@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.geckoview_example;
 
@@ -172,7 +172,7 @@ class WebExtensionManager
     refreshExtensionList();
   }
 
-  
+  // We only support either one browserAction or one pageAction
   private void onAction(
       final WebExtension extension, final GeckoSession session, final WebExtension.Action action) {
     WebExtensionDelegate delegate = mExtensionDelegate.get();
@@ -183,7 +183,7 @@ class WebExtensionManager
     WebExtension.Action resolved;
 
     if (session == null) {
-      
+      // This is the default action
       mDefaultAction = action;
       resolved = actionFor(delegate.getCurrentSession());
     } else {
@@ -192,8 +192,8 @@ class WebExtensionManager
       }
       delegate.getSession(session).action = action;
       if (delegate.getCurrentSession() != session) {
-        
-        
+        // This update is not for the session that we are currently displaying,
+        // no need to update the UI
         return;
       }
       resolved = action.withDefault(mDefaultAction);
@@ -342,7 +342,7 @@ class WebExtensionManager
   @Override
   public void onCurrentSession(TabSession session) {
     if (mDefaultAction == null) {
-      
+      // No action was ever defined, so nothing to do
       return;
     }
 
@@ -540,7 +540,7 @@ public class GeckoViewActivity extends AppCompatActivity
     protected abstract T getValue(
         final String key, final T defaultValue, final SharedPreferences preferences);
 
-    
+    /** Override one of these to define the behavior when this setting changes. */
     protected void setValue(final GeckoSessionSettings settings, final T value) {}
 
     protected void setValue(final GeckoRuntimeSettings settings, final T value) {}
@@ -626,7 +626,7 @@ public class GeckoViewActivity extends AppCompatActivity
       new IntSetting(
           R.string.key_preferred_color_scheme,
           R.integer.preferred_color_scheme_default,
-           true) {
+          /* reloadCurrentSession */ true) {
         @Override
         public void setValue(final GeckoRuntimeSettings settings, final Integer value) {
           settings.setPreferredColorScheme(value);
@@ -637,7 +637,7 @@ public class GeckoViewActivity extends AppCompatActivity
       new StringSetting(
           R.string.key_user_agent_override,
           R.string.user_agent_override_default,
-           true) {
+          /* reloadCurrentSession */ true) {
         @Override
         public void setValue(final GeckoSessionSettings settings, final String value) {
           settings.setUserAgentOverride(value.isEmpty() ? null : value);
@@ -656,7 +656,7 @@ public class GeckoViewActivity extends AppCompatActivity
       new BooleanSetting(
           R.string.key_javascript_enabled,
           R.bool.javascript_enabled_default,
-           true) {
+          /* reloadCurrentSession */ true) {
         @Override
         public void setValue(final GeckoRuntimeSettings settings, final Boolean value) {
           settings.setJavaScriptEnabled(value);
@@ -667,7 +667,7 @@ public class GeckoViewActivity extends AppCompatActivity
       new BooleanSetting(
           R.string.key_global_privacy_control_enabled,
           R.bool.global_privacy_control_enabled_default,
-           true) {
+          /* reloadCurrentSession */ true) {
         @Override
         public void setValue(final GeckoRuntimeSettings settings, final Boolean value) {
           settings.setGlobalPrivacyControl(value);
@@ -678,7 +678,7 @@ public class GeckoViewActivity extends AppCompatActivity
       new BooleanSetting(
           R.string.key_etb_private_mode_enabled,
           R.bool.etb_private_mode_enabled_default,
-           true) {
+          /* reloadCurrentSession */ true) {
         @Override
         public void setValue(final GeckoRuntimeSettings settings, final Boolean value) {
           settings.getContentBlocking().setEmailTrackerBlockingPrivateBrowsing(value);
@@ -689,7 +689,7 @@ public class GeckoViewActivity extends AppCompatActivity
       new BooleanSetting(
           R.string.key_extensions_process_enabled,
           R.bool.extensions_process_enabled_default,
-           true) {
+          /* reloadCurrentSession */ true) {
         @Override
         public void setValue(final GeckoRuntimeSettings settings, final Boolean value) {
           settings.setExtensionsProcessEnabled(value);
@@ -780,17 +780,19 @@ public class GeckoViewActivity extends AppCompatActivity
       new BooleanSetting(R.string.key_dfpi, R.bool.dfpi_default) {
         @Override
         public void setValue(final GeckoRuntimeSettings settings, final Boolean value) {
-          int cookieBehavior =
-              value
-                  ? ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
-                  : ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS;
-          settings.getContentBlocking().setCookieBehavior(cookieBehavior);
+          // If dFPI is enabled set appropriate cookieBehavior, else do not overwrite.
+          if (value) {
+            settings
+                .getContentBlocking()
+                .setCookieBehavior(
+                    ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS);
+          }
         }
       };
 
   private final BooleanSetting mAllowAutoplay =
       new BooleanSetting(
-          R.string.key_autoplay, R.bool.autoplay_default,  true);
+          R.string.key_autoplay, R.bool.autoplay_default, /* reloadCurrentSession */ true);
 
   private final BooleanSetting mAllowExtensionsInPrivateBrowsing =
       new BooleanSetting(
@@ -812,7 +814,7 @@ public class GeckoViewActivity extends AppCompatActivity
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    
+    // We might have been started because the user clicked on a notification
     WebNotification notification = getIntent().getParcelableExtra("onClick");
     if (notification != null) {
       getIntent().removeExtra("onClick");
@@ -830,7 +832,7 @@ public class GeckoViewActivity extends AppCompatActivity
 
     SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
     preferences.registerOnSharedPreferenceChangeListener(this);
-    
+    // Read initial preference state
     onPreferencesChange(preferences);
 
     mToolbarView = new ToolbarLayout(this, mTabSessionManager);
@@ -852,8 +854,8 @@ public class GeckoViewActivity extends AppCompatActivity
           new GeckoRuntimeSettings.Builder();
 
       if (BuildConfig.DEBUG) {
-        
-        
+        // In debug builds, we want to load JavaScript resources fresh with
+        // each build.
         runtimeSettingsBuilder.arguments(new String[] {"-purgecaches"});
       }
 
@@ -898,7 +900,7 @@ public class GeckoViewActivity extends AppCompatActivity
             }
           });
 
-      
+      // `getSystemService` call requires API level 23
       if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
         sGeckoRuntime.setWebNotificationDelegate(
             new WebNotificationDelegate() {
@@ -1101,16 +1103,16 @@ public class GeckoViewActivity extends AppCompatActivity
   }
 
   private void createNotificationChannel() {
-    
-    
+    // Create the NotificationChannel, but only on API 26+ because
+    // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       CharSequence name = getString(R.string.app_name);
       String description = getString(R.string.activity_label);
       int importance = NotificationManager.IMPORTANCE_DEFAULT;
       NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
       channel.setDescription(description);
-      
-      
+      // Register the channel with the system; you can't change the importance
+      // or other notification behaviors after this
       NotificationManager notificationManager = getSystemService(NotificationManager.class);
       notificationManager.createNotificationChannel(channel);
     }
@@ -1360,8 +1362,8 @@ public class GeckoViewActivity extends AppCompatActivity
         (dialog, which) -> {
           final String uri = input.getText().toString();
 
-          
-          
+          // We only suopport one extension at a time, so remove the currently installed
+          // extension if there is one
           setViewVisibility(mPopupView, false);
           mPopupView = null;
           mPopupSession = null;
@@ -1385,7 +1387,7 @@ public class GeckoViewActivity extends AppCompatActivity
     builder.setNegativeButton(
         R.string.cancel,
         (dialog, which) -> {
-          
+          // Nothing to do
         });
 
     builder.show();
@@ -1453,12 +1455,12 @@ public class GeckoViewActivity extends AppCompatActivity
     Spinner fromSelect = new Spinner(this);
     Spinner toSelect = new Spinner(this);
 
-    
+    // Set spinners with data
     TranslationsController.RuntimeTranslation.listSupportedLanguages()
         .then(
             supportedLanguages -> {
-              
-              
+              // Just a check if sorting is working on the Language object by reversing, Languages
+              // should generally come from the API in the display order.
               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 Collections.reverse(supportedLanguages.fromLanguages);
               }
@@ -1468,7 +1470,7 @@ public class GeckoViewActivity extends AppCompatActivity
                       android.R.layout.simple_spinner_item,
                       supportedLanguages.fromLanguages);
               fromSelect.setAdapter(fromData);
-              
+              // Set detected language
               final int index =
                   fromData.getPosition(
                       new TranslationsController.Language(mDetectedLanguage, null));
@@ -1480,12 +1482,12 @@ public class GeckoViewActivity extends AppCompatActivity
                       android.R.layout.simple_spinner_item,
                       supportedLanguages.toLanguages);
               toSelect.setAdapter(toData);
-              
+              // Set preferred language
               TranslationsController.RuntimeTranslation.preferredLanguages()
                   .then(
                       preferredList -> {
                         Log.d(LOGTAG, "Preferred Translation Languages: " + preferredList);
-                        
+                        // Reorder dropdown listing based on preferences
                         for (int i = preferredList.size() - 1; i >= 0; i--) {
                           final int langIndex =
                               toData.getPosition(
@@ -1522,7 +1524,7 @@ public class GeckoViewActivity extends AppCompatActivity
     builder.setNegativeButton(
         R.string.cancel,
         (dialog, which) -> {
-          
+          // Nothing to do
         });
 
     builder.show();
@@ -1546,7 +1548,7 @@ public class GeckoViewActivity extends AppCompatActivity
   private void translateManage() {
     Spinner languageSelect = new Spinner(this);
     Spinner operationSelect = new Spinner(this);
-    
+    // Should match ModelOperation choices
     List<String> operationChoices =
         new ArrayList<>(
             Arrays.asList(
@@ -1559,14 +1561,14 @@ public class GeckoViewActivity extends AppCompatActivity
             this.getBaseContext(), android.R.layout.simple_spinner_item, operationChoices);
     operationSelect.setAdapter(operationData);
 
-    
+    // Get current model states
     GeckoResult<List<TranslationsController.RuntimeTranslation.LanguageModel>> currentStates =
         TranslationsController.RuntimeTranslation.listModelDownloadStates();
     currentStates.then(
         models -> {
           List<TranslationsController.Language> languages =
               new ArrayList<TranslationsController.Language>();
-          
+          // Pseudo container of "all" just to simplify spinner for GVE
           languages.add(new TranslationsController.Language("all", "All Models"));
           for (var model : models) {
             Log.i(LOGTAG, "Translate Model State: " + model);
@@ -1597,7 +1599,7 @@ public class GeckoViewActivity extends AppCompatActivity
           final String operation = (String) operationSelect.getSelectedItem();
 
           String operationLevel = TranslationsController.RuntimeTranslation.LANGUAGE;
-          
+          // Pseudo option for ease of GVE
           if (selectedLanguage.code.equals("all")) {
             operationLevel = TranslationsController.RuntimeTranslation.ALL;
           }
@@ -1608,12 +1610,12 @@ public class GeckoViewActivity extends AppCompatActivity
                   .operationLevel(operationLevel)
                   .build();
 
-          
+          // Complete Operation
           GeckoResult<Void> requestOperation =
               TranslationsController.RuntimeTranslation.manageLanguageModel(options);
           requestOperation.then(
               opt -> {
-                
+                // Log Changes
                 GeckoResult<List<TranslationsController.RuntimeTranslation.LanguageModel>>
                     reportChanges =
                         TranslationsController.RuntimeTranslation.listModelDownloadStates();
@@ -1630,7 +1632,7 @@ public class GeckoViewActivity extends AppCompatActivity
     builder.setNegativeButton(
         R.string.cancel,
         (dialog, which) -> {
-          
+          // Nothing to do
         });
 
     builder.show();
@@ -1638,7 +1640,7 @@ public class GeckoViewActivity extends AppCompatActivity
 
   private RelativeLayout translateLayout(
       Spinner spinnerA, int labelA, Spinner spinnerB, int labelB, int labelInfo) {
-    
+    // From fields
     TextView fromLangLabel = new TextView(this);
     fromLangLabel.setText(labelA);
     LinearLayout from = new LinearLayout(this);
@@ -1650,7 +1652,7 @@ public class GeckoViewActivity extends AppCompatActivity
             RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
     fromParams.setMarginStart(30);
 
-    
+    // To fields
     TextView toLangLabel = new TextView(this);
     toLangLabel.setText(labelB);
     LinearLayout to = new LinearLayout(this);
@@ -1663,12 +1665,12 @@ public class GeckoViewActivity extends AppCompatActivity
     toParams.setMarginStart(30);
     toParams.addRule(RelativeLayout.BELOW, from.getId());
 
-    
+    // Layout
     RelativeLayout layout = new RelativeLayout(this);
     layout.addView(from, fromParams);
     layout.addView(to, toParams);
 
-    
+    // Hint
     TextView info = new TextView(this);
     if (labelInfo != -1) {
       RelativeLayout.LayoutParams infoParams =
@@ -1711,7 +1713,7 @@ public class GeckoViewActivity extends AppCompatActivity
       setGeckoViewSession(session, activateTab);
       mCurrentUri = session.getUri();
       if (!session.isOpen()) {
-        
+        // Session's process was previously killed; reopen
         session.open(sGeckoRuntime);
         session.loadUri(mCurrentUri);
       }
@@ -1737,7 +1739,7 @@ public class GeckoViewActivity extends AppCompatActivity
 
     final boolean hasSession = session != null;
     final LocationView view = mToolbarView.getLocationView();
-    
+    // No point having the URL bar enabled if there's no session to navigate to
     view.setEnabled(hasSession);
 
     if (hasSession) {
@@ -1871,7 +1873,7 @@ public class GeckoViewActivity extends AppCompatActivity
               + filename;
 
       Log.i(LOGTAG, "Downloading to: " + downloadsPath);
-      int bufferSize = 1024; 
+      int bufferSize = 1024; // to read in 1Mb increments
       byte[] buffer = new byte[bufferSize];
       try (OutputStream out = new BufferedOutputStream(new FileOutputStream(downloadsPath))) {
         int len;
@@ -2289,7 +2291,7 @@ public class GeckoViewActivity extends AppCompatActivity
       mCallback = null;
       for (final int result : grantResults) {
         if (result != PackageManager.PERMISSION_GRANTED) {
-          
+          // At least one permission was not granted.
           cb.reject();
           return;
         }
@@ -2301,7 +2303,7 @@ public class GeckoViewActivity extends AppCompatActivity
     public void onAndroidPermissionsRequest(
         final GeckoSession session, final String[] permissions, final Callback callback) {
       if (Build.VERSION.SDK_INT >= 23) {
-        
+        // requestPermissions was introduced in API 23.
         mCallback = callback;
         requestPermissions(permissions, androidPermissionRequestCode);
       } else {
@@ -2383,10 +2385,10 @@ public class GeckoViewActivity extends AppCompatActivity
         final MediaSource[] video,
         final MediaSource[] audio,
         final MediaCallback callback) {
-      
-      
-      
-      
+      // If we don't have device permissions at this point, just automatically reject the request
+      // as we will have already have requested device permissions before getting to this point
+      // and if we've reached here and we don't have permissions then that means that the user
+      // denied them.
       if ((audio != null
               && ContextCompat.checkSelfPermission(
                       GeckoViewActivity.this, Manifest.permission.RECORD_AUDIO)
@@ -2480,7 +2482,7 @@ public class GeckoViewActivity extends AppCompatActivity
     builder.setNegativeButton(
         R.string.cancel,
         (dialog, which) -> {
-          
+          // Nothing to do
         });
 
     builder.show();
@@ -2498,11 +2500,11 @@ public class GeckoViewActivity extends AppCompatActivity
             RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
     actionParams.setMarginStart(30);
 
-    
+    // Layout
     RelativeLayout layout = new RelativeLayout(this);
     layout.addView(action, actionParams);
 
-    
+    // Hint
     TextView info = new TextView(this);
     if (labelInfo != -1) {
       RelativeLayout.LayoutParams infoParams =
@@ -2692,8 +2694,8 @@ public class GeckoViewActivity extends AppCompatActivity
       final TabSession newSession = createSession();
       mToolbarView.updateTabCount();
       setGeckoViewSession(newSession);
-      
-      
+      // A reference to newSession is stored by mTabSessionManager,
+      // which prevents the session from being garbage-collected.
       return GeckoResult.fromValue(newSession);
     }
 
