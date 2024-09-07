@@ -8,6 +8,7 @@
 #include "HTMLEditor.h"
 #include "HTMLEditorInlines.h"
 
+#include "AutoSelectionRestorer.h"
 #include "EditAction.h"
 #include "EditorDOMPoint.h"
 #include "EditorUtils.h"
@@ -2913,7 +2914,7 @@ NS_IMETHODIMP HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
   
   
   
-  AutoSelectionRestorer restoreSelectionLater(*this);
+  AutoSelectionRestorer restoreSelectionLater(this);
 
   
   nsAtom* newCellName =
@@ -3636,7 +3637,7 @@ nsresult HTMLEditor::NormalizeTableInternal(Element& aTableOrElementInTable) {
   TableSize tableSize = tableSizeOrError.unwrap();
 
   
-  AutoSelectionRestorer restoreSelectionLater(*this);
+  AutoSelectionRestorer restoreSelectionLater(this);
 
   AutoPlaceholderBatch treateAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);

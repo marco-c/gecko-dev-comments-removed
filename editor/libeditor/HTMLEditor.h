@@ -1020,15 +1020,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  bool ArePreservingSelection() const;
-  void PreserveSelectionAcrossActions();
-  MOZ_CAN_RUN_SCRIPT nsresult RestorePreservedSelection();
-  void StopPreservingSelection();
-
-  
-
-
-
 
 
 
@@ -4341,44 +4332,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  class AutoSelectionRestorer final {
-   public:
-    AutoSelectionRestorer() = delete;
-    explicit AutoSelectionRestorer(const AutoSelectionRestorer& aOther) =
-        delete;
-    AutoSelectionRestorer(AutoSelectionRestorer&& aOther) = delete;
-
-    
-
-
-
-
-
-
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY explicit AutoSelectionRestorer(
-        HTMLEditor& aHTMLEditor);
-
-    
-
-
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY ~AutoSelectionRestorer();
-
-    
-
-
-    void Abort();
-
-    bool MaybeRestoreSelectionLater() const { return !!mHTMLEditor; }
-
-   protected:
-    
-    MOZ_KNOWN_LIVE HTMLEditor* mHTMLEditor = nullptr;
-  };
-
-  
-
-
-
 
 
 
@@ -4524,6 +4477,7 @@ class HTMLEditor final : public EditorBase,
                                        
   friend class AutoRangeArray;  
                                 
+  friend class AutoSelectionRestore;
   friend class AutoSelectionSetterAfterTableEdit;  
   friend class
       AutoSetTemporaryAncestorLimiter;  

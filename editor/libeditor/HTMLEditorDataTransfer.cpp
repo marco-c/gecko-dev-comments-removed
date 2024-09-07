@@ -8,6 +8,7 @@
 
 #include <string.h>
 
+#include "AutoSelectionRestorer.h"
 #include "EditAction.h"
 #include "EditorDOMPoint.h"
 #include "EditorUtils.h"
@@ -703,7 +704,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
     
     
     {
-      AutoSelectionRestorer restoreSelectionLater(mHTMLEditor);
+      AutoSelectionRestorer restoreSelectionLater(&mHTMLEditor);
       rv = mHTMLEditor.DeleteTableCellWithTransaction(1);
       if (NS_FAILED(rv)) {
         NS_WARNING("HTMLEditor::DeleteTableCellWithTransaction(1) failed");

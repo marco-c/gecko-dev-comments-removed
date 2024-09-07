@@ -703,7 +703,16 @@ class EditorBase : public nsIEditor,
     Yes,
   };
 
+  enum class PreventSetSelection {
+    No,
+    Yes,
+  };
+
   
+
+
+
+
 
 
 
@@ -722,6 +731,7 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT nsresult ReplaceTextAsAction(
       const nsAString& aString, nsRange* aReplaceRange,
       AllowBeforeInputEventCancelable aAllowBeforeInputEventCancelable,
+      PreventSetSelection aPreventSetSelection = PreventSetSelection::No,
       nsIPrincipal* aPrincipal = nullptr);
 
   
@@ -1603,12 +1613,10 @@ class EditorBase : public nsIEditor,
 
 
   SelectionState& SavedSelectionRef() {
-    MOZ_ASSERT(IsHTMLEditor());
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->SavedSelectionRef();
   }
   const SelectionState& SavedSelectionRef() const {
-    MOZ_ASSERT(IsHTMLEditor());
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->SavedSelectionRef();
   }
@@ -2167,6 +2175,15 @@ class EditorBase : public nsIEditor,
 
   enum class SafeToInsertData : bool { No, Yes };
   SafeToInsertData IsSafeToInsertData(nsIPrincipal* aSourcePrincipal) const;
+
+  
+
+
+
+  bool ArePreservingSelection() const;
+  void PreserveSelectionAcrossActions();
+  MOZ_CAN_RUN_SCRIPT nsresult RestorePreservedSelection();
+  void StopPreservingSelection();
 
  protected:  
   
@@ -2954,8 +2971,9 @@ class EditorBase : public nsIEditor,
   friend class AlignStateAtSelection;  
                                        
   friend class AutoRangeArray;  
-  friend class CaretPoint;      
-                                
+  friend class AutoSelectionRestorer;   
+  friend class CaretPoint;              
+                                        
   friend class CompositionTransaction;  
                                         
                                         

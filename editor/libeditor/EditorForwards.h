@@ -86,6 +86,7 @@ class SelectionState;
 class TextEditor;                  
 
 class AutoRangeArray;                   
+class AutoSelectionRestorer;            
 class AutoSelectionRangeArray;          
 class CaretPoint;                       
 class ChangeAttributeTransaction;       

@@ -68,6 +68,16 @@ class WidgetContentCommandEvent : public WidgetGUIEvent {
     bool mIsHorizontal;  
   } mScroll;
 
+  
+  struct Selection {
+    
+    nsString mReplaceSrcString;  
+    
+    uint32_t mOffset = 0;  
+    
+    bool mPreventSetSelection = false;  
+  } mSelection;
+
   bool mOnlyEnabledCheck;  
 
   bool mSucceeded;  
@@ -79,6 +89,7 @@ class WidgetContentCommandEvent : public WidgetGUIEvent {
 
     mString = aEvent.mString;
     mScroll = aEvent.mScroll;
+    mSelection = aEvent.mSelection;
     mOnlyEnabledCheck = aEvent.mOnlyEnabledCheck;
     mSucceeded = aEvent.mSucceeded;
     mIsEnabled = aEvent.mIsEnabled;
