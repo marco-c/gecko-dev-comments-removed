@@ -125,7 +125,7 @@ async function doBasicDisableAndEnableTest(pref) {
   });
   await check_results({
     context,
-    matches: [makeWeatherResult()],
+    matches: [QuickSuggestTestUtils.weatherResult()],
   });
 }
 
@@ -196,7 +196,7 @@ add_tasks_with_rust(
     });
     await check_results({
       context,
-      matches: [makeWeatherResult()],
+      matches: [QuickSuggestTestUtils.weatherResult()],
     });
   }
 );
@@ -666,7 +666,7 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
           ],
           isPrivate: false,
         }),
-        matches: [makeWeatherResult({ temperatureUnit })],
+        matches: [QuickSuggestTestUtils.weatherResult({ temperatureUnit })],
       });
 
       info(
@@ -681,7 +681,9 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
           ],
           isPrivate: false,
         }),
-        matches: [makeWeatherResult({ temperatureUnit: osUnit })],
+        matches: [
+          QuickSuggestTestUtils.weatherResult({ temperatureUnit: osUnit }),
+        ],
       });
       Services.prefs.clearUserPref("intl.regional_prefs.use_os_locales");
     });
@@ -707,7 +709,7 @@ add_tasks_with_rust(async function block() {
   });
   await check_results({
     context,
-    matches: [makeWeatherResult()],
+    matches: [QuickSuggestTestUtils.weatherResult()],
   });
 
   
@@ -1213,7 +1215,7 @@ add_tasks_with_rust(async function nimbusOverride() {
     hasSuggestion: true,
   });
 
-  let defaultResult = makeWeatherResult();
+  let defaultResult = QuickSuggestTestUtils.weatherResult();
 
   
   
@@ -1243,7 +1245,7 @@ add_tasks_with_rust(async function nimbusOverride() {
   
   
   
-  let merinoResult = makeWeatherResult({
+  let merinoResult = QuickSuggestTestUtils.weatherResult({
     source: "merino",
     provider: "accuweather",
     telemetryType: null,
