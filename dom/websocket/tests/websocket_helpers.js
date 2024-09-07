@@ -1,3 +1,6 @@
+
+
+
 var current_test = 0;
 
 function shouldNotOpen(e) {
@@ -23,7 +26,7 @@ function shouldCloseNotCleanly(e) {
   );
 }
 
-function ignoreError(e) {}
+function ignoreError() {}
 
 function CreateTestWS(ws_location, ws_protocol) {
   var ws;

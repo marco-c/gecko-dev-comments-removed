@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -30,7 +30,7 @@ async function useWebSocket(contentWindow) {
       contentWindow.openCount += 1;
       resolve();
     };
-    ws.onerror = e => {
+    ws.onerror = () => {
       contentWindow.errorCount += 1;
       reject("websocket error");
     };

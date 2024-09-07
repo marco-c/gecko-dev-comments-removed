@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -14,7 +14,7 @@
 <pre id="feedback"></pre>
 <script class="testbody" type="text/javascript">
 
-  var worker = new Worker("websocket_worker2.js");
+  var worker = new Worker("websocket2.worker.js");
 
   worker.onmessage = function(event) {
     is(event.target, worker, "event.target should be a worker!");

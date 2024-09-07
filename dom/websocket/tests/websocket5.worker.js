@@ -1,19 +1,16 @@
+
+
 importScripts("websocket_helpers.js");
 importScripts("websocket_tests.js");
 importScripts("websocket_worker_helpers.js");
 
 var tests = [
-  test11, 
-  test12, 
-  test13, 
-  test14, 
-  
-  test15, 
-  
-  test16, 
-  test18, 
-  test19, 
-  
+  test42, 
+  test43, 
+  test44, 
+  test46, 
+  test47, 
+  test49, 
 ];
 
 doTest();
