@@ -394,7 +394,7 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
     
     
     
-    nsresult rv = mozilla::Omnijar::Init();
+    nsresult rv = mozilla::Omnijar::FallibleInit();
     if (NS_FAILED(rv)) {
       XPCOM_INIT_FATAL("Omnijar::Init()", NS_ERROR_OMNIJAR_CORRUPT)
     }

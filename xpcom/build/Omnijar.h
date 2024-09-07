@@ -85,8 +85,13 @@ class Omnijar {
 
 
 
-  static nsresult Init(nsIFile* aGrePath = nullptr,
-                       nsIFile* aAppPath = nullptr);
+  static void Init(nsIFile* aGrePath = nullptr, nsIFile* aAppPath = nullptr);
+
+  
+
+
+  static nsresult FallibleInit(nsIFile* aGrePath = nullptr,
+                               nsIFile* aAppPath = nullptr);
 
   
 
