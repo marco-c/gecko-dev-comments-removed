@@ -37,8 +37,12 @@ class PushResampler {
   
   
   int Resample(InterleavedView<const T> src, InterleavedView<T> dst);
+  
+  
+  int Resample(MonoView<const T> src, MonoView<T> dst);
 
  private:
+  
   std::unique_ptr<T[]> source_;
   std::unique_ptr<T[]> destination_;
   DeinterleavedView<T> source_view_;
