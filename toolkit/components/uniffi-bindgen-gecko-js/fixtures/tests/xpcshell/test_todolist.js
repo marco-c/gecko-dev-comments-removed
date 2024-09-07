@@ -1,11 +1,18 @@
 
 
 
-const { TodoList, TodoEntry, getDefaultList, setDefaultList } =
+const { TodoList, TodoEntry, TodoError, getDefaultList, setDefaultList } =
   ChromeUtils.importESModule("resource://gre/modules/RustTodolist.sys.mjs");
 
 add_task(async function () {
   const todo = await TodoList.init();
+
+  await Assert.rejects(
+    todo.getLastEntry(),
+    TodoError,
+    "getLastEntry called before there were any entries"
+  );
+
   const entry = new TodoEntry({
     text: "Write bindings for strings in records",
   });
