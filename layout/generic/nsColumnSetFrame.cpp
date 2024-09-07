@@ -415,9 +415,6 @@ nscoord nsColumnSetFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord iSize = 0;
 
   if (mFrames.FirstChild()) {
-    
-    
-    
     iSize = mFrames.FirstChild()->GetMinISize(aRenderingContext);
   }
   const nsStyleColumn* colStyle = StyleColumn();
@@ -455,9 +452,6 @@ nscoord nsColumnSetFrame::GetPrefISize(gfxContext* aRenderingContext) {
     colISize =
         ColumnUtils::ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
   } else if (mFrames.FirstChild()) {
-    
-    
-    
     colISize = mFrames.FirstChild()->GetPrefISize(aRenderingContext);
   } else {
     colISize = 0;
