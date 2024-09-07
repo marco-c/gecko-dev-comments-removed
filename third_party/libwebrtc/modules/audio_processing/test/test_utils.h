@@ -16,7 +16,6 @@
 #include <iterator>
 #include <limits>
 #include <memory>
-#include <sstream>  
 #include <string>
 #include <vector>
 
@@ -147,22 +146,6 @@ float ComputeSNR(const T* ref, const T* test, size_t length, float* variance) {
   if (mse > 0)
     snr = 10 * log10(*variance / mse);
   return snr;
-}
-
-
-
-template <typename T>
-std::vector<T> ParseList(absl::string_view to_parse) {
-  std::vector<T> values;
-
-  std::istringstream str(  
-      std::string{to_parse});
-  std::copy(
-      std::istream_iterator<T>(str),  
-      std::istream_iterator<T>(),     
-      std::back_inserter(values));
-
-  return values;
 }
 
 }  
