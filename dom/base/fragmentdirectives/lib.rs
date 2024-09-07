@@ -64,7 +64,7 @@ impl TextDirective {
 
 #[repr(C)]
 pub struct ParsedFragmentDirectiveResult {
-    url_without_fragment_directive: nsCString,
+    hash_without_fragment_directive: nsCString,
     fragment_directive: nsCString,
     text_directives: ThinVec<TextDirective>,
 }
@@ -83,21 +83,23 @@ pub struct ParsedFragmentDirectiveResult {
 
 #[no_mangle]
 pub extern "C" fn parse_fragment_directive(
-    url: &nsCString,
+    hash: &nsCString,
     result: &mut ParsedFragmentDirectiveResult,
 ) -> bool {
     
-    result.url_without_fragment_directive = nsCString::new();
+    result.hash_without_fragment_directive = nsCString::new();
     result.fragment_directive = nsCString::new();
     result.text_directives.clear();
 
-    let url_as_rust_string = url.to_utf8();
-    if let Some((stripped_url, fragment_directive, text_directives)) =
+    let url_as_rust_string = hash.to_utf8();
+    if let Some((stripped_hash, fragment_directive, text_directives)) =
         fragment_directive_impl::parse_fragment_directive_and_remove_it_from_hash(
             &url_as_rust_string,
         )
     {
-        result.url_without_fragment_directive.assign(&stripped_url);
+        result
+            .hash_without_fragment_directive
+            .assign(&stripped_hash);
         result.fragment_directive.assign(&fragment_directive);
         result.text_directives.extend(
             text_directives
