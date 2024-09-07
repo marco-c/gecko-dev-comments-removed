@@ -413,8 +413,7 @@ void MacroAssembler::addPtr(ImmPtr imm, Register dest) {
 
 
 
-template <class L>
-void MacroAssembler::branchIfFalseBool(Register reg, L label) {
+void MacroAssembler::branchIfFalseBool(Register reg, Label* label) {
   
   branchTest32(Assembler::Zero, reg, Imm32(0xFF), label);
 }
