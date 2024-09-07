@@ -823,17 +823,13 @@ class Module::PartialTier2CompileTaskImpl : public PartialTier2CompileTask {
 
       
       
-      bool success = CompilePartialTier2(*code_, funcIndex_);
-
-      
-      
-      
-
-      
-      
-      
-      
       UniqueChars error;
+      bool success = CompilePartialTier2(*code_, funcIndex_, &error);
+
+      
+      
+      
+
       UniqueCharsVector warnings;
       ReportTier2ResultsOffThread(success, mozilla::Some(funcIndex_),
                                   code_->codeMeta().scriptedCaller(), error,

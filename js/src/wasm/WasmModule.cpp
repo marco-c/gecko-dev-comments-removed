@@ -63,7 +63,7 @@ void js::wasm::ReportTier2ResultsOffThread(bool success,
                                            const UniqueChars& error,
                                            const UniqueCharsVector& warnings) {
   
-  MOZ_ASSERT_IF(maybeFuncIndex.isSome(), !error && warnings.length() == 0);
+  MOZ_ASSERT_IF(maybeFuncIndex.isSome(), warnings.length() == 0);
 
   
   UniqueChars context = Tier2ResultsContext(scriptedCaller);
