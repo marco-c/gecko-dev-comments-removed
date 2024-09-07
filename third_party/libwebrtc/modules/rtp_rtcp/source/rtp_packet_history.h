@@ -40,11 +40,8 @@ class RtpPacketHistory {
   };
 
   enum class PaddingMode {
-    kDefault,   
-                
-    kPriority,  
-    
-    
+    kDefault,  
+               
     kRecentLargePacket  
                         
   };
@@ -59,10 +56,6 @@ class RtpPacketHistory {
   
   static constexpr int kPacketCullingDelayFactor = 3;
 
-  RtpPacketHistory(Clock* clock, bool enable_padding_prio)
-      : RtpPacketHistory(clock,
-                         enable_padding_prio ? PaddingMode::kPriority
-                                             : PaddingMode::kDefault) {}
   RtpPacketHistory(Clock* clock, PaddingMode padding_mode);
 
   RtpPacketHistory() = delete;
@@ -130,10 +123,6 @@ class RtpPacketHistory {
   void Clear();
 
  private:
-  struct MoreUseful;
-  class StoredPacket;
-  using PacketPrioritySet = std::set<StoredPacket*, MoreUseful>;
-
   class StoredPacket {
    public:
     StoredPacket() = default;
@@ -146,7 +135,7 @@ class RtpPacketHistory {
 
     uint64_t insert_order() const { return insert_order_; }
     size_t times_retransmitted() const { return times_retransmitted_; }
-    void IncrementTimesRetransmitted(PacketPrioritySet* priority_set);
+    void IncrementTimesRetransmitted();
 
     
     Timestamp send_time() const { return send_time_; }
@@ -168,11 +157,6 @@ class RtpPacketHistory {
     
     size_t times_retransmitted_;
   };
-  struct MoreUseful {
-    bool operator()(StoredPacket* lhs, StoredPacket* rhs) const;
-  };
-
-  bool padding_priority_enabled() const;
 
   
   bool VerifyRtt(const StoredPacket& packet) const
@@ -205,9 +189,6 @@ class RtpPacketHistory {
 
   
   uint64_t packets_inserted_ RTC_GUARDED_BY(lock_);
-  
-  
-  PacketPrioritySet padding_priority_ RTC_GUARDED_BY(lock_);
 
   absl::optional<RtpPacketToSend> large_payload_packet_ RTC_GUARDED_BY(lock_);
 };

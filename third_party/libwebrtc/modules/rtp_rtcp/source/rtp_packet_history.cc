@@ -46,33 +46,8 @@ RtpPacketHistory::StoredPacket& RtpPacketHistory::StoredPacket::operator=(
     RtpPacketHistory::StoredPacket&&) = default;
 RtpPacketHistory::StoredPacket::~StoredPacket() = default;
 
-void RtpPacketHistory::StoredPacket::IncrementTimesRetransmitted(
-    PacketPrioritySet* priority_set) {
-  
-  
-  
-  const bool in_priority_set = priority_set && priority_set->erase(this) > 0;
+void RtpPacketHistory::StoredPacket::IncrementTimesRetransmitted() {
   ++times_retransmitted_;
-  if (in_priority_set) {
-    auto it = priority_set->insert(this);
-    RTC_DCHECK(it.second)
-        << "ERROR: Priority set already contains matching packet! In set: "
-           "insert order = "
-        << (*it.first)->insert_order_
-        << ", times retransmitted = " << (*it.first)->times_retransmitted_
-        << ". Trying to add: insert order = " << insert_order_
-        << ", times retransmitted = " << times_retransmitted_;
-  }
-}
-
-bool RtpPacketHistory::MoreUseful::operator()(StoredPacket* lhs,
-                                              StoredPacket* rhs) const {
-  
-  if (lhs->times_retransmitted() != rhs->times_retransmitted()) {
-    return lhs->times_retransmitted() < rhs->times_retransmitted();
-  }
-  
-  return lhs->insert_order() > rhs->insert_order();
 }
 
 RtpPacketHistory::RtpPacketHistory(Clock* clock, PaddingMode padding_mode)
@@ -163,14 +138,6 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
 
   packet_history_[packet_index] =
       StoredPacket(std::move(packet), send_time, packets_inserted_++);
-
-  if (padding_priority_enabled()) {
-    if (padding_priority_.size() >= kMaxPaddingHistory - 1) {
-      padding_priority_.erase(std::prev(padding_priority_.end()));
-    }
-    auto prio_it = padding_priority_.insert(&packet_history_[packet_index]);
-    RTC_DCHECK(prio_it.second) << "Failed to insert packet into prio set.";
-  }
 }
 
 std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndMarkAsPending(
@@ -230,8 +197,7 @@ void RtpPacketHistory::MarkPacketAsSent(uint16_t sequence_number) {
   
   packet->set_send_time(clock_->CurrentTime());
   packet->pending_transmission_ = false;
-  packet->IncrementTimesRetransmitted(
-      padding_priority_enabled() ? &padding_priority_ : nullptr);
+  packet->IncrementTimesRetransmitted();
 }
 
 bool RtpPacketHistory::GetPacketState(uint16_t sequence_number) const {
@@ -290,10 +256,7 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket(
   }
 
   StoredPacket* best_packet = nullptr;
-  if (padding_priority_enabled() && !padding_priority_.empty()) {
-    auto best_packet_it = padding_priority_.begin();
-    best_packet = *best_packet_it;
-  } else if (!padding_priority_enabled() && !packet_history_.empty()) {
+  if (!packet_history_.empty()) {
     
     for (auto it = packet_history_.rbegin(); it != packet_history_.rend();
          ++it) {
@@ -322,9 +285,7 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket(
   }
 
   best_packet->set_send_time(clock_->CurrentTime());
-  best_packet->IncrementTimesRetransmitted(
-      padding_priority_enabled() ? &padding_priority_ : nullptr);
-
+  best_packet->IncrementTimesRetransmitted();
   return padding_packet;
 }
 
@@ -348,7 +309,6 @@ void RtpPacketHistory::Clear() {
 
 void RtpPacketHistory::Reset() {
   packet_history_.clear();
-  padding_priority_.clear();
   large_payload_packet_ = absl::nullopt;
 }
 
@@ -396,12 +356,6 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::RemovePacket(
   
   std::unique_ptr<RtpPacketToSend> rtp_packet =
       std::move(packet_history_[packet_index].packet_);
-
-  
-  if (padding_mode_ == PaddingMode::kPriority) {
-    padding_priority_.erase(&packet_history_[packet_index]);
-  }
-
   if (packet_index == 0) {
     while (!packet_history_.empty() &&
            packet_history_.front().packet_ == nullptr) {
@@ -447,10 +401,6 @@ RtpPacketHistory::StoredPacket* RtpPacketHistory::GetStoredPacket(
     return nullptr;
   }
   return &packet_history_[index];
-}
-
-bool RtpPacketHistory::padding_priority_enabled() const {
-  return padding_mode_ == PaddingMode::kPriority;
 }
 
 }  
