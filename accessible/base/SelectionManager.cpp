@@ -8,6 +8,7 @@
 #include "DocAccessible-inl.h"
 #include "HyperTextAccessible.h"
 #include "HyperTextAccessible-inl.h"
+#include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
 #include "nsCoreUtils.h"
 #include "nsEventShell.h"
@@ -46,13 +47,6 @@ void SelectionManager::ClearControlSelectionListener() {
     mCurrCtrlNormalSel->RemoveSelectionListener(this);
     mCurrCtrlNormalSel = nullptr;
   }
-
-  
-  
-  if (mCurrCtrlSpellSel) {
-    mCurrCtrlSpellSel->RemoveSelectionListener(this);
-    mCurrCtrlSpellSel = nullptr;
-  }
 }
 
 void SelectionManager::SetControlSelectionListener(dom::Element* aFocusedElm) {
@@ -72,11 +66,6 @@ void SelectionManager::SetControlSelectionListener(dom::Element* aFocusedElm) {
   Selection* normalSel = frameSel->GetSelection(SelectionType::eNormal);
   normalSel->AddSelectionListener(this);
   mCurrCtrlNormalSel = normalSel;
-
-  
-  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
-  spellSel->AddSelectionListener(this);
-  mCurrCtrlSpellSel = spellSel;
 }
 
 void SelectionManager::AddDocSelectionListener(PresShell* aPresShell) {
@@ -85,10 +74,6 @@ void SelectionManager::AddDocSelectionListener(PresShell* aPresShell) {
   
   Selection* normalSel = frameSel->GetSelection(SelectionType::eNormal);
   normalSel->AddSelectionListener(this);
-
-  
-  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
-  spellSel->AddSelectionListener(this);
 }
 
 void SelectionManager::RemoveDocSelectionListener(PresShell* aPresShell) {
@@ -98,26 +83,12 @@ void SelectionManager::RemoveDocSelectionListener(PresShell* aPresShell) {
   Selection* normalSel = frameSel->GetSelection(SelectionType::eNormal);
   normalSel->RemoveSelectionListener(this);
 
-  
-  
-  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
-  spellSel->RemoveSelectionListener(this);
-
   if (mCurrCtrlNormalSel) {
     if (mCurrCtrlNormalSel->GetPresShell() == aPresShell) {
       
       
       mCurrCtrlNormalSel->RemoveSelectionListener(this);
       mCurrCtrlNormalSel = nullptr;
-    }
-  }
-
-  if (mCurrCtrlSpellSel) {
-    if (mCurrCtrlSpellSel->GetPresShell() == aPresShell) {
-      
-      
-      mCurrCtrlSpellSel->RemoveSelectionListener(this);
-      mCurrCtrlSpellSel = nullptr;
     }
   }
 }
@@ -225,24 +196,33 @@ void SelectionManager::ProcessSelectionChanged(SelData* aSelData) {
     RefPtr<AccEvent> event = new AccTextSelChangeEvent(
         text, selection, aSelData->mReason, aSelData->mGranularity);
     text->Document()->FireDelayedEvent(event);
-
-  } else if (selection->GetType() == SelectionType::eSpellCheck) {
-    
-    
-    text->Document()->FireDelayedEvent(
-        nsIAccessibleEvent::EVENT_TEXT_ATTRIBUTE_CHANGED, text);
   }
 }
 
-void SelectionManager::SpellCheckRangeChanged(
-    const dom::AbstractRange& aRange) {
-  
-  
+
+bool SelectionManager::SelectionRangeChanged(SelectionType aType,
+                                             const dom::AbstractRange& aRange) {
+  if (aType != SelectionType::eSpellCheck) {
+    
+    return false;
+  }
+  if (!GetAccService()) {
+    return false;
+  }
+  dom::Document* doc = aRange.GetStartContainer()->OwnerDoc();
+  MOZ_ASSERT(doc);
+  nsINode* node = aRange.GetClosestCommonInclusiveAncestor();
+  HyperTextAccessible* acc = nsAccUtils::GetTextContainer(node);
+  if (!acc) {
+    return true;
+  }
+  MOZ_ASSERT(acc->Document());
+  acc->Document()->FireDelayedEvent(
+      nsIAccessibleEvent::EVENT_TEXT_ATTRIBUTE_CHANGED, acc);
   if (IPCAccessibilityActive()) {
-    dom::Document* doc = aRange.GetStartContainer()->OwnerDoc();
-    MOZ_ASSERT(doc);
     TextLeafPoint::UpdateCachedTextOffsetAttributes(doc, aRange);
   }
+  return true;
 }
 
 SelectionManager::~SelectionManager() = default;

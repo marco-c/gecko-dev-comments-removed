@@ -87,6 +87,10 @@
 #include "nsFocusManager.h"
 #include "nsPIDOMWindow.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 namespace mozilla {
 
 
@@ -1169,6 +1173,10 @@ nsresult Selection::StyledRanges::AddRangeAndIgnoreOverlaps(
   if (mRanges.Length() == 0) {
     mRanges.AppendElement(StyledRange(aRange));
     aRange->RegisterSelection(MOZ_KnownLive(mSelection));
+#ifdef ACCESSIBILITY
+    a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(),
+                                                  *aRange);
+#endif
     return NS_OK;
   }
 
@@ -1194,6 +1202,9 @@ nsresult Selection::StyledRanges::AddRangeAndIgnoreOverlaps(
 
   mRanges.InsertElementAt(startIndex, StyledRange(aRange));
   aRange->RegisterSelection(MOZ_KnownLive(mSelection));
+#ifdef ACCESSIBILITY
+  a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(), *aRange);
+#endif
   return NS_OK;
 }
 
@@ -1210,6 +1221,10 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
     
     mRanges.AppendElement(StyledRange(aRange));
     aRange->RegisterSelection(MOZ_KnownLive(mSelection));
+#ifdef ACCESSIBILITY
+    a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(),
+                                                  *aRange);
+#endif
 
     aOutIndex->emplace(0u);
     return NS_OK;
@@ -1243,6 +1258,14 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
     aOutIndex->emplace(startIndex);
     return NS_OK;
   }
+
+  
+  
+  
+  
+#ifdef ACCESSIBILITY
+  a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(), *aRange);
+#endif
 
   if (startIndex == endIndex) {
     
@@ -1320,6 +1343,9 @@ nsresult Selection::StyledRanges::RemoveRangeAndUnregisterSelection(
 
   mRanges.RemoveElementAt(idx);
   aRange.UnregisterSelection(mSelection);
+#ifdef ACCESSIBILITY
+  a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(), aRange);
+#endif
 
   return NS_OK;
 }
@@ -2099,6 +2125,14 @@ void Selection::StyledRanges::UnregisterSelection() {
 }
 
 void Selection::StyledRanges::Clear() {
+#ifdef ACCESSIBILITY
+  for (auto& range : mRanges) {
+    if (!a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(),
+                                                       *range.mRange)) {
+      break;
+    }
+  }
+#endif
   mRanges.Clear();
   mInvalidStaticRanges.Clear();
 }

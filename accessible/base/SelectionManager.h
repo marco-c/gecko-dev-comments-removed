@@ -6,6 +6,7 @@
 #ifndef mozilla_a11y_SelectionManager_h__
 #define mozilla_a11y_SelectionManager_h__
 
+#include "nsISelectionController.h"
 #include "nsISelectionListener.h"
 #include "mozilla/WeakPtr.h"
 
@@ -114,7 +115,10 @@ class SelectionManager : public nsISelectionListener {
 
 
 
-  void SpellCheckRangeChanged(const dom::AbstractRange& aRange);
+
+
+  static bool SelectionRangeChanged(SelectionType aType,
+                                    const dom::AbstractRange& aRange);
 
   ~SelectionManager();
 
@@ -131,7 +135,6 @@ class SelectionManager : public nsISelectionListener {
   int32_t mCaretOffset;
   HyperTextAccessible* mAccWithCaret;
   WeakPtr<dom::Selection> mCurrCtrlNormalSel;
-  WeakPtr<dom::Selection> mCurrCtrlSpellSel;
 };
 
 }  
