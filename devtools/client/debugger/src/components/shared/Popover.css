@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .popover {
   position: fixed;
@@ -24,9 +24,5 @@
 }
 
 .popover:not(.orientation-right) .preview-popup {
-  margin-left: var(--left-offset);
-}
-
-.popover .add-to-expression-bar {
   margin-left: var(--left-offset);
 }
