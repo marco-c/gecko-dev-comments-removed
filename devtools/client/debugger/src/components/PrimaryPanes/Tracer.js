@@ -198,6 +198,7 @@ export class Tracer extends Component {
       
       let topTracesStartIndex = 0;
       if (startIndex != 0) {
+        topTracesStartIndex = -1;
         for (let i = 0; i < topTraces.length; i++) {
           const traceIndex = topTraces[i];
           if (traceIndex >= startIndex) {
@@ -219,7 +220,13 @@ export class Tracer extends Component {
         }
       }
 
-      topTraces = topTraces.slice(topTracesStartIndex, topTracesEndIndex);
+      if (topTracesStartIndex == -1) {
+        
+        
+        topTraces = [Math.floor(startIndex)];
+      } else {
+        topTraces = topTraces.slice(topTracesStartIndex, topTracesEndIndex);
+      }
 
       
       
@@ -231,7 +238,12 @@ export class Tracer extends Component {
         const results = [];
         
         results.push(Math.floor(startIndex));
-        collectAllSiblings(traceParents, traceChildren, startIndex, results);
+        collectAllSiblings(
+          traceParents,
+          traceChildren,
+          Math.floor(startIndex),
+          results
+        );
         topTraces.unshift(...results);
       }
     }
