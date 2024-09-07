@@ -1571,8 +1571,9 @@ TextPropertyEditor.prototype = {
     const { value, unit } = this._draggingValueCache;
     
     const roundedValue = Number.isInteger(value) ? value : value.toFixed(1);
-    this.prop.setValue(roundedValue + unit, this.prop.priority);
-    this.ruleView.emitForTests("property-updated-by-dragging");
+    this.prop
+      .setValue(roundedValue + unit, this.prop.priority)
+      .then(() => this.ruleView.emitForTests("property-updated-by-dragging"));
     this._hasDragged = true;
   },
 
