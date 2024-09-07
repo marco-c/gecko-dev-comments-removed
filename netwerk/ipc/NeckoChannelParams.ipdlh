@@ -639,6 +639,18 @@ union GIOChannelCreationArgs
   GIOChannelConnectArgs;   
 };
 
+
+
+
+
+struct DataChannelInfo
+{
+  nullable nsIURI        uri;
+  uint32_t               loadFlags;
+  LoadInfoArgs           loadInfo;
+  nsCString              contentType;
+};
+
 struct RemoteStreamInfo {
   nullable nsIInputStream inputStream;
   nsCString contentType;
