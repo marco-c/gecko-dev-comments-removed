@@ -13,8 +13,8 @@
 #include "mozilla/Casting.h"    
 #include "mozilla/DebugOnly.h"  
 #include "mozilla/FloatingPoint.h"  
-#include "mozilla/HashTable.h"      
-#include "mozilla/Maybe.h"          
+#include "mozilla/HashTable.h"  
+#include "mozilla/Maybe.h"      
 #include "mozilla/Saturate.h"
 #include "mozilla/Variant.h"  
 
