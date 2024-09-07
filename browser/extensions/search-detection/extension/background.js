@@ -6,12 +6,6 @@
 
 
 
-const TELEMETRY_CATEGORY = "addonsSearchDetection";
-
-const TELEMETRY_METHOD_ETLD_CHANGE = "etld_change";
-
-const TELEMETRY_OBJECT_WEBREQUEST = "webrequest";
-const TELEMETRY_OBJECT_OTHER = "other";
 
 const TELEMETRY_VALUE_EXTENSION = "extension";
 const TELEMETRY_VALUE_SERVER = "server";
@@ -21,15 +15,6 @@ class AddonsSearchDetection {
     
     
     this.matchPatterns = {};
-
-    browser.telemetry.registerEvents(TELEMETRY_CATEGORY, {
-      [TELEMETRY_METHOD_ETLD_CHANGE]: {
-        methods: [TELEMETRY_METHOD_ETLD_CHANGE],
-        objects: [TELEMETRY_OBJECT_WEBREQUEST, TELEMETRY_OBJECT_OTHER],
-        extra_keys: ["addonId", "addonVersion", "from", "to"],
-        record_on_release: true,
-      },
-    });
 
     this.onRedirectedListener = this.onRedirectedListener.bind(this);
   }
@@ -133,26 +118,20 @@ class AddonsSearchDetection {
       return;
     }
 
-    const telemetryObject = maybeServerSideRedirect
-      ? TELEMETRY_OBJECT_OTHER
-      : TELEMETRY_OBJECT_WEBREQUEST;
-    const telemetryValue = maybeServerSideRedirect
-      ? TELEMETRY_VALUE_SERVER
-      : TELEMETRY_VALUE_EXTENSION;
-
     for (const id of addonIds) {
       const addonVersion = await browser.addonsSearchDetection.getAddonVersion(
         id
       );
-      const extra = { addonId: id, addonVersion, from, to };
-
-      browser.telemetry.recordEvent(
-        TELEMETRY_CATEGORY,
-        TELEMETRY_METHOD_ETLD_CHANGE,
-        telemetryObject,
-        telemetryValue,
-        extra
-      );
+      const extra = {
+        addonId: id,
+        addonVersion,
+        from,
+        to,
+        value: maybeServerSideRedirect
+          ? TELEMETRY_VALUE_SERVER
+          : TELEMETRY_VALUE_EXTENSION,
+      };
+      browser.addonsSearchDetection.report(maybeServerSideRedirect, extra);
     }
   }
 

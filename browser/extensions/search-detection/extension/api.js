@@ -27,6 +27,7 @@ const SEARCH_TOPIC_ENGINE_MODIFIED = "browser-search-engine-modified";
 
 this.addonsSearchDetection = class extends ExtensionAPI {
   getAPI(context) {
+    Services.telemetry.setEventRecordingEnabled("addonsSearchDetection", true);
     const { extension } = context;
 
     
@@ -108,6 +109,15 @@ this.addonsSearchDetection = class extends ExtensionAPI {
           } catch (err) {
             console.error(err);
             return null;
+          }
+        },
+
+        
+        report(maybeServerSideRedirect, extra) {
+          if (maybeServerSideRedirect) {
+            Glean.addonsSearchDetection.etldChangeOther.record(extra);
+          } else {
+            Glean.addonsSearchDetection.etldChangeWebrequest.record(extra);
           }
         },
 
