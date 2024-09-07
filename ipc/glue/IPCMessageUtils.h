@@ -51,36 +51,6 @@ namespace IPC {
 
 
 
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct PlainOldDataSerializer {
-  static_assert(
-      std::is_trivially_copyable<T>::value,
-      "PlainOldDataSerializer can only be used with trivially copyable types!");
-
-  typedef T paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    aWriter->WriteBytes(&aParam, sizeof(aParam));
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return aReader->ReadBytesInto(aResult, sizeof(paramType));
-  }
-};
-
-
-
-
-
 template <typename T>
 struct EmptyStructSerializer {
   typedef T paramType;
