@@ -29,7 +29,8 @@ class BuiltinVideoBitrateAllocatorFactory
   BuiltinVideoBitrateAllocatorFactory() = default;
   ~BuiltinVideoBitrateAllocatorFactory() override = default;
 
-  std::unique_ptr<VideoBitrateAllocator> CreateVideoBitrateAllocator(
+  std::unique_ptr<VideoBitrateAllocator> Create(
+      const Environment& env,
       const VideoCodec& codec) override {
     
     
@@ -38,7 +39,7 @@ class BuiltinVideoBitrateAllocatorFactory
         codec.numberOfSimulcastStreams <= 1) {
       return std::make_unique<SvcRateAllocator>(codec);
     }
-    return std::make_unique<SimulcastRateAllocator>(codec);
+    return std::make_unique<SimulcastRateAllocator>(env, codec);
   }
 };
 
