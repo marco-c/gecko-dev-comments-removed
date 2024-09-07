@@ -721,7 +721,8 @@ void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
     if (!mSrcURI) {
       
       
-      return true;
+      
+      return !!mCurrentRequest;
     }
     return nsContentUtils::IsImageAvailable(
         this, mSrcURI, mSrcTriggeringPrincipal, GetCORSMode());
