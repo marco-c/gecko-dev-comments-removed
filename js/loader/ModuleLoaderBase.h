@@ -393,7 +393,7 @@ class ModuleLoaderBase : public nsISupports {
   void DisallowImportMaps() { mImportMapsAllowed = false; }
 
   
-  bool IsModuleFetched(nsIURI* aURL) const;
+  bool IsModuleFetched(const ModuleMapKey& key) const;
 
   nsresult GetFetchedModuleURLs(nsTArray<nsCString>& aURLs);
 
@@ -466,12 +466,12 @@ class ModuleLoaderBase : public nsISupports {
   nsresult StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
                                     RestartRequest aRestart);
 
-  bool ModuleMapContainsURL(nsIURI* aURL) const;
-  bool IsModuleFetching(nsIURI* aURL) const;
+  bool ModuleMapContainsURL(const ModuleMapKey& key) const;
+  bool IsModuleFetching(const ModuleMapKey& key) const;
   void WaitForModuleFetch(ModuleLoadRequest* aRequest);
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
 
-  ModuleScript* GetFetchedModule(nsIURI* aURL) const;
+  ModuleScript* GetFetchedModule(const ModuleMapKey& moduleMapKey) const;
 
   JS::Value FindFirstParseError(ModuleLoadRequest* aRequest);
   static nsresult InitDebuggerDataForModuleGraph(JSContext* aCx,
