@@ -20,7 +20,6 @@ using namespace regexp_compiler_constants;
 constexpr base::uc32 kMaxCodePoint = 0x10ffff;
 constexpr int kMaxUtf16CodeUnit = 0xffff;
 constexpr uint32_t kMaxUtf16CodeUnitU = 0xffff;
-constexpr int32_t kMaxOneByteCharCode = unibrow::Latin1::kMaxChar;
 
 
 
@@ -416,6 +415,7 @@ RegExpNode* UnanchoredAdvance(RegExpCompiler* compiler,
 }
 
 }  
+
 
 
 void CharacterRange::AddUnicodeCaseEquivalents(ZoneList<CharacterRange>* ranges,
@@ -1444,6 +1444,7 @@ void CharacterRange::AddClassEscape(StandardCharacterSet standard_character_set,
 }
 
 
+
 void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
                                         ZoneList<CharacterRange>* ranges,
                                         bool is_one_byte) {
@@ -1459,8 +1460,8 @@ void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
     
     if (from >= kLeadSurrogateStart && to <= kTrailSurrogateEnd) continue;
     if (is_one_byte && !RangeContainsLatin1Equivalents(range)) {
-      if (from > kMaxOneByteCharCode) continue;
-      if (to > kMaxOneByteCharCode) to = kMaxOneByteCharCode;
+      if (from > String::kMaxOneByteCharCode) continue;
+      if (to > String::kMaxOneByteCharCode) to = String::kMaxOneByteCharCode;
     }
     others.add(from, to);
   }
@@ -1502,8 +1503,8 @@ void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
     
     if (bottom >= kLeadSurrogateStart && top <= kTrailSurrogateEnd) continue;
     if (is_one_byte && !RangeContainsLatin1Equivalents(range)) {
-      if (bottom > kMaxOneByteCharCode) continue;
-      if (top > kMaxOneByteCharCode) top = kMaxOneByteCharCode;
+      if (bottom > String::kMaxOneByteCharCode) continue;
+      if (top > String::kMaxOneByteCharCode) top = String::kMaxOneByteCharCode;
     }
     unibrow::uchar chars[unibrow::Ecma262UnCanonicalize::kMaxWidth];
     if (top == bottom) {
