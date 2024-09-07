@@ -115,8 +115,9 @@ add_task(async function () {
               AppConstants.DEBUG &&
               
               r.y1 >=
-                document.getElementById("appcontent").getBoundingClientRect()
-                  .top,
+                document
+                  .getElementById("tabbrowser-tabbox")
+                  .getBoundingClientRect().top,
           },
         ],
       },

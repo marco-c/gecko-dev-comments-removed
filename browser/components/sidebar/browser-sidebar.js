@@ -531,11 +531,11 @@ var SidebarController = {
       
       
       
-      let appcontent = document.getElementById("appcontent");
+      let tabbox = document.getElementById("tabbrowser-tabbox");
       let boxOrdinal = this._box.style.order;
-      this._box.style.order = appcontent.style.order;
+      this._box.style.order = tabbox.style.order;
 
-      appcontent.style.order = boxOrdinal;
+      tabbox.style.order = boxOrdinal;
       
       sidebarContainer.style.order = parseInt(this._box.style.order) + 1;
       

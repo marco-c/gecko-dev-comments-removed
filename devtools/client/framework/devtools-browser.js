@@ -147,13 +147,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     if (devtoolsTheme != "dark") {
       devtoolsTheme = "light";
     }
-
-    
-    
-    
-    win.document
-      .getElementById("appcontent")
-      .setAttribute("devtoolstheme", devtoolsTheme);
+    win.document.documentElement.setAttribute("devtoolstheme", devtoolsTheme);
   },
 
   observe(subject, topic, prefName) {
