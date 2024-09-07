@@ -526,6 +526,87 @@ class StringToAtomCache {
   }
 };
 
+
+
+
+
+
+
+class TracingCaches {
+  uint32_t shapeId_ = 0;
+  uint32_t atomId_ = 0;
+  using TracingPointerCache =
+      HashMap<uintptr_t, uint32_t, DefaultHasher<uintptr_t>, SystemAllocPolicy>;
+  TracingPointerCache shapes_;
+  TracingPointerCache atoms_;
+
+  
+  
+  using TracingU32Set =
+      HashSet<uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>;
+  TracingU32Set scriptSourcesSeen_;
+
+ public:
+  void clearOnCompaction() {
+    atoms_.clear();
+    shapes_.clear();
+  }
+
+  void clearAll() {
+    shapeId_ = 0;
+    atomId_ = 0;
+    scriptSourcesSeen_.clear();
+    atoms_.clear();
+    shapes_.clear();
+  }
+
+  enum class GetOrPutResult {
+    OOM,
+    NewlyAdded,
+    WasPresent,
+  };
+
+  GetOrPutResult getOrPutAtom(JSAtom* atom, uint32_t* id) {
+    TracingPointerCache::AddPtr p =
+        atoms_.lookupForAdd(reinterpret_cast<uintptr_t>(atom));
+    if (p) {
+      *id = p->value();
+      return GetOrPutResult::WasPresent;
+    }
+    *id = atomId_++;
+    if (!atoms_.add(p, reinterpret_cast<uintptr_t>(atom), *id)) {
+      return GetOrPutResult::OOM;
+    }
+    return GetOrPutResult::NewlyAdded;
+  }
+
+  GetOrPutResult getOrPutShape(Shape* shape, uint32_t* id) {
+    TracingPointerCache::AddPtr p =
+        shapes_.lookupForAdd(reinterpret_cast<uintptr_t>(shape));
+    if (p) {
+      *id = p->value();
+      return GetOrPutResult::WasPresent;
+    }
+    *id = shapeId_++;
+    if (!shapes_.add(p, reinterpret_cast<uintptr_t>(shape), *id)) {
+      return GetOrPutResult::OOM;
+    }
+    return GetOrPutResult::NewlyAdded;
+  }
+
+  
+  GetOrPutResult putScriptSourceIfMissing(uint32_t scriptSourceId) {
+    TracingU32Set::AddPtr p = scriptSourcesSeen_.lookupForAdd(scriptSourceId);
+    if (p) {
+      return GetOrPutResult::WasPresent;
+    }
+    if (!scriptSourcesSeen_.add(p, scriptSourceId)) {
+      return GetOrPutResult::OOM;
+    }
+    return GetOrPutResult::NewlyAdded;
+  }
+};
+
 class RuntimeCaches {
  public:
   MegamorphicCache megamorphicCache;
@@ -533,6 +614,7 @@ class RuntimeCaches {
   UncompressedSourceCache uncompressedSourceCache;
   EvalCache evalCache;
   StringToAtomCache stringToAtomCache;
+  TracingCaches tracingCaches;
 
   
   
@@ -555,6 +637,7 @@ class RuntimeCaches {
       megamorphicSetPropCache->bumpGeneration();
     }
     scopeCache.purge();
+    tracingCaches.clearOnCompaction();
   }
 
   void purgeStencils() {

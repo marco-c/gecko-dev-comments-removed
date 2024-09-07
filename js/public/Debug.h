@@ -29,6 +29,27 @@ class Debugger;
 extern JS_PUBLIC_API bool JS_DefineDebuggerObject(JSContext* cx,
                                                   JS::HandleObject obj);
 
+
+
+
+
+
+
+extern JS_PUBLIC_API void JS_TracerEnterLabelLatin1(JSContext* cx,
+                                                    const char* label);
+extern JS_PUBLIC_API void JS_TracerEnterLabelTwoByte(JSContext* cx,
+                                                     const char16_t* label);
+
+
+
+
+
+
+extern JS_PUBLIC_API void JS_TracerLeaveLabelLatin1(JSContext* cx,
+                                                    const char* label);
+extern JS_PUBLIC_API void JS_TracerLeaveLabelTwoByte(JSContext* cx,
+                                                     const char16_t* label);
+
 namespace JS {
 namespace dbg {
 
