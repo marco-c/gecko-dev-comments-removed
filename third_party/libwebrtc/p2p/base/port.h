@@ -170,25 +170,45 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 
 
 class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
+ public:
+  
+  
+  struct PortParametersRef {
+    webrtc::TaskQueueBase* network_thread;
+    rtc::PacketSocketFactory* socket_factory;
+    const rtc::Network* network;
+    absl::string_view ice_username_fragment;
+    absl::string_view ice_password;
+    const webrtc::FieldTrialsView* field_trials;
+  };
+
  protected:
   
-  Port(webrtc::TaskQueueBase* thread,
+  Port(const PortParametersRef& args, webrtc::IceCandidateType type);
+  Port(const PortParametersRef& args,
        webrtc::IceCandidateType type,
-       rtc::PacketSocketFactory* factory,
-       const rtc::Network* network,
-       absl::string_view username_fragment,
-       absl::string_view password,
-       const webrtc::FieldTrialsView* field_trials = nullptr);
-  Port(webrtc::TaskQueueBase* thread,
-       webrtc::IceCandidateType type,
-       rtc::PacketSocketFactory* factory,
-       const rtc::Network* network,
        uint16_t min_port,
        uint16_t max_port,
-       absl::string_view username_fragment,
-       absl::string_view password,
-       const webrtc::FieldTrialsView* field_trials = nullptr,
        bool shared_socket = false);
+  [[deprecated("Pass arguments using PortParametersRef")]] Port(
+      webrtc::TaskQueueBase* thread,
+      webrtc::IceCandidateType type,
+      rtc::PacketSocketFactory* factory,
+      const rtc::Network* network,
+      absl::string_view username_fragment,
+      absl::string_view password,
+      const webrtc::FieldTrialsView* field_trials = nullptr);
+  [[deprecated("Pass arguments using PortParametersRef")]] Port(
+      webrtc::TaskQueueBase* thread,
+      webrtc::IceCandidateType type,
+      rtc::PacketSocketFactory* factory,
+      const rtc::Network* network,
+      uint16_t min_port,
+      uint16_t max_port,
+      absl::string_view username_fragment,
+      absl::string_view password,
+      const webrtc::FieldTrialsView* field_trials = nullptr,
+      bool shared_socket = false);
 
  public:
   ~Port() override;
