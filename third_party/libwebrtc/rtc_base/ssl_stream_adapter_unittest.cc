@@ -1372,11 +1372,10 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSDelayedIdentityWithBogusDigest) {
 }
 
 
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
-  std::vector<int> high;
-  high.push_back(rtc::kSrtpAes128CmSha1_80);
-  SetDtlsSrtpCryptoSuites(high, true);
-  SetDtlsSrtpCryptoSuites(high, false);
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpAes128CmSha1_80) {
+  const std::vector<int> crypto_suites = {rtc::kSrtpAes128CmSha1_80};
+  SetDtlsSrtpCryptoSuites(crypto_suites, true);
+  SetDtlsSrtpCryptoSuites(crypto_suites, false);
   TestHandshake();
 
   int client_cipher;
@@ -1389,11 +1388,10 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
 }
 
 
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
-  std::vector<int> low;
-  low.push_back(rtc::kSrtpAes128CmSha1_32);
-  SetDtlsSrtpCryptoSuites(low, true);
-  SetDtlsSrtpCryptoSuites(low, false);
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpAes128CmSha1_32) {
+  const std::vector<int> crypto_suites = {rtc::kSrtpAes128CmSha1_32};
+  SetDtlsSrtpCryptoSuites(crypto_suites, true);
+  SetDtlsSrtpCryptoSuites(crypto_suites, false);
   TestHandshake();
 
   int client_cipher;
@@ -1406,13 +1404,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
 }
 
 
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
-  std::vector<int> high;
-  high.push_back(rtc::kSrtpAes128CmSha1_80);
-  std::vector<int> low;
-  low.push_back(rtc::kSrtpAes128CmSha1_32);
-  SetDtlsSrtpCryptoSuites(high, true);
-  SetDtlsSrtpCryptoSuites(low, false);
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpIncompatibleCipherSuites) {
+  SetDtlsSrtpCryptoSuites({rtc::kSrtpAes128CmSha1_80}, true);
+  SetDtlsSrtpCryptoSuites({rtc::kSrtpAes128CmSha1_32}, false);
   TestHandshake();
 
   int client_cipher;
@@ -1422,12 +1416,12 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
 }
 
 
+
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
-  std::vector<int> mixed;
-  mixed.push_back(rtc::kSrtpAes128CmSha1_80);
-  mixed.push_back(rtc::kSrtpAes128CmSha1_32);
-  SetDtlsSrtpCryptoSuites(mixed, true);
-  SetDtlsSrtpCryptoSuites(mixed, false);
+  const std::vector<int> crypto_suites = {rtc::kSrtpAes128CmSha1_80,
+                                          rtc::kSrtpAes128CmSha1_32};
+  SetDtlsSrtpCryptoSuites(crypto_suites, true);
+  SetDtlsSrtpCryptoSuites(crypto_suites, false);
   TestHandshake();
 
   int client_cipher;
@@ -1440,11 +1434,10 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
 }
 
 
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM128) {
-  std::vector<int> gcm128;
-  gcm128.push_back(rtc::kSrtpAeadAes128Gcm);
-  SetDtlsSrtpCryptoSuites(gcm128, true);
-  SetDtlsSrtpCryptoSuites(gcm128, false);
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpAeadAes128Gcm) {
+  std::vector<int> crypto_suites = {rtc::kSrtpAeadAes128Gcm};
+  SetDtlsSrtpCryptoSuites(crypto_suites, true);
+  SetDtlsSrtpCryptoSuites(crypto_suites, false);
   TestHandshake();
 
   int client_cipher;
@@ -1458,10 +1451,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM128) {
 
 
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM256) {
-  std::vector<int> gcm256;
-  gcm256.push_back(rtc::kSrtpAeadAes256Gcm);
-  SetDtlsSrtpCryptoSuites(gcm256, true);
-  SetDtlsSrtpCryptoSuites(gcm256, false);
+  std::vector<int> crypto_suites = {rtc::kSrtpAeadAes256Gcm};
+  SetDtlsSrtpCryptoSuites(crypto_suites, true);
+  SetDtlsSrtpCryptoSuites(crypto_suites, false);
   TestHandshake();
 
   int client_cipher;
@@ -1474,13 +1466,9 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM256) {
 }
 
 
-TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMismatch) {
-  std::vector<int> gcm128;
-  gcm128.push_back(rtc::kSrtpAeadAes128Gcm);
-  std::vector<int> gcm256;
-  gcm256.push_back(rtc::kSrtpAeadAes256Gcm);
-  SetDtlsSrtpCryptoSuites(gcm128, true);
-  SetDtlsSrtpCryptoSuites(gcm256, false);
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpIncompatibleGcmCipherSuites) {
+  SetDtlsSrtpCryptoSuites({rtc::kSrtpAeadAes128Gcm}, true);
+  SetDtlsSrtpCryptoSuites({rtc::kSrtpAeadAes256Gcm}, false);
   TestHandshake();
 
   int client_cipher;
@@ -1491,11 +1479,10 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMismatch) {
 
 
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMixed) {
-  std::vector<int> gcmBoth;
-  gcmBoth.push_back(rtc::kSrtpAeadAes256Gcm);
-  gcmBoth.push_back(rtc::kSrtpAeadAes128Gcm);
-  SetDtlsSrtpCryptoSuites(gcmBoth, true);
-  SetDtlsSrtpCryptoSuites(gcmBoth, false);
+  std::vector<int> crypto_suites = {rtc::kSrtpAeadAes256Gcm,
+                                    rtc::kSrtpAeadAes128Gcm};
+  SetDtlsSrtpCryptoSuites(crypto_suites, true);
+  SetDtlsSrtpCryptoSuites(crypto_suites, false);
   TestHandshake();
 
   int client_cipher;
