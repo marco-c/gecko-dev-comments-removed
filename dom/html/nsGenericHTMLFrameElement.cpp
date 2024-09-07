@@ -154,21 +154,14 @@ void nsGenericHTMLFrameElement::SwapFrameLoaders(
 }
 
 void nsGenericHTMLFrameElement::LoadSrc() {
-  EnsureFrameLoader();
-
-  if (!mFrameLoader) {
+  
+  if (mLazyLoading) {
     return;
   }
 
-  if (mLazyLoading) {
-    
-    if (!mFrameLoader->GetExtantBrowsingContext()) {
-      
-      
-      nsContentUtils::AddScriptRunner(
-          NewRunnableMethod("InitializeLazyFrameLoader", mFrameLoader.get(),
-                            &nsFrameLoader::GetBrowsingContext));
-    }
+  EnsureFrameLoader();
+
+  if (!mFrameLoader) {
     return;
   }
 
