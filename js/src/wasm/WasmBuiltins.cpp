@@ -1641,7 +1641,7 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
     
     
     
-    case SymbolicAddress::HandleDebugTrap:  
+    case SymbolicAddress::HandleDebugTrap:      
     case SymbolicAddress::HandleRequestTierUp:  
 
     
