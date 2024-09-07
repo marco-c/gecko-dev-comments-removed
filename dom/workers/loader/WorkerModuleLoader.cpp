@@ -40,7 +40,7 @@ nsIURI* WorkerModuleLoader::GetBaseURI() const {
 }
 
 already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
-    nsIURI* aURI, ModuleLoadRequest* aParent) {
+    nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent) {
   
   
   
@@ -54,10 +54,9 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
       aParent->GetWorkerLoadContext()->mScriptLoader,
       aParent->GetWorkerLoadContext()->mOnlyExistingCachedResourcesAllowed);
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, JS::ModuleType::JavaScript, aParent->ReferrerPolicy(),
-      aParent->mFetchOptions, SRIMetadata(), aParent->mURI, loadContext,
-      false, 
-      false, 
+      aURI, aModuleType, aParent->ReferrerPolicy(), aParent->mFetchOptions,
+      SRIMetadata(), aParent->mURI, loadContext, false, 
+      false,                                            
       this, aParent->mVisitedSet, aParent->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();
@@ -82,8 +81,9 @@ bool WorkerModuleLoader::CreateDynamicImportLoader() {
 }
 
 already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
-    JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
-    JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise) {
+    JSContext* aCx, nsIURI* aURI, JS::ModuleType aModuleType,
+    LoadedScript* aMaybeActiveScript, JS::Handle<JSString*> aSpecifier,
+    JS::Handle<JSObject*> aPromise) {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
 
   if (!CreateDynamicImportLoader()) {
@@ -137,13 +137,12 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
       true);
 
   RefPtr<JS::loader::VisitedURLSet> visitedSet =
-      ModuleLoadRequest::NewVisitedSetForTopLevelImport(
-          aURI, JS::ModuleType::JavaScript);
+      ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI, aModuleType);
 
   ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
   RefPtr<ModuleLoadRequest> request =
-      new ModuleLoadRequest(aURI, JS::ModuleType::JavaScript, referrerPolicy,
-                            options, SRIMetadata(), baseURL, context, true,
+      new ModuleLoadRequest(aURI, aModuleType, referrerPolicy, options,
+                            SRIMetadata(), baseURL, context, true,
                              true, 
                             this, visitedSet, nullptr);
 
