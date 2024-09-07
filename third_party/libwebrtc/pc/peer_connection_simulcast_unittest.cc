@@ -12,7 +12,6 @@
 #include <iterator>
 #include <map>
 #include <memory>
-#include <ostream>  
 #include <string>
 #include <utility>
 #include <vector>
@@ -88,19 +87,6 @@ using cricket::RidDescription;
 using cricket::SimulcastDescription;
 using cricket::SimulcastLayer;
 using cricket::StreamParams;
-
-namespace cricket {
-
-std::ostream& operator<<(  
-    std::ostream& os,      
-    const SimulcastLayer& layer) {
-  if (layer.is_paused) {
-    os << "~";
-  }
-  return os << layer.rid;
-}
-
-}  
 
 namespace webrtc {
 

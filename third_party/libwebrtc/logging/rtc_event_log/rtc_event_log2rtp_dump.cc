@@ -13,7 +13,6 @@
 
 #include <iostream>
 #include <memory>
-#include <sstream>  
 #include <string>
 #include <vector>
 
@@ -31,6 +30,7 @@
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/string_to_number.h"
 #include "test/rtp_file_reader.h"
 #include "test/rtp_file_writer.h"
 
@@ -77,18 +77,7 @@ using MediaType = webrtc::ParsedRtcEventLog::MediaType;
 
 absl::optional<uint32_t> ParseSsrc(absl::string_view str) {
   
-  uint32_t ssrc;
-  auto read_mode = std::dec;
-  if (str.size() > 2 &&
-      (str.substr(0, 2) == "0x" || str.substr(0, 2) == "0X")) {
-    read_mode = std::hex;
-    str = str.substr(2);
-  }
-  std::stringstream ss(std::string{str});
-  ss >> read_mode >> ssrc;
-  if (str.empty() || (!ss.fail() && ss.eof()))
-    return ssrc;
-  return absl::nullopt;
+  return rtc::StringToNumber<uint32_t>(str, 0);
 }
 
 bool ShouldSkipStream(MediaType media_type,
