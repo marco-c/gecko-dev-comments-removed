@@ -381,18 +381,65 @@ static void SetJitExceptionHandler() {
     js::SetJitExceptionHandler(JitExceptionHandler);
 }
 #  endif
+#endif  
 
-
-
-
-
-
-
-
-
-static const SIZE_T kReserveSize = 0x5000000;  
-static void* gBreakpadReservedVM;
+static struct ReservedResources {
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+  
+  
+  static const SIZE_T kReserveSize = 0x5000000;  
+  void* mVirtualMemory;
+#elif defined(XP_LINUX)
+  
+  
+  
+  static const size_t kReservedFDs = 4;
+  std::array<int, kReservedFDs> mFileDescriptors;
 #endif
+
+  ReservedResources()
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+      : mVirtualMemory(nullptr)
+#elif defined(XP_LINUX)
+      : mFileDescriptors{-1, -1, -1, -1}
+#endif
+  {
+  }
+} gReservedResources;
+
+static void ReserveResources() {
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+  
+  
+  
+  
+  MOZ_ASSERT(gReservedResources.mVirtualMemory == nullptr);
+  gReservedResources.mVirtualMemory = VirtualAlloc(
+      nullptr, ReservedResources::kReserveSize, MEM_RESERVE, PAGE_NOACCESS);
+#elif defined(XP_LINUX)
+  for (size_t i = 0; i < ReservedResources::kReservedFDs; i++) {
+    MOZ_ASSERT(gReservedResources.mFileDescriptors[i] < 0);
+    gReservedResources.mFileDescriptors[i] =
+        static_cast<int>(syscall(__NR_memfd_create, "mozreserved", 0));
+  }
+#endif
+}
+
+static void ReleaseResources() {
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+  if (gReservedResources.mVirtualMemory) {
+    VirtualFree(gReservedResources.mVirtualMemory, 0, MEM_RELEASE);
+    gReservedResources.mVirtualMemory = nullptr;
+  }
+#elif defined(XP_LINUX)
+  for (size_t i = 0; i < ReservedResources::kReservedFDs; i++) {
+    if (gReservedResources.mFileDescriptors[i] > 0) {
+      close(gReservedResources.mFileDescriptors[i]);
+      gReservedResources.mFileDescriptors[i] = -1;
+    }
+  }
+#endif  
+}
 
 #ifdef XP_LINUX
 static inline void my_u64tostring(uint64_t aValue, char* aBuffer,
@@ -1697,19 +1744,6 @@ static bool BuildTempPath(PathStringT& aResult) {
 
 #ifdef XP_WIN
 
-static void ReserveBreakpadVM() {
-  if (!gBreakpadReservedVM) {
-    gBreakpadReservedVM =
-        VirtualAlloc(nullptr, kReserveSize, MEM_RESERVE, PAGE_NOACCESS);
-  }
-}
-
-static void FreeBreakpadVM() {
-  if (gBreakpadReservedVM) {
-    VirtualFree(gBreakpadReservedVM, 0, MEM_RELEASE);
-  }
-}
-
 static bool IsCrashingException(EXCEPTION_POINTERS* exinfo) {
   if (!exinfo) {
     return true;
@@ -1738,13 +1772,14 @@ static bool IsCrashingException(EXCEPTION_POINTERS* exinfo) {
 
 
 
+
 static void PrepareForMinidump() {
   mozilla::IOInterposer::Disable();
+  ReleaseResources();
 #if defined(XP_WIN)
 #  if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
   DllBlocklist_Shutdown();
 #  endif
-  FreeBreakpadVM();
 #endif  
 }
 
@@ -1990,9 +2025,9 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
     return NS_ERROR_FAILURE;
   }
 
-#ifdef XP_WIN
-  ReserveBreakpadVM();
+  ReserveResources();
 
+#ifdef XP_WIN
   
   
   ::LoadLibraryW(L"psapi.dll");
