@@ -400,9 +400,11 @@ export class Tracer extends Component {
     const yInSlider = event.clientY - top;
     const mousePositionRatio = yInSlider / height;
 
-    const index =
-      this.state.startIndex +
-      Math.floor(mousePositionRatio * this.state.renderedTraceCount);
+    
+    
+    const index = Math.round(
+      this.state.startIndex + mousePositionRatio * this.state.renderedTraceCount
+    );
 
     this.props.selectTrace(index);
   }
