@@ -733,7 +733,7 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
     nscoord height = p2a * mBounds.height;
 
     mViewManager->SetWindowDimensions(width, height);
-    mPresContext->SetVisibleArea(nsRect(0, 0, width, height));
+    mPresContext->SetInitialVisibleArea(nsRect(0, 0, width, height));
     
     mPresContext->RecomputeBrowsingContextDependentData();
   }

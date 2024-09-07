@@ -794,3 +794,13 @@ ScreenIntSize MobileViewportManager::GetDisplaySizeForVisualViewport() const {
   }
   return displaySize;
 }
+
+nsRect MobileViewportManager::InitialVisibleArea() {
+  UpdateSizesBeforeReflow();
+
+  
+  
+  
+  
+  return nsRect(nsPoint(), CSSSize::ToAppUnits(mMobileViewportSize));
+}

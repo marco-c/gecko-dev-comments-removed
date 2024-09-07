@@ -148,6 +148,11 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   void RefreshViewportSize(bool aForceAdjustResolution);
 
+  
+
+
+  nsRect InitialVisibleArea();
+
  private:
   ~MobileViewportManager();
 
