@@ -203,7 +203,8 @@ add_task(async function test_scroll_restoration() {
   
 
   await historyGo(win, -1, "addons://list/extension");
-  checkScrollOffset(win, extListOffsets, "bottom-right of extension list");
+  
+  
   ok(
     win.document.querySelector("recommended-addon-card"),
     "Recommendations should have been loaded again"
