@@ -390,8 +390,10 @@ struct WebGLContextOptions final {
 
   dom::WebGLPowerPreference powerPreference =
       dom::WebGLPowerPreference::Default;
+  bool forceSoftwareRendering = false;
   bool shouldResistFingerprinting = true;
   bool enableDebugRendererInfo = false;
+  PaddingField<bool, 7> _padding;
 
   auto MutTiedFields() {
     
@@ -407,8 +409,10 @@ struct WebGLContextOptions final {
       xrCompatible,
 
       powerPreference,
+      forceSoftwareRendering,
       shouldResistFingerprinting,
-      enableDebugRendererInfo);
+      enableDebugRendererInfo,
+      _padding);
     
   }
 
