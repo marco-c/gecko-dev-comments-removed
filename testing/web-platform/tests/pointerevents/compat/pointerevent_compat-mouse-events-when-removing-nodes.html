@@ -1,14 +1,15 @@
 <!DOCTYPE HTML>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="/resources/testdriver.js"></script>
 <script src="/resources/testdriver-vendor.js"></script>
 <script src="/resources/testdriver-actions.js"></script>
 <script type="text/javascript" src="../pointerevent_support.js"></script>
-
-
-
-
+<!-- There are significant differences in how browsers fire pointer events and
+compat mouse events when elements are removed from the dom.
+There is a discussion about the order of pointer events and mouse compat events
+for this scenario in the pointer event working group (See link below)-->
 <link rel="help" href="https://github.com/w3c/pointerevents/issues/285">
 <style>
 div.box {
