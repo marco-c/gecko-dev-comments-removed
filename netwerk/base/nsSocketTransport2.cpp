@@ -1241,15 +1241,6 @@ nsresult nsSocketTransport::InitiateSocket() {
   if (gIOService->IsNetTearingDown()) {
     return NS_ERROR_ABORT;
   }
-
-  
-  
-  if (StaticPrefs::network_socket_ip_addr_any_disabled() &&
-      mNetAddr.IsIPAddrAny()) {
-    SOCKET_LOG(("connection refused NS_ERROR_CONNECTION_REFUSED\n"));
-    return NS_ERROR_CONNECTION_REFUSED;
-  }
-
   if (gIOService->IsOffline()) {
     if (StaticPrefs::network_disable_localhost_when_offline() || !isLocal) {
       return NS_ERROR_OFFLINE;
