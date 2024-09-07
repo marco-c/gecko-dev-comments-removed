@@ -1279,6 +1279,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1902474",
+    platform: "android",
+    domain: "lg.jio.com",
+    bug: "1902474",
+    config: {
+      matches: ["*://lg.jio.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA.replace(/ (Mobile|Tablet);/, "");
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
