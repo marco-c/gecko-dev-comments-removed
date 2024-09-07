@@ -2,15 +2,68 @@
 
 
 
+import {
+  getAllTraces,
+  getTraceFrames,
+  getIsCurrentlyTracing,
+} from "../selectors/index";
+import { selectSourceBySourceActorID } from "./sources/select.js";
+const {
+  TRACER_FIELDS_INDEXES,
+} = require("resource://devtools/server/actors/tracer.js");
+
 
 
 
 export function tracingToggled(thread, enabled) {
-  return ({ dispatch }) => {
-    dispatch({
-      type: "TRACING_TOGGLED",
-      thread,
-      enabled,
+  return {
+    type: "TRACING_TOGGLED",
+    thread,
+    enabled,
+  };
+}
+
+export function clearTracerData() {
+  return {
+    type: "TRACING_CLEAR",
+  };
+}
+
+export function addTraces(traces) {
+  return async function ({ dispatch, getState }) {
+    if (!getIsCurrentlyTracing(getState())) {
+      return null;
+    }
+
+    return dispatch({
+      type: "ADD_TRACES",
+      traces,
     });
+  };
+}
+
+export function selectTrace(traceIndex) {
+  return async function ({ dispatch, getState }) {
+    dispatch({
+      type: "SELECT_TRACE",
+      traceIndex,
+    });
+    const traces = getAllTraces(getState());
+    const trace = traces[traceIndex];
+    
+    if (!trace || trace[TRACER_FIELDS_INDEXES.TYPE] == "event") {
+      return;
+    }
+
+    const frameIndex = trace[TRACER_FIELDS_INDEXES.FRAME_INDEX];
+    const frames = getTraceFrames(getState());
+    const frame = frames[frameIndex];
+
+    await dispatch(
+      selectSourceBySourceActorID(frame.sourceId, {
+        line: frame.line,
+        column: frame.column,
+      })
+    );
   };
 }

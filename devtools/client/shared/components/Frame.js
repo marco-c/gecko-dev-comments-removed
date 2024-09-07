@@ -259,10 +259,13 @@ class Frame extends Component {
       return {
         ...sourceElConfig,
         onClick: e => {
+          
           e.preventDefault();
-          e.stopPropagation();
+          if (onClick) {
+            e.stopPropagation();
 
-          onClick(generatedLocation);
+            onClick(generatedLocation);
+          }
         },
         href: source,
         draggable: false,
