@@ -170,16 +170,12 @@ namespace rtc {
 using ::webrtc::TimeDelta;
 
 bool OpenSSLAdapter::InitializeSSL() {
-  if (!SSL_library_init())
-    return false;
-#if !defined(ADDRESS_SANITIZER) || !defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
   
-  SSL_load_error_strings();
-#endif
-  ERR_load_BIO_strings();
-  OpenSSL_add_all_algorithms();
-  RAND_poll();
-  return true;
+  
+  
+  
+  
+  return OPENSSL_init_ssl(0, nullptr);
 }
 
 bool OpenSSLAdapter::CleanupSSL() {
