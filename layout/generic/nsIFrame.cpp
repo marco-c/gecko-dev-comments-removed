@@ -1398,9 +1398,7 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 void nsIFrame::HandleLastRememberedSize() {
   MOZ_ASSERT(IsPrimaryFrame());
   
-  
-  if (!StaticPrefs::layout_css_contain_intrinsic_size_enabled() ||
-      !StaticPrefs::layout_css_content_visibility_enabled()) {
+  if (!StaticPrefs::layout_css_contain_intrinsic_size_enabled()) {
     return;
   }
   auto* element = Element::FromNodeOrNull(mContent);
@@ -6988,10 +6986,6 @@ bool nsIFrame::IsHiddenByContentVisibilityOfInFlowParentForLayout() const {
 
 nsIFrame* nsIFrame::GetClosestContentVisibilityAncestor(
     const EnumSet<IncludeContentVisibility>& aInclude) const {
-  if (!StaticPrefs::layout_css_content_visibility_enabled()) {
-    return nullptr;
-  }
-
   auto* parent = GetInFlowParent();
   bool isAnonymousBlock = Style()->IsAnonBox() && parent &&
                           parent->HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES);
