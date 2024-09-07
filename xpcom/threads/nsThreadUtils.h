@@ -1816,7 +1816,6 @@ class Task;
 class PresShell;
 namespace dom {
 class FrameRequestCallback;
-class VideoFrameRequestCallback;
 }  
 
 
@@ -1839,8 +1838,6 @@ typedef LogTaskBase<nsTimerImpl> LogTimerEvent;
 typedef LogTaskBase<Task> LogTask;
 typedef LogTaskBase<PresShell> LogPresShellObserver;
 typedef LogTaskBase<dom::FrameRequestCallback> LogFrameRequestCallback;
-typedef LogTaskBase<dom::VideoFrameRequestCallback>
-    LogVideoFrameRequestCallback;
 
 
 

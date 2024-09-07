@@ -1117,7 +1117,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  virtual void ResetState();
+  void ResetState();
 
   
 
@@ -1937,9 +1937,5 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 bool HasDebuggerOrTabsPrivilege(JSContext* aCx, JSObject* aObj);
 
 }  
-
-inline nsISupports* ToSupports(mozilla::dom::HTMLMediaElement* aElement) {
-  return static_cast<mozilla::dom::EventTarget*>(aElement);
-}
 
 #endif  
