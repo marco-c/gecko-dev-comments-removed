@@ -672,15 +672,7 @@ DevToolsClient.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-  waitForRequestsToSettle({ ignoreOrphanedFronts = false } = {}) {
+  waitForRequestsToSettle() {
     let requests = [];
 
     
@@ -700,12 +692,6 @@ DevToolsClient.prototype = {
     
     for (const front of fronts) {
       if (front.hasRequests()) {
-        if (ignoreOrphanedFronts && !this.getFrontByID(front.actorID)) {
-          
-          
-          
-          continue;
-        }
         requests.push(front.waitForRequestsToSettle());
       }
     }

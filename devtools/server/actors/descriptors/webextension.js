@@ -68,11 +68,6 @@ const BGSCRIPT_STATUSES = {
 
 
 
-
-
-
-
-
 class WebExtensionDescriptorActor extends Actor {
   constructor(conn, addon) {
     super(conn, webExtensionDescriptorSpec);
@@ -80,9 +75,8 @@ class WebExtensionDescriptorActor extends Actor {
     this.addonId = addon.id;
     this._childFormPromise = null;
 
-    this.destroy = this.destroy.bind(this);
     this._onChildExit = this._onChildExit.bind(this);
-
+    this.destroy = this.destroy.bind(this);
     lazy.AddonManager.addAddonListener(this);
   }
 
@@ -168,17 +162,12 @@ class WebExtensionDescriptorActor extends Actor {
       return this._form;
     }
 
-    if (!this._browser) {
-      
-      
-      this._browser =
-        await lazy.ExtensionParent.DebugUtils.getExtensionProcessBrowser(this);
-    }
+    this._browser =
+      await lazy.ExtensionParent.DebugUtils.getExtensionProcessBrowser(this);
 
     const policy = lazy.ExtensionParent.WebExtensionPolicy.getByID(
       this.addonId
     );
-
     this._form = await connectToFrame(this.conn, this._browser, this.destroy, {
       addonId: this.addonId,
       addonBrowsingContextGroupId: policy.browsingContextGroupId,
@@ -198,9 +187,10 @@ class WebExtensionDescriptorActor extends Actor {
       );
     }
 
-    this._mm.addMessageListener("debug:webext_child_exit", this._onChildExit);
-
     this._childActorID = this._form.actor;
+
+    
+    this._mm.addMessageListener("debug:webext_child_exit", this._onChildExit);
 
     return this._form;
   }
@@ -296,10 +286,7 @@ class WebExtensionDescriptorActor extends Actor {
       return;
     }
 
-    
-    
-    delete this._form;
-    delete this._childActorID;
+    this.destroy();
   }
 
   
