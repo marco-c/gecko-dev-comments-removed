@@ -1921,10 +1921,11 @@ class AddonPermissionsList extends HTMLElement {
       
       
       
-      optionalPerms.origins = [
-        ...optionalPerms.origins,
+      let origins = [
+        ...(this.addon.optionalOriginsNormalized ?? []),
         ...grantedPerms.origins.filter(o => !requiredPerms.origins.includes(o)),
       ];
+      optionalPerms.origins = [...new Set(origins)];
     }
 
     let permissions = Extension.formatPermissionStrings(
