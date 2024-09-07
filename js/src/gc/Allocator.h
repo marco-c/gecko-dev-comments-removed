@@ -49,14 +49,46 @@ class CellAllocator {
   
   
   
-  template <typename T, js::AllowGC allowGC = CanGC, typename... Args>
+  template <typename T, AllowGC allowGC = CanGC, typename... Args>
   static inline T* NewCell(JSContext* cx, Args&&... args);
 
  private:
+  
+  
+  
+  
+  
+  template <typename T, AllowGC allowGC, typename... Args>
+  static T* NewString(JSContext* cx, Heap heap, Args&&... args);
+
+  template <typename T, AllowGC allowGC>
+  static T* NewBigInt(JSContext* cx, Heap heap);
+
+  template <typename T, AllowGC allowGC>
+  static T* NewObject(JSContext* cx, AllocKind kind, Heap heap,
+                      const JSClass* clasp, AllocSite* site = nullptr);
+
+  
+  template <typename T, AllowGC allowGC, typename... Args>
+  static T* NewTenuredCell(JSContext* cx, Args&&... args);
+
+  
+  
+  template <JS::TraceKind traceKind, AllowGC allowGC>
+  static void* AllocNurseryOrTenuredCell(JSContext* cx, AllocKind allocKind,
+                                         size_t thingSize, Heap heap,
+                                         AllocSite* site);
+  friend class TenuringTracer;
+
   template <AllowGC allowGC>
   static void* RetryNurseryAlloc(JSContext* cx, JS::TraceKind traceKind,
                                  AllocKind allocKind, size_t thingSize,
                                  AllocSite* site);
+
+  
+  template <AllowGC allowGC>
+  static void* AllocTenuredCell(JSContext* cx, AllocKind kind);
+
   template <AllowGC allowGC>
   static void* TryNewTenuredCell(JSContext* cx, AllocKind kind);
 
@@ -80,38 +112,7 @@ class CellAllocator {
   static void CheckIncrementalZoneState(JSContext* cx, void* ptr);
 #endif
 
-  static inline gc::Heap CheckedHeap(gc::Heap heap);
-
-  
-  
-  template <JS::TraceKind traceKind, AllowGC allowGC>
-  static void* AllocNurseryOrTenuredCell(JSContext* cx, gc::AllocKind allocKind,
-                                         size_t thingSize, gc::Heap heap,
-                                         AllocSite* site);
-  friend class TenuringTracer;
-
-  
-  template <AllowGC allowGC>
-  static void* AllocTenuredCell(JSContext* cx, gc::AllocKind kind);
-
-  
-  
-  
-  
-  
-  template <typename T, AllowGC allowGC, typename... Args>
-  static T* NewString(JSContext* cx, gc::Heap heap, Args&&... args);
-
-  template <typename T, AllowGC allowGC>
-  static T* NewBigInt(JSContext* cx, Heap heap);
-
-  template <typename T, AllowGC allowGC>
-  static T* NewObject(JSContext* cx, gc::AllocKind kind, gc::Heap heap,
-                      const JSClass* clasp, gc::AllocSite* site = nullptr);
-
-  
-  template <typename T, AllowGC allowGC, typename... Args>
-  static T* NewTenuredCell(JSContext* cx, Args&&... args);
+  static inline Heap CheckedHeap(Heap heap);
 };
 
 }  
