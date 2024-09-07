@@ -70,7 +70,6 @@ struct StyleSizeOverrides {
   
   bool mApplyOverridesVerbatim = false;
 };
-}  
 
 
 
@@ -86,15 +85,17 @@ struct StyleSizeOverrides {
 
 
 template <class NumericType>
-NumericType NS_CSS_MINMAX(NumericType aValue, NumericType aMinValue,
-                          NumericType aMaxValue) {
+NumericType CSSMinMax(NumericType aValue, NumericType aMinValue,
+                      NumericType aMaxValue) {
   NumericType result = aValue;
-  if (aMaxValue < result) result = aMaxValue;
-  if (aMinValue > result) result = aMinValue;
+  if (aMaxValue < result) {
+    result = aMaxValue;
+  }
+  if (aMinValue > result) {
+    result = aMinValue;
+  }
   return result;
 }
-
-namespace mozilla {
 
 
 

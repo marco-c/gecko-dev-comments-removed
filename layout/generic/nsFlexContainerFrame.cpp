@@ -693,7 +693,7 @@ class nsFlexContainerFrame::FlexItem final {
     
     
     
-    mMainSize = NS_CSS_MINMAX(mFlexBaseSize, mMainMinSize, mMainMaxSize);
+    mMainSize = CSSMinMax(mFlexBaseSize, mMainMinSize, mMainMaxSize);
 
     FLEX_ITEM_LOG(mFrame, "Set flex base size: %d, hypothetical main size: %d",
                   mFlexBaseSize, mMainSize);
@@ -3883,7 +3883,7 @@ void FlexItem::ResolveStretchedCrossSize(nscoord aLineCrossSize) {
   
   nscoord stretchedSize = aLineCrossSize - MarginBorderPaddingSizeInCrossAxis();
 
-  stretchedSize = NS_CSS_MINMAX(stretchedSize, mCrossMinSize, mCrossMaxSize);
+  stretchedSize = CSSMinMax(stretchedSize, mCrossMinSize, mCrossMaxSize);
 
   
   
