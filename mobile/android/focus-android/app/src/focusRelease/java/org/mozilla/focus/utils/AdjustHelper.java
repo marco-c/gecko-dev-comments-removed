@@ -18,7 +18,11 @@ import org.mozilla.focus.BuildConfig;
 import org.mozilla.focus.FocusApplication;
 import org.mozilla.focus.telemetry.GleanMetricsService;
 
+
+@Deprecated
 public class AdjustHelper {
+
+    @Deprecated
     public static void setupAdjustIfNeeded(FocusApplication application) {
         
 

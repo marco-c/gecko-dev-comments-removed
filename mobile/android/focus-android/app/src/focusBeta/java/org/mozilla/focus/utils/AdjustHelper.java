@@ -7,7 +7,11 @@ package org.mozilla.focus.utils;
 
 import android.content.Context;
 
+
+@Deprecated
 public class AdjustHelper {
+
+    @Deprecated
     public static void setupAdjustIfNeeded(Context context) {
         
     }
