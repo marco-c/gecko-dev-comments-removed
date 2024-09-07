@@ -16,6 +16,22 @@ function run_test() {
   
   Services.prefs.setIntPref(
     "permissions.default.camera",
+    Services.perms.MAX_VALID_ACTION + 1
+  );
+  Assert.equal(
+    Services.perms.testPermissionFromPrincipal(principal, "camera"),
+    Services.perms.UNKNOWN_ACTION
+  );
+
+  Services.prefs.setIntPref("permissions.default.camera", -1);
+  Assert.equal(
+    Services.perms.testPermissionFromPrincipal(principal, "camera"),
+    Services.perms.UNKNOWN_ACTION
+  );
+
+  
+  Services.prefs.setIntPref(
+    "permissions.default.camera",
     Services.perms.DENY_ACTION
   );
   Assert.equal(
