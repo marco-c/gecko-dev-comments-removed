@@ -93,6 +93,14 @@ function continueResponses() {
 
 
 
+function failResponses() {
+  info("Interruptible response is failed and next ones allowed to continue.");
+  _gDeferResponses.reject();
+}
+
+
+
+
 function promiseInterruptibleDownload(extension = ".txt") {
   let interruptibleFile = new FileUtils.File(
     PathUtils.join(PathUtils.tempDir, `interruptible${extension}`)
@@ -332,11 +340,18 @@ function startServer() {
 
       
       _gDeferResponses.promise
-        .then(function RIH_onSuccess() {
-          aResponse.write(TEST_DATA_SHORT);
-          aResponse.finish();
-          info("Interruptible request finished.");
-        })
+        .then(
+          () => {
+            aResponse.write(TEST_DATA_SHORT);
+            aResponse.finish();
+            info("Interruptible request finished.");
+          },
+          () => {
+            
+            aResponse.finish();
+            info("Interruptible request failed.");
+          }
+        )
         .catch(console.error);
     }
   );
