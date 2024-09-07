@@ -5,8 +5,6 @@ use crate::pe;
 use crate::read::{Bytes, Error, ReadError, Result};
 
 
-
-
 #[derive(Debug, Default, Clone, Copy)]
 pub struct RelocationBlockIterator<'data> {
     data: Bytes<'data>,

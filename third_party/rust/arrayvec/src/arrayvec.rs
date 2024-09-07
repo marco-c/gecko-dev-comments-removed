@@ -77,8 +77,6 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
-    #[inline]
-    #[track_caller]
     pub fn new() -> ArrayVec<T, CAP> {
         assert_capacity_limit!(CAP);
         unsafe {
@@ -174,7 +172,6 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
-    #[track_caller]
     pub fn push(&mut self, element: T) {
         ArrayVecImpl::push(self, element)
     }
@@ -280,7 +277,6 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
-    #[track_caller]
     pub fn insert(&mut self, index: usize, element: T) {
         self.try_insert(index, element).unwrap()
     }
@@ -511,7 +507,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
             }
             if DELETED {
                 unsafe {
-                    let hole_slot = cur.sub(g.deleted_cnt);
+                    let hole_slot = g.v.as_mut_ptr().add(g.processed_len - g.deleted_cnt);
                     ptr::copy_nonoverlapping(cur, hole_slot, 1);
                 }
             }
@@ -752,7 +748,6 @@ impl<T, const CAP: usize> DerefMut for ArrayVec<T, CAP> {
 
 
 impl<T, const CAP: usize> From<[T; CAP]> for ArrayVec<T, CAP> {
-    #[track_caller]
     fn from(array: [T; CAP]) -> Self {
         let array = ManuallyDrop::new(array);
         let mut vec = <ArrayVec<T, CAP>>::new();
@@ -847,32 +842,6 @@ impl<T, const CAP: usize> IntoIterator for ArrayVec<T, CAP> {
     }
 }
 
-
-#[cfg(feature = "zeroize")]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl<Z: zeroize::Zeroize, const CAP: usize> zeroize::Zeroize for ArrayVec<Z, CAP> {
-    fn zeroize(&mut self) {
-        
-        self.iter_mut().zeroize();
-        
-        self.clear();
-        
-        self.xs.zeroize();
-    }
-}
 
 
 pub struct IntoIter<T, const CAP: usize> {
@@ -1009,8 +978,9 @@ impl<'a, T: 'a, const CAP: usize> Drop for Drain<'a, T, CAP> {
                 
                 let start = source_vec.len();
                 let tail = self.tail_start;
-                let ptr = source_vec.as_mut_ptr();
-                ptr::copy(ptr.add(tail), ptr.add(start), self.tail_len);
+                let src = source_vec.as_ptr().add(tail);
+                let dst = source_vec.as_mut_ptr().add(start);
+                ptr::copy(src, dst, self.tail_len);
                 source_vec.set_len(start + self.tail_len);
             }
         }
@@ -1042,7 +1012,6 @@ impl<T, const CAP: usize> Extend<T> for ArrayVec<T, CAP> {
     
     
     
-    #[track_caller]
     fn extend<I: IntoIterator<Item=T>>(&mut self, iter: I) {
         unsafe {
             self.extend_from_iter::<_, true>(iter)
@@ -1052,7 +1021,6 @@ impl<T, const CAP: usize> Extend<T> for ArrayVec<T, CAP> {
 
 #[inline(never)]
 #[cold]
-#[track_caller]
 fn extend_panic() {
     panic!("ArrayVec: capacity exceeded in extend/from_iter");
 }
@@ -1064,7 +1032,6 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
-    #[track_caller]
     pub(crate) unsafe fn extend_from_iter<I, const CHECK: bool>(&mut self, iterable: I)
         where I: IntoIterator<Item = T>
     {
@@ -1115,7 +1082,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
 unsafe fn raw_ptr_add<T>(ptr: *mut T, offset: usize) -> *mut T {
     if mem::size_of::<T>() == 0 {
         
-        ptr.cast::<u8>().wrapping_add(offset).cast()
+        (ptr as usize).wrapping_add(offset) as _
     } else {
         ptr.add(offset)
     }

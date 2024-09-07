@@ -11,9 +11,6 @@ use super::FileHeader;
 
 
 
-
-
-
 #[derive(Debug, Clone)]
 pub struct AttributesSection<'data, Elf: FileHeader> {
     endian: Elf::Endian,
@@ -27,8 +24,9 @@ impl<'data, Elf: FileHeader> AttributesSection<'data, Elf> {
         let mut data = Bytes(data);
 
         
-        
-        let version = data.read::<u8>().cloned().unwrap_or(b'A');
+        let version = *data
+            .read::<u8>()
+            .read_error("Invalid ELF attributes section offset or size")?;
 
         Ok(AttributesSection {
             endian,
@@ -106,7 +104,6 @@ impl<'data, Elf: FileHeader> AttributesSubsectionIterator<'data, Elf> {
         }))
     }
 }
-
 
 
 

@@ -1,96 +1,55 @@
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
 
-use crate::endian::Endianness;
 use crate::read::{
     self, Architecture, CodeView, ComdatKind, CompressedData, CompressedFileRange, Export,
-    FileFlags, Import, ObjectKind, ObjectMap, Relocation, RelocationMap, Result, SectionFlags,
-    SectionIndex, SectionKind, SegmentFlags, SubArchitecture, SymbolFlags, SymbolIndex, SymbolKind,
-    SymbolMap, SymbolMapName, SymbolScope, SymbolSection,
+    FileFlags, Import, ObjectKind, ObjectMap, Relocation, Result, SectionFlags, SectionIndex,
+    SectionKind, SegmentFlags, SymbolFlags, SymbolIndex, SymbolKind, SymbolMap, SymbolMapName,
+    SymbolScope, SymbolSection,
 };
+use crate::Endianness;
 
 
-
-
-pub trait Object<'data>: read::private::Sealed {
+pub trait Object<'data: 'file, 'file>: read::private::Sealed {
     
-    type Segment<'file>: ObjectSegment<'data>
-    where
-        Self: 'file,
-        'data: 'file;
+    type Segment: ObjectSegment<'data>;
 
     
-    type SegmentIterator<'file>: Iterator<Item = Self::Segment<'file>>
-    where
-        Self: 'file,
-        'data: 'file;
+    type SegmentIterator: Iterator<Item = Self::Segment>;
 
     
-    type Section<'file>: ObjectSection<'data>
-    where
-        Self: 'file,
-        'data: 'file;
+    type Section: ObjectSection<'data>;
 
     
-    type SectionIterator<'file>: Iterator<Item = Self::Section<'file>>
-    where
-        Self: 'file,
-        'data: 'file;
+    type SectionIterator: Iterator<Item = Self::Section>;
 
     
-    type Comdat<'file>: ObjectComdat<'data>
-    where
-        Self: 'file,
-        'data: 'file;
+    type Comdat: ObjectComdat<'data>;
 
     
-    type ComdatIterator<'file>: Iterator<Item = Self::Comdat<'file>>
-    where
-        Self: 'file,
-        'data: 'file;
+    type ComdatIterator: Iterator<Item = Self::Comdat>;
 
     
-    type Symbol<'file>: ObjectSymbol<'data>
-    where
-        Self: 'file,
-        'data: 'file;
+    type Symbol: ObjectSymbol<'data>;
 
     
-    type SymbolIterator<'file>: Iterator<Item = Self::Symbol<'file>>
-    where
-        Self: 'file,
-        'data: 'file;
+    type SymbolIterator: Iterator<Item = Self::Symbol>;
 
     
-    type SymbolTable<'file>: ObjectSymbolTable<
+    type SymbolTable: ObjectSymbolTable<
         'data,
-        Symbol = Self::Symbol<'file>,
-        SymbolIterator = Self::SymbolIterator<'file>,
-    >
-    where
-        Self: 'file,
-        'data: 'file;
+        Symbol = Self::Symbol,
+        SymbolIterator = Self::SymbolIterator,
+    >;
 
     
     
     
     
-    type DynamicRelocationIterator<'file>: Iterator<Item = (u64, Relocation)>
-    where
-        Self: 'file,
-        'data: 'file;
+    type DynamicRelocationIterator: Iterator<Item = (u64, Relocation)>;
 
     
     fn architecture(&self) -> Architecture;
-
-    
-    
-    
-    
-    
-    fn sub_architecture(&self) -> Option<SubArchitecture> {
-        None
-    }
 
     
     #[inline]
@@ -112,12 +71,7 @@ pub trait Object<'data>: read::private::Sealed {
     fn kind(&self) -> ObjectKind;
 
     
-    
-    
-    
-    
-    
-    fn segments(&self) -> Self::SegmentIterator<'_>;
+    fn segments(&'file self) -> Self::SegmentIterator;
 
     
     
@@ -133,17 +87,12 @@ pub trait Object<'data>: read::private::Sealed {
     
     
     
-    
-    
-    fn section_by_name(&self, section_name: &str) -> Option<Self::Section<'_>> {
+    fn section_by_name(&'file self, section_name: &str) -> Option<Self::Section> {
         self.section_by_name_bytes(section_name.as_bytes())
     }
 
     
-    fn section_by_name_bytes<'file>(
-        &'file self,
-        section_name: &[u8],
-    ) -> Option<Self::Section<'file>>;
+    fn section_by_name_bytes(&'file self, section_name: &[u8]) -> Option<Self::Section>;
 
     
     
@@ -152,47 +101,35 @@ pub trait Object<'data>: read::private::Sealed {
     
     
     
-    fn section_by_index(&self, index: SectionIndex) -> Result<Self::Section<'_>>;
+    fn section_by_index(&'file self, index: SectionIndex) -> Result<Self::Section>;
 
     
-    fn sections(&self) -> Self::SectionIterator<'_>;
+    fn sections(&'file self) -> Self::SectionIterator;
 
     
-    fn comdats(&self) -> Self::ComdatIterator<'_>;
+    fn comdats(&'file self) -> Self::ComdatIterator;
 
     
-    fn symbol_table(&self) -> Option<Self::SymbolTable<'_>>;
-
-    
-    
-    
-    
-    
-    fn symbol_by_index(&self, index: SymbolIndex) -> Result<Self::Symbol<'_>>;
+    fn symbol_table(&'file self) -> Option<Self::SymbolTable>;
 
     
     
     
     
     
-    fn symbols(&self) -> Self::SymbolIterator<'_>;
-
-    
-    fn symbol_by_name<'file>(&'file self, symbol_name: &str) -> Option<Self::Symbol<'file>> {
-        self.symbol_by_name_bytes(symbol_name.as_bytes())
-    }
-
-    
-    fn symbol_by_name_bytes<'file>(&'file self, symbol_name: &[u8]) -> Option<Self::Symbol<'file>> {
-        self.symbols()
-            .find(|sym| sym.name_bytes() == Ok(symbol_name))
-    }
+    fn symbol_by_index(&'file self, index: SymbolIndex) -> Result<Self::Symbol>;
 
     
     
     
     
-    fn dynamic_symbol_table(&self) -> Option<Self::SymbolTable<'_>>;
+    
+    fn symbols(&'file self) -> Self::SymbolIterator;
+
+    
+    
+    
+    fn dynamic_symbol_table(&'file self) -> Option<Self::SymbolTable>;
 
     
     
@@ -200,73 +137,28 @@ pub trait Object<'data>: read::private::Sealed {
     
     
     
-    
-    fn dynamic_symbols(&self) -> Self::SymbolIterator<'_>;
+    fn dynamic_symbols(&'file self) -> Self::SymbolIterator;
 
     
     
     
     
     
-    fn dynamic_relocations(&self) -> Option<Self::DynamicRelocationIterator<'_>>;
+    fn dynamic_relocations(&'file self) -> Option<Self::DynamicRelocationIterator>;
 
     
     
     
     
-    fn symbol_map(&self) -> SymbolMap<SymbolMapName<'data>> {
+    fn symbol_map(&'file self) -> SymbolMap<SymbolMapName<'data>> {
         let mut symbols = Vec::new();
         if let Some(table) = self.symbol_table().or_else(|| self.dynamic_symbol_table()) {
-            
-            let mut all_symbols = Vec::new();
             for symbol in table.symbols() {
-                
                 if !symbol.is_definition() {
                     continue;
                 }
-                
-                let name = match symbol.name() {
-                    Ok(name) => name,
-                    _ => continue,
-                };
-                if name.is_empty() {
-                    continue;
-                }
-
-                
-                let mut priority = 0u32;
-
-                
-                match symbol.kind() {
-                    SymbolKind::Text | SymbolKind::Data => {}
-                    SymbolKind::Unknown => priority += 1,
-                    _ => continue,
-                }
-                priority *= 2;
-
-                
-                priority += match symbol.scope() {
-                    SymbolScope::Unknown => 3,
-                    SymbolScope::Compilation => 2,
-                    SymbolScope::Linkage => 1,
-                    SymbolScope::Dynamic => 0,
-                };
-                priority *= 4;
-
-                
-                let index = !0 - symbol.index().0;
-
-                
-                all_symbols.push((symbol.address(), priority, index, name));
-            }
-            
-            all_symbols.sort_unstable();
-
-            let mut previous_address = !0;
-            for (address, _priority, _index, name) in all_symbols {
-                if address != previous_address {
-                    symbols.push(SymbolMapName::new(address, name));
-                    previous_address = address;
+                if let Ok(name) = symbol.name() {
+                    symbols.push(SymbolMapName::new(symbol.address(), name));
                 }
             }
         }
@@ -276,7 +168,7 @@ pub trait Object<'data>: read::private::Sealed {
     
     
     
-    fn object_map(&self) -> ObjectMap<'data> {
+    fn object_map(&'file self) -> ObjectMap<'data> {
         ObjectMap::default()
     }
 
@@ -325,14 +217,15 @@ pub trait Object<'data>: read::private::Sealed {
     
     
     
-    fn relative_address_base(&self) -> u64;
+    fn relative_address_base(&'file self) -> u64;
 
     
-    fn entry(&self) -> u64;
+    fn entry(&'file self) -> u64;
 
     
     fn flags(&self) -> FileFlags;
 }
+
 
 
 
@@ -372,8 +265,6 @@ pub trait ObjectSegment<'data>: read::private::Sealed {
     
     fn flags(&self) -> SegmentFlags;
 }
-
-
 
 
 pub trait ObjectSection<'data>: read::private::Sealed {
@@ -433,12 +324,12 @@ pub trait ObjectSection<'data>: read::private::Sealed {
     }
 
     
-    fn name_bytes(&self) -> Result<&'data [u8]>;
+    fn name_bytes(&self) -> Result<&[u8]>;
 
     
     
     
-    fn name(&self) -> Result<&'data str>;
+    fn name(&self) -> Result<&str>;
 
     
     fn segment_name_bytes(&self) -> Result<Option<&[u8]>>;
@@ -455,13 +346,8 @@ pub trait ObjectSection<'data>: read::private::Sealed {
     fn relocations(&self) -> Self::RelocationIterator;
 
     
-    fn relocation_map(&self) -> Result<RelocationMap>;
-
-    
     fn flags(&self) -> SectionFlags;
 }
-
-
 
 
 pub trait ObjectComdat<'data>: read::private::Sealed {
@@ -475,18 +361,16 @@ pub trait ObjectComdat<'data>: read::private::Sealed {
     fn symbol(&self) -> SymbolIndex;
 
     
-    fn name_bytes(&self) -> Result<&'data [u8]>;
+    fn name_bytes(&self) -> Result<&[u8]>;
 
     
     
     
-    fn name(&self) -> Result<&'data str>;
+    fn name(&self) -> Result<&str>;
 
     
     fn sections(&self) -> Self::SectionIterator;
 }
-
-
 
 
 pub trait ObjectSymbolTable<'data>: read::private::Sealed {
@@ -508,8 +392,6 @@ pub trait ObjectSymbolTable<'data>: read::private::Sealed {
     
     fn symbol_by_index(&self, index: SymbolIndex) -> Result<Self::Symbol>;
 }
-
-
 
 
 pub trait ObjectSymbol<'data>: read::private::Sealed {
@@ -546,8 +428,6 @@ pub trait ObjectSymbol<'data>: read::private::Sealed {
     
     fn is_undefined(&self) -> bool;
 
-    
-    
     
     
     fn is_definition(&self) -> bool;

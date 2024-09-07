@@ -34,18 +34,6 @@ type Result<T> = result::Result<T, ()>;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 pub trait ReadRef<'a>: Clone + Copy {
     
     fn len(self) -> Result<u64>;

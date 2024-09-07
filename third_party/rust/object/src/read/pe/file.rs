@@ -4,15 +4,12 @@ use core::{mem, str};
 
 use core::convert::TryInto;
 
-use crate::endian::{LittleEndian as LE, U32};
-use crate::pe;
-use crate::pod::{self, Pod};
 use crate::read::coff::{CoffCommon, CoffSymbol, CoffSymbolIterator, CoffSymbolTable, SymbolTable};
 use crate::read::{
-    self, Architecture, ByteString, Bytes, CodeView, ComdatKind, Error, Export, FileFlags, Import,
-    NoDynamicRelocationIterator, Object, ObjectComdat, ObjectKind, ReadError, ReadRef, Result,
-    SectionIndex, SubArchitecture, SymbolIndex,
+    self, Architecture, ComdatKind, Error, Export, FileFlags, Import, NoDynamicRelocationIterator,
+    Object, ObjectComdat, ObjectKind, ReadError, ReadRef, Result, SectionIndex, SymbolIndex,
 };
+use crate::{pe, ByteString, Bytes, CodeView, LittleEndian as LE, Pod, U32};
 
 use super::{
     DataDirectories, ExportTable, ImageThunkData, ImportTable, PeSection, PeSectionIterator,
@@ -20,17 +17,9 @@ use super::{
 };
 
 
-
-
-
 pub type PeFile32<'data, R = &'data [u8]> = PeFile<'data, pe::ImageNtHeaders32, R>;
 
-
-
-
 pub type PeFile64<'data, R = &'data [u8]> = PeFile<'data, pe::ImageNtHeaders64, R>;
-
-
 
 
 #[derive(Debug)]
@@ -138,36 +127,30 @@ where
 {
 }
 
-impl<'data, Pe, R> Object<'data> for PeFile<'data, Pe, R>
+impl<'data, 'file, Pe, R> Object<'data, 'file> for PeFile<'data, Pe, R>
 where
+    'data: 'file,
     Pe: ImageNtHeaders,
-    R: ReadRef<'data>,
+    R: 'file + ReadRef<'data>,
 {
-    type Segment<'file> = PeSegment<'data, 'file, Pe, R> where Self: 'file, 'data: 'file;
-    type SegmentIterator<'file> = PeSegmentIterator<'data, 'file, Pe, R> where Self: 'file, 'data: 'file;
-    type Section<'file> = PeSection<'data, 'file, Pe, R> where Self: 'file, 'data: 'file;
-    type SectionIterator<'file> = PeSectionIterator<'data, 'file, Pe, R> where Self: 'file, 'data: 'file;
-    type Comdat<'file> = PeComdat<'data, 'file, Pe, R> where Self: 'file, 'data: 'file;
-    type ComdatIterator<'file> = PeComdatIterator<'data, 'file, Pe, R> where Self: 'file, 'data: 'file;
-    type Symbol<'file> = CoffSymbol<'data, 'file, R> where Self: 'file, 'data: 'file;
-    type SymbolIterator<'file> = CoffSymbolIterator<'data, 'file, R> where Self: 'file, 'data: 'file;
-    type SymbolTable<'file> = CoffSymbolTable<'data, 'file, R> where Self: 'file, 'data: 'file;
-    type DynamicRelocationIterator<'file> = NoDynamicRelocationIterator where Self: 'file, 'data: 'file;
+    type Segment = PeSegment<'data, 'file, Pe, R>;
+    type SegmentIterator = PeSegmentIterator<'data, 'file, Pe, R>;
+    type Section = PeSection<'data, 'file, Pe, R>;
+    type SectionIterator = PeSectionIterator<'data, 'file, Pe, R>;
+    type Comdat = PeComdat<'data, 'file, Pe, R>;
+    type ComdatIterator = PeComdatIterator<'data, 'file, Pe, R>;
+    type Symbol = CoffSymbol<'data, 'file, R>;
+    type SymbolIterator = CoffSymbolIterator<'data, 'file, R>;
+    type SymbolTable = CoffSymbolTable<'data, 'file, R>;
+    type DynamicRelocationIterator = NoDynamicRelocationIterator;
 
     fn architecture(&self) -> Architecture {
         match self.nt_headers.file_header().machine.get(LE) {
             pe::IMAGE_FILE_MACHINE_ARMNT => Architecture::Arm,
-            pe::IMAGE_FILE_MACHINE_ARM64 | pe::IMAGE_FILE_MACHINE_ARM64EC => Architecture::Aarch64,
+            pe::IMAGE_FILE_MACHINE_ARM64 => Architecture::Aarch64,
             pe::IMAGE_FILE_MACHINE_I386 => Architecture::I386,
             pe::IMAGE_FILE_MACHINE_AMD64 => Architecture::X86_64,
             _ => Architecture::Unknown,
-        }
-    }
-
-    fn sub_architecture(&self) -> Option<SubArchitecture> {
-        match self.nt_headers.file_header().machine.get(LE) {
-            pe::IMAGE_FILE_MACHINE_ARM64EC => Some(SubArchitecture::Arm64EC),
-            _ => None,
         }
     }
 
@@ -193,14 +176,14 @@ where
         }
     }
 
-    fn segments(&self) -> PeSegmentIterator<'data, '_, Pe, R> {
+    fn segments(&'file self) -> PeSegmentIterator<'data, 'file, Pe, R> {
         PeSegmentIterator {
             file: self,
             iter: self.common.sections.iter(),
         }
     }
 
-    fn section_by_name_bytes<'file>(
+    fn section_by_name_bytes(
         &'file self,
         section_name: &[u8],
     ) -> Option<PeSection<'data, 'file, Pe, R>> {
@@ -209,13 +192,16 @@ where
             .section_by_name(self.common.symbols.strings(), section_name)
             .map(|(index, section)| PeSection {
                 file: self,
-                index,
+                index: SectionIndex(index),
                 section,
             })
     }
 
-    fn section_by_index(&self, index: SectionIndex) -> Result<PeSection<'data, '_, Pe, R>> {
-        let section = self.common.sections.section(index)?;
+    fn section_by_index(
+        &'file self,
+        index: SectionIndex,
+    ) -> Result<PeSection<'data, 'file, Pe, R>> {
+        let section = self.common.sections.section(index.0)?;
         Ok(PeSection {
             file: self,
             index,
@@ -223,19 +209,19 @@ where
         })
     }
 
-    fn sections(&self) -> PeSectionIterator<'data, '_, Pe, R> {
+    fn sections(&'file self) -> PeSectionIterator<'data, 'file, Pe, R> {
         PeSectionIterator {
             file: self,
             iter: self.common.sections.iter().enumerate(),
         }
     }
 
-    fn comdats(&self) -> PeComdatIterator<'data, '_, Pe, R> {
+    fn comdats(&'file self) -> PeComdatIterator<'data, 'file, Pe, R> {
         PeComdatIterator { file: self }
     }
 
-    fn symbol_by_index(&self, index: SymbolIndex) -> Result<CoffSymbol<'data, '_, R>> {
-        let symbol = self.common.symbols.symbol(index)?;
+    fn symbol_by_index(&'file self, index: SymbolIndex) -> Result<CoffSymbol<'data, 'file, R>> {
+        let symbol = self.common.symbols.symbol(index.0)?;
         Ok(CoffSymbol {
             file: &self.common,
             index,
@@ -243,23 +229,30 @@ where
         })
     }
 
-    fn symbols(&self) -> CoffSymbolIterator<'data, '_, R> {
-        CoffSymbolIterator::new(&self.common)
+    fn symbols(&'file self) -> CoffSymbolIterator<'data, 'file, R> {
+        CoffSymbolIterator {
+            file: &self.common,
+            index: 0,
+        }
     }
 
-    fn symbol_table(&self) -> Option<CoffSymbolTable<'data, '_, R>> {
+    fn symbol_table(&'file self) -> Option<CoffSymbolTable<'data, 'file, R>> {
         Some(CoffSymbolTable { file: &self.common })
     }
 
-    fn dynamic_symbols(&self) -> CoffSymbolIterator<'data, '_, R> {
-        CoffSymbolIterator::empty(&self.common)
+    fn dynamic_symbols(&'file self) -> CoffSymbolIterator<'data, 'file, R> {
+        CoffSymbolIterator {
+            file: &self.common,
+            
+            index: self.common.symbols.len(),
+        }
     }
 
-    fn dynamic_symbol_table(&self) -> Option<CoffSymbolTable<'data, '_, R>> {
+    fn dynamic_symbol_table(&'file self) -> Option<CoffSymbolTable<'data, 'file, R>> {
         None
     }
 
-    fn dynamic_relocations(&self) -> Option<NoDynamicRelocationIterator> {
+    fn dynamic_relocations(&'file self) -> Option<NoDynamicRelocationIterator> {
         None
     }
 
@@ -310,8 +303,17 @@ where
             Some(data_dir) => data_dir,
             None => return Ok(None),
         };
-        let debug_data = data_dir.data(self.data, &self.common.sections)?;
-        let debug_dirs = pod::slice_from_all_bytes::<pe::ImageDebugDirectory>(debug_data)
+        let debug_data = data_dir.data(self.data, &self.common.sections).map(Bytes)?;
+        let debug_data_size = data_dir.size.get(LE) as usize;
+
+        let count = debug_data_size / mem::size_of::<pe::ImageDebugDirectory>();
+        let rem = debug_data_size % mem::size_of::<pe::ImageDebugDirectory>();
+        if rem != 0 || count < 1 {
+            return Err(Error("Invalid PE debug dir size"));
+        }
+
+        let debug_dirs = debug_data
+            .read_slice_at::<pe::ImageDebugDirectory>(0, count)
             .read_error("Invalid PE debug dir size")?;
 
         for debug_dir in debug_dirs {
@@ -386,8 +388,6 @@ pub type PeComdatIterator64<'data, 'file, R = &'data [u8]> =
     PeComdatIterator<'data, 'file, pe::ImageNtHeaders64, R>;
 
 
-
-
 #[derive(Debug)]
 pub struct PeComdatIterator<'data, 'file, Pe, R = &'data [u8]>
 where
@@ -417,8 +417,6 @@ pub type PeComdat32<'data, 'file, R = &'data [u8]> =
 
 pub type PeComdat64<'data, 'file, R = &'data [u8]> =
     PeComdat<'data, 'file, pe::ImageNtHeaders64, R>;
-
-
 
 
 #[derive(Debug)]
@@ -456,12 +454,12 @@ where
     }
 
     #[inline]
-    fn name_bytes(&self) -> Result<&'data [u8]> {
+    fn name_bytes(&self) -> Result<&[u8]> {
         unreachable!();
     }
 
     #[inline]
-    fn name(&self) -> Result<&'data str> {
+    fn name(&self) -> Result<&str> {
         unreachable!();
     }
 
@@ -477,8 +475,6 @@ pub type PeComdatSectionIterator32<'data, 'file, R = &'data [u8]> =
 
 pub type PeComdatSectionIterator64<'data, 'file, R = &'data [u8]> =
     PeComdatSectionIterator<'data, 'file, pe::ImageNtHeaders64, R>;
-
-
 
 
 #[derive(Debug)]

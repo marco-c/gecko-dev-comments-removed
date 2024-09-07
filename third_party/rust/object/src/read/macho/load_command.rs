@@ -247,15 +247,6 @@ impl<'data, E: Endian> LoadCommandData<'data, E> {
             Ok(None)
         }
     }
-
-    
-    pub fn build_version(self) -> Result<Option<&'data macho::BuildVersionCommand<E>>> {
-        if self.cmd == macho::LC_BUILD_VERSION {
-            Some(self.data()).transpose()
-        } else {
-            Ok(None)
-        }
-    }
 }
 
 
@@ -372,15 +363,11 @@ mod tests {
 
     #[test]
     fn cmd_size_invalid() {
-        #[repr(align(16))]
-        struct Align<const N: usize>([u8; N]);
-        let mut commands = LoadCommandIterator::new(LittleEndian, &Align([0; 8]).0, 10);
+        let mut commands = LoadCommandIterator::new(LittleEndian, &[0; 8], 10);
         assert!(commands.next().is_err());
-        let mut commands =
-            LoadCommandIterator::new(LittleEndian, &Align([0, 0, 0, 0, 7, 0, 0, 0, 0]).0, 10);
+        let mut commands = LoadCommandIterator::new(LittleEndian, &[0, 0, 0, 0, 7, 0, 0, 0, 0], 10);
         assert!(commands.next().is_err());
-        let mut commands =
-            LoadCommandIterator::new(LittleEndian, &Align([0, 0, 0, 0, 8, 0, 0, 0, 0]).0, 10);
+        let mut commands = LoadCommandIterator::new(LittleEndian, &[0, 0, 0, 0, 8, 0, 0, 0, 0], 10);
         assert!(commands.next().is_ok());
     }
 }

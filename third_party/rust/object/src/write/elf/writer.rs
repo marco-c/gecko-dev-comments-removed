@@ -211,11 +211,6 @@ impl<'a> Writer<'a> {
     }
 
     
-    fn class(&self) -> Class {
-        Class { is_64: self.is_64 }
-    }
-
-    
     pub fn reserved_len(&self) -> usize {
         self.len
     }
@@ -226,8 +221,6 @@ impl<'a> Writer<'a> {
         self.buffer.len()
     }
 
-    
-    
     
     
     
@@ -266,12 +259,20 @@ impl<'a> Writer<'a> {
         self.buffer.resize(offset);
     }
 
+    fn file_header_size(&self) -> usize {
+        if self.is_64 {
+            mem::size_of::<elf::FileHeader64<Endianness>>()
+        } else {
+            mem::size_of::<elf::FileHeader32<Endianness>>()
+        }
+    }
+
     
     
     
     pub fn reserve_file_header(&mut self) {
         debug_assert_eq!(self.len, 0);
-        self.reserve(self.class().file_header_size(), 1);
+        self.reserve(self.file_header_size(), 1);
     }
 
     
@@ -309,13 +310,13 @@ impl<'a> Writer<'a> {
             padding: [0; 7],
         };
 
-        let e_ehsize = self.class().file_header_size() as u16;
+        let e_ehsize = self.file_header_size() as u16;
 
         let e_phoff = self.segment_offset as u64;
         let e_phentsize = if self.segment_num == 0 {
             0
         } else {
-            self.class().program_header_size() as u16
+            self.program_header_size() as u16
         };
         
         let e_phnum = self.segment_num as u16;
@@ -324,7 +325,7 @@ impl<'a> Writer<'a> {
         let e_shentsize = if self.section_num == 0 {
             0
         } else {
-            self.class().section_header_size() as u16
+            self.section_header_size() as u16
         };
         let e_shnum = if self.section_num >= elf::SHN_LORESERVE.into() {
             0
@@ -379,6 +380,14 @@ impl<'a> Writer<'a> {
         Ok(())
     }
 
+    fn program_header_size(&self) -> usize {
+        if self.is_64 {
+            mem::size_of::<elf::ProgramHeader64<Endianness>>()
+        } else {
+            mem::size_of::<elf::ProgramHeader32<Endianness>>()
+        }
+    }
+
     
     pub fn reserve_program_headers(&mut self, num: u32) {
         debug_assert_eq!(self.segment_offset, 0);
@@ -386,10 +395,8 @@ impl<'a> Writer<'a> {
             return;
         }
         self.segment_num = num;
-        self.segment_offset = self.reserve(
-            num as usize * self.class().program_header_size(),
-            self.elf_align,
-        );
+        self.segment_offset =
+            self.reserve(num as usize * self.program_header_size(), self.elf_align);
     }
 
     
@@ -460,6 +467,14 @@ impl<'a> Writer<'a> {
         SectionIndex(index)
     }
 
+    fn section_header_size(&self) -> usize {
+        if self.is_64 {
+            mem::size_of::<elf::SectionHeader64<Endianness>>()
+        } else {
+            mem::size_of::<elf::SectionHeader32<Endianness>>()
+        }
+    }
+
     
     
     
@@ -471,7 +486,7 @@ impl<'a> Writer<'a> {
             return;
         }
         self.section_offset = self.reserve(
-            self.section_num as usize * self.class().section_header_size(),
+            self.section_num as usize * self.section_header_size(),
             self.elf_align,
         );
     }
@@ -592,16 +607,8 @@ impl<'a> Writer<'a> {
     
     
     pub fn reserve_shstrtab_section_index(&mut self) -> SectionIndex {
-        self.reserve_shstrtab_section_index_with_name(&b".shstrtab"[..])
-    }
-
-    
-    
-    
-    
-    pub fn reserve_shstrtab_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert_eq!(self.shstrtab_index, SectionIndex(0));
-        self.shstrtab_str_id = Some(self.add_section_name(name));
+        self.shstrtab_str_id = Some(self.add_section_name(&b".shstrtab"[..]));
         self.shstrtab_index = self.reserve_section_index();
         self.shstrtab_index
     }
@@ -644,11 +651,6 @@ impl<'a> Writer<'a> {
     }
 
     
-    pub fn require_strtab(&mut self) {
-        self.need_strtab = true;
-    }
-
-    
     
     
     
@@ -680,15 +682,8 @@ impl<'a> Writer<'a> {
     
     
     pub fn reserve_strtab_section_index(&mut self) -> SectionIndex {
-        self.reserve_strtab_section_index_with_name(&b".strtab"[..])
-    }
-
-    
-    
-    
-    pub fn reserve_strtab_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert_eq!(self.strtab_index, SectionIndex(0));
-        self.strtab_str_id = Some(self.add_section_name(name));
+        self.strtab_str_id = Some(self.add_section_name(&b".strtab"[..]));
         self.strtab_index = self.reserve_section_index();
         self.strtab_index
     }
@@ -726,6 +721,8 @@ impl<'a> Writer<'a> {
         debug_assert_eq!(self.symtab_offset, 0);
         debug_assert_eq!(self.symtab_num, 0);
         self.symtab_num = 1;
+        
+        self.need_strtab = true;
         SymbolIndex(0)
     }
 
@@ -746,6 +743,8 @@ impl<'a> Writer<'a> {
         debug_assert_eq!(self.symtab_shndx_offset, 0);
         if self.symtab_num == 0 {
             self.symtab_num = 1;
+            
+            self.need_strtab = true;
         }
         let index = self.symtab_num;
         self.symtab_num += 1;
@@ -764,6 +763,14 @@ impl<'a> Writer<'a> {
         self.symtab_num
     }
 
+    fn symbol_size(&self) -> usize {
+        if self.is_64 {
+            mem::size_of::<elf::Sym64<Endianness>>()
+        } else {
+            mem::size_of::<elf::Sym32<Endianness>>()
+        }
+    }
+
     
     
     
@@ -775,7 +782,7 @@ impl<'a> Writer<'a> {
             return;
         }
         self.symtab_offset = self.reserve(
-            self.symtab_num as usize * self.class().sym_size(),
+            self.symtab_num as usize * self.symbol_size(),
             self.elf_align,
         );
     }
@@ -852,15 +859,8 @@ impl<'a> Writer<'a> {
     
     
     pub fn reserve_symtab_section_index(&mut self) -> SectionIndex {
-        self.reserve_symtab_section_index_with_name(&b".symtab"[..])
-    }
-
-    
-    
-    
-    pub fn reserve_symtab_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert_eq!(self.symtab_index, SectionIndex(0));
-        self.symtab_str_id = Some(self.add_section_name(name));
+        self.symtab_str_id = Some(self.add_section_name(&b".symtab"[..]));
         self.symtab_index = self.reserve_section_index();
         self.symtab_index
     }
@@ -883,23 +883,17 @@ impl<'a> Writer<'a> {
             sh_flags: 0,
             sh_addr: 0,
             sh_offset: self.symtab_offset as u64,
-            sh_size: self.symtab_num as u64 * self.class().sym_size() as u64,
+            sh_size: self.symtab_num as u64 * self.symbol_size() as u64,
             sh_link: self.strtab_index.0,
             sh_info: num_local,
             sh_addralign: self.elf_align as u64,
-            sh_entsize: self.class().sym_size() as u64,
+            sh_entsize: self.symbol_size() as u64,
         });
     }
 
     
     pub fn symtab_shndx_needed(&self) -> bool {
         self.need_symtab_shndx
-    }
-
-    
-    
-    pub fn require_symtab_shndx(&mut self) {
-        self.need_symtab_shndx = true;
     }
 
     
@@ -937,18 +931,8 @@ impl<'a> Writer<'a> {
     
     
     pub fn reserve_symtab_shndx_section_index(&mut self) -> SectionIndex {
-        self.reserve_symtab_shndx_section_index_with_name(&b".symtab_shndx"[..])
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn reserve_symtab_shndx_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert!(self.symtab_shndx_str_id.is_none());
-        self.symtab_shndx_str_id = Some(self.add_section_name(name));
+        self.symtab_shndx_str_id = Some(self.add_section_name(&b".symtab_shndx"[..]));
         self.reserve_section_index()
     }
 
@@ -1002,34 +986,20 @@ impl<'a> Writer<'a> {
     }
 
     
-    pub fn require_dynstr(&mut self) {
-        self.need_dynstr = true;
-    }
-
     
     
     
     
     
-    
-    pub fn reserve_dynstr(&mut self) -> usize {
+    pub fn reserve_dynstr(&mut self) {
         debug_assert_eq!(self.dynstr_offset, 0);
         if !self.need_dynstr {
-            return 0;
+            return;
         }
         
         self.dynstr_data = vec![0];
         self.dynstr.write(1, &mut self.dynstr_data);
         self.dynstr_offset = self.reserve(self.dynstr_data.len(), 1);
-        self.dynstr_offset
-    }
-
-    
-    
-    
-    pub fn dynstr_len(&mut self) -> usize {
-        debug_assert_ne!(self.dynstr_offset, 0);
-        self.dynstr_data.len()
     }
 
     
@@ -1047,15 +1017,8 @@ impl<'a> Writer<'a> {
     
     
     pub fn reserve_dynstr_section_index(&mut self) -> SectionIndex {
-        self.reserve_dynstr_section_index_with_name(&b".dynstr"[..])
-    }
-
-    
-    
-    
-    pub fn reserve_dynstr_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert_eq!(self.dynstr_index, SectionIndex(0));
-        self.dynstr_str_id = Some(self.add_section_name(name));
+        self.dynstr_str_id = Some(self.add_section_name(&b".dynstr"[..]));
         self.dynstr_index = self.reserve_section_index();
         self.dynstr_index
     }
@@ -1098,6 +1061,8 @@ impl<'a> Writer<'a> {
         debug_assert_eq!(self.dynsym_offset, 0);
         debug_assert_eq!(self.dynsym_num, 0);
         self.dynsym_num = 1;
+        
+        self.need_dynstr = true;
         SymbolIndex(0)
     }
 
@@ -1114,6 +1079,8 @@ impl<'a> Writer<'a> {
         debug_assert_eq!(self.dynsym_offset, 0);
         if self.dynsym_num == 0 {
             self.dynsym_num = 1;
+            
+            self.need_dynstr = true;
         }
         let index = self.dynsym_num;
         self.dynsym_num += 1;
@@ -1133,16 +1100,15 @@ impl<'a> Writer<'a> {
     
     
     
-    pub fn reserve_dynsym(&mut self) -> usize {
+    pub fn reserve_dynsym(&mut self) {
         debug_assert_eq!(self.dynsym_offset, 0);
         if self.dynsym_num == 0 {
-            return 0;
+            return;
         }
         self.dynsym_offset = self.reserve(
-            self.dynsym_num as usize * self.class().sym_size(),
+            self.dynsym_num as usize * self.symbol_size(),
             self.elf_align,
         );
-        self.dynsym_offset
     }
 
     
@@ -1210,15 +1176,8 @@ impl<'a> Writer<'a> {
     
     
     pub fn reserve_dynsym_section_index(&mut self) -> SectionIndex {
-        self.reserve_dynsym_section_index_with_name(&b".dynsym"[..])
-    }
-
-    
-    
-    
-    pub fn reserve_dynsym_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert_eq!(self.dynsym_index, SectionIndex(0));
-        self.dynsym_str_id = Some(self.add_section_name(name));
+        self.dynsym_str_id = Some(self.add_section_name(&b".dynsym"[..]));
         self.dynsym_index = self.reserve_section_index();
         self.dynsym_index
     }
@@ -1241,25 +1200,32 @@ impl<'a> Writer<'a> {
             sh_flags: elf::SHF_ALLOC.into(),
             sh_addr,
             sh_offset: self.dynsym_offset as u64,
-            sh_size: self.dynsym_num as u64 * self.class().sym_size() as u64,
+            sh_size: self.dynsym_num as u64 * self.symbol_size() as u64,
             sh_link: self.dynstr_index.0,
             sh_info: num_local,
             sh_addralign: self.elf_align as u64,
-            sh_entsize: self.class().sym_size() as u64,
+            sh_entsize: self.symbol_size() as u64,
         });
+    }
+
+    fn dyn_size(&self) -> usize {
+        if self.is_64 {
+            mem::size_of::<elf::Dyn64<Endianness>>()
+        } else {
+            mem::size_of::<elf::Dyn32<Endianness>>()
+        }
     }
 
     
     
     
-    pub fn reserve_dynamic(&mut self, dynamic_num: usize) -> usize {
+    pub fn reserve_dynamic(&mut self, dynamic_num: usize) {
         debug_assert_eq!(self.dynamic_offset, 0);
         if dynamic_num == 0 {
-            return 0;
+            return;
         }
         self.dynamic_num = dynamic_num;
-        self.dynamic_offset = self.reserve_dynamics(dynamic_num);
-        self.dynamic_offset
+        self.dynamic_offset = self.reserve(dynamic_num * self.dyn_size(), self.elf_align);
     }
 
     
@@ -1274,19 +1240,13 @@ impl<'a> Writer<'a> {
     }
 
     
-    
-    
-    pub fn reserve_dynamics(&mut self, dynamic_num: usize) -> usize {
-        self.reserve(dynamic_num * self.class().dyn_size(), self.elf_align)
-    }
-
-    
     pub fn write_dynamic_string(&mut self, tag: u32, id: StringId) {
         self.write_dynamic(tag, self.dynstr.get_offset(id) as u64);
     }
 
     
     pub fn write_dynamic(&mut self, d_tag: u32, d_val: u64) {
+        debug_assert!(self.dynamic_offset <= self.buffer.len());
         let endian = self.endian;
         if self.is_64 {
             let d = elf::Dyn64 {
@@ -1301,6 +1261,9 @@ impl<'a> Writer<'a> {
             };
             self.buffer.write(&d);
         }
+        debug_assert!(
+            self.dynamic_offset + self.dynamic_num * self.dyn_size() >= self.buffer.len()
+        );
     }
 
     
@@ -1323,22 +1286,39 @@ impl<'a> Writer<'a> {
             sh_flags: (elf::SHF_WRITE | elf::SHF_ALLOC).into(),
             sh_addr,
             sh_offset: self.dynamic_offset as u64,
-            sh_size: (self.dynamic_num * self.class().dyn_size()) as u64,
+            sh_size: (self.dynamic_num * self.dyn_size()) as u64,
             sh_link: self.dynstr_index.0,
             sh_info: 0,
             sh_addralign: self.elf_align as u64,
-            sh_entsize: self.class().dyn_size() as u64,
+            sh_entsize: self.dyn_size() as u64,
         });
+    }
+
+    fn rel_size(&self, is_rela: bool) -> usize {
+        if self.is_64 {
+            if is_rela {
+                mem::size_of::<elf::Rela64<Endianness>>()
+            } else {
+                mem::size_of::<elf::Rel64<Endianness>>()
+            }
+        } else {
+            if is_rela {
+                mem::size_of::<elf::Rela32<Endianness>>()
+            } else {
+                mem::size_of::<elf::Rel32<Endianness>>()
+            }
+        }
     }
 
     
     
     
     
-    pub fn reserve_hash(&mut self, bucket_count: u32, chain_count: u32) -> usize {
-        self.hash_size = self.class().hash_size(bucket_count, chain_count);
+    pub fn reserve_hash(&mut self, bucket_count: u32, chain_count: u32) {
+        self.hash_size = mem::size_of::<elf::HashHeader<Endianness>>()
+            + bucket_count as usize * 4
+            + chain_count as usize * 4;
         self.hash_offset = self.reserve(self.hash_size, self.elf_align);
-        self.hash_offset
     }
 
     
@@ -1371,13 +1351,8 @@ impl<'a> Writer<'a> {
 
     
     pub fn reserve_hash_section_index(&mut self) -> SectionIndex {
-        self.reserve_hash_section_index_with_name(&b".hash"[..])
-    }
-
-    
-    pub fn reserve_hash_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert!(self.hash_str_id.is_none());
-        self.hash_str_id = Some(self.add_section_name(name));
+        self.hash_str_id = Some(self.add_section_name(&b".hash"[..]));
         self.reserve_section_index()
     }
 
@@ -1406,17 +1381,12 @@ impl<'a> Writer<'a> {
     
     
     
-    pub fn reserve_gnu_hash(
-        &mut self,
-        bloom_count: u32,
-        bucket_count: u32,
-        symbol_count: u32,
-    ) -> usize {
-        self.gnu_hash_size = self
-            .class()
-            .gnu_hash_size(bloom_count, bucket_count, symbol_count);
+    pub fn reserve_gnu_hash(&mut self, bloom_count: u32, bucket_count: u32, symbol_count: u32) {
+        self.gnu_hash_size = mem::size_of::<elf::GnuHashHeader<Endianness>>()
+            + bloom_count as usize * self.elf_align
+            + bucket_count as usize * 4
+            + symbol_count as usize * 4;
         self.gnu_hash_offset = self.reserve(self.gnu_hash_size, self.elf_align);
-        self.gnu_hash_offset
     }
 
     
@@ -1502,13 +1472,8 @@ impl<'a> Writer<'a> {
 
     
     pub fn reserve_gnu_hash_section_index(&mut self) -> SectionIndex {
-        self.reserve_gnu_hash_section_index_with_name(&b".gnu.hash"[..])
-    }
-
-    
-    pub fn reserve_gnu_hash_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert!(self.gnu_hash_str_id.is_none());
-        self.gnu_hash_str_id = Some(self.add_section_name(name));
+        self.gnu_hash_str_id = Some(self.add_section_name(&b".gnu.hash"[..]));
         self.reserve_section_index()
     }
 
@@ -1529,20 +1494,19 @@ impl<'a> Writer<'a> {
             sh_link: self.dynsym_index.0,
             sh_info: 0,
             sh_addralign: self.elf_align as u64,
-            sh_entsize: if self.is_64 { 0 } else { 4 },
+            sh_entsize: 0,
         });
     }
 
     
     
     
-    pub fn reserve_gnu_versym(&mut self) -> usize {
+    pub fn reserve_gnu_versym(&mut self) {
         debug_assert_eq!(self.gnu_versym_offset, 0);
         if self.dynsym_num == 0 {
-            return 0;
+            return;
         }
         self.gnu_versym_offset = self.reserve(self.dynsym_num as usize * 2, 2);
-        self.gnu_versym_offset
     }
 
     
@@ -1565,13 +1529,8 @@ impl<'a> Writer<'a> {
 
     
     pub fn reserve_gnu_versym_section_index(&mut self) -> SectionIndex {
-        self.reserve_gnu_versym_section_index_with_name(&b".gnu.version"[..])
-    }
-
-    
-    pub fn reserve_gnu_versym_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert!(self.gnu_versym_str_id.is_none());
-        self.gnu_versym_str_id = Some(self.add_section_name(name));
+        self.gnu_versym_str_id = Some(self.add_section_name(&b".gnu.version"[..]));
         self.reserve_section_index()
     }
 
@@ -1588,7 +1547,7 @@ impl<'a> Writer<'a> {
             sh_flags: elf::SHF_ALLOC.into(),
             sh_addr,
             sh_offset: self.gnu_versym_offset as u64,
-            sh_size: self.class().gnu_versym_size(self.dynsym_num as usize) as u64,
+            sh_size: self.dynsym_num as u64 * 2,
             sh_link: self.dynsym_index.0,
             sh_info: 0,
             sh_addralign: 2,
@@ -1597,16 +1556,16 @@ impl<'a> Writer<'a> {
     }
 
     
-    pub fn reserve_gnu_verdef(&mut self, verdef_count: usize, verdaux_count: usize) -> usize {
+    pub fn reserve_gnu_verdef(&mut self, verdef_count: usize, verdaux_count: usize) {
         debug_assert_eq!(self.gnu_verdef_offset, 0);
         if verdef_count == 0 {
-            return 0;
+            return;
         }
-        self.gnu_verdef_size = self.class().gnu_verdef_size(verdef_count, verdaux_count);
+        self.gnu_verdef_size = verdef_count * mem::size_of::<elf::Verdef<Endianness>>()
+            + verdaux_count * mem::size_of::<elf::Verdaux<Endianness>>();
         self.gnu_verdef_offset = self.reserve(self.gnu_verdef_size, self.elf_align);
         self.gnu_verdef_count = verdef_count as u16;
         self.gnu_verdef_remaining = self.gnu_verdef_count;
-        self.gnu_verdef_offset
     }
 
     
@@ -1665,13 +1624,8 @@ impl<'a> Writer<'a> {
 
     
     pub fn reserve_gnu_verdef_section_index(&mut self) -> SectionIndex {
-        self.reserve_gnu_verdef_section_index_with_name(&b".gnu.version_d"[..])
-    }
-
-    
-    pub fn reserve_gnu_verdef_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert!(self.gnu_verdef_str_id.is_none());
-        self.gnu_verdef_str_id = Some(self.add_section_name(name));
+        self.gnu_verdef_str_id = Some(self.add_section_name(&b".gnu.version_d"[..]));
         self.reserve_section_index()
     }
 
@@ -1697,16 +1651,16 @@ impl<'a> Writer<'a> {
     }
 
     
-    pub fn reserve_gnu_verneed(&mut self, verneed_count: usize, vernaux_count: usize) -> usize {
+    pub fn reserve_gnu_verneed(&mut self, verneed_count: usize, vernaux_count: usize) {
         debug_assert_eq!(self.gnu_verneed_offset, 0);
         if verneed_count == 0 {
-            return 0;
+            return;
         }
-        self.gnu_verneed_size = self.class().gnu_verneed_size(verneed_count, vernaux_count);
+        self.gnu_verneed_size = verneed_count * mem::size_of::<elf::Verneed<Endianness>>()
+            + vernaux_count * mem::size_of::<elf::Vernaux<Endianness>>();
         self.gnu_verneed_offset = self.reserve(self.gnu_verneed_size, self.elf_align);
         self.gnu_verneed_count = verneed_count as u16;
         self.gnu_verneed_remaining = self.gnu_verneed_count;
-        self.gnu_verneed_offset
     }
 
     
@@ -1765,13 +1719,8 @@ impl<'a> Writer<'a> {
 
     
     pub fn reserve_gnu_verneed_section_index(&mut self) -> SectionIndex {
-        self.reserve_gnu_verneed_section_index_with_name(&b".gnu.version_r"[..])
-    }
-
-    
-    pub fn reserve_gnu_verneed_section_index_with_name(&mut self, name: &'a [u8]) -> SectionIndex {
         debug_assert!(self.gnu_verneed_str_id.is_none());
-        self.gnu_verneed_str_id = Some(self.add_section_name(name));
+        self.gnu_verneed_str_id = Some(self.add_section_name(&b".gnu.version_r"[..]));
         self.reserve_section_index()
     }
 
@@ -1798,28 +1747,19 @@ impl<'a> Writer<'a> {
 
     
     pub fn reserve_gnu_attributes_section_index(&mut self) -> SectionIndex {
-        self.reserve_gnu_attributes_section_index_with_name(&b".gnu.attributes"[..])
-    }
-
-    
-    pub fn reserve_gnu_attributes_section_index_with_name(
-        &mut self,
-        name: &'a [u8],
-    ) -> SectionIndex {
         debug_assert!(self.gnu_attributes_str_id.is_none());
-        self.gnu_attributes_str_id = Some(self.add_section_name(name));
+        self.gnu_attributes_str_id = Some(self.add_section_name(&b".gnu.attributes"[..]));
         self.reserve_section_index()
     }
 
     
-    pub fn reserve_gnu_attributes(&mut self, gnu_attributes_size: usize) -> usize {
+    pub fn reserve_gnu_attributes(&mut self, gnu_attributes_size: usize) {
         debug_assert_eq!(self.gnu_attributes_offset, 0);
         if gnu_attributes_size == 0 {
-            return 0;
+            return;
         }
         self.gnu_attributes_size = gnu_attributes_size;
         self.gnu_attributes_offset = self.reserve(self.gnu_attributes_size, self.elf_align);
-        self.gnu_attributes_offset
     }
 
     
@@ -1857,7 +1797,7 @@ impl<'a> Writer<'a> {
     
     
     pub fn reserve_relocations(&mut self, count: usize, is_rela: bool) -> usize {
-        self.reserve(count * self.class().rel_size(is_rela), self.elf_align)
+        self.reserve(count * self.rel_size(is_rela), self.elf_align)
     }
 
     
@@ -1925,11 +1865,11 @@ impl<'a> Writer<'a> {
             sh_flags: elf::SHF_INFO_LINK.into(),
             sh_addr: 0,
             sh_offset: offset as u64,
-            sh_size: (count * self.class().rel_size(is_rela)) as u64,
+            sh_size: (count * self.rel_size(is_rela)) as u64,
             sh_link: symtab.0,
             sh_info: section.0,
             sh_addralign: self.elf_align as u64,
-            sh_entsize: self.class().rel_size(is_rela) as u64,
+            sh_entsize: self.rel_size(is_rela) as u64,
         });
     }
 
@@ -2104,119 +2044,6 @@ impl AttributesWriter {
         debug_assert_eq!(self.subsection_offset, 0);
         debug_assert_eq!(self.subsubsection_offset, 0);
         self.data
-    }
-}
-
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct Class {
-    
-    pub is_64: bool,
-}
-
-impl Class {
-    
-    pub fn align(self) -> usize {
-        if self.is_64 {
-            8
-        } else {
-            4
-        }
-    }
-
-    
-    pub fn file_header_size(self) -> usize {
-        if self.is_64 {
-            mem::size_of::<elf::FileHeader64<Endianness>>()
-        } else {
-            mem::size_of::<elf::FileHeader32<Endianness>>()
-        }
-    }
-
-    
-    pub fn program_header_size(self) -> usize {
-        if self.is_64 {
-            mem::size_of::<elf::ProgramHeader64<Endianness>>()
-        } else {
-            mem::size_of::<elf::ProgramHeader32<Endianness>>()
-        }
-    }
-
-    
-    pub fn section_header_size(self) -> usize {
-        if self.is_64 {
-            mem::size_of::<elf::SectionHeader64<Endianness>>()
-        } else {
-            mem::size_of::<elf::SectionHeader32<Endianness>>()
-        }
-    }
-
-    
-    pub fn sym_size(self) -> usize {
-        if self.is_64 {
-            mem::size_of::<elf::Sym64<Endianness>>()
-        } else {
-            mem::size_of::<elf::Sym32<Endianness>>()
-        }
-    }
-
-    
-    pub fn rel_size(self, is_rela: bool) -> usize {
-        if self.is_64 {
-            if is_rela {
-                mem::size_of::<elf::Rela64<Endianness>>()
-            } else {
-                mem::size_of::<elf::Rel64<Endianness>>()
-            }
-        } else {
-            if is_rela {
-                mem::size_of::<elf::Rela32<Endianness>>()
-            } else {
-                mem::size_of::<elf::Rel32<Endianness>>()
-            }
-        }
-    }
-
-    
-    pub fn dyn_size(self) -> usize {
-        if self.is_64 {
-            mem::size_of::<elf::Dyn64<Endianness>>()
-        } else {
-            mem::size_of::<elf::Dyn32<Endianness>>()
-        }
-    }
-
-    
-    pub fn hash_size(self, bucket_count: u32, chain_count: u32) -> usize {
-        mem::size_of::<elf::HashHeader<Endianness>>()
-            + bucket_count as usize * 4
-            + chain_count as usize * 4
-    }
-
-    
-    pub fn gnu_hash_size(self, bloom_count: u32, bucket_count: u32, symbol_count: u32) -> usize {
-        let bloom_size = if self.is_64 { 8 } else { 4 };
-        mem::size_of::<elf::GnuHashHeader<Endianness>>()
-            + bloom_count as usize * bloom_size
-            + bucket_count as usize * 4
-            + symbol_count as usize * 4
-    }
-
-    
-    pub fn gnu_versym_size(self, symbol_count: usize) -> usize {
-        symbol_count * 2
-    }
-
-    
-    pub fn gnu_verdef_size(self, verdef_count: usize, verdaux_count: usize) -> usize {
-        verdef_count * mem::size_of::<elf::Verdef<Endianness>>()
-            + verdaux_count * mem::size_of::<elf::Verdaux<Endianness>>()
-    }
-
-    
-    pub fn gnu_verneed_size(self, verneed_count: usize, vernaux_count: usize) -> usize {
-        verneed_count * mem::size_of::<elf::Verneed<Endianness>>()
-            + vernaux_count * mem::size_of::<elf::Vernaux<Endianness>>()
     }
 }
 

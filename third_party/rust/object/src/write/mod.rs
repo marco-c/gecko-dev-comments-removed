@@ -1,14 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
 use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -19,11 +10,13 @@ use hashbrown::HashMap;
 use std::{boxed::Box, collections::HashMap, error, io};
 
 use crate::endian::{Endianness, U32, U64};
-
-pub use crate::common::*;
+use crate::{
+    Architecture, BinaryFormat, ComdatKind, FileFlags, RelocationEncoding, RelocationKind,
+    SectionFlags, SectionKind, SymbolFlags, SymbolKind, SymbolScope,
+};
 
 #[cfg(feature = "coff")]
-pub mod coff;
+mod coff;
 #[cfg(feature = "coff")]
 pub use coff::CoffExportStyle;
 
@@ -41,7 +34,7 @@ pub mod pe;
 #[cfg(feature = "xcoff")]
 mod xcoff;
 
-pub(crate) mod string;
+mod string;
 pub use string::StringId;
 
 mod util;
@@ -49,7 +42,7 @@ pub use util::*;
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Error(pub(crate) String);
+pub struct Error(String);
 
 impl fmt::Display for Error {
     #[inline]
@@ -69,30 +62,21 @@ pub type Result<T> = result::Result<T, Error>;
 pub struct Object<'a> {
     format: BinaryFormat,
     architecture: Architecture,
-    sub_architecture: Option<SubArchitecture>,
     endian: Endianness,
     sections: Vec<Section<'a>>,
     standard_sections: HashMap<StandardSection, SectionId>,
     symbols: Vec<Symbol>,
     symbol_map: HashMap<Vec<u8>, SymbolId>,
+    stub_symbols: HashMap<SymbolId, SymbolId>,
     comdats: Vec<Comdat>,
     
     pub flags: FileFlags,
     
     pub mangling: Mangling,
-    #[cfg(feature = "coff")]
-    stub_symbols: HashMap<SymbolId, SymbolId>,
     
-    #[cfg(feature = "macho")]
     tlv_bootstrap: Option<SymbolId>,
-    
-    #[cfg(feature = "macho")]
-    macho_cpu_subtype: Option<u32>,
     #[cfg(feature = "macho")]
     macho_build_version: Option<MachOBuildVersion>,
-    
-    #[cfg(feature = "macho")]
-    macho_subsections_via_symbols: bool,
 }
 
 impl<'a> Object<'a> {
@@ -101,25 +85,18 @@ impl<'a> Object<'a> {
         Object {
             format,
             architecture,
-            sub_architecture: None,
             endian,
             sections: Vec::new(),
             standard_sections: HashMap::new(),
             symbols: Vec::new(),
             symbol_map: HashMap::new(),
+            stub_symbols: HashMap::new(),
             comdats: Vec::new(),
             flags: FileFlags::None,
             mangling: Mangling::default(format, architecture),
-            #[cfg(feature = "coff")]
-            stub_symbols: HashMap::new(),
-            #[cfg(feature = "macho")]
             tlv_bootstrap: None,
             #[cfg(feature = "macho")]
-            macho_cpu_subtype: None,
-            #[cfg(feature = "macho")]
             macho_build_version: None,
-            #[cfg(feature = "macho")]
-            macho_subsections_via_symbols: false,
         }
     }
 
@@ -133,17 +110,6 @@ impl<'a> Object<'a> {
     #[inline]
     pub fn architecture(&self) -> Architecture {
         self.architecture
-    }
-
-    
-    #[inline]
-    pub fn sub_architecture(&self) -> Option<SubArchitecture> {
-        self.sub_architecture
-    }
-
-    
-    pub fn set_sub_architecture(&mut self, sub_architecture: Option<SubArchitecture>) {
-        self.sub_architecture = sub_architecture;
     }
 
     
@@ -189,7 +155,6 @@ impl<'a> Object<'a> {
     
     
     
-    
     pub fn set_section_data<T>(&mut self, section: SectionId, data: T, align: u64)
     where
         T: Into<Cow<'a, [u8]>>,
@@ -198,16 +163,10 @@ impl<'a> Object<'a> {
     }
 
     
-    
-    
-    
     pub fn append_section_data(&mut self, section: SectionId, data: &[u8], align: u64) -> u64 {
         self.sections[section.0].append_data(data, align)
     }
 
-    
-    
-    
     
     pub fn append_section_bss(&mut self, section: SectionId, size: u64, align: u64) -> u64 {
         self.sections[section.0].append_bss(size, align)
@@ -277,35 +236,39 @@ impl<'a> Object<'a> {
     }
 
     
-    
-    
-    
-    
-    pub fn add_subsection(&mut self, section: StandardSection, name: &[u8]) -> SectionId {
-        if self.has_subsections_via_symbols() {
+    pub fn add_subsection(
+        &mut self,
+        section: StandardSection,
+        name: &[u8],
+        data: &[u8],
+        align: u64,
+    ) -> (SectionId, u64) {
+        let section_id = if self.has_subsections_via_symbols() {
+            self.set_subsections_via_symbols();
             self.section_id(section)
         } else {
             let (segment, name, kind, flags) = self.subsection_info(section, name);
             let id = self.add_section(segment.to_vec(), name, kind);
             self.section_mut(id).flags = flags;
             id
-        }
+        };
+        let offset = self.append_section_data(section_id, data, align);
+        (section_id, offset)
     }
 
     fn has_subsections_via_symbols(&self) -> bool {
-        self.format == BinaryFormat::MachO
+        match self.format {
+            BinaryFormat::Coff | BinaryFormat::Elf | BinaryFormat::Xcoff => false,
+            BinaryFormat::MachO => true,
+            _ => unimplemented!(),
+        }
     }
 
-    
-    
-    
-    
-    
-    
-    pub fn set_subsections_via_symbols(&mut self) {
-        #[cfg(feature = "macho")]
-        if self.format == BinaryFormat::MachO {
-            self.macho_subsections_via_symbols = true;
+    fn set_subsections_via_symbols(&mut self) {
+        match self.format {
+            #[cfg(feature = "macho")]
+            BinaryFormat::MachO => self.macho_set_subsections_via_symbols(),
+            _ => unimplemented!(),
         }
     }
 
@@ -418,8 +381,6 @@ impl<'a> Object<'a> {
     
     
     
-    
-    
     pub fn add_common_symbol(&mut self, mut symbol: Symbol, size: u64, align: u64) -> SymbolId {
         if self.has_common() {
             let symbol_id = self.add_symbol(symbol);
@@ -479,23 +440,13 @@ impl<'a> Object<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn add_symbol_data(
         &mut self,
         symbol_id: SymbolId,
         section: SectionId,
-        mut data: &[u8],
+        data: &[u8],
         align: u64,
     ) -> u64 {
-        #[cfg(feature = "macho")]
-        if data.is_empty() && self.macho_subsections_via_symbols {
-            data = &[0];
-        }
         let offset = self.append_section_data(section, data, align);
         self.set_symbol_data(symbol_id, section, offset, data.len() as u64);
         offset
@@ -507,23 +458,13 @@ impl<'a> Object<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn add_symbol_bss(
         &mut self,
         symbol_id: SymbolId,
         section: SectionId,
-        mut size: u64,
+        size: u64,
         align: u64,
     ) -> u64 {
-        #[cfg(feature = "macho")]
-        if size == 0 && self.macho_subsections_via_symbols {
-            size = 1;
-        }
         let offset = self.append_section_bss(section, size, align);
         self.set_symbol_data(symbol_id, section, offset, size);
         offset
@@ -573,31 +514,19 @@ impl<'a> Object<'a> {
     
     
     pub fn add_relocation(&mut self, section: SectionId, mut relocation: Relocation) -> Result<()> {
-        match self.format {
+        let addend = match self.format {
             #[cfg(feature = "coff")]
-            BinaryFormat::Coff => self.coff_translate_relocation(&mut relocation)?,
+            BinaryFormat::Coff => self.coff_fixup_relocation(&mut relocation),
             #[cfg(feature = "elf")]
-            BinaryFormat::Elf => self.elf_translate_relocation(&mut relocation)?,
+            BinaryFormat::Elf => self.elf_fixup_relocation(&mut relocation)?,
             #[cfg(feature = "macho")]
-            BinaryFormat::MachO => self.macho_translate_relocation(&mut relocation)?,
+            BinaryFormat::MachO => self.macho_fixup_relocation(&mut relocation),
             #[cfg(feature = "xcoff")]
-            BinaryFormat::Xcoff => self.xcoff_translate_relocation(&mut relocation)?,
-            _ => unimplemented!(),
-        }
-        let implicit = match self.format {
-            #[cfg(feature = "coff")]
-            BinaryFormat::Coff => self.coff_adjust_addend(&mut relocation)?,
-            #[cfg(feature = "elf")]
-            BinaryFormat::Elf => self.elf_adjust_addend(&mut relocation)?,
-            #[cfg(feature = "macho")]
-            BinaryFormat::MachO => self.macho_adjust_addend(&mut relocation)?,
-            #[cfg(feature = "xcoff")]
-            BinaryFormat::Xcoff => self.xcoff_adjust_addend(&mut relocation)?,
+            BinaryFormat::Xcoff => self.xcoff_fixup_relocation(&mut relocation),
             _ => unimplemented!(),
         };
-        if implicit && relocation.addend != 0 {
-            self.write_relocation_addend(section, &relocation)?;
-            relocation.addend = 0;
+        if addend != 0 {
+            self.write_relocation_addend(section, &relocation, addend)?;
         }
         self.sections[section.0].relocations.push(relocation);
         Ok(())
@@ -607,23 +536,13 @@ impl<'a> Object<'a> {
         &mut self,
         section: SectionId,
         relocation: &Relocation,
+        addend: i64,
     ) -> Result<()> {
-        let size = match self.format {
-            #[cfg(feature = "coff")]
-            BinaryFormat::Coff => self.coff_relocation_size(relocation)?,
-            #[cfg(feature = "elf")]
-            BinaryFormat::Elf => self.elf_relocation_size(relocation)?,
-            #[cfg(feature = "macho")]
-            BinaryFormat::MachO => self.macho_relocation_size(relocation)?,
-            #[cfg(feature = "xcoff")]
-            BinaryFormat::Xcoff => self.xcoff_relocation_size(relocation)?,
-            _ => unimplemented!(),
-        };
         let data = self.sections[section.0].data_mut();
         let offset = relocation.offset as usize;
-        match size {
-            32 => data.write_at(offset, &U32::new(self.endian, relocation.addend as u32)),
-            64 => data.write_at(offset, &U64::new(self.endian, relocation.addend as u64)),
+        match relocation.size {
+            32 => data.write_at(offset, &U32::new(self.endian, addend as u32)),
+            64 => data.write_at(offset, &U64::new(self.endian, addend as u64)),
             _ => {
                 return Err(Error(format!(
                     "unimplemented relocation addend {:?}",
@@ -635,7 +554,7 @@ impl<'a> Object<'a> {
             Error(format!(
                 "invalid relocation offset {}+{} (max {})",
                 relocation.offset,
-                size,
+                relocation.size,
                 data.len()
             ))
         })
@@ -788,7 +707,6 @@ impl<'a> Section<'a> {
     
     
     
-    
     pub fn set_data<T>(&mut self, data: T, align: u64)
     where
         T: Into<Cow<'a, [u8]>>,
@@ -801,7 +719,6 @@ impl<'a> Section<'a> {
         self.align = align;
     }
 
-    
     
     
     
@@ -823,7 +740,6 @@ impl<'a> Section<'a> {
         offset as u64
     }
 
-    
     
     
     
@@ -950,6 +866,12 @@ pub struct Relocation {
     
     pub offset: u64,
     
+    pub size: u8,
+    
+    pub kind: RelocationKind,
+    
+    pub encoding: RelocationEncoding,
+    
     
     
     pub symbol: SymbolId,
@@ -957,8 +879,6 @@ pub struct Relocation {
     
     
     pub addend: i64,
-    
-    pub flags: RelocationFlags,
 }
 
 
