@@ -791,7 +791,7 @@ using MemoryDescVector = Vector<MemoryDesc, 1, SystemAllocPolicy>;
 
 
 
-static_assert(MaxMemory32LimitField <= UINT64_MAX / PageSize);
+static_assert(MaxMemory32PagesValidation <= UINT64_MAX / PageSize);
 
 struct TableDesc {
   Limits limits;
@@ -810,27 +810,13 @@ struct TableDesc {
         isImported(isImported),
         isExported(isExported),
         isAsmJS(isAsmJS),
-        initExpr(std::move(initExpr)) {
-    
-    
-    
-    static_assert(MaxTableLimitField <= UINT32_MAX);
-    MOZ_ASSERT(limits.initial <= UINT32_MAX);
-    MOZ_ASSERT_IF(limits.maximum.isSome(),
-                  limits.maximum.value() <= UINT32_MAX);
-  }
+        initExpr(std::move(initExpr)) {}
 
   IndexType indexType() const { return limits.indexType; }
 
-  uint32_t initialLength() const {
-    
-    return limits.initial;
-  }
+  uint64_t initialLength() const { return limits.initial; }
 
-  mozilla::Maybe<uint32_t> maximumLength() const {
-    
-    return limits.maximum;
-  }
+  mozilla::Maybe<uint64_t> maximumLength() const { return limits.maximum; }
 };
 
 using TableDescVector = Vector<TableDesc, 0, SystemAllocPolicy>;

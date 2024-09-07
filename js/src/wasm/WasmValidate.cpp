@@ -2018,9 +2018,9 @@ static bool DecodeTableTypeAndLimits(Decoder& d, CodeMetadata* codeMeta) {
   
   
   
-  if (limits.initial > MaxTableLimitField ||
+  if (limits.initial > MaxTableElemsValidation(limits.indexType) ||
       ((limits.maximum.isSome() &&
-        limits.maximum.value() > MaxTableLimitField))) {
+        limits.maximum.value() > MaxTableElemsValidation(limits.indexType)))) {
     return d.fail("too many table elements");
   }
 
@@ -2028,8 +2028,6 @@ static bool DecodeTableTypeAndLimits(Decoder& d, CodeMetadata* codeMeta) {
     return d.fail("too many tables");
   }
 
-  
-  static_assert(MaxTableLimitField <= UINT32_MAX, "invariant");
   Maybe<InitExpr> initExpr;
   if (initExprPresent) {
     InitExpr initializer;
@@ -2084,7 +2082,7 @@ static bool DecodeMemoryTypeAndLimits(Decoder& d, CodeMetadata* codeMeta,
     return false;
   }
 
-  uint64_t maxField = MaxMemoryLimitField(limits.indexType);
+  uint64_t maxField = MaxMemoryPagesValidation(limits.indexType);
 
   if (limits.initial > maxField) {
     return d.fail("initial memory size too big");

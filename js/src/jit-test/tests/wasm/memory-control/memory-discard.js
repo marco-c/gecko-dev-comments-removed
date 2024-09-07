@@ -114,7 +114,7 @@ testAll(function testWithGrow(discardViaJS, shared, memType) {
     checkSecondHalf(exp, true);
 
     
-    exp.memory.grow(200)
+    exp.memory.grow(memType === "i64" ? 200n : 200);
 
     
     checkFirstHalf(exp, false);
