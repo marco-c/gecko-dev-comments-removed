@@ -3651,16 +3651,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  static void* LayerIsPrerenderedDataKey() {
-    return &sLayerIsPrerenderedDataKey;
-  }
-  static uint8_t sLayerIsPrerenderedDataKey;
-
-  
-
-
-
-
 
 
 
