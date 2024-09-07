@@ -395,8 +395,7 @@ void MediaSource::EndOfStream(
   SetReadyState(MediaSourceReadyState::Ended);
   mSourceBuffers->Ended();
   if (!aError.WasPassed()) {
-    DurationChange(mSourceBuffers->GetHighestBufferedEndTime().ToBase(1000000),
-                   aRv);
+    DurationChangeOnEndOfStream();
     
     mDecoder->Ended(true);
     return;
@@ -590,30 +589,37 @@ void MediaSource::QueueAsyncSimpleEvent(const char* aName) {
   mAbstractMainThread->Dispatch(event.forget());
 }
 
-void MediaSource::DurationChange(const media::TimeUnit& aNewDuration,
-                                 ErrorResult& aRv) {
+void MediaSource::DurationChangeOnEndOfStream() {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("DurationChange(aNewDuration=%s)", aNewDuration.ToString().get());
+  MOZ_ASSERT(mReadyState == MediaSourceReadyState::Ended);
+  
+  
+  
+  
 
   
-  if (mDecoder->GetDuration() == aNewDuration.ToSeconds()) {
-    return;
-  }
-
   
   
   
-  if (aNewDuration < mSourceBuffers->HighestStartTime()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
-  }
-
+  
+  
+  
   
   
   media::TimeUnit highestEndTime = mSourceBuffers->HighestEndTime();
   
   
-  media::TimeUnit newDuration = std::max(aNewDuration, highestEndTime);
+  MOZ_ASSERT(highestEndTime == mSourceBuffers->GetHighestBufferedEndTime());
+  MOZ_ASSERT(highestEndTime >= mSourceBuffers->HighestStartTime());
+  
+  
+  
+  media::TimeUnit newDuration = highestEndTime.ToBase(USECS_PER_S);
+  MSE_DEBUG("DurationChangeOnEndOfStream(newDuration=%s)",
+            newDuration.ToString().get());
+  if (mDecoder->GetDuration() == newDuration.ToSeconds()) {
+    return;
+  }
 
   
   
