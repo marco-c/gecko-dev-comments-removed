@@ -80,7 +80,7 @@ class SVGPatternFrame final : public SVGPaintServerFrame {
   uint16_t GetEnumValue(uint32_t aIndex) {
     return GetEnumValue(aIndex, mContent);
   }
-  SVGAnimatedTransformList* GetPatternTransformList(nsIContent* aDefault);
+  SVGPatternFrame* GetPatternTransformFrame(SVGPatternFrame* aDefault);
   gfxMatrix GetPatternTransform();
   const SVGAnimatedViewBox& GetViewBox(nsIContent* aDefault);
   const SVGAnimatedViewBox& GetViewBox() { return GetViewBox(mContent); }
@@ -94,6 +94,10 @@ class SVGPatternFrame final : public SVGPaintServerFrame {
   const SVGAnimatedLength* GetLengthValue(uint32_t aIndex) {
     return GetLengthValue(aIndex, mContent);
   }
+
+  void PaintChildren(DrawTarget* aDrawTarget,
+                     SVGPatternFrame* aPatternWithChildren, nsIFrame* aSource,
+                     float aGraphicOpacity, imgDrawingParams& aImgParams);
 
   already_AddRefed<SourceSurface> PaintPattern(
       const DrawTarget* aDrawTarget, Matrix* patternMatrix,
