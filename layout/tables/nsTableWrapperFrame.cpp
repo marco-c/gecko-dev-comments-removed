@@ -238,33 +238,18 @@ ComputedStyle* nsTableWrapperFrame::GetParentComputedStyle(
   return (*aProviderFrame = InnerTableFrame())->Style();
 }
 
-
-nscoord nsTableWrapperFrame::GetMinISize(gfxContext* aRenderingContext) {
-  nscoord iSize = nsLayoutUtils::IntrinsicForContainer(
-      aRenderingContext, InnerTableFrame(), IntrinsicISizeType::MinISize);
-  if (mCaptionFrames.NotEmpty()) {
-    nscoord capISize = nsLayoutUtils::IntrinsicForContainer(
-        aRenderingContext, mCaptionFrames.FirstChild(),
-        IntrinsicISizeType::MinISize);
-    if (capISize > iSize) {
-      iSize = capISize;
-    }
-  }
-  return iSize;
-}
-
-
-nscoord nsTableWrapperFrame::GetPrefISize(gfxContext* aRenderingContext) {
-  nscoord maxISize = nsLayoutUtils::IntrinsicForContainer(
-      aRenderingContext, InnerTableFrame(), IntrinsicISizeType::PrefISize);
+nscoord nsTableWrapperFrame::IntrinsicISize(gfxContext* aContext,
+                                            IntrinsicISizeType aType) {
+  nscoord iSize =
+      nsLayoutUtils::IntrinsicForContainer(aContext, InnerTableFrame(), aType);
   if (mCaptionFrames.NotEmpty()) {
     
+    
     const nscoord capMinISize = nsLayoutUtils::IntrinsicForContainer(
-        aRenderingContext, mCaptionFrames.FirstChild(),
-        IntrinsicISizeType::MinISize);
-    maxISize = std::max(maxISize, capMinISize);
+        aContext, mCaptionFrames.FirstChild(), IntrinsicISizeType::MinISize);
+    iSize = std::max(iSize, capMinISize);
   }
-  return maxISize;
+  return iSize;
 }
 
 LogicalSize nsTableWrapperFrame::InnerTableShrinkWrapSize(

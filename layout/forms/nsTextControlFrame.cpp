@@ -559,15 +559,12 @@ void nsTextControlFrame::AppendAnonymousContentTo(
   aElements.AppendElement(mRootNode);
 }
 
-nscoord nsTextControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
+nscoord nsTextControlFrame::IntrinsicISize(gfxContext* aContext,
+                                           IntrinsicISizeType aType) {
+  
+  
   WritingMode wm = GetWritingMode();
-  return CalcIntrinsicSize(aRenderingContext, wm).ISize(wm);
-}
-
-nscoord nsTextControlFrame::GetMinISize(gfxContext* aRenderingContext) {
-  
-  
-  return GetPrefISize(aRenderingContext);
+  return CalcIntrinsicSize(aContext, wm).ISize(wm);
 }
 
 Maybe<nscoord> nsTextControlFrame::ComputeBaseline(

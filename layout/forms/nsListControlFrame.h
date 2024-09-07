@@ -53,8 +53,8 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
 
   void SetInitialChildList(ChildListID aListID, nsFrameList&& aChildList) final;
 
-  nscoord GetPrefISize(gfxContext* aRenderingContext) final;
-  nscoord GetMinISize(gfxContext* aRenderingContext) final;
+  nscoord IntrinsicISize(gfxContext* aContext,
+                         mozilla::IntrinsicISizeType aType) final;
 
   void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput, nsReflowStatus& aStatus) final;
@@ -257,10 +257,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   
   
   nscoord CalcIntrinsicBSize(nscoord aBSizeOfARow, int32_t aNumberOfOptions);
-
-  
-  nscoord IntrinsicISize(gfxContext* aRenderingContext,
-                         mozilla::IntrinsicISizeType aType);
 
   
   void SetComboboxItem(int32_t aIndex);

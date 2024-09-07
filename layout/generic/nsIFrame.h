@@ -2577,7 +2577,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nscoord GetMinISize(gfxContext* aRenderingContext);
+  nscoord GetMinISize(gfxContext* aContext) {
+    return IntrinsicISize(aContext, mozilla::IntrinsicISizeType::MinISize);
+  }
 
   
 
@@ -2585,7 +2587,20 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nscoord GetPrefISize(gfxContext* aRenderingContext);
+  nscoord GetPrefISize(gfxContext* aContext) {
+    return IntrinsicISize(aContext, mozilla::IntrinsicISizeType::PrefISize);
+  }
+
+  
+
+
+
+
+
+  virtual nscoord IntrinsicISize(gfxContext* aContext,
+                                 mozilla::IntrinsicISizeType aType) {
+    return 0;
+  }
 
   
 

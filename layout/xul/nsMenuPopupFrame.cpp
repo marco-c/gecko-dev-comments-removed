@@ -458,9 +458,11 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   PropagateStyleToWidget(flags);
 }
 
-void nsMenuPopupFrame::TweakMinPrefISize(nscoord& aSize) {
+nscoord nsMenuPopupFrame::IntrinsicISize(gfxContext* aContext,
+                                         IntrinsicISizeType aType) {
+  nscoord iSize = nsBlockFrame::IntrinsicISize(aContext, aType);
   if (!ShouldExpandToInflowParentOrAnchor()) {
-    return;
+    return iSize;
   }
   
   
@@ -473,7 +475,7 @@ void nsMenuPopupFrame::TweakMinPrefISize(nscoord& aSize) {
   
   
   if (ScrollContainerFrame* sf = GetScrollContainerFrame()) {
-    aSize += sf->GetDesiredScrollbarSizes().LeftRight();
+    iSize += sf->GetDesiredScrollbarSizes().LeftRight();
   }
 
   nscoord menuListOrAnchorWidth = 0;
@@ -487,19 +489,8 @@ void nsMenuPopupFrame::TweakMinPrefISize(nscoord& aSize) {
   
   menuListOrAnchorWidth +=
       2 * StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
-  aSize = std::max(aSize, menuListOrAnchorWidth);
-}
 
-nscoord nsMenuPopupFrame::GetMinISize(gfxContext* aRC) {
-  nscoord result = nsBlockFrame::GetMinISize(aRC);
-  TweakMinPrefISize(result);
-  return result;
-}
-
-nscoord nsMenuPopupFrame::GetPrefISize(gfxContext* aRC) {
-  nscoord result = nsBlockFrame::GetPrefISize(aRC);
-  TweakMinPrefISize(result);
-  return result;
+  return std::max(iSize, menuListOrAnchorWidth);
 }
 
 void nsMenuPopupFrame::Reflow(nsPresContext* aPresContext,

@@ -553,13 +553,9 @@ nsresult nsSubDocumentFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
-
-nscoord nsSubDocumentFrame::GetMinISize(gfxContext* aRenderingContext) {
-  return GetIntrinsicISize();
-}
-
-
-nscoord nsSubDocumentFrame::GetPrefISize(gfxContext* aRenderingContext) {
+nscoord nsSubDocumentFrame::IntrinsicISize(gfxContext* aContext,
+                                           IntrinsicISizeType aType) {
+  
   
   
   

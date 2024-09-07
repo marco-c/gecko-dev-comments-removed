@@ -46,8 +46,8 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
   mozilla::a11y::AccType AccessibleType() final;
 #endif
 
-  nscoord GetMinISize(gfxContext* aRenderingContext) final;
-  nscoord GetPrefISize(gfxContext* aRenderingContext) final;
+  nscoord IntrinsicISize(gfxContext* aContext,
+                         mozilla::IntrinsicISizeType aType) final;
 
   
   
@@ -109,10 +109,6 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
   DropDownPositionState AbsolutelyPositionDropDown();
 
   nscoord GetLongestOptionISize(gfxContext*) const;
-
-  
-  nscoord IntrinsicISize(gfxContext* aRenderingContext,
-                         mozilla::IntrinsicISizeType aType);
 
   class RedisplayTextEvent : public mozilla::Runnable {
    public:

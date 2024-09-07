@@ -5996,12 +5996,6 @@ void nsIFrame::MarkSubtreeDirty() {
 }
 
 
-nscoord nsIFrame::GetMinISize(gfxContext* aRenderingContext) { return 0; }
-
-
-nscoord nsIFrame::GetPrefISize(gfxContext* aRenderingContext) { return 0; }
-
-
 void nsIFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                  nsIFrame::InlineMinISizeData* aData) {
   nscoord isize = nsLayoutUtils::IntrinsicForContainer(

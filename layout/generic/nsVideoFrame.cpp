@@ -373,15 +373,10 @@ nsIFrame::SizeComputationResult nsVideoFrame::ComputeSize(
           AspectRatioUsage::None};
 }
 
-nscoord nsVideoFrame::GetMinISize(gfxContext* aRenderingContext) {
+nscoord nsVideoFrame::IntrinsicISize(gfxContext* aContext,
+                                     IntrinsicISizeType aType) {
   
-  nsSize size = GetIntrinsicSize().ToSize().valueOr(nsSize());
-  return GetWritingMode().IsVertical() ? size.height : size.width;
-}
-
-nscoord nsVideoFrame::GetPrefISize(gfxContext* aRenderingContext) {
-  
-  return GetMinISize(aRenderingContext);
+  return GetIntrinsicSize().ISize(GetWritingMode()).valueOr(0);
 }
 
 Maybe<nsSize> nsVideoFrame::PosterImageSize() const {

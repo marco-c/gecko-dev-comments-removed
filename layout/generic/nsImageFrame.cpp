@@ -1467,14 +1467,8 @@ nscoord nsImageFrame::GetContinuationOffset() const {
   return offset;
 }
 
-nscoord nsImageFrame::GetMinISize(gfxContext* aRenderingContext) {
-  
-  
-  EnsureIntrinsicSizeAndRatio();
-  return mIntrinsicSize.ISize(GetWritingMode()).valueOr(0);
-}
-
-nscoord nsImageFrame::GetPrefISize(gfxContext* aRenderingContext) {
+nscoord nsImageFrame::IntrinsicISize(gfxContext* aContext,
+                                     IntrinsicISizeType aType) {
   
   
   EnsureIntrinsicSizeAndRatio();
