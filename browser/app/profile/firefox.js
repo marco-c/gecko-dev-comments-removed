@@ -1217,18 +1217,12 @@ pref("network.manage-offline-status", true);
 
 
 pref("network.protocol-handler.external.mailto", true); 
-pref("network.protocol-handler.external.news", true);   
-pref("network.protocol-handler.external.snews", true);  
-pref("network.protocol-handler.external.nntp", true);   
 #ifdef XP_WIN
   pref("network.protocol-handler.external.ms-windows-store", true);
 #endif
 
 
 pref("network.protocol-handler.warn-external.mailto", false);
-pref("network.protocol-handler.warn-external.news", false);
-pref("network.protocol-handler.warn-external.snews", false);
-pref("network.protocol-handler.warn-external.nntp", false);
 #ifdef XP_WIN
   pref("network.protocol-handler.warn-external.ms-windows-store", false);
 #endif
