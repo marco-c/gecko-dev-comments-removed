@@ -7141,6 +7141,12 @@
           !(originalLocation.spec in FAVICON_DEFAULTS)
         ) {
           this.mTab.removeAttribute("image");
+        } else {
+          
+          
+          
+          
+          gBrowser.setDefaultIcon(this.mTab, this.mBrowser._documentURI);
         }
 
         
@@ -7297,12 +7303,6 @@
               
               gBrowser.clearRelatedTabs();
             }
-          }
-
-          
-          
-          if (!isReload && !aWebProgress.isLoadingDocument) {
-            gBrowser.setDefaultIcon(this.mTab, this.mBrowser._documentURI);
           }
 
           if (
