@@ -36,11 +36,9 @@ class TargetTransferRateObserver {
 
 
 struct NetworkControllerConfig {
-  
-  
-  [[deprecated]] NetworkControllerConfig() = default;
-  explicit NetworkControllerConfig(const Environment& env)
-      : key_value_config(&env.field_trials()), event_log(&env.event_log()) {}
+  explicit NetworkControllerConfig(const Environment& env) : env(env) {}
+
+  Environment env;
 
   
   
@@ -50,12 +48,6 @@ struct NetworkControllerConfig {
   
   
   StreamsConfig stream_based_config;
-
-  
-  
-  const FieldTrialsView* key_value_config = nullptr;
-  
-  RtcEventLog* event_log = nullptr;
 };
 
 
