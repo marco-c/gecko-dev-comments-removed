@@ -68,14 +68,15 @@ class MultiLogCTVerifier {
   
   
   pkix::Result VerifySCTs(pkix::Input encodedSctList,
-                          const LogEntry& expectedEntry, SCTOrigin origin,
-                          pkix::Time time, CTVerifyResult& result);
+                          const LogEntry& expectedEntry,
+                          VerifiedSCT::Origin origin, pkix::Time time,
+                          CTVerifyResult& result);
 
   
   
   pkix::Result VerifySingleSCT(SignedCertificateTimestamp&& sct,
                                const ct::LogEntry& expectedEntry,
-                               SCTOrigin origin, pkix::Time time,
+                               VerifiedSCT::Origin origin, pkix::Time time,
                                CTVerifyResult& result);
 
   
