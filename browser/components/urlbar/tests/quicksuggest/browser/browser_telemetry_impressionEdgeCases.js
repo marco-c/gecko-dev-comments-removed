@@ -15,28 +15,14 @@ ChromeUtils.defineESModuleGetters(this, {
 const { TELEMETRY_SCALARS } = UrlbarProviderQuickSuggest;
 
 const REMOTE_SETTINGS_RESULTS = [
-  {
-    id: 1,
-    url: "https://example.com/sponsored",
-    title: "Sponsored suggestion",
-    keywords: ["sponsored"],
-    click_url: "https://example.com/click",
-    impression_url: "https://example.com/impression",
-    advertiser: "testadvertiser",
-  },
-  {
-    id: 2,
-    url: "https://example.com/nonsponsored",
-    title: "Non-sponsored suggestion",
-    keywords: ["nonsponsored"],
-    click_url: "https://example.com/click",
-    impression_url: "https://example.com/impression",
-    advertiser: "testadvertiser",
-    iab_category: "5 - Education",
-  },
+  QuickSuggestTestUtils.ampRemoteSettings({ keywords: ["sponsored"] }),
+  QuickSuggestTestUtils.wikipediaRemoteSettings({ keywords: ["nonsponsored"] }),
 ];
 
 const SPONSORED_RESULT = REMOTE_SETTINGS_RESULTS[0];
+
+
+requestLongerTimeout(6);
 
 add_setup(async function () {
   await PlacesUtils.history.clear();
@@ -61,7 +47,7 @@ add_setup(async function () {
 
 
 
-add_task(async function abandonment() {
+add_tasks_with_rust(async function abandonment() {
   Services.telemetry.clearEvents();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -81,7 +67,7 @@ add_task(async function abandonment() {
 
 
 
-add_task(async function noQuickSuggestResult() {
+add_tasks_with_rust(async function noQuickSuggestResult() {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     Services.telemetry.clearEvents();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -101,7 +87,7 @@ add_task(async function noQuickSuggestResult() {
 
 
 
-add_task(async function hiddenRow() {
+add_tasks_with_rust(async function hiddenRow() {
   Services.telemetry.clearEvents();
 
   
@@ -234,12 +220,13 @@ add_task(async function hiddenRow() {
   BrowserTestUtils.removeTab(tab);
   UrlbarProvidersManager.unregisterProvider(provider);
   UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
+  await PlacesUtils.history.clear();
 });
 
 
 
 
-add_task(async function notAddedToView() {
+add_tasks_with_rust(async function notAddedToView() {
   Services.telemetry.clearEvents();
 
   
@@ -271,7 +258,7 @@ add_task(async function notAddedToView() {
 
 
 
-add_task(async function previousResultStillVisible() {
+add_tasks_with_rust(async function previousResultStillVisible() {
   Services.telemetry.clearEvents();
 
   

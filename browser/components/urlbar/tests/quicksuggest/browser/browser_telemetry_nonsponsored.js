@@ -191,15 +191,14 @@ add_tasks_with_rust(async function nonsponsored() {
         },
         
         {
-          command: "help",
+          command: "manage",
           scalars: {
             [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-            [TELEMETRY_SCALARS.HELP_NONSPONSORED]: position,
           },
           event: {
             category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
             method: "engagement",
-            object: "help",
+            object: "other",
             extra: {
               suggestion_type,
               match_type,

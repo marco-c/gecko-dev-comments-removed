@@ -479,7 +479,7 @@ async function doCommandTest({
       : commandOrArray[commandOrArray.length - 1];
 
   let loadPromise;
-  if (command == "help") {
+  if (command == "help" || command == "manage") {
     
     loadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
   }
@@ -494,8 +494,8 @@ async function doCommandTest({
     info("Waiting for load");
     await loadPromise;
     await TestUtils.waitForTick();
-    if (command == "help") {
-      info("Closing help tab");
+    if (command == "help" || command == "manage") {
+      info("Closing help or manage tab");
       BrowserTestUtils.removeTab(gBrowser.selectedTab);
     }
   }
