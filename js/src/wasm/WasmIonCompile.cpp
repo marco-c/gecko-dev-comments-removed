@@ -2409,6 +2409,11 @@ class FunctionCompiler {
     }
 
     
+    if (codeMeta().funcIsImport(funcIndex)) {
+      return false;
+    }
+
+    
     if (inliningDepth() > JS::Prefs::wasm_experimental_inline_depth_limit()) {
       return false;
     }
