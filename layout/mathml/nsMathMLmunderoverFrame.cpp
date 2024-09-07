@@ -223,9 +223,9 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
     
     
     if (mContent->AsElement()->GetAttr(nsGkAtoms::accentunder_, value)) {
-      if (value.EqualsLiteral("true")) {
+      if (value.LowerCaseEqualsLiteral("true")) {
         mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTUNDER;
-      } else if (value.EqualsLiteral("false")) {
+      } else if (value.LowerCaseEqualsLiteral("false")) {
         mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTUNDER;
       }
     }
@@ -244,9 +244,9 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
     
     if (mContent->AsElement()->GetAttr(nsGkAtoms::accent_, value)) {
-      if (value.EqualsLiteral("true")) {
+      if (value.LowerCaseEqualsLiteral("true")) {
         mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
-      } else if (value.EqualsLiteral("false")) {
+      } else if (value.LowerCaseEqualsLiteral("false")) {
         mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTOVER;
       }
     }
