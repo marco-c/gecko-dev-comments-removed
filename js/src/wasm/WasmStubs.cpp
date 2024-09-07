@@ -932,29 +932,40 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   
   
+  
+  
+  
+  
 
   MOZ_ASSERT(masm.framePushed() == 0);
 
-  unsigned normalBytesNeeded = StackArgBytesForWasmABI(funcType);
+  unsigned normalBytesNeeded =
+      ExitFooterFrame::Size() + StackArgBytesForWasmABI(funcType);
 
   MIRTypeVector coerceArgTypes;
   MOZ_ALWAYS_TRUE(coerceArgTypes.append(MIRType::Int32));
   MOZ_ALWAYS_TRUE(coerceArgTypes.append(MIRType::Pointer));
   MOZ_ALWAYS_TRUE(coerceArgTypes.append(MIRType::Pointer));
-  unsigned oolBytesNeeded = StackArgBytesForWasmABI(coerceArgTypes);
+  unsigned oolBytesNeeded =
+      ExitFooterFrame::Size() + StackArgBytesForWasmABI(coerceArgTypes);
 
   unsigned bytesNeeded = std::max(normalBytesNeeded, oolBytesNeeded);
 
   
   
-  unsigned frameSizeExclFP = StackDecrementForCall(
-      WasmStackAlignment, masm.framePushed(), bytesNeeded);
+  unsigned frameSize = StackDecrementForCall(WasmStackAlignment,
+                                             masm.framePushed(), bytesNeeded);
 
   
   
-  masm.reserveStack(frameSizeExclFP);
+  masm.reserveStack(frameSize);
 
-  uint32_t frameSize = masm.framePushed();
+  MOZ_ASSERT(masm.framePushed() == frameSize);
+
+  
+  static_assert(ExitFooterFrame::Size() == sizeof(uintptr_t));
+  masm.storePtr(ImmWord(uint32_t(ExitFrameType::WasmGenericJitEntry)),
+                Address(FramePointer, -int32_t(ExitFooterFrame::Size())));
 
   GenerateJitEntryLoadInstance(masm);
 
@@ -1198,9 +1209,6 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   CallFuncExport(masm, fe, funcPtr);
   masm.assertStackAlignment(WasmStackAlignment);
 
-  
-  masm.freeStackTo(frameSize - frameSizeExclFP);
-
   GenPrintf(DebugChannel::Function, masm, "wasm-function[%d]; returns ",
             fe.funcIndex());
 
@@ -1234,18 +1242,11 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         break;
       }
       case ValType::I64: {
-        Label fail, done;
         GenPrintI64(DebugChannel::Function, masm, ReturnReg64);
-        GenerateBigIntInitialization(masm, 0, ReturnReg64, scratchG, fe, &fail);
+        MOZ_ASSERT(masm.framePushed() == frameSize);
+        GenerateBigIntInitialization(masm, 0, ReturnReg64, scratchG, fe,
+                                     &exception);
         masm.boxNonDouble(JSVAL_TYPE_BIGINT, scratchG, JSReturnOperand);
-        masm.jump(&done);
-        masm.bind(&fail);
-        
-        masm.reserveStack(frameSizeExclFP);
-        masm.jump(&exception);
-        masm.bind(&done);
-        
-        masm.setFramePushed(0);
         break;
       }
       case ValType::V128: {
@@ -1263,9 +1264,11 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     }
   }
 
-  GenPrintf(DebugChannel::Function, masm, "\n");
+  
+  masm.moveToStackPtr(FramePointer);
+  masm.setFramePushed(0);
 
-  MOZ_ASSERT(masm.framePushed() == 0);
+  GenPrintf(DebugChannel::Function, masm, "\n");
 
   AssertExpectedSP(masm);
   GenerateJitEntryEpilogue(masm, offsets);
@@ -1318,14 +1321,14 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     
     masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg,
                       &rejoinBeforeCall);
+
+    MOZ_ASSERT(masm.framePushed() == frameSize);
     hasFallThroughForException = true;
   }
 
-  
-  masm.bind(&exception);
-  masm.setFramePushed(frameSize);
   if (exception.used() || hasFallThroughForException) {
-    masm.freeStackTo(frameSize);
+    masm.bind(&exception);
+    masm.setFramePushed(frameSize);
     GenerateJitEntryThrow(masm, frameSize);
   }
 

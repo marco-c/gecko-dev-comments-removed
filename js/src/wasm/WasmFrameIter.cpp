@@ -180,15 +180,19 @@ void WasmFrameIter::operator++() {
   popFrame();
 }
 
-static inline void AssertDirectJitCall(const void* fp) {
+static inline void AssertJitExitFrame(const void* fp,
+                                      jit::ExitFrameType expected) {
   
   
   
 #ifdef DEBUG
   auto* jitCaller = (ExitFrameLayout*)fp;
-  MOZ_ASSERT(jitCaller->footer()->type() ==
-             jit::ExitFrameType::DirectWasmJitCall);
+  MOZ_ASSERT(jitCaller->footer()->type() == expected);
 #endif
+}
+
+static inline void AssertDirectJitCall(const void* fp) {
+  AssertJitExitFrame(fp, jit::ExitFrameType::DirectWasmJitCall);
 }
 
 void WasmFrameIter::popFrame() {
@@ -215,7 +219,7 @@ void WasmFrameIter::popFrame() {
     AssertDirectJitCall(fp_->jitEntryCaller());
 
     unwoundCallerFP_ = fp_->jitEntryCaller();
-    unwoundJitFrameType_.emplace(FrameType::Exit);
+    hasUnwoundJitFrame_ = true;
 
     if (unwind_ == Unwind::True) {
       activation_->setJSExitFP(unwoundCallerFP());
@@ -239,6 +243,7 @@ void WasmFrameIter::popFrame() {
   if (codeRange_->isInterpEntry()) {
     
     unwoundCallerFP_ = reinterpret_cast<uint8_t*>(fp_);
+    MOZ_ASSERT(!hasUnwoundJitFrame_);
 
     fp_ = nullptr;
     code_ = nullptr;
@@ -269,7 +274,9 @@ void WasmFrameIter::popFrame() {
     
     
     unwoundCallerFP_ = reinterpret_cast<uint8_t*>(fp_);
-    unwoundJitFrameType_.emplace(FrameType::JSJitToWasm);
+    hasUnwoundJitFrame_ = true;
+    AssertJitExitFrame(unwoundCallerFP_,
+                       jit::ExitFrameType::WasmGenericJitEntry);
 
     fp_ = nullptr;
     code_ = nullptr;
@@ -411,13 +418,8 @@ DebugFrame* WasmFrameIter::debugFrame() const {
 }
 
 bool WasmFrameIter::hasUnwoundJitFrame() const {
-  return unwoundCallerFP_ && unwoundJitFrameType_.isSome();
-}
-
-jit::FrameType WasmFrameIter::unwoundJitFrameType() const {
-  MOZ_ASSERT(unwoundCallerFP_);
-  MOZ_ASSERT(unwoundJitFrameType_.isSome());
-  return *unwoundJitFrameType_;
+  MOZ_ASSERT_IF(hasUnwoundJitFrame_, unwoundCallerFP_);
+  return hasUnwoundJitFrame_;
 }
 
 uint8_t* WasmFrameIter::resumePCinCurrentFrame() const {

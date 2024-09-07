@@ -38,12 +38,9 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation)
   MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
 }
 
-JSJitFrameIter::JSJitFrameIter(const JitActivation* activation,
-                               FrameType frameType, uint8_t* fp, bool unwinding)
-    : current_(fp), type_(frameType), activation_(activation) {
-  
-  
-  
+JSJitFrameIter::JSJitFrameIter(const JitActivation* activation, uint8_t* fp,
+                               bool unwinding)
+    : current_(fp), type_(FrameType::Exit), activation_(activation) {
   
   
   if (unwinding) {
@@ -51,7 +48,6 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation,
   } else {
     MOZ_ASSERT(fp > activation->jsOrWasmExitFP());
   }
-  MOZ_ASSERT(type_ == FrameType::JSJitToWasm || type_ == FrameType::Exit);
   MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
 }
 
@@ -408,9 +404,6 @@ void JSJitFrameIter::dump() const {
       break;
     case FrameType::Exit:
       fprintf(stderr, " Exit frame\n");
-      break;
-    case FrameType::JSJitToWasm:
-      fprintf(stderr, " Wasm exit frame\n");
       break;
   };
   fputc('\n', stderr);
@@ -815,7 +808,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
     case FrameType::TrampolineNative:
     case FrameType::Exit:
     case FrameType::Bailout:
-    case FrameType::JSJitToWasm:
       
       
       break;

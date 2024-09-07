@@ -71,11 +71,6 @@ enum class FrameType {
 
   
   
-  
-  JSJitToWasm,
-
-  
-  
   TrampolineNative,
 };
 
@@ -133,8 +128,7 @@ class JSJitFrameIter {
 
   
   
-  JSJitFrameIter(const JitActivation* activation, FrameType frameType,
-                 uint8_t* fp, bool unwinding);
+  JSJitFrameIter(const JitActivation* activation, uint8_t* fp, bool unwinding);
 
   void setResumePCInCurrentFrame(uint8_t* newAddr) {
     resumePCinCurrentFrame_ = newAddr;
