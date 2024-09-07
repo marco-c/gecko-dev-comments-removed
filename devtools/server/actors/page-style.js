@@ -690,6 +690,7 @@ class PageStyleActor extends Actor {
           continue;
         }
 
+        
         if (readPseudo === "::highlight") {
           InspectorUtils.getRegisteredCssHighlights(
             this.inspector.targetActor.window.document,
@@ -801,6 +802,14 @@ class PageStyleActor extends Actor {
       case "::slider-thumb":
       case "::slider-track":
         return node.nodeName == "INPUT" && node.type == "range";
+      case "::view-transition":
+      case "::view-transition-group":
+      case "::view-transition-image-pair":
+      case "::view-transition-old":
+      case "::view-transition-new":
+        
+        
+        return false;
       default:
         console.error("Unhandled pseudo-element " + pseudo);
         return false;

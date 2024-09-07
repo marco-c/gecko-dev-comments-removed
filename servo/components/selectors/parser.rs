@@ -40,6 +40,11 @@ pub trait PseudoElement: Sized + ToCss {
     fn valid_after_slotted(&self) -> bool {
         false
     }
+
+    
+    fn specificity_count(&self) -> u32 {
+        1
+    }
 }
 
 
