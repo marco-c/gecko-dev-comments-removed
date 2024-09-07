@@ -93,17 +93,10 @@ class QuotaUsageRequestChild final : public PQuotaUsageRequestChild {
   
   ~QuotaUsageRequestChild();
 
-  void HandleResponse(nsresult aResponse);
-
-  void HandleResponse(const OriginUsageMetadataArray& aResponse);
-
-  void HandleResponse(const OriginUsageResponse& aResponse);
-
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  virtual mozilla::ipc::IPCResult Recv__delete__(
-      UsageRequestResponse&& aResponse) override;
+  virtual mozilla::ipc::IPCResult Recv__delete__() override;
 };
 
 class QuotaRequestChild final : public PQuotaRequestChild {
