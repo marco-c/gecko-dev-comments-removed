@@ -3833,6 +3833,7 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
 
   for (ParseNode* member : pattern->contents()) {
     ParseNode* subpattern;
+    bool hasKeyOnStack = false;
     if (member->isKind(ParseNodeKind::MutateProto) ||
         member->isKind(ParseNodeKind::Spread)) {
       subpattern = member->as<UnaryNode>().kid();
@@ -3843,6 +3844,16 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
       MOZ_ASSERT(member->isKind(ParseNodeKind::PropertyDefinition) ||
                  member->isKind(ParseNodeKind::Shorthand));
       subpattern = member->as<BinaryNode>().right();
+
+      
+      ParseNode* key = member->as<BinaryNode>().left();
+      if (key->isKind(ParseNodeKind::ComputedName)) {
+        if (!emitComputedPropertyName(&key->as<UnaryNode>())) {
+          
+          return false;
+        }
+        hasKeyOnStack = true;
+      }
     }
 
     ParseNode* lhs = subpattern;
@@ -3862,7 +3873,7 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     }
 
     
-    if (!emitDupAt(emitted)) {
+    if (!emitDupAt(emitted + hasKeyOnStack)) {
       
       return false;
     }
@@ -3939,8 +3950,9 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
           
           
           MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
+          MOZ_ASSERT(hasKeyOnStack);
 
-          if (!emitComputedPropertyName(&key->as<UnaryNode>())) {
+          if (!emit2(JSOp::Pick, emitted + 1)) {
             
             return false;
           }
