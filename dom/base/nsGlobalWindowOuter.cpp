@@ -2601,7 +2601,7 @@ void nsGlobalWindowOuter::PreloadLocalStorage() {
 
   
   
-  if (principal->GetPrivateBrowsingId() == 0) {
+  if (!principal->GetIsInPrivateBrowsing()) {
     RefPtr<Storage> storage;
     rv = storageManager->PrecacheStorage(principal, storagePrincipal,
                                          getter_AddRefs(storage));

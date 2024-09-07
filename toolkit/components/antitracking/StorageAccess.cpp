@@ -274,7 +274,7 @@ StorageAccess StorageAllowedForWindow(nsPIDOMWindowInner* aWindow,
   
   if (const nsCOMPtr<nsIGlobalObject> global = aWindow->AsGlobal()) {
     if (const nsCOMPtr<nsIPrincipal> principal = global->PrincipalOrNull()) {
-      if (principal->GetPrivateBrowsingId() > 0) {
+      if (principal->GetIsInPrivateBrowsing()) {
         return StorageAccess::ePrivateBrowsing;
       }
     }
