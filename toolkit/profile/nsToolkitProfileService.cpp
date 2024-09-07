@@ -276,6 +276,59 @@ nsToolkitProfile::GetRootDir(nsIFile** aResult) {
 }
 
 NS_IMETHODIMP
+nsToolkitProfile::SetRootDir(nsIFile* aRootDir) {
+  NS_ASSERTION(nsToolkitProfileService::gService, "Where did my service go?");
+
+  
+  bool equals;
+  nsresult rv = mRootDir->Equals(aRootDir, &equals);
+  if (NS_SUCCEEDED(rv) && equals) {
+    return NS_OK;
+  }
+
+  
+  nsCString newPath;
+  bool isRelative;
+  rv = nsToolkitProfileService::gService->GetProfileDescriptor(
+      aRootDir, newPath, &isRelative);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIFile> localDir;
+  if (isRelative) {
+    rv = NS_NewNativeLocalFile(""_ns, true, getter_AddRefs(localDir));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = localDir->SetRelativeDescriptor(
+        nsToolkitProfileService::gService->mTempData, newPath);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
+    localDir = aRootDir;
+  }
+
+  
+  nsINIParser* db = &nsToolkitProfileService::gService->mProfileDB;
+  rv = db->SetString(mSection.get(), "Path", newPath.get());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = db->SetString(mSection.get(), "IsRelative", isRelative ? "1" : "0");
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  if (nsToolkitProfileService::gService->mDedicatedProfile == this) {
+    rv = db->SetString(nsToolkitProfileService::gService->mInstallSection.get(),
+                       "Default", newPath.get());
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  mRootDir = aRootDir;
+  mLocalDir = localDir;
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsToolkitProfile::GetLocalDir(nsIFile** aResult) {
   NS_ADDREF(*aResult = mLocalDir);
   return NS_OK;
@@ -1182,17 +1235,23 @@ nsresult nsToolkitProfileService::GetProfileDescriptor(
   nsresult rv = aProfile->GetRootDir(getter_AddRefs(profileDir));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  return GetProfileDescriptor(profileDir, aDescriptor, aIsRelative);
+}
+
+nsresult nsToolkitProfileService::GetProfileDescriptor(nsIFile* aRootDir,
+                                                       nsACString& aDescriptor,
+                                                       bool* aIsRelative) {
   
   bool isRelative;
-  rv = mAppData->Contains(profileDir, &isRelative);
+  nsresult rv = mAppData->Contains(aRootDir, &isRelative);
 
   nsCString profilePath;
   if (NS_SUCCEEDED(rv) && isRelative) {
     
-    rv = profileDir->GetRelativeDescriptor(mAppData, profilePath);
+    rv = aRootDir->GetRelativeDescriptor(mAppData, profilePath);
   } else {
     
-    rv = profileDir->GetPersistentDescriptor(profilePath);
+    rv = aRootDir->GetPersistentDescriptor(profilePath);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
