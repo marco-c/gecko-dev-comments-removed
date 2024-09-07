@@ -1421,7 +1421,7 @@ const gCSSProperties2 = {
   'text-box-edge': {
     
     types: [
-      { type: 'discrete', options: [ [ 'leading', 'text' ] ] }
+      { type: 'discrete', options: [ [ 'auto', 'text' ] ] }
     ]
   },
   'text-box-trim': {
