@@ -6,8 +6,7 @@
 
 validateInputFromAnotherBuilder('elu');
 
-validateUnaryOperation(
-    'elu', floatingPointTypes,  true);
+validateSingleInputOperation('elu',  true);
 
 promise_test(async t => {
   const options = {alpha: 1.0};
