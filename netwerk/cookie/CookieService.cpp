@@ -138,28 +138,6 @@ constexpr auto CONSOLE_REJECTION_CATEGORY = "cookiesRejection"_ns;
 
 namespace {
 
-void ComposeCookieString(nsTArray<RefPtr<Cookie>>& aCookieList,
-                         nsACString& aCookieString) {
-  for (Cookie* cookie : aCookieList) {
-    
-    if (!cookie->Name().IsEmpty() || !cookie->Value().IsEmpty()) {
-      
-      
-      if (!aCookieString.IsEmpty()) {
-        aCookieString.AppendLiteral("; ");
-      }
-
-      if (!cookie->Name().IsEmpty()) {
-        
-        aCookieString += cookie->Name() + "="_ns + cookie->Value();
-      } else {
-        
-        aCookieString += cookie->Value();
-      }
-    }
-  }
-}
-
 
 bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
                                             Cookie* aCookie,
@@ -366,170 +344,6 @@ CookieService::GetCookieBehavior(bool aIsPrivate, uint32_t* aCookieBehavior) {
 }
 
 NS_IMETHODIMP
-CookieService::GetCookieStringFromDocument(Document* aDocument,
-                                           nsACString& aCookie) {
-  NS_ENSURE_ARG(aDocument);
-
-  nsresult rv;
-
-  aCookie.Truncate();
-
-  if (!IsInitialized()) {
-    return NS_OK;
-  }
-
-  bool thirdParty = true;
-  nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
-  
-  
-  if (innerWindow) {
-    ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
-
-    if (thirdPartyUtil) {
-      Unused << thirdPartyUtil->IsThirdPartyWindow(
-          innerWindow->GetOuterWindow(), nullptr, &thirdParty);
-    }
-  }
-
-  nsCOMPtr<nsIPrincipal> cookiePrincipal =
-      aDocument->EffectiveCookiePrincipal();
-
-  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
-  principals.AppendElement(cookiePrincipal);
-
-  
-  
-  
-  
-  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
-                 aDocument->CookieJarSettings()->GetPartitionForeign();
-  bool documentHasStorageAccess = false;
-  rv = aDocument->HasStorageAccessSync(documentHasStorageAccess);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (isCHIPS && documentHasStorageAccess) {
-    
-    MOZ_ASSERT(cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
-    
-    
-    
-    
-    if (!aDocument->PartitionedPrincipal()
-             ->OriginAttributesRef()
-             .mPartitionKey.IsEmpty()) {
-      principals.AppendElement(aDocument->PartitionedPrincipal());
-    }
-  }
-
-  nsTArray<RefPtr<Cookie>> cookieList;
-
-  for (auto& principal : principals) {
-    if (!CookieCommons::IsSchemeSupported(principal)) {
-      return NS_OK;
-    }
-
-    CookieStorage* storage = PickStorage(principal->OriginAttributesRef());
-
-    nsAutoCString baseDomain;
-    rv = CookieCommons::GetBaseDomain(principal, baseDomain);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_OK;
-    }
-
-    nsAutoCString hostFromURI;
-    rv = nsContentUtils::GetHostOrIPv6WithBrackets(principal, hostFromURI);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_OK;
-    }
-
-    nsAutoCString pathFromURI;
-    rv = principal->GetFilePath(pathFromURI);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_OK;
-    }
-
-    int64_t currentTimeInUsec = PR_Now();
-    int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
-
-    nsTArray<RefPtr<Cookie>> cookies;
-    storage->GetCookiesFromHost(baseDomain, principal->OriginAttributesRef(),
-                                cookies);
-    if (cookies.IsEmpty()) {
-      continue;
-    }
-
-    
-    
-    bool potentiallyTrustworthy =
-        principal->GetIsOriginPotentiallyTrustworthy();
-
-    bool stale = false;
-
-    
-    for (Cookie* cookie : cookies) {
-      
-      if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
-        continue;
-      }
-
-      
-      
-      if (cookie->IsHttpOnly()) {
-        continue;
-      }
-
-      if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
-                            cookie, aDocument)) {
-        continue;
-      }
-
-      
-      if (cookie->IsSecure() && !potentiallyTrustworthy) {
-        continue;
-      }
-
-      
-      if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
-        continue;
-      }
-
-      
-      if (cookie->Expiry() <= currentTime) {
-        continue;
-      }
-
-      
-      
-      cookieList.AppendElement(cookie);
-      if (cookie->IsStale()) {
-        stale = true;
-      }
-    }
-
-    if (cookieList.IsEmpty()) {
-      continue;
-    }
-
-    
-    
-    if (stale) {
-      storage->StaleCookies(cookieList, currentTimeInUsec);
-    }
-  }
-
-  if (cookieList.IsEmpty()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  cookieList.Sort(CompareCookiesForSending());
-  ComposeCookieString(cookieList, aCookie);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
                                        nsACString& aCookieString) {
   NS_ENSURE_ARG(aHostURI);
@@ -597,7 +411,7 @@ CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
       hadCrossSiteRedirects, true, false, originAttributesList,
       foundCookieList);
 
-  ComposeCookieString(foundCookieList, aCookieString);
+  CookieCommons::ComposeCookieString(foundCookieList, aCookieString);
 
   if (!aCookieString.IsEmpty()) {
     COOKIE_LOGSUCCESS(GET_COOKIE, aHostURI, aCookieString, nullptr, false);
@@ -1877,6 +1691,40 @@ bool CookieService::SetCookiesFromIPC(const nsACString& aBaseDomain,
   }
 
   return true;
+}
+
+void CookieService::GetCookiesFromHost(
+    const nsACString& aBaseDomain,
+    const mozilla::OriginAttributes& aOriginAttributes,
+    nsTArray<RefPtr<mozilla::net::Cookie>>& aCookies) {
+  if (!IsInitialized()) {
+    return;
+  }
+
+  CookieStorage* storage = PickStorage(aOriginAttributes);
+  storage->GetCookiesFromHost(aBaseDomain, aOriginAttributes, aCookies);
+}
+
+void CookieService::StaleCookies(
+    const nsTArray<RefPtr<mozilla::net::Cookie>>& aCookies,
+    int64_t aCurrentTimeInUsec) {
+  if (!IsInitialized()) {
+    return;
+  }
+
+  if (aCookies.IsEmpty()) {
+    return;
+  }
+
+  OriginAttributes originAttributes = aCookies[0]->OriginAttributesRef();
+#ifdef MOZ_DEBUG
+  for (Cookie* cookie : aCookies) {
+    MOZ_ASSERT(originAttributes == cookie->OriginAttributesRef());
+  }
+#endif
+
+  CookieStorage* storage = PickStorage(originAttributes);
+  storage->StaleCookies(aCookies, aCurrentTimeInUsec);
 }
 
 }  
