@@ -194,6 +194,7 @@
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/InspectorUtils.h"
+#include "mozilla/dom/InteractiveWidget.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MediaQueryList.h"
 #include "mozilla/dom/MediaSource.h"
@@ -1432,6 +1433,7 @@ Document::Document(const char* aContentType)
       mHttpsOnlyStatus(nsILoadInfo::HTTPS_ONLY_UNINITIALIZED),
       mViewportType(Unknown),
       mViewportFit(ViewportFitType::Auto),
+      mInteractiveWidgetMode(InteractiveWidget::ResizesContent),
       mHeaderData(nullptr),
       mServoRestyleRootDirtyBits(0),
       mThrowOnDynamicMarkupInsertionCounter(0),
@@ -10953,10 +10955,46 @@ ViewportMetaData Document::GetViewportMetaData() const {
                                        : ViewportMetaData();
 }
 
+static InteractiveWidget ParseInteractiveWidget(
+    const ViewportMetaData& aViewportMetaData) {
+  if (aViewportMetaData.mInteractiveWidgetMode.IsEmpty()) {
+    
+    
+    
+    return InteractiveWidget::ResizesContent;
+  }
+
+  if (aViewportMetaData.mInteractiveWidgetMode.EqualsIgnoreCase(
+          "resizes-visual")) {
+    return InteractiveWidget::ResizesVisual;
+  }
+  if (aViewportMetaData.mInteractiveWidgetMode.EqualsIgnoreCase(
+          "resizes-content")) {
+    return InteractiveWidget::ResizesContent;
+  }
+  if (aViewportMetaData.mInteractiveWidgetMode.EqualsIgnoreCase(
+          "overlays-content")) {
+    return InteractiveWidget::OverlaysContent;
+  }
+  
+  return InteractiveWidget::ResizesContent;
+}
+
 void Document::SetMetaViewportData(UniquePtr<ViewportMetaData> aData) {
   mLastModifiedViewportMetaData = std::move(aData);
   
   mViewportType = Unknown;
+
+  
+  
+  
+  
+  
+  dom::InteractiveWidget interactiveWidget =
+      ParseInteractiveWidget(*mLastModifiedViewportMetaData);
+  if (mInteractiveWidgetMode != interactiveWidget) {
+    mInteractiveWidgetMode = interactiveWidget;
+  }
 
   AsyncEventDispatcher::RunDOMEventWhenSafe(
       *this, u"DOMMetaViewportFitChanged"_ns, CanBubble::eYes,
