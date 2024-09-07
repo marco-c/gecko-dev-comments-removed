@@ -1704,8 +1704,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
                             Label* label) PER_SHARED_ARCH;
 
   
+  
+  
+  
+  
   inline void branchTest64(Condition cond, Register64 lhs, Register64 rhs,
-                           Register temp, Label* label) PER_ARCH;
+                           Register temp, Label* success,
+                           Label* fail = nullptr) PER_ARCH;
+  inline void branchTest64(Condition cond, Register64 lhs, Register64 rhs,
+                           Label* success, Label* fail = nullptr);
+  inline void branchTest64(Condition cond, Register64 lhs, Imm64 rhs,
+                           Label* success, Label* fail = nullptr) PER_ARCH;
 
   
   inline void branchIfFalseBool(Register reg, Label* label);

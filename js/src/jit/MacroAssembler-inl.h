@@ -413,6 +413,11 @@ void MacroAssembler::addPtr(ImmPtr imm, Register dest) {
 
 
 
+void MacroAssembler::branchTest64(Condition cond, Register64 lhs,
+                                  Register64 rhs, Label* success, Label* fail) {
+  branchTest64(cond, lhs, rhs, InvalidReg, success, fail);
+}
+
 void MacroAssembler::branchIfFalseBool(Register reg, Label* label) {
   
   branchTest32(Assembler::Zero, reg, Imm32(0xFF), label);
