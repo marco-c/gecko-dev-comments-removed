@@ -5,10 +5,31 @@
 
 
 #include "ClipboardContentAnalysisChild.h"
+#include "MainThreadUtils.h"
+#include "mozilla/dom/ContentChild.h"
 
 namespace mozilla {
 
 StaticRefPtr<ClipboardContentAnalysisChild>
     ClipboardContentAnalysisChild::sSingleton;
+
+ ClipboardContentAnalysisChild*
+ClipboardContentAnalysisChild::GetOrCreate() {
+  AssertIsOnMainThread();
+  MOZ_ASSERT(XRE_IsContentProcess());
+
+  if (!sSingleton) {
+    Endpoint<PClipboardContentAnalysisParent> parentEndpoint;
+    Endpoint<PClipboardContentAnalysisChild> childEndpoint;
+    MOZ_ALWAYS_SUCCEEDS(PClipboardContentAnalysis::CreateEndpoints(
+        &parentEndpoint, &childEndpoint));
+    dom::ContentChild::GetSingleton()->SendCreateClipboardContentAnalysis(
+        std::move(parentEndpoint));
+
+    sSingleton = new ClipboardContentAnalysisChild();
+    childEndpoint.Bind(sSingleton);
+  }
+  return sSingleton;
+}
 
 }  

@@ -8,16 +8,107 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Variant.h"
-#include "mozilla/SpinEventLoopUntil.h"
 #include "nsBaseClipboard.h"
 #include "nsIClipboard.h"
 #include "nsID.h"
 #include "nsITransferable.h"
-#include "nsWidgetsCID.h"
 
 namespace mozilla {
-static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
+namespace {
+using ClipboardResultPromise =
+    MozPromise<dom::IPCTransferableData, nsresult, true>;
+
+static RefPtr<ClipboardResultPromise> GetClipboardImpl(
+    const nsTArray<nsCString>& aTypes, int32_t aWhichClipboard,
+    uint64_t aRequestingWindowContextId,
+    dom::ThreadsafeContentParentHandle* aRequestingContentParent) {
+  AssertIsOnMainThread();
+
+  RefPtr<dom::WindowGlobalParent> window =
+      dom::WindowGlobalParent::GetByInnerWindowId(aRequestingWindowContextId);
+
+  
+  
+  
+  
+  
+  if (!window) {
+    return ClipboardResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  if (window->IsDiscarded()) {
+    NS_WARNING(
+        "discarded window passed to RecvGetClipboard(); returning "
+        "no clipboard "
+        "content");
+    return ClipboardResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  if (aRequestingContentParent->ChildID() != window->ContentParentId()) {
+    NS_WARNING("incorrect content process passing window to GetClipboard");
+    return ClipboardResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  
+  nsCOMPtr<nsIClipboard> clipboard =
+      do_GetService("@mozilla.org/widget/clipboard;1");
+  if (!clipboard) {
+    return ClipboardResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  auto transferableToCheck =
+      dom::ContentParent::CreateClipboardTransferable(aTypes);
+  if (transferableToCheck.isErr()) {
+    return ClipboardResultPromise::CreateAndReject(
+        transferableToCheck.unwrapErr(), __func__);
+  }
+
+  
+  
+  
+  nsCOMPtr transferable = transferableToCheck.unwrap();
+  
+  
+  
+  
+  nsresult rv = clipboard->GetData(transferable, aWhichClipboard, nullptr);
+  if (NS_FAILED(rv)) {
+    return ClipboardResultPromise::CreateAndReject(rv, __func__);
+  }
+
+  auto resultPromise = MakeRefPtr<ClipboardResultPromise::Private>(__func__);
+
+  auto contentAnalysisCallback =
+      mozilla::MakeRefPtr<mozilla::contentanalysis::ContentAnalysis::
+                              SafeContentAnalysisResultCallback>(
+          [transferable, resultPromise,
+           cpHandle = RefPtr{aRequestingContentParent}](
+              RefPtr<nsIContentAnalysisResult>&& aResult) {
+            
+            AssertIsOnMainThread();
+
+            bool shouldAllow = aResult->GetShouldAllowContent();
+            if (!shouldAllow) {
+              resultPromise->Reject(NS_ERROR_CONTENT_BLOCKED, __func__);
+              return;
+            }
+            dom::IPCTransferableData transferableData;
+            RefPtr<dom::ContentParent> contentParent =
+                cpHandle->GetContentParent();
+            nsContentUtils::TransferableToIPCTransferableData(
+                transferable, &transferableData, true ,
+                contentParent);
+            resultPromise->Resolve(std::move(transferableData), __func__);
+          });
+
+  contentanalysis::ContentAnalysis::CheckClipboardContentAnalysis(
+      static_cast<nsBaseClipboard*>(clipboard.get()), window, transferable,
+      aWhichClipboard, contentAnalysisCallback);
+  return resultPromise;
+}
+}  
 
 ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
     nsTArray<nsCString>&& aTypes, const int32_t& aWhichClipboard,
@@ -27,138 +118,44 @@ ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
   
   
   MOZ_ASSERT(!NS_IsMainThread());
-  RefPtr<nsIThread> actorThread = NS_GetCurrentThread();
-  NS_ASSERTION(actorThread, "NS_GetCurrentThread() should not fail");
-  
-  
-  
-  mozilla::Maybe<mozilla::Variant<IPCTransferableData, nsresult>>
-      maybeTransferableResult;
-  bool transferableResultSet = false;
 
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      __func__, [actorThread, aTypes = std::move(aTypes), aWhichClipboard,
-                 aRequestingWindowContextId, &maybeTransferableResult,
-                 &transferableResultSet]() {
-        nsresult rv = NS_OK;
-        
-        auto sendRv = MakeScopeExit([&]() {
-          maybeTransferableResult = Some(AsVariant(rv));
-          
-          NS_DispatchToThreadQueue(
-              NS_NewRunnableFunction(
-                  __func__,
-                  [&transferableResultSet]() { transferableResultSet = true; }),
-              actorThread, EventQueuePriority::Normal);
-        });
-        nsCOMPtr<nsIClipboard> clipboard;
-        RefPtr<dom::WindowGlobalParent> window =
-            dom::WindowGlobalParent::GetByInnerWindowId(
-                aRequestingWindowContextId);
-        
-        
-        
-        
-        if (!window) {
-          rv = NS_ERROR_FAILURE;
-          return;
-        }
+  Monitor mon("ClipboardContentAnalysisParent::RecvGetClipboard");
+  InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
+              [&]() {
+                return GetClipboardImpl(aTypes, aWhichClipboard,
+                                        aRequestingWindowContextId,
+                                        mThreadsafeContentParentHandle);
+              })
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [&](ClipboardResultPromise::ResolveOrRejectValue&& aResult) {
+               AssertIsOnMainThread();
+               
+               
+               
+               MonitorAutoLock lock(mon);
+               if (aResult.IsResolve()) {
+                 *aTransferableDataOrError = std::move(aResult.ResolveValue());
+               } else {
+                 *aTransferableDataOrError = aResult.RejectValue();
+               }
+               mon.Notify();
+             });
 
-        if (window->IsDiscarded()) {
-          NS_WARNING(
-              "discarded window passed to RecvGetClipboard(); returning "
-              "no clipboard "
-              "content");
-          rv = NS_ERROR_FAILURE;
-          return;
-        }
+  {
+    MonitorAutoLock lock(mon);
+    while (aTransferableDataOrError->type() ==
+           IPCTransferableDataOrError::T__None) {
+      mon.Wait();
+    }
+  }
 
-        
-        clipboard = do_GetService(kCClipboardCID, &rv);
-        NS_ENSURE_SUCCESS_VOID(rv);
-
-        auto transferableToCheck =
-            dom::ContentParent::CreateClipboardTransferable(aTypes);
-        if (transferableToCheck.isErr()) {
-          rv = transferableToCheck.unwrapErr();
-          return;
-        }
-
-        
-        
-        
-        nsCOMPtr transferable = transferableToCheck.unwrap();
-        rv = clipboard->GetData(transferable, aWhichClipboard, nullptr);
-        NS_ENSURE_SUCCESS_VOID(rv);
-
-        auto contentAnalysisCallback =
-            mozilla::MakeRefPtr<mozilla::contentanalysis::ContentAnalysis::
-                                    SafeContentAnalysisResultCallback>(
-                [actorThread, transferable, aRequestingWindowContextId,
-                 &maybeTransferableResult, &transferableResultSet](
-                    RefPtr<nsIContentAnalysisResult>&& aResult) {
-                  
-                  
-                  
-                  
-                  bool shouldAllow = aResult->GetShouldAllowContent();
-                  if (!shouldAllow) {
-                    maybeTransferableResult =
-                        Some(AsVariant(NS_ERROR_CONTENT_BLOCKED));
-                  } else {
-                    IPCTransferableData transferableData;
-                    RefPtr<dom::WindowGlobalParent> window =
-                        dom::WindowGlobalParent::GetByInnerWindowId(
-                            aRequestingWindowContextId);
-                    if (!window && window->IsDiscarded()) {
-                      maybeTransferableResult =
-                          Some(AsVariant(NS_ERROR_UNEXPECTED));
-                    } else {
-                      maybeTransferableResult =
-                          Some(AsVariant(IPCTransferableData()));
-                      nsContentUtils::TransferableToIPCTransferableData(
-                          transferable,
-                          &(maybeTransferableResult.ref()
-                                .as<IPCTransferableData>()),
-                          true ,
-                          window->BrowsingContext()->GetContentParent());
-                    }
-                  }
-
-                  
-                  NS_DispatchToThreadQueue(
-                      NS_NewRunnableFunction(__func__,
-                                             [&transferableResultSet]() {
-                                               transferableResultSet = true;
-                                             }),
-                      actorThread, EventQueuePriority::Normal);
-                });
-
-        contentanalysis::ContentAnalysis::CheckClipboardContentAnalysis(
-            static_cast<nsBaseClipboard*>(clipboard.get()), window,
-            transferable, aWhichClipboard, contentAnalysisCallback);
-
-        sendRv.release();
-      }));
-
-  mozilla::SpinEventLoopUntil(
-      "Waiting for clipboard and content analysis"_ns,
-      [&transferableResultSet] { return transferableResultSet; });
-
-  NS_ASSERTION(maybeTransferableResult.isSome(),
-               "maybeTransferableResult should be set when "
-               "transferableResultSet is true!");
-  auto& transferableResult = *maybeTransferableResult;
-  if (transferableResult.is<nsresult>()) {
-    *aTransferableDataOrError = transferableResult.as<nsresult>();
-    NS_WARNING(
-        nsPrintfCString("ClipboardContentAnalysisParent::"
-                        "RecvGetClipboard got error %x",
-                        static_cast<int>(transferableResult.as<nsresult>()))
-            .get());
-  } else {
-    *aTransferableDataOrError =
-        std::move(transferableResult.as<IPCTransferableData>());
+  if (aTransferableDataOrError->type() ==
+      IPCTransferableDataOrError::Tnsresult) {
+    NS_WARNING(nsPrintfCString(
+                   "ClipboardContentAnalysisParent::"
+                   "RecvGetClipboard got error %x",
+                   static_cast<int>(aTransferableDataOrError->get_nsresult()))
+                   .get());
   }
 
   return IPC_OK();
