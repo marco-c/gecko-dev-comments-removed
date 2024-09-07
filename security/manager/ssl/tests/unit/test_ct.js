@@ -7,16 +7,6 @@
 
 do_get_profile(); 
 
-function expectCT(value) {
-  return securityInfo => {
-    Assert.equal(
-      securityInfo.certificateTransparencyStatus,
-      value,
-      "actual and expected CT status should match"
-    );
-  };
-}
-
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.pki.certificate_transparency.mode");
   let cert = constructCertFromFile("test_ct/ct-valid.example.com.pem");
@@ -29,23 +19,14 @@ function run_test() {
   
   
   
-  add_connection_test(
+  add_ct_test(
     "ct-valid.example.com",
-    PRErrorCodeSuccess,
-    null,
-    expectCT(
-      Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT
-    )
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT
   );
   
-  add_connection_test(
+  add_ct_test(
     "ct-insufficient-scts.example.com",
-    PRErrorCodeSuccess,
-    null,
-    expectCT(
-      Ci.nsITransportSecurityInfo
-        .CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
-    )
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
   );
 
   
@@ -56,14 +37,29 @@ function run_test() {
     clearSessionCache();
     run_next_test();
   });
-  add_connection_test(
+  add_ct_test(
     "ct-valid.example.com",
-    PRErrorCodeSuccess,
-    null,
-    expectCT(
-      Ci.nsITransportSecurityInfo
-        .CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
-    )
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
+  );
+
+  
+  add_ct_test(
+    "ct-future-timestamp.example.com",
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
+  );
+
+  
+  
+  add_ct_test(
+    "ct-multiple-from-same-log.example.com",
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_DIVERSE_SCTS
+  );
+
+  
+  
+  add_ct_test(
+    "ct-unknown-log.example.com",
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
   );
 
   run_next_test();

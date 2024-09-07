@@ -1245,3 +1245,42 @@ function append_line_to_data_storage_file(
     ) + line;
   outputStream.write(line, line.length);
 }
+
+
+
+
+function expectCT(expectedCTValue, expectedResumed) {
+  return securityInfo => {
+    Assert.equal(
+      securityInfo.certificateTransparencyStatus,
+      expectedCTValue,
+      "actual and expected CT status should match"
+    );
+    Assert.equal(
+      securityInfo.resumed,
+      expectedResumed,
+      "connection should be resumed (or not) as expected"
+    );
+  };
+}
+
+
+
+
+
+
+function add_ct_test(host, expectedCTValue) {
+  add_connection_test(
+    host,
+    PRErrorCodeSuccess,
+    null,
+    expectCT(expectedCTValue, false)
+  );
+  
+  add_connection_test(
+    host,
+    PRErrorCodeSuccess,
+    null,
+    expectCT(expectedCTValue, true)
+  );
+}
