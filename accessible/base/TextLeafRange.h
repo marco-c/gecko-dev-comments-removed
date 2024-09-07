@@ -141,7 +141,8 @@ class TextLeafPoint final {
 
 
 
-  static nsTArray<int32_t> GetSpellingErrorOffsets(LocalAccessible* aAcc);
+  static nsTArray<TextOffsetAttribute> GetSpellingErrorOffsets(
+      LocalAccessible* aAcc);
 
   
 

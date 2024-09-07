@@ -1467,32 +1467,27 @@ bool TextLeafPoint::IsInSpellingError() const {
   if (!acc->mCachedFields) {
     return false;
   }
-  auto spellingErrors = acc->mCachedFields->GetAttribute<nsTArray<int32_t>>(
-      CacheKey::SpellingErrors);
+  auto spellingErrors =
+      acc->mCachedFields->GetAttribute<nsTArray<TextOffsetAttribute>>(
+          CacheKey::SpellingErrors);
   if (!spellingErrors) {
     return false;
   }
+  auto compare = [this](const TextOffsetAttribute& aItem) {
+    if (aItem.mStartOffset <= mOffset &&
+        (mOffset < aItem.mEndOffset || aItem.mEndOffset == -1)) {
+      return 0;
+    }
+    if (aItem.mStartOffset > mOffset) {
+      return -1;
+    }
+    return 1;
+  };
   size_t index;
-  const bool foundOrigin = BinarySearch(
-      *spellingErrors, 0, spellingErrors->Length(), mOffset, &index);
   
   
-  const bool foundStart = index % 2 == 0;
-  if (foundOrigin) {
-    
-    
-    return foundStart;
-  }
-  
-  if (index == 0) {
-    return false;  
-  }
-  if (foundStart) {
-    
-    return false;
-  }
-  
-  return true;
+  return BinarySearchIf(*spellingErrors, 0, spellingErrors->Length(), compare,
+                        &index);
 }
 
 TextLeafPoint TextLeafPoint::FindSpellingErrorSameAcc(
@@ -1558,22 +1553,44 @@ TextLeafPoint TextLeafPoint::FindSpellingErrorSameAcc(
   if (!acc->mCachedFields) {
     return TextLeafPoint();
   }
-  auto spellingErrors = acc->mCachedFields->GetAttribute<nsTArray<int32_t>>(
-      CacheKey::SpellingErrors);
+  auto spellingErrors =
+      acc->mCachedFields->GetAttribute<nsTArray<TextOffsetAttribute>>(
+          CacheKey::SpellingErrors);
   if (!spellingErrors) {
     return TextLeafPoint();
   }
-  size_t index;
-  if (BinarySearch(*spellingErrors, 0, spellingErrors->Length(), mOffset,
-                   &index)) {
+  auto compare = [this](const TextOffsetAttribute& aItem) {
     
-    if (aIncludeOrigin) {
+    
+    if (aItem.mStartOffset <= mOffset &&
+        (mOffset <= aItem.mEndOffset || aItem.mEndOffset == -1)) {
+      return 0;
+    }
+    if (aItem.mStartOffset > mOffset) {
+      return -1;
+    }
+    return 1;
+  };
+  size_t index;
+  if (BinarySearchIf(*spellingErrors, 0, spellingErrors->Length(), compare,
+                     &index)) {
+    
+    if (aIncludeOrigin && ((*spellingErrors)[index].mStartOffset == mOffset ||
+                           (*spellingErrors)[index].mEndOffset == mOffset)) {
       return *this;
     }
+    
     if (aDirection == eDirNext) {
+      if ((*spellingErrors)[index].mEndOffset > mOffset) {
+        MOZ_ASSERT((*spellingErrors)[index].mEndOffset != -1);
+        return TextLeafPoint(mAcc, (*spellingErrors)[index].mEndOffset);
+      }
       
       
       ++index;
+    } else if ((*spellingErrors)[index].mStartOffset < mOffset &&
+               (*spellingErrors)[index].mStartOffset != -1) {
+      return TextLeafPoint(mAcc, (*spellingErrors)[index].mStartOffset);
     }
   }
   
@@ -1581,19 +1598,14 @@ TextLeafPoint TextLeafPoint::FindSpellingErrorSameAcc(
     if (spellingErrors->Length() == index) {
       return TextLeafPoint();  
     }
-    return TextLeafPoint(mAcc, (*spellingErrors)[index]);
+    return TextLeafPoint(mAcc, (*spellingErrors)[index].mStartOffset);
   }
   if (index == 0) {
     return TextLeafPoint();  
   }
   
   --index;
-  if ((*spellingErrors)[index] == -1) {
-    MOZ_ASSERT(index == 0);
-    
-    return TextLeafPoint();
-  }
-  return TextLeafPoint(mAcc, (*spellingErrors)[index]);
+  return TextLeafPoint(mAcc, (*spellingErrors)[index].mEndOffset);
 }
 
 TextLeafPoint TextLeafPoint::NeighborLeafPoint(
@@ -1662,37 +1674,35 @@ LayoutDeviceIntRect TextLeafPoint::ComputeBoundsFromFrame() const {
 }
 
 
-nsTArray<int32_t> TextLeafPoint::GetSpellingErrorOffsets(
+nsTArray<TextOffsetAttribute> TextLeafPoint::GetSpellingErrorOffsets(
     LocalAccessible* aAcc) {
   nsINode* node = aAcc->GetNode();
   auto domRanges = FindDOMSpellingErrors(
       aAcc, 0, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
-  
-  
-  
-  nsTArray<int32_t> offsets(domRanges.Length() * 2);
+  nsTArray<TextOffsetAttribute> offsets(domRanges.Length());
   for (dom::AbstractRange* domRange : domRanges) {
+    TextOffsetAttribute& data = *offsets.AppendElement();
     if (domRange->GetStartContainer() == node) {
-      offsets.AppendElement(static_cast<int32_t>(ContentToRenderedOffset(
-          aAcc, static_cast<int32_t>(domRange->StartOffset()))));
+      data.mStartOffset = static_cast<int32_t>(ContentToRenderedOffset(
+          aAcc, static_cast<int32_t>(domRange->StartOffset())));
     } else {
       
       
       MOZ_ASSERT(domRange == *domRanges.begin() && offsets.IsEmpty());
       
       
-      offsets.AppendElement(-1);
+      data.mStartOffset = -1;
     }
     if (domRange->GetEndContainer() == node) {
-      offsets.AppendElement(static_cast<int32_t>(ContentToRenderedOffset(
-          aAcc, static_cast<int32_t>(domRange->EndOffset()))));
+      data.mEndOffset = static_cast<int32_t>(ContentToRenderedOffset(
+          aAcc, static_cast<int32_t>(domRange->EndOffset())));
     } else {
       
       
       MOZ_ASSERT(domRange == *domRanges.rbegin());
-      
-      
+      data.mEndOffset = -1;
     }
+    data.mAttribute = nsGkAtoms::spelling;
   }
   return offsets;
 }
