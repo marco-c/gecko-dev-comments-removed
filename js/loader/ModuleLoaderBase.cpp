@@ -149,8 +149,11 @@ JSObject* ModuleLoaderBase::HostResolveImportedModule(
 
     
     
-    ModuleScript* ms =
-        loader->GetFetchedModule(ModuleMapKey(uri, ModuleType::JavaScript));
+    JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequest);
+
+    
+    
+    ModuleScript* ms = loader->GetFetchedModule(ModuleMapKey(uri, moduleType));
     MOZ_ASSERT(ms, "Resolved module not found in module map");
     MOZ_ASSERT(!ms->HasParseError());
     MOZ_ASSERT(ms->ModuleRecord());
@@ -331,9 +334,13 @@ bool ModuleLoaderBase::HostImportModuleDynamically(
   }
 
   
+  
+  JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequest);
+
+  
   nsCOMPtr<nsIURI> uri = result.unwrap();
   RefPtr<ModuleLoadRequest> request = loader->CreateDynamicImport(
-      aCx, uri, JS::ModuleType::JavaScript, script, specifierString, aPromise);
+      aCx, uri, moduleType, script, specifierString, aPromise);
 
   if (!request) {
     
@@ -852,8 +859,12 @@ nsresult ModuleLoaderBase::ResolveRequestedModules(
 
     nsCOMPtr<nsIURI> uri = result.unwrap();
     if (aRequestedModulesOut) {
-      aRequestedModulesOut->AppendElement(
-          ModuleMapKey(uri, JS::ModuleType::JavaScript));
+      
+      
+      JS::ModuleType moduleType =
+          JS::GetRequestedModuleType(cx, moduleRecord, i);
+
+      aRequestedModulesOut->AppendElement(ModuleMapKey(uri, moduleType));
     }
   }
 
@@ -1040,8 +1051,8 @@ void ModuleLoaderBase::FinishDynamicImport(
   JS::Rooted<JSString*> specifier(aCx, aRequest->mDynamicSpecifier);
   JS::Rooted<JSObject*> promise(aCx, aRequest->mDynamicPromise);
 
-  JS::Rooted<JSObject*> moduleRequest(aCx,
-                                      JS::CreateModuleRequest(aCx, specifier));
+  JS::Rooted<JSObject*> moduleRequest(
+      aCx, JS::CreateModuleRequest(aCx, specifier, aRequest->mModuleType));
 
   JS::FinishDynamicModuleImport(aCx, aEvaluationPromise, referencingScript,
                                 moduleRequest, promise);

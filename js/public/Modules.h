@@ -287,12 +287,24 @@ extern JS_PUBLIC_API void GetRequestedModuleSourcePos(
 
 
 
+extern JS_PUBLIC_API ModuleType GetRequestedModuleType(
+    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index);
+
+
+
+
 extern JS_PUBLIC_API JSScript* GetModuleScript(Handle<JSObject*> moduleRecord);
 
 extern JS_PUBLIC_API JSObject* CreateModuleRequest(
-    JSContext* cx, Handle<JSString*> specifierArg);
+    JSContext* cx, Handle<JSString*> specifierArg, ModuleType moduleType);
 extern JS_PUBLIC_API JSString* GetModuleRequestSpecifier(
     JSContext* cx, Handle<JSObject*> moduleRequestArg);
+
+
+
+
+extern JS_PUBLIC_API ModuleType
+GetModuleRequestType(JSContext* cx, Handle<JSObject*> moduleRequestArg);
 
 
 
