@@ -19,7 +19,6 @@
 #include "jsapi.h"
 #include "js/CompileOptions.h"
 #include "js/Conversions.h"
-#include "js/SourceText.h"
 #include "js/String.h"  
 #include "js/Utility.h"  
 #include "nsString.h"
@@ -41,13 +40,6 @@ class Element;
 
 class nsJSUtils {
  public:
-  static bool GetCallingLocation(JSContext* aContext, nsACString& aFilename,
-                                 uint32_t* aLineno = nullptr,
-                                 uint32_t* aColumn = nullptr);
-  static bool GetCallingLocation(JSContext* aContext, nsAString& aFilename,
-                                 uint32_t* aLineno = nullptr,
-                                 uint32_t* aColumn = nullptr);
-
   
 
 

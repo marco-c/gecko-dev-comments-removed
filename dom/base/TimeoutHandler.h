@@ -13,6 +13,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/SourceLocation.h"
 #include "mozilla/dom/FunctionBinding.h"
 
 namespace mozilla::dom {
@@ -26,27 +27,21 @@ class TimeoutHandler : public nsISupports {
   
   
   
-  virtual void GetLocation(const char** aFileName, uint32_t* aLineNo,
-                           uint32_t* aColumn);
-  
-  
-  
   
   
   virtual void GetDescription(nsACString& aOutString);
   virtual void MarkForCC() {}
 
  protected:
-  TimeoutHandler() : mFileName(""), mLineNo(0), mColumn(1) {}
-  explicit TimeoutHandler(JSContext* aCx);
+  TimeoutHandler() = default;
+  explicit TimeoutHandler(JSContext* aCx)
+      : mCaller(JSCallingLocation::Get(aCx)) {}
 
   virtual ~TimeoutHandler() = default;
 
   
   
-  nsCString mFileName;
-  uint32_t mLineNo;
-  uint32_t mColumn;
+  const JSCallingLocation mCaller;
 
  private:
   TimeoutHandler(const TimeoutHandler&) = delete;

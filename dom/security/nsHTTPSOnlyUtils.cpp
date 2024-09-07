@@ -843,8 +843,8 @@ void nsHTTPSOnlyUtils::LogMessage(const nsAString& aMessage, uint32_t aFlags,
   }
   if (windowId) {
     
-    nsContentUtils::ReportToConsoleByWindowID(message, aFlags, category,
-                                              windowId, aURI);
+    nsContentUtils::ReportToConsoleByWindowID(
+        message, aFlags, category, windowId, mozilla::SourceLocation(aURI));
   } else {
     
     bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();

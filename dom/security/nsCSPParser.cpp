@@ -183,7 +183,7 @@ void nsCSPParser::logWarningErrorToConsole(uint32_t aSeverityFlag,
   
   
   mCSPContext->logToConsole(aProperty, aParams,
-                            u""_ns,          
+                            ""_ns,           
                             u""_ns,          
                             0,               
                             1,               

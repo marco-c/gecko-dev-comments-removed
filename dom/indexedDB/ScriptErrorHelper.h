@@ -10,19 +10,21 @@
 #include <inttypes.h>
 #include "nsStringFwd.h"
 
+namespace mozilla {
+struct JSCallingLocation;
+}
+
 namespace mozilla::dom::indexedDB {
 
 
 class ScriptErrorHelper {
  public:
-  static void Dump(const nsAString& aMessage, const nsAString& aFilename,
-                   uint32_t aLineNumber, uint32_t aColumnNumber,
+  static void Dump(const nsAString& aMessage, const JSCallingLocation&,
                    uint32_t aSeverityFlag, 
                    bool aIsChrome, uint64_t aInnerWindowID);
 
   static void DumpLocalizedMessage(
-      const nsACString& aMessageName, const nsAString& aFilename,
-      uint32_t aLineNumber, uint32_t aColumnNumber,
+      const nsACString& aMessageName, const JSCallingLocation&,
       uint32_t aSeverityFlag, 
       bool aIsChrome, uint64_t aInnerWindowID);
 };

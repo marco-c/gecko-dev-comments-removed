@@ -185,6 +185,8 @@ void HTMLScriptElement::FreezeExecutionAttrs(const Document* aOwnerDoc) {
   
   nsAutoString src;
   if (GetAttr(nsGkAtoms::src, src)) {
+    SourceLocation loc{OwnerDoc()->GetDocumentURI(), GetScriptLineNumber(),
+                       GetScriptColumnNumber().oneOriginValue()};
     
     if (!src.IsEmpty()) {
       nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(mUri), src,
@@ -193,20 +195,16 @@ void HTMLScriptElement::FreezeExecutionAttrs(const Document* aOwnerDoc) {
       if (!mUri) {
         AutoTArray<nsString, 2> params = {u"src"_ns, src};
 
-        nsContentUtils::ReportToConsole(
-            nsIScriptError::warningFlag, "HTML"_ns, OwnerDoc(),
-            nsContentUtils::eDOM_PROPERTIES, "ScriptSourceInvalidUri", params,
-            nullptr, u""_ns, GetScriptLineNumber(),
-            GetScriptColumnNumber().oneOriginValue());
+        nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "HTML"_ns,
+                                        OwnerDoc(),
+                                        nsContentUtils::eDOM_PROPERTIES,
+                                        "ScriptSourceInvalidUri", params, loc);
       }
     } else {
       AutoTArray<nsString, 1> params = {u"src"_ns};
-
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, "HTML"_ns, OwnerDoc(),
-          nsContentUtils::eDOM_PROPERTIES, "ScriptSourceEmpty", params, nullptr,
-          u""_ns, GetScriptLineNumber(),
-          GetScriptColumnNumber().oneOriginValue());
+          nsContentUtils::eDOM_PROPERTIES, "ScriptSourceEmpty", params, loc);
     }
 
     

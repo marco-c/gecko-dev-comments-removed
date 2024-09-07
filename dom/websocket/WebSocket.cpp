@@ -1780,7 +1780,7 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
 
     params.AppendElement(u"wss"_ns);
     CSP_LogLocalizedStr("upgradeInsecureRequest", params,
-                        u""_ns,  
+                        ""_ns,   
                         u""_ns,  
                         0,       
                         1,       

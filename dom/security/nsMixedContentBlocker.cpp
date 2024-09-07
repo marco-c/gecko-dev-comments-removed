@@ -115,9 +115,9 @@ static void LogMixedContentMessage(
                                         messageLookupKey.get(), params,
                                         localizedMsg);
 
-  nsContentUtils::ReportToConsoleByWindowID(localizedMsg, severityFlag,
-                                            messageCategory, aInnerWindowID,
-                                            aRequestingLocation);
+  nsContentUtils::ReportToConsoleByWindowID(
+      localizedMsg, severityFlag, messageCategory, aInnerWindowID,
+      SourceLocation(aRequestingLocation));
 }
 
 
@@ -802,7 +802,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     CopyUTF8toUTF16(spec, *params.AppendElement());
 
     CSP_LogLocalizedStr("blockAllMixedContent", params,
-                        u""_ns,  
+                        ""_ns,   
                         u""_ns,  
                         0,       
                         1,       

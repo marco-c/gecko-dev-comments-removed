@@ -390,21 +390,16 @@ nsresult PushErrorDispatcher::NotifyWorkers() {
     
     return nsContentUtils::ReportToConsoleNonLocalized(
         mMessage, mFlags, "Push"_ns, nullptr, 
-        nullptr,                              
-        u""_ns,                               
-        0,                                    
-        0,                                    
-        nsContentUtils::eOMIT_LOCATION);
+        SourceLocation());
   }
 
   
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   if (swm) {
-    swm->ReportToAllClients(mScope, mMessage,
-                            NS_ConvertUTF8toUTF16(mScope), 
-                            u""_ns,                        
-                            0,                             
-                            0,                             
+    swm->ReportToAllClients(mScope, mMessage, mScope, 
+                            u""_ns,                   
+                            0,                        
+                            0,                        
                             mFlags);
   }
   return NS_OK;
@@ -426,12 +421,8 @@ nsresult PushErrorDispatcher::HandleNoChildProcesses() {
     return rv;
   }
   return nsContentUtils::ReportToConsoleNonLocalized(
-      mMessage, mFlags, "Push"_ns, nullptr, 
-      scopeURI,                             
-      u""_ns,                               
-      0,                                    
-      0,                                    
-      nsContentUtils::eOMIT_LOCATION);
+      mMessage, mFlags, "Push"_ns,  nullptr,
+      SourceLocation(scopeURI.get()));
 }
 
 }  
