@@ -239,7 +239,7 @@ void UiCompositorControllerParent::InitializeForSameProcess() {
   
   
   if (!CompositorThreadHolder::IsInCompositorThread()) {
-    SetOtherProcessId(base::GetCurrentProcId());
+    SetOtherEndpointProcInfo(ipc::EndpointProcInfo::Current());
     SynchronousTask task(
         "UiCompositorControllerParent::InitializeForSameProcess");
 

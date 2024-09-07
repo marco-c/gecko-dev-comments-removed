@@ -106,6 +106,23 @@ class ProtocolCloneContext;
 
 
 
+struct EndpointProcInfo {
+  base::ProcessId mPid = base::kInvalidProcessId;
+  GeckoChildID mChildID = kInvalidGeckoChildID;
+
+  bool operator==(const EndpointProcInfo& aOther) const {
+    return mPid == aOther.mPid && mChildID == aOther.mChildID;
+  }
+  bool operator!=(const EndpointProcInfo& aOther) const {
+    return !operator==(aOther);
+  }
+
+  static EndpointProcInfo Invalid() { return {}; }
+  static EndpointProcInfo Current();
+};
+
+
+
 
 struct ActorHandle {
   int mId;
@@ -448,12 +465,12 @@ class IToplevelProtocol : public IRefCountedProtocol {
   MessageChannel* GetIPCChannel() { return &mChannel; }
   const MessageChannel* GetIPCChannel() const { return &mChannel; }
 
-  void SetOtherProcessId(base::ProcessId aOtherPid);
+  void SetOtherEndpointProcInfo(EndpointProcInfo aOtherProcInfo);
 
   virtual void ProcessingError(Result aError, const char* aMsgName) {}
 
   bool Open(ScopedPort aPort, const nsID& aMessageChannelId,
-            base::ProcessId aOtherPid,
+            EndpointProcInfo aOtherProcInfo,
             nsISerialEventTarget* aEventTarget = nullptr);
 
   bool Open(IToplevelProtocol* aTarget, nsISerialEventTarget* aEventTarget,
@@ -537,6 +554,7 @@ class IToplevelProtocol : public IRefCountedProtocol {
   }
 
   base::ProcessId OtherPidMaybeInvalid() const { return mOtherPid; }
+  GeckoChildID OtherChildIDMaybeInvalid() const { return mOtherChildID; }
 
  private:
   int32_t NextId();
@@ -545,6 +563,7 @@ class IToplevelProtocol : public IRefCountedProtocol {
   using IDMap = nsTHashMap<nsUint32HashKey, T>;
 
   base::ProcessId mOtherPid;
+  GeckoChildID mOtherChildID;
 
   
   

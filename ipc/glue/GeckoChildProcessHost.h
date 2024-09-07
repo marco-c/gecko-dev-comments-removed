@@ -132,8 +132,9 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
 
   UntypedEndpoint TakeInitialEndpoint() {
     return UntypedEndpoint{PrivateIPDLInterface{}, std::move(mInitialPort),
-                           mInitialChannelId, base::GetCurrentProcId(),
-                           GetChildProcessId()};
+                           mInitialChannelId, EndpointProcInfo::Current(),
+                           EndpointProcInfo{.mPid = GetChildProcessId(),
+                                            .mChildID = GetChildID()}};
   }
 
   

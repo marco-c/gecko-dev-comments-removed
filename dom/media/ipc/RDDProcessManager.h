@@ -39,7 +39,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   
   
   RefPtr<EnsureRDDPromise> EnsureRDDProcessAndCreateBridge(
-      base::ProcessId aOtherProcess, dom::ContentParentId aParentId);
+      ipc::EndpointProcInfo aOtherProcess, dom::ContentParentId aParentId);
 
   void OnProcessUnexpectedShutdown(RDDProcessHost* aHost) override;
 
@@ -49,6 +49,9 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
 
   
   base::ProcessId RDDProcessPid();
+
+  
+  ipc::EndpointProcInfo RDDEndpointProcInfo();
 
   
   
@@ -102,7 +105,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   friend class Observer;
 
   bool CreateContentBridge(
-      base::ProcessId aOtherProcess, dom::ContentParentId aParentId,
+      ipc::EndpointProcInfo aOtherProcess, dom::ContentParentId aParentId,
       ipc::Endpoint<PRemoteDecoderManagerChild>* aOutRemoteDecoderManager);
 
   const RefPtr<Observer> mObserver;

@@ -14,8 +14,9 @@ template <typename T>
 class Maybe;
 
 namespace ipc {
+struct EndpointProcInfo;
 class IProtocol;
-}
+}  
 }  
 
 namespace IPC {

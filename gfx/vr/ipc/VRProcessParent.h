@@ -54,7 +54,6 @@ class VRProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
   void OnChannelClosed();
   bool IsConnected() const;
 
-  base::ProcessId OtherPid();
   VRChild* GetActor() const { return mVRChild.get(); }
   
   

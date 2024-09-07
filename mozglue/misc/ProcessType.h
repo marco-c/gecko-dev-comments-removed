@@ -26,6 +26,8 @@ enum GeckoProcessType {
 
 using GeckoChildID = int32_t;
 
+inline constexpr GeckoChildID kInvalidGeckoChildID = -1;
+
 namespace mozilla {
 namespace startup {
 extern MFBT_DATA GeckoProcessType sChildProcessType;

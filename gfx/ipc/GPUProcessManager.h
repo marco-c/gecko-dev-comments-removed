@@ -106,7 +106,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       uint64_t aInnerWindowId, bool* aRetry);
 
   bool CreateContentBridges(
-      base::ProcessId aOtherProcess,
+      mozilla::ipc::EndpointProcInfo aOtherProcess,
       mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutCompositor,
       mozilla::ipc::Endpoint<PImageBridgeChild>* aOutImageBridge,
       mozilla::ipc::Endpoint<PVRManagerChild>* aOutVRBridge,
@@ -195,6 +195,9 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   base::ProcessId GPUProcessPid();
 
   
+  mozilla::ipc::EndpointProcInfo GPUEndpointProcInfo();
+
+  
   
   RefPtr<MemoryReportingProcess> GetProcessMemoryReporter();
 
@@ -225,17 +228,20 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void ScreenInformationChanged();
 
   bool CreateContentCompositorManager(
-      base::ProcessId aOtherProcess, dom::ContentParentId aChildId,
-      uint32_t aNamespace,
+      mozilla::ipc::EndpointProcInfo aOtherProcess,
+      dom::ContentParentId aChildId, uint32_t aNamespace,
       mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutEndpoint);
   bool CreateContentImageBridge(
-      base::ProcessId aOtherProcess, dom::ContentParentId aChildId,
+      mozilla::ipc::EndpointProcInfo aOtherProcess,
+      dom::ContentParentId aChildId,
       mozilla::ipc::Endpoint<PImageBridgeChild>* aOutEndpoint);
   bool CreateContentVRManager(
-      base::ProcessId aOtherProcess, dom::ContentParentId aChildId,
+      mozilla::ipc::EndpointProcInfo aOtherProcess,
+      dom::ContentParentId aChildId,
       mozilla::ipc::Endpoint<PVRManagerChild>* aOutEndpoint);
   void CreateContentRemoteDecoderManager(
-      base::ProcessId aOtherProcess, dom::ContentParentId aChildId,
+      mozilla::ipc::EndpointProcInfo aOtherProcess,
+      dom::ContentParentId aChildId,
       mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>* aOutEndPoint);
 
   

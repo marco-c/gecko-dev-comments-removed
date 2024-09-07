@@ -75,7 +75,7 @@ void InProcessParent::Startup() {
     MOZ_CRASH("Failed to open InProcessChild!");
   }
 
-  parent->SetOtherProcessId(base::GetCurrentProcId());
+  parent->SetOtherEndpointProcInfo(EndpointProcInfo::Current());
 
   
   InProcessParent::sSingleton = std::move(parent);
