@@ -48,31 +48,38 @@ bool ElemOpEmitter::prepareForKey() {
 bool ElemOpEmitter::emitGet() {
   MOZ_ASSERT(state_ == State::Key);
 
-  
-  
-  if (isIncDec() || isCompoundAssignment()) {
-    if (!bce_->emit1(JSOp::ToPropertyKey)) {
-      
-      
-      
-      
-      return false;
-    }
-  }
-
   if (isSuper()) {
     if (!bce_->emitSuperBase()) {
       
       return false;
     }
   }
+
+  
+  
   if (isIncDec() || isCompoundAssignment()) {
     if (isSuper()) {
+      if (!bce_->emit1(JSOp::Swap)) {
+        
+        return false;
+      }
+      if (!bce_->emit1(JSOp::ToPropertyKey)) {
+        
+        return false;
+      }
+      if (!bce_->emit1(JSOp::Swap)) {
+        
+        return false;
+      }
       if (!bce_->emitDupAt(2, 3)) {
         
         return false;
       }
     } else {
+      if (!bce_->emit1(JSOp::ToPropertyKey)) {
+        
+        return false;
+      }
       if (!bce_->emit1(JSOp::Dup2)) {
         
         return false;
