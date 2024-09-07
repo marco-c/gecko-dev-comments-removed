@@ -483,6 +483,9 @@ export class Tracer extends Component {
     
     
     startIndex = Math.max(0, startIndex);
+    
+    startIndex = Math.min(startIndex, this.props.traceCount - 1);
+
     if (endIndex != -1) {
       
       endIndex = Math.max(startIndex + 1, endIndex);
