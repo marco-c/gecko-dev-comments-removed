@@ -2154,14 +2154,8 @@ MediaManager::MaybeRequestPermissionAndEnumerateRawDevices(
 
   if (!deviceAccessPromise) {
     
-    
-    
-    
-    
-    
-    ipc::PBackgroundChild* backgroundChild =
-        ipc::BackgroundChild::GetOrCreateForCurrentThread();
-    deviceAccessPromise = backgroundChild->SendRequestCameraAccess(false);
+    deviceAccessPromise =
+        NativePromise::CreateAndResolve(CamerasAccessStatus::Granted, __func__);
   }
 
   return deviceAccessPromise->Then(
@@ -2196,8 +2190,7 @@ MediaManager::MaybeRequestPermissionAndEnumerateRawDevices(
               "rejected");
         }
 
-        if (aParams.VideoInputType() == MediaSourceEnum::Camera &&
-            aParams.mFlags.contains(EnumerationFlag::AllowPermissionRequest)) {
+        if (aParams.mFlags.contains(EnumerationFlag::AllowPermissionRequest)) {
           MOZ_ASSERT(aValue.ResolveValue() == CamerasAccessStatus::Granted);
           EnsureNoPlaceholdersInDeviceCache();
         }
