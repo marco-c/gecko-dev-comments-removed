@@ -663,6 +663,18 @@ class Tagged {
 
 
 
+template <typename To, typename From>
+inline Tagged<To> UncheckedCast(Tagged<From> value) {
+  return Tagged<To>(To::cast(value));
+}
+
+template <typename To, typename From>
+inline Tagged<To> Cast(const From& value) {
+  return UncheckedCast<To>(Tagged(value));
+}
+
+
+
 
 class FixedArray : public HeapObject {
  public:
@@ -738,6 +750,17 @@ class ByteArray : public HeapObject {
   }
 
   friend class SMRegExpMacroAssembler;
+};
+
+
+
+class TrustedByteArray : public ByteArray {
+ public:
+  static TrustedByteArray cast(Object object) {
+    TrustedByteArray b;
+    b.setValue(object.value());
+    return b;
+  }
 };
 
 
@@ -910,6 +933,14 @@ template <typename T>
 inline Handle<T> handle(T object, Isolate* isolate) {
   return Handle<T>(object, isolate);
 }
+
+
+
+
+
+
+template <typename T>
+using DirectHandle = Handle<T>;
 
 
 
@@ -1167,6 +1198,9 @@ class Isolate {
   inline Factory* factory() { return this; }
 
   Handle<ByteArray> NewByteArray(
+      int length, AllocationType allocation = AllocationType::kYoung);
+
+  Handle<TrustedByteArray> NewTrustedByteArray(
       int length, AllocationType allocation = AllocationType::kYoung);
 
   
