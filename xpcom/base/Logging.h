@@ -16,7 +16,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "mozilla/LoggingCore.h"
 
 #define MOZ_LOGGING_ENABLED 1
 
@@ -30,6 +29,36 @@
 namespace mozilla {
 
 class TimeStamp;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class LogLevel {
+  Disabled = 0,
+  Error,
+  Warning,
+  Info,
+  Debug,
+  Verbose,
+};
+
+
+
+
+LogLevel ToLogLevel(int32_t aLevel);
 
 class LogModule {
  public:
@@ -117,8 +146,6 @@ class LogModule {
 
   const char* Name() const { return mName; }
 
-  AtomicLogLevel& LevelRef() { return mLevel; }
-
  private:
   friend class LogModuleManager;
 
@@ -130,7 +157,7 @@ class LogModule {
 
   char* mName;
 
-  AtomicLogLevel mLevel;
+  Atomic<LogLevel, Relaxed> mLevel;
 };
 
 
