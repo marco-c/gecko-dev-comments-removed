@@ -56,9 +56,6 @@ class DecoderTraits {
   static bool IsHttpLiveStreamingType(const MediaContainerType& aType);
 
   
-  static bool IsMatroskaType(const MediaContainerType& aType);
-
-  
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
       const MediaContainerType& aType);
 };
