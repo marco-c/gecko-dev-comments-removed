@@ -1053,6 +1053,117 @@ async function createTranslationsWasmRemoteClient(
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function modifyRemoteSettingsRecords(
+  remoteSettingsClient,
+  {
+    recordsToCreate = [],
+    recordsToDelete = [],
+    expectedCreatedRecordsCount = 0,
+    expectedUpdatedRecordsCount = 0,
+    expectedDeletedRecordsCount = 0,
+  }
+) {
+  for (const recordToCreate of recordsToCreate) {
+    for (const recordToDelete of recordsToDelete) {
+      isnot(
+        recordToCreate.id,
+        recordToDelete.id,
+        `Attempt to both create and delete the same record from Remote Settings database: '${recordToCreate.name}'`
+      );
+    }
+  }
+
+  let created = [];
+  let updated = [];
+  let deleted = [];
+
+  const existingRecords = await remoteSettingsClient.get();
+
+  for (const newRecord of recordsToCreate) {
+    const existingRecord = existingRecords.find(
+      existingRecord => existingRecord.id === newRecord.id
+    );
+    if (existingRecord) {
+      updated.push({
+        old: existingRecord,
+        new: newRecord,
+      });
+    } else {
+      created.push(newRecord);
+    }
+  }
+
+  if (recordsToCreate.length) {
+    info("Storing new and updated records in mocked Remote Settings database");
+    await remoteSettingsClient.db.importChanges(
+       {},
+      Date.now(),
+      recordsToCreate
+    );
+  }
+
+  if (recordsToDelete.length) {
+    info("Storing new and updated records in mocked Remote Settings database");
+    for (const recordToDelete of recordsToDelete) {
+      ok(
+        existingRecords.find(
+          existingRecord => existingRecord.id === recordToDelete.id
+        ),
+        `The record to delete '${recordToDelete.name}' should be found in the database.`
+      );
+      await remoteSettingsClient.db.delete(recordToDelete.id);
+      deleted.push(recordToDelete);
+    }
+  }
+
+  is(
+    created.length,
+    expectedCreatedRecordsCount,
+    "Expected the correct number of created records"
+  );
+  is(
+    updated.length,
+    expectedUpdatedRecordsCount,
+    "Expected the correct number of updated records"
+  );
+  is(
+    deleted.length,
+    expectedDeletedRecordsCount,
+    "Expected the correct number of deleted records"
+  );
+
+  info('Emitting a remote client "sync" event.');
+  await remoteSettingsClient.emit("sync", {
+    data: {
+      created,
+      updated,
+      deleted,
+    },
+  });
+}
+
 async function selectAboutPreferencesElements() {
   const document = gBrowser.selectedBrowser.contentDocument;
 
@@ -1267,32 +1378,46 @@ function waitForAppLocaleChanged() {
 }
 
 async function mockLocales({ systemLocales, appLocales, webLanguages }) {
-  const appLocaleChanged1 = waitForAppLocaleChanged();
+  if (systemLocales) {
+    TranslationsParent.mockedSystemLocales = systemLocales;
+  }
 
-  TranslationsParent.mockedSystemLocales = systemLocales;
   const { availableLocales, requestedLocales } = Services.locale;
 
-  info("Mocking locales, so expect potential .ftl resource errors.");
-  Services.locale.availableLocales = appLocales;
-  Services.locale.requestedLocales = appLocales;
+  if (appLocales) {
+    const appLocaleChanged = waitForAppLocaleChanged();
 
-  await appLocaleChanged1;
+    info("Mocking locales, so expect potential .ftl resource errors.");
+    Services.locale.availableLocales = appLocales;
+    Services.locale.requestedLocales = appLocales;
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["intl.accept_languages", webLanguages.join(",")]],
-  });
+    await appLocaleChanged;
+  }
+
+  if (webLanguages) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["intl.accept_languages", webLanguages.join(",")]],
+    });
+  }
 
   return async () => {
-    const appLocaleChanged2 = waitForAppLocaleChanged();
-
     
-    TranslationsParent.mockedSystemLocales = null;
-    Services.locale.availableLocales = availableLocales;
-    Services.locale.requestedLocales = requestedLocales;
+    if (systemLocales) {
+      TranslationsParent.mockedSystemLocales = null;
+    }
 
-    await appLocaleChanged2;
+    if (appLocales) {
+      const appLocaleChanged = waitForAppLocaleChanged();
 
-    await SpecialPowers.popPrefEnv();
+      Services.locale.availableLocales = availableLocales;
+      Services.locale.requestedLocales = requestedLocales;
+
+      await appLocaleChanged;
+    }
+
+    if (webLanguages) {
+      await SpecialPowers.popPrefEnv();
+    }
   };
 }
 
