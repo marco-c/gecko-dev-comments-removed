@@ -345,6 +345,9 @@ pref("media.video-queue.send-to-compositor-size", 1);
 pref("network.buffer.cache.size",  16384);
 
 
+pref("network.cookie.cookieBehavior.pbmode", 4);
+
+
 pref("network.http.http2.default-hpack-buffer", 4096);
 
 
