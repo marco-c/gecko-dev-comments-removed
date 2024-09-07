@@ -1601,6 +1601,7 @@ pref("intl.hyphenation-alias.af-*", "af");
 pref("intl.hyphenation-alias.bg-*", "bg");
 pref("intl.hyphenation-alias.bn-*", "bn");
 pref("intl.hyphenation-alias.ca-*", "ca");
+pref("intl.hyphenation-alias.cs-*", "cs");
 pref("intl.hyphenation-alias.cy-*", "cy");
 pref("intl.hyphenation-alias.da-*", "da");
 pref("intl.hyphenation-alias.eo-*", "eo");
@@ -1641,6 +1642,10 @@ pref("intl.hyphenation-alias.as", "bn");
 pref("intl.hyphenation-alias.as-*", "bn");
 pref("intl.hyphenation-alias.mr", "hi");
 pref("intl.hyphenation-alias.mr-*", "hi");
+
+
+pref("intl.hyphenation-alias.sk", "cs");
+pref("intl.hyphenation-alias.sk-*", "cs");
 
 
 
