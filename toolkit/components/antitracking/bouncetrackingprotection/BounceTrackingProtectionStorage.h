@@ -65,6 +65,10 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   enum class EntryType : uint8_t { BounceTracker = 0, UserActivation = 1 };
 
   
+  [[nodiscard]] nsresult ClearByType(
+      BounceTrackingProtectionStorage::EntryType aType);
+
+  
   
   [[nodiscard]] nsresult ClearBySiteHost(const nsACString& aSiteHost,
                                          OriginAttributes* aOriginAttributes);
@@ -147,6 +151,13 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
 
   
   
+  [[nodiscard]] nsresult DeleteDataByType(
+      mozIStorageConnection* aDatabaseConnection,
+      const Maybe<OriginAttributes>& aOriginAttributes,
+      BounceTrackingProtectionStorage::EntryType aEntryType);
+
+  
+  
   [[nodiscard]] static nsresult DeleteDataByOriginAttributesPattern(
       mozIStorageConnection* aDatabaseConnection,
       const OriginAttributesPattern& aOriginAttributesPattern);
@@ -194,6 +205,12 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   [[nodiscard]] nsresult DeleteDBEntriesInTimeRange(
       OriginAttributes* aOriginAttributes, PRTime aFrom,
       Maybe<PRTime> aTo = Nothing{}, Maybe<EntryType> aEntryType = Nothing{});
+
+  
+  
+  [[nodiscard]] nsresult DeleteDBEntriesByType(
+      OriginAttributes* aOriginAttributes,
+      BounceTrackingProtectionStorage::EntryType aEntryType);
 
   
   [[nodiscard]] nsresult DeleteDBEntriesByOriginAttributesPattern(
