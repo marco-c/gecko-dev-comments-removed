@@ -5786,7 +5786,8 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   nsCOMPtr<nsIDragSession> dragSession =
       nsContentUtils::GetDragSession(rootView->GetWidget());
   if (dragSession) {
-    mSynthMouseMoveEvent.Forget();
+    
+    
     return;
   }
 
@@ -6771,11 +6772,18 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       [[fallthrough]];
     case eMouseEnterIntoWidget:
     case eMouseDown:
-    case eMouseUp: {
+    case eMouseUp:
+    case eDragEnter:
+    case eDragStart:
+    case eDragOver:
+    case eDrop: {
       mMouseLocation = GetEventLocation(*aEvent->AsMouseEvent());
       mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
-      mMouseLocationWasSetBySynthesizedMouseEventForTests =
-          aEvent->mFlags.mIsSynthesizedForTests;
+      
+      if (aEvent->mClass != eDragEventClass) {
+        mMouseLocationWasSetBySynthesizedMouseEventForTests =
+            aEvent->mFlags.mIsSynthesizedForTests;
+      }
 #ifdef DEBUG
       if (MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Info)) {
         static uint32_t sFrequentMessageCount = 0;
@@ -6799,11 +6807,18 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
         }
       }
 #endif
-      if (aEvent->mMessage == eMouseEnterIntoWidget) {
+      if (aEvent->mMessage == eMouseEnterIntoWidget ||
+          aEvent->mClass == eDragEventClass) {
         SynthesizeMouseMove(false);
       }
       break;
     }
+    case eDragExit:
+      if (aEvent->mRelatedTarget) {
+        
+        break;
+      }
+      [[fallthrough]];
     case eMouseExitFromWidget: {
       
       
@@ -8365,7 +8380,8 @@ nsresult PresShell::EventHandler::HandleEventWithTarget(
 #endif
   NS_ENSURE_STATE(!aNewEventContent ||
                   aNewEventContent->GetComposedDoc() == GetDocument());
-  if (aEvent->mClass == ePointerEventClass) {
+  if (aEvent->mClass == ePointerEventClass ||
+      aEvent->mClass == eDragEventClass) {
     mPresShell->RecordPointerLocation(aEvent->AsMouseEvent());
   }
   AutoPointerEventTargetUpdater updater(mPresShell, aEvent, aNewEventFrame,
