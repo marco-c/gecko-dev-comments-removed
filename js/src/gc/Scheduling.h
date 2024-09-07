@@ -522,9 +522,6 @@ namespace TuningDefaults {
 static const uint32_t MinEmptyChunkCount = 1;
 
 
-static const uint32_t MaxEmptyChunkCount = 30;
-
-
 static const int64_t DefaultTimeBudgetMS = 0;  
 
 
