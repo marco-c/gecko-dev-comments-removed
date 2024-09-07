@@ -819,15 +819,11 @@ void LibaomAv1Encoder::SetRates(const RateControlParameters& parameters) {
     for (int sid = 0; sid < svc_params_->number_spatial_layers; ++sid) {
       
       
-      
-      
-      int accumulated_bitrate_bps = 0;
       for (int tid = 0; tid < svc_params_->number_temporal_layers; ++tid) {
         int layer_index = sid * svc_params_->number_temporal_layers + tid;
-        accumulated_bitrate_bps += parameters.bitrate.GetBitrate(sid, tid);
         
         svc_params_->layer_target_bitrate[layer_index] =
-            accumulated_bitrate_bps / 1000;
+            parameters.bitrate.GetTemporalLayerSum(sid, tid) / 1000;
       }
     }
     SetEncoderControlParameters(AV1E_SET_SVC_PARAMS, &*svc_params_);
