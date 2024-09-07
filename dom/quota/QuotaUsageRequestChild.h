@@ -33,6 +33,9 @@ class QuotaUsageRequestChild final : public PQuotaUsageRequestChild {
 
   NS_INLINE_DECL_REFCOUNTING(QuotaUsageRequestChild, override)
 
+  
+  virtual mozilla::ipc::IPCResult Recv__delete__() override;
+
  private:
   
   explicit QuotaUsageRequestChild(UsageRequest* aRequest);
@@ -40,10 +43,7 @@ class QuotaUsageRequestChild final : public PQuotaUsageRequestChild {
   
   ~QuotaUsageRequestChild();
 
-  
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-
-  virtual mozilla::ipc::IPCResult Recv__delete__() override;
 };
 
 }  

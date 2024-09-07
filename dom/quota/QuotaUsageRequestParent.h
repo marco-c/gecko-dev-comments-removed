@@ -24,13 +24,13 @@ class QuotaUsageRequestParent : public BackgroundThreadObject,
 
   void Destroy();
 
+  
+  mozilla::ipc::IPCResult RecvCancel();
+
  private:
   virtual ~QuotaUsageRequestParent();
 
-  
   void ActorDestroy(ActorDestroyReason aWhy) override;
-
-  mozilla::ipc::IPCResult RecvCancel() final;
 
   MozPromiseHolder<BoolPromise> mCancelPromiseHolder;
 };
