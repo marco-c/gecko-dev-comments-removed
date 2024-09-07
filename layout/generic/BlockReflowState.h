@@ -361,7 +361,7 @@ class BlockReflowState {
   nsIFrame* mPrevChild;
 
   
-  CollapsingMargin mPrevBEndMargin;
+  nsCollapsingMargin mPrevBEndMargin;
 
   
   

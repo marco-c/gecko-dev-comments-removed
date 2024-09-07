@@ -275,9 +275,9 @@ class nsLineBox final : public nsLineLink {
   }
 
   
-  mozilla::CollapsingMargin GetCarriedOutBEndMargin() const;
+  nsCollapsingMargin GetCarriedOutBEndMargin() const;
   
-  bool SetCarriedOutBEndMargin(mozilla::CollapsingMargin aValue);
+  bool SetCarriedOutBEndMargin(nsCollapsingMargin aValue);
 
   
   bool HasFloats() const {
@@ -538,7 +538,7 @@ class nsLineBox final : public nsLineLink {
 
   struct ExtraBlockData : public ExtraData {
     explicit ExtraBlockData(const nsRect& aBounds) : ExtraData(aBounds) {}
-    mozilla::CollapsingMargin mCarriedOutBEndMargin;
+    nsCollapsingMargin mCarriedOutBEndMargin;
   };
 
   struct ExtraInlineData : public ExtraData {
