@@ -6611,19 +6611,23 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
     return;
   }
 
-  StorageAccess storageAccess = CookieAllowedForDocument(this);
-  if (storageAccess == StorageAccess::eDeny) {
-    return;
-  }
-
-  if (ShouldPartitionStorage(storageAccess) &&
-      !StoragePartitioningEnabled(storageAccess, CookieJarSettings())) {
-    return;
-  }
-
   
-  if (IsCookieAverse()) {
-    return;
+  
+  if (!StaticPrefs::dom_cookie_testing_enabled()) {
+    StorageAccess storageAccess = CookieAllowedForDocument(this);
+    if (storageAccess == StorageAccess::eDeny) {
+      return;
+    }
+
+    if (ShouldPartitionStorage(storageAccess) &&
+        !StoragePartitioningEnabled(storageAccess, CookieJarSettings())) {
+      return;
+    }
+
+    
+    if (IsCookieAverse()) {
+      return;
+    }
   }
 
   
