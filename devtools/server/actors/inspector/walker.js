@@ -347,14 +347,16 @@ class WalkerActor extends Actor {
     return "[WalkerActor " + this.actorID + "]";
   }
 
-  getDocumentWalker(node, skipTo) {
+  getDocumentWalkerFilter() {
     
-    const filter = this.showAllAnonymousContent
+    return this.showAllAnonymousContent
       ? allAnonymousContentTreeWalkerFilter
       : standardTreeWalkerFilter;
+  }
 
+  getDocumentWalker(node, skipTo) {
     return new DocumentWalker(node, this.rootWin, {
-      filter,
+      filter: this.getDocumentWalkerFilter(),
       skipTo,
       showAnonymousContent: true,
     });
@@ -2201,6 +2203,19 @@ class WalkerActor extends Actor {
   onMutations(mutations) {
     
     
+    const documentWalkerFilter = this.getDocumentWalkerFilter();
+    if (
+      mutations.every(
+        mutation =>
+          documentWalkerFilter(mutation.target) ===
+          nodeFilterConstants.FILTER_SKIP
+      )
+    ) {
+      return;
+    }
+
+    
+    
     
     this.emit("any-mutation");
 
@@ -2325,6 +2340,13 @@ class WalkerActor extends Actor {
 
   onAnonymousrootcreated(event) {
     const root = event.target;
+
+    
+    const documentWalkerFilter = this.getDocumentWalkerFilter();
+    if (documentWalkerFilter(root) === nodeFilterConstants.FILTER_SKIP) {
+      return;
+    }
+
     const parent = this.rawParentNode(root);
     if (!parent) {
       
