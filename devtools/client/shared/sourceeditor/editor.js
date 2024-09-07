@@ -11,6 +11,8 @@ const {
   getIndentationFromIteration,
 } = require("resource://devtools/shared/indentation.js");
 
+const { debounce } = require("resource://devtools/shared/debounce.js");
+
 const ENABLE_CODE_FOLDING = "devtools.editor.enableCodeFolding";
 const KEYMAP_PREF = "devtools.editor.keymap";
 const AUTO_CLOSE = "devtools.editor.autoclosebrackets";
@@ -164,6 +166,9 @@ class Editor extends EventEmitter {
     query: null,
   };
 
+  
+  
+  #currentDocumentId = null;
   #CodeMirror6;
   #compartments;
   #effects;
@@ -176,7 +181,10 @@ class Editor extends EventEmitter {
   #lineContentMarkers = new Map();
   #posContentMarkers = new Map();
   #editorDOMEventHandlers = {};
-
+  
+  
+  
+  #scrollSnapshots = new Map();
   #updateListener = null;
 
   constructor(config) {
@@ -668,6 +676,11 @@ class Editor extends EventEmitter {
       this.config.indentUnit || 2
     );
 
+    
+    this.#editorDOMEventHandlers.scroll = [
+      debounce(this.cacheScrollSnapshot, 250),
+    ];
+
     const extensions = [
       bracketMatching(),
       indentCompartment.of(indentUnit.of(indentStr)),
@@ -704,7 +717,9 @@ class Editor extends EventEmitter {
           this.#updateListener(v);
         }
       }),
-      domEventHandlersCompartment.of(EditorView.domEventHandlers({})),
+      domEventHandlersCompartment.of(
+        EditorView.domEventHandlers(this.#createEventHandlers())
+      ),
       lineNumberMarkersCompartment.of([]),
       lineContentMarkerExtension,
       positionContentMarkerExtension,
@@ -1010,6 +1025,14 @@ class Editor extends EventEmitter {
       ),
     });
   }
+
+  cacheScrollSnapshot = () => {
+    const cm = editors.get(this);
+    if (this.#currentDocumentId) {
+      return;
+    }
+    this.#scrollSnapshots.set(this.#currentDocumentId, cm.scrollSnapshot());
+  };
 
   
 
@@ -2020,7 +2043,9 @@ class Editor extends EventEmitter {
 
 
 
-  setText(value) {
+
+
+  async setText(value, documentId) {
     const cm = editors.get(this);
 
     if (typeof value !== "string" && "binary" in value) {
@@ -2048,10 +2073,30 @@ class Editor extends EventEmitter {
       if (cm.state.doc.toString() == value) {
         return;
       }
-      cm.dispatch({
+
+      await cm.dispatch({
         changes: { from: 0, to: cm.state.doc.length, insert: value },
         selection: { anchor: 0 },
       });
+
+      const {
+        codemirrorView: { EditorView },
+      } = this.#CodeMirror6;
+      
+      
+      
+      
+      
+      const scrollSnapshot = this.#scrollSnapshots.get(documentId);
+      await cm.dispatch({
+        effects: scrollSnapshot
+          ? [scrollSnapshot]
+          : [EditorView.scrollIntoView(0)],
+      });
+
+      if (documentId) {
+        this.#currentDocumentId = documentId;
+      }
     } else {
       cm.setValue(value);
     }
@@ -3037,6 +3082,7 @@ class Editor extends EventEmitter {
     this.#updateListener = null;
     this.#lineGutterMarkers.clear();
     this.#lineContentMarkers.clear();
+    this.#scrollSnapshots.clear();
 
     if (this.#prefObserver) {
       this.#prefObserver.off(KEYMAP_PREF, this.setKeyMap);
