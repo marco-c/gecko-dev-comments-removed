@@ -362,9 +362,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
 
   
   
-#ifndef XP_MACOSX
   nsAutoCString appFilePath;
-#endif
   nsAutoCString workingDirPath;
   if (restart) {
     
@@ -373,8 +371,6 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
       return;
     }
 
-    
-    
     
     
     nsCOMPtr<nsIFile> appFile;
@@ -390,7 +386,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
       return;
     }
     CopyUTF16toUTF8(appFilePathW, appFilePath);
-#elif !defined(XP_MACOSX)
+#else
     rv = appFile->GetNativePath(appFilePath);
     if (NS_FAILED(rv)) {
       return;
@@ -529,11 +525,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
   argv[4] = (char*)pid.get();
   if (restart && appArgc) {
     argv[5] = (char*)workingDirPath.get();
-#if defined(XP_MACOSX)
-    argv[6] = (char*)installDirPath.get();
-#else
     argv[6] = (char*)appFilePath.get();
-#endif
     for (int i = 1; i < appArgc; ++i) {
       argv[6 + i] = appArgv[i];
     }
