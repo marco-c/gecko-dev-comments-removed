@@ -305,7 +305,7 @@ AllocSite* CellAllocator::MaybeGenerateMissingAllocSite(JSContext* cx,
 void CellAllocator::CheckIncrementalZoneState(JS::Zone* zone, void* ptr) {
   MOZ_ASSERT(ptr);
   TenuredCell* cell = reinterpret_cast<TenuredCell*>(ptr);
-  TenuredChunkBase* chunk = detail::GetCellChunkBase(cell);
+  ArenaChunkBase* chunk = detail::GetCellChunkBase(cell);
   if (zone->isGCMarkingOrSweeping()) {
     MOZ_ASSERT(chunk->markBits.isMarkedBlack(cell));
   } else {
@@ -388,7 +388,7 @@ void* ArenaLists::refillFreeListAndAllocate(
     maybeLock.emplace(rt);
   }
 
-  TenuredChunk* chunk = rt->gc.pickChunk(maybeLock.ref());
+  ArenaChunk* chunk = rt->gc.pickChunk(maybeLock.ref());
   if (!chunk) {
     return nullptr;
   }
@@ -453,7 +453,7 @@ bool GCRuntime::wantBackgroundAllocation(const AutoLockGC& lock) const {
          (fullChunks(lock).count() + availableChunks(lock).count()) >= 4;
 }
 
-Arena* GCRuntime::allocateArena(TenuredChunk* chunk, Zone* zone,
+Arena* GCRuntime::allocateArena(ArenaChunk* chunk, Zone* zone,
                                 AllocKind thingKind,
                                 ShouldCheckThresholds checkThresholds,
                                 const AutoLockGC& lock) {
@@ -476,9 +476,8 @@ Arena* GCRuntime::allocateArena(TenuredChunk* chunk, Zone* zone,
   return arena;
 }
 
-Arena* TenuredChunk::allocateArena(GCRuntime* gc, Zone* zone,
-                                   AllocKind thingKind,
-                                   const AutoLockGC& lock) {
+Arena* ArenaChunk::allocateArena(GCRuntime* gc, Zone* zone, AllocKind thingKind,
+                                 const AutoLockGC& lock) {
   if (info.numArenasFreeCommitted == 0) {
     commitOnePage(gc);
     MOZ_ASSERT(info.numArenasFreeCommitted == ArenasPerPage);
@@ -511,7 +510,7 @@ static inline size_t FindFirstBitSet(
   MOZ_CRASH("No bits found");
 }
 
-void TenuredChunk::commitOnePage(GCRuntime* gc) {
+void ArenaChunk::commitOnePage(GCRuntime* gc) {
   MOZ_ASSERT(info.numArenasFreeCommitted == 0);
   MOZ_ASSERT(info.numArenasFree >= ArenasPerPage);
 
@@ -535,7 +534,7 @@ void TenuredChunk::commitOnePage(GCRuntime* gc) {
   verify();
 }
 
-Arena* TenuredChunk::fetchNextFreeArena(GCRuntime* gc) {
+Arena* ArenaChunk::fetchNextFreeArena(GCRuntime* gc) {
   MOZ_ASSERT(info.numArenasFreeCommitted > 0);
   MOZ_ASSERT(info.numArenasFreeCommitted <= info.numArenasFree);
 
@@ -551,21 +550,21 @@ Arena* TenuredChunk::fetchNextFreeArena(GCRuntime* gc) {
 
 
 
-TenuredChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
-  TenuredChunk* chunk = emptyChunks(lock).pop();
+ArenaChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
+  ArenaChunk* chunk = emptyChunks(lock).pop();
   if (chunk) {
     
     
     SetMemCheckKind(chunk, sizeof(ChunkBase), MemCheckKind::MakeUndefined);
-    chunk->initBaseForTenuredChunk(rt);
+    chunk->initBaseForArenaChunk(rt);
     MOZ_ASSERT(chunk->unused());
   } else {
-    void* ptr = TenuredChunk::allocate(this);
+    void* ptr = ArenaChunk::allocate(this);
     if (!ptr) {
       return nullptr;
     }
 
-    chunk = TenuredChunk::emplace(ptr, this,  true);
+    chunk = ArenaChunk::emplace(ptr, this,  true);
     MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
   }
 
@@ -576,7 +575,7 @@ TenuredChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
   return chunk;
 }
 
-void GCRuntime::recycleChunk(TenuredChunk* chunk, const AutoLockGC& lock) {
+void GCRuntime::recycleChunk(ArenaChunk* chunk, const AutoLockGC& lock) {
 #ifdef DEBUG
   MOZ_ASSERT(chunk->unused());
   chunk->verify();
@@ -589,12 +588,12 @@ void GCRuntime::recycleChunk(TenuredChunk* chunk, const AutoLockGC& lock) {
   emptyChunks(lock).push(chunk);
 }
 
-TenuredChunk* GCRuntime::pickChunk(AutoLockGCBgAlloc& lock) {
+ArenaChunk* GCRuntime::pickChunk(AutoLockGCBgAlloc& lock) {
   if (availableChunks(lock).count()) {
     return availableChunks(lock).head();
   }
 
-  TenuredChunk* chunk = getOrAllocChunk(lock);
+  ArenaChunk* chunk = getOrAllocChunk(lock);
   if (!chunk) {
     return nullptr;
   }
@@ -623,21 +622,21 @@ void BackgroundAllocTask::run(AutoLockHelperThreadState& lock) {
 
   AutoLockGC gcLock(gc);
   while (!isCancelled() && gc->wantBackgroundAllocation(gcLock)) {
-    TenuredChunk* chunk;
+    ArenaChunk* chunk;
     {
       AutoUnlockGC unlock(gcLock);
-      void* ptr = TenuredChunk::allocate(gc);
+      void* ptr = ArenaChunk::allocate(gc);
       if (!ptr) {
         break;
       }
-      chunk = TenuredChunk::emplace(ptr, gc,  true);
+      chunk = ArenaChunk::emplace(ptr, gc,  true);
     }
     chunkPool_.ref().push(chunk);
   }
 }
 
 
-void* TenuredChunk::allocate(GCRuntime* gc) {
+void* ArenaChunk::allocate(GCRuntime* gc) {
   void* chunk = MapAlignedPages(ChunkSize, ChunkSize);
   if (!chunk) {
     return nullptr;
@@ -656,8 +655,8 @@ static inline bool ShouldDecommitNewChunk(bool allMemoryCommitted,
   return !allMemoryCommitted || !state.inHighFrequencyGCMode();
 }
 
-TenuredChunk* TenuredChunk::emplace(void* ptr, GCRuntime* gc,
-                                    bool allMemoryCommitted) {
+ArenaChunk* ArenaChunk::emplace(void* ptr, GCRuntime* gc,
+                                bool allMemoryCommitted) {
   
   MOZ_MAKE_MEM_UNDEFINED(ptr, ChunkSize);
 
@@ -667,7 +666,7 @@ TenuredChunk* TenuredChunk::emplace(void* ptr, GCRuntime* gc,
 
   Poison(ptr, JS_FRESH_TENURED_PATTERN, ChunkSize, MemCheckKind::MakeUndefined);
 
-  TenuredChunk* chunk = new (mozilla::KnownNotNull, ptr) TenuredChunk(gc->rt);
+  ArenaChunk* chunk = new (mozilla::KnownNotNull, ptr) ArenaChunk(gc->rt);
 
   if (ShouldDecommitNewChunk(allMemoryCommitted, gc->schedulingState)) {
     
@@ -684,13 +683,13 @@ TenuredChunk* TenuredChunk::emplace(void* ptr, GCRuntime* gc,
   return chunk;
 }
 
-void TenuredChunk::decommitAllArenas() {
+void ArenaChunk::decommitAllArenas() {
   MOZ_ASSERT(unused());
   MarkPagesUnusedSoft(&arenas[0], ArenasPerChunk * ArenaSize);
   initAsDecommitted();
 }
 
-void TenuredChunkBase::initAsDecommitted() {
+void ArenaChunkBase::initAsDecommitted() {
   
   
   
