@@ -423,7 +423,8 @@ static const JSClassOps ForOfPICClassOps = {
 const JSClass ForOfPICObject::class_ = {
     "ForOfPIC",
     JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_BACKGROUND_FINALIZE,
-    &ForOfPICClassOps};
+    &ForOfPICClassOps,
+};
 
 
 NativeObject* js::ForOfPIC::createForOfPICObject(JSContext* cx,
