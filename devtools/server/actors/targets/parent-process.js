@@ -104,11 +104,14 @@ class ParentProcessTargetActor extends WindowGlobalTargetActor {
     
     
     if (!window) {
-      
-      
       window = Services.wm.getMostRecentWindow(null);
     }
 
+    
+    
+    if (!window) {
+      window = Services.appShell.hiddenDOMWindow;
+    }
     return window.docShell;
   }
 
