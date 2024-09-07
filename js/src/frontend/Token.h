@@ -135,7 +135,7 @@ struct Token {
   
   TokenPos pos;
 
-  union {
+  union U {
    private:
     friend struct Token;
 
@@ -151,6 +151,9 @@ struct Token {
 
     
     JS::RegExpFlags reflags;
+
+   public:
+    U() {};
   } u;
 
 #ifdef DEBUG
