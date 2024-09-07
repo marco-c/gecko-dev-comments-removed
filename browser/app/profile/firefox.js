@@ -1871,7 +1871,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.recs.personalized", fal
 pref("browser.newtabpage.activity-stream.discoverystream.spocs.personalized", true);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "");
+
+pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.locale-topics-config", "en-US, en-GB, en-CA");
 
 pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.enabled", false);
 
