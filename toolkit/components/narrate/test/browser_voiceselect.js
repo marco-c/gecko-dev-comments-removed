@@ -135,5 +135,39 @@ add_task(async function testVoiceselectKeyboard() {
       () => $(NarrateTestUtils.VOICE_SELECTED).dataset.value == firstValue,
       "value changed back to original after pressing Enter"
     );
+
+    
+    
+    $(NarrateTestUtils.VOICE_SELECT).focus();
+
+    eventUtils.synthesizeKey("KEY_Tab", {}, content);
+
+    is(
+      content.document.activeElement,
+      $(NarrateTestUtils.START),
+      "Focus moves back to the first focusable button"
+    );
+
+    
+    
+    let promiseEvent = ContentTaskUtils.waitForEvent(content, "paragraphstart");
+
+    $(NarrateTestUtils.TOGGLE).focus();
+
+    eventUtils.synthesizeKey("n", {}, content);
+
+    await promiseEvent;
+
+    $(NarrateTestUtils.VOICE_SELECT).focus();
+
+    eventUtils.synthesizeKey("KEY_Enter", {}, content);
+
+    eventUtils.synthesizeKey("KEY_Tab", {}, content);
+
+    is(
+      content.document.activeElement,
+      $(NarrateTestUtils.BACK),
+      "Focus moves back to the first focusable button"
+    );
   });
 });

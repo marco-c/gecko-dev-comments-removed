@@ -62,6 +62,14 @@ add_task(async function () {
           
           simulateClick(button);
           ok(!dropdown.classList.contains("open"), "dropdown is closed");
+
+          
+          simulateClick(button);
+          ok(dropdown.classList.contains("open"), "dropdown is open");
+
+          
+          EventUtils.synthesizeKey("KEY_Escape", {}, win);
+          ok(!dropdown.classList.contains("open"), "dropdown is closed");
         }
 
         let doc = content.document;
