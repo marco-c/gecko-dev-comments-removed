@@ -237,23 +237,43 @@ float SVGViewportElement::GetLength(uint8_t aCtxType) const {
 
 
 
-gfxMatrix SVGViewportElement::ChildToUserSpaceTransform() const {
-  auto viewBox = GetViewBoxTransform();
+gfxMatrix SVGViewportElement::PrependLocalTransformsTo(
+    const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
+  
+  if (aWhich == eUserSpaceToParent) {
+    return aMatrix;
+  }
+
+  gfxMatrix childToUser;
+
   if (IsInner()) {
     float x, y;
     const_cast<SVGViewportElement*>(this)->GetAnimatedLengthValues(&x, &y,
                                                                    nullptr);
-    return ThebesMatrix(viewBox.PostTranslate(x, y));
-  }
-  if (IsRootSVGSVGElement()) {
+    childToUser = ThebesMatrix(GetViewBoxTransform().PostTranslate(x, y));
+  } else if (IsRootSVGSVGElement()) {
     const auto* svg = static_cast<const SVGSVGElement*>(this);
     const SVGPoint& translate = svg->GetCurrentTranslate();
     float scale = svg->CurrentScale();
-    return ThebesMatrix(viewBox.PostScale(scale, scale)
-                            .PostTranslate(translate.GetX(), translate.GetY()));
+    childToUser =
+        ThebesMatrix(GetViewBoxTransform()
+                         .PostScale(scale, scale)
+                         .PostTranslate(translate.GetX(), translate.GetY()));
+  } else {
+    
+    childToUser = ThebesMatrix(GetViewBoxTransform());
   }
+
+  MOZ_ASSERT(aWhich == eAllTransforms || aWhich == eChildToUserSpace,
+             "Unknown TransformTypes");
   
-  return ThebesMatrix(viewBox);
+  
+  
+  
+  
+  
+  
+  return childToUser * aMatrix;
 }
 
 
