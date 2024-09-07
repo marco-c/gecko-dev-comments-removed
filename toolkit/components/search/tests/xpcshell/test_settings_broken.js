@@ -14,13 +14,16 @@ const { getAppInfo } = ChromeUtils.importESModule(
   "resource://testing-common/AppInfo.sys.mjs"
 );
 
+
+const CONFIG = [{ identifier: "appDefaultEngine" }, { identifier: "engine1" }];
+
 const enginesSettings = {
   version: SearchUtils.SETTINGS_VERSION,
   buildID: "TBD",
   appVersion: "TBD",
   locale: "en-US",
   metaData: {
-    searchDefault: "Test search engine",
+    searchDefault: "appDefaultEngine",
     searchDefaultHash: "TBD",
     
     searchDefaultExpir: 1567694909002,
@@ -69,10 +72,7 @@ add_setup(async function () {
     true
   );
 
-  await SearchTestUtils.useTestEngines();
-  Services.prefs.setCharPref(SearchUtils.BROWSER_SEARCH_PREF + "region", "US");
-  Services.locale.availableLocales = ["en-US"];
-  Services.locale.requestedLocales = ["en-US"];
+  SearchTestUtils.setRemoteSettingsConfig(CONFIG);
 
   
   enginesSettings.metaData.searchDefaultHash = SearchUtils.getVerificationHash(
@@ -111,19 +111,14 @@ add_task(async function test_cached_engine_properties() {
 
   const expectedEngines = [
     
-    "Test search engine",
-    
-    "engine-resourceicon",
-    "engine-chromeicon",
-    "engine-pref",
-    "engine-rel-searchform-purpose",
-    "Test search engine (Reordered)",
+    "appDefaultEngine",
     "A second test engine",
+    "engine1",
   ];
 
   Assert.deepEqual(
     engines.map(e => e.name),
     expectedEngines,
-    "Should have the expected default engines"
+    "Should have the expected application engines and the user engine"
   );
 });
