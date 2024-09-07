@@ -197,8 +197,8 @@ async function initUpdateServiceStub() {
 
 
 
-function reloadUpdateManagerData(skipFiles = false) {
-  gUpdateManager.internal.reload(skipFiles);
+async function reloadUpdateManagerData(skipFiles = false) {
+  await gUpdateManager.internal.reload(skipFiles);
 }
 
 const observer = {

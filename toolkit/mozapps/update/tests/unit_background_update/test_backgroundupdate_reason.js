@@ -58,9 +58,9 @@ add_task(async function test_reasons_overflow() {
   }
 });
 
-add_task(() => {
+add_task(async () => {
   
   
   
-  doTestFinish();
+  await doTestFinish();
 });

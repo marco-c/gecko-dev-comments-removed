@@ -1184,7 +1184,7 @@ function dumpOverride(aText) {
 
 
 
-function doTestFinish() {
+async function doTestFinish() {
   if (gDebugTest) {
     
     
@@ -1193,7 +1193,7 @@ function doTestFinish() {
     gAUS.observe(null, "nsPref:changed", PREF_APP_UPDATE_LOG);
   }
 
-  reloadUpdateManagerData(true);
+  await reloadUpdateManagerData(true);
 
   
   
@@ -4201,7 +4201,7 @@ function isFileInUse(aFile) {
 
 
 
-function waitForFilesInUse() {
+async function waitForFilesInUse() {
   if (AppConstants.platform == "win") {
     let fileNames = [
       FILE_APP_BIN,
@@ -4218,7 +4218,7 @@ function waitForFilesInUse() {
   }
 
   debugDump("calling doTestFinish");
-  doTestFinish();
+  await doTestFinish();
 }
 
 
