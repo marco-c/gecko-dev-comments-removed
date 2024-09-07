@@ -389,19 +389,11 @@ static struct ReservedResources {
   
   static const SIZE_T kReserveSize = 0x5000000;  
   void* mVirtualMemory;
-#elif defined(XP_LINUX)
-  
-  
-  
-  static const size_t kReservedFDs = 4;
-  std::array<int, kReservedFDs> mFileDescriptors;
 #endif
 
   ReservedResources()
 #if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
       : mVirtualMemory(nullptr)
-#elif defined(XP_LINUX)
-      : mFileDescriptors{-1, -1, -1, -1}
 #endif
   {
   }
@@ -416,12 +408,6 @@ static void ReserveResources() {
   MOZ_ASSERT(gReservedResources.mVirtualMemory == nullptr);
   gReservedResources.mVirtualMemory = VirtualAlloc(
       nullptr, ReservedResources::kReserveSize, MEM_RESERVE, PAGE_NOACCESS);
-#elif defined(XP_LINUX)
-  for (size_t i = 0; i < ReservedResources::kReservedFDs; i++) {
-    MOZ_ASSERT(gReservedResources.mFileDescriptors[i] < 0);
-    gReservedResources.mFileDescriptors[i] =
-        static_cast<int>(syscall(__NR_memfd_create, "mozreserved", 0));
-  }
 #endif
 }
 
@@ -430,13 +416,6 @@ static void ReleaseResources() {
   if (gReservedResources.mVirtualMemory) {
     VirtualFree(gReservedResources.mVirtualMemory, 0, MEM_RELEASE);
     gReservedResources.mVirtualMemory = nullptr;
-  }
-#elif defined(XP_LINUX)
-  for (size_t i = 0; i < ReservedResources::kReservedFDs; i++) {
-    if (gReservedResources.mFileDescriptors[i] > 0) {
-      close(gReservedResources.mFileDescriptors[i]);
-      gReservedResources.mFileDescriptors[i] = -1;
-    }
   }
 #endif  
 }

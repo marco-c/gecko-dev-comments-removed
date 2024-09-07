@@ -32,6 +32,7 @@
 
 #include <pthread.h>
 
+#include <array>
 #include <string>
 
 #include "common/using_std_string.h"
@@ -105,6 +106,11 @@ private:
   bool MakeMinidumpFilename(string& outFilename);
 
   
+  
+  void ReserveFileDescriptors();
+  void ReleaseFileDescriptors();
+
+  
   static void* ThreadMain(void* arg);
 
   int server_fd_;
@@ -124,6 +130,9 @@ private:
   pthread_t thread_;
   int control_pipe_in_;
   int control_pipe_out_;
+
+  static const size_t RESERVED_FDS_NUM = 2;
+  std::array<int, RESERVED_FDS_NUM> reserved_fds_;
 
   
   CrashGenerationServer(const CrashGenerationServer&);
