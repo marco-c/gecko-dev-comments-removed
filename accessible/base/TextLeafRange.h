@@ -13,10 +13,9 @@
 #include "nsDirection.h"
 #include "nsIAccessibleText.h"
 
-class nsRange;
-
 namespace mozilla {
 namespace dom {
+class AbstractRange;
 class Document;
 }
 
@@ -148,7 +147,7 @@ class TextLeafPoint final {
 
 
   static void UpdateCachedSpellingError(dom::Document* aDocument,
-                                        const nsRange& aRange);
+                                        const dom::AbstractRange& aRange);
 
   
 
