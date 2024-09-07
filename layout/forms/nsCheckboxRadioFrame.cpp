@@ -12,8 +12,6 @@
 
 using namespace mozilla;
 
-
-
 nsCheckboxRadioFrame* NS_NewCheckboxRadioFrame(PresShell* aPresShell,
                                                ComputedStyle* aStyle) {
   return new (aPresShell)
