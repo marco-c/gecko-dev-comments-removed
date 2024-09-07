@@ -255,6 +255,8 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
                    ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
                    nsReflowStatus& aStatus);
 
+  nsMargin GetBorderPaddingForPlace(const PlaceFlags& aFlags);
+
  protected:
   
   
@@ -291,7 +293,6 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   void ClearSavedChildMetrics();
 
-  nsMargin GetBorderPaddingForPlace(const PlaceFlags& aFlags);
   static nsMargin GetMarginForPlace(const PlaceFlags& aFlags, nsIFrame* aChild);
 
   static void InflateReflowAndBoundingMetrics(
