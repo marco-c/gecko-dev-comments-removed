@@ -65,14 +65,21 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
             self._initialize_device()
 
             external_storage = self.device.shell_output("echo $EXTERNAL_STORAGE")
-            self._remote_test_root = os.path.join(
-                external_storage,
-                "Android",
-                "data",
-                self.config["binary"],
-                "files",
-                "test_root",
-            )
+            if int(self.device.shell_output("getprop ro.build.version.release")) == 14:
+                
+                
+                
+                
+                self._remote_test_root = os.path.join(external_storage, "Download")
+            else:
+                self._remote_test_root = os.path.join(
+                    external_storage,
+                    "Android",
+                    "data",
+                    self.config["binary"],
+                    "files",
+                    "test_root",
+                )
 
         return self._remote_test_root
 
