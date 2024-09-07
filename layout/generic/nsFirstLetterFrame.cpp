@@ -125,13 +125,18 @@ void nsFirstLetterFrame::AddInlinePrefISize(
 
 
 nscoord nsFirstLetterFrame::GetMinISize(gfxContext* aRenderingContext) {
-  return nsLayoutUtils::MinISizeFromInline(this, aRenderingContext);
+  return IntrinsicISize(aRenderingContext, IntrinsicISizeType::MinISize);
 }
 
 
 
 nscoord nsFirstLetterFrame::GetPrefISize(gfxContext* aRenderingContext) {
-  return nsLayoutUtils::PrefISizeFromInline(this, aRenderingContext);
+  return IntrinsicISize(aRenderingContext, IntrinsicISizeType::PrefISize);
+}
+
+nscoord nsFirstLetterFrame::IntrinsicISize(gfxContext* aContext,
+                                           IntrinsicISizeType aType) {
+  return IntrinsicISizeFromInline(aContext, aType);
 }
 
 

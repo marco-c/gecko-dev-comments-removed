@@ -2879,6 +2879,14 @@ class nsIFrame : public nsQueryFrame {
   nscoord ShrinkISizeToFit(gfxContext* aRenderingContext, nscoord aISizeInCB,
                            mozilla::ComputeSizeFlags aFlags);
 
+  
+
+
+
+
+  nscoord IntrinsicISizeFromInline(gfxContext* aContext,
+                                   mozilla::IntrinsicISizeType aType);
+
  public:
   
 

@@ -1588,14 +1588,6 @@ class nsLayoutUtils {
       nscoord tentWidth, nscoord tentHeight);
 
   
-  static nscoord PrefISizeFromInline(nsIFrame* aFrame,
-                                     gfxContext* aRenderingContext);
-
-  
-  static nscoord MinISizeFromInline(nsIFrame* aFrame,
-                                    gfxContext* aRenderingContext);
-
-  
   static nscolor DarkenColorIfNeeded(nsIFrame* aFrame, nscolor aColor);
 
   

@@ -4378,13 +4378,18 @@ nsIFrame* nsContinuingTextFrame::FirstInFlow() const {
 
 
 nscoord nsTextFrame::GetMinISize(gfxContext* aRenderingContext) {
-  return nsLayoutUtils::MinISizeFromInline(this, aRenderingContext);
+  return IntrinsicISize(aRenderingContext, IntrinsicISizeType::MinISize);
 }
 
 
 
 nscoord nsTextFrame::GetPrefISize(gfxContext* aRenderingContext) {
-  return nsLayoutUtils::PrefISizeFromInline(this, aRenderingContext);
+  return IntrinsicISize(aRenderingContext, IntrinsicISizeType::PrefISize);
+}
+
+nscoord nsTextFrame::IntrinsicISize(gfxContext* aContext,
+                                    IntrinsicISizeType aType) {
+  return IntrinsicISizeFromInline(aContext, aType);
 }
 
 
