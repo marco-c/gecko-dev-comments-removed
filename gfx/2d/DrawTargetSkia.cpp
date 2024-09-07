@@ -1430,6 +1430,8 @@ Maybe<Rect> DrawTargetSkia::GetGlyphLocalBounds(
     return Nothing();
   }
 
+  
+  bounds.Inflate(1);
   return Some(bounds);
 }
 
