@@ -315,7 +315,7 @@ async function forEachLocalShortcutRow(callback) {
     
     
     
-    if (shortcut.pref == "shortcuts.quickactions") {
+    if (shortcut.pref == "shortcuts.actions") {
       continue;
     }
     await callback(row, shortcut);
