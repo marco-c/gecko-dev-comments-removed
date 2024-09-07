@@ -6,52 +6,57 @@
 
 
 
-add_task(async () => {
-  let hash = xreDirProvider.getInstallHash();
-  let defaultProfile = makeRandomProfileDir("default");
-  let updatedProfile = makeRandomProfileDir("updated");
-  let profilesIni = {
-    profiles: [
-      {
-        name: "default",
-        path: defaultProfile.leafName,
-        default: true,
+add_task(
+  {
+    skip_if: () => !AppConstants.MOZ_SELECTABLE_PROFILES,
+  },
+  async () => {
+    let hash = xreDirProvider.getInstallHash();
+    let defaultProfile = makeRandomProfileDir("default");
+    let updatedProfile = makeRandomProfileDir("updated");
+    let profilesIni = {
+      profiles: [
+        {
+          name: "default",
+          path: defaultProfile.leafName,
+          default: true,
+        },
+      ],
+      installs: {
+        [hash]: {
+          default: defaultProfile.leafName,
+        },
       },
-    ],
-    installs: {
-      [hash]: {
-        default: defaultProfile.leafName,
-      },
-    },
-  };
-  writeProfilesIni(profilesIni);
+    };
+    writeProfilesIni(profilesIni);
 
-  
-  checkProfileService(profilesIni);
+    
+    checkProfileService(profilesIni);
 
-  
-  let { profile } = selectStartupProfile();
-  profile.rootDir = updatedProfile;
-  let service = getProfileService();
-  service.flush();
+    
+    let { profile } = selectStartupProfile();
+    profile.rootDir = updatedProfile;
+    let service = getProfileService();
+    service.flush();
 
-  
-  profilesIni.profiles[0].path = updatedProfile.leafName;
-  profilesIni.installs[hash].default = updatedProfile.leafName;
+    
+    profilesIni.profiles[0].path = updatedProfile.leafName;
+    profilesIni.installs[hash].default = updatedProfile.leafName;
 
-  
-  checkProfileService(profilesIni, false);
+    
+    checkProfileService(profilesIni, false);
 
-  
-  
-  Assert.ok(
-    profile.rootDir.equals(updatedProfile),
-    "rootDir should have been updated."
-  );
-  let expectedLocalDir = gDataHomeLocal.clone();
-  expectedLocalDir.append(updatedProfile.leafName);
-  Assert.ok(
-    profile.localDir.equals(expectedLocalDir),
-    "localDir should have been updated."
-  );
-});
+    
+    
+    Assert.ok(
+      profile.rootDir.equals(updatedProfile),
+      "rootDir should have been updated."
+    );
+    let expectedLocalDir = gDataHomeLocal.clone();
+    expectedLocalDir.append(updatedProfile.leafName);
+    Assert.ok(
+      profile.localDir.equals(expectedLocalDir),
+      "localDir should have been updated."
+    );
+  }
+);
