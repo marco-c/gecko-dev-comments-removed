@@ -1710,6 +1710,8 @@ bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   
+
+  
   
   
   JS::PropertyAttributes attrs = GetPropertyAttributes(obj, prop);
@@ -1723,9 +1725,12 @@ bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
 
   
   if (!attrs.configurable()) {
+    
     if (desc.hasConfigurable() && desc.configurable()) {
       return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
+
+    
     if (desc.hasEnumerable() && desc.enumerable() != attrs.enumerable()) {
       return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
@@ -2026,6 +2031,10 @@ bool js::AddOrUpdateSparseElementHelper(JSContext* cx,
 
 
 
+
+
+
+
 bool js::NativeHasProperty(JSContext* cx, Handle<NativeObject*> obj,
                            HandleId id, bool* foundp) {
   Rooted<NativeObject*> pobj(cx, obj);
@@ -2060,7 +2069,6 @@ bool js::NativeHasProperty(JSContext* cx, Handle<NativeObject*> obj,
       return true;
     }
 
-    
     
     
     
@@ -2285,6 +2293,11 @@ bool js::GetSparseElementHelper(JSContext* cx, Handle<NativeObject*> obj,
   return GetExistingProperty<CanGC>(cx, receiver, obj, id, prop, result);
 }
 
+
+
+
+
+
 template <AllowGC allowGC>
 static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
     JSContext* cx, typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
@@ -2328,7 +2341,6 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
       return GetNonexistentProperty(cx, id, nameLookup, vp);
     }
 
-    
     
     
     
@@ -2474,9 +2486,13 @@ static bool NativeSetExistingDataProperty(JSContext* cx,
 
 
 
-bool js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v,
-                               HandleValue receiverValue,
-                               ObjectOpResult& result) {
+
+
+
+
+static bool SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v,
+                                  HandleValue receiverValue,
+                                  ObjectOpResult& result) {
   
   if (!receiverValue.isObject()) {
     return result.fail(JSMSG_SET_NON_OBJECT_RECEIVER);
@@ -2520,20 +2536,6 @@ bool js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v,
   return DefineProperty(cx, receiver, id, desc, result);
 }
 
-
-
-bool js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id,
-                            HandleValue v, HandleValue receiver,
-                            ObjectOpResult& result) {
-  MOZ_ASSERT(!obj->is<ProxyObject>());
-
-  RootedObject proto(cx, obj->staticPrototype());
-  if (proto) {
-    return SetProperty(cx, proto, id, v, receiver, result);
-  }
-
-  return SetPropertyByDefining(cx, id, v, receiver, result);
-}
 
 
 
@@ -2604,11 +2606,16 @@ static bool SetDenseElement(JSContext* cx, Handle<NativeObject*> obj,
 
 
 
+
+
+
 static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
                                 HandleValue receiver,
                                 Handle<NativeObject*> pobj,
                                 const PropertyResult& prop,
                                 ObjectOpResult& result) {
+  
+
   
   if (prop.isDenseElement() || prop.isTypedArrayElement()) {
     
@@ -2657,24 +2664,35 @@ static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
   
   MOZ_ASSERT(propInfo.isAccessorProperty());
 
+  
   JSObject* setterObject = pobj->getSetter(propInfo);
+
+  
   if (!setterObject) {
     return result.fail(JSMSG_GETTER_ONLY);
   }
 
+  
   RootedValue setter(cx, ObjectValue(*setterObject));
   if (!js::CallSetter(cx, receiver, setter, v)) {
     return false;
   }
 
+  
   return result.succeed();
 }
+
+
+
+
+
+
+
 
 template <QualifiedBool IsQualified>
 bool js::NativeSetProperty(JSContext* cx, Handle<NativeObject*> obj,
                            HandleId id, HandleValue v, HandleValue receiver,
                            ObjectOpResult& result) {
-  
   
   
   PropertyResult prop;
@@ -2695,8 +2713,8 @@ bool js::NativeSetProperty(JSContext* cx, Handle<NativeObject*> obj,
       return false;
     }
 
+    
     if (prop.isFound()) {
-      
       return SetExistingProperty(cx, id, v, receiver, pobj, prop, result);
     }
 
@@ -2714,7 +2732,6 @@ bool js::NativeSetProperty(JSContext* cx, Handle<NativeObject*> obj,
                                                  result);
     }
 
-    
     
     
     
@@ -2779,6 +2796,10 @@ static bool CallJSDeletePropertyOp(JSContext* cx, JSDeletePropertyOp op,
   }
   return result.succeed();
 }
+
+
+
+
 
 
 bool js::NativeDeleteProperty(JSContext* cx, Handle<NativeObject*> obj,

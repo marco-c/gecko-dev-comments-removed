@@ -1135,14 +1135,15 @@ bool TypedArrayObjectTemplate<uint64_t>::convertValue(JSContext* cx,
 
 
 
+
+
+
 template <typename NativeType>
  bool TypedArrayObjectTemplate<NativeType>::setElement(
     JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
     ObjectOpResult& result) {
   MOZ_ASSERT(!obj->hasDetachedBuffer());
   MOZ_ASSERT(index < obj->length().valueOr(0));
-
-  
 
   
   NativeType nativeValue;
@@ -3864,17 +3865,17 @@ bool js::DefineTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   }
 
   
-  if (desc.isAccessorDescriptor()) {
-    return result.fail(JSMSG_CANT_REDEFINE_PROP);
-  }
-
-  
   if (desc.hasConfigurable() && !desc.configurable()) {
     return result.fail(JSMSG_CANT_REDEFINE_PROP);
   }
 
   
   if (desc.hasEnumerable() && !desc.enumerable()) {
+    return result.fail(JSMSG_CANT_REDEFINE_PROP);
+  }
+
+  
+  if (desc.isAccessorDescriptor()) {
     return result.fail(JSMSG_CANT_REDEFINE_PROP);
   }
 
