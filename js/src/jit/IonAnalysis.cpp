@@ -29,8 +29,9 @@ using MPhiUseIteratorStack =
 
 
 
-static bool DepthFirstSearchUse(MIRGenerator* mir,
-                                MPhiUseIteratorStack& worklist, MPhi* phi) {
+[[nodiscard]] static bool DepthFirstSearchUse(MIRGenerator* mir,
+                                              MPhiUseIteratorStack& worklist,
+                                              MPhi* phi) {
   
   auto push = [&worklist](MPhi* phi, MUseIterator use) -> bool {
     phi->setInWorklist();
@@ -131,9 +132,9 @@ static bool DepthFirstSearchUse(MIRGenerator* mir,
   return true;
 }
 
-static bool FlagPhiInputsAsImplicitlyUsed(MIRGenerator* mir, MBasicBlock* block,
-                                          MBasicBlock* succ,
-                                          MPhiUseIteratorStack& worklist) {
+[[nodiscard]] static bool FlagPhiInputsAsImplicitlyUsed(
+    MIRGenerator* mir, MBasicBlock* block, MBasicBlock* succ,
+    MPhiUseIteratorStack& worklist) {
   
   
   
@@ -265,7 +266,7 @@ static MInstructionIterator FindFirstInstructionAfterBail(MBasicBlock* block) {
 
 
 
-static bool FlagOperandsAsImplicitlyUsedAfter(
+[[nodiscard]] static bool FlagOperandsAsImplicitlyUsedAfter(
     MIRGenerator* mir, MBasicBlock* block, MInstructionIterator firstRemoved) {
   MOZ_ASSERT(firstRemoved->block() == block);
 
@@ -312,8 +313,8 @@ static bool FlagOperandsAsImplicitlyUsedAfter(
   return true;
 }
 
-static bool FlagEntryResumePointOperands(MIRGenerator* mir,
-                                         MBasicBlock* block) {
+[[nodiscard]] static bool FlagEntryResumePointOperands(MIRGenerator* mir,
+                                                       MBasicBlock* block) {
   
   MResumePoint* rp = block->entryResumePoint();
   while (rp) {
@@ -334,8 +335,8 @@ static bool FlagEntryResumePointOperands(MIRGenerator* mir,
   return true;
 }
 
-static bool FlagAllOperandsAsImplicitlyUsed(MIRGenerator* mir,
-                                            MBasicBlock* block) {
+[[nodiscard]] static bool FlagAllOperandsAsImplicitlyUsed(MIRGenerator* mir,
+                                                          MBasicBlock* block) {
   return FlagEntryResumePointOperands(mir, block) &&
          FlagOperandsAsImplicitlyUsedAfter(mir, block, block->begin());
 }
@@ -420,12 +421,16 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
     if (!block->isMarked()) {
       
       
-      FlagAllOperandsAsImplicitlyUsed(mir, block);
+      if (!FlagAllOperandsAsImplicitlyUsed(mir, block)) {
+        return false;
+      }
     } else if (block->alwaysBails()) {
       
       
       MInstructionIterator firstRemoved = FindFirstInstructionAfterBail(block);
-      FlagOperandsAsImplicitlyUsedAfter(mir, block, firstRemoved);
+      if (!FlagOperandsAsImplicitlyUsedAfter(mir, block, firstRemoved)) {
+        return false;
+      }
     }
   }
 
@@ -503,7 +508,8 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
   return true;
 }
 
-static bool SplitCriticalEdgesForBlock(MIRGraph& graph, MBasicBlock* block) {
+[[nodiscard]] static bool SplitCriticalEdgesForBlock(MIRGraph& graph,
+                                                     MBasicBlock* block) {
   if (block->numSuccessors() < 2) {
     return true;
   }
@@ -767,8 +773,8 @@ static bool IsDiamondPattern(MBasicBlock* initialBlock) {
   return true;
 }
 
-static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
-                                           MBasicBlock* initialBlock) {
+[[nodiscard]] static bool MaybeFoldDiamondConditionBlock(
+    MIRGraph& graph, MBasicBlock* initialBlock) {
   MOZ_ASSERT(IsDiamondPattern(initialBlock));
 
   
@@ -936,8 +942,8 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
   return false;
 }
 
-static bool MaybeFoldTriangleConditionBlock(MIRGraph& graph,
-                                            MBasicBlock* initialBlock) {
+[[nodiscard]] static bool MaybeFoldTriangleConditionBlock(
+    MIRGraph& graph, MBasicBlock* initialBlock) {
   MOZ_ASSERT(IsTrianglePattern(initialBlock));
 
   
@@ -1089,8 +1095,8 @@ static bool MaybeFoldTriangleConditionBlock(MIRGraph& graph,
   return true;
 }
 
-static bool MaybeFoldConditionBlock(MIRGraph& graph,
-                                    MBasicBlock* initialBlock) {
+[[nodiscard]] static bool MaybeFoldConditionBlock(MIRGraph& graph,
+                                                  MBasicBlock* initialBlock) {
   if (IsDiamondPattern(initialBlock)) {
     return MaybeFoldDiamondConditionBlock(graph, initialBlock);
   }
@@ -1100,7 +1106,8 @@ static bool MaybeFoldConditionBlock(MIRGraph& graph,
   return true;
 }
 
-static bool MaybeFoldTestBlock(MIRGraph& graph, MBasicBlock* initialBlock) {
+[[nodiscard]] static bool MaybeFoldTestBlock(MIRGraph& graph,
+                                             MBasicBlock* initialBlock) {
   
   
   
@@ -2984,7 +2991,9 @@ bool jit::RemoveUnmarkedBlocks(MIRGenerator* mir, MIRGraph& graph,
         continue;
       }
 
-      FlagAllOperandsAsImplicitlyUsed(mir, block);
+      if (!FlagAllOperandsAsImplicitlyUsed(mir, block)) {
+        return false;
+      }
     }
 
     
@@ -4235,8 +4244,8 @@ bool jit::EliminateRedundantShapeGuards(MIRGraph& graph) {
   return true;
 }
 
-static bool TryEliminateGCBarriersForAllocation(TempAllocator& alloc,
-                                                MInstruction* allocation) {
+[[nodiscard]] static bool TryEliminateGCBarriersForAllocation(
+    TempAllocator& alloc, MInstruction* allocation) {
   MOZ_ASSERT(allocation->type() == MIRType::Object);
 
   JitSpew(JitSpew_RedundantGCBarriers, "Analyzing allocation %s",
