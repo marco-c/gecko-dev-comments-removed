@@ -46,6 +46,8 @@ add_task(async function () {
   selectContextMenuItem(dbg, `${selectors.editConditionItem}`);
   await waitForConditionalPanelFocus(dbg);
   
+  pressKey(dbg, "Right");
+  
   pressKey(dbg, "Left");
   
   pressKey(dbg, "ShiftEnter");
