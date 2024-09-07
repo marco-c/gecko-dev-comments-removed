@@ -9270,44 +9270,43 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
-  const bool isJavaScript = SchemeIsJavascript(aLoadState->URI());
-  const bool isExternalProtocol =
-      nsContentUtils::IsExternalProtocol(aLoadState->URI());
-  const bool isDownload = !aLoadState->FileName().IsVoid();
-  const bool toBeReset = !isJavaScript && MaybeInitTiming();
+  bool toBeReset = false;
+  bool isJavaScript = SchemeIsJavascript(aLoadState->URI());
 
-  
-  
-  if (mTiming && !isDownload) {
+  if (!isJavaScript) {
+    toBeReset = MaybeInitTiming();
+  }
+  bool isNotDownload = aLoadState->FileName().IsVoid();
+  if (mTiming && isNotDownload) {
     mTiming->NotifyBeforeUnload();
   }
   
   
-  
-  
-  
-  if (!isJavaScript && !isDownload &&
+  if (!isJavaScript && isNotDownload &&
       !aLoadState->NotifiedBeforeUnloadListeners() && mDocumentViewer) {
-    
-    
-    
-    
-    
-    const bool isPrivateWin = GetOriginAttributes().IsPrivateBrowsing();
-    const uint32_t loadType = aLoadState->LoadType();
+    bool okToUnload;
 
     
-    const bool isHistoryOrReload =
-        loadType == LOAD_RELOAD_NORMAL ||
+    
+    
+    
+    
+    bool isPrivateWin = GetOriginAttributes().IsPrivateBrowsing();
+    bool isHistoryOrReload = false;
+    uint32_t loadType = aLoadState->LoadType();
+
+    
+    if (loadType == LOAD_RELOAD_NORMAL ||
         loadType == LOAD_RELOAD_BYPASS_CACHE ||
         loadType == LOAD_RELOAD_BYPASS_PROXY ||
         loadType == LOAD_RELOAD_BYPASS_PROXY_AND_CACHE ||
-        loadType == LOAD_HISTORY;
+        loadType == LOAD_HISTORY) {
+      isHistoryOrReload = true;
+    }
 
     
     
     
-    bool okToUnload;
     if (!isHistoryOrReload && aLoadState->IsExemptFromHTTPSFirstMode() &&
         nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
       rv = mDocumentViewer->PermitUnload(
@@ -9325,7 +9324,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
   }
 
-  if (mTiming && !isDownload) {
+  if (mTiming && isNotDownload) {
     mTiming->NotifyUnloadAccepted(mCurrentURI);
   }
 
@@ -9359,7 +9358,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
-  const bool savePresentation =
+  bool savePresentation =
       CanSavePresentation(aLoadState->LoadType(), nullptr, nullptr,
                            true);
 
@@ -9385,7 +9384,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
-  if (!isJavaScript && !isDownload && !isExternalProtocol) {
+  if (!isJavaScript && isNotDownload) {
     
     
     
@@ -9393,6 +9392,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     
     
     
+
     if ((mDocumentViewer && mDocumentViewer->GetPreviousViewer()) ||
         LOAD_TYPE_HAS_FLAGS(aLoadState->LoadType(), LOAD_FLAGS_STOP_CONTENT)) {
       rv = Stop(nsIWebNavigation::STOP_ALL);
