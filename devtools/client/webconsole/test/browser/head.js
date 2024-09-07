@@ -1269,13 +1269,55 @@ async function selectNodeWithPicker(toolbox, selector) {
 
 
 
-function expandObjectInspectorNode(node) {
+async function expandObjectInspectorNode(node) {
+  if (!node.classList.contains("tree-node")) {
+    ok(false, "Node should be a .tree-node");
+    return;
+  }
   const arrow = getObjectInspectorNodeArrow(node);
   if (!arrow) {
     ok(false, "Node can't be expanded");
     return;
   }
+  if (arrow.classList.contains("open")) {
+    ok(false, "Node already expanded");
+    return;
+  }
+  const isLongString = node.querySelector(".node > .objectBox-string");
+  let onMutation;
+  let textContentBeforeExpand;
+  if (!isLongString) {
+    const objectInspector = node.closest(".object-inspector");
+    onMutation = waitForNodeMutation(objectInspector, {
+      childList: true,
+    });
+  } else {
+    textContentBeforeExpand = node.textContent;
+  }
   arrow.click();
+
+  
+  
+  
+  if (isLongString) {
+    
+    await waitFor(() => arrow.classList.contains("open"));
+    
+    
+    await waitFor(
+      () => node.textContent.length > textContentBeforeExpand.length
+    );
+  } else {
+    await onMutation;
+    
+    
+    await waitFor(() => !!getObjectInspectorChildrenNodes(node).length);
+  }
+
+  ok(
+    arrow.classList.contains("open"),
+    "The arrow of the root node of the tree is expanded after clicking on it"
+  );
 }
 
 
@@ -1316,7 +1358,7 @@ function getObjectInspectorNodes(oi) {
 
 
 function getObjectInspectorChildrenNodes(node) {
-  const getLevel = n => parseInt(n.getAttribute("aria-level"), 10);
+  const getLevel = n => parseInt(n.getAttribute("aria-level") || "0", 10);
   const level = getLevel(node);
   const childLevel = level + 1;
   const children = [];
