@@ -984,7 +984,18 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                                        bool aHasPostData);
 
  private:
-  mozilla::ipc::IPCResult Attach(bool aFromIPC, ContentParent* aOriginProcess);
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] const char* BrowsingContextCoherencyChecks(
+      ContentParent* aOriginProcess);
+
+  void Attach(bool aFromIPC, ContentParent* aOriginProcess);
 
   
   
@@ -997,10 +1008,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSetOriginAttributes();
 
   void AssertOriginAttributesMatchPrivateBrowsing();
-
-  
-  
-  void AssertCoherentLoadContext();
 
   friend class ::nsOuterWindowProxy;
   friend class ::nsGlobalWindowOuter;
