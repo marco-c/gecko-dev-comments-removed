@@ -1,4 +1,9 @@
 export type ProviderType = "default" | "openid4vp";
+export type CredentialMediationRequirement =
+  | "conditional"
+  | "optional"
+  | "required"
+  | "silent";
 
 
 
@@ -26,12 +31,17 @@ export interface CredentialRequestOptions {
 
 
   digital: DigitalCredentialRequestOptions;
+  mediation: CredentialMediationRequirement;
 }
 
 
 
 
-export type IframeActionType = "create" | "get" | "ping" | "preventSilentAccess" ;
+export type IframeActionType =
+  | "create"
+  | "get"
+  | "ping"
+  | "preventSilentAccess";
 
 
 
