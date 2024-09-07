@@ -185,15 +185,15 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AudioContext", insecureContext: true },
   
-  { name: "AudioData", insecureContext: true },
+  { name: "AudioData", insecureContext: true, nightlyAndroid: true },
   
-  { name: "AudioDecoder" },
+  { name: "AudioDecoder", nightlyAndroid: true },
   
   { name: "AudioBufferSourceNode", insecureContext: true },
   
   { name: "AudioDestinationNode", insecureContext: true },
   
-  { name: "AudioEncoder" },
+  { name: "AudioEncoder", nightlyAndroid: true },
   
   { name: "AudioListener", insecureContext: true },
   
@@ -415,9 +415,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ElementInternals", insecureContext: true },
   
-  { name: "EncodedAudioChunk", insecureContext: true },
+  { name: "EncodedAudioChunk", insecureContext: true, nightlyAndroid: true },
   
-  { name: "EncodedVideoChunk", insecureContext: true },
+  { name: "EncodedVideoChunk", insecureContext: true, nightlyAndroid: true },
   
   { name: "ErrorEvent", insecureContext: true },
   
@@ -1460,13 +1460,13 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ValidityState", insecureContext: true },
   
-  { name: "VideoColorSpace", insecureContext: true },
+  { name: "VideoColorSpace", insecureContext: true, nightlyAndroid: true },
   
-  { name: "VideoDecoder" },
+  { name: "VideoDecoder", nightlyAndroid: true },
   
-  { name: "VideoEncoder" },
+  { name: "VideoEncoder", nightlyAndroid: true },
   
-  { name: "VideoFrame", insecureContext: true },
+  { name: "VideoFrame", insecureContext: true, nightlyAndroid: true },
   
   { name: "VideoPlaybackQuality", insecureContext: true },
   
