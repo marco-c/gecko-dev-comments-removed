@@ -620,6 +620,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   bool mEndMarkerAdded = false;
+  
+  bool mReportedNEL = false;
 
   
   
