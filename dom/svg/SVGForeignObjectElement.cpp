@@ -68,23 +68,16 @@ already_AddRefed<DOMSVGAnimatedLength> SVGForeignObjectElement::Height() {
 
 
 
-
-gfxMatrix SVGForeignObjectElement::PrependLocalTransformsTo(
-    const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
+gfxMatrix SVGForeignObjectElement::ChildToUserSpaceTransform() const {
   
   float x, y;
-
   if (!SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y>(this, &x, &y)) {
     
     
     const_cast<SVGForeignObjectElement*>(this)->GetAnimatedLengthValues(
         &x, &y, nullptr);
   }
-
-  gfxMatrix toUserSpace = gfxMatrix::Translation(x, y);
-  MOZ_ASSERT(aWhich == eAllTransforms || aWhich == eChildToUserSpace,
-             "Unknown TransformTypes");
-  return toUserSpace * aMatrix;
+  return gfxMatrix::Translation(x, y);
 }
 
 

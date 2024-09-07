@@ -45,26 +45,6 @@ class SVGViewportElement;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-enum SVGTransformTypes {
-  eAllTransforms,
-  eChildToUserSpace
-};
-
-
-
-
-
 class SVGContentUtils {
  public:
   using Float = gfx::Float;
