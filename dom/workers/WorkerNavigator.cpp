@@ -139,21 +139,17 @@ void WorkerNavigator::GetPlatform(nsString& aPlatform, CallerType aCallerType,
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);
 
-  if (aCallerType != CallerType::System) {
-    if (workerPrivate->ShouldResistFingerprinting(
-            RFPTarget::NavigatorPlatform)) {
-      
-      aPlatform.AssignLiteral(SPOOFED_PLATFORM);
-      return;
-    }
-
-    if (!mProperties.mPlatformOverridden.IsEmpty()) {
-      aPlatform = mProperties.mPlatformOverridden;
-      return;
-    }
+  
+  
+  
+  if (aCallerType == CallerType::System ||
+      workerPrivate->ShouldResistFingerprinting(RFPTarget::NavigatorPlatform) ||
+      mProperties.mPlatformOverridden.IsEmpty()) {
+    aPlatform = mProperties.mPlatform;
+  } else {
+    
+    aPlatform = mProperties.mPlatformOverridden;
   }
-
-  aPlatform = mProperties.mPlatform;
 }
 
 namespace {
