@@ -18,11 +18,6 @@
 #include "hasht.h"
 #include "prtime.h"
 
-
-extern mozilla::pkix::Result GetCertLifetimeInFullMonths(
-    mozilla::pkix::Time certNotBefore, mozilla::pkix::Time certNotAfter,
-    size_t& months);
-
 namespace mozilla {
 namespace ct {
 
@@ -30,11 +25,6 @@ using namespace mozilla::pkix;
 
 class CTPolicyEnforcerTest : public ::testing::Test {
  public:
-  void SetUp() override {
-    OPERATORS_1_AND_2.push_back(OPERATOR_1);
-    OPERATORS_1_AND_2.push_back(OPERATOR_2);
-  }
-
   void GetLogId(Buffer& logId, size_t logNo) {
     logId.resize(SHA256_LENGTH);
     std::fill(logId.begin(), logId.end(), 0);
@@ -68,37 +58,28 @@ class CTPolicyEnforcerTest : public ::testing::Test {
   }
 
   void CheckCompliance(const VerifiedSCTList& verifiedSct,
-                       size_t certLifetimeInCalendarMonths,
-                       const CTLogOperatorList& dependentLogOperators,
+                       Duration certLifetime,
                        CTPolicyCompliance expectedCompliance) {
-    CTPolicyCompliance compliance;
-    mPolicyEnforcer.CheckCompliance(verifiedSct, certLifetimeInCalendarMonths,
-                                    dependentLogOperators, compliance);
+    CTPolicyCompliance compliance =
+        CheckCTPolicyCompliance(verifiedSct, certLifetime);
     EXPECT_EQ(expectedCompliance, compliance);
   }
 
  protected:
-  CTPolicyEnforcer mPolicyEnforcer;
-
   const size_t LOG_1 = 1;
   const size_t LOG_2 = 2;
   const size_t LOG_3 = 3;
-  const size_t LOG_4 = 4;
-  const size_t LOG_5 = 5;
 
   const CTLogOperatorId OPERATOR_1 = 1;
   const CTLogOperatorId OPERATOR_2 = 2;
   const CTLogOperatorId OPERATOR_3 = 3;
-
-  CTLogOperatorList NO_OPERATORS;
-  CTLogOperatorList OPERATORS_1_AND_2;
 
   const SCTOrigin ORIGIN_EMBEDDED = SCTOrigin::Embedded;
   const SCTOrigin ORIGIN_TLS = SCTOrigin::TLSExtension;
   const SCTOrigin ORIGIN_OCSP = SCTOrigin::OCSPResponse;
 
   
-  const size_t DEFAULT_MONTHS = 4 * 12L;
+  const Duration DEFAULT_LIFETIME = Duration(365 * Time::ONE_DAY_IN_SECONDS);
 
   
   const uint64_t TIMESTAMP_1 = 1439596800000L;
@@ -110,7 +91,7 @@ class CTPolicyEnforcerTest : public ::testing::Test {
   const uint64_t BEFORE_RETIREMENT = 1459468800000L;
 
   
-  const uint64_t AFTER_DISQUALIFIED = 1460764800000L;
+  const uint64_t AFTER_RETIREMENT = 1460764800000L;
 };
 
 TEST_F(CTPolicyEnforcerTest, ConformsToCTPolicyWithNonEmbeddedSCTs) {
@@ -119,18 +100,20 @@ TEST_F(CTPolicyEnforcerTest, ConformsToCTPolicyWithNonEmbeddedSCTs) {
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_TLS, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_TLS, TIMESTAMP_1);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::Compliant);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::Compliant);
 }
 
 TEST_F(CTPolicyEnforcerTest, DoesNotConformNotEnoughDiverseNonEmbeddedSCTs) {
   VerifiedSCTList scts;
 
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_TLS, TIMESTAMP_1);
-  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_TLS, TIMESTAMP_1);
+  AddSct(scts, LOG_2, OPERATOR_1, ORIGIN_TLS, TIMESTAMP_1);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, OPERATORS_1_AND_2,
-                  CTPolicyCompliance::NotDiverseScts);
+  
+  
+  
+  
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 }
 
 TEST_F(CTPolicyEnforcerTest, ConformsToCTPolicyWithEmbeddedSCTs) {
@@ -139,12 +122,9 @@ TEST_F(CTPolicyEnforcerTest, ConformsToCTPolicyWithEmbeddedSCTs) {
   
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_3, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_4, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_5, OPERATOR_2, ORIGIN_EMBEDDED, TIMESTAMP_1);
+  AddSct(scts, LOG_3, OPERATOR_2, ORIGIN_EMBEDDED, TIMESTAMP_1);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::Compliant);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::Compliant);
 }
 
 TEST_F(CTPolicyEnforcerTest, DoesNotConformNotEnoughDiverseEmbeddedSCTs) {
@@ -154,11 +134,8 @@ TEST_F(CTPolicyEnforcerTest, DoesNotConformNotEnoughDiverseEmbeddedSCTs) {
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   AddSct(scts, LOG_3, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_4, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_5, OPERATOR_2, ORIGIN_EMBEDDED, TIMESTAMP_1);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, OPERATORS_1_AND_2,
-                  CTPolicyCompliance::NotDiverseScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotDiverseScts);
 }
 
 TEST_F(CTPolicyEnforcerTest, ConformsToCTPolicyWithPooledNonEmbeddedSCTs) {
@@ -167,18 +144,16 @@ TEST_F(CTPolicyEnforcerTest, ConformsToCTPolicyWithPooledNonEmbeddedSCTs) {
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_OCSP, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_TLS, TIMESTAMP_1);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::Compliant);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::Compliant);
 }
 
-TEST_F(CTPolicyEnforcerTest, ConformsToCTPolicyWithPooledEmbeddedSCTs) {
+TEST_F(CTPolicyEnforcerTest, DoesNotConformToCTPolicyWithPooledEmbeddedSCTs) {
   VerifiedSCTList scts;
 
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_OCSP, TIMESTAMP_1);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::Compliant);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 }
 
 TEST_F(CTPolicyEnforcerTest, DoesNotConformToCTPolicyNotEnoughSCTs) {
@@ -187,8 +162,7 @@ TEST_F(CTPolicyEnforcerTest, DoesNotConformToCTPolicyNotEnoughSCTs) {
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_EMBEDDED, TIMESTAMP_1);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 }
 
 TEST_F(CTPolicyEnforcerTest, DoesNotConformToCTPolicyNotEnoughFreshSCTs) {
@@ -202,63 +176,52 @@ TEST_F(CTPolicyEnforcerTest, DoesNotConformToCTPolicyNotEnoughFreshSCTs) {
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_TLS, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_TLS, BEFORE_RETIREMENT,
          CTLogState::Retired);
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
   
   scts.clear();
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_TLS, TIMESTAMP_1);
-  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_TLS, AFTER_DISQUALIFIED,
+  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_TLS, AFTER_RETIREMENT,
          CTLogState::Retired);
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 
   
   scts.clear();
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_TLS, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_EMBEDDED, BEFORE_RETIREMENT,
          CTLogState::Retired);
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 
   
   scts.clear();
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_TLS, TIMESTAMP_1);
-  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_EMBEDDED, AFTER_DISQUALIFIED,
+  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_EMBEDDED, AFTER_RETIREMENT,
          CTLogState::Retired);
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 }
 
-TEST_F(CTPolicyEnforcerTest,
-       ConformsWithDisqualifiedLogBeforeDisqualificationDate) {
+TEST_F(CTPolicyEnforcerTest, ConformsWithRetiredLogBeforeDisqualificationDate) {
   VerifiedSCTList scts;
 
   
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_3, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_4, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_5, OPERATOR_2, ORIGIN_EMBEDDED, BEFORE_RETIREMENT,
+  AddSct(scts, LOG_3, OPERATOR_2, ORIGIN_EMBEDDED, BEFORE_RETIREMENT,
          CTLogState::Retired);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::Compliant);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::Compliant);
 }
 
 TEST_F(CTPolicyEnforcerTest,
-       DoesNotConformWithDisqualifiedLogAfterDisqualificationDate) {
+       DoesNotConformWithRetiredLogAfterDisqualificationDate) {
   VerifiedSCTList scts;
 
   
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   AddSct(scts, LOG_2, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_3, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_4, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_5, OPERATOR_2, ORIGIN_EMBEDDED, AFTER_DISQUALIFIED,
+  AddSct(scts, LOG_3, OPERATOR_2, ORIGIN_EMBEDDED, AFTER_RETIREMENT,
          CTLogState::Retired);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 }
 
 TEST_F(CTPolicyEnforcerTest,
@@ -266,49 +229,45 @@ TEST_F(CTPolicyEnforcerTest,
   VerifiedSCTList scts;
 
   
-  AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, AFTER_DISQUALIFIED,
+  AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, AFTER_RETIREMENT,
          CTLogState::Retired);
-  AddSct(scts, LOG_2, OPERATOR_1, ORIGIN_EMBEDDED, AFTER_DISQUALIFIED);
-  AddSct(scts, LOG_3, OPERATOR_1, ORIGIN_EMBEDDED, AFTER_DISQUALIFIED);
-  AddSct(scts, LOG_4, OPERATOR_1, ORIGIN_EMBEDDED, AFTER_DISQUALIFIED);
-  AddSct(scts, LOG_5, OPERATOR_2, ORIGIN_EMBEDDED, AFTER_DISQUALIFIED);
+  AddSct(scts, LOG_2, OPERATOR_1, ORIGIN_EMBEDDED, AFTER_RETIREMENT);
+  AddSct(scts, LOG_3, OPERATOR_2, ORIGIN_EMBEDDED, AFTER_RETIREMENT);
 
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotEnoughScts);
 }
 
 TEST_F(CTPolicyEnforcerTest,
-       DoesNotConformToCTPolicyNotEnoughUniqueEmbeddedLogs) {
+       DoesNotConformToCTPolicyNotEnoughUniqueEmbeddedRetiredLogs) {
   VerifiedSCTList scts;
 
   
   AddSct(scts, LOG_1, OPERATOR_1, ORIGIN_EMBEDDED, TIMESTAMP_1);
   
-  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_3, OPERATOR_2, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  
-  AddSct(scts, LOG_4, OPERATOR_3, ORIGIN_EMBEDDED, TIMESTAMP_1);
-  AddSct(scts, LOG_4, OPERATOR_3, ORIGIN_EMBEDDED, TIMESTAMP_1);
+  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_EMBEDDED, BEFORE_RETIREMENT,
+         CTLogState::Retired);
+  AddSct(scts, LOG_2, OPERATOR_2, ORIGIN_EMBEDDED, BEFORE_RETIREMENT,
+         CTLogState::Retired);
 
   
-  CheckCompliance(scts, DEFAULT_MONTHS, NO_OPERATORS,
-                  CTPolicyCompliance::NotEnoughScts);
+  CheckCompliance(scts, DEFAULT_LIFETIME, CTPolicyCompliance::NotDiverseScts);
 }
 
 TEST_F(CTPolicyEnforcerTest,
        ConformsToPolicyExactNumberOfSCTsForValidityPeriod) {
   
   const struct TestData {
-    size_t certLifetimeInCalendarMonths;
+    Duration certLifetime;
     size_t sctsRequired;
-  } kTestData[] = {{3, 2},          {12 + 2, 2},     {12 + 3, 3},
-                   {2 * 12 + 2, 3}, {2 * 12 + 3, 4}, {3 * 12 + 2, 4},
-                   {3 * 12 + 4, 5}};
+  } kTestData[] = {{Duration(90 * Time::ONE_DAY_IN_SECONDS), 2},
+                   {Duration(180 * Time::ONE_DAY_IN_SECONDS), 2},
+                   {Duration(181 * Time::ONE_DAY_IN_SECONDS), 3},
+                   {Duration(365 * Time::ONE_DAY_IN_SECONDS), 3}};
 
   for (size_t i = 0; i < MOZILLA_CT_ARRAY_LENGTH(kTestData); ++i) {
     SCOPED_TRACE(i);
 
-    size_t months = kTestData[i].certLifetimeInCalendarMonths;
+    Duration certLifetime = kTestData[i].certLifetime;
     size_t sctsRequired = kTestData[i].sctsRequired;
 
     
@@ -317,8 +276,8 @@ TEST_F(CTPolicyEnforcerTest,
       VerifiedSCTList scts;
       AddMultipleScts(scts, sctsAvailable, 1, ORIGIN_EMBEDDED, TIMESTAMP_1);
 
-      CTPolicyCompliance compliance;
-      mPolicyEnforcer.CheckCompliance(scts, months, NO_OPERATORS, compliance);
+      CTPolicyCompliance compliance =
+          CheckCTPolicyCompliance(scts, certLifetime);
       EXPECT_EQ(CTPolicyCompliance::NotEnoughScts, compliance)
           << "i=" << i << " sctsRequired=" << sctsRequired
           << " sctsAvailable=" << sctsAvailable;
@@ -328,52 +287,8 @@ TEST_F(CTPolicyEnforcerTest,
     VerifiedSCTList scts;
     AddMultipleScts(scts, sctsRequired, 2, ORIGIN_EMBEDDED, TIMESTAMP_1);
 
-    CTPolicyCompliance compliance;
-    mPolicyEnforcer.CheckCompliance(scts, months, NO_OPERATORS, compliance);
+    CTPolicyCompliance compliance = CheckCTPolicyCompliance(scts, certLifetime);
     EXPECT_EQ(CTPolicyCompliance::Compliant, compliance) << "i=" << i;
-  }
-}
-
-TEST_F(CTPolicyEnforcerTest, TestEdgeCasesOfGetCertLifetimeInFullMonths) {
-  const struct TestData {
-    uint64_t notBefore;
-    uint64_t notAfter;
-    size_t expectedMonths;
-  } kTestData[] = {
-      {                   
-       1424863500000000,  
-       1427196299000000,  
-       0},
-      {                   
-       1424863500000000,  
-       1427282700000000,  
-       1},
-      {                   
-       1427282700000000,  
-       1461583500000000,  
-       13},
-      {
-       1425209100000000,  
-       1462015500000000,  
-       13},
-      {
-       
-       1427801100000000,  
-       1459509900000000,  
-       12}};
-
-  for (size_t i = 0; i < MOZILLA_CT_ARRAY_LENGTH(kTestData); ++i) {
-    SCOPED_TRACE(i);
-
-    size_t months;
-    ASSERT_EQ(Success,
-              GetCertLifetimeInFullMonths(mozilla::pkix::TimeFromEpochInSeconds(
-                                              kTestData[i].notBefore / 1000000),
-                                          mozilla::pkix::TimeFromEpochInSeconds(
-                                              kTestData[i].notAfter / 1000000),
-                                          months))
-        << "i=" << i;
-    EXPECT_EQ(kTestData[i].expectedMonths, months) << "i=" << i;
   }
 }
 

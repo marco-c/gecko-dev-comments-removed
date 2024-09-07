@@ -7,9 +7,9 @@
 #include "CTPolicyEnforcer.h"
 
 #include "mozilla/Assertions.h"
-#include <algorithm>
+#include "mozpkix/Time.h"
+#include <set>
 #include <stdint.h>
-#include <vector>
 
 namespace mozilla {
 namespace ct {
@@ -18,104 +18,13 @@ using namespace mozilla::pkix;
 
 
 
-static size_t GetRequiredEmbeddedSctsCount(
-    size_t certLifetimeInFullCalendarMonths) {
+
+const Duration ONE_HUNDRED_AND_EIGHTY_DAYS =
+    Duration(180 * Time::ONE_DAY_IN_SECONDS);
+size_t GetRequiredEmbeddedSctsCount(Duration certLifetime) {
   
   
-  
-  
-  return 1 + (certLifetimeInFullCalendarMonths + 9) / 12;
-}
-
-
-static bool HasValidEmbeddedSct(const VerifiedSCTList& verifiedScts) {
-  for (const VerifiedSCT& verifiedSct : verifiedScts) {
-    if (verifiedSct.logState == CTLogState::Admissible &&
-        verifiedSct.origin == SCTOrigin::Embedded) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-static bool HasValidNonEmbeddedSct(const VerifiedSCTList& verifiedScts) {
-  for (const VerifiedSCT& verifiedSct : verifiedScts) {
-    if (verifiedSct.logState == CTLogState::Admissible &&
-        (verifiedSct.origin == SCTOrigin::TLSExtension ||
-         verifiedSct.origin == SCTOrigin::OCSPResponse)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-
-
-template <typename SelectFunc>
-void CountIndependentLogOperatorsForSelectedScts(
-    const VerifiedSCTList& verifiedScts,
-    const CTLogOperatorList& dependentOperators, size_t& count,
-    SelectFunc selected) {
-  CTLogOperatorList operatorIds;
-  for (const VerifiedSCT& verifiedSct : verifiedScts) {
-    CTLogOperatorId sctLogOperatorId = verifiedSct.logOperatorId;
-    
-    bool isDependentOperator = false;
-    for (CTLogOperatorId dependentOperator : dependentOperators) {
-      if (sctLogOperatorId == dependentOperator) {
-        isDependentOperator = true;
-        break;
-      }
-    }
-    if (isDependentOperator || !selected(verifiedSct)) {
-      continue;
-    }
-    
-    bool alreadyAdded = false;
-    for (CTLogOperatorId id : operatorIds) {
-      if (id == sctLogOperatorId) {
-        alreadyAdded = true;
-        break;
-      }
-    }
-    
-    if (!alreadyAdded) {
-      operatorIds.push_back(sctLogOperatorId);
-    }
-  }
-  count = operatorIds.size();
-}
-
-
-
-template <typename SelectFunc>
-static void CountLogsForSelectedScts(const VerifiedSCTList& verifiedScts,
-                                     size_t& count, SelectFunc selected) {
-  
-  
-  std::vector<const Buffer*> logIds;
-  for (const VerifiedSCT& verifiedSct : verifiedScts) {
-    if (!selected(verifiedSct)) {
-      continue;
-    }
-
-    const Buffer* sctLogId = &verifiedSct.sct.logId;
-    
-    bool alreadyAdded = false;
-    for (const Buffer* logId : logIds) {
-      if (*logId == *sctLogId) {
-        alreadyAdded = true;
-        break;
-      }
-    }
-    
-    if (!alreadyAdded) {
-      logIds.push_back(sctLogId);
-    }
-  }
-  count = logIds.size();
+  return ONE_HUNDRED_AND_EIGHTY_DAYS < certLifetime ? 3 : 2;
 }
 
 
@@ -130,8 +39,7 @@ static void CountLogsForSelectedScts(const VerifiedSCTList& verifiedScts,
 
 
 
-static uint64_t GetEffectiveCertIssuanceTime(
-    const VerifiedSCTList& verifiedScts) {
+uint64_t GetEffectiveCertIssuanceTime(const VerifiedSCTList& verifiedScts) {
   uint64_t result = UINT64_MAX;
   for (const VerifiedSCT& verifiedSct : verifiedScts) {
     if (verifiedSct.logState == CTLogState::Admissible) {
@@ -144,8 +52,8 @@ static uint64_t GetEffectiveCertIssuanceTime(
 
 
 
-static bool LogWasQualifiedForSct(const VerifiedSCT& verifiedSct,
-                                  uint64_t certIssuanceTime) {
+bool LogWasQualifiedForSct(const VerifiedSCT& verifiedSct,
+                           uint64_t certIssuanceTime) {
   switch (verifiedSct.logState) {
     case CTLogState::Admissible:
       return true;
@@ -166,114 +74,84 @@ static bool LogWasQualifiedForSct(const VerifiedSCT& verifiedSct,
 
 
 
-static void CheckOperatorDiversityCompliance(
-    const VerifiedSCTList& verifiedScts, uint64_t certIssuanceTime,
-    const CTLogOperatorList& dependentOperators, bool& compliant) {
-  size_t independentOperatorsCount;
-  CountIndependentLogOperatorsForSelectedScts(
-      verifiedScts, dependentOperators, independentOperatorsCount,
-      [certIssuanceTime](const VerifiedSCT& verifiedSct) -> bool {
-        return LogWasQualifiedForSct(verifiedSct, certIssuanceTime);
-      });
-  
-  
-  
-  
-  
-  
-  
-  compliant = independentOperatorsCount >= 2;
-}
 
-
-
-
-
-
-
-static void CheckNonEmbeddedCompliance(const VerifiedSCTList& verifiedScts,
-                                       bool& compliant) {
-  if (!HasValidNonEmbeddedSct(verifiedScts)) {
-    compliant = false;
-    return;
-  }
-
-  size_t validSctsCount;
-  CountLogsForSelectedScts(
-      verifiedScts, validSctsCount, [](const VerifiedSCT& verifiedSct) -> bool {
-        return verifiedSct.logState == CTLogState::Admissible;
-      });
-
-  compliant = validSctsCount >= 2;
-}
-
-
-
-
-
-
-
-
-static void CheckEmbeddedCompliance(const VerifiedSCTList& verifiedScts,
-                                    size_t certLifetimeInCalendarMonths,
-                                    uint64_t certIssuanceTime,
-                                    bool& compliant) {
-  if (!HasValidEmbeddedSct(verifiedScts)) {
-    compliant = false;
-    return;
-  }
-
-  
-  
-  
-  size_t embeddedSctsCount;
-  CountLogsForSelectedScts(
-      verifiedScts, embeddedSctsCount,
-      [certIssuanceTime](const VerifiedSCT& verifiedSct) -> bool {
-        return verifiedSct.origin == SCTOrigin::Embedded &&
-               LogWasQualifiedForSct(verifiedSct, certIssuanceTime);
-      });
-
-  size_t requiredSctsCount =
-      GetRequiredEmbeddedSctsCount(certLifetimeInCalendarMonths);
-
-  compliant = embeddedSctsCount >= requiredSctsCount;
-}
-
-void CTPolicyEnforcer::CheckCompliance(
-    const VerifiedSCTList& verifiedScts, size_t certLifetimeInCalendarMonths,
-    const CTLogOperatorList& dependentOperators,
-    CTPolicyCompliance& compliance) {
-  uint64_t certIssuanceTime = GetEffectiveCertIssuanceTime(verifiedScts);
-
-  bool diversityOK;
-  CheckOperatorDiversityCompliance(verifiedScts, certIssuanceTime,
-                                   dependentOperators, diversityOK);
-
-  bool nonEmbeddedCaseOK;
-  CheckNonEmbeddedCompliance(verifiedScts, nonEmbeddedCaseOK);
-
-  bool embeddedCaseOK;
-  CheckEmbeddedCompliance(verifiedScts, certLifetimeInCalendarMonths,
-                          certIssuanceTime, embeddedCaseOK);
-
-  if (nonEmbeddedCaseOK || embeddedCaseOK) {
-    compliance = diversityOK ? CTPolicyCompliance::Compliant
-                             : CTPolicyCompliance::NotDiverseScts;
-  } else {
+CTPolicyCompliance EmbeddedSCTsCompliant(const VerifiedSCTList& verifiedScts,
+                                         uint64_t certIssuanceTime,
+                                         Duration certLifetime) {
+  size_t admissibleCount = 0;
+  size_t admissibleOrRetiredCount = 0;
+  std::set<CTLogOperatorId> logOperators;
+  std::set<Buffer> logIds;
+  for (const auto& verifiedSct : verifiedScts) {
+    if (verifiedSct.origin != SCTOrigin::Embedded) {
+      continue;
+    }
+    if (verifiedSct.logState != CTLogState::Admissible &&
+        !LogWasQualifiedForSct(verifiedSct, certIssuanceTime)) {
+      continue;
+    }
     
-    compliance = CTPolicyCompliance::NotEnoughScts;
+    
+    
+    if (verifiedSct.logState == CTLogState::Admissible) {
+      admissibleCount++;
+    }
+    if (LogWasQualifiedForSct(verifiedSct, certIssuanceTime)) {
+      admissibleOrRetiredCount++;
+      logIds.insert(verifiedSct.sct.logId);
+    }
+    logOperators.insert(verifiedSct.logOperatorId);
   }
 
-  switch (compliance) {
-    case CTPolicyCompliance::Compliant:
-    case CTPolicyCompliance::NotEnoughScts:
-    case CTPolicyCompliance::NotDiverseScts:
-      break;
-    case CTPolicyCompliance::Unknown:
-    default:
-      assert(false);
+  size_t requiredEmbeddedScts = GetRequiredEmbeddedSctsCount(certLifetime);
+  if (admissibleCount < 1 || admissibleOrRetiredCount < requiredEmbeddedScts) {
+    return CTPolicyCompliance::NotEnoughScts;
   }
+  if (logIds.size() < requiredEmbeddedScts || logOperators.size() < 2) {
+    return CTPolicyCompliance::NotDiverseScts;
+  }
+  return CTPolicyCompliance::Compliant;
+}
+
+
+
+
+
+
+CTPolicyCompliance NonEmbeddedSCTsCompliant(
+    const VerifiedSCTList& verifiedScts) {
+  size_t admissibleCount = 0;
+  std::set<CTLogOperatorId> logOperators;
+  std::set<Buffer> logIds;
+  for (const auto& verifiedSct : verifiedScts) {
+    if (verifiedSct.origin == SCTOrigin::Embedded) {
+      continue;
+    }
+    if (verifiedSct.logState != CTLogState::Admissible) {
+      continue;
+    }
+    admissibleCount++;
+    logIds.insert(verifiedSct.sct.logId);
+    logOperators.insert(verifiedSct.logOperatorId);
+  }
+
+  if (admissibleCount < 2) {
+    return CTPolicyCompliance::NotEnoughScts;
+  }
+  if (logIds.size() < 2 || logOperators.size() < 2) {
+    return CTPolicyCompliance::NotDiverseScts;
+  }
+  return CTPolicyCompliance::Compliant;
+}
+
+CTPolicyCompliance CheckCTPolicyCompliance(const VerifiedSCTList& verifiedScts,
+                                           Duration certLifetime) {
+  if (NonEmbeddedSCTsCompliant(verifiedScts) == CTPolicyCompliance::Compliant) {
+    return CTPolicyCompliance::Compliant;
+  }
+
+  uint64_t certIssuanceTime = GetEffectiveCertIssuanceTime(verifiedScts);
+  return EmbeddedSCTsCompliant(verifiedScts, certIssuanceTime, certLifetime);
 }
 
 }  

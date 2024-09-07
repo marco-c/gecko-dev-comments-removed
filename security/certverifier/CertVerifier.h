@@ -39,7 +39,6 @@ namespace ct {
 
 
 class MultiLogCTVerifier;
-class CTDiversityPolicy;
 
 }  
 }  
@@ -105,9 +104,7 @@ class PinningTelemetryInfo {
 
 class CertificateTransparencyInfo {
  public:
-  CertificateTransparencyInfo()
-      : enabled(false),
-        policyCompliance(mozilla::ct::CTPolicyCompliance::Unknown) {
+  CertificateTransparencyInfo() : enabled(false), policyCompliance(Nothing()) {
     Reset();
   }
 
@@ -116,7 +113,7 @@ class CertificateTransparencyInfo {
   
   mozilla::ct::CTVerifyResult verifyResult;
   
-  mozilla::ct::CTPolicyCompliance policyCompliance;
+  Maybe<mozilla::ct::CTPolicyCompliance> policyCompliance;
 
   void Reset();
 };
@@ -266,7 +263,6 @@ class CertVerifier {
   
   
   UniquePtr<mozilla::ct::MultiLogCTVerifier> mCTVerifier;
-  UniquePtr<mozilla::ct::CTDiversityPolicy> mCTDiversityPolicy;
 
   void LoadKnownCTLogs();
   mozilla::pkix::Result VerifyCertificateTransparencyPolicy(

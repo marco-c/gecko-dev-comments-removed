@@ -10,6 +10,7 @@
 #include "CTLog.h"
 #include "CTVerifyResult.h"
 #include "mozpkix/Result.h"
+#include "mozpkix/Time.h"
 
 namespace mozilla {
 namespace ct {
@@ -17,8 +18,6 @@ namespace ct {
 
 
 enum class CTPolicyCompliance {
-  
-  Unknown,
   
   
   Compliant,
@@ -42,22 +41,18 @@ enum class CTPolicyCompliance {
 
 
 
-class CTPolicyEnforcer {
- public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void CheckCompliance(const VerifiedSCTList& verifiedScts,
-                       size_t certLifetimeInCalendarMonths,
-                       const CTLogOperatorList& dependentOperators,
-                       CTPolicyCompliance& compliance);
-};
+
+
+
+
+
+
+
+
+
+
+CTPolicyCompliance CheckCTPolicyCompliance(const VerifiedSCTList& verifiedScts,
+                                           pkix::Duration certLifetime);
 
 }  
 }  

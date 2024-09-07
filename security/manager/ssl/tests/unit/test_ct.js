@@ -29,8 +29,6 @@ function run_test() {
   
   
   
-  
-  
   add_connection_test(
     "ct-valid.example.com",
     PRErrorCodeSuccess,
