@@ -317,8 +317,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
   
   virtual void GenerateKeyFrame() = 0;
 
-  virtual void SetRtcpMode(RtcpMode mode) = 0;
-
   
   
   
