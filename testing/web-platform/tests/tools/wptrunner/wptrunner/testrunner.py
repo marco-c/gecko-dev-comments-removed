@@ -475,6 +475,10 @@ class TestRunnerManager(threading.Thread):
             self.logger.critical(message)
             raise
         finally:
+            self._cleanup_run_loop()
+
+    def _cleanup_run_loop(self):
+        try:
             self.logger.debug("TestRunnerManager main loop terminating, starting cleanup")
 
             skipped_tests = []
@@ -499,6 +503,10 @@ class TestRunnerManager(threading.Thread):
                 assert self.browser.browser is not None
                 self.browser.browser.cleanup()
             self.logger.debug("TestRunnerManager main loop terminated")
+        finally:
+            
+            
+            
             self.parent_stop_flag.wait_for_all_managers_done()
 
     def wait_event(self):
