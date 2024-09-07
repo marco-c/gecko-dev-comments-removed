@@ -362,9 +362,9 @@ async function doEngagementWithoutAddingResultToView(
   getPriorityStub.returns(Infinity);
 
   
-  let onLegacyEngagementSpy = sandbox.spy(
+  let onSearchSessionEndSpy = sandbox.spy(
     UrlbarProviderQuickSuggest,
-    "onLegacyEngagement"
+    "onSearchSessionEnd"
   );
 
   let sandboxCleanup = () => {
@@ -442,11 +442,8 @@ async function doEngagementWithoutAddingResultToView(
   });
   await loadPromise;
 
-  let engagementCalls = onLegacyEngagementSpy.getCalls().filter(call => {
-    let state = call.args[0];
-    return state == "engagement";
-  });
-  Assert.equal(engagementCalls.length, 1, "One engagement occurred");
+  let spyCalls = onSearchSessionEndSpy.getCalls();
+  Assert.equal(spyCalls.length, 1, "One session occurred");
 
   
   resolveQuery();
