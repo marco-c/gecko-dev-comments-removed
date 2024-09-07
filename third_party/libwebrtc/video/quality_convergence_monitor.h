@@ -14,6 +14,7 @@
 #include <deque>
 #include <memory>
 
+#include "api/field_trials_view.h"
 #include "api/video/video_codec_type.h"
 
 namespace webrtc {
@@ -47,6 +48,11 @@ class QualityConvergenceMonitor {
 
   explicit QualityConvergenceMonitor(const Parameters& params);
 
+  static std::unique_ptr<QualityConvergenceMonitor> Create(
+      int static_qp_threshold,
+      VideoCodecType codec,
+      const FieldTrialsView& trials);
+
   
   
   
@@ -55,6 +61,10 @@ class QualityConvergenceMonitor {
   
   
   bool AtTargetQuality() const;
+
+  
+  
+  Parameters GetParametersForTesting() const { return params_; }
 
  private:
   const Parameters params_;
