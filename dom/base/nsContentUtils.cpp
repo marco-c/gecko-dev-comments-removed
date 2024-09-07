@@ -7044,13 +7044,6 @@ void* nsContentUtils::AllocClassMatchingInfo(nsINode* aRootNode,
   return info;
 }
 
-
-bool nsContentUtils::IsFocusedContent(const nsIContent* aContent) {
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-
-  return fm && fm->GetFocusedElement() == aContent;
-}
-
 bool nsContentUtils::HasScrollgrab(nsIContent* aContent) {
   
   

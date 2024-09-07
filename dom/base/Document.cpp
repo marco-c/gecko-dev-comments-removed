@@ -6087,12 +6087,11 @@ nsresult Document::TurnEditingOff() {
 
   
   
-  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
-    if (RefPtr<TextControlElement> textControlElement =
-            TextControlElement::FromNodeOrNull(fm->GetFocusedElement())) {
-      if (RefPtr<TextEditor> textEditor = textControlElement->GetTextEditor()) {
-        textEditor->ReinitializeSelection(*textControlElement);
-      }
+  if (RefPtr<TextControlElement> textControlElement =
+          TextControlElement::FromNodeOrNull(
+              nsFocusManager::GetFocusedElementStatic())) {
+    if (RefPtr<TextEditor> textEditor = textControlElement->GetTextEditor()) {
+      textEditor->ReinitializeSelection(*textControlElement);
     }
   }
 
@@ -6157,10 +6156,7 @@ nsresult Document::EditingStateChanged() {
     
     
     
-    RefPtr<Element> focusedElement =
-        nsFocusManager::GetFocusManager()
-            ? nsFocusManager::GetFocusManager()->GetFocusedElement()
-            : nullptr;
+    RefPtr<Element> focusedElement = nsFocusManager::GetFocusedElementStatic();
     DebugOnly<nsresult> rvIgnored =
         HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
             htmlEditor, *this, focusedElement);
@@ -6444,9 +6440,8 @@ void Document::ChangeContentEditableCount(Element* aElement, int32_t aChange) {
 }
 
 void Document::DeferredContentEditableCountChange(Element* aElement) {
-  const RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
   const bool elementHasFocus =
-      aElement && fm && fm->GetFocusedElement() == aElement;
+      aElement && nsFocusManager::GetFocusedElementStatic() == aElement;
   if (elementHasFocus) {
     MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
     
@@ -6522,7 +6517,7 @@ void Document::DeferredContentEditableCountChange(Element* aElement) {
   
   
   if (elementHasFocus && aElement->HasFlag(NODE_IS_EDITABLE) &&
-      fm->GetFocusedElement() == aElement) {
+      nsFocusManager::GetFocusedElementStatic() == aElement) {
     if (RefPtr<HTMLEditor> htmlEditor = GetHTMLEditor()) {
       DebugOnly<nsresult> rvIgnored =
           htmlEditor->FocusedElementOrDocumentBecomesEditable(*this, aElement);

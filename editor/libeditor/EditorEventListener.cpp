@@ -209,19 +209,15 @@ void EditorEventListener::Disconnect() {
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
   mEditorBase = nullptr;
 
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (fm) {
-    nsIContent* focusedContent = fm->GetFocusedElement();
-    mozilla::dom::Element* root = editorBase->GetRoot();
-    if (focusedContent && root &&
-        focusedContent->IsInclusiveDescendantOf(root)) {
-      
-      
-      DebugOnly<nsresult> rvIgnored = editorBase->FinalizeSelection();
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "EditorBase::FinalizeSelection() failed, but ignored");
-    }
+  const Element* const focusedElement =
+      nsFocusManager::GetFocusedElementStatic();
+  mozilla::dom::Element* root = editorBase->GetRoot();
+  if (focusedElement && root && focusedElement->IsInclusiveDescendantOf(root)) {
+    
+    
+    DebugOnly<nsresult> rvIgnored = editorBase->FinalizeSelection();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "EditorBase::FinalizeSelection() failed, but ignored");
   }
 }
 

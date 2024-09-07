@@ -2554,14 +2554,6 @@ class nsContentUtils {
 
 
 
-
-  static bool IsFocusedContent(const nsIContent* aContent);
-
-  
-
-
-
-
   static bool IsCutCopyAllowed(Document* aDocument,
                                nsIPrincipal& aSubjectPrincipal);
 

@@ -773,14 +773,9 @@ nsresult TextEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
 nsresult TextEditor::OnBlur(const EventTarget* aEventTarget) {
   
   
-  nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
-  if (MOZ_UNLIKELY(!focusManager)) {
-    return NS_OK;
-  }
-
   
   
-  if (focusManager->GetFocusedElement()) {
+  if (nsFocusManager::GetFocusedElementStatic()) {
     return NS_OK;
   }
 

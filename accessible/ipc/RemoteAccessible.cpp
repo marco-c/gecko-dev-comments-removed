@@ -1877,15 +1877,12 @@ bool RemoteAccessible::HasPrimaryAction() const {
 
 void RemoteAccessible::TakeFocus() const {
   Unused << mDoc->SendTakeFocus(mID);
-  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
-    auto* bp = static_cast<dom::BrowserParent*>(mDoc->Manager());
-    MOZ_ASSERT(bp);
-    dom::Element* owner = bp->GetOwnerElement();
-    if (fm->GetFocusedElement() == owner) {
-      
-      
-      return;
-    }
+  auto* bp = static_cast<dom::BrowserParent*>(mDoc->Manager());
+  MOZ_ASSERT(bp);
+  if (nsFocusManager::GetFocusedElementStatic() == bp->GetOwnerElement()) {
+    
+    
+    return;
   }
   
   

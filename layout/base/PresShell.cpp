@@ -9208,11 +9208,7 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
   
   
   
-  RefPtr<Element> currentFocus;
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (fm) {
-    currentFocus = fm->GetFocusedElement();
-  }
+  RefPtr<Element> currentFocus = nsFocusManager::GetFocusedElementStatic();
 
   
   if (currentFocus) {
