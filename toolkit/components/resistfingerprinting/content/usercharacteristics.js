@@ -942,8 +942,7 @@ async function populateAudioFingerprint() {
     
     
     
-    
-    return hash * 10e7;
+    return hash * 10e13;
   }
 
   finishRendering();
