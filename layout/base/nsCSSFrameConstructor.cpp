@@ -7179,34 +7179,96 @@ static bool IsWhitespaceFrame(const nsIFrame* aFrame) {
   return aFrame->IsTextFrame() && aFrame->GetContent()->TextIsOnlyWhitespace();
 }
 
+static bool IsSyntheticColGroup(const nsIFrame* aFrame) {
+  return aFrame->IsTableColGroupFrame() &&
+         static_cast<const nsTableColGroupFrame*>(aFrame)->IsSynthetic();
+}
+
 static bool IsOnlyNonWhitespaceFrameInList(const nsFrameList& aFrameList,
                                            const nsIFrame* aFrame) {
   for (const nsIFrame* f : aFrameList) {
     if (f == aFrame) {
       
       aFrame = aFrame->GetNextContinuation();
-    } else if (!IsWhitespaceFrame(f)) {
+    } else if (!IsWhitespaceFrame(f) && !IsSyntheticColGroup(f)) {
+      
+      
       return false;
     }
   }
   return true;
 }
 
+static bool AllChildListsAreEffectivelyEmpty(nsIFrame* aFrame) {
+  for (auto& [list, listID] : aFrame->ChildLists()) {
+    if (list.IsEmpty()) {
+      continue;
+    }
+    
+    
+    
+    if (listID == FrameChildListID::ColGroup) {
+      if (nsIFrame* f = list.OnlyChild(); f && IsSyntheticColGroup(f)) {
+        continue;
+      }
+    }
+    return false;
+  }
+  return true;
+}
+
+static bool SafeToInsertPseudoNeedingChildren(nsIFrame* aFrame) {
+  return AllChildListsAreEffectivelyEmpty(aFrame);
+}
+
+
+
+
 static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
                                                  nsIFrame* aParent) {
   MOZ_ASSERT(IsWrapperPseudo(aParent));
-  if (IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame)) {
-    return true;
-  }
-  if (aFrame->IsTableColGroupFrame()) {
-    return IsOnlyNonWhitespaceFrameInList(
-        aParent->GetChildList(FrameChildListID::ColGroup), aFrame);
+  
+  if (aParent->IsTableFrame()) {
+    auto* wrapper = aParent->GetParent();
+    MOZ_ASSERT(wrapper);
+    MOZ_ASSERT(wrapper->IsTableWrapperFrame());
+    MOZ_ASSERT(!aFrame->IsTableCaption(),
+               "Caption parent should be the wrapper");
+    
+    
+    
+    if (!wrapper->GetChildList(FrameChildListID::Caption).IsEmpty()) {
+      return false;
+    }
+    
+    
+    if (aFrame->IsTableColGroupFrame()) {
+      return aParent->PrincipalChildList().IsEmpty() &&
+             IsOnlyNonWhitespaceFrameInList(
+                 aParent->GetChildList(FrameChildListID::ColGroup), aFrame);
+    }
+    const auto& colGroupList =
+        aParent->GetChildList(FrameChildListID::ColGroup);
+    if (!colGroupList.IsEmpty()) {
+      nsIFrame* f = colGroupList.OnlyChild();
+      if (!f || !IsSyntheticColGroup(f)) {
+        return false;
+      }
+    }
   }
   if (aFrame->IsTableCaption()) {
+    MOZ_ASSERT(aParent->IsTableWrapperFrame());
+    MOZ_ASSERT(aParent->PrincipalChildList().OnlyChild());
+    MOZ_ASSERT(aParent->PrincipalChildList().OnlyChild()->IsTableFrame());
     return IsOnlyNonWhitespaceFrameInList(
-        aParent->GetChildList(FrameChildListID::Caption), aFrame);
+               aParent->GetChildList(FrameChildListID::Caption), aFrame) &&
+           
+           
+           AllChildListsAreEffectivelyEmpty(
+               aParent->PrincipalChildList().OnlyChild());
   }
-  return false;
+  MOZ_ASSERT(!aFrame->IsTableColGroupFrame());
+  return IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame);
 }
 
 static bool CanRemoveWrapperPseudoForChildRemoval(nsIFrame* aFrame,
@@ -11174,25 +11236,6 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
   return false;
 
 #undef TRACE
-}
-
-static bool SafeToInsertPseudoNeedingChildren(nsIFrame* aFrame) {
-  for (auto& [list, listID] : aFrame->ChildLists()) {
-    if (list.IsEmpty()) {
-      continue;
-    }
-    
-    
-    
-    if (listID == FrameChildListID::ColGroup) {
-      if (nsIFrame* f = list.OnlyChild();
-          f && static_cast<nsTableColGroupFrame*>(f)->IsSynthetic()) {
-        continue;
-      }
-    }
-    return false;
-  }
-  return true;
 }
 
 bool nsCSSFrameConstructor::WipeContainingBlock(
