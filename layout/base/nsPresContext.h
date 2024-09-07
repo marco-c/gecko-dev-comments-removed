@@ -435,6 +435,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     return mDynamicToolbarHeight;
   }
 
+  void UpdateKeyboardHeight(mozilla::ScreenIntCoord aHeight);
+
   
 
 
@@ -1226,6 +1228,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   mozilla::ScreenIntCoord mDynamicToolbarMaxHeight;
   mozilla::ScreenIntCoord mDynamicToolbarHeight;
+  
+  mozilla::ScreenIntCoord mKeyboardHeight;
   
   mozilla::ScreenIntMargin mSafeAreaInsets;
   nsSize mPageSize;
