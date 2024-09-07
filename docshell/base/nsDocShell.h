@@ -457,7 +457,7 @@ class nsDocShell final : public nsDocLoader,
   
   static nsresult FilterStatusForErrorPage(
       nsresult aStatus, nsIChannel* aChannel, uint32_t aLoadType,
-      bool aIsTopFrame, bool aUseErrorPages,
+      bool aIsTopFrame, bool aUseErrorPages, bool aIsInitialDocument,
       bool* aSkippedUnknownProtocolNavigation = nullptr);
 
   
