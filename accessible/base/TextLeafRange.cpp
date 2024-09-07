@@ -444,19 +444,19 @@ class BlockRule : public PivotRule {
 
 
 
-static nsTArray<dom::AbstractRange*> FindDOMSpellingErrors(
-    LocalAccessible* aAcc, int32_t aRenderedStart, int32_t aRenderedEnd,
-    bool aAllowAdjacent = false) {
+
+static nsTArray<std::pair<nsTArray<dom::AbstractRange*>, nsStaticAtom*>>
+FindDOMTextOffsetAttributes(LocalAccessible* aAcc, int32_t aRenderedStart,
+                            int32_t aRenderedEnd, bool aAllowAdjacent = false) {
+  nsTArray<std::pair<nsTArray<dom::AbstractRange*>, nsStaticAtom*>> result;
   if (!aAcc->IsTextLeaf() || !aAcc->HasOwnContent()) {
-    return {};
+    return result;
   }
   nsIFrame* frame = aAcc->GetFrame();
   RefPtr<nsFrameSelection> frameSel =
       frame ? frame->GetFrameSelection() : nullptr;
-  dom::Selection* domSel =
-      frameSel ? frameSel->GetSelection(SelectionType::eSpellCheck) : nullptr;
-  if (!domSel) {
-    return {};
+  if (!frameSel) {
+    return result;
   }
   nsINode* node = aAcc->GetNode();
   uint32_t contentStart = RenderedToContentOffset(aAcc, aRenderedStart);
@@ -464,10 +464,24 @@ static nsTArray<dom::AbstractRange*> FindDOMSpellingErrors(
       aRenderedEnd == nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT
           ? dom::CharacterData::FromNode(node)->TextLength()
           : RenderedToContentOffset(aAcc, aRenderedEnd);
-  nsTArray<dom::AbstractRange*> domRanges;
-  domSel->GetAbstractRangesForIntervalArray(
-      node, contentStart, node, contentEnd, aAllowAdjacent, &domRanges);
-  return domRanges;
+  const std::pair<mozilla::SelectionType, nsStaticAtom*>
+      kSelectionTypesToAttributes[] = {
+          {SelectionType::eSpellCheck, nsGkAtoms::spelling},
+      };
+  result.SetCapacity(ArrayLength(kSelectionTypesToAttributes));
+  for (auto [selType, attr] : kSelectionTypesToAttributes) {
+    dom::Selection* domSel = frameSel->GetSelection(selType);
+    if (!domSel) {
+      continue;
+    }
+    nsTArray<dom::AbstractRange*> domRanges;
+    domSel->GetAbstractRangesForIntervalArray(
+        node, contentStart, node, contentEnd, aAllowAdjacent, &domRanges);
+    if (!domRanges.IsEmpty()) {
+      result.AppendElement(std::make_pair(std::move(domRanges), attr));
+    }
+  }
+  return result;
 }
 
 
@@ -1454,24 +1468,32 @@ TextLeafPoint TextLeafPoint::FindClusterSameAcc(nsDirection aDirection,
   return TextLeafPoint();
 }
 
-bool TextLeafPoint::IsInSpellingError() const {
+void TextLeafPoint::AddTextOffsetAttributes(AccAttributes* aAttrs) const {
+  auto expose = [aAttrs](nsAtom* aAttr) {
+    if (aAttr == nsGkAtoms::spelling) {
+      aAttrs->SetAttribute(nsGkAtoms::invalid, aAttr);
+    }
+  };
+
   if (LocalAccessible* acc = mAcc->AsLocal()) {
-    auto domRanges = FindDOMSpellingErrors(acc, mOffset, mOffset + 1);
-    
-    
-    return !domRanges.IsEmpty();
+    auto ranges = FindDOMTextOffsetAttributes(acc, mOffset, mOffset + 1);
+    for (auto& [domRanges, attr] : ranges) {
+      MOZ_ASSERT(domRanges.Length() >= 1);
+      expose(attr);
+    }
+    return;
   }
 
   RemoteAccessible* acc = mAcc->AsRemote();
   MOZ_ASSERT(acc);
   if (!acc->mCachedFields) {
-    return false;
+    return;
   }
   auto spellingErrors =
       acc->mCachedFields->GetAttribute<nsTArray<TextOffsetAttribute>>(
           CacheKey::SpellingErrors);
   if (!spellingErrors) {
-    return false;
+    return;
   }
   auto compare = [this](const TextOffsetAttribute& aItem) {
     if (aItem.mStartOffset <= mOffset &&
@@ -1483,14 +1505,16 @@ bool TextLeafPoint::IsInSpellingError() const {
     }
     return 1;
   };
-  size_t index;
   
   
-  return BinarySearchIf(*spellingErrors, 0, spellingErrors->Length(), compare,
-                        &index);
+  auto [lower, upper] =
+      EqualRange(*spellingErrors, 0, spellingErrors->Length(), compare);
+  for (auto i = lower; i < upper; ++i) {
+    expose((*spellingErrors)[i].mAttribute);
+  }
 }
 
-TextLeafPoint TextLeafPoint::FindSpellingErrorSameAcc(
+TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
     nsDirection aDirection, bool aIncludeOrigin) const {
   if (!aIncludeOrigin && mOffset == 0 && aDirection == eDirPrevious) {
     return TextLeafPoint();
@@ -1498,54 +1522,79 @@ TextLeafPoint TextLeafPoint::FindSpellingErrorSameAcc(
   if (LocalAccessible* acc = mAcc->AsLocal()) {
     
     
-    auto domRanges =
+    auto ranges =
         aDirection == eDirNext
-            ? FindDOMSpellingErrors(acc, mOffset,
-                                    nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT,
-                                     true)
-            : FindDOMSpellingErrors(acc, 0, mOffset,
-                                     true);
+            ? FindDOMTextOffsetAttributes(
+                  acc, mOffset, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT,
+                   true)
+            : FindDOMTextOffsetAttributes(acc, 0, mOffset,
+                                           true);
     nsINode* node = acc->GetNode();
+    
+    
+    
+    
+    
+    int32_t dest = -1;
     if (aDirection == eDirNext) {
-      for (dom::AbstractRange* domRange : domRanges) {
-        if (domRange->GetStartContainer() == node) {
-          int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
-              acc, static_cast<int32_t>(domRange->StartOffset())));
-          if ((aIncludeOrigin && matchOffset == mOffset) ||
-              matchOffset > mOffset) {
-            return TextLeafPoint(mAcc, matchOffset);
+      for (auto& [domRanges, attr] : ranges) {
+        for (dom::AbstractRange* domRange : domRanges) {
+          if (domRange->GetStartContainer() == node) {
+            int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
+                acc, static_cast<int32_t>(domRange->StartOffset())));
+            if (aIncludeOrigin && matchOffset == mOffset) {
+              return *this;
+            }
+            if (matchOffset > mOffset && (dest == -1 || matchOffset <= dest)) {
+              dest = matchOffset;
+              break;
+            }
           }
-        }
-        if (domRange->GetEndContainer() == node) {
-          int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
-              acc, static_cast<int32_t>(domRange->EndOffset())));
-          if ((aIncludeOrigin && matchOffset == mOffset) ||
-              matchOffset > mOffset) {
-            return TextLeafPoint(mAcc, matchOffset);
+          if (domRange->GetEndContainer() == node) {
+            int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
+                acc, static_cast<int32_t>(domRange->EndOffset())));
+            if (aIncludeOrigin && matchOffset == mOffset) {
+              return *this;
+            }
+            if (matchOffset > mOffset && (dest == -1 || matchOffset <= dest)) {
+              dest = matchOffset;
+              break;
+            }
           }
         }
       }
     } else {
-      for (dom::AbstractRange* domRange : Reversed(domRanges)) {
-        if (domRange->GetEndContainer() == node) {
-          int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
-              acc, static_cast<int32_t>(domRange->EndOffset())));
-          if ((aIncludeOrigin && matchOffset == mOffset) ||
-              matchOffset < mOffset) {
-            return TextLeafPoint(mAcc, matchOffset);
+      for (auto& [domRanges, attr] : ranges) {
+        for (dom::AbstractRange* domRange : Reversed(domRanges)) {
+          if (domRange->GetEndContainer() == node) {
+            int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
+                acc, static_cast<int32_t>(domRange->EndOffset())));
+            if (aIncludeOrigin && matchOffset == mOffset) {
+              return *this;
+            }
+            if (matchOffset < mOffset && (dest == -1 || matchOffset >= dest)) {
+              dest = matchOffset;
+              break;
+            }
           }
-        }
-        if (domRange->GetStartContainer() == node) {
-          int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
-              acc, static_cast<int32_t>(domRange->StartOffset())));
-          if ((aIncludeOrigin && matchOffset == mOffset) ||
-              matchOffset < mOffset) {
-            return TextLeafPoint(mAcc, matchOffset);
+          if (domRange->GetStartContainer() == node) {
+            int32_t matchOffset = static_cast<int32_t>(ContentToRenderedOffset(
+                acc, static_cast<int32_t>(domRange->StartOffset())));
+            if (aIncludeOrigin && matchOffset == mOffset) {
+              return *this;
+            }
+            if (matchOffset < mOffset && (dest == -1 || matchOffset >= dest)) {
+              dest = matchOffset;
+              break;
+            }
           }
         }
       }
     }
-    return TextLeafPoint();
+    if (dest == -1) {
+      return TextLeafPoint();
+    }
+    return TextLeafPoint(mAcc, dest);
   }
 
   RemoteAccessible* acc = mAcc->AsRemote();
@@ -1677,33 +1726,41 @@ LayoutDeviceIntRect TextLeafPoint::ComputeBoundsFromFrame() const {
 nsTArray<TextOffsetAttribute> TextLeafPoint::GetSpellingErrorOffsets(
     LocalAccessible* aAcc) {
   nsINode* node = aAcc->GetNode();
-  auto domRanges = FindDOMSpellingErrors(
+  auto ranges = FindDOMTextOffsetAttributes(
       aAcc, 0, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
-  nsTArray<TextOffsetAttribute> offsets(domRanges.Length());
-  for (dom::AbstractRange* domRange : domRanges) {
-    TextOffsetAttribute& data = *offsets.AppendElement();
-    if (domRange->GetStartContainer() == node) {
-      data.mStartOffset = static_cast<int32_t>(ContentToRenderedOffset(
-          aAcc, static_cast<int32_t>(domRange->StartOffset())));
-    } else {
-      
-      
-      MOZ_ASSERT(domRange == *domRanges.begin() && offsets.IsEmpty());
-      
-      
-      data.mStartOffset = -1;
-    }
-    if (domRange->GetEndContainer() == node) {
-      data.mEndOffset = static_cast<int32_t>(ContentToRenderedOffset(
-          aAcc, static_cast<int32_t>(domRange->EndOffset())));
-    } else {
-      
-      
-      MOZ_ASSERT(domRange == *domRanges.rbegin());
-      data.mEndOffset = -1;
-    }
-    data.mAttribute = nsGkAtoms::spelling;
+  size_t capacity = 0;
+  for (auto& [domRanges, attr] : ranges) {
+    capacity += domRanges.Length();
   }
+  nsTArray<TextOffsetAttribute> offsets(capacity);
+  for (auto& [domRanges, attr] : ranges) {
+    for (dom::AbstractRange* domRange : domRanges) {
+      TextOffsetAttribute& data = *offsets.AppendElement();
+      data.mAttribute = attr;
+      if (domRange->GetStartContainer() == node) {
+        data.mStartOffset = static_cast<int32_t>(ContentToRenderedOffset(
+            aAcc, static_cast<int32_t>(domRange->StartOffset())));
+      } else {
+        
+        
+        MOZ_ASSERT(domRange == *domRanges.begin());
+        
+        
+        
+        data.mStartOffset = -1;
+      }
+      if (domRange->GetEndContainer() == node) {
+        data.mEndOffset = static_cast<int32_t>(ContentToRenderedOffset(
+            aAcc, static_cast<int32_t>(domRange->EndOffset())));
+      } else {
+        
+        
+        MOZ_ASSERT(domRange == *domRanges.rbegin());
+        data.mEndOffset = -1;
+      }
+    }
+  }
+  offsets.Sort();
   return offsets;
 }
 
@@ -1773,9 +1830,7 @@ already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributes(
       thisAttrs->CopyTo(attrs);
     }
   }
-  if (IsInSpellingError()) {
-    attrs->SetAttribute(nsGkAtoms::invalid, nsGkAtoms::spelling);
-  }
+  AddTextOffsetAttributes(attrs);
   return attrs.forget();
 }
 
@@ -1808,7 +1863,7 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
   }
   TextLeafPoint lastPoint = *this;
   for (;;) {
-    if (TextLeafPoint spelling = lastPoint.FindSpellingErrorSameAcc(
+    if (TextLeafPoint spelling = lastPoint.FindTextOffsetAttributeSameAcc(
             aDirection, aIncludeOrigin && lastPoint.mAcc == mAcc)) {
       
       

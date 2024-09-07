@@ -229,15 +229,17 @@ class TextLeafPoint final {
   TextLeafPoint FindClusterSameAcc(nsDirection aDirection,
                                    bool aIncludeOrigin) const;
 
-  bool IsInSpellingError() const;
+  void AddTextOffsetAttributes(AccAttributes* aAttrs) const;
 
   
 
 
 
 
-  TextLeafPoint FindSpellingErrorSameAcc(nsDirection aDirection,
-                                         bool aIncludeOrigin) const;
+
+
+  TextLeafPoint FindTextOffsetAttributeSameAcc(nsDirection aDirection,
+                                               bool aIncludeOrigin) const;
 
   
   
