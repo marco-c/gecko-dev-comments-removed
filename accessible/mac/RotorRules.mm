@@ -388,3 +388,29 @@ uint16_t RotorLiveRegionRule::Match(Accessible* aAcc) {
   }
   return result;
 }
+
+
+
+RotorFocusableRule::RotorFocusableRule(Accessible* aDirectDescendantsFrom,
+                                       const nsString& aSearchText)
+    : RotorRule(aDirectDescendantsFrom, aSearchText) {};
+
+RotorFocusableRule::RotorFocusableRule(const nsString& aSearchText)
+    : RotorRule(aSearchText) {};
+
+uint16_t RotorFocusableRule::Match(Accessible* aAcc) {
+  uint16_t result = RotorRule::Match(aAcc);
+  
+  
+  
+  
+  if ((result & nsIAccessibleTraversalRule::FILTER_MATCH)) {
+    if ((aAcc->State() & states::FOCUSABLE) == 0 || aAcc->ActionCount() == 0) {
+      
+      
+      result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+  }
+
+  return result;
+}
