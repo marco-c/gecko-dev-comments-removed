@@ -530,9 +530,9 @@ static bool IsQuirkContainingBlockHeight(const ReflowInput* rs,
 
 void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
                                   LayoutFrameType aFrameType) {
-  SetBResize(false);
   SetIResize(false);
-  mFlags.mIsBResizeForPercentages = false;
+  SetBResize(false);
+  SetBResizeForPercentages(false);
 
   const WritingMode wm = mWritingMode;  
   
@@ -658,7 +658,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     
     
     SetBResize(true);
-    mFlags.mIsBResizeForPercentages = true;
+    SetBResizeForPercentages(true);
     
     
     
@@ -671,7 +671,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     
     
     SetBResize(true);
-    mFlags.mIsBResizeForPercentages = true;
+    SetBResizeForPercentages(true);
   } else if (aFrameType == LayoutFrameType::TableCell &&
              (mFlags.mSpecialBSizeReflow ||
               mFrame->FirstInFlow()->HasAnyStateBits(
@@ -681,15 +681,14 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     
     
     SetBResize(true);
-    mFlags.mIsBResizeForPercentages = true;
+    SetBResizeForPercentages(true);
   } else if (mCBReflowInput && mFrame->IsBlockWrapper()) {
     
     
     
     
     SetBResize(mCBReflowInput->IsBResizeForWM(wm));
-    mFlags.mIsBResizeForPercentages =
-        mCBReflowInput->IsBResizeForPercentagesForWM(wm);
+    SetBResizeForPercentages(mCBReflowInput->IsBResizeForPercentagesForWM(wm));
   } else if (ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
     
     if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
