@@ -23,9 +23,9 @@ namespace js {
 namespace detail {
 
 
-UniquePtr<BumpChunk> BumpChunk::newWithCapacity(size_t size) {
+UniquePtr<BumpChunk> BumpChunk::newWithCapacity(size_t size, arena_id_t arena) {
   MOZ_DIAGNOSTIC_ASSERT(size >= sizeof(BumpChunk));
-  void* mem = js_malloc(size);
+  void* mem = js_arena_malloc(arena, size);
   if (!mem) {
     return nullptr;
   }
@@ -185,7 +185,8 @@ LifoAlloc::UniqueBumpChunk LifoAlloc::newChunkWithCapacity(size_t n,
                                : NextSize(defaultChunkSize_, smallAllocsSize_);
 
   
-  UniqueBumpChunk result = detail::BumpChunk::newWithCapacity(chunkSize);
+  UniqueBumpChunk result =
+      detail::BumpChunk::newWithCapacity(chunkSize, arena_);
   if (!result) {
     return nullptr;
   }
@@ -369,6 +370,13 @@ void LifoAlloc::steal(LifoAlloc* other) {
 void LifoAlloc::transferFrom(LifoAlloc* other) {
   MOZ_ASSERT(!markCount);
   MOZ_ASSERT(!other->markCount);
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(arena_ == other->arena_);
 
   
   

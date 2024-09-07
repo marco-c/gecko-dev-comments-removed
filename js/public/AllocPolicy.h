@@ -25,8 +25,7 @@ class FrontendContext;
 
 enum class AllocFunction { Malloc, Calloc, Realloc };
 
-
-class AllocPolicyBase {
+class ArenaAllocPolicyBase {
  public:
   template <typename T>
   T* maybe_pod_arena_malloc(arena_id_t arenaId, size_t numElems) {
@@ -54,7 +53,11 @@ class AllocPolicyBase {
                        size_t newSize) {
     return maybe_pod_arena_realloc<T>(arenaId, p, oldSize, newSize);
   }
+};
 
+
+class AllocPolicyBase : public ArenaAllocPolicyBase {
+ public:
   template <typename T>
   T* maybe_pod_malloc(size_t numElems) {
     return maybe_pod_arena_malloc<T>(js::MallocArena, numElems);
@@ -87,7 +90,51 @@ class AllocPolicyBase {
 };
 
 
+
+
+
+class BackgroundAllocPolicyBase : ArenaAllocPolicyBase {
+ public:
+  template <typename T>
+  T* maybe_pod_malloc(size_t numElems) {
+    return maybe_pod_arena_malloc<T>(js::BackgroundMallocArena, numElems);
+  }
+  template <typename T>
+  T* maybe_pod_calloc(size_t numElems) {
+    return maybe_pod_arena_calloc<T>(js::BackgroundMallocArena, numElems);
+  }
+  template <typename T>
+  T* maybe_pod_realloc(T* p, size_t oldSize, size_t newSize) {
+    return maybe_pod_arena_realloc<T>(js::BackgroundMallocArena, p, oldSize,
+                                      newSize);
+  }
+  template <typename T>
+  T* pod_malloc(size_t numElems) {
+    return pod_arena_malloc<T>(js::BackgroundMallocArena, numElems);
+  }
+  template <typename T>
+  T* pod_calloc(size_t numElems) {
+    return pod_arena_calloc<T>(js::BackgroundMallocArena, numElems);
+  }
+  template <typename T>
+  T* pod_realloc(T* p, size_t oldSize, size_t newSize) {
+    return pod_arena_realloc<T>(js::BackgroundMallocArena, p, oldSize, newSize);
+  }
+
+  template <typename T>
+  void free_(T* p, size_t numElems = 0) {
+    js_free(p);
+  }
+};
+
+
 class SystemAllocPolicy : public AllocPolicyBase {
+ public:
+  void reportAllocOverflow() const {}
+  bool checkSimulatedOOM() const { return !js::oom::ShouldFailWithOOM(); }
+};
+
+class BackgroundSystemAllocPolicy : public BackgroundAllocPolicyBase {
  public:
   void reportAllocOverflow() const {}
   bool checkSimulatedOOM() const { return !js::oom::ShouldFailWithOOM(); }

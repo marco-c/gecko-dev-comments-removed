@@ -22,7 +22,7 @@ struct MinimalAlloc {
 
   
   
-  MinimalAlloc() : lifo(128 * 1024), alloc(&lifo) {
+  MinimalAlloc() : lifo(128 * 1024, js::MallocArena), alloc(&lifo) {
     if (!alloc.ensureBallast()) {
       MOZ_CRASH("[OOM] Not enough RAM for the test.");
     }

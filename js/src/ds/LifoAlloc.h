@@ -516,7 +516,7 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
   
   
   
-  static UniquePtr<BumpChunk> newWithCapacity(size_t size);
+  static UniquePtr<BumpChunk> newWithCapacity(size_t size, arena_id_t arena);
 
   
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
@@ -699,6 +699,17 @@ class LifoAlloc {
   
   size_t smallAllocsSize_;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  arena_id_t arena_;
+
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
   bool fallibleScope_;
 #endif
@@ -766,8 +777,9 @@ class LifoAlloc {
   [[nodiscard]] bool ensureUnusedApproximateColdPath(size_t n, size_t total);
 
  public:
-  explicit LifoAlloc(size_t defaultChunkSize)
-      : peakSize_(0)
+  LifoAlloc(size_t defaultChunkSize, arena_id_t arena)
+      : peakSize_(0),
+        arena_(arena)
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
         ,
         fallibleScope_(true)

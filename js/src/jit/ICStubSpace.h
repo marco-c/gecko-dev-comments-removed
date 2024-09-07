@@ -16,7 +16,7 @@ namespace jit {
 
 class ICStubSpace {
   static constexpr size_t DefaultChunkSize = 4096;
-  LifoAlloc allocator_{DefaultChunkSize};
+  LifoAlloc allocator_{DefaultChunkSize, js::BackgroundMallocArena};
 
  public:
   inline void* alloc(size_t size) { return allocator_.alloc(size); }

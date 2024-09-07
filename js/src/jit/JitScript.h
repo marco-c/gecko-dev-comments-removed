@@ -222,7 +222,7 @@ class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
 
   
   static constexpr size_t AllocSiteChunkSize = 256;
-  LifoAlloc allocSitesSpace_{AllocSiteChunkSize};
+  LifoAlloc allocSitesSpace_{AllocSiteChunkSize, js::BackgroundMallocArena};
   Vector<gc::AllocSite*, 0, SystemAllocPolicy> allocSites_;
 
   

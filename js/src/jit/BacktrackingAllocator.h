@@ -572,7 +572,8 @@ class VirtualRegister {
 
 
 
-using SplitPositionVector = js::Vector<CodePosition, 4, SystemAllocPolicy>;
+using SplitPositionVector =
+    js::Vector<CodePosition, 4, BackgroundSystemAllocPolicy>;
 
 class BacktrackingAllocator : protected RegisterAllocator {
   friend class JSONSpewer;
@@ -599,7 +600,8 @@ class BacktrackingAllocator : protected RegisterAllocator {
     size_t priority_;
   };
 
-  PriorityQueue<QueueItem, QueueItem, 0, SystemAllocPolicy> allocationQueue;
+  PriorityQueue<QueueItem, QueueItem, 0, BackgroundSystemAllocPolicy>
+      allocationQueue;
 
   
   
@@ -659,9 +661,9 @@ class BacktrackingAllocator : protected RegisterAllocator {
   
   SpillSlotList normalSlots, doubleSlots, quadSlots;
 
-  Vector<LiveBundle*, 4, SystemAllocPolicy> spilledBundles;
+  Vector<LiveBundle*, 4, BackgroundSystemAllocPolicy> spilledBundles;
 
-  using LiveBundleVector = Vector<LiveBundle*, 4, SystemAllocPolicy>;
+  using LiveBundleVector = Vector<LiveBundle*, 4, BackgroundSystemAllocPolicy>;
 
   
   bool compilingWasm() { return mir->outerInfo().compilingWasm(); }
