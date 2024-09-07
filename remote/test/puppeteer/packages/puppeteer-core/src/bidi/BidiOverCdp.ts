@@ -5,7 +5,7 @@
 
 
 import * as BidiMapper from 'chromium-bidi/lib/cjs/bidiMapper/BidiMapper.js';
-import * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
+import type * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 import type {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping.js';
 
 import type {CDPEvents, CDPSession} from '../api/CDPSession.js';
@@ -24,8 +24,7 @@ const bidiServerLogger = (prefix: string, ...args: unknown[]): void => {
 
 
 export async function connectBidiOverCdp(
-  cdp: CdpConnection,
-  options: BidiMapper.MapperOptions
+  cdp: CdpConnection
 ): Promise<BidiConnection> {
   const transportBiDi = new NoOpTransport();
   const cdpConnectionAdapter = new CdpConnectionAdapter(cdp);
@@ -56,17 +55,8 @@ export async function connectBidiOverCdp(
   const bidiServer = await BidiMapper.BidiServer.createAndStart(
     transportBiDi,
     cdpConnectionAdapter,
-    
     cdpConnectionAdapter.browserClient(),
-    '',
-    {
-      
-      
-      unhandledPromptBehavior: {
-        default: Bidi.Session.UserPromptHandlerType.Ignore,
-      },
-      ...options,
-    },
+     '',
     undefined,
     bidiServerLogger
   );

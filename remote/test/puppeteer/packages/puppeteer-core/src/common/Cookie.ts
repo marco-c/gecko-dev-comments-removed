@@ -92,6 +92,8 @@ export interface Cookie {
 
 
 
+
+
   partitionKey?: string;
   
 
@@ -159,6 +161,7 @@ export interface CookieParam {
 
 
 
+
   partitionKey?: string;
 }
 
@@ -183,4 +186,11 @@ export interface DeleteCookiesRequest {
 
 
   path?: string;
+  
+
+
+
+
+
+  partitionKey?: string;
 }

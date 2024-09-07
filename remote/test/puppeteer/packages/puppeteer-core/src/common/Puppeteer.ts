@@ -63,6 +63,8 @@ export class Puppeteer {
 
 
 
+
+
   static registerCustomQueryHandler(
     name: string,
     queryHandler: CustomQueryHandler
@@ -98,7 +100,7 @@ export class Puppeteer {
   
 
 
-  protected _changedProduct = false;
+  protected _changedBrowsers = false;
 
   
 

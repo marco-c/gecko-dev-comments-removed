@@ -20,9 +20,6 @@ import type {BidiEvents, Commands, Connection} from './Connection.js';
 
 
 
-
-
-
 export class Session
   extends EventEmitter<BidiEvents & {ended: {reason: string}}>
   implements Connection<BidiEvents & {ended: {reason: string}}>
@@ -31,26 +28,6 @@ export class Session
     connection: Connection,
     capabilities: Bidi.Session.CapabilitiesRequest
   ): Promise<Session> {
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     const {result} = await connection.send('session.new', {
       capabilities,
     });

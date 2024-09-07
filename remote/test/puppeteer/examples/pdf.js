@@ -14,8 +14,6 @@ const puppeteer = require('puppeteer');
   await page.goto('https://news.ycombinator.com', {
     waitUntil: 'networkidle2',
   });
-  
-  
   await page.pdf({
     path: 'hn.pdf',
     format: 'letter',

@@ -229,7 +229,7 @@ export class Connection extends EventEmitter<CDPSessionEvents> {
 
 
   async _createSession(
-    targetInfo: Protocol.Target.TargetInfo,
+    targetInfo: {targetId: string},
     isAutoAttachEmulated = true
   ): Promise<CDPSession> {
     if (!isAutoAttachEmulated) {

@@ -407,7 +407,9 @@ export class FrameManager extends EventEmitter<FrameManagerEvents> {
   ): void {
     let frame = this.frame(frameId);
     if (frame) {
-      if (session && frame.isOOPFrame()) {
+      if (session && frame.client !== this.#client) {
+        
+        
         
         
         

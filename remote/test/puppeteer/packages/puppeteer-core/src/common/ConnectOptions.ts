@@ -4,6 +4,8 @@
 
 
 
+import type {Session} from 'chromium-bidi/lib/cjs/protocol/protocol.js';
+
 import type {
   IsPageTargetCallback,
   TargetFilterCallback,
@@ -17,6 +19,21 @@ import type {Viewport} from './Viewport.js';
 
 export type ProtocolType = 'cdp' | 'webDriverBiDi';
 
+export type SupportedWebDriverCapability = Exclude<
+  Session.CapabilityRequest,
+  'unhandledPromptBehavior' | 'acceptInsecureCerts'
+>;
+
+
+
+
+
+
+export interface SupportedWebDriverCapabilities {
+  firstMatch?: SupportedWebDriverCapability[];
+  alwaysMatch?: SupportedWebDriverCapability;
+}
+
 
 
 
@@ -27,7 +44,7 @@ export interface BrowserConnectOptions {
 
 
 
-  ignoreHTTPSErrors?: boolean;
+  acceptInsecureCerts?: boolean;
   
 
 
@@ -49,6 +66,13 @@ export interface BrowserConnectOptions {
   _isPageTarget?: IsPageTargetCallback;
 
   
+
+
+
+
+
+
+
 
 
 
@@ -74,4 +98,12 @@ export interface ConnectOptions extends BrowserConnectOptions {
 
 
   headers?: Record<string, string>;
+
+  
+
+
+
+
+
+  capabilities?: SupportedWebDriverCapabilities;
 }

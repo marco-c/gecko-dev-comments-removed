@@ -4,7 +4,7 @@
 
 
 
-import type {Product} from './Product.js';
+import type {SupportedBrowser} from './SupportedBrowser.js';
 
 
 
@@ -31,33 +31,7 @@ export interface Configuration {
 
 
 
-
-
-
-
-
-  browserRevision?: string;
-  
-
-
-
-
-
-
   cacheDirectory?: string;
-  
-
-
-
-
-
-
-
-
-
-
-
-  downloadBaseUrl?: string;
   
 
 
@@ -74,7 +48,7 @@ export interface Configuration {
 
 
 
-  defaultProduct?: Product;
+  defaultBrowser?: SupportedBrowser;
   
 
 
@@ -94,21 +68,132 @@ export interface Configuration {
 
 
 
-  skipChromeDownload?: boolean;
-  
-
-
-
-
-  skipChromeHeadlessShellDownload?: boolean;
-  
-
-
-
-
   logLevel?: 'silent' | 'error' | 'warn';
   
 
 
   experiments?: ExperimentsConfiguration;
+
+  chrome?: ChromeSettings;
+  ['chrome-headless-shell']?: ChromeHeadlessShellSettings;
+  firefox?: FirefoxSettings;
+}
+
+
+
+
+export interface ChromeSettings {
+  
+
+
+
+
+
+
+  skipDownload?: boolean;
+  
+
+
+
+
+
+
+
+
+
+
+  downloadBaseUrl?: string;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  version?: string;
+}
+
+
+
+
+export interface ChromeHeadlessShellSettings {
+  
+
+
+
+
+
+
+
+  skipDownload?: boolean;
+  
+
+
+
+
+
+
+
+
+
+
+  downloadBaseUrl?: string;
+  
+
+
+
+
+
+
+
+
+
+
+
+  version?: string;
+}
+
+
+
+
+export interface FirefoxSettings {
+  
+
+
+
+
+
+
+  skipDownload?: boolean;
+  
+
+
+
+
+
+
+
+
+
+
+  downloadBaseUrl?: string;
+  
+
+
+
+
+
+
+
+
+
+
+
+  version?: string;
 }

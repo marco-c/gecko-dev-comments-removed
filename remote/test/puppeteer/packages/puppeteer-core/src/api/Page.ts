@@ -63,7 +63,6 @@ import {
   debugError,
   fromEmitterEvent,
   filterAsync,
-  importFSPromises,
   isString,
   NETWORK_IDLE_TIME,
   timeout,
@@ -71,6 +70,7 @@ import {
   fromAbortSignal,
 } from '../common/util.js';
 import type {Viewport} from '../common/Viewport.js';
+import {environment} from '../environment.js';
 import type {ScreenRecorder} from '../node/ScreenRecorder.js';
 import {guarded} from '../util/decorators.js';
 import {
@@ -79,6 +79,7 @@ import {
   DisposableStack,
   disposeSymbol,
 } from '../util/disposable.js';
+import {stringToTypedArray} from '../util/encoding.js';
 
 import type {Browser} from './Browser.js';
 import type {BrowserContext} from './BrowserContext.js';
@@ -997,7 +998,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param selector -
    * {@link https://pptr.dev/guides/page-interactions#selectors | selector}
-   * to query page for.
+   * to query the page for.
    * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | CSS selectors}
    * can be passed as-is and a
    * {@link https://pptr.dev/guides/page-interactions#non-css-selectors | Puppeteer-specific selector syntax}
@@ -1021,7 +1022,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param selector -
    * {@link https://pptr.dev/guides/page-interactions#selectors | selector}
-   * to query page for.
+   * to query the page for.
    * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | CSS selectors}
    * can be passed as-is and a
    * {@link https://pptr.dev/guides/page-interactions#non-css-selectors | Puppeteer-specific selector syntax}
@@ -1063,7 +1064,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param selector -
    * {@link https://pptr.dev/guides/page-interactions#selectors | selector}
-   * to query page for.
+   * to query the page for.
    * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | CSS selectors}
    * can be passed as-is and a
    * {@link https://pptr.dev/guides/page-interactions#non-css-selectors | Puppeteer-specific selector syntax}
@@ -1093,7 +1094,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param selector -
    * {@link https://pptr.dev/guides/page-interactions#selectors | selector}
-   * to query page for.
+   * to query the page for.
    * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | CSS selectors}
    * can be passed as-is and a
    * {@link https://pptr.dev/guides/page-interactions#non-css-selectors | Puppeteer-specific selector syntax}
@@ -1268,7 +1269,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param selector -
    * {@link https://pptr.dev/guides/page-interactions#selectors | selector}
-   * to query page for.
+   * to query the page for.
    * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | CSS selectors}
    * can be passed as-is and a
    * {@link https://pptr.dev/guides/page-interactions#non-css-selectors | Puppeteer-specific selector syntax}
@@ -1353,7 +1354,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param selector -
    * {@link https://pptr.dev/guides/page-interactions#selectors | selector}
-   * to query page for.
+   * to query the page for.
    * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | CSS selectors}
    * can be passed as-is and a
    * {@link https://pptr.dev/guides/page-interactions#non-css-selectors | Puppeteer-specific selector syntax}
@@ -1854,11 +1855,11 @@ export abstract class Page extends EventEmitter<PageEvents> {
   ): Promise<Frame> {
     const {timeout: ms = this.getDefaultTimeout(), signal} = options;
 
-    if (isString(urlOrPredicate)) {
-      urlOrPredicate = (frame: Frame) => {
-        return urlOrPredicate === frame.url();
-      };
-    }
+    const predicate = isString(urlOrPredicate)
+      ? (frame: Frame) => {
+          return urlOrPredicate === frame.url();
+        }
+      : urlOrPredicate;
 
     return await firstValueFrom(
       merge(
@@ -1866,7 +1867,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
         fromEmitterEvent(this, PageEvent.FrameNavigated),
         from(this.frames())
       ).pipe(
-        filterAsync(urlOrPredicate),
+        filterAsync(predicate),
         first(),
         raceWith(
           timeout(ms),
@@ -1921,7 +1922,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * ```ts
    * import {KnownDevices} from 'puppeteer';
-   * const iPhone = KnownDevices['iPhone 6'];
+   * const iPhone = KnownDevices['iPhone 15 Pro'];
    *
    * (async () => {
    *   const browser = await puppeteer.launch();
@@ -2278,17 +2279,15 @@ export abstract class Page extends EventEmitter<PageEvents> {
   /**
    * @internal
    */
-  async _maybeWriteBufferToFile(
+  async _maybeWriteTypedArrayToFile(
     path: string | undefined,
-    buffer: Buffer
+    typedArray: Uint8Array
   ): Promise<void> {
     if (!path) {
       return;
     }
 
-    const fs = await importFSPromises();
-
-    await fs.writeFile(path, buffer);
+    await environment.value.fs.promises.writeFile(path, typedArray);
   }
 
   /**
@@ -2334,12 +2333,9 @@ export abstract class Page extends EventEmitter<PageEvents> {
   async screencast(
     options: Readonly<ScreencastOptions> = {}
   ): Promise<ScreenRecorder> {
-    const [{ScreenRecorder}, [width, height, devicePixelRatio]] =
-      await Promise.all([
-        import('../node/ScreenRecorder.js'),
-        this.#getNativePixelDimensions(),
-      ]);
-
+    const ScreenRecorder = environment.value.ScreenRecorder;
+    const [width, height, devicePixelRatio] =
+      await this.#getNativePixelDimensions();
     let crop: BoundingBox | undefined;
     if (options.crop) {
       const {
@@ -2398,7 +2394,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
       throw error;
     }
     if (options.path) {
-      const {createWriteStream} = await import('fs');
+      const {createWriteStream} = environment.value.fs;
       const stream = createWriteStream(options.path, 'binary');
       recorder.pipe(stream);
     }
@@ -2487,13 +2483,13 @@ export abstract class Page extends EventEmitter<PageEvents> {
   async screenshot(
     options: Readonly<ScreenshotOptions> & {encoding: 'base64'}
   ): Promise<string>;
-  async screenshot(options?: Readonly<ScreenshotOptions>): Promise<Buffer>;
+  async screenshot(options?: Readonly<ScreenshotOptions>): Promise<Uint8Array>;
   @guarded(function () {
     return this.browser();
   })
   async screenshot(
     userOptions: Readonly<ScreenshotOptions> = {}
-  ): Promise<Buffer | string> {
+  ): Promise<Uint8Array | string> {
     using _guard = await this.browserContext().startScreenshot();
 
     await this.bringToFront();
@@ -2592,9 +2588,10 @@ export abstract class Page extends EventEmitter<PageEvents> {
     if (options.encoding === 'base64') {
       return data;
     }
-    const buffer = Buffer.from(data, 'base64');
-    await this._maybeWriteBufferToFile(options.path, buffer);
-    return buffer;
+
+    const typedArray = stringToTypedArray(data, true);
+    await this._maybeWriteTypedArrayToFile(options.path, typedArray);
+    return typedArray;
   }
 
   
@@ -2625,7 +2622,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
   
 
 
-  abstract pdf(options?: PDFOptions): Promise<Buffer>;
+  abstract pdf(options?: PDFOptions): Promise<Uint8Array>;
 
   
 
@@ -2679,6 +2676,20 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   click(selector: string, options?: Readonly<ClickOptions>): Promise<void> {
     return this.mainFrame().click(selector, options);
   }
@@ -2698,11 +2709,37 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   focus(selector: string): Promise<void> {
     return this.mainFrame().focus(selector);
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2747,11 +2784,35 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   select(selector: string, ...values: string[]): Promise<string[]> {
     return this.mainFrame().select(selector, ...values);
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2792,6 +2853,17 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   type(
     selector: string,
     text: string,
@@ -2801,6 +2873,18 @@ export abstract class Page extends EventEmitter<PageEvents> {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

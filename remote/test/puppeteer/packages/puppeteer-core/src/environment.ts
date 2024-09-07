@@ -4,7 +4,38 @@
 
 
 
+import type FS from 'fs';
+import type Path from 'path';
+
+import type {ScreenRecorder} from './node/ScreenRecorder.js';
+
 
 
 
 export const isNode = !!(typeof process !== 'undefined' && process.version);
+
+export interface EnvironmentDependencies {
+  fs: typeof FS;
+  path: typeof Path;
+  ScreenRecorder: typeof ScreenRecorder;
+}
+
+
+
+
+
+export const environment: {
+  value: EnvironmentDependencies;
+} = {
+  value: {
+    get fs(): typeof FS {
+      throw new Error('fs is not available in this environment');
+    },
+    get path(): typeof Path {
+      throw new Error('path is not available in this environment');
+    },
+    get ScreenRecorder(): typeof ScreenRecorder {
+      throw new Error('ScreenRecorder is not available in this environment');
+    },
+  },
+};

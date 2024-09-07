@@ -5,7 +5,7 @@
 
 
 import type {BrowserConnectOptions} from '../common/ConnectOptions.js';
-import type {Product} from '../common/Product.js';
+import type {SupportedBrowser} from '../common/SupportedBrowser.js';
 
 
 
@@ -117,12 +117,14 @@ export interface LaunchOptions {
 
 
 
+
+
   pipe?: boolean;
   
 
 
 
-  product?: Product;
+  browser?: SupportedBrowser;
   
 
 

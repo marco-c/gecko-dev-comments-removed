@@ -11,7 +11,7 @@ import type {HTTPResponse} from 'puppeteer-core/internal/api/HTTPResponse.js';
 
 import {launch} from './mocha-utils.js';
 
-describe('ignoreHTTPSErrors', function () {
+describe('acceptInsecureCerts', function () {
   
 
 
@@ -20,7 +20,7 @@ describe('ignoreHTTPSErrors', function () {
 
   before(async () => {
     state = await launch(
-      {ignoreHTTPSErrors: true},
+      {acceptInsecureCerts: true},
       {
         after: 'all',
       }
@@ -124,5 +124,18 @@ describe('ignoreHTTPSErrors', function () {
     
     expect(await page.frames()[0]!.evaluate('1 + 2')).toBe(3);
     expect(await page.frames()[1]!.evaluate('2 + 3')).toBe(5);
+  });
+  it('works for service worker', async () => {
+    const {httpsServer, page} = state;
+    await page.goto(httpsServer.PREFIX + '/serviceworkers/empty/sw.html');
+    await page.evaluate(async () => {
+      return await (
+        globalThis as unknown as {
+          registrationPromise: Promise<{unregister: () => void}>;
+        }
+      ).registrationPromise.then((registration: any) => {
+        return registration.unregister();
+      });
+    });
   });
 });

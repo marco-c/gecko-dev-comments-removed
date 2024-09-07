@@ -27,10 +27,8 @@ import type {
   HandleFor,
   NodeFor,
 } from '../common/types.js';
-import {
-  importFSPromises,
-  withSourcePuppeteerURLIfNone,
-} from '../common/util.js';
+import {withSourcePuppeteerURLIfNone} from '../common/util.js';
+import {environment} from '../environment.js';
 import {assert} from '../util/assert.js';
 import {throwIfDisposed} from '../util/decorators.js';
 
@@ -68,6 +66,10 @@ export interface WaitForOptions {
 
 
   ignoreSameDocumentNavigation?: boolean;
+  
+
+
+  signal?: AbortSignal;
 }
 
 
@@ -295,16 +297,6 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
 
 
   abstract page(): Page;
-
-  
-
-
-
-
-
-
-
-  abstract isOOPFrame(): boolean;
 
   
 
@@ -907,8 +899,7 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
     }
 
     if (path) {
-      const fs = await importFSPromises();
-      content = await fs.readFile(path, 'utf8');
+      content = await environment.value.fs.promises.readFile(path, 'utf8');
       content += `//# sourceURL=${path.replace(/\n/g, '')}`;
     }
 
@@ -988,9 +979,7 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
     }
 
     if (path) {
-      const fs = await importFSPromises();
-
-      content = await fs.readFile(path, 'utf8');
+      content = await environment.value.fs.promises.readFile(path, 'utf8');
       content += '/*# sourceURL=' + path.replace(/\n/g, '') + '*/';
       options.content = content;
     }

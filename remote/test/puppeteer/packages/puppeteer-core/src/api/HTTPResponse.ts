@@ -89,14 +89,21 @@ export abstract class HTTPResponse {
 
 
 
-  abstract buffer(): Promise<Buffer>;
+  abstract content(): Promise<Uint8Array>;
 
   
 
 
+  async buffer(): Promise<Buffer> {
+    const content = await this.content();
+    return Buffer.from(content);
+  }
+  
+
+
   async text(): Promise<string> {
-    const content = await this.buffer();
-    return content.toString('utf8');
+    const content = await this.content();
+    return new TextDecoder().decode(content);
   }
 
   

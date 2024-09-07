@@ -91,6 +91,13 @@ export interface BrowserContextEvents extends Record<EventType, unknown> {
 
 
 
+
+
+
+
+
+
+
 export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> {
   
 
@@ -173,26 +180,6 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
 
   abstract pages(): Promise<Page[]>;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  abstract isIncognito(): boolean;
 
   
 

@@ -157,13 +157,19 @@ export abstract class BidiRealm extends Realm {
         functionDeclaration,
          true,
         {
-          arguments: args.length
+          
+          
+          arguments: args.some(arg => {
+            return arg instanceof LazyArg;
+          })
             ? await Promise.all(
                 args.map(arg => {
-                  return this.serialize(arg);
+                  return this.serializeAsync(arg);
                 })
               )
-            : [],
+            : args.map(arg => {
+                return this.serialize(arg);
+              }),
           resultOwnership,
           userActivation: true,
           serializationOptions,
@@ -194,11 +200,14 @@ export abstract class BidiRealm extends Realm {
     return BidiJSHandle.from(result, this);
   }
 
-  async serialize(arg: unknown): Promise<Bidi.Script.LocalValue> {
+  async serializeAsync(arg: unknown): Promise<Bidi.Script.LocalValue> {
     if (arg instanceof LazyArg) {
       arg = await arg.get(this);
     }
+    return this.serialize(arg);
+  }
 
+  serialize(arg: unknown): Bidi.Script.LocalValue {
     if (arg instanceof BidiJSHandle || arg instanceof BidiElementHandle) {
       if (arg.realm !== this) {
         if (

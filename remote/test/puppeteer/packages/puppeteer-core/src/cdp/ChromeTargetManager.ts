@@ -124,14 +124,14 @@ export class ChromeTargetManager
       );
       
       
-      
-      const skipTarget =
-        targetInfo.type === 'browser' ||
-        targetInfo.url.startsWith('chrome-extension://');
+      const isPageOrFrame =
+        targetInfo.type === 'page' || targetInfo.type === 'iframe';
+      const isExtension = targetInfo.url.startsWith('chrome-extension://');
       if (
         (!this.#targetFilterCallback ||
           this.#targetFilterCallback(targetForFilter)) &&
-        !skipTarget
+        isPageOrFrame &&
+        !isExtension
       ) {
         this.#targetsIdsForInit.add(targetId);
       }
