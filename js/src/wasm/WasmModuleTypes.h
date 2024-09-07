@@ -286,7 +286,6 @@ struct BranchHintCollection {
   bool failedParse_ = false;
 
  public:
-
   
   [[nodiscard]] bool addHintsForFunc(uint32_t functionIndex,
                                      BranchHintVector&& branchHints) {
