@@ -125,7 +125,7 @@ add_setup(async function setup() {
   client = RemoteSettings("search-config-icons");
   await client.db.clear();
 
-  sinon.stub(client.attachments, "_baseAttachmentsURL").returns(gDataUrl);
+  sinon.stub(RemoteSettingsUtils, "baseAttachmentsURL").returns(gDataUrl);
 
   
   await insertRecordIntoCollection(client, {
