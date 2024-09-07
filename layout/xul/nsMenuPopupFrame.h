@@ -568,8 +568,8 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   
   
   
-  int32_t mXPos = 0;
-  int32_t mYPos = 0;
+  nsPoint mExtraMargin;
+
   nsRect mScreenRect;
   
   
