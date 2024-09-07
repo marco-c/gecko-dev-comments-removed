@@ -13549,7 +13549,7 @@
 # Use NSPR for HTTP3 UDP IO
 - name: network.http.http3.use_nspr_for_io
   type: RelaxedAtomicBool
-  value: true
+  value: @IS_NOT_NIGHTLY_BUILD@
   mirror: always
 
 - name: network.http.http3.enable_qlog
@@ -13650,6 +13650,13 @@
 #else
   value: @IS_NIGHTLY_BUILD@
 #endif
+  mirror: always
+  rust: true
+
+# Whether to enable Packetization Layer Path MTU Discovery.
+- name: network.http.http3.pmtud
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
