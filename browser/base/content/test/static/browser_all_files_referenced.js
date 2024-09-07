@@ -301,8 +301,14 @@ if (AppConstants.NIGHTLY_BUILD) {
       { file: "chrome://browser/content/backup/debug.html" },
 
       
-      { file: "chrome://global/content/ml/transformers.js" },
       { file: "chrome://global/content/ml/ort.js" },
+    ]
+  );
+} else {
+  allowlist.push(
+    ...[
+      
+      { file: "chrome://global/content/ml/ort.js-dev" },
     ]
   );
 }
