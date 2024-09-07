@@ -56,8 +56,8 @@ const BOTTOM_RIGHT_QUADRANT = 4;
 
 
 
-function setupPlayer(id, wgp, videoRef) {
-  Player.init(id, wgp, videoRef);
+function setupPlayer(id, wgp, videoRef, autoFocus) {
+  Player.init(id, wgp, videoRef, autoFocus);
 }
 
 
@@ -119,6 +119,10 @@ function setTimestamp(timeString) {
 
 function setVolume(volume) {
   Player.setVolume(volume);
+}
+
+function closeFromForeground() {
+  Player.closeFromForeground();
 }
 
 
@@ -188,7 +192,9 @@ let Player = {
 
 
 
-  init(id, wgp, videoRef) {
+
+
+  init(id, wgp, videoRef, autoFocus) {
     this.id = id;
 
     
@@ -322,9 +328,11 @@ let Player = {
     
     
     
-    window.requestAnimationFrame(() => {
-      window.focus();
-    });
+    if (autoFocus) {
+      window.requestAnimationFrame(() => {
+        window.focus();
+      });
+    }
 
     let fontSize = Services.prefs.getCharPref(
       TEXT_TRACK_FONT_SIZE_PREF,
@@ -762,6 +770,13 @@ let Player = {
       reason: "pip-closed",
     });
     this.closePipWindow({ reason: "closeButton" });
+  },
+
+  closeFromForeground() {
+    PictureInPicture.closeSinglePipWindow({
+      reason: "foregrounded",
+      actorRef: this.actor,
+    });
   },
 
   fullscreenModeToggle() {
