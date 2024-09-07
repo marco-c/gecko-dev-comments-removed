@@ -8,66 +8,6 @@ ChromeUtils.defineESModuleGetters(this, {
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
-const { ctypes } = ChromeUtils.importESModule(
-  "resource://gre/modules/ctypes.sys.mjs"
-);
-
-
-function openLibrary(names) {
-  for (const name of names) {
-    try {
-      return ctypes.open(name);
-    } catch (e) {}
-  }
-  return undefined;
-}
-
-
-
-
-function raiseSignal(pid, sig) {
-  try {
-    const libc = openLibrary([
-      "libc.so.6",
-      "libc.so",
-      "libc.dylib",
-      "libSystem.B.dylib",
-    ]);
-    if (!libc) {
-      info("Failed to open any libc shared object");
-      return { ok: false };
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    const kill = libc.declare(
-      "kill",
-      ctypes.default_abi,
-      ctypes.int, 
-      ctypes.int32_t, 
-      ctypes.int 
-    );
-
-    let kres = kill(pid, sig);
-    if (kres != 0) {
-      info(`Kill returned a non-zero result ${kres}.`);
-      return { ok: false };
-    }
-
-    libc.close();
-  } catch (e) {
-    info(`Exception ${e} thrown while trying to call kill`);
-    return { ok: false };
-  }
-
-  return { ok: true };
-}
-
 async function cleanupAfterTest() {
   
   
@@ -85,18 +25,6 @@ async function cleanupAfterTest() {
   
   await Services.profiler.StopProfiler();
 }
-
-
-
-
-
-
-
-
-
-
-const SIGUSR1 = Services.appinfo.OS === "Darwin" ? 30 : 10;
-const SIGUSR2 = Services.appinfo.OS === "Darwin" ? 31 : 12;
 
 add_task(async () => {
   info("Test that starting the profiler with a posix signal works.");
