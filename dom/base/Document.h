@@ -2444,8 +2444,11 @@ class Document : public nsINode,
 
   LinkedList<MediaQueryList>& MediaQueryLists() { return mDOMMediaQueryLists; }
 
-  nsTHashMap<const Element*, nsTArray<WeakPtr<PreloaderBase>>>&
-  ContentIdentifiersForLCP() {
+  using ContentIdentifiersForLCPType =
+      nsTHashMap<NoMemMoveKey<nsPtrHashKey<const Element>>,
+                 AutoTArray<WeakPtr<PreloaderBase>, 1>>;
+
+  ContentIdentifiersForLCPType& ContentIdentifiersForLCP() {
     return mContentIdentifiersForLCP;
   }
 
@@ -5100,11 +5103,7 @@ class Document : public nsINode,
   
   
   
-  
-  
-  
-  nsTHashMap<const Element*, nsTArray<WeakPtr<PreloaderBase>>>
-      mContentIdentifiersForLCP;
+  ContentIdentifiersForLCPType mContentIdentifiersForLCP;
 
   
   nsTObserverArray<nsIDocumentObserver*> mObservers;

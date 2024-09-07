@@ -609,4 +609,15 @@ class nsGenericHashKey : public PLDHashEntryHdr {
   T mKey;
 };
 
+
+
+
+
+template <class Key>
+class NoMemMoveKey : public Key {
+ public:
+  explicit NoMemMoveKey(typename Key::KeyTypePointer aKey) : Key(aKey) {}
+  enum { ALLOW_MEMMOVE = false };
+};
+
 #endif  
