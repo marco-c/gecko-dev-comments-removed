@@ -1521,8 +1521,9 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
   
   
   
-  ASSERT_TRUE(turn_port_->SetEntryChannelId(
-      udp_port_->Candidates()[0].address(), 1));
+  int illegal_channel_id = kMaxTurnChannelNumber + 1u;
+  ASSERT_TRUE(turn_port_->SetEntryChannelIdForTesting(
+      udp_port_->Candidates()[0].address(), illegal_channel_id));
 
   std::string data = "ABC";
   conn1->Send(data.data(), data.length(), options);
@@ -1534,6 +1535,8 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
 
   conn2->RegisterReceivedPacketCallback(
       [&](Connection* connection, const rtc::ReceivedPacket& packet) {
+        
+        
         udp_packets_.push_back(
             rtc::Buffer(packet.payload().data(), packet.payload().size()));
       });

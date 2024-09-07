@@ -192,7 +192,11 @@ class TurnPort : public Port {
   }
   
   
-  bool SetEntryChannelId(const rtc::SocketAddress& address, int channel_id);
+  
+  
+  
+  bool SetEntryChannelIdForTesting(const rtc::SocketAddress& address,
+                                   int channel_id);
 
   void HandleConnectionDestroyed(Connection* conn) override;
 
