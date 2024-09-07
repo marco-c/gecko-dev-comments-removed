@@ -2,7 +2,7 @@
 
 
 
-use crate::{LabeledTimingSample, Suggestion, SuggestionProvider};
+use crate::SuggestionProvider;
 
 
 #[derive(Clone, Debug, Default)]
@@ -10,11 +10,6 @@ pub struct SuggestionQuery {
     pub keyword: String,
     pub providers: Vec<SuggestionProvider>,
     pub limit: Option<i32>,
-}
-
-pub struct QueryWithMetricsResult {
-    pub suggestions: Vec<Suggestion>,
-    pub query_times: Vec<LabeledTimingSample>,
 }
 
 impl SuggestionQuery {
