@@ -4116,6 +4116,67 @@ async function synthesizeMockDragAndDrop(aParams) {
   expectNoDragTargetEvents |= expectNoDragEvents;
 
   
+  let browsingContextsAreRelated = function (cxt1, cxt2) {
+    let cxt = cxt1;
+    while (cxt) {
+      if (cxt2 == cxt) {
+        return true;
+      }
+      cxt = cxt.parent;
+    }
+    cxt = cxt2.parent;
+    while (cxt) {
+      if (cxt1 == cxt) {
+        return true;
+      }
+      cxt = cxt.parent;
+    }
+    return false;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let expectProtectedDataTransferAccess =
+    !SpecialPowers.getBoolPref("dom.events.dataTransfer.protected.enabled") &&
+    browsingContextsAreRelated(targetBrowsingCxt, sourceBrowsingCxt);
+
+  
+  
+  let expectProtectedDataTransferAccessDragendOnly = !SpecialPowers.getBoolPref(
+    "dom.events.dataTransfer.protected.enabled"
+  );
+
+  info(
+    `expectProtectedDataTransferAccess: ${expectProtectedDataTransferAccess}`
+  );
+  info(
+    `expectProtectedDataTransferAccessDragendOnly: ${expectProtectedDataTransferAccessDragendOnly}`
+  );
+
+  
   
   
   const { MockRegistrar } = ChromeUtils.importESModule(
@@ -4160,6 +4221,7 @@ async function synthesizeMockDragAndDrop(aParams) {
       expectCancelDragStart,
       expectSrcElementDisconnected,
       expectNoDragEvents,
+      expectProtectedDataTransferAccessDragendOnly,
       dragElementId: srcElement,
     };
     const targetVars = {
@@ -4170,6 +4232,7 @@ async function synthesizeMockDragAndDrop(aParams) {
     const bothVars = {
       contextLabel,
       throwOnExtraMessage,
+      expectProtectedDataTransferAccess,
       relevantEvents: [
         "mousedown",
         "mouseup",
