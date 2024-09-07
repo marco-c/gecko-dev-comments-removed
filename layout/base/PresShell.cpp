@@ -8251,11 +8251,24 @@ nsresult PresShell::EventHandler::HandleEventAtFocusedContent(
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mPresShell->mCurrentEventTarget.SetFrameAndContent(
       aGUIEvent->mMessage, nullptr, eventTargetElement);
-  if (!mPresShell->GetCurrentEventContent() ||
-      !mPresShell->GetCurrentEventFrame() ||
-      InZombieDocument(mPresShell->mCurrentEventTarget.mContent)) {
+  if (aGUIEvent->mClass != eCompositionEventClass &&
+      aGUIEvent->mClass != eQueryContentEventClass &&
+      aGUIEvent->mClass != eSelectionEventClass &&
+      (!mPresShell->GetCurrentEventContent() ||
+       !mPresShell->GetCurrentEventFrame() ||
+       InZombieDocument(mPresShell->mCurrentEventTarget.mContent))) {
     return RetargetEventToParent(aGUIEvent, aEventStatus);
   }
 

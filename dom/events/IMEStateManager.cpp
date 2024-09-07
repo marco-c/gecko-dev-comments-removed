@@ -491,6 +491,7 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
   return NS_OK;
 }
 
+
 void IMEStateManager::OnParentChainChangedOfObservingElement(
     IMEContentObserver& aObserver) {
   if (!sFocusedPresContext || sActiveIMEContentObserver != &aObserver) {
@@ -509,6 +510,94 @@ void IMEStateManager::OnParentChainChangedOfObservingElement(
            &aObserver, sFocusedPresContext.get(), sFocusedElement.get(),
            presContext.get(), element.get()));
   OnRemoveContent(*presContext, *element);
+}
+
+
+void IMEStateManager::OnUpdateHTMLEditorRootElement(HTMLEditor& aHTMLEditor,
+                                                    Element* aNewRootElement) {
+  MOZ_LOG(
+      sISMLog, LogLevel::Info,
+      ("OnUpdateHTMLEditorRootElement(aHTMLEditor=0x%p, aNewRootElement=%s), "
+       "sFocusedPresContext=0x%p, sFocusedElement=%s, "
+       "sActiveIMEContentObserver=0x%p (GetObservingElement()=%s), "
+       "sTextInputHandlingWidget=0x%p, aHTMLEditor.GetPresContext()=0x%p",
+       &aHTMLEditor,
+       aNewRootElement ? ToString(*aNewRootElement).c_str() : "nullptr",
+       sFocusedPresContext.get(),
+       ToString(RefPtr<Element>(sFocusedElement)).c_str(),
+       sActiveIMEContentObserver.get(),
+       sActiveIMEContentObserver
+           ? ToString(RefPtr<Element>(
+                          sActiveIMEContentObserver->GetObservingElement()))
+                 .c_str()
+           : "N/A",
+       sTextInputHandlingWidget, aHTMLEditor.GetPresContext()));
+
+  if (
+      
+      !sFocusedPresContext || !sTextInputHandlingWidget ||
+      
+      
+      sFocusedElement ||
+      
+      sFocusedPresContext != aHTMLEditor.GetPresContext() ||
+      
+      
+      !aHTMLEditor.IsInDesignMode() ||
+      
+      
+      (aNewRootElement && sActiveIMEContentObserver &&
+       sActiveIMEContentObserver->GetObservingElement() == aNewRootElement)) {
+    return;
+  }
+
+  OwningNonNull<nsPresContext> presContext = *sFocusedPresContext;
+
+  DestroyIMEContentObserver();
+
+  if (!aNewRootElement) {
+    
+    IMEState newState = GetNewIMEState(*presContext, nullptr);
+    MOZ_ASSERT(newState.mEnabled == IMEEnabled::Disabled);
+    InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
+                              InputContextAction::LOST_FOCUS);
+    InputContext::Origin origin =
+        BrowserParent::GetFocused() ? InputContext::ORIGIN_CONTENT : sOrigin;
+    OwningNonNull<nsIWidget> textInputHandlingWidget =
+        *sTextInputHandlingWidget;
+    SetIMEState(newState, presContext, nullptr, textInputHandlingWidget, action,
+                origin);
+    return;
+  }
+
+  MOZ_ASSERT(aNewRootElement);
+  
+  IMEState newState = GetNewIMEState(*presContext, nullptr);
+  MOZ_ASSERT(newState.mEnabled == IMEEnabled::Enabled);
+  InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
+                            InputContextAction::GOT_FOCUS);
+  InputContext::Origin origin =
+      BrowserParent::GetFocused() ? InputContext::ORIGIN_CONTENT : sOrigin;
+  OwningNonNull<nsIWidget> textInputHandlingWidget = *sTextInputHandlingWidget;
+  SetIMEState(newState, presContext, nullptr, textInputHandlingWidget, action,
+              origin);
+  
+  
+  if (sFocusedElement || sActiveIMEContentObserver) {
+    MOZ_LOG(sISMLog, LogLevel::Warning,
+            ("OnUpdateHTMLEditorRootElement(), WARNING: Somebody update focus "
+             "during setting IME state, sFocusedElement=%s, "
+             "sActiveIMEContentObserver=0x%p",
+             ToString(RefPtr<Element>(sFocusedElement)).c_str(),
+             sActiveIMEContentObserver.get()));
+    return;
+  }
+
+  if (IsIMEObserverNeeded(newState)) {
+    MOZ_ASSERT(sFocusedPresContext == presContext);
+    MOZ_ASSERT(!sFocusedElement);
+    CreateIMEContentObserver(aHTMLEditor, nullptr);
+  }
 }
 
 
@@ -1525,10 +1614,16 @@ IMEState IMEStateManager::GetNewIMEState(const nsPresContext& aPresContext,
     
     
     if (aPresContext.Document() && aPresContext.Document()->IsInDesignMode()) {
+      if (aPresContext.Document()->GetRootElement()) {
+        MOZ_LOG(sISMLog, LogLevel::Debug,
+                ("  GetNewIMEState() returns IMEEnabled::Enabled because "
+                 "design mode editor has focus"));
+        return IMEState(IMEEnabled::Enabled);
+      }
       MOZ_LOG(sISMLog, LogLevel::Debug,
-              ("  GetNewIMEState() returns IMEEnabled::Enabled because "
-               "design mode editor has focus"));
-      return IMEState(IMEEnabled::Enabled);
+              ("  GetNewIMEState() returns IMEEnabled::Disabled because "
+               "document is in the design mode but has no element"));
+      return IMEState(IMEEnabled::Disabled);
     }
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  GetNewIMEState() returns IMEEnabled::Disabled because "

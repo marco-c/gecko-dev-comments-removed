@@ -175,6 +175,13 @@ class IMEStateManager {
 
 
 
+  MOZ_CAN_RUN_SCRIPT static void OnUpdateHTMLEditorRootElement(
+      HTMLEditor& aHTMLEditor, dom::Element* aNewRootElement);
+
+  
+
+
+
 
 
 
