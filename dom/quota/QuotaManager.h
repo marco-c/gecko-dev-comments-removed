@@ -359,11 +359,25 @@ class QuotaManager final : public BackgroundThreadObject {
   nsresult EnsureStorageIsInitializedInternal();
 
  public:
+  RefPtr<BoolPromise> InitializePersistentOrigin(
+      const PrincipalInfo& aPrincipalInfo);
+
+  RefPtr<BoolPromise> InitializePersistentOrigin(
+      const PrincipalInfo& aPrincipalInfo,
+      RefPtr<UniversalDirectoryLock> aDirectoryLock);
+
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
   EnsurePersistentOriginIsInitializedInternal(
       const OriginMetadata& aOriginMetadata);
+
+  RefPtr<BoolPromise> InitializeTemporaryOrigin(
+      PersistenceType aPersistenceType, const PrincipalInfo& aPrincipalInfo);
+
+  RefPtr<BoolPromise> InitializeTemporaryOrigin(
+      PersistenceType aPersistenceType, const PrincipalInfo& aPrincipalInfo,
+      RefPtr<UniversalDirectoryLock> aDirectoryLock);
 
   bool IsTemporaryOriginInitializedInternal(
       const OriginMetadata& aOriginMetadata) const;

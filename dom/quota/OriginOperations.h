@@ -66,26 +66,30 @@ RefPtr<QuotaUsageRequestBase> CreateGetOriginUsageOp(
 RefPtr<QuotaRequestBase> CreateStorageNameOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager);
 
-RefPtr<QuotaRequestBase> CreateStorageInitializedOp(
+RefPtr<ResolvableNormalOriginOp<bool>> CreateStorageInitializedOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager);
 
-RefPtr<QuotaRequestBase> CreateTemporaryStorageInitializedOp(
+RefPtr<ResolvableNormalOriginOp<bool>> CreateTemporaryStorageInitializedOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager);
 
 RefPtr<ResolvableNormalOriginOp<bool>> CreateInitOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
     RefPtr<UniversalDirectoryLock> aDirectoryLock);
 
-RefPtr<QuotaRequestBase> CreateInitTemporaryStorageOp(
-    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager);
-
-RefPtr<QuotaRequestBase> CreateInitializePersistentOriginOp(
+RefPtr<ResolvableNormalOriginOp<bool>> CreateInitTemporaryStorageOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-    const RequestParams& aParams);
+    RefPtr<UniversalDirectoryLock> aDirectoryLock);
 
-RefPtr<QuotaRequestBase> CreateInitializeTemporaryOriginOp(
+RefPtr<ResolvableNormalOriginOp<bool>> CreateInitializePersistentOriginOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-    const RequestParams& aParams);
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+    RefPtr<UniversalDirectoryLock> aDirectoryLock);
+
+RefPtr<ResolvableNormalOriginOp<bool>> CreateInitializeTemporaryOriginOp(
+    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
+    const PersistenceType aPersistenceType,
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+    RefPtr<UniversalDirectoryLock> aDirectoryLock);
 
 RefPtr<ResolvableNormalOriginOp<bool>> CreateInitializePersistentClientOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
