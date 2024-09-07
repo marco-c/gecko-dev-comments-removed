@@ -16,7 +16,7 @@ nsresult nsWinRemoteClient::Init() { return NS_OK; }
 
 nsresult nsWinRemoteClient::SendCommandLine(const char* aProgram,
                                             const char* aProfile, int32_t argc,
-                                            const char** argv) {
+                                            const char** argv, bool aRaise) {
   nsString className;
   BuildClassName(aProgram, aProfile, className);
 
@@ -30,9 +30,13 @@ nsresult nsWinRemoteClient::SendCommandLine(const char* aProgram,
   _wgetcwd(cwd, MAX_PATH);
   WinRemoteMessageSender sender(argc, argv, nsDependentString(cwd));
 
-  
-  
-  ::SetForegroundWindow(handle);
+  if (aRaise) {
+    
+    
+    
+    
+    ::SetForegroundWindow(handle);
+  }
   ::SendMessageW(handle, WM_COPYDATA, 0,
                  reinterpret_cast<LPARAM>(sender.CopyData()));
 
