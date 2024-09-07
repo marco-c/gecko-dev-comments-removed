@@ -752,6 +752,26 @@ const auto* const kOptOutPref =
 const auto* const kSendOncePref =
     "toolkit.telemetry.user_characteristics_ping.send-once";
 
+namespace {
+
+
+
+
+
+
+
+
+
+int32_t GetCurrentVersion() {
+  auto userValue = Preferences::GetInt(kCurrentVersionPref, 0);
+  auto defaultValue =
+      Preferences::GetInt(kCurrentVersionPref, 0, PrefValueKind::Default);
+
+  return std::max(userValue, defaultValue);
+}
+
+}  
+
 
 nsresult PopulateEssentials() {
   glean::characteristics::submission_schema.Set(kSubmissionSchema);
@@ -778,7 +798,7 @@ void AfterPingSentSteps(bool aUpdatePref) {
   if (aUpdatePref) {
     MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Debug,
             ("Updating preference"));
-    auto current_version = Preferences::GetInt(kCurrentVersionPref, 0);
+    auto current_version = GetCurrentVersion();
     Preferences::SetInt(kLastVersionPref, current_version);
     if (Preferences::GetBool(kSendOncePref, false)) {
       Preferences::SetBool(kSendOncePref, false);
@@ -817,7 +837,7 @@ bool nsUserCharacteristics::ShouldSubmit() {
     return true;
   }
 
-  int32_t currentVersion = Preferences::GetInt(kCurrentVersionPref, 0);
+  int32_t currentVersion = GetCurrentVersion();
   int32_t lastSubmissionVersion = Preferences::GetInt(kLastVersionPref, 0);
   MOZ_ASSERT(lastSubmissionVersion <= currentVersion,
              "lastSubmissionVersion is somehow greater than currentVersion "
