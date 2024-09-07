@@ -3,7 +3,9 @@
 use crate::backend::mount::types::{
     InternalMountFlags, MountFlags, MountFlagsArg, MountPropagationFlags, UnmountFlags,
 };
-use crate::{backend, io, path};
+use crate::ffi::CStr;
+use crate::path::{self, option_into_with_c_str};
+use crate::{backend, io};
 
 
 
@@ -31,6 +33,39 @@ pub fn mount<Source: path::Arg, Target: path::Arg, Fs: path::Arg, Data: path::Ar
                         Some(data),
                     )
                 })
+            })
+        })
+    })
+}
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn mount2<Source: path::Arg, Target: path::Arg, Fs: path::Arg>(
+    source: Option<Source>,
+    target: Target,
+    file_system_type: Option<Fs>,
+    flags: MountFlags,
+    data: Option<&CStr>,
+) -> io::Result<()> {
+    option_into_with_c_str(source, |source| {
+        target.into_with_c_str(|target| {
+            option_into_with_c_str(file_system_type, |file_system_type| {
+                backend::mount::syscalls::mount(
+                    source,
+                    target,
+                    file_system_type,
+                    MountFlagsArg(flags.bits()),
+                    data,
+                )
             })
         })
     })

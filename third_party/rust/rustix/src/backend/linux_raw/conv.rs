@@ -15,7 +15,7 @@
 
 use super::c;
 use super::fd::{AsRawFd, BorrowedFd, FromRawFd, RawFd};
-#[cfg(any(feature = "event", feature = "runtime"))]
+#[cfg(any(feature = "event", feature = "runtime", feature = "system"))]
 use super::io::errno::try_decode_error;
 #[cfg(target_pointer_width = "64")]
 use super::io::errno::try_decode_u64;
@@ -874,7 +874,7 @@ pub(super) unsafe fn ret(raw: RetReg<R0>) -> io::Result<()> {
 
 
 
-#[cfg(any(feature = "event", feature = "runtime"))]
+#[cfg(any(feature = "event", feature = "runtime", feature = "system"))]
 #[inline]
 pub(super) unsafe fn ret_error(raw: RetReg<R0>) -> io::Errno {
     try_decode_error(raw)

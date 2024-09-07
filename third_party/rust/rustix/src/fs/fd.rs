@@ -10,7 +10,6 @@ use backend::fd::{AsFd, BorrowedFd};
 #[cfg(not(any(
     netbsdlike,
     solarish,
-    target_os = "aix",
     target_os = "dragonfly",
     target_os = "espidf",
     target_os = "nto",
@@ -41,6 +40,7 @@ use backend::fs::types::Stat;
 use backend::fs::types::StatFs;
 #[cfg(not(any(target_os = "haiku", target_os = "redox", target_os = "wasi")))]
 use backend::fs::types::StatVfs;
+use core::fmt;
 
 
 
@@ -49,13 +49,24 @@ use backend::fs::types::StatVfs;
 
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Timestamps {
     
     pub last_access: Timespec,
 
     
     pub last_modification: Timespec,
+}
+
+impl fmt::Debug for Timestamps {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_struct("Timestamps")
+            .field("last_access.tv_sec", &self.last_access.tv_sec)
+            .field("last_access.tv_nsec", &self.last_access.tv_nsec)
+            .field("last_modification.tv_sec", &self.last_modification.tv_sec)
+            .field("last_modification.tv_nsec", &self.last_modification.tv_nsec)
+            .finish()
+    }
 }
 
 
@@ -231,7 +242,6 @@ pub fn futimens<Fd: AsFd>(fd: Fd, times: &Timestamps) -> io::Result<()> {
 #[cfg(not(any(
     netbsdlike,
     solarish,
-    target_os = "aix",
     target_os = "dragonfly",
     target_os = "espidf",
     target_os = "nto",

@@ -45,6 +45,7 @@ pub(super) trait FromAsm: private::Sealed {
 
 
 #[repr(transparent)]
+#[allow(dead_code)]
 pub(super) struct Opaque(c::c_void);
 
 

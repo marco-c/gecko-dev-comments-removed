@@ -93,6 +93,16 @@ pub(crate) const SO_NOSIGPIPE: c_int = 0x0800;
 
 
 
+#[cfg(linux_kernel)]
+pub(crate) const O_LARGEFILE: c_int = linux_raw_sys::general::O_LARGEFILE as _;
+
+
+
+#[cfg(target_os = "illumos")]
+pub(crate) const O_LARGEFILE: c_int = 0x2000;
+
+
+
 
 
 #[cfg(all(
@@ -166,7 +176,7 @@ pub(super) use libc::{pread64 as pread, pwrite64 as pwrite};
 #[cfg(any(target_os = "linux", target_os = "hurd", target_os = "emscripten"))]
 pub(super) use libc::{preadv64 as preadv, pwritev64 as pwritev};
 
-#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]
 pub(super) unsafe fn prlimit(
     pid: libc::pid_t,
     resource: libc::__rlimit_resource_t,

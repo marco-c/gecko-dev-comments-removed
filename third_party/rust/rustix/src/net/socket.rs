@@ -3,6 +3,8 @@ use crate::net::{SocketAddr, SocketAddrAny, SocketAddrV4, SocketAddrV6};
 use crate::{backend, io};
 use backend::fd::{AsFd, BorrowedFd};
 
+#[cfg(target_os = "linux")]
+use crate::net::xdp::SocketAddrXdp;
 pub use crate::net::{AddressFamily, Protocol, Shutdown, SocketFlags, SocketType};
 #[cfg(unix)]
 pub use backend::net::addr::SocketAddrUnix;
@@ -168,6 +170,8 @@ fn _bind_any(sockfd: BorrowedFd<'_>, addr: &SocketAddrAny) -> io::Result<()> {
         SocketAddrAny::V6(v6) => backend::net::syscalls::bind_v6(sockfd, v6),
         #[cfg(unix)]
         SocketAddrAny::Unix(unix) => backend::net::syscalls::bind_unix(sockfd, unix),
+        #[cfg(target_os = "linux")]
+        SocketAddrAny::Xdp(xdp) => backend::net::syscalls::bind_xdp(sockfd, xdp),
     }
 }
 
@@ -278,6 +282,20 @@ pub fn bind_unix<Fd: AsFd>(sockfd: Fd, addr: &SocketAddrUnix) -> io::Result<()> 
 
 
 
+#[cfg(target_os = "linux")]
+#[inline]
+#[doc(alias = "bind")]
+pub fn bind_xdp<Fd: AsFd>(sockfd: Fd, addr: &SocketAddrXdp) -> io::Result<()> {
+    backend::net::syscalls::bind_xdp(sockfd.as_fd(), addr)
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -350,6 +368,8 @@ fn _connect_any(sockfd: BorrowedFd<'_>, addr: &SocketAddrAny) -> io::Result<()> 
         SocketAddrAny::V6(v6) => backend::net::syscalls::connect_v6(sockfd, v6),
         #[cfg(unix)]
         SocketAddrAny::Unix(unix) => backend::net::syscalls::connect_unix(sockfd, unix),
+        #[cfg(target_os = "linux")]
+        SocketAddrAny::Xdp(_) => Err(io::Errno::OPNOTSUPP),
     }
 }
 

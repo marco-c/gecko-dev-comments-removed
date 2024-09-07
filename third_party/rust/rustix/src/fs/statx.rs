@@ -102,8 +102,7 @@ mod compat {
         mask: StatxFlags,
     ) -> io::Result<Statx> {
         match backend::fs::syscalls::statx(dirfd, path, flags, mask) {
-            Err(io::Errno::NOSYS) => statx_error_nosys(),
-            Err(io::Errno::PERM) => statx_error_perm(),
+            Err(err) => statx_error(err),
             result => {
                 STATX_STATE.store(2, Ordering::Relaxed);
                 result
@@ -113,23 +112,18 @@ mod compat {
 
     
     
-    #[cold]
-    fn statx_error_nosys() -> io::Result<Statx> {
-        STATX_STATE.store(1, Ordering::Relaxed);
-        Err(io::Errno::NOSYS)
-    }
-
     
     #[cold]
-    fn statx_error_perm() -> io::Result<Statx> {
-        
-        
-        
+    fn statx_error(err: io::Errno) -> io::Result<Statx> {
         if backend::fs::syscalls::is_statx_available() {
+            
+            
             STATX_STATE.store(2, Ordering::Relaxed);
-            Err(io::Errno::PERM)
+            Err(err)
         } else {
-            statx_error_nosys()
+            
+            STATX_STATE.store(1, Ordering::Relaxed);
+            Err(io::Errno::NOSYS)
         }
     }
 }

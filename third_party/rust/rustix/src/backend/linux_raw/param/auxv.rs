@@ -5,6 +5,7 @@
 
 #![allow(unsafe_code)]
 
+use super::super::conv::{c_int, pass_usize, ret_usize};
 use crate::backend::c;
 use crate::fd::OwnedFd;
 #[cfg(feature = "param")]
@@ -21,12 +22,15 @@ use core::sync::atomic::Ordering::Relaxed;
 use core::sync::atomic::{AtomicPtr, AtomicUsize};
 use linux_raw_sys::elf::*;
 use linux_raw_sys::general::{
-    AT_BASE, AT_CLKTCK, AT_EXECFN, AT_HWCAP, AT_HWCAP2, AT_NULL, AT_PAGESZ, AT_SYSINFO_EHDR,
+    AT_BASE, AT_CLKTCK, AT_EXECFN, AT_HWCAP, AT_HWCAP2, AT_MINSIGSTKSZ, AT_NULL, AT_PAGESZ,
+    AT_SYSINFO_EHDR,
 };
 #[cfg(feature = "runtime")]
 use linux_raw_sys::general::{
     AT_EGID, AT_ENTRY, AT_EUID, AT_GID, AT_PHDR, AT_PHENT, AT_PHNUM, AT_RANDOM, AT_SECURE, AT_UID,
 };
+#[cfg(feature = "alloc")]
+use {alloc::borrow::Cow, alloc::vec};
 
 #[cfg(feature = "param")]
 #[inline]
@@ -67,6 +71,19 @@ pub(crate) fn linux_hwcap() -> (usize, usize) {
     }
 
     (hwcap, hwcap2)
+}
+
+#[cfg(feature = "param")]
+#[inline]
+pub(crate) fn linux_minsigstksz() -> usize {
+    let mut minsigstksz = MINSIGSTKSZ.load(Relaxed);
+
+    if minsigstksz == 0 {
+        init_auxv();
+        minsigstksz = MINSIGSTKSZ.load(Relaxed);
+    }
+
+    minsigstksz
 }
 
 #[cfg(feature = "param")]
@@ -120,12 +137,19 @@ pub(crate) fn exe_phdrs() -> (*const c::c_void, usize, usize) {
 
 
 
+
+
+
 #[inline]
 pub(in super::super) fn sysinfo_ehdr() -> *const Elf_Ehdr {
     let mut ehdr = SYSINFO_EHDR.load(Relaxed);
 
     if ehdr.is_null() {
-        init_auxv();
+        
+        
+        
+        maybe_init_auxv();
+
         ehdr = SYSINFO_EHDR.load(Relaxed);
     }
 
@@ -162,6 +186,7 @@ static PAGE_SIZE: AtomicUsize = AtomicUsize::new(0);
 static CLOCK_TICKS_PER_SECOND: AtomicUsize = AtomicUsize::new(0);
 static HWCAP: AtomicUsize = AtomicUsize::new(0);
 static HWCAP2: AtomicUsize = AtomicUsize::new(0);
+static MINSIGSTKSZ: AtomicUsize = AtomicUsize::new(0);
 static EXECFN: AtomicPtr<c::c_char> = AtomicPtr::new(null_mut());
 static SYSINFO_EHDR: AtomicPtr<Elf_Ehdr> = AtomicPtr::new(null_mut());
 #[cfg(feature = "runtime")]
@@ -177,74 +202,122 @@ static ENTRY: AtomicUsize = AtomicUsize::new(0);
 #[cfg(feature = "runtime")]
 static RANDOM: AtomicPtr<[u8; 16]> = AtomicPtr::new(null_mut());
 
-#[cfg(feature = "alloc")]
-fn pr_get_auxv() -> crate::io::Result<Vec<u8>> {
-    use super::super::conv::{c_int, pass_usize, ret_usize};
-    const PR_GET_AUXV: c::c_int = 0x4155_5856;
-    let mut buffer = alloc::vec![0u8; 512];
+const PR_GET_AUXV: c::c_int = 0x4155_5856;
+
+
+
+
+
+
+#[cold]
+fn pr_get_auxv_static(buffer: &mut [u8; 512]) -> Result<&mut [u8], crate::io::Result<usize>> {
     let len = unsafe {
         ret_usize(syscall_always_asm!(
             __NR_prctl,
             c_int(PR_GET_AUXV),
-            buffer.as_ptr(),
+            buffer.as_mut_ptr(),
             pass_usize(buffer.len()),
             pass_usize(0),
             pass_usize(0)
-        ))?
+        ))
+        .map_err(Err)?
     };
     if len <= buffer.len() {
-        buffer.truncate(len);
-        return Ok(buffer);
+        return Ok(&mut buffer[..len]);
     }
-    buffer.resize(len, 0);
+    Err(Ok(len))
+}
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+#[cold]
+fn pr_get_auxv_dynamic(buffer: &mut [u8; 512]) -> crate::io::Result<Cow<'_, [u8]>> {
+    
+    let len = match pr_get_auxv_static(buffer) {
+        Ok(buffer) => return Ok(Cow::Borrowed(buffer)),
+        Err(Ok(len)) => len,
+        Err(Err(err)) => return Err(err),
+    };
+
+    
+    let mut buffer = vec![0u8; len];
     let len = unsafe {
         ret_usize(syscall_always_asm!(
             __NR_prctl,
             c_int(PR_GET_AUXV),
-            buffer.as_ptr(),
+            buffer.as_mut_ptr(),
             pass_usize(buffer.len()),
             pass_usize(0),
             pass_usize(0)
         ))?
     };
     assert_eq!(len, buffer.len());
-    return Ok(buffer);
+    Ok(Cow::Owned(buffer))
+}
+
+
+
+#[cold]
+fn init_auxv() {
+    init_auxv_impl().unwrap();
+}
+
+
+
+#[cold]
+fn maybe_init_auxv() {
+    if let Ok(()) = init_auxv_impl() {
+        return;
+    }
 }
 
 
 
 
 #[cold]
-fn init_auxv() {
-    #[cfg(feature = "alloc")]
-    {
-        match pr_get_auxv() {
-            Ok(buffer) => {
-                
-                unsafe {
-                    init_from_aux_iter(AuxPointer(buffer.as_ptr().cast())).unwrap();
-                }
-                return;
-            }
-            Err(_) => {
-                
-            }
-        }
-    }
+fn init_auxv_impl() -> Result<(), ()> {
+    let mut buffer = [0u8; 512];
 
     
     
     
-    
-    let file = crate::fs::open("/proc/self/auxv", OFlags::RDONLY, Mode::empty()).unwrap();
-
-    #[cfg(feature = "alloc")]
-    init_from_auxv_file(file).unwrap();
-
     #[cfg(not(feature = "alloc"))]
-    unsafe {
-        init_from_aux_iter(AuxFile(file)).unwrap();
+    let result = pr_get_auxv_static(&mut buffer);
+
+    
+    
+    #[cfg(feature = "alloc")]
+    let result = pr_get_auxv_dynamic(&mut buffer);
+
+    if let Ok(buffer) = result {
+        
+        unsafe {
+            init_from_aux_iter(AuxPointer(buffer.as_ptr().cast())).unwrap();
+        }
+        return Ok(());
     }
+
+    
+    
+    
+    
+    if let Ok(file) = crate::fs::open("/proc/self/auxv", OFlags::RDONLY, Mode::empty()) {
+        #[cfg(feature = "alloc")]
+        init_from_auxv_file(file).unwrap();
+
+        #[cfg(not(feature = "alloc"))]
+        unsafe {
+            init_from_aux_iter(AuxFile(file)).unwrap();
+        }
+
+        return Ok(());
+    }
+
+    Err(())
 }
 
 
@@ -293,6 +366,7 @@ unsafe fn init_from_aux_iter(aux_iter: impl Iterator<Item = Elf_auxv_t>) -> Opti
     let mut clktck = 0;
     let mut hwcap = 0;
     let mut hwcap2 = 0;
+    let mut minsigstksz = 0;
     let mut execfn = null_mut();
     let mut sysinfo_ehdr = null_mut();
     #[cfg(feature = "runtime")]
@@ -322,6 +396,7 @@ unsafe fn init_from_aux_iter(aux_iter: impl Iterator<Item = Elf_auxv_t>) -> Opti
             AT_CLKTCK => clktck = a_val as usize,
             AT_HWCAP => hwcap = a_val as usize,
             AT_HWCAP2 => hwcap2 = a_val as usize,
+            AT_MINSIGSTKSZ => minsigstksz = a_val as usize,
             AT_EXECFN => execfn = check_raw_pointer::<c::c_char>(a_val as *mut _)?.as_ptr(),
             AT_SYSINFO_EHDR => sysinfo_ehdr = check_elf_base(a_val as *mut _)?.as_ptr(),
 
@@ -376,6 +451,7 @@ unsafe fn init_from_aux_iter(aux_iter: impl Iterator<Item = Elf_auxv_t>) -> Opti
     CLOCK_TICKS_PER_SECOND.store(clktck, Relaxed);
     HWCAP.store(hwcap, Relaxed);
     HWCAP2.store(hwcap2, Relaxed);
+    MINSIGSTKSZ.store(minsigstksz, Relaxed);
     EXECFN.store(execfn, Relaxed);
     SYSINFO_EHDR.store(sysinfo_ehdr, Relaxed);
     #[cfg(feature = "runtime")]

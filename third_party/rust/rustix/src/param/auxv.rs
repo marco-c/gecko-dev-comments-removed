@@ -82,6 +82,27 @@ pub fn linux_hwcap() -> (usize, usize) {
     )
 ))]
 #[inline]
+pub fn linux_minsigstksz() -> usize {
+    backend::param::auxv::linux_minsigstksz()
+}
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(
+    linux_raw,
+    any(
+        all(target_os = "android", target_pointer_width = "64"),
+        target_os = "linux",
+    )
+))]
+#[inline]
 pub fn linux_execfn() -> &'static CStr {
     backend::param::auxv::linux_execfn()
 }
