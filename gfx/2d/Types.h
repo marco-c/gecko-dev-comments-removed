@@ -73,19 +73,25 @@ enum class SurfaceFormat : int8_t {
   R16G16,
 
   
-  YUV420,  
-  NV12,    
-           
-           
-  P016,    
-  P010,    
-           
-           
-  YUY2,    
-           
-           
-           
-           
+  YUV420,     
+              
+  YUV422P10,  
+              
+  NV12,       
+              
+              
+  P016,       
+  P010,       
+              
+              
+  NV16,       
+              
+              
+  YUY2,       
+              
+              
+              
+              
   HSV,
   Lab,
   Depth,
@@ -152,9 +158,11 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
       break;
 
     case SurfaceFormat::YUV420:
+    case SurfaceFormat::YUV422P10:
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
+    case SurfaceFormat::NV16:
     case SurfaceFormat::YUY2:
       info.hasColor = true;
       info.hasAlpha = false;
@@ -207,9 +215,11 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
       break;
 
     case SurfaceFormat::YUV420:
+    case SurfaceFormat::YUV422P10:
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
+    case SurfaceFormat::NV16:
     case SurfaceFormat::YUY2:
     case SurfaceFormat::UNKNOWN:
       break;  
