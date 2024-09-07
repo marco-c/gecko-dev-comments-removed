@@ -2168,7 +2168,10 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   image_copy.ClearEncodedData();
 
   int temporal_index = 0;
-  if (codec_specific_info) {
+  if (encoded_image.TemporalIndex()) {
+    
+    temporal_index = *encoded_image.TemporalIndex();
+  } else if (codec_specific_info) {
     if (codec_specific_info->codecType == kVideoCodecVP9) {
       temporal_index = codec_specific_info->codecSpecific.VP9.temporal_idx;
     } else if (codec_specific_info->codecType == kVideoCodecVP8) {
@@ -2412,8 +2415,8 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
     
     
     
-    int stream_index = encoded_image.SpatialIndex().value_or(
-        encoded_image.SimulcastIndex().value_or(0));
+    int stream_index = std::max(encoded_image.SimulcastIndex().value_or(0),
+                                encoded_image.SpatialIndex().value_or(0));
     bitrate_adjuster_->OnEncodedFrame(frame_size, stream_index, temporal_index);
   }
 }
