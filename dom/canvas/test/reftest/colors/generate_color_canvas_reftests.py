@@ -277,11 +277,11 @@ def reftests_from_config(test_config: Config) -> Iterable[ColorReftest]:
     elif test_config["e_context"] == "webgl":
         
         yield from reftests_from_expected_color(
-            ["skip-if(!cocoaWidget)"], correct_color
+            ["skip-if(!cocoaWidget&&!winWidget)"], correct_color
         )
         
         yield from reftests_from_expected_color(
-            ["skip-if(cocoaWidget) "], expected_color_srgb
+            ["skip-if(cocoaWidget||winWidget)  "], expected_color_srgb
         )
     else:
         assert False, test_config["e_context"]
