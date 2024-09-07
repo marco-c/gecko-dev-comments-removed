@@ -395,6 +395,19 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   
   featureUsage_ |= code.featureUsage;
 
+  if (compilingTier1() && mode() == CompileMode::LazyTiering) {
+    for (const FuncCompileOutput& func : code.funcs) {
+      
+      MOZ_ASSERT(func.index >= codeMeta_->numFuncImports);
+      uint32_t funcDefIndex = func.index - codeMeta_->numFuncImports;
+      
+      MOZ_ASSERT(funcDefFeatureUsages_[funcDefIndex] == FeatureUsage::None);
+      funcDefFeatureUsages_[funcDefIndex] = func.featureUsage;
+    }
+  } else {
+    MOZ_ASSERT(funcDefFeatureUsages_.length() == 0);
+  }
+
   
   
 
@@ -925,6 +938,13 @@ bool ModuleGenerator::prepareTier1() {
   }
 
   
+  
+  if (mode() == CompileMode::LazyTiering &&
+      !funcDefFeatureUsages_.resize(codeMeta_->numFuncDefs())) {
+    return false;
+  }
+
+  
   if (!funcImports_.resize(codeMeta_->numFuncImports)) {
     return false;
   }
@@ -1170,6 +1190,9 @@ SharedModule ModuleGenerator::finishModule(
   codeMeta->funcDefRanges = std::move(funcDefRanges_);
 
   
+  codeMeta->funcDefFeatureUsages = std::move(funcDefFeatureUsages_);
+
+  
   
   if (compilerEnv_->debugEnabled() ||
       compilerEnv_->mode() == CompileMode::LazyTiering) {
@@ -1327,7 +1350,8 @@ size_t CompiledCode::sizeOfExcludingThis(
     trapSitesSize += vec.sizeOfExcludingThis(mallocSizeOf);
   }
 
-  return bytes.sizeOfExcludingThis(mallocSizeOf) +
+  return funcs.sizeOfExcludingThis(mallocSizeOf) +
+         bytes.sizeOfExcludingThis(mallocSizeOf) +
          codeRanges.sizeOfExcludingThis(mallocSizeOf) +
          callSites.sizeOfExcludingThis(mallocSizeOf) +
          callSiteTargets.sizeOfExcludingThis(mallocSizeOf) + trapSitesSize +

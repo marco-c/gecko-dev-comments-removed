@@ -2402,6 +2402,12 @@ class FunctionCompiler {
     }
 
     
+    FeatureUsage funcFeatureUsage = codeMeta().funcDefFeatureUsage(funcIndex);
+    if (funcFeatureUsage & FeatureUsage::ReturnCall) {
+      return false;
+    }
+
+    
     const FuncDefRange& funcRange = codeMeta().funcDefRange(funcIndex);
     return funcRange.bodyLength <=
            JS::Prefs::wasm_experimental_inline_size_limit();
@@ -2499,10 +2505,7 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     
-    
-    if (isInlined()) {
-      MOZ_CRASH();
-    }
+    MOZ_RELEASE_ASSERT(!isInlined());
 
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::ReturnFunc);
     auto callee = CalleeDesc::function(funcIndex);
@@ -2526,10 +2529,7 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     
-    
-    if (isInlined()) {
-      MOZ_CRASH();
-    }
+    MOZ_RELEASE_ASSERT(!isInlined());
 
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Import);
     auto callee = CalleeDesc::import(globalDataOffset);
@@ -2553,10 +2553,7 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     
-    
-    if (isInlined()) {
-      MOZ_CRASH();
-    }
+    MOZ_RELEASE_ASSERT(!isInlined());
 
     const FuncType& funcType = (*codeMeta_.types)[funcTypeIndex].funcType();
     CallIndirectId callIndirectId =
@@ -9896,9 +9893,16 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
 
       bool hasUnwindInfo =
           unwindInfoBefore != masm.codeRangeUnwindInfos().length();
+
+      
       if (!code->codeRanges.emplaceBack(func.index, offsets, hasUnwindInfo)) {
         return false;
       }
+    }
+
+    
+    if (!code->funcs.emplaceBack(func.index, observedFeatures)) {
+      return false;
     }
 
     JitSpew(JitSpew_Codegen,

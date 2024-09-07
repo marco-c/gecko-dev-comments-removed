@@ -192,6 +192,11 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
+  FeatureUsageVector funcDefFeatureUsages;
+
+  
+  
+  
   
   SharedBytes bytecode;
 
@@ -305,6 +310,11 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     MOZ_ASSERT(funcIndex >= numFuncImports);
     uint32_t funcDefIndex = funcIndex - numFuncImports;
     return funcDefRanges[funcDefIndex];
+  }
+  FeatureUsage funcDefFeatureUsage(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= numFuncImports);
+    uint32_t funcDefIndex = funcIndex - numFuncImports;
+    return funcDefFeatureUsages[funcDefIndex];
   }
 
   
