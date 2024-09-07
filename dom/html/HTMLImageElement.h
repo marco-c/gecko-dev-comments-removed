@@ -267,7 +267,11 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   
   
   void UpdateSourceSyncAndQueueImageTask(
-      bool aAlwaysLoad, const HTMLSourceElement* aSkippedSource = nullptr);
+      bool aAlwaysLoad, bool aNotify,
+      const HTMLSourceElement* aSkippedSource = nullptr);
+
+  
+  void ClearImageLoadTask();
 
   
   
@@ -396,9 +400,6 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   void SetResponsiveSelector(RefPtr<ResponsiveImageSelector>&& aSource);
   void SetDensity(double aDensity);
 
-  
-  void QueueImageLoadTask(bool aAlwaysLoad);
-
   RefPtr<ImageLoadTask> mPendingImageLoadTask;
   nsCOMPtr<nsIURI> mSrcURI;
   nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
@@ -408,7 +409,6 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   nsCOMPtr<nsIURI> mLastSelectedSource;
   
   double mCurrentDensity = 1.0;
-  bool mInDocResponsiveContent = false;
 };
 
 }  

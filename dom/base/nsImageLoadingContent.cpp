@@ -104,14 +104,13 @@ nsImageLoadingContent::nsImageLoadingContent()
       mOutstandingDecodePromises(0),
       mRequestGeneration(0),
       mLoadingEnabled(true),
-      mLoading(false),
       mUseUrgentStartForChannel(false),
       mLazyLoading(false),
-      mStateChangerDepth(0),
+      mHasPendingLoadTask(false),
+      mSyncDecodingHint(false),
+      mInDocResponsiveContent(false),
       mCurrentRequestRegistered(false),
-      mPendingRequestRegistered(false),
-      mIsStartingImageLoad(false),
-      mSyncDecodingHint(false) {
+      mPendingRequestRegistered(false) {
   if (!nsContentUtils::GetImgLoaderForChannel(nullptr, nullptr)) {
     mLoadingEnabled = false;
   }
@@ -174,12 +173,6 @@ void nsImageLoadingContent::Notify(imgIRequest* aRequest, int32_t aType,
     }
   }
 
-  if (aType == imgINotificationObserver::SIZE_AVAILABLE) {
-    
-    
-    UpdateImageState(true);
-  }
-
   if (aType == imgINotificationObserver::LOAD_COMPLETE) {
     uint32_t reqStatus;
     aRequest->GetImageStatus(&reqStatus);
@@ -216,7 +209,6 @@ void nsImageLoadingContent::Notify(imgIRequest* aRequest, int32_t aType,
     if (container) {
       container->PropagateUseCounters(GetOurOwnerDoc());
     }
-
     UpdateImageState(true);
   }
 }
@@ -239,9 +231,6 @@ void nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest,
   }
 
   
-  AutoStateChanger changer(this, true);
-
-  
   if (aRequest == mPendingRequest) {
     MakePendingRequestCurrent();
   }
@@ -260,6 +249,7 @@ void nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest,
   MaybeResolveDecodePromises();
   LargestContentfulPaint::MaybeProcessImageForElementTiming(mCurrentRequest,
                                                             element);
+  UpdateImageState(true);
 }
 
 void nsImageLoadingContent::OnUnlockedDraw() {
@@ -952,8 +942,7 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
   
 
   
-  AutoStateChanger changer(this, true);
-
+  auto updateStateOnExit = MakeScopeExit([&] { UpdateImageState(true); });
   
   nsCOMPtr<nsIURI> uri;
   aChannel->GetOriginalURI(getter_AddRefs(uri));
@@ -1026,11 +1015,6 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
                                           nsLoadFlags aLoadFlags,
                                           Document* aDocument,
                                           nsIPrincipal* aTriggeringPrincipal) {
-  MOZ_ASSERT(!mIsStartingImageLoad, "some evil code is reentering LoadImage.");
-  if (mIsStartingImageLoad) {
-    return NS_OK;
-  }
-
   
   
   
@@ -1065,9 +1049,6 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
     }
   }
 
-  AutoRestore<bool> guard(mIsStartingImageLoad);
-  mIsStartingImageLoad = true;
-
   
   
   
@@ -1099,7 +1080,7 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   }
 
   
-  AutoStateChanger changer(this, aNotify);
+  auto updateStateOnExit = MakeScopeExit([&] { UpdateImageState(aNotify); });
 
   
   
@@ -1333,49 +1314,29 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
 }
 
 void nsImageLoadingContent::UpdateImageState(bool aNotify) {
-  if (mStateChangerDepth > 0) {
-    
-    
-    
-    
-    
-    
-    return;
-  }
-
   Element* thisElement = AsContent()->AsElement();
-
-  mLoading = false;
-
-  Element::AutoStateChangeNotifier notifier(*thisElement, aNotify);
-  thisElement->RemoveStatesSilently(ElementState::BROKEN);
-
-  
-  
-  if (!mCurrentRequest) {
-    if (!mLazyLoading) {
-      
-      
-      thisElement->AddStatesSilently(ElementState::BROKEN);
-      RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
+  const bool isBroken = [&] {
+    if (mLazyLoading || mHasPendingLoadTask) {
+      return false;
     }
-  } else {
+    if (!mCurrentRequest) {
+      return true;
+    }
     uint32_t currentLoadStatus;
     nsresult rv = mCurrentRequest->GetImageStatus(&currentLoadStatus);
-    if (NS_FAILED(rv) || (currentLoadStatus & imgIRequest::STATUS_ERROR)) {
-      thisElement->AddStatesSilently(ElementState::BROKEN);
-      RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
-    } else if (!(currentLoadStatus & imgIRequest::STATUS_SIZE_AVAILABLE)) {
-      mLoading = true;
-    }
+    return NS_FAILED(rv) || currentLoadStatus & imgIRequest::STATUS_ERROR;
+  }();
+  thisElement->SetStates(ElementState::BROKEN, isBroken, aNotify);
+  if (isBroken) {
+    RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
   }
 }
 
 void nsImageLoadingContent::CancelImageRequests(bool aNotify) {
   RejectDecodePromises(NS_ERROR_DOM_IMAGE_INVALID_REQUEST);
-  AutoStateChanger changer(this, aNotify);
   ClearPendingRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DiscardImages));
   ClearCurrentRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DiscardImages));
+  UpdateImageState(aNotify);
 }
 
 Document* nsImageLoadingContent::GetOurOwnerDoc() {

@@ -333,25 +333,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   
 
 
-  struct AutoStateChanger {
-    AutoStateChanger(nsImageLoadingContent* aImageContent, bool aNotify)
-        : mImageContent(aImageContent), mNotify(aNotify) {
-      mImageContent->mStateChangerDepth++;
-    }
-    ~AutoStateChanger() {
-      mImageContent->mStateChangerDepth--;
-      mImageContent->UpdateImageState(mNotify);
-    }
-
-    nsImageLoadingContent* mImageContent;
-    bool mNotify;
-  };
-
-  friend struct AutoStateChanger;
-
-  
-
-
 
 
 
@@ -550,15 +531,8 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   uint32_t mRequestGeneration;
 
-  bool mLoadingEnabled : 1;
-
  protected:
-  
-
-
-
-  bool mLoading : 1;
-
+  bool mLoadingEnabled : 1;
   
 
 
@@ -570,29 +544,20 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   
   bool mLazyLoading : 1;
 
- private:
   
-  uint8_t mStateChangerDepth;
+  bool mHasPendingLoadTask : 1;
 
+  
+  bool mSyncDecodingHint : 1;
+
+  
+  bool mInDocResponsiveContent : 1;
+
+ private:
   
   
   bool mCurrentRequestRegistered;
   bool mPendingRequestRegistered;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mIsStartingImageLoad;
-
-  
-  bool mSyncDecodingHint;
 };
 
 #endif  

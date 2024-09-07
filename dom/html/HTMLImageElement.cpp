@@ -92,7 +92,7 @@ class ImageLoadTask final : public MicroTaskRunnable {
   void Run(AutoSlowOperation& aAso) override {
     if (mElement->mPendingImageLoadTask == this) {
       JSCallingLocation::AutoFallback fallback(&mCallingLocation);
-      mElement->mPendingImageLoadTask = nullptr;
+      mElement->ClearImageLoadTask();
       mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
       mElement->LoadSelectedImage(mAlwaysLoad);
     }
@@ -327,7 +327,7 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   }
 
   bool forceReload = false;
-  if (aName == nsGkAtoms::loading && !mLoading) {
+  if (aName == nsGkAtoms::loading) {
     if (aValue && Loading(aValue->GetEnumValue()) == Loading::Lazy) {
       SetLazyLoading();
     } else if (aOldValue &&
@@ -387,7 +387,7 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   
   if (forceReload) {
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-    UpdateSourceSyncAndQueueImageTask(true);
+    UpdateSourceSyncAndQueueImageTask(true, aNotify);
   }
 
   return nsGenericHTMLElement::AfterSetAttr(
@@ -427,7 +427,7 @@ void HTMLImageElement::AfterMaybeChangeAttr(
     mResponsiveSelector->SetDefaultSource(mSrcURI, mSrcTriggeringPrincipal);
   }
   mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-  UpdateSourceSyncAndQueueImageTask(true);
+  UpdateSourceSyncAndQueueImageTask(true, aNotify);
 }
 
 void HTMLImageElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
@@ -486,7 +486,7 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
       mInDocResponsiveContent = true;
     }
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-    UpdateSourceSyncAndQueueImageTask(false);
+    UpdateSourceSyncAndQueueImageTask(false,  false);
   }
   return NS_OK;
 }
@@ -570,7 +570,7 @@ void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   
   
   
-  UpdateSourceSyncAndQueueImageTask(true);
+  UpdateSourceSyncAndQueueImageTask(true,  false);
 }
 
 
@@ -647,7 +647,7 @@ nsresult HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest) {
   
   
   
-  aDest->UpdateSourceSyncAndQueueImageTask(false);
+  aDest->UpdateSourceSyncAndQueueImageTask(false,  false);
   return NS_OK;
 }
 
@@ -700,9 +700,14 @@ void HTMLImageElement::ClearForm(bool aRemoveFromForm) {
   mForm = nullptr;
 }
 
+void HTMLImageElement::ClearImageLoadTask() {
+  mPendingImageLoadTask = nullptr;
+  mHasPendingLoadTask = false;
+}
+
 
 void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
-    bool aAlwaysLoad, const HTMLSourceElement* aSkippedSource) {
+    bool aAlwaysLoad, bool aNotify, const HTMLSourceElement* aSkippedSource) {
   
   
   
@@ -751,17 +756,17 @@ void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
       
       
       nsContentUtils::AddScriptRunner(
-          NewRunnableMethod<bool, HTMLSourceElement*>(
+          NewRunnableMethod<bool, bool, HTMLSourceElement*>(
               "HTMLImageElement::UpdateSourceSyncAndQueueImageTask", this,
               &HTMLImageElement::UpdateSourceSyncAndQueueImageTask, aAlwaysLoad,
-              nullptr));
+               true, nullptr));
       return;
     }
 
     if (mLazyLoading && mSrcURI) {
       StopLazyLoading(StartLoad::No);
     }
-    mPendingImageLoadTask = nullptr;
+    ClearImageLoadTask();
     LoadSelectedImage(alwaysLoad);
     return;
   }
@@ -776,6 +781,9 @@ void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
 
   RefPtr task = new ImageLoadTask(this, alwaysLoad, mUseUrgentStartForChannel);
   mPendingImageLoadTask = task;
+  mHasPendingLoadTask = true;
+  
+  UpdateImageState(aNotify);
   
   
   CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
@@ -842,6 +850,9 @@ void HTMLImageElement::LoadSelectedImage(bool aAlwaysLoad) {
     
     
     SetDensity(currentDensity);
+    
+    
+    UpdateImageState(true);
     return;
   }
 
@@ -891,7 +902,7 @@ void HTMLImageElement::PictureSourceSrcsetChanged(nsIContent* aSourceNode,
 
   
   
-  UpdateSourceSyncAndQueueImageTask(true);
+  UpdateSourceSyncAndQueueImageTask(true, aNotify);
 }
 
 void HTMLImageElement::PictureSourceSizesChanged(nsIContent* aSourceNode,
@@ -911,7 +922,7 @@ void HTMLImageElement::PictureSourceSizesChanged(nsIContent* aSourceNode,
 
   
   
-  UpdateSourceSyncAndQueueImageTask(true);
+  UpdateSourceSyncAndQueueImageTask(true, aNotify);
 }
 
 void HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode,
@@ -921,7 +932,7 @@ void HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode,
 
   
   
-  UpdateSourceSyncAndQueueImageTask(true);
+  UpdateSourceSyncAndQueueImageTask(true, aNotify);
 }
 
 void HTMLImageElement::PictureSourceDimensionChanged(
@@ -943,14 +954,14 @@ void HTMLImageElement::PictureSourceAdded(bool aNotify,
   MOZ_ASSERT(!aSourceNode || IsPreviousSibling(aSourceNode, this),
              "Should not be getting notifications for non-previous-siblings");
 
-  UpdateSourceSyncAndQueueImageTask(true);
+  UpdateSourceSyncAndQueueImageTask(true, aNotify);
 }
 
 void HTMLImageElement::PictureSourceRemoved(bool aNotify,
                                             HTMLSourceElement* aSourceNode) {
   MOZ_ASSERT(!aSourceNode || IsPreviousSibling(aSourceNode, this),
              "Should not be getting notifications for non-previous-siblings");
-  UpdateSourceSyncAndQueueImageTask(true, aSourceNode);
+  UpdateSourceSyncAndQueueImageTask(true, aNotify, aSourceNode);
 }
 
 bool HTMLImageElement::UpdateResponsiveSource(
@@ -1165,7 +1176,7 @@ bool HTMLImageElement::SelectSourceForTagWithAttrs(
 void HTMLImageElement::DestroyContent() {
   
   
-  mPendingImageLoadTask = nullptr;
+  ClearImageLoadTask();
 
   mResponsiveSelector = nullptr;
 
@@ -1174,7 +1185,7 @@ void HTMLImageElement::DestroyContent() {
 }
 
 void HTMLImageElement::MediaFeatureValuesChanged() {
-  UpdateSourceSyncAndQueueImageTask(false);
+  UpdateSourceSyncAndQueueImageTask(false,  true);
 }
 
 bool HTMLImageElement::ShouldLoadImage() const {
@@ -1211,7 +1222,7 @@ void HTMLImageElement::StopLazyLoading(StartLoad aStartLoad) {
   }
 
   if (aStartLoad == StartLoad::Yes) {
-    UpdateSourceSyncAndQueueImageTask(true);
+    UpdateSourceSyncAndQueueImageTask(true,  true);
   }
 }
 
