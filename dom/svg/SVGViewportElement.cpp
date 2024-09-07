@@ -239,11 +239,6 @@ float SVGViewportElement::GetLength(uint8_t aCtxType) const {
 
 gfxMatrix SVGViewportElement::PrependLocalTransformsTo(
     const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
-  
-  if (aWhich == eUserSpaceToParent) {
-    return aMatrix;
-  }
-
   gfxMatrix childToUser;
 
   if (IsInner()) {
@@ -266,13 +261,6 @@ gfxMatrix SVGViewportElement::PrependLocalTransformsTo(
 
   MOZ_ASSERT(aWhich == eAllTransforms || aWhich == eChildToUserSpace,
              "Unknown TransformTypes");
-  
-  
-  
-  
-  
-  
-  
   return childToUser * aMatrix;
 }
 

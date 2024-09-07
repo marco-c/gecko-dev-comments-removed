@@ -618,14 +618,6 @@ class SVGUtils final {
 
 
   static gfxMatrix GetCSSPxToDevPxMatrix(const nsIFrame* aNonSVGFrame);
-
-  
-
-
-
-
-
-
   static gfxMatrix GetTransformMatrixInUserSpace(const nsIFrame* aFrame);
 };
 
