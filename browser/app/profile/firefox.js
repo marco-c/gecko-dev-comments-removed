@@ -1857,6 +1857,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-basic-config", "
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.pocket-feed-parameters", "");
+pref("browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment", false);
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible", true);
