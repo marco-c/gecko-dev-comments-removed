@@ -863,16 +863,14 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
   
   
   
-  if (aHTMLEditor->OurWindowHasFocus()) {
-    if (RefPtr<nsPresContext> presContext = aHTMLEditor->GetPresContext()) {
-      RefPtr<Element> focusedElement =
-          nsFocusManager::GetFocusedElementStatic();
-      MOZ_ASSERT_IF(focusedElement,
-                    focusedElement->GetPresContext(
-                        Element::PresContextFor::eForComposedDoc));
-      IMEStateManager::MaybeOnEditableStateDisabled(*presContext,
-                                                    focusedElement);
-    }
+  if (const RefPtr<nsPresContext> presContext = aDocument.GetPresContext()) {
+    const RefPtr<Element> focusedElementInDocument =
+        Element::FromNodeOrNull(aDocument.GetUnretargetedFocusedContent());
+    MOZ_ASSERT_IF(focusedElementInDocument,
+                  focusedElementInDocument->GetPresContext(
+                      Element::PresContextFor::eForComposedDoc));
+    IMEStateManager::MaybeOnEditableStateDisabled(*presContext,
+                                                  focusedElementInDocument);
   }
 
   return rv;
