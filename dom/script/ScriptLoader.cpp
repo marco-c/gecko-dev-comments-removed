@@ -1758,6 +1758,13 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
     return NS_OK;
   }
 
+  
+  
+  if (aRequest->IsModuleRequest() &&
+      aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::JSON) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIGlobalObject> globalObject = GetGlobalForRequest(aRequest);
   if (!globalObject) {
     return NS_ERROR_FAILURE;
