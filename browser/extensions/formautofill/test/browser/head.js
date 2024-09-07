@@ -1437,6 +1437,9 @@ async function triggerCapture(browser, submitButtonSelector, fillSelectors) {
 
 
 
+
+
+
 async function add_heuristic_tests(
   patterns,
   fixturePathPrefix = "",
@@ -1543,6 +1546,10 @@ async function add_heuristic_tests(
         await removeAllRecords();
       }
     });
+
+    if (testPattern.onTestComplete) {
+      await testPattern.onTestComplete();
+    }
 
     if (testPattern.profile) {
       await removeAllRecords();
