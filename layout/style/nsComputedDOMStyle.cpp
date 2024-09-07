@@ -2113,8 +2113,18 @@ static void SetValueToExtremumLength(nsROCSSPrimitiveValue* aValue,
       return aValue->SetString("min-content");
     case nsIFrame::ExtremumLength::MozAvailable:
       return aValue->SetString("-moz-available");
-    case nsIFrame::ExtremumLength::Stretch:
+    case nsIFrame::ExtremumLength::Stretch: {
+      
+      
+      
+      
+      
+      if (!StaticPrefs::layout_css_stretch_size_keyword_enabled() &&
+          StaticPrefs::layout_css_webkit_fill_available_enabled()) {
+        return aValue->SetString("-webkit-fill-available");
+      }
       return aValue->SetString("stretch");
+    }
     case nsIFrame::ExtremumLength::FitContent:
       return aValue->SetString("fit-content");
     case nsIFrame::ExtremumLength::FitContentFunction:
