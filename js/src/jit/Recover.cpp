@@ -2020,9 +2020,9 @@ RInt32ToBigInt::RInt32ToBigInt(CompactBufferReader& reader) {}
 
 bool RInt32ToBigInt::recover(JSContext* cx, SnapshotIterator& iter) const {
   
-  int32_t n = iter.readInt32();
+  double d = iter.readNumber();
 
-  BigInt* result = BigInt::createFromInt64(cx, int64_t(n));
+  BigInt* result = NumberToBigInt(cx, d);
   if (!result) {
     return false;
   }
