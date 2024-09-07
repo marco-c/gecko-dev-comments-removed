@@ -3208,8 +3208,10 @@ class _DSCard extends (external_React_default()).PureComponent {
   }
   render() {
     if (this.props.placeholder || !this.state.isSeen) {
+      
+      const placeholderClassName = this.state.isSeen ? `placeholder-seen` : ``;
       return external_React_default().createElement("div", {
-        className: "ds-card placeholder",
+        className: `ds-card placeholder ${placeholderClassName}`,
         ref: this.setPlaceholderRef
       }, external_React_default().createElement("div", {
         className: "placeholder-image placeholder-fill"
