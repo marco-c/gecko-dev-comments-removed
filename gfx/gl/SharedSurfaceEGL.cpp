@@ -69,18 +69,18 @@ SharedSurface_EGLImage::SharedSurface_EGLImage(const SharedSurfaceDesc& desc,
                                                const EGLImage image)
     : SharedSurface(desc, std::move(fb)),
       mMutex("SharedSurface_EGLImage mutex"),
+      mEglDisplay(GLContextEGL::Cast(desc.gl)->mEgl),
       mImage(image) {}
 
 SharedSurface_EGLImage::~SharedSurface_EGLImage() {
-  const auto& gle = GLContextEGL::Cast(mDesc.gl);
-  const auto& egl = gle->mEgl;
-  egl->fDestroyImage(mImage);
+  if (auto display = mEglDisplay.lock()) {
+    display->fDestroyImage(mImage);
 
-  if (mSync) {
-    
-    
-    egl->fDestroySync(mSync);
-    mSync = 0;
+    if (mSync) {
+      
+      
+      display->fDestroySync(mSync);
+    }
   }
 }
 
