@@ -182,9 +182,13 @@ class RequestListContent extends Component {
 
 
   onResize() {
-    const parent = this.refs.scrollEl.parentNode;
-    this.refs.scrollEl.style.width = parent.offsetWidth + "px";
-    this.refs.scrollEl.style.height = parent.offsetHeight + "px";
+    
+    
+    requestAnimationFrame(() => {
+      const parent = this.refs.scrollEl.parentNode;
+      this.refs.scrollEl.style.width = parent.offsetWidth + "px";
+      this.refs.scrollEl.style.height = parent.offsetHeight + "px";
+    });
   }
 
   onIntersect(entries) {
