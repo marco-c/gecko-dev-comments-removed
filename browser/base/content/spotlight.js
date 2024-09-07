@@ -28,6 +28,7 @@ function renderMultistage(ready) {
   
   window.AWGetFeatureConfig = () => CONFIG;
   window.AWGetSelectedTheme = receive("GET_SELECTED_THEME");
+  window.AWGetInstalledAddons = receive("GET_INSTALLED_ADDONS");
   window.AWSelectTheme = data => receive("SELECT_THEME")(data?.toUpperCase());
   
   if (CONFIG?.metrics !== "block") {
