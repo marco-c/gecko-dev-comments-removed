@@ -237,12 +237,22 @@ impl Config {
 
         let move_file = |from: &Path| -> anyhow::Result<PathBuf> {
             let to = pending_crashes_dir.join(from.file_name().unwrap());
-            std::fs::rename(from, &to).with_context(|| {
-                self.build_string("crashreporter-error-moving-path")
-                    .arg("from", from.display().to_string())
-                    .arg("to", to.display().to_string())
-                    .get()
-            })?;
+            
+            
+            if let Err(e) = std::fs::rename(from, &to) {
+                log::warn!("failed to move {} to {}: {e}", from.display(), to.display());
+                log::info!("trying to copy and remove instead");
+
+                std::fs::copy(from, &to).with_context(|| {
+                    self.build_string("crashreporter-error-moving-path")
+                        .arg("from", from.display().to_string())
+                        .arg("to", to.display().to_string())
+                        .get()
+                })?;
+                if let Err(e) = std::fs::remove_file(from) {
+                    log::warn!("failed to remove {}: {e}", from.display());
+                }
+            }
             Ok(to)
         };
 
