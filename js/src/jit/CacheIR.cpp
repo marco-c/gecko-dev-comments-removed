@@ -9765,15 +9765,18 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertFloat32() {
   }
 
   
+  
+  bool mustBeFloat32 = args_[1].toBoolean();
+
+  
   initializeInputOperand();
 
   
   emitNativeCalleeGuard();
 
-  
+  ValOperandId valId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
 
-  
-  writer.loadUndefinedResult();
+  writer.assertFloat32Result(valId, mustBeFloat32);
   writer.returnFromIC();
 
   trackAttached("AssertFloat32");

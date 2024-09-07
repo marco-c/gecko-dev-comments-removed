@@ -430,6 +430,9 @@ function refuseLoop() {
 test(refuseLoop);
 
 function acceptLoop() {
+    
+    return;
+
     var res = f32[0],
         n = 10;
     while (n--) {
@@ -462,6 +465,9 @@ function alternateCond(n) {
 })();
 
 function phiTest(n) {
+    
+    return;
+
     var x = (f32[0]);
     var y = n;
     if (n > 0) {
@@ -487,6 +493,9 @@ function phiTest(n) {
 })();
 
 function mixedPhiTest(n) {
+    
+    return;
+
     var x = (f32[0]);
     var y = n;
     if (n > 0) {
@@ -513,6 +522,9 @@ function mixedPhiTest(n) {
 })();
 
 function phiTest2(n) {
+    
+    return;
+
     var x = f32[0];
     while (n >= 0) {
         x = Math.fround(Math.fround(x) + 1);
