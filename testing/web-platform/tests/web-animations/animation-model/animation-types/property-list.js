@@ -1592,6 +1592,12 @@ const gCSSProperties2 = {
     types: [
     ]
   },
+  'view-transition-class': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'card scale-animation' ] ] },
+    ]
+  },
   'view-transition-name': {
     
     types: [
