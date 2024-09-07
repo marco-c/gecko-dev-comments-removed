@@ -140,10 +140,10 @@ void MediaSession::SetActionHandler(MediaSessionAction aAction,
   
   
   
-  RefPtr<MediaSessionActionHandler>& hanlder = mActionHandlers[aAction];
-  if (!hanlder && aHandler) {
+  RefPtr<MediaSessionActionHandler>& handler = mActionHandlers[aAction];
+  if (!handler && aHandler) {
     NotifyEnableSupportedAction(aAction);
-  } else if (hanlder && !aHandler) {
+  } else if (handler && !aHandler) {
     NotifyDisableSupportedAction(aAction);
   }
   mActionHandlers[aAction] = aHandler;
