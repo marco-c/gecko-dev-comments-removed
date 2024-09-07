@@ -659,6 +659,10 @@ pref("browser.urlbar.fakespot.minKeywordLength", 4);
 
 
 
+pref("browser.urlbar.fakespot.suggestedIndex", -1);
+
+
+
 pref("browser.urlbar.suggest.fakespot", true);
 
 

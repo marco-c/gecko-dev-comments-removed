@@ -792,10 +792,33 @@ async function doMinKeywordLengthTest({
   }
 }
 
+
+add_task(async function suggestedIndex() {
+  
+  
+  Assert.notEqual(
+    UrlbarPrefs.get("fakespotSuggestedIndex"),
+    0,
+    "Sanity check: Default value of fakespotSuggestedIndex is not 0"
+  );
+
+  let cleanUpNimbusEnable = await UrlbarTestUtils.initNimbusFeature({
+    fakespotSuggestedIndex: 0,
+  });
+  await check_results({
+    context: createContext(PRIMARY_SEARCH_STRING, {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [makeExpectedResult({ suggestedIndex: 0 })],
+  });
+  await cleanUpNimbusEnable();
+});
+
 function makeExpectedResult({
   url = PRIMARY_URL,
   title = PRIMARY_TITLE,
-  suggestedIndex = 0,
+  suggestedIndex = -1,
   isSuggestedIndexRelativeToGroup = true,
   originalUrl = undefined,
   displayUrl = undefined,
