@@ -189,8 +189,12 @@ already_AddRefed<ChannelWrapper> ChannelWrapper::GetRegisteredChannel(
 }
 
 void ChannelWrapper::SetChannel(nsIChannel* aChannel) {
+  
+  
   detail::ChannelHolder::SetChannel(aChannel);
   ClearCachedAttributes();
+  
+  ChannelWrapper_Binding::ClearCachedMethodValue(this);
   ChannelWrapper_Binding::ClearCachedFinalURIValue(this);
   ChannelWrapper_Binding::ClearCachedFinalURLValue(this);
   mFinalURLInfo.reset();
