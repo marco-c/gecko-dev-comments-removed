@@ -39,7 +39,12 @@ class Limiter {
   ~Limiter();
 
   
-  void Process(AudioFrameView<float> signal);
+  void Process(DeinterleavedView<float> signal);
+
+  [[deprecated("Use DeinterleavedView version")]] void Process(
+      AudioFrameView<float> signal) {
+    return Process(signal.view());
+  }
   InterpolatedGainCurve::Stats GetGainCurveStats() const;
 
   

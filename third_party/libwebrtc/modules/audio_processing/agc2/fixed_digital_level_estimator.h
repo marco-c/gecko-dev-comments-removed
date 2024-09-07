@@ -46,7 +46,13 @@ class FixedDigitalLevelEstimator {
   
   
   std::array<float, kSubFramesInFrame> ComputeLevel(
-      const AudioFrameView<const float>& float_frame);
+      DeinterleavedView<const float> float_frame);
+
+  [[deprecated(
+      "Use DeinterleavedView variant")]] std::array<float, kSubFramesInFrame>
+  ComputeLevel(const AudioFrameView<const float>& float_frame) {
+    return ComputeLevel(float_frame.view());
+  }
 
   
   
