@@ -227,17 +227,6 @@ add_task(async function test_tabs_showhide() {
   SessionStore.setBrowserState(JSON.stringify(sessData));
   await restored;
 
-  if (!Services.prefs.getBoolPref("browser.tabs.tabmanager.enabled")) {
-    for (let win of BrowserWindowIterator()) {
-      let allTabsButton = win.document.getElementById("alltabs-button");
-      is(
-        getComputedStyle(allTabsButton).display,
-        "none",
-        "The all tabs button is hidden"
-      );
-    }
-  }
-
   
   
   extension.sendMessage("hideall");

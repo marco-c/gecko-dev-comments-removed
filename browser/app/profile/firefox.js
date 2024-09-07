@@ -948,9 +948,6 @@ pref("browser.tabs.tabMinWidth", 76);
 pref("browser.tabs.secondaryTextUnsupportedLocales", "ar,bn,bo,ckb,fa,gu,he,hi,ja,km,kn,ko,lo,mr,my,ne,pa,si,ta,te,th,ur,zh");
 
 
-pref("browser.tabs.tabmanager.enabled", true);
-
-
 
 
 
