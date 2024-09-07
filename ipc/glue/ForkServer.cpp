@@ -249,6 +249,8 @@ void ForkServer::OnMessageReceived(UniquePtr<IPC::Message> message) {
 
 
 bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
+  MOZ_ASSERT(XRE_IsForkServerProcess(), "fork server process only");
+
 #ifdef DEBUG
   if (getenv("MOZ_FORKSERVER_WAIT_GDB")) {
     printf(
@@ -261,12 +263,6 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
 #endif
 
   SetProcessTitleInit(*aArgv);
-
-  
-  MOZ_ASSERT(!strcmp((*aArgv)[*aArgc - 1], "forkserver"),
-             "last argument is not \"forkserver\"");
-  SetGeckoProcessType("forkserver");
-  SetGeckoChildID((*aArgv)[*aArgc - 2]);
 
   
   
@@ -320,7 +316,16 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
   forkserver.mAppProcBuilder.reset();
 
   
-  nsTraceRefcnt::ReopenLogFilesAfterFork((*aArgv)[*aArgc - 1]);
+  if (*aArgc < 2) {
+    MOZ_CRASH("forked process missing process type and childid arguments");
+  }
+  SetGeckoProcessType((*aArgv)[--*aArgc]);
+  SetGeckoChildID((*aArgv)[--*aArgc]);
+  MOZ_ASSERT(!XRE_IsForkServerProcess(),
+             "fork server created another fork server?");
+
+  
+  nsTraceRefcnt::ReopenLogFilesAfterFork(XRE_GetProcessTypeString());
 
   return false;
 }

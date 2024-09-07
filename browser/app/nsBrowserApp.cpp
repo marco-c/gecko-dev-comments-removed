@@ -5,6 +5,7 @@
 
 #include "nsXULAppAPI.h"
 #include "mozilla/XREAppData.h"
+#include "XREChildData.h"
 #include "XREShellData.h"
 #include "application.ini.h"
 #include "mozilla/Bootstrap.h"
@@ -38,9 +39,12 @@
 #  include "mozilla/WindowsProcessMitigations.h"
 
 #  define XRE_WANT_ENVIRON
+#  include "nsWindowsWMain.cpp"
+
 #  define strcasecmp _stricmp
 #  ifdef MOZ_SANDBOX
 #    include "mozilla/sandboxing/SandboxInitialization.h"
+#    include "mozilla/sandboxing/sandboxLogging.h"
 #  endif
 #endif
 #include "BinaryPath.h"
@@ -97,7 +101,6 @@ __attribute__((constructor)) static void SSE2Check() {
 
 #if !defined(MOZ_WIDGET_COCOA) && !defined(MOZ_WIDGET_ANDROID)
 #  define MOZ_BROWSER_CAN_BE_CONTENTPROC
-#  include "../../ipc/contentproc/plugin-container.cpp"
 #endif
 
 using namespace mozilla;
@@ -280,30 +283,38 @@ int main(int argc, char* argv[], char* envp[]) {
 #if defined(XP_UNIX)
   ReserveDefaultFileDescriptors();
 #endif
-#if defined(MOZ_ENABLE_FORKSERVER)
-  if (strcmp(argv[argc - 1], "forkserver") == 0) {
-    nsresult rv = InitXPCOMGlue(LibLoadingStrategy::NoReadAhead);
-    if (NS_FAILED(rv)) {
-      return 255;
-    }
 
+#ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
+  if (argc > 1 && IsArg(argv[1], "contentproc")) {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    if (gBootstrap->XRE_ForkServer(&argc, &argv)) {
+    SetGeckoProcessType(argv[--argc]);
+    SetGeckoChildID(argv[--argc]);
+
+#  if defined(MOZ_ENABLE_FORKSERVER)
+    if (GetGeckoProcessType() == GeckoProcessType_ForkServer) {
+      nsresult rv = InitXPCOMGlue(LibLoadingStrategy::NoReadAhead);
+      if (NS_FAILED(rv)) {
+        return 255;
+      }
+
       
       
-      gBootstrap->NS_LogTerm();
-      return 0;
+      
+      
+      
+      
+      
+      
+      
+      if (gBootstrap->XRE_ForkServer(&argc, &argv)) {
+        
+        
+        
+        gBootstrap->NS_LogTerm();
+        return 0;
+      }
     }
-    
-    
+#  endif
   }
 #endif
 
@@ -314,23 +325,17 @@ int main(int argc, char* argv[], char* envp[]) {
 
   
   
+  
+  CrashReporter::RegisterRuntimeExceptionModule();
+
+  
   auto unregisterRuntimeExceptionModule =
       MakeScopeExit([] { CrashReporter::UnregisterRuntimeExceptionModule(); });
 
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
   
   
-  if (argc > 1 && IsArg(argv[1], "contentproc")) {
-    
-    
-    SetGeckoProcessType(argv[argc - 1]);
-    SetGeckoChildID(argv[argc - 2]);
-
-    
-    
-    
-    CrashReporter::RegisterRuntimeExceptionModule();
-
+  if (GetGeckoProcessType() != GeckoProcessType_Default) {
 #  if defined(XP_WIN) && defined(MOZ_SANDBOX)
     
     
@@ -376,7 +381,26 @@ int main(int argc, char* argv[], char* envp[]) {
       return 255;
     }
 
-    int result = content_process_main(gBootstrap.get(), argc, argv);
+    XREChildData childData;
+
+#  if defined(XP_WIN) && defined(MOZ_SANDBOX)
+    if (IsSandboxedProcess()) {
+      childData.sandboxTargetServices =
+          mozilla::sandboxing::GetInitializedTargetServices();
+      if (!childData.sandboxTargetServices) {
+        return 1;
+      }
+
+      childData.ProvideLogFunction = mozilla::sandboxing::ProvideLogFunction;
+    }
+
+    if (GetGeckoProcessType() == GeckoProcessType_RemoteSandboxBroker) {
+      childData.sandboxBrokerServices =
+          mozilla::sandboxing::GetInitializedBrokerServices();
+    }
+#  endif
+
+    rv = gBootstrap->XRE_InitChildProcess(argc, argv, &childData);
 
 #  if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
     DllBlocklist_Shutdown();
@@ -385,12 +409,9 @@ int main(int argc, char* argv[], char* envp[]) {
     
     gBootstrap->NS_LogTerm();
 
-    return result;
+    return NS_FAILED(rv) ? 1 : 0;
   }
 #endif
-
-  
-  CrashReporter::RegisterRuntimeExceptionModule();
 
 #ifdef HAS_DLL_BLOCKLIST
   DllBlocklist_Initialize(gBlocklistInitFlags);

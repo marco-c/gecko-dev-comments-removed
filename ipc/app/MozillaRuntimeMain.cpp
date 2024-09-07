@@ -4,59 +4,34 @@
 
 
 
-#include "../contentproc/plugin-container.cpp"
-
+#include "nsXULAppAPI.h"
+#include "XREChildData.h"
 #include "mozilla/Bootstrap.h"
+#include "mozilla/ProcessType.h"
 #include "mozilla/RuntimeExceptionModule.h"
 #include "mozilla/ScopeExit.h"
 #if defined(XP_WIN)
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/GeckoArgs.h"
+
+#  include "nsWindowsWMain.cpp"
+
+#  ifdef MOZ_SANDBOX
+#    include "mozilla/sandboxing/SandboxInitialization.h"
+#    include "mozilla/sandboxing/sandboxLogging.h"
+#  endif
 #endif  
 
 using namespace mozilla;
 
-static bool UseForkServer(int argc, char* argv[]) {
-#if defined(MOZ_ENABLE_FORKSERVER)
-  return strcmp(argv[argc - 1], "forkserver") == 0;
-#else
-  return false;
-#endif
-}
-
-static int RunForkServer(Bootstrap::UniquePtr&& bootstrap, int argc,
-                         char* argv[]) {
-#if defined(MOZ_ENABLE_FORKSERVER)
-  int ret = 0;
-
-  bootstrap->NS_LogInit();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (bootstrap->XRE_ForkServer(&argc, &argv)) {
-    
-    
-  } else {
-    
-    
-    ret = content_process_main(bootstrap.get(), argc, argv);
-  }
-
-  bootstrap->NS_LogTerm();
-  return ret;
-#else
-  return 0;
-#endif
-}
-
 int main(int argc, char* argv[]) {
+  
+  if (argc < 2) {
+    return 3;
+  }
+  SetGeckoProcessType(argv[--argc]);
+  SetGeckoChildID(argv[--argc]);
+
   auto bootstrapResult = GetBootstrap();
   if (bootstrapResult.isErr()) {
     return 2;
@@ -64,36 +39,67 @@ int main(int argc, char* argv[]) {
 
   Bootstrap::UniquePtr bootstrap = bootstrapResult.unwrap();
 
-  int ret;
-  if (UseForkServer(argc, argv)) {
-    ret = RunForkServer(std::move(bootstrap), argc, argv);
-  } else {
-    
-    
-    SetGeckoProcessType(argv[argc - 1]);
-    SetGeckoChildID(argv[argc - 2]);
+#if defined(MOZ_ENABLE_FORKSERVER)
+  if (GetGeckoProcessType() == GeckoProcessType_ForkServer) {
+    bootstrap->NS_LogInit();
 
     
     
     
-    CrashReporter::RegisterRuntimeExceptionModule();
-
     
-    auto unregisterRuntimeExceptionModule = MakeScopeExit(
-        [] { CrashReporter::UnregisterRuntimeExceptionModule(); });
+    
+    
+    
+    
+    
+    if (bootstrap->XRE_ForkServer(&argc, &argv)) {
+      
+      
+      bootstrap->NS_LogTerm();
+      return 0;
+    }
+  }
+#endif
+
+  
+  
+  
+  CrashReporter::RegisterRuntimeExceptionModule();
+
+  
+  auto unregisterRuntimeExceptionModule =
+      MakeScopeExit([] { CrashReporter::UnregisterRuntimeExceptionModule(); });
 
 #ifdef HAS_DLL_BLOCKLIST
-    uint32_t initFlags = eDllBlocklistInitFlagIsChildProcess;
-    SetDllBlocklistProcessTypeFlags(initFlags, GetGeckoProcessType());
-    DllBlocklist_Initialize(initFlags);
+  uint32_t initFlags = eDllBlocklistInitFlagIsChildProcess;
+  SetDllBlocklistProcessTypeFlags(initFlags, GetGeckoProcessType());
+  DllBlocklist_Initialize(initFlags);
 #endif
 
-    ret = content_process_main(bootstrap.get(), argc, argv);
+  XREChildData childData;
 
-#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-    DllBlocklist_Shutdown();
-#endif
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+  if (IsSandboxedProcess()) {
+    childData.sandboxTargetServices =
+        mozilla::sandboxing::GetInitializedTargetServices();
+    if (!childData.sandboxTargetServices) {
+      return 1;
+    }
+
+    childData.ProvideLogFunction = mozilla::sandboxing::ProvideLogFunction;
   }
 
-  return ret;
+  if (GetGeckoProcessType() == GeckoProcessType_RemoteSandboxBroker) {
+    childData.sandboxBrokerServices =
+        mozilla::sandboxing::GetInitializedBrokerServices();
+  }
+#endif
+
+  nsresult rv = bootstrap->XRE_InitChildProcess(argc, argv, &childData);
+
+#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
+  DllBlocklist_Shutdown();
+#endif
+
+  return NS_FAILED(rv) ? 1 : 0;
 }

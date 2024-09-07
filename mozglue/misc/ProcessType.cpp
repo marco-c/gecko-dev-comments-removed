@@ -19,24 +19,15 @@ GeckoChildID sGeckoChildID = 0;
 }  
 
 void SetGeckoProcessType(const char* aProcessTypeString) {
-#if !defined(DEBUG)
-  
-  
-  
   if (sChildProcessType != GeckoProcessType_Default &&
       sChildProcessType != GeckoProcessType_ForkServer) {
-    return;
+    MOZ_CRASH("Cannot set GeckoProcessType multiple times.");
   }
-#endif
 
 #define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
                            process_bin_type, procinfo_typename,               \
                            webidl_typename, allcaps_name)                     \
   if (std::strcmp(aProcessTypeString, string_name) == 0) {                    \
-    MOZ_ASSERT_IF(                                                            \
-        sChildProcessType != GeckoProcessType_Default &&                      \
-            sChildProcessType != GeckoProcessType_ForkServer,                 \
-        sChildProcessType == GeckoProcessType::GeckoProcessType_##enum_name); \
     sChildProcessType = GeckoProcessType::GeckoProcessType_##enum_name;       \
     return;                                                                   \
   }
@@ -58,6 +49,10 @@ void SetGeckoProcessType(const char* aProcessTypeString) {
 
 void SetGeckoChildID(const char* aGeckoChildIDString) {
   sGeckoChildID = atoi(aGeckoChildIDString);
+
+  if (sGeckoChildID <= 0) {
+    MOZ_CRASH("aGeckoChildIDString is not valid.");
+  }
 }
 
 }  
