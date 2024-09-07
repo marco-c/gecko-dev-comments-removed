@@ -62,7 +62,7 @@
 #include "js/ColumnNumber.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
-#include "util/StringBuffer.h"        
+#include "util/StringBuilder.h"       
 #include "vm/BytecodeUtil.h"  
 #include "vm/CompletionKind.h"      
 #include "vm/FunctionPrefixKind.h"  

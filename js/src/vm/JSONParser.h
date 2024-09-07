@@ -21,10 +21,10 @@
 #include "gc/GC.h"                      
 #include "js/GCVector.h"                
 #include "js/RootingAPI.h"  
-#include "js/Value.h"           
-#include "js/Vector.h"          
-#include "util/StringBuffer.h"  
-#include "vm/StringType.h"      
+#include "js/Value.h"            
+#include "js/Vector.h"           
+#include "util/StringBuilder.h"  
+#include "vm/StringType.h"       
 
 struct JSContext;
 class JSTracer;

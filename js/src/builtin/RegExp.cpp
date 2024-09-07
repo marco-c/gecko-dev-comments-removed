@@ -18,7 +18,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "js/RegExpFlags.h"  
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
 #include "vm/RegExpObject.h"

@@ -14,7 +14,7 @@
 #include "frontend/ParserAtom.h"  
 #include "frontend/ScriptIndex.h"  
 #include "frontend/Stencil.h"
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/ErrorReporting.h"  
 #include "vm/JSScript.h"

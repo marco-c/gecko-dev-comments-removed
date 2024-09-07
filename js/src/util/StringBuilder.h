@@ -4,8 +4,8 @@
 
 
 
-#ifndef util_StringBuffer_h
-#define util_StringBuffer_h
+#ifndef util_StringBuilder_h
+#define util_StringBuilder_h
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MaybeOneOf.h"

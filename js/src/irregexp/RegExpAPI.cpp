@@ -32,7 +32,7 @@
 #include "js/ColumnNumber.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "vm/MatchPairs.h"
 #include "vm/PlainObject.h"
 #include "vm/RegExpShared.h"

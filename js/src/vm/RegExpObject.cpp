@@ -23,7 +23,7 @@
 #include "js/Printer.h"               
 #include "js/RegExp.h"
 #include "js/RegExpFlags.h"  
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "util/Unicode.h"
 #include "vm/JSONPrinter.h"  
 #include "vm/MatchPairs.h"

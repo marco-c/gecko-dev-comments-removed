@@ -43,7 +43,7 @@
 #include "js/PropertySpec.h"        
 #include "js/Stack.h"               
 #include "js/StreamConsumer.h"
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "util/Text.h"
 #include "vm/ErrorObject.h"
 #include "vm/FunctionFlags.h"      

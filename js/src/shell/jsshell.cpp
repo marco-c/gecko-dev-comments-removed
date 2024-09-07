@@ -14,7 +14,7 @@
 
 #include "js/GlobalObject.h"
 #include "js/PropertyAndElement.h"  
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 
 using namespace JS;
 

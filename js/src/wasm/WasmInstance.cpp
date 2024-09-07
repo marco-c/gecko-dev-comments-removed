@@ -37,7 +37,7 @@
 #include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/Stack.h"                 
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "util/Text.h"
 #include "util/Unicode.h"
 #include "vm/ArrayBufferObject.h"

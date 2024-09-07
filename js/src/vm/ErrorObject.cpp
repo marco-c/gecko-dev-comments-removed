@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sw=2 et tw=80:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "vm/ErrorObject-inl.h"
 
@@ -22,13 +22,13 @@
 #include "gc/GCContext.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
-#include "js/CharacterEncoding.h"  // JS::ConstUTF8CharsZ
+#include "js/CharacterEncoding.h"  
 #include "js/Class.h"
-#include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
+#include "js/ColumnNumber.h"  
 #include "js/Conversions.h"
 #include "js/ErrorReport.h"
-#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
-#include "js/friend/StackLimits.h"    // js::AutoCheckRecursionLimit
+#include "js/friend/ErrorMessages.h"  
+#include "js/friend/StackLimits.h"    
 #include "js/PropertySpec.h"
 #include "js/RootingAPI.h"
 #include "js/Stack.h"
@@ -36,10 +36,10 @@
 #include "js/Utility.h"
 #include "js/Value.h"
 #include "js/Wrapper.h"
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "vm/GlobalObject.h"
 #include "vm/Iteration.h"
-#include "vm/JSAtomUtils.h"  // ClassName
+#include "vm/JSAtomUtils.h"  
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"
@@ -49,7 +49,7 @@
 #include "vm/Shape.h"
 #include "vm/Stack.h"
 #include "vm/StringType.h"
-#include "vm/ToSource.h"  // js::ValueToSource
+#include "vm/ToSource.h"  
 
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
@@ -93,14 +93,14 @@ static const JSFunctionSpec error_methods[] = {
     JS_FS_END,
 };
 
-// Error.prototype and NativeError.prototype have own .message and .name
-// properties.
+
+
 #define COMMON_ERROR_PROPERTIES(name) \
   JS_STRING_PS("message", "", 0), JS_STRING_PS("name", #name, 0)
 
 static const JSPropertySpec error_properties[] = {
     COMMON_ERROR_PROPERTIES(Error),
-    // Only Error.prototype has .stack!
+    
     JS_PSGS("stack", ErrorObject::getStack, ErrorObject::setStack, 0),
     JS_PS_END,
 };
@@ -177,25 +177,25 @@ const ClassSpec ErrorObject::classSpecs[JSEXN_ERROR_LIMIT] = {
 #define IMPLEMENT_ERROR_CLASS(name) \
   IMPLEMENT_ERROR_CLASS_CORE(name, ErrorObject::RESERVED_SLOTS)
 
-// Only used for classes that could be a Wasm trap. Classes that use this
-// macro should be kept in sync with the exception types that mightBeWasmTrap()
-// will return true for.
+
+
+
 #define IMPLEMENT_ERROR_CLASS_MAYBE_WASM_TRAP(name) \
   IMPLEMENT_ERROR_CLASS_CORE(name, ErrorObject::RESERVED_SLOTS_MAYBE_WASM_TRAP)
 
 static void exn_finalize(JS::GCContext* gcx, JSObject* obj);
 
 static const JSClassOps ErrorObjectClassOps = {
-    nullptr,       // addProperty
-    nullptr,       // delProperty
-    nullptr,       // enumerate
-    nullptr,       // newEnumerate
-    nullptr,       // resolve
-    nullptr,       // mayResolve
-    exn_finalize,  // finalize
-    nullptr,       // call
-    nullptr,       // construct
-    nullptr,       // trace
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    exn_finalize,  
+    nullptr,       
+    nullptr,       
+    nullptr,       
 };
 
 const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {
@@ -211,7 +211,7 @@ const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {
     IMPLEMENT_ERROR_CLASS(SyntaxError),
     IMPLEMENT_ERROR_CLASS(TypeError),
     IMPLEMENT_ERROR_CLASS(URIError),
-    // These Error subclasses are not accessible via the global object:
+    
     IMPLEMENT_ERROR_CLASS(DebuggeeWouldRun),
     IMPLEMENT_ERROR_CLASS(CompileError),
     IMPLEMENT_ERROR_CLASS(LinkError),
@@ -220,7 +220,7 @@ const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {
 
 static void exn_finalize(JS::GCContext* gcx, JSObject* obj) {
   if (JSErrorReport* report = obj->as<ErrorObject>().getErrorReport()) {
-    // Bug 1560019: This allocation is not currently tracked.
+    
     gcx->deleteUntracked(report);
   }
 }
@@ -228,7 +228,7 @@ static void exn_finalize(JS::GCContext* gcx, JSObject* obj) {
 static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
                                       unsigned messageArg, JSExnType exnType,
                                       HandleObject proto) {
-  // Compute the error message, if any.
+  
   RootedString message(cx, nullptr);
   if (args.hasDefined(messageArg)) {
     message = ToString<CanGC>(cx, args[messageArg]);
@@ -237,9 +237,9 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
     }
   }
 
-  // Don't interpret the two parameters following the message parameter as the
-  // non-standard fileName and lineNumber arguments when we have an options
-  // object argument.
+  
+  
+  
   bool hasOptions = args.get(messageArg + 1).isObject();
 
   Rooted<mozilla::Maybe<Value>> cause(cx, mozilla::Nothing());
@@ -260,7 +260,7 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
     }
   }
 
-  // Find the scripted caller, but only ones we're allowed to know about.
+  
   NonBuiltinFrameIter iter(cx, cx->realm()->principals());
 
   RootedString fileName(cx);
@@ -307,10 +307,10 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
 static bool Error(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  // ECMA ed. 3, 15.11.1 requires Error, etc., to construct even when
-  // called as functions, without operator new.  But as we do not give
-  // each constructor a distinct JSClass, we must get the exception type
-  // ourselves.
+  
+  
+  
+  
   JSExnType exnType =
       JSExnType(args.callee().as<JSFunction>().getExtendedSlot(0).toInt32());
 
@@ -325,7 +325,7 @@ static bool Error(JSContext* cx, unsigned argc, Value* vp) {
   JSProtoKey protoKey =
       JSCLASS_CACHED_PROTO_KEY(&ErrorObject::classes[exnType]);
 
-  // ES6 19.5.1.1 mandates the .prototype lookup happens before the toString
+  
   RootedObject proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, protoKey, &proto)) {
     return false;
@@ -340,7 +340,7 @@ static bool Error(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-// AggregateError ( errors, message )
+
 static bool AggregateError(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -349,48 +349,48 @@ static bool AggregateError(JSContext* cx, unsigned argc, Value* vp) {
 
   MOZ_ASSERT(exnType == JSEXN_AGGREGATEERR);
 
-  // Steps 1-2. (9.1.13 OrdinaryCreateFromConstructor, steps 1-2).
+  
   RootedObject proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_AggregateError,
                                           &proto)) {
     return false;
   }
 
-  // TypeError anyway, but this gives a better error message.
+  
   if (!args.requireAtLeast(cx, "AggregateError", 1)) {
     return false;
   }
 
-  // 9.1.13 OrdinaryCreateFromConstructor, step 3.
-  // Step 3.
+  
+  
   Rooted<ErrorObject*> obj(
       cx, CreateErrorObject(cx, args, 1, JSEXN_AGGREGATEERR, proto));
   if (!obj) {
     return false;
   }
 
-  // Step 4.
+  
 
   Rooted<ArrayObject*> errorsList(cx);
   if (!IterableToArray(cx, args.get(0), &errorsList)) {
     return false;
   }
 
-  // Step 5.
+  
   RootedValue errorsVal(cx, JS::ObjectValue(*errorsList));
   if (!NativeDefineDataProperty(cx, obj, cx->names().errors, errorsVal, 0)) {
     return false;
   }
 
-  // Step 6.
+  
   args.rval().setObject(*obj);
   return true;
 }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-// Explicit Resource Management Proposal
-// SuppressedError ( error, suppressed, message )
-// https://arai-a.github.io/ecma262-compare/?pr=3000&id=sec-suppressederror
+
+
+
 static bool SuppressedError(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -399,10 +399,10 @@ static bool SuppressedError(JSContext* cx, unsigned argc, Value* vp) {
 
   MOZ_ASSERT(exnType == JSEXN_SUPPRESSEDERR);
 
-  // Step 1. If NewTarget is undefined, let newTarget be the active function
-  // object; else let newTarget be NewTarget.
-  // Step 2. Let O be ? OrdinaryCreateFromConstructor(newTarget,
-  // "%SuppressedError.prototype%", « [[ErrorData]] »).
+  
+  
+  
+  
   JS::Rooted<JSObject*> proto(cx);
 
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_SuppressedError,
@@ -410,10 +410,10 @@ static bool SuppressedError(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  // Step 3. If message is not undefined, then
-  // Step 3.a. Let messageString be ? ToString(message).
-  // Step 3.b. Perform CreateNonEnumerableDataPropertyOrThrow(O, "message",
-  // messageString).
+  
+  
+  
+  
   JS::Rooted<ErrorObject*> obj(
       cx, CreateErrorObject(cx, args, 2, JSEXN_SUPPRESSEDERR, proto));
 
@@ -421,27 +421,27 @@ static bool SuppressedError(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  // Step 4. Perform CreateNonEnumerableDataPropertyOrThrow(O, "error", error).
+  
   JS::Rooted<JS::Value> errorVal(cx, args.get(0));
   if (!NativeDefineDataProperty(cx, obj, cx->names().error, errorVal, 0)) {
     return false;
   }
 
-  // Step 5. Perform CreateNonEnumerableDataPropertyOrThrow(O, "suppressed",
-  // suppressed).
+  
+  
   JS::Rooted<JS::Value> suppressedVal(cx, args.get(1));
   if (!NativeDefineDataProperty(cx, obj, cx->names().suppressed, suppressedVal,
                                 0)) {
     return false;
   }
 
-  // Step 6. Return O.
+  
   args.rval().setObject(*obj);
   return true;
 }
 #endif
 
-/* static */
+
 JSObject* ErrorObject::createProto(JSContext* cx, JSProtoKey key) {
   JSExnType type = ExnTypeFromProtoKey(key);
 
@@ -460,7 +460,7 @@ JSObject* ErrorObject::createProto(JSContext* cx, JSProtoKey key) {
       cx, &ErrorObject::protoClasses[type], protoProto);
 }
 
-/* static */
+
 JSObject* ErrorObject::createConstructor(JSContext* cx, JSProtoKey key) {
   JSExnType type = ExnTypeFromProtoKey(key);
   RootedObject ctor(cx);
@@ -506,7 +506,7 @@ JSObject* ErrorObject::createConstructor(JSContext* cx, JSProtoKey key) {
   return ctor;
 }
 
-/* static */
+
 SharedShape* js::ErrorObject::assignInitialShape(JSContext* cx,
                                                  Handle<ErrorObject*> obj) {
   MOZ_ASSERT(obj->empty());
@@ -532,7 +532,7 @@ SharedShape* js::ErrorObject::assignInitialShape(JSContext* cx,
   return obj->sharedShape();
 }
 
-/* static */
+
 bool js::ErrorObject::init(JSContext* cx, Handle<ErrorObject*> obj,
                            JSExnType type, UniquePtr<JSErrorReport> errorReport,
                            HandleString fileName, HandleObject stack,
@@ -544,17 +544,17 @@ bool js::ErrorObject::init(JSContext* cx, Handle<ErrorObject*> obj,
   AssertObjectIsSavedFrameOrWrapper(cx, stack);
   cx->check(obj, stack);
 
-  // Null out early in case of error, for exn_finalize's sake.
+  
   obj->initReservedSlot(ERROR_REPORT_SLOT, PrivateValue(nullptr));
 
   if (!SharedShape::ensureInitialCustomShape<ErrorObject>(cx, obj)) {
     return false;
   }
 
-  // The .message property isn't part of the initial shape because it's
-  // present in some error objects -- |Error.prototype|, |new Error("f")|,
-  // |new Error("")| -- but not in others -- |new Error(undefined)|,
-  // |new Error()|.
+  
+  
+  
+  
   if (message) {
     constexpr PropertyFlags propFlags = {PropertyFlag::Configurable,
                                          PropertyFlag::Writable};
@@ -564,9 +564,9 @@ bool js::ErrorObject::init(JSContext* cx, Handle<ErrorObject*> obj,
     }
   }
 
-  // Similar to the .message property, .cause is present only in some error
-  // objects -- |new Error("f", {cause: cause})| -- but not in other --
-  // |Error.prototype|, |new Error()|, |new Error("f")|.
+  
+  
+  
   if (cause.isSome()) {
     constexpr PropertyFlags propFlags = {PropertyFlag::Configurable,
                                          PropertyFlag::Writable};
@@ -613,7 +613,7 @@ bool js::ErrorObject::init(JSContext* cx, Handle<ErrorObject*> obj,
   return true;
 }
 
-/* static */
+
 ErrorObject* js::ErrorObject::create(JSContext* cx, JSExnType errorType,
                                      HandleObject stack, HandleString fileName,
                                      uint32_t sourceId, uint32_t lineNumber,
@@ -621,7 +621,7 @@ ErrorObject* js::ErrorObject::create(JSContext* cx, JSExnType errorType,
                                      UniquePtr<JSErrorReport> report,
                                      HandleString message,
                                      Handle<mozilla::Maybe<JS::Value>> cause,
-                                     HandleObject protoArg /* = nullptr */) {
+                                     HandleObject protoArg ) {
   AssertObjectIsSavedFrameOrWrapper(cx, stack);
 
   RootedObject proto(cx, protoArg);
@@ -657,15 +657,15 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
     return r;
   }
 
-  // We build an error report on the stack and then use CopyErrorReport to do
-  // the nitty-gritty malloc stuff.
+  
+  
   JSErrorReport report;
 
-  // Type.
+  
   JSExnType type_ = type();
   report.exnType = type_;
 
-  // Filename.
+  
   RootedString filename(cx, fileName(cx));
   UniqueChars filenameStr = JS_EncodeStringToUTF8(cx, filename);
   if (!filenameStr) {
@@ -673,13 +673,13 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
   }
   report.filename = JS::ConstUTF8CharsZ(filenameStr.get());
 
-  // Coordinates.
+  
   report.sourceId = sourceId();
   report.lineno = lineNumber();
   report.column = columnNumber();
 
-  // Message. Note that |new Error()| will result in an undefined |message|
-  // slot, so we need to explicitly substitute the empty string in that case.
+  
+  
   RootedString message(cx, getMessage());
   if (!message) {
     message = cx->runtime()->emptyString;
@@ -691,7 +691,7 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
   }
   report.initOwnedMessage(utf8.release());
 
-  // Cache and return.
+  
   UniquePtr<JSErrorReport> copy = CopyErrorReport(cx, &report);
   if (!copy) {
     return nullptr;
@@ -702,14 +702,14 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
 
 static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
                                          MutableHandleObject result) {
-  // Walk up the prototype chain until we find an error object instance or
-  // prototype object. This allows code like:
-  //  Object.create(Error.prototype).stack
-  // or
-  //   function NYI() { }
-  //   NYI.prototype = new Error;
-  //   (new NYI).stack
-  // to continue returning stacks that are useless, but at least don't throw.
+  
+  
+  
+  
+  
+  
+  
+  
 
   RootedObject curr(cx, obj);
   RootedObject target(cx);
@@ -729,8 +729,8 @@ static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
     }
   } while (curr);
 
-  // We walked the whole prototype chain and did not find an Error
-  // object.
+  
+  
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                             JSMSG_INCOMPATIBLE_PROTO, "Error", "(get stack)",
                             obj->getClass()->name);
@@ -739,14 +739,14 @@ static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
 
 static MOZ_ALWAYS_INLINE bool IsObject(HandleValue v) { return v.isObject(); }
 
-/* static */
+
 bool js::ErrorObject::getStack(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  // We accept any object here, because of poor-man's subclassing of Error.
+  
   return CallNonGenericMethod<IsObject, getStack_impl>(cx, args);
 }
 
-/* static */
+
 bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
   RootedObject thisObj(cx, &args.thisv().toObject());
 
@@ -760,8 +760,8 @@ bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
     return true;
   }
 
-  // Do frame filtering based on the ErrorObject's principals. This ensures we
-  // don't see chrome frames when chrome code accesses .stack over Xrays.
+  
+  
   JSPrincipals* principals = obj->as<ErrorObject>().realm()->principals();
 
   RootedObject savedFrameObj(cx, obj->as<ErrorObject>().stack());
@@ -771,8 +771,8 @@ bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
   }
 
   if (cx->runtime()->stackFormat() == js::StackFormat::V8) {
-    // When emulating V8 stack frames, we also need to prepend the
-    // stringified Error to the stack string.
+    
+    
     Handle<PropertyName*> name = cx->names().ErrorToStringWithTrailingNewline;
     FixedInvokeArgs<0> args2(cx);
     RootedValue rval(cx);
@@ -793,14 +793,14 @@ bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
   return true;
 }
 
-/* static */
+
 bool js::ErrorObject::setStack(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  // We accept any object here, because of poor-man's subclassing of Error.
+  
   return CallNonGenericMethod<IsObject, setStack_impl>(cx, args);
 }
 
-/* static */
+
 bool js::ErrorObject::setStack_impl(JSContext* cx, const CallArgs& args) {
   RootedObject thisObj(cx, &args.thisv().toObject());
 
@@ -862,7 +862,7 @@ JSString* js::ErrorToSource(JSContext* cx, HandleObject obj) {
     }
   }
   if (lineno != 0) {
-    /* We have a line, but no filename, add empty string */
+    
     if (filename->empty() && !sb.append(", \"\"")) {
       return nullptr;
     }
@@ -883,9 +883,9 @@ JSString* js::ErrorToSource(JSContext* cx, HandleObject obj) {
   return sb.finishString();
 }
 
-/*
- * Return a string that may eval to something similar to the original object.
- */
+
+
+
 static bool exn_toSource(JSContext* cx, unsigned argc, Value* vp) {
   AutoCheckRecursionLimit recursion(cx);
   if (!recursion.check(cx)) {

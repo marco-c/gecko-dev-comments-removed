@@ -57,7 +57,7 @@
 #include "js/Utility.h"  
 #include "js/Value.h"    
 #include "util/Poison.h"
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "util/Text.h"
 #include "vm/BigIntType.h"  
 #include "vm/BytecodeIterator.h"

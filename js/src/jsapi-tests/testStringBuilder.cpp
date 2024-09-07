@@ -6,7 +6,7 @@
 
 
 #include "jsapi-tests/tests.h"
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "vm/JSAtomUtils.h"  
 
 BEGIN_TEST(testStringBuilder_finishString) {

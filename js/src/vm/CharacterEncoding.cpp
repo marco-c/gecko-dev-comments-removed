@@ -31,7 +31,7 @@
 
 #include "frontend/FrontendContext.h"
 #include "js/friend/ErrorMessages.h"  
-#include "util/StringBuffer.h"
+#include "util/StringBuilder.h"
 #include "util/Unicode.h"  
 #include "vm/JSContext.h"
 

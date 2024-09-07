@@ -18,8 +18,8 @@
 #include "frontend/Parser-macros.h"  
 #include "frontend/ParserAtom.h"     
 #include "js/Conversions.h"
-#include "js/Stack.h"           
-#include "util/StringBuffer.h"  
+#include "js/Stack.h"            
+#include "util/StringBuilder.h"  
 
 using namespace js;
 using namespace js::frontend;

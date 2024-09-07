@@ -32,7 +32,7 @@
 #include "js/Value.h"              
 #include "util/CompleteFile.h"     
 #include "util/Identifier.h"       
-#include "util/StringBuffer.h"     
+#include "util/StringBuilder.h"    
 #include "vm/EnvironmentObject.h"  
 #include "vm/ErrorReporting.h"  
 #include "vm/Interpreter.h"     
