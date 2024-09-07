@@ -2468,7 +2468,7 @@ class nsIFrame : public nsQueryFrame {
     }
   }
 
-  bool IsPrimaryFrameOfRootOrBodyElement() const;
+  bool ShouldPropagateRepaintsToRoot() const;
 
   
 

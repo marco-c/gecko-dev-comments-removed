@@ -527,7 +527,7 @@ static void InvalidateImages(nsIFrame* aFrame, imgIRequest* aRequest,
     return aFrame->InvalidateFrame();
   }
 
-  if (aFrame->IsPrimaryFrameOfRootOrBodyElement()) {
+  if (aFrame->ShouldPropagateRepaintsToRoot()) {
     if (auto* canvas = aFrame->PresShell()->GetCanvasFrame()) {
       
       

@@ -1306,7 +1306,7 @@ static void ApplyRenderingChangeToTree(PresShell* aPresShell, nsIFrame* aFrame,
     
     
     
-    if (aFrame->IsPrimaryFrameOfRootOrBodyElement()) {
+    if (aFrame->ShouldPropagateRepaintsToRoot()) {
       nsIFrame* rootFrame = aPresShell->GetRootFrame();
       MOZ_ASSERT(rootFrame, "No root frame?");
       DoApplyRenderingChangeToTree(rootFrame, nsChangeHint_RepaintFrame);

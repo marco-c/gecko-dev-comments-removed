@@ -578,8 +578,15 @@ static void MaybeScheduleReflowSVGNonDisplayText(nsIFrame* aFrame) {
       IntrinsicDirty::FrameAncestorsAndDescendants);
 }
 
-bool nsIFrame::IsPrimaryFrameOfRootOrBodyElement() const {
+bool nsIFrame::ShouldPropagateRepaintsToRoot() const {
   if (!IsPrimaryFrame()) {
+    
+    
+    if (IsTableFrame()) {
+      MOZ_ASSERT(GetParent() && GetParent()->IsTableWrapperFrame());
+      return GetParent()->ShouldPropagateRepaintsToRoot();
+    }
+
     return false;
   }
   nsIContent* content = GetContent();
