@@ -246,6 +246,13 @@ add_task(async function sidebar_isOpen() {
 });
 
 add_task(async function testShortcuts() {
+  
+  
+  if (Services.prefs.getBoolPref("sidebar.revamp", false)) {
+    info("skipping test because sidebar.revamp is set");
+    return;
+  }
+
   function verifyShortcut(id, commandKey, win = window) {
     const doc = win.document;
     
@@ -349,6 +356,13 @@ add_task(async function testShortcuts() {
 });
 
 add_task(async function sidebar_switcher_panel_icon_update() {
+  
+  
+  if (Services.prefs.getBoolPref("sidebar.revamp", false)) {
+    info("skipping test because sidebar.revamp is set");
+    return;
+  }
+
   info("Load extension");
   const extension = ExtensionTestUtils.loadExtension(getExtData());
   await extension.startup();
@@ -386,6 +400,13 @@ add_task(async function sidebar_switcher_panel_icon_update() {
 });
 
 add_task(async function sidebar_switcher_panel_hidpi_icon() {
+  
+  
+  if (Services.prefs.getBoolPref("sidebar.revamp", false)) {
+    info("skipping test because sidebar.revamp is set");
+    return;
+  }
+
   await SpecialPowers.pushPrefEnv({
     set: [["layout.css.devPixelsPerPx", 2]],
   });
@@ -414,6 +435,13 @@ add_task(async function sidebar_switcher_panel_hidpi_icon() {
 });
 
 add_task(async function sidebar_switcher_label_bug1905771_regression_test() {
+  
+  
+  if (Services.prefs.getBoolPref("sidebar.revamp", false)) {
+    info("skipping test because sidebar.revamp is set");
+    return;
+  }
+
   let extData = getExtData({
     name: "Test Extension",
     browser_specific_settings: { gecko: { id: "@sidebar" } },
