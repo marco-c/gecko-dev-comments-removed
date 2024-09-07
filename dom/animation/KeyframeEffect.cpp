@@ -1626,7 +1626,7 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
 
   
   
-  if (primaryFrame->IsSVGTransformed()) {
+  if (primaryFrame->GetParentSVGTransforms()) {
     aPerformanceWarning = AnimationPerformanceWarning::Type::TransformSVG;
     return false;
   }

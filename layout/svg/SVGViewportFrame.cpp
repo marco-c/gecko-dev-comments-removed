@@ -239,16 +239,15 @@ void SVGViewportFrame::NotifyViewportOrTransformChanged(uint32_t aFlags) {
 
 
 bool SVGViewportFrame::HasChildrenOnlyTransform(gfx::Matrix* aTransform) const {
-  SVGViewportElement* content = static_cast<SVGViewportElement*>(GetContent());
-
-  if (content->HasViewBoxOrSyntheticViewBox()) {
-    
-    if (aTransform) {
-      *aTransform = content->GetViewBoxTransform();
-    }
-    return true;
+  auto* content = static_cast<SVGViewportElement*>(GetContent());
+  if (!content->HasViewBoxOrSyntheticViewBox()) {
+    return false;
   }
-  return false;
+  
+  if (aTransform) {
+    *aTransform = content->GetViewBoxTransform();
+  }
+  return true;
 }
 
 }  

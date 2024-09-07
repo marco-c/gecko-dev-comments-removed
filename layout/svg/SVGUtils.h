@@ -258,9 +258,8 @@ class SVGUtils final {
   
 
 
-  static bool IsSVGTransformed(const nsIFrame* aFrame,
-                               gfx::Matrix* aOwnTransform,
-                               gfx::Matrix* aFromParentTransform);
+  static bool GetParentSVGTransforms(const nsIFrame* aFrame,
+                                     gfx::Matrix* aFromParentTransform);
 
   
 

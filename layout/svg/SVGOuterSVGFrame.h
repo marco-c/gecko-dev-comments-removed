@@ -96,8 +96,7 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
     return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
 
-  bool IsSVGTransformed(Matrix* aOwnTransform,
-                        Matrix* aFromParentTransform) const override;
+  bool DoGetParentSVGTransforms(Matrix*) const override { return false; };
 
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
@@ -114,13 +113,7 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   
   gfxMatrix GetCanvasTM() override;
 
-  bool HasChildrenOnlyTransform(Matrix* aTransform) const override {
-    
-    
-    
-    
-    return false;
-  }
+  bool HasChildrenOnlyTransform(Matrix* aTransform) const override;
 
   
 
@@ -200,8 +193,7 @@ class SVGOuterSVGAnonChildFrame final : public SVGDisplayContainerFrame {
   }
 #endif
 
-  bool IsSVGTransformed(Matrix* aOwnTransform,
-                        Matrix* aFromParentTransform) const override;
+  bool DoGetParentSVGTransforms(Matrix*) const override;
 
   
   gfxMatrix GetCanvasTM() override {

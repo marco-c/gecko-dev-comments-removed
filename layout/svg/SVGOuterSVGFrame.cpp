@@ -526,14 +526,6 @@ nsresult SVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
   return NS_OK;
 }
 
-bool SVGOuterSVGFrame::IsSVGTransformed(Matrix* aOwnTransform,
-                                        Matrix* aFromParentTransform) const {
-  
-  
-  
-  return false;
-}
-
 
 
 
@@ -796,55 +788,50 @@ void SVGOuterSVGAnonChildFrame::BuildDisplayList(
                                                         &newList);
 }
 
-static Matrix ComputeOuterSVGAnonChildFrameTransform(
-    const SVGOuterSVGAnonChildFrame* aFrame) {
+bool SVGOuterSVGFrame::HasChildrenOnlyTransform(Matrix* aTransform) const {
   
   
   
-  
-  SVGSVGElement* content = static_cast<SVGSVGElement*>(aFrame->GetContent());
-
+  auto* content = static_cast<SVGSVGElement*>(GetContent());
   if (!content->HasChildrenOnlyTransform()) {
-    return Matrix();
+    return false;
   }
-
-  
-  gfxMatrix ownMatrix =
-      content->PrependLocalTransformsTo(gfxMatrix(), eChildToUserSpace);
-
-  if (ownMatrix.HasNonTranslation()) {
+  if (aTransform) {
     
-    
-    MOZ_ASSERT(ownMatrix.IsRectilinear(),
-               "Non-rectilinear transform will break the following logic");
-
-    
-    
-    
-    
-    CSSPoint pos = CSSPixel::FromAppUnits(aFrame->GetPosition());
-    CSSPoint scaledPos = CSSPoint(ownMatrix._11 * pos.x, ownMatrix._22 * pos.y);
-    CSSPoint deltaPos = scaledPos - pos;
-    ownMatrix *= gfxMatrix::Translation(-deltaPos.x, -deltaPos.y);
+    *aTransform = gfx::ToMatrix(
+        content->PrependLocalTransformsTo(gfxMatrix(), eChildToUserSpace));
+    if (aTransform->HasNonTranslation()) {
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(aTransform->IsRectilinear(),
+                 "Non-rectilinear transform will break the following logic");
+      CSSPoint pos =
+          CSSPixel::FromAppUnits(GetContentRectRelativeToSelf().TopLeft());
+      CSSPoint scaledPos =
+          CSSPoint(aTransform->_11 * pos.x, aTransform->_22 * pos.y);
+      CSSPoint deltaPos = scaledPos - pos;
+      *aTransform *= Matrix::Translation(-deltaPos.x, -deltaPos.y);
+    }
   }
-
-  return gfx::ToMatrix(ownMatrix);
+  return true;
 }
 
-
-
-
-
-
-
-
-
-bool SVGOuterSVGAnonChildFrame::IsSVGTransformed(
-    Matrix* aOwnTransform, Matrix* aFromParentTransform) const {
-  if (aOwnTransform) {
-    *aOwnTransform = ComputeOuterSVGAnonChildFrameTransform(this);
-  }
-
+bool SVGOuterSVGAnonChildFrame::DoGetParentSVGTransforms(
+    Matrix* aFromParentTransform) const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SVGUtils::GetParentSVGTransforms(this, aFromParentTransform);
   return true;
 }
 
