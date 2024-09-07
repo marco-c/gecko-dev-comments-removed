@@ -106,8 +106,12 @@ struct TypeDefInstanceData {
 
 
 
+
+
+
+
 struct FuncDefInstanceData {
-  uint32_t hotnessCounter;
+  int32_t hotnessCounter;
 };
 
 

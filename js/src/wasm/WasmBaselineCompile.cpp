@@ -940,13 +940,73 @@ void BaseCompiler::restoreRegisterReturnValues(const ResultType& resultType) {
 
 
 
+class OutOfLineRequestTierUp : public OutOfLineCode {
+  Register instance_;  
+  RegI32 scratch_;     
+  size_t lastOpcodeOffset_;  
+
+ public:
+  OutOfLineRequestTierUp(Register instance, RegI32 scratch,
+                         size_t lastOpcodeOffset)
+      : instance_(instance),
+        scratch_(scratch),
+        lastOpcodeOffset_(lastOpcodeOffset) {}
+  virtual void generate(MacroAssembler* masm) override {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+#ifndef RABALDR_PIN_INSTANCE
+    if (Register(instance_) != InstanceReg) {
+#  ifdef JS_CODEGEN_X86
+      
+      masm->xchgl(instance_, InstanceReg);
+#  elif JS_CODEGEN_ARM
+      
+      masm->mov(instance_, scratch_);  
+      masm->mov(InstanceReg, instance_);
+      masm->mov(scratch_, InstanceReg);
+#  else
+      MOZ_CRASH("BaseCompiler::OutOfLineRequestTierUp #1");
+#  endif
+    }
+#endif
+    
+    masm->call(Address(InstanceReg, Instance::offsetOfRequestTierUpStub()));
+    masm->append(CallSiteDesc(lastOpcodeOffset_, CallSiteDesc::RequestTierUp),
+                 CodeOffset(masm->currentOffset()));
+    
+#ifndef RABALDR_PIN_INSTANCE
+    if (Register(instance_) != InstanceReg) {
+#  ifdef JS_CODEGEN_X86
+      masm->xchgl(instance_, InstanceReg);
+#  elif JS_CODEGEN_ARM
+      masm->mov(instance_, scratch_);
+      masm->mov(InstanceReg, instance_);
+      masm->mov(scratch_, InstanceReg);
+#  else
+      MOZ_CRASH("BaseCompiler::OutOfLineRequestTierUp #2");
+#  endif
+    }
+#endif
+
+    masm->jump(rejoin());
+  }
+};
+
 bool BaseCompiler::addHotnessCheck() {
   if (compilerEnv_.mode() != CompileMode::LazyTiering) {
     return true;
   }
 
-  
-  
   
   
   
@@ -970,65 +1030,26 @@ bool BaseCompiler::addHotnessCheck() {
   fr.loadInstancePtr(instance);
 #endif
 
-  Label counterNotNegative;
-  Label after;
-
   Address addressOfCounter = Address(
       instance, wasm::Instance::offsetInData(
                     codeMeta_.offsetOfFuncDefInstanceData(func_.index)));
 
   RegI32 counter = needI32();
+
+  OutOfLineCode* ool = addOutOfLineCode(new (alloc_) OutOfLineRequestTierUp(
+      instance, counter, iter_.lastOpcodeOffset()));
+  if (!ool) {
+    return false;
+  }
+
   masm.load32(addressOfCounter, counter);
-  masm.branchSub32(Assembler::NotSigned,  
-                   Imm32(1), counter, &counterNotNegative);
-
-  
-  
-  
-  
-  
-#ifndef RABALDR_PIN_INSTANCE
-  if (Register(instance) != InstanceReg) {
-#  ifdef JS_CODEGEN_X86
-    
-    masm.xchgl(instance, InstanceReg);
-#  elif JS_CODEGEN_ARM
-    
-    masm.mov(instance, counter);  
-    masm.mov(InstanceReg, instance);
-    masm.mov(counter, InstanceReg);
-#  else
-    MOZ_CRASH("BaseCompiler::addHotnessCheck #1");
-#  endif
-  }
-#endif
-  
-  masm.call(Address(InstanceReg, Instance::offsetOfRequestTierUpStub()));
-  masm.append(
-      CallSiteDesc(iter_.lastOpcodeOffset(), CallSiteDesc::RequestTierUp),
-      CodeOffset(masm.currentOffset()));
-  
-#ifndef RABALDR_PIN_INSTANCE
-  if (Register(instance) != InstanceReg) {
-#  ifdef JS_CODEGEN_X86
-    masm.xchgl(instance, InstanceReg);
-#  elif JS_CODEGEN_ARM
-    masm.mov(instance, counter);
-    masm.mov(InstanceReg, instance);
-    masm.mov(counter, InstanceReg);
-#  else
-    MOZ_CRASH("BaseCompiler::addHotnessCheck #2");
-#  endif
-  }
-#endif
-  masm.jump(&after);
-
-  masm.bind(&counterNotNegative);
+  masm.branchSub32(Assembler::Signed,  
+                   Imm32(1), counter, ool->entry());
   masm.store32(counter, addressOfCounter);
 
-  masm.bind(&after);
-  freeI32(counter);
+  masm.bind(ool->rejoin());
 
+  freeI32(counter);
   return true;
 }
 
