@@ -10022,6 +10022,23 @@ const NEWTAB_DARK_THEME = {
 
 
 
+function Logo() {
+  return external_React_default().createElement("div", {
+    className: "logo-and-wordmark"
+  }, external_React_default().createElement("div", {
+    className: "logo"
+  }), external_React_default().createElement("div", {
+    className: "wordmark"
+  }));
+}
+
+;
+
+
+
+
+
+
 
 
 
@@ -10137,13 +10154,7 @@ class _Search extends (external_React_default()).PureComponent {
     const wrapperClassName = ["search-wrapper", this.props.disable && "search-disabled", this.props.fakeFocus && "fake-focus"].filter(v => v).join(" ");
     return external_React_default().createElement("div", {
       className: wrapperClassName
-    }, this.props.showLogo && external_React_default().createElement("div", {
-      className: "logo-and-wordmark"
-    }, external_React_default().createElement("div", {
-      className: "logo"
-    }), external_React_default().createElement("div", {
-      className: "wordmark"
-    })), !this.props.handoffEnabled && external_React_default().createElement("div", {
+    }, this.props.showLogo && external_React_default().createElement(Logo, null), !this.props.handoffEnabled && external_React_default().createElement("div", {
       className: "search-inner-wrapper"
     }, external_React_default().createElement("input", {
       id: "newtab-search-text",
@@ -11036,6 +11047,7 @@ function Base_extends() { Base_extends = Object.assign ? Object.assign.bind() : 
 
 
 
+
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const Base_WALLPAPER_HIGHLIGHT_DISMISSED_PREF = "newtabWallpapers.highlightDismissed";
@@ -11433,8 +11445,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     prefs.showSearch ? "has-search" : "no-search", layoutsVariantAEnabled ? "layout-variant-a" : "",
     
-    layoutsVariantBEnabled ? "layout-variant-b" : "" 
-    ].filter(v => v).join(" ");
+    layoutsVariantBEnabled ? "layout-variant-b" : "",
+    
+    pocketEnabled ? "has-recommended-stories" : "no-recommended-stories"].filter(v => v).join(" ");
     const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["feeds.topsites"] && !pocketEnabled && !prefs.showSearch && "only-topsites", noSectionsEnabled && "no-sections", prefs["logowordmark.alwaysVisible"] && "visible-logo", hasThumbsUpDownLayout && hasThumbsUpDown && "thumbs-ui-compact"].filter(v => v).join(" ");
     if (wallpapersEnabled || wallpapersV2Enabled) {
       this.updateWallpaper();
@@ -11471,7 +11484,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"],
       handoffEnabled: searchHandoffEnabled
-    }, props.Search)))), external_React_default().createElement("div", {
+    }, props.Search)))), !prefs.showSearch && layoutsVariantAEnabled && !noSectionsEnabled && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
       className: `body-wrapper${initialized ? " on" : ""}`
     }, isDiscoveryStream ? external_React_default().createElement(ErrorBoundary, {
       className: "borderless-error"
