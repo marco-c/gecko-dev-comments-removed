@@ -474,12 +474,6 @@ class nsWindow final : public nsBaseWidget {
 
   static nsWindow* GetWindow(GdkWindow* window);
 
-  
-
-
-
-  void DispatchActivateEventAccessible();
-
  protected:
   virtual ~nsWindow();
 
@@ -962,6 +956,12 @@ class nsWindow final : public nsBaseWidget {
 
 
   void DispatchEventToRootAccessible(uint32_t aEventType);
+
+  
+
+
+
+  void DispatchActivateEventAccessible();
 
   
 
