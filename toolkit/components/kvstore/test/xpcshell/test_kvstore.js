@@ -107,7 +107,7 @@ add_task(async function getOrCreate() {
   const nonexistentDir = PathUtils.join(PathUtils.profileDir, "nonexistent");
   await Assert.rejects(
     KeyValueService.getOrCreate(nonexistentDir, "db"),
-    /NotFound/
+    /UnsuitableEnvironmentPath/
   );
 
   
