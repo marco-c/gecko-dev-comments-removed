@@ -144,6 +144,11 @@ function createFileHandles(dir, ...fileNames) {
       fileNames.map(fileName => dir.getFileHandle(fileName, {create: true})));
 }
 
+function createDirectoryHandles(dir, ...dirNames) {
+  return Promise.all(
+      dirNames.map(dirName => dir.getDirectoryHandle(dirName, {create: true})));
+}
+
 
 async function releaseLock(lockPromise) {
   const result = await lockPromise;
