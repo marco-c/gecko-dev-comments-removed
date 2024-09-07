@@ -254,7 +254,10 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
 
   virtual void SetIceRole(IceRole role) = 0;
 
-  virtual void SetIceTiebreaker(uint64_t tiebreaker) = 0;
+  
+  
+  
+  virtual void SetIceTiebreaker(uint64_t tiebreaker) { RTC_CHECK_NOTREACHED(); }
 
   virtual void SetIceCredentials(absl::string_view ice_ufrag,
                                  absl::string_view ice_pwd);
