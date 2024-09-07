@@ -464,7 +464,6 @@ class WritingMode {
 
 
 
-
   WritingMode() : mWritingMode{0} {}
 
   
@@ -476,8 +475,6 @@ class WritingMode {
   }
 
   
-
-
 
 
 
@@ -572,6 +569,7 @@ class WritingMode {
   }
 
   
+
 
 
 
