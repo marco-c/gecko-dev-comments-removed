@@ -83,14 +83,15 @@ class ImageLoadTask final : public MicroTaskRunnable {
   ImageLoadTask(HTMLImageElement* aElement, bool aAlwaysLoad,
                 bool aUseUrgentStartForChannel)
       : mElement(aElement),
+        mDocument(aElement->OwnerDoc()),
         mAlwaysLoad(aAlwaysLoad),
         mUseUrgentStartForChannel(aUseUrgentStartForChannel) {
-    mDocument = aElement->OwnerDoc();
     mDocument->BlockOnload();
   }
 
   void Run(AutoSlowOperation& aAso) override {
     if (mElement->mPendingImageLoadTask == this) {
+      JSCallingLocation::AutoFallback fallback(&mCallingLocation);
       mElement->mPendingImageLoadTask = nullptr;
       mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
       mElement->LoadSelectedImage(mAlwaysLoad);
@@ -107,13 +108,13 @@ class ImageLoadTask final : public MicroTaskRunnable {
 
  private:
   ~ImageLoadTask() = default;
-  RefPtr<HTMLImageElement> mElement;
-  nsCOMPtr<Document> mDocument;
-  bool mAlwaysLoad;
-
+  const RefPtr<HTMLImageElement> mElement;
+  const RefPtr<Document> mDocument;
+  const JSCallingLocation mCallingLocation{JSCallingLocation::Get()};
+  const bool mAlwaysLoad;
   
   
-  bool mUseUrgentStartForChannel;
+  const bool mUseUrgentStartForChannel;
 };
 
 HTMLImageElement::HTMLImageElement(
