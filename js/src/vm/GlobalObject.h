@@ -109,6 +109,7 @@ class GlobalObjectData {
 
   ~GlobalObjectData();
 
+#ifndef NIGHTLY_BUILD
   
   
   
@@ -117,6 +118,7 @@ class GlobalObjectData {
   using VarNamesSet =
       GCHashSet<HeapPtr<JSAtom*>, DefaultHasher<JSAtom*>, CellAllocPolicy>;
   VarNamesSet varNames;
+#endif
 
   
   
@@ -999,6 +1001,7 @@ class GlobalObject : public NativeObject {
   
   bool valueIsEval(const Value& val);
 
+#ifndef NIGHTLY_BUILD
   void removeFromVarNames(JSAtom* name) { data().varNames.remove(name); }
 
   
@@ -1006,6 +1009,7 @@ class GlobalObject : public NativeObject {
 
   
   [[nodiscard]] bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
+#endif
 
   static ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx,
                                                              bool mapped);
