@@ -1634,7 +1634,7 @@ pref("services.sync.prefs.sync.extensions.activeThemeID", true);
 pref("services.sync.prefs.sync.general.autoScroll", true);
 
 pref("services.sync.prefs.sync-seen.general.autoScroll", false);
-pref("services.sync.prefs.sync.general.smoothScroll", true);
+
 pref("services.sync.prefs.sync.intl.accept_languages", true);
 pref("services.sync.prefs.sync.intl.regional_prefs.use_os_locales", true);
 pref("services.sync.prefs.sync.layout.spellcheckDefault", true);
