@@ -29,6 +29,7 @@
 namespace webrtc {
 namespace videocapturemodule {
 
+class DeviceInfoPipeWire;
 class PipeWireSession;
 class VideoCaptureModulePipeWire;
 
@@ -97,6 +98,21 @@ class PipeWireSession : public rtc::RefCountedNonVirtual<PipeWireSession> {
 
   void Init(VideoCaptureOptions::Callback* callback,
             int fd = kInvalidPipeWireFd);
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  bool RegisterDeviceInfo(DeviceInfoPipeWire* device_info);
+  
+  
+  bool DeRegisterDeviceInfo(DeviceInfoPipeWire* device_info);
+
   const std::deque<PipeWireNode::PipeWireNodePtr>& nodes() const {
     return nodes_;
   }
@@ -110,6 +126,8 @@ class PipeWireSession : public rtc::RefCountedNonVirtual<PipeWireSession> {
   bool StartPipeWire(int fd);
   void StopPipeWire();
   void PipeWireSync();
+
+  void NotifyDeviceChange();
 
   static void OnCoreError(void* data,
                           uint32_t id,
@@ -133,7 +151,13 @@ class PipeWireSession : public rtc::RefCountedNonVirtual<PipeWireSession> {
   VideoCaptureOptions::Callback* callback_ RTC_GUARDED_BY(&callback_lock_) =
       nullptr;
 
-  VideoCaptureOptions::Status status_;
+  webrtc::Mutex device_info_lock_;
+  std::vector<DeviceInfoPipeWire*> device_info_list_
+      RTC_GUARDED_BY(device_info_lock_);
+  
+  
+  VideoCaptureOptions::Status status_
+      RTC_GUARDED_BY(device_info_lock_);
 
   struct pw_thread_loop* pw_main_loop_ = nullptr;
   struct pw_context* pw_context_ = nullptr;
