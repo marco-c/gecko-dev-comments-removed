@@ -118,13 +118,10 @@
 using namespace js;
 
 using mozilla::Maybe;
-using mozilla::PodCopy;
-using mozilla::Some;
 
 using JS::AutoStableStringChars;
 using JS::CompileOptions;
 using JS::ReadOnlyCompileOptions;
-using JS::SourceText;
 
 
 

@@ -15,7 +15,6 @@
 #include "mozilla/FloatingPoint.h"  
 #include "mozilla/HashTable.h"      
 #include "mozilla/Maybe.h"          
-#include "mozilla/PodOperations.h"  
 #include "mozilla/Saturate.h"
 #include "mozilla/Variant.h"  
 
@@ -85,7 +84,6 @@ using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::NumberEqualsInt32;
 using mozilla::NumberIsInt32;
-using mozilla::PodCopy;
 using mozilla::Some;
 
 static bool ParseNodeRequiresSpecialLineNumberNotes(ParseNode* pn) {

@@ -152,8 +152,6 @@ using namespace js;
 
 using JS::AutoStableStringChars;
 using JS::CompileOptions;
-using JS::SourceOwnership;
-using JS::SourceText;
 using JS::dbg::AutoEntryMonitor;
 using JS::dbg::Builder;
 using mozilla::AsVariant;
@@ -162,7 +160,6 @@ using mozilla::MakeScopeExit;
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
-using mozilla::TimeDuration;
 using mozilla::TimeStamp;
 
 

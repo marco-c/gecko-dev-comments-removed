@@ -96,7 +96,6 @@ using JS::AutoStableStringChars;
 using JS::CompileOptions;
 using JS::SourceOwnership;
 using JS::SourceText;
-using mozilla::MakeScopeExit;
 using mozilla::Maybe;
 
 ScriptedOnStepHandler::ScriptedOnStepHandler(JSObject* object)
