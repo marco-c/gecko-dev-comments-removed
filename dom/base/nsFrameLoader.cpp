@@ -1393,6 +1393,10 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
       ourContext.AsIPCTabContext());
   Unused << otherBrowserParent->SendSwappedWithOtherRemoteLoader(
       otherContext.AsIPCTabContext());
+  
+  
+  browserParent->RecomputeProcessPriority();
+  otherBrowserParent->RecomputeProcessPriority();
   return NS_OK;
 }
 

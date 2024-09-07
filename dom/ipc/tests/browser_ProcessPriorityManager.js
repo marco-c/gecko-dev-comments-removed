@@ -16,6 +16,10 @@ const PROCESS_PRIORITY_BACKGROUND = "BACKGROUND";
 const WAIT_FOR_CHANGE_TIME_MS = 2000;
 
 
+
+requestLongerTimeout(2);
+
+
 function browsingContextChildID(bc) {
   return bc.currentWindowGlobal?.domProcess.childID;
 }
@@ -960,4 +964,32 @@ add_task(async function test_audio_background_tab() {
       "Loading a page from the bfcache should keep the tab prioritized."
     );
   });
+});
+
+
+
+
+
+
+add_task(async function test_tab_moved_to_new_window() {
+  await BrowserTestUtils.withNewTab(
+    "https://example.com/browser/dom/ipc/tests/file_cross_frame.html",
+    async browser => {
+      let tab = gBrowser.getTabForBrowser(browser);
+      let tabID = browsingContextChildID(tab.linkedBrowser.browsingContext);
+      let delayedStartupPromise = BrowserTestUtils.waitForNewWindow();
+      let win = gBrowser.replaceTabWithWindow(tab);
+      await delayedStartupPromise;
+      
+      
+      await TestUtils.waitForCondition(() => gBrowser.tabs.length === 1);
+      Assert.equal(
+        gTabPriorityWatcher.currentPriority(tabID),
+        PROCESS_PRIORITY_FOREGROUND,
+        "Tab should be in foreground after moving to new window"
+      );
+
+      await BrowserTestUtils.closeWindow(win);
+    }
+  );
 });
