@@ -773,9 +773,7 @@ class Editor extends EventEmitter {
 
 
 
-
     function _buildDecorationsForMarker(
-      markerDecorations,
       marker,
       transaction,
       newMarkerDecorations
@@ -845,12 +843,7 @@ class Editor extends EventEmitter {
 
     function updateDecorations(markerDecorations, marker, transaction) {
       const newDecorations = [];
-      _buildDecorationsForMarker(
-        markerDecorations,
-        marker,
-        transaction,
-        newDecorations
-      );
+      _buildDecorationsForMarker(marker, transaction, newDecorations);
 
       return markerDecorations.update({
         
@@ -880,12 +873,7 @@ class Editor extends EventEmitter {
       const allNewDecorations = [];
 
       for (const marker of allMarkers) {
-        _buildDecorationsForMarker(
-          markerDecorations,
-          marker,
-          transaction,
-          allNewDecorations
-        );
+        _buildDecorationsForMarker(marker, transaction, allNewDecorations);
       }
 
       return markerDecorations.update({
@@ -1159,7 +1147,6 @@ class Editor extends EventEmitter {
     }
 
     function _buildDecorationsForPositionMarkers(
-      markerDecorations,
       marker,
       transaction,
       newMarkerDecorations
@@ -1254,12 +1241,7 @@ class Editor extends EventEmitter {
     function updateDecorations(markerDecorations, marker, transaction) {
       const newDecorations = [];
 
-      _buildDecorationsForPositionMarkers(
-        markerDecorations,
-        marker,
-        transaction,
-        newDecorations
-      );
+      _buildDecorationsForPositionMarkers(marker, transaction, newDecorations);
       return markerDecorations.update({
         filter: (from, to, decoration) => {
           return decoration.markerType !== marker.id;
@@ -1288,7 +1270,6 @@ class Editor extends EventEmitter {
 
       for (const marker of markers) {
         _buildDecorationsForPositionMarkers(
-          markerDecorations,
           marker,
           transaction,
           allNewDecorations
