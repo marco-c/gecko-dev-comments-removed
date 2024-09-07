@@ -1427,7 +1427,7 @@ const gCSSProperties2 = {
   'text-box-trim': {
     
     types: [
-      { type: 'discrete', options: [ [ 'none', 'start' ] ] }
+      { type: 'discrete', options: [ [ 'none', 'trim-start' ] ] }
     ]
   },
   'text-decoration': {
