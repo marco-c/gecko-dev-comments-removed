@@ -27,7 +27,7 @@ namespace webrtc {
 
 
 
-struct BitrateAllocationLimits {
+struct RTC_EXPORT BitrateAllocationLimits {
   
   DataRate min_allocatable_rate = DataRate::Zero();
   
@@ -40,7 +40,7 @@ struct BitrateAllocationLimits {
 
 
 
-struct StreamsConfig {
+struct RTC_EXPORT StreamsConfig {
   StreamsConfig();
   StreamsConfig(const StreamsConfig&);
   ~StreamsConfig();
@@ -58,7 +58,7 @@ struct StreamsConfig {
   absl::optional<DataRate> max_total_allocated_bitrate;
 };
 
-struct TargetRateConstraints {
+struct RTC_EXPORT TargetRateConstraints {
   TargetRateConstraints();
   TargetRateConstraints(const TargetRateConstraints&);
   ~TargetRateConstraints();
@@ -72,12 +72,12 @@ struct TargetRateConstraints {
 
 
 
-struct NetworkAvailability {
+struct RTC_EXPORT NetworkAvailability {
   Timestamp at_time = Timestamp::PlusInfinity();
   bool network_available = false;
 };
 
-struct NetworkRouteChange {
+struct RTC_EXPORT NetworkRouteChange {
   NetworkRouteChange();
   NetworkRouteChange(const NetworkRouteChange&);
   ~NetworkRouteChange();
@@ -87,7 +87,7 @@ struct NetworkRouteChange {
   TargetRateConstraints constraints;
 };
 
-struct PacedPacketInfo {
+struct RTC_EXPORT PacedPacketInfo {
   PacedPacketInfo();
   PacedPacketInfo(int probe_cluster_id,
                   int probe_cluster_min_probes,
@@ -104,7 +104,7 @@ struct PacedPacketInfo {
   int probe_cluster_bytes_sent = 0;
 };
 
-struct SentPacket {
+struct RTC_EXPORT SentPacket {
   Timestamp send_time = Timestamp::PlusInfinity();
   
   DataSize size = DataSize::Zero();
@@ -123,7 +123,7 @@ struct SentPacket {
   DataSize data_in_flight = DataSize::Zero();
 };
 
-struct ReceivedPacket {
+struct RTC_EXPORT ReceivedPacket {
   Timestamp send_time = Timestamp::MinusInfinity();
   Timestamp receive_time = Timestamp::PlusInfinity();
   DataSize size = DataSize::Zero();
@@ -131,18 +131,18 @@ struct ReceivedPacket {
 
 
 
-struct RemoteBitrateReport {
+struct RTC_EXPORT RemoteBitrateReport {
   Timestamp receive_time = Timestamp::PlusInfinity();
   DataRate bandwidth = DataRate::Infinity();
 };
 
-struct RoundTripTimeUpdate {
+struct RTC_EXPORT RoundTripTimeUpdate {
   Timestamp receive_time = Timestamp::PlusInfinity();
   TimeDelta round_trip_time = TimeDelta::PlusInfinity();
   bool smoothed = false;
 };
 
-struct TransportLossReport {
+struct RTC_EXPORT TransportLossReport {
   Timestamp receive_time = Timestamp::PlusInfinity();
   Timestamp start_time = Timestamp::PlusInfinity();
   Timestamp end_time = Timestamp::PlusInfinity();
@@ -152,7 +152,7 @@ struct TransportLossReport {
 
 
 
-struct PacketResult {
+struct RTC_EXPORT PacketResult {
   class ReceiveTimeOrder {
    public:
     bool operator()(const PacketResult& lhs, const PacketResult& rhs);
@@ -168,7 +168,7 @@ struct PacketResult {
   Timestamp receive_time = Timestamp::PlusInfinity();
 };
 
-struct TransportPacketsFeedback {
+struct RTC_EXPORT TransportPacketsFeedback {
   TransportPacketsFeedback();
   TransportPacketsFeedback(const TransportPacketsFeedback& other);
   ~TransportPacketsFeedback();
@@ -188,7 +188,7 @@ struct TransportPacketsFeedback {
 
 
 
-struct NetworkEstimate {
+struct RTC_EXPORT NetworkEstimate {
   Timestamp at_time = Timestamp::PlusInfinity();
   
   DataRate bandwidth = DataRate::Infinity();
@@ -200,7 +200,7 @@ struct NetworkEstimate {
 
 
 
-struct PacerConfig {
+struct RTC_EXPORT PacerConfig {
   Timestamp at_time = Timestamp::PlusInfinity();
   
   DataSize data_window = DataSize::Infinity();
@@ -211,7 +211,7 @@ struct PacerConfig {
   DataRate pad_rate() const { return pad_window / time_window; }
 };
 
-struct ProbeClusterConfig {
+struct RTC_EXPORT ProbeClusterConfig {
   Timestamp at_time = Timestamp::PlusInfinity();
   DataRate target_data_rate = DataRate::Zero();
   
@@ -222,7 +222,7 @@ struct ProbeClusterConfig {
   int32_t id = 0;
 };
 
-struct TargetTransferRate {
+struct RTC_EXPORT TargetTransferRate {
   Timestamp at_time = Timestamp::PlusInfinity();
   
   NetworkEstimate network_estimate;
@@ -234,7 +234,7 @@ struct TargetTransferRate {
 
 
 
-struct NetworkControlUpdate {
+struct RTC_EXPORT NetworkControlUpdate {
   NetworkControlUpdate();
   NetworkControlUpdate(const NetworkControlUpdate&);
   ~NetworkControlUpdate();
@@ -251,13 +251,13 @@ struct NetworkControlUpdate {
 };
 
 
-struct ProcessInterval {
+struct RTC_EXPORT ProcessInterval {
   Timestamp at_time = Timestamp::PlusInfinity();
   absl::optional<DataSize> pacer_queue;
 };
 
 
-struct NetworkStateEstimate {
+struct RTC_EXPORT NetworkStateEstimate {
   double confidence = NAN;
   
   Timestamp update_time = Timestamp::MinusInfinity();
