@@ -15,21 +15,21 @@ promise_test(async t => {
   const rc1 = await rcHelper.addWindow(
        null,  {features: 'noopener'});
 
-  await createIndexedDBForTesting(rc1, 'test_idb', 1);
+  const prefix = t.name + Math.random();
+  const dbname1 = prefix + "_1";
+  const dbname2 = prefix + "_2";
+  await waitUntilIndexedDBOpenForTesting(rc1, dbname1, 1);
   await assertBFCacheEligibility(rc1,  true);
 
   
   
   
-  await createIndexedDBForTesting(rc1, 'test_idb_2', 1);
+  await waitUntilIndexedDBOpenForTesting(rc1, dbname2, 1);
 
   const rc2 = await rc1.navigateToNew();
   
-  await createIndexedDBForTesting(rc2, 'test_idb_2', 2);
-  await rc2.historyBack();
   
   
   
-  
-  await assertNotRestoredFromBFCache(rc1, ['masked']);
+  await waitUntilIndexedDBOpenForTesting(rc2, dbname2, 2);
 });

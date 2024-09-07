@@ -14,11 +14,12 @@ promise_test(async t => {
   const rc1 = await rcHelper.addWindow(
        null,  {features: 'noopener'});
 
-  await rc1.executeScript(() => {
+  const dbname = t.name + Math.random();
+  await rc1.executeScript((dbname) => {
     return new Promise(resolve => {
       
       
-      const db = indexedDB.open( 'test_idb',  1);
+      const db = indexedDB.open( dbname,  1);
       db.onupgradeneeded = () => {
         db.result.createObjectStore('store');
         addEventListener('pagehide', () => {
@@ -36,7 +37,7 @@ promise_test(async t => {
         resolve();
       };
     });
-  });
+  }, [dbname]);
 
   await assertBFCacheEligibility(rc1,  true);
 });

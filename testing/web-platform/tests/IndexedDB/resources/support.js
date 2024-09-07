@@ -226,3 +226,15 @@ async function createIndexedDBForTesting(rc, dbName, version) {
     }
   }, [dbName, version]);
 }
+
+
+
+async function waitUntilIndexedDBOpenForTesting(rc, dbName, version) {
+  await rc.executeScript(async (dbName, version) => {
+    await new Promise((resolve, reject) => {
+        let request = indexedDB.open(dbName, version);
+        request.onsuccess = resolve;
+        request.onerror = reject;
+    });
+  }, [dbName, version]);
+}
