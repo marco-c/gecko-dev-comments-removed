@@ -223,6 +223,12 @@ RefPtr<EncoderAgent::ReconfigurationPromise> EncoderAgent::Reconfigure(
 RefPtr<ShutdownPromise> EncoderAgent::Shutdown() {
   MOZ_ASSERT(mOwnerThread->IsOnCurrentThread());
 
+  LOG("EncoderAgent #%zu (%p) shutdown in %s state", mId, this,
+      EnumValueToString(mState));
+
+  MOZ_ASSERT(mShutdownWhileCreationPromise.IsEmpty(),
+             "Shutdown while shutting down is prohibited");
+
   auto r =
       MediaResult(NS_ERROR_DOM_MEDIA_CANCELED, "Canceled by encoder shutdown");
 
@@ -233,7 +239,6 @@ RefPtr<ShutdownPromise> EncoderAgent::Shutdown() {
     MOZ_ASSERT(!mConfigurePromise.IsEmpty());
     MOZ_ASSERT(!mEncoder);
     MOZ_ASSERT(mState == State::Configuring);
-    MOZ_ASSERT(mShutdownWhileCreationPromise.IsEmpty());
 
     LOGW(
         "EncoderAgent #%zu (%p) shutdown while the encoder creation for "
@@ -251,7 +256,23 @@ RefPtr<ShutdownPromise> EncoderAgent::Shutdown() {
   }
 
   
-  MOZ_ASSERT(mEncoder);
+  if (!mEncoder) {
+    LOG("EncoderAgent #%zu (%p) shutdown without an active encoder", mId, this);
+    MOZ_ASSERT(mState == State::Error);
+    MOZ_ASSERT(!mInitRequest.Exists());
+    MOZ_ASSERT(mConfigurePromise.IsEmpty());
+    MOZ_ASSERT(!mReconfigurationRequest.Exists());
+    MOZ_ASSERT(mReconfigurationPromise.IsEmpty());
+    MOZ_ASSERT(!mEncodeRequest.Exists());
+    MOZ_ASSERT(mEncodePromise.IsEmpty());
+    MOZ_ASSERT(!mDrainRequest.Exists());
+    MOZ_ASSERT(mDrainPromise.IsEmpty());
+    
+    SetState(State::Unconfigured);
+    return ShutdownPromise::CreateAndResolve(true, __func__);
+  }
+
+  
 
   
   mInitRequest.DisconnectIfExists();
