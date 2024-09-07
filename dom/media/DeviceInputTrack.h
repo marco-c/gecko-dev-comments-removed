@@ -172,12 +172,6 @@ class DeviceInputTrack : public ProcessedMediaTrack {
 
   
   const nsTArray<RefPtr<DeviceInputConsumerTrack>>& GetConsumerTracks() const;
-  
-  
-  
-  void NotifySetRequestedProcessingParamsResult(
-      MediaTrackGraph* aGraph, cubeb_input_processing_params aRequestedParams,
-      const Result<cubeb_input_processing_params, int>& aResult);
 
   
   
@@ -185,6 +179,12 @@ class DeviceInputTrack : public ProcessedMediaTrack {
   bool HasVoiceInput() const;
   
   cubeb_input_processing_params RequestedProcessingParams() const;
+  
+  
+  
+  void NotifySetRequestedProcessingParamsResult(
+      MediaTrackGraph* aGraph, cubeb_input_processing_params aRequestedParams,
+      const Result<cubeb_input_processing_params, int>& aResult);
   
   void DeviceChanged(MediaTrackGraph* aGraph) const;
 

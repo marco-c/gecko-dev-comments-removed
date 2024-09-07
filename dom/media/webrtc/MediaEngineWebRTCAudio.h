@@ -135,6 +135,11 @@ class AudioInputProcessing : public AudioDataListener {
 
   void Disconnect(MediaTrackGraph* aGraph) override;
 
+  
+  
+  
+  
+  
   void NotifySetRequestedInputProcessingParamsResult(
       MediaTrackGraph* aGraph, cubeb_input_processing_params aRequestedParams,
       const Result<cubeb_input_processing_params, int>& aResult) override;
