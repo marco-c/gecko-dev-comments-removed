@@ -81,8 +81,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
   
   void UpdateHitTestingTree(uint32_t aPaintSequenceNumber = 0) {
     manager->UpdateHitTestingTree(WebRenderScrollDataWrapper{*updater, &layers},
-                                   false, LayersId{0},
-                                  aPaintSequenceNumber);
+                                  LayersId{0}, aPaintSequenceNumber);
   }
 
   void CreateScrollData(const char* aTreeShape,
