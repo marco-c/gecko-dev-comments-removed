@@ -1642,7 +1642,7 @@ void nsRefreshDriver::NotifyDOMContentLoaded() {
   
   
   
-  if (!HasObservers()) {
+  if (!HasReasonsToTick()) {
     if (nsPresContext* pc = GetPresContext()) {
       pc->NotifyDOMContentFlushed();
     }
@@ -1915,9 +1915,6 @@ bool nsRefreshDriver::HasObservers() const {
     }
   }
 
-  
-  
-  
   return (mViewManagerFlushIsPending && !mThrottled) ||
          !mStyleFlushObservers.IsEmpty() ||
          !mAnimationEventFlushObservers.IsEmpty() ||
@@ -3014,28 +3011,25 @@ void nsRefreshDriver::Thaw() {
     mFreezeCount--;
   }
 
-  if (mFreezeCount == 0) {
-    if (HasObservers() || HasImageRequests()) {
-      
-      
-      
-      
-      RefPtr<nsRunnableMethod<nsRefreshDriver>> event = NewRunnableMethod(
-          "nsRefreshDriver::DoRefresh", this, &nsRefreshDriver::DoRefresh);
-      nsPresContext* pc = GetPresContext();
-      if (pc) {
-        pc->Document()->Dispatch(event.forget());
-        EnsureTimerStarted();
-      } else {
-        NS_ERROR("Thawing while document is being destroyed");
-      }
+  if (mFreezeCount == 0 && HasReasonsToTick()) {
+    
+    
+    
+    
+    RefPtr<nsRunnableMethod<nsRefreshDriver>> event = NewRunnableMethod(
+        "nsRefreshDriver::DoRefresh", this, &nsRefreshDriver::DoRefresh);
+    if (nsPresContext* pc = GetPresContext()) {
+      pc->Document()->Dispatch(event.forget());
+      EnsureTimerStarted();
+    } else {
+      NS_ERROR("Thawing while document is being destroyed");
     }
   }
 }
 
 void nsRefreshDriver::FinishedWaitingForTransaction() {
-  if (mSkippedPaints && !IsInRefresh() &&
-      (HasObservers() || HasImageRequests()) && CanDoCatchUpTick()) {
+  if (mSkippedPaints && !IsInRefresh() && HasReasonsToTick() &&
+      CanDoCatchUpTick()) {
     NS_DispatchToCurrentThreadQueue(
         NS_NewRunnableFunction(
             "nsRefreshDriver::FinishedWaitingForTransaction",
