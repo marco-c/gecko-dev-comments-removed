@@ -4,10 +4,10 @@
 
 
 
-#include "FFmpegRuntimeLinker.h"
 #include "FFmpegLibWrapper.h"
-#include "mozilla/ArrayUtils.h"
 #include "FFmpegLog.h"
+#include "FFmpegRuntimeLinker.h"
+#include "mozilla/ArrayUtils.h"
 #include "prlink.h"
 
 namespace mozilla {
