@@ -768,11 +768,11 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
       return server_ssl_->GetSslCipherSuite(retval);
   }
 
-  int GetSslVersion(bool client) {
+  bool GetSslVersionBytes(bool client, int* version) {
     if (client)
-      return client_ssl_->GetSslVersion();
+      return client_ssl_->GetSslVersionBytes(version);
     else
-      return server_ssl_->GetSslVersion();
+      return server_ssl_->GetSslVersionBytes(version);
   }
 
   bool ExportKeyingMaterial(absl::string_view label,
@@ -1605,22 +1605,19 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 }
 
 
-
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Both) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslVersionBytes) {
+  
+  const int kDtls1_2 = 0xFEFD;
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
-  int client_cipher;
-  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
-  int server_cipher;
-  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
+  int client_version;
+  ASSERT_TRUE(GetSslVersionBytes(true, &client_version));
+  EXPECT_EQ(client_version, kDtls1_2);
 
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(true));
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(false));
-
-  ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
-      server_cipher, ::testing::get<1>(GetParam()).type()));
+  int server_version;
+  ASSERT_TRUE(GetSslVersionBytes(false, &server_version));
+  EXPECT_EQ(server_version, kDtls1_2);
 }
 
 
@@ -1633,9 +1630,6 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
   ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
   int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
-
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(true));
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(false));
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(

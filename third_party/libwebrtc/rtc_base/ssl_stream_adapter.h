@@ -91,16 +91,12 @@ enum SSLRole { SSL_CLIENT, SSL_SERVER };
 enum SSLMode { SSL_MODE_TLS, SSL_MODE_DTLS };
 
 
-
-
-
-
 enum SSLProtocolVersion {
   SSL_PROTOCOL_NOT_GIVEN = -1,
-  SSL_PROTOCOL_TLS_10 = 0,
-  SSL_PROTOCOL_TLS_11,
-  SSL_PROTOCOL_TLS_12,
-  SSL_PROTOCOL_DTLS_10 = SSL_PROTOCOL_TLS_11,
+  SSL_PROTOCOL_TLS_10 = 0,  
+  SSL_PROTOCOL_TLS_11 = 1,  
+  SSL_PROTOCOL_TLS_12 = 2,
+  SSL_PROTOCOL_DTLS_10 = 1,  
   SSL_PROTOCOL_DTLS_12 = SSL_PROTOCOL_TLS_12,
 };
 enum class SSLPeerCertificateDigestError {
@@ -198,7 +194,8 @@ class SSLStreamAdapter : public StreamInterface {
 
   
   
-  virtual SSLProtocolVersion GetSslVersion() const = 0;
+  [[deprecated("Use GetSslVersionBytes")]] virtual SSLProtocolVersion
+  GetSslVersion() const = 0;
   
   
   virtual bool GetSslVersionBytes(int* version) const = 0;

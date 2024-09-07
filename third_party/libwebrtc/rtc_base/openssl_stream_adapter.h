@@ -107,8 +107,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter,
   static std::string SslCipherSuiteToName(int crypto_suite);
 
   bool GetSslCipherSuite(int* cipher) override;
-
-  SSLProtocolVersion GetSslVersion() const override;
+  [[deprecated("Use GetSslVersionBytes")]] SSLProtocolVersion GetSslVersion()
+      const override;
   bool GetSslVersionBytes(int* version) const override;
   
   bool ExportKeyingMaterial(absl::string_view label,
