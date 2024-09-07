@@ -166,6 +166,7 @@ class Editor extends EventEmitter {
     query: null,
   };
 
+  #abortController;
   
   
   #currentDocumentId = null;
@@ -418,7 +419,11 @@ class Editor extends EventEmitter {
       };
 
       env.style.visibility = "hidden";
-      env.addEventListener("load", onLoad, { capture: true, once: true });
+      env.addEventListener("load", onLoad, {
+        capture: true,
+        once: true,
+        signal: this.#abortController?.signal,
+      });
       env.src = CM_IFRAME;
       el.appendChild(env);
 
@@ -427,6 +432,8 @@ class Editor extends EventEmitter {
   }
 
   appendToLocalElement(el) {
+    const win = el.ownerDocument.defaultView;
+    this.#abortController = new win.AbortController();
     if (this.config.cm6) {
       this.#setupCm6(el);
     } else {
@@ -485,42 +492,50 @@ class Editor extends EventEmitter {
     
     
     
-    cm.getScrollerElement().addEventListener("wheel", ev => {
-      
-      
-      
-      
-      ev.preventDefault();
+    cm.getScrollerElement().addEventListener(
+      "wheel",
+      ev => {
+        
+        
+        
+        
+        ev.preventDefault();
 
-      let { deltaX, deltaY } = ev;
+        let { deltaX, deltaY } = ev;
 
-      if (ev.deltaMode == ev.DOM_DELTA_LINE) {
-        deltaX *= cm.defaultCharWidth();
-        deltaY *= cm.defaultTextHeight();
-      } else if (ev.deltaMode == ev.DOM_DELTA_PAGE) {
-        deltaX *= cm.getWrapperElement().clientWidth;
-        deltaY *= cm.getWrapperElement().clientHeight;
-      }
+        if (ev.deltaMode == ev.DOM_DELTA_LINE) {
+          deltaX *= cm.defaultCharWidth();
+          deltaY *= cm.defaultTextHeight();
+        } else if (ev.deltaMode == ev.DOM_DELTA_PAGE) {
+          deltaX *= cm.getWrapperElement().clientWidth;
+          deltaY *= cm.getWrapperElement().clientHeight;
+        }
 
-      cm.getScrollerElement().scrollBy(deltaX, deltaY);
-    });
+        cm.getScrollerElement().scrollBy(deltaX, deltaY);
+      },
+      { signal: this.#abortController?.signal }
+    );
 
-    cm.getWrapperElement().addEventListener("contextmenu", ev => {
-      if (!this.config.contextMenu) {
-        return;
-      }
+    cm.getWrapperElement().addEventListener(
+      "contextmenu",
+      ev => {
+        if (!this.config.contextMenu) {
+          return;
+        }
 
-      ev.stopPropagation();
-      ev.preventDefault();
+        ev.stopPropagation();
+        ev.preventDefault();
 
-      let popup = this.config.contextMenu;
-      if (typeof popup == "string") {
-        popup = this.#ownerDoc.getElementById(this.config.contextMenu);
-      }
+        let popup = this.config.contextMenu;
+        if (typeof popup == "string") {
+          popup = this.#ownerDoc.getElementById(this.config.contextMenu);
+        }
 
-      this.emit("popupOpen", ev, popup);
-      popup.openPopupAtScreen(ev.screenX, ev.screenY, true);
-    });
+        this.emit("popupOpen", ev, popup);
+        popup.openPopupAtScreen(ev.screenX, ev.screenY, true);
+      },
+      { signal: this.#abortController?.signal }
+    );
 
     const pipedEvents = [
       "beforeChange",
@@ -2449,7 +2464,9 @@ class Editor extends EventEmitter {
 
     for (const name in eventsArg) {
       const listener = eventsArg[name].bind(this, line, marker, data);
-      marker.addEventListener(name, listener);
+      marker.addEventListener(name, listener, {
+        signal: this.#abortController?.signal,
+      });
     }
   }
 
@@ -3086,6 +3103,10 @@ class Editor extends EventEmitter {
   destroy() {
     if (this.config.cm6 && this.#CodeMirror6) {
       this.#clearEditorDOMEventListeners();
+    }
+    if (this.#abortController) {
+      this.#abortController.abort();
+      this.#abortController = null;
     }
     this.container = null;
     this.config = null;
