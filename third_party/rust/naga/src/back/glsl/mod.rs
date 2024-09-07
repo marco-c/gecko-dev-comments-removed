@@ -546,6 +546,11 @@ pub struct Writer<'a, W> {
     
     need_bake_expressions: back::NeedBakeExpressions,
     
+    
+    
+    
+    continue_ctx: back::continue_forward::ContinueCtx,
+    
     multiview: Option<std::num::NonZeroU32>,
     
     varying: crate::FastHashMap<String, VaryingLocation>,
@@ -619,6 +624,7 @@ impl<'a, W: Write> Writer<'a, W> {
             block_id: IdGenerator::default(),
             named_expressions: Default::default(),
             need_bake_expressions: Default::default(),
+            continue_ctx: back::continue_forward::ContinueCtx::default(),
             varying: Default::default(),
         };
 
@@ -2082,42 +2088,94 @@ impl<'a, W: Write> Writer<'a, W> {
                 selector,
                 ref cases,
             } => {
-                
-                write!(self.out, "{level}")?;
-                write!(self.out, "switch(")?;
-                self.write_expr(selector, ctx)?;
-                writeln!(self.out, ") {{")?;
-
-                
                 let l2 = level.next();
-                for case in cases {
-                    match case.value {
-                        crate::SwitchValue::I32(value) => write!(self.out, "{l2}case {value}:")?,
-                        crate::SwitchValue::U32(value) => write!(self.out, "{l2}case {value}u:")?,
-                        crate::SwitchValue::Default => write!(self.out, "{l2}default:")?,
+                
+                
+                
+                
+                
+                
+                
+                
+                let one_body = cases
+                    .iter()
+                    .rev()
+                    .skip(1)
+                    .all(|case| case.fall_through && case.body.is_empty());
+                if one_body {
+                    
+                    
+                    
+                    if let Some(variable) = self.continue_ctx.enter_switch(&mut self.namer) {
+                        writeln!(self.out, "{level}bool {variable} = false;",)?;
+                    };
+                    writeln!(self.out, "{level}do {{")?;
+                    
+
+                    
+                    if let Some(case) = cases.last() {
+                        for sta in case.body.iter() {
+                            self.write_stmt(sta, ctx, l2)?;
+                        }
+                    }
+                    
+                    writeln!(self.out, "{level}}} while(false);")?;
+
+                    
+                    use back::continue_forward::ExitControlFlow;
+                    let op = match self.continue_ctx.exit_switch() {
+                        ExitControlFlow::None => None,
+                        ExitControlFlow::Continue { variable } => Some(("continue", variable)),
+                        ExitControlFlow::Break { variable } => Some(("break", variable)),
+                    };
+                    if let Some((control_flow, variable)) = op {
+                        writeln!(self.out, "{level}if ({variable}) {{")?;
+                        writeln!(self.out, "{l2}{control_flow};")?;
+                        writeln!(self.out, "{level}}}")?;
+                    }
+                } else {
+                    
+                    write!(self.out, "{level}")?;
+                    write!(self.out, "switch(")?;
+                    self.write_expr(selector, ctx)?;
+                    writeln!(self.out, ") {{")?;
+
+                    
+                    for case in cases {
+                        match case.value {
+                            crate::SwitchValue::I32(value) => {
+                                write!(self.out, "{l2}case {value}:")?
+                            }
+                            crate::SwitchValue::U32(value) => {
+                                write!(self.out, "{l2}case {value}u:")?
+                            }
+                            crate::SwitchValue::Default => write!(self.out, "{l2}default:")?,
+                        }
+
+                        let write_block_braces = !(case.fall_through && case.body.is_empty());
+                        if write_block_braces {
+                            writeln!(self.out, " {{")?;
+                        } else {
+                            writeln!(self.out)?;
+                        }
+
+                        for sta in case.body.iter() {
+                            self.write_stmt(sta, ctx, l2.next())?;
+                        }
+
+                        if !case.fall_through
+                            && case.body.last().map_or(true, |s| !s.is_terminator())
+                        {
+                            writeln!(self.out, "{}break;", l2.next())?;
+                        }
+
+                        if write_block_braces {
+                            writeln!(self.out, "{l2}}}")?;
+                        }
                     }
 
-                    let write_block_braces = !(case.fall_through && case.body.is_empty());
-                    if write_block_braces {
-                        writeln!(self.out, " {{")?;
-                    } else {
-                        writeln!(self.out)?;
-                    }
-
-                    for sta in case.body.iter() {
-                        self.write_stmt(sta, ctx, l2.next())?;
-                    }
-
-                    if !case.fall_through && case.body.last().map_or(true, |s| !s.is_terminator()) {
-                        writeln!(self.out, "{}break;", l2.next())?;
-                    }
-
-                    if write_block_braces {
-                        writeln!(self.out, "{l2}}}")?;
-                    }
+                    writeln!(self.out, "{level}}}")?
                 }
-
-                writeln!(self.out, "{level}}}")?
             }
             
             
@@ -2134,6 +2192,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 ref continuing,
                 break_if,
             } => {
+                self.continue_ctx.enter_loop();
                 if !continuing.is_empty() || break_if.is_some() {
                     let gate_name = self.namer.call("loop_init");
                     writeln!(self.out, "{level}bool {gate_name} = true;")?;
@@ -2159,7 +2218,8 @@ impl<'a, W: Write> Writer<'a, W> {
                 for sta in body {
                     self.write_stmt(sta, ctx, level.next())?;
                 }
-                writeln!(self.out, "{level}}}")?
+                writeln!(self.out, "{level}}}")?;
+                self.continue_ctx.exit_loop();
             }
             
             
@@ -2169,8 +2229,14 @@ impl<'a, W: Write> Writer<'a, W> {
             }
             
             Statement::Continue => {
-                write!(self.out, "{level}")?;
-                writeln!(self.out, "continue;")?
+                
+                
+                if let Some(variable) = self.continue_ctx.continue_encountered() {
+                    writeln!(self.out, "{level}{variable} = true;",)?;
+                    writeln!(self.out, "{level}break;")?
+                } else {
+                    writeln!(self.out, "{level}continue;")?
+                }
             }
             
             Statement::Return { value } => {
@@ -3581,8 +3647,8 @@ impl<'a, W: Write> Writer<'a, W> {
 
                         return Ok(());
                     }
-                    Mf::FindLsb => "findLSB",
-                    Mf::FindMsb => "findMSB",
+                    Mf::FirstTrailingBit => "findLSB",
+                    Mf::FirstLeadingBit => "findMSB",
                     
                     Mf::Pack4x8snorm => "packSnorm4x8",
                     Mf::Pack4x8unorm => "packUnorm4x8",
@@ -3656,8 +3722,10 @@ impl<'a, W: Write> Writer<'a, W> {
 
                 
                 
-                let ret_might_need_int_to_uint =
-                    matches!(fun, Mf::FindLsb | Mf::FindMsb | Mf::CountOneBits | Mf::Abs);
+                let ret_might_need_int_to_uint = matches!(
+                    fun,
+                    Mf::FirstTrailingBit | Mf::FirstLeadingBit | Mf::CountOneBits | Mf::Abs
+                );
 
                 
                 

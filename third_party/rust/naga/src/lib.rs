@@ -873,7 +873,7 @@ pub enum Literal {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -891,8 +891,7 @@ pub struct Override {
 }
 
 
-#[derive(Debug, Clone)]
-#[cfg_attr(test, derive(PartialEq))]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -954,7 +953,7 @@ pub struct ResourceBinding {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -1198,8 +1197,8 @@ pub enum MathFunction {
     ReverseBits,
     ExtractBits,
     InsertBits,
-    FindLsb,
-    FindMsb,
+    FirstTrailingBit,
+    FirstLeadingBit,
     
     Pack4x8snorm,
     Pack4x8unorm,
@@ -1337,7 +1336,7 @@ bitflags::bitflags! {
         const STORAGE = 1 << 0;
         /// Barrier affects all [`AddressSpace::WorkGroup`] accesses.
         const WORK_GROUP = 1 << 1;
-        /// Barrier synchronizes execution across all invocations within a subgroup that exectue this instruction.
+        /// Barrier synchronizes execution across all invocations within a subgroup that execute this instruction.
         const SUB_GROUP = 1 << 2;
     }
 }
@@ -1354,8 +1353,7 @@ bitflags::bitflags! {
 
 
 
-#[derive(Clone, Debug)]
-#[cfg_attr(test, derive(PartialEq))]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]

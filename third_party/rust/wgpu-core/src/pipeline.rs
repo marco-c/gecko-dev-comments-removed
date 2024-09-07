@@ -147,8 +147,6 @@ pub struct ProgrammableStageDescriptor<'a> {
     
     
     pub zero_initialize_workgroup_memory: bool,
-    
-    pub vertex_pulling_transform: bool,
 }
 
 
@@ -176,8 +174,6 @@ pub struct ResolvedProgrammableStageDescriptor<'a, A: HalApi> {
     
     
     pub zero_initialize_workgroup_memory: bool,
-    
-    pub vertex_pulling_transform: bool,
 }
 
 

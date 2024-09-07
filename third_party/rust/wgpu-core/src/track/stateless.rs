@@ -3,7 +3,6 @@
 
 
 
-
 use std::sync::Arc;
 
 use crate::{
@@ -32,12 +31,6 @@ impl<T: Trackable> StatelessBindGroupState<T> {
     pub(crate) fn optimize(&self) {
         let mut resources = self.resources.lock();
         resources.sort_unstable_by_key(|resource| resource.tracker_index());
-    }
-
-    
-    pub fn used_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
-        let resources = self.resources.lock();
-        resources.iter().cloned().collect::<Vec<_>>().into_iter()
     }
 
     
@@ -77,11 +70,6 @@ impl<T: Trackable> StatelessTracker<T> {
         if index >= self.metadata.size() {
             self.set_size(index + 1);
         }
-    }
-
-    
-    pub fn used_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
-        self.metadata.owned_resources()
     }
 
     

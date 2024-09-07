@@ -1,6 +1,6 @@
 #![allow(clippy::let_unit_value)] 
 
-use std::{mem, os::raw::c_void, ptr::NonNull, sync::Once, thread};
+use std::{os::raw::c_void, ptr::NonNull, sync::Once, thread};
 
 use core_graphics_types::{
     base::CGFloat,
@@ -70,22 +70,25 @@ impl super::Surface {
         }
     }
 
-    pub unsafe fn dispose(self) {
-        if let Some(view) = self.view {
-            let () = msg_send![view.as_ptr(), release];
-        }
-    }
-
     
     #[allow(clippy::transmute_ptr_to_ref)]
     pub unsafe fn from_view(
         view: *mut c_void,
         delegate: Option<&HalManagedMetalLayerDelegate>,
     ) -> Self {
-        let view = view as *mut Object;
+        let view = view.cast::<Object>();
         let render_layer = {
             let layer = unsafe { Self::get_metal_layer(view, delegate) };
-            unsafe { mem::transmute::<_, &metal::MetalLayerRef>(layer) }
+            let layer = layer.cast::<metal::MetalLayerRef>();
+            
+            
+            
+            
+            
+            
+            
+            
+            unsafe { &*layer }
         }
         .to_owned();
         let _: *mut c_void = msg_send![view, retain];
@@ -165,6 +168,16 @@ impl super::Surface {
             width: (size.width * scale) as u32,
             height: (size.height * scale) as u32,
             depth_or_array_layers: 1,
+        }
+    }
+}
+
+impl Drop for super::Surface {
+    fn drop(&mut self) {
+        if let Some(view) = self.view {
+            unsafe {
+                let () = msg_send![view.as_ptr(), release];
+            }
         }
     }
 }

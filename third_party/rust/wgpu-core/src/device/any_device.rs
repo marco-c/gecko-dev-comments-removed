@@ -34,7 +34,7 @@ impl AnyDevice {
         unsafe fn drop_glue<A: HalApi>(ptr: *mut ()) {
             
             unsafe {
-                _ = Arc::from_raw(ptr.cast::<A::Device>());
+                _ = Arc::from_raw(ptr.cast::<Device<A>>());
             }
         }
 

@@ -355,6 +355,8 @@ pub struct PipelineOptions {
     
     
     
+    
+    
     pub vertex_pulling_transform: bool,
 
     

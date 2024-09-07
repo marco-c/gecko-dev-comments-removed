@@ -18,7 +18,6 @@
 
 
 
-
 use super::{range::RangedStates, PendingTransition, PendingTransitionList, TrackerIndex};
 use crate::{
     hal_api::HalApi,
@@ -444,6 +443,11 @@ impl<A: HalApi> TextureTracker<A> {
         if index >= self.start_set.simple.len() {
             self.set_size(index + 1);
         }
+    }
+
+    
+    pub fn contains(&self, texture: &Texture<A>) -> bool {
+        self.metadata.contains(texture.tracker_index().as_usize())
     }
 
     
@@ -1120,8 +1124,6 @@ unsafe fn insert<T: Clone>(
             
             strict_assert_eq!(invalid_resource_state(state), false);
 
-            log::trace!("\ttex {index}: insert start {state:?}");
-
             if let Some(start_state) = start_state {
                 unsafe { *start_state.simple.get_unchecked_mut(index) = state };
             }
@@ -1136,8 +1138,6 @@ unsafe fn insert<T: Clone>(
 
             let complex =
                 unsafe { ComplexTextureState::from_selector_state_iter(full_range, state_iter) };
-
-            log::trace!("\ttex {index}: insert start {complex:?}");
 
             if let Some(start_state) = start_state {
                 unsafe { *start_state.simple.get_unchecked_mut(index) = TextureUses::COMPLEX };
@@ -1159,8 +1159,6 @@ unsafe fn insert<T: Clone>(
                 
                 strict_assert_eq!(invalid_resource_state(state), false);
 
-                log::trace!("\ttex {index}: insert end {state:?}");
-
                 
                 
                 unsafe { *end_state.simple.get_unchecked_mut(index) = state };
@@ -1171,8 +1169,6 @@ unsafe fn insert<T: Clone>(
                 let complex = unsafe {
                     ComplexTextureState::from_selector_state_iter(full_range, state_iter)
                 };
-
-                log::trace!("\ttex {index}: insert end {complex:?}");
 
                 
                 
@@ -1211,8 +1207,6 @@ unsafe fn merge<A: HalApi>(
         (SingleOrManyStates::Single(current_simple), SingleOrManyStates::Single(new_simple)) => {
             let merged_state = *current_simple | new_simple;
 
-            log::trace!("\ttex {index}: merge simple {current_simple:?} + {new_simple:?}");
-
             if invalid_resource_state(merged_state) {
                 return Err(ResourceUsageCompatibilityError::from_texture(
                     unsafe { metadata_provider.get(index) },
@@ -1237,8 +1231,6 @@ unsafe fn merge<A: HalApi>(
 
             for (selector, new_state) in new_many {
                 let merged_state = *current_simple | new_state;
-
-                log::trace!("\ttex {index}: merge {selector:?} {current_simple:?} + {new_state:?}");
 
                 if invalid_resource_state(merged_state) {
                     return Err(ResourceUsageCompatibilityError::from_texture(
@@ -1276,11 +1268,6 @@ unsafe fn merge<A: HalApi>(
                     
                     let merged_state = merged_state - TextureUses::UNKNOWN;
 
-                    log::trace!(
-                        "\ttex {index}: merge mip {mip_id} layers {layers:?} \
-                         {current_layer_state:?} + {new_simple:?}"
-                    );
-
                     if invalid_resource_state(merged_state) {
                         return Err(ResourceUsageCompatibilityError::from_texture(
                             unsafe { metadata_provider.get(index) },
@@ -1316,11 +1303,6 @@ unsafe fn merge<A: HalApi>(
                             
                             continue;
                         }
-
-                        log::trace!(
-                            "\ttex {index}: merge mip {mip_id} layers {layers:?} \
-                             {current_layer_state:?} + {new_state:?}"
-                        );
 
                         if invalid_resource_state(merged_state) {
                             return Err(ResourceUsageCompatibilityError::from_texture(
@@ -1369,8 +1351,6 @@ unsafe fn barrier(
                 return;
             }
 
-            log::trace!("\ttex {index}: transition simple {current_simple:?} -> {new_simple:?}");
-
             barriers.push(PendingTransition {
                 id: index as _,
                 selector: texture_selector.clone(),
@@ -1386,10 +1366,6 @@ unsafe fn barrier(
                 if skip_barrier(current_simple, new_state) {
                     continue;
                 }
-
-                log::trace!(
-                    "\ttex {index}: transition {selector:?} {current_simple:?} -> {new_state:?}"
-                );
 
                 barriers.push(PendingTransition {
                     id: index as _,
@@ -1410,11 +1386,6 @@ unsafe fn barrier(
                     if skip_barrier(current_layer_state, new_simple) {
                         continue;
                     }
-
-                    log::trace!(
-                        "\ttex {index}: transition mip {mip_id} layers {layers:?} \
-                         {current_layer_state:?} -> {new_simple:?}"
-                    );
 
                     barriers.push(PendingTransition {
                         id: index as _,
@@ -1444,11 +1415,6 @@ unsafe fn barrier(
                         if skip_barrier(*current_layer_state, new_state) {
                             continue;
                         }
-
-                        log::trace!(
-                            "\ttex {index}: transition mip {mip_id} layers {layers:?} \
-                            {current_layer_state:?} -> {new_state:?}"
-                        );
 
                         barriers.push(PendingTransition {
                             id: index as _,

@@ -117,33 +117,6 @@ pub struct Function<'a> {
     pub name: Ident<'a>,
     pub arguments: Vec<FunctionArgument<'a>>,
     pub result: Option<FunctionResult<'a>>,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub locals: Arena<Local>,
-
     pub body: Block<'a>,
 }
 

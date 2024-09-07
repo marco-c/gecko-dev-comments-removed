@@ -104,6 +104,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             entry_point_io: Vec::new(),
             named_expressions: crate::NamedExpressions::default(),
             wrapped: super::Wrapped::default(),
+            continue_ctx: back::continue_forward::ContinueCtx::default(),
             temp_access_chain: Vec::new(),
             need_bake_expressions: Default::default(),
         }
@@ -122,6 +123,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         self.entry_point_io.clear();
         self.named_expressions.clear();
         self.wrapped.clear();
+        self.continue_ctx.clear();
         self.need_bake_expressions.clear();
     }
 
@@ -1440,6 +1442,151 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
     }
 
     
+    fn write_switch(
+        &mut self,
+        module: &Module,
+        func_ctx: &back::FunctionCtx<'_>,
+        level: back::Level,
+        selector: Handle<crate::Expression>,
+        cases: &[crate::SwitchCase],
+    ) -> BackendResult {
+        
+        let indent_level_1 = level.next();
+        let indent_level_2 = indent_level_1.next();
+
+        
+        if let Some(variable) = self.continue_ctx.enter_switch(&mut self.namer) {
+            writeln!(self.out, "{level}bool {variable} = false;",)?;
+        };
+
+        
+        
+        
+        
+        let one_body = cases
+            .iter()
+            .rev()
+            .skip(1)
+            .all(|case| case.fall_through && case.body.is_empty());
+        if one_body {
+            
+            writeln!(self.out, "{level}do {{")?;
+            
+
+            
+            if let Some(case) = cases.last() {
+                for sta in case.body.iter() {
+                    self.write_stmt(module, sta, func_ctx, indent_level_1)?;
+                }
+            }
+            
+            writeln!(self.out, "{level}}} while(false);")?;
+        } else {
+            
+            write!(self.out, "{level}")?;
+            write!(self.out, "switch(")?;
+            self.write_expr(module, selector, func_ctx)?;
+            writeln!(self.out, ") {{")?;
+
+            for (i, case) in cases.iter().enumerate() {
+                match case.value {
+                    crate::SwitchValue::I32(value) => {
+                        write!(self.out, "{indent_level_1}case {value}:")?
+                    }
+                    crate::SwitchValue::U32(value) => {
+                        write!(self.out, "{indent_level_1}case {value}u:")?
+                    }
+                    crate::SwitchValue::Default => write!(self.out, "{indent_level_1}default:")?,
+                }
+
+                
+                
+                
+                
+                
+                
+                let write_block_braces = !(case.fall_through && case.body.is_empty());
+                if write_block_braces {
+                    writeln!(self.out, " {{")?;
+                } else {
+                    writeln!(self.out)?;
+                }
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if case.fall_through && !case.body.is_empty() {
+                    let curr_len = i + 1;
+                    let end_case_idx = curr_len
+                        + cases
+                            .iter()
+                            .skip(curr_len)
+                            .position(|case| !case.fall_through)
+                            .unwrap();
+                    let indent_level_3 = indent_level_2.next();
+                    for case in &cases[i..=end_case_idx] {
+                        writeln!(self.out, "{indent_level_2}{{")?;
+                        let prev_len = self.named_expressions.len();
+                        for sta in case.body.iter() {
+                            self.write_stmt(module, sta, func_ctx, indent_level_3)?;
+                        }
+                        
+                        self.named_expressions.truncate(prev_len);
+                        writeln!(self.out, "{indent_level_2}}}")?;
+                    }
+
+                    let last_case = &cases[end_case_idx];
+                    if last_case.body.last().map_or(true, |s| !s.is_terminator()) {
+                        writeln!(self.out, "{indent_level_2}break;")?;
+                    }
+                } else {
+                    for sta in case.body.iter() {
+                        self.write_stmt(module, sta, func_ctx, indent_level_2)?;
+                    }
+                    if !case.fall_through && case.body.last().map_or(true, |s| !s.is_terminator()) {
+                        writeln!(self.out, "{indent_level_2}break;")?;
+                    }
+                }
+
+                if write_block_braces {
+                    writeln!(self.out, "{indent_level_1}}}")?;
+                }
+            }
+
+            writeln!(self.out, "{level}}}")?;
+        }
+
+        
+        use back::continue_forward::ExitControlFlow;
+        let op = match self.continue_ctx.exit_switch() {
+            ExitControlFlow::None => None,
+            ExitControlFlow::Continue { variable } => Some(("continue", variable)),
+            ExitControlFlow::Break { variable } => Some(("break", variable)),
+        };
+        if let Some((control_flow, variable)) = op {
+            writeln!(self.out, "{level}if ({variable}) {{")?;
+            writeln!(self.out, "{indent_level_1}{control_flow};")?;
+            writeln!(self.out, "{level}}}")?;
+        }
+
+        Ok(())
+    }
+
+    
     
     
     
@@ -1882,6 +2029,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 ref continuing,
                 break_if,
             } => {
+                self.continue_ctx.enter_loop();
                 let l2 = level.next();
                 if !continuing.is_empty() || break_if.is_some() {
                     let gate_name = self.namer.call("loop_init");
@@ -1908,10 +2056,18 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 for sta in body.iter() {
                     self.write_stmt(module, sta, func_ctx, l2)?;
                 }
-                writeln!(self.out, "{level}}}")?
+                writeln!(self.out, "{level}}}")?;
+                self.continue_ctx.exit_loop();
             }
             Statement::Break => writeln!(self.out, "{level}break;")?,
-            Statement::Continue => writeln!(self.out, "{level}continue;")?,
+            Statement::Continue => {
+                if let Some(variable) = self.continue_ctx.continue_encountered() {
+                    writeln!(self.out, "{level}{variable} = true;")?;
+                    writeln!(self.out, "{level}break;")?
+                } else {
+                    writeln!(self.out, "{level}continue;")?
+                }
+            }
             Statement::Barrier(barrier) => {
                 self.write_barrier(barrier, level)?;
             }
@@ -2063,100 +2219,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 selector,
                 ref cases,
             } => {
-                
-                write!(self.out, "{level}")?;
-                write!(self.out, "switch(")?;
-                self.write_expr(module, selector, func_ctx)?;
-                writeln!(self.out, ") {{")?;
-
-                
-                let indent_level_1 = level.next();
-                let indent_level_2 = indent_level_1.next();
-
-                for (i, case) in cases.iter().enumerate() {
-                    match case.value {
-                        crate::SwitchValue::I32(value) => {
-                            write!(self.out, "{indent_level_1}case {value}:")?
-                        }
-                        crate::SwitchValue::U32(value) => {
-                            write!(self.out, "{indent_level_1}case {value}u:")?
-                        }
-                        crate::SwitchValue::Default => {
-                            write!(self.out, "{indent_level_1}default:")?
-                        }
-                    }
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    let write_block_braces = !(case.fall_through && case.body.is_empty());
-                    if write_block_braces {
-                        writeln!(self.out, " {{")?;
-                    } else {
-                        writeln!(self.out)?;
-                    }
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    if case.fall_through && !case.body.is_empty() {
-                        let curr_len = i + 1;
-                        let end_case_idx = curr_len
-                            + cases
-                                .iter()
-                                .skip(curr_len)
-                                .position(|case| !case.fall_through)
-                                .unwrap();
-                        let indent_level_3 = indent_level_2.next();
-                        for case in &cases[i..=end_case_idx] {
-                            writeln!(self.out, "{indent_level_2}{{")?;
-                            let prev_len = self.named_expressions.len();
-                            for sta in case.body.iter() {
-                                self.write_stmt(module, sta, func_ctx, indent_level_3)?;
-                            }
-                            
-                            self.named_expressions.truncate(prev_len);
-                            writeln!(self.out, "{indent_level_2}}}")?;
-                        }
-
-                        let last_case = &cases[end_case_idx];
-                        if last_case.body.last().map_or(true, |s| !s.is_terminator()) {
-                            writeln!(self.out, "{indent_level_2}break;")?;
-                        }
-                    } else {
-                        for sta in case.body.iter() {
-                            self.write_stmt(module, sta, func_ctx, indent_level_2)?;
-                        }
-                        if !case.fall_through
-                            && case.body.last().map_or(true, |s| !s.is_terminator())
-                        {
-                            writeln!(self.out, "{indent_level_2}break;")?;
-                        }
-                    }
-
-                    if write_block_braces {
-                        writeln!(self.out, "{indent_level_1}}}")?;
-                    }
-                }
-
-                writeln!(self.out, "{level}}}")?
+                self.write_switch(module, func_ctx, level, selector, cases)?;
             }
             Statement::RayQuery { .. } => unreachable!(),
             Statement::SubgroupBallot { result, predicate } => {
@@ -3000,8 +3063,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     Mf::CountLeadingZeros => Function::CountLeadingZeros,
                     Mf::CountOneBits => Function::MissingIntOverload("countbits"),
                     Mf::ReverseBits => Function::MissingIntOverload("reversebits"),
-                    Mf::FindLsb => Function::MissingIntReturnType("firstbitlow"),
-                    Mf::FindMsb => Function::MissingIntReturnType("firstbithigh"),
+                    Mf::FirstTrailingBit => Function::MissingIntReturnType("firstbitlow"),
+                    Mf::FirstLeadingBit => Function::MissingIntReturnType("firstbithigh"),
                     Mf::ExtractBits => Function::Regular(EXTRACT_BITS_FUNCTION),
                     Mf::InsertBits => Function::Regular(INSERT_BITS_FUNCTION),
                     

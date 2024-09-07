@@ -202,13 +202,10 @@
 
 
 
-
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![allow(
     
     clippy::arc_with_non_send_sync,
-    
-    unknown_lints,
     
     clippy::match_like_matches_macro,
     
@@ -222,8 +219,6 @@
     
     clippy::vec_init_then_push,
     
-    clippy::if_then_panic,
-    
     clippy::non_send_fields_in_send_ty,
     
     clippy::missing_safety_doc,
@@ -231,6 +226,7 @@
     clippy::pattern_type_mismatch,
 )]
 #![warn(
+    clippy::ptr_as_ptr,
     trivial_casts,
     trivial_numeric_casts,
     unsafe_op_in_unsafe_fn,
@@ -447,7 +443,6 @@ pub trait Instance: Sized + WasmNotSendSync {
         display_handle: raw_window_handle::RawDisplayHandle,
         window_handle: raw_window_handle::RawWindowHandle,
     ) -> Result<<Self::A as Api>::Surface, InstanceError>;
-    unsafe fn destroy_surface(&self, surface: <Self::A as Api>::Surface);
     
     unsafe fn enumerate_adapters(
         &self,
@@ -894,6 +889,10 @@ pub trait Device: WasmNotSendSync {
     );
 
     fn get_internal_counters(&self) -> wgt::HalCounters;
+
+    fn generate_allocator_report(&self) -> Option<wgt::AllocatorReport> {
+        None
+    }
 }
 
 pub trait Queue: WasmNotSendSync {
@@ -1866,8 +1865,6 @@ pub struct ProgrammableStage<'a, A: Api> {
     
     
     pub zero_initialize_workgroup_memory: bool,
-    
-    pub vertex_pulling_transform: bool,
 }
 
 
@@ -1878,7 +1875,6 @@ impl<A: Api> Clone for ProgrammableStage<'_, A> {
             entry_point: self.entry_point,
             constants: self.constants,
             zero_initialize_workgroup_memory: self.zero_initialize_workgroup_memory,
-            vertex_pulling_transform: self.vertex_pulling_transform,
         }
     }
 }

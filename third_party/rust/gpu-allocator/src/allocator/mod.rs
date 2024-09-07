@@ -1,4 +1,4 @@
-use std::{backtrace::Backtrace, sync::Arc};
+use std::{backtrace::Backtrace, fmt, ops::Range, sync::Arc};
 
 use log::*;
 
@@ -29,12 +29,75 @@ impl AllocationType {
     }
 }
 
+
 #[derive(Clone)]
-pub(crate) struct AllocationReport {
-    pub(crate) name: String,
-    pub(crate) size: u64,
+pub struct AllocationReport {
+    
+    pub name: String,
+    
+    pub offset: u64,
+    
+    pub size: u64,
     #[cfg(feature = "visualizer")]
     pub(crate) backtrace: Arc<Backtrace>,
+}
+
+
+#[derive(Clone)]
+pub struct MemoryBlockReport {
+    
+    pub size: u64,
+    
+    
+    pub allocations: Range<usize>,
+}
+
+
+#[derive(Clone)]
+pub struct AllocatorReport {
+    
+    pub allocations: Vec<AllocationReport>,
+    
+    pub blocks: Vec<MemoryBlockReport>,
+    
+    pub total_allocated_bytes: u64,
+    
+    pub total_reserved_bytes: u64,
+}
+
+impl fmt::Debug for AllocationReport {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = if !self.name.is_empty() {
+            self.name.as_str()
+        } else {
+            "--"
+        };
+        write!(f, "{name:?}: {}", fmt_bytes(self.size))
+    }
+}
+
+impl fmt::Debug for AllocatorReport {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut allocations = self.allocations.clone();
+        allocations.sort_by_key(|alloc| std::cmp::Reverse(alloc.size));
+
+        let max_num_allocations_to_print = f.precision().unwrap_or(usize::MAX);
+        allocations.truncate(max_num_allocations_to_print);
+
+        f.debug_struct("AllocatorReport")
+            .field(
+                "summary",
+                &std::format_args!(
+                    "{} / {}",
+                    fmt_bytes(self.total_allocated_bytes),
+                    fmt_bytes(self.total_reserved_bytes)
+                ),
+            )
+            .field("blocks", &self.blocks.len())
+            .field("allocations", &self.allocations.len())
+            .field("largest", &allocations.as_slice())
+            .finish()
+    }
 }
 
 #[cfg(feature = "visualizer")]
@@ -42,7 +105,7 @@ pub(crate) trait SubAllocatorBase: crate::visualizer::SubAllocatorVisualizer {}
 #[cfg(not(feature = "visualizer"))]
 pub(crate) trait SubAllocatorBase {}
 
-pub(crate) trait SubAllocator: SubAllocatorBase + std::fmt::Debug + Sync + Send {
+pub(crate) trait SubAllocator: SubAllocatorBase + fmt::Debug + Sync + Send {
     fn allocate(
         &mut self,
         size: u64,
@@ -73,15 +136,7 @@ pub(crate) trait SubAllocator: SubAllocatorBase + std::fmt::Debug + Sync + Send 
     #[must_use]
     fn supports_general_allocations(&self) -> bool;
     #[must_use]
-    fn size(&self) -> u64;
-    #[must_use]
     fn allocated(&self) -> u64;
-
-    
-    #[must_use]
-    fn available_memory(&self) -> u64 {
-        self.size() - self.allocated()
-    }
 
     
     #[must_use]
@@ -89,8 +144,6 @@ pub(crate) trait SubAllocator: SubAllocatorBase + std::fmt::Debug + Sync + Send 
         self.allocated() == 0
     }
 }
-
-pub(crate) const VISUALIZER_TABLE_MAX_ENTRY_NAME_LEN: usize = 40;
 
 pub(crate) fn fmt_bytes(mut amount: u64) -> String {
     const SUFFIX: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];

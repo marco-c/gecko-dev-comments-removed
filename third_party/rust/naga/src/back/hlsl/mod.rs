@@ -327,6 +327,7 @@ pub struct Writer<'a, W> {
     
     named_expressions: crate::NamedExpressions,
     wrapped: Wrapped,
+    continue_ctx: back::continue_forward::ContinueCtx,
 
     
     

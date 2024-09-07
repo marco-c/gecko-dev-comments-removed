@@ -67,7 +67,7 @@ impl<T: Clone> ResourceMetadata<T> {
 
     
     pub(super) fn contains(&self, index: usize) -> bool {
-        self.owned[index]
+        self.owned.get(index).unwrap_or(false)
     }
 
     

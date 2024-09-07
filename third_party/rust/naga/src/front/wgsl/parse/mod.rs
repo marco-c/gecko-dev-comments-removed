@@ -40,6 +40,27 @@ struct ExpressionContext<'input, 'temp, 'out> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     locals: &'out mut Arena<ast::Local>,
 
     
@@ -2158,7 +2179,6 @@ impl Parser {
             arguments,
             result,
             body,
-            locals,
         };
 
         

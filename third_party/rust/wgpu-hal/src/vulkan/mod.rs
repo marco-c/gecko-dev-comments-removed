@@ -24,7 +24,6 @@
 
 
 
-
 mod adapter;
 mod command;
 mod conv;
@@ -714,7 +713,6 @@ impl Temp {
         self.marker.clear();
         self.buffer_barriers.clear();
         self.image_barriers.clear();
-        
     }
 
     fn make_c_str(&mut self, name: &str) -> &CStr {

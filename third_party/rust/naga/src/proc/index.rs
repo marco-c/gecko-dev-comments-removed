@@ -113,12 +113,6 @@ pub struct BoundsCheckPolicies {
     
     
     
-    #[cfg_attr(feature = "deserialize", serde(default))]
-    pub image_load: BoundsCheckPolicy,
-
-    
-    
-    
     
     
     
@@ -126,7 +120,7 @@ pub struct BoundsCheckPolicies {
     
     
     #[cfg_attr(feature = "deserialize", serde(default))]
-    pub image_store: BoundsCheckPolicy,
+    pub image_load: BoundsCheckPolicy,
 
     
     #[cfg_attr(feature = "deserialize", serde(default))]
@@ -173,10 +167,7 @@ impl BoundsCheckPolicies {
 
     
     pub fn contains(&self, policy: BoundsCheckPolicy) -> bool {
-        self.index == policy
-            || self.buffer == policy
-            || self.image_load == policy
-            || self.image_store == policy
+        self.index == policy || self.buffer == policy || self.image_load == policy
     }
 }
 
