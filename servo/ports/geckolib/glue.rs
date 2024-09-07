@@ -9298,6 +9298,7 @@ pub unsafe extern "C" fn Servo_Value_Matches_Syntax(
         AllowComputationallyDependent,
         SpecifiedValue,
     };
+    use crate::style::properties::CSSWideKeyword;
 
     
     let syntax = unsafe { syntax.as_str_unchecked() };
@@ -9309,6 +9310,12 @@ pub unsafe extern "C" fn Servo_Value_Matches_Syntax(
     let mut input = ParserInput::new(css_text);
     let mut input = Parser::new(&mut input);
     input.skip_whitespace();
+
+    
+    if input.try_parse(CSSWideKeyword::parse).is_ok() {
+        return true;
+    }
+
     let url_data = unsafe { UrlExtraData::from_ptr_ref(&extra_data) };
 
     SpecifiedValue::parse(
