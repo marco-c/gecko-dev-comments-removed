@@ -51,7 +51,7 @@ class nsHTMLCanvasFrame final : public nsContainerFrame {
   
   mozilla::CSSIntSize GetCanvasSize() const;
 
-  nscoord IntrinsicISize(gfxContext* aContext,
+  nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
                          mozilla::IntrinsicISizeType aType) override;
 
   virtual mozilla::IntrinsicSize GetIntrinsicSize() override;

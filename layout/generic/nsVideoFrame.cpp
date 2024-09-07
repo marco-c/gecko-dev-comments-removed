@@ -373,7 +373,7 @@ nsIFrame::SizeComputationResult nsVideoFrame::ComputeSize(
           AspectRatioUsage::None};
 }
 
-nscoord nsVideoFrame::IntrinsicISize(gfxContext* aContext,
+nscoord nsVideoFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                      IntrinsicISizeType aType) {
   
   return GetIntrinsicSize().ISize(GetWritingMode()).valueOr(0);

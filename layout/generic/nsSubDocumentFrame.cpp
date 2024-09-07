@@ -555,7 +555,7 @@ nsresult nsSubDocumentFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
-nscoord nsSubDocumentFrame::IntrinsicISize(gfxContext* aContext,
+nscoord nsSubDocumentFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                            IntrinsicISizeType aType) {
   
   

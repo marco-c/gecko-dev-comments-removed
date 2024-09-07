@@ -84,8 +84,9 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
     
     AutoMaybeDisableFontInflation an(aFrame);
 
-    minCoord = aFrame->GetMinISize(aRenderingContext);
-    prefCoord = aFrame->GetPrefISize(aRenderingContext);
+    const IntrinsicSizeInput input(aRenderingContext);
+    minCoord = aFrame->GetMinISize(input);
+    prefCoord = aFrame->GetPrefISize(input);
     
     
     
