@@ -45,6 +45,17 @@ interface nsIPermissionManager : nsISupports
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   const uint32_t UNKNOWN_ACTION = 0;
   const uint32_t ALLOW_ACTION = 1;
   const uint32_t DENY_ACTION = 2;
