@@ -121,11 +121,6 @@ class AudioDestinationNode final : public AudioNode,
   RefPtr<Promise> mOfflineRenderingPromise;
 
   bool mIsOffline;
-
-  
-  
-  TimeStamp mCreatedTime;
-  TimeDuration mDurationBeforeFirstTimeAudible;
 };
 
 }  
