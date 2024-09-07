@@ -234,14 +234,10 @@ void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
 }
 
 nsToolkitProfile::nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
-                                   nsIFile* aLocalDir, bool aFromDB,
-                                   const nsACString& aStoreID = VoidCString(),
-                                   bool aShowProfileSelector = false)
+                                   nsIFile* aLocalDir, bool aFromDB)
     : mName(aName),
       mRootDir(aRootDir),
       mLocalDir(aLocalDir),
-      mStoreID(aStoreID),
-      mShowProfileSelector(aShowProfileSelector),
       mLock(nullptr),
       mIndex(0),
       mSection("Profile") {
@@ -268,12 +264,6 @@ nsToolkitProfile::nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
 
     db->SetString(mSection.get(), "IsRelative", isRelative ? "1" : "0");
     db->SetString(mSection.get(), "Path", descriptor.get());
-    if (!mStoreID.IsVoid()) {
-      db->SetString(mSection.get(), "StoreID",
-                    PromiseFlatCString(mStoreID).get());
-      db->SetString(mSection.get(), "ShowSelector",
-                    aShowProfileSelector ? "1" : "0");
-    }
   }
 }
 
@@ -283,109 +273,6 @@ NS_IMETHODIMP
 nsToolkitProfile::GetRootDir(nsIFile** aResult) {
   NS_ADDREF(*aResult = mRootDir);
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsToolkitProfile::SetRootDir(nsIFile* aRootDir) {
-  NS_ASSERTION(nsToolkitProfileService::gService, "Where did my service go?");
-
-  
-  bool equals;
-  nsresult rv = mRootDir->Equals(aRootDir, &equals);
-  if (NS_SUCCEEDED(rv) && equals) {
-    return NS_OK;
-  }
-
-  
-  nsCString newPath;
-  bool isRelative;
-  rv = nsToolkitProfileService::gService->GetProfileDescriptor(
-      aRootDir, newPath, &isRelative);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIFile> localDir;
-  if (isRelative) {
-    rv = NS_NewNativeLocalFile(""_ns, true, getter_AddRefs(localDir));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = localDir->SetRelativeDescriptor(
-        nsToolkitProfileService::gService->mTempData, newPath);
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    localDir = aRootDir;
-  }
-
-  
-  nsINIParser* db = &nsToolkitProfileService::gService->mProfileDB;
-  rv = db->SetString(mSection.get(), "Path", newPath.get());
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = db->SetString(mSection.get(), "IsRelative", isRelative ? "1" : "0");
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  if (nsToolkitProfileService::gService->mDedicatedProfile == this) {
-    rv = db->SetString(nsToolkitProfileService::gService->mInstallSection.get(),
-                       "Default", newPath.get());
-  }
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  mRootDir = aRootDir;
-  mLocalDir = localDir;
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsToolkitProfile::GetStoreID(nsACString& aResult) {
-  aResult = mStoreID;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsToolkitProfile::SetStoreID(const nsACString& aStoreID) {
-#ifdef MOZ_SELECTABLE_PROFILES
-  NS_ASSERTION(nsToolkitProfileService::gService, "Where did my service go?");
-
-  
-  if (mStoreID.Equals(aStoreID)) {
-    return NS_OK;
-  }
-
-  
-  
-  nsresult rv;
-  if (!aStoreID.IsVoid()) {
-    rv = nsToolkitProfileService::gService->mProfileDB.SetString(
-        mSection.get(), "StoreID", PromiseFlatCString(aStoreID).get());
-  } else {
-    rv = nsToolkitProfileService::gService->mProfileDB.DeleteString(
-        mSection.get(), "StoreID");
-
-    
-    if (rv == NS_ERROR_FAILURE) {
-      rv = NS_OK;
-    }
-
-    
-    
-    mShowProfileSelector = false;
-    rv = nsToolkitProfileService::gService->mProfileDB.DeleteString(
-        mSection.get(), "ShowSelector");
-    if (rv == NS_ERROR_FAILURE) {
-      rv = NS_OK;
-    }
-  }
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mStoreID = aStoreID;
-
-  return NS_OK;
-#else
-  return NS_ERROR_FAILURE;
-#endif
 }
 
 NS_IMETHODIMP
@@ -429,41 +316,6 @@ nsToolkitProfile::SetName(const nsACString& aName) {
   }
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsToolkitProfile::GetShowProfileSelector(bool* aShowProfileSelector) {
-#ifdef MOZ_SELECTABLE_PROFILES
-  *aShowProfileSelector = mShowProfileSelector;
-#else
-  *aShowProfileSelector = false;
-#endif
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsToolkitProfile::SetShowProfileSelector(bool aShowProfileSelector) {
-#ifdef MOZ_SELECTABLE_PROFILES
-  NS_ASSERTION(nsToolkitProfileService::gService, "Where did my service go?");
-
-  
-  if (mStoreID.IsVoid()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (mShowProfileSelector == aShowProfileSelector) {
-    return NS_OK;
-  }
-
-  nsresult rv = nsToolkitProfileService::gService->mProfileDB.SetString(
-      mSection.get(), "ShowSelector", aShowProfileSelector ? "1" : "0");
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mShowProfileSelector = aShowProfileSelector;
-  return NS_OK;
-#else
-  return NS_ERROR_FAILURE;
-#endif
 }
 
 nsresult nsToolkitProfile::RemoveInternal(bool aRemoveFiles,
@@ -1140,26 +992,7 @@ nsresult nsToolkitProfileService::Init() {
       localDir = rootDir;
     }
 
-    nsCString storeID;
-    bool showProfileSelector = false;
-
-    rv = mProfileDB.GetString(profileID.get(), "StoreID", storeID);
-
-    
-    if (NS_FAILED(rv) && rv == NS_ERROR_FAILURE) {
-      storeID = VoidCString();
-    }
-
-    
-    if (!storeID.IsVoid()) {
-      rv = mProfileDB.GetString(profileID.get(), "ShowSelector", buffer);
-      if (NS_SUCCEEDED(rv)) {
-        showProfileSelector = buffer.EqualsLiteral("1");
-      }
-    }
-
-    currentProfile = new nsToolkitProfile(name, rootDir, localDir, true,
-                                          storeID, showProfileSelector);
+    currentProfile = new nsToolkitProfile(name, rootDir, localDir, true);
 
     
     
@@ -1349,23 +1182,17 @@ nsresult nsToolkitProfileService::GetProfileDescriptor(
   nsresult rv = aProfile->GetRootDir(getter_AddRefs(profileDir));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return GetProfileDescriptor(profileDir, aDescriptor, aIsRelative);
-}
-
-nsresult nsToolkitProfileService::GetProfileDescriptor(nsIFile* aRootDir,
-                                                       nsACString& aDescriptor,
-                                                       bool* aIsRelative) {
   
   bool isRelative;
-  nsresult rv = mAppData->Contains(aRootDir, &isRelative);
+  rv = mAppData->Contains(profileDir, &isRelative);
 
   nsCString profilePath;
   if (NS_SUCCEEDED(rv) && isRelative) {
     
-    rv = aRootDir->GetRelativeDescriptor(mAppData, profilePath);
+    rv = profileDir->GetRelativeDescriptor(mAppData, profilePath);
   } else {
     
-    rv = aRootDir->GetPersistentDescriptor(profilePath);
+    rv = profileDir->GetPersistentDescriptor(profilePath);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
