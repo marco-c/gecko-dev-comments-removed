@@ -478,21 +478,9 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
         SECItem candidateCertDERSECItem =
             UnsafeMapInputToSECItem(candidateCertDER);
 
-    
-    
-    
-#ifndef MOZ_WIDGET_ANDROID
-        auto timerId =
-            mozilla::glean::cert_verifier::cert_trust_evaluation_time.Start();
-#endif
         UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
             CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false,
             true));
-
-#ifndef MOZ_WIDGET_ANDROID
-        mozilla::glean::cert_verifier::cert_trust_evaluation_time
-            .StopAndAccumulate(std::move(timerId));
-#endif
         if (!candidateCert) {
           result = MapPRErrorCodeToResult(PR_GetError());
           return;
