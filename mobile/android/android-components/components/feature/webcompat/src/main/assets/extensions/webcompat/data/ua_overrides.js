@@ -1386,6 +1386,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1898941",
+    platform: "all",
+    domain: "events.webinar.ru",
+    bug: "1898941",
+    config: {
+      matches: ["*://events.webinar.ru/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
