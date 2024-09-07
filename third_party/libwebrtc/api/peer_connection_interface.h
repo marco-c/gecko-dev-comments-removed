@@ -1221,6 +1221,10 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   virtual rtc::Thread* signaling_thread() const = 0;
 
+  
+  
+  virtual NetworkControllerInterface* GetNetworkController() = 0;
+
  protected:
   
   ~PeerConnectionInterface() override = default;

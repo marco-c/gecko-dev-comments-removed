@@ -105,6 +105,10 @@ class MockRtpTransportControllerSend
   MOCK_METHOD(void, IncludeOverheadInPacedSender, (), (override));
   MOCK_METHOD(void, OnReceivedPacket, (const ReceivedPacket&), (override));
   MOCK_METHOD(void, EnsureStarted, (), (override));
+  MOCK_METHOD(NetworkControllerInterface*,
+              GetNetworkController,
+              (),
+              (override));
 };
 }  
 #endif  
