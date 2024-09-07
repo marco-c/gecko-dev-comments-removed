@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include <windows.h>
 #include <wrl.h>
@@ -30,12 +30,12 @@
 #include "nsWindowGfx.h"
 #include "Units.h"
 
-/* mingw currently doesn't support windows.ui.viewmanagement.h, so we disable it
- * until it's fixed. */
 
-// See
-// https://github.com/tpn/winsdk-10/blob/master/Include/10.0.14393.0/winrt/windows.ui.viewmanagement.h
-// for the source of some of these definitions for older SDKs.
+
+
+
+
+
 #ifndef __MINGW32__
 
 #  include <inspectable.h>
@@ -116,10 +116,10 @@ interface IUISettingsAutoHideScrollBarsChangedEventArgs;
 MIDL_INTERFACE("87afd4b2-9146-5f02-8f6b-06d454174c0f")
 IUISettingsAutoHideScrollBarsChangedEventArgs : public IInspectable{};
 
-}  // namespace ViewManagement
-}  // namespace UI
-}  // namespace Windows
-}  // namespace ABI
+}  
+}  
+}  
+}  
 
 namespace ABI {
 namespace Windows {
@@ -146,9 +146,9 @@ ITypedEventHandler<ABI::Windows::UI::ViewManagement::UISettings*,
            L"UISettingsAutoHideScrollBarsChangedEventArgs>";
   }
 };
-// Define a typedef for the parameterized interface specialization's mangled
-// name. This allows code which uses the mangled name for the parameterized
-// interface to access the correct parameterized interface specialization.
+
+
+
 typedef ITypedEventHandler<ABI::Windows::UI::ViewManagement::UISettings*,
                            ABI::Windows::UI::ViewManagement::
                                UISettingsAutoHideScrollBarsChangedEventArgs*>
@@ -157,9 +157,9 @@ typedef ITypedEventHandler<ABI::Windows::UI::ViewManagement::UISettings*,
       ABI::Windows::Foundation::                                                                                                                            \
           __FITypedEventHandler_2_Windows__CUI__CViewManagement__CUISettings_Windows__CUI__CViewManagement__CUISettingsAutoHideScrollBarsChangedEventArgs_t
 
-}  // namespace Foundation
-}  // namespace Windows
-}  // namespace ABI
+}  
+}  
+}  
 
 namespace ABI {
 namespace Windows {
@@ -179,10 +179,10 @@ IUISettings5 : public IInspectable {
   virtual HRESULT STDMETHODCALLTYPE remove_AutoHideScrollBarsChanged(
       EventRegistrationToken token) = 0;
 };
-}  // namespace ViewManagement
-}  // namespace UI
-}  // namespace Windows
-}  // namespace ABI
+}  
+}  
+}  
+}  
 #  endif
 #endif
 
@@ -299,8 +299,8 @@ WindowsUIUtils::GetInTabletMode(bool* aResult) {
 static IInspectable* GetUISettings() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 #ifndef __MINGW32__
-  // We need to keep this alive for ~ever so that change callbacks work as
-  // expected, sigh.
+  
+  
   static StaticRefPtr<IInspectable> sUiSettingsAsInspectable;
 
   if (!sUiSettingsAsInspectable) {
@@ -319,7 +319,7 @@ static IInspectable* GetUISettings() {
       auto callback = Callback<ITypedEventHandler<
           UISettings*, UISettingsAutoHideScrollBarsChangedEventArgs*>>(
           [](auto...) {
-            // Scrollbar sizes change layout.
+            
             LookAndFeel::NotifyChangedAllWindows(
                 widget::ThemeChangeKind::StyleAndLayout);
             return S_OK;
@@ -333,7 +333,7 @@ static IInspectable* GetUISettings() {
       EventRegistrationToken unusedToken;
       auto callback =
           Callback<ITypedEventHandler<UISettings*, IInspectable*>>([](auto...) {
-            // Text scale factor changes style and layout.
+            
             LookAndFeel::NotifyChangedAllWindows(
                 widget::ThemeChangeKind::StyleAndLayout);
             return S_OK;
@@ -347,7 +347,7 @@ static IInspectable* GetUISettings() {
       EventRegistrationToken unusedToken;
       auto callback =
           Callback<ITypedEventHandler<UISettings*, IInspectable*>>([](auto...) {
-            // System color changes change style only.
+            
             LookAndFeel::NotifyChangedAllWindows(
                 widget::ThemeChangeKind::Style);
             return S_OK;
@@ -361,7 +361,7 @@ static IInspectable* GetUISettings() {
       EventRegistrationToken unusedToken;
       auto callback =
           Callback<ITypedEventHandler<UISettings*, IInspectable*>>([](auto...) {
-            // Transparent effects changes change media queries only.
+            
             LookAndFeel::NotifyChangedAllWindows(
                 widget::ThemeChangeKind::MediaQueriesOnly);
             return S_OK;
@@ -410,8 +410,8 @@ Maybe<nscolor> WindowsUIUtils::GetSystemColor(ColorScheme aScheme,
     return Nothing();
   }
 
-  // https://docs.microsoft.com/en-us/windows/apps/design/style/color
-  // Is a useful resource to see which values have decent contrast.
+  
+  
   if (StaticPrefs::widget_windows_uwp_system_colors_highlight_accent()) {
     if (aSysColor == COLOR_HIGHLIGHT) {
       int tone = aScheme == ColorScheme::Light ? 0 : -1;
@@ -425,8 +425,8 @@ Maybe<nscolor> WindowsUIUtils::GetSystemColor(ColorScheme aScheme,
   }
 
   if (aScheme == ColorScheme::Dark) {
-    // There are no explicitly dark colors in UWP, other than the highlight
-    // colors above.
+    
+    
     return Nothing();
   }
 
@@ -475,9 +475,9 @@ Maybe<nscolor> WindowsUIUtils::GetSystemColor(ColorScheme aScheme,
 bool WindowsUIUtils::ComputeOverlayScrollbars() {
 #ifndef __MINGW32__
   if (!IsWin11OrLater()) {
-    // While in theory Windows 10 supports overlay scrollbar settings, it's off
-    // by default and it's untested whether our Win10 scrollbar drawing code
-    // deals with it properly.
+    
+    
+    
     return false;
   }
   if (!StaticPrefs::widget_windows_overlay_scrollbars_enabled()) {
@@ -557,14 +557,7 @@ void WindowsUIUtils::UpdateInTabletMode() {
 
   rv = winMediator->GetMostRecentBrowserWindow(getter_AddRefs(navWin));
   if (NS_FAILED(rv) || !navWin) {
-    // Fall back to the hidden window
-    nsCOMPtr<nsIAppShellService> appShell(
-        do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
-
-    rv = appShell->GetHiddenDOMWindow(getter_AddRefs(navWin));
-    if (NS_FAILED(rv) || !navWin) {
-      return;
-    }
+    return;
   }
 
   nsPIDOMWindowOuter* win = nsPIDOMWindowOuter::From(navWin);
@@ -691,8 +684,8 @@ static Result<Ok, nsresult> AddShareEventListeners(
 
   ComPtr<IDataPackage4> spDataPackage4;
   if (SUCCEEDED(aDataPackage.As(&spDataPackage4))) {
-    // Use SharedCanceled API only on supported versions of Windows
-    // So that the older ones can still use ShareUrl()
+    
+    
 
     auto canceledCallback =
         Callback<ITypedEventHandler<DataPackage*, IInspectable*>>(
@@ -735,11 +728,11 @@ RefPtr<SharePromise> WindowsUIUtils::Share(nsAutoString aTitle,
       return E_FAIL;
     }
 
-    /*
-     * Windows always requires a title, and an empty string does not work.
-     * Thus we trick the API by passing a whitespace when we have no title.
-     * https://docs.microsoft.com/en-us/windows/uwp/app-to-app/share-data
-     */
+    
+
+
+
+
     auto wTitle = ConvertToWindowsString((title.IsVoid() || title.Length() == 0)
                                              ? nsAutoString(u" "_ns)
                                              : title);
@@ -749,7 +742,7 @@ RefPtr<SharePromise> WindowsUIUtils::Share(nsAutoString aTitle,
       return E_FAIL;
     }
 
-    // Assign even if empty, as Windows requires some data to share
+    
     auto wText = ConvertToWindowsString(text);
     if (wText.isErr() || FAILED(spDataPackage->SetText(wText.unwrap().get()))) {
       promiseHolder->Reject(NS_ERROR_FAILURE, __func__);
