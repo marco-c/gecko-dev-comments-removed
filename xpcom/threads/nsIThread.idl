@@ -207,8 +207,6 @@ interface nsIThread : nsISerialEventTarget
 
   [noscript] void setRunningEventDelay(in TimeDuration delay, in TimeStamp start);
 
-  [noscript] void setNameForWakeupTelemetry(in ACString name);
-
   
 
 
