@@ -10,7 +10,6 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Credential.h"
 #include "mozilla/dom/IPCIdentityCredential.h"
-#include "nsICredentialChosenCallback.h"
 #include "mozilla/IdentityCredentialStorageService.h"
 #include "mozilla/MozPromise.h"
 
@@ -98,19 +97,9 @@ class IdentityCredential final : public Credential {
   
   void GetOrigin(nsACString& aOrigin, ErrorResult& aError) const;
 
-  static nsresult ShowCredentialChooser(
-      const RefPtr<CanonicalBrowsingContext>& aContext,
-      const nsTArray<IPCIdentityCredential>& aCredentials,
-      const RefPtr<nsICredentialChosenCallback>& aCallback);
-
-  static void GetCredential(nsPIDOMWindowInner* aParent,
-                            const CredentialRequestOptions& aOptions,
-                            bool aSameOriginWithAncestors,
-                            const RefPtr<Promise>& aPromise);
-
-  static RefPtr<GetIPCIdentityCredentialPromise> GetCredentialInMainProcess(
-      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions);
+  static RefPtr<GetIdentityCredentialsPromise> CollectFromCredentialStore(
+      nsPIDOMWindowInner* aParent, const CredentialRequestOptions& aOptions,
+      bool aSameOriginWithAncestors);
 
   static RefPtr<GenericPromise> AllowedToCollectCredential(
       nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
@@ -136,6 +125,14 @@ class IdentityCredential final : public Credential {
   
   
   
+  static void DiscoverFromExternalSource(
+      nsPIDOMWindowInner* aParent,
+      const IdentityCredentialRequestOptions& aOptions,
+      bool aSameOriginWithAncestors, const RefPtr<Promise>& aPromise);
+
+  
+  
+  
   
   
   
@@ -149,11 +146,6 @@ class IdentityCredential final : public Credential {
   
   static RefPtr<GetIPCIdentityCredentialPromise>
   DiscoverFromExternalSourceInMainProcess(
-      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions);
-
-  static RefPtr<GetIPCIdentityCredentialPromise>
-  DiscoverLightweightFromExternalSourceInMainProcess(
       nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
       const IdentityCredentialRequestOptions& aOptions);
 
