@@ -13,8 +13,10 @@ const kElementwiseLogicalBinaryOperators = [
 ];
 
 kElementwiseLogicalBinaryOperators.forEach((operatorName) => {
+  validateTwoInputsOfSameDataType(operatorName);
   validateTwoInputsFromMultipleBuilders(operatorName);
+  validateTwoInputsBroadcastable(operatorName);
 });
 
 
-validateInputFromAnotherBuilder('not');
+validateInputFromAnotherBuilder('logicalNot');
