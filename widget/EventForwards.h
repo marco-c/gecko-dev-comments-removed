@@ -90,6 +90,18 @@ const char* ToChar(EventMessage aEventMessage);
 
 
 
+
+
+
+
+
+[[nodiscard]] bool IsForbiddenDispatchingToNonElementContent(
+    EventMessage aMessage);
+
+
+
+
+
 typedef uint8_t EventClassIDType;
 
 enum EventClassID : EventClassIDType {

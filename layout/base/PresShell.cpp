@@ -39,6 +39,7 @@
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementBinding.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/FragmentDirective.h"
 #include "mozilla/dom/HTMLAreaElement.h"
@@ -2148,7 +2149,7 @@ void PresShell::NativeAnonymousContentRemoved(nsIContent* aAnonContent) {
   if (nsIContent* root =
           GetNativeAnonymousSubtreeRoot(mCurrentEventTarget.mContent)) {
     if (aAnonContent == root) {
-      mCurrentEventTarget.SetFrameAndContent(
+      mCurrentEventTarget.UpdateFrameAndContent(
           nullptr, aAnonContent->GetFlattenedTreeParent());
     }
   }
@@ -2156,7 +2157,7 @@ void PresShell::NativeAnonymousContentRemoved(nsIContent* aAnonContent) {
   for (EventTargetInfo& eventTargetInfo : mCurrentEventTargetStack) {
     nsIContent* anon = GetNativeAnonymousSubtreeRoot(eventTargetInfo.mContent);
     if (aAnonContent == anon) {
-      eventTargetInfo.SetFrameAndContent(
+      eventTargetInfo.UpdateFrameAndContent(
           nullptr, aAnonContent->GetFlattenedTreeParent());
     }
   }
@@ -2189,15 +2190,29 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
     
     aFrame->RemoveAllProperties();
 
+    const auto ComputeTargetContent =
+        [&aFrame](const EventTargetInfo& aEventTargetInfo) -> nsIContent* {
+      if (!IsForbiddenDispatchingToNonElementContent(
+              aEventTargetInfo.mEventMessage)) {
+        return aFrame->GetContent();
+      }
+      return aFrame->GetContent()
+                 ? aFrame->GetContent()
+                       ->GetInclusiveFlattenedTreeAncestorElement()
+                 : nullptr;
+    };
+
     if (aFrame == mCurrentEventTarget.mFrame) {
-      mCurrentEventTarget.SetFrameAndContent(nullptr, aFrame->GetContent());
+      mCurrentEventTarget.UpdateFrameAndContent(
+          nullptr, ComputeTargetContent(mCurrentEventTarget));
     }
 
     for (EventTargetInfo& eventTargetInfo : mCurrentEventTargetStack) {
       if (aFrame == eventTargetInfo.mFrame) {
         
         
-        eventTargetInfo.SetFrameAndContent(nullptr, aFrame->GetContent());
+        eventTargetInfo.UpdateFrameAndContent(
+            nullptr, ComputeTargetContent(eventTargetInfo));
       }
     }
 
@@ -7297,7 +7312,8 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   
   
   EventHandler eventHandler(*eventTargetData.mPresShell);
-  AutoCurrentEventInfoSetter eventInfoSetter(eventHandler, eventTargetData);
+  AutoCurrentEventInfoSetter eventInfoSetter(eventHandler, aGUIEvent->mMessage,
+                                             eventTargetData);
   
   
   nsresult rv = eventHandler.HandleEventWithCurrentEventInfo(
@@ -8218,8 +8234,8 @@ nsresult PresShell::EventHandler::HandleEventAtFocusedContent(
 
   
   
-  mPresShell->mCurrentEventTarget.SetFrameAndContent(nullptr,
-                                                     eventTargetElement);
+  mPresShell->mCurrentEventTarget.SetFrameAndContent(
+      aGUIEvent->mMessage, nullptr, eventTargetElement);
   if (!mPresShell->GetCurrentEventContent() ||
       !mPresShell->GetCurrentEventFrame() ||
       InZombieDocument(mPresShell->mCurrentEventTarget.mContent)) {
@@ -8321,7 +8337,7 @@ nsresult PresShell::EventHandler::HandleEventWithFrameForPresShell(
   MOZ_ASSERT(aEventStatus);
 
   AutoCurrentEventInfoSetter eventInfoSetter(
-      *this, EventTargetInfo(aFrameForPresShell, nullptr));
+      *this, EventTargetInfo(aGUIEvent->mMessage, aFrameForPresShell, nullptr));
 
   nsresult rv = NS_OK;
   if (mPresShell->GetCurrentEventFrame()) {
@@ -8387,7 +8403,8 @@ nsresult PresShell::EventHandler::HandleEventWithTarget(
   AutoPointerEventTargetUpdater updater(mPresShell, aEvent, aNewEventFrame,
                                         aNewEventContent, aTargetContent);
   AutoCurrentEventInfoSetter eventInfoSetter(
-      *this, EventTargetInfo(aNewEventFrame, aNewEventContent));
+      *this,
+      EventTargetInfo(aEvent->mMessage, aNewEventFrame, aNewEventContent));
   nsresult rv = HandleEventWithCurrentEventInfo(aEvent, aEventStatus, false,
                                                 aOverrideClickTarget);
   return rv;
@@ -8997,6 +9014,18 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
     } else {
       if (aEvent->IsMouseEventClassOrHasClickRelatedPointerEvent()) {
         PresShell::sMouseButtons = aEvent->AsMouseEvent()->mButtons;
+#ifdef DEBUG
+        if (eventTarget->IsContent() && !eventTarget->IsElement()) {
+          NS_WARNING(nsPrintfCString(
+                         "%s (IsReal()=%s) target is not an elemnet content "
+                         "node, %s\n",
+                         ToChar(aEvent->mMessage),
+                         aEvent->AsMouseEvent()->IsReal() ? "true" : "false",
+                         ToString(*eventTarget).c_str())
+                         .get());
+          MOZ_CRASH("MouseEvent target must be an element");
+        }
+#endif  
       }
       RefPtr<nsPresContext> presContext = GetPresContext();
       EventDispatcher::Dispatch(eventTarget, presContext, aEvent, nullptr,
@@ -9057,8 +9086,8 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
       if (contentPresShell) {
         
         
-        contentPresShell->PushCurrentEventInfo(
-            EventTargetInfo(content->GetPrimaryFrame(), content));
+        contentPresShell->PushCurrentEventInfo(EventTargetInfo(
+            newEvent.mMessage, content->GetPrimaryFrame(), content));
       }
     }
 
@@ -9101,7 +9130,8 @@ nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
                                              nsEventStatus* aStatus) {
   nsresult rv = NS_OK;
 
-  PushCurrentEventInfo(EventTargetInfo(nullptr, aTargetContent));
+  PushCurrentEventInfo(
+      EventTargetInfo(aEvent->mMessage, nullptr, aTargetContent));
 
   
   
@@ -9125,7 +9155,8 @@ nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
                                              nsEventStatus* aStatus) {
   nsresult rv = NS_OK;
 
-  PushCurrentEventInfo(EventTargetInfo(nullptr, aTargetContent));
+  PushCurrentEventInfo(EventTargetInfo(aEvent->WidgetEventPtr()->mMessage,
+                                       nullptr, aTargetContent));
   nsCOMPtr<nsISupports> container = mPresContext->GetContainerWeak();
   if (container) {
     rv = EventDispatcher::DispatchDOMEvent(aTargetContent, nullptr, aEvent,
@@ -9157,7 +9188,11 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
           widgetPoint;
 
       mPresShell->mCurrentEventTarget.SetFrameAndContent(
-          itemFrame, itemFrame->GetContent());
+          aMouseEvent->mMessage, itemFrame,
+          itemFrame->GetContent()
+              ? itemFrame->GetContent()
+                    ->GetInclusiveFlattenedTreeAncestorElement()
+              : nullptr);
 
       return true;
     }
@@ -9220,8 +9255,8 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
         currentFocus, getter_AddRefs(currentPointElement),
         aMouseEvent->mRefPoint, MOZ_KnownLive(aMouseEvent->mWidget));
     if (currentPointElement) {
-      mPresShell->mCurrentEventTarget.SetFrameAndContent(nullptr,
-                                                         currentPointElement);
+      mPresShell->mCurrentEventTarget.SetFrameAndContent(
+          aMouseEvent->mMessage, nullptr, currentPointElement);
       mPresShell->GetCurrentEventFrame();
     }
   }
@@ -11841,10 +11876,9 @@ nsIContent* PresShell::EventHandler::GetOverrideClickTarget(
   }
 
   nsIContent* overrideClickTarget = target->GetContent();
-  while (overrideClickTarget && !overrideClickTarget->IsElement()) {
-    overrideClickTarget = overrideClickTarget->GetFlattenedTreeParent();
-  }
-  return overrideClickTarget;
+  return overrideClickTarget
+             ? overrideClickTarget->GetInclusiveFlattenedTreeAncestorElement()
+             : nullptr;
 }
 
 
@@ -11907,15 +11941,7 @@ void PresShell::EventHandler::EventTargetData::
     return;
   }
   const Element* const closestInclusiveAncestorElement =
-      [&]() -> const Element* {
-    for (const nsIContent* const content :
-         mFrame->GetContent()->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
-      if (content->IsElement()) {
-        return content->AsElement();
-      }
-    }
-    return nullptr;
-  }();
+      mFrame->GetContent()->GetInclusiveFlattenedTreeAncestorElement();
   if (closestInclusiveAncestorElement == mContent) {
     return;
   }
@@ -11999,11 +12025,7 @@ bool PresShell::EventHandler::EventTargetData::ComputeElementFromFrame(
   
   
   
-  nsIContent* content = mContent;
-  while (content && !content->IsElement()) {
-    content = content->GetFlattenedTreeParent();
-  }
-  mContent = content;
+  mContent = mContent->GetInclusiveFlattenedTreeAncestorElement();
 
   
   return !!mContent;

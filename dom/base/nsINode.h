@@ -1172,6 +1172,12 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+  inline mozilla::dom::Element* GetInclusiveFlattenedTreeAncestorElement()
+      const;
+
+  
+
+
 
 
   nsINode* SubtreeRoot() const;
