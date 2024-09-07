@@ -497,6 +497,11 @@ typedef enum JSGCParamKey {
 
   JSGC_NURSERY_ENABLED = 55,
 
+  
+
+
+
+  JSGC_HIGH_FREQUENCY_MODE = 56,
 } JSGCParamKey;
 
 
