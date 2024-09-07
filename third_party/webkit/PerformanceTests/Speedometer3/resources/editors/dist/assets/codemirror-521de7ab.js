@@ -21905,3 +21905,4 @@ function scroll() {
   let isTop = editorInstance.getScrollTop() == 0;
   editorInstance.setScrollTop(isTop ? editorInstance.getScrollHeight() : 0);
 }
+

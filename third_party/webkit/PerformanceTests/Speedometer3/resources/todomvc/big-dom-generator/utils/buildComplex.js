@@ -35,7 +35,7 @@ function buildComplex(options) {
         targetDirectory = "./dist",
         complexDomHtmlFile = "index.html",
         todoHtmlFile = "index.html",
-        cssFilesToAddLinksFor = ["big-dom-generator.css"],
+        cssFilesToAddLinksFor = ["big-dom.css"],
     } = options;
 
     prepareComplex(options);
