@@ -191,6 +191,12 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
         ic.commitText(text, newCursorPosition)
         promise.value
+
+        
+        
+        if (newCursorPosition != 1) {
+            mainSession.waitForJS("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+        }
     }
 
     private fun deleteSurroundingText(ic: InputConnection, before: Int, after: Int) {
