@@ -672,7 +672,15 @@ DevToolsClient.prototype = {
 
 
 
-  waitForRequestsToSettle() {
+
+
+
+
+
+
+
+
+  waitForRequestsToSettle({ ignoreOrphanedFronts = false } = {}) {
     let requests = [];
 
     
@@ -692,6 +700,12 @@ DevToolsClient.prototype = {
     
     for (const front of fronts) {
       if (front.hasRequests()) {
+        if (ignoreOrphanedFronts && !this.getFrontByID(front.actorID)) {
+          
+          
+          
+          continue;
+        }
         requests.push(front.waitForRequestsToSettle());
       }
     }
@@ -709,7 +723,7 @@ DevToolsClient.prototype = {
       })
       .then(() => {
         
-        return this.waitForRequestsToSettle();
+        return this.waitForRequestsToSettle({ ignoreOrphanedFronts });
       });
   },
 

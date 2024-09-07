@@ -51,8 +51,8 @@ async function createCommandsDictionary(descriptorFront) {
     watcherFront,
 
     
-    waitForRequestsToSettle() {
-      return descriptorFront.client.waitForRequestsToSettle();
+    waitForRequestsToSettle(options) {
+      return descriptorFront.client.waitForRequestsToSettle(options);
     },
 
     
