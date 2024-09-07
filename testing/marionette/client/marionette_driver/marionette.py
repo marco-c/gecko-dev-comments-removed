@@ -1133,7 +1133,14 @@ class Marionette(object):
             try:
                 self.is_shutting_down = True
                 if callback is not None:
-                    callback()
+                    try:
+                        callback()
+                    except errors.JavascriptException as e:
+                        if not e.message.startswith("Script evaluation aborted: Actor"):
+                            
+                            
+                            raise e
+
                     quit_details["in_app"] = True
                 else:
                     quit_details = self._request_in_app_shutdown()
@@ -1241,7 +1248,14 @@ class Marionette(object):
             try:
                 self.is_shutting_down = True
                 if callback is not None:
-                    callback()
+                    try:
+                        callback()
+                    except errors.JavascriptException as e:
+                        if not e.message.startswith("Script evaluation aborted: Actor"):
+                            
+                            
+                            raise e
+
                     restart_details["in_app"] = True
                 else:
                     flags = ["eRestart"]
