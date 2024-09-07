@@ -29,7 +29,7 @@ use serde_json::Value as JsonValue;
 
 
 pub struct WebExtStorageStore {
-    db: Arc<ThreadSafeStorageDb>,
+    pub(crate) db: Arc<ThreadSafeStorageDb>,
 }
 
 impl WebExtStorageStore {
@@ -119,14 +119,9 @@ impl WebExtStorageStore {
 
     
     
-    pub fn get_bytes_in_use(&self, ext_id: &str, keys: JsonValue) -> Result<usize> {
+    pub fn get_bytes_in_use(&self, ext_id: &str, keys: JsonValue) -> Result<u64> {
         let db = self.db.lock();
-        api::get_bytes_in_use(&db, ext_id, keys)
-    }
-
-    
-    pub fn bridged_engine(&self) -> sync::BridgedEngine {
-        sync::BridgedEngine::new(&self.db)
+        Ok(api::get_bytes_in_use(&db, ext_id, keys)? as u64)
     }
 
     
