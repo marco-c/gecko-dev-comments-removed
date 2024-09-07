@@ -517,9 +517,6 @@ struct BaseCompiler final {
   inline RegI32 maybeHighPart(RegI64 r);
 
   
-  inline void maybeClearHighPart(RegI64 r);
-
-  
   
   
   
