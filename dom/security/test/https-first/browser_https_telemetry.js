@@ -63,6 +63,7 @@ function verifyGleanValues(
   aHttpsFirstUpgradeDowngrade,
   aHttpsFirstSchemelessUpgrade,
   aHttpsFirstSchemelessUpgradeDowngrade,
+  aCSPUpgradeInsecureRequests,
   aHttpsRR,
   aWebExtensionUpgrade,
   aUpgradeException
@@ -106,6 +107,11 @@ function verifyGleanValues(
     glean.https_first_schemeless_upgrade_downgrade.testGetValue(),
     aHttpsFirstSchemelessUpgradeDowngrade,
     "verify https_first_schemeless_upgrade_downgrade"
+  );
+  is(
+    glean.csp_uir.testGetValue(),
+    aCSPUpgradeInsecureRequests,
+    "verify csp_uir"
   );
   is(glean.https_rr.testGetValue(), aHttpsRR, "verify https_rr");
   is(
@@ -195,6 +201,7 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     null 
   );
 });
@@ -217,6 +224,7 @@ add_task(async function () {
     "(1) no upgrade test",
     null ,
     1 ,
+    null ,
     null ,
     null ,
     null ,
@@ -260,6 +268,7 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     null 
   );
 });
@@ -284,6 +293,7 @@ add_task(async function () {
     null ,
     null ,
     1 ,
+    null ,
     null ,
     null ,
     null ,
@@ -324,6 +334,7 @@ add_task(async function () {
     null ,
     null ,
     1 ,
+    null ,
     null ,
     null ,
     null ,
@@ -380,6 +391,7 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     null 
   );
 
@@ -413,6 +425,7 @@ add_task(async function () {
     null ,
     null ,
     1 ,
+    null ,
     null ,
     null ,
     null ,
@@ -515,6 +528,7 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     null 
   );
 });
@@ -548,6 +562,7 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     null 
   );
 
@@ -575,6 +590,7 @@ add_task(async function () {
     null ,
     1 ,
     1 ,
+    null ,
     null ,
     null ,
     null ,
@@ -612,6 +628,7 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     null 
   );
 
@@ -643,6 +660,7 @@ add_task(async function () {
     1 ,
     null ,
     null ,
+    null ,
     null 
   );
 });
@@ -670,6 +688,7 @@ add_task(async function () {
 
   verifyGleanValues(
     "(7) https-rr upgrade",
+    null ,
     null ,
     null ,
     null ,
@@ -744,6 +763,7 @@ add_task(async function () {
 
   verifyGleanValues(
     "(8) upgrade/downgrade/reload",
+    null ,
     null ,
     null ,
     null ,

@@ -246,7 +246,14 @@ nsDocShellLoadState::nsDocShellLoadState(nsIURI* aURI, uint64_t aLoadIdentifier)
                                 : NOT_REMOTE_TYPE),
       mWasSchemelessInput(false) {
   MOZ_ASSERT(aURI, "Cannot create a LoadState with a null URI!");
-  if (aURI->SchemeIs("https")) {
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
+  if (innerURI->SchemeIs("https") || innerURI->SchemeIs("about")) {
     mHttpsUpgradeTelemetry = nsILoadInfo::ALREADY_HTTPS;
   } else {
     mHttpsUpgradeTelemetry = nsILoadInfo::NO_UPGRADE;
