@@ -825,7 +825,7 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
   }
 
   auto dnsStrategy = GetProxyDNSStrategy();
-  if (!(dnsStrategy & DNS_PREFETCH_ORIGIN)) {
+  if (dnsStrategy != ProxyDNSStrategy::ORIGIN) {
     return ContinueOnBeforeConnect(aShouldUpgrade, aStatus);
   }
 
@@ -6773,29 +6773,16 @@ nsHttpChannel::GetOrCreateChannelClassifier() {
   return classifier.forget();
 }
 
-uint16_t nsHttpChannel::GetProxyDNSStrategy() {
+ProxyDNSStrategy nsHttpChannel::GetProxyDNSStrategy() {
   
   
-
-  
-  
-  if (!mProxyInfo || StaticPrefs::network_dns_force_use_https_rr()) {
-    return DNS_PREFETCH_ORIGIN;
+  nsCOMPtr<nsProxyInfo> proxyInfo(static_cast<nsProxyInfo*>(mProxyInfo.get()));
+  if (!proxyInfo || StaticPrefs::network_dns_force_use_https_rr()) {
+    return ProxyDNSStrategy::ORIGIN;
   }
 
-  uint32_t flags = 0;
-  nsAutoCString type;
-  mProxyInfo->GetFlags(&flags);
-  mProxyInfo->GetType(type);
-
   
-  if (!(flags & nsIProxyInfo::TRANSPARENT_PROXY_RESOLVES_HOST)) {
-    if (type.EqualsLiteral("socks")) {
-      return DNS_PREFETCH_ORIGIN;
-    }
-  }
-
-  return 0;
+  return GetProxyDNSStrategyHelper(proxyInfo->Type(), proxyInfo->Flags());
 }
 
 
@@ -7096,16 +7083,7 @@ nsresult nsHttpChannel::BeginConnect() {
     ReEvaluateReferrerAfterTrackingStatusIsKnown();
   }
 
-  rv = MaybeStartDNSPrefetch();
-  if (NS_FAILED(rv)) {
-    auto dnsStrategy = GetProxyDNSStrategy();
-    if (dnsStrategy & DNS_BLOCK_ON_ORIGIN_RESOLVE) {
-      
-      return rv;
-    }
-    
-    return NS_OK;
-  }
+  MaybeStartDNSPrefetch();
 
   rv = CallOrWaitForResume(
       [](nsHttpChannel* self) { return self->PrepareToConnect(); });
@@ -7125,7 +7103,7 @@ nsresult nsHttpChannel::BeginConnect() {
   return NS_OK;
 }
 
-nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
+void nsHttpChannel::MaybeStartDNSPrefetch() {
   
   
   
@@ -7141,7 +7119,7 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
   
   if ((mLoadFlags & (LOAD_NO_NETWORK_IO | LOAD_ONLY_FROM_CACHE)) ||
       LoadAuthRedirectedChannel()) {
-    return NS_OK;
+    return;
   }
 
   auto dnsStrategy = GetProxyDNSStrategy();
@@ -7149,10 +7127,10 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
   LOG(
       ("nsHttpChannel::MaybeStartDNSPrefetch [this=%p, strategy=%u] "
        "prefetching%s\n",
-       this, dnsStrategy,
+       this, static_cast<uint32_t>(dnsStrategy),
        mCaps & NS_HTTP_REFRESH_DNS ? ", refresh requested" : ""));
 
-  if (dnsStrategy & DNS_PREFETCH_ORIGIN) {
+  if (dnsStrategy == ProxyDNSStrategy::ORIGIN) {
     OriginAttributes originAttributes;
     StoragePrincipalHelper::GetOriginAttributesForNetworkState(
         this, originAttributes);
@@ -7164,20 +7142,8 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
     if (mCaps & NS_HTTP_REFRESH_DNS) {
       dnsFlags |= nsIDNSService::RESOLVE_BYPASS_CACHE;
     }
-    nsresult rv = mDNSPrefetch->PrefetchHigh(dnsFlags);
 
-    if (dnsStrategy & DNS_BLOCK_ON_ORIGIN_RESOLVE) {
-      LOG(("  blocking on prefetching origin"));
-
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        LOG(("  lookup failed with 0x%08" PRIx32 ", aborting request",
-             static_cast<uint32_t>(rv)));
-        return rv;
-      }
-
-      
-      mDNSBlockingThenable = mDNSBlockingPromise.Ensure(__func__);
-    }
+    Unused << mDNSPrefetch->PrefetchHigh(dnsFlags);
 
     if (StaticPrefs::network_dns_use_https_rr_as_altsvc() && !mHTTPSSVCRecord &&
         !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR) && canUseHTTPSRRonNetwork()) {
@@ -7195,8 +7161,6 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
                                         });
     }
   }
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
