@@ -649,8 +649,8 @@ gfxMatrix SVGOuterSVGFrame::GetCanvasTM() {
     float devPxPerCSSPx = 1.0f / nsPresContext::AppUnitsToFloatCSSPixels(
                                      PresContext()->AppUnitsPerDevPixel());
 
-    gfxMatrix tm = content->PrependLocalTransformsTo(
-        gfxMatrix::Scaling(devPxPerCSSPx, devPxPerCSSPx));
+    gfxMatrix tm = content->ChildToUserSpaceTransform().PostScale(
+        devPxPerCSSPx, devPxPerCSSPx);
     mCanvasTM = MakeUnique<gfxMatrix>(tm);
   }
   return *mCanvasTM;
@@ -798,8 +798,8 @@ bool SVGOuterSVGFrame::HasChildrenOnlyTransform(Matrix* aTransform) const {
   }
   if (aTransform) {
     
-    *aTransform = gfx::ToMatrix(
-        content->PrependLocalTransformsTo(gfxMatrix(), eChildToUserSpace));
+    
+    *aTransform = gfx::ToMatrix(content->ChildToUserSpaceTransform());
     if (aTransform->HasNonTranslation()) {
       
       
