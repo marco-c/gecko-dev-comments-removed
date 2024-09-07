@@ -667,9 +667,6 @@
 
     resumeDelayedMedia() {
       if (this.activeMediaBlocked) {
-        Services.telemetry
-          .getHistogramById("TAB_AUDIO_INDICATOR_USED")
-          .add(3 );
         this.removeAttribute("activemedia-blocked");
         this.linkedBrowser.resumeMedia();
         gBrowser._tabAttrModified(this, ["activemedia-blocked"]);
@@ -678,24 +675,18 @@
 
     toggleMuteAudio(aMuteReason) {
       let browser = this.linkedBrowser;
-      let hist = Services.telemetry.getHistogramById(
-        "TAB_AUDIO_INDICATOR_USED"
-      );
-
       if (browser.audioMuted) {
         if (this.linkedPanel) {
           
           browser.unmute();
         }
         this.removeAttribute("muted");
-        hist.add(1 );
       } else {
         if (this.linkedPanel) {
           
           browser.mute();
         }
         this.toggleAttribute("muted", true);
-        hist.add(0 );
       }
       this.muteReason = aMuteReason || null;
 
