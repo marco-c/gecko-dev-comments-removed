@@ -2595,17 +2595,9 @@ class nsIFrame : public nsQueryFrame {
 
 
   struct InlineIntrinsicISizeData {
-    InlineIntrinsicISizeData()
-        : mLine(nullptr),
-          mLineContainer(nullptr),
-          mPrevLines(0),
-          mCurrentLine(0),
-          mTrailingWhitespace(0),
-          mSkipWhitespace(true) {}
-
     
     
-    const nsLineList_iterator* mLine;
+    const nsLineList_iterator* mLine = nullptr;
 
     
     
@@ -2614,7 +2606,7 @@ class nsIFrame : public nsQueryFrame {
     
     
    private:
-    nsIFrame* mLineContainer;
+    nsIFrame* mLineContainer = nullptr;
 
     
    public:
@@ -2624,21 +2616,21 @@ class nsIFrame : public nsQueryFrame {
     nsIFrame* LineContainer() const { return mLineContainer; }
 
     
-    nscoord mPrevLines;
+    nscoord mPrevLines = 0;
 
     
     
     
-    nscoord mCurrentLine;
+    nscoord mCurrentLine = 0;
 
     
     
-    nscoord mTrailingWhitespace;
+    nscoord mTrailingWhitespace = 0;
 
     
     
     
-    bool mSkipWhitespace;
+    bool mSkipWhitespace = true;
 
     
     class FloatInfo {
@@ -2657,8 +2649,6 @@ class nsIFrame : public nsQueryFrame {
   };
 
   struct InlineMinISizeData : public InlineIntrinsicISizeData {
-    InlineMinISizeData() : mAtStartOfLine(true) {}
-
     
     void DefaultAddInlineMinISize(nsIFrame* aFrame, nscoord aISize,
                                   bool aAllowBreak = true);
@@ -2676,12 +2666,10 @@ class nsIFrame : public nsQueryFrame {
     
     
     
-    bool mAtStartOfLine;
+    bool mAtStartOfLine = true;
   };
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
-    InlinePrefISizeData() : mLineIsEmpty(true) {}
-
     
 
 
@@ -2702,10 +2690,11 @@ class nsIFrame : public nsQueryFrame {
     void DefaultAddInlinePrefISize(nscoord aISize);
 
     
-    bool mLineIsEmpty;
+    bool mLineIsEmpty = true;
   };
 
   
+
 
 
 
