@@ -8331,7 +8331,8 @@ nsBlockFrame::FloatAvoidingISizeToClear nsBlockFrame::ISizeToClearPastFloats(
 
   nscoord marginISize = computedMargin.IStartEnd(wm);
   const auto& iSize = reflowInput.mStylePosition->ISize(wm);
-  if (marginISize < 0 && (iSize.IsAuto() || iSize.IsMozAvailable())) {
+  if (marginISize < 0 &&
+      (iSize.IsAuto() || iSize.BehavesLikeStretchOnInlineAxis())) {
     
     
     

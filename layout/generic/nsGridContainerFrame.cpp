@@ -816,7 +816,9 @@ struct nsGridContainerFrame::GridItemInfo {
   
   bool IsBSizeDependentOnContainerSize(WritingMode aContainerWM) const {
     const auto IsDependentOnContainerSize = [](const auto& size) -> bool {
-      return size.HasPercent() || size.IsMozAvailable();
+      
+      
+      return size.HasPercent() || size.BehavesLikeStretchOnInlineAxis();
     };
 
     const nsStylePosition* stylePos = mFrame->StylePosition();
