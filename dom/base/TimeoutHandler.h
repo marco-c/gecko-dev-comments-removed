@@ -41,7 +41,7 @@ class TimeoutHandler : public nsISupports {
 
   
   
-  const JSCallingLocation mCaller;
+  const JSCallingLocation mCaller = {};
 
  private:
   TimeoutHandler(const TimeoutHandler&) = delete;
