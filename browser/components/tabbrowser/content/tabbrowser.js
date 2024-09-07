@@ -4551,23 +4551,21 @@
 
 
 
-
-
     async closeTabsByURI(urisToClose) {
-      let remainingURIsToClose = [...urisToClose];
       let tabsToRemove = [];
       for (let tab of this.tabs) {
         let currentURI = tab.linkedBrowser.currentURI;
         
-        const matchedIndex = remainingURIsToClose.findIndex(uriToClose =>
+        const matchedIndex = urisToClose.findIndex(uriToClose =>
           uriToClose.equals(currentURI)
         );
 
         if (matchedIndex > -1) {
           tabsToRemove.push(tab);
-          remainingURIsToClose.splice(matchedIndex, 1); 
         }
       }
+
+      let closedCount = 0;
 
       if (tabsToRemove.length) {
         const { beforeUnloadComplete, lastToClose } = this._startRemoveTabs(
@@ -4584,14 +4582,16 @@
         
         await beforeUnloadComplete;
 
+        closedCount = tabsToRemove.length - (lastToClose ? 1 : 0);
+
         
         
         if (lastToClose) {
           this.removeTab(lastToClose);
+          closedCount++;
         }
       }
-      
-      return remainingURIsToClose;
+      return closedCount;
     },
 
     
