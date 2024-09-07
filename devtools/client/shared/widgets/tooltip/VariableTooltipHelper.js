@@ -6,6 +6,7 @@
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
+const OutputParser = require("resource://devtools/client/shared/output-parser.js");
 loader.lazyGetter(this, "L10N_EMPTY", function () {
   const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
   const L10N = new LocalizationHelper(
@@ -38,18 +39,46 @@ loader.lazyGetter(this, "L10N_EMPTY", function () {
 
 
 
+
+
+
+
+
+
 function setVariableTooltip(
   tooltip,
   doc,
-  { computed, topSectionText, registeredProperty, startingStyle }
+  {
+    computed,
+    cssProperties,
+    outputParserOptions,
+    registeredProperty,
+    startingStyle,
+    topSectionText,
+    variableName,
+  }
 ) {
   
   const div = doc.createElementNS(XHTML_NS, "div");
   div.classList.add("devtools-monospace", "devtools-tooltip-css-variable");
 
+  const outputParser = new OutputParser(doc, cssProperties);
+  const parse = value =>
+    outputParser.parseCssProperty(variableName, value, outputParserOptions);
+
   const valueEl = doc.createElementNS(XHTML_NS, "section");
   valueEl.classList.add("variable-value");
-  appendValue(doc, valueEl, topSectionText);
+  const varData = outputParserOptions.getVariableData(variableName);
+  
+  
+  if (
+    typeof varData.value !== "string" &&
+    typeof registeredProperty?.initialValue !== "string"
+  ) {
+    valueEl.append(doc.createTextNode(topSectionText));
+  } else {
+    appendValue(doc, valueEl, topSectionText, parse);
+  }
   div.appendChild(valueEl);
 
   if (typeof computed !== "undefined") {
@@ -59,7 +88,7 @@ function setVariableTooltip(
     const h2 = doc.createElementNS(XHTML_NS, "h2");
     h2.append(doc.createTextNode("computed value"));
     const computedValueEl = doc.createElementNS(XHTML_NS, "div");
-    appendValue(doc, computedValueEl, computed);
+    appendValue(doc, computedValueEl, computed, parse);
     section.append(h2, computedValueEl);
 
     div.appendChild(section);
@@ -72,7 +101,7 @@ function setVariableTooltip(
     const h2 = doc.createElementNS(XHTML_NS, "h2");
     h2.append(doc.createTextNode("@starting-style"));
     const startingStyleValue = doc.createElementNS(XHTML_NS, "div");
-    appendValue(doc, startingStyleValue, startingStyle);
+    appendValue(doc, startingStyleValue, startingStyle, parse);
     section.append(h2, startingStyleValue);
 
     div.appendChild(section);
@@ -87,11 +116,11 @@ function setVariableTooltip(
     h2.append(doc.createTextNode("@property"));
 
     const dl = doc.createElementNS(XHTML_NS, "dl");
-    const addProperty = (label, value, lineBreak = true) => {
+    const addProperty = ({ label, value, parseValue, lineBreak }) => {
       const dt = doc.createElementNS(XHTML_NS, "dt");
       dt.append(doc.createTextNode(label));
       const dd = doc.createElementNS(XHTML_NS, "dd");
-      appendValue(doc, dd, value);
+      appendValue(doc, dd, value, parseValue ? parse : null);
       dl.append(dt, dd);
       if (lineBreak) {
         dl.append(doc.createElementNS(XHTML_NS, "br"));
@@ -100,10 +129,25 @@ function setVariableTooltip(
 
     const hasInitialValue = typeof registeredProperty.initialValue === "string";
 
-    addProperty("syntax:", `"${registeredProperty.syntax}"`);
-    addProperty("inherits:", registeredProperty.inherits, hasInitialValue);
+    addProperty({
+      label: "syntax:",
+      value: `"${registeredProperty.syntax}"`,
+      parseValue: false,
+      lineBreak: true,
+    });
+    addProperty({
+      label: "inherits:",
+      value: registeredProperty.inherits,
+      parseValue: false,
+      lineBreak: hasInitialValue,
+    });
     if (hasInitialValue) {
-      addProperty("initial-value:", registeredProperty.initialValue, false);
+      addProperty({
+        label: "initial-value:",
+        value: registeredProperty.initialValue,
+        parseValue: true,
+        lineBreak: false,
+      });
     }
 
     section.append(h2, dl);
@@ -115,9 +159,25 @@ function setVariableTooltip(
   tooltip.setContentSize({ width: "auto", height: "auto" });
 }
 
-function appendValue(doc, el, value) {
+
+
+
+
+
+
+
+
+
+
+function appendValue(doc, el, value, parse) {
   if (value !== "") {
-    el.append(doc.createTextNode(value));
+    const frag = parse && parse(value);
+    if (frag) {
+      el.append(frag);
+    } else {
+      el.append(doc.createTextNode(value));
+    }
+    el.classList.add("theme-fg-color1");
   } else {
     el.append(doc.createTextNode(`<${L10N_EMPTY}>`));
     el.classList.add("empty-css-variable");

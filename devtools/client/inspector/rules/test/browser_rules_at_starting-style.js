@@ -279,11 +279,23 @@ add_task(async function () {
     `main, [data-test="top-level"]`,
     "color",
     {
-      header: "white",
+      header:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="white">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:white" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">white</span>' +
+        '</span>',
       
       computed: null,
       
-      startingStyle: "black",
+      startingStyle:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="black">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:black" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">black</span>' +
+        '</span>',
     }
   );
 
@@ -296,7 +308,13 @@ add_task(async function () {
     "--check-my-color",
     {
       
-      header: "black",
+      header:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="black">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:black" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">black</span>' +
+        '</span>',
       
       computed: null,
       
@@ -316,8 +334,20 @@ add_task(async function () {
     `main, [data-test="top-level"]`,
     "--check-my-overridden-color",
     {
-      header: "white",
-      computed: "white",
+      header:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="white">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:white" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">white</span>' +
+        '</span>',
+      computed:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="white">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:white" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">white</span>' +
+        '</span>',
       
       startingStyle: null,
     }
@@ -328,7 +358,13 @@ add_task(async function () {
     "--check-my-overridden-color",
     {
       
-      header: "white",
+      header:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="white">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:white" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">white</span>' +
+        '</span>',
       
       computed: null,
       startingStyle: null,
@@ -343,16 +379,44 @@ add_task(async function () {
     `main, [data-test="top-level"]`,
     "--check-my-registered-color",
     {
-      header: "white",
-      computed: "rgb(255, 255, 255)",
+      header:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="white">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:white" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">white</span>' +
+        '</span>',
+      computed:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="rgb(255, 255, 255)">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:rgb(255, 255, 255)" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">rgb(255, 255, 255)</span>' +
+        '</span>',
       
-      startingStyle: "black",
+      startingStyle:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="black">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:black" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">black</span>' +
+        '</span>',
       
-      registeredProperty: [
-        `syntax:"<color>"`,
-        `inherits:true`,
-        `initial-value:blue`,
-      ],
+      registeredProperty: {
+        syntax: `"&lt;color&gt;"`,
+        inherits: "true",
+        "initial-value":
+          
+          `<span xmlns="http://www.w3.org/1999/xhtml" data-color="blue">` +
+            `<span ` +
+              `class="ruleview-swatch ruleview-colorswatch" ` +
+              `style="background-color:blue" ` +
+              `tabindex="0" ` +
+              `role="button">` +
+            `</span>` +
+            `<span class="ruleview-color">blue</span>` +
+          `</span>`,
+      },
     }
   );
 
@@ -362,17 +426,33 @@ add_task(async function () {
     "--check-my-registered-color",
     {
       
-      header: "black",
+      header:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="black">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:black" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">black</span>' +
+        '</span>',
       
       computed: null,
       
       startingStyle: null,
       
-      registeredProperty: [
-        `syntax:"<color>"`,
-        `inherits:true`,
-        `initial-value:blue`,
-      ],
+      registeredProperty: {
+        syntax: `"&lt;color&gt;"`,
+        inherits: "true",
+        "initial-value":
+          
+          `<span xmlns="http://www.w3.org/1999/xhtml" data-color="blue">` +
+            `<span ` +
+              `class="ruleview-swatch ruleview-colorswatch" ` +
+              `style="background-color:blue" ` +
+              `tabindex="0" ` +
+              `role="button">` +
+            `</span>` +
+            `<span class="ruleview-color">blue</span>` +
+          `</span>`,
+      },
     }
   );
 
@@ -383,15 +463,27 @@ add_task(async function () {
     "--check-my-unset-registered-color",
     {
       
-      header: "lavender",
+      header:
+        
+        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="lavender">' +
+          '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:lavender" tabindex="0" role="button">' +
+          '</span>' +
+          '<span class="ruleview-color">lavender</span>' +
+        '</span>',
       
       startingStyle: null,
       
-      registeredProperty: [
-        `syntax:"<color>"`,
-        `inherits:true`,
-        `initial-value:lavender`,
-      ],
+      registeredProperty: {
+        syntax: `"&lt;color&gt;"`,
+        inherits: "true",
+        "initial-value":
+          
+          '<span xmlns="http://www.w3.org/1999/xhtml" data-color="lavender">' +
+            '<span class="ruleview-swatch ruleview-colorswatch" style="background-color:lavender" tabindex="0" role="button">' +
+            '</span>' +
+            '<span class="ruleview-color">lavender</span>' +
+          '</span>',
+      },
     }
   );
 
@@ -403,7 +495,8 @@ add_task(async function () {
     {
       header: "1px",
       
-      startingStyle: "<empty>",
+      startingStyle: "&lt;empty&gt;",
+      startingStyleClasses: ["empty-css-variable"],
     }
   );
 
