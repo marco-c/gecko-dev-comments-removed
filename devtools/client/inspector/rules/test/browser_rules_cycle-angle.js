@@ -105,7 +105,7 @@ async function checkSwatchShiftClick(container, win, expectedValue, comment) {
   
   await wait(500);
 
-  const swatch = container.querySelector(".ruleview-angleswatch");
+  const swatch = container.querySelector(".inspector-angleswatch");
   const valueNode = container.querySelector(".ruleview-angle");
 
   const onUnitChange = once(swatch, "unit-change");

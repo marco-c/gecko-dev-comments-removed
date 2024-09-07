@@ -17,7 +17,7 @@ add_task(async function () {
     wait: true,
   });
 
-  const swatch = property.valueSpan.querySelector(".ruleview-filterswatch");
+  const swatch = property.valueSpan.querySelector(".inspector-filterswatch");
 
   const filterTooltip = view.tooltips.getTooltip("filterEditor");
   

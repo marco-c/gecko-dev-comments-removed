@@ -16,7 +16,7 @@ add_task(async function () {
     view,
     "body",
     "filter"
-  ).valueSpan.querySelector(".ruleview-filterswatch");
+  ).valueSpan.querySelector(".inspector-filterswatch");
 
   info("Click on the filter swatch element");
   

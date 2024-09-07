@@ -45,8 +45,9 @@ add_task(async function () {
 
   
   const colorPropertySpan = colorPropertyElement.valueSpan;
-  const colorVariableElement =
-    colorPropertySpan.querySelector(".ruleview-variable");
+  const colorVariableElement = colorPropertySpan.querySelector(
+    ".inspector-variable"
+  );
   ok(!!colorVariableElement, "Found the variable element");
 
   
