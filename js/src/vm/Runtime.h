@@ -52,6 +52,7 @@
 #include "vm/GeckoProfiler.h"
 #include "vm/InvalidatingFuse.h"
 #include "vm/JSScript.h"
+#include "vm/Logging.h"
 #include "vm/OffThreadPromiseRuntimeState.h"  
 #include "vm/SharedScriptDataTableHolder.h"   
 #include "vm/Stack.h"
