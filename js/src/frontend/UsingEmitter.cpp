@@ -27,6 +27,14 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
 
   if (hasAwaitUsing_) {
     
+    
+    
+    if (!bce_->emit1(JSOp::GetRval)) {
+      
+      return false;
+    }
+
+    
     if (!bce_->emit1(JSOp::False)) {
       
       return false;
@@ -60,6 +68,11 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     }
   }
 
+  
+
+  
+  
+  
   
 
   
@@ -335,9 +348,40 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emitPickN(7)) {
+  if (initialCompletion == CompletionKind::Throw &&
+      bce_->sc->isSuspendableContext() &&
+      bce_->sc->asSuspendableContext()->isGenerator()) {
     
-    return false;
+
+    
+    
+    
+    
+    
+    if (!bce_->emit1(JSOp::IsGenClosing)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::Not)) {
+      
+      return false;
+    }
+
+    if (!bce_->emitPickN(8)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::BitAnd)) {
+      
+      return false;
+    }
+  } else {
+    if (!bce_->emitPickN(7)) {
+      
+      return false;
+    }
   }
 
   
@@ -527,6 +571,20 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
   if (!bce_->emit1(JSOp::Swap)) {
     
     return false;
+  }
+
+  if (hasAwaitUsing_) {
+    
+
+    if (!bce_->emitPickN(2)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::SetRval)) {
+      
+      return false;
+    }
   }
 
   InternalIfEmitter ifThrow(bce_);
