@@ -3883,6 +3883,32 @@ toolbar#nav-bar {
         self.log.warning("Force-terminating active process(es).")
 
         browser_pid = browser_pid or proc.pid
+
+        
+        if mozinfo.isLinux or mozinfo.isMac:
+            self.log.info(
+                "Attempting to start the profiler to help with diagnosing the hang."
+            )
+            self.log.info("Sending SIGUSR1 to pid %d start the profiler." % browser_pid)
+            os.kill(browser_pid, signal.SIGUSR1)
+            self.log.info("Waiting 10s to capture a profile.")
+            time.sleep(10)
+            self.log.info("Sending SIGUSR2 to pid %d stop the profiler." % browser_pid)
+            os.kill(browser_pid, signal.SIGUSR2)
+            
+            
+            
+            
+            
+            
+            
+            self.log.info("Wait 10s for Firefox to write the profile to disk.")
+            time.sleep(10)
+        else:
+            self.log.info(
+                "Not sending a signal to start the profiler - not on MacOS or Linux. See Bug 1823370."
+            )
+
         child_pids = self.extract_child_pids(processLog, browser_pid)
         self.log.info("Found child pids: %s" % child_pids)
 

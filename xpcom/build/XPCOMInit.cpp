@@ -478,7 +478,7 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   
   
   
-  profiler_lookup_download_directory();
+  profiler_lookup_async_signal_dump_directory();
 
   
   mozilla::SharedThreadPool::InitStatics();

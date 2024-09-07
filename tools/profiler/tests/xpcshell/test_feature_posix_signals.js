@@ -3,24 +3,15 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
-  Downloads: "resource://gre/modules/Downloads.sys.mjs",
-  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
 async function cleanupAfterTest() {
   
-  
-  let profile = FileUtils.File(await Downloads.getSystemDownloadsDirectory());
+  let profile = await getFullProfilePath(Services.appinfo.processID);
 
   
-  let pid = Services.appinfo.processID;
-
-  
-  profile.append(`profile_0_${pid}.json`);
-
-  
-  await IOUtils.remove(profile.path, { ignoreAbsent: true });
+  await IOUtils.remove(profile, { ignoreAbsent: true });
 
   
   await Services.profiler.StopProfiler();
@@ -101,7 +92,7 @@ add_task(async () => {
 
 add_task(async () => {
   info(
-    "Test that stopping the profiler with a posix signal writes a profile file to the system download directory."
+    "Test that stopping the profiler with a posix signal writes a profile file disk."
   );
   registerCleanupFunction(cleanupAfterTest);
 
@@ -116,13 +107,8 @@ add_task(async () => {
   const features = [];
 
   
-  let profile = FileUtils.File(await Downloads.getSystemDownloadsDirectory());
-
-  
   let pid = Services.appinfo.processID;
-
-  
-  profile.append(`profile_0_${pid}.json`);
+  let profile = await getFullProfilePath(pid);
 
   
   await Services.profiler.StartProfiler(entries, interval, threads, features);
@@ -140,7 +126,7 @@ add_task(async () => {
 
   
   Assert.ok(
-    await IOUtils.exists(profile.path),
+    await IOUtils.exists(profile),
     "A profile file should be written to disk."
   );
 

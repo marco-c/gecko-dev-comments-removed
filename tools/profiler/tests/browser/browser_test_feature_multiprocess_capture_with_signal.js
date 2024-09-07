@@ -2,16 +2,6 @@
 
 
 
-async function get_profile_path_on_disk(pid) {
-  
-  let profile = FileUtils.File(await Downloads.getSystemDownloadsDirectory());
-
-  
-  profile.append(`profile_0_${pid}.json`);
-
-  return profile;
-}
-
 function check_profile_contains_parent_and_content_pids(
   parent_pid,
   content_pid,
@@ -153,14 +143,14 @@ add_task(
 
       
       info(`Retrieving profile file.`);
-      let profile_file = await get_profile_path_on_disk(parent_pid);
+      let profile_file = await getFullProfilePath(parent_pid);
       Assert.ok(
-        await IOUtils.exists(profile_file.path),
+        await IOUtils.exists(profile_file),
         "A profile file should be written to disk."
       );
 
       
-      let profile = await IOUtils.readJSON(profile_file.path);
+      let profile = await IOUtils.readJSON(profile_file);
       info("Found this many proceses: " + profile.processes.length);
 
       
