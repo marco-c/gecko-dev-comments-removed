@@ -386,10 +386,7 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
   
   
   if (!rtp_rtcp_->OnSendingRtpFrame(rtp_timestamp_without_offset,
-                                    
-                                    
-                                    
-                                    -1, payloadType,
+                                    absolute_capture_timestamp_ms, payloadType,
                                     false)) {
     return -1;
   }
