@@ -1701,8 +1701,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
 const ONNX_WEB = ort;
-const ONNX_NODE = null;
 
 
 
