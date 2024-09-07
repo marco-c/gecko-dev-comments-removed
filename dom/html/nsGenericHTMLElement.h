@@ -23,7 +23,6 @@
 #include <cstdint>
 
 class nsDOMTokenList;
-class nsIFormControlFrame;
 class nsIFrame;
 class nsILayoutHistoryState;
 class nsIURI;
@@ -393,17 +392,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
   void GetBaseTarget(nsAString& aBaseTarget) const;
-
-  
-
-
-
-
-
-
-  nsIFormControlFrame* GetFormControlFrame(bool aFlushFrames);
-
-  
 
   
 
@@ -1193,10 +1181,6 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   void GetAutocapitalize(nsAString& aValue) const override;
   bool IsHTMLFocusable(mozilla::IsFocusableFlags, bool* aIsFocusable,
                        int32_t* aTabIndex) override;
-
-  
-  void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
-  nsresult PreHandleEvent(mozilla::EventChainVisitor& aVisitor) override;
 
   
   mozilla::dom::HTMLFieldSetElement* GetFieldSet() override;

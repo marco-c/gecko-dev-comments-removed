@@ -321,7 +321,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   
   TextControlState* mState;
 
-  NS_IMETHOD SelectAll(nsPresContext* aPresContext);
+  MOZ_CAN_RUN_SCRIPT void SelectAll();
   
 
 

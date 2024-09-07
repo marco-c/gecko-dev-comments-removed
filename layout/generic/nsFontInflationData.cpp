@@ -234,8 +234,7 @@ void nsFontInflationData::UpdateISize(const ReflowInput& aReflowInput) {
   
   
 
-  nsIFormControlFrame* fcf = do_QueryFrame(aFrame);
-  if (fcf) {
+  if (aFrame->IsTextInputFrame()) {
     return aFrame;
   }
 

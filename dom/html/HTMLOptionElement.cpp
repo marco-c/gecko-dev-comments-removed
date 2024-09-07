@@ -15,7 +15,6 @@
 #include "nsISelectControlFrame.h"
 
 
-#include "nsIFormControlFrame.h"
 #include "mozilla/dom/Document.h"
 #include "nsNodeInfoManager.h"
 #include "nsCOMPtr.h"
