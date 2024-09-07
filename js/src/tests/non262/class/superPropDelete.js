@@ -13,17 +13,11 @@ class derived extends base {
         assertThrowsInstanceOf(() => delete super[sideEffect = 1], ReferenceError);
         assertEq(sideEffect, 1);
     }
-    testDeleteElemPropValFirst() {
-        
-        
-        delete super[Object.setPrototypeOf(derived.prototype, null)];
-    }
 }
 
 var d = new derived();
 assertThrowsInstanceOf(() => d.testDeleteProp(), ReferenceError);
 d.testDeleteElem();
-assertThrowsInstanceOf(() => d.testDeleteElemPropValFirst(), TypeError);
 
 
 var thing1 = {
