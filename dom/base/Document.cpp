@@ -17292,6 +17292,10 @@ void Document::NotifyUserGestureActivation(
 
     wc->NotifyUserGestureActivation(aModifiers);
   });
+
+  
+  
+  SetSHEntryHasUserInteraction(true);
 }
 
 bool Document::HasBeenUserGestureActivated() {

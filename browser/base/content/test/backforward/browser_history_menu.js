@@ -62,6 +62,10 @@ async function testBackForwardMenu(useContextMenu) {
           content.history.back();
           await popStatePromise;
         } else {
+          
+          
+          
+          content.document.notifyUserGestureActivation();
           content.history.pushState({}, "" + iterChild, iterChild + ".html");
         }
       }
