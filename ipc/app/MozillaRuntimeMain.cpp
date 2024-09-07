@@ -71,6 +71,7 @@ int main(int argc, char* argv[]) {
     
     
     SetGeckoProcessType(argv[argc - 1]);
+    SetGeckoChildID(argv[argc - 2]);
 
     
     

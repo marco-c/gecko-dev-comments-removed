@@ -11,6 +11,7 @@
 #include "mozilla/BlockingResourceBase.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Omnijar.h"
+#include "mozilla/ProcessType.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
@@ -262,11 +263,16 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
   SetProcessTitleInit(*aArgv);
 
   
+  MOZ_ASSERT(!strcmp((*aArgv)[*aArgc - 1], "forkserver"),
+             "last argument is not \"forkserver\"");
+  SetGeckoProcessType("forkserver");
+  SetGeckoChildID((*aArgv)[*aArgc - 2]);
+
+  
   
   ForkServer forkserver;
   forkserver.InitProcess(aArgc, aArgv);
 
-  XRE_SetProcessType("forkserver");
   NS_LogInit();
   mozilla::LogModule::Init(0, nullptr);
   ForkServerPreload(*aArgc, *aArgv);

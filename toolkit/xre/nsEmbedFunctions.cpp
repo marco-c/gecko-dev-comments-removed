@@ -193,10 +193,6 @@ void XRE_SetAndroidChildFds(JNIEnv* env, const XRE_AndroidChildFds& fds) {
 }
 #endif  
 
-void XRE_SetProcessType(const char* aProcessTypeString) {
-  SetGeckoProcessType(aProcessTypeString);
-}
-
 #if defined(XP_WIN)
 void SetTaskbarGroupId(const nsString& aId) {
   if (FAILED(SetCurrentProcessExplicitAppUserModelID(aId.get()))) {

@@ -22,9 +22,14 @@ enum GeckoProcessType {
   GeckoProcessType_Invalid = GeckoProcessType_End
 };
 
+
+
+using GeckoChildID = int32_t;
+
 namespace mozilla {
 namespace startup {
 extern MFBT_DATA GeckoProcessType sChildProcessType;
+extern MFBT_DATA GeckoChildID sGeckoChildID;
 }  
 
 
@@ -38,6 +43,18 @@ MOZ_ALWAYS_INLINE GeckoProcessType GetGeckoProcessType() {
 
 
 MFBT_API void SetGeckoProcessType(const char* aProcessTypeString);
+
+
+
+
+MOZ_ALWAYS_INLINE GeckoChildID GetGeckoChildID() {
+  return startup::sGeckoChildID;
+}
+
+
+
+
+MFBT_API void SetGeckoChildID(const char* aGeckoChildIDString);
 
 }  
 

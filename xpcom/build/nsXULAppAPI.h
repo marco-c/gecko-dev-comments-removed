@@ -288,8 +288,6 @@ struct XRE_AndroidChildFds {
 void XRE_SetAndroidChildFds(JNIEnv* env, const XRE_AndroidChildFds& fds);
 #endif  
 
-void XRE_SetProcessType(const char* aProcessTypeString);
-
 nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
                               const XREChildData* aChildData);
 
@@ -303,6 +301,11 @@ GeckoProcessType XRE_GetProcessType();
 
 
 const char* XRE_GetProcessTypeString();
+
+
+
+
+GeckoChildID XRE_GetChildID();
 
 
 

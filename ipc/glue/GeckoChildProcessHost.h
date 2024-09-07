@@ -153,6 +153,11 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   
   ProcessId GetChildProcessId();
 
+  
+  
+  
+  GeckoChildID GetChildID() const { return mChildID; }
+
   GeckoProcessType GetProcessType() { return mProcessType; }
 
 #ifdef XP_DARWIN
@@ -213,6 +218,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
  protected:
   virtual ~GeckoChildProcessHost();
   GeckoProcessType mProcessType;
+  GeckoChildID mChildID;
   bool mIsFileContent;
   Monitor mMonitor;
   FilePath mProcessPath;
