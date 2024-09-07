@@ -31,7 +31,6 @@ class SdpPref {
     Sipcc,
     WebRtcSdp,
   };
-  static auto ToString(const Parsers& aParser) -> std::string;
 
   
   enum class AlternateParseModes {
@@ -40,7 +39,6 @@ class SdpPref {
     Failover,  
     Never,     
   };
-  static auto ToString(const AlternateParseModes& aMode) -> std::string;
 
  private:
   
