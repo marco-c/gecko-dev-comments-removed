@@ -611,6 +611,15 @@ int16_t PresShell::sMouseButtons = MouseButtonsFlag::eNoButtons;
 
 LazyLogModule PresShell::gLog("PresShell");
 
+#ifdef DEBUG
+
+
+
+
+
+LazyLogModule gLogMouseLocation("MouseLocation");
+#endif
+
 TimeStamp PresShell::EventHandler::sLastInputCreated;
 TimeStamp PresShell::EventHandler::sLastInputProcessed;
 StaticRefPtr<Element> PresShell::EventHandler::sLastKeyDownEventTargetElement;
@@ -5799,9 +5808,10 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   
   RefPtr<PresShell> kungFuDeathGrip(this);
 
-#ifdef DEBUG_MOUSE_LOCATION
-  printf("[ps=%p]synthesizing mouse move to (%d,%d)\n", this, mMouseLocation.x,
-         mMouseLocation.y);
+#ifdef DEBUG
+  MOZ_LOG(gLogMouseLocation, LogLevel::Info,
+          ("[ps=%p]synthesizing mouse move to (%d,%d)\n", this,
+           mMouseLocation.x, mMouseLocation.y));
 #endif
 
   int32_t APD = mPresContext->AppUnitsPerDevPixel();
@@ -6766,12 +6776,28 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
       mMouseLocationWasSetBySynthesizedMouseEventForTests =
           aEvent->mFlags.mIsSynthesizedForTests;
-#ifdef DEBUG_MOUSE_LOCATION
-      if (aEvent->mMessage == eMouseEnterIntoWidget) {
-        printf("[ps=%p]got mouse enter for %p\n", this, aEvent->mWidget);
+#ifdef DEBUG
+      if (MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Info)) {
+        static uint32_t sFrequentMessageCount = 0;
+        const bool isFrequestMessage =
+            aEvent->mMessage == eMouseMove || aEvent->mMessage == eDragOver;
+        if (!isFrequestMessage ||
+            MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Verbose) ||
+            !(sFrequentMessageCount % 50)) {
+          MOZ_LOG(gLogMouseLocation,
+                  isFrequestMessage ? LogLevel::Debug : LogLevel::Info,
+                  ("[ps=%p]got %s for %p at {%d, %d}\n", this,
+                   ToChar(aEvent->mMessage), aEvent->mWidget.get(),
+                   mMouseLocation.x, mMouseLocation.y));
+        }
+        if (isFrequestMessage) {
+          sFrequentMessageCount++;
+        } else {
+          
+          
+          sFrequentMessageCount = 0;
+        }
       }
-      printf("[ps=%p]setting mouse location to (%d,%d)\n", this,
-             mMouseLocation.x, mMouseLocation.y);
 #endif
       if (aEvent->mMessage == eMouseEnterIntoWidget) {
         SynthesizeMouseMove(false);
@@ -6789,9 +6815,10 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       mMouseEventTargetGuid = InputAPZContext::GetTargetLayerGuid();
       mMouseLocationWasSetBySynthesizedMouseEventForTests =
           aEvent->mFlags.mIsSynthesizedForTests;
-#ifdef DEBUG_MOUSE_LOCATION
-      printf("[ps=%p]got mouse exit for %p\n", this, aEvent->mWidget);
-      printf("[ps=%p]clearing mouse location\n", this);
+#ifdef DEBUG
+      MOZ_LOG(gLogMouseLocation, LogLevel::Info,
+              ("[ps=%p]got %s for %p, mouse location is cleared\n", this,
+               ToChar(aEvent->mMessage), aEvent->mWidget.get()));
 #endif
       break;
     }
