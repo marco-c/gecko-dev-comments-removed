@@ -1,6 +1,12 @@
 'use strict';
 
 const gCSSProperties1 = {
+  'alignment-baseline': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'baseline', 'middle' ] ] }
+    ]
+  },
   'align-content': {
     
     types: [
@@ -322,6 +328,12 @@ const gCSSProperties1 = {
     
     types: [
       { type: 'discrete', options: [ [ 'content-box', 'border-box' ] ] }
+    ]
+  },
+  'buffered-rendering': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'auto', 'dynamic' ] ] }
     ]
   },
   'caption-side': {
