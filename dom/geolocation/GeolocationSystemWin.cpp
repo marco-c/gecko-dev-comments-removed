@@ -5,9 +5,11 @@
 
 
 #include "GeolocationSystem.h"
+#include "mozilla/Components.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/ScopeExit.h"
 #include "nsIGeolocationUIUtilsWin.h"
+#include "nsIWifiListener.h"
 #include "nsIWifiMonitor.h"
 
 #include <windows.system.h>
@@ -70,10 +72,7 @@ bool SystemWillPromptForPermissionHint() {
   
   
   
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsIWifiMonitor> wifiMonitor =
-      do_GetService("@mozilla.org/wifi/monitor;1", &rv);
-  NS_ENSURE_SUCCESS(rv, false);
+  nsCOMPtr<nsIWifiMonitor> wifiMonitor = components::WifiMonitor::Service();
   NS_ENSURE_TRUE(wifiMonitor, false);
   return wifiMonitor->GetHasWifiAdapter();
 }
@@ -268,6 +267,46 @@ void OpenWindowsLocationSettings(
   cancelRequest.release();
 }
 
+class LocationPermissionWifiScanListener final : public nsIWifiListener {
+ public:
+  NS_DECL_ISUPPORTS
+
+  explicit LocationPermissionWifiScanListener(
+      SystemGeolocationPermissionRequest* aRequest)
+      : mRequest(aRequest) {}
+
+  NS_IMETHOD OnChange(const nsTArray<RefPtr<nsIWifiAccessPoint>>&) override {
+    
+    
+    RefPtr<LocationPermissionWifiScanListener> self = this;
+    return PermissionWasDecided();
+  }
+
+  NS_IMETHOD OnError(nsresult) override {
+    
+    
+    RefPtr<LocationPermissionWifiScanListener> self = this;
+    return PermissionWasDecided();
+  }
+
+ private:
+  virtual ~LocationPermissionWifiScanListener() = default;
+  RefPtr<SystemGeolocationPermissionRequest> mRequest;
+
+  
+  
+  
+  nsresult PermissionWasDecided() {
+    nsCOMPtr<nsIWifiMonitor> wifiMonitor = components::WifiMonitor::Service();
+    NS_ENSURE_TRUE(wifiMonitor, NS_ERROR_FAILURE);
+    wifiMonitor->StopWatching(this);
+    mRequest->Stop();
+    return NS_OK;
+  }
+};
+
+NS_IMPL_ISUPPORTS(LocationPermissionWifiScanListener, nsIWifiListener)
+
 }  
 
 
@@ -282,8 +321,9 @@ SystemGeolocationPermissionBehavior GetGeolocationPermissionBehavior() {
   return SystemGeolocationPermissionBehavior::NoPrompt;
 }
 
-already_AddRefed<SystemGeolocationPermissionRequest> PresentSystemSettings(
-    BrowsingContext* aBrowsingContext, ParentRequestResolver&& aResolver) {
+already_AddRefed<SystemGeolocationPermissionRequest>
+RequestLocationPermissionFromUser(BrowsingContext* aBrowsingContext,
+                                  ParentRequestResolver&& aResolver) {
   RefPtr<WindowsGeolocationPermissionRequest> permissionRequest =
       new WindowsGeolocationPermissionRequest(aBrowsingContext,
                                               std::move(aResolver));
@@ -291,7 +331,20 @@ already_AddRefed<SystemGeolocationPermissionRequest> PresentSystemSettings(
   if (permissionRequest->IsStopped()) {
     return nullptr;
   }
-  OpenWindowsLocationSettings(permissionRequest);
+  if (SystemWillPromptForPermissionHint()) {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIWifiMonitor> wifiMonitor = components::WifiMonitor::Service();
+    NS_ENSURE_TRUE(wifiMonitor, nullptr);
+    auto listener =
+        MakeRefPtr<LocationPermissionWifiScanListener>(permissionRequest);
+    wifiMonitor->StartWatching(listener, false);
+  } else {
+    OpenWindowsLocationSettings(permissionRequest);
+  }
   return permissionRequest.forget();
 }
 
