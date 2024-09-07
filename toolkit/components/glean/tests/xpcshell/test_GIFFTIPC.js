@@ -115,6 +115,19 @@ add_task({ skip_if: () => runningInParent }, async function run_child_stuff() {
     Glean.testOnly.whatDoYouRemember.breakfast.accumulate(memory);
   }
 
+  let l1 = Glean.testOnly.whereHasTheTimeGone["long time passing"].start();
+  let l2 = Glean.testOnly.whereHasTheTimeGone["long time passing"].start();
+
+  await sleep(5);
+
+  let l3 = Glean.testOnly.whereHasTheTimeGone["long time passing"].start();
+  Glean.testOnly.whereHasTheTimeGone["long time passing"].cancel(l1);
+
+  await sleep(5);
+
+  Glean.testOnly.whereHasTheTimeGone["long time passing"].stopAndAccumulate(l2); 
+  Glean.testOnly.whereHasTheTimeGone["long time passing"].stopAndAccumulate(l3); 
+
   Telemetry.canRecordBase = oldCanRecordBase;
 });
 
@@ -374,6 +387,35 @@ add_task(
       2,
       labeledMemoryHist.breakfast.values["1"],
       "Samples are in the right bucket"
+    );
+
+    
+    const lTimes =
+      Glean.testOnly.whereHasTheTimeGone["long time passing"].testGetValue();
+    Assert.greater(lTimes.sum, 15 * NANOS_IN_MILLIS - EPSILON);
+    
+    
+    Assert.equal(
+      2,
+      Object.entries(lTimes.values).reduce((acc, [, count]) => acc + count, 0)
+    );
+    const labeledTimingHist =
+      keyedHistSnapshot.content.TELEMETRY_TEST_MIRROR_FOR_LABELED_TIMING;
+    Assert.ok("long time passing" in labeledTimingHist);
+    
+    
+    Assert.greaterOrEqual(
+      labeledTimingHist["long time passing"].sum,
+      13,
+      "Histogram's in milliseconds."
+    );
+    Assert.equal(
+      2,
+      Object.entries(labeledTimingHist["long time passing"].values).reduce(
+        (acc, [, count]) => acc + count,
+        0
+      ),
+      "Only two samples"
     );
   }
 );

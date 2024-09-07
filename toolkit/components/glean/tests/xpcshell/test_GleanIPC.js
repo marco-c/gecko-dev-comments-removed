@@ -81,6 +81,19 @@ add_task({ skip_if: () => runningInParent }, async function run_child_stuff() {
   for (let memory of MEMORIES) {
     Glean.testOnly.whatDoYouRemember.trivia.accumulate(memory);
   }
+
+  let l1 = Glean.testOnly.whereHasTheTimeGone.relatively.start();
+  let l2 = Glean.testOnly.whereHasTheTimeGone.relatively.start();
+
+  await sleep(5);
+
+  let l3 = Glean.testOnly.whereHasTheTimeGone.relatively.start();
+  Glean.testOnly.whereHasTheTimeGone.relatively.cancel(l1);
+
+  await sleep(5);
+
+  Glean.testOnly.whereHasTheTimeGone.relatively.stopAndAccumulate(l2); 
+  Glean.testOnly.whereHasTheTimeGone.relatively.stopAndAccumulate(l3); 
 });
 
 add_task(
@@ -173,5 +186,18 @@ add_task(
       }
       Assert.ok(count == 1 && MEMORY_BUCKETS.includes(bucket));
     }
+
+    const labeledTimes =
+      Glean.testOnly.whereHasTheTimeGone.relatively.testGetValue();
+    Assert.greater(labeledTimes.sum, 15 * NANOS_IN_MILLIS - EPSILON);
+    
+    
+    Assert.equal(
+      2,
+      Object.entries(labeledTimes.values).reduce(
+        (acc, [, count]) => acc + count,
+        0
+      )
+    );
   }
 );
