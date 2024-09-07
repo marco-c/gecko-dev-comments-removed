@@ -23,6 +23,22 @@
 #include <stdio.h>  
 #include <string.h>
 
+#if defined(__linux__) && defined(__aarch64__)
+#include <sys/auxv.h>  
+#endif
+
+#if defined(_WIN32) && defined(__aarch64__)
+#undef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#undef WIN32_EXTRA_LEAN
+#define WIN32_EXTRA_LEAN
+#include <windows.h>  
+#endif
+
+#if defined(__APPLE__) && defined(__aarch64__)
+#include <sys/sysctl.h>  
+#endif
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -39,7 +55,6 @@ extern "C" {
 
 
 LIBYUV_API int cpu_info_ = 0;
-
 
 
 #if (defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || \
@@ -133,46 +148,217 @@ static int GetXCR0() {
 #pragma optimize("g", on)
 #endif
 
+static int cpuinfo_search(const char* cpuinfo_line,
+                          const char* needle,
+                          int needle_len) {
+  const char* p = strstr(cpuinfo_line, needle);
+  return p && (p[needle_len] == ' ' || p[needle_len] == '\n');
+}
+
 
 
 LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
   char cpuinfo_line[512];
-  FILE* f = fopen(cpuinfo_name, "r");
+  FILE* f = fopen(cpuinfo_name, "re");
   if (!f) {
     
     
     return kCpuHasNEON;
   }
-  while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
+  memset(cpuinfo_line, 0, sizeof(cpuinfo_line));
+  int features = 0;
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f)) {
     if (memcmp(cpuinfo_line, "Features", 8) == 0) {
-      char* p = strstr(cpuinfo_line, " neon");
-      if (p && (p[5] == ' ' || p[5] == '\n')) {
-        fclose(f);
-        return kCpuHasNEON;
-      }
-      
-      p = strstr(cpuinfo_line, " asimd");
-      if (p) {
-        fclose(f);
-        return kCpuHasNEON;
+      if (cpuinfo_search(cpuinfo_line, " neon", 5)) {
+        features |= kCpuHasNEON;
       }
     }
   }
   fclose(f);
-  return 0;
+  return features;
+}
+
+#ifdef __aarch64__
+#ifdef __linux__
+
+
+#define YUV_AARCH64_HWCAP_ASIMDDP (1 << 20)
+#define YUV_AARCH64_HWCAP_SVE (1 << 22)
+#define YUV_AARCH64_HWCAP2_SVE2 (1 << 1)
+#define YUV_AARCH64_HWCAP2_I8MM (1 << 13)
+#define YUV_AARCH64_HWCAP2_SME (1 << 23)
+
+
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
+                                          unsigned long hwcap2) {
+  
+  int features = kCpuHasNEON;
+
+  
+  
+  
+  
+  
+  
+  if (hwcap & YUV_AARCH64_HWCAP_ASIMDDP) {
+    features |= kCpuHasNeonDotProd;
+    if (hwcap2 & YUV_AARCH64_HWCAP2_I8MM) {
+      features |= kCpuHasNeonI8MM;
+      if (hwcap & YUV_AARCH64_HWCAP_SVE) {
+        features |= kCpuHasSVE;
+        if (hwcap2 & YUV_AARCH64_HWCAP2_SVE2) {
+          features |= kCpuHasSVE2;
+          if (hwcap2 & YUV_AARCH64_HWCAP2_SME) {
+            features |= kCpuHasSME;
+          }
+        }
+      }
+    }
+  }
+  return features;
+}
+
+#elif defined(_WIN32)
+
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+  
+  int features = kCpuHasNEON;
+
+  
+  
+#ifdef PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE
+  if (IsProcessorFeaturePresent(PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE)) {
+    features |= kCpuHasNeonDotProd;
+  }
+#endif
+  
+  return features;
+}
+
+#elif defined(__APPLE__)
+static bool have_feature(const char* feature) {
+  
+  
+  int64_t feature_present = 0;
+  size_t size = sizeof(feature_present);
+  if (sysctlbyname(feature, &feature_present, &size, NULL, 0) != 0) {
+    return false;
+  }
+  return feature_present;
 }
 
 
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+  
+  int features = kCpuHasNEON;
+
+  if (have_feature("hw.optional.arm.FEAT_DotProd")) {
+    features |= kCpuHasNeonDotProd;
+    if (have_feature("hw.optional.arm.FEAT_I8MM")) {
+      features |= kCpuHasNeonI8MM;
+    }
+  }
+  
+  return features;
+}
+
+#else  
+
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+  
+  int features = kCpuHasNEON;
+
+  
+
+  return features;
+}
+#endif
+#endif  
+
+LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
+  char cpuinfo_line[512];
+  int flag = 0;
+  FILE* f = fopen(cpuinfo_name, "re");
+  if (!f) {
+#if defined(__riscv_vector)
+    
+    
+    return kCpuHasRVV;
+#else
+    return 0;
+#endif
+  }
+  memset(cpuinfo_line, 0, sizeof(cpuinfo_line));
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f)) {
+    if (memcmp(cpuinfo_line, "isa", 3) == 0) {
+      
+      char* isa = strstr(cpuinfo_line, "rv64");
+      if (isa) {
+        size_t isa_len = strlen(isa);
+        char* extensions;
+        size_t extensions_len = 0;
+        size_t std_isa_len;
+        
+        if (isa[isa_len - 1] == '\n') {
+          isa[--isa_len] = '\0';
+        }
+        
+        if (isa_len < 5) {
+          fclose(f);
+          return 0;
+        }
+        
+        
+        isa += 5;
+        
+        
+        
+        extensions = strpbrk(isa, "zxs");
+        if (extensions) {
+          
+          
+          char* ext = strtok(extensions, "_");
+          extensions_len = strlen(extensions);
+          while (ext) {
+            
+            if (!strcmp(ext, "zvfh")) {
+              flag |= kCpuHasRVVZVFH;
+            }
+            ext = strtok(NULL, "_");
+          }
+        }
+        std_isa_len = isa_len - extensions_len - 5;
+        
+        if (memchr(isa, 'v', std_isa_len)) {
+          
+          flag |= kCpuHasRVV;
+        }
+      }
+    }
+#if defined(__riscv_vector)
+    
+    else if ((memcmp(cpuinfo_line, "vendor_id\t: GenuineIntel", 24) == 0) ||
+             (memcmp(cpuinfo_line, "vendor_id\t: AuthenticAMD", 24) == 0)) {
+      fclose(f);
+      return kCpuHasRVV;
+    }
+#endif
+  }
+  fclose(f);
+  return flag;
+}
+
 LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
   char cpuinfo_line[512];
-  int flag = 0x0;
-  FILE* f = fopen(cpuinfo_name, "r");
+  int flag = 0;
+  FILE* f = fopen(cpuinfo_name, "re");
   if (!f) {
     
     
     return 0;
   }
-  while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
+  memset(cpuinfo_line, 0, sizeof(cpuinfo_line));
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f)) {
     if (memcmp(cpuinfo_line, "cpu model", 9) == 0) {
       
       if (strstr(cpuinfo_line, "Loongson-2K")) {
@@ -191,14 +377,13 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
   return flag;
 }
 
-
 #define LOONGARCH_CFG2 0x2
 #define LOONGARCH_CFG2_LSX (1 << 6)
 #define LOONGARCH_CFG2_LASX (1 << 7)
 
 #if defined(__loongarch__)
 LIBYUV_API SAFEBUFFERS int LoongarchCpuCaps(void) {
-  int flag = 0x0;
+  int flag = 0;
   uint32_t cfg2 = 0;
 
   __asm__ volatile("cpucfg %0, %1 \n\t" : "+&r"(cfg2) : "r"(LOONGARCH_CFG2));
@@ -220,10 +405,12 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info0[4] = {0, 0, 0, 0};
   int cpu_info1[4] = {0, 0, 0, 0};
   int cpu_info7[4] = {0, 0, 0, 0};
+  int cpu_einfo7[4] = {0, 0, 0, 0};
   CpuId(0, 0, cpu_info0);
   CpuId(1, 0, cpu_info1);
   if (cpu_info0[0] >= 7) {
     CpuId(7, 0, cpu_info7);
+    CpuId(7, 1, cpu_einfo7);
   }
   cpu_info = kCpuHasX86 | ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
              ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
@@ -236,7 +423,9 @@ static SAFEBUFFERS int GetCpuFlags(void) {
       ((GetXCR0() & 6) == 6)) {  
     cpu_info |= kCpuHasAVX | ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
                 ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
-                ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0);
+                ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0) |
+                ((cpu_einfo7[0] & 0x00000010) ? kCpuHasAVXVNNI : 0) |
+                ((cpu_einfo7[3] & 0x00000010) ? kCpuHasAVXVNNIINT8 : 0);
 
     
     if ((GetXCR0() & 0xe0) == 0xe0) {
@@ -246,8 +435,8 @@ static SAFEBUFFERS int GetCpuFlags(void) {
       cpu_info |= (cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0;
       cpu_info |= (cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0;
       cpu_info |= (cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0;
-      cpu_info |= (cpu_info7[2] & 0x00004000) ? kCpuHasAVX512VPOPCNTDQ : 0;
-      cpu_info |= (cpu_info7[2] & 0x00000100) ? kCpuHasGFNI : 0;
+      cpu_info |= (cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0;
+      cpu_info |= (cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0;
     }
   }
 #endif
@@ -260,22 +449,28 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   cpu_info |= kCpuHasLOONGARCH;
 #endif
 #if defined(__arm__) || defined(__aarch64__)
-
-
-
-#if defined(__ARM_NEON__) || defined(__native_client__) || !defined(__linux__)
-  cpu_info = kCpuHasNEON;
-
-
-
-#endif
-#if defined(__aarch64__)
-  cpu_info = kCpuHasNEON;
+#if defined(__aarch64__) && defined(__linux__)
+  
+  
+  
+  
+  unsigned long hwcap = getauxval(AT_HWCAP);
+  unsigned long hwcap2 = getauxval(AT_HWCAP2);
+  cpu_info = AArch64CpuCaps(hwcap, hwcap2);
+#elif defined(__aarch64__)
+  cpu_info = AArch64CpuCaps();
 #else
+  
+  
+  
   
   cpu_info = ArmCpuCaps("/proc/cpuinfo");
 #endif
   cpu_info |= kCpuHasARM;
+#endif  
+#if defined(__riscv) && defined(__linux__)
+  cpu_info = RiscvCpuCaps("/proc/cpuinfo");
+  cpu_info |= kCpuHasRISCV;
 #endif  
   cpu_info |= kCpuInitialized;
   return cpu_info;

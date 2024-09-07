@@ -30,7 +30,10 @@ extern "C" {
 #endif
 
 #if defined(__has_feature)
-#if __has_feature(memory_sanitizer)
+#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_NEON)
+#define LIBYUV_DISABLE_NEON
+#endif
+#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_X86)
 #define LIBYUV_DISABLE_X86
 #endif
 #endif
@@ -826,15 +829,6 @@ int ARGBCopyYToAlpha(const uint8_t* src_y,
                      int dst_stride_argb,
                      int width,
                      int height);
-
-typedef void (*ARGBBlendRow)(const uint8_t* src_argb0,
-                             const uint8_t* src_argb1,
-                             uint8_t* dst_argb,
-                             int width);
-
-
-LIBYUV_API
-ARGBBlendRow GetARGBBlend();
 
 
 
