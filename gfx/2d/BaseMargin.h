@@ -120,6 +120,10 @@ struct BaseMargin {
     left = std::min(left, aMargin.left);
   }
 
+  bool IsAllZero() const {
+    return left == 0 && top == 0 && right == 0 && bottom == 0;
+  }
+
   
   
   bool operator==(const Sub& aMargin) const {
