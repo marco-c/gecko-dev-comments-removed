@@ -967,10 +967,12 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
     return true;
   }
 
-  CFTypeRefPtr<IOSurfaceRef> surface = macIOSurface->GetIOSurfaceRef();
-  OSType pixelFormat = IOSurfaceGetPixelFormat(surface.get());
-  if (pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange ||
-      pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange) {
+  if (macIOSurface->GetColorDepth() == gfx::ColorDepth::COLOR_10) {
+    
+    return true;
+  }
+
+  if (macIOSurface->GetPlaneCount() > 1) {
     
     return true;
   }
@@ -979,12 +981,6 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
   
 
   if (!StaticPrefs::gfx_core_animation_specialize_video()) {
-    
-    return false;
-  }
-
-  if (pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange &&
-      pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
     
     return false;
   }
