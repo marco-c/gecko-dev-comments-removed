@@ -866,6 +866,20 @@ pref("permissions.desktop-notification.notNow.enabled", false);
 
 pref("permissions.fullscreen.allowed", false);
 
+#ifdef MOZ_WEBRTC
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("permissions.media.show_always_ask.enabled", false);
+#endif
+
 
 
 pref("browser.link.force_default_user_context_id_for_external_opens", false);
