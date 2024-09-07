@@ -9,7 +9,11 @@ const { MegalistViewModel } = ChromeUtils.importESModule(
 
 const EXPECTED_SNAPSHOTS_DATA = [
   
-  { lineIndex: 0, value: { total: 3, alerts: 0 }, field: undefined },
+  {
+    lineIndex: 0,
+    value: { total: 3, alerts: 0, statsTotal: 3 },
+    field: undefined,
+  },
 
   
   { lineIndex: 1, value: "example1.com", field: "origin" },

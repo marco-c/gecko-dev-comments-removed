@@ -192,22 +192,6 @@ add_task(async function test_loginDataSourceSortByAlerts() {
       displayOrigin: "vulnerablelogin.com",
       username: "vulnerable",
     },
-    {
-      displayOrigin: "a.com",
-      username: "aUsername",
-    },
-    {
-      displayOrigin: "a.com",
-      username: "bUsername",
-    },
-    {
-      displayOrigin: "b.com",
-      username: "aUsername",
-    },
-    {
-      displayOrigin: "b.com",
-      username: "bUsername",
-    },
   ];
 
   
