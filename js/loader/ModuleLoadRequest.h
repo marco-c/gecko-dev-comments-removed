@@ -24,7 +24,7 @@ class ModuleLoaderBase;
 
 
 
-class VisitedURLSet : public nsTHashtable<nsURIHashKey> {
+class VisitedURLSet : public nsTHashtable<ModuleMapKey> {
   NS_INLINE_DECL_REFCOUNTING(VisitedURLSet)
 
  private:
