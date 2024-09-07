@@ -6138,6 +6138,7 @@ static const PrefListEntry sRestrictFromWebContentProcesses[] = {
     PREF_LIST_ENTRY("extensions.webextensions.uuids"),
     PREF_LIST_ENTRY("privacy.userContext.extension"),
     PREF_LIST_ENTRY("toolkit.telemetry.cachedClientID"),
+    PREF_LIST_ENTRY("toolkit.telemetry.cachedProfileGroupID"),
 
     
     PREF_LIST_ENTRY("app.update.lastUpdateTime."),
