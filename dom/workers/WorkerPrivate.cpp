@@ -1655,6 +1655,20 @@ nsresult WorkerPrivate::DispatchLockHeld(
     
     
     
+    if (mStatus == Pending) {
+      LOGV(
+          ("WorkerPrivate::DispatchLockHeld [%p] runnable %p is append in "
+           "mPreStartRunnables",
+           this, runnable.get()));
+      RefPtr<WorkerThreadRunnable> workerThreadRunnable =
+          static_cast<WorkerThreadRunnable*>(runnable.get());
+      mPreStartRunnables.AppendElement(workerThreadRunnable);
+    }
+
+    
+    
+    
+    
     LOGV(
         ("WorkerPrivate::DispatchLockHeld [%p] runnable %p dispatch to the "
          "main event queue",
