@@ -5209,6 +5209,11 @@ MDefinition* MNot::foldsTo(TempAllocator& alloc) {
     return MConstant::New(alloc, BooleanValue(false));
   }
 
+  
+  if (input()->isInt64ToBigInt()) {
+    return MNot::New(alloc, input()->toInt64ToBigInt()->input());
+  }
+
   return this;
 }
 
