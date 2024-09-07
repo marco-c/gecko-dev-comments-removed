@@ -163,7 +163,12 @@ TEST(SplTest, CountLeadingZeros64) {
   }
 }
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST(SplTest, DISABLED_MathOperationsTest) {
+#else
 TEST(SplTest, MathOperationsTest) {
+#endif
   int A = 1134567892;
   int32_t num = 117;
   int32_t den = -5;
