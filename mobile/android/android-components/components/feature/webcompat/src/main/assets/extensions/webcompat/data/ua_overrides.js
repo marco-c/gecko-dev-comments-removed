@@ -1261,6 +1261,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1903970",
+    platform: "all",
+    domain: "www.unimedlitoral.com.br",
+    bug: "1903970",
+    config: {
+      matches: ["*://www.unimedlitoral.com.br/agendaonline/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
