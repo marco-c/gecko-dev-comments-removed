@@ -13,13 +13,41 @@ const isFissionEnabled = SpecialPowers.useRemoteSubframes;
 const SAMPLE_SIZE = 10;
 const NS_PER_MS = 1000000;
 
+
+
+
+
+
+const LINUX_ROUNDING_ERROR = 8.0 * NS_PER_MS;
+
 function checkProcessCpuTime(proc) {
-  Assert.greater(proc.cpuTime, 0, "Got some cpu time");
-  Assert.greater(proc.threads.length, 0, "Got some threads");
-  Assert.ok(
-    proc.threads.some(thread => thread.cpuTime > 0),
-    "Got some cpu time in the threads"
-  );
+  let hasProcessCPUTime = proc.cpuTime > 0;
+  if (hasProcessCPUTime || AppConstants.platform !== "linux") {
+    Assert.ok(hasProcessCPUTime, "Got some cpu time");
+    Assert.greater(proc.threads.length, 0, "Got some threads");
+  } else {
+    
+    
+    Assert.equal(proc.threads.length, 1, "Got one thread");
+    Assert.equal(proc.threads[0].name, "forkserver", "Got one forkserver");
+  }
+
+  let hasThreadCPUTime = proc.threads.some(thread => thread.cpuTime > 0);
+  if (hasThreadCPUTime || AppConstants.platform !== "linux") {
+    Assert.ok(hasThreadCPUTime, "Got some cpu time in the threads");
+  } else {
+    
+    
+    
+    
+    
+    
+    Assert.less(
+      proc.cpuTime / proc.threads.length,
+      LINUX_ROUNDING_ERROR,
+      `No CPU time (${proc.cpuTime}) in the threads (${proc.threads.length}) on Linux, but within rounding errors`
+    );
+  }
 
   let cpuThreads = 0;
   for (let thread of proc.threads) {
