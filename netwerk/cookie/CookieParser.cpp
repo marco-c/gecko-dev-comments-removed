@@ -912,8 +912,6 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     return newCookie;
   }
 
-  CookieCommons::RecordUnicodeTelemetry(mCookieData);
-
   
   
   if (XRE_IsParentProcess() || !aFromHttp) {
