@@ -186,10 +186,10 @@ class Pacer {
   TimeDelta delay_;
 };
 
+
+
 class LimitedTaskQueue {
  public:
-  
-  
   
   
   
@@ -199,12 +199,21 @@ class LimitedTaskQueue {
 
   LimitedTaskQueue() : queue_size_(0) {}
 
-  void PostScheduledTask(absl::AnyInvocable<void() &&> task, Timestamp start) {
+  void PostScheduledTask(absl::AnyInvocable<void() &&> task,
+                         Timestamp scheduled) {
+    {
+      
+      MutexLock lock(&mutex_);
+      while (queue_size_ >= kMaxTaskQueueSize) {
+        task_executed_.Wait(TimeDelta::Seconds(10));
+        task_executed_.Reset();
+      }
+    }
+
     ++queue_size_;
-    task_queue_.PostTask([this, task = std::move(task), start]() mutable {
-      
-      
-      int64_t wait_ms = (start - Timestamp::Millis(rtc::TimeMillis())).ms();
+    task_queue_.PostTask([this, task = std::move(task), scheduled]() mutable {
+      Timestamp now = Timestamp::Millis(rtc::TimeMillis());
+      int64_t wait_ms = (scheduled - now).ms();
       if (wait_ms > 0) {
         RTC_CHECK_LT(wait_ms, 10000) << "Too high wait_ms " << wait_ms;
         SleepMs(wait_ms);
@@ -213,16 +222,19 @@ class LimitedTaskQueue {
       --queue_size_;
       task_executed_.Set();
     });
+  }
 
-    task_executed_.Reset();
-    if (queue_size_ > kMaxTaskQueueSize) {
-      task_executed_.Wait(rtc::Event::kForever);
-      RTC_CHECK(queue_size_ <= kMaxTaskQueueSize);
-    }
+  void PostTask(absl::AnyInvocable<void() &&> task) {
+    Timestamp now = Timestamp::Millis(rtc::TimeMillis());
+    PostScheduledTask(std::move(task), now);
   }
 
   void PostTaskAndWait(absl::AnyInvocable<void() &&> task) {
-    PostScheduledTask(std::move(task), Timestamp::Millis(rtc::TimeMillis()));
+    PostTask(std::move(task));
+    WaitForPreviouslyPostedTasks();
+  }
+
+  void WaitForPreviouslyPostedTasks() {
     task_queue_.WaitForPreviouslyPostedTasks();
   }
 
@@ -230,6 +242,7 @@ class LimitedTaskQueue {
   TaskQueueForTest task_queue_;
   std::atomic_int queue_size_;
   rtc::Event task_executed_;
+  Mutex mutex_;
 };
 
 class TesterY4mWriter {
@@ -776,7 +789,7 @@ class VideoCodecAnalyzer : public VideoCodecTester::VideoCodecStats {
   }
 
   VideoSource* const video_source_;
-  TaskQueueForTest task_queue_;
+  LimitedTaskQueue task_queue_;
   
   std::map<uint32_t, std::map<int, Frame>> frames_;
   std::map<uint32_t, EncodingSettings> encoding_settings_;
