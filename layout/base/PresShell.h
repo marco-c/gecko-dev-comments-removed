@@ -1522,6 +1522,9 @@ class PresShell final : public nsStubDocumentObserver,
   nsSize GetVisualViewportSizeUpdatedByDynamicToolbar() const;
 
   
+  void RefreshViewportSize();
+
+  
 
 
   

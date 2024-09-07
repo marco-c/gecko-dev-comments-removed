@@ -144,12 +144,12 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   mozilla::CSSToScreenScale GetZoom() const;
 
- private:
-  ~MobileViewportManager();
-
   
 
   void RefreshViewportSize(bool aForceAdjustResolution);
+
+ private:
+  ~MobileViewportManager();
 
   
   void RefreshVisualViewportSize();
