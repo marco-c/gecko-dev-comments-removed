@@ -217,6 +217,11 @@ extern JS_PUBLIC_API Value GetModulePrivate(JSObject* module);
 
 
 
+extern JS_PUBLIC_API bool IsCyclicModule(JSObject* module);
+
+
+
+
 
 
 
