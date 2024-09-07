@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "CTKnownLogs.h"
 #include "CTLog.h"
 #include "CTUtils.h"
 #include "SignedCertificateTimestamp.h"
@@ -28,28 +29,25 @@ namespace ct {
 
 class CTLogVerifier {
  public:
-  CTLogVerifier();
+  
+  
+  
+  CTLogVerifier(CTLogOperatorId operatorId, CTLogState logState,
+                uint64_t timestamp);
 
   
   
   
   
-  
-  
-  
-  
-  
-  pkix::Result Init(pkix::Input subjectPublicKeyInfo,
-                    CTLogOperatorId operatorId, CTLogStatus logStatus,
-                    uint64_t disqualificationTime);
+  pkix::Result Init(pkix::Input subjectPublicKeyInfo);
 
   
   
   const Buffer& keyId() const { return mKeyId; }
 
   CTLogOperatorId operatorId() const { return mOperatorId; }
-  bool isDisqualified() const { return mDisqualified; }
-  uint64_t disqualificationTime() const { return mDisqualificationTime; }
+  CTLogState state() const { return mState; }
+  uint64_t timestamp() const { return mTimestamp; }
 
   
   
@@ -78,8 +76,8 @@ class CTLogVerifier {
   Buffer mKeyId;
   DigitallySigned::SignatureAlgorithm mSignatureAlgorithm;
   CTLogOperatorId mOperatorId;
-  bool mDisqualified;
-  uint64_t mDisqualificationTime;
+  CTLogState mState;
+  uint64_t mTimestamp;
 };
 
 }  

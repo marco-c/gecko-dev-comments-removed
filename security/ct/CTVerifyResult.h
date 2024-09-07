@@ -9,48 +9,33 @@
 
 #include <vector>
 
+#include "CTKnownLogs.h"
 #include "CTLog.h"
 #include "SignedCertificateTimestamp.h"
 
 namespace mozilla {
 namespace ct {
 
+enum class SCTOrigin {
+  Embedded,
+  TLSExtension,
+  OCSPResponse,
+};
+
 
 
 
 struct VerifiedSCT {
-  VerifiedSCT();
+  VerifiedSCT(SignedCertificateTimestamp&& sct, SCTOrigin origin,
+              CTLogOperatorId logOperatorId, CTLogState logState,
+              uint64_t logTimestamp);
 
   
   SignedCertificateTimestamp sct;
-
-  enum class Status {
-    None,
-    
-    Valid,
-    
-    
-    ValidFromDisqualifiedLog,
-    
-    UnknownLog,
-    
-    InvalidSignature,
-    
-    
-    InvalidTimestamp,
-  };
-
-  enum class Origin {
-    Unknown,
-    Embedded,
-    TLSExtension,
-    OCSPResponse,
-  };
-
-  Status status;
-  Origin origin;
+  SCTOrigin origin;
   CTLogOperatorId logOperatorId;
-  uint64_t logDisqualificationTime;
+  CTLogState logState;
+  uint64_t logTimestamp;
 };
 
 typedef std::vector<VerifiedSCT> VerifiedSCTList;
@@ -74,6 +59,19 @@ class CTVerifyResult {
   
   
   size_t decodingErrors;
+  
+  size_t sctsFromUnknownLogs;
+  
+  size_t sctsWithInvalidSignatures;
+  
+  size_t sctsWithInvalidTimestamps;
+
+  
+  size_t embeddedSCTs;
+  
+  size_t sctsFromTLSHandshake;
+  
+  size_t sctsFromOCSP;
 
   void Reset();
 };

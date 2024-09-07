@@ -439,42 +439,14 @@ static SECStatus BlockServerCertChangeForSpdy(
 
 void GatherTelemetryForSingleSCT(const ct::VerifiedSCT& verifiedSct) {
   
-  uint32_t origin = 0;
-  switch (verifiedSct.origin) {
-    case ct::VerifiedSCT::Origin::Embedded:
-      origin = 1;
-      break;
-    case ct::VerifiedSCT::Origin::TLSExtension:
-      origin = 2;
-      break;
-    case ct::VerifiedSCT::Origin::OCSPResponse:
-      origin = 3;
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unexpected VerifiedSCT::Origin type");
-  }
-  Telemetry::Accumulate(Telemetry::SSL_SCTS_ORIGIN, origin);
-
-  
   uint32_t verificationStatus = 0;
-  switch (verifiedSct.status) {
-    case ct::VerifiedSCT::Status::Valid:
+  switch (verifiedSct.logState) {
+    case ct::CTLogState::Admissible:
       verificationStatus = 1;
       break;
-    case ct::VerifiedSCT::Status::UnknownLog:
-      verificationStatus = 2;
-      break;
-    case ct::VerifiedSCT::Status::InvalidSignature:
-      verificationStatus = 3;
-      break;
-    case ct::VerifiedSCT::Status::InvalidTimestamp:
-      verificationStatus = 4;
-      break;
-    case ct::VerifiedSCT::Status::ValidFromDisqualifiedLog:
+    case ct::CTLogState::Retired:
       verificationStatus = 5;
       break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unexpected VerifiedSCT::Status type");
   }
   Telemetry::Accumulate(Telemetry::SSL_SCTS_VERIFICATION_STATUS,
                         verificationStatus);
@@ -493,9 +465,28 @@ void GatherCertificateTransparencyTelemetry(
   }
 
   
-  
   for (size_t i = 0; i < info.verifyResult.decodingErrors; ++i) {
     Telemetry::Accumulate(Telemetry::SSL_SCTS_VERIFICATION_STATUS, 0);
+  }
+  for (size_t i = 0; i < info.verifyResult.sctsFromUnknownLogs; ++i) {
+    Telemetry::Accumulate(Telemetry::SSL_SCTS_VERIFICATION_STATUS, 2);
+  }
+  for (size_t i = 0; i < info.verifyResult.sctsWithInvalidSignatures; ++i) {
+    Telemetry::Accumulate(Telemetry::SSL_SCTS_VERIFICATION_STATUS, 3);
+  }
+  for (size_t i = 0; i < info.verifyResult.sctsWithInvalidTimestamps; ++i) {
+    Telemetry::Accumulate(Telemetry::SSL_SCTS_VERIFICATION_STATUS, 4);
+  }
+
+  
+  for (size_t i = 0; i < info.verifyResult.embeddedSCTs; ++i) {
+    Telemetry::Accumulate(Telemetry::SSL_SCTS_ORIGIN, 1);
+  }
+  for (size_t i = 0; i < info.verifyResult.sctsFromTLSHandshake; ++i) {
+    Telemetry::Accumulate(Telemetry::SSL_SCTS_ORIGIN, 2);
+  }
+  for (size_t i = 0; i < info.verifyResult.sctsFromOCSP; ++i) {
+    Telemetry::Accumulate(Telemetry::SSL_SCTS_ORIGIN, 3);
   }
 
   
