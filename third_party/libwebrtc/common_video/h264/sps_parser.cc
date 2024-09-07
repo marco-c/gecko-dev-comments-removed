@@ -56,7 +56,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
 
   
   
-  uint32_t chroma_format_idc = 1;
+  sps.chroma_format_idc = 1;
 
   
   
@@ -73,8 +73,8 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
       profile_idc == 86 || profile_idc == 118 || profile_idc == 128 ||
       profile_idc == 138 || profile_idc == 139 || profile_idc == 134) {
     
-    chroma_format_idc = reader.ReadExponentialGolomb();
-    if (chroma_format_idc == 3) {
+    sps.chroma_format_idc = reader.ReadExponentialGolomb();
+    if (sps.chroma_format_idc == 3) {
       
       sps.separate_colour_plane_flag = reader.ReadBit();
     }
@@ -89,7 +89,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
       
       
       
-      int scaling_list_count = (chroma_format_idc == 3 ? 12 : 8);
+      int scaling_list_count = (sps.chroma_format_idc == 3 ? 12 : 8);
       for (int i = 0; i < scaling_list_count; ++i) {
         
         if (reader.Read<bool>()) {
@@ -202,17 +202,17 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
 
   
   
-  if (sps.separate_colour_plane_flag || chroma_format_idc == 0) {
+  if (sps.separate_colour_plane_flag || sps.chroma_format_idc == 0) {
     frame_crop_bottom_offset *= (2 - sps.frame_mbs_only_flag);
     frame_crop_top_offset *= (2 - sps.frame_mbs_only_flag);
-  } else if (!sps.separate_colour_plane_flag && chroma_format_idc > 0) {
+  } else if (!sps.separate_colour_plane_flag && sps.chroma_format_idc > 0) {
     
-    if (chroma_format_idc == 1 || chroma_format_idc == 2) {
+    if (sps.chroma_format_idc == 1 || sps.chroma_format_idc == 2) {
       frame_crop_left_offset *= 2;
       frame_crop_right_offset *= 2;
     }
     
-    if (chroma_format_idc == 1) {
+    if (sps.chroma_format_idc == 1) {
       frame_crop_top_offset *= 2;
       frame_crop_bottom_offset *= 2;
     }

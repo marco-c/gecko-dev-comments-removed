@@ -51,6 +51,11 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
   bool is_idr = (source[0] & 0x0F) == H264::NaluType::kIdr;
   uint8_t nal_ref_idc = (source[0] & 0x60) >> 5;
 
+  uint32_t num_ref_idx_l0_active_minus1 =
+      pps_->num_ref_idx_l0_default_active_minus1;
+  uint32_t num_ref_idx_l1_active_minus1 =
+      pps_->num_ref_idx_l1_default_active_minus1;
+
   
   slice_reader.ReadExponentialGolomb();
   
@@ -114,10 +119,10 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
       
       if (slice_reader.Read<bool>()) {
         
-        slice_reader.ReadExponentialGolomb();
+        num_ref_idx_l0_active_minus1 = slice_reader.ReadExponentialGolomb();
         if (slice_type == H264::SliceType::kB) {
           
-          slice_reader.ReadExponentialGolomb();
+          num_ref_idx_l1_active_minus1 = slice_reader.ReadExponentialGolomb();
         }
       }
       break;
@@ -180,17 +185,67 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
   if (!slice_reader.Ok()) {
     return kInvalidStream;
   }
-  
   if ((pps_->weighted_pred_flag && (slice_type == H264::SliceType::kP ||
                                     slice_type == H264::SliceType::kSp)) ||
       (pps_->weighted_bipred_idc == 1 && slice_type == H264::SliceType::kB)) {
-    RTC_LOG(LS_ERROR) << "Streams with pred_weight_table unsupported.";
-    return kUnsupportedStream;
+    
+    
+    slice_reader.ReadExponentialGolomb();
+
+    
+    
+    
+    uint8_t chroma_array_type =
+        sps_->separate_colour_plane_flag == 0 ? sps_->chroma_format_idc : 0;
+
+    if (chroma_array_type != 0) {
+      
+      slice_reader.ReadExponentialGolomb();
+    }
+
+    for (uint32_t i = 0; i <= num_ref_idx_l0_active_minus1; i++) {
+      
+      if (slice_reader.Read<bool>()) {
+        
+        slice_reader.ReadExponentialGolomb();
+        
+        slice_reader.ReadExponentialGolomb();
+      }
+      if (chroma_array_type != 0) {
+        
+        if (slice_reader.Read<bool>()) {
+          for (uint8_t j = 0; j < 2; j++) {
+            
+            slice_reader.ReadExponentialGolomb();
+            
+            slice_reader.ReadExponentialGolomb();
+          }
+        }
+      }
+    }
+    if (slice_type % 5 == 1) {
+      for (uint32_t i = 0; i <= num_ref_idx_l1_active_minus1; i++) {
+        
+        if (slice_reader.Read<bool>()) {
+          
+          slice_reader.ReadExponentialGolomb();
+          
+          slice_reader.ReadExponentialGolomb();
+        }
+        if (chroma_array_type != 0) {
+          
+          if (slice_reader.Read<bool>()) {
+            for (uint8_t j = 0; j < 2; j++) {
+              
+              slice_reader.ReadExponentialGolomb();
+              
+              slice_reader.ReadExponentialGolomb();
+            }
+          }
+        }
+      }
+    }
   }
-  
-  
-  
-  
   if (nal_ref_idc != 0) {
     
     if (is_idr) {

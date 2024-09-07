@@ -131,9 +131,9 @@ absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
     }
   }
   
-  reader.ReadExponentialGolomb();
+  pps.num_ref_idx_l0_default_active_minus1 = reader.ReadExponentialGolomb();
   
-  reader.ReadExponentialGolomb();
+  pps.num_ref_idx_l1_default_active_minus1 = reader.ReadExponentialGolomb();
   
   pps.weighted_pred_flag = reader.Read<bool>();
   
