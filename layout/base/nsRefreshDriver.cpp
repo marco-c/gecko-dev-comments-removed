@@ -2361,66 +2361,26 @@ void nsRefreshDriver::UpdateAnimationsAndSendEvents() {
   }
 }
 
-void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
-  if (!mNeedToRunFrameRequestCallbacks) {
-    return;
-  }
-  mNeedToRunFrameRequestCallbacks = false;
-  const bool tickThrottledFrameRequests = [&] {
-    if (mThrottled) {
-      
-      
-      
-      return true;
-    }
-    if (aNowTime >= mNextThrottledFrameRequestTick) {
-      mNextThrottledFrameRequestTick =
-          aNowTime + mThrottledFrameRequestInterval;
-      return true;
-    }
-    return false;
-  }();
-
-  if (NS_WARN_IF(!mPresContext)) {
-    return;
-  }
+void nsRefreshDriver::RunVideoFrameCallbacks(
+    const nsTArray<RefPtr<Document>>& aDocs, TimeStamp aNowTime) {
   
-  AutoTArray<RefPtr<Document>, 8> docs;
-  auto ShouldCollect = [](const Document* aDoc) {
-    return aDoc->ShouldFireFrameRequestCallbacks();
-  };
-  if (ShouldCollect(mPresContext->Document())) {
-    docs.AppendElement(mPresContext->Document());
-  }
-  mPresContext->Document()->CollectDescendantDocuments(docs, ShouldCollect);
-
   
   
   Maybe<TimeStamp> nextTickHint;
-  for (Document* doc : docs) {
-    if (!tickThrottledFrameRequests && doc->ShouldThrottleFrameRequests()) {
-      
-      
-      
-      
-      
-      mNeedToRunFrameRequestCallbacks = true;
-      continue;
-    }
+  for (Document* doc : aDocs) {
     nsTArray<RefPtr<HTMLVideoElement>> videoElms;
     doc->TakeVideoFrameRequestCallbacks(videoElms);
     if (videoElms.IsEmpty()) {
       continue;
     }
-    if (!nextTickHint) {
-      nextTickHint = GetNextTickHint();
-    }
-    AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
-        "Paint", "requestVideoFrame callbacks", GRAPHICS, doc->InnerWindowID());
+
     DOMHighResTimeStamp timeStamp = 0;
     DOMHighResTimeStamp nextTickTimeStamp = 0;
-    if (nsPIDOMWindowInner* innerWindow = doc->GetInnerWindow()) {
+    if (auto* innerWindow = doc->GetInnerWindow()) {
       if (Performance* perf = innerWindow->GetPerformance()) {
+        if (!nextTickHint) {
+          nextTickHint = GetNextTickHint();
+        }
         timeStamp = perf->TimeStampToDOMHighResForRendering(aNowTime);
         nextTickTimeStamp =
             nextTickHint
@@ -2429,6 +2389,9 @@ void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
       }
       
     }
+
+    AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
+        "Paint", "requestVideoFrame callbacks", GRAPHICS, doc->InnerWindowID());
     for (const auto& videoElm : videoElms) {
       nsTArray<VideoFrameRequest> callbacks;
       VideoFrameCallbackMetadata metadata;
@@ -2465,40 +2428,37 @@ void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
       }
     }
   }
+}
 
-  
-  for (Document* doc : docs) {
-    if (!tickThrottledFrameRequests && doc->ShouldThrottleFrameRequests()) {
-      
-      MOZ_ASSERT(mNeedToRunFrameRequestCallbacks);
-      continue;
-    }
-    AutoTArray<FrameRequest, 8> callbacks;
+void nsRefreshDriver::RunFrameRequestCallbacks(
+    const nsTArray<RefPtr<Document>>& aDocs, TimeStamp aNowTime) {
+  for (Document* doc : aDocs) {
+    nsTArray<FrameRequest> callbacks;
     doc->TakeFrameRequestCallbacks(callbacks);
     if (callbacks.IsEmpty()) {
       continue;
     }
-    AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
-        "Paint", "requestAnimationFrame callbacks", GRAPHICS,
-        doc->InnerWindowID());
-    TimeStamp startTime = TimeStamp::Now();
-    nsCOMPtr<nsIGlobalObject> global;
+
     DOMHighResTimeStamp timeStamp = 0;
-    if (nsPIDOMWindowInner* innerWindow = doc->GetInnerWindow()) {
+    RefPtr innerWindow = nsGlobalWindowInner::Cast(doc->GetInnerWindow());
+    if (innerWindow) {
       if (Performance* perf = innerWindow->GetPerformance()) {
         timeStamp = perf->TimeStampToDOMHighResForRendering(aNowTime);
       }
-      global = nsGlobalWindowInner::Cast(innerWindow);
       
     }
 
+    AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
+        "Paint", "requestAnimationFrame callbacks", GRAPHICS,
+        doc->InnerWindowID());
+    const TimeStamp startTime = TimeStamp::Now();
     for (const auto& callback : callbacks) {
       if (doc->IsCanceledFrameRequestCallback(callback.mHandle)) {
         continue;
       }
 
       CallbackDebuggerNotificationGuard guard(
-          global, DebuggerNotificationType::RequestAnimationFrameCallback);
+          innerWindow, DebuggerNotificationType::RequestAnimationFrameCallback);
 
       
       
@@ -2515,6 +2475,67 @@ void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
           .AccumulateRawDuration(TimeStamp::Now() - startTime);
     }
   }
+}
+
+void nsRefreshDriver::RunVideoAndFrameRequestCallbacks(TimeStamp aNowTime) {
+  if (!mNeedToRunFrameRequestCallbacks) {
+    return;
+  }
+  mNeedToRunFrameRequestCallbacks = false;
+  const bool tickThrottledFrameRequests = [&] {
+    if (mThrottled) {
+      
+      
+      
+      return true;
+    }
+    if (aNowTime >= mNextThrottledFrameRequestTick) {
+      mNextThrottledFrameRequestTick =
+          aNowTime + mThrottledFrameRequestInterval;
+      return true;
+    }
+    return false;
+  }();
+
+  if (NS_WARN_IF(!mPresContext)) {
+    return;
+  }
+  
+  AutoTArray<RefPtr<Document>, 8> docs;
+  auto ShouldCollect = [](const Document* aDoc) {
+    
+    
+    
+    
+    
+    
+    return aDoc->HasFrameRequestCallbacks() &&
+           aDoc->ShouldFireFrameRequestCallbacks();
+  };
+  if (ShouldCollect(mPresContext->Document())) {
+    docs.AppendElement(mPresContext->Document());
+  }
+  mPresContext->Document()->CollectDescendantDocuments(docs, ShouldCollect);
+  
+  if (!tickThrottledFrameRequests) {
+    const size_t sizeBefore = docs.Length();
+    docs.RemoveElementsBy(
+        [](Document* aDoc) { return aDoc->ShouldThrottleFrameRequests(); });
+    if (sizeBefore != docs.Length()) {
+      
+      
+      
+      
+      mNeedToRunFrameRequestCallbacks = true;
+    }
+  }
+
+  if (docs.IsEmpty()) {
+    return;
+  }
+
+  RunVideoFrameCallbacks(docs, aNowTime);
+  RunFrameRequestCallbacks(docs, aNowTime);
 }
 
 static StaticAutoPtr<AutoTArray<RefPtr<Task>, 8>> sPendingIdleTasks;
@@ -2736,7 +2757,20 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   
   
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RunVideoAndFrameRequestCallbacks(aNowTime);
+
   MaybeIncreaseMeasuredTicksSinceLoading();
 
   
