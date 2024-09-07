@@ -83,7 +83,8 @@ int32_t Channel::SendData(AudioFrameType frameType,
   }
 
   status = _receiverACM->InsertPacket(
-      rtp_header, rtc::ArrayView<const uint8_t>(_payloadData, payloadDataSize));
+      rtp_header, rtc::ArrayView<const uint8_t>(_payloadData, payloadDataSize),
+      Timestamp::MinusInfinity());
 
   return status;
 }
