@@ -227,13 +227,6 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   bool ConsumeTransientUserGestureActivation();
 
-  
-  bool HasValidHistoryActivation() const;
-
-  
-  
-  bool ConsumeHistoryActivation();
-
   bool GetTransientUserGestureActivationModifiers(
       UserActivation::Modifiers* aModifiers);
 
@@ -401,11 +394,6 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   
   TimeStamp mUserGestureStart;
-
-  
-  
-  
-  TimeStamp mHistoryActivation;
 };
 
 using WindowContextTransaction = WindowContext::BaseTransaction;
