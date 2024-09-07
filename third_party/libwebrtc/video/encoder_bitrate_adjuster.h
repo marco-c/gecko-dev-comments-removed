@@ -14,17 +14,20 @@
 #include <memory>
 
 #include "api/field_trials_view.h"
+#include "api/units/time_delta.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder.h"
+#include "system_wrappers/include/clock.h"
 #include "video/encoder_overshoot_detector.h"
+#include "video/rate_utilization_tracker.h"
 
 namespace webrtc {
 
 class EncoderBitrateAdjuster {
  public:
   
-  static constexpr int64_t kWindowSizeMs = 3000;
+  static constexpr TimeDelta kWindowSize = TimeDelta::Seconds(3);
   
   
   
@@ -36,7 +39,8 @@ class EncoderBitrateAdjuster {
   static constexpr double kDefaultUtilizationFactor = 1.2;
 
   EncoderBitrateAdjuster(const VideoCodec& codec_settings,
-                         const FieldTrialsView& field_trials);
+                         const FieldTrialsView& field_trials,
+                         Clock& clock);
   ~EncoderBitrateAdjuster();
 
   
@@ -59,6 +63,7 @@ class EncoderBitrateAdjuster {
 
  private:
   const bool utilize_bandwidth_headroom_;
+  const bool use_newfangled_headroom_adjustment_;
 
   VideoEncoder::RateControlParameters current_rate_control_parameters_;
   
@@ -74,6 +79,10 @@ class EncoderBitrateAdjuster {
       overshoot_detectors_[kMaxSpatialLayers][kMaxTemporalStreams];
 
   
+  std::unique_ptr<RateUtilizationTracker>
+      media_rate_trackers_[kMaxSpatialLayers];
+
+  
   uint32_t min_bitrates_bps_[kMaxSpatialLayers];
 
   
@@ -81,6 +90,8 @@ class EncoderBitrateAdjuster {
 
   
   VideoCodecMode codec_mode_;
+
+  Clock& clock_;
 };
 
 }  
