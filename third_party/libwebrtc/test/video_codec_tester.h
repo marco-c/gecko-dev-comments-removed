@@ -194,7 +194,8 @@ class VideoCodecTester {
   
   
   
-  static EncodingSettings CreateEncodingSettings(std::string codec_type,
+  static EncodingSettings CreateEncodingSettings(const Environment& env,
+                                                 std::string codec_type,
                                                  std::string scalability_name,
                                                  int width,
                                                  int height,
