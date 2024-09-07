@@ -2175,7 +2175,7 @@ void MacroAssembler::loadBigIntAbsolute(Register bigInt, Register dest,
 }
 
 void MacroAssembler::initializeBigInt64(Scalar::Type type, Register bigInt,
-                                        Register64 val) {
+                                        Register64 val, Register64 temp) {
   MOZ_ASSERT(Scalar::isBigIntType(type));
 
   store32(Imm32(0), Address(bigInt, BigInt::offsetOfFlags()));
@@ -2189,6 +2189,12 @@ void MacroAssembler::initializeBigInt64(Scalar::Type type, Register bigInt,
   bind(&nonZero);
 
   if (type == Scalar::BigInt64) {
+    
+    if (temp != Register64::Invalid()) {
+      move64(val, temp);
+      val = temp;
+    }
+
     
     
     Label isPositive;
@@ -4418,6 +4424,16 @@ void MacroAssembler::Push(const Register64 reg) {
   MOZ_ASSERT(MOZ_LITTLE_ENDIAN(), "Big-endian not supported.");
   Push(reg.high);
   Push(reg.low);
+#endif
+}
+
+void MacroAssembler::Pop(const Register64 reg) {
+#if JS_BITS_PER_WORD == 64
+  Pop(reg.reg);
+#else
+  MOZ_ASSERT(MOZ_LITTLE_ENDIAN(), "Big-endian not supported.");
+  Pop(reg.low);
+  Pop(reg.high);
 #endif
 }
 
