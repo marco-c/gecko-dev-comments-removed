@@ -64,6 +64,12 @@ class PointerEvent : public MouseEvent {
   
   bool ShouldResistFingerprinting() const;
 
+  
+  
+  
+  
+  void EnsureFillingCoalescedEvents(WidgetPointerEvent& aWidgetEvent);
+
   nsTArray<RefPtr<PointerEvent>> mCoalescedEvents;
   nsTArray<RefPtr<PointerEvent>> mPredictedEvents;
 
