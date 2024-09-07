@@ -393,7 +393,7 @@ impl Separator for Space {
         let mut results = vec![parse_one(input)?];
         loop {
             input.skip_whitespace(); 
-            if let Ok(item) = input.try(&mut parse_one) {
+            if let Ok(item) = input.try_parse(&mut parse_one) {
                 results.push(item);
             } else {
                 return Ok(results);
@@ -419,9 +419,9 @@ impl Separator for CommaWithSpace {
         loop {
             input.skip_whitespace(); 
             let comma_location = input.current_source_location();
-            let comma = input.try(|i| i.expect_comma()).is_ok();
+            let comma = input.try_parse(|i| i.expect_comma()).is_ok();
             input.skip_whitespace(); 
-            if let Ok(item) = input.try(&mut parse_one) {
+            if let Ok(item) = input.try_parse(&mut parse_one) {
                 results.push(item);
             } else if comma {
                 return Err(comma_location.new_unexpected_token_error(Token::Comma));
