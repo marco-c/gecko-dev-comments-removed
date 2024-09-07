@@ -5355,12 +5355,12 @@
       if (aTab.group && aTab.group.id === aGroup.id) {
         return;
       }
+
+      let oldPosition = aTab._tPos;
       let wasFocused = document.activeElement == this.selectedTab;
       aGroup.appendChild(aTab);
 
-      
-      
-      this._updateAfterMoveTabTo(aTab, -1, wasFocused);
+      this._updateAfterMoveTabTo(aTab, oldPosition, wasFocused);
     },
 
     _updateAfterMoveTabTo(aTab, oldPosition, wasFocused = null) {
