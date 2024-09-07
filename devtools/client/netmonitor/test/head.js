@@ -334,14 +334,6 @@ function initNetMonitor(
   }
 
   return (async function () {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        
-        
-        ["javascript.options.asyncstack_capture_debuggee_only", false],
-      ],
-    });
-
     let tab = null;
     let privateWindow = null;
 
