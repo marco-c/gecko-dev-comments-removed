@@ -2692,6 +2692,8 @@
         globalHistoryOptions,
         triggeringRemoteType,
         wasSchemelessInput,
+        hasValidUserGestureActivation = false,
+        textDirectiveUserActivation = false,
       } = {}
     ) {
       
@@ -2880,8 +2882,10 @@
           triggeringRemoteType,
           wasSchemelessInput,
           hasValidUserGestureActivation:
+            hasValidUserGestureActivation ||
             !!openWindowInfo?.hasValidUserGestureActivation,
           textDirectiveUserActivation:
+            textDirectiveUserActivation ||
             !!openWindowInfo?.textDirectiveUserActivation,
         });
       }
