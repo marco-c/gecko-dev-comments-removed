@@ -55,14 +55,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   mozilla::IntrinsicSize GetIntrinsicSize() override;
   mozilla::AspectRatio GetIntrinsicRatio() const override;
 
-  mozilla::LogicalSize ComputeAutoSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWritingMode,
-      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
-      const mozilla::LogicalSize& aMargin,
-      const mozilla::LogicalSize& aBorderPadding,
-      const mozilla::StyleSizeOverrides& aSizeOverrides,
-      mozilla::ComputeSizeFlags aFlags) override;
-
   SizeComputationResult ComputeSize(
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
@@ -155,14 +147,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   void UpdateEmbeddedBrowsingContextDependentData();
 
   bool IsInline() const { return mIsInline; }
-
-  nscoord GetIntrinsicBSize() {
-    return GetIntrinsicSize().BSize(GetWritingMode()).valueOr(0);
-  }
-
-  nscoord GetIntrinsicISize() {
-    return GetIntrinsicSize().ISize(GetWritingMode()).valueOr(0);
-  }
 
   
   

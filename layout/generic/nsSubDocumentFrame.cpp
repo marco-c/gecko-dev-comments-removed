@@ -562,7 +562,7 @@ nscoord nsSubDocumentFrame::IntrinsicISize(gfxContext* aContext,
   
   
   
-  return GetIntrinsicISize();
+  return GetIntrinsicSize().ISize(GetWritingMode()).valueOr(0);
 }
 
 
@@ -621,23 +621,6 @@ AspectRatio nsSubDocumentFrame::GetIntrinsicRatio() const {
   
   
   return nsAtomicContainerFrame::GetIntrinsicRatio();
-}
-
-
-LogicalSize nsSubDocumentFrame::ComputeAutoSize(
-    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
-    nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
-  if (!IsInline()) {
-    return nsIFrame::ComputeAutoSize(aRenderingContext, aWM, aCBSize,
-                                     aAvailableISize, aMargin, aBorderPadding,
-                                     aSizeOverrides, aFlags);
-  }
-
-  const WritingMode wm = GetWritingMode();
-  LogicalSize result(wm, GetIntrinsicISize(), GetIntrinsicBSize());
-  return result.ConvertTo(aWM, wm);
 }
 
 
