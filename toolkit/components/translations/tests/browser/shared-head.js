@@ -982,6 +982,21 @@ function createRecordsForLanguagePair(fromLang, toLang) {
 
 
 
+
+function createWasmRecord() {
+  return {
+    id: crypto.randomUUID(),
+    name: "bergamot-translator",
+    version: TranslationsParent.BERGAMOT_MAJOR_VERSION + ".0",
+    last_modified: Date.now(),
+    schema: Date.now(),
+  };
+}
+
+
+
+
+
 let _remoteSettingsMockId = 0;
 
 
@@ -1027,14 +1042,7 @@ async function createTranslationModelsRemoteClient(
 async function createTranslationsWasmRemoteClient(
   autoDownloadFromRemoteSettings
 ) {
-  const records = ["bergamot-translator"].map(name => ({
-    id: crypto.randomUUID(),
-    name,
-    version: TranslationsParent.BERGAMOT_MAJOR_VERSION + ".0",
-    last_modified: Date.now(),
-    schema: Date.now(),
-  }));
-
+  const records = [createWasmRecord()];
   const { RemoteSettings } = ChromeUtils.importESModule(
     "resource://services-settings/remote-settings.sys.mjs"
   );

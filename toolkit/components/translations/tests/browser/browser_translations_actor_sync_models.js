@@ -9,7 +9,7 @@
 
 
 
-add_task(async function test_translations_actor_sync_update() {
+add_task(async function test_translations_actor_sync_update_models() {
   const { remoteClients, cleanup } = await setupActorTest({
     autoDownloadFromRemoteSettings: true,
     languagePairs: [
@@ -60,7 +60,7 @@ add_task(async function test_translations_actor_sync_update() {
 
 
 
-add_task(async function test_translations_actor_sync_delete() {
+add_task(async function test_translations_actor_sync_delete_models() {
   const { remoteClients, cleanup } = await setupActorTest({
     autoDownloadFromRemoteSettings: true,
     languagePairs: [
@@ -110,7 +110,7 @@ add_task(async function test_translations_actor_sync_delete() {
 
 
 
-add_task(async function test_translations_actor_sync_create() {
+add_task(async function test_translations_actor_sync_create_models() {
   const { remoteClients, cleanup } = await setupActorTest({
     autoDownloadFromRemoteSettings: true,
     languagePairs: [
@@ -166,7 +166,7 @@ add_task(async function test_translations_actor_sync_create() {
 
 
 add_task(
-  async function test_translations_actor_sync_create_higher_minor_version() {
+  async function test_translations_actor_sync_create_models_higher_minor_version() {
     const { remoteClients, cleanup } = await setupActorTest({
       autoDownloadFromRemoteSettings: true,
       languagePairs: [
@@ -226,7 +226,7 @@ add_task(
 
 
 add_task(
-  async function test_translations_actor_sync_create_higher_major_version() {
+  async function test_translations_actor_sync_create_models_higher_major_version() {
     const { remoteClients, cleanup } = await setupActorTest({
       autoDownloadFromRemoteSettings: true,
       languagePairs: [
@@ -286,7 +286,7 @@ add_task(
 
 
 
-add_task(async function test_translations_actor_sync_rollback() {
+add_task(async function test_translations_actor_sync_rollback_models() {
   const { remoteClients, cleanup } = await setupActorTest({
     autoDownloadFromRemoteSettings: true,
     languagePairs: [
