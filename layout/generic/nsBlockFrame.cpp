@@ -1792,7 +1792,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     ListTag(stdout);
     printf(": status=%s metrics=%d,%d carriedMargin=%d",
            ToString(aStatus).c_str(), aMetrics.ISize(parentWM),
-           aMetrics.BSize(parentWM), aMetrics.mCarriedOutBEndMargin.get());
+           aMetrics.BSize(parentWM), aMetrics.mCarriedOutBEndMargin.Get());
     if (HasOverflowAreas()) {
       printf(" overflow-vis={%d,%d,%d,%d}", aMetrics.InkOverflow().x,
              aMetrics.InkOverflow().y, aMetrics.InkOverflow().width,
@@ -2145,7 +2145,7 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     if (CheckForCollapsedBEndMarginFromClearanceLine()) {
       
       
-      nonCarriedOutBDirMargin = aState.mPrevBEndMargin.get();
+      nonCarriedOutBDirMargin = aState.mPrevBEndMargin.Get();
       aState.mPrevBEndMargin.Zero();
     }
     aMetrics.mCarriedOutBEndMargin = aState.mPrevBEndMargin;
@@ -2166,7 +2166,7 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     if (blockEndEdgeOfChildren < aState.mReflowInput.AvailableBSize()) {
       
       blockEndEdgeOfChildren =
-          std::min(blockEndEdgeOfChildren + aState.mPrevBEndMargin.get(),
+          std::min(blockEndEdgeOfChildren + aState.mPrevBEndMargin.Get(),
                    aState.mReflowInput.AvailableBSize());
     }
   }
@@ -2868,7 +2868,7 @@ static void DumpLine(const BlockReflowState& aState, nsLineBox* aLine,
         aLine->IsDirty() ? "yes" : "no", aLine->IStart(), aLine->BStart(),
         aLine->ISize(), aLine->BSize(), ovis.x, ovis.y, ovis.width, ovis.height,
         oscr.x, oscr.y, oscr.width, oscr.height, aDeltaBCoord,
-        aState.mPrevBEndMargin.get(), aLine->GetChildCount());
+        aState.mPrevBEndMargin.Get(), aLine->GetChildCount());
   }
 #endif
 }
@@ -4091,7 +4091,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   
   if (!treatWithClearance && !applyBStartMargin && mightClearFloats &&
       aState.mReflowInput.mDiscoveredClearance) {
-    nscoord curBCoord = aState.mBCoord + aState.mPrevBEndMargin.get();
+    nscoord curBCoord = aState.mBCoord + aState.mPrevBEndMargin.Get();
     if (auto [clearBCoord, result] =
             aState.ClearFloats(curBCoord, clearType, floatAvoidingBlock);
         result != ClearFloatsResult::BCoordNoChange) {
@@ -4113,7 +4113,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
 
   nsIFrame* clearanceFrame = nullptr;
   const nscoord startingBCoord = aState.mBCoord;
-  const nsCollapsingMargin incomingMargin = aState.mPrevBEndMargin;
+  const CollapsingMargin incomingMargin = aState.mPrevBEndMargin;
   nscoord clearance;
   
   
@@ -4144,7 +4144,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
                               availSpace);
 
       if (treatWithClearance) {
-        aState.mBCoord += aState.mPrevBEndMargin.get();
+        aState.mBCoord += aState.mPrevBEndMargin.Get();
         aState.mPrevBEndMargin.Zero();
       }
 
@@ -4171,7 +4171,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
         
         
         
-        nscoord curBCoord = aState.mBCoord + aState.mPrevBEndMargin.get();
+        nscoord curBCoord = aState.mBCoord + aState.mPrevBEndMargin.Get();
         if (auto [clearBCoord, result] =
                 aState.ClearFloats(curBCoord, clearType, floatAvoidingBlock);
             result != ClearFloatsResult::BCoordNoChange) {
@@ -4184,7 +4184,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
           aLine->SetHasClearance();
 
           
-          aState.mBCoord += aState.mPrevBEndMargin.get();
+          aState.mBCoord += aState.mPrevBEndMargin.Get();
           aState.mPrevBEndMargin.Zero();
 
           
@@ -4198,7 +4198,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       
       
       
-      bStartMargin = aState.mPrevBEndMargin.get();
+      bStartMargin = aState.mPrevBEndMargin.Get();
 
       if (treatWithClearance) {
         nscoord currentBCoord = aState.mBCoord;
@@ -4517,7 +4517,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       
       bool forceFit = aState.IsAdjacentWithBStart() && clearance <= 0 &&
                       !floatAvailableSpace.HasFloats();
-      nsCollapsingMargin collapsedBEndMargin;
+      CollapsingMargin collapsedBEndMargin;
       OverflowAreas overflowAreas;
       *aKeepReflowGoing =
           brc.PlaceBlock(*childReflowInput, forceFit, aLine.get(),
@@ -4708,7 +4708,7 @@ bool nsBlockFrame::ReflowInlineFrames(BlockReflowState& aState,
   
   
   if (ShouldApplyBStartMargin(aState, aLine)) {
-    aState.mBCoord += aState.mPrevBEndMargin.get();
+    aState.mBCoord += aState.mPrevBEndMargin.Get();
   }
   nsFlowAreaRect floatAvailableSpace = aState.GetFloatAvailableSpace();
 
@@ -5539,7 +5539,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
     
     
     nscoord dy = aState.mFlags.mShouldApplyBStartMargin
-                     ? -aState.mPrevBEndMargin.get()
+                     ? -aState.mPrevBEndMargin.Get()
                      : 0;
     newBCoord = aState.mBCoord + dy;
   }
@@ -7263,7 +7263,7 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
 
   nsIFrame* clearanceFrame = nullptr;
   do {
-    nsCollapsingMargin margin;
+    CollapsingMargin margin;
     bool mayNeedRetry = false;
     aFloatRI.mDiscoveredClearance = nullptr;
     

@@ -108,7 +108,6 @@ struct OverflowAreas {
   nsRect mScrollable;
 };
 
-}  
 
 
 
@@ -118,37 +117,31 @@ struct OverflowAreas {
 
 
 
-
-struct nsCollapsingMargin {
- private:
-  nscoord mMostPos;  
-  nscoord mMostNeg;  
-
+class CollapsingMargin final {
  public:
-  nsCollapsingMargin() : mMostPos(0), mMostNeg(0) {}
-
-  nsCollapsingMargin(const nsCollapsingMargin& aOther) = default;
-
-  bool operator==(const nsCollapsingMargin& aOther) const {
+  bool operator==(const CollapsingMargin& aOther) const {
     return mMostPos == aOther.mMostPos && mMostNeg == aOther.mMostNeg;
   }
 
-  bool operator!=(const nsCollapsingMargin& aOther) const {
+  bool operator!=(const CollapsingMargin& aOther) const {
     return !(*this == aOther);
   }
 
-  nsCollapsingMargin& operator=(const nsCollapsingMargin& aOther) = default;
-
   void Include(nscoord aCoord) {
-    if (aCoord > mMostPos)
+    if (aCoord > mMostPos) {
       mMostPos = aCoord;
-    else if (aCoord < mMostNeg)
+    } else if (aCoord < mMostNeg) {
       mMostNeg = aCoord;
+    }
   }
 
-  void Include(const nsCollapsingMargin& aOther) {
-    if (aOther.mMostPos > mMostPos) mMostPos = aOther.mMostPos;
-    if (aOther.mMostNeg < mMostNeg) mMostNeg = aOther.mMostNeg;
+  void Include(const CollapsingMargin& aOther) {
+    if (aOther.mMostPos > mMostPos) {
+      mMostPos = aOther.mMostPos;
+    }
+    if (aOther.mMostNeg < mMostNeg) {
+      mMostNeg = aOther.mMostNeg;
+    }
   }
 
   void Zero() {
@@ -156,12 +149,17 @@ struct nsCollapsingMargin {
     mMostNeg = 0;
   }
 
-  bool IsZero() const { return (mMostPos == 0) && (mMostNeg == 0); }
+  bool IsZero() const { return mMostPos == 0 && mMostNeg == 0; }
 
-  nscoord get() const { return mMostPos + mMostNeg; }
+  nscoord Get() const { return mMostPos + mMostNeg; }
+
+ private:
+  
+  nscoord mMostPos = 0;
+
+  
+  nscoord mMostNeg = 0;
 };
-
-namespace mozilla {
 
 
 
@@ -238,7 +236,7 @@ class ReflowOutput {
 
   
   
-  nsCollapsingMargin mCarriedOutBEndMargin;
+  CollapsingMargin mCarriedOutBEndMargin;
 
   
   
