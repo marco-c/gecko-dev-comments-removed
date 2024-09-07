@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=405182
+-->
 <head>
   <title>Test for Bug 405182</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -34,12 +34,12 @@ function do_test()
     ns.appendChild(nt);
     dE.appendChild(ns);
     ok(true, "Test is successful if we get here without crashing");
-    SimpleTest.finish();
   }
+  SimpleTest.finish();
 }
 
 SimpleTest.waitForExplicitFinish();
-addLoadEvent(do_test);
+addLoadEvent(() => SpecialPowers.pushPrefEnv({"set": [["dom.mutation_events.enabled", true]]}, do_test));
 
 </script>
 </pre>

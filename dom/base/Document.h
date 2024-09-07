@@ -3658,6 +3658,10 @@ class Document : public nsINode,
 
   
   
+  bool MutationEventsEnabled();
+
+  
+  
   
   
   
@@ -4923,6 +4927,8 @@ class Document : public nsINode,
   bool mForceLoadAtTop : 1;
 
   bool mFireMutationEvents : 1;
+
+  Maybe<bool> mMutationEventsEnabled;
 
   
   

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=726364
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 726364</title>
@@ -40,7 +40,7 @@ function boom()
 }
 
 SimpleTest.waitForExplicitFinish();
-addLoadEvent(boom);
+addLoadEvent(() => SpecialPowers.pushPrefEnv({"set": [["dom.mutation_events.enabled", true]]}, boom));
 
 </script>
 </pre>

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=629200
+-->
 <head>
   <title>Test for Bug 629200</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -250,7 +250,8 @@ function runTests() {
   SimpleTest.finish();
 }
 
-window.addEventListener("load", runTests);
+window.addEventListener("load", () =>
+  SpecialPowers.pushPrefEnv({"set": [["dom.mutation_events.enabled", true]]}, runTests));
 </script>
 </pre>
 </body>
