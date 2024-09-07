@@ -1980,6 +1980,17 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
                         "Targeting occurs in InternalLoad");
   aLoadState->AssertProcessCouldTriggerLoadIfSystem();
 
+  
+  
+  
+  if (aLoadState->HasLoadFlags(nsIWebNavigation::LOAD_FLAGS_DISABLE_TRR)) {
+    Unused << SetDefaultLoadFlags(GetDefaultLoadFlags() |
+                                  nsIRequest::LOAD_TRR_DISABLED_MODE);
+  } else if (aLoadState->HasLoadFlags(nsIWebNavigation::LOAD_FLAGS_FORCE_TRR)) {
+    Unused << SetDefaultLoadFlags(GetDefaultLoadFlags() |
+                                  nsIRequest::LOAD_TRR_ONLY_MODE);
+  }
+
   if (mDocShell) {
     nsCOMPtr<nsIDocShell> docShell = mDocShell;
     return docShell->LoadURI(aLoadState, aSetNavigating);
