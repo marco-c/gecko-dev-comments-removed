@@ -1014,23 +1014,52 @@ async function assertTooltipHiddenOnMouseOut(tooltip, target) {
 
 
 
+
+
+
+
+
+
 async function assertVariableTooltipForProperty(
   view,
   ruleSelector,
   propertyName,
-  { header, registeredProperty, startingStyle }
+  {
+    computed,
+    header,
+    index = 0,
+    isMatched = true,
+    registeredProperty,
+    startingStyle,
+  }
 ) {
   
-  const variableEl = await waitFor(() =>
-    getRuleViewProperty(
-      view,
-      ruleSelector,
-      propertyName
-    ).valueSpan.querySelector(".ruleview-variable,.ruleview-unmatched")
+  const variableEl = await waitFor(
+    () =>
+      getRuleViewProperty(
+        view,
+        ruleSelector,
+        propertyName
+      ).valueSpan.querySelectorAll(".ruleview-variable,.ruleview-unmatched")[
+        index
+      ]
   );
+
+  if (isMatched) {
+    ok(
+      !variableEl.classList.contains("ruleview-unmatched"),
+      `CSS variable #${index} for ${propertyName} in ${ruleSelector} is matched`
+    );
+  } else {
+    ok(
+      variableEl.classList.contains("ruleview-unmatched"),
+      `CSS variable #${index} for ${propertyName} in ${ruleSelector} is unmatched`
+    );
+  }
 
   const previewTooltip = await assertShowPreviewTooltip(view, variableEl);
   const valueEl = previewTooltip.panel.querySelector(".variable-value");
+  const computedValueEl = previewTooltip.panel.querySelector(".computed div");
   const startingStyleEl = previewTooltip.panel.querySelector(
     ".starting-style div"
   );
@@ -1038,22 +1067,36 @@ async function assertVariableTooltipForProperty(
     ".registered-property dl"
   );
   is(
-    valueEl.textContent,
+    valueEl?.textContent,
     header,
-    `CSS variable preview tooltip has expected header text for ${propertyName} in ${ruleSelector}`
+    `CSS variable #${index} preview tooltip has expected header text for ${propertyName} in ${ruleSelector}`
   );
+
+  if (typeof computed !== "string") {
+    is(
+      computedValueEl,
+      null,
+      `CSS variable #${index} preview tooltip doesn't have computed value section for ${propertyName} in ${ruleSelector}`
+    );
+  } else {
+    is(
+      computedValueEl?.innerText,
+      computed,
+      `CSS variable #${index} preview tooltip has expected computed value section for ${propertyName} in ${ruleSelector}`
+    );
+  }
 
   if (!registeredProperty) {
     is(
       registeredPropertyEl,
       null,
-      `CSS variable preview tooltip doesn't have registered property section for ${propertyName} in ${ruleSelector}`
+      `CSS variable #${index} preview tooltip doesn't have registered property section for ${propertyName} in ${ruleSelector}`
     );
   } else {
     is(
-      registeredPropertyEl.innerText,
+      registeredPropertyEl?.innerText,
       registeredProperty.join("\n"),
-      `CSS variable preview tooltip has expected registered property section for ${propertyName} in ${ruleSelector}`
+      `CSS variable #${index} preview tooltip has expected registered property section for ${propertyName} in ${ruleSelector}`
     );
   }
 
@@ -1061,13 +1104,13 @@ async function assertVariableTooltipForProperty(
     is(
       startingStyleEl,
       null,
-      `CSS variable preview tooltip doesn't have a starting-style section for ${propertyName} in ${ruleSelector}`
+      `CSS variable #${index} preview tooltip doesn't have a starting-style section for ${propertyName} in ${ruleSelector}`
     );
   } else {
     is(
-      startingStyleEl.innerText,
+      startingStyleEl?.innerText,
       startingStyle,
-      `CSS variable preview tooltip has expected starting-style section for ${propertyName} in ${ruleSelector}`
+      `CSS variable #${index} preview tooltip has expected starting-style section for ${propertyName} in ${ruleSelector}`
     );
   }
 

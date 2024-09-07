@@ -414,6 +414,23 @@ class TextProperty {
 
 
 
+  getVariableComputedValue() {
+    const declaration = this.#getDomRuleDeclaration();
+    
+    
+    
+    if (!declaration || !declaration.isCustomProperty) {
+      return null;
+    }
+
+    return declaration.computedValue;
+  }
+
+  
+
+
+
+
 
   getExpectedSyntax() {
     const declaration = this.#getDomRuleDeclaration();
