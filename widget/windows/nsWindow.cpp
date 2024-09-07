@@ -2995,7 +2995,6 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
 
 
 
-
 TransparencyMode nsWindow::GetTransparencyMode() {
   return GetTopLevelWindow(true)->GetWindowTranslucencyInner();
 }
@@ -7369,51 +7368,14 @@ void nsWindow::SetWindowTranslucencyInner(TransparencyMode aMode) {
     return;
   }
 
-  
-  HWND hWnd = WinUtils::GetTopLevelHWND(mWnd, true);
-  nsWindow* parent = WinUtils::GetNSWindowPtr(hWnd);
-
-  if (!parent) {
-    NS_WARNING("Trying to use transparent chrome in an embedded context");
-    return;
-  }
-
-  if (parent != this) {
-    NS_WARNING(
-        "Setting SetWindowTranslucencyInner on a parent this is not us!");
-  }
-
-  if (aMode == TransparencyMode::Transparent) {
-    
-    
-    HideWindowChrome(true);
-  } else if (mHideChrome &&
-             mTransparencyMode == TransparencyMode::Transparent) {
-    
-    HideWindowChrome(false);
-  }
-
-  LONG_PTR style = ::GetWindowLongPtrW(hWnd, GWL_STYLE),
-           exStyle = ::GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-
-  if (parent->mIsVisible) {
-    style |= WS_VISIBLE;
-    if (parent->mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
-      style |= WS_MAXIMIZE;
-    } else if (parent->mFrameState->GetSizeMode() == nsSizeMode_Minimized) {
-      style |= WS_MINIMIZE;
-    }
-  }
-
+  MOZ_ASSERT(WinUtils::GetTopLevelHWND(mWnd, true) == mWnd);
+  LONG_PTR exStyle = ::GetWindowLongPtr(mWnd, GWL_EXSTYLE);
   if (aMode == TransparencyMode::Transparent) {
     exStyle |= WS_EX_LAYERED;
   } else {
     exStyle &= ~WS_EX_LAYERED;
   }
-
-  VERIFY_WINDOW_STYLE(style);
-  ::SetWindowLongPtrW(hWnd, GWL_STYLE, style);
-  ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
+  ::SetWindowLongPtrW(mWnd, GWL_EXSTYLE, exStyle);
 
   mTransparencyMode = aMode;
 
