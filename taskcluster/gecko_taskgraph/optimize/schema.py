@@ -26,6 +26,7 @@ default_optimizations = (
     
     {"skip-unless-expanded": None},
     {"skip-unless-backstop": None},
+    {"skip-unless-android-perftest-backstop": None},
     
     {"skip-unless-changed": [str]},
     
