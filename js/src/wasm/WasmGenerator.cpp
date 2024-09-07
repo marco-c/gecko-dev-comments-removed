@@ -960,12 +960,13 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
     MOZ_ASSERT(mode() == CompileMode::LazyTiering);
 
     
+    
     uint8_t* codeStart = nullptr;
     uint32_t codeLength = 0;
     uint32_t metadataBias = 0;
     codeBlock_->segment = CodeSegment::createFromMasmWithBumpAlloc(
-        *masm_, *linkData_, partialTieringCode_, &codeStart, &codeLength,
-        &metadataBias);
+        *masm_, *linkData_, partialTieringCode_,  false,
+        &codeStart, &codeLength, &metadataBias);
     if (!codeBlock_->segment) {
       warnf("failed to allocate executable memory for module");
       return nullptr;

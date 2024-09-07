@@ -218,19 +218,22 @@ class CodeSegment : public ShareableBase<CodeSegment> {
 
   
   
-  static RefPtr<CodeSegment> createEmpty(size_t capacityBytes);
+  static RefPtr<CodeSegment> createEmpty(size_t capacityBytes,
+                                         bool allowLastDitchGC = true);
 
   
   
   static RefPtr<CodeSegment> createFromMasm(jit::MacroAssembler& masm,
                                             const LinkData& linkData,
-                                            const Code* maybeCode);
+                                            const Code* maybeCode,
+                                            bool allowLastDitchGC = true);
 
   
   
   static RefPtr<CodeSegment> createFromBytes(const uint8_t* unlinkedBytes,
                                              size_t unlinkedBytesLength,
-                                             const LinkData& linkData);
+                                             const LinkData& linkData,
+                                             bool allowLastDitchGC = true);
 
   
   
@@ -245,7 +248,7 @@ class CodeSegment : public ShareableBase<CodeSegment> {
   
   static RefPtr<CodeSegment> createFromMasmWithBumpAlloc(
       jit::MacroAssembler& masm, const LinkData& linkData, const Code* code,
-      uint8_t** codeStartOut, uint32_t* codeLengthOut,
+      bool allowLastDitchGC, uint8_t** codeStartOut, uint32_t* codeLengthOut,
       uint32_t* metadataBiasOut);
 
   
@@ -305,7 +308,7 @@ using SharedCodeSegmentVector = Vector<SharedCodeSegment, 0, SystemAllocPolicy>;
 
 extern UniqueCodeBytes AllocateCodeBytes(
     mozilla::Maybe<jit::AutoMarkJitCodeWritableForThread>& writable,
-    uint32_t codeLength);
+    uint32_t codeLength, bool allowLastDitchGC);
 extern bool StaticallyLink(jit::AutoMarkJitCodeWritableForThread& writable,
                            uint8_t* base, const LinkData& linkData,
                            const Code* maybeCode);
@@ -1224,6 +1227,7 @@ void PatchDebugSymbolicAccesses(uint8_t* codeBase, jit::MacroAssembler& masm);
 
 SharedCodeSegment AllocateCodePagesFrom(SharedCodeSegmentVector& lazySegments,
                                         uint32_t bytesNeeded,
+                                        bool allowLastDitchGC,
                                         size_t* offsetInSegment,
                                         size_t* roundedUpAllocationSize);
 
