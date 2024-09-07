@@ -4,7 +4,6 @@
 #ifndef mozilla_BounceTrackingProtection_h__
 #define mozilla_BounceTrackingProtection_h__
 
-#include "BounceTrackingStorageObserver.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
 #include "nsIBounceTrackingProtection.h"
@@ -81,26 +80,11 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   [[nodiscard]] nsresult Init();
 
   
-  static void OnPrefChange(const char* aPref, void* aData);
-
-  
-  
-  nsresult OnModeChange(bool aIsStartup);
-
-  
-  
-  
-  nsresult UpdateBounceTrackingPurgeTimer(bool aShouldEnable);
-
-  
   
   static Maybe<bool> sFeatureIsEnabled;
 
   
   nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
-
-  
-  RefPtr<BounceTrackingStorageObserver> mStorageObserver;
 
   
   RefPtr<BounceTrackingProtectionStorage> mStorage;
@@ -139,13 +123,6 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   
   
   [[nodiscard]] nsresult MaybeMigrateUserInteractionPermissions();
-
-  
-  
-  
-  [[nodiscard]] static nsresult LogBounceTrackersClassifiedToWebConsole(
-      BounceTrackingState* aBounceTrackingState,
-      const nsTArray<nsCString>& aSiteHosts);
 };
 
 }  

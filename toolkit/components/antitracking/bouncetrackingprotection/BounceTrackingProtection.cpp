@@ -40,8 +40,6 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "nsIConsoleService.h"
-#include "mozilla/intl/Localization.h"
 
 #define TEST_OBSERVER_MSG_RECORD_BOUNCES_FINISHED "test-record-bounces-finished"
 
@@ -58,8 +56,6 @@ static bool sInitFailed = false;
 
 
 Maybe<bool> BounceTrackingProtection::sFeatureIsEnabled;
-
-static const char kBTPModePref[] = "privacy.bounceTrackingProtection.mode";
 
 static constexpr uint32_t TRACKER_PURGE_FLAGS =
     nsIClearDataService::CLEAR_ALL_CACHES | nsIClearDataService::CLEAR_COOKIES |
@@ -82,8 +78,13 @@ BounceTrackingProtection::GetSingleton() {
 
   
   if (sFeatureIsEnabled.isNothing()) {
-    if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-        nsIBounceTrackingProtection::MODE_DISABLED) {
+    if (StaticPrefs::privacy_bounceTrackingProtection_enabled_AtStartup()) {
+      sFeatureIsEnabled = Some(true);
+
+      glean::bounce_tracking_protection::enabled_at_startup.Set(true);
+      glean::bounce_tracking_protection::enabled_dry_run_mode_at_startup.Set(
+          StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode());
+    } else {
       sFeatureIsEnabled = Some(false);
 
       glean::bounce_tracking_protection::enabled_at_startup.Set(false);
@@ -93,12 +94,6 @@ BounceTrackingProtection::GetSingleton() {
       
       return nullptr;
     }
-    sFeatureIsEnabled = Some(true);
-
-    glean::bounce_tracking_protection::enabled_at_startup.Set(true);
-    glean::bounce_tracking_protection::enabled_dry_run_mode_at_startup.Set(
-        StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-        nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN);
   }
   MOZ_ASSERT(sFeatureIsEnabled.isSome());
 
@@ -129,17 +124,14 @@ BounceTrackingProtection::GetSingleton() {
 }
 
 nsresult BounceTrackingProtection::Init() {
-  MOZ_ASSERT(StaticPrefs::privacy_bounceTrackingProtection_mode() !=
-                 nsIBounceTrackingProtection::MODE_DISABLED,
-             "Mode pref must have an enabled state for init to be called.");
   MOZ_LOG(
       gBounceTrackingProtectionLog, LogLevel::Info,
-      ("Init BounceTrackingProtection. Config: mode: %d, "
+      ("Init BounceTrackingProtection. Config: enableDryRunMode: %d, "
        "bounceTrackingActivationLifetimeSec: %d, bounceTrackingGracePeriodSec: "
        "%d, bounceTrackingPurgeTimerPeriodSec: %d, "
        "clientBounceDetectionTimerPeriodMS: %d, requireStatefulBounces: %d, "
        "HasMigratedUserActivationData: %d",
-       StaticPrefs::privacy_bounceTrackingProtection_mode(),
+       StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode(),
        StaticPrefs::
            privacy_bounceTrackingProtection_bounceTrackingActivationLifetimeSec(),
        StaticPrefs::
@@ -161,31 +153,6 @@ nsresult BounceTrackingProtection::Init() {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Error,
             ("user activation permission migration failed"));
-  }
-
-  
-  
-  rv = Preferences::RegisterCallback(&BounceTrackingProtection::OnPrefChange,
-                                     kBTPModePref);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  return OnModeChange(true);
-}
-
-nsresult BounceTrackingProtection::UpdateBounceTrackingPurgeTimer(
-    bool aShouldEnable) {
-  
-  
-  
-  
-  if (mBounceTrackingPurgeTimer) {
-    mBounceTrackingPurgeTimer->Cancel();
-    mBounceTrackingPurgeTimer = nullptr;
-  }
-
-  if (!aShouldEnable) {
-    return NS_OK;
   }
 
   
@@ -221,82 +188,6 @@ nsresult BounceTrackingProtection::UpdateBounceTrackingPurgeTimer(
       "mBounceTrackingPurgeTimer");
 }
 
-
-void BounceTrackingProtection::OnPrefChange(const char* aPref, void* aData) {
-  MOZ_ASSERT(sBounceTrackingProtection);
-  MOZ_ASSERT(strcmp(kBTPModePref, aPref) == 0);
-  sBounceTrackingProtection->OnModeChange(false);
-}
-
-nsresult BounceTrackingProtection::OnModeChange(bool aIsStartup) {
-  
-  uint8_t modeInt = StaticPrefs::privacy_bounceTrackingProtection_mode();
-  NS_ENSURE_TRUE(
-      modeInt >= 0 && modeInt <= nsIBounceTrackingProtection::MAX_MODE_VALUE,
-      NS_ERROR_FAILURE);
-  nsIBounceTrackingProtection::Modes mode =
-      static_cast<nsIBounceTrackingProtection::Modes>(modeInt);
-
-  MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
-          ("%s: mode: %d.", __FUNCTION__, mode));
-  if (sInitFailed) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsresult result = NS_OK;
-
-  if (!aIsStartup) {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(mStorage);
-    result = mStorage->ClearByType(
-        BounceTrackingProtectionStorage::EntryType::BounceTracker);
-  }
-
-  
-  if (mode == nsIBounceTrackingProtection::MODE_DISABLED ||
-      mode == nsIBounceTrackingProtection::MODE_ENABLED_STANDBY) {
-    
-    if (aIsStartup) {
-      MOZ_ASSERT(!mStorageObserver);
-      MOZ_ASSERT(!mBounceTrackingPurgeTimer);
-      return result;
-    }
-
-    
-    mStorageObserver = nullptr;
-
-    
-    nsresult rv = UpdateBounceTrackingPurgeTimer(false);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      result = rv;
-      
-    }
-
-    
-    BounceTrackingState::DestroyAll();
-    return result;
-  }
-
-  
-  MOZ_ASSERT(mode == nsIBounceTrackingProtection::MODE_ENABLED ||
-             mode == nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN);
-
-  
-  mStorageObserver = new BounceTrackingStorageObserver();
-  nsresult rv = mStorageObserver->Init();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  rv = UpdateBounceTrackingPurgeTimer(true);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return result;
-}
-
 nsresult BounceTrackingProtection::RecordStatefulBounces(
     BounceTrackingState* aBounceTrackingState) {
   NS_ENSURE_ARG_POINTER(aBounceTrackingState);
@@ -314,8 +205,6 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   RefPtr<BounceTrackingStateGlobal> globalState =
       mStorage->GetOrCreateStateGlobal(aBounceTrackingState);
   MOZ_ASSERT(globalState);
-
-  nsTArray<nsCString> classifiedHosts;
 
   
   for (const nsACString& host : record->GetBounceHosts()) {
@@ -376,8 +265,6 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
       continue;
     }
 
-    classifiedHosts.AppendElement(host);
-
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Info,
             ("%s: Added bounce tracker candidate. siteHost: %s, "
              "aBounceTrackingState: %s",
@@ -390,11 +277,6 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
           ("%s: Done, reset aBounceTrackingState: %s", __FUNCTION__,
            aBounceTrackingState->Describe().get()));
-
-  
-  nsresult rv = LogBounceTrackersClassifiedToWebConsole(aBounceTrackingState,
-                                                        classifiedHosts);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -642,9 +524,7 @@ BounceTrackingProtection::TestRunPurgeBounceTrackers(
                     purgedSiteHosts) {
         promise->MaybeResolve(purgedSiteHosts);
       },
-      [promise](const PurgeBounceTrackersMozPromise::RejectValueType& error) {
-        promise->MaybeReject(error);
-      });
+      [promise] { promise->MaybeRejectWithUndefined(); });
 
   promise.forget(aPromise);
   return NS_OK;
@@ -705,74 +585,6 @@ BounceTrackingProtection::TestMaybeMigrateUserInteractionPermissions() {
   return MaybeMigrateUserInteractionPermissions();
 }
 
-
-nsresult BounceTrackingProtection::LogBounceTrackersClassifiedToWebConsole(
-    BounceTrackingState* aBounceTrackingState,
-    const nsTArray<nsCString>& aSiteHosts) {
-  NS_ENSURE_ARG(aBounceTrackingState);
-
-  
-  if (aSiteHosts.IsEmpty()) {
-    return NS_OK;
-  }
-
-  RefPtr<dom::BrowsingContext> browsingContext =
-      aBounceTrackingState->CurrentBrowsingContext();
-  if (!browsingContext) {
-    return NS_OK;
-  }
-
-  
-  nsTArray<nsCString> resourceIDs = {"toolkit/global/antiTracking.ftl"_ns};
-  RefPtr<intl::Localization> l10n =
-      intl::Localization::Create(resourceIDs, true);
-
-  for (const nsACString& siteHost : aSiteHosts) {
-    auto l10nArgs = dom::Optional<intl::L10nArgs>();
-    l10nArgs.Construct();
-
-    auto siteHostArg = l10nArgs.Value().Entries().AppendElement();
-    siteHostArg->mKey = "siteHost";
-    siteHostArg->mValue.SetValue().SetAsUTF8String().Assign(siteHost);
-
-    auto gracePeriodArg = l10nArgs.Value().Entries().AppendElement();
-    gracePeriodArg->mKey = "gracePeriodSeconds";
-    gracePeriodArg->mValue.SetValue().SetAsDouble() = StaticPrefs::
-        privacy_bounceTrackingProtection_bounceTrackingGracePeriodSec();
-
-    
-    nsAutoCString message;
-    ErrorResult errorResult;
-    l10n->FormatValueSync("btp-warning-tracker-classified"_ns, l10nArgs,
-                          message, errorResult);
-    if (NS_WARN_IF(errorResult.Failed())) {
-      return errorResult.StealNSResult();
-    }
-
-    
-    nsresult rv = NS_OK;
-    nsCOMPtr<nsIScriptError> error =
-        do_CreateInstance(NS_SCRIPTERROR_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = error->InitWithWindowID(
-        NS_ConvertUTF8toUTF16(message), ""_ns, 0, 0,
-        nsIScriptError::warningFlag, "bounceTrackingProtection",
-        browsingContext->GetCurrentInnerWindowId(), true);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsCOMPtr<nsIConsoleService> consoleService =
-        do_GetService(NS_CONSOLESERVICE_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    rv = consoleService->LogMessage(error);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  return NS_OK;
-}
-
 RefPtr<GenericPromise>
 BounceTrackingProtection::EnsureRemoteExceptionListService() {
   
@@ -799,17 +611,6 @@ BounceTrackingProtection::EnsureRemoteExceptionListService() {
 
 RefPtr<BounceTrackingProtection::PurgeBounceTrackersMozPromise>
 BounceTrackingProtection::PurgeBounceTrackers() {
-  
-  if (StaticPrefs::privacy_bounceTrackingProtection_mode() !=
-          nsIBounceTrackingProtection::MODE_ENABLED &&
-      StaticPrefs::privacy_bounceTrackingProtection_mode() !=
-          nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
-            ("%s: Skip: Purging disabled via mode pref.", __FUNCTION__));
-    return PurgeBounceTrackersMozPromise::CreateAndReject(
-        nsresult::NS_ERROR_NOT_AVAILABLE, __func__);
-  }
-
   
   if (mPurgeInProgress) {
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
@@ -943,14 +744,6 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
           ("%s: %s", __FUNCTION__, aStateGlobal->Describe().get()));
 
-  
-  if (StaticPrefs::privacy_bounceTrackingProtection_mode() !=
-          nsIBounceTrackingProtection::MODE_ENABLED &&
-      StaticPrefs::privacy_bounceTrackingProtection_mode() !=
-          nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   const PRTime now = PR_Now();
 
   
@@ -1048,8 +841,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
              __FUNCTION__, PromiseFlatCString(host).get(), bounceTime,
              aStateGlobal->Describe().get()));
 
-    if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-        nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {
+    if (StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
       
       
       cb->OnDataDeleted(0);

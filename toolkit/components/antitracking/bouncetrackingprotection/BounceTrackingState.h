@@ -49,15 +49,8 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   static void ResetAll();
-
-  
-  
-  static void DestroyAll();
-
-  
   static void ResetAllForOriginAttributes(
       const OriginAttributes& aOriginAttributes);
-  
   static void ResetAllForOriginAttributesPattern(
       const OriginAttributesPattern& aPattern);
 

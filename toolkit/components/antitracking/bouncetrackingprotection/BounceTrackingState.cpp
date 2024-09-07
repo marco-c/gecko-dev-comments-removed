@@ -39,21 +39,17 @@ namespace mozilla {
 static StaticAutoPtr<nsTHashMap<uint64_t, WeakPtr<BounceTrackingState>>>
     sBounceTrackingStates;
 
+static StaticRefPtr<BounceTrackingStorageObserver> sStorageObserver;
+
 NS_IMPL_ISUPPORTS(BounceTrackingState, nsIWebProgressListener,
                   nsISupportsWeakReference);
 
 BounceTrackingState::BounceTrackingState() {
-  MOZ_ASSERT(StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-                 nsIBounceTrackingProtection::MODE_ENABLED ||
-             StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-                 nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN);
+  MOZ_ASSERT(StaticPrefs::privacy_bounceTrackingProtection_enabled_AtStartup());
   mBounceTrackingProtection = BounceTrackingProtection::GetSingleton();
 };
 
 BounceTrackingState::~BounceTrackingState() {
-  MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Verbose,
-          ("BounceTrackingState destructor"));
-
   if (sBounceTrackingStates) {
     sBounceTrackingStates->Remove(mBrowserId);
   }
@@ -112,54 +108,20 @@ already_AddRefed<BounceTrackingState> BounceTrackingState::GetOrCreate(
   }
   sBounceTrackingStates->InsertOrUpdate(browserId, newBTS);
 
+  
+  if (!sStorageObserver) {
+    sStorageObserver = new BounceTrackingStorageObserver();
+    ClearOnShutdown(&sStorageObserver);
+
+    aRv = sStorageObserver->Init();
+    NS_ENSURE_SUCCESS(aRv, nullptr);
+  }
+
   return newBTS.forget();
 };
 
 
 void BounceTrackingState::ResetAll() { Reset(nullptr, nullptr); }
-
-
-void BounceTrackingState::DestroyAll() {
-  MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug, ("%s", __FUNCTION__));
-  if (!sBounceTrackingStates) {
-    return;
-  }
-
-  
-  
-  BounceTrackingState::Reset(nullptr, nullptr);
-
-  
-  for (auto iter = sBounceTrackingStates->Iter(); !iter.Done(); iter.Next()) {
-    WeakPtr<BounceTrackingState> bts = iter.Data();
-    
-    
-    
-    
-    iter.Remove();
-    if (!bts) {
-      continue;
-    }
-    
-    
-    
-    
-    RefPtr<dom::BrowsingContext> browsingContext =
-        bts->CurrentBrowsingContext();
-    if (!browsingContext) {
-      continue;
-    }
-    dom::BrowsingContextWebProgress* webProgress =
-        browsingContext->Canonical()->GetWebProgress();
-    if (!webProgress) {
-      continue;
-    }
-    webProgress->DropBounceTrackingState();
-  }
-
-  
-  sBounceTrackingStates = nullptr;
-}
 
 
 void BounceTrackingState::ResetAllForOriginAttributes(
@@ -175,19 +137,14 @@ void BounceTrackingState::ResetAllForOriginAttributesPattern(
 
 nsresult BounceTrackingState::Init(
     dom::BrowsingContextWebProgress* aWebProgress) {
-  MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
-          ("BounceTrackingState::%s", __FUNCTION__));
-
   MOZ_ASSERT(!mIsInitialized,
              "BounceTrackingState must not be initialized twice.");
   mIsInitialized = true;
 
   NS_ENSURE_ARG_POINTER(aWebProgress);
-  NS_ENSURE_TRUE(StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-                         nsIBounceTrackingProtection::MODE_ENABLED ||
-                     StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-                         nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN,
-                 NS_ERROR_NOT_AVAILABLE);
+  NS_ENSURE_TRUE(
+      StaticPrefs::privacy_bounceTrackingProtection_enabled_AtStartup(),
+      NS_ERROR_NOT_AVAILABLE);
   NS_ENSURE_TRUE(mBounceTrackingProtection, NS_ERROR_FAILURE);
 
   
@@ -203,8 +160,11 @@ nsresult BounceTrackingState::Init(
 
   
   
-  return aWebProgress->AddProgressListener(this,
-                                           nsIWebProgress::NOTIFY_STATE_WINDOW);
+  nsresult rv = aWebProgress->AddProgressListener(
+      this, nsIWebProgress::NOTIFY_STATE_WINDOW);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
 }
 
 void BounceTrackingState::ResetBounceTrackingRecord() {
@@ -266,10 +226,8 @@ bool BounceTrackingState::ShouldCreateBounceTrackingStateForWebProgress(
     dom::BrowsingContextWebProgress* aWebProgress) {
   NS_ENSURE_TRUE(aWebProgress, false);
 
-  uint8_t mode = StaticPrefs::privacy_bounceTrackingProtection_mode();
   
-  if (mode != nsIBounceTrackingProtection::MODE_ENABLED &&
-      mode != nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {
+  if (!StaticPrefs::privacy_bounceTrackingProtection_enabled_AtStartup()) {
     return false;
   }
 

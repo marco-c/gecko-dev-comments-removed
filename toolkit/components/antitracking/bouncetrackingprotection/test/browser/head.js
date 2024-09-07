@@ -231,25 +231,16 @@ async function navigateLinkClick(
 
 
 async function waitForRecordBounces(browser) {
-  let { browserId } = browser.browsingContext;
-  info(
-    `waitForRecordBounces: Waiting for record bounces for browser: ${browserId}.`
-  );
-
-  await TestUtils.topicObserved(
+  return TestUtils.topicObserved(
     OBSERVER_MSG_RECORD_BOUNCES_FINISHED,
     subject => {
       
       let propBag = subject.QueryInterface(Ci.nsIPropertyBag2);
-      return browserId == propBag.getProperty("browserId");
+      let browserId = propBag.getProperty("browserId");
+      return browser.browsingContext.browserId == browserId;
     }
   );
-
-  info(`waitForRecordBounces: Recorded bounces for browser ${browserId}.`);
 }
-
-
-
 
 
 
@@ -295,7 +286,6 @@ async function runTestBounce(options = {}) {
     setStateInWebWorker = false,
     setStateInNestedWebWorker = false,
     setCookieViaImage = null,
-    expectRecordBounces = true,
     expectCandidate = true,
     expectPurge = true,
     originAttributes = {},
@@ -342,10 +332,7 @@ async function runTestBounce(options = {}) {
   let browser = tab.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser, true, initialURL);
 
-  let promiseRecordBounces;
-  if (expectRecordBounces) {
-    promiseRecordBounces = waitForRecordBounces(browser);
-  }
+  let promiseRecordBounces = waitForRecordBounces(browser);
 
   
   let targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html");
@@ -378,24 +365,12 @@ async function runTestBounce(options = {}) {
   
   
   
-  let finalTargetURL = new URL(getBaseUrl(ORIGIN_C) + "file_start.html");
-  let finalLoadPromise = BrowserTestUtils.browserLoaded(
+  await navigateLinkClick(
     browser,
-    true,
-    initialURL.href
+    new URL(getBaseUrl(ORIGIN_C) + "file_start.html")
   );
-  await navigateLinkClick(browser, finalTargetURL);
-  await finalLoadPromise;
 
-  if (expectRecordBounces) {
-    await promiseRecordBounces;
-  } else {
-    
-    
-    
-    
-    await new Promise(resolve => setTimeout(resolve, 0));
-  }
+  await promiseRecordBounces;
 
   Assert.deepEqual(
     bounceTrackingProtection
@@ -418,25 +393,11 @@ async function runTestBounce(options = {}) {
   
   await postBounceCallback();
 
-  
-  let mode = Services.prefs.getIntPref("privacy.bounceTrackingProtection.mode");
-  let expectPurgingToThrow =
-    mode != Ci.nsIBounceTrackingProtection.MODE_ENABLED &&
-    mode != Ci.nsIBounceTrackingProtection.MODE_ENABLED_DRY_RUN;
-
-  if (expectPurgingToThrow) {
-    await Assert.rejects(
-      bounceTrackingProtection.testRunPurgeBounceTrackers(),
-      /NS_ERROR_NOT_AVAILABLE/,
-      "testRunPurgeBounceTrackers should reject when BTP is disabled."
-    );
-  } else {
-    Assert.deepEqual(
-      await bounceTrackingProtection.testRunPurgeBounceTrackers(),
-      expectPurge ? [SITE_TRACKER] : [],
-      `Should ${expectPurge ? "" : "not "}purge state for ${SITE_TRACKER}.`
-    );
-  }
+  Assert.deepEqual(
+    await bounceTrackingProtection.testRunPurgeBounceTrackers(),
+    expectPurge ? [SITE_TRACKER] : [],
+    `Should ${expectPurge ? "" : "not "}purge state for ${SITE_TRACKER}.`
+  );
 
   
   BrowserTestUtils.removeTab(tab);
