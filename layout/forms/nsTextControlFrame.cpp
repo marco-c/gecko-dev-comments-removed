@@ -249,8 +249,8 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
   
   
   if (maybeCols.isSome() && mButton && mButton->GetPrimaryFrame()) {
-    const IntrinsicSizeInput input(aRenderingContext, Nothing());
-    intrinsicSize.ISize(aWM) += mButton->GetPrimaryFrame()->GetMinISize(input);
+    intrinsicSize.ISize(aWM) +=
+        mButton->GetPrimaryFrame()->GetMinISize(aRenderingContext);
   }
 
   return intrinsicSize;
@@ -559,12 +559,12 @@ void nsTextControlFrame::AppendAnonymousContentTo(
   aElements.AppendElement(mRootNode);
 }
 
-nscoord nsTextControlFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
+nscoord nsTextControlFrame::IntrinsicISize(gfxContext* aContext,
                                            IntrinsicISizeType aType) {
   
   
   WritingMode wm = GetWritingMode();
-  return CalcIntrinsicSize(aInput.mContext, wm).ISize(wm);
+  return CalcIntrinsicSize(aContext, wm).ISize(wm);
 }
 
 Maybe<nscoord> nsTextControlFrame::ComputeBaseline(

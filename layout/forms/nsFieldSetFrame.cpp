@@ -321,7 +321,7 @@ ImgDrawResult nsFieldSetFrame::PaintBorder(nsDisplayListBuilder* aBuilder,
   return result;
 }
 
-nscoord nsFieldSetFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
+nscoord nsFieldSetFrame::IntrinsicISize(gfxContext* aContext,
                                         IntrinsicISizeType aType) {
   
   
@@ -331,8 +331,7 @@ nscoord nsFieldSetFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 
   nscoord legendWidth = 0;
   if (nsIFrame* legend = GetLegend()) {
-    legendWidth =
-        nsLayoutUtils::IntrinsicForContainer(aInput.mContext, legend, aType);
+    legendWidth = nsLayoutUtils::IntrinsicForContainer(aContext, legend, aType);
   }
 
   nscoord contentWidth = 0;
@@ -341,8 +340,7 @@ nscoord nsFieldSetFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
     
     
     contentWidth = nsLayoutUtils::IntrinsicForContainer(
-        aInput.mContext, inner, aType, Nothing(),
-        nsLayoutUtils::IGNORE_PADDING);
+        aContext, inner, aType, Nothing(), nsLayoutUtils::IGNORE_PADDING);
   }
 
   return std::max(legendWidth, contentWidth);

@@ -46,7 +46,7 @@ NS_QUERYFRAME_TAIL_INHERITING(nsIFrame)
 #endif
 
 
-void nsPlaceholderFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
+void nsPlaceholderFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                            InlineMinISizeData* aData) {
   
   
@@ -55,11 +55,15 @@ void nsPlaceholderFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
   
 
   
-  AddFloatToIntrinsicISizeData(aInput, IntrinsicISizeType::MinISize, aData);
+  if (mOutOfFlowFrame->IsFloating()) {
+    const nscoord floatISize = nsLayoutUtils::IntrinsicForContainer(
+        aRenderingContext, mOutOfFlowFrame, IntrinsicISizeType::MinISize);
+    aData->mFloats.EmplaceBack(mOutOfFlowFrame, floatISize);
+  }
 }
 
 
-void nsPlaceholderFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
+void nsPlaceholderFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
                                             InlinePrefISizeData* aData) {
   
   
@@ -68,18 +72,9 @@ void nsPlaceholderFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
   
 
   
-  AddFloatToIntrinsicISizeData(aInput, IntrinsicISizeType::PrefISize, aData);
-}
-
-void nsPlaceholderFrame::AddFloatToIntrinsicISizeData(
-    const IntrinsicSizeInput& aInput, IntrinsicISizeType aType,
-    InlineIntrinsicISizeData* aData) const {
   if (mOutOfFlowFrame->IsFloating()) {
-    const IntrinsicSizeInput floatInput(
-        aInput, mOutOfFlowFrame->GetWritingMode(), GetWritingMode());
     const nscoord floatISize = nsLayoutUtils::IntrinsicForContainer(
-        floatInput.mContext, mOutOfFlowFrame, aType,
-        floatInput.mPercentageBasis);
+        aRenderingContext, mOutOfFlowFrame, IntrinsicISizeType::PrefISize);
     aData->mFloats.EmplaceBack(mOutOfFlowFrame, floatISize);
   }
 }

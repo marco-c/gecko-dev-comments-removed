@@ -51,30 +51,24 @@ nsresult nsRubyFrame::GetFrameName(nsAString& aResult) const {
 #endif
 
 
-void nsRubyFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
+void nsRubyFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                     InlineMinISizeData* aData) {
-  auto handleChildren = [&](auto frame, auto data) {
-    
-    
-    const IntrinsicSizeInput input(aInput.mContext, Nothing());
+  auto handleChildren = [aRenderingContext](auto frame, auto data) {
     for (RubySegmentEnumerator e(static_cast<nsRubyFrame*>(frame)); !e.AtEnd();
          e.Next()) {
-      e.GetBaseContainer()->AddInlineMinISize(input, data);
+      e.GetBaseContainer()->AddInlineMinISize(aRenderingContext, data);
     }
   };
   DoInlineIntrinsicISize(aData, handleChildren);
 }
 
 
-void nsRubyFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
+void nsRubyFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
                                      InlinePrefISizeData* aData) {
-  auto handleChildren = [&](auto frame, auto data) {
-    
-    
-    const IntrinsicSizeInput input(aInput.mContext, Nothing());
+  auto handleChildren = [aRenderingContext](auto frame, auto data) {
     for (RubySegmentEnumerator e(static_cast<nsRubyFrame*>(frame)); !e.AtEnd();
          e.Next()) {
-      e.GetBaseContainer()->AddInlinePrefISize(input, data);
+      e.GetBaseContainer()->AddInlinePrefISize(aRenderingContext, data);
     }
   };
   DoInlineIntrinsicISize(aData, handleChildren);

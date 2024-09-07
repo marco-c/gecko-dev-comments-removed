@@ -4041,9 +4041,6 @@ static Maybe<nscoord> GetPercentBSize(const LengthPercentage& aSize,
                                       nsIFrame* aFrame, bool aHorizontalAxis);
 
 
-
-
-
 template <typename SizeOrMaxSize>
 static Maybe<nscoord> GetPercentBSize(const SizeOrMaxSize& aSize,
                                       nsIFrame* aFrame, bool aHorizontalAxis) {
@@ -4311,14 +4308,10 @@ static Maybe<nscoord> GetIntrinsicSize(nsIFrame::ExtremumLength aLength,
   nscoord result;
   if (aISizeFromAspectRatio) {
     result = *aISizeFromAspectRatio;
+  } else if (aLength == nsIFrame::ExtremumLength::MaxContent) {
+    result = aFrame->GetPrefISize(aRenderingContext);
   } else {
-    
-    
-    const IntrinsicSizeInput input(aRenderingContext, Nothing());
-    auto type = aLength == nsIFrame::ExtremumLength::MaxContent
-                    ? IntrinsicISizeType::PrefISize
-                    : IntrinsicISizeType::MinISize;
-    result = aFrame->IntrinsicISize(input, type);
+    result = aFrame->GetMinISize(aRenderingContext);
   }
 
   result += aContentBoxToBoxSizingDiff;
@@ -4444,11 +4437,8 @@ static nscoord AddIntrinsicSizeOffset(
     if (aISizeFromAspectRatio) {
       minContent = maxContent = *aISizeFromAspectRatio;
     } else {
-      
-      
-      const IntrinsicSizeInput input(aRenderingContext, Nothing());
-      minContent = aFrame->GetMinISize(input);
-      maxContent = aFrame->GetPrefISize(input);
+      minContent = aFrame->GetMinISize(aRenderingContext);
+      maxContent = aFrame->GetPrefISize(aRenderingContext);
     }
     minContent += contentBoxToBoxSizingDiff;
     maxContent += contentBoxToBoxSizingDiff;
@@ -4603,7 +4593,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
       aFrame->GetWritingMode().PhysicalAxis(LogicalAxis::Inline);
   const bool isInlineAxis = aAxis == ourInlineAxis;
 
-  auto ResetIfKeywords = [](StyleSize& aSize, StyleSize& aMinSize,
+  auto resetIfKeywords = [](StyleSize& aSize, StyleSize& aMinSize,
                             StyleMaxSize& aMaxSize) {
     if (!aSize.IsLengthPercentage()) {
       aSize = StyleSize::Auto();
@@ -4621,7 +4611,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   
   
   if (!isInlineAxis) {
-    ResetIfKeywords(styleISize, styleMinISize, styleMaxISize);
+    resetIfKeywords(styleISize, styleMinISize, styleMaxISize);
   }
 
   
@@ -4650,32 +4640,6 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
     fixedMinISize = GetAbsoluteSize(styleMinISize);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  StyleSize styleBSize = horizontalAxis ? stylePos->mHeight : stylePos->mWidth;
-  StyleSize styleMinBSize =
-      horizontalAxis ? stylePos->mMinHeight : stylePos->mMinWidth;
-  StyleMaxSize styleMaxBSize =
-      horizontalAxis ? stylePos->mMaxHeight : stylePos->mMaxWidth;
-
-  
-  
-  
-  
-  
-  if (isInlineAxis) {
-    ResetIfKeywords(styleBSize, styleMinBSize, styleMaxBSize);
-  }
-
   auto childWM = aFrame->GetWritingMode();
   nscoord pmPercentageBasis = NS_UNCONSTRAINEDSIZE;
   if (aPercentageBasis.isSome()) {
@@ -4686,26 +4650,26 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
             ? aPercentageBasis->BSize(childWM)
             : aPercentageBasis->ISize(childWM);
   }
-  nsIFrame::IntrinsicSizeOffsetData offsetInRequestedAxis =
+  nsIFrame::IntrinsicSizeOffsetData offsets =
       MOZ_LIKELY(isInlineAxis)
           ? aFrame->IntrinsicISizeOffsets(pmPercentageBasis)
           : aFrame->IntrinsicBSizeOffsets(pmPercentageBasis);
 
-  auto GetContentEdgeToBoxSizing = [&](const StyleBoxSizing aBoxSizing) {
-    if (aBoxSizing == StyleBoxSizing::Content) {
-      return LogicalSize(childWM);
-    }
-    nsIFrame::IntrinsicSizeOffsetData offsetInOtherAxis =
-        MOZ_LIKELY(isInlineAxis)
-            ? aFrame->IntrinsicBSizeOffsets(pmPercentageBasis)
-            : aFrame->IntrinsicISizeOffsets(pmPercentageBasis);
-    const auto& inlineOffset =
-        isInlineAxis ? offsetInRequestedAxis : offsetInOtherAxis;
-    const auto& blockOffset =
-        isInlineAxis ? offsetInOtherAxis : offsetInRequestedAxis;
-    return LogicalSize(childWM, inlineOffset.BorderPadding(),
-                       blockOffset.BorderPadding());
-  };
+  auto getContentBoxSizeToBoxSizingAdjust =
+      [childWM, &offsets, &aFrame, isInlineAxis,
+       pmPercentageBasis](const StyleBoxSizing aBoxSizing) {
+        return aBoxSizing == StyleBoxSizing::Border
+                   ? LogicalSize(childWM,
+                                 (isInlineAxis ? offsets
+                                               : aFrame->IntrinsicISizeOffsets(
+                                                     pmPercentageBasis))
+                                     .BorderPadding(),
+                                 (!isInlineAxis ? offsets
+                                                : aFrame->IntrinsicBSizeOffsets(
+                                                      pmPercentageBasis))
+                                     .BorderPadding())
+                   : LogicalSize(childWM);
+      };
 
   
   
@@ -4721,7 +4685,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   };
 
   Maybe<nscoord> iSizeFromAspectRatio;
-  Maybe<LogicalSize> contentEdgeToBoxSizing;
+  Maybe<LogicalSize> contentBoxSizeToBoxSizingAdjust;
 
   const bool ignorePadding =
       (aFlags & IGNORE_PADDING) || aFrame->IsAbsolutelyPositioned();
@@ -4767,38 +4731,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         result = aFrame->BSize();
       }
     } else {
-      
-      
-      
-      
-      const nscoord percentageBasisBSizeForFrame =
-          aPercentageBasis ? aPercentageBasis->BSize(childWM)
-                           : NS_UNCONSTRAINEDSIZE;
-      nscoord percentageBasisBSizeForChildren;
-      if (aFrame->IsBlockContainer()) {
-        
-        
-        contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
-
-        
-        
-        
-        percentageBasisBSizeForChildren =
-            nsIFrame::ComputeBSizeValueAsPercentageBasis(
-                styleBSize, styleMinBSize, styleMaxBSize,
-                percentageBasisBSizeForFrame,
-                contentEdgeToBoxSizing->BSize(childWM));
-      } else {
-        
-        
-        
-        percentageBasisBSizeForChildren = percentageBasisBSizeForFrame;
-      }
-      const IntrinsicSizeInput input(
-          aRenderingContext,
-          Some(LogicalSize(childWM, NS_UNCONSTRAINEDSIZE,
-                           percentageBasisBSizeForChildren)));
-      result = aFrame->IntrinsicISize(input, aType);
+      result = aFrame->IntrinsicISize(aRenderingContext, aType);
     }
 #ifdef DEBUG_INTRINSIC_WIDTH
     --gNoiseIndent;
@@ -4808,6 +4741,33 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
                   aType == IntrinsicISizeType::MinISize ? "min" : "pref",
                   horizontalAxis ? "horizontal" : "vertical", result);
 #endif
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    StyleSize styleBSize =
+        horizontalAxis ? stylePos->mHeight : stylePos->mWidth;
+    StyleSize styleMinBSize =
+        horizontalAxis ? stylePos->mMinHeight : stylePos->mMinWidth;
+    StyleMaxSize styleMaxBSize =
+        horizontalAxis ? stylePos->mMaxHeight : stylePos->mMaxWidth;
+
+    
+    
+    
+    
+    
+    if (isInlineAxis) {
+      resetIfKeywords(styleBSize, styleMinBSize, styleMaxBSize);
+    }
 
     
     
@@ -4844,10 +4804,8 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
 
         nscoord bSizeTakenByBoxSizing = GetDefiniteSizeTakenByBoxSizing(
             boxSizing, aFrame, !isInlineAxis, ignorePadding, aPercentageBasis);
-        if (!contentEdgeToBoxSizing) {
-          contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
-        }
-
+        contentBoxSizeToBoxSizingAdjust.emplace(
+            getContentBoxSizeToBoxSizingAdjust(boxSizing));
         
         
         
@@ -4858,7 +4816,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
           
           result = ratio.ComputeRatioDependentSize(
               isInlineAxis ? LogicalAxis::Inline : LogicalAxis::Block, childWM,
-              *bSize, *contentEdgeToBoxSizing);
+              *bSize, *contentBoxSizeToBoxSizingAdjust);
           
           
           iSizeFromAspectRatio.emplace(result);
@@ -4868,7 +4826,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
           *maxBSize = std::max(0, *maxBSize - bSizeTakenByBoxSizing);
           nscoord maxISize = ratio.ComputeRatioDependentSize(
               isInlineAxis ? LogicalAxis::Inline : LogicalAxis::Block, childWM,
-              *maxBSize, *contentEdgeToBoxSizing);
+              *maxBSize, *contentBoxSizeToBoxSizingAdjust);
           if (maxISize < result) {
             result = maxISize;
           }
@@ -4881,7 +4839,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
           *minBSize = std::max(0, *minBSize - bSizeTakenByBoxSizing);
           nscoord minISize = ratio.ComputeRatioDependentSize(
               isInlineAxis ? LogicalAxis::Inline : LogicalAxis::Block, childWM,
-              *minBSize, *contentEdgeToBoxSizing);
+              *minBSize, *contentBoxSizeToBoxSizingAdjust);
           if (minISize > result) {
             result = minISize;
           }
@@ -4908,8 +4866,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   if (aFrame->IsTableFrame()) {
     
     
-    const IntrinsicSizeInput input(aRenderingContext, Nothing());
-    min = aFrame->GetMinISize(input);
+    min = aFrame->GetMinISize(aRenderingContext);
   }
 
   
@@ -4930,25 +4887,25 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
       
       
       const StyleBoxSizing boxSizingForAR = stylePos->mBoxSizing;
-      if (!contentEdgeToBoxSizing) {
-        contentEdgeToBoxSizing.emplace(
-            GetContentEdgeToBoxSizing(boxSizingForAR));
+      if (!contentBoxSizeToBoxSizingAdjust) {
+        contentBoxSizeToBoxSizingAdjust.emplace(
+            getContentBoxSizeToBoxSizingAdjust(boxSizingForAR));
       }
       nscoord bSizeTakenByBoxSizing =
           GetDefiniteSizeTakenByBoxSizing(boxSizingForAR, aFrame, !isInlineAxis,
                                           ignorePadding, aPercentageBasis);
-
       *bSize -= bSizeTakenByBoxSizing;
-      iSizeFromAspectRatio.emplace(ar.ComputeRatioDependentSize(
-          LogicalAxis::Inline, childWM, *bSize, *contentEdgeToBoxSizing));
+      iSizeFromAspectRatio.emplace(
+          ar.ComputeRatioDependentSize(LogicalAxis::Inline, childWM, *bSize,
+                                       *contentBoxSizeToBoxSizingAdjust));
     }
   }
 
   nscoord contentBoxSize = result;
   result = AddIntrinsicSizeOffset(
-      aRenderingContext, aFrame, offsetInRequestedAxis, aType, boxSizing,
-      result, min, styleISize, fixedMinISize, styleMinISize, fixedMaxISize,
-      styleMaxISize, iSizeFromAspectRatio, aFlags, aAxis);
+      aRenderingContext, aFrame, offsets, aType, boxSizing, result, min,
+      styleISize, fixedMinISize, styleMinISize, fixedMaxISize, styleMaxISize,
+      iSizeFromAspectRatio, aFlags, aAxis);
   nscoord overflow = result - aMarginBoxMinSizeClamp;
   if (MOZ_UNLIKELY(overflow > 0)) {
     nscoord newContentBoxSize = std::max(nscoord(0), contentBoxSize - overflow);

@@ -365,8 +365,10 @@ CSSIntSize nsHTMLCanvasFrame::GetCanvasSize() const {
   return size;
 }
 
-nscoord nsHTMLCanvasFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
+nscoord nsHTMLCanvasFrame::IntrinsicISize(gfxContext* aContext,
                                           IntrinsicISizeType aType) {
+  
+  
   if (Maybe<nscoord> containISize = ContainIntrinsicISize()) {
     return *containISize;
   }

@@ -109,23 +109,23 @@ nsresult nsFirstLetterFrame::GetChildFrameContainingOffset(
 
 
 
-void nsFirstLetterFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
+void nsFirstLetterFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                            InlineMinISizeData* aData) {
-  DoInlineMinISize(aInput, aData);
+  DoInlineMinISize(aRenderingContext, aData);
 }
 
 
 
 
-void nsFirstLetterFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
+void nsFirstLetterFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
                                             InlinePrefISizeData* aData) {
-  DoInlinePrefISize(aInput, aData);
+  DoInlinePrefISize(aRenderingContext, aData);
 }
 
 
-nscoord nsFirstLetterFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
+nscoord nsFirstLetterFrame::IntrinsicISize(gfxContext* aContext,
                                            IntrinsicISizeType aType) {
-  return IntrinsicISizeFromInline(aInput, aType);
+  return IntrinsicISizeFromInline(aContext, aType);
 }
 
 

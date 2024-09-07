@@ -271,7 +271,7 @@ class nsTableFrame : public nsContainerFrame {
   void MarkIntrinsicISizesDirty() override;
   
   
-  nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
+  nscoord IntrinsicISize(gfxContext* aContext,
                          mozilla::IntrinsicISizeType aType) override;
   IntrinsicSizeOffsetData IntrinsicISizeOffsets(
       nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE) override;

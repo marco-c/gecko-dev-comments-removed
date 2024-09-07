@@ -6415,8 +6415,8 @@ void nsFlexContainerFrame::ReflowPlaceholders(
   }
 }
 
-nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
-    const IntrinsicSizeInput& aInput, IntrinsicISizeType aType) {
+nscoord nsFlexContainerFrame::ComputeIntrinsicISize(gfxContext* aContext,
+                                                    IntrinsicISizeType aType) {
   if (Maybe<nscoord> containISize = ContainIntrinsicISize()) {
     return *containISize;
   }
@@ -6454,10 +6454,8 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       continue;
     }
 
-    const IntrinsicSizeInput childInput(aInput, childFrame->GetWritingMode(),
-                                        GetWritingMode());
-    nscoord childISize = nsLayoutUtils::IntrinsicForContainer(
-        childInput.mContext, childFrame, aType, childInput.mPercentageBasis);
+    nscoord childISize =
+        nsLayoutUtils::IntrinsicForContainer(aContext, childFrame, aType);
 
     
     
@@ -6482,13 +6480,13 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
   return containerISize;
 }
 
-nscoord nsFlexContainerFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
+nscoord nsFlexContainerFrame::IntrinsicISize(gfxContext* aContext,
                                              IntrinsicISizeType aType) {
   nscoord& cachedISize = aType == IntrinsicISizeType::MinISize
                              ? mCachedMinISize
                              : mCachedPrefISize;
   if (cachedISize == NS_INTRINSIC_ISIZE_UNKNOWN) {
-    cachedISize = ComputeIntrinsicISize(aInput, aType);
+    cachedISize = ComputeIntrinsicISize(aContext, aType);
   }
   return cachedISize;
 }

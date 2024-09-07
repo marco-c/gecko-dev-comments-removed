@@ -788,25 +788,21 @@ void nsContainerFrame::SyncFrameViewAfterReflow(nsPresContext* aPresContext,
   }
 }
 
-void nsContainerFrame::DoInlineMinISize(const IntrinsicSizeInput& aInput,
+void nsContainerFrame::DoInlineMinISize(gfxContext* aRenderingContext,
                                         InlineMinISizeData* aData) {
-  auto handleChildren = [&](auto frame, auto data) {
+  auto handleChildren = [aRenderingContext](auto frame, auto data) {
     for (nsIFrame* kid : frame->mFrames) {
-      const IntrinsicSizeInput kidInput(aInput, kid->GetWritingMode(),
-                                        GetWritingMode());
-      kid->AddInlineMinISize(kidInput, data);
+      kid->AddInlineMinISize(aRenderingContext, data);
     }
   };
   DoInlineIntrinsicISize(aData, handleChildren);
 }
 
-void nsContainerFrame::DoInlinePrefISize(const IntrinsicSizeInput& aInput,
+void nsContainerFrame::DoInlinePrefISize(gfxContext* aRenderingContext,
                                          InlinePrefISizeData* aData) {
-  auto handleChildren = [&](auto frame, auto data) {
+  auto handleChildren = [aRenderingContext](auto frame, auto data) {
     for (nsIFrame* kid : frame->mFrames) {
-      const IntrinsicSizeInput kidInput(aInput, kid->GetWritingMode(),
-                                        GetWritingMode());
-      kid->AddInlinePrefISize(kidInput, data);
+      kid->AddInlinePrefISize(aRenderingContext, data);
     }
   };
   DoInlineIntrinsicISize(aData, handleChildren);
@@ -837,18 +833,17 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
     AutoMaybeDisableFontInflation an(this);
 
     WritingMode tableWM = GetParent()->GetWritingMode();
-    const IntrinsicSizeInput input(aRenderingContext, Nothing());
     if (aWM.IsOrthogonalTo(tableWM)) {
       
       
-      result.ISize(aWM) = GetMinISize(input);
+      result.ISize(aWM) = GetMinISize(aRenderingContext);
     } else {
       
       
       
       
       
-      nscoord min = GetMinISize(input);
+      nscoord min = GetMinISize(aRenderingContext);
       if (min > aCBSize.ISize(aWM)) {
         min = aCBSize.ISize(aWM);
       }

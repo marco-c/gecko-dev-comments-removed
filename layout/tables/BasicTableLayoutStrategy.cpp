@@ -71,12 +71,9 @@ struct CellISizeInfo {
 
 
 
-
 static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
                                   nsIFrame* aFrame, WritingMode aWM,
                                   bool aIsCell) {
-  MOZ_ASSERT(aFrame->GetWritingMode() == aWM,
-             "The caller is expected to pass aFrame's writing mode!");
   nscoord minCoord, prefCoord;
   const nsStylePosition* stylePos = aFrame->StylePosition();
   bool isQuirks =
@@ -87,30 +84,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
     
     AutoMaybeDisableFontInflation an(aFrame);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const nscoord cbBSize = NS_UNCONSTRAINEDSIZE;
-    const nscoord contentEdgeToBoxSizingBSize =
-        stylePos->mBoxSizing == StyleBoxSizing::Border
-            ? aFrame->IntrinsicBSizeOffsets().BorderPadding()
-            : 0;
-    const nscoord cellBSize = nsIFrame::ComputeBSizeValueAsPercentageBasis(
-        stylePos->BSize(aWM), stylePos->MinBSize(aWM), stylePos->MaxBSize(aWM),
-        cbBSize, contentEdgeToBoxSizingBSize);
-
-    const IntrinsicSizeInput input(
-        aRenderingContext,
-        Some(LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, cellBSize)));
-    minCoord = aFrame->GetMinISize(input);
-    prefCoord = aFrame->GetPrefISize(input);
+    minCoord = aFrame->GetMinISize(aRenderingContext);
+    prefCoord = aFrame->GetPrefISize(aRenderingContext);
     
     
     

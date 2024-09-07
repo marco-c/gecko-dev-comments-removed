@@ -227,7 +227,7 @@ nscoord nsListControlFrame::CalcBSizeOfARow() {
   return rowBSize;
 }
 
-nscoord nsListControlFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
+nscoord nsListControlFrame::IntrinsicISize(gfxContext* aContext,
                                            IntrinsicISizeType aType) {
   
   
@@ -238,7 +238,7 @@ nscoord nsListControlFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
   if (Maybe<nscoord> containISize = ContainIntrinsicISize()) {
     result = *containISize;
   } else {
-    result = GetScrolledFrame()->IntrinsicISize(aInput, aType);
+    result = GetScrolledFrame()->IntrinsicISize(aContext, aType);
   }
   LogicalMargin scrollbarSize(wm, GetDesiredScrollbarSizes());
   result = NSCoordSaturatingAdd(result, scrollbarSize.IStartEnd(wm));
