@@ -12,6 +12,7 @@
 
 
 
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -273,4 +274,42 @@ async function testCutText(acc, startOffset, endOffset, staticContentOffset) {
   let evt = (await evtPromise)[0];
   evt.QueryInterface(nsIAccessibleTextChangeEvent);
   is(evt.start, staticContentOffset + startOffset);
+}
+
+
+
+
+
+function textAttrRangesMatch(acc, ranges, attrs) {
+  acc.QueryInterface(nsIAccessibleText);
+  let offset = 0;
+  let expectedRanges = [...ranges];
+  let charCount = acc.characterCount;
+  while (offset < charCount) {
+    let start = {};
+    let end = {};
+    let attributes = acc.getTextAttributes(false, offset, start, end);
+    offset = end.value;
+    let matched = true;
+    for (const attr in attrs) {
+      try {
+        if (attributes.getStringProperty(attr) != attrs[attr]) {
+          
+          matched = false;
+        }
+      } catch (err) {
+        
+        matched = false;
+      }
+    }
+    if (!matched) {
+      continue;
+    }
+    let expected = expectedRanges.shift();
+    if (!expected || expected[0] != start.value || expected[1] != end.value) {
+      return false;
+    }
+  }
+
+  return !expectedRanges.length;
 }
