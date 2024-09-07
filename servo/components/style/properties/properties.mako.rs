@@ -1616,6 +1616,13 @@ pub mod style_structs {
 
             
             
+            #[cfg(feature = "servo")]
+            pub fn has_initial_animation_timeline(&self) -> bool {
+                self.animation_timeline_count() == 1 && self.animation_timeline_at(0).is_auto()
+            }
+
+            
+            
             #[cfg(feature = "gecko")]
             pub fn specifies_scroll_timelines(&self) -> bool {
                 self.scroll_timeline_name_iter().any(|name| !name.is_none())

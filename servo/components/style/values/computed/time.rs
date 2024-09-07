@@ -5,6 +5,7 @@
 
 
 use crate::values::CSSFloat;
+use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -23,11 +24,6 @@ impl Time {
     }
 
     
-    pub fn zero() -> Self {
-        Self::from_seconds(0.0)
-    }
-
-    
     #[inline]
     pub fn seconds(&self) -> CSSFloat {
         self.seconds
@@ -41,5 +37,15 @@ impl ToCss for Time {
     {
         self.seconds().to_css(dest)?;
         dest.write_char('s')
+    }
+}
+
+impl Zero for Time {
+    fn zero() -> Self {
+        Self::from_seconds(0.0)
+    }
+
+    fn is_zero(&self) -> bool {
+        self.seconds == 0.
     }
 }

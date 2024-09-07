@@ -353,7 +353,9 @@ macro_rules! try_parse_one {
                 
                 
                 
-                let has_duration = !self.animation_duration.0[i].is_zero();
+                let has_duration = !self.animation_duration.0[i].is_auto()
+                    && (static_prefs::pref!("layout.css.scroll-driven-animations.enabled")
+                        || !self.animation_duration.0[i].is_zero());
                 let has_timing_function = !self.animation_timing_function.0[i].is_ease();
                 let has_delay = !self.animation_delay.0[i].is_zero();
                 let has_iteration_count = !self.animation_iteration_count.0[i].is_one();
