@@ -17,6 +17,9 @@
 namespace js {
 namespace wasm {
 
+using BuiltinModuleFuncIdVector =
+    Vector<BuiltinModuleFuncId, 0, SystemAllocPolicy>;
+
 
 
 
@@ -50,6 +53,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 
   
   uint32_t numFuncImports;
+  
+  
+  
+  BuiltinModuleFuncIdVector knownFuncImports;
   
   uint32_t numGlobalImports;
 
@@ -263,6 +270,15 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     uint32_t funcDefIndex = funcIndex - numFuncImports;
     return funcDefFeatureUsages[funcDefIndex];
   }
+
+  BuiltinModuleFuncId knownFuncImport(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex < numFuncImports);
+    if (knownFuncImports.empty()) {
+      return BuiltinModuleFuncId::None;
+    }
+    return knownFuncImports[funcIndex];
+  }
+
   CallRefMetricsRange getFuncDefCallRefs(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex >= numFuncImports);
     uint32_t funcDefIndex = funcIndex - numFuncImports;

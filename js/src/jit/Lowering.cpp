@@ -3400,6 +3400,19 @@ void LIRGenerator::visitWasmAnyRefFromJSString(MWasmAnyRefFromJSString* ins) {
   define(lir, ins);
 }
 
+void LIRGenerator::visitWasmAnyRefIsJSString(MWasmAnyRefIsJSString* ins) {
+  LWasmAnyRefIsJSString* lir = new (alloc())
+      LWasmAnyRefIsJSString(useRegisterAtStart(ins->input()), temp());
+  define(lir, ins);
+}
+
+void LIRGenerator::visitWasmTrapIfAnyRefIsNotJSString(
+    MWasmTrapIfAnyRefIsNotJSString* ins) {
+  LWasmTrapIfAnyRefIsNotJSString* lir = new (alloc())
+      LWasmTrapIfAnyRefIsNotJSString(useRegisterAtStart(ins->input()), temp());
+  add(lir, ins);
+}
+
 void LIRGenerator::visitWasmNewI31Ref(MWasmNewI31Ref* ins) {
   
   LWasmNewI31Ref* lir =

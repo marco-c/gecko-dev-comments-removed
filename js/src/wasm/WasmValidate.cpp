@@ -2245,6 +2245,7 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
     switch (import.kind) {
       case DefinitionKind::Function: {
         const FuncDesc& func = codeMeta->funcs[importFuncIndex];
+        uint32_t funcIndex = importFuncIndex;
         importFuncIndex += 1;
 
         
@@ -2254,17 +2255,20 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
         }
 
         
-        Maybe<const BuiltinModuleFunc*> builtinFunc =
-            ImportMatchesBuiltinModuleFunc(import.field.utf8Bytes(),
-                                           *builtinModule);
-        if (!builtinFunc) {
+        const BuiltinModuleFunc* builtinFunc = nullptr;
+        BuiltinModuleFuncId builtinFuncId;
+        if (!ImportMatchesBuiltinModuleFunc(import.field.utf8Bytes(),
+                                            *builtinModule, &builtinFunc,
+                                            &builtinFuncId)) {
           return d.fail("unrecognized builtin module field");
         }
 
         const TypeDef& importTypeDef = (*codeMeta->types)[func.typeIndex];
-        if (!TypeDef::isSubTypeOf((*builtinFunc)->typeDef(), &importTypeDef)) {
-          return d.failf("type mismatch in %s", (*builtinFunc)->exportName());
+        if (!TypeDef::isSubTypeOf(builtinFunc->typeDef(), &importTypeDef)) {
+          return d.failf("type mismatch in %s", builtinFunc->exportName());
         }
+
+        codeMeta->knownFuncImports[funcIndex] = builtinFuncId;
         break;
       }
       case DefinitionKind::Global: {
@@ -2334,6 +2338,9 @@ static bool DecodeImportSection(Decoder& d, CodeMetadata* codeMeta,
   }
 
   codeMeta->numFuncImports = codeMeta->funcs.length();
+  if (!codeMeta->knownFuncImports.resize(codeMeta->numFuncImports)) {
+    return false;
+  }
   codeMeta->numGlobalImports = codeMeta->globals.length();
   return true;
 }
