@@ -239,6 +239,8 @@ void QuotaManagerDependencyFixture::InitializeTemporaryOrigin(
 
 void QuotaManagerDependencyFixture::GetOriginUsage(
     const OriginMetadata& aOriginMetadata, UsageInfo* aResult) {
+  ASSERT_TRUE(aResult);
+
   mozilla::ipc::PrincipalInfo principalInfo;
   ASSERT_NO_FATAL_FAILURE(
       CreateContentPrincipalInfo(aOriginMetadata.mOrigin, principalInfo));
