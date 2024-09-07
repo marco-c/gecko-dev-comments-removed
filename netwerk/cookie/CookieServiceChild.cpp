@@ -272,17 +272,6 @@ IPCResult CookieServiceChild::RecvTrackCookiesLoad(
   return IPC_OK();
 }
 
-uint32_t CookieServiceChild::CountCookiesFromHashTable(
-    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttrs) {
-  CookiesList* cookiesList = nullptr;
-
-  nsCString baseDomain;
-  CookieKey key(aBaseDomain, aOriginAttrs);
-  mCookiesMap.Get(key, &cookiesList);
-
-  return cookiesList ? cookiesList->Length() : 0;
-}
-
  bool CookieServiceChild::RequireThirdPartyCheck(
     nsILoadInfo* aLoadInfo) {
   if (!aLoadInfo) {
@@ -353,123 +342,6 @@ CookieServiceChild::GetCookieStringFromHttp(nsIURI* ,
 }
 
 NS_IMETHODIMP
-CookieServiceChild::SetCookieStringFromDocument(
-    dom::Document* aDocument, const nsACString& aCookieString) {
-  NS_ENSURE_ARG(aDocument);
-
-  nsCOMPtr<nsIURI> documentURI;
-  nsAutoCString baseDomain;
-  OriginAttributes attrs;
-
-  
-  
-  auto hasExistingCookiesLambda = [&](const nsACString& aBaseDomain,
-                                      const OriginAttributes& aAttrs) {
-    return !!CountCookiesFromHashTable(aBaseDomain, aAttrs);
-  };
-
-  auto* basePrincipal = BasePrincipal::Cast(aDocument->NodePrincipal());
-  basePrincipal->GetURI(getter_AddRefs(documentURI));
-  if (NS_WARN_IF(!documentURI)) {
-    
-    
-    return NS_OK;
-  }
-
-  
-  
-  RefPtr<ConsoleReportCollector> crc = new ConsoleReportCollector();
-  auto scopeExit = MakeScopeExit([&] { crc->FlushConsoleReports(aDocument); });
-
-  CookieParser cookieParser(crc, documentURI);
-
-  RefPtr<Cookie> cookie = CookieCommons::CreateCookieFromDocument(
-      cookieParser, aDocument, aCookieString, PR_Now(), mTLDService,
-      mThirdPartyUtil, hasExistingCookiesLambda, baseDomain, attrs);
-  if (!cookie) {
-    return NS_OK;
-  }
-
-  bool thirdParty = true;
-  nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
-  
-  
-  if (innerWindow) {
-    ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
-
-    if (thirdPartyUtil) {
-      Unused << thirdPartyUtil->IsThirdPartyWindow(
-          innerWindow->GetOuterWindow(), nullptr, &thirdParty);
-    }
-  }
-
-  if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
-                        cookie, aDocument)) {
-    return NS_OK;
-  }
-
-  CookieKey key(baseDomain, attrs);
-  CookiesList* cookies = mCookiesMap.Get(key);
-
-  if (cookies) {
-    
-    
-    
-    
-
-    
-    
-    bool needPartitioned = StaticPrefs::network_cookie_CHIPS_enabled() &&
-                           cookie->RawIsPartitioned();
-    nsCOMPtr<nsIPrincipal> principal =
-        needPartitioned ? aDocument->PartitionedPrincipal()
-                        : aDocument->EffectiveCookiePrincipal();
-    bool isPotentiallyTrustworthy =
-        principal->GetIsOriginPotentiallyTrustworthy();
-
-    for (uint32_t i = 0; i < cookies->Length(); ++i) {
-      RefPtr<Cookie> existingCookie = cookies->ElementAt(i);
-      if (existingCookie->Name().Equals(cookie->Name()) &&
-          existingCookie->Host().Equals(cookie->Host()) &&
-          existingCookie->Path().Equals(cookie->Path())) {
-        
-        if (existingCookie->IsHttpOnly()) {
-          return NS_OK;
-        }
-
-        
-        
-        if (existingCookie->IsSecure() && !isPotentiallyTrustworthy) {
-          return NS_OK;
-        }
-      }
-    }
-  }
-
-  RecordDocumentCookie(cookie, attrs);
-
-  if (CanSend()) {
-    nsTArray<CookieStruct> cookiesToSend;
-    cookiesToSend.AppendElement(cookie->ToIPC());
-
-    
-    dom::WindowGlobalChild* windowGlobalChild =
-        aDocument->GetWindowGlobalChild();
-
-    
-    if (NS_WARN_IF(!windowGlobalChild)) {
-      SendSetCookies(baseDomain, attrs, documentURI, false, thirdParty,
-                     cookiesToSend);
-      return NS_OK;
-    }
-    windowGlobalChild->SendSetCookies(baseDomain, attrs, documentURI, false,
-                                      thirdParty, cookiesToSend);
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 CookieServiceChild::SetCookieStringFromHttp(nsIURI* aHostURI,
                                             const nsACString& aCookieString,
                                             nsIChannel* aChannel) {
@@ -518,7 +390,7 @@ CookieServiceChild::SetCookieStringFromHttp(nsIURI* aHostURI,
       result.contains(ThirdPartyAnalysis::IsThirdPartySocialTrackingResource),
       result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted),
       aCookieString,
-      CountCookiesFromHashTable(baseDomain, storagePrincipalOriginAttributes),
+      HasExistingCookies(baseDomain, storagePrincipalOriginAttributes),
       storagePrincipalOriginAttributes, &rejectedReason);
 
   if (cookieStatus != STATUS_ACCEPTED &&
@@ -653,9 +525,8 @@ CookieServiceChild::RunInTransaction(
 }
 
 void CookieServiceChild::GetCookiesFromHost(
-    const nsACString& aBaseDomain,
-    const mozilla::OriginAttributes& aOriginAttributes,
-    nsTArray<RefPtr<mozilla::net::Cookie>>& aCookies) {
+    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes,
+    nsTArray<RefPtr<Cookie>>& aCookies) {
   CookieKey key(aBaseDomain, aOriginAttributes);
 
   CookiesList* cookiesList = nullptr;
@@ -666,10 +537,88 @@ void CookieServiceChild::GetCookiesFromHost(
   }
 }
 
-void CookieServiceChild::StaleCookies(
-    const nsTArray<RefPtr<mozilla::net::Cookie>>& aCookies,
-    int64_t aCurrentTimeInUsec) {
+void CookieServiceChild::StaleCookies(const nsTArray<RefPtr<Cookie>>& aCookies,
+                                      int64_t aCurrentTimeInUsec) {
   
+}
+
+bool CookieServiceChild::HasExistingCookies(
+    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes) {
+  CookiesList* cookiesList = nullptr;
+
+  CookieKey key(aBaseDomain, aOriginAttributes);
+  mCookiesMap.Get(key, &cookiesList);
+
+  return cookiesList ? cookiesList->Length() : 0;
+}
+
+void CookieServiceChild::AddCookieFromDocument(
+    CookieParser& aCookieParser, const nsACString& aBaseDomain,
+    const OriginAttributes& aOriginAttributes, Cookie& aCookie,
+    int64_t aCurrentTimeInUsec, nsIURI* aDocumentURI, bool aThirdParty,
+    dom::Document* aDocument) {
+  MOZ_ASSERT(aDocumentURI);
+  MOZ_ASSERT(aDocument);
+
+  CookieKey key(aBaseDomain, aOriginAttributes);
+  CookiesList* cookies = mCookiesMap.Get(key);
+
+  if (cookies) {
+    
+    
+    
+    
+
+    
+    
+    bool needPartitioned = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                           aCookie.RawIsPartitioned();
+    nsCOMPtr<nsIPrincipal> principal =
+        needPartitioned ? aDocument->PartitionedPrincipal()
+                        : aDocument->EffectiveCookiePrincipal();
+    bool isPotentiallyTrustworthy =
+        principal->GetIsOriginPotentiallyTrustworthy();
+
+    for (uint32_t i = 0; i < cookies->Length(); ++i) {
+      RefPtr<Cookie> existingCookie = cookies->ElementAt(i);
+      if (existingCookie->Name().Equals(aCookie.Name()) &&
+          existingCookie->Host().Equals(aCookie.Host()) &&
+          existingCookie->Path().Equals(aCookie.Path())) {
+        
+        if (existingCookie->IsHttpOnly()) {
+          return;
+        }
+
+        
+        
+        if (existingCookie->IsSecure() && !isPotentiallyTrustworthy) {
+          return;
+        }
+      }
+    }
+  }
+
+  RecordDocumentCookie(&aCookie, aOriginAttributes);
+
+  if (CanSend()) {
+    nsTArray<CookieStruct> cookiesToSend;
+    cookiesToSend.AppendElement(aCookie.ToIPC());
+
+    
+    dom::WindowGlobalChild* windowGlobalChild =
+        aDocument->GetWindowGlobalChild();
+
+    
+    if (NS_WARN_IF(!windowGlobalChild)) {
+      SendSetCookies(aBaseDomain, aOriginAttributes, aDocumentURI, false,
+                     aThirdParty, cookiesToSend);
+      return;
+    }
+
+    windowGlobalChild->SendSetCookies(aBaseDomain, aOriginAttributes,
+                                      aDocumentURI, false, aThirdParty,
+                                      cookiesToSend);
+  }
 }
 
 }  
