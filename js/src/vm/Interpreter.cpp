@@ -1652,6 +1652,10 @@ enum SyncDisposalClosureSlots {
 
 
 
+
+
+
+
 static bool SyncDisposalClosure(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -1915,6 +1919,42 @@ bool js::AddDisposableResource(
 
   
   return NewbornArrayPush(cx, disposeCapability, resource);
+}
+
+
+
+
+
+bool js::AddDisposableResourceToCapability(
+    JSContext* cx, JS::Handle<ArrayObject*> disposeCapability,
+    JS::Handle<JS::Value> val, JS::Handle<JS::Value> method,
+    JS::Handle<JS::Value> needsClosure, UsingHint hint) {
+  JS::Rooted<JS::Value> disposeMethod(cx);
+
+  bool needsClosureBool = needsClosure.toBoolean();
+  if (needsClosureBool) {
+    JS::Handle<PropertyName*> funName = cx->names().empty_;
+    JSFunction* asyncWrapper =
+        NewNativeFunction(cx, SyncDisposalClosure, 0, funName,
+                          gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+
+    if (!asyncWrapper) {
+      return false;
+    }
+    asyncWrapper->initExtendedSlot(SyncDisposalClosureSlot_MethodSlot, method);
+    disposeMethod.set(JS::ObjectValue(*asyncWrapper));
+  } else {
+    disposeMethod.set(method);
+  }
+
+  DisposableRecordObject* disposableRecord =
+      DisposableRecordObject::create(cx, val, disposeMethod, hint);
+  if (!disposableRecord) {
+    return false;
+  }
+
+  return NewbornArrayPush(cx, disposeCapability,
+                          JS::ObjectValue(*disposableRecord));
 }
 #endif
 
@@ -2269,7 +2309,15 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       ReservedRooted<JSObject*> env(&rootObject0,
                                     REGS.fp()->environmentChain());
 
-      ReservedRooted<Value> val(&rootValue0, REGS.sp[-1]);
+      ReservedRooted<JS::Value> needsClosure(&rootValue0);
+      POP_COPY_TO(needsClosure);
+
+      ReservedRooted<JS::Value> method(&rootValue1);
+      POP_COPY_TO(method);
+
+      JS::Rooted<JS::Value> val(cx);
+      POP_COPY_TO(val);
+
       UsingHint hint = UsingHint(GET_UINT8(REGS.pc));
       JS::Rooted<ArrayObject*> disposableCapability(cx);
 
@@ -2288,8 +2336,8 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
         goto error;
       }
 
-      if (!AddDisposableResource(cx, disposableCapability, val, hint,
-                                 JS::NothingHandleValue)) {
+      if (!AddDisposableResourceToCapability(cx, disposableCapability, val,
+                                             method, needsClosure, hint)) {
         goto error;
       }
     }

@@ -3413,7 +3413,7 @@
 
 
  \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(AddDisposable, add_disposable, NULL, 2, 1, 1, JOF_UINT8)) \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(AddDisposable, add_disposable, NULL, 2, 3, 0, JOF_UINT8)) \
     
 
 
