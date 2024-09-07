@@ -296,32 +296,13 @@ class WritingMode {
 
   bool IsAlphabeticalBaseline() const { return !IsCentralBaseline(); }
 
-  static mozilla::PhysicalAxis PhysicalAxisForLogicalAxis(
-      uint8_t aWritingModeValue, LogicalAxis aAxis) {
-    
-    
-    
-    
-    static_assert(uint8_t(StyleWritingModeProperty::HorizontalTb) == 0 &&
-                      uint8_t(StyleWritingModeProperty::VerticalRl) == 1 &&
-                      uint8_t(StyleWritingModeProperty::VerticalLr) == 3 &&
-                      uint8_t(LogicalAxis::Block) == 0 &&
-                      uint8_t(LogicalAxis::Inline) == 1 &&
-                      uint8_t(PhysicalAxis::Vertical) == 0 &&
-                      uint8_t(PhysicalAxis::Horizontal) == 1,
-                  "unexpected writing-mode, logical axis or physical axis "
-                  "constant values");
-    return mozilla::PhysicalAxis((aWritingModeValue ^ uint8_t(aAxis)) & 0x1);
-  }
+  
+
 
   mozilla::PhysicalAxis PhysicalAxis(LogicalAxis aAxis) const {
-    
-    
-    
-    
-    
-    const auto wm = (mWritingMode & StyleWritingMode::VERTICAL)._0;
-    return PhysicalAxisForLogicalAxis(wm, aAxis);
+    const bool isInline = aAxis == LogicalAxis::Inline;
+    return isInline == IsVertical() ? PhysicalAxis::Vertical
+                                    : PhysicalAxis::Horizontal;
   }
 
   static mozilla::Side PhysicalSideForBlockAxis(uint8_t aWritingModeValue,
