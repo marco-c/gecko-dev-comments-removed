@@ -88,7 +88,11 @@ var gSearchPane = {
     suggestsPref.on("change", updateSuggestionCheckboxes);
     urlbarSuggestsPref.on("change", updateSuggestionCheckboxes);
     let customizableUIListener = {
-      onWidgetAfterDOMChange: updateSuggestionCheckboxes,
+      onWidgetAfterDOMChange: node => {
+        if (node.id == "search-container") {
+          updateSuggestionCheckboxes();
+        }
+      },
     };
     lazy.CustomizableUI.addListener(customizableUIListener);
     window.addEventListener("unload", () => {
@@ -162,13 +166,6 @@ var gSearchPane = {
 
   _initShowSearchTermsCheckbox() {
     let checkbox = document.getElementById("searchShowSearchTermCheckbox");
-
-    
-    let onNimbus = () => {
-      checkbox.hidden = !UrlbarPrefs.get("showSearchTermsFeatureGate");
-    };
-    NimbusFeatures.urlbar.onUpdate(onNimbus);
-
     let updateCheckboxHidden = () => {
       checkbox.hidden =
         !UrlbarPrefs.get("showSearchTermsFeatureGate") ||
@@ -178,16 +175,20 @@ var gSearchPane = {
     
     
     let customizableUIListener = {
-      onWidgetAfterDOMChange: updateCheckboxHidden,
+      onWidgetAfterDOMChange: node => {
+        if (node.id == "search-container") {
+          updateCheckboxHidden();
+        }
+      },
     };
     lazy.CustomizableUI.addListener(customizableUIListener);
+    NimbusFeatures.urlbar.onUpdate(updateCheckboxHidden);
 
     
-    onNimbus();
     updateCheckboxHidden();
 
     window.addEventListener("unload", () => {
-      NimbusFeatures.urlbar.offUpdate(onNimbus);
+      NimbusFeatures.urlbar.offUpdate(updateCheckboxHidden);
       lazy.CustomizableUI.removeListener(customizableUIListener);
     });
   },
