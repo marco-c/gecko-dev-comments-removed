@@ -25,6 +25,7 @@ typedef NS_ENUM(NSInteger, RTCRtpMediaType) {
 };
 
 @class RTC_OBJC_TYPE(RTCRtpReceiver);
+@class RTC_OBJC_TYPE(RTCRtpSource);
 
 RTC_OBJC_EXPORT
 @protocol RTC_OBJC_TYPE
@@ -70,6 +71,13 @@ RTC_OBJC_EXPORT
 
 
 @property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCMediaStreamTrack) * track;
+
+
+
+
+
+
+@property(nonatomic, readonly) NSArray<RTC_OBJC_TYPE(RTCRtpSource) *> *sources;
 
 
 @property(nonatomic, weak) id<RTC_OBJC_TYPE(RTCRtpReceiverDelegate)> delegate;
