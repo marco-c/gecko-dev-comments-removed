@@ -72,7 +72,8 @@ class ServoExecutor(ProcessTestExecutor):
         
         
         
-        for dir in [".", "./servo"]:
+        
+        for dir in [".", "./_venv/servo"]:
             candidate = os.path.abspath(os.path.join(dir, default_path))
             if os.path.isfile(candidate):
                 return candidate
