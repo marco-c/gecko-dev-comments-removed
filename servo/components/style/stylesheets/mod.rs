@@ -425,6 +425,9 @@ impl From<CssRuleType> for CssRuleTypes {
 
 impl CssRuleTypes {
     
+    pub const IMPORTANT_FORBIDDEN: Self = Self(CssRuleType::PositionTry.bit() | CssRuleType::Keyframe.bit());
+
+    
     #[inline]
     pub fn contains(self, ty: CssRuleType) -> bool {
         self.0 & ty.bit() != 0
