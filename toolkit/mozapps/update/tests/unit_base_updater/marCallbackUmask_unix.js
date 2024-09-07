@@ -38,5 +38,5 @@ async function run_test() {
   
   
   
-  checkCallbackLog();
+  checkCallbackLog(getApplyDirFile(DIR_RESOURCES + "callback_app.log"));
 }
