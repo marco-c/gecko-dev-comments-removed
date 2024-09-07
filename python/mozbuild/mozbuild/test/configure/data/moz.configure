@@ -11,7 +11,14 @@ option("--enable-simple", help="Enable simple")
 option("--enable-with-env", env="MOZ_WITH_ENV", help="Enable with env")
 
 
-option("--enable-values", nargs="*", help="Enable values")
+option("--enable-values", nargs="*", metavar="V", help="Enable values V")
+
+
+option("--enable-others", nargs="+", metavar="V", help="Enable other values V")
+
+
+option("--enable-triplet", nargs=3, metavar="V", help="Enable triplet V")
+set_config("TRIPLET", depends("--enable-triplet")(lambda x: x and x[0]))
 
 
 option("--enable-choices", nargs="*", choices=("a", "b", "c"), help="Enable choices")
@@ -159,6 +166,14 @@ def returned_choices(values):
 set_config("CHOICES", returned_choices)
 
 
+@depends("--enable-others")
+def other_choices(values):
+    return values
+
+
+set_config("OTHER_CHOICES", other_choices)
+
+
 
 
 option("--disable-foo", nargs="*", choices=("x", "y"), help="{Enable|Disable} Foo")
@@ -186,7 +201,7 @@ include("included.configure")
 
 
 
-option("--enable-include", nargs=1, help="Include")
+option("--enable-include", nargs=1, metavar="I", help="Include I")
 
 
 @depends("--enable-include")
@@ -200,7 +215,7 @@ include(include_path)
 
 
 
-option("--with-imports", nargs="?", help="Imports")
+option("--with-imports", nargs="?", metavar="I", help="Imports I")
 
 
 
