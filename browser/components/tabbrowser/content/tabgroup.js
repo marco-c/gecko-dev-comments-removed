@@ -57,6 +57,21 @@
     set label(val) {
       this.setAttribute("label", val);
     }
+
+    get tabs() {
+      return Array.from(this.children).filter(node => node.matches("tab"));
+    }
+
+    
+
+
+
+
+    addTabs(tabs) {
+      for (let tab of tabs) {
+        gBrowser.moveTabToGroup(tab, this);
+      }
+    }
   }
 
   customElements.define("tab-group", MozTabbrowserTabGroup);
