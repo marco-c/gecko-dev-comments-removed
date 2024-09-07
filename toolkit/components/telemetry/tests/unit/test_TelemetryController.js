@@ -47,6 +47,7 @@ const DELETION_REQUEST_PING_TYPE = "deletion-request";
 const TEST_PING_TYPE = "test-ping-type";
 
 var gClientID = null;
+var gProfileGroupID = null;
 
 ChromeUtils.defineLazyGetter(this, "DATAREPORTING_PATH", async function () {
   return PathUtils.join(PathUtils.profileDir, "datareporting");
@@ -120,6 +121,7 @@ function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
 
   
   Assert.equal("clientId" in aPing, aHasClientId);
+  Assert.equal("profileGroupId" in aPing, aHasClientId);
   Assert.equal("environment" in aPing, aHasEnvironment);
 }
 
@@ -198,6 +200,7 @@ add_task(async function test_disableDataUpload() {
   let ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
   let firstClientId = ping.clientId;
+  let firstProfileGroupId = ping.profileGroupId;
 
   Assert.ok(firstClientId, "Test ping needs a client ID");
   Assert.notEqual(
@@ -205,6 +208,7 @@ add_task(async function test_disableDataUpload() {
     firstClientId,
     "Client ID should be valid and random"
   );
+  Assert.ok(firstProfileGroupId, "Test ping needs a profile group ID");
 
   
   let disableObserved = TestUtils.topicObserved(
@@ -255,6 +259,13 @@ add_task(async function test_disableDataUpload() {
     firstClientId,
     secondClientId,
     "The client id must have changed"
+  );
+  let secondProfileGroupId =
+    TelemetryController.getCurrentPingData().profileGroupId;
+  Assert.equal(
+    firstProfileGroupId,
+    secondProfileGroupId,
+    "The profile group id must not have changed"
   );
   
   await PingServer.stop();
@@ -321,6 +332,11 @@ add_task(async function test_disableDataUpload() {
     ping.clientId,
     "Client ID should be different from the previous value"
   );
+  Assert.equal(
+    firstProfileGroupId,
+    ping.profileGroupId,
+    "The profile group ID should not change"
+  );
 
   
   ping = await PingServer.promiseNextPing();
@@ -329,6 +345,11 @@ add_task(async function test_disableDataUpload() {
     secondClientId,
     ping.clientId,
     "Deletion must be requested for correct client id"
+  );
+  Assert.equal(
+    firstProfileGroupId,
+    ping.profileGroupId,
+    "The profile group ID should not change"
   );
 
   
@@ -369,12 +390,18 @@ add_task(async function test_pingHasClientId() {
   
   
   gClientID = await ClientID.getClientID();
+  gProfileGroupID = await ClientID.getProfileGroupID();
 
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
   Assert.equal(
     ping.clientId,
     gClientID,
     "The correct clientId must be reported."
+  );
+  Assert.equal(
+    ping.profileGroupId,
+    gProfileGroupID,
+    "The correct profileGroupId must be reported."
   );
 
   
@@ -397,6 +424,11 @@ add_task(async function test_pingHasClientId() {
     gClientID,
     "Telemetry should report the correct cached clientId."
   );
+  Assert.equal(
+    ping.profileGroupId,
+    gProfileGroupID,
+    "Telemetry should report the correct cached profileGroupId."
+  );
 
   
   
@@ -411,6 +443,11 @@ add_task(async function test_pingHasClientId() {
     ping.clientId,
     gClientID,
     "The correct clientId must be reported."
+  );
+  Assert.equal(
+    ping.profileGroupId,
+    gProfileGroupID,
+    "The correct profileGroupId must be reported."
   );
   Assert.equal(
     h.snapshot().sum,
@@ -442,6 +479,11 @@ add_task(async function test_pingHasEnvironmentAndClientId() {
     ping.clientId,
     gClientID,
     "The correct clientId must be reported."
+  );
+  Assert.equal(
+    ping.profileGroupId,
+    gProfileGroupID,
+    "The correct profileGroupId must be reported."
   );
 });
 
