@@ -3463,15 +3463,6 @@
 
 
 
- \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(GetDisposableRecord, get_disposable_record, NULL, 1, 2, 3, JOF_BYTE)) \
-    
-
-
-
-
-
-
 
 
 
@@ -3729,13 +3720,14 @@
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+    IF_RECORD_TUPLE(, MACRO(241))     \
     IF_RECORD_TUPLE(, MACRO(242))     \
     IF_RECORD_TUPLE(, MACRO(243))     \
     IF_RECORD_TUPLE(, MACRO(244))     \
     IF_RECORD_TUPLE(, MACRO(245))     \
     IF_RECORD_TUPLE(, MACRO(246))     \
     IF_RECORD_TUPLE(, MACRO(247))     \
-    IF_RECORD_TUPLE(, MACRO(248))     \
+    MACRO(248)                                   \
     MACRO(249)                                   \
     MACRO(250)                                   \
     MACRO(251)                                   \

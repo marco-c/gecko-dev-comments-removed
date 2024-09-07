@@ -4888,12 +4888,6 @@ bool BaselineCodeGen<Handler>::emit_TakeDisposeCapability() {
 }
 
 template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_GetDisposableRecord() {
-  
-  MOZ_CRASH("GetDisposableRecord has not been implemented for baseline");
-}
-
-template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_CreateSuppressedError() {
   
   

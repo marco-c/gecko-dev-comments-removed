@@ -125,12 +125,45 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
+  if (!bce_->emit1(JSOp::GetElem)) {
+    
+    return false;
+  }
+
   
   
   
   
   
-  if (!bce_->emit1(JSOp::GetDisposableRecord)) {
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitAtomOp(JSOp::GetProp,
+                        TaggedParserAtomIndex::WellKnown::hint())) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(1)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitAtomOp(JSOp::GetProp,
+                        TaggedParserAtomIndex::WellKnown::method())) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPickN(2)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitAtomOp(JSOp::GetProp,
+                        TaggedParserAtomIndex::WellKnown::value())) {
     
     return false;
   }
