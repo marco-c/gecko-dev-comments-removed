@@ -133,32 +133,6 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
 
  protected:
-  enum class PlaceFlag : uint8_t {
-    
-    
-    
-    
-    
-    
-    MeasureOnly,
-
-    
-    
-    
-    
-    
-    
-    IntrinsicSize,
-
-    
-    
-    
-    
-    
-    IgnoreBorderPadding,
-  };
-  using PlaceFlags = mozilla::EnumSet<PlaceFlag>;
-
   
 
 
@@ -181,7 +155,14 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-  virtual nsresult Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
+
+
+
+
+
+
+
+  virtual nsresult Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
                          ReflowOutput& aDesiredSize);
 
   
@@ -216,7 +197,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-  nsresult PlaceAsMrow(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
+  nsresult PlaceAsMrow(DrawTarget* aDrawTarget, bool aPlaceOrigin,
                        ReflowOutput& aDesiredSize);
 
   
@@ -255,8 +236,6 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
                    ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
                    nsReflowStatus& aStatus);
 
-  nsMargin GetBorderPaddingForPlace(const PlaceFlags& aFlags);
-
  protected:
   
   
@@ -292,12 +271,6 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   
   void ClearSavedChildMetrics();
-
-  static nsMargin GetMarginForPlace(const PlaceFlags& aFlags, nsIFrame* aChild);
-
-  static void InflateReflowAndBoundingMetrics(
-      const nsMargin& aBorderPadding, ReflowOutput& aReflowOutput,
-      nsBoundingMetrics& aBoundingMetrics);
 
   
   
