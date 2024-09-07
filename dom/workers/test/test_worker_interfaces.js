@@ -136,11 +136,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AbortSignal", insecureContext: true },
   
-  { name: "AudioData", insecureContext: true, nightly: true },
+  { name: "AudioData", insecureContext: true },
   
-  { name: "AudioDecoder", nightly: true },
+  { name: "AudioDecoder" },
   
-  { name: "AudioEncoder", nightly: true },
+  { name: "AudioEncoder" },
   
   { name: "Blob", insecureContext: true },
   
@@ -192,9 +192,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "DOMStringList", insecureContext: true },
   
-  { name: "EncodedAudioChunk", insecureContext: true, nightly: true },
+  { name: "EncodedAudioChunk", insecureContext: true },
   
-  { name: "EncodedVideoChunk", insecureContext: true, nightly: true },
+  { name: "EncodedVideoChunk", insecureContext: true },
   
   { name: "ErrorEvent", insecureContext: true },
   
@@ -372,11 +372,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "VideoColorSpace", insecureContext: true, nightly: true },
   
-  { name: "VideoDecoder", nightly: true },
+  { name: "VideoDecoder" },
   
-  { name: "VideoEncoder", nightly: true },
+  { name: "VideoEncoder" },
   
-  { name: "VideoFrame", insecureContext: true, nightly: true },
+  { name: "VideoFrame", insecureContext: true },
   
   { name: "WebGL2RenderingContext", insecureContext: true },
   
