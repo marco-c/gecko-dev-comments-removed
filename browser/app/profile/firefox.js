@@ -774,6 +774,10 @@ pref("browser.search.widget.removeAfterDaysUnused", 120);
 
 
 
+pref("browser.search.totalSearches", 0);
+
+
+
 
 pref("browser.shopping.experience2023.enabled", false);
 
