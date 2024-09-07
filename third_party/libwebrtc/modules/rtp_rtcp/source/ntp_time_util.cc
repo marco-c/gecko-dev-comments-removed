@@ -8,7 +8,7 @@
 
 
 
-#include "modules/rtp_rtcp/source/time_util.h"
+#include "modules/rtp_rtcp/source/ntp_time_util.h"
 
 #include <algorithm>
 
