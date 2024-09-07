@@ -2258,10 +2258,6 @@ void nsRefreshDriver::UpdateIntersectionObservations(TimeStamp aNowTime) {
   mNeedToUpdateIntersectionObservations = false;
 }
 
-void nsRefreshDriver::UpdateRemoteFrameEffects() {
-  mPresContext->Document()->UpdateRemoteFrameEffects();
-}
-
 void nsRefreshDriver::UpdateRelevancyOfContentVisibilityAutoFrames() {
   if (!mNeedToUpdateContentRelevancy) {
     return;
@@ -2889,10 +2885,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
     
     mCompositionPayloads.Clear();
   }
-
-  
-  
-  UpdateRemoteFrameEffects();
 
 #ifndef ANDROID 
   double totalMs = (TimeStamp::Now() - mTickStart).ToMilliseconds();

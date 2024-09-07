@@ -165,21 +165,6 @@ static LengthPercentage PrefMargin(float aValue, bool aIsPercentage) {
                        : LengthPercentage::FromPixels(aValue);
 }
 
-StyleRect<LengthPercentage> DOMIntersectionObserver::LazyLoadingRootMargin() {
-  StyleRect<LengthPercentage> margin;
-#define SET_MARGIN(side_, side_lower_)                                 \
-  margin.Get(eSide##side_) = PrefMargin(                               \
-      StaticPrefs::dom_image_lazy_loading_root_margin_##side_lower_(), \
-      StaticPrefs::                                                    \
-          dom_image_lazy_loading_root_margin_##side_lower_##_percentage());
-  SET_MARGIN(Top, top);
-  SET_MARGIN(Right, right);
-  SET_MARGIN(Bottom, bottom);
-  SET_MARGIN(Left, left);
-#undef SET_MARGIN
-  return margin;
-}
-
 DOMIntersectionObserver::DOMIntersectionObserver(Document& aDocument,
                                                  NativeCallback aCallback)
     : mOwner(aDocument.GetInnerWindow()),
@@ -191,7 +176,18 @@ DOMIntersectionObserver::CreateLazyLoadObserver(Document& aDocument) {
   RefPtr<DOMIntersectionObserver> observer =
       new DOMIntersectionObserver(aDocument, LazyLoadCallback);
   observer->mThresholds.AppendElement(0.0f);
-  observer->mRootMargin = LazyLoadingRootMargin();
+
+#define SET_MARGIN(side_, side_lower_)                                 \
+  observer->mRootMargin.Get(eSide##side_) = PrefMargin(                \
+      StaticPrefs::dom_image_lazy_loading_root_margin_##side_lower_(), \
+      StaticPrefs::                                                    \
+          dom_image_lazy_loading_root_margin_##side_lower_##_percentage());
+  SET_MARGIN(Top, top);
+  SET_MARGIN(Right, right);
+  SET_MARGIN(Bottom, bottom);
+  SET_MARGIN(Left, left);
+#undef SET_MARGIN
+
   return observer.forget();
 }
 
@@ -328,8 +324,7 @@ static const Document* GetTopLevelContentDocumentInThisProcess(
 
 
 static Maybe<nsRect> ComputeTheIntersection(
-    nsIFrame* aTarget, const nsRect& aTargetRectRelativeToTarget,
-    nsIFrame* aRoot, const nsRect& aRootBounds,
+    nsIFrame* aTarget, nsIFrame* aRoot, const nsRect& aRootBounds,
     const Maybe<nsRect>& aRemoteDocumentVisibleRect,
     DOMIntersectionObserver::IsForProximityToViewport
         aIsForProximityToViewport) {
@@ -338,7 +333,21 @@ static Maybe<nsRect> ComputeTheIntersection(
   
   
   
-  auto inflowRect = aTargetRectRelativeToTarget;
+  auto inflowRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+      target, target,
+      nsLayoutUtils::GetAllInFlowRectsFlag::AccountForTransforms);
+  
+  
+  if (aIsForProximityToViewport ==
+      DOMIntersectionObserver::IsForProximityToViewport::Yes) {
+    const auto& disp = *target->StyleDisplay();
+    auto clipAxes = target->ShouldApplyOverflowClipping(&disp);
+    if (!clipAxes.isEmpty()) {
+      inflowRect = OverflowAreas::GetOverflowClipRect(
+          inflowRect, inflowRect, clipAxes,
+          target->OverflowClipMargin(clipAxes));
+    }
+  }
   Maybe<nsRect> intersectionRect = Some(inflowRect);
 
   
@@ -624,7 +633,7 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
 
 
 IntersectionOutput DOMIntersectionObserver::Intersect(
-    const IntersectionInput& aInput, const Element& aTarget, BoxToUse aBoxToUse,
+    const IntersectionInput& aInput, const Element& aTarget,
     IsForProximityToViewport aIsForProximityToViewport) {
   const bool isSimilarOrigin = SimilarOrigin(aTarget, aInput.mRootNode) ==
                                BrowsingContextOrigin::Similar;
@@ -673,38 +682,23 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
 
   
   
+  nsRect targetRect = targetFrame->GetBoundingClientRect();
   
-  nsLayoutUtils::GetAllInFlowRectsFlags flags{
-      nsLayoutUtils::GetAllInFlowRectsFlag::AccountForTransforms};
-  if (aBoxToUse == BoxToUse::Content) {
-    flags += nsLayoutUtils::GetAllInFlowRectsFlag::UseContentBox;
-  }
-  nsRect targetRectRelativeToTarget =
-      nsLayoutUtils::GetAllInFlowRectsUnion(targetFrame, targetFrame, flags);
-
-  if (aBoxToUse == BoxToUse::OverflowClip) {
+  
+  if (aIsForProximityToViewport == IsForProximityToViewport::Yes) {
     const auto& disp = *targetFrame->StyleDisplay();
     auto clipAxes = targetFrame->ShouldApplyOverflowClipping(&disp);
     if (!clipAxes.isEmpty()) {
-      targetRectRelativeToTarget = OverflowAreas::GetOverflowClipRect(
-          targetRectRelativeToTarget, targetRectRelativeToTarget, clipAxes,
+      targetRect = OverflowAreas::GetOverflowClipRect(
+          targetRect, targetRect, clipAxes,
           targetFrame->OverflowClipMargin(clipAxes));
     }
   }
 
-  auto targetRect = nsLayoutUtils::TransformFrameRectToAncestor(
-      targetFrame, targetRectRelativeToTarget,
-      nsLayoutUtils::GetContainingBlockForClientRect(targetFrame));
-
-  
-  
-  MOZ_ASSERT_IF(aIsForProximityToViewport == IsForProximityToViewport::Yes,
-                aBoxToUse == BoxToUse::OverflowClip);
-
   
   
   Maybe<nsRect> intersectionRect = ComputeTheIntersection(
-      targetFrame, targetRectRelativeToTarget, aInput.mRootFrame, rootBounds,
+      targetFrame, aInput.mRootFrame, rootBounds,
       aInput.mRemoteDocumentVisibleRect, aIsForProximityToViewport);
 
   return {isSimilarOrigin, rootBounds, targetRect, intersectionRect};

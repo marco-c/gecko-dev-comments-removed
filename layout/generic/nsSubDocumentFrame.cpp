@@ -21,7 +21,6 @@
 #include "mozilla/dom/HTMLFrameElement.h"
 #include "mozilla/dom/ImageDocument.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/RemoteBrowser.h"
 
 #include "nsCOMPtr.h"
 #include "nsGenericHTMLElement.h"
@@ -1299,19 +1298,57 @@ bool nsDisplayRemote::CreateWebRenderCommands(
     return true;
   }
 
+  nsPresContext* pc = mFrame->PresContext();
+  nsFrameLoader* fl = GetFrameLoader();
+
   auto* subDocFrame = static_cast<nsSubDocumentFrame*>(mFrame);
   nsRect destRect = subDocFrame->GetDestRect();
-  if (aDisplayListBuilder->IsForPainting()) {
-    subDocFrame->SetRasterScale(aSc.GetInheritedScale());
+  if (RefPtr<RemoteBrowser> remoteBrowser = fl->GetRemoteBrowser()) {
+    if (pc->GetPrintSettings()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      fl->UpdatePositionAndSize(subDocFrame);
+    }
+
+    
+    
     const nsRect buildingRect = GetBuildingRect() - ToReferenceFrame();
     Maybe<nsRect> visibleRect =
         buildingRect.EdgeInclusiveIntersection(destRect);
     if (visibleRect) {
       *visibleRect -= destRect.TopLeft();
     }
-    subDocFrame->SetVisibleRect(visibleRect);
+
+    
+    MatrixScales scale = aSc.GetInheritedScale();
+
+    ParentLayerToScreenScale2D transformToAncestorScale =
+        ParentLayerToParentLayerScale(
+            pc->GetPresShell() ? pc->GetPresShell()->GetCumulativeResolution()
+                               : 1.f) *
+        nsLayoutUtils::GetTransformToAncestorScaleCrossProcessForFrameMetrics(
+            mFrame);
+
+    aDisplayListBuilder->AddEffectUpdate(
+        remoteBrowser, EffectsInfo::VisibleWithinRect(
+                           visibleRect, scale, transformToAncestorScale));
+
+    
+    
+    RefPtr<WebRenderRemoteData> userData =
+        aManager->CommandBuilder()
+            .CreateOrRecycleWebRenderUserData<WebRenderRemoteData>(this,
+                                                                   nullptr);
+    userData->SetRemoteBrowser(remoteBrowser);
   }
-  nscoord auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+
+  nscoord auPerDevPixel = pc->AppUnitsPerDevPixel();
   nsPoint layerOffset =
       aDisplayListBuilder->ToReferenceFrame(mFrame) + destRect.TopLeft();
   mOffset = LayoutDevicePoint::FromAppUnits(layerOffset, auPerDevPixel);

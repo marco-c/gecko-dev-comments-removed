@@ -2700,6 +2700,17 @@ void PrintHitTestInfoStats(nsDisplayList* aList) {
 }
 #endif
 
+
+
+static void ApplyEffectsUpdates(
+    const nsTHashMap<nsPtrHashKey<RemoteBrowser>, EffectsInfo>& aUpdates) {
+  for (const auto& entry : aUpdates) {
+    auto* browser = entry.GetKey();
+    const auto& update = entry.GetData();
+    browser->UpdateEffects(update);
+  }
+}
+
 static void DumpBeforePaintDisplayList(UniquePtr<std::stringstream>& aStream,
                                        nsDisplayListBuilder* aBuilder,
                                        nsDisplayList* aList,
@@ -3218,6 +3229,11 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
           opaqueRegion.ToNearestPixels(presContext->AppUnitsPerDevPixel())));
       widget->UpdateWindowDraggingRegion(builder->GetWindowDraggingRegion());
     }
+  }
+
+  
+  if (isForPainting) {
+    ApplyEffectsUpdates(builder->GetEffectUpdates());
   }
 
   builder->Check();
