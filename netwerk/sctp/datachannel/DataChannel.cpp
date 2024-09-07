@@ -3018,13 +3018,13 @@ void DataChannelConnection::CloseAll() {
   }
 
   
-  for (const auto& channel : mPending) {
+  std::set<RefPtr<DataChannel>> temp(std::move(mPending));
+  for (const auto& channel : temp) {
     DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
               channel->mStream));
     MutexAutoUnlock lock(mLock);
     channel->Close();  
   }
-  mPending.clear();
   
   
   SendOutgoingStreamReset();
