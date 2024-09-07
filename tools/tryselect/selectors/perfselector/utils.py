@@ -5,18 +5,24 @@
 import re
 import sys
 
-REVISION_MATCHER = re.compile(r"remote:.*/try/rev/([\w]*)[ \t]*$")
+TREEHERDER_REVISION_MATCHER = re.compile(
+    r"remote:.*https://treeherder\.mozilla\.org/jobs\?.*revision=([\w]*)[ \t]*$"
+)
+HGMO_REVISION_MATCHER = re.compile(
+    r"remote:.*/try/(?:rev/|pushloghtml\?changeset=)([\w]*)[ \t]*$"
+)
 
 
 class LogProcessor:
     def __init__(self):
         self.buf = ""
         self.stdout = sys.__stdout__
-        self._revision = None
+        self._treeherder_revision = None
+        self._hg_revision = None
 
     @property
     def revision(self):
-        return self._revision
+        return self._treeherder_revision or self._hg_revision
 
     def write(self, buf):
         while buf:
@@ -38,7 +44,14 @@ class LogProcessor:
             self.stdout.write(data.strip("\n") + "\n")
 
             
-            match = REVISION_MATCHER.match(data)
+            
+            match = TREEHERDER_REVISION_MATCHER.match(data)
+            if match:
+                self._treeherder_revision = match.group(1)
+
+            
+            
+            match = HGMO_REVISION_MATCHER.match(data)
             if match:
                 
-                self._revision = match.group(1)
+                self._hg_revision = match.group(1)
