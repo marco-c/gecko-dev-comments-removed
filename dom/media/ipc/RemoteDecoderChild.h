@@ -43,6 +43,7 @@ class RemoteDecoderChild : public ShmemRecycleAllocator<RemoteDecoderChild>,
   nsCString GetCodecName() const;
   void SetSeekThreshold(const media::TimeUnit& aTime);
   MediaDataDecoder::ConversionRequired NeedsConversion() const;
+  bool ShouldDecoderAlwaysBeRecycled() const;
   void DestroyIPDL();
 
   
@@ -83,6 +84,7 @@ class RemoteDecoderChild : public ShmemRecycleAllocator<RemoteDecoderChild>,
   bool mRemoteDecoderCrashed = false;
   MediaDataDecoder::ConversionRequired mConversion =
       MediaDataDecoder::ConversionRequired::kNeedNone;
+  bool mShouldDecoderAlwaysBeRecycled = false;
 };
 
 }  

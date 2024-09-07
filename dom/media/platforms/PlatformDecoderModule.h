@@ -554,6 +554,11 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   
   virtual bool SupportDecoderRecycling() const { return false; }
 
+  
+  
+  
+  virtual bool ShouldDecoderAlwaysBeRecycled() const { return false; }
+
   enum class ConversionRequired {
     kNeedNone = 0,
     kNeedAVCC = 1,
