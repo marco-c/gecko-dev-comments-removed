@@ -711,8 +711,8 @@ static void WasmHandleRequestTierUp(Instance* instance) {
   
   
   if (!ok) {
-    wasm::LogOffThread("Failed to tier-up function=%d in instance=%p.", funcIndex,
-              instance);
+    wasm::LogOffThread("Failed to tier-up function=%d in instance=%p.",
+                       funcIndex, instance);
   }
 }
 
