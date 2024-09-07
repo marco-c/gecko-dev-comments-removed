@@ -27,6 +27,7 @@
 
 #include "jit/AtomicOperations.h"
 #include "jit/InlinableNatives.h"
+#include "jit/JitRuntime.h"
 #include "jit/MacroAssembler.h"
 #include "jit/ProcessExecutableMemory.h"
 #include "jit/Simulator.h"
@@ -714,8 +715,13 @@ static void WasmHandleRequestTierUp(Instance* instance) {
 
 
 
-void wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
-                       jit::ResumeFromException* rfe) {
+void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
+                               jit::ResumeFromException* rfe) {
+  MOZ_ASSERT(iter.isWasm());
+  MOZ_ASSERT(CallingActivation(cx) == iter.activation());
+  MOZ_ASSERT(cx->activation()->asJit()->hasWasmExitFP());
+  MOZ_ASSERT(rfe->kind == ExceptionResumeKind::EntryFrame);
+
   
   
   
@@ -724,7 +730,6 @@ void wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   
   
 
-  MOZ_ASSERT(CallingActivation(cx) == iter.activation());
 #ifdef DEBUG
   auto onExit = mozilla::MakeScopeExit([cx] {
     MOZ_ASSERT(!cx->activation()->asJit()->isWasmTrapping(),
@@ -735,31 +740,22 @@ void wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 #endif
 
   MOZ_ASSERT(!iter.done());
-  iter.setUnwind(WasmFrameIter::Unwind::True);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  Rooted<WasmInstanceObject*> keepAlive(cx, iter.instance()->object());
+  iter.asWasm().setUnwind(WasmFrameIter::Unwind::True);
 
   JitActivation* activation = CallingActivation(cx);
   Rooted<WasmExceptionObject*> wasmExn(cx,
                                        GetOrWrapWasmException(activation, cx));
 
-  for (; !iter.done(); ++iter) {
+  for (; !iter.done() && iter.isWasm(); ++iter) {
     
     
-    cx->setRealmForJitExceptionHandler(iter.instance()->realm());
+    WasmFrameIter& wasmFrame = iter.asWasm();
+    cx->setRealmForJitExceptionHandler(wasmFrame.instance()->realm());
 
     
     if (wasmExn) {
-      const wasm::Code& code = iter.instance()->code();
-      const uint8_t* pc = iter.resumePCinCurrentFrame();
+      const wasm::Code& code = wasmFrame.instance()->code();
+      const uint8_t* pc = wasmFrame.resumePCinCurrentFrame();
       const wasm::CodeBlock* codeBlock = nullptr;
       const wasm::TryNote* tryNote =
           FindNonDelegateTryNote(code, pc, &codeBlock);
@@ -775,12 +771,11 @@ void wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 #endif
 
         cx->clearPendingException();
-        MOZ_ASSERT(iter.instance() == iter.instance());
-        iter.instance()->setPendingException(wasmExn);
+        wasmFrame.instance()->setPendingException(wasmExn);
 
         rfe->kind = ExceptionResumeKind::WasmCatch;
-        rfe->framePointer = (uint8_t*)iter.frame();
-        rfe->instance = iter.instance();
+        rfe->framePointer = (uint8_t*)wasmFrame.frame();
+        rfe->instance = wasmFrame.instance();
 
         rfe->stackPointer =
             (uint8_t*)(rfe->framePointer - tryNote->landingPadFramePushed());
@@ -796,11 +791,11 @@ void wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
       }
     }
 
-    if (!iter.debugEnabled()) {
+    if (!wasmFrame.debugEnabled()) {
       continue;
     }
 
-    DebugFrame* frame = iter.debugFrame();
+    DebugFrame* frame = wasmFrame.debugFrame();
     frame->clearReturnJSValue();
 
     
@@ -842,24 +837,14 @@ void wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
                        .isWrappedJSValue());
   }
 #endif
-
-  
-  
-  rfe->kind = ExceptionResumeKind::Wasm;
-  rfe->framePointer = (uint8_t*)iter.unwoundCallerFP();
-  rfe->stackPointer = (uint8_t*)iter.unwoundAddressOfReturnAddress();
-  rfe->instance = (Instance*)FailInstanceReg;
-  rfe->target = nullptr;
 }
 
 static void* WasmHandleThrow(jit::ResumeFromException* rfe) {
-  JSContext* cx = TlsContext.get();  
-  JitActivation* activation = CallingActivation(cx);
-  WasmFrameIter iter(activation);
+  jit::HandleException(rfe);
   
   
-  HandleThrow(cx, iter, rfe);
-  return rfe;
+  JSContext* cx = TlsContext.get();
+  return cx->runtime()->jitRuntime()->getExceptionTailReturnValueCheck().value;
 }
 
 

@@ -688,12 +688,6 @@ static JitFrameLayout* GetLastProfilingFrame(ResumeFromException* rfe) {
   return nullptr;
 }
 
-static void HandleExceptionWasm(JSContext* cx, wasm::WasmFrameIter* iter,
-                                ResumeFromException* rfe) {
-  MOZ_ASSERT(cx->activation()->asJit()->hasWasmExitFP());
-  wasm::HandleThrow(cx, *iter, rfe);
-}
-
 void HandleException(ResumeFromException* rfe) {
   JSContext* cx = TlsContext.get();
 
@@ -737,20 +731,34 @@ void HandleException(ResumeFromException* rfe) {
 
   JitFrameIter iter(cx->activation()->asJit(),
                      true);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Rooted<WasmInstanceObject*> keepAlive(cx);
+  if (iter.isWasm()) {
+    keepAlive = iter.asWasm().instance()->object();
+  }
+
   CommonFrameLayout* prevJitFrame = nullptr;
   while (!iter.done()) {
     if (iter.isWasm()) {
       prevJitFrame = nullptr;
-      HandleExceptionWasm(cx, &iter.asWasm(), rfe);
+      wasm::HandleExceptionWasm(cx, iter, rfe);
       if (rfe->kind == ExceptionResumeKind::WasmCatch) {
         
-        MOZ_ASSERT(!iter.done());
-      } else {
-        
-        MOZ_ASSERT(rfe->kind == ExceptionResumeKind::Wasm);
-        MOZ_ASSERT(iter.done());
+        return;
       }
-      return;
+      
+      
+      MOZ_ASSERT(iter.isJSJit() || (iter.isWasm() && iter.done()));
+      continue;
     }
 
     JSJitFrameIter& frame = iter.asJSJit();
@@ -841,6 +849,16 @@ void HandleException(ResumeFromException* rfe) {
     rfe->framePointer = iter.asJSJit().current()->callerFramePtr();
     rfe->stackPointer =
         iter.asJSJit().fp() + CommonFrameLayout::offsetOfReturnAddress();
+  } else {
+    MOZ_ASSERT(iter.isWasm());
+    
+    
+    
+    rfe->kind = ExceptionResumeKind::Wasm;
+    rfe->framePointer = (uint8_t*)iter.asWasm().unwoundCallerFP();
+    rfe->stackPointer = (uint8_t*)iter.asWasm().unwoundAddressOfReturnAddress();
+    rfe->instance = (wasm::Instance*)wasm::FailInstanceReg;
+    rfe->target = nullptr;
   }
 }
 

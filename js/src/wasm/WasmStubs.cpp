@@ -2728,13 +2728,9 @@ void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
 }
 
 
-
-
-
 static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
                               Offsets* offsets) {
   Register scratch1 = ABINonArgReturnReg0;
-  Register scratch2 = ABINonArgReturnReg1;
 
   AssertExpectedSP(masm);
   masm.haltingAlign(CodeAlignment);
@@ -2782,38 +2778,15 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   
   masm.call(SymbolicAddress::HandleThrow);
 
-  Label resumeCatch, leaveWasm;
-
-  masm.load32(Address(ReturnReg, offsetof(jit::ResumeFromException, kind)),
-              scratch1);
-
-  masm.branch32(Assembler::Equal, scratch1,
-                Imm32(jit::ExceptionResumeKind::WasmCatch), &resumeCatch);
-  masm.branch32(Assembler::Equal, scratch1,
-                Imm32(jit::ExceptionResumeKind::Wasm), &leaveWasm);
-
-  masm.breakpoint();
+  
+  masm.freeStack(frameSize);
 
   
-  masm.bind(&resumeCatch);
-  GenerateJumpToCatchHandler(masm, ReturnReg, scratch1, scratch2);
-
   
-  masm.bind(&leaveWasm);
-  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfFramePointer()),
-               FramePointer);
-  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfInstance()),
-               InstanceReg);
-  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfStackPointer()),
-               scratch1);
-  masm.moveToStackPtr(scratch1);
 #ifdef JS_CODEGEN_ARM64
-  masm.loadPtr(Address(scratch1, 0), lr);
-  masm.addToStackPtr(Imm32(8));
-  masm.abiret();
-#else
-  masm.ret();
+  masm.Mov(PseudoStackPointer64, sp);
 #endif
+  masm.jump(ReturnReg);
 
   return FinishOffsets(masm, offsets);
 }
