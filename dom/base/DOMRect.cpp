@@ -148,13 +148,19 @@ JSObject* DOMRectList::WrapObject(JSContext* cx,
 static double RoundFloat(double aValue) { return floor(aValue + 0.5); }
 
 void DOMRect::SetLayoutRect(const nsRect& aLayoutRect) {
-  double scale = 65536.0;
-  
-  
-  double scaleInv = 1 / scale;
-  double t2pScaled = scale / AppUnitsPerCSSPixel();
-  double x = RoundFloat(aLayoutRect.x * t2pScaled) * scaleInv;
-  double y = RoundFloat(aLayoutRect.y * t2pScaled) * scaleInv;
-  SetRect(x, y, RoundFloat(aLayoutRect.XMost() * t2pScaled) * scaleInv - x,
-          RoundFloat(aLayoutRect.YMost() * t2pScaled) * scaleInv - y);
+  if (StaticPrefs::dom_rect_legacy_rounding()) {
+    double scale = 65536.0;
+    
+    
+    double scaleInv = 1 / scale;
+    double t2pScaled = scale / AppUnitsPerCSSPixel();
+    double x = RoundFloat(aLayoutRect.x * t2pScaled) * scaleInv;
+    double y = RoundFloat(aLayoutRect.y * t2pScaled) * scaleInv;
+    return SetRect(
+        float(x), float(y),
+        float(RoundFloat(aLayoutRect.XMost() * t2pScaled) * scaleInv - x),
+        float(RoundFloat(aLayoutRect.YMost() * t2pScaled) * scaleInv - y));
+  }
+  auto rect = CSSRect::FromAppUnits(aLayoutRect);
+  SetRect(rect.x, rect.y, rect.width, rect.height);
 }
