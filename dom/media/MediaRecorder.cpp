@@ -601,7 +601,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
             mRecorder->mConstrainedMimeType)),
         mVideoBitsPerSecond(aVideoBitsPerSecond),
         mAudioBitsPerSecond(aAudioBitsPerSecond),
-        mStartTime(TimeStamp::Now()),
         mRunningState(RunningState::Idling) {
     MOZ_ASSERT(NS_IsMainThread());
     Telemetry::ScalarAdd(Telemetry::ScalarID::MEDIARECORDER_RECORDING_COUNT, 1);
@@ -1058,13 +1057,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       return mShutdownPromise;
     }
 
-    
-    
-    
-    TimeDuration timeDelta = TimeStamp::Now() - mStartTime;
-    Telemetry::Accumulate(Telemetry::MEDIA_RECORDER_RECORDING_DURATION,
-                          timeDelta.ToSeconds());
-
     mShutdownPromise = ShutdownPromise::CreateAndResolve(true, __func__);
 
     if (mEncoder) {
@@ -1164,8 +1156,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   const uint32_t mVideoBitsPerSecond;
   
   const uint32_t mAudioBitsPerSecond;
-  
-  const TimeStamp mStartTime;
   
   
   
