@@ -610,7 +610,7 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
       IsWidevineKeySystem(aKeySystem)) {
     
     contentType.AppendLiteral(
-        u"decode-bpp=8,"
+        u"decode-bpc=8,"
         "decode-res-x=1920,decode-res-y=1080,"
         "decode-bitrate=10000000,decode-fps=30,");
     
