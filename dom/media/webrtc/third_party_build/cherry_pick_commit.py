@@ -275,7 +275,6 @@ if __name__ == "__main__":
     error_help = None
 
     if len(resume_state) == 0:
-        update_resume_state("resume2", resume_state_filename)
         if args.skip_restore is False:
             
             
@@ -302,6 +301,7 @@ if __name__ == "__main__":
                 args.tar_name,
                 "https",  
             )
+        update_resume_state("resume2", resume_state_filename)
 
     
     error_help = (
