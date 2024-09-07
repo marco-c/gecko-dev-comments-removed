@@ -15,6 +15,7 @@
 #include "mozilla/CORSMode.h"             
 #include "mozilla/MemoryReporting.h"      
 #include "mozilla/SharedSubResourceCache.h"  
+#include "mozilla/dom/CacheExpirationTime.h"  
 #include "nsIMemoryReporter.h"  
 #include "nsIObserver.h"        
 #include "nsIPrincipal.h"       
@@ -145,14 +146,14 @@ class ScriptLoadData final
     return mLoadedScript.get();
   }
 
-  uint32_t ExpirationTime() const { return mExpirationTime; }
+  const CacheExpirationTime& ExpirationTime() const { return mExpirationTime; }
 
   ScriptLoader& Loader() { return *mLoader; }
 
   const ScriptHashKey& CacheKey() const { return mKey; }
 
  private:
-  uint32_t mExpirationTime = 0;
+  CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
   ScriptLoader* mLoader;
   ScriptHashKey mKey;
   RefPtr<JS::loader::LoadedScript> mLoadedScript;

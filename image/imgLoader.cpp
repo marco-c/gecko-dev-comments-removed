@@ -31,6 +31,7 @@
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
@@ -1001,7 +1002,7 @@ imgCacheEntry::imgCacheEntry(imgLoader* loader, imgRequest* request,
       mDataSize(0),
       mTouchedTime(SecondsFromPRTime(PR_Now())),
       mLoadTime(SecondsFromPRTime(PR_Now())),
-      mExpiryTime(0),
+      mExpiryTime(CacheExpirationTime::Never()),
       mMustValidate(false),
       
       
@@ -1906,8 +1907,7 @@ bool imgLoader::ValidateEntry(
   
   
   
-  uint32_t expiryTime = aEntry->GetExpiryTime();
-  bool hasExpired = expiryTime && expiryTime <= SecondsFromPRTime(PR_Now());
+  bool hasExpired = aEntry->GetExpiryTime().IsExpired();
 
   
   if (nsCOMPtr<nsIFileURL> fileUrl = do_QueryInterface(aURI)) {

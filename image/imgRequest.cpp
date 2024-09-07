@@ -602,8 +602,7 @@ void imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry,
   if (!info.mExpirationTime) {
     
     
-    info.mExpirationTime.emplace(nsContentUtils::SecondsFromPRTime(PR_Now()) -
-                                 1);
+    info.mExpirationTime.emplace(CacheExpirationTime::AlreadyExpired());
   }
   aCacheEntry->AccumulateExpiryTime(*info.mExpirationTime, aForceTouch);
   
