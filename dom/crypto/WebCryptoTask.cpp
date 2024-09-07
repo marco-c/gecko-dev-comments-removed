@@ -1868,7 +1868,8 @@ class ImportEcKeyTask : public ImportKeyTask {
       return;
     }
 
-    if (mFormat.EqualsLiteral(WEBCRYPTO_KEY_FORMAT_RAW)) {
+    if (mFormat.EqualsLiteral(WEBCRYPTO_KEY_FORMAT_RAW) ||
+        mFormat.EqualsLiteral(WEBCRYPTO_KEY_FORMAT_JWK)) {
       RootedDictionary<EcKeyImportParams> params(aCx);
       mEarlyRv = Coerce(aCx, params, aAlgorithm);
       if (NS_FAILED(mEarlyRv) || !params.mNamedCurve.WasPassed()) {
@@ -1978,8 +1979,18 @@ class ImportEcKeyTask : public ImportKeyTask {
 
     
     if (mFormat.EqualsLiteral(WEBCRYPTO_KEY_FORMAT_JWK)) {
-      if (!NormalizeToken(mJwk.mCrv.Value(), mNamedCurve)) {
+      
+      nsString namedCurveFromCrv;
+      if (!NormalizeToken(mJwk.mCrv.Value(), namedCurveFromCrv)) {
         return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+      }
+
+      
+      
+      
+      
+      if (!mNamedCurve.Equals(namedCurveFromCrv)) {
+        return NS_ERROR_DOM_DATA_ERR;
       }
     }
     return NS_OK;
