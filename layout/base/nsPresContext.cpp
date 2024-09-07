@@ -320,8 +320,7 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
     mMissingFonts = MakeUnique<gfxMissingFontRecorder>();
   }
 
-  if (StaticPrefs::layout_dynamic_toolbar_max_height() > 0 &&
-      IsRootContentDocumentCrossProcess()) {
+  if (StaticPrefs::layout_dynamic_toolbar_max_height() > 0) {
     
     
     mDynamicToolbarMaxHeight = StaticPrefs::layout_dynamic_toolbar_max_height();
@@ -3128,21 +3127,13 @@ nscoord nsPresContext::GetDynamicToolbarMaxHeightInAppUnits() const {
   if (mDynamicToolbarMaxHeight == 0) {
     return 0;
   }
-  return CSSPixel::ToAppUnits(
-      ScreenCoord(GetDynamicToolbarMaxHeight()) /
-      
-      
-      
-      (CSSToDevPixelScale() * LayoutDeviceToScreenScale(1.0)));
+  return CSSPixel::ToAppUnits(ScreenCoord(GetDynamicToolbarMaxHeight()) /
+                              GetMVMScale(mPresShell));
 }
 
 nscoord nsPresContext::GetBimodalDynamicToolbarHeightInAppUnits() const {
-  if (mDynamicToolbarMaxHeight == 0) {
-    return 0;
-  }
   return GetDynamicToolbarState() == DynamicToolbarState::Collapsed
-             ? CSSPixel::ToAppUnits(ScreenCoord(GetDynamicToolbarMaxHeight()) /
-                                    GetMVMScale(mPresShell))
+             ? GetDynamicToolbarMaxHeightInAppUnits()
              : 0;
 }
 
