@@ -36,7 +36,6 @@ using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.
 [RefCounted] using mozilla::dom::SessionStoreRestoreData from "mozilla/dom/SessionStoreRestoreData.h";
 using mozilla::dom::IdentityCredentialInit from "mozilla/dom/IdentityCredentialBinding.h";
 using mozilla::dom::IdentityCredentialRequestOptions from "mozilla/dom/IdentityCredentialBinding.h";
-using mozilla::dom::IdentityLoginTargetType from "mozilla/dom/IdentityCredentialBinding.h";
 
 namespace mozilla {
 namespace dom {
@@ -93,7 +92,10 @@ child:
 
   async RestoreTabContent(nullable SessionStoreRestoreData aData) returns (bool success);
 
-  async NavigateForIdentityCredentialDiscovery(nsString aUri, IdentityLoginTargetType aType);
+  
+  
+  
+  async NotifyStoredIdentityCredential(IPCIdentityCredential aIdentityCredential);
 
 both:
   async RawMessage(JSActorMessageMeta aMetadata, ClonedMessageData? aData,
@@ -207,9 +209,19 @@ parent:
   
   
   
-  async GetIdentityCredential(IdentityCredentialRequestOptions aOptions)
-      returns (IPCIdentityCredential? identityCredential, nsresult rv);
+  async DiscoverIdentityCredentialFromExternalSource(IdentityCredentialRequestOptions aOptions)
+      returns (IPCIdentityCredential? identityCredential);
+  async CollectIdentityCredentialFromCredentialStore(IdentityCredentialRequestOptions aOptions)
+      returns (IPCIdentityCredential[] identityCredential);
   async StoreIdentityCredential(IPCIdentityCredential aCredential)
+      returns (nsresult rv);
+
+  
+  
+  
+  
+  
+  async NotifyPendingIdentityCredentialDiscovery(IdentityCredentialRequestOptions aOptions)
       returns (nsresult rv);
 
   async GetStorageAccessPermission() returns(uint32_t permission_action);
