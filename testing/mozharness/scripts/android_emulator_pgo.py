@@ -248,15 +248,6 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
             driver.quit(in_app=True)
 
             
-            
-            for i in range(50):
-                if not adbdevice.process_exist(app):
-                    break
-                time.sleep(2)
-            else:
-                raise Exception("Android App (%s) never quit" % app)
-
-            
             adbdevice.pull(outputdir, "/builds/worker/workspace/")
         except ADBTimeoutError:
             self.fatal(
