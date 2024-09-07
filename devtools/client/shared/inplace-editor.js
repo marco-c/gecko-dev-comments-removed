@@ -369,6 +369,7 @@ class InplaceEditor extends EventEmitter {
       this.#onKeyPress,
       eventListenerConfig
     );
+    this.input.addEventListener("wheel", this.#onWheel, eventListenerConfig);
     this.input.addEventListener("input", this.#onInput, eventListenerConfig);
     this.input.addEventListener(
       "dblclick",
@@ -1438,39 +1439,57 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  #getIncrement(event) {
-    const getSmallIncrementKey = evt => {
-      if (isOSX) {
-        return evt.altKey;
-      }
-      return evt.ctrlKey;
-    };
 
+
+
+
+
+  #getIncrement(event) {
     const largeIncrement = 100;
     const mediumIncrement = 10;
     const smallIncrement = 0.1;
 
     let increment = 0;
+
+    let wheelUp = false;
+    let wheelDown = false;
+    if (event.type === "wheel") {
+      if (event.wheelDelta > 0) {
+        wheelUp = true;
+      } else if (event.wheelDelta < 0) {
+        wheelDown = true;
+      }
+    }
+
     const key = event.keyCode;
 
-    if (isKeyIn(key, "UP", "PAGE_UP")) {
+    if (wheelUp || isKeyIn(key, "UP", "PAGE_UP")) {
       increment = 1 * this.defaultIncrement;
-    } else if (isKeyIn(key, "DOWN", "PAGE_DOWN")) {
+    } else if (wheelDown || isKeyIn(key, "DOWN", "PAGE_DOWN")) {
       increment = -1 * this.defaultIncrement;
     }
 
-    if (event.shiftKey && !getSmallIncrementKey(event)) {
+    const largeIncrementKeyPressed = event.shiftKey;
+    const smallIncrementKeyPressed = this.#isSmallIncrementKeyPressed(event);
+    if (largeIncrementKeyPressed && !smallIncrementKeyPressed) {
       if (isKeyIn(key, "PAGE_UP", "PAGE_DOWN")) {
         increment *= largeIncrement;
       } else {
         increment *= mediumIncrement;
       }
-    } else if (getSmallIncrementKey(event) && !event.shiftKey) {
+    } else if (smallIncrementKeyPressed && !largeIncrementKeyPressed) {
       increment *= smallIncrement;
     }
 
     return increment;
   }
+
+  #isSmallIncrementKeyPressed = evt => {
+    if (isOSX) {
+      return evt.altKey;
+    }
+    return evt.ctrlKey;
+  };
 
   
 
@@ -1499,6 +1518,24 @@ class InplaceEditor extends EventEmitter {
     
     if (this.currentInputValue === "" && this.showSuggestCompletionOnEmpty) {
       this.#maybeSuggestCompletion(false);
+    }
+  };
+
+  
+
+
+
+
+  #onWheel = event => {
+    const isPlainText = this.contentType == CONTENT_TYPES.PLAIN_TEXT;
+    let increment = 0;
+    if (!isPlainText) {
+      increment = this.#getIncrement(event);
+    }
+
+    if (increment && this.#incrementValue(increment)) {
+      this.#updateSize();
+      event.preventDefault();
     }
   };
 
