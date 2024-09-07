@@ -209,6 +209,10 @@ void APZEventResult::SetStatusForFastFling(
 
   
   
+  mHandledResult = APZHandledResult::Initialize(aTarget, DispatchToContent::No);
+
+  
+  
   
   APZHandledResult::UpdateForTouchEvent(
       mHandledResult, aBlock, aConsumableFlags, aTarget, DispatchToContent::No);
