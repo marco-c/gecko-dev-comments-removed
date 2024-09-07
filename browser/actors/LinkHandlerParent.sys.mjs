@@ -5,7 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
 let gTestListeners = new Set();
@@ -105,7 +105,15 @@ export class LinkHandlerParent extends JSWindowActorParent {
   setIconFromLink(
     gBrowser,
     browser,
-    { pageURL, originalURL, canUseForTab, expiration, iconURL, canStoreIcon }
+    {
+      pageURL,
+      originalURL,
+      canUseForTab,
+      expiration,
+      iconURL,
+      canStoreIcon,
+      beforePageShow,
+    }
   ) {
     let tab = gBrowser.getTabForBrowser(browser);
     if (!tab) {
@@ -123,7 +131,7 @@ export class LinkHandlerParent extends JSWindowActorParent {
       console.error(ex);
       return;
     }
-    if (iconURI.scheme != "data") {
+    if (!iconURI.schemeIs("data")) {
       try {
         Services.scriptSecurityManager.checkLoadURIWithPrincipal(
           browser.contentPrincipal,
@@ -136,13 +144,11 @@ export class LinkHandlerParent extends JSWindowActorParent {
     }
     if (canStoreIcon) {
       try {
-        lazy.PlacesUIUtils.loadFavicon(
-          browser,
-          Services.scriptSecurityManager.getSystemPrincipal(),
+        lazy.PlacesUtils.favicons.setFaviconForPage(
           Services.io.newURI(pageURL),
           Services.io.newURI(originalURL),
-          expiration,
-          iconURI
+          iconURI,
+          expiration && lazy.PlacesUtils.toPRTime(expiration)
         );
       } catch (ex) {
         console.error(ex);
@@ -150,7 +156,7 @@ export class LinkHandlerParent extends JSWindowActorParent {
     }
 
     if (canUseForTab) {
-      gBrowser.setIcon(tab, iconURL, originalURL);
+      gBrowser.setIcon(tab, iconURL, originalURL, null, beforePageShow);
     }
   }
 }
