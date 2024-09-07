@@ -97,6 +97,7 @@ static const char* CSPStrDirectives[] = {
     "style-src-attr",             
     "require-trusted-types-for",  
     "trusted-types",              
+    "report-to",                  
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir) {
@@ -379,6 +380,20 @@ class nsCSPReportURI : public nsCSPBaseSrc {
 
 
 
+class nsCSPGroup : public nsCSPBaseSrc {
+ public:
+  explicit nsCSPGroup(const nsAString& aGroup);
+  virtual ~nsCSPGroup();
+
+  bool visit(nsCSPSrcVisitor* aVisitor) const override;
+  void toString(nsAString& aOutStr) const override;
+
+ private:
+  nsString mGroup;
+};
+
+
+
 class nsCSPSandboxFlags : public nsCSPBaseSrc {
  public:
   explicit nsCSPSandboxFlags(const nsAString& aFlags);
@@ -477,6 +492,8 @@ class nsCSPDirective {
   virtual bool equals(CSPDirective aDirective) const;
 
   void getReportURIs(nsTArray<nsString>& outReportURIs) const;
+
+  void getReportGroup(nsAString& outReportGroup) const;
 
   bool visitSrcs(nsCSPSrcVisitor* aVisitor) const;
 
@@ -697,6 +714,8 @@ class nsCSPPolicy {
   }
 
   void getReportURIs(nsTArray<nsString>& outReportURIs) const;
+
+  void getReportGroup(nsAString& outReportGroup) const;
 
   void getViolatedDirectiveInformation(CSPDirective aDirective,
                                        nsAString& aDirectiveName,
