@@ -1192,9 +1192,16 @@ TextPropertyEditor.prototype = {
       return;
     }
 
+    const isVariable = value.startsWith("--");
+
     
     
-    if (!this.prop.value && direction !== Services.focus.MOVEFOCUS_FORWARD) {
+    
+    if (
+      !this.prop.value &&
+      !isVariable &&
+      direction !== Services.focus.MOVEFOCUS_FORWARD
+    ) {
       this.remove(direction);
       return;
     }
@@ -1274,9 +1281,11 @@ TextPropertyEditor.prototype = {
         this.committed.value === val.value &&
         this.committed.priority === val.priority);
 
+    const isVariable = this.prop.name.startsWith("--");
+
     
     
-    if (value.trim() && isValueUnchanged) {
+    if ((value.trim() || isVariable) && isValueUnchanged) {
       this.ruleEditor.rule.previewPropertyValue(
         this.prop,
         val.value,
@@ -1313,7 +1322,12 @@ TextPropertyEditor.prototype = {
     
     
     
-    if (!value.trim() && direction !== Services.focus.MOVEFOCUS_BACKWARD) {
+    
+    if (
+      !value.trim() &&
+      !isVariable &&
+      direction !== Services.focus.MOVEFOCUS_BACKWARD
+    ) {
       setTimeout(() => {
         if (!this.editing) {
           this.remove(direction);
