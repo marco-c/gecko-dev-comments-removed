@@ -8,6 +8,7 @@
 
 
 #include "ActorsChild.h"
+#include "QuotaUsageRequestChild.h"
 
 
 #include "mozilla/ErrorNames.h"

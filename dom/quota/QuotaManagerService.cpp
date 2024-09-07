@@ -12,6 +12,7 @@
 #include "QuotaManager.h"
 #include "QuotaRequests.h"
 #include "QuotaResults.h"
+#include "QuotaUsageRequestChild.h"
 
 
 #include <cstdint>
