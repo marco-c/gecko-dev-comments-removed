@@ -905,24 +905,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "NamedNodeMap", insecureContext: true },
   
-  { name: "NavigateEvent", insecureContext: true, disabled: true },
-  
-  { name: "Navigation", insecureContext: true, disabled: true },
-  
-  { name: "NavigationActivation", insecureContext: true, disabled: true },
-  
-  {
-    name: "NavigationCurrentEntryChangeEvent",
-    insecureContext: true,
-    disabled: true,
-  },
-  
-  { name: "NavigationDestination", insecureContext: true, disabled: true },
-  
-  { name: "NavigationHistoryEntry", insecureContext: true, disabled: true },
-  
-  { name: "NavigationTransition", insecureContext: true, disabled: true },
-  
   "NavigationPreloadManager",
   
   { name: "Navigator", insecureContext: true },
