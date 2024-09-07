@@ -3,6 +3,7 @@
 
 
 
+#include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/WeakPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsCycleCollectionParticipant.h"
@@ -31,7 +32,8 @@ class Selection;
 
 class nsTypeAheadFind : public nsITypeAheadFind,
                         public nsIObserver,
-                        public nsSupportsWeakReference {
+                        public nsSupportsWeakReference,
+                        public mozilla::GlobalTeardownObserver {
  public:
   nsTypeAheadFind();
 
@@ -79,7 +81,10 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   
   already_AddRefed<mozilla::dom::Document> GetDocument();
 
+  void DisconnectFromOwner() override;
   void ReleaseStrongMemberVariables();
+  void ReleaseFoundResultsAndDisconnect();
+  void SetCurrentWindow(nsPIDOMWindowInner* aWindow);
 
   
   nsString mTypeAheadBuffer;
@@ -95,7 +100,6 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   nsCOMPtr<mozilla::dom::Element>
       mFoundEditable;           
   RefPtr<nsRange> mFoundRange;  
-  nsCOMPtr<nsPIDOMWindowInner> mCurrentWindow;
   
   
   uint32_t mLastFindLength;
