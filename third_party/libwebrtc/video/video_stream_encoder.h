@@ -47,6 +47,7 @@
 #include "video/encoder_bitrate_adjuster.h"
 #include "video/frame_cadence_adapter.h"
 #include "video/frame_encode_metadata_writer.h"
+#include "video/quality_convergence_controller.h"
 #include "video/video_source_sink_controller.h"
 #include "video/video_stream_encoder_interface.h"
 #include "video/video_stream_encoder_observer.h"
@@ -417,6 +418,11 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   QpParser qp_parser_;
   const bool qp_parsing_allowed_;
+
+  
+  
+  
+  QualityConvergenceController quality_convergence_controller_;
 
   
   bool switch_encoder_on_init_failures_;
