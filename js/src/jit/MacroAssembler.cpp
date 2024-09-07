@@ -5509,22 +5509,29 @@ struct ReturnCallTrampolineData {
 static ReturnCallTrampolineData MakeReturnCallTrampoline(MacroAssembler& masm) {
   uint32_t savedPushed = masm.framePushed();
 
-  
-  
   ReturnCallTrampolineData data;
+
+  {
+#  if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+    AutoForbidPoolsAndNops afp(&masm, 1);
+#  elif defined(JS_CODEGEN_RISCV64)
+    BlockTrampolinePoolScope block_trampoline_pool(&masm, 1);
+#  endif
+
+    
+    
 #  ifdef JS_CODEGEN_ARM
-  data.trampolineOffset = masm.currentOffset();
+    data.trampolineOffset = masm.currentOffset();
 #  else
-  masm.bind(&data.trampoline);
+    masm.bind(&data.trampoline);
 #  endif
 
-  masm.setFramePushed(
-      AlignBytes(wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
-                 WasmStackAlignment));
+    masm.setFramePushed(AlignBytes(
+        wasm::FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
+        WasmStackAlignment));
 
-#  ifdef ENABLE_WASM_TAIL_CALLS
-  masm.wasmMarkSlowCall();
-#  endif
+    masm.wasmMarkSlowCall();
+  }
 
   masm.loadPtr(
       Address(masm.getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
