@@ -49,9 +49,6 @@ class AbortFollower : public nsISupports {
 
 
 
-
-
-
 class AbortSignalImpl : public nsISupports, public SupportsWeakPtr {
  public:
   explicit AbortSignalImpl(bool aAborted, JS::Handle<JS::Value> aReason);
@@ -63,7 +60,7 @@ class AbortSignalImpl : public nsISupports, public SupportsWeakPtr {
   
   JS::Value RawReason() const;
 
-  void SignalAbort(JS::Handle<JS::Value> aReason);
+  virtual void SignalAbort(JS::Handle<JS::Value> aReason);
 
  protected:
   
@@ -74,10 +71,6 @@ class AbortSignalImpl : public nsISupports, public SupportsWeakPtr {
   static void Unlink(AbortSignalImpl* aSignal);
 
   virtual ~AbortSignalImpl() { UnlinkFollowers(); }
-
-  virtual void SignalAbortWithDependents();
-
-  virtual void RunAbortSteps();
 
   void SetAborted(JS::Handle<JS::Value> aReason);
 
@@ -90,9 +83,6 @@ class AbortSignalImpl : public nsISupports, public SupportsWeakPtr {
 
   void UnlinkFollowers();
 
-  
-  
-  
   
   
   

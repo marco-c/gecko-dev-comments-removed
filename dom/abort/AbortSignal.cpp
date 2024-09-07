@@ -49,26 +49,8 @@ void AbortSignalImpl::SignalAbort(JS::Handle<JS::Value> aReason) {
   }
 
   
-  
-  
-  
-  
   SetAborted(aReason);
 
-  
-  SignalAbortWithDependents();
-}
-
-void AbortSignalImpl::SignalAbortWithDependents() {
-  
-  RunAbortSteps();
-}
-
-
-
-
-void AbortSignalImpl::RunAbortSteps() {
-  
   
   
   
@@ -295,26 +277,14 @@ already_AddRefed<AbortSignal> AbortSignal::Any(
   RefPtr<AbortSignal> resultSignal =
       new AbortSignal(aGlobal, false, JS::UndefinedHandleValue);
 
-  if (!aSignals.IsEmpty()) {
-    
-    
-    
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aGlobal)) {
-      return nullptr;
-    }
-    JSContext* cx = jsapi.cx();
-
-    
-    
-    
-    for (const auto& signal : aSignals) {
-      if (signal->Aborted()) {
-        JS::Rooted<JS::Value> reason(cx);
-        signal->GetReason(cx, &reason);
-        resultSignal->SetAborted(reason);
-        return resultSignal.forget();
-      }
+  
+  
+  
+  for (const auto& signal : aSignals) {
+    if (signal->Aborted()) {
+      JS::Rooted<JS::Value> reason(RootingCx(), signal->RawReason());
+      resultSignal->SetAborted(reason);
+      return resultSignal.forget();
     }
   }
 
@@ -370,53 +340,14 @@ void AbortSignal::ThrowIfAborted(JSContext* aCx, ErrorResult& aRv) {
 }
 
 
-void AbortSignal::SignalAbortWithDependents() {
+void AbortSignal::SignalAbort(JS::Handle<JS::Value> aReason) {
   
-  nsTArray<RefPtr<AbortSignal>> dependentSignalsToAbort;
-
-  
-  nsTArray<RefPtr<AbortSignal>> dependentSignals = std::move(mDependentSignals);
-
-  if (!dependentSignals.IsEmpty()) {
-    
-    
-    
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(GetParentObject())) {
-      return;
-    }
-    JSContext* cx = jsapi.cx();
-    JS::Rooted<JS::Value> reason(cx);
-    GetReason(cx, &reason);
-
-    
-    for (const auto& dependentSignal : dependentSignals) {
-      MOZ_ASSERT(dependentSignal->mSourceSignals.Contains(this));
-      
-      if (!dependentSignal->Aborted()) {
-        
-        
-        dependentSignal->SetAborted(reason);
-        
-        dependentSignalsToAbort.AppendElement(dependentSignal);
-      }
-    }
+  if (Aborted()) {
+    return;
   }
 
   
-  RunAbortSteps();
-
-  
-  
-  for (const auto& dependentSignal : dependentSignalsToAbort) {
-    dependentSignal->RunAbortSteps();
-  }
-}
-
-
-void AbortSignal::RunAbortSteps() {
-  
-  AbortSignalImpl::RunAbortSteps();
+  AbortSignalImpl::SignalAbort(aReason);
 
   
   EventInit init;
@@ -427,6 +358,14 @@ void AbortSignal::RunAbortSteps() {
   event->SetTrusted(true);
 
   DispatchEvent(*event);
+
+  
+  for (const auto& dependant : mDependentSignals) {
+    MOZ_ASSERT(dependant->mSourceSignals.Contains(this));
+    dependant->SignalAbort(aReason);
+  }
+  
+  mDependentSignals.Clear();
 }
 
 bool AbortSignal::Dependent() const { return mDependent; }
