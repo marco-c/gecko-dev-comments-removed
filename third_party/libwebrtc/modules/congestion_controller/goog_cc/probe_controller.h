@@ -45,12 +45,16 @@ struct ProbeControllerConfig {
   FieldTrialParameter<bool> abort_further_probe_if_max_lower_than_current;
   
   
-  FieldTrialParameter<TimeDelta> repeated_initial_probing_duration;
-
+  FieldTrialParameter<TimeDelta> repeated_initial_probing_time_period;
+  
+  
+  FieldTrialParameter<TimeDelta> initial_probe_duration;
+  
+  
+  FieldTrialParameter<TimeDelta> initial_min_probe_delta;
   
   FieldTrialParameter<TimeDelta> alr_probing_interval;
   FieldTrialParameter<double> alr_probe_scale;
-
   
   FieldTrialParameter<TimeDelta> network_state_estimate_probing_interval;
   
@@ -74,6 +78,8 @@ struct ProbeControllerConfig {
   FieldTrialParameter<int> min_probe_packets_sent;
   
   FieldTrialParameter<TimeDelta> min_probe_duration;
+  
+  FieldTrialParameter<TimeDelta> min_probe_delta;
   FieldTrialParameter<double> loss_limited_probe_scale;
   
   
@@ -83,7 +89,7 @@ struct ProbeControllerConfig {
 
 
 
-enum class BandwidthLimitedCause {
+enum class BandwidthLimitedCause : int {
   kLossLimitedBweIncreasing = 0,
   kLossLimitedBwe = 1,
   kDelayBasedLimited = 2,
@@ -128,6 +134,8 @@ class ProbeController {
   
   
   
+  
+  
   void EnableRepeatedInitialProbing(bool enable);
 
   void SetAlrStartTimeMs(absl::optional<int64_t> alr_start_time);
@@ -138,6 +146,7 @@ class ProbeController {
 
   void SetNetworkStateEstimate(webrtc::NetworkStateEstimate estimate);
 
+  
   
   
   
@@ -166,9 +175,10 @@ class ProbeController {
   bool TimeForAlrProbe(Timestamp at_time) const;
   bool TimeForNetworkStateProbe(Timestamp at_time) const;
   bool TimeForNextRepeatedInitialProbe(Timestamp at_time) const;
+  ProbeClusterConfig CreateProbeClusterConfig(Timestamp at_time,
+                                              DataRate bitrate);
 
   bool network_available_;
-  bool waiting_for_initial_probe_result_ = false;
   bool repeated_initial_probing_enabled_ = false;
   Timestamp last_allowed_repeated_initial_probe_ = Timestamp::MinusInfinity();
   BandwidthLimitedCause bandwidth_limited_cause_ =

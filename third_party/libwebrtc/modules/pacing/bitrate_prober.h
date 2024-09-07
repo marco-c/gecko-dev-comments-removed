@@ -16,8 +16,10 @@
 
 #include <queue>
 
-#include "api/transport/field_trial_based_config.h"
+#include "api/field_trials_view.h"
 #include "api/transport/network_types.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
@@ -29,8 +31,6 @@ struct BitrateProberConfig {
   BitrateProberConfig& operator=(const BitrateProberConfig&) = default;
   ~BitrateProberConfig() = default;
 
-  
-  FieldTrialParameter<TimeDelta> min_probe_delta;
   
   FieldTrialParameter<TimeDelta> max_probe_delay;
   
@@ -103,9 +103,9 @@ class BitrateProber {
 
     int sent_probes = 0;
     int sent_bytes = 0;
+    TimeDelta min_probe_delta = TimeDelta::Zero();
     Timestamp requested_at = Timestamp::MinusInfinity();
     Timestamp started_at = Timestamp::MinusInfinity();
-    int retries = 0;
   };
 
   Timestamp CalculateNextProbeTime(const ProbeCluster& cluster) const;

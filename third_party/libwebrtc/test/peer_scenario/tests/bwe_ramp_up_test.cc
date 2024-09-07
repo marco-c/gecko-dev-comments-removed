@@ -199,7 +199,7 @@ TEST_P(BweRampupWithInitialProbeTest, BweRampUpBothDirectionsWithoutMedia) {
 
   
   
-  s.ProcessMessages(TimeDelta::Seconds(1));
+  s.ProcessMessages(TimeDelta::Seconds(2));
 
   auto callee_inbound_stats =
       GetStatsAndProcess(s, callee)->GetStatsOfType<RTCInboundRtpStreamStats>();
