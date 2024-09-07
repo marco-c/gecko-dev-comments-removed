@@ -189,7 +189,7 @@ class BranchDeadlineSet {
   
   
   
-  typedef Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>> RangeVector;
+  using RangeVector = Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>>;
 
   
   
@@ -376,7 +376,7 @@ class BranchDeadlineSet<0u> {
 };
 
 
-typedef int32_t PoolAllocUnit;
+using PoolAllocUnit = int32_t;
 
 
 
@@ -552,7 +552,7 @@ struct AssemblerBufferWithConstantPools
   };
 
  private:
-  typedef AssemblerBuffer<SliceSize, Inst> Parent;
+  using Parent = AssemblerBuffer<SliceSize, Inst>;
   using typename Parent::Slice;
 
   

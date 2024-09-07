@@ -133,7 +133,7 @@ struct JitPoisonRange {
       : pool(pool), start(start), size(size) {}
 };
 
-typedef Vector<JitPoisonRange, 0, SystemAllocPolicy> JitPoisonRangeVector;
+using JitPoisonRangeVector = Vector<JitPoisonRange, 0, SystemAllocPolicy>;
 
 class ExecutableAllocator {
  public:
@@ -187,16 +187,16 @@ class ExecutableAllocator {
 
   
   static const size_t maxSmallPools = 4;
-  typedef js::Vector<ExecutablePool*, maxSmallPools, js::SystemAllocPolicy>
-      SmallExecPoolVector;
+  using SmallExecPoolVector =
+      js::Vector<ExecutablePool*, maxSmallPools, js::SystemAllocPolicy>;
   SmallExecPoolVector m_smallPools;
 
   
   
   
-  typedef js::HashSet<ExecutablePool*, js::DefaultHasher<ExecutablePool*>,
-                      js::SystemAllocPolicy>
-      ExecPoolHashSet;
+  using ExecPoolHashSet =
+      js::HashSet<ExecutablePool*, js::DefaultHasher<ExecutablePool*>,
+                  js::SystemAllocPolicy>;
   ExecPoolHashSet m_pools;  
 };
 

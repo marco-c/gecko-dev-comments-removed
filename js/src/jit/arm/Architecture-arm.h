@@ -63,8 +63,8 @@ class Registers {
     pc = r15,
     invalid_reg
   };
-  typedef uint8_t Code;
-  typedef RegisterID Encoding;
+  using Code = uint8_t;
+  using Encoding = RegisterID;
 
   
   union RegisterContent {
@@ -88,7 +88,7 @@ class Registers {
   static const uint32_t Total = 16;
   static const uint32_t Allocatable = 13;
 
-  typedef uint32_t SetType;
+  using SetType = uint32_t;
 
   static const SetType AllMask = (1 << Total) - 1;
   static const SetType ArgRegMask =
@@ -144,7 +144,7 @@ class Registers {
 };
 
 
-typedef uint16_t PackedRegisterMask;
+using PackedRegisterMask = uint16_t;
 
 class FloatRegisters {
  public:
@@ -216,8 +216,8 @@ class FloatRegisters {
     invalid_freg
   };
 
-  typedef uint32_t Code;
-  typedef FPRegisterID Encoding;
+  using Code = uint32_t;
+  using Encoding = FPRegisterID;
 
   
   union RegisterContent {
@@ -285,7 +285,7 @@ class FloatRegisters {
     
     
   
-  typedef uint64_t SetType;
+  using SetType = uint64_t;
   static const SetType AllSingleMask = (1ull << TotalSingle) - 1;
   static const SetType AllDoubleMask = ((1ull << TotalDouble) - 1)
                                        << TotalSingle;
@@ -330,9 +330,9 @@ class VFPRegister {
   
   enum RegType : uint8_t { Single = 0x0, Double = 0x1, UInt = 0x2, Int = 0x3 };
 
-  typedef FloatRegisters Codes;
-  typedef Codes::Code Code;
-  typedef Codes::Encoding Encoding;
+  using Codes = FloatRegisters;
+  using Code = Codes::Code;
+  using Encoding = Codes::Encoding;
 
   
  public:
@@ -491,7 +491,7 @@ class VFPRegister {
     return doubleOverlay(aliasIdx - 1);
   }
 
-  typedef FloatRegisters::SetType SetType;
+  using SetType = FloatRegisters::SetType;
 
   
   
@@ -630,7 +630,7 @@ VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set) {
 }
 
 
-typedef VFPRegister FloatRegister;
+using FloatRegister = VFPRegister;
 
 uint32_t GetARMFlags();
 bool HasARMv7();

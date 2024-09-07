@@ -228,8 +228,8 @@ class JitRuntime {
   
   
   
-  typedef mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>
-      NumFinishedOffThreadTasksType;
+  using NumFinishedOffThreadTasksType =
+      mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>;
   NumFinishedOffThreadTasksType numFinishedOffThreadTasks_{0};
 
   

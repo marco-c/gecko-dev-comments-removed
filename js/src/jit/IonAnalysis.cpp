@@ -3756,9 +3756,8 @@ struct BoundsCheckInfo {
   uint32_t validEnd;
 };
 
-typedef HashMap<uint32_t, BoundsCheckInfo, DefaultHasher<uint32_t>,
-                JitAllocPolicy>
-    BoundsCheckMap;
+using BoundsCheckMap =
+    HashMap<uint32_t, BoundsCheckInfo, DefaultHasher<uint32_t>, JitAllocPolicy>;
 
 
 static HashNumber BoundsCheckHashIgnoreOffset(MBoundsCheck* check) {

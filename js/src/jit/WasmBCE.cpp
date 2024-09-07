@@ -13,9 +13,8 @@
 using namespace js;
 using namespace js::jit;
 
-typedef js::HashMap<uint32_t, MDefinition*, DefaultHasher<uint32_t>,
-                    SystemAllocPolicy>
-    LastSeenMap;
+using LastSeenMap = js::HashMap<uint32_t, MDefinition*, DefaultHasher<uint32_t>,
+                                SystemAllocPolicy>;
 
 
 

@@ -359,7 +359,7 @@ class SnapshotWriter {
   
   
   using RVA = RValueAllocation;
-  typedef HashMap<RVA, uint32_t, RVA::Hasher, SystemAllocPolicy> RValueAllocMap;
+  using RValueAllocMap = HashMap<RVA, uint32_t, RVA::Hasher, SystemAllocPolicy>;
   RValueAllocMap allocMap_;
 
   

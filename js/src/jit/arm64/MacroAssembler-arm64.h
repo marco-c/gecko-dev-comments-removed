@@ -47,7 +47,7 @@ class ScratchTagScope;
 
 class MacroAssemblerCompat : public vixl::MacroAssembler {
  public:
-  typedef vixl::Condition Condition;
+  using Condition = vixl::Condition;
 
  private:
   
@@ -2210,7 +2210,7 @@ inline void MacroAssemblerCompat::splitTagForTest(const ValueOperand& value,
   splitSignExtTag(value, tag);
 }
 
-typedef MacroAssemblerCompat MacroAssemblerSpecific;
+using MacroAssemblerSpecific = MacroAssemblerCompat;
 
 }  
 }  

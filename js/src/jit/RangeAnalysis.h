@@ -71,8 +71,8 @@ struct LoopIterationBound : public TempObject {
         currentSum(currentSum) {}
 };
 
-typedef Vector<LoopIterationBound*, 0, SystemAllocPolicy>
-    LoopIterationBoundVector;
+using LoopIterationBoundVector =
+    Vector<LoopIterationBound*, 0, SystemAllocPolicy>;
 
 
 struct SymbolicBound : public TempObject {

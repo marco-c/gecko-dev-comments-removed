@@ -180,7 +180,7 @@ class BaseAssemblerX86 : public BaseAssembler {
   }
 };
 
-typedef BaseAssemblerX86 BaseAssemblerSpecific;
+using BaseAssemblerSpecific = BaseAssemblerX86;
 
 }  
 

@@ -319,7 +319,7 @@ class JSJitProfilingFrameIterator {
 
 class RInstructionResults {
   
-  typedef mozilla::Vector<HeapPtr<Value>, 1, SystemAllocPolicy> Values;
+  using Values = mozilla::Vector<HeapPtr<Value>, 1, SystemAllocPolicy>;
   UniquePtr<Values> results_;
 
   

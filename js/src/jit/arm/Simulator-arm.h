@@ -54,7 +54,7 @@ class AutoLockSimulator;
 
 
 
-typedef void (*SingleStepCallback)(void* arg, Simulator* sim, void* pc);
+using SingleStepCallback = void (*)(void* arg, Simulator* sim, void* pc);
 
 
 enum VFPRoundingMode {
@@ -72,7 +72,7 @@ enum VFPRoundingMode {
 
 const uint32_t kVFPRoundingModeMask = 3 << 22;
 
-typedef int32_t Instr;
+using Instr = int32_t;
 class SimInstruction;
 
 
@@ -472,7 +472,7 @@ class Simulator {
   void setCallResultDouble(double result);
   void setCallResultFloat(float result);
   void setCallResult(int64_t res);
-  void scratchVolatileRegisters(bool scratchFloat = true);
+  void scratchVolatileRegisters(void* target = nullptr);
 
   template <class ReturnType, int register_size>
   void getFromVFPRegister(int reg_index, ReturnType* out);
@@ -566,14 +566,14 @@ class SimulatorProcess {
  private:
   
   struct ICacheHasher {
-    typedef void* Key;
-    typedef void* Lookup;
+    using Key = void*;
+    using Lookup = void*;
     static HashNumber hash(const Lookup& l);
     static bool match(const Key& k, const Lookup& l);
   };
 
  public:
-  typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
+  using ICacheMap = HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy>;
 
   static mozilla::Atomic<size_t, mozilla::ReleaseAcquire>
       ICacheCheckingDisableCount;
