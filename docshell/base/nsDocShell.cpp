@@ -5999,22 +5999,9 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
           
           
           
-          
-          
-          
-          
-          
-          bool isACE;
           nsAutoCString utf8Host;
-          nsCOMPtr<nsIIDNService> idnSrv =
-              do_GetService(NS_IDNSERVICE_CONTRACTID);
-          if (idnSrv && NS_SUCCEEDED(idnSrv->IsACE(host, &isACE)) && isACE &&
-              NS_SUCCEEDED(idnSrv->ConvertACEtoUTF8(host, utf8Host))) {
-            info = KeywordToURI(utf8Host, aUsePrivateBrowsing);
-
-          } else {
-            info = KeywordToURI(host, aUsePrivateBrowsing);
-          }
+          mozilla_net_recover_keyword_from_punycode(&host, &utf8Host);
+          info = KeywordToURI(utf8Host, aUsePrivateBrowsing);
         }
         if (info) {
           info->GetPreferredURI(getter_AddRefs(newURI));
