@@ -244,64 +244,22 @@ void CodeGenerator::visitCompareExchangeTypedArrayElement64(
 void CodeGenerator::visitAtomicExchangeTypedArrayElement64(
     LAtomicExchangeTypedArrayElement64* lir) {
   Register elements = ToRegister(lir->elements());
-  Register value = ToRegister(lir->value());
-  Register64 temp1 = ToRegister64(lir->temp1());
-  Register out = ToRegister(lir->output());
-  Register64 temp2 = Register64(value, out);
+  Register64 value = ToRegister64(lir->value());
+  Register64 out = ToOutRegister64(lir);
 
-  MOZ_ASSERT(value == edx);
-  MOZ_ASSERT(temp1 == Register64(ecx, ebx));
-  MOZ_ASSERT(temp2 == Register64(edx, eax));
-  MOZ_ASSERT(out == eax);
+  MOZ_ASSERT(value == Register64(ecx, ebx));
+  MOZ_ASSERT(out == Register64(edx, eax));
 
   Scalar::Type arrayType = lir->mir()->arrayType();
 
-  DebugOnly<uint32_t> framePushed = masm.framePushed();
-
-  
-  masm.push(edx);
-
-  auto restoreSavedRegisters = [&]() { masm.pop(edx); };
-
-  masm.loadBigInt64(value, temp1);
-
   if (lir->index()->isConstant()) {
     Address dest = ToAddress(elements, lir->index(), arrayType);
-    masm.atomicExchange64(Synchronization::Full(), dest, temp1, temp2);
+    masm.atomicExchange64(Synchronization::Full(), dest, value, out);
   } else {
     BaseIndex dest(elements, ToRegister(lir->index()),
                    ScaleFromScalarType(arrayType));
-    masm.atomicExchange64(Synchronization::Full(), dest, temp1, temp2);
+    masm.atomicExchange64(Synchronization::Full(), dest, value, out);
   }
-
-  
-  masm.move64(temp2, temp1);
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(framePushed == masm.framePushed());
-
-  OutOfLineCode* ool = createBigIntOutOfLine(lir, arrayType, temp1, out);
-
-  
-  Register temp = edx;
-
-  Label fail;
-  masm.newGCBigInt(out, temp, initialBigIntHeap(), &fail);
-  masm.initializeBigInt64(arrayType, out, temp1);
-  restoreSavedRegisters();
-  masm.jump(ool->rejoin());
-
-  
-  masm.bind(&fail);
-  restoreSavedRegisters();
-  masm.jump(ool->entry());
-
-  
-  masm.bind(ool->rejoin());
 }
 
 void CodeGenerator::visitAtomicTypedArrayElementBinop64(
