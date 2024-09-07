@@ -93,7 +93,7 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
 
   surf->Lock(false);
 
-  if (surf->GetFormat() == SurfaceFormat::YUV422) {
+  if (surf->GetFormat() == SurfaceFormat::YUY2) {
     
     
     size_t heightScale = ySize.height / cbcrSize.height;
@@ -243,8 +243,8 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
           aYSize, aCbCrSize, aYUVColorSpace, aTransferFunction, aColorRange,
           aColorDepth);
     } else {
-      result = MacIOSurface::CreateYUV422Surface(aYSize, aYUVColorSpace,
-                                                 aColorRange);
+      result =
+          MacIOSurface::CreateYUY2Surface(aYSize, aYUVColorSpace, aColorRange);
     }
 
     if (mSurfaces.Length() <

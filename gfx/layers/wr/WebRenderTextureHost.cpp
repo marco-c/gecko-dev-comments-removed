@@ -155,7 +155,7 @@ gfx::SurfaceFormat WebRenderTextureHost::GetReadFormat() const {
 
 int32_t WebRenderTextureHost::GetRGBStride() {
   gfx::SurfaceFormat format = GetFormat();
-  if (GetFormat() == gfx::SurfaceFormat::YUV) {
+  if (GetFormat() == gfx::SurfaceFormat::YUV420) {
     
     
     return gfx::GetAlignedStride<16>(

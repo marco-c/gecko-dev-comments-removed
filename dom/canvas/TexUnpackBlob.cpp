@@ -901,7 +901,7 @@ static bool GetFormatForSurf(const gfx::SourceSurface* surf,
       *out_bpp = 1;
       return true;
 
-    case gfx::SurfaceFormat::YUV:
+    case gfx::SurfaceFormat::YUV420:
       
       NS_ERROR("We don't handle uploads from YUV sources yet.");
       

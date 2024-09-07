@@ -34,8 +34,8 @@ static bool CreateTextureForPlane(uint8_t aPlaneID, gl::GLContext* aGL,
   bool result = aSurface->BindTexImage(aGL, aPlaneID, &readFormat);
   
   
-  MOZ_ASSERT(aSurface->GetFormat() != gfx::SurfaceFormat::YUV422 ||
-             readFormat == gfx::SurfaceFormat::YUV422);
+  MOZ_ASSERT(aSurface->GetFormat() != gfx::SurfaceFormat::YUY2 ||
+             readFormat == gfx::SurfaceFormat::YUY2);
 
   return result;
 }

@@ -73,7 +73,7 @@ enum class SurfaceFormat : int8_t {
   R16G16,
 
   
-  YUV,
+  YUV420,  
   NV12,    
            
            
@@ -81,7 +81,11 @@ enum class SurfaceFormat : int8_t {
   P010,    
            
            
-  YUV422,  
+  YUY2,    
+           
+           
+           
+           
   HSV,
   Lab,
   Depth,
@@ -147,11 +151,11 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
       info.hasAlpha = true;
       break;
 
-    case SurfaceFormat::YUV:
+    case SurfaceFormat::YUV420:
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
-    case SurfaceFormat::YUV422:
+    case SurfaceFormat::YUY2:
       info.hasColor = true;
       info.hasAlpha = false;
       info.isYuv = true;
@@ -202,11 +206,11 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
       info.bytesPerPixel = 3 * sizeof(float);
       break;
 
-    case SurfaceFormat::YUV:
+    case SurfaceFormat::YUV420:
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
-    case SurfaceFormat::YUV422:
+    case SurfaceFormat::YUY2:
     case SurfaceFormat::UNKNOWN:
       break;  
   }
@@ -296,11 +300,11 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::HSV:
     case SurfaceFormat::Lab:
     case SurfaceFormat::Depth:
-    case SurfaceFormat::YUV:
+    case SurfaceFormat::YUV420:
     case SurfaceFormat::NV12:
     case SurfaceFormat::P010:
     case SurfaceFormat::P016:
-    case SurfaceFormat::YUV422:
+    case SurfaceFormat::YUY2:
       return true;
     default:
       return false;
