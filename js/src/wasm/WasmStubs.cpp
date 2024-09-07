@@ -844,6 +844,8 @@ static void GenerateJitEntryLoadInstance(MacroAssembler& masm) {
 
 
 
+
+
 static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
   AssertExpectedSP(masm);
 
@@ -851,8 +853,6 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
 
   masm.freeStack(frameSize);
   MoveSPForJitABI(masm);
-
-  GenerateJitEntryLoadInstance(masm);
 
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfCx()), ScratchIonEntry);
   masm.enterFakeExitFrameForWasm(ScratchIonEntry, ScratchIonEntry,
@@ -1204,7 +1204,6 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
                                      WasmCalleeInstanceOffsetBeforeCall));
 
   
-  
   masm.assertStackAlignment(WasmStackAlignment);
   CallFuncExport(masm, fe, funcPtr);
   masm.assertStackAlignment(WasmStackAlignment);
@@ -1253,9 +1252,6 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         MOZ_CRASH("unexpected return type when calling from ion to wasm");
       }
       case ValType::Ref: {
-        
-        
-        GenerateJitEntryLoadInstance(masm);
         GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
         masm.convertWasmAnyRefToValue(InstanceReg, ReturnReg, JSReturnOperand,
                                       WasmJitEntryReturnScratch);
