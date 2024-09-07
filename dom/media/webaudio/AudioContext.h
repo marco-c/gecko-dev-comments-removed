@@ -375,17 +375,6 @@ class AudioContext final : public DOMEventTargetHelper,
 
   
   
-  void UpdateAutoplayAssumptionStatus();
-
-  
-  
-  
-  
-  void MaybeUpdateAutoplayTelemetry();
-  void MaybeUpdateAutoplayTelemetryWhenShutdown();
-
-  
-  
   
   void MaybeUpdatePageAwakeRequest();
   void MaybeClearPageAwakeRequest();
@@ -446,20 +435,6 @@ class AudioContext final : public DOMEventTargetHelper,
   
   
   bool mSuspendedByChrome;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mWasEverAllowedToStart;
-  bool mWasEverBlockedToStart;
-  bool mWouldBeAllowedToStart;
 
   
   

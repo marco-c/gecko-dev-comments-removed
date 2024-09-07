@@ -59,22 +59,6 @@ class AutoplayPolicy {
       const dom::AutoplayPolicyMediaType& aType, const dom::Document& aDoc);
 };
 
-
-
-
-
-
-class AutoplayPolicyTelemetryUtils {
- public:
-  
-  
-  
-  
-  
-  static bool WouldBeAllowedToPlayIfAutoplayDisabled(
-      const dom::AudioContext& aContext);
-};
-
 }  
 
 #endif
