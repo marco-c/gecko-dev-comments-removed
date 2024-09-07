@@ -1,7 +1,6 @@
 
 
 use bit_vec::BitVec;
-use std::mem;
 use wgt::strict_assert;
 
 
@@ -191,7 +190,7 @@ fn resize_bitvec<B: bit_vec::BitBlock>(vec: &mut BitVec<B>, size: usize) {
 
 
 fn iterate_bitvec_indices(ownership: &BitVec<usize>) -> impl Iterator<Item = usize> + '_ {
-    const BITS_PER_BLOCK: usize = mem::size_of::<usize>() * 8;
+    const BITS_PER_BLOCK: usize = usize::BITS as usize;
 
     let size = ownership.len();
 

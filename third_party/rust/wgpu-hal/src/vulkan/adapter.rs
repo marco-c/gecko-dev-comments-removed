@@ -253,6 +253,7 @@ impl PhysicalDeviceFeatures {
                 )
                 .texture_compression_bc(
                     requested_features.contains(wgt::Features::TEXTURE_COMPRESSION_BC),
+                    
                 )
                 
                 .pipeline_statistics_query(
@@ -538,6 +539,10 @@ impl PhysicalDeviceFeatures {
         features.set(
             F::TEXTURE_COMPRESSION_BC,
             self.core.texture_compression_bc != 0,
+        );
+        features.set(
+            F::TEXTURE_COMPRESSION_BC_SLICED_3D,
+            self.core.texture_compression_bc != 0, 
         );
         features.set(
             F::PIPELINE_STATISTICS_QUERY,

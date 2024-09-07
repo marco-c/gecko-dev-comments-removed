@@ -593,15 +593,14 @@ impl FunctionInfo {
             E::FunctionArgument(index) => {
                 let arg = &resolve_context.arguments[index as usize];
                 let uniform = match arg.binding {
-                    Some(crate::Binding::BuiltIn(built_in)) => match built_in {
+                    Some(crate::Binding::BuiltIn(
                         
                         crate::BuiltIn::FrontFacing
                         
                         | crate::BuiltIn::WorkGroupId
                         | crate::BuiltIn::WorkGroupSize
-                        | crate::BuiltIn::NumWorkGroups => true,
-                        _ => false,
-                    },
+                        | crate::BuiltIn::NumWorkGroups)
+                    ) => true,
                     
                     Some(crate::Binding::Location {
                         interpolation: Some(crate::Interpolation::Flat),

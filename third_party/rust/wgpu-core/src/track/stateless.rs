@@ -1,117 +1,26 @@
-
-
-
-
-
 use std::sync::Arc;
 
-use crate::{
-    lock::{rank, Mutex},
-    resource::Trackable,
-    track::ResourceMetadata,
-};
+
 
 
 #[derive(Debug)]
-pub(crate) struct StatelessBindGroupState<T: Trackable> {
-    resources: Mutex<Vec<Arc<T>>>,
+pub(crate) struct StatelessTracker<T> {
+    resources: Vec<Arc<T>>,
 }
 
-impl<T: Trackable> StatelessBindGroupState<T> {
+impl<T> StatelessTracker<T> {
     pub fn new() -> Self {
         Self {
-            resources: Mutex::new(rank::STATELESS_BIND_GROUP_STATE_RESOURCES, Vec::new()),
+            resources: Vec::new(),
         }
     }
 
-    
-    
-    
-    
-    pub(crate) fn optimize(&self) {
-        let mut resources = self.resources.lock();
-        resources.sort_unstable_by_key(|resource| resource.tracker_index());
-    }
-
-    
-    pub fn add_single(&self, resource: &Arc<T>) {
-        let mut resources = self.resources.lock();
-        resources.push(resource.clone());
-    }
-}
-
-
-#[derive(Debug)]
-pub(crate) struct StatelessTracker<T: Trackable> {
-    metadata: ResourceMetadata<Arc<T>>,
-}
-
-impl<T: Trackable> StatelessTracker<T> {
-    pub fn new() -> Self {
-        Self {
-            metadata: ResourceMetadata::new(),
-        }
-    }
-
-    fn tracker_assert_in_bounds(&self, index: usize) {
-        self.metadata.tracker_assert_in_bounds(index);
-    }
-
-    
-    
-    
-    
-    pub fn set_size(&mut self, size: usize) {
-        self.metadata.set_size(size);
-    }
-
-    
-    fn allow_index(&mut self, index: usize) {
-        if index >= self.metadata.size() {
-            self.set_size(index + 1);
-        }
-    }
-
-    
-    
-    
-    
-    
     
     
     
     
     pub fn insert_single(&mut self, resource: Arc<T>) -> &Arc<T> {
-        let index = resource.tracker_index().as_usize();
-
-        self.allow_index(index);
-
-        self.tracker_assert_in_bounds(index);
-
-        unsafe { self.metadata.insert(index, resource) }
-    }
-
-    
-    
-    
-    
-    pub fn add_from_tracker(&mut self, other: &Self) {
-        let incoming_size = other.metadata.size();
-        if incoming_size > self.metadata.size() {
-            self.set_size(incoming_size);
-        }
-
-        for index in other.metadata.owned_indices() {
-            self.tracker_assert_in_bounds(index);
-            other.tracker_assert_in_bounds(index);
-            unsafe {
-                let previously_owned = self.metadata.contains_unchecked(index);
-
-                if !previously_owned {
-                    let other_resource = other.metadata.get_resource_unchecked(index);
-                    self.metadata.insert(index, other_resource.clone());
-                }
-            }
-        }
+        self.resources.push(resource);
+        unsafe { self.resources.last().unwrap_unchecked() }
     }
 }

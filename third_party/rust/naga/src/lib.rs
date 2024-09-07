@@ -615,7 +615,7 @@ pub enum StorageFormat {
     
     Rgb10a2Uint,
     Rgb10a2Unorm,
-    Rg11b10Float,
+    Rg11b10UFloat,
 
     
     Rg32Uint,

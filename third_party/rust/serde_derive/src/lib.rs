@@ -13,7 +13,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.204")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.208")]
 #![cfg_attr(not(check_cfg), allow(unexpected_cfgs))]
 
 #![allow(
