@@ -33,7 +33,11 @@ BEGIN_TEST(testRedefineGlobalEval) {
       JS_GlobalObjectTraceHook,        
   };
 
-  static const JSClass cls = {"global", JSCLASS_GLOBAL_FLAGS, &clsOps};
+  static const JSClass cls = {
+      "global",
+      JSCLASS_GLOBAL_FLAGS,
+      &clsOps,
+  };
 
   
   JS::RealmOptions options;
