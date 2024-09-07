@@ -119,7 +119,7 @@ add_task(async function test_calling_sync_calls_ext_storage_sync() {
     returns: Promise.resolve(),
   }));
   try {
-    await withContext(async function (context) {
+    await withSyncContext(async function (context) {
       
       await extensionStorageSync.set(extension, { a: "b" }, context);
       let ping = await sync_engine_and_validate_telem(engine, false);
