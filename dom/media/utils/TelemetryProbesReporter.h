@@ -68,8 +68,6 @@ class TelemetryProbesReporter final {
   void OnAudibleChanged(AudibleState aAudible);
   void OnMediaContentChanged(MediaContent aContent);
   void OnMutedChanged(bool aMuted);
-  void OnDecodeSuspended();
-  void OnDecodeResumed();
 
   enum class FirstFrameLoadedFlag {
     IsMSE,
@@ -89,7 +87,6 @@ class TelemetryProbesReporter final {
   double GetTotalVideoHDRPlayTimeInSeconds() const;
   double GetVisibleVideoPlayTimeInSeconds() const;
   double GetInvisibleVideoPlayTimeInSeconds() const;
-  double GetVideoDecodeSuspendedTimeInSeconds() const;
 
   double GetTotalAudioPlayTimeInSeconds() const;
   double GetInaudiblePlayTimeInSeconds() const;
@@ -182,9 +179,6 @@ class TelemetryProbesReporter final {
 
   
   TimeDurationAccumulator mMutedAudioPlayTime;
-
-  
-  TimeDurationAccumulator mVideoDecodeSuspendedTime;
 
   Visibility mMediaElementVisibility = Visibility::eInitial;
 
