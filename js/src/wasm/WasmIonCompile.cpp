@@ -1940,6 +1940,20 @@ class FunctionCompiler {
     return true;
   }
 
+  
+  
+  
+  MDefinition* loadCachedRefFunc(uint32_t funcIndex) {
+    uint32_t exportedFuncIndex = codeMeta().findFuncExportIndex(funcIndex);
+    MWasmLoadInstanceDataField* refFunc = MWasmLoadInstanceDataField::New(
+        alloc(), MIRType::WasmAnyRef,
+        codeMeta_.offsetOfFuncExportInstanceData(exportedFuncIndex) +
+            offsetof(FuncExportInstanceData, func),
+        true, instancePointer_);
+    curBlock_->add(refFunc);
+    return refFunc;
+  }
+
   MDefinition* loadTableField(uint32_t tableIndex, unsigned fieldOffset,
                               MIRType type) {
     uint32_t instanceDataOffset = wasm::Instance::offsetInData(
@@ -7720,9 +7734,95 @@ static bool EmitBrOnNonNull(FunctionCompiler& f) {
   return f.brOnNonNull(relativeDepth, values, type, condition);
 }
 
+
+
+
+
+
+
+
+
+
+static bool EmitSpeculativeInlineCallRef(
+    FunctionCompiler& f, uint32_t bytecodeOffset, const FuncType& funcType,
+    uint32_t expectedFuncIndex, MDefinition* actualCalleeFunc,
+    const DefVector& args, DefVector* results) {
+  
+  if (!f.refAsNonNull(actualCalleeFunc)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MDefinition* expectedCalleeFunc = f.loadCachedRefFunc(expectedFuncIndex);
+  if (!expectedCalleeFunc) {
+    return false;
+  }
+
+  
+  
+  MDefinition* isExpectedCallee =
+      f.compare(actualCalleeFunc, expectedCalleeFunc, JSOp::Eq,
+                MCompare::Compare_WasmAnyRef);
+  if (!isExpectedCallee) {
+    return false;
+  }
+
+  
+  MBasicBlock* elseBlock;
+  if (!f.branchAndStartThen(isExpectedCallee, &elseBlock)) {
+    return false;
+  }
+
+  
+  DefVector inlineResults;
+  if (!EmitInlineCall(f, funcType, expectedFuncIndex, args, &inlineResults)) {
+    return false;
+  }
+
+  
+  if (!f.pushDefs(inlineResults)) {
+    return false;
+  }
+
+  
+  if (!f.switchToElse(elseBlock, &elseBlock)) {
+    return false;
+  }
+
+  
+  CallCompileState call;
+  if (!EmitCallArgs(f, funcType, args, &call)) {
+    return false;
+  }
+
+  DefVector callResults;
+  if (!f.callRef(funcType, actualCalleeFunc, bytecodeOffset, call,
+                 &callResults)) {
+    return false;
+  }
+
+  
+  if (!f.pushDefs(callResults)) {
+    return false;
+  }
+
+  
+  return f.joinIfElse(elseBlock, results);
+}
+
 static bool EmitCallRef(FunctionCompiler& f) {
-  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
-  f.readCallRefHint();
+  uint32_t bytecodeOffset = f.readBytecodeOffset();
+  CallRefHint hint = f.readCallRefHint();
   const FuncType* funcType;
   MDefinition* callee;
   DefVector args;
@@ -7735,13 +7835,25 @@ static bool EmitCallRef(FunctionCompiler& f) {
     return true;
   }
 
+  if (hint.isInlineFunc() &&
+      f.shouldInlineCallDirect(hint.inlineFuncIndex())) {
+    DefVector results;
+    if (!EmitSpeculativeInlineCallRef(f, bytecodeOffset, *funcType,
+                                      hint.inlineFuncIndex(), callee, args,
+                                      &results)) {
+      return false;
+    }
+    f.iter().setResults(results.length(), results);
+    return true;
+  }
+
   CallCompileState call;
   if (!EmitCallArgs(f, *funcType, args, &call)) {
     return false;
   }
 
   DefVector results;
-  if (!f.callRef(*funcType, callee, lineOrBytecode, call, &results)) {
+  if (!f.callRef(*funcType, callee, bytecodeOffset, call, &results)) {
     return false;
   }
 
