@@ -816,19 +816,15 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
     const mozilla::LogicalSize& aBorderPadding,
     const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
-  nscoord availBased =
-      aAvailableISize - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
   if (aFlags.contains(ComputeSizeFlag::ShrinkWrap)) {
     
-    const auto& styleISize = aSizeOverrides.mStyleISize
-                                 ? *aSizeOverrides.mStyleISize
-                                 : StylePosition()->ISize(aWM);
-    if (styleISize.IsAuto()) {
-      result.ISize(aWM) =
-          ShrinkISizeToFit(aRenderingContext, availBased, aFlags);
-    }
+    
+    result = nsIFrame::ComputeAutoSize(aRenderingContext, aWM, aCBSize,
+                                       aAvailableISize, aMargin, aBorderPadding,
+                                       aSizeOverrides, aFlags);
   } else {
-    result.ISize(aWM) = availBased;
+    result.ISize(aWM) =
+        aAvailableISize - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
   }
 
   if (IsTableCaption()) {
