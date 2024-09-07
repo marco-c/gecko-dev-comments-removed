@@ -32,7 +32,7 @@ class BasicTableLayoutStrategy : public nsITableLayoutStrategy {
  private:
   
   
-  enum BtlsISizeType { BTLS_MIN_ISIZE, BTLS_PREF_ISIZE, BTLS_FINAL_ISIZE };
+  enum class BtlsISizeType : uint8_t { MinISize, PrefISize, FinalISize };
 
   
   void ComputeColumnIntrinsicISizes(gfxContext* aRenderingContext);
