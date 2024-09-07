@@ -95,13 +95,21 @@ public final class Sample implements Parcelable {
     if (cryptoInfo == null) {
       cryptoInfo = new CryptoInfo();
     }
-    cryptoInfo.set(
-        crypto.numSubSamples,
-        crypto.numBytesOfClearData,
-        crypto.numBytesOfEncryptedData,
-        crypto.key,
-        crypto.iv,
-        crypto.mode);
+    if (crypto.numSubSamples > 0) {
+      cryptoInfo.set(
+          crypto.numSubSamples,
+          crypto.numBytesOfClearData,
+          crypto.numBytesOfEncryptedData,
+          crypto.key,
+          crypto.iv,
+          crypto.mode);
+    } else {
+      
+      
+      
+      
+      cryptoInfo.set(1, new int[] {0}, new int[] {info.size}, crypto.key, crypto.iv, crypto.mode);
+    }
     if (supportsCryptoPattern()) {
       final CryptoInfo.Pattern pattern = getCryptoPatternCompat(crypto);
       if (pattern == null) {
