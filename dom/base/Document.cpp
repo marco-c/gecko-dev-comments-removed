@@ -18193,6 +18193,13 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   
   ConsumeTransientUserGestureActivation();
 
+  ContentChild* cc = ContentChild::GetSingleton();
+  if (!cc) {
+    
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
   
   
   
