@@ -166,6 +166,7 @@ static bool isCyrillicLatinConfusable(char32_t aChar) {
     case 0x043A:  
     case 0x0458:  
     case 0x04CF:  
+    case 0x043C:  
     case 0x043E:  
     case 0x0440:  
     case 0x0517:  

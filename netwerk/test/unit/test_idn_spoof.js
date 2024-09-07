@@ -1028,7 +1028,14 @@ function checkEquals(a, b, message, expectedFail) {
   }
 }
 
+
+let additionalTestcases = [
+  
+  ["xn--80aaa2bl1n.com", "акамаі.com", kUnsafe, cyrillicConfusableExpectation()],
+];
+
 add_task(async function test_chrome_spoofs() {
+  testCases = testCases.concat(additionalTestcases);
   for (let test of testCases) {
     let result = "\uFFFD";
     try {
