@@ -42,8 +42,10 @@ class ReportingHeader final : public nsIObserver,
 
   struct Endpoint {
     nsCOMPtr<nsIURI> mUrl;
+    nsCString mEndpointName;
     uint32_t mPriority;
     uint32_t mWeight;
+    uint32_t mFailures;
   };
 
   struct Group {
@@ -58,8 +60,16 @@ class ReportingHeader final : public nsIObserver,
     nsTObserverArray<Group> mGroups;
   };
 
-  static UniquePtr<Client> ParseHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
-                                       const nsACString& aHeaderValue);
+  
+  
+  static UniquePtr<Client> ParseReportingEndpointsHeader(
+      const nsACString& aHeaderValue, nsIURI* aURI);
+
+  
+  
+  static UniquePtr<Client> ParseReportToHeader(nsIHttpChannel* aChannel,
+                                               nsIURI* aURI,
+                                               const nsACString& aHeaderValue);
 
   static void GetEndpointForReport(
       const nsAString& aGroupName,
@@ -89,7 +99,7 @@ class ReportingHeader final : public nsIObserver,
 
   
   
-  bool IsSecureURI(nsIURI* aURI) const;
+  static bool IsSecureURI(nsIURI* aURI);
 
   void RemoveOriginsFromHost(const nsAString& aHost);
 

@@ -5,6 +5,7 @@
 
 
 UNIFIED_SOURCES = [
+    "TestReportingEndpointsParser.cpp",
     "TestReportToParser.cpp",
 ]
 

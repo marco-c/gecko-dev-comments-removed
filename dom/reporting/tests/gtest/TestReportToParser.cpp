@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
 #include "mozilla/dom/ReportingHeader.h"
@@ -21,21 +21,21 @@ TEST(ReportToParser, Basic)
 
   bool urlEqual = false;
 
-  
+  // Empty header.
   UniquePtr<ReportingHeader::Client> client =
-      ReportingHeader::ParseHeader(nullptr, uri, ""_ns);
+      ReportingHeader::ParseReportToHeader(nullptr, uri, ""_ns);
   ASSERT_TRUE(!client);
 
-  
-  client = ReportingHeader::ParseHeader(nullptr, uri, "    "_ns);
+  // Empty header.
+  client = ReportingHeader::ParseReportToHeader(nullptr, uri, "    "_ns);
   ASSERT_TRUE(!client);
 
-  
-  client = ReportingHeader::ParseHeader(nullptr, uri, "{}"_ns);
+  // No minimal attributes
+  client = ReportingHeader::ParseReportToHeader(nullptr, uri, "{}"_ns);
   ASSERT_TRUE(!client);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // Single client
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 42, \"endpoints\": [{\"url\": "
@@ -56,8 +56,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)2,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, same group name.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 43, \"endpoints\": [{\"url\": "
@@ -69,8 +69,8 @@ TEST(ReportToParser, Basic)
   ASSERT_TRUE(client->mGroups.ElementAt(0).mName.EqualsLiteral("default"));
   ASSERT_EQ(43, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first one with an invalid group name.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 43, \"group\": 123, \"endpoints\": [{\"url\": "
@@ -82,8 +82,8 @@ TEST(ReportToParser, Basic)
   ASSERT_TRUE(client->mGroups.ElementAt(0).mName.EqualsLiteral("default"));
   ASSERT_EQ(44, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first one with an invalid group name.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 43, \"group\": null, \"endpoints\": [{\"url\": "
@@ -95,8 +95,8 @@ TEST(ReportToParser, Basic)
   ASSERT_TRUE(client->mGroups.ElementAt(0).mName.EqualsLiteral("default"));
   ASSERT_EQ(44, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first one with an invalid group name.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 43, \"group\": {}, \"endpoints\": [{\"url\": "
@@ -108,8 +108,8 @@ TEST(ReportToParser, Basic)
   ASSERT_TRUE(client->mGroups.ElementAt(0).mName.EqualsLiteral("default"));
   ASSERT_EQ(44, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // Single client: optional params
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 45, \"group\": \"foobar\", \"include_subdomains\": "
@@ -121,8 +121,8 @@ TEST(ReportToParser, Basic)
   ASSERT_TRUE(client->mGroups.ElementAt(0).mIncludeSubdomains);
   ASSERT_EQ(45, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: missing max_age.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"endpoints\": [{\"url\": \"https://example.com\", \"priority\": "
@@ -133,8 +133,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(46, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: invalid max_age.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": null, \"endpoints\": [{\"url\": "
@@ -145,8 +145,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(46, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: invalid max_age.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": \"foobar\", \"endpoints\": [{\"url\": "
@@ -157,8 +157,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(46, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: invalid max_age.
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": {}, \"endpoints\": [{\"url\": "
@@ -169,8 +169,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(46, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: missing endpoints
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 47},"
@@ -180,8 +180,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(48, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: invalid endpoints
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 47, \"endpoints\": null },"
@@ -191,8 +191,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(48, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: invalid endpoints
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 47, \"endpoints\": \"abc\" },"
@@ -202,8 +202,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(48, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: invalid endpoints
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 47, \"endpoints\": 42 },"
@@ -213,8 +213,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(48, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: invalid endpoints
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 47, \"endpoints\": {} },"
@@ -224,8 +224,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(48, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 clients, the first incomplete: empty endpoints
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 49, \"endpoints\": []},"
@@ -235,8 +235,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1, client->mGroups.Length());
   ASSERT_EQ(50, client->mGroups.ElementAt(0).mTTL);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: missing url
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString("{\"max_age\": 51, \"endpoints\": ["
                        " {\"priority\": 1, \"weight\": 2},"
@@ -255,8 +255,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)2,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: invalid url
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString("{\"max_age\": 51, \"endpoints\": ["
                        " {\"url\": 42, \"priority\": 1, \"weight\": 2},"
@@ -275,8 +275,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)2,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: invalid url
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 51, \"endpoints\": ["
@@ -296,8 +296,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)2,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: invalid url
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString("{\"max_age\": 51, \"endpoints\": ["
                        " {\"url\": {}, \"priority\": 1, \"weight\": 2},"
@@ -316,8 +316,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)2,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: missing priority
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString("{\"max_age\": 52, \"endpoints\": ["
                        " {\"url\": \"https://example.com\", \"weight\": 3}]}"));
@@ -334,8 +334,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)3,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: invalid priority
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString("{\"max_age\": 52, \"endpoints\": ["
                        " {\"url\": \"https://example.com\", \"priority\": "
@@ -355,8 +355,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)3,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: invalid priority
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString("{\"max_age\": 52, \"endpoints\": ["
                        " {\"url\": \"https://example.com\", \"priority\": "
@@ -376,8 +376,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)3,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: missing weight
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString(
           "{\"max_age\": 52, \"endpoints\": ["
@@ -395,8 +395,8 @@ TEST(ReportToParser, Basic)
   ASSERT_EQ((uint32_t)1,
             client->mGroups.ElementAt(0).mEndpoints.ElementAt(0).mWeight);
 
-  
-  client = ReportingHeader::ParseHeader(
+  // 2 endpoints, the first incomplete: invalid weight
+  client = ReportingHeader::ParseReportToHeader(
       nullptr, uri,
       nsLiteralCString("{\"max_age\": 52, \"endpoints\": ["
                        " {\"url\": \"https://example.com\", \"priority\": 4, "
