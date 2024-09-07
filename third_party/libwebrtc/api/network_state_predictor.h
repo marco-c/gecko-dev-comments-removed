@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef API_NETWORK_STATE_PREDICTOR_H_
+#define API_NETWORK_STATE_PREDICTOR_H_
+
+#include <memory>
+#include <vector>
+
+#include "api/transport/bandwidth_usage.h"
+
+namespace webrtc {
+
+
+
+
+
+
+
+
+
+class NetworkStatePredictor {
+ public:
+  virtual ~NetworkStatePredictor() {}
+
+  
+  
+  
+  
+  virtual BandwidthUsage Update(int64_t send_time_ms,
+                                int64_t arrival_time_ms,
+                                BandwidthUsage network_state) = 0;
+};
+
+class NetworkStatePredictorFactoryInterface {
+ public:
+  virtual std::unique_ptr<NetworkStatePredictor>
+  CreateNetworkStatePredictor() = 0;
+  virtual ~NetworkStatePredictorFactoryInterface() = default;
+};
+
+}  
+
+#endif  
