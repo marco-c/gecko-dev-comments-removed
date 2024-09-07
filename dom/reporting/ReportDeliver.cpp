@@ -4,6 +4,8 @@
 
 
 
+#include <algorithm>
+
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/EndpointForReportChild.h"
@@ -30,6 +32,10 @@ namespace mozilla::dom {
 namespace {
 
 StaticRefPtr<ReportDeliver> gReportDeliver;
+
+
+
+constexpr double gMinReportAgeInMs = 4.0;
 
 class ReportFetchHandler final : public PromiseNativeHandler {
  public:
@@ -149,8 +155,13 @@ void SendReports(nsTArray<ReportDeliver::ReportData>& aReports,
     MOZ_ASSERT(report.mPrincipal == aPrincipal);
     MOZ_ASSERT(report.mEndpointURL == aEndPointUrl);
     w.StartObjectElement();
-    w.IntProperty("age",
-                  (TimeStamp::Now() - report.mCreationTime).ToMilliseconds());
+    
+    
+    
+    w.IntProperty(
+        "age",
+        std::max((TimeStamp::Now() - report.mCreationTime).ToMilliseconds(),
+                 gMinReportAgeInMs));
     w.StringProperty("type", NS_ConvertUTF16toUTF8(report.mType));
     w.StringProperty("url", NS_ConvertUTF16toUTF8(report.mURL));
     w.StringProperty("user_agent", NS_ConvertUTF16toUTF8(report.mUserAgent));
