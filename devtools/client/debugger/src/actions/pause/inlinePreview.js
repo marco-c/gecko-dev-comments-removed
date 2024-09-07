@@ -194,6 +194,8 @@ function getBindingValues(
     previews.push({
       line,
       column,
+      
+      type: "paused",
       name: displayName,
       value: displayValue,
     });

@@ -32,10 +32,14 @@ function initialState() {
     selectedTraceIndex: null,
 
     
+    previews: null,
+
+    
     localPlatformVersion: null,
     remotePlatformVersion: null,
   };
 }
+
 
 function update(state = initialState(), action) {
   switch (action.type) {
@@ -56,15 +60,38 @@ function update(state = initialState(), action) {
     }
 
     case "SELECT_TRACE": {
+      const { traceIndex } = action;
       if (
-        action.traceIndex < 0 ||
-        action.traceIndex >= state.mutableTraces.length
+        traceIndex < 0 ||
+        traceIndex >= state.mutableTraces.length ||
+        traceIndex == state.selectedTraceIndex
       ) {
         return state;
       }
+
+      const trace = state.mutableTraces[traceIndex];
       return {
         ...state,
-        selectedTraceIndex: action.traceIndex,
+        selectedTraceIndex: traceIndex,
+
+        
+        
+        previews: generatePreviewsForTrace(state, trace),
+      };
+    }
+
+    case "SELECT_FRAME":
+    case "PAUSED": {
+      if (!state.previews && state.selectedTraceIndex == null) {
+        return state;
+      }
+
+      
+      
+      return {
+        ...state,
+        selectedTraceIndex: null,
+        previews: null,
       };
     }
 
@@ -239,6 +266,58 @@ function locationMatchTrace(location, trace) {
     trace.lineNumber == location.line &&
     trace.columnNumber == location.column
   );
+}
+
+
+
+
+
+
+
+
+
+
+function generatePreviewsForTrace(state, trace) {
+  let previews = state.previews;
+  const argumentValues = trace[TRACER_FIELDS_INDEXES.ENTER_ARGS];
+  const argumentNames = trace[TRACER_FIELDS_INDEXES.ENTER_ARG_NAMES];
+  if (argumentNames && argumentValues) {
+    const frameIndex = trace[TRACER_FIELDS_INDEXES.FRAME_INDEX];
+    const frame = state.mutableFrames[frameIndex];
+    
+    const line = frame.line - 1;
+    const column = frame.column;
+
+    const preview = [];
+    for (let i = 0; i < argumentNames.length; i++) {
+      const name = argumentNames[i];
+
+      
+      const objectGrip = argumentValues[i]?.getGrip
+        ? argumentValues[i]?.getGrip()
+        : argumentValues[i];
+
+      preview.push({
+        
+        
+        
+        
+        line,
+        column,
+
+        
+        type: "trace",
+        name,
+        value: objectGrip,
+      });
+    }
+
+    
+    previews = {
+      [line]: preview,
+    };
+  }
+  return previews;
 }
 
 export default update;

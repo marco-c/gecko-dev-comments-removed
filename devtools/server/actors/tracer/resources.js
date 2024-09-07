@@ -321,7 +321,8 @@ class ResourcesTracingListener {
       ]);
     }
 
-    let args = undefined;
+    let args = undefined,
+      argNames = undefined;
     
     
     
@@ -337,6 +338,7 @@ class ResourcesTracingListener {
         const dbgObj = makeDebuggeeValue(this.targetActor, arg);
         args.push(createValueGripForTarget(this.targetActor, dbgObj));
       }
+      argNames = frame.callee.script.parameterNames;
     }
 
     
@@ -359,6 +361,7 @@ class ResourcesTracingListener {
       ChromeUtils.dateNow(),
       depth,
       args,
+      argNames,
     ]);
     this.throttleEmitTraces();
 
