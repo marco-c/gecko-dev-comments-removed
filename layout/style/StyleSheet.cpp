@@ -841,15 +841,19 @@ StyleSheet::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
   if (!aSheet->GetParentSheet()) {
     return NS_OK;  
   }
-  MOZ_ASSERT(this == aSheet->GetParentSheet(),
-             "We are being notified of a sheet load for a sheet that is not "
-             "our child!");
+  MOZ_DIAGNOSTIC_ASSERT(this == aSheet->GetParentSheet(),
+                        "We are being notified of a sheet load for a sheet "
+                        "that is not our child!");
   if (NS_FAILED(aStatus)) {
     return NS_OK;
   }
-
-  MOZ_ASSERT(aSheet->GetOwnerRule());
-  NOTIFY(ImportRuleLoaded, (*aSheet->GetOwnerRule(), *aSheet));
+  
+  
+  
+  if (!aSheet->GetOwnerRule()) {
+    return NS_OK;
+  }
+  NOTIFY(ImportRuleLoaded, (*aSheet));
   return NS_OK;
 }
 
