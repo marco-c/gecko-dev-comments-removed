@@ -11,11 +11,6 @@ document.addEventListener(
     let mainPopupSet = document.getElementById("mainPopupSet");
     
     mainPopupSet.addEventListener("command", event => {
-      if (event.target.hasAttribute("popupReportIndex")) {
-        PopupBlockerObserver.showBlockedPopup(event);
-        return;
-      }
-
       switch (event.target.id) {
         
         case "context_openANewTab":
@@ -189,17 +184,6 @@ document.addEventListener(
           break;
 
         
-        case "blockedPopupAllowSite":
-          PopupBlockerObserver.toggleAllowPopupsForSite(event);
-          break;
-        case "blockedPopupEdit":
-          PopupBlockerObserver.editPopupSettings(event);
-          break;
-        case "blockedPopupDontShowMessage":
-          PopupBlockerObserver.dontShowMessage(event);
-          break;
-
-        
         case "context_HidePictureInPictureToggle":
           PictureInPicture.hideToggle();
           break;
@@ -324,9 +308,6 @@ document.addEventListener(
           ToolbarContextMenu.updateDownloadsAlwaysOpenPanel(event.target);
           ToolbarContextMenu.updateExtension(event.target, event);
           break;
-        case "blockedPopupOptions":
-          PopupBlockerObserver.fillPopupList(event);
-          break;
         case "pageActionContextMenu":
           BrowserPageActions.onContextMenuShowing(event, event.target);
           break;
@@ -366,9 +347,6 @@ document.addEventListener(
 
     mainPopupSet.addEventListener("popuphiding", event => {
       switch (event.target.id) {
-        case "blockedPopupOptions":
-          PopupBlockerObserver.onPopupHiding(event);
-          break;
         case "tabbrowser-tab-tooltip":
           event.target.removeAttribute("position");
           break;
