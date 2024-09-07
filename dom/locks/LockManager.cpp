@@ -10,6 +10,7 @@
 #include "mozilla/dom/locks/LockManagerChild.h"
 #include "mozilla/dom/locks/LockRequestChild.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/LockManagerBinding.h"
 #include "mozilla/dom/Promise.h"
@@ -34,17 +35,31 @@ JSObject* LockManager::WrapObject(JSContext* aCx,
 }
 
 LockManager::LockManager(nsIGlobalObject* aGlobal) : mOwner(aGlobal) {
-  Maybe<ClientInfo> clientInfo = aGlobal->GetClientInfo();
-  if (!clientInfo) {
-    
-    return;
-  }
+  Maybe<nsID> clientID;
+  nsCOMPtr<nsIPrincipal> principal;
 
-  nsCOMPtr<nsIPrincipal> principal =
-      clientInfo->GetPrincipal().unwrapOr(nullptr);
-  if (!principal || !principal->GetIsContentPrincipal()) {
-    
-    return;
+  if (XRE_IsParentProcess() && aGlobal->PrincipalOrNull() &&
+      aGlobal->PrincipalOrNull()->IsSystemPrincipal()) {
+    clientID = Nothing();
+    principal = aGlobal->PrincipalOrNull();
+  } else {
+    Maybe<ClientInfo> clientInfo = aGlobal->GetClientInfo();
+    if (!clientInfo) {
+      
+      return;
+    }
+
+    principal = clientInfo->GetPrincipal().unwrapOr(nullptr);
+    if (!principal) {
+      return;
+    }
+
+    if (!principal->GetIsContentPrincipal()) {
+      
+      return;
+    }
+
+    clientID = Some(clientInfo->Id());
   }
 
   mozilla::ipc::PBackgroundChild* backgroundActor =
@@ -52,7 +67,7 @@ LockManager::LockManager(nsIGlobalObject* aGlobal) : mOwner(aGlobal) {
   mActor = new locks::LockManagerChild(aGlobal);
 
   if (!backgroundActor->SendPLockManagerConstructor(
-          mActor, WrapNotNull(principal), clientInfo->Id())) {
+          mActor, WrapNotNull(principal), clientID)) {
     
     
     mActor = nullptr;
@@ -134,14 +149,17 @@ already_AddRefed<Promise> LockManager::Request(const nsAString& aName,
                                                const LockOptions& aOptions,
                                                LockGrantedCallback& aCallback,
                                                ErrorResult& aRv) {
-  if (!mOwner->GetClientInfo()) {
-    
-    
-    
-    
-    aRv.ThrowInvalidStateError(
-        "The document of the lock manager is not fully active");
-    return nullptr;
+  if (!mOwner->PrincipalOrNull() ||
+      !mOwner->PrincipalOrNull()->IsSystemPrincipal()) {
+    if (!mOwner->GetClientInfo()) {
+      
+      
+      
+      
+      aRv.ThrowInvalidStateError(
+          "The document of the lock manager is not fully active");
+      return nullptr;
+    }
   }
 
   const StorageAccess access = mOwner->GetStorageAccess();
@@ -184,10 +202,13 @@ already_AddRefed<Promise> LockManager::Request(const nsAString& aName,
 };
 
 already_AddRefed<Promise> LockManager::Query(ErrorResult& aRv) {
-  if (!mOwner->GetClientInfo()) {
-    aRv.ThrowInvalidStateError(
-        "The document of the lock manager is not fully active");
-    return nullptr;
+  if (!mOwner->PrincipalOrNull() ||
+      !mOwner->PrincipalOrNull()->IsSystemPrincipal()) {
+    if (!mOwner->GetClientInfo()) {
+      aRv.ThrowInvalidStateError(
+          "The document of the lock manager is not fully active");
+      return nullptr;
+    }
   }
 
   if (mOwner->GetStorageAccess() <= StorageAccess::eDeny) {
