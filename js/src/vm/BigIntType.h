@@ -167,6 +167,11 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   
   
+  static bool isInt32(const BigInt* x, int32_t* result);
+
+  
+  
+  
   static bool isInt64(const BigInt* x, int64_t* result);
 
   
