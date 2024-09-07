@@ -29,8 +29,8 @@ static size_t GetRequiredEmbeddedSctsCount(
 
 static bool HasValidEmbeddedSct(const VerifiedSCTList& verifiedScts) {
   for (const VerifiedSCT& verifiedSct : verifiedScts) {
-    if (verifiedSct.status == VerifiedSCT::Status::Valid &&
-        verifiedSct.origin == VerifiedSCT::Origin::Embedded) {
+    if (verifiedSct.logState == CTLogState::Admissible &&
+        verifiedSct.origin == SCTOrigin::Embedded) {
       return true;
     }
   }
@@ -40,9 +40,9 @@ static bool HasValidEmbeddedSct(const VerifiedSCTList& verifiedScts) {
 
 static bool HasValidNonEmbeddedSct(const VerifiedSCTList& verifiedScts) {
   for (const VerifiedSCT& verifiedSct : verifiedScts) {
-    if (verifiedSct.status == VerifiedSCT::Status::Valid &&
-        (verifiedSct.origin == VerifiedSCT::Origin::TLSExtension ||
-         verifiedSct.origin == VerifiedSCT::Origin::OCSPResponse)) {
+    if (verifiedSct.logState == CTLogState::Admissible &&
+        (verifiedSct.origin == SCTOrigin::TLSExtension ||
+         verifiedSct.origin == SCTOrigin::OCSPResponse)) {
       return true;
     }
   }
@@ -133,7 +133,7 @@ static uint64_t GetEffectiveCertIssuanceTime(
     const VerifiedSCTList& verifiedScts) {
   uint64_t result = UINT64_MAX;
   for (const VerifiedSCT& verifiedSct : verifiedScts) {
-    if (verifiedSct.status == VerifiedSCT::Status::Valid) {
+    if (verifiedSct.logState == CTLogState::Admissible) {
       result = std::min(result, verifiedSct.sct.timestamp);
     }
   }
@@ -145,15 +145,15 @@ static uint64_t GetEffectiveCertIssuanceTime(
 
 static bool LogWasQualifiedForSct(const VerifiedSCT& verifiedSct,
                                   uint64_t certIssuanceTime) {
-  if (verifiedSct.status == VerifiedSCT::Status::Valid) {
-    return true;
+  switch (verifiedSct.logState) {
+    case CTLogState::Admissible:
+      return true;
+    case CTLogState::Retired: {
+      uint64_t logRetirementTime = verifiedSct.logTimestamp;
+      return certIssuanceTime < logRetirementTime &&
+             verifiedSct.sct.timestamp < logRetirementTime;
+    }
   }
-  if (verifiedSct.status == VerifiedSCT::Status::ValidFromDisqualifiedLog) {
-    uint64_t logDisqualificationTime = verifiedSct.logDisqualificationTime;
-    return certIssuanceTime < logDisqualificationTime &&
-           verifiedSct.sct.timestamp < logDisqualificationTime;
-  }
-  return false;
 }
 
 
@@ -198,7 +198,7 @@ static void CheckNonEmbeddedCompliance(const VerifiedSCTList& verifiedScts,
   size_t validSctsCount;
   CountLogsForSelectedScts(
       verifiedScts, validSctsCount, [](const VerifiedSCT& verifiedSct) -> bool {
-        return verifiedSct.status == VerifiedSCT::Status::Valid;
+        return verifiedSct.logState == CTLogState::Admissible;
       });
 
   compliant = validSctsCount >= 2;
@@ -227,7 +227,7 @@ static void CheckEmbeddedCompliance(const VerifiedSCTList& verifiedScts,
   CountLogsForSelectedScts(
       verifiedScts, embeddedSctsCount,
       [certIssuanceTime](const VerifiedSCT& verifiedSct) -> bool {
-        return verifiedSct.origin == VerifiedSCT::Origin::Embedded &&
+        return verifiedSct.origin == SCTOrigin::Embedded &&
                LogWasQualifiedForSct(verifiedSct, certIssuanceTime);
       });
 
