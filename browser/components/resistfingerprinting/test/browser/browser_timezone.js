@@ -65,7 +65,10 @@ async function verifySpoofed() {
       doc.lastModified.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$1-$2")
     );
     
-    let offset = Math.floor((new Date() - lastModified) / (60 * 1000));
+    
+    let offset = Math.floor(
+      (Math.ceil(new Date() / 1000) * 1000 - lastModified) / (60 * 1000)
+    );
     is(offset, 0, "document.lastModified does not leak the timezone.");
   }
 
