@@ -58,6 +58,12 @@ class AbortSignal : public DOMEventTargetHelper, public AbortSignalImpl {
   
   void SignalAbort(JS::Handle<JS::Value> aReason) override;
 
+  
+  void SignalAbort(JS::Handle<JS::Value> aReason) override;
+
+  
+  void SignalAbort(JS::Handle<JS::Value> aReason) override;
+
   virtual bool IsTaskSignal() const { return false; }
 
   bool Dependent() const;
