@@ -255,9 +255,9 @@ class SupportChecker {
       RefPtr<MediaByteBuffer> extraData =
           aTrackConfig.GetAsVideoInfo()->mExtraData;
       AddToCheckList([mimeType, extraData]() {
-#if defined(XP_WIN) || defined(XP_DARWIN)
         if (MP4Decoder::IsH264(mimeType)) {
           SPSData spsdata;
+          
           
           
           if (H264::DecodeSPSFromExtraData(extraData, spsdata) &&
@@ -272,7 +272,6 @@ class SupportChecker {
                                   "with YUV444 chroma subsampling.")));
           }
         }
-#endif
         return CheckResult(SupportChecker::Reason::kSupported);
       });
     }
