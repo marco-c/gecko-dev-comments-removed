@@ -19,7 +19,7 @@ add_setup(async function () {
 
 add_task(async function test_install_duplicate_engine_startup() {
   let name = "Plain";
-  consoleAllowList.push("#createAndAddAddonEngine failed for");
+  consoleAllowList.push("#loadStartupEngines failed for");
   
   
   let extensionInfo = {

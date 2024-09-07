@@ -21,7 +21,7 @@ add_task(async function test_validate_engines() {
   
   
   
-  consoleAllowList.push("Could not load engine");
+  consoleAllowList.push("Could not load app provided search engine");
   config = config.map(obj => {
     if (obj.recordType == "engine") {
       return {
