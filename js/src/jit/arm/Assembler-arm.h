@@ -1650,6 +1650,13 @@ class Assembler : public AssemblerShared {
                             bool toFixed, Condition c = Always);
 
   
+  
+  BufferOffset as_vcvtb_s2h(VFPRegister vd, VFPRegister vm,
+                            Condition c = Always);
+  BufferOffset as_vcvtb_h2s(VFPRegister vd, VFPRegister vm,
+                            Condition c = Always);
+
+  
   BufferOffset as_vdtr(LoadStore ls, VFPRegister vd, VFPAddr addr,
                        Condition c = Always );
 
