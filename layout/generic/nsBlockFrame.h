@@ -630,7 +630,7 @@ class nsBlockFrame : public nsContainerFrame {
 
   bool ComputeCustomOverflow(mozilla::OverflowAreas&) override;
 
-  void UnionChildOverflow(mozilla::OverflowAreas&) override;
+  void UnionChildOverflow(mozilla::OverflowAreas&, bool aAsIfScrolled) override;
 
   
 

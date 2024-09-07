@@ -25,6 +25,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "nsFontMetrics.h"
+#include "nsFlexContainerFrame.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "nsScrollbarFrame.h"
 #include "nsINode.h"
@@ -6893,24 +6894,107 @@ nsRect ScrollContainerFrame::GetScrolledRect() const {
 }
 
 StyleDirection ScrollContainerFrame::GetScrolledFrameDir() const {
+  return GetScrolledFrameDir(mScrolledFrame);
+}
+
+StyleDirection ScrollContainerFrame::GetScrolledFrameDir(
+    const nsIFrame* aScrolledFrame) {
   
   
-  if (mScrolledFrame->StyleTextReset()->mUnicodeBidi ==
+  if (aScrolledFrame->StyleTextReset()->mUnicodeBidi ==
       StyleUnicodeBidi::Plaintext) {
-    if (nsIFrame* child = mScrolledFrame->PrincipalChildList().FirstChild()) {
+    if (nsIFrame* child = aScrolledFrame->PrincipalChildList().FirstChild()) {
       return nsBidiPresUtils::ParagraphDirection(child) ==
-                     mozilla::intl::BidiDirection::LTR
+                     intl::BidiDirection::LTR
                  ? StyleDirection::Ltr
                  : StyleDirection::Rtl;
     }
   }
-  return IsBidiLTR() ? StyleDirection::Ltr : StyleDirection::Rtl;
+  return aScrolledFrame->GetWritingMode().IsBidiLTR() ? StyleDirection::Ltr
+                                                      : StyleDirection::Rtl;
+}
+
+auto ScrollContainerFrame::ComputePerAxisScrollDirections(
+    const nsIFrame* aScrolledFrame) -> PerAxisScrollDirections {
+  auto wm = aScrolledFrame->GetWritingMode();
+  auto dir = GetScrolledFrameDir(aScrolledFrame);
+  wm.SetDirectionFromBidiLevel(dir == StyleDirection::Rtl
+                                   ? intl::BidiEmbeddingLevel::RTL()
+                                   : intl::BidiEmbeddingLevel::LTR());
+  bool scrollToRight = wm.IsPhysicalLTR();
+  bool scrollToBottom =
+      !wm.IsVertical() || wm.GetInlineDir() == WritingMode::InlineDir::TTB;
+  if (aScrolledFrame->IsFlexContainerFrame()) {
+    
+    
+    
+    
+    
+    const FlexboxAxisInfo info(aScrolledFrame);
+    const bool isMainAxisVertical = info.mIsRowOriented == wm.IsVertical();
+    if (info.mIsMainAxisReversed) {
+      if (isMainAxisVertical) {
+        scrollToBottom = !scrollToBottom;
+      } else {
+        scrollToRight = !scrollToRight;
+      }
+    }
+    if (info.mIsCrossAxisReversed) {
+      if (isMainAxisVertical) {
+        scrollToRight = !scrollToRight;
+      } else {
+        scrollToBottom = !scrollToBottom;
+      }
+    }
+  }
+  return {scrollToRight, scrollToBottom};
 }
 
 nsRect ScrollContainerFrame::GetUnsnappedScrolledRectInternal(
     const nsRect& aScrolledOverflowArea, const nsSize& aScrollPortSize) const {
-  return nsLayoutUtils::GetScrolledRect(mScrolledFrame, aScrolledOverflowArea,
-                                        aScrollPortSize, GetScrolledFrameDir());
+  nscoord x1 = aScrolledOverflowArea.x, x2 = aScrolledOverflowArea.XMost(),
+          y1 = aScrolledOverflowArea.y, y2 = aScrolledOverflowArea.YMost();
+  auto dirs = ComputePerAxisScrollDirections(mScrolledFrame);
+  
+  
+  
+  if (dirs.mToRight) {
+    if (x1 < 0) {
+      x1 = 0;
+    }
+  } else {
+    if (x2 > aScrollPortSize.width) {
+      x2 = aScrollPortSize.width;
+    }
+    
+    
+    
+    
+    
+    
+    
+    nscoord extraWidth =
+        std::max(0, mScrolledFrame->GetSize().width - aScrollPortSize.width);
+    x2 += extraWidth;
+  }
+
+  
+  
+  
+  if (dirs.mToBottom) {
+    if (y1 < 0) {
+      y1 = 0;
+    }
+  } else {
+    if (y2 > aScrollPortSize.height) {
+      y2 = aScrollPortSize.height;
+    }
+    nscoord extraHeight =
+        std::max(0, mScrolledFrame->GetSize().height - aScrollPortSize.height);
+    y2 += extraHeight;
+  }
+
+  return nsRect(x1, y1, x2 - x1, y2 - y1);
 }
 
 nsMargin ScrollContainerFrame::GetActualScrollbarSizes(

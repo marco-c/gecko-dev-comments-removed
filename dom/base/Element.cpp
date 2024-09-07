@@ -15,8 +15,6 @@
 
 #include <inttypes.h>
 #include <initializer_list>
-#include <new>
-#include "DOMIntersectionObserver.h"
 #include "DOMMatrix.h"
 #include "ExpandedPrincipal.h"
 #include "PresShellInlines.h"
@@ -929,24 +927,34 @@ int32_t Element::ScrollLeftMax() {
 
 static nsSize GetScrollRectSizeForOverflowVisibleFrame(nsIFrame* aFrame) {
   if (!aFrame || aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    return nsSize(0, 0);
+    return nsSize();
   }
 
-  nsRect paddingRect = aFrame->GetPaddingRectRelativeToSelf();
-  OverflowAreas overflowAreas(paddingRect, paddingRect);
   
   
-  
-  
-  nsLayoutUtils::UnionChildOverflow(aFrame, overflowAreas);
-  
-  
-  nsRect overflowRect =
-      overflowAreas.ScrollableOverflow().UnionEdges(paddingRect);
-  return nsLayoutUtils::GetScrolledRect(aFrame, overflowRect,
-                                        paddingRect.Size(),
-                                        aFrame->StyleVisibility()->mDirection)
-      .Size();
+  const nsRect paddingRect = aFrame->GetPaddingRectRelativeToSelf();
+  const nsRect overflowRect = [&] {
+    OverflowAreas overflowAreas(paddingRect, paddingRect);
+    
+    
+    
+    
+    
+    aFrame->UnionChildOverflow(overflowAreas,  true);
+    
+    
+    return overflowAreas.ScrollableOverflow().UnionEdges(paddingRect);
+  }();
+
+  auto directions =
+      ScrollContainerFrame::ComputePerAxisScrollDirections(aFrame);
+  const nscoord height = directions.mToBottom
+                             ? overflowRect.YMost() - paddingRect.Y()
+                             : paddingRect.YMost() - overflowRect.Y();
+  const nscoord width = directions.mToRight
+                            ? overflowRect.XMost() - paddingRect.X()
+                            : paddingRect.XMost() - overflowRect.X();
+  return nsSize(width, height);
 }
 
 nsSize Element::GetScrollSize() {

@@ -195,6 +195,14 @@ class ScrollContainerFrame : public nsContainerFrame,
     return GetCurrentAnonymousContent().contains(GetNeededAnonymousContent());
   }
 
+  struct PerAxisScrollDirections {
+    bool mToRight = false;
+    bool mToBottom = false;
+  };
+
+  static PerAxisScrollDirections ComputePerAxisScrollDirections(
+      const nsIFrame* aScrolledFrame);
+
   
 
 
@@ -1240,6 +1248,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool HasPerspective() const { return ChildrenHavePerspective(); }
   bool HasBgAttachmentLocal() const;
   StyleDirection GetScrolledFrameDir() const;
+  static StyleDirection GetScrolledFrameDir(const nsIFrame*);
 
   
   

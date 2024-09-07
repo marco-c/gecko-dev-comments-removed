@@ -488,8 +488,8 @@ void nsHTMLCanvasFrame::AppendDirectlyOwnedAnonBoxes(
   aResult.AppendElement(OwnedAnonBox(mFrames.FirstChild()));
 }
 
-void nsHTMLCanvasFrame::UnionChildOverflow(
-    mozilla::OverflowAreas& aOverflowAreas) {
+void nsHTMLCanvasFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
+                                           bool) {
   
   
   

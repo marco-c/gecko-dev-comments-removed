@@ -159,10 +159,11 @@ class nsFlexContainerFrame final : public nsContainerFrame,
       BaselineExportContext) const override;
 
   
-  void UnionInFlowChildOverflow(mozilla::OverflowAreas&);
+  void UnionInFlowChildOverflow(mozilla::OverflowAreas&,
+                                bool aAsIfScrolled = false);
 
   
-  void UnionChildOverflow(mozilla::OverflowAreas&) final;
+  void UnionChildOverflow(mozilla::OverflowAreas&, bool aAsIfScrolled) final;
 
   
   bool DrainSelfOverflowList() override;

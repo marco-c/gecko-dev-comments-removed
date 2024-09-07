@@ -2538,7 +2538,8 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 #endif
 }
 
-void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
+void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
+                                      bool aAsIfScrolled) {
   
   
   

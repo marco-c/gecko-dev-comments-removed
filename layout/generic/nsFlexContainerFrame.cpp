@@ -4864,7 +4864,7 @@ Maybe<nscoord> nsFlexContainerFrame::GetNaturalBaselineBOffset(
 }
 
 void nsFlexContainerFrame::UnionInFlowChildOverflow(
-    OverflowAreas& aOverflowAreas) {
+    OverflowAreas& aOverflowAreas, bool aAsIfScrolled) {
   
   
   
@@ -4882,6 +4882,7 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
   
   
   const bool isScrolledContent =
+      aAsIfScrolled ||
       Style()->GetPseudoType() == PseudoStyleType::scrolledContent;
   bool anyScrolledContentItem = false;
   
@@ -4931,8 +4932,9 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
   }
 }
 
-void nsFlexContainerFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
-  UnionInFlowChildOverflow(aOverflowAreas);
+void nsFlexContainerFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
+                                              bool aAsIfScrolled) {
+  UnionInFlowChildOverflow(aOverflowAreas, aAsIfScrolled);
   
   
   nsLayoutUtils::UnionChildOverflow(this, aOverflowAreas,

@@ -3073,7 +3073,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual void UnionChildOverflow(mozilla::OverflowAreas& aOverflowAreas);
+
+  virtual void UnionChildOverflow(mozilla::OverflowAreas& aOverflowAreas,
+                                  bool aAsIfScrolled = false);
 
   
   nsSize OverflowClipMargin(mozilla::PhysicalAxes aClipAxes) const;
