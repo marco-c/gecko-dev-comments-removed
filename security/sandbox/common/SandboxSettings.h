@@ -7,10 +7,6 @@
 #define mozilla_SandboxSettings_h
 #include <cinttypes>
 
-#if defined(MOZ_PROFILE_GENERATE)
-#  include <string>
-#endif
-
 #include "nsIXULRuntime.h"
 
 #ifdef __OpenBSD__
@@ -27,14 +23,6 @@ namespace mozilla {
 int GetEffectiveContentSandboxLevel();
 int GetEffectiveSocketProcessSandboxLevel();
 int GetEffectiveGpuSandboxLevel();
-
-#if defined(MOZ_PROFILE_GENERATE)
-#  if defined(XP_WIN)
-bool GetLlvmProfileDir(std::wstring& parentPath);
-#  else
-bool GetLlvmProfileDir(std::string& parentPath);
-#  endif
-#endif
 
 
 bool IsContentSandboxEnabled();
