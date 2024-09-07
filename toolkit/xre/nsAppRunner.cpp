@@ -4934,12 +4934,8 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       
       
 #  ifdef MOZ_WIDGET_GTK
-      auto& startupToken =
+      const auto& startupToken =
           GdkIsWaylandDisplay() ? mXDGActivationToken : mDesktopStartupID;
-#    ifdef MOZ_X11
-      if (GdkIsX11Display() && startupToken.IsEmpty())
-        startupToken = SynthesizeStartupToken();
-#    endif 
 #  else
       const nsCString startupToken;
 #  endif
