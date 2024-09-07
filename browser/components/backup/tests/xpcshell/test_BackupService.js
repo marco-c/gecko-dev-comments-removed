@@ -93,6 +93,10 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     "BROWSER_BACKUP_TOTAL_BACKUP_SIZE"
   );
   
+  let compressedArchiveSizeHistogram = TelemetryTestUtils.getAndClearHistogram(
+    "BROWSER_BACKUP_COMPRESSED_ARCHIVE_SIZE"
+  );
+  
   let backupTimerHistogram = TelemetryTestUtils.getAndClearHistogram(
     "BROWSER_BACKUP_TOTAL_BACKUP_TIME_MS"
   );
@@ -201,6 +205,7 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   const SMALLEST_BACKUP_SIZE_BYTES = 1048576;
   const SMALLEST_BACKUP_SIZE_MEBIBYTES = 1;
 
+  
   let totalBackupSize = Glean.browserBackup.totalBackupSize.testGetValue();
   Assert.equal(
     totalBackupSize.count,
@@ -214,6 +219,25 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   );
   TelemetryTestUtils.assertHistogram(
     totalBackupSizeHistogram,
+    SMALLEST_BACKUP_SIZE_MEBIBYTES,
+    1
+  );
+
+  
+  let compressedArchiveSize =
+    Glean.browserBackup.compressedArchiveSize.testGetValue();
+  Assert.equal(
+    compressedArchiveSize.count,
+    1,
+    "Should have collected a single measurement for the backup compressed archive size"
+  );
+  Assert.equal(
+    compressedArchiveSize.sum,
+    SMALLEST_BACKUP_SIZE_BYTES,
+    "Should have collected the right value for the backup compressed archive size"
+  );
+  TelemetryTestUtils.assertHistogram(
+    compressedArchiveSizeHistogram,
     SMALLEST_BACKUP_SIZE_MEBIBYTES,
     1
   );
