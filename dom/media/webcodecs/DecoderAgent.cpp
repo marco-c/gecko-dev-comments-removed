@@ -249,7 +249,24 @@ RefPtr<ShutdownPromise> DecoderAgent::Shutdown() {
   }
 
   
-  MOZ_ASSERT(mDecoder);
+  if (!mDecoder) {
+    LOG("DecoderAgent #%d (%p) shutdown without an active decoder", mId, this);
+    MOZ_ASSERT(mState == State::Error);
+    MOZ_ASSERT(!mInitRequest.Exists());
+    MOZ_ASSERT(mConfigurePromise.IsEmpty());
+    MOZ_ASSERT(!mDecodeRequest.Exists());
+    MOZ_ASSERT(mDecodePromise.IsEmpty());
+    MOZ_ASSERT(!mDrainRequest.Exists());
+    MOZ_ASSERT(!mFlushRequest.Exists());
+    MOZ_ASSERT(!mDryRequest.Exists());
+    MOZ_ASSERT(mDryPromise.IsEmpty());
+    MOZ_ASSERT(mDrainAndFlushPromise.IsEmpty());
+    
+    SetState(State::Unconfigured);
+    return ShutdownPromise::CreateAndResolve(true, __func__);
+  }
+
+  
 
   
   mInitRequest.DisconnectIfExists();
