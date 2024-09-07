@@ -43,7 +43,9 @@ bool SetPriority(ThreadPriority priority) {
 #if defined(WEBRTC_WIN)
   return SetThreadPriority(GetCurrentThread(),
                            Win32PriorityFromThreadPriority(priority)) != FALSE;
-#elif defined(__native_client__) || defined(WEBRTC_FUCHSIA)
+#elif defined(__native_client__) || defined(WEBRTC_FUCHSIA) || \
+    (defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__))
+  
   
   return true;
 #elif defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
