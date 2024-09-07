@@ -2503,9 +2503,6 @@ pref("signon.management.page.fileImport.enabled", true);
 
 
 pref("signon.firefoxRelay.feature", "available");
-
-
-
 pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.page.vulnerable-passwords.enabled", true);
 pref("signon.management.page.sort", "name");
