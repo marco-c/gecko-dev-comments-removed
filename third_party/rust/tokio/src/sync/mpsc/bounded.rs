@@ -75,6 +75,18 @@ pub struct Permit<'a, T> {
 
 
 
+pub struct PermitIterator<'a, T> {
+    chan: &'a chan::Tx<T, Semaphore>,
+    n: usize,
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -270,6 +282,82 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn recv_many(&mut self, buffer: &mut Vec<T>, limit: usize) -> usize {
+        use crate::future::poll_fn;
+        poll_fn(|cx| self.chan.recv_many(cx, buffer, limit)).await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_recv(&mut self) -> Result<T, TryRecvError> {
         self.chan.try_recv()
     }
@@ -396,8 +484,242 @@ impl<T> Receiver<T> {
     
     
     
+    
+    pub fn is_closed(&self) -> bool {
+        self.chan.is_closed()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_empty(&self) -> bool {
+        self.chan.is_empty()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn len(&self) -> usize {
+        self.chan.len()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn capacity(&self) -> usize {
+        self.chan.semaphore().semaphore.available_permits()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn max_capacity(&self) -> usize {
+        self.chan.semaphore().bound
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<T>> {
         self.chan.recv(cx)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_recv_many(
+        &mut self,
+        cx: &mut Context<'_>,
+        buffer: &mut Vec<T>,
+        limit: usize,
+    ) -> Poll<usize> {
+        self.chan.recv_many(cx, buffer, limit)
+    }
+
+    
+    pub fn sender_strong_count(&self) -> usize {
+        self.chan.sender_strong_count()
+    }
+
+    
+    pub fn sender_weak_count(&self) -> usize {
+        self.chan.sender_weak_count()
     }
 }
 
@@ -416,6 +738,10 @@ impl<T> Sender<T> {
         Sender { chan }
     }
 
+    
+    
+    
+    
     
     
     
@@ -518,7 +844,7 @@ impl<T> Sender<T> {
     
     
     pub async fn closed(&self) {
-        self.chan.closed().await
+        self.chan.closed().await;
     }
 
     
@@ -581,7 +907,7 @@ impl<T> Sender<T> {
     
     pub fn try_send(&self, message: T) -> Result<(), TrySendError<T>> {
         match self.chan.semaphore().semaphore.try_acquire(1) {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(TryAcquireError::Closed) => return Err(TrySendError::Closed(message)),
             Err(TryAcquireError::NoPermits) => return Err(TrySendError::Full(message)),
         }
@@ -769,8 +1095,72 @@ impl<T> Sender<T> {
     
     
     pub async fn reserve(&self) -> Result<Permit<'_, T>, SendError<()>> {
-        self.reserve_inner().await?;
+        self.reserve_inner(1).await?;
         Ok(Permit { chan: &self.chan })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn reserve_many(&self, n: usize) -> Result<PermitIterator<'_, T>, SendError<()>> {
+        self.reserve_inner(n).await?;
+        Ok(PermitIterator {
+            chan: &self.chan,
+            n,
+        })
     }
 
     
@@ -854,17 +1244,20 @@ impl<T> Sender<T> {
     
     
     pub async fn reserve_owned(self) -> Result<OwnedPermit<T>, SendError<()>> {
-        self.reserve_inner().await?;
+        self.reserve_inner(1).await?;
         Ok(OwnedPermit {
             chan: Some(self.chan),
         })
     }
 
-    async fn reserve_inner(&self) -> Result<(), SendError<()>> {
+    async fn reserve_inner(&self, n: usize) -> Result<(), SendError<()>> {
         crate::trace::async_trace_leaf().await;
 
-        match self.chan.semaphore().semaphore.acquire(1).await {
-            Ok(_) => Ok(()),
+        if n > self.max_capacity() {
+            return Err(SendError(()));
+        }
+        match self.chan.semaphore().semaphore.acquire(n).await {
+            Ok(()) => Ok(()),
             Err(_) => Err(SendError(())),
         }
     }
@@ -914,7 +1307,7 @@ impl<T> Sender<T> {
     
     pub fn try_reserve(&self) -> Result<Permit<'_, T>, TrySendError<()>> {
         match self.chan.semaphore().semaphore.try_acquire(1) {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(TryAcquireError::Closed) => return Err(TrySendError::Closed(())),
             Err(TryAcquireError::NoPermits) => return Err(TrySendError::Full(())),
         }
@@ -977,9 +1370,94 @@ impl<T> Sender<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_reserve_many(&self, n: usize) -> Result<PermitIterator<'_, T>, TrySendError<()>> {
+        if n > self.max_capacity() {
+            return Err(TrySendError::Full(()));
+        }
+
+        match self.chan.semaphore().semaphore.try_acquire(n) {
+            Ok(()) => {}
+            Err(TryAcquireError::Closed) => return Err(TrySendError::Closed(())),
+            Err(TryAcquireError::NoPermits) => return Err(TrySendError::Full(())),
+        }
+
+        Ok(PermitIterator {
+            chan: &self.chan,
+            n,
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_reserve_owned(self) -> Result<OwnedPermit<T>, TrySendError<Self>> {
         match self.chan.semaphore().semaphore.try_acquire(1) {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(TryAcquireError::Closed) => return Err(TrySendError::Closed(self)),
             Err(TryAcquireError::NoPermits) => return Err(TrySendError::Full(self)),
         }
@@ -1046,6 +1524,7 @@ impl<T> Sender<T> {
     
     
     
+    #[must_use = "Downgrade creates a WeakSender without destroying the original non-weak sender."]
     pub fn downgrade(&self) -> WeakSender<T> {
         WeakSender {
             chan: self.chan.downgrade(),
@@ -1087,6 +1566,16 @@ impl<T> Sender<T> {
     pub fn max_capacity(&self) -> usize {
         self.chan.semaphore().bound
     }
+
+    
+    pub fn strong_count(&self) -> usize {
+        self.chan.strong_count()
+    }
+
+    
+    pub fn weak_count(&self) -> usize {
+        self.chan.weak_count()
+    }
 }
 
 impl<T> Clone for Sender<T> {
@@ -1107,9 +1596,17 @@ impl<T> fmt::Debug for Sender<T> {
 
 impl<T> Clone for WeakSender<T> {
     fn clone(&self) -> Self {
+        self.chan.increment_weak_count();
+
         WeakSender {
             chan: self.chan.clone(),
         }
+    }
+}
+
+impl<T> Drop for WeakSender<T> {
+    fn drop(&mut self) {
+        self.chan.decrement_weak_count();
     }
 }
 
@@ -1119,6 +1616,16 @@ impl<T> WeakSender<T> {
     
     pub fn upgrade(&self) -> Option<Sender<T>> {
         chan::Tx::upgrade(self.chan.clone()).map(Sender::new)
+    }
+
+    
+    pub fn strong_count(&self) -> usize {
+        self.chan.strong_count()
+    }
+
+    
+    pub fn weak_count(&self) -> usize {
+        self.chan.weak_count()
     }
 }
 
@@ -1194,6 +1701,58 @@ impl<T> fmt::Debug for Permit<'_, T> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_struct("Permit")
             .field("chan", &self.chan)
+            .finish()
+    }
+}
+
+
+
+impl<'a, T> Iterator for PermitIterator<'a, T> {
+    type Item = Permit<'a, T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.n == 0 {
+            return None;
+        }
+
+        self.n -= 1;
+        Some(Permit { chan: self.chan })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = self.n;
+        (n, Some(n))
+    }
+}
+impl<T> ExactSizeIterator for PermitIterator<'_, T> {}
+impl<T> std::iter::FusedIterator for PermitIterator<'_, T> {}
+
+impl<T> Drop for PermitIterator<'_, T> {
+    fn drop(&mut self) {
+        use chan::Semaphore;
+
+        if self.n == 0 {
+            return;
+        }
+
+        let semaphore = self.chan.semaphore();
+
+        
+        semaphore.add_permits(self.n);
+
+        
+        
+        if semaphore.is_closed() && semaphore.is_idle() {
+            self.chan.wake_rx();
+        }
+    }
+}
+
+impl<T> fmt::Debug for PermitIterator<'_, T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_struct("PermitIterator")
+            .field("chan", &self.chan)
+            .field("capacity", &self.n)
             .finish()
     }
 }

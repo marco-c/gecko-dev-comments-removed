@@ -3,6 +3,8 @@ use crate::runtime::io::{ReadyEvent, Registration};
 use crate::runtime::scheduler;
 
 use mio::unix::SourceFd;
+use std::error::Error;
+use std::fmt;
 use std::io;
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::{task::Context, task::Poll};
@@ -176,6 +178,8 @@ use std::{task::Context, task::Poll};
 
 pub struct AsyncFd<T: AsRawFd> {
     registration: Registration,
+    
+    
     inner: Option<T>,
 }
 
@@ -247,15 +251,69 @@ impl<T: AsRawFd> AsyncFd<T> {
         handle: scheduler::Handle,
         interest: Interest,
     ) -> io::Result<Self> {
+        Self::try_new_with_handle_and_interest(inner, handle, interest).map_err(Into::into)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[track_caller]
+    pub fn try_new(inner: T) -> Result<Self, AsyncFdTryNewError<T>>
+    where
+        T: AsRawFd,
+    {
+        Self::try_with_interest(inner, Interest::READABLE | Interest::WRITABLE)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[track_caller]
+    pub fn try_with_interest(inner: T, interest: Interest) -> Result<Self, AsyncFdTryNewError<T>>
+    where
+        T: AsRawFd,
+    {
+        Self::try_new_with_handle_and_interest(inner, scheduler::Handle::current(), interest)
+    }
+
+    #[track_caller]
+    pub(crate) fn try_new_with_handle_and_interest(
+        inner: T,
+        handle: scheduler::Handle,
+        interest: Interest,
+    ) -> Result<Self, AsyncFdTryNewError<T>> {
         let fd = inner.as_raw_fd();
 
-        let registration =
-            Registration::new_with_interest_and_handle(&mut SourceFd(&fd), interest, handle)?;
-
-        Ok(AsyncFd {
-            registration,
-            inner: Some(inner),
-        })
+        match Registration::new_with_interest_and_handle(&mut SourceFd(&fd), interest, handle) {
+            Ok(registration) => Ok(AsyncFd {
+                registration,
+                inner: Some(inner),
+            }),
+            Err(cause) => Err(AsyncFdTryNewError { inner, cause }),
+        }
     }
 
     
@@ -271,13 +329,12 @@ impl<T: AsRawFd> AsyncFd<T> {
     }
 
     fn take_inner(&mut self) -> Option<T> {
-        let fd = self.inner.as_ref().map(AsRawFd::as_raw_fd);
+        let inner = self.inner.take()?;
+        let fd = inner.as_raw_fd();
 
-        if let Some(fd) = fd {
-            let _ = self.registration.deregister(&mut SourceFd(&fd));
-        }
+        let _ = self.registration.deregister(&mut SourceFd(&fd));
 
-        self.inner.take()
+        Some(inner)
     }
 
     
@@ -319,11 +376,10 @@ impl<T: AsRawFd> AsyncFd<T> {
     ) -> Poll<io::Result<AsyncFdReadyGuard<'a, T>>> {
         let event = ready!(self.registration.poll_read_ready(cx))?;
 
-        Ok(AsyncFdReadyGuard {
+        Poll::Ready(Ok(AsyncFdReadyGuard {
             async_fd: self,
             event: Some(event),
-        })
-        .into()
+        }))
     }
 
     
@@ -357,11 +413,10 @@ impl<T: AsRawFd> AsyncFd<T> {
     ) -> Poll<io::Result<AsyncFdReadyMutGuard<'a, T>>> {
         let event = ready!(self.registration.poll_read_ready(cx))?;
 
-        Ok(AsyncFdReadyMutGuard {
+        Poll::Ready(Ok(AsyncFdReadyMutGuard {
             async_fd: self,
             event: Some(event),
-        })
-        .into()
+        }))
     }
 
     
@@ -397,11 +452,10 @@ impl<T: AsRawFd> AsyncFd<T> {
     ) -> Poll<io::Result<AsyncFdReadyGuard<'a, T>>> {
         let event = ready!(self.registration.poll_write_ready(cx))?;
 
-        Ok(AsyncFdReadyGuard {
+        Poll::Ready(Ok(AsyncFdReadyGuard {
             async_fd: self,
             event: Some(event),
-        })
-        .into()
+        }))
     }
 
     
@@ -435,11 +489,10 @@ impl<T: AsRawFd> AsyncFd<T> {
     ) -> Poll<io::Result<AsyncFdReadyMutGuard<'a, T>>> {
         let event = ready!(self.registration.poll_write_ready(cx))?;
 
-        Ok(AsyncFdReadyMutGuard {
+        Poll::Ready(Ok(AsyncFdReadyMutGuard {
             async_fd: self,
             event: Some(event),
-        })
-        .into()
+        }))
     }
 
     
@@ -797,7 +850,6 @@ impl<T: AsRawFd> AsRawFd for AsyncFd<T> {
     }
 }
 
-#[cfg(not(tokio_no_as_fd))]
 impl<T: AsRawFd> std::os::unix::io::AsFd for AsyncFd<T> {
     fn as_fd(&self) -> std::os::unix::io::BorrowedFd<'_> {
         unsafe { std::os::unix::io::BorrowedFd::borrow_raw(self.as_raw_fd()) }
@@ -830,12 +882,20 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyGuard<'a, Inner> {
     
     
     
+    
+    
+    
+    
     pub fn clear_ready(&mut self) {
         if let Some(event) = self.event.take() {
             self.async_fd.registration.clear_readiness(event);
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -1014,14 +1074,11 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyGuard<'a, Inner> {
     ) -> Result<io::Result<R>, TryIoError> {
         let result = f(self.async_fd);
 
-        if let Err(e) = result.as_ref() {
-            if e.kind() == io::ErrorKind::WouldBlock {
-                self.clear_ready();
-            }
-        }
-
         match result {
-            Err(err) if err.kind() == io::ErrorKind::WouldBlock => Err(TryIoError(())),
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {
+                self.clear_ready();
+                Err(TryIoError(()))
+            }
             result => Ok(result),
         }
     }
@@ -1049,12 +1106,20 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyMutGuard<'a, Inner> {
     
     
     
+    
+    
+    
+    
     pub fn clear_ready(&mut self) {
         if let Some(event) = self.event.take() {
             self.async_fd.registration.clear_readiness(event);
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -1194,14 +1259,11 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyMutGuard<'a, Inner> {
     ) -> Result<io::Result<R>, TryIoError> {
         let result = f(self.async_fd);
 
-        if let Err(e) = result.as_ref() {
-            if e.kind() == io::ErrorKind::WouldBlock {
-                self.clear_ready();
-            }
-        }
-
         match result {
-            Err(err) if err.kind() == io::ErrorKind::WouldBlock => Err(TryIoError(())),
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {
+                self.clear_ready();
+                Err(TryIoError(()))
+            }
             result => Ok(result),
         }
     }
@@ -1251,3 +1313,47 @@ impl<'a, T: std::fmt::Debug + AsRawFd> std::fmt::Debug for AsyncFdReadyMutGuard<
 
 #[derive(Debug)]
 pub struct TryIoError(());
+
+
+
+
+
+pub struct AsyncFdTryNewError<T> {
+    inner: T,
+    cause: io::Error,
+}
+
+impl<T> AsyncFdTryNewError<T> {
+    
+    
+    
+    
+    
+    pub fn into_parts(self) -> (T, io::Error) {
+        (self.inner, self.cause)
+    }
+}
+
+impl<T> fmt::Display for AsyncFdTryNewError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.cause, f)
+    }
+}
+
+impl<T> fmt::Debug for AsyncFdTryNewError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.cause, f)
+    }
+}
+
+impl<T> Error for AsyncFdTryNewError<T> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(&self.cause)
+    }
+}
+
+impl<T> From<AsyncFdTryNewError<T>> for io::Error {
+    fn from(value: AsyncFdTryNewError<T>) -> Self {
+        value.cause
+    }
+}

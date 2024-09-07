@@ -4,9 +4,7 @@ use crate::net::unix::SocketAddr;
 use std::fmt;
 use std::io;
 use std::net::Shutdown;
-#[cfg(not(tokio_no_as_fd))]
-use std::os::unix::io::{AsFd, BorrowedFd};
-use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
 use std::os::unix::net;
 use std::path::Path;
 use std::task::{Context, Poll};
@@ -98,6 +96,16 @@ cfg_net_unix! {
 }
 
 impl UnixDatagram {
+    pub(crate) fn from_mio(sys: mio::net::UnixDatagram) -> io::Result<UnixDatagram> {
+        let datagram = UnixDatagram::new(sys)?;
+
+        if let Some(e) = datagram.io.take_error()? {
+            return Err(e);
+        }
+
+        Ok(datagram)
+    }
+
     
     
     
@@ -500,7 +508,7 @@ impl UnixDatagram {
     pub fn into_std(self) -> io::Result<std::os::unix::net::UnixDatagram> {
         self.io
             .into_inner()
-            .map(|io| io.into_raw_fd())
+            .map(IntoRawFd::into_raw_fd)
             .map(|raw_fd| unsafe { std::os::unix::net::UnixDatagram::from_raw_fd(raw_fd) })
     }
 
@@ -1153,6 +1161,7 @@ impl UnixDatagram {
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<SocketAddr>> {
+        #[allow(clippy::blocks_in_conditions)]
         let (n, addr) = ready!(self.io.registration().poll_read_io(cx, || {
             // Safety: will not read the maybe uninitialized bytes.
             let b = unsafe {
@@ -1254,6 +1263,7 @@ impl UnixDatagram {
     
     
     pub fn poll_recv(&self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<()>> {
+        #[allow(clippy::blocks_in_conditions)]
         let n = ready!(self.io.registration().poll_read_io(cx, || {
             // Safety: will not read the maybe uninitialized bytes.
             let b = unsafe {
@@ -1578,7 +1588,6 @@ impl AsRawFd for UnixDatagram {
     }
 }
 
-#[cfg(not(tokio_no_as_fd))]
 impl AsFd for UnixDatagram {
     fn as_fd(&self) -> BorrowedFd<'_> {
         unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }

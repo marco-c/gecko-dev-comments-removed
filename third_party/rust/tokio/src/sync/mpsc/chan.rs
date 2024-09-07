@@ -6,6 +6,7 @@ use crate::runtime::park::CachedParkThread;
 use crate::sync::mpsc::error::TryRecvError;
 use crate::sync::mpsc::{bounded, list, unbounded};
 use crate::sync::notify::Notify;
+use crate::util::cacheline::CachePadded;
 
 use std::fmt;
 use std::process;
@@ -40,6 +41,8 @@ pub(crate) trait Semaphore {
 
     fn add_permit(&self);
 
+    fn add_permits(&self, n: usize);
+
     fn close(&self);
 
     fn is_closed(&self) -> bool;
@@ -47,21 +50,24 @@ pub(crate) trait Semaphore {
 
 pub(super) struct Chan<T, S> {
     
-    notify_rx_closed: Notify,
+    tx: CachePadded<list::Tx<T>>,
 
     
-    tx: list::Tx<T>,
+    rx_waker: CachePadded<AtomicWaker>,
+
+    
+    notify_rx_closed: Notify,
 
     
     semaphore: S,
 
     
-    rx_waker: AtomicWaker,
-
-    
     
     
     tx_count: AtomicUsize,
+
+    
+    tx_weak_count: AtomicUsize,
 
     
     rx_fields: UnsafeCell<RxFields<T>>,
@@ -73,9 +79,9 @@ where
 {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_struct("Chan")
-            .field("tx", &self.tx)
+            .field("tx", &*self.tx)
             .field("semaphore", &self.semaphore)
-            .field("rx_waker", &self.rx_waker)
+            .field("rx_waker", &*self.rx_waker)
             .field("tx_count", &self.tx_count)
             .field("rx_fields", &"...")
             .finish()
@@ -108,10 +114,11 @@ pub(crate) fn channel<T, S: Semaphore>(semaphore: S) -> (Tx<T, S>, Rx<T, S>) {
 
     let chan = Arc::new(Chan {
         notify_rx_closed: Notify::new(),
-        tx,
+        tx: CachePadded::new(tx),
         semaphore,
-        rx_waker: AtomicWaker::new(),
+        rx_waker: CachePadded::new(AtomicWaker::new()),
         tx_count: AtomicUsize::new(1),
+        tx_weak_count: AtomicUsize::new(0),
         rx_fields: UnsafeCell::new(RxFields {
             list: rx,
             rx_closed: false,
@@ -128,7 +135,17 @@ impl<T, S> Tx<T, S> {
         Tx { inner: chan }
     }
 
+    pub(super) fn strong_count(&self) -> usize {
+        self.inner.tx_count.load(Acquire)
+    }
+
+    pub(super) fn weak_count(&self) -> usize {
+        self.inner.tx_weak_count.load(Relaxed)
+    }
+
     pub(super) fn downgrade(&self) -> Arc<Chan<T, S>> {
+        self.inner.increment_weak_count();
+
         self.inner.clone()
     }
 
@@ -238,9 +255,36 @@ impl<T, S: Semaphore> Rx<T, S> {
         self.inner.notify_rx_closed.notify_waiters();
     }
 
+    pub(crate) fn is_closed(&self) -> bool {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.inner.semaphore.is_closed() || self.inner.tx_count.load(Acquire) == 0
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.inner.rx_fields.with(|rx_fields_ptr| {
+            let rx_fields = unsafe { &*rx_fields_ptr };
+            rx_fields.list.is_empty(&self.inner.tx)
+        })
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.inner.rx_fields.with(|rx_fields_ptr| {
+            let rx_fields = unsafe { &*rx_fields_ptr };
+            rx_fields.list.len(&self.inner.tx)
+        })
+    }
+
     
     pub(crate) fn recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<T>> {
-        use super::block::Read::*;
+        use super::block::Read;
 
         ready!(crate::trace::trace_leaf(cx));
 
@@ -253,12 +297,12 @@ impl<T, S: Semaphore> Rx<T, S> {
             macro_rules! try_recv {
                 () => {
                     match rx_fields.list.pop(&self.inner.tx) {
-                        Some(Value(value)) => {
+                        Some(Read::Value(value)) => {
                             self.inner.semaphore.add_permit();
                             coop.made_progress();
                             return Ready(Some(value));
                         }
-                        Some(Closed) => {
+                        Some(Read::Closed) => {
                             // TODO: This check may not be required as it most
                             // likely can only return `true` at this point. A
                             // channel is closed when all tx handles are
@@ -286,6 +330,91 @@ impl<T, S: Semaphore> Rx<T, S> {
             if rx_fields.rx_closed && self.inner.semaphore.is_idle() {
                 coop.made_progress();
                 Ready(None)
+            } else {
+                Pending
+            }
+        })
+    }
+
+    
+    
+    
+    
+    pub(crate) fn recv_many(
+        &mut self,
+        cx: &mut Context<'_>,
+        buffer: &mut Vec<T>,
+        limit: usize,
+    ) -> Poll<usize> {
+        use super::block::Read;
+
+        ready!(crate::trace::trace_leaf(cx));
+
+        
+        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
+
+        if limit == 0 {
+            coop.made_progress();
+            return Ready(0usize);
+        }
+
+        let mut remaining = limit;
+        let initial_length = buffer.len();
+
+        self.inner.rx_fields.with_mut(|rx_fields_ptr| {
+            let rx_fields = unsafe { &mut *rx_fields_ptr };
+            macro_rules! try_recv {
+                () => {
+                    while remaining > 0 {
+                        match rx_fields.list.pop(&self.inner.tx) {
+                            Some(Read::Value(value)) => {
+                                remaining -= 1;
+                                buffer.push(value);
+                            }
+
+                            Some(Read::Closed) => {
+                                let number_added = buffer.len() - initial_length;
+                                if number_added > 0 {
+                                    self.inner.semaphore.add_permits(number_added);
+                                }
+                                // TODO: This check may not be required as it most
+                                // likely can only return `true` at this point. A
+                                // channel is closed when all tx handles are
+                                // dropped. Dropping a tx handle releases memory,
+                                // which ensures that if dropping the tx handle is
+                                // visible, then all messages sent are also visible.
+                                assert!(self.inner.semaphore.is_idle());
+                                coop.made_progress();
+                                return Ready(number_added);
+                            }
+
+                            None => {
+                                break; // fall through
+                            }
+                        }
+                    }
+                    let number_added = buffer.len() - initial_length;
+                    if number_added > 0 {
+                        self.inner.semaphore.add_permits(number_added);
+                        coop.made_progress();
+                        return Ready(number_added);
+                    }
+                };
+            }
+
+            try_recv!();
+
+            self.inner.rx_waker.register_by_ref(cx.waker());
+
+            
+            
+            
+            try_recv!();
+
+            if rx_fields.rx_closed && self.inner.semaphore.is_idle() {
+                assert!(buffer.is_empty());
+                coop.made_progress();
+                Ready(0usize)
             } else {
                 Pending
             }
@@ -336,6 +465,18 @@ impl<T, S: Semaphore> Rx<T, S> {
             }
         })
     }
+
+    pub(super) fn semaphore(&self) -> &S {
+        &self.inner.semaphore
+    }
+
+    pub(super) fn sender_strong_count(&self) -> usize {
+        self.inner.tx_count.load(Acquire)
+    }
+
+    pub(super) fn sender_weak_count(&self) -> usize {
+        self.inner.tx_weak_count.load(Relaxed)
+    }
 }
 
 impl<T, S: Semaphore> Drop for Rx<T, S> {
@@ -350,7 +491,7 @@ impl<T, S: Semaphore> Drop for Rx<T, S> {
             while let Some(Value(_)) = rx_fields.list.pop(&self.inner.tx) {
                 self.inner.semaphore.add_permit();
             }
-        })
+        });
     }
 }
 
@@ -363,6 +504,22 @@ impl<T, S> Chan<T, S> {
 
         
         self.rx_waker.wake();
+    }
+
+    pub(super) fn decrement_weak_count(&self) {
+        self.tx_weak_count.fetch_sub(1, Relaxed);
+    }
+
+    pub(super) fn increment_weak_count(&self) {
+        self.tx_weak_count.fetch_add(1, Relaxed);
+    }
+
+    pub(super) fn strong_count(&self) -> usize {
+        self.tx_count.load(Acquire)
+    }
+
+    pub(super) fn weak_count(&self) -> usize {
+        self.tx_weak_count.load(Relaxed)
     }
 }
 
@@ -385,7 +542,11 @@ impl<T, S> Drop for Chan<T, S> {
 
 impl Semaphore for bounded::Semaphore {
     fn add_permit(&self) {
-        self.semaphore.release(1)
+        self.semaphore.release(1);
+    }
+
+    fn add_permits(&self, n: usize) {
+        self.semaphore.release(n)
     }
 
     fn is_idle(&self) -> bool {
@@ -408,6 +569,15 @@ impl Semaphore for unbounded::Semaphore {
         let prev = self.0.fetch_sub(2, Release);
 
         if prev >> 1 == 0 {
+            
+            process::abort();
+        }
+    }
+
+    fn add_permits(&self, n: usize) {
+        let prev = self.0.fetch_sub(n << 1, Release);
+
+        if (prev >> 1) < n {
             
             process::abort();
         }

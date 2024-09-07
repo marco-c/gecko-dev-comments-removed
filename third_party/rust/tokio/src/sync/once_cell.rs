@@ -114,12 +114,10 @@ impl<T> Drop for OnceCell<T> {
 
 impl<T> From<T> for OnceCell<T> {
     fn from(value: T) -> Self {
-        let semaphore = Semaphore::new(0);
-        semaphore.close();
         OnceCell {
             value_set: AtomicBool::new(true),
             value: UnsafeCell::new(MaybeUninit::new(value)),
-            semaphore,
+            semaphore: Semaphore::new_closed(),
         }
     }
 }
@@ -134,6 +132,51 @@ impl<T> OnceCell<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(all(loom, test)))]
+    pub const fn const_new() -> Self {
+        OnceCell {
+            value_set: AtomicBool::new(false),
+            value: UnsafeCell::new(MaybeUninit::uninit()),
+            semaphore: Semaphore::const_new(1),
+        }
+    }
+
+    
+    
+    
+    
     
     
     
@@ -171,13 +214,17 @@ impl<T> OnceCell<T> {
     
     
     
-    #[cfg(all(feature = "parking_lot", not(all(loom, test))))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "parking_lot")))]
-    pub const fn const_new() -> Self {
+    
+    
+    
+    
+    
+    #[cfg(not(all(loom, test)))]
+    pub const fn const_new_with(value: T) -> Self {
         OnceCell {
-            value_set: AtomicBool::new(false),
-            value: UnsafeCell::new(MaybeUninit::uninit()),
-            semaphore: Semaphore::const_new(1),
+            value_set: AtomicBool::new(true),
+            value: UnsafeCell::new(MaybeUninit::new(value)),
+            semaphore: Semaphore::const_new_closed(),
         }
     }
 

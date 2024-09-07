@@ -223,11 +223,11 @@ cfg_io_driver_impl! {
         pub use ready::Ready;
     }
 
-    #[cfg_attr(tokio_wasi, allow(unused_imports))]
+    #[cfg_attr(target_os = "wasi", allow(unused_imports))]
     mod poll_evented;
 
     #[cfg(not(loom))]
-    #[cfg_attr(tokio_wasi, allow(unused_imports))]
+    #[cfg_attr(target_os = "wasi", allow(unused_imports))]
     pub(crate) use poll_evented::PollEvented;
 }
 
@@ -245,7 +245,7 @@ cfg_net_unix! {
 
     pub mod unix {
         //! Asynchronous IO structures specific to Unix-like operating systems.
-        pub use super::async_fd::{AsyncFd, AsyncFdReadyGuard, AsyncFdReadyMutGuard, TryIoError};
+        pub use super::async_fd::{AsyncFd, AsyncFdTryNewError, AsyncFdReadyGuard, AsyncFdReadyMutGuard, TryIoError};
     }
 }
 
@@ -265,11 +265,13 @@ cfg_io_std! {
 cfg_io_util! {
     mod split;
     pub use split::{split, ReadHalf, WriteHalf};
+    mod join;
+    pub use join::{join, Join};
 
     pub(crate) mod seek;
     pub(crate) mod util;
     pub use util::{
-        copy, copy_bidirectional, copy_buf, duplex, empty, repeat, sink, AsyncBufReadExt, AsyncReadExt, AsyncSeekExt, AsyncWriteExt,
+        copy, copy_bidirectional, copy_bidirectional_with_sizes, copy_buf, duplex, empty, repeat, sink, AsyncBufReadExt, AsyncReadExt, AsyncSeekExt, AsyncWriteExt,
         BufReader, BufStream, BufWriter, DuplexStream, Empty, Lines, Repeat, Sink, Split, Take,
     };
 }

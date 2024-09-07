@@ -1,7 +1,9 @@
-use crate::loom::sync::atomic::Ordering::Relaxed;
-use crate::loom::sync::atomic::{AtomicU64, AtomicUsize};
 use crate::runtime::metrics::Histogram;
 use crate::runtime::Config;
+use crate::util::metric_atomics::{MetricAtomicU64, MetricAtomicUsize};
+use std::sync::atomic::Ordering::Relaxed;
+use std::sync::Mutex;
+use std::thread::ThreadId;
 
 
 
@@ -10,39 +12,48 @@ use crate::runtime::Config;
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[repr(align(128))]
 pub(crate) struct WorkerMetrics {
     
-    pub(crate) park_count: AtomicU64,
+    pub(crate) park_count: MetricAtomicU64,
 
     
-    pub(crate) noop_count: AtomicU64,
+    pub(crate) park_unpark_count: MetricAtomicU64,
 
     
-    pub(crate) steal_count: AtomicU64,
+    pub(crate) noop_count: MetricAtomicU64,
 
     
-    pub(crate) steal_operations: AtomicU64,
+    pub(crate) steal_count: MetricAtomicU64,
 
     
-    pub(crate) poll_count: AtomicU64,
+    pub(crate) steal_operations: MetricAtomicU64,
 
     
-    pub(crate) busy_duration_total: AtomicU64,
+    pub(crate) poll_count: MetricAtomicU64,
 
     
-    pub(crate) local_schedule_count: AtomicU64,
+    pub(crate) mean_poll_time: MetricAtomicU64,
 
     
-    pub(crate) overflow_count: AtomicU64,
+    pub(crate) busy_duration_total: MetricAtomicU64,
+
+    
+    pub(crate) local_schedule_count: MetricAtomicU64,
+
+    
+    pub(crate) overflow_count: MetricAtomicU64,
 
     
     
-    pub(crate) queue_depth: AtomicUsize,
+    pub(crate) queue_depth: MetricAtomicUsize,
 
     
     pub(super) poll_count_histogram: Option<Histogram>,
+
+    
+    thread_id: Mutex<Option<ThreadId>>,
 }
 
 impl WorkerMetrics {
@@ -56,18 +67,7 @@ impl WorkerMetrics {
     }
 
     pub(crate) fn new() -> WorkerMetrics {
-        WorkerMetrics {
-            park_count: AtomicU64::new(0),
-            noop_count: AtomicU64::new(0),
-            steal_count: AtomicU64::new(0),
-            steal_operations: AtomicU64::new(0),
-            poll_count: AtomicU64::new(0),
-            overflow_count: AtomicU64::new(0),
-            busy_duration_total: AtomicU64::new(0),
-            local_schedule_count: AtomicU64::new(0),
-            queue_depth: AtomicUsize::new(0),
-            poll_count_histogram: None,
-        }
+        WorkerMetrics::default()
     }
 
     pub(crate) fn queue_depth(&self) -> usize {
@@ -76,5 +76,13 @@ impl WorkerMetrics {
 
     pub(crate) fn set_queue_depth(&self, len: usize) {
         self.queue_depth.store(len, Relaxed);
+    }
+
+    pub(crate) fn thread_id(&self) -> Option<ThreadId> {
+        *self.thread_id.lock().unwrap()
+    }
+
+    pub(crate) fn set_thread_id(&self, thread_id: ThreadId) {
+        *self.thread_id.lock().unwrap() = Some(thread_id);
     }
 }

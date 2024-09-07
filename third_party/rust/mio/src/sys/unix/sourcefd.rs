@@ -1,7 +1,12 @@
-use crate::{event, Interest, Registry, Token};
-
 use std::io;
-use std::os::unix::io::RawFd;
+#[cfg(not(target_os = "hermit"))]
+use std::os::fd::RawFd;
+
+
+#[cfg(target_os = "hermit")]
+use std::os::hermit::io::RawFd;
+
+use crate::{event, Interest, Registry, Token};
 
 
 

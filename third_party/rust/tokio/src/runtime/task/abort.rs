@@ -12,6 +12,13 @@ use std::panic::{RefUnwindSafe, UnwindSafe};
 
 
 
+
+
+
+
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 pub struct AbortHandle {
     raw: RawTask,
@@ -22,6 +29,16 @@ impl AbortHandle {
         Self { raw }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -83,5 +100,13 @@ impl fmt::Debug for AbortHandle {
 impl Drop for AbortHandle {
     fn drop(&mut self) {
         self.raw.drop_abort_handle();
+    }
+}
+
+impl Clone for AbortHandle {
+    
+    fn clone(&self) -> Self {
+        self.raw.ref_inc();
+        Self::new(self.raw)
     }
 }

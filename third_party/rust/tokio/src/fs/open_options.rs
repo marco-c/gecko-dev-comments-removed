@@ -78,8 +78,6 @@ use std::os::windows::fs::OpenOptionsExt;
 
 
 
-
-
 #[derive(Clone, Debug)]
 pub struct OpenOptions(StdOpenOptions);
 
@@ -444,7 +442,6 @@ feature! {
         /// # Examples
         ///
         /// ```no_run
-        /// use libc;
         /// use tokio::fs::OpenOptions;
         /// use std::io;
         ///

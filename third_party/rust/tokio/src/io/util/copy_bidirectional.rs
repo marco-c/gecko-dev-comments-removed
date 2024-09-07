@@ -68,14 +68,60 @@ where
 
 
 
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
-pub async fn copy_bidirectional<A, B>(a: &mut A, b: &mut B) -> Result<(u64, u64), std::io::Error>
+pub async fn copy_bidirectional<A, B>(a: &mut A, b: &mut B) -> io::Result<(u64, u64)>
 where
     A: AsyncRead + AsyncWrite + Unpin + ?Sized,
     B: AsyncRead + AsyncWrite + Unpin + ?Sized,
 {
-    let mut a_to_b = TransferState::Running(CopyBuffer::new());
-    let mut b_to_a = TransferState::Running(CopyBuffer::new());
+    copy_bidirectional_impl(
+        a,
+        b,
+        CopyBuffer::new(super::DEFAULT_BUF_SIZE),
+        CopyBuffer::new(super::DEFAULT_BUF_SIZE),
+    )
+    .await
+}
+
+
+
+
+
+#[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
+pub async fn copy_bidirectional_with_sizes<A, B>(
+    a: &mut A,
+    b: &mut B,
+    a_to_b_buf_size: usize,
+    b_to_a_buf_size: usize,
+) -> io::Result<(u64, u64)>
+where
+    A: AsyncRead + AsyncWrite + Unpin + ?Sized,
+    B: AsyncRead + AsyncWrite + Unpin + ?Sized,
+{
+    copy_bidirectional_impl(
+        a,
+        b,
+        CopyBuffer::new(a_to_b_buf_size),
+        CopyBuffer::new(b_to_a_buf_size),
+    )
+    .await
+}
+
+async fn copy_bidirectional_impl<A, B>(
+    a: &mut A,
+    b: &mut B,
+    a_to_b_buffer: CopyBuffer,
+    b_to_a_buffer: CopyBuffer,
+) -> io::Result<(u64, u64)>
+where
+    A: AsyncRead + AsyncWrite + Unpin + ?Sized,
+    B: AsyncRead + AsyncWrite + Unpin + ?Sized,
+{
+    let mut a_to_b = TransferState::Running(a_to_b_buffer);
+    let mut b_to_a = TransferState::Running(b_to_a_buffer);
     poll_fn(|cx| {
         let a_to_b = transfer_one_direction(cx, &mut a_to_b, a, b)?;
         let b_to_a = transfer_one_direction(cx, &mut b_to_a, b, a)?;

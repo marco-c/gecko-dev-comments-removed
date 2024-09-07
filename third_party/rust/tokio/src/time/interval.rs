@@ -122,6 +122,7 @@ fn internal_interval_at(
         let location = location.expect("should have location if tracing");
 
         tracing::trace_span!(
+            parent: None,
             "runtime.resource",
             concrete_type = "Interval",
             kind = "timer",
@@ -140,7 +141,7 @@ fn internal_interval_at(
     Interval {
         delay,
         period,
-        missed_tick_behavior: Default::default(),
+        missed_tick_behavior: MissedTickBehavior::default(),
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         resource_span,
     }
@@ -479,7 +480,9 @@ impl Interval {
             self.missed_tick_behavior
                 .next_timeout(timeout, now, self.period)
         } else {
-            timeout + self.period
+            timeout
+                .checked_add(self.period)
+                .unwrap_or_else(Instant::far_future)
         };
 
         
@@ -517,8 +520,111 @@ impl Interval {
     
     
     
+    
+    
     pub fn reset(&mut self) {
         self.delay.as_mut().reset(Instant::now() + self.period);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reset_immediately(&mut self) {
+        self.delay.as_mut().reset(Instant::now());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reset_after(&mut self, after: Duration) {
+        self.delay.as_mut().reset(Instant::now() + after);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reset_at(&mut self, deadline: Instant) {
+        self.delay.as_mut().reset(deadline);
     }
 
     

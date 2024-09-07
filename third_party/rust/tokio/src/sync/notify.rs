@@ -227,6 +227,8 @@ struct Waiter {
     
     
     
+    
+    
     notification: AtomicNotification,
 
     
@@ -253,13 +255,16 @@ generate_addr_of_methods! {
 }
 
 
-const NOTIFICATION_NONE: usize = 0;
+const NOTIFICATION_NONE: usize = 0b000;
 
 
-const NOTIFICATION_ONE: usize = 1;
+const NOTIFICATION_ONE: usize = 0b001;
 
 
-const NOTIFICATION_ALL: usize = 2;
+const NOTIFICATION_LAST: usize = 0b101;
+
+
+const NOTIFICATION_ALL: usize = 0b010;
 
 
 
@@ -275,13 +280,20 @@ impl AtomicNotification {
     
     
     fn store_release(&self, notification: Notification) {
-        self.0.store(notification as usize, Release);
+        let data: usize = match notification {
+            Notification::All => NOTIFICATION_ALL,
+            Notification::One(NotifyOneStrategy::Fifo) => NOTIFICATION_ONE,
+            Notification::One(NotifyOneStrategy::Lifo) => NOTIFICATION_LAST,
+        };
+        self.0.store(data, Release);
     }
 
     fn load(&self, ordering: Ordering) -> Option<Notification> {
-        match self.0.load(ordering) {
+        let data = self.0.load(ordering);
+        match data {
             NOTIFICATION_NONE => None,
-            NOTIFICATION_ONE => Some(Notification::One),
+            NOTIFICATION_ONE => Some(Notification::One(NotifyOneStrategy::Fifo)),
+            NOTIFICATION_LAST => Some(Notification::One(NotifyOneStrategy::Lifo)),
             NOTIFICATION_ALL => Some(Notification::All),
             _ => unreachable!(),
         }
@@ -298,9 +310,16 @@ impl AtomicNotification {
 
 #[derive(Debug, PartialEq, Eq)]
 #[repr(usize)]
+enum NotifyOneStrategy {
+    Fifo,
+    Lifo,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+#[repr(usize)]
 enum Notification {
-    One = NOTIFICATION_ONE,
-    All = NOTIFICATION_ALL,
+    One(NotifyOneStrategy),
+    All,
 }
 
 
@@ -443,8 +462,15 @@ impl Notify {
     
     
     
-    #[cfg(all(feature = "parking_lot", not(all(loom, test))))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "parking_lot")))]
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(all(loom, test)))]
     pub const fn const_new() -> Notify {
         Notify {
             state: AtomicUsize::new(0),
@@ -551,6 +577,23 @@ impl Notify {
     
     #[cfg_attr(docsrs, doc(alias = "notify"))]
     pub fn notify_one(&self) {
+        self.notify_with_strategy(NotifyOneStrategy::Fifo);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn notify_last(&self) {
+        self.notify_with_strategy(NotifyOneStrategy::Lifo);
+    }
+
+    fn notify_with_strategy(&self, strategy: NotifyOneStrategy) {
         
         let mut curr = self.state.load(SeqCst);
 
@@ -578,7 +621,7 @@ impl Notify {
         
         curr = self.state.load(SeqCst);
 
-        if let Some(waker) = notify_locked(&mut waiters, &self.state, curr) {
+        if let Some(waker) = notify_locked(&mut waiters, &self.state, curr, strategy) {
             drop(waiters);
             waker.wake();
         }
@@ -701,51 +744,58 @@ impl Default for Notify {
 impl UnwindSafe for Notify {}
 impl RefUnwindSafe for Notify {}
 
-fn notify_locked(waiters: &mut WaitList, state: &AtomicUsize, curr: usize) -> Option<Waker> {
-    loop {
-        match get_state(curr) {
-            EMPTY | NOTIFIED => {
-                let res = state.compare_exchange(curr, set_state(curr, NOTIFIED), SeqCst, SeqCst);
+fn notify_locked(
+    waiters: &mut WaitList,
+    state: &AtomicUsize,
+    curr: usize,
+    strategy: NotifyOneStrategy,
+) -> Option<Waker> {
+    match get_state(curr) {
+        EMPTY | NOTIFIED => {
+            let res = state.compare_exchange(curr, set_state(curr, NOTIFIED), SeqCst, SeqCst);
 
-                match res {
-                    Ok(_) => return None,
-                    Err(actual) => {
-                        let actual_state = get_state(actual);
-                        assert!(actual_state == EMPTY || actual_state == NOTIFIED);
-                        state.store(set_state(actual, NOTIFIED), SeqCst);
-                        return None;
-                    }
+            match res {
+                Ok(_) => None,
+                Err(actual) => {
+                    let actual_state = get_state(actual);
+                    assert!(actual_state == EMPTY || actual_state == NOTIFIED);
+                    state.store(set_state(actual, NOTIFIED), SeqCst);
+                    None
                 }
             }
-            WAITING => {
-                
-                
-                
-                
-                
-                let waiter = waiters.pop_back().unwrap();
-
-                
-                let waiter = unsafe { waiter.as_ref() };
-
-                
-                let waker = unsafe { waiter.waker.with_mut(|waker| (*waker).take()) };
-
-                
-                waiter.notification.store_release(Notification::One);
-
-                if waiters.is_empty() {
-                    
-                    
-                    
-                    
-                    state.store(set_state(curr, EMPTY), SeqCst);
-                }
-
-                return waker;
-            }
-            _ => unreachable!(),
         }
+        WAITING => {
+            
+            
+            
+            
+            
+            let waiter = match strategy {
+                NotifyOneStrategy::Fifo => waiters.pop_back().unwrap(),
+                NotifyOneStrategy::Lifo => waiters.pop_front().unwrap(),
+            };
+
+            
+            let waiter = unsafe { waiter.as_ref() };
+
+            
+            let waker = unsafe { waiter.waker.with_mut(|waker| (*waker).take()) };
+
+            
+            waiter
+                .notification
+                .store_release(Notification::One(strategy));
+
+            if waiters.is_empty() {
+                
+                
+                
+                
+                state.store(set_state(curr, EMPTY), SeqCst);
+            }
+            waker
+        }
+        _ => unreachable!(),
     }
 }
 
@@ -881,13 +931,11 @@ impl Notified<'_> {
     }
 
     fn poll_notified(self: Pin<&mut Self>, waker: Option<&Waker>) -> Poll<()> {
-        use State::*;
-
         let (notify, state, notify_waiters_calls, waiter) = self.project();
 
         'outer_loop: loop {
             match *state {
-                Init => {
+                State::Init => {
                     let curr = notify.state.load(SeqCst);
 
                     
@@ -900,7 +948,7 @@ impl Notified<'_> {
 
                     if res.is_ok() {
                         
-                        *state = Done;
+                        *state = State::Done;
                         continue 'outer_loop;
                     }
 
@@ -918,7 +966,7 @@ impl Notified<'_> {
                     
                     
                     if get_num_notify_waiters_calls(curr) != *notify_waiters_calls {
-                        *state = Done;
+                        *state = State::Done;
                         continue 'outer_loop;
                     }
 
@@ -954,7 +1002,7 @@ impl Notified<'_> {
                                 match res {
                                     Ok(_) => {
                                         
-                                        *state = Done;
+                                        *state = State::Done;
                                         continue 'outer_loop;
                                     }
                                     Err(actual) => {
@@ -982,14 +1030,14 @@ impl Notified<'_> {
                     
                     waiters.push_front(NonNull::from(waiter));
 
-                    *state = Waiting;
+                    *state = State::Waiting;
 
                     drop(waiters);
                     drop(old_waker);
 
                     return Poll::Pending;
                 }
-                Waiting => {
+                State::Waiting => {
                     #[cfg(tokio_taskdump)]
                     if let Some(waker) = waker {
                         let mut ctx = Context::from_waker(waker);
@@ -1002,7 +1050,7 @@ impl Notified<'_> {
                         drop(unsafe { waiter.waker.with_mut(|waker| (*waker).take()) });
 
                         waiter.notification.clear();
-                        *state = Done;
+                        *state = State::Done;
                         return Poll::Ready(());
                     }
 
@@ -1027,7 +1075,7 @@ impl Notified<'_> {
                         drop(waiters);
                         drop(old_waker);
 
-                        *state = Done;
+                        *state = State::Done;
                         return Poll::Ready(());
                     }
 
@@ -1049,7 +1097,7 @@ impl Notified<'_> {
                         
                         unsafe { waiters.remove(NonNull::from(waiter)) };
 
-                        *state = Done;
+                        *state = State::Done;
                     } else {
                         
                         unsafe {
@@ -1083,7 +1131,7 @@ impl Notified<'_> {
                     
                     drop(old_waker);
                 }
-                Done => {
+                State::Done => {
                     #[cfg(tokio_taskdump)]
                     if let Some(waker) = waker {
                         let mut ctx = Context::from_waker(waker);
@@ -1106,15 +1154,13 @@ impl Future for Notified<'_> {
 
 impl Drop for Notified<'_> {
     fn drop(&mut self) {
-        use State::*;
-
         
         let (notify, state, _, waiter) = unsafe { Pin::new_unchecked(self).project() };
 
         
         
         
-        if matches!(*state, Waiting) {
+        if matches!(*state, State::Waiting) {
             let mut waiters = notify.waiters.lock();
             let mut notify_state = notify.state.load(SeqCst);
 
@@ -1137,8 +1183,10 @@ impl Drop for Notified<'_> {
             
             
             
-            if notification == Some(Notification::One) {
-                if let Some(waker) = notify_locked(&mut waiters, &notify.state, notify_state) {
+            if let Some(Notification::One(strategy)) = notification {
+                if let Some(waker) =
+                    notify_locked(&mut waiters, &notify.state, notify_state, strategy)
+                {
                     drop(waiters);
                     waker.wake();
                 }

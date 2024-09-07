@@ -1,5 +1,6 @@
 #![warn(rust_2018_idioms)]
-#![cfg(all(feature = "full", not(tokio_wasi)))] 
+#![cfg(all(feature = "full", not(target_os = "wasi")))] 
+#![cfg(panic = "unwind")]
 
 use futures::future;
 use std::error::Error;
@@ -75,7 +76,7 @@ fn timeout_panic_caller() -> Result<(), Box<dyn Error>> {
         
         let rt = Builder::new_current_thread().build().unwrap();
         rt.block_on(async {
-            let _ = timeout(Duration::from_millis(5), future::pending::<()>());
+            let _timeout = timeout(Duration::from_millis(5), future::pending::<()>());
         });
     });
 

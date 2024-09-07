@@ -179,7 +179,7 @@ mod harness;
 use self::harness::Harness;
 
 mod id;
-#[cfg_attr(not(tokio_unstable), allow(unreachable_pub))]
+#[cfg_attr(not(tokio_unstable), allow(unreachable_pub, unused_imports))]
 pub use id::{id, try_id, Id};
 
 #[cfg(feature = "rt")]
@@ -208,6 +208,7 @@ cfg_taskdump! {
 
 use crate::future::Future;
 use crate::util::linked_list;
+use crate::util::sharded_list;
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
@@ -279,7 +280,7 @@ pub(crate) trait Schedule: Sync + Sized + 'static {
 
 cfg_rt! {
     /// This is the constructor for a new task. Three references to the task are
-    /// created. The first task reference is usually put into an OwnedTasks
+    /// created. The first task reference is usually put into an `OwnedTasks`
     /// immediately. The Notified is sent to the scheduler as an ordinary
     /// notification.
     fn new_task<T, S>(
@@ -361,6 +362,32 @@ impl<S: 'static> Task<S> {
     fn header_ptr(&self) -> NonNull<Header> {
         self.raw.header_ptr()
     }
+
+    cfg_taskdump! {
+        /// Notify the task for task dumping.
+        ///
+        /// Returns `None` if the task has already been notified.
+        pub(super) fn notify_for_tracing(&self) -> Option<Notified<S>> {
+            if self.as_raw().state().transition_to_notified_for_tracing() {
+                // SAFETY: `transition_to_notified_for_tracing` increments the
+                // refcount.
+                Some(unsafe { Notified(Task::new(self.raw)) })
+            } else {
+                None
+            }
+        }
+
+        /// Returns a [task ID] that uniquely identifies this task relative to other
+        /// currently spawned tasks.
+        ///
+        /// [task ID]: crate::task::Id
+        #[cfg(tokio_unstable)]
+        #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
+        pub(crate) fn id(&self) -> crate::task::Id {
+            // Safety: The header pointer is valid.
+            unsafe { Header::get_id(self.raw.header_ptr()) }
+        }
+    }
 }
 
 impl<S: 'static> Notified<S> {
@@ -404,7 +431,7 @@ impl<S: Schedule> LocalNotified<S> {
 impl<S: Schedule> UnownedTask<S> {
     
     #[cfg(test)]
-    #[cfg_attr(tokio_wasm, allow(dead_code))]
+    #[cfg_attr(target_family = "wasm", allow(dead_code))]
     pub(super) fn into_notified(self) -> Notified<S> {
         Notified(self.into_task())
     }
@@ -440,7 +467,7 @@ impl<S: Schedule> UnownedTask<S> {
     }
 
     pub(crate) fn shutdown(self) {
-        self.into_task().shutdown()
+        self.into_task().shutdown();
     }
 }
 
@@ -493,5 +520,18 @@ unsafe impl<S> linked_list::Link for Task<S> {
 
     unsafe fn pointers(target: NonNull<Header>) -> NonNull<linked_list::Pointers<Header>> {
         self::core::Trailer::addr_of_owned(Header::get_trailer(target))
+    }
+}
+
+
+
+
+
+
+unsafe impl<S> sharded_list::ShardedListItem for Task<S> {
+    unsafe fn get_shard_id(target: NonNull<Self::Target>) -> usize {
+        
+        let task_id = unsafe { Header::get_id(target) };
+        task_id.0 as usize
     }
 }

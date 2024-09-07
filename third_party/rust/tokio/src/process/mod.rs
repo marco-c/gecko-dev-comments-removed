@@ -260,8 +260,6 @@ use std::os::windows::process::CommandExt;
 
 cfg_windows! {
     use crate::os::windows::io::{AsRawHandle, RawHandle};
-    #[cfg(not(tokio_no_as_fd))]
-    use crate::os::windows::io::{AsHandle, BorrowedHandle};
 }
 
 
@@ -325,6 +323,12 @@ impl Command {
     
     pub fn as_std(&self) -> &StdCommand {
         &self.std
+    }
+
+    
+    
+    pub fn as_std_mut(&mut self) -> &mut StdCommand {
+        &mut self.std
     }
 
     
@@ -400,20 +404,15 @@ impl Command {
         self
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(windows)]
-    #[cfg(tokio_unstable)]
-    #[cfg_attr(docsrs, doc(cfg(all(windows, tokio_unstable))))]
-    pub fn raw_arg<S: AsRef<OsStr>>(&mut self, text_to_append_as_is: S) -> &mut Command {
-        self.std.raw_arg(text_to_append_as_is);
-        self
+    cfg_windows! {
+        /// Append literal text to the command line without any quoting or escaping.
+        ///
+        /// This is useful for passing arguments to `cmd.exe /c`, which doesn't follow
+        /// `CommandLineToArgvW` escaping rules.
+        pub fn raw_arg<S: AsRef<OsStr>>(&mut self, text_to_append_as_is: S) -> &mut Command {
+            self.std.raw_arg(text_to_append_as_is);
+            self
+        }
     }
 
     
@@ -569,8 +568,6 @@ impl Command {
     
     
     
-    
-    
     pub fn stdin<T: Into<Stdio>>(&mut self, cfg: T) -> &mut Command {
         self.std.stdin(cfg);
         self
@@ -679,6 +676,8 @@ impl Command {
     #[cfg(unix)]
     #[cfg_attr(docsrs, doc(cfg(unix)))]
     pub fn uid(&mut self, id: u32) -> &mut Command {
+        #[cfg(target_os = "nto")]
+        let id = id as i32;
         self.std.uid(id);
         self
     }
@@ -688,6 +687,8 @@ impl Command {
     #[cfg(unix)]
     #[cfg_attr(docsrs, doc(cfg(unix)))]
     pub fn gid(&mut self, id: u32) -> &mut Command {
+        #[cfg(target_os = "nto")]
+        let id = id as i32;
         self.std.gid(id);
         self
     }
@@ -1203,6 +1204,10 @@ impl Child {
     
     
     
+    
+    
+    
+    
     pub async fn wait(&mut self) -> io::Result<ExitStatus> {
         
         
@@ -1448,92 +1453,100 @@ impl TryInto<Stdio> for ChildStderr {
 }
 
 #[cfg(unix)]
+#[cfg_attr(docsrs, doc(cfg(unix)))]
 mod sys {
-    #[cfg(not(tokio_no_as_fd))]
-    use std::os::unix::io::{AsFd, BorrowedFd};
-    use std::os::unix::io::{AsRawFd, RawFd};
+    use std::{
+        io,
+        os::unix::io::{AsFd, AsRawFd, BorrowedFd, OwnedFd, RawFd},
+    };
 
     use super::{ChildStderr, ChildStdin, ChildStdout};
 
-    impl AsRawFd for ChildStdin {
-        fn as_raw_fd(&self) -> RawFd {
-            self.inner.as_raw_fd()
-        }
+    macro_rules! impl_traits {
+        ($type:ty) => {
+            impl $type {
+                /// Convert into [`OwnedFd`].
+                pub fn into_owned_fd(self) -> io::Result<OwnedFd> {
+                    self.inner.into_owned_fd()
+                }
+            }
+
+            impl AsRawFd for $type {
+                fn as_raw_fd(&self) -> RawFd {
+                    self.inner.as_raw_fd()
+                }
+            }
+
+            impl AsFd for $type {
+                fn as_fd(&self) -> BorrowedFd<'_> {
+                    unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
+                }
+            }
+        };
     }
 
-    #[cfg(not(tokio_no_as_fd))]
-    impl AsFd for ChildStdin {
-        fn as_fd(&self) -> BorrowedFd<'_> {
-            unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
-        }
-    }
-
-    impl AsRawFd for ChildStdout {
-        fn as_raw_fd(&self) -> RawFd {
-            self.inner.as_raw_fd()
-        }
-    }
-
-    #[cfg(not(tokio_no_as_fd))]
-    impl AsFd for ChildStdout {
-        fn as_fd(&self) -> BorrowedFd<'_> {
-            unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
-        }
-    }
-
-    impl AsRawFd for ChildStderr {
-        fn as_raw_fd(&self) -> RawFd {
-            self.inner.as_raw_fd()
-        }
-    }
-
-    #[cfg(not(tokio_no_as_fd))]
-    impl AsFd for ChildStderr {
-        fn as_fd(&self) -> BorrowedFd<'_> {
-            unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
-        }
-    }
+    impl_traits!(ChildStdin);
+    impl_traits!(ChildStdout);
+    impl_traits!(ChildStderr);
 }
 
-cfg_windows! {
-    impl AsRawHandle for ChildStdin {
-        fn as_raw_handle(&self) -> RawHandle {
-            self.inner.as_raw_handle()
-        }
+#[cfg(any(windows, docsrs))]
+#[cfg_attr(docsrs, doc(cfg(windows)))]
+mod windows {
+    use super::*;
+    use crate::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, OwnedHandle, RawHandle};
+
+    #[cfg(not(docsrs))]
+    macro_rules! impl_traits {
+        ($type:ty) => {
+            impl $type {
+                /// Convert into [`OwnedHandle`].
+                pub fn into_owned_handle(self) -> io::Result<OwnedHandle> {
+                    self.inner.into_owned_handle()
+                }
+            }
+
+            impl AsRawHandle for $type {
+                fn as_raw_handle(&self) -> RawHandle {
+                    self.inner.as_raw_handle()
+                }
+            }
+
+            impl AsHandle for $type {
+                fn as_handle(&self) -> BorrowedHandle<'_> {
+                    unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
+                }
+            }
+        };
     }
 
-    #[cfg(not(tokio_no_as_fd))]
-    impl AsHandle for ChildStdin {
-        fn as_handle(&self) -> BorrowedHandle<'_> {
-            unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
-        }
+    #[cfg(docsrs)]
+    macro_rules! impl_traits {
+        ($type:ty) => {
+            impl $type {
+                /// Convert into [`OwnedHandle`].
+                pub fn into_owned_handle(self) -> io::Result<OwnedHandle> {
+                    todo!("For doc generation only")
+                }
+            }
+
+            impl AsRawHandle for $type {
+                fn as_raw_handle(&self) -> RawHandle {
+                    todo!("For doc generation only")
+                }
+            }
+
+            impl AsHandle for $type {
+                fn as_handle(&self) -> BorrowedHandle<'_> {
+                    todo!("For doc generation only")
+                }
+            }
+        };
     }
 
-    impl AsRawHandle for ChildStdout {
-        fn as_raw_handle(&self) -> RawHandle {
-            self.inner.as_raw_handle()
-        }
-    }
-
-    #[cfg(not(tokio_no_as_fd))]
-    impl AsHandle for ChildStdout {
-        fn as_handle(&self) -> BorrowedHandle<'_> {
-            unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
-        }
-    }
-
-    impl AsRawHandle for ChildStderr {
-        fn as_raw_handle(&self) -> RawHandle {
-            self.inner.as_raw_handle()
-        }
-    }
-
-    #[cfg(not(tokio_no_as_fd))]
-    impl AsHandle for ChildStderr {
-        fn as_handle(&self) -> BorrowedHandle<'_> {
-            unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
-        }
-    }
+    impl_traits!(ChildStdin);
+    impl_traits!(ChildStdout);
+    impl_traits!(ChildStderr);
 }
 
 #[cfg(all(test, not(loom)))]

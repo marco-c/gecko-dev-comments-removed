@@ -1,6 +1,5 @@
 
 
-use self::Kind::*;
 use std::error;
 use std::fmt;
 
@@ -57,7 +56,7 @@ pub(crate) enum InsertError {
 impl Error {
     
     pub fn shutdown() -> Error {
-        Error(Shutdown)
+        Error(Kind::Shutdown)
     }
 
     
@@ -67,7 +66,7 @@ impl Error {
 
     
     pub fn at_capacity() -> Error {
-        Error(AtCapacity)
+        Error(Kind::AtCapacity)
     }
 
     
@@ -77,7 +76,7 @@ impl Error {
 
     
     pub fn invalid() -> Error {
-        Error(Invalid)
+        Error(Kind::Invalid)
     }
 
     
@@ -90,11 +89,12 @@ impl error::Error for Error {}
 
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use self::Kind::*;
         let descr = match self.0 {
-            Shutdown => "the timer is shutdown, must be called from the context of Tokio runtime",
-            AtCapacity => "timer is at capacity and cannot create a new entry",
-            Invalid => "timer duration exceeds maximum duration",
+            Kind::Shutdown => {
+                "the timer is shutdown, must be called from the context of Tokio runtime"
+            }
+            Kind::AtCapacity => "timer is at capacity and cannot create a new entry",
+            Kind::Invalid => "timer duration exceeds maximum duration",
         };
         write!(fmt, "{}", descr)
     }

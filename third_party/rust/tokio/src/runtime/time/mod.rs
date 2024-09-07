@@ -12,6 +12,7 @@ use entry::{EntryList, TimerHandle, TimerShared, MAX_SAFE_MILLIS_DURATION};
 
 mod handle;
 pub(crate) use self::handle::Handle;
+use self::wheel::Wheel;
 
 mod source;
 pub(crate) use source::TimeSource;
@@ -23,9 +24,29 @@ use crate::loom::sync::Mutex;
 use crate::runtime::driver::{self, IoHandle, IoStack};
 use crate::time::error::Error;
 use crate::time::{Clock, Duration};
+use crate::util::WakeList;
 
+use crate::loom::sync::atomic::AtomicU64;
 use std::fmt;
-use std::{num::NonZeroU64, ptr::NonNull, task::Waker};
+use std::{num::NonZeroU64, ptr::NonNull};
+
+struct AtomicOptionNonZeroU64(AtomicU64);
+
+
+impl AtomicOptionNonZeroU64 {
+    fn new(val: Option<NonZeroU64>) -> Self {
+        Self(AtomicU64::new(val.map_or(0, NonZeroU64::get)))
+    }
+
+    fn store(&self, val: Option<NonZeroU64>) {
+        self.0
+            .store(val.map_or(0, NonZeroU64::get), Ordering::Relaxed);
+    }
+
+    fn load(&self) -> Option<NonZeroU64> {
+        NonZeroU64::new(self.0.load(Ordering::Relaxed))
+    }
+}
 
 
 
@@ -91,7 +112,10 @@ pub(crate) struct Driver {
 
 struct Inner {
     
-    pub(super) state: Mutex<InnerState>,
+    next_wake: AtomicOptionNonZeroU64,
+
+    
+    wheels: Box<[Mutex<wheel::Wheel>]>,
 
     
     pub(super) is_shutdown: AtomicBool,
@@ -107,37 +131,26 @@ struct Inner {
 }
 
 
-struct InnerState {
-    
-    elapsed: u64,
-
-    
-    next_wake: Option<NonZeroU64>,
-
-    
-    wheel: wheel::Wheel,
-}
-
-
 
 impl Driver {
     
     
     
     
-    pub(crate) fn new(park: IoStack, clock: &Clock) -> (Driver, Handle) {
+    pub(crate) fn new(park: IoStack, clock: &Clock, shards: u32) -> (Driver, Handle) {
+        assert!(shards > 0);
+
         let time_source = TimeSource::new(clock);
+        let wheels: Vec<_> = (0..shards)
+            .map(|_| Mutex::new(wheel::Wheel::new()))
+            .collect();
 
         let handle = Handle {
             time_source,
             inner: Inner {
-                state: Mutex::new(InnerState {
-                    elapsed: 0,
-                    next_wake: None,
-                    wheel: wheel::Wheel::new(),
-                }),
+                next_wake: AtomicOptionNonZeroU64::new(None),
+                wheels: wheels.into_boxed_slice(),
                 is_shutdown: AtomicBool::new(false),
-
                 #[cfg(feature = "test-util")]
                 did_wake: AtomicBool::new(false),
             },
@@ -149,11 +162,11 @@ impl Driver {
     }
 
     pub(crate) fn park(&mut self, handle: &driver::Handle) {
-        self.park_internal(handle, None)
+        self.park_internal(handle, None);
     }
 
     pub(crate) fn park_timeout(&mut self, handle: &driver::Handle, duration: Duration) {
-        self.park_internal(handle, Some(duration))
+        self.park_internal(handle, Some(duration));
     }
 
     pub(crate) fn shutdown(&mut self, rt_handle: &driver::Handle) {
@@ -167,24 +180,35 @@ impl Driver {
 
         
 
-        handle.process_at_time(u64::MAX);
+        handle.process_at_time(0, u64::MAX);
 
         self.park.shutdown(rt_handle);
     }
 
     fn park_internal(&mut self, rt_handle: &driver::Handle, limit: Option<Duration>) {
         let handle = rt_handle.time();
-        let mut lock = handle.inner.state.lock();
-
         assert!(!handle.is_shutdown());
 
-        let next_wake = lock.wheel.next_expiration_time();
-        lock.next_wake =
-            next_wake.map(|t| NonZeroU64::new(t).unwrap_or_else(|| NonZeroU64::new(1).unwrap()));
+        
+        let locks = (0..rt_handle.time().inner.get_shard_size())
+            .map(|id| rt_handle.time().inner.lock_sharded_wheel(id))
+            .collect::<Vec<_>>();
 
-        drop(lock);
+        let expiration_time = locks
+            .iter()
+            .filter_map(|lock| lock.next_expiration_time())
+            .min();
 
-        match next_wake {
+        rt_handle
+            .time()
+            .inner
+            .next_wake
+            .store(next_wake_time(expiration_time));
+
+        
+        drop(locks);
+
+        match expiration_time {
             Some(when) => {
                 let now = handle.time_source.now(rt_handle.clock());
                 
@@ -248,66 +272,80 @@ impl Driver {
     }
 }
 
+
+
+
+
+
+
+
+fn next_wake_time(expiration_time: Option<u64>) -> Option<NonZeroU64> {
+    expiration_time.and_then(|v| {
+        if v == 0 {
+            NonZeroU64::new(1)
+        } else {
+            NonZeroU64::new(v)
+        }
+    })
+}
+
 impl Handle {
     
     pub(self) fn process(&self, clock: &Clock) {
         let now = self.time_source().now(clock);
-
-        self.process_at_time(now)
+        
+        let shards = self.inner.get_shard_size();
+        let start = crate::runtime::context::thread_rng_n(shards);
+        self.process_at_time(start, now);
     }
 
-    pub(self) fn process_at_time(&self, mut now: u64) {
-        let mut waker_list: [Option<Waker>; 32] = Default::default();
-        let mut waker_idx = 0;
+    pub(self) fn process_at_time(&self, start: u32, now: u64) {
+        let shards = self.inner.get_shard_size();
 
-        let mut lock = self.inner.lock();
+        let expiration_time = (start..shards + start)
+            .filter_map(|i| self.process_at_sharded_time(i, now))
+            .min();
 
-        if now < lock.elapsed {
+        self.inner.next_wake.store(next_wake_time(expiration_time));
+    }
+
+    
+    pub(self) fn process_at_sharded_time(&self, id: u32, mut now: u64) -> Option<u64> {
+        let mut waker_list = WakeList::new();
+        let mut lock = self.inner.lock_sharded_wheel(id);
+
+        if now < lock.elapsed() {
             
             
             
             
             
             
-            now = lock.elapsed;
+            now = lock.elapsed();
         }
 
-        while let Some(entry) = lock.wheel.poll(now) {
+        while let Some(entry) = lock.poll(now) {
             debug_assert!(unsafe { entry.is_pending() });
 
             
             if let Some(waker) = unsafe { entry.fire(Ok(())) } {
-                waker_list[waker_idx] = Some(waker);
+                waker_list.push(waker);
 
-                waker_idx += 1;
-
-                if waker_idx == waker_list.len() {
+                if !waker_list.can_push() {
                     
                     drop(lock);
 
-                    for waker in waker_list.iter_mut() {
-                        waker.take().unwrap().wake();
-                    }
+                    waker_list.wake_all();
 
-                    waker_idx = 0;
-
-                    lock = self.inner.lock();
+                    lock = self.inner.lock_sharded_wheel(id);
                 }
             }
         }
-
-        
-        lock.elapsed = lock.wheel.elapsed();
-        lock.next_wake = lock
-            .wheel
-            .poll_at()
-            .map(|t| NonZeroU64::new(t).unwrap_or_else(|| NonZeroU64::new(1).unwrap()));
-
+        let next_wake_up = lock.poll_at();
         drop(lock);
 
-        for waker in waker_list[0..waker_idx].iter_mut() {
-            waker.take().unwrap().wake();
-        }
+        waker_list.wake_all();
+        next_wake_up
     }
 
     
@@ -322,10 +360,10 @@ impl Handle {
     
     pub(self) unsafe fn clear_entry(&self, entry: NonNull<TimerShared>) {
         unsafe {
-            let mut lock = self.inner.lock();
+            let mut lock = self.inner.lock_sharded_wheel(entry.as_ref().shard_id());
 
             if entry.as_ref().might_be_registered() {
-                lock.wheel.remove(entry);
+                lock.remove(entry);
             }
 
             entry.as_ref().handle().fire(Ok(()));
@@ -345,12 +383,12 @@ impl Handle {
         entry: NonNull<TimerShared>,
     ) {
         let waker = unsafe {
-            let mut lock = self.inner.lock();
+            let mut lock = self.inner.lock_sharded_wheel(entry.as_ref().shard_id());
 
             
             
             if unsafe { entry.as_ref().might_be_registered() } {
-                lock.wheel.remove(entry);
+                lock.remove(entry);
             }
 
             
@@ -364,10 +402,12 @@ impl Handle {
                 
                 
                 
-                match unsafe { lock.wheel.insert(entry) } {
+                match unsafe { lock.insert(entry) } {
                     Ok(when) => {
-                        if lock
+                        if self
+                            .inner
                             .next_wake
+                            .load()
                             .map(|next_wake| when < next_wake.get())
                             .unwrap_or(true)
                         {
@@ -404,13 +444,23 @@ impl Handle {
 
 impl Inner {
     
-    pub(super) fn lock(&self) -> crate::loom::sync::MutexGuard<'_, InnerState> {
-        self.state.lock()
+    pub(super) fn lock_sharded_wheel(
+        &self,
+        shard_id: u32,
+    ) -> crate::loom::sync::MutexGuard<'_, Wheel> {
+        let index = shard_id % (self.wheels.len() as u32);
+        
+        unsafe { self.wheels.get_unchecked(index as usize).lock() }
     }
 
     
     pub(super) fn is_shutdown(&self) -> bool {
         self.is_shutdown.load(Ordering::SeqCst)
+    }
+
+    
+    fn get_shard_size(&self) -> u32 {
+        self.wheels.len() as u32
     }
 }
 

@@ -207,7 +207,7 @@ impl Selector {
 }
 
 
-const TIMEOUT_TOKEN: wasi::Userdata = wasi::Userdata::max_value();
+const TIMEOUT_TOKEN: wasi::Userdata = wasi::Userdata::MAX;
 
 
 fn timeout_subscription(timeout: Duration) -> wasi::Subscription {
@@ -334,7 +334,7 @@ pub(crate) mod event {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.debug_struct("EventFdReadwrite")
                     .field("nbytes", &self.0.nbytes)
-                    .field("flags", &self.0.flags)
+                    .field("flags", &EventrwflagsDetails(self.0.flags))
                     .finish()
             }
         }

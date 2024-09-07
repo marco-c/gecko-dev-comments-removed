@@ -1,3 +1,4 @@
+#![allow(unknown_lints, unexpected_cfgs)]
 #![warn(rust_2018_idioms)]
 #![cfg(feature = "full")]
 
@@ -11,13 +12,13 @@ use tokio::sync::{mpsc, oneshot};
 use tokio::task::{self, LocalSet};
 use tokio::time;
 
-#[cfg(not(tokio_wasi))]
+#[cfg(not(target_os = "wasi"))]
 use std::cell::Cell;
 use std::sync::atomic::AtomicBool;
-#[cfg(not(tokio_wasi))]
+#[cfg(not(target_os = "wasi"))]
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
-#[cfg(not(tokio_wasi))]
+#[cfg(not(target_os = "wasi"))]
 use std::sync::atomic::Ordering::SeqCst;
 use std::time::Duration;
 
@@ -30,11 +31,11 @@ async fn local_current_thread_scheduler() {
         .await;
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn local_threadpool() {
     thread_local! {
-        static ON_RT_THREAD: Cell<bool> = Cell::new(false);
+        static ON_RT_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_RT_THREAD.with(|cell| cell.set(true));
@@ -51,11 +52,11 @@ async fn local_threadpool() {
         .await;
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn localset_future_threadpool() {
     thread_local! {
-        static ON_LOCAL_THREAD: Cell<bool> = Cell::new(false);
+        static ON_LOCAL_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_LOCAL_THREAD.with(|cell| cell.set(true));
@@ -67,7 +68,7 @@ async fn localset_future_threadpool() {
     local.await;
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn localset_future_timers() {
     static RAN1: AtomicBool = AtomicBool::new(false);
@@ -112,13 +113,13 @@ async fn localset_future_drives_all_local_futs() {
     assert!(RAN3.load(Ordering::SeqCst));
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn local_threadpool_timer() {
     
     
     thread_local! {
-        static ON_RT_THREAD: Cell<bool> = Cell::new(false);
+        static ON_RT_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_RT_THREAD.with(|cell| cell.set(true));
@@ -151,14 +152,14 @@ fn enter_guard_spawn() {
     });
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[test]
 
 
 #[should_panic]
 fn local_threadpool_blocking_in_place() {
     thread_local! {
-        static ON_RT_THREAD: Cell<bool> = Cell::new(false);
+        static ON_RT_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_RT_THREAD.with(|cell| cell.set(true));
@@ -178,11 +179,11 @@ fn local_threadpool_blocking_in_place() {
     });
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn local_threadpool_blocking_run() {
     thread_local! {
-        static ON_RT_THREAD: Cell<bool> = Cell::new(false);
+        static ON_RT_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_RT_THREAD.with(|cell| cell.set(true));
@@ -207,12 +208,12 @@ async fn local_threadpool_blocking_run() {
         .await;
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn all_spawns_are_local() {
     use futures::future;
     thread_local! {
-        static ON_RT_THREAD: Cell<bool> = Cell::new(false);
+        static ON_RT_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_RT_THREAD.with(|cell| cell.set(true));
@@ -234,11 +235,11 @@ async fn all_spawns_are_local() {
         .await;
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn nested_spawn_is_local() {
     thread_local! {
-        static ON_RT_THREAD: Cell<bool> = Cell::new(false);
+        static ON_RT_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_RT_THREAD.with(|cell| cell.set(true));
@@ -270,11 +271,11 @@ async fn nested_spawn_is_local() {
         .await;
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[test]
 fn join_local_future_elsewhere() {
     thread_local! {
-        static ON_RT_THREAD: Cell<bool> = Cell::new(false);
+        static ON_RT_THREAD: Cell<bool> = const { Cell::new(false) };
     }
 
     ON_RT_THREAD.with(|cell| cell.set(true));
@@ -307,7 +308,7 @@ fn join_local_future_elsewhere() {
 }
 
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::test(flavor = "multi_thread")]
 async fn localset_in_thread_local() {
     thread_local! {
@@ -398,7 +399,10 @@ fn with_timeout(timeout: Duration, f: impl FnOnce() + Send + 'static) {
     thread.join().expect("test thread should not panic!")
 }
 
-#[cfg_attr(tokio_wasi, ignore = "`unwrap()` in `with_timeout()` panics on Wasi")]
+#[cfg_attr(
+    target_os = "wasi",
+    ignore = "`unwrap()` in `with_timeout()` panics on Wasi"
+)]
 #[test]
 fn drop_cancels_remote_tasks() {
     
@@ -422,7 +426,7 @@ fn drop_cancels_remote_tasks() {
 }
 
 #[cfg_attr(
-    tokio_wasi,
+    target_os = "wasi",
     ignore = "FIXME: `task::spawn_local().await.unwrap()` panics on Wasi"
 )]
 #[test]
@@ -446,7 +450,7 @@ fn local_tasks_wake_join_all() {
     });
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[test]
 fn local_tasks_are_polled_after_tick() {
     
@@ -463,7 +467,7 @@ fn local_tasks_are_polled_after_tick() {
     local_tasks_are_polled_after_tick_inner();
 }
 
-#[cfg(not(tokio_wasi))] 
+#[cfg(not(target_os = "wasi"))] 
 #[tokio::main(flavor = "current_thread")]
 async fn local_tasks_are_polled_after_tick_inner() {
     
@@ -568,6 +572,27 @@ async fn spawn_wakes_localset() {
         _ = local.run_until(pending::<()>()).fuse() => unreachable!(),
         ret = async { local.spawn_local(ready(())).await.unwrap()}.fuse() => ret
     }
+}
+
+
+
+#[tokio::test]
+async fn sleep_with_local_enter_guard() {
+    let local = LocalSet::new();
+    let _guard = local.enter();
+
+    let (tx, rx) = oneshot::channel();
+
+    local
+        .run_until(async move {
+            tokio::task::spawn_local(async move {
+                time::sleep(Duration::ZERO).await;
+
+                tx.send(()).expect("failed to send");
+            });
+            assert_eq!(rx.await, Ok(()));
+        })
+        .await;
 }
 
 #[test]

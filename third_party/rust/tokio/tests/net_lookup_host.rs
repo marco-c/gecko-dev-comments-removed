@@ -1,4 +1,4 @@
-#![cfg(all(feature = "full", not(tokio_wasi)))] 
+#![cfg(all(feature = "full", not(target_os = "wasi")))] 
 
 use tokio::net;
 use tokio_test::assert_ok;

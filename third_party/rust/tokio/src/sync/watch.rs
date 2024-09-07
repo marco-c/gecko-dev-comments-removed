@@ -56,10 +56,65 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::sync::notify::Notify;
 
 use crate::loom::sync::atomic::AtomicUsize;
-use crate::loom::sync::atomic::Ordering::Relaxed;
+use crate::loom::sync::atomic::Ordering::{AcqRel, Relaxed};
 use crate::loom::sync::{Arc, RwLock, RwLockReadGuard};
 use std::fmt;
 use std::mem;
@@ -89,6 +144,22 @@ pub struct Receiver<T> {
 #[derive(Debug)]
 pub struct Sender<T> {
     shared: Arc<Shared<T>>,
+}
+
+impl<T> Clone for Sender<T> {
+    fn clone(&self) -> Self {
+        self.shared.ref_count_tx.fetch_add(1, Relaxed);
+
+        Self {
+            shared: self.shared.clone(),
+        }
+    }
+}
+
+impl<T: Default> Default for Sender<T> {
+    fn default() -> Self {
+        Self::new(T::default())
+    }
 }
 
 
@@ -184,6 +255,9 @@ struct Shared<T> {
     ref_count_rx: AtomicUsize,
 
     
+    ref_count_tx: AtomicUsize,
+
+    
     notify_rx: big_notify::BigNotify,
 
     
@@ -205,6 +279,7 @@ impl<T: fmt::Debug> fmt::Debug for Shared<T> {
 pub mod error {
     
 
+    use std::error::Error;
     use std::fmt;
 
     
@@ -225,7 +300,7 @@ pub mod error {
         }
     }
 
-    impl<T> std::error::Error for SendError<T> {}
+    impl<T> Error for SendError<T> {}
 
     
     #[derive(Debug, Clone)]
@@ -239,11 +314,11 @@ pub mod error {
         }
     }
 
-    impl std::error::Error for RecvError {}
+    impl Error for RecvError {}
 }
 
 mod big_notify {
-    use super::*;
+    use super::Notify;
     use crate::sync::notify::Notified;
 
     
@@ -259,7 +334,7 @@ mod big_notify {
 
     pub(super) struct BigNotify {
         #[cfg(not(all(not(loom), feature = "sync", any(feature = "rt", feature = "macros"))))]
-        next: AtomicUsize,
+        next: std::sync::atomic::AtomicUsize,
         inner: [Notify; 8],
     }
 
@@ -271,7 +346,7 @@ mod big_notify {
                     feature = "sync",
                     any(feature = "rt", feature = "macros")
                 )))]
-                next: AtomicUsize::new(0),
+                next: std::sync::atomic::AtomicUsize::new(0),
                 inner: Default::default(),
             }
         }
@@ -285,7 +360,7 @@ mod big_notify {
         
         #[cfg(not(all(not(loom), feature = "sync", any(feature = "rt", feature = "macros"))))]
         pub(super) fn notified(&self) -> Notified<'_> {
-            let i = self.next.fetch_add(1, Relaxed) % 8;
+            let i = self.next.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % 8;
             self.inner[i].notified()
         }
 
@@ -301,9 +376,12 @@ mod big_notify {
 use self::state::{AtomicState, Version};
 mod state {
     use crate::loom::sync::atomic::AtomicUsize;
-    use crate::loom::sync::atomic::Ordering::SeqCst;
+    use crate::loom::sync::atomic::Ordering;
 
-    const CLOSED: usize = 1;
+    const CLOSED_BIT: usize = 1;
+
+    
+    const STEP_SIZE: usize = 2;
 
     
     #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -318,25 +396,35 @@ mod state {
     pub(super) struct StateSnapshot(usize);
 
     
+    
+    
+    
+    
+    
     #[derive(Debug)]
     pub(super) struct AtomicState(AtomicUsize);
 
     impl Version {
         
-        pub(super) fn initial() -> Self {
-            Version(0)
+        pub(super) fn decrement(&mut self) {
+            
+            
+            
+            self.0 = self.0.wrapping_sub(STEP_SIZE);
         }
+
+        pub(super) const INITIAL: Self = Version(0);
     }
 
     impl StateSnapshot {
         
         pub(super) fn version(self) -> Version {
-            Version(self.0 & !CLOSED)
+            Version(self.0 & !CLOSED_BIT)
         }
 
         
         pub(super) fn is_closed(self) -> bool {
-            (self.0 & CLOSED) == CLOSED
+            (self.0 & CLOSED_BIT) == CLOSED_BIT
         }
     }
 
@@ -344,26 +432,45 @@ mod state {
         
         
         pub(super) fn new() -> Self {
-            AtomicState(AtomicUsize::new(0))
+            AtomicState(AtomicUsize::new(Version::INITIAL.0))
         }
 
+        
+        
+        
+        
+        
+        
+        
         
         pub(super) fn load(&self) -> StateSnapshot {
-            StateSnapshot(self.0.load(SeqCst))
+            StateSnapshot(self.0.load(Ordering::Acquire))
         }
 
         
-        pub(super) fn increment_version(&self) {
+        pub(super) fn increment_version_while_locked(&self) {
             
-            self.0.fetch_add(2, SeqCst);
+            
+            
+            
+            self.0.fetch_add(STEP_SIZE, Ordering::Release);
         }
 
         
         pub(super) fn set_closed(&self) {
-            self.0.fetch_or(CLOSED, SeqCst);
+            self.0.fetch_or(CLOSED_BIT, Ordering::Release);
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -397,6 +504,7 @@ pub fn channel<T>(init: T) -> (Sender<T>, Receiver<T>) {
         value: RwLock::new(init),
         state: AtomicState::new(),
         ref_count_rx: AtomicUsize::new(1),
+        ref_count_tx: AtomicUsize::new(1),
         notify_rx: big_notify::BigNotify::new(),
         notify_tx: Notify::new(),
     });
@@ -407,7 +515,7 @@ pub fn channel<T>(init: T) -> (Sender<T>, Receiver<T>) {
 
     let rx = Receiver {
         shared,
-        version: Version::initial(),
+        version: Version::INITIAL,
     };
 
     (tx, rx)
@@ -462,6 +570,10 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
+    
     pub fn borrow(&self) -> Ref<'_, T> {
         let inner = self.shared.value.read().unwrap();
 
@@ -473,6 +585,10 @@ impl<T> Receiver<T> {
         Ref { inner, has_changed }
     }
 
+    
+    
+    
+    
     
     
     
@@ -561,6 +677,32 @@ impl<T> Receiver<T> {
         Ok(self.version != new_version)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn mark_changed(&mut self) {
+        self.version.decrement();
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn mark_unchanged(&mut self) {
+        let current_version = self.shared.state.load().version();
+        self.version = current_version;
+    }
+
+    
+    
+    
     
     
     
@@ -677,8 +819,23 @@ impl<T> Receiver<T> {
                 let has_changed = self.version != new_version;
                 self.version = new_version;
 
-                if (!closed || has_changed) && f(&inner) {
-                    return Ok(Ref { inner, has_changed });
+                if !closed || has_changed {
+                    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| f(&inner)));
+                    match result {
+                        Ok(true) => {
+                            return Ok(Ref { inner, has_changed });
+                        }
+                        Ok(false) => {
+                            
+                        }
+                        Err(panicked) => {
+                            
+                            drop(inner);
+                            
+                            panic::resume_unwind(panicked);
+                            
+                        }
+                    };
                 }
             }
 
@@ -778,6 +935,27 @@ impl<T> Drop for Receiver<T> {
 }
 
 impl<T> Sender<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(init: T) -> Self {
+        let (tx, _) = channel(init);
+        tx
+    }
+
     
     
     
@@ -930,7 +1108,7 @@ impl<T> Sender<T> {
                 }
             };
 
-            self.shared.state.increment_version();
+            self.shared.state.increment_version_while_locked();
 
             
             
@@ -1010,6 +1188,12 @@ impl<T> Sender<T> {
         self.receiver_count() == 0
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1140,12 +1324,30 @@ impl<T> Sender<T> {
     pub fn receiver_count(&self) -> usize {
         self.shared.ref_count_rx.load(Relaxed)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn same_channel(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.shared, &other.shared)
+    }
 }
 
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
-        self.shared.state.set_closed();
-        self.shared.notify_rx.notify_waiters();
+        if self.shared.ref_count_tx.fetch_sub(1, AcqRel) == 1 {
+            self.shared.state.set_closed();
+            self.shared.notify_rx.notify_waiters();
+        }
     }
 }
 

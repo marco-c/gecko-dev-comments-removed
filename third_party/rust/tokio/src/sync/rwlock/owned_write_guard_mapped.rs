@@ -155,6 +155,31 @@ impl<T: ?Sized, U: ?Sized> OwnedRwLockMappedWriteGuard<T, U> {
             resource_span: this.resource_span,
         })
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn rwlock(this: &Self) -> &Arc<RwLock<T>> {
+        &this.lock
+    }
 }
 
 impl<T: ?Sized, U: ?Sized> ops::Deref for OwnedRwLockMappedWriteGuard<T, U> {

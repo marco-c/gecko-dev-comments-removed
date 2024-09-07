@@ -12,7 +12,7 @@ use std::task::{Context, Poll};
 use crate::runtime::Handle;
 #[cfg(tokio_unstable)]
 use crate::task::Id;
-use crate::task::{AbortHandle, JoinError, JoinHandle, LocalSet};
+use crate::task::{unconstrained, AbortHandle, JoinError, JoinHandle, LocalSet};
 use crate::util::IdleNotifiedSet;
 
 
@@ -309,6 +309,59 @@ impl<T: 'static> JoinSet<T> {
     
     
     
+    pub fn try_join_next(&mut self) -> Option<Result<T, JoinError>> {
+        
+        loop {
+            let mut entry = self.inner.try_pop_notified()?;
+
+            let res = entry.with_value_and_context(|jh, ctx| {
+                
+                
+                Pin::new(&mut unconstrained(jh)).poll(ctx)
+            });
+
+            if let Poll::Ready(res) = res {
+                let _entry = entry.remove();
+
+                return Some(res);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(tokio_unstable)]
+    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
+    pub fn try_join_next_with_id(&mut self) -> Option<Result<(Id, T), JoinError>> {
+        
+        loop {
+            let mut entry = self.inner.try_pop_notified()?;
+
+            let res = entry.with_value_and_context(|jh, ctx| {
+                
+                
+                Pin::new(&mut unconstrained(jh)).poll(ctx)
+            });
+
+            if let Poll::Ready(res) = res {
+                let entry = entry.remove();
+
+                return Some(res.map(|output| (entry.id(), output)));
+            }
+        }
+    }
+
+    
+    
+    
     
     
     
@@ -475,6 +528,49 @@ impl<T> Default for JoinSet<T> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl<T, F> std::iter::FromIterator<F> for JoinSet<T>
+where
+    F: Future<Output = T>,
+    F: Send + 'static,
+    T: Send + 'static,
+{
+    fn from_iter<I: IntoIterator<Item = F>>(iter: I) -> Self {
+        let mut set = Self::new();
+        iter.into_iter().for_each(|task| {
+            set.spawn(task);
+        });
+        set
+    }
+}
+
+
+
 #[cfg(all(tokio_unstable, feature = "tracing"))]
 #[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "tracing"))))]
 impl<'a, T: 'static> Builder<'a, T> {
@@ -525,6 +621,51 @@ impl<'a, T: 'static> Builder<'a, T> {
         T: Send,
     {
         Ok(self.joinset.insert(self.builder.spawn_on(future, handle)?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_blocking<F>(self, f: F) -> std::io::Result<AbortHandle>
+    where
+        F: FnOnce() -> T,
+        F: Send + 'static,
+        T: Send,
+    {
+        Ok(self.joinset.insert(self.builder.spawn_blocking(f)?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_blocking_on<F>(self, f: F, handle: &Handle) -> std::io::Result<AbortHandle>
+    where
+        F: FnOnce() -> T,
+        F: Send + 'static,
+        T: Send,
+    {
+        Ok(self
+            .joinset
+            .insert(self.builder.spawn_blocking_on(f, handle)?))
     }
 
     

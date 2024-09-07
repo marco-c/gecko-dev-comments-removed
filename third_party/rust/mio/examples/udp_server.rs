@@ -40,7 +40,12 @@ fn main() -> io::Result<()> {
     
     loop {
         
-        poll.poll(&mut events, None)?;
+        if let Err(err) = poll.poll(&mut events, None) {
+            if err.kind() == io::ErrorKind::Interrupted {
+                continue;
+            }
+            return Err(err);
+        }
 
         
         for event in events.iter() {

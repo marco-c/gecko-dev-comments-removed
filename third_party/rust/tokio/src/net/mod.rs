@@ -22,6 +22,12 @@
 
 
 
+
+
+
+
+
+
 mod addr;
 cfg_not_wasi! {
     #[cfg(feature = "net")]
@@ -49,6 +55,7 @@ cfg_net_unix! {
     pub use unix::datagram::socket::UnixDatagram;
     pub use unix::listener::UnixListener;
     pub use unix::stream::UnixStream;
+    pub use unix::socket::UnixSocket;
 }
 
 cfg_net_windows! {

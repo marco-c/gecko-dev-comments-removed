@@ -23,12 +23,7 @@ use std::task::Poll;
 
 
 
-
-
-
-
-
-#[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "rt"))))]
+#[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 pub async fn consume_budget() {
     let mut status = Poll::Pending;
 

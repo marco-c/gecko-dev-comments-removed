@@ -1,11 +1,11 @@
-use crate::io_source::IoSource;
-use crate::net::{SocketAddr, UnixStream};
-use crate::{event, sys, Interest, Registry, Token};
-
-use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-use std::os::unix::net;
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
+use std::os::unix::net::{self, SocketAddr};
 use std::path::Path;
 use std::{fmt, io};
+
+use crate::io_source::IoSource;
+use crate::net::UnixStream;
+use crate::{event, sys, Interest, Registry, Token};
 
 
 pub struct UnixListener {
@@ -15,7 +15,13 @@ pub struct UnixListener {
 impl UnixListener {
     
     pub fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixListener> {
-        sys::uds::listener::bind(path.as_ref()).map(UnixListener::from_std)
+        let addr = SocketAddr::from_pathname(path)?;
+        UnixListener::bind_addr(&addr)
+    }
+
+    
+    pub fn bind_addr(address: &SocketAddr) -> io::Result<UnixListener> {
+        sys::uds::listener::bind_addr(address).map(UnixListener::from_std)
     }
 
     
@@ -39,8 +45,8 @@ impl UnixListener {
     }
 
     
-    pub fn local_addr(&self) -> io::Result<sys::SocketAddr> {
-        sys::uds::listener::local_addr(&self.inner)
+    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+        self.inner.local_addr()
     }
 
     
@@ -100,5 +106,20 @@ impl FromRawFd for UnixListener {
     
     unsafe fn from_raw_fd(fd: RawFd) -> UnixListener {
         UnixListener::from_std(FromRawFd::from_raw_fd(fd))
+    }
+}
+
+impl From<UnixListener> for net::UnixListener {
+    fn from(listener: UnixListener) -> Self {
+        
+        
+        
+        unsafe { net::UnixListener::from_raw_fd(listener.into_raw_fd()) }
+    }
+}
+
+impl AsFd for UnixListener {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.inner.as_fd()
     }
 }

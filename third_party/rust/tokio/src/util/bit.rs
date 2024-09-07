@@ -37,14 +37,6 @@ impl Pack {
         (base & !self.mask) | (value << self.shift)
     }
 
-    
-    
-    
-    
-    pub(crate) fn pack_lossy(&self, value: usize, base: usize) -> usize {
-        self.pack(value & self.max_value(), base)
-    }
-
     pub(crate) fn unpack(&self, src: usize) -> usize {
         unpack(src, self.mask, self.shift)
     }

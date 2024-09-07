@@ -8,7 +8,6 @@ use std::task::{Context, Poll};
 
 
 
-
 pub struct UnboundedSender<T> {
     chan: chan::Tx<T, Semaphore>,
 }
@@ -62,7 +61,6 @@ impl<T> fmt::Debug for UnboundedSender<T> {
             .finish()
     }
 }
-
 
 
 
@@ -212,6 +210,79 @@ impl<T> UnboundedReceiver<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn recv_many(&mut self, buffer: &mut Vec<T>, limit: usize) -> usize {
+        use crate::future::poll_fn;
+        poll_fn(|cx| self.chan.recv_many(cx, buffer, limit)).await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_recv(&mut self) -> Result<T, TryRecvError> {
         self.chan.try_recv()
     }
@@ -280,8 +351,162 @@ impl<T> UnboundedReceiver<T> {
     
     
     
+    
+    pub fn is_closed(&self) -> bool {
+        self.chan.is_closed()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_empty(&self) -> bool {
+        self.chan.is_empty()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn len(&self) -> usize {
+        self.chan.len()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<T>> {
         self.chan.recv(cx)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_recv_many(
+        &mut self,
+        cx: &mut Context<'_>,
+        buffer: &mut Vec<T>,
+        limit: usize,
+    ) -> Poll<usize> {
+        self.chan.recv_many(cx, buffer, limit)
+    }
+
+    
+    pub fn sender_strong_count(&self) -> usize {
+        self.chan.sender_strong_count()
+    }
+
+    
+    pub fn sender_weak_count(&self) -> usize {
+        self.chan.sender_weak_count()
     }
 }
 
@@ -379,7 +604,7 @@ impl<T> UnboundedSender<T> {
     
     
     pub async fn closed(&self) {
-        self.chan.closed().await
+        self.chan.closed().await;
     }
 
     
@@ -424,18 +649,37 @@ impl<T> UnboundedSender<T> {
     
     
     
+    #[must_use = "Downgrade creates a WeakSender without destroying the original non-weak sender."]
     pub fn downgrade(&self) -> WeakUnboundedSender<T> {
         WeakUnboundedSender {
             chan: self.chan.downgrade(),
         }
     }
+
+    
+    pub fn strong_count(&self) -> usize {
+        self.chan.strong_count()
+    }
+
+    
+    pub fn weak_count(&self) -> usize {
+        self.chan.weak_count()
+    }
 }
 
 impl<T> Clone for WeakUnboundedSender<T> {
     fn clone(&self) -> Self {
+        self.chan.increment_weak_count();
+
         WeakUnboundedSender {
             chan: self.chan.clone(),
         }
+    }
+}
+
+impl<T> Drop for WeakUnboundedSender<T> {
+    fn drop(&mut self) {
+        self.chan.decrement_weak_count();
     }
 }
 
@@ -445,6 +689,16 @@ impl<T> WeakUnboundedSender<T> {
     
     pub fn upgrade(&self) -> Option<UnboundedSender<T>> {
         chan::Tx::upgrade(self.chan.clone()).map(UnboundedSender::new)
+    }
+
+    
+    pub fn strong_count(&self) -> usize {
+        self.chan.strong_count()
+    }
+
+    
+    pub fn weak_count(&self) -> usize {
+        self.chan.weak_count()
     }
 }
 

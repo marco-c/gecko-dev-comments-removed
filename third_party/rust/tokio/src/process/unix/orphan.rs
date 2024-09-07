@@ -8,6 +8,7 @@ use std::process::ExitStatus;
 
 pub(crate) trait Wait {
     
+    #[allow(dead_code)]
     fn id(&self) -> u32;
     
     fn try_wait(&mut self) -> io::Result<Option<ExitStatus>>;
@@ -70,7 +71,7 @@ impl<T> OrphanQueueImpl<T> {
     where
         T: Wait,
     {
-        self.queue.lock().push(orphan)
+        self.queue.lock().push(orphan);
     }
 
     

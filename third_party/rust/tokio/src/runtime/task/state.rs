@@ -2,7 +2,6 @@ use crate::loom::sync::atomic::AtomicUsize;
 
 use std::fmt;
 use std::sync::atomic::Ordering::{AcqRel, Acquire, Release};
-use std::usize;
 
 pub(super) struct State {
     val: AtomicUsize,
@@ -29,15 +28,12 @@ const LIFECYCLE_MASK: usize = 0b11;
 const NOTIFIED: usize = 0b100;
 
 
-#[allow(clippy::unusual_byte_groupings)] 
 const JOIN_INTEREST: usize = 0b1_000;
 
 
-#[allow(clippy::unusual_byte_groupings)] 
 const JOIN_WAKER: usize = 0b10_000;
 
 
-#[allow(clippy::unusual_byte_groupings)] 
 const CANCELLED: usize = 0b100_000;
 
 
@@ -142,7 +138,6 @@ impl State {
         })
     }
 
-    
     
     
     
@@ -271,6 +266,10 @@ impl State {
     }
 
     
+    
+    
+    
+    
     #[cfg(all(
         tokio_unstable,
         tokio_taskdump,
@@ -278,12 +277,16 @@ impl State {
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
     ))]
-    pub(super) fn transition_to_notified_for_tracing(&self) {
+    pub(super) fn transition_to_notified_for_tracing(&self) -> bool {
         self.fetch_update_action(|mut snapshot| {
-            snapshot.set_notified();
-            snapshot.ref_inc();
-            ((), Some(snapshot))
-        });
+            if snapshot.is_notified() {
+                (false, None)
+            } else {
+                snapshot.set_notified();
+                snapshot.ref_inc();
+                (true, Some(snapshot))
+            }
+        })
     }
 
     
@@ -522,11 +525,11 @@ impl Snapshot {
     }
 
     fn unset_notified(&mut self) {
-        self.0 &= !NOTIFIED
+        self.0 &= !NOTIFIED;
     }
 
     fn set_notified(&mut self) {
-        self.0 |= NOTIFIED
+        self.0 |= NOTIFIED;
     }
 
     pub(super) fn is_running(self) -> bool {
@@ -559,7 +562,7 @@ impl Snapshot {
     }
 
     fn unset_join_interested(&mut self) {
-        self.0 &= !JOIN_INTEREST
+        self.0 &= !JOIN_INTEREST;
     }
 
     pub(super) fn is_join_waker_set(self) -> bool {
@@ -571,7 +574,7 @@ impl Snapshot {
     }
 
     fn unset_join_waker(&mut self) {
-        self.0 &= !JOIN_WAKER
+        self.0 &= !JOIN_WAKER;
     }
 
     pub(super) fn ref_count(self) -> usize {
@@ -585,7 +588,7 @@ impl Snapshot {
 
     pub(super) fn ref_dec(&mut self) {
         assert!(self.ref_count() > 0);
-        self.0 -= REF_ONE
+        self.0 -= REF_ONE;
     }
 }
 

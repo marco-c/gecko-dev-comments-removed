@@ -2,6 +2,7 @@
 
 
 
+use crate::task::Id;
 use std::fmt;
 
 
@@ -25,6 +26,7 @@ pub struct Tasks {
 
 #[derive(Debug)]
 pub struct Task {
+    id: Id,
     trace: Trace,
 }
 
@@ -57,10 +59,26 @@ impl Tasks {
 }
 
 impl Task {
-    pub(crate) fn new(trace: super::task::trace::Trace) -> Self {
+    pub(crate) fn new(id: Id, trace: super::task::trace::Trace) -> Self {
         Self {
+            id,
             trace: Trace { inner: trace },
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(tokio_unstable)]
+    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
+    pub fn id(&self) -> Id {
+        self.id
     }
 
     

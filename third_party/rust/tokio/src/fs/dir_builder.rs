@@ -7,8 +7,6 @@ use std::path::Path;
 
 
 
-
-
 #[derive(Debug, Default)]
 pub struct DirBuilder {
     
@@ -32,14 +30,10 @@ impl DirBuilder {
     
     
     
-    
-    
     pub fn new() -> Self {
-        Default::default()
+        DirBuilder::default()
     }
 
-    
-    
     
     
     
@@ -60,8 +54,6 @@ impl DirBuilder {
         self
     }
 
-    
-    
     
     
     

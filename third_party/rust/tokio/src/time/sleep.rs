@@ -60,7 +60,7 @@ use std::task::{self, Poll};
 #[cfg_attr(docsrs, doc(alias = "delay_until"))]
 #[track_caller]
 pub fn sleep_until(deadline: Instant) -> Sleep {
-    return Sleep::new_timeout(deadline, trace::caller_location());
+    Sleep::new_timeout(deadline, trace::caller_location())
 }
 
 
@@ -219,6 +219,7 @@ pin_project! {
     
     
     
+    #[project(!Unpin)]
     
     #[cfg_attr(docsrs, doc(alias = "Delay"))]
     #[derive(Debug)]
@@ -253,12 +254,11 @@ impl Sleep {
         location: Option<&'static Location<'static>>,
     ) -> Sleep {
         use crate::runtime::scheduler;
-
         let handle = scheduler::Handle::current();
-        let entry = TimerEntry::new(&handle, deadline);
-
+        let entry = TimerEntry::new(handle, deadline);
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         let inner = {
+            let handle = scheduler::Handle::current();
             let clock = handle.driver().clock();
             let handle = &handle.driver().time();
             let time_source = handle.time_source();
@@ -350,7 +350,7 @@ impl Sleep {
     
     
     pub fn reset(self: Pin<&mut Self>, deadline: Instant) {
-        self.reset_inner(deadline)
+        self.reset_inner(deadline);
     }
 
     

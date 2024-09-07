@@ -75,6 +75,319 @@ use std::sync::Arc;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct Semaphore {
     
@@ -140,6 +453,7 @@ impl Semaphore {
             let location = std::panic::Location::caller();
 
             tracing::trace_span!(
+                parent: None,
                 "runtime.resource",
                 concrete_type = "Semaphore",
                 kind = "Sync",
@@ -173,19 +487,39 @@ impl Semaphore {
     
     
     
-    #[cfg(all(feature = "parking_lot", not(all(loom, test))))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "parking_lot")))]
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(all(loom, test)))]
     pub const fn const_new(permits: usize) -> Self {
-        #[cfg(all(tokio_unstable, feature = "tracing"))]
-        return Self {
+        Self {
             ll_sem: ll::Semaphore::const_new(permits),
+            #[cfg(all(tokio_unstable, feature = "tracing"))]
             resource_span: tracing::Span::none(),
-        };
+        }
+    }
 
-        #[cfg(any(not(tokio_unstable), not(feature = "tracing")))]
-        return Self {
-            ll_sem: ll::Semaphore::const_new(permits),
-        };
+    
+    pub(crate) fn new_closed() -> Self {
+        Self {
+            ll_sem: ll::Semaphore::new_closed(),
+            #[cfg(all(tokio_unstable, feature = "tracing"))]
+            resource_span: tracing::Span::none(),
+        }
+    }
+
+    
+    #[cfg(not(all(loom, test)))]
+    pub(crate) const fn const_new_closed() -> Self {
+        Self {
+            ll_sem: ll::Semaphore::const_new_closed(),
+            #[cfg(all(tokio_unstable, feature = "tracing"))]
+            resource_span: tracing::Span::none(),
+        }
     }
 
     
@@ -198,6 +532,14 @@ impl Semaphore {
     
     pub fn add_permits(&self, n: usize) {
         self.ll_sem.release(n);
+    }
+
+    
+    
+    
+    
+    pub fn forget_permits(&self, n: usize) -> usize {
+        self.ll_sem.forget_permits(n)
     }
 
     
@@ -284,7 +626,7 @@ impl Semaphore {
     pub async fn acquire_many(&self, n: u32) -> Result<SemaphorePermit<'_>, AcquireError> {
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         trace::async_op(
-            || self.ll_sem.acquire(n),
+            || self.ll_sem.acquire(n as usize),
             self.resource_span.clone(),
             "Semaphore::acquire_many",
             "poll",
@@ -293,7 +635,7 @@ impl Semaphore {
         .await?;
 
         #[cfg(not(all(tokio_unstable, feature = "tracing")))]
-        self.ll_sem.acquire(n).await?;
+        self.ll_sem.acquire(n as usize).await?;
 
         Ok(SemaphorePermit {
             sem: self,
@@ -331,7 +673,7 @@ impl Semaphore {
     
     pub fn try_acquire(&self) -> Result<SemaphorePermit<'_>, TryAcquireError> {
         match self.ll_sem.try_acquire(1) {
-            Ok(_) => Ok(SemaphorePermit {
+            Ok(()) => Ok(SemaphorePermit {
                 sem: self,
                 permits: 1,
             }),
@@ -365,8 +707,8 @@ impl Semaphore {
     
     
     pub fn try_acquire_many(&self, n: u32) -> Result<SemaphorePermit<'_>, TryAcquireError> {
-        match self.ll_sem.try_acquire(n) {
-            Ok(_) => Ok(SemaphorePermit {
+        match self.ll_sem.try_acquire(n as usize) {
+            Ok(()) => Ok(SemaphorePermit {
                 sem: self,
                 permits: n,
             }),
@@ -483,14 +825,14 @@ impl Semaphore {
     ) -> Result<OwnedSemaphorePermit, AcquireError> {
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         let inner = trace::async_op(
-            || self.ll_sem.acquire(n),
+            || self.ll_sem.acquire(n as usize),
             self.resource_span.clone(),
             "Semaphore::acquire_many_owned",
             "poll",
             true,
         );
         #[cfg(not(all(tokio_unstable, feature = "tracing")))]
-        let inner = self.ll_sem.acquire(n);
+        let inner = self.ll_sem.acquire(n as usize);
 
         inner.await?;
         Ok(OwnedSemaphorePermit {
@@ -533,7 +875,7 @@ impl Semaphore {
     
     pub fn try_acquire_owned(self: Arc<Self>) -> Result<OwnedSemaphorePermit, TryAcquireError> {
         match self.ll_sem.try_acquire(1) {
-            Ok(_) => Ok(OwnedSemaphorePermit {
+            Ok(()) => Ok(OwnedSemaphorePermit {
                 sem: self,
                 permits: 1,
             }),
@@ -574,8 +916,8 @@ impl Semaphore {
         self: Arc<Self>,
         n: u32,
     ) -> Result<OwnedSemaphorePermit, TryAcquireError> {
-        match self.ll_sem.try_acquire(n) {
-            Ok(_) => Ok(OwnedSemaphorePermit {
+        match self.ll_sem.try_acquire(n as usize) {
+            Ok(()) => Ok(OwnedSemaphorePermit {
                 sem: self,
                 permits: n,
             }),
@@ -626,10 +968,51 @@ impl<'a> SemaphorePermit<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn forget(mut self) {
         self.permits = 0;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -648,9 +1031,65 @@ impl<'a> SemaphorePermit<'a> {
         self.permits += other.permits;
         other.permits = 0;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn split(&mut self, n: usize) -> Option<Self> {
+        let n = u32::try_from(n).ok()?;
+
+        if n > self.permits {
+            return None;
+        }
+
+        self.permits -= n;
+
+        Some(Self {
+            sem: self.sem,
+            permits: n,
+        })
+    }
+
+    
+    pub fn num_permits(&self) -> usize {
+        self.permits as usize
+    }
 }
 
 impl OwnedSemaphorePermit {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -658,6 +1097,29 @@ impl OwnedSemaphorePermit {
         self.permits = 0;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -678,8 +1140,50 @@ impl OwnedSemaphorePermit {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn split(&mut self, n: usize) -> Option<Self> {
+        let n = u32::try_from(n).ok()?;
+
+        if n > self.permits {
+            return None;
+        }
+
+        self.permits -= n;
+
+        Some(Self {
+            sem: self.sem.clone(),
+            permits: n,
+        })
+    }
+
+    
     pub fn semaphore(&self) -> &Arc<Semaphore> {
         &self.sem
+    }
+
+    
+    pub fn num_permits(&self) -> usize {
+        self.permits as usize
     }
 }
 

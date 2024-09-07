@@ -23,7 +23,8 @@ impl AtomicU16 {
     
     
     pub(crate) unsafe fn unsync_load(&self) -> u16 {
-        core::ptr::read(self.inner.get() as *const u16)
+        
+        self.load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 

@@ -204,7 +204,7 @@ impl<T> Tx<T> {
         
         for _ in 0..3 {
             match curr.as_ref().try_push(&mut block, AcqRel, Acquire) {
-                Ok(_) => {
+                Ok(()) => {
                     reused = true;
                     break;
                 }
@@ -216,6 +216,15 @@ impl<T> Tx<T> {
 
         if !reused {
             let _ = Box::from_raw(block.as_ptr());
+        }
+    }
+
+    pub(crate) fn is_closed(&self) -> bool {
+        let tail = self.block_tail.load(Acquire);
+
+        unsafe {
+            let tail_block = &*tail;
+            tail_block.is_closed()
         }
     }
 }
@@ -230,6 +239,24 @@ impl<T> fmt::Debug for Tx<T> {
 }
 
 impl<T> Rx<T> {
+    pub(crate) fn is_empty(&self, tx: &Tx<T>) -> bool {
+        let block = unsafe { self.head.as_ref() };
+        if block.has_value(self.index) {
+            return false;
+        }
+
+        
+        
+        self.len(tx) == 0
+    }
+
+    pub(crate) fn len(&self, tx: &Tx<T>) -> usize {
+        
+        
+        let tail_position = tx.tail_position.load(Acquire);
+        tail_position - self.index - (tx.is_closed() as usize)
+    }
+
     
     pub(crate) fn pop(&mut self, tx: &Tx<T>) -> Option<block::Read<T>> {
         

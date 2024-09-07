@@ -33,6 +33,10 @@ impl JoinError {
     }
 
     
+    
+    
+    
+    
     pub fn is_cancelled(&self) -> bool {
         matches!(&self.repr, Repr::Cancelled)
     }

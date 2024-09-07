@@ -1,8 +1,10 @@
 use std::ops::{Deref, DerefMut};
-#[cfg(unix)]
-use std::os::unix::io::AsRawFd;
-#[cfg(target_os = "wasi")]
-use std::os::wasi::io::AsRawFd;
+#[cfg(any(unix, target_os = "wasi"))]
+use std::os::fd::AsRawFd;
+
+
+#[cfg(target_os = "hermit")]
+use std::os::hermit::io::AsRawFd;
 #[cfg(windows)]
 use std::os::windows::io::AsRawSocket;
 #[cfg(debug_assertions)]
@@ -11,33 +13,6 @@ use std::{fmt, io};
 
 use crate::sys::IoSourceState;
 use crate::{event, Interest, Registry, Token};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -129,7 +104,7 @@ impl<T> DerefMut for IoSource<T> {
     }
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "hermit"))]
 impl<T> event::Source for IoSource<T>
 where
     T: AsRawFd,
@@ -142,9 +117,8 @@ where
     ) -> io::Result<()> {
         #[cfg(debug_assertions)]
         self.selector_id.associate(registry)?;
-        registry
-            .selector()
-            .register(self.inner.as_raw_fd(), token, interests)
+        self.state
+            .register(registry, token, interests, self.inner.as_raw_fd())
     }
 
     fn reregister(
@@ -155,15 +129,14 @@ where
     ) -> io::Result<()> {
         #[cfg(debug_assertions)]
         self.selector_id.check_association(registry)?;
-        registry
-            .selector()
-            .reregister(self.inner.as_raw_fd(), token, interests)
+        self.state
+            .reregister(registry, token, interests, self.inner.as_raw_fd())
     }
 
     fn deregister(&mut self, registry: &Registry) -> io::Result<()> {
         #[cfg(debug_assertions)]
         self.selector_id.remove_association(registry)?;
-        registry.selector().deregister(self.inner.as_raw_fd())
+        self.state.deregister(registry, self.inner.as_raw_fd())
     }
 }
 

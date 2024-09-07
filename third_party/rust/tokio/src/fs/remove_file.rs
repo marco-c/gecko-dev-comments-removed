@@ -10,8 +10,6 @@ use std::path::Path;
 
 
 
-
-
 pub async fn remove_file(path: impl AsRef<Path>) -> io::Result<()> {
     let path = path.as_ref().to_owned();
     asyncify(move || std::fs::remove_file(path)).await

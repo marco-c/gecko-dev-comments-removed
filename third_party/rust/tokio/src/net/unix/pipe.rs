@@ -6,10 +6,8 @@ use crate::io::{AsyncRead, AsyncWrite, PollEvented, ReadBuf, Ready};
 use mio::unix::pipe as mio_pipe;
 use std::fs::File;
 use std::io::{self, Read, Write};
-use std::os::unix::fs::{FileTypeExt, OpenOptionsExt};
-#[cfg(not(tokio_no_as_fd))]
-use std::os::unix::io::{AsFd, BorrowedFd};
-use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use std::os::unix::fs::OpenOptionsExt;
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, OwnedFd, RawFd};
 use std::path::Path;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -18,6 +16,58 @@ cfg_io_util! {
     use bytes::BufMut;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn pipe() -> io::Result<(Sender, Receiver)> {
+    let (tx, rx) = mio_pipe::new()?;
+    Ok((Sender::from_mio(tx)?, Receiver::from_mio(rx)?))
+}
 
 
 
@@ -221,7 +271,7 @@ impl OpenOptions {
 
         let file = options.open(path)?;
 
-        if !self.unchecked && !is_fifo(&file)? {
+        if !self.unchecked && !is_pipe(file.as_fd())? {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "not a pipe"));
         }
 
@@ -341,15 +391,40 @@ impl Sender {
     
     
     
-    pub fn from_file(mut file: File) -> io::Result<Sender> {
-        if !is_fifo(&file)? {
+    pub fn from_file(file: File) -> io::Result<Sender> {
+        Sender::from_owned_fd(file.into())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_owned_fd(owned_fd: OwnedFd) -> io::Result<Sender> {
+        if !is_pipe(owned_fd.as_fd())? {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "not a pipe"));
         }
 
-        let flags = get_file_flags(&file)?;
+        let flags = get_file_flags(owned_fd.as_fd())?;
         if has_write_access(flags) {
-            set_nonblocking(&mut file, flags)?;
-            Sender::from_file_unchecked(file)
+            set_nonblocking(owned_fd.as_fd(), flags)?;
+            Sender::from_owned_fd_unchecked(owned_fd)
         } else {
             Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -397,8 +472,28 @@ impl Sender {
     
     
     pub fn from_file_unchecked(file: File) -> io::Result<Sender> {
-        let raw_fd = file.into_raw_fd();
-        let mio_tx = unsafe { mio_pipe::Sender::from_raw_fd(raw_fd) };
+        Sender::from_owned_fd_unchecked(file.into())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_owned_fd_unchecked(owned_fd: OwnedFd) -> io::Result<Sender> {
+        
+        let mio_tx = unsafe { mio_pipe::Sender::from_raw_fd(owned_fd.into_raw_fd()) };
         Sender::from_mio(mio_tx)
     }
 
@@ -626,6 +721,31 @@ impl Sender {
             .registration()
             .try_io(Interest::WRITABLE, || (&*self.io).write_vectored(buf))
     }
+
+    
+    
+    
+    
+    pub fn into_blocking_fd(self) -> io::Result<OwnedFd> {
+        let fd = self.into_nonblocking_fd()?;
+        set_blocking(&fd)?;
+        Ok(fd)
+    }
+
+    
+    
+    
+    
+    
+    pub fn into_nonblocking_fd(self) -> io::Result<OwnedFd> {
+        let mio_pipe = self.io.into_inner()?;
+
+        
+        
+        let owned_fd = unsafe { OwnedFd::from_raw_fd(mio_pipe.into_raw_fd()) };
+
+        Ok(owned_fd)
+    }
 }
 
 impl AsyncWrite for Sender {
@@ -664,7 +784,6 @@ impl AsRawFd for Sender {
     }
 }
 
-#[cfg(not(tokio_no_as_fd))]
 impl AsFd for Sender {
     fn as_fd(&self) -> BorrowedFd<'_> {
         unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
@@ -768,15 +887,40 @@ impl Receiver {
     
     
     
-    pub fn from_file(mut file: File) -> io::Result<Receiver> {
-        if !is_fifo(&file)? {
+    pub fn from_file(file: File) -> io::Result<Receiver> {
+        Receiver::from_owned_fd(file.into())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_owned_fd(owned_fd: OwnedFd) -> io::Result<Receiver> {
+        if !is_pipe(owned_fd.as_fd())? {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "not a pipe"));
         }
 
-        let flags = get_file_flags(&file)?;
+        let flags = get_file_flags(owned_fd.as_fd())?;
         if has_read_access(flags) {
-            set_nonblocking(&mut file, flags)?;
-            Receiver::from_file_unchecked(file)
+            set_nonblocking(owned_fd.as_fd(), flags)?;
+            Receiver::from_owned_fd_unchecked(owned_fd)
         } else {
             Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -824,8 +968,28 @@ impl Receiver {
     
     
     pub fn from_file_unchecked(file: File) -> io::Result<Receiver> {
-        let raw_fd = file.into_raw_fd();
-        let mio_rx = unsafe { mio_pipe::Receiver::from_raw_fd(raw_fd) };
+        Receiver::from_owned_fd_unchecked(file.into())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_owned_fd_unchecked(owned_fd: OwnedFd) -> io::Result<Receiver> {
+        
+        let mio_rx = unsafe { mio_pipe::Receiver::from_raw_fd(owned_fd.into_raw_fd()) };
         Receiver::from_mio(mio_rx)
     }
 
@@ -1150,6 +1314,31 @@ impl Receiver {
             })
         }
     }
+
+    
+    
+    
+    
+    pub fn into_blocking_fd(self) -> io::Result<OwnedFd> {
+        let fd = self.into_nonblocking_fd()?;
+        set_blocking(&fd)?;
+        Ok(fd)
+    }
+
+    
+    
+    
+    
+    
+    pub fn into_nonblocking_fd(self) -> io::Result<OwnedFd> {
+        let mio_pipe = self.io.into_inner()?;
+
+        
+        
+        let owned_fd = unsafe { OwnedFd::from_raw_fd(mio_pipe.into_raw_fd()) };
+
+        Ok(owned_fd)
+    }
 }
 
 impl AsyncRead for Receiver {
@@ -1170,7 +1359,6 @@ impl AsRawFd for Receiver {
     }
 }
 
-#[cfg(not(tokio_no_as_fd))]
 impl AsFd for Receiver {
     fn as_fd(&self) -> BorrowedFd<'_> {
         unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
@@ -1178,14 +1366,26 @@ impl AsFd for Receiver {
 }
 
 
-fn is_fifo(file: &File) -> io::Result<bool> {
-    Ok(file.metadata()?.file_type().is_fifo())
+fn is_pipe(fd: BorrowedFd<'_>) -> io::Result<bool> {
+    
+    
+    let mut stat: libc::stat = unsafe { std::mem::zeroed() };
+
+    
+    
+    let r = unsafe { libc::fstat(fd.as_raw_fd(), &mut stat) };
+
+    if r == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok((stat.st_mode as libc::mode_t & libc::S_IFMT) == libc::S_IFIFO)
+    }
 }
 
 
-fn get_file_flags(file: &File) -> io::Result<libc::c_int> {
-    let fd = file.as_raw_fd();
-    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+fn get_file_flags(fd: BorrowedFd<'_>) -> io::Result<libc::c_int> {
+    
+    let flags = unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_GETFL) };
     if flags < 0 {
         Err(io::Error::last_os_error())
     } else {
@@ -1206,17 +1406,37 @@ fn has_write_access(flags: libc::c_int) -> bool {
 }
 
 
-fn set_nonblocking(file: &mut File, current_flags: libc::c_int) -> io::Result<()> {
-    let fd = file.as_raw_fd();
-
+fn set_nonblocking(fd: BorrowedFd<'_>, current_flags: libc::c_int) -> io::Result<()> {
     let flags = current_flags | libc::O_NONBLOCK;
 
     if flags != current_flags {
-        let ret = unsafe { libc::fcntl(fd, libc::F_SETFL, flags) };
+        
+        
+        let ret = unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_SETFL, flags) };
         if ret < 0 {
             return Err(io::Error::last_os_error());
         }
     }
 
     Ok(())
+}
+
+
+fn set_blocking<T: AsRawFd>(fd: &T) -> io::Result<()> {
+    
+    let previous = unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_GETFL) };
+    if previous == -1 {
+        return Err(io::Error::last_os_error());
+    }
+
+    let new = previous & !libc::O_NONBLOCK;
+
+    
+    
+    let r = unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_SETFL, new) };
+    if r == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
 }

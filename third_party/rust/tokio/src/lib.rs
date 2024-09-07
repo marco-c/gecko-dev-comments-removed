@@ -1,9 +1,9 @@
+#![allow(unknown_lints, unexpected_cfgs)]
 #![allow(
     clippy::cognitive_complexity,
     clippy::large_enum_variant,
     clippy::module_inception,
-    clippy::needless_doctest_main,
-    clippy::declare_interior_mutable_const
+    clippy::needless_doctest_main
 )]
 #![warn(
     missing_debug_implementations,
@@ -447,35 +447,14 @@
 
 
 
-#[cfg(not(any(
-    target_pointer_width = "32",
-    target_pointer_width = "64",
-    target_pointer_width = "128"
-)))]
+#[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
 compile_error! {
-    "Tokio requires the platform pointer width to be 32, 64, or 128 bits"
+    "Tokio requires the platform pointer width to be at least 32 bits"
 }
-
-
-
-
-
-#[cfg(any(
-    all(target_arch = "wasm32", not(tokio_wasm)),
-    all(target_arch = "wasm64", not(tokio_wasm)),
-    all(target_family = "wasm", not(tokio_wasm)),
-    all(target_os = "wasi", not(tokio_wasm)),
-    all(target_os = "wasi", not(tokio_wasi)),
-    all(target_os = "wasi", tokio_wasm_not_wasi),
-    all(tokio_wasm, not(any(target_arch = "wasm32", target_arch = "wasm64"))),
-    all(tokio_wasm_not_wasi, not(tokio_wasm)),
-    all(tokio_wasi, not(tokio_wasm))
-))]
-compile_error!("Tokio's build script has incorrectly detected wasm.");
 
 #[cfg(all(
     not(tokio_unstable),
-    tokio_wasm,
+    target_family = "wasm",
     any(
         feature = "fs",
         feature = "io-std",
@@ -492,6 +471,7 @@ compile_error!("The `tokio_taskdump` feature requires `--cfg tokio_unstable`.");
 
 #[cfg(all(
     tokio_taskdump,
+    not(doc),
     not(all(
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
@@ -648,6 +628,7 @@ pub mod stream {}
 #[cfg(docsrs)]
 pub mod doc;
 
+#[cfg(any(feature = "net", feature = "fs"))]
 #[cfg(docsrs)]
 #[allow(unused)]
 pub(crate) use self::doc::os;
@@ -671,7 +652,6 @@ cfg_macros! {
 
     cfg_rt! {
         #[cfg(feature = "rt-multi-thread")]
-        #[cfg(not(test))] // Work around for rust-lang/rust#62127
         #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
         #[doc(inline)]
         pub use tokio_macros::main;
@@ -682,7 +662,6 @@ cfg_macros! {
         pub use tokio_macros::test;
 
         cfg_not_rt_multi_thread! {
-            #[cfg(not(test))] // Work around for rust-lang/rust#62127
             #[doc(inline)]
             pub use tokio_macros::main_rt as main;
 
@@ -693,7 +672,6 @@ cfg_macros! {
 
     // Always fail if rt is not enabled.
     cfg_not_rt! {
-        #[cfg(not(test))]
         #[doc(inline)]
         pub use tokio_macros::main_fail as main;
 

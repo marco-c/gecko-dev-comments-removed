@@ -1,3 +1,4 @@
+use super::BOX_FUTURE_THRESHOLD;
 use crate::runtime::blocking::BlockingPool;
 use crate::runtime::scheduler::CurrentThread;
 use crate::runtime::{context, EnterGuard, Handle};
@@ -9,7 +10,37 @@ use std::time::Duration;
 cfg_rt_multi_thread! {
     use crate::runtime::Builder;
     use crate::runtime::scheduler::MultiThread;
+
+    cfg_unstable! {
+        use crate::runtime::scheduler::MultiThreadAlt;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -84,6 +115,9 @@ pub enum RuntimeFlavor {
     CurrentThread,
     
     MultiThread,
+    
+    #[cfg(tokio_unstable)]
+    MultiThreadAlt,
 }
 
 
@@ -93,8 +127,12 @@ pub(super) enum Scheduler {
     CurrentThread(CurrentThread),
 
     
-    #[cfg(all(feature = "rt-multi-thread", not(tokio_wasi)))]
+    #[cfg(feature = "rt-multi-thread")]
     MultiThread(MultiThread),
+
+    
+    #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+    MultiThreadAlt(MultiThreadAlt),
 }
 
 impl Runtime {
@@ -110,40 +148,38 @@ impl Runtime {
         }
     }
 
-    cfg_not_wasi! {
-        /// Creates a new runtime instance with default configuration values.
-        ///
-        /// This results in the multi threaded scheduler, I/O driver, and time driver being
-        /// initialized.
-        ///
-        /// Most applications will not need to call this function directly. Instead,
-        /// they will use the  [`#[tokio::main]` attribute][main]. When a more complex
-        /// configuration is necessary, the [runtime builder] may be used.
-        ///
-        /// See [module level][mod] documentation for more details.
-        ///
-        /// # Examples
-        ///
-        /// Creating a new `Runtime` with default configuration values.
-        ///
-        /// ```
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        #[cfg(feature = "rt-multi-thread")]
-        #[cfg_attr(docsrs, doc(cfg(feature = "rt-multi-thread")))]
-        pub fn new() -> std::io::Result<Runtime> {
-            Builder::new_multi_thread().enable_all().build()
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "rt-multi-thread")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rt-multi-thread")))]
+    pub fn new() -> std::io::Result<Runtime> {
+        Builder::new_multi_thread().enable_all().build()
     }
 
     
@@ -205,9 +241,14 @@ impl Runtime {
         F: Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        self.handle.spawn(future)
+        if cfg!(debug_assertions) && std::mem::size_of::<F>() > BOX_FUTURE_THRESHOLD {
+            self.handle.spawn_named(Box::pin(future), None)
+        } else {
+            self.handle.spawn_named(future, None)
+        }
     }
 
+    
     
     
     
@@ -288,6 +329,15 @@ impl Runtime {
     
     #[track_caller]
     pub fn block_on<F: Future>(&self, future: F) -> F::Output {
+        if cfg!(debug_assertions) && std::mem::size_of::<F>() > BOX_FUTURE_THRESHOLD {
+            self.block_on_inner(Box::pin(future))
+        } else {
+            self.block_on_inner(future)
+        }
+    }
+
+    #[track_caller]
+    fn block_on_inner<F: Future>(&self, future: F) -> F::Output {
         #[cfg(all(
             tokio_unstable,
             tokio_taskdump,
@@ -309,11 +359,17 @@ impl Runtime {
 
         match &self.scheduler {
             Scheduler::CurrentThread(exec) => exec.block_on(&self.handle.inner, future),
-            #[cfg(all(feature = "rt-multi-thread", not(tokio_wasi)))]
+            #[cfg(feature = "rt-multi-thread")]
             Scheduler::MultiThread(exec) => exec.block_on(&self.handle.inner, future),
+            #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+            Scheduler::MultiThreadAlt(exec) => exec.block_on(&self.handle.inner, future),
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -411,7 +467,13 @@ impl Runtime {
     
     
     pub fn shutdown_background(self) {
-        self.shutdown_timeout(Duration::from_nanos(0))
+        self.shutdown_timeout(Duration::from_nanos(0));
+    }
+
+    
+    
+    pub fn metrics(&self) -> crate::runtime::RuntimeMetrics {
+        self.handle.metrics()
     }
 }
 
@@ -425,8 +487,14 @@ impl Drop for Runtime {
                 let _guard = context::try_set_current(&self.handle.inner);
                 current_thread.shutdown(&self.handle.inner);
             }
-            #[cfg(all(feature = "rt-multi-thread", not(tokio_wasi)))]
+            #[cfg(feature = "rt-multi-thread")]
             Scheduler::MultiThread(multi_thread) => {
+                
+                
+                multi_thread.shutdown(&self.handle.inner);
+            }
+            #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+            Scheduler::MultiThreadAlt(multi_thread) => {
                 
                 
                 multi_thread.shutdown(&self.handle.inner);
@@ -435,11 +503,6 @@ impl Drop for Runtime {
     }
 }
 
-cfg_metrics! {
-    impl Runtime {
-        /// TODO
-        pub fn metrics(&self) -> crate::runtime::RuntimeMetrics {
-            self.handle.metrics()
-        }
-    }
-}
+impl std::panic::UnwindSafe for Runtime {}
+
+impl std::panic::RefUnwindSafe for Runtime {}

@@ -164,7 +164,7 @@ impl<E: AioSource> Aio<E> {
     
     
     
-    pub fn poll_ready<'a>(&'a self, cx: &mut Context<'_>) -> Poll<io::Result<AioEvent>> {
+    pub fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<io::Result<AioEvent>> {
         let ev = ready!(self.registration.poll_read_ready(cx))?;
         Poll::Ready(Ok(AioEvent(ev)))
     }

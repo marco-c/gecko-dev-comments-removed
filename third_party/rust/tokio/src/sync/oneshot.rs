@@ -473,6 +473,7 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
         let location = std::panic::Location::caller();
 
         let resource_span = tracing::trace_span!(
+            parent: None,
             "runtime.resource",
             concrete_type = "Sender|Receiver",
             kind = "Sync",
@@ -712,7 +713,7 @@ impl<T> Sender<T> {
         #[cfg(not(all(tokio_unstable, feature = "tracing")))]
         let closed = poll_fn(|cx| self.poll_closed(cx));
 
-        closed.await
+        closed.await;
     }
 
     
@@ -1071,7 +1072,14 @@ impl<T> Receiver<T> {
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
         if let Some(inner) = self.inner.as_ref() {
-            inner.close();
+            let state = inner.close();
+
+            if state.is_complete() {
+                
+                
+                drop(unsafe { inner.consume_value() });
+            }
+
             #[cfg(all(tokio_unstable, feature = "tracing"))]
             self.resource_span.in_scope(|| {
                 tracing::trace!(
@@ -1201,7 +1209,7 @@ impl<T> Inner<T> {
     }
 
     
-    fn close(&self) {
+    fn close(&self) -> State {
         let prev = State::set_closed(&self.state);
 
         if prev.is_tx_task_set() && !prev.is_complete() {
@@ -1209,6 +1217,8 @@ impl<T> Inner<T> {
                 self.tx_task.with_task(Waker::wake_by_ref);
             }
         }
+
+        prev
     }
 
     
@@ -1246,6 +1256,15 @@ impl<T> Drop for Inner<T> {
             unsafe {
                 self.tx_task.drop_task();
             }
+        }
+
+        
+        
+        unsafe {
+            
+            
+            
+            debug_assert!(self.consume_value().is_none());
         }
     }
 }

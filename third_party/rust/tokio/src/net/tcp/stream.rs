@@ -239,13 +239,17 @@ impl TcpStream {
     
     
     
+    
+    
+    
+    
     pub fn into_std(self) -> io::Result<std::net::TcpStream> {
         #[cfg(unix)]
         {
             use std::os::unix::io::{FromRawFd, IntoRawFd};
             self.io
                 .into_inner()
-                .map(|io| io.into_raw_fd())
+                .map(IntoRawFd::into_raw_fd)
                 .map(|raw_fd| unsafe { std::net::TcpStream::from_raw_fd(raw_fd) })
         }
 
@@ -258,7 +262,7 @@ impl TcpStream {
                 .map(|raw_socket| unsafe { std::net::TcpStream::from_raw_socket(raw_socket) })
         }
 
-        #[cfg(tokio_wasi)]
+        #[cfg(target_os = "wasi")]
         {
             use std::os::wasi::io::{FromRawFd, IntoRawFd};
             self.io
@@ -1174,13 +1178,13 @@ impl TcpStream {
             socket2::SockRef::from(self).linger()
         }
 
-        /// Sets the linger duration of this socket by setting the SO_LINGER option.
+        /// Sets the linger duration of this socket by setting the `SO_LINGER` option.
         ///
         /// This option controls the action taken when a stream has unsent messages and the stream is
-        /// closed. If SO_LINGER is set, the system shall block the process until it can transmit the
+        /// closed. If `SO_LINGER` is set, the system shall block the process until it can transmit the
         /// data or until the time expires.
         ///
-        /// If SO_LINGER is not specified, and the stream is closed, the system handles the call in a
+        /// If `SO_LINGER` is not specified, and the stream is closed, the system handles the call in a
         /// way that allows the process to continue as quickly as possible.
         ///
         /// # Examples
@@ -1378,7 +1382,6 @@ mod sys {
         }
     }
 
-    #[cfg(not(tokio_no_as_fd))]
     impl AsFd for TcpStream {
         fn as_fd(&self) -> BorrowedFd<'_> {
             unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
@@ -1387,9 +1390,7 @@ mod sys {
 }
 
 cfg_windows! {
-    use crate::os::windows::io::{AsRawSocket, RawSocket};
-    #[cfg(not(tokio_no_as_fd))]
-    use crate::os::windows::io::{AsSocket, BorrowedSocket};
+    use crate::os::windows::io::{AsRawSocket, RawSocket, AsSocket, BorrowedSocket};
 
     impl AsRawSocket for TcpStream {
         fn as_raw_socket(&self) -> RawSocket {
@@ -1397,7 +1398,6 @@ cfg_windows! {
         }
     }
 
-    #[cfg(not(tokio_no_as_fd))]
     impl AsSocket for TcpStream {
         fn as_socket(&self) -> BorrowedSocket<'_> {
             unsafe { BorrowedSocket::borrow_raw(self.as_raw_socket()) }
@@ -1405,7 +1405,7 @@ cfg_windows! {
     }
 }
 
-#[cfg(all(tokio_unstable, tokio_wasi))]
+#[cfg(all(tokio_unstable, target_os = "wasi"))]
 mod sys {
     use super::TcpStream;
     use std::os::wasi::prelude::*;
@@ -1416,7 +1416,6 @@ mod sys {
         }
     }
 
-    #[cfg(not(tokio_no_as_fd))]
     impl AsFd for TcpStream {
         fn as_fd(&self) -> BorrowedFd<'_> {
             unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }

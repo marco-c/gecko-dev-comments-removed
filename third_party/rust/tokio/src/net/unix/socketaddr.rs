@@ -2,7 +2,7 @@ use std::fmt;
 use std::path::Path;
 
 
-pub struct SocketAddr(pub(super) mio::net::SocketAddr);
+pub struct SocketAddr(pub(super) std::os::unix::net::SocketAddr);
 
 impl SocketAddr {
     

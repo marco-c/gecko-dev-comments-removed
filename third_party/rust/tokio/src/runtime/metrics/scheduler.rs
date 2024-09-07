@@ -1,4 +1,5 @@
-use crate::loom::sync::atomic::{AtomicU64, Ordering::Relaxed};
+use crate::loom::sync::atomic::Ordering::Relaxed;
+use crate::util::metric_atomics::MetricAtomicU64;
 
 
 
@@ -10,25 +11,25 @@ use crate::loom::sync::atomic::{AtomicU64, Ordering::Relaxed};
 #[derive(Debug)]
 pub(crate) struct SchedulerMetrics {
     
-    pub(super) remote_schedule_count: AtomicU64,
-    pub(super) budget_forced_yield_count: AtomicU64,
+    pub(super) remote_schedule_count: MetricAtomicU64,
+    pub(super) budget_forced_yield_count: MetricAtomicU64,
 }
 
 impl SchedulerMetrics {
     pub(crate) fn new() -> SchedulerMetrics {
         SchedulerMetrics {
-            remote_schedule_count: AtomicU64::new(0),
-            budget_forced_yield_count: AtomicU64::new(0),
+            remote_schedule_count: MetricAtomicU64::new(0),
+            budget_forced_yield_count: MetricAtomicU64::new(0),
         }
     }
 
     
     pub(crate) fn inc_remote_schedule_count(&self) {
-        self.remote_schedule_count.fetch_add(1, Relaxed);
+        self.remote_schedule_count.add(1, Relaxed);
     }
 
     
     pub(crate) fn inc_budget_forced_yield_count(&self) {
-        self.budget_forced_yield_count.fetch_add(1, Relaxed);
+        self.budget_forced_yield_count.add(1, Relaxed);
     }
 }

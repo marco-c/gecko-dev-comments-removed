@@ -43,7 +43,7 @@ impl Storage for OsStorage {
     where
         F: FnMut(&'a EventInfo),
     {
-        self.iter().map(|si| &si.event_info).for_each(f)
+        self.iter().map(|si| &si.event_info).for_each(f);
     }
 }
 
@@ -224,7 +224,7 @@ pub(crate) struct SignalInfo {
 impl Default for SignalInfo {
     fn default() -> SignalInfo {
         SignalInfo {
-            event_info: Default::default(),
+            event_info: EventInfo::default(),
             init: Once::new(),
             initialized: AtomicBool::new(false),
         }
@@ -485,10 +485,12 @@ impl Signal {
 }
 
 
+#[cfg(feature = "process")]
 pub(crate) trait InternalStream {
     fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>>;
 }
 
+#[cfg(feature = "process")]
 impl InternalStream for Signal {
     fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
         self.poll_recv(cx)

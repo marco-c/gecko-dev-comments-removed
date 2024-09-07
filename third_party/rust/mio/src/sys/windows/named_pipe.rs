@@ -84,6 +84,7 @@ struct Inner {
     connect: Overlapped,
     read: Overlapped,
     write: Overlapped,
+    event: Overlapped,
     
     handle: Handle,
     connecting: AtomicBool,
@@ -112,6 +113,12 @@ impl Inner {
     unsafe fn ptr_from_write_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
         
         (ptr as *mut Overlapped).wrapping_sub(2) as *const Inner
+    }
+
+    
+    unsafe fn ptr_from_event_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
+        
+        (ptr as *mut Overlapped).wrapping_sub(3) as *const Inner
     }
 
     
@@ -478,6 +485,7 @@ impl FromRawHandle for NamedPipe {
                 connecting: AtomicBool::new(false),
                 read: Overlapped::new(read_done),
                 write: Overlapped::new(write_done),
+                event: Overlapped::new(event_done),
                 io: Mutex::new(Io {
                     cp: None,
                     token: None,
@@ -724,7 +732,7 @@ impl Inner {
             
             Err(e) => {
                 io.read = State::Err(e);
-                io.notify_readable(events);
+                io.notify_readable(me, events);
                 true
             }
         }
@@ -787,7 +795,7 @@ impl Inner {
             Ok(None) => (),
             Err(e) => {
                 io.write = State::Err(e);
-                io.notify_writable(events);
+                io.notify_writable(me, events);
             }
         }
     }
@@ -797,7 +805,7 @@ impl Inner {
         #[allow(clippy::needless_option_as_deref)]
         if Inner::schedule_read(me, &mut io, events.as_deref_mut()) {
             if let State::None = io.write {
-                io.notify_writable(events);
+                io.notify_writable(me, events);
             }
         }
     }
@@ -877,7 +885,7 @@ fn read_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
     }
 
     
-    io.notify_readable(events);
+    io.notify_readable(&me, events);
 }
 
 fn write_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
@@ -895,7 +903,7 @@ fn write_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
         
         
         State::Ok(..) => {
-            io.notify_writable(events);
+            io.notify_writable(&me, events);
             return;
         }
         State::Pending(buf, pos) => (buf, pos),
@@ -909,7 +917,7 @@ fn write_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
                 let new_pos = pos + (status.bytes_transferred() as usize);
                 if new_pos == buf.len() {
                     me.put_buffer(buf);
-                    io.notify_writable(events);
+                    io.notify_writable(&me, events);
                 } else {
                     Inner::schedule_write(&me, buf, new_pos, &mut io, events);
                 }
@@ -917,8 +925,34 @@ fn write_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
             Err(e) => {
                 debug_assert_eq!(status.bytes_transferred(), 0);
                 io.write = State::Err(e);
-                io.notify_writable(events);
+                io.notify_writable(&me, events);
             }
+        }
+    }
+}
+
+fn event_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
+    let status = CompletionStatus::from_entry(status);
+
+    
+    
+    
+    let me = unsafe { Arc::from_raw(Inner::ptr_from_event_overlapped(status.overlapped())) };
+
+    let io = me.io.lock().unwrap();
+
+    
+    if io.token.is_some() {
+        
+        
+        
+        if let Some(events) = events {
+            let mut ev = Event::from_completion_status(&status);
+            
+            
+            
+            ev.data >>= 1;
+            events.push(ev);
         }
     }
 }
@@ -938,7 +972,7 @@ impl Io {
         }
     }
 
-    fn notify_readable(&self, events: Option<&mut Vec<Event>>) {
+    fn notify_readable(&self, me: &Arc<Inner>, events: Option<&mut Vec<Event>>) {
         if let Some(token) = self.token {
             let mut ev = Event::new(token);
             ev.set_readable();
@@ -946,12 +980,12 @@ impl Io {
             if let Some(events) = events {
                 events.push(ev);
             } else {
-                let _ = self.cp.as_ref().unwrap().post(ev.to_completion_status());
+                self.schedule_event(me, ev);
             }
         }
     }
 
-    fn notify_writable(&self, events: Option<&mut Vec<Event>>) {
+    fn notify_writable(&self, me: &Arc<Inner>, events: Option<&mut Vec<Event>>) {
         if let Some(token) = self.token {
             let mut ev = Event::new(token);
             ev.set_writable();
@@ -959,7 +993,32 @@ impl Io {
             if let Some(events) = events {
                 events.push(ev);
             } else {
-                let _ = self.cp.as_ref().unwrap().post(ev.to_completion_status());
+                self.schedule_event(me, ev);
+            }
+        }
+    }
+
+    fn schedule_event(&self, me: &Arc<Inner>, mut event: Event) {
+        
+        
+        
+        
+        
+        
+        
+        event.data <<= 1;
+        event.data += 1;
+
+        let completion_status =
+            event.to_completion_status_with_overlapped(me.event.as_ptr() as *mut _);
+
+        match self.cp.as_ref().unwrap().post(completion_status) {
+            Ok(_) => {
+                
+                mem::forget(me.clone());
+            }
+            Err(_) => {
+                
             }
         }
     }

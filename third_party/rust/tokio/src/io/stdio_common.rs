@@ -45,12 +45,13 @@ where
         
         
         
-        if cfg!(not(any(target_os = "windows", test))) || buf.len() <= crate::io::blocking::MAX_BUF
+        if cfg!(not(any(target_os = "windows", test)))
+            || buf.len() <= crate::io::blocking::DEFAULT_MAX_BUF_SIZE
         {
             return call_inner(buf);
         }
 
-        buf = &buf[..crate::io::blocking::MAX_BUF];
+        buf = &buf[..crate::io::blocking::DEFAULT_MAX_BUF_SIZE];
 
         
         
@@ -108,7 +109,7 @@ where
 #[cfg(test)]
 #[cfg(not(loom))]
 mod tests {
-    use crate::io::blocking::MAX_BUF;
+    use crate::io::blocking::DEFAULT_MAX_BUF_SIZE;
     use crate::io::AsyncWriteExt;
     use std::io;
     use std::pin::Pin;
@@ -123,7 +124,7 @@ mod tests {
             _cx: &mut Context<'_>,
             buf: &[u8],
         ) -> Poll<Result<usize, io::Error>> {
-            assert!(buf.len() <= MAX_BUF);
+            assert!(buf.len() <= DEFAULT_MAX_BUF_SIZE);
             assert!(std::str::from_utf8(buf).is_ok());
             Poll::Ready(Ok(buf.len()))
         }
@@ -158,7 +159,7 @@ mod tests {
             _cx: &mut Context<'_>,
             buf: &[u8],
         ) -> Poll<Result<usize, io::Error>> {
-            assert!(buf.len() <= MAX_BUF);
+            assert!(buf.len() <= DEFAULT_MAX_BUF_SIZE);
             self.write_history.push(buf.len());
             Poll::Ready(Ok(buf.len()))
         }
@@ -178,7 +179,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_splitter() {
-        let data = str::repeat("█", MAX_BUF);
+        let data = str::repeat("█", DEFAULT_MAX_BUF_SIZE);
         let mut wr = super::SplitByUtf8BoundaryIfWindows::new(TextMockWriter);
         let fut = async move {
             wr.write_all(data.as_bytes()).await.unwrap();
@@ -197,7 +198,7 @@ mod tests {
         
         let checked_count = super::MAGIC_CONST * super::MAX_BYTES_PER_CHAR;
         let mut data: Vec<u8> = str::repeat("a", checked_count).into();
-        data.extend(std::iter::repeat(0b1010_1010).take(MAX_BUF - checked_count + 1));
+        data.extend(std::iter::repeat(0b1010_1010).take(DEFAULT_MAX_BUF_SIZE - checked_count + 1));
         let mut writer = LoggingMockWriter::new();
         let mut splitter = super::SplitByUtf8BoundaryIfWindows::new(&mut writer);
         crate::runtime::Builder::new_current_thread()

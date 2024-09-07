@@ -171,6 +171,22 @@ impl<T> Block<T> {
     
     
     
+    pub(crate) fn has_value(&self, slot_index: usize) -> bool {
+        if slot_index < self.header.start_index {
+            return false;
+        }
+        if slot_index >= self.header.start_index + super::BLOCK_CAP {
+            return false;
+        }
+
+        let offset = offset(slot_index);
+        let ready_bits = self.header.ready_slots.load(Acquire);
+        is_ready(ready_bits, offset)
+    }
+
+    
+    
+    
     
     
     
@@ -193,6 +209,11 @@ impl<T> Block<T> {
     
     pub(crate) unsafe fn tx_close(&self) {
         self.header.ready_slots.fetch_or(TX_CLOSED, Release);
+    }
+
+    pub(crate) unsafe fn is_closed(&self) -> bool {
+        let ready_bits = self.header.ready_slots.load(Acquire);
+        is_tx_closed(ready_bits)
     }
 
     
@@ -243,13 +264,6 @@ impl<T> Block<T> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub(crate) fn is_final(&self) -> bool {
         self.header.ready_slots.load(Acquire) & READY_MASK == READY_MASK
     }
@@ -272,10 +286,9 @@ impl<T> Block<T> {
         let ret = NonNull::new(self.header.next.load(ordering));
 
         debug_assert!(unsafe {
-            ret.map(|block| {
+            ret.map_or(true, |block| {
                 block.as_ref().header.start_index == self.header.start_index.wrapping_add(BLOCK_CAP)
             })
-            .unwrap_or(true)
         });
 
         ret
@@ -382,7 +395,7 @@ impl<T> Block<T> {
             let actual = unsafe { curr.as_ref().try_push(&mut new_block, AcqRel, Acquire) };
 
             curr = match actual {
-                Ok(_) => {
+                Ok(()) => {
                     return next;
                 }
                 Err(curr) => curr,

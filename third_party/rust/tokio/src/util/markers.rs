@@ -1,8 +1,9 @@
 
-pub(crate) struct SyncNotSend(*mut ());
+#[allow(dead_code)]
+pub(crate) struct SyncNotSend(#[allow(dead_code)] *mut ());
 
 unsafe impl Sync for SyncNotSend {}
 
 cfg_rt! {
-    pub(crate) struct NotSendOrSync(*mut ());
+    pub(crate) struct NotSendOrSync(#[allow(dead_code)] *mut ());
 }

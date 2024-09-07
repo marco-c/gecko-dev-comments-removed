@@ -58,6 +58,7 @@ use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::AtomicU64;
 use crate::loom::sync::atomic::Ordering;
 
+use crate::runtime::context;
 use crate::runtime::scheduler;
 use crate::sync::AtomicWaker;
 use crate::time::Instant;
@@ -75,7 +76,7 @@ const STATE_MIN_VALUE: u64 = STATE_PENDING_FIRE;
 
 
 
-pub(super) const MAX_SAFE_MILLIS_DURATION: u64 = u64::MAX - 2;
+pub(super) const MAX_SAFE_MILLIS_DURATION: u64 = STATE_MIN_VALUE - 1;
 
 
 
@@ -187,18 +188,14 @@ impl StateCell {
                 break Err(cur_state);
             }
 
-            match self.state.compare_exchange(
+            match self.state.compare_exchange_weak(
                 cur_state,
                 STATE_PENDING_FIRE,
                 Ordering::AcqRel,
                 Ordering::Acquire,
             ) {
-                Ok(_) => {
-                    break Ok(());
-                }
-                Err(actual_state) => {
-                    cur_state = actual_state;
-                }
+                Ok(_) => break Ok(()),
+                Err(actual_state) => cur_state = actual_state,
             }
         }
     }
@@ -266,12 +263,8 @@ impl StateCell {
                 Ordering::AcqRel,
                 Ordering::Acquire,
             ) {
-                Ok(_) => {
-                    return Ok(());
-                }
-                Err(true_prior) => {
-                    prior = true_prior;
-                }
+                Ok(_) => return Ok(()),
+                Err(true_prior) => prior = true_prior,
             }
         }
     }
@@ -301,7 +294,7 @@ pub(crate) struct TimerEntry {
     
     
     
-    inner: StdUnsafeCell<TimerShared>,
+    inner: StdUnsafeCell<Option<TimerShared>>,
     
     
     deadline: Instant,
@@ -337,6 +330,8 @@ pub(super) type EntryList = crate::util::linked_list::LinkedList<TimerShared, Ti
 
 pub(crate) struct TimerShared {
     
+    shard_id: u32,
+    
     
     
     
@@ -346,9 +341,6 @@ pub(crate) struct TimerShared {
     
     
     cached_when: AtomicU64,
-
-    
-    true_when: AtomicU64,
 
     
     
@@ -364,7 +356,6 @@ unsafe impl Sync for TimerShared {}
 impl std::fmt::Debug for TimerShared {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TimerShared")
-            .field("when", &self.true_when.load(Ordering::Relaxed))
             .field("cached_when", &self.cached_when.load(Ordering::Relaxed))
             .field("state", &self.state)
             .finish()
@@ -380,10 +371,10 @@ generate_addr_of_methods! {
 }
 
 impl TimerShared {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(shard_id: u32) -> Self {
         Self {
+            shard_id,
             cached_when: AtomicU64::new(0),
-            true_when: AtomicU64::new(0),
             pointers: linked_list::Pointers::new(),
             state: StateCell::default(),
             _p: PhantomPinned,
@@ -451,6 +442,11 @@ impl TimerShared {
     pub(super) fn might_be_registered(&self) -> bool {
         self.state.might_be_registered()
     }
+
+    
+    pub(super) fn shard_id(&self) -> u32 {
+        self.shard_id
+    }
 }
 
 unsafe impl linked_list::Link for TimerShared {
@@ -477,23 +473,34 @@ unsafe impl linked_list::Link for TimerShared {
 
 impl TimerEntry {
     #[track_caller]
-    pub(crate) fn new(handle: &scheduler::Handle, deadline: Instant) -> Self {
+    pub(crate) fn new(handle: scheduler::Handle, deadline: Instant) -> Self {
         
         let _ = handle.driver().time();
 
-        let driver = handle.clone();
-
         Self {
-            driver,
-            inner: StdUnsafeCell::new(TimerShared::new()),
+            driver: handle,
+            inner: StdUnsafeCell::new(None),
             deadline,
             registered: false,
             _m: std::marker::PhantomPinned,
         }
     }
 
+    fn is_inner_init(&self) -> bool {
+        unsafe { &*self.inner.get() }.is_some()
+    }
+
+    
     fn inner(&self) -> &TimerShared {
-        unsafe { &*self.inner.get() }
+        let inner = unsafe { &*self.inner.get() };
+        if inner.is_none() {
+            let shard_size = self.driver.driver().time().inner.get_shard_size();
+            let shard_id = generate_shard_id(shard_size);
+            unsafe {
+                *self.inner.get() = Some(TimerShared::new(shard_id));
+            }
+        }
+        return inner.as_ref().unwrap();
     }
 
     pub(crate) fn deadline(&self) -> Instant {
@@ -501,11 +508,15 @@ impl TimerEntry {
     }
 
     pub(crate) fn is_elapsed(&self) -> bool {
-        !self.inner().state.might_be_registered() && self.registered
+        self.is_inner_init() && !self.inner().state.might_be_registered() && self.registered
     }
 
     
     pub(crate) fn cancel(self: Pin<&mut Self>) {
+        
+        if !self.is_inner_init() {
+            return;
+        }
         
         
         
@@ -532,8 +543,9 @@ impl TimerEntry {
     }
 
     pub(crate) fn reset(mut self: Pin<&mut Self>, new_time: Instant, reregister: bool) {
-        unsafe { self.as_mut().get_unchecked_mut() }.deadline = new_time;
-        unsafe { self.as_mut().get_unchecked_mut() }.registered = reregister;
+        let this = unsafe { self.as_mut().get_unchecked_mut() };
+        this.deadline = new_time;
+        this.registered = reregister;
 
         let tick = self.driver().time_source().deadline_to_tick(new_time);
 
@@ -553,18 +565,18 @@ impl TimerEntry {
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Result<(), super::Error>> {
-        if self.driver().is_shutdown() {
-            panic!("{}", crate::util::error::RUNTIME_SHUTTING_DOWN_ERROR);
-        }
+        assert!(
+            !self.driver().is_shutdown(),
+            "{}",
+            crate::util::error::RUNTIME_SHUTTING_DOWN_ERROR
+        );
 
         if !self.registered {
             let deadline = self.deadline;
             self.as_mut().reset(deadline, true);
         }
 
-        let this = unsafe { self.get_unchecked_mut() };
-
-        this.inner().state.poll(cx.waker())
+        self.inner().state.poll(cx.waker())
     }
 
     pub(crate) fn driver(&self) -> &super::Handle {
@@ -639,6 +651,28 @@ impl TimerHandle {
 
 impl Drop for TimerEntry {
     fn drop(&mut self) {
-        unsafe { Pin::new_unchecked(self) }.as_mut().cancel()
+        unsafe { Pin::new_unchecked(self) }.as_mut().cancel();
+    }
+}
+
+
+
+cfg_rt! {
+    fn generate_shard_id(shard_size: u32) -> u32 {
+        let id = context::with_scheduler(|ctx| match ctx {
+            Some(scheduler::Context::CurrentThread(_ctx)) => 0,
+            #[cfg(feature = "rt-multi-thread")]
+            Some(scheduler::Context::MultiThread(ctx)) => ctx.get_worker_index() as u32,
+            #[cfg(all(tokio_unstable, feature = "rt-multi-thread"))]
+            Some(scheduler::Context::MultiThreadAlt(ctx)) => ctx.get_worker_index() as u32,
+            None => context::thread_rng_n(shard_size),
+        });
+        id % shard_size
+    }
+}
+
+cfg_not_rt! {
+    fn generate_shard_id(shard_size: u32) -> u32 {
+        context::thread_rng_n(shard_size)
     }
 }

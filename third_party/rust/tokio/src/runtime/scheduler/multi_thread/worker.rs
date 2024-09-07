@@ -72,9 +72,10 @@ use crate::util::rand::{FastRand, RngSeedGenerator};
 
 use std::cell::RefCell;
 use std::task::Waker;
+use std::thread;
 use std::time::Duration;
 
-cfg_metrics! {
+cfg_unstable_metrics! {
     mod metrics;
 }
 
@@ -158,7 +159,7 @@ pub(crate) struct Shared {
     idle: Idle,
 
     
-    pub(super) owned: OwnedTasks<Arc<Handle>>,
+    pub(crate) owned: OwnedTasks<Arc<Handle>>,
 
     
     pub(super) synced: Mutex<Synced>,
@@ -287,7 +288,7 @@ pub(super) fn create(
             remotes: remotes.into_boxed_slice(),
             inject,
             idle,
-            owned: OwnedTasks::new(),
+            owned: OwnedTasks::new(size),
             synced: Mutex::new(Synced {
                 idle: idle_synced,
                 inject: inject_synced,
@@ -334,6 +335,12 @@ where
                 if let Some(cx) = maybe_cx {
                     if self.take_core {
                         let core = cx.worker.core.take();
+
+                        if core.is_some() {
+                            cx.worker.handle.shared.worker_metrics[cx.worker.index]
+                                .set_thread_id(thread::current().id());
+                        }
+
                         let mut cx_core = cx.core.borrow_mut();
                         assert!(cx_core.is_none());
                         *cx_core = core;
@@ -395,10 +402,18 @@ where
         let cx = maybe_cx.expect("no .is_some() == false cases above should lead here");
 
         
-        let core = match cx.core.borrow_mut().take() {
+        let mut core = match cx.core.borrow_mut().take() {
             Some(core) => core,
             None => return Ok(()),
         };
+
+        
+        
+        
+        if let Some(task) = core.lifo_slot.take() {
+            core.run_queue
+                .push_back_or_overflow(task, &*cx.worker.handle, &mut core.stats);
+        }
 
         
         
@@ -450,6 +465,7 @@ impl Launch {
 }
 
 fn run(worker: Arc<Worker>) {
+    #[allow(dead_code)]
     struct AbortOnPanic;
 
     impl Drop for AbortOnPanic {
@@ -472,6 +488,8 @@ fn run(worker: Arc<Worker>) {
         Some(core) => core,
         None => return,
     };
+
+    worker.handle.shared.worker_metrics[worker.index].set_thread_id(thread::current().id());
 
     let handle = scheduler::Handle::MultiThread(worker.handle.clone());
 
@@ -543,11 +561,11 @@ impl Context {
                 } else {
                     self.park(core)
                 };
+                core.stats.start_processing_scheduled_tasks();
             }
         }
 
         core.pre_shutdown(&self.worker);
-
         
         self.worker.handle.shutdown_core(core);
         Err(())
@@ -690,7 +708,12 @@ impl Context {
         if core.transition_to_parked(&self.worker) {
             while !core.is_shutdown && !core.is_traced {
                 core.stats.about_to_park();
+                core.stats
+                    .submit(&self.worker.handle.shared.worker_metrics[self.worker.index]);
+
                 core = self.park_timeout(core, None);
+
+                core.stats.unparked();
 
                 
                 core.maintenance(&self.worker);
@@ -741,6 +764,11 @@ impl Context {
     pub(crate) fn defer(&self, waker: &Waker) {
         self.defer.defer(waker);
     }
+
+    #[allow(dead_code)]
+    pub(crate) fn get_worker_index(&self) -> usize {
+        self.worker.index
+    }
 }
 
 impl Core {
@@ -786,6 +814,10 @@ impl Core {
                 worker.inject().len() / worker.handle.shared.remotes.len() + 1,
                 cap,
             );
+
+            
+            
+            let n = usize::max(1, n);
 
             let mut synced = worker.handle.shared.synced.lock();
             
@@ -951,7 +983,15 @@ impl Core {
     
     fn pre_shutdown(&mut self, worker: &Worker) {
         
-        worker.handle.shared.owned.close_and_shutdown_all();
+        let start = self
+            .rand
+            .fastrand_n(worker.handle.shared.owned.get_shard_size() as u32);
+        
+        worker
+            .handle
+            .shared
+            .owned
+            .close_and_shutdown_all(start as usize);
 
         self.stats
             .submit(&worker.handle.shared.worker_metrics[worker.index]);
@@ -972,8 +1012,6 @@ impl Core {
         let next = self
             .stats
             .tuned_global_queue_interval(&worker.handle.shared.config);
-
-        debug_assert!(next > 1);
 
         
         if abs_diff(self.global_queue_interval, next) > 2 {
@@ -1021,7 +1059,13 @@ impl Handle {
             
             self.push_remote_task(task);
             self.notify_parked_remote();
-        })
+        });
+    }
+
+    pub(super) fn schedule_option_task_without_yield(&self, task: Option<Notified>) {
+        if let Some(task) = task {
+            self.schedule_task(task, false);
+        }
     }
 
     fn schedule_local(&self, core: &mut Core, task: Notified, is_yield: bool) {

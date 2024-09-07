@@ -12,6 +12,9 @@ pub mod windows {
         pub type RawHandle = crate::doc::NotDefinedHere;
 
         
+        pub type OwnedHandle = crate::doc::NotDefinedHere;
+
+        
         pub trait AsRawHandle {
             
             fn as_raw_handle(&self) -> RawHandle;

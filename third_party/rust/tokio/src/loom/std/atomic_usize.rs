@@ -23,7 +23,8 @@ impl AtomicUsize {
     
     
     pub(crate) unsafe fn unsync_load(&self) -> usize {
-        core::ptr::read(self.inner.get() as *const usize)
+        
+        self.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     pub(crate) fn with_mut<R>(&mut self, f: impl FnOnce(&mut usize) -> R) -> R {

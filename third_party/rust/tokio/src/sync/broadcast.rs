@@ -117,9 +117,9 @@
 
 
 use crate::loom::cell::UnsafeCell;
-use crate::loom::sync::atomic::AtomicUsize;
+use crate::loom::sync::atomic::{AtomicBool, AtomicUsize};
 use crate::loom::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard};
-use crate::util::linked_list::{self, LinkedList};
+use crate::util::linked_list::{self, GuardedLinkedList, LinkedList};
 use crate::util::WakeList;
 
 use std::fmt;
@@ -127,9 +127,8 @@ use std::future::Future;
 use std::marker::PhantomPinned;
 use std::pin::Pin;
 use std::ptr::NonNull;
-use std::sync::atomic::Ordering::SeqCst;
+use std::sync::atomic::Ordering::{Acquire, Relaxed, Release, SeqCst};
 use std::task::{Context, Poll, Waker};
-use std::usize;
 
 
 
@@ -299,7 +298,7 @@ pub mod error {
     impl std::error::Error for TryRecvError {}
 }
 
-use self::error::*;
+use self::error::{RecvError, SendError, TryRecvError};
 
 
 struct Shared<T> {
@@ -354,7 +353,7 @@ struct Slot<T> {
 
 struct Waiter {
     
-    queued: bool,
+    queued: AtomicBool,
 
     
     waker: Option<Waker>,
@@ -364,6 +363,17 @@ struct Waiter {
 
     
     _p: PhantomPinned,
+}
+
+impl Waiter {
+    fn new() -> Self {
+        Self {
+            queued: AtomicBool::new(false),
+            waker: None,
+            pointers: linked_list::Pointers::new(),
+            _p: PhantomPinned,
+        }
+    }
 }
 
 generate_addr_of_methods! {
@@ -443,43 +453,16 @@ const MAX_RECEIVERS: usize = usize::MAX >> 2;
 
 
 
+
+
 #[track_caller]
-pub fn channel<T: Clone>(mut capacity: usize) -> (Sender<T>, Receiver<T>) {
-    assert!(capacity > 0, "capacity is empty");
-    assert!(capacity <= usize::MAX >> 1, "requested capacity too large");
-
+pub fn channel<T: Clone>(capacity: usize) -> (Sender<T>, Receiver<T>) {
     
-    capacity = capacity.next_power_of_two();
-
-    let mut buffer = Vec::with_capacity(capacity);
-
-    for i in 0..capacity {
-        buffer.push(RwLock::new(Slot {
-            rem: AtomicUsize::new(0),
-            pos: (i as u64).wrapping_sub(capacity as u64),
-            val: UnsafeCell::new(None),
-        }));
-    }
-
-    let shared = Arc::new(Shared {
-        buffer: buffer.into_boxed_slice(),
-        mask: capacity - 1,
-        tail: Mutex::new(Tail {
-            pos: 0,
-            rx_cnt: 1,
-            closed: false,
-            waiters: LinkedList::new(),
-        }),
-        num_tx: AtomicUsize::new(1),
-    });
-
+    let tx = unsafe { Sender::new_with_receiver_count(1, capacity) };
     let rx = Receiver {
-        shared: shared.clone(),
+        shared: tx.shared.clone(),
         next: 0,
     };
-
-    let tx = Sender { shared };
-
     (tx, rx)
 }
 
@@ -490,6 +473,66 @@ unsafe impl<T: Send> Send for Receiver<T> {}
 unsafe impl<T: Send> Sync for Receiver<T> {}
 
 impl<T> Sender<T> {
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn new(capacity: usize) -> Self {
+        
+        unsafe { Self::new_with_receiver_count(0, capacity) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    unsafe fn new_with_receiver_count(receiver_count: usize, mut capacity: usize) -> Self {
+        assert!(capacity > 0, "broadcast channel capacity cannot be zero");
+        assert!(
+            capacity <= usize::MAX >> 1,
+            "broadcast channel capacity exceeded `usize::MAX / 2`"
+        );
+
+        
+        capacity = capacity.next_power_of_two();
+
+        let mut buffer = Vec::with_capacity(capacity);
+
+        for i in 0..capacity {
+            buffer.push(RwLock::new(Slot {
+                rem: AtomicUsize::new(0),
+                pos: (i as u64).wrapping_sub(capacity as u64),
+                val: UnsafeCell::new(None),
+            }));
+        }
+
+        let shared = Arc::new(Shared {
+            buffer: buffer.into_boxed_slice(),
+            mask: capacity - 1,
+            tail: Mutex::new(Tail {
+                pos: 0,
+                rx_cnt: receiver_count,
+                closed: false,
+                waiters: LinkedList::new(),
+            }),
+            num_tx: AtomicUsize::new(1),
+        });
+
+        Sender { shared }
+    }
+
+    
     
     
     
@@ -773,9 +816,7 @@ impl<T> Sender<T> {
 fn new_receiver<T>(shared: Arc<Shared<T>>) -> Receiver<T> {
     let mut tail = shared.tail.lock();
 
-    if tail.rx_cnt == MAX_RECEIVERS {
-        panic!("max receivers");
-    }
+    assert!(tail.rx_cnt != MAX_RECEIVERS, "max receivers");
 
     tail.rx_cnt = tail.rx_cnt.checked_add(1).expect("overflow");
 
@@ -786,21 +827,91 @@ fn new_receiver<T>(shared: Arc<Shared<T>>) -> Receiver<T> {
     Receiver { shared, next }
 }
 
+
+
+
+struct WaitersList<'a, T> {
+    list: GuardedLinkedList<Waiter, <Waiter as linked_list::Link>::Target>,
+    is_empty: bool,
+    shared: &'a Shared<T>,
+}
+
+impl<'a, T> Drop for WaitersList<'a, T> {
+    fn drop(&mut self) {
+        
+        
+        if !self.is_empty {
+            let _lock_guard = self.shared.tail.lock();
+            while self.list.pop_back().is_some() {}
+        }
+    }
+}
+
+impl<'a, T> WaitersList<'a, T> {
+    fn new(
+        unguarded_list: LinkedList<Waiter, <Waiter as linked_list::Link>::Target>,
+        guard: Pin<&'a Waiter>,
+        shared: &'a Shared<T>,
+    ) -> Self {
+        let guard_ptr = NonNull::from(guard.get_ref());
+        let list = unguarded_list.into_guarded(guard_ptr);
+        WaitersList {
+            list,
+            is_empty: false,
+            shared,
+        }
+    }
+
+    
+    
+    fn pop_back_locked(&mut self, _tail: &mut Tail) -> Option<NonNull<Waiter>> {
+        let result = self.list.pop_back();
+        if result.is_none() {
+            
+            
+            self.is_empty = true;
+        }
+        result
+    }
+}
+
 impl<T> Shared<T> {
     fn notify_rx<'a, 'b: 'a>(&'b self, mut tail: MutexGuard<'a, Tail>) {
+        
+        
+        let guard = Waiter::new();
+        pin!(guard);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut list = WaitersList::new(std::mem::take(&mut tail.waiters), guard.as_ref(), self);
+
         let mut wakers = WakeList::new();
         'outer: loop {
             while wakers.can_push() {
-                match tail.waiters.pop_back() {
-                    Some(mut waiter) => {
-                        
-                        let waiter = unsafe { waiter.as_mut() };
+                match list.pop_back_locked(&mut tail) {
+                    Some(waiter) => {
+                        unsafe {
+                            
+                            
+                            if let Some(waker) = (*waiter.as_ptr()).waker.take() {
+                                wakers.push(waker);
+                            }
 
-                        assert!(waiter.queued);
-                        waiter.queued = false;
-
-                        if let Some(waker) = waiter.waker.take() {
-                            wakers.push(waker);
+                            
+                            let queued = &(*waiter.as_ptr()).queued;
+                            
+                            assert!(queued.load(Relaxed));
+                            
+                            
+                            
+                            queued.store(false, Release);
                         }
                     }
                     None => {
@@ -999,8 +1110,13 @@ impl<T> Receiver<T> {
                                     }
                                 }
 
-                                if !(*ptr).queued {
-                                    (*ptr).queued = true;
+                                
+                                
+                                
+                                if !(*ptr).queued.load(Relaxed) {
+                                    
+                                    
+                                    (*ptr).queued.store(true, Relaxed);
                                     tail.waiters.push_front(NonNull::new_unchecked(&mut *ptr));
                                 }
                             });
@@ -1218,6 +1334,7 @@ impl<T: Clone> Receiver<T> {
     
     
     
+    
     pub fn blocking_recv(&mut self) -> Result<T, RecvError> {
         crate::future::block_on(self.recv())
     }
@@ -1251,7 +1368,7 @@ impl<'a, T> Recv<'a, T> {
         Recv {
             receiver,
             waiter: UnsafeCell::new(Waiter {
-                queued: false,
+                queued: AtomicBool::new(false),
                 waker: None,
                 pointers: linked_list::Pointers::new(),
                 _p: PhantomPinned,
@@ -1298,20 +1415,35 @@ impl<'a, T> Drop for Recv<'a, T> {
     fn drop(&mut self) {
         
         
-        let mut tail = self.receiver.shared.tail.lock();
+        
+        let queued = self
+            .waiter
+            .with(|ptr| unsafe { (*ptr).queued.load(Acquire) });
 
         
-        let queued = self.waiter.with(|ptr| unsafe { (*ptr).queued });
-
+        
+        
         if queued {
             
             
+            let mut tail = self.receiver.shared.tail.lock();
+
             
             
-            unsafe {
-                self.waiter.with_mut(|ptr| {
-                    tail.waiters.remove((&mut *ptr).into());
-                });
+            let queued = self
+                .waiter
+                .with_mut(|ptr| unsafe { (*ptr).queued.load(Relaxed) });
+
+            if queued {
+                
+                
+                
+                
+                unsafe {
+                    self.waiter.with_mut(|ptr| {
+                        tail.waiters.remove((&mut *ptr).into());
+                    });
+                }
             }
         }
     }
@@ -1369,3 +1501,41 @@ impl<'a, T> Drop for RecvGuard<'a, T> {
 }
 
 fn is_unpin<T: Unpin>() {}
+
+#[cfg(not(loom))]
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn receiver_count_on_sender_constructor() {
+        let sender = Sender::<i32>::new(16);
+        assert_eq!(sender.receiver_count(), 0);
+
+        let rx_1 = sender.subscribe();
+        assert_eq!(sender.receiver_count(), 1);
+
+        let rx_2 = rx_1.resubscribe();
+        assert_eq!(sender.receiver_count(), 2);
+
+        let rx_3 = sender.subscribe();
+        assert_eq!(sender.receiver_count(), 3);
+
+        drop(rx_3);
+        drop(rx_1);
+        assert_eq!(sender.receiver_count(), 1);
+
+        drop(rx_2);
+        assert_eq!(sender.receiver_count(), 0);
+    }
+
+    #[cfg(not(loom))]
+    #[test]
+    fn receiver_count_on_channel_constructor() {
+        let (sender, rx) = channel::<i32>(16);
+        assert_eq!(sender.receiver_count(), 1);
+
+        let _rx_2 = rx.resubscribe();
+        assert_eq!(sender.receiver_count(), 2);
+    }
+}

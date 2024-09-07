@@ -126,6 +126,10 @@ use std::{fmt, mem, ptr};
 
 
 
+
+
+
+
 pub struct Mutex<T: ?Sized> {
     #[cfg(all(tokio_unstable, feature = "tracing"))]
     resource_span: tracing::Span,
@@ -340,6 +344,7 @@ impl<T: ?Sized> Mutex<T> {
             let location = std::panic::Location::caller();
 
             tracing::trace_span!(
+                parent: None,
                 "runtime.resource",
                 concrete_type = "Mutex",
                 kind = "Sync",
@@ -378,8 +383,15 @@ impl<T: ?Sized> Mutex<T> {
     
     
     
-    #[cfg(all(feature = "parking_lot", not(all(loom, test)),))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "parking_lot")))]
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(all(loom, test)))]
     pub const fn const_new(t: T) -> Self
     where
         T: Sized,
@@ -392,6 +404,10 @@ impl<T: ?Sized> Mutex<T> {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -591,6 +607,10 @@ impl<T: ?Sized> Mutex<T> {
     
     
     
+    
+    
+    
+    
     pub async fn lock_owned(self: Arc<Self>) -> OwnedMutexGuard<T> {
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         let resource_span = self.resource_span.clone();
@@ -657,7 +677,7 @@ impl<T: ?Sized> Mutex<T> {
     
     pub fn try_lock(&self) -> Result<MutexGuard<'_, T>, TryLockError> {
         match self.s.try_acquire(1) {
-            Ok(_) => {
+            Ok(()) => {
                 let guard = MutexGuard {
                     lock: self,
                     #[cfg(all(tokio_unstable, feature = "tracing"))]
@@ -728,7 +748,7 @@ impl<T: ?Sized> Mutex<T> {
     
     pub fn try_lock_owned(self: Arc<Self>) -> Result<OwnedMutexGuard<T>, TryLockError> {
         match self.s.try_acquire(1) {
-            Ok(_) => {
+            Ok(()) => {
                 let guard = OwnedMutexGuard {
                     #[cfg(all(tokio_unstable, feature = "tracing"))]
                     resource_span: self.resource_span.clone(),
@@ -847,6 +867,7 @@ impl<'a, T: ?Sized> MutexGuard<'a, T> {
     #[inline]
     pub fn map<U, F>(mut this: Self, f: F) -> MappedMutexGuard<'a, U>
     where
+        U: ?Sized,
         F: FnOnce(&mut T) -> &mut U,
     {
         let data = f(&mut *this) as *mut U;
@@ -895,6 +916,7 @@ impl<'a, T: ?Sized> MutexGuard<'a, T> {
     #[inline]
     pub fn try_map<U, F>(mut this: Self, f: F) -> Result<MappedMutexGuard<'a, U>, Self>
     where
+        U: ?Sized,
         F: FnOnce(&mut T) -> Option<&mut U>,
     {
         let data = match f(&mut *this) {
@@ -1027,6 +1049,7 @@ impl<T: ?Sized> OwnedMutexGuard<T> {
     #[inline]
     pub fn map<U, F>(mut this: Self, f: F) -> OwnedMappedMutexGuard<T, U>
     where
+        U: ?Sized,
         F: FnOnce(&mut T) -> &mut U,
     {
         let data = f(&mut *this) as *mut U;
@@ -1075,6 +1098,7 @@ impl<T: ?Sized> OwnedMutexGuard<T> {
     #[inline]
     pub fn try_map<U, F>(mut this: Self, f: F) -> Result<OwnedMappedMutexGuard<T, U>, Self>
     where
+        U: ?Sized,
         F: FnOnce(&mut T) -> Option<&mut U>,
     {
         let data = match f(&mut *this) {

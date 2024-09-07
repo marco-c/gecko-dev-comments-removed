@@ -86,18 +86,11 @@ pub(crate) struct Pointers<T> {
 
 
 
-#[repr(C)]
 struct PointersInner<T> {
     
-    
-    
-    #[allow(dead_code)]
     prev: Option<NonNull<T>>,
 
     
-    
-    
-    #[allow(dead_code)]
     next: Option<NonNull<T>>,
 
     
@@ -146,6 +139,26 @@ impl<L: Link> LinkedList<L, L::Target> {
 
     
     
+    pub(crate) fn pop_front(&mut self) -> Option<L::Handle> {
+        unsafe {
+            let head = self.head?;
+            self.head = L::pointers(head).as_ref().get_next();
+
+            if let Some(new_head) = L::pointers(head).as_ref().get_next() {
+                L::pointers(new_head).as_mut().set_prev(None);
+            } else {
+                self.tail = None;
+            }
+
+            L::pointers(head).as_mut().set_prev(None);
+            L::pointers(head).as_mut().set_next(None);
+
+            Some(L::from_raw(head))
+        }
+    }
+
+    
+    
     pub(crate) fn pop_back(&mut self) -> Option<L::Handle> {
         unsafe {
             let last = self.tail?;
@@ -154,7 +167,7 @@ impl<L: Link> LinkedList<L, L::Target> {
             if let Some(prev) = L::pointers(last).as_ref().get_prev() {
                 L::pointers(prev).as_mut().set_next(None);
             } else {
-                self.head = None
+                self.head = None;
             }
 
             L::pointers(last).as_mut().set_prev(None);
@@ -228,53 +241,6 @@ impl<L: Link> fmt::Debug for LinkedList<L, L::Target> {
     }
 }
 
-
-
-
-
-pub(crate) struct CountedLinkedList<L: Link, T> {
-    list: LinkedList<L, T>,
-    count: usize,
-}
-
-impl<L: Link> CountedLinkedList<L, L::Target> {
-    pub(crate) fn new() -> CountedLinkedList<L, L::Target> {
-        CountedLinkedList {
-            list: LinkedList::new(),
-            count: 0,
-        }
-    }
-
-    pub(crate) fn push_front(&mut self, val: L::Handle) {
-        self.list.push_front(val);
-        self.count += 1;
-    }
-
-    pub(crate) fn pop_back(&mut self) -> Option<L::Handle> {
-        let val = self.list.pop_back();
-        if val.is_some() {
-            self.count -= 1;
-        }
-        val
-    }
-
-    pub(crate) fn is_empty(&self) -> bool {
-        self.list.is_empty()
-    }
-
-    pub(crate) unsafe fn remove(&mut self, node: NonNull<L::Target>) -> Option<L::Handle> {
-        let val = self.list.remove(node);
-        if val.is_some() {
-            self.count -= 1;
-        }
-        val
-    }
-
-    pub(crate) fn count(&self) -> usize {
-        self.count
-    }
-}
-
 #[cfg(any(
     feature = "fs",
     feature = "rt",
@@ -297,7 +263,7 @@ impl<L: Link> Default for LinkedList<L, L::Target> {
 
 
 
-cfg_io_readiness! {
+cfg_io_driver_impl! {
     pub(crate) struct DrainFilter<'a, T: Link, F> {
         list: &'a mut LinkedList<T, T::Target>,
         filter: F,
@@ -307,7 +273,7 @@ cfg_io_readiness! {
     impl<T: Link> LinkedList<T, T::Target> {
         pub(crate) fn drain_filter<F>(&mut self, filter: F) -> DrainFilter<'_, T, F>
         where
-            F: FnMut(&mut T::Target) -> bool,
+            F: FnMut(&T::Target) -> bool,
         {
             let curr = self.head;
             DrainFilter {
@@ -321,7 +287,7 @@ cfg_io_readiness! {
     impl<'a, T, F> Iterator for DrainFilter<'a, T, F>
     where
         T: Link,
-        F: FnMut(&mut T::Target) -> bool,
+        F: FnMut(&T::Target) -> bool,
     {
         type Item = T::Handle;
 
@@ -342,22 +308,11 @@ cfg_io_readiness! {
 }
 
 cfg_taskdump! {
-    impl<T: Link> CountedLinkedList<T, T::Target> {
-        pub(crate) fn for_each<F>(&mut self, f: F)
-        where
-            F: FnMut(&T::Handle),
-        {
-            self.list.for_each(f)
-        }
-    }
-
     impl<T: Link> LinkedList<T, T::Target> {
         pub(crate) fn for_each<F>(&mut self, mut f: F)
         where
             F: FnMut(&T::Handle),
         {
-            use std::mem::ManuallyDrop;
-
             let mut next = self.head;
 
             while let Some(curr) = next {
@@ -396,7 +351,7 @@ feature! {
         _marker: PhantomData<*const L>,
     }
 
-    impl<U, L: Link<Handle = NonNull<U>>> LinkedList<L, L::Target> {
+    impl<L: Link> LinkedList<L, L::Target> {
         /// Turns a linked list into the guarded version by linking the guard node
         /// with the head and tail nodes. Like with other nodes, you should guarantee
         /// that the guard node is pinned in memory.
@@ -477,37 +432,23 @@ impl<T> Pointers<T> {
 
     pub(crate) fn get_prev(&self) -> Option<NonNull<T>> {
         
-        unsafe {
-            let inner = self.inner.get();
-            let prev = inner as *const Option<NonNull<T>>;
-            ptr::read(prev)
-        }
+        unsafe { ptr::addr_of!((*self.inner.get()).prev).read() }
     }
     pub(crate) fn get_next(&self) -> Option<NonNull<T>> {
         
-        unsafe {
-            let inner = self.inner.get();
-            let prev = inner as *const Option<NonNull<T>>;
-            let next = prev.add(1);
-            ptr::read(next)
-        }
+        unsafe { ptr::addr_of!((*self.inner.get()).next).read() }
     }
 
     fn set_prev(&mut self, value: Option<NonNull<T>>) {
         
         unsafe {
-            let inner = self.inner.get();
-            let prev = inner as *mut Option<NonNull<T>>;
-            ptr::write(prev, value);
+            ptr::addr_of_mut!((*self.inner.get()).prev).write(value);
         }
     }
     fn set_next(&mut self, value: Option<NonNull<T>>) {
         
         unsafe {
-            let inner = self.inner.get();
-            let prev = inner as *mut Option<NonNull<T>>;
-            let next = prev.add(1);
-            ptr::write(next, value);
+            ptr::addr_of_mut!((*self.inner.get()).next).write(value);
         }
     }
 }
@@ -794,26 +735,6 @@ pub(crate) mod tests {
 
             assert!(list.remove(ptr(&c)).is_none());
         }
-    }
-
-    #[test]
-    fn count() {
-        let mut list = CountedLinkedList::<&Entry, <&Entry as Link>::Target>::new();
-        assert_eq!(0, list.count());
-
-        let a = entry(5);
-        let b = entry(7);
-        list.push_front(a.as_ref());
-        list.push_front(b.as_ref());
-        assert_eq!(2, list.count());
-
-        list.pop_back();
-        assert_eq!(1, list.count());
-
-        unsafe {
-            list.remove(ptr(&b));
-        }
-        assert_eq!(0, list.count());
     }
 
     

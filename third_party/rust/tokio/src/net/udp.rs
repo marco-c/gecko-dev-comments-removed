@@ -251,7 +251,7 @@ impl UdpSocket {
             use std::os::unix::io::{FromRawFd, IntoRawFd};
             self.io
                 .into_inner()
-                .map(|io| io.into_raw_fd())
+                .map(IntoRawFd::into_raw_fd)
                 .map(|raw_fd| unsafe { std::net::UdpSocket::from_raw_fd(raw_fd) })
         }
 
@@ -342,7 +342,7 @@ impl UdpSocket {
 
         for addr in addrs {
             match self.io.connect(addr) {
-                Ok(_) => return Ok(()),
+                Ok(()) => return Ok(()),
                 Err(e) => last_err = Some(e),
             }
         }
@@ -804,6 +804,7 @@ impl UdpSocket {
     
     
     pub fn poll_recv(&self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<()>> {
+        #[allow(clippy::blocks_in_conditions)]
         let n = ready!(self.io.registration().poll_read_io(cx, || {
             // Safety: will not read the maybe uninitialized bytes.
             let b = unsafe {
@@ -881,7 +882,7 @@ impl UdpSocket {
         /// Tries to receive data from the stream into the provided buffer, advancing the
         /// buffer's internal cursor, returning how many bytes were read.
         ///
-        /// This method must be called with valid byte array buf of sufficient size
+        /// This method must be called with valid byte array `buf` of sufficient size
         /// to hold the message bytes. If a message is too long to fit in the
         /// supplied buffer, excess bytes may be discarded.
         ///
@@ -949,7 +950,7 @@ impl UdpSocket {
         /// to which it is connected, advancing the buffer's internal cursor,
         /// returning how many bytes were read.
         ///
-        /// This method must be called with valid byte array buf of sufficient size
+        /// This method must be called with valid byte array `buf` of sufficient size
         /// to hold the message bytes. If a message is too long to fit in the
         /// supplied buffer, excess bytes may be discarded.
         ///
@@ -996,7 +997,7 @@ impl UdpSocket {
         /// Tries to receive a single datagram message on the socket. On success,
         /// returns the number of bytes read and the origin.
         ///
-        /// This method must be called with valid byte array buf of sufficient size
+        /// This method must be called with valid byte array `buf` of sufficient size
         /// to hold the message bytes. If a message is too long to fit in the
         /// supplied buffer, excess bytes may be discarded.
         ///
@@ -1071,7 +1072,7 @@ impl UdpSocket {
         /// Receives a single datagram message on the socket, advancing the
         /// buffer's internal cursor, returning how many bytes were read and the origin.
         ///
-        /// This method must be called with valid byte array buf of sufficient size
+        /// This method must be called with valid byte array `buf` of sufficient size
         /// to hold the message bytes. If a message is too long to fit in the
         /// supplied buffer, excess bytes may be discarded.
         ///
@@ -1340,6 +1341,7 @@ impl UdpSocket {
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<SocketAddr>> {
+        #[allow(clippy::blocks_in_conditions)]
         let (n, addr) = ready!(self.io.registration().poll_read_io(cx, || {
             // Safety: will not read the maybe uninitialized bytes.
             let b = unsafe {
@@ -1595,6 +1597,7 @@ impl UdpSocket {
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<SocketAddr>> {
+        #[allow(clippy::blocks_in_conditions)]
         let (n, addr) = ready!(self.io.registration().poll_read_io(cx, || {
             // Safety: will not read the maybe uninitialized bytes.
             let b = unsafe {
@@ -1921,7 +1924,7 @@ impl UdpSocket {
     
     
     
-    #[cfg(all(any(target_os = "android", target_os = "fuchsia", target_os = "linux")))]
+    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
     #[cfg_attr(
         docsrs,
         doc(cfg(all(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))))
@@ -2021,7 +2024,6 @@ mod sys {
         }
     }
 
-    #[cfg(not(tokio_no_as_fd))]
     impl AsFd for UdpSocket {
         fn as_fd(&self) -> BorrowedFd<'_> {
             unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
@@ -2031,7 +2033,6 @@ mod sys {
 
 cfg_windows! {
     use crate::os::windows::io::{AsRawSocket, RawSocket};
-    #[cfg(not(tokio_no_as_fd))]
     use crate::os::windows::io::{AsSocket, BorrowedSocket};
 
     impl AsRawSocket for UdpSocket {
@@ -2040,7 +2041,6 @@ cfg_windows! {
         }
     }
 
-    #[cfg(not(tokio_no_as_fd))]
     impl AsSocket for UdpSocket {
         fn as_socket(&self) -> BorrowedSocket<'_> {
             unsafe { BorrowedSocket::borrow_raw(self.as_raw_socket()) }

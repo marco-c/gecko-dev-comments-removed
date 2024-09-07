@@ -206,6 +206,17 @@ impl<T> JoinHandle<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn abort(&self) {
         self.raw.remote_abort();
     }

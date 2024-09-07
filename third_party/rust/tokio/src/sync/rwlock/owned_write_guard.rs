@@ -390,6 +390,26 @@ impl<T: ?Sized> OwnedRwLockWriteGuard<T> {
 
         guard
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn rwlock(this: &Self) -> &Arc<RwLock<T>> {
+        &this.lock
+    }
 }
 
 impl<T: ?Sized> ops::Deref for OwnedRwLockWriteGuard<T> {

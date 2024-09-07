@@ -1,6 +1,6 @@
 use crate::runtime::time::{EntryList, TimerHandle, TimerShared};
 
-use std::{fmt, ptr::NonNull};
+use std::{array, fmt, ptr::NonNull};
 
 
 pub(crate) struct Level {
@@ -39,89 +39,10 @@ const LEVEL_MULT: usize = 64;
 
 impl Level {
     pub(crate) fn new(level: usize) -> Level {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let ctor = EntryList::default;
-
         Level {
             level,
             occupied: 0,
-            slot: [
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-                ctor(),
-            ],
+            slot: array::from_fn(|_| EntryList::default()),
         }
     }
 
@@ -130,10 +51,7 @@ impl Level {
     pub(crate) fn next_expiration(&self, now: u64) -> Option<Expiration> {
         
         
-        let slot = match self.next_occupied_slot(now) {
-            Some(slot) => slot,
-            None => return None,
-        };
+        let slot = self.next_occupied_slot(now)?;
 
         
         
@@ -196,7 +114,7 @@ impl Level {
         let now_slot = (now / slot_range(self.level)) as usize;
         let occupied = self.occupied.rotate_right(now_slot as u32);
         let zeros = occupied.trailing_zeros() as usize;
-        let slot = (zeros + now_slot) % 64;
+        let slot = (zeros + now_slot) % LEVEL_MULT;
 
         Some(slot)
     }
@@ -267,7 +185,7 @@ mod test {
         for level in 1..5 {
             for pos in level..64 {
                 let a = pos * 64_usize.pow(level as u32);
-                assert_eq!(pos as usize, slot_for(a as u64, level));
+                assert_eq!(pos, slot_for(a as u64, level));
             }
         }
     }

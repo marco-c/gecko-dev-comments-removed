@@ -8,6 +8,9 @@ pub(crate) struct MetricsBatch {
     park_count: u64,
 
     
+    park_unpark_count: u64,
+
+    
     noop_count: u64,
 
     
@@ -54,6 +57,7 @@ impl MetricsBatch {
 
         MetricsBatch {
             park_count: 0,
+            park_unpark_count: 0,
             noop_count: 0,
             steal_count: 0,
             steal_operations: 0,
@@ -73,8 +77,12 @@ impl MetricsBatch {
         }
     }
 
-    pub(crate) fn submit(&mut self, worker: &WorkerMetrics) {
+    pub(crate) fn submit(&mut self, worker: &WorkerMetrics, mean_poll_time: u64) {
+        worker.mean_poll_time.store(mean_poll_time, Relaxed);
         worker.park_count.store(self.park_count, Relaxed);
+        worker
+            .park_unpark_count
+            .store(self.park_unpark_count, Relaxed);
         worker.noop_count.store(self.noop_count, Relaxed);
         worker.steal_count.store(self.steal_count, Relaxed);
         worker
@@ -100,12 +108,18 @@ impl MetricsBatch {
     
     pub(crate) fn about_to_park(&mut self) {
         self.park_count += 1;
+        self.park_unpark_count += 1;
 
         if self.poll_count_on_last_park == self.poll_count {
             self.noop_count += 1;
         } else {
             self.poll_count_on_last_park = self.poll_count;
         }
+    }
+
+    
+    pub(crate) fn unparked(&mut self) {
+        self.park_unpark_count += 1;
     }
 
     

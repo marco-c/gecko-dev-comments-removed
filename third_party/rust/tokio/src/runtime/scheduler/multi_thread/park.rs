@@ -10,6 +10,9 @@ use crate::util::TryLock;
 use std::sync::atomic::Ordering::SeqCst;
 use std::time::Duration;
 
+#[cfg(loom)]
+use crate::runtime::park::CURRENT_THREAD_PARK_COUNT;
+
 pub(crate) struct Parker {
     inner: Arc<Inner>,
 }
@@ -72,7 +75,14 @@ impl Parker {
         assert_eq!(duration, Duration::from_millis(0));
 
         if let Some(mut driver) = self.inner.shared.driver.try_lock() {
-            driver.park_timeout(handle, duration)
+            driver.park_timeout(handle, duration);
+        } else {
+            
+            
+            
+            
+            #[cfg(loom)]
+            CURRENT_THREAD_PARK_COUNT.with(|count| count.fetch_add(1, SeqCst));
         }
     }
 
@@ -219,7 +229,7 @@ impl Inner {
         
         drop(self.mutex.lock());
 
-        self.condvar.notify_one()
+        self.condvar.notify_one();
     }
 
     fn shutdown(&self, handle: &driver::Handle) {

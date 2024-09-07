@@ -1,6 +1,5 @@
 use crate::runtime::{Config, MetricsBatch, WorkerMetrics};
 
-use std::cmp;
 use std::time::{Duration, Instant};
 
 
@@ -62,23 +61,21 @@ impl Stats {
         
         let tasks_per_interval = (TARGET_GLOBAL_QUEUE_INTERVAL / self.task_poll_time_ewma) as u32;
 
-        cmp::max(
-            
-            
-            2,
-            cmp::min(
-                MAX_TASKS_POLLED_PER_GLOBAL_QUEUE_INTERVAL,
-                tasks_per_interval,
-            ),
-        )
+        
+        
+        tasks_per_interval.clamp(2, MAX_TASKS_POLLED_PER_GLOBAL_QUEUE_INTERVAL)
     }
 
     pub(crate) fn submit(&mut self, to: &WorkerMetrics) {
-        self.batch.submit(to);
+        self.batch.submit(to, self.task_poll_time_ewma as u64);
     }
 
     pub(crate) fn about_to_park(&mut self) {
         self.batch.about_to_park();
+    }
+
+    pub(crate) fn unparked(&mut self) {
+        self.batch.unparked();
     }
 
     pub(crate) fn inc_local_schedule_count(&mut self) {

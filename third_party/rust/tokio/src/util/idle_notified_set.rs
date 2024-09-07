@@ -204,6 +204,34 @@ impl<T> IdleNotifiedSet<T> {
     }
 
     
+    
+    pub(crate) fn try_pop_notified(&mut self) -> Option<EntryInOneOfTheLists<'_, T>> {
+        
+        
+        if self.length == 0 {
+            
+            return None;
+        }
+
+        let mut lock = self.lists.lock();
+
+        
+        let entry = lock.notified.pop_back()?;
+
+        lock.idle.push_front(entry.clone());
+
+        
+        entry.my_list.with_mut(|ptr| unsafe {
+            *ptr = List::Idle;
+        });
+
+        drop(lock);
+
+        
+        Some(EntryInOneOfTheLists { entry, set: self })
+    }
+
+    
     pub(crate) fn for_each<F: FnMut(&mut T)>(&mut self, mut func: F) {
         fn get_ptrs<T>(list: &mut LinkedList<T>, ptrs: &mut Vec<*mut T>) {
             let mut node = list.last();
@@ -433,7 +461,7 @@ impl<T: 'static> Wake for ListEntry<T> {
     }
 
     fn wake(me: Arc<Self>) {
-        Self::wake_by_ref(&me)
+        Self::wake_by_ref(&me);
     }
 }
 

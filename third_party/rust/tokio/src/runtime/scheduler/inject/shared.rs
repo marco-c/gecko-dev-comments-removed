@@ -38,7 +38,7 @@ impl<T: 'static> Shared<T> {
     }
 
     
-    #[cfg(any(tokio_taskdump, all(feature = "rt-multi-thread", not(tokio_wasi))))]
+    #[cfg(any(tokio_taskdump, feature = "rt-multi-thread"))]
     pub(crate) fn is_closed(&self, synced: &Synced) -> bool {
         synced.is_closed
     }
@@ -105,6 +105,8 @@ impl<T: 'static> Shared<T> {
     
     pub(crate) unsafe fn pop_n<'a>(&'a self, synced: &'a mut Synced, n: usize) -> Pop<'a, T> {
         use std::cmp;
+
+        debug_assert!(n > 0);
 
         
         
