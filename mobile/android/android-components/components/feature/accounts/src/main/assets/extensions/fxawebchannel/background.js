@@ -14,8 +14,14 @@ let port = browser.runtime.connectNative(WEB_CHANNEL_BACKGROUND_MESSAGING_ID);
 
 port.onMessage.addListener(event => {
   if (event.type == "overrideFxAServer") {
+    
+    
+    
+    const url = new URL(event.url);
+    const urlPattern = `${url.protocol}//${url.hostname}/*`;
+
     browser.contentScripts.register({
-      matches: [event.url + "/*"],
+      matches: [urlPattern],
       js: [{ file: "fxawebchannel.js" }],
       runAt: "document_start",
     });
