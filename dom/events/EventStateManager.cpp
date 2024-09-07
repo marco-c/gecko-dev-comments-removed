@@ -2294,17 +2294,7 @@ void EventStateManager::FireContextClick() {
 
     if (allowedToDispatch) {
       
-      Maybe<WidgetPointerEvent> pointerEvent;
-      Maybe<WidgetMouseEvent> mouseEvent;
-      if (StaticPrefs::
-              dom_w3c_pointer_events_dispatch_click_as_pointer_event()) {
-        pointerEvent.emplace(true, eContextMenu, targetWidget);
-      } else {
-        mouseEvent.emplace(true, eContextMenu, targetWidget,
-                           WidgetMouseEvent::eReal);
-      }
-      WidgetMouseEvent& event =
-          pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
+      WidgetPointerEvent event(true, eContextMenu, targetWidget);
       event.mClickCount = 1;
       FillInEventFromGestureDown(&event);
 

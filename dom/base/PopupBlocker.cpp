@@ -275,13 +275,6 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
                 abuse = PopupBlocker::openControlled;
               }
               break;
-            case ePointerClick:
-              
-              
-              if (PopupAllowedForEvent("click")) {
-                abuse = PopupBlocker::openAllowed;
-              }
-              break;
             case eMouseDoubleClick:
               if (PopupAllowedForEvent("dblclick")) {
                 abuse = PopupBlocker::openControlled;
@@ -290,24 +283,6 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
             default:
               break;
           }
-        } else if (aEvent->mMessage == ePointerAuxClick) {
-          
-          
-          if (PopupAllowedForEvent("auxclick")) {
-            abuse = PopupBlocker::openControlled;
-          }
-        }
-
-        
-        
-        switch (aEvent->mMessage) {
-          case eContextMenu:
-            if (PopupAllowedForEvent("contextmenu")) {
-              abuse = PopupBlocker::openControlled;
-            }
-            break;
-          default:
-            break;
         }
       }
       break;

@@ -81,8 +81,6 @@ const char* ToChar(EventMessage aEventMessage);
 
 
 
-
-
 [[nodiscard]] bool IsPointerEventMessageOriginallyMouseEventMessage(
     EventMessage aMessage);
 

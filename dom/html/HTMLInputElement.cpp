@@ -2983,15 +2983,7 @@ void HTMLInputElement::MaybeSubmitForm(nsPresContext* aPresContext) {
   
   if (RefPtr<nsGenericHTMLFormElement> submitContent =
           mForm->GetDefaultSubmitElement()) {
-    Maybe<WidgetPointerEvent> pointerEvent;
-    Maybe<WidgetMouseEvent> mouseEvent;
-    if (StaticPrefs::dom_w3c_pointer_events_dispatch_click_as_pointer_event()) {
-      pointerEvent.emplace(true, ePointerClick, nullptr);
-    } else {
-      mouseEvent.emplace(true, ePointerClick, nullptr, WidgetMouseEvent::eReal);
-    }
-    WidgetMouseEvent& event =
-        pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
+    WidgetPointerEvent event(true, ePointerClick, nullptr);
     event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_KEYBOARD;
     
     
