@@ -24,6 +24,18 @@ namespace webrtc {
 
 class TransformableFrameInterface {
  public:
+  
+  
+  
+  
+  
+  class Passkey;
+  RTC_EXPORT explicit TransformableFrameInterface(Passkey);
+
+  TransformableFrameInterface(TransformableFrameInterface&&) = default;
+  TransformableFrameInterface& operator=(TransformableFrameInterface&&) =
+      default;
+
   virtual ~TransformableFrameInterface() = default;
 
   
@@ -58,6 +70,7 @@ class TransformableFrameInterface {
 
 class TransformableVideoFrameInterface : public TransformableFrameInterface {
  public:
+  RTC_EXPORT explicit TransformableVideoFrameInterface(Passkey passkey);
   virtual ~TransformableVideoFrameInterface() = default;
   virtual bool IsKeyFrame() const = 0;
   virtual const std::string& GetRid() const = 0;
@@ -70,6 +83,7 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
 
 class TransformableAudioFrameInterface : public TransformableFrameInterface {
  public:
+  RTC_EXPORT explicit TransformableAudioFrameInterface(Passkey passkey);
   virtual ~TransformableAudioFrameInterface() = default;
 
   virtual rtc::ArrayView<const uint32_t> GetContributingSources() const = 0;
@@ -136,6 +150,27 @@ class FrameTransformerHost {
   
   
   
+};
+
+
+
+
+class TransformableFrameInterface::Passkey {
+ public:
+  ~Passkey() = default;
+
+ private:
+  
+  
+  friend class TransformableOutgoingAudioFrame;
+  friend class TransformableIncomingAudioFrame;
+  friend class TransformableVideoSenderFrame;
+  friend class TransformableVideoReceiverFrame;
+
+  friend class MockTransformableFrame;
+  friend class MockTransformableAudioFrame;
+  friend class MockTransformableVideoFrame;
+  Passkey() = default;
 };
 
 }  

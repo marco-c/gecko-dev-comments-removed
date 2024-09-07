@@ -29,6 +29,7 @@ namespace {
 
 
 const TimeDelta kDefaultRetransmissionsTime = TimeDelta::Millis(10);
+}  
 
 class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
  public:
@@ -41,7 +42,8 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
                                 uint32_t ssrc,
                                 std::vector<uint32_t> csrcs,
                                 const std::string& rid)
-      : encoded_data_(encoded_image.GetEncodedData()),
+      : TransformableVideoFrameInterface(Passkey()),
+        encoded_data_(encoded_image.GetEncodedData()),
         pre_transform_payload_size_(encoded_image.size()),
         header_(video_header),
         frame_type_(encoded_image._frameType),
@@ -134,7 +136,6 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
   std::vector<uint32_t> csrcs_;
   const std::string rid_;
 };
-}  
 
 RTPSenderVideoFrameTransformerDelegate::RTPSenderVideoFrameTransformerDelegate(
     RTPVideoFrameSenderInterface* sender,
