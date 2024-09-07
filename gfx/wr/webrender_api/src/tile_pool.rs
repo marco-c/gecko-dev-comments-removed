@@ -43,7 +43,20 @@ impl BlobTilePool {
     
     
     pub fn get_buffer(&mut self, requested_size: usize) -> MutableTileBuffer {
-        assert!(requested_size <= self.largest_size_class);
+        if requested_size > self.largest_size_class {
+            
+            
+            
+            
+            
+            
+            
+            let mut buf = vec![0; requested_size];
+            return MutableTileBuffer {
+                ptr: buf.as_mut_ptr(),
+                strong_ref: Arc::new(buf),
+            };
+        }
 
         let (bucket_idx, cap) = self.bucket_and_size(requested_size);
         let bucket = &mut self.buckets[bucket_idx];
