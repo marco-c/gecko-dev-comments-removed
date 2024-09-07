@@ -104,10 +104,9 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared {
   
   
   void emitBranch(Assembler::Condition cond, MBasicBlock* ifTrue,
-                  MBasicBlock* ifFalse,
-                  Assembler::NaNCond ifNaN = Assembler::NaN_HandledByCond);
-  void emitBranch(Assembler::DoubleCondition cond, MBasicBlock* ifTrue,
                   MBasicBlock* ifFalse);
+  void emitBranch(Assembler::DoubleCondition cond, MBasicBlock* ifTrue,
+                  MBasicBlock* ifFalse, Assembler::NaNCond ifNaN);
 
   void emitTableSwitchDispatch(MTableSwitch* mir, Register index,
                                Register base);
