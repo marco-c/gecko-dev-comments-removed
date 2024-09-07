@@ -59,6 +59,8 @@ namespace {
 
 
 constexpr int kQpMin = 10;
+constexpr int kAv1ScreenshareMinimumQindex =
+    40;  
 constexpr int kUsageProfile = AOM_USAGE_REALTIME;
 constexpr int kMinQindex = 145;  
 constexpr int kMaxQindex = 205;  
@@ -866,6 +868,8 @@ VideoEncoder::EncoderInfo LibaomAv1Encoder::GetEncoderInfo() const {
     info.resolution_bitrate_limits =
         encoder_info_override_.resolution_bitrate_limits();
   }
+
+  info.minimum_qp = kAv1ScreenshareMinimumQindex;
   return info;
 }
 

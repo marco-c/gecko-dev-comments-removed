@@ -259,6 +259,11 @@ class RTC_EXPORT VideoEncoder {
     
     
     absl::optional<bool> is_qp_trusted;
+
+    
+    
+    
+    absl::optional<int> minimum_qp;
   };
 
   struct RTC_EXPORT RateControlParameters {
