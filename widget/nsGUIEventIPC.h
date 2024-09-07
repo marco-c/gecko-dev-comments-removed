@@ -218,10 +218,17 @@ template <>
 struct ParamTraits<mozilla::WidgetMouseEvent> {
   using paramType = mozilla::WidgetMouseEvent;
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    MOZ_ASSERT(!aParam.mIgnoreCapturingContent);
-    MOZ_ASSERT(!aParam.mSynthesizeMoveAfterDispatch);
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
+  static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParam(aWriter,
                static_cast<const mozilla::WidgetMouseEventBase&>(aParam));
     WriteParam(aWriter,
