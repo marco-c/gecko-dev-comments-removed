@@ -1182,6 +1182,22 @@ async function populateMathML() {
   }, {});
 }
 
+async function populateAudioDeviceProperties() {
+  const ctx = new AudioContext();
+  await ctx.resume();
+
+  
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  
+  
+  return {
+    audioFrames: ctx.outputLatency * ctx.sampleRate,
+    audioRate: ctx.sampleRate,
+    audioChannels: ctx.destination.maxChannelCount,
+  };
+}
+
 
 
 function getCanvasSources() {
@@ -1252,6 +1268,7 @@ async function startPopulating() {
     populateMathML,
     populateCSSQueries,
     populateNavigatorProperties,
+    populateAudioDeviceProperties,
   ];
   
   
