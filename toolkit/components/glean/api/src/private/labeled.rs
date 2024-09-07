@@ -5,7 +5,7 @@
 use inherent::inherent;
 
 use super::{
-    CommonMetricData, ErrorType, LabeledBooleanMetric, LabeledCounterMetric, LabeledStringMetric,
+    ErrorType, LabeledBooleanMetric, LabeledCounterMetric, LabeledMetricData, LabeledStringMetric,
     MetricId,
 };
 use crate::ipc::need_ipc;
@@ -137,7 +137,7 @@ where
     
     pub fn new(
         id: MetricId,
-        meta: CommonMetricData,
+        meta: LabeledMetricData,
         labels: Option<Vec<Cow<'static, str>>>,
     ) -> LabeledMetric<T, E> {
         let core = glean::private::LabeledMetric::new(meta, labels);
@@ -199,18 +199,21 @@ mod test {
     use super::*;
     use crate::common_test::*;
     use crate::metrics::DynamicLabel;
+    use crate::private::CommonMetricData;
 
     
     static GLOBAL_METRIC: Lazy<LabeledMetric<LabeledBooleanMetric, DynamicLabel>> =
         Lazy::new(|| {
             LabeledMetric::new(
                 0.into(),
-                CommonMetricData {
-                    name: "global".into(),
-                    category: "metric".into(),
-                    send_in_pings: vec!["ping".into()],
-                    disabled: false,
-                    ..Default::default()
+                LabeledMetricData::Common {
+                    cmd: CommonMetricData {
+                        name: "global".into(),
+                        category: "metric".into(),
+                        send_in_pings: vec!["ping".into()],
+                        disabled: false,
+                        ..Default::default()
+                    },
                 },
                 None,
             )
@@ -234,12 +237,14 @@ mod test {
 
         let metric: LabeledMetric<LabeledBooleanMetric, DynamicLabel> = LabeledMetric::new(
             0.into(),
-            CommonMetricData {
-                name: "bool".into(),
-                category: "labeled".into(),
-                send_in_pings: store_names,
-                disabled: false,
-                ..Default::default()
+            LabeledMetricData::Common {
+                cmd: CommonMetricData {
+                    name: "bool".into(),
+                    category: "labeled".into(),
+                    send_in_pings: store_names,
+                    disabled: false,
+                    ..Default::default()
+                },
             },
             None,
         );
@@ -257,12 +262,14 @@ mod test {
 
         let metric: LabeledMetric<LabeledStringMetric, DynamicLabel> = LabeledMetric::new(
             0.into(),
-            CommonMetricData {
-                name: "string".into(),
-                category: "labeled".into(),
-                send_in_pings: store_names,
-                disabled: false,
-                ..Default::default()
+            LabeledMetricData::Common {
+                cmd: CommonMetricData {
+                    name: "string".into(),
+                    category: "labeled".into(),
+                    send_in_pings: store_names,
+                    disabled: false,
+                    ..Default::default()
+                },
             },
             None,
         );
@@ -283,12 +290,14 @@ mod test {
 
         let metric: LabeledMetric<LabeledCounterMetric, DynamicLabel> = LabeledMetric::new(
             0.into(),
-            CommonMetricData {
-                name: "counter".into(),
-                category: "labeled".into(),
-                send_in_pings: store_names,
-                disabled: false,
-                ..Default::default()
+            LabeledMetricData::Common {
+                cmd: CommonMetricData {
+                    name: "counter".into(),
+                    category: "labeled".into(),
+                    send_in_pings: store_names,
+                    disabled: false,
+                    ..Default::default()
+                },
             },
             None,
         );
@@ -306,12 +315,14 @@ mod test {
 
         let metric: LabeledMetric<LabeledBooleanMetric, DynamicLabel> = LabeledMetric::new(
             0.into(),
-            CommonMetricData {
-                name: "bool".into(),
-                category: "labeled".into(),
-                send_in_pings: store_names,
-                disabled: false,
-                ..Default::default()
+            LabeledMetricData::Common {
+                cmd: CommonMetricData {
+                    name: "bool".into(),
+                    category: "labeled".into(),
+                    send_in_pings: store_names,
+                    disabled: false,
+                    ..Default::default()
+                },
             },
             None,
         );
@@ -336,12 +347,14 @@ mod test {
         }
         let metric: LabeledMetric<LabeledBooleanMetric, MetricLabels> = LabeledMetric::new(
             0.into(),
-            CommonMetricData {
-                name: "bool".into(),
-                category: "labeled".into(),
-                send_in_pings: store_names,
-                disabled: false,
-                ..Default::default()
+            LabeledMetricData::Common {
+                cmd: CommonMetricData {
+                    name: "bool".into(),
+                    category: "labeled".into(),
+                    send_in_pings: store_names,
+                    disabled: false,
+                    ..Default::default()
+                },
             },
             Some(vec!["label1".into(), "label2".into()]),
         );

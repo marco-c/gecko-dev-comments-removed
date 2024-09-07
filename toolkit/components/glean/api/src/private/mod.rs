@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 
 
 pub use glean::{
-    traits, CommonMetricData, DistributionData, ErrorType, Lifetime, MemoryUnit, RecordedEvent,
-    TimeUnit, TimerId,
+    traits, CommonMetricData, DistributionData, ErrorType, LabeledMetricData, Lifetime, MemoryUnit,
+    RecordedEvent, TimeUnit, TimerId,
 };
 
 mod boolean;
