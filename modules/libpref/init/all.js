@@ -565,6 +565,7 @@ pref("toolkit.telemetry.unified", true);
 
 
 pref("toolkit.telemetry.dap_enabled", false);
+pref("toolkit.telemetry.dap.logLevel", "Warn");
 
 pref("toolkit.telemetry.dap_task1_enabled", false);
 pref("toolkit.telemetry.dap_task1_taskid", "");
@@ -574,13 +575,13 @@ pref("toolkit.telemetry.dap_visit_counting_enabled", false);
 
 pref("toolkit.telemetry.dap_visit_counting_experiment_list", "[]");
 
-pref("toolkit.telemetry.dap_leader", "https://dap-09-3.api.divviup.org/");
 
-pref("toolkit.telemetry.dap_leader_owner", "ISRG");
+pref("toolkit.telemetry.dap.leader.url", "https://dap-09-3.api.divviup.org");
+pref("toolkit.telemetry.dap.leader.hpke", "ACkAACAAAQABACDk8wgwe2-TqHyaL74uqjVWMcF1zi9pxiwQhu4aPwncYw");
 
-pref("toolkit.telemetry.dap_helper", "https://dap.services.mozilla.com");
-pref("toolkit.telemetry.dap_helper_owner", "Mozilla");
-pref("toolkit.telemetry.dap.logLevel", "Warn");
+
+pref("toolkit.telemetry.dap.helper.url", "https://dap.services.mozilla.com");
+pref("toolkit.telemetry.dap.helper.hpke", "ACkAACAAAQABACAucqWdIQRN6BxumPBRXIlg2JsxcznwWX7vyqzM3cjuQA");
 
 
 pref("toolkit.telemetry.translations.logLevel", "Error");
