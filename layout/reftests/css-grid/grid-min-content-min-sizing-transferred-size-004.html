@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     https://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>CSS Grid Test: Testing track 'min-content' min-sizing function with 'min-height:auto' on an item with an intrinsic aspect ratio</title>
@@ -48,7 +48,7 @@ for (var i = 0; i < rowtest.length; ++i) {
   img.setAttribute("src","support/lime-2x24.png");
   img.setAttribute("style",rowtest[i]);
   grid.appendChild(img);
-  document.body.appendChild(document.createTextNode("2x24.png -- "+rowtest[i]+'\n'));
+  document.body.appendChild(document.createTextNode(`Test ${i+1}: 2x24.png -- ${rowtest[i]}`));
   document.body.appendChild(document.createElement('br'));
   document.body.appendChild(grid);
   document.body.appendChild(document.createElement('br'));
