@@ -65,6 +65,11 @@ namespace detail {
 
 
 
+
+
+
+
+
 struct ChannelHolder {
   explicit ChannelHolder(nsIChannel* aChannel)
       : mChannel(do_GetWeakReference(aChannel)), mWeakChannel(aChannel) {}
@@ -173,7 +178,7 @@ class ChannelWrapper final : public DOMEventTargetHelper,
   IMPL_EVENT_HANDLER(start);
   IMPL_EVENT_HANDLER(stop);
 
-  already_AddRefed<nsIURI> FinalURI() const;
+  already_AddRefed<nsIURI> GetFinalURI() const;
 
   void GetFinalURL(nsString& aRetVal) const;
 
