@@ -95,7 +95,7 @@ class StringBuffer {
 
 
   template <typename CharT>
-  static bool IsValidLength(size_t aLength) {
+  static constexpr bool IsValidLength(size_t aLength) {
     auto checkedSize =
         (CheckedUint32(aLength) + 1) * sizeof(CharT) + sizeof(StringBuffer);
     return checkedSize.isValid();
