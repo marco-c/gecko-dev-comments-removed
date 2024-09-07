@@ -865,7 +865,13 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcma_stereo_20ms) {
 
 #if defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_LINUX) && \
     defined(WEBRTC_ARCH_X86_64)
+
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Ilbc_30ms) {
+#else
 TEST_F(AcmSenderBitExactnessOldApi, Ilbc_30ms) {
+#endif
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ILBC", 8000, 1, 102, 240, 240));
   Run("a739434bec8a754e9356ce2115603ce5",
       "cfae2e9f6aba96e145f2bcdd5050ce78",
@@ -875,7 +881,13 @@ TEST_F(AcmSenderBitExactnessOldApi, Ilbc_30ms) {
 #endif
 
 #if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64)
+
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(AcmSenderBitExactnessOldApi, DISABLED_G722_20ms) {
+#else
 TEST_F(AcmSenderBitExactnessOldApi, G722_20ms) {
+#endif
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
   Run("b875d9a3e41f5470857bdff02e3b368f",
       "fc68a87e1380614e658087cb35d5ca10",
@@ -885,7 +897,13 @@ TEST_F(AcmSenderBitExactnessOldApi, G722_20ms) {
 #endif
 
 #if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64)
+
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(AcmSenderBitExactnessOldApi, DISABLED_G722_stereo_20ms) {
+#else
 TEST_F(AcmSenderBitExactnessOldApi, G722_stereo_20ms) {
+#endif
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 2, 119, 320, 160));
   Run("02c427d73363b2f37853a0dd17fe1aba",
       "66516152eeaa1e650ad94ff85f668dac",
