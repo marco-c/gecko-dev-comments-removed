@@ -37,16 +37,8 @@ class nsRemoteClient {
 
 
 
-
-
-
-
-
-
-
   virtual nsresult SendCommandLine(const char* aProgram, const char* aProfile,
-                                   int32_t argc, const char** argv,
-                                   const char* aStartupToken) = 0;
+                                   int32_t argc, const char** argv) = 0;
 };
 
 #endif  
