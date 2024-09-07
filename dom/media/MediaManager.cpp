@@ -2756,6 +2756,7 @@ enum class GetUserMediaSecurityState {
 
 
 
+
 static void ReduceConstraint(
     OwningBooleanOrMediaTrackConstraints& aConstraint) {
   
@@ -2774,6 +2775,13 @@ static void ReduceConstraint(
     mediaSource =
         Some(aConstraint.GetAsMediaTrackConstraints().mMediaSource.Value());
   }
+
+  Maybe<OwningStringOrStringSequenceOrConstrainDOMStringParameters> facingMode;
+  if (aConstraint.GetAsMediaTrackConstraints().mFacingMode.WasPassed()) {
+    facingMode =
+        Some(aConstraint.GetAsMediaTrackConstraints().mFacingMode.Value());
+  }
+
   aConstraint.Uninit();
   if (mediaSource) {
     aConstraint.SetAsMediaTrackConstraints().mMediaSource.Construct(
@@ -2781,6 +2789,14 @@ static void ReduceConstraint(
   } else {
     Unused << aConstraint.SetAsMediaTrackConstraints();
   }
+
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
+  if (facingMode) {
+    aConstraint.SetAsMediaTrackConstraints().mFacingMode.Construct(*facingMode);
+  } else {
+    Unused << aConstraint.SetAsMediaTrackConstraints();
+  }
+#endif
 }
 
 
@@ -3250,22 +3266,39 @@ RefPtr<LocalDeviceSetPromise> MediaManager::AnonymizeDevices(
         MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
         __func__);
   }
-  bool persist = IsActivelyCapturingOrHasAPermission(windowId);
+  bool resistFingerprinting =
+      aWindow->AsGlobal()->ShouldResistFingerprinting(RFPTarget::MediaDevices);
+  bool persist =
+      IsActivelyCapturingOrHasAPermission(windowId) && !resistFingerprinting;
   return media::GetPrincipalKey(principalInfo, persist)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [rawDevices = std::move(aDevices),
-           windowId](const nsCString& aOriginKey) {
+          [rawDevices = std::move(aDevices), windowId,
+           resistFingerprinting](const nsCString& aOriginKey) {
             MOZ_ASSERT(!aOriginKey.IsEmpty());
             RefPtr anonymized = new LocalMediaDeviceSetRefCnt();
             for (const RefPtr<MediaDevice>& device : *rawDevices) {
+              nsString name = device->mRawName;
+              if (name.Find(u"AirPods"_ns) != -1) {
+                name = u"AirPods"_ns;
+              }
+
               nsString id = device->mRawID;
+              if (resistFingerprinting) {
+                nsRFPService::GetMediaDeviceName(name, device->mKind);
+                id = name;
+                id.AppendInt(windowId);
+              }
               
               
               if (!id.IsEmpty()) {
                 nsContentUtils::AnonymizeId(id, aOriginKey);
               }
+
               nsString groupId = device->mRawGroupID;
+              if (resistFingerprinting) {
+                nsRFPService::GetMediaDeviceGroup(groupId, device->mKind);
+              }
               
               
               
@@ -3273,11 +3306,6 @@ RefPtr<LocalDeviceSetPromise> MediaManager::AnonymizeDevices(
               
               groupId.AppendInt(windowId);
               nsContentUtils::AnonymizeId(groupId, aOriginKey);
-
-              nsString name = device->mRawName;
-              if (name.Find(u"AirPods"_ns) != -1) {
-                name = u"AirPods"_ns;
-              }
               anonymized->EmplaceBack(
                   new LocalMediaDevice(device, id, groupId, name));
             }

@@ -14,6 +14,7 @@
 #include "mozilla/ContentBlockingLog.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/dom/MediaDeviceInfoBinding.h"
 #include "js/RealmOptions.h"
 #include "nsHashtablesFwd.h"
 #include "nsICookieJarSettings.h"
@@ -367,6 +368,16 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   static bool CheckSuspiciousFingerprintingActivity(
       nsTArray<ContentBlockingLog::LogEntry>& aLogs);
+
+  
+  
+  static void GetMediaDeviceName(nsString& aName,
+                                 mozilla::dom::MediaDeviceKind aKind);
+
+  
+  
+  static void GetMediaDeviceGroup(nsString& aGroup,
+                                  mozilla::dom::MediaDeviceKind aKind);
 
  private:
   nsresult Init();
