@@ -83,8 +83,6 @@ fn main() {
     let config_result = config.read_from_environment();
     config.log_target = Some(log_target);
 
-    glean::init(&config);
-
     let mut config = Arc::new(config);
 
     let result = config_result.and_then(|()| {
@@ -195,8 +193,6 @@ fn main() {
         cfg.restart_command = Some("mockfox".into());
         cfg.strings = Some(lang::load().unwrap());
 
-        glean::init(&cfg);
-
         let mut cfg = Arc::new(cfg);
         try_run(&mut cfg)
     });
@@ -243,6 +239,15 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
             config.move_crash_data_to_pending()?;
             extra
         };
+
+        
+        
+        
+        
+        
+        
+        #[cfg(not(test))]
+        glean::init(&config);
 
         logic::ReportCrash::new(config.clone(), extra)?.run()
     }

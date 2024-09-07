@@ -173,6 +173,9 @@ impl Config {
         }
 
         
+        
+        
+        
         if self.data_dir.is_none() {
             let vendor = extra[VENDOR_KEY].as_str().unwrap_or(DEFAULT_VENDOR);
             let product = extra[PRODUCT_KEY].as_str().unwrap_or(DEFAULT_PRODUCT);
