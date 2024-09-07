@@ -157,7 +157,6 @@ class alignas(ArenaSize) Arena {
 
   FreeSpan firstFreeSpan;
 
- public:
   
 
 
@@ -170,8 +169,9 @@ class alignas(ArenaSize) Arena {
 
 
 
-  JS::Zone* zone;
+  JS::Zone* zone_;
 
+ public:
   
 
 
@@ -228,7 +228,10 @@ class alignas(ArenaSize) Arena {
 
   uint8_t data[ArenaSize - ArenaHeaderSize];
 
-  void init(JS::Zone* zoneArg, AllocKind kind, const AutoLockGC& lock);
+  void init(GCRuntime* gc, JS::Zone* zoneArg, AllocKind kind,
+            const AutoLockGC& lock);
+
+  JS::Zone* zone() const { return zone_; }
 
   
   
@@ -246,7 +249,7 @@ class alignas(ArenaSize) Arena {
     firstFreeSpan.initAsEmpty();
 
     
-    AlwaysPoison(&zone, JS_FREED_ARENA_PATTERN, sizeof(zone),
+    AlwaysPoison(&zone_, JS_FREED_ARENA_PATTERN, sizeof(zone_),
                  MemCheckKind::MakeNoAccess);
 
     allocKind = AllocKind::LIMIT;
@@ -260,7 +263,7 @@ class alignas(ArenaSize) Arena {
   }
 
   
-  inline void release(const AutoLockGC& lock);
+  inline void release(GCRuntime* gc, const AutoLockGC& lock);
 
   uintptr_t address() const {
     checkAddress();
@@ -434,16 +437,6 @@ class alignas(ArenaSize) Arena {
   void checkNoMarkedCells();
 #endif
 };
-
-static_assert(ArenaZoneOffset == offsetof(Arena, zone),
-              "The hardcoded API zone offset must match the actual offset.");
-
-static_assert(sizeof(Arena) == ArenaSize,
-              "ArenaSize must match the actual size of the Arena structure.");
-
-static_assert(
-    offsetof(Arena, data) == ArenaHeaderSize,
-    "ArenaHeaderSize must match the actual size of the header fields.");
 
 inline Arena* FreeSpan::getArena() {
   Arena* arena = getArenaUnchecked();

@@ -608,6 +608,8 @@ class GCRuntime {
 
   
   void releaseArena(Arena* arena, const AutoLockGC& lock);
+  void releaseArenas(Arena* arena, const AutoLockGC& lock);
+  void releaseArenaList(ArenaList& arenaList, const AutoLockGC& lock);
 
   
   static void* refillFreeListInGC(Zone* zone, AllocKind thingKind);
