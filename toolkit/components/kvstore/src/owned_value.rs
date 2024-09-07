@@ -2,12 +2,13 @@
 
 
 
-use error::KeyValueError;
 use nsstring::{nsCString, nsString};
 use rkv::OwnedValue;
 use std::convert::TryInto;
 use storage_variant::{DataType, NsIVariantExt, VariantType};
 use xpcom::{interfaces::nsIVariant, RefPtr};
+
+use crate::error::KeyValueError;
 
 pub fn owned_to_variant(owned: OwnedValue) -> Result<RefPtr<nsIVariant>, KeyValueError> {
     match owned {
