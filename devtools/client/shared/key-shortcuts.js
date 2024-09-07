@@ -90,9 +90,7 @@ function KeyShortcuts({ window, target }) {
 
 
 
-
-
-KeyShortcuts.parseElectronKey = function (window, str) {
+KeyShortcuts.parseElectronKey = function (str) {
   
   
   if (typeof str !== "string") {
@@ -290,7 +288,7 @@ KeyShortcuts.prototype = {
       );
     }
     if (!this.keys.has(key)) {
-      const shortcut = KeyShortcuts.parseElectronKey(this.window, key);
+      const shortcut = KeyShortcuts.parseElectronKey(key);
       
       if (!shortcut) {
         return;

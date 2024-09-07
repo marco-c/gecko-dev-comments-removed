@@ -1036,9 +1036,7 @@ function getActiveInspector() {
 
 
 function synthesizeKeyShortcut(key, target) {
-  
-  const window = Services.appShell.hiddenDOMWindow;
-  const shortcut = KeyShortcuts.parseElectronKey(window, key);
+  const shortcut = KeyShortcuts.parseElectronKey(key);
   const keyEvent = {
     altKey: shortcut.alt,
     ctrlKey: shortcut.ctrl,
