@@ -229,135 +229,125 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   const bool forceRepaint = mTransparencyMode == TransparencyMode::Transparent;
   const LayoutDeviceIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
 
-  if (knowsCompositor && layerManager) {
-    
-    
-    layerManager->SetNeedsComposite(true);
-    layerManager->SendInvalidRegion(region.ToUnknownRegion());
-  }
-
   RefPtr<nsWindow> strongThis(this);
 
-  nsIWidgetListener* listener = GetPaintListener();
-  if (listener) {
+  if (nsIWidgetListener* listener = GetPaintListener()) {
+    
     listener->WillPaintWindow(this);
   }
-  
-  listener = GetPaintListener();
-  if (!listener) {
+
+  bool didPaint = false;
+  auto endPaint = MakeScopeExit([&] {
+    if (!usingMemoryDC) {
+      ::EndPaint(mWnd, &ps);
+    }
+    if (didPaint) {
+      mLastPaintEndTime = TimeStamp::Now();
+      if (nsIWidgetListener* listener = GetPaintListener()) {
+        listener->DidPaintWindow();
+      }
+      if (aNestingLevel == 0 && ::GetUpdateRect(mWnd, nullptr, false)) {
+        OnPaint(1);
+      }
+    }
+  });
+
+  if (region.IsEmpty() || !GetPaintListener()) {
     return false;
   }
 
-  if (knowsCompositor && layerManager && layerManager->NeedsComposite()) {
+  if (knowsCompositor && layerManager) {
+    layerManager->SendInvalidRegion(region.ToUnknownRegion());
     layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
-    layerManager->SetNeedsComposite(false);
   }
-
-  bool result = true;
-  if (!region.IsEmpty() && listener) {
-    
-    
-
-#ifdef WIDGET_DEBUG_OUTPUT
-    debug_DumpPaintEvent(stdout, this, region.ToUnknownRegion(), "noname",
-                         (int32_t)mWnd);
-#endif  
-
-    switch (renderer->GetBackendType()) {
-      case LayersBackend::LAYERS_NONE: {
-        RefPtr<gfxASurface> targetSurface;
-
-        
-        if (TransparencyMode::Transparent == mTransparencyMode) {
-          
-          
-          MutexAutoLock lock(mBasicLayersSurface->GetTransparentSurfaceLock());
-          targetSurface = mBasicLayersSurface->EnsureTransparentSurface();
-        }
-
-        RefPtr<gfxWindowsSurface> targetSurfaceWin;
-        if (!targetSurface) {
-          uint32_t flags = (mTransparencyMode == TransparencyMode::Opaque)
-                               ? 0
-                               : gfxWindowsSurface::FLAG_IS_TRANSPARENT;
-          targetSurfaceWin = new gfxWindowsSurface(hDC, flags);
-          targetSurface = targetSurfaceWin;
-        }
-
-        if (!targetSurface) {
-          NS_ERROR("Invalid RenderMode!");
-          return false;
-        }
-
-        RECT paintRect;
-        ::GetClientRect(mWnd, &paintRect);
-        RefPtr<DrawTarget> dt = gfxPlatform::CreateDrawTargetForSurface(
-            targetSurface, IntSize(paintRect.right - paintRect.left,
-                                   paintRect.bottom - paintRect.top));
-        if (!dt || !dt->IsValid()) {
-          gfxWarning()
-              << "nsWindow::OnPaint failed in CreateDrawTargetForSurface";
-          return false;
-        }
-
-        
-        BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
-        switch (mTransparencyMode) {
-          case TransparencyMode::Transparent:
-            
-            
-            dt->ClearRect(
-                Rect(0.f, 0.f, dt->GetSize().width, dt->GetSize().height));
-            break;
-          default:
-            
-            doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
-            break;
-        }
-
-        gfxContext thebesContext(dt);
-
-        {
-          AutoLayerManagerSetup setupLayerManager(this, &thebesContext,
-                                                  doubleBuffering);
-          result = listener->PaintWindow(this, region);
-        }
-
-        if (TransparencyMode::Transparent == mTransparencyMode) {
-          
-          
-          
-          mBasicLayersSurface->RedrawTransparentWindow();
-        }
-      } break;
-      case LayersBackend::LAYERS_WR: {
-        result = listener->PaintWindow(this, region);
-        if (!gfxEnv::MOZ_DISABLE_FORCE_PRESENT()) {
-          nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
-              "nsWindow::ForcePresent", this, &nsWindow::ForcePresent);
-          NS_DispatchToMainThread(event);
-        }
-      } break;
-      default:
-        NS_ERROR("Unknown layers backend used!");
-        break;
-    }
-  }
-
-  if (!usingMemoryDC) {
-    ::EndPaint(mWnd, &ps);
-  }
-
-  mLastPaintEndTime = TimeStamp::Now();
 
   
-  listener = GetPaintListener();
-  if (listener) listener->DidPaintWindow();
+  
+#ifdef WIDGET_DEBUG_OUTPUT
+  debug_DumpPaintEvent(stdout, this, region.ToUnknownRegion(), "noname",
+                       (int32_t)mWnd);
+#endif  
 
-  if (aNestingLevel == 0 && ::GetUpdateRect(mWnd, nullptr, false)) {
-    OnPaint(1);
+  bool result = true;
+  switch (renderer->GetBackendType()) {
+    case LayersBackend::LAYERS_NONE: {
+      RefPtr<gfxASurface> targetSurface;
+
+      
+      if (TransparencyMode::Transparent == mTransparencyMode) {
+        
+        
+        MutexAutoLock lock(mBasicLayersSurface->GetTransparentSurfaceLock());
+        targetSurface = mBasicLayersSurface->EnsureTransparentSurface();
+      }
+
+      RefPtr<gfxWindowsSurface> targetSurfaceWin;
+      if (!targetSurface) {
+        uint32_t flags = (mTransparencyMode == TransparencyMode::Opaque)
+                             ? 0
+                             : gfxWindowsSurface::FLAG_IS_TRANSPARENT;
+        targetSurfaceWin = new gfxWindowsSurface(hDC, flags);
+        targetSurface = targetSurfaceWin;
+      }
+
+      RECT paintRect;
+      ::GetClientRect(mWnd, &paintRect);
+      RefPtr<DrawTarget> dt = gfxPlatform::CreateDrawTargetForSurface(
+          targetSurface, IntSize(paintRect.right - paintRect.left,
+                                 paintRect.bottom - paintRect.top));
+      if (!dt || !dt->IsValid()) {
+        gfxWarning()
+            << "nsWindow::OnPaint failed in CreateDrawTargetForSurface";
+        return false;
+      }
+
+      
+      BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
+      switch (mTransparencyMode) {
+        case TransparencyMode::Transparent:
+          
+          
+          dt->ClearRect(Rect(dt->GetRect()));
+          break;
+        default:
+          
+          doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
+          break;
+      }
+
+      gfxContext thebesContext(dt);
+
+      {
+        AutoLayerManagerSetup setupLayerManager(this, &thebesContext,
+                                                doubleBuffering);
+        if (nsIWidgetListener* listener = GetPaintListener()) {
+          result = listener->PaintWindow(this, region);
+        }
+      }
+
+      if (TransparencyMode::Transparent == mTransparencyMode) {
+        
+        
+        
+        mBasicLayersSurface->RedrawTransparentWindow();
+      }
+    } break;
+    case LayersBackend::LAYERS_WR: {
+      if (nsIWidgetListener* listener = GetPaintListener()) {
+        result = listener->PaintWindow(this, region);
+      }
+      if (!gfxEnv::MOZ_DISABLE_FORCE_PRESENT()) {
+        nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
+            "nsWindow::ForcePresent", this, &nsWindow::ForcePresent);
+        NS_DispatchToMainThread(event);
+      }
+    } break;
+    default:
+      NS_ERROR("Unknown layers backend used!");
+      break;
   }
 
+  didPaint = true;
   return result;
 }
 
