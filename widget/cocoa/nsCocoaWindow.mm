@@ -597,6 +597,7 @@ void nsCocoaWindow::Destroy() {
   if (mParent) {
     mParent->RemoveChild(this);
   }
+  nsBaseWidget::OnDestroy();
 
   if (mInFullScreenMode && !mInNativeFullScreenMode) {
     
@@ -609,14 +610,8 @@ void nsCocoaWindow::Destroy() {
   
   if (mWindow && mWindowMadeHere) {
     CancelAllTransitions();
-
-    
-    
-    
+    DestroyNativeWindow();
   }
-
-  
-  nsBaseWidget::OnDestroy();
 }
 
 void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
