@@ -310,9 +310,9 @@ JS_PUBLIC_API JSObject* JS::CreateModuleRequest(
     return nullptr;
   }
 
-  Rooted<UniquePtr<ImportAttributeVector>> attributes(cx);
+  Rooted<ImportAttributeVector> attributes(cx);
 
-  return ModuleRequestObject::create(cx, specifierAtom, &attributes);
+  return ModuleRequestObject::create(cx, specifierAtom, attributes);
 }
 
 JS_PUBLIC_API JSString* JS::GetModuleRequestSpecifier(
@@ -1259,31 +1259,6 @@ static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
 }
 
 
-static bool AllImportAttributesSupported(
-    JSContext* cx, mozilla::Span<const ImportAttribute> attributes,
-    MutableHandle<JSAtom*> invalidKey) {
-  
-  
-  
-  
-  
-  
-  
-
-  
-  for (const ImportAttribute& attribute : attributes) {
-    
-    if (attribute.key() != cx->names().type) {
-      invalidKey.set(attribute.key());
-      return false;
-    }
-  }
-
-  
-  return true;
-}
-
-
 
 static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
                                MutableHandle<ModuleVector> stack, size_t index,
@@ -1342,10 +1317,9 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
     
     
     
-    Rooted<JSAtom*> invalidKey(cx);
-    if (!AllImportAttributesSupported(cx, moduleRequest->attributes(),
-                                      &invalidKey)) {
-      UniqueChars printableKey = AtomToPrintableString(cx, invalidKey);
+    if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
+      UniqueChars printableKey = AtomToPrintableString(
+          cx, moduleRequest->getFirstUnsupportedAttributeKey());
       JS_ReportErrorNumberASCII(
           cx, GetErrorMessage, nullptr,
           JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
