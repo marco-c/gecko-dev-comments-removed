@@ -7,15 +7,28 @@
   
   const wwwAlt = "https://{{hosts[alt][www]}}:{{ports[https][0]}}";
   const www1Alt = "https://{{hosts[alt][www1]}}:{{ports[https][0]}}";
-  const responder_html = "/storage-access-api/resources/script-with-cookie-header.py?script=embedded_responder.js";
+  const responder_html_load_ack = "/storage-access-api/resources/script-with-cookie-header.py?script=embedded_responder.js&should_ack_load=true";
 
   if (window === window.top) {
     
     promise_test(async (t) => {
-      const [frame1, frame2] = await Promise.all([
-        CreateFrame(wwwAlt + responder_html),
-        CreateFrame(wwwAlt + responder_html),
-      ]);
+      
+      
+      
+      
+      
+      
+      const frame1_loaded = new Promise(r => {
+        onmessage = e => r(e.data);
+      });
+      const frame1 = await CreateFrame(wwwAlt + responder_html_load_ack);
+      assert_equals(await frame1_loaded, "loaded");
+
+      const frame2_loaded = new Promise(r => {
+        onmessage = e => r(e.data);
+      });
+      const frame2 = await CreateFrame(www1Alt + responder_html_load_ack);
+      assert_equals(await frame2_loaded, "loaded");
 
       t.add_cleanup(async () => {
         await SetPermissionInFrame(frame1, [{ name: 'storage-access' }, 'prompt']);
@@ -26,14 +39,26 @@
 
       const state = await observed;
       assert_equals(state, "granted");
-    }, "Permissions grants are observable across same-origin iframes");
+    }, 'Permissions grants are observable across same-origin iframes');
 
-    
     promise_test(async (t) => {
-      const [frame1, frame2] = await Promise.all([
-        CreateFrame(wwwAlt + responder_html),
-        CreateFrame(www1Alt + responder_html),
-      ]);
+      
+      
+      
+      
+      
+      
+      const frame1_loaded = new Promise(r => {
+        onmessage = e => r(e.data);
+      });
+      const frame1 = await CreateFrame(wwwAlt + responder_html_load_ack);
+      assert_equals(await frame1_loaded, "loaded");
+
+      const frame2_loaded = new Promise(r => {
+        onmessage = e => r(e.data);
+      });
+      const frame2 = await CreateFrame(www1Alt + responder_html_load_ack);
+      assert_equals(await frame2_loaded, "loaded");
 
       t.add_cleanup(async () => {
         await SetPermissionInFrame(frame1, [{ name: 'storage-access' }, 'prompt']);

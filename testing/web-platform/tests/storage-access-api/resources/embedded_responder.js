@@ -95,3 +95,9 @@ window.addEventListener("message", async (event) => {
     default:
   }
 });
+
+
+
+if (should_ack_load) {
+  parent.postMessage('loaded', '*');
+}
