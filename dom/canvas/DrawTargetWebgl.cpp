@@ -37,6 +37,10 @@
 
 #include "gfxPlatform.h"
 
+#ifdef XP_MACOSX
+#  include "mozilla/gfx/ScaledFontMac.h"
+#endif
+
 namespace mozilla::gfx {
 
 BackingTexture::BackingTexture(const IntSize& aSize, SurfaceFormat aFormat,
@@ -4181,6 +4185,43 @@ static bool CheckForColorGlyphs(const RefPtr<SourceSurface>& aSurface) {
 
 
 
+static DeviceColor QuantizePreblendColor(const DeviceColor& aColor,
+                                         bool aUseSubpixelAA) {
+  int32_t r = int32_t(aColor.r * 255.0f + 0.5f);
+  int32_t g = int32_t(aColor.r * 255.0f + 0.5f);
+  int32_t b = int32_t(aColor.r * 255.0f + 0.5f);
+  
+  
+  
+  
+  bool lightOnDark = r >= 85 && g >= 85 && b >= 85 && r + g + b >= 2 * 255;
+  
+  
+  constexpr int32_t lumBits = 3;
+  constexpr int32_t ceilMask = (1 << (8 - lumBits)) - 1;
+  constexpr int32_t floorMask = ((1 << lumBits) - 1) << (8 - lumBits);
+  if (!aUseSubpixelAA) {
+    
+    
+    g = (r * 54 + g * 183 + b * 19) >> 8;
+    g |= ceilMask;
+    
+    r = b = lightOnDark ? 255 : 0;
+  } else if (lightOnDark) {
+    r |= ceilMask;
+    g |= ceilMask;
+    b |= ceilMask;
+  } else {
+    r &= floorMask;
+    g &= floorMask;
+    b &= floorMask;
+  }
+  return DeviceColor{r / 255.0f, g / 255.0f, b / 255.0f, 1.0f};
+}
+
+
+
+
 bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
                                          const GlyphBuffer& aBuffer,
                                          const Pattern& aPattern,
@@ -4209,18 +4250,24 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
   DeviceColor color = aOptions.mCompositionOp == CompositionOp::OP_CLEAR
                           ? DeviceColor(1, 1, 1, 1)
                           : static_cast<const ColorPattern&>(aPattern).mColor;
+#if defined(XP_MACOSX) || defined(XP_WIN)
+  
+  bool usePreblend = aUseSubpixelAA;
+#else
+  
+  bool usePreblend = false;
+#endif
+
 #ifdef XP_MACOSX
   
   
   
-  
-  bool lightOnDark =
-      useBitmaps || (color.r >= 0.33f && color.g >= 0.33f && color.b >= 0.33f &&
-                     color.r + color.g + color.b >= 2.0f);
-#else
-  
-  const bool lightOnDark = true;
+  if (aFont->GetType() == FontType::MAC &&
+      static_cast<ScaledFontMac*>(aFont)->UseFontSmoothing()) {
+    usePreblend = true;
+  }
 #endif
+
   
   
   
@@ -4231,9 +4278,9 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
   HashNumber hash =
       GlyphCacheEntry::HashGlyphs(aBuffer, quantizeTransform, quantizeScale);
   DeviceColor colorOrMask =
-      useBitmaps
-          ? color
-          : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, lightOnDark ? 1 : 0);
+      useBitmaps ? color
+                 : (usePreblend ? QuantizePreblendColor(color, aUseSubpixelAA)
+                                : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, 1));
   IntRect clipRect(IntPoint(), mViewportSize);
   RefPtr<GlyphCacheEntry> entry =
       cache->FindEntry(aBuffer, colorOrMask, quantizeTransform, quantizeScale,
@@ -4302,16 +4349,9 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
     
     RefPtr<DrawTargetSkia> textDT = new DrawTargetSkia;
     if (textDT->Init(intBounds.Size(),
-                     lightOnDark && !useBitmaps && !aUseSubpixelAA
-                         ? SurfaceFormat::A8
-                         : SurfaceFormat::B8G8R8A8)) {
-      if (!lightOnDark) {
-        
-        
-        textDT->FillRect(Rect(IntRect(IntPoint(), intBounds.Size())),
-                         ColorPattern(DeviceColor(1, 1, 1, 1)),
-                         DrawOptions(1.0f, CompositionOp::OP_OVER));
-      }
+                     useBitmaps || usePreblend || aUseSubpixelAA
+                         ? SurfaceFormat::B8G8R8A8
+                         : SurfaceFormat::A8)) {
       textDT->SetTransform(currentTransform *
                            Matrix::Translation(-intBounds.TopLeft()));
       textDT->SetPermitSubpixelAA(aUseSubpixelAA);
@@ -4322,39 +4362,17 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
       
       
       
-      ColorPattern colorPattern(
-          useBitmaps ? color : DeviceColor::Mask(lightOnDark ? 1 : 0, 1));
-      if (aStrokeOptions) {
-        textDT->StrokeGlyphs(aFont, aBuffer, colorPattern, *aStrokeOptions,
-                             drawOptions);
+      if (!useBitmaps && usePreblend) {
+        textDT->DrawGlyphMask(aFont, aBuffer, color, aStrokeOptions,
+                              drawOptions);
       } else {
-        textDT->FillGlyphs(aFont, aBuffer, colorPattern, drawOptions);
-      }
-      if (!lightOnDark) {
-        uint8_t* data = nullptr;
-        IntSize size;
-        int32_t stride = 0;
-        SurfaceFormat format = SurfaceFormat::UNKNOWN;
-        if (!textDT->LockBits(&data, &size, &stride, &format)) {
-          return false;
+        ColorPattern colorPattern(useBitmaps ? color : DeviceColor(1, 1, 1, 1));
+        if (aStrokeOptions) {
+          textDT->StrokeGlyphs(aFont, aBuffer, colorPattern, *aStrokeOptions,
+                               drawOptions);
+        } else {
+          textDT->FillGlyphs(aFont, aBuffer, colorPattern, drawOptions);
         }
-        uint8_t* row = data;
-        for (int y = 0; y < size.height; ++y) {
-          uint8_t* px = row;
-          for (int x = 0; x < size.width; ++x) {
-            
-            
-            
-            
-            px[0] = 255 - px[0];
-            px[1] = 255 - px[1];
-            px[2] = 255 - px[2];
-            px[3] = std::max(px[0], std::max(px[1], px[2]));
-            px += 4;
-          }
-          row += stride;
-        }
-        textDT->ReleaseBits(data);
       }
       RefPtr<SourceSurface> textSurface = textDT->Snapshot();
       if (textSurface) {
