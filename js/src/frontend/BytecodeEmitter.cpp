@@ -2595,22 +2595,62 @@ bool BytecodeEmitter::emitFunctionScript(FunctionNode* funNode) {
   return fse.intoStencil();
 }
 
+class js::frontend::DestructuringLHSRef {
+  struct None {
+    size_t numReferenceSlots() const { return 0; }
+  };
+
+  mozilla::Variant<None, NameOpEmitter, PropOpEmitter, ElemOpEmitter,
+                   PrivateOpEmitter>
+      emitter_ = AsVariant(None{});
+
+ public:
+  template <typename T>
+  void from(T&& emitter) {
+    emitter_.emplace<T>(std::forward<T>(emitter));
+  }
+
+  template <typename T>
+  T& emitter() {
+    return emitter_.as<T>();
+  }
+
+  
+
+
+  size_t numReferenceSlots() const {
+    return emitter_.match([](auto& e) { return e.numReferenceSlots(); });
+  }
+};
+
 bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
-                                              size_t* emitted) {
+                                              DestructuringFlavor flav,
+                                              DestructuringLHSRef& lref) {
 #ifdef DEBUG
   int depth = bytecodeSection().stackDepth();
 #endif
 
   switch (target->getKind()) {
-    case ParseNodeKind::Name:
     case ParseNodeKind::ArrayExpr:
     case ParseNodeKind::ObjectExpr:
       
       
       
-      
-      *emitted = 0;
       break;
+
+    case ParseNodeKind::Name: {
+      auto* name = &target->as<NameNode>();
+      NameOpEmitter noe(this, name->atom(),
+                        flav == DestructuringFlavor::Assignment
+                            ? NameOpEmitter::Kind::SimpleAssignment
+                            : NameOpEmitter::Kind::Initialize);
+      if (!noe.prepareForRhs()) {
+        return false;
+      }
+
+      lref.from(std::move(noe));
+      return true;
+    }
 
     case ParseNodeKind::ArgumentsLength:
     case ParseNodeKind::DotExpr: {
@@ -2642,8 +2682,7 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
         return false;
       }
 
-      
-      *emitted = 1 + isSuper;
+      lref.from(std::move(poe));
       break;
     }
 
@@ -2669,8 +2708,7 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
         return false;
       }
 
-      
-      *emitted = 2 + isSuper;
+      lref.from(std::move(eoe));
       break;
     }
 
@@ -2686,7 +2724,8 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
         
         return false;
       }
-      *emitted = xoe.numReferenceSlots();
+
+      lref.from(std::move(xoe));
       break;
     }
 
@@ -2701,13 +2740,14 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
       MOZ_CRASH("emitDestructuringLHSRef: bad lhs kind");
   }
 
-  MOZ_ASSERT(bytecodeSection().stackDepth() == depth + int(*emitted));
+  MOZ_ASSERT(bytecodeSection().stackDepth() ==
+             depth + int(lref.numReferenceSlots()));
 
   return true;
 }
 
 bool BytecodeEmitter::emitSetOrInitializeDestructuring(
-    ParseNode* target, DestructuringFlavor flav) {
+    ParseNode* target, DestructuringFlavor flav, DestructuringLHSRef& lref) {
   
   
   
@@ -2724,51 +2764,14 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
       break;
 
     case ParseNodeKind::Name: {
-      auto name = target->as<NameNode>().name();
-      NameLocation loc = lookupName(name);
-      NameOpEmitter::Kind kind;
-      switch (flav) {
-        case DestructuringFlavor::Declaration:
-          kind = NameOpEmitter::Kind::Initialize;
-          break;
+      
+      
+      auto& noe = lref.emitter<NameOpEmitter>();
 
-        case DestructuringFlavor::Assignment:
-          kind = NameOpEmitter::Kind::SimpleAssignment;
-          break;
-      }
-
-      NameOpEmitter noe(this, name, loc, kind);
-      if (!noe.prepareForRhs()) {
-        
-        return false;
-      }
-      if (noe.emittedBindOp()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (!emit1(JSOp::Swap)) {
-          
-          return false;
-        }
-      } else {
-        
-        
-      }
       if (!noe.emitAssignment()) {
         
         return false;
       }
-
       break;
     }
 
@@ -2779,16 +2782,11 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
       
       
       
-      PropertyAccess* prop = &target->as<PropertyAccess>();
-      bool isSuper = prop->isSuper();
-      PropOpEmitter poe(this, PropOpEmitter::Kind::SimpleAssignment,
-                        isSuper ? PropOpEmitter::ObjKind::Super
-                                : PropOpEmitter::ObjKind::Other);
-      if (!poe.skipObjAndRhs()) {
-        return false;
-      }
-      
+      auto& poe = lref.emitter<PropOpEmitter>();
+      auto* prop = &target->as<PropertyAccess>();
+
       if (!poe.emitAssignment(prop->key().atom())) {
+        
         return false;
       }
       break;
@@ -2800,15 +2798,8 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
       
       
       
-      PropertyByValue* elem = &target->as<PropertyByValue>();
-      bool isSuper = elem->isSuper();
-      MOZ_ASSERT(!elem->key().isKind(ParseNodeKind::PrivateName));
-      ElemOpEmitter eoe(this, ElemOpEmitter::Kind::SimpleAssignment,
-                        isSuper ? ElemOpEmitter::ObjKind::Super
-                                : ElemOpEmitter::ObjKind::Other);
-      if (!eoe.skipObjAndKeyAndRhs()) {
-        return false;
-      }
+      auto& eoe = lref.emitter<ElemOpEmitter>();
+
       if (!eoe.emitAssignment()) {
         
         return false;
@@ -2819,12 +2810,8 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
     case ParseNodeKind::PrivateMemberExpr: {
       
       
-      PrivateMemberAccess* privateExpr = &target->as<PrivateMemberAccess>();
-      PrivateOpEmitter xoe(this, PrivateOpEmitter::Kind::SimpleAssignment,
-                           privateExpr->privateName().name());
-      if (!xoe.skipReference()) {
-        return false;
-      }
+      auto& xoe = lref.emitter<PrivateOpEmitter>();
+
       if (!xoe.emitAssignment()) {
         
         return false;
@@ -3375,6 +3362,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         idx += 1;
         continue;
       }
+      MOZ_ASSERT(member->isKind(ParseNodeKind::Name));
 
       if (!emit1(JSOp::Dup)) {
         
@@ -3432,7 +3420,13 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         return false;
       }
 
-      if (!emitSetOrInitializeDestructuring(member, flav)) {
+      DestructuringLHSRef lref;
+      if (!emitDestructuringLHSRef(member, flav, lref)) {
+        
+        return false;
+      }
+
+      if (!emitSetOrInitializeDestructuring(member, flav, lref)) {
         
         return false;
       }
@@ -3520,19 +3514,20 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
     }
 
     
-    size_t emitted = 0;
-
-    
+    DestructuringLHSRef lref;
     bool isElision = lhsPattern->isKind(ParseNodeKind::Elision);
     if (!isElision) {
-      auto emitLHSRef = [lhsPattern, &emitted](BytecodeEmitter* bce) {
-        return bce->emitDestructuringLHSRef(lhsPattern, &emitted);
+      auto emitLHSRef = [lhsPattern, flav, &lref](BytecodeEmitter* bce) {
+        return bce->emitDestructuringLHSRef(lhsPattern, flav, lref);
         
       };
       if (!wrapWithDestructuringTryNote(tryNoteDepth, emitLHSRef)) {
         return false;
       }
     }
+
+    
+    size_t emitted = lref.numReferenceSlots();
 
     
     if (emitted) {
@@ -3616,8 +3611,8 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         return false;
       }
 
-      auto emitAssignment = [lhsPattern, flav](BytecodeEmitter* bce) {
-        return bce->emitSetOrInitializeDestructuring(lhsPattern, flav);
+      auto emitAssignment = [lhsPattern, flav, &lref](BytecodeEmitter* bce) {
+        return bce->emitSetOrInitializeDestructuring(lhsPattern, flav, lref);
         
       };
       if (!wrapWithDestructuringTryNote(tryNoteDepth, emitAssignment)) {
@@ -3741,8 +3736,8 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
     }
 
     if (!isElision) {
-      auto emitAssignment = [lhsPattern, flav](BytecodeEmitter* bce) {
-        return bce->emitSetOrInitializeDestructuring(lhsPattern, flav);
+      auto emitAssignment = [lhsPattern, flav, &lref](BytecodeEmitter* bce) {
+        return bce->emitSetOrInitializeDestructuring(lhsPattern, flav, lref);
         
       };
 
@@ -3864,13 +3859,14 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     }
 
     
-    size_t emitted = 0;
-
-    
-    if (!emitDestructuringLHSRef(lhs, &emitted)) {
+    DestructuringLHSRef lref;
+    if (!emitDestructuringLHSRef(lhs, flav, lref)) {
       
       return false;
     }
+
+    
+    size_t emitted = lref.numReferenceSlots();
 
     
     if (!emitDupAt(emitted + hasKeyOnStack)) {
@@ -3911,7 +3907,7 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
       }
 
       
-      if (!emitSetOrInitializeDestructuring(lhs, flav)) {
+      if (!emitSetOrInitializeDestructuring(lhs, flav, lref)) {
         
         return false;
       }
@@ -3998,7 +3994,7 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     }
 
     
-    if (!emitSetOrInitializeDestructuring(lhs, flav)) {
+    if (!emitSetOrInitializeDestructuring(lhs, flav, lref)) {
       
       return false;
     }

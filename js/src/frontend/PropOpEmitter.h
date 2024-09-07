@@ -9,6 +9,8 @@
 
 #include "mozilla/Attributes.h"
 
+#include <stddef.h>
+
 #include "vm/SharedStencil.h"  
 
 namespace js {
@@ -166,8 +168,6 @@ class MOZ_STACK_CLASS PropOpEmitter {
   
   
   
-  
-  
   enum class State {
     
     Start,
@@ -237,7 +237,6 @@ class MOZ_STACK_CLASS PropOpEmitter {
   [[nodiscard]] bool emitGet(TaggedParserAtomIndex prop);
 
   [[nodiscard]] bool prepareForRhs();
-  [[nodiscard]] bool skipObjAndRhs();
 
   [[nodiscard]] bool emitDelete(TaggedParserAtomIndex prop);
 
@@ -246,6 +245,8 @@ class MOZ_STACK_CLASS PropOpEmitter {
 
   [[nodiscard]] bool emitIncDec(TaggedParserAtomIndex prop,
                                 ValueUsage valueUsage);
+
+  size_t numReferenceSlots() const { return 1 + isSuper(); }
 };
 
 } 
