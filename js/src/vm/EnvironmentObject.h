@@ -1320,9 +1320,9 @@ class DebugEnvironments {
 
 
 
-  typedef HashMap<MissingEnvironmentKey, WeakHeapPtr<DebugEnvironmentProxy*>,
-                  MissingEnvironmentKey, ZoneAllocPolicy>
-      MissingEnvironmentMap;
+  using MissingEnvironmentMap =
+      HashMap<MissingEnvironmentKey, WeakHeapPtr<DebugEnvironmentProxy*>,
+              MissingEnvironmentKey, ZoneAllocPolicy>;
   MissingEnvironmentMap missingEnvs;
 
   
@@ -1333,9 +1333,9 @@ class DebugEnvironments {
 
 
 
-  typedef GCHashMap<WeakHeapPtr<JSObject*>, LiveEnvironmentVal,
-                    StableCellHasher<WeakHeapPtr<JSObject*>>, ZoneAllocPolicy>
-      LiveEnvironmentMap;
+  using LiveEnvironmentMap =
+      GCHashMap<WeakHeapPtr<JSObject*>, LiveEnvironmentVal,
+                StableCellHasher<WeakHeapPtr<JSObject*>>, ZoneAllocPolicy>;
   LiveEnvironmentMap liveEnvs;
 
  public:
