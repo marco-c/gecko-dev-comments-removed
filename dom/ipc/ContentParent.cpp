@@ -1461,18 +1461,18 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
       new BrowserParent(constructorSender.get(), tabId, aContext,
                         aBrowsingContext->Canonical(), chromeFlags);
 
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  if (NS_WARN_IF(!cpm)) {
+    return nullptr;
+  }
+  cpm->RegisterRemoteFrame(browserParent);
+
   
   ManagedEndpoint<PBrowserChild> childEp =
       constructorSender->OpenPBrowserEndpoint(browserParent);
   if (NS_WARN_IF(!childEp.IsValid())) {
     return nullptr;
   }
-
-  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-  if (NS_WARN_IF(!cpm)) {
-    return nullptr;
-  }
-  cpm->RegisterRemoteFrame(browserParent);
 
   nsCOMPtr<nsIPrincipal> initialPrincipal =
       NullPrincipal::Create(aBrowsingContext->OriginAttributesRef());
@@ -4145,20 +4145,16 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
                                           browsingContext, chromeFlags);
 
   
-  if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), parent))) {
-    return IPC_FAIL(this, "BindPBrowserEndpoint failed");
+  
+  
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  if (!cpm || !cpm->RegisterRemoteFrame(parent)) {
+    return IPC_FAIL(this, "RegisterRemoteFrame Failed");
   }
 
   
-  
-  if (openerTabId > 0) {
-    
-    
-    
-    auto* cpm = ContentProcessManager::GetSingleton();
-    if (!cpm || !cpm->RegisterRemoteFrame(parent)) {
-      return IPC_FAIL(this, "RegisterRemoteFrame Failed");
-    }
+  if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), parent))) {
+    return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 
   if (NS_WARN_IF(!parent->BindPWindowGlobalEndpoint(std::move(aWindowEp),
