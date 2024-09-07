@@ -56,10 +56,9 @@ void nsPlaceholderFrame::AddInlineMinISize(
 
   
   if (mOutOfFlowFrame->IsFloating()) {
-    nscoord floatWidth = nsLayoutUtils::IntrinsicForContainer(
+    const nscoord floatISize = nsLayoutUtils::IntrinsicForContainer(
         aRenderingContext, mOutOfFlowFrame, IntrinsicISizeType::MinISize);
-    aData->mFloats.AppendElement(
-        InlineIntrinsicISizeData::FloatInfo(mOutOfFlowFrame, floatWidth));
+    aData->mFloats.EmplaceBack(mOutOfFlowFrame, floatISize);
   }
 }
 
@@ -74,10 +73,9 @@ void nsPlaceholderFrame::AddInlinePrefISize(
 
   
   if (mOutOfFlowFrame->IsFloating()) {
-    nscoord floatWidth = nsLayoutUtils::IntrinsicForContainer(
+    const nscoord floatISize = nsLayoutUtils::IntrinsicForContainer(
         aRenderingContext, mOutOfFlowFrame, IntrinsicISizeType::PrefISize);
-    aData->mFloats.AppendElement(
-        InlineIntrinsicISizeData::FloatInfo(mOutOfFlowFrame, floatWidth));
+    aData->mFloats.EmplaceBack(mOutOfFlowFrame, floatISize);
   }
 }
 
