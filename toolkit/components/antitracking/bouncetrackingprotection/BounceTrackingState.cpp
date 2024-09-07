@@ -270,7 +270,8 @@ bool BounceTrackingState::ShouldTrackPrincipal(nsIPrincipal* aPrincipal) {
 
 
 nsresult BounceTrackingState::HasBounceTrackingStateForSite(
-    const nsACString& aSiteHost, bool& aResult) {
+    const nsACString& aSiteHost, const OriginAttributes& aOriginAttributes,
+    bool& aResult) {
   aResult = false;
   NS_ENSURE_TRUE(aSiteHost.Length(), NS_ERROR_FAILURE);
 
@@ -287,6 +288,12 @@ nsresult BounceTrackingState::HasBounceTrackingStateForSite(
       continue;
     }
     RefPtr<BounceTrackingState> state(btsWeak);
+
+    
+    
+    if (state->mOriginAttributes != aOriginAttributes) {
+      continue;
+    }
 
     
     RefPtr<dom::BrowsingContext> browsingContext =

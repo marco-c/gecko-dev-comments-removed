@@ -88,8 +88,10 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   
+  
   [[nodiscard]] static nsresult HasBounceTrackingStateForSite(
-      const nsACString& aSiteHost, bool& aResult);
+      const nsACString& aSiteHost, const OriginAttributes& aOriginAttributes,
+      bool& aResult);
 
   
   

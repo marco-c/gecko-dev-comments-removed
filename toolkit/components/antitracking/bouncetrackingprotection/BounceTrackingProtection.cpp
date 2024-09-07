@@ -788,7 +788,8 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     
     
     bool hostIsActive;
-    rv = BounceTrackingState::HasBounceTrackingStateForSite(host, hostIsActive);
+    rv = BounceTrackingState::HasBounceTrackingStateForSite(
+        host, aStateGlobal->OriginAttributesRef(), hostIsActive);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       hostIsActive = false;
     }
