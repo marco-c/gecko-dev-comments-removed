@@ -81,8 +81,10 @@ def lint(files, config, **lintargs):
     paths = list(paths)
     chunk_size = 50
     binary = get_rstcheck_binary()
+    
+    
+    
     rstcheck_options = [
-        "--ignore-language=cpp,json",
         "--ignore-roles=searchfox",
     ]
 
