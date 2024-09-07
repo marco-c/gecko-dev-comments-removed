@@ -433,6 +433,7 @@ class GCRuntime {
   void setAlwaysPreserveCode() { alwaysPreserveCode = true; }
 
   void setIncrementalGCEnabled(bool enabled);
+  void setNurseryEnabled(bool enabled);
 
   bool isIncrementalGCEnabled() const { return incrementalGCEnabled; }
   bool isPerZoneGCEnabled() const { return perZoneGCEnabled; }
@@ -1301,6 +1302,14 @@ class GCRuntime {
 
 
   MainThreadData<bool> compactingEnabled;
+
+  
+
+
+
+
+
+  MainThreadData<bool> nurseryEnabled;
 
   
 

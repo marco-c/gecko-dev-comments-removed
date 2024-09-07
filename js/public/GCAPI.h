@@ -489,6 +489,14 @@ typedef enum JSGCParamKey {
 
   JSGC_SLICE_NUMBER = 54,
 
+  
+
+
+
+
+
+  JSGC_NURSERY_ENABLED = 55,
+
 } JSGCParamKey;
 
 

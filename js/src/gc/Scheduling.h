@@ -537,6 +537,9 @@ static const bool PerZoneGCEnabled = false;
 static const bool CompactingEnabled = true;
 
 
+static const bool NurseryEnabled = true;
+
+
 static const bool ParallelMarkingEnabled = false;
 
 

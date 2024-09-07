@@ -918,6 +918,9 @@ pref("javascript.options.mem.gc_incremental_slice_ms", 5);
 
 pref("javascript.options.mem.gc_compacting", true);
 
+
+pref("javascript.options.mem.gc_generational", true);
+
 #ifdef NIGHTLY_BUILD
 
 pref("javascript.options.mem.gc_experimental_semispace_nursery", false);
