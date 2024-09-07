@@ -19,7 +19,7 @@ use sql_support::{
 
 
 
-pub const VERSION: u32 = 25;
+pub const VERSION: u32 = 26;
 
 
 pub const SQL: &str = "
@@ -170,6 +170,13 @@ CREATE TABLE mdn_custom_details(
     description TEXT NOT NULL,
     FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
 );
+
+CREATE TABLE exposure_custom_details(
+    suggestion_id INTEGER PRIMARY KEY,
+    type TEXT NOT NULL,
+    FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
+);
+CREATE INDEX exposure_custom_details_type ON exposure_custom_details(type);
 
 CREATE TABLE dismissed_suggestions (
     url TEXT PRIMARY KEY
@@ -419,6 +426,20 @@ CREATE TABLE ingested_records(
     last_modified INTEGER NOT NULL,
     PRIMARY KEY (id, collection)
 ) WITHOUT ROWID;
+                    ",
+                )?;
+                Ok(())
+            }
+            25 => {
+                
+                tx.execute_batch(
+                    "
+CREATE TABLE exposure_custom_details(
+    suggestion_id INTEGER PRIMARY KEY,
+    type TEXT NOT NULL,
+    FOREIGN KEY(suggestion_id) REFERENCES suggestions(id) ON DELETE CASCADE
+);
+CREATE INDEX exposure_custom_details_type ON exposure_custom_details(type);
                     ",
                 )?;
                 Ok(())
