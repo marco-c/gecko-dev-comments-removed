@@ -3573,7 +3573,10 @@ void nsHttpConnectionMgr::DoSpeculativeConnectionInternal(
     return;
   }
 
-  if (aFetchHTTPSRR && NS_SUCCEEDED(aTrans->FetchHTTPSRR())) {
+  ProxyDNSStrategy strategy = GetProxyDNSStrategyHelper(
+      aEnt->mConnInfo->ProxyType(), aEnt->mConnInfo->ProxyFlag());
+  if (aFetchHTTPSRR && strategy == ProxyDNSStrategy::ORIGIN &&
+      NS_SUCCEEDED(aTrans->FetchHTTPSRR())) {
     
     
     return;

@@ -307,23 +307,11 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   void MaybeResolveProxyAndBeginConnect();
-  nsresult MaybeStartDNSPrefetch();
+  void MaybeStartDNSPrefetch();
 
   
   
-  static uint16_t const DNS_PREFETCH_ORIGIN = 1 << 0;
-  
-  static uint16_t const DNS_PREFETCH_PROXY = 1 << 1;
-  
-  static uint16_t const DNS_PROXY_IS_HTTP = 1 << 2;
-  
-  
-  static uint16_t const DNS_BLOCK_ON_ORIGIN_RESOLVE = 1 << 3;
-
-  
-  
-  
-  uint16_t GetProxyDNSStrategy();
+  ProxyDNSStrategy GetProxyDNSStrategy();
 
   
   
