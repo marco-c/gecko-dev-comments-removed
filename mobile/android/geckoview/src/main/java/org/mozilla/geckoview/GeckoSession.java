@@ -4303,18 +4303,6 @@ public class GeckoSession {
         @NonNull final GeckoSession session, @NonNull final String viewportFit) {}
 
     
-
-
-
-
-
-
-    @Deprecated
-    @DeprecationSchedule(id = "session-onProductUrl", version = 131)
-    @UiThread
-    default void onProductUrl(@NonNull final GeckoSession session) {}
-
-    
     class ContextElement {
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({TYPE_NONE, TYPE_IMAGE, TYPE_VIDEO, TYPE_AUDIO})
