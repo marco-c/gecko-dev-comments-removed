@@ -3,6 +3,7 @@
 
 
 use inherent::inherent;
+use std::sync::Arc;
 
 use super::{CommonMetricData, MetricId};
 use glean::{DistributionData, ErrorType, HistogramType};
@@ -13,18 +14,19 @@ use glean::traits::CustomDistribution;
 
 
 
+#[derive(Clone)]
 pub enum CustomDistributionMetric {
     Parent {
         
         
         
         id: MetricId,
-        inner: glean::private::CustomDistributionMetric,
+        inner: Arc<glean::private::CustomDistributionMetric>,
     },
     Child(CustomDistributionMetricIpc),
 }
-#[derive(Debug)]
-pub struct CustomDistributionMetricIpc(MetricId);
+#[derive(Debug, Clone)]
+pub struct CustomDistributionMetricIpc(pub MetricId);
 
 impl CustomDistributionMetric {
     
@@ -46,7 +48,18 @@ impl CustomDistributionMetric {
                 bucket_count,
                 histogram_type,
             );
-            CustomDistributionMetric::Parent { id, inner }
+            CustomDistributionMetric::Parent {
+                id,
+                inner: Arc::new(inner),
+            }
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn metric_id(&self) -> MetricId {
+        match self {
+            CustomDistributionMetric::Parent { id, .. } => *id,
+            CustomDistributionMetric::Child(c) => c.0,
         }
     }
 
