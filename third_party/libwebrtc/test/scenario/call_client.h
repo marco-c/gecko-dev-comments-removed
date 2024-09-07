@@ -130,6 +130,9 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   void SetVideoReceiveRtpHeaderExtensions(
       rtc::ArrayView<RtpExtension> extensions);
 
+  
+  void UpdateNetworkAdapterId(int adapter_id);
+
   void OnPacketReceived(EmulatedIpPacket packet) override;
   std::unique_ptr<RtcEventLogOutput> GetLogWriter(std::string name);
 
