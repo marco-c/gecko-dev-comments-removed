@@ -655,7 +655,7 @@ pref("browser.urlbar.fakespot.featureGate", false);
 
 
 
-pref("browser.urlbar.fakespot.minKeywordLength", 0);
+pref("browser.urlbar.fakespot.minKeywordLength", 4);
 
 
 

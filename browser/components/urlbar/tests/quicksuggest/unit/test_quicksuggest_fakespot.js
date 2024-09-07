@@ -48,6 +48,14 @@ add_setup(async function () {
       ["fakespot.featureGate", true],
     ],
   });
+
+  
+  
+  Assert.equal(
+    UrlbarPrefs.get("fakespot.minKeywordLength"),
+    4,
+    "Sanity check: This test assumes the default minKeywordLength is 4"
+  );
 });
 
 add_task(async function basic() {
@@ -400,7 +408,7 @@ add_task(async function showLessFrequently() {
       before: {
         canShowLessFrequently: true,
         showLessFrequentlyCount: 0,
-        minKeywordLength: 0,
+        minKeywordLength: 4,
       },
       after: {
         canShowLessFrequently: true,
@@ -529,11 +537,12 @@ add_task(async function rustProviders() {
   await QuickSuggestTestUtils.forceSync();
 });
 
-add_task(async function minKeywordLength_noPrefValue() {
+add_task(async function minKeywordLength_defaultPrefValue() {
   await doMinKeywordLengthTest({
     
     prefValue: null,
     nimbusValue: 5,
+    expectedValue: 5,
     tests: [
       {
         query: "ex",
@@ -572,11 +581,12 @@ add_task(async function minKeywordLength_noPrefValue() {
   });
 });
 
-add_task(async function minKeywordLength_smallerPrefValue() {
+add_task(async function minKeywordLength_smallerPrefUserValue() {
   await doMinKeywordLengthTest({
     
-    prefValue: 4,
-    nimbusValue: 5,
+    prefValue: 5,
+    nimbusValue: 6,
+    expectedValue: 5,
     tests: [
       {
         query: "ex",
@@ -588,13 +598,17 @@ add_task(async function minKeywordLength_smallerPrefValue() {
       },
       {
         query: "exam",
+        expected: null,
+      },
+      {
+        query: "examp",
         expected: {
           url: PRIMARY_URL,
           title: PRIMARY_TITLE,
         },
       },
       {
-        query: "examp",
+        query: "exampl",
         expected: {
           url: PRIMARY_URL,
           title: PRIMARY_TITLE,
@@ -611,11 +625,12 @@ add_task(async function minKeywordLength_smallerPrefValue() {
   });
 });
 
-add_task(async function minKeywordLength_largerPrefValue() {
+add_task(async function minKeywordLength_largerPrefUserValue() {
   await doMinKeywordLengthTest({
     
     prefValue: 6,
     nimbusValue: 5,
+    expectedValue: 6,
     tests: [
       {
         query: "ex",
@@ -656,6 +671,7 @@ add_task(async function minKeywordLength_onlyPrefValue() {
     
     prefValue: 5,
     nimbusValue: null,
+    expectedValue: 5,
     tests: [
       {
         query: "ex",
@@ -689,11 +705,12 @@ add_task(async function minKeywordLength_onlyPrefValue() {
 
 
 
-add_task(async function minKeywordLength_noNimbusOrPrefValue() {
+add_task(async function minKeywordLength_noNimbusOrPrefUserValue() {
   await doMinKeywordLengthTest({
     
     prefValue: null,
     nimbusValue: null,
+    expectedValue: 4,
     tests: [
       {
         query: "ex",
@@ -721,7 +738,12 @@ add_task(async function minKeywordLength_noNimbusOrPrefValue() {
   });
 });
 
-async function doMinKeywordLengthTest({ prefValue, nimbusValue, tests }) {
+async function doMinKeywordLengthTest({
+  prefValue,
+  nimbusValue,
+  expectedValue,
+  tests,
+}) {
   
   let originalPrefValue = Services.prefs.prefHasUserValue(
     "browser.urlbar.fakespot.minKeywordLength"
@@ -742,6 +764,14 @@ async function doMinKeywordLengthTest({ prefValue, nimbusValue, tests }) {
     });
   }
 
+  
+  Assert.equal(
+    QuickSuggest.getFeature("FakespotSuggestions")._test_minKeywordLength,
+    expectedValue,
+    "minKeywordLength should be correct"
+  );
+
+  
   for (let { query, expected } of tests) {
     info("Running min keyword length test with query: " + query);
     await check_results({
