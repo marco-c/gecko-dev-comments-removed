@@ -19,7 +19,6 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/SVGContextPaint.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/SVGObserverUtils.h"
@@ -467,33 +466,51 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
     
     if (getStroke) {
+#if 0
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      SVGContentUtils::AutoStrokeOptions strokeOptions;
+      SVGContentUtils::GetStrokeOptions(&strokeOptions, element,
+                                        Style(), nullptr,
+                                        SVGContentUtils::eIgnoreStrokeDashing);
       Rect strokeBBoxExtents;
-      if (StaticPrefs::svg_Moz2D_strokeBounds_enabled()) {
-        SVGContentUtils::AutoStrokeOptions strokeOptions;
-        SVGContentUtils::GetStrokeOptions(
-            &strokeOptions, element, Style(), nullptr,
-            SVGContentUtils::eIgnoreStrokeDashing);
-        gfxMatrix userToOuterSVG;
-        if (SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
-          Matrix outerSVGToUser = ToMatrix(userToOuterSVG);
-          outerSVGToUser.Invert();
-          Matrix outerSVGToBBox = aToBBoxUserspace * outerSVGToUser;
-          RefPtr<PathBuilder> builder =
-              pathInUserSpace->TransformedCopyToBuilder(
-                  ToMatrix(userToOuterSVG));
-          RefPtr<Path> pathInOuterSVGSpace = builder->Finish();
-          strokeBBoxExtents = pathInOuterSVGSpace->GetStrokedBounds(
-              strokeOptions, outerSVGToBBox);
-        } else {
-          strokeBBoxExtents = pathInUserSpace->GetStrokedBounds(
-              strokeOptions, aToBBoxUserspace);
-        }
+      gfxMatrix userToOuterSVG;
+      if (SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
+        Matrix outerSVGToUser = ToMatrix(userToOuterSVG);
+        outerSVGToUser.Invert();
+        Matrix outerSVGToBBox = aToBBoxUserspace * outerSVGToUser;
+        RefPtr<PathBuilder> builder =
+          pathInUserSpace->TransformedCopyToBuilder(ToMatrix(userToOuterSVG));
+        RefPtr<Path> pathInOuterSVGSpace = builder->Finish();
+        strokeBBoxExtents =
+          pathInOuterSVGSpace->GetStrokedBounds(strokeOptions, outerSVGToBBox);
       } else {
-        strokeBBoxExtents = ToRect(SVGUtils::PathExtentsToMaxStrokeExtents(
-            ThebesRect(pathBBoxExtents), this, ThebesMatrix(aToBBoxUserspace)));
+        strokeBBoxExtents =
+          pathInUserSpace->GetStrokedBounds(strokeOptions, aToBBoxUserspace);
       }
       MOZ_ASSERT(strokeBBoxExtents.IsFinite(), "bbox is about to go bad");
       bbox.UnionEdges(strokeBBoxExtents);
+#else
+      
+      gfxRect strokeBBoxExtents = SVGUtils::PathExtentsToMaxStrokeExtents(
+          ThebesRect(pathBBoxExtents), this, ThebesMatrix(aToBBoxUserspace));
+      MOZ_ASSERT(ToRect(strokeBBoxExtents).IsFinite(),
+                 "bbox is about to go bad");
+      bbox.UnionEdges(strokeBBoxExtents);
+#endif
     }
   }
 
