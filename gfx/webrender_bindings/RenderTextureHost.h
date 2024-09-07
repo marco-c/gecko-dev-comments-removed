@@ -10,6 +10,7 @@
 #include "GLConsts.h"
 #include "GLTypes.h"
 #include "nsISupportsImpl.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/RefPtr.h"
@@ -42,6 +43,27 @@ class RenderTextureHostWrapper;
 
 void ActivateBindAndTexParameteri(gl::GLContext* aGL, GLenum aActiveTexture,
                                   GLenum aBindTarget, GLuint aBindTexture);
+
+
+
+
+class RenderTextureHostUsageInfo final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RenderTextureHostUsageInfo)
+
+  RenderTextureHostUsageInfo() : mCreationTimeStamp(TimeStamp::Now()) {}
+
+  bool VideoOverlayDisabled() { return mVideoOverlayDisabled; }
+  void DisableVideoOverlay() { mVideoOverlayDisabled = true; }
+
+  const TimeStamp mCreationTimeStamp;
+
+ protected:
+  ~RenderTextureHostUsageInfo() = default;
+
+  
+  Atomic<bool> mVideoOverlayDisabled{false};
+};
 
 class RenderTextureHost {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RenderTextureHost)
@@ -134,6 +156,16 @@ class RenderTextureHost {
     return false;
   }
 
+  
+  
+  
+  virtual RefPtr<RenderTextureHostUsageInfo> GetOrMergeUsageInfo(
+      const MutexAutoLock& aProofOfMapLock,
+      RefPtr<RenderTextureHostUsageInfo> aUsageInfo);
+
+  virtual RefPtr<RenderTextureHostUsageInfo> GetTextureHostUsageInfo(
+      const MutexAutoLock& aProofOfMapLock);
+
  protected:
   virtual ~RenderTextureHost();
 
@@ -145,6 +177,9 @@ class RenderTextureHost {
       gfx::IntSize aTextureSize) const;
 
   bool mIsFromDRMSource;
+
+  
+  RefPtr<RenderTextureHostUsageInfo> mRenderTextureHostUsageInfo;
 
   friend class RenderTextureHostWrapper;
 };

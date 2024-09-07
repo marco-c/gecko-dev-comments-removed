@@ -45,6 +45,7 @@ typedef MozPromise<MemoryReport, bool, true> MemoryReportPromise;
 
 class RendererOGL;
 class RenderTextureHost;
+class RenderTextureHostUsageInfo;
 class RenderThread;
 
 
@@ -232,12 +233,21 @@ class RenderThread final {
   void HandleRenderTextureOps();
 
   
+  RefPtr<RenderTextureHostUsageInfo> GetOrMergeUsageInfo(
+      const wr::ExternalImageId& aExternalImageId,
+      RefPtr<RenderTextureHostUsageInfo> aUsageInfo);
+
+  
   void UnregisterExternalImageDuringShutdown(
       const wr::ExternalImageId& aExternalImageId);
 
   
   RenderTextureHost* GetRenderTexture(
       const wr::ExternalImageId& aExternalImageId);
+
+  
+  std::tuple<RenderTextureHost*, RefPtr<RenderTextureHostUsageInfo>>
+  GetRenderTextureAndUsageInfo(const wr::ExternalImageId& aExternalImageId);
 
   
   bool IsDestroyed(wr::WindowId aWindowId);

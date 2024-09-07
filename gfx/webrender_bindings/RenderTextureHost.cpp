@@ -7,6 +7,7 @@
 #include "RenderTextureHost.h"
 
 #include "GLContext.h"
+#include "mozilla/layers/CompositorThread.h"
 #include "RenderThread.h"
 
 namespace mozilla {
@@ -52,6 +53,60 @@ std::pair<gfx::Point, gfx::Point> RenderTextureHost::GetUvCoords(
 
 void RenderTextureHost::Destroy() {
   MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+}
+
+RefPtr<RenderTextureHostUsageInfo> RenderTextureHost::GetOrMergeUsageInfo(
+    const MutexAutoLock& aProofOfMapLock,
+    RefPtr<RenderTextureHostUsageInfo> aUsageInfo) {
+  MOZ_ASSERT(layers::CompositorThreadHolder::IsInCompositorThread());
+
+  if (mRenderTextureHostUsageInfo && aUsageInfo) {
+    if (mRenderTextureHostUsageInfo == aUsageInfo) {
+      return mRenderTextureHostUsageInfo;
+    }
+
+    
+
+    const bool overlayDisabled =
+        mRenderTextureHostUsageInfo->VideoOverlayDisabled() ||
+        aUsageInfo->VideoOverlayDisabled();
+
+    
+    
+    RefPtr<RenderTextureHostUsageInfo> usageInfo = [&]() {
+      if (aUsageInfo->mCreationTimeStamp <
+          mRenderTextureHostUsageInfo->mCreationTimeStamp) {
+        return aUsageInfo;
+      }
+      return mRenderTextureHostUsageInfo;
+    }();
+
+    
+    if (overlayDisabled) {
+      usageInfo->DisableVideoOverlay();
+    }
+    mRenderTextureHostUsageInfo = usageInfo;
+  } else if (aUsageInfo && !mRenderTextureHostUsageInfo) {
+    mRenderTextureHostUsageInfo = aUsageInfo;
+  }
+
+  if (!mRenderTextureHostUsageInfo) {
+    MOZ_ASSERT(!aUsageInfo);
+    mRenderTextureHostUsageInfo = new RenderTextureHostUsageInfo;
+  }
+
+  MOZ_ASSERT(mRenderTextureHostUsageInfo);
+  MOZ_ASSERT_IF(aUsageInfo && aUsageInfo->VideoOverlayDisabled(),
+                mRenderTextureHostUsageInfo->VideoOverlayDisabled());
+
+  return mRenderTextureHostUsageInfo;
+}
+
+RefPtr<RenderTextureHostUsageInfo> RenderTextureHost::GetTextureHostUsageInfo(
+    const MutexAutoLock& aProofOfMapLock) {
+  MOZ_ASSERT(RenderThread::IsInRenderThread());
+
+  return mRenderTextureHostUsageInfo;
 }
 
 }  

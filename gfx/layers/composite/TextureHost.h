@@ -670,6 +670,9 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
     
     
     SUPPORTS_EXTERNAL_BUFFER_TEXTURES,
+
+    
+    EXTERNAL_COMPOSITING_DISABLED,
   };
   using PushDisplayItemFlagSet = EnumSet<PushDisplayItemFlag>;
 
