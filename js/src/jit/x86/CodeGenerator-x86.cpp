@@ -155,90 +155,24 @@ void CodeGenerator::visitAtomicStore64(LAtomicStore64* lir) {
 void CodeGenerator::visitCompareExchangeTypedArrayElement64(
     LCompareExchangeTypedArrayElement64* lir) {
   Register elements = ToRegister(lir->elements());
-  Register oldval = ToRegister(lir->oldval());
-  DebugOnly<Register> newval = ToRegister(lir->newval());
-  DebugOnly<Register> temp = ToRegister(lir->tempLow());
-  Register out = ToRegister(lir->output());
+  Register64 oldval = ToRegister64(lir->oldval());
+  Register64 newval = ToRegister64(lir->newval());
+  Register64 out = ToOutRegister64(lir);
 
-  MOZ_ASSERT(elements == esi);
-  MOZ_ASSERT(oldval == eax);
-  MOZ_ASSERT(newval.inspect() == edx);
-  MOZ_ASSERT(temp.inspect() == ebx);
-  MOZ_ASSERT(out == ecx);
+  MOZ_ASSERT(oldval == Register64(edx, eax));
+  MOZ_ASSERT(newval == Register64(ecx, ebx));
+  MOZ_ASSERT(out == oldval);
 
   Scalar::Type arrayType = lir->mir()->arrayType();
 
-  DebugOnly<uint32_t> framePushed = masm.framePushed();
-
-  
-  masm.push(eax);
-  masm.push(edx);
-
-  auto restoreSavedRegisters = [&]() {
-    masm.pop(edx);
-    masm.pop(eax);
-  };
-
-  Register64 expected = Register64(edx, eax);
-  Register64 replacement = Register64(ecx, ebx);
-
-  
-  {
-    
-    Register bigInt = esi;
-    masm.push(bigInt);
-
-    masm.mov(oldval, bigInt);
-    masm.loadBigInt64(bigInt, expected);
-
-    
-    masm.loadPtr(Address(masm.getStackPointer(), sizeof(uintptr_t)), bigInt);
-    masm.loadBigInt64(bigInt, replacement);
-
-    masm.pop(bigInt);
-  }
-
   if (lir->index()->isConstant()) {
     Address dest = ToAddress(elements, lir->index(), arrayType);
-    masm.compareExchange64(Synchronization::Full(), dest, expected, replacement,
-                           expected);
+    masm.compareExchange64(Synchronization::Full(), dest, oldval, newval, out);
   } else {
     BaseIndex dest(elements, ToRegister(lir->index()),
                    ScaleFromScalarType(arrayType));
-    masm.compareExchange64(Synchronization::Full(), dest, expected, replacement,
-                           expected);
+    masm.compareExchange64(Synchronization::Full(), dest, oldval, newval, out);
   }
-
-  
-  masm.move64(expected, replacement);
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(framePushed == masm.framePushed());
-
-  OutOfLineCode* ool = createBigIntOutOfLine(lir, arrayType, replacement, out);
-
-  
-  Register bigInt = eax;
-  Register temp2 = edx;
-
-  Label fail;
-  masm.newGCBigInt(bigInt, temp2, initialBigIntHeap(), &fail);
-  masm.initializeBigInt64(arrayType, bigInt, replacement);
-  masm.mov(bigInt, out);
-  restoreSavedRegisters();
-  masm.jump(ool->rejoin());
-
-  
-  masm.bind(&fail);
-  restoreSavedRegisters();
-  masm.jump(ool->entry());
-
-  
-  masm.bind(ool->rejoin());
 }
 
 void CodeGenerator::visitAtomicExchangeTypedArrayElement64(

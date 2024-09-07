@@ -361,12 +361,14 @@ bool WarpCacheIRTranspiler::transpile(
   
   
   
+  
   MOZ_ASSERT_IF(effectful_,
                 effectful_->resumePoint() || effectful_->isIonToWasmCall() ||
                     effectful_->isLoadUnboxedScalar() ||
                     effectful_->isLoadDataViewElement() ||
                     effectful_->isAtomicTypedArrayElementBinop() ||
                     effectful_->isAtomicExchangeTypedArrayElement() ||
+                    effectful_->isCompareExchangeTypedArrayElement() ||
                     effectful_->isResizableTypedArrayLength() ||
                     effectful_->isResizableDataViewByteLength() ||
                     effectful_->isGrowableSharedArrayBufferByteLength());
@@ -2242,8 +2244,7 @@ bool WarpCacheIRTranspiler::emitLoadTypedArrayElementExistsResult(
 }
 
 static MIRType MIRTypeForArrayBufferViewRead(Scalar::Type arrayType,
-                                             bool forceDoubleForUint32,
-                                             bool allowInt64 = false) {
+                                             bool forceDoubleForUint32) {
   switch (arrayType) {
     case Scalar::Int8:
     case Scalar::Uint8:
@@ -2261,10 +2262,7 @@ static MIRType MIRTypeForArrayBufferViewRead(Scalar::Type arrayType,
       return MIRType::Double;
     case Scalar::BigInt64:
     case Scalar::BigUint64:
-      if (allowInt64) {
-        return MIRType::Int64;
-      }
-      return MIRType::BigInt;
+      return MIRType::Int64;
     default:
       break;
   }
@@ -2298,7 +2296,7 @@ bool WarpCacheIRTranspiler::emitLoadTypedArrayElementResult(
 
   auto* load = MLoadUnboxedScalar::New(alloc(), elements, index, elementType);
   load->setResultType(
-      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32, true));
+      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32));
   add(load);
 
   MInstruction* result = load;
@@ -2929,7 +2927,7 @@ bool WarpCacheIRTranspiler::emitLoadDataViewValueResult(
   add(load);
 
   MIRType knownType =
-      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32, true);
+      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
   load->setResultType(knownType);
 
   MInstruction* result = load;
@@ -4720,8 +4718,18 @@ bool WarpCacheIRTranspiler::emitAtomicsCompareExchangeResult(
   cas->setResultType(knownType);
   addEffectful(cas);
 
-  pushResult(cas);
-  return resumeAfter(cas);
+  MInstruction* result = cas;
+  if (Scalar::isBigIntType(elementType)) {
+    result = MInt64ToBigInt::New(alloc(), cas, elementType);
+
+    
+    result->setNotMovable();
+
+    add(result);
+  }
+
+  pushResult(result);
+  return resumeAfterUnchecked(result);
 }
 
 bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
@@ -4740,7 +4748,7 @@ bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
 
   bool forceDoubleForUint32 = true;
   MIRType knownType =
-      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32, true);
+      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
   auto* exchange = MAtomicExchangeTypedArrayElement::New(
       alloc(), elements, index, value, elementType);
@@ -4778,7 +4786,7 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
 
   bool forceDoubleForUint32 = true;
   MIRType knownType =
-      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32, true);
+      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
   auto* binop = MAtomicTypedArrayElementBinop::New(
       alloc(), op, elements, index, elementType, value, forEffect);
@@ -4856,7 +4864,7 @@ bool WarpCacheIRTranspiler::emitAtomicsLoadResult(
 
   bool forceDoubleForUint32 = true;
   MIRType knownType =
-      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32, true);
+      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
   auto* load = MLoadUnboxedScalar::New(alloc(), elements, index, elementType,
                                        MemoryBarrierRequirement::Required);
