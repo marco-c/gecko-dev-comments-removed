@@ -112,13 +112,16 @@ NS_IMETHODIMP StartModuleLoadRunnable::RunOnWorkletThread() {
 
   RefPtr<WorkletLoadContext> loadContext = new WorkletLoadContext(mHandlerRef);
 
+  RefPtr<JS::loader::VisitedURLSet> visitedSet =
+      ModuleLoadRequest::NewVisitedSetForTopLevelImport(
+          mURI, JS::ModuleType::JavaScript);
+
   
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       mURI, JS::ModuleType::JavaScript, ReferrerPolicy::_empty, fetchOptions,
       SRIMetadata(), mReferrer, loadContext, true, 
       false,                                       
-      moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(mURI),
-      nullptr);
+      moduleLoader, visitedSet, nullptr);
 
   request->mURL = request->mURI->GetSpecOrDefault();
   request->NoCacheEntryFound();
