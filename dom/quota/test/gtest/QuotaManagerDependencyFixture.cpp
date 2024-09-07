@@ -261,6 +261,30 @@ void QuotaManagerDependencyFixture::GetOriginUsage(
 }
 
 
+void QuotaManagerDependencyFixture::GetCachedOriginUsage(
+    const OriginMetadata& aOriginMetadata, UsageInfo* aResult) {
+  ASSERT_TRUE(aResult);
+
+  mozilla::ipc::PrincipalInfo principalInfo;
+  ASSERT_NO_FATAL_FAILURE(
+      CreateContentPrincipalInfo(aOriginMetadata.mOrigin, principalInfo));
+
+  PerformOnBackgroundThread(
+      [aResult, principalInfo = std::move(principalInfo)]() {
+        QuotaManager* quotaManager = QuotaManager::Get();
+        ASSERT_TRUE(quotaManager);
+
+        auto value = Await(quotaManager->GetOriginUsage(
+            principalInfo,  true));
+        if (value.IsResolve()) {
+          *aResult = value.ResolveValue();
+        } else {
+          *aResult = UsageInfo();
+        }
+      });
+}
+
+
 void QuotaManagerDependencyFixture::ClearStoragesForOrigin(
     const OriginMetadata& aOriginMetadata) {
   mozilla::ipc::PrincipalInfo principalInfo;
