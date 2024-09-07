@@ -874,9 +874,19 @@ nsresult mozJSModuleLoader::LoadSingleModuleScriptOnWorker(
   NS_ENSURE_SUCCESS(rv, rv);
 
   CompileOptions options(aCx);
-  ScriptPreloader::FillCompileOptionsForCachedStencil(options);
+  
+  
+  
+  
+  
+  
+  
+  options.setNoScriptRval(true);
   options.setFileAndLine(location.BeginReading(), 1);
   SetModuleOptions(options);
+
+  
+  MOZ_ASSERT(!options.sourceIsLazy);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
   if (!srcBuf.init(aCx, data.get(), data.Length(),
