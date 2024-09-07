@@ -329,6 +329,10 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       vpxInfo.mDisplay = mCurrentConfig.mDisplay;
       VPXDecoder::ReadVPCCBox(vpxInfo, mCurrentConfig.mExtraData);
       mInfo = Some(vpxInfo);
+
+      mCurrentConfig.mTransferFunction = Some(vpxInfo.TransferFunction());
+      mCurrentConfig.mColorPrimaries = Some(vpxInfo.ColorPrimaries());
+      mCurrentConfig.mColorSpace = Some(vpxInfo.ColorSpace());
     }
   }
 
@@ -351,6 +355,7 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     if (!VPXDecoder::GetStreamInfo(dataSpan, info, mCodec)) {
       return NS_ERROR_DOM_MEDIA_DECODE_ERR;
     }
+
     
     
     if (!info.mKeyFrame) {
@@ -362,6 +367,12 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       if (mInfo.ref().IsCompatible(info)) {
         return rv;
       }
+
+      
+      
+      info.mColorPrimaries = mInfo.ref().mColorPrimaries;
+      info.mTransferFunction = mInfo.ref().mTransferFunction;
+
       
       
       mCurrentConfig.ResetImageRect();
@@ -407,7 +418,6 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 
     mCurrentConfig.mColorDepth = gfx::ColorDepthForBitDepth(info.mBitDepth);
     mCurrentConfig.mColorSpace = Some(info.ColorSpace());
-    
 
     
     
