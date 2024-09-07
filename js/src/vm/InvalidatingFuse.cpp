@@ -57,7 +57,13 @@ void js::DependentScriptSet::invalidateForFuse(JSContext* cx,
 void js::jit::InvalidateAndClearScriptSet(JSContext* cx,
                                           WeakScriptCache& scripts,
                                           const char* reason) {
-  for (auto r = scripts.all(); !r.empty(); r.popFront()) {
+  
+  
+  
+  WeakScriptSet localScripts = scripts.stealContents();
+  MOZ_ASSERT(scripts.empty());
+
+  for (auto r = localScripts.all(); !r.empty(); r.popFront()) {
     JSScript* script = r.front().get();
     
     
@@ -68,9 +74,6 @@ void js::jit::InvalidateAndClearScriptSet(JSContext* cx,
       js::jit::Invalidate(cx, script);
     }
   }
-
-  
-  scripts.clear();
 }
 
 bool js::DependentScriptSet::addScriptForFuse(InvalidatingFuse* fuse,
@@ -107,4 +110,11 @@ bool js::jit::AddScriptToSet(WeakScriptCache& scripts,
 
   
   return true;
+}
+
+void js::jit::RemoveFromScriptSet(WeakScriptCache& scripts, JSScript* script) {
+  js::jit::WeakScriptSet::Ptr p = scripts.lookup(script);
+  if (p) {
+    scripts.remove(p);
+  }
 }
