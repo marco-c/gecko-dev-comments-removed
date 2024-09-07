@@ -1928,14 +1928,6 @@ static bool DefineNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
         return result.fail(JSMSG_CANT_DEFINE_PAST_ARRAY_LENGTH);
       }
     }
-  } else if (obj->is<TypedArrayObject>()) {
-    
-    
-    
-    if (mozilla::Maybe<uint64_t> index = ToTypedArrayIndex(id)) {
-      Rooted<TypedArrayObject*> tobj(cx, &obj->as<TypedArrayObject>());
-      return SetTypedArrayElement(cx, tobj, *index, v, result);
-    }
   } else if (obj->is<ArgumentsObject>()) {
     
     
@@ -1950,6 +1942,9 @@ static bool DefineNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
       obj->as<ArgumentsObject>().markElementOverridden();
     }
   }
+
+  
+  MOZ_ASSERT_IF(obj->is<TypedArrayObject>(), ToTypedArrayIndex(id).isNothing());
 
 #ifdef DEBUG
   PropertyResult prop;
@@ -2539,6 +2534,9 @@ static bool SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v,
   return DefineProperty(cx, receiver, id, desc, result);
 }
 
+enum class TypedArrayOutOfRange : bool { No, Yes };
+
+
 
 
 
@@ -2549,13 +2547,41 @@ static bool SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v,
 
 template <QualifiedBool IsQualified>
 static bool SetNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
-                                   HandleId id, HandleValue v,
-                                   HandleValue receiver,
+                                   Handle<NativeObject*> pobj, HandleId id,
+                                   HandleValue v, HandleValue receiver,
+                                   TypedArrayOutOfRange typedArrayOutOfRange,
                                    ObjectOpResult& result) {
   if (!IsQualified && receiver.isObject() &&
       receiver.toObject().isUnqualifiedVarObj()) {
     if (!MaybeReportUndeclaredVarAssignment(cx, id)) {
       return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  if constexpr (IsQualified) {
+    
+    if (typedArrayOutOfRange == TypedArrayOutOfRange::Yes) {
+      MOZ_ASSERT(pobj->is<TypedArrayObject>(),
+                 "typed array out-of-range reported by non-typed array?");
+      MOZ_ASSERT(pobj == obj || !obj->is<TypedArrayObject>(),
+                 "prototype chain not traversed for typed array indices");
+
+      
+      if (receiver.isObject() && pobj == &receiver.toObject()) {
+        mozilla::Maybe<uint64_t> index = ToTypedArrayIndex(id);
+        MOZ_ASSERT(index, "typed array out-of-range reported by non-index?");
+
+        auto tobj = HandleObject(pobj).as<TypedArrayObject>();
+        return SetTypedArrayElement(cx, tobj, *index, v, result);
+      }
+
+      
+      return result.succeed();
     }
   }
 
@@ -2704,12 +2730,6 @@ bool js::NativeSetProperty(JSContext* cx, Handle<NativeObject*> obj,
   
   
   
-  
-  
-  
-  
-  
-  
   for (;;) {
     
     if (!NativeLookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop)) {
@@ -2731,8 +2751,9 @@ bool js::NativeSetProperty(JSContext* cx, Handle<NativeObject*> obj,
     JSObject* proto = pobj->staticPrototype();
     if (!proto || prop.shouldIgnoreProtoChain()) {
       
-      return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver,
-                                                 result);
+      return SetNonexistentProperty<IsQualified>(
+          cx, obj, pobj, id, v, receiver,
+          TypedArrayOutOfRange{prop.isTypedArrayOutOfRange()}, result);
     }
 
     
@@ -2750,8 +2771,8 @@ bool js::NativeSetProperty(JSContext* cx, Handle<NativeObject*> obj,
           return false;
         }
         if (!found) {
-          return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver,
-                                                     result);
+          return SetNonexistentProperty<IsQualified>(
+              cx, obj, pobj, id, v, receiver, TypedArrayOutOfRange::No, result);
         }
       }
 
