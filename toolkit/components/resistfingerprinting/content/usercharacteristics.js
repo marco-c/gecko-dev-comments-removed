@@ -729,38 +729,17 @@ async function populateMediaCapabilities() {
   
   
   
-  const mimeTypes = {
-    audio: [
-      
-      "audio/webm; codecs=vorbis",
-      "audio/webm; codecs=opus",
-      
-      "audio/mp4; codecs=mp4a.40.2",
-      "audio/mp4; codecs=mp3",
-      "audio/mp4; codecs=opus",
-      "audio/mp4; codecs=flac",
-    ],
-    video: [
-      
-      "video/webm; codecs=vp9",
-      "video/webm; codecs=vp8",
-      "video/webm; codecs=av1",
-      
-      "video/mp4; codecs=vp9",
-      "video/mp4; codecs=vp8",
-      "video/mp4; codecs=hev1.1.6.L123.B0",
-      "video/mp4; codecs=avc1.64001F",
-    ],
-  };
-
-  const audioConfig = {
-    type: "file",
-    audio: {
-      channels: 2,
-      bitrate: 64000,
-      samplerate: 44000,
-    },
-  };
+  const mimeTypes = [
+    
+    "video/webm; codecs=vp9",
+    "video/webm; codecs=vp8",
+    "video/webm; codecs=av1",
+    
+    "video/mp4; codecs=vp9",
+    "video/mp4; codecs=vp8",
+    "video/mp4; codecs=hev1.1.0.L30.b0",
+    "video/mp4; codecs=avc1.42000A",
+  ];
 
   const videoConfig = {
     type: "file",
@@ -772,36 +751,63 @@ async function populateMediaCapabilities() {
     },
   };
 
-  async function getCapabilities() {
+  
+  
+  async function h264CodecsSupported() {
     
-    
-    const capabilities = {
-      unsupported: [],
-      videos: {},
-    };
+    const levels = [...Array(3).keys()]
+      .map(i => [
+        ((i + 4) * 10).toString(16),
+        ((i + 4) * 10 + 1).toString(16),
+        ((i + 4) * 10 + 2).toString(16),
+      ])
+      .flat();
 
-    for (const audioMime of mimeTypes.audio) {
-      audioConfig.audio.contentType = audioMime;
-      const capability = await navigator.mediaCapabilities.decodingInfo(
-        audioConfig
-      );
-      if (!capability.supported) {
-        capabilities.unsupported.push(audioMime);
+    
+    
+    const profiles = ["avc1.4200", "avc1.4d00", "avc1.6e00", "avc1.7a00"];
+
+    const supportLevels = {};
+    for (const profile of profiles) {
+      for (const level of levels) {
+        const mimeType = `video/mp4; codecs=${profile}${level}`;
+        videoConfig.video.contentType = mimeType;
+        const capability = await navigator.mediaCapabilities.decodingInfo(
+          videoConfig
+        );
+
+        if (capability.supported) {
+          supportLevels[profile] = level;
+        }
       }
     }
 
-    for (const videoMime of mimeTypes.video) {
-      videoConfig.video.contentType = videoMime;
+    return supportLevels;
+  }
+
+  async function getCapabilities() {
+    const capabilities = {
+      unsupported: [],
+      notSmooth: [],
+      notPowerEfficient: [],
+      h264: await h264CodecsSupported(),
+    };
+
+    for (const mime of mimeTypes) {
+      videoConfig.video.contentType = mime;
       const capability = await navigator.mediaCapabilities.decodingInfo(
         videoConfig
       );
+      const shortMime = mime.split("=")[1];
       if (!capability.supported) {
-        capabilities.unsupported.push(videoMime);
+        capabilities.unsupported.push(shortMime);
       } else {
-        capabilities.videos[videoMime] = {
-          smooth: capability.smooth,
-          powerEfficient: capability.powerEfficient,
-        };
+        if (!capability.smooth) {
+          capabilities.notSmooth.push(shortMime);
+        }
+        if (!capability.powerEfficient) {
+          capabilities.notPowerEfficient.push(shortMime);
+        }
       }
     }
 
