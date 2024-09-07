@@ -111,10 +111,11 @@ add_task(async function test_backup() {
     stagingPath,
     sourcePath
   );
-  Assert.equal(
+  Assert.deepEqual(
     manifestEntry,
-    null,
-    "PreferencesBackupResource.backup should return null as its ManifestEntry"
+    { profilePath: sourcePath },
+    "PreferencesBackupResource.backup should return the original profile path " +
+      "in its ManifestEntry"
   );
 
   await assertFilesExist(stagingPath, simpleCopyFiles);
@@ -184,21 +185,25 @@ add_task(async function test_recover() {
   
   
   const TEST_SEARCH_ENGINE_LOAD_PATH = "some/path/on/disk";
+  const TEST_SEARCH_ENGINE_LOAD_PATH_HASH = "some pre-existing hash";
   const TEST_DEFAULT_ENGINE_ID = "bugle";
+  const TEST_DEFAULT_ENGINE_ID_HASH = "default engine original hash";
   const TEST_PRIVATE_DEFAULT_ENGINE_ID = "goose";
+  const TEST_PRIVATE_DEFAULT_ENGINE_ID_HASH =
+    "private default engine original hash";
 
   let fakeSearchPrefs = {
     metaData: {
       defaultEngineId: TEST_DEFAULT_ENGINE_ID,
-      defaultEngineIdHash: "default engine original hash",
+      defaultEngineIdHash: TEST_DEFAULT_ENGINE_ID_HASH,
       privateDefaultEngineId: TEST_PRIVATE_DEFAULT_ENGINE_ID,
-      privateDefaultEngineIdHash: "private default engine original hash",
+      privateDefaultEngineIdHash: TEST_PRIVATE_DEFAULT_ENGINE_ID_HASH,
     },
     engines: [
       {
         _loadPath: TEST_SEARCH_ENGINE_LOAD_PATH,
         _metaData: {
-          loadPathHash: "some pre-existing hash",
+          loadPathHash: TEST_SEARCH_ENGINE_LOAD_PATH_HASH,
         },
       },
     ],
@@ -214,11 +219,26 @@ add_task(async function test_recover() {
   );
 
   const EXPECTED_HASH = "this is some newly generated hash";
-  sandbox.stub(SearchUtils, "getVerificationHash").returns(EXPECTED_HASH);
+  sandbox
+    .stub(SearchUtils, "getVerificationHash")
+    .onCall(0)
+    .returns(TEST_SEARCH_ENGINE_LOAD_PATH_HASH)
+    .onCall(1)
+    .returns(EXPECTED_HASH)
+    .onCall(2)
+    .returns(TEST_DEFAULT_ENGINE_ID_HASH)
+    .onCall(3)
+    .returns(EXPECTED_HASH)
+    .onCall(4)
+    .returns(TEST_PRIVATE_DEFAULT_ENGINE_ID_HASH)
+    .onCall(5)
+    .returns(EXPECTED_HASH);
+
+  const PRETEND_ORIGINAL_PATH = "some/original/path";
 
   
   let postRecoveryEntry = await preferencesBackupResource.recover(
-    null ,
+    { profilePath: PRETEND_ORIGINAL_PATH },
     recoveryPath,
     destProfilePath
   );
@@ -236,28 +256,49 @@ add_task(async function test_recover() {
   
   
   
+  
+  
+  
   Assert.equal(
     SearchUtils.getVerificationHash.callCount,
-    3,
+    6,
     "SearchUtils.getVerificationHash was called the right number of times."
   );
   Assert.ok(
     SearchUtils.getVerificationHash
       .getCall(0)
-      .calledWith(TEST_SEARCH_ENGINE_LOAD_PATH, destProfilePath),
+      .calledWith(TEST_SEARCH_ENGINE_LOAD_PATH, PRETEND_ORIGINAL_PATH),
     "SearchUtils.getVerificationHash first call called with the right arguments."
   );
   Assert.ok(
     SearchUtils.getVerificationHash
       .getCall(1)
-      .calledWith(TEST_DEFAULT_ENGINE_ID, destProfilePath),
+      .calledWith(TEST_SEARCH_ENGINE_LOAD_PATH, destProfilePath),
     "SearchUtils.getVerificationHash second call called with the right arguments."
   );
   Assert.ok(
     SearchUtils.getVerificationHash
       .getCall(2)
-      .calledWith(TEST_PRIVATE_DEFAULT_ENGINE_ID, destProfilePath),
+      .calledWith(TEST_DEFAULT_ENGINE_ID, PRETEND_ORIGINAL_PATH),
     "SearchUtils.getVerificationHash third call called with the right arguments."
+  );
+  Assert.ok(
+    SearchUtils.getVerificationHash
+      .getCall(3)
+      .calledWith(TEST_DEFAULT_ENGINE_ID, destProfilePath),
+    "SearchUtils.getVerificationHash fourth call called with the right arguments."
+  );
+  Assert.ok(
+    SearchUtils.getVerificationHash
+      .getCall(4)
+      .calledWith(TEST_PRIVATE_DEFAULT_ENGINE_ID, PRETEND_ORIGINAL_PATH),
+    "SearchUtils.getVerificationHash fifth call called with the right arguments."
+  );
+  Assert.ok(
+    SearchUtils.getVerificationHash
+      .getCall(5)
+      .calledWith(TEST_PRIVATE_DEFAULT_ENGINE_ID, destProfilePath),
+    "SearchUtils.getVerificationHash sixth call called with the right arguments."
   );
 
   let recoveredSearchPrefs = await IOUtils.readJSON(
