@@ -359,10 +359,12 @@ bool WarpCacheIRTranspiler::transpile(
   
   
   
+  
   MOZ_ASSERT_IF(effectful_,
                 effectful_->resumePoint() || effectful_->isIonToWasmCall() ||
                     effectful_->isLoadUnboxedScalar() ||
                     effectful_->isLoadDataViewElement() ||
+                    effectful_->isAtomicTypedArrayElementBinop() ||
                     effectful_->isResizableTypedArrayLength() ||
                     effectful_->isResizableDataViewByteLength() ||
                     effectful_->isGrowableSharedArrayBufferByteLength());
@@ -4764,7 +4766,7 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
 
   bool forceDoubleForUint32 = true;
   MIRType knownType =
-      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
+      MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32, true);
 
   auto* binop = MAtomicTypedArrayElementBinop::New(
       alloc(), op, elements, index, elementType, value, forEffect);
@@ -4773,12 +4775,23 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
   }
   addEffectful(binop);
 
-  if (!forEffect) {
-    pushResult(binop);
-  } else {
+  if (forEffect) {
     pushResult(constant(UndefinedValue()));
+    return resumeAfter(binop);
   }
-  return resumeAfter(binop);
+
+  MInstruction* result = binop;
+  if (Scalar::isBigIntType(elementType)) {
+    result = MInt64ToBigInt::New(alloc(), binop, elementType);
+
+    
+    result->setNotMovable();
+
+    add(result);
+  }
+
+  pushResult(result);
+  return resumeAfterUnchecked(result);
 }
 
 bool WarpCacheIRTranspiler::emitAtomicsAddResult(

@@ -289,6 +289,21 @@ class TruncateToInt32OrToBigIntPolicy final : public TypePolicy {
 };
 
 
+
+template <unsigned Op>
+class TruncateToInt32OrToInt64Policy final : public TypePolicy {
+ public:
+  constexpr TruncateToInt32OrToInt64Policy() = default;
+  EMPTY_DATA_;
+  [[nodiscard]] static bool staticAdjustInputs(TempAllocator& alloc,
+                                               MInstruction* def);
+  [[nodiscard]] bool adjustInputs(TempAllocator& alloc,
+                                  MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
+};
+
+
 template <unsigned Op>
 class DoublePolicy final : public TypePolicy {
  public:

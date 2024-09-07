@@ -309,73 +309,32 @@ void CodeGenerator::visitAtomicTypedArrayElementBinop64(
   MOZ_ASSERT(!lir->mir()->isForEffect());
 
   Register elements = ToRegister(lir->elements());
-  Register value = ToRegister(lir->value());
-  Register64 temp1 = ToRegister64(lir->temp1());
-  Register out = ToRegister(lir->output());
-  Register64 temp2 = Register64(value, out);
+  Register64 value = ToRegister64(lir->value());
+  Register64 out = ToOutRegister64(lir);
 
-  MOZ_ASSERT(value == edx);
-  MOZ_ASSERT(temp1 == Register64(ecx, ebx));
-  MOZ_ASSERT(temp2 == Register64(edx, eax));
-  MOZ_ASSERT(out == eax);
+  MOZ_ASSERT(value == Register64(ecx, ebx));
+  MOZ_ASSERT(out == Register64(edx, eax));
 
   Scalar::Type arrayType = lir->mir()->arrayType();
   AtomicOp atomicOp = lir->mir()->operation();
 
-  DebugOnly<uint32_t> framePushed = masm.framePushed();
-
   
-  masm.push(edx);
-
-  auto restoreSavedRegisters = [&]() { masm.pop(edx); };
-
-  masm.loadBigInt64(value, temp1);
-
-  masm.Push(temp1);
+  masm.push64(value);
 
   Address addr(masm.getStackPointer(), 0);
 
   if (lir->index()->isConstant()) {
     Address dest = ToAddress(elements, lir->index(), arrayType);
-    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, temp1,
-                         temp2);
+    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, value,
+                         out);
   } else {
     BaseIndex dest(elements, ToRegister(lir->index()),
                    ScaleFromScalarType(arrayType));
-    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, temp1,
-                         temp2);
+    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, value,
+                         out);
   }
 
-  masm.freeStack(sizeof(uint64_t));
-
-  
-  masm.move64(temp2, temp1);
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(framePushed == masm.framePushed());
-
-  OutOfLineCode* ool = createBigIntOutOfLine(lir, arrayType, temp1, out);
-
-  
-  Register temp = edx;
-
-  Label fail;
-  masm.newGCBigInt(out, temp, initialBigIntHeap(), &fail);
-  masm.initializeBigInt64(arrayType, out, temp1);
-  restoreSavedRegisters();
-  masm.jump(ool->rejoin());
-
-  
-  masm.bind(&fail);
-  restoreSavedRegisters();
-  masm.jump(ool->entry());
-
-  
-  masm.bind(ool->rejoin());
+  masm.pop64(value);
 }
 
 void CodeGenerator::visitAtomicTypedArrayElementBinopForEffect64(
@@ -383,42 +342,32 @@ void CodeGenerator::visitAtomicTypedArrayElementBinopForEffect64(
   MOZ_ASSERT(lir->mir()->isForEffect());
 
   Register elements = ToRegister(lir->elements());
-  Register value = ToRegister(lir->value());
-  Register64 temp1 = ToRegister64(lir->temp1());
-  Register tempLow = ToRegister(lir->tempLow());
-  Register64 temp2 = Register64(value, tempLow);
+  Register64 value = ToRegister64(lir->value());
+  Register64 temp = ToRegister64(lir->temp());
 
-  MOZ_ASSERT(value == edx);
-  MOZ_ASSERT(temp1 == Register64(ecx, ebx));
-  MOZ_ASSERT(temp2 == Register64(edx, eax));
-  MOZ_ASSERT(tempLow == eax);
+  MOZ_ASSERT(value == Register64(ecx, ebx));
+  MOZ_ASSERT(temp == Register64(edx, eax));
 
   Scalar::Type arrayType = lir->mir()->arrayType();
   AtomicOp atomicOp = lir->mir()->operation();
 
   
-  masm.push(edx);
-
-  masm.loadBigInt64(value, temp1);
-
-  masm.Push(temp1);
+  masm.push64(value);
 
   Address addr(masm.getStackPointer(), 0);
 
   if (lir->index()->isConstant()) {
     Address dest = ToAddress(elements, lir->index(), arrayType);
-    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, temp1,
-                         temp2);
+    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, value,
+                         temp);
   } else {
     BaseIndex dest(elements, ToRegister(lir->index()),
                    ScaleFromScalarType(arrayType));
-    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, temp1,
-                         temp2);
+    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, addr, dest, value,
+                         temp);
   }
 
-  masm.freeStack(sizeof(uint64_t));
-
-  masm.pop(edx);
+  masm.pop64(value);
 }
 
 void CodeGenerator::visitWasmUint32ToDouble(LWasmUint32ToDouble* lir) {
