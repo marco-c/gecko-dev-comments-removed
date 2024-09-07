@@ -49,12 +49,11 @@ class nsAppStartup final : public nsIAppStartup,
 
   nsCOMPtr<nsIAppShell> mAppShell;
 
-  int32_t mConsiderQuitStopper;  
-  bool mRunning;                 
-  bool mShuttingDown;            
-  bool mStartingUp;              
-  bool mAttemptingQuit;          
-  bool mInterrupted;  
+  int32_t mConsiderQuitStopper;     
+  bool mRunning;                    
+  bool mShuttingDown;               
+  bool mStartingUp;                 
+  bool mAttemptingQuit;             
   bool mIsSafeModeNecessary;        
   bool mStartupCrashTrackingEnded;  
                                     
