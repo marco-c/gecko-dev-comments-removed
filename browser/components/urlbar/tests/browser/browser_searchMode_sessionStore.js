@@ -320,8 +320,6 @@ async function withNewWindow(urls, callback) {
 
 
 
-
-
 async function restoreWindow(expectedRestoredURL) {
   let winPromise = BrowserTestUtils.waitForNewWindow();
   let win = SessionStore.undoCloseWindow(0);

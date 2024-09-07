@@ -463,7 +463,6 @@ var BookmarkPropertiesPanel = {
 
 
 
-
   async _getInsertionPointDetails() {
     return [
       await this._defaultInsertionPoint.getIndex(),
