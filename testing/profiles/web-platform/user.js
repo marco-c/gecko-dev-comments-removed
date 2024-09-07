@@ -69,8 +69,6 @@ user_pref("media.block-autoplay-until-in-foreground", false);
 
 user_pref("layout.css.prefers-color-scheme.content-override", 1);
 
-user_pref("gfx.offscreencanvas.enabled", true);
-
 user_pref("dom.reporting.enabled", true);
 
 user_pref("remote.experimental.enabled", true);

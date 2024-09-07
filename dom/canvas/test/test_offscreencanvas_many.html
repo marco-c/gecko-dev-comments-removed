@@ -6,11 +6,11 @@
 <link rel="stylesheet" href="/tests/SimpleTest/test.css">
 </head>
 <body>
-
-
-
-
-
+<!--
+  This test needs several workers run offscreen canvas simultaneously.
+  So we choose 8 workers, 4 of them run basic webgl drawing test and
+  others run size changing test.
+-->
 <script>
 
 SimpleTest.waitForExplicitFinish();
@@ -58,7 +58,6 @@ function runTest() {
 }
 
 SpecialPowers.pushPrefEnv({'set': [
-  ['gfx.offscreencanvas.enabled', true],
   ['webgl.force-enabled', true]
 ]}, runTest);
 
