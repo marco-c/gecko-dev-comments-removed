@@ -110,10 +110,14 @@ add_task(async function test_chips_limit_document_first_party_child() {
 
   
   
+  
+  
+  await setCookieViaDomOnChild(browser, uniqueLargeCookie(true));
   await setCookieViaDomOnChild(browser, uniqueLargeCookie(true));
   await setCookieViaDomOnChild(browser, uniqueLargeCookie(true));
   await setCookieViaDomOnChild(browser, uniqueLargeCookie(true));
 
+  await setCookieViaDomOnChild(browser, uniqueLargeCookie(false));
   await setCookieViaDomOnChild(browser, uniqueLargeCookie(false));
   await setCookieViaDomOnChild(browser, uniqueLargeCookie(false));
   await setCookieViaDomOnChild(browser, uniqueLargeCookie(false));
@@ -133,7 +137,7 @@ add_task(async function test_chips_limit_document_first_party_child() {
   
   
   Assert.equal(partitioned.length, 2);
-  Assert.equal(unpartitioned.length, 3);
+  Assert.equal(unpartitioned.length, 4);
 
   
   BrowserTestUtils.removeTab(tab);
@@ -170,9 +174,11 @@ add_task(async function test_chips_limit_third_party() {
       content.document.cookie = largeCookie(true, 0);
       content.document.cookie = largeCookie(true, 1);
       content.document.cookie = largeCookie(true, 2);
+      content.document.cookie = largeCookie(true, 3);
       content.document.cookie = largeCookie(false, 0);
       content.document.cookie = largeCookie(false, 1);
       content.document.cookie = largeCookie(false, 2);
+      content.document.cookie = largeCookie(false, 3);
     });
   });
 
@@ -242,9 +248,11 @@ add_task(async function test_chips_limit_samesite_foreign() {
             content.document.cookie = largeCookie(true, 0);
             content.document.cookie = largeCookie(true, 1);
             content.document.cookie = largeCookie(true, 2);
+            content.document.cookie = largeCookie(true, 3);
             content.document.cookie = largeCookie(false, 0);
             content.document.cookie = largeCookie(false, 1);
             content.document.cookie = largeCookie(false, 2);
+            content.document.cookie = largeCookie(false, 3);
           });
         }
       );

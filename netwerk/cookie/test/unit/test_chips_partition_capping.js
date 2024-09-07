@@ -84,7 +84,11 @@ function channelMaybePartitioned(uri, partition) {
   return channel;
 }
 
-const COOKIES_TO_SET_COUNT = 102;
+const BYTE_LIMIT = 10240;
+const BYTE_LIMIT_WITH_BUFFER = BYTE_LIMIT * 1.2; 
+const BYTES_PER_COOKIE = 100;
+const COOKIES_TO_SET_COUNT = 122;
+const COOKIES_TO_SET_BYTES = COOKIES_TO_SET_COUNT * BYTES_PER_COOKIE; 
 
 
 
@@ -93,9 +97,9 @@ function setManyCookies(uri, channel, partitioned) {
   let cookieString = "";
   let cookieNames = [];
   for (let i = 0; i < COOKIES_TO_SET_COUNT; i++) {
-    
     let name = "c" + i.toString();
-    let value = i + "_".repeat(100 - i.toString().length - name.length);
+    let value =
+      i + "_".repeat(BYTES_PER_COOKIE - i.toString().length - name.length);
     let cookie = name + "=" + value;
     cookieNames.push(name);
 
@@ -159,24 +163,27 @@ add_task(async function test_chips_limit_parent_http_partitioned() {
 
   let expected = setManyCookies(uri, channel, true);
   expected.cookieNames.push("exceeded");
-  expected.cookieNames.shift(); 
-  expected.cookieNames.shift();
-  expected.cookieNames.shift();
+  
+  for (let i = 0; i < 23; i++) {
+    expected.cookieNames.shift();
+  }
 
   
   let actual = Services.cookies.getCookieStringFromHttp(uri, channel);
   Assert.equal(actual, expected.cookieString);
-  await checkReportedOverflow(0);
+  await checkReportedOverflow(0); 
 
   
   let cookie = "exceeded".concat("=").concat("x".repeat(240));
+  let cookieNameValueLen = cookie.length - 1;
   Services.cookies.setCookieStringFromHttp(
     uri,
     headerify(cookie, COOKIES_TO_SET_COUNT, true), 
     channel
   );
 
-  let expectedOverflow = 208;
+  let expectedOverflow =
+    COOKIES_TO_SET_BYTES + cookieNameValueLen - BYTE_LIMIT_WITH_BUFFER;
   await checkReportedOverflow(expectedOverflow);
 
   
@@ -198,8 +205,9 @@ add_task(async function test_chips_limit_overwrites_can_purge() {
   let channel = channelMaybePartitioned(uri, baseDomain, true);
 
   let expected = setManyCookies(uri, channel, true);
-  expected.cookieNames.shift(); 
-  expected.cookieNames.shift();
+  for (let i = 0; i < 22; i++) {
+    expected.cookieNames.shift();
+  }
 
   
   let actual = Services.cookies.getCookieStringFromHttp(uri, channel);
@@ -210,13 +218,18 @@ add_task(async function test_chips_limit_overwrites_can_purge() {
   
   
   let cookie = "c101".concat("=").concat("x".repeat(240)); 
+  let cookieNameValueLen = cookie.length - 1;
   Services.cookies.setCookieStringFromHttp(
     uri,
     headerify(cookie, COOKIES_TO_SET_COUNT, true), 
     channel
   );
 
-  let expectedOverflow = 104;
+  let expectedOverflow =
+    COOKIES_TO_SET_BYTES +
+    cookieNameValueLen -
+    BYTES_PER_COOKIE -
+    BYTE_LIMIT_WITH_BUFFER;
   await checkReportedOverflow(expectedOverflow);
 
   
@@ -248,6 +261,7 @@ add_task(async function test_chips_limit_dry_run_no_purge() {
 
   
   let cookie = "exceeded".concat("=").concat("x".repeat(240));
+  let cookieNameValueLen = cookie.length - 1;
   Services.cookies.setCookieStringFromHttp(
     uri,
     headerify(cookie, COOKIES_TO_SET_COUNT, true), 
@@ -255,7 +269,8 @@ add_task(async function test_chips_limit_dry_run_no_purge() {
   );
   expected.cookieString += "; ".concat(cookie);
 
-  let expectedOverflow = 208;
+  let expectedOverflow =
+    COOKIES_TO_SET_BYTES + cookieNameValueLen - BYTE_LIMIT_WITH_BUFFER;
   await checkReportedOverflow(expectedOverflow);
 
   
