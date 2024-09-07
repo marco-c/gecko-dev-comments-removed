@@ -24,7 +24,7 @@ const enginesSettings = {
     
     
     
-    defaultEngineId: "engine2@search.mozilla.orgdefault",
+    defaultEngineId: "engine2",
     defaultEngineIdHash: "TBD",
     visibleDefaultEngines: "engine1,engine2",
     visibleDefaultEnginesHash: "TBD",
@@ -34,11 +34,13 @@ const enginesSettings = {
       _metaData: { alias: null },
       _isAppProvided: true,
       _name: "engine1",
+      id: "engine1",
     },
     {
       _metaData: { alias: null },
       _isAppProvided: true,
       _name: "engine2",
+      id: "engine2",
     },
   ],
 };
