@@ -85,7 +85,8 @@ class Omnijar {
 
 
 
-  static void Init(nsIFile* aGrePath = nullptr, nsIFile* aAppPath = nullptr);
+  static nsresult Init(nsIFile* aGrePath = nullptr,
+                       nsIFile* aAppPath = nullptr);
 
   
 
@@ -161,7 +162,7 @@ class Omnijar {
   
 
 
-  static void InitOne(nsIFile* aPath, Type aType);
+  static nsresult InitOne(nsIFile* aPath, Type aType);
   static void CleanUpOne(Type aType);
 }; 
 

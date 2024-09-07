@@ -382,7 +382,14 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
     
     
     MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsContentProcess());
-    mozilla::Omnijar::Init();
+
+    
+    
+    
+    nsresult rv = mozilla::Omnijar::Init();
+    if (NS_FAILED(rv)) {
+      return NS_ERROR_OMNIJAR_CORRUPT;
+    }
   }
 
   if ((sCommandLineWasInitialized = !CommandLine::IsInitialized())) {
