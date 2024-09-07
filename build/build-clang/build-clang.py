@@ -379,7 +379,11 @@ def get_tool(config, key):
     if key in config:
         f = config[key].format(**os.environ)
         if os.path.isabs(f):
-            if not os.path.exists(f):
+            path, f = os.path.split(f)
+            
+            
+            f = which(f, path=path)
+            if not f:
                 raise ValueError("%s must point to an existing path" % key)
             return f
 
