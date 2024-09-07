@@ -851,8 +851,7 @@ class AsyncPanZoomController {
   
 
 
-  static ExternalPoint GetFirstExternalTouchPoint(
-      const MultiTouchInput& aEvent);
+  ExternalPoint GetFirstExternalTouchPoint(const MultiTouchInput& aEvent);
 
   
 
@@ -1110,12 +1109,6 @@ class AsyncPanZoomController {
   
   
   RecentEventsBuffer<PinchGestureInput> mPinchEventBuffer;
-
-  
-  
-  
-  
-  RecentEventsBuffer<MultiTouchInput> mTouchScrollEventBuffer;
 
   
   
