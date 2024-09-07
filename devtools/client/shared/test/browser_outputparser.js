@@ -733,6 +733,8 @@ function testParseVariable(doc, parser) {
     },
     {
       text: "1px solid var(--seen, seagreen)",
+      
+      skipVariableDeclarationTest: true,
       variables: { "--seen": "chartreuse" },
       expected:
         
@@ -750,6 +752,8 @@ function testParseVariable(doc, parser) {
     },
     {
       text: "1px solid var(--not-seen, seagreen)",
+      
+      skipVariableDeclarationTest: true,
       variables: {},
       expected:
         
@@ -879,9 +883,7 @@ function testParseVariable(doc, parser) {
     {
       text: "var(--x)",
       variables: {
-        "--x": {
-          value: "light-dark(red, blue)",
-        },
+        "--x": "light-dark(red, blue)",
       },
       parserExtraOptions: {
         isDarkColorScheme: false,
@@ -892,9 +894,7 @@ function testParseVariable(doc, parser) {
     {
       text: "var(--x)",
       variables: {
-        "--x": {
-          value: "color-mix(in srgb, red 50%, blue)",
-        },
+        "--x": "color-mix(in srgb, red 50%, blue)",
       },
       parserExtraOptions: {
         isDarkColorScheme: false,
@@ -920,26 +920,86 @@ function testParseVariable(doc, parser) {
     },
   ];
 
+  const target = doc.querySelector("div");
+
+  const VAR_NAME_TO_DEFINE = "--test-parse-variable";
   for (const test of TESTS) {
-    const getData = function (varName) {
-      if (typeof test.variables[varName] === "string") {
-        return { value: test.variables[varName] };
+    
+    
+    
+    if (VAR_NAME_TO_DEFINE in test.variables) {
+      throw new Error(`${VAR_NAME_TO_DEFINE} shouldn't be set in variables`);
+    }
+
+    
+    const variables = {
+      ...(test.variables || {}),
+      [VAR_NAME_TO_DEFINE]: test.text,
+    };
+    
+    for (const [varName, varData] of Object.entries(variables)) {
+      doc.body.style.setProperty(
+        varName,
+        typeof varData === "string" ? varData : varData.value
+      );
+    }
+
+    const getVariableData = function (varName) {
+      if (typeof variables[varName] === "string") {
+        const value = variables[varName];
+        const computedValue = getComputedStyle(doc.body).getPropertyValue(
+          varName
+        );
+        return { value, computedValue };
       }
 
-      return test.variables[varName] || {};
+      return variables[varName] || {};
     };
 
     const frag = parser.parseCssProperty("color", test.text, {
-      getVariableData: getData,
+      getVariableData,
       unmatchedClass: "unmatched-class",
       ...(test.parserExtraOptions || {}),
     });
 
-    const target = doc.querySelector("div");
     target.appendChild(frag);
 
-    is(target.innerHTML, test.expected, test.text);
+    is(
+      target.innerHTML,
+      test.expected,
+      `"color: ${test.text}" is parsed as expected`
+    );
+
     target.innerHTML = "";
+
+    if (test.skipVariableDeclarationTest) {
+      continue;
+    }
+
+    const varFrag = parser.parseCssProperty(
+      "--test-parse-variable",
+      test.text,
+      {
+        getVariableData,
+        unmatchedClass: "unmatched-class",
+        ...(test.parserExtraOptions || {}),
+      }
+    );
+
+    target.appendChild(varFrag);
+
+    is(
+      target.innerHTML,
+      test.expected,
+      `"--test-parse-variable: ${test.text}" is parsed as expected`
+    );
+
+    target.innerHTML = "";
+
+    
+    for (const varName in variables || {}) {
+      doc.body.style.removeProperty(varName);
+    }
   }
 }
 

@@ -159,10 +159,17 @@ class OutputParser {
       name === "shape-outside" ||
       name === "offset-path";
     options.expectFont = name === "font-family";
+    options.isVariable = name.startsWith("--");
     options.supportsColor =
       this.#cssProperties.supportsType(name, "color") ||
       this.#cssProperties.supportsType(name, "gradient") ||
-      (name.startsWith("--") && InspectorUtils.isValidCSSColor(value));
+      
+      
+      (options.isVariable &&
+        (InspectorUtils.isValidCSSColor(value) ||
+          InspectorUtils.isValidCSSColor(
+            options.getVariableData?.(name).computedValue
+          )));
 
     
     
@@ -436,7 +443,7 @@ class OutputParser {
     const colorOK = () => {
       return (
         options.supportsColor ||
-        (options.expectFilter &&
+        ((options.expectFilter || options.isVariable) &&
           this.#stack.length !== 0 &&
           this.#stack.at(-1).isColorTakingFunction)
       );
