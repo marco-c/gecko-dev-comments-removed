@@ -421,7 +421,8 @@ StyleSheet* Gecko_StyleSheet_Clone(const StyleSheet* aSheet,
   MOZ_ASSERT(aSheet->GetParentSheet(), "Should only be used for @import");
   MOZ_ASSERT(aNewParentSheet, "Wat");
 
-  RefPtr<StyleSheet> newSheet = aSheet->Clone(nullptr, nullptr);
+  RefPtr<StyleSheet> newSheet =
+      aSheet->Clone(const_cast<StyleSheet*>(aNewParentSheet), nullptr);
 
   
   
