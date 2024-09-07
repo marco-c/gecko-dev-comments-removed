@@ -1,10 +1,8 @@
 use core::mem::size_of;
 use core::num::Wrapping;
 use core::{f32, f64};
-#[cfg(has_i128)]
-use core::{i128, u128};
-use core::{i16, i32, i64, i8, isize};
-use core::{u16, u32, u64, u8, usize};
+use core::{i128, i16, i32, i64, i8, isize};
+use core::{u128, u16, u32, u64, u8, usize};
 
 
 
@@ -55,10 +53,7 @@ pub trait ToPrimitive {
     
     
     
-    
-    
     #[inline]
-    #[cfg(has_i128)]
     fn to_i128(&self) -> Option<i128> {
         self.to_i64().map(From::from)
     }
@@ -101,10 +96,7 @@ pub trait ToPrimitive {
     
     
     
-    
-    
     #[inline]
-    #[cfg(has_i128)]
     fn to_u128(&self) -> Option<u128> {
         self.to_u64().map(From::from)
     }
@@ -173,7 +165,6 @@ macro_rules! impl_to_primitive_int {
                 fn to_i16 -> i16;
                 fn to_i32 -> i32;
                 fn to_i64 -> i64;
-                #[cfg(has_i128)]
                 fn to_i128 -> i128;
             }
 
@@ -183,7 +174,6 @@ macro_rules! impl_to_primitive_int {
                 fn to_u16 -> u16;
                 fn to_u32 -> u32;
                 fn to_u64 -> u64;
-                #[cfg(has_i128)]
                 fn to_u128 -> u128;
             }
 
@@ -204,7 +194,6 @@ impl_to_primitive_int!(i8);
 impl_to_primitive_int!(i16);
 impl_to_primitive_int!(i32);
 impl_to_primitive_int!(i64);
-#[cfg(has_i128)]
 impl_to_primitive_int!(i128);
 
 macro_rules! impl_to_primitive_uint_to_int {
@@ -246,7 +235,6 @@ macro_rules! impl_to_primitive_uint {
                 fn to_i16 -> i16;
                 fn to_i32 -> i32;
                 fn to_i64 -> i64;
-                #[cfg(has_i128)]
                 fn to_i128 -> i128;
             }
 
@@ -256,7 +244,6 @@ macro_rules! impl_to_primitive_uint {
                 fn to_u16 -> u16;
                 fn to_u32 -> u32;
                 fn to_u64 -> u64;
-                #[cfg(has_i128)]
                 fn to_u128 -> u128;
             }
 
@@ -277,7 +264,6 @@ impl_to_primitive_uint!(u8);
 impl_to_primitive_uint!(u16);
 impl_to_primitive_uint!(u32);
 impl_to_primitive_uint!(u64);
-#[cfg(has_i128)]
 impl_to_primitive_uint!(u128);
 
 macro_rules! impl_to_primitive_float_to_float {
@@ -291,19 +277,11 @@ macro_rules! impl_to_primitive_float_to_float {
     )*}
 }
 
-#[cfg(has_to_int_unchecked)]
 macro_rules! float_to_int_unchecked {
     
     
     ($float:expr => $int:ty) => {
         unsafe { $float.to_int_unchecked::<$int>() }
-    };
-}
-
-#[cfg(not(has_to_int_unchecked))]
-macro_rules! float_to_int_unchecked {
-    ($float:expr => $int:ty) => {
-        $float as $int
     };
 }
 
@@ -373,7 +351,6 @@ macro_rules! impl_to_primitive_float {
                 fn to_i16 -> i16;
                 fn to_i32 -> i32;
                 fn to_i64 -> i64;
-                #[cfg(has_i128)]
                 fn to_i128 -> i128;
             }
 
@@ -383,7 +360,6 @@ macro_rules! impl_to_primitive_float {
                 fn to_u16 -> u16;
                 fn to_u32 -> u32;
                 fn to_u64 -> u64;
-                #[cfg(has_i128)]
                 fn to_u128 -> u128;
             }
 
@@ -446,10 +422,7 @@ pub trait FromPrimitive: Sized {
     
     
     
-    
-    
     #[inline]
-    #[cfg(has_i128)]
     fn from_i128(n: i128) -> Option<Self> {
         n.to_i64().and_then(FromPrimitive::from_i64)
     }
@@ -491,10 +464,7 @@ pub trait FromPrimitive: Sized {
     
     
     
-    
-    
     #[inline]
-    #[cfg(has_i128)]
     fn from_u128(n: u128) -> Option<Self> {
         n.to_u64().and_then(FromPrimitive::from_u64)
     }
@@ -545,7 +515,6 @@ macro_rules! impl_from_primitive {
             fn from_i64(n: i64) -> Option<$T> {
                 n.$to_ty()
             }
-            #[cfg(has_i128)]
             #[inline]
             fn from_i128(n: i128) -> Option<$T> {
                 n.$to_ty()
@@ -571,7 +540,6 @@ macro_rules! impl_from_primitive {
             fn from_u64(n: u64) -> Option<$T> {
                 n.$to_ty()
             }
-            #[cfg(has_i128)]
             #[inline]
             fn from_u128(n: u128) -> Option<$T> {
                 n.$to_ty()
@@ -594,14 +562,12 @@ impl_from_primitive!(i8, to_i8);
 impl_from_primitive!(i16, to_i16);
 impl_from_primitive!(i32, to_i32);
 impl_from_primitive!(i64, to_i64);
-#[cfg(has_i128)]
 impl_from_primitive!(i128, to_i128);
 impl_from_primitive!(usize, to_usize);
 impl_from_primitive!(u8, to_u8);
 impl_from_primitive!(u16, to_u16);
 impl_from_primitive!(u32, to_u32);
 impl_from_primitive!(u64, to_u64);
-#[cfg(has_i128)]
 impl_from_primitive!(u128, to_u128);
 impl_from_primitive!(f32, to_f32);
 impl_from_primitive!(f64, to_f64);
@@ -623,7 +589,6 @@ impl<T: ToPrimitive> ToPrimitive for Wrapping<T> {
         fn to_i16 -> i16;
         fn to_i32 -> i32;
         fn to_i64 -> i64;
-        #[cfg(has_i128)]
         fn to_i128 -> i128;
 
         fn to_usize -> usize;
@@ -631,7 +596,6 @@ impl<T: ToPrimitive> ToPrimitive for Wrapping<T> {
         fn to_u16 -> u16;
         fn to_u32 -> u32;
         fn to_u64 -> u64;
-        #[cfg(has_i128)]
         fn to_u128 -> u128;
 
         fn to_f32 -> f32;
@@ -656,7 +620,6 @@ impl<T: FromPrimitive> FromPrimitive for Wrapping<T> {
         fn from_i16(i16);
         fn from_i32(i32);
         fn from_i64(i64);
-        #[cfg(has_i128)]
         fn from_i128(i128);
 
         fn from_usize(usize);
@@ -664,7 +627,6 @@ impl<T: FromPrimitive> FromPrimitive for Wrapping<T> {
         fn from_u16(u16);
         fn from_u32(u32);
         fn from_u64(u64);
-        #[cfg(has_i128)]
         fn from_u128(u128);
 
         fn from_f32(f32);
@@ -722,14 +684,12 @@ impl_num_cast!(u8, to_u8);
 impl_num_cast!(u16, to_u16);
 impl_num_cast!(u32, to_u32);
 impl_num_cast!(u64, to_u64);
-#[cfg(has_i128)]
 impl_num_cast!(u128, to_u128);
 impl_num_cast!(usize, to_usize);
 impl_num_cast!(i8, to_i8);
 impl_num_cast!(i16, to_i16);
 impl_num_cast!(i32, to_i32);
 impl_num_cast!(i64, to_i64);
-#[cfg(has_i128)]
 impl_num_cast!(i128, to_i128);
 impl_num_cast!(isize, to_isize);
 impl_num_cast!(f32, to_f32);
@@ -787,10 +747,8 @@ macro_rules! impl_as_primitive {
     )*};
     ($T: ty => { $( $U: ty ),* } ) => {
         impl_as_primitive!(@ $T => { $( $U ),* });
-        impl_as_primitive!(@ $T => { u8, u16, u32, u64, usize });
-        impl_as_primitive!(@ $T => #[cfg(has_i128)] impl u128);
-        impl_as_primitive!(@ $T => { i8, i16, i32, i64, isize });
-        impl_as_primitive!(@ $T => #[cfg(has_i128)] impl i128);
+        impl_as_primitive!(@ $T => { u8, u16, u32, u64, u128, usize });
+        impl_as_primitive!(@ $T => { i8, i16, i32, i64, i128, isize });
     };
 }
 
@@ -802,9 +760,7 @@ impl_as_primitive!(u32 => { f32, f64 });
 impl_as_primitive!(i32 => { f32, f64 });
 impl_as_primitive!(u64 => { f32, f64 });
 impl_as_primitive!(i64 => { f32, f64 });
-#[cfg(has_i128)]
 impl_as_primitive!(u128 => { f32, f64 });
-#[cfg(has_i128)]
 impl_as_primitive!(i128 => { f32, f64 });
 impl_as_primitive!(usize => { f32, f64 });
 impl_as_primitive!(isize => { f32, f64 });
