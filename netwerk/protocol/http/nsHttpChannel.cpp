@@ -132,6 +132,9 @@
 #ifdef XP_WIN
 #  include "HttpWinUtils.h"
 #endif
+#ifdef XP_MACOSX
+#  include "MicrosoftEntraSSOUtils.h"
+#endif
 #ifdef FUZZING
 #  include "mozilla/StaticPrefs_fuzzing.h"
 #endif
@@ -438,14 +441,23 @@ nsresult nsHttpChannel::PrepareToConnect() {
 
   AddCookiesToRequest();
 
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_MACOSX)
 
   auto prefEnabledForCurrentContainer = [&]() {
     uint32_t containerId = mLoadInfo->GetOriginAttributes().mUserContextId;
     
     static_assert(nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID == 0);
-    nsPrintfCString prefName("network.http.windows-sso.container-enabled.%u",
-                             containerId);
+
+    nsAutoCString prefName;
+#  ifdef XP_WIN
+    prefName = nsPrintfCString("network.http.windows-sso.container-enabled.%u",
+                               containerId);
+#  endif
+
+#  ifdef XP_MACOSX
+    prefName = nsPrintfCString(
+        "network.http.microsoft-entra-sso.container-enabled.%u", containerId);
+#  endif
 
     bool enabled = false;
     Preferences::GetBool(prefName.get(), &enabled);
@@ -454,6 +466,10 @@ nsresult nsHttpChannel::PrepareToConnect() {
 
     return enabled;
   };
+
+#endif  
+
+#ifdef XP_WIN
 
   
   
@@ -468,6 +484,38 @@ nsresult nsHttpChannel::PrepareToConnect() {
       AddWindowsSSO(this);
     }
   }
+#endif
+
+#ifdef XP_MACOSX
+
+  auto isUriMSAuthority = [&]() {
+    nsAutoCString endPoint;
+    nsresult rv = mURI->GetHost(endPoint);
+    if (!NS_SUCCEEDED(rv)) {
+      return false;
+    }
+    LOG(("endPoint is %s\n", endPoint.get()));
+
+    return gHttpHandler->IsHostMSAuthority(endPoint);
+  };
+
+  
+  
+  
+  if (StaticPrefs::network_http_microsoft_entra_sso_enabled() &&
+      mURI->SchemeIs("https") && !(mLoadFlags & LOAD_ANONYMOUS) &&
+      !mPrivateBrowsing) {
+    ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
+    nsAutoCString query;
+    nsresult rv = mURI->GetQuery(query);
+    if ((type == ExtContentPolicy::TYPE_DOCUMENT ||
+         type == ExtContentPolicy::TYPE_SUBDOCUMENT) &&
+        NS_SUCCEEDED(rv) && !query.IsEmpty() &&
+        prefEnabledForCurrentContainer() && isUriMSAuthority()) {
+      AddMicrosoftEntraSSO(this);
+    }
+  }
+
 #endif
 
   

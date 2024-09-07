@@ -1,0 +1,19 @@
+
+
+
+
+#ifndef MicrosoftEntraSSOUtils_h__
+#define MicrosoftEntraSSOUtils_h__
+
+namespace mozilla {
+namespace net {
+
+class nsHttpChannel;
+class MicrosoftEntraSSOUtils;  
+
+void AddMicrosoftEntraSSO(nsHttpChannel* aChannel);
+
+}  
+}  
+
+#endif  
