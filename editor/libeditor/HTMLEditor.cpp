@@ -825,14 +825,8 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
     aHTMLEditor->mHasFocus = false;
     aHTMLEditor->mIsInDesignMode = false;
 
-    RefPtr<Element> focusedElement = nsFocusManager::GetFocusedElementStatic();
-    if (focusedElement && !focusedElement->IsInComposedDoc()) {
-      
-      
-      
-      
-      focusedElement = nullptr;
-    }
+    const RefPtr<Element> focusedElement =
+        nsFocusManager::GetFocusedElementStatic();
     TextControlElement* const focusedTextControlElement =
         TextControlElement::FromNodeOrNull(focusedElement);
     if ((focusedElement && focusedElement->IsEditable() &&
@@ -861,18 +855,13 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
   
   
   
-  
-  
-  if (aHTMLEditor->OurWindowHasFocus()) {
-    if (RefPtr<nsPresContext> presContext = aHTMLEditor->GetPresContext()) {
-      RefPtr<Element> focusedElement =
-          nsFocusManager::GetFocusedElementStatic();
-      MOZ_ASSERT_IF(focusedElement,
-                    focusedElement->GetPresContext(
-                        Element::PresContextFor::eForComposedDoc));
-      IMEStateManager::MaybeOnEditableStateDisabled(*presContext,
-                                                    focusedElement);
-    }
+  RefPtr<Element> focusedElement = nsFocusManager::GetFocusedElementStatic();
+  RefPtr<nsPresContext> presContext =
+      focusedElement ? focusedElement->GetPresContext(
+                           Element::PresContextFor::eForComposedDoc)
+                     : aDocument.GetPresContext();
+  if (presContext) {
+    IMEStateManager::MaybeOnEditableStateDisabled(*presContext, focusedElement);
   }
 
   return rv;
@@ -889,13 +878,10 @@ nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
                       ? "true"
                       : "false")
                : "N/A"));
-  const Element* eventTargetAsElement =
-      Element::FromEventTargetOrNull(aEventTarget);
 
   
   
-  const Element* focusedElement = nsFocusManager::GetFocusedElementStatic();
-  if (focusedElement && focusedElement != eventTargetAsElement) {
+  if (nsFocusManager::GetFocusedElementStatic()) {
     
     
     mIsInDesignMode = false;
@@ -906,8 +892,7 @@ nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
   
   
   
-  if (mIsInDesignMode && eventTargetAsElement &&
-      eventTargetAsElement->IsInComposedDoc()) {
+  if (mIsInDesignMode && Element::FromEventTargetOrNull(aEventTarget)) {
     return NS_OK;
   }
 

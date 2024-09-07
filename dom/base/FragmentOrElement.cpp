@@ -185,7 +185,7 @@ HTMLSlotElement* nsIContent::GetAssignedSlotByMode() const {
 }
 
 nsIContent::IMEState nsIContent::GetDesiredIMEState() {
-  if (!IsEditable() || !IsInComposedDoc()) {
+  if (!IsEditable()) {
     
     
     if (!IsElement() ||

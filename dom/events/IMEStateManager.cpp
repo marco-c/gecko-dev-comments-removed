@@ -415,7 +415,8 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
 
     if (compositionInContent) {
       MOZ_LOG(sISMLog, LogLevel::Debug,
-              ("  OnRemoveContent(), composition is in the content"));
+              ("  OnRemoveContent(), "
+               "composition is in the content"));
 
       
       
@@ -429,15 +430,8 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
     }
   }
 
-  if (!sFocusedPresContext ||
-      
-      
-      (sFocusedElement && sFocusedElement != &aElement) ||
-      
-      
-      (!sFocusedElement &&
-       (!sActiveIMEContentObserver ||
-        sActiveIMEContentObserver->GetObservingElement() != &aElement))) {
+  if (!sFocusedPresContext || !sFocusedElement ||
+      !sFocusedElement->IsInclusiveDescendantOf(&aElement)) {
     return NS_OK;
   }
   MOZ_ASSERT(sFocusedPresContext == &aPresContext);
@@ -473,42 +467,13 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
   }
 
   if (IsIMEObserverNeeded(newState)) {
-    
-    
-    
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "IMEStateManager::RecreateIMEContentObserverWhenContentRemoved",
-        [presContext = OwningNonNull{aPresContext}]() {
-          MOZ_ASSERT(sFocusedPresContext == presContext);
-          MOZ_ASSERT(!sFocusedElement);
-          if (RefPtr<HTMLEditor> htmlEditor =
-                  nsContentUtils::GetHTMLEditor(presContext)) {
-            CreateIMEContentObserver(*htmlEditor, nullptr);
-          }
-        }));
+    if (RefPtr<HTMLEditor> htmlEditor =
+            nsContentUtils::GetHTMLEditor(&aPresContext)) {
+      CreateIMEContentObserver(*htmlEditor, nullptr);
+    }
   }
 
   return NS_OK;
-}
-
-void IMEStateManager::OnParentChainChangedOfObservingElement(
-    IMEContentObserver& aObserver) {
-  if (!sFocusedPresContext || sActiveIMEContentObserver != &aObserver) {
-    return;
-  }
-  RefPtr<nsPresContext> presContext = aObserver.GetPresContext();
-  RefPtr<Element> element = aObserver.GetObservingElement();
-  if (NS_WARN_IF(!presContext) || NS_WARN_IF(!element)) {
-    return;
-  }
-  MOZ_LOG(sISMLog, LogLevel::Info,
-          ("OnParentChainChangedOfObservingElement(aObserver=0x%p), "
-           "sFocusedPresContext=0x%p, sFocusedElement=0x%p, "
-           "aObserver->GetPresContext()=0x%p, "
-           "aObserver->GetObservingElement()=0x%p",
-           &aObserver, sFocusedPresContext.get(), sFocusedElement.get(),
-           presContext.get(), element.get()));
-  OnRemoveContent(*presContext, *element);
 }
 
 
