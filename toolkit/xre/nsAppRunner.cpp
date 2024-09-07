@@ -4909,42 +4909,59 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #if defined(MOZ_HAS_REMOTE)
   if (mRemoteService) {
     
-    nsCString profileName;
-    if (profile) {
-      rv = profile->GetName(profileName);
-    }
-    if (!profile || NS_FAILED(rv) || profileName.IsEmpty()) {
-      
-      nsString leafName;
-      rv = mProfD->GetLeafName(leafName);
-      if (NS_SUCCEEDED(rv)) {
-        CopyUTF16toUTF8(leafName, profileName);
-      }
-    }
+    nsCString profilePath;
 
-    mRemoteService->SetProfile(profileName);
-
-    if (!mDisableRemoteClient) {
-      
-      
-#  ifdef MOZ_WIDGET_GTK
-      auto& startupToken =
-          GdkIsWaylandDisplay() ? mXDGActivationToken : mDesktopStartupID;
-#    ifdef MOZ_X11
-      if (GdkIsX11Display() && startupToken.IsEmpty())
-        startupToken = SynthesizeStartupToken();
-#    endif 
-      mRemoteService->SetStartupToken(startupToken);
+#  ifdef XP_WIN
+    nsString path;
+    rv = mProfD->GetPath(path);
+    if (NS_SUCCEEDED(rv)) {
+      CopyUTF16toUTF8(path, profilePath);
+    }
+#  else
+    rv = mProfD->GetNativePath(profilePath);
 #  endif
-      rv = mRemoteService->StartClient();
-      if (NS_SUCCEEDED(rv)) {
-        *aExitFlag = true;
-        mRemoteService->UnlockStartup();
-        return 0;
-      }
-      if (rv == NS_ERROR_INVALID_ARG) {
-        mRemoteService->UnlockStartup();
-        return 1;
+
+    if (NS_SUCCEEDED(rv)) {
+      mRemoteService->SetProfile(profilePath);
+
+      if (!mDisableRemoteClient) {
+        
+        
+#  ifdef MOZ_WIDGET_GTK
+        auto& startupToken =
+            GdkIsWaylandDisplay() ? mXDGActivationToken : mDesktopStartupID;
+#    ifdef MOZ_X11
+        if (GdkIsX11Display() && startupToken.IsEmpty()) {
+          startupToken = SynthesizeStartupToken();
+        }
+#    endif 
+        mRemoteService->SetStartupToken(startupToken);
+#  endif
+        rv = mRemoteService->StartClient();
+
+        if (rv == NS_ERROR_NOT_AVAILABLE && profile) {
+          
+          
+          nsCString profileName;
+          profile->GetName(profileName);
+          mRemoteService->SetProfile(profileName);
+
+          rv = mRemoteService->StartClient();
+
+          
+          mRemoteService->SetProfile(profilePath);
+        }
+
+        if (NS_SUCCEEDED(rv)) {
+          *aExitFlag = true;
+          mRemoteService->UnlockStartup();
+          return 0;
+        }
+
+        if (rv == NS_ERROR_INVALID_ARG) {
+          mRemoteService->UnlockStartup();
+          return 1;
+        }
       }
     }
   }
