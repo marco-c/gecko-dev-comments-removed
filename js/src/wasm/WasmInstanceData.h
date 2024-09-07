@@ -116,6 +116,12 @@ struct FuncDefInstanceData {
 
 
 
+struct FuncExportInstanceData {
+  GCPtr<JSFunction*> func;
+};
+
+
+
 
 
 

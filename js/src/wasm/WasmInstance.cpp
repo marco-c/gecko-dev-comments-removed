@@ -130,8 +130,18 @@ const void* Instance::addressOfGlobalCell(const GlobalDesc& global) const {
   return cell;
 }
 
-FuncImportInstanceData& Instance::funcImportInstanceData(const FuncImport& fi) {
-  return *(FuncImportInstanceData*)(data() + fi.instanceOffset());
+FuncImportInstanceData& Instance::funcImportInstanceData(uint32_t funcIndex) {
+  MOZ_ASSERT(funcIndex < codeMeta().numFuncImports);
+  FuncImportInstanceData* instanceData =
+      (FuncImportInstanceData*)(data() + codeMeta().funcImportsOffsetStart);
+  return instanceData[funcIndex];
+}
+
+FuncExportInstanceData& Instance::funcExportInstanceData(
+    uint32_t funcExportIndex) {
+  FuncExportInstanceData* instanceData =
+      (FuncExportInstanceData*)(data() + codeMeta().funcExportsOffsetStart);
+  return instanceData[funcExportIndex];
 }
 
 MemoryInstanceData& Instance::memoryInstanceData(uint32_t memoryIndex) const {
@@ -298,7 +308,7 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
     }
   }
 
-  FuncImportInstanceData& import = funcImportInstanceData(fi);
+  FuncImportInstanceData& import = funcImportInstanceData(funcImportIndex);
   Rooted<JSObject*> importCallable(cx, import.callable);
   MOZ_ASSERT(cx->realm() == importCallable->nonCCWRealm());
 
@@ -1025,8 +1035,7 @@ bool Instance::iterElemsFunctions(const ModuleElemSegment& seg,
     uint32_t elemFuncIndex = seg.elemIndices[i];
 
     if (elemFuncIndex < funcImports.length()) {
-      FuncImportInstanceData& import =
-          funcImportInstanceData(funcImports[elemFuncIndex]);
+      FuncImportInstanceData& import = funcImportInstanceData(elemFuncIndex);
       MOZ_ASSERT(import.callable->isCallable());
 
       if (import.callable->is<JSFunction>()) {
@@ -1348,37 +1357,12 @@ static int32_t MemDiscardShared(Instance* instance, I byteOffset, I byteLen,
   MOZ_ASSERT(SASigRefFunc.failureMode == FailureMode::FailOnInvalidRef);
   JSContext* cx = instance->cx();
 
-  const FuncImportVector& funcImports = instance->code().funcImports();
-
-  
-  
-  
-  
-  
-  
-  
-  if (funcIndex < funcImports.length()) {
-    FuncImportInstanceData& import =
-        instance->funcImportInstanceData(funcImports[funcIndex]);
-    if (import.callable->is<JSFunction>()) {
-      JSFunction* fun = &import.callable->as<JSFunction>();
-      if (IsWasmExportedFunction(fun)) {
-        return FuncRef::fromJSFunction(fun).forCompiledCode();
-      }
-    }
+  RootedFunction exportedFunc(cx);
+  if (!instance->getExportedFunction(cx, funcIndex, &exportedFunc)) {
+    MOZ_ASSERT(cx->isThrowingOutOfMemory());
+    return nullptr;
   }
-
-  RootedFunction fun(cx);
-  Rooted<WasmInstanceObject*> instanceObj(cx, instance->object());
-  if (!WasmInstanceObject::getExportedFunction(cx, instanceObj, funcIndex,
-                                               &fun)) {
-    
-    
-    ReportOutOfMemory(cx);
-    return AnyRef::invalid().forCompiledCode();
-  }
-
-  return FuncRef::fromJSFunction(fun).forCompiledCode();
+  return FuncRef::fromJSFunction(exportedFunc.get()).forCompiledCode();
 }
 
 
@@ -2426,7 +2410,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     MOZ_ASSERT(f->isCallable());
     const FuncImport& fi = code().funcImport(i);
     const FuncType& funcType = codeMeta().getFuncType(i);
-    FuncImportInstanceData& import = funcImportInstanceData(fi);
+    FuncImportInstanceData& import = funcImportInstanceData(i);
     import.callable = f;
     if (f->is<JSFunction>()) {
       JSFunction* fun = &f->as<JSFunction>();
@@ -2458,6 +2442,12 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
           code().sharedStubs().segment->base() + fi.interpExitCodeOffset();
     }
   }
+
+#ifdef DEBUG
+  for (size_t i = 0; i < codeMeta().numExportedFuncs(); i++) {
+    MOZ_ASSERT(!funcExportInstanceData(i).func);
+  }
+#endif
 
   
   
@@ -2768,8 +2758,16 @@ void Instance::tracePrivate(JSTracer* trc) {
 
   
   
-  for (const FuncImport& fi : code().funcImports()) {
-    TraceNullableEdge(trc, &funcImportInstanceData(fi).callable, "wasm import");
+  for (uint32_t funcIndex = 0; funcIndex < codeMeta().numFuncImports;
+       funcIndex++) {
+    TraceNullableEdge(trc, &funcImportInstanceData(funcIndex).callable,
+                      "wasm import");
+  }
+
+  for (uint32_t funcExportIndex = 0; funcExportIndex < codeMeta().numExportedFuncs();
+       funcExportIndex++) {
+    TraceNullableEdge(trc, &funcExportInstanceData(funcExportIndex).func,
+                      "wasm func export");
   }
 
   for (uint32_t memoryIndex = 0;
@@ -3140,6 +3138,348 @@ class MOZ_RAII ReturnToJSResultCollector {
                             level);
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool WasmCall(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedFunction callee(cx, &args.callee().as<JSFunction>());
+
+  Instance& instance = ExportedFunctionToInstance(callee);
+  uint32_t funcIndex = ExportedFunctionToFuncIndex(callee);
+  return instance.callExport(cx, funcIndex, args);
+}
+
+bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
+                                   MutableHandleFunction result) {
+  uint32_t funcExportIndex = codeMeta().findFuncExportIndex(funcIndex);
+  FuncExportInstanceData& instanceData =
+      funcExportInstanceData(funcExportIndex);
+
+  
+  if (instanceData.func) {
+    result.set(instanceData.func);
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (funcIndex < codeMeta().numFuncImports) {
+    FuncImportInstanceData& import = funcImportInstanceData(funcIndex);
+    if (import.callable->is<JSFunction>()) {
+      JSFunction* fun = &import.callable->as<JSFunction>();
+      if (IsWasmExportedFunction(fun)) {
+        instanceData.func = fun;
+        result.set(fun);
+        return true;
+      }
+    }
+  }
+
+  
+  
+  const CodeBlock& codeBlock = code().funcCodeBlock(funcIndex);
+  const FuncExport& funcExport = codeBlock.lookupFuncExport(funcIndex);
+  const TypeDef& funcTypeDef = codeMeta().getFuncTypeDef(funcIndex);
+  unsigned numArgs = funcTypeDef.funcType().args().length();
+
+  if (isAsmJS()) {
+    
+    
+    Rooted<JSAtom*> name(cx, getFuncDisplayAtom(cx, funcIndex));
+    if (!name) {
+      return false;
+    }
+    result.set(NewNativeConstructor(cx, WasmCall, numArgs, name,
+                                    gc::AllocKind::FUNCTION_EXTENDED,
+                                    TenuredObject, FunctionFlags::ASMJS_CTOR));
+    if (!result) {
+      return false;
+    }
+    MOZ_ASSERT(result->isTenured());
+    STATIC_ASSERT_WASM_FUNCTIONS_TENURED;
+
+    
+    result->setWasmFuncIndex(funcIndex);
+  } else {
+    Rooted<JSAtom*> name(cx, NumberToAtom(cx, funcIndex));
+    if (!name) {
+      return false;
+    }
+    RootedObject proto(cx);
+#ifdef ENABLE_WASM_TYPE_REFLECTIONS
+    proto = GlobalObject::getOrCreatePrototype(cx, JSProto_WasmFunction);
+    if (!proto) {
+      return false;
+    }
+#endif
+    result.set(NewFunctionWithProto(
+        cx, WasmCall, numArgs, FunctionFlags::WASM, nullptr, name, proto,
+        gc::AllocKind::FUNCTION_EXTENDED, TenuredObject));
+    if (!result) {
+      return false;
+    }
+    MOZ_ASSERT(result->isTenured());
+    STATIC_ASSERT_WASM_FUNCTIONS_TENURED;
+
+    
+    
+    
+    
+    
+    if (funcTypeDef.funcType().canHaveJitEntry()) {
+      if (!funcExport.hasEagerStubs()) {
+        if (!EnsureBuiltinThunksInitialized()) {
+          return false;
+        }
+        void* provisionalLazyJitEntryStub = ProvisionalLazyJitEntryStub();
+        MOZ_ASSERT(provisionalLazyJitEntryStub);
+        code().setJitEntryIfNull(funcIndex, provisionalLazyJitEntryStub);
+      }
+      result->setWasmJitEntry(code().getAddressOfJitEntry(funcIndex));
+    } else {
+      result->setWasmFuncIndex(funcIndex);
+    }
+  }
+
+  result->setExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT,
+                          PrivateValue(const_cast<Instance*>(this)));
+  result->setExtendedSlot(FunctionExtended::WASM_STV_SLOT,
+                          PrivateValue((void*)funcTypeDef.superTypeVector()));
+
+  const CodeRange& codeRange = codeBlock.codeRange(funcExport);
+  result->setExtendedSlot(FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT,
+                          PrivateValue(codeBlock.segment->base() +
+                                       codeRange.funcUncheckedCallEntry()));
+
+  instanceData.func = result;
+  return true;
+}
 
 bool Instance::callExport(JSContext* cx, uint32_t funcIndex,
                           const CallArgs& args, CoercionLevel level) {

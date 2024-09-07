@@ -1029,10 +1029,6 @@ bool ModuleGenerator::prepareTier1() {
     return false;
   }
 
-  for (size_t i = 0; i < codeMeta_->numFuncImports; i++) {
-    funcImports_[i] = FuncImport(codeMeta_->offsetOfFuncImportInstanceData(i));
-  }
-
   
   
   if (!FuncToCodeRangeMap::createDense(0, codeMeta_->numFuncImports,

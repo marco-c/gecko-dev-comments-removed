@@ -197,10 +197,9 @@ class WasmGlobalObject : public NativeObject {
 class WasmInstanceObject : public NativeObject {
   static const unsigned INSTANCE_SLOT = 0;
   static const unsigned EXPORTS_OBJ_SLOT = 1;
-  static const unsigned EXPORTS_SLOT = 2;
-  static const unsigned SCOPES_SLOT = 3;
-  static const unsigned INSTANCE_SCOPE_SLOT = 4;
-  static const unsigned GLOBALS_SLOT = 5;
+  static const unsigned SCOPES_SLOT = 2;
+  static const unsigned INSTANCE_SCOPE_SLOT = 3;
+  static const unsigned GLOBALS_SLOT = 4;
 
   static const JSClassOps classOps_;
   static const ClassSpec classSpec_;
@@ -211,19 +210,11 @@ class WasmInstanceObject : public NativeObject {
   static void trace(JSTracer* trc, JSObject* obj);
 
   
-  
-  
-  
-  using ExportMap = GCHashMap<uint32_t, HeapPtr<JSFunction*>,
-                              DefaultHasher<uint32_t>, CellAllocPolicy>;
-  ExportMap& exports() const;
-
-  
   class UnspecifiedScopeMap;
   UnspecifiedScopeMap& scopes() const;
 
  public:
-  static const unsigned RESERVED_SLOTS = 6;
+  static const unsigned RESERVED_SLOTS = 5;
   static const JSClass class_;
   static const JSClass& protoClass_;
   static const JSPropertySpec properties[];

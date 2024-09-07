@@ -6,6 +6,7 @@
 
 #include "wasm/WasmMetadata.h"
 
+#include "mozilla/BinarySearch.h"
 #include "mozilla/CheckedInt.h"
 
 #include "jsnum.h"  
@@ -75,6 +76,29 @@ bool CodeMetadata::allocateInstanceDataBytesN(uint32_t bytes, uint32_t align,
 
 bool CodeMetadata::prepareForCompile(CompileMode mode) {
   MOZ_ASSERT(!isPreparedForCompile());
+
+  
+  
+  uint32_t exportedFuncCount = 0;
+  for (uint32_t funcIndex = 0; funcIndex < funcs.length(); funcIndex++) {
+    const FuncDesc& func = funcs[funcIndex];
+    if (func.isExported()) {
+      exportedFuncCount++;
+    }
+  }
+
+  if (!exportedFuncIndices.reserve(exportedFuncCount)) {
+    return false;
+  }
+  for (uint32_t funcIndex = 0; funcIndex < funcs.length(); funcIndex++) {
+    const FuncDesc& func = funcs[funcIndex];
+    if (!func.isExported()) {
+      continue;
+    }
+    exportedFuncIndices.infallibleEmplaceBack(funcIndex);
+  }
+
+  
   instanceDataLength = 0;
 
   
@@ -97,6 +121,13 @@ bool CodeMetadata::prepareForCompile(CompileMode mode) {
   if (!allocateInstanceDataBytesN(sizeof(FuncImportInstanceData),
                                   alignof(FuncImportInstanceData),
                                   numFuncImports, &funcImportsOffsetStart)) {
+    return false;
+  }
+
+  
+  if (!allocateInstanceDataBytesN(
+          sizeof(FuncExportInstanceData), alignof(FuncExportInstanceData),
+          numExportedFuncs(), &funcExportsOffsetStart)) {
     return false;
   }
 
@@ -138,6 +169,17 @@ bool CodeMetadata::prepareForCompile(CompileMode mode) {
   }
 
   return true;
+}
+
+uint32_t CodeMetadata::findFuncExportIndex(uint32_t funcIndex) const {
+  MOZ_ASSERT(funcs[funcIndex].isExported());
+
+  size_t match;
+  if (!mozilla::BinarySearch(exportedFuncIndices, 0,
+                             exportedFuncIndices.length(), funcIndex, &match)) {
+    MOZ_CRASH("missing function export");
+  }
+  return (uint32_t)match;
 }
 
 

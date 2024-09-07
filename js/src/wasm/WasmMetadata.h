@@ -24,90 +24,6 @@ namespace wasm {
 
 
 
-class FuncExport {
-  uint32_t funcIndex_;
-  uint32_t eagerInterpEntryOffset_;  
-  bool hasEagerStubs_;
-
-  WASM_CHECK_CACHEABLE_POD(funcIndex_, eagerInterpEntryOffset_, hasEagerStubs_);
-
- public:
-  FuncExport() = default;
-  explicit FuncExport(uint32_t funcIndex, bool hasEagerStubs) {
-    funcIndex_ = funcIndex;
-    eagerInterpEntryOffset_ = UINT32_MAX;
-    hasEagerStubs_ = hasEagerStubs;
-  }
-  void initEagerInterpEntryOffset(uint32_t entryOffset) {
-    MOZ_ASSERT(eagerInterpEntryOffset_ == UINT32_MAX);
-    MOZ_ASSERT(hasEagerStubs());
-    eagerInterpEntryOffset_ = entryOffset;
-  }
-
-  bool hasEagerStubs() const { return hasEagerStubs_; }
-  uint32_t funcIndex() const { return funcIndex_; }
-  uint32_t eagerInterpEntryOffset() const {
-    MOZ_ASSERT(eagerInterpEntryOffset_ != UINT32_MAX);
-    MOZ_ASSERT(hasEagerStubs());
-    return eagerInterpEntryOffset_;
-  }
-  void offsetBy(uint32_t delta) { eagerInterpEntryOffset_ += delta; }
-};
-
-WASM_DECLARE_CACHEABLE_POD(FuncExport);
-
-using FuncExportVector = Vector<FuncExport, 0, SystemAllocPolicy>;
-
-
-
-
-
-
-
-class FuncImport {
- private:
-  uint32_t instanceOffset_;
-  uint32_t interpExitCodeOffset_;  
-  uint32_t jitExitCodeOffset_;     
-
-  WASM_CHECK_CACHEABLE_POD(instanceOffset_, interpExitCodeOffset_,
-                           jitExitCodeOffset_);
-
- public:
-  FuncImport()
-      : instanceOffset_(0), interpExitCodeOffset_(0), jitExitCodeOffset_(0) {}
-
-  explicit FuncImport(uint32_t instanceOffset) {
-    instanceOffset_ = instanceOffset;
-    interpExitCodeOffset_ = 0;
-    jitExitCodeOffset_ = 0;
-  }
-
-  void initInterpExitOffset(uint32_t off) {
-    MOZ_ASSERT(!interpExitCodeOffset_);
-    interpExitCodeOffset_ = off;
-  }
-  void initJitExitOffset(uint32_t off) {
-    MOZ_ASSERT(!jitExitCodeOffset_);
-    jitExitCodeOffset_ = off;
-  }
-
-  uint32_t instanceOffset() const { return instanceOffset_; }
-  uint32_t interpExitCodeOffset() const { return interpExitCodeOffset_; }
-  uint32_t jitExitCodeOffset() const { return jitExitCodeOffset_; }
-};
-
-WASM_DECLARE_CACHEABLE_POD(FuncImport)
-
-using FuncImportVector = Vector<FuncImport, 0, SystemAllocPolicy>;
-
-
-
-
-
-
-
-
 enum class NameContext { Standalone, BeforeLocation };
 
 
@@ -163,6 +79,11 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   mozilla::Maybe<uint32_t> dataCount;
+
+  
+  
+  
+  Uint32Vector exportedFuncIndices;
 
   
   
@@ -231,6 +152,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   uint32_t funcImportsOffsetStart;
+  
+  
+  uint32_t funcExportsOffsetStart;
   
   
   uint32_t typeDefsOffsetStart;
@@ -343,6 +267,12 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     uint32_t funcDefIndex = funcIndex - numFuncImports;
     return funcDefCallRefs[funcDefIndex];
   }
+
+  
+  uint32_t findFuncExportIndex(uint32_t funcIndex) const;
+
+  
+  uint32_t numExportedFuncs() const { return exportedFuncIndices.length(); }
 
   CallRefHint getCallRefHint(uint32_t callRefIndex) const {
     if (!callRefHints) {
