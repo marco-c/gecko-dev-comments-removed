@@ -1558,8 +1558,8 @@ mozilla::ipc::IPCResult ContentChild::RecvInitProcessHangMonitor(
 }
 
 mozilla::ipc::IPCResult ContentChild::GetResultForRenderingInitFailure(
-    base::ProcessId aOtherPid) {
-  if (aOtherPid == base::GetCurrentProcId() || aOtherPid == OtherPid()) {
+    GeckoChildID aOtherChildID) {
+  if (aOtherChildID == XRE_GetChildID() || aOtherChildID == OtherChildID()) {
     
     
     return IPC_FAIL_NO_REASON(this);
@@ -1593,17 +1593,17 @@ mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
   
   
   if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
-    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
+    return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
-    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
+    return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!ImageBridgeChild::InitForContent(std::move(aImageBridge),
                                         namespaces[2])) {
-    return GetResultForRenderingInitFailure(aImageBridge.OtherPid());
+    return GetResultForRenderingInitFailure(aImageBridge.OtherChildID());
   }
   if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge))) {
-    return GetResultForRenderingInitFailure(aVRBridge.OtherPid());
+    return GetResultForRenderingInitFailure(aVRBridge.OtherChildID());
   }
   RemoteDecoderManagerChild::InitForGPUProcess(std::move(aVideoManager));
 
@@ -1630,17 +1630,17 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRendering(
 
   
   if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
-    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
+    return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
-    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
+    return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!ImageBridgeChild::ReinitForContent(std::move(aImageBridge),
                                           namespaces[2])) {
-    return GetResultForRenderingInitFailure(aImageBridge.OtherPid());
+    return GetResultForRenderingInitFailure(aImageBridge.OtherChildID());
   }
   if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge))) {
-    return GetResultForRenderingInitFailure(aVRBridge.OtherPid());
+    return GetResultForRenderingInitFailure(aVRBridge.OtherChildID());
   }
   gfxPlatform::GetPlatform()->CompositorUpdated();
 
@@ -3332,12 +3332,11 @@ mozilla::ipc::IPCResult ContentChild::RecvGetFilesResponse(
 
 
 void ContentChild::FatalErrorIfNotUsingGPUProcess(const char* const aErrorMsg,
-                                                  base::ProcessId aOtherPid) {
+                                                  GeckoChildID aChildID) {
   
   
   
-  if (aOtherPid == base::GetCurrentProcId() ||
-      (GetSingleton() && GetSingleton()->OtherPid() == aOtherPid)) {
+  if (aChildID == XRE_GetChildID() || aChildID == 0) {
     mozilla::ipc::FatalError(aErrorMsg, false);
   } else {
     nsAutoCString formattedMessage("IPDL error: \"");

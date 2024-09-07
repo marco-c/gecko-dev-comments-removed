@@ -277,13 +277,14 @@ typename Transaction<Context>::IndexSet Transaction<Context>::Validate(
   if (!revertTxn.mModified.isEmpty()) {
     
     
-    MOZ_LOG(
-        Context::GetSyncLog(), LogLevel::Debug,
-        ("Transaction::PartialRevert(#%" PRIx64 ", pid %" PRIPID "): %s",
-         aOwner->Id(), aSource ? aSource->OtherPid() : base::kInvalidProcessId,
-         FormatTransaction<Context>(revertTxn.mModified, mValues,
-                                    revertTxn.mValues)
-             .get()));
+    MOZ_LOG(Context::GetSyncLog(), LogLevel::Debug,
+            ("Transaction::PartialRevert(#%" PRIx64 ", childid %d, pid %" PRIPID
+             "): %s",
+             aOwner->Id(), aSource ? aSource->OtherChildID() : -1,
+             aSource ? aSource->OtherPid() : base::kInvalidProcessId,
+             FormatTransaction<Context>(revertTxn.mModified, mValues,
+                                        revertTxn.mValues)
+                 .get()));
 
     mModified -= revertTxn.mModified;
 
