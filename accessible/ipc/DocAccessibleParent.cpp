@@ -929,6 +929,7 @@ void DocAccessibleParent::Destroy() {
       CachedTableAccessible::Invalidate(acc);
     }
     ProxyDestroyed(acc);
+    
     iter.Remove();
   }
 
