@@ -195,10 +195,13 @@ void ChannelWrapper::SetChannel(nsIChannel* aChannel) {
   ClearCachedAttributes();
   
   ChannelWrapper_Binding::ClearCachedMethodValue(this);
+
+  
   ChannelWrapper_Binding::ClearCachedFinalURIValue(this);
   ChannelWrapper_Binding::ClearCachedFinalURLValue(this);
   mFinalURLInfo.reset();
   ChannelWrapper_Binding::ClearCachedProxyInfoValue(this);
+  ChannelWrapper_Binding::ClearCachedCanModifyValue(this);
 }
 
 void ChannelWrapper::ClearCachedAttributes() {
