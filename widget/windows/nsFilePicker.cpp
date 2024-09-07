@@ -249,13 +249,8 @@ static Strategy GetStrategy() {
       return RemoteWithFallback;
 
     default:
-#ifdef NIGHTLY_BUILD
       
       return FallbackUnlessCrash;
-#else
-      
-      return LocalOnly;
-#endif
   }
 };
 
