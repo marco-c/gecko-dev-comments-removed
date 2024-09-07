@@ -253,10 +253,18 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   
   
   if (overscroll != 0) {
-    float overscrollScale =
-        1.0f - (std::abs(overscroll.value) /
-                aAxis.GetRectLength(mMetrics.GetCompositionBounds()));
-    MOZ_ASSERT(overscrollScale > 0.0f && overscrollScale <= 1.0f);
+    ParentLayerCoord compBoundsLength =
+        aAxis.GetRectLength(mMetrics.GetCompositionBounds());
+
+    
+    
+    
+    float overscrollProportion =
+        std::min(std::abs(overscroll.value), compBoundsLength.value) /
+        compBoundsLength.value;
+
+    float overscrollScale = 1.0f - overscrollProportion;
+    MOZ_ASSERT(overscrollScale >= 0.0f && overscrollScale <= 1.0f);
     
     
     
