@@ -40,22 +40,6 @@ exports.setIgnoreLayoutChanges = (...args) =>
 
 
 
-const utilsCache = new WeakMap();
-function utilsFor(win) {
-  
-  
-  if (!utilsCache.has(win)) {
-    utilsCache.set(win, win.windowUtils);
-  }
-  return utilsCache.get(win);
-}
-
-
-
-
-
-
-
 
 function isWindowIncluded(boundaryWindow, win) {
   if (win === boundaryWindow) {
@@ -594,7 +578,7 @@ exports.getDisplayPixelRatio = getDisplayPixelRatio;
 
 function getWindowDimensions(window) {
   
-  const windowUtils = utilsFor(window);
+  const { windowUtils } = window;
   let { width, height } = windowUtils.getRootBounds();
 
   if (!width || !height) {
@@ -620,7 +604,7 @@ exports.getWindowDimensions = getWindowDimensions;
 
 
 function getViewportDimensions(window) {
-  const windowUtils = utilsFor(window);
+  const { windowUtils } = window;
 
   const scrollbarHeight = {};
   const scrollbarWidth = {};
@@ -668,7 +652,7 @@ function loadSheet(window, url, type = "agent") {
     type = "agent";
   }
 
-  const windowUtils = utilsFor(window);
+  const { windowUtils } = window;
   try {
     windowUtils.loadSheetUsingURIString(url, windowUtils[SHEET_TYPE[type]]);
   } catch (e) {
@@ -690,7 +674,7 @@ function removeSheet(window, url, type = "agent") {
     type = "agent";
   }
 
-  const windowUtils = utilsFor(window);
+  const { windowUtils } = window;
   try {
     windowUtils.removeSheetUsingURIString(url, windowUtils[SHEET_TYPE[type]]);
   } catch (e) {
