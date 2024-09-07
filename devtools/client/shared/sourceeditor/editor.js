@@ -630,7 +630,7 @@ class Editor extends EventEmitter {
 
     const {
       codemirror,
-      codemirrorView: { EditorView, lineNumbers },
+      codemirrorView: { EditorView, lineNumbers, drawSelection },
       codemirrorState: { EditorState, Compartment },
       codemirrorSearch: { highlightSelectionMatches },
       codemirrorLanguage: {
@@ -731,6 +731,16 @@ class Editor extends EventEmitter {
 
     if (this.config.mode === Editor.modes.js) {
       extensions.push(codemirrorLangJavascript.javascript());
+    }
+
+    if (Services.prefs.prefHasUserValue(CARET_BLINK_TIME)) {
+      
+      const cursorBlinkRate = Services.prefs.getIntPref(CARET_BLINK_TIME) * 2;
+      extensions.push(
+        drawSelection({
+          cursorBlinkRate,
+        })
+      );
     }
 
     const cm = new EditorView({
