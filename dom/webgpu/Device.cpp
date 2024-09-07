@@ -1019,10 +1019,6 @@ bool Device::CheckNewWarning(const nsACString& aMessage) {
 }
 
 void Device::Destroy() {
-  if (IsLost()) {
-    return;
-  }
-
   
   
   dom::AutoJSAPI jsapi;
@@ -1033,6 +1029,13 @@ void Device::Destroy() {
     }
 
     mTrackedBuffers.Clear();
+  }
+
+  if (!IsBridgeAlive()) {
+    
+    
+    ResolveLost(Some(dom::GPUDeviceLostReason::Destroyed), u""_ns);
+    return;
   }
 
   mBridge->SendDeviceDestroy(mId);
