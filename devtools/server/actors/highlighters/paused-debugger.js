@@ -15,13 +15,6 @@ loader.lazyGetter(this, "PausedReasonsBundle", () => {
   );
 });
 
-loader.lazyRequireGetter(
-  this,
-  "DEBUGGER_PAUSED_REASONS_L10N_MAPPING",
-  "resource://devtools/shared/constants.js",
-  true
-);
-
 
 
 
@@ -82,6 +75,7 @@ class PausedDebuggerOverlay {
         id: "reason",
         class: "reason",
       },
+      text: PausedReasonsBundle.formatValueSync("whypaused-other"),
       prefix,
     });
 
@@ -227,11 +221,6 @@ class PausedDebuggerOverlay {
 
     
     const toolbar = this.getElement("toolbar");
-    this.getElement("reason").setTextContent(
-      PausedReasonsBundle.formatValueSync(
-        DEBUGGER_PAUSED_REASONS_L10N_MAPPING[reason]
-      )
-    );
     toolbar.removeAttribute("hidden");
 
     
