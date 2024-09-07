@@ -267,7 +267,7 @@
       
       
       
-      if (TabsInTitlebar.enabled) {
+      if (TabsInTitlebar.enabled && !this.verticalMode) {
         return;
       }
 
