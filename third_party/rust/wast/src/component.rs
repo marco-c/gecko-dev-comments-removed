@@ -1,7 +1,7 @@
 
 
 mod alias;
-mod binary;
+pub(crate) mod binary;
 mod component;
 mod custom;
 mod expand;

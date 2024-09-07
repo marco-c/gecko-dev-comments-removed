@@ -27,10 +27,7 @@ impl Wat<'_> {
     
     
     pub fn encode(&mut self) -> std::result::Result<Vec<u8>, crate::Error> {
-        match self {
-            Wat::Module(m) => m.encode(),
-            Wat::Component(c) => c.encode(),
-        }
+        crate::core::EncodeOptions::default().encode_wat(self)
     }
 
     

@@ -44,6 +44,8 @@ pub enum TableKind<'a> {
         
         is64: bool,
         
+        shared: bool,
+        
         
         payload: ElemPayload<'a>,
     },
@@ -61,10 +63,16 @@ impl<'a> Parse<'a> for Table<'a> {
         
         
         
+        
+        
         let mut l = parser.lookahead1();
 
+        let is_shared = l.peek::<kw::shared>()?;
         let has_index_type = l.peek::<kw::i32>()? | l.peek::<kw::i64>()?;
-        let kind = if l.peek::<RefType>()? || (has_index_type && parser.peek2::<RefType>()?) {
+        let kind = if l.peek::<RefType>()?
+            || ((is_shared || has_index_type) && parser.peek2::<RefType>()?)
+        {
+            let shared = parser.parse::<Option<kw::shared>>()?.is_some();
             let is64 = if parser.parse::<Option<kw::i32>>()?.is_some() {
                 false
             } else {
@@ -82,9 +90,10 @@ impl<'a> Parse<'a> for Table<'a> {
             TableKind::Inline {
                 elem,
                 is64,
+                shared,
                 payload,
             }
-        } else if has_index_type || l.peek::<u64>()? {
+        } else if is_shared || has_index_type || l.peek::<u64>()? {
             TableKind::Normal {
                 ty: parser.parse()?,
                 init_expr: if !parser.is_empty() {
@@ -264,10 +273,7 @@ impl<'a> ElemPayload<'a> {
             match &mut ret {
                 ElemPayload::Indices(list) => list.push(func),
                 ElemPayload::Exprs { exprs, .. } => {
-                    let expr = Expression {
-                        instrs: [Instruction::RefFunc(func)].into(),
-                        branch_hints: Vec::new(),
-                    };
+                    let expr = Expression::one(Instruction::RefFunc(func));
                     exprs.push(expr);
                 }
             }

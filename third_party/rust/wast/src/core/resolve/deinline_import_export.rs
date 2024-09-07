@@ -71,14 +71,11 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                             name: None,
                             kind: DataKind::Active {
                                 memory: Index::Id(id),
-                                offset: Expression {
-                                    instrs: Box::new([if is64 {
-                                        Instruction::I64Const(0)
-                                    } else {
-                                        Instruction::I32Const(0)
-                                    }]),
-                                    branch_hints: Vec::new(),
-                                },
+                                offset: Expression::one(if is64 {
+                                    Instruction::I64Const(0)
+                                } else {
+                                    Instruction::I32Const(0)
+                                }),
                             },
                             data,
                         }));
@@ -108,9 +105,11 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                     }
                     
                     
+                    
                     TableKind::Inline {
                         payload,
                         elem,
+                        shared,
                         is64,
                     } => {
                         let is64 = *is64;
@@ -126,6 +125,7 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                                     is64,
                                 },
                                 elem: *elem,
+                                shared: *shared,
                             },
                             init_expr: None,
                         };
@@ -140,14 +140,11 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                             name: None,
                             kind: ElemKind::Active {
                                 table: Index::Id(id),
-                                offset: Expression {
-                                    instrs: Box::new([if is64 {
-                                        Instruction::I64Const(0)
-                                    } else {
-                                        Instruction::I32Const(0)
-                                    }]),
-                                    branch_hints: Vec::new(),
-                                },
+                                offset: Expression::one(if is64 {
+                                    Instruction::I64Const(0)
+                                } else {
+                                    Instruction::I32Const(0)
+                                }),
                             },
                             payload,
                         }));
