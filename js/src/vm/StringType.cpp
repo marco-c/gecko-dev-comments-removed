@@ -100,14 +100,6 @@ size_t JSString::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
   }
 
   
-  if (isExtensible()) {
-    JSExtensibleString& extensible = asExtensible();
-    return extensible.hasLatin1Chars()
-               ? mallocSizeOf(extensible.rawLatin1Chars())
-               : mallocSizeOf(extensible.rawTwoByteChars());
-  }
-
-  
   
   if (isInline()) {
     return 0;
