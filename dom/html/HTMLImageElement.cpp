@@ -93,7 +93,7 @@ class ImageLoadTask final : public MicroTaskRunnable {
     if (mElement->mPendingImageLoadTask == this) {
       mElement->mPendingImageLoadTask = nullptr;
       mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
-      mElement->LoadSelectedImage(true, true, mAlwaysLoad);
+      mElement->LoadSelectedImage(mAlwaysLoad);
     }
     mDocument->UnblockOnload(false);
   }
@@ -165,12 +165,11 @@ bool HTMLImageElement::Draggable() const {
 bool HTMLImageElement::Complete() {
   
   
-
   if (!HasAttr(nsGkAtoms::srcset) && !HasNonEmptyAttr(nsGkAtoms::src)) {
     return true;
   }
 
-  if (!mCurrentRequest || mPendingRequest) {
+  if (!mCurrentRequest || mPendingRequest || mPendingImageLoadTask) {
     return false;
   }
 
@@ -321,32 +320,24 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   }
 
   bool forceReload = false;
-
   if (aName == nsGkAtoms::loading && !mLoading) {
     if (aValue && Loading(aValue->GetEnumValue()) == Loading::Lazy) {
       SetLazyLoading();
     } else if (aOldValue &&
                Loading(aOldValue->GetEnumValue()) == Loading::Lazy) {
-      StopLazyLoading(StartLoading::Yes);
+      StopLazyLoading(StartLoad(aNotify));
     }
   } else if (aName == nsGkAtoms::src && !aValue) {
     
     
     
     
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
     
     
-    if (InResponsiveMode()) {
-      if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
-        mResponsiveSelector->SetDefaultSource(VoidString());
-      }
-      UpdateSourceSyncAndQueueImageTask(true);
-    } else {
-      
-      CancelImageRequests(aNotify);
+    if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
+      mResponsiveSelector->SetDefaultSource(VoidString());
     }
+    forceReload = true;
   } else if (aName == nsGkAtoms::srcset) {
     
     
@@ -368,37 +359,20 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                       ImageDecodingType::Sync);
   } else if (aName == nsGkAtoms::referrerpolicy) {
     ReferrerPolicy referrerPolicy = GetReferrerPolicyAsEnum();
-    
-    
-    forceReload = aNotify && !InResponsiveMode() &&
-                  referrerPolicy != ReferrerPolicy::_empty &&
+    forceReload = referrerPolicy != ReferrerPolicy::_empty &&
                   referrerPolicy != ReferrerPolicyFromAttr(aOldValue);
   } else if (aName == nsGkAtoms::crossorigin) {
-    
-    
-    
-    
-    forceReload = aNotify && GetCORSMode() != AttrValueToCORSMode(aOldValue);
+    forceReload = GetCORSMode() != AttrValueToCORSMode(aOldValue);
   }
 
-  if (forceReload) {
-    
-    
-    
-    
+  
+  
+  
+  if (forceReload && aNotify) {
     
     
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-    if (InResponsiveMode()) {
-      
-      
-      UpdateSourceSyncAndQueueImageTask(true);
-    } else if (ShouldLoadImage()) {
-      
-      
-      
-      ForceReload(aNotify, IgnoreErrors());
-    }
+    UpdateSourceSyncAndQueueImageTask(true);
   }
 
   return nsGenericHTMLElement::AfterSetAttr(
@@ -431,43 +405,15 @@ void HTMLImageElement::AfterMaybeChangeAttr(
   
   
   
-  
-  
-  
-  mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
   mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
       this, aValue.String(), aMaybeScriptedPrincipal);
 
-  if (InResponsiveMode()) {
-    if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
-      mResponsiveSelector->SetDefaultSource(mSrcURI, mSrcTriggeringPrincipal);
-    }
+  if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
+    mResponsiveSelector->SetDefaultSource(mSrcURI, mSrcTriggeringPrincipal);
+  }
+  if (aNotify) {
+    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
     UpdateSourceSyncAndQueueImageTask(true);
-  } else if (aNotify && ShouldLoadImage()) {
-    
-    
-    
-
-    
-    
-
-    
-    mNewRequestsWillNeedAnimationReset = true;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    LoadSelectedImage( true, aNotify,
-                       true);
-
-    mNewRequestsWillNeedAnimationReset = false;
   }
 }
 
@@ -513,59 +459,31 @@ bool HTMLImageElement::IsHTMLFocusable(IsFocusableFlags aFlags,
 }
 
 nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
-  nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(nsGenericHTMLElement::BindToTree(aContext, aParent));
 
   nsImageLoadingContent::BindToTree(aContext, aParent);
 
   UpdateFormOwner();
 
-  if (HaveSrcsetOrInPicture()) {
-    if (IsInComposedDoc() && !mInDocResponsiveContent) {
-      aContext.OwnerDoc().AddResponsiveContent(this);
-      mInDocResponsiveContent = true;
-    }
-
-    
-    
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
-    
-    
-    
-    
-    
-    
-    
-    if (!IsInPicture()) {
-      UpdateSourceSyncAndQueueImageTask(false);
-    }
-  } else if (!InResponsiveMode() && HasAttr(nsGkAtoms::src)) {
-    
-    
-    
-    
-    
-
-    
-    
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
-    
-    
-    
-
-    
-    
-    
-    if (LoadingEnabled() && ShouldLoadImage()) {
-      nsContentUtils::AddScriptRunner(
-          NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage", this,
-                                  &HTMLImageElement::MaybeLoadImage, false));
-    }
+  const bool srcsetOrPicture = HaveSrcsetOrInPicture();
+  if (srcsetOrPicture && aContext.InComposedDoc() && !mInDocResponsiveContent) {
+    aContext.OwnerDoc().AddResponsiveContent(this);
+    mInDocResponsiveContent = true;
   }
 
-  return rv;
+  
+  
+  mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+  
+  
+  
+  
+  
+  
+  
+  UpdateSourceSyncAndQueueImageTask(false);
+
+  return NS_OK;
 }
 
 void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
@@ -611,21 +529,6 @@ void HTMLImageElement::UpdateFormOwner() {
   }
 }
 
-void HTMLImageElement::MaybeLoadImage(bool aAlwaysForceLoad) {
-  
-  
-  
-  
-
-  
-
-  LoadSelectedImage(aAlwaysForceLoad,  true, aAlwaysForceLoad);
-
-  if (!LoadingEnabled()) {
-    CancelImageRequests(true);
-  }
-}
-
 void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
 
@@ -649,14 +552,7 @@ void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   
   
   
-  if (InResponsiveMode()) {
-    UpdateResponsiveSource();
-  }
-
-  
-  
-  
-  StartLoadingIfNeeded();
+  UpdateSourceSyncAndQueueImageTask(true);
 }
 
 
@@ -727,26 +623,13 @@ nsIntSize HTMLImageElement::NaturalSize() {
 }
 
 nsresult HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest) {
-  nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  MOZ_TRY(nsGenericHTMLElement::CopyInnerTo(aDest));
 
   
   
   
   
-  if (!aDest->InResponsiveMode() && aDest->HasAttr(nsGkAtoms::src) &&
-      aDest->ShouldLoadImage()) {
-    
-    
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
-    nsContentUtils::AddScriptRunner(
-        NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage", aDest,
-                                &HTMLImageElement::MaybeLoadImage, false));
-  }
-
+  aDest->UpdateSourceSyncAndQueueImageTask(false);
   return NS_OK;
 }
 
@@ -799,6 +682,7 @@ void HTMLImageElement::ClearForm(bool aRemoveFromForm) {
   mForm = nullptr;
 }
 
+
 void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
     bool aAlwaysLoad, const HTMLSourceElement* aSkippedSource) {
   
@@ -812,8 +696,11 @@ void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
   
   
   
-  const bool changed = UpdateResponsiveSource(aSkippedSource);
+  UpdateResponsiveSource(aSkippedSource);
 
+  
+  
+  
   
   
   if (!LoadingEnabled() || !ShouldLoadImage()) {
@@ -822,32 +709,61 @@ void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
 
   
   
-  bool alwaysLoad = aAlwaysLoad;
-  if (mPendingImageLoadTask) {
-    alwaysLoad = alwaysLoad || mPendingImageLoadTask->AlwaysLoad();
-  }
+  const bool alwaysLoad = aAlwaysLoad || (mPendingImageLoadTask &&
+                                          mPendingImageLoadTask->AlwaysLoad());
 
-  if (!changed && !alwaysLoad) {
+  
+  const bool shouldLoadSync = [&] {
+    if (HaveSrcsetOrInPicture()) {
+      return false;
+    }
+    if (!mSrcURI) {
+      
+      
+      return true;
+    }
+    return nsContentUtils::IsImageAvailable(
+        this, mSrcURI, mSrcTriggeringPrincipal, GetCORSMode());
+  }();
+
+  if (shouldLoadSync) {
+    if (!nsContentUtils::IsSafeToRunScript()) {
+      
+      
+      
+      nsContentUtils::AddScriptRunner(
+          NewRunnableMethod<bool, HTMLSourceElement*>(
+              "HTMLImageElement::UpdateSourceSyncAndQueueImageTask", this,
+              &HTMLImageElement::UpdateSourceSyncAndQueueImageTask, aAlwaysLoad,
+              nullptr));
+      return;
+    }
+
+    if (mLazyLoading && mSrcURI) {
+      StopLazyLoading(StartLoad::No);
+    }
+    mPendingImageLoadTask = nullptr;
+    LoadSelectedImage(alwaysLoad);
     return;
   }
 
-  QueueImageLoadTask(alwaysLoad);
-}
-
-bool HTMLImageElement::HaveSrcsetOrInPicture() {
-  if (HasAttr(nsGkAtoms::srcset)) {
-    return true;
+  if (mLazyLoading) {
+    
+    
+    
+    
+    return;
   }
 
-  return IsInPicture();
+  RefPtr task = new ImageLoadTask(this, alwaysLoad, mUseUrgentStartForChannel);
+  mPendingImageLoadTask = task;
+  
+  
+  CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
 }
 
-bool HTMLImageElement::InResponsiveMode() {
-  
-  
-  
-  return mResponsiveSelector || mPendingImageLoadTask ||
-         HaveSrcsetOrInPicture();
+bool HTMLImageElement::HaveSrcsetOrInPicture() const {
+  return HasAttr(nsGkAtoms::srcset) || IsInPicture();
 }
 
 bool HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource) {
@@ -861,8 +777,7 @@ bool HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource) {
          equal;
 }
 
-nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
-                                             bool aAlwaysLoad) {
+void HTMLImageElement::LoadSelectedImage(bool aAlwaysLoad) {
   
   
   
@@ -908,33 +823,30 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
     
     
     SetDensity(currentDensity);
-    return NS_OK;
+    return;
   }
 
-  
   if (mLazyLoading) {
-    if (!selectedSource ||
-        !nsContentUtils::IsImageAvailable(this, selectedSource,
-                                          triggeringPrincipal, GetCORSMode())) {
-      return NS_OK;
-    }
-    StopLazyLoading(StartLoading::No);
+    return;
   }
 
   nsresult rv = NS_ERROR_FAILURE;
 
+  const bool kNotify = true;
   
   if (selectedSource || hasSrc) {
-    rv = LoadImage(selectedSource, aForce, aNotify, type, triggeringPrincipal);
+    
+    
+    rv = LoadImage(selectedSource,  true, kNotify, type,
+                   triggeringPrincipal);
   }
 
   mLastSelectedSource = selectedSource;
   mCurrentDensity = currentDensity;
 
   if (NS_FAILED(rv)) {
-    CancelImageRequests(aNotify);
+    CancelImageRequests(kNotify);
   }
-  return rv;
 }
 
 void HTMLImageElement::PictureSourceSrcsetChanged(nsIContent* aSourceNode,
@@ -965,7 +877,9 @@ void HTMLImageElement::PictureSourceSrcsetChanged(nsIContent* aSourceNode,
 
   
   
-  UpdateSourceSyncAndQueueImageTask(true);
+  if (aNotify) {
+    UpdateSourceSyncAndQueueImageTask(true);
+  }
 }
 
 void HTMLImageElement::PictureSourceSizesChanged(nsIContent* aSourceNode,
@@ -985,7 +899,9 @@ void HTMLImageElement::PictureSourceSizesChanged(nsIContent* aSourceNode,
 
   
   
-  UpdateSourceSyncAndQueueImageTask(true);
+  if (aNotify) {
+    UpdateSourceSyncAndQueueImageTask(true);
+  }
 }
 
 void HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode,
@@ -995,7 +911,9 @@ void HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode,
 
   
   
-  UpdateSourceSyncAndQueueImageTask(true);
+  if (aNotify) {
+    UpdateSourceSyncAndQueueImageTask(true);
+  }
 }
 
 void HTMLImageElement::PictureSourceDimensionChanged(
@@ -1012,18 +930,24 @@ void HTMLImageElement::PictureSourceDimensionChanged(
   }
 }
 
-void HTMLImageElement::PictureSourceAdded(HTMLSourceElement* aSourceNode) {
+void HTMLImageElement::PictureSourceAdded(bool aNotify,
+                                          HTMLSourceElement* aSourceNode) {
   MOZ_ASSERT(!aSourceNode || IsPreviousSibling(aSourceNode, this),
              "Should not be getting notifications for non-previous-siblings");
 
-  UpdateSourceSyncAndQueueImageTask(true);
+  if (aNotify) {
+    UpdateSourceSyncAndQueueImageTask(true);
+  }
 }
 
-void HTMLImageElement::PictureSourceRemoved(HTMLSourceElement* aSourceNode) {
+void HTMLImageElement::PictureSourceRemoved(bool aNotify,
+                                            HTMLSourceElement* aSourceNode) {
   MOZ_ASSERT(!aSourceNode || IsPreviousSibling(aSourceNode, this),
              "Should not be getting notifications for non-previous-siblings");
 
-  UpdateSourceSyncAndQueueImageTask(true, aSourceNode);
+  if (aNotify) {
+    UpdateSourceSyncAndQueueImageTask(true, aSourceNode);
+  }
 }
 
 bool HTMLImageElement::UpdateResponsiveSource(
@@ -1210,6 +1134,7 @@ bool HTMLImageElement::SelectSourceForTagWithAttrs(
   }
 
   
+  
   RefPtr<ResponsiveImageSelector> sel = new ResponsiveImageSelector(aDocument);
 
   sel->SetCandidatesFromSourceSet(aSrcsetAttr);
@@ -1272,24 +1197,7 @@ void HTMLImageElement::SetLazyLoading() {
   UpdateImageState(true);
 }
 
-void HTMLImageElement::StartLoadingIfNeeded() {
-  if (!LoadingEnabled() || !ShouldLoadImage()) {
-    return;
-  }
-
-  
-  
-  nsContentUtils::AddScriptRunner(
-      InResponsiveMode()
-          ? NewRunnableMethod<bool>("dom::HTMLImageElement::QueueImageLoadTask",
-                                    this, &HTMLImageElement::QueueImageLoadTask,
-                                    true)
-          : NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
-                                    this, &HTMLImageElement::MaybeLoadImage,
-                                    true));
-}
-
-void HTMLImageElement::StopLazyLoading(StartLoading aStartLoading) {
+void HTMLImageElement::StopLazyLoading(StartLoad aStartLoad) {
   if (!mLazyLoading) {
     return;
   }
@@ -1299,8 +1207,8 @@ void HTMLImageElement::StopLazyLoading(StartLoading aStartLoading) {
     obs->Unobserve(*this);
   }
 
-  if (aStartLoading == StartLoading::Yes) {
-    StartLoadingIfNeeded();
+  if (aStartLoad == StartLoad::Yes) {
+    UpdateSourceSyncAndQueueImageTask(true);
   }
 }
 
@@ -1370,15 +1278,6 @@ void HTMLImageElement::SetDensity(double aDensity) {
   if (nsImageFrame* f = do_QueryFrame(GetPrimaryFrame())) {
     f->ResponsiveContentDensityChanged();
   }
-}
-
-void HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad) {
-  RefPtr<ImageLoadTask> task =
-      new ImageLoadTask(this, aAlwaysLoad, mUseUrgentStartForChannel);
-  
-  
-  mPendingImageLoadTask = task;
-  CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
 }
 
 FetchPriority HTMLImageElement::GetFetchPriorityForImage() const {

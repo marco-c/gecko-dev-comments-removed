@@ -428,13 +428,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-
-  void ResetAnimationIfNeeded();
-
-  
-
-
-
   static bool HaveSize(imgIRequest* aImage);
 
   
@@ -468,12 +461,10 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   enum {
     
-    REQUEST_NEEDS_ANIMATION_RESET = 1 << 0,
-    
-    REQUEST_IS_TRACKED = 1 << 1,
+    REQUEST_IS_TRACKED = 1 << 0,
     
     
-    REQUEST_IS_IMAGESET = 1 << 2,
+    REQUEST_IS_IMAGESET = 1 << 1,
   };
 
   
@@ -564,16 +555,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
   bool mLoading : 1;
-
-  
-
-
-
-
-
-
-
-  bool mNewRequestsWillNeedAnimationReset : 1;
 
   
 

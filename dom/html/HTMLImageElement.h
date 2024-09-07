@@ -79,10 +79,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   void NodeInfoChanged(Document* aOldDoc) override;
-
   nsresult CopyInnerTo(HTMLImageElement* aDest);
-
-  void MaybeLoadImage(bool aAlwaysForceLoad);
 
   bool IsMap() { return GetBoolAttr(nsGkAtoms::ismap); }
   void SetIsMap(bool aIsMap, ErrorResult& aError) {
@@ -255,9 +252,8 @@ class HTMLImageElement final : public nsGenericHTMLElement,
       const nsAString& aTypeAttr, const nsAString& aMediaAttr,
       nsAString& aResult);
 
-  enum class FromIntersectionObserver : bool { No, Yes };
-  enum class StartLoading : bool { No, Yes };
-  void StopLazyLoading(StartLoading);
+  enum class StartLoad : bool { No, Yes };
+  void StopLazyLoading(StartLoad = StartLoad::Yes);
 
   
   
@@ -270,28 +266,19 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   
   
-  
-  
-  
-  
-  
   void UpdateSourceSyncAndQueueImageTask(
       bool aAlwaysLoad, const HTMLSourceElement* aSkippedSource = nullptr);
 
   
   
-  bool HaveSrcsetOrInPicture();
-
-  
-  
-  bool InResponsiveMode();
+  bool HaveSrcsetOrInPicture() const;
 
   
   bool SelectedSourceMatchesLast(nsIURI* aSelectedSource);
 
   
   
-  nsresult LoadSelectedImage(bool aForce, bool aNotify, bool aAlwaysLoad);
+  void LoadSelectedImage(bool aAlwaysLoad);
 
   
   static bool SupportedPictureSourceType(const nsAString& aType);
@@ -310,9 +297,11 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   void PictureSourceDimensionChanged(HTMLSourceElement* aSourceNode,
                                      bool aNotify);
 
-  void PictureSourceAdded(HTMLSourceElement* aSourceNode = nullptr);
+  void PictureSourceAdded(bool aNotify,
+                          HTMLSourceElement* aSourceNode = nullptr);
   
-  void PictureSourceRemoved(HTMLSourceElement* aSourceNode = nullptr);
+  void PictureSourceRemoved(bool aNotify,
+                            HTMLSourceElement* aSourceNode = nullptr);
 
   
   
@@ -396,8 +385,6 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   
   void SetLazyLoading();
-
-  void StartLoadingIfNeeded();
 
   bool IsInPicture() const {
     return GetParentElement() &&
