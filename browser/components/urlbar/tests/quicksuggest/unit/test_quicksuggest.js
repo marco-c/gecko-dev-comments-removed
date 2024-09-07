@@ -384,7 +384,7 @@ add_tasks_with_rust(async function emptySearchStringsAndSpaces() {
 
 
 
-add_tasks_with_rust(async function browser_search_suggest_enabled() {
+add_tasks_with_rust(async function browser_search_suggest_disabled() {
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("browser.search.suggest.enabled", false);
@@ -396,7 +396,7 @@ add_tasks_with_rust(async function browser_search_suggest_enabled() {
   });
   await check_results({
     context,
-    matches: [expectedSponsoredResult()],
+    matches: [expectedSponsoredResult({ suggestedIndex: -1 })],
   });
 
   UrlbarPrefs.clear("browser.search.suggest.enabled");
@@ -404,7 +404,7 @@ add_tasks_with_rust(async function browser_search_suggest_enabled() {
 
 
 
-add_tasks_with_rust(async function browser_search_suggest_enabled() {
+add_tasks_with_rust(async function browser_suggest_searches_disabled() {
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("suggest.searches", false);
@@ -416,7 +416,7 @@ add_tasks_with_rust(async function browser_search_suggest_enabled() {
   });
   await check_results({
     context,
-    matches: [expectedSponsoredResult()],
+    matches: [expectedSponsoredResult({ suggestedIndex: -1 })],
   });
 
   UrlbarPrefs.clear("suggest.searches");
@@ -695,7 +695,10 @@ async function doDedupeAgainstURLTest({
   expectOther,
 }) {
   
+  
+  
   UrlbarPrefs.set("suggest.searches", false);
+  expectedQuickSuggestResult.suggestedIndex = -1;
 
   
   let otherURL = otherPrefix + PREFIX_SUGGESTIONS_STRIPPED_URL;
@@ -737,8 +740,6 @@ async function doDedupeAgainstURLTest({
     }),
   ];
 
-  expectedResults.push(expectedQuickSuggestResult);
-
   if (expectOther) {
     expectedResults.push(
       makeVisitResult(context, {
@@ -747,6 +748,9 @@ async function doDedupeAgainstURLTest({
       })
     );
   }
+
+  
+  expectedResults.push(expectedQuickSuggestResult);
 
   info("Doing second query");
   await check_results({ context, matches: expectedResults });
@@ -949,6 +953,7 @@ add_tasks_with_rust(async function timestamps() {
 
 add_tasks_with_rust(async function dedupeAgainstURL_timestamps() {
   
+  
   UrlbarPrefs.set("suggest.searches", false);
 
   
@@ -1025,14 +1030,14 @@ add_tasks_with_rust(async function dedupeAgainstURL_timestamps() {
     blockId: 5,
     advertiser: "TestAdvertiserTimestamp",
     iabCategory: "22 - Shopping",
+    
+    suggestedIndex: -1,
   });
 
-  const QUICK_SUGGEST_INDEX = 1;
-  let expectedResults = [
-    expectedHeuristic,
-    expectedQuickSuggest,
-    ...expectedBadTimestampResults,
-  ];
+  let expectedResults = [expectedHeuristic, ...expectedBadTimestampResults];
+
+  const QUICK_SUGGEST_INDEX = expectedResults.length;
+  expectedResults.push(expectedQuickSuggest);
 
   let controller = UrlbarTestUtils.newMockController();
   await controller.startQuery(context);

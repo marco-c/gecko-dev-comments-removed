@@ -39,6 +39,7 @@ add_setup(async function () {
   await UrlbarTestUtils.formHistory.clear();
 
   
+  
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
@@ -56,41 +57,116 @@ add_setup(async function () {
 });
 
 
-add_task(async function noSuggestions() {
-  await doTestPermutations(({ withHistory, generalIndex }) => ({
-    expectedResultCount: withHistory ? MAX_RESULTS : 2,
-    expectedIndex: generalIndex == 0 || !withHistory ? 1 : MAX_RESULTS - 1,
-  }));
-});
-
-
-add_task(async function suggestionsFirst() {
+add_task(async function searchSuggestionsFirst_withSuggestions() {
   await SpecialPowers.pushPrefEnv({
     set: [[SUGGESTIONS_FIRST_PREF, true]],
   });
   await withSuggestions(async () => {
     await doTestPermutations(({ withHistory, generalIndex }) => ({
+      
+      
+      expectedSuggestedIndex: generalIndex,
       expectedResultCount: withHistory ? MAX_RESULTS : 4,
-      expectedIndex: generalIndex == 0 || !withHistory ? 3 : MAX_RESULTS - 1,
+      expectedViewIndex:
+        generalIndex == 0 || !withHistory ? 3 : MAX_RESULTS - 1,
     }));
   });
   await SpecialPowers.popPrefEnv();
 });
 
 
-add_task(async function suggestionsLast() {
+
+add_task(async function searchSuggestionsFirst_withoutSuggestions() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SUGGESTIONS_FIRST_PREF, true]],
+  });
+  await doTestPermutations(({ isSponsored, withHistory, generalIndex }) => ({
+    
+    
+    expectedSuggestedIndex: isSponsored ? -1 : generalIndex,
+    expectedResultCount: withHistory ? MAX_RESULTS : 2,
+    expectedViewIndex:
+      (generalIndex == 0 && !isSponsored) || !withHistory ? 1 : MAX_RESULTS - 1,
+  }));
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function searchSuggestionsFirst_suggestionsDisabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SUGGESTIONS_FIRST_PREF, true]],
+  });
+  await withSuggestions(async () => {
+    await doTestPermutations(({ isSponsored, withHistory, generalIndex }) => ({
+      
+      
+      expectedSuggestedIndex: isSponsored ? -1 : generalIndex,
+      expectedResultCount: withHistory ? MAX_RESULTS : 2,
+      expectedViewIndex:
+        (generalIndex == 0 && !isSponsored) || !withHistory
+          ? 1
+          : MAX_RESULTS - 1,
+    }));
+  }, false);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function historyFirst_withSuggestions() {
   await SpecialPowers.pushPrefEnv({
     set: [[SUGGESTIONS_FIRST_PREF, false]],
   });
   await withSuggestions(async () => {
     await doTestPermutations(({ isSponsored, withHistory, generalIndex }) => ({
+      
+      
+      expectedSuggestedIndex: isSponsored ? -1 : generalIndex,
       expectedResultCount: withHistory ? MAX_RESULTS : 4,
-      expectedIndex:
+      expectedViewIndex:
         (generalIndex == 0 && !isSponsored) || !withHistory
           ? 1
           : MAX_RESULTS - 3,
     }));
   });
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function historyFirst_withoutSuggestions() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SUGGESTIONS_FIRST_PREF, false]],
+  });
+  await doTestPermutations(({ isSponsored, withHistory, generalIndex }) => ({
+    
+    
+    expectedSuggestedIndex: isSponsored ? -1 : generalIndex,
+    expectedResultCount: withHistory ? MAX_RESULTS : 2,
+    expectedViewIndex:
+      (generalIndex == 0 && !isSponsored) || !withHistory ? 1 : MAX_RESULTS - 1,
+  }));
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function historyFirst_suggestionsDisabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SUGGESTIONS_FIRST_PREF, false]],
+  });
+  await withSuggestions(async () => {
+    await doTestPermutations(({ isSponsored, withHistory, generalIndex }) => ({
+      
+      
+      expectedSuggestedIndex: isSponsored ? -1 : generalIndex,
+      expectedResultCount: withHistory ? MAX_RESULTS : 2,
+      expectedViewIndex:
+        (generalIndex == 0 && !isSponsored) || !withHistory
+          ? 1
+          : MAX_RESULTS - 1,
+    }));
+  }, false);
   await SpecialPowers.popPrefEnv();
 });
 
@@ -102,17 +178,17 @@ add_task(async function otherSuggestedIndex_noSuggestions() {
     
     { suggestedIndex: 1, resultSpan: 2 },
     
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    
     {
       type: UrlbarUtils.RESULT_TYPE.URL,
       providerName: UrlbarProviderQuickSuggest.name,
     },
-    
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
   ]);
 });
 
@@ -251,12 +327,15 @@ async function doTestPermutations(callback) {
 
 
 
+
+
 async function doTest({
   isSponsored,
   withHistory,
   generalIndex,
+  expectedSuggestedIndex,
   expectedResultCount,
-  expectedIndex,
+  expectedViewIndex,
 }) {
   info(
     "Running test with options: " +
@@ -265,7 +344,7 @@ async function doTest({
         withHistory,
         generalIndex,
         expectedResultCount,
-        expectedIndex,
+        expectedViewIndex,
       })
   );
 
@@ -295,14 +374,20 @@ async function doTest({
     expectedResultCount,
     "Expected result count"
   );
-  await QuickSuggestTestUtils.assertIsQuickSuggest({
+  let details = await QuickSuggestTestUtils.assertIsQuickSuggest({
     window,
     isSponsored,
-    index: expectedIndex,
+    index: expectedViewIndex,
     url: isSponsored
       ? REMOTE_SETTINGS_RESULTS[0].url
       : REMOTE_SETTINGS_RESULTS[1].url,
   });
+
+  Assert.equal(
+    details.result.suggestedIndex,
+    expectedSuggestedIndex,
+    "Expected suggestedIndex"
+  );
 
   await UrlbarTestUtils.promisePopupClose(window);
   await PlacesUtils.history.clear();
@@ -328,9 +413,11 @@ async function addHistory() {
 
 
 
-async function withSuggestions(callback) {
+
+
+async function withSuggestions(callback, enableSuggestions = true) {
   await SpecialPowers.pushPrefEnv({
-    set: [[SUGGESTIONS_PREF, true]],
+    set: [[SUGGESTIONS_PREF, enableSuggestions]],
   });
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
