@@ -2743,7 +2743,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual void AddInlineMinISize(gfxContext* aRenderingContext,
+  virtual void AddInlineMinISize(const mozilla::IntrinsicSizeInput& aInput,
                                  InlineMinISizeData* aData);
 
   
@@ -2756,7 +2756,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual void AddInlinePrefISize(gfxContext* aRenderingContext,
+  virtual void AddInlinePrefISize(const mozilla::IntrinsicSizeInput& aInput,
                                   InlinePrefISizeData* aData);
 
   
@@ -2915,7 +2915,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nscoord IntrinsicISizeFromInline(gfxContext* aContext,
+  nscoord IntrinsicISizeFromInline(const mozilla::IntrinsicSizeInput& aInput,
                                    mozilla::IntrinsicISizeType aType);
 
  public:

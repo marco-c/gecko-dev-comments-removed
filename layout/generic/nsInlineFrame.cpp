@@ -223,15 +223,15 @@ void nsInlineFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 
 
-void nsInlineFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+void nsInlineFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
                                       InlineMinISizeData* aData) {
-  DoInlineMinISize(aRenderingContext, aData);
+  DoInlineMinISize(aInput, aData);
 }
 
 
-void nsInlineFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+void nsInlineFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
                                        InlinePrefISizeData* aData) {
-  DoInlinePrefISize(aRenderingContext, aData);
+  DoInlinePrefISize(aInput, aData);
 }
 
 
