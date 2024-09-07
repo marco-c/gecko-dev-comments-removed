@@ -1408,23 +1408,27 @@ inline ColorPattern DrawTargetWebgl::GetClearPattern() const {
       DeviceColor(0.0f, 0.0f, 0.0f, IsOpaque(mFormat) ? 1.0f : 0.0f));
 }
 
+template <typename R>
+inline RectDouble DrawTargetWebgl::TransformDouble(const R& aRect) const {
+  return MatrixDouble(mTransform).TransformBounds(WidenToDouble(aRect));
+}
 
-inline bool DrawTargetWebgl::RectContainsViewport(const Rect& aRect) const {
-  return mTransform.PreservesAxisAlignedRectangles() &&
-         MatrixDouble(mTransform)
-             .TransformBounds(
-                 RectDouble(aRect.x, aRect.y, aRect.width, aRect.height))
-             .Contains(RectDouble(GetRect()));
+
+inline Maybe<Rect> DrawTargetWebgl::RectClippedToViewport(
+    const RectDouble& aRect) const {
+  if (!mTransform.PreservesAxisAlignedRectangles()) {
+    return Nothing();
+  }
+
+  return Some(NarrowToFloat(aRect.SafeIntersect(RectDouble(GetRect()))));
 }
 
 
 
 
 
-static inline bool RectInsidePrecisionLimits(const Rect& aRect,
-                                             const Matrix& aTransform) {
-  return Rect(-(1 << 20), -(1 << 20), 2 << 20, 2 << 20)
-      .Contains(aTransform.TransformBounds(aRect));
+static inline bool RectInsidePrecisionLimits(const RectDouble& aRect) {
+  return RectDouble(-(1 << 20), -(1 << 20), 2 << 20, 2 << 20).Contains(aRect);
 }
 
 void DrawTargetWebgl::ClearRect(const Rect& aRect) {
@@ -1433,14 +1437,16 @@ void DrawTargetWebgl::ClearRect(const Rect& aRect) {
     return;
   }
 
-  bool containsViewport = RectContainsViewport(aRect);
-  if (containsViewport) {
+  RectDouble xformRect = TransformDouble(aRect);
+  bool containsViewport = false;
+  if (Maybe<Rect> clipped = RectClippedToViewport(xformRect)) {
     
     
-    DrawRect(Rect(GetRect()), GetClearPattern(),
+    containsViewport = clipped->Size() == Size(GetSize());
+    DrawRect(*clipped, GetClearPattern(),
              DrawOptions(1.0f, CompositionOp::OP_CLEAR), Nothing(), nullptr,
              false);
-  } else if (RectInsidePrecisionLimits(aRect, mTransform)) {
+  } else if (RectInsidePrecisionLimits(xformRect)) {
     
     DrawRect(aRect, GetClearPattern(),
              DrawOptions(1.0f, CompositionOp::OP_CLEAR));
@@ -2592,16 +2598,18 @@ bool SharedContextWebgl::PruneTextureMemory(size_t aMargin, bool aPruneUnused) {
 void DrawTargetWebgl::FillRect(const Rect& aRect, const Pattern& aPattern,
                                const DrawOptions& aOptions) {
   if (SupportsPattern(aPattern)) {
-    if (RectInsidePrecisionLimits(aRect, mTransform)) {
-      DrawRect(aRect, aPattern, aOptions);
-      return;
+    RectDouble xformRect = TransformDouble(aRect);
+    if (aPattern.GetType() == PatternType::COLOR) {
+      if (Maybe<Rect> clipped = RectClippedToViewport(xformRect)) {
+        
+        
+        
+        DrawRect(*clipped, aPattern, aOptions, Nothing(), nullptr, false);
+        return;
+      }
     }
-    if (aPattern.GetType() == PatternType::COLOR &&
-        RectContainsViewport(aRect)) {
-      
-      
-      
-      DrawRect(Rect(GetRect()), aPattern, aOptions, Nothing(), nullptr, false);
+    if (RectInsidePrecisionLimits(xformRect)) {
+      DrawRect(aRect, aPattern, aOptions);
       return;
     }
   }
@@ -2762,17 +2770,19 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   SkRect skiaRect = SkRect::MakeEmpty();
   
   if (skiaPath.isRect(&skiaRect) && SupportsPattern(aPattern)) {
-    Rect rect = SkRectToRect(skiaRect);
-    if (RectInsidePrecisionLimits(rect, mTransform)) {
-      DrawRect(rect, aPattern, aOptions);
-      return;
+    RectDouble rect = SkRectToRectDouble(skiaRect);
+    RectDouble xformRect = TransformDouble(rect);
+    if (aPattern.GetType() == PatternType::COLOR) {
+      if (Maybe<Rect> clipped = RectClippedToViewport(xformRect)) {
+        
+        
+        
+        DrawRect(*clipped, aPattern, aOptions, Nothing(), nullptr, false);
+        return;
+      }
     }
-    if (aPattern.GetType() == PatternType::COLOR &&
-        RectContainsViewport(rect)) {
-      
-      
-      
-      DrawRect(Rect(GetRect()), aPattern, aOptions, Nothing(), nullptr, false);
+    if (RectInsidePrecisionLimits(xformRect)) {
+      DrawRect(NarrowToFloat(rect), aPattern, aOptions);
       return;
     }
   }
