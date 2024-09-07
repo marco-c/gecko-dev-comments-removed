@@ -5126,7 +5126,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
       
       
       
-      aError = OpenInternal(u""_ns, u""_ns, u""_ns,
+      aError = OpenInternal(""_ns, u""_ns, u""_ns,
                             false,    
                             true,     
                             false,    
@@ -5520,7 +5520,7 @@ bool nsGlobalWindowOuter::CanSetProperty(const char* aPrefName) {
 
 
 void nsGlobalWindowOuter::FireAbuseEvents(
-    const nsAString& aPopupURL, const nsAString& aPopupWindowName,
+    const nsACString& aPopupURL, const nsAString& aPopupWindowName,
     const nsAString& aPopupWindowFeatures) {
   
   nsCOMPtr<Document> currentDoc = GetDoc();
@@ -5537,10 +5537,7 @@ void nsGlobalWindowOuter::FireAbuseEvents(
   if (doc) baseURL = doc->GetDocBaseURI();
 
   
-  nsCOMPtr<nsIIOService> ios(do_GetService(NS_IOSERVICE_CONTRACTID));
-  if (ios)
-    ios->NewURI(NS_ConvertUTF16toUTF8(aPopupURL), nullptr, baseURL,
-                getter_AddRefs(popupURI));
+  Unused << NS_NewURI(getter_AddRefs(popupURI), aPopupURL, nullptr, baseURL);
 
   
   FirePopupBlockedEvent(currentDoc, popupURI, aPopupWindowName,
@@ -5551,10 +5548,11 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenOuter(
     const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
     ErrorResult& aError) {
   RefPtr<BrowsingContext> bc;
-  nsresult rv = OpenJS(aUrl, aName, aOptions, getter_AddRefs(bc));
+  NS_ConvertUTF16toUTF8 url(aUrl);
+  nsresult rv = OpenJS(url, aName, aOptions, getter_AddRefs(bc));
   if (rv == NS_ERROR_MALFORMED_URI) {
     aError.ThrowSyntaxError("Unable to open a window with invalid URL '"_ns +
-                            NS_ConvertUTF16toUTF8(aUrl) + "'."_ns);
+                            url + "'."_ns);
     return nullptr;
   }
 
@@ -5567,7 +5565,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenOuter(
   return WindowProxyHolder(std::move(bc));
 }
 
-nsresult nsGlobalWindowOuter::Open(const nsAString& aUrl,
+nsresult nsGlobalWindowOuter::Open(const nsACString& aUrl,
                                    const nsAString& aName,
                                    const nsAString& aOptions,
                                    nsDocShellLoadState* aLoadState,
@@ -5582,7 +5580,7 @@ nsresult nsGlobalWindowOuter::Open(const nsAString& aUrl,
                       aLoadState, aForceNoOpener, PrintKind::None, _retval);
 }
 
-nsresult nsGlobalWindowOuter::OpenJS(const nsAString& aUrl,
+nsresult nsGlobalWindowOuter::OpenJS(const nsACString& aUrl,
                                      const nsAString& aName,
                                      const nsAString& aOptions,
                                      BrowsingContext** _retval) {
@@ -5599,7 +5597,7 @@ nsresult nsGlobalWindowOuter::OpenJS(const nsAString& aUrl,
 
 
 
-nsresult nsGlobalWindowOuter::OpenDialog(const nsAString& aUrl,
+nsresult nsGlobalWindowOuter::OpenDialog(const nsACString& aUrl,
                                          const nsAString& aName,
                                          const nsAString& aOptions,
                                          nsIArray* aArguments,
@@ -5617,7 +5615,7 @@ nsresult nsGlobalWindowOuter::OpenDialog(const nsAString& aUrl,
 
 
 
-nsresult nsGlobalWindowOuter::OpenNoNavigate(const nsAString& aUrl,
+nsresult nsGlobalWindowOuter::OpenNoNavigate(const nsACString& aUrl,
                                              const nsAString& aName,
                                              const nsAString& aOptions,
                                              BrowsingContext** _retval) {
@@ -5645,7 +5643,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenDialogOuter(
   }
 
   RefPtr<BrowsingContext> dialog;
-  aError = OpenInternal(aUrl, aName, aOptions,
+  aError = OpenInternal(NS_ConvertUTF16toUTF8(aUrl), aName, aOptions,
                         true,       
                         false,      
                         false,      
@@ -6741,7 +6739,7 @@ class AutoUnblockScriptClosing {
 };
 
 nsresult nsGlobalWindowOuter::OpenInternal(
-    const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
+    const nsACString& aUrl, const nsAString& aName, const nsAString& aOptions,
     bool aDialog, bool aCalledNoScript, bool aDoJSFixups, bool aNavigate,
     nsIArray* aArguments, nsDocShellLoadState* aLoadState, bool aForceNoOpener,
     PrintKind aPrintKind, BrowsingContext** aReturn) {
@@ -6828,7 +6826,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     
     nsCString url;
     url.SetIsVoid(true);
-    AppendUTF16toUTF8(aUrl, url);
+    url.Append(aUrl);
 
     
     

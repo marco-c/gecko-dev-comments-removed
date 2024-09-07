@@ -8394,7 +8394,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
       loadState->SetPostDataStream(aLoadState->PostDataStream());
       loadState->SetIsFormSubmission(aLoadState->IsFormSubmission());
 
-      rv = win->Open(NS_ConvertUTF8toUTF16(spec),
+      rv = win->Open(spec,
                      aLoadState->Target(),  
                      u""_ns,                
                      loadState,
@@ -8404,7 +8404,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
       return rv;
     }
 
-    rv = win->OpenNoNavigate(NS_ConvertUTF8toUTF16(spec),
+    rv = win->OpenNoNavigate(spec,
                              aLoadState->Target(),  
                              u""_ns,                
                              getter_AddRefs(newBC));

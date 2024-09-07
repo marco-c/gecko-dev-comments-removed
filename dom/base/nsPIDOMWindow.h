@@ -1080,7 +1080,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual nsresult OpenNoNavigate(const nsAString& aUrl, const nsAString& aName,
+  virtual nsresult OpenNoNavigate(const nsACString& aUrl,
+                                  const nsAString& aName,
                                   const nsAString& aOptions,
                                   mozilla::dom::BrowsingContext** _retval) = 0;
 
@@ -1112,11 +1113,11 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
   
   
-  virtual nsresult Open(const nsAString& aUrl, const nsAString& aName,
+  virtual nsresult Open(const nsACString& aUrl, const nsAString& aName,
                         const nsAString& aOptions,
                         nsDocShellLoadState* aLoadState, bool aForceNoOpener,
                         mozilla::dom::BrowsingContext** _retval) = 0;
-  virtual nsresult OpenDialog(const nsAString& aUrl, const nsAString& aName,
+  virtual nsresult OpenDialog(const nsACString& aUrl, const nsAString& aName,
                               const nsAString& aOptions, nsIArray* aArguments,
                               mozilla::dom::BrowsingContext** _retval) = 0;
 
