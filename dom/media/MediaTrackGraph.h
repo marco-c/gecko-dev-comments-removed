@@ -140,8 +140,17 @@ class AudioDataListenerInterface {
 
 
 
+
+  virtual void NotifySetRequestedInputProcessingParams(
+      MediaTrackGraph* aGraph, int aGeneration,
+      cubeb_input_processing_params aRequestedParams) = 0;
+
+  
+
+
+
   virtual void NotifySetRequestedInputProcessingParamsResult(
-      MediaTrackGraph* aGraph, cubeb_input_processing_params aRequestedParams,
+      MediaTrackGraph* aGraph, int aGeneration,
       const Result<cubeb_input_processing_params, int>& aResult) = 0;
 };
 

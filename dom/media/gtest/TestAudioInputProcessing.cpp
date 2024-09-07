@@ -536,16 +536,31 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   EXPECT_FALSE(aip->IsPassThrough(graph));
 
   
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 1, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoOnlyConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+
+  
   aip->NotifySetRequestedInputProcessingParamsResult(
-      graph, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION,
-      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+      graph, 1, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
   
   EXPECT_EQ(aip->AppliedConfig(graph), webrtc::AudioProcessing::Config());
   EXPECT_TRUE(aip->IsPassThrough(graph));
 
   
-  aip->NotifySetRequestedInputProcessingParamsResult(
-      graph, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION, Err(CUBEB_ERROR));
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 2, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+
+  
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 3, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+  
+  EXPECT_EQ(aip->AppliedConfig(graph), webrtc::AudioProcessing::Config());
+  EXPECT_TRUE(aip->IsPassThrough(graph));
+  
+  aip->NotifySetRequestedInputProcessingParamsResult(graph, 3,
+                                                     Err(CUBEB_ERROR));
   
   
   EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
@@ -554,9 +569,14 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   EXPECT_FALSE(aip->IsPassThrough(graph));
 
   
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 4, CUBEB_INPUT_PROCESSING_PARAM_NONE);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoOnlyConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+
+  
   aip->NotifySetRequestedInputProcessingParamsResult(
-      graph, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION,
-      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+      graph, 2, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
   
   EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
             CUBEB_INPUT_PROCESSING_PARAM_NONE);
@@ -565,8 +585,7 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
 
   
   aip->NotifySetRequestedInputProcessingParamsResult(
-      graph, CUBEB_INPUT_PROCESSING_PARAM_NONE,
-      CUBEB_INPUT_PROCESSING_PARAM_NONE);
+      graph, 4, CUBEB_INPUT_PROCESSING_PARAM_NONE);
   EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
             CUBEB_INPUT_PROCESSING_PARAM_NONE);
   EXPECT_EQ(aip->AppliedConfig(graph), echoOnlyConfig);
@@ -581,21 +600,28 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
   EXPECT_FALSE(aip->IsPassThrough(graph));
   
-  aip->NotifySetRequestedInputProcessingParamsResult(
-      graph,
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 5,
       CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
-          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
-      CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+  
+  aip->NotifySetRequestedInputProcessingParamsResult(
+      graph, 5, CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
   
   EXPECT_EQ(aip->AppliedConfig(graph), echoOnlyConfig);
   EXPECT_FALSE(aip->IsPassThrough(graph));
 
   
-  aip->NotifySetRequestedInputProcessingParamsResult(
-      graph,
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 6,
       CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
-          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
-      Err(CUBEB_ERROR));
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoOnlyConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+  aip->NotifySetRequestedInputProcessingParamsResult(graph, 6,
+                                                     Err(CUBEB_ERROR));
   
   EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
             CUBEB_INPUT_PROCESSING_PARAM_NONE);
@@ -610,10 +636,15 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
   EXPECT_FALSE(aip->IsPassThrough(graph));
   
-  aip->NotifySetRequestedInputProcessingParamsResult(
-      graph,
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 7,
       CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
-          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+  
+  aip->NotifySetRequestedInputProcessingParamsResult(
+      graph, 7,
       static_cast<cubeb_input_processing_params>(
           CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
           CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION));
@@ -627,11 +658,15 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   
   
   
-  aip->NotifySetRequestedInputProcessingParamsResult(
-      graph, CUBEB_INPUT_PROCESSING_PARAM_NONE,
-
-      CUBEB_INPUT_PROCESSING_PARAM_NONE);
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 8, CUBEB_INPUT_PROCESSING_PARAM_NONE);
   
+  EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+  
+  
+  aip->NotifySetRequestedInputProcessingParamsResult(
+      graph, 8, CUBEB_INPUT_PROCESSING_PARAM_NONE);
   EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
             CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
                 CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
@@ -639,11 +674,17 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   EXPECT_FALSE(aip->IsPassThrough(graph));
 
   
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 9,
+      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  
+  EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+  
   
   aip->NotifySetRequestedInputProcessingParamsResult(
-      graph,
-      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
-          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
+      graph, 9,
       static_cast<cubeb_input_processing_params>(
           CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
           CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION));
@@ -656,11 +697,12 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   
   
   aip->Disconnect(graph);
+  aip->NotifySetRequestedInputProcessingParams(
+      graph, 1, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
   aip->NotifySetRequestedInputProcessingParamsResult(
-      graph,
-      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
-          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
-      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+      graph, 1, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
   EXPECT_EQ(aip->AppliedConfig(graph), noiseOnlyConfig);
   EXPECT_FALSE(aip->IsPassThrough(graph));
 

@@ -138,10 +138,17 @@ class AudioInputProcessing : public AudioDataListener {
   
   
   
+  void NotifySetRequestedInputProcessingParams(
+      MediaTrackGraph* aGraph, int aGeneration,
+      cubeb_input_processing_params aRequestedParams) override;
+
+  
+  
+  
   
   
   void NotifySetRequestedInputProcessingParamsResult(
-      MediaTrackGraph* aGraph, cubeb_input_processing_params aRequestedParams,
+      MediaTrackGraph* aGraph, int aGeneration,
       const Result<cubeb_input_processing_params, int>& aResult) override;
 
   void PacketizeAndProcess(AudioProcessingTrack* aTrack,
@@ -209,6 +216,9 @@ class AudioInputProcessing : public AudioDataListener {
   
   
   bool mPlatformProcessingEnabled = false;
+  
+  
+  int mPlatformProcessingSetGeneration = -1;
   
   
   
