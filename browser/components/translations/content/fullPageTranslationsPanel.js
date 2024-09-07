@@ -1455,7 +1455,30 @@ var FullPageTranslationsPanel = new (class {
         break;
       }
       case "TranslationsParent:LanguageState": {
-        const { actor } = event.detail;
+        const { actor, reason } = event.detail;
+
+        const innerWindowId =
+          gBrowser.selectedBrowser.browsingContext.top.embedderElement
+            .innerWindowID;
+
+        this.console?.debug("TranslationsParent:LanguageState", {
+          reason,
+          currentId: innerWindowId,
+          originatorId: actor.innerWindowId,
+        });
+
+        if (innerWindowId !== actor.innerWindowId) {
+          
+          
+          
+          
+          
+          
+          
+          
+          return;
+        }
+
         const {
           detectedLanguages,
           requestedTranslationPair,
@@ -1571,7 +1594,7 @@ var FullPageTranslationsPanel = new (class {
             break;
           case "engine-load-failure":
             this.#showEngineError(actor).catch(viewError =>
-              this.console.error(viewError)
+              this.console?.error(viewError)
             );
             break;
           default:

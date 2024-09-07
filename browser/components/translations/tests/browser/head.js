@@ -13,8 +13,9 @@ Services.scriptloader.loadSubScript(
 
 
 
-async function addTab(url) {
+async function addTab(url, message) {
   logAction(url);
+  info(message);
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     url,
@@ -24,6 +25,37 @@ async function addTab(url) {
     tab,
     removeTab() {
       BrowserTestUtils.removeTab(tab);
+    },
+    
+
+
+
+
+
+
+
+    runInPage(callback, data = {}) {
+      
+      
+      
+      const fn = new Function( `
+        const TranslationsTest = ChromeUtils.importESModule(
+          "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
+        );
+
+        // Pass in the values that get injected by the task runner.
+        TranslationsTest.setup({Assert, ContentTaskUtils, content});
+
+        const data = ${JSON.stringify(data)};
+
+        return (${callback.toString()})(TranslationsTest, data);
+      `);
+
+      return ContentTask.spawn(
+        tab.linkedBrowser,
+        {}, 
+        fn
+      );
     },
   };
 }
