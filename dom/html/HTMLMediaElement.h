@@ -1416,6 +1416,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  virtual bool HasPendingCallbacks() const { return false; }
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   

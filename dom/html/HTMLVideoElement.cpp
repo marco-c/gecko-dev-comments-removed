@@ -752,6 +752,13 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
   
   
   
+  if (NS_WARN_IF(frameSize.IsEmpty())) {
+    return;
+  }
+
+  
+  
+  
   if (composited) {
     aMd.mExpectedDisplayTime = aMd.mPresentationTime;
   }
@@ -775,12 +782,29 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
 
   mLastPresentedFrameID = frameID;
   mVideoFrameRequestManager.Take(aCallbacks);
+
+  NS_DispatchToMainThread(NewRunnableMethod(
+      "HTMLVideoElement::FinishedVideoFrameRequestCallbacks", this,
+      &HTMLVideoElement::FinishedVideoFrameRequestCallbacks));
+}
+
+void HTMLVideoElement::FinishedVideoFrameRequestCallbacks() {
+  
+  
+  
+  if (!HasPendingCallbacks()) {
+    NotifyDecoderActivityChanges();
+  }
 }
 
 uint32_t HTMLVideoElement::RequestVideoFrameCallback(
     VideoFrameRequestCallback& aCallback, ErrorResult& aRv) {
+  bool hasPending = HasPendingCallbacks();
   uint32_t handle = 0;
   aRv = mVideoFrameRequestManager.Schedule(aCallback, &handle);
+  if (!hasPending && HasPendingCallbacks()) {
+    NotifyDecoderActivityChanges();
+  }
   return handle;
 }
 
@@ -789,7 +813,9 @@ bool HTMLVideoElement::IsVideoFrameCallbackCancelled(uint32_t aHandle) {
 }
 
 void HTMLVideoElement::CancelVideoFrameCallback(uint32_t aHandle) {
-  mVideoFrameRequestManager.Cancel(aHandle);
+  if (mVideoFrameRequestManager.Cancel(aHandle) && !HasPendingCallbacks()) {
+    NotifyDecoderActivityChanges();
+  }
 }
 
 }  

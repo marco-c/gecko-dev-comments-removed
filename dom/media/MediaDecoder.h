@@ -170,8 +170,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   virtual void Play();
 
   
-  virtual void NotifyOwnerActivityChanged(bool aIsOwnerInvisible,
-                                          bool aIsOwnerConnected);
+  void NotifyOwnerActivityChanged(bool aIsOwnerInvisible,
+                                  bool aIsOwnerConnected,
+                                  bool aIsOwnerInBackground,
+                                  bool aHasOwnerPendingCallbacks);
 
   
   virtual void Pause();
@@ -336,8 +338,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   bool CanPlayThrough();
 
   
-  virtual void SetElementVisibility(bool aIsOwnerInvisible,
-                                    bool aIsOwnerConnected);
+  void SetElementVisibility(bool aIsOwnerInvisible, bool aIsOwnerConnected,
+                            bool aIsOwnerInBackground,
+                            bool aHasOwnerPendingCallbacks);
 
   
   
@@ -632,6 +635,12 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   bool mIsOwnerConnected;
+
+  
+  bool mIsOwnerInBackground;
+
+  
+  bool mHasOwnerPendingCallbacks;
 
   
   bool mForcedHidden;
