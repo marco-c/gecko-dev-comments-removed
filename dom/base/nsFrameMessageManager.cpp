@@ -541,21 +541,9 @@ void nsFrameMessageManager::SendSyncMessage(JSContext* aCx,
 
   nsTArray<StructuredCloneData> retval;
 
-  TimeStamp start = TimeStamp::Now();
   sSendingSyncMessage = true;
   bool ok = mCallback->DoSendBlockingMessage(aMessageName, data, &retval);
   sSendingSyncMessage = false;
-
-  uint32_t latencyMs = round((TimeStamp::Now() - start).ToMilliseconds());
-  if (latencyMs >= kMinTelemetrySyncMessageManagerLatencyMs) {
-    NS_ConvertUTF16toUTF8 messageName(aMessageName);
-    
-    
-    
-    messageName.StripTaggedASCII(ASCIIMask::Mask0to9());
-    Telemetry::Accumulate(Telemetry::IPC_SYNC_MESSAGE_MANAGER_LATENCY_MS,
-                          messageName, latencyMs);
-  }
 
   if (!ok) {
     return;
@@ -1633,8 +1621,6 @@ nsSameProcessAsyncMessageBase::nsSameProcessAsyncMessageBase()
 nsresult nsSameProcessAsyncMessageBase::Init(const nsAString& aMessage,
                                              StructuredCloneData& aData) {
   if (!mData.Copy(aData)) {
-    Telemetry::Accumulate(Telemetry::IPC_SAME_PROCESS_MESSAGE_COPY_OOM_KB,
-                          aData.DataLength());
     return NS_ERROR_OUT_OF_MEMORY;
   }
 

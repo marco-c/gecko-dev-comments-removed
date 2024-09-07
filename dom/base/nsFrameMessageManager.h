@@ -61,10 +61,6 @@ namespace ipc {
 class MessageManagerCallback;
 class WritableSharedMap;
 
-
-
-static const uint32_t kMinTelemetrySyncMessageManagerLatencyMs = 1;
-
 enum class MessageManagerFlags {
   MM_NONE = 0,
   MM_CHROME = 1,
