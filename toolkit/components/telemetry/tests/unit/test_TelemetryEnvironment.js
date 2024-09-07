@@ -182,7 +182,9 @@ add_task(async function setup() {
 
   await TelemetryEnvironmentTesting.spoofProfileReset();
   await TelemetryEnvironment.delayedInit();
-  await SearchTestUtils.useTestEngines("data", "search-extensions");
+  
+  
+  await SearchTestUtils.setRemoteSettingsConfig([{ identifier: "unused" }]);
 });
 
 add_task(async function test_checkEnvironment() {
