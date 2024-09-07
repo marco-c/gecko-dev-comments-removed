@@ -56,6 +56,65 @@ struct Helper<> {
 };
 
 
+struct Rank0 {};
+struct Rank1 : Rank0 {};
+
+template <typename Trait,
+          typename = std::enable_if_t<std::is_convertible_v<
+              decltype(Trait::MakeAudioEncoder(
+                  std::declval<Environment>(),
+                  std::declval<typename Trait::Config>(),
+                  std::declval<AudioEncoderFactory::Options>())),
+              std::unique_ptr<AudioEncoder>>>>
+absl::Nullable<std::unique_ptr<AudioEncoder>> CreateEncoder(
+    Rank1,
+    const Environment& env,
+    const typename Trait::Config& config,
+    const AudioEncoderFactory::Options& options) {
+  return Trait::MakeAudioEncoder(env, config, options);
+}
+
+template <typename Trait,
+          typename = std::enable_if_t<std::is_convertible_v<
+              decltype(Trait::MakeAudioEncoder(
+                  std::declval<typename Trait::Config>(),
+                  int{},
+                  std::declval<absl::optional<AudioCodecPairId>>())),
+              std::unique_ptr<AudioEncoder>>>>
+absl::Nullable<std::unique_ptr<AudioEncoder>> CreateEncoder(
+    Rank0,
+    const Environment& env,
+    const typename Trait::Config& config,
+    const AudioEncoderFactory::Options& options) {
+  return Trait::MakeAudioEncoder(config, options.payload_type,
+                                 options.codec_pair_id);
+}
+
+template <typename Trait,
+          typename = std::enable_if_t<std::is_convertible_v<
+              decltype(Trait::MakeAudioEncoder(
+                  std::declval<typename Trait::Config>(),
+                  int{},
+                  std::declval<absl::optional<AudioCodecPairId>>())),
+              std::unique_ptr<AudioEncoder>>>>
+absl::Nullable<std::unique_ptr<AudioEncoder>> LegacyCreateEncoder(
+    Rank1,
+    const typename Trait::Config& config,
+    int payload_type,
+    absl::optional<AudioCodecPairId> codec_pair_ids) {
+  return Trait::MakeAudioEncoder(config, payload_type, codec_pair_ids);
+}
+
+template <typename Trait>
+absl::Nullable<std::unique_ptr<AudioEncoder>> LegacyCreateEncoder(
+    Rank0,
+    const typename Trait::Config& config,
+    int payload_type,
+    absl::optional<AudioCodecPairId> codec_pair_ids) {
+  RTC_CHECK_NOTREACHED();
+}
+
+
 
 template <typename T, typename... Ts>
 struct Helper<T, Ts...> {
@@ -80,7 +139,8 @@ struct Helper<T, Ts...> {
       absl::optional<AudioCodecPairId> codec_pair_id) {
     auto opt_config = T::SdpToConfig(format);
     if (opt_config) {
-      return T::MakeAudioEncoder(*opt_config, payload_type, codec_pair_id);
+      return LegacyCreateEncoder<T>(Rank1{}, *opt_config, payload_type,
+                                    codec_pair_id);
     } else {
       return Helper<Ts...>::MakeAudioEncoder(payload_type, format,
                                              codec_pair_id);
@@ -92,10 +152,7 @@ struct Helper<T, Ts...> {
       const SdpAudioFormat& format,
       const AudioEncoderFactory::Options& options) {
     if (auto opt_config = T::SdpToConfig(format); opt_config.has_value()) {
-      
-      
-      return T::MakeAudioEncoder(*opt_config, options.payload_type,
-                                 options.codec_pair_id);
+      return CreateEncoder<T>(Rank1{}, env, *opt_config, options);
     }
     return Helper<Ts...>::CreateAudioEncoder(env, format, options);
   }
@@ -131,6 +188,17 @@ class AudioEncoderFactoryT : public AudioEncoderFactory {
 };
 
 }  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
