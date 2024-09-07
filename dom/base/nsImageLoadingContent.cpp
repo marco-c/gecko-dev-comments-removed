@@ -952,19 +952,12 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
   
 
   
-  
-  
-  if (mCurrentRequest && !HaveSize(mCurrentRequest)) {
-    nsCOMPtr<nsIURI> uri;
-    aChannel->GetOriginalURI(getter_AddRefs(uri));
-    MaybeAgeRequestGeneration(uri);
-  }
-
-  
   AutoStateChanger changer(this, true);
 
   
-  RefPtr<imgRequestProxy>& req = PrepareNextRequest(eImageLoadType_Normal);
+  nsCOMPtr<nsIURI> uri;
+  aChannel->GetOriginalURI(getter_AddRefs(uri));
+  RefPtr<imgRequestProxy>& req = PrepareNextRequest(eImageLoadType_Normal, uri);
   nsresult rv = loader->LoadImageWithChannel(aChannel, this, doc, aListener,
                                              getter_AddRefs(req));
   if (NS_SUCCEEDED(rv)) {
@@ -1106,13 +1099,6 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   }
 
   
-  
-  
-  if (mCurrentRequest && !HaveSize(mCurrentRequest)) {
-    MaybeAgeRequestGeneration(aNewURI);
-  }
-
-  
   AutoStateChanger changer(this, aNotify);
 
   
@@ -1126,7 +1112,8 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   nsLoadFlags loadFlags =
       aLoadFlags | nsContentUtils::CORSModeToLoadImageFlags(GetCORSMode());
 
-  RefPtr<imgRequestProxy>& req = PrepareNextRequest(aImageLoadType);
+  RefPtr<imgRequestProxy>& req = PrepareNextRequest(aImageLoadType, aNewURI);
+
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   bool result = nsContentUtils::QueryTriggeringPrincipal(
       element, aTriggeringPrincipal, getter_AddRefs(triggeringPrincipal));
@@ -1464,19 +1451,23 @@ void nsImageLoadingContent::CancelPendingEvent() {
 }
 
 RefPtr<imgRequestProxy>& nsImageLoadingContent::PrepareNextRequest(
-    ImageLoadType aImageLoadType) {
+    ImageLoadType aImageLoadType, nsIURI* aNewURI) {
   MaybeForceSyncDecoding( true);
 
   
   
   
   
-  return HaveSize(mCurrentRequest) ? PreparePendingRequest(aImageLoadType)
-                                   : PrepareCurrentRequest(aImageLoadType);
+  return HaveSize(mCurrentRequest)
+             ? PreparePendingRequest(aImageLoadType)
+             : PrepareCurrentRequest(aImageLoadType, aNewURI);
 }
 
 RefPtr<imgRequestProxy>& nsImageLoadingContent::PrepareCurrentRequest(
-    ImageLoadType aImageLoadType) {
+    ImageLoadType aImageLoadType, nsIURI* aNewURI) {
+  if (mCurrentRequest) {
+    MaybeAgeRequestGeneration(aNewURI);
+  }
   
   ClearCurrentRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DiscardImages));
 
@@ -1531,7 +1522,6 @@ void nsImageLoadingContent::MakePendingRequestCurrent() {
   
   nsCOMPtr<nsIURI> uri;
   mPendingRequest->GetURI(getter_AddRefs(uri));
-  MaybeAgeRequestGeneration(uri);
 
   
   
@@ -1544,7 +1534,7 @@ void nsImageLoadingContent::MakePendingRequestCurrent() {
                                ? eImageLoadType_Imageset
                                : eImageLoadType_Normal;
 
-  PrepareCurrentRequest(loadType) = mPendingRequest;
+  PrepareCurrentRequest(loadType, uri) = mPendingRequest;
   MakePendingScriptedRequestsCurrent();
   mPendingRequest = nullptr;
   mCurrentRequestFlags = mPendingRequestFlags;

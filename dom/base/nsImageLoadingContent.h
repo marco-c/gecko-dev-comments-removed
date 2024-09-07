@@ -392,7 +392,8 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-  RefPtr<imgRequestProxy>& PrepareNextRequest(ImageLoadType aImageLoadType);
+
+  RefPtr<imgRequestProxy>& PrepareNextRequest(ImageLoadType, nsIURI* aNewURI);
 
   
 
@@ -402,8 +403,10 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-  RefPtr<imgRequestProxy>& PrepareCurrentRequest(ImageLoadType aImageLoadType);
-  RefPtr<imgRequestProxy>& PreparePendingRequest(ImageLoadType aImageLoadType);
+
+  RefPtr<imgRequestProxy>& PrepareCurrentRequest(ImageLoadType,
+                                                 nsIURI* aNewURI);
+  RefPtr<imgRequestProxy>& PreparePendingRequest(ImageLoadType);
 
   
 
