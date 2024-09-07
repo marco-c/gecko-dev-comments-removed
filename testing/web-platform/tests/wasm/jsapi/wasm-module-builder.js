@@ -106,6 +106,10 @@ let kWasmF64 = 0x7c;
 let kWasmS128 = 0x7b;
 
 
+let kWasmI8 = 0x78;
+let kWasmI16 = 0x77;
+
+
 
 let kWasmNullFuncRef = -0x0d;
 let kWasmNullExternRef = -0x0e;
@@ -1152,7 +1156,7 @@ class WasmModuleBuilder {
           section.emit_string(imp.name || '');
           section.emit_u8(imp.kind);
           if (imp.kind == kExternalFunction) {
-            section.emit_u32v(imp.type_index);
+            section.emit_u32v(imp.type);
           } else if (imp.kind == kExternalGlobal) {
             section.emit_type(imp.type);
             section.emit_u8(imp.mutable);
