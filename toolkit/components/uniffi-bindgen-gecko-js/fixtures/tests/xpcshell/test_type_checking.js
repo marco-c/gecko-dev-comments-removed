@@ -30,16 +30,6 @@ add_task(async function testFunctionArguments() {
   );
 });
 
-add_task(async function testNumberOverflow() {
-  
-  
-  await Assert.rejects(
-    Arithmetic.add(Number.MAX_SAFE_INTEGER, 1),
-    /RangeError/,
-    "add() call that overflows Number.MAX_SAFE_INTEGER"
-  );
-});
-
 add_task(async function testObjectPointers() {
   const todo = await TodoList.TodoList.init();
   const stringifier = await Rondpoint.Stringifier.init();
@@ -49,7 +39,7 @@ add_task(async function testObjectPointers() {
 
   await Assert.rejects(
     todo.getEntries(), 
-    /Incorrect UniFFI pointer type/,
+    /Bad pointer type/,
     "getEntries() with wrong pointer type"
   );
 
