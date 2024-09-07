@@ -195,8 +195,6 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   bool hidePermissionDoorhanger = false;
   if (!aDocument->ShouldResistFingerprinting(
           RFPTarget::CanvasImageExtractionPrompt) &&
-      StaticPrefs::
-          privacy_resistFingerprinting_autoDeclineNoUserInputCanvasPrompts() &&
       aDocument->ShouldResistFingerprinting(
           RFPTarget::CanvasExtractionBeforeUserInputIsBlocked)) {
     
@@ -212,8 +210,6 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   
 
   hidePermissionDoorhanger |=
-      StaticPrefs::
-          privacy_resistFingerprinting_autoDeclineNoUserInputCanvasPrompts() &&
       aDocument->ShouldResistFingerprinting(
           RFPTarget::CanvasExtractionBeforeUserInputIsBlocked) &&
       !dom::UserActivation::IsHandlingUserInput();
