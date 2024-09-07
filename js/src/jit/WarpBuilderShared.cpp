@@ -26,7 +26,6 @@ bool WarpBuilderShared::resumeAfter(MInstruction* ins, BytecodeLocation loc) {
   
   
   
-  
   MOZ_ASSERT(ins->isEffectful() || ins->isInt64ToBigInt() ||
              ins->isPostIntPtrConversion());
   MOZ_ASSERT(!ins->isMovable());

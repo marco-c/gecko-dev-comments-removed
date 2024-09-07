@@ -357,18 +357,8 @@ bool WarpCacheIRTranspiler::transpile(
   
   
   
-  
-  
-  
-  
-  
   MOZ_ASSERT_IF(effectful_,
                 effectful_->resumePoint() || effectful_->isIonToWasmCall() ||
-                    effectful_->isLoadUnboxedScalar() ||
-                    effectful_->isLoadDataViewElement() ||
-                    effectful_->isAtomicTypedArrayElementBinop() ||
-                    effectful_->isAtomicExchangeTypedArrayElement() ||
-                    effectful_->isCompareExchangeTypedArrayElement() ||
                     effectful_->isResizableTypedArrayLength() ||
                     effectful_->isResizableDataViewByteLength() ||
                     effectful_->isGrowableSharedArrayBufferByteLength());
@@ -4721,15 +4711,11 @@ bool WarpCacheIRTranspiler::emitAtomicsCompareExchangeResult(
   MInstruction* result = cas;
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), cas, elementType);
-
-    
-    result->setNotMovable();
-
     add(result);
   }
 
   pushResult(result);
-  return resumeAfterUnchecked(result);
+  return resumeAfter(cas);
 }
 
 bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
@@ -4758,15 +4744,11 @@ bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
   MInstruction* result = exchange;
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), exchange, elementType);
-
-    
-    result->setNotMovable();
-
     add(result);
   }
 
   pushResult(result);
-  return resumeAfterUnchecked(result);
+  return resumeAfter(exchange);
 }
 
 bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
@@ -4803,15 +4785,11 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
   MInstruction* result = binop;
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), binop, elementType);
-
-    
-    result->setNotMovable();
-
     add(result);
   }
 
   pushResult(result);
-  return resumeAfterUnchecked(result);
+  return resumeAfter(binop);
 }
 
 bool WarpCacheIRTranspiler::emitAtomicsAddResult(
@@ -4874,15 +4852,11 @@ bool WarpCacheIRTranspiler::emitAtomicsLoadResult(
   MInstruction* result = load;
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), load, elementType);
-
-    
-    result->setNotMovable();
-
     add(result);
   }
 
   pushResult(result);
-  return resumeAfterUnchecked(result);
+  return resumeAfter(load);
 }
 
 bool WarpCacheIRTranspiler::emitAtomicsStoreResult(
