@@ -89,13 +89,6 @@ add_task(async function test_tabs() {
   Assert.ok(component, "Synced tabs panel is shown.");
   const contextMenu = SidebarController.currentContextMenu;
 
-  
-  await TestUtils.waitForTick();
-  for (const card of component.cards) {
-    card.toggleDetails(true);
-    await card.updateComplete;
-  }
-
   for (const [i, client] of tabClients.entries()) {
     const card = component.cards[i];
     Assert.equal(card.heading, client.name, "Device name is correct.");

@@ -20,7 +20,19 @@ const yesterday = new Date(
   today.getMonth(),
   today.getDate() - 1
 );
-const dates = [today, yesterday];
+
+
+const lastMonth = new Date(today);
+lastMonth.setDate(1);
+if (lastMonth.getMonth() === 0) {
+  
+  lastMonth.setMonth(11);
+  lastMonth.setFullYear(lastMonth.getFullYear() - 1);
+} else {
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+}
+
+const dates = [today, yesterday, lastMonth];
 
 let win;
 
@@ -142,6 +154,9 @@ add_task(async function test_history_sort() {
     "true",
     "Sort by site is checked."
   );
+  for (const card of component.cards) {
+    Assert.equal(card.expanded, true, "All cards are expanded.");
+  }
 
   info("Sort history by date.");
   promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
@@ -157,20 +172,21 @@ add_task(async function test_history_sort() {
     "true",
     "Sort by date is checked."
   );
+  for (const [i, card] of component.cards.entries()) {
+    Assert.equal(
+      card.expanded,
+      i === 0 || i === 1,
+      "The cards for Today and Yesterday are expanded."
+    );
+  }
 });
 
 add_task(async function test_history_keyboard_navigation() {
   const {
-    component: { cards, lists },
+    component: { lists },
     contentWindow,
   } = await showHistorySidebar();
 
-  
-  await TestUtils.waitForTick();
-  for (const card of cards) {
-    card.toggleDetails(true);
-    await card.updateComplete;
-  }
   const rows = await TestUtils.waitForCondition(
     () => lists[0].rowEls.length === URLs.length && lists[0].rowEls,
     "History rows are shown."
@@ -196,16 +212,10 @@ add_task(async function test_history_keyboard_navigation() {
 
 add_task(async function test_history_hover_buttons() {
   const {
-    component: { cards, lists },
+    component: { lists },
     contentWindow,
   } = await showHistorySidebar();
 
-  
-  await TestUtils.waitForTick();
-  for (const card of cards) {
-    card.toggleDetails(true);
-    await card.updateComplete;
-  }
   const rows = await TestUtils.waitForCondition(
     () => lists[0].rowEls.length === URLs.length && lists[0].rowEls,
     "History rows are shown."
@@ -233,16 +243,9 @@ add_task(async function test_history_hover_buttons() {
 
 add_task(async function test_history_context_menu() {
   const {
-    component: { cards, lists },
+    component: { lists },
   } = await showHistorySidebar();
   const contextMenu = win.SidebarController.currentContextMenu;
-
-  
-  await TestUtils.waitForTick();
-  for (const card of cards) {
-    card.toggleDetails(true);
-    await card.updateComplete;
-  }
   let rows = lists[0].rowEls;
 
   function getItem(item) {
