@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(RegExp.escape), false, 'isConstructor(RegExp.escape) must return false');
+
+assert.throws(TypeError, function () {
+  new RegExp.escape();
+});
+
+reportCompare(0, 0);

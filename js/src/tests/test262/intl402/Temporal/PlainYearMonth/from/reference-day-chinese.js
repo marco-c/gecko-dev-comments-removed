@@ -34,13 +34,34 @@ const months2022TestData = [
   ["M11", 11, 24],
   ["M12", 12, 23],
 ];
-for (const [nonLeapMonthCode, month, referenceISODay] of months2022TestData) {
+for (let [nonLeapMonthCode, month, referenceISODay] of months2022TestData) {
   
   const year = new Temporal.PlainDate(2022, 3, 1).withCalendar("chinese").year;
   const leapMonthCode = nonLeapMonthCode + "L";
   const fields = { year, monthCode: leapMonthCode, calendar: "chinese" };
 
   const result = Temporal.PlainYearMonth.from(fields, { overflow: "constrain" });
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (result.month !== month) {
+    assert.sameValue(result.month, month + 1);
+
+    
+    
+    const nextMonth = months2022TestData.find(e => e[1] === month + 1);
+    [nonLeapMonthCode, month, referenceISODay] = nextMonth;
+  }
+
   TemporalHelpers.assertPlainYearMonth(
     result,
     year, month, nonLeapMonthCode,

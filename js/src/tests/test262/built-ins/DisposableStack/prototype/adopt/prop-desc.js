@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof DisposableStack.prototype.adopt, 'function');
+
+verifyProperty(DisposableStack.prototype, 'adopt', {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

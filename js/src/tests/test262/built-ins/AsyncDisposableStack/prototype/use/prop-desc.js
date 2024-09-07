@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof AsyncDisposableStack.prototype.use, 'function');
+
+verifyProperty(AsyncDisposableStack.prototype, 'use', {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

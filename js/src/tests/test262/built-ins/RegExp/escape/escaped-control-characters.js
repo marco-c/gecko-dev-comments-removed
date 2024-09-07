@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const controlCharacters = '\t\n\v\f\r';
+const expectedEscapedCharacters = '\\t\\n\\v\\f\\r';
+
+assert.sameValue(RegExp.escape(controlCharacters), expectedEscapedCharacters, 'Control characters are correctly escaped');
+
+reportCompare(0, 0);

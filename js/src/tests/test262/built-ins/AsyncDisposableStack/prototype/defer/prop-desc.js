@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof AsyncDisposableStack.prototype.defer, 'function');
+
+verifyProperty(AsyncDisposableStack.prototype, 'defer', {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

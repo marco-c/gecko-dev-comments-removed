@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof SuppressedError.prototype, 'object');
+
+verifyProperty(SuppressedError, 'prototype', {
+  enumerable: false,
+  writable: false,
+  configurable: false
+});
+
+reportCompare(0, 0);

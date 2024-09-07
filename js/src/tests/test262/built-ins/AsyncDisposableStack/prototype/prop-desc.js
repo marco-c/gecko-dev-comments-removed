@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(AsyncDisposableStack, 'prototype', {
+  writable: false,
+  enumerable: false,
+  configurable: false
+});
+
+reportCompare(0, 0);

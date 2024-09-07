@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof $262.AbstractModuleSource, 'function');
+verifyProperty($262.AbstractModuleSource.prototype, Symbol.toStringTag, {
+  enumerable: false,
+  configurable: true,
+  set: undefined,
+  value: undefined,
+}, {
+  restore: true,
+});
+
+
+const ToStringTag = Object.getOwnPropertyDescriptor($262.AbstractModuleSource.prototype, Symbol.toStringTag).get;
+assert.sameValue(typeof ToStringTag, 'function');
+assert.sameValue(ToStringTag.call(262), undefined);
+assert.sameValue(ToStringTag.call($262.AbstractModuleSource.prototype), undefined);
+
+reportCompare(0, 0);

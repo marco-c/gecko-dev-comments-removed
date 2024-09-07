@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(SuppressedError), true, 'isConstructor(SuppressedError) must return true');
+new SuppressedError();
+
+
+reportCompare(0, 0);

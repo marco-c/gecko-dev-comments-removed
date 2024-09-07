@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.asyncDispose, 'symbol');
+verifyNotEnumerable(Symbol, 'asyncDispose');
+verifyNotWritable(Symbol, 'asyncDispose');
+verifyNotConfigurable(Symbol, 'asyncDispose');
+
+reportCompare(0, 0);

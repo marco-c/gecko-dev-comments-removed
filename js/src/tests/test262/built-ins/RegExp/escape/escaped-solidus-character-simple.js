@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(RegExp.escape('/'), '\\/', 'solidus character is escaped correctly');
+assert.sameValue(RegExp.escape('//'), '\\/\\/', 'solidus character is escaped correctly - multiple occurrences 1');
+assert.sameValue(RegExp.escape('///'), '\\/\\/\\/', 'solidus character is escaped correctly - multiple occurrences 2');
+assert.sameValue(RegExp.escape('////'), '\\/\\/\\/\\/', 'solidus character is escaped correctly - multiple occurrences 3');
+
+reportCompare(0, 0);

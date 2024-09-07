@@ -20,7 +20,7 @@ let resizeTo;
 
 
 
-function ResizeBufferMidIteration(n) {
+function ResizeMidIteration(n) {
   CollectValuesAndResize(n, values, rab, resizeAfter, resizeTo);
   return false;
 }
@@ -36,7 +36,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 2;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert.sameValue(fixedLength.findLast(ResizeBufferMidIteration), undefined);
+  assert.sameValue(fixedLength.findLast(ResizeMidIteration), undefined);
   assert.compareArray(values, [
     6,
     4,
@@ -50,7 +50,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 1;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert.sameValue(fixedLengthWithOffset.findLast(ResizeBufferMidIteration), undefined);
+  assert.sameValue(fixedLengthWithOffset.findLast(ResizeMidIteration), undefined);
   assert.compareArray(values, [
     6,
     4
@@ -62,7 +62,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 2;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert.sameValue(lengthTracking.findLast(ResizeBufferMidIteration), undefined);
+  assert.sameValue(lengthTracking.findLast(ResizeMidIteration), undefined);
   assert.compareArray(values, [
     6,
     4,
@@ -76,7 +76,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 1;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert.sameValue(lengthTrackingWithOffset.findLast(ResizeBufferMidIteration), undefined);
+  assert.sameValue(lengthTrackingWithOffset.findLast(ResizeMidIteration), undefined);
   assert.compareArray(values, [
     6,
     4

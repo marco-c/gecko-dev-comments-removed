@@ -1,0 +1,87 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+let values;
+let rab;
+let resizeAfter;
+let resizeTo;
+
+
+
+
+
+function ResizeMidIteration(n) {
+  CollectValuesAndResize(n, values, rab, resizeAfter, resizeTo);
+  return false;
+}
+
+
+
+
+
+
+
+for (let ctor of ctors) {
+  rab = CreateRabForTest(ctor);
+  const fixedLength = new ctor(rab, 0, 4);
+  values = [];
+  resizeAfter = 2;
+  resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
+  assert.sameValue(Array.prototype.find.call(fixedLength, ResizeMidIteration), undefined);
+  assert.compareArray(values, [
+    0,
+    2,
+    4,
+    6
+  ]);
+}
+for (let ctor of ctors) {
+  rab = CreateRabForTest(ctor);
+  const fixedLengthWithOffset = new ctor(rab, 2 * ctor.BYTES_PER_ELEMENT, 2);
+  values = [];
+  resizeAfter = 1;
+  resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
+  assert.sameValue(Array.prototype.find.call(fixedLengthWithOffset, ResizeMidIteration), undefined);
+  assert.compareArray(values, [
+    4,
+    6
+  ]);
+}
+for (let ctor of ctors) {
+  rab = CreateRabForTest(ctor);
+  const lengthTracking = new ctor(rab, 0);
+  values = [];
+  resizeAfter = 2;
+  resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
+  assert.sameValue(Array.prototype.find.call(lengthTracking, ResizeMidIteration), undefined);
+  assert.compareArray(values, [
+    0,
+    2,
+    4,
+    6
+  ]);
+}
+for (let ctor of ctors) {
+  rab = CreateRabForTest(ctor);
+  const lengthTrackingWithOffset = new ctor(rab, 2 * ctor.BYTES_PER_ELEMENT);
+  values = [];
+  resizeAfter = 1;
+  resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
+  assert.sameValue(Array.prototype.find.call(lengthTrackingWithOffset, ResizeMidIteration), undefined);
+  assert.compareArray(values, [
+    4,
+    6
+  ]);
+}
+
+reportCompare(0, 0);

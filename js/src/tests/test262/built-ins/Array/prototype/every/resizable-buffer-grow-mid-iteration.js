@@ -20,7 +20,7 @@ let resizeTo;
 
 
 
-function ResizeBufferMidIteration(n) {
+function ResizeMidIteration(n) {
   
   return CollectValuesAndResize(n, values, rab, resizeAfter, resizeTo);
 }
@@ -36,7 +36,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 2;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert(Array.prototype.every.call(fixedLength, ResizeBufferMidIteration));
+  assert(Array.prototype.every.call(fixedLength, ResizeMidIteration));
   assert.compareArray(values, [
     0,
     2,
@@ -50,7 +50,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 1;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert(Array.prototype.every.call(fixedLengthWithOffset, ResizeBufferMidIteration));
+  assert(Array.prototype.every.call(fixedLengthWithOffset, ResizeMidIteration));
   assert.compareArray(values, [
     4,
     6
@@ -62,7 +62,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 2;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert(Array.prototype.every.call(lengthTracking, ResizeBufferMidIteration));
+  assert(Array.prototype.every.call(lengthTracking, ResizeMidIteration));
   assert.compareArray(values, [
     0,
     2,
@@ -76,7 +76,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 1;
   resizeTo = 5 * ctor.BYTES_PER_ELEMENT;
-  assert(Array.prototype.every.call(lengthTrackingWithOffset, ResizeBufferMidIteration));
+  assert(Array.prototype.every.call(lengthTrackingWithOffset, ResizeMidIteration));
   assert.compareArray(values, [
     4,
     6

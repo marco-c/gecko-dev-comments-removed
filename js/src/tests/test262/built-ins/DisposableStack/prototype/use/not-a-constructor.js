@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(DisposableStack.prototype.use),
+  false,
+  'isConstructor(DisposableStack.prototype.use) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let stack = new DisposableStack({}); new stack.use();
+}, '`let stack = new DisposableStack({}); new stack.use()` throws TypeError');
+
+reportCompare(0, 0);

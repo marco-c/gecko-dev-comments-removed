@@ -20,7 +20,7 @@ let resizeTo;
 
 
 
-function ResizeBufferMidIteration(n) {
+function ResizeMidIteration(n) {
   CollectValuesAndResize(n, values, rab, resizeAfter, resizeTo);
   return false;
 }
@@ -37,7 +37,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 2;
   resizeTo = 3 * ctor.BYTES_PER_ELEMENT;
-  assert.compareArray(ToNumbers(fixedLength.filter(ResizeBufferMidIteration)),[]);
+  assert.compareArray(ToNumbers(fixedLength.filter(ResizeMidIteration)),[]);
   assert.compareArray(values, [
     0,
     2,
@@ -51,7 +51,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 1;
   resizeTo = 3 * ctor.BYTES_PER_ELEMENT;
-  assert.compareArray(ToNumbers(fixedLengthWithOffset.filter(ResizeBufferMidIteration)),[]);
+  assert.compareArray(ToNumbers(fixedLengthWithOffset.filter(ResizeMidIteration)),[]);
   assert.compareArray(values, [
     4,
     undefined
@@ -63,7 +63,7 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 2;
   resizeTo = 3 * ctor.BYTES_PER_ELEMENT;
-  assert.compareArray(ToNumbers(lengthTracking.filter(ResizeBufferMidIteration)),[]);
+  assert.compareArray(ToNumbers(lengthTracking.filter(ResizeMidIteration)),[]);
   assert.compareArray(values, [
     0,
     2,
@@ -77,12 +77,11 @@ for (let ctor of ctors) {
   values = [];
   resizeAfter = 1;
   resizeTo = 3 * ctor.BYTES_PER_ELEMENT;
-  assert.compareArray(ToNumbers(lengthTrackingWithOffset.filter(ResizeBufferMidIteration)),[]);
+  assert.compareArray(ToNumbers(lengthTrackingWithOffset.filter(ResizeMidIteration)),[]);
   assert.compareArray(values, [
     4,
     undefined
   ]);
 }
-
 
 reportCompare(0, 0);

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(AsyncDisposableStack), true, 'isConstructor(AsyncDisposableStack) must return true');
+new AsyncDisposableStack();
+
+reportCompare(0, 0);

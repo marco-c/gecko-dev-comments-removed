@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof $262.AbstractModuleSource, 'function');
+verifyProperty($262.AbstractModuleSource, 'prototype', {
+  value: $262.AbstractModuleSource.prototype,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

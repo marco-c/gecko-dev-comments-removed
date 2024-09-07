@@ -7,6 +7,7 @@
 
 
 
+
 var target = new Uint8Array([255, 255, 255, 255, 255]);
 assert.throws(SyntaxError, function() {
   target.setFromBase64("MjYyZm.9v");

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(AsyncDisposableStack.prototype.defer),
+  false,
+  'isConstructor(AsyncDisposableStack.prototype.defer) must return false'
+);
+
+assert.throws(TypeError, () => {
+  let stack = new AsyncDisposableStack({}); new stack.defer();
+}, '`let stack = new AsyncDisposableStack({}); new stack.defer()` throws TypeError');
+
+reportCompare(0, 0);
