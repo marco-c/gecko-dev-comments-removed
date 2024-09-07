@@ -59,8 +59,8 @@ using IonFreeCompileTasks = Vector<IonCompileTask*, 8, SystemAllocPolicy>;
 namespace wasm {
 struct CompileTask;
 struct CompileTaskState;
-struct Tier2GeneratorTask;
-using UniqueTier2GeneratorTask = UniquePtr<Tier2GeneratorTask>;
+struct CompleteTier2GeneratorTask;
+using UniqueCompleteTier2GeneratorTask = UniquePtr<CompleteTier2GeneratorTask>;
 }  
 
 
@@ -134,10 +134,13 @@ size_t RemovePendingWasmCompileTasks(const wasm::CompileTaskState& taskState,
                                      const AutoLockHelperThreadState& lock);
 
 
-void StartOffThreadWasmTier2Generator(wasm::UniqueTier2GeneratorTask task);
 
 
-void CancelOffThreadWasmTier2Generator();
+void StartOffThreadWasmCompleteTier2Generator(
+    wasm::UniqueCompleteTier2GeneratorTask task);
+
+
+void CancelOffThreadWasmCompleteTier2Generator();
 
 
 

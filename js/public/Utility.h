@@ -54,20 +54,20 @@ namespace js {
 
 
 enum ThreadType {
-  THREAD_TYPE_NONE = 0,              
-  THREAD_TYPE_MAIN,                  
-  THREAD_TYPE_WASM_COMPILE_TIER1,    
-  THREAD_TYPE_WASM_COMPILE_TIER2,    
-  THREAD_TYPE_ION,                   
-  THREAD_TYPE_COMPRESS,              
-  THREAD_TYPE_GCPARALLEL,            
-  THREAD_TYPE_PROMISE_TASK,          
-  THREAD_TYPE_ION_FREE,              
-  THREAD_TYPE_WASM_GENERATOR_TIER2,  
-  THREAD_TYPE_WORKER,                
-  THREAD_TYPE_DELAZIFY,              
-  THREAD_TYPE_DELAZIFY_FREE,         
-  THREAD_TYPE_MAX                    
+  THREAD_TYPE_NONE = 0,                       
+  THREAD_TYPE_MAIN,                           
+  THREAD_TYPE_WASM_COMPILE_TIER1,             
+  THREAD_TYPE_WASM_COMPILE_TIER2,             
+  THREAD_TYPE_ION,                            
+  THREAD_TYPE_COMPRESS,                       
+  THREAD_TYPE_GCPARALLEL,                     
+  THREAD_TYPE_PROMISE_TASK,                   
+  THREAD_TYPE_ION_FREE,                       
+  THREAD_TYPE_WASM_GENERATOR_COMPLETE_TIER2,  
+  THREAD_TYPE_WORKER,                         
+  THREAD_TYPE_DELAZIFY,                       
+  THREAD_TYPE_DELAZIFY_FREE,                  
+  THREAD_TYPE_MAX  
 };
 
 namespace oom {
@@ -86,7 +86,8 @@ namespace oom {
 
 
 const ThreadType FirstThreadTypeToTest = THREAD_TYPE_MAIN;
-const ThreadType LastThreadTypeToTest = THREAD_TYPE_WASM_GENERATOR_TIER2;
+const ThreadType LastThreadTypeToTest =
+    THREAD_TYPE_WASM_GENERATOR_COMPLETE_TIER2;
 
 extern bool InitThreadType(void);
 extern void SetThreadType(ThreadType);
