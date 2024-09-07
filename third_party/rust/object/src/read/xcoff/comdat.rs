@@ -2,9 +2,8 @@
 
 use core::fmt::Debug;
 
-use crate::xcoff;
-
 use crate::read::{self, ComdatKind, ObjectComdat, ReadRef, Result, SectionIndex, SymbolIndex};
+use crate::xcoff;
 
 use super::{FileHeader, XcoffFile};
 
@@ -14,6 +13,8 @@ pub type XcoffComdatIterator32<'data, 'file, R = &'data [u8]> =
 
 pub type XcoffComdatIterator64<'data, 'file, R = &'data [u8]> =
     XcoffComdatIterator<'data, 'file, xcoff::FileHeader64, R>;
+
+
 
 
 #[derive(Debug)]
@@ -46,6 +47,8 @@ pub type XcoffComdat32<'data, 'file, R = &'data [u8]> =
 
 pub type XcoffComdat64<'data, 'file, R = &'data [u8]> =
     XcoffComdat<'data, 'file, xcoff::FileHeader64, R>;
+
+
 
 
 #[derive(Debug)]
@@ -83,12 +86,12 @@ where
     }
 
     #[inline]
-    fn name_bytes(&self) -> Result<&[u8]> {
+    fn name_bytes(&self) -> Result<&'data [u8]> {
         unreachable!();
     }
 
     #[inline]
-    fn name(&self) -> Result<&str> {
+    fn name(&self) -> Result<&'data str> {
         unreachable!();
     }
 
@@ -104,6 +107,8 @@ pub type XcoffComdatSectionIterator32<'data, 'file, R = &'data [u8]> =
 
 pub type XcoffComdatSectionIterator64<'data, 'file, R = &'data [u8]> =
     XcoffComdatSectionIterator<'data, 'file, xcoff::FileHeader64, R>;
+
+
 
 
 #[derive(Debug)]

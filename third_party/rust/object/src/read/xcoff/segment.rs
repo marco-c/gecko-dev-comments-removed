@@ -3,7 +3,7 @@
 use core::fmt::Debug;
 use core::str;
 
-use crate::read::{self, ObjectSegment, ReadRef, Result};
+use crate::read::{self, ObjectSegment, ReadRef, Result, SegmentFlags};
 use crate::xcoff;
 
 use super::{FileHeader, XcoffFile};
@@ -14,6 +14,8 @@ pub type XcoffSegmentIterator32<'data, 'file, R = &'data [u8]> =
 
 pub type XcoffSegmentIterator64<'data, 'file, R = &'data [u8]> =
     XcoffSegmentIterator<'data, 'file, xcoff::FileHeader64, R>;
+
+
 
 
 #[derive(Debug)]
@@ -44,6 +46,8 @@ pub type XcoffSegment32<'data, 'file, R = &'data [u8]> =
 
 pub type XcoffSegment64<'data, 'file, R = &'data [u8]> =
     XcoffSegment<'data, 'file, xcoff::FileHeader64, R>;
+
+
 
 
 #[derive(Debug)]
@@ -107,7 +111,7 @@ where
         unreachable!();
     }
 
-    fn flags(&self) -> crate::SegmentFlags {
+    fn flags(&self) -> SegmentFlags {
         unreachable!();
     }
 }

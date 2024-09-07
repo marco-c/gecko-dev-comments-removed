@@ -1,10 +1,14 @@
 use core::fmt::Debug;
 use core::mem;
 
+use crate::endian::{LittleEndian as LE, U16Bytes};
+use crate::pe;
+use crate::pod::Pod;
 use crate::read::{Bytes, ReadError, Result};
-use crate::{pe, LittleEndian as LE, Pod, U16Bytes};
 
 use super::ImageNtHeaders;
+
+
 
 
 #[derive(Debug, Clone)]
@@ -216,6 +220,9 @@ impl ImageThunkData for pe::ImageThunkData32 {
         self.0.get(LE) & 0x7fff_ffff
     }
 }
+
+
+
 
 
 #[derive(Debug, Clone)]

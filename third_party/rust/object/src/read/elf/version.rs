@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::read::{Bytes, ReadError, ReadRef, Result, StringTable};
+use crate::read::{Bytes, ReadError, ReadRef, Result, StringTable, SymbolIndex};
 use crate::{elf, endian};
 
 use super::FileHeader;
@@ -40,6 +40,7 @@ pub struct Version<'data> {
     hash: u32,
     
     valid: bool,
+    file: Option<&'data [u8]>,
 }
 
 impl<'data> Version<'data> {
@@ -52,7 +53,18 @@ impl<'data> Version<'data> {
     pub fn hash(&self) -> u32 {
         self.hash
     }
+
+    
+    
+    
+    
+    pub fn file(&self) -> Option<&'data [u8]> {
+        self.file
+    }
 }
+
+
+
 
 
 
@@ -125,12 +137,13 @@ impl<'data, Elf: FileHeader> VersionTable<'data, Elf> {
                         name: verdaux.name(endian, strings)?,
                         hash: verdef.vd_hash.get(endian),
                         valid: true,
+                        file: None,
                     };
                 }
             }
         }
         if let Some(mut verneeds) = verneeds {
-            while let Some((_, mut vernauxs)) = verneeds.next()? {
+            while let Some((verneed, mut vernauxs)) = verneeds.next()? {
                 while let Some(vernaux) = vernauxs.next()? {
                     let index = vernaux.vna_other.get(endian) & elf::VERSYM_VERSION;
                     if index <= elf::VER_NDX_GLOBAL {
@@ -141,6 +154,7 @@ impl<'data, Elf: FileHeader> VersionTable<'data, Elf> {
                         name: vernaux.name(endian, strings)?,
                         hash: vernaux.vna_hash.get(endian),
                         valid: true,
+                        file: Some(verneed.file(endian, strings)?),
                     };
                 }
             }
@@ -158,8 +172,8 @@ impl<'data, Elf: FileHeader> VersionTable<'data, Elf> {
     }
 
     
-    pub fn version_index(&self, endian: Elf::Endian, index: usize) -> VersionIndex {
-        let version_index = match self.symbols.get(index) {
+    pub fn version_index(&self, endian: Elf::Endian, index: SymbolIndex) -> VersionIndex {
+        let version_index = match self.symbols.get(index.0) {
             Some(x) => x.0.get(endian),
             
             
@@ -188,7 +202,12 @@ impl<'data, Elf: FileHeader> VersionTable<'data, Elf> {
     
     
     
-    pub fn matches(&self, endian: Elf::Endian, index: usize, need: Option<&Version<'_>>) -> bool {
+    pub fn matches(
+        &self,
+        endian: Elf::Endian,
+        index: SymbolIndex,
+        need: Option<&Version<'_>>,
+    ) -> bool {
         let version_index = self.version_index(endian, index);
         let def = match self.version(version_index) {
             Ok(def) => def,

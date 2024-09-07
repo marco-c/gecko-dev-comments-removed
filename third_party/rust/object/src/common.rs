@@ -26,10 +26,22 @@ pub enum Architecture {
     Riscv64,
     S390x,
     Sbf,
+    Sharc,
+    Sparc,
+    Sparc32Plus,
     Sparc64,
     Wasm32,
     Wasm64,
     Xtensa,
+}
+
+
+#[allow(missing_docs)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum SubArchitecture {
+    Arm64E,
+    Arm64EC,
 }
 
 impl Architecture {
@@ -59,6 +71,9 @@ impl Architecture {
             Architecture::Riscv64 => Some(AddressSize::U64),
             Architecture::S390x => Some(AddressSize::U64),
             Architecture::Sbf => Some(AddressSize::U64),
+            Architecture::Sharc => Some(AddressSize::U32),
+            Architecture::Sparc => Some(AddressSize::U32),
+            Architecture::Sparc32Plus => Some(AddressSize::U32),
             Architecture::Sparc64 => Some(AddressSize::U64),
             Architecture::Wasm32 => Some(AddressSize::U32),
             Architecture::Wasm64 => Some(AddressSize::U64),
@@ -100,6 +115,21 @@ pub enum BinaryFormat {
     Pe,
     Wasm,
     Xcoff,
+}
+
+impl BinaryFormat {
+    
+    
+    
+    pub fn native_object() -> BinaryFormat {
+        if cfg!(target_os = "windows") {
+            BinaryFormat::Coff
+        } else if cfg!(target_os = "macos") {
+            BinaryFormat::MachO
+        } else {
+            BinaryFormat::Elf
+        }
+    }
 }
 
 
@@ -180,6 +210,11 @@ pub enum SectionKind {
     
     
     
+    
+    DebugString,
+    
+    
+    
     Linker,
     
     Note,
@@ -245,8 +280,6 @@ pub enum SymbolKind {
     
     Unknown,
     
-    Null,
-    
     Text,
     
     Data,
@@ -292,6 +325,8 @@ pub enum SymbolScope {
 #[non_exhaustive]
 pub enum RelocationKind {
     
+    Unknown,
+    
     Absolute,
     
     Relative,
@@ -311,19 +346,6 @@ pub enum RelocationKind {
     SectionOffset,
     
     SectionIndex,
-    
-    Elf(u32),
-    
-    MachO {
-        
-        value: u8,
-        
-        relative: bool,
-    },
-    
-    Coff(u16),
-    
-    Xcoff(u8),
 }
 
 
@@ -333,6 +355,8 @@ pub enum RelocationKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum RelocationEncoding {
+    
+    Unknown,
     
     Generic,
 
@@ -367,6 +391,30 @@ pub enum RelocationEncoding {
     
     
     LoongArchBranch,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SharcTypeA,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SharcTypeB,
 }
 
 
@@ -497,5 +545,46 @@ pub enum SymbolFlags<Section, Symbol> {
         
         
         containing_csect: Option<Symbol>,
+    },
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum RelocationFlags {
+    
+    Generic {
+        
+        kind: RelocationKind,
+        
+        encoding: RelocationEncoding,
+        
+        size: u8,
+    },
+    
+    Elf {
+        
+        r_type: u32,
+    },
+    
+    MachO {
+        
+        r_type: u8,
+        
+        r_pcrel: bool,
+        
+        r_length: u8,
+    },
+    
+    Coff {
+        
+        typ: u16,
+    },
+    
+    Xcoff {
+        
+        r_rtype: u8,
+        
+        r_rsize: u8,
     },
 }

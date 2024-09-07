@@ -1,21 +1,68 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use core::{fmt, result};
 
-use crate::common::*;
+#[cfg(not(feature = "std"))]
+use alloc::collections::btree_map::BTreeMap as Map;
+#[cfg(feature = "std")]
+use std::collections::hash_map::HashMap as Map;
+
+pub use crate::common::*;
 
 mod read_ref;
 pub use read_ref::*;
 
-#[cfg(feature = "std")]
 mod read_cache;
-#[cfg(feature = "std")]
 pub use read_cache::*;
 
 mod util;
 pub use util::*;
+
+#[cfg(any(feature = "elf", feature = "macho"))]
+mod gnu_compression;
 
 #[cfg(any(
     feature = "coff",
@@ -66,7 +113,7 @@ mod private {
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Error(&'static str);
+pub struct Error(pub(crate) &'static str);
 
 impl fmt::Display for Error {
     #[inline]
@@ -110,7 +157,7 @@ impl<T> ReadError<T> for Option<T> {
     target_pointer_width = "32",
     feature = "elf"
 ))]
-pub type NativeFile<'data, R = &'data [u8]> = elf::ElfFile32<'data, crate::Endianness, R>;
+pub type NativeFile<'data, R = &'data [u8]> = elf::ElfFile32<'data, crate::endian::Endianness, R>;
 
 
 #[cfg(all(
@@ -119,15 +166,17 @@ pub type NativeFile<'data, R = &'data [u8]> = elf::ElfFile32<'data, crate::Endia
     target_pointer_width = "64",
     feature = "elf"
 ))]
-pub type NativeFile<'data, R = &'data [u8]> = elf::ElfFile64<'data, crate::Endianness, R>;
+pub type NativeFile<'data, R = &'data [u8]> = elf::ElfFile64<'data, crate::endian::Endianness, R>;
 
 
 #[cfg(all(target_os = "macos", target_pointer_width = "32", feature = "macho"))]
-pub type NativeFile<'data, R = &'data [u8]> = macho::MachOFile32<'data, crate::Endianness, R>;
+pub type NativeFile<'data, R = &'data [u8]> =
+    macho::MachOFile32<'data, crate::endian::Endianness, R>;
 
 
 #[cfg(all(target_os = "macos", target_pointer_width = "64", feature = "macho"))]
-pub type NativeFile<'data, R = &'data [u8]> = macho::MachOFile64<'data, crate::Endianness, R>;
+pub type NativeFile<'data, R = &'data [u8]> =
+    macho::MachOFile64<'data, crate::endian::Endianness, R>;
 
 
 #[cfg(all(target_os = "windows", target_pointer_width = "32", feature = "pe"))]
@@ -146,52 +195,84 @@ pub type NativeFile<'data, R = &'data [u8]> = wasm::WasmFile<'data, R>;
 #[non_exhaustive]
 pub enum FileKind {
     
+    
+    
     #[cfg(feature = "archive")]
     Archive,
+    
+    
     
     #[cfg(feature = "coff")]
     Coff,
     
     
     
+    
+    
     #[cfg(feature = "coff")]
     CoffBig,
+    
+    
     
     #[cfg(feature = "coff")]
     CoffImport,
     
+    
+    
     #[cfg(feature = "macho")]
     DyldCache,
+    
+    
     
     #[cfg(feature = "elf")]
     Elf32,
     
+    
+    
     #[cfg(feature = "elf")]
     Elf64,
+    
+    
     
     #[cfg(feature = "macho")]
     MachO32,
     
+    
+    
     #[cfg(feature = "macho")]
     MachO64,
+    
+    
     
     #[cfg(feature = "macho")]
     MachOFat32,
     
+    
+    
     #[cfg(feature = "macho")]
     MachOFat64,
+    
+    
     
     #[cfg(feature = "pe")]
     Pe32,
     
+    
+    
     #[cfg(feature = "pe")]
     Pe64,
+    
+    
     
     #[cfg(feature = "wasm")]
     Wasm,
     
+    
+    
     #[cfg(feature = "xcoff")]
     Xcoff32,
+    
+    
     
     #[cfg(feature = "xcoff")]
     Xcoff64,
@@ -214,7 +295,8 @@ impl FileKind {
 
         let kind = match [magic[0], magic[1], magic[2], magic[3], magic[4], magic[5], magic[6], magic[7]] {
             #[cfg(feature = "archive")]
-            [b'!', b'<', b'a', b'r', b'c', b'h', b'>', b'\n'] => FileKind::Archive,
+            [b'!', b'<', b'a', b'r', b'c', b'h', b'>', b'\n']
+            | [b'!', b'<', b't', b'h', b'i', b'n', b'>', b'\n'] => FileKind::Archive,
             #[cfg(feature = "macho")]
             [b'd', b'y', b'l', b'd', b'_', b'v', b'1', b' '] => FileKind::DyldCache,
             #[cfg(feature = "elf")]
@@ -232,7 +314,7 @@ impl FileKind {
             #[cfg(feature = "macho")]
             [0xca, 0xfe, 0xba, 0xbf, ..] => FileKind::MachOFat64,
             #[cfg(feature = "wasm")]
-            [0x00, b'a', b's', b'm', ..] => FileKind::Wasm,
+            [0x00, b'a', b's', b'm', _, _, 0x00, 0x00] => FileKind::Wasm,
             #[cfg(feature = "pe")]
             [b'M', b'Z', ..] if offset == 0 => {
                 
@@ -252,6 +334,8 @@ impl FileKind {
             [0xc4, 0x01, ..]
             
             | [0x64, 0xaa, ..]
+            
+            | [0x41, 0xa6, ..]
             
             | [0x4c, 0x01, ..]
             
@@ -277,6 +361,8 @@ impl FileKind {
 }
 
 
+
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ObjectKind {
@@ -296,9 +382,21 @@ pub enum ObjectKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SectionIndex(pub usize);
 
+impl fmt::Display for SectionIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SymbolIndex(pub usize);
+
+impl fmt::Display for SymbolIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -339,6 +437,10 @@ pub trait SymbolMapEntry {
 }
 
 
+
+
+
+
 #[derive(Debug, Default, Clone)]
 pub struct SymbolMap<T: SymbolMapEntry> {
     symbols: Vec<T>,
@@ -349,7 +451,7 @@ impl<T: SymbolMapEntry> SymbolMap<T> {
     
     
     pub fn new(mut symbols: Vec<T>) -> Self {
-        symbols.sort_unstable_by_key(|s| s.address());
+        symbols.sort_by_key(|s| s.address());
         SymbolMap { symbols }
     }
 
@@ -408,10 +510,12 @@ impl<'data> SymbolMapEntry for SymbolMapName<'data> {
 
 
 
+
+
 #[derive(Debug, Default, Clone)]
 pub struct ObjectMap<'data> {
     symbols: SymbolMap<ObjectMapEntry<'data>>,
-    objects: Vec<&'data [u8]>,
+    objects: Vec<ObjectMapFile<'data>>,
 }
 
 impl<'data> ObjectMap<'data> {
@@ -430,7 +534,7 @@ impl<'data> ObjectMap<'data> {
 
     
     #[inline]
-    pub fn objects(&self) -> &[&'data [u8]] {
+    pub fn objects(&self) -> &[ObjectMapFile<'data>] {
         &self.objects
     }
 }
@@ -473,8 +577,8 @@ impl<'data> ObjectMapEntry<'data> {
 
     
     #[inline]
-    pub fn object(&self, map: &ObjectMap<'data>) -> &'data [u8] {
-        map.objects[self.object]
+    pub fn object<'a>(&self, map: &'a ObjectMap<'data>) -> &'a ObjectMapFile<'data> {
+        &map.objects[self.object]
     }
 }
 
@@ -484,6 +588,33 @@ impl<'data> SymbolMapEntry for ObjectMapEntry<'data> {
         self.address
     }
 }
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ObjectMapFile<'data> {
+    path: &'data [u8],
+    member: Option<&'data [u8]>,
+}
+
+impl<'data> ObjectMapFile<'data> {
+    fn new(path: &'data [u8], member: Option<&'data [u8]>) -> Self {
+        ObjectMapFile { path, member }
+    }
+
+    
+    #[inline]
+    pub fn path(&self) -> &'data [u8] {
+        self.path
+    }
+
+    
+    #[inline]
+    pub fn member(&self) -> Option<&'data [u8]> {
+        self.member
+    }
+}
+
+
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -506,6 +637,8 @@ impl<'data> Import<'data> {
         self.library.0
     }
 }
+
+
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -570,6 +703,8 @@ pub enum RelocationTarget {
 }
 
 
+
+
 #[derive(Debug)]
 pub struct Relocation {
     kind: RelocationKind,
@@ -578,6 +713,7 @@ pub struct Relocation {
     target: RelocationTarget,
     addend: i64,
     implicit_addend: bool,
+    flags: RelocationFlags,
 }
 
 impl Relocation {
@@ -616,7 +752,7 @@ impl Relocation {
     
     #[inline]
     pub fn set_addend(&mut self, addend: i64) {
-        self.addend = addend
+        self.addend = addend;
     }
 
     
@@ -625,6 +761,109 @@ impl Relocation {
     pub fn has_implicit_addend(&self) -> bool {
         self.implicit_addend
     }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn flags(&self) -> RelocationFlags {
+        self.flags
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Debug, Default)]
+pub struct RelocationMap(Map<u64, RelocationMapEntry>);
+
+impl RelocationMap {
+    
+    
+    
+    
+    
+    pub fn new<'data, 'file, T>(file: &'file T, section: &T::Section<'file>) -> Result<Self>
+    where
+        T: Object<'data>,
+    {
+        let mut map = RelocationMap(Map::new());
+        for (offset, relocation) in section.relocations() {
+            map.add(file, offset, relocation)?;
+        }
+        Ok(map)
+    }
+
+    
+    pub fn add<'data: 'file, 'file, T>(
+        &mut self,
+        file: &'file T,
+        offset: u64,
+        relocation: Relocation,
+    ) -> Result<()>
+    where
+        T: Object<'data>,
+    {
+        let mut entry = RelocationMapEntry {
+            implicit_addend: relocation.has_implicit_addend(),
+            addend: relocation.addend() as u64,
+        };
+        match relocation.kind() {
+            RelocationKind::Absolute => match relocation.target() {
+                RelocationTarget::Symbol(symbol_idx) => {
+                    let symbol = file
+                        .symbol_by_index(symbol_idx)
+                        .read_error("Relocation with invalid symbol")?;
+                    entry.addend = symbol.address().wrapping_add(entry.addend);
+                }
+                RelocationTarget::Section(section_idx) => {
+                    let section = file
+                        .section_by_index(section_idx)
+                        .read_error("Relocation with invalid section")?;
+                    
+                    
+                    if section.kind() != SectionKind::Debug {
+                        entry.addend = section.address().wrapping_add(entry.addend);
+                    }
+                }
+                _ => {
+                    return Err(Error("Unsupported relocation target"));
+                }
+            },
+            _ => {
+                return Err(Error("Unsupported relocation type"));
+            }
+        }
+        if self.0.insert(offset, entry).is_some() {
+            return Err(Error("Multiple relocations for offset"));
+        }
+        Ok(())
+    }
+
+    
+    pub fn relocate(&self, offset: u64, value: u64) -> u64 {
+        if let Some(relocation) = self.0.get(&offset) {
+            if relocation.implicit_addend {
+                
+                value.wrapping_add(relocation.addend)
+            } else {
+                relocation.addend
+            }
+        } else {
+            value
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct RelocationMapEntry {
+    implicit_addend: bool,
+    addend: u64,
 }
 
 
@@ -644,6 +883,8 @@ pub enum CompressionFormat {
     
     Zstandard,
 }
+
+
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -693,6 +934,8 @@ impl CompressedFileRange {
 }
 
 
+
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CompressedData<'data> {
     
@@ -730,7 +973,11 @@ impl<'data> CompressedData<'data> {
                     .try_into()
                     .ok()
                     .read_error("Uncompressed data size is too large.")?;
-                let mut decompressed = Vec::with_capacity(size);
+                let mut decompressed = Vec::new();
+                decompressed
+                    .try_reserve_exact(size)
+                    .ok()
+                    .read_error("Uncompressed data allocation failed")?;
                 let mut decompress = flate2::Decompress::new(true);
                 decompress
                     .decompress_vec(
@@ -751,7 +998,11 @@ impl<'data> CompressedData<'data> {
                     .try_into()
                     .ok()
                     .read_error("Uncompressed data size is too large.")?;
-                let mut decompressed = Vec::with_capacity(size);
+                let mut decompressed = Vec::new();
+                decompressed
+                    .try_reserve_exact(size)
+                    .ok()
+                    .read_error("Uncompressed data allocation failed")?;
                 let mut decoder = ruzstd::StreamingDecoder::new(self.data)
                     .ok()
                     .read_error("Invalid zstd compressed data")?;

@@ -10,6 +10,9 @@ use crate::read::{self, Bytes, Error, ReadError};
 use super::FileHeader;
 
 
+
+
+
 #[derive(Debug)]
 pub struct NoteIterator<'data, Elf>
 where
@@ -207,6 +210,8 @@ impl<Endian: endian::Endian> NoteHeader for elf::NoteHeader64<Endian> {
         self.n_type.get(endian)
     }
 }
+
+
 
 
 #[derive(Debug)]

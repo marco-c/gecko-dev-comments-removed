@@ -37,27 +37,28 @@ fn issue_552_section_file_alignment() {
     
     
     let section = object.add_section(vec![], vec![], object::SectionKind::ReadOnlyDataWithRel);
-    object.append_section_data(section, &vec![0u8; 32], 1);
+    object.append_section_data(section, &[0u8; 32], 1);
 
     
     
     let section = object.add_section(vec![], vec![], object::SectionKind::ReadOnlyData);
-    object.append_section_data(section, &vec![0u8; 1], 32);
-
-    let section = object.add_section(vec![], vec![], object::SectionKind::Text);
-    object.append_section_data(section, &vec![0u8; 1], 1);
+    object.append_section_data(section, &[0u8; 1], 32);
 
     let bytes = &*object.write().unwrap();
+    
     let object = read::File::parse(bytes).unwrap();
     let mut sections = object.sections();
 
     let section = sections.next().unwrap();
-    assert_eq!(section.file_range(), Some((368, 32)));
+    let offset = section.file_range().unwrap().0;
+    
+    assert_ne!(offset % 32, 0);
     assert_eq!(section.address(), 0);
     assert_eq!(section.size(), 32);
 
     let section = sections.next().unwrap();
-    assert_eq!(section.file_range(), Some((400, 1)));
+    
+    assert_eq!(section.file_range(), Some((offset + 32, 1)));
     assert_eq!(section.address(), 32);
     assert_eq!(section.size(), 1);
 }

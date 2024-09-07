@@ -2,6 +2,48 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(doc)]
+use crate::xcoff;
+
 mod file;
 pub use file::*;
 
