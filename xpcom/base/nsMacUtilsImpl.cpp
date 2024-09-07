@@ -10,11 +10,10 @@
 #include "base/process_util.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Omnijar.h"
-#include "nsComponentManagerUtils.h"
-#include "nsCOMPtr.h"
 #include "nsDirectoryServiceDefs.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIFile.h"
-#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
@@ -85,17 +84,15 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
     aAppPath.Assign(*sCachedAppPath);
     return true;
   }
+
   nsAutoCString appPath;
   nsAutoCString appBinaryPath(
       (CommandLine::ForCurrentProcess()->argv()[0]).c_str());
 
   
-  ToLowerCase(appBinaryPath);
-
   
   
-  
-  auto pattern = "/contents/macos/"_ns;
+  auto pattern = "/Contents/MacOS/"_ns;
   nsAutoCString::const_iterator start, end;
   appBinaryPath.BeginReading(start);
   appBinaryPath.EndReading(end);
