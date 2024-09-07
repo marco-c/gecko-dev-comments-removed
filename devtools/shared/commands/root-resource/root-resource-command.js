@@ -90,10 +90,6 @@ class RootResourceCommand {
 
     if (!this._listenerRegistered) {
       this._listenerRegistered = true;
-      
-      
-      this.rootFront.on("resource-available-form", this._onResourceAvailable);
-      this.rootFront.on("resource-destroyed-form", this._onResourceDestroyed);
       this.rootFront.on(
         "resources-available-array",
         this._onResourceAvailableArray

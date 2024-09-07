@@ -14,16 +14,7 @@ loader.lazyRequireGetter(
 
 module.exports = function ({ resource, targetFront }) {
   
-  
-  
-  
-  if (resource.message) {
-    if (Array.isArray(resource.message.arguments)) {
-      resource.message.arguments = resource.message.arguments.map(arg =>
-        getAdHocFrontOrPrimitiveGrip(arg, targetFront)
-      );
-    }
-  } else if (Array.isArray(resource.arguments)) {
+  if (Array.isArray(resource.arguments)) {
     resource.arguments = resource.arguments.map(arg =>
       getAdHocFrontOrPrimitiveGrip(arg, targetFront)
     );

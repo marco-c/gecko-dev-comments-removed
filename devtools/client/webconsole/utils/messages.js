@@ -121,11 +121,8 @@ function prepareMessage(resource, idGenerator, persistLogs) {
 function transformResource(resource, persistLogs) {
   switch (resource.resourceType || resource.type) {
     case ResourceCommand.TYPES.CONSOLE_MESSAGE: {
-      
-      
-      
       return transformConsoleAPICallResource(
-        resource.message || resource,
+        resource,
         persistLogs,
         resource.targetFront
       );

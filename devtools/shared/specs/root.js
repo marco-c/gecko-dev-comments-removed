@@ -122,17 +122,6 @@ const rootSpecPrototype = {
       type: "processListChanged",
     },
 
-    
-    
-    "resource-available-form": {
-      type: "resource-available-form",
-      resources: Arg(0, "array:json"),
-    },
-    "resource-destroyed-form": {
-      type: "resource-destroyed-form",
-      resources: Arg(0, "array:json"),
-    },
-
     "resources-available-array": {
       type: "resources-available-array",
       array: Arg(0, "array:json"),

@@ -33,9 +33,6 @@ class ResourceCommand {
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
 
-    this._onResourceAvailable = this._onResourceAvailable.bind(this);
-    this._onResourceDestroyed = this._onResourceDestroyed.bind(this);
-
     
     
     
@@ -65,17 +62,7 @@ class ResourceCommand {
     this._offTargetFrontListeners = new Map();
 
     
-    
-    
-    const throttleDelay =
-      commands.client.mainRoot.traits.throttledResources &&
-      !Services.prefs.getBoolPref(
-        "devtools.client-side-throttling.enable",
-        false
-      )
-        ? 0
-        : 100;
-
+    const throttleDelay = 0;
     this._notifyWatchers = this._notifyWatchers.bind(this);
     this._throttledNotifyWatchers = throttle(
       this._notifyWatchers,
@@ -216,24 +203,6 @@ class ResourceCommand {
       this._listenerRegistered = true;
       
       
-      
-      
-      this.watcherFront.on(
-        "resource-available-form",
-        this._onResourceAvailable.bind(this, {
-          watcherFront: this.watcherFront,
-        })
-      );
-      this.watcherFront.on(
-        "resource-updated-form",
-        this._onResourceUpdated.bind(this, { watcherFront: this.watcherFront })
-      );
-      this.watcherFront.on(
-        "resource-destroyed-form",
-        this._onResourceDestroyed.bind(this, {
-          watcherFront: this.watcherFront,
-        })
-      );
       this.watcherFront.on(
         "resources-available-array",
         this._onResourceAvailableArray.bind(this, {
@@ -546,18 +515,6 @@ class ResourceCommand {
     
     
     
-    const offResourceAvailable = targetFront.on(
-      "resource-available-form",
-      this._onResourceAvailable.bind(this, { targetFront })
-    );
-    const offResourceUpdated = targetFront.on(
-      "resource-updated-form",
-      this._onResourceUpdated.bind(this, { targetFront })
-    );
-    const offResourceDestroyed = targetFront.on(
-      "resource-destroyed-form",
-      this._onResourceDestroyed.bind(this, { targetFront })
-    );
     const offResourceAvailableArray = targetFront.on(
       "resources-available-array",
       this._onResourceAvailableArray.bind(this, { targetFront })
@@ -573,9 +530,6 @@ class ResourceCommand {
 
     const offList = this._offTargetFrontListeners.get(targetFront) || [];
     offList.push(
-      offResourceAvailable,
-      offResourceUpdated,
-      offResourceDestroyed,
       offResourceAvailableArray,
       offResourceUpdatedArray,
       offResourceDestroyedArray
@@ -800,111 +754,11 @@ class ResourceCommand {
   }
 
   
-  
-  
-  
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-  async _onResourceAvailable({ targetFront, watcherFront }, resources) {
-    let includesDocumentEventWillNavigate = false;
-    let includesDocumentEventDomLoading = false;
-    for (let resource of resources) {
-      const { resourceType } = resource;
-
-      if (watcherFront) {
-        targetFront = await this._getTargetForWatcherResource(resource);
-        
-        
-        
-        
-        
-        
-        
-        if (targetFront) {
-          await targetFront.initialized;
-        }
-      }
-
-      
-      
-      resource.isAlreadyExistingResource =
-        this._processingExistingResources.has(resourceType);
-
-      
-      
-      if (!resource.targetFront) {
-        resource.targetFront = targetFront;
-      }
-
-      if (ResourceTransformers[resourceType]) {
-        resource = ResourceTransformers[resourceType]({
-          resource,
-          targetCommand: this.targetCommand,
-          targetFront,
-          watcherFront: this.watcherFront,
-        });
-      }
-
-      if (!resource.resourceId) {
-        resource.resourceId = `auto:${++gLastResourceId}`;
-      }
-
-      
-      const isWillNavigate =
-        resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name == "will-navigate";
-      if (isWillNavigate && resource.targetFront.isTopLevel) {
-        includesDocumentEventWillNavigate = true;
-        this._onWillNavigate(resource.targetFront);
-      }
-      if (
-        resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name == "dom-loading" &&
-        resource.targetFront.isTopLevel
-      ) {
-        includesDocumentEventDomLoading = true;
-      }
-
-      this._queueResourceEvent("available", resourceType, [resource]);
-
-      
-      
-      
-      if (!isWillNavigate) {
-        this.addResourceToCache(resource);
-      }
-    }
-
-    
-    
-    
-    
-    
-    if (
-      includesDocumentEventWillNavigate ||
-      (includesDocumentEventDomLoading &&
-        !this.targetCommand.hasTargetWatcherSupport("service_worker")) ||
-      this.throttlingDisabled
-    ) {
-      this._notifyWatchers();
-    } else {
-      this._throttledNotifyWatchers();
-    }
-  }
-
-  
 
 
 
@@ -1003,6 +857,15 @@ class ResourceCommand {
   }
 
   
+
+
+
+
+
+
+
+
+
 
 
 

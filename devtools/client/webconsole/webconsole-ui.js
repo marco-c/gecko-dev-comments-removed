@@ -512,11 +512,7 @@ class WebConsoleUI {
       if (
         (this.isBrowserToolboxConsole || this.isBrowserConsole) &&
         resource.isAlreadyExistingResource &&
-        (resource.pageError?.private ||
-          
-          
-          
-          (resource.message || resource)?.private)
+        (resource.pageError?.private || resource.private)
       ) {
         continue;
       }
