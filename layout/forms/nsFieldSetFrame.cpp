@@ -340,7 +340,7 @@ nscoord nsFieldSetFrame::IntrinsicISize(gfxContext* aContext,
     
     
     contentWidth = nsLayoutUtils::IntrinsicForContainer(
-        aContext, inner, aType, nsLayoutUtils::IGNORE_PADDING);
+        aContext, inner, aType, Nothing(), nsLayoutUtils::IGNORE_PADDING);
   }
 
   return std::max(legendWidth, contentWidth);

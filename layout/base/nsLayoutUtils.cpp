@@ -5011,16 +5011,15 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
 }
 
 
-nscoord nsLayoutUtils::IntrinsicForContainer(gfxContext* aRenderingContext,
-                                             nsIFrame* aFrame,
-                                             IntrinsicISizeType aType,
-                                             uint32_t aFlags) {
+nscoord nsLayoutUtils::IntrinsicForContainer(
+    gfxContext* aRenderingContext, nsIFrame* aFrame, IntrinsicISizeType aType,
+    const Maybe<LogicalSize>& aPercentageBasis, uint32_t aFlags) {
   MOZ_ASSERT(aFrame && aFrame->GetParent());
   
   PhysicalAxis axis =
       aFrame->GetParent()->GetWritingMode().PhysicalAxis(LogicalAxis::Inline);
-  return IntrinsicForAxis(axis, aRenderingContext, aFrame, aType, Nothing(),
-                          aFlags);
+  return IntrinsicForAxis(axis, aRenderingContext, aFrame, aType,
+                          aPercentageBasis, aFlags);
 }
 
 
