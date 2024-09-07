@@ -285,8 +285,6 @@ interface nsIURI : nsISupports
 
 
 
-
-
     readonly attribute AUTF8String displayHost;
 
     
@@ -297,11 +295,9 @@ interface nsIURI : nsISupports
     
 
 
-
     readonly attribute AUTF8String displaySpec;
 
     
-
 
 
     readonly attribute AUTF8String displayPrePath;
