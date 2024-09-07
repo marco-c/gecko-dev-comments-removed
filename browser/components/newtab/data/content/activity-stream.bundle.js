@@ -4378,7 +4378,8 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       learnMore,
       title,
       subTitle,
-      mayHaveSponsoredStories
+      mayHaveSponsoredStories,
+      mayHaveTopicsSelection
     } = this.props;
     const active = menuButtonHover || showContextMenu;
     let bodyStyle;
@@ -4398,7 +4399,6 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       };
     }
     const hasSubtitleClassName = subTitle ? `has-subtitle` : ``;
-    const topicSelectionEnabled = this.props.Prefs.values["discoverystream.topicSelection.enabled"];
     return external_React_default().createElement("section", {
       className: `collapsible-section ${this.props.className}${active ? " active" : ""}`
       
@@ -4428,7 +4428,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     })), mayHaveSponsoredStories && this.props.spocMessageVariant === "variant-a" && external_React_default().createElement(SponsoredContentHighlight, {
       position: "inset-block-start inset-inline-start",
       dispatch: this.props.dispatch
-    })), topicSelectionEnabled && external_React_default().createElement("moz-button", {
+    })), mayHaveTopicsSelection && external_React_default().createElement("moz-button", {
       label: "Personalize my feed",
       type: "primary",
       onClick: this.handleTopicSelectionButtonClick
@@ -9192,6 +9192,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
     const {
       config
     } = this.props.DiscoveryStream;
+    const topicSelectionEnabled = this.props.Prefs.values["discoverystream.topicSelection.enabled"];
 
     
     if (!config.collapsible) {
@@ -9275,6 +9276,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       title: sectionTitle,
       subTitle: subTitle,
       mayHaveSponsoredStories: mayHaveSponsoredStories,
+      mayHaveTopicsSelection: topicSelectionEnabled,
       spocMessageVariant: message?.properties?.spocMessageVariant,
       eventSource: "CARDGRID"
     }, this.renderLayout(layoutRender)), this.renderLayout([{
