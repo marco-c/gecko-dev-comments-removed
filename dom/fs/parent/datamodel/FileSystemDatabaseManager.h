@@ -73,6 +73,16 @@ class FileSystemDatabaseManager {
 
 
 
+
+
+
+  virtual Result<quota::UsageInfo, QMResult> GetUsage() const = 0;
+
+  
+
+
+
+
   virtual nsresult UpdateUsage(const FileId& aFileId) = 0;
 
   
