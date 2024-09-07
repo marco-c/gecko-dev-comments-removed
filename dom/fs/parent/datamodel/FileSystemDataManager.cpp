@@ -58,7 +58,7 @@ class nsCStringHashKeyDM : public nsCStringHashKey {
 
 
 using FileSystemDataManagerHashKey =
-    std::conditional<DiagnosticAssertEnabled::value, nsCStringHashKeyDM,
+    std::conditional<ReleaseAssertEnabled::value, nsCStringHashKeyDM,
                      nsCStringHashKey>::type;
 
 
