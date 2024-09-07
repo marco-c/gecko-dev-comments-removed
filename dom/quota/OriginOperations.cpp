@@ -182,11 +182,16 @@ class ShutdownStorageOp : public ResolvableNormalOriginOp<bool> {
   void CloseDirectory() override;
 };
 
+class CancelableHelper {
+ protected:
+  virtual const Atomic<bool>& GetIsCanceledFlag() = 0;
+};
 
 
 
 
-class TraverseRepositoryHelper {
+
+class TraverseRepositoryHelper : public CancelableHelper {
  public:
   TraverseRepositoryHelper() = default;
 
@@ -199,8 +204,6 @@ class TraverseRepositoryHelper {
                               PersistenceType aPersistenceType);
 
  private:
-  virtual const Atomic<bool>& GetIsCanceledFlag() = 0;
-
   virtual nsresult ProcessOrigin(QuotaManager& aQuotaManager,
                                  nsIFile& aOriginDir, const bool aPersistent,
                                  const PersistenceType aPersistenceType) = 0;
