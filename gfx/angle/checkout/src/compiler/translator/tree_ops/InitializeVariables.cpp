@@ -309,6 +309,37 @@ class InitializeLocalsTraverser : public TIntermTraverser
         return false;
     }
 
+    bool visitFunctionDefinition(Visit visit, TIntermFunctionDefinition *node) override
+    {
+        
+        
+
+        TIntermSequence initCode;
+
+        const TFunction *function = node->getFunction();
+        for (size_t paramIndex = 0; paramIndex < function->getParamCount(); ++paramIndex)
+        {
+            const TVariable *paramVariable = function->getParam(paramIndex);
+            const TType &paramType         = paramVariable->getType();
+
+            if (paramType.getQualifier() != EvqParamOut)
+            {
+                continue;
+            }
+
+            CreateInitCode(new TIntermSymbol(paramVariable), mCanUseLoopsToInitialize,
+                           mHighPrecisionSupported, &initCode, mSymbolTable);
+        }
+
+        if (!initCode.empty())
+        {
+            TIntermSequence *body = node->getBody()->getSequence();
+            body->insert(body->begin(), initCode.begin(), initCode.end());
+        }
+
+        return true;
+    }
+
   private:
     int mShaderVersion;
     bool mCanUseLoopsToInitialize;
