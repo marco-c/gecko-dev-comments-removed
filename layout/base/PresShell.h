@@ -1752,6 +1752,12 @@ class PresShell final : public nsStubDocumentObserver,
 
   void ClearTemporarilyVisibleForScrolledIntoViewDescendantFlags() const;
 
+  
+  
+  dom::SelectionNodeCache* GetSelectionNodeCache() {
+    return mSelectionNodeCache;
+  }
+
  private:
   ~PresShell();
 
@@ -3260,6 +3266,13 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   TimeStamp mLastConsumedEscapeKeyUpForFullscreen;
+
+  
+  
+  
+  
+  friend dom::SelectionNodeCache;
+  dom::SelectionNodeCache* mSelectionNodeCache{nullptr};
 
   struct CapturingContentInfo final {
     CapturingContentInfo()

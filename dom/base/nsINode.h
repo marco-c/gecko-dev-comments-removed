@@ -103,6 +103,7 @@ class MutationObservers;
 template <typename T>
 class Optional;
 class OwningNodeOrString;
+class SelectionNodeCache;
 template <typename>
 class Sequence;
 class ShadowRoot;
@@ -1655,7 +1656,11 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  bool IsSelected(uint32_t aStartOffset, uint32_t aEndOffset) const;
+
+
+
+  bool IsSelected(uint32_t aStartOffset, uint32_t aEndOffset,
+                  mozilla::dom::SelectionNodeCache* aCache = nullptr) const;
 
   
 

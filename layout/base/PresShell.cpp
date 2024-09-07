@@ -9835,6 +9835,11 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   
   
   
+  SelectionNodeCache cache(*this);
+
+  
+  
+  
   
   target->SchedulePaint(nsIFrame::PAINT_DEFAULT, false);
 
