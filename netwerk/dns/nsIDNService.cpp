@@ -115,6 +115,45 @@ static bool isCJKIdeograph(char32_t aChar) {
   }
 }
 
+static bool isDigitLookalike(char32_t aChar) {
+  switch (aChar) {
+    case 0x03B8:  
+    case 0x0968:  
+    case 0x09E8:  
+    case 0x0A68:  
+    case 0x0AE8:  
+    case 0x0CE9:  
+    case 0x0577:  
+    case 0x0437:  
+    case 0x0499:  
+    case 0x04E1:  
+    case 0x0909:  
+    case 0x0993:  
+    case 0x0A24:  
+    case 0x0A69:  
+    case 0x0AE9:  
+    case 0x0C69:  
+    case 0x1012:  
+    case 0x10D5:  
+    case 0x10DE:  
+    case 0x0A5C:  
+    case 0x10D9:  
+    case 0x0A6B:  
+    case 0x4E29:  
+    case 0x3110:  
+    case 0x0573:  
+    case 0x09EA:  
+    case 0x0A6A:  
+    case 0x0B6B:  
+    case 0x0AED:  
+    case 0x0B68:  
+    case 0x0C68:  
+      return true;
+    default:
+      return false;
+  }
+}
+
 
 
 
@@ -252,6 +291,14 @@ enum ScriptCombo : int32_t {
   FAIL = 13,
 };
 
+
+
+
+
+
+
+enum class DigitLookalikeStatus { Ignore, Safe, Block };
+
 }  
 
 bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
@@ -278,6 +325,7 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
   char32_t previousChar = 0;
   char32_t baseChar = 0;  
   char32_t savedNumberingSystem = 0;
+  DigitLookalikeStatus digitLookalikeStatus = DigitLookalikeStatus::Safe;
 
 #if 0
   HanVariantType savedHanVariant = HVT_NotHan;
@@ -370,6 +418,16 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
     if (ch == 0xB7 && (!TLDEqualsLiteral(aTLD, "cat") || previousChar != 'l' ||
                        current == end || *current != 'l')) {
       return false;
+    }
+
+    
+    
+    
+    if (digitLookalikeStatus != DigitLookalikeStatus::Ignore &&
+        !ISNUMERIC(ch)) {
+      digitLookalikeStatus = isDigitLookalike(ch)
+                                 ? DigitLookalikeStatus::Block
+                                 : DigitLookalikeStatus::Ignore;
     }
 
     
@@ -486,7 +544,7 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
 
     previousChar = ch;
   }
-  return true;
+  return digitLookalikeStatus != DigitLookalikeStatus::Block;
 }
 
 
