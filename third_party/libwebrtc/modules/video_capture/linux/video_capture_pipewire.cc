@@ -35,9 +35,14 @@ struct {
     {SPA_VIDEO_FORMAT_UYVY, VideoType::kUYVY},
     
     
+    
+    
     {SPA_VIDEO_FORMAT_BGRA, VideoType::kARGB},
     {SPA_VIDEO_FORMAT_RGBA, VideoType::kABGR},
-    {SPA_VIDEO_FORMAT_RGB, VideoType::kRGB24},
+    {SPA_VIDEO_FORMAT_ARGB, VideoType::kBGRA},
+    {SPA_VIDEO_FORMAT_RGB, VideoType::kBGR24},
+    {SPA_VIDEO_FORMAT_BGR, VideoType::kRGB24},
+    {SPA_VIDEO_FORMAT_RGB16, VideoType::kRGB565},
 };
 
 VideoType VideoCaptureModulePipeWire::PipeWireRawFormatToVideoType(
@@ -302,13 +307,16 @@ void VideoCaptureModulePipeWire::OnFormatChanged(const struct spa_pod* format) {
         break;
       case VideoType::kYUY2:
       case VideoType::kUYVY:
+      case VideoType::kRGB565:
         stride = configured_capability_.width * 2;
         break;
       case VideoType::kRGB24:
+      case VideoType::kBGR24:
         stride = configured_capability_.width * 3;
         break;
       case VideoType::kARGB:
       case VideoType::kABGR:
+      case VideoType::kBGRA:
         stride = configured_capability_.width * 4;
         break;
       default:
