@@ -29,6 +29,8 @@ export function createEditor(useCm6 = false) {
     extraKeys: {
       
       Esc: false,
+      Tab: false,
+      "Shift-Tab": false,
       "Cmd-F": false,
       "Ctrl-F": false,
       "Cmd-G": false,

@@ -312,37 +312,39 @@ class Editor extends EventEmitter {
     
     
     
-    this.config.extraKeys.Tab = cm => {
-      if (config.extraKeys?.Tab) {
-        
-        
-        
-        const res = config.extraKeys.Tab(cm);
-        if (res === false) {
+    if (this.config.extraKeys.Tab == undefined) {
+      this.config.extraKeys.Tab = cm => {
+        if (config.extraKeys?.Tab) {
+          
+          
+          
+          const res = config.extraKeys.Tab(cm);
+          if (res === false) {
+            return;
+          }
+        }
+
+        if (cm.somethingSelected()) {
+          cm.indentSelection("add");
           return;
         }
-      }
 
-      if (cm.somethingSelected()) {
-        cm.indentSelection("add");
-        return;
-      }
+        if (this.config.indentWithTabs) {
+          cm.replaceSelection("\t", "end", "+input");
+          return;
+        }
 
-      if (this.config.indentWithTabs) {
-        cm.replaceSelection("\t", "end", "+input");
-        return;
-      }
+        let num = cm.getOption("indentUnit");
+        if (cm.getCursor().ch !== 0) {
+          num -= cm.getCursor().ch % num;
+        }
+        cm.replaceSelection(" ".repeat(num), "end", "+input");
+      };
 
-      let num = cm.getOption("indentUnit");
-      if (cm.getCursor().ch !== 0) {
-        num -= cm.getCursor().ch % num;
+      if (this.config.cssProperties) {
+        
+        this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
       }
-      cm.replaceSelection(" ".repeat(num), "end", "+input");
-    };
-
-    if (this.config.cssProperties) {
-      
-      this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
     }
   }
 

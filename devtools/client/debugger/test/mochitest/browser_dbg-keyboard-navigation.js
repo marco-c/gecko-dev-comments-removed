@@ -13,29 +13,44 @@ add_task(async function () {
   await selectSource(dbg, "simple2.js");
 
   await waitForElementWithSelector(dbg, ".CodeMirror");
+
+  info("Focus on the editor");
   findElementWithSelector(dbg, ".CodeMirror").focus();
 
-  
-  pressKey(dbg, "Enter");
-  is(
-    findElementWithSelector(dbg, "textarea"),
-    doc.activeElement,
-    "Editor is enabled"
-  );
-
-  
-  pressKey(dbg, "Escape");
   is(
     findElementWithSelector(dbg, ".CodeMirror"),
     doc.activeElement,
-    "Focused on container"
+    "Editor is focused"
   );
 
+  info(
+    "Press shift + tab to navigate out of the editor to the previous tab element"
+  );
+  pressKey(dbg, "ShiftTab");
+
+  is(
+    findElementWithSelector(dbg, ".command-bar-button.toggle-button.end"),
+    doc.activeElement,
+    "The left sidebar toggle button is focused"
+  );
+
+  info("Press tab to navigate back to the editor");
+  pressKey(dbg, "Tab");
+
+  is(
+    findElementWithSelector(dbg, ".CodeMirror"),
+    doc.activeElement,
+    "Editor is focused again"
+  );
+
+  info("Press tab again to navigate out of the editor to the next tab element");
   
   pressKey(dbg, "Tab");
+  pressKey(dbg, "Tab");
+
   is(
-    findElementWithSelector(dbg, "textarea"),
+    findElementWithSelector(dbg, ".action.black-box"),
     doc.activeElement,
-    "Editor is enabled"
+    "The ignore source button is focused"
   );
 });
