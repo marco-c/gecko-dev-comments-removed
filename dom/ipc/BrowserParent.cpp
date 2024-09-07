@@ -3920,7 +3920,7 @@ void BrowserParent::GetIPCTransferableData(
   if (!transfer) {
     
     
-    transfer = new DataTransfer(nullptr, eDrop, true, -1);
+    transfer = new DataTransfer(nullptr, eDrop, true, Nothing());
     aSession->SetDataTransfer(transfer);
   }
   
