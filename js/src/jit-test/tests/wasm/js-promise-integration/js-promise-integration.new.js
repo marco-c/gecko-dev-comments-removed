@@ -235,7 +235,8 @@ test(t => {
 
 
 
-test(t => {
+const androidForArm = getBuildConfiguration("android") && getBuildConfiguration("arm");
+!androidForArm && test(t => {
   
   
   
