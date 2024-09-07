@@ -1,19 +1,66 @@
 
 
+const tierUpThreshold = 1;
+let {importFunc} = wasmEvalText(`
+  (module (func (export "importFunc") (result i32) i32.const 2))
+`).exports;
+let testFuncs = [
+  [importFunc, 2],
+  ["trueFunc", 1],
+  ["falseFunc", 0],
+  ["trapFunc", WebAssembly.RuntimeError],
+  [null, WebAssembly.RuntimeError],
+];
+function invokeTestWith(exports, exportThing, expected) {
+  let targetFunc;
+  if (exportThing instanceof WebAssembly.Function) {
+    targetFunc = exportThing;
+  } else if (exportThing === null) {
+    targetFunc = null;
+  } else {
+    targetFunc = exports[exportThing];
+  }
 
+  if (expected === WebAssembly.RuntimeError) {
+    assertErrorMessage(() => exports.test(targetFunc), WebAssembly.RuntimeError, /./);
+  } else {
+    assertEq(exports.test(targetFunc), expected);
+  }
+}
 
-let {test} = wasmEvalText(`
-(module
-  (type $refType (func (result i32)))
-  (func $ref (export "ref") (result i32)
-    i32.const 1
-  )
-  (func (export "test") (result i32)
-    ref.func $ref
-    call_ref $refType
-  )
-)`).exports;
+for ([funcToInline, funcToInlineExpected] of testFuncs) {
+  let exports = wasmEvalText(`
+  (module
+    (type $booleanFunc (func (result i32)))
 
-for (let i = 0; i < 10; i++) {
-  assertEq(test(), 1);
+    (func $importFunc (import "" "importFunc") (result i32))
+    (func $trueFunc (export "trueFunc") (result i32)
+      i32.const 1
+    )
+    (func $falseFunc (export "falseFunc") (result i32)
+      i32.const 0
+    )
+    (func $trapFunc (export "trapFunc") (result i32)
+      unreachable
+    )
+
+    (func (export "test") (param (ref null $booleanFunc)) (result i32)
+      local.get 0
+      call_ref $booleanFunc
+    )
+  )`, {"": {importFunc}}).exports;
+  let test = exports["test"];
+
+  
+  assertEq(wasmFunctionTier(test), "baseline");
+  for (let i = 0; i <= tierUpThreshold; i++) {
+    invokeTestWith(exports, funcToInline, funcToInlineExpected);
+  }
+  assertEq(wasmFunctionTier(test), "optimized");
+
+  
+  
+  for ([testFunc, testFuncExpected] of testFuncs) {
+    invokeTestWith(exports, testFunc, testFuncExpected);
+  }
 }

@@ -1128,6 +1128,9 @@ class Code : public ShareableBase<Code> {
   bool funcHasTier(uint32_t funcIndex, Tier tier) const {
     return funcCodeBlock(funcIndex).tier() == tier;
   }
+  Tier funcTier(uint32_t funcIndex) const {
+    return funcCodeBlock(funcIndex).tier();
+  }
 
   const LinkData* codeBlockLinkData(const CodeBlock& block) const;
   void clearLinkData() const;
@@ -1179,6 +1182,8 @@ class Code : public ShareableBase<Code> {
     }
     return block->lookupUnwindInfo(pc);
   }
+  
+  
   bool lookupFunctionTier(const CodeRange* codeRange, Tier* tier) const;
 
   
