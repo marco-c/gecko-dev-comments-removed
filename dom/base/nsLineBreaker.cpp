@@ -78,71 +78,63 @@ nsLineBreaker::~nsLineBreaker() {
                "Should have Reset() before destruction!");
 }
 
-
-bool nsLineBreaker::ShouldCapitalize(uint32_t aChar, bool& aCapitalizeNext) {
-  using mozilla::intl::GeneralCategory;
-  auto category = UnicodeProperties::CharType(aChar);
-  switch (category) {
-    case GeneralCategory::Uppercase_Letter:
-    case GeneralCategory::Lowercase_Letter:
-    case GeneralCategory::Titlecase_Letter:
-    case GeneralCategory::Modifier_Letter:
-    case GeneralCategory::Other_Letter:
-    case GeneralCategory::Decimal_Number:
-    case GeneralCategory::Letter_Number:
-    case GeneralCategory::Other_Number:
-      if (aCapitalizeNext) {
-        aCapitalizeNext = false;
-        return true;
-      }
-      break;
-    case GeneralCategory::Space_Separator:
-    case GeneralCategory::Line_Separator:
-    case GeneralCategory::Paragraph_Separator:
-    case GeneralCategory::Dash_Punctuation:
-    case GeneralCategory::Initial_Punctuation:
-      
-
-
-
-
-
-
-
-      aCapitalizeNext = true;
-      break;
-    case GeneralCategory::Final_Punctuation:
-      
-
-      if (aChar != 0x2019) {
-        aCapitalizeNext = true;
-      }
-      break;
-    case GeneralCategory::Other_Punctuation:
-      
-
-      if (aChar != '\'' && aChar != 0x00B7) {
-        aCapitalizeNext = true;
-      }
-      break;
-    default:
-      break;
-  }
-  return false;
-}
-
 static void SetupCapitalization(const char16_t* aWord, uint32_t aLength,
                                 bool* aCapitalization) {
   
+  using mozilla::intl::GeneralCategory;
   bool capitalizeNextChar = true;
   for (uint32_t i = 0; i < aLength; ++i) {
     uint32_t ch = aWord[i];
     if (i + 1 < aLength && NS_IS_SURROGATE_PAIR(ch, aWord[i + 1])) {
       ch = SURROGATE_TO_UCS4(ch, aWord[i + 1]);
     }
-    aCapitalization[i] =
-        nsLineBreaker::ShouldCapitalize(ch, capitalizeNextChar);
+    auto category = UnicodeProperties::CharType(ch);
+    switch (category) {
+      case GeneralCategory::Uppercase_Letter:
+      case GeneralCategory::Lowercase_Letter:
+      case GeneralCategory::Titlecase_Letter:
+      case GeneralCategory::Modifier_Letter:
+      case GeneralCategory::Other_Letter:
+      case GeneralCategory::Decimal_Number:
+      case GeneralCategory::Letter_Number:
+      case GeneralCategory::Other_Number:
+        if (capitalizeNextChar) {
+          aCapitalization[i] = true;
+          capitalizeNextChar = false;
+        }
+        break;
+      case GeneralCategory::Space_Separator:
+      case GeneralCategory::Line_Separator:
+      case GeneralCategory::Paragraph_Separator:
+      case GeneralCategory::Dash_Punctuation:
+      case GeneralCategory::Initial_Punctuation:
+        
 
+
+
+
+
+
+
+        capitalizeNextChar = true;
+        break;
+      case GeneralCategory::Final_Punctuation:
+        
+
+        if (ch != 0x2019) {
+          capitalizeNextChar = true;
+        }
+        break;
+      case GeneralCategory::Other_Punctuation:
+        
+
+        if (ch != '\'' && ch != 0x00B7) {
+          capitalizeNextChar = true;
+        }
+        break;
+      default:
+        break;
+    }
     if (!IS_IN_BMP(ch)) {
       ++i;
     }
