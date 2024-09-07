@@ -6824,24 +6824,15 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     
     
     
-    nsCString url;
-    url.SetIsVoid(true);
-    url.Append(aUrl);
-
     
     
-    
-    
-    
-    if (!url.IsVoid()) {
-      auto result =
-          URIfromURLAndMaybeDoSecurityCheck(url, !aDialog && aNavigate);
-      if (result.isErr()) {
-        return result.unwrapErr();
-      }
-
-      uri = result.unwrap();
+    auto result =
+        URIfromURLAndMaybeDoSecurityCheck(aUrl, !aDialog && aNavigate);
+    if (result.isErr()) {
+      return result.unwrapErr();
     }
+
+    uri = result.unwrap();
   } else if (mDoc) {
     mDoc->SetUseCounter(eUseCounter_custom_WindowOpenEmptyUrl);
   }
