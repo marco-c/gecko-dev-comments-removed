@@ -16,16 +16,6 @@
 
 #include "rtc_base/checks.h"
 
-#if !defined(MAC_OS_X_VERSION_10_7) || \
-    MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_7
-
-@interface NSScreen (LionAPI)
-- (CGFloat)backingScaleFactor;
-- (NSRect)convertRectToBacking:(NSRect)aRect;
-@end
-
-#endif  
-
 namespace webrtc {
 
 namespace {
@@ -60,16 +50,9 @@ MacDisplayConfiguration GetConfigurationForScreen(NSScreen* screen) {
   NSRect ns_bounds = [screen frame];
   display_config.bounds = NSRectToDesktopRect(ns_bounds);
 
-  
-  
-  if ([screen respondsToSelector:@selector(backingScaleFactor)] &&
-      [screen respondsToSelector:@selector(convertRectToBacking:)]) {
-    display_config.dip_to_pixel_scale = [screen backingScaleFactor];
-    NSRect ns_pixel_bounds = [screen convertRectToBacking: ns_bounds];
-    display_config.pixel_bounds = NSRectToDesktopRect(ns_pixel_bounds);
-  } else {
-    display_config.pixel_bounds = display_config.bounds;
-  }
+  display_config.dip_to_pixel_scale = [screen backingScaleFactor];
+  NSRect ns_pixel_bounds = [screen convertRectToBacking:ns_bounds];
+  display_config.pixel_bounds = NSRectToDesktopRect(ns_pixel_bounds);
 
   
   display_config.is_builtin = CGDisplayIsBuiltin(display_config.id);
