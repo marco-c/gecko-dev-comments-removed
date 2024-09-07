@@ -1297,6 +1297,41 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+    id: "bug1909448",
+    platform: "all",
+    domain: "fire.honeywell.com",
+    bug: "1909448",
+    config: {
+      matches: ["*://fire.honeywell.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1899937-ua",
+    platform: "all",
+    domain: "plus.nhk.jp",
+    bug: "1899937",
+    config: {
+      matches: ["*://plus.nhk.jp/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
