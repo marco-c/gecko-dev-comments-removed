@@ -1439,6 +1439,10 @@ nsresult Classifier::UpdateTableV4(TableUpdateArray& aUpdates,
       
       if (prefixes1.IsEmpty() && prefixes2.IsEmpty()) {
         lookupCacheV4->GetPrefixes(prefixes1);
+
+        
+        
+        rv = lookupCacheV4->ApplyUpdate(updateV4, *input, *output);
       } else {
         MOZ_ASSERT(prefixes1.IsEmpty() ^ prefixes2.IsEmpty());
 
@@ -1447,9 +1451,12 @@ nsresult Classifier::UpdateTableV4(TableUpdateArray& aUpdates,
         
         input = prefixes1.IsEmpty() ? &prefixes2 : &prefixes1;
         output = prefixes1.IsEmpty() ? &prefixes1 : &prefixes2;
+
+        
+        
+        rv = lookupCacheV4->ApplyUpdate(updateV4, *input, *output);
       }
 
-      rv = lookupCacheV4->ApplyUpdate(updateV4, *input, *output);
       if (NS_FAILED(rv)) {
         return rv;
       }
