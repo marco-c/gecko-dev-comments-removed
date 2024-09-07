@@ -27,12 +27,12 @@ add_heuristic_tests(
         
         
         
-        
-          
-          
-            
-          
-        
+        {
+          invalid: true,
+          fields: [
+            { fieldName: "cc-csc", reason: "regex-heuristic"},
+          ],
+        },
       ],
     },
   ],

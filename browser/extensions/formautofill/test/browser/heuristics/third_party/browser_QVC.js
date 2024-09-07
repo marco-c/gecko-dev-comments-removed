@@ -19,7 +19,7 @@ add_heuristic_tests(
         },
         {
           fields: [
-            
+            { fieldName: "cc-csc", reason: "regex-heuristic"},
             { fieldName: "cc-type", reason: "regex-heuristic" },
             { fieldName: "cc-number", reason: "fathom" },
             { fieldName: "cc-exp", reason: "update-heuristic" },
@@ -28,6 +28,7 @@ add_heuristic_tests(
         {
           invalid: true,
           fields: [
+            { fieldName: "cc-csc", reason: "regex-heuristic" },
             { fieldName: "cc-number", reason: "regex-heuristic" }, 
           ],
         },
@@ -58,15 +59,16 @@ add_heuristic_tests(
             reason: "fathom",
           },
           fields: [
+            { fieldName: "cc-csc", reason: "regex-heuristic"},
             { fieldName: "cc-type", reason: "regex-heuristic" }, 
             { fieldName: "cc-number" }, 
             { fieldName: "cc-exp", reason: "update-heuristic" },
-            
           ],
         },
         {
           invalid: true,
           fields: [
+            { fieldName: "cc-csc", reason: "regex-heuristic" },
             { fieldName: "cc-number", reason: "regex-heuristic" }, 
           ],
         },
