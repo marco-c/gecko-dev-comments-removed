@@ -61,13 +61,32 @@ class StringBuffer {
                "mStorageSize will truncate");
 
     size_t bytes = sizeof(StringBuffer) + aSize;
-    auto* hdr = aArena ? (StringBuffer*)moz_arena_malloc(*aArena, bytes)
-                       : (StringBuffer*)malloc(bytes);
-    if (hdr) {
-      hdr->mRefCount = 1;
-      hdr->mStorageSize = aSize;
-      detail::RefCountLogger::logAddRef(hdr, 1);
+    void* hdr = aArena ? moz_arena_malloc(*aArena, bytes) : malloc(bytes);
+    if (!hdr) {
+      return nullptr;
     }
+    return ConstructInPlace(hdr, aSize);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<StringBuffer> ConstructInPlace(void* aBuffer,
+                                                         size_t aStorageSize) {
+    MOZ_ASSERT(aBuffer, "must have a valid buffer");
+    MOZ_ASSERT(aStorageSize != 0, "zero capacity StringBuffer not allowed");
+    auto* hdr = new (aBuffer) StringBuffer();
+    hdr->mRefCount = 1;
+    hdr->mStorageSize = aStorageSize;
+    detail::RefCountLogger::logAddRef(hdr, 1);
     return already_AddRefed(hdr);
   }
 

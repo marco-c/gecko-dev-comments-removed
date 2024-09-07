@@ -53,6 +53,10 @@ static CharT* ExtractWellSized(Buffer& cb) {
 }
 
 char16_t* StringBuffer::stealChars() {
+  
+  
+  MOZ_RELEASE_ASSERT(numHeaderChars_ == 0);
+
   if (isLatin1() && !inflateChars()) {
     return nullptr;
   }
@@ -66,21 +70,38 @@ bool StringBuffer::inflateChars() {
   TwoByteCharBuffer twoByte(latin1Chars().allocPolicy());
 
   
+  
+  MOZ_ASSERT(numHeaderChars_ == 0 ||
+             numHeaderChars_ == numHeaderChars<Latin1Char>());
+  MOZ_ASSERT(latin1Chars().length() >= numHeaderChars_);
+  size_t numHeaderCharsNew =
+      numHeaderChars_ > 0 ? numHeaderChars<char16_t>() : 0;
+
+  
 
 
 
 
-  size_t capacity = std::max(reserved_, latin1Chars().length());
+  size_t reserved = reservedExclHeader_ + numHeaderChars_;
+  size_t capacity = std::max(reserved, latin1Chars().length());
+  capacity = capacity - numHeaderChars_ + numHeaderCharsNew;
   if (!twoByte.reserve(capacity)) {
     return false;
   }
 
-  twoByte.infallibleGrowByUninitialized(latin1Chars().length());
+  twoByte.infallibleAppendN('\0', numHeaderCharsNew);
 
-  mozilla::ConvertLatin1toUtf16(mozilla::AsChars(latin1Chars()), twoByte);
+  auto charsSource = mozilla::AsChars(latin1Chars()).From(numHeaderChars_);
+  twoByte.infallibleGrowByUninitialized(charsSource.Length());
+
+  auto charsDest = mozilla::Span<char16_t>(twoByte).From(numHeaderCharsNew);
+  mozilla::ConvertLatin1toUtf16(charsSource, charsDest);
+
+  MOZ_ASSERT(twoByte.length() == numHeaderCharsNew + length());
 
   cb.destroy();
   cb.construct<TwoByteCharBuffer>(std::move(twoByte));
+  numHeaderChars_ = numHeaderCharsNew;
   return true;
 }
 
@@ -92,6 +113,14 @@ bool StringBuffer::append(const frontend::ParserAtomsTable& parserAtoms,
 template <typename CharT>
 JSLinearString* StringBuffer::finishStringInternal(JSContext* cx,
                                                    gc::Heap heap) {
+  
+  MOZ_ASSERT(numHeaderChars_ == numHeaderChars<CharT>());
+#ifdef DEBUG
+  auto isZeroChar = [](CharT c) { return c == '\0'; };
+  MOZ_ASSERT(std::all_of(chars<CharT>().begin(),
+                         chars<CharT>().begin() + numHeaderChars_, isZeroChar));
+#endif
+
   size_t len = length();
 
   if (JSAtom* staticStr = cx->staticStrings().lookup(begin<CharT>(), len)) {
@@ -106,25 +135,49 @@ JSLinearString* StringBuffer::finishStringInternal(JSContext* cx,
   
   
   
-  using Vec = std::remove_reference_t<decltype(chars<CharT>())>;
-  if (len <= Vec::InlineLength) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (len < JSString::MIN_BYTES_FOR_BUFFER / sizeof(CharT)) {
     return NewStringCopyNDontDeflate<CanGC>(cx, begin<CharT>(), len, heap);
   }
 
-  UniquePtr<CharT[], JS::FreePolicy> buf(
-      ExtractWellSized<CharT>(chars<CharT>()));
-
-  if (!buf) {
+  if (MOZ_UNLIKELY(!mozilla::StringBuffer::IsValidLength<CharT>(len))) {
+    ReportAllocationOverflow(cx);
     return nullptr;
   }
 
-  JSLinearString* str =
-      NewStringDontDeflate<CanGC>(cx, std::move(buf), len, heap);
-  if (!str) {
+  
+  auto& charsWithHeader = chars<CharT>();
+  if (!charsWithHeader.append('\0')) {
     return nullptr;
   }
 
-  return str;
+  CharT* mem = ExtractWellSized<CharT>(charsWithHeader);
+  if (!mem) {
+    return nullptr;
+  }
+  
+  
+  MOZ_ASSERT(charsWithHeader.empty());
+  MOZ_ALWAYS_TRUE(charsWithHeader.appendN('\0', numHeaderChars_));
+
+  
+  RefPtr<mozilla::StringBuffer> buffer =
+      mozilla::StringBuffer::ConstructInPlace(mem, (len + 1) * sizeof(CharT));
+  MOZ_ASSERT(buffer->Data() == mem + numHeaderChars_,
+             "chars are where mozilla::StringBuffer expects them");
+  MOZ_ASSERT(static_cast<CharT*>(buffer->Data())[len] == '\0',
+             "StringBuffer must be null-terminated");
+
+  Rooted<JSString::OwnedChars<CharT>> owned(cx, std::move(buffer), len);
+  return JSLinearString::new_<CanGC, CharT>(cx, &owned, heap);
 }
 
 JSLinearString* JSStringBuilder::finishString(gc::Heap heap) {
@@ -156,14 +209,9 @@ JSAtom* StringBuffer::finishAtom() {
     return maybeCx_->names().empty_;
   }
 
-  if (isLatin1()) {
-    JSAtom* atom = AtomizeChars(maybeCx_, latin1Chars().begin(), len);
-    latin1Chars().clear();
-    return atom;
-  }
-
-  JSAtom* atom = AtomizeChars(maybeCx_, twoByteChars().begin(), len);
-  twoByteChars().clear();
+  JSAtom* atom = isLatin1() ? AtomizeChars(maybeCx_, rawLatin1Begin(), len)
+                            : AtomizeChars(maybeCx_, rawTwoByteBegin(), len);
+  clear();
   return atom;
 }
 
@@ -174,14 +222,10 @@ frontend::TaggedParserAtomIndex StringBuffer::finishParserAtom(
     return frontend::TaggedParserAtomIndex::WellKnown::empty();
   }
 
-  if (isLatin1()) {
-    auto result = parserAtoms.internLatin1(fc, latin1Chars().begin(), len);
-    latin1Chars().clear();
-    return result;
-  }
-
-  auto result = parserAtoms.internChar16(fc, twoByteChars().begin(), len);
-  twoByteChars().clear();
+  auto result = isLatin1()
+                    ? parserAtoms.internLatin1(fc, rawLatin1Begin(), len)
+                    : parserAtoms.internChar16(fc, rawTwoByteBegin(), len);
+  clear();
   return result;
 }
 

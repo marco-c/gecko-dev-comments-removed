@@ -24,3 +24,12 @@ function testAtom() {
     assertEq(repr.bufferRefCount, 1);
 }
 testAtom();
+
+
+function testJoin() {
+    var str = Array(1000).fill("a").join(",");
+    var repr = JSON.parse(stringRepresentation(str));
+    assertEq(repr.flags.includes("HAS_STRING_BUFFER_BIT"), true);
+    assertEq(repr.bufferRefCount, 1);
+}
+testJoin();
