@@ -129,8 +129,8 @@ extern "C" {
 
 
 #define LZ4_VERSION_MAJOR    1    /* for breaking interface changes  */
-#define LZ4_VERSION_MINOR    9    /* for new (non-breaking) interface capabilities */
-#define LZ4_VERSION_RELEASE  4    /* for tweaks, bug-fixes, or development */
+#define LZ4_VERSION_MINOR   10    /* for new (non-breaking) interface capabilities */
+#define LZ4_VERSION_RELEASE  0    /* for tweaks, bug-fixes, or development */
 
 #define LZ4_VERSION_NUMBER (LZ4_VERSION_MAJOR *100*100 + LZ4_VERSION_MINOR *100 + LZ4_VERSION_RELEASE)
 
@@ -146,9 +146,6 @@ LZ4LIB_API const char* LZ4_versionString (void);
 
 
 
-#define LZ4_MEMORY_USAGE_MIN 10
-#define LZ4_MEMORY_USAGE_DEFAULT 14
-#define LZ4_MEMORY_USAGE_MAX 20
 
 
 
@@ -160,6 +157,11 @@ LZ4LIB_API const char* LZ4_versionString (void);
 #ifndef LZ4_MEMORY_USAGE
 # define LZ4_MEMORY_USAGE LZ4_MEMORY_USAGE_DEFAULT
 #endif
+
+
+#define LZ4_MEMORY_USAGE_MIN 10
+#define LZ4_MEMORY_USAGE_DEFAULT 14
+#define LZ4_MEMORY_USAGE_MAX 20
 
 #if (LZ4_MEMORY_USAGE < LZ4_MEMORY_USAGE_MIN)
 #  error "LZ4_MEMORY_USAGE is too small !"
@@ -187,6 +189,7 @@ LZ4LIB_API const char* LZ4_versionString (void);
 
 
 LZ4LIB_API int LZ4_compress_default(const char* src, char* dst, int srcSize, int dstCapacity);
+
 
 
 
@@ -266,8 +269,7 @@ LZ4LIB_API int LZ4_compress_fast_extState (void* state, const char* src, char* d
 
 
 
-LZ4LIB_API int LZ4_compress_destSize (const char* src, char* dst, int* srcSizePtr, int targetDstSize);
-
+LZ4LIB_API int LZ4_compress_destSize(const char* src, char* dst, int* srcSizePtr, int targetDstSize);
 
 
 
@@ -375,6 +377,51 @@ LZ4LIB_API int LZ4_loadDict (LZ4_stream_t* streamPtr, const char* dictionary, in
 
 
 
+LZ4LIB_API int LZ4_loadDictSlow(LZ4_stream_t* streamPtr, const char* dictionary, int dictSize);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+LZ4LIB_API void
+LZ4_attach_dictionary(LZ4_stream_t* workingStream,
+                const LZ4_stream_t* dictionaryStream);
+
+
+
+
+
+
+
+
 
 
 
@@ -468,6 +515,19 @@ LZ4LIB_API int LZ4_decoderRingBufferSize(int maxBlockSize);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 LZ4LIB_API int
 LZ4_decompress_safe_continue (LZ4_streamDecode_t* LZ4_streamDecode,
                         const char* src, char* dst,
@@ -486,6 +546,12 @@ LZ4LIB_API int
 LZ4_decompress_safe_usingDict(const char* src, char* dst,
                               int srcSize, int dstCapacity,
                               const char* dictStart, int dictSize);
+
+
+
+
+
+
 
 LZ4LIB_API int
 LZ4_decompress_safe_partial_usingDict(const char* src, char* dst,
@@ -526,9 +592,9 @@ LZ4_decompress_safe_partial_usingDict(const char* src, char* dst,
 #define LZ4_STATIC_3504398509
 
 #ifdef LZ4_PUBLISH_STATIC_FUNCTIONS
-#define LZ4LIB_STATIC_API LZ4LIB_API
+# define LZ4LIB_STATIC_API LZ4LIB_API
 #else
-#define LZ4LIB_STATIC_API
+# define LZ4LIB_STATIC_API
 #endif
 
 
@@ -548,32 +614,7 @@ LZ4LIB_STATIC_API int LZ4_compress_fast_extState_fastReset (void* state, const c
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-LZ4LIB_STATIC_API void
-LZ4_attach_dictionary(LZ4_stream_t* workingStream,
-                const LZ4_stream_t* dictionaryStream);
-
+int LZ4_compress_destSize_extState(void* state, const char* src, char* dst, int* srcSizePtr, int targetDstSize, int acceleration);
 
 
 
@@ -685,7 +726,7 @@ struct LZ4_stream_t_internal {
     
 };
 
-#define LZ4_STREAM_MINSIZE  ((1UL << LZ4_MEMORY_USAGE) + 32)  /* static size, for inter-version compatibility */
+#define LZ4_STREAM_MINSIZE  ((1UL << (LZ4_MEMORY_USAGE)) + 32)  /* static size, for inter-version compatibility */
 union LZ4_stream_u {
     char minStateSize[LZ4_STREAM_MINSIZE];
     LZ4_stream_t_internal internal_donotuse;
@@ -706,7 +747,7 @@ union LZ4_stream_u {
 
 
 
-LZ4LIB_API LZ4_stream_t* LZ4_initStream (void* buffer, size_t size);
+LZ4LIB_API LZ4_stream_t* LZ4_initStream (void* stateBuffer, size_t size);
 
 
 
@@ -818,11 +859,12 @@ LZ4_DEPRECATED("use LZ4_decompress_fast_usingDict() instead") LZ4LIB_API int LZ4
 
 
 
-LZ4_DEPRECATED("This function is deprecated and unsafe. Consider using LZ4_decompress_safe() instead")
+LZ4_DEPRECATED("This function is deprecated and unsafe. Consider using LZ4_decompress_safe_partial() instead")
 LZ4LIB_API int LZ4_decompress_fast (const char* src, char* dst, int originalSize);
-LZ4_DEPRECATED("This function is deprecated and unsafe. Consider using LZ4_decompress_safe_continue() instead")
+LZ4_DEPRECATED("This function is deprecated and unsafe. Consider migrating towards LZ4_decompress_safe_continue() instead. "
+               "Note that the contract will change (requires block's compressed size, instead of decompressed size)")
 LZ4LIB_API int LZ4_decompress_fast_continue (LZ4_streamDecode_t* LZ4_streamDecode, const char* src, char* dst, int originalSize);
-LZ4_DEPRECATED("This function is deprecated and unsafe. Consider using LZ4_decompress_safe_usingDict() instead")
+LZ4_DEPRECATED("This function is deprecated and unsafe. Consider using LZ4_decompress_safe_partial_usingDict() instead")
 LZ4LIB_API int LZ4_decompress_fast_usingDict (const char* src, char* dst, int originalSize, const char* dictStart, int dictSize);
 
 

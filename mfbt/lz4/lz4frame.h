@@ -182,7 +182,7 @@ typedef struct {
   LZ4F_blockChecksum_t   blockChecksumFlag;   
 } LZ4F_frameInfo_t;
 
-#define LZ4F_INIT_FRAMEINFO   { LZ4F_default, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame, 0ULL, 0U, LZ4F_noBlockChecksum }    /* v1.8.3+ */
+#define LZ4F_INIT_FRAMEINFO   { LZ4F_max64KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame, 0ULL, 0U, LZ4F_noBlockChecksum }    /* v1.8.3+ */
 
 
 
@@ -204,7 +204,26 @@ typedef struct {
 
 
 
-LZ4FLIB_API int LZ4F_compressionLevel_max(void);   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+LZ4FLIB_API size_t LZ4F_compressFrame(void* dstBuffer, size_t dstCapacity,
+                                const void* srcBuffer, size_t srcSize,
+                                const LZ4F_preferences_t* preferencesPtr);
 
 
 
@@ -218,12 +237,7 @@ LZ4FLIB_API size_t LZ4F_compressFrameBound(size_t srcSize, const LZ4F_preference
 
 
 
-
-
-
-LZ4FLIB_API size_t LZ4F_compressFrame(void* dstBuffer, size_t dstCapacity,
-                                const void* srcBuffer, size_t srcSize,
-                                const LZ4F_preferences_t* preferencesPtr);
+LZ4FLIB_API int LZ4F_compressionLevel_max(void);   
 
 
 
@@ -357,6 +371,7 @@ typedef LZ4F_dctx* LZ4F_decompressionContext_t;
 typedef struct {
   unsigned stableDst;     
 
+
   unsigned skipChecksums; 
 
   unsigned reserved1;     
@@ -478,6 +493,11 @@ LZ4F_getFrameInfo(LZ4F_dctx* dctx,
 
 
 
+
+
+
+
+
 LZ4FLIB_API size_t
 LZ4F_decompress(LZ4F_dctx* dctx,
                 void* dstBuffer, size_t* dstSizePtr,
@@ -494,6 +514,109 @@ LZ4FLIB_API void LZ4F_resetDecompressionContext(LZ4F_dctx* dctx);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+LZ4FLIB_API size_t
+LZ4F_compressBegin_usingDict(LZ4F_cctx* cctx,
+                            void* dstBuffer, size_t dstCapacity,
+                      const void* dictBuffer, size_t dictSize,
+                      const LZ4F_preferences_t* prefsPtr);
+
+
+
+
+
+LZ4FLIB_API size_t
+LZ4F_decompress_usingDict(LZ4F_dctx* dctxPtr,
+                          void* dstBuffer, size_t* dstSizePtr,
+                    const void* srcBuffer, size_t* srcSizePtr,
+                    const void* dict, size_t dictSize,
+                    const LZ4F_decompressOptions_t* decompressOptionsPtr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LZ4F_CDict_s LZ4F_CDict;
+
+
+
+
+
+
+LZ4FLIB_API LZ4F_CDict* LZ4F_createCDict(const void* dictBuffer, size_t dictSize);
+LZ4FLIB_API void        LZ4F_freeCDict(LZ4F_CDict* CDict);
+
+
+
+
+
+
+
+
+
+
+
+
+
+LZ4FLIB_API size_t
+LZ4F_compressFrame_usingCDict(LZ4F_cctx* cctx,
+                              void* dst, size_t dstCapacity,
+                        const void* src, size_t srcSize,
+                        const LZ4F_CDict* cdict,
+                        const LZ4F_preferences_t* preferencesPtr);
+
+
+
+
+
+
+
+
+
+LZ4FLIB_API size_t
+LZ4F_compressBegin_usingCDict(LZ4F_cctx* cctx,
+                              void* dstBuffer, size_t dstCapacity,
+                        const LZ4F_CDict* cdict,
+                        const LZ4F_preferences_t* prefsPtr);
+
+
 #if defined (__cplusplus)
 }
 #endif
@@ -503,19 +626,21 @@ LZ4FLIB_API void LZ4F_resetDecompressionContext(LZ4F_dctx* dctx);
 #if defined(LZ4F_STATIC_LINKING_ONLY) && !defined(LZ4F_H_STATIC_09782039843)
 #define LZ4F_H_STATIC_09782039843
 
+
+
+
+
+
+
+
+
+
+
+
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
-
-
-
-
-
-
-
-
-
-
 
 #ifdef LZ4F_PUBLISH_STATIC_FUNCTIONS
 # define LZ4FLIB_STATIC_API LZ4FLIB_API
@@ -530,7 +655,7 @@ extern "C" {
         ITEM(ERROR_GENERIC) \
         ITEM(ERROR_maxBlockSize_invalid) \
         ITEM(ERROR_blockMode_invalid) \
-        ITEM(ERROR_contentChecksumFlag_invalid) \
+        ITEM(ERROR_parameter_invalid) \
         ITEM(ERROR_compressionLevel_invalid) \
         ITEM(ERROR_headerVersion_wrong) \
         ITEM(ERROR_blockChecksum_invalid) \
@@ -548,6 +673,8 @@ extern "C" {
         ITEM(ERROR_frameDecoding_alreadyStarted) \
         ITEM(ERROR_compressionState_uninitialized) \
         ITEM(ERROR_parameter_null) \
+        ITEM(ERROR_io_write) \
+        ITEM(ERROR_io_read) \
         ITEM(ERROR_maxCode)
 
 #define LZ4F_GENERATE_ENUM(ENUM) LZ4F_##ENUM,
@@ -557,6 +684,10 @@ typedef enum { LZ4F_LIST_ERRORS(LZ4F_GENERATE_ENUM)
               _LZ4F_dummy_error_enum_for_c89_never_used } LZ4F_errorCodes;
 
 LZ4FLIB_STATIC_API LZ4F_errorCodes LZ4F_getErrorCode(size_t functionResult);
+
+
+
+
 
 
 
@@ -586,78 +717,6 @@ LZ4F_uncompressedUpdate(LZ4F_cctx* cctx,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct LZ4F_CDict_s LZ4F_CDict;
-
-
-
-
-
-
-LZ4FLIB_STATIC_API LZ4F_CDict* LZ4F_createCDict(const void* dictBuffer, size_t dictSize);
-LZ4FLIB_STATIC_API void        LZ4F_freeCDict(LZ4F_CDict* CDict);
-
-
-
-
-
-
-
-
-
-
-
-
-LZ4FLIB_STATIC_API size_t
-LZ4F_compressFrame_usingCDict(LZ4F_cctx* cctx,
-                              void* dst, size_t dstCapacity,
-                        const void* src, size_t srcSize,
-                        const LZ4F_CDict* cdict,
-                        const LZ4F_preferences_t* preferencesPtr);
-
-
-
-
-
-
-
-
-
-LZ4FLIB_STATIC_API size_t
-LZ4F_compressBegin_usingCDict(LZ4F_cctx* cctx,
-                              void* dstBuffer, size_t dstCapacity,
-                        const LZ4F_CDict* cdict,
-                        const LZ4F_preferences_t* prefsPtr);
-
-
-
-
-
-
-LZ4FLIB_STATIC_API size_t
-LZ4F_decompress_usingDict(LZ4F_dctx* dctxPtr,
-                          void* dstBuffer, size_t* dstSizePtr,
-                    const void* srcBuffer, size_t* srcSizePtr,
-                    const void* dict, size_t dictSize,
-                    const LZ4F_decompressOptions_t* decompressOptionsPtr);
 
 
 

@@ -44,7 +44,7 @@ extern "C" {
 
 
 
-#define LZ4HC_CLEVEL_MIN         3
+#define LZ4HC_CLEVEL_MIN         2
 #define LZ4HC_CLEVEL_DEFAULT     9
 #define LZ4HC_CLEVEL_OPT_MIN    10
 #define LZ4HC_CLEVEL_MAX        12
@@ -152,6 +152,8 @@ LZ4LIB_API int             LZ4_freeStreamHC (LZ4_streamHC_t* streamHCPtr);
 
 
 
+
+
 LZ4LIB_API void LZ4_resetStreamHC_fast(LZ4_streamHC_t* streamHCPtr, int compressionLevel);   
 LZ4LIB_API int  LZ4_loadDictHC (LZ4_streamHC_t* streamHCPtr, const char* dictionary, int dictSize);
 
@@ -189,6 +191,34 @@ LZ4LIB_API int LZ4_saveDictHC (LZ4_streamHC_t* streamHCPtr, char* safeBuffer, in
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+LZ4LIB_API void
+LZ4_attach_HC_dictionary(LZ4_streamHC_t* working_stream,
+                   const LZ4_streamHC_t* dictionary_stream);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define LZ4HC_DICTIONARY_LOGSIZE 16
 #define LZ4HC_MAXD (1<<LZ4HC_DICTIONARY_LOGSIZE)
 #define LZ4HC_MAXD_MASK (LZ4HC_MAXD - 1)
@@ -204,18 +234,18 @@ LZ4LIB_API int LZ4_saveDictHC (LZ4_streamHC_t* streamHCPtr, char* safeBuffer, in
 typedef struct LZ4HC_CCtx_internal LZ4HC_CCtx_internal;
 struct LZ4HC_CCtx_internal
 {
-    LZ4_u32   hashTable[LZ4HC_HASHTABLESIZE];
-    LZ4_u16   chainTable[LZ4HC_MAXD];
-    const LZ4_byte* end;       
+    LZ4_u32 hashTable[LZ4HC_HASHTABLESIZE];
+    LZ4_u16 chainTable[LZ4HC_MAXD];
+    const LZ4_byte* end;     
     const LZ4_byte* prefixStart;  
     const LZ4_byte* dictStart; 
-    LZ4_u32   dictLimit;       
-    LZ4_u32   lowLimit;        
-    LZ4_u32   nextToUpdate;    
-    short     compressionLevel;
-    LZ4_i8    favorDecSpeed;   
+    LZ4_u32 dictLimit;       
+    LZ4_u32 lowLimit;        
+    LZ4_u32 nextToUpdate;    
+    short   compressionLevel;
+    LZ4_i8  favorDecSpeed;   
 
-    LZ4_i8    dirty;           
+    LZ4_i8  dirty;           
     const LZ4HC_CCtx_internal* dictCtx;
 };
 
@@ -375,35 +405,6 @@ LZ4LIB_STATIC_API int LZ4_compress_HC_extStateHC_fastReset (
     const char* src, char* dst,
     int srcSize, int dstCapacity,
     int compressionLevel);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-LZ4LIB_STATIC_API void LZ4_attach_HC_dictionary(
-          LZ4_streamHC_t *working_stream,
-    const LZ4_streamHC_t *dictionary_stream);
 
 #if defined (__cplusplus)
 }
