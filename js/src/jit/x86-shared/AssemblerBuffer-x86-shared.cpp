@@ -11,7 +11,8 @@
 using namespace js;
 using namespace jit;
 
-bool AssemblerBuffer::swap(Vector<uint8_t, 0, SystemAllocPolicy>& bytes) {
+bool x86_shared::AssemblerBuffer::swap(
+    Vector<uint8_t, 0, SystemAllocPolicy>& bytes) {
   
   MOZ_ASSERT(bytes.empty());
 

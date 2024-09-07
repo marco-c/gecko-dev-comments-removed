@@ -81,6 +81,8 @@ class JS_PUBLIC_API Sprinter;
 
 namespace jit {
 
+namespace x86_shared {
+
 
 
 
@@ -213,6 +215,8 @@ class AssemblerBuffer {
   mozilla::Vector<unsigned char, 256, AssemblerBufferAllocPolicy> m_buffer;
   bool m_oom;
 };
+
+}  
 
 class GenericAssembler {
 #ifdef JS_JITSPEW
