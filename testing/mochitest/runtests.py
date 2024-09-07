@@ -1781,6 +1781,10 @@ toolbar#nav-bar {
                 filters.append(failures(options.runFailures))
                 noDefaultFilters = True
 
+            
+            if info["os"] == "mac" and info["os_version"] == "14.40":
+                info["crashreporter"] = False
+
             tests = manifest.active_tests(
                 exists=False,
                 disabled=disabled,

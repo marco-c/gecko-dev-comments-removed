@@ -147,7 +147,6 @@ info["os_version"] = StringVersion(os_version)
 info["is_ubuntu"] = "Ubuntu" in version
 
 
-
 if processor in ["i386", "i686"]:
     if bits == "32bit":
         processor = "x86"
