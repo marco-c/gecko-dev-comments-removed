@@ -115,14 +115,4 @@ interface nsIAppShellService : nsISupports
 
 
   readonly attribute boolean hasHiddenWindow;
-
-  
-
-
-
-
-
-
-  boolean startEventLoopLagTracking();
-  void stopEventLoopLagTracking();
 };

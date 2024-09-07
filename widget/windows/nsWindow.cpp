@@ -99,7 +99,6 @@
 #include "prtime.h"
 #include "prenv.h"
 
-#include "mozilla/WidgetTraceEvent.h"
 #include "nsContentUtils.h"
 #include "nsISupportsPrimitives.h"
 #include "nsITheme.h"
@@ -4697,13 +4696,6 @@ LRESULT CALLBACK nsWindow::WindowProcInternal(HWND hWnd, UINT msg,
       WNDPROC prevWindowProc = (WNDPROC)::GetWindowLongPtr(hWnd, GWLP_USERDATA);
       return ::CallWindowProcW(prevWindowProc, hWnd, msg, wParam, lParam);
     }
-  }
-
-  if (msg == MOZ_WM_TRACE) {
-    
-    
-    mozilla::SignalTracerThread();
-    return 0;
   }
 
   
