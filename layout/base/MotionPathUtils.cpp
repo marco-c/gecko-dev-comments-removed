@@ -364,7 +364,13 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
     
     
     point -= NSPointToPoint(data.mCurrentPosition, AppUnitsPerCSSPixel());
-    directionAngle = atan2((double)tangent.y, (double)tangent.x);  
+    
+    
+    
+    directionAngle =
+        pathLength < std::numeric_limits<gfx::Float>::epsilon()
+            ? 0.0
+            : atan2((double)tangent.y, (double)tangent.x);  
   } else if (aPath.IsRay()) {
     const auto& ray = aPath.AsRay();
     MOZ_ASSERT(ray.mRay);
