@@ -214,6 +214,14 @@ class StringBuffer {
 
 
 
+  uint32_t AllocationSize() const {
+    return sizeof(StringBuffer) + StorageSize();
+  }
+
+  
+
+
+
 
 
 
@@ -249,6 +257,11 @@ class StringBuffer {
     return mRefCount.load(std::memory_order_relaxed) > 1;
 #endif
   }
+
+  
+
+
+  bool HasMultipleReferences() const { return IsReadonly(); }
 
 #ifdef DEBUG
   

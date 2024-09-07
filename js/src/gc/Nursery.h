@@ -424,6 +424,8 @@ class Nursery {
            (maxChunkCount() - currentChunk() - 1) * gc::ChunkSize;
   }
 
+  inline void addMallocedBufferBytes(size_t nbytes);
+
   
   
   
