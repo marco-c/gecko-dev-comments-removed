@@ -59,7 +59,10 @@ class MenuButton extends PureComponent {
 
       
       
-      icon: PropTypes.string,
+      
+      
+      
+      icon: PropTypes.oneOfType([PropTypes.bool, PropTypes.string]),
 
       
       menuId: PropTypes.string,
