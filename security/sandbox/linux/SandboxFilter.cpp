@@ -2055,6 +2055,11 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
       case SYS_BIND:
         return Some(Allow());
 
+      
+      
+      case SYS_RECVMMSG:
+        return Some(Allow());
+
         
       case SYS_SENDMMSG:
         return Some(Allow());
