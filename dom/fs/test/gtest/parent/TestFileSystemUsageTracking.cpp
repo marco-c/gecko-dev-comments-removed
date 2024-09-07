@@ -44,6 +44,22 @@ class TestFileSystemUsageTracking
     });
   }
 
+  void LockExclusive(const EntryId& aEntryId) {
+    ASSERT_TRUE(mDataManager);
+
+    TEST_TRY_UNWRAP(FileId fileId,
+                    PerformOnBackgroundThread([this, &aEntryId]() {
+                      return mDataManager->LockExclusive(aEntryId);
+                    }));
+  }
+
+  void UnlockExclusive(const EntryId& aEntryId) {
+    ASSERT_TRUE(mDataManager);
+
+    PerformOnBackgroundThread(
+        [this, &aEntryId]() { mDataManager->UnlockExclusive(aEntryId); });
+  }
+
   void CreateNewEmptyFile(EntryId& aEntryId) {
     ASSERT_TRUE(mDataManager);
 
@@ -144,8 +160,7 @@ TEST_F(TestFileSystemUsageTracking, CheckUsageBeforeAnyFilesOnDisk) {
   
   quota::UsageInfo usageNow;
   ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
-  ASSERT_TRUE(usageNow.DatabaseUsage().isNothing());
-  EXPECT_TRUE(usageNow.FileUsage().isNothing());
+  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
 
   
   ASSERT_NO_FATAL_FAILURE(EnsureDataManager());
@@ -155,7 +170,9 @@ TEST_F(TestFileSystemUsageTracking, CheckUsageBeforeAnyFilesOnDisk) {
   
   ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
   ASSERT_NO_FATAL_FAILURE(CheckUsageGreaterThan(usageNow, 0u));
-  const auto initialDbUsage = usageNow.DatabaseUsage().value();
+
+  uint64_t initialDbUsage;
+  ASSERT_NO_FATAL_FAILURE(GetUsageValue(usageNow, initialDbUsage));
 
   ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
   ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
@@ -167,92 +184,115 @@ TEST_F(TestFileSystemUsageTracking, CheckUsageBeforeAnyFilesOnDisk) {
   
   
   
-  const auto expectedUse = initialDbUsage + 2 * GetPageSize();
-
-  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
+  const auto increasedDbUsage = initialDbUsage + 2 * GetPageSize();
 
   ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, increasedDbUsage));
+
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, increasedDbUsage));
 }
 
 TEST_F(TestFileSystemUsageTracking, WritesToFilesShouldIncreaseUsage) {
   
   ASSERT_NO_FATAL_FAILURE(EnsureDataManager());
 
+  
   EntryId testFileId;
   ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(testFileId));
 
   quota::UsageInfo usageNow;
-  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
-  ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
-  const auto testFileDbUsage = usageNow.DatabaseUsage().value();
-
   ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageGreaterThan(usageNow, 0u));
+
+  uint64_t initialDbUsage;
+  ASSERT_NO_FATAL_FAILURE(GetUsageValue(usageNow, initialDbUsage));
+
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
 
   
+  ASSERT_NO_FATAL_FAILURE(LockExclusive(testFileId));
+
   const nsCString& testData = GetTestData();
 
   ASSERT_NO_FATAL_FAILURE(WriteDataToFile(testFileId, testData));
 
   
   
-  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
-
   
-  
-  ASSERT_NO_FATAL_FAILURE(UpdateDatabaseUsage(FileId(testFileId)));
-
-  const auto expectedTotalUsage = testFileDbUsage + testData.Length();
-
   
   ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
 
-  
+  const auto increasedDbUsage = initialDbUsage + testData.Length();
+
   ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, increasedDbUsage));
+
+  ASSERT_NO_FATAL_FAILURE(UnlockExclusive(testFileId));
+
+  
+  
+  
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, increasedDbUsage));
+
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, increasedDbUsage));
 }
 
 TEST_F(TestFileSystemUsageTracking, RemovingFileShouldDecreaseUsage) {
   
   ASSERT_NO_FATAL_FAILURE(EnsureDataManager());
 
+  
   EntryId testFileId;
   ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(testFileId));
 
   quota::UsageInfo usageNow;
   ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
-  ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
-  const auto testFileDbUsage = usageNow.DatabaseUsage().value();
+  ASSERT_NO_FATAL_FAILURE(CheckUsageGreaterThan(usageNow, 0u));
+
+  uint64_t initialDbUsage;
+  ASSERT_NO_FATAL_FAILURE(GetUsageValue(usageNow, initialDbUsage));
+
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
 
   
+  ASSERT_NO_FATAL_FAILURE(LockExclusive(testFileId));
+
   const nsCString& testData = GetTestData();
-  const auto expectedTotalUsage = testFileDbUsage + testData.Length();
 
   ASSERT_NO_FATAL_FAILURE(WriteDataToFile(testFileId, testData));
 
-  
-  
-  ASSERT_NO_FATAL_FAILURE(UpdateDatabaseUsage(FileId(testFileId)));
+  ASSERT_NO_FATAL_FAILURE(UnlockExclusive(testFileId));
 
   
+  
+  
+  const auto increasedDbUsage = initialDbUsage + testData.Length();
+
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, increasedDbUsage));
+
   ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, increasedDbUsage));
 
+  
   bool wasRemoved;
   ASSERT_NO_FATAL_FAILURE(RemoveFile(wasRemoved));
   ASSERT_TRUE(wasRemoved);
 
   
-  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
-
   
+  
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
+
   ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
 }
 
 }  
