@@ -265,6 +265,13 @@ add_task(async function setup() {
     "network.cookie.sameSite.noneRequiresSecure",
     false
   );
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "network.cookie.cookieBehavior.optInPartitioning",
+    false
+  );
 });
 
 add_task(async function test_no_partitioning() {
