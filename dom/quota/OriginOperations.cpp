@@ -1993,7 +1993,9 @@ RefPtr<BoolPromise> GetCachedOriginUsageOp::OpenDirectory() {
   AssertIsOnOwningThread();
 
   return OpenStorageDirectory(
-      PersistenceScope::CreateFromNull(),
+      PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
+                                      PERSISTENCE_TYPE_DEFAULT,
+                                      PERSISTENCE_TYPE_PRIVATE),
       OriginScope::FromOrigin(mPrincipalMetadata.mOrigin),
       Nullable<Client::Type>(),
        false);
@@ -2775,7 +2777,9 @@ RefPtr<BoolPromise> EstimateOp::OpenDirectory() {
 
   
   return OpenStorageDirectory(
-      PersistenceScope::CreateFromValue(mOriginMetadata.mPersistenceType),
+      PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
+                                      PERSISTENCE_TYPE_DEFAULT,
+                                      PERSISTENCE_TYPE_PRIVATE),
       OriginScope::FromOrigin(mOriginMetadata.mOrigin),
       Nullable<Client::Type>(),
        false);
