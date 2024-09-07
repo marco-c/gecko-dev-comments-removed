@@ -238,8 +238,7 @@ nsObjectLoadingContent::nsObjectLoadingContent()
       mIsStopping(false),
       mIsLoading(false),
       mScriptRequested(false),
-      mRewrittenYoutubeEmbed(false),
-      mLoadingSyntheticDocument(false) {}
+      mRewrittenYoutubeEmbed(false) {}
 
 nsObjectLoadingContent::~nsObjectLoadingContent() {
   
@@ -675,6 +674,11 @@ bool nsObjectLoadingContent::CheckProcessPolicy(int16_t* aContentPolicy) {
   return true;
 }
 
+bool nsObjectLoadingContent::IsSyntheticImageDocument() const {
+  return mType == ObjectType::Document &&
+         imgLoader::SupportImageWithMimeType(mContentType);
+}
+
 nsObjectLoadingContent::ParameterUpdateFlags
 nsObjectLoadingContent::UpdateObjectParameters() {
   Element* el = AsElement();
@@ -702,7 +706,7 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   
   
   
-  nsObjectLoadingContent::ParameterUpdateFlags retval = eParamNoChange;
+  ParameterUpdateFlags retval = eParamNoChange;
 
   
   
@@ -766,6 +770,7 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   }
 
   mRewrittenYoutubeEmbed = false;
+
   
   
   if (!uriStr.IsEmpty()) {
@@ -956,9 +961,6 @@ nsObjectLoadingContent::UpdateObjectParameters() {
     newType = ObjectType::Fallback;
     LOG(("OBJLC [%p]: NewType #4: %u", this, uint32_t(newType)));
   }
-
-  mLoadingSyntheticDocument = newType == ObjectType::Document &&
-                              imgLoader::SupportImageWithMimeType(newMime);
 
   
   
@@ -1799,8 +1801,6 @@ void nsObjectLoadingContent::SubdocumentIntrinsicSizeOrRatioChanged(
 
 void nsObjectLoadingContent::SubdocumentImageLoadComplete(nsresult aResult) {
   ObjectType oldType = mType;
-  mLoadingSyntheticDocument = false;
-
   if (NS_FAILED(aResult)) {
     UnloadObject();
     mType = ObjectType::Fallback;

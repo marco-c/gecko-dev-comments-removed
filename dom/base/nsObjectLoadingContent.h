@@ -89,6 +89,8 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
   bool IsRewrittenYoutubeEmbed() const { return mRewrittenYoutubeEmbed; }
 
+  bool IsSyntheticImageDocument() const;
+
   const mozilla::Maybe<mozilla::IntrinsicSize>& GetSubdocumentIntrinsicSize()
       const {
     return mSubdocumentIntrinsicSize;
@@ -452,8 +454,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
   
   
   bool mRewrittenYoutubeEmbed : 1;
-
-  bool mLoadingSyntheticDocument : 1;
 
   
   
