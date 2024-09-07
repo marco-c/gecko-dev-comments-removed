@@ -3703,6 +3703,12 @@ pref("webextensions.tests", false);
 
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
+#ifdef NIGHTLY_BUILD
+  pref("webextensions.storage.session.enforceQuota", true);
+#else
+  pref("webextensions.storage.session.enforceQuota", false);
+#endif
+
 pref("webextensions.storage.sync.enabled", true);
 
 pref("webextensions.storage.sync.kinto", false);
