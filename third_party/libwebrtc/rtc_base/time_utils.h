@@ -133,7 +133,7 @@ int64_t TimeUTCMicros();
 
 
 
-int64_t TimeUTCMillis();
+RTC_EXPORT int64_t TimeUTCMillis();
 
 }  
 
