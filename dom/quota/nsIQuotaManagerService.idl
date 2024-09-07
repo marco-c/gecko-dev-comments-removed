@@ -188,6 +188,20 @@ interface nsIQuotaManagerService : nsISupports
   
 
 
+
+
+
+
+
+
+
+
+  [must_use] nsIQuotaRequest
+  getCachedUsageForPrincipal(in nsIPrincipal aPrincipal);
+
+  
+
+
   [must_use] nsIQuotaRequest
   listOrigins();
 
