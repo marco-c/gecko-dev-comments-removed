@@ -177,12 +177,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  static gfxPlatform* GetPlatform() {
-    if (MOZ_UNLIKELY(!gPlatform)) {
-      Init();
-    }
-    return gPlatform;
-  }
+  static gfxPlatform* GetPlatform();
 
   
 
@@ -498,13 +493,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   void UpdateCanUseHardwareVideoDecoding();
 
-  inline static void EnsureCMSInitialized() {
-    if (MOZ_UNLIKELY(!gCMSInitialized)) {
-      MaybeInitializeCMS();
-      MOZ_ASSERT(gCMSInitialized);
-    }
-  }
-
   
 
 
@@ -540,42 +528,48 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
   static qcms_profile* GetCMSOutputProfile() {
-    return GetPlatform()->mCMSOutputProfile;
+    EnsureCMSInitialized();
+    return gCMSOutputProfile;
   }
 
   
 
 
   static qcms_profile* GetCMSsRGBProfile() {
-    return GetPlatform()->mCMSsRGBProfile;
+    EnsureCMSInitialized();
+    return gCMSsRGBProfile;
   }
 
   
 
 
   static qcms_transform* GetCMSRGBTransform() {
-    return GetPlatform()->mCMSRGBTransform;
+    EnsureCMSInitialized();
+    return gCMSRGBTransform;
   }
 
   
 
 
   static qcms_transform* GetCMSInverseRGBTransform() {
-    return GetPlatform()->mCMSInverseRGBTransform;
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSInverseRGBTransform;
   }
 
   
 
 
   static qcms_transform* GetCMSRGBATransform() {
-    return GetPlatform()->mCMSRGBATransform;
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSRGBATransform;
   }
 
   
 
 
   static qcms_transform* GetCMSBGRATransform() {
-    return GetPlatform()->mCMSBGRATransform;
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSBGRATransform;
   }
 
   
@@ -865,6 +859,16 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
+
+
+
+  const mozilla::gfx::ContentDeviceData* GetInitContentDeviceData();
+
+  
+
+
+
+
   mozilla::Maybe<nsTArray<uint8_t>>& GetCMSOutputProfileData();
 
   
@@ -931,10 +935,27 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static void InitOpenGLConfig();
 
-  static gfxPlatform* gPlatform;
+  static mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire>
+      gCMSInitialized;
+  static CMSMode gCMSMode;
 
-  void InitializeCMS();
-  void ShutdownCMS();
+  
+  static qcms_profile* gCMSOutputProfile;
+  static qcms_profile* gCMSsRGBProfile;
+
+  static qcms_transform* gCMSRGBTransform;
+  static qcms_transform* gCMSInverseRGBTransform;
+  static qcms_transform* gCMSRGBATransform;
+  static qcms_transform* gCMSBGRATransform;
+
+  inline static void EnsureCMSInitialized() {
+    if (MOZ_UNLIKELY(!gCMSInitialized)) {
+      InitializeCMS();
+    }
+  }
+
+  static void InitializeCMS();
+  static void ShutdownCMS();
 
   
 
@@ -952,23 +973,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static bool IsDXNV12Blocked();
   static bool IsDXP010Blocked();
   static bool IsDXP016Blocked();
-
-  static void MaybeInitializeCMS();
-
-  
-  
-  static mozilla::Atomic<bool, mozilla::ReleaseAcquire> gCMSInitialized;
-  static CMSMode gCMSMode;
-
-  
-  qcms_profile* mCMSOutputProfile = nullptr;
-  qcms_profile* mCMSsRGBProfile = nullptr;
-
-  qcms_transform* mCMSRGBTransform = nullptr;
-  qcms_transform* mCMSInverseRGBTransform = nullptr;
-  qcms_transform* mCMSRGBATransform = nullptr;
-  qcms_transform* mCMSBGRATransform = nullptr;
-  mozilla::Maybe<nsTArray<uint8_t>> mCMSOutputProfileData;
 
   RefPtr<gfxASurface> mScreenReferenceSurface;
   RefPtr<mozilla::layers::MemoryPressureObserver> mMemoryPressureObserver;
