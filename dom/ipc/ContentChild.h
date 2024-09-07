@@ -114,7 +114,7 @@ class ContentChild final : public PContentChild,
       BrowsingContext** aReturn);
 
   void Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
-            const char* aParentBuildID, uint64_t aChildID, bool aIsForBrowser);
+            const char* aParentBuildID, bool aIsForBrowser);
 
   void InitXPCOM(XPCOMInitData&& aXPCOMInit,
                  const mozilla::dom::ipc::StructuredCloneData& aInitialData,
@@ -446,7 +446,9 @@ class ContentChild final : public PContentChild,
   
   nsString& GetIndexedDBPath();
 
-  ContentParentId GetID() const { return mID; }
+  ContentParentId GetID() const {
+    return ContentParentId{static_cast<uint64_t>(XRE_GetChildID())};
+  }
 
   bool IsForBrowser() const { return mIsForBrowser; }
 
@@ -826,15 +828,6 @@ class ContentChild final : public PContentChild,
   FullLookAndFeel mLookAndFeelData;
   
   nsTArray<base::SharedMemoryHandle> mSharedFontListBlocks;
-
-  
-
-
-
-
-
-
-  ContentParentId mID;
 
   AppInfo mAppInfo;
 

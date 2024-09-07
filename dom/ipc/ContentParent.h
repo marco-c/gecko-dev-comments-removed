@@ -464,6 +464,13 @@ class ContentParent final : public PContentParent,
 
   void KillHard(const char* aReason);
 
+  
+
+
+
+
+
+
   ContentParentId ChildID() const { return mChildID; }
 
   
