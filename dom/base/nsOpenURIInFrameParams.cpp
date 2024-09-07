@@ -5,6 +5,7 @@
 
 
 #include "nsOpenURIInFrameParams.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsIOpenWindowInfo.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Element.h"
