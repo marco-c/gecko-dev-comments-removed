@@ -1872,9 +1872,9 @@ function rbigintmod(i) {
 
 let uceFault_pow_bigint = eval(`(${uceFault})`.replace('uceFault', 'uceFault_pow_bigint'));
 function rbigintpow(i) {
-    var x = i ** 2n;
+    var x = i ** 5n;
     if (uceFault_pow_bigint(i) || uceFault_pow_bigint(i))
-        assertEq(x, 9801n  );
+        assertEq(x, 9509900499n  );
     assertRecoveredOnBailout(x, true);
     return i;
 }
