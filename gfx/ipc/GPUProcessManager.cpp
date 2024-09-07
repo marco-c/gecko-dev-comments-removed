@@ -214,6 +214,17 @@ void GPUProcessManager::ResetProcessStable() {
 }
 
 bool GPUProcessManager::IsProcessStable(const TimeStamp& aNow) {
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  
+  if (!mAppInForeground) {
+    return true;
+  }
+#endif
+
   if (mTotalProcessAttempts > 0) {
     auto delta = (int32_t)(aNow - mProcessAttemptLastTime).ToMilliseconds();
     if (delta < StaticPrefs::layers_gpu_process_stable_min_uptime_ms()) {
@@ -249,32 +260,10 @@ bool GPUProcessManager::LaunchGPUProcess() {
   
   EnsureVsyncIOThread();
 
-  
-  
-  
-  
-  auto newTime = TimeStamp::Now();
-  if (IsProcessStable(newTime)) {
-    mUnstableProcessAttempts = 0;
-  } else {
-    mUnstableProcessAttempts++;
-    mozilla::glean::gpu_process::unstable_launch_attempts.Set(
-        mUnstableProcessAttempts);
-  }
   mTotalProcessAttempts++;
   mozilla::glean::gpu_process::total_launch_attempts.Set(mTotalProcessAttempts);
-  mProcessAttemptLastTime = newTime;
+  mProcessAttemptLastTime = TimeStamp::Now();
   mProcessStable = false;
-
-  
-  
-  
-  
-  if (!mAppInForeground) {
-    gfxCriticalNote
-        << "GPU process is being launched whilst app is in background";
-    mProcessStable = true;
-  }
 
   std::vector<std::string> extraArgs;
   ipc::ProcessChild::AddPlatformBuildID(extraArgs);
@@ -919,6 +908,18 @@ void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
 
   CompositorManagerChild::OnGPUProcessLost(aHost->GetProcessToken());
   DestroyProcess( true);
+
+  
+  
+  
+  
+  if (IsProcessStable(TimeStamp::Now())) {
+    mUnstableProcessAttempts = 0;
+  } else {
+    mUnstableProcessAttempts++;
+    mozilla::glean::gpu_process::unstable_launch_attempts.Set(
+        mUnstableProcessAttempts);
+  }
 
   if (mUnstableProcessAttempts >
       uint32_t(StaticPrefs::layers_gpu_process_max_restarts())) {
