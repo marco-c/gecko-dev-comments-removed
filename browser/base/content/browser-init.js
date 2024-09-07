@@ -371,22 +371,23 @@ var gBrowserInit = {
     BrowserOffline.init();
     CanvasPermissionPromptHelper.init();
     WebAuthnPromptHelper.init();
-    ContentAnalysis.initialize(document);
+
+    XPCOMUtils.callModulesFromCategory(
+      "browser-window-delayed-startup",
+      window
+    );
 
     
     
     
     FullZoom.init();
     PanelUI.init(shouldSuppressPopupNotifications);
-    ReportBrokenSite.init(gBrowser);
 
     UpdateUrlbarSearchSplitterState();
 
     BookmarkingUI.init();
     BrowserSearch.delayedStartupInit();
-    SearchUIUtils.init();
     gProtectionsHandler.init();
-    HomePage.delayedStartup().catch(console.error);
 
     let safeMode = document.getElementById("helpSafeMode");
     if (Services.appinfo.inSafeMode) {
