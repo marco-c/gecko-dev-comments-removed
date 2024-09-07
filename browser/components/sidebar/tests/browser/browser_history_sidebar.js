@@ -22,15 +22,8 @@ const yesterday = new Date(
 );
 
 
-const lastMonth = new Date(today);
-lastMonth.setDate(1);
-if (lastMonth.getMonth() === 0) {
-  
-  lastMonth.setMonth(11);
-  lastMonth.setFullYear(lastMonth.getFullYear() - 1);
-} else {
-  lastMonth.setMonth(lastMonth.getMonth() - 1);
-}
+
+const lastMonth = new Date(today.getFullYear(), today.getMonth(), -1);
 
 const dates = [today, yesterday, lastMonth];
 
