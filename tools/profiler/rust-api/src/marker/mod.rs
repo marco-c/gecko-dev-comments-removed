@@ -129,7 +129,12 @@ use crate::json_writer::JSONWriter;
 use crate::marker::deserializer_tags_state::get_or_insert_deserializer_tag;
 use crate::ProfilerTime;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::borrow::Cow;
 use std::os::raw::c_char;
+
+
+
+pub type CowString = Cow<'static, str>;
 
 
 
@@ -336,7 +341,13 @@ pub fn add_marker<T>(
 
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Tracing(pub String);
+pub struct Tracing(pub CowString);
+
+impl Tracing {
+    pub fn from_str(s: &'static str) -> Self {
+        Tracing(Cow::Borrowed(s))
+    }
+}
 
 impl ProfilerMarker for Tracing {
     fn marker_type_name() -> &'static str {
@@ -373,7 +384,7 @@ pub struct AutoProfilerTracingMarker<'a> {
     name: &'a str,
     category: ProfilingCategoryPair,
     options: MarkerOptions,
-    payload: String,
+    payload: CowString,
 }
 
 impl<'a> AutoProfilerTracingMarker<'a> {
@@ -381,7 +392,7 @@ impl<'a> AutoProfilerTracingMarker<'a> {
         name: &'a str,
         category: ProfilingCategoryPair,
         options: MarkerOptions,
-        payload: String,
+        payload: CowString,
     ) -> Option<AutoProfilerTracingMarker<'a>> {
         if !crate::profiler_state::can_accept_markers() {
             return None;
