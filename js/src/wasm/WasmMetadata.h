@@ -7,6 +7,8 @@
 #ifndef wasm_WasmMetadata_h
 #define wasm_WasmMetadata_h
 
+#include "mozilla/Atomics.h"
+
 #include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmInstanceData.h"  
 #include "wasm/WasmModuleTypes.h"
@@ -199,7 +201,21 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
+  CallRefMetricsRangeVector funcDefCallRefs;
+
+  
+  
+  
+  
   SharedBytes bytecode;
+
+  
+  
+  
+  
+  
+  
+  MutableCallRefHints callRefHints;
 
   
   bool debugEnabled;
@@ -230,12 +246,16 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   uint32_t instanceDataLength;
 
+  
+  uint32_t numCallRefMetrics;
+
   explicit CodeMetadata(const CompileArgs* compileArgs = nullptr,
                         ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
         compileArgs(compileArgs),
         numFuncImports(0),
         numGlobalImports(0),
+        callRefHints(nullptr),
         debugEnabled(false),
         debugHash(),
         funcDefsOffsetStart(UINT32_MAX),
@@ -244,7 +264,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         memoriesOffsetStart(UINT32_MAX),
         tablesOffsetStart(UINT32_MAX),
         tagsOffsetStart(UINT32_MAX),
-        instanceDataLength(UINT32_MAX) {}
+        instanceDataLength(UINT32_MAX),
+        numCallRefMetrics(UINT32_MAX) {}
 
   [[nodiscard]] bool init() {
     MOZ_ASSERT(!types);
@@ -316,6 +337,21 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     MOZ_ASSERT(funcIndex >= numFuncImports);
     uint32_t funcDefIndex = funcIndex - numFuncImports;
     return funcDefFeatureUsages[funcDefIndex];
+  }
+  CallRefMetricsRange getFuncDefCallRefs(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= numFuncImports);
+    uint32_t funcDefIndex = funcIndex - numFuncImports;
+    return funcDefCallRefs[funcDefIndex];
+  }
+
+  CallRefHint getCallRefHint(uint32_t callRefIndex) const {
+    if (!callRefHints) {
+      return CallRefHint::unknown();
+    }
+    return CallRefHint::fromRepr(callRefHints[callRefIndex]);
+  }
+  void setCallRefHint(uint32_t callRefIndex, CallRefHint hint) const {
+    callRefHints[callRefIndex] = hint.toRepr();
   }
 
   

@@ -57,6 +57,7 @@ bool CompiledCode::swap(MacroAssembler& masm) {
   symbolicAccesses.swap(masm.symbolicAccesses());
   tryNotes.swap(masm.tryNotes());
   codeRangeUnwindInfos.swap(masm.codeRangeUnwindInfos());
+  callRefMetricsPatches.swap(masm.callRefMetricsPatches());
   codeLabels.swap(masm.codeLabels());
   return true;
 }
@@ -92,6 +93,7 @@ ModuleGenerator::ModuleGenerator(const CodeMetadata& codeMeta,
       requestTierUpStubCodeOffset_(0),
       lastPatchedCallSite_(0),
       startOfUnpatchedCallsites_(0),
+      numCallRefMetrics_(0),
       parallel_(false),
       outstanding_(0),
       currentTask_(nullptr),
@@ -399,16 +401,38 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   featureUsage_ |= code.featureUsage;
 
   if (compilingTier1() && mode() == CompileMode::LazyTiering) {
+    
+    
+    uint32_t startOfCallRefMetrics = numCallRefMetrics_;
+
     for (const FuncCompileOutput& func : code.funcs) {
       
       MOZ_ASSERT(func.index >= codeMeta_->numFuncImports);
       uint32_t funcDefIndex = func.index - codeMeta_->numFuncImports;
+
       
       MOZ_ASSERT(funcDefFeatureUsages_[funcDefIndex] == FeatureUsage::None);
+
+      
       funcDefFeatureUsages_[funcDefIndex] = func.featureUsage;
+
+      
+      
+      MOZ_ASSERT(func.callRefMetricsRange.begin +
+                     func.callRefMetricsRange.length <=
+                 code.callRefMetricsPatches.length());
+      funcDefCallRefMetrics_[funcDefIndex] = func.callRefMetricsRange;
+      funcDefCallRefMetrics_[funcDefIndex].offsetBy(startOfCallRefMetrics);
     }
   } else {
-    MOZ_ASSERT(funcDefFeatureUsages_.length() == 0);
+    MOZ_ASSERT(funcDefFeatureUsages_.empty());
+    MOZ_ASSERT(funcDefCallRefMetrics_.empty());
+    MOZ_ASSERT(code.callRefMetricsPatches.empty());
+#ifdef DEBUG
+    for (const FuncCompileOutput& func : code.funcs) {
+      MOZ_ASSERT(func.callRefMetricsRange.length == 0);
+    }
+#endif
   }
 
   
@@ -467,6 +491,24 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
     if (!linkData_->symbolicLinks[access.target].append(patchAt)) {
       return false;
     }
+  }
+
+  for (const CallRefMetricsPatch& patch : code.callRefMetricsPatches) {
+    CodeOffset offset = CodeOffset(patch.offsetOfOffsetPatch());
+    offset.offsetBy(offsetInModule);
+
+    size_t callRefIndex = numCallRefMetrics_;
+    numCallRefMetrics_ += 1;
+    size_t callRefMetricOffset = callRefIndex * sizeof(CallRefMetrics);
+
+    
+    
+    
+    if (callRefMetricOffset > (INT32_MAX / sizeof(CallRefMetrics))) {
+      return false;
+    }
+
+    masm_->patchMove32(offset, int32_t(callRefMetricOffset));
   }
 
   for (const CodeLabel& codeLabel : code.codeLabels) {
@@ -977,7 +1019,8 @@ bool ModuleGenerator::prepareTier1() {
   
   
   if (mode() == CompileMode::LazyTiering &&
-      !funcDefFeatureUsages_.resize(codeMeta_->numFuncDefs())) {
+      (!funcDefFeatureUsages_.resize(codeMeta_->numFuncDefs()) ||
+       !funcDefCallRefMetrics_.resize(codeMeta_->numFuncDefs()))) {
     return false;
   }
 
@@ -1228,11 +1271,21 @@ SharedModule ModuleGenerator::finishModule(
 
   
   codeMeta->funcDefFeatureUsages = std::move(funcDefFeatureUsages_);
+  codeMeta->funcDefCallRefs = std::move(funcDefCallRefMetrics_);
+  MOZ_ASSERT_IF(mode() != CompileMode::LazyTiering, numCallRefMetrics_ == 0);
+  codeMeta->numCallRefMetrics = numCallRefMetrics_;
+
+  if (mode() == CompileMode::LazyTiering) {
+    codeMeta->callRefHints = MutableCallRefHints(
+        js_pod_calloc<MutableCallRefHint>(numCallRefMetrics_));
+    if (!codeMeta->callRefHints) {
+      return nullptr;
+    }
+  }
 
   
   
-  if (compilerEnv_->debugEnabled() ||
-      compilerEnv_->mode() == CompileMode::LazyTiering) {
+  if (debugEnabled() || mode() == CompileMode::LazyTiering) {
     codeMeta->bytecode = &bytecode;
   } else {
     codeMeta->bytecode = nullptr;
@@ -1245,7 +1298,7 @@ SharedModule ModuleGenerator::finishModule(
   }
 
   
-  if (compilerEnv_->debugEnabled()) {
+  if (debugEnabled()) {
     codeMeta->debugEnabled = true;
 
     static_assert(sizeof(ModuleHash) <= sizeof(mozilla::SHA1Sum::Hash),
@@ -1395,6 +1448,8 @@ size_t CompiledCode::sizeOfExcludingThis(
          callSiteTargets.sizeOfExcludingThis(mallocSizeOf) + trapSitesSize +
          symbolicAccesses.sizeOfExcludingThis(mallocSizeOf) +
          tryNotes.sizeOfExcludingThis(mallocSizeOf) +
+         codeRangeUnwindInfos.sizeOfExcludingThis(mallocSizeOf) +
+         callRefMetricsPatches.sizeOfExcludingThis(mallocSizeOf) +
          codeLabels.sizeOfExcludingThis(mallocSizeOf);
 }
 

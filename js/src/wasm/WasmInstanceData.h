@@ -191,6 +191,28 @@ struct FunctionTableElem {
   Instance* instance;
 };
 
+
+
+
+
+
+
+
+
+
+
+struct CallRefMetrics {
+  enum State : uint32_t {
+    Unknown,
+    Monomorphic,
+    Polymorphic,
+  };
+
+  State state;
+  uint32_t callCount;
+  GCPtr<JSFunction*> monomorphicTarget;
+};
+
 }  
 }  
 

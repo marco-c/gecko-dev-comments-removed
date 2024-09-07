@@ -70,6 +70,10 @@ static const uint32_t MinSuperTypeVectorLength = 8;
 
 static const uint32_t JumpTableJitEntryOffset = 0;
 
+
+
+#define STATIC_ASSERT_WASM_FUNCTIONS_TENURED
+
 }  
 }  
 

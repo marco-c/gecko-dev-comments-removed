@@ -61,6 +61,7 @@ struct TableInstanceData;
 struct TagDesc;
 struct TagInstanceData;
 struct TypeDefInstanceData;
+struct CallRefMetrics;
 class WasmFrameIter;
 
 
@@ -193,6 +194,11 @@ class alignas(16) Instance {
   
   
   uint32_t* debugFilter_;
+
+  
+  
+  
+  CallRefMetrics* callRefMetrics_;
 
   
   uint32_t maxInitializedGlobalsIndexPlus1_;
@@ -336,6 +342,9 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfDebugFilter() {
     return offsetof(Instance, debugFilter_);
   }
+  static constexpr size_t offsetOfCallRefMetrics() {
+    return offsetof(Instance, callRefMetrics_);
+  }
   static constexpr size_t offsetOfData() { return offsetof(Instance, data_); }
   static constexpr size_t offsetInData(size_t offset) {
     return offsetOfData() + offset;
@@ -376,6 +385,7 @@ class alignas(16) Instance {
   void resetTemporaryStackLimit(JSContext* cx);
 
   void resetHotnessCounter(uint32_t funcIndex);
+  void submitCallRefHints(uint32_t funcIndex);
 
   bool debugFilter(uint32_t funcIndex) const;
   void setDebugFilter(uint32_t funcIndex, bool value);

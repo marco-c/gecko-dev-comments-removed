@@ -2176,6 +2176,9 @@ bool WasmInstanceObject::getExportedFunction(
       return false;
     }
 
+    MOZ_ASSERT(fun->isTenured());
+    STATIC_ASSERT_WASM_FUNCTIONS_TENURED;
+
     
     fun->setWasmFuncIndex(funcIndex);
   } else {
@@ -2196,6 +2199,9 @@ bool WasmInstanceObject::getExportedFunction(
     if (!fun) {
       return false;
     }
+
+    MOZ_ASSERT(fun->isTenured());
+    STATIC_ASSERT_WASM_FUNCTIONS_TENURED;
 
     
     
