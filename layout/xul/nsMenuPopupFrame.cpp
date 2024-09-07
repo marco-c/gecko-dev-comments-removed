@@ -1450,7 +1450,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
       
       
       nsIFrame* anchorFrame = GetAnchorFrame();
-      if (NS_WARN_IF(!anchorFrame)) {
+      if (!anchorFrame) {
         return rootScreenRect;
       }
       return ComputeAnchorRect(rootPc, anchorFrame);
