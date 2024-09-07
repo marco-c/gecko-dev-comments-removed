@@ -234,10 +234,12 @@ void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
 }
 
 nsToolkitProfile::nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
-                                   nsIFile* aLocalDir, bool aFromDB)
+                                   nsIFile* aLocalDir, bool aFromDB,
+                                   const nsACString& aStoreID = VoidCString())
     : mName(aName),
       mRootDir(aRootDir),
       mLocalDir(aLocalDir),
+      mStoreID(aStoreID),
       mLock(nullptr),
       mIndex(0),
       mSection("Profile") {
@@ -264,6 +266,10 @@ nsToolkitProfile::nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
 
     db->SetString(mSection.get(), "IsRelative", isRelative ? "1" : "0");
     db->SetString(mSection.get(), "Path", descriptor.get());
+    if (!mStoreID.IsVoid()) {
+      db->SetString(mSection.get(), "StoreID",
+                    PromiseFlatCString(mStoreID).get());
+    }
   }
 }
 
@@ -326,6 +332,48 @@ nsToolkitProfile::SetRootDir(nsIFile* aRootDir) {
   mLocalDir = localDir;
 
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsToolkitProfile::GetStoreID(nsACString& aResult) {
+  aResult = mStoreID;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsToolkitProfile::SetStoreID(const nsACString& aStoreID) {
+#ifdef MOZ_SELECTABLE_PROFILES
+  NS_ASSERTION(nsToolkitProfileService::gService, "Where did my service go?");
+
+  
+  if (mStoreID.Equals(aStoreID)) {
+    return NS_OK;
+  }
+
+  
+  
+  nsresult rv;
+  if (!aStoreID.IsVoid()) {
+    rv = nsToolkitProfileService::gService->mProfileDB.SetString(
+        mSection.get(), "StoreID", PromiseFlatCString(aStoreID).get());
+  } else {
+    rv = nsToolkitProfileService::gService->mProfileDB.DeleteString(
+        mSection.get(), "StoreID");
+
+    
+    if (rv == NS_ERROR_FAILURE) {
+      rv = NS_OK;
+    }
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  mStoreID = aStoreID;
+
+  return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP
@@ -1045,7 +1093,17 @@ nsresult nsToolkitProfileService::Init() {
       localDir = rootDir;
     }
 
-    currentProfile = new nsToolkitProfile(name, rootDir, localDir, true);
+    nsCString storeID;
+
+    rv = mProfileDB.GetString(profileID.get(), "StoreID", storeID);
+
+    
+    if (NS_FAILED(rv) && rv == NS_ERROR_FAILURE) {
+      storeID = VoidCString();
+    }
+
+    currentProfile =
+        new nsToolkitProfile(name, rootDir, localDir, true, storeID);
 
     
     
