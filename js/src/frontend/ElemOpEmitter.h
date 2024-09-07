@@ -179,8 +179,6 @@ class MOZ_STACK_CLASS ElemOpEmitter {
   
   
   
-  
-  
   enum class State {
     
     Start,
@@ -252,13 +250,14 @@ class MOZ_STACK_CLASS ElemOpEmitter {
   [[nodiscard]] bool emitGet();
 
   [[nodiscard]] bool prepareForRhs();
-  [[nodiscard]] bool skipObjAndKeyAndRhs();
 
   [[nodiscard]] bool emitDelete();
 
   [[nodiscard]] bool emitAssignment();
 
   [[nodiscard]] bool emitIncDec(ValueUsage valueUsage);
+
+  size_t numReferenceSlots() const { return 2 + isSuper(); }
 };
 
 } 
