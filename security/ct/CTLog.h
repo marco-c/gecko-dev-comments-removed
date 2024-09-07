@@ -16,9 +16,21 @@ namespace ct {
 
 
 
+
 typedef int16_t CTLogOperatorId;
 
 typedef std::vector<CTLogOperatorId> CTLogOperatorList;
+
+
+
+enum class CTLogStatus {
+  
+  Unknown,
+  
+  Included,
+  
+  Disqualified,
+};
 
 }  
 }  
