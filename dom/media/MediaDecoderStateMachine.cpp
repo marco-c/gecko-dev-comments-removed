@@ -3928,8 +3928,9 @@ void MediaDecoderStateMachine::BufferedRangeUpdated() {
 
   
   
-  if (mDuration.Ref().isNothing() || mDuration.Ref()->IsInfinite() ||
-      end > mDuration.Ref().ref()) {
+  if ((mDuration.Ref().isNothing() || mDuration.Ref()->IsInfinite() ||
+       end > mDuration.Ref().ref()) &&
+      end.IsPositiveOrZero()) {
     nsPrintfCString msg{
         "duration:%" PRId64 "->%" PRId64,
         mDuration.Ref().isNothing() ? 0 : mDuration.Ref()->ToMicroseconds(),
