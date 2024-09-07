@@ -663,6 +663,18 @@ class Tagged {
 
 
 
+template <typename To, typename From>
+inline Tagged<To> UncheckedCast(Tagged<From> value) {
+  return Tagged<To>(To::cast(value));
+}
+
+template <typename To, typename From>
+inline Tagged<To> Cast(const From& value) {
+  return UncheckedCast<To>(Tagged(value));
+}
+
+
+
 
 class FixedArray : public HeapObject {
  public:
@@ -910,6 +922,14 @@ template <typename T>
 inline Handle<T> handle(T object, Isolate* isolate) {
   return Handle<T>(object, isolate);
 }
+
+
+
+
+
+
+template <typename T>
+using DirectHandle = Handle<T>;
 
 
 
