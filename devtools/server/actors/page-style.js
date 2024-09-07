@@ -635,6 +635,7 @@ class PageStyleActor extends Actor {
 
 
 
+
   _getAllElementRules(node, inherited, options) {
     const { bindingElement, pseudo } = CssLogic.getBindingElementAndPseudo(
       node.rawNode
@@ -650,12 +651,11 @@ class PageStyleActor extends Actor {
     const showInheritedStyles =
       inherited && this._hasInheritedProps(bindingElement.style);
 
-    const rule = {
-      rule: elementStyle,
+    const rule = this._getRuleItem(elementStyle, node.rawNode, {
       pseudoElement: null,
       isSystem: false,
       inherited: false,
-    };
+    });
 
     
     if (showElementStyles) {
@@ -715,6 +715,27 @@ class PageStyleActor extends Actor {
     }
 
     return rules;
+  }
+
+  
+
+
+
+
+
+
+
+
+  _getRuleItem(rule, rawNode, { inherited, isSystem, pseudoElement }) {
+    return {
+      rule,
+      pseudoElement,
+      isSystem,
+      inherited,
+      
+      
+      darkColorScheme: InspectorUtils.isUsedColorSchemeDark(rawNode),
+    };
   }
 
   _nodeIsTextfieldLike(node) {
@@ -841,12 +862,13 @@ class PageStyleActor extends Actor {
 
       const ruleActor = this._styleRef(domRule);
 
-      rules.push({
-        rule: ruleActor,
-        inherited,
-        isSystem,
-        pseudoElement: pseudo,
-      });
+      rules.push(
+        this._getRuleItem(ruleActor, node, {
+          inherited,
+          isSystem,
+          pseudoElement: pseudo,
+        })
+      );
     }
     return rules;
   }
