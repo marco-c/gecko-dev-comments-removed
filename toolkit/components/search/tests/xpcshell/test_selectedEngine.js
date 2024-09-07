@@ -2,17 +2,20 @@
 
 
 const kDefaultEngineName = "engine1";
+const kOtherAppProvidedEngineId = "engine2";
 
 add_setup(async function () {
   useHttpServer();
-  await SearchTestUtils.useTestEngines("data1");
+  SearchTestUtils.setRemoteSettingsConfig([
+    { identifier: kDefaultEngineName },
+    { identifier: kOtherAppProvidedEngineId },
+  ]);
   Assert.ok(!Services.search.isInitialized);
   Services.prefs.setBoolPref(
     "browser.search.removeEngineInfobar.enabled",
     false
   );
 });
-
 
 add_task(async function test_defaultEngine() {
   await Services.search.init();
@@ -112,29 +115,22 @@ add_task(async function test_resetToOriginalDefaultEngine() {
 
 add_task(async function test_fallback_kept_after_restart() {
   
-  let builtInEngines = await Services.search.getAppProvidedEngines();
-  let nonDefaultBuiltInEngine;
-  for (let engine of builtInEngines) {
-    if (engine.name != kDefaultEngineName) {
-      nonDefaultBuiltInEngine = engine;
-      break;
-    }
-  }
+  let otherAppProvidedEngine = Services.search.getEngineById(
+    kOtherAppProvidedEngineId
+  );
+
   await Services.search.setDefault(
-    nonDefaultBuiltInEngine,
+    otherAppProvidedEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
-  Assert.equal(
-    Services.search.defaultEngine.name,
-    nonDefaultBuiltInEngine.name
-  );
+  Assert.equal(Services.search.defaultEngine.name, otherAppProvidedEngine.name);
   await promiseAfterSettings();
 
   
-  await Services.search.removeEngine(nonDefaultBuiltInEngine);
+  await Services.search.removeEngine(otherAppProvidedEngine);
   
   
-  Assert.ok(nonDefaultBuiltInEngine.hidden);
+  Assert.ok(otherAppProvidedEngine.hidden);
 
   
   
@@ -143,7 +139,7 @@ add_task(async function test_fallback_kept_after_restart() {
   
   
   Services.search.restoreDefaultEngines();
-  Assert.ok(!nonDefaultBuiltInEngine.hidden);
+  Assert.ok(!otherAppProvidedEngine.hidden);
   Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
   await promiseAfterSettings();
 

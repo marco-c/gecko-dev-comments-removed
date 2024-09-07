@@ -5,7 +5,7 @@
 
 
 add_setup(async function () {
-  await SearchTestUtils.useTestEngines("data1");
+  SearchTestUtils.setRemoteSettingsConfig([{ identifier: "unused" }]);
 });
 
 add_task(async function run_test() {

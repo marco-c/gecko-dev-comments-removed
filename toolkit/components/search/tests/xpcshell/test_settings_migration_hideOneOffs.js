@@ -27,7 +27,10 @@ async function loadSettingsFile(settingsFile) {
 
 
 add_setup(async function () {
-  await SearchTestUtils.useTestEngines("data1");
+  SearchTestUtils.setRemoteSettingsConfig([
+    { identifier: "engine1" },
+    { identifier: "engine2" },
+  ]);
   await Services.search.init();
 });
 

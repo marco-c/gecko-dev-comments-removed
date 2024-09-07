@@ -18,36 +18,7 @@
 
 "use strict";
 
-const TEST_CONFIG_V2 = [
-  {
-    recordType: "engine",
-    identifier: "example",
-    base: {
-      name: "example",
-      urls: {
-        search: {
-          base: "https://example.com",
-          params: [],
-          searchTermParamName: "search",
-        },
-      },
-    },
-    variants: [
-      {
-        environment: { allRegionsAndLocales: true },
-      },
-    ],
-  },
-  {
-    recordType: "defaultEngines",
-    globalDefault: "example",
-    specificDefaults: [],
-  },
-  {
-    recordType: "engineOrders",
-    orders: [],
-  },
-];
+const CONFIG = [];
 
 
 
@@ -69,7 +40,7 @@ const ENGINE_NAME_TO_NEW_NAME_MAP = new Map([
 ]);
 
 for (let [identifier, name] of ENGINE_NAME_TO_NEW_NAME_MAP.entries()) {
-  TEST_CONFIG_V2.push({
+  CONFIG.push({
     recordType: "engine",
     identifier,
     base: {
@@ -83,11 +54,6 @@ for (let [identifier, name] of ENGINE_NAME_TO_NEW_NAME_MAP.entries()) {
         },
       },
     },
-    variants: [
-      {
-        environment: { allRegionsAndLocales: true },
-      },
-    ],
   });
 }
 
@@ -115,7 +81,7 @@ async function loadSettingsFile(settingsFile) {
 
 
 add_setup(async function () {
-  await SearchTestUtils.useTestEngines("data1", null, TEST_CONFIG_V2);
+  SearchTestUtils.setRemoteSettingsConfig(CONFIG);
   await loadSettingsFile("data/search-migration-renames.json");
 });
 
