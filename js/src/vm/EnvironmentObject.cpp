@@ -3640,7 +3640,7 @@ bool js::CheckLexicalNameConflict(
   if (shadowsExistingProperty && varObj->is<GlobalObject>()) {
     
     
-    varObj->as<GlobalObject>().bumpGenerationCount();
+    varObj->as<GlobalObject>().bumpGenerationCount(cx);
   }
 
   return true;
