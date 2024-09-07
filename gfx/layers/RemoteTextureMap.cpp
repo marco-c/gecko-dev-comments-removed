@@ -325,6 +325,12 @@ bool RemoteTextureMap::RecycleTexture(
                                                           info.format};
   if (aHolder.mResourceWrapper) {
     
+    if (aHolder.mResourceWrapper->mSharedSurface &&
+        !aHolder.mResourceWrapper->mSharedSurface->mDesc.canRecycle) {
+      return false;
+    }
+
+    
     SurfaceDescriptor desc;
     if (!aHolder.mTextureData->Serialize(desc)) {
       return false;
