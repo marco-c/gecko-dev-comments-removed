@@ -45,9 +45,7 @@ TEST_F(TestFileSystemUsageTracking, CheckUsageBeforeAnyFilesOnDisk) {
       
       
       
-      TEST_TRY_UNWRAP(quota::UsageInfo usageNow,
-                      quotaClient->InitOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                              testOriginMeta, isCanceled));
+      TEST_TRY_UNWRAP(quota::UsageInfo usageNow, dbm->GetUsage());
       ASSERT_NO_FATAL_FAILURE(CheckUsageGreaterThan(usageNow, 0u));
       const auto initialDbUsage = usageNow.DatabaseUsage().value();
 
@@ -73,9 +71,7 @@ TEST_F(TestFileSystemUsageTracking, CheckUsageBeforeAnyFilesOnDisk) {
                                     testOriginMeta, isCanceled));
       ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
 
-      TEST_TRY_UNWRAP(usageNow,
-                      quotaClient->InitOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                              testOriginMeta, isCanceled));
+      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
       ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
     };
 
@@ -133,9 +129,7 @@ TEST_F(TestFileSystemUsageTracking, WritesToFilesShouldIncreaseUsage) {
       ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
       const auto testFileDbUsage = usageNow.DatabaseUsage().value();
 
-      TEST_TRY_UNWRAP(usageNow,
-                      quotaClient->InitOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                              testOriginMeta, isCanceled));
+      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
       ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
 
       
@@ -146,9 +140,7 @@ TEST_F(TestFileSystemUsageTracking, WritesToFilesShouldIncreaseUsage) {
 
       
       
-      TEST_TRY_UNWRAP(usageNow,
-                      quotaClient->InitOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                              testOriginMeta, isCanceled));
+      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
       ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
 
       
@@ -158,9 +150,7 @@ TEST_F(TestFileSystemUsageTracking, WritesToFilesShouldIncreaseUsage) {
       const auto expectedTotalUsage = testFileDbUsage + testData.Length();
 
       
-      TEST_TRY_UNWRAP(usageNow,
-                      quotaClient->InitOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                              testOriginMeta, isCanceled));
+      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
       ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
 
       
@@ -200,9 +190,7 @@ TEST_F(TestFileSystemUsageTracking, RemovingFileShouldDecreaseUsage) {
 
       EntryId testFileId;
       ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(dbm, fileData, testFileId));
-      TEST_TRY_UNWRAP(quota::UsageInfo usageNow,
-                      quotaClient->InitOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                              testOriginMeta, isCanceled));
+      TEST_TRY_UNWRAP(quota::UsageInfo usageNow, dbm->GetUsage());
       ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
       const auto testFileDbUsage = usageNow.DatabaseUsage().value();
 
@@ -228,9 +216,7 @@ TEST_F(TestFileSystemUsageTracking, RemovingFileShouldDecreaseUsage) {
       ASSERT_TRUE(wasRemoved);
 
       
-      TEST_TRY_UNWRAP(usageNow,
-                      quotaClient->InitOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                              testOriginMeta, isCanceled));
+      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
       ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
 
       
