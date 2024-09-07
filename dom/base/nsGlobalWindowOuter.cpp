@@ -5127,13 +5127,13 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
       
       
       aError = OpenInternal(u""_ns, u""_ns, u""_ns,
-                            false,             
-                            true,              
-                            false,             
-                            true,              
-                            nullptr, nullptr,  
-                            nullptr,           
-                            false,             
+                            false,    
+                            true,     
+                            false,    
+                            true,     
+                            nullptr,  
+                            nullptr,  
+                            false,    
                             printKind, getter_AddRefs(bc));
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
@@ -5574,11 +5574,11 @@ nsresult nsGlobalWindowOuter::Open(const nsAString& aUrl,
                                    bool aForceNoOpener,
                                    BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
-                      false,             
-                      true,              
-                      false,             
-                      true,              
-                      nullptr, nullptr,  
+                      false,    
+                      true,     
+                      false,    
+                      true,     
+                      nullptr,  
                       aLoadState, aForceNoOpener, PrintKind::None, _retval);
 }
 
@@ -5587,13 +5587,13 @@ nsresult nsGlobalWindowOuter::OpenJS(const nsAString& aUrl,
                                      const nsAString& aOptions,
                                      BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
-                      false,             
-                      false,             
-                      true,              
-                      true,              
-                      nullptr, nullptr,  
-                      nullptr,           
-                      false,             
+                      false,    
+                      false,    
+                      true,     
+                      true,     
+                      nullptr,  
+                      nullptr,  
+                      false,    
                       PrintKind::None, _retval);
 }
 
@@ -5602,16 +5602,16 @@ nsresult nsGlobalWindowOuter::OpenJS(const nsAString& aUrl,
 nsresult nsGlobalWindowOuter::OpenDialog(const nsAString& aUrl,
                                          const nsAString& aName,
                                          const nsAString& aOptions,
-                                         nsISupports* aExtraArgument,
+                                         nsIArray* aArguments,
                                          BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
-                      true,                     
-                      true,                     
-                      false,                    
-                      true,                     
-                      nullptr, aExtraArgument,  
-                      nullptr,                  
-                      false,                    
+                      true,        
+                      true,        
+                      false,       
+                      true,        
+                      aArguments,  
+                      nullptr,     
+                      false,       
                       PrintKind::None, _retval);
 }
 
@@ -5622,13 +5622,13 @@ nsresult nsGlobalWindowOuter::OpenNoNavigate(const nsAString& aUrl,
                                              const nsAString& aOptions,
                                              BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
-                      false,             
-                      true,              
-                      false,             
-                      false,             
-                      nullptr, nullptr,  
-                      nullptr,           
-                      false,             
+                      false,    
+                      true,     
+                      false,    
+                      false,    
+                      nullptr,  
+                      nullptr,  
+                      false,    
                       PrintKind::None, _retval);
 }
 
@@ -5646,13 +5646,13 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenDialogOuter(
 
   RefPtr<BrowsingContext> dialog;
   aError = OpenInternal(aUrl, aName, aOptions,
-                        true,                
-                        false,               
-                        false,               
-                        true,                
-                        argvArray, nullptr,  
-                        nullptr,             
-                        false,               
+                        true,       
+                        false,      
+                        false,      
+                        true,       
+                        argvArray,  
+                        nullptr,    
+                        false,      
                         PrintKind::None, getter_AddRefs(dialog));
   if (!dialog) {
     return nullptr;
@@ -6743,19 +6743,8 @@ class AutoUnblockScriptClosing {
 nsresult nsGlobalWindowOuter::OpenInternal(
     const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
     bool aDialog, bool aCalledNoScript, bool aDoJSFixups, bool aNavigate,
-    nsIArray* argv, nsISupports* aExtraArgument,
-    nsDocShellLoadState* aLoadState, bool aForceNoOpener, PrintKind aPrintKind,
-    BrowsingContext** aReturn) {
-#ifdef DEBUG
-  uint32_t argc = 0;
-  if (argv) argv->GetLength(&argc);
-#endif
-
-  MOZ_ASSERT(!aExtraArgument || (!argv && argc == 0),
-             "Can't pass in arguments both ways");
-  MOZ_ASSERT(!aCalledNoScript || (!argv && argc == 0),
-             "Can't pass JS args when called via the noscript methods");
-
+    nsIArray* aArguments, nsDocShellLoadState* aLoadState, bool aForceNoOpener,
+    PrintKind aPrintKind, BrowsingContext** aReturn) {
   mozilla::Maybe<AutoUnblockScriptClosing> closeUnblocker;
 
   
@@ -6940,7 +6929,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       
       rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
                                  true, aDialog,
-                                aNavigate, argv, isPopupSpamWindow,
+                                aNavigate, aArguments, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
                                 loadState, getter_AddRefs(domReturn));
     } else {
@@ -6956,7 +6945,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       AutoNoJSAPI nojsapi;
       rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
                                  false, aDialog,
-                                aNavigate, aExtraArgument, isPopupSpamWindow,
+                                aNavigate, aArguments, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
                                 loadState, getter_AddRefs(domReturn));
     }

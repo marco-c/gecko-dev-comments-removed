@@ -627,7 +627,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
       const mozilla::dom::Sequence<JS::Value>& aExtraArgument,
       mozilla::ErrorResult& aError);
   nsresult OpenDialog(const nsAString& aUrl, const nsAString& aName,
-                      const nsAString& aOptions, nsISupports* aExtraArgument,
+                      const nsAString& aOptions, nsIArray* aArguments,
                       mozilla::dom::BrowsingContext** _retval) override;
   void UpdateCommands(const nsAString& anAction) override;
 
@@ -748,14 +748,11 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
 
 
-
-
   nsresult OpenInternal(const nsAString& aUrl, const nsAString& aName,
                         const nsAString& aOptions, bool aDialog,
                         bool aCalledNoScript, bool aDoJSFixups, bool aNavigate,
-                        nsIArray* argv, nsISupports* aExtraArgument,
-                        nsDocShellLoadState* aLoadState, bool aForceNoOpener,
-                        PrintKind aPrintKind,
+                        nsIArray* aArguments, nsDocShellLoadState* aLoadState,
+                        bool aForceNoOpener, PrintKind aPrintKind,
                         mozilla::dom::BrowsingContext** aReturn);
 
   mozilla::Result<already_AddRefed<nsIURI>, nsresult>
