@@ -577,13 +577,20 @@ nsFocusManager::ClearFocus(mozIDOMWindowProxy* aWindow) {
 
   if (IsSameOrAncestor(window, GetFocusedBrowsingContext())) {
     RefPtr<BrowsingContext> bc = window->GetBrowsingContext();
-    bool isAncestor = (GetFocusedBrowsingContext() != bc);
-    uint64_t actionId = GenerateFocusActionId();
-    if (Blur(bc, nullptr, isAncestor, true, false, actionId)) {
+    RefPtr<BrowsingContext> focusedBC = GetFocusedBrowsingContext();
+    const bool isAncestor = (focusedBC != bc);
+    RefPtr<BrowsingContext> ancestorBC = isAncestor ? bc : nullptr;
+    if (Blur(focusedBC, ancestorBC, isAncestor, true, false,
+             GenerateFocusActionId())) {
       
       
       if (isAncestor) {
-        Focus(window, nullptr, 0, true, false, false, true, actionId);
+        
+        
+        
+        
+        Focus(window, nullptr, 0, true, false, false, true,
+              GenerateFocusActionId());
       }
     }
   } else {
