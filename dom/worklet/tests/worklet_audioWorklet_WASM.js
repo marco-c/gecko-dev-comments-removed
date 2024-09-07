@@ -7,7 +7,7 @@ class WasmProcessWorkletProcessor extends AudioWorkletProcessor {
     };
   }
 
-  process(inputs, outputs, parameters) {
+  process() {
     
     return true;
   }
