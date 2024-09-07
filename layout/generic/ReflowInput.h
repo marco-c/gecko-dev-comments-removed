@@ -120,64 +120,59 @@ struct SizeComputationInput {
     return mComputedPadding.GetPhysicalMargin(mWritingMode);
   }
 
-  mozilla::LogicalMargin ComputedLogicalMargin(mozilla::WritingMode aWM) const {
+  LogicalMargin ComputedLogicalMargin(WritingMode aWM) const {
     return mComputedMargin.ConvertTo(aWM, mWritingMode);
   }
-  mozilla::LogicalMargin ComputedLogicalBorderPadding(
-      mozilla::WritingMode aWM) const {
+  LogicalMargin ComputedLogicalBorderPadding(WritingMode aWM) const {
     return mComputedBorderPadding.ConvertTo(aWM, mWritingMode);
   }
-  mozilla::LogicalMargin ComputedLogicalPadding(
-      mozilla::WritingMode aWM) const {
+  LogicalMargin ComputedLogicalPadding(WritingMode aWM) const {
     return mComputedPadding.ConvertTo(aWM, mWritingMode);
   }
-  mozilla::LogicalMargin ComputedLogicalBorder(mozilla::WritingMode aWM) const {
+  LogicalMargin ComputedLogicalBorder(WritingMode aWM) const {
     return (mComputedBorderPadding - mComputedPadding)
         .ConvertTo(aWM, mWritingMode);
   }
 
-  void SetComputedLogicalMargin(mozilla::WritingMode aWM,
-                                const mozilla::LogicalMargin& aMargin) {
+  void SetComputedLogicalMargin(WritingMode aWM, const LogicalMargin& aMargin) {
     mComputedMargin = aMargin.ConvertTo(mWritingMode, aWM);
   }
-  void SetComputedLogicalBorderPadding(
-      mozilla::WritingMode aWM, const mozilla::LogicalMargin& aBorderPadding) {
+  void SetComputedLogicalBorderPadding(WritingMode aWM,
+                                       const LogicalMargin& aBorderPadding) {
     mComputedBorderPadding = aBorderPadding.ConvertTo(mWritingMode, aWM);
   }
-  void SetComputedLogicalPadding(mozilla::WritingMode aWM,
-                                 const mozilla::LogicalMargin& aPadding) {
+  void SetComputedLogicalPadding(WritingMode aWM,
+                                 const LogicalMargin& aPadding) {
     mComputedPadding = aPadding.ConvertTo(mWritingMode, aWM);
   }
 
-  mozilla::WritingMode GetWritingMode() const { return mWritingMode; }
+  WritingMode GetWritingMode() const { return mWritingMode; }
 
  protected:
   
-  const mozilla::WritingMode mWritingMode;
+  const WritingMode mWritingMode;
 
   
   const bool mIsThemed = false;
 
   
-  mozilla::LogicalMargin mComputedMargin;
+  LogicalMargin mComputedMargin;
 
   
-  mozilla::LogicalMargin mComputedBorderPadding;
+  LogicalMargin mComputedBorderPadding;
 
   
-  mozilla::LogicalMargin mComputedPadding;
+  LogicalMargin mComputedPadding;
 
  public:
   
   SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext);
 
   SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext,
-                       mozilla::WritingMode aContainingBlockWritingMode,
+                       WritingMode aContainingBlockWritingMode,
                        nscoord aContainingBlockISize,
-                       const mozilla::Maybe<mozilla::LogicalMargin>& aBorder =
-                           mozilla::Nothing(),
-                       const mozilla::Maybe<mozilla::LogicalMargin>& aPadding =
-                           mozilla::Nothing());
+                       const Maybe<LogicalMargin>& aBorder = Nothing(),
+                       const Maybe<LogicalMargin>& aPadding = Nothing());
 
  private:
   
@@ -190,8 +185,8 @@ struct SizeComputationInput {
 
 
 
-  bool ComputeMargin(mozilla::WritingMode aCBWM, nscoord aPercentBasis,
-                     mozilla::LayoutFrameType aFrameType);
+  bool ComputeMargin(WritingMode aCBWM, nscoord aPercentBasis,
+                     LayoutFrameType aFrameType);
 
   
 
@@ -203,15 +198,14 @@ struct SizeComputationInput {
 
 
 
-  bool ComputePadding(mozilla::WritingMode aCBWM, nscoord aPercentBasis,
-                      mozilla::LayoutFrameType aFrameType);
+  bool ComputePadding(WritingMode aCBWM, nscoord aPercentBasis,
+                      LayoutFrameType aFrameType);
 
  protected:
-  void InitOffsets(mozilla::WritingMode aCBWM, nscoord aPercentBasis,
-                   mozilla::LayoutFrameType aFrameType,
-                   mozilla::ComputeSizeFlags aFlags,
-                   const mozilla::Maybe<mozilla::LogicalMargin>& aBorder,
-                   const mozilla::Maybe<mozilla::LogicalMargin>& aPadding,
+  void InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
+                   LayoutFrameType aFrameType, ComputeSizeFlags aFlags,
+                   const Maybe<LogicalMargin>& aBorder,
+                   const Maybe<LogicalMargin>& aPadding,
                    const nsStyleDisplay* aDisplay = nullptr);
 
   
@@ -222,12 +216,12 @@ struct SizeComputationInput {
 
   template <typename SizeOrMaxSize>
   inline nscoord ComputeISizeValue(const LogicalSize& aContainingBlockSize,
-                                   mozilla::StyleBoxSizing aBoxSizing,
+                                   StyleBoxSizing aBoxSizing,
                                    const SizeOrMaxSize&) const;
 
   nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
-                            mozilla::StyleBoxSizing aBoxSizing,
-                            const mozilla::LengthPercentage& aCoord) const;
+                            StyleBoxSizing aBoxSizing,
+                            const LengthPercentage& aCoord) const;
 };
 
 
@@ -344,11 +338,11 @@ struct ReflowInput : public SizeComputationInput {
     mPercentageBasisInBlockAxis = Some(aBSize);
   }
 
-  mozilla::LogicalSize AvailableSize() const { return mAvailableSize; }
-  mozilla::LogicalSize ComputedSize() const { return mComputedSize; }
+  LogicalSize AvailableSize() const { return mAvailableSize; }
+  LogicalSize ComputedSize() const { return mComputedSize; }
 
   template <typename F>
-  mozilla::LogicalSize ComputedSizeWithBSizeFallback(F&& aFallback) const {
+  LogicalSize ComputedSizeWithBSizeFallback(F&& aFallback) const {
     auto size = mComputedSize;
     if (size.BSize(mWritingMode) == NS_UNCONSTRAINEDSIZE) {
       size.BSize(mWritingMode) = ApplyMinMaxBSize(aFallback());
@@ -356,33 +350,31 @@ struct ReflowInput : public SizeComputationInput {
     return size;
   }
 
-  mozilla::LogicalSize ComputedMinSize() const { return mComputedMinSize; }
-  mozilla::LogicalSize ComputedMaxSize() const { return mComputedMaxSize; }
+  LogicalSize ComputedMinSize() const { return mComputedMinSize; }
+  LogicalSize ComputedMaxSize() const { return mComputedMaxSize; }
 
-  mozilla::LogicalSize AvailableSize(mozilla::WritingMode aWM) const {
+  LogicalSize AvailableSize(WritingMode aWM) const {
     return AvailableSize().ConvertTo(aWM, mWritingMode);
   }
-  mozilla::LogicalSize ComputedSize(mozilla::WritingMode aWM) const {
+  LogicalSize ComputedSize(WritingMode aWM) const {
     return ComputedSize().ConvertTo(aWM, mWritingMode);
   }
-  mozilla::LogicalSize ComputedMinSize(mozilla::WritingMode aWM) const {
+  LogicalSize ComputedMinSize(WritingMode aWM) const {
     return ComputedMinSize().ConvertTo(aWM, mWritingMode);
   }
-  mozilla::LogicalSize ComputedMaxSize(mozilla::WritingMode aWM) const {
+  LogicalSize ComputedMaxSize(WritingMode aWM) const {
     return ComputedMaxSize().ConvertTo(aWM, mWritingMode);
   }
 
-  mozilla::LogicalSize ComputedSizeWithPadding(mozilla::WritingMode aWM) const {
+  LogicalSize ComputedSizeWithPadding(WritingMode aWM) const {
     return ComputedSize(aWM) + ComputedLogicalPadding(aWM).Size(aWM);
   }
 
-  mozilla::LogicalSize ComputedSizeWithBorderPadding(
-      mozilla::WritingMode aWM) const {
+  LogicalSize ComputedSizeWithBorderPadding(WritingMode aWM) const {
     return ComputedSize(aWM) + ComputedLogicalBorderPadding(aWM).Size(aWM);
   }
 
-  mozilla::LogicalSize ComputedSizeWithMarginBorderPadding(
-      mozilla::WritingMode aWM) const {
+  LogicalSize ComputedSizeWithMarginBorderPadding(WritingMode aWM) const {
     return ComputedSizeWithBorderPadding(aWM) +
            ComputedLogicalMargin(aWM).Size(aWM);
   }
@@ -395,11 +387,11 @@ struct ReflowInput : public SizeComputationInput {
     return mComputedOffsets.GetPhysicalMargin(mWritingMode);
   }
 
-  LogicalMargin ComputedLogicalOffsets(mozilla::WritingMode aWM) const {
+  LogicalMargin ComputedLogicalOffsets(WritingMode aWM) const {
     return mComputedOffsets.ConvertTo(aWM, mWritingMode);
   }
 
-  void SetComputedLogicalOffsets(mozilla::WritingMode aWM,
+  void SetComputedLogicalOffsets(WritingMode aWM,
                                  const LogicalMargin& aOffsets) {
     mComputedOffsets = aOffsets.ConvertTo(mWritingMode, aWM);
   }
@@ -563,9 +555,9 @@ struct ReflowInput : public SizeComputationInput {
   };
   Flags mFlags;
 
-  mozilla::StyleSizeOverrides mStyleSizeOverrides;
+  StyleSizeOverrides mStyleSizeOverrides;
 
-  mozilla::ComputeSizeFlags mComputeSizeFlags;
+  ComputeSizeFlags mComputeSizeFlags;
 
   
   
@@ -580,11 +572,11 @@ struct ReflowInput : public SizeComputationInput {
   }
   bool IsIResize() const { return mFlags.mIsIResize; }
   bool IsBResize() const { return mFlags.mIsBResize; }
-  bool IsBResizeForWM(mozilla::WritingMode aWM) const {
+  bool IsBResizeForWM(WritingMode aWM) const {
     return aWM.IsOrthogonalTo(mWritingMode) ? mFlags.mIsIResize
                                             : mFlags.mIsBResize;
   }
-  bool IsBResizeForPercentagesForWM(mozilla::WritingMode aWM) const {
+  bool IsBResizeForPercentagesForWM(WritingMode aWM) const {
     
     
     
@@ -626,7 +618,7 @@ struct ReflowInput : public SizeComputationInput {
     
     StaticPosIsCBOrigin,
   };
-  using InitFlags = mozilla::EnumSet<InitFlag>;
+  using InitFlags = EnumSet<InitFlag>;
 
   
   
@@ -644,8 +636,7 @@ struct ReflowInput : public SizeComputationInput {
 
 
   ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
-              gfxContext* aRenderingContext,
-              const mozilla::LogicalSize& aAvailableSpace,
+              gfxContext* aRenderingContext, const LogicalSize& aAvailableSpace,
               InitFlags aFlags = {});
 
   
@@ -672,12 +663,11 @@ struct ReflowInput : public SizeComputationInput {
 
   ReflowInput(nsPresContext* aPresContext,
               const ReflowInput& aParentReflowInput, nsIFrame* aFrame,
-              const mozilla::LogicalSize& aAvailableSpace,
-              const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
-                  mozilla::Nothing(),
+              const LogicalSize& aAvailableSpace,
+              const Maybe<LogicalSize>& aContainingBlockSize = Nothing(),
               InitFlags aFlags = {},
-              const mozilla::StyleSizeOverrides& aSizeOverrides = {},
-              mozilla::ComputeSizeFlags aComputeSizeFlags = {});
+              const StyleSizeOverrides& aSizeOverrides = {},
+              ComputeSizeFlags aComputeSizeFlags = {});
 
   
 
@@ -692,12 +682,9 @@ struct ReflowInput : public SizeComputationInput {
 
 
   void Init(nsPresContext* aPresContext,
-            const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
-                mozilla::Nothing(),
-            const mozilla::Maybe<mozilla::LogicalMargin>& aBorder =
-                mozilla::Nothing(),
-            const mozilla::Maybe<mozilla::LogicalMargin>& aPadding =
-                mozilla::Nothing());
+            const Maybe<LogicalSize>& aContainingBlockSize = Nothing(),
+            const Maybe<LogicalMargin>& aBorder = Nothing(),
+            const Maybe<LogicalMargin>& aPadding = Nothing());
 
   
 
@@ -739,11 +726,11 @@ struct ReflowInput : public SizeComputationInput {
                                          nsAtom* aLanguage,
                                          bool aExplicitLanguage,
                                          nsPresContext* aPresContext,
-                                         mozilla::WritingMode aWM);
+                                         WritingMode aWM);
 
   static constexpr float kNormalLineHeightFactor = 1.2f;
 
-  mozilla::LogicalSize ComputeContainingBlockRectangle(
+  LogicalSize ComputeContainingBlockRectangle(
       nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
 
   
@@ -843,9 +830,8 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  static mozilla::LogicalMargin ComputeRelativeOffsets(
-      mozilla::WritingMode aWM, nsIFrame* aFrame,
-      const mozilla::LogicalSize& aCBSize);
+  static LogicalMargin ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
+                                              const LogicalSize& aCBSize);
 
   
   
@@ -861,10 +847,11 @@ struct ReflowInput : public SizeComputationInput {
                                        const nsMargin& aComputedOffsets,
                                        nsPoint* aPosition);
 
-  static void ApplyRelativePositioning(
-      nsIFrame* aFrame, mozilla::WritingMode aWritingMode,
-      const mozilla::LogicalMargin& aComputedOffsets,
-      mozilla::LogicalPoint* aPosition, const nsSize& aContainerSize);
+  static void ApplyRelativePositioning(nsIFrame* aFrame,
+                                       WritingMode aWritingMode,
+                                       const LogicalMargin& aComputedOffsets,
+                                       LogicalPoint* aPosition,
+                                       const nsSize& aContainerSize);
 
   
   
@@ -888,16 +875,14 @@ struct ReflowInput : public SizeComputationInput {
 
  protected:
   void InitCBReflowInput();
-  void InitResizeFlags(nsPresContext* aPresContext,
-                       mozilla::LayoutFrameType aFrameType);
+  void InitResizeFlags(nsPresContext* aPresContext, LayoutFrameType aFrameType);
   void InitDynamicReflowRoot();
 
-  void InitConstraints(
-      nsPresContext* aPresContext,
-      const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize,
-      const mozilla::Maybe<mozilla::LogicalMargin>& aBorder,
-      const mozilla::Maybe<mozilla::LogicalMargin>& aPadding,
-      mozilla::LayoutFrameType aFrameType);
+  void InitConstraints(nsPresContext* aPresContext,
+                       const Maybe<LogicalSize>& aContainingBlockSize,
+                       const Maybe<LogicalMargin>& aBorder,
+                       const Maybe<LogicalMargin>& aPadding,
+                       LayoutFrameType aFrameType);
 
   
   
@@ -906,7 +891,7 @@ struct ReflowInput : public SizeComputationInput {
   
   nsIFrame* GetHypotheticalBoxContainer(nsIFrame* aFrame,
                                         nscoord& aCBIStartEdge,
-                                        mozilla::LogicalSize& aCBSize) const;
+                                        LogicalSize& aCBSize) const;
 
   
   
@@ -938,12 +923,12 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  void ComputeMinMaxValues(const mozilla::LogicalSize& aCBSize);
+  void ComputeMinMaxValues(const LogicalSize& aCBSize);
 
   
   
   
-  void CalculateBorderPaddingMargin(mozilla::LogicalAxis aAxis,
+  void CalculateBorderPaddingMargin(LogicalAxis aAxis,
                                     nscoord aContainingBlockSize,
                                     nscoord* aInsideBoxSizing,
                                     nscoord* aOutsideBoxSizing) const;
@@ -975,7 +960,7 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  mozilla::LogicalSize mAvailableSize{mWritingMode};
+  LogicalSize mAvailableSize{mWritingMode};
 
   
   
@@ -988,18 +973,18 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  mozilla::LogicalSize mComputedSize{mWritingMode};
+  LogicalSize mComputedSize{mWritingMode};
 
   
   
-  mozilla::LogicalMargin mComputedOffsets{mWritingMode};
+  LogicalMargin mComputedOffsets{mWritingMode};
 
   
-  mozilla::LogicalSize mComputedMinSize{mWritingMode};
+  LogicalSize mComputedMinSize{mWritingMode};
 
   
-  mozilla::LogicalSize mComputedMaxSize{mWritingMode, NS_UNCONSTRAINEDSIZE,
-                                        NS_UNCONSTRAINEDSIZE};
+  LogicalSize mComputedMaxSize{mWritingMode, NS_UNCONSTRAINEDSIZE,
+                               NS_UNCONSTRAINEDSIZE};
 
   
   
