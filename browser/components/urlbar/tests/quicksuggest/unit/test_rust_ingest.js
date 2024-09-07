@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   InterruptKind: "resource://gre/modules/RustSuggest.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  SuggestionProvider: "resource://gre/modules/RustSuggest.sys.mjs",
 });
 
 
@@ -31,7 +32,10 @@ add_setup(async function () {
         attachment: [REMOTE_SETTINGS_SUGGESTION],
       },
     ],
-    prefs: [["suggest.quicksuggest.sponsored", true]],
+    prefs: [
+      ["suggest.quicksuggest.sponsored", true],
+      ["suggest.quicksuggest.nonsponsored", true],
+    ],
   });
 });
 
@@ -48,63 +52,135 @@ add_task(async function disableEnable() {
     "Sanity check: Rust backend is initially enabled"
   );
 
-  
-  
+  let enabledTypes = QuickSuggest.rustBackend._test_enabledSuggestionTypes;
+  Assert.greater(
+    enabledTypes.length,
+    0,
+    "This test expects some Rust suggestion types to be enabled"
+  );
+
   UrlbarPrefs.set("quicksuggest.rustEnabled", false);
   UrlbarPrefs.set("quicksuggest.rustEnabled", true);
-  let { ingestPromise } = await waitForIngestStart(null);
 
-  info("Awaiting ingest promise");
-  await ingestPromise;
-  info("Done awaiting ingest promise");
+  
+  
+  await withIngestStub(async ({ stub, rustBackend }) => {
+    info("Awaiting ingest promise");
+    await rustBackend.ingestPromise;
 
-  await checkSuggestions();
+    checkIngestCounts({
+      stub,
+      expected: Object.fromEntries(
+        enabledTypes.map(({ provider }) => [provider, 1])
+      ),
+    });
+  });
+});
+
+
+
+
+add_task(async function featureWithMultipleSuggestionTypes() {
+  
+  let feature = QuickSuggest.getFeature("AdmWikipedia");
+  Assert.ok(!!feature, "This test expects the AdmWikipedia feature to exist");
+  Assert.deepEqual(
+    [...feature.rustSuggestionTypes].sort(),
+    ["Amp", "Wikipedia"],
+    "This test expects the AdmWikipedia feature to manage Amp and Wikipedia suggestions"
+  );
+
+  
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+  await QuickSuggestTestUtils.forceSync();
+
+  await withIngestStub(async ({ stub, rustBackend }) => {
+    let providersFilter = [
+      SuggestionProvider.AMP,
+      SuggestionProvider.WIKIPEDIA,
+    ];
+
+    
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+    info("Awaiting ingest promise after disabling sponsored");
+    await rustBackend.ingestPromise;
+    checkIngestCounts({ stub, providersFilter, expected: {} });
+
+    
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+    info("Awaiting ingest promise after disabling nonsponsored");
+    await rustBackend.ingestPromise;
+    checkIngestCounts({ stub, providersFilter, expected: {} });
+
+    Assert.ok(
+      !feature.isEnabled,
+      "The feature should be disabled after disabling sponsored and nonsponsored suggestions"
+    );
+
+    
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+    info("Awaiting ingest promise after re-enabling sponsored");
+    await rustBackend.ingestPromise;
+    checkIngestCounts({
+      stub,
+      providersFilter,
+      expected: {
+        [SuggestionProvider.AMP]: 1,
+      },
+    });
+
+    
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+    info("Awaiting ingest promise after re-enabling nonsponsored");
+    await rustBackend.ingestPromise;
+    checkIngestCounts({
+      stub,
+      providersFilter,
+      expected: {
+        [SuggestionProvider.WIKIPEDIA]: 1,
+      },
+    });
+  });
 });
 
 
 add_task(async function interval() {
-  let { ingestPromise } = QuickSuggest.rustBackend;
-
   
   
   let intervalSecs = 3;
   UrlbarPrefs.set("quicksuggest.rustIngestIntervalSeconds", intervalSecs);
   UrlbarPrefs.set("quicksuggest.rustEnabled", false);
   UrlbarPrefs.set("quicksuggest.rustEnabled", true);
-  ({ ingestPromise } = await waitForIngestStart(ingestPromise));
 
   info("Awaiting initial ingest promise");
+  let { ingestPromise } = QuickSuggest.rustBackend;
   await ingestPromise;
-  info("Done awaiting initial ingest promise");
 
-  
-  for (let i = 0; i < 3; i++) {
-    info("Preparing for ingest at index " + i);
+  let enabledTypes = QuickSuggest.rustBackend._test_enabledSuggestionTypes;
+  Assert.greater(
+    enabledTypes.length,
+    0,
+    "This test expects some Rust suggestion types to be enabled"
+  );
 
+  await withIngestStub(async ({ stub }) => {
     
-    let suggestion = {
-      ...REMOTE_SETTINGS_SUGGESTION,
-      url: REMOTE_SETTINGS_SUGGESTION.url + "/" + i,
-    };
-    await QuickSuggestTestUtils.setRemoteSettingsRecords(
-      [
-        {
-          type: "data",
-          attachment: [suggestion],
-        },
-      ],
-      
-      
-      { forceSync: false }
-    );
+    for (let i = 0; i < 3; i++) {
+      info(`Waiting ${intervalSecs}s for ingest to start at index ${i}`);
+      ({ ingestPromise } = await waitForIngestStart(ingestPromise));
+      info("Waiting for ingest to finish at index " + i);
+      await ingestPromise;
+      info("Ingest finished at index " + i);
 
-    
-    info(`Waiting ${intervalSecs}s for ingest to start at index ${i}`);
-    ({ ingestPromise } = await waitForIngestStart(ingestPromise));
-    info("Waiting for ingest to finish at index " + i);
-    await ingestPromise;
-    await checkSuggestions([suggestion]);
-  }
+      checkIngestCounts({
+        stub,
+        expected: Object.fromEntries(
+          enabledTypes.map(({ provider }) => [provider, 1])
+        ),
+      });
+    }
+  });
 
   info("Disabling the backend");
   UrlbarPrefs.set("quicksuggest.rustEnabled", false);
@@ -154,10 +230,9 @@ add_task(async function interval() {
   
   UrlbarPrefs.clear("quicksuggest.rustIngestIntervalSeconds");
   UrlbarPrefs.set("quicksuggest.rustEnabled", true);
-  ({ ingestPromise } = await waitForIngestStart(ingestPromise));
 
   info("Awaiting cleanup ingest promise");
-  await ingestPromise;
+  await QuickSuggest.rustBackend.ingestPromise;
   info("Done awaiting cleanup ingest promise");
 });
 
@@ -189,6 +264,60 @@ add_task(async function shutdown() {
   sandbox.restore();
 });
 
+
+
+
+
+
+
+async function withIngestStub(callback) {
+  let sandbox = sinon.createSandbox();
+  let { rustBackend } = QuickSuggest;
+  let stub = sandbox.stub(rustBackend._test_store, "ingest");
+  await callback({ stub, rustBackend });
+  sandbox.restore();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getIngestCounts(stub, providersFilter = null) {
+  let countsByProvider = {};
+  for (let call of stub.getCalls()) {
+    let ingestConstraints = call.args[0];
+    for (let p of ingestConstraints.providers) {
+      if (!providersFilter || providersFilter.includes(p)) {
+        if (!countsByProvider.hasOwnProperty(p)) {
+          countsByProvider[p] = 0;
+        }
+        countsByProvider[p]++;
+      }
+    }
+  }
+
+  info("Got ingest counts: " + JSON.stringify(countsByProvider));
+
+  stub.resetHistory();
+  return countsByProvider;
+}
+
+function checkIngestCounts({ stub, providersFilter, expected }) {
+  Assert.deepEqual(
+    getIngestCounts(stub, providersFilter),
+    expected,
+    "Actual ingest counts should match expected counts"
+  );
+}
+
 async function waitForIngestStart(oldIngestPromise) {
   let newIngestPromise;
   await TestUtils.waitForCondition(() => {
@@ -213,15 +342,6 @@ async function waitForIngestStart(oldIngestPromise) {
   
   
   return { ingestPromise: newIngestPromise };
-}
-
-async function checkSuggestions(expected = [REMOTE_SETTINGS_SUGGESTION]) {
-  let actual = await QuickSuggest.rustBackend.query("amp");
-  Assert.deepEqual(
-    actual.map(s => s.url),
-    expected.map(s => s.url),
-    "Backend should be serving the expected suggestions"
-  );
 }
 
 
