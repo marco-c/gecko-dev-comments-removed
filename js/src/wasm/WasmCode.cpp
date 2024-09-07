@@ -278,19 +278,37 @@ static void SendCodeRangesToProfiler(
   }
 }
 
-bool CodeSegment::linkAndMakeExecutable(
+bool CodeSegment::linkAndMakeExecutableSubRange(
     jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
-    const Code* maybeCode) {
-  if (!StaticallyLink(writable, bytes_.get(), linkData, maybeCode)) {
+    const Code* maybeCode, uint8_t* pageStart, uint8_t* codeStart,
+    uint32_t codeLength) {
+  
+  
+  MOZ_ASSERT(CodeSegment::IsPageAligned(uintptr_t(pageStart)));
+  MOZ_ASSERT(codeStart >= pageStart);
+  MOZ_ASSERT(codeStart - pageStart < ptrdiff_t(CodeSegment::PageSize()));
+  uint32_t fuzz = codeStart - pageStart;
+  if (!StaticallyLink(writable, codeStart, linkData, maybeCode)) {
     return false;
   }
 
   
   
   
-  return ExecutableAllocator::makeExecutableAndFlushICache(
-      base(), RoundupCodeLength(lengthBytes()));
+  return ExecutableAllocator::makeExecutableAndFlushICache(pageStart,
+                                                           fuzz + codeLength);
 }
+
+bool CodeSegment::linkAndMakeExecutable(
+    jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
+    const Code* maybeCode) {
+  MOZ_ASSERT(base() == bytes_.get());
+  return linkAndMakeExecutableSubRange(
+      writable, linkData, maybeCode,
+      base(), base(),
+      RoundupCodeLength(lengthBytes()));
+}
+
 
 SharedCodeSegment CodeSegment::createEmpty(size_t capacityBytes) {
   uint32_t codeLength = 0;
@@ -356,6 +374,145 @@ SharedCodeSegment CodeSegment::createFromBytes(const uint8_t* unlinkedBytes,
       !segment->linkAndMakeExecutable(*writable, linkData, nullptr)) {
     return nullptr;
   }
+  return segment;
+}
+
+
+
+SharedCodeSegment js::wasm::AllocateCodePagesFrom(
+    SharedCodeSegmentVector& lazySegments, uint32_t bytesNeeded,
+    size_t* offsetInSegment, size_t* roundedUpAllocationSize) {
+  size_t codeLength = CodeSegment::PageRoundup(bytesNeeded);
+
+  if (lazySegments.length() == 0 ||
+      !lazySegments[lazySegments.length() - 1]->hasSpace(codeLength)) {
+    SharedCodeSegment newSegment = CodeSegment::createEmpty(codeLength);
+    if (!newSegment) {
+      return nullptr;
+    }
+    if (!lazySegments.emplaceBack(std::move(newSegment))) {
+      return nullptr;
+    }
+  }
+
+  MOZ_ASSERT(lazySegments.length() > 0);
+  CodeSegment* segment = lazySegments[lazySegments.length() - 1].get();
+
+  uint8_t* codePtr = nullptr;
+  segment->claimSpace(codeLength, &codePtr);
+  *offsetInSegment = codePtr - segment->base();
+  if (roundedUpAllocationSize) {
+    *roundedUpAllocationSize = codeLength;
+  }
+  return segment;
+}
+
+
+
+
+SharedCodeSegment CodeSegment::createFromMasmWithBumpAlloc(
+    jit::MacroAssembler& masm, const LinkData& linkData, const Code* code,
+    uint8_t** codeStartOut, uint32_t* codeLengthOut,
+    uint32_t* metadataBiasOut) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  SharedCodeSegment segment;
+  uint32_t requestLength;
+  uint8_t* pageStart;
+  uint8_t* codeStart;
+
+  
+  
+  
+  
+  
+  uint32_t fuzz;
+
+  
+  uint32_t codeLength = masm.bytesNeeded();
+
+  {
+    auto guard = code->data().writeLock();
+
+    
+    
+    
+    
+    
+    const uint32_t cacheLineSize = 64;
+    int32_t bytesUnusedAtEndOfPage =
+        int32_t(CodeSegment::PageRoundup(codeLength) - codeLength);
+    MOZ_RELEASE_ASSERT(bytesUnusedAtEndOfPage >= 0 &&
+                       bytesUnusedAtEndOfPage <
+                           int32_t(CodeSegment::PageSize()));
+    uint32_t fuzzLinesAvailable =
+        uint32_t(bytesUnusedAtEndOfPage) / cacheLineSize;
+    
+    if (fuzzLinesAvailable > 63) {
+      fuzzLinesAvailable = 63;
+    }
+    
+    fuzz = guard->simplePRNG.get11RandomBits() % (fuzzLinesAvailable + 1);
+    fuzz *= cacheLineSize;
+
+    requestLength = fuzz + codeLength;
+    
+    
+    MOZ_RELEASE_ASSERT(CodeSegment::PageRoundup(requestLength) ==
+                       CodeSegment::PageRoundup(codeLength));
+
+    
+    size_t offsetInSegment = 0;
+    segment = AllocateCodePagesFrom(guard->lazyFuncSegments, requestLength,
+                                    &offsetInSegment,
+                                    nullptr);
+    if (!segment) {
+      return nullptr;
+    }
+    MOZ_ASSERT(CodeSegment::IsPageAligned(uintptr_t(segment->base())));
+    MOZ_ASSERT(CodeSegment::IsPageAligned(offsetInSegment));
+
+    pageStart = segment->base() + offsetInSegment;
+    codeStart = pageStart + fuzz;
+  }
+
+  Maybe<AutoMarkJitCodeWritableForThread> writable;
+  writable.emplace();
+
+  masm.executableCopy(codeStart);
+  if (!segment->linkAndMakeExecutableSubRange(
+          *writable, linkData, code, pageStart, codeStart, codeLength)) {
+    return nullptr;
+  }
+
+  *codeStartOut = codeStart;
+  *codeLengthOut = codeLength;
+  *metadataBiasOut = codeStart - segment->base();
   return segment;
 }
 
@@ -444,27 +601,17 @@ bool Code::createManyLazyEntryStubs(const WriteGuard& guard,
     return false;
   }
 
-  size_t codeLength = CodeSegment::AlignBytesNeeded(masm.bytesNeeded());
-
-  if (guard->lazySegments.length() == 0 ||
-      !guard->lazySegments[guard->lazySegments.length() - 1]->hasSpace(
-          codeLength)) {
-    SharedCodeSegment newSegment = CodeSegment::createEmpty(codeLength);
-    if (!newSegment) {
-      return false;
-    }
-    if (!guard->lazySegments.emplaceBack(std::move(newSegment))) {
-      return false;
-    }
-  }
-
-  MOZ_ASSERT(guard->lazySegments.length() > 0);
+  size_t offsetInSegment = 0;
+  size_t codeLength = 0;
   CodeSegment* segment =
-      guard->lazySegments[guard->lazySegments.length() - 1].get();
-
-  uint8_t* codePtr = nullptr;
-  segment->claimSpace(codeLength, &codePtr);
-  size_t offsetInSegment = codePtr - segment->base();
+      AllocateCodePagesFrom(guard->lazyStubSegments, masm.bytesNeeded(),
+                            &offsetInSegment, &codeLength)
+          .get();
+  if (!segment) {
+    return false;
+  }
+  uint8_t* codePtr = segment->base() + offsetInSegment;
+  MOZ_ASSERT(CodeSegment::IsPageAligned(codeLength));
 
   UniqueCodeBlock stubCodeBlock =
       MakeUnique<CodeBlock>(CodeBlockKind::LazyStubs);
@@ -817,6 +964,33 @@ bool CodeBlock::initialize(const Code& code, size_t codeBlockIndex) {
 
   MOZ_ASSERT(initialized());
   return true;
+}
+
+void CodeBlock::offsetMetadataBy(uint32_t delta) {
+  if (delta == 0) {
+    return;
+  }
+  for (CodeRange& cr : codeRanges) {
+    cr.offsetBy(delta);
+  }
+  for (CallSite& cs : callSites) {
+    cs.offsetBy(delta);
+  }
+  for (Trap trap : MakeEnumeratedRange(Trap::Limit)) {
+    for (TrapSite& ts : trapSites[trap]) {
+      ts.offsetBy(delta);
+    }
+  }
+  for (FuncExport& fe : funcExports) {
+    fe.offsetBy(delta);
+  }
+  stackMaps.offsetBy(delta);
+  for (TryNote& tn : tryNotes) {
+    tn.offsetBy(delta);
+  }
+  for (CodeRangeUnwindInfo& crui : codeRangeUnwindInfos) {
+    crui.offsetBy(delta);
+  }
 }
 
 void CodeBlock::addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
@@ -1258,7 +1432,7 @@ void Code::addSizeOfMiscIfNotSeen(
       funcImports_.sizeOfExcludingThis(mallocSizeOf) +
       profilingLabels_.lock()->sizeOfExcludingThis(mallocSizeOf) +
       jumpTables_.sizeOfMiscExcludingThis();
-  for (const SharedCodeSegment& stub : guard->lazySegments) {
+  for (const SharedCodeSegment& stub : guard->lazyStubSegments) {
     stub->addSizeOfMisc(mallocSizeOf, code, data);
   }
 

@@ -209,9 +209,6 @@ class CodeSegment : public ShareableBase<CodeSegment> {
   const uint32_t capacityBytes_;
   const Code* code_;
 
-  bool linkAndMakeExecutable(jit::AutoMarkJitCodeWritableForThread& writable,
-                             const LinkData& linkData, const Code* maybeCode);
-
  public:
   CodeSegment(UniqueCodeBytes bytes, uint32_t lengthBytes,
               uint32_t capacityBytes)
@@ -220,13 +217,52 @@ class CodeSegment : public ShareableBase<CodeSegment> {
         capacityBytes_(capacityBytes),
         code_(nullptr) {}
 
+  
+  
   static RefPtr<CodeSegment> createEmpty(size_t capacityBytes);
+
+  
+  
   static RefPtr<CodeSegment> createFromMasm(jit::MacroAssembler& masm,
                                             const LinkData& linkData,
                                             const Code* maybeCode);
+
+  
+  
   static RefPtr<CodeSegment> createFromBytes(const uint8_t* unlinkedBytes,
                                              size_t unlinkedBytesLength,
                                              const LinkData& linkData);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<CodeSegment> createFromMasmWithBumpAlloc(
+      jit::MacroAssembler& masm, const LinkData& linkData, const Code* code,
+      uint8_t** codeStartOut, uint32_t* codeLengthOut,
+      uint32_t* metadataBiasOut);
+
+  
+  
+  
+  
+  
+  bool linkAndMakeExecutableSubRange(
+      jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
+      const Code* maybeCode, uint8_t* pageStart, uint8_t* codeStart,
+      uint32_t codeLength);
+
+  
+  
+  bool linkAndMakeExecutable(jit::AutoMarkJitCodeWritableForThread& writable,
+                             const LinkData& linkData, const Code* maybeCode);
 
   void setCode(const Code& code) { code_ = &code; }
 
@@ -240,12 +276,16 @@ class CodeSegment : public ShareableBase<CodeSegment> {
     return capacityBytes_;
   }
 
-  static size_t AlignBytesNeeded(size_t bytes) {
+  static size_t PageSize() { return gc::SystemPageSize(); }
+  static size_t PageRoundup(uintptr_t bytes) {
     
     return AlignBytes(bytes, gc::SystemPageSize());
   }
+  static bool IsPageAligned(uintptr_t bytes) {
+    return bytes == PageRoundup(bytes);
+  }
   bool hasSpace(size_t bytes) const {
-    MOZ_ASSERT(AlignBytesNeeded(bytes) == bytes);
+    MOZ_ASSERT(IsPageAligned(bytes));
     return bytes <= capacityBytes() && lengthBytes_ <= capacityBytes() - bytes;
   }
   void claimSpace(size_t bytes, uint8_t** claimedBase) {
@@ -406,6 +446,16 @@ class CodeBlock {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   FuncToCodeRangeMap funcToCodeRange;
   CodeRangeVector codeRanges;
   CallSiteVector callSites;
@@ -461,6 +511,9 @@ class CodeBlock {
     return kind == CodeBlockKind::SharedStubs ||
            kind == CodeBlockKind::OptimizedTier;
   }
+
+  
+  void offsetMetadataBy(uint32_t delta);
 
   const uint8_t* base() const { return codeBase; }
   uint32_t length() const { return codeLength; }
@@ -768,6 +821,26 @@ using MetadataAnalysisHashMap =
     HashMap<const char*, uint32_t, mozilla::CStringHasher, SystemAllocPolicy>;
 
 class Code : public ShareableBase<Code> {
+  
+  
+  
+  
+  
+  
+  
+  class SimplePRNG {
+    uint32_t state_;
+
+   public:
+    SimplePRNG() : state_(999) {}
+    
+    uint32_t get11RandomBits() {
+      state_ = state_ * 1103515245 + 12345;
+      
+      
+      return (state_ >> 4) & 0x7FF;
+    }
+  };
   struct ProtectedData {
     
     
@@ -778,9 +851,15 @@ class Code : public ShareableBase<Code> {
     UniqueLinkDataVector blocksLinkData;
 
     
-    SharedCodeSegmentVector lazySegments;
+    SharedCodeSegmentVector lazyStubSegments;
     
     LazyFuncExportVector lazyExports;
+
+    
+    SharedCodeSegmentVector lazyFuncSegments;
+
+    
+    SimplePRNG simplePRNG;
   };
   using ReadGuard = RWExclusiveData<ProtectedData>::ReadGuard;
   using WriteGuard = RWExclusiveData<ProtectedData>::WriteGuard;
@@ -894,6 +973,8 @@ class Code : public ShareableBase<Code> {
   [[nodiscard]] bool getOrCreateInterpEntry(uint32_t funcIndex,
                                             const FuncExport** funcExport,
                                             void** interpEntry) const;
+
+  const RWExclusiveData<ProtectedData>& data() const { return data_; }
 
   bool requestTierUp(uint32_t funcIndex) const;
 
@@ -1045,6 +1126,15 @@ class Code : public ShareableBase<Code> {
 };
 
 void PatchDebugSymbolicAccesses(uint8_t* codeBase, jit::MacroAssembler& masm);
+
+
+
+
+
+SharedCodeSegment AllocateCodePagesFrom(SharedCodeSegmentVector& lazySegments,
+                                        uint32_t bytesNeeded,
+                                        size_t* offsetInSegment,
+                                        size_t* roundedUpAllocationSize);
 
 }  
 }  
