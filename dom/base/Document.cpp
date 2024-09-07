@@ -243,6 +243,7 @@
 #include "mozilla/dom/URL.h"
 #include "mozilla/dom/UseCounterMetrics.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WakeLockJS.h"
 #include "mozilla/dom/WakeLockSentinel.h"
 #include "mozilla/dom/WindowBinding.h"
@@ -2586,6 +2587,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrototypeDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMidasCommandManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAll)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveViewTransition)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocGroup)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameRequestManager)
 
@@ -2715,6 +2717,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPrototypeDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mMidasCommandManager)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAll)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveViewTransition)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReferrerInfo)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreloadReferrerInfo)
 
@@ -17782,10 +17785,49 @@ void Document::ClearStaleServoData() {
   }
 }
 
-ViewTransition* Document::StartViewTransition(
-    const Optional<OwningNonNull<ViewTransitionUpdateCallback>>&) {
+
+already_AddRefed<ViewTransition> Document::StartViewTransition(
+    const Optional<OwningNonNull<ViewTransitionUpdateCallback>>& aCallback) {
   
-  return nullptr;
+  RefPtr transition = new ViewTransition(
+      *this, aCallback.WasPassed() ? &aCallback.Value() : nullptr);
+  if (Hidden()) {
+    
+    
+    
+    
+    transition->SkipTransition(SkipTransitionReason::DocumentHidden);
+    return transition.forget();
+  }
+  if (mActiveViewTransition) {
+    
+    
+    
+    mActiveViewTransition->SkipTransition(
+        SkipTransitionReason::ClobberedActiveTransition);
+  }
+  
+  mActiveViewTransition = transition;
+
+  if (mPresShell) {
+    if (nsRefreshDriver* rd = mPresShell->GetRefreshDriver()) {
+      rd->EnsureViewTransitionOperationsHappen();
+    }
+  }
+  
+  return transition.forget();
+}
+
+void Document::ClearActiveViewTransition() { mActiveViewTransition = nullptr; }
+
+void Document::PerformPendingViewTransitionOperations() {
+  if (mActiveViewTransition) {
+    mActiveViewTransition->PerformPendingOperations();
+  }
+  EnumerateSubDocuments([](Document& aDoc) {
+    aDoc.PerformPendingViewTransitionOperations();
+    return CallState::Continue;
+  });
 }
 
 Selection* Document::GetSelection(ErrorResult& aRv) {
