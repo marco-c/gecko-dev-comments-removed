@@ -1107,13 +1107,14 @@ impl<F: AsRawHandle> AsRawHandle for NamedTempFile<F> {
 pub(crate) fn create_named(
     mut path: PathBuf,
     open_options: &mut OpenOptions,
+    permissions: Option<&std::fs::Permissions>,
 ) -> io::Result<NamedTempFile> {
     
     
     if !path.is_absolute() {
         path = env::current_dir()?.join(path)
     }
-    imp::create_named(&path, open_options)
+    imp::create_named(&path, open_options, permissions)
         .with_err_path(|| path.clone())
         .map(|file| NamedTempFile {
             path: TempPath {

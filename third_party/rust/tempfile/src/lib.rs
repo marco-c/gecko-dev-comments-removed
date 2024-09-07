@@ -197,6 +197,7 @@ pub struct Builder<'a, 'b> {
     prefix: &'a OsStr,
     suffix: &'b OsStr,
     append: bool,
+    permissions: Option<std::fs::Permissions>,
 }
 
 impl<'a, 'b> Default for Builder<'a, 'b> {
@@ -206,6 +207,7 @@ impl<'a, 'b> Default for Builder<'a, 'b> {
             prefix: OsStr::new(".tmp"),
             suffix: OsStr::new(""),
             append: false,
+            permissions: None,
         }
     }
 }
@@ -431,6 +433,89 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn permissions(&mut self, permissions: std::fs::Permissions) -> &mut Self {
+        self.permissions = Some(permissions);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn tempfile(&self) -> io::Result<NamedTempFile> {
         self.tempfile_in(env::temp_dir())
     }
@@ -473,7 +558,10 @@ impl<'a, 'b> Builder<'a, 'b> {
             self.prefix,
             self.suffix,
             self.random_len,
-            |path| file::create_named(path, OpenOptions::new().append(self.append)),
+            self.permissions.as_ref(),
+            |path, permissions| {
+                file::create_named(path, OpenOptions::new().append(self.append), permissions)
+            },
         )
     }
 
@@ -545,7 +633,14 @@ impl<'a, 'b> Builder<'a, 'b> {
             dir = &storage;
         }
 
-        util::create_helper(dir, self.prefix, self.suffix, self.random_len, dir::create)
+        util::create_helper(
+            dir,
+            self.prefix,
+            self.suffix,
+            self.random_len,
+            self.permissions.as_ref(),
+            dir::create,
+        )
     }
 
     
@@ -690,7 +785,8 @@ impl<'a, 'b> Builder<'a, 'b> {
             self.prefix,
             self.suffix,
             self.random_len,
-            move |path| {
+            None,
+            move |path, _permissions| {
                 Ok(NamedTempFile::from_parts(
                     f(&path)?,
                     TempPath::from_path(path),
