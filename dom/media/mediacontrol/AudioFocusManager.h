@@ -29,24 +29,15 @@ class AudioFocusManager {
   void RevokeAudioFocus(IMediaController* aController);
 
   explicit AudioFocusManager() = default;
-  ~AudioFocusManager();
+  ~AudioFocusManager() = default;
 
   uint32_t GetAudioFocusNums() const;
 
  private:
   friend class MediaControlService;
-  
-  
-  bool ClearFocusControllersIfNeeded();
-
-  void CreateTimerForUpdatingTelemetry();
-  
-  
-  void UpdateTelemetryDataFromTimer(uint32_t aPrevFocusNum,
-                                    uint64_t aPrevActiveControllerNum);
+  void ClearFocusControllersIfNeeded();
 
   nsTArray<RefPtr<IMediaController>> mOwningFocusControllers;
-  RefPtr<SimpleTimer> mTelemetryTimer;
 };
 
 }  

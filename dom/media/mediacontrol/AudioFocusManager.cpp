@@ -10,7 +10,6 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Telemetry.h"
 #include "nsThreadUtils.h"
 
 #undef LOG
@@ -25,20 +24,9 @@ void AudioFocusManager::RequestAudioFocus(IMediaController* aController) {
   if (mOwningFocusControllers.Contains(aController)) {
     return;
   }
-  const bool hasManagedAudioFocus = ClearFocusControllersIfNeeded();
+  ClearFocusControllersIfNeeded();
   LOG("Controller %" PRId64 " grants audio focus", aController->Id());
   mOwningFocusControllers.AppendElement(aController);
-  if (hasManagedAudioFocus) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_TABS_AUDIO_COMPETITION::ManagedFocusByGecko);
-  } else if (GetAudioFocusNums() == 1) {
-    
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_TABS_AUDIO_COMPETITION::None);
-  } else {
-    
-    CreateTimerForUpdatingTelemetry();
-  }
 }
 
 void AudioFocusManager::RevokeAudioFocus(IMediaController* aController) {
@@ -50,85 +38,23 @@ void AudioFocusManager::RevokeAudioFocus(IMediaController* aController) {
   mOwningFocusControllers.RemoveElement(aController);
 }
 
-bool AudioFocusManager::ClearFocusControllersIfNeeded() {
+void AudioFocusManager::ClearFocusControllersIfNeeded() {
   
   
   if (!StaticPrefs::media_audioFocus_management()) {
-    return false;
+    return;
   }
 
-  bool hasStoppedAnyController = false;
   for (auto& controller : mOwningFocusControllers) {
     LOG("Controller %" PRId64 " loses audio focus in audio competitition",
         controller->Id());
-    hasStoppedAnyController = true;
     controller->Stop();
   }
   mOwningFocusControllers.Clear();
-  return hasStoppedAnyController;
 }
 
 uint32_t AudioFocusManager::GetAudioFocusNums() const {
   return mOwningFocusControllers.Length();
-}
-
-void AudioFocusManager::CreateTimerForUpdatingTelemetry() {
-  MOZ_ASSERT(NS_IsMainThread());
-  
-  if (mTelemetryTimer) {
-    return;
-  }
-
-  const uint32_t focusNum = GetAudioFocusNums();
-  MOZ_ASSERT(focusNum > 1);
-
-  RefPtr<MediaControlService> service = MediaControlService::GetService();
-  MOZ_ASSERT(service);
-  const uint32_t activeControllerNum = service->GetActiveControllersNum();
-
-  
-  
-  
-  nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
-      "AudioFocusManager::RequestAudioFocus",
-      [focusNum, activeControllerNum]() {
-        if (RefPtr<MediaControlService> service =
-                MediaControlService::GetService()) {
-          service->GetAudioFocusManager().UpdateTelemetryDataFromTimer(
-              focusNum, activeControllerNum);
-        }
-      });
-  mTelemetryTimer =
-      SimpleTimer::Create(task, 4000, GetMainThreadSerialEventTarget());
-}
-
-void AudioFocusManager::UpdateTelemetryDataFromTimer(
-    uint32_t aPrevFocusNum, uint64_t aPrevActiveControllerNum) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mTelemetryTimer);
-  
-  
-  if (GetAudioFocusNums() < aPrevFocusNum) {
-    
-    
-    
-    if (MediaControlService::GetService()->GetActiveControllersNum() ==
-        aPrevActiveControllerNum) {
-      AccumulateCategorical(mozilla::Telemetry::LABELS_TABS_AUDIO_COMPETITION::
-                                ManagedFocusByUser);
-    }
-  } else {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_TABS_AUDIO_COMPETITION::Ignored);
-  }
-  mTelemetryTimer = nullptr;
-}
-
-AudioFocusManager::~AudioFocusManager() {
-  if (mTelemetryTimer) {
-    mTelemetryTimer->Cancel();
-    mTelemetryTimer = nullptr;
-  }
 }
 
 }  
