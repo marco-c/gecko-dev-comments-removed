@@ -505,9 +505,6 @@ static Result<CombinedBufferLayout, MediaResult> ComputeLayoutAndAllocationSize(
                           aFormat.PlaneName(p))));
     }
 
-    
-    
-    
     ComputedPlaneLayout layout{.mDestinationOffset = 0,
                                .mDestinationStride = 0,
                                .mSourceTop = sourceTop.value(),
@@ -1054,9 +1051,6 @@ static Result<RefPtr<VideoFrame>, MediaResult> CreateVideoFrameFromBuffer(
   
   
 
-  
-  
-  
   return MakeRefPtr<VideoFrame>(aGlobal, data, Some(aInit.mFormat), codedSize,
                                 parsedRect,
                                 displaySize ? *displaySize : parsedRect.Size(),
@@ -1990,9 +1984,7 @@ already_AddRefed<Promise> VideoFrame::CopyTo(
     }
 
     MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
-    
-    
-    
+
     p->MaybeResolve(planeLayouts);
     return p.forget();
   });
