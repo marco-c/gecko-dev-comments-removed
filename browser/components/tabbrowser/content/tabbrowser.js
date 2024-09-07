@@ -7200,6 +7200,12 @@
             }
           }
 
+          
+          
+          if (!isReload && !aWebProgress.isLoadingDocument) {
+            gBrowser.setDefaultIcon(this.mTab, this.mBrowser._documentURI);
+          }
+
           if (
             aRequest instanceof Ci.nsIChannel &&
             !isBlankPageURL(aRequest.originalURI.spec)
