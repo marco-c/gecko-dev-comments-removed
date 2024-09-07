@@ -188,18 +188,49 @@ static bool isCyrillicLatinConfusable(char32_t aChar) {
   }
 }
 
-static bool isCyrillicDomain(mozilla::Span<const char32_t>& aTLD) {
+static bool isThaiLatinConfusable(char32_t aChar) {
+  switch (aChar) {
+
+#if defined(XP_LINUX) && !defined(ANDROID)
+    case 0x0E14:  
+    case 0x0E17:  
+    case 0x0E19:  
+    case 0x0E1B:  
+    case 0x0E21:  
+    case 0x0E25:  
+    case 0x0E2B:  
+#endif
+    case 0x0E1A:  
+    case 0x0E1E:  
+    case 0x0E1F:  
+    case 0x0E23:  
+    case 0x0E40:  
+    case 0x0E41:  
+    case 0x0E50:  
+      return true;
+    default:
+      return false;
+  }
+}
+
+static bool doesTLDScriptMatch(mozilla::Span<const char32_t>& aTLD,
+                               Script script) {
   mozilla::Span<const char32_t>::const_iterator current = aTLD.cbegin();
   mozilla::Span<const char32_t>::const_iterator end = aTLD.cend();
 
   while (current != end) {
     char32_t ch = *current++;
-    if (UnicodeProperties::GetScriptCode(ch) == Script::CYRILLIC) {
+    if (UnicodeProperties::GetScriptCode(ch) == script) {
       return true;
     }
   }
 
-  return TLDEqualsLiteral(aTLD, "bg") || TLDEqualsLiteral(aTLD, "by") ||
+  return false;
+}
+
+static bool isCyrillicDomain(mozilla::Span<const char32_t>& aTLD) {
+  return doesTLDScriptMatch(aTLD, Script::CYRILLIC) ||
+         TLDEqualsLiteral(aTLD, "bg") || TLDEqualsLiteral(aTLD, "by") ||
          TLDEqualsLiteral(aTLD, "kz") || TLDEqualsLiteral(aTLD, "pyc") ||
          TLDEqualsLiteral(aTLD, "ru") || TLDEqualsLiteral(aTLD, "su") ||
          TLDEqualsLiteral(aTLD, "ua") || TLDEqualsLiteral(aTLD, "uz");
@@ -298,6 +329,7 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
   char32_t savedNumberingSystem = 0;
   LookalikeStatus digitLookalikeStatus = LookalikeStatus::Safe;
   LookalikeStatus cyrillicStatus = LookalikeStatus::Safe;
+  LookalikeStatus thaiStatus = LookalikeStatus::Safe;
 
 #if 0
   HanVariantType savedHanVariant = HVT_NotHan;
@@ -425,6 +457,14 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
     }
 
     
+    if (thaiStatus != LookalikeStatus::Ignore && script == Script::THAI &&
+        !doesTLDScriptMatch(aTLD, Script::THAI) &&
+        !TLDEqualsLiteral(aTLD, "th")) {
+      thaiStatus = isThaiLatinConfusable(ch) ? LookalikeStatus::Block
+                                             : LookalikeStatus::Ignore;
+    }
+
+    
     
     if (isCJKIdeograph(ch)) {
       
@@ -523,7 +563,8 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
   }
   return digitLookalikeStatus != LookalikeStatus::Block &&
          (!StaticPrefs::network_idn_punycode_cyrillic_confusables() ||
-          cyrillicStatus != LookalikeStatus::Block);
+          cyrillicStatus != LookalikeStatus::Block) &&
+         thaiStatus != LookalikeStatus::Block;
 }
 
 
