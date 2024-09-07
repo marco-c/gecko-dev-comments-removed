@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/audio/audio_frame.h"
 #include "modules/audio_processing/agc2/fixed_digital_level_estimator.h"
 #include "modules/audio_processing/agc2/interpolated_gain_curve.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
@@ -23,9 +24,16 @@ class ApmDataDumper;
 
 class Limiter {
  public:
-  Limiter(int sample_rate_hz,
-          ApmDataDumper* apm_data_dumper,
+  
+  Limiter(ApmDataDumper* apm_data_dumper,
+          size_t samples_per_channel,
           absl::string_view histogram_name_prefix);
+
+  [[deprecated("Use constructor that accepts samples_per_channel")]] Limiter(
+      int sample_rate_hz,
+      ApmDataDumper* apm_data_dumper,
+      absl::string_view histogram_name_prefix);
+
   Limiter(const Limiter& limiter) = delete;
   Limiter& operator=(const Limiter& limiter) = delete;
   ~Limiter();
@@ -38,8 +46,12 @@ class Limiter {
   
   
   
-  
-  void SetSampleRate(int sample_rate_hz);
+  void SetSamplesPerChannel(size_t samples_per_channel);
+
+  [[deprecated("Use SetSamplesPerChannel")]] void SetSampleRate(
+      int sample_rate_hz) {
+    SetSamplesPerChannel(SampleRateToDefaultChannelSize(sample_rate_hz));
+  }
 
   
   void Reset();

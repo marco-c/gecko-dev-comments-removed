@@ -30,7 +30,11 @@ class FixedDigitalLevelEstimator {
   
   
   
-  FixedDigitalLevelEstimator(int sample_rate_hz,
+  
+  
+  
+  
+  FixedDigitalLevelEstimator(size_t samples_per_channel,
                              ApmDataDumper* apm_data_dumper);
 
   FixedDigitalLevelEstimator(const FixedDigitalLevelEstimator&) = delete;
@@ -46,7 +50,7 @@ class FixedDigitalLevelEstimator {
 
   
   
-  void SetSampleRate(int sample_rate_hz);
+  void SetSamplesPerChannel(size_t samples_per_channel);
 
   
   void Reset();
