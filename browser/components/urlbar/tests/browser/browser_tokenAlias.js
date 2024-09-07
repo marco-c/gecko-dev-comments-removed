@@ -39,6 +39,15 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.suggest.searches", true]],
   });
+
+  
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.maxRichResults", 12]],
+  });
 });
 
 
@@ -410,11 +419,21 @@ add_task(async function clickAndFillAlias() {
   let testEngineItem;
   for (let i = 0; !testEngineItem; i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    Assert.equal(
-      details.displayed.title,
-      `Search with ${details.searchParams.engine}`,
-      "The result's title is set correctly."
-    );
+
+    if (details.result.type == UrlbarUtils.RESULT_TYPE.RESTRICT) {
+      Assert.equal(
+        details.displayed.title,
+        `Search with ${details.result.payload.l10nRestrictKeyword}`,
+        "The result's title is set correctly."
+      );
+    } else {
+      Assert.equal(
+        details.displayed.title,
+        `Search with ${details.searchParams.engine}`,
+        "The result's title is set correctly."
+      );
+    }
+
     Assert.ok(!details.action, "The result should have no action text.");
     if (details.searchParams && details.searchParams.keyword == ALIAS) {
       testEngineItem = await UrlbarTestUtils.waitForAutocompleteResultAt(
@@ -597,7 +616,10 @@ add_task(async function hiddenEngine() {
   
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    if (defaultEngine.name == details.searchParams.engine) {
+    if (
+      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      defaultEngine.name == details.searchParams.engine
+    ) {
       foundDefaultEngineInPopup = true;
       break;
     }
@@ -619,7 +641,10 @@ add_task(async function hiddenEngine() {
   foundDefaultEngineInPopup = false;
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    if (defaultEngine.name == details.searchParams.engine) {
+    if (
+      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      defaultEngine.name == details.searchParams.engine
+    ) {
       foundDefaultEngineInPopup = true;
       break;
     }
@@ -662,7 +687,10 @@ add_task(async function nonPrefixedKeyword() {
   
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    if (details.searchParams.engine === name) {
+    if (
+      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      details.searchParams.engine === name
+    ) {
       foundEngineInPopup = true;
       break;
     }
