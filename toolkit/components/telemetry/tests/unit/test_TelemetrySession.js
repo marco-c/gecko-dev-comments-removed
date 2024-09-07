@@ -1288,6 +1288,7 @@ add_task(async function test_sendShutdownPing() {
   await TelemetryController.testShutdown();
   
   gClientID = await ClientID.getClientID();
+  gProfileGroupID = await ClientID.getProfileGroupID();
 
   
   await checkPendingShutdownPing();
