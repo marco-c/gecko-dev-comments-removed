@@ -1255,6 +1255,24 @@ const gCSSProperties2 = {
       { type: 'discrete', options: [ [ 'auto', 'smooth' ] ] }
     ]
   },
+  'scroll-snap-align': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'start' ]] }
+    ]
+  },
+  'scroll-snap-stop': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'normal', 'always' ]] }
+    ]
+  },
+  'scroll-snap-type': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'x mandatory' ]] }
+    ]
+  },
   'scrollbar-color': {
     
     types: [ 'colorPair' ]
