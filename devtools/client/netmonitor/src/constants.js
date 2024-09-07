@@ -457,10 +457,9 @@ const REQUESTS_WATERFALL = {
   BACKGROUND_TICKS_OPACITY_MIN: 32,
   BACKGROUND_TICKS_OPACITY_ADD: 32,
   
-  DOMCONTENTLOADED_TICKS_COLOR: "--theme-highlight-blue",
-  LOAD_TICKS_COLOR: "--theme-highlight-red",
-  
-  TICKS_COLOR_OPACITY: 192,
+  DOMCONTENTLOADED_TICKS_COLOR: "--timing-marker-dom-content-loaded-color",
+  LOAD_TICKS_COLOR: "--timing-marker-load-color",
+
   HEADER_TICKS_MULTIPLE: 5, 
   HEADER_TICKS_SPACING_MIN: 60, 
   

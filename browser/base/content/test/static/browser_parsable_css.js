@@ -135,6 +135,16 @@ let propNameAllowlist = [
   { propName: "--panel-border-color", isFromDevTools: true },
   { propName: "--panel-shadow", isFromDevTools: true },
   { propName: "--panel-shadow-margin", isFromDevTools: true },
+
+  
+  {
+    propName: "--timing-marker-dom-content-loaded-color",
+    isFromDevTools: true,
+  },
+  {
+    propName: "--timing-marker-load-color",
+    isFromDevTools: true,
+  },
 ];
 
 

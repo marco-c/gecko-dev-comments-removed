@@ -7,7 +7,6 @@
 const {
   getCssVariableColor,
 } = require("resource://devtools/client/shared/theme.js");
-const { colorUtils } = require("resource://devtools/shared/css/color.js");
 const {
   REQUESTS_WATERFALL,
 } = require("resource://devtools/client/netmonitor/src/constants.js");
@@ -151,15 +150,13 @@ class WaterfallBackground {
 
 
 
-
   getThemeColorAsRgba(colorVariableName) {
     const colorStr = getCssVariableColor(
       colorVariableName,
       document.ownerGlobal
     );
-    const color = new colorUtils.CssColor(colorStr);
-    const { r, g, b } = color.getRGBATuple();
-    return [r, g, b, REQUESTS_WATERFALL.TICKS_COLOR_OPACITY];
+    const { r, g, b, a } = InspectorUtils.colorToRGBA(colorStr);
+    return [r, g, b, a * 255];
   }
 
   destroy() {
