@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2015 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "wasm/WasmCompile.h"
 
@@ -49,6 +49,8 @@
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
+
+using mozilla::Atomic;
 
 uint32_t wasm::ObservedCPUFeatures() {
   enum Arch {
@@ -107,7 +109,7 @@ bool FeatureOptions::init(JSContext* cx, HandleValue val) {
     }
     RootedObject obj(cx, &val.toObject());
 
-    
+    // Check the 'importedStringConstants' option
     RootedValue importedStringConstants(cx);
     if (!JS_GetProperty(cx, obj, "importedStringConstants",
                         &importedStringConstants)) {
@@ -118,7 +120,7 @@ bool FeatureOptions::init(JSContext* cx, HandleValue val) {
       this->jsStringConstants = false;
     } else if (importedStringConstants.isBoolean() &&
                importedStringConstants.toBoolean()) {
-      
+      // Temporary backwards compatibility hack to interpret 'true' as "'"
       this->jsStringConstants = true;
 
       UniqueChars jsStringConstantsNamespace = JS_smprintf("'");
@@ -153,7 +155,7 @@ bool FeatureOptions::init(JSContext* cx, HandleValue val) {
       }
     }
 
-    
+    // Get the `builtins` iterable
     RootedValue builtins(cx);
     if (!JS_GetProperty(cx, obj, "builtins", &builtins)) {
       return false;
@@ -243,28 +245,28 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   bool baseline = BaselineAvailable(cx);
   bool ion = IonAvailable(cx);
 
-  
-  
-  
-  
+  // Debug information such as source view or debug traps will require
+  // additional memory and permanently stay in baseline code, so we try to
+  // only enable it when a developer actually cares: when the debugger tab
+  // is open.
   bool debug = cx->realm() && cx->realm()->debuggerObservesWasm();
 
   bool forceTiering = cx->options().testWasmAwaitTier2() ||
                       JitOptions.wasmDelayTier2 ||
                       wasm::ExperimentalCompilePipelineAvailable(cx);
 
-  
-  
-  
+  // The <Compiler>Available() predicates should ensure no failure here, but
+  // when we're fuzzing we allow inconsistent switches and the check may thus
+  // fail.  Let it go to a run-time error instead of crashing.
   if (debug && ion) {
     *error = CompileArgsError::NoCompiler;
     return nullptr;
   }
 
   if (forceTiering && !(baseline && ion)) {
-    
-    
-    
+    // This can happen only in testing, and in this case we don't have a
+    // proper way to signal the error, so just silently override the default,
+    // instead of adding a skip-if directive to every test using debug/gc.
     forceTiering = false;
   }
 
@@ -303,10 +305,10 @@ SharedCompileArgs CompileArgs::buildForAsmJS(ScriptedCaller&& scriptedCaller) {
   }
 
   target->scriptedCaller = std::move(scriptedCaller);
-  
-  
-  
-  
+  // AsmJS is deprecated and doesn't have mechanisms for experimental features,
+  // so we don't need to initialize the FeatureArgs. It also only targets the
+  // Ion backend and does not need WASM debug support since it is de-optimized
+  // to JS in that case.
   target->ionEnabled = true;
   target->debugEnabled = false;
 
@@ -319,13 +321,13 @@ SharedCompileArgs CompileArgs::buildForValidation(const FeatureArgs& args) {
     return nullptr;
   }
 
-  
+  // Validation will not need compilers, just mark them disabled
   target->baselineEnabled = false;
   target->ionEnabled = false;
   target->debugEnabled = false;
   target->forceTiering = false;
 
-  
+  // Set the features
   target->features = args;
 
   return target;
@@ -351,8 +353,8 @@ SharedCompileArgs CompileArgs::buildAndReport(JSContext* cx,
       break;
     }
     case CompileArgsError::OutOfMemory: {
-      
-      
+      // Most callers are required to return 'false' without reporting an OOM,
+      // so we make reporting it optional here.
       if (reportOOM) {
         ReportOutOfMemory(cx);
       }
@@ -362,123 +364,123 @@ SharedCompileArgs CompileArgs::buildAndReport(JSContext* cx,
   return nullptr;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * [SMDOC] Tiered wasm compilation.
+ *
+ * "Tiered compilation" refers to the mechanism where we first compile the code
+ * with a fast non-optimizing compiler so that we can start running the code
+ * quickly, while in the background recompiling the code with the slower
+ * optimizing compiler.  Code created by baseline is called "tier-1"; code
+ * created by the optimizing compiler is called "tier-2".  When the tier-2 code
+ * is ready, we "tier up" the code by creating paths from tier-1 code into their
+ * tier-2 counterparts; this patching is performed as the program is running.
+ *
+ * ## Selecting the compilation mode
+ *
+ * When wasm bytecode arrives, we choose the compilation strategy based on
+ * switches and on aspects of the code and the hardware.  If switches allow
+ * tiered compilation to happen (the normal case), the following logic applies.
+ *
+ * If the code is sufficiently large that tiered compilation would be beneficial
+ * but not so large that it might blow our compiled code budget and make
+ * compilation fail, we choose tiered compilation.  Otherwise we go straight to
+ * optimized code.
+ *
+ * The expected benefit of tiering is computed by TieringBeneficial(), below,
+ * based on various estimated parameters of the hardware: ratios of object code
+ * to byte code, speed of the system, number of cores.
+ *
+ * ## Mechanics of tiering up; patching
+ *
+ * Every time control enters a tier-1 function, the function prologue loads its
+ * tiering pointer from the tiering jump table (see JumpTable in WasmCode.h) and
+ * jumps to it.
+ *
+ * Initially, an entry in the tiering table points to the instruction inside the
+ * tier-1 function that follows the jump instruction (hence the jump is an
+ * expensive nop).  When the tier-2 compiler is finished, the table is patched
+ * racily to point into the tier-2 function at the correct prologue location
+ * (see loop near the end of Module::finishTier2()).  As tier-2 compilation is
+ * performed at most once per Module, there is at most one such racy overwrite
+ * per table element during the lifetime of the Module.
+ *
+ * The effect of the patching is to cause the tier-1 function to jump to its
+ * tier-2 counterpart whenever the tier-1 function is called subsequently.  That
+ * is, tier-1 code performs standard frame setup on behalf of whatever code it
+ * jumps to, and the target code (tier-1 or tier-2) allocates its own frame in
+ * whatever way it wants.
+ *
+ * The racy writing means that it is often nondeterministic whether tier-1 or
+ * tier-2 code is reached by any call during the tiering-up process; if F calls
+ * A and B in that order, it may reach tier-2 code for A and tier-1 code for B.
+ * If F is running concurrently on threads T1 and T2, T1 and T2 may see code
+ * from different tiers for either function.
+ *
+ * Note, tiering up also requires upgrading the jit-entry stubs so that they
+ * reference tier-2 code.  The mechanics of this upgrading are described at
+ * WasmInstanceObject::getExportedFunction().
+ *
+ * ## Current limitations of tiering
+ *
+ * Tiering is not always seamless.  Partly, it is possible for a program to get
+ * stuck in tier-1 code.  Partly, a function that has tiered up continues to
+ * force execution to go via tier-1 code to reach tier-2 code, paying for an
+ * additional jump and a slightly less optimized prologue than tier-2 code could
+ * have had on its own.
+ *
+ * Known tiering limitiations:
+ *
+ * - We can tier up only at function boundaries.  If a tier-1 function has a
+ *   long-running loop it will not tier up until it returns to its caller.  If
+ *   this loop never exits (a runloop in a worker, for example) then the
+ *   function will never tier up.
+ *
+ *   To do better, we need OSR.
+ *
+ * - Wasm Table entries are never patched during tier-up.  A Table of funcref
+ *   holds not a JSFunction pointer, but a (code*,instance*) pair of pointers.
+ * When a table.set operation is performed, the JSFunction value is decomposed
+ * and its code and instance pointers are stored in the table; subsequently,
+ * when a table.get operation is performed, the JSFunction value is
+ * reconstituted from its code pointer using fairly elaborate machinery.  (The
+ * mechanics are the same also for the reflected JS operations on a
+ * WebAssembly.Table.  For everything, see WasmTable.{cpp,h}.)  The code pointer
+ * in the Table will always be the code pointer belonging to the best tier that
+ * was active at the time when that function was stored in that Table slot; in
+ * many cases, it will be tier-1 code.  As a consequence, a call through a table
+ * will first enter tier-1 code and then jump to tier-2 code.
+ *
+ *   To do better, we must update all the tables in the system when an instance
+ *   tiers up.  This is expected to be very hard.
+ *
+ * - Imported Wasm functions are never patched during tier-up.  Imports are held
+ *   in FuncImportInstanceData values in the instance, and for a wasm
+ *   callee, what's stored is the raw code pointer into the best tier of the
+ *   callee that was active at the time the import was resolved.  That could be
+ *   baseline code, and if it is, the situation is as for Table entries: a call
+ *   to an import will always go via that import's tier-1 code, which will tier
+ * up with an indirect jump.
+ *
+ *   To do better, we must update all the import tables in the system that
+ *   import functions from instances whose modules have tiered up.  This is
+ *   expected to be hard.
+ */
+
+// Classify the current system as one of a set of recognizable classes.  This
+// really needs to get our tier-1 systems right.
+//
+// TODO: We don't yet have a good measure of how fast a system is.  We
+// distinguish between mobile and desktop because these are very different kinds
+// of systems, but we could further distinguish between low / medium / high end
+// within those major classes.  If we do so, then constants below would be
+// provided for each (class, architecture, system-tier) combination, not just
+// (class, architecture) as now.
+//
+// CPU clock speed is not by itself a good predictor of system performance, as
+// there are high-performance systems with slow clocks (recent Intel) and
+// low-performance systems with fast clocks (older AMD).  We can also use
+// physical memory, core configuration, OS details, CPU class and family, and
+// CPU manufacturer to disambiguate.
 
 enum class SystemClass {
   DesktopX86,
@@ -526,11 +528,11 @@ static SystemClass ClassifySystem() {
   }
 }
 
-
-
-
-
-
+// Code sizes in machine code bytes per bytecode byte, again empirical except
+// where marked.
+//
+// The Ion estimate for ARM64 is the measured Baseline value scaled by a
+// plausible factor for optimized code.
 
 static const double x64Tox86Inflation = 1.25;
 
@@ -538,7 +540,7 @@ static const double x64IonBytesPerBytecode = 2.45;
 static const double x86IonBytesPerBytecode =
     x64IonBytesPerBytecode * x64Tox86Inflation;
 static const double arm32IonBytesPerBytecode = 3.3;
-static const double arm64IonBytesPerBytecode = 3.0 / 1.4;  
+static const double arm64IonBytesPerBytecode = 3.0 / 1.4;  // Estimate
 
 static const double x64BaselineBytesPerBytecode = x64IonBytesPerBytecode * 1.43;
 static const double x86BaselineBytesPerBytecode =
@@ -598,36 +600,36 @@ double wasm::EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize) {
   MOZ_CRASH("bad tier");
 }
 
-
-
+// If parallel Ion compilation is going to take longer than this, we should
+// tier.
 
 static const double tierCutoffMs = 10;
 
-
-
-
-
-
-
-
-
-
-
-
-
+// Compilation rate values are empirical except when noted, the reference
+// systems are:
+//
+// Late-2013 MacBook Pro (2.6GHz 4 x hyperthreaded Haswell, Mac OS X)
+// Late-2015 Nexus 5X (1.4GHz 4 x Cortex-A53 + 1.8GHz 2 x Cortex-A57, Android)
+// Ca-2016 SoftIron Overdrive 1000 (1.7GHz 4 x Cortex-A57, Fedora)
+//
+// The rates are always per core.
+//
+// The estimate for ARM64 is the Baseline compilation rate on the SoftIron
+// (because we have no Ion yet), divided by 5 to estimate Ion compile rate and
+// then divided by 2 to make it more reasonable for consumer ARM64 systems.
 
 static const double x64IonBytecodesPerMs = 2100;
 static const double x86IonBytecodesPerMs = 1500;
 static const double arm32IonBytecodesPerMs = 450;
-static const double arm64IonBytecodesPerMs = 750;  
+static const double arm64IonBytecodesPerMs = 750;  // Estimate
 
-
-
-
+// Tiering cutoff values: if code section sizes are below these values (when
+// divided by the effective number of cores) we do not tier, because we guess
+// that parallel Ion compilation will be fast enough.
 
 static const double x64DesktopTierCutoff = x64IonBytecodesPerMs * tierCutoffMs;
 static const double x86DesktopTierCutoff = x86IonBytecodesPerMs * tierCutoffMs;
-static const double x86MobileTierCutoff = x86DesktopTierCutoff / 2;  
+static const double x86MobileTierCutoff = x86DesktopTierCutoff / 2;  // Guess
 static const double arm32MobileTierCutoff =
     arm32IonBytecodesPerMs * tierCutoffMs;
 static const double arm64MobileTierCutoff =
@@ -654,15 +656,15 @@ static double CodesizeCutoff(SystemClass cls) {
   }
 }
 
-
-
-
-
-
-
-
-
-
+// As the number of cores grows the effectiveness of each core dwindles (on the
+// systems we care about for SpiderMonkey).
+//
+// The data are empirical, computed from the observed compilation time of the
+// Tanks demo code on a variable number of cores.
+//
+// The heuristic may fail on NUMA systems where the core count is high but the
+// performance increase is nil or negative once the program moves beyond one
+// socket.  However, few browser users have such systems.
 
 static double EffectiveCores(uint32_t cores) {
   if (cores <= 3) {
@@ -672,42 +674,42 @@ static double EffectiveCores(uint32_t cores) {
 }
 
 #ifndef JS_64BIT
-
-
+// Don't tier if tiering will fill code memory to more to more than this
+// fraction.
 
 static const double spaceCutoffPct = 0.9;
 #endif
 
-
+// Figure out whether we should use tiered compilation or not.
 static bool TieringBeneficial(uint32_t codeSize) {
   uint32_t cpuCount = GetHelperThreadCPUCount();
   MOZ_ASSERT(cpuCount > 0);
 
-  
-  
-  
-  
-  
-  
+  // It's mostly sensible not to background compile when there's only one
+  // hardware thread as we want foreground computation to have access to that.
+  // However, if wasm background compilation helper threads can be given lower
+  // priority then background compilation on single-core systems still makes
+  // some kind of sense.  That said, this is a non-issue: as of September 2017
+  // 1-core was down to 3.5% of our population and falling.
 
   if (cpuCount == 1) {
     return false;
   }
 
-  
-  
+  // Compute the max number of threads available to do actual background
+  // compilation work.
 
   uint32_t workers = GetMaxWasmCompilationThreads();
 
-  
-  
+  // The number of cores we will use is bounded both by the CPU count and the
+  // worker count, since the worker count already takes this into account.
 
   uint32_t cores = workers;
 
   SystemClass cls = ClassifySystem();
 
-  
-  
+  // Ion compilation on available cores must take long enough to be worth the
+  // bother.
 
   double cutoffSize = CodesizeCutoff(cls);
   double effectiveCores = EffectiveCores(cores);
@@ -716,18 +718,18 @@ static bool TieringBeneficial(uint32_t codeSize) {
     return false;
   }
 
-  
-  
-  
+  // Do not implement a size cutoff for 64-bit systems since the code size
+  // budget for 64 bit is so large that it will hardly ever be an issue.
+  // (Also the cutoff percentage might be different on 64-bit.)
 
 #ifndef JS_64BIT
-  
-  
-  
-  
-  
-  
-  
+  // If the amount of executable code for baseline compilation jeopardizes the
+  // availability of executable memory for ion code then do not tier, for now.
+  //
+  // TODO: For now we consider this module in isolation.  We should really
+  // worry about what else is going on in this process and might be filling up
+  // the code memory.  It's like we need some kind of code memory reservation
+  // system or JIT compilation for large modules.
 
   double ionRatio = OptimizedBytesPerBytecode(cls);
   double baselineRatio = BaselineBytesPerBytecode(cls);
@@ -735,8 +737,8 @@ static bool TieringBeneficial(uint32_t codeSize) {
   double availMemory = LikelyAvailableExecutableMemory();
   double cutoff = spaceCutoffPct * MaxCodeBytesPerProcess;
 
-  
-  
+  // If the sum of baseline and ion code makes us exceeds some set percentage
+  // of the executable memory then disable tiering.
 
   if ((MaxCodeBytesPerProcess - availMemory) + needMemory > cutoff) {
     return false;
@@ -746,7 +748,7 @@ static bool TieringBeneficial(uint32_t codeSize) {
   return true;
 }
 
-
+// Ensure that we have the non-compiler requirements to tier safely.
 static bool PlatformCanTier() {
   return CanUseExtraThreads() && jit::CanFlushExecutionContextForAllThreads();
 }
@@ -784,7 +786,7 @@ void CompilerEnvironment::computeParameters(Decoder& d) {
   MOZ_ASSERT_IF(debugEnabled, baselineEnabled);
   MOZ_ASSERT_IF(forceTiering, baselineEnabled && hasSecondTier);
 
-  
+  // Various constraints in various places should prevent failure here.
   MOZ_RELEASE_ASSERT(baselineEnabled || ionEnabled);
 
   uint32_t codeSectionSize = 0;
@@ -825,8 +827,8 @@ static bool DecodeFunctionBody(DecoderT& d, ModuleGeneratorT& mg,
 
   const size_t offsetInModule = d.currentOffset();
 
-  
-  
+  // Skip over the function body; it will be validated by the compilation
+  // thread.
   const uint8_t* bodyBegin;
   if (!d.readBytes(bodySize, &bodyBegin)) {
     return d.fail("function body length too big");
@@ -970,7 +972,7 @@ bool wasm::CompilePartialTier2(const Code& code, uint32_t funcIndex) {
   ModuleGenerator mg(codeMeta, compilerEnv, CompileState::LazyTier2, nullptr,
                      &error, nullptr);
   if (!mg.initializePartialTier(code, funcIndex)) {
-    
+    // The module is already validated, this must be an OOM
     MOZ_ASSERT(!error);
     return false;
   }
@@ -983,7 +985,7 @@ bool wasm::CompilePartialTier2(const Code& code, uint32_t funcIndex) {
   if (!mg.compileFuncDef(funcIndex, funcRange.bytecodeOffset, bodyBegin,
                          bodyEnd) ||
       !mg.finishFuncDefs() || !mg.finishPartialTier2()) {
-    
+    // The module is already validated, this must be an OOM
     MOZ_RELEASE_ASSERT(!error);
     return false;
   }

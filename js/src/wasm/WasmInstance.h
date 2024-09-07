@@ -50,8 +50,6 @@ class StoreBuffer;
 
 namespace wasm {
 
-using mozilla::Atomic;
-
 struct FuncDefInstanceData;
 class FuncImport;
 struct FuncImportInstanceData;
@@ -118,10 +116,10 @@ class alignas(16) Instance {
   
   
   
-  Atomic<JS::NativeStackLimit, mozilla::Relaxed> stackLimit_;
+  mozilla::Atomic<JS::NativeStackLimit, mozilla::Relaxed> stackLimit_;
 
   
-  Atomic<uint32_t, mozilla::Relaxed> interrupt_;
+  mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
 
   
   
@@ -472,7 +470,7 @@ class alignas(16) Instance {
 
   
 
-  void addSizeOfMisc(MallocSizeOf mallocSizeOf,
+  void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf,
                      SeenSet<CodeMetadata>* seenCodeMeta,
                      SeenSet<CodeMetadataForAsmJS>* seenCodeMetaForAsmJS,
                      SeenSet<Code>* seenCode, SeenSet<Table>* seenTables,
@@ -632,7 +630,8 @@ class alignas(16) Instance {
 };
 
 bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,
-                      Maybe<char*> stackResultsLoc, MutableHandleValue rval,
+                      mozilla::Maybe<char*> stackResultsLoc,
+                      MutableHandleValue rval,
                       CoercionLevel level = CoercionLevel::Spec);
 
 

@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2016 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef wasm_code_h
 #define wasm_code_h
@@ -47,7 +47,7 @@
 #include "threading/ExclusiveData.h"
 #include "util/Memory.h"
 #include "vm/MutexIDs.h"
-#include "wasm/AsmJS.h"  
+#include "wasm/AsmJS.h"  // CodeMetadataForAsmJS::SeenSet
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenConstants.h"
@@ -65,8 +65,6 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
 
-using js::CodeMetadataForAsmJS;
-
 struct JS_PUBLIC_API JSContext;
 class JSFunction;
 
@@ -78,12 +76,12 @@ class MacroAssembler;
 
 namespace wasm {
 
-
-
-
-
-
-
+// LinkData contains all the metadata necessary to patch all the locations
+// that depend on the absolute address of a CodeSegment. This happens in a
+// "linking" step after compilation and after the module's code is serialized.
+// The LinkData is serialized along with the Module but does not (normally, see
+// Module::debugLinkData_ comment) persist after (de)serialization, which
+// distinguishes it from Metadata, which is stored in the Code object.
 
 struct LinkDataCacheablePod {
   uint32_t trapOffset = 0;
@@ -117,8 +115,9 @@ struct LinkData : LinkDataCacheablePod {
   };
   using InternalLinkVector = Vector<InternalLink, 0, SystemAllocPolicy>;
 
-  struct SymbolicLinkArray : EnumeratedArray<SymbolicAddress, Uint32Vector,
-                                             size_t(SymbolicAddress::Limit)> {
+  struct SymbolicLinkArray
+      : mozilla::EnumeratedArray<SymbolicAddress, Uint32Vector,
+                                 size_t(SymbolicAddress::Limit)> {
     bool isEmpty() const {
       for (const Uint32Vector& symbolicLinks : *this) {
         if (symbolicLinks.length() != 0) {
@@ -159,7 +158,7 @@ WASM_DECLARE_CACHEABLE_POD(LinkData::InternalLink);
 using UniqueLinkData = UniquePtr<LinkData>;
 using UniqueLinkDataVector = Vector<UniqueLinkData, 0, SystemAllocPolicy>;
 
-
+// Executable code must be deallocated specially.
 
 struct FreeCode {
   uint32_t codeLength;
@@ -186,21 +185,21 @@ enum class CodeBlockKind {
   LazyStubs
 };
 
+// CodeSegment contains common helpers for determining the base and length of a
+// code segment and if a pc belongs to this segment. It is inherited by:
+// - ModuleSegment, i.e. the code segment of a Module, generated
+// eagerly when a Module is instanciated.
+// - LazyStubSegment, i.e. the code segment of entry stubs that are lazily
+// generated.
 
+// LazyStubSegment is a code segment lazily generated for function entry stubs
+// (both interpreter and jit ones).
+//
+// Because a stub is usually small (a few KiB) and an executable code segment
+// isn't (64KiB), a given stub segment can contain entry stubs of many
+// functions.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// A wasm ModuleSegment owns the allocated executable code for a wasm module.
 
 class CodeSegment : public ShareableBase<CodeSegment> {
  private:
@@ -217,50 +216,50 @@ class CodeSegment : public ShareableBase<CodeSegment> {
         capacityBytes_(capacityBytes),
         code_(nullptr) {}
 
-  
-  
+  // Create a new, empty code segment.  Allocation granularity is
+  // ExecutableCodePageSize (64KB).
   static RefPtr<CodeSegment> createEmpty(size_t capacityBytes);
 
-  
-  
+  // Create a new code segment and copy/link code from `masm` into it.
+  // Allocation granularity is ExecutableCodePageSize (64KB).
   static RefPtr<CodeSegment> createFromMasm(jit::MacroAssembler& masm,
                                             const LinkData& linkData,
                                             const Code* maybeCode);
 
-  
-  
+  // Create a new code segment and copy/link code from `unlinkedBytes` into
+  // it.  Allocation granularity is ExecutableCodePageSize (64KB).
   static RefPtr<CodeSegment> createFromBytes(const uint8_t* unlinkedBytes,
                                              size_t unlinkedBytesLength,
                                              const LinkData& linkData);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Allocate code space at a hardware page granularity, taking space from
+  // `code->lazyFuncSegments`, and copy/link code from `masm` into it.  If an
+  // existing segment can satisy the allocation, space is reserved there, and
+  // that segment is returned; else a new segment is created for the
+  // allocation, is added to `code->lazyFuncSegments`, and returned.
+  //
+  // The location/length of the final code is returned in
+  // `*codeStart`/`*codeLength`.  Note that placement is somewhat randomised
+  // inside the page, so `*codeStart` will not be page-aligned.  Also, the
+  // metadata associated with the code block will have to be offset by the
+  // value returned in `*metadataBias`.
   static RefPtr<CodeSegment> createFromMasmWithBumpAlloc(
       jit::MacroAssembler& masm, const LinkData& linkData, const Code* code,
       uint8_t** codeStartOut, uint32_t* codeLengthOut,
       uint32_t* metadataBiasOut);
 
-  
-  
-  
-  
-  
+  // For this CodeSegment, perform linking on the area
+  // [codeStart, +codeLength), then make all pages that intersect
+  // [pageStart, +codeLength+(codeStart-pageStart)) executable.  See ASCII
+  // art at CodeSegment::createFromMasmWithBumpAlloc (implementation) for the
+  // meaning of pageStart/codeStart/codeLength.
   bool linkAndMakeExecutableSubRange(
       jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
       const Code* maybeCode, uint8_t* pageStart, uint8_t* codeStart,
       uint32_t codeLength);
 
-  
-  
+  // For this CodeSegment, perform linking on the entire code area, then make
+  // it executable.
   bool linkAndMakeExecutable(jit::AutoMarkJitCodeWritableForThread& writable,
                              const LinkData& linkData, const Code* maybeCode);
 
@@ -278,7 +277,7 @@ class CodeSegment : public ShareableBase<CodeSegment> {
 
   static size_t PageSize() { return gc::SystemPageSize(); }
   static size_t PageRoundup(uintptr_t bytes) {
-    
+    // All new code allocations must be rounded to the system page size
     return AlignBytes(bytes, gc::SystemPageSize());
   }
   static bool IsPageAligned(uintptr_t bytes) {
@@ -319,20 +318,20 @@ enum class TierUpState : uint32_t {
 };
 
 struct FuncState {
-  Atomic<const CodeBlock*> bestTier;
-  Atomic<TierUpState> tierUpState;
+  mozilla::Atomic<const CodeBlock*> bestTier;
+  mozilla::Atomic<TierUpState> tierUpState;
 };
 using FuncStatesPointer = mozilla::UniquePtr<FuncState[], JS::FreePolicy>;
 
-
-
-
+// LazyFuncExport helps to efficiently lookup a CodeRange from a given function
+// index. It is inserted in a vector sorted by function index, to perform
+// binary search on it later.
 
 struct LazyFuncExport {
   size_t funcIndex;
   size_t lazyStubBlockIndex;
   size_t funcCodeRangeIndex;
-  
+  // Used to make sure we only upgrade a lazy stub from baseline to ion.
   mozilla::DebugOnly<CodeBlockKind> funcKind;
 
   LazyFuncExport(size_t funcIndex, size_t lazyStubBlockIndex,
@@ -409,7 +408,7 @@ class FuncToCodeRangeMap {
 #endif
   }
 
-  size_t sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return funcToCodeRange_.sizeOfExcludingThis(mallocSizeOf);
   }
 
@@ -418,44 +417,44 @@ class FuncToCodeRangeMap {
   WASM_DECLARE_FRIEND_SERIALIZE(FuncToCodeRangeMap);
 };
 
-
-
-
-
-
-
-
+// CodeBlock contains all the data related to a given compilation tier. It is
+// built during module generation and then immutably stored in a Code.
+//
+// Code contains a map from PC to containing code block. The map is thread-safe
+// to support lookups from multiple threads (see ThreadSafeCodeBlockMap). This
+// is safe because code blocks are immutable after creation, so there won't
+// be any concurrent modification during a metadata lookup.
 
 class CodeBlock {
  public:
-  
+  // Weak reference to the code that owns us, not serialized.
   const Code* code;
-  
+  // The index we are held inside our containing Code::data::blocks_ vector.
   size_t codeBlockIndex;
 
-  
-  
-  
+  // The following information is all serialized
+  // Which kind of code is being stored in this block. Most consumers don't
+  // care about this.
   const CodeBlockKind kind;
 
-  
+  // The code segment our JIT code is within.
   SharedCodeSegment segment;
-  
+  // The sub-range of the code segment our JIT code is within.
   const uint8_t* codeBase;
   size_t codeLength;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Metadata about the code we have contributed to the segment.
+  //
+  // * `funcToCodeRange` does not involve code locations.
+  //
+  // * `stackMaps` specifies code locations directly, in
+  //   StackMaps::Maplet::nextInsnAddr.
+  //
+  // * All 6 other fields specify a code locations in by carrying an offset
+  //   which is interpreted to be relative to the start of the containing
+  //   segment, *not* relative to `CodeBlock::codeBase`.  That is, the denoted
+  //   address is `segment->base() + ..offset...`.
+  //
   FuncToCodeRangeMap funcToCodeRange;
   CodeRangeVector codeRanges;
   CallSiteVector callSites;
@@ -465,7 +464,7 @@ class CodeBlock {
   TryNoteVector tryNotes;
   CodeRangeUnwindInfoVector codeRangeUnwindInfos;
 
-  
+  // Track whether we are registered in the process map of code blocks.
   bool unregisterOnDestroy_;
 
   static constexpr CodeBlockKind kindFromTier(Tier tier) {
@@ -485,7 +484,7 @@ class CodeBlock {
 
   bool initialized() const {
     if (code) {
-      
+      // Initialize should have given us an index too.
       MOZ_ASSERT(codeBlockIndex != (size_t)-1);
       return true;
     }
@@ -494,7 +493,7 @@ class CodeBlock {
 
   bool initialize(const Code& code, size_t codeBlockIndex);
 
-  
+  // Gets the tier for this code block. Only valid for non-lazy stub code.
   Tier tier() const {
     switch (kind) {
       case CodeBlockKind::BaselineTier:
@@ -506,13 +505,13 @@ class CodeBlock {
     }
   }
 
-  
+  // Returns whether this code block should be considered for serialization.
   bool isSerializable() const {
     return kind == CodeBlockKind::SharedStubs ||
            kind == CodeBlockKind::OptimizedTier;
   }
 
-  
+  // Add an offset to the metadata.  See comment above.
   void offsetMetadataBy(uint32_t delta);
 
   const uint8_t* base() const { return codeBase; }
@@ -539,36 +538,36 @@ class CodeBlock {
   void disassemble(JSContext* cx, int kindSelection,
                    PrintCallback printString) const;
 
-  void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
+  void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf, size_t* code,
                      size_t* data) const;
 
   WASM_DECLARE_FRIEND_SERIALIZE_ARGS(CodeBlock, const wasm::LinkData& data);
 };
 
-
-
-
-
-
-
-
-
+// Because of profiling, the thread running wasm might need to know to which
+// CodeBlock the current PC belongs, during a call to lookup(). A lookup
+// is a read-only operation, and we don't want to take a lock then
+// (otherwise, we could have a deadlock situation if an async lookup
+// happened on a given thread that was holding mutatorsMutex_ while getting
+// sampled). Since the writer could be modifying the data that is getting
+// looked up, the writer functions use spin-locks to know if there are any
+// observers (i.e. calls to lookup()) of the atomic data.
 
 class ThreadSafeCodeBlockMap {
-  
-  
+  // Since writes (insertions or removals) can happen on any background
+  // thread at the same time, we need a lock here.
 
   Mutex mutatorsMutex_ MOZ_UNANNOTATED;
 
   RawCodeBlockVector segments1_;
   RawCodeBlockVector segments2_;
 
-  
-  
+  // Except during swapAndWait(), there are no lookup() observers of the
+  // vector pointed to by mutableCodeBlocks_
 
   RawCodeBlockVector* mutableCodeBlocks_;
-  Atomic<const RawCodeBlockVector*> readonlyCodeBlocks_;
-  Atomic<size_t> numActiveLookups_;
+  mozilla::Atomic<const RawCodeBlockVector*> readonlyCodeBlocks_;
+  mozilla::Atomic<size_t> numActiveLookups_;
 
   struct CodeBlockPC {
     const void* pc;
@@ -585,30 +584,30 @@ class ThreadSafeCodeBlockMap {
   };
 
   void swapAndWait() {
-    
-    
-    
-    
+    // Both vectors are consistent for lookup at this point although their
+    // contents are different: there is no way for the looked up PC to be
+    // in the code segment that is getting registered, because the code
+    // segment is not even fully created yet.
 
-    
-    
-    
+    // If a lookup happens before this instruction, then the
+    // soon-to-become-former read-only pointer is used during the lookup,
+    // which is valid.
 
     mutableCodeBlocks_ = const_cast<RawCodeBlockVector*>(
         readonlyCodeBlocks_.exchange(mutableCodeBlocks_));
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // If a lookup happens after this instruction, then the updated vector
+    // is used, which is valid:
+    // - in case of insertion, it means the new vector contains more data,
+    // but it's fine since the code segment is getting registered and thus
+    // isn't even fully created yet, so the code can't be running.
+    // - in case of removal, it means the new vector contains one less
+    // entry, but it's fine since unregistering means the code segment
+    // isn't used by any live instance anymore, thus PC can't be in the
+    // to-be-removed code segment's range.
 
-    
-    
+    // A lookup could have happened on any of the two vectors. Wait for
+    // observers to be done using any vector before mutating.
 
     while (numActiveLookups_ > 0) {
     }
@@ -651,10 +650,10 @@ class ThreadSafeCodeBlockMap {
     MOZ_ASSERT(index == otherIndex);
 #endif
 
-    
-    
-    
-    
+    // Although we could simply revert the insertion in the read-only
+    // vector, it is simpler to just crash and given that each CodeBlock
+    // consumes multiple pages, it is unlikely this insert() would OOM in
+    // practice
     AutoEnterOOMUnsafeRegion oom;
     if (!mutableCodeBlocks_->insert(mutableCodeBlocks_->begin() + index, cs)) {
       oom.crash("when inserting a CodeBlock in the process-wide map");
@@ -707,9 +706,9 @@ class ThreadSafeCodeBlockMap {
       return nullptr;
     }
 
-    
-    
-    
+    // It is fine returning a raw CodeBlock*, because we assume we are
+    // looking up a live PC in code which is on the stack, keeping the
+    // CodeBlock alive.
 
     const CodeBlock* result = (*readonly)[index];
     if (codeRange) {
@@ -719,37 +718,37 @@ class ThreadSafeCodeBlockMap {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Jump tables that implement function tiering and fast js-to-wasm calls.
+//
+// There is one JumpTable object per Code object, holding two jump tables: the
+// tiering jump table and the jit-entry jump table.  The JumpTable is not
+// serialized with its Code, but is a run-time entity only.  At run-time it is
+// shared across threads with its owning Code (and the Module that owns the
+// Code).  Values in the JumpTable /must/ /always/ be JSContext-agnostic and
+// Instance-agnostic, because of this sharing.
+//
+// Both jump tables have a number of entries equal to the number of functions in
+// their Module, including imports.  In the tiering table, the elements
+// corresponding to the Module's imported functions are unused; in the jit-entry
+// table, the elements corresponding to the Module's non-exported functions are
+// unused.  (Functions can be exported explicitly via the exports section or
+// implicitly via a mention of their indices outside function bodies.)  See
+// comments at JumpTables::init() and WasmInstanceObject::getExportedFunction().
+// The entries are void*.  Unused entries are null.
+//
+// The tiering jump table.
+//
+// This table holds code pointers that are used by baseline functions to enter
+// optimized code.  See the large comment block in WasmCompile.cpp for
+// information about how tiering works.
+//
+// The jit-entry jump table.
+//
+// The jit-entry jump table entry for a function holds a stub that allows Jitted
+// JS code to call wasm using the JS JIT ABI.  See large comment block at
+// WasmInstanceObject::getExportedFunction() for more about exported functions
+// and stubs and the lifecycle of the entries in the jit-entry table - there are
+// complex invariants.
 
 class JumpTables {
   using TablePointer = mozilla::UniquePtr<void*[], JS::FreePolicy>;
@@ -769,18 +768,18 @@ class JumpTables {
                   const CodeBlock& sharedStubs, const CodeBlock& tier1);
 
   void setJitEntry(size_t i, void* target) const {
-    
-    
+    // Make sure that write is atomic; see comment in wasm::Module::finishTier2
+    // to that effect.
     MOZ_ASSERT(i < numFuncs_);
     jit_.get()[i] = target;
   }
   void setJitEntryIfNull(size_t i, void* target) const {
-    
-    
+    // Make sure that compare-and-write is atomic; see comment in
+    // wasm::Module::finishTier2 to that effect.
     MOZ_ASSERT(i < numFuncs_);
     void* expected = nullptr;
     (void)__atomic_compare_exchange_n(&jit_.get()[i], &expected, target,
-                                      false, __ATOMIC_RELAXED,
+                                      /*weak=*/false, __ATOMIC_RELAXED,
                                       __ATOMIC_RELAXED);
   }
   void** getAddressOfJitEntry(size_t i) const {
@@ -796,7 +795,7 @@ class JumpTables {
 
   void setTieringEntry(size_t i, void* target) const {
     MOZ_ASSERT(i < numFuncs_);
-    
+    // See comment in wasm::Module::finishTier2.
     if (mode_ != CompileMode::Once) {
       tiering_.get()[i] = target;
     }
@@ -804,16 +803,16 @@ class JumpTables {
   void** tiering() const { return tiering_.get(); }
 
   size_t sizeOfMiscExcludingThis() const {
-    
-    
+    // 2 words per function for the jit entry table, plus maybe 1 per
+    // function if we're tiering.
     return sizeof(void*) * (2 + (tiering_ ? 1 : 0)) * numFuncs_;
   }
 };
 
-
-
-
-
+// Code objects own executable code and the metadata that describe it. A single
+// Code object is normally shared between a module and all its instances.
+//
+// profilingLabels_ is lazily initialized, but behind a lock.
 
 using SharedCode = RefPtr<const Code>;
 using MutableCode = RefPtr<Code>;
@@ -821,111 +820,111 @@ using MetadataAnalysisHashMap =
     HashMap<const char*, uint32_t, mozilla::CStringHasher, SystemAllocPolicy>;
 
 class Code : public ShareableBase<Code> {
-  
-  
-  
-  
-  
-  
-  
+  // A primitive PRNG, as used in early C library implementations.
+  // See https://en.wikipedia.org/wiki/
+  //             Linear_congruential_generator#Parameters_in_common_use.
+  // It is used for randomising code layout so as to avoid icache misses, not
+  // for any security-related reason, which is why we don't care about its
+  // quality too much.  It also gives us repeatability when debugging or
+  // profiling.
   class SimplePRNG {
     uint32_t state_;
 
    public:
     SimplePRNG() : state_(999) {}
-    
+    // Returns an 11-bit pseudo-random number.
     uint32_t get11RandomBits() {
       state_ = state_ * 1103515245 + 12345;
-      
-      
+      // Both the high and low order bits are reputed to be not very random.
+      // Throw them away.
       return (state_ >> 4) & 0x7FF;
     }
   };
   struct ProtectedData {
-    
-    
+    // A vector of all of the code blocks owned by this code. Each code block
+    // is immutable once added to the vector, but this vector may grow.
     UniqueConstCodeBlockVector blocks;
-    
-    
-    
+    // A vector of link data paired 1:1 with `blocks`. Entries may be null if
+    // the code block is not serializable. This is separate from CodeBlock so
+    // that we may clear it out after serialization has happened.
     UniqueLinkDataVector blocksLinkData;
 
-    
+    // A vector of code segments that we can allocate lazy segments into
     SharedCodeSegmentVector lazyStubSegments;
-    
+    // A sorted vector of LazyFuncExport
     LazyFuncExportVector lazyExports;
 
-    
+    // A vector of code segments that we can lazily allocate functions into
     SharedCodeSegmentVector lazyFuncSegments;
 
-    
+    // For randomizing code layout.
     SimplePRNG simplePRNG;
   };
   using ReadGuard = RWExclusiveData<ProtectedData>::ReadGuard;
   using WriteGuard = RWExclusiveData<ProtectedData>::WriteGuard;
 
-  
+  // The compile mode this code is used with.
   const CompileMode mode_;
 
-  
-  
+  // Core data that is not thread-safe and must acquire a lock in order to
+  // access.
   RWExclusiveData<ProtectedData> data_;
 
-  
+  // Thread-safe mutable map from code pointer to code block that contains it.
   mutable ThreadSafeCodeBlockMap blockMap_;
 
-  
-  
-  
-  
+  // These have the same lifetime end as Code itself -- they can be dropped
+  // when Code itself is dropped.  FIXME: should these be MutableCodeXX?
+  //
+  // This must always be non-null.
   SharedCodeMetadata codeMeta_;
-  
+  // This is null for a wasm module, non-null for asm.js
   SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   const CodeBlock* sharedStubs_;
   const CodeBlock* completeTier1_;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // [SMDOC] Tier-2 data
+  //
+  // hasCompleteTier2_ and completeTier2_ implement a three-state protocol for
+  // broadcasting tier-2 data; this also amounts to a single-writer/
+  // multiple-reader setup.
+  //
+  // Initially hasCompleteTier2_ is false and completeTier2_ is null.
+  //
+  // While hasCompleteTier2_ is false, *no* thread may read completeTier2_, but
+  // one thread may make completeTier2_ non-null (this will be the tier-2
+  // compiler thread).  That same thread must then later set hasCompleteTier2_
+  // to true to broadcast the completeTier2_ value and its availability.  Note
+  // that the writing thread may not itself read completeTier2_ before setting
+  // hasCompleteTier2_, in order to simplify reasoning about global invariants.
+  //
+  // Once hasCompleteTier2_ is true, *no* thread may write completeTier2_ and
+  // *no* thread may read completeTier2_ without having observed
+  // hasCompleteTier2_ as true first.  Once hasCompleteTier2_ is true, it stays
+  // true.
   mutable const CodeBlock* completeTier2_;
-  mutable Atomic<bool> hasCompleteTier2_;
+  mutable mozilla::Atomic<bool> hasCompleteTier2_;
 
-  
-  
+  // State for every defined function (not imported) in this module. This is
+  // only needed if we're doing partial tiering.
   mutable FuncStatesPointer funcStates_;
 
   FuncImportVector funcImports_;
   ExclusiveData<CacheableCharsVector> profilingLabels_;
   JumpTables jumpTables_;
 
-  
+  // Where to redirect PC to for handling traps from the signal handler.
   uint8_t* trapCode_;
 
-  
+  // Offset of the debug stub in the `sharedStubs_` CodeBlock.  Not serialized.
   uint32_t debugStubOffset_;
 
-  
+  // Offset of the request-tier-up stub in the `sharedStubs_` CodeBlock.
   uint32_t requestTierUpStubOffset_;
 
-  
-  
+  // Methods for getting complete tiers, private while we're moving to partial
+  // tiering.
   Tiers completeTiers() const;
 
   [[nodiscard]] bool addCodeBlock(const WriteGuard& guard,
@@ -935,8 +934,8 @@ class Code : public ShareableBase<Code> {
   [[nodiscard]] const LazyFuncExport* lookupLazyFuncExport(
       const WriteGuard& guard, uint32_t funcIndex) const;
 
-  
-  
+  // Returns a pointer to the raw interpreter entry of a given function for
+  // which stubs have been lazily generated.
   [[nodiscard]] void* lookupLazyInterpEntry(const WriteGuard& guard,
                                             uint32_t funcIndex) const;
 
@@ -947,13 +946,13 @@ class Code : public ShareableBase<Code> {
   [[nodiscard]] bool createManyLazyEntryStubs(
       const WriteGuard& guard, const Uint32Vector& funcExportIndices,
       const CodeBlock& tierCodeBlock, size_t* stubBlockIndex) const;
-  
-  
-  
-  
+  // Create one lazy stub for all the functions in funcExportIndices, putting
+  // them in a single stub. Jit entries won't be used until
+  // setJitEntries() is actually called, after the Code owner has committed
+  // tier2.
   [[nodiscard]] bool createTier2LazyEntryStubs(
       const WriteGuard& guard, const CodeBlock& tier2Code,
-      Maybe<size_t>* outStubBlockIndex) const;
+      mozilla::Maybe<size_t>* outStubBlockIndex) const;
   [[nodiscard]] bool appendProfilingLabels(
       const ExclusiveData<CacheableCharsVector>::Guard& labels,
       const CodeBlock& codeBlock) const;
@@ -1011,10 +1010,10 @@ class Code : public ShareableBase<Code> {
   const FuncImportVector& funcImports() const { return funcImports_; }
 
   bool hasCompleteTier(Tier tier) const;
-  
+  // The 'stable' complete tier of code. This is stable during a run/
   Tier stableCompleteTier() const;
-  
-  
+  // The 'best' complete tier of code. This may transition from baseline to ion
+  // at any time.
   Tier bestCompleteTier() const;
   bool hasSerializableCode() const { return hasCompleteTier(Tier::Serialized); }
 
@@ -1046,7 +1045,7 @@ class Code : public ShareableBase<Code> {
   const LinkData* codeBlockLinkData(const CodeBlock& block) const;
   void clearLinkData() const;
 
-  
+  // Code metadata lookup:
   const CallSite* lookupCallSite(void* pc) const {
     const CodeBlock* block = blockMap_.lookup(pc);
     if (!block) {
@@ -1095,24 +1094,24 @@ class Code : public ShareableBase<Code> {
   }
   bool lookupFunctionTier(const CodeRange* codeRange, Tier* tier) const;
 
-  
-  
+  // To save memory, profilingLabels_ are generated lazily when profiling mode
+  // is enabled.
 
   void ensureProfilingLabels(bool profilingEnabled) const;
   const char* profilingLabel(uint32_t funcIndex) const;
 
-  
+  // Wasm disassembly support
 
   void disassemble(JSContext* cx, Tier tier, int kindSelection,
                    PrintCallback printString) const;
 
-  
+  // Wasm metadata size analysis
   MetadataAnalysisHashMap metadataAnalysis(JSContext* cx) const;
 
-  
+  // about:memory reporting:
 
   void addSizeOfMiscIfNotSeen(
-      MallocSizeOf mallocSizeOf, CodeMetadata::SeenSet* seenCodeMeta,
+      mozilla::MallocSizeOf mallocSizeOf, CodeMetadata::SeenSet* seenCodeMeta,
       CodeMetadataForAsmJS::SeenSet* seenCodeMetaForAsmJS,
       Code::SeenSet* seenCode, size_t* code, size_t* data) const;
 
@@ -1127,16 +1126,16 @@ class Code : public ShareableBase<Code> {
 
 void PatchDebugSymbolicAccesses(uint8_t* codeBase, jit::MacroAssembler& masm);
 
-
-
-
-
+// Allocate executable memory from the pool in `lazySegments`, or if none of
+// those have space, create a new Segment, add it to the vector, and allocate
+// from that.  `*roundedUpAllocationSize` returns the actual allocation size;
+// it is guaranteed to be a multiple of the machine's page size.
 SharedCodeSegment AllocateCodePagesFrom(SharedCodeSegmentVector& lazySegments,
                                         uint32_t bytesNeeded,
                                         size_t* offsetInSegment,
                                         size_t* roundedUpAllocationSize);
 
-}  
-}  
+}  // namespace wasm
+}  // namespace js
 
-#endif  
+#endif  // wasm_code_h

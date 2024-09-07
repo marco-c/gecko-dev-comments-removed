@@ -35,7 +35,7 @@ struct CodeMetadata;
 
 [[nodiscard]] bool DecodeConstantExpression(Decoder& d, CodeMetadata* codeMeta,
                                             ValType expected,
-                                            Maybe<LitVal>* literal);
+                                            mozilla::Maybe<LitVal>* literal);
 
 enum class InitExprKind {
   None,

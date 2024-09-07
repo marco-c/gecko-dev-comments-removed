@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2021 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef wasm_binary_h
 #define wasm_binary_h
@@ -37,11 +37,8 @@
 namespace js {
 namespace wasm {
 
-using mozilla::DebugOnly;
-using mozilla::Maybe;
-
-
-
+// The Opcode compactly and safely represents the primary opcode plus any
+// extension, with convenient predicates and accessors.
 
 class Opcode {
   uint32_t bits_;
@@ -115,9 +112,9 @@ class Opcode {
   bool operator!=(const Opcode& that) const { return bits_ != that.bits_; }
 };
 
-
-
-
+// The Encoder class appends bytes to the Bytes object it is given during
+// construction. The client is responsible for the Bytes's lifetime and must
+// keep the Bytes alive as long as the Encoder is used.
 
 class Encoder {
   Bytes& bytes_;
@@ -207,8 +204,8 @@ class Encoder {
   size_t currentOffset() const { return bytes_.length(); }
   bool empty() const { return currentOffset() == 0; }
 
-  
-  
+  // Fixed-size encoding operations simply copy the literal bytes (without
+  // attempting to align).
 
   [[nodiscard]] bool writeFixedU7(uint8_t i) {
     MOZ_ASSERT(i <= uint8_t(INT8_MAX));
@@ -219,7 +216,7 @@ class Encoder {
   [[nodiscard]] bool writeFixedF32(float f) { return write<float>(f); }
   [[nodiscard]] bool writeFixedF64(double d) { return write<double>(d); }
 
-  
+  // Variable-length encodings that all use LEB128.
 
   [[nodiscard]] bool writeVarU32(uint32_t i) { return writeVarU<uint32_t>(i); }
   [[nodiscard]] bool writeVarS32(int32_t i) { return writeVarS<int32_t>(i); }
@@ -235,7 +232,7 @@ class Encoder {
         return false;
       }
       uint32_t typeIndex = types_->indexOf(*type.typeDef());
-      
+      // Encode positive LEB S33 as S64.
       return writeVarS64(typeIndex);
     }
     TypeCode tc = type.packed().typeCode();
@@ -243,8 +240,8 @@ class Encoder {
     return writeFixedU8(uint8_t(tc));
   }
   [[nodiscard]] bool writeOp(Opcode opcode) {
-    
-    
+    // The Opcode constructor has asserted that `opcode` is meaningful, so no
+    // further correctness checking is necessary here.
     uint32_t bits = opcode.bits();
     if (!writeFixedU8(bits & 255)) {
       return false;
@@ -255,7 +252,7 @@ class Encoder {
     return writeVarU32(bits >> 8);
   }
 
-  
+  // Fixed-length encodings that allow back-patching.
 
   [[nodiscard]] bool writePatchableFixedU7(size_t* offset) {
     *offset = bytes_.length();
@@ -265,7 +262,7 @@ class Encoder {
     return patchFixedU7(offset, patchBits, UINT8_MAX);
   }
 
-  
+  // Variable-length encodings that allow back-patching.
 
   [[nodiscard]] bool writePatchableVarU32(size_t* offset) {
     *offset = bytes_.length();
@@ -275,19 +272,19 @@ class Encoder {
     return patchVarU32(offset, patchBits, UINT32_MAX);
   }
 
-  
-  
+  // Byte ranges start with an LEB128 length followed by an arbitrary sequence
+  // of bytes. When used for strings, bytes are to be interpreted as utf8.
 
   [[nodiscard]] bool writeBytes(const void* bytes, uint32_t numBytes) {
     return writeVarU32(numBytes) &&
            bytes_.append(reinterpret_cast<const uint8_t*>(bytes), numBytes);
   }
 
-  
-  
-  
-  
-  
+  // A "section" is a contiguous range of bytes that stores its own size so
+  // that it may be trivially skipped without examining the payload. Sections
+  // require backpatching since the size of the section is only known at the
+  // end while the size's varU32 must be stored at the beginning. Immediately
+  // after the section length is the string id of the section.
 
   [[nodiscard]] bool startSection(SectionId id, size_t* offset) {
     MOZ_ASSERT(uint32_t(id) < 128);
@@ -299,9 +296,9 @@ class Encoder {
   }
 };
 
-
-
-
+// The Decoder class decodes the bytes in the range it is given during
+// construction. The client is responsible for keeping the byte range alive as
+// long as the Decoder is used.
 
 class Decoder {
   const uint8_t* const beg_;
@@ -340,7 +337,7 @@ class Decoder {
 
   template <typename UInt>
   [[nodiscard]] bool readVarU(UInt* out) {
-    DebugOnly<const uint8_t*> before = cur_;
+    mozilla::DebugOnly<const uint8_t*> before = cur_;
     const unsigned numBits = sizeof(UInt) * CHAR_BIT;
     const unsigned remainderBits = numBits % 7;
     const unsigned numBitsInSevens = numBits - remainderBits;
@@ -425,12 +422,12 @@ class Decoder {
         warnings_(warnings),
         resilientMode_(false) {}
 
-  
+  // These convenience functions use currentOffset() as the errorOffset.
   bool fail(const char* msg) { return fail(currentOffset(), msg); }
   bool failf(const char* msg, ...) MOZ_FORMAT_PRINTF(2, 3);
   void warnf(const char* msg, ...) MOZ_FORMAT_PRINTF(2, 3);
 
-  
+  // Report an error at the given offset (relative to the whole module).
   bool fail(size_t errorOffset, const char* msg);
 
   UniqueChars* error() { return error_; }
@@ -451,7 +448,7 @@ class Decoder {
     MOZ_ASSERT(end_ >= cur_);
     return size_t(end_ - cur_);
   }
-  
+  // pos must be a value previously returned from currentPosition.
   void rollbackPosition(const uint8_t* pos) { cur_ = pos; }
   const uint8_t* currentPosition() const { return cur_; }
   size_t beginOffset() const { return offsetInModule_; }
@@ -459,7 +456,7 @@ class Decoder {
   const uint8_t* begin() const { return beg_; }
   const uint8_t* end() const { return end_; }
 
-  
+  // Peek at the next byte, if it exists, without advancing the position.
 
   bool peekByte(uint8_t* byte) {
     if (done()) {
@@ -469,8 +466,8 @@ class Decoder {
     return true;
   }
 
-  
-  
+  // Fixed-size encoding operations simply copy the literal bytes (without
+  // attempting to align).
 
   [[nodiscard]] bool readFixedU8(uint8_t* i) { return read<uint8_t>(i); }
   [[nodiscard]] bool readFixedU32(uint32_t* u) { return read<uint32_t>(u); }
@@ -487,7 +484,7 @@ class Decoder {
   }
 #endif
 
-  
+  // Variable-length encodings that all use LEB128.
 
   [[nodiscard]] bool readVarU32(uint32_t* out) {
     return readVarU<uint32_t>(out);
@@ -498,7 +495,7 @@ class Decoder {
   }
   [[nodiscard]] bool readVarS64(int64_t* out) { return readVarS<int64_t>(out); }
 
-  
+  // Value and reference types
 
   [[nodiscard]] ValType uncheckedReadValType(const TypeContext& types);
 
@@ -520,11 +517,11 @@ class Decoder {
   [[nodiscard]] bool readRefType(const TypeContext& types,
                                  const FeatureArgs& features, RefType* type);
 
-  
+  // Instruction opcode
 
   [[nodiscard]] bool readOp(OpBytes* op);
 
-  
+  // Instruction immediates for constant instructions
 
   [[nodiscard]] bool readBinary() { return true; }
   [[nodiscard]] bool readTypeIndex(uint32_t* typeIndex);
@@ -540,7 +537,7 @@ class Decoder {
   [[nodiscard]] bool readRefNull(const TypeContext& types,
                                  const FeatureArgs& features, RefType* type);
 
-  
+  // See writeBytes comment.
 
   [[nodiscard]] bool readBytes(uint32_t numBytes,
                                const uint8_t** bytes = nullptr) {
@@ -554,7 +551,7 @@ class Decoder {
     return true;
   }
 
-  
+  // See "section" description in Encoder.
 
   [[nodiscard]] bool readSectionHeader(uint8_t* id, SectionRange* range);
 
@@ -564,8 +561,8 @@ class Decoder {
   [[nodiscard]] bool finishSection(const SectionRange& range,
                                    const char* sectionName);
 
-  
-  
+  // Custom sections do not cause validation errors unless the error is in
+  // the section header itself.
 
   [[nodiscard]] bool startCustomSection(const char* expected,
                                         size_t expectedLength,
@@ -585,16 +582,16 @@ class Decoder {
 
   [[nodiscard]] bool skipCustomSection(CodeMetadata* codeMeta);
 
-  
+  // The Name section has its own optional subsections.
 
   [[nodiscard]] bool startNameSubsection(NameType nameType,
-                                         Maybe<uint32_t>* endOffset);
+                                         mozilla::Maybe<uint32_t>* endOffset);
   [[nodiscard]] bool finishNameSubsection(uint32_t endOffset);
   [[nodiscard]] bool skipNameSubsection();
 
-  
-  
-  
+  // The infallible "unchecked" decoding functions can be used when we are
+  // sure that the bytes are well-formed (by construction or due to previous
+  // validation).
 
   uint8_t uncheckedReadFixedU8() { return uncheckedRead<uint8_t>(); }
   uint32_t uncheckedReadFixedU32() { return uncheckedRead<uint32_t>(); }
@@ -638,7 +635,7 @@ class Decoder {
   }
 };
 
-
+// Value and reference types
 
 inline ValType Decoder::uncheckedReadValType(const TypeContext& types) {
   uint8_t code = uncheckedReadFixedU8();
@@ -832,7 +829,7 @@ inline bool Decoder::readRefType(const TypeContext& types,
   return true;
 }
 
-
+// Instruction opcode
 
 inline bool Decoder::readOp(OpBytes* op) {
   static_assert(size_t(Op::Limit) == 256, "fits");
@@ -847,7 +844,7 @@ inline bool Decoder::readOp(OpBytes* op) {
   return readVarU32(&op->b1);
 }
 
-
+// Instruction immediates for constant instructions
 
 inline bool Decoder::readTypeIndex(uint32_t* typeIndex) {
   if (!readVarU32(typeIndex)) {
@@ -912,7 +909,7 @@ inline bool Decoder::readRefNull(const TypeContext& types,
   return readHeapType(types, features, true, type);
 }
 
-}  
-}  
+}  // namespace wasm
+}  // namespace js
 
-#endif  
+#endif  // namespace wasm_binary_h

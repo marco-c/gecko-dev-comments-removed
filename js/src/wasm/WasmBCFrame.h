@@ -122,12 +122,12 @@ class StackHeight {
 class StackResultsLoc {
   uint32_t bytes_;
   size_t count_;
-  Maybe<uint32_t> height_;
+  mozilla::Maybe<uint32_t> height_;
 
  public:
   StackResultsLoc() : bytes_(0), count_(0) {};
   StackResultsLoc(uint32_t bytes, size_t count, uint32_t height)
-      : bytes_(bytes), count_(count), height_(Some(height)) {
+      : bytes_(bytes), count_(count), height_(mozilla::Some(height)) {
     MOZ_ASSERT(bytes != 0);
     MOZ_ASSERT(count != 0);
     MOZ_ASSERT(height != 0);
@@ -494,7 +494,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   CodeOffset stackAddOffset_;
 
   
-  Maybe<int32_t> stackResultsPtrOffset_;
+  mozilla::Maybe<int32_t> stackResultsPtrOffset_;
 
   
   uint32_t instancePointerOffset_;
@@ -590,7 +590,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
       return false;
     }
 
-    DebugOnly<uint32_t> index = 0;
+    mozilla::DebugOnly<uint32_t> index = 0;
     BaseLocalIter i(locals, args, debugEnabled);
     for (; !i.done() && i.index() < args.lengthWithoutStackResults(); i++) {
       MOZ_ASSERT(i.isArg());
@@ -616,7 +616,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
     setLocalSize(AlignBytes(localSize, WasmStackAlignment));
 
     if (args.hasSyntheticStackResultPointerArg()) {
-      stackResultsPtrOffset_ = Some(i.stackResultPointerOffset());
+      stackResultsPtrOffset_ = mozilla::Some(i.stackResultPointerOffset());
     }
 
     return true;
@@ -768,7 +768,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   
   
   uint32_t pushGPR(Register r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     pushChunkyBytes(StackSizeOfPtr);
     masm.storePtr(r, Address(sp_, stackOffset(currentStackHeight())));
@@ -781,7 +781,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   }
 
   uint32_t pushFloat32(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     pushChunkyBytes(StackSizeOfFloat);
     masm.storeFloat32(r, Address(sp_, stackOffset(currentStackHeight())));
@@ -795,7 +795,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
 
 #ifdef ENABLE_WASM_SIMD
   uint32_t pushV128(RegV128 r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #  ifdef RABALDR_CHUNKY_STACK
     pushChunkyBytes(StackSizeOfV128);
 #  else
@@ -810,7 +810,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
 #endif
 
   uint32_t pushDouble(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     pushChunkyBytes(StackSizeOfDouble);
     masm.storeDouble(r, Address(sp_, stackOffset(currentStackHeight())));
@@ -825,7 +825,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   
   
   void popGPR(Register r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     masm.loadPtr(Address(sp_, stackOffset(currentStackHeight())), r);
     popChunkyBytes(StackSizeOfPtr);
@@ -836,7 +836,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   }
 
   void popFloat32(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     masm.loadFloat32(Address(sp_, stackOffset(currentStackHeight())), r);
     popChunkyBytes(StackSizeOfFloat);
@@ -847,7 +847,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   }
 
   void popDouble(FloatRegister r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
 #ifdef RABALDR_CHUNKY_STACK
     masm.loadDouble(Address(sp_, stackOffset(currentStackHeight())), r);
     popChunkyBytes(StackSizeOfDouble);
@@ -859,7 +859,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
 
 #ifdef ENABLE_WASM_SIMD
   void popV128(RegV128 r) {
-    DebugOnly<uint32_t> stackBefore = currentStackHeight();
+    mozilla::DebugOnly<uint32_t> stackBefore = currentStackHeight();
     masm.loadUnalignedSimd128(Address(sp_, stackOffset(currentStackHeight())),
                               r);
 #  ifdef RABALDR_CHUNKY_STACK
@@ -1327,7 +1327,7 @@ struct StackMapGenerator {
   
   
   
-  Maybe<uint32_t> framePushedAtEntryToBody;
+  mozilla::Maybe<uint32_t> framePushedAtEntryToBody;
 
   
 
@@ -1348,7 +1348,7 @@ struct StackMapGenerator {
   
   
   
-  Maybe<uint32_t> framePushedExcludingOutboundCallArgs;
+  mozilla::Maybe<uint32_t> framePushedExcludingOutboundCallArgs;
 
   
   

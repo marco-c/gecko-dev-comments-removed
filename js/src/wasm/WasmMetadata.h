@@ -149,7 +149,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   GlobalDescVector globals;
 
   
-  Maybe<uint32_t> startFuncIndex;
+  mozilla::Maybe<uint32_t> startFuncIndex;
 
   
   
@@ -160,7 +160,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  Maybe<uint32_t> dataCount;
+  mozilla::Maybe<uint32_t> dataCount;
 
   
   
@@ -171,13 +171,13 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   BranchHintCollection branchHints;
 
   
-  Maybe<Name> moduleName;
+  mozilla::Maybe<Name> moduleName;
   NameVector funcNames;
   
   
   
   SharedBytes namePayload;
-  Maybe<uint32_t> nameCustomSectionIndex;
+  mozilla::Maybe<uint32_t> nameCustomSectionIndex;
 
   
   CustomSectionRangeVector customSectionRanges;
@@ -422,10 +422,10 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
     return !!codeMeta && codeMeta->init();
   }
 
-  bool addDefinedFunc(
-      ValTypeVector&& params, ValTypeVector&& results,
-      bool declareForRef = false,
-      Maybe<CacheableName>&& optionalExportedName = mozilla::Nothing());
+  bool addDefinedFunc(ValTypeVector&& params, ValTypeVector&& results,
+                      bool declareForRef = false,
+                      mozilla::Maybe<CacheableName>&& optionalExportedName =
+                          mozilla::Nothing());
   bool addImportedFunc(ValTypeVector&& params, ValTypeVector&& results,
                        CacheableName&& importModName,
                        CacheableName&& importFieldName);

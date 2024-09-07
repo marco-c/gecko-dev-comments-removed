@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2021 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "wasm/WasmCodegenTypes.h"
 
@@ -111,7 +111,7 @@ const char* js::wasm::NameOfTrapMachineInsn(TrapMachineInsn tmi) {
       return "NameOfTrapMachineInsn::unknown";
   }
 }
-#endif  
+#endif  // DEBUG
 
 void TrapSiteVectorArray::clear() {
   for (Trap trap : MakeEnumeratedRange(Trap::Limit)) {
@@ -140,7 +140,7 @@ size_t TrapSiteVectorArray::sumOfLengths() const {
 }
 
 size_t TrapSiteVectorArray::sizeOfExcludingThis(
-    MallocSizeOf mallocSizeOf) const {
+    mozilla::MallocSizeOf mallocSizeOf) const {
   size_t ret = 0;
   for (Trap trap : MakeEnumeratedRange(Trap::Limit)) {
     ret += (*this)[trap].sizeOfExcludingThis(mallocSizeOf);
@@ -248,7 +248,7 @@ CallIndirectId CallIndirectId::forAsmJSFunc() {
 
 CallIndirectId CallIndirectId::forFunc(const CodeMetadata& codeMeta,
                                        uint32_t funcIndex) {
-  
+  // asm.js tables are homogenous and don't require a signature check
   if (codeMeta.isAsmJS()) {
     return CallIndirectId::forAsmJSFunc();
   }
@@ -263,7 +263,7 @@ CallIndirectId CallIndirectId::forFunc(const CodeMetadata& codeMeta,
 
 CallIndirectId CallIndirectId::forFuncType(const CodeMetadata& codeMeta,
                                            uint32_t funcTypeIndex) {
-  
+  // asm.js tables are homogenous and don't require a signature check
   if (codeMeta.isAsmJS()) {
     return CallIndirectId::forAsmJSFunc();
   }

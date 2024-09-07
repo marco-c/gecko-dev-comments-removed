@@ -100,7 +100,7 @@ class Module : public JS::WasmModule {
   
   
 
-  mutable Atomic<bool> testingTier2Active_;
+  mutable mozilla::Atomic<bool> testingTier2Active_;
 
   
 
@@ -180,7 +180,7 @@ class Module : public JS::WasmModule {
 
   
 
-  void addSizeOfMisc(MallocSizeOf mallocSizeOf,
+  void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf,
                      CodeMetadata::SeenSet* seenCodeMeta,
                      CodeMetadataForAsmJS::SeenSet* seenCodeMetaForAsmJS,
                      Code::SeenSet* seenCode, size_t* code, size_t* data) const;
