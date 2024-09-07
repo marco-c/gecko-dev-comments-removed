@@ -238,7 +238,9 @@ rtc::Buffer SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
         nalu_index.payload_start_offset - nalu_index.start_offset);
     rtc::ArrayView<const uint8_t> nalu = buffer.subview(
         nalu_index.payload_start_offset, nalu_index.payload_size);
-
+    if (nalu.empty()) {
+      continue;
+    }
     if (H264::ParseNaluType(nalu[0]) == H264::NaluType::kSps) {
       
       
