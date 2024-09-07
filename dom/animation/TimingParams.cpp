@@ -225,6 +225,7 @@ bool TimingParams::operator==(const TimingParams& aOther) const {
 
 
 
+
 TimingParams TimingParams::Normalize(
     const TimeDuration& aTimelineDuration) const {
   MOZ_ASSERT(aTimelineDuration,
@@ -233,16 +234,16 @@ TimingParams TimingParams::Normalize(
   TimingParams normalizedTiming(*this);
 
   
-  
-  
-  
-  
   if (!mDuration) {
     
     
     
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
+    
+    
+    
+    normalizedTiming.mDuration.emplace(aTimelineDuration);
     normalizedTiming.Update();
     return normalizedTiming;
   }
