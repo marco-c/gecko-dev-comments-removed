@@ -3918,12 +3918,6 @@ MDefinition* MTruncateBigIntToInt64::foldsTo(TempAllocator& alloc) {
   }
 
   
-  if (input->isInt32ToBigInt()) {
-    return MExtendInt32ToInt64::New(alloc, input->getOperand(0),
-                                     false);
-  }
-
-  
   if (input->isConstant()) {
     return MConstant::NewInt64(
         alloc, BigInt::toInt64(input->toConstant()->toBigInt()));
@@ -3942,13 +3936,6 @@ MDefinition* MToInt64::foldsTo(TempAllocator& alloc) {
   
   if (input->isInt64ToBigInt()) {
     return input->getOperand(0);
-  }
-
-  
-  
-  if (input->isInt32ToBigInt()) {
-    return MExtendInt32ToInt64::New(alloc, input->getOperand(0),
-                                     false);
   }
 
   
