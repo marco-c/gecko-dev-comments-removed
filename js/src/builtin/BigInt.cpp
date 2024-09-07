@@ -231,7 +231,9 @@ const JSClass BigIntObject::protoClass_ = {
 
 const JSPropertySpec BigIntObject::properties[] = {
     
-    JS_STRING_SYM_PS(toStringTag, "BigInt", JSPROP_READONLY), JS_PS_END};
+    JS_STRING_SYM_PS(toStringTag, "BigInt", JSPROP_READONLY),
+    JS_PS_END,
+};
 
 const JSFunctionSpec BigIntObject::methods[] = {
     JS_FN("valueOf", valueOf, 0, 0),
