@@ -51,9 +51,6 @@ inline bool CharInBlocklist(char16_t aChar,
 }
 
 
-
-
-
 void InitializeBlocklist(nsTArray<BlocklistRange>& aBlocklist);
 
 void RemoveCharFromBlocklist(char16_t aChar,

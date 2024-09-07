@@ -1353,31 +1353,6 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 
 
-
-
-
-
-
-
-pref("network.IDN.restriction_profile", "high");
-
-
-
-
-
-
-
-
-
-
-
-pref("network.IDN.extra_allowed_chars", "");
-
-pref("network.IDN.extra_blocked_chars", "");
-
-
-
-
 pref("network.dns.ipv4OnlyDomains", "");
 
 

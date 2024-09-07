@@ -29,7 +29,6 @@ class nsTextToSubURI : public nsITextToSubURI {
                                       nsAString& _retval);
 
   
-  
   nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist;
 };
 

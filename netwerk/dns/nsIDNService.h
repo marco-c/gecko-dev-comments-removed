@@ -35,14 +35,6 @@ class nsIDNService final : public nsIIDNService {
  protected:
   virtual ~nsIDNService();
 
- private:
-  void prefsChanged(const char* pref);
-
-  static void PrefChanged(const char* aPref, void* aSelf) {
-    auto* self = static_cast<nsIDNService*>(aSelf);
-    self->prefsChanged(aPref);
-  }
-
  public:
   
 
@@ -70,9 +62,8 @@ class nsIDNService final : public nsIIDNService {
 
 
 
-
   bool IsLabelSafe(mozilla::Span<const char32_t> aLabel,
-                   mozilla::Span<const char32_t> aTLD) MOZ_EXCLUDES(mLock);
+                   mozilla::Span<const char32_t> aTLD);
 
  private:
   
@@ -80,40 +71,15 @@ class nsIDNService final : public nsIIDNService {
 
 
 
-  enum restrictionProfile {
-    eASCIIOnlyProfile,
-    eHighlyRestrictiveProfile,
-    eModeratelyRestrictiveProfile
-  };
-
-  
 
 
 
 
 
-
-
-
-
-
-
-
-
-  bool illegalScriptCombo(restrictionProfile profile,
-                          mozilla::intl::Script script,
+  bool illegalScriptCombo(mozilla::intl::Script script,
                           mozilla::net::ScriptCombo& savedScript);
 
-  
-  
-  mozilla::RWLock mLock{"nsIDNService"};
-
-  
-  nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist MOZ_GUARDED_BY(mLock);
-
-  
-  restrictionProfile mRestrictionProfile MOZ_GUARDED_BY(mLock){
-      eASCIIOnlyProfile};
+  nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist;
 };
 
 extern "C" MOZ_EXPORT bool mozilla_net_is_label_safe(const char32_t* aLabel,
