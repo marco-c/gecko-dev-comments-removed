@@ -137,8 +137,7 @@ const int16_t* AudioFrame::data() const {
   return muted_ ? zeroed_data().begin() : data_;
 }
 
-rtc::ArrayView<const int16_t> AudioFrame::data_view() const {
-  const auto samples = samples_per_channel_ * num_channels_;
+InterleavedView<const int16_t> AudioFrame::data_view() const {
   
   
   
@@ -146,8 +145,9 @@ rtc::ArrayView<const int16_t> AudioFrame::data_view() const {
   
   
   
-  return muted_ ? zeroed_data().subview(0, samples)
-                : rtc::ArrayView<const int16_t>(&data_[0], samples);
+  
+  return InterleavedView<const int16_t>(muted_ ? &zeroed_data()[0] : &data_[0],
+                                        samples_per_channel_, num_channels_);
 }
 
 int16_t* AudioFrame::mutable_data() {
@@ -161,8 +161,8 @@ int16_t* AudioFrame::mutable_data() {
   return data_;
 }
 
-rtc::ArrayView<int16_t> AudioFrame::mutable_data(size_t samples_per_channel,
-                                                 size_t num_channels) {
+InterleavedView<int16_t> AudioFrame::mutable_data(size_t samples_per_channel,
+                                                  size_t num_channels) {
   const size_t total_samples = samples_per_channel * num_channels;
   RTC_CHECK_LE(total_samples, kMaxDataSizeSamples);
   RTC_CHECK_LE(num_channels, kMaxConcurrentChannels);
@@ -183,7 +183,7 @@ rtc::ArrayView<int16_t> AudioFrame::mutable_data(size_t samples_per_channel,
   }
   samples_per_channel_ = samples_per_channel;
   num_channels_ = num_channels;
-  return rtc::ArrayView<int16_t>(&data_[0], total_samples);
+  return InterleavedView<int16_t>(&data_[0], samples_per_channel, num_channels);
 }
 
 void AudioFrame::Mute() {

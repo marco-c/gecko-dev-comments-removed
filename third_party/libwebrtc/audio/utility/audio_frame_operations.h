@@ -28,9 +28,8 @@ class AudioFrameOperations {
   
   
   
-  static void QuadToStereo(rtc::ArrayView<const int16_t> src_audio,
-                           size_t samples_per_channel,
-                           rtc::ArrayView<int16_t> dst_audio);
+  static void QuadToStereo(InterleavedView<const int16_t> src_audio,
+                           InterleavedView<int16_t> dst_audio);
 
   
   
@@ -40,11 +39,8 @@ class AudioFrameOperations {
   
   
   
-  static void DownmixChannels(rtc::ArrayView<const int16_t> src_audio,
-                              size_t src_channels,
-                              size_t samples_per_channel,
-                              size_t dst_channels,
-                              rtc::ArrayView<int16_t> dst_audio);
+  static void DownmixChannels(InterleavedView<const int16_t> src_audio,
+                              InterleavedView<int16_t> dst_audio);
 
   
   

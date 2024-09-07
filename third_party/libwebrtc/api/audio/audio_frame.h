@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "api/array_view.h"
+#include "api/audio/audio_view.h"
 #include "api/audio/channel_layout.h"
 #include "api/rtp_packet_infos.h"
 #include "rtc_base/checks.h"
@@ -124,10 +125,8 @@ class AudioFrame {
 
   
   
-  
-  rtc::ArrayView<const int16_t> data_view() const;
+  InterleavedView<const int16_t> data_view() const;
 
-  
   
   
   
@@ -139,8 +138,8 @@ class AudioFrame {
   
   
   
-  rtc::ArrayView<int16_t> mutable_data(size_t samples_per_channel,
-                                       size_t num_channels);
+  InterleavedView<int16_t> mutable_data(size_t samples_per_channel,
+                                        size_t num_channels);
 
   
   void Mute();

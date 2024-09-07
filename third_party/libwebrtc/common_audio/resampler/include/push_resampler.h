@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "api/array_view.h"
+#include "api/audio/audio_view.h"
 
 namespace webrtc {
 
@@ -37,7 +37,7 @@ class PushResampler {
 
   
   
-  int Resample(rtc::ArrayView<const T> src, rtc::ArrayView<T> dst);
+  int Resample(InterleavedView<const T> src, InterleavedView<T> dst);
 
  private:
   int src_sample_rate_hz_;
