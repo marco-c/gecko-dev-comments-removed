@@ -237,14 +237,14 @@ static KeySystemConfig::EMECodecString ToEMEAPICodecString(
 
 static bool IsMFCDMAllowedByOrigin(const Maybe<nsCString>& aOrigin) {
   
-  
   enum Filer : uint32_t {
     eDisable = 0,
     eAllowedListEnabled = 1,
     eBlockedListEnabled = 2,
   };
   const auto prefValue = StaticPrefs::media_eme_mfcdm_origin_filter_enabled();
-  if (prefValue == Filer::eDisable || !aOrigin) {
+  if (prefValue == Filer::eDisable || !aOrigin ||
+      !IsMediaFoundationCDMPlaybackEnabled()) {
     
     return true;
   }
