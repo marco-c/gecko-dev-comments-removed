@@ -257,10 +257,6 @@ class Nursery {
 
   [[nodiscard]] inline bool addStringBuffer(JSLinearString* s);
 
-  [[nodiscard]] inline bool addExtensibleStringBuffer(
-      JSLinearString* s, mozilla::StringBuffer* buffer);
-  inline void removeExtensibleStringBuffer(JSLinearString* s);
-
   size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const;
 
   
@@ -520,8 +516,6 @@ class Nursery {
   void clearMapAndSetNurseryRanges();
   void sweepMapAndSetObjects();
 
-  void sweepStringsWithBuffer();
-
   
   void* allocateBuffer(JS::Zone* zone, size_t nbytes);
 
@@ -739,14 +733,6 @@ class Nursery {
   using StringAndBufferVector =
       JS::GCVector<StringAndBuffer, 8, SystemAllocPolicy>;
   StringAndBufferVector stringBuffers_;
-
-  
-  
-  
-  using ExtensibleStringBuffers =
-      HashMap<JSLinearString*, mozilla::StringBuffer*,
-              js::PointerHasher<JSLinearString*>, js::SystemAllocPolicy>;
-  ExtensibleStringBuffers extensibleStringBuffers_;
 
   
   using StringBufferVector =
