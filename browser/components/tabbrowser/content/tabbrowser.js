@@ -1360,9 +1360,6 @@
         
         
         
-        
-        
-        newTab.finishUnselectedTabHoverTimer();
         newBrowser.unselectedTabHover(false);
       }
 

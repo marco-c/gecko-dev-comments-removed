@@ -578,7 +578,6 @@
         this.container._handleTabSelect();
       } else if (this.linkedPanel) {
         this.linkedBrowser.unselectedTabHover(true);
-        this.startUnselectedTabHoverTimer();
       }
 
       
@@ -594,7 +593,6 @@
       this._hover = false;
       if (this.linkedPanel && !this.selected) {
         this.linkedBrowser.unselectedTabHover(false);
-        this.cancelUnselectedTabHoverTimer();
       }
       this.dispatchEvent(new CustomEvent("TabHoverEnd", { bubbles: true }));
     }
@@ -618,51 +616,6 @@
         tooltipEl.removeAttribute("data-l10n-id");
       }
       
-    }
-
-    startUnselectedTabHoverTimer() {
-      
-      if (!this.linkedBrowser.shouldHandleUnselectedTabHover) {
-        return;
-      }
-
-      if (
-        !TelemetryStopwatch.running("HOVER_UNTIL_UNSELECTED_TAB_OPENED", this)
-      ) {
-        TelemetryStopwatch.start("HOVER_UNTIL_UNSELECTED_TAB_OPENED", this);
-      }
-
-      if (this._hoverTabTimer) {
-        clearTimeout(this._hoverTabTimer);
-        this._hoverTabTimer = null;
-      }
-    }
-
-    cancelUnselectedTabHoverTimer() {
-      
-      
-      
-      
-      
-      
-      
-      
-      this._hoverTabTimer = setTimeout(() => {
-        if (
-          TelemetryStopwatch.running("HOVER_UNTIL_UNSELECTED_TAB_OPENED", this)
-        ) {
-          TelemetryStopwatch.cancel("HOVER_UNTIL_UNSELECTED_TAB_OPENED", this);
-        }
-      }, 100);
-    }
-
-    finishUnselectedTabHoverTimer() {
-      
-      if (
-        TelemetryStopwatch.running("HOVER_UNTIL_UNSELECTED_TAB_OPENED", this)
-      ) {
-        TelemetryStopwatch.finish("HOVER_UNTIL_UNSELECTED_TAB_OPENED", this);
-      }
     }
 
     resumeDelayedMedia() {
