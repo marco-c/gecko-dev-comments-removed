@@ -40,7 +40,7 @@ static inline void profiler_init(void* stackTop) {}
 static inline void profiler_shutdown(
     IsFastShutdown aIsFastShutdown = IsFastShutdown::No) {}
 
-static inline void profiler_lookup_download_directory() {}
+static inline void profiler_lookup_async_signal_dump_directory() {}
 
 #else  
 
@@ -138,7 +138,7 @@ void profiler_ensure_started(
 
 
 
-void profiler_lookup_download_directory();
+void profiler_lookup_async_signal_dump_directory();
 
 
 
