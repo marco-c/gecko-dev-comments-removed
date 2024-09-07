@@ -136,21 +136,15 @@ function handleMessages(engine) {
             await discardPromise;
           }
           try {
-            const { whitespaceBefore, whitespaceAfter, cleanedSourceText } =
-              cleanText(sourceText);
-
             
             
             
             
-            let targetText = await engine.translate(
-              cleanedSourceText,
+            const targetText = await engine.translate(
+              sourceText,
               isHTML,
               innerWindowId
             );
-
-            
-            targetText = whitespaceBefore + targetText + whitespaceAfter;
 
             
             
@@ -327,6 +321,7 @@ class Engine {
   #syncTranslate(sourceText, isHTML, innerWindowId) {
     const startTime = performance.now();
     let response;
+    sourceText = sourceText.trim();
     const { messages, options } = BergamotUtils.getTranslationArgs(
       this.bergamot,
       sourceText,
@@ -569,9 +564,27 @@ class BergamotUtils {
 
 
 
+  static cleanText(sourceText) {
+    
+    sourceText = sourceText.trim();
+
+    
+    sourceText = sourceText.replaceAll("\u00AD", "");
+
+    return sourceText;
+  }
+
+  
+
+
+
+
+
+
   static getTranslationArgs(bergamot, sourceText, isHTML) {
     const messages = new bergamot.VectorString();
     const options = new bergamot.VectorResponseOptions();
+    sourceText = BergamotUtils.cleanText(sourceText);
 
     
     if (sourceText) {
@@ -735,35 +748,4 @@ class WorkQueue {
     await new Promise(resolve => setTimeout(resolve, 0));
     this.#isWorkCancelled = false;
   }
-}
-
-
-
-
-const whitespaceRegex = /^(\s*)(.*?)(\s*)$/;
-
-
-
-
-
-
-
-
-
-
-function cleanText(sourceText) {
-  
-  
-  const result = whitespaceRegex.exec(sourceText);
-  if (!result) {
-    throw new Error("The whitespace regex should always return a result.");
-  }
-  const whitespaceBefore = result[1];
-  const whitespaceAfter = result[3];
-  let cleanedSourceText = result[2];
-
-  
-  cleanedSourceText = cleanedSourceText.replaceAll("\u00AD", "");
-
-  return { whitespaceBefore, whitespaceAfter, cleanedSourceText };
 }
