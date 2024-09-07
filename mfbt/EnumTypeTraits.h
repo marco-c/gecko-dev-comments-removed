@@ -79,7 +79,6 @@ struct EnumTypeFitsWithin
 
 
 
-
 template <typename T>
 inline constexpr auto UnderlyingValue(const T v) {
   static_assert(std::is_enum_v<T>);

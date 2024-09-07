@@ -1364,7 +1364,6 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mResizeSuppressed(false),
       mNeedToUpdateIntersectionObservations(false),
       mNeedToUpdateResizeObservers(false),
-      mNeedToUpdateViewTransitions(false),
       mNeedToRunFrameRequestCallbacks(false),
       mNeedToUpdateAnimations(false),
       mMightNeedMediaQueryListenerUpdate(false),
@@ -1966,9 +1965,6 @@ auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
   if (mNeedToUpdateResizeObservers) {
     reasons |= TickReasons::eNeedsToNotifyResizeObservers;
   }
-  if (mNeedToUpdateViewTransitions) {
-    reasons |= TickReasons::eNeedsToUpdateViewTransitions;
-  }
   if (mNeedToUpdateAnimations) {
     reasons |= TickReasons::eNeedsToUpdateAnimations;
   }
@@ -2017,9 +2013,6 @@ void nsRefreshDriver::AppendTickReasonsToString(TickReasons aReasons,
   }
   if (aReasons & TickReasons::eNeedsToNotifyResizeObservers) {
     aStr.AppendLiteral(" NeedsToNotifyResizeObservers");
-  }
-  if (aReasons & TickReasons::eNeedsToUpdateViewTransitions) {
-    aStr.AppendLiteral(" NeedsToUpdateViewTransitions");
   }
   if (aReasons & TickReasons::eNeedsToUpdateAnimations) {
     aStr.AppendLiteral(" NeedsToUpdateAnimations");
@@ -2241,15 +2234,6 @@ void nsRefreshDriver::RunFullscreenSteps() {
   for (UniquePtr<PendingFullscreenEvent>& event : pendings) {
     event->Dispatch();
   }
-}
-
-void nsRefreshDriver::PerformPendingViewTransitionOperations() {
-  if (!mNeedToUpdateViewTransitions) {
-    return;
-  }
-  mNeedToUpdateViewTransitions = false;
-  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("View Transitions", LAYOUT);
-  mPresContext->Document()->PerformPendingViewTransitionOperations();
 }
 
 void nsRefreshDriver::UpdateIntersectionObservations(TimeStamp aNowTime) {
@@ -2814,12 +2798,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
     return StopTimer();
   }
-
-  
-
-  
-  
-  PerformPendingViewTransitionOperations();
 
   
   
