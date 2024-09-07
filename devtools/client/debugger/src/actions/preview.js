@@ -13,9 +13,14 @@ import {
   getSelectedFrame,
   getCurrentThread,
   getSelectedException,
+  getSelectedTraceIndex,
+  getAllTraces,
 } from "../selectors/index";
 
 import { getMappedExpression } from "./expressions";
+const {
+  TRACER_FIELDS_INDEXES,
+} = require("resource://devtools/server/actors/tracer.js");
 
 async function findExpressionMatch(state, parserWorker, editor, tokenPos) {
   const location = getSelectedLocation(state);
@@ -35,7 +40,97 @@ async function findExpressionMatch(state, parserWorker, editor, tokenPos) {
   return editor.getExpressionFromCoords(tokenPos);
 }
 
-export function getPreview(target, tokenPos, editor) {
+
+
+
+
+
+
+
+
+
+
+export function getTracerPreview(target, tokenPos, editor) {
+  return async thunkArgs => {
+    const { getState, parserWorker } = thunkArgs;
+    const selectedTraceIndex = getSelectedTraceIndex(getState());
+    if (selectedTraceIndex == null) {
+      return null;
+    }
+
+    const trace = getAllTraces(getState())[selectedTraceIndex];
+
+    
+    
+    if (trace[TRACER_FIELDS_INDEXES.TYPE] != "enter") {
+      return null;
+    }
+
+    const match = await findExpressionMatch(
+      getState(),
+      parserWorker,
+      editor,
+      tokenPos
+    );
+    let { expression, location } = match;
+    const source = getSelectedSource(getState());
+    if (location && source.isOriginal) {
+      const thread = getCurrentThread(getState());
+      const mapResult = await getMappedExpression(
+        expression,
+        thread,
+        thunkArgs
+      );
+      if (mapResult) {
+        expression = mapResult.expression;
+      }
+    }
+
+    const argumentValues = trace[TRACER_FIELDS_INDEXES.ENTER_ARGS];
+    const argumentNames = trace[TRACER_FIELDS_INDEXES.ENTER_ARG_NAMES];
+    if (!argumentNames || !argumentValues) {
+      return null;
+    }
+
+    const argumentIndex = argumentNames.indexOf(expression);
+    if (argumentIndex == -1) {
+      return null;
+    }
+
+    const result = argumentValues[argumentIndex];
+    
+    const resultGrip = result?.getGrip ? result?.getGrip() : result;
+
+    const root = {
+      path: expression,
+      contents: {
+        value: resultGrip,
+        front: getFront(result),
+      },
+    };
+    return {
+      previewType: "tracer",
+      target,
+      tokenPos,
+      cursorPos: target.getBoundingClientRect(),
+      expression,
+      root,
+      resultGrip,
+    };
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+export function getPausedPreview(target, tokenPos, editor) {
   return async thunkArgs => {
     const { getState, client, parserWorker } = thunkArgs;
     if (
@@ -127,6 +222,7 @@ export function getPreview(target, tokenPos, editor) {
     };
 
     return {
+      previewType: "pause",
       target,
       tokenPos,
       cursorPos: target.getBoundingClientRect(),
