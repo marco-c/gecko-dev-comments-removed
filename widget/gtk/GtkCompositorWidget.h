@@ -31,8 +31,7 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
   virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 
   virtual void CleanupResources() = 0;
-  virtual void SetRenderingSurface(const uintptr_t aXWindow,
-                                   const bool aShaped) = 0;
+  virtual void SetRenderingSurface(const uintptr_t aXWindow) = 0;
 
   
 
@@ -79,8 +78,7 @@ class GtkCompositorWidget : public CompositorWidget,
   void CleanupResources() override;
 
   
-  void SetRenderingSurface(const uintptr_t aXWindow,
-                           const bool aShaped) override;
+  void SetRenderingSurface(const uintptr_t aXWindow) override;
 
   
   
@@ -105,7 +103,7 @@ class GtkCompositorWidget : public CompositorWidget,
   void ConfigureWaylandBackend();
 #endif
 #if defined(MOZ_X11)
-  void ConfigureX11Backend(Window aXWindow, bool aShaped);
+  void ConfigureX11Backend(Window aXWindow);
 #endif
 #ifdef MOZ_LOGGING
   bool IsPopup();
