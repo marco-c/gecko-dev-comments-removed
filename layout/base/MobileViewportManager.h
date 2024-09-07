@@ -15,6 +15,7 @@
 #include "nsIDOMEventListener.h"
 #include "nsIObserver.h"
 #include "Units.h"
+#include "UnitTransforms.h"
 
 class nsViewportInfo;
 
@@ -96,10 +97,11 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   void SetInitialViewport();
 
-  const mozilla::LayoutDeviceIntSize& DisplaySize() const {
-    return mDisplaySize;
+  mozilla::LayoutDeviceIntSize DisplaySize() const {
+    return mozilla::ViewAs<mozilla::LayoutDevicePixel>(
+        GetLayoutDisplaySize(),
+        mozilla::PixelCastJustification::LayoutDeviceIsScreenForBounds);
   };
-
   
 
 
@@ -135,6 +137,8 @@ class MobileViewportManager final : public nsIDOMEventListener,
   mozilla::CSSSize GetIntrinsicCompositionSize() const;
 
   mozilla::ParentLayerSize GetCompositionSizeWithoutDynamicToolbar() const;
+
+  void UpdateKeyboardHeight(mozilla::ScreenIntCoord aKeyboardHeight);
 
   static mozilla::LazyLogModule gLog;
 
@@ -199,10 +203,19 @@ class MobileViewportManager final : public nsIDOMEventListener,
   mozilla::ScreenIntSize GetCompositionSize(
       const mozilla::ScreenIntSize& aDisplaySize) const;
 
+  
+
+
+
+  mozilla::ScreenIntSize GetLayoutDisplaySize() const;
+
   RefPtr<mozilla::MVMContext> mContext;
   ManagerType mManagerType;
   bool mIsFirstPaint;
   bool mPainted;
+  
+  
+  bool mInvalidViewport;
   mozilla::LayoutDeviceIntSize mDisplaySize;
   mozilla::CSSSize mMobileViewportSize;
   mozilla::Maybe<float> mRestoreResolution;
@@ -215,6 +228,11 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
 
   nsSize mVisualViewportSizeUpdatedByDynamicToolbar;
+
+  
+
+
+  mozilla::ScreenIntCoord mKeyboardHeight;
 };
 
 #endif
