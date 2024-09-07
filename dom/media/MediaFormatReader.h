@@ -201,8 +201,6 @@ class MediaFormatReader final
   RefPtr<GenericPromise> RequestDebugInfo(
       dom::MediaFormatReaderDebugInfo& aInfo);
 
-  Maybe<nsCString> GetAudioProcessPerCodec();
-
   
   
   
