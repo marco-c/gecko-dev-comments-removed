@@ -591,44 +591,71 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell,
                                              bool aAllowCrossShadowBoundary) {
   NS_ENSURE_TRUE(aPresShell, nullptr);
 
-  if (IsDocument()) return AsDocument()->GetRootElement();
-  if (!IsContent()) return nullptr;
+  const bool isContent = IsContent();
 
-  if (GetComposedDoc() != aPresShell->GetDocument()) {
+  if (!isContent && !IsDocument()) {
     return nullptr;
   }
 
-  if (AsContent()->HasIndependentSelection() || IsInNativeAnonymousSubtree()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (Element* anonymousDivElement = GetAnonymousRootElementOfTextEditor()) {
-      return anonymousDivElement;
+  if (isContent) {
+    if (GetComposedDoc() != aPresShell->GetDocument()) {
+      return nullptr;
+    }
+
+    if (AsContent()->HasIndependentSelection() ||
+        IsInNativeAnonymousSubtree()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      if (Element* anonymousDivElement =
+              GetAnonymousRootElementOfTextEditor()) {
+        return anonymousDivElement;
+      }
     }
   }
 
-  nsPresContext* presContext = aPresShell->GetPresContext();
-  if (presContext) {
-    HTMLEditor* htmlEditor = nsContentUtils::GetHTMLEditor(presContext);
-    if (htmlEditor) {
+  if (nsPresContext* presContext = aPresShell->GetPresContext()) {
+    if (nsContentUtils::GetHTMLEditor(presContext)) {
+      
+      
+
+      
+      
+      
+      
+      
       
       if (!IsInComposedDoc() || IsInDesignMode() ||
           !HasFlag(NODE_IS_EDITABLE)) {
-        nsIContent* editorRoot = htmlEditor->GetRoot();
-        NS_ENSURE_TRUE(editorRoot, nullptr);
-        return nsContentUtils::IsInSameAnonymousTree(this, editorRoot)
-                   ? editorRoot
+        Element* const bodyOrDocumentElement = [&]() -> Element* {
+          if (Element* const bodyElement = OwnerDoc()->GetBodyElement()) {
+            return bodyElement;
+          }
+          return OwnerDoc()->GetDocumentElement();
+        }();
+        NS_ENSURE_TRUE(bodyOrDocumentElement, nullptr);
+        return nsContentUtils::IsInSameAnonymousTree(this,
+                                                     bodyOrDocumentElement)
+                   ? bodyOrDocumentElement
                    : GetRootForContentSubtree(AsContent());
       }
       
       
+      
+      MOZ_ASSERT(IsEditable());
+      MOZ_ASSERT(!IsInDesignMode());
+      MOZ_ASSERT(IsContent());
       return static_cast<nsIContent*>(this)->GetEditingHost();
     }
+  }
+
+  if (!isContent) {
+    return nullptr;
   }
 
   RefPtr<nsFrameSelection> fs = aPresShell->FrameSelection();
