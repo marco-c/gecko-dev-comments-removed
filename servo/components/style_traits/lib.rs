@@ -164,7 +164,12 @@ pub enum StyleParseErrorKind<'i> {
     
     OtherInvalidValue(CowRcStr<'i>),
     
-    UnexpectedImportantDeclaration,
+    
+    
+    
+    AnimationPropertyInKeyframeBlock,
+    
+    NotAllowedInPageRule,
 }
 
 impl<'i> From<ValueParseErrorKind<'i>> for StyleParseErrorKind<'i> {
