@@ -1934,7 +1934,7 @@ static bool DefineNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
     
     if (mozilla::Maybe<uint64_t> index = ToTypedArrayIndex(id)) {
       Rooted<TypedArrayObject*> tobj(cx, &obj->as<TypedArrayObject>());
-      return SetTypedArrayElementOutOfBounds(cx, tobj, *index, v, result);
+      return SetTypedArrayElement(cx, tobj, *index, v, result);
     }
   } else if (obj->is<ArgumentsObject>()) {
     

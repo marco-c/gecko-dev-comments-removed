@@ -1142,9 +1142,6 @@ template <typename NativeType>
  bool TypedArrayObjectTemplate<NativeType>::setElement(
     JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
     ObjectOpResult& result) {
-  MOZ_ASSERT(!obj->hasDetachedBuffer());
-  MOZ_ASSERT(index < obj->length().valueOr(0));
-
   
   NativeType nativeValue;
   if (!convertValue(cx, v, &nativeValue)) {
@@ -3815,37 +3812,6 @@ bool js::SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
   }
 
   MOZ_CRASH("Unsupported TypedArray type");
-}
-
-bool js::SetTypedArrayElementOutOfBounds(JSContext* cx,
-                                         Handle<TypedArrayObject*> obj,
-                                         uint64_t index, HandleValue v,
-                                         ObjectOpResult& result) {
-  
-  
-  
-  
-  MOZ_ASSERT(index >= obj->length().valueOr(0) ||
-             (obj->isSharedMemory() && obj->bufferShared()->isGrowable()));
-
-  
-
-  
-  RootedValue converted(cx);
-  if (!obj->convertValue(cx, v, &converted)) {
-    return false;
-  }
-
-  
-  if (index < obj->length().valueOr(0)) {
-    
-    
-    MOZ_ASSERT(obj->hasResizableBuffer());
-    return SetTypedArrayElement(cx, obj, index, converted, result);
-  }
-
-  
-  return result.succeed();
 }
 
 
