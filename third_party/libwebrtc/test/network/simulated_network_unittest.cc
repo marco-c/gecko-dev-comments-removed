@@ -52,7 +52,8 @@ TEST(SimulatedNetworkTest, EnqueueFirstPacketOnNetworkWithInfiniteCapacity) {
 TEST(SimulatedNetworkTest, EnqueueFirstPacketOnNetworkWithLimitedCapacity) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(PacketWithSize(125)));
 
   EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Seconds(1).us());
@@ -62,7 +63,8 @@ TEST(SimulatedNetworkTest,
      EnqueuePacketsButNextDeliveryIsBasedOnFirstEnqueuedPacket) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(
       PacketInFlightInfo(125, 0, 1)));
   EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Seconds(1).us());
@@ -83,7 +85,8 @@ TEST(SimulatedNetworkTest,
 
 TEST(SimulatedNetworkTest, EnqueueFailsWhenQueueLengthIsReached) {
   SimulatedNetwork network =
-      SimulatedNetwork({.queue_length_packets = 1, .link_capacity_kbps = 1});
+      SimulatedNetwork({.queue_length_packets = 1,
+                        .link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(
       PacketInFlightInfo(125, 0, 1)));
 
@@ -110,8 +113,8 @@ TEST(SimulatedNetworkTest, PacketOverhead) {
   
   
   
-  SimulatedNetwork network =
-      SimulatedNetwork({.link_capacity_kbps = 1, .packet_overhead = 125});
+  SimulatedNetwork network = SimulatedNetwork(
+      {.link_capacity = DataRate::KilobitsPerSec(1), .packet_overhead = 125});
   ASSERT_TRUE(network.EnqueuePacket(PacketWithSize(125)));
 
   EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Seconds(2).us());
@@ -121,7 +124,8 @@ TEST(SimulatedNetworkTest,
      DequeueDeliverablePacketsLeavesPacketsInCapacityLink) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(
       PacketInFlightInfo(125, 0, 1)));
   
@@ -151,7 +155,8 @@ TEST(SimulatedNetworkTest,
      DequeueDeliverablePacketsAppliesConfigChangesToCapacityLink) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   const PacketInFlightInfo packet_1 =
       PacketInFlightInfo(125, 0, 1);
   ASSERT_TRUE(network.EnqueuePacket(packet_1));
@@ -170,7 +175,7 @@ TEST(SimulatedNetworkTest,
 
   
   
-  network.SetConfig({.link_capacity_kbps = 10});
+  network.SetConfig({.link_capacity = DataRate::KilobitsPerSec(10)});
 
   
   
@@ -202,7 +207,8 @@ TEST(SimulatedNetworkTest,
      SetConfigUpdateNextDeliveryTimeIfLinkCapacityChange) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   MockFunction<void()> delivery_time_changed_callback;
   network.RegisterDeliveryTimeChangedCallback(
       delivery_time_changed_callback.AsStdFunction());
@@ -217,7 +223,7 @@ TEST(SimulatedNetworkTest,
   EXPECT_CALL(delivery_time_changed_callback, Call).WillOnce([&]() {
     EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(500 + 50).us());
   });
-  network.SetConfig({.link_capacity_kbps = 10},
+  network.SetConfig({.link_capacity = DataRate::KilobitsPerSec(10)},
                      Timestamp::Millis(500));
 }
 
@@ -268,7 +274,8 @@ TEST(SimulatedNetworkTest, SetConfigUpdateQueueDelayAfterDelivery) {
   
   
   SimulatedNetwork network =
-      SimulatedNetwork({.queue_delay_ms = 1000, .link_capacity_kbps = 1000});
+      SimulatedNetwork({.queue_delay_ms = 1000,
+                        .link_capacity = DataRate::KilobitsPerSec(1000)});
   MockFunction<void()> delivery_time_changed_callback;
   network.RegisterDeliveryTimeChangedCallback(
       delivery_time_changed_callback.AsStdFunction());
@@ -285,8 +292,9 @@ TEST(SimulatedNetworkTest, SetConfigUpdateQueueDelayAfterDelivery) {
   EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(1000 + 1).us());
 
   
-  network.SetConfig({.queue_delay_ms = 1, .link_capacity_kbps = 100},
-                     Timestamp::Millis(500));
+  network.SetConfig(
+      {.queue_delay_ms = 1, .link_capacity = DataRate::KilobitsPerSec(100)},
+       Timestamp::Millis(500));
   EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(1000 + 1).us());
 
   
@@ -310,7 +318,8 @@ TEST(SimulatedNetworkTest, SetConfigUpdateQueueDelayAfterDelivery) {
 TEST(SimulatedNetworkTest, NetworkEmptyAfterLastPacketDequeued) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(PacketWithSize(125)));
 
   
@@ -326,7 +335,8 @@ TEST(SimulatedNetworkTest, NetworkEmptyAfterLastPacketDequeued) {
 TEST(SimulatedNetworkTest, DequeueDeliverablePacketsOnLateCall) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(
       PacketInFlightInfo(125, 0, 1)));
 
@@ -349,7 +359,8 @@ TEST(SimulatedNetworkTest,
      DequeueDeliverablePacketsOnEarlyCallReturnsNoPackets) {
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(PacketWithSize(125)));
 
   
@@ -366,8 +377,8 @@ TEST(SimulatedNetworkTest,
 TEST(SimulatedNetworkTest, QueueDelayMsWithoutStandardDeviation) {
   
   
-  SimulatedNetwork network =
-      SimulatedNetwork({.queue_delay_ms = 100, .link_capacity_kbps = 1});
+  SimulatedNetwork network = SimulatedNetwork(
+      {.queue_delay_ms = 100, .link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(PacketWithSize(125)));
   
   
@@ -394,7 +405,7 @@ TEST(SimulatedNetworkTest,
   SimulatedNetwork network =
       SimulatedNetwork({.queue_delay_ms = 100,
                         .delay_standard_deviation_ms = 90,
-                        .link_capacity_kbps = 1,
+                        .link_capacity = DataRate::KilobitsPerSec(1),
                         .allow_reordering = false});
   
   
@@ -432,7 +443,7 @@ TEST(SimulatedNetworkTest, QueueDelayMsWithStandardDeviationAndReorderAllowed) {
   SimulatedNetwork network =
       SimulatedNetwork({.queue_delay_ms = 100,
                         .delay_standard_deviation_ms = 90,
-                        .link_capacity_kbps = 1,
+                        .link_capacity = DataRate::KilobitsPerSec(1),
                         .allow_reordering = true},
                        1);
   
@@ -495,9 +506,11 @@ TEST(SimulatedNetworkTest, PacketLoss) {
 
 TEST(SimulatedNetworkTest, NextDeliveryTimeSetAfterLostPackets) {
   
-  SimulatedNetwork network = SimulatedNetwork(
-      {.queue_delay_ms = 10, .link_capacity_kbps = 1000, .loss_percent = 50},
-      1);
+  SimulatedNetwork network =
+      SimulatedNetwork({.queue_delay_ms = 10,
+                        .link_capacity = DataRate::KilobitsPerSec(1000),
+                        .loss_percent = 50},
+                       1);
   
   
   
@@ -569,7 +582,8 @@ TEST(SimulatedNetworkTest, PauseTransmissionUntil) {
   
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(
       PacketInFlightInfo(125, 0, 1)));
   ASSERT_TRUE(network.EnqueuePacket(
@@ -606,7 +620,8 @@ TEST(SimulatedNetworkTest, PauseTransmissionUntil) {
 }
 
 TEST(SimulatedNetworkTest, CongestedNetworkRespectsLinkCapacity) {
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   for (size_t i = 0; i < 1'000; ++i) {
     ASSERT_TRUE(network.EnqueuePacket(PacketInFlightInfo(
         125, 0, i)));
@@ -633,7 +648,8 @@ TEST(SimulatedNetworkTest, EnqueuePacketWithSubSecondNonMonotonicBehaviour) {
   
   
   
-  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
   ASSERT_TRUE(network.EnqueuePacket(PacketInFlightInfo(
       125, TimeDelta::Seconds(1).us(),
       0)));
@@ -654,6 +670,7 @@ TEST(SimulatedNetworkTest, EnqueuePacketWithSubSecondNonMonotonicBehaviour) {
   EXPECT_EQ(delivered_packets[0].packet_id, 1ul);
   EXPECT_EQ(delivered_packets[0].receive_time_us, TimeDelta::Seconds(3).us());
 }
+
 
 
 
