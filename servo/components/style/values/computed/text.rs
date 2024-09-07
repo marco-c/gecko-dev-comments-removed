@@ -50,13 +50,15 @@ pub type TextIndent = GenericTextIndent<LengthPercentage>;
     ToAnimatedZero,
     ToResolvedValue,
 )]
-pub struct LetterSpacing(pub Length);
+pub struct GenericLetterSpacing<L>(pub L);
+
+pub type LetterSpacing = GenericLetterSpacing<Length>;
 
 impl LetterSpacing {
     
     #[inline]
     pub fn normal() -> Self {
-        LetterSpacing(Length::zero())
+        Self(Length::zero())
     }
 }
 
@@ -80,8 +82,8 @@ impl ToComputedValue for specified::LetterSpacing {
     type ComputedValue = LetterSpacing;
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
-            Spacing::Normal => LetterSpacing(Length::zero()),
-            Spacing::Value(ref v) => LetterSpacing(v.to_computed_value(context)),
+            Spacing::Normal => GenericLetterSpacing(Length::zero()),
+            Spacing::Value(ref v) => GenericLetterSpacing(v.to_computed_value(context)),
         }
     }
 

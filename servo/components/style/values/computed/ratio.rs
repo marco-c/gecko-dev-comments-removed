@@ -8,7 +8,7 @@ use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::NonNegativeNumber;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::ratio::Ratio as GenericRatio;
-use crate::{One, Zero};
+use crate::Zero;
 use std::cmp::Ordering;
 
 
@@ -23,8 +23,17 @@ impl PartialOrd for Ratio {
     }
 }
 
+impl GenericRatio<f32> {
+    
+    #[inline]
+    fn to_f32(&self) -> f32 {
+        debug_assert!(!self.is_degenerate());
+        self.0 / self.1
+    }
+}
 
-impl Animate for Ratio {
+
+impl Animate for GenericRatio<f32> {
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
         
         if self.is_degenerate() || other.is_degenerate() {
@@ -55,11 +64,11 @@ impl Animate for Ratio {
         if result.is_zero() || result.is_infinite() {
             return Err(());
         }
-        Ok(Ratio::new(result, 1.0f32))
+        Ok(GenericRatio(result, 1.0))
     }
 }
 
-impl ComputeSquaredDistance for Ratio {
+impl ComputeSquaredDistance for GenericRatio<f32> {
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
         if self.is_degenerate() || other.is_degenerate() {
             return Err(());
@@ -72,44 +81,10 @@ impl ComputeSquaredDistance for Ratio {
     }
 }
 
-impl Zero for Ratio {
-    fn zero() -> Self {
-        Self::new(Zero::zero(), One::one())
-    }
-
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
-
 impl Ratio {
     
     #[inline]
     pub fn new(a: f32, b: f32) -> Self {
         GenericRatio(a.into(), b.into())
-    }
-
-    
-    
-    pub fn used_value(self) -> Self {
-        if self.0.is_zero() && self.1.is_zero() {
-            Ratio::new(One::one(), Zero::zero())
-        } else {
-            self
-        }
-    }
-
-    
-    
-    #[inline]
-    pub fn is_degenerate(&self) -> bool {
-        self.0.is_zero() || self.1.is_zero()
-    }
-
-    
-    #[inline]
-    fn to_f32(&self) -> f32 {
-        debug_assert!(!self.is_degenerate());
-        (self.0).0 / (self.1).0
     }
 }
