@@ -309,6 +309,40 @@ static MConstant* EvaluateConstantOperands(TempAllocator& alloc,
   return MConstant::New(alloc, retVal);
 }
 
+static MConstant* EvaluateConstantNaNOperand(MBinaryInstruction* ins) {
+  auto* left = ins->lhs();
+  auto* right = ins->rhs();
+
+  MOZ_ASSERT(IsTypeRepresentableAsDouble(left->type()));
+  MOZ_ASSERT(IsTypeRepresentableAsDouble(right->type()));
+  MOZ_ASSERT(left->type() == ins->type());
+  MOZ_ASSERT(right->type() == ins->type());
+
+  
+  if (!IsFloatingPointType(ins->type())) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(!left->isConstant() || !right->isConstant(),
+             "EvaluateConstantOperands should have handled this case");
+
+  
+  MConstant* cst;
+  if (left->isConstant()) {
+    cst = left->toConstant();
+  } else if (right->isConstant()) {
+    cst = right->toConstant();
+  } else {
+    return nullptr;
+  }
+  if (!std::isnan(cst->numberToDouble())) {
+    return nullptr;
+  }
+
+  
+  return cst;
+}
+
 static MMul* EvaluateExactReciprocal(TempAllocator& alloc, MDiv* ins) {
   
   if (!IsFloatingPointType(ins->type())) {
@@ -2844,6 +2878,11 @@ MDefinition* MBinaryArithInstruction::foldsTo(TempAllocator& alloc) {
     return folded;
   }
 
+  if (MConstant* folded = EvaluateConstantNaNOperand(this)) {
+    MOZ_ASSERT(!isTruncated());
+    return folded;
+  }
+
   if (mustPreserveNaN_) {
     return this;
   }
@@ -3222,6 +3261,11 @@ MDefinition* MPow::foldsConstantPower(TempAllocator& alloc) {
     MMul* y = multiply(input(), input());
     block()->insertBefore(this, y);
     return multiply(y, y);
+  }
+
+  
+  if (std::isnan(pow)) {
+    return power();
   }
 
   
