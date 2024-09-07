@@ -72,7 +72,6 @@ namespace {
 using VideoStatistics = VideoCodecTestStats::VideoStatistics;
 
 const int kBaseKeyFrameInterval = 3000;
-const double kBitratePriority = 1.0;
 const int kDefaultMaxFramerateFps = 30;
 const int kMaxQp = 56;
 
@@ -80,7 +79,7 @@ void ConfigureSimulcast(VideoCodec* codec_settings) {
   FieldTrialBasedConfig trials;
   const std::vector<webrtc::VideoStream> streams = cricket::GetSimulcastConfig(
       1, codec_settings->numberOfSimulcastStreams,
-      codec_settings->width, codec_settings->height, kBitratePriority, kMaxQp,
+      codec_settings->width, codec_settings->height, kMaxQp,
        false, true, trials, webrtc::kVideoCodecVP8);
 
   for (size_t i = 0; i < streams.size(); ++i) {
