@@ -281,7 +281,6 @@ gc::AllocSite* IRGenerator::maybeCreateAllocSite() {
   JSScript* outerScript = frame->outerScript();
   bool hasBaselineScript = outerScript->hasBaselineScript();
   bool isInlined = frame->icScript()->isInlined();
-
   if (!hasBaselineScript && !isInlined) {
     MOZ_ASSERT(frame->runningInInterpreter());
     return outerScript->zone()->unknownAllocSite(JS::TraceKind::Object);
@@ -11008,6 +11007,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
     }
   }
 
+  gc::AllocSite* site = generator_.maybeCreateAllocSite();
+  if (!site) {
+    return AttachDecision::NoAction;
+  }
+
   
   initializeInputOperand();
 
@@ -11032,7 +11036,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
     lengthId = writer.loadInt32Constant(0);
   }
 
-  writer.newArrayFromLengthResult(templateObj, lengthId);
+  writer.newArrayFromLengthResult(templateObj, lengthId, site);
   writer.returnFromIC();
 
   trackAttached("ArrayConstructor");

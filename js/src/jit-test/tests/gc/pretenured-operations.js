@@ -32,3 +32,9 @@ check(() => { return []; });
 
 check(() => { return new Object(); });
 check(() => { return Object(); });
+
+
+check(() => { return Array(); });
+check(() => { return Array(100); });
+check(() => { return new Array(); });
+check(() => { return new Array(100); });

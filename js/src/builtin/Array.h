@@ -63,7 +63,8 @@ extern ArrayObject* NewDenseFullyAllocatedArray(
 
 
 extern ArrayObject* NewDensePartlyAllocatedArray(
-    JSContext* cx, uint32_t length, NewObjectKind newKind = GenericObject);
+    JSContext* cx, uint32_t length, NewObjectKind newKind = GenericObject,
+    gc::AllocSite* site = nullptr);
 
 
 
@@ -142,7 +143,8 @@ extern bool NewbornArrayPush(JSContext* cx, HandleObject obj, const Value& v);
 
 extern ArrayObject* ArrayConstructorOneArg(JSContext* cx,
                                            Handle<ArrayObject*> templateObject,
-                                           int32_t lengthInt);
+                                           int32_t lengthInt,
+                                           gc::AllocSite* site);
 
 #ifdef DEBUG
 extern bool ArrayInfo(JSContext* cx, unsigned argc, Value* vp);
