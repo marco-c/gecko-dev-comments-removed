@@ -339,7 +339,9 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   
   
-  if (!StaticPrefs::browser_zoom_siteSpecific()) {
+  
+  if (!aNewContext->EverAttached() ||
+      !StaticPrefs::browser_zoom_siteSpecific()) {
     txn.SetFullZoom(GetFullZoom());
     txn.SetTextZoom(GetTextZoom());
   }
