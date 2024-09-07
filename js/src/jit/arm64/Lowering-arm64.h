@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_arm64_Lowering_arm64_h
 #define jit_arm64_Lowering_arm64_h
@@ -17,7 +17,7 @@ class LIRGeneratorARM64 : public LIRGeneratorShared {
   LIRGeneratorARM64(MIRGenerator* gen, MIRGraph& graph, LIRGraph& lirGraph)
       : LIRGeneratorShared(gen, graph, lirGraph) {}
 
-  
+  // Returns a box allocation. reg2 is ignored on 64-bit platforms.
   LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
                              bool useAtStart = false);
 
@@ -30,7 +30,7 @@ class LIRGeneratorARM64 : public LIRGeneratorShared {
 
   bool needTempForPostBarrier() { return true; }
 
-  
+  // ARM64 has a scratch register, so no need for another temp for dispatch ICs.
   LDefinition tempForDispatchCache(MIRType outputType = MIRType::None) {
     return LDefinition::BogusTemp();
   }
@@ -76,8 +76,6 @@ class LIRGeneratorARM64 : public LIRGeneratorShared {
 
   void lowerBuiltinInt64ToFloatingPoint(MBuiltinInt64ToFloatingPoint* ins);
   void lowerWasmBuiltinTruncateToInt64(MWasmBuiltinTruncateToInt64* ins);
-  void lowerForBitAndAndBranch(LBitAndAndBranch* baab, MInstruction* mir,
-                               MDefinition* lhs, MDefinition* rhs);
   void lowerWasmBuiltinTruncateToInt32(MWasmBuiltinTruncateToInt32* ins);
   void lowerTruncateDToInt32(MTruncateToInt32* ins);
   void lowerTruncateFToInt32(MTruncateToInt32* ins);
@@ -125,7 +123,7 @@ class LIRGeneratorARM64 : public LIRGeneratorShared {
 
 using LIRGeneratorSpecific = LIRGeneratorARM64;
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_arm64_Lowering_arm64_h */

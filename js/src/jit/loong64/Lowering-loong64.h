@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_loong64_Lowering_loong64_h
 #define jit_loong64_Lowering_loong64_h
@@ -47,10 +47,7 @@ class LIRGeneratorLOONG64 : public LIRGeneratorShared {
   void lowerForFPU(LInstructionHelper<1, 2, Temps>* ins, MDefinition* mir,
                    MDefinition* lhs, MDefinition* rhs);
 
-  void lowerForBitAndAndBranch(LBitAndAndBranch* baab, MInstruction* mir,
-                               MDefinition* lhs, MDefinition* rhs);
-
-  
+  // Returns a box allocation. reg2 is ignored on 64-bit platforms.
   LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
                              bool useAtStart = false);
 
@@ -101,7 +98,7 @@ class LIRGeneratorLOONG64 : public LIRGeneratorShared {
 
 typedef LIRGeneratorLOONG64 LIRGeneratorSpecific;
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_loong64_Lowering_loong64_h */
