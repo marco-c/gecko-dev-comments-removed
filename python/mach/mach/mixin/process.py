@@ -170,13 +170,10 @@ class ProcessExecutionMixin(LoggingMixin):
             p.processOutput()
             status = None
             sig = None
-            
-            
-            
-            while status is None and p.pid_exists(p.pid):
+            while status is None:
                 try:
                     if sig is None:
-                        status = p.wait(5)
+                        status = p.wait()
                     else:
                         status = p.kill(sig=sig)
                 except KeyboardInterrupt:
