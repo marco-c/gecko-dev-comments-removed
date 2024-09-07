@@ -186,51 +186,23 @@ void RenderCompositorOGLSWGL::HandleExternalImage(
     RenderTextureHost* aExternalImage, FrameSurface& aFrameSurface) {
   MOZ_ASSERT(aExternalImage);
 
-#ifdef MOZ_WIDGET_ANDROID
-  GLenum target =
-      LOCAL_GL_TEXTURE_EXTERNAL;  
-  GLenum wrapMode = LOCAL_GL_CLAMP_TO_EDGE;
-
-  if (auto* host = aExternalImage->AsRenderAndroidSurfaceTextureHost()) {
-    host->UpdateTexImageIfNecessary();
-
-    
-    
-    RefPtr<SurfaceTextureSource> layer = new SurfaceTextureSource(
-        (TextureSourceProvider*)mCompositor, host->mSurfTex, host->mFormat,
-        target, wrapMode, host->mSize, host->mTransformOverride);
-    RefPtr<TexturedEffect> texturedEffect =
-        CreateTexturedEffect(host->mFormat, layer, aFrameSurface.mFilter,
-                              true);
-
-    gfx::Rect drawRect(0, 0, host->mSize.width, host->mSize.height);
-
-    EffectChain effect;
-    effect.mPrimaryEffect = texturedEffect;
-    mCompositor->DrawQuad(drawRect, aFrameSurface.mClipRect, effect, 1.0,
-                          aFrameSurface.mTransform, drawRect);
-  } else if (auto* host =
-                 aExternalImage->AsRenderAndroidHardwareBufferTextureHost()) {
-    
-    
-    RefPtr<AndroidHardwareBufferTextureSource> layer =
-        new AndroidHardwareBufferTextureSource(
-            (TextureSourceProvider*)mCompositor,
-            host->GetAndroidHardwareBuffer(),
-            host->GetAndroidHardwareBuffer()->mFormat, target, wrapMode,
-            host->GetSize());
+  
+  
+  RefPtr<TextureSource> layer =
+      aExternalImage->CreateTextureSource(mCompositor);
+  if (layer) {
     RefPtr<TexturedEffect> texturedEffect = CreateTexturedEffect(
-        host->GetAndroidHardwareBuffer()->mFormat, layer, aFrameSurface.mFilter,
+        aExternalImage->GetFormat(), layer, aFrameSurface.mFilter,
          true);
 
-    gfx::Rect drawRect(0, 0, host->GetSize().width, host->GetSize().height);
+    auto size = layer->GetSize();
+    gfx::Rect drawRect(0.0, 0.0, float(size.width), float(size.height));
 
     EffectChain effect;
     effect.mPrimaryEffect = texturedEffect;
     mCompositor->DrawQuad(drawRect, aFrameSurface.mClipRect, effect, 1.0,
                           aFrameSurface.mTransform, drawRect);
   }
-#endif
 }
 
 void RenderCompositorOGLSWGL::GetCompositorCapabilities(
