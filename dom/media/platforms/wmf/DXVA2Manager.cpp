@@ -877,7 +877,11 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
       MOZ_ASSERT(data);
       if (data) {
         
-        data->RegisterQuery(query);
+        
+        
+        const bool onlyForOverlay = mVendorID != 0x10DE;
+        
+        data->RegisterQuery(query, onlyForOverlay);
       } else {
         gfxCriticalNoteOnce << "D3D11TextureData does not exist";
       }

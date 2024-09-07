@@ -467,6 +467,8 @@ struct GpuProcessTextureId {
 
 struct GpuProcessQueryId {
   uint64_t mId = 0;
+  
+  bool mOnlyForOverlay = false;
 
   static GpuProcessQueryId GetNext();
 
