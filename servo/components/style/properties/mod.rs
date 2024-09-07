@@ -25,6 +25,7 @@ use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID, RefPtr
 use crate::logical_geometry::WritingMode;
 use crate::parser::ParserContext;
 use crate::str::CssString;
+use crate::stylesheets::CssRuleType;
 use crate::stylesheets::Origin;
 use crate::stylist::Stylist;
 use crate::values::{computed, serialize_atom_name};
@@ -487,7 +488,7 @@ impl PropertyId {
     fn allowed_in(&self, context: &ParserContext) -> bool {
         let id = match self.non_custom_id() {
             
-            None => return true,
+            None => return !context.nesting_context.rule_types.contains(CssRuleType::PositionTry),
             Some(id) => id,
         };
         id.allowed_in(context)
