@@ -722,6 +722,11 @@ async function loadTestPage({
     
 
 
+
+
+
+
+
     async resolveDownloads(count) {
       await remoteClients.translationsWasm.resolvePendingDownloads(1);
       await remoteClients.translationModels.resolvePendingDownloads(
@@ -732,10 +737,61 @@ async function loadTestPage({
     
 
 
+
+
+
+
+
     async rejectDownloads(count) {
       await remoteClients.translationsWasm.rejectPendingDownloads(1);
       await remoteClients.translationModels.rejectPendingDownloads(
         FILES_PER_LANGUAGE_PAIR * count
+      );
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+    async resolveBulkDownloads({
+      expectedWasmDownloads,
+      expectedLanguagePairDownloads,
+    }) {
+      await remoteClients.translationsWasm.resolvePendingDownloads(
+        expectedWasmDownloads
+      );
+      await remoteClients.translationModels.resolvePendingDownloads(
+        FILES_PER_LANGUAGE_PAIR * expectedLanguagePairDownloads
+      );
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+    async rejectBulkDownloads({
+      expectedWasmDownloads,
+      expectedLanguagePairDownloads,
+    }) {
+      await remoteClients.translationsWasm.rejectPendingDownloads(
+        expectedWasmDownloads
+      );
+      await remoteClients.translationModels.rejectPendingDownloads(
+        FILES_PER_LANGUAGE_PAIR * expectedLanguagePairDownloads
       );
     },
 
