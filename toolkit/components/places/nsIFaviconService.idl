@@ -20,6 +20,9 @@ interface nsIFaviconService : nsISupports
   const unsigned long FAVICON_LOAD_NON_PRIVATE = 2;
 
   
+  const unsigned short ICONDATA_FLAGS_RICH = 1 << 0;
+
+  
 
 
 
@@ -172,7 +175,8 @@ interface nsIFaviconService : nsISupports
     in nsIURI aFaviconURI,
     in nsIURI aDataURL,
     [optional] in PRTime aExpiration,
-    [optional] in PlacesCompletionCallback aCallback
+    [optional] in PlacesCompletionCallback aCallback,
+    [optional] in boolean isRichIcon
   );
 
   
