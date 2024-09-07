@@ -52,15 +52,15 @@ inline size_t GrowEltsAggressively(size_t aOldElts, size_t aIncr) {
 
 }  
 
-class StringBufferAllocPolicy {
+class StringBuilderAllocPolicy {
   TempAllocPolicy impl_;
   const arena_id_t& arenaId_;
 
  public:
-  StringBufferAllocPolicy(FrontendContext* fc, const arena_id_t& arenaId)
+  StringBuilderAllocPolicy(FrontendContext* fc, const arena_id_t& arenaId)
       : impl_(fc), arenaId_(arenaId) {}
 
-  StringBufferAllocPolicy(JSContext* cx, const arena_id_t& arenaId)
+  StringBuilderAllocPolicy(JSContext* cx, const arena_id_t& arenaId)
       : impl_(cx), arenaId_(arenaId) {}
 
   template <typename T>
@@ -112,10 +112,11 @@ class StringBufferAllocPolicy {
 
 
 
-class StringBuffer {
+class StringBuilder {
  protected:
   template <typename CharT>
-  using BufferType = Vector<CharT, 80 / sizeof(CharT), StringBufferAllocPolicy>;
+  using BufferType =
+      Vector<CharT, 80 / sizeof(CharT), StringBuilderAllocPolicy>;
 
   
 
@@ -146,8 +147,8 @@ class StringBuffer {
   
   uint8_t numHeaderChars_ = 0;
 
-  StringBuffer(const StringBuffer& other) = delete;
-  void operator=(const StringBuffer& other) = delete;
+  StringBuilder(const StringBuilder& other) = delete;
+  void operator=(const StringBuilder& other) = delete;
 
   
   
@@ -200,11 +201,11 @@ class StringBuffer {
   JSLinearString* finishStringInternal(JSContext* cx, gc::Heap heap);
 
  public:
-  explicit StringBuffer(JSContext* cx,
-                        const arena_id_t& arenaId = js::MallocArena)
+  explicit StringBuilder(JSContext* cx,
+                         const arena_id_t& arenaId = js::MallocArena)
       : maybeCx_(cx) {
     MOZ_ASSERT(cx);
-    cb.construct<Latin1CharBuffer>(StringBufferAllocPolicy{cx, arenaId});
+    cb.construct<Latin1CharBuffer>(StringBuilderAllocPolicy{cx, arenaId});
   }
 
   
@@ -212,10 +213,10 @@ class StringBuffer {
   
   
   
-  explicit StringBuffer(FrontendContext* fc,
-                        const arena_id_t& arenaId = js::MallocArena) {
+  explicit StringBuilder(FrontendContext* fc,
+                         const arena_id_t& arenaId = js::MallocArena) {
     MOZ_ASSERT(fc);
-    cb.construct<Latin1CharBuffer>(StringBufferAllocPolicy{fc, arenaId});
+    cb.construct<Latin1CharBuffer>(StringBuilderAllocPolicy{fc, arenaId});
   }
 
   void clear() { shrinkTo(0); }
@@ -405,10 +406,10 @@ class StringBuffer {
 };
 
 
-class JSStringBuilder : public StringBuffer {
+class JSStringBuilder : public StringBuilder {
  public:
   explicit JSStringBuilder(JSContext* cx)
-      : StringBuffer(cx, js::StringBufferArena) {
+      : StringBuilder(cx, js::StringBufferArena) {
     
     numHeaderChars_ = numHeaderChars<Latin1Char>();
     MOZ_ALWAYS_TRUE(latin1Chars().appendN('\0', numHeaderChars_));
@@ -423,7 +424,7 @@ class JSStringBuilder : public StringBuffer {
   JSLinearString* finishString(gc::Heap heap = gc::Heap::Default);
 };
 
-inline bool StringBuffer::append(const char16_t* begin, const char16_t* end) {
+inline bool StringBuilder::append(const char16_t* begin, const char16_t* end) {
   MOZ_ASSERT(begin <= end);
   if (isLatin1()) {
     while (true) {
@@ -445,7 +446,7 @@ inline bool StringBuffer::append(const char16_t* begin, const char16_t* end) {
   return twoByteChars().append(begin, end);
 }
 
-inline bool StringBuffer::append(const JSLinearString* str) {
+inline bool StringBuilder::append(const JSLinearString* str) {
   JS::AutoCheckCannotGC nogc;
   if (isLatin1()) {
     if (str->hasLatin1Chars()) {
@@ -460,8 +461,8 @@ inline bool StringBuffer::append(const JSLinearString* str) {
              : twoByteChars().append(str->twoByteChars(nogc), str->length());
 }
 
-inline void StringBuffer::infallibleAppendSubstring(const JSLinearString* base,
-                                                    size_t off, size_t len) {
+inline void StringBuilder::infallibleAppendSubstring(const JSLinearString* base,
+                                                     size_t off, size_t len) {
   MOZ_ASSERT(off + len <= base->length());
   MOZ_ASSERT_IF(base->hasTwoByteChars(), isTwoByte());
 
@@ -473,8 +474,8 @@ inline void StringBuffer::infallibleAppendSubstring(const JSLinearString* base,
   }
 }
 
-inline bool StringBuffer::appendSubstring(const JSLinearString* base,
-                                          size_t off, size_t len) {
+inline bool StringBuilder::appendSubstring(const JSLinearString* base,
+                                           size_t off, size_t len) {
   MOZ_ASSERT(off + len <= base->length());
 
   JS::AutoCheckCannotGC nogc;
@@ -491,8 +492,8 @@ inline bool StringBuffer::appendSubstring(const JSLinearString* base,
              : twoByteChars().append(base->twoByteChars(nogc) + off, len);
 }
 
-inline bool StringBuffer::appendSubstring(JSString* base, size_t off,
-                                          size_t len) {
+inline bool StringBuilder::appendSubstring(JSString* base, size_t off,
+                                           size_t len) {
   MOZ_ASSERT(maybeCx_);
 
   JSLinearString* linear = base->ensureLinear(maybeCx_);
@@ -503,7 +504,7 @@ inline bool StringBuffer::appendSubstring(JSString* base, size_t off,
   return appendSubstring(linear, off, len);
 }
 
-inline bool StringBuffer::append(JSString* str) {
+inline bool StringBuilder::append(JSString* str) {
   MOZ_ASSERT(maybeCx_);
 
   JSLinearString* linear = str->ensureLinear(maybeCx_);
@@ -515,20 +516,20 @@ inline bool StringBuffer::append(JSString* str) {
 }
 
 
-extern bool ValueToStringBufferSlow(JSContext* cx, const Value& v,
-                                    StringBuffer& sb);
+extern bool ValueToStringBuilderSlow(JSContext* cx, const Value& v,
+                                     StringBuilder& sb);
 
-inline bool ValueToStringBuffer(JSContext* cx, const Value& v,
-                                StringBuffer& sb) {
+inline bool ValueToStringBuilder(JSContext* cx, const Value& v,
+                                 StringBuilder& sb) {
   if (v.isString()) {
     return sb.append(v.toString());
   }
 
-  return ValueToStringBufferSlow(cx, v, sb);
+  return ValueToStringBuilderSlow(cx, v, sb);
 }
 
 
-inline bool BooleanToStringBuffer(bool b, StringBuffer& sb) {
+inline bool BooleanToStringBuilder(bool b, StringBuilder& sb) {
   return b ? sb.append("true") : sb.append("false");
 }
 

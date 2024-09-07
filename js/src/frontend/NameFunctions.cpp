@@ -40,7 +40,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
   
   
-  StringBuffer buf_;
+  StringBuilder buf_;
 
   
   bool isCall(ParseNode* pn) {

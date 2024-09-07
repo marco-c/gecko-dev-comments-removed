@@ -10214,7 +10214,7 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
             TaggedParserAtomIndex name =
                 classMethod->name().as<NameNode>().atom();
             AccessorType accessorType = classMethod->accessorType();
-            StringBuffer storedMethodName(fc);
+            StringBuilder storedMethodName(fc);
             if (!storedMethodName.append(parserAtoms(), name)) {
               return false;
             }
@@ -10492,7 +10492,7 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
     
     TaggedParserAtomIndex name = classMethod->name().as<NameNode>().atom();
     AccessorType accessorType = classMethod->accessorType();
-    StringBuffer storedMethodName(fc);
+    StringBuilder storedMethodName(fc);
     if (!storedMethodName.append(parserAtoms(), name)) {
       return false;
     }

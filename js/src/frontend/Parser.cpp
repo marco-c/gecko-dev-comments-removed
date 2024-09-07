@@ -2628,7 +2628,7 @@ bool ParserBase::leaveInnerFunction(ParseContext* outerpc) {
 
 TaggedParserAtomIndex ParserBase::prefixAccessorName(
     PropertyType propType, TaggedParserAtomIndex propAtom) {
-  StringBuffer prefixed(fc_);
+  StringBuilder prefixed(fc_);
   if (propType == PropertyType::Setter) {
     if (!prefixed.append("set ")) {
       return TaggedParserAtomIndex::null();
@@ -7752,7 +7752,7 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
       
       
       
-      StringBuffer privateStateDesc(fc_);
+      StringBuilder privateStateDesc(fc_);
       if (!privateStateDesc.append(this->parserAtoms(), propAtom)) {
         return false;
       }
@@ -8964,7 +8964,7 @@ GeneralParser<ParseHandler, Unit>::synthesizePrivateMethodInitializer(
 
   
   
-  StringBuffer storedMethodName(fc_);
+  StringBuilder storedMethodName(fc_);
   if (!storedMethodName.append(this->parserAtoms(), propAtom)) {
     return errorResult();
   }
@@ -9132,7 +9132,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeAccessor(
   
   
   
-  StringBuffer storedMethodName(fc_);
+  StringBuilder storedMethodName(fc_);
   if (!storedMethodName.append(accessorType == AccessorType::Getter ? "get"
                                                                     : "set")) {
     return errorResult();

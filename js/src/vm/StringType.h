@@ -47,7 +47,7 @@ class ArrayObject;
 class JS_PUBLIC_API GenericPrinter;
 class JSONPrinter;
 class PropertyName;
-class StringBuffer;
+class StringBuilder;
 
 namespace frontend {
 class ParserAtomsTable;
@@ -2101,8 +2101,8 @@ static MOZ_ALWAYS_INLINE JSString* ToString(JSContext* cx, JS::HandleValue v) {
 
 
 
-inline bool ValueToStringBuffer(JSContext* cx, const Value& v,
-                                StringBuffer& sb);
+inline bool ValueToStringBuilder(JSContext* cx, const Value& v,
+                                 StringBuilder& sb);
 
 } 
 

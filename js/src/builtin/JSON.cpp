@@ -159,7 +159,7 @@ static MOZ_ALWAYS_INLINE RangedPtr<DstCharT> InfallibleQuoteJSONString(
 
 template <typename SrcCharT, typename DstCharT>
 static size_t QuoteJSONStringHelper(const JSLinearString& linear,
-                                    StringBuffer& sb, size_t sbOffset) {
+                                    StringBuilder& sb, size_t sbOffset) {
   size_t len = linear.length();
 
   JS::AutoCheckCannotGC nogc;
@@ -172,7 +172,7 @@ static size_t QuoteJSONStringHelper(const JSLinearString& linear,
   return dstEnd - dstBegin;
 }
 
-static bool QuoteJSONString(JSContext* cx, StringBuffer& sb, JSString* str) {
+static bool QuoteJSONString(JSContext* cx, StringBuilder& sb, JSString* str) {
   JSLinearString* linear = str->ensureLinear(cx);
   if (!linear) {
     return false;
@@ -223,7 +223,7 @@ using ObjectVector = GCVector<JSObject*, 8>;
 
 class StringifyContext {
  public:
-  StringifyContext(JSContext* cx, StringBuffer& sb, const StringBuffer& gap,
+  StringifyContext(JSContext* cx, StringBuilder& sb, const StringBuilder& gap,
                    HandleObject replacer, const RootedIdVector& propertyList,
                    bool maybeSafely)
       : sb(sb),
@@ -237,8 +237,8 @@ class StringifyContext {
     MOZ_ASSERT_IF(maybeSafely, gap.empty());
   }
 
-  StringBuffer& sb;
-  const StringBuffer& gap;
+  StringBuilder& sb;
+  const StringBuilder& gap;
   RootedObject replacer;
   Rooted<ObjectVector> stack;
   const RootedIdVector& propertyList;
@@ -779,7 +779,7 @@ static bool SerializeJSONProperty(JSContext* cx, const Value& v,
       }
     }
 
-    return NumberValueToStringBuffer(v, scx->sb);
+    return NumberValueToStringBuilder(v, scx->sb);
   }
 
   
@@ -1089,7 +1089,7 @@ class OwnNonIndexKeysIterForJSON {
 };
 
 
-static bool EmitSimpleValue(JSContext* cx, StringBuffer& sb, const Value& v) {
+static bool EmitSimpleValue(JSContext* cx, StringBuilder& sb, const Value& v) {
   
   if (v.isString()) {
     return QuoteJSONString(cx, sb, v.toString());
@@ -1113,7 +1113,7 @@ static bool EmitSimpleValue(JSContext* cx, StringBuffer& sb, const Value& v) {
       }
     }
 
-    return NumberValueToStringBuffer(v, sb);
+    return NumberValueToStringBuilder(v, sb);
   }
 
   
@@ -1128,7 +1128,7 @@ static bool EmitSimpleValue(JSContext* cx, StringBuffer& sb, const Value& v) {
 
 
 
-static bool EmitQuotedIndexColon(StringBuffer& sb, uint32_t index) {
+static bool EmitQuotedIndexColon(StringBuilder& sb, uint32_t index) {
   Int32ToCStringBuf cbuf;
   size_t cstrlen;
   const char* cstr = ::Int32ToCString(&cbuf, index, &cstrlen);
@@ -1509,7 +1509,7 @@ static bool FastSerializeJSONProperty(JSContext* cx, Handle<Value> v,
 
 
 bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
-                   const Value& space_, StringBuffer& sb,
+                   const Value& space_, StringBuilder& sb,
                    StringifyBehavior stringifyBehavior) {
   RootedObject replacer(cx, replacer_);
   RootedValue space(cx, space_);
@@ -1635,7 +1635,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
     }
   }
 
-  StringBuffer gap(cx);
+  StringBuilder gap(cx);
 
   if (space.isNumber()) {
     

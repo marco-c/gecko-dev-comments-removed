@@ -499,7 +499,7 @@ static JSAtom* NameToPrefixedFunctionName(JSContext* cx, JSString* nameStr,
                                           FunctionPrefixKind prefixKind) {
   MOZ_ASSERT(prefixKind != FunctionPrefixKind::None);
 
-  StringBuffer sb(cx);
+  StringBuilder sb(cx);
   if (prefixKind == FunctionPrefixKind::Get) {
     if (!sb.append("get ")) {
       return nullptr;
@@ -1907,7 +1907,7 @@ static JSAtom* SymbolToFunctionName(JSContext* cx, JS::Symbol* symbol,
   }
 
   
-  StringBuffer sb(cx);
+  StringBuilder sb(cx);
   if (prefixKind == FunctionPrefixKind::Get) {
     if (!sb.append("get ")) {
       return nullptr;

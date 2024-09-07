@@ -231,7 +231,7 @@ class FunctionCompiler {
  private:
   JSContext* const cx_;
   Rooted<JSAtom*> nameAtom_;
-  StringBuffer funStr_;
+  StringBuilder funStr_;
 
   uint32_t parameterListEnd_ = 0;
   bool nameIsIdentifier_ = true;

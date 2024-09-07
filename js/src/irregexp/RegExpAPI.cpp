@@ -260,7 +260,7 @@ static void ReportSyntaxError(TokenStreamAnyChars& ts,
 
   
   
-  StringBuffer windowBuf(ts.context());
+  StringBuilder windowBuf(ts.context());
   if (!windowBuf.append(windowStart, windowEnd)) {
     return;
   }

@@ -1230,7 +1230,7 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
 
       
       
-      mozilla::Maybe<StringBuffer> accum;
+      mozilla::Maybe<StringBuilder> accum;
       TaggedParserAtomIndex firstAtom;
       firstAtom = (*current)->as<NameNode>().atom();
 
