@@ -876,17 +876,6 @@ void nsDisplayListBuilder::UpdateShouldBuildAsyncZoomContainer() {
   mBuildAsyncZoomContainer = !mIsRelativeToLayoutViewport &&
                              !document->Fullscreen() &&
                              nsLayoutUtils::AllowZoomingForDocument(document);
-
-  
-  
-  
-  
-  
-#ifdef DEBUG
-  if (!mIsRelativeToLayoutViewport && !mBuildAsyncZoomContainer) {
-    MOZ_ASSERT(document->GetPresShell()->GetResolution() == 1.0f);
-  }
-#endif
 }
 
 
