@@ -1775,6 +1775,9 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
     
     nsCOMPtr<nsIRunnable> wakeupNotifier = new nsWakeupNotifier(this);
     NS_DispatchToMainThread(wakeupNotifier);
+    mInSleepMode = false;
+  } else if (!strcmp(topic, NS_WIDGET_SLEEP_OBSERVER_TOPIC)) {
+    mInSleepMode = true;
   }
 
   return NS_OK;
