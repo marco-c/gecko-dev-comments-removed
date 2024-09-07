@@ -494,9 +494,9 @@ TEST_F(AudioDecoderG722Test, SetTargetBitrate) {
 
 
 #if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
-TEST_F(AudioDecoderG722StereoTest, EncodeDecode) {
-#else
 TEST_F(AudioDecoderG722StereoTest, DISABLED_EncodeDecode) {
+#else
+TEST_F(AudioDecoderG722StereoTest, EncodeDecode) {
 #endif
   int tolerance = 6176;
   int channel_diff_tolerance = 0;
