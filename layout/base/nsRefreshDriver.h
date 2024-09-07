@@ -371,8 +371,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   static void DispatchIdleTaskAfterTickUnlessExists(mozilla::Task* aTask);
   static void CancelIdleTask(mozilla::Task* aTask);
 
-  void NotifyDOMContentLoaded();
-
   
   void RunDelayedEventsSoon();
 
@@ -635,9 +633,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   
   bool mResizeSuppressed : 1;
-
-  
-  bool mNotifyDOMContentFlushed : 1;
 
   
   

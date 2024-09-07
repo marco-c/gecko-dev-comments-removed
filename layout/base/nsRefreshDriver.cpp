@@ -1363,7 +1363,6 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mWaitingForTransaction(false),
       mSkippedPaints(false),
       mResizeSuppressed(false),
-      mNotifyDOMContentFlushed(false),
       mNeedToUpdateIntersectionObservations(false),
       mNeedToUpdateResizeObservers(false),
       mNeedToRunFrameRequestCallbacks(false),
@@ -1635,21 +1634,6 @@ void nsRefreshDriver::RemoveImageRequest(imgIRequest* aRequest) {
                                        MarkerInnerWindowIdFromDocShell(
                                            GetDocShell(mPresContext))),
                          nsContentUtils::TruncatedURLForDisplay(uri));
-  }
-}
-
-void nsRefreshDriver::NotifyDOMContentLoaded() {
-  
-  
-  
-  if (!HasReasonsToTick()) {
-    if (nsPresContext* pc = GetPresContext()) {
-      pc->NotifyDOMContentFlushed();
-    }
-    
-    
-  } else {
-    mNotifyDOMContentFlushed = true;
   }
 }
 
@@ -2888,11 +2872,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::REFRESH_DRIVER_TICK,
                                  static_cast<uint32_t>(totalMs));
 #endif
-
-  if (mNotifyDOMContentFlushed) {
-    mNotifyDOMContentFlushed = false;
-    mPresContext->NotifyDOMContentFlushed();
-  }
 
   for (nsAPostRefreshObserver* observer :
        mPostRefreshObservers.ForwardRange()) {
