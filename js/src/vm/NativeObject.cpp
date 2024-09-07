@@ -1667,6 +1667,7 @@ bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
       return false;
     }
   }
+  MOZ_ASSERT(!prop.isTypedArrayElement());
 
   
   
@@ -1725,6 +1726,49 @@ bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
     if (desc.hasEnumerable() && desc.enumerable() != attrs.enumerable()) {
       return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
+
+    MOZ_ASSERT(
+        !desc.isGenericDescriptor(),
+        "redundant or conflicting generic property descriptor already handled");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (IsAccessorDescriptor(prop) || desc.isAccessorDescriptor()) {
+      return result.fail(JSMSG_CANT_REDEFINE_PROP);
+    }
+
+    
+    if (!attrs.writable()) {
+      
+      if (desc.hasWritable() && desc.writable()) {
+        return result.fail(JSMSG_CANT_REDEFINE_PROP);
+      }
+
+      
+      if (desc.hasValue()) {
+        RootedValue currentValue(cx);
+        if (!GetExistingDataProperty(cx, obj, id, prop, &currentValue)) {
+          return false;
+        }
+
+        bool same;
+        if (!SameValue(cx, desc.value(), currentValue, &same)) {
+          return false;
+        }
+        if (!same) {
+          return result.fail(JSMSG_CANT_REDEFINE_PROP);
+        }
+      }
+
+      return result.succeed();
+    }
   }
 
   
@@ -1736,8 +1780,51 @@ bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   
-  if (desc.isGenericDescriptor()) {
+  if (desc.isDataDescriptor()) {
     
+    if (IsDataDescriptor(prop)) {
+      if (!desc.hasValue()) {
+        RootedValue currentValue(cx);
+        if (!GetExistingDataProperty(cx, obj, id, prop, &currentValue)) {
+          return false;
+        }
+
+        desc.setValue(currentValue);
+      }
+      if (!desc.hasWritable()) {
+        desc.setWritable(attrs.writable());
+      }
+    } else {
+      if (!desc.hasValue()) {
+        desc.setValue(UndefinedHandleValue);
+      }
+      if (!desc.hasWritable()) {
+        desc.setWritable(false);
+      }
+    }
+  } else if (desc.isAccessorDescriptor()) {
+    
+    if (IsAccessorDescriptor(prop)) {
+      PropertyInfo propInfo = prop.propertyInfo();
+      MOZ_ASSERT(propInfo.isAccessorProperty());
+      MOZ_ASSERT(desc.isAccessorDescriptor());
+
+      if (!desc.hasGetter()) {
+        desc.setGetter(obj->getGetter(propInfo));
+      }
+      if (!desc.hasSetter()) {
+        desc.setSetter(obj->getSetter(propInfo));
+      }
+    } else {
+      if (!desc.hasGetter()) {
+        desc.setGetter(nullptr);
+      }
+      if (!desc.hasSetter()) {
+        desc.setSetter(nullptr);
+      }
+    }
+  } else {
+    MOZ_ASSERT(desc.isGenericDescriptor());
 
     
     
@@ -1757,84 +1844,9 @@ bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
       desc.setGetter(obj->getGetter(propInfo));
       desc.setSetter(obj->getSetter(propInfo));
     }
-  } else if (desc.isDataDescriptor() != IsDataDescriptor(prop)) {
-    
-    if (!attrs.configurable()) {
-      return result.fail(JSMSG_CANT_REDEFINE_PROP);
-    }
-
-    
-    CompletePropertyDescriptor(&desc);
-  } else if (desc.isDataDescriptor()) {
-    
-    bool frozen = !attrs.configurable() && !attrs.writable();
-
-    
-    if (frozen && desc.hasWritable() && desc.writable()) {
-      return result.fail(JSMSG_CANT_REDEFINE_PROP);
-    }
-
-    if (frozen || !desc.hasValue()) {
-      RootedValue currentValue(cx);
-      if (!GetExistingDataProperty(cx, obj, id, prop, &currentValue)) {
-        return false;
-      }
-
-      if (!desc.hasValue()) {
-        
-        desc.setValue(currentValue);
-      } else {
-        
-        bool same;
-        if (!SameValue(cx, desc.value(), currentValue, &same)) {
-          return false;
-        }
-        if (!same) {
-          return result.fail(JSMSG_CANT_REDEFINE_PROP);
-        }
-      }
-    }
-
-    
-    if (frozen) {
-      return result.succeed();
-    }
-
-    
-    if (!desc.hasWritable()) {
-      desc.setWritable(attrs.writable());
-    }
-  } else {
-    
-    PropertyInfo propInfo = prop.propertyInfo();
-    MOZ_ASSERT(propInfo.isAccessorProperty());
-    MOZ_ASSERT(desc.isAccessorDescriptor());
-
-    
-    
-    if (desc.hasSetter()) {
-      
-      if (!attrs.configurable() && desc.setter() != obj->getSetter(propInfo)) {
-        return result.fail(JSMSG_CANT_REDEFINE_PROP);
-      }
-    } else {
-      
-      desc.setSetter(obj->getSetter(propInfo));
-    }
-    if (desc.hasGetter()) {
-      
-      if (!attrs.configurable() && desc.getter() != obj->getGetter(propInfo)) {
-        return result.fail(JSMSG_CANT_REDEFINE_PROP);
-      }
-    } else {
-      
-      desc.setGetter(obj->getGetter(propInfo));
-    }
-
-    
   }
+  desc.assertComplete();
 
-  
   if (!AddOrChangeProperty<IsAddOrChange::Change>(cx, obj, id, desc, &prop)) {
     return false;
   }
