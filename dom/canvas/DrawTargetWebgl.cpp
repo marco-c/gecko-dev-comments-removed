@@ -2598,24 +2598,91 @@ bool SharedContextWebgl::PruneTextureMemory(size_t aMargin, bool aPruneUnused) {
   return mNumTextureHandles < oldItems;
 }
 
-void DrawTargetWebgl::FillRect(const Rect& aRect, const Pattern& aPattern,
-                               const DrawOptions& aOptions) {
-  if (SupportsPattern(aPattern)) {
-    RectDouble xformRect = TransformDouble(aRect);
-    if (aPattern.GetType() == PatternType::COLOR) {
-      if (Maybe<Rect> clipped = RectClippedToViewport(xformRect)) {
+
+Maybe<SurfacePattern> DrawTargetWebgl::LinearGradientToSurface(
+    const RectDouble& aBounds, const Pattern& aPattern) {
+  MOZ_ASSERT(aPattern.GetType() == PatternType::LINEAR_GRADIENT);
+  const auto& gradient = static_cast<const LinearGradientPattern&>(aPattern);
+  
+  Point gradBegin = gradient.mMatrix.TransformPoint(gradient.mBegin);
+  Point gradEnd = gradient.mMatrix.TransformPoint(gradient.mEnd);
+  
+  Point begin = mTransform.TransformPoint(gradBegin);
+  Point end = mTransform.TransformPoint(gradEnd);
+  
+  Point dir = end - begin;
+  float len = dir.Length();
+  dir = dir / len;
+  
+  Rect visBounds = NarrowToFloat(aBounds.SafeIntersect(RectDouble(GetRect())));
+  
+  float dist0 = (visBounds.TopLeft() - begin).DotProduct(dir);
+  float distX = visBounds.width * dir.x;
+  float distY = visBounds.height * dir.y;
+  float minDist = floorf(
+      std::max(dist0 + std::min(distX, 0.0f) + std::min(distY, 0.0f), 0.0f));
+  float maxDist = ceilf(
+      std::min(dist0 + std::max(distX, 0.0f) + std::max(distY, 0.0f), len));
+  
+  
+  float subLen = maxDist - minDist;
+  if (subLen > 0 && subLen < 0.5f * visBounds.Area()) {
+    
+    
+    RefPtr<DrawTargetSkia> dt = new DrawTargetSkia;
+    if (dt->Init(IntSize(int32_t(subLen + 2), 1), SurfaceFormat::B8G8R8A8)) {
+      
+      dt->FillRect(Rect(dt->GetRect()),
+                   LinearGradientPattern(Point(1 - minDist, 0.0f),
+                                         Point(len + 1 - minDist, 0.0f),
+                                         gradient.mStops));
+      if (RefPtr<SourceSurface> snapshot = dt->Snapshot()) {
         
         
-        
-        DrawRect(*clipped, aPattern, aOptions, Nothing(), nullptr, false);
-        return;
+        Point gradDir = (gradEnd - gradBegin) / len;
+        Point tangent = Point(-gradDir.y, gradDir.x) / gradDir.Length();
+        SurfacePattern surfacePattern(
+            snapshot, ExtendMode::CLAMP,
+            Matrix(gradDir.x, gradDir.y, tangent.x, tangent.y, gradBegin.x,
+                   gradBegin.y)
+                .PreTranslate(minDist - 1, 0));
+        if (SupportsPattern(surfacePattern)) {
+          return Some(surfacePattern);
+        }
       }
     }
-    if (RectInsidePrecisionLimits(xformRect)) {
-      DrawRect(aRect, aPattern, aOptions);
+  }
+  return Nothing();
+}
+
+void DrawTargetWebgl::FillRect(const Rect& aRect, const Pattern& aPattern,
+                               const DrawOptions& aOptions) {
+  RectDouble xformRect = TransformDouble(aRect);
+  if (aPattern.GetType() == PatternType::COLOR) {
+    if (Maybe<Rect> clipped = RectClippedToViewport(xformRect)) {
+      
+      
+      
+      DrawRect(*clipped, aPattern, aOptions, Nothing(), nullptr, false);
       return;
     }
   }
+  if (RectInsidePrecisionLimits(xformRect)) {
+    if (SupportsPattern(aPattern)) {
+      DrawRect(aRect, aPattern, aOptions);
+      return;
+    }
+    if (aPattern.GetType() == PatternType::LINEAR_GRADIENT) {
+      if (Maybe<SurfacePattern> surface =
+              LinearGradientToSurface(xformRect, aPattern)) {
+        if (DrawRect(aRect, *surface, aOptions, Nothing(), nullptr, true, true,
+                     true)) {
+          return;
+        }
+      }
+    }
+  }
+
   if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
     mSkia->FillRect(aRect, aPattern, aOptions);
@@ -2772,7 +2839,7 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   const SkPath& skiaPath = static_cast<const PathSkia*>(aPath)->GetPath();
   SkRect skiaRect = SkRect::MakeEmpty();
   
-  if (skiaPath.isRect(&skiaRect) && SupportsPattern(aPattern)) {
+  if (skiaPath.isRect(&skiaRect)) {
     RectDouble rect = SkRectToRectDouble(skiaRect);
     RectDouble xformRect = TransformDouble(rect);
     if (aPattern.GetType() == PatternType::COLOR) {
@@ -2784,9 +2851,21 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
         return;
       }
     }
+
     if (RectInsidePrecisionLimits(xformRect)) {
-      DrawRect(NarrowToFloat(rect), aPattern, aOptions);
-      return;
+      if (SupportsPattern(aPattern)) {
+        DrawRect(NarrowToFloat(rect), aPattern, aOptions);
+        return;
+      }
+      if (aPattern.GetType() == PatternType::LINEAR_GRADIENT) {
+        if (Maybe<SurfacePattern> surface =
+                LinearGradientToSurface(xformRect, aPattern)) {
+          if (DrawRect(NarrowToFloat(rect), *surface, aOptions, Nothing(),
+                       nullptr, true, true, true)) {
+            return;
+          }
+        }
+      }
     }
   }
 
