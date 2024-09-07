@@ -6135,7 +6135,8 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
-                     PrerenderDecision aPrerenderDecision);
+                     PrerenderDecision aPrerenderDecision,
+                     bool aWrapsBackdropFilter);
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
@@ -6495,6 +6496,7 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
   
   bool mHasAssociatedPerspective : 1;
   bool mContainsASRs : 1;
+  bool mWrapsBackdropFilter : 1;
 };
 
 
