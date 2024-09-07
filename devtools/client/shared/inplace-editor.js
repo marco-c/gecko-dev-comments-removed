@@ -172,6 +172,8 @@ function isKeyIn(key, ...keys) {
 
 
 
+
+
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -426,6 +428,8 @@ class InplaceEditor extends EventEmitter {
 
 
 
+
+
   #createInput(options = {}) {
     this.input = this.doc.createElementNS(
       HTML_NS,
@@ -442,6 +446,9 @@ class InplaceEditor extends EventEmitter {
     }
 
     this.input.classList.add("styleinspector-propertyeditor");
+    if (options.inputClass) {
+      this.input.classList.add(options.inputClass);
+    }
     this.input.value = this.initial;
     if (options.inputAriaLabel) {
       this.input.setAttribute("aria-label", options.inputAriaLabel);
