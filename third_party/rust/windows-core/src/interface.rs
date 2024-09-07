@@ -1,14 +1,29 @@
+use super::*;
+use core::any::Any;
+use core::ffi::c_void;
+use core::marker::PhantomData;
+use core::mem::{forget, transmute_copy, MaybeUninit};
+use core::ptr::NonNull;
 
 
 
 
 
 
-pub unsafe trait Interface: Sized {
+
+pub unsafe trait Interface: Sized + Clone {
+    #[doc(hidden)]
     type Vtable;
 
     
+    const IID: GUID;
+
     #[doc(hidden)]
+    const UNKNOWN: bool = true;
+
+    
+    #[doc(hidden)]
+    #[inline(always)]
     fn vtable(&self) -> &Self::Vtable {
         
         unsafe { self.assume_vtable::<Self>() }
@@ -21,22 +36,24 @@ pub unsafe trait Interface: Sized {
     
     
     #[doc(hidden)]
+    #[inline(always)]
     unsafe fn assume_vtable<T: Interface>(&self) -> &T::Vtable {
         &**(self.as_raw() as *mut *mut T::Vtable)
     }
 
     
     #[inline(always)]
-    fn as_raw(&self) -> *mut std::ffi::c_void {
+    fn as_raw(&self) -> *mut c_void {
         
-        unsafe { std::mem::transmute_copy(self) }
+        unsafe { transmute_copy(self) }
     }
 
     
-    fn into_raw(self) -> *mut std::ffi::c_void {
+    #[inline(always)]
+    fn into_raw(self) -> *mut c_void {
         
         let raw = self.as_raw();
-        std::mem::forget(self);
+        forget(self);
         raw
     }
 
@@ -46,8 +63,8 @@ pub unsafe trait Interface: Sized {
     
     
     
-    unsafe fn from_raw(raw: *mut std::ffi::c_void) -> Self {
-        std::mem::transmute_copy(&raw)
+    unsafe fn from_raw(raw: *mut c_void) -> Self {
+        transmute_copy(&raw)
     }
 
     
@@ -56,17 +73,269 @@ pub unsafe trait Interface: Sized {
     
     
     
-    unsafe fn from_raw_borrowed(raw: &*mut std::ffi::c_void) -> Option<&Self> {
+    #[inline(always)]
+    unsafe fn from_raw_borrowed(raw: &*mut c_void) -> Option<&Self> {
         if raw.is_null() {
             None
         } else {
-            Some(std::mem::transmute_copy(&raw))
+            Some(transmute_copy(&raw))
         }
+    }
+
+    
+    
+    
+    
+    #[inline(always)]
+    fn cast<T: Interface>(&self) -> Result<T> {
+        
+        
+        
+        unsafe {
+            
+            
+            
+            
+            
+            
+            let mut result = MaybeUninit::<Option<T>>::zeroed();
+            self.query(&T::IID, result.as_mut_ptr() as _).ok()?;
+
+            
+            
+            if let Some(obj) = result.assume_init() {
+                Ok(obj)
+            } else {
+                Err(imp::E_POINTER.into())
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    fn cast_to_any<T>(&self) -> Result<&dyn Any>
+    where
+        T: ComObjectInner,
+        T::Outer: Any + 'static + IUnknownImpl<Impl = T>,
+    {
+        unsafe {
+            let mut any_ref_arg: MaybeUninit<&dyn Any> = MaybeUninit::zeroed();
+            self.query(
+                &DYNAMIC_CAST_IID,
+                any_ref_arg.as_mut_ptr() as *mut *mut c_void,
+            )
+            .ok()?;
+            Ok(any_ref_arg.assume_init())
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    fn is_object<T>(&self) -> bool
+    where
+        T: ComObjectInner,
+        T::Outer: Any + 'static + IUnknownImpl<Impl = T>,
+    {
+        if let Ok(any) = self.cast_to_any::<T>() {
+            any.is::<T::Outer>()
+        } else {
+            false
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    fn cast_object_ref<T>(&self) -> Result<&T::Outer>
+    where
+        T: ComObjectInner,
+        T::Outer: Any + 'static + IUnknownImpl<Impl = T>,
+    {
+        let any: &dyn Any = self.cast_to_any::<T>()?;
+        if let Some(outer) = any.downcast_ref::<T::Outer>() {
+            Ok(outer)
+        } else {
+            Err(imp::E_NOINTERFACE.into())
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    fn cast_object<T>(&self) -> Result<ComObject<T>>
+    where
+        T: ComObjectInner,
+        T::Outer: Any + 'static + IUnknownImpl<Impl = T>,
+    {
+        let object_ref = self.cast_object_ref::<T>()?;
+        Ok(object_ref.to_object())
+    }
+
+    
+    fn downgrade(&self) -> Result<Weak<Self>> {
+        self.cast::<imp::IWeakReferenceSource>()
+            .and_then(|source| Weak::downgrade(&source))
+    }
+
+    
+    
+    
+    
+    
+    #[inline(always)]
+    unsafe fn query(&self, iid: *const GUID, interface: *mut *mut c_void) -> HRESULT {
+        if Self::UNKNOWN {
+            (self.assume_vtable::<IUnknown>().QueryInterface)(self.as_raw(), iid, interface)
+        } else {
+            panic!("Non-COM interfaces cannot be queried.")
+        }
+    }
+
+    
+    
+    fn to_ref(&self) -> InterfaceRef<'_, Self> {
+        InterfaceRef::from_interface(self)
     }
 }
 
 
 #[doc(hidden)]
-pub unsafe fn from_raw_borrowed<T: Interface>(raw: &*mut std::ffi::c_void) -> Option<&T> {
+pub unsafe fn from_raw_borrowed<T: Interface>(raw: &*mut c_void) -> Option<&T> {
     T::from_raw_borrowed(raw)
 }
+
+
+
+
+
+#[repr(transparent)]
+pub struct InterfaceRef<'a, I>(NonNull<c_void>, PhantomData<&'a I>);
+
+impl<'a, I> Copy for InterfaceRef<'a, I> {}
+
+impl<'a, I> Clone for InterfaceRef<'a, I> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<'a, I: core::fmt::Debug + Interface> core::fmt::Debug for InterfaceRef<'a, I> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        <I as core::fmt::Debug>::fmt(&**self, f)
+    }
+}
+
+impl<'a, I: Interface> InterfaceRef<'a, I> {
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub unsafe fn from_raw(ptr: NonNull<c_void>) -> Self {
+        Self(ptr, PhantomData)
+    }
+
+    
+    
+    
+    
+    #[inline(always)]
+    pub fn from_interface(interface: &I) -> Self {
+        unsafe {
+            
+            
+            Self(NonNull::new_unchecked(interface.as_raw()), PhantomData)
+        }
+    }
+
+    
+    #[inline(always)]
+    pub fn to_owned(self) -> I {
+        (*self).clone()
+    }
+}
+
+impl<'a, 'i: 'a, I: Interface> From<&'i I> for InterfaceRef<'a, I> {
+    #[inline(always)]
+    fn from(interface: &'a I) -> InterfaceRef<'a, I> {
+        InterfaceRef::from_interface(interface)
+    }
+}
+
+impl<'a, I: Interface> core::ops::Deref for InterfaceRef<'a, I> {
+    type Target = I;
+
+    #[inline(always)]
+    fn deref(&self) -> &I {
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+
+
+
+#[doc(hidden)]
+pub const DYNAMIC_CAST_IID: GUID = GUID::from_u128(0xae49d5cb_143f_431c_874c_2729336e4eca);

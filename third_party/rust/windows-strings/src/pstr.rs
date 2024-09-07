@@ -12,12 +12,12 @@ impl PSTR {
     }
 
     
-    pub fn null() -> Self {
-        Self(std::ptr::null_mut())
+    pub const fn null() -> Self {
+        Self(core::ptr::null_mut())
     }
 
     
-    pub fn as_ptr(&self) -> *mut u8 {
+    pub const fn as_ptr(&self) -> *mut u8 {
         self.0
     }
 
@@ -32,8 +32,8 @@ impl PSTR {
     
     
     pub unsafe fn as_bytes(&self) -> &[u8] {
-        let len = super::strlen(PCSTR::from_raw(self.0));
-        std::slice::from_raw_parts(self.0, len)
+        let len = strlen(PCSTR::from_raw(self.0));
+        core::slice::from_raw_parts(self.0, len)
     }
 
     
@@ -41,7 +41,7 @@ impl PSTR {
     
     
     
-    pub unsafe fn to_string(&self) -> std::result::Result<String, std::string::FromUtf8Error> {
+    pub unsafe fn to_string(&self) -> core::result::Result<String, alloc::string::FromUtf8Error> {
         String::from_utf8(self.as_bytes().into())
     }
 
@@ -50,11 +50,7 @@ impl PSTR {
     
     
     
-    pub unsafe fn display(&self) -> impl std::fmt::Display + '_ {
+    pub unsafe fn display(&self) -> impl core::fmt::Display + '_ {
         Decode(move || decode_utf8(self.as_bytes()))
     }
-}
-
-impl TypeKind for PSTR {
-    type TypeKind = CopyType;
 }

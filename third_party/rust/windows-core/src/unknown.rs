@@ -1,32 +1,36 @@
 use super::*;
+use core::ffi::c_void;
+use core::ptr::NonNull;
 
 
 
 
 
 #[repr(transparent)]
-pub struct IUnknown(std::ptr::NonNull<std::ffi::c_void>);
+pub struct IUnknown(NonNull<c_void>);
 
 #[doc(hidden)]
 #[repr(C)]
+#[allow(non_camel_case_types)]
 pub struct IUnknown_Vtbl {
-    pub QueryInterface: unsafe extern "system" fn(this: *mut std::ffi::c_void, iid: *const GUID, interface: *mut *mut std::ffi::c_void) -> HRESULT,
-    pub AddRef: unsafe extern "system" fn(this: *mut std::ffi::c_void) -> u32,
-    pub Release: unsafe extern "system" fn(this: *mut std::ffi::c_void) -> u32,
+    pub QueryInterface: unsafe extern "system" fn(
+        this: *mut c_void,
+        iid: *const GUID,
+        interface: *mut *mut c_void,
+    ) -> HRESULT,
+    pub AddRef: unsafe extern "system" fn(this: *mut c_void) -> u32,
+    pub Release: unsafe extern "system" fn(this: *mut c_void) -> u32,
 }
 
 unsafe impl Interface for IUnknown {
     type Vtable = IUnknown_Vtbl;
-}
-
-unsafe impl ComInterface for IUnknown {
     const IID: GUID = GUID::from_u128(0x00000000_0000_0000_c000_000000000046);
 }
 
 impl Clone for IUnknown {
     fn clone(&self) -> Self {
         unsafe {
-            (self.vtable().AddRef)(std::mem::transmute_copy(self));
+            (self.vtable().AddRef)(core::mem::transmute_copy(self));
         }
 
         Self(self.0)
@@ -36,7 +40,7 @@ impl Clone for IUnknown {
 impl Drop for IUnknown {
     fn drop(&mut self) {
         unsafe {
-            (self.vtable().Release)(std::mem::transmute_copy(self));
+            (self.vtable().Release)(core::mem::transmute_copy(self));
         }
     }
 }
@@ -47,57 +51,143 @@ impl PartialEq for IUnknown {
         
         
         
-        self.cast::<IUnknown>().unwrap().0 == other.cast::<IUnknown>().unwrap().0
+        
+        
+        
+        
+        
+        self.as_raw() == other.as_raw()
+            || self.cast::<IUnknown>().unwrap().0 == other.cast::<IUnknown>().unwrap().0
     }
 }
 
 impl Eq for IUnknown {}
 
-impl std::fmt::Debug for IUnknown {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("IUnknown").field(&self.0).finish()
+impl core::fmt::Debug for IUnknown {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_tuple("IUnknown").field(&self.as_raw()).finish()
     }
 }
 
+
+
+
+
 #[doc(hidden)]
 pub trait IUnknownImpl {
+    
     type Impl;
+
     
     fn get_impl(&self) -> &Self::Impl;
 
     
+    fn get_impl_mut(&mut self) -> &mut Self::Impl;
+
+    
+    fn into_inner(self) -> Self::Impl;
+
     
     
     
     
     
-    unsafe fn QueryInterface(&self, iid: *const GUID, interface: *mut *mut std::ffi::c_void) -> HRESULT;
+    
+    unsafe fn QueryInterface(&self, iid: *const GUID, interface: *mut *mut c_void) -> HRESULT;
+
     
     fn AddRef(&self) -> u32;
+
     
     
     
     
     
     
-    unsafe fn Release(&self) -> u32;
+    
+    
+    
+    unsafe fn Release(self_: *mut Self) -> u32;
+
+    
+    fn is_reference_count_one(&self) -> bool;
+
+    
+    unsafe fn GetTrustLevel(&self, value: *mut i32) -> HRESULT;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn from_inner_ref(inner: &Self::Impl) -> &Self;
+
+    
+    
+    
+    
+    #[inline(always)]
+    fn as_interface<I: Interface>(&self) -> InterfaceRef<'_, I>
+    where
+        Self: ComObjectInterface<I>,
+    {
+        <Self as ComObjectInterface<I>>::as_interface_ref(self)
+    }
+
+    
+    #[inline(always)]
+    fn to_interface<I: Interface>(&self) -> I
+    where
+        Self: ComObjectInterface<I>,
+    {
+        <Self as ComObjectInterface<I>>::as_interface_ref(self).to_owned()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn to_object(&self) -> ComObject<Self::Impl>
+    where
+        Self::Impl: ComObjectInner<Outer = Self>;
+
+    
+    
+    const INNER_OFFSET_IN_POINTERS: usize;
 }
 
-#[cfg(feature = "implement")]
 impl IUnknown_Vtbl {
     pub const fn new<T: IUnknownImpl, const OFFSET: isize>() -> Self {
-        unsafe extern "system" fn QueryInterface<T: IUnknownImpl, const OFFSET: isize>(this: *mut std::ffi::c_void, iid: *const GUID, interface: *mut *mut std::ffi::c_void) -> HRESULT {
-            let this = (this as *mut *mut std::ffi::c_void).offset(OFFSET) as *mut T;
+        unsafe extern "system" fn QueryInterface<T: IUnknownImpl, const OFFSET: isize>(
+            this: *mut c_void,
+            iid: *const GUID,
+            interface: *mut *mut c_void,
+        ) -> HRESULT {
+            let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
             (*this).QueryInterface(iid, interface)
         }
-        unsafe extern "system" fn AddRef<T: IUnknownImpl, const OFFSET: isize>(this: *mut std::ffi::c_void) -> u32 {
-            let this = (this as *mut *mut std::ffi::c_void).offset(OFFSET) as *mut T;
+        unsafe extern "system" fn AddRef<T: IUnknownImpl, const OFFSET: isize>(
+            this: *mut c_void,
+        ) -> u32 {
+            let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
             (*this).AddRef()
         }
-        unsafe extern "system" fn Release<T: IUnknownImpl, const OFFSET: isize>(this: *mut std::ffi::c_void) -> u32 {
-            let this = (this as *mut *mut std::ffi::c_void).offset(OFFSET) as *mut T;
-            (*this).Release()
+        unsafe extern "system" fn Release<T: IUnknownImpl, const OFFSET: isize>(
+            this: *mut c_void,
+        ) -> u32 {
+            let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
+            T::Release(this)
         }
-        Self { QueryInterface: QueryInterface::<T, OFFSET>, AddRef: AddRef::<T, OFFSET>, Release: Release::<T, OFFSET> }
+        Self {
+            QueryInterface: QueryInterface::<T, OFFSET>,
+            AddRef: AddRef::<T, OFFSET>,
+            Release: Release::<T, OFFSET>,
+        }
     }
 }

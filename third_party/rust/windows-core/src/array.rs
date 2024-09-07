@@ -8,7 +8,10 @@ pub struct Array<T: Type<T>> {
 
 impl<T: Type<T>> Default for Array<T> {
     fn default() -> Self {
-        Array { data: std::ptr::null_mut(), len: 0 }
+        Array {
+            data: core::ptr::null_mut(),
+            len: 0,
+        }
     }
 }
 
@@ -20,14 +23,16 @@ impl<T: Type<T>> Array<T> {
 
     
     pub fn with_len(len: usize) -> Self {
-        assert!(len < std::u32::MAX as usize);
-        let bytes_amount = len.checked_mul(std::mem::size_of::<T>()).expect("Attempted to allocate too large an Array");
+        assert!(len < u32::MAX as usize);
+        let bytes_amount = len
+            .checked_mul(core::mem::size_of::<T>())
+            .expect("Attempted to allocate too large an Array");
 
         
         
         
         
-        let data = unsafe { crate::imp::CoTaskMemAlloc(bytes_amount) as *mut T::Default };
+        let data = unsafe { imp::CoTaskMemAlloc(bytes_amount) as *mut T::Default };
 
         assert!(!data.is_null(), "Could not successfully allocate for Array");
 
@@ -36,7 +41,7 @@ impl<T: Type<T>> Array<T> {
         
         
         unsafe {
-            std::ptr::write_bytes(data, 0, len);
+            core::ptr::write_bytes(data, 0, len);
         }
 
         let len = len as u32;
@@ -81,22 +86,22 @@ impl<T: Type<T>> Array<T> {
             return;
         }
 
-        let mut data = std::ptr::null_mut();
+        let mut data = core::ptr::null_mut();
         let mut len = 0;
 
-        std::mem::swap(&mut data, &mut self.data);
-        std::mem::swap(&mut len, &mut self.len);
+        core::mem::swap(&mut data, &mut self.data);
+        core::mem::swap(&mut len, &mut self.len);
 
         
         
         unsafe {
             
             
-            std::ptr::drop_in_place(std::slice::from_raw_parts_mut(data, len as usize));
+            core::ptr::drop_in_place(core::slice::from_raw_parts_mut(data, len as usize));
             
             
             
-            crate::imp::CoTaskMemFree(data as _);
+            imp::CoTaskMemFree(data as _);
         }
     }
 
@@ -115,12 +120,12 @@ impl<T: Type<T>> Array<T> {
     
     pub fn into_abi(self) -> (*mut T::Abi, u32) {
         let abi = (self.data as *mut _, self.len);
-        std::mem::forget(self);
+        core::mem::forget(self);
         abi
     }
 }
 
-impl<T: Type<T>> std::ops::Deref for Array<T> {
+impl<T: Type<T>> core::ops::Deref for Array<T> {
     type Target = [T::Default];
 
     fn deref(&self) -> &[T::Default] {
@@ -129,18 +134,18 @@ impl<T: Type<T>> std::ops::Deref for Array<T> {
         }
 
         
-        unsafe { std::slice::from_raw_parts(self.data, self.len as usize) }
+        unsafe { core::slice::from_raw_parts(self.data, self.len as usize) }
     }
 }
 
-impl<T: Type<T>> std::ops::DerefMut for Array<T> {
+impl<T: Type<T>> core::ops::DerefMut for Array<T> {
     fn deref_mut(&mut self) -> &mut [T::Default] {
         if self.is_empty() {
             return &mut [];
         }
 
         
-        unsafe { std::slice::from_raw_parts_mut(self.data, self.len as usize) }
+        unsafe { core::slice::from_raw_parts_mut(self.data, self.len as usize) }
     }
 }
 
@@ -154,12 +159,16 @@ impl<T: Type<T>> Drop for Array<T> {
 pub struct ArrayProxy<T: Type<T>> {
     data: *mut *mut T::Default,
     len: *mut u32,
-    temp: std::mem::ManuallyDrop<Array<T>>,
+    temp: core::mem::ManuallyDrop<Array<T>>,
 }
 
 impl<T: Type<T>> ArrayProxy<T> {
     pub fn from_raw_parts(data: *mut *mut T::Default, len: *mut u32) -> Self {
-        Self { data, len, temp: std::mem::ManuallyDrop::new(Array::new()) }
+        Self {
+            data,
+            len,
+            temp: core::mem::ManuallyDrop::new(Array::new()),
+        }
     }
 
     pub fn as_array(&mut self) -> &mut Array<T> {

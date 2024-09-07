@@ -1,15 +1,26 @@
 use super::*;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 
 #[repr(transparent)]
 #[derive(Clone, PartialEq, Eq)]
-pub struct AgileReference<T>(crate::imp::IAgileReference, PhantomData<T>);
+pub struct AgileReference<T>(imp::IAgileReference, PhantomData<T>);
 
-impl<T: ComInterface> AgileReference<T> {
+impl<T: Interface> AgileReference<T> {
     
     pub fn new(object: &T) -> Result<Self> {
-        unsafe { crate::imp::RoGetAgileReference(crate::imp::AGILEREFERENCE_DEFAULT, &T::IID, object.as_unknown()).map(|reference| Self(reference, Default::default())) }
+        
+        
+        
+        assert!(T::UNKNOWN);
+        unsafe {
+            imp::RoGetAgileReference(
+                imp::AGILEREFERENCE_DEFAULT,
+                &T::IID,
+                core::mem::transmute::<&T, &IUnknown>(object),
+            )
+            .map(|reference| Self(reference, Default::default()))
+        }
     }
 
     
@@ -18,11 +29,11 @@ impl<T: ComInterface> AgileReference<T> {
     }
 }
 
-unsafe impl<T: ComInterface> Send for AgileReference<T> {}
-unsafe impl<T: ComInterface> Sync for AgileReference<T> {}
+unsafe impl<T: Interface> Send for AgileReference<T> {}
+unsafe impl<T: Interface> Sync for AgileReference<T> {}
 
-impl<T> std::fmt::Debug for AgileReference<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<T> core::fmt::Debug for AgileReference<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "AgileReference({:?})", &self.0)
     }
 }

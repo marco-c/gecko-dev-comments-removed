@@ -13,7 +13,7 @@ impl PCWSTR {
 
     
     pub const fn null() -> Self {
-        Self(std::ptr::null())
+        Self(core::ptr::null())
     }
 
     
@@ -31,9 +31,11 @@ impl PCWSTR {
     
     
     
-    pub unsafe fn as_wide(&self) -> &[u16] {
-        let len = super::wcslen(*self);
-        std::slice::from_raw_parts(self.0, len)
+    pub unsafe fn len(&self) -> usize {
+        extern "C" {
+            fn wcslen(s: *const u16) -> usize;
+        }
+        wcslen(self.0)
     }
 
     
@@ -41,7 +43,25 @@ impl PCWSTR {
     
     
     
-    pub unsafe fn to_string(&self) -> std::result::Result<String, std::string::FromUtf16Error> {
+    pub unsafe fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn as_wide(&self) -> &[u16] {
+        core::slice::from_raw_parts(self.0, self.len())
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn to_string(&self) -> core::result::Result<String, alloc::string::FromUtf16Error> {
         String::from_utf16(self.as_wide())
     }
 
@@ -59,11 +79,7 @@ impl PCWSTR {
     
     
     
-    pub unsafe fn display(&self) -> impl std::fmt::Display + '_ {
-        Decode(move || std::char::decode_utf16(self.as_wide().iter().cloned()))
+    pub unsafe fn display(&self) -> impl core::fmt::Display + '_ {
+        Decode(move || core::char::decode_utf16(self.as_wide().iter().cloned()))
     }
-}
-
-impl TypeKind for PCWSTR {
-    type TypeKind = CopyType;
 }

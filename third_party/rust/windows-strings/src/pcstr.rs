@@ -1,0 +1,56 @@
+use super::*;
+
+
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct PCSTR(pub *const u8);
+
+impl PCSTR {
+    
+    pub const fn from_raw(ptr: *const u8) -> Self {
+        Self(ptr)
+    }
+
+    
+    pub const fn null() -> Self {
+        Self(core::ptr::null())
+    }
+
+    
+    pub const fn as_ptr(&self) -> *const u8 {
+        self.0
+    }
+
+    
+    pub fn is_null(&self) -> bool {
+        self.0.is_null()
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn as_bytes(&self) -> &[u8] {
+        let len = strlen(*self);
+        core::slice::from_raw_parts(self.0, len)
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn to_string(&self) -> core::result::Result<String, alloc::string::FromUtf8Error> {
+        String::from_utf8(self.as_bytes().into())
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn display(&self) -> impl core::fmt::Display + '_ {
+        Decode(move || decode_utf8(self.as_bytes()))
+    }
+}

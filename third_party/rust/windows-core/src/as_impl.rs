@@ -6,5 +6,15 @@ pub trait AsImpl<T> {
     
     
     
-    unsafe fn as_impl(&self) -> &T;
+    unsafe fn as_impl(&self) -> &T {
+        self.as_impl_ptr().as_ref()
+    }
+
+    
+    
+    
+    
+    
+    
+    unsafe fn as_impl_ptr(&self) -> core::ptr::NonNull<T>;
 }
