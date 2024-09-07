@@ -273,7 +273,8 @@ nsCString nsContentSecurityUtils::SmartFormatCrashString(
 
 
 nsCString OptimizeFileName(const nsAString& aFileName) {
-  NS_ConvertUTF16toUTF8 optimizedName(aFileName);
+  nsCString optimizedName;
+  CopyUTF16toUTF8(aFileName, optimizedName);
 
   MOZ_LOG(sCSMLog, LogLevel::Verbose,
           ("Optimizing FileName: %s", optimizedName.get()));
