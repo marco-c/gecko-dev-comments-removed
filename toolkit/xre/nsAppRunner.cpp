@@ -574,13 +574,17 @@ bool BrowserTabsRemoteAutostart() {
   gBrowserTabsRemoteAutostart = true;
   E10sStatus status = kE10sEnabledByDefault;
 
-  
-  
-  
-  
-  
-  
-  if (gBrowserTabsRemoteAutostart && xpc::AreNonLocalConnectionsDisabled()) {
+
+
+
+
+#if defined(MOZILLA_OFFICIAL)
+  bool allowDisablingE10s = xpc::AreNonLocalConnectionsDisabled();
+#else
+  bool allowDisablingE10s = true;
+#endif
+
+  if (gBrowserTabsRemoteAutostart && allowDisablingE10s) {
     const char* forceDisable = PR_GetEnv("MOZ_FORCE_DISABLE_E10S");
     if (forceDisable && !strcmp(forceDisable, "1")) {
       gBrowserTabsRemoteAutostart = false;
