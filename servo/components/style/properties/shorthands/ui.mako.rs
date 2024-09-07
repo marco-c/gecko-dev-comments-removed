@@ -213,12 +213,13 @@ macro_rules! try_parse_one {
                     rule_types_allowed="Style"
                     spec="https://drafts.csswg.org/css-animations/#propdef-animation">
     <%
-        props = "name timeline duration timing_function delay iteration_count \
+        props = "name duration timing_function delay iteration_count \
                  direction fill_mode play_state".split()
     %>
     % for prop in props:
     use crate::properties::longhands::animation_${prop};
     % endfor
+    use crate::properties::longhands::animation_timeline;
 
     pub fn parse_value<'i, 't>(
         context: &ParserContext,
@@ -254,9 +255,14 @@ macro_rules! try_parse_one {
                 try_parse_one!(context, input, fill_mode, animation_fill_mode);
                 try_parse_one!(context, input, play_state, animation_play_state);
                 try_parse_one!(context, input, name, animation_name);
-                if static_prefs::pref!("layout.css.scroll-driven-animations.enabled") {
-                    try_parse_one!(context, input, timeline, animation_timeline);
-                }
+
+                
+                
+                
+                
+                
+                
+                
 
                 parsed -= 1;
                 break
@@ -290,6 +296,10 @@ macro_rules! try_parse_one {
             % for prop in props:
             animation_${prop}: animation_${prop}::SpecifiedValue(${prop}s.into()),
             % endfor
+            // FIXME: Bug 1824261. animation-timeline is reset-only for now.
+            animation_timeline: animation_timeline::SpecifiedValue(
+                vec![animation_timeline::single_value::get_initial_specified_value()].into()
+            ),
         })
     }
 
@@ -310,7 +320,7 @@ macro_rules! try_parse_one {
 
             
             
-            % for name in props[2:]:
+            % for name in props[1:]:
                 if len != self.animation_${name}.0.len() {
                     return Ok(())
                 }
@@ -318,7 +328,7 @@ macro_rules! try_parse_one {
 
             
             
-            if self.animation_timeline.map_or(false, |v| len != v.0.len()) {
+            if self.animation_timeline.map_or(false, |v| v.0.len() != 1 || !v.0[0].is_auto()) {
                 return Ok(());
             }
 
@@ -355,10 +365,6 @@ macro_rules! try_parse_one {
                     !matches!(self.animation_play_state.0[i], AnimationPlayState::Running);
                 let animation_name = &self.animation_name.0[i];
                 let has_name = !animation_name.is_none();
-                let has_timeline = match self.animation_timeline {
-                    Some(timeline) => !timeline.0[i].is_auto(),
-                    _ => false,
-                };
 
                 let mut writer = SequenceWriter::new(dest, " ");
 
@@ -373,7 +379,7 @@ macro_rules! try_parse_one {
                 }
 
                 
-                % for name in props[4:6]:
+                % for name in props[3:5]:
                 if has_${name} {
                     writer.item(&self.animation_${name}.0[i])?;
                 }
@@ -393,17 +399,13 @@ macro_rules! try_parse_one {
 
                 
                 let has_any = {
-                    has_timeline
+                    has_duration
                 % for name in props[2:]:
                         || has_${name}
                 % endfor
                 };
                 if has_name || !has_any {
                     writer.item(animation_name)?;
-                }
-
-                if has_timeline {
-                    writer.item(&self.animation_timeline.unwrap().0[i])?;
                 }
             }
             Ok(())
