@@ -5,26 +5,9 @@
 
 #include "nsISupports.idl"
 
-interface nsIChannel;
-interface nsICookie;
 interface nsIURI;
+interface nsIChannel;
 webidl Document;
-
-%{C++
-namespace mozilla {
-  class OriginAttributes;
-
-  namespace net {
-    class Cookie;
-    class CookieParser;
-  }
-}
-%}
-
-[ref] native const_OriginAttributes(const mozilla::OriginAttributes);
-native CookieRefPtr(RefPtr<mozilla::net::Cookie>);
-[ref] native CookiePtr(mozilla::net::Cookie);
-[ref] native CookieParserPtr(mozilla::net::CookieParser);
 
 
 
@@ -67,7 +50,7 @@ interface nsICookieTransactionCallback : nsISupports
 
 
 
-[builtinclass, scriptable, uuid(1e94e283-2811-4f43-b947-d22b1549d824)]
+[scriptable, uuid(1e94e283-2811-4f43-b947-d22b1549d824)]
 interface nsICookieService : nsISupports
 {
   
@@ -89,27 +72,12 @@ interface nsICookieService : nsISupports
 
 
 
-  [noscript, notxpcom, nostdcall] void getCookiesFromHost(in ACString aBaseDomain,
-                                                          in const_OriginAttributes aOriginAttributes,
-                                                          out Array<CookieRefPtr> aCookies);
 
-  
-  [noscript, notxpcom, nostdcall] void staleCookies(in Array<CookieRefPtr> aCookies,
-                                                    in int64_t aCurrentTimeInUsec);
 
-  
-  [noscript, notxpcom, nostdcall] boolean hasExistingCookies(in ACString aBaseDomain,
-                                                             in const_OriginAttributes aOriginAttributes);
 
-  
-  [noscript, notxpcom, nostdcall] void addCookieFromDocument(in CookieParserPtr aCookieParser,
-                                                             in ACString aBaseDomain,
-                                                             in const_OriginAttributes aOriginAttributes,
-                                                             in CookiePtr aCookie,
-                                                             in int64_t aCurrentTimeInUsec,
-                                                             in nsIURI aDocumentURI,
-                                                             in boolean aThirdParty,
-                                                             in Document document);
+
+
+  ACString getCookieStringFromDocument(in Document aDocument);
 
   
 
@@ -128,6 +96,18 @@ interface nsICookieService : nsISupports
 
 
   ACString getCookieStringFromHttp(in nsIURI aURI, in nsIChannel aChannel);
+
+  
+
+
+
+
+
+
+
+
+
+  void setCookieStringFromDocument(in Document aDocument, in ACString aCookie);
 
   
 

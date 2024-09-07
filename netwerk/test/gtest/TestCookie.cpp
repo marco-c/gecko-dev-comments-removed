@@ -154,12 +154,7 @@ void GetACookieNoHttp(nsICookieService* aCookieService, const char* aSpec,
                                   DocumentFlavorHTML);
   Unused << NS_WARN_IF(NS_FAILED(rv));
 
-  nsAutoString cookie;
-  ErrorResult err;
-  document->GetCookie(cookie, err);
-  EXPECT_TRUE(!err.Failed());
-
-  CopyUTF16toUTF8(cookie, aCookie);
+  Unused << aCookieService->GetCookieStringFromDocument(document, aCookie);
 }
 
 
@@ -213,9 +208,6 @@ void InitPrefs(nsIPrefBranch* aPrefBranch) {
   Preferences::SetBool("network.cookieJarSettings.unblocked_for_testing", true);
   Preferences::SetBool("dom.securecontext.allowlist_onions", false);
   Preferences::SetBool("network.cookie.sameSite.schemeful", false);
-
-  
-  Preferences::SetBool("dom.cookie.testing.enabled", true);
 }
 
 TEST(TestCookie, TestCookieMain)

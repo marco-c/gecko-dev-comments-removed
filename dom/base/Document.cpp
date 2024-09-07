@@ -266,10 +266,7 @@
 #include "mozilla/ipc/IdleSchedulerChild.h"
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/net/ChannelEventQueue.h"
-#include "mozilla/net/Cookie.h"
-#include "mozilla/net/CookieCommons.h"
 #include "mozilla/net/CookieJarSettings.h"
-#include "mozilla/net/CookieParser.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/net/RequestContextService.h"
 #include "nsAboutProtocolUtils.h"
@@ -465,9 +462,6 @@ mozilla::LazyLogModule gTimeoutDeferralLog("TimeoutDefer");
 mozilla::LazyLogModule gUseCountersLog("UseCounters");
 
 namespace mozilla {
-
-using namespace net;
-
 namespace dom {
 
 class Document::HeaderData {
@@ -6611,188 +6605,34 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
     return;
   }
 
-  
-  
-  if (!StaticPrefs::dom_cookie_testing_enabled()) {
-    StorageAccess storageAccess = CookieAllowedForDocument(this);
-    if (storageAccess == StorageAccess::eDeny) {
-      return;
-    }
+  StorageAccess storageAccess = CookieAllowedForDocument(this);
+  if (storageAccess == StorageAccess::eDeny) {
+    return;
+  }
 
-    if (ShouldPartitionStorage(storageAccess) &&
-        !StoragePartitioningEnabled(storageAccess, CookieJarSettings())) {
-      return;
-    }
+  if (ShouldPartitionStorage(storageAccess) &&
+      !StoragePartitioningEnabled(storageAccess, CookieJarSettings())) {
+    return;
+  }
 
-    
-    if (IsCookieAverse()) {
-      return;
-    }
+  
+  if (IsCookieAverse()) {
+    return;
   }
 
   
   nsCOMPtr<nsICookieService> service =
       do_GetService(NS_COOKIESERVICE_CONTRACTID);
-  if (!service) {
-    return;
+  if (service) {
+    nsAutoCString cookie;
+    service->GetCookieStringFromDocument(this, cookie);
+    
+    
+    UTF_8_ENCODING->DecodeWithoutBOMHandling(cookie, aCookie);
   }
-
-  bool thirdParty = true;
-  nsPIDOMWindowInner* innerWindow = GetInnerWindow();
-  
-  
-  if (innerWindow) {
-    ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
-
-    if (thirdPartyUtil) {
-      Unused << thirdPartyUtil->IsThirdPartyWindow(
-          innerWindow->GetOuterWindow(), nullptr, &thirdParty);
-    }
-  }
-
-  nsCOMPtr<nsIPrincipal> cookiePrincipal = EffectiveCookiePrincipal();
-
-  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
-  principals.AppendElement(cookiePrincipal);
-
-  
-  
-  
-  
-  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
-                 CookieJarSettings()->GetPartitionForeign();
-  bool documentHasStorageAccess = false;
-  nsresult rv = HasStorageAccessSync(documentHasStorageAccess);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  if (isCHIPS && documentHasStorageAccess) {
-    
-    MOZ_ASSERT(cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
-    
-    
-    
-    
-    if (!PartitionedPrincipal()
-             ->OriginAttributesRef()
-             .mPartitionKey.IsEmpty()) {
-      principals.AppendElement(PartitionedPrincipal());
-    }
-  }
-
-  nsTArray<RefPtr<Cookie>> cookieList;
-
-  for (auto& principal : principals) {
-    if (!CookieCommons::IsSchemeSupported(principal)) {
-      return;
-    }
-
-    nsAutoCString baseDomain;
-    rv = CookieCommons::GetBaseDomain(principal, baseDomain);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
-    nsAutoCString hostFromURI;
-    rv = nsContentUtils::GetHostOrIPv6WithBrackets(principal, hostFromURI);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
-    nsAutoCString pathFromURI;
-    rv = principal->GetFilePath(pathFromURI);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
-    int64_t currentTimeInUsec = PR_Now();
-    int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
-
-    nsTArray<RefPtr<Cookie>> cookies;
-    service->GetCookiesFromHost(baseDomain, principal->OriginAttributesRef(),
-                                cookies);
-    if (cookies.IsEmpty()) {
-      continue;
-    }
-
-    
-    
-    bool potentiallyTrustworthy =
-        principal->GetIsOriginPotentiallyTrustworthy();
-
-    bool stale = false;
-
-    
-    for (Cookie* cookie : cookies) {
-      
-      if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
-        continue;
-      }
-
-      
-      
-      if (cookie->IsHttpOnly()) {
-        continue;
-      }
-
-      if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
-                            cookie, this)) {
-        continue;
-      }
-
-      
-      if (cookie->IsSecure() && !potentiallyTrustworthy) {
-        continue;
-      }
-
-      
-      if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
-        continue;
-      }
-
-      
-      if (cookie->Expiry() <= currentTime) {
-        continue;
-      }
-
-      
-      
-      cookieList.AppendElement(cookie);
-      if (cookie->IsStale()) {
-        stale = true;
-      }
-    }
-
-    if (cookieList.IsEmpty()) {
-      continue;
-    }
-
-    
-    
-    if (stale) {
-      service->StaleCookies(cookieList, currentTimeInUsec);
-    }
-  }
-
-  if (cookieList.IsEmpty()) {
-    return;
-  }
-
-  
-  
-  
-  cookieList.Sort(CompareCookiesForSending());
-
-  nsAutoCString cookieString;
-  CookieCommons::ComposeCookieString(cookieList, cookieString);
-
-  
-  
-  UTF_8_ENCODING->DecodeWithoutBOMHandling(cookieString, aCookie);
 }
 
-void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
+void Document::SetCookie(const nsAString& aCookie, ErrorResult& aRv) {
   if (mDisableCookieAccess) {
     return;
   }
@@ -6832,71 +6672,19 @@ void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
     return;
   }
 
-  NS_ConvertUTF16toUTF8 cookieString(aCookieString);
-
-  nsCOMPtr<nsIURI> documentURI;
-  nsAutoCString baseDomain;
-  OriginAttributes attrs;
-
-  int64_t currentTimeInUsec = PR_Now();
-
-  auto* basePrincipal = BasePrincipal::Cast(NodePrincipal());
-  basePrincipal->GetURI(getter_AddRefs(documentURI));
-  if (NS_WARN_IF(!documentURI)) {
-    
-    
-    return;
-  }
+  NS_ConvertUTF16toUTF8 cookie(aCookie);
+  nsresult rv = service->SetCookieStringFromDocument(this, cookie);
 
   
-  
-  RefPtr<ConsoleReportCollector> crc = new ConsoleReportCollector();
-  auto scopeExit = MakeScopeExit([&] { crc->FlushConsoleReports(this); });
-
-  CookieParser cookieParser(crc, documentURI);
-
-  ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
-  if (!thirdPartyUtil) {
+  if (NS_FAILED(rv)) {
     return;
   }
-
-  nsCOMPtr<nsIEffectiveTLDService> tldService =
-      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-  if (!tldService) {
-    return;
-  }
-
-  RefPtr<Cookie> cookie = CookieCommons::CreateCookieFromDocument(
-      cookieParser, this, cookieString, currentTimeInUsec, tldService,
-      thirdPartyUtil, baseDomain, attrs);
-  if (!cookie) {
-    return;
-  }
-
-  bool thirdParty = true;
-  nsPIDOMWindowInner* innerWindow = GetInnerWindow();
-  
-  
-  if (innerWindow) {
-    Unused << thirdPartyUtil->IsThirdPartyWindow(innerWindow->GetOuterWindow(),
-                                                 nullptr, &thirdParty);
-  }
-
-  if (thirdParty &&
-      !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(cookie, this)) {
-    return;
-  }
-
-  
-  service->AddCookieFromDocument(cookieParser, baseDomain, attrs, *cookie,
-                                 currentTimeInUsec, documentURI, thirdParty,
-                                 this);
 
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
   if (observerService) {
     observerService->NotifyObservers(ToSupports(this), "document-set-cookie",
-                                     nsString(aCookieString).get());
+                                     nsString(aCookie).get());
   }
 }
 

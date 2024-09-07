@@ -368,6 +368,8 @@ already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
     CookieParser& aCookieParser, Document* aDocument,
     const nsACString& aCookieString, int64_t currentTimeInUsec,
     nsIEffectiveTLDService* aTLDService, mozIThirdPartyUtil* aThirdPartyUtil,
+    std::function<bool(const nsACString&, const OriginAttributes&)>&&
+        aHasExistingCookiesLambda,
     nsACString& aBaseDomain, OriginAttributes& aAttrs) {
   if (!CookieCommons::IsSchemeSupported(aCookieParser.HostURI())) {
     return nullptr;
@@ -445,17 +447,11 @@ already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
                       : aDocument->EffectiveCookiePrincipal();
   MOZ_ASSERT(cookiePrincipal);
 
-  nsCOMPtr<nsICookieService> service =
-      do_GetService(NS_COOKIESERVICE_CONTRACTID);
-  if (!service) {
-    return nullptr;
-  }
-
   
   uint32_t dummyRejectedReason = 0;
   if (aDocument->CookieJarSettings()->GetLimitForeignContexts() &&
-      !service->HasExistingCookies(baseDomain,
-                                   cookiePrincipal->OriginAttributesRef()) &&
+      !aHasExistingCookiesLambda(baseDomain,
+                                 cookiePrincipal->OriginAttributesRef()) &&
       !ShouldAllowAccessFor(innerWindow, aCookieParser.HostURI(),
                             &dummyRejectedReason)) {
     return nullptr;
@@ -820,28 +816,6 @@ bool CookieCommons::ChipsLimitEnabledAndChipsCookie(
   return StaticPrefs::network_cookie_CHIPS_enabled() &&
          StaticPrefs::network_cookie_chips_partitionLimitEnabled() &&
          cookie.IsPartitioned() && cookie.RawIsPartitioned() && tcpEnabled;
-}
-
-void CookieCommons::ComposeCookieString(nsTArray<RefPtr<Cookie>>& aCookieList,
-                                        nsACString& aCookieString) {
-  for (Cookie* cookie : aCookieList) {
-    
-    if (!cookie->Name().IsEmpty() || !cookie->Value().IsEmpty()) {
-      
-      
-      if (!aCookieString.IsEmpty()) {
-        aCookieString.AppendLiteral("; ");
-      }
-
-      if (!cookie->Name().IsEmpty()) {
-        
-        aCookieString += cookie->Name() + "="_ns + cookie->Value();
-      } else {
-        
-        aCookieString += cookie->Value();
-      }
-    }
-  }
 }
 
 }  
