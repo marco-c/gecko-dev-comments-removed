@@ -16,6 +16,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.Collection;
+import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.util.GeckoBundle;
 
 @AnyThread
@@ -376,7 +377,9 @@ public final class GeckoSessionSettings implements Parcelable {
     mBundle.putBoolean(ALLOW_JAVASCRIPT.name, true);
     mBundle.putBoolean(FULL_ACCESSIBILITY_TREE.name, false);
     mBundle.putBoolean(IS_EXTENSION_POPUP.name, false);
-    mBundle.putInt(USER_AGENT_MODE.name, USER_AGENT_MODE_MOBILE);
+    mBundle.putInt(
+        USER_AGENT_MODE.name,
+        GeckoAppShell.isTablet() ? USER_AGENT_MODE_DESKTOP : USER_AGENT_MODE_MOBILE);
     mBundle.putString(USER_AGENT_OVERRIDE.name, null);
     mBundle.putInt(VIEWPORT_MODE.name, VIEWPORT_MODE_MOBILE);
     mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
