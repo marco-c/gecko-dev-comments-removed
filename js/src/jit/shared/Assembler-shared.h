@@ -541,7 +541,7 @@ using SymbolicAccessVector = Vector<SymbolicAccess, 0, SystemAllocPolicy>;
 
 class MemoryAccessDesc {
   uint32_t memoryIndex_;
-  uint64_t offset64_;
+  uint64_t offset_;
   uint32_t align_;
   Scalar::Type type_;
   jit::Synchronization sync_;
@@ -557,7 +557,7 @@ class MemoryAccessDesc {
       BytecodeOffset trapOffset, mozilla::DebugOnly<bool> hugeMemory,
       jit::Synchronization sync = jit::Synchronization::None())
       : memoryIndex_(memoryIndex),
-        offset64_(offset),
+        offset_(offset),
         align_(align),
         type_(type),
         sync_(sync),
@@ -579,18 +579,18 @@ class MemoryAccessDesc {
   
   
   
-  uint32_t offset() const {
-    MOZ_ASSERT(offset64_ <= UINT32_MAX);
-    return uint32_t(offset64_);
+  uint32_t offset32() const {
+    MOZ_ASSERT(offset_ <= UINT32_MAX);
+    return uint32_t(offset_);
   }
-  uint64_t offset64() const { return offset64_; }
+  uint64_t offset64() const { return offset_; }
 
   
-  void clearOffset() { offset64_ = 0; }
+  void clearOffset() { offset_ = 0; }
 
   
   
-  void setOffset32(uint32_t offset) { offset64_ = offset; }
+  void setOffset32(uint32_t offset) { offset_ = offset; }
 
   uint32_t align() const { return align_; }
   Scalar::Type type() const { return type_; }
