@@ -220,7 +220,11 @@ class WasmArrayObject : public WasmGcObject,
     storageBytes += gc::CellAlignBytes - (storageBytes % gc::CellAlignBytes);
     return storageBytes;
   }
-  static uint32_t calcStorageBytes(uint32_t elemSize, uint32_t numElements) {
+  
+  
+  
+  static uint32_t calcStorageBytesUnchecked(uint32_t elemSize,
+                                            uint32_t numElements) {
     CheckedUint32 storageBytes = calcStorageBytesChecked(elemSize, numElements);
     MOZ_ASSERT(storageBytes.isValid());
     return storageBytes.value();

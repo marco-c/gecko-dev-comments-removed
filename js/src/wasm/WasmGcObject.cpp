@@ -397,7 +397,9 @@ void WasmArrayObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
     
     const TypeDef& typeDef = arrayObj.typeDef();
     MOZ_ASSERT(typeDef.isArrayType());
-    size_t trailerSize = calcStorageBytes(
+    
+    
+    size_t trailerSize = calcStorageBytesUnchecked(
         typeDef.arrayType().elementType_.size(), arrayObj.numElements_);
     
     MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
@@ -426,7 +428,9 @@ size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
     if (!arrayObj.isDataInline()) {
       const TypeDef& typeDef = arrayObj.typeDef();
       MOZ_ASSERT(typeDef.isArrayType());
-      size_t trailerSize = calcStorageBytes(
+      
+      
+      size_t trailerSize = calcStorageBytesUnchecked(
           typeDef.arrayType().elementType_.size(), arrayObj.numElements_);
       
       MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
