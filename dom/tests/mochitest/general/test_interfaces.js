@@ -1679,8 +1679,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onclose", insecureContext: true },
   
-  { name: "oncontentvisibilityautostatechange", insecureContext: true },
-  
   { name: "oncontextlost", insecureContext: true },
   
   { name: "oncontextmenu", insecureContext: true },
