@@ -44,7 +44,7 @@ static nsIFrame* DescendIntoBlockLevelFrame(nsIFrame* aFrame) {
 }
 
 bool nsBlockReflowContext::ComputeCollapsedBStartMargin(
-    const ReflowInput& aRI, nsCollapsingMargin* aMargin,
+    const ReflowInput& aRI, CollapsingMargin* aMargin,
     nsIFrame* aClearanceFrame, bool* aMayNeedRetry, bool* aBlockIsEmpty) {
   WritingMode wm = aRI.GetWritingMode();
   WritingMode parentWM = mMetrics.GetWritingMode();
@@ -211,7 +211,7 @@ done:
 
 void nsBlockReflowContext::ReflowBlock(const LogicalRect& aSpace,
                                        bool aApplyBStartMargin,
-                                       nsCollapsingMargin& aPrevMargin,
+                                       CollapsingMargin& aPrevMargin,
                                        nscoord aClearance, nsLineBox* aLine,
                                        ReflowInput& aFrameRI,
                                        nsReflowStatus& aFrameReflowStatus,
@@ -240,12 +240,12 @@ void nsBlockReflowContext::ReflowBlock(const LogicalRect& aSpace,
     if (mWritingMode.IsOrthogonalTo(mFrame->GetWritingMode())) {
       if (NS_UNCONSTRAINEDSIZE != aFrameRI.AvailableISize()) {
         aFrameRI.SetAvailableISize(std::max(
-            0, aFrameRI.AvailableISize() - mBStartMargin.get() - aClearance));
+            0, aFrameRI.AvailableISize() - mBStartMargin.Get() - aClearance));
       }
     } else {
       if (NS_UNCONSTRAINEDSIZE != aFrameRI.AvailableBSize()) {
         aFrameRI.SetAvailableBSize(std::max(
-            0, aFrameRI.AvailableBSize() - mBStartMargin.get() - aClearance));
+            0, aFrameRI.AvailableBSize() - mBStartMargin.Get() - aClearance));
       }
     }
   } else {
@@ -266,7 +266,7 @@ void nsBlockReflowContext::ReflowBlock(const LogicalRect& aSpace,
     
     LogicalMargin usedMargin = aFrameRI.ComputedLogicalMargin(mWritingMode);
     mICoord = mSpace.IStart(mWritingMode) + usedMargin.IStart(mWritingMode);
-    mBCoord = mSpace.BStart(mWritingMode) + mBStartMargin.get() + aClearance;
+    mBCoord = mSpace.BStart(mWritingMode) + mBStartMargin.Get() + aClearance;
 
     LogicalRect space(
         mWritingMode, mICoord, mBCoord,
@@ -344,7 +344,7 @@ void nsBlockReflowContext::ReflowBlock(const LogicalRect& aSpace,
 
 bool nsBlockReflowContext::PlaceBlock(const ReflowInput& aReflowInput,
                                       bool aForceFit, nsLineBox* aLine,
-                                      nsCollapsingMargin& aBEndMarginResult,
+                                      CollapsingMargin& aBEndMarginResult,
                                       OverflowAreas& aOverflowAreas,
                                       const nsReflowStatus& aReflowStatus) {
   
@@ -405,7 +405,7 @@ bool nsBlockReflowContext::PlaceBlock(const ReflowInput& aReflowInput,
     
     
     
-    backupContainingBlockAdvance = mBStartMargin.get();
+    backupContainingBlockAdvance = mBStartMargin.Get();
   }
 
   
