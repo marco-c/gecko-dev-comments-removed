@@ -100,8 +100,6 @@
 
 using namespace JS::loader;
 
-using mozilla::Telemetry::LABELS_DOM_SCRIPT_PRELOAD_RESULT;
-
 namespace mozilla::dom {
 
 LazyLogModule ScriptLoader::gCspPRLog("CSP");
@@ -264,10 +262,6 @@ ScriptLoader::~ScriptLoader() {
     mPendingChildLoaders[j]->RemoveParserBlockingScriptExecutionBlocker();
   }
 
-  for (size_t i = 0; i < mPreloads.Length(); i++) {
-    AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::NotUsed);
-  }
-
   if (mShutdownObserver) {
     mShutdownObserver->Unregister();
     mShutdownObserver = nullptr;
@@ -358,13 +352,6 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
   
   if (!CanRecordExtended()) {
     return;
-  }
-
-  
-  if (aRequest->IsModuleRequest()) {
-    AccumulateCategorical(LABELS_DOM_SCRIPT_KIND::ModuleScript);
-  } else {
-    AccumulateCategorical(LABELS_DOM_SCRIPT_KIND::ClassicScript);
   }
 
   
@@ -1172,7 +1159,6 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
       
       
       request->Cancel();
-      AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::RejectedByPolicy);
       return false;
     }
 
@@ -1199,8 +1185,6 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
       mOffThreadCompilingRequests.Remove(request);
       request->GetScriptLoadContext()->mInCompilingList = false;
     }
-
-    AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::Used);
   } else {
     
 
@@ -1565,7 +1549,6 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
        aElement->GetCORSMode() != request->CORSMode())) {
     
     request->Cancel();
-    AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::RequestMismatch);
     return nullptr;
   }
 
@@ -3714,7 +3697,6 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
       mPreloads.RemoveElement(aRequest, PreloadRequestComparator());
     }
     MOZ_ASSERT(!aRequest->isInList());
-    AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::LoadError);
   } else if (aRequest->IsModuleRequest()) {
     ModuleLoadRequest* modReq = aRequest->AsModuleRequest();
     if (modReq->IsDynamicImport()) {
