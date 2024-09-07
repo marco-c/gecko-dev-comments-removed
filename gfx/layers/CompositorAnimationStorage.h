@@ -32,11 +32,6 @@ struct AnimationTransform {
 
 
 
-  gfx::Matrix4x4 mTransformInDevSpace;
-  
-
-
-
   gfx::Matrix4x4 mFrameTransform;
   TransformData mData;
 
@@ -64,12 +59,10 @@ struct AnimatedValue final {
     return mValue.is<T>();
   }
 
-  AnimatedValue(const gfx::Matrix4x4& aTransformInDevSpace,
-                const gfx::Matrix4x4& aFrameTransform,
+  AnimatedValue(const gfx::Matrix4x4& aFrameTransform,
                 const TransformData& aData, SampledAnimationArray&& aValue)
-      : mValue(AsVariant(AnimationTransform{
-            aTransformInDevSpace, aFrameTransform, aData, std::move(aValue)})) {
-  }
+      : mValue(AsVariant(
+            AnimationTransform{aFrameTransform, aData, std::move(aValue)})) {}
 
   explicit AnimatedValue(const float& aValue) : mValue(AsVariant(aValue)) {}
 
