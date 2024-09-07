@@ -317,7 +317,7 @@ extern const char gToolkitBuildID[];
 
 static nsIProfileLock* gProfileLock;
 #if defined(MOZ_HAS_REMOTE)
-static nsRemoteService* gRemoteService;
+static RefPtr<nsRemoteService> gRemoteService;
 #endif
 
 int gRestartArgc;
@@ -2043,6 +2043,13 @@ nsresult ScopedXPCOMStartup::SetWindowCreator(nsINativeAppSupport* native) {
   return do_AddRef(ScopedXPCOMStartup::gNativeAppSupport);
 }
 
+#ifdef MOZ_HAS_REMOTE
+ already_AddRefed<nsIRemoteService> GetRemoteService() {
+  nsCOMPtr<nsIRemoteService> remoteService = gRemoteService.get();
+  return remoteService.forget();
+}
+#endif
+
 nsINativeAppSupport* ScopedXPCOMStartup::gNativeAppSupport;
 
 static void DumpArbitraryHelp() {
@@ -2772,7 +2779,6 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
 #if defined(MOZ_HAS_REMOTE)
         if (gRemoteService) {
           gRemoteService->UnlockStartup();
-          gRemoteService = nullptr;
         }
 #endif
         return LaunchChild(false, true);
@@ -2887,7 +2893,6 @@ static ReturnAbortOnError ShowProfileManager(
 #if defined(MOZ_HAS_REMOTE)
   if (gRemoteService) {
     gRemoteService->UnlockStartup();
-    gRemoteService = nullptr;
   }
 #endif
   return LaunchChild(false, true);
@@ -3678,9 +3683,6 @@ class XREMain {
   nsCOMPtr<nsIFile> mProfD;
   nsCOMPtr<nsIFile> mProfLD;
   nsCOMPtr<nsIProfileLock> mProfileLock;
-#if defined(MOZ_HAS_REMOTE)
-  RefPtr<nsRemoteService> mRemoteService;
-#endif
 
   UniquePtr<ScopedXPCOMStartup> mScopedXPCOM;
   UniquePtr<XREAppData> mAppData;
@@ -4837,10 +4839,9 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #endif
 #if defined(MOZ_HAS_REMOTE)
   
-  mRemoteService = new nsRemoteService(gAppData->remotingName);
-  if (mRemoteService) {
-    mRemoteService->LockStartup();
-    gRemoteService = mRemoteService;
+  gRemoteService = new nsRemoteService(gAppData->remotingName);
+  if (gRemoteService) {
+    gRemoteService->LockStartup();
   }
 #endif
 #if defined(MOZ_WIDGET_GTK)
@@ -4907,7 +4908,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   }
 
 #if defined(MOZ_HAS_REMOTE)
-  if (mRemoteService) {
+  if (gRemoteService) {
     
     nsCString profilePath;
 
@@ -4922,7 +4923,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #  endif
 
     if (NS_SUCCEEDED(rv)) {
-      mRemoteService->SetProfile(profilePath);
+      gRemoteService->SetProfile(profilePath);
 
       if (!mDisableRemoteClient) {
         
@@ -4935,31 +4936,31 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
           startupToken = SynthesizeStartupToken();
         }
 #    endif 
-        mRemoteService->SetStartupToken(startupToken);
+        gRemoteService->SetStartupToken(startupToken);
 #  endif
-        rv = mRemoteService->StartClient();
+        rv = gRemoteService->StartClient();
 
         if (rv == NS_ERROR_NOT_AVAILABLE && profile) {
           
           
           nsCString profileName;
           profile->GetName(profileName);
-          mRemoteService->SetProfile(profileName);
+          gRemoteService->SetProfile(profileName);
 
-          rv = mRemoteService->StartClient();
+          rv = gRemoteService->StartClient();
 
           
-          mRemoteService->SetProfile(profilePath);
+          gRemoteService->SetProfile(profilePath);
         }
 
         if (NS_SUCCEEDED(rv)) {
           *aExitFlag = true;
-          mRemoteService->UnlockStartup();
+          gRemoteService->UnlockStartup();
           return 0;
         }
 
         if (rv == NS_ERROR_INVALID_ARG) {
-          mRemoteService->UnlockStartup();
+          gRemoteService->UnlockStartup();
           return 1;
         }
       }
@@ -5716,10 +5717,9 @@ nsresult XREMain::XRE_mainRun() {
 #if defined(MOZ_HAS_REMOTE)
       
       
-      if (mRemoteService) {
-        mRemoteService->StartupServer();
-        mRemoteService->UnlockStartup();
-        gRemoteService = nullptr;
+      if (gRemoteService) {
+        gRemoteService->StartupServer();
+        gRemoteService->UnlockStartup();
       }
 #endif 
 
@@ -6060,8 +6060,9 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   
   
-  if (mRemoteService) {
-    mRemoteService->ShutdownServer();
+  if (gRemoteService) {
+    gRemoteService->ShutdownServer();
+    gRemoteService = nullptr;
   }
 #endif 
 
