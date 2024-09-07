@@ -308,11 +308,18 @@ void MediaControlService::GenerateTestMediaControlKey(MediaControlKey aKey) {
     return;
   }
   
-  if (aKey == MediaControlKey::Seekto) {
-    mMediaKeysHandler->OnActionPerformed(
-        MediaControlAction(aKey, SeekDetails()));
-  } else {
-    mMediaKeysHandler->OnActionPerformed(MediaControlAction(aKey));
+  switch (aKey) {
+    case MediaControlKey::Seekto:
+      mMediaKeysHandler->OnActionPerformed(
+          MediaControlAction(aKey, SeekDetails(0.0, false )));
+      break;
+    case MediaControlKey::Seekbackward:
+    case MediaControlKey::Seekforward:
+      mMediaKeysHandler->OnActionPerformed(
+          MediaControlAction(aKey, SeekDetails(0.0)));
+      break;
+    default:
+      mMediaKeysHandler->OnActionPerformed(MediaControlAction(aKey));
   }
 }
 
