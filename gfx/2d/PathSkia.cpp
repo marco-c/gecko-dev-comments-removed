@@ -265,9 +265,14 @@ void PathSkia::StreamToSink(PathSink* aSink) const {
 }
 
 Maybe<Rect> PathSkia::AsRect() const {
-  SkRect rect;
-  if (mPath.isRect(&rect)) {
-    return Some(SkRectToRect(rect));
+  SkRect skiaRect;
+  if (mPath.isRect(&skiaRect)) {
+    Rect rect = SkRectToRect(skiaRect);
+    
+    
+    if (RectToSkRect(rect) == skiaRect) {
+      return Some(rect);
+    }
   }
   return Nothing();
 }
