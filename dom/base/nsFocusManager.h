@@ -259,7 +259,8 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   MOZ_CAN_RUN_SCRIPT void WindowHidden(mozIDOMWindowProxy* aWindow,
-                                       uint64_t aActionId);
+                                       uint64_t aActionId,
+                                       bool aIsEnteringBFCache);
 
   
 
@@ -826,7 +827,8 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   void SetActiveBrowsingContextInContent(
-      mozilla::dom::BrowsingContext* aContext, uint64_t aActionId);
+      mozilla::dom::BrowsingContext* aContext, uint64_t aActionId,
+      bool aIsEnteringBFCache);
 
   
   

@@ -1353,7 +1353,7 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
   
   NS_ENSURE_STATE(mDocument);
   nsPIDOMWindowOuter* window = mDocument->GetWindow();
-  if (window) window->PageHidden();
+  if (window) window->PageHidden(!aIsUnload);
 
   if (aIsUnload) {
     

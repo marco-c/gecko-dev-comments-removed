@@ -569,7 +569,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-  virtual void PageHidden() = 0;
+  virtual void PageHidden(bool aIsEnteringBFCacheInParent) = 0;
 
   
 
@@ -1057,7 +1057,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual void PageHidden() = 0;
+  virtual void PageHidden(bool aIsEnteringBFCacheInParent) = 0;
 
   
 
