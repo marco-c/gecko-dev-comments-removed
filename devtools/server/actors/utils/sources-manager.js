@@ -480,7 +480,10 @@ class SourcesManager extends EventEmitter {
     
     
     const actors = [...this._sourceActors.values()].filter(
-      actor => actor.url == url
+      
+      
+      
+      actor => actor.url == url && actor.actualText() != "[no source]"
     );
     if (!actors.every(actor => actor.contentMatches(result))) {
       if (actors.length > 1) {
