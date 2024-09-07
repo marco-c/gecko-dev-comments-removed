@@ -80,6 +80,13 @@ class PointerEvent : public MouseEvent {
   Maybe<int32_t> mTiltY;
   Maybe<double> mAltitudeAngle;
   Maybe<double> mAzimuthAngle;
+
+  
+  
+  
+  
+  
+  bool mCoalescedOrPredictedEvent = false;
 };
 
 void ConvertPointerTypeToString(uint16_t aPointerTypeSrc,

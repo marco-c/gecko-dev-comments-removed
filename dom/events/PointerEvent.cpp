@@ -349,6 +349,7 @@ void PointerEvent::GetCoalescedEvents(
          widgetEvent->mCoalescedWidgetEvents->mEvents) {
       RefPtr<PointerEvent> domEvent =
           NS_NewDOMPointerEvent(owner, nullptr, &event);
+      domEvent->mCoalescedOrPredictedEvent = true;
 
       
       
@@ -387,7 +388,8 @@ void PointerEvent::EnsureFillingCoalescedEvents(
   if (!aWidgetEvent.IsTrusted() || aWidgetEvent.mMessage != ePointerMove ||
       !mCoalescedEvents.IsEmpty() ||
       (aWidgetEvent.mCoalescedWidgetEvents &&
-       !aWidgetEvent.mCoalescedWidgetEvents->mEvents.IsEmpty())) {
+       !aWidgetEvent.mCoalescedWidgetEvents->mEvents.IsEmpty()) ||
+      mCoalescedOrPredictedEvent) {
     return;
   }
   if (!aWidgetEvent.mCoalescedWidgetEvents) {
@@ -404,6 +406,7 @@ void PointerEvent::EnsureFillingCoalescedEvents(
 
 void PointerEvent::GetPredictedEvents(
     nsTArray<RefPtr<PointerEvent>>& aPointerEvents) {
+  
   
   if (mEvent->IsTrusted() && mEvent->mTarget) {
     for (RefPtr<PointerEvent>& pointerEvent : mPredictedEvents) {
