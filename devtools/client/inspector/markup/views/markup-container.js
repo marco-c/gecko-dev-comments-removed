@@ -559,7 +559,7 @@ MarkupContainer.prototype = {
     this.markup.navigate(this);
     
     this.canFocus = true;
-    this.focus();
+    this.focus({ fromMouseEvent: true });
     event.stopPropagation();
 
     
@@ -822,11 +822,21 @@ MarkupContainer.prototype = {
   
 
 
-  focus() {
+
+
+
+
+  focus({ fromMouseEvent = false } = {}) {
     
     const focusable = this.editor.elt.querySelector("[tabindex='0']");
     if (focusable) {
-      focusable.focus();
+      if (fromMouseEvent) {
+        
+        
+        Services.focus.setFocus(focusable, Services.focus.FLAG_NOSHOWRING);
+      } else {
+        focusable.focus();
+      }
     }
   },
 
