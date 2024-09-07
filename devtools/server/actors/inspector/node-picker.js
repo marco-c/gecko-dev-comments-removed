@@ -280,7 +280,7 @@ class NodePicker {
      * SHIFT: Trigger onHover, handling `pointer-events: none` nodes
      */
     switch (event.keyCode) {
-      
+      // Wider.
       case event.DOM_VK_LEFT:
         if (!currentNode.parentElement) {
           return;
@@ -288,16 +288,16 @@ class NodePicker {
         currentNode = currentNode.parentElement;
         break;
 
-      
+      // Narrower.
       case event.DOM_VK_RIGHT:
         if (!currentNode.children.length) {
           return;
         }
 
-        
+        // Set firstElementChild by default
         let child = currentNode.firstElementChild;
-        
-        
+        // If currentNode is parent of hoveredNode, then
+        // previously selected childNode is set
         const hoveredNode = this._hoveredNode.rawNode;
         for (const sibling of currentNode.children) {
           if (sibling.contains(hoveredNode) || sibling === hoveredNode) {
@@ -308,12 +308,12 @@ class NodePicker {
         currentNode = child;
         break;
 
-      
+      // Select the element.
       case event.DOM_VK_RETURN:
         this._onPick(event);
         return;
 
-      
+      // Cancel pick mode.
       case event.DOM_VK_ESCAPE:
         this.cancelPick();
         this._walker.emit("picker-node-canceled");
@@ -336,7 +336,7 @@ class NodePicker {
         return;
     }
 
-    
+    // Store currently attached element
     this._currentNode = this._walker.attachElement(currentNode);
     this._walker.emit("picker-node-hovered", this._currentNode);
   }
@@ -352,17 +352,17 @@ class NodePicker {
     if (event.type == "mousemove") {
       this._onHovered(event);
     } else if (event.type == "mouseup") {
-      
-      
+      // Suppressed mousedown/mouseup events will be sent to us before they have
+      // been converted into click events. Just treat any mouseup as a click.
       this._onPick(event);
     }
   }
 
-  
-  
-  
-  
-  
+  // In most cases, we need to prevent content events from reaching the content. This is
+  // needed to avoid triggering actions such as submitting forms or following links.
+  // In the case where the event happens on a remote frame however, we do want to let it
+  // through. That is because otherwise the pickers started in nested remote frames will
+  // never have a chance of picking their own elements.
   _preventContentEvent(event) {
     if (isRemoteBrowserElement(event.target)) {
       return;
@@ -371,41 +371,88 @@ class NodePicker {
     event.preventDefault();
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * When the debugger pauses execution in a page, events will not be delivered
+   * to any handlers added to elements on that page. This method uses the
+   * document's setSuppressedEventListener interface to bypass this restriction:
+   * events will be delivered to the callback at times when they would
+   * otherwise be suppressed. The set of events delivered this way is currently
+   * limited to mouse events.
+   *
+   * @param callback The function to call with suppressed events, or null.
+   */
   _setSuppressedEventListener(callback) {
     if (!this._targetActor?.window?.document) {
       return;
     }
 
-    
+    // Pass the callback to setSuppressedEventListener as an EventListener.
     this._targetActor.window.document.setSuppressedEventListener(
       callback ? { handleEvent: callback } : null
     );
   }
 
   _startPickerListeners() {
+    const eventsToSuppress = [
+      { type: "click", handler: this._onPick },
+      { type: "dblclick", handler: this._preventContentEvent },
+      { type: "keydown", handler: this._onKeyDown },
+      { type: "keyup", handler: this._onKeyUp },
+      { type: "mousedown", handler: this._preventContentEvent },
+      { type: "mousemove", handler: this._onHovered },
+      { type: "mouseup", handler: this._preventContentEvent },
+    ];
+
     const target = this._targetActor.chromeEventHandler;
     this.#eventListenersAbortController = new AbortController();
-    const config = {
-      capture: true,
-      signal: this.#eventListenersAbortController.signal,
-    };
-    target.addEventListener("mousemove", this._onHovered, config);
-    target.addEventListener("click", this._onPick, config);
-    target.addEventListener("mousedown", this._preventContentEvent, config);
-    target.addEventListener("mouseup", this._preventContentEvent, config);
-    target.addEventListener("dblclick", this._preventContentEvent, config);
-    target.addEventListener("keydown", this._onKeyDown, config);
-    target.addEventListener("keyup", this._onKeyUp, config);
+
+    for (const event of eventsToSuppress) {
+      const { type, handler } = event;
+
+      // When the node picker is enabled, DOM events should not be propagated or
+      // trigger regular listeners.
+      //
+      // Event listeners can be added in two groups:
+      // - the default group, used by all webcontent event listeners
+      // - the mozSystemGroup group, which can be used by privileged JS
+      //
+      // For instance, the <video> widget controls rely on mozSystemGroup events
+      // to handle clicks on their UI elements.
+      //
+      // In general we need to prevent events from both groups, as well as
+      // handle a few events such as `click` to actually pick nodes.
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      target.addEventListener(type, this._preventContentEvent, {
+        capture: true,
+        signal: this.#eventListenersAbortController.signal,
+      });
+
+      
+      target.addEventListener(type, handler, {
+        capture: true,
+        mozSystemGroup: true,
+        signal: this.#eventListenersAbortController.signal,
+      });
+    }
 
     this._setSuppressedEventListener(this._onSuppressedEvent);
   }
