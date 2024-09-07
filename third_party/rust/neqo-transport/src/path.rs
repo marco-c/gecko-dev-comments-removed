@@ -50,7 +50,6 @@ pub type PathRef = Rc<RefCell<Path>>;
 #[derive(Debug, Default)]
 pub struct Paths {
     
-    #[allow(unknown_lints)] 
     #[allow(clippy::struct_field_names)]
     paths: Vec<PathRef>,
     
@@ -1003,6 +1002,7 @@ impl Path {
         now: Instant,
     ) {
         debug_assert!(self.is_primary());
+        self.ecn_info.on_packets_lost(lost_packets);
         let cwnd_reduced = self.sender.on_packets_lost(
             self.rtt.first_sample_time(),
             prev_largest_acked_sent,
@@ -1014,6 +1014,14 @@ impl Path {
         if cwnd_reduced {
             self.rtt.update_ack_delay(self.sender.cwnd(), self.plpmtu());
         }
+    }
+
+    
+    
+    
+    pub fn pto_possible(&self) -> bool {
+        
+        self.amplification_limit() >= self.plpmtu()
     }
 
     

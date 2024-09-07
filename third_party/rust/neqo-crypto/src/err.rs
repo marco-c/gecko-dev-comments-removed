@@ -5,7 +5,6 @@
 
 
 #![allow(dead_code)]
-#![allow(clippy::upper_case_acronyms)]
 
 use std::{os::raw::c_char, str::Utf8Error};
 

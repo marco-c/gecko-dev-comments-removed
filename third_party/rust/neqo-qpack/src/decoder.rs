@@ -396,7 +396,7 @@ mod tests {
 
     
     #[test]
-    fn test_recv_insert_with_name_ref_1() {
+    fn recv_insert_with_name_ref_1() {
         test_instruction(
             0,
             &[0xc4, 0x04, 0x31, 0x32, 0x33, 0x34],
@@ -408,7 +408,7 @@ mod tests {
 
     
     #[test]
-    fn test_recv_insert_with_name_ref_2() {
+    fn recv_insert_with_name_ref_2() {
         test_instruction(
             100,
             &[0xc4, 0x04, 0x31, 0x32, 0x33, 0x34],
@@ -420,7 +420,7 @@ mod tests {
 
     
     #[test]
-    fn test_recv_insert_with_name_litarel_2() {
+    fn recv_insert_with_name_litarel_2() {
         test_instruction(
             200,
             &[
@@ -434,12 +434,12 @@ mod tests {
     }
 
     #[test]
-    fn test_recv_change_capacity() {
+    fn recv_change_capacity() {
         test_instruction(0, &[0x3f, 0xa9, 0x01], &Ok(()), &[0x03], 200);
     }
 
     #[test]
-    fn test_recv_change_capacity_too_big() {
+    fn recv_change_capacity_too_big() {
         test_instruction(
             0,
             &[0x3f, 0xf1, 0x02],
@@ -452,7 +452,7 @@ mod tests {
     
     
     #[test]
-    fn test_duplicate() {
+    fn duplicate() {
         let mut decoder = connect();
 
         assert!(decoder.decoder.set_capacity(100).is_ok());
@@ -480,7 +480,7 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_incr_encode_header_ack_some() {
+    fn encode_incr_encode_header_ack_some() {
         
         
         
@@ -517,7 +517,7 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_incr_encode_header_ack_all() {
+    fn encode_incr_encode_header_ack_all() {
         
         
         
@@ -553,7 +553,7 @@ mod tests {
     }
 
     #[test]
-    fn test_header_ack_all() {
+    fn header_ack_all() {
         
         
         let headers = vec![
@@ -579,7 +579,7 @@ mod tests {
     }
 
     #[test]
-    fn test_header_ack_and_incr_instruction() {
+    fn header_ack_and_incr_instruction() {
         
         
         
@@ -603,7 +603,7 @@ mod tests {
     }
 
     #[test]
-    fn test_header_block_decoder() {
+    fn header_block_decoder() {
         let test_cases: [TestElement; 6] = [
             
             TestElement {
@@ -684,7 +684,7 @@ mod tests {
     }
 
     #[test]
-    fn test_header_block_decoder_huffman() {
+    fn header_block_decoder_huffman() {
         let test_cases: [TestElement; 6] = [
             
             TestElement {
@@ -763,7 +763,7 @@ mod tests {
     }
 
     #[test]
-    fn test_subtract_overflow_in_header_ack() {
+    fn subtract_overflow_in_header_ack() {
         const HEADER_BLOCK_1: &[u8] = &[0x03, 0x81, 0x10, 0x11];
         const ENCODER_INST: &[u8] = &[
             0x4a, 0x6d, 0x79, 0x2d, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x61, 0x09, 0x6d, 0x79,
@@ -795,7 +795,7 @@ mod tests {
     }
 
     #[test]
-    fn test_base_larger_than_entry_count() {
+    fn base_larger_than_entry_count() {
         
         
         

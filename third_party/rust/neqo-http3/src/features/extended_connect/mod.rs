@@ -4,8 +4,6 @@
 
 
 
-#![allow(clippy::module_name_repetitions)]
-
 pub(crate) mod webtransport_session;
 pub(crate) mod webtransport_streams;
 

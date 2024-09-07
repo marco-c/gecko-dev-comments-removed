@@ -500,7 +500,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_connect() {
+    fn server_connect() {
         mem::drop(connect_and_receive_settings());
     }
 
@@ -573,14 +573,14 @@ mod tests {
 
     
     #[test]
-    fn test_server_receive_control_frame() {
+    fn server_receive_control_frame() {
         mem::drop(connect());
     }
 
     
     
     #[test]
-    fn test_server_close_control_stream() {
+    fn server_close_control_stream() {
         let (mut hconn, mut peer_conn) = connect();
         let control = peer_conn.control_stream_id;
         peer_conn.stream_close_send(control).unwrap();
@@ -592,7 +592,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_missing_settings() {
+    fn server_missing_settings() {
         let (mut hconn, mut neqo_trans_conn) = connect_and_receive_settings();
         
         let control_stream = neqo_trans_conn.stream_create(StreamType::UniDi).unwrap();
@@ -607,7 +607,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_receive_settings_twice() {
+    fn server_receive_settings_twice() {
         let (mut hconn, mut peer_conn) = connect();
         
         peer_conn.control_send(&[0x4, 0x6, 0x1, 0x40, 0x64, 0x7, 0x40, 0x64]);
@@ -637,28 +637,28 @@ mod tests {
     }
 
     #[test]
-    fn test_priority_update_valid_id_0() {
+    fn priority_update_valid_id_0() {
         
         priority_update_check_id(StreamId::new(0), true);
     }
     #[test]
-    fn test_priority_update_invalid_id_1() {
+    fn priority_update_invalid_id_1() {
         
         priority_update_check_id(StreamId::new(1), false);
     }
     #[test]
-    fn test_priority_update_invalid_id_2() {
+    fn priority_update_invalid_id_2() {
         
         priority_update_check_id(StreamId::new(2), false);
     }
     #[test]
-    fn test_priority_update_invalid_id_3() {
+    fn priority_update_invalid_id_3() {
         
         priority_update_check_id(StreamId::new(3), false);
     }
 
     #[test]
-    fn test_priority_update_invalid_large_id() {
+    fn priority_update_invalid_large_id() {
         
         priority_update_check_id(StreamId::new(1_000_000_000), false);
     }
@@ -676,26 +676,26 @@ mod tests {
 
     
     #[test]
-    fn test_server_data_frame_on_control_stream() {
+    fn server_data_frame_on_control_stream() {
         test_wrong_frame_on_control_stream(&[0x0, 0x2, 0x1, 0x2]);
     }
 
     
     #[test]
-    fn test_server_headers_frame_on_control_stream() {
+    fn server_headers_frame_on_control_stream() {
         test_wrong_frame_on_control_stream(&[0x1, 0x2, 0x1, 0x2]);
     }
 
     
     #[test]
-    fn test_server_push_promise_frame_on_control_stream() {
+    fn server_push_promise_frame_on_control_stream() {
         test_wrong_frame_on_control_stream(&[0x5, 0x2, 0x1, 0x2]);
     }
 
     
     
     #[test]
-    fn test_server_received_unknown_stream() {
+    fn server_received_unknown_stream() {
         let (mut hconn, mut peer_conn) = connect();
 
         
@@ -728,7 +728,7 @@ mod tests {
 
     
     #[test]
-    fn test_server_received_push_stream() {
+    fn server_received_push_stream() {
         let (mut hconn, mut peer_conn) = connect();
 
         
@@ -742,7 +742,7 @@ mod tests {
 
     
     #[test]
-    fn test_server_frame_reading() {
+    fn server_frame_reading() {
         let (mut hconn, mut peer_conn) = connect_and_receive_settings();
 
         
@@ -865,23 +865,23 @@ mod tests {
 
     
     #[test]
-    fn test_server_incomplete_data_frame() {
+    fn server_incomplete_data_frame() {
         test_incomplete_frame(&REQUEST_WITH_BODY[..22]);
     }
 
     
     #[test]
-    fn test_server_incomplete_headers_frame() {
+    fn server_incomplete_headers_frame() {
         test_incomplete_frame(&REQUEST_WITH_BODY[..10]);
     }
 
     #[test]
-    fn test_server_incomplete_unknown_frame() {
+    fn server_incomplete_unknown_frame() {
         test_incomplete_frame(&[0x21]);
     }
 
     #[test]
-    fn test_server_request_with_body() {
+    fn server_request_with_body() {
         let (mut hconn, mut peer_conn) = connect();
 
         let stream_id = peer_conn.stream_create(StreamType::BiDi).unwrap();
@@ -926,7 +926,7 @@ mod tests {
     }
 
     #[test]
-    fn test_server_request_with_body_send_stop_sending() {
+    fn server_request_with_body_send_stop_sending() {
         let (mut hconn, mut peer_conn) = connect();
 
         let stream_id = peer_conn.stream_create(StreamType::BiDi).unwrap();
@@ -1003,7 +1003,7 @@ mod tests {
     }
 
     #[test]
-    fn test_server_request_with_body_server_reset() {
+    fn server_request_with_body_server_reset() {
         let (mut hconn, mut peer_conn) = connect();
 
         let request_stream_id = peer_conn.stream_create(StreamType::BiDi).unwrap();
@@ -1072,7 +1072,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_reset_control_stream() {
+    fn server_reset_control_stream() {
         let (mut hconn, mut peer_conn) = connect();
         peer_conn
             .stream_reset_send(CLIENT_SIDE_CONTROL_STREAM_ID, Error::HttpNoError.code())
@@ -1085,7 +1085,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_reset_client_side_encoder_stream() {
+    fn server_reset_client_side_encoder_stream() {
         let (mut hconn, mut peer_conn) = connect();
         peer_conn
             .stream_reset_send(CLIENT_SIDE_ENCODER_STREAM_ID, Error::HttpNoError.code())
@@ -1098,7 +1098,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_reset_client_side_decoder_stream() {
+    fn server_reset_client_side_decoder_stream() {
         let (mut hconn, mut peer_conn) = connect();
         peer_conn
             .stream_reset_send(CLIENT_SIDE_DECODER_STREAM_ID, Error::HttpNoError.code())
@@ -1111,7 +1111,7 @@ mod tests {
     
     
     #[test]
-    fn test_client_stop_sending_control_stream() {
+    fn client_stop_sending_control_stream() {
         let (mut hconn, mut peer_conn) = connect();
 
         peer_conn
@@ -1125,7 +1125,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_stop_sending_encoder_stream() {
+    fn server_stop_sending_encoder_stream() {
         let (mut hconn, mut peer_conn) = connect();
         peer_conn
             .stream_stop_sending(SERVER_SIDE_ENCODER_STREAM_ID, Error::HttpNoError.code())
@@ -1138,7 +1138,7 @@ mod tests {
     
     
     #[test]
-    fn test_server_stop_sending_decoder_stream() {
+    fn server_stop_sending_decoder_stream() {
         let (mut hconn, mut peer_conn) = connect();
         peer_conn
             .stream_stop_sending(SERVER_SIDE_DECODER_STREAM_ID, Error::HttpNoError.code())

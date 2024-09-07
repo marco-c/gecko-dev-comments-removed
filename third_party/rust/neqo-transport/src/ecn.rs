@@ -9,10 +9,19 @@ use std::ops::{AddAssign, Deref, DerefMut, Sub};
 use enum_map::EnumMap;
 use neqo_common::{qdebug, qinfo, qwarn, IpTosEcn};
 
-use crate::{packet::PacketNumber, recovery::SentPacket};
+use crate::{
+    packet::{PacketNumber, PacketType},
+    recovery::SentPacket,
+};
 
 
 pub const ECN_TEST_COUNT: usize = 10;
+
+
+
+
+
+const ECN_TEST_COUNT_INITIAL_PHASE: usize = 3;
 
 
 
@@ -20,7 +29,10 @@ pub const ECN_TEST_COUNT: usize = 10;
 enum EcnValidationState {
     
     
-    Testing(usize),
+    Testing {
+        probes_sent: usize,
+        initial_probes_lost: usize,
+    },
     
     Unknown,
     
@@ -31,7 +43,10 @@ enum EcnValidationState {
 
 impl Default for EcnValidationState {
     fn default() -> Self {
-        Self::Testing(0)
+        Self::Testing {
+            probes_sent: 0,
+            initial_probes_lost: 0,
+        }
     }
 }
 
@@ -112,7 +127,7 @@ impl EcnInfo {
     
     
     pub fn on_packet_sent(&mut self) {
-        if let EcnValidationState::Testing(ref mut probes_sent) = &mut self.state {
+        if let EcnValidationState::Testing { probes_sent, .. } = &mut self.state {
             *probes_sent += 1;
             qdebug!("ECN probing: sent {} probes", probes_sent);
             if *probes_sent == ECN_TEST_COUNT {
@@ -136,6 +151,28 @@ impl EcnInfo {
 
         matches!(self.state, EcnValidationState::Capable)
             && (self.baseline - prev_baseline)[IpTosEcn::Ce] > 0
+    }
+
+    pub fn on_packets_lost(&mut self, lost_packets: &[SentPacket]) {
+        if let EcnValidationState::Testing {
+            probes_sent,
+            initial_probes_lost: probes_lost,
+        } = &mut self.state
+        {
+            *probes_lost += lost_packets
+                .iter()
+                .filter(|p| p.packet_type() == PacketType::Initial && p.ecn_mark().is_ecn_marked())
+                .count();
+            
+            
+            if probes_sent == probes_lost && *probes_lost == ECN_TEST_COUNT_INITIAL_PHASE {
+                qdebug!(
+                    "ECN validation failed, all {} initial marked packets were lost",
+                    probes_lost
+                );
+                self.state = EcnValidationState::Failed;
+            }
+        }
     }
 
     

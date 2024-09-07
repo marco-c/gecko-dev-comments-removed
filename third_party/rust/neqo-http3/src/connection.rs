@@ -467,7 +467,6 @@ impl Http3Connection {
 
     
     
-    #[allow(clippy::option_if_let_else)] 
     fn stream_receive(&mut self, conn: &mut Connection, stream_id: StreamId) -> Res<ReceiveOutput> {
         qtrace!([self], "Readable stream {}.", stream_id);
 

@@ -149,7 +149,6 @@ impl PacketBuilder {
     
     
     
-    #[allow(clippy::reversed_empty_ranges)]
     pub fn short(mut encoder: Encoder, key_phase: bool, dcid: impl AsRef<[u8]>) -> Self {
         let mut limit = Self::infer_limit(&encoder);
         let header_start = encoder.len();
@@ -181,8 +180,7 @@ impl PacketBuilder {
     
     
     
-    #[allow(clippy::reversed_empty_ranges)] 
-    #[allow(clippy::similar_names)] 
+    #[allow(clippy::similar_names)]
     pub fn long(
         mut encoder: Encoder,
         pt: PacketType,
@@ -454,7 +452,7 @@ impl PacketBuilder {
     
     
     
-    #[allow(clippy::similar_names)] 
+    #[allow(clippy::similar_names)]
     pub fn retry(
         version: Version,
         dcid: &[u8],
@@ -486,8 +484,8 @@ impl PacketBuilder {
     }
 
     
-    #[allow(clippy::similar_names)] 
     #[must_use]
+    #[allow(clippy::similar_names)]
     pub fn version_negotiation(
         dcid: &[u8],
         scid: &[u8],
@@ -602,7 +600,7 @@ impl<'a> PublicPacket<'a> {
     
     
     
-    #[allow(clippy::similar_names)] 
+    #[allow(clippy::similar_names)]
     pub fn decode(data: &'a [u8], dcid_decoder: &dyn ConnectionIdDecoder) -> Res<(Self, &'a [u8])> {
         let mut decoder = Decoder::new(data);
         let first = Self::opt(decoder.decode_byte())?;
@@ -760,7 +758,6 @@ impl<'a> PublicPacket<'a> {
     }
 
     #[must_use]
-    #[allow(clippy::len_without_is_empty)] 
     pub const fn len(&self) -> usize {
         self.data.len()
     }

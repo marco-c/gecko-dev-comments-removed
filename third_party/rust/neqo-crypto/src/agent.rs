@@ -748,7 +748,7 @@ impl SecretAgent {
     
     
     
-    #[allow(unknown_lints, clippy::branches_sharing_code)]
+    #[allow(clippy::branches_sharing_code)]
     pub fn close(&mut self) {
         
         if self.fd.is_null() {
@@ -833,12 +833,7 @@ impl ResumptionToken {
 
 
 #[derive(Debug)]
-#[allow(
-    renamed_and_removed_lints,
-    clippy::box_vec,
-    unknown_lints,
-    clippy::box_collection
-)] 
+#[allow(clippy::box_collection)] 
 pub struct Client {
     agent: SecretAgent,
 

@@ -585,6 +585,10 @@ fn loss_time_past_largest_acked() {
     assert!(s_hs3.is_some());
 
     
+    let cb = server.process_output(now).callback();
+    assert_eq!(cb, server.conn_params.get_idle_timeout());
+
+    
     
     
     

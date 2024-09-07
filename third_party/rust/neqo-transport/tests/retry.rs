@@ -361,7 +361,6 @@ fn vn_after_retry() {
 
 
 #[test]
-#[allow(clippy::shadow_unrelated)]
 fn mitm_retry() {
     let mut client = default_client();
     let mut retry_server = default_server();

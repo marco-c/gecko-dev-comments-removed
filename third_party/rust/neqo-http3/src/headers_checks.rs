@@ -4,8 +4,6 @@
 
 
 
-#![allow(clippy::unused_unit)] 
-
 use enumset::{enum_set, EnumSet, EnumSetType};
 use neqo_common::Header;
 

@@ -129,8 +129,8 @@ fn raw() {
     assert!(server.state().is_connected());
 
     
-    let mut certs = client.peer_certificate().unwrap();
-    assert_eq!(1, certs.count());
+    let certs = client.peer_certificate().unwrap();
+    assert_eq!(1, certs.into_iter().count());
 
     
     assert!(server.peer_certificate().is_none());

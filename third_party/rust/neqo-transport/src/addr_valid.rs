@@ -267,7 +267,7 @@ impl AddressValidation {
 
 
 
-#[allow(dead_code, clippy::large_enum_variant)]
+#[allow(clippy::large_enum_variant)]
 pub enum NewTokenState {
     Client {
         

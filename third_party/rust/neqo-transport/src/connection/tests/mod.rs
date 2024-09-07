@@ -194,7 +194,6 @@ fn handshake_with_modifier(
     let mut did_ping = enum_map! {_ => false};
     while !is_done(a) {
         _ = maybe_authenticate(a);
-        let had_input = input.is_some();
         
         
         
@@ -213,12 +212,7 @@ fn handshake_with_modifier(
             a.test_frame_writer = None;
             did_ping[a.role()] = true;
         }
-        assert!(had_input || output.is_some());
-        if let Some(d) = output {
-            input = modifier(d);
-        } else {
-            input = output;
-        }
+        input = output.and_then(modifier);
         qtrace!("handshake: t += {:?}", rtt / 2);
         now += rtt / 2;
         mem::swap(&mut a, &mut b);

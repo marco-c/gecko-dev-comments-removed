@@ -65,6 +65,7 @@ impl RecvStreams {
     pub fn get_mut(&mut self, id: StreamId) -> Res<&mut RecvStream> {
         self.streams.get_mut(&id).ok_or(Error::InvalidStreamId)
     }
+
     #[allow(clippy::missing_errors_doc)]
     pub fn keep_alive(&mut self, id: StreamId, k: bool) -> Res<()> {
         let self_ka = &mut self.keep_alive;
@@ -386,7 +387,6 @@ impl RxStreamOrderer {
 
 
 #[derive(Debug)]
-#[allow(dead_code)]
 
 enum RecvStreamState {
     Recv {
@@ -643,7 +643,7 @@ impl RecvStream {
         
         
         let already_data_ready = self.data_ready();
-        let new_end = offset + u64::try_from(data.len()).unwrap();
+        let new_end = offset + u64::try_from(data.len())?;
 
         self.state.flow_control_consume_data(new_end, fin)?;
 
@@ -1051,7 +1051,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(unknown_lints, clippy::single_range_in_vec_init)] 
+    #[allow(clippy::single_range_in_vec_init)] 
     fn recv_noncontiguous() {
         
         recv_ranges(&[10..20], 0);

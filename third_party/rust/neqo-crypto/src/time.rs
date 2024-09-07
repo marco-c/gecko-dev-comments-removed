@@ -4,8 +4,6 @@
 
 
 
-#![allow(clippy::upper_case_acronyms)]
-
 use std::{
     ops::Deref,
     os::raw::c_void,

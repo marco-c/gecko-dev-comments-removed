@@ -55,7 +55,7 @@ impl FrameReaderTest {
 
 
 #[test]
-fn test_frame_reading_with_stream_settings1() {
+fn frame_reading_with_stream_settings1() {
     let mut fr = FrameReaderTest::new();
 
     
@@ -77,7 +77,7 @@ fn test_frame_reading_with_stream_settings1() {
 
 
 #[test]
-fn test_frame_reading_with_stream_settings2() {
+fn frame_reading_with_stream_settings2() {
     let mut fr = FrameReaderTest::new();
 
     
@@ -97,7 +97,7 @@ fn test_frame_reading_with_stream_settings2() {
 
 
 #[test]
-fn test_frame_reading_with_stream_push_promise() {
+fn frame_reading_with_stream_push_promise() {
     let mut fr = FrameReaderTest::new();
 
     
@@ -121,7 +121,7 @@ fn test_frame_reading_with_stream_push_promise() {
 
 
 #[test]
-fn test_frame_reading_with_stream_data() {
+fn frame_reading_with_stream_data() {
     let mut fr = FrameReaderTest::new();
 
     
@@ -137,7 +137,7 @@ fn test_frame_reading_with_stream_data() {
 
 
 #[test]
-fn test_unknown_frame() {
+fn unknown_frame() {
     
     const UNKNOWN_FRAME_LEN: usize = 832;
 
@@ -162,7 +162,7 @@ fn test_unknown_frame() {
 
 
 #[test]
-fn test_frame_reading_with_stream_wt_close_session() {
+fn frame_reading_with_stream_wt_close_session() {
     let mut fr = FrameReaderTest::new();
 
     
@@ -181,7 +181,7 @@ fn test_frame_reading_with_stream_wt_close_session() {
 
 
 #[test]
-fn test_unknown_wt_frame() {
+fn unknown_wt_frame() {
     
     const UNKNOWN_FRAME_LEN: usize = 832;
 
@@ -268,7 +268,7 @@ fn test_reading_frame<T: FrameDecoder<T> + PartialEq + Debug>(
 }
 
 #[test]
-fn test_complete_and_incomplete_unknown_frame() {
+fn complete_and_incomplete_unknown_frame() {
     
     const UNKNOWN_FRAME_LEN: usize = 832;
     let mut enc = Encoder::with_capacity(UNKNOWN_FRAME_LEN + 4);
@@ -377,7 +377,7 @@ fn test_complete_and_incomplete_frame<T: FrameDecoder<T> + PartialEq + Debug>(
 }
 
 #[test]
-fn test_complete_and_incomplete_frames() {
+fn complete_and_incomplete_frames() {
     const FRAME_LEN: usize = 10;
     const HEADER_BLOCK: &[u8] = &[0x01, 0x02, 0x03, 0x04];
 
@@ -460,7 +460,7 @@ fn test_complete_and_incomplete_frames() {
 }
 
 #[test]
-fn test_complete_and_incomplete_wt_frames() {
+fn complete_and_incomplete_wt_frames() {
     
     let f = WebTransportFrame::CloseSession {
         error: 5,
@@ -474,7 +474,7 @@ fn test_complete_and_incomplete_wt_frames() {
 
 
 #[test]
-fn test_frame_reading_when_stream_is_closed_before_sending_data() {
+fn frame_reading_when_stream_is_closed_before_sending_data() {
     let mut fr = FrameReaderTest::new();
 
     fr.conn_s.stream_send(fr.stream_id, &[0x00]).unwrap();
@@ -497,7 +497,7 @@ fn test_frame_reading_when_stream_is_closed_before_sending_data() {
 
 
 #[test]
-fn test_wt_frame_reading_when_stream_is_closed_before_sending_data() {
+fn wt_frame_reading_when_stream_is_closed_before_sending_data() {
     let mut fr = FrameReaderTest::new();
 
     fr.conn_s.stream_send(fr.stream_id, &[0x00]).unwrap();

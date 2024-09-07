@@ -15,7 +15,6 @@ use crate::frames::{
     reader::FrameDecoder, FrameReader, HFrame, StreamReaderConnectionWrapper, WebTransportFrame,
 };
 
-#[allow(clippy::many_single_char_names)]
 pub fn enc_dec<T: FrameDecoder<T>>(d: &Encoder, st: &str, remaining: usize) -> T {
     
     let d2 = Encoder::from_hex(st);
