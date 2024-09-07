@@ -2391,46 +2391,7 @@ async function unregisterServiceWorker(workerUrl) {
 
 
 
-async function toggleJsTracer(toolbox) {
-  const { isTracingEnabled } = toolbox.commands.tracerCommand;
-  const { logMethod, traceOnNextInteraction, traceOnNextLoad } =
-    toolbox.commands.tracerCommand.getTracingOptions();
+function toggleJsTracer(toolbox) {
   const toolbarButton = toolbox.doc.getElementById("command-button-jstracer");
   toolbarButton.click();
-
-  const {
-    TRACER_LOG_METHODS,
-  } = require("resource://devtools/shared/specs/tracer.js");
-  if (logMethod != TRACER_LOG_METHODS.CONSOLE) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (isTracingEnabled) {
-    const { hud } = await toolbox.getPanel("webconsole");
-    info("Wait for tracing to be disabled");
-    await waitFor(() =>
-      [...hud.ui.outputNode.querySelectorAll(".message")].some(msg =>
-        msg.textContent.includes("Stopped tracing")
-      )
-    );
-
-    hud.ui.clearOutput();
-    await waitFor(
-      () => hud.ui.outputNode.querySelectorAll(".message").length === 0
-    );
-  } else {
-    
-    const { hud } = await toolbox.getPanelWhenReady("webconsole");
-    if (!traceOnNextInteraction && !traceOnNextLoad) {
-      await waitFor(() =>
-        [...hud.ui.outputNode.querySelectorAll(".message")].some(msg =>
-          msg.textContent.includes("Started tracing to Web Console")
-        )
-      );
-    }
-  }
 }
