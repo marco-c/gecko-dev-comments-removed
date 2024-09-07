@@ -853,40 +853,6 @@ static void* WasmHandleThrow(jit::ResumeFromException* rfe) {
 }
 
 
-static void* RequestTierUp(JSContext* cx, JitActivation* activation) {
-  void* resumePC = activation->wasmTrapData().resumePC;
-  const CodeRange* codeRange;
-  const CodeBlock* codeBlock = LookupCodeBlock(resumePC, &codeRange);
-  MOZ_RELEASE_ASSERT(codeBlock && codeRange);
-
-  uint32_t funcIndex = codeRange->funcIndex();
-
-  
-  
-  
-  
-  
-
-  
-  
-
-  wasm::Instance* instance = activation->wasmExitInstance();
-  instance->resetHotnessCounter(funcIndex);
-
-  
-  
-  bool ok = codeBlock->code->requestTierUp(funcIndex);
-  
-  if (!ok) {
-    wasm::Log(cx, "Failed to tier-up function=%d in instance=%p.", funcIndex,
-              instance);
-  }
-
-  activation->finishWasmTrap();
-  return resumePC;
-}
-
-
 static void* CheckInterrupt(JSContext* cx, JitActivation* activation) {
   ResetInterruptState(cx);
 
@@ -950,8 +916,6 @@ static void* WasmHandleTrap() {
       ReportTrapError(cx, JSMSG_WASM_UNALIGNED_ACCESS);
       return nullptr;
     }
-    case Trap::RequestTierUp:
-      return RequestTierUp(cx, activation);
     case Trap::CheckInterrupt:
       return CheckInterrupt(cx, activation);
     case Trap::StackOverflow: {

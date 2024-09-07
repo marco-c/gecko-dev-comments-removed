@@ -940,41 +940,6 @@ void BaseCompiler::restoreRegisterReturnValues(const ResultType& resultType) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool BaseCompiler::addHotnessCheck() {
   if (compilerEnv_.mode() != CompileMode::LazyTiering) {
     return true;

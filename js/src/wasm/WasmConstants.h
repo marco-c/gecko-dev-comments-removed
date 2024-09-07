@@ -202,10 +202,6 @@ enum class Trap {
 
   
   
-  RequestTierUp,
-
-  
-  
   CheckInterrupt,
 
   
