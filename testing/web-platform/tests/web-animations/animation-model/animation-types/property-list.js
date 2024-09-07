@@ -98,6 +98,16 @@ const gCSSProperties1 = {
     types: [
     ]
   },
+  'block-step-insert': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'margin', 'padding' ] ] }
+    ]
+  },
+  'block-step-size': {
+    
+    types: [ 'length' ]
+  },
   'border-block-end-color': {
     
     types: [
