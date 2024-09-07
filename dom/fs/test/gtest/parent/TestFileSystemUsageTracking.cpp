@@ -10,9 +10,7 @@
 #include "datamodel/FileSystemDataManager.h"
 #include "datamodel/FileSystemDatabaseManager.h"
 #include "gtest/gtest.h"
-#include "mozilla/dom/FileSystemQuotaClientFactory.h"
 #include "mozilla/dom/PFileSystemManager.h"
-#include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/UsageInfo.h"
 #include "mozilla/dom/quota/test/QuotaManagerDependencyFixture.h"
 
@@ -29,218 +27,232 @@ class TestFileSystemUsageTracking
   static void TearDownTestCase() { ASSERT_NO_FATAL_FAILURE(ShutdownFixture()); }
 
   void TearDown() override {
+    PerformOnBackgroundThread([this]() { mDataManager = nullptr; });
+
     ASSERT_NO_FATAL_FAILURE(ClearStoragesForOrigin(GetTestOriginMetadata()));
   }
+
+  static void GetOriginUsage(quota::UsageInfo& aResult) {
+    ASSERT_NO_FATAL_FAILURE(QuotaManagerDependencyFixture::GetOriginUsage(
+        GetTestOriginMetadata(), &aResult));
+  }
+
+  void EnsureDataManager() {
+    PerformOnBackgroundThread([this]() {
+      ASSERT_NO_FATAL_FAILURE(test::CreateRegisteredDataManager(
+          GetTestOriginMetadata(), mDataManager));
+    });
+  }
+
+  void CreateNewEmptyFile(EntryId& aEntryId) {
+    ASSERT_TRUE(mDataManager);
+
+    TEST_TRY_UNWRAP(
+        EntryId testFileId,
+        PerformOnThread(mDataManager->MutableIOTaskQueuePtr(),
+                        [this]() -> Result<EntryId, QMResult> {
+                          data::FileSystemDatabaseManager* databaseManager =
+                              mDataManager->MutableDatabaseManagerPtr();
+
+                          QM_TRY_UNWRAP(const EntryId rootId,
+                                        data::GetRootHandle(GetTestOrigin()));
+                          FileSystemChildMetadata fileData(rootId,
+                                                           GetTestFileName());
+
+                          EntryId testFileId;
+                          ENSURE_NO_FATAL_FAILURE(
+                              test::CreateNewEmptyFile(databaseManager,
+                                                       fileData, testFileId),
+                              Err(QMResult(NS_ERROR_FAILURE)));
+
+                          return testFileId;
+                        }));
+
+    aEntryId = testFileId;
+  }
+
+  void WriteDataToFile(EntryId& aEntryId, const nsCString& aData) {
+    ASSERT_TRUE(mDataManager);
+
+    TEST_TRY(PerformOnThread(
+        mDataManager->MutableIOTaskQueuePtr(),
+        [this, &aEntryId, &aData]() -> Result<Ok, QMResult> {
+          data::FileSystemDatabaseManager* databaseManager =
+              mDataManager->MutableDatabaseManagerPtr();
+
+          ENSURE_NO_FATAL_FAILURE(
+              test::WriteDataToFile(GetTestOriginMetadata(), databaseManager,
+                                    aEntryId, aData),
+              Err(QMResult(NS_ERROR_FAILURE)));
+
+          return Ok{};
+        }));
+  }
+
+  void RemoveFile(bool& aWasRemoved) {
+    ASSERT_TRUE(mDataManager);
+
+    TEST_TRY_UNWRAP(
+        bool wasRemoved,
+        PerformOnThread(mDataManager->MutableIOTaskQueuePtr(),
+                        [this]() -> Result<bool, QMResult> {
+                          data::FileSystemDatabaseManager* databaseManager =
+                              mDataManager->MutableDatabaseManagerPtr();
+
+                          QM_TRY_UNWRAP(const EntryId rootId,
+                                        data::GetRootHandle(GetTestOrigin()));
+
+                          QM_TRY_RETURN(databaseManager->RemoveFile(
+                              {rootId, GetTestFileName()}));
+                        }));
+
+    aWasRemoved = wasRemoved;
+  }
+
+  void GetDatabaseUsage(quota::UsageInfo& aDatabaseUsage) {
+    ASSERT_TRUE(mDataManager);
+
+    TEST_TRY_UNWRAP(
+        auto databaseUsage,
+        PerformOnThread(mDataManager->MutableIOTaskQueuePtr(), [this]() {
+          data::FileSystemDatabaseManager* databaseManager =
+              mDataManager->MutableDatabaseManagerPtr();
+
+          QM_TRY_RETURN(databaseManager->GetUsage());
+        }));
+
+    aDatabaseUsage = databaseUsage;
+  }
+
+  void UpdateDatabaseUsage(const FileId& aFileId) {
+    ASSERT_TRUE(mDataManager);
+
+    TEST_TRY(PerformOnThread(
+        mDataManager->MutableIOTaskQueuePtr(), [this, &aFileId]() {
+          data::FileSystemDatabaseManager* databaseManager =
+              mDataManager->MutableDatabaseManagerPtr();
+
+          QM_TRY_RETURN(MOZ_TO_RESULT(databaseManager->UpdateUsage(aFileId)));
+        }));
+  }
+
+ private:
+  Registered<data::FileSystemDataManager> mDataManager;
 };
 
 TEST_F(TestFileSystemUsageTracking, CheckUsageBeforeAnyFilesOnDisk) {
-  auto backgroundTask = []() {
-    mozilla::Atomic<bool> isCanceled{false};
-    auto ioTask = [&isCanceled](const RefPtr<quota::Client>& quotaClient,
-                                data::FileSystemDatabaseManager* dbm) {
-      ASSERT_FALSE(isCanceled);
-      const quota::OriginMetadata& testOriginMeta = GetTestOriginMetadata();
-      const Origin& testOrigin = testOriginMeta.mOrigin;
+  
+  quota::UsageInfo usageNow;
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_TRUE(usageNow.DatabaseUsage().isNothing());
+  EXPECT_TRUE(usageNow.FileUsage().isNothing());
 
-      
-      
-      
-      TEST_TRY_UNWRAP(quota::UsageInfo usageNow, dbm->GetUsage());
-      ASSERT_NO_FATAL_FAILURE(CheckUsageGreaterThan(usageNow, 0u));
-      const auto initialDbUsage = usageNow.DatabaseUsage().value();
+  
+  ASSERT_NO_FATAL_FAILURE(EnsureDataManager());
 
-      TEST_TRY_UNWRAP(usageNow, quotaClient->GetUsageForOrigin(
-                                    quota::PERSISTENCE_TYPE_DEFAULT,
-                                    testOriginMeta, isCanceled));
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
+  
+  
+  
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageGreaterThan(usageNow, 0u));
+  const auto initialDbUsage = usageNow.DatabaseUsage().value();
 
-      
-      TEST_TRY_UNWRAP(const EntryId rootId, data::GetRootHandle(testOrigin));
-      FileSystemChildMetadata fileData(rootId, GetTestFileName());
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, initialDbUsage));
 
-      EntryId testFileId;
-      ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(dbm, fileData, testFileId));
+  
+  EntryId testFileId;
+  ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(testFileId));
 
-      
-      
-      
-      const auto expectedUse = initialDbUsage + 2 * GetPageSize();
+  
+  
+  
+  const auto expectedUse = initialDbUsage + 2 * GetPageSize();
 
-      TEST_TRY_UNWRAP(usageNow, quotaClient->GetUsageForOrigin(
-                                    quota::PERSISTENCE_TYPE_DEFAULT,
-                                    testOriginMeta, isCanceled));
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
 
-      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
-    };
-
-    RefPtr<mozilla::dom::quota::Client> quotaClient = fs::CreateQuotaClient();
-    ASSERT_TRUE(quotaClient);
-
-    
-    auto checkTask =
-        [&isCanceled](const RefPtr<mozilla::dom::quota::Client>& quotaClient) {
-          TEST_TRY_UNWRAP(quota::UsageInfo usageNow,
-                          quotaClient->GetUsageForOrigin(
-                              quota::PERSISTENCE_TYPE_DEFAULT,
-                              GetTestOriginMetadata(), isCanceled));
-
-          ASSERT_TRUE(usageNow.DatabaseUsage().isNothing());
-          EXPECT_TRUE(usageNow.FileUsage().isNothing());
-        };
-
-    PerformOnIOThread(std::move(checkTask),
-                      RefPtr<mozilla::dom::quota::Client>{quotaClient});
-
-    
-    Registered<data::FileSystemDataManager> rdm;
-    ASSERT_NO_FATAL_FAILURE(
-        CreateRegisteredDataManager(GetTestOriginMetadata(), rdm));
-
-    
-    PerformOnIOThread(std::move(ioTask), std::move(quotaClient),
-                      rdm->MutableDatabaseManagerPtr());
-  };
-
-  PerformOnBackgroundThread(std::move(backgroundTask));
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedUse));
 }
 
 TEST_F(TestFileSystemUsageTracking, WritesToFilesShouldIncreaseUsage) {
-  auto backgroundTask = []() {
-    mozilla::Atomic<bool> isCanceled{false};
-    auto ioTask = [&isCanceled](
-                      const RefPtr<mozilla::dom::quota::Client>& quotaClient,
-                      data::FileSystemDatabaseManager* dbm) {
-      const quota::OriginMetadata& testOriginMeta = GetTestOriginMetadata();
-      const Origin& testOrigin = testOriginMeta.mOrigin;
+  
+  ASSERT_NO_FATAL_FAILURE(EnsureDataManager());
 
-      TEST_TRY_UNWRAP(const EntryId rootId, data::GetRootHandle(testOrigin));
-      FileSystemChildMetadata fileData(rootId, GetTestFileName());
+  EntryId testFileId;
+  ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(testFileId));
 
-      EntryId testFileId;
-      ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(dbm, fileData, testFileId));
-      
+  quota::UsageInfo usageNow;
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
+  const auto testFileDbUsage = usageNow.DatabaseUsage().value();
 
-      TEST_TRY_UNWRAP(
-          quota::UsageInfo usageNow,
-          quotaClient->GetUsageForOrigin(quota::PERSISTENCE_TYPE_DEFAULT,
-                                         testOriginMeta, isCanceled));
-      ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
-      const auto testFileDbUsage = usageNow.DatabaseUsage().value();
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
 
-      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
+  
+  const nsCString& testData = GetTestData();
 
-      
-      const nsCString& testData = GetTestData();
+  ASSERT_NO_FATAL_FAILURE(WriteDataToFile(testFileId, testData));
 
-      ASSERT_NO_FATAL_FAILURE(
-          WriteDataToFile(GetTestOriginMetadata(), dbm, testFileId, testData));
+  
+  
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
 
-      
-      
-      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
+  
+  
+  ASSERT_NO_FATAL_FAILURE(UpdateDatabaseUsage(FileId(testFileId)));
 
-      
-      
-      ASSERT_NSEQ(NS_OK, dbm->UpdateUsage(FileId(testFileId)));
+  const auto expectedTotalUsage = testFileDbUsage + testData.Length();
 
-      const auto expectedTotalUsage = testFileDbUsage + testData.Length();
+  
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
 
-      
-      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
-
-      
-      TEST_TRY_UNWRAP(usageNow, quotaClient->GetUsageForOrigin(
-                                    quota::PERSISTENCE_TYPE_DEFAULT,
-                                    testOriginMeta, isCanceled));
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
-    };
-
-    RefPtr<mozilla::dom::quota::Client> quotaClient = fs::CreateQuotaClient();
-    ASSERT_TRUE(quotaClient);
-
-    
-    Registered<data::FileSystemDataManager> rdm;
-    ASSERT_NO_FATAL_FAILURE(
-        CreateRegisteredDataManager(GetTestOriginMetadata(), rdm));
-
-    
-    PerformOnIOThread(std::move(ioTask), std::move(quotaClient),
-                      rdm->MutableDatabaseManagerPtr());
-  };
-
-  PerformOnBackgroundThread(std::move(backgroundTask));
+  
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
 }
 
 TEST_F(TestFileSystemUsageTracking, RemovingFileShouldDecreaseUsage) {
-  auto backgroundTask = []() {
-    mozilla::Atomic<bool> isCanceled{false};
-    auto ioTask = [&isCanceled](
-                      const RefPtr<mozilla::dom::quota::Client>& quotaClient,
-                      data::FileSystemDatabaseManager* dbm) {
-      const quota::OriginMetadata& testOriginMeta = GetTestOriginMetadata();
-      const Origin& testOrigin = testOriginMeta.mOrigin;
+  
+  ASSERT_NO_FATAL_FAILURE(EnsureDataManager());
 
-      TEST_TRY_UNWRAP(const EntryId rootId, data::GetRootHandle(testOrigin));
-      FileSystemChildMetadata fileData(rootId, GetTestFileName());
+  EntryId testFileId;
+  ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(testFileId));
 
-      EntryId testFileId;
-      ASSERT_NO_FATAL_FAILURE(CreateNewEmptyFile(dbm, fileData, testFileId));
-      TEST_TRY_UNWRAP(quota::UsageInfo usageNow, dbm->GetUsage());
-      ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
-      const auto testFileDbUsage = usageNow.DatabaseUsage().value();
+  quota::UsageInfo usageNow;
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_TRUE(usageNow.DatabaseUsage().isSome());
+  const auto testFileDbUsage = usageNow.DatabaseUsage().value();
 
-      
-      const nsCString& testData = GetTestData();
-      const auto expectedTotalUsage = testFileDbUsage + testData.Length();
+  
+  const nsCString& testData = GetTestData();
+  const auto expectedTotalUsage = testFileDbUsage + testData.Length();
 
-      ASSERT_NO_FATAL_FAILURE(
-          WriteDataToFile(GetTestOriginMetadata(), dbm, testFileId, testData));
+  ASSERT_NO_FATAL_FAILURE(WriteDataToFile(testFileId, testData));
 
-      
-      
-      ASSERT_NSEQ(NS_OK, dbm->UpdateUsage(FileId(testFileId)));
+  
+  
+  ASSERT_NO_FATAL_FAILURE(UpdateDatabaseUsage(FileId(testFileId)));
 
-      
-      TEST_TRY_UNWRAP(usageNow, quotaClient->GetUsageForOrigin(
-                                    quota::PERSISTENCE_TYPE_DEFAULT,
-                                    testOriginMeta, isCanceled));
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
+  
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, expectedTotalUsage));
 
-      TEST_TRY_UNWRAP(bool wasRemoved,
-                      dbm->RemoveFile({rootId, GetTestFileName()}));
-      ASSERT_TRUE(wasRemoved);
+  bool wasRemoved;
+  ASSERT_NO_FATAL_FAILURE(RemoveFile(wasRemoved));
+  ASSERT_TRUE(wasRemoved);
 
-      
-      TEST_TRY_UNWRAP(usageNow, dbm->GetUsage());
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
+  
+  ASSERT_NO_FATAL_FAILURE(GetDatabaseUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
 
-      
-      TEST_TRY_UNWRAP(usageNow, quotaClient->GetUsageForOrigin(
-                                    quota::PERSISTENCE_TYPE_DEFAULT,
-                                    testOriginMeta, isCanceled));
-
-      ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
-    };
-
-    RefPtr<mozilla::dom::quota::Client> quotaClient = fs::CreateQuotaClient();
-    ASSERT_TRUE(quotaClient);
-
-    
-    Registered<data::FileSystemDataManager> rdm;
-    ASSERT_NO_FATAL_FAILURE(
-        CreateRegisteredDataManager(GetTestOriginMetadata(), rdm));
-
-    
-    PerformOnIOThread(std::move(ioTask), std::move(quotaClient),
-                      rdm->MutableDatabaseManagerPtr());
-  };
-
-  PerformOnBackgroundThread(std::move(backgroundTask));
+  
+  ASSERT_NO_FATAL_FAILURE(GetOriginUsage(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
 }
 
 }  
