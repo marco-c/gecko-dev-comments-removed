@@ -17,7 +17,7 @@ namespace mozilla {
 namespace dom {
 class AbstractRange;
 class Document;
-}
+}  
 
 namespace a11y {
 class Accessible;
