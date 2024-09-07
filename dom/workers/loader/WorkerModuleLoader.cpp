@@ -136,12 +136,16 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
       
       true);
 
+  RefPtr<JS::loader::VisitedURLSet> visitedSet =
+      ModuleLoadRequest::NewVisitedSetForTopLevelImport(
+          aURI, JS::ModuleType::JavaScript);
+
   ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
-  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, JS::ModuleType::JavaScript, referrerPolicy, options, SRIMetadata(),
-      baseURL, context, true,
-       true, 
-      this, ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
+  RefPtr<ModuleLoadRequest> request =
+      new ModuleLoadRequest(aURI, JS::ModuleType::JavaScript, referrerPolicy,
+                            options, SRIMetadata(), baseURL, context, true,
+                             true, 
+                            this, visitedSet, nullptr);
 
   request->SetDynamicImport(aMaybeActiveScript, aSpecifier, aPromise);
   request->NoCacheEntryFound();
