@@ -1402,7 +1402,7 @@ template void Simulator::setVFPRegister<float, 1>(int reg_index,
                                                   const float& value);
 
 void Simulator::getFpArgs(double* x, double* y, int32_t* z) {
-  if (UseHardFpABI()) {
+  if (ARMFlags::UseHardFpABI()) {
     get_double_from_d_register(0, x);
     get_double_from_d_register(1, y);
     *z = get_register(0);
@@ -1422,7 +1422,7 @@ void Simulator::getFpFromStack(int32_t* stack, double* x) {
 
 void Simulator::setCallResultDouble(double result) {
   
-  if (UseHardFpABI()) {
+  if (ARMFlags::UseHardFpABI()) {
     char buffer[2 * sizeof(vfp_registers_[0])];
     memcpy(buffer, &result, sizeof(buffer));
     
@@ -1436,7 +1436,7 @@ void Simulator::setCallResultDouble(double result) {
 }
 
 void Simulator::setCallResultFloat(float result) {
-  if (UseHardFpABI()) {
+  if (ARMFlags::UseHardFpABI()) {
     char buffer[sizeof(registers_[0])];
     memcpy(buffer, &result, sizeof(buffer));
     
@@ -1482,13 +1482,15 @@ uint64_t Simulator::readQ(int32_t addr, SimInstruction* instr,
     return UINT64_MAX;
   }
 
-  if ((addr & 3) == 0 || (f == AllowUnaligned && !HasAlignmentFault())) {
+  if ((addr & 3) == 0 ||
+      (f == AllowUnaligned && !ARMFlags::HasAlignmentFault())) {
     uint64_t* ptr = reinterpret_cast<uint64_t*>(addr);
     return *ptr;
   }
 
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     uint64_t value;
     memcpy(&value, ptr, sizeof(value));
@@ -1505,14 +1507,16 @@ void Simulator::writeQ(int32_t addr, uint64_t value, SimInstruction* instr,
     return;
   }
 
-  if ((addr & 3) == 0 || (f == AllowUnaligned && !HasAlignmentFault())) {
+  if ((addr & 3) == 0 ||
+      (f == AllowUnaligned && !ARMFlags::HasAlignmentFault())) {
     uint64_t* ptr = reinterpret_cast<uint64_t*>(addr);
     *ptr = value;
     return;
   }
 
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     memcpy(ptr, &value, sizeof(value));
     return;
@@ -1527,7 +1531,8 @@ int Simulator::readW(int32_t addr, SimInstruction* instr, UnalignedPolicy f) {
     return -1;
   }
 
-  if ((addr & 3) == 0 || (f == AllowUnaligned && !HasAlignmentFault())) {
+  if ((addr & 3) == 0 ||
+      (f == AllowUnaligned && !ARMFlags::HasAlignmentFault())) {
     intptr_t* ptr = reinterpret_cast<intptr_t*>(addr);
     return *ptr;
   }
@@ -1536,7 +1541,8 @@ int Simulator::readW(int32_t addr, SimInstruction* instr, UnalignedPolicy f) {
   
   
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     int value;
     memcpy(&value, ptr, sizeof(value));
@@ -1553,14 +1559,16 @@ void Simulator::writeW(int32_t addr, int value, SimInstruction* instr,
     return;
   }
 
-  if ((addr & 3) == 0 || (f == AllowUnaligned && !HasAlignmentFault())) {
+  if ((addr & 3) == 0 ||
+      (f == AllowUnaligned && !ARMFlags::HasAlignmentFault())) {
     intptr_t* ptr = reinterpret_cast<intptr_t*>(addr);
     *ptr = value;
     return;
   }
 
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     memcpy(ptr, &value, sizeof(value));
     return;
@@ -1628,13 +1636,14 @@ uint16_t Simulator::readHU(int32_t addr, SimInstruction* instr) {
 
   
   
-  if ((addr & 1) == 0 || !HasAlignmentFault()) {
+  if ((addr & 1) == 0 || !ARMFlags::HasAlignmentFault()) {
     uint16_t* ptr = reinterpret_cast<uint16_t*>(addr);
     return *ptr;
   }
 
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     uint16_t value;
     memcpy(&value, ptr, sizeof(value));
@@ -1651,13 +1660,14 @@ int16_t Simulator::readH(int32_t addr, SimInstruction* instr) {
     return -1;
   }
 
-  if ((addr & 1) == 0 || !HasAlignmentFault()) {
+  if ((addr & 1) == 0 || !ARMFlags::HasAlignmentFault()) {
     int16_t* ptr = reinterpret_cast<int16_t*>(addr);
     return *ptr;
   }
 
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     int16_t value;
     memcpy(&value, ptr, sizeof(value));
@@ -1674,14 +1684,15 @@ void Simulator::writeH(int32_t addr, uint16_t value, SimInstruction* instr) {
     return;
   }
 
-  if ((addr & 1) == 0 || !HasAlignmentFault()) {
+  if ((addr & 1) == 0 || !ARMFlags::HasAlignmentFault()) {
     uint16_t* ptr = reinterpret_cast<uint16_t*>(addr);
     *ptr = value;
     return;
   }
 
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     memcpy(ptr, &value, sizeof(value));
     return;
@@ -1696,14 +1707,15 @@ void Simulator::writeH(int32_t addr, int16_t value, SimInstruction* instr) {
     return;
   }
 
-  if ((addr & 1) == 0 || !HasAlignmentFault()) {
+  if ((addr & 1) == 0 || !ARMFlags::HasAlignmentFault()) {
     int16_t* ptr = reinterpret_cast<int16_t*>(addr);
     *ptr = value;
     return;
   }
 
   
-  if (FixupFault() && wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
+  if (ARMFlags::FixupFault() &&
+      wasm::InCompiledCode(reinterpret_cast<void*>(get_pc()))) {
     char* ptr = reinterpret_cast<char*>(addr);
     memcpy(ptr, &value, sizeof(value));
     return;

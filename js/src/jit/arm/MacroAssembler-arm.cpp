@@ -306,7 +306,7 @@ void MacroAssemblerARM::ma_nop() { as_nop(); }
 BufferOffset MacroAssemblerARM::ma_movPatchable(Imm32 imm_, Register dest,
                                                 Assembler::Condition c) {
   int32_t imm = imm_.value;
-  if (HasMOVWT()) {
+  if (ARMFlags::HasMOVWT()) {
     BufferOffset offset = as_movw(dest, Imm16(imm & 0xffff), c);
     as_movt(dest, Imm16(imm >> 16 & 0xffff), c);
     return offset;
@@ -375,7 +375,7 @@ void MacroAssemblerARM::ma_mov(Imm32 imm, Register dest,
   }
 
   
-  if (HasMOVWT()) {
+  if (ARMFlags::HasMOVWT()) {
     
     
     
@@ -1262,7 +1262,7 @@ void MacroAssemblerARM::ma_vpush(VFPRegister r) {
 
 
 void MacroAssemblerARM::ma_dmb(BarrierOption option) {
-  if (HasDMBDSBISB()) {
+  if (ARMFlags::HasDMBDSBISB()) {
     as_dmb(option);
   } else {
     as_dmb_trap();
@@ -1270,7 +1270,7 @@ void MacroAssemblerARM::ma_dmb(BarrierOption option) {
 }
 
 void MacroAssemblerARM::ma_dsb(BarrierOption option) {
-  if (HasDMBDSBISB()) {
+  if (ARMFlags::HasDMBDSBISB()) {
     as_dsb(option);
   } else {
     as_dsb_trap();
@@ -1400,7 +1400,7 @@ static inline uint32_t DoubleLowWord(double d) {
 
 void MacroAssemblerARM::ma_vimm(double value, FloatRegister dest,
                                 Condition cc) {
-  if (HasVFPv3()) {
+  if (ARMFlags::HasVFPv3()) {
     if (DoubleLowWord(value) == 0) {
       if (DoubleHighWord(value) == 0) {
         
@@ -1423,7 +1423,7 @@ void MacroAssemblerARM::ma_vimm(double value, FloatRegister dest,
 void MacroAssemblerARM::ma_vimm_f32(float value, FloatRegister dest,
                                     Condition cc) {
   VFPRegister vd = VFPRegister(dest).singleOverlay();
-  if (HasVFPv3()) {
+  if (ARMFlags::HasVFPv3()) {
     if (IsPositiveZero(value)) {
       
       as_vimm(vd, VFPImm::One, cc);
@@ -4462,7 +4462,7 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
 
   
   
-  if (!callFromWasm && !UseHardFpABI()) {
+  if (!callFromWasm && !ARMFlags::UseHardFpABI()) {
     switch (result) {
       case ABIType::Float64:
         
@@ -5832,7 +5832,7 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
   
   MOZ_ASSERT(lhsOutput != rhs);
 
-  if (HasIDIV()) {
+  if (ARMFlags::HasIDIV()) {
     if (isRemainder) {
       masm.remainder32(rhs, lhsOutput, isUnsigned);
     } else {
@@ -5892,7 +5892,7 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
   
   MOZ_ASSERT(lhsOutput != rhs);
 
-  if (HasIDIV()) {
+  if (ARMFlags::HasIDIV()) {
     mov(lhsOutput, remOutput);
     remainder32(rhs, remOutput, isUnsigned);
     quotient32(rhs, lhsOutput, isUnsigned);
@@ -6256,7 +6256,7 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
       
       
       
-      if (HasNEON()) {
+      if (ARMFlags::HasNEON()) {
         
         
         
@@ -6364,7 +6364,7 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
       ma_add(memoryBase, ptr, scratch);
 
       
-      if (HasNEON()) {
+      if (ARMFlags::HasNEON()) {
         if (byteSize == 4 && (val.code() & 1)) {
           ScratchFloat32Scope fscratch(asMasm());
           as_vmov(fscratch, val);

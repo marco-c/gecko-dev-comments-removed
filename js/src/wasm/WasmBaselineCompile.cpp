@@ -1489,7 +1489,7 @@ void BaseCompiler::beginCall(
   if (call.usesSystemAbi) {
     
 #if defined(JS_CODEGEN_ARM)
-    call.hardFP = UseHardFpABI();
+    call.hardFP = ARMFlags::UseHardFpABI();
     call.abi.setUseHardFp(call.hardFP);
 #endif
   } else {
@@ -12070,7 +12070,7 @@ bool js::wasm::BaselinePlatformSupport() {
   
   
   
-  if (!HasIDIV()) {
+  if (!ARMFlags::HasIDIV()) {
     return false;
   }
 #endif

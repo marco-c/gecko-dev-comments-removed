@@ -842,7 +842,7 @@ void CodeGeneratorARM::emitBigIntDiv(LBigIntDiv* ins, Register dividend,
                                      Label* fail) {
   
 
-  if (HasIDIV()) {
+  if (ARMFlags::HasIDIV()) {
     masm.ma_sdiv(dividend, divisor,  dividend);
 
     
@@ -882,7 +882,7 @@ void CodeGeneratorARM::emitBigIntMod(LBigIntMod* ins, Register dividend,
                                      Label* fail) {
   
 
-  if (HasIDIV()) {
+  if (ARMFlags::HasIDIV()) {
     {
       ScratchRegisterScope scratch(masm);
       masm.ma_smod(dividend, divisor,  dividend, scratch);

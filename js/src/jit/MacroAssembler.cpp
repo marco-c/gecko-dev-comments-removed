@@ -4455,7 +4455,7 @@ void MacroAssembler::setupABICallHelper() {
   
   
 #  if defined(JS_SIMULATOR_ARM)
-  abiArgs_.setUseHardFp(UseHardFpABI());
+  abiArgs_.setUseHardFp(ARMFlags::UseHardFpABI());
 #  elif defined(JS_CODEGEN_ARM_HARDFP)
   abiArgs_.setUseHardFp(true);
 #  else

@@ -55,7 +55,7 @@ static bool UnalignedAccessesAreOK() {
 #  if defined(__x86_64__) || defined(__i386__)
   return true;
 #  elif defined(__arm__)
-  return !HasAlignmentFault();
+  return !ARMFlags::HasAlignmentFault();
 #  elif defined(__aarch64__)
   
   return true;

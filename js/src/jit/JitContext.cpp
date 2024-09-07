@@ -103,7 +103,7 @@ bool jit::InitializeJit() {
 #endif
 
 #if defined(JS_CODEGEN_ARM)
-  InitARMFlags();
+  ARMFlags::Init();
 #endif
 
 #ifdef JS_CODEGEN_ARM64
@@ -154,7 +154,7 @@ bool jit::JitSupportsAtomics() {
   
   
   
-  return js::jit::HasLDSTREXBHD();
+  return js::jit::ARMFlags::HasLDSTREXBHD();
 #else
   return true;
 #endif

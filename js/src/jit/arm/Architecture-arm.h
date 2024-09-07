@@ -7,6 +7,7 @@
 #ifndef jit_arm_Architecture_arm_h
 #define jit_arm_Architecture_arm_h
 
+#include "mozilla/EnumSet.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
@@ -632,59 +633,148 @@ VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set) {
 
 using FloatRegister = VFPRegister;
 
-uint32_t GetARMFlags();
-bool HasARMv7();
-bool HasMOVWT();
-bool HasLDSTREXBHD();  
-bool HasDMBDSBISB();   
-bool HasVFPv3();
-bool HasVFP();
-bool Has32DP();
-bool HasIDIV();
-bool HasNEON();
+enum class ARMCapability : uint32_t {
+  
+  Initialized,
 
-extern volatile uint32_t armHwCapFlags;
+  
+  VFP,
 
+  
+  VFPD32,
 
+  
+  VFPv3,
 
+  
+  VFPv3D16,
 
+  
+  VFPv4,
 
-#define HWCAP_FIXUP_FAULT (1 << 24)
+  
+  Neon,
 
+  
+  IDivA,
 
+  
+  FixupFault,
 
-#define HWCAP_UNINITIALIZED (1 << 25)
+  
+  AlignmentFault,
 
+  
+  UseHardFpABI,
 
-#define HWCAP_ALIGNMENT_FAULT (1 << 26)
+  
+  ARMv7,
+};
 
+using ARMCapabilities = mozilla::EnumSet<ARMCapability>;
 
-#define HWCAP_USE_HARDFP_ABI (1 << 27)
+class ARMFlags final {
+  
+  
+  
+  static inline ARMCapabilities capabilities{};
 
+ public:
+  ARMFlags() = delete;
 
-#define HWCAP_ARMv7 (1 << 28)
+  
+  
+  
+  
+  
+  static void Init();
 
+  static bool IsInitialized() {
+    return capabilities.contains(ARMCapability::Initialized);
+  }
 
+  static uint32_t GetFlags() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.serialize();
+  }
+  static bool HasARMv7() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::ARMv7);
+  }
+  static bool HasMOVWT() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::ARMv7);
+  }
+  
+  static bool HasLDSTREXBHD() {
+    
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::ARMv7);
+  }
+  
+  static bool HasDMBDSBISB() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::ARMv7);
+  }
+  static bool HasVFP() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::VFP);
+  }
+  static bool Has32DP() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::VFPD32);
+  }
+  static bool HasVFPv3() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::VFPv3);
+  }
+  static bool HasNEON() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::Neon);
+  }
+  static bool HasIDIV() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::IDivA);
+  }
 
-
-
-inline bool HasAlignmentFault() {
-  MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
-  return armHwCapFlags & HWCAP_ALIGNMENT_FAULT;
-}
+  
+  
+  static bool HasAlignmentFault() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::AlignmentFault);
+  }
 
 #ifdef JS_SIMULATOR_ARM
-
-
-inline bool FixupFault() {
-  MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
-  return armHwCapFlags & HWCAP_FIXUP_FAULT;
-}
+  
+  
+  static bool FixupFault() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::FixupFault);
+  }
 #endif
 
 
 
-inline bool hasUnaliasedDouble() { return Has32DP(); }
+
+#ifdef JS_SIMULATOR_ARM
+  static bool UseHardFpABI() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::UseHardFpABI);
+  }
+#else
+  static constexpr bool UseHardFpABI() {
+#  if defined(JS_CODEGEN_ARM_HARDFP)
+    return true;
+#  else
+    return false;
+#  endif
+  }
+#endif
+};
+
+
+
+inline bool hasUnaliasedDouble() { return ARMFlags::Has32DP(); }
 
 
 
@@ -694,34 +784,10 @@ inline bool hasMultiAlias() { return true; }
 
 
 
-
-
-
-void InitARMFlags();
-
-
-
-
-
 void SetARMHwCapFlagsString(const char* armHwCap);
 
 
-uint32_t GetARMFlags();
-
-
-
-
-#ifdef JS_SIMULATOR_ARM
-bool UseHardFpABI();
-#else
-static inline bool UseHardFpABI() {
-#  if defined(JS_CODEGEN_ARM_HARDFP)
-  return true;
-#  else
-  return false;
-#  endif
-}
-#endif
+inline uint32_t GetARMFlags() { return ARMFlags::GetFlags(); }
 
 
 
