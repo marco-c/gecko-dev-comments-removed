@@ -366,11 +366,6 @@ void CookieStorage::RemoveCookiesWithOriginAttributes(
   }
 }
 
- bool CookieStorage::isIPv6BaseDomain(
-    const nsACString& aBaseDomain) {
-  return aBaseDomain.Contains(':');
-}
-
  bool CookieStorage::SerializeIPv6BaseDomain(
     nsACString& aBaseDomain) {
   bool hasStartBracket = aBaseDomain.First() == '[';
@@ -410,7 +405,7 @@ void CookieStorage::RemoveCookiesFromExactHost(
   
   
   nsAutoCString removeBaseDomain;
-  bool isIPv6 = isIPv6BaseDomain(aBaseDomain);
+  bool isIPv6 = CookieCommons::IsIPv6BaseDomain(aBaseDomain);
   if (isIPv6) {
     MOZ_ASSERT(!aBaseDomain.IsEmpty());
     
@@ -428,7 +423,7 @@ void CookieStorage::RemoveCookiesFromExactHost(
     
     if (isIPv6) {
       
-      if (!isIPv6BaseDomain(entry->mBaseDomain)) {
+      if (!CookieCommons::IsIPv6BaseDomain(entry->mBaseDomain)) {
         continue;
       }
       

@@ -225,10 +225,6 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
 
   
   
-  static bool isIPv6BaseDomain(const nsACString& aBaseDomain);
-
-  
-  
   static bool SerializeIPv6BaseDomain(nsACString& aBaseDomain);
 
   virtual void CollectCookieJarSizeData() = 0;

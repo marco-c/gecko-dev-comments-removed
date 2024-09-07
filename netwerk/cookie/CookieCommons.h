@@ -80,6 +80,10 @@ class CookieCommons final {
                                         const nsACString& aHost,
                                         nsCString& aBaseDomain);
 
+  
+  
+  static bool IsIPv6BaseDomain(const nsACString& aBaseDomain);
+
   static void NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
                              uint32_t aRejectedReason,
                              CookieOperation aOperation);
