@@ -67,6 +67,11 @@ ContentProcess::ContentProcess(ProcessId aParentPid,
 ContentProcess::~ContentProcess() { NS_LogTerm(); }
 
 bool ContentProcess::Init(int aArgc, char* aArgv[]) {
+  InfallibleInit(aArgc, aArgv);
+  return true;
+}
+
+void ContentProcess::InfallibleInit(int aArgc, char* aArgv[]) {
   Maybe<bool> isForBrowser = Nothing();
   Maybe<const char*> parentBuildID =
       geckoargs::sParentBuildID.Get(aArgc, aArgv);
@@ -121,17 +126,20 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
 #endif 
 
   
-  if (isForBrowser.isNothing() || parentBuildID.isNothing()) {
-    return false;
+  if (isForBrowser.isNothing()) {
+    MOZ_CRASH("isForBrowser flag missing");
+  }
+  if (parentBuildID.isNothing()) {
+    MOZ_CRASH("parentBuildID flag missing");
   }
 
   if (!ProcessChild::InitPrefs(aArgc, aArgv)) {
-    return false;
+    MOZ_CRASH("InitPrefs failed");
   }
 
   if (!::mozilla::ipc::ImportSharedJSInit(jsInitHandle.valueOr(0),
                                           jsInitLen.valueOr(0))) {
-    return false;
+    MOZ_CRASH("ImportSharedJSInit failed");
   }
 
   mContent.Init(TakeInitialEndpoint(), *parentBuildID, *isForBrowser);
@@ -139,14 +147,14 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
   nsCOMPtr<nsIFile> greDir;
   nsresult rv = GetGREDir(getter_AddRefs(greDir));
   if (NS_FAILED(rv)) {
-    return false;
+    MOZ_CRASH("GetGREDir failed");
   }
 
   nsCOMPtr<nsIFile> xpcomAppDir = appDirArg ? appDirArg : greDir;
 
   rv = mDirProvider.Initialize(xpcomAppDir, greDir);
   if (NS_FAILED(rv)) {
-    return false;
+    MOZ_CRASH("mDirProvider.Initialize failed");
   }
 
   
@@ -157,7 +165,7 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
 
   rv = NS_InitXPCOM(nullptr, xpcomAppDir, &mDirProvider);
   if (NS_FAILED(rv)) {
-    return false;
+    MOZ_CRASH("NS_InitXPCOM failed");
   }
 
   
@@ -176,8 +184,6 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
   
   mozilla::ipc::BackgroundChild::Startup();
   mozilla::ipc::BackgroundChild::InitContentStarter(&mContent);
-
-  return true;
 }
 
 
