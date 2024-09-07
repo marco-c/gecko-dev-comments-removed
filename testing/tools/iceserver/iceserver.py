@@ -817,6 +817,9 @@ class TcpStunRedirectHandler(protocol.DatagramProtocol):
     def write(self, data, address):
         self.transport.write(bytes(data))
 
+    def connectionLost(self, reason):
+        print("Lost connection from {}".format(self.address))
+
 
 def get_default_route(family):
     dummy_socket = socket.socket(family, socket.SOCK_DGRAM)
@@ -859,35 +862,69 @@ KEY_FILE = "private.key"
 
 
 def create_self_signed_cert(name):
-    from OpenSSL import crypto
+    
+    
+    
+    
 
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography import x509
+    from cryptography.x509.oid import NameOID
+    from cryptography.hazmat.primitives import hashes
+    import datetime
+    from cryptography.hazmat.primitives import serialization
+
+    
+    
+    
+    
     if os.path.isfile(CERT_FILE) and os.path.isfile(KEY_FILE):
         return
 
     
-    k = crypto.PKey()
-    k.generate_key(crypto.TYPE_RSA, 1024)
+    
+    
+    
+    
+    
+    key = rsa.generate_private_key(key_size=2048, public_exponent=65537)
+
+    subject = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "TX"),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, "Dallas"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mozilla test iceserver"),
+            x509.NameAttribute(NameOID.COMMON_NAME, name),
+        ]
+    )
 
     
-    cert = crypto.X509()
-    cert.get_subject().C = "US"
-    cert.get_subject().ST = "TX"
-    cert.get_subject().L = "Dallas"
-    cert.get_subject().O = "Mozilla test iceserver"
-    cert.get_subject().OU = "Mozilla test iceserver"
-    cert.get_subject().CN = name
-    cert.set_serial_number(1000)
-    cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)
-    cert.set_issuer(cert.get_subject())
-    cert.set_pubkey(k)
-    cert.add_extensions(
-        [crypto.X509Extension(b"subjectAltName", False, f"DNS:{name}".encode())]
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(subject)
+        .serial_number(1000)
+        .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+        .not_valid_after(
+            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=365)
+        )
+        .public_key(key.public_key())
+        .add_extension(
+            x509.SubjectAlternativeName([x509.DNSName(name)]),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
     )
-    cert.sign(k, "sha1")
 
-    open(CERT_FILE, "wb").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-    open(KEY_FILE, "wb").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+    open(CERT_FILE, "wb").write(cert.public_bytes(encoding=serialization.Encoding.PEM))
+    open(KEY_FILE, "wb").write(
+        key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+    )
 
 
 if __name__ == "__main__":
