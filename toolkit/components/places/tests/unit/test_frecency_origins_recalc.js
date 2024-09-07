@@ -19,6 +19,9 @@ add_task(async function test() {
       visitDate: new Date(new Date().setDate(now.getDate() - 30)),
     },
   ]);
+  
+  
+  PlacesUtils.history.shouldStartFrecencyRecalculation = false;
   Assert.equal(
     await PlacesTestUtils.getDatabaseValue("moz_origins", "recalc_frecency", {
       host,
@@ -26,19 +29,18 @@ add_task(async function test() {
     1,
     "Frecency should be calculated"
   );
-  
-  
-  await TestUtils.waitForCondition(
-    async () =>
-      (await PlacesTestUtils.getDatabaseValue(
-        "moz_origins",
-        "recalc_alt_frecency",
-        {
-          host,
-        }
-      )) == 1,
+  Assert.equal(
+    await PlacesTestUtils.getDatabaseValue(
+      "moz_origins",
+      "recalc_alt_frecency",
+      {
+        host,
+      }
+    ),
+    1,
     "Alt frecency should be calculated"
   );
+
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   let alt_frecency = await PlacesTestUtils.getDatabaseValue(
     "moz_origins",
@@ -50,7 +52,8 @@ add_task(async function test() {
     "frecency",
     { host }
   );
-  
+
+  info("Remove only one visit (otherwise the page would be orphaned).");
   await PlacesUtils.history.removeVisitsByFilter({
     beginDate: new Date(now.valueOf() - 10000),
     endDate: new Date(now.valueOf() + 10000),
@@ -87,11 +90,14 @@ add_task(async function test() {
     "alternative frecency should have decreased"
   );
 
-  
+  info("Add another page to the same host.");
   const url2 = `https://${host}/second/`;
   await PlacesTestUtils.addVisits(url2);
-  
+  info("Remove the first page.");
   await PlacesUtils.history.remove(url);
+  
+  
+  PlacesUtils.history.shouldStartFrecencyRecalculation = false;
   Assert.equal(
     await PlacesTestUtils.getDatabaseValue("moz_origins", "recalc_frecency", {
       host,
