@@ -74,8 +74,26 @@ add_task(async function testResetAll() {
   ok(Services.prefs.getBoolPref(KNOWN_PREF_2), "initial state D");
 
   
-  doc.getElementById("test-featureC").click();
-  doc.getElementById("test-featureD").click();
+
+  EventUtils.synthesizeMouseAtCenter(
+    doc.getElementById("test-featureC").checkboxEl,
+    {},
+    gBrowser.contentWindow
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    doc.getElementById("test-featureD").labelEl,
+    {},
+    gBrowser.contentWindow
+  );
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  EventUtils.synthesizeMouseAtCenter(
+    doc.getElementById("test-featureD").descriptionEl,
+    {},
+    gBrowser.contentWindow
+  );
+  AccessibilityUtils.resetEnv();
 
   
   ok(!Services.prefs.getBoolPref("test.featureA"), "modified state A");
