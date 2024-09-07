@@ -96,10 +96,10 @@ class H26xPacketBuffer {
 
   
   
-  std::map<uint32_t, PpsInfo> pps_data_;
+  std::map<int, PpsInfo> pps_data_;
   
   
-  std::map<uint32_t, SpsInfo> sps_data_;
+  std::map<int, SpsInfo> sps_data_;
 };
 
 }  
