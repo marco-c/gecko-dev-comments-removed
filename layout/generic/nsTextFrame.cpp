@@ -4253,9 +4253,13 @@ class nsContinuingTextFrame final : public nsTextFrame {
   };
 
   void AddInlineMinISize(gfxContext* aRenderingContext,
-                         InlineMinISizeData* aData) final;
+                         InlineMinISizeData* aData) final {
+    
+  }
   void AddInlinePrefISize(gfxContext* aRenderingContext,
-                          InlinePrefISizeData* aData) final;
+                          InlinePrefISizeData* aData) final {
+    
+  }
 
  protected:
   explicit nsContinuingTextFrame(ComputedStyle* aStyle,
@@ -4378,18 +4382,6 @@ nsIFrame* nsContinuingTextFrame::FirstInFlow() const {
 nscoord nsTextFrame::IntrinsicISize(gfxContext* aContext,
                                     IntrinsicISizeType aType) {
   return IntrinsicISizeFromInline(aContext, aType);
-}
-
-
-void nsContinuingTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
-                                              InlineMinISizeData* aData) {
-  
-}
-
-
-void nsContinuingTextFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
-                                               InlinePrefISizeData* aData) {
-  
 }
 
 

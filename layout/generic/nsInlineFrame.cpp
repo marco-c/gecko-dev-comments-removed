@@ -265,7 +265,8 @@ static void ReparentChildListStyle(nsPresContext* aPresContext,
   }
 }
 
-void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
+void nsInlineFrame::Reflow(nsPresContext* aPresContext,
+                           ReflowOutput& aReflowOutput,
                            const ReflowInput& aReflowInput,
                            nsReflowStatus& aStatus) {
   MarkInReflow();
@@ -276,7 +277,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     NS_ERROR("must have non-null aReflowInput.mLineLayout");
     return;
   }
-  if (IsFrameTreeTooDeep(aReflowInput, aMetrics, aStatus)) {
+  if (IsFrameTreeTooDeep(aReflowInput, aReflowOutput, aStatus)) {
     return;
   }
 
@@ -353,9 +354,9 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     Unused << PullOneFrame(aPresContext, irs);
   }
 
-  ReflowFrames(aPresContext, aReflowInput, irs, aMetrics, aStatus);
+  ReflowFrames(aPresContext, aReflowInput, irs, aReflowOutput, aStatus);
 
-  ReflowAbsoluteFrames(aPresContext, aMetrics, aReflowInput, aStatus);
+  ReflowAbsoluteFrames(aPresContext, aReflowOutput, aReflowInput, aStatus);
 
   
   
@@ -441,7 +442,8 @@ void nsInlineFrame::PullOverflowsFromPrevInFlow() {
 
 void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
                                  const ReflowInput& aReflowInput,
-                                 InlineReflowInput& irs, ReflowOutput& aMetrics,
+                                 InlineReflowInput& irs,
+                                 ReflowOutput& aReflowOutput,
                                  nsReflowStatus& aStatus) {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
@@ -591,7 +593,7 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   
   
   
-  aMetrics.ISize(lineWM) = lineLayout->EndSpan(this);
+  aReflowOutput.ISize(lineWM) = lineLayout->EndSpan(this);
 
   
 
@@ -607,7 +609,7 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   
   if ((!GetPrevContinuation() && !FrameIsNonFirstInIBSplit()) ||
       boxDecorationBreakClone) {
-    aMetrics.ISize(lineWM) += framePadding.IStart(frameWM);
+    aReflowOutput.ISize(lineWM) += framePadding.IStart(frameWM);
   }
 
   
@@ -621,20 +623,20 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   if ((aStatus.IsComplete() && !LastInFlow()->GetNextContinuation() &&
        !FrameIsNonLastInIBSplit()) ||
       boxDecorationBreakClone) {
-    aMetrics.ISize(lineWM) += framePadding.IEnd(frameWM);
+    aReflowOutput.ISize(lineWM) += framePadding.IEnd(frameWM);
   }
 
-  nsLayoutUtils::SetBSizeFromFontMetrics(this, aMetrics, framePadding, lineWM,
-                                         frameWM);
+  nsLayoutUtils::SetBSizeFromFontMetrics(this, aReflowOutput, framePadding,
+                                         lineWM, frameWM);
 
   
   
-  aMetrics.mOverflowAreas.Clear();
+  aReflowOutput.mOverflowAreas.Clear();
 
 #ifdef NOISY_FINAL_SIZE
   ListTag(stdout);
-  printf(": metrics=%d,%d ascent=%d\n", aMetrics.Width(), aMetrics.Height(),
-         aMetrics.BlockStartAscent());
+  printf(": metrics=%d,%d ascent=%d\n", aReflowOutput.Width(),
+         aReflowOutput.Height(), aReflowOutput.BlockStartAscent());
 #endif
 }
 
@@ -982,7 +984,7 @@ nsIFrame* nsFirstLineFrame::PullOneFrame(nsPresContext* aPresContext,
 }
 
 void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
-                              ReflowOutput& aMetrics,
+                              ReflowOutput& aReflowOutput,
                               const ReflowInput& aReflowInput,
                               nsReflowStatus& aStatus) {
   MarkInReflow();
@@ -1043,10 +1045,10 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   NS_ASSERTION(!aReflowInput.mLineLayout->GetInFirstLine(),
                "Nested first-line frames? BOGUS");
   aReflowInput.mLineLayout->SetInFirstLine(true);
-  ReflowFrames(aPresContext, aReflowInput, irs, aMetrics, aStatus);
+  ReflowFrames(aPresContext, aReflowInput, irs, aReflowOutput, aStatus);
   aReflowInput.mLineLayout->SetInFirstLine(false);
 
-  ReflowAbsoluteFrames(aPresContext, aMetrics, aReflowInput, aStatus);
+  ReflowAbsoluteFrames(aPresContext, aReflowOutput, aReflowInput, aStatus);
 
   
 }
