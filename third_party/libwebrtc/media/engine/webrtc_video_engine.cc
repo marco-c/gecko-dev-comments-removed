@@ -168,16 +168,10 @@ bool IsCodecValidForLowerRange(const Codec& codec) {
 
 
 
-
-
-
-
-
 template <class T>
-std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
+std::vector<webrtc::SdpVideoFormat> GetDefaultSupportedFormats(
     const T* factory,
     bool is_decoder_factory,
-    bool include_rtx,
     const webrtc::FieldTrialsView& trials) {
   if (!factory) {
     return {};
@@ -190,11 +184,10 @@ std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
   }
 
   if (supported_formats.empty())
-    return std::vector<Codec>();
+    return supported_formats;
 
   supported_formats.push_back(webrtc::SdpVideoFormat(kRedCodecName));
   supported_formats.push_back(webrtc::SdpVideoFormat(kUlpfecCodecName));
-
   
   
   if (is_decoder_factory || IsEnabled(trials, "WebRTC-FlexFEC-03-Advertised")) {
@@ -206,7 +199,17 @@ std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
     flexfec_format.parameters = {{kFlexfecFmtpRepairWindow, "10000000"}};
     supported_formats.push_back(flexfec_format);
   }
+  return supported_formats;
+}
 
+
+
+
+
+std::vector<Codec> AssignPayloadTypesAndAddRtx(
+    const std::vector<webrtc::SdpVideoFormat>& supported_formats,
+    bool include_rtx,
+    const webrtc::FieldTrialsView& trials) {
   
   
   static const int kFirstDynamicPayloadTypeLowerRange = 35;
@@ -268,6 +271,20 @@ std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
     }
   }
   return output_codecs;
+}
+
+
+
+template <class T>
+std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
+    const T* factory,
+    bool is_decoder_factory,
+    bool include_rtx,
+    const webrtc::FieldTrialsView& trials) {
+  auto supported_formats =
+      GetDefaultSupportedFormats(factory, is_decoder_factory, trials);
+
+  return AssignPayloadTypesAndAddRtx(supported_formats, include_rtx, trials);
 }
 
 static std::string CodecVectorToString(const std::vector<Codec>& codecs) {
