@@ -2,14 +2,7 @@ import sys
 import platform
 
 
-__all__ = ['install', 'NullFinder', 'Protocol']
-
-
-try:
-    from typing import Protocol
-except ImportError:  
-    
-    from ..typing_extensions import Protocol  
+__all__ = ['install', 'NullFinder']
 
 
 def install(cls):
@@ -45,21 +38,13 @@ def disable_stdlib_finder():
 
 class NullFinder:
     """
-    A "Finder" (aka "MetaClassFinder") that never finds any modules,
+    A "Finder" (aka "MetaPathFinder") that never finds any modules,
     but may find distributions.
     """
 
     @staticmethod
     def find_spec(*args, **kwargs):
         return None
-
-    
-    
-    
-    
-    
-    
-    find_module = find_spec
 
 
 def pypy_partial(val):

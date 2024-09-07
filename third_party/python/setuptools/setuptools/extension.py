@@ -1,11 +1,14 @@
-import re
+from __future__ import annotations
+
 import functools
-import distutils.core
-import distutils.errors
-import distutils.extension
+import re
 from typing import TYPE_CHECKING
 
 from .monkey import get_unpatched
+
+import distutils.core
+import distutils.errors
+import distutils.extension
 
 
 def _have_cython():
@@ -16,17 +19,18 @@ def _have_cython():
     try:
         
         __import__(cython_impl, fromlist=['build_ext']).build_ext
-        return True
     except Exception:
-        pass
-    return False
+        return False
+    return True
 
 
 
 have_pyrex = _have_cython
 if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
+
     
-    _Extension = distutils.core.Extension
+    _Extension: TypeAlias = distutils.core.Extension
 else:
     _Extension = get_unpatched(distutils.core.Extension)
 
@@ -127,10 +131,19 @@ class Extension(_Extension):
       specified on Windows. (since v63)
     """
 
-    def __init__(self, name, sources, *args, **kw):
+    
+    
+    
+    
+    _full_name: str  
+    _links_to_dynamic: bool  
+    _needs_stub: bool  
+    _file_name: str  
+
+    def __init__(self, name: str, sources, *args, py_limited_api: bool = False, **kw):
         
         
-        self.py_limited_api = kw.pop("py_limited_api", False)
+        self.py_limited_api = py_limited_api
         super().__init__(name, sources, *args, **kw)
 
     def _convert_pyx_sources_to_lang(self):

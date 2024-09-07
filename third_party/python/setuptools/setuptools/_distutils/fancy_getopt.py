@@ -21,7 +21,7 @@ from .errors import DistutilsArgError, DistutilsGetoptError
 
 
 longopt_pat = r'[a-zA-Z](?:[a-zA-Z0-9-]*)'
-longopt_re = re.compile(r'^%s$' % longopt_pat)
+longopt_re = re.compile(rf'^{longopt_pat}$')
 
 
 neg_alias_re = re.compile(f"^({longopt_pat})=!({longopt_pat})$")
@@ -95,7 +95,7 @@ class FancyGetopt:
     def add_option(self, long_option, short_option=None, help_string=None):
         if long_option in self.option_index:
             raise DistutilsGetoptError(
-                "option conflict: already an option '%s'" % long_option
+                f"option conflict: already an option '{long_option}'"
             )
         else:
             option = (long_option, short_option, help_string)
@@ -118,11 +118,11 @@ class FancyGetopt:
         for alias, opt in aliases.items():
             if alias not in self.option_index:
                 raise DistutilsGetoptError(
-                    f"invalid {what} '{alias}': " f"option '{alias}' not defined"
+                    f"invalid {what} '{alias}': option '{alias}' not defined"
                 )
             if opt not in self.option_index:
                 raise DistutilsGetoptError(
-                    f"invalid {what} '{alias}': " f"aliased option '{opt}' not defined"
+                    f"invalid {what} '{alias}': aliased option '{opt}' not defined"
                 )
 
     def set_aliases(self, alias):
@@ -162,13 +162,13 @@ class FancyGetopt:
             
             if not isinstance(long, str) or len(long) < 2:
                 raise DistutilsGetoptError(
-                    ("invalid long option '%s': must be a string of length >= 2") % long
+                    f"invalid long option '{long}': must be a string of length >= 2"
                 )
 
             if not ((short is None) or (isinstance(short, str) and len(short) == 1)):
                 raise DistutilsGetoptError(
-                    "invalid short option '%s': "
-                    "must a single character or None" % short
+                    f"invalid short option '{short}': "
+                    "must a single character or None"
                 )
 
             self.repeat[long] = repeat
@@ -178,7 +178,7 @@ class FancyGetopt:
                 if short:
                     short = short + ':'
                 long = long[0:-1]
-                self.takes_arg[long] = 1
+                self.takes_arg[long] = True
             else:
                 
                 
@@ -191,7 +191,7 @@ class FancyGetopt:
                         )
 
                     self.long_opts[-1] = long  
-                self.takes_arg[long] = 0
+                self.takes_arg[long] = False
 
             
             
@@ -210,8 +210,8 @@ class FancyGetopt:
             
             if not longopt_re.match(long):
                 raise DistutilsGetoptError(
-                    "invalid long option name '%s' "
-                    "(must be letters, numbers, hyphens only" % long
+                    f"invalid long option name '{long}' "
+                    "(must be letters, numbers, hyphens only"
                 )
 
             self.attr_name[long] = self.get_attr_name(long)

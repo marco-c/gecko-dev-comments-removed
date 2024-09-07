@@ -1,4 +1,4 @@
-from setuptools.extern.more_itertools import consume  
+from more_itertools import consume  
 
 
 

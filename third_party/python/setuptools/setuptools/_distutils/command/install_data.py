@@ -5,7 +5,11 @@ platform-independent data files."""
 
 
 
+from __future__ import annotations
+
+import functools
 import os
+from typing import Iterable
 
 from ..core import Command
 from ..util import change_root, convert_path
@@ -19,7 +23,7 @@ class install_data(Command):
             'install-dir=',
             'd',
             "base directory for installing data files "
-            "(default: installation base dir)",
+            "[default: installation base dir]",
         ),
         ('root=', None, "install everything relative to this alternate root directory"),
         ('force', 'f', "force installation (overwrite existing files)"),
@@ -31,9 +35,9 @@ class install_data(Command):
         self.install_dir = None
         self.outfiles = []
         self.root = None
-        self.force = 0
+        self.force = False
         self.data_files = self.distribution.data_files
-        self.warn_dir = 1
+        self.warn_dir = True
 
     def finalize_options(self):
         self.set_undefined_options(
@@ -46,36 +50,42 @@ class install_data(Command):
     def run(self):
         self.mkpath(self.install_dir)
         for f in self.data_files:
-            if isinstance(f, str):
-                
-                f = convert_path(f)
-                if self.warn_dir:
-                    self.warn(
-                        "setup script did not provide a directory for "
-                        f"'{f}' -- installing right in '{self.install_dir}'"
-                    )
-                (out, _) = self.copy_file(f, self.install_dir)
-                self.outfiles.append(out)
-            else:
-                
-                dir = convert_path(f[0])
-                if not os.path.isabs(dir):
-                    dir = os.path.join(self.install_dir, dir)
-                elif self.root:
-                    dir = change_root(self.root, dir)
-                self.mkpath(dir)
+            self._copy(f)
 
-                if f[1] == []:
-                    
-                    
-                    
-                    self.outfiles.append(dir)
-                else:
-                    
-                    for data in f[1]:
-                        data = convert_path(data)
-                        (out, _) = self.copy_file(data, dir)
-                        self.outfiles.append(out)
+    @functools.singledispatchmethod
+    def _copy(self, f: tuple[str | os.PathLike, Iterable[str | os.PathLike]]):
+        
+        dir = convert_path(f[0])
+        if not os.path.isabs(dir):
+            dir = os.path.join(self.install_dir, dir)
+        elif self.root:
+            dir = change_root(self.root, dir)
+        self.mkpath(dir)
+
+        if f[1] == []:
+            
+            
+            
+            self.outfiles.append(dir)
+        else:
+            
+            for data in f[1]:
+                data = convert_path(data)
+                (out, _) = self.copy_file(data, dir)
+                self.outfiles.append(out)
+
+    @_copy.register(str)
+    @_copy.register(os.PathLike)
+    def _(self, f: str | os.PathLike):
+        
+        f = convert_path(f)
+        if self.warn_dir:
+            self.warn(
+                "setup script did not provide a directory for "
+                f"'{f}' -- installing right in '{self.install_dir}'"
+            )
+        (out, _) = self.copy_file(f, self.install_dir)
+        self.outfiles.append(out)
 
     def get_inputs(self):
         return self.data_files or []

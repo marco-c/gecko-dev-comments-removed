@@ -1,24 +1,38 @@
-from ._compat import Protocol
-from typing import Any, Dict, Iterator, List, TypeVar, Union
+from __future__ import annotations
+
+import os
+from typing import Protocol
+from typing import Any, Dict, Iterator, List, Optional, TypeVar, Union, overload
 
 
 _T = TypeVar("_T")
 
 
 class PackageMetadata(Protocol):
-    def __len__(self) -> int:
-        ...  
+    def __len__(self) -> int: ...  
 
-    def __contains__(self, item: str) -> bool:
-        ...  
+    def __contains__(self, item: str) -> bool: ...  
 
-    def __getitem__(self, key: str) -> str:
-        ...  
+    def __getitem__(self, key: str) -> str: ...  
 
-    def __iter__(self) -> Iterator[str]:
-        ...  
+    def __iter__(self) -> Iterator[str]: ...  
 
-    def get_all(self, name: str, failobj: _T = ...) -> Union[List[Any], _T]:
+    @overload
+    def get(
+        self, name: str, failobj: None = None
+    ) -> Optional[str]: ...  
+
+    @overload
+    def get(self, name: str, failobj: _T) -> Union[str, _T]: ...  
+
+    
+    @overload
+    def get_all(
+        self, name: str, failobj: None = None
+    ) -> Optional[List[Any]]: ...  
+
+    @overload
+    def get_all(self, name: str, failobj: _T) -> Union[List[Any], _T]:
         """
         Return all values associated with a possibly multi-valued key.
         """
@@ -30,20 +44,24 @@ class PackageMetadata(Protocol):
         """
 
 
-class SimplePath(Protocol[_T]):
+class SimplePath(Protocol):
     """
-    A minimal subset of pathlib.Path required by PathDistribution.
+    A minimal subset of pathlib.Path required by Distribution.
     """
 
-    def joinpath(self) -> _T:
-        ...  
+    def joinpath(
+        self, other: Union[str, os.PathLike[str]]
+    ) -> SimplePath: ...  
 
-    def __truediv__(self, other: Union[str, _T]) -> _T:
-        ...  
+    def __truediv__(
+        self, other: Union[str, os.PathLike[str]]
+    ) -> SimplePath: ...  
 
     @property
-    def parent(self) -> _T:
-        ...  
+    def parent(self) -> SimplePath: ...  
 
-    def read_text(self) -> str:
-        ...  
+    def read_text(self, encoding=None) -> str: ...  
+
+    def read_bytes(self) -> bytes: ...  
+
+    def exists(self) -> bool: ...  

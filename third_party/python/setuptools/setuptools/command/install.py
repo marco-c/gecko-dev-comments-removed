@@ -1,13 +1,19 @@
-from distutils.errors import DistutilsArgError
-import inspect
+from __future__ import annotations
+
 import glob
+import inspect
 import platform
-import distutils.command.install as orig
-from typing import cast
+from collections.abc import Callable
+from typing import Any, ClassVar, cast
 
 import setuptools
+
+from ..dist import Distribution
 from ..warnings import SetuptoolsDeprecationWarning, SetuptoolsWarning
 from .bdist_egg import bdist_egg as bdist_egg_cls
+
+import distutils.command.install as orig
+from distutils.errors import DistutilsArgError
 
 
 
@@ -16,6 +22,8 @@ _install = orig.install
 
 class install(orig.install):
     """Use easy_install to install the package, w/dependencies"""
+
+    distribution: Distribution  
 
     user_options = orig.install.user_options + [
         ('old-and-unmanageable', None, "Try not to use this!"),
@@ -29,7 +37,9 @@ class install(orig.install):
         'old-and-unmanageable',
         'single-version-externally-managed',
     ]
-    new_commands = [
+    
+    
+    new_commands: ClassVar[list[tuple[str, Callable[[Any], bool] | None]]] = [
         ('install_egg_info', lambda self: True),
         ('install_scripts', lambda self: True),
     ]
