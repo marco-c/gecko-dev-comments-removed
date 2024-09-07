@@ -160,12 +160,22 @@ function testMultiWithDeserializeReadTransferErrorHelper(g, BASE, desc) {
     } catch (e) {
         assertEq(e.message.includes("invalid transferable"), true);
     }
+
+    try {
+        
+        
+        let clone = deserialize(s);
+    } catch (e) {
+        assertEq(e.message.includes("cannot transfer twice"), true);
+    }
+
     s = null;
     gc();
     printTrace(arguments.callee.name, g, BASE, obj.log, "deserialize");
     assertEq("" + obj.log, "" + [
         
         BASE + 1, "R", BASE + 3, "R",
+        
         
         
         
