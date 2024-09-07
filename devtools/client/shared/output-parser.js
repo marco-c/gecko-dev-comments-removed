@@ -749,6 +749,9 @@ class OutputParser {
           this.#stack.push({
             isParenthesis: true,
             separatorIndexes: [],
+            
+            
+            parts: [],
           });
           this.#appendTextNode(
             text.substring(token.startOffset, token.endOffset)
