@@ -422,9 +422,32 @@ struct FrameBidiData {
 struct MOZ_STACK_CLASS IntrinsicSizeInput final {
   gfxContext* const mContext;
 
-  explicit IntrinsicSizeInput(gfxContext* aContext) : mContext(aContext) {
+  
+  
+  
+  
+  
+  
+  
+  Maybe<LogicalSize> mPercentageBasis;
+
+  IntrinsicSizeInput(gfxContext* aContext,
+                     const Maybe<LogicalSize>& aPercentageBasis)
+      : mContext(aContext), mPercentageBasis(aPercentageBasis) {
     MOZ_ASSERT(mContext);
   }
+
+  
+  
+  
+  
+  
+  IntrinsicSizeInput(const IntrinsicSizeInput& aSource,
+                     mozilla::WritingMode aToWM, mozilla::WritingMode aFromWM)
+      : IntrinsicSizeInput(aSource.mContext,
+                           aSource.mPercentageBasis.map([&](const auto& aPB) {
+                             return aPB.ConvertTo(aToWM, aFromWM);
+                           })) {}
 };
 
 }  
@@ -2871,6 +2894,12 @@ class nsIFrame : public nsQueryFrame {
       const mozilla::LogicalSize& aBorderPadding,
       const mozilla::StyleSizeOverrides& aSizeOverrides,
       mozilla::ComputeSizeFlags aFlags);
+
+  static nscoord ComputeBSizeValueAsPercentageBasis(
+      const mozilla::StyleSize& aStyleBSize,
+      const mozilla::StyleSize& aStyleMinBSize,
+      const mozilla::StyleMaxSize& aStyleMaxBSize, nscoord aCBBSize,
+      nscoord aContentEdgeToBoxSizingBSize);
 
  protected:
   

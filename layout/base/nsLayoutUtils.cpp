@@ -4041,6 +4041,9 @@ static Maybe<nscoord> GetPercentBSize(const LengthPercentage& aSize,
                                       nsIFrame* aFrame, bool aHorizontalAxis);
 
 
+
+
+
 template <typename SizeOrMaxSize>
 static Maybe<nscoord> GetPercentBSize(const SizeOrMaxSize& aSize,
                                       nsIFrame* aFrame, bool aHorizontalAxis) {
@@ -4309,7 +4312,9 @@ static Maybe<nscoord> GetIntrinsicSize(nsIFrame::ExtremumLength aLength,
   if (aISizeFromAspectRatio) {
     result = *aISizeFromAspectRatio;
   } else {
-    const IntrinsicSizeInput input(aRenderingContext);
+    
+    
+    const IntrinsicSizeInput input(aRenderingContext, Nothing());
     auto type = aLength == nsIFrame::ExtremumLength::MaxContent
                     ? IntrinsicISizeType::PrefISize
                     : IntrinsicISizeType::MinISize;
@@ -4439,7 +4444,9 @@ static nscoord AddIntrinsicSizeOffset(
     if (aISizeFromAspectRatio) {
       minContent = maxContent = *aISizeFromAspectRatio;
     } else {
-      const IntrinsicSizeInput input(aRenderingContext);
+      
+      
+      const IntrinsicSizeInput input(aRenderingContext, Nothing());
       minContent = aFrame->GetMinISize(input);
       maxContent = aFrame->GetPrefISize(input);
     }
@@ -4643,6 +4650,32 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
     fixedMinISize = GetAbsoluteSize(styleMinISize);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  StyleSize styleBSize = horizontalAxis ? stylePos->mHeight : stylePos->mWidth;
+  StyleSize styleMinBSize =
+      horizontalAxis ? stylePos->mMinHeight : stylePos->mMinWidth;
+  StyleMaxSize styleMaxBSize =
+      horizontalAxis ? stylePos->mMaxHeight : stylePos->mMaxWidth;
+
+  
+  
+  
+  
+  
+  if (isInlineAxis) {
+    ResetIfKeywords(styleBSize, styleMinBSize, styleMaxBSize);
+  }
+
   auto childWM = aFrame->GetWritingMode();
   nscoord pmPercentageBasis = NS_UNCONSTRAINEDSIZE;
   if (aPercentageBasis.isSome()) {
@@ -4734,7 +4767,37 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         result = aFrame->BSize();
       }
     } else {
-      const IntrinsicSizeInput input(aRenderingContext);
+      
+      
+      
+      
+      const nscoord percentageBasisBSizeForFrame =
+          aPercentageBasis ? aPercentageBasis->BSize(childWM)
+                           : NS_UNCONSTRAINEDSIZE;
+      nscoord percentageBasisBSizeForChildren;
+      if (aFrame->IsBlockContainer()) {
+        
+        
+        contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
+
+        
+        
+        
+        percentageBasisBSizeForChildren =
+            nsIFrame::ComputeBSizeValueAsPercentageBasis(
+                styleBSize, styleMinBSize, styleMaxBSize,
+                percentageBasisBSizeForFrame,
+                contentEdgeToBoxSizing->BSize(childWM));
+      } else {
+        
+        
+        
+        percentageBasisBSizeForChildren = percentageBasisBSizeForFrame;
+      }
+      const IntrinsicSizeInput input(
+          aRenderingContext,
+          Some(LogicalSize(childWM, NS_UNCONSTRAINEDSIZE,
+                           percentageBasisBSizeForChildren)));
       result = aFrame->IntrinsicISize(input, aType);
     }
 #ifdef DEBUG_INTRINSIC_WIDTH
@@ -4745,33 +4808,6 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
                   aType == IntrinsicISizeType::MinISize ? "min" : "pref",
                   horizontalAxis ? "horizontal" : "vertical", result);
 #endif
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    StyleSize styleBSize =
-        horizontalAxis ? stylePos->mHeight : stylePos->mWidth;
-    StyleSize styleMinBSize =
-        horizontalAxis ? stylePos->mMinHeight : stylePos->mMinWidth;
-    StyleMaxSize styleMaxBSize =
-        horizontalAxis ? stylePos->mMaxHeight : stylePos->mMaxWidth;
-
-    
-    
-    
-    
-    
-    if (isInlineAxis) {
-      ResetIfKeywords(styleBSize, styleMinBSize, styleMaxBSize);
-    }
 
     
     
@@ -4808,7 +4844,10 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
 
         nscoord bSizeTakenByBoxSizing = GetDefiniteSizeTakenByBoxSizing(
             boxSizing, aFrame, !isInlineAxis, ignorePadding, aPercentageBasis);
-        contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
+        if (!contentEdgeToBoxSizing) {
+          contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
+        }
+
         
         
         
@@ -4869,7 +4908,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   if (aFrame->IsTableFrame()) {
     
     
-    const IntrinsicSizeInput input(aRenderingContext);
+    const IntrinsicSizeInput input(aRenderingContext, Nothing());
     min = aFrame->GetMinISize(input);
   }
 
