@@ -8598,7 +8598,7 @@ void nsTextFrame::MarkIntrinsicISizesDirty() {
 
 
 void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
-                                           nsIFrame::InlineMinISizeData* aData,
+                                           InlineMinISizeData* aData,
                                            TextRunType aTextRunType) {
   uint32_t flowEndInTextRun;
   gfxSkipCharsIterator iter =
@@ -8840,7 +8840,7 @@ static bool IsUnreflowedLetterFrame(nsIFrame* aFrame) {
 
 
 void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
-                                    nsIFrame::InlineMinISizeData* aData) {
+                                    InlineMinISizeData* aData) {
   
   
   
@@ -8886,9 +8886,9 @@ void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
 
 
 
-void nsTextFrame::AddInlinePrefISizeForFlow(
-    gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData,
-    TextRunType aTextRunType) {
+void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
+                                            InlinePrefISizeData* aData,
+                                            TextRunType aTextRunType) {
   if (IsUnreflowedLetterFrame(GetParent())) {
     MaybeSplitFramesForFirstLetter();
   }
@@ -9007,7 +9007,7 @@ void nsTextFrame::AddInlinePrefISizeForFlow(
 
 
 void nsTextFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
-                                     nsIFrame::InlinePrefISizeData* aData) {
+                                     InlinePrefISizeData* aData) {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   TextRunType trtype = (inflation == 1.0f) ? eNotInflated : eInflated;
 

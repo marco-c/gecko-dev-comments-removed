@@ -224,13 +224,13 @@ void nsInlineFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 
 void nsInlineFrame::AddInlineMinISize(gfxContext* aRenderingContext,
-                                      nsIFrame::InlineMinISizeData* aData) {
+                                      InlineMinISizeData* aData) {
   DoInlineMinISize(aRenderingContext, aData);
 }
 
 
 void nsInlineFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
-                                       nsIFrame::InlinePrefISizeData* aData) {
+                                       InlinePrefISizeData* aData) {
   DoInlinePrefISize(aRenderingContext, aData);
 }
 

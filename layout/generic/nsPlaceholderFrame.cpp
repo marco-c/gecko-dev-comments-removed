@@ -46,8 +46,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsIFrame)
 #endif
 
 
-void nsPlaceholderFrame::AddInlineMinISize(
-    gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
+void nsPlaceholderFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+                                           InlineMinISizeData* aData) {
   
   
   
@@ -63,8 +63,8 @@ void nsPlaceholderFrame::AddInlineMinISize(
 }
 
 
-void nsPlaceholderFrame::AddInlinePrefISize(
-    gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
+void nsPlaceholderFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+                                            InlinePrefISizeData* aData) {
   
   
   
