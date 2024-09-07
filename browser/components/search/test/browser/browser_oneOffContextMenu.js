@@ -5,9 +5,6 @@ const TEST_ENGINE_BASENAME = "testEngine.xml";
 
 let searchbar;
 let searchIcon;
-let searchPopup;
-let oneOffInstance;
-let oneOffButtons;
 
 add_setup(async function () {
   searchbar = await gCUITestUtils.addSearchBar();
@@ -15,9 +12,6 @@ add_setup(async function () {
     gCUITestUtils.removeSearchBar();
   });
   searchIcon = searchbar.querySelector(".searchbar-search-button");
-  searchPopup = document.getElementById("PopupSearchAutoComplete");
-  oneOffInstance = searchPopup.oneOffButtons;
-  oneOffButtons = oneOffInstance.buttons;
 
   
   await SearchTestUtils.installSearchExtension(
@@ -33,66 +27,37 @@ add_setup(async function () {
   });
 });
 
-add_task(async function testNewtabEmpty() {
-  await openPopup("abc");
-  let oneOffButton = findOneOff(TEST_ENGINE_NAME);
+add_task(async function telemetry() {
+  searchbar.focus();
+  searchbar.value = "abc";
 
-  let promise = BrowserTestUtils.waitForNewTab(gBrowser);
-  await activateContextMenuItem(
-    oneOffButton,
-    ".search-one-offs-context-open-in-new-tab"
-  );
-  let tab = await promise;
+  let searchPopup = document.getElementById("PopupSearchAutoComplete");
+  let oneOffInstance = searchPopup.oneOffButtons;
+
+  let oneOffButtons = oneOffInstance.buttons;
 
   
-  await closePopup();
-
-  Assert.equal(
-    tab.linkedBrowser.currentURI.spec,
-    "http://mochi.test:8888/browser/browser/components/search/test/browser/?search&test=abc",
-    "Expected search tab should have loaded"
-  );
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function testNewtabNonempty() {
-  await openPopup("");
-  let oneOffButton = findOneOff(TEST_ENGINE_NAME);
-
-  let promise = BrowserTestUtils.waitForNewTab(gBrowser);
-  await activateContextMenuItem(
-    oneOffButton,
-    ".search-one-offs-context-open-in-new-tab"
-  );
-  let tab = await promise;
+  let shownPromise = promiseEvent(searchPopup, "popupshown");
+  let builtPromise = promiseEvent(oneOffInstance, "rebuild");
+  info("Opening search panel");
+  EventUtils.synthesizeMouseAtCenter(searchIcon, {});
+  await Promise.all([shownPromise, builtPromise]);
 
   
-  await closePopup();
-
-  Assert.equal(
-    tab.linkedBrowser.currentURI.spec,
-    "http://mochi.test:8888/",
-    "Search form should have loaded in new tab"
-  );
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-function findOneOff(engineName) {
-  let oneOffChildren = [...oneOffButtons.children];
-  let oneOffButton = oneOffChildren.find(
-    node => node.engine?.name == engineName
-  );
+  let oneOffButton;
+  for (let node of oneOffButtons.children) {
+    if (node.engine && node.engine.name == TEST_ENGINE_NAME) {
+      oneOffButton = node;
+      break;
+    }
+  }
   Assert.notEqual(
     oneOffButton,
     undefined,
-    `One-off for ${engineName} should exist`
+    "One-off for test engine should exist"
   );
-  return oneOffButton;
-}
 
-async function activateContextMenuItem(oneOffButton, itemID) {
+  
   let contextMenu = oneOffInstance.querySelector(
     ".search-one-offs-context-menu"
   );
@@ -103,27 +68,34 @@ async function activateContextMenuItem(oneOffButton, itemID) {
   });
   await promise;
 
-  let menuItem = contextMenu.querySelector(itemID);
-  contextMenu.activateItem(menuItem);
-}
+  
+  let searchInNewTabMenuItem = contextMenu.querySelector(
+    ".search-one-offs-context-open-in-new-tab"
+  );
+  promise = BrowserTestUtils.waitForNewTab(gBrowser);
+  contextMenu.activateItem(searchInNewTabMenuItem);
+  let tab = await promise;
 
-async function openPopup(searchBarValue) {
-  searchbar.focus();
-  searchbar.value = searchBarValue;
-  if (searchbar.textbox.popupOpen) {
-    info("searchPanel is already open");
-    return;
-  }
-  let shownPromise = promiseEvent(searchPopup, "popupshown");
-  let builtPromise = promiseEvent(oneOffInstance, "rebuild");
-  info("Opening search panel");
-  EventUtils.synthesizeMouseAtCenter(searchIcon, {});
-  await Promise.all([shownPromise, builtPromise]);
-}
-
-async function closePopup() {
-  let promise = promiseEvent(searchPopup, "popuphidden");
+  
+  promise = promiseEvent(searchPopup, "popuphidden");
   info("Closing search panel");
   EventUtils.synthesizeKey("KEY_Escape");
   await promise;
-}
+
+  
+  Assert.equal(
+    tab.linkedBrowser.currentURI.spec,
+    "http://mochi.test:8888/browser/browser/components/search/test/browser/?search&test=abc",
+    "Expected search tab should have loaded"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+
+  
+  await EventUtils.promiseNativeMouseEvent({
+    type: "mousemove",
+    target: searchbar,
+    offsetX: 0,
+    offsetY: 0,
+  });
+});

@@ -306,14 +306,52 @@
     }
 
     handleSearchCommand(aEvent, aEngine, aForceNewTab) {
+      let where = "current";
+      let params;
+      const newTabPref = Services.prefs.getBoolPref("browser.search.openintab");
+
+      
       if (
         aEvent &&
-        aEvent.originalTarget.classList.contains("search-go-button") &&
-        aEvent.button == 2
+        aEvent.originalTarget.classList.contains("search-go-button")
       ) {
-        return;
+        if (aEvent.button == 2) {
+          return;
+        }
+        where = lazy.BrowserUtils.whereToOpenLink(aEvent, false, true);
+        if (
+          newTabPref &&
+          !aEvent.altKey &&
+          !aEvent.getModifierState("AltGraph") &&
+          where == "current" &&
+          !gBrowser.selectedTab.isEmpty
+        ) {
+          where = "tab";
+        }
+      } else if (aForceNewTab) {
+        where = "tab";
+        if (Services.prefs.getBoolPref("browser.tabs.loadInBackground")) {
+          where += "-background";
+        }
+      } else {
+        if (
+          (KeyboardEvent.isInstance(aEvent) &&
+            (aEvent.altKey || aEvent.getModifierState("AltGraph"))) ^
+            newTabPref &&
+          !gBrowser.selectedTab.isEmpty
+        ) {
+          where = "tab";
+        }
+        if (
+          MouseEvent.isInstance(aEvent) &&
+          (aEvent.button == 1 || aEvent.getModifierState("Accel"))
+        ) {
+          where = "tab";
+          params = {
+            inBackground: true,
+          };
+        }
       }
-      let { where, params } = this.whereToOpen(aEvent, aForceNewTab);
       this.handleSearchCommandWhere(aEvent, aEngine, where, params);
     }
 
@@ -409,98 +447,6 @@
         }
       }
       openTrustedLinkIn(submission.uri.spec, aWhere, params);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    whereToOpen(aEvent, aForceNewTab = false) {
-      let where = "current";
-      let params = {};
-      const newTabPref = Services.prefs.getBoolPref("browser.search.openintab");
-
-      
-      if (aEvent?.originalTarget.classList.contains("search-go-button")) {
-        where = lazy.BrowserUtils.whereToOpenLink(aEvent, false, true);
-        if (
-          newTabPref &&
-          !aEvent.altKey &&
-          !aEvent.getModifierState("AltGraph") &&
-          where == "current" &&
-          !gBrowser.selectedTab.isEmpty
-        ) {
-          where = "tab";
-        }
-      } else if (aForceNewTab) {
-        where = "tab";
-        if (Services.prefs.getBoolPref("browser.tabs.loadInBackground")) {
-          params = {
-            inBackground: true,
-          };
-        }
-      } else {
-        if (
-          (KeyboardEvent.isInstance(aEvent) &&
-            (aEvent.altKey || aEvent.getModifierState("AltGraph"))) ^
-            newTabPref &&
-          !gBrowser.selectedTab.isEmpty
-        ) {
-          where = "tab";
-        }
-        if (
-          MouseEvent.isInstance(aEvent) &&
-          (aEvent.button == 1 || aEvent.getModifierState("Accel"))
-        ) {
-          where = "tab";
-          params = {
-            inBackground: true,
-          };
-        }
-      }
-
-      return { where, params };
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    openSearchForm(aEvent, aEngine, forceNewTab = false) {
-      let { where, params } = this.whereToOpen(aEvent, forceNewTab);
-
-      let engine = aEngine || this.currentEngine;
-      let searchForm = engine.wrappedJSObject.searchForm;
-
-      if (where === "tab" && !!params.inBackground) {
-        
-        params.avoidBrowserFocus = true;
-      } else if (
-        where !== "window" &&
-        aEvent.keyCode === KeyEvent.DOM_VK_RETURN
-      ) {
-        
-        params.avoidBrowserFocus = true;
-        this._needBrowserFocusAtEnterKeyUp = true;
-      }
-
-      openTrustedLinkIn(searchForm, where, params);
     }
 
     disconnectedCallback() {
@@ -861,10 +807,6 @@
             )
           )
         ) {
-          if (event.shiftKey) {
-            let engine = this.textbox.selectedButton?.engine;
-            this.openSearchForm(event, engine);
-          }
           return true;
         }
         
