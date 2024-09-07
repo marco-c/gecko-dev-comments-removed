@@ -483,6 +483,11 @@ class RefTest(object):
             prefs["reftest.manifests"] = json.dumps(manifests)
 
         
+        prefs["reftest.mozharness_test_paths"] = (
+            len(os.environ.get("MOZHARNESS_TEST_PATHS", "")) > 0
+        )
+
+        
         prefs["fission.autostart"] = True
         if options.disableFission:
             prefs["fission.autostart"] = False
