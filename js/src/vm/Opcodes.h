@@ -2630,19 +2630,6 @@
 
 
 
- \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(ThrowWithoutJump, throw_without_jump, NULL, 1, 1, 0, JOF_BYTE)) \
-    
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2651,20 +2638,6 @@
 
  \
     MACRO(ThrowWithStack, throw_with_stack, NULL, 1, 2, 0, JOF_BYTE) \
-    
-
-
-
-
-
-
-
-
-
-
-
- \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(ThrowWithStackWithoutJump, throw_with_stack_without_jump, NULL, 1, 2, 0, JOF_BYTE)) \
     
 
 
@@ -3720,13 +3693,15 @@
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+    IF_RECORD_TUPLE(, MACRO(239))     \
+    IF_RECORD_TUPLE(, MACRO(240))     \
     IF_RECORD_TUPLE(, MACRO(241))     \
     IF_RECORD_TUPLE(, MACRO(242))     \
     IF_RECORD_TUPLE(, MACRO(243))     \
     IF_RECORD_TUPLE(, MACRO(244))     \
     IF_RECORD_TUPLE(, MACRO(245))     \
-    IF_RECORD_TUPLE(, MACRO(246))     \
-    IF_RECORD_TUPLE(, MACRO(247))     \
+    MACRO(246)                                   \
+    MACRO(247)                                   \
     MACRO(248)                                   \
     MACRO(249)                                   \
     MACRO(250)                                   \

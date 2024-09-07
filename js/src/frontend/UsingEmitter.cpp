@@ -10,20 +10,56 @@
 #include "frontend/TryEmitter.h"
 #include "frontend/WhileEmitter.h"
 #include "vm/CompletionKind.h"
-#include "vm/DisposeJumpKind.h"
 
 using namespace js;
 using namespace js::frontend;
 
 UsingEmitter::UsingEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
+bool UsingEmitter::emitThrowIfException() {
+  
+
+  InternalIfEmitter ifThrow(bce_);
+
+  if (!ifThrow.emitThenElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Throw)) {
+    
+    return false;
+  }
+
+  if (!ifThrow.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!ifThrow.emitEnd()) {
+    
+    return false;
+  }
+
+  return true;
+}
+
 
 
 
 bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
-                                   CompletionKind initialCompletion,
-                                   DisposeJumpKind jumpKind) {
+                                   CompletionKind initialCompletion) {
   MOZ_ASSERT(initialCompletion != CompletionKind::Return);
+
+  
+  
+  
+  
 
   if (hasAwaitUsing_) {
     
@@ -53,15 +89,26 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
       
       return false;
     }
-    if (!bce_->emit1(JSOp::Exception)) {
+
+    if (hasAwaitUsing_) {
       
-      return false;
+      if (!bce_->emitPickN(4)) {
+        
+        return false;
+      }
+    } else {
+      
+      if (!bce_->emit1(JSOp::Swap)) {
+        
+        return false;
+      }
     }
   } else {
     if (!bce_->emit1(JSOp::False)) {
       
       return false;
     }
+
     if (!bce_->emit1(JSOp::Undefined)) {
       
       return false;
@@ -620,40 +667,6 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     }
   }
 
-  InternalIfEmitter ifThrow(bce_);
-
-  if (!ifThrow.emitThenElse()) {
-    
-    return false;
-  }
-
-  if (jumpKind == DisposeJumpKind::JumpOnError) {
-    if (!bce_->emit1(JSOp::Throw)) {
-      
-      return false;
-    }
-  } else {
-    if (!bce_->emit1(JSOp::ThrowWithoutJump)) {
-      
-      return false;
-    }
-  }
-
-  if (!ifThrow.emitElse()) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Pop)) {
-    
-    return false;
-  }
-
-  if (!ifThrow.emitEnd()) {
-    
-    return false;
-  }
-
   return true;
 }
 
@@ -677,19 +690,49 @@ bool UsingEmitter::prepareForAssignment(UsingHint hint) {
 bool UsingEmitter::prepareForForOfLoopIteration() {
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
-  return emitDisposeLoop(*es);
+
+  if (!emitDisposeLoop(*es)) {
+    
+    return false;
+  }
+
+  return emitThrowIfException();
 }
 
 bool UsingEmitter::prepareForForOfIteratorCloseOnThrow() {
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
-  return emitDisposeLoop(*es, CompletionKind::Throw,
-                         DisposeJumpKind::NoJumpOnError);
+
+  
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!emitDisposeLoop(*es, CompletionKind::Throw)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  return bce_->emit1(JSOp::Swap);
+  
 }
 
 bool UsingEmitter::emitNonLocalJump(EmitterScope* present) {
   MOZ_ASSERT(present->hasDisposables());
-  return emitDisposeLoop(*present);
+
+  if (!emitDisposeLoop(*present)) {
+    
+    return false;
+  }
+
+  return emitThrowIfException();
 }
 
 bool UsingEmitter::emitEnd() {
@@ -701,6 +744,12 @@ bool UsingEmitter::emitEnd() {
   
   
   if (!emitDisposeLoop(*es)) {
+    
+    return false;
+  }
+
+  if (!emitThrowIfException()) {
+    
     return false;
   }
 
@@ -716,17 +765,7 @@ bool UsingEmitter::emitEnd() {
     return false;
   }
 
-  if (!bce_->emitDupAt(2)) {
-    
-    return false;
-  }
-
-  if (!bce_->emitDupAt(2)) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::ThrowWithStackWithoutJump)) {
+  if (!bce_->emitPickN(2)) {
     
     return false;
   }
@@ -736,10 +775,16 @@ bool UsingEmitter::emitEnd() {
     return false;
   }
 
-  
-  
-  
-  
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitUnpickN(2)) {
+    
+    return false;
+  }
+
   if (!tryEmitter_->emitEnd()) {
     
     return false;

@@ -9,12 +9,9 @@
 #include "mozilla/Assertions.h"  
 
 #include "frontend/BytecodeEmitter.h"  
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "frontend/EmitterScope.h"  
-#endif
-#include "frontend/IfEmitter.h"      
-#include "frontend/SharedContext.h"  
-#include "vm/Opcodes.h"              
+#include "frontend/IfEmitter.h"        
+#include "frontend/SharedContext.h"    
+#include "vm/Opcodes.h"                
 
 using namespace js;
 using namespace js::frontend;
@@ -101,12 +98,7 @@ bool TryEmitter::emitTryEnd() {
   return true;
 }
 
-bool TryEmitter::emitCatch(ExceptionStack stack
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                           ,
-                           ForForOfIteratorClose forForOfIteratorClose
-#endif
-) {
+bool TryEmitter::emitCatch(ExceptionStack stack) {
   MOZ_ASSERT(state_ == State::Try);
   if (!emitTryEnd()) {
     return false;
@@ -126,18 +118,6 @@ bool TryEmitter::emitCatch(ExceptionStack stack
       return false;
     }
   }
-
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  
-  
-  
-  
-  if (forForOfIteratorClose == ForForOfIteratorClose::Yes) {
-    if (!bce_->innermostEmitterScope()->prepareForForOfIteratorCloseOnThrow()) {
-      return false;
-    }
-  }
-#endif
 
   if (stack == ExceptionStack::No) {
     if (!bce_->emit1(JSOp::Exception)) {

@@ -7,6 +7,7 @@
 #include "frontend/ForOfLoopControl.h"
 
 #include "frontend/BytecodeEmitter.h"  
+#include "frontend/EmitterScope.h"     
 #include "frontend/IfEmitter.h"        
 #include "vm/CompletionKind.h"         
 #include "vm/Opcodes.h"                
@@ -38,15 +39,21 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
 }
 
 bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
-  if (!tryCatch_->emitCatch(TryEmitter::ExceptionStack::Yes
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                            ,
-                            TryEmitter::ForForOfIteratorClose::Yes
-#endif
-                            )) {
+  if (!tryCatch_->emitCatch(TryEmitter::ExceptionStack::Yes)) {
     
     return false;
   }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  
+  
+  
+  
+  if (!bce->innermostEmitterScope()->prepareForForOfIteratorCloseOnThrow()) {
+    
+    return false;
+  }
+#endif
 
   unsigned slotFromTop = bce->bytecodeSection().stackDepth() - iterDepth_;
   if (!bce->emitDupAt(slotFromTop)) {
