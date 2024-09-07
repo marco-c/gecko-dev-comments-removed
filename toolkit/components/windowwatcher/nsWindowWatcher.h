@@ -64,6 +64,26 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   static bool HaveSpecifiedSize(const mozilla::dom::WindowFeatures& features);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<nsDocShellLoadState> CreateLoadState(
+      nsIURI* aUri, nsPIDOMWindowOuter* aParent);
+
  protected:
   virtual ~nsWindowWatcher();
 
