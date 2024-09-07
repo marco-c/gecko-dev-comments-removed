@@ -99,12 +99,27 @@ add_task(async function testQueryParamIsNotStrippedForWrongSiteSpecific() {
 
 
 add_task(async function testMagneticLinks() {
-  let originalUrl = "magnet:?xt=urn:btih:somesha1hash";
+  let validUrl = "magnet:?xt=urn:btih:somesha1hash";
   let shortenedUrl = "magnet:?xt=urn:btih:somesha1hash";
   await testStripOnShare({
-    selectWholeUrl: true,
-    validUrl: originalUrl,
-    strippedUrl: shortenedUrl,
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+  });
+});
+
+
+
+add_task(async function testErrorHandlingForNestedLinks() {
+  let validUrl =
+    "https://www.example.com/?test_3=magnet%3A%3Fxt%3Durn%3Abtih%3Asomesha1hash&test_4=1234&test_2=4321";
+  let shortenedUrl =
+    "https://www.example.com/?test_3=magnet%3A%3Fxt%3Durn%3Abtih%3Asomesha1hash&test_4=1234";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
     useTestList: true,
   });
 });
