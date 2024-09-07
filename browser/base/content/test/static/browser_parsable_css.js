@@ -32,12 +32,6 @@ let ignoreList = [
   },
   
   {
-    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
-    errorMessage: /Unknown property.*overflow-clip-box/i,
-    isFromDevTools: false,
-  },
-  
-  {
     sourceName: /\b(html)\.css$/i,
     errorMessage: /Error in parsing value for ‘content’/i,
     isFromDevTools: false,
