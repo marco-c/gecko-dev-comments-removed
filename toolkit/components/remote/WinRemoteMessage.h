@@ -36,16 +36,17 @@ enum class WinRemoteMessageVersion : uint32_t {
 
   
   CommandLineAndWorkingDirInUtf16 = 2,
+
+  
+  NullSeparatedArguments = 3,
 };
 
 class WinRemoteMessageSender final {
   COPYDATASTRUCT mData;
-  nsAutoString mUtf16Buffer;
-  nsAutoCString mUtf8Buffer;
 
  public:
-  WinRemoteMessageSender(const wchar_t* aCommandLine,
-                         const wchar_t* aWorkingDir);
+  WinRemoteMessageSender(int32_t aArgc, const char** aArgv,
+                         const nsAString& aWorkingDir);
 
   WinRemoteMessageSender(const WinRemoteMessageSender&) = delete;
   WinRemoteMessageSender(WinRemoteMessageSender&&) = delete;
@@ -53,12 +54,16 @@ class WinRemoteMessageSender final {
   WinRemoteMessageSender& operator=(WinRemoteMessageSender&&) = delete;
 
   COPYDATASTRUCT* CopyData();
+
+ private:
+  nsCString mCmdLineBuffer;
 };
 
 class WinRemoteMessageReceiver final {
   nsCOMPtr<nsICommandLineRunner> mCommandLine;
 
   nsresult ParseV2(const nsAString& aBuffer);
+  nsresult ParseV3(const nsACString& aBuffer);
 
  public:
   WinRemoteMessageReceiver() = default;

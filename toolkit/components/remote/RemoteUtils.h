@@ -25,7 +25,7 @@ static void BuildClassName(const char* aProgram, const char* aProfile,
 }
 #endif
 
-char* ConstructCommandLine(int32_t argc, char** argv, const char* aStartupToken,
-                           int* aCommandLineLength);
+char* ConstructCommandLine(int32_t argc, const char** argv,
+                           const char* aStartupToken, int* aCommandLineLength);
 
 #endif  
