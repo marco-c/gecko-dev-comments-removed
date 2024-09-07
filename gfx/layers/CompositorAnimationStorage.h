@@ -32,11 +32,6 @@ struct AnimationTransform {
 
 
 
-  gfx::Matrix4x4 mTransformInDevSpace;
-  
-
-
-
   gfx::Matrix4x4 mFrameTransform;
   TransformData mData;
 
