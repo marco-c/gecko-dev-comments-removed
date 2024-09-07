@@ -10,18 +10,15 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 const REMOTE_SETTINGS_RESULTS = [
-  QuickSuggestTestUtils.ampRemoteSettings(),
-  QuickSuggestTestUtils.wikipediaRemoteSettings(),
+  QuickSuggestTestUtils.ampRemoteSettings({
+    keywords: ["amp", "amp and wikipedia"],
+  }),
+  QuickSuggestTestUtils.wikipediaRemoteSettings({
+    keywords: ["wikipedia", "amp and wikipedia"],
+  }),
 ];
 
-add_setup(async function test_setup() {
-  
-  do_get_profile();
-
-  
-  Services.fog.initializeFOG();
-
-  
+add_setup(async function setup() {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: [
       {
@@ -36,7 +33,7 @@ add_setup(async function test_setup() {
   });
 });
 
-add_task(async function testExposureCheck() {
+add_task(async function oneExposureResult_shown_matched() {
   UrlbarPrefs.set("exposureResults", suggestResultType("adm_sponsored"));
   UrlbarPrefs.set("showExposureResults", true);
 
@@ -47,17 +44,76 @@ add_task(async function testExposureCheck() {
 
   await check_results({
     context,
-    matches: [QuickSuggestTestUtils.ampResult()],
+    matches: [
+      {
+        ...QuickSuggestTestUtils.ampResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+      },
+    ],
   });
-
-  Assert.equal(
-    context.results[0].exposureResultType,
-    suggestResultType("adm_sponsored")
-  );
-  Assert.equal(context.results[0].exposureResultHidden, false);
 });
 
-add_task(async function testExposureCheckMultiple() {
+add_task(async function oneExposureResult_shown_notMatched() {
+  UrlbarPrefs.set("exposureResults", suggestResultType("adm_sponsored"));
+  UrlbarPrefs.set("showExposureResults", true);
+
+  let context = createContext("wikipedia", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+
+  await check_results({
+    context,
+    matches: [
+      {
+        ...QuickSuggestTestUtils.wikipediaResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.NONE,
+      },
+    ],
+  });
+});
+
+add_task(async function oneExposureResult_hidden_matched() {
+  UrlbarPrefs.set("exposureResults", suggestResultType("adm_sponsored"));
+  UrlbarPrefs.set("showExposureResults", false);
+
+  let context = createContext("amp", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+
+  await check_results({
+    context,
+    matches: [
+      {
+        ...QuickSuggestTestUtils.ampResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+      },
+    ],
+  });
+});
+
+add_task(async function oneExposureResult_hidden_notMatched() {
+  UrlbarPrefs.set("exposureResults", suggestResultType("adm_sponsored"));
+  UrlbarPrefs.set("showExposureResults", false);
+
+  let context = createContext("wikipedia", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+
+  await check_results({
+    context,
+    matches: [
+      {
+        ...QuickSuggestTestUtils.wikipediaResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.NONE,
+      },
+    ],
+  });
+});
+
+add_task(async function manyExposureResults_shown_oneMatched_1() {
   UrlbarPrefs.set(
     "exposureResults",
     [
@@ -71,54 +127,119 @@ add_task(async function testExposureCheckMultiple() {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
-
   await check_results({
     context,
-    matches: [QuickSuggestTestUtils.ampResult()],
+    matches: [
+      {
+        ...QuickSuggestTestUtils.ampResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+      },
+    ],
   });
+});
 
-  Assert.equal(
-    context.results[0].exposureResultType,
-    suggestResultType("adm_sponsored")
+add_task(async function manyExposureResults_shown_oneMatched_2() {
+  UrlbarPrefs.set(
+    "exposureResults",
+    [
+      suggestResultType("adm_sponsored"),
+      suggestResultType("adm_nonsponsored"),
+    ].join(",")
   );
-  Assert.equal(context.results[0].exposureResultHidden, false);
+  UrlbarPrefs.set("showExposureResults", true);
 
-  context = createContext("wikipedia", {
+  let context = createContext("wikipedia", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [
+      {
+        ...QuickSuggestTestUtils.wikipediaResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+      },
+    ],
+  });
+});
+
+add_task(async function manyExposureResults_shown_manyMatched() {
+  UrlbarPrefs.set(
+    "exposureResults",
+    [
+      suggestResultType("adm_sponsored"),
+      suggestResultType("adm_nonsponsored"),
+    ].join(",")
+  );
+  UrlbarPrefs.set("showExposureResults", true);
+
+  let keyword = "amp and wikipedia";
+  let context = createContext(keyword, {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
 
+  
+  
   await check_results({
     context,
-    matches: [QuickSuggestTestUtils.wikipediaResult()],
+    matches: [
+      {
+        ...QuickSuggestTestUtils.ampResult({ keyword }),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+      },
+    ],
   });
-
-  Assert.equal(
-    context.results[0].exposureResultType,
-    suggestResultType("adm_nonsponsored")
-  );
-  Assert.equal(context.results[0].exposureResultHidden, false);
 });
 
-add_task(async function exposureDisplayFiltering() {
-  UrlbarPrefs.set("exposureResults", suggestResultType("adm_sponsored"));
+add_task(async function manyExposureResults_hidden_oneMatched_1() {
+  UrlbarPrefs.set(
+    "exposureResults",
+    [
+      suggestResultType("adm_sponsored"),
+      suggestResultType("adm_nonsponsored"),
+    ].join(",")
+  );
   UrlbarPrefs.set("showExposureResults", false);
 
   let context = createContext("amp", {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
-
   await check_results({
     context,
-    matches: [QuickSuggestTestUtils.ampResult()],
+    matches: [
+      {
+        ...QuickSuggestTestUtils.ampResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+      },
+    ],
   });
+});
 
-  Assert.equal(
-    context.results[0].exposureResultType,
-    suggestResultType("adm_sponsored")
+add_task(async function manyExposureResults_hidden_oneMatched_2() {
+  UrlbarPrefs.set(
+    "exposureResults",
+    [
+      suggestResultType("adm_sponsored"),
+      suggestResultType("adm_nonsponsored"),
+    ].join(",")
   );
-  Assert.equal(context.results[0].exposureResultHidden, true);
+  UrlbarPrefs.set("showExposureResults", false);
+
+  let context = createContext("wikipedia", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [
+      {
+        ...QuickSuggestTestUtils.wikipediaResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+      },
+    ],
+  });
 });
 
 function suggestResultType(typeWithoutSource) {
