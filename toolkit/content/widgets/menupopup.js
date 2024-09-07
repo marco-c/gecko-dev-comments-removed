@@ -267,7 +267,7 @@
       
       if (
         this.parentNode?.localName == "menulist" ||
-        !this.scrollBox.hasAttribute("overflowing")
+        !this.scrollBox.overflowing
       ) {
         return;
       }

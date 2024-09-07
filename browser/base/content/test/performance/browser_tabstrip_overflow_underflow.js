@@ -107,7 +107,7 @@ add_task(async function () {
   );
 
   Assert.ok(
-    gBrowser.tabContainer.hasAttribute("overflow"),
+    gBrowser.tabContainer.overflowing,
     "Tabs should now be overflowed."
   );
 
@@ -168,15 +168,15 @@ add_task(async function () {
   BrowserTestUtils.removeTab(lastTab);
 
   Assert.ok(
-    gBrowser.tabContainer.hasAttribute("overflow"),
+    gBrowser.tabContainer.overflowing,
     "Tabs should still be overflowed."
   );
 
   
   
   
-  while (gBrowser.tabContainer.hasAttribute("overflow")) {
-    lastTab = gBrowser.tabs[gBrowser.tabs.length - 1];
+  while (gBrowser.tabContainer.overflowing) {
+    lastTab = gBrowser.tabs.at(-1);
     if (gBrowser.selectedTab !== lastTab) {
       await BrowserTestUtils.switchTab(gBrowser, lastTab);
     }

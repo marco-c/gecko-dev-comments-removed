@@ -511,26 +511,8 @@ add_task(async function test_show_hide_tab() {
 
 
 
-
 add_task(async function test_show_hide_tab_via_tab_panel() {
   gTabsPanel.init();
-  const tabContainer = document.getElementById("tabbrowser-tabs");
-  let shouldAddOverflow = !tabContainer.hasAttribute("overflow");
-  const revertTabContainerAttribute = () => {
-    if (shouldAddOverflow) {
-      
-      tabContainer.removeAttribute("overflow");
-      
-      shouldAddOverflow = false;
-    }
-  };
-  if (shouldAddOverflow) {
-    
-    tabContainer.setAttribute("overflow", "true");
-    
-    registerCleanupFunction(revertTabContainerAttribute);
-  }
-
   const allTabsView = document.getElementById("allTabsMenu-allTabsView");
 
   await testShowHideTabMenu({
@@ -570,8 +552,6 @@ add_task(async function test_show_hide_tab_via_tab_panel() {
       await allTabsPopupHiddenPromise;
     },
   });
-
-  revertTabContainerAttribute();
 });
 
 add_task(async function test_show_hide_tools_menu() {
