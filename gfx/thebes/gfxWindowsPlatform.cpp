@@ -373,9 +373,6 @@ void gfxWindowsPlatform::InitAcceleration() {
 
   DeviceManagerDx::Init();
 
-  
-  MOZ_ASSERT_IF(XRE_IsContentProcess(), GetInitContentDeviceData());
-
   InitializeConfig();
   InitGPUProcessSupport();
   
