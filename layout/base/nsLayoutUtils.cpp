@@ -4393,41 +4393,32 @@ static nscoord GetFitContentSizeForMaxOrPreferredSize(
 
 
 
-
-
 static nscoord AddIntrinsicSizeOffset(
     gfxContext* aRenderingContext, nsIFrame* aFrame,
     const nsIFrame::IntrinsicSizeOffsetData& aOffsets, IntrinsicISizeType aType,
-    StyleBoxSizing aBoxSizing, nscoord aContentSize, nscoord aContentMinSize,
+    StyleBoxSizing aBoxSizing, nscoord aContentSize,
     const StyleSize& aStyleSize, const Maybe<nscoord> aFixedMinSize,
     const StyleSize& aStyleMinSize, const Maybe<nscoord> aFixedMaxSize,
     const StyleMaxSize& aStyleMaxSize, Maybe<nscoord> aISizeFromAspectRatio,
     uint32_t aFlags, PhysicalAxis aAxis) {
-  nscoord result = aContentSize;
-  nscoord min = aContentMinSize;
-  nscoord coordOutsideSize = 0;
-  nscoord contentBoxToBoxSizingDiff = 0;
+  const nscoord padding =
+      aFlags & nsLayoutUtils::IGNORE_PADDING ? 0 : aOffsets.padding;
+  nscoord contentBoxToBoxSizingDiff;
+  nscoord boxSizingToMarginDiff;
 
-  if (!(aFlags & nsLayoutUtils::IGNORE_PADDING)) {
-    coordOutsideSize += aOffsets.padding;
-  }
-
-  coordOutsideSize += aOffsets.border;
-
+  
+  
+  nscoord result;
   if (aBoxSizing == StyleBoxSizing::Border) {
-    
-    
-    contentBoxToBoxSizingDiff = coordOutsideSize;
-
-    min += coordOutsideSize;
-    result = NSCoordSaturatingAdd(result, coordOutsideSize);
-
-    coordOutsideSize = 0;
+    contentBoxToBoxSizingDiff = padding + aOffsets.border;
+    boxSizingToMarginDiff = aOffsets.margin;
+    result = NSCoordSaturatingAdd(aContentSize, contentBoxToBoxSizingDiff);
+  } else {
+    MOZ_ASSERT(aBoxSizing == StyleBoxSizing::Content);
+    contentBoxToBoxSizingDiff = 0;
+    boxSizingToMarginDiff = padding + aOffsets.border + aOffsets.margin;
+    result = aContentSize;
   }
-
-  coordOutsideSize += aOffsets.margin;
-
-  min += coordOutsideSize;
 
   
   nscoord minContent = 0;
@@ -4452,13 +4443,13 @@ static nscoord AddIntrinsicSizeOffset(
   if (aType == IntrinsicISizeType::MinISize &&
       aFrame->IsPercentageResolvedAgainstZero(aStyleSize, aStyleMaxSize)) {
     
-    result = 0;  
+    result = 0;
   } else if (Maybe<nscoord> size = GetAbsoluteSize(aStyleSize).orElse([&]() {
                return GetIntrinsicSize(
                    aStyleSize, aRenderingContext, aFrame, aISizeFromAspectRatio,
                    nsIFrame::SizeProperty::Size, contentBoxToBoxSizingDiff);
              })) {
-    result = *size + coordOutsideSize;
+    result = *size + boxSizingToMarginDiff;
   } else if (aStyleSize.IsFitContentFunction()) {
     
     
@@ -4468,9 +4459,9 @@ static nscoord AddIntrinsicSizeOffset(
         aType, nsIFrame::SizeProperty::Size, aFrame,
         aStyleSize.AsFitContentFunction(), initial, minContent, maxContent);
     
-    result = NSCoordSaturatingAdd(fitContentFuncSize, coordOutsideSize);
+    result = NSCoordSaturatingAdd(fitContentFuncSize, boxSizingToMarginDiff);
   } else {
-    result = NSCoordSaturatingAdd(result, coordOutsideSize);
+    result = NSCoordSaturatingAdd(result, boxSizingToMarginDiff);
   }
 
   
@@ -4480,7 +4471,7 @@ static nscoord AddIntrinsicSizeOffset(
         nsIFrame::SizeProperty::MaxSize, contentBoxToBoxSizingDiff);
   });
   if (maxSize) {
-    *maxSize += coordOutsideSize;
+    *maxSize += boxSizingToMarginDiff;
     if (result > *maxSize) {
       result = *maxSize;
     }
@@ -4489,7 +4480,8 @@ static nscoord AddIntrinsicSizeOffset(
         aType, nsIFrame::SizeProperty::MaxSize, aFrame,
         aStyleMaxSize.AsFitContentFunction(), NS_UNCONSTRAINEDSIZE, minContent,
         maxContent);
-    maxSize.emplace(NSCoordSaturatingAdd(fitContentFuncSize, coordOutsideSize));
+    maxSize.emplace(
+        NSCoordSaturatingAdd(fitContentFuncSize, boxSizingToMarginDiff));
     if (result > *maxSize) {
       result = *maxSize;
     }
@@ -4502,7 +4494,7 @@ static nscoord AddIntrinsicSizeOffset(
         nsIFrame::SizeProperty::MinSize, contentBoxToBoxSizingDiff);
   });
   if (minSize) {
-    *minSize += coordOutsideSize;
+    *minSize += boxSizingToMarginDiff;
     if (result < *minSize) {
       result = *minSize;
     }
@@ -4515,15 +4507,15 @@ static nscoord AddIntrinsicSizeOffset(
     }
     nscoord fitContentFuncSize =
         std::max(minContent, std::min(maxContent, *minSize));
-    *minSize = NSCoordSaturatingAdd(fitContentFuncSize, coordOutsideSize);
+    *minSize = NSCoordSaturatingAdd(fitContentFuncSize, boxSizingToMarginDiff);
     if (result < *minSize) {
       result = *minSize;
     }
   }
 
-  if (result < min) {
-    result = min;
-  }
+  const nscoord borderPaddingMargin =
+      contentBoxToBoxSizingDiff + boxSizingToMarginDiff;
+  result = std::max(result, borderPaddingMargin);
 
   const nsStyleDisplay* disp = aFrame->StyleDisplay();
   if (aFrame->IsThemed(disp)) {
@@ -4613,15 +4605,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  nscoord result = 0, min = 0;
+  nscoord result = 0;
 
   Maybe<nscoord> fixedMaxISize = GetAbsoluteSize(styleMaxISize);
   Maybe<nscoord> fixedMinISize;
@@ -4916,7 +4900,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   nscoord contentBoxSize = result;
   result = AddIntrinsicSizeOffset(
       aRenderingContext, aFrame, offsetInRequestedAxis, aType, boxSizing,
-      result, min, styleISize, fixedMinISize, styleMinISize, fixedMaxISize,
+      result, styleISize, fixedMinISize, styleMinISize, fixedMaxISize,
       styleMaxISize, iSizeFromAspectRatio, aFlags, aAxis);
   nscoord overflow = result - aMarginBoxMinSizeClamp;
   if (MOZ_UNLIKELY(overflow > 0)) {
@@ -5023,12 +5007,11 @@ nscoord nsLayoutUtils::MinSizeContributionForAxis(
       ourInlineAxis == aAxis ? aFrame->IntrinsicISizeOffsets(pmPercentageBasis)
                              : aFrame->IntrinsicBSizeOffsets(pmPercentageBasis);
   nscoord result = 0;
-  nscoord min = 0;
   
   
   
   result = AddIntrinsicSizeOffset(
-      aRC, aFrame, offsets, aType, stylePos->mBoxSizing, result, min, size,
+      aRC, aFrame, offsets, aType, stylePos->mBoxSizing, result, size,
       fixedMinSize, size, Nothing(), maxSize, Nothing(), aFlags, aAxis);
 
   return result;
