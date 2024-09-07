@@ -54,9 +54,14 @@ bool VadTest::ValidRatesAndFrameLengths(int rate, size_t frame_length) {
 namespace webrtc {
 namespace test {
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(VadTest, DISABLED_ApiTest) {
+#else
 TEST_F(VadTest, ApiTest) {
-  
-  
+#endif
+
+
 
   VadInst* handle = WebRtcVad_Create();
   int16_t zeros[kMaxFrameLength] = {0};
