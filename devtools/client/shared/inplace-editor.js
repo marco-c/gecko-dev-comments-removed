@@ -174,6 +174,7 @@ function isKeyIn(key, ...keys) {
 
 
 
+
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -286,7 +287,9 @@ class InplaceEditor extends EventEmitter {
     this.doc = doc;
     this.elt.inplaceEditor = this;
     this.cssProperties = options.cssProperties;
-    this.cssVariables = options.cssVariables || new Map();
+    this.getCssVariables = options.getCssVariables
+      ? options.getCssVariables.bind(this)
+      : null;
     this.change = options.change;
     this.done = options.done;
     this.contextMenu = options.contextMenu;
@@ -413,6 +416,8 @@ class InplaceEditor extends EventEmitter {
   #pressedKey;
   #preventSuggestions;
   #selectedIndex;
+  #variableNames;
+  #variables;
 
   get currentInputValue() {
     const val = this.trimOutput ? this.input.value.trim() : this.input.value;
@@ -1834,13 +1839,31 @@ class InplaceEditor extends EventEmitter {
       .sort();
   }
 
+  #getCSSVariablesMap() {
+    if (!this.getCssVariables) {
+      return null;
+    }
+
+    if (!this.#variables) {
+      this.#variables = this.getCssVariables();
+    }
+    return this.#variables;
+  }
+
   
 
 
 
 
   #getCSSVariableNames() {
-    return Array.from(this.cssVariables.keys()).sort();
+    if (!this.#variableNames) {
+      const variables = this.#getCSSVariablesMap();
+      if (!variables) {
+        return [];
+      }
+      this.#variableNames = Array.from(variables.keys()).sort();
+    }
+    return this.#variableNames;
   }
 
   
@@ -1851,7 +1874,7 @@ class InplaceEditor extends EventEmitter {
 
 
   #getCSSVariableValue(varName) {
-    return this.cssVariables.get(varName);
+    return this.#getCSSVariablesMap()?.get(varName);
   }
 }
 
