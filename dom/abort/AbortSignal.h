@@ -25,9 +25,7 @@ namespace mozilla::dom {
 
 
 
-class AbortSignal : public DOMEventTargetHelper,
-                    public AbortSignalImpl,
-                    public AbortFollower {
+class AbortSignal : public DOMEventTargetHelper, public AbortSignalImpl {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(AbortSignal,
@@ -51,14 +49,14 @@ class AbortSignal : public DOMEventTargetHelper,
   static already_AddRefed<AbortSignal> Any(
       GlobalObject& aGlobal,
       const Sequence<OwningNonNull<AbortSignal>>& aSignals);
+  static already_AddRefed<AbortSignal> Any(
+      nsIGlobalObject* aGlobal,
+      const Span<const OwningNonNull<AbortSignal>>& aSignals);
 
   void ThrowIfAborted(JSContext* aCx, ErrorResult& aRv);
 
   
   void SignalAbort(JS::Handle<JS::Value> aReason) override;
-
-  
-  void RunAbortAlgorithm() override;
 
   virtual bool IsTaskSignal() const { return false; }
 

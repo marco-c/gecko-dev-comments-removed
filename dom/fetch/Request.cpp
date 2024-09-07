@@ -62,11 +62,8 @@ Request::Request(nsIGlobalObject* aOwner, SafeRefPtr<InternalRequest> aRequest,
   if (aSignal) {
     
     
-    JS::Rooted<JS::Value> reason(RootingCx(), aSignal->RawReason());
-    mSignal = new AbortSignal(aOwner, aSignal->Aborted(), reason);
-    if (!mSignal->Aborted()) {
-      mSignal->Follow(aSignal);
-    }
+    AutoTArray<OwningNonNull<AbortSignal>, 1> array{OwningNonNull(*aSignal)};
+    mSignal = AbortSignal::Any(aOwner, mozilla::Span{array});
   }
 }
 
