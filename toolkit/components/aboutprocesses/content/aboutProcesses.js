@@ -665,7 +665,7 @@ var View = {
     let killButton = cpuCell.nextSibling;
     killButton.className = "action-icon";
 
-    if (data.type.startsWith("web")) {
+    if (data.type != "browser") {
       
       if (this._killedRecently.some(kill => kill.pid && kill.pid == data.pid)) {
         
@@ -680,10 +680,10 @@ var View = {
       } else {
         
         killButton.classList.add("close-icon");
-        document.l10n.setAttributes(
-          killButton,
-          "about-processes-shutdown-process"
-        );
+        let killButtonLabelId = data.type.startsWith("web")
+          ? "about-processes-shutdown-process"
+          : "about-processes-kill-process";
+        document.l10n.setAttributes(killButton, killButtonLabelId);
       }
     }
 
@@ -1464,6 +1464,10 @@ var Control = {
 
       
       row.classList.add("killing");
+
+      
+      target.removeAttribute("data-l10n-id");
+      target.removeAttribute("title");
       for (
         let childRow = row.nextSibling;
         childRow && !childRow.classList.contains("process");
@@ -1495,6 +1499,8 @@ var Control = {
       });
       View._killedRecently.push({ outerWindowId: row.win.outerWindowId });
       row.classList.add("killing");
+      target.removeAttribute("data-l10n-id");
+      target.removeAttribute("title");
 
       
       if (row.previousSibling.classList.contains("process")) {
@@ -1513,6 +1519,9 @@ var Control = {
           
           View._killedRecently.push({ pid: parentRow.process.pid });
           parentRow.classList.add("killing");
+          let actionIcon = parentRow.querySelector(".action-item");
+          actionIcon.removeAttribute("data-l10n-id");
+          actionIcon.removeAttribute("title");
         }
       }
     }
