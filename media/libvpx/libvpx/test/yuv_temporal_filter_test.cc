@@ -8,7 +8,7 @@
 
 
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vp9_rtcd.h"
 #include "test/acm_random.h"
