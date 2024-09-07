@@ -242,6 +242,25 @@ nscoord nsTableWrapperFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                             IntrinsicISizeType aType) {
   nscoord iSize = nsLayoutUtils::IntrinsicForContainer(
       aInput.mContext, InnerTableFrame(), aType);
+
+  {
+    
+    
+    AutoMaybeDisableFontInflation an(this);
+
+    
+    
+    const IntrinsicSizeInput input(aInput.mContext, Nothing());
+
+    
+    
+    const IntrinsicSizeOffsetData offset =
+        InnerTableFrame()->IntrinsicISizeOffsets();
+    const nscoord innerTableMinISize = InnerTableFrame()->GetMinISize(input) +
+                                       offset.BorderPadding() + offset.margin;
+    iSize = std::max(iSize, innerTableMinISize);
+  }
+
   if (mCaptionFrames.NotEmpty()) {
     
     

@@ -4881,13 +4881,6 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
     }
   }
 
-  if (aFrame->IsTableFrame()) {
-    
-    
-    const IntrinsicSizeInput input(aRenderingContext, Nothing());
-    min = aFrame->GetMinISize(input);
-  }
-
   
   
   
