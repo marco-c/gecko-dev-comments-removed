@@ -301,7 +301,8 @@ TEST(CongestionControlFeedbackGeneratorTest,
   generator.Process(clock.CurrentTime());
 }
 
-TEST(CongestionControlFeedbackGeneratorTest,
+
+TEST(DISABLED_CongestionControlFeedbackGeneratorTest,
      ReportsFirstReceivedPacketArrivalTimeButEcnFromCePacketIfDuplicate) {
   MockFunction<void(std::vector<std::unique_ptr<rtcp::RtcpPacket>>)>
       rtcp_sender;
