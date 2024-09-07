@@ -2367,20 +2367,6 @@ void nsLookAndFeel::RecordLookAndFeelSpecificTelemetry() {
   nsString version;
   version.AppendPrintf("%d.%d", gtk_major_version, gtk_minor_version);
   Telemetry::ScalarSet(Telemetry::ScalarID::WIDGET_GTK_VERSION, version);
-
-  
-  bool hasScrollbarButtons =
-      GetInt(LookAndFeel::IntID::ScrollArrowStyle) != eScrollArrow_None;
-  mozilla::Telemetry::ScalarSet(
-      mozilla::Telemetry::ScalarID::WIDGET_GTK_THEME_HAS_SCROLLBAR_BUTTONS,
-      hasScrollbarButtons);
-
-  
-  
-  bool scrollbarUsesImage = !ShouldHonorThemeScrollbarColors();
-  mozilla::Telemetry::ScalarSet(
-      mozilla::Telemetry::ScalarID::WIDGET_GTK_THEME_SCROLLBAR_USES_IMAGES,
-      scrollbarUsesImage);
 }
 
 bool nsLookAndFeel::ShouldHonorThemeScrollbarColors() {
