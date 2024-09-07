@@ -123,9 +123,7 @@ void DataTransferItemList::Clear(nsIPrincipal& aSubjectPrincipal,
     
     
     Remove(Length() - 1, aSubjectPrincipal, aRv);
-    if (NS_WARN_IF(aRv.Failed())) {
-      return;
-    }
+    ENSURE_SUCCESS_VOID(aRv);
   }
 
   MOZ_ASSERT(Length() == 0);

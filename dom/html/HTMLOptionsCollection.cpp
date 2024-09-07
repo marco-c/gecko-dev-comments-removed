@@ -88,9 +88,7 @@ void HTMLOptionsCollection::IndexedSetter(uint32_t aIndex,
     
     
     SetLength(aIndex, aError);
-    if (NS_WARN_IF(aError.Failed())) {
-      return;
-    }
+    ENSURE_SUCCESS_VOID(aError);
   }
 
   NS_ASSERTION(aIndex <= mElements.Length(), "SetLength lied");

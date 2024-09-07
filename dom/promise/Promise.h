@@ -191,12 +191,6 @@ class Promise : public SupportsWeakPtr {
 
   
   
-  void MaybeRejectWithExceptionFromContext(JSContext* aCx) {
-    HandleException(aCx);
-  }
-
-  
-  
   bool SetSettledPromiseIsHandled();
 
   
