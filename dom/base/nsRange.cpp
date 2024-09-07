@@ -3512,6 +3512,12 @@ void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
     return;
   }
 
+  
+  if (startNode && endNode &&
+      startNode->GetComposedDoc() != endNode->GetComposedDoc()) {
+    return;
+  }
+
   auto CanBecomeCrossShadowBoundaryPoint = [](nsINode* aContainer) -> bool {
     if (!aContainer) {
       return true;
