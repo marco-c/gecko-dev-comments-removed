@@ -193,6 +193,17 @@ add_task(async function test_downloads() {
   );
 
   
+  await testDownload(
+    {
+      url: FILE_URL,
+      filename: "sub/1. organized/file2",
+    },
+    ["sub", "1. organized", "file2"],
+    FILE_LEN,
+    "Directory containing invalid file name"
+  );
+
+  
   if (WINDOWS) {
     
     await testDownload(
