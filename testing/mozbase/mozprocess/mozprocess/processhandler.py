@@ -88,7 +88,6 @@ class ProcessHandlerMixin(object):
         """
 
         MAX_IOCOMPLETION_PORT_NOTIFICATION_DELAY = 180
-        MAX_PROCESS_KILL_DELAY = 30
         TIMEOUT_BEFORE_SIGKILL = 1.0
 
         def __init__(
@@ -601,11 +600,6 @@ falling back to not using job objects for managing child processes""",
 
                 if self._job:
                     self.debug("waiting with IO completion port")
-                    if timeout is None:
-                        timeout = (
-                            self.MAX_IOCOMPLETION_PORT_NOTIFICATION_DELAY
-                            + self.MAX_PROCESS_KILL_DELAY
-                        )
                     
                     
                     
@@ -613,12 +607,13 @@ falling back to not using job objects for managing child processes""",
                     
                     
                     try:
-                        
-                        
                         item = self._process_events.get(timeout=timeout)
                         if item[self.pid] == "FINISHED":
                             self.debug("received 'FINISHED' from _procmgrthread")
                             self._process_events.task_done()
+                    except Empty:
+                        
+                        pass
                     except Exception:
                         traceback.print_exc()
                         raise OSError(
@@ -655,11 +650,7 @@ falling back to not using job objects for managing child processes""",
 
                     if rc == winprocess.WAIT_TIMEOUT:
                         
-                        print(
-                            "Timed out waiting for process to close, "
-                            "attempting TerminateProcess"
-                        )
-                        self.kill()
+                        pass
                     elif rc == winprocess.WAIT_OBJECT_0:
                         
                         print("Single process terminated successfully")
