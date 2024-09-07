@@ -303,7 +303,7 @@ class OutputParser {
 
     let varData;
     let varFallbackValue;
-    let varSubsitutedValue;
+    let varSubstitutedValue;
     let varComputedValue;
 
     
@@ -322,24 +322,17 @@ class OutputParser {
             
             varValue;
 
-      varSubsitutedValue = options.inStartingStyleRule
+      varSubstitutedValue = options.inStartingStyleRule
         ? varStartingStyleValue
         : varValue;
 
       varComputedValue = varData.computedValue;
     }
 
-    
-    const varName = text.substring(tokens[0].startOffset, tokens[0].endOffset);
-
-    if (typeof varSubsitutedValue === "string") {
+    if (typeof varSubstitutedValue === "string") {
       
       
-      firstOpts["data-variable"] = STYLE_INSPECTOR_L10N.getFormatStr(
-        "rule.variableValue",
-        varName,
-        varSubsitutedValue
-      );
+      firstOpts["data-variable"] = varSubstitutedValue;
       firstOpts.class = options.matchedVariableClass;
       secondOpts.class = options.unmatchedClass;
 
@@ -348,7 +341,7 @@ class OutputParser {
       if (
         !options.inStartingStyleRule &&
         typeof varComputedValue === "string" &&
-        varComputedValue !== varSubsitutedValue
+        varComputedValue !== varSubstitutedValue
       ) {
         firstOpts["data-variable-computed"] = varComputedValue;
       }
@@ -358,12 +351,7 @@ class OutputParser {
         !options.inStartingStyleRule &&
         typeof varData.startingStyle === "string"
       ) {
-        firstOpts["data-starting-style-variable"] =
-          STYLE_INSPECTOR_L10N.getFormatStr(
-            "rule.variableValue",
-            varName,
-            varData.startingStyle
-          );
+        firstOpts["data-starting-style-variable"] = varData.startingStyle;
       }
 
       if (varData.registeredProperty) {
@@ -376,6 +364,12 @@ class OutputParser {
     } else {
       
       firstOpts.class = options.unmatchedClass;
+
+      
+      const varName = text.substring(
+        tokens[0].startOffset,
+        tokens[0].endOffset
+      );
       firstOpts["data-variable"] = STYLE_INSPECTOR_L10N.getFormatStr(
         "rule.variableUnset",
         varName
@@ -410,7 +404,7 @@ class OutputParser {
 
     return {
       node: variableNode,
-      value: varSubsitutedValue,
+      value: varSubstitutedValue,
       computedValue: varComputedValue,
       fallbackValue: varFallbackValue,
     };

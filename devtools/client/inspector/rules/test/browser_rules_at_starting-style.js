@@ -276,11 +276,11 @@ add_task(async function () {
     `main, [data-test="top-level"]`,
     "color",
     {
-      header: "--my-color = white",
+      header: "white",
       
       computed: null,
       
-      startingStyle: "--my-color = black",
+      startingStyle: "black",
     }
   );
 
@@ -293,7 +293,7 @@ add_task(async function () {
     "--check-my-color",
     {
       
-      header: "--my-color = black",
+      header: "black",
       
       computed: null,
       
@@ -313,7 +313,7 @@ add_task(async function () {
     `main, [data-test="top-level"]`,
     "--check-my-overridden-color",
     {
-      header: "--my-overridden-color = white",
+      header: "white",
       computed: "white",
       
       startingStyle: null,
@@ -325,7 +325,7 @@ add_task(async function () {
     "--check-my-overridden-color",
     {
       
-      header: "--my-overridden-color = white",
+      header: "white",
       
       computed: null,
       startingStyle: null,
@@ -340,10 +340,10 @@ add_task(async function () {
     `main, [data-test="top-level"]`,
     "--check-my-registered-color",
     {
-      header: "--my-registered-color = white",
+      header: "white",
       computed: "rgb(255, 255, 255)",
       
-      startingStyle: "--my-registered-color = black",
+      startingStyle: "black",
       
       registeredProperty: [
         `syntax:"<color>"`,
@@ -359,7 +359,7 @@ add_task(async function () {
     "--check-my-registered-color",
     {
       
-      header: "--my-registered-color = black",
+      header: "black",
       
       computed: null,
       
@@ -380,7 +380,7 @@ add_task(async function () {
     "--check-my-unset-registered-color",
     {
       
-      header: "--my-unset-registered-color = lavender",
+      header: "lavender",
       
       startingStyle: null,
       
