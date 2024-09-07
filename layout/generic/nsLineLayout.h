@@ -365,8 +365,8 @@ class nsLineLayout {
     return lineLayout;
   }
 
-  nsIFrame* mLastOptionalBreakFrame;
-  nsIFrame* mForceBreakFrame;
+  nsIFrame* mLastOptionalBreakFrame = nullptr;
+  nsIFrame* mForceBreakFrame = nullptr;
 
   
   
@@ -463,7 +463,7 @@ class nsLineLayout {
 
     bool ParticipatesInJustification() const;
   };
-  PerFrameData* mFrameFreeList;
+  PerFrameData* mFrameFreeList = nullptr;
 
   
   
@@ -522,9 +522,9 @@ class nsLineLayout {
       mLastFrame = pfd;
     }
   };
-  PerSpanData* mSpanFreeList;
-  PerSpanData* mRootSpan;
-  PerSpanData* mCurrentSpan;
+  PerSpanData* mSpanFreeList = nullptr;
+  PerSpanData* mRootSpan = nullptr;
+  PerSpanData* mCurrentSpan = nullptr;
 
   
   
@@ -543,36 +543,36 @@ class nsLineLayout {
   gfxTextRun::TrimmableWS GetTrimFrom(const PerSpanData* aSpan,
                                       bool aLineIsRTL) const;
 
-  gfxBreakPriority mLastOptionalBreakPriority;
-  int32_t mLastOptionalBreakFrameOffset;
-  int32_t mForceBreakFrameOffset;
+  gfxBreakPriority mLastOptionalBreakPriority = gfxBreakPriority::eNoBreak;
+  int32_t mLastOptionalBreakFrameOffset = -1;
+  int32_t mForceBreakFrameOffset = -1;
 
-  nscoord mMinLineBSize;
-
-  
-  
-  nscoord mTextIndent;
+  nscoord mMinLineBSize = 0;
 
   
   
-  int32_t mLineNumber;
+  nscoord mTextIndent = 0;
+
+  
+  
+  int32_t mLineNumber = 0;
   mozilla::JustificationInfo mJustificationInfo;
 
-  int32_t mTotalPlacedFrames;
+  int32_t mTotalPlacedFrames = 0;
 
-  nscoord mBStartEdge;
-  nscoord mMaxStartBoxBSize;
-  nscoord mMaxEndBoxBSize;
+  nscoord mBStartEdge = 0;
+  nscoord mMaxStartBoxBSize = 0;
+  nscoord mMaxEndBoxBSize = 0;
 
   nscoord mInflationMinFontSize;
 
   
   
-  nscoord mFinalLineBSize;
+  nscoord mFinalLineBSize = 0;
 
   
   
-  nscoord mTrimmableISize;
+  nscoord mTrimmableISize = 0;
 
   
   nsSize mContainerSize;
@@ -595,10 +595,10 @@ class nsLineLayout {
   bool mSuppressLineWrap : 1;
   bool mUsedOverflowWrap : 1;
 
-  int32_t mSpanDepth;
+  int32_t mSpanDepth = 0;
 #ifdef DEBUG
-  int32_t mSpansAllocated, mSpansFreed;
-  int32_t mFramesAllocated, mFramesFreed;
+  int32_t mSpansAllocated = 0, mSpansFreed = 0;
+  int32_t mFramesAllocated = 0, mFramesFreed = 0;
 #endif
 
   
