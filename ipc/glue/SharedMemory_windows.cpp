@@ -4,12 +4,11 @@
 
 
 
-#include <windows.h>
-
 #include "mozilla/ipc/SharedMemory.h"
 
-namespace mozilla {
-namespace ipc {
+#include <windows.h>
+
+namespace mozilla::ipc {
 
 void SharedMemory::SystemProtect(char* aAddr, size_t aSize, int aRights) {
   if (!SystemProtectFallible(aAddr, aSize, aRights)) {
@@ -37,5 +36,4 @@ size_t SharedMemory::SystemPageSize() {
   return si.dwPageSize;
 }
 
-}  
 }  
