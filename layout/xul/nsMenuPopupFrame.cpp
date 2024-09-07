@@ -838,13 +838,6 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
       mPopupAnchor = POPUPALIGNMENT_TOPLEFT;
       mPopupAlignment = POPUPALIGNMENT_TOPLEFT;
       mPosition = POPUPPOSITION_OVERLAP;
-    } else if (position.EqualsLiteral("after_pointer")) {
-      mPopupAnchor = POPUPALIGNMENT_TOPLEFT;
-      mPopupAlignment = POPUPALIGNMENT_TOPLEFT;
-      mPosition = POPUPPOSITION_AFTERPOINTER;
-      
-      
-      mYPos += 21;
     } else if (position.EqualsLiteral("selection")) {
       mPopupAnchor = POPUPALIGNMENT_BOTTOMLEFT;
       mPopupAlignment = POPUPALIGNMENT_TOPLEFT;
