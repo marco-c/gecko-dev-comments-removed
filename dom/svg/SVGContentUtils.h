@@ -56,17 +56,8 @@ class SVGViewportElement;
 
 
 
-
-
-
-
-
-
-
-
 enum SVGTransformTypes {
   eAllTransforms,
-  eUserSpaceToParent,
   eChildToUserSpace
 };
 

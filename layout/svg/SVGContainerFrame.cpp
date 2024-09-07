@@ -274,19 +274,7 @@ nsIFrame* SVGDisplayContainerFrame::GetFrameForPoint(const gfxPoint& aPoint) {
         continue;
       }
     }
-    
-    
-    gfxPoint p = point;
-    if (const auto* svg = SVGElement::FromNode(content)) {
-      gfxMatrix m = svg->PrependLocalTransformsTo({}, eUserSpaceToParent);
-      if (!m.IsIdentity()) {
-        if (!m.Invert()) {
-          continue;
-        }
-        p = m.TransformPoint(p);
-      }
-    }
-    result = SVGFrame->GetFrameForPoint(p);
+    result = SVGFrame->GetFrameForPoint(point);
     if (result) {
       break;
     }

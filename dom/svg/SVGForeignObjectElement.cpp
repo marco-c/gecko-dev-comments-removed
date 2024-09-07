@@ -72,10 +72,6 @@ already_AddRefed<DOMSVGAnimatedLength> SVGForeignObjectElement::Height() {
 gfxMatrix SVGForeignObjectElement::PrependLocalTransformsTo(
     const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
   
-  if (aWhich == eUserSpaceToParent) {
-    return aMatrix;
-  }
-  
   float x, y;
 
   if (!SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y>(this, &x, &y)) {
