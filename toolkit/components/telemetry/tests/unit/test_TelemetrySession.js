@@ -55,7 +55,6 @@ ChromeUtils.defineLazyGetter(this, "DATAREPORTING_PATH", function () {
 });
 
 var gClientID = null;
-var gProfileGroupID = null;
 var gMonotonicNow = 0;
 
 function sendPing() {
@@ -144,7 +143,6 @@ function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
 
   
   Assert.equal("clientId" in aPing, aHasClientId);
-  Assert.equal("profileGroupId" in aPing, aHasClientId);
   Assert.equal("environment" in aPing, aHasEnvironment);
 }
 
@@ -525,7 +523,6 @@ add_task(async function asyncSetup() {
   await TelemetryController.testSetup();
   
   gClientID = await ClientID.getClientID();
-  gProfileGroupID = await ClientID.getProfileGroupID();
 });
 
 
@@ -1215,7 +1212,6 @@ add_task(async function test_savedPingsOnShutdown() {
   checkPingFormat(ping, expectedType, true, true);
   Assert.equal(ping.payload.info.reason, expectedReason);
   Assert.equal(ping.clientId, gClientID);
-  Assert.equal(ping.profileGroupId, gProfileGroupID);
 });
 
 add_task(async function test_sendShutdownPing() {
@@ -1264,7 +1260,6 @@ add_task(async function test_sendShutdownPing() {
   checkPingFormat(ping, ping.type, true, true);
   Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
   Assert.equal(ping.clientId, gClientID);
-  Assert.equal(ping.profileGroupId, gProfileGroupID);
   
   
   PingServer.registerPingHandler(() =>
@@ -1359,7 +1354,6 @@ add_task(async function test_sendShutdownPing() {
   checkPingFormat(ping, ping.type, true, true);
   Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
   Assert.equal(ping.clientId, gClientID);
-  Assert.equal(ping.profileGroupId, gProfileGroupID);
 
   
   Services.prefs.setBoolPref(
@@ -1511,7 +1505,6 @@ add_task(async function test_sendFirstShutdownPing() {
   checkPingFormat(ping, "first-shutdown", true, true);
   Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
   Assert.equal(ping.clientId, gClientID);
-  Assert.equal(ping.profileGroupId, gProfileGroupID);
 
   await TelemetryStorage.testClearPendingPings();
 
