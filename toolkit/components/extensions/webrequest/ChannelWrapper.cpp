@@ -664,17 +664,17 @@ bool ChannelWrapper::Matches(
       return false;
     }
 
-    bool isProxy =
-        aOptions.mIsProxy && aExtension->HasPermission(nsGkAtoms::proxy);
     
-    if (!aExtension->CanAccessURI(urlInfo, false, !isProxy, true)) {
+    
+    if (!aExtension->CanAccessURI(urlInfo, false, false, true)) {
       return false;
     }
 
     
     
-    if (!isProxy) {
-      if (IsSystemLoad()) {
+    
+    if (!aOptions.mIsProxy || !aExtension->HasPermission(nsGkAtoms::proxy)) {
+      if (!CanModify()) {
         return false;
       }
 
@@ -682,11 +682,14 @@ bool ChannelWrapper::Matches(
       
       
       
-      if (origin && !aExtension->CanAccessURI(*origin, false, true, true)) {
+      if (origin && !aExtension->CanAccessURI(*origin, false, false, true)) {
         return false;
       }
     }
   }
+  
+  
+  
 
   return true;
 }
