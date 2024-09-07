@@ -847,10 +847,6 @@ class Code : public ShareableBase<Code> {
 
   
   
-  const SharedBytes bytecode_;
-
-  
-  
   Tiers completeTiers() const;
 
   [[nodiscard]] bool addCodeBlock(const WriteGuard& guard,
@@ -885,8 +881,7 @@ class Code : public ShareableBase<Code> {
 
  public:
   Code(CompileMode mode, const CodeMetadata& codeMeta,
-       const CodeMetadataForAsmJS* codeMetaForAsmJS,
-       const ShareableBytes* maybeBytecode);
+       const CodeMetadataForAsmJS* codeMetaForAsmJS);
 
   [[nodiscard]] bool initialize(FuncImportVector&& funcImports,
                                 UniqueCodeBlock sharedStubs,
@@ -926,7 +921,7 @@ class Code : public ShareableBase<Code> {
 
   const Bytes& bytecode() const {
     MOZ_ASSERT(codeMeta().debugEnabled || mode_ == CompileMode::LazyTiering);
-    return bytecode_->bytes;
+    return codeMeta_->bytecode->bytes;
   }
 
   const FuncImport& funcImport(uint32_t funcIndex) const {

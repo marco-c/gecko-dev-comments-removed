@@ -1170,6 +1170,15 @@ SharedModule ModuleGenerator::finishModule(
   codeMeta->funcDefRanges = std::move(funcDefRanges_);
 
   
+  
+  if (compilerEnv_->debugEnabled() ||
+      compilerEnv_->mode() == CompileMode::LazyTiering) {
+    codeMeta->bytecode = &bytecode;
+  } else {
+    codeMeta->bytecode = nullptr;
+  }
+
+  
   if (codeMeta_->nameCustomSectionIndex) {
     codeMeta->namePayload =
         moduleMeta->customSections[*codeMeta_->nameCustomSectionIndex].payload;
@@ -1188,12 +1197,7 @@ SharedModule ModuleGenerator::finishModule(
     memcpy(codeMeta->debugHash, hash, sizeof(ModuleHash));
   }
 
-  
-  
-  bool keepBytecode = compilerEnv_->debugEnabled() ||
-                      compilerEnv_->mode() == CompileMode::LazyTiering;
-  MutableCode code = js_new<Code>(mode(), *codeMeta_, codeMetaForAsmJS_,
-                                  keepBytecode ? &bytecode : nullptr);
+  MutableCode code = js_new<Code>(mode(), *codeMeta_, codeMetaForAsmJS_);
   if (!code || !code->initialize(
                    std::move(funcImports_), std::move(sharedStubsCodeBlock_),
                    std::move(sharedStubsLinkData_), std::move(tier1Code),

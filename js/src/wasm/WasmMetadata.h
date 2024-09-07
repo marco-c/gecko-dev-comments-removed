@@ -190,6 +190,12 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   FuncDefRangeVector funcDefRanges;
 
   
+  
+  
+  
+  SharedBytes bytecode;
+
+  
   bool debugEnabled;
   
   
