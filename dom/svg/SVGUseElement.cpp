@@ -604,12 +604,29 @@ void SVGUseElement::UnlinkSource() {
 
 
 
-gfxMatrix SVGUseElement::ChildToUserSpaceTransform() const {
+gfxMatrix SVGUseElement::PrependLocalTransformsTo(
+    const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
+  if (aWhich == eUserSpaceToParent) {
+    return aMatrix;
+  }
+
+  
   float x, y;
   if (!SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y>(this, &x, &y)) {
     const_cast<SVGUseElement*>(this)->GetAnimatedLengthValues(&x, &y, nullptr);
   }
-  return gfxMatrix::Translation(x, y);
+
+  gfxMatrix childToUser = gfxMatrix::Translation(x, y);
+  MOZ_ASSERT(aWhich == eChildToUserSpace || aWhich == eAllTransforms,
+             "Unknown TransformTypes");
+  
+  
+  
+  
+  
+  
+  
+  return childToUser * aMatrix;
 }
 
 

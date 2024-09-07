@@ -140,7 +140,26 @@ class SVGElement : public SVGElementBase
 
 
 
-  virtual gfxMatrix ChildToUserSpaceTransform() const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual gfxMatrix PrependLocalTransformsTo(
+      const gfxMatrix& aMatrix,
+      SVGTransformTypes aWhich = eAllTransforms) const;
 
   
   

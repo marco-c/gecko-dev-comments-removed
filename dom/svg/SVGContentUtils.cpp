@@ -496,12 +496,22 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
   auto getLocalTransformHelper =
       [](SVGElement const* e, bool shouldIncludeChildToUserSpace) -> gfxMatrix {
     gfxMatrix ret;
+
     if (auto* f = e->GetPrimaryFrame()) {
       ret = SVGUtils::GetTransformMatrixInUserSpace(f);
+    } else {
+      
+      
+      
+      
+      
+      ret = e->PrependLocalTransformsTo({}, eUserSpaceToParent);
     }
+
     if (shouldIncludeChildToUserSpace) {
-      ret = e->ChildToUserSpaceTransform() * ret;
+      ret = e->PrependLocalTransformsTo({}, eChildToUserSpace) * ret;
     }
+
     return ret;
   };
 
