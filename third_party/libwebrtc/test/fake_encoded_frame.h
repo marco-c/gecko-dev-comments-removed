@@ -12,7 +12,6 @@
 #define TEST_FAKE_ENCODED_FRAME_H_
 
 #include <memory>
-#include <ostream>  
 #include <vector>
 
 #include "api/rtp_packet_infos.h"
@@ -21,11 +20,6 @@
 #include "test/gmock.h"
 
 namespace webrtc {
-
-
-void PrintTo(const EncodedFrame& frame,
-             std::ostream* os);  
-
 namespace test {
 
 class FakeEncodedFrame : public EncodedFrame {

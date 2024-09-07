@@ -95,7 +95,7 @@ static std::string ToStringIfSet(const char* key,
 
 template <class T>
 static std::string VectorToString(const std::vector<T>& vals) {
-  rtc::StringBuilder ost;  
+  rtc::StringBuilder ost;
   ost << "[";
   for (size_t i = 0; i < vals.size(); ++i) {
     if (i > 0) {

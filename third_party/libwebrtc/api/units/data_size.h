@@ -11,10 +11,6 @@
 #ifndef API_UNITS_DATA_SIZE_H_
 #define API_UNITS_DATA_SIZE_H_
 
-#ifdef WEBRTC_UNIT_TEST
-#include <ostream>  
-#endif              
-
 #include <string>
 #include <type_traits>
 
@@ -52,14 +48,6 @@ std::string ToString(DataSize value);
 inline std::string ToLogString(DataSize value) {
   return ToString(value);
 }
-
-#ifdef WEBRTC_UNIT_TEST
-inline std::ostream& operator<<(  
-    std::ostream& stream,         
-    DataSize value) {
-  return stream << ToString(value);
-}
-#endif  
 
 }  
 

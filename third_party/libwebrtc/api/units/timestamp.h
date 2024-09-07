@@ -11,10 +11,6 @@
 #ifndef API_UNITS_TIMESTAMP_H_
 #define API_UNITS_TIMESTAMP_H_
 
-#ifdef WEBRTC_UNIT_TEST
-#include <ostream>  
-#endif              
-
 #include <string>
 #include <type_traits>
 
@@ -125,14 +121,6 @@ std::string ToString(Timestamp value);
 inline std::string ToLogString(Timestamp value) {
   return ToString(value);
 }
-
-#ifdef WEBRTC_UNIT_TEST
-inline std::ostream& operator<<(  
-    std::ostream& stream,         
-    Timestamp value) {
-  return stream << ToString(value);
-}
-#endif  
 
 }  
 

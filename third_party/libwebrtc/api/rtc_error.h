@@ -11,9 +11,6 @@
 #ifndef API_RTC_ERROR_H_
 #define API_RTC_ERROR_H_
 
-#ifdef WEBRTC_UNIT_TEST
-#include <ostream>
-#endif  
 #include <stdint.h>
 
 #include <string>
@@ -163,20 +160,6 @@ class RTC_EXPORT RTCError {
 
 RTC_EXPORT absl::string_view ToString(RTCErrorType error);
 RTC_EXPORT absl::string_view ToString(RTCErrorDetailType error);
-
-#ifdef WEBRTC_UNIT_TEST
-inline std::ostream& operator<<(  
-    std::ostream& stream,         
-    RTCErrorType error) {
-  return stream << ToString(error);
-}
-
-inline std::ostream& operator<<(  
-    std::ostream& stream,         
-    RTCErrorDetailType error) {
-  return stream << ToString(error);
-}
-#endif  
 
 
 

@@ -82,13 +82,6 @@ class RTC_EXPORT IPAddress {
   bool operator<(const IPAddress& other) const;
   bool operator>(const IPAddress& other) const;
 
-#ifdef WEBRTC_UNIT_TEST
-  inline std::ostream& operator<<(  
-      std::ostream& os) {           
-    return os << ToString();
-  }
-#endif  
-
   int family() const { return family_; }
   in_addr ipv4_address() const;
   in6_addr ipv6_address() const;
