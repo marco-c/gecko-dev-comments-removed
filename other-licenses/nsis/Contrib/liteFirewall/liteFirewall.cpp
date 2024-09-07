@@ -111,7 +111,9 @@ HRESULT AddRule(LPCTSTR ExceptionName, LPCTSTR ProcessPath)
 		}
 		catch (_com_error& e)
 		{
-			printf("%s", e.Error());
+			
+			printf("0x%lx", e.Error());
+			
 		}
 		goto Cleanup;
 	}
