@@ -370,10 +370,6 @@ class nsLineLayout {
 
   
   
-  friend class nsInlineFrame;
-
-  
-  
   
   
   BlockReflowState* mBlockRS = nullptr; 
@@ -384,11 +380,7 @@ class nsLineLayout {
   
   
   
-
   struct PerSpanData;
-  struct PerFrameData;
-  friend struct PerSpanData;
-  friend struct PerFrameData;
   struct PerFrameData {
     
     PerFrameData* mNext;
