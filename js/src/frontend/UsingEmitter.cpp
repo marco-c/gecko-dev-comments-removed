@@ -16,6 +16,53 @@ using namespace js::frontend;
 
 UsingEmitter::UsingEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
+bool UsingEmitter::emitTakeDisposeCapability() {
+  if (!bce_->emit1(JSOp::TakeDisposeCapability)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::IsNullOrUndefined)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifUndefined(bce_);
+
+  if (!ifUndefined.emitThenElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Zero)) {
+    
+    return false;
+  }
+
+  if (!ifUndefined.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitAtomOp(JSOp::GetProp,
+                        TaggedParserAtomIndex::WellKnown::length())) {
+    
+    return false;
+  }
+
+  if (!ifUndefined.emitEnd()) {
+    
+    return false;
+  }
+
+  return true;
+}
+
 bool UsingEmitter::emitThrowIfException() {
   
 
@@ -128,7 +175,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
   
   
   
-  if (!bce_->emit1(JSOp::TakeDisposeCapability)) {
+  if (!emitTakeDisposeCapability()) {
     
     return false;
   }

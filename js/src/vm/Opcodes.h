@@ -3428,7 +3428,7 @@
 
 
  \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(TakeDisposeCapability, take_dispose_capability, NULL, 1, 0, 2, JOF_BYTE)) \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(TakeDisposeCapability, take_dispose_capability, NULL, 1, 0, 1, JOF_BYTE)) \
     
 
 

@@ -631,7 +631,10 @@ class ModuleEnvironmentObject : public EnvironmentObject {
   static const JSClass class_;
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  static constexpr uint32_t RESERVED_SLOTS = 3;
+  
+  
+  
+  static constexpr uint32_t RESERVED_SLOTS = 4;
 #else
   static constexpr uint32_t RESERVED_SLOTS = 2;
 #endif
@@ -762,7 +765,8 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   static const JSClass class_;
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  static constexpr uint32_t RESERVED_SLOTS = 3;
+  
+  static constexpr uint32_t RESERVED_SLOTS = 4;
 #else
   static constexpr uint32_t RESERVED_SLOTS = 2;
 #endif
