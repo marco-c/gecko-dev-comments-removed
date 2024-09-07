@@ -835,6 +835,9 @@ pref("browser.shopping.experience2023.sidebarClosedCount", 0);
 pref("browser.shopping.experience2023.showKeepSidebarClosedMessage", true);
 
 
+pref("browser.shopping.experience2023.integratedSidebar", false);
+
+
 pref("browser.spin_cursor_while_busy", false);
 
 
