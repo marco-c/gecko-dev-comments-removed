@@ -15,6 +15,12 @@ const { getRemoteCommandStore, RemoteCommand } = ChromeUtils.importESModule(
   "resource://services-sync/TabsStore.sys.mjs"
 );
 
+ChromeUtils.defineESModuleGetters(this, {
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
+  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
+});
+
 class TelemetryMock {
   constructor() {
     this._events = [];
@@ -57,20 +63,36 @@ add_task(async function test_closetab_isDeviceCompatible() {
     },
   };
   
-  
-  Assert.ok(!closeTab.isDeviceCompatible(device));
+  Assert.ok(closeTab.isDeviceCompatible(device));
 
   
   Services.prefs.setBoolPref(
     "identity.fxaccounts.commands.remoteTabManagement.enabled",
-    true
+    false
   );
-  Assert.ok(closeTab.isDeviceCompatible(device));
+  Assert.ok(!closeTab.isDeviceCompatible(device));
 
   
   Services.prefs.clearUserPref(
     "identity.fxaccounts.commands.remoteTabManagement.enabled"
   );
+  Assert.ok(closeTab.isDeviceCompatible(device));
+
+  
+  await ExperimentManager.onStartup();
+  await ExperimentAPI.ready();
+  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+    featureId: "remoteTabManagement",
+    
+    value: {
+      closeTabsEnabled: false,
+    },
+  });
+
+  
+  Assert.ok(!closeTab.isDeviceCompatible(device));
+
+  doExperimentCleanup();
 });
 
 add_task(async function test_closetab_send() {
