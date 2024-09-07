@@ -101,9 +101,13 @@
       this.shadowRoot.addEventListener("mouseout", this.on_mouseout.bind(this));
 
       let overflowObserver = new ResizeObserver(([entry]) => {
-        let overflowing =
-          entry.contentRect[this.#verticalMode ? "height" : "width"] >
-          this.scrollClientSize;
+        let contentSize =
+          entry.contentRect[this.#verticalMode ? "height" : "width"];
+        
+        
+        
+        
+        let overflowing = contentSize - this.scrollClientSize > 0.02;
         if (overflowing == this.hasAttribute("overflowing")) {
           return;
         }
