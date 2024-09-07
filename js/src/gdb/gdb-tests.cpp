@@ -18,8 +18,11 @@
 using namespace JS;
 
 
-static const JSClass global_class = {"global", JSCLASS_GLOBAL_FLAGS,
-                                     &DefaultGlobalClassOps};
+static const JSClass global_class = {
+    "global",
+    JSCLASS_GLOBAL_FLAGS,
+    &DefaultGlobalClassOps,
+};
 
 static volatile int dontOptimizeMeAway = 0;
 
