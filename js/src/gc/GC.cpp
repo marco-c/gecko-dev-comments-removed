@@ -2596,7 +2596,6 @@ void GCRuntime::startCollection(JS::GCReason reason) {
   isCompacting = shouldCompact();
   rootsRemoved = false;
   sweepGroupIndex = 0;
-  lastGCStartTime_ = TimeStamp::Now();
 
 #ifdef DEBUG
   if (isShutdownGC()) {
@@ -3414,7 +3413,7 @@ void GCRuntime::finishCollection(JS::GCReason reason) {
 
   TimeStamp currentTime = TimeStamp::Now();
 
-  updateSchedulingStateAfterCollection(currentTime);
+  updateSchedulingStateOnGCEnd(currentTime);
 
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     zone->changeGCState(Zone::Finished, Zone::NoGC);
@@ -3427,8 +3426,6 @@ void GCRuntime::finishCollection(JS::GCReason reason) {
   clearSelectedForMarking();
 #endif
 
-  schedulingState.updateHighFrequencyMode(lastGCEndTime_, currentTime,
-                                          tunables);
   lastGCEndTime_ = currentTime;
 
   checkGCStateNotInUse();
@@ -3507,7 +3504,7 @@ void GCRuntime::maybeStopPretenuring() {
   }
 }
 
-void GCRuntime::updateSchedulingStateAfterCollection(TimeStamp currentTime) {
+void GCRuntime::updateSchedulingStateOnGCEnd(TimeStamp currentTime) {
   TimeDuration totalGCTime = stats().totalGCTime();
   size_t totalInitialBytes = stats().initialCollectedBytes();
 
@@ -4177,7 +4174,9 @@ GCRuntime::IncrementalResult GCRuntime::budgetIncrementalGC(
   return IncrementalResult::Ok;
 }
 
-bool GCRuntime::maybeIncreaseSliceBudget(SliceBudget& budget) {
+bool GCRuntime::maybeIncreaseSliceBudget(SliceBudget& budget,
+                                         TimeStamp sliceStartTime,
+                                         TimeStamp gcStartTime) {
   if (js::SupportDifferentialTesting()) {
     return false;
   }
@@ -4187,7 +4186,8 @@ bool GCRuntime::maybeIncreaseSliceBudget(SliceBudget& budget) {
   }
 
   bool wasIncreasedForLongCollections =
-      maybeIncreaseSliceBudgetForLongCollections(budget);
+      maybeIncreaseSliceBudgetForLongCollections(budget, sliceStartTime,
+                                                 gcStartTime);
   bool wasIncreasedForUgentCollections =
       maybeIncreaseSliceBudgetForUrgentCollections(budget);
 
@@ -4209,7 +4209,7 @@ static bool ExtendBudget(SliceBudget& budget, double newDuration) {
 }
 
 bool GCRuntime::maybeIncreaseSliceBudgetForLongCollections(
-    SliceBudget& budget) {
+    SliceBudget& budget, TimeStamp sliceStartTime, TimeStamp gcStartTime) {
   
   
 
@@ -4221,7 +4221,7 @@ bool GCRuntime::maybeIncreaseSliceBudgetForLongCollections(
   const BudgetAtTime MinBudgetStart{1500, 0.0};
   const BudgetAtTime MinBudgetEnd{2500, 100.0};
 
-  double totalTime = (TimeStamp::Now() - lastGCStartTime()).ToMilliseconds();
+  double totalTime = (sliceStartTime - gcStartTime).ToMilliseconds();
 
   double minBudget =
       LinearInterpolate(totalTime, MinBudgetStart.time, MinBudgetStart.budget,
@@ -4382,7 +4382,8 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   
   
   
-  if (!isIncrementalGCInProgress()) {
+  bool firstSlice = !isIncrementalGCInProgress();
+  if (firstSlice) {
     assertBackgroundSweepingFinished();
     MOZ_ASSERT(decommitTask.isIdle());
   }
@@ -4391,9 +4392,19 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   AutoCallGCCallbacks callCallbacks(*this, reason);
 
   
+  TimeStamp now = TimeStamp::Now();
+  if (firstSlice) {
+    schedulingState.updateHighFrequencyModeOnGCStart(
+        gcOptions(), now, lastGCStartTime_, tunables);
+    lastGCStartTime_ = now;
+  }
+  schedulingState.updateHighFrequencyModeOnSliceStart(gcOptions(), reason);
+
+  
   
   SliceBudget budget(budgetArg);
-  bool budgetWasIncreased = maybeIncreaseSliceBudget(budget);
+  bool budgetWasIncreased =
+      maybeIncreaseSliceBudget(budget, now, lastGCStartTime_);
 
   ScheduleZones(this, reason);
 
@@ -4606,8 +4617,6 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
   AutoStopVerifyingBarriers av(rt, isShutdownGC());
   AutoMaybeLeaveAtomsZone leaveAtomsZone(rt->mainContextFromOwnThread());
   AutoSetZoneSliceThresholds sliceThresholds(this);
-
-  schedulingState.updateHighFrequencyModeForReason(reason);
 
   if (!isIncrementalGCInProgress() && tunables.balancedHeapLimitsEnabled()) {
     updateAllocationRates();

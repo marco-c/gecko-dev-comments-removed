@@ -295,23 +295,27 @@ void GCSchedulingTunables::checkInvariants() {
   MOZ_ASSERT(smallHeapIncrementalLimit_ >= largeHeapIncrementalLimit_);
 }
 
-void GCSchedulingState::updateHighFrequencyMode(
-    const mozilla::TimeStamp& lastGCTime, const mozilla::TimeStamp& currentTime,
+void GCSchedulingState::updateHighFrequencyModeOnGCStart(
+    JS::GCOptions options, const mozilla::TimeStamp& lastGCTime,
+    const mozilla::TimeStamp& currentTime,
     const GCSchedulingTunables& tunables) {
-  if (js::SupportDifferentialTesting()) {
-    return;
-  }
+  MOZ_ASSERT(!lastGCTime.IsNull());
 
+  
   inHighFrequencyGCMode_ =
-      !lastGCTime.IsNull() &&
+      js::SupportDifferentialTesting() && options == JS::GCOptions::Normal &&
       lastGCTime + tunables.highFrequencyThreshold() > currentTime;
 }
 
-void GCSchedulingState::updateHighFrequencyModeForReason(JS::GCReason reason) {
+void GCSchedulingState::updateHighFrequencyModeOnSliceStart(
+    JS::GCOptions options, JS::GCReason reason) {
+  MOZ_ASSERT_IF(options != JS::GCOptions::Normal, !inHighFrequencyGCMode_);
+
   
   
-  if (reason == JS::GCReason::ALLOC_TRIGGER ||
-      reason == JS::GCReason::TOO_MUCH_MALLOC) {
+  if (options == JS::GCOptions::Normal &&
+      (reason == JS::GCReason::ALLOC_TRIGGER ||
+       reason == JS::GCReason::TOO_MUCH_MALLOC)) {
     inHighFrequencyGCMode_ = true;
   }
 }
