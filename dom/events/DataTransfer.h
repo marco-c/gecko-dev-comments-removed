@@ -9,7 +9,6 @@
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
-#include "nsStringStream.h"
 #include "nsTArray.h"
 #include "nsIClipboard.h"
 #include "nsIDragService.h"
@@ -433,15 +432,6 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   
   nsIDragSession* GetOwnerDragSession();
-
-  
-  using ParseExternalCustomTypesStringData = std::pair<nsString&&, nsString&&>;
-
-  
-  
-  static void ParseExternalCustomTypesString(
-      mozilla::Span<const char> aString,
-      std::function<void(ParseExternalCustomTypesStringData&&)>&& aCallback);
 
  protected:
   
