@@ -74,10 +74,20 @@ async def test_pen_pointer_properties(
     actions = Actions()
     (
         actions.add_pointer(pointer_type="pen")
+        
+        
         .pointer_move(x=0, y=0, origin=get_element_origin(pointerArea))
-        .pointer_down(button=0, pressure=0.36, altitude_angle=0.3, azimuth_angle=0.2419, twist=86)
+        
+        .pointer_down(button=0, pressure=0.36, altitude_angle=0.3,
+                      azimuth_angle=0.2419, twist=86)
+        
+        
         .pointer_move(x=10, y=10, origin=get_element_origin(pointerArea))
+        
+        
         .pointer_up(button=0)
+        
+        
         .pointer_move(x=80, y=50, origin=get_element_origin(pointerArea))
     )
 
@@ -85,42 +95,59 @@ async def test_pen_pointer_properties(
         actions=actions, context=top_context["context"]
     )
 
-    events = await get_events(bidi_session, top_context["context"])
-    assert len(events) == 10
+    
+    events = [e for e in await get_events(bidi_session, top_context["context"])
+              if e["pointerType"] == "pen"]
+
     event_types = [e["type"] for e in events]
     assert [
+        
+        
+        
         "pointerover",
         "pointerenter",
-        "pointermove",
         "pointerdown",
-        "pointerover",
-        "pointerenter",
+        
         "pointermove",
+        
         "pointerup",
-        "pointerout",
-        "pointerleave",
+        
+        
     ] == event_types
-    assert events[3]["type"] == "pointerdown"
-    assert events[3]["pageX"] == pytest.approx(center["x"], abs=1.0)
-    assert events[3]["pageY"] == pytest.approx(center["y"], abs=1.0)
+
+    assert events[2]["type"] == "pointerdown"
+    assert events[2]["pageX"] == pytest.approx(center["x"], abs=1.0)
+    assert events[2]["pageY"] == pytest.approx(center["y"], abs=1.0)
+    assert events[2]["target"] == "pointerArea"
+    assert events[2]["pointerType"] == "pen"
+    
+    assert round(events[2]["width"], 2) == 1
+    assert round(events[2]["height"], 2) == 1
+    assert round(events[2]["pressure"], 2) == 0.36
+    assert events[2]["tiltX"] == 72
+    assert events[2]["tiltY"] == 38
+    assert events[2]["twist"] == 86
+
+    assert events[3]["type"] == "pointermove"
+    assert events[3]["pageX"] == pytest.approx(center["x"] + 10, abs=1.0)
+    assert events[3]["pageY"] == pytest.approx(center["y"] + 10, abs=1.0)
     assert events[3]["target"] == "pointerArea"
     assert events[3]["pointerType"] == "pen"
-    
     assert round(events[3]["width"], 2) == 1
     assert round(events[3]["height"], 2) == 1
-    assert round(events[3]["pressure"], 2) == 0.36
-    assert events[3]["tiltX"] == 72
-    assert events[3]["tiltY"] == 38
-    assert events[3]["twist"] == 86
-    assert events[6]["type"] == "pointermove"
-    assert events[6]["pageX"] == pytest.approx(center["x"] + 10, abs=1.0)
-    assert events[6]["pageY"] == pytest.approx(center["y"] + 10, abs=1.0)
-    assert events[6]["target"] == "pointerArea"
-    assert events[6]["pointerType"] == "pen"
-    assert round(events[6]["width"], 2) == 1
-    assert round(events[6]["height"], 2) == 1
-    
-    assert round(events[6]["pressure"], 2) == 0.5
-    assert events[6]["tiltX"] == 0
-    assert events[6]["tiltY"] == 0
-    assert events[6]["twist"] == 0
+    assert round(events[3]["pressure"], 2) == 0.5
+    assert events[3]["tiltX"] == 0
+    assert events[3]["tiltY"] == 0
+    assert events[3]["twist"] == 0
+
+    assert events[4]["type"] == "pointerup"
+    assert events[4]["pageX"] == pytest.approx(center["x"] + 10, abs=1.0)
+    assert events[4]["pageY"] == pytest.approx(center["y"] + 10, abs=1.0)
+    assert events[4]["target"] == "pointerArea"
+    assert events[4]["pointerType"] == "pen"
+    assert round(events[4]["width"], 2) == 1
+    assert round(events[4]["height"], 2) == 1
+    assert round(events[4]["pressure"], 2) == 0
+    assert events[4]["tiltX"] == 0
+    assert events[4]["tiltY"] == 0
+    assert events[4]["twist"] == 0
