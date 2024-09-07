@@ -2218,11 +2218,11 @@ void Assembler::bind(Label* label, BufferOffset boff) {
     return;
   }
 
+  BufferOffset dest = boff.assigned() ? boff : nextOffset();
   if (label->used()) {
     bool more;
     
     
-    BufferOffset dest = boff.assigned() ? boff : nextOffset();
     BufferOffset b(label);
     do {
       BufferOffset next;
@@ -2242,7 +2242,7 @@ void Assembler::bind(Label* label, BufferOffset boff) {
       b = next;
     } while (more);
   }
-  label->bind(nextOffset().getOffset());
+  label->bind(dest.getOffset());
   MOZ_ASSERT(!oom());
 }
 
