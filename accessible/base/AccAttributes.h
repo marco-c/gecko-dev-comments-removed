@@ -75,6 +75,7 @@ struct TextOffsetAttribute {
   int32_t mEndOffset;
   
   
+  
   RefPtr<nsAtom> mAttribute;
 
   bool operator==(const TextOffsetAttribute& aOther) const {
