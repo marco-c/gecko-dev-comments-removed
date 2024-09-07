@@ -40,6 +40,7 @@ namespace mozilla::dom::quota {
 
 struct OriginMetadata;
 class OriginScope;
+class PersistenceScope;
 class QuotaManager;
 class UsageInfo;
 
@@ -140,7 +141,7 @@ class Client {
   
   
   virtual nsresult AboutToClearOrigins(
-      const Nullable<PersistenceType>& aPersistenceType,
+      const PersistenceScope& aPersistenceScope,
       const OriginScope& aOriginScope) {
     return NS_OK;
   }

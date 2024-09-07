@@ -83,8 +83,7 @@ class NS_NO_VTABLE ClientDirectoryLock : public OriginDirectoryLock {
 
 class UniversalDirectoryLock : public DirectoryLock {
  public:
-  
-  virtual const Nullable<PersistenceType>& NullablePersistenceType() const = 0;
+  virtual const PersistenceScope& PersistenceScopeRef() const = 0;
 
   
   virtual const OriginScope& GetOriginScope() const = 0;
