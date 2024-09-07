@@ -410,9 +410,6 @@ def lint(config, **lintargs):
         extra_args=lintargs.get("extra_args") or [],
     )
 
-    
-    
-    
     path = os.path.join(
         lintargs["topobjdir"],
         "gradle/build/mobile/android/geckoview/reports",
