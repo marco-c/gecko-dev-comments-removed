@@ -304,11 +304,7 @@ class FileCopier(FileRegistry):
         
         
         
-        try:
-            os.makedirs(destination)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        os.makedirs(destination, exist_ok=True)
 
         
         
@@ -336,11 +332,7 @@ class FileCopier(FileRegistry):
         
         
         for d in sorted(required_dirs, key=len):
-            try:
-                os.mkdir(d)
-            except OSError as error:
-                if error.errno != errno.EEXIST:
-                    raise
+            os.makedirs(d, exist_ok=True)
 
             
             
