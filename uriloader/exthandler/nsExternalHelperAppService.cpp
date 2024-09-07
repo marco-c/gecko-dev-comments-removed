@@ -1444,7 +1444,7 @@ nsresult nsExternalAppHandler::SetUpTempFile(nsIChannel* aChannel) {
   
   
   nsCOMPtr<nsIFile> dummyFile;
-  rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dummyFile));
+  rv = mTempFile->Clone(getter_AddRefs(dummyFile));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
