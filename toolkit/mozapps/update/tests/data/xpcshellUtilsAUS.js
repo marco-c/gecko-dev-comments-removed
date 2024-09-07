@@ -4445,8 +4445,6 @@ function createAppInfo(aID, aName, aVersion, aPlatformVersion) {
 
 
 
-
-
 function getProcessArgs(aExtraArgs) {
   if (!aExtraArgs) {
     aExtraArgs = [];
@@ -4481,7 +4479,7 @@ function getProcessArgs(aExtraArgs) {
     scriptContents += "export XRE_PROFILE_PATH=" + profilePath + "\n";
     scriptContents +=
       appBinPath +
-      " -no-remote -test-process-updates " +
+      " -test-process-updates " +
       aExtraArgs.join(" ") +
       " " +
       PIPE_TO_NULL;
@@ -4498,7 +4496,6 @@ function getProcessArgs(aExtraArgs) {
       appBinPath,
       "-profile",
       profilePath,
-      "-no-remote",
       "-test-process-updates",
       "-wait-for-browser",
     ]

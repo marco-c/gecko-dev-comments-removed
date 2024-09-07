@@ -208,6 +208,12 @@ const startupPhases = {
       read: 1,
       close: 1,
     },
+    {
+      
+      path: "TmpD:firefox-default/parent.lock",
+      condition: WIN,
+      stat: 1,
+    },
   ],
 
   "before opening first browser window": [

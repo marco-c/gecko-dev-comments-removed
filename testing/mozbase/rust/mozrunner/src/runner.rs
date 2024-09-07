@@ -160,12 +160,9 @@ impl FirefoxRunner {
     
     
     pub fn new(path: &Path, profile: Option<Profile>) -> FirefoxRunner {
-        let mut envs: HashMap<OsString, OsString> = HashMap::new();
-        envs.insert("MOZ_NO_REMOTE".into(), "1".into());
-
         FirefoxRunner {
             path: path.to_path_buf(),
-            envs,
+            envs: HashMap::new(),
             profile,
             args: vec![],
             stdout: None,
