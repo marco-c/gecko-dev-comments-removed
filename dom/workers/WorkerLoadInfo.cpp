@@ -333,20 +333,6 @@ bool WorkerLoadInfo::PrincipalURIMatchesScriptURL() {
     return true;
   }
 
-  
-  
-  
-
-  bool allowsRelaxedOriginPolicy = false;
-  rv = mPrincipal->AllowsRelaxStrictFileOriginPolicy(
-      mBaseURI, &allowsRelaxedOriginPolicy);
-
-  if (nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
-      NS_URIIsLocalFile(mBaseURI) &&
-      (NS_SUCCEEDED(rv) && allowsRelaxedOriginPolicy)) {
-    return true;
-  }
-
   return false;
 }
 #endif  

@@ -2451,7 +2451,6 @@ bool NS_SecurityCompareURIs(nsIURI* aSourceURI, nsIURI* aTargetURI,
   }
 
   
-  
   if (targetScheme.EqualsLiteral("file")) {
     
     if (!aStrictFileOriginPolicy) return true;
@@ -2518,50 +2517,6 @@ bool NS_URIIsLocalFile(nsIURI* aURI) {
          NS_SUCCEEDED(util->ProtocolHasFlags(
              aURI, nsIProtocolHandler::URI_IS_LOCAL_FILE, &isFile)) &&
          isFile;
-}
-
-bool NS_RelaxStrictFileOriginPolicy(nsIURI* aTargetURI, nsIURI* aSourceURI,
-                                    bool aAllowDirectoryTarget ) {
-  if (!NS_URIIsLocalFile(aTargetURI)) {
-    
-    MOZ_ASSERT_UNREACHABLE(
-        "NS_RelaxStrictFileOriginPolicy called with non-file URI");
-    return false;
-  }
-
-  if (!NS_URIIsLocalFile(aSourceURI)) {
-    
-    
-    
-    
-    
-    return false;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIFileURL> targetFileURL(do_QueryInterface(aTargetURI));
-  nsCOMPtr<nsIFileURL> sourceFileURL(do_QueryInterface(aSourceURI));
-  nsCOMPtr<nsIFile> targetFile;
-  nsCOMPtr<nsIFile> sourceFile;
-  bool targetIsDir;
-
-  
-  
-  if (!sourceFileURL || !targetFileURL ||
-      NS_FAILED(targetFileURL->GetFile(getter_AddRefs(targetFile))) ||
-      NS_FAILED(sourceFileURL->GetFile(getter_AddRefs(sourceFile))) ||
-      !targetFile || !sourceFile || NS_FAILED(targetFile->Normalize()) ||
-#ifndef MOZ_WIDGET_ANDROID
-      NS_FAILED(sourceFile->Normalize()) ||
-#endif
-      (!aAllowDirectoryTarget &&
-       (NS_FAILED(targetFile->IsDirectory(&targetIsDir)) || targetIsDir))) {
-    return false;
-  }
-
-  return false;
 }
 
 bool NS_IsInternalSameURIRedirect(nsIChannel* aOldChannel,

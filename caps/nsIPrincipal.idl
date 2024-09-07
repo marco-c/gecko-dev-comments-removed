@@ -419,14 +419,6 @@ interface nsIPrincipal : nsISupports
     [infallible]
     boolean isSameOrigin(in nsIURI otherURI);
 
-    
-
-
-
-
-
-    boolean allowsRelaxStrictFileOriginPolicy(in nsIURI aURI);
-
 
     
 

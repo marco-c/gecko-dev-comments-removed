@@ -878,15 +878,6 @@ bool NS_SecurityCompareURIs(nsIURI* aSourceURI, nsIURI* aTargetURI,
 
 bool NS_URIIsLocalFile(nsIURI* aURI);
 
-
-
-
-
-
-
-bool NS_RelaxStrictFileOriginPolicy(nsIURI* aTargetURI, nsIURI* aSourceURI,
-                                    bool aAllowDirectoryTarget = false);
-
 bool NS_IsInternalSameURIRedirect(nsIChannel* aOldChannel,
                                   nsIChannel* aNewChannel, uint32_t aFlags);
 
