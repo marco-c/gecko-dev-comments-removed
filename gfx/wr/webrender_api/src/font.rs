@@ -297,9 +297,14 @@ impl Default for SyntheticItalics {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Hash, Eq, MallocSizeOf, PartialEq, PartialOrd, Ord, Serialize)]
 pub struct FontInstanceOptions {
-    pub render_mode: FontRenderMode,
     pub flags: FontInstanceFlags,
     pub synthetic_italics: SyntheticItalics,
+    pub render_mode: FontRenderMode,
+    
+    
+    
+    
+    pub _padding: u8,
 }
 
 impl Default for FontInstanceOptions {
@@ -308,6 +313,7 @@ impl Default for FontInstanceOptions {
             render_mode: FontRenderMode::Subpixel,
             flags: Default::default(),
             synthetic_italics: SyntheticItalics::disabled(),
+            _padding: 0,
         }
     }
 }
