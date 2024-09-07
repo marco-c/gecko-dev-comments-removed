@@ -153,7 +153,7 @@ TEST_F(TestFileSystemOriginInitialization, EmptyOriginDirectory) {
   ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
 
   ASSERT_NO_FATAL_FAILURE(GetCachedOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, 0u));
 
   
   ASSERT_NO_FATAL_FAILURE(AssertTemporaryStorageNotInitialized());
@@ -209,7 +209,7 @@ TEST_F(TestFileSystemOriginInitialization, EmptyFileSystemDirectory) {
   ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
 
   ASSERT_NO_FATAL_FAILURE(GetCachedOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, 0u));
 
   
   ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
@@ -271,7 +271,7 @@ TEST_F(TestFileSystemOriginInitialization, EmptyFileSystemDatabase) {
   ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, beforeShutdownUsage));
 
   ASSERT_NO_FATAL_FAILURE(GetCachedOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, 0u));
 
   
   ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
@@ -337,7 +337,7 @@ TEST_F(TestFileSystemOriginInitialization, EmptyFileSystemFile) {
   ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, beforeShutdownUsage));
 
   ASSERT_NO_FATAL_FAILURE(GetCachedOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, 0u));
 
   
   ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
@@ -424,7 +424,7 @@ TEST_F(TestFileSystemOriginInitialization, NonEmptyFileSystemFile) {
   ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, beforeShutdownUsage));
 
   ASSERT_NO_FATAL_FAILURE(GetCachedOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, 0u));
 
   
   ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
@@ -520,7 +520,7 @@ TEST_F(TestFileSystemOriginInitialization,
   ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, beforeShutdownUsage));
 
   ASSERT_NO_FATAL_FAILURE(GetCachedOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, 0u));
 
   
   ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
@@ -604,7 +604,7 @@ TEST_F(TestFileSystemOriginInitialization, RemovedFileSystemFile) {
   ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, beforeShutdownUsage));
 
   ASSERT_NO_FATAL_FAILURE(GetCachedOriginUsage(usageNow));
-  ASSERT_NO_FATAL_FAILURE(CheckUsageIsNothing(usageNow));
+  ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, 0u));
 
   
   ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
