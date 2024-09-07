@@ -79,6 +79,13 @@
 #endif
 
 
+#if defined(__clang__)
+#  define MOZ_HAS_CLANG_ATTRIBUTE(attr) __has_attribute(attr)
+#else
+#  define MOZ_HAS_CLANG_ATTRIBUTE(attr) 0
+#endif
+
+
 
 
 
@@ -88,15 +95,13 @@
 #  endif
 #endif
 
-#if defined(__GNUC__) || \
-    (defined(__clang__) && __has_attribute(no_profile_instrument_function))
+#if defined(__GNUC__) || MOZ_HAS_CLANG_ATTRIBUTE(no_profile_instrument_function)
 #  define MOZ_NOPROFILE __attribute__((no_profile_instrument_function))
 #else
 #  define MOZ_NOPROFILE
 #endif
 
-#if defined(__GNUC__) || \
-    (defined(__clang__) && __has_attribute(no_instrument_function))
+#if defined(__GNUC__) || (MOZ_HAS_CLANG_ATTRIBUTE(no_instrument_function))
 #  define MOZ_NOINSTRUMENT __attribute__((no_instrument_function))
 #else
 #  define MOZ_NOINSTRUMENT
@@ -121,7 +126,7 @@
 
 
 
-#if defined(__clang__) && __has_attribute(nomerge)
+#if MOZ_HAS_CLANG_ATTRIBUTE(nomerge)
 #  define MOZ_NOMERGE __attribute__((nomerge))
 #else
 #  define MOZ_NOMERGE
