@@ -1451,7 +1451,10 @@ var snapshotFormatters = {
       let th = $.new("th", null, "column");
       document.l10n.setAttributes(th, keyStrId);
       let td = $.new("td", data[key]);
-      if (key === "hasUserNamespaces" && !data[key]) {
+      
+      
+      const isPackagedApp = Services.sysinfo.getPropertyAsBool("isPackagedApp");
+      if (key === "hasUserNamespaces" && !data[key] && !isPackagedApp) {
         td = $.new("td", "");
         td.classList.add("feature-unavailable");
         let span = document.createElement("span");
