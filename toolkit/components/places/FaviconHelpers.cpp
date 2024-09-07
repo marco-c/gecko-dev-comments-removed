@@ -391,14 +391,21 @@ nsresult FetchIconPerSpec(const RefPtr<Database>& aDB,
   MOZ_ASSERT(!aPageSpec.IsEmpty(), "Page spec must not be empty.");
   MOZ_ASSERT(!NS_IsMainThread());
 
+  const uint16_t THRESHOLD_WIDTH = 64;
+
   
   
   
   
   
-  nsCOMPtr<mozIStorageStatement> stmt = aDB->GetStatement(
+  
+  
+  
+  
+
+  nsCString query = nsPrintfCString(
       "/* do not warn (bug no: not worth having a compound index) */ "
-      "SELECT width, icon_url, root "
+      "SELECT width, icon_url, root, (flags & %d) as isRich "
       "FROM moz_icons i "
       "JOIN moz_icons_to_pages ON i.id = icon_id "
       "JOIN moz_pages_w_icons p ON p.id = page_id "
@@ -406,10 +413,17 @@ nsresult FetchIconPerSpec(const RefPtr<Database>& aDB,
       "OR (:hash_idx AND page_url_hash = hash(substr(:url, 0, :hash_idx)) "
       "AND page_url = substr(:url, 0, :hash_idx)) "
       "UNION ALL "
-      "SELECT width, icon_url, root "
+      "SELECT width, icon_url, root, (flags & %d) as isRich "
       "FROM moz_icons i "
       "WHERE fixed_icon_url_hash = hash(fixup_url(:host) || '/favicon.ico') "
-      "ORDER BY width DESC, root ASC");
+      "ORDER BY %s width DESC, root ASC",
+      nsIFaviconService::ICONDATA_FLAGS_RICH,
+      nsIFaviconService::ICONDATA_FLAGS_RICH,
+      
+      aPreferredWidth <= THRESHOLD_WIDTH ? "isRich ASC, " : "");
+
+  nsCOMPtr<mozIStorageStatement> stmt = aDB->GetStatement(query);
+
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoper(stmt);
 
@@ -421,6 +435,7 @@ nsresult FetchIconPerSpec(const RefPtr<Database>& aDB,
   rv = stmt->BindInt32ByName("hash_idx"_ns, hashIdx + 1);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
   
   
   bool hasResult;
