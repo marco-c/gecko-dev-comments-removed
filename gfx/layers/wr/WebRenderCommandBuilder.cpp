@@ -310,7 +310,6 @@ struct DIGroup {
   LayerIntRect mLastVisibleRect;
 
   
-  
   LayerIntRect mPreservedRect;
   
   
@@ -336,11 +335,7 @@ struct DIGroup {
         mHitInfo(CompositorHitTestInvisibleToHit) {}
 
   void InvalidateRect(const LayerIntRect& aRect) {
-    auto r = aRect.Intersect(mPreservedRect);
-    
-    if (!r.IsEmpty()) {
-      mInvalidRect = mInvalidRect.Union(r);
-    }
+    mInvalidRect = mInvalidRect.Union(aRect);
   }
 
   LayerIntRect ItemBounds(nsDisplayItem* aItem) {
