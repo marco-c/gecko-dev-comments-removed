@@ -16,12 +16,6 @@ add_task(async function test_indicatorDrop() {
   ok(downloadButton, "download button present");
   await promiseButtonShown(downloadButton.id);
 
-  let EventUtils = {};
-  Services.scriptloader.loadSubScript(
-    "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
-    EventUtils
-  );
-
   
   await task_resetState();
 
