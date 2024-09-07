@@ -14,13 +14,6 @@ function imageBufferFromDataURI(encodedImageData) {
   return Uint8Array.from(decodedImageData, byte => byte.charCodeAt(0)).buffer;
 }
 
-const kPrefCustomizationState = "browser.uiCustomization.state";
-const kPrefCustomizationHorizontalTabstrip =
-  "browser.uiCustomization.horizontalTabstrip";
-
-Services.prefs.clearUserPref(kPrefCustomizationState);
-Services.prefs.clearUserPref(kPrefCustomizationHorizontalTabstrip);
-
 
 const extData = {
   manifest: {
