@@ -24,7 +24,7 @@ class ModuleLoaderBase;
 
 
 
-class VisitedURLSet : public nsTHashtable<ModuleMapKey> {
+class VisitedURLSet : public nsTHashtable<nsURIHashKey> {
   NS_INLINE_DECL_REFCOUNTING(VisitedURLSet)
 
  private:
@@ -50,16 +50,14 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                                                          ScriptLoadRequest)
   using SRIMetadata = mozilla::dom::SRIMetadata;
 
-  ModuleLoadRequest(nsIURI* aURI, JS::ModuleType aModuleType,
-                    mozilla::dom::ReferrerPolicy aReferrerPolicy,
+  ModuleLoadRequest(nsIURI* aURI, mozilla::dom::ReferrerPolicy aReferrerPolicy,
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     LoadContextBase* aContext, bool aIsTopLevel,
                     bool aIsDynamicImport, ModuleLoaderBase* aLoader,
                     VisitedURLSet* aVisitedSet, ModuleLoadRequest* aRootModule);
 
-  static VisitedURLSet* NewVisitedSetForTopLevelImport(
-      nsIURI* aURI, JS::ModuleType aModuleType);
+  static VisitedURLSet* NewVisitedSetForTopLevelImport(nsIURI* aURI);
 
   bool IsTopLevel() const override { return mIsTopLevel; }
 
@@ -129,9 +127,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
  public:
   
   const bool mIsTopLevel;
-
-  
-  const JS::ModuleType mModuleType;
 
   
   const bool mIsDynamicImport;

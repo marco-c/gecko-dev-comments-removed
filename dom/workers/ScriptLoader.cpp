@@ -719,16 +719,13 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     nsCOMPtr<nsIURI> referrer =
         mWorkerRef->Private()->GetReferrerInfo()->GetOriginalReferrer();
 
-    RefPtr<JS::loader::VisitedURLSet> visitedSet =
-        ModuleLoadRequest::NewVisitedSetForTopLevelImport(
-            uri, JS::ModuleType::JavaScript);
-
     
     request = new ModuleLoadRequest(
-        uri, JS::ModuleType::JavaScript, referrerPolicy, fetchOptions,
-        SRIMetadata(), referrer, loadContext, true, 
-        false,                                      
-        moduleLoader, visitedSet, nullptr);
+        uri, referrerPolicy, fetchOptions, SRIMetadata(), referrer, loadContext,
+        true,  
+        false, 
+        moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(uri),
+        nullptr);
   }
 
   
@@ -1060,13 +1057,10 @@ nsresult WorkerScriptLoader::LoadScript(
   
   
   if (!IsDebuggerScript()) {
-    JS::ModuleType moduleType = request->IsModuleRequest()
-                                    ? request->AsModuleRequest()->mModuleType
-                                    : JS::ModuleType::JavaScript;
-
     headerProcessor = MakeRefPtr<ScriptResponseHeaderProcessor>(
         mWorkerRef, loadContext->IsTopLevel() && !IsDynamicImport(request),
-        request->IsModuleRequest(), moduleType);
+        GetContentPolicyType(request) ==
+            nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS);
   }
 
   nsCOMPtr<nsIStreamLoader> loader;

@@ -190,15 +190,6 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
 
 
 
-
-
-extern JS_PUBLIC_API JSObject* CompileJsonModule(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf);
-
-
-
-
 extern JS_PUBLIC_API void SetModulePrivate(JSObject* module,
                                            const Value& value);
 
@@ -213,11 +204,6 @@ extern JS_PUBLIC_API void ClearModulePrivate(JSObject* module);
 
 
 extern JS_PUBLIC_API Value GetModulePrivate(JSObject* module);
-
-
-
-
-extern JS_PUBLIC_API bool IsCyclicModule(JSObject* module);
 
 
 
@@ -292,24 +278,12 @@ extern JS_PUBLIC_API void GetRequestedModuleSourcePos(
 
 
 
-extern JS_PUBLIC_API ModuleType GetRequestedModuleType(
-    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index);
-
-
-
-
 extern JS_PUBLIC_API JSScript* GetModuleScript(Handle<JSObject*> moduleRecord);
 
 extern JS_PUBLIC_API JSObject* CreateModuleRequest(
-    JSContext* cx, Handle<JSString*> specifierArg, ModuleType moduleType);
+    JSContext* cx, Handle<JSString*> specifierArg);
 extern JS_PUBLIC_API JSString* GetModuleRequestSpecifier(
     JSContext* cx, Handle<JSObject*> moduleRequestArg);
-
-
-
-
-extern JS_PUBLIC_API ModuleType
-GetModuleRequestType(JSContext* cx, Handle<JSObject*> moduleRequestArg);
 
 
 

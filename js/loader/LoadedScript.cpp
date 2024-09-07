@@ -287,11 +287,9 @@ void ModuleScript::UnlinkModuleRecord() {
   
   
   if (mModuleRecord) {
-    if (JS::IsCyclicModule(mModuleRecord)) {
-      JSObject* module = mModuleRecord.unbarrieredGet();
-      MOZ_ASSERT(JS::GetModulePrivate(module).toPrivate() == this);
-      JS::ClearModulePrivate(module);
-    }
+    JSObject* module = mModuleRecord.unbarrieredGet();
+    MOZ_ASSERT(JS::GetModulePrivate(module).toPrivate() == this);
+    JS::ClearModulePrivate(module);
     mModuleRecord = nullptr;
   }
 }
@@ -308,14 +306,12 @@ void ModuleScript::SetModuleRecord(JS::Handle<JSObject*> aModuleRecord) {
 
   mModuleRecord = aModuleRecord;
 
-  if (JS::IsCyclicModule(mModuleRecord)) {
-    
-    
-    
-    
-    MOZ_ASSERT(JS::GetModulePrivate(mModuleRecord).isUndefined());
-    JS::SetModulePrivate(mModuleRecord, JS::PrivateValue(this));
-  }
+  
+  
+  
+  
+  MOZ_ASSERT(JS::GetModulePrivate(mModuleRecord).isUndefined());
+  JS::SetModulePrivate(mModuleRecord, JS::PrivateValue(this));
 
   mozilla::HoldJSObjects(this);
 }

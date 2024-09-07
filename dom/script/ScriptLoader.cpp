@@ -1758,13 +1758,6 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
     return NS_OK;
   }
 
-  
-  
-  if (aRequest->IsModuleRequest() &&
-      aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::JSON) {
-    return NS_OK;
-  }
-
   nsCOMPtr<nsIGlobalObject> globalObject = GetGlobalForRequest(aRequest);
   if (!globalObject) {
     return NS_ERROR_FAILURE;
@@ -3875,25 +3868,6 @@ bool ScriptLoader::ShouldCompileOffThread(ScriptLoadRequest* aRequest) {
   return false;
 }
 
-static bool MimeTypeMatchesExpectedModuleType(
-    nsIChannel* aChannel, JS::ModuleType expectedModuleType) {
-  nsAutoCString mimeType;
-  aChannel->GetContentType(mimeType);
-  NS_ConvertUTF8toUTF16 typeString(mimeType);
-
-  if (expectedModuleType == JS::ModuleType::JavaScript &&
-      nsContentUtils::IsJavascriptMIMEType(typeString)) {
-    return true;
-  }
-
-  if (expectedModuleType == JS::ModuleType::JSON &&
-      nsContentUtils::IsJsonMimeType(typeString)) {
-    return true;
-  }
-
-  return false;
-}
-
 nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                             nsIIncrementalStreamLoader* aLoader,
                                             nsresult aStatus) {
@@ -3987,7 +3961,10 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
 
     
     
-    if (!MimeTypeMatchesExpectedModuleType(channel, request->mModuleType)) {
+    nsAutoCString mimeType;
+    channel->GetContentType(mimeType);
+    NS_ConvertUTF8toUTF16 typeString(mimeType);
+    if (!nsContentUtils::IsJavascriptMIMEType(typeString)) {
       return NS_ERROR_FAILURE;
     }
 

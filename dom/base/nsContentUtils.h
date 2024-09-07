@@ -2748,12 +2748,6 @@ class nsContentUtils {
   static bool IsJavascriptMIMEType(const nsAString& aMIMEType);
   static bool IsJavascriptMIMEType(const nsACString& aMIMEType);
 
-  
-
-
-
-  static bool IsJsonMimeType(const nsAString& aMimeType);
-
   static void SplitMimeType(const nsAString& aValue, nsString& aType,
                             nsString& aParams);
 

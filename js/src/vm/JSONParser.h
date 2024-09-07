@@ -9,7 +9,6 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"       
 #include "mozilla/Range.h"       
 #include "mozilla/RangedPtr.h"   
 
@@ -207,10 +206,6 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
   
 
   JSContext* cx;
-
-  bool reportLineNumbersFromParsedData = false;
-
-  mozilla::Maybe<JS::ConstUTF8CharsZ> filename;
 
   JS::Value v;
 
@@ -603,18 +598,6 @@ class MOZ_STACK_CLASS JSONParser
 
   bool parse(JS::MutableHandle<JS::Value> vp);
 
-  void reportLineNumbersFromParsedData(bool b) {
-    this->handler.reportLineNumbersFromParsedData = b;
-  }
-
-  
-
-
-
-  void setFilename(JS::ConstUTF8CharsZ filename) {
-    this->handler.filename = mozilla::Some(filename);
-  }
-
   void trace(JSTracer* trc);
 };
 
@@ -667,12 +650,6 @@ class MutableWrappedPtrOperations<JSONParser<CharT>, Wrapper>
  public:
   bool parse(JS::MutableHandle<JS::Value> vp) {
     return static_cast<Wrapper*>(this)->get().parse(vp);
-  }
-  void setFilename(JS::ConstUTF8CharsZ filename) {
-    static_cast<Wrapper*>(this)->get().setFilename(filename);
-  }
-  void reportLineNumbersFromParsedData(bool b) {
-    static_cast<Wrapper*>(this)->get().reportLineNumbersFromParsedData(b);
   }
 };
 
