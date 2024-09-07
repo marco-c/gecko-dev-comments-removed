@@ -34,10 +34,8 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(MediaPlaybackState, uint32_t,
 
 
 
-enum class MediaAudibleState : bool {
-  eInaudible = false,
-  eAudible = true,
-};
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(MediaAudibleState, bool,
+                                             (eInaudible, eAudible));
 
 
 
