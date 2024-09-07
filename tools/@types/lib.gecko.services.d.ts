@@ -3,6 +3,7 @@
 
 
 
+
 interface JSServices {
   DAPTelemetry: nsIDAPTelemetry;
   appShell: nsIAppShellService;

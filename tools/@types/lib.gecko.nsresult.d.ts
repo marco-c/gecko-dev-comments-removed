@@ -3,6 +3,7 @@
 
 
 
+
 interface nsIXPCComponents_Results {
 
   
