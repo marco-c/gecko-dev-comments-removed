@@ -114,12 +114,12 @@ class RegExp final : public AllStatic {
   
   
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeHandle<Object> Exec(
-      Isolate* isolate, Handle<JSRegExp> regexp, Handle<String> subject,
+      Isolate* isolate, DirectHandle<JSRegExp> regexp, Handle<String> subject,
       int index, Handle<RegExpMatchInfo> last_match_info,
       ExecQuirks exec_quirks = ExecQuirks::kNone);
 
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeHandle<Object>
-  ExperimentalOneshotExec(Isolate* isolate, Handle<JSRegExp> regexp,
+  ExperimentalOneshotExec(Isolate* isolate, DirectHandle<JSRegExp> regexp,
                           DirectHandle<String> subject, int index,
                           Handle<RegExpMatchInfo> last_match_info,
                           ExecQuirks exec_quirks = ExecQuirks::kNone);
