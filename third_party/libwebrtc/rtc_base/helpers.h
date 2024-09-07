@@ -83,10 +83,6 @@ uint32_t CreateRandomNonZeroId();
 
 double CreateRandomDouble();
 
-
-
-double GetNextMovingAverage(double prev_average, double cur, double ratio);
-
 }  
 
 #endif  
