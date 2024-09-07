@@ -24,7 +24,8 @@ using layers::InputAPZContext;
 using layers::ScrollableLayerGuid;
 
 template <typename Units>
-gfx::Matrix4x4Typed<Units, Units> ViewportUtils::GetVisualToLayoutTransform(
+gfx::Matrix4x4TypedFlagged<Units, Units>
+ViewportUtils::GetVisualToLayoutTransform(
     ScrollableLayerGuid::ViewID aScrollId) {
   static_assert(
       std::is_same_v<Units, CSSPixel> ||
@@ -65,12 +66,12 @@ gfx::Matrix4x4Typed<Units, Units> ViewportUtils::GetVisualToLayoutTransform(
                 content->GetPrimaryFrame()->PresContext()->CSSToDevPixelScale();
   }
 
-  return gfx::Matrix4x4Typed<Units, Units>::Scaling(1 / resolution,
-                                                    1 / resolution, 1)
+  return gfx::Matrix4x4TypedFlagged<Units, Units>::Scaling(1 / resolution,
+                                                           1 / resolution, 1)
       .PostTranslate(transform.x, transform.y, 0);
 }
 
-CSSToCSSMatrix4x4 GetVisualToLayoutTransform(PresShell* aContext) {
+CSSToCSSMatrix4x4Flagged GetVisualToLayoutTransform(PresShell* aContext) {
   ScrollableLayerGuid::ViewID targetScrollId =
       InputAPZContext::GetTargetLayerGuid().mScrollId;
   if (targetScrollId == ScrollableLayerGuid::NULL_SCROLL_ID) {
@@ -232,9 +233,9 @@ LayoutDeviceRect ViewportUtils::ToScreenRelativeVisual(
 
 
 
-template CSSToCSSMatrix4x4 ViewportUtils::GetVisualToLayoutTransform<CSSPixel>(
-    ScrollableLayerGuid::ViewID);
-template LayoutDeviceToLayoutDeviceMatrix4x4
+template CSSToCSSMatrix4x4Flagged ViewportUtils::GetVisualToLayoutTransform<
+    CSSPixel>(ScrollableLayerGuid::ViewID);
+template LayoutDeviceToLayoutDeviceMatrix4x4Flagged
     ViewportUtils::GetVisualToLayoutTransform<LayoutDevicePixel>(
         ScrollableLayerGuid::ViewID);
 
