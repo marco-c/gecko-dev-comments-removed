@@ -575,6 +575,8 @@ enum class LayoutFrameClassFlags : uint16_t {
   SupportsAspectRatio = 1 << 13,
   
   BlockFormattingContext = 1 << 14,
+  
+  SVGRenderingObserverContainer = 1 << 15,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LayoutFrameClassFlags)
@@ -3449,6 +3451,8 @@ class nsIFrame : public nsQueryFrame {
   CLASS_FLAG_METHOD0(SupportsCSSTransforms);
   CLASS_FLAG_METHOD0(SupportsContainLayoutAndPaint)
   CLASS_FLAG_METHOD0(SupportsAspectRatio)
+  CLASS_FLAG_METHOD(IsSVGRenderingObserverContainer,
+                    SVGRenderingObserverContainer);
 
 #undef CLASS_FLAG_METHOD
 #undef CLASS_FLAG_METHOD0
@@ -4673,17 +4677,6 @@ class nsIFrame : public nsQueryFrame {
 
   bool IsInSVGTextSubtree() const {
     return HasAnyStateBits(NS_FRAME_IS_SVG_TEXT);
-  }
-
-  
-
-
-  bool IsRenderingObserverContainer() const {
-    
-    
-    return HasAllStateBits(NS_FRAME_SVG_LAYOUT |
-                           NS_STATE_SVG_RENDERING_OBSERVER_CONTAINER) ||
-           IsSVGOuterSVGFrame();
   }
 
   

@@ -29,8 +29,7 @@ nsIFrame* NS_NewSVGContainerFrame(mozilla::PresShell* aPresShell,
   
   
   
-  frame->AddStateBits(NS_FRAME_IS_NONDISPLAY |
-                      NS_STATE_SVG_RENDERING_OBSERVER_CONTAINER);
+  frame->AddStateBits(NS_FRAME_IS_NONDISPLAY);
   return frame;
 }
 
