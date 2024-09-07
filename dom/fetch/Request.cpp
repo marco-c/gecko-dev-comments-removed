@@ -352,6 +352,11 @@ SafeRefPtr<Request> Request::Constructor(
     request->SetMozErrors();
   }
 
+  if (aInit.mTriggeringPrincipal.WasPassed() &&
+      aInit.mTriggeringPrincipal.Value()) {
+    request->SetTriggeringPrincipal(aInit.mTriggeringPrincipal.Value());
+  }
+
   
   if (aInit.mMethod.WasPassed()) {
     nsAutoCString method(aInit.mMethod.Value());

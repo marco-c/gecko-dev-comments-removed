@@ -641,8 +641,14 @@ nsresult FetchDriver::HttpFetch(
                        nullptr, 
                        loadFlags, ios);
   } else {
+    nsCOMPtr<nsIPrincipal> principal = mPrincipal;
+    if (principal->IsSystemPrincipal() &&
+        mRequest->GetTriggeringPrincipalOverride()) {
+      principal = mRequest->GetTriggeringPrincipalOverride();
+    }
+
     rv =
-        NS_NewChannel(getter_AddRefs(chan), uri, mPrincipal, secFlags,
+        NS_NewChannel(getter_AddRefs(chan), uri, principal, secFlags,
                       mRequest->ContentPolicyType(), mCookieJarSettings,
                       mPerformanceStorage, mLoadGroup, nullptr, 
                       loadFlags, ios);
