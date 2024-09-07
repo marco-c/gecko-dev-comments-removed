@@ -32,6 +32,10 @@ extern JS_PUBLIC_API void SetHelperThreadTaskCallback(
 
 extern JS_PUBLIC_API void RunHelperThreadTask(HelperThreadTask* task);
 
+
+extern JS_PUBLIC_API const char* GetHelperThreadTaskName(
+    HelperThreadTask* task);
+
 }  
 
 #endif  
