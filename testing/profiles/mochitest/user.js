@@ -31,8 +31,3 @@ user_pref("app.update.disabledForTesting", true);
 
 
 user_pref("places.history.floodingPrevention.enabled", false);
-
-
-
-
-user_pref("geo.prompt.open_system_prefs", false);

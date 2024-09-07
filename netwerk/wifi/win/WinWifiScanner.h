@@ -20,11 +20,6 @@ class WifiScannerImpl final : public WifiScanner {
   
 
 
-  bool HasWifiAdapter() { return !!mWlanLibrary; }
-
-  
-
-
 
 
 
