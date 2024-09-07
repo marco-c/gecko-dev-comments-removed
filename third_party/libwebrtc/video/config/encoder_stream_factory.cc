@@ -328,7 +328,7 @@ EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
   
   layers = GetSimulcastConfig(
       FindRequiredActiveLayers(encoder_config),
-      encoder_config.number_of_streams, width, height, encoder_config.max_qp,
+      encoder_config.number_of_streams, width, height,
       webrtc::SimulcastUtility::IsConferenceModeScreenshare(encoder_config),
       temporal_layers_supported, trials, encoder_config.codec_type);
   
