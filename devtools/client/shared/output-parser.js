@@ -301,6 +301,7 @@ class OutputParser {
     let varData;
     let varFallbackValue;
     let varSubsitutedValue;
+    let varComputedValue;
 
     
     if (tokens && tokens.length === 1) {
@@ -321,6 +322,8 @@ class OutputParser {
       varSubsitutedValue = options.inStartingStyleRule
         ? varStartingStyleValue
         : varValue;
+
+      varComputedValue = varData.computedValue;
     }
 
     
@@ -336,6 +339,16 @@ class OutputParser {
       );
       firstOpts.class = options.matchedVariableClass;
       secondOpts.class = options.unmatchedClass;
+
+      
+      
+      if (
+        !options.inStartingStyleRule &&
+        typeof varComputedValue === "string" &&
+        varComputedValue !== varSubsitutedValue
+      ) {
+        firstOpts["data-variable-computed"] = varComputedValue;
+      }
 
       
       if (
