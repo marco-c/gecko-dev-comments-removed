@@ -168,6 +168,14 @@ interface nsIIOService : nsISupports
 
     nsIWebTransport newWebTransport();
 
+
+    
+
+
+
+    [implicit_jscontext]
+    jsval originAttributesForNetworkState(in nsIChannel aChannel);
+
     
 
 
