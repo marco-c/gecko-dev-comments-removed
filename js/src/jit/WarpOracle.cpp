@@ -1095,7 +1095,13 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
       case AbortReason::Disable: {
         
         
+
+        
+        
+        
         ICEntry* entry = icScript_->icEntryForStub(fallbackStub);
+        MOZ_ASSERT_IF(entry->firstStub() != stub,
+                      !isTrialInlined && entry->firstStub() == stub->next());
         if (entry->firstStub() == stub) {
           fallbackStub->unlinkStub(cx_->zone(), entry, nullptr, stub);
         }
