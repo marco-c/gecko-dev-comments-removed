@@ -1738,6 +1738,13 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
         ContentProcessSandboxParams::ForThisProcess(aBroker));
   }
 #  elif defined(XP_WIN)
+  
+  
+  
+  
+  ::LoadLibraryW(L"mozavcodec.dll");
+  ::LoadLibraryW(L"mozavutil.dll");
+
   if (GetEffectiveContentSandboxLevel() > 7) {
     
     ::LoadLibraryW(L"avrt.dll");
@@ -1747,8 +1754,6 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
     
     ::LoadLibraryW(L"textshaping.dll");
     
-    ::LoadLibraryW(L"mozavcodec.dll");
-    ::LoadLibraryW(L"mozavutil.dll");
     ::LoadLibraryW(L"mfplat.dll");
     ::LoadLibraryW(L"mf.dll");
     ::LoadLibraryW(L"dxva2.dll");
