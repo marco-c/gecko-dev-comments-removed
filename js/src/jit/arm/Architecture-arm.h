@@ -652,6 +652,9 @@ enum class ARMCapability : uint32_t {
   IDivA,
 
   
+  FPHP,
+
+  
   FixupFault,
 
   
@@ -721,6 +724,10 @@ class ARMFlags final {
     MOZ_ASSERT(IsInitialized());
     return capabilities.contains(ARMCapability::VFPv3);
   }
+  static bool HasVFPv4() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::VFPv4);
+  }
   static bool HasNEON() {
     MOZ_ASSERT(IsInitialized());
     return capabilities.contains(ARMCapability::Neon);
@@ -728,6 +735,10 @@ class ARMFlags final {
   static bool HasIDIV() {
     MOZ_ASSERT(IsInitialized());
     return capabilities.contains(ARMCapability::IDivA);
+  }
+  static bool HasFPHalfPrecision() {
+    MOZ_ASSERT(IsInitialized());
+    return capabilities.contains(ARMCapability::FPHP);
   }
 
   
