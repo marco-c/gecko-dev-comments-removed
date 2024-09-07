@@ -2,7 +2,7 @@
 
 
 
-add_task(async function test_tabGroups() {
+add_task(async function test_tabGroupCreateAndAddTab() {
   let group = gBrowser.addTabGroup("blue", "test");
 
   Assert.ok(group.id, "group has id");
@@ -14,6 +14,21 @@ add_task(async function test_tabGroups() {
 
   
   BrowserTestUtils.removeTab(tab1);
+  group.remove();
+});
+
+add_task(async function test_tabGroupCreateWithTabs() {
+  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let group = gBrowser.addTabGroup("blue", "test", [tab1, tab2]);
+
+  Assert.equal(group.tabs.length, 2, "group has 2 tabs");
+  Assert.ok(group.tabs.includes(tab1), "tab1 is in group");
+  Assert.ok(group.tabs.includes(tab2), "tab2 is in group");
+
+  
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
   group.remove();
 });
 
