@@ -427,6 +427,12 @@ nsresult nsMathMLmpaddedFrame::Place(DrawTarget* aDrawTarget,
   mBoundingMetrics.descent = depth;
   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
 
+  
+  auto borderPadding = GetBorderPaddingForPlace(aFlags);
+  InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
+                                  mBoundingMetrics);
+  dx += borderPadding.left;
+
   mReference.x = 0;
   mReference.y = aDesiredSize.BlockStartAscent();
 
