@@ -1298,6 +1298,10 @@ const gCSSProperties2 = {
     types: [
     ]
   },
+  'stroke-color': {
+    
+    types: [ 'color' ]
+  },
   'stroke-dasharray': {
     
     types: [
