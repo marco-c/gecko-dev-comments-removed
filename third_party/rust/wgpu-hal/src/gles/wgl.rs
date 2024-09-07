@@ -9,7 +9,7 @@ use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::{
     collections::HashSet,
     ffi::{c_void, CStr, CString},
-    mem,
+    mem::{self, ManuallyDrop},
     os::raw::c_int,
     ptr,
     sync::{
@@ -134,9 +134,27 @@ unsafe impl Send for WglContext {}
 unsafe impl Sync for WglContext {}
 
 struct Inner {
-    gl: glow::Context,
+    gl: ManuallyDrop<glow::Context>,
     device: InstanceDevice,
     context: WglContext,
+}
+
+impl Drop for Inner {
+    fn drop(&mut self) {
+        struct CurrentGuard<'a>(&'a WglContext);
+        impl Drop for CurrentGuard<'_> {
+            fn drop(&mut self) {
+                self.0.unmake_current().unwrap();
+            }
+        }
+
+        
+        
+        self.context.make_current(self.device.dc).unwrap();
+        let _guard = CurrentGuard(&self.context);
+        
+        unsafe { ManuallyDrop::drop(&mut self.gl) };
+    }
 }
 
 unsafe impl Send for Inner {}
@@ -497,6 +515,8 @@ impl crate::Instance for Instance {
             unsafe { gl.debug_message_callback(super::gl_debug_message_callback) };
         }
 
+        
+        let gl = ManuallyDrop::new(gl);
         context.unmake_current().map_err(|e| {
             crate::InstanceError::with_source(
                 String::from("unable to unset the current WGL context"),

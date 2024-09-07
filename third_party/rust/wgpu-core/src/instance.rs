@@ -498,7 +498,7 @@ impl Global {
 
             let id = self
                 .surfaces
-                .prepare(wgt::Backend::Empty, id_in) 
+                .prepare(Backend::Empty, id_in) 
                 .assign(Arc::new(surface));
             Ok(id)
         }

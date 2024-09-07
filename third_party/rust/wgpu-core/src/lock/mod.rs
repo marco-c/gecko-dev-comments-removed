@@ -26,16 +26,29 @@
 
 
 
+
+
+
+
+
 pub mod rank;
 
 #[cfg_attr(not(wgpu_validate_locks), allow(dead_code))]
 mod ranked;
 
-#[cfg_attr(wgpu_validate_locks, allow(dead_code))]
+#[cfg(feature = "observe_locks")]
+mod observing;
+
+#[cfg_attr(any(wgpu_validate_locks, feature = "observe_locks"), allow(dead_code))]
 mod vanilla;
 
 #[cfg(wgpu_validate_locks)]
-pub use ranked::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use ranked as chosen;
 
-#[cfg(not(wgpu_validate_locks))]
-pub use vanilla::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+#[cfg(feature = "observe_locks")]
+use observing as chosen;
+
+#[cfg(not(any(wgpu_validate_locks, feature = "observe_locks")))]
+use vanilla as chosen;
+
+pub use chosen::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};

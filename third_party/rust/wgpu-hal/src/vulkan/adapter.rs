@@ -1,6 +1,6 @@
 use super::conv;
 
-use ash::{amd, ext, khr, vk};
+use ash::{amd, ext, google, khr, vk};
 use parking_lot::Mutex;
 
 use std::{collections::BTreeMap, ffi::CStr, sync::Arc};
@@ -771,6 +771,11 @@ impl PhysicalDeviceFeatures {
             );
         }
 
+        features.set(
+            F::VULKAN_GOOGLE_DISPLAY_TIMING,
+            caps.supports_extension(google::display_timing::NAME),
+        );
+
         (features, dl_flags)
     }
 
@@ -1002,6 +1007,11 @@ impl PhysicalDeviceProperties {
             wgt::Features::SHADER_INT64_ATOMIC_ALL_OPS | wgt::Features::SHADER_INT64_ATOMIC_MIN_MAX,
         ) {
             extensions.push(khr::shader_atomic_int64::NAME);
+        }
+
+        
+        if requested_features.contains(wgt::Features::VULKAN_GOOGLE_DISPLAY_TIMING) {
+            extensions.push(google::display_timing::NAME);
         }
 
         extensions
@@ -1593,11 +1603,13 @@ impl super::Adapter {
     
     
     
+    
+    
     #[allow(clippy::too_many_arguments)]
     pub unsafe fn device_from_raw(
         &self,
         raw_device: ash::Device,
-        handle_is_owned: bool,
+        drop_callback: Option<crate::DropCallback>,
         enabled_extensions: &[&'static CStr],
         features: wgt::Features,
         memory_hints: &wgt::MemoryHints,
@@ -1812,12 +1824,14 @@ impl super::Adapter {
             0, 0, 0, 0,
         ];
 
+        let drop_guard = crate::DropGuard::from_option(drop_callback);
+
         let shared = Arc::new(super::DeviceShared {
             raw: raw_device,
             family_index,
             queue_index,
             raw_queue,
-            handle_is_owned,
+            drop_guard,
             instance: Arc::clone(&self.instance),
             physical_device: self.raw,
             enabled_extensions: enabled_extensions.into(),
@@ -2005,7 +2019,7 @@ impl crate::Adapter for super::Adapter {
         unsafe {
             self.device_from_raw(
                 raw_device,
-                true,
+                None,
                 &enabled_extensions,
                 features,
                 memory_hints,

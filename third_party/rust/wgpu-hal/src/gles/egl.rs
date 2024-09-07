@@ -1,8 +1,10 @@
 use glow::HasContext;
 use once_cell::sync::Lazy;
-use parking_lot::{Mutex, MutexGuard, RwLock};
+use parking_lot::{MappedMutexGuard, Mutex, MutexGuard, RwLock};
 
-use std::{collections::HashMap, ffi, os::raw, ptr, rc::Rc, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap, ffi, mem::ManuallyDrop, os::raw, ptr, rc::Rc, sync::Arc, time::Duration,
+};
 
 
 const CONTEXT_LOCK_TIMEOUT_SECS: u64 = 1;
@@ -295,6 +297,7 @@ impl EglContext {
             .make_current(self.display, self.pbuffer, self.pbuffer, Some(self.raw))
             .unwrap();
     }
+
     fn unmake_current(&self) {
         self.instance
             .make_current(self.display, None, None, None)
@@ -305,7 +308,7 @@ impl EglContext {
 
 
 pub struct AdapterContext {
-    glow: Mutex<glow::Context>,
+    glow: Mutex<ManuallyDrop<glow::Context>>,
     egl: Option<EglContext>,
 }
 
@@ -346,6 +349,31 @@ impl AdapterContext {
     }
 }
 
+impl Drop for AdapterContext {
+    fn drop(&mut self) {
+        struct CurrentGuard<'a>(&'a EglContext);
+        impl Drop for CurrentGuard<'_> {
+            fn drop(&mut self) {
+                self.0.unmake_current();
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        let _guard = self.egl.as_ref().map(|egl| {
+            egl.make_current();
+            CurrentGuard(egl)
+        });
+        let glow = self.glow.get_mut();
+        
+        unsafe { ManuallyDrop::drop(glow) };
+    }
+}
+
 struct EglContextLock<'a> {
     instance: &'a Arc<EglInstance>,
     display: khronos_egl::Display,
@@ -353,7 +381,7 @@ struct EglContextLock<'a> {
 
 
 pub struct AdapterContextLock<'a> {
-    glow: MutexGuard<'a, glow::Context>,
+    glow: MutexGuard<'a, ManuallyDrop<glow::Context>>,
     egl: Option<EglContextLock<'a>>,
 }
 
@@ -387,10 +415,12 @@ impl AdapterContext {
     
     
     
-    pub unsafe fn get_without_egl_lock(&self) -> MutexGuard<glow::Context> {
-        self.glow
+    pub unsafe fn get_without_egl_lock(&self) -> MappedMutexGuard<glow::Context> {
+        let guard = self
+            .glow
             .try_lock_for(Duration::from_secs(CONTEXT_LOCK_TIMEOUT_SECS))
-            .expect("Could not lock adapter context. This is most-likely a deadlock.")
+            .expect("Could not lock adapter context. This is most-likely a deadlock.");
+        MutexGuard::map(guard, |glow| &mut **glow)
     }
 
     
@@ -1052,6 +1082,8 @@ impl crate::Instance for Instance {
             unsafe { gl.debug_message_callback(super::gl_debug_message_callback) };
         }
 
+        
+        let gl = ManuallyDrop::new(gl);
         inner.egl.unmake_current();
 
         unsafe {
@@ -1073,13 +1105,15 @@ impl super::Adapter {
     
     
     
+    
+    
     pub unsafe fn new_external(
         fun: impl FnMut(&str) -> *const ffi::c_void,
     ) -> Option<crate::ExposedAdapter<super::Api>> {
         let context = unsafe { glow::Context::from_loader_function(fun) };
         unsafe {
             Self::expose(AdapterContext {
-                glow: Mutex::new(context),
+                glow: Mutex::new(ManuallyDrop::new(context)),
                 egl: None,
             })
         }

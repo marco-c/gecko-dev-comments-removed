@@ -64,14 +64,10 @@ use std::{cell::Cell, panic::Location};
 
 
 
-
-
 pub struct Mutex<T> {
     inner: parking_lot::Mutex<T>,
     rank: LockRank,
 }
-
-
 
 
 
@@ -144,12 +140,12 @@ fn acquire(new_rank: LockRank, location: &'static Location<'static>) -> LockStat
              last locked {:<35} at {}\n\
              now locking {:<35} at {}\n\
              Locking {} after locking {} is not permitted.",
-            last_rank.bit.name(),
+            last_rank.bit.member_name(),
             last_location,
-            new_rank.bit.name(),
+            new_rank.bit.member_name(),
             location,
-            new_rank.bit.name(),
-            last_rank.bit.name(),
+            new_rank.bit.member_name(),
+            last_rank.bit.member_name(),
         );
     }
     LOCK_STATE.set(LockState {
@@ -221,8 +217,6 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Mutex<T> {
 
 
 
-
-
 pub struct RwLock<T> {
     inner: parking_lot::RwLock<T>,
     rank: LockRank,
@@ -234,14 +228,10 @@ pub struct RwLock<T> {
 
 
 
-
-
 pub struct RwLockReadGuard<'a, T> {
     inner: parking_lot::RwLockReadGuard<'a, T>,
     saved: LockStateGuard,
 }
-
-
 
 
 
