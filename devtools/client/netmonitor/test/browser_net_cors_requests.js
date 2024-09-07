@@ -39,9 +39,6 @@ add_task(async function () {
   info("Waiting until the requests appear in netmonitor");
   await wait;
 
-  
-  
-  
   info("Checking the flight and preflight methods");
   ["POST", "OPTIONS"].forEach((method, index) => {
     verifyRequestItemTarget(

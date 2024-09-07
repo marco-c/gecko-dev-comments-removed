@@ -45,9 +45,6 @@ add_task(async function () {
   
   
   
-  
-  
-  
   let optRequest, postRequest;
   if (sortedRequests[0].method === "POST") {
     optRequest = sortedRequests[1];
@@ -92,10 +89,6 @@ add_task(async function () {
   sortedRequests = getSortedRequests(store.getState());
   is(sortedRequests.length, 4, "There are 4 requests in total");
 
-  
-  
-  
-  
   
   
   

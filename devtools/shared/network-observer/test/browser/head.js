@@ -109,14 +109,9 @@ function createNetworkEventOwner() {
 
 
 
-async function waitForNetworkEvents(
-  expectedUrl = null,
-  expectedRequestsCount,
-  earlyEvents = false
-) {
+async function waitForNetworkEvents(expectedUrl = null, expectedRequestsCount) {
   const events = [];
   const networkObserver = new NetworkObserver({
-    earlyEvents,
     ignoreChannelFunction: channel =>
       expectedUrl ? channel.URI.spec !== expectedUrl : false,
     onNetworkEvent: () => {

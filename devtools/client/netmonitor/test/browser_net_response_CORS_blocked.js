@@ -39,10 +39,6 @@ add_task(async function testCORSNotificationPresent() {
   info("Waiting until the requests appear in netmonitor");
   await wait;
 
-  
-  
-  
-  
   info("selecting preflight request at index 1");
   const firstItem = document.querySelectorAll(".request-list-item")[1];
   EventUtils.sendMouseEvent({ type: "mousedown" }, firstItem);
@@ -100,10 +96,6 @@ add_task(async function testCORSNotificationNotPresent() {
   info("waiting for requests to appear in netmonitor");
   await wait;
 
-  
-  
-  
-  
   info("selecting preflight request at index 1");
   const firstItem = document.querySelectorAll(".request-list-item")[1];
   EventUtils.sendMouseEvent({ type: "mousedown" }, firstItem);
