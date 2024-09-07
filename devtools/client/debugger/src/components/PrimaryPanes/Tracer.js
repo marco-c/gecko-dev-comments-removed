@@ -190,7 +190,12 @@ export class Tracer extends Component {
       );
     }
 
-    const { searchStrings, startIndex, endIndex } = this.state;
+    const { searchStrings } = this.state;
+
+    
+    let { startIndex, endIndex } = this.state;
+    startIndex = Math.floor(startIndex);
+    endIndex = Math.floor(endIndex);
 
     if (startIndex != 0 || endIndex != -1) {
       
@@ -224,7 +229,7 @@ export class Tracer extends Component {
       if (topTracesStartIndex == -1) {
         
         
-        topTraces = [Math.floor(startIndex)];
+        topTraces = [startIndex];
       } else {
         topTraces = topTraces.slice(topTracesStartIndex, topTracesEndIndex);
       }
@@ -237,14 +242,8 @@ export class Tracer extends Component {
       
       if (startIndex != 0 && topTraces[0] != startIndex) {
         const results = [];
-        
-        results.push(Math.floor(startIndex));
-        collectAllSiblings(
-          traceParents,
-          traceChildren,
-          Math.floor(startIndex),
-          results
-        );
+        results.push(startIndex);
+        collectAllSiblings(traceParents, traceChildren, startIndex, results);
         topTraces.unshift(...results);
       }
     }
