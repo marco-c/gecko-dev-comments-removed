@@ -326,6 +326,12 @@ var SidebarController = {
       this._observer.disconnect();
       this._observer = null;
     }
+
+    if (this.revampComponentsLoaded) {
+      
+      
+      this.sidebarMain.remove();
+    }
   },
 
   
