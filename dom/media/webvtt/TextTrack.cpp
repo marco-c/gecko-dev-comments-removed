@@ -4,15 +4,16 @@
 
 
 
-#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/TextTrack.h"
-#include "mozilla/dom/TextTrackBinding.h"
-#include "mozilla/dom/TextTrackList.h"
-#include "mozilla/dom/TextTrackCue.h"
-#include "mozilla/dom/TextTrackCueList.h"
-#include "mozilla/dom/TextTrackRegion.h"
+
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLTrackElement.h"
+#include "mozilla/dom/TextTrackBinding.h"
+#include "mozilla/dom/TextTrackCue.h"
+#include "mozilla/dom/TextTrackCueList.h"
+#include "mozilla/dom/TextTrackList.h"
+#include "mozilla/dom/TextTrackRegion.h"
 #include "nsGlobalWindowInner.h"
 
 extern mozilla::LazyLogModule gTextTrackLog;
