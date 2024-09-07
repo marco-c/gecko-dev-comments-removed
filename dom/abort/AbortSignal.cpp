@@ -293,6 +293,12 @@ already_AddRefed<AbortSignal> AbortSignal::Any(
     } else {
       
       for (const auto& sourceSignal : signal->mSourceSignals) {
+        if (!sourceSignal) {
+          
+          
+          
+          continue;
+        }
         MOZ_ASSERT(!sourceSignal->Aborted() && !sourceSignal->Dependent());
         resultSignal->MakeDependentOn(sourceSignal);
       }
