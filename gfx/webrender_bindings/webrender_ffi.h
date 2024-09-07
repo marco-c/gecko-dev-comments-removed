@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef WR_h
 #define WR_h
@@ -12,9 +12,9 @@
 
 extern "C" {
 
-
-
-
+// ----
+// Functions invoked from Rust code
+// ----
 
 bool is_in_compositor_thread();
 bool is_in_main_thread();
@@ -32,36 +32,35 @@ void* get_proc_address_from_glcontext(void* glcontext_ptr,
 
 bool gecko_profiler_thread_is_being_profiled();
 
+// IMPORTANT: Keep this synchronized with enumerate_interners in
+// gfx/wr/webrender_api
+#define WEBRENDER_FOR_EACH_INTERNER(macro, comma_like_delim) \
+  macro(clip) comma_like_delim macro(prim)                   \
+  comma_like_delim macro(normal_border)                      \
+  comma_like_delim macro(image_border)                       \
+  comma_like_delim macro(image)                              \
+  comma_like_delim macro(yuv_image)                          \
+  comma_like_delim macro(line_decoration)                    \
+  comma_like_delim macro(linear_grad)                        \
+  comma_like_delim macro(radial_grad)                        \
+  comma_like_delim macro(conic_grad)                         \
+  comma_like_delim macro(picture)                            \
+  comma_like_delim macro(text_run)                           \
+  comma_like_delim macro(filterdata)                         \
+  comma_like_delim macro(backdrop_capture)                   \
+  comma_like_delim macro(backdrop_render)                    \
+  comma_like_delim macro(polyon)                             \
+  comma_like_delim macro(box_shadow)
 
-
-#define WEBRENDER_FOR_EACH_INTERNER(macro) \
-  macro(clip);                             \
-  macro(prim);                             \
-  macro(normal_border);                    \
-  macro(image_border);                     \
-  macro(image);                            \
-  macro(yuv_image);                        \
-  macro(line_decoration);                  \
-  macro(linear_grad);                      \
-  macro(radial_grad);                      \
-  macro(conic_grad);                       \
-  macro(picture);                          \
-  macro(text_run);                         \
-  macro(filterdata);                       \
-  macro(backdrop_capture);                 \
-  macro(backdrop_render);                  \
-  macro(polyon);                           \
-  macro(box_shadow);
-
-
+// Prelude of types necessary before including webrender_ffi_generated.h
 namespace mozilla {
 namespace wr {
 
-
-
+// Because this struct is macro-generated on the Rust side, cbindgen can't see
+// it. Work around that by re-declaring it here.
 #define DECLARE_MEMBER(id) uintptr_t id;
 struct InternerSubReport {
-  WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBER)
+  WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBER, )
 };
 
 #undef DECLARE_MEMBER
@@ -74,8 +73,8 @@ struct WrPipelineInfo;
 struct WrPipelineIdAndEpoch;
 using WrPipelineIdEpochs = nsTArray<WrPipelineIdAndEpoch>;
 
-}  
-}  
+}  // namespace wr
+}  // namespace mozilla
 
 void apz_register_updater(mozilla::wr::WrWindowId aWindowId);
 void apz_pre_scene_swap(mozilla::wr::WrWindowId aWindowId);
@@ -94,10 +93,10 @@ void omta_register_sampler(mozilla::wr::WrWindowId aWindowId);
 void omta_sample(mozilla::wr::WrWindowId aWindowId,
                  mozilla::wr::Transaction* aTransaction);
 void omta_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
-}  
+}  // extern "C"
 
-
-
+// Work-around Solaris define which conflcits with WR color constant, see
+// bug 1773491.
 #pragma push_macro("TRANSPARENT")
 #undef TRANSPARENT
 
@@ -114,11 +113,11 @@ template struct mozilla::wr::Box2D<int, mozilla::wr::LayoutPixel>;
 namespace mozilla {
 namespace wr {
 
-
-
+// Cast a blob image key into a regular image for use in
+// a display item.
 inline ImageKey AsImageKey(BlobImageKey aKey) { return aKey._0; }
 
-}  
-}  
+}  // namespace wr
+}  // namespace mozilla
 
-#endif  
+#endif  // WR_h
