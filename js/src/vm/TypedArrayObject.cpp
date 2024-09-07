@@ -4185,18 +4185,25 @@ static bool TypedArrayRadixSort(JSContext* cx, TypedArrayObject* typedArray,
   
   constexpr size_t StdSortMaxCutoff = (64 * 1024 * 1024) / sizeof(T);
 
-  if (length <= StdSortMinCutoff || length >= StdSortMaxCutoff) {
-    return TypedArrayStdSort<T, Ops>(cx, typedArray, length);
-  }
-
   if constexpr (sizeof(T) == 2) {
     
     
-    constexpr size_t CountingSortMaxCutoff = 65536;
+    
+    
+    
+    
+    
+    constexpr size_t CountingSortMaxCutoff =
+        65536 * (sizeof(size_t) / sizeof(T)) - 2048;
+    static_assert(CountingSortMaxCutoff < StdSortMaxCutoff);
 
     if (length >= CountingSortMaxCutoff) {
       return TypedArrayCountingSort<T, Ops>(cx, typedArray, length);
     }
+  }
+
+  if (length <= StdSortMinCutoff || length >= StdSortMaxCutoff) {
+    return TypedArrayStdSort<T, Ops>(cx, typedArray, length);
   }
 
   using UnsignedT =
