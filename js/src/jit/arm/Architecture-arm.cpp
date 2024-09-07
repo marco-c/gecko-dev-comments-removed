@@ -209,13 +209,7 @@ static auto ParseARMHwCapFlags(const char* armHwCap) {
     
   }
 
-  auto capabilities = ParseARMCpuFeatures(armHwCap,  true);
-
-#ifdef JS_CODEGEN_ARM_HARDFP
-  capabilities += ARMCapability::UseHardFpABI;
-#endif
-
-  return capabilities;
+  return ParseARMCpuFeatures(armHwCap,  true);
 }
 
 #ifndef JS_SIMULATOR_ARM
@@ -318,11 +312,6 @@ static auto ReadARMHwCapFlags() {
 
   
   
-
-#  ifdef JS_CODEGEN_ARM_HARDFP
-  
-  capabilities += ARMCapability::UseHardFpABI;
-#  endif
 
 #  if defined(__VFP_FP__) && !defined(__SOFTFP__)
   
