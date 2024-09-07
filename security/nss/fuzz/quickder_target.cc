@@ -2,7 +2,14 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+
 #include "asn1_mutators.h"
+#include "certt.h"
+#include "keythi.h"
+#include "secdert.h"
 #include "shared.h"
 
 const std::vector<const SEC_ASN1Template *> templates = {

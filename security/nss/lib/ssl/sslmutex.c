@@ -4,7 +4,7 @@
 
 #include "seccomon.h"
 
-#if defined(XP_UNIX) || defined(XP_WIN32) || defined(XP_OS2)
+#if defined(XP_UNIX) || defined(XP_WIN32)
 
 #include "sslmutex.h"
 #include "prerr.h"

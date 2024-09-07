@@ -333,16 +333,6 @@ nss_MD_unix_map_connect_error(int err)
         case EACCES:
             prError = PR_ADDRESS_NOT_SUPPORTED_ERROR;
             break;
-#if defined(UNIXWARE) || defined(SNI) || defined(NEC)
-        
-
-
-
-
-        case EIO:
-            prError = PR_CONNECT_REFUSED_ERROR;
-            break;
-#endif
         case ELOOP:
             prError = PR_ADDRESS_NOT_SUPPORTED_ERROR;
             break;
@@ -738,11 +728,9 @@ nss_MD_unix_map_default_error(int err)
         case ENFILE:
             prError = PR_SYS_DESC_TABLE_FULL_ERROR;
             break;
-#if !defined(SCO)
         case ENOBUFS:
             prError = PR_INSUFFICIENT_RESOURCES_ERROR;
             break;
-#endif
         case ENODEV:
             prError = PR_FILE_NOT_FOUND_ERROR;
             break;

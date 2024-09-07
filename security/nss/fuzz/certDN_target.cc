@@ -2,9 +2,10 @@
 
 
 
+#include <cassert>
 #include <string>
 
-#include "shared.h"
+#include "cert.h"
 
 #define TEST_FUNCTION(f) \
   out = f(certName);     \

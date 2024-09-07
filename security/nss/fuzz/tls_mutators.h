@@ -2,8 +2,11 @@
 
 
 
-#ifndef tls_mutators_h__
-#define tls_mutators_h__
+#ifndef TLS_MUTATORS_H_
+#define TLS_MUTATORS_H_
+
+#include <cstddef>
+#include <cstdint>
 
 namespace TlsMutators {
 

@@ -996,11 +996,7 @@ getBoundListenSocket(unsigned short port)
         errExit("PR_SetSocketOption(PR_SockOpt_Reuseaddr)");
     }
 
-#ifndef WIN95
     
-
-
-
 
     opt.option = PR_SockOpt_Linger;
     opt.value.linger.polarity = PR_TRUE;
@@ -1010,7 +1006,6 @@ getBoundListenSocket(unsigned short port)
         PR_Close(listen_sock);
         errExit("PR_SetSocketOption(PR_SockOpt_Linger)");
     }
-#endif
 
     prStatus = PR_Bind(listen_sock, &addr);
     if (prStatus < 0) {

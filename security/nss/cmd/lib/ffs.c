@@ -1,7 +1,7 @@
 
 
 
-#if !defined(XP_UNIX) && !defined(XP_OS2)
+#if !defined(XP_UNIX)
 
 int
 ffs(unsigned int i)

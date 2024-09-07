@@ -733,48 +733,6 @@ nssToken_FindCertificatesByID(
     return objects;
 }
 
-
-
-
-
-static PRStatus
-nssToken_decodeSerialItem(NSSItem *serial, NSSItem *serialDecode)
-{
-    unsigned char *data = (unsigned char *)serial->data;
-    int data_left, data_len, index;
-
-    if ((serial->size >= 3) && (data[0] == 0x2)) {
-        
-
-        data_left = serial->size - 2;
-        data_len = data[1];
-        index = 2;
-
-        
-        if (data_len & 0x80) {
-            int len_count = data_len & 0x7f;
-
-            data_len = 0;
-            data_left -= len_count;
-            if (data_left > 0) {
-                while (len_count--) {
-                    data_len = (data_len << 8) | data[index++];
-                }
-            }
-        }
-        
-
-
-        
-        if (data_len == data_left) {
-            serialDecode->size = data_len;
-            serialDecode->data = &data[index];
-            return PR_SUCCESS;
-        }
-    }
-    return PR_FAILURE;
-}
-
 NSS_IMPLEMENT nssCryptokiObject *
 nssToken_FindCertificateByIssuerAndSerialNumber(
     NSSToken *token,
@@ -785,7 +743,6 @@ nssToken_FindCertificateByIssuerAndSerialNumber(
     PRStatus *statusOpt)
 {
     CK_ATTRIBUTE_PTR attr;
-    CK_ATTRIBUTE_PTR serialAttr;
     CK_ATTRIBUTE cert_template[4];
     CK_ULONG ctsize;
     nssCryptokiObject **objects;
@@ -808,7 +765,6 @@ nssToken_FindCertificateByIssuerAndSerialNumber(
     
     NSS_CK_SET_ATTRIBUTE_ITEM(attr, CKA_CLASS, &g_ck_class_cert);
     NSS_CK_SET_ATTRIBUTE_ITEM(attr, CKA_ISSUER, issuer);
-    serialAttr = attr;
     NSS_CK_SET_ATTRIBUTE_ITEM(attr, CKA_SERIAL_NUMBER, serial);
     NSS_CK_TEMPLATE_FINISH(cert_template, attr, ctsize);
     
@@ -826,33 +782,6 @@ nssToken_FindCertificateByIssuerAndSerialNumber(
         nss_ZFreeIf(objects);
     }
 
-    
-
-
-
-    if (!objects) {
-        NSSItem serialDecode;
-        PRStatus status;
-
-        status = nssToken_decodeSerialItem(serial, &serialDecode);
-        if (status != PR_SUCCESS) {
-            return NULL;
-        }
-        NSS_CK_SET_ATTRIBUTE_ITEM(serialAttr, CKA_SERIAL_NUMBER, &serialDecode);
-        if (searchType == nssTokenSearchType_TokenForced) {
-            objects = find_objects(token, sessionOpt,
-                                   cert_template, ctsize,
-                                   1, statusOpt);
-        } else {
-            objects = nssToken_FindObjectsByTemplate(token, sessionOpt,
-                                                     cert_template, ctsize,
-                                                     1, statusOpt);
-        }
-        if (objects) {
-            rvObject = objects[0];
-            nss_ZFreeIf(objects);
-        }
-    }
     return rvObject;
 }
 

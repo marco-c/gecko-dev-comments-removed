@@ -173,7 +173,7 @@ void s_mp_sqr_comba_32(const mp_int *A, mp_int *B);
 #endif 
 
 
-#if defined(__OS2__) && defined(__IBMC__)
+#if defined(__IBMC__)
 #define MPI_ASM_DECL __cdecl
 #else
 #define MPI_ASM_DECL

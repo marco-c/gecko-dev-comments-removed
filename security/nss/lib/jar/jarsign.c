@@ -32,8 +32,6 @@ typedef void (*ETVoidPtrFunc)(void *data);
 
 
 
-
-
 JAR_Digest *PR_CALLBACK
 JAR_calculate_digest(void *data, long length)
 {

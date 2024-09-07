@@ -4,17 +4,19 @@
 
 
 
-#ifndef shared_h__
-#define shared_h__
+#ifndef SHARED_H_
+#define SHARED_H_
 
-#include <assert.h>
-#include <random>
-#include "cert.h"
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+
 #include "nss.h"
 
-extern "C" size_t LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
-extern "C" size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
-                                          size_t MaxSize, unsigned int Seed);
+extern "C" size_t LLVMFuzzerMutate(uint8_t* data, size_t size, size_t maxSize);
+extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
+                                          size_t maxSize, unsigned int seed);
 
 class NSSDatabase {
  public:
@@ -22,9 +24,9 @@ class NSSDatabase {
   ~NSSDatabase() { assert(NSS_Shutdown() == SECSuccess); }
 };
 
-typedef std::vector<decltype(LLVMFuzzerCustomMutator) *> Mutators;
+typedef std::vector<decltype(LLVMFuzzerCustomMutator)*> Mutators;
 
-size_t CustomMutate(Mutators mutators, uint8_t *data, size_t size,
-                    size_t max_size, unsigned int seed);
+size_t CustomMutate(Mutators mutators, uint8_t* data, size_t size,
+                    size_t maxSize, unsigned int seed);
 
 #endif  

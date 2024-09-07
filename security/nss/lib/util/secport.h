@@ -175,11 +175,7 @@ SEC_END_PROTOS
 
 #define PORT_Memcmp memcmp
 #define PORT_Memcpy memcpy
-#ifndef SUNOS4
 #define PORT_Memmove memmove
-#else 
-#define PORT_Memmove(s, ct, n) bcopy((ct), (s), (n))
-#endif 
 #define PORT_Memset memset
 
 #define PORT_Strcasecmp PL_strcasecmp

@@ -49,10 +49,10 @@ extern "C" {
 #endif
 
 struct dirent {
-#if defined(OS2) || defined(WIN32) 
-    int d_ino;                     
-    int d_reclen;                  
-    int d_namlen;                  
+#if defined(WIN32) 
+    int d_ino;     
+    int d_reclen;  
+    int d_namlen;  
     char d_name[MAXNAMLEN + 1];
     unsigned long d_size;
     unsigned short d_attribute; 

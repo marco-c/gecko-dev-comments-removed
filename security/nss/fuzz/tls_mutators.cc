@@ -3,13 +3,13 @@
 
 
 #include <algorithm>
-#include "shared.h"
-#include "tls_parser.h"
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <random>
+#include <vector>
 
-#include "ssl.h"
-extern "C" {
-#include "sslimpl.h"
-}
+#include "tls_parser.h"
 
 using namespace nss_test;
 
@@ -29,14 +29,14 @@ class Record {
     assert(data_ && size_ > 0);
 
     
-    uint8_t buf[size_];
-    memcpy(buf, data_, size_);
+    std::vector<uint8_t> buf(size_);
+    memcpy(buf.data(), data_, size_);
 
     uint8_t *dest = const_cast<uint8_t *>(other->data());
     
     memmove(dest + size_, other->data(), other->size() + other->remaining());
     
-    memcpy(dest, buf, size_);
+    memcpy(dest, buf.data(), size_);
   }
 
   void truncate(size_t length) {
@@ -126,24 +126,24 @@ size_t ShuffleRecords(uint8_t *data, size_t size, size_t max_size,
   std::mt19937 rng(seed);
 
   
-  uint8_t buf[size];
-  memcpy(buf, data, size);
-
-  
-  auto records = ParseRecords(buf, sizeof(buf));
+  auto records = ParseRecords(data, size);
   if (records.empty()) {
     return 0;
   }
 
   
-  uint8_t *dest = const_cast<uint8_t *>(ParseRecords(data, size).at(0)->data());
+  std::vector<uint8_t> buf(size);
+  memcpy(buf.data(), data, size);
+
+  
+  uint8_t *dest = const_cast<uint8_t *>(records.at(0)->data());
 
   
   std::shuffle(records.begin(), records.end(), rng);
 
   
   for (auto &rec : records) {
-    memcpy(dest, rec->data(), rec->size());
+    memcpy(dest, buf.data() + (rec->data() - data), rec->size());
     dest += rec->size();
   }
 
