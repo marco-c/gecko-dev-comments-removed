@@ -1814,6 +1814,11 @@ void MediaFormatReader::NotifyNewOutput(
                 !!decoder.mIsHardwareAccelerated);
           }
         }
+        
+        
+        if (decoder.mNumSamplesOutput == 1) {
+          decoder.mDescription = mVideo.mDecoder->GetDescriptionName();
+        }
       }
       decoder.mDecodePerfRecorder->Record(
           sample->mTime.ToMicroseconds(),
