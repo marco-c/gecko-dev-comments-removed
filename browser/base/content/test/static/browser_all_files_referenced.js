@@ -163,6 +163,9 @@ var allowlist = [
   { file: "resource://gre/localization/en-US/toolkit/global/cspErrors.ftl" },
 
   
+  { file: "resource://gre/localization/en-US/toolkit/global/antiTracking.ftl" },
+
+  
   {
     file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
     platforms: ["linux", "win"],

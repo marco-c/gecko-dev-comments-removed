@@ -40,6 +40,8 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "nsIConsoleService.h"
+#include "mozilla/intl/Localization.h"
 
 #define TEST_OBSERVER_MSG_RECORD_BOUNCES_FINISHED "test-record-bounces-finished"
 
@@ -312,6 +314,8 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
       mStorage->GetOrCreateStateGlobal(aBounceTrackingState);
   MOZ_ASSERT(globalState);
 
+  nsTArray<nsCString> classifiedHosts;
+
   
   for (const nsACString& host : record->GetBounceHosts()) {
     
@@ -371,6 +375,8 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
       continue;
     }
 
+    classifiedHosts.AppendElement(host);
+
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Info,
             ("%s: Added bounce tracker candidate. siteHost: %s, "
              "aBounceTrackingState: %s",
@@ -383,6 +389,11 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
           ("%s: Done, reset aBounceTrackingState: %s", __FUNCTION__,
            aBounceTrackingState->Describe().get()));
+
+  
+  nsresult rv = LogBounceTrackersClassifiedToWebConsole(aBounceTrackingState,
+                                                        classifiedHosts);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -691,6 +702,74 @@ BounceTrackingProtection::TestAddUserActivation(
 NS_IMETHODIMP
 BounceTrackingProtection::TestMaybeMigrateUserInteractionPermissions() {
   return MaybeMigrateUserInteractionPermissions();
+}
+
+
+nsresult BounceTrackingProtection::LogBounceTrackersClassifiedToWebConsole(
+    BounceTrackingState* aBounceTrackingState,
+    const nsTArray<nsCString>& aSiteHosts) {
+  NS_ENSURE_ARG(aBounceTrackingState);
+
+  
+  if (aSiteHosts.IsEmpty()) {
+    return NS_OK;
+  }
+
+  RefPtr<dom::BrowsingContext> browsingContext =
+      aBounceTrackingState->CurrentBrowsingContext();
+  if (!browsingContext) {
+    return NS_OK;
+  }
+
+  
+  nsTArray<nsCString> resourceIDs = {"toolkit/global/antiTracking.ftl"_ns};
+  RefPtr<intl::Localization> l10n =
+      intl::Localization::Create(resourceIDs, true);
+
+  for (const nsACString& siteHost : aSiteHosts) {
+    auto l10nArgs = dom::Optional<intl::L10nArgs>();
+    l10nArgs.Construct();
+
+    auto siteHostArg = l10nArgs.Value().Entries().AppendElement();
+    siteHostArg->mKey = "siteHost";
+    siteHostArg->mValue.SetValue().SetAsUTF8String().Assign(siteHost);
+
+    auto gracePeriodArg = l10nArgs.Value().Entries().AppendElement();
+    gracePeriodArg->mKey = "gracePeriodSeconds";
+    gracePeriodArg->mValue.SetValue().SetAsDouble() = StaticPrefs::
+        privacy_bounceTrackingProtection_bounceTrackingGracePeriodSec();
+
+    
+    nsAutoCString message;
+    ErrorResult errorResult;
+    l10n->FormatValueSync("btp-warning-tracker-classified"_ns, l10nArgs,
+                          message, errorResult);
+    if (NS_WARN_IF(errorResult.Failed())) {
+      return errorResult.StealNSResult();
+    }
+
+    
+    nsresult rv = NS_OK;
+    nsCOMPtr<nsIScriptError> error =
+        do_CreateInstance(NS_SCRIPTERROR_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = error->InitWithWindowID(
+        NS_ConvertUTF8toUTF16(message), ""_ns, 0, 0,
+        nsIScriptError::warningFlag, "bounceTrackingProtection",
+        browsingContext->GetCurrentInnerWindowId(), true);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsCOMPtr<nsIConsoleService> consoleService =
+        do_GetService(NS_CONSOLESERVICE_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = consoleService->LogMessage(error);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return NS_OK;
 }
 
 RefPtr<GenericPromise>

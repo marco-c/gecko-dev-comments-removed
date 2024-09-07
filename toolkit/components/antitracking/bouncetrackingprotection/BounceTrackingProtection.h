@@ -139,6 +139,13 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   
   
   [[nodiscard]] nsresult MaybeMigrateUserInteractionPermissions();
+
+  
+  
+  
+  [[nodiscard]] static nsresult LogBounceTrackersClassifiedToWebConsole(
+      BounceTrackingState* aBounceTrackingState,
+      const nsTArray<nsCString>& aSiteHosts);
 };
 
 }  
