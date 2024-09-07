@@ -7265,20 +7265,20 @@ bool BytecodeEmitter::emitDeleteProperty(UnaryNode* deleteNode) {
                     propExpr->as<PropertyAccess>().isSuper()
                         ? PropOpEmitter::ObjKind::Super
                         : PropOpEmitter::ObjKind::Other);
+
+  if (!poe.prepareForObj()) {
+    return false;
+  }
+
   if (propExpr->isSuper()) {
     
     
-    
-    
-    UnaryNode* base = &propExpr->expression().as<UnaryNode>();
+    auto* base = &propExpr->expression().as<UnaryNode>();
     if (!emitGetThisForSuperBase(base)) {
       
       return false;
     }
   } else {
-    if (!poe.prepareForObj()) {
-      return false;
-    }
     if (!emitPropLHS(propExpr)) {
       
       return false;
