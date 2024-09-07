@@ -105,7 +105,7 @@ T2S(int32_t, PRId32);
 T2S(int64_t, PRId64);
 T2S(char16_t, PRIu16);  
 T2S(char32_t, PRIu32);  
-#if defined(XP_DARWIN) || defined(XP_WIN)
+#if defined(XP_DARWIN) || defined(XP_WIN) || defined(__wasm__)
 T2S(long, "ld");
 T2S(unsigned long, "lu");
 #endif
