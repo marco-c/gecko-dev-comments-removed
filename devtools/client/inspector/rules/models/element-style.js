@@ -418,10 +418,7 @@ class ElementStyle {
             !computedProp.textProp.invisible
           ) {
             if (!isPropInStartingStyle) {
-              variables.set(computedProp.name, {
-                declarationValue: computedProp.value,
-                computedValue: computedProp.textProp.getVariableComputedValue(),
-              });
+              variables.set(computedProp.name, computedProp.value);
             } else {
               startingStyleVariables.set(computedProp.name, computedProp.value);
             }
@@ -940,9 +937,7 @@ class ElementStyle {
     if (variables?.has(name)) {
       
       
-      const { declarationValue, computedValue } = variables.get(name);
-      data.value = declarationValue;
-      data.computedValue = computedValue;
+      data.value = variables.get(name);
     }
     if (startingStyleVariables?.has(name)) {
       data.startingStyle = startingStyleVariables.get(name);
@@ -964,14 +959,7 @@ class ElementStyle {
 
 
   getAllCustomProperties(pseudo = "") {
-    const customProperties = new Map();
-    for (const [
-      key,
-      { computedValue, declarationValue },
-    ] of this.variablesMap.get(pseudo)) {
-      customProperties.set(key, computedValue ?? declarationValue);
-    }
-
+    let customProperties = this.variablesMap.get(pseudo);
     const startingStyleCustomProperties =
       this.startingStyleVariablesMap.get(pseudo);
 
@@ -987,11 +975,19 @@ class ElementStyle {
       return customProperties;
     }
 
+    let newMapCreated = false;
+
     if (startingStyleCustomProperties) {
       for (const [name, value] of startingStyleCustomProperties) {
         
         
         if (!customProperties.has(name)) {
+          
+          
+          if (!newMapCreated) {
+            customProperties = new Map(customProperties);
+            newMapCreated = true;
+          }
           customProperties.set(name, value);
         }
       }
@@ -1001,6 +997,12 @@ class ElementStyle {
       for (const [name, propertyDefinition] of registeredPropertiesMap) {
         
         if (!customProperties.has(name)) {
+          
+          
+          if (!newMapCreated) {
+            customProperties = new Map(customProperties);
+            newMapCreated = true;
+          }
           customProperties.set(name, propertyDefinition.initialValue);
         }
       }

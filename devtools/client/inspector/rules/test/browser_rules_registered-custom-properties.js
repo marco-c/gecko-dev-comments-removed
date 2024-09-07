@@ -160,7 +160,6 @@ add_task(async function () {
   await assertVariableTooltipForProperty(view, "h1", "color", {
     
     header: `--css-inherit = ${CSS_INHERIT_MAIN_VALUE}`,
-    computed: "rgb(255, 0, 0)",
     registeredProperty: [
       `syntax:"<color>"`,
       `inherits:true`,
@@ -202,8 +201,6 @@ add_task(async function () {
     
     {
       header: `--js-inherit = ${JS_INHERIT_MAIN_VALUE}`,
-      
-      computed: null,
       registeredProperty: [`syntax:"*"`, `inherits:true`],
     }
   );
@@ -311,7 +308,6 @@ add_task(async function () {
   
   await assertVariableTooltipForProperty(view, "h1", "caret-color", {
     header: `--css-dynamic-registered is not set`,
-    isMatched: false,
   });
 
   info(

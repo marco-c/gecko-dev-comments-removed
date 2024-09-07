@@ -432,7 +432,6 @@ class StyleRuleActor extends Actor {
 
         if (SharedCssLogic.isCssVariable(decl.name)) {
           decl.isCustomProperty = true;
-          decl.computedValue = style.getPropertyValue(decl.name);
 
           
           

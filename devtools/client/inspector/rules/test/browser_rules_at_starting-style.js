@@ -278,8 +278,6 @@ add_task(async function () {
     {
       header: "--my-color = white",
       
-      computed: null,
-      
       startingStyle: "--my-color = black",
     }
   );
@@ -294,8 +292,6 @@ add_task(async function () {
     {
       
       header: "--my-color = black",
-      
-      computed: null,
       
       startingStyle: null,
     }
@@ -314,7 +310,6 @@ add_task(async function () {
     "--check-my-overridden-color",
     {
       header: "--my-overridden-color = white",
-      computed: "white",
       
       startingStyle: null,
     }
@@ -326,8 +321,6 @@ add_task(async function () {
     {
       
       header: "--my-overridden-color = white",
-      
-      computed: null,
       startingStyle: null,
     }
   );
@@ -341,7 +334,6 @@ add_task(async function () {
     "--check-my-registered-color",
     {
       header: "--my-registered-color = white",
-      computed: "rgb(255, 255, 255)",
       
       startingStyle: "--my-registered-color = black",
       
@@ -360,8 +352,6 @@ add_task(async function () {
     {
       
       header: "--my-registered-color = black",
-      
-      computed: null,
       
       startingStyle: null,
       

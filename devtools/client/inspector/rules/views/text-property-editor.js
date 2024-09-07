@@ -324,8 +324,9 @@ TextPropertyEditor.prototype = {
         }
       });
 
-      const getCssVariables = () =>
-        this.rule.elementStyle.getAllCustomProperties(this.rule.pseudoElement);
+      const cssVariables = this.rule.elementStyle.getAllCustomProperties(
+        this.rule.pseudoElement
+      );
 
       editableField({
         start: this._onStartEditing,
@@ -336,7 +337,7 @@ TextPropertyEditor.prototype = {
         contentType: InplaceEditor.CONTENT_TYPES.CSS_PROPERTY,
         popup: this.popup,
         cssProperties: this.cssProperties,
-        getCssVariables,
+        cssVariables,
         
         
         focusEditableFieldAfterApply: true,
@@ -435,7 +436,7 @@ TextPropertyEditor.prototype = {
         multiline: true,
         maxWidth: () => this.container.getBoundingClientRect().width,
         cssProperties: this.cssProperties,
-        getCssVariables,
+        cssVariables,
         getGridLineNames: this.getGridlineNames,
         showSuggestCompletionOnEmpty: true,
         

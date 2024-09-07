@@ -28,12 +28,10 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-
-
 function setVariableTooltip(
   tooltip,
   doc,
-  { computed, topSectionText, registeredProperty, startingStyle }
+  { topSectionText, registeredProperty, startingStyle }
 ) {
   
   const div = doc.createElementNS(XHTML_NS, "div");
@@ -44,19 +42,7 @@ function setVariableTooltip(
   valueEl.append(doc.createTextNode(topSectionText));
   div.appendChild(valueEl);
 
-  if (typeof computed !== "undefined") {
-    const section = doc.createElementNS(XHTML_NS, "section");
-    section.classList.add("computed", "variable-tooltip-section");
-
-    const h2 = doc.createElementNS(XHTML_NS, "h2");
-    h2.append(doc.createTextNode("computed value"));
-    const computedValueEl = doc.createElementNS(XHTML_NS, "div");
-    computedValueEl.append(doc.createTextNode(computed));
-    section.append(h2, computedValueEl);
-
-    div.appendChild(section);
-  }
-
+  
   if (typeof startingStyle !== "undefined") {
     const section = doc.createElementNS(XHTML_NS, "section");
     section.classList.add("starting-style", "variable-tooltip-section");
