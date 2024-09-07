@@ -213,6 +213,10 @@ void IMEContentObserver::OnIMEReceivedFocus() {
 bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
                                         Element* aElement,
                                         EditorBase& aEditorBase) {
+  
+  
+  
+  
   mEditableNode = IMEStateManager::GetRootEditableNode(aPresContext, aElement);
   if (NS_WARN_IF(!mEditableNode)) {
     return false;
@@ -260,11 +264,18 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
       return false;
     }
 
+    
+    
+    
+    
     nsCOMPtr<nsINode> startContainer = selRange->GetStartContainer();
     mRootElement = Element::FromNodeOrNull(
         startContainer->GetSelectionRootContent(presShell));
   } else {
     MOZ_ASSERT(!mIsTextControl);
+    
+    
+    
     nsCOMPtr<nsINode> editableNode = mEditableNode;
     mRootElement = Element::FromNodeOrNull(
         editableNode->GetSelectionRootContent(presShell));
@@ -325,6 +336,10 @@ void IMEContentObserver::ObserveEditableNode() {
     mEditorBase->SetIMEContentObserver(this);
   }
 
+  MOZ_LOG(sIMECOLog, LogLevel::Info,
+          ("0x%p ObserveEditableNode(), starting to observe 0x%p (%s)", this,
+           mRootElement.get(), ToString(*mRootElement).c_str()));
+
   mRootElement->AddMutationObserver(this);
   
   
@@ -380,6 +395,12 @@ void IMEContentObserver::UnregisterObservers() {
   if (!mIsObserving) {
     return;
   }
+
+  MOZ_LOG(sIMECOLog, LogLevel::Info,
+          ("0x%p UnregisterObservers(), stop observing 0x%p (%s)", this,
+           mRootElement.get(),
+           mRootElement ? ToString(*mRootElement).c_str() : "nullptr"));
+
   mIsObserving = false;
 
   if (mEditorBase) {
@@ -1234,6 +1255,26 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
                       IsEditorHandlingEventForComposition(),
                       IsEditorComposing());
   MaybeNotifyIMEOfTextChange(data);
+}
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void IMEContentObserver::ParentChainChanged(
+    nsIContent* aContent) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mIsObserving);
+  OwningNonNull<IMEContentObserver> observer(*this);
+  IMEStateManager::OnParentChainChangedOfObservingElement(observer);
 }
 
 void IMEContentObserver::OnTextControlValueChangedWhileNotObservable(
