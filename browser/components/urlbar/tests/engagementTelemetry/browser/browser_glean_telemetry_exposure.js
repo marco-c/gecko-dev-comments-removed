@@ -1,243 +1,139 @@
 
 
 
-
-
 "use strict";
 
+const SPONSORED_QUERY = "sponsored";
+const NONSPONSORED_QUERY = "nonsponsored";
 
-requestLongerTimeout(6);
+
+requestLongerTimeout(3);
+
 
 add_setup(async function () {
   await initExposureTest();
 });
 
-add_task(async function engagement() {
+add_task(async function exposureSponsoredOnEngagement() {
   await doExposureTest({
     prefs: [
       ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
       ["browser.urlbar.showExposureResults", true],
     ],
-    query: "amp",
-    trigger: doClick,
-    expectedResultTypes: ["adm_sponsored"],
-    shouldBeShown: true,
+    query: SPONSORED_QUERY,
+    trigger: () => doClick(),
+    assert: () =>
+      assertExposureTelemetry([
+        { results: suggestResultType("adm_sponsored") },
+      ]),
   });
 });
 
-add_task(async function abandonment() {
+add_task(async function exposureSponsoredOnAbandonment() {
   await doExposureTest({
     prefs: [
       ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
       ["browser.urlbar.showExposureResults", true],
     ],
-    query: "amp",
-    trigger: doBlur,
-    expectedResultTypes: ["adm_sponsored"],
-    shouldBeShown: true,
+    query: SPONSORED_QUERY,
+    trigger: () => doBlur(),
+    assert: () =>
+      assertExposureTelemetry([
+        { results: suggestResultType("adm_sponsored") },
+      ]),
   });
 });
 
-add_task(async function oneExposureResult_shown_matched() {
-  await doExposureTest({
-    prefs: [
-      ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
-      ["browser.urlbar.showExposureResults", true],
-    ],
-    query: "amp",
-    expectedResultTypes: ["adm_sponsored"],
-    shouldBeShown: true,
-  });
-});
-
-add_task(async function oneExposureResult_shown_notMatched() {
-  await doExposureTest({
-    prefs: [
-      ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
-      ["browser.urlbar.showExposureResults", true],
-    ],
-    query: "wikipedia",
-    expectedResultTypes: [],
-  });
-});
-
-add_task(async function oneExposureResult_hidden_matched() {
+add_task(async function exposureFilter() {
   await doExposureTest({
     prefs: [
       ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
       ["browser.urlbar.showExposureResults", false],
     ],
-    query: "amp",
-    expectedResultTypes: ["adm_sponsored"],
-    shouldBeShown: false,
+    query: SPONSORED_QUERY,
+    select: async () => {
+      
+      Assert.equal(
+        await getResultByType(suggestResultType("adm_sponsored")),
+        null
+      );
+    },
+    trigger: () => doBlur(),
+    assert: () =>
+      assertExposureTelemetry([
+        { results: suggestResultType("adm_sponsored") },
+      ]),
   });
 });
 
-add_task(async function oneExposureResult_hidden_notMatched() {
-  await doExposureTest({
-    prefs: [
-      ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
-      ["browser.urlbar.showExposureResults", false],
-    ],
-    query: "wikipedia",
-    expectedResultTypes: [],
-  });
-});
-
-add_task(async function manyExposureResults_shown_oneMatched_1() {
-  await doExposureTest({
-    prefs: [
-      [
-        "browser.urlbar.exposureResults",
-        [
-          suggestResultType("adm_sponsored"),
-          suggestResultType("adm_nonsponsored"),
-        ].join(","),
-      ],
-      ["browser.urlbar.showExposureResults", true],
-    ],
-    query: "amp",
-    expectedResultTypes: ["adm_sponsored"],
-    shouldBeShown: true,
-  });
-});
-
-add_task(async function manyExposureResults_shown_oneMatched_2() {
-  await doExposureTest({
-    prefs: [
-      [
-        "browser.urlbar.exposureResults",
-        [
-          suggestResultType("adm_sponsored"),
-          suggestResultType("adm_nonsponsored"),
-        ].join(","),
-      ],
-      ["browser.urlbar.showExposureResults", true],
-    ],
-    query: "wikipedia",
-    expectedResultTypes: ["adm_nonsponsored"],
-    shouldBeShown: true,
-  });
-});
-
-add_task(async function manyExposureResults_shown_manyMatched() {
-  await doExposureTest({
-    prefs: [
-      [
-        "browser.urlbar.exposureResults",
-        [
-          suggestResultType("adm_sponsored"),
-          suggestResultType("adm_nonsponsored"),
-        ].join(","),
-      ],
-      ["browser.urlbar.showExposureResults", true],
-    ],
-    query: "amp and wikipedia",
-    
-    
-    expectedResultTypes: ["adm_sponsored"],
-    shouldBeShown: true,
-  });
-});
-
-add_task(async function manyExposureResults_hidden_oneMatched_1() {
-  await doExposureTest({
-    prefs: [
-      [
-        "browser.urlbar.exposureResults",
-        [
-          suggestResultType("adm_sponsored"),
-          suggestResultType("adm_nonsponsored"),
-        ].join(","),
-      ],
-      ["browser.urlbar.showExposureResults", false],
-    ],
-    query: "amp",
-    expectedResultTypes: ["adm_sponsored"],
-    shouldBeShown: false,
-  });
-});
-
-add_task(async function manyExposureResults_hidden_oneMatched_2() {
-  await doExposureTest({
-    prefs: [
-      [
-        "browser.urlbar.exposureResults",
-        [
-          suggestResultType("adm_sponsored"),
-          suggestResultType("adm_nonsponsored"),
-        ].join(","),
-      ],
-      ["browser.urlbar.showExposureResults", false],
-    ],
-    query: "wikipedia",
-    expectedResultTypes: ["adm_nonsponsored"],
-    shouldBeShown: false,
-  });
-});
-
-add_task(async function manyExposureResults_hidden_manyMatched() {
-  await doExposureTest({
-    prefs: [
-      [
-        "browser.urlbar.exposureResults",
-        [
-          suggestResultType("adm_sponsored"),
-          suggestResultType("adm_nonsponsored"),
-        ].join(","),
-      ],
-      ["browser.urlbar.showExposureResults", false],
-    ],
-    query: "amp and wikipedia",
-    
-    
-    expectedResultTypes: ["adm_nonsponsored", "adm_sponsored"],
-    shouldBeShown: false,
-  });
-});
-
-add_task(async function modifyQuery_terminal() {
+add_task(async function innerQueryExposure() {
   await doExposureTest({
     prefs: [
       ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
       ["browser.urlbar.showExposureResults", true],
     ],
-    
-    query: "wikipedia",
+    query: NONSPONSORED_QUERY,
+    select: () => {},
     trigger: async () => {
       
       gURLBar.select();
       EventUtils.synthesizeKey("KEY_Backspace");
-      
-      await openPopup("amp");
+      await openPopup(SPONSORED_QUERY);
+      await defaultSelect(SPONSORED_QUERY);
       await doClick();
     },
-    expectedResultTypes: ["adm_sponsored"],
-    
-    
-    shouldBeShown: false,
+    assert: () =>
+      assertExposureTelemetry([
+        { results: suggestResultType("adm_sponsored") },
+      ]),
   });
 });
 
-add_task(async function modifyQuery_nonTerminal() {
+add_task(async function innerQueryInvertedExposure() {
   await doExposureTest({
     prefs: [
       ["browser.urlbar.exposureResults", suggestResultType("adm_sponsored")],
       ["browser.urlbar.showExposureResults", true],
     ],
-    
-    query: "amp",
+    query: SPONSORED_QUERY,
+    select: () => {},
     trigger: async () => {
       
       gURLBar.select();
       EventUtils.synthesizeKey("KEY_Backspace");
-      
-      await openPopup("wikipedia");
+      await openPopup(NONSPONSORED_QUERY);
+      await defaultSelect(SPONSORED_QUERY);
       await doClick();
     },
-    expectedResultTypes: ["adm_sponsored"],
-    
-    
-    shouldBeShown: true,
+    assert: () =>
+      assertExposureTelemetry([
+        { results: suggestResultType("adm_sponsored") },
+      ]),
   });
 });
+
+add_task(async function multipleProviders() {
+  await doExposureTest({
+    prefs: [
+      [
+        "browser.urlbar.exposureResults",
+        [
+          suggestResultType("adm_sponsored"),
+          suggestResultType("adm_nonsponsored"),
+        ].join(","),
+      ],
+      ["browser.urlbar.showExposureResults", true],
+    ],
+    query: NONSPONSORED_QUERY,
+    trigger: () => doClick(),
+    assert: () =>
+      assertExposureTelemetry([
+        { results: suggestResultType("adm_nonsponsored") },
+      ]),
+  });
+});
+
+function suggestResultType(typeWithoutSource) {
+  let source = UrlbarPrefs.get("quickSuggestRustEnabled") ? "rust" : "rs";
+  return `${source}_${typeWithoutSource}`;
+}
