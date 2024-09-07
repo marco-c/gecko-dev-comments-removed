@@ -13,7 +13,7 @@ use core::ops::Range;
 const USIZE_WIDTH: usize = mem::size_of::<usize>();
 
 
-#[repr(packed)]
+#[repr(C, packed)]
 pub struct FlexZeroSlice {
     
     

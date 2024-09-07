@@ -28,7 +28,7 @@ use core::mem::{self, MaybeUninit};
 
 
 
-#[repr(packed)]
+#[repr(C, packed)]
 pub struct OptionULE<U>(bool, MaybeUninit<U>);
 
 impl<U: Copy> OptionULE<U> {
@@ -141,7 +141,7 @@ impl<U: Copy + Eq> Eq for OptionULE<U> {}
 
 
 
-#[repr(packed)]
+#[repr(C, packed)]
 pub struct OptionVarULE<U: VarULE + ?Sized>(PhantomData<U>, bool, [u8]);
 
 impl<U: VarULE + ?Sized> OptionVarULE<U> {
