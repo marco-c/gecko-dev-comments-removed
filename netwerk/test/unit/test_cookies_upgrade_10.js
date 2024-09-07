@@ -51,7 +51,7 @@ add_task(async function () {
     );
 
     
-    Assert.ok(getDBVersion(destFile) >= 13);
+    Assert.equal(13, getDBVersion(destFile));
 
     
     Assert.ok(!indexExists(destFile, "moz_basedomain"));
