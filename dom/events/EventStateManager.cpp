@@ -2426,18 +2426,22 @@ void EventStateManager::StopTrackingDragGesture(bool aClearInChildProcesses) {
   
   
   
-  if (aClearInChildProcesses) {
-    nsCOMPtr<nsIDragService> dragService =
-        do_GetService("@mozilla.org/widget/dragservice;1");
-    if (dragService) {
-      RefPtr<nsIDragSession> dragSession =
-          dragService->GetCurrentSession(mPresContext->GetRootWidget());
-      if (!dragSession) {
-        
-        dragService->RemoveAllBrowsers();
-      }
-    }
+  if (!aClearInChildProcesses || !XRE_IsParentProcess()) {
+    return;
   }
+
+  
+  RefPtr<nsIDragSession> dragSession =
+      nsContentUtils::GetDragSession(mPresContext);
+  if (dragSession) {
+    return;
+  }
+  nsCOMPtr<nsIDragService> dragService =
+      do_GetService("@mozilla.org/widget/dragservice;1");
+  if (!dragService) {
+    return;
+  }
+  dragService->RemoveAllBrowsers();
 }
 
 void EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent) {
