@@ -35,6 +35,7 @@ use crate::gecko_bindings::sugar::refptr::RefCounted;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::{bindings, structs};
 use crate::parser::{NestingContext, ParserContext};
+use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{DeepCloneParams, DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::str::CssStringWriter;
@@ -43,7 +44,7 @@ use cssparser::{parse_one_rule, Parser, ParserInput};
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use servo_arc::Arc;
 use std::borrow::Cow;
-use std::fmt;
+use std::fmt::{self, Write};
 #[cfg(feature = "gecko")]
 use std::mem::{self, ManuallyDrop};
 use style_traits::ParsingMode;
@@ -276,6 +277,46 @@ impl fmt::Debug for UrlExtraData {
 
 #[cfg(feature = "gecko")]
 impl Eq for UrlExtraData {}
+
+
+
+
+
+
+
+fn style_or_page_rule_to_css(
+    rules: Option<&Arc<Locked<CssRules>>>,
+    block: &Locked<PropertyDeclarationBlock>,
+    guard: &SharedRwLockReadGuard,
+    dest: &mut CssStringWriter,
+) -> fmt::Result {
+    
+    dest.write_char('{')?;
+
+    
+    let declaration_block = block.read_with(guard);
+    let has_declarations = !declaration_block.declarations().is_empty();
+
+    
+    if let Some(ref rules) = rules {
+        let rules = rules.read_with(guard);
+        
+        if !rules.is_empty() {
+            if has_declarations {
+                dest.write_str("\n  ")?;
+                declaration_block.to_css(dest)?;
+            }
+            return rules.to_css_block_without_opening(guard, dest);
+        }
+    }
+
+    
+    if has_declarations {
+        dest.write_char(' ')?;
+        declaration_block.to_css(dest)?;
+    }
+    dest.write_str(" }")
+}
 
 
 
