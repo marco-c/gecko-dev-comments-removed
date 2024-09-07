@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/loong64/Lowering-loong64.h"
 
@@ -62,7 +62,7 @@ template void LIRGeneratorLOONG64::lowerForShiftInt64(
     LInstructionHelper<INT64_PIECES, INT64_PIECES + 1, 1>* ins,
     MDefinition* mir, MDefinition* lhs, MDefinition* rhs);
 
-// x = !y
+
 void LIRGeneratorLOONG64::lowerForALU(LInstructionHelper<1, 1, 0>* ins,
                                       MDefinition* mir, MDefinition* input) {
   ins->setOperand(0, useRegister(input));
@@ -71,7 +71,7 @@ void LIRGeneratorLOONG64::lowerForALU(LInstructionHelper<1, 1, 0>* ins,
       LDefinition(LDefinition::TypeFrom(mir->type()), LDefinition::REGISTER));
 }
 
-// z = x + y
+
 void LIRGeneratorLOONG64::lowerForALU(LInstructionHelper<1, 2, 0>* ins,
                                       MDefinition* mir, MDefinition* lhs,
                                       MDefinition* rhs) {
@@ -212,15 +212,15 @@ void LIRGeneratorLOONG64::lowerDivI(MDiv* div) {
     return;
   }
 
-  // Division instructions are slow. Division by constant denominators can be
-  // rewritten to use other instructions.
+  
+  
   if (div->rhs()->isConstant()) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
-    // Check for division by a positive power of two, which is an easy and
-    // important case to optimize. Note that other optimizations are also
-    // possible; division by negative powers of two can be optimized in a
-    // similar manner as positive powers of two, and division by other
-    // constants can be optimized by a reciprocal multiplication technique.
+    
+    
+    
+    
+    
     int32_t shift = FloorLog2(rhs);
     if (rhs > 0 && 1 << shift == rhs) {
       LDivPowTwoI* lir =
@@ -423,8 +423,8 @@ void LIRGeneratorLOONG64::lowerWasmSelectI64(MWasmSelect* select) {
   defineInt64ReuseInput(lir, select, LWasmSelectI64::TrueExprIndex);
 }
 
-// On loong64 we specialize the only cases where compare is {U,}Int32 and select
-// is {U,}Int32.
+
+
 bool LIRGeneratorShared::canSpecializeWasmCompareAndSelect(
     MCompare::CompareType compTy, MIRType insTy) {
   return insTy == MIRType::Int32 && (compTy == MCompare::Compare_Int32 ||
@@ -480,9 +480,8 @@ void LIRGeneratorLOONG64::lowerAtomicLoad64(MLoadUnboxedScalar* ins) {
   const LAllocation index =
       useRegisterOrIndexConstant(ins->index(), ins->storageType());
 
-  auto* lir = new (alloc()) LAtomicLoad64(elements, index, temp(), tempInt64());
-  define(lir, ins);
-  assignSafepoint(lir, ins);
+  auto* lir = new (alloc()) LAtomicLoad64(elements, index);
+  defineInt64(lir, ins);
 }
 
 void LIRGeneratorLOONG64::lowerAtomicStore64(MStoreUnboxedScalar* ins) {
@@ -497,7 +496,7 @@ void LIRGeneratorLOONG64::lowerAtomicStore64(MStoreUnboxedScalar* ins) {
 void LIRGenerator::visitBox(MBox* box) {
   MDefinition* opd = box->getOperand(0);
 
-  // If the operand is a constant, emit near its uses.
+  
   if (opd->isConstant() && box->canEmitAtUses()) {
     emitAtUses(box);
     return;
@@ -521,8 +520,8 @@ void LIRGenerator::visitUnbox(MUnbox* unbox) {
     lir = new (alloc())
         LUnboxFloatingPoint(useRegisterAtStart(box), unbox->type());
   } else if (unbox->fallible()) {
-    // If the unbox is fallible, load the Value in a register first to
-    // avoid multiple loads.
+    
+    
     lir = new (alloc()) LUnbox(useRegisterAtStart(box));
   } else {
     lir = new (alloc()) LUnbox(useAtStart(box));
@@ -620,8 +619,8 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
     return;
   }
 
-  // If the target is a floating register then we need a temp at the
-  // CodeGenerator level for creating the result.
+  
+  
 
   LDefinition outTemp = LDefinition::BogusTemp();
   LDefinition valueTemp = LDefinition::BogusTemp();
@@ -668,8 +667,8 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
     return;
   }
 
-  // If the target is a floating register then we need a temp at the
-  // CodeGenerator level for creating the result.
+  
+  
 
   MOZ_ASSERT(ins->arrayType() <= Scalar::Uint32);
 
@@ -712,9 +711,9 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
     LInt64Definition temp1 = tempInt64();
     LInt64Definition temp2 = tempInt64();
 
-    // Case 1: the result of the operation is not used.
-    //
-    // We can omit allocating the result BigInt.
+    
+    
+    
 
     if (ins->isForEffect()) {
       auto* lir = new (alloc()) LAtomicTypedArrayElementBinopForEffect64(
@@ -723,7 +722,7 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
       return;
     }
 
-    // Case 2: the result of the operation is used.
+    
 
     auto* lir = new (alloc())
         LAtomicTypedArrayElementBinop64(elements, index, value, temp1, temp2);
@@ -750,8 +749,8 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
     return;
   }
 
-  // For a Uint32Array with a known double result we need a temp for
-  // the intermediate output.
+  
+  
 
   LDefinition outTemp = LDefinition::BogusTemp();
 
@@ -787,9 +786,9 @@ void LIRGenerator::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins) {
                                ? useRegisterAtStart(boundsCheckLimit)
                                : LAllocation();
 
-  // We have no memory-base value, meaning that HeapReg is to be used as the
-  // memory base.  This follows from the definition of
-  // FunctionCompiler::maybeLoadMemoryBase() in WasmIonCompile.cpp.
+  
+  
+  
   MOZ_ASSERT(!ins->hasMemoryBase());
   auto* lir =
       new (alloc()) LAsmJSLoadHeap(baseAlloc, limitAlloc, LAllocation());
@@ -810,7 +809,7 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
                                ? useRegisterAtStart(boundsCheckLimit)
                                : LAllocation();
 
-  // See comment in LIRGenerator::visitAsmJSStoreHeap just above.
+  
   MOZ_ASSERT(!ins->hasMemoryBase());
   add(new (alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()),
                                     limitAlloc, LAllocation()),
@@ -819,10 +818,10 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
 
 void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   MDefinition* base = ins->base();
-  // 'base' is a GPR but may be of either type. If it is 32-bit, it is
-  // sign-extended on loongarch64 platform and we should explicitly promote it
-  // to 64-bit by zero-extension when use it as an index register in memory
-  // accesses.
+  
+  
+  
+  
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
 
   LAllocation memoryBase =
@@ -852,7 +851,7 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
 
 void LIRGenerator::visitWasmStore(MWasmStore* ins) {
   MDefinition* base = ins->base();
-  // See comment in visitWasmLoad re the type of 'base'.
+  
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
 
   MDefinition* value = ins->value();
@@ -916,7 +915,7 @@ void LIRGenerator::visitWasmUnsignedToFloat32(MWasmUnsignedToFloat32* ins) {
 
 void LIRGenerator::visitWasmCompareExchangeHeap(MWasmCompareExchangeHeap* ins) {
   MDefinition* base = ins->base();
-  // See comment in visitWasmLoad re the type of 'base'.
+  
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
   LAllocation memoryBase =
       ins->hasMemoryBase() ? LAllocation(useRegisterAtStart(ins->memoryBase()))
@@ -950,7 +949,7 @@ void LIRGenerator::visitWasmCompareExchangeHeap(MWasmCompareExchangeHeap* ins) {
 
 void LIRGenerator::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins) {
   MDefinition* base = ins->base();
-  // See comment in visitWasmLoad re the type of 'base'.
+  
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
   LAllocation memoryBase =
       ins->hasMemoryBase() ? LAllocation(useRegisterAtStart(ins->memoryBase()))
@@ -981,7 +980,7 @@ void LIRGenerator::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins) {
 
 void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
   MDefinition* base = ins->base();
-  // See comment in visitWasmLoad re the type of 'base'.
+  
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
   LAllocation memoryBase =
       ins->hasMemoryBase() ? LAllocation(useRegisterAtStart(ins->memoryBase()))
@@ -1037,7 +1036,7 @@ bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
 #endif
 
 bool MWasmBinarySimd128::specializeForConstantRhs() {
-  // Probably many we want to do here
+  
   return false;
 }
 

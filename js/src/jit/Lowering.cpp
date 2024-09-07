@@ -4580,7 +4580,7 @@ void LIRGenerator::visitStringSplit(MStringSplit* ins) {
 void LIRGenerator::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
   MOZ_ASSERT(ins->elements()->type() == MIRType::Elements);
   MOZ_ASSERT(ins->index()->type() == MIRType::IntPtr);
-  MOZ_ASSERT(IsNumericType(ins->type()) || ins->type() == MIRType::Boolean);
+  MOZ_ASSERT(IsNumberType(ins->type()));
 
   auto sync = SynchronizeLoad(ins->requiresMemoryBarrier());
 
@@ -4593,6 +4593,14 @@ void LIRGenerator::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
   const LAllocation index = useRegisterOrIndexConstant(
       ins->index(), ins->storageType(), ins->offsetAdjustment());
 
+  if (Scalar::isBigIntType(ins->storageType())) {
+    MOZ_ASSERT(ins->type() == MIRType::Int64);
+
+    auto* lir = new (alloc()) LLoadUnboxedInt64(elements, index);
+    defineInt64(lir, ins);
+    return;
+  }
+
   
   
   if (!sync.isNone()) {
@@ -4600,37 +4608,28 @@ void LIRGenerator::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
     add(fence, ins);
   }
 
-  if (!Scalar::isBigIntType(ins->storageType())) {
-    
-    
-    LDefinition temp1 = LDefinition::BogusTemp();
-    if ((ins->storageType() == Scalar::Uint32 &&
-         IsFloatingPointType(ins->type())) ||
-        ins->storageType() == Scalar::Float16) {
-      temp1 = temp();
-    }
+  
+  
+  LDefinition temp1 = LDefinition::BogusTemp();
+  if ((ins->storageType() == Scalar::Uint32 &&
+       IsFloatingPointType(ins->type())) ||
+      ins->storageType() == Scalar::Float16) {
+    temp1 = temp();
+  }
 
-    
-    LDefinition temp2 = LDefinition::BogusTemp();
-    if (MacroAssembler::LoadRequiresCall(ins->storageType())) {
-      temp2 = temp();
-    }
+  
+  LDefinition temp2 = LDefinition::BogusTemp();
+  if (MacroAssembler::LoadRequiresCall(ins->storageType())) {
+    temp2 = temp();
+  }
 
-    auto* lir = new (alloc()) LLoadUnboxedScalar(elements, index, temp1, temp2);
-    if (ins->fallible()) {
-      assignSnapshot(lir, ins->bailoutKind());
-    }
-    define(lir, ins);
+  auto* lir = new (alloc()) LLoadUnboxedScalar(elements, index, temp1, temp2);
+  if (ins->fallible()) {
+    assignSnapshot(lir, ins->bailoutKind());
+  }
+  define(lir, ins);
 
-    if (MacroAssembler::LoadRequiresCall(ins->storageType())) {
-      assignSafepoint(lir, ins);
-    }
-  } else {
-    MOZ_ASSERT(ins->type() == MIRType::BigInt);
-
-    auto* lir =
-        new (alloc()) LLoadUnboxedBigInt(elements, index, temp(), tempInt64());
-    define(lir, ins);
+  if (MacroAssembler::LoadRequiresCall(ins->storageType())) {
     assignSafepoint(lir, ins);
   }
 
