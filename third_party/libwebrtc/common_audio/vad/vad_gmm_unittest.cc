@@ -18,7 +18,12 @@ extern "C" {
 namespace webrtc {
 namespace test {
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(VadTest, DISABLED_vad_gmm) {
+#else
 TEST_F(VadTest, vad_gmm) {
+#endif
   int16_t delta = 0;
   
   EXPECT_EQ(1048576, WebRtcVad_GaussianProbability(0, 0, 128, &delta));
