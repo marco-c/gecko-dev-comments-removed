@@ -1739,7 +1739,10 @@ void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
     {
       
       
-      truncateFloat32ToInt32(src, dest, fail);
+      
+      
+      
+      vcvttss2si(src, dest);
 
       
       {
@@ -1750,8 +1753,9 @@ void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
 
       
       
-      subl(Imm32(1), dest);
       
+      
+      branchSub32(Assembler::Overflow, Imm32(1), dest, fail);
     }
 
     bind(&end);
@@ -1794,7 +1798,10 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
     {
       
       
-      truncateDoubleToInt32(src, dest, fail);
+      
+      
+      
+      vcvttsd2si(src, dest);
 
       
       {
@@ -1805,8 +1812,9 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
 
       
       
-      subl(Imm32(1), dest);
       
+      
+      branchSub32(Assembler::Overflow, Imm32(1), dest, fail);
     }
 
     bind(&end);
@@ -2004,7 +2012,10 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
 
       
       
-      truncateFloat32ToInt32(temp, dest, fail);
+      
+      
+      
+      vcvttss2si(temp, dest);
 
       
       convertInt32ToFloat32(dest, scratch);
@@ -2012,8 +2023,9 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
 
       
       
-      subl(Imm32(1), dest);
       
+      
+      branchSub32(Assembler::Overflow, Imm32(1), dest, fail);
     }
   }
 
@@ -2079,7 +2091,10 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
 
       
       
-      truncateDoubleToInt32(temp, dest, fail);
+      
+      
+      
+      vcvttsd2si(temp, dest);
 
       
       convertInt32ToDouble(dest, scratch);
@@ -2087,8 +2102,9 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
 
       
       
-      subl(Imm32(1), dest);
       
+      
+      branchSub32(Assembler::Overflow, Imm32(1), dest, fail);
     }
   }
 
