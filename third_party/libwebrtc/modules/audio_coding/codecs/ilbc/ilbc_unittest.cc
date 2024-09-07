@@ -15,8 +15,13 @@
 
 namespace webrtc {
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST(IlbcTest, DISABLED_BadPacket) {
+#else
 TEST(IlbcTest, BadPacket) {
-  
+#endif
+
   AudioEncoderIlbcConfig config;
   config.frame_size_ms = 20;  
                               

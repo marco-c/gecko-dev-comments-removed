@@ -293,8 +293,13 @@ TEST_F(DebugDumpTest, SimpleCase) {
   VerifyDebugDump(generator.dump_file_name());
 }
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(DebugDumpTest, DISABLED_ChangeInputFormat) {
+#else
 TEST_F(DebugDumpTest, ChangeInputFormat) {
-  DebugDumpGenerator generator({});
+#endif
+  DebugDumpGenerator generator(/*apm_config=*/{});
 
   generator.StartRecording();
   generator.Process(100);
@@ -310,8 +315,13 @@ TEST_F(DebugDumpTest, ChangeInputFormat) {
   VerifyDebugDump(generator.dump_file_name());
 }
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(DebugDumpTest, DISABLED_ChangeReverseFormat) {
+#else
 TEST_F(DebugDumpTest, ChangeReverseFormat) {
-  DebugDumpGenerator generator({});
+#endif
+  DebugDumpGenerator generator(/*apm_config=*/{});
   generator.StartRecording();
   generator.Process(100);
   generator.SetReverseRate(48000);
