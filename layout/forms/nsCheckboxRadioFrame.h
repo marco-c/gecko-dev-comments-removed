@@ -22,19 +22,11 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame {
   explicit nsCheckboxRadioFrame(ComputedStyle* aStyle,
                                 nsPresContext* aPresContext);
 
-  
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
 
-  
-
-
-
   nscoord GetMinISize(gfxContext* aRenderingContext) override;
   nscoord GetPrefISize(gfxContext* aRenderingContext) override;
-
-  
-
 
   mozilla::LogicalSize ComputeAutoSize(
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
