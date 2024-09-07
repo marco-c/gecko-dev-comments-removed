@@ -721,9 +721,9 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
 
     
     request = new ModuleLoadRequest(
-        uri, referrerPolicy, fetchOptions, SRIMetadata(), referrer, loadContext,
-        true,  
-        false, 
+        uri, JS::ModuleType::JavaScript, referrerPolicy, fetchOptions,
+        SRIMetadata(), referrer, loadContext, true, 
+        false,                                      
         moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(uri),
         nullptr);
   }
