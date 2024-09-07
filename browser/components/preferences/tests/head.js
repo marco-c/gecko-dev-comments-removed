@@ -203,7 +203,7 @@ class DefinitionServer {
       id: "test-feature",
       
       title: "experimental-features-media-jxl",
-      group: "experimental-features-group-browsing",
+      group: "experimental-features-group-customize-browsing",
       description: "pane-experimental-description3",
       restartRequired: false,
       type: "boolean",
