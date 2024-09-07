@@ -114,9 +114,9 @@ NS_IMETHODIMP StartModuleLoadRunnable::RunOnWorkletThread() {
 
   
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      mURI, ReferrerPolicy::_empty, fetchOptions, SRIMetadata(), mReferrer,
-      loadContext, true, 
-      false,             
+      mURI, JS::ModuleType::JavaScript, ReferrerPolicy::_empty, fetchOptions,
+      SRIMetadata(), mReferrer, loadContext, true, 
+      false,                                       
       moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(mURI),
       nullptr);
 

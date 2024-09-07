@@ -54,9 +54,10 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
       aParent->GetWorkerLoadContext()->mScriptLoader,
       aParent->GetWorkerLoadContext()->mOnlyExistingCachedResourcesAllowed);
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aParent->ReferrerPolicy(), aParent->mFetchOptions, SRIMetadata(),
-      aParent->mURI, loadContext, false, 
-      false,                             
+      aURI, JS::ModuleType::JavaScript, aParent->ReferrerPolicy(),
+      aParent->mFetchOptions, SRIMetadata(), aParent->mURI, loadContext,
+      false, 
+      false, 
       this, aParent->mVisitedSet, aParent->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();
@@ -137,7 +138,8 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
 
   ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, referrerPolicy, options, SRIMetadata(), baseURL, context, true,
+      aURI, JS::ModuleType::JavaScript, referrerPolicy, options, SRIMetadata(),
+      baseURL, context, true,
        true, 
       this, ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
 

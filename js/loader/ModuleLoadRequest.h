@@ -50,7 +50,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                                                          ScriptLoadRequest)
   using SRIMetadata = mozilla::dom::SRIMetadata;
 
-  ModuleLoadRequest(nsIURI* aURI, mozilla::dom::ReferrerPolicy aReferrerPolicy,
+  ModuleLoadRequest(nsIURI* aURI, JS::ModuleType aModuleType,
+                    mozilla::dom::ReferrerPolicy aReferrerPolicy,
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     LoadContextBase* aContext, bool aIsTopLevel,
@@ -127,6 +128,9 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
  public:
   
   const bool mIsTopLevel;
+
+  
+  const JS::ModuleType mModuleType;
 
   
   const bool mIsDynamicImport;

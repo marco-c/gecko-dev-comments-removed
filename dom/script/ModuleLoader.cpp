@@ -283,8 +283,8 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateTopLevel(
     ScriptFetchOptions* aFetchOptions, const SRIMetadata& aIntegrity,
     nsIURI* aReferrer, ScriptLoader* aLoader, ScriptLoadContext* aContext) {
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aReferrerPolicy, aFetchOptions, aIntegrity, aReferrer, aContext,
-      true,
+      aURI, JS::ModuleType::JavaScript, aReferrerPolicy, aFetchOptions,
+      aIntegrity, aReferrer, aContext, true,
        false, 
       aLoader->GetModuleLoader(),
       ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
@@ -302,9 +302,10 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateStaticImport(
   newContext->mScriptMode = aParent->GetScriptLoadContext()->mScriptMode;
 
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aParent->ReferrerPolicy(), aParent->mFetchOptions, SRIMetadata(),
-      aParent->mURI, newContext, false, 
-      false,                            
+      aURI, JS::ModuleType::JavaScript, aParent->ReferrerPolicy(),
+      aParent->mFetchOptions, SRIMetadata(), aParent->mURI, newContext,
+      false, 
+      false, 
       aParent->mLoader, aParent->mVisitedSet, aParent->GetRootModule());
 
   request->NoCacheEntryFound();
@@ -361,7 +362,8 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
   context->mScriptMode = ScriptLoadContext::ScriptMode::eAsync;
 
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, referrerPolicy, options, SRIMetadata(), baseURL, context, true,
+      aURI, JS::ModuleType::JavaScript, referrerPolicy, options, SRIMetadata(),
+      baseURL, context, true,
        true, 
       this, ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
 
