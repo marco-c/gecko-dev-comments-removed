@@ -6677,7 +6677,8 @@ void LIRGenerator::visitWasmCall(MWasmCallT ins) {
   
   
   
-  if (ins->callee().which() == wasm::CalleeDesc::WasmTable &&
+  if ((ins->callee().which() == wasm::CalleeDesc::WasmTable ||
+       ins->callee().which() == wasm::CalleeDesc::FuncRef) &&
       !ins->isWasmReturnCall()) {
     auto* adjunctSafepoint = new (alloc()) LWasmCallIndirectAdjunctSafepoint();
     add(adjunctSafepoint);
