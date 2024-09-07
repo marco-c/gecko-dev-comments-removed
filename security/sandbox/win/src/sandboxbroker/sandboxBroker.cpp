@@ -1022,6 +1022,24 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     }
 
     
+    
+    wchar_t* systemBinPath;
+    if (SUCCEEDED(::SHGetKnownFolderPath(FOLDERID_System, 0, nullptr,
+                                         &systemBinPath))) {
+      std::wstring systemBinPathStr = systemBinPath;
+      ::CoTaskMemFree(systemBinPath);
+      systemBinPathStr += L"\\*";
+      result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
+                                sandbox::TargetPolicy::FILES_ALLOW_READONLY,
+                                systemBinPathStr.c_str());
+      if (sandbox::SBOX_ALL_OK != result) {
+        NS_ERROR("Failed to add rule for system bin dir.");
+        LOG_E("Failed (ResultCode %d) to add read access to: %S", result,
+              systemBinPathStr.c_str());
+      }
+    }
+
+    
     result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_REGISTRY,
                               sandbox::TargetPolicy::REG_ALLOW_READONLY,
                               L"HKEY_LOCAL_MACHINE\\Software\\Classes\\CLSID"
