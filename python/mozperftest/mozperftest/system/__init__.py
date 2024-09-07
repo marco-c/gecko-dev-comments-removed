@@ -56,9 +56,4 @@ def pick_system(env, flavor, mach_cmd):
             VersionProducer,
         ]
         return Layers(env, mach_cmd, layers)
-    if flavor == "alert":
-        
-        
-        
-        return Layers(env, mach_cmd, [])
     raise NotImplementedError(flavor)
