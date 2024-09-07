@@ -180,7 +180,16 @@ def is_windows(target):
 
 
 def is_cross_compile(target):
-    return SUPPORTED_TARGETS[target] != (platform.system(), platform.machine())
+    target_system, target_machine = SUPPORTED_TARGETS[target]
+    system, machine = (platform.system(), platform.machine())
+    if system != target_system:
+        return True
+    
+    
+    
+    if system == "Darwin" and machine == "arm64":
+        return False
+    return machine != target_machine
 
 
 def build_one_stage(
