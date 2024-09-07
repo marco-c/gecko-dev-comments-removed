@@ -101,9 +101,6 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared {
 
   bool generateOutOfLineCode();
 
-  void emitCompare(MCompare::CompareType type, const LAllocation* left,
-                   const LAllocation* right);
-
   
   
   void emitBranch(Assembler::Condition cond, MBasicBlock* ifTrue,
