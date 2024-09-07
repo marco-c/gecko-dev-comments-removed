@@ -1960,7 +1960,10 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
     } else if (m->hasTopLevelAwait()) {
       
       
-      MOZ_ALWAYS_TRUE(ExecuteAsyncModule(cx, m));
+      if (!ExecuteAsyncModule(cx, m)) {
+        MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
+        cx->clearPendingException();
+      }
     } else {
       
       
