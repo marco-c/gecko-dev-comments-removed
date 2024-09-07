@@ -43,9 +43,14 @@ class LinearEasingFunctionWidget extends EventEmitter {
     this.parent = parent;
     this.#initMarkup();
 
-    this.#svgEl.addEventListener("mousedown", this.#onMouseDown.bind(this), {
-      signal: this.#abortController.signal,
-    });
+    this.#svgEl.addEventListener(
+      "pointerdown",
+      this.#onPointerDown.bind(this),
+      {
+        signal: this.#abortController.signal,
+        passive: true,
+      }
+    );
     this.#svgEl.addEventListener("dblclick", this.#onDoubleClick.bind(this), {
       signal: this.#abortController.signal,
     });
@@ -183,8 +188,11 @@ class LinearEasingFunctionWidget extends EventEmitter {
 
 
 
-  #onMouseDown(event) {
+  #onPointerDown(event) {
     if (
+      
+      
+      event.pointerType != "mouse" ||
       !event.target.classList.contains(
         LinearEasingFunctionWidget.CONTROL_POINTS_CLASSNAME
       )
@@ -196,14 +204,20 @@ class LinearEasingFunctionWidget extends EventEmitter {
     this.#draggedEl.setPointerCapture(event.pointerId);
 
     this.#dragAbortController = new AbortController();
+    
+    
     this.#draggedEl.addEventListener(
       "mousemove",
       this.#onMouseMove.bind(this),
       { signal: this.#dragAbortController.signal }
     );
-    this.#draggedEl.addEventListener("mouseup", this.#onMouseUp.bind(this), {
-      signal: this.#dragAbortController.signal,
-    });
+    this.#draggedEl.addEventListener(
+      "pointerup",
+      this.#onPointerUp.bind(this),
+      {
+        signal: this.#dragAbortController.signal,
+      }
+    );
   }
 
   
@@ -258,10 +272,7 @@ class LinearEasingFunctionWidget extends EventEmitter {
 
 
 
-
-
-  #onMouseUp(event) {
-    this.#draggedEl.releasePointerCapture(event.pointerId);
+  #onPointerUp() {
     this.#draggedEl = null;
     this.#dragAbortController.abort();
     this.#dragAbortController = null;
