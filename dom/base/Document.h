@@ -254,6 +254,7 @@ class HTMLInputElement;
 class HTMLMetaElement;
 class HTMLDialogElement;
 class HTMLSharedElement;
+class HTMLVideoElement;
 class HTMLImageElement;
 struct LifecycleCallbackArgs;
 class Link;
@@ -3047,12 +3048,22 @@ class Document : public nsINode,
                                         uint32_t* aHandle);
   void CancelFrameRequestCallback(uint32_t aHandle);
 
+  void ScheduleVideoFrameCallbacks(HTMLVideoElement* aElement);
+  void CancelVideoFrameCallbacks(HTMLVideoElement* aElement);
+
   
 
 
 
 
   bool IsCanceledFrameRequestCallback(uint32_t aHandle) const;
+
+  
+
+
+
+  void TakeVideoFrameRequestCallbacks(
+      nsTArray<RefPtr<HTMLVideoElement>>& aVideoCallbacks);
 
   
 
