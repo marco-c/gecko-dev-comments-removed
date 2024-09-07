@@ -1865,16 +1865,17 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-bff-config", "US
   
   pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "US, CA");
   pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.onboarding.enabled", true);
+  pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.region-topic-label-config", "US, CA");
 #else
   pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.enabled", false);
   pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "");
   pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.onboarding.enabled", false);
+  pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.region-topic-label-config", "");
 #endif
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.locale-topics-config", "en-US, en-GB, en-CA");
-
-pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.enabled", true);
+pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.locale-topic-label-config", "en-US, en-GB, en-CA");
 
 pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.endpoint", "merino.services.mozilla.com");
 
