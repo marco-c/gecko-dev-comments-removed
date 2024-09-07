@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
-
-
+<!--
+-->
 <head>
   <title>Test for document.cookie max-age pref</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -48,7 +48,7 @@ function dotest()
 {
   SimpleTest.waitForExplicitFinish();
   SpecialPowers.pushPrefEnv({
-    set: [["privacy.documentCookies.maxage", kSevenDays]],
+    set: [["network.cookie.maxageCap", kSevenDays]],
   }).then(_ => {
     gScript = SpecialPowers.loadChromeScript(kScriptURL);
 
