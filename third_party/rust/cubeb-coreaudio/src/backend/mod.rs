@@ -3786,7 +3786,16 @@ impl<'ctx> CoreStreamData<'ctx> {
             let r = audio_unit_get_property(
                 self.output_unit,
                 kAudioUnitProperty_StreamFormat,
-                kAudioUnitScope_Input,
+                if using_voice_processing_unit {
+                    
+                    
+                    kAudioUnitScope_Input
+                } else {
+                    
+                    
+                    
+                    kAudioUnitScope_Output
+                },
                 AU_OUT_BUS,
                 &mut output_hw_desc,
                 &mut size,
@@ -3815,11 +3824,42 @@ impl<'ctx> CoreStreamData<'ctx> {
 
             
             
+            let mut maybe_need_mixer = true;
+            if self.output_stream_params.channels() == 2
+                && self.output_stream_params.layout() == ChannelLayout::STEREO
+            {
+                let layout = AudioChannelLayout {
+                    mChannelLayoutTag: kAudioChannelLayoutTag_Stereo,
+                    ..Default::default()
+                };
+                let r = audio_unit_set_property(
+                    self.output_unit,
+                    kAudioUnitProperty_AudioChannelLayout,
+                    kAudioUnitScope_Input,
+                    AU_OUT_BUS,
+                    &layout,
+                    mem::size_of::<AudioChannelLayout>(),
+                );
+                if r != NO_ERR {
+                    cubeb_log!(
+                        "AudioUnitSetProperty/output/kAudioUnitProperty_AudioChannelLayout rv={}",
+                        r
+                    );
+                }
+                maybe_need_mixer = r != NO_ERR;
+            }
+
+            
+            
             
             
             let params = unsafe {
                 let mut p = *self.output_stream_params.as_ptr();
-                p.channels = output_hw_desc.mChannelsPerFrame;
+                p.channels = if maybe_need_mixer {
+                    output_hw_desc.mChannelsPerFrame
+                } else {
+                    self.output_stream_params.channels()
+                };
                 if using_voice_processing_unit {
                     
                     
@@ -3870,33 +3910,6 @@ impl<'ctx> CoreStreamData<'ctx> {
                 self.stm_ptr,
                 device_layout
             );
-
-            
-            
-            let mut maybe_need_mixer = true;
-            if self.output_stream_params.channels() == 2
-                && self.output_stream_params.layout() == ChannelLayout::STEREO
-            {
-                let layout = AudioChannelLayout {
-                    mChannelLayoutTag: kAudioChannelLayoutTag_Stereo,
-                    ..Default::default()
-                };
-                let r = audio_unit_set_property(
-                    self.output_unit,
-                    kAudioUnitProperty_AudioChannelLayout,
-                    kAudioUnitScope_Input,
-                    AU_OUT_BUS,
-                    &layout,
-                    mem::size_of::<AudioChannelLayout>(),
-                );
-                if r != NO_ERR {
-                    cubeb_log!(
-                        "AudioUnitSetProperty/output/kAudioUnitProperty_AudioChannelLayout rv={}",
-                        r
-                    );
-                }
-                maybe_need_mixer = r != NO_ERR;
-            }
 
             if maybe_need_mixer {
                 
