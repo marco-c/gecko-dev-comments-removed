@@ -244,6 +244,13 @@ void TransmissionControlBlock::SendBufferedPackets(SctpPacket::Builder& builder,
 
     auto chunks =
         retransmission_queue_.GetChunksToSend(now, builder.bytes_remaining());
+
+    if (!chunks.empty()) {
+      
+      
+      heartbeat_handler_.RestartTimer();
+    }
+
     for (auto& [tsn, data] : chunks) {
       if (capabilities_.message_interleaving) {
         builder.Add(IDataChunk(tsn, std::move(data), false));
