@@ -291,6 +291,13 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   void ClearSavedChildMetrics();
 
+  nsMargin GetBorderPaddingForPlace(const PlaceFlags& aFlags);
+  static nsMargin GetMarginForPlace(const PlaceFlags& aFlags, nsIFrame* aChild);
+
+  static void InflateReflowAndBoundingMetrics(
+      const nsMargin& aBorderPadding, ReflowOutput& aReflowOutput,
+      nsBoundingMetrics& aBoundingMetrics);
+
   
   
   static void PropagatePresentationDataFor(nsIFrame* aFrame,
