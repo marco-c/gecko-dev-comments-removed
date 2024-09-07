@@ -360,10 +360,11 @@ async function testClipboardWithContentAnalysis(allowPaste) {
 }
 
 function assertContentAnalysisRequest(request, expectedText) {
-  is(
-    request.url.spec,
-    "data:text/html," + escape(testPage),
-    "request has correct URL"
+  
+  
+  ok(
+    request.url.spec.startsWith("moz-nullprincipal:"),
+    "request has correct moz-nullprincipal URL, got " + request.url.spec
   );
   is(
     request.analysisType,

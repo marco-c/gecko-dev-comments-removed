@@ -217,6 +217,11 @@ class ContentAnalysis final : public nsIContentAnalysis {
         mResolver;
   };
   static bool MightBeActive();
+  
+  
+  
+  static nsCOMPtr<nsIURI> GetURIForBrowsingContext(
+      dom::CanonicalBrowsingContext* aBrowsingContext);
   static bool CheckClipboardContentAnalysisSync(
       nsBaseClipboard* aClipboard, mozilla::dom::WindowGlobalParent* aWindow,
       const nsCOMPtr<nsITransferable>& trans,

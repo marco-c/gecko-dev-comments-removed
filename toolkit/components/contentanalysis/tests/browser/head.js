@@ -122,16 +122,17 @@ function makeMockContentAnalysis() {
     setupForTest(shouldAllowRequest) {
       this.shouldAllowRequest = shouldAllowRequest;
       this.errorValue = undefined;
-      this.calls = [];
+      this.clearCalls();
     },
 
     setupForTestWithError(errorValue) {
       this.errorValue = errorValue;
-      this.calls = [];
+      this.clearCalls();
     },
 
     clearCalls() {
       this.calls = [];
+      this.browsingContextsForURIs = [];
     },
 
     getAction() {
@@ -186,6 +187,14 @@ function makeMockContentAnalysis() {
 
     cancelAllRequests() {
       
+    },
+
+    getURIForBrowsingContext(aBrowsingContext) {
+      
+      
+      
+      this.browsingContextsForURIs.push(aBrowsingContext);
+      return aBrowsingContext.currentURI;
     },
   };
 }
