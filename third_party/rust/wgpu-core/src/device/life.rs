@@ -3,7 +3,6 @@ use crate::{
         queue::{EncoderInFlight, SubmittedWorkDoneClosure, TempResource},
         DeviceError, DeviceLostClosure,
     },
-    hal_api::HalApi,
     resource::{self, Buffer, Texture, Trackable},
     snatch::SnatchGuard,
     SubmissionIndex,
@@ -22,7 +21,7 @@ use thiserror::Error;
 
 
 
-struct ActiveSubmission<A: HalApi> {
+struct ActiveSubmission {
     
     
     
@@ -30,10 +29,10 @@ struct ActiveSubmission<A: HalApi> {
     index: SubmissionIndex,
 
     
-    temp_resources: Vec<TempResource<A>>,
+    temp_resources: Vec<TempResource>,
 
     
-    mapped: Vec<Arc<Buffer<A>>>,
+    mapped: Vec<Arc<Buffer>>,
 
     
     
@@ -47,18 +46,18 @@ struct ActiveSubmission<A: HalApi> {
     
     
     
-    encoders: Vec<EncoderInFlight<A>>,
+    encoders: Vec<EncoderInFlight>,
 
     
     
     work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
 }
 
-impl<A: HalApi> ActiveSubmission<A> {
+impl ActiveSubmission {
     
     
     
-    pub fn contains_buffer(&self, buffer: &Buffer<A>) -> bool {
+    pub fn contains_buffer(&self, buffer: &Buffer) -> bool {
         for encoder in &self.encoders {
             
             
@@ -83,7 +82,7 @@ impl<A: HalApi> ActiveSubmission<A> {
     
     
     
-    pub fn contains_texture(&self, texture: &Texture<A>) -> bool {
+    pub fn contains_texture(&self, texture: &Texture) -> bool {
         for encoder in &self.encoders {
             
             
@@ -150,11 +149,11 @@ pub enum WaitIdleError {
 
 
 
-pub(crate) struct LifetimeTracker<A: HalApi> {
+pub(crate) struct LifetimeTracker {
     
     
     
-    mapped: Vec<Arc<Buffer<A>>>,
+    mapped: Vec<Arc<Buffer>>,
 
     
     
@@ -162,11 +161,11 @@ pub(crate) struct LifetimeTracker<A: HalApi> {
     
     
     
-    active: Vec<ActiveSubmission<A>>,
+    active: Vec<ActiveSubmission>,
 
     
     
-    ready_to_map: Vec<Arc<Buffer<A>>>,
+    ready_to_map: Vec<Arc<Buffer>>,
 
     
     
@@ -180,7 +179,7 @@ pub(crate) struct LifetimeTracker<A: HalApi> {
     pub device_lost_closure: Option<DeviceLostClosure>,
 }
 
-impl<A: HalApi> LifetimeTracker<A> {
+impl LifetimeTracker {
     pub fn new() -> Self {
         Self {
             mapped: Vec::new(),
@@ -200,8 +199,8 @@ impl<A: HalApi> LifetimeTracker<A> {
     pub fn track_submission(
         &mut self,
         index: SubmissionIndex,
-        temp_resources: impl Iterator<Item = TempResource<A>>,
-        encoders: Vec<EncoderInFlight<A>>,
+        temp_resources: impl Iterator<Item = TempResource>,
+        encoders: Vec<EncoderInFlight>,
     ) {
         self.active.push(ActiveSubmission {
             index,
@@ -212,16 +211,13 @@ impl<A: HalApi> LifetimeTracker<A> {
         });
     }
 
-    pub(crate) fn map(&mut self, value: &Arc<Buffer<A>>) {
+    pub(crate) fn map(&mut self, value: &Arc<Buffer>) {
         self.mapped.push(value.clone());
     }
 
     
     
-    pub fn get_buffer_latest_submission_index(
-        &self,
-        buffer: &Buffer<A>,
-    ) -> Option<SubmissionIndex> {
+    pub fn get_buffer_latest_submission_index(&self, buffer: &Buffer) -> Option<SubmissionIndex> {
         
         
         self.active.iter().rev().find_map(|submission| {
@@ -237,7 +233,7 @@ impl<A: HalApi> LifetimeTracker<A> {
     
     pub fn get_texture_latest_submission_index(
         &self,
-        texture: &Texture<A>,
+        texture: &Texture,
     ) -> Option<SubmissionIndex> {
         
         
@@ -268,7 +264,7 @@ impl<A: HalApi> LifetimeTracker<A> {
     pub fn triage_submissions(
         &mut self,
         last_done: SubmissionIndex,
-        command_allocator: &crate::command::CommandAllocator<A>,
+        command_allocator: &crate::command::CommandAllocator,
     ) -> SmallVec<[SubmittedWorkDoneClosure; 1]> {
         profiling::scope!("triage_submissions");
 
@@ -295,7 +291,7 @@ impl<A: HalApi> LifetimeTracker<A> {
 
     pub fn schedule_resource_destruction(
         &mut self,
-        temp_resource: TempResource<A>,
+        temp_resource: TempResource,
         last_submit_index: SubmissionIndex,
     ) {
         let resources = self
@@ -351,7 +347,7 @@ impl<A: HalApi> LifetimeTracker<A> {
     #[must_use]
     pub(crate) fn handle_mapping(
         &mut self,
-        raw: &A::Device,
+        raw: &dyn hal::DynDevice,
         snatch_guard: &SnatchGuard,
     ) -> Vec<super::BufferMapPendingClosure> {
         if self.ready_to_map.is_empty() {

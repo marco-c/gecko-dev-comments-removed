@@ -54,6 +54,7 @@ macro_rules! impl_bitflags {
         impl $name {
             /// Returns true if the bitflags contains bits that are not part of
             /// the bitflags definition.
+            #[must_use]
             pub fn contains_invalid_bits(&self) -> bool {
                 let all = Self::all().bits();
                 (self.bits() | all) != all
@@ -114,6 +115,7 @@ pub enum Backend {
 
 impl Backend {
     
+    #[must_use]
     pub const fn to_str(self) -> &'static str {
         match self {
             Backend::Empty => "empty",
@@ -957,11 +959,13 @@ impl_bitflags!(Features);
 
 impl Features {
     
+    #[must_use]
     pub const fn all_webgpu_mask() -> Self {
         Self::from_bits_truncate(0xFFFFF)
     }
 
     
+    #[must_use]
     pub const fn all_native_mask() -> Self {
         Self::from_bits_truncate(!Self::all_webgpu_mask().bits())
     }
@@ -1013,11 +1017,13 @@ impl Default for InstanceFlags {
 
 impl InstanceFlags {
     
+    #[must_use]
     pub fn debugging() -> Self {
         InstanceFlags::DEBUG | InstanceFlags::VALIDATION
     }
 
     
+    #[must_use]
     pub fn advanced_debugging() -> Self {
         Self::debugging() | InstanceFlags::GPU_BASED_VALIDATION
     }
@@ -1025,6 +1031,7 @@ impl InstanceFlags {
     
     
     
+    #[must_use]
     pub fn from_build_config() -> Self {
         if cfg!(debug_assertions) {
             return InstanceFlags::debugging();
@@ -1045,6 +1052,7 @@ impl InstanceFlags {
     
     
     
+    #[must_use]
     pub fn with_env(mut self) -> Self {
         fn env(key: &str) -> Option<bool> {
             std::env::var(key).ok().map(|s| match s.as_str() {
@@ -1308,6 +1316,7 @@ impl Limits {
     
     
     
+    #[must_use]
     pub const fn downlevel_defaults() -> Self {
         Self {
             max_texture_dimension_1d: 2048,
@@ -1364,6 +1373,7 @@ impl Limits {
     
     
     
+    #[must_use]
     pub const fn downlevel_webgl2_defaults() -> Self {
         Self {
             max_uniform_buffers_per_shader_stage: 11,
@@ -1394,6 +1404,7 @@ impl Limits {
     
     
     
+    #[must_use]
     pub const fn using_resolution(self, other: Self) -> Self {
         Self {
             max_texture_dimension_1d: other.max_texture_dimension_1d,
@@ -1406,6 +1417,7 @@ impl Limits {
     
     
     
+    #[must_use]
     pub const fn using_alignment(self, other: Self) -> Self {
         Self {
             min_uniform_buffer_offset_alignment: other.min_uniform_buffer_offset_alignment,
@@ -1417,6 +1429,7 @@ impl Limits {
     
     
     
+    #[must_use]
     pub fn check_limits(&self, allowed: &Self) -> bool {
         let mut within = true;
         self.check_limits_with_fail_fn(allowed, true, |_, _, _| within = false);
@@ -1534,6 +1547,7 @@ impl DownlevelCapabilities {
     
     
     
+    #[must_use]
     pub fn is_webgpu_compliant(&self) -> bool {
         self.flags.contains(DownlevelFlags::compliant())
             && self.limits == DownlevelLimits::default()
@@ -1707,6 +1721,7 @@ impl_bitflags!(DownlevelFlags);
 
 impl DownlevelFlags {
     
+    #[must_use]
     pub const fn compliant() -> Self {
         
 
@@ -1846,6 +1861,7 @@ pub struct DeviceDescriptor<L> {
 
 impl<L> DeviceDescriptor<L> {
     
+    #[must_use]
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> DeviceDescriptor<K> {
         DeviceDescriptor {
             label: fun(&self.label),
@@ -1914,6 +1930,7 @@ pub enum TextureViewDimension {
 
 impl TextureViewDimension {
     
+    #[must_use]
     pub fn compatible_texture_dimension(self) -> TextureDimension {
         match self {
             Self::D1 => TextureDimension::D1,
@@ -1976,6 +1993,7 @@ impl BlendFactor {
     
     
     
+    #[must_use]
     pub fn ref_second_blend_source(&self) -> bool {
         match self {
             BlendFactor::Src1
@@ -2046,6 +2064,7 @@ impl BlendComponent {
 
     
     
+    #[must_use]
     pub fn uses_constant(&self) -> bool {
         match (self.src_factor, self.dst_factor) {
             (BlendFactor::Constant, _)
@@ -2169,6 +2188,7 @@ pub enum PrimitiveTopology {
 
 impl PrimitiveTopology {
     
+    #[must_use]
     pub fn is_strip(&self) -> bool {
         match *self {
             Self::PointList | Self::LineList | Self::TriangleList => false,
@@ -2336,6 +2356,7 @@ impl TextureFormatFeatureFlags {
     
     
     
+    #[must_use]
     pub fn sample_count_supported(&self, count: u32) -> bool {
         use TextureFormatFeatureFlags as tfsc;
 
@@ -2350,6 +2371,7 @@ impl TextureFormatFeatureFlags {
     }
 
     
+    #[must_use]
     pub fn supported_sample_counts(&self) -> Vec<u32> {
         let all_possible_sample_counts: [u32; 5] = [1, 2, 4, 8, 16];
         all_possible_sample_counts
@@ -3009,6 +3031,7 @@ impl Serialize for TextureFormat {
 
 impl TextureAspect {
     
+    #[must_use]
     pub fn from_plane(plane: u32) -> Option<Self> {
         Some(match plane {
             0 => Self::Plane0,
@@ -3023,6 +3046,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn aspect_specific_format(&self, aspect: TextureAspect) -> Option<Self> {
         match (*self, aspect) {
             (Self::Stencil8, TextureAspect::StencilOnly) => Some(*self),
@@ -3046,6 +3070,7 @@ impl TextureFormat {
 
     
     
+    #[must_use]
     pub fn is_depth_stencil_component(&self, combined_format: Self) -> bool {
         match (combined_format, *self) {
             (Self::Depth24PlusStencil8, Self::Depth24Plus | Self::Stencil8)
@@ -3057,6 +3082,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn is_depth_stencil_format(&self) -> bool {
         match *self {
             Self::Stencil8
@@ -3072,6 +3098,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn is_combined_depth_stencil_format(&self) -> bool {
         match *self {
             Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => true,
@@ -3080,11 +3107,13 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn is_multi_planar_format(&self) -> bool {
         self.planes().is_some()
     }
 
     
+    #[must_use]
     pub fn planes(&self) -> Option<u32> {
         match *self {
             Self::NV12 => Some(2),
@@ -3093,11 +3122,13 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn has_color_aspect(&self) -> bool {
         !self.is_depth_stencil_format()
     }
 
     
+    #[must_use]
     pub fn has_depth_aspect(&self) -> bool {
         match *self {
             Self::Depth16Unorm
@@ -3110,6 +3141,7 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn has_stencil_aspect(&self) -> bool {
         match *self {
             Self::Stencil8 | Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => true,
@@ -3118,6 +3150,7 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn size_multiple_requirement(&self) -> (u32, u32) {
         match *self {
             Self::NV12 => (2, 2),
@@ -3128,6 +3161,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn block_dimensions(&self) -> (u32, u32) {
         match *self {
             Self::R8Unorm
@@ -3227,16 +3261,19 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn is_compressed(&self) -> bool {
         self.block_dimensions() != (1, 1)
     }
 
     
+    #[must_use]
     pub fn is_bcn(&self) -> bool {
         self.required_features() == Features::TEXTURE_COMPRESSION_BC
     }
 
     
+    #[must_use]
     pub fn required_features(&self) -> Features {
         match *self {
             Self::R8Unorm
@@ -3329,6 +3366,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn guaranteed_format_features(&self, device_features: Features) -> TextureFormatFeatures {
         
         let noaa = TextureFormatFeatureFlags::empty();
@@ -3384,7 +3422,7 @@ impl TextureFormat {
             Self::Bgra8UnormSrgb =>       (msaa_resolve, attachment),
             Self::Rgb10a2Uint =>          (        msaa, attachment),
             Self::Rgb10a2Unorm =>         (msaa_resolve, attachment),
-            Self::Rg11b10UFloat =>         (        msaa,   rg11b10f),
+            Self::Rg11b10UFloat =>        (        msaa,   rg11b10f),
             Self::Rg32Uint =>             (        noaa,  all_flags),
             Self::Rg32Sint =>             (        noaa,  all_flags),
             Self::Rg32Float =>            (        noaa,  all_flags),
@@ -3464,6 +3502,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn sample_type(
         &self,
         aspect: Option<TextureAspect>,
@@ -3586,6 +3625,7 @@ impl TextureFormat {
     
     
     #[deprecated(since = "0.19.0", note = "Use `block_copy_size` instead.")]
+    #[must_use]
     pub fn block_size(&self, aspect: Option<TextureAspect>) -> Option<u32> {
         self.block_copy_size(aspect)
     }
@@ -3602,6 +3642,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn block_copy_size(&self, aspect: Option<TextureAspect>) -> Option<u32> {
         match *self {
             Self::R8Unorm | Self::R8Snorm | Self::R8Uint | Self::R8Sint => Some(1),
@@ -3689,6 +3730,7 @@ impl TextureFormat {
 
     
     
+    #[must_use]
     pub fn target_pixel_byte_cost(&self) -> Option<u32> {
         match *self {
             Self::R8Unorm | Self::R8Snorm | Self::R8Uint | Self::R8Sint => Some(1),
@@ -3765,6 +3807,7 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn target_component_alignment(&self) -> Option<u32> {
         match *self {
             Self::R8Unorm
@@ -3846,6 +3889,7 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn components(&self) -> u8 {
         self.components_with_aspect(TextureAspect::All)
     }
@@ -3853,6 +3897,7 @@ impl TextureFormat {
     
     
     
+    #[must_use]
     pub fn components_with_aspect(&self, aspect: TextureAspect) -> u8 {
         match *self {
             Self::R8Unorm
@@ -3938,6 +3983,7 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn remove_srgb_suffix(&self) -> TextureFormat {
         match *self {
             Self::Rgba8UnormSrgb => Self::Rgba8Unorm,
@@ -3961,6 +4007,7 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn add_srgb_suffix(&self) -> TextureFormat {
         match *self {
             Self::Rgba8Unorm => Self::Rgba8UnormSrgb,
@@ -3984,6 +4031,7 @@ impl TextureFormat {
     }
 
     
+    #[must_use]
     pub fn is_srgb(&self) -> bool {
         *self != self.remove_srgb_suffix()
     }
@@ -4629,6 +4677,7 @@ pub enum Maintain<T> {
 
 impl<T> Maintain<T> {
     
+    #[must_use]
     pub fn wait() -> Self {
         
         
@@ -4637,6 +4686,7 @@ impl<T> Maintain<T> {
     }
 
     
+    #[must_use]
     pub fn wait_for(submission_index: T) -> Self {
         
         
@@ -4645,6 +4695,7 @@ impl<T> Maintain<T> {
     }
 
     
+    #[must_use]
     pub fn is_wait(&self) -> bool {
         match *self {
             Self::WaitForSubmissionIndex(..) | Self::Wait => true,
@@ -4653,6 +4704,7 @@ impl<T> Maintain<T> {
     }
 
     
+    #[must_use]
     pub fn map_index<U, F>(self, func: F) -> Maintain<U>
     where
         F: FnOnce(T) -> U,
@@ -4678,6 +4730,7 @@ pub enum MaintainResult {
 
 impl MaintainResult {
     
+    #[must_use]
     pub fn is_queue_empty(&self) -> bool {
         matches!(self, Self::SubmissionQueueEmpty)
     }
@@ -4710,11 +4763,13 @@ pub struct StencilState {
 
 impl StencilState {
     
+    #[must_use]
     pub fn is_enabled(&self) -> bool {
         (self.front != StencilFaceState::IGNORE || self.back != StencilFaceState::IGNORE)
             && (self.read_mask != 0 || self.write_mask != 0)
     }
     
+    #[must_use]
     pub fn is_read_only(&self, cull_mode: Option<Face>) -> bool {
         
         
@@ -4730,6 +4785,7 @@ impl StencilState {
         front_ro && back_ro
     }
     
+    #[must_use]
     pub fn needs_ref_value(&self) -> bool {
         self.front.needs_ref_value() || self.back.needs_ref_value()
     }
@@ -4755,6 +4811,7 @@ pub struct DepthBiasState {
 
 impl DepthBiasState {
     
+    #[must_use]
     pub fn is_enabled(&self) -> bool {
         self.constant != 0 || self.slope_scale != 0.0
     }
@@ -4805,21 +4862,25 @@ pub struct DepthStencilState {
 
 impl DepthStencilState {
     
+    #[must_use]
     pub fn is_depth_enabled(&self) -> bool {
         self.depth_compare != CompareFunction::Always || self.depth_write_enabled
     }
 
     
+    #[must_use]
     pub fn is_depth_read_only(&self) -> bool {
         !self.depth_write_enabled
     }
 
     
+    #[must_use]
     pub fn is_stencil_read_only(&self, cull_mode: Option<Face>) -> bool {
         self.stencil.is_read_only(cull_mode)
     }
 
     
+    #[must_use]
     pub fn is_read_only(&self, cull_mode: Option<Face>) -> bool {
         self.is_depth_read_only() && self.is_stencil_read_only(cull_mode)
     }
@@ -4903,6 +4964,7 @@ impl StencilFaceState {
     };
 
     
+    #[must_use]
     pub fn needs_ref_value(&self) -> bool {
         self.compare.needs_ref_value()
             || self.fail_op == StencilOperation::Replace
@@ -4911,6 +4973,7 @@ impl StencilFaceState {
     }
 
     
+    #[must_use]
     pub fn is_read_only(&self) -> bool {
         self.pass_op == StencilOperation::Keep
             && self.depth_fail_op == StencilOperation::Keep
@@ -4957,6 +5020,7 @@ pub enum CompareFunction {
 
 impl CompareFunction {
     
+    #[must_use]
     pub fn needs_ref_value(self) -> bool {
         match self {
             Self::Never | Self::Always => false,
@@ -5140,6 +5204,7 @@ pub enum VertexFormat {
 
 impl VertexFormat {
     
+    #[must_use]
     pub const fn size(&self) -> u64 {
         match self {
             Self::Uint8x2 | Self::Sint8x2 | Self::Unorm8x2 | Self::Snorm8x2 => 2,
@@ -5244,6 +5309,7 @@ pub struct BufferDescriptor<L> {
 
 impl<L> BufferDescriptor<L> {
     
+    #[must_use]
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> BufferDescriptor<K> {
         BufferDescriptor {
             label: fun(&self.label),
@@ -5268,6 +5334,7 @@ pub struct CommandEncoderDescriptor<L> {
 
 impl<L> CommandEncoderDescriptor<L> {
     
+    #[must_use]
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CommandEncoderDescriptor<K> {
         CommandEncoderDescriptor {
             label: fun(&self.label),
@@ -5571,6 +5638,7 @@ impl PresentationTimestamp {
     pub const INVALID_TIMESTAMP: Self = Self(u128::MAX);
 
     
+    #[must_use]
     pub fn is_invalid(self) -> bool {
         self == Self::INVALID_TIMESTAMP
     }
@@ -5673,6 +5741,7 @@ impl Origin2d {
     pub const ZERO: Self = Self { x: 0, y: 0 };
 
     
+    #[must_use]
     pub fn to_3d(self, z: u32) -> Origin3d {
         Origin3d {
             x: self.x,
@@ -5710,6 +5779,7 @@ impl Origin3d {
     pub const ZERO: Self = Self { x: 0, y: 0, z: 0 };
 
     
+    #[must_use]
     pub fn to_2d(self) -> Origin2d {
         Origin2d {
             x: self.x,
@@ -5777,6 +5847,7 @@ impl Extent3d {
     
     
     
+    #[must_use]
     pub fn physical_size(&self, format: TextureFormat) -> Self {
         let (block_width, block_height) = format.block_dimensions();
 
@@ -5794,6 +5865,7 @@ impl Extent3d {
     
     
     
+    #[must_use]
     pub fn max_mips(&self, dim: TextureDimension) -> u32 {
         match dim {
             TextureDimension::D1 => 1,
@@ -5812,6 +5884,7 @@ impl Extent3d {
     
     
     
+    #[must_use]
     pub fn mip_level_size(&self, level: u32, dim: TextureDimension) -> Self {
         Self {
             width: u32::max(1, self.width >> level),
@@ -5963,6 +6036,7 @@ pub struct TextureDescriptor<L, V> {
 
 impl<L, V> TextureDescriptor<L, V> {
     
+    #[must_use]
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> TextureDescriptor<K, V>
     where
         V: Clone,
@@ -5980,6 +6054,7 @@ impl<L, V> TextureDescriptor<L, V> {
     }
 
     
+    #[must_use]
     pub fn map_label_and_view_formats<K, M>(
         &self,
         l_fun: impl FnOnce(&L) -> K,
@@ -6030,6 +6105,7 @@ impl<L, V> TextureDescriptor<L, V> {
     
     
     
+    #[must_use]
     pub fn mip_level_size(&self, level: u32) -> Option<Extent3d> {
         if level >= self.mip_level_count {
             return None;
@@ -6041,6 +6117,7 @@ impl<L, V> TextureDescriptor<L, V> {
     
     
     
+    #[must_use]
     pub fn compute_render_extent(&self, mip_level: u32) -> Extent3d {
         Extent3d {
             width: u32::max(1, self.size.width >> mip_level),
@@ -6052,6 +6129,7 @@ impl<L, V> TextureDescriptor<L, V> {
     
     
     
+    #[must_use]
     pub fn array_layer_count(&self) -> u32 {
         match self.dimension {
             TextureDimension::D1 | TextureDimension::D3 => 1,
@@ -6163,6 +6241,7 @@ pub struct CommandBufferDescriptor<L> {
 
 impl<L> CommandBufferDescriptor<L> {
     
+    #[must_use]
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CommandBufferDescriptor<K> {
         CommandBufferDescriptor {
             label: fun(&self.label),
@@ -6211,6 +6290,7 @@ pub struct RenderBundleDescriptor<L> {
 
 impl<L> RenderBundleDescriptor<L> {
     
+    #[must_use]
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> RenderBundleDescriptor<K> {
         RenderBundleDescriptor {
             label: fun(&self.label),
@@ -6642,6 +6722,7 @@ pub enum BindingType {
 
 impl BindingType {
     
+    #[must_use]
     pub fn has_dynamic_offset(&self) -> bool {
         match *self {
             Self::Buffer {
@@ -6763,7 +6844,11 @@ pub enum ExternalImageSource {
     
     ImageBitmap(web_sys::ImageBitmap),
     
+    HTMLImageElement(web_sys::HtmlImageElement),
+    
     HTMLVideoElement(web_sys::HtmlVideoElement),
+    
+    ImageData(web_sys::ImageData),
     
     HTMLCanvasElement(web_sys::HtmlCanvasElement),
     
@@ -6778,7 +6863,9 @@ impl ExternalImageSource {
     pub fn width(&self) -> u32 {
         match self {
             ExternalImageSource::ImageBitmap(b) => b.width(),
+            ExternalImageSource::HTMLImageElement(i) => i.width(),
             ExternalImageSource::HTMLVideoElement(v) => v.video_width(),
+            ExternalImageSource::ImageData(i) => i.width(),
             ExternalImageSource::HTMLCanvasElement(c) => c.width(),
             ExternalImageSource::OffscreenCanvas(c) => c.width(),
         }
@@ -6788,7 +6875,9 @@ impl ExternalImageSource {
     pub fn height(&self) -> u32 {
         match self {
             ExternalImageSource::ImageBitmap(b) => b.height(),
+            ExternalImageSource::HTMLImageElement(i) => i.height(),
             ExternalImageSource::HTMLVideoElement(v) => v.video_height(),
+            ExternalImageSource::ImageData(i) => i.height(),
             ExternalImageSource::HTMLCanvasElement(c) => c.height(),
             ExternalImageSource::OffscreenCanvas(c) => c.height(),
         }
@@ -6802,7 +6891,9 @@ impl std::ops::Deref for ExternalImageSource {
     fn deref(&self) -> &Self::Target {
         match self {
             Self::ImageBitmap(b) => b,
+            Self::HTMLImageElement(i) => i,
             Self::HTMLVideoElement(v) => v,
+            Self::ImageData(i) => i,
             Self::HTMLCanvasElement(c) => c,
             Self::OffscreenCanvas(c) => c,
         }
@@ -6929,6 +7020,7 @@ impl ImageSubresourceRange {
     
     
     
+    #[must_use]
     pub fn is_full_resource(
         &self,
         format: TextureFormat,
@@ -6955,6 +7047,7 @@ impl ImageSubresourceRange {
     }
 
     
+    #[must_use]
     pub fn mip_range(&self, mip_level_count: u32) -> Range<u32> {
         self.base_mip_level..match self.mip_level_count {
             Some(mip_level_count) => self.base_mip_level + mip_level_count,
@@ -6963,6 +7056,7 @@ impl ImageSubresourceRange {
     }
 
     
+    #[must_use]
     pub fn layer_range(&self, array_layer_count: u32) -> Range<u32> {
         self.base_array_layer..match self.array_layer_count {
             Some(array_layer_count) => self.base_array_layer + array_layer_count,
@@ -7009,6 +7103,7 @@ pub struct QuerySetDescriptor<L> {
 
 impl<L> QuerySetDescriptor<L> {
     
+    #[must_use]
     pub fn map_label<'a, K>(&'a self, fun: impl FnOnce(&'a L) -> K) -> QuerySetDescriptor<K> {
         QuerySetDescriptor {
             label: fun(&self.label),
@@ -7103,6 +7198,7 @@ pub struct DrawIndirectArgs {
 
 impl DrawIndirectArgs {
     
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         unsafe {
             std::mem::transmute(std::slice::from_raw_parts(
@@ -7133,6 +7229,7 @@ pub struct DrawIndexedIndirectArgs {
 
 impl DrawIndexedIndirectArgs {
     
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         unsafe {
             std::mem::transmute(std::slice::from_raw_parts(
@@ -7157,6 +7254,7 @@ pub struct DispatchIndirectArgs {
 
 impl DispatchIndirectArgs {
     
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         unsafe {
             std::mem::transmute(std::slice::from_raw_parts(
@@ -7176,6 +7274,7 @@ pub struct ShaderBoundChecks {
 
 impl ShaderBoundChecks {
     
+    #[must_use]
     pub fn new() -> Self {
         ShaderBoundChecks {
             runtime_checks: true,
@@ -7187,6 +7286,7 @@ impl ShaderBoundChecks {
     
     
     
+    #[must_use]
     pub unsafe fn unchecked() -> Self {
         ShaderBoundChecks {
             runtime_checks: false,
@@ -7194,6 +7294,7 @@ impl ShaderBoundChecks {
     }
 
     
+    #[must_use]
     pub fn runtime_checks(&self) -> bool {
         self.runtime_checks
     }

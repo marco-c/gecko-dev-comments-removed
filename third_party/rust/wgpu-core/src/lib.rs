@@ -2,20 +2,6 @@
 
 
 
-#![cfg_attr(
-    not(any(not(doc), wgpu_core_doc)),
-    doc = r#"\
-## Documentation hidden
-
-As a workaround for [an issue in rustdoc](https://github.com/rust-lang/rust/issues/114891)
-that [affects `wgpu-core` documentation builds \
-severely](https://github.com/gfx-rs/wgpu/issues/4905),
-the documentation for `wgpu-core` is empty unless built with
-`RUSTFLAGS="--cfg wgpu_core_doc"`, which may take a very long time.
-"#
-)]
-#![cfg(any(not(doc), wgpu_core_doc))]
-
 
 #![doc = document_features::document_features!()]
 
@@ -62,6 +48,13 @@ the documentation for `wgpu-core` is empty unless built with
     unused_extern_crates,
     unused_qualifications
 )]
+
+
+
+
+
+
+#![cfg_attr(not(send_sync), allow(clippy::arc_with_non_send_sync))]
 
 pub mod binding_model;
 pub mod command;
@@ -145,174 +138,6 @@ support enough features to be a fully compliant implementation. A subset of the 
 If you are running this program on native and not in a browser and wish to work around this issue, call \
 Adapter::downlevel_properties or Device::downlevel_properties to get a listing of the features the current \
 platform supports.";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-macro_rules! define_backend_caller {
-    { $public:ident, $private:ident, $feature:literal if $cfg:meta } => {
-        #[cfg($cfg)]
-        #[macro_export]
-        macro_rules! $private {
-            ( $call:expr ) => ( $call )
-        }
-
-        #[cfg(not($cfg))]
-        #[macro_export]
-        macro_rules! $private {
-            ( $call:expr ) => (
-                panic!("Identifier refers to disabled backend feature {:?}", $feature)
-            )
-        }
-
-        // See note about rust-lang#52234 above.
-        #[doc(hidden)] pub use $private as $public;
-    }
-}
-
-
-
-
-
-
-
-define_backend_caller! { gfx_if_vulkan, gfx_if_vulkan_hidden, "vulkan" if all(feature = "vulkan", not(target_arch = "wasm32")) }
-define_backend_caller! { gfx_if_metal, gfx_if_metal_hidden, "metal" if all(feature = "metal", any(target_os = "macos", target_os = "ios")) }
-define_backend_caller! { gfx_if_dx12, gfx_if_dx12_hidden, "dx12" if all(feature = "dx12", windows) }
-define_backend_caller! { gfx_if_gles, gfx_if_gles_hidden, "gles" if feature = "gles" }
-define_backend_caller! { gfx_if_empty, gfx_if_empty_hidden, "empty" if all(
-    not(any(feature = "metal", feature = "vulkan", feature = "gles")),
-    any(target_os = "macos", target_os = "ios"),
-) }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[macro_export]
-macro_rules! gfx_select {
-    
-    ($id:expr => $c0:ident.$c1:tt.$method:ident $params:tt) => {
-        $crate::gfx_select!($id => {$c0.$c1}, $method $params)
-    };
-
-    
-    ($id:expr => $c0:ident.$method:ident $params:tt) => {
-        $crate::gfx_select!($id => {$c0}, $method $params)
-    };
-
-    ($id:expr => {$($c:tt)*}, $method:ident $params:tt) => {
-        match $id.backend() {
-            wgt::Backend::Vulkan => $crate::gfx_if_vulkan!($($c)*.$method::<$crate::api::Vulkan> $params),
-            wgt::Backend::Metal => $crate::gfx_if_metal!($($c)*.$method::<$crate::api::Metal> $params),
-            wgt::Backend::Dx12 => $crate::gfx_if_dx12!($($c)*.$method::<$crate::api::Dx12> $params),
-            wgt::Backend::Gl => $crate::gfx_if_gles!($($c)*.$method::<$crate::api::Gles> $params),
-            wgt::Backend::Empty => $crate::gfx_if_empty!($($c)*.$method::<$crate::api::Empty> $params),
-            other => panic!("Unexpected backend {:?}", other),
-        }
-    };
-}
 
 #[cfg(feature = "api_log_info")]
 macro_rules! api_log {

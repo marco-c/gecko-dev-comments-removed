@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{hal_api::HalApi, id};
+use crate::id;
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -15,9 +15,9 @@ pub struct PassTimestampWrites {
 }
 
 
-pub struct ArcPassTimestampWrites<A: HalApi> {
+pub struct ArcPassTimestampWrites {
     
-    pub query_set: Arc<crate::resource::QuerySet<A>>,
+    pub query_set: Arc<crate::resource::QuerySet>,
     
     pub beginning_of_pass_write_index: Option<u32>,
     

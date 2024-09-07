@@ -103,7 +103,6 @@ mod texture;
 
 use crate::{
     binding_model, command,
-    hal_api::HalApi,
     lock::{rank, Mutex},
     pipeline,
     resource::{self, Labeled, ResourceErrorIdent},
@@ -257,11 +256,11 @@ pub(crate) type PendingTransitionList = Vec<PendingTransition<hal::TextureUses>>
 
 impl PendingTransition<hal::BufferUses> {
     
-    pub fn into_hal<'a, A: HalApi>(
+    pub fn into_hal<'a>(
         self,
-        buf: &'a resource::Buffer<A>,
+        buf: &'a resource::Buffer,
         snatch_guard: &'a SnatchGuard<'a>,
-    ) -> hal::BufferBarrier<'a, A> {
+    ) -> hal::BufferBarrier<'a, dyn hal::DynBuffer> {
         let buffer = buf.raw(snatch_guard).expect("Buffer is destroyed");
         hal::BufferBarrier {
             buffer,
@@ -272,7 +271,10 @@ impl PendingTransition<hal::BufferUses> {
 
 impl PendingTransition<hal::TextureUses> {
     
-    pub fn into_hal<'a, A: HalApi>(self, texture: &'a A::Texture) -> hal::TextureBarrier<'a, A> {
+    pub fn into_hal(
+        self,
+        texture: &dyn hal::DynTexture,
+    ) -> hal::TextureBarrier<'_, dyn hal::DynTexture> {
         
         strict_assert_ne!(self.usage.start, hal::TextureUses::UNKNOWN);
         strict_assert_ne!(self.usage.end, hal::TextureUses::UNKNOWN);
@@ -349,8 +351,8 @@ pub enum ResourceUsageCompatibilityError {
 }
 
 impl ResourceUsageCompatibilityError {
-    fn from_buffer<A: HalApi>(
-        buffer: &resource::Buffer<A>,
+    fn from_buffer(
+        buffer: &resource::Buffer,
         current_state: hal::BufferUses,
         new_state: hal::BufferUses,
     ) -> Self {
@@ -363,8 +365,8 @@ impl ResourceUsageCompatibilityError {
         }
     }
 
-    fn from_texture<A: HalApi>(
-        texture: &resource::Texture<A>,
+    fn from_texture(
+        texture: &resource::Texture,
         selector: TextureSelector,
         current_state: hal::TextureUses,
         new_state: hal::TextureUses,
@@ -414,13 +416,13 @@ impl<T: ResourceUses> fmt::Display for InvalidUse<T> {
 
 
 #[derive(Debug)]
-pub(crate) struct BindGroupStates<A: HalApi> {
-    pub buffers: BufferBindGroupState<A>,
-    pub views: TextureViewBindGroupState<A>,
-    pub samplers: StatelessTracker<resource::Sampler<A>>,
+pub(crate) struct BindGroupStates {
+    pub buffers: BufferBindGroupState,
+    pub views: TextureViewBindGroupState,
+    pub samplers: StatelessTracker<resource::Sampler>,
 }
 
-impl<A: HalApi> BindGroupStates<A> {
+impl BindGroupStates {
     pub fn new() -> Self {
         Self {
             buffers: BufferBindGroupState::new(),
@@ -447,15 +449,15 @@ impl<A: HalApi> BindGroupStates<A> {
 
 
 #[derive(Debug)]
-pub(crate) struct RenderBundleScope<A: HalApi> {
-    pub buffers: BufferUsageScope<A>,
-    pub textures: TextureUsageScope<A>,
+pub(crate) struct RenderBundleScope {
+    pub buffers: BufferUsageScope,
+    pub textures: TextureUsageScope,
     
-    pub bind_groups: StatelessTracker<binding_model::BindGroup<A>>,
-    pub render_pipelines: StatelessTracker<pipeline::RenderPipeline<A>>,
+    pub bind_groups: StatelessTracker<binding_model::BindGroup>,
+    pub render_pipelines: StatelessTracker<pipeline::RenderPipeline>,
 }
 
-impl<A: HalApi> RenderBundleScope<A> {
+impl RenderBundleScope {
     
     pub fn new() -> Self {
         Self {
@@ -477,7 +479,7 @@ impl<A: HalApi> RenderBundleScope<A> {
     
     pub unsafe fn merge_bind_group(
         &mut self,
-        bind_group: &BindGroupStates<A>,
+        bind_group: &BindGroupStates,
     ) -> Result<(), ResourceUsageCompatibilityError> {
         unsafe { self.buffers.merge_bind_group(&bind_group.buffers)? };
         unsafe { self.textures.merge_bind_group(&bind_group.views)? };
@@ -489,18 +491,18 @@ impl<A: HalApi> RenderBundleScope<A> {
 
 
 
-pub(crate) type UsageScopePool<A> = Mutex<Vec<(BufferUsageScope<A>, TextureUsageScope<A>)>>;
+pub(crate) type UsageScopePool = Mutex<Vec<(BufferUsageScope, TextureUsageScope)>>;
 
 
 
 #[derive(Debug)]
-pub(crate) struct UsageScope<'a, A: HalApi> {
-    pub pool: &'a UsageScopePool<A>,
-    pub buffers: BufferUsageScope<A>,
-    pub textures: TextureUsageScope<A>,
+pub(crate) struct UsageScope<'a> {
+    pub pool: &'a UsageScopePool,
+    pub buffers: BufferUsageScope,
+    pub textures: TextureUsageScope,
 }
 
-impl<'a, A: HalApi> Drop for UsageScope<'a, A> {
+impl<'a> Drop for UsageScope<'a> {
     fn drop(&mut self) {
         
         self.buffers.clear();
@@ -512,14 +514,14 @@ impl<'a, A: HalApi> Drop for UsageScope<'a, A> {
     }
 }
 
-impl<A: HalApi> UsageScope<'static, A> {
+impl UsageScope<'static> {
     pub fn new_pooled<'d>(
-        pool: &'d UsageScopePool<A>,
+        pool: &'d UsageScopePool,
         tracker_indices: &TrackerIndexAllocators,
-    ) -> UsageScope<'d, A> {
+    ) -> UsageScope<'d> {
         let pooled = pool.lock().pop().unwrap_or_default();
 
-        let mut scope = UsageScope::<'d, A> {
+        let mut scope = UsageScope::<'d> {
             pool,
             buffers: pooled.0,
             textures: pooled.1,
@@ -531,7 +533,7 @@ impl<A: HalApi> UsageScope<'static, A> {
     }
 }
 
-impl<'a, A: HalApi> UsageScope<'a, A> {
+impl<'a> UsageScope<'a> {
     
     
     
@@ -543,7 +545,7 @@ impl<'a, A: HalApi> UsageScope<'a, A> {
     
     pub unsafe fn merge_bind_group(
         &mut self,
-        bind_group: &BindGroupStates<A>,
+        bind_group: &BindGroupStates,
     ) -> Result<(), ResourceUsageCompatibilityError> {
         unsafe {
             self.buffers.merge_bind_group(&bind_group.buffers)?;
@@ -564,7 +566,7 @@ impl<'a, A: HalApi> UsageScope<'a, A> {
     
     pub unsafe fn merge_render_bundle(
         &mut self,
-        render_bundle: &RenderBundleScope<A>,
+        render_bundle: &RenderBundleScope,
     ) -> Result<(), ResourceUsageCompatibilityError> {
         self.buffers.merge_usage_scope(&render_bundle.buffers)?;
         self.textures.merge_usage_scope(&render_bundle.textures)?;
@@ -574,12 +576,12 @@ impl<'a, A: HalApi> UsageScope<'a, A> {
 }
 
 
-pub(crate) struct DeviceTracker<A: HalApi> {
-    pub buffers: DeviceBufferTracker<A>,
-    pub textures: DeviceTextureTracker<A>,
+pub(crate) struct DeviceTracker {
+    pub buffers: DeviceBufferTracker,
+    pub textures: DeviceTextureTracker,
 }
 
-impl<A: HalApi> DeviceTracker<A> {
+impl DeviceTracker {
     pub fn new() -> Self {
         Self {
             buffers: DeviceBufferTracker::new(),
@@ -589,18 +591,18 @@ impl<A: HalApi> DeviceTracker<A> {
 }
 
 
-pub(crate) struct Tracker<A: HalApi> {
-    pub buffers: BufferTracker<A>,
-    pub textures: TextureTracker<A>,
-    pub views: StatelessTracker<resource::TextureView<A>>,
-    pub bind_groups: StatelessTracker<binding_model::BindGroup<A>>,
-    pub compute_pipelines: StatelessTracker<pipeline::ComputePipeline<A>>,
-    pub render_pipelines: StatelessTracker<pipeline::RenderPipeline<A>>,
-    pub bundles: StatelessTracker<command::RenderBundle<A>>,
-    pub query_sets: StatelessTracker<resource::QuerySet<A>>,
+pub(crate) struct Tracker {
+    pub buffers: BufferTracker,
+    pub textures: TextureTracker,
+    pub views: StatelessTracker<resource::TextureView>,
+    pub bind_groups: StatelessTracker<binding_model::BindGroup>,
+    pub compute_pipelines: StatelessTracker<pipeline::ComputePipeline>,
+    pub render_pipelines: StatelessTracker<pipeline::RenderPipeline>,
+    pub bundles: StatelessTracker<command::RenderBundle>,
+    pub query_sets: StatelessTracker<resource::QuerySet>,
 }
 
-impl<A: HalApi> Tracker<A> {
+impl Tracker {
     pub fn new() -> Self {
         Self {
             buffers: BufferTracker::new(),
@@ -638,8 +640,8 @@ impl<A: HalApi> Tracker<A> {
     
     pub unsafe fn set_and_remove_from_usage_scope_sparse(
         &mut self,
-        scope: &mut UsageScope<A>,
-        bind_group: &BindGroupStates<A>,
+        scope: &mut UsageScope,
+        bind_group: &BindGroupStates,
     ) {
         unsafe {
             self.buffers.set_and_remove_from_usage_scope_sparse(

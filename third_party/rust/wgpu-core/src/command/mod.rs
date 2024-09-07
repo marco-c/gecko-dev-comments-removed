@@ -5,8 +5,6 @@ mod clear;
 mod compute;
 mod compute_command;
 mod draw;
-mod dyn_compute_pass;
-mod dyn_render_pass;
 mod memory_init;
 mod query;
 mod render;
@@ -18,9 +16,8 @@ use std::sync::Arc;
 
 pub(crate) use self::clear::clear_texture;
 pub use self::{
-    bundle::*, clear::ClearError, compute::*, compute_command::ComputeCommand, draw::*,
-    dyn_compute_pass::DynComputePass, dyn_render_pass::DynRenderPass, query::*, render::*,
-    render_command::RenderCommand, transfer::*,
+    bundle::*, clear::ClearError, compute::*, compute_command::ComputeCommand, draw::*, query::*,
+    render::*, render_command::RenderCommand, transfer::*,
 };
 pub(crate) use allocator::CommandAllocator;
 
@@ -37,9 +34,8 @@ use crate::init_tracker::BufferInitTrackerAction;
 use crate::resource::Labeled;
 use crate::track::{DeviceTracker, Tracker, UsageScope};
 use crate::LabelHelpers;
-use crate::{api_log, global::Global, hal_api::HalApi, id, resource_log, Label};
+use crate::{api_log, global::Global, id, resource_log, Label};
 
-use hal::CommandEncoder as _;
 use thiserror::Error;
 
 #[cfg(feature = "trace")]
@@ -115,7 +111,7 @@ pub(crate) enum CommandEncoderStatus {
 
 
 
-pub(crate) struct CommandEncoder<A: HalApi> {
+pub(crate) struct CommandEncoder {
     
     
     
@@ -123,7 +119,7 @@ pub(crate) struct CommandEncoder<A: HalApi> {
     
     
     
-    raw: A::CommandEncoder,
+    raw: Box<dyn hal::DynCommandEncoder>,
 
     
     
@@ -136,7 +132,7 @@ pub(crate) struct CommandEncoder<A: HalApi> {
     
     
     
-    list: Vec<A::CommandBuffer>,
+    list: Vec<Box<dyn hal::DynCommandBuffer>>,
 
     
     
@@ -150,7 +146,7 @@ pub(crate) struct CommandEncoder<A: HalApi> {
 }
 
 
-impl<A: HalApi> CommandEncoder<A> {
+impl CommandEncoder {
     
     
     
@@ -219,14 +215,14 @@ impl<A: HalApi> CommandEncoder<A> {
     
     
     
-    pub(crate) fn open(&mut self) -> Result<&mut A::CommandEncoder, DeviceError> {
+    pub(crate) fn open(&mut self) -> Result<&mut dyn hal::DynCommandEncoder, DeviceError> {
         if !self.is_open {
             self.is_open = true;
             let hal_label = self.hal_label.as_deref();
             unsafe { self.raw.begin_encoding(hal_label)? };
         }
 
-        Ok(&mut self.raw)
+        Ok(self.raw.as_mut())
     }
 
     
@@ -241,27 +237,27 @@ impl<A: HalApi> CommandEncoder<A> {
     }
 }
 
-pub(crate) struct BakedCommands<A: HalApi> {
-    pub(crate) encoder: A::CommandEncoder,
-    pub(crate) list: Vec<A::CommandBuffer>,
-    pub(crate) trackers: Tracker<A>,
-    buffer_memory_init_actions: Vec<BufferInitTrackerAction<A>>,
-    texture_memory_actions: CommandBufferTextureMemoryActions<A>,
+pub(crate) struct BakedCommands {
+    pub(crate) encoder: Box<dyn hal::DynCommandEncoder>,
+    pub(crate) list: Vec<Box<dyn hal::DynCommandBuffer>>,
+    pub(crate) trackers: Tracker,
+    buffer_memory_init_actions: Vec<BufferInitTrackerAction>,
+    texture_memory_actions: CommandBufferTextureMemoryActions,
 }
 
 
-pub struct CommandBufferMutable<A: HalApi> {
+pub struct CommandBufferMutable {
     
     
     
     
-    pub(crate) encoder: CommandEncoder<A>,
+    pub(crate) encoder: CommandEncoder,
 
     
     status: CommandEncoderStatus,
 
     
-    pub(crate) trackers: Tracker<A>,
+    pub(crate) trackers: Tracker,
 
     
     
@@ -269,18 +265,18 @@ pub struct CommandBufferMutable<A: HalApi> {
     
     
     
-    buffer_memory_init_actions: Vec<BufferInitTrackerAction<A>>,
-    texture_memory_actions: CommandBufferTextureMemoryActions<A>,
+    buffer_memory_init_actions: Vec<BufferInitTrackerAction>,
+    texture_memory_actions: CommandBufferTextureMemoryActions,
 
-    pub(crate) pending_query_resets: QueryResetMap<A>,
+    pub(crate) pending_query_resets: QueryResetMap,
     #[cfg(feature = "trace")]
     pub(crate) commands: Option<Vec<TraceCommand>>,
 }
 
-impl<A: HalApi> CommandBufferMutable<A> {
+impl CommandBufferMutable {
     pub(crate) fn open_encoder_and_tracker(
         &mut self,
-    ) -> Result<(&mut A::CommandEncoder, &mut Tracker<A>), DeviceError> {
+    ) -> Result<(&mut dyn hal::DynCommandEncoder, &mut Tracker), DeviceError> {
         let encoder = self.encoder.open()?;
         let tracker = &mut self.trackers;
 
@@ -306,8 +302,8 @@ impl<A: HalApi> CommandBufferMutable<A> {
 
 
 
-pub struct CommandBuffer<A: HalApi> {
-    pub(crate) device: Arc<Device<A>>,
+pub struct CommandBuffer {
+    pub(crate) device: Arc<Device>,
     support_clear_texture: bool,
     
     label: String,
@@ -318,10 +314,10 @@ pub struct CommandBuffer<A: HalApi> {
     
     
     
-    pub(crate) data: Mutex<Option<CommandBufferMutable<A>>>,
+    pub(crate) data: Mutex<Option<CommandBufferMutable>>,
 }
 
-impl<A: HalApi> Drop for CommandBuffer<A> {
+impl Drop for CommandBuffer {
     fn drop(&mut self) {
         resource_log!("Drop {}", self.error_ident());
         if self.data.lock().is_none() {
@@ -329,17 +325,20 @@ impl<A: HalApi> Drop for CommandBuffer<A> {
         }
         let mut baked = self.extract_baked_commands();
         unsafe {
-            baked.encoder.reset_all(baked.list.into_iter());
+            baked.encoder.reset_all(baked.list);
         }
         unsafe {
-            use hal::Device;
             self.device.raw().destroy_command_encoder(baked.encoder);
         }
     }
 }
 
-impl<A: HalApi> CommandBuffer<A> {
-    pub(crate) fn new(encoder: A::CommandEncoder, device: &Arc<Device<A>>, label: &Label) -> Self {
+impl CommandBuffer {
+    pub(crate) fn new(
+        encoder: Box<dyn hal::DynCommandEncoder>,
+        device: &Arc<Device>,
+        label: &Label,
+    ) -> Self {
         CommandBuffer {
             device: device.clone(),
             support_clear_texture: device.features.contains(wgt::Features::CLEAR_TEXTURE),
@@ -370,9 +369,9 @@ impl<A: HalApi> CommandBuffer<A> {
     }
 
     pub(crate) fn insert_barriers_from_tracker(
-        raw: &mut A::CommandEncoder,
-        base: &mut Tracker<A>,
-        head: &Tracker<A>,
+        raw: &mut dyn hal::DynCommandEncoder,
+        base: &mut Tracker,
+        head: &Tracker,
         snatch_guard: &SnatchGuard,
     ) {
         profiling::scope!("insert_barriers");
@@ -384,9 +383,9 @@ impl<A: HalApi> CommandBuffer<A> {
     }
 
     pub(crate) fn insert_barriers_from_scope(
-        raw: &mut A::CommandEncoder,
-        base: &mut Tracker<A>,
-        head: &UsageScope<A>,
+        raw: &mut dyn hal::DynCommandEncoder,
+        base: &mut Tracker,
+        head: &UsageScope,
         snatch_guard: &SnatchGuard,
     ) {
         profiling::scope!("insert_barriers");
@@ -398,49 +397,55 @@ impl<A: HalApi> CommandBuffer<A> {
     }
 
     pub(crate) fn drain_barriers(
-        raw: &mut A::CommandEncoder,
-        base: &mut Tracker<A>,
+        raw: &mut dyn hal::DynCommandEncoder,
+        base: &mut Tracker,
         snatch_guard: &SnatchGuard,
     ) {
         profiling::scope!("drain_barriers");
 
-        let buffer_barriers = base.buffers.drain_transitions(snatch_guard);
+        let buffer_barriers = base
+            .buffers
+            .drain_transitions(snatch_guard)
+            .collect::<Vec<_>>();
         let (transitions, textures) = base.textures.drain_transitions(snatch_guard);
         let texture_barriers = transitions
             .into_iter()
             .enumerate()
-            .map(|(i, p)| p.into_hal(textures[i].unwrap().raw()));
+            .map(|(i, p)| p.into_hal(textures[i].unwrap().raw()))
+            .collect::<Vec<_>>();
 
         unsafe {
-            raw.transition_buffers(buffer_barriers);
-            raw.transition_textures(texture_barriers);
+            raw.transition_buffers(&buffer_barriers);
+            raw.transition_textures(&texture_barriers);
         }
     }
 
     pub(crate) fn insert_barriers_from_device_tracker(
-        raw: &mut A::CommandEncoder,
-        base: &mut DeviceTracker<A>,
-        head: &Tracker<A>,
+        raw: &mut dyn hal::DynCommandEncoder,
+        base: &mut DeviceTracker,
+        head: &Tracker,
         snatch_guard: &SnatchGuard,
     ) {
         profiling::scope!("insert_barriers_from_device_tracker");
 
         let buffer_barriers = base
             .buffers
-            .set_from_tracker_and_drain_transitions(&head.buffers, snatch_guard);
+            .set_from_tracker_and_drain_transitions(&head.buffers, snatch_guard)
+            .collect::<Vec<_>>();
 
         let texture_barriers = base
             .textures
-            .set_from_tracker_and_drain_transitions(&head.textures, snatch_guard);
+            .set_from_tracker_and_drain_transitions(&head.textures, snatch_guard)
+            .collect::<Vec<_>>();
 
         unsafe {
-            raw.transition_buffers(buffer_barriers);
-            raw.transition_textures(texture_barriers);
+            raw.transition_buffers(&buffer_barriers);
+            raw.transition_textures(&texture_barriers);
         }
     }
 }
 
-impl<A: HalApi> CommandBuffer<A> {
+impl CommandBuffer {
     fn lock_encoder_impl(&self, lock: bool) -> Result<(), CommandEncoderError> {
         let mut cmd_buf_data_guard = self.data.lock();
         let cmd_buf_data = cmd_buf_data_guard.as_mut().unwrap();
@@ -500,7 +505,7 @@ impl<A: HalApi> CommandBuffer<A> {
         }
     }
 
-    pub(crate) fn extract_baked_commands(&mut self) -> BakedCommands<A> {
+    pub(crate) fn extract_baked_commands(&mut self) -> BakedCommands {
         let data = self.data.lock().take().unwrap();
         BakedCommands {
             encoder: data.encoder.raw,
@@ -511,7 +516,7 @@ impl<A: HalApi> CommandBuffer<A> {
         }
     }
 
-    pub(crate) fn from_arc_into_baked(self: Arc<Self>) -> BakedCommands<A> {
+    pub(crate) fn from_arc_into_baked(self: Arc<Self>) -> BakedCommands {
         let mut command_buffer = Arc::into_inner(self)
             .expect("CommandBuffer cannot be destroyed because is still in use");
         command_buffer.extract_baked_commands()
@@ -601,14 +606,14 @@ pub enum CommandEncoderError {
 }
 
 impl Global {
-    pub fn command_encoder_finish<A: HalApi>(
+    pub fn command_encoder_finish(
         &self,
         encoder_id: id::CommandEncoderId,
         _desc: &wgt::CommandBufferDescriptor<Label>,
     ) -> (id::CommandBufferId, Option<CommandEncoderError>) {
         profiling::scope!("CommandEncoder::finish");
 
-        let hub = A::hub(self);
+        let hub = &self.hub;
 
         let error = match hub.command_buffers.get(encoder_id.into_command_buffer_id()) {
             Ok(cmd_buf) => {
@@ -643,7 +648,7 @@ impl Global {
         (encoder_id.into_command_buffer_id(), error)
     }
 
-    pub fn command_encoder_push_debug_group<A: HalApi>(
+    pub fn command_encoder_push_debug_group(
         &self,
         encoder_id: id::CommandEncoderId,
         label: &str,
@@ -651,7 +656,7 @@ impl Global {
         profiling::scope!("CommandEncoder::push_debug_group");
         api_log!("CommandEncoder::push_debug_group {label}");
 
-        let hub = A::hub(self);
+        let hub = &self.hub;
 
         let cmd_buf = match hub.command_buffers.get(encoder_id.into_command_buffer_id()) {
             Ok(cmd_buf) => cmd_buf,
@@ -679,7 +684,7 @@ impl Global {
         Ok(())
     }
 
-    pub fn command_encoder_insert_debug_marker<A: HalApi>(
+    pub fn command_encoder_insert_debug_marker(
         &self,
         encoder_id: id::CommandEncoderId,
         label: &str,
@@ -687,7 +692,7 @@ impl Global {
         profiling::scope!("CommandEncoder::insert_debug_marker");
         api_log!("CommandEncoder::insert_debug_marker {label}");
 
-        let hub = A::hub(self);
+        let hub = &self.hub;
 
         let cmd_buf = match hub.command_buffers.get(encoder_id.into_command_buffer_id()) {
             Ok(cmd_buf) => cmd_buf,
@@ -716,14 +721,14 @@ impl Global {
         Ok(())
     }
 
-    pub fn command_encoder_pop_debug_group<A: HalApi>(
+    pub fn command_encoder_pop_debug_group(
         &self,
         encoder_id: id::CommandEncoderId,
     ) -> Result<(), CommandEncoderError> {
         profiling::scope!("CommandEncoder::pop_debug_marker");
         api_log!("CommandEncoder::pop_debug_group");
 
-        let hub = A::hub(self);
+        let hub = &self.hub;
 
         let cmd_buf = match hub.command_buffers.get(encoder_id.into_command_buffer_id()) {
             Ok(cmd_buf) => cmd_buf,

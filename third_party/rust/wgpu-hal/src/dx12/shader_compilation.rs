@@ -2,7 +2,7 @@ use std::ffi::CStr;
 use std::ptr;
 
 pub(super) use dxc::{compile_dxc, get_dxc_container, DxcContainer};
-use winapi::um::d3dcompiler;
+use windows::Win32::Graphics::Direct3D;
 
 use crate::auxil::dxgi::result::HResult;
 
@@ -16,7 +16,7 @@ pub(super) fn compile_fxc(
     device: &super::Device,
     source: &str,
     source_name: Option<&CStr>,
-    raw_ep: &std::ffi::CString,
+    raw_ep: &CStr,
     stage_bit: wgt::ShaderStages,
     full_stage: &CStr,
 ) -> (
@@ -24,49 +24,54 @@ pub(super) fn compile_fxc(
     log::Level,
 ) {
     profiling::scope!("compile_fxc");
-    let mut shader_data = d3d12::Blob::null();
-    let mut compile_flags = d3dcompiler::D3DCOMPILE_ENABLE_STRICTNESS;
+    let mut shader_data = None;
+    let mut compile_flags = Direct3D::Fxc::D3DCOMPILE_ENABLE_STRICTNESS;
     if device
         .private_caps
         .instance_flags
         .contains(wgt::InstanceFlags::DEBUG)
     {
-        compile_flags |= d3dcompiler::D3DCOMPILE_DEBUG | d3dcompiler::D3DCOMPILE_SKIP_OPTIMIZATION;
+        compile_flags |=
+            Direct3D::Fxc::D3DCOMPILE_DEBUG | Direct3D::Fxc::D3DCOMPILE_SKIP_OPTIMIZATION;
     }
 
     
     let source_name = source_name.map(|cstr| cstr.as_ptr()).unwrap_or(ptr::null());
 
-    let mut error = d3d12::Blob::null();
+    let mut error = None;
     let hr = unsafe {
-        profiling::scope!("d3dcompiler::D3DCompile");
-        d3dcompiler::D3DCompile(
+        profiling::scope!("Direct3D::Fxc::D3DCompile");
+        Direct3D::Fxc::D3DCompile(
+            
             source.as_ptr().cast(),
             source.len(),
-            source_name.cast(),
-            ptr::null(),
-            ptr::null_mut(),
-            raw_ep.as_ptr(),
-            full_stage.as_ptr().cast(),
+            windows::core::PCSTR(source_name.cast()),
+            None,
+            None,
+            windows::core::PCSTR(raw_ep.as_ptr().cast()),
+            windows::core::PCSTR(full_stage.as_ptr().cast()),
             compile_flags,
             0,
-            shader_data.mut_void().cast(),
-            error.mut_void().cast(),
+            &mut shader_data,
+            Some(&mut error),
         )
     };
 
     match hr.into_result() {
-        Ok(()) => (
-            Ok(super::CompiledShader::Fxc(shader_data)),
-            log::Level::Info,
-        ),
+        Ok(()) => {
+            let shader_data = shader_data.unwrap();
+            (
+                Ok(super::CompiledShader::Fxc(shader_data)),
+                log::Level::Info,
+            )
+        }
         Err(e) => {
             let mut full_msg = format!("FXC D3DCompile error ({e})");
-            if !error.is_null() {
+            if let Some(error) = error {
                 use std::fmt::Write as _;
                 let message = unsafe {
                     std::slice::from_raw_parts(
-                        error.GetBufferPointer() as *const u8,
+                        error.GetBufferPointer().cast(),
                         error.GetBufferSize(),
                     )
                 };

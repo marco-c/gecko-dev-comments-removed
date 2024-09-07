@@ -161,7 +161,11 @@ impl super::Swapchain {
             profiling::scope!("vkDeviceWaitIdle");
             
             
-            let _ = unsafe { device.device_wait_idle() };
+            let _ = unsafe {
+                device
+                    .device_wait_idle()
+                    .map_err(super::map_host_device_oom_and_lost_err)
+            };
         };
 
         
@@ -1046,8 +1050,10 @@ impl crate::Surface for super::Surface {
                         Err(crate::SurfaceError::Outdated)
                     }
                     vk::Result::ERROR_SURFACE_LOST_KHR => Err(crate::SurfaceError::Lost),
-                    other => Err(crate::DeviceError::from(other).into()),
-                }
+                    
+                    
+                    other => Err(super::map_host_device_oom_and_lost_err(other).into()),
+                };
             }
         };
 

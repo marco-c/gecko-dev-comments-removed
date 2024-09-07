@@ -3,7 +3,6 @@ use crate::{
     binding_model::{CreateBindGroupLayoutError, CreatePipelineLayoutError, PipelineLayout},
     command::ColorAttachmentError,
     device::{Device, DeviceError, MissingDownlevelFlags, MissingFeatures, RenderPassContext},
-    hal_api::HalApi,
     id::{PipelineCacheId, PipelineLayoutId, ShaderModuleId},
     resource::{Labeled, TrackingData},
     resource_log, validation, Label,
@@ -46,21 +45,20 @@ pub struct ShaderModuleDescriptor<'a> {
 }
 
 #[derive(Debug)]
-pub struct ShaderModule<A: HalApi> {
-    pub(crate) raw: ManuallyDrop<A::ShaderModule>,
-    pub(crate) device: Arc<Device<A>>,
+pub struct ShaderModule {
+    pub(crate) raw: ManuallyDrop<Box<dyn hal::DynShaderModule>>,
+    pub(crate) device: Arc<Device>,
     pub(crate) interface: Option<validation::Interface>,
     
     pub(crate) label: String,
 }
 
-impl<A: HalApi> Drop for ShaderModule<A> {
+impl Drop for ShaderModule {
     fn drop(&mut self) {
         resource_log!("Destroy raw {}", self.error_ident());
         
         let raw = unsafe { ManuallyDrop::take(&mut self.raw) };
         unsafe {
-            use hal::Device;
             self.device.raw().destroy_shader_module(raw);
         }
     }
@@ -71,9 +69,9 @@ crate::impl_labeled!(ShaderModule);
 crate::impl_parent_device!(ShaderModule);
 crate::impl_storage_item!(ShaderModule);
 
-impl<A: HalApi> ShaderModule<A> {
-    pub(crate) fn raw(&self) -> &A::ShaderModule {
-        &self.raw
+impl ShaderModule {
+    pub(crate) fn raw(&self) -> &dyn hal::DynShaderModule {
+        self.raw.as_ref()
     }
 
     pub(crate) fn finalize_entry_point_name(
@@ -151,9 +149,9 @@ pub struct ProgrammableStageDescriptor<'a> {
 
 
 #[derive(Clone, Debug)]
-pub struct ResolvedProgrammableStageDescriptor<'a, A: HalApi> {
+pub struct ResolvedProgrammableStageDescriptor<'a> {
     
-    pub module: Arc<ShaderModule<A>>,
+    pub module: Arc<ShaderModule>,
     
     
     
@@ -209,14 +207,14 @@ pub struct ComputePipelineDescriptor<'a> {
 
 
 #[derive(Clone, Debug)]
-pub struct ResolvedComputePipelineDescriptor<'a, A: HalApi> {
+pub struct ResolvedComputePipelineDescriptor<'a> {
     pub label: Label<'a>,
     
-    pub layout: Option<Arc<PipelineLayout<A>>>,
+    pub layout: Option<Arc<PipelineLayout>>,
     
-    pub stage: ResolvedProgrammableStageDescriptor<'a, A>,
+    pub stage: ResolvedProgrammableStageDescriptor<'a>,
     
-    pub cache: Option<Arc<PipelineCache<A>>>,
+    pub cache: Option<Arc<PipelineCache>>,
 }
 
 #[derive(Clone, Debug, Error)]
@@ -241,24 +239,23 @@ pub enum CreateComputePipelineError {
 }
 
 #[derive(Debug)]
-pub struct ComputePipeline<A: HalApi> {
-    pub(crate) raw: ManuallyDrop<A::ComputePipeline>,
-    pub(crate) layout: Arc<PipelineLayout<A>>,
-    pub(crate) device: Arc<Device<A>>,
-    pub(crate) _shader_module: Arc<ShaderModule<A>>,
+pub struct ComputePipeline {
+    pub(crate) raw: ManuallyDrop<Box<dyn hal::DynComputePipeline>>,
+    pub(crate) layout: Arc<PipelineLayout>,
+    pub(crate) device: Arc<Device>,
+    pub(crate) _shader_module: Arc<ShaderModule>,
     pub(crate) late_sized_buffer_groups: ArrayVec<LateSizedBufferGroup, { hal::MAX_BIND_GROUPS }>,
     
     pub(crate) label: String,
     pub(crate) tracking_data: TrackingData,
 }
 
-impl<A: HalApi> Drop for ComputePipeline<A> {
+impl Drop for ComputePipeline {
     fn drop(&mut self) {
         resource_log!("Destroy raw {}", self.error_ident());
         
         let raw = unsafe { ManuallyDrop::take(&mut self.raw) };
         unsafe {
-            use hal::Device;
             self.device.raw().destroy_compute_pipeline(raw);
         }
     }
@@ -270,9 +267,9 @@ crate::impl_parent_device!(ComputePipeline);
 crate::impl_storage_item!(ComputePipeline);
 crate::impl_trackable!(ComputePipeline);
 
-impl<A: HalApi> ComputePipeline<A> {
-    pub(crate) fn raw(&self) -> &A::ComputePipeline {
-        &self.raw
+impl ComputePipeline {
+    pub(crate) fn raw(&self) -> &dyn hal::DynComputePipeline {
+        self.raw.as_ref()
     }
 }
 
@@ -300,20 +297,19 @@ impl From<hal::PipelineCacheError> for CreatePipelineCacheError {
 }
 
 #[derive(Debug)]
-pub struct PipelineCache<A: HalApi> {
-    pub(crate) raw: ManuallyDrop<A::PipelineCache>,
-    pub(crate) device: Arc<Device<A>>,
+pub struct PipelineCache {
+    pub(crate) raw: ManuallyDrop<Box<dyn hal::DynPipelineCache>>,
+    pub(crate) device: Arc<Device>,
     
     pub(crate) label: String,
 }
 
-impl<A: HalApi> Drop for PipelineCache<A> {
+impl Drop for PipelineCache {
     fn drop(&mut self) {
         resource_log!("Destroy raw {}", self.error_ident());
         
         let raw = unsafe { ManuallyDrop::take(&mut self.raw) };
         unsafe {
-            use hal::Device;
             self.device.raw().destroy_pipeline_cache(raw);
         }
     }
@@ -324,9 +320,9 @@ crate::impl_labeled!(PipelineCache);
 crate::impl_parent_device!(PipelineCache);
 crate::impl_storage_item!(PipelineCache);
 
-impl<A: HalApi> PipelineCache<A> {
-    pub(crate) fn raw(&self) -> &A::PipelineCache {
-        &self.raw
+impl PipelineCache {
+    pub(crate) fn raw(&self) -> &dyn hal::DynPipelineCache {
+        self.raw.as_ref()
     }
 }
 
@@ -355,9 +351,9 @@ pub struct VertexState<'a> {
 
 
 #[derive(Clone, Debug)]
-pub struct ResolvedVertexState<'a, A: HalApi> {
+pub struct ResolvedVertexState<'a> {
     
-    pub stage: ResolvedProgrammableStageDescriptor<'a, A>,
+    pub stage: ResolvedProgrammableStageDescriptor<'a>,
     
     pub buffers: Cow<'a, [VertexBufferLayout<'a>]>,
 }
@@ -374,9 +370,9 @@ pub struct FragmentState<'a> {
 
 
 #[derive(Clone, Debug)]
-pub struct ResolvedFragmentState<'a, A: HalApi> {
+pub struct ResolvedFragmentState<'a> {
     
-    pub stage: ResolvedProgrammableStageDescriptor<'a, A>,
+    pub stage: ResolvedProgrammableStageDescriptor<'a>,
     
     pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
 }
@@ -410,12 +406,12 @@ pub struct RenderPipelineDescriptor<'a> {
 
 
 #[derive(Clone, Debug)]
-pub struct ResolvedRenderPipelineDescriptor<'a, A: HalApi> {
+pub struct ResolvedRenderPipelineDescriptor<'a> {
     pub label: Label<'a>,
     
-    pub layout: Option<Arc<PipelineLayout<A>>>,
+    pub layout: Option<Arc<PipelineLayout>>,
     
-    pub vertex: ResolvedVertexState<'a, A>,
+    pub vertex: ResolvedVertexState<'a>,
     
     pub primitive: wgt::PrimitiveState,
     
@@ -423,12 +419,12 @@ pub struct ResolvedRenderPipelineDescriptor<'a, A: HalApi> {
     
     pub multisample: wgt::MultisampleState,
     
-    pub fragment: Option<ResolvedFragmentState<'a, A>>,
+    pub fragment: Option<ResolvedFragmentState<'a>>,
     
     
     pub multiview: Option<NonZeroU32>,
     
-    pub cache: Option<Arc<PipelineCache<A>>>,
+    pub cache: Option<Arc<PipelineCache>>,
 }
 
 #[derive(Clone, Debug)]
@@ -591,12 +587,11 @@ impl Default for VertexStep {
 }
 
 #[derive(Debug)]
-pub struct RenderPipeline<A: HalApi> {
-    pub(crate) raw: ManuallyDrop<A::RenderPipeline>,
-    pub(crate) device: Arc<Device<A>>,
-    pub(crate) layout: Arc<PipelineLayout<A>>,
-    pub(crate) _shader_modules:
-        ArrayVec<Arc<ShaderModule<A>>, { hal::MAX_CONCURRENT_SHADER_STAGES }>,
+pub struct RenderPipeline {
+    pub(crate) raw: ManuallyDrop<Box<dyn hal::DynRenderPipeline>>,
+    pub(crate) device: Arc<Device>,
+    pub(crate) layout: Arc<PipelineLayout>,
+    pub(crate) _shader_modules: ArrayVec<Arc<ShaderModule>, { hal::MAX_CONCURRENT_SHADER_STAGES }>,
     pub(crate) pass_context: RenderPassContext,
     pub(crate) flags: PipelineFlags,
     pub(crate) strip_index_format: Option<wgt::IndexFormat>,
@@ -607,13 +602,12 @@ pub struct RenderPipeline<A: HalApi> {
     pub(crate) tracking_data: TrackingData,
 }
 
-impl<A: HalApi> Drop for RenderPipeline<A> {
+impl Drop for RenderPipeline {
     fn drop(&mut self) {
         resource_log!("Destroy raw {}", self.error_ident());
         
         let raw = unsafe { ManuallyDrop::take(&mut self.raw) };
         unsafe {
-            use hal::Device;
             self.device.raw().destroy_render_pipeline(raw);
         }
     }
@@ -625,8 +619,8 @@ crate::impl_parent_device!(RenderPipeline);
 crate::impl_storage_item!(RenderPipeline);
 crate::impl_trackable!(RenderPipeline);
 
-impl<A: HalApi> RenderPipeline<A> {
-    pub(crate) fn raw(&self) -> &A::RenderPipeline {
-        &self.raw
+impl RenderPipeline {
+    pub(crate) fn raw(&self) -> &dyn hal::DynRenderPipeline {
+        self.raw.as_ref()
     }
 }

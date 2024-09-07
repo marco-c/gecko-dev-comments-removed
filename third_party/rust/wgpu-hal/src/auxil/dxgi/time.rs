@@ -1,11 +1,6 @@
 #![allow(dead_code)] 
 
-use std::mem;
-
-use winapi::um::{
-    profileapi::{QueryPerformanceCounter, QueryPerformanceFrequency},
-    winnt::LARGE_INTEGER,
-};
+use windows::Win32::System::Performance::{QueryPerformanceCounter, QueryPerformanceFrequency};
 
 pub enum PresentationTimer {
     
@@ -14,9 +9,12 @@ pub enum PresentationTimer {
         frequency: u64,
     },
     
+    
+    
+    
     #[allow(non_snake_case)]
     IPresentationManager {
-        fnQueryInterruptTimePrecise: unsafe extern "system" fn(*mut winapi::ctypes::c_ulonglong),
+        fnQueryInterruptTimePrecise: unsafe extern "system" fn(*mut u64),
     },
 }
 
@@ -43,12 +41,13 @@ impl std::fmt::Debug for PresentationTimer {
 impl PresentationTimer {
     
     pub fn new_dxgi() -> Self {
-        let mut frequency: LARGE_INTEGER = unsafe { mem::zeroed() };
-        let success = unsafe { QueryPerformanceFrequency(&mut frequency) };
-        assert_ne!(success, 0);
+        let mut frequency = 0;
+        unsafe { QueryPerformanceFrequency(&mut frequency) }.unwrap();
 
         Self::Dxgi {
-            frequency: unsafe { *frequency.QuadPart() } as u64,
+            frequency: frequency
+                .try_into()
+                .expect("Frequency should not be negative"),
         }
     }
 
@@ -56,6 +55,7 @@ impl PresentationTimer {
     
     
     pub fn new_ipresentation_manager() -> Self {
+        
         
         
         
@@ -73,12 +73,11 @@ impl PresentationTimer {
         
         match *self {
             PresentationTimer::Dxgi { frequency } => {
-                let mut counter: LARGE_INTEGER = unsafe { mem::zeroed() };
-                let success = unsafe { QueryPerformanceCounter(&mut counter) };
-                assert_ne!(success, 0);
+                let mut counter = 0;
+                unsafe { QueryPerformanceCounter(&mut counter) }.unwrap();
 
                 
-                (unsafe { *counter.QuadPart() } as u128 * 1_000_000_000) / frequency as u128
+                (counter as u128 * 1_000_000_000) / frequency as u128
             }
             PresentationTimer::IPresentationManager {
                 fnQueryInterruptTimePrecise,

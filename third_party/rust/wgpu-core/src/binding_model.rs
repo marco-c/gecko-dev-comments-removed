@@ -2,7 +2,6 @@ use crate::{
     device::{
         bgl, Device, DeviceError, MissingDownlevelFlags, MissingFeatures, SHADER_STAGE_COUNT,
     },
-    hal_api::HalApi,
     id::{BindGroupLayoutId, BufferId, SamplerId, TextureViewId},
     init_tracker::{BufferInitTrackerAction, TextureInitTrackerAction},
     pipeline::{ComputePipeline, RenderPipeline},
@@ -417,12 +416,12 @@ pub struct BindGroupEntry<'a> {
 
 
 #[derive(Clone, Debug)]
-pub struct ResolvedBindGroupEntry<'a, A: HalApi> {
+pub struct ResolvedBindGroupEntry<'a> {
     
     
     pub binding: u32,
     
-    pub resource: ResolvedBindingResource<'a, A>,
+    pub resource: ResolvedBindingResource<'a>,
 }
 
 
@@ -441,15 +440,15 @@ pub struct BindGroupDescriptor<'a> {
 
 
 #[derive(Clone, Debug)]
-pub struct ResolvedBindGroupDescriptor<'a, A: HalApi> {
+pub struct ResolvedBindGroupDescriptor<'a> {
     
     
     
     pub label: Label<'a>,
     
-    pub layout: Arc<BindGroupLayout<A>>,
+    pub layout: Arc<BindGroupLayout>,
     
-    pub entries: Cow<'a, [ResolvedBindGroupEntry<'a, A>]>,
+    pub entries: Cow<'a, [ResolvedBindGroupEntry<'a>]>,
 }
 
 
@@ -468,13 +467,13 @@ pub struct BindGroupLayoutDescriptor<'a> {
 
 
 #[derive(Debug)]
-pub(crate) enum ExclusivePipeline<A: HalApi> {
+pub(crate) enum ExclusivePipeline {
     None,
-    Render(Weak<RenderPipeline<A>>),
-    Compute(Weak<ComputePipeline<A>>),
+    Render(Weak<RenderPipeline>),
+    Compute(Weak<ComputePipeline>),
 }
 
-impl<A: HalApi> std::fmt::Display for ExclusivePipeline<A> {
+impl std::fmt::Display for ExclusivePipeline {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ExclusivePipeline::None => f.write_str("None"),
@@ -498,9 +497,9 @@ impl<A: HalApi> std::fmt::Display for ExclusivePipeline<A> {
 
 
 #[derive(Debug)]
-pub struct BindGroupLayout<A: HalApi> {
-    pub(crate) raw: ManuallyDrop<A::BindGroupLayout>,
-    pub(crate) device: Arc<Device<A>>,
+pub struct BindGroupLayout {
+    pub(crate) raw: ManuallyDrop<Box<dyn hal::DynBindGroupLayout>>,
+    pub(crate) device: Arc<Device>,
     pub(crate) entries: bgl::EntryMap,
     
     
@@ -509,14 +508,14 @@ pub struct BindGroupLayout<A: HalApi> {
     
     
     pub(crate) origin: bgl::Origin,
-    pub(crate) exclusive_pipeline: OnceCell<ExclusivePipeline<A>>,
+    pub(crate) exclusive_pipeline: OnceCell<ExclusivePipeline>,
     #[allow(unused)]
     pub(crate) binding_count_validator: BindingTypeMaxCountValidator,
     
     pub(crate) label: String,
 }
 
-impl<A: HalApi> Drop for BindGroupLayout<A> {
+impl Drop for BindGroupLayout {
     fn drop(&mut self) {
         resource_log!("Destroy raw {}", self.error_ident());
         if matches!(self.origin, bgl::Origin::Pool) {
@@ -525,7 +524,6 @@ impl<A: HalApi> Drop for BindGroupLayout<A> {
         
         let raw = unsafe { ManuallyDrop::take(&mut self.raw) };
         unsafe {
-            use hal::Device;
             self.device.raw().destroy_bind_group_layout(raw);
         }
     }
@@ -536,9 +534,9 @@ crate::impl_labeled!(BindGroupLayout);
 crate::impl_parent_device!(BindGroupLayout);
 crate::impl_storage_item!(BindGroupLayout);
 
-impl<A: HalApi> BindGroupLayout<A> {
-    pub(crate) fn raw(&self) -> &A::BindGroupLayout {
-        &self.raw
+impl BindGroupLayout {
+    pub(crate) fn raw(&self) -> &dyn hal::DynBindGroupLayout {
+        self.raw.as_ref()
     }
 }
 
@@ -632,14 +630,14 @@ pub struct PipelineLayoutDescriptor<'a> {
 
 
 #[derive(Debug)]
-pub struct ResolvedPipelineLayoutDescriptor<'a, A: HalApi> {
+pub struct ResolvedPipelineLayoutDescriptor<'a> {
     
     
     
     pub label: Label<'a>,
     
     
-    pub bind_group_layouts: Cow<'a, [Arc<BindGroupLayout<A>>]>,
+    pub bind_group_layouts: Cow<'a, [Arc<BindGroupLayout>]>,
     
     
     
@@ -651,30 +649,29 @@ pub struct ResolvedPipelineLayoutDescriptor<'a, A: HalApi> {
 }
 
 #[derive(Debug)]
-pub struct PipelineLayout<A: HalApi> {
-    pub(crate) raw: ManuallyDrop<A::PipelineLayout>,
-    pub(crate) device: Arc<Device<A>>,
+pub struct PipelineLayout {
+    pub(crate) raw: ManuallyDrop<Box<dyn hal::DynPipelineLayout>>,
+    pub(crate) device: Arc<Device>,
     
     pub(crate) label: String,
-    pub(crate) bind_group_layouts: ArrayVec<Arc<BindGroupLayout<A>>, { hal::MAX_BIND_GROUPS }>,
+    pub(crate) bind_group_layouts: ArrayVec<Arc<BindGroupLayout>, { hal::MAX_BIND_GROUPS }>,
     pub(crate) push_constant_ranges: ArrayVec<wgt::PushConstantRange, { SHADER_STAGE_COUNT }>,
 }
 
-impl<A: HalApi> Drop for PipelineLayout<A> {
+impl Drop for PipelineLayout {
     fn drop(&mut self) {
         resource_log!("Destroy raw {}", self.error_ident());
         
         let raw = unsafe { ManuallyDrop::take(&mut self.raw) };
         unsafe {
-            use hal::Device;
             self.device.raw().destroy_pipeline_layout(raw);
         }
     }
 }
 
-impl<A: HalApi> PipelineLayout<A> {
-    pub(crate) fn raw(&self) -> &A::PipelineLayout {
-        &self.raw
+impl PipelineLayout {
+    pub(crate) fn raw(&self) -> &dyn hal::DynPipelineLayout {
+        self.raw.as_ref()
     }
 
     pub(crate) fn get_binding_maps(&self) -> ArrayVec<&bgl::EntryMap, { hal::MAX_BIND_GROUPS }> {
@@ -778,8 +775,8 @@ pub struct BufferBinding {
 }
 
 #[derive(Clone, Debug)]
-pub struct ResolvedBufferBinding<A: HalApi> {
-    pub buffer: Arc<Buffer<A>>,
+pub struct ResolvedBufferBinding {
+    pub buffer: Arc<Buffer>,
     pub offset: wgt::BufferAddress,
     pub size: Option<wgt::BufferSize>,
 }
@@ -800,13 +797,13 @@ pub enum BindingResource<'a> {
 
 
 #[derive(Debug, Clone)]
-pub enum ResolvedBindingResource<'a, A: HalApi> {
-    Buffer(ResolvedBufferBinding<A>),
-    BufferArray(Cow<'a, [ResolvedBufferBinding<A>]>),
-    Sampler(Arc<Sampler<A>>),
-    SamplerArray(Cow<'a, [Arc<Sampler<A>>]>),
-    TextureView(Arc<TextureView<A>>),
-    TextureViewArray(Cow<'a, [Arc<TextureView<A>>]>),
+pub enum ResolvedBindingResource<'a> {
+    Buffer(ResolvedBufferBinding),
+    BufferArray(Cow<'a, [ResolvedBufferBinding]>),
+    Sampler(Arc<Sampler>),
+    SamplerArray(Cow<'a, [Arc<Sampler>]>),
+    TextureView(Arc<TextureView>),
+    TextureViewArray(Cow<'a, [Arc<TextureView>]>),
 }
 
 #[derive(Clone, Debug, Error)]
@@ -888,39 +885,38 @@ pub(crate) fn buffer_binding_type_alignment(
 }
 
 #[derive(Debug)]
-pub struct BindGroup<A: HalApi> {
-    pub(crate) raw: Snatchable<A::BindGroup>,
-    pub(crate) device: Arc<Device<A>>,
-    pub(crate) layout: Arc<BindGroupLayout<A>>,
+pub struct BindGroup {
+    pub(crate) raw: Snatchable<Box<dyn hal::DynBindGroup>>,
+    pub(crate) device: Arc<Device>,
+    pub(crate) layout: Arc<BindGroupLayout>,
     
     pub(crate) label: String,
     pub(crate) tracking_data: TrackingData,
-    pub(crate) used: BindGroupStates<A>,
-    pub(crate) used_buffer_ranges: Vec<BufferInitTrackerAction<A>>,
-    pub(crate) used_texture_ranges: Vec<TextureInitTrackerAction<A>>,
+    pub(crate) used: BindGroupStates,
+    pub(crate) used_buffer_ranges: Vec<BufferInitTrackerAction>,
+    pub(crate) used_texture_ranges: Vec<TextureInitTrackerAction>,
     pub(crate) dynamic_binding_info: Vec<BindGroupDynamicBindingData>,
     
     
     pub(crate) late_buffer_binding_sizes: Vec<wgt::BufferSize>,
 }
 
-impl<A: HalApi> Drop for BindGroup<A> {
+impl Drop for BindGroup {
     fn drop(&mut self) {
         if let Some(raw) = self.raw.take() {
             resource_log!("Destroy raw {}", self.error_ident());
             unsafe {
-                use hal::Device;
                 self.device.raw().destroy_bind_group(raw);
             }
         }
     }
 }
 
-impl<A: HalApi> BindGroup<A> {
+impl BindGroup {
     pub(crate) fn try_raw<'a>(
         &'a self,
         guard: &'a SnatchGuard,
-    ) -> Result<&A::BindGroup, DestroyedResourceError> {
+    ) -> Result<&dyn hal::DynBindGroup, DestroyedResourceError> {
         
         
         for buffer in &self.used_buffer_ranges {
@@ -932,6 +928,7 @@ impl<A: HalApi> BindGroup<A> {
 
         self.raw
             .get(guard)
+            .map(|raw| raw.as_ref())
             .ok_or_else(|| DestroyedResourceError(self.error_ident()))
     }
 
