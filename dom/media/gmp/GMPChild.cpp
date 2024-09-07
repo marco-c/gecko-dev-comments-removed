@@ -176,6 +176,7 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
       u"ole32.dll",        
       u"oleaut32.dll",     
       u"psapi.dll",        
+      u"shell32.dll",      
       u"softokn3.dll",     
       u"winmm.dll",        
   };
