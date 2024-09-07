@@ -45,8 +45,9 @@ using ParentRequestResolver =
 
 
 
-already_AddRefed<SystemGeolocationPermissionRequest> PresentSystemSettings(
-    BrowsingContext* aBrowsingContext, ParentRequestResolver&& aResolver);
+already_AddRefed<SystemGeolocationPermissionRequest>
+RequestLocationPermissionFromUser(BrowsingContext* aBrowsingContext,
+                                  ParentRequestResolver&& aResolver);
 
 }  
 }  

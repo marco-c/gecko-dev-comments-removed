@@ -343,8 +343,8 @@ void Geolocation::ReallowWithSystemPermissionOrCancel(
   denyPermissionOnError.release();
 
   RefPtr<SystemGeolocationPermissionRequest> permissionRequest =
-      geolocation::PresentSystemSettings(aBrowsingContext,
-                                         std::move(aResolver));
+      geolocation::RequestLocationPermissionFromUser(aBrowsingContext,
+                                                     std::move(aResolver));
   NS_ENSURE_TRUE_VOID(permissionRequest);
 
   auto cancelRequestOnError = MakeScopeExit([&]() {
@@ -383,7 +383,8 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     return NS_OK;
   }
 
-  if (mBehavior == SystemGeolocationPermissionBehavior::GeckoWillPromptUser) {
+  if (mBehavior != SystemGeolocationPermissionBehavior::NoPrompt) {
+    
     
     
     
