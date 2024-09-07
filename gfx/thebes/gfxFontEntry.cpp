@@ -90,6 +90,8 @@ gfxFontEntry::~gfxFontEntry() {
   
   MOZ_ASSERT(!gfxFontUtils::IsInServoTraversal());
 
+  AutoWriteLock lock(mLock);
+
   hb_blob_destroy(mCOLR.exchange(nullptr));
   hb_blob_destroy(mCPAL.exchange(nullptr));
 
@@ -112,7 +114,8 @@ gfxFontEntry::~gfxFontEntry() {
     }
   }
 
-  delete mFontTableCache.exchange(nullptr);
+  mFontTableCache.reset(nullptr);
+
   delete mSVGGlyphs.exchange(nullptr);
   delete[] mUVSData.exchange(nullptr);
 
@@ -513,48 +516,29 @@ hb_blob_t* gfxFontEntry::FontTableHashEntry::GetBlob() const {
 }
 
 bool gfxFontEntry::GetExistingFontTable(uint32_t aTag, hb_blob_t** aBlob) {
-  
-  
-  MOZ_PUSH_IGNORE_THREAD_SAFETY
-  if (MOZ_UNLIKELY(!mFontTableCache)) {
-    
-    
-    
-    
-    
-    auto* newCache = new FontTableCache(8);
-    if (MOZ_UNLIKELY(!mFontTableCache.compareExchange(nullptr, newCache))) {
-      delete newCache;
-    }
-  }
-  FontTableCache* cache = GetFontTableCache();
-  MOZ_POP_THREAD_SAFETY
-
-  
   AutoReadLock lock(mLock);
-  FontTableHashEntry* entry = cache->GetEntry(aTag);
-  if (!entry) {
+
+  if (MOZ_UNLIKELY(!mFontTableCache)) {
     return false;
   }
 
-  *aBlob = entry->GetBlob();
-  return true;
+  if (const auto* entry = mFontTableCache->GetEntry(aTag)) {
+    *aBlob = entry->GetBlob();
+    return true;
+  }
+
+  return false;
 }
 
 hb_blob_t* gfxFontEntry::ShareFontTableAndGetBlob(uint32_t aTag,
                                                   nsTArray<uint8_t>* aBuffer) {
-  MOZ_PUSH_IGNORE_THREAD_SAFETY
-  if (MOZ_UNLIKELY(!mFontTableCache)) {
-    auto* newCache = new FontTableCache(8);
-    if (MOZ_UNLIKELY(!mFontTableCache.compareExchange(nullptr, newCache))) {
-      delete newCache;
-    }
-  }
-  FontTableCache* cache = GetFontTableCache();
-  MOZ_POP_THREAD_SAFETY
-
   AutoWriteLock lock(mLock);
-  FontTableHashEntry* entry = cache->PutEntry(aTag);
+
+  if (MOZ_UNLIKELY(!mFontTableCache)) {
+    mFontTableCache = MakeUnique<FontTableCache>(8);
+  }
+
+  FontTableHashEntry* entry = mFontTableCache->PutEntry(aTag);
   if (MOZ_UNLIKELY(!entry)) {  
     return nullptr;
   }
@@ -565,7 +549,8 @@ hb_blob_t* gfxFontEntry::ShareFontTableAndGetBlob(uint32_t aTag,
     return nullptr;
   }
 
-  return entry->ShareTableAndGetBlob(std::move(*aBuffer), cache);
+  return entry->ShareTableAndGetBlob(std::move(*aBuffer),
+                                     mFontTableCache.get());
 }
 
 already_AddRefed<gfxCharacterMap> gfxFontEntry::GetCMAPFromFontInfo(
@@ -1429,7 +1414,7 @@ void gfxFontEntry::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
     AutoReadLock lock(mLock);
     if (mFontTableCache) {
       aSizes->mFontTableCacheSize +=
-          GetFontTableCache()->SizeOfIncludingThis(aMallocSizeOf);
+          mFontTableCache->SizeOfIncludingThis(aMallocSizeOf);
     }
   }
 
