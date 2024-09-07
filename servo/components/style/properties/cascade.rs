@@ -578,7 +578,7 @@ struct Declarations<'a> {
     
     has_prioritary_properties: bool,
     
-    longhand_declarations: SmallVec<[Declaration<'a>; 32]>,
+    longhand_declarations: SmallVec<[Declaration<'a>; 64]>,
     
     prioritary_positions: [PrioritaryDeclarationPosition; property_counts::PRIORITARY],
 }
