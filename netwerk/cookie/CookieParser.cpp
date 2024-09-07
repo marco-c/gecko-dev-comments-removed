@@ -700,7 +700,7 @@ bool CookieParser::ParseMaxAgeAttribute(const nsACString& aMaxage,
 bool CookieParser::GetExpiry(CookieStruct& aCookieData,
                              const nsACString& aExpires,
                              const nsACString& aMaxage, int64_t aCurrentTime,
-                             bool aFromHttp) {
+                             const nsACString& aDateHeader, bool aFromHttp) {
   int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
 
   
@@ -728,12 +728,36 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
 
   
   if (!aExpires.IsEmpty()) {
-    PRTime expires;
-
     
-    if (PR_ParseTimeString(aExpires.BeginReading(), true, &expires) !=
+    PRTime expiresTime;
+    if (PR_ParseTimeString(aExpires.BeginReading(), true, &expiresTime) !=
         PR_SUCCESS) {
       return true;
+    }
+
+    int64_t expires = expiresTime / int64_t(PR_USEC_PER_SEC);
+
+    
+    
+    
+    
+    if (!aDateHeader.IsEmpty()) {
+      MOZ_ASSERT(aFromHttp);
+
+      PRTime dateHeaderTime;
+      if (PR_ParseTimeString(aDateHeader.BeginReading(), true,
+                             &dateHeaderTime) == PR_SUCCESS) {
+        int64_t serverTime = dateHeaderTime / int64_t(PR_USEC_PER_SEC);
+        int64_t delta = aCurrentTime - serverTime;
+
+        if (StaticPrefs::network_cookie_useServerTime()) {
+          expires += delta;
+        } else if (expires <= aCurrentTime &&
+                   (expires + delta) > aCurrentTime) {
+          mozilla::glean::networking::set_cookie_expired_without_server_time
+              .AddToNumerator(1);
+        }
+      }
     }
 
     
@@ -742,10 +766,9 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
     
     
     if (maxageCap) {
-      aCookieData.expiry() = std::min(expires / int64_t(PR_USEC_PER_SEC),
-                                      aCurrentTime + maxageCap);
+      aCookieData.expiry() = std::min(expires, aCurrentTime + maxageCap);
     } else {
-      aCookieData.expiry() = expires / int64_t(PR_USEC_PER_SEC);
+      aCookieData.expiry() = expires;
     }
 
     return false;
@@ -846,8 +869,9 @@ static void RecordPartitionedTelemetry(const CookieStruct& aCookieData,
 
 bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
                          CookieStatus aStatus, nsCString& aCookieHeader,
-                         bool aFromHttp, bool aIsForeignAndNotAddon,
-                         bool aPartitionedOnly, bool aIsInPrivateBrowsing) {
+                         const nsACString& aDateHeader, bool aFromHttp,
+                         bool aIsForeignAndNotAddon, bool aPartitionedOnly,
+                         bool aIsInPrivateBrowsing) {
   MOZ_ASSERT(!mContainsCookie);
 
   
@@ -885,7 +909,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
   
   mCookieData.isSession() =
       GetExpiry(mCookieData, expires, maxage,
-                currentTimeInUsec / PR_USEC_PER_SEC, aFromHttp);
+                currentTimeInUsec / PR_USEC_PER_SEC, aDateHeader, aFromHttp);
   if (aStatus == STATUS_ACCEPT_SESSION) {
     
     
