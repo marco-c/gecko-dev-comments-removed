@@ -400,11 +400,12 @@ BootstrapResult GetBootstrap(const char* aXPCOMFile,
 #if defined(XP_WIN) && defined(_M_X64) && defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   auto check = reinterpret_cast<decltype(&XRE_CheckBlockScopeStaticVarInit)>(
       GetSymbol(sTop->libHandle, "XRE_CheckBlockScopeStaticVarInit"));
-  MOZ_DIAGNOSTIC_ASSERT(check);
 
   
   uint32_t xulTlsIndex = 0;
-  if (!check(&xulTlsIndex)) {
+  
+  
+  if (check && !check(&xulTlsIndex)) {
     
     XPCOMGlueUnload();
 
