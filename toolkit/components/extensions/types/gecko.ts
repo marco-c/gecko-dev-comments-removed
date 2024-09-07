@@ -91,7 +91,4 @@ interface XULBrowserElement extends XULFrameElement, FrameLoader {
   remoteType: string;
 }
 
-
-interface Localization {
-  formatValuesSync(aKeys: L10nKey[]): (string | null)[];
-}
+type nsQIResult<iid> = import("gecko/lib.gecko.xpcom").nsQIResult<iid>;
