@@ -211,10 +211,6 @@ class TouchSimulator {
         this.startX = evt.pageX;
         this.startY = evt.pageY;
 
-        
-        
-        evt.target.setCapture(false);
-
         type = "touchstart";
         break;
 
