@@ -594,9 +594,9 @@ impl Parse for DashedIdentAndOrTryTactic {
 pub enum PositionTryFallbacksItem {
     
     IdentAndOrTactic(DashedIdentAndOrTryTactic),
-    #[parse(parse_fn = "InsetArea::parse_except_none")]
+    #[parse(parse_fn = "PositionArea::parse_except_none")]
     
-    InsetArea(InsetArea),
+    PositionArea(PositionArea),
 }
 
 #[derive(
@@ -761,7 +761,7 @@ impl PositionVisibility {
 #[repr(u8)]
 
 
-pub enum InsetAreaKeyword {
+pub enum PositionAreaKeyword {
     #[default]
     None,
 
@@ -832,7 +832,7 @@ pub enum InsetAreaKeyword {
 }
 
 #[allow(missing_docs)]
-impl InsetAreaKeyword {
+impl PositionAreaKeyword {
     #[inline]
     pub fn none() -> Self {
         Self::None
@@ -930,7 +930,7 @@ impl InsetAreaKeyword {
 }
 
 #[inline]
-fn is_compatible_pairing(first: InsetAreaKeyword, second: InsetAreaKeyword) -> bool {
+fn is_compatible_pairing(first: PositionAreaKeyword, second: PositionAreaKeyword) -> bool {
     if first.is_none() || second.is_none() {
         
         
@@ -986,21 +986,21 @@ fn is_compatible_pairing(first: InsetAreaKeyword, second: InsetAreaKeyword) -> b
 )]
 #[repr(C)]
 
-pub struct InsetArea {
+pub struct PositionArea {
     
-    pub first: InsetAreaKeyword,
+    pub first: PositionAreaKeyword,
     
-    #[css(skip_if = "InsetAreaKeyword::is_none")]
-    pub second: InsetAreaKeyword,
+    #[css(skip_if = "PositionAreaKeyword::is_none")]
+    pub second: PositionAreaKeyword,
 }
 
 #[allow(missing_docs)]
-impl InsetArea {
+impl PositionArea {
     #[inline]
     pub fn none() -> Self {
         Self {
-            first: InsetAreaKeyword::None,
-            second: InsetAreaKeyword::None,
+            first: PositionAreaKeyword::None,
+            second: PositionAreaKeyword::None,
         }
     }
 
@@ -1022,7 +1022,7 @@ impl InsetArea {
         allow_none: bool,
     ) -> Result<Self, ParseError<'i>> {
         let mut location = input.current_source_location();
-        let mut first = InsetAreaKeyword::parse(input)?;
+        let mut first = PositionAreaKeyword::parse(input)?;
         if first.is_none() {
             if allow_none {
                 return Ok(Self::none());
@@ -1031,12 +1031,12 @@ impl InsetArea {
         }
 
         location = input.current_source_location();
-        let second = input.try_parse(InsetAreaKeyword::parse);
-        if let Ok(InsetAreaKeyword::None) = second {
+        let second = input.try_parse(PositionAreaKeyword::parse);
+        if let Ok(PositionAreaKeyword::None) = second {
             
             return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
-        let mut second = second.unwrap_or(InsetAreaKeyword::None);
+        let mut second = second.unwrap_or(PositionAreaKeyword::None);
         if second.is_none() {
             
             
@@ -1062,16 +1062,16 @@ impl InsetArea {
             
             
             if first == second {
-                second = InsetAreaKeyword::None;
+                second = PositionAreaKeyword::None;
             }
-        } else if second == InsetAreaKeyword::SpanAll {
+        } else if second == PositionAreaKeyword::SpanAll {
             
             
-            second = InsetAreaKeyword::None;
-        } else if first == InsetAreaKeyword::SpanAll {
+            second = PositionAreaKeyword::None;
+        } else if first == PositionAreaKeyword::SpanAll {
             
             first = second;
-            second = InsetAreaKeyword::None;
+            second = PositionAreaKeyword::None;
         } else if first.is_vertical() ||
             second.is_horizontal() ||
             first.is_inline() ||
@@ -1087,7 +1087,7 @@ impl InsetArea {
     }
 }
 
-impl Parse for InsetArea {
+impl Parse for PositionArea {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
