@@ -2259,6 +2259,14 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
        id == NameToId(cx->names().fromHex))) {
     return true;
   }
+
+  
+  
+  
+  if (key == JSProto_Function && !JS::Prefs::experimental_regexp_escape() &&
+      id == NameToId(cx->names().escape)) {
+    return true;
+  }
 #endif
 
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
