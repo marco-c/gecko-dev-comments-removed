@@ -1467,7 +1467,7 @@ nscoord nsImageFrame::GetContinuationOffset() const {
   return offset;
 }
 
-nscoord nsImageFrame::IntrinsicISize(gfxContext* aContext,
+nscoord nsImageFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                      IntrinsicISizeType aType) {
   
   

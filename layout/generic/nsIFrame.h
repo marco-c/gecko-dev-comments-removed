@@ -416,6 +416,17 @@ struct FrameBidiData {
   mozilla::intl::BidiEmbeddingLevel precedingControl;
 };
 
+
+
+
+struct MOZ_STACK_CLASS IntrinsicSizeInput final {
+  gfxContext* const mContext;
+
+  explicit IntrinsicSizeInput(gfxContext* aContext) : mContext(aContext) {
+    MOZ_ASSERT(mContext);
+  }
+};
+
 }  
 
 
@@ -2579,8 +2590,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nscoord GetMinISize(gfxContext* aContext) {
-    return IntrinsicISize(aContext, mozilla::IntrinsicISizeType::MinISize);
+  nscoord GetMinISize(const mozilla::IntrinsicSizeInput& aInput) {
+    return IntrinsicISize(aInput, mozilla::IntrinsicISizeType::MinISize);
   }
 
   
@@ -2589,8 +2600,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nscoord GetPrefISize(gfxContext* aContext) {
-    return IntrinsicISize(aContext, mozilla::IntrinsicISizeType::PrefISize);
+  nscoord GetPrefISize(const mozilla::IntrinsicSizeInput& aInput) {
+    return IntrinsicISize(aInput, mozilla::IntrinsicISizeType::PrefISize);
   }
 
   
@@ -2599,7 +2610,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nscoord IntrinsicISize(gfxContext* aContext,
+  virtual nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
                                  mozilla::IntrinsicISizeType aType) {
     return 0;
   }
@@ -2893,7 +2904,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nscoord ShrinkISizeToFit(gfxContext* aRenderingContext, nscoord aISizeInCB,
+  nscoord ShrinkISizeToFit(const mozilla::IntrinsicSizeInput& aInput,
+                           nscoord aISizeInCB,
                            mozilla::ComputeSizeFlags aFlags);
 
   

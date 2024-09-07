@@ -123,9 +123,9 @@ void nsFirstLetterFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
 }
 
 
-nscoord nsFirstLetterFrame::IntrinsicISize(gfxContext* aContext,
+nscoord nsFirstLetterFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                            IntrinsicISizeType aType) {
-  return IntrinsicISizeFromInline(aContext, aType);
+  return IntrinsicISizeFromInline(aInput.mContext, aType);
 }
 
 
