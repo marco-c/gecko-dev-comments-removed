@@ -84,6 +84,21 @@ impl Parse for ListStyleType {
     }
 }
 
+#[cfg(feature = "servo")]
+impl ListStyleType {
+    
+    #[inline]
+    pub fn disc() -> Self {
+        Self::Disc
+    }
+
+    
+    #[inline]
+    pub fn none() -> Self {
+        Self::None
+    }
+}
+
 
 #[derive(
     Clone,
