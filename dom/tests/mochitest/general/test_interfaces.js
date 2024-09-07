@@ -187,13 +187,13 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AudioData", insecureContext: true },
   
-  { name: "AudioDecoder", android: false },
+  { name: "AudioDecoder" },
   
   { name: "AudioBufferSourceNode", insecureContext: true },
   
   { name: "AudioDestinationNode", insecureContext: true },
   
-  { name: "AudioEncoder", android: false },
+  { name: "AudioEncoder" },
   
   { name: "AudioListener", insecureContext: true },
   
@@ -415,9 +415,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ElementInternals", insecureContext: true },
   
-  { name: "EncodedAudioChunk", insecureContext: true, android: false },
+  { name: "EncodedAudioChunk", insecureContext: true },
   
-  { name: "EncodedVideoChunk", insecureContext: true, android: false },
+  { name: "EncodedVideoChunk", insecureContext: true },
   
   { name: "ErrorEvent", insecureContext: true },
   
@@ -1460,11 +1460,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ValidityState", insecureContext: true },
   
-  { name: "VideoColorSpace", insecureContext: true, android: false },
+  { name: "VideoColorSpace", insecureContext: true },
   
-  { name: "VideoDecoder", android: false },
+  { name: "VideoDecoder" },
   
-  { name: "VideoEncoder", android: false },
+  { name: "VideoEncoder" },
   
   { name: "VideoFrame", insecureContext: true },
   
