@@ -91,10 +91,6 @@ impl Drop for NssLoaded {
 
 static INITIALIZED: OnceLock<Res<NssLoaded>> = OnceLock::new();
 
-fn already_initialized() -> bool {
-    unsafe { nss::NSS_IsInitialized() != 0 }
-}
-
 fn version_check() -> Res<()> {
     let min_ver = CString::new(MINIMUM_NSS_VERSION)?;
     if unsafe { nss::NSS_VersionCheck(min_ver.as_ptr()) } == 0 {
@@ -108,36 +104,6 @@ fn version_check() -> Res<()> {
 
 
 
-
-
-pub fn init() -> Res<()> {
-    
-    time::init();
-    let res = INITIALIZED.get_or_init(|| {
-        version_check()?;
-        if already_initialized() {
-            return Ok(NssLoaded::External);
-        }
-
-        secstatus_to_res(unsafe { nss::NSS_NoDB_Init(null()) })?;
-        secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })?;
-        secstatus_to_res(unsafe {
-            p11::NSS_SetAlgorithmPolicy(
-                p11::SECOidTag::SEC_OID_XYBER768D00,
-                p11::NSS_USE_ALG_IN_SSL_KX,
-                0,
-            )
-        })?;
-
-        Ok(NssLoaded::NoDb)
-    });
-    res.as_ref().map(|_| ()).map_err(Clone::clone)
-}
-
-
-
-
-
 #[cfg(debug_assertions)]
 fn enable_ssl_trace() -> Res<()> {
     let opt = ssl::Opt::Locking.as_int();
@@ -145,20 +111,15 @@ fn enable_ssl_trace() -> Res<()> {
     secstatus_to_res(unsafe { ssl::SSL_OptionGetDefault(opt, &mut v) })
 }
 
-
-
-
-
-
-pub fn init_db<P: Into<PathBuf>>(dir: P) -> Res<()> {
+fn init_once(db: Option<PathBuf>) -> Res<NssLoaded> {
+    
     time::init();
-    let res = INITIALIZED.get_or_init(|| {
-        version_check()?;
-        if already_initialized() {
-            return Ok(NssLoaded::External);
-        }
+    version_check()?;
+    if unsafe { nss::NSS_IsInitialized() != 0 } {
+        return Ok(NssLoaded::External);
+    }
 
-        let path = dir.into();
+    let state = if let Some(path) = db {
         if !path.is_dir() {
             return Err(Error::InternalError);
         }
@@ -175,23 +136,48 @@ pub fn init_db<P: Into<PathBuf>>(dir: P) -> Res<()> {
             )
         })?;
 
-        secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })?;
-        secstatus_to_res(unsafe {
-            p11::NSS_SetAlgorithmPolicy(
-                p11::SECOidTag::SEC_OID_XYBER768D00,
-                p11::NSS_USE_ALG_IN_SSL_KX,
-                0,
-            )
-        })?;
         secstatus_to_res(unsafe {
             ssl::SSL_ConfigServerSessionIDCache(1024, 0, 0, dircstr.as_ptr())
         })?;
+        NssLoaded::Db
+    } else {
+        secstatus_to_res(unsafe { nss::NSS_NoDB_Init(null()) })?;
+        NssLoaded::NoDb
+    };
 
-        #[cfg(debug_assertions)]
-        enable_ssl_trace()?;
+    secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })?;
+    secstatus_to_res(unsafe {
+        p11::NSS_SetAlgorithmPolicy(
+            p11::SECOidTag::SEC_OID_XYBER768D00,
+            p11::NSS_USE_ALG_IN_SSL_KX,
+            0,
+        )
+    })?;
 
-        Ok(NssLoaded::Db)
-    });
+    #[cfg(debug_assertions)]
+    enable_ssl_trace()?;
+
+    Ok(state)
+}
+
+
+
+
+
+
+
+pub fn init() -> Res<()> {
+    let res = INITIALIZED.get_or_init(|| init_once(None));
+    res.as_ref().map(|_| ()).map_err(Clone::clone)
+}
+
+
+
+
+
+
+pub fn init_db<P: Into<PathBuf>>(dir: P) -> Res<()> {
+    let res = INITIALIZED.get_or_init(|| init_once(Some(dir.into())));
     res.as_ref().map(|_| ()).map_err(Clone::clone)
 }
 

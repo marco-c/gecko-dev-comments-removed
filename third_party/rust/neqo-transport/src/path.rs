@@ -15,7 +15,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{hex, qdebug, qinfo, qlog::NeqoQlog, qtrace, Datagram, Encoder, IpTos};
+use neqo_common::{hex, qdebug, qinfo, qlog::NeqoQlog, qtrace, Datagram, Encoder, IpTos, IpTosEcn};
 use neqo_crypto::random;
 
 use crate::{
@@ -35,7 +35,10 @@ use crate::{
 };
 
 
-const MAX_PATH_PROBES: usize = 3;
+
+
+
+pub const MAX_PATH_PROBES: usize = 3;
 
 const MAX_PATHS: usize = 15;
 
@@ -225,7 +228,13 @@ impl Paths {
     
     
     
-    pub fn migrate(&mut self, path: &PathRef, force: bool, now: Instant) -> bool {
+    pub fn migrate(
+        &mut self,
+        path: &PathRef,
+        force: bool,
+        now: Instant,
+        stats: &mut Stats,
+    ) -> bool {
         debug_assert!(!self.is_temporary(path));
         let baseline = self.primary().map_or_else(
             || EcnInfo::default().baseline(),
@@ -239,7 +248,7 @@ impl Paths {
         } else {
             self.migration_target = Some(Rc::clone(path));
         }
-        path.borrow_mut().probe();
+        path.borrow_mut().probe(stats);
         self.migration_target.is_none()
     }
 
@@ -248,11 +257,11 @@ impl Paths {
     
     
     
-    pub fn process_timeout(&mut self, now: Instant, pto: Duration) -> bool {
+    pub fn process_timeout(&mut self, now: Instant, pto: Duration, stats: &mut Stats) -> bool {
         let to_retire = &mut self.to_retire;
         let mut primary_failed = false;
         self.paths.retain(|p| {
-            if p.borrow_mut().process_timeout(now, pto) {
+            if p.borrow_mut().process_timeout(now, pto, stats) {
                 true
             } else {
                 qdebug!([p.borrow()], "Retiring path");
@@ -301,7 +310,13 @@ impl Paths {
 
     
     
-    pub fn handle_migration(&mut self, path: &PathRef, remote: SocketAddr, now: Instant) {
+    pub fn handle_migration(
+        &mut self,
+        path: &PathRef,
+        remote: SocketAddr,
+        now: Instant,
+        stats: &mut Stats,
+    ) {
         
         
         
@@ -316,7 +331,7 @@ impl Paths {
 
         if let Some(old_path) = self.select_primary(path) {
             
-            old_path.borrow_mut().probe();
+            old_path.borrow_mut().probe(stats);
             
         }
     }
@@ -339,11 +354,11 @@ impl Paths {
     
     
     #[must_use]
-    pub fn path_response(&mut self, response: [u8; 8], now: Instant) -> bool {
+    pub fn path_response(&mut self, response: [u8; 8], now: Instant, stats: &mut Stats) -> bool {
         
         
         for p in &self.paths {
-            if p.borrow_mut().path_response(response, now) {
+            if p.borrow_mut().path_response(response, now, stats) {
                 
                 
                 if self
@@ -452,10 +467,10 @@ impl Paths {
         
         
         
-        self.primary()
-            .map_or(RttEstimate::default().estimate(), |p| {
-                p.borrow().rtt().estimate()
-            })
+        self.primary().map_or_else(
+            || RttEstimate::default().estimate(),
+            |p| p.borrow().rtt().estimate(),
+        )
     }
 
     pub fn set_qlog(&mut self, qlog: NeqoQlog) {
@@ -660,8 +675,8 @@ impl Path {
 
     
     
-    pub fn local_cid(&self) -> &ConnectionId {
-        self.local_cid.as_ref().unwrap()
+    pub const fn local_cid(&self) -> Option<&ConnectionId> {
+        self.local_cid.as_ref()
     }
 
     
@@ -674,8 +689,10 @@ impl Path {
     }
 
     
-    pub fn remote_cid(&self) -> &ConnectionId {
-        self.remote_cid.as_ref().unwrap().connection_id()
+    pub fn remote_cid(&self) -> Option<&ConnectionId> {
+        self.remote_cid
+            .as_ref()
+            .map(super::cid::ConnectionIdEntry::connection_id)
     }
 
     
@@ -696,12 +713,12 @@ impl Path {
     }
 
     
-    pub fn datagram<V: Into<Vec<u8>>>(&mut self, payload: V) -> Datagram {
+    pub fn datagram<V: Into<Vec<u8>>>(&mut self, payload: V, stats: &mut Stats) -> Datagram {
         
         
         
         let tos = self.tos();
-        self.ecn_info.on_packet_sent();
+        self.ecn_info.on_packet_sent(stats);
         Datagram::new(self.local, self.remote, tos, payload)
     }
 
@@ -721,14 +738,14 @@ impl Path {
     }
 
     
-    pub fn path_response(&mut self, response: [u8; 8], now: Instant) -> bool {
+    pub fn path_response(&mut self, response: [u8; 8], now: Instant, stats: &mut Stats) -> bool {
         if let ProbeState::Probing { data, mtu, .. } = &mut self.state {
             if response == *data {
                 let need_full_probe = !*mtu;
                 self.set_valid(now);
                 if need_full_probe {
                     qdebug!([self], "Sub-MTU probe successful, reset probe count");
-                    self.probe();
+                    self.probe(stats);
                 }
                 true
             } else {
@@ -747,15 +764,25 @@ impl Path {
 
     
     
-    fn probe(&mut self) {
+    fn probe(&mut self, stats: &mut Stats) {
         let probe_count = match &self.state {
             ProbeState::Probing { probe_count, .. } => *probe_count + 1,
             ProbeState::ProbeNeeded { probe_count, .. } => *probe_count,
             _ => 0,
         };
         self.state = if probe_count >= MAX_PATH_PROBES {
-            qinfo!([self], "Probing failed");
-            ProbeState::Failed
+            if self.ecn_info.ecn_mark() == IpTosEcn::Ect0 {
+                
+                qinfo!(
+                    [self],
+                    "Possible ECN blackhole, disabling ECN and re-probing path"
+                );
+                self.ecn_info.disable_ecn(stats);
+                ProbeState::ProbeNeeded { probe_count: 0 }
+            } else {
+                qinfo!([self], "Probing failed");
+                ProbeState::Failed
+            }
         } else {
             qdebug!([self], "Initiating probe");
             ProbeState::ProbeNeeded { probe_count }
@@ -839,10 +866,10 @@ impl Path {
 
     
     
-    pub fn process_timeout(&mut self, now: Instant, pto: Duration) -> bool {
+    pub fn process_timeout(&mut self, now: Instant, pto: Duration, stats: &mut Stats) -> bool {
         if let ProbeState::Probing { sent, .. } = &self.state {
             if now >= *sent + pto {
-                self.probe();
+                self.probe(stats);
             }
         }
         if matches!(self.state, ProbeState::Failed) {
@@ -855,7 +882,7 @@ impl Path {
             
             
             
-            let count = u32::try_from(MAX_PATH_PROBES + 1).unwrap();
+            let count = u32::try_from(2 * MAX_PATH_PROBES + 1).unwrap();
             self.validated.unwrap() + (pto * count) > now
         } else {
             
@@ -978,7 +1005,7 @@ impl Path {
     ) {
         debug_assert!(self.is_primary());
 
-        let ecn_ce_received = self.ecn_info.on_packets_acked(acked_pkts, ack_ecn);
+        let ecn_ce_received = self.ecn_info.on_packets_acked(acked_pkts, ack_ecn, stats);
         if ecn_ce_received {
             let cwnd_reduced = self
                 .sender
@@ -1002,7 +1029,7 @@ impl Path {
         now: Instant,
     ) {
         debug_assert!(self.is_primary());
-        self.ecn_info.on_packets_lost(lost_packets);
+        self.ecn_info.on_packets_lost(lost_packets, stats);
         let cwnd_reduced = self.sender.on_packets_lost(
             self.rtt.first_sample_time(),
             prev_largest_acked_sent,

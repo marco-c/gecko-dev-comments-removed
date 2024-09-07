@@ -66,7 +66,7 @@ fn is_debug() -> bool {
 
 fn setup_clang() {
     
-    if env::consts::OS != "windows" || env::var("GITHUB_WORKFLOW").unwrap() == "CI" {
+    if env::consts::OS != "windows" || env::var("GITHUB_WORKFLOW").unwrap_or_default() == "CI" {
         return;
     }
     println!("rerun-if-env-changed=LIBCLANG_PATH");

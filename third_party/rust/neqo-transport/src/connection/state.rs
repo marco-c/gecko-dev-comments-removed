@@ -76,6 +76,11 @@ impl State {
             None
         }
     }
+
+    #[must_use]
+    pub const fn closing(&self) -> bool {
+        matches!(self, Self::Closing { .. } | Self::Draining { .. })
+    }
 }
 
 

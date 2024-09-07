@@ -12,13 +12,14 @@ use test_fixture::{
     fixture_init, now, DEFAULT_ADDR_V4,
 };
 
-use super::{send_something_with_modifier, DEFAULT_RTT};
 use crate::{
     connection::tests::{
         connect_force_idle, connect_force_idle_with_modifier, default_client, default_server,
-        handshake_with_modifier, migration::get_cid, new_client, new_server, send_something,
+        handshake_with_modifier, migration::get_cid, new_client, new_server, send_and_receive,
+        send_something, send_something_with_modifier, send_with_modifier_and_receive, DEFAULT_RTT,
     },
     ecn::ECN_TEST_COUNT,
+    path::MAX_PATH_PROBES,
     ConnectionId, ConnectionParameters, StreamType,
 };
 
@@ -92,6 +93,79 @@ fn handshake_delay_with_ecn_blackhole() {
 }
 
 #[test]
+fn migration_delay_to_ecn_blackhole() {
+    let mut now = now();
+    let mut client = default_client();
+    let mut server = default_server();
+
+    
+    connect_force_idle(&mut client, &mut server);
+
+    
+    client
+        .migrate(Some(DEFAULT_ADDR_V4), Some(DEFAULT_ADDR_V4), false, now)
+        .unwrap();
+
+    
+    
+    let mut probes = 0;
+    while probes < MAX_PATH_PROBES * 2 {
+        match client.process_output(now) {
+            crate::Output::Callback(t) => {
+                now += t;
+            }
+            crate::Output::Datagram(d) => {
+                
+                if d.source().is_ipv4() {
+                    
+                    probes += 1;
+                    assert_eq!(client.stats().frame_tx.path_challenge, probes);
+                    if probes <= MAX_PATH_PROBES {
+                        
+                        assert_ecn_enabled(d.tos());
+                    } else {
+                        
+                        assert_ecn_disabled(d.tos());
+                    }
+                }
+            }
+            crate::Output::None => panic!("unexpected output"),
+        }
+    }
+}
+
+#[test]
+fn stats() {
+    let now = now();
+    let mut client = default_client();
+    let mut server = default_server();
+    connect_force_idle(&mut client, &mut server);
+
+    for _ in 0..ECN_TEST_COUNT {
+        let ack = send_and_receive(&mut client, &mut server, now);
+        client.process_input(&ack.unwrap(), now);
+    }
+
+    for _ in 0..ECN_TEST_COUNT {
+        let ack = send_and_receive(&mut server, &mut client, now);
+        server.process_input(&ack.unwrap(), now);
+    }
+
+    for stats in [client.stats(), server.stats()] {
+        assert_eq!(stats.ecn_paths_capable, 1);
+        assert_eq!(stats.ecn_paths_not_capable, 0);
+
+        for codepoint in [IpTosEcn::Ect1, IpTosEcn::Ce] {
+            assert_eq!(stats.ecn_tx[codepoint], 0);
+            assert_eq!(stats.ecn_rx[codepoint], 0);
+        }
+    }
+
+    assert!(client.stats().ecn_tx[IpTosEcn::Ect0] <= server.stats().ecn_rx[IpTosEcn::Ect0]);
+    assert!(server.stats().ecn_tx[IpTosEcn::Ect0] <= client.stats().ecn_rx[IpTosEcn::Ect0]);
+}
+
+#[test]
 fn disables_on_loss() {
     let now = now();
     let mut client = default_client();
@@ -104,6 +178,24 @@ fn disables_on_loss() {
 
     for _ in 0..ECN_TEST_COUNT {
         send_something(&mut client, now);
+    }
+
+    
+    let client_pkt = send_something(&mut client, now);
+    assert_ecn_disabled(client_pkt.tos());
+}
+
+#[test]
+fn disables_on_remark() {
+    let now = now();
+    let mut client = default_client();
+    let mut server = default_server();
+    connect_force_idle(&mut client, &mut server);
+
+    for _ in 0..ECN_TEST_COUNT {
+        if let Some(ack) = send_with_modifier_and_receive(&mut client, &mut server, now, remark()) {
+            client.process_input(&ack, now);
+        }
     }
 
     

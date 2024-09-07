@@ -16,10 +16,10 @@ use std::{
     time::{Duration, Instant},
 };
 
+use enum_map::{enum_map, EnumMap};
 use neqo_common::{qdebug, qinfo, qlog::NeqoQlog, qtrace, qwarn};
 pub use sent::SentPacket;
 use sent::SentPackets;
-use smallvec::{smallvec, SmallVec};
 pub use token::{RecoveryToken, StreamRecoveryToken};
 
 use crate::{
@@ -361,20 +361,10 @@ impl LossRecoverySpace {
 
 #[derive(Debug)]
 pub struct LossRecoverySpaces {
-    
-    
-    spaces: SmallVec<[LossRecoverySpace; 1]>,
+    spaces: EnumMap<PacketNumberSpace, Option<LossRecoverySpace>>,
 }
 
 impl LossRecoverySpaces {
-    const fn idx(space: PacketNumberSpace) -> usize {
-        match space {
-            PacketNumberSpace::ApplicationData => 0,
-            PacketNumberSpace::Handshake => 1,
-            PacketNumberSpace::Initial => 2,
-        }
-    }
-
     
     
     
@@ -382,45 +372,42 @@ impl LossRecoverySpaces {
     
     
     pub fn drop_space(&mut self, space: PacketNumberSpace) -> impl IntoIterator<Item = SentPacket> {
-        let sp = match space {
-            PacketNumberSpace::Initial => self.spaces.pop(),
-            PacketNumberSpace::Handshake => {
-                let sp = self.spaces.pop();
-                self.spaces.shrink_to_fit();
-                sp
-            }
-            PacketNumberSpace::ApplicationData => panic!("discarding application space"),
-        };
-        let mut sp = sp.unwrap();
-        assert_eq!(sp.space(), space, "dropping spaces out of order");
-        sp.remove_ignored()
+        let sp = self.spaces[space].take();
+        assert_ne!(
+            space,
+            PacketNumberSpace::ApplicationData,
+            "discarding application space"
+        );
+        sp.unwrap().remove_ignored()
     }
 
     pub fn get(&self, space: PacketNumberSpace) -> Option<&LossRecoverySpace> {
-        self.spaces.get(Self::idx(space))
+        self.spaces[space].as_ref()
     }
 
     pub fn get_mut(&mut self, space: PacketNumberSpace) -> Option<&mut LossRecoverySpace> {
-        self.spaces.get_mut(Self::idx(space))
+        self.spaces[space].as_mut()
     }
 
     fn iter(&self) -> impl Iterator<Item = &LossRecoverySpace> {
-        self.spaces.iter()
+        self.spaces.iter().filter_map(|(_, recvd)| recvd.as_ref())
     }
 
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut LossRecoverySpace> {
-        self.spaces.iter_mut()
+        self.spaces
+            .iter_mut()
+            .filter_map(|(_, recvd)| recvd.as_mut())
     }
 }
 
 impl Default for LossRecoverySpaces {
     fn default() -> Self {
         Self {
-            spaces: smallvec![
-                LossRecoverySpace::new(PacketNumberSpace::ApplicationData),
-                LossRecoverySpace::new(PacketNumberSpace::Handshake),
-                LossRecoverySpace::new(PacketNumberSpace::Initial),
-            ],
+            spaces: enum_map! {
+                PacketNumberSpace::Initial => Some(LossRecoverySpace::new(PacketNumberSpace::Initial)),
+                PacketNumberSpace::Handshake => Some(LossRecoverySpace::new(PacketNumberSpace::Handshake)),
+                PacketNumberSpace::ApplicationData =>Some(LossRecoverySpace::new(PacketNumberSpace::ApplicationData)),
+            },
         }
     }
 }
@@ -439,32 +426,33 @@ struct PtoState {
 impl PtoState {
     
     
-    fn pto_packet_count(space: PacketNumberSpace, rx_count: usize) -> usize {
-        if space == PacketNumberSpace::Initial && rx_count == 0 {
+    fn pto_packet_count(space: PacketNumberSpace) -> usize {
+        if space == PacketNumberSpace::ApplicationData {
+            MAX_PTO_PACKET_COUNT
+        } else {
+            
             
             
             
             1
-        } else {
-            MAX_PTO_PACKET_COUNT
         }
     }
 
-    pub fn new(space: PacketNumberSpace, probe: PacketNumberSpaceSet, rx_count: usize) -> Self {
+    pub fn new(space: PacketNumberSpace, probe: PacketNumberSpaceSet) -> Self {
         debug_assert!(probe[space]);
         Self {
             space,
             count: 1,
-            packets: Self::pto_packet_count(space, rx_count),
+            packets: Self::pto_packet_count(space),
             probe,
         }
     }
 
-    pub fn pto(&mut self, space: PacketNumberSpace, probe: PacketNumberSpaceSet, rx_count: usize) {
+    pub fn pto(&mut self, space: PacketNumberSpace, probe: PacketNumberSpaceSet) {
         debug_assert!(probe[space]);
         self.space = space;
         self.count += 1;
-        self.packets = Self::pto_packet_count(space, rx_count);
+        self.packets = Self::pto_packet_count(space);
         self.probe = probe;
     }
 
@@ -546,7 +534,7 @@ impl LossRecovery {
 
     pub fn on_packet_sent(&mut self, path: &PathRef, mut sent_packet: SentPacket) {
         let pn_space = PacketNumberSpace::from(sent_packet.packet_type());
-        qdebug!([self], "packet {}-{} sent", pn_space, sent_packet.pn());
+        qtrace!([self], "packet {}-{} sent", pn_space, sent_packet.pn());
         if let Some(space) = self.spaces.get_mut(pn_space) {
             path.borrow_mut().packet_sent(&mut sent_packet);
             space.on_packet_sent(sent_packet);
@@ -816,11 +804,10 @@ impl LossRecovery {
     }
 
     fn fire_pto(&mut self, pn_space: PacketNumberSpace, allow_probes: PacketNumberSpaceSet) {
-        let rx_count = self.stats.borrow().packets_rx;
         if let Some(st) = &mut self.pto_state {
-            st.pto(pn_space, allow_probes, rx_count);
+            st.pto(pn_space, allow_probes);
         } else {
-            self.pto_state = Some(PtoState::new(pn_space, allow_probes, rx_count));
+            self.pto_state = Some(PtoState::new(pn_space, allow_probes));
         }
 
         self.pto_state
@@ -852,10 +839,7 @@ impl LossRecovery {
                     let space = self.spaces.get_mut(*pn_space).unwrap();
                     lost.extend(
                         space
-                            .pto_packets(PtoState::pto_packet_count(
-                                *pn_space,
-                                self.stats.borrow().packets_rx,
-                            ))
+                            .pto_packets(PtoState::pto_packet_count(*pn_space))
                             .cloned(),
                     );
 
@@ -906,7 +890,7 @@ impl LossRecovery {
     
     #[allow(clippy::option_if_let_else)]
     pub fn send_profile(&mut self, path: &Path, now: Instant) -> SendProfile {
-        qdebug!([self], "get send profile {:?}", now);
+        qtrace!([self], "get send profile {:?}", now);
         let sender = path.sender();
         let mtu = path.plpmtu();
         if let Some(profile) = self
@@ -1380,13 +1364,6 @@ mod tests {
     fn drop_app() {
         let mut lr = Fixture::default();
         lr.discard(PacketNumberSpace::ApplicationData, now());
-    }
-
-    #[test]
-    #[should_panic(expected = "dropping spaces out of order")]
-    fn drop_out_of_order() {
-        let mut lr = Fixture::default();
-        lr.discard(PacketNumberSpace::Handshake, now());
     }
 
     #[test]

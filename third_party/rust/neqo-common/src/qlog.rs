@@ -6,9 +6,12 @@
 
 use std::{
     cell::RefCell,
-    fmt,
-    path::{Path, PathBuf},
+    fmt::{self, Display},
+    fs::OpenOptions,
+    io::BufWriter,
+    path::PathBuf,
     rc::Rc,
+    time::SystemTime,
 };
 
 use qlog::{
@@ -34,16 +37,48 @@ impl NeqoQlog {
     
     
     
-    pub fn enabled(
-        mut streamer: QlogStreamer,
-        qlog_path: impl AsRef<Path>,
+    pub fn enabled_with_file(
+        mut qlog_path: PathBuf,
+        role: Role,
+        title: Option<String>,
+        description: Option<String>,
+        file_prefix: impl Display,
     ) -> Result<Self, qlog::Error> {
+        qlog_path.push(format!("{file_prefix}.sqlog"));
+
+        let file = OpenOptions::new()
+            .write(true)
+            
+            
+            .create_new(true)
+            .open(&qlog_path)
+            .map_err(qlog::Error::IoError)?;
+
+        let streamer = QlogStreamer::new(
+            qlog::QLOG_VERSION.to_string(),
+            title,
+            description,
+            None,
+            std::time::Instant::now(),
+            new_trace(role),
+            qlog::events::EventImportance::Base,
+            Box::new(BufWriter::new(file)),
+        );
+        Self::enabled(streamer, qlog_path)
+    }
+
+    
+    
+    
+    
+    
+    pub fn enabled(mut streamer: QlogStreamer, qlog_path: PathBuf) -> Result<Self, qlog::Error> {
         streamer.start_log()?;
 
         Ok(Self {
             inner: Rc::new(RefCell::new(Some(NeqoQlogShared {
+                qlog_path,
                 streamer,
-                qlog_path: qlog_path.as_ref().to_owned(),
             }))),
         })
     }
@@ -138,13 +173,10 @@ pub fn new_trace(role: Role) -> qlog::TraceSeq {
         common_fields: Some(CommonFields {
             group_id: None,
             protocol_type: None,
-            reference_time: {
-                
-                
-                
-                #[allow(clippy::cast_precision_loss)]
-                Some(time::OffsetDateTime::now_utc().unix_timestamp() as f64)
-            },
+            reference_time: SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .map(|d| d.as_secs_f64() * 1_000.0)
+                .ok(),
             time_format: Some("relative".to_string()),
         }),
     }

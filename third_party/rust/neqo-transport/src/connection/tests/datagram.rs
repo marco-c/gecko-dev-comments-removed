@@ -599,7 +599,7 @@ fn datagram_fill() {
         let path = p.borrow();
         
         
-        path.plpmtu() - path.remote_cid().len() - 19
+        path.plpmtu() - path.remote_cid().unwrap().len() - 19
     };
     assert!(space >= 64); 
 
