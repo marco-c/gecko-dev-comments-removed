@@ -274,6 +274,15 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
       }
     }
 
+#ifdef XP_MACOSX
+    
+    
+    if (ch == 0x620 || ch == 0xf8c || ch == 0xf8d || ch == 0xf8e ||
+        ch == 0xf8f) {
+      return false;
+    }
+#endif
+
     
     if (ch == 0x30fc && lastScript != Script::HIRAGANA &&
         lastScript != Script::KATAKANA) {
