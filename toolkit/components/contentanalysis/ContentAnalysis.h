@@ -379,6 +379,7 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
   void SetOwner(RefPtr<ContentAnalysis> aOwner);
   void DoNotAcknowledge() { mDoNotAcknowledge = true; }
   void SetCancelError(CancelError aCancelError);
+  void SetIsCachedResponse() { mIsCachedResponse = true; }
 
  private:
   ~ContentAnalysisResponse() = default;
@@ -413,6 +414,11 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
   
   
   bool mDoNotAcknowledge = false;
+
+  
+  
+  
+  bool mIsCachedResponse = false;
 
   friend class ContentAnalysis;
 };
