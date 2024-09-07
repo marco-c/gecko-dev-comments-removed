@@ -2728,8 +2728,8 @@ class Document : public nsINode,
     return !EventHandlingSuppressed() && mScriptGlobalObject;
   }
 
-  bool WouldScheduleFrameRequestCallbacks() const {
-    
+  void MaybeScheduleFrameRequestCallbacks();
+  bool ShouldFireFrameRequestCallbacks() const {
     
     
     return mPresShell && IsEventHandlingEnabled();
@@ -2738,7 +2738,7 @@ class Document : public nsINode,
   void DecreaseEventSuppression() {
     MOZ_ASSERT(mEventsSuppressed);
     --mEventsSuppressed;
-    UpdateFrameRequestCallbackSchedulingState();
+    MaybeScheduleFrameRequestCallbacks();
   }
 
   
@@ -3056,6 +3056,11 @@ class Document : public nsINode,
 
 
   void TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks);
+
+  
+  bool HasFrameRequestCallbacks() const {
+    return !mFrameRequestManager.IsEmpty();
+  }
 
   
 
@@ -4434,14 +4439,6 @@ class Document : public nsINode,
   nsCString GetContentTypeInternal() const { return mContentType; }
 
   
-  
-  
-  
-  
-  void UpdateFrameRequestCallbackSchedulingState(
-      PresShell* aOldPresShell = nullptr);
-
-  
   bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
 
   void MaybeAllowStorageForOpenerAfterUserInteraction();
@@ -4726,11 +4723,6 @@ class Document : public nsINode,
   
   
   bool mDidFireDOMContentLoaded : 1;
-
-  
-  
-  
-  bool mFrameRequestCallbacksScheduled : 1;
 
   bool mIsTopLevelContentDocument : 1;
 
