@@ -3753,6 +3753,8 @@ class Document : public nsINode,
   
   
   void UpdateIntersections(TimeStamp aNowTime);
+  
+  void UpdateRemoteFrameEffects();
   MOZ_CAN_RUN_SCRIPT void NotifyIntersectionObservers();
 
   DOMIntersectionObserver* GetLazyLoadObserver() { return mLazyLoadObserver; }

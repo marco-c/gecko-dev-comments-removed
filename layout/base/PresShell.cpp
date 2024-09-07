@@ -12228,7 +12228,7 @@ PresShell::ProximityToViewportResult PresShell::DetermineProximityToViewport() {
     
     bool intersects =
         DOMIntersectionObserver::Intersect(
-            input, *element,
+            input, *element, DOMIntersectionObserver::BoxToUse::OverflowClip,
             DOMIntersectionObserver::IsForProximityToViewport::Yes)
             .Intersects();
     element->SetVisibleForContentVisibility(intersects);
