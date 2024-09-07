@@ -141,6 +141,10 @@ int js::shell::FuzzJSRuntimeFuzz(const uint8_t* buf, size_t size) {
   }
 
   
+  
+  gCx->runtime()->hadOutOfMemory = false;
+
+  
   CrashOnPendingException();
 
   int32_t ret = 0;
