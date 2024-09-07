@@ -324,6 +324,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetHasRestoreData(GetHasRestoreData());
   txn.SetShouldDelayMediaFromStart(GetShouldDelayMediaFromStart());
   txn.SetForceOffline(GetForceOffline());
+  txn.SetTopInnerSizeForRFP(GetTopInnerSizeForRFP());
 
   
   
