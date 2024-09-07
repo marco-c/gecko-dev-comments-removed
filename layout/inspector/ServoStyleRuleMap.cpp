@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/ServoStyleRuleMap.h"
 
@@ -49,20 +49,20 @@ void ServoStyleRuleMap::SheetAdded(StyleSheet& aStyleSheet) {
 }
 
 void ServoStyleRuleMap::SheetCloned(StyleSheet& aStyleSheet) {
-  // Invalidate all data inside. We could probably track down all the individual
-  // rules that changed etc, but it doesn't seem worth it.
-  //
-  // TODO: We can't do this until GetCssRulesInternal stops cloning.
-  // mTable.Clear();
+  
+  
+  
+  
+  
 }
 
 void ServoStyleRuleMap::SheetRemoved(StyleSheet& aStyleSheet) {
-  // Invalidate all data inside. This isn't strictly necessary since
-  // we should always get update from document before new queries come.
-  // But it is probably still safer if we try to avoid having invalid
-  // pointers inside. Also if the document keep adding and removing
-  // stylesheets, this would also prevent us from infinitely growing
-  // memory usage.
+  
+  
+  
+  
+  
+  
   mTable.Clear();
 }
 
@@ -88,8 +88,9 @@ void ServoStyleRuleMap::RuleRemoved(StyleSheet& aStyleSheet,
     case StyleCssRuleType::Container:
     case StyleCssRuleType::Document:
     case StyleCssRuleType::Scope:
-    case StyleCssRuleType::StartingStyle: {
-      // See the comment in SheetRemoved.
+    case StyleCssRuleType::StartingStyle:
+    case StyleCssRuleType::PositionTry: {
+      
       mTable.Clear();
       break;
     }
@@ -151,6 +152,7 @@ void ServoStyleRuleMap::FillTableFromRule(css::Rule& aRule) {
     case StyleCssRuleType::CounterStyle:
     case StyleCssRuleType::FontFeatureValues:
     case StyleCssRuleType::FontPaletteValues:
+    case StyleCssRuleType::PositionTry:
       break;
   }
 }
@@ -167,4 +169,4 @@ void ServoStyleRuleMap::FillTableFromStyleSheet(StyleSheet& aSheet) {
   }
 }
 
-}  // namespace mozilla
+}  
