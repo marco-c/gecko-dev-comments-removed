@@ -759,22 +759,9 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
 
   mPopupState = ePopupShowing;
   mAnchorContent = aAnchorContent;
-  mAnchorType = aAnchorType;
-  const nscoord auPerCssPx = AppUnitsPerCSSPixel();
-  const nsPoint pos = CSSPixel::ToAppUnits(CSSIntPoint(aXPos, aYPos));
-  
-  
-  mScreenRect = nsRect(-auPerCssPx, -auPerCssPx, 0, 0);
-  mExtraMargin = pos;
-  
-  if (mAnchorType == MenuPopupAnchorType::Node && !aAnchorContent) {
-    mAnchorType = MenuPopupAnchorType::Point;
-    mScreenRect = nsRect(
-        pos + PresShell()->GetRootFrame()->GetScreenRectInAppUnits().TopLeft(),
-        nsSize());
-    mExtraMargin = {};
-  }
   mTriggerContent = aTriggerContent;
+  mXPos = aXPos;
+  mYPos = aYPos;
   mIsNativeMenu = false;
   mIsTopLevelContextMenu = false;
   mVFlip = false;
@@ -783,6 +770,8 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
   mAlignmentOffset = 0;
   mPositionedOffset = 0;
   mPositionedByMoveToRect = false;
+
+  mAnchorType = aAnchorType;
 
   
   
@@ -798,6 +787,8 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
       
       if (anchor.IsEmpty() && align.IsEmpty() && position.IsEmpty())
         position.Assign(aPosition);
+      else
+        mXPos = mYPos = 0;
     } else if (!aPosition.IsEmpty()) {
       position.Assign(aPosition);
     }
@@ -855,6 +846,9 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
       InitPositionFromAnchorAlign(anchor, align);
     }
   }
+  
+  
+  mScreenRect = nsRect(-AppUnitsPerCSSPixel(), -AppUnitsPerCSSPixel(), 0, 0);
 
   if (aAttributesOverride) {
     
@@ -890,8 +884,9 @@ void nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
   mAnchorContent = nullptr;
   mTriggerContent = aTriggerContent;
   mScreenRect =
-      nsRect(CSSPixel::ToAppUnits(CSSIntPoint(aXPos, aYPos)), nsSize());
-  mExtraMargin = {};
+      nsRect(CSSPixel::ToAppUnits(aXPos), CSSPixel::ToAppUnits(aYPos), 0, 0);
+  mXPos = 0;
+  mYPos = 0;
   mFlip = FlipFromAttribute(this);
   mPopupAnchor = POPUPALIGNMENT_NONE;
   mPopupAlignment = POPUPALIGNMENT_NONE;
@@ -910,8 +905,9 @@ void nsMenuPopupFrame::InitializePopupAsNativeContextMenu(
   mPopupState = ePopupShowing;
   mAnchorContent = nullptr;
   mScreenRect =
-      nsRect(CSSPixel::ToAppUnits(CSSIntPoint(aXPos, aYPos)), nsSize());
-  mExtraMargin = {};
+      nsRect(CSSPixel::ToAppUnits(aXPos), CSSPixel::ToAppUnits(aYPos), 0, 0);
+  mXPos = 0;
+  mYPos = 0;
   mFlip = FlipType_Default;
   mPopupAnchor = POPUPALIGNMENT_NONE;
   mPopupAlignment = POPUPALIGNMENT_NONE;
@@ -1450,7 +1446,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
       
       
       nsIFrame* anchorFrame = GetAnchorFrame();
-      if (NS_WARN_IF(!anchorFrame)) {
+      if (!anchorFrame) {
         return rootScreenRect;
       }
       return ComputeAnchorRect(rootPc, anchorFrame);
@@ -1473,6 +1469,20 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
       
       result.mUsedRect.MoveTo(result.mAnchorRect.TopLeft() +
                               nsPoint(margin.left, margin.top));
+    }
+
+    
+    
+    
+    
+    
+    {
+      nsPoint offset(CSSPixel::ToAppUnits(mXPos), CSSPixel::ToAppUnits(mYPos));
+      if (IsDirectionRTL()) {
+        offset.x = -offset.x;
+      }
+      result.mUsedRect.MoveBy(offset);
+      result.mAnchorRect.MoveBy(offset);
     }
   } else {
     
@@ -2160,10 +2170,6 @@ nsMargin nsMenuPopupFrame::GetMargin() const {
     margin.top += auOffset;
     margin.bottom += auOffset;
   }
-  margin.top += mExtraMargin.y;
-  margin.bottom += mExtraMargin.y;
-  margin.left += mExtraMargin.x;
-  margin.right += mExtraMargin.x;
   return margin;
 }
 
@@ -2203,6 +2209,7 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
     
     mPopupAlignment = POPUPALIGNMENT_TOPLEFT;
     mPopupAnchor = POPUPALIGNMENT_BOTTOMLEFT;
+    mXPos = mYPos = 0;
   } else {
     mAnchorType = MenuPopupAnchorType::Point;
   }
