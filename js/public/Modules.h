@@ -36,6 +36,8 @@ union Utf8Unit;
 
 namespace JS {
 
+
+
 enum class ModuleType : uint32_t {
   Unknown = 0,
   JavaScript,
