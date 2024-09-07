@@ -45,6 +45,7 @@ class SVGTransformableElement : public SVGElement {
       SVGTransformTypes aWhich = eAllTransforms) const override;
   const gfx::Matrix* GetAnimateMotionTransform() const override;
   void SetAnimateMotionTransform(const gfx::Matrix* aMatrix) override;
+  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   SVGAnimatedTransformList* GetAnimatedTransformList(
       uint32_t aFlags = 0) override;
@@ -55,17 +56,6 @@ class SVGTransformableElement : public SVGElement {
   bool IsTransformable() override { return true; }
 
  protected:
-  
-
-
-
-
-
-
-  static gfxMatrix GetUserToParentTransform(
-      const gfx::Matrix* aAnimateMotionTransform,
-      const SVGAnimatedTransformList* aTransforms);
-
   UniquePtr<SVGAnimatedTransformList> mTransforms;
 
   

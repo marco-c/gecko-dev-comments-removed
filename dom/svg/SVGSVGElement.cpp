@@ -441,10 +441,19 @@ bool SVGSVGElement::WillBeOutermostSVG(nsINode& aParent) const {
   return true;
 }
 
-void SVGSVGElement::InvalidateTransformNotifyFrame() {
-  ISVGSVGFrame* svgframe = do_QueryFrame(GetPrimaryFrame());
+void SVGSVGElement::DidChangeSVGView() {
+  InvalidateTransformNotifyFrame();
   
-  if (svgframe) {
+  
+  if (!IsPendingMappedAttributeEvaluation() &&
+      mAttrs.MarkAsPendingPresAttributeEvaluation()) {
+    OwnerDoc()->ScheduleForPresAttrEvaluation(this);
+  }
+}
+
+void SVGSVGElement::InvalidateTransformNotifyFrame() {
+  
+  if (ISVGSVGFrame* svgframe = do_QueryFrame(GetPrimaryFrame())) {
     svgframe->NotifyViewportOrTransformChanged(
         ISVGDisplayableFrame::TRANSFORM_CHANGED);
   }
@@ -582,11 +591,6 @@ const SVGAnimatedViewBox& SVGSVGElement::GetViewBoxInternal() const {
   }
 
   return mViewBox;
-}
-
-SVGAnimatedTransformList* SVGSVGElement::GetTransformInternal() const {
-  return (mSVGView && mSVGView->mTransforms) ? mSVGView->mTransforms.get()
-                                             : mTransforms.get();
 }
 
 }  

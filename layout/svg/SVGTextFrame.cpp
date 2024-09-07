@@ -351,13 +351,26 @@ static SVGTextFrame* FrameIfAnonymousChildReflowed(SVGTextFrame* aFrame) {
   return aFrame;
 }
 
-static double GetContextScale(const gfxMatrix& aMatrix) {
-  
-  
-  
-  gfxPoint p = aMatrix.TransformPoint(gfxPoint(1, 1)) -
-               aMatrix.TransformPoint(gfxPoint(0, 0));
-  return SVGContentUtils::ComputeNormalizedHypotenuse(p.x, p.y);
+
+
+
+static float GetContextScale(SVGTextFrame* aFrame) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+    
+    
+    
+    
+    
+    return 1.0f;
+  }
+  auto matrix = nsLayoutUtils::GetTransformToAncestor(
+      RelativeTo{aFrame}, RelativeTo{SVGUtils::GetOuterSVGFrame(aFrame)});
+  Matrix transform2D;
+  if (!matrix.CanDraw2D(&transform2D)) {
+    return {};
+  }
+  auto scales = transform2D.ScaleFactors();
+  return std::max(1.0f, std::max(scales.xScale, scales.yScale));
 }
 
 
@@ -2995,14 +3008,14 @@ void SVGTextFrame::NotifySVGChanged(uint32_t aFlags) {
     mCanvasTM = nullptr;
     
     
-    gfxMatrix newTM =
-        HasAnyStateBits(NS_FRAME_IS_NONDISPLAY) ? gfxMatrix() : GetCanvasTM();
-    
-    float scale = GetContextScale(newTM);
-    float change = scale / mLastContextScale;
-    if (change >= 2.0f || change <= 0.5f) {
-      needNewBounds = true;
-      needGlyphMetricsUpdate = true;
+    if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+      
+      float scale = GetContextScale(this);
+      float change = scale / mLastContextScale;
+      if (change >= 2.0f || change <= 0.5f) {
+        needNewBounds = true;
+        needGlyphMetricsUpdate = true;
+      }
     }
   }
 
@@ -4521,11 +4534,10 @@ already_AddRefed<Path> SVGTextFrame::GetTextPath(nsIFrame* aTextPathFrame) {
     return nullptr;
   }
 
-  gfxMatrix matrix = geomElement->PrependLocalTransformsTo(gfxMatrix());
+  
+  auto matrix = geomElement->LocalTransform();
   if (!matrix.IsIdentity()) {
-    
-    RefPtr<PathBuilder> builder =
-        path->TransformedCopyToBuilder(ToMatrix(matrix));
+    RefPtr<PathBuilder> builder = path->TransformedCopyToBuilder(matrix);
     path = builder->Finish();
   }
 
@@ -5119,8 +5131,6 @@ void SVGTextFrame::DoReflow() {
 bool SVGTextFrame::UpdateFontSizeScaleFactor() {
   double oldFontSizeScaleFactor = mFontSizeScaleFactor;
 
-  nsPresContext* presContext = PresContext();
-
   bool geometricPrecision = false;
   CSSCoord min = std::numeric_limits<float>::max();
   CSSCoord max = std::numeric_limits<float>::min();
@@ -5158,30 +5168,8 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
     return mFontSizeScaleFactor != oldFontSizeScaleFactor;
   }
 
-  
-  
-  
-  
-  
-  double contextScale = 1.0;
-  if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-    gfxMatrix m(GetCanvasTM());
-    if (!m.IsSingular()) {
-      contextScale = GetContextScale(m);
-      if (!std::isfinite(contextScale)) {
-        contextScale = 1.0f;
-      }
-    }
-  }
+  float contextScale = GetContextScale(this);
   mLastContextScale = contextScale;
-
-  
-  
-  
-  
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
-      presContext->AppUnitsPerDevPixel());
-  contextScale *= cssPxPerDevPx;
 
   double minTextRunSize = min * contextScale;
   double maxTextRunSize = max * contextScale;

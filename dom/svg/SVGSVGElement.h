@@ -183,6 +183,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   
   void InvalidateTransformNotifyFrame();
+  void DidChangeSVGView();
 
   
   
@@ -197,7 +198,6 @@ class SVGSVGElement final : public SVGSVGElementBase {
   bool ClearPreserveAspectRatioProperty();
 
   const SVGAnimatedViewBox& GetViewBoxInternal() const override;
-  SVGAnimatedTransformList* GetTransformInternal() const override;
 
   EnumAttributesInfo GetEnumInfo() override;
 

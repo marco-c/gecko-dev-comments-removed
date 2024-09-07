@@ -247,6 +247,8 @@ class SVGGeometryElement : public SVGGeometryElementBase {
   MOZ_CAN_RUN_SCRIPT already_AddRefed<DOMSVGPoint> GetPointAtLength(
       float distance, ErrorResult& rv);
 
+  gfx::Matrix LocalTransform() const;
+
  protected:
   
   NumberAttributesInfo GetNumberInfo() override;

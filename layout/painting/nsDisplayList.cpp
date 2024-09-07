@@ -6247,12 +6247,13 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
         aProperties.mTranslate, aProperties.mRotate, aProperties.mScale,
         aProperties.mMotion.ptrOr(nullptr), aProperties.mTransform, aRefBox,
         aAppUnitsPerPixel);
-  } else if (hasSVGTransforms) {
+  }
+  if (hasSVGTransforms) {
     
     float pixelsPerCSSPx = AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
     svgTransform._31 *= pixelsPerCSSPx;
     svgTransform._32 *= pixelsPerCSSPx;
-    result = Matrix4x4::From2D(svgTransform);
+    result *= Matrix4x4::From2D(svgTransform);
   }
 
   

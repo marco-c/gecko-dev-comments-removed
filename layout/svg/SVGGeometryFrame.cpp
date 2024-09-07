@@ -104,12 +104,15 @@ void SVGGeometryFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
         
         element->ClearAnyCachedPath();
       }
-    } else {
-      if (StyleSVG()->mFillRule != oldStyleSVG->mFillRule) {
-        
-        element->ClearAnyCachedPath();
-      }
+    } else if (StyleSVG()->mFillRule != oldStyleSVG->mFillRule) {
+      
+      element->ClearAnyCachedPath();
     }
+  }
+
+  if (StyleDisplay()->CalcTransformPropertyDifference(
+          *aOldComputedStyle->StyleDisplay())) {
+    SVGUtils::NotifyChildrenOfSVGChange(this, TRANSFORM_CHANGED);
   }
 
   if (element->IsGeometryChangedViaCSS(*Style(), *aOldComputedStyle)) {

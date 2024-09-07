@@ -606,15 +606,8 @@ void SVGUseElement::UnlinkSource() {
 
 gfxMatrix SVGUseElement::PrependLocalTransformsTo(
     const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
-  
-  gfxMatrix userToParent;
-
-  if (aWhich == eUserSpaceToParent || aWhich == eAllTransforms) {
-    userToParent = GetUserToParentTransform(mAnimateMotionTransform.get(),
-                                            mTransforms.get());
-    if (aWhich == eUserSpaceToParent) {
-      return userToParent * aMatrix;
-    }
+  if (aWhich == eUserSpaceToParent) {
+    return aMatrix;
   }
 
   
@@ -624,13 +617,8 @@ gfxMatrix SVGUseElement::PrependLocalTransformsTo(
   }
 
   gfxMatrix childToUser = gfxMatrix::Translation(x, y);
-
-  if (aWhich == eAllTransforms) {
-    return childToUser * userToParent * aMatrix;
-  }
-
-  MOZ_ASSERT(aWhich == eChildToUserSpace, "Unknown TransformTypes");
-
+  MOZ_ASSERT(aWhich == eChildToUserSpace || aWhich == eAllTransforms,
+             "Unknown TransformTypes");
   
   
   
