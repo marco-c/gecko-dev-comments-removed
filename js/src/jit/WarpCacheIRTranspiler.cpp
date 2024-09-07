@@ -6061,7 +6061,7 @@ bool WarpCacheIRTranspiler::emitCallWasmFunction(
     switch (results[0].kind()) {
       case wasm::ValType::I64:
         
-        postConversion = MInt64ToBigInt::New(alloc(), call);
+        postConversion = MInt64ToBigInt::New(alloc(), call, Scalar::BigInt64);
 
         
         postConversion->setNotMovable();
