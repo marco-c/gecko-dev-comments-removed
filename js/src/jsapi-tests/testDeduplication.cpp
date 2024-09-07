@@ -96,6 +96,8 @@ BEGIN_TEST(testDeduplication_ASSC) {
   JS::AutoStableStringChars stable(cx);
   CHECK(stable.init(cx, depdep));
 
+  CHECK(stable.latin1Range().length() == 80);
+
   const JS::Latin1Char* chars = stable.latin1Chars();
   CHECK(memcmp(chars, text + 20, 80 * sizeof(JS::Latin1Char)) == 0);
 
@@ -126,6 +128,14 @@ BEGIN_TEST(testDeduplication_ASSC) {
   
   
   
+
+  
+  
+  JS::AutoStableStringChars stable2(cx);
+  CHECK(stable2.init(cx, depdep));
+  
+  
+  CHECK(stable2.latin1Range().length() == 80);
 
   return true;
 }
