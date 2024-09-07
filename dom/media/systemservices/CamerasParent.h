@@ -144,6 +144,11 @@ class CamerasParent final : public PCamerasParent,
   
   void OnDeviceChange() override;
 
+  
+  
+  
+  std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> GetDeviceInfo(
+      int aEngine);
   VideoEngine* EnsureInitialized(int aEngine);
 
   

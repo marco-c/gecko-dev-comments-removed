@@ -65,7 +65,7 @@ class VideoEngine {
 
 
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
-  GetOrCreateVideoCaptureDeviceInfo();
+  GetOrCreateVideoCaptureDeviceInfo(webrtc::VideoInputFeedBack* callBack);
 
   
 
