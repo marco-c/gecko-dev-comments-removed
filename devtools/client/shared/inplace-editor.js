@@ -246,6 +246,8 @@ function editableItem(options, callback) {
   
   
   element._editable = true;
+  
+  element.setAttribute("editable", "");
 
   
   element._trigger = trigger;
