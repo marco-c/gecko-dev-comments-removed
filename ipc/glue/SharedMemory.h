@@ -7,37 +7,75 @@
 #ifndef mozilla_ipc_SharedMemory_h
 #define mozilla_ipc_SharedMemory_h
 
-#include <cstddef>
-
-#include "chrome/common/ipc_message_utils.h"
-#include "mozilla/Assertions.h"
+#include "nsDebug.h"
 #include "nsISupportsImpl.h"  
+#include "mozilla/Attributes.h"
 
-#ifdef XP_DARWIN
-#  include "mozilla/ipc/SharedMemoryImpl_mach.h"
-#else
-#  include "mozilla/ipc/SharedMemoryImpl_chromium.h"
-#endif
+#include "base/process.h"
+#include "chrome/common/ipc_message_utils.h"
 
-namespace mozilla::ipc {
 
-class SharedMemory : public SharedMemoryImpl {
-  ~SharedMemory();
+
+
+
+namespace {
+enum Rights { RightsNone = 0, RightsRead = 1 << 0, RightsWrite = 1 << 1 };
+}  
+
+namespace mozilla {
+
+namespace ipc {
+class SharedMemory;
+}  
+
+namespace ipc {
+
+class SharedMemory {
+ protected:
+  virtual ~SharedMemory() {
+    Unmapped();
+    Destroyed();
+  }
 
  public:
-  SharedMemory();
+  enum OpenRights {
+    RightsReadOnly = RightsRead,
+    RightsReadWrite = RightsRead | RightsWrite,
+  };
+
+  size_t Size() const { return mMappedSize; }
+
+  virtual void* memory() const = 0;
+
+  virtual bool Create(size_t size) = 0;
+  virtual bool Map(size_t nBytes, void* fixed_address = nullptr) = 0;
+  virtual void Unmap() = 0;
+
+  virtual void CloseHandle() = 0;
+
+  virtual bool WriteHandle(IPC::MessageWriter* aWriter) = 0;
+  virtual bool ReadHandle(IPC::MessageReader* aReader) = 0;
+
+  void Protect(char* aAddr, size_t aSize, int aRights) {
+    char* memStart = reinterpret_cast<char*>(memory());
+    if (!memStart) MOZ_CRASH("SharedMemory region points at NULL!");
+    char* memEnd = memStart + Size();
+
+    char* protStart = aAddr;
+    if (!protStart) MOZ_CRASH("trying to Protect() a NULL region!");
+    char* protEnd = protStart + aSize;
+
+    if (!(memStart <= protStart && protEnd <= memEnd))
+      MOZ_CRASH("attempt to Protect() a region outside this SharedMemory");
+
+    
+    SystemProtect(aAddr, aSize, aRights);
+  }
 
   
   
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedMemory)
-
-  size_t Size() const { return mMappedSize; }
-  void CloseHandle() { TakeHandle(); }
-
-  bool WriteHandle(IPC::MessageWriter* aWriter);
-  bool ReadHandle(IPC::MessageReader* aReader);
-  void Protect(char* aAddr, size_t aSize, int aRights);
 
   static void SystemProtect(char* aAddr, size_t aSize, int aRights);
   [[nodiscard]] static bool SystemProtectFallible(char* aAddr, size_t aSize,
@@ -45,12 +83,21 @@ class SharedMemory : public SharedMemoryImpl {
   static size_t SystemPageSize();
   static size_t PageAlignedSize(size_t aSize);
 
-  bool Create(size_t nBytes);
-  bool Map(size_t nBytes, void* fixedAddress = nullptr);
-  void Unmap();
-  void* Memory() const;
+ protected:
+  SharedMemory();
 
- private:
+  
+  
+  
+  
+  
+  
+  
+  void Created(size_t aNBytes);
+  void Mapped(size_t aNBytes);
+  void Unmapped();
+  void Destroyed();
+
   
   
   
@@ -61,6 +108,35 @@ class SharedMemory : public SharedMemoryImpl {
   size_t mMappedSize;
 };
 
+template <typename HandleImpl>
+class SharedMemoryCommon : public SharedMemory {
+ public:
+  typedef HandleImpl Handle;
+
+  virtual Handle CloneHandle() = 0;
+  virtual Handle TakeHandle() = 0;
+  virtual bool IsHandleValid(const Handle& aHandle) const = 0;
+  virtual bool SetHandle(Handle aHandle, OpenRights aRights) = 0;
+
+  virtual void CloseHandle() override { TakeHandle(); }
+
+  virtual bool WriteHandle(IPC::MessageWriter* aWriter) override {
+    Handle handle = CloneHandle();
+    if (!handle) {
+      return false;
+    }
+    IPC::WriteParam(aWriter, std::move(handle));
+    return true;
+  }
+
+  virtual bool ReadHandle(IPC::MessageReader* aReader) override {
+    Handle handle;
+    return IPC::ReadParam(aReader, &handle) && IsHandleValid(handle) &&
+           SetHandle(std::move(handle), RightsReadWrite);
+  }
+};
+
+}  
 }  
 
 #endif  

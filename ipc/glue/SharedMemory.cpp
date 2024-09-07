@@ -4,12 +4,15 @@
 
 
 
-#include "mozilla/ipc/SharedMemory.h"
+#include <math.h>
 
-#include "mozilla/Atomics.h"
+#include "nsString.h"
 #include "nsIMemoryReporter.h"
+#include "mozilla/ipc/SharedMemory.h"
+#include "mozilla/Atomics.h"
 
-namespace mozilla::ipc {
+namespace mozilla {
+namespace ipc {
 
 static Atomic<size_t> gShmemAllocated;
 static Atomic<size_t> gShmemMapped;
@@ -46,47 +49,6 @@ SharedMemory::SharedMemory() : mAllocSize(0), mMappedSize(0) {
   }
 }
 
-SharedMemory::~SharedMemory() {
-  Unmap();
-  CloseHandle();
-
-  MOZ_ASSERT(gShmemAllocated >= mAllocSize,
-             "Can't destroy more than allocated");
-  gShmemAllocated -= mAllocSize;
-  mAllocSize = 0;
-}
-
-bool SharedMemory::WriteHandle(IPC::MessageWriter* aWriter) {
-  Handle handle = CloneHandle();
-  if (!handle) {
-    return false;
-  }
-  IPC::WriteParam(aWriter, std::move(handle));
-  return true;
-}
-
-bool SharedMemory::ReadHandle(IPC::MessageReader* aReader) {
-  Handle handle;
-  return IPC::ReadParam(aReader, &handle) && IsHandleValid(handle) &&
-         SetHandle(std::move(handle), RightsReadWrite);
-}
-
-void SharedMemory::Protect(char* aAddr, size_t aSize, int aRights) {
-  char* memStart = reinterpret_cast<char*>(Memory());
-  if (!memStart) MOZ_CRASH("SharedMemory region points at NULL!");
-  char* memEnd = memStart + Size();
-
-  char* protStart = aAddr;
-  if (!protStart) MOZ_CRASH("trying to Protect() a NULL region!");
-  char* protEnd = protStart + aSize;
-
-  if (!(memStart <= protStart && protEnd <= memEnd)) {
-    MOZ_CRASH("attempt to Protect() a region outside this SharedMemory");
-  }
-
-  
-  SystemProtect(aAddr, aSize, aRights);
-}
 
 size_t SharedMemory::PageAlignedSize(size_t aSize) {
   size_t pageSize = SystemPageSize();
@@ -94,37 +56,29 @@ size_t SharedMemory::PageAlignedSize(size_t aSize) {
   return pageSize * nPagesNeeded;
 }
 
-bool SharedMemory::Create(size_t aNBytes) {
-  bool ok = CreateImpl(aNBytes);
-  if (ok) {
-    mAllocSize = aNBytes;
-    gShmemAllocated += mAllocSize;
-  }
-  return ok;
+void SharedMemory::Created(size_t aNBytes) {
+  mAllocSize = aNBytes;
+  gShmemAllocated += mAllocSize;
 }
 
-bool SharedMemory::Map(size_t aNBytes, void* fixedAddress) {
-  bool ok = MapImpl(aNBytes, fixedAddress);
-  if (ok) {
-    mMappedSize = aNBytes;
-    gShmemMapped += mMappedSize;
-  }
-  return ok;
+void SharedMemory::Mapped(size_t aNBytes) {
+  mMappedSize = aNBytes;
+  gShmemMapped += mMappedSize;
 }
 
-void SharedMemory::Unmap() {
+void SharedMemory::Unmapped() {
   MOZ_ASSERT(gShmemMapped >= mMappedSize, "Can't unmap more than mapped");
-  UnmapImpl(mMappedSize);
   gShmemMapped -= mMappedSize;
   mMappedSize = 0;
 }
 
-void* SharedMemory::Memory() const {
-#ifdef FUZZING
-  return SharedMemoryFuzzer::MutateSharedMemory(MemoryImpl(), mAllocSize);
-#else
-  return MemoryImpl();
-#endif
+
+void SharedMemory::Destroyed() {
+  MOZ_ASSERT(gShmemAllocated >= mAllocSize,
+             "Can't destroy more than allocated");
+  gShmemAllocated -= mAllocSize;
+  mAllocSize = 0;
 }
 
+}  
 }  

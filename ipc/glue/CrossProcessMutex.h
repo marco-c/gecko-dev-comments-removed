@@ -15,7 +15,7 @@
 #endif
 #if !defined(XP_WIN) && !defined(XP_NETBSD) && !defined(XP_OPENBSD)
 #  include <pthread.h>
-#  include "mozilla/ipc/SharedMemory.h"
+#  include "mozilla/ipc/SharedMemoryBasic.h"
 #  include "mozilla/Atomics.h"
 #endif
 
@@ -39,7 +39,7 @@ namespace mozilla {
 #if defined(XP_WIN)
 typedef mozilla::UniqueFileHandle CrossProcessMutexHandle;
 #elif !defined(XP_NETBSD) && !defined(XP_OPENBSD)
-typedef mozilla::ipc::SharedMemory::Handle CrossProcessMutexHandle;
+typedef mozilla::ipc::SharedMemoryBasic::Handle CrossProcessMutexHandle;
 #else
 
 
@@ -104,7 +104,7 @@ class CrossProcessMutex {
 #if defined(XP_WIN)
   HANDLE mMutex;
 #elif !defined(XP_NETBSD) && !defined(XP_OPENBSD)
-  RefPtr<mozilla::ipc::SharedMemory> mSharedBuffer;
+  RefPtr<mozilla::ipc::SharedMemoryBasic> mSharedBuffer;
   pthread_mutex_t* mMutex;
   mozilla::Atomic<int32_t>* mCount;
 #endif

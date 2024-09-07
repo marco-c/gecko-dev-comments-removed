@@ -52,6 +52,7 @@
 
 
 
+
 namespace mozilla::ipc {
 
 class IProtocol;
