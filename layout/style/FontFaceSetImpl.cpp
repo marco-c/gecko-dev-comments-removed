@@ -637,12 +637,10 @@ nsresult FontFaceSetImpl::LogMessage(gfxUserFontEntry* aUserFontEntry,
 
   
   StyleLockedFontFaceRule* rule = FindRuleForUserFontEntry(aUserFontEntry);
-  nsString href;
-  nsAutoCString text;
+  nsAutoCString href;
   uint32_t line = 0;
   uint32_t column = 0;
   if (rule) {
-    Servo_FontFaceRule_GetCssText(rule, &text);
     Servo_FontFaceRule_GetSourceLocation(rule, &line, &column);
     
     
@@ -666,8 +664,7 @@ nsresult FontFaceSetImpl::LogMessage(gfxUserFontEntry* aUserFontEntry,
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = scriptError->InitWithWindowID(NS_ConvertUTF8toUTF16(message),
-                                     href,                         
-                                     NS_ConvertUTF8toUTF16(text),  
+                                     href,  
                                      line, column,
                                      aFlags,        
                                      "CSS Loader",  

@@ -1742,18 +1742,16 @@ void nsCORSListenerProxy::LogBlockedCORSRequest(
   
   if (aInnerWindowID > 0) {
     rv = scriptError->InitWithSanitizedSource(aMessage,
-                                              u""_ns,  
-                                              u""_ns,  
-                                              0,       
-                                              0,       
+                                              ""_ns,  
+                                              0,      
+                                              0,      
                                               errorFlag, aCategory,
                                               aInnerWindowID);
   } else {
     rv = scriptError->Init(aMessage,
-                           u""_ns,  
-                           u""_ns,  
-                           0,       
-                           0,       
+                           ""_ns,  
+                           0,      
+                           0,      
                            errorFlag, aCategory, aPrivateBrowsing,
                            aFromChromeContext);  
   }

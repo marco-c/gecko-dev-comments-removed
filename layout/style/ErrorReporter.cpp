@@ -37,7 +37,7 @@ class ShortTermURISpecCache : public Runnable {
   ShortTermURISpecCache()
       : Runnable("ShortTermURISpecCache"), mPending(false) {}
 
-  nsString const& GetSpec(nsIURI* aURI) {
+  nsCString const& GetSpec(nsIURI* aURI) {
     if (mURI != aURI) {
       mURI = aURI;
 
@@ -62,7 +62,7 @@ class ShortTermURISpecCache : public Runnable {
 
  private:
   nsCOMPtr<nsIURI> mURI;
-  nsString mSpec;
+  nsCString mSpec;
   bool mPending;
 };
 
@@ -200,17 +200,9 @@ bool ErrorReporter::ShouldReportErrors(const StyleSheet* aSheet,
   return false;
 }
 
-void ErrorReporter::OutputError(const nsACString& aSourceLine,
-                                const nsACString& aSelectors,
+void ErrorReporter::OutputError(const nsACString& aSelectors,
                                 uint32_t aLineNumber, uint32_t aColNumber,
                                 nsIURI* aURI) {
-  nsAutoString errorLine;
-  
-  
-  if (!AppendUTF8toUTF16(aSourceLine, errorLine, fallible)) {
-    errorLine.Truncate();
-  }
-
   nsAutoString selectors;
   if (!AppendUTF8toUTF16(aSelectors, selectors, fallible)) {
     selectors.Truncate();
@@ -220,7 +212,7 @@ void ErrorReporter::OutputError(const nsACString& aSourceLine,
     return;
   }
 
-  nsAutoString fileName;
+  nsAutoCString fileName;
   if (aURI) {
     if (!sSpecCache) {
       sSpecCache = new ShortTermURISpecCache;
@@ -239,8 +231,8 @@ void ErrorReporter::OutputError(const nsACString& aSourceLine,
     
     
     rv = errorObject->InitWithSanitizedSource(
-        mError, fileName, errorLine, aLineNumber, aColNumber,
-        nsIScriptError::warningFlag, "CSS Parser", mInnerWindowId);
+        mError, fileName, aLineNumber, aColNumber, nsIScriptError::warningFlag,
+        "CSS Parser", mInnerWindowId);
 
     if (NS_SUCCEEDED(rv)) {
       errorObject->SetCssSelectors(selectors);

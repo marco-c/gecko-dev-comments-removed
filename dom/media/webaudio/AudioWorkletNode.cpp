@@ -52,7 +52,7 @@ struct ProcessorErrorDetails {
   unsigned mLineno;
   
   unsigned mColno;
-  nsString mFilename;
+  nsCString mFilename;
   nsString mMessage;
 };
 
@@ -231,11 +231,7 @@ void WorkletNodeEngine::SendProcessorError(AudioNodeTrack* aTrack,
     }
 
     ProcessorErrorDetails details;
-
-    CopyUTF8toUTF16(
-        mozilla::MakeStringSpan(jsReport.report()->filename.c_str()),
-        details.mFilename);
-
+    details.mFilename.Assign(jsReport.report()->filename.c_str());
     xpc::ErrorReport::ErrorReportToMessageString(jsReport.report(),
                                                  details.mMessage);
     details.mLineno = jsReport.report()->lineno;

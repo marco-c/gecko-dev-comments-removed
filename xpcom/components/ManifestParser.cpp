@@ -153,10 +153,9 @@ void LogMessageWithContext(FileLocation& aFile, uint32_t aLineNumber,
   }
 
   nsresult rv = error->Init(
-      NS_ConvertUTF8toUTF16(formatted.get()), NS_ConvertUTF8toUTF16(file),
-      u""_ns, aLineNumber, 0, nsIScriptError::warningFlag,
-      "chrome registration"_ns, false ,
-      true );
+      NS_ConvertUTF8toUTF16(formatted.get()), file, aLineNumber, 0,
+      nsIScriptError::warningFlag, "chrome registration"_ns,
+      false , true );
   if (NS_FAILED(rv)) {
     return;
   }

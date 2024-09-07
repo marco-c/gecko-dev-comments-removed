@@ -502,7 +502,7 @@ class CycleCollectedJSRuntime {
     
     
     struct ErrorDetails {
-      nsString mFilename;
+      nsCString mFilename;
       nsString mMessage;
       nsString mStack;
       JSExnType mType;
