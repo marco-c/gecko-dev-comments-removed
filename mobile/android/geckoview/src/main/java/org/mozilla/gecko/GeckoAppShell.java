@@ -1604,4 +1604,10 @@ public class GeckoAppShell {
     
     return android.os.Process.isIsolated();
   }
+
+  @WrapForJNI(dispatchTo = "gecko")
+  public static native void onSystemLocaleChanged();
+
+  @WrapForJNI(dispatchTo = "gecko")
+  public static native void onTimezoneChanged();
 }
