@@ -1230,15 +1230,9 @@ pref("network.manage-offline-status", true);
 
 
 pref("network.protocol-handler.external.mailto", true); 
-#ifdef XP_WIN
-  pref("network.protocol-handler.external.ms-windows-store", true);
-#endif
 
 
 pref("network.protocol-handler.warn-external.mailto", false);
-#ifdef XP_WIN
-  pref("network.protocol-handler.warn-external.ms-windows-store", false);
-#endif
 
 
 
