@@ -18,6 +18,8 @@
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/audio_format.h"
+#include "api/environment/environment.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/ref_count.h"
 
 namespace webrtc {
@@ -25,6 +27,13 @@ namespace webrtc {
 
 class AudioEncoderFactory : public RefCountInterface {
  public:
+  struct Options {
+    
+    
+    int payload_type = -1;
+    absl::optional<AudioCodecPairId> codec_pair_id;
+  };
+
   
   virtual std::vector<AudioCodecSpec> GetSupportedEncoders() = 0;
 
@@ -51,11 +60,37 @@ class AudioEncoderFactory : public RefCountInterface {
   
   
   
+  virtual absl::Nullable<std::unique_ptr<AudioEncoder>>
+  Create(const Environment& env, const SdpAudioFormat& format, Options options);
+
+  
+  
   virtual std::unique_ptr<AudioEncoder> MakeAudioEncoder(
       int payload_type,
       const SdpAudioFormat& format,
-      absl::optional<AudioCodecPairId> codec_pair_id) = 0;
+      absl::optional<AudioCodecPairId> codec_pair_id);
 };
+
+
+
+
+
+inline absl::Nullable<std::unique_ptr<AudioEncoder>>
+AudioEncoderFactory::Create(const Environment& env,
+                            const SdpAudioFormat& format,
+                            Options options) {
+  return MakeAudioEncoder(options.payload_type, format, options.codec_pair_id);
+}
+
+inline absl::Nullable<std::unique_ptr<AudioEncoder>>
+AudioEncoderFactory::MakeAudioEncoder(
+    int payload_type,
+    const SdpAudioFormat& format,
+    absl::optional<AudioCodecPairId> codec_pair_id) {
+  
+  
+  RTC_CHECK_NOTREACHED();
+}
 
 }  
 
