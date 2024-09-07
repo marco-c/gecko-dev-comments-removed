@@ -141,14 +141,14 @@ class TextLeafPoint final {
 
 
 
-  static nsTArray<TextOffsetAttribute> GetSpellingErrorOffsets(
+  static nsTArray<TextOffsetAttribute> GetTextOffsetAttributes(
       LocalAccessible* aAcc);
 
   
 
 
-  static void UpdateCachedSpellingError(dom::Document* aDocument,
-                                        const dom::AbstractRange& aRange);
+  static void UpdateCachedTextOffsetAttributes(
+      dom::Document* aDocument, const dom::AbstractRange& aRange);
 
   
 

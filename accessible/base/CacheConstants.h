@@ -28,7 +28,7 @@ class CacheDomain {
   static constexpr uint64_t TransformMatrix = ((uint64_t)0x1) << 10;
   static constexpr uint64_t ScrollPosition = ((uint64_t)0x1) << 11;
   static constexpr uint64_t Table = ((uint64_t)0x1) << 12;
-  static constexpr uint64_t Spelling = ((uint64_t)0x1) << 13;
+  static constexpr uint64_t TextOffsetAttributes = ((uint64_t)0x1) << 13;
   static constexpr uint64_t Viewport = ((uint64_t)0x1) << 14;
   static constexpr uint64_t ARIA = ((uint64_t)0x1) << 15;
   static constexpr uint64_t Relations = ((uint64_t)0x1) << 16;
@@ -212,7 +212,8 @@ class CacheKey {
   static constexpr nsStaticAtom* ScrollPosition = nsGkAtoms::scrollPosition;
   
   
-  static constexpr nsStaticAtom* SpellingErrors = nsGkAtoms::spelling;
+  
+  static constexpr nsStaticAtom* TextOffsetAttributes = nsGkAtoms::spelling;
   
   
   static constexpr nsStaticAtom* SrcURL = nsGkAtoms::src;

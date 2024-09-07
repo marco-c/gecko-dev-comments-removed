@@ -1489,10 +1489,10 @@ void TextLeafPoint::AddTextOffsetAttributes(AccAttributes* aAttrs) const {
   if (!acc->mCachedFields) {
     return;
   }
-  auto spellingErrors =
+  auto offsetAttrs =
       acc->mCachedFields->GetAttribute<nsTArray<TextOffsetAttribute>>(
-          CacheKey::SpellingErrors);
-  if (!spellingErrors) {
+          CacheKey::TextOffsetAttributes);
+  if (!offsetAttrs) {
     return;
   }
   auto compare = [this](const TextOffsetAttribute& aItem) {
@@ -1508,9 +1508,9 @@ void TextLeafPoint::AddTextOffsetAttributes(AccAttributes* aAttrs) const {
   
   
   auto [lower, upper] =
-      EqualRange(*spellingErrors, 0, spellingErrors->Length(), compare);
+      EqualRange(*offsetAttrs, 0, offsetAttrs->Length(), compare);
   for (auto i = lower; i < upper; ++i) {
-    expose((*spellingErrors)[i].mAttribute);
+    expose((*offsetAttrs)[i].mAttribute);
   }
 }
 
@@ -1602,10 +1602,10 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
   if (!acc->mCachedFields) {
     return TextLeafPoint();
   }
-  auto spellingErrors =
+  auto offsetAttrs =
       acc->mCachedFields->GetAttribute<nsTArray<TextOffsetAttribute>>(
-          CacheKey::SpellingErrors);
-  if (!spellingErrors) {
+          CacheKey::TextOffsetAttributes);
+  if (!offsetAttrs) {
     return TextLeafPoint();
   }
   auto compare = [this](const TextOffsetAttribute& aItem) {
@@ -1621,40 +1621,39 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
     return 1;
   };
   size_t index;
-  if (BinarySearchIf(*spellingErrors, 0, spellingErrors->Length(), compare,
-                     &index)) {
+  if (BinarySearchIf(*offsetAttrs, 0, offsetAttrs->Length(), compare, &index)) {
     
-    if (aIncludeOrigin && ((*spellingErrors)[index].mStartOffset == mOffset ||
-                           (*spellingErrors)[index].mEndOffset == mOffset)) {
+    if (aIncludeOrigin && ((*offsetAttrs)[index].mStartOffset == mOffset ||
+                           (*offsetAttrs)[index].mEndOffset == mOffset)) {
       return *this;
     }
     
     if (aDirection == eDirNext) {
-      if ((*spellingErrors)[index].mEndOffset > mOffset) {
-        MOZ_ASSERT((*spellingErrors)[index].mEndOffset != -1);
-        return TextLeafPoint(mAcc, (*spellingErrors)[index].mEndOffset);
+      if ((*offsetAttrs)[index].mEndOffset > mOffset) {
+        MOZ_ASSERT((*offsetAttrs)[index].mEndOffset != -1);
+        return TextLeafPoint(mAcc, (*offsetAttrs)[index].mEndOffset);
       }
       
       
       ++index;
-    } else if ((*spellingErrors)[index].mStartOffset < mOffset &&
-               (*spellingErrors)[index].mStartOffset != -1) {
-      return TextLeafPoint(mAcc, (*spellingErrors)[index].mStartOffset);
+    } else if ((*offsetAttrs)[index].mStartOffset < mOffset &&
+               (*offsetAttrs)[index].mStartOffset != -1) {
+      return TextLeafPoint(mAcc, (*offsetAttrs)[index].mStartOffset);
     }
   }
   
   if (aDirection == eDirNext) {
-    if (spellingErrors->Length() == index) {
+    if (offsetAttrs->Length() == index) {
       return TextLeafPoint();  
     }
-    return TextLeafPoint(mAcc, (*spellingErrors)[index].mStartOffset);
+    return TextLeafPoint(mAcc, (*offsetAttrs)[index].mStartOffset);
   }
   if (index == 0) {
     return TextLeafPoint();  
   }
   
   --index;
-  return TextLeafPoint(mAcc, (*spellingErrors)[index].mEndOffset);
+  return TextLeafPoint(mAcc, (*offsetAttrs)[index].mEndOffset);
 }
 
 TextLeafPoint TextLeafPoint::NeighborLeafPoint(
@@ -1723,7 +1722,7 @@ LayoutDeviceIntRect TextLeafPoint::ComputeBoundsFromFrame() const {
 }
 
 
-nsTArray<TextOffsetAttribute> TextLeafPoint::GetSpellingErrorOffsets(
+nsTArray<TextOffsetAttribute> TextLeafPoint::GetTextOffsetAttributes(
     LocalAccessible* aAcc) {
   nsINode* node = aAcc->GetNode();
   auto ranges = FindDOMTextOffsetAttributes(
@@ -1765,7 +1764,7 @@ nsTArray<TextOffsetAttribute> TextLeafPoint::GetSpellingErrorOffsets(
 }
 
 
-void TextLeafPoint::UpdateCachedSpellingError(
+void TextLeafPoint::UpdateCachedTextOffsetAttributes(
     dom::Document* aDocument, const dom::AbstractRange& aRange) {
   DocAccessible* docAcc = GetExistingDocAccessible(aDocument);
   if (!docAcc) {
@@ -1778,7 +1777,8 @@ void TextLeafPoint::UpdateCachedSpellingError(
   }
   for (Accessible* acc = startAcc; acc; acc = NextLeaf(acc)) {
     if (acc->IsTextLeaf()) {
-      docAcc->QueueCacheUpdate(acc->AsLocal(), CacheDomain::Spelling);
+      docAcc->QueueCacheUpdate(acc->AsLocal(),
+                               CacheDomain::TextOffsetAttributes);
     }
     if (acc == endAcc) {
       
@@ -1863,11 +1863,11 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
   }
   TextLeafPoint lastPoint = *this;
   for (;;) {
-    if (TextLeafPoint spelling = lastPoint.FindTextOffsetAttributeSameAcc(
+    if (TextLeafPoint offsetAttr = lastPoint.FindTextOffsetAttributeSameAcc(
             aDirection, aIncludeOrigin && lastPoint.mAcc == mAcc)) {
       
       
-      return spelling;
+      return offsetAttr;
     }
     TextLeafPoint point;
     point.mAcc = aDirection == eDirNext ? lastPoint.mAcc->NextSibling()

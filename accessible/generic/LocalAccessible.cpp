@@ -3669,13 +3669,14 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   
-  if (aCacheDomain & (CacheDomain::Spelling | CacheDomain::Text) &&
+  if (aCacheDomain & (CacheDomain::TextOffsetAttributes | CacheDomain::Text) &&
       IsTextLeaf()) {
-    auto spellingErrors = TextLeafPoint::GetSpellingErrorOffsets(this);
-    if (!spellingErrors.IsEmpty()) {
-      fields->SetAttribute(CacheKey::SpellingErrors, std::move(spellingErrors));
+    auto offsetAttrs = TextLeafPoint::GetTextOffsetAttributes(this);
+    if (!offsetAttrs.IsEmpty()) {
+      fields->SetAttribute(CacheKey::TextOffsetAttributes,
+                           std::move(offsetAttrs));
     } else if (aUpdateType == CacheUpdateType::Update) {
-      fields->SetAttribute(CacheKey::SpellingErrors, DeleteEntry());
+      fields->SetAttribute(CacheKey::TextOffsetAttributes, DeleteEntry());
     }
   }
 
