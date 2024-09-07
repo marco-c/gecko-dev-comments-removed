@@ -990,7 +990,7 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
 
       
       vp9_settings.flexibleMode =
-          IsDisabled(call_->trials(), "WebRTC-Video-Vp9FlexibleMode");
+          !IsDisabled(call_->trials(), "WebRTC-Video-Vp9FlexibleMode");
     } else {
       
       vp9_settings.flexibleMode = vp9_settings.numberOfSpatialLayers > 1;
