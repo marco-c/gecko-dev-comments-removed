@@ -2,92 +2,64 @@
 
 
 
+use crate::{rs, Result};
+use parking_lot::Mutex;
 use std::collections::HashMap;
 
-use crate::{db::SuggestDao, error::Error, rs, Result};
 
 
 
 
 
-
-#[derive(Clone, Default)]
-pub struct RemoteSettingsBenchmarkClient {
-    records: Vec<rs::Record>,
-    attachments: HashMap<String, Vec<u8>>,
+pub struct RemoteSettingsWarmUpClient {
+    client: rs::RemoteSettingsClient,
+    pub get_records_responses: Mutex<HashMap<rs::RecordRequest, Vec<rs::Record>>>,
 }
 
-impl RemoteSettingsBenchmarkClient {
-    pub fn new() -> Result<Self> {
-        let mut new_benchmark_client = Self::default();
-        new_benchmark_client.fetch_data_with_client(
-            remote_settings::Client::new(remote_settings::RemoteSettingsConfig {
-                server: None,
-                bucket_name: None,
-                collection_name: "quicksuggest".to_owned(),
-                server_url: None,
-            })?,
-            rs::Collection::Quicksuggest,
-        )?;
-        new_benchmark_client.fetch_data_with_client(
-            remote_settings::Client::new(remote_settings::RemoteSettingsConfig {
-                server: None,
-                bucket_name: None,
-                collection_name: "fakespot-suggest-products".to_owned(),
-                server_url: None,
-            })?,
-            rs::Collection::Fakespot,
-        )?;
-        Ok(new_benchmark_client)
-    }
-
-    fn fetch_data_with_client(
-        &mut self,
-        client: remote_settings::Client,
-        collection: rs::Collection,
-    ) -> Result<()> {
-        let response = client.get_records()?;
-        for r in &response.records {
-            if let Some(a) = &r.attachment {
-                self.attachments
-                    .insert(a.location.clone(), client.get_attachment(&a.location)?);
-            }
+impl RemoteSettingsWarmUpClient {
+    pub fn new() -> Self {
+        Self {
+            client: rs::RemoteSettingsClient::new(None, None, None).unwrap(),
+            get_records_responses: Mutex::new(HashMap::new()),
         }
-        self.records.extend(
-            response
-                .records
-                .into_iter()
-                .filter_map(|r| rs::Record::new(r, collection).ok()),
-        );
-        Ok(())
     }
+}
 
-    pub fn total_attachment_size(&self) -> usize {
-        self.attachments.values().map(|a| a.len()).sum()
+impl Default for RemoteSettingsWarmUpClient {
+    fn default() -> Self {
+        Self::new()
     }
+}
+
+impl rs::Client for RemoteSettingsWarmUpClient {
+    fn get_records(&self, request: rs::RecordRequest) -> Result<Vec<rs::Record>> {
+        let response = self.client.get_records(request.clone())?;
+        self.get_records_responses
+            .lock()
+            .insert(request, response.clone());
+        Ok(response)
+    }
+}
+
+#[derive(Clone)]
+pub struct RemoteSettingsBenchmarkClient {
+    pub get_records_responses: HashMap<rs::RecordRequest, Vec<rs::Record>>,
 }
 
 impl rs::Client for RemoteSettingsBenchmarkClient {
-    fn get_records(
-        &self,
-        collection: rs::Collection,
-        _db: &mut SuggestDao,
-    ) -> Result<Vec<rs::Record>> {
+    fn get_records(&self, request: rs::RecordRequest) -> Result<Vec<rs::Record>> {
         Ok(self
-            .records
-            .iter()
-            .filter(|r| r.collection == collection)
-            .cloned()
-            .collect())
+            .get_records_responses
+            .get(&request)
+            .unwrap_or_else(|| panic!("options not found: {request:?}"))
+            .clone())
     }
+}
 
-    fn download_attachment(&self, record: &rs::Record) -> Result<Vec<u8>> {
-        match &record.attachment {
-            Some(a) => match self.attachments.get(&a.location) {
-                Some(data) => Ok(data.clone()),
-                None => Err(Error::MissingAttachment(record.id.to_string())),
-            },
-            None => Err(Error::MissingAttachment(record.id.to_string())),
+impl From<RemoteSettingsWarmUpClient> for RemoteSettingsBenchmarkClient {
+    fn from(warm_up_client: RemoteSettingsWarmUpClient) -> Self {
+        Self {
+            get_records_responses: warm_up_client.get_records_responses.into_inner(),
         }
     }
 }

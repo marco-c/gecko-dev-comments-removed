@@ -6,7 +6,7 @@ use crate::config::RemoteSettingsConfig;
 use crate::error::{RemoteSettingsError, Result};
 use crate::{RemoteSettingsServer, UniffiCustomTypeConverter};
 use parking_lot::Mutex;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::{
     borrow::Cow,
     time::{Duration, Instant},
@@ -215,20 +215,20 @@ impl Client {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RemoteSettingsResponse {
     pub records: Vec<RemoteSettingsRecord>,
     pub last_modified: u64,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 struct RecordsResponse {
     data: Vec<RemoteSettingsRecord>,
 }
 
 
 
-#[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct RemoteSettingsRecord {
     pub id: String,
     pub last_modified: u64,
@@ -241,7 +241,7 @@ pub struct RemoteSettingsRecord {
 
 
 
-#[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct Attachment {
     pub filename: String,
     pub mimetype: String,

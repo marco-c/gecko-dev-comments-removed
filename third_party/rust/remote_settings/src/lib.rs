@@ -2,7 +2,6 @@
 
 
 
-pub mod cache;
 pub mod error;
 pub use error::{RemoteSettingsError, Result};
 use std::{fs::File, io::prelude::Write};
