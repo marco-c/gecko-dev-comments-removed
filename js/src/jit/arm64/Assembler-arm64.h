@@ -771,10 +771,6 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
   return true;
 }
 
-inline Imm32 Imm64::firstHalf() const { return low(); }
-
-inline Imm32 Imm64::secondHalf() const { return hi(); }
-
 
 
 class AutoForbidNops {
