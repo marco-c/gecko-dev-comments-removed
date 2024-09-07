@@ -1287,33 +1287,6 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
   
   
   
-
-  
-  
-  
-  
-  
-  if (widget::WinUtils::HasPackageIdentity()) {
-    auto pinWithWin11TaskbarAPIResults =
-        IsCurrentAppPinnedToTaskbarWin11(false);
-    switch (pinWithWin11TaskbarAPIResults.result) {
-      case Win11PinToTaskBarResultStatus::NotPinned:
-        return false;
-        break;
-      case Win11PinToTaskBarResultStatus::AlreadyPinned:
-        return true;
-        break;
-      default:
-        
-        
-        
-        break;
-    }
-  }
-
-  
-  
-  
   
   
   wchar_t exePath[MAXPATHLEN] = {};
@@ -1767,7 +1740,6 @@ static nsresult PinCurrentAppToTaskbarImpl(
     case Win11PinToTaskBarResultStatus::AlreadyPinned:
       return NS_OK;
 
-    case Win11PinToTaskBarResultStatus::NotPinned:
     case Win11PinToTaskBarResultStatus::NotCurrentlyAllowed:
     case Win11PinToTaskBarResultStatus::Failed:
       
@@ -1892,6 +1864,12 @@ NS_IMETHODIMP
 nsWindowsShellService::PinCurrentAppToTaskbarAsync(bool aPrivateBrowsing,
                                                    JSContext* aCx,
                                                    dom::Promise** aPromise) {
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   return PinCurrentAppToTaskbarAsyncImpl(
        false, aPrivateBrowsing, aCx, aPromise);
 }
@@ -1899,6 +1877,12 @@ nsWindowsShellService::PinCurrentAppToTaskbarAsync(bool aPrivateBrowsing,
 NS_IMETHODIMP
 nsWindowsShellService::CheckPinCurrentAppToTaskbarAsync(
     bool aPrivateBrowsing, JSContext* aCx, dom::Promise** aPromise) {
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   return PinCurrentAppToTaskbarAsyncImpl(
        true, aPrivateBrowsing, aCx, aPromise);
 }
@@ -1906,6 +1890,12 @@ nsWindowsShellService::CheckPinCurrentAppToTaskbarAsync(
 NS_IMETHODIMP
 nsWindowsShellService::IsCurrentAppPinnedToTaskbarAsync(
     const nsAString& aumid, JSContext* aCx,  dom::Promise** aPromise) {
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
