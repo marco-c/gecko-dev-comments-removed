@@ -59,9 +59,6 @@ extern const char kCsAeadAes256Gcm[];
 std::string SrtpCryptoSuiteToName(int crypto_suite);
 
 
-int SrtpCryptoSuiteFromName(absl::string_view crypto_suite);
-
-
 
 bool GetSrtpKeyAndSaltLengths(int crypto_suite,
                               int* key_length,
@@ -69,9 +66,6 @@ bool GetSrtpKeyAndSaltLengths(int crypto_suite,
 
 
 bool IsGcmCryptoSuite(int crypto_suite);
-
-
-bool IsGcmCryptoSuiteName(absl::string_view crypto_suite);
 
 
 
