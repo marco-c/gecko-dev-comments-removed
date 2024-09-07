@@ -124,13 +124,10 @@ static inline BindingKind DeclarationKindToBindingKind(DeclarationKind kind) {
       return BindingKind::Let;
 
     case DeclarationKind::Const:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    
-    case DeclarationKind::AwaitUsing:
-#endif
       return BindingKind::Const;
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    case DeclarationKind::AwaitUsing:
     case DeclarationKind::Using:
       return BindingKind::Using;
 #endif
@@ -196,7 +193,7 @@ class DeclaredNameInfo {
     
     
     
-    if (kind == DeclarationKind::Using) {
+    if (kind == DeclarationKind::Using || kind == DeclarationKind::AwaitUsing) {
       closedOver_ = true;
     }
 #endif

@@ -27,7 +27,10 @@ class MOZ_STACK_CLASS UsingEmitter {
   
   
 
+  bool hasAwaitUsing_ = false;
+
   [[nodiscard]] bool emitDisposeLoop(
+      EmitterScope& es,
       CompletionKind initialCompletion = CompletionKind::Normal,
       DisposeJumpKind jumpKind = DisposeJumpKind::JumpOnError);
 

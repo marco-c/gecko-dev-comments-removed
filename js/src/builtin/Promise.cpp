@@ -613,8 +613,8 @@ static bool MaybeGetAndClearExceptionAndStack(
 
 
 
-static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
-                                HandleObject promiseObj, HandleObject reject) {
+bool js::AbruptRejectPromise(JSContext* cx, CallArgs& args,
+                             HandleObject promiseObj, HandleObject reject) {
   
   
   RootedValue reason(cx);

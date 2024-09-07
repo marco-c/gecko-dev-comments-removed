@@ -1646,6 +1646,54 @@ void js::ReportInNotObjectError(JSContext* cx, HandleValue lref,
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 
+enum SyncDisposalClosureSlots {
+  SyncDisposalClosureSlot_MethodSlot = 0,
+};
+
+
+
+
+
+static bool SyncDisposalClosure(JSContext* cx, unsigned argc, JS::Value* vp) {
+  JS::CallArgs args = CallArgsFromVp(argc, vp);
+
+  JS::Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
+
+  JS::Rooted<JS::Value> method(
+      cx, callee->getExtendedSlot(SyncDisposalClosureSlot_MethodSlot));
+
+  
+  JS::Rooted<JS::Value> O(cx, args.thisv());
+
+  
+  
+  JSObject* createPromise = JS::NewPromiseObject(cx, nullptr);
+  if (!createPromise) {
+    return false;
+  }
+  JS::Rooted<PromiseObject*> promiseCapability(
+      cx, &createPromise->as<PromiseObject>());
+
+  
+  JS::Rooted<JS::Value> rval(cx);
+  bool result = Call(cx, method, O, &rval);
+
+  
+  if (!result) {
+    return AbruptRejectPromise(cx, args, promiseCapability, nullptr);
+  }
+
+  
+  
+  if (!JS::ResolvePromise(cx, promiseCapability, JS::UndefinedHandleValue)) {
+    return false;
+  }
+
+  
+  args.rval().set(JS::ObjectValue(*promiseCapability));
+  return true;
+}
+
 
 
 
@@ -1653,8 +1701,60 @@ bool js::GetDisposeMethod(JSContext* cx, JS::Handle<JS::Value> objVal,
                           UsingHint hint,
                           JS::MutableHandle<JS::Value> disposeMethod) {
   switch (hint) {
-    case UsingHint::Async:
-      MOZ_CRASH("Async hint is not yet supported");
+    case UsingHint::Async: {
+      
+      
+      
+      
+      JS::Rooted<JS::PropertyKey> idAsync(
+          cx, PropertyKey::Symbol(cx->wellKnownSymbols().asyncDispose));
+      JS::Rooted<JSObject*> obj(cx, &objVal.toObject());
+
+      if (!GetProperty(cx, obj, obj, idAsync, disposeMethod)) {
+        return false;
+      }
+
+      
+      
+      
+      
+      if (disposeMethod.isNullOrUndefined()) {
+        
+        JS::Rooted<JS::PropertyKey> idSync(
+            cx, PropertyKey::Symbol(cx->wellKnownSymbols().dispose));
+        JS::Rooted<JS::Value> syncDisposeMethod(cx);
+        if (!GetProperty(cx, obj, obj, idSync, &syncDisposeMethod)) {
+          return false;
+        }
+
+        if (!syncDisposeMethod.isNullOrUndefined()) {
+          
+          if (!IsCallable(syncDisposeMethod)) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                      JSMSG_DISPOSE_NOT_CALLABLE);
+            return false;
+          }
+
+          
+          
+          
+          
+          
+          JS::Handle<PropertyName*> funName = cx->names().empty_;
+          JSFunction* asyncWrapper = NewNativeFunction(
+              cx, SyncDisposalClosure, 0, funName,
+              gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+          if (!asyncWrapper) {
+            return false;
+          }
+          asyncWrapper->initExtendedSlot(SyncDisposalClosureSlot_MethodSlot,
+                                         syncDisposeMethod);
+          disposeMethod.set(JS::ObjectValue(*asyncWrapper));
+        }
+      }
+
+      break;
+    }
 
     case UsingHint::Sync: {
       
@@ -1667,21 +1767,23 @@ bool js::GetDisposeMethod(JSContext* cx, JS::Handle<JS::Value> objVal,
         return false;
       }
 
-      
-      
-      
-      
-      if (disposeMethod.isNullOrUndefined() || !IsCallable(disposeMethod)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_DISPOSE_NOT_CALLABLE);
-        return false;
-      }
-
-      return true;
+      break;
     }
     default:
       MOZ_CRASH("Invalid UsingHint");
   }
+
+  
+  
+  
+  
+  if (disposeMethod.isNullOrUndefined() || !IsCallable(disposeMethod)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_DISPOSE_NOT_CALLABLE);
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -2241,15 +2343,26 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       ReservedRooted<JS::Value> index(&rootValue1);
       POP_COPY_TO(index);
       POP_COPY_TO(disposeCapability);
+
       JS::Rooted<ListObject*> disposables(
           cx, &disposeCapability.toObject().as<ListObject>());
       uint32_t idx = index.toInt32();
       MOZ_ASSERT(idx < disposables->length());
       DisposableRecordObject* disposableRecord =
           &disposables->get(idx).toObject().as<DisposableRecordObject>();
-      PUSH_INT32(int32_t(disposableRecord->getHint()));
-      PUSH_OBJECT(disposableRecord->getMethod().toObject());
-      PUSH_OBJECT(disposableRecord->getObject().toObject());
+
+      UsingHint hint = disposableRecord->getHint();
+      JS::Value method = disposableRecord->getMethod();
+      JS::Value val = disposableRecord->getObject();
+
+      MOZ_ASSERT_IF(hint == UsingHint::Sync,
+                    method.isObject() && val.isObject());
+      MOZ_ASSERT_IF(hint == UsingHint::Async,
+                    (method.isObject() || method.isUndefined()) &&
+                        (val.isObject() || val.isUndefined()));
+      PUSH_INT32(int32_t(hint));
+      PUSH_COPY(method);
+      PUSH_COPY(val);
     }
     END_CASE(GetDisposableRecord)
 

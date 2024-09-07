@@ -49,21 +49,22 @@ extern JS_PUBLIC_API Symbol* GetSymbolFor(JSContext* cx, Handle<JSString*> key);
 extern JS_PUBLIC_API JSString* GetSymbolDescription(Handle<Symbol*> symbol);
 
 
-#define JS_FOR_EACH_WELL_KNOWN_SYMBOL(MACRO) \
-  MACRO(isConcatSpreadable)                  \
-  MACRO(iterator)                            \
-  MACRO(match)                               \
-  MACRO(replace)                             \
-  MACRO(search)                              \
-  MACRO(species)                             \
-  MACRO(hasInstance)                         \
-  MACRO(split)                               \
-  MACRO(toPrimitive)                         \
-  MACRO(toStringTag)                         \
-  MACRO(unscopables)                         \
-  MACRO(asyncIterator)                       \
-  MACRO(matchAll)                            \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(dispose))
+#define JS_FOR_EACH_WELL_KNOWN_SYMBOL(MACRO)      \
+  MACRO(isConcatSpreadable)                       \
+  MACRO(iterator)                                 \
+  MACRO(match)                                    \
+  MACRO(replace)                                  \
+  MACRO(search)                                   \
+  MACRO(species)                                  \
+  MACRO(hasInstance)                              \
+  MACRO(split)                                    \
+  MACRO(toPrimitive)                              \
+  MACRO(toStringTag)                              \
+  MACRO(unscopables)                              \
+  MACRO(asyncIterator)                            \
+  MACRO(matchAll)                                 \
+  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(dispose)) \
+  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(asyncDispose))
 
 enum class SymbolCode : uint32_t {
 
