@@ -3868,6 +3868,25 @@ bool ScriptLoader::ShouldCompileOffThread(ScriptLoadRequest* aRequest) {
   return false;
 }
 
+static bool MimeTypeMatchesExpectedModuleType(
+    nsIChannel* aChannel, JS::ModuleType expectedModuleType) {
+  nsAutoCString mimeType;
+  aChannel->GetContentType(mimeType);
+  NS_ConvertUTF8toUTF16 typeString(mimeType);
+
+  if (expectedModuleType == JS::ModuleType::JavaScript &&
+      nsContentUtils::IsJavascriptMIMEType(typeString)) {
+    return true;
+  }
+
+  if (expectedModuleType == JS::ModuleType::JSON &&
+      nsContentUtils::IsJsonMimeType(typeString)) {
+    return true;
+  }
+
+  return false;
+}
+
 nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                             nsIIncrementalStreamLoader* aLoader,
                                             nsresult aStatus) {
@@ -3961,10 +3980,7 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
 
     
     
-    nsAutoCString mimeType;
-    channel->GetContentType(mimeType);
-    NS_ConvertUTF8toUTF16 typeString(mimeType);
-    if (!nsContentUtils::IsJavascriptMIMEType(typeString)) {
+    if (!MimeTypeMatchesExpectedModuleType(channel, request->mModuleType)) {
       return NS_ERROR_FAILURE;
     }
 
