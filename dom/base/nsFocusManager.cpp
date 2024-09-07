@@ -26,6 +26,7 @@
 #include "nsIBaseWindow.h"
 #include "nsIAppWindow.h"
 #include "nsTextControlFrame.h"
+#include "nsThreadUtils.h"
 #include "nsViewManager.h"
 #include "nsFrameSelection.h"
 #include "mozilla/dom/Selection.h"
@@ -945,13 +946,20 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
 
   
   if (previousFocusedElement->IsEditable()) {
-    if (nsCOMPtr<nsIDocShell> docShell = aDocument->GetDocShell()) {
-      if (RefPtr<HTMLEditor> htmlEditor = docShell->GetHTMLEditor()) {
-        RefPtr<Selection> selection = htmlEditor->GetSelection();
+    if (nsIDocShell* const docShell = aDocument->GetDocShell()) {
+      if (HTMLEditor* const htmlEditor = docShell->GetHTMLEditor()) {
+        Selection* const selection = htmlEditor->GetSelection();
         if (selection && selection->GetFrameSelection() &&
             previousFocusedElement ==
                 selection->GetFrameSelection()->GetAncestorLimiter()) {
-          htmlEditor->FinalizeSelection();
+          
+          
+          
+          
+          
+          nsContentUtils::AddScriptRunner(
+              NewRunnableMethod("HTMLEditor::FinalizeSelection", htmlEditor,
+                                &HTMLEditor::FinalizeSelection));
         }
       }
     }

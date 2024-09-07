@@ -5416,6 +5416,7 @@ static FrameContentRange GetRangeForFrame(const nsIFrame* aFrame) {
     content = content->GetParent();
   }
 
+  MOZ_ASSERT(!content->IsBeingRemoved());
   nsIContent* parent = content->GetParent();
   if (aFrame->IsBlockOutside() || !parent) {
     return FrameContentRange(content, 0, content->GetChildCount());
@@ -5424,9 +5425,10 @@ static FrameContentRange GetRangeForFrame(const nsIFrame* aFrame) {
   
   
   
-  const int32_t index = parent->ComputeIndexOf_Deprecated(content);
-  MOZ_ASSERT(index >= 0);
-  return FrameContentRange(parent, index, index + 1);
+  Maybe<uint32_t> index = parent->ComputeIndexOf(content);
+  MOZ_ASSERT(index.isSome());
+  return FrameContentRange(parent, static_cast<int32_t>(*index),
+                           static_cast<int32_t>(*index + 1));
 }
 
 
