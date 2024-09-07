@@ -150,6 +150,11 @@ add_task(async function test_remote_exceptions_and_purge() {
 
 
 add_task(async function test_remote_exception_updates() {
+  
+  
+  
+  await bounceTrackingProtection.testRunPurgeBounceTrackers();
+
   info("Create foo.com, bar.com");
   let entryTrackerA = await db.create({ siteHost: "foo.com" });
   let entryTrackerB = await db.create({ siteHost: "bar.com" });

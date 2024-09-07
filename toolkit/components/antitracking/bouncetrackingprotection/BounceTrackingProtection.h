@@ -96,6 +96,9 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   nsTHashSet<nsCStringHashKey> mRemoteSiteHostExceptions;
 
   
+  RefPtr<GenericPromise> EnsureRemoteExceptionListService();
+
+  
   using PurgeBounceTrackersMozPromise =
       MozPromise<nsTArray<nsCString>, nsresult, true>;
   RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
