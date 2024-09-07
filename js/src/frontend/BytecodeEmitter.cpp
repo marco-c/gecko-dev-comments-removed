@@ -7299,44 +7299,21 @@ bool BytecodeEmitter::emitDeleteProperty(UnaryNode* deleteNode) {
 bool BytecodeEmitter::emitDeleteElement(UnaryNode* deleteNode) {
   MOZ_ASSERT(deleteNode->isKind(ParseNodeKind::DeleteElemExpr));
 
-  PropertyByValue* elemExpr = &deleteNode->kid()->as<PropertyByValue>();
+  auto* elemExpr = &deleteNode->kid()->as<PropertyByValue>();
   bool isSuper = elemExpr->isSuper();
-  DebugOnly<bool> isPrivate =
-      elemExpr->key().isKind(ParseNodeKind::PrivateName);
-  MOZ_ASSERT(!isPrivate);
+  MOZ_ASSERT(!elemExpr->key().isKind(ParseNodeKind::PrivateName));
   ElemOpEmitter eoe(
       this, ElemOpEmitter::Kind::Delete,
       isSuper ? ElemOpEmitter::ObjKind::Super : ElemOpEmitter::ObjKind::Other);
-  if (isSuper) {
-    
-    
-    
-    
-    
-    if (!eoe.prepareForObj()) {
-      
-      return false;
-    }
 
-    UnaryNode* base = &elemExpr->expression().as<UnaryNode>();
-    if (!emitGetThisForSuperBase(base)) {
-      
-      return false;
-    }
-    if (!eoe.prepareForKey()) {
-      
-      return false;
-    }
-    if (!emitTree(&elemExpr->key())) {
-      
-      return false;
-    }
-  } else {
-    if (!emitElemObjAndKey(elemExpr, eoe)) {
-      
-      return false;
-    }
+  if (!emitElemObjAndKey(elemExpr, eoe)) {
+    
+    
+    
+    
+    return false;
   }
+
   if (!eoe.emitDelete()) {
     
     
