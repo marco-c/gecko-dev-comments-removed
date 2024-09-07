@@ -16,6 +16,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonSearchEngine: "resource://gre/modules/AddonSearchEngine.sys.mjs",
+  AppProvidedSearchEngine:
+    "resource://gre/modules/AppProvidedSearchEngine.sys.mjs",
 });
 
 
@@ -46,41 +48,43 @@ this.addonsSearchDetection = class extends ExtensionAPI {
 
           try {
             await Services.search.promiseInitialized;
-            const visibleEngines = await Services.search.getEngines();
+            const engines = await Services.search.getEngines();
 
-            visibleEngines.forEach(engine => {
-              if (!(engine instanceof lazy.AddonSearchEngine)) {
-                return;
-              }
-              const { _extensionID, _urls } = engine.wrappedJSObject;
-
-              if (!_extensionID) {
-                
-                return;
+            for (let engine of engines) {
+              if (
+                !(engine instanceof lazy.AddonSearchEngine) &&
+                !(engine instanceof lazy.AppProvidedSearchEngine)
+              ) {
+                continue;
               }
 
-              _urls
+              
+              
+              let submission = engine.getSubmission("searchTerm");
+              if (submission) {
                 
                 
-                .filter(({ type }) => type === "text/html")
-                .forEach(({ template }) => {
-                  
-                  
-                  
-                  const pattern = template.split("?")[0] + "*";
+                
+                const pattern =
+                  submission.uri.prePath + submission.uri.filePath + "*";
 
-                  
-                  
-                  
-                  if (!patterns[pattern]) {
-                    patterns[pattern] = [];
-                  }
+                
+                
+                
+                if (!patterns[pattern]) {
+                  patterns[pattern] = [];
+                }
 
-                  if (!patterns[pattern].includes(_extensionID)) {
-                    patterns[pattern].push(_extensionID);
-                  }
-                });
-            });
+                
+                
+                
+                
+                const _extensionID = engine.wrappedJSObject._extensionID;
+                if (_extensionID && !patterns[pattern].includes(_extensionID)) {
+                  patterns[pattern].push(_extensionID);
+                }
+              }
+            }
           } catch (err) {
             console.error(err);
           }
