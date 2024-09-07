@@ -1,6 +1,7 @@
 import { assert, unreachable } from '../../../../../../common/util/util.js';
 import { kValue } from '../../../../../util/constants.js';
 import {
+  ScalarType,
   Type,
   Value,
   elementTypeOf,
@@ -14,6 +15,9 @@ import {
   scalarF64Range,
   linearRange,
   linearRangeBigInt,
+  quantizeToF32,
+  quantizeToF16,
+  QuantizeFunc,
 } from '../../../../../util/math.js';
 import { ShaderValidationTest } from '../../../shader_validation_test.js';
 
@@ -311,4 +315,125 @@ export function unique<T>(...arrays: Array<readonly T[]>): T[] {
     }
   }
   return [...set];
+}
+
+interface FloatLimits {
+  positive: {
+    max: number;
+    min: number;
+  };
+  negative: {
+    max: number;
+    min: number;
+  };
+  emax: number;
+}
+
+
+
+
+
+
+
+
+
+
+export class ConstantOrOverrideValueChecker {
+  #allChecksPassed = true;
+  #floatLimits?: FloatLimits;
+  #quantizeFn: QuantizeFunc<number>;
+
+  constructor(
+    private t: ShaderValidationTest,
+    type: ScalarType
+  ) {
+    switch (type) {
+      case Type.f32:
+        this.#quantizeFn = quantizeToF32;
+        this.#floatLimits = kValue.f32;
+        break;
+      case Type.f16:
+        this.#quantizeFn = quantizeToF16;
+        this.#floatLimits = kValue.f16;
+        break;
+      default:
+        this.#quantizeFn = (v: number) => v;
+        break;
+    }
+  }
+
+  quantize(value: number): number {
+    return this.#quantizeFn(value);
+  }
+
+  
+  
+  
+  
+  isAmbiguousOverflow(value: number): boolean {
+    
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+
+    
+    if (
+      !this.#floatLimits ||
+      (value <= this.#floatLimits.positive.max && value >= this.#floatLimits.negative.min)
+    ) {
+      return false;
+    }
+
+    
+    
+    
+    return Math.abs(value) < Math.pow(2, this.#floatLimits.emax + 1);
+  }
+
+  
+  isNearZero(value: number): boolean {
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+    if (!this.#floatLimits) {
+      return value === 0;
+    }
+
+    return value < this.#floatLimits.positive.min && value > this.#floatLimits.negative.max;
+  }
+
+  checkedResult(value: number): number {
+    if (this.isAmbiguousOverflow(value)) {
+      this.t.skip(`Checked value, ${value}, was within the ambiguous overflow rounding range.`);
+    }
+
+    const quantizedValue = this.quantize(value);
+    if (!Number.isFinite(quantizedValue)) {
+      this.#allChecksPassed = false;
+    }
+    return quantizedValue;
+  }
+
+  checkedResultBigInt(value: bigint): bigint {
+    if (kValue.i64.isOOB(value)) {
+      this.#allChecksPassed = false;
+    }
+    return value;
+  }
+
+  skipIfCheckFails(value: number): number {
+    if (this.isAmbiguousOverflow(value)) {
+      this.t.skip(`Checked value, ${value}, was within the ambiguous overflow rounding range.`);
+    }
+
+    const quantizedValue = this.quantize(value);
+    if (!Number.isFinite(quantizedValue)) {
+      this.t.skip(`Checked value, ${value}, was not finite after quantization.`);
+    }
+    return value;
+  }
+
+  allChecksPassed(): boolean {
+    return this.#allChecksPassed;
+  }
 }

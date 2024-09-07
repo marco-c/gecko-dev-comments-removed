@@ -1,6 +1,7 @@
 
 
 
+
 import { dataCache } from '../framework/data_cache.js';
 import { getResourcePath, setBaseResourcePath } from '../framework/resources.js';
 import { globalTestConfig } from '../framework/test_config.js';
@@ -674,6 +675,8 @@ void (async () => {
     showInfo((err as Error).toString());
     return;
   }
+
+  document.title = `${document.title} ${compatibility ? '(compat)' : ''} - ${rootQuery.toString()}`;
 
   tree.dissolveSingleChildTrees();
 

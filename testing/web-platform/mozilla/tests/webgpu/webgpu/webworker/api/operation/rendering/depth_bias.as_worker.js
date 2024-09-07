@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../api/operation/rendering/depth_bias.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

@@ -195,7 +195,7 @@ export const TexelFormats = [
 { format: 'rg32uint', _shaderType: 'u32' },
 { format: 'rg32sint', _shaderType: 'i32' },
 { format: 'rg32float', _shaderType: 'f32' },
-{ format: 'rgba32uint', _shaderType: 'i32' },
+{ format: 'rgba32uint', _shaderType: 'u32' },
 { format: 'rgba32sint', _shaderType: 'i32' },
 { format: 'rgba32float', _shaderType: 'f32' }];
 
@@ -217,6 +217,11 @@ export function* generateTypes({
 
 
 })
+
+
+
+
+
 
 
 
@@ -308,6 +313,8 @@ export function* generateTypes({
     let arrayElementCount = kDefaultArrayLength;
     let supportsAtomics = scalarInfo.supportsAtomics;
     let layout = undefined;
+    let accessSuffixes = undefined;
+    let validLayoutForAddressSpace = true;
     if (scalarInfo.layout) {
       
       
@@ -318,8 +325,11 @@ export function* generateTypes({
         assert(!isAtomic, 'the uniform case is making vec4 of scalar, which cannot handle atomics');
         arrayElemType = `vec4<${baseType}>`;
         supportsAtomics = false;
+        accessSuffixes = ['.x', '.y', '.z', '.w'];
         const arrayElemLayout = vectorLayout('vec4', baseType);
         
+        
+        validLayoutForAddressSpace = arrayElemLayout.alignment % 16 === 0;
         arrayElementCount = align(arrayElementCount, 4) / 4;
         const arrayByteSize = arrayElementCount * arrayElemLayout.size;
         layout = { alignment: arrayElemLayout.alignment, size: arrayByteSize };
@@ -343,14 +353,17 @@ export function* generateTypes({
       elementBaseType: `${baseType}`,
       arrayLength: arrayElementCount,
       layout,
-      supportsAtomics
+      supportsAtomics,
+      accessSuffixes
     };
 
-    
-    yield { type: `array<${arrayElemType},${arrayElementCount}>`, _kTypeInfo: arrayTypeInfo };
-    
-    if (addressSpace === 'storage') {
-      yield { type: `array<${arrayElemType}>`, _kTypeInfo: arrayTypeInfo };
+    if (validLayoutForAddressSpace) {
+      
+      yield { type: `array<${arrayElemType},${arrayElementCount}>`, _kTypeInfo: arrayTypeInfo };
+      
+      if (addressSpace === 'storage') {
+        yield { type: `array<${arrayElemType}>`, _kTypeInfo: arrayTypeInfo };
+      }
     }
   }
 

@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../../api/operation/command_buffer/render/state_tracking.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

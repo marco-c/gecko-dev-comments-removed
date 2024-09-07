@@ -1,4 +1,6 @@
-import { FP } from '../../../../../util/floating_point.js';
+import { assert } from '../../../../../../common/util/util.js';
+import { FP, FPInterval } from '../../../../../util/floating_point.js';
+import { PRNG } from '../../../../../util/prng.js';
 import { makeCaseCache } from '../../case_cache.js';
 
 
@@ -8,53 +10,124 @@ import { makeCaseCache } from '../../case_cache.js';
 
 
 
-const kDeterminantValues = [-38, -10, -5, -1, 0, 1, 5, 10, 38];
 
-const kDeterminantMatrixValues = {
-  2: kDeterminantValues.map((f, idx) => [
-    [idx % 4 === 0 ? f : idx, idx % 4 === 1 ? f : -idx],
-    [idx % 4 === 2 ? f : -idx, idx % 4 === 3 ? f : idx],
-  ]),
-  3: kDeterminantValues.map((f, idx) => [
-    [idx % 9 === 0 ? f : idx, idx % 9 === 1 ? f : -idx, idx % 9 === 2 ? f : idx],
-    [idx % 9 === 3 ? f : -idx, idx % 9 === 4 ? f : idx, idx % 9 === 5 ? f : -idx],
-    [idx % 9 === 6 ? f : idx, idx % 9 === 7 ? f : -idx, idx % 9 === 8 ? f : idx],
-  ]),
-  4: kDeterminantValues.map((f, idx) => [
-    [
-      idx % 16 === 0 ? f : idx,
-      idx % 16 === 1 ? f : -idx,
-      idx % 16 === 2 ? f : idx,
-      idx % 16 === 3 ? f : -idx,
-    ],
-    [
-      idx % 16 === 4 ? f : -idx,
-      idx % 16 === 5 ? f : idx,
-      idx % 16 === 6 ? f : -idx,
-      idx % 16 === 7 ? f : idx,
-    ],
-    [
-      idx % 16 === 8 ? f : idx,
-      idx % 16 === 9 ? f : -idx,
-      idx % 16 === 10 ? f : idx,
-      idx % 16 === 11 ? f : -idx,
-    ],
-    [
-      idx % 16 === 12 ? f : -idx,
-      idx % 16 === 13 ? f : idx,
-      idx % 16 === 14 ? f : -idx,
-      idx % 16 === 15 ? f : idx,
-    ],
-  ]),
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+type Dim = 2 | 3 | 4;
+type FPWidth = 16 | 32;
+
+
+const numSamples = 20;
+
+
+
+function randomMatrixEntry(p: PRNG, dim: Dim, fpwidth: FPWidth): number {
+  
+  const rangeTable = {
+    16: {
+      2: 32,
+      3: 8,
+      4: 4,
+    },
+    32: {
+      2: 2896,
+      3: 161,
+      4: 38,
+    },
+  };
+  const N = rangeTable[fpwidth][dim];
+  
+  const balanced = p.uniformInt(N) - Math.floor(N / 2);
+  return balanced;
+}
+
+
+
+
+
+
+function randomSquareMatrix(p: PRNG, dim: Dim, fpwidth: FPWidth): number[][] {
+  const result: number[][] = [...Array(dim)].map(_ => [...Array(dim)]);
+  
+  
+  const multiplier = [1, 2, 0.25][p.uniformInt(3)];
+  for (let c = 0; c < dim; c++) {
+    for (let r = 0; r < dim; r++) {
+      result[c][r] = multiplier * randomMatrixEntry(p, dim, fpwidth);
+    }
+  }
+  return result;
+}
+
+type detFnType = (m: number[][]) => FPInterval;
+
+
+function nonTrivialMatrices(matrices: number[][][], detFn: detFnType): boolean {
+  const detInterval = (m: number[][]) => detFn(m);
+  const sumBegin = matrices.reduce((accum, m) => accum + Math.abs(detInterval(m).begin), 0);
+  const sumEnd = matrices.reduce((accum, m) => accum + Math.abs(detInterval(m).end), 0);
+  return sumBegin > 0 && sumEnd >= sumBegin;
+}
 
 
 const f32_cases = ([2, 3, 4] as const)
   .flatMap(dim =>
     ([true, false] as const).map(nonConst => ({
       [`f32_mat${dim}x${dim}_${nonConst ? 'non_const' : 'const'}`]: () => {
+        const p = new PRNG(dim + 32);
+        const matrices: number[][][] = [...Array(numSamples)].map(_ =>
+          randomSquareMatrix(p, dim, 32)
+        );
+        assert(nonTrivialMatrices(matrices, FP.f32.determinantInterval));
         return FP.f32.generateMatrixToScalarCases(
-          kDeterminantMatrixValues[dim],
+          matrices,
           nonConst ? 'unfiltered' : 'finite',
           FP.f32.determinantInterval
         );
@@ -68,8 +141,13 @@ const f16_cases = ([2, 3, 4] as const)
   .flatMap(dim =>
     ([true, false] as const).map(nonConst => ({
       [`f16_mat${dim}x${dim}_${nonConst ? 'non_const' : 'const'}`]: () => {
+        const p = new PRNG(dim + 16);
+        const matrices: number[][][] = [...Array(numSamples)].map(_ =>
+          randomSquareMatrix(p, dim, 16)
+        );
+        assert(nonTrivialMatrices(matrices, FP.f16.determinantInterval));
         return FP.f16.generateMatrixToScalarCases(
-          kDeterminantMatrixValues[dim],
+          matrices,
           nonConst ? 'unfiltered' : 'finite',
           FP.f16.determinantInterval
         );
@@ -82,8 +160,14 @@ const f16_cases = ([2, 3, 4] as const)
 const abstract_cases = ([2, 3, 4] as const)
   .map(dim => ({
     [`abstract_mat${dim}x${dim}`]: () => {
+      const p = new PRNG(dim + 64);
+      
+      const matrices: number[][][] = [...Array(numSamples)].map(_ =>
+        randomSquareMatrix(p, dim, 32)
+      );
+      assert(nonTrivialMatrices(matrices, FP.f32.determinantInterval));
       return FP.abstract.generateMatrixToScalarCases(
-        kDeterminantMatrixValues[dim],
+        matrices,
         'finite',
         
         FP.f32.determinantInterval

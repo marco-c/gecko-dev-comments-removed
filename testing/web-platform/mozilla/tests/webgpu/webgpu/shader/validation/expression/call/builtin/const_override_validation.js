@@ -1,6 +1,7 @@
 
 
 import { assert, unreachable } from '../../../../../../common/util/util.js';import { kValue } from '../../../../../util/constants.js';import {
+
   Type,
 
   elementTypeOf,
@@ -13,7 +14,10 @@ import {
   scalarF32Range,
   scalarF64Range,
   linearRange,
-  linearRangeBigInt } from
+  linearRangeBigInt,
+  quantizeToF32,
+  quantizeToF16 } from
+
 '../../../../../util/math.js';
 
 
@@ -311,4 +315,125 @@ export function unique(...arrays) {
     }
   }
   return [...set];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export class ConstantOrOverrideValueChecker {
+  #allChecksPassed = true;
+  #floatLimits;
+  #quantizeFn;
+
+  constructor(
+  t,
+  type)
+  {this.t = t;
+    switch (type) {
+      case Type.f32:
+        this.#quantizeFn = quantizeToF32;
+        this.#floatLimits = kValue.f32;
+        break;
+      case Type.f16:
+        this.#quantizeFn = quantizeToF16;
+        this.#floatLimits = kValue.f16;
+        break;
+      default:
+        this.#quantizeFn = (v) => v;
+        break;
+    }
+  }
+
+  quantize(value) {
+    return this.#quantizeFn(value);
+  }
+
+  
+  
+  
+  
+  isAmbiguousOverflow(value) {
+    
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+
+    
+    if (
+    !this.#floatLimits ||
+    value <= this.#floatLimits.positive.max && value >= this.#floatLimits.negative.min)
+    {
+      return false;
+    }
+
+    
+    
+    
+    return Math.abs(value) < Math.pow(2, this.#floatLimits.emax + 1);
+  }
+
+  
+  isNearZero(value) {
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+    if (!this.#floatLimits) {
+      return value === 0;
+    }
+
+    return value < this.#floatLimits.positive.min && value > this.#floatLimits.negative.max;
+  }
+
+  checkedResult(value) {
+    if (this.isAmbiguousOverflow(value)) {
+      this.t.skip(`Checked value, ${value}, was within the ambiguous overflow rounding range.`);
+    }
+
+    const quantizedValue = this.quantize(value);
+    if (!Number.isFinite(quantizedValue)) {
+      this.#allChecksPassed = false;
+    }
+    return quantizedValue;
+  }
+
+  checkedResultBigInt(value) {
+    if (kValue.i64.isOOB(value)) {
+      this.#allChecksPassed = false;
+    }
+    return value;
+  }
+
+  skipIfCheckFails(value) {
+    if (this.isAmbiguousOverflow(value)) {
+      this.t.skip(`Checked value, ${value}, was within the ambiguous overflow rounding range.`);
+    }
+
+    const quantizedValue = this.quantize(value);
+    if (!Number.isFinite(quantizedValue)) {
+      this.t.skip(`Checked value, ${value}, was not finite after quantization.`);
+    }
+    return value;
+  }
+
+  allChecksPassed() {
+    return this.#allChecksPassed;
+  }
 }

@@ -1,6 +1,7 @@
 
 
-import { Colors } from '../../common/util/colors.js';import { assert, objectEquals, unreachable } from '../../common/util/util.js';
+import { Colors } from '../../common/util/colors.js';import { objectsToRecord } from '../../common/util/data_tables.js';
+import { assert, objectEquals, unreachable } from '../../common/util/util.js';
 import { Float16Array } from '../../external/petamoriken/float16/float16.js';
 
 
@@ -23,16 +24,32 @@ import {
 
 
 
-export function floatAsNormalizedInteger(float, bits, signed) {
+
+export function floatAsNormalizedIntegerUnquantized(
+float,
+bits,
+signed)
+{
   if (signed) {
     assert(float >= -1 && float <= 1, () => `${float} out of bounds of snorm`);
     const max = Math.pow(2, bits - 1) - 1;
-    return Math.round(float * max);
+    return float * max;
   } else {
     assert(float >= 0 && float <= 1, () => `${float} out of bounds of unorm`);
     const max = Math.pow(2, bits) - 1;
-    return Math.round(float * max);
+    return float * max;
   }
+}
+
+
+
+
+
+
+
+
+export function floatAsNormalizedInteger(float, bits, signed) {
+  return Math.round(floatAsNormalizedIntegerUnquantized(float, bits, signed));
 }
 
 
@@ -962,6 +979,51 @@ bool(valueFromBytes(workingDataU32, buf, offset) !== 0)
 
 
 
+const kVecTypes = {
+  vec2ai: VectorType.create(2, abstractIntType),
+  vec2i: VectorType.create(2, i32Type),
+  vec2u: VectorType.create(2, u32Type),
+  vec2af: VectorType.create(2, abstractFloatType),
+  vec2f: VectorType.create(2, f32Type),
+  vec2h: VectorType.create(2, f16Type),
+  vec2b: VectorType.create(2, boolType),
+  vec3ai: VectorType.create(3, abstractIntType),
+  vec3i: VectorType.create(3, i32Type),
+  vec3u: VectorType.create(3, u32Type),
+  vec3af: VectorType.create(3, abstractFloatType),
+  vec3f: VectorType.create(3, f32Type),
+  vec3h: VectorType.create(3, f16Type),
+  vec3b: VectorType.create(3, boolType),
+  vec4ai: VectorType.create(4, abstractIntType),
+  vec4i: VectorType.create(4, i32Type),
+  vec4u: VectorType.create(4, u32Type),
+  vec4af: VectorType.create(4, abstractFloatType),
+  vec4f: VectorType.create(4, f32Type),
+  vec4h: VectorType.create(4, f16Type),
+  vec4b: VectorType.create(4, boolType)
+};
+
+const kMatTypes = {
+  mat2x2f: MatrixType.create(2, 2, f32Type),
+  mat2x2h: MatrixType.create(2, 2, f16Type),
+  mat3x2f: MatrixType.create(3, 2, f32Type),
+  mat3x2h: MatrixType.create(3, 2, f16Type),
+  mat4x2f: MatrixType.create(4, 2, f32Type),
+  mat4x2h: MatrixType.create(4, 2, f16Type),
+  mat2x3f: MatrixType.create(2, 3, f32Type),
+  mat2x3h: MatrixType.create(2, 3, f16Type),
+  mat3x3f: MatrixType.create(3, 3, f32Type),
+  mat3x3h: MatrixType.create(3, 3, f16Type),
+  mat4x3f: MatrixType.create(4, 3, f32Type),
+  mat4x3h: MatrixType.create(4, 3, f16Type),
+  mat2x4f: MatrixType.create(2, 4, f32Type),
+  mat2x4h: MatrixType.create(2, 4, f16Type),
+  mat3x4f: MatrixType.create(3, 4, f32Type),
+  mat3x4h: MatrixType.create(3, 4, f16Type),
+  mat4x4f: MatrixType.create(4, 4, f32Type),
+  mat4x4h: MatrixType.create(4, 4, f16Type)
+};
+
 
 export const Type = {
   abstractInt: abstractIntType,
@@ -983,52 +1045,34 @@ export const Type = {
 
   vec: (width, elementType) => VectorType.create(width, elementType),
 
-  vec2ai: VectorType.create(2, abstractIntType),
-  vec2i: VectorType.create(2, i32Type),
-  vec2u: VectorType.create(2, u32Type),
-  vec2af: VectorType.create(2, abstractFloatType),
-  vec2f: VectorType.create(2, f32Type),
-  vec2h: VectorType.create(2, f16Type),
-  vec2b: VectorType.create(2, boolType),
-  vec3ai: VectorType.create(3, abstractIntType),
-  vec3i: VectorType.create(3, i32Type),
-  vec3u: VectorType.create(3, u32Type),
-  vec3af: VectorType.create(3, abstractFloatType),
-  vec3f: VectorType.create(3, f32Type),
-  vec3h: VectorType.create(3, f16Type),
-  vec3b: VectorType.create(3, boolType),
-  vec4ai: VectorType.create(4, abstractIntType),
-  vec4i: VectorType.create(4, i32Type),
-  vec4u: VectorType.create(4, u32Type),
-  vec4af: VectorType.create(4, abstractFloatType),
-  vec4f: VectorType.create(4, f32Type),
-  vec4h: VectorType.create(4, f16Type),
-  vec4b: VectorType.create(4, boolType),
+  
+  ...kVecTypes,
+  
+  ...objectsToRecord(Object.values(kVecTypes)),
 
   mat: (cols, rows, elementType) =>
   MatrixType.create(cols, rows, elementType),
 
-  mat2x2f: MatrixType.create(2, 2, f32Type),
-  mat2x2h: MatrixType.create(2, 2, f16Type),
-  mat3x2f: MatrixType.create(3, 2, f32Type),
-  mat3x2h: MatrixType.create(3, 2, f16Type),
-  mat4x2f: MatrixType.create(4, 2, f32Type),
-  mat4x2h: MatrixType.create(4, 2, f16Type),
-  mat2x3f: MatrixType.create(2, 3, f32Type),
-  mat2x3h: MatrixType.create(2, 3, f16Type),
-  mat3x3f: MatrixType.create(3, 3, f32Type),
-  mat3x3h: MatrixType.create(3, 3, f16Type),
-  mat4x3f: MatrixType.create(4, 3, f32Type),
-  mat4x3h: MatrixType.create(4, 3, f16Type),
-  mat2x4f: MatrixType.create(2, 4, f32Type),
-  mat2x4h: MatrixType.create(2, 4, f16Type),
-  mat3x4f: MatrixType.create(3, 4, f32Type),
-  mat3x4h: MatrixType.create(3, 4, f16Type),
-  mat4x4f: MatrixType.create(4, 4, f32Type),
-  mat4x4h: MatrixType.create(4, 4, f16Type),
+  
+  ...kMatTypes,
+  
+  ...objectsToRecord(Object.values(kVecTypes)),
 
   array: (count, elementType) => ArrayType.create(count, elementType)
 };
+
+
+
+
+
+
+
+
+export function stringToType(s) {
+  const t = Type[s];
+  assert(!!t);
+  return t;
+}
 
 
 export function scalarType(kind) {
@@ -1158,7 +1202,7 @@ export function concreteTypeOf(ty, allowedScalarTypes) {
           return Type.f32;
         }
         if (allowedScalarTypes.includes(Type.f16)) {
-          return Type.f32;
+          return Type.f16;
         }
         throw new Error(`no ${ty}`);
     }
@@ -2349,6 +2393,26 @@ export function isFloatType(ty) {
 
 
 
+export function isIntegerType(ty) {
+  if (ty instanceof ScalarType) {
+    return (
+      ty.kind === 'abstract-int' ||
+      ty.kind === 'i32' ||
+      ty.kind === 'i16' ||
+      ty.kind === 'i8' ||
+      ty.kind === 'u32' ||
+      ty.kind === 'u16' ||
+      ty.kind === 'u8');
+
+  }
+  return false;
+}
+
+
+
+
+
+
 export function isConvertibleToFloatType(ty) {
   if (ty instanceof ScalarType) {
     return (
@@ -2379,11 +2443,23 @@ export function isConvertible(src, dst) {
     return true;
   }
 
-  const widthOf = (ty) => {
-    return ty instanceof VectorType ? ty.width : 1;
+  const shapeOf = (ty) => {
+    if (ty instanceof ScalarType) {
+      return `scalar`;
+    }
+    if (ty instanceof VectorType) {
+      return `vec${ty.width}`;
+    }
+    if (ty instanceof MatrixType) {
+      return `mat${ty.cols}x${ty.rows}`;
+    }
+    if (ty instanceof ArrayType) {
+      return `array<${ty.count}>`;
+    }
+    unreachable(`unhandled type: ${ty}`);
   };
 
-  if (widthOf(src) !== widthOf(dst)) {
+  if (shapeOf(src) !== shapeOf(dst)) {
     return false;
   }
 
@@ -2424,7 +2500,10 @@ export function isConvertible(src, dst) {
 }
 
 
-const kFloatScalars = [Type.abstractFloat, Type.f32, Type.f16];
+export const kFloatScalars = [Type.abstractFloat, Type.f32, Type.f16];
+
+
+export const kConcreteFloatScalars = [Type.f32, Type.f16];
 
 
 const kFloatVec2 = [Type.vec2af, Type.vec2f, Type.vec2h];
@@ -2543,22 +2622,7 @@ export const kAllScalarsAndVectors = [
 
 
 
-export const kAllMatrices = [
-Type.mat2x2f,
-Type.mat2x2h,
-Type.mat2x3f,
-Type.mat2x3h,
-Type.mat2x4f,
-Type.mat2x4h,
-Type.mat3x2f,
-Type.mat3x2h,
-Type.mat3x3f,
-Type.mat3x3h,
-Type.mat3x4f,
-Type.mat3x4h,
-Type.mat4x2f,
-Type.mat4x2h,
-Type.mat4x3f,
-Type.mat4x3h,
-Type.mat4x4f,
-Type.mat4x4h];
+export const kAllVecTypes = Object.values(kVecTypes);
+
+
+export const kAllMatrices = Object.values(kMatTypes);

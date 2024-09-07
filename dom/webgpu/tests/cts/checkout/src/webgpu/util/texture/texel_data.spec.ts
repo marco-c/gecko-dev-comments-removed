@@ -8,6 +8,7 @@ import {
   EncodableTextureFormat,
 } from '../../format_info.js';
 import { GPUTest } from '../../gpu_test.js';
+import { gammaCompress, floatAsNormalizedIntegerUnquantized } from '../conversion.js';
 
 import {
   kTexelRepresentationInfo,
@@ -17,7 +18,7 @@ import {
 
 export const g = makeTestGroup(GPUTest);
 
-function doTest(
+async function doTest(
   t: GPUTest & {
     params: {
       format: EncodableTextureFormat;
@@ -35,7 +36,7 @@ function doTest(
 
   const rep = kTexelRepresentationInfo[format];
   const texelData = rep.pack(componentData);
-  const texture = t.device.createTexture({
+  const texture = t.createTextureTracked({
     format,
     size: [1, 1, 1],
     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
@@ -77,7 +78,7 @@ function doTest(
     },
   });
 
-  const outputBuffer = t.device.createBuffer({
+  const outputBuffer = t.createBufferTracked({
     size: rep.componentOrder.length * 4,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
   });
@@ -106,16 +107,65 @@ function doTest(
   pass.end();
   t.device.queue.submit([encoder.finish()]);
 
-  t.expectGPUBufferValuesEqual(
-    outputBuffer,
-    new ReadbackTypedArray(
-      rep.componentOrder.map(c => {
-        const value = rep.decode(componentData)[c];
-        assert(value !== undefined);
-        return value;
-      })
-    )
+  const idealReadbackData = new ReadbackTypedArray(
+    rep.componentOrder.map(c => {
+      const value = rep.decode(componentData)[c];
+      assert(value !== undefined);
+      return value;
+    })
   );
+
+  if (format === 'rgba8unorm-srgb' || format === 'bgra8unorm-srgb') {
+    
+    
+    
+    
+    
+    const readBackValue = await t.readGPUBufferRangeTyped(outputBuffer, {
+      type: Float32Array,
+      typedLength: 4,
+    });
+    
+    t.expect(idealReadbackData[3] === readBackValue.data[3]);
+
+    
+    
+    const readBackValueToSRGB = new Array(3);
+    for (let i = 0; i < 3; ++i) {
+      const gammaCompressed = gammaCompress(readBackValue.data[i]);
+      let outputIndex = i;
+      if (format === 'bgra8unorm-srgb' && (i === 0 || i === 2)) {
+        outputIndex = 2 - i;
+      }
+      readBackValueToSRGB[outputIndex] = floatAsNormalizedIntegerUnquantized(
+        gammaCompressed,
+        8,
+        false
+      );
+    }
+    readBackValue.cleanup();
+
+    
+    const check8UnormSRGB = (inputValue: number, idealValue: number) => {
+      const kToleranceULP = 0.5;
+      if (idealValue === 0 || idealValue === 255) {
+        t.expect(inputValue === idealValue);
+      } else {
+        t.expect(Math.abs(inputValue - idealValue) <= kToleranceULP);
+      }
+    };
+
+    assert(
+      componentData.R !== undefined &&
+        componentData.G !== undefined &&
+        componentData.B !== undefined
+    );
+    check8UnormSRGB(readBackValueToSRGB[0], componentData.R);
+    check8UnormSRGB(readBackValueToSRGB[1], componentData.G);
+    check8UnormSRGB(readBackValueToSRGB[2], componentData.B);
+  } else {
+    t.expectGPUBufferValuesEqual(outputBuffer, idealReadbackData);
+  }
 }
 
 

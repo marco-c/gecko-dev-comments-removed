@@ -49,13 +49,12 @@ fn((t) => {
   const hasStencil = formatInfo.stencil !== undefined;
 
   
-  const ds = t.device.createTexture({
+  const ds = t.createTextureTracked({
     label: 'testTexture',
     size: [3, 3],
     format,
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
   });
-  t.trackForCleanup(ds);
 
   
   
@@ -105,13 +104,13 @@ fn((t) => {
     depthStencilAttachment: {
       view: ds.createView(),
       ...(hasDepth && {
-        depthStoreOp: 'store',
         depthLoadOp: 'clear',
+        depthStoreOp: 'store',
         depthClearValue: 0
       }),
       ...(hasStencil && {
-        stencilStoreOp: 'store',
         stencilLoadOp: 'clear',
+        stencilStoreOp: 'store',
         stencilClearValue: 0
       })
     }
@@ -217,20 +216,18 @@ fn((t) => {
   });
 
   
-  const fakeStencil = t.device.createTexture({
+  const fakeStencil = t.createTextureTracked({
     label: 'fakeStencil',
     format: 'r32uint',
     size: [1, 1],
     usage: GPUTextureUsage.TEXTURE_BINDING
   });
-  t.trackForCleanup(fakeStencil);
-  const fakeDepth = t.device.createTexture({
+  const fakeDepth = t.createTextureTracked({
     label: 'fakeDepth',
     format: 'r32float',
     size: [1, 1],
     usage: GPUTextureUsage.TEXTURE_BINDING
   });
-  t.trackForCleanup(fakeDepth);
   const stencilView = stencilReadOnly ?
   ds.createView({ aspect: 'stencil-only' }) :
   fakeStencil.createView();
@@ -254,15 +251,15 @@ fn((t) => {
       depthReadOnly ?
       { depthReadOnly: true } :
       {
-        depthStoreOp: 'store',
-        depthLoadOp: 'load'
+        depthLoadOp: 'load',
+        depthStoreOp: 'store'
       })),
       ...(hasStencil && (
       stencilReadOnly ?
       { stencilReadOnly: true } :
       {
-        stencilStoreOp: 'store',
-        stencilLoadOp: 'load'
+        stencilLoadOp: 'load',
+        stencilStoreOp: 'store'
       }))
     }
   });
@@ -301,7 +298,7 @@ fn((t) => {
 
   });
 
-  const resultTexture = t.device.createTexture({
+  const resultTexture = t.createTextureTracked({
     label: 'resultTexture',
     format: 'r32uint',
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,

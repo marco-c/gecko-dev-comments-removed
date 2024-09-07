@@ -36,22 +36,32 @@ in the logs. On non-WPT runtimes, it will also print to the console with console
 WPT disallows console.log and doesn't support logs on passing tests, so this does nothing on WPT.`
   )
   .fn(async t => {
-    const adapterInfo = await t.adapter.requestAdapterInfo();
+    
+    const adapterInfo = t.adapter.info || (await t.adapter.requestAdapterInfo());
+    const isCompatibilityMode = (t.adapter as unknown as { isCompatibilityMode?: boolean })
+      .isCompatibilityMode;
 
     const info = JSON.stringify(
       {
+        userAgent: navigator.userAgent,
         globalScope: Object.getPrototypeOf(globalThis).constructor.name,
         globalTestConfig,
         baseResourcePath: getResourcePath(''),
         defaultRequestAdapterOptions: getDefaultRequestAdapterOptions(),
-        adapterInfo,
-        userAgent: navigator.userAgent,
+        adapter: {
+          isFallbackAdapter: t.adapter.isFallbackAdapter,
+          isCompatibilityMode,
+          info: adapterInfo,
+          features: Array.from(t.adapter.features),
+          limits: t.adapter.limits,
+        },
       },
       
       
       (_key, value) => {
         if (value === undefined || value === null) return null;
         if (typeof value !== 'object') return value;
+        if (value instanceof Array) return value;
 
         const valueObj = value as Record<string, unknown>;
         return Object.fromEntries(

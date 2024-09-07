@@ -3,8 +3,27 @@
 import { ValidationTest } from '../api/validation/validation_test.js';export class CompatibilityTest extends ValidationTest {
   async init() {
     await super.init();
-    if (!this.isCompatibility) {
-      this.skip('compatibility tests do not work on non-compatibility mode');
-    }
+  }
+
+  
+
+
+
+
+
+  expectValidationErrorInCompatibilityMode(fn, shouldError = true) {
+    this.expectValidationError(fn, this.isCompatibility && shouldError);
+  }
+
+  
+
+
+
+  expectGPUErrorInCompatibilityMode(
+  filter,
+  fn,
+  shouldError = true)
+  {
+    return this.expectGPUError(filter, fn, this.isCompatibility && shouldError);
   }
 }

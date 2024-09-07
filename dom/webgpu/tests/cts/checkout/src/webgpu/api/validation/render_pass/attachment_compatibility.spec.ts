@@ -85,15 +85,13 @@ const kFeaturesForDepthStencilAttachmentFormats = getFeaturesForFormats([
 
 class F extends ValidationTest {
   createAttachmentTextureView(format: GPUTextureFormat, sampleCount?: number) {
-    return this.device
-      .createTexture({
-        
-        size: [16, 16, 1],
-        format,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        sampleCount,
-      })
-      .createView();
+    return this.createTextureTracked({
+      
+      size: [16, 16, 1],
+      format,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+      sampleCount,
+    }).createView();
   }
 
   createColorAttachment(

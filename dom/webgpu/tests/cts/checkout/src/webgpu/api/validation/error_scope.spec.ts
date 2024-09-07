@@ -7,113 +7,11 @@ TODO: (POSTV1) Test error scopes of different threads and make sure they go to t
 TODO: (POSTV1) Test that unhandled errors go the right device, and nowhere if the device was dropped.
 `;
 
-import { Fixture } from '../../../common/framework/fixture.js';
 import { makeTestGroup } from '../../../common/framework/test_group.js';
-import { getGPU } from '../../../common/util/navigator_gpu.js';
-import { assert, raceWithRejectOnTimeout } from '../../../common/util/util.js';
 import { kErrorScopeFilters, kGeneratableErrorScopeFilters } from '../../capability_info.js';
+import { ErrorTest } from '../../error_test.js';
 
-class ErrorScopeTests extends Fixture {
-  _device: GPUDevice | undefined = undefined;
-
-  get device(): GPUDevice {
-    assert(this._device !== undefined);
-    return this._device;
-  }
-
-  override async init(): Promise<void> {
-    await super.init();
-    const gpu = getGPU(this.rec);
-    const adapter = await gpu.requestAdapter();
-    assert(adapter !== null);
-
-    
-    
-    const device = this.trackForCleanup(
-      await adapter.requestDevice({
-        requiredLimits: {
-          maxTextureDimension2D: adapter.limits.maxTextureDimension2D,
-          maxTextureArrayLayers: adapter.limits.maxTextureArrayLayers,
-        },
-      })
-    );
-    assert(device !== null);
-    this._device = device;
-  }
-
-  
-  
-  
-  generateError(filter: GPUErrorFilter): void {
-    switch (filter) {
-      case 'out-of-memory':
-        this.trackForCleanup(
-          this.device.createTexture({
-            
-            format: 'rgba32float',
-            usage: GPUTextureUsage.COPY_DST,
-            size: [
-              this.device.limits.maxTextureDimension2D,
-              this.device.limits.maxTextureDimension2D,
-              this.device.limits.maxTextureArrayLayers,
-            ],
-          })
-        );
-        break;
-      case 'validation':
-        
-        this.trackForCleanup(
-          this.device.createBuffer({
-            size: 1024,
-            usage: 0xffff, 
-          })
-        );
-        break;
-    }
-    
-    this.device.queue.submit([]);
-  }
-
-  
-  isInstanceOfError(filter: GPUErrorFilter, error: GPUError | null): boolean {
-    switch (filter) {
-      case 'out-of-memory':
-        return error instanceof GPUOutOfMemoryError;
-      case 'validation':
-        return error instanceof GPUValidationError;
-      case 'internal':
-        return error instanceof GPUInternalError;
-    }
-  }
-
-  
-  
-  async expectUncapturedError(fn: Function): Promise<GPUUncapturedErrorEvent> {
-    return this.immediateAsyncExpectation(() => {
-      
-      const TIMEOUT_IN_MS = 1000;
-
-      const promise: Promise<GPUUncapturedErrorEvent> = new Promise(resolve => {
-        const eventListener = ((event: GPUUncapturedErrorEvent) => {
-          this.debug(`Got uncaptured error event with ${event.error}`);
-          resolve(event);
-        }) as EventListener;
-
-        this.device.addEventListener('uncapturederror', eventListener, { once: true });
-      });
-
-      fn();
-
-      return raceWithRejectOnTimeout(
-        promise,
-        TIMEOUT_IN_MS,
-        'Timeout occurred waiting for uncaptured error'
-      );
-    });
-  }
-}
-
-export const g = makeTestGroup(ErrorScopeTests);
+export const g = makeTestGroup(ErrorTest);
 
 g.test('simple')
   .desc(

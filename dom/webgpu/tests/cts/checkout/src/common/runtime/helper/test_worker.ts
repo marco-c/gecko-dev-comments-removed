@@ -19,10 +19,14 @@ function unregisterAllServiceWorkers() {
 
 
 
-unregisterAllServiceWorkers();
-window.addEventListener('beforeunload', () => {
+if ('serviceWorker' in navigator) {
+  
+  
   unregisterAllServiceWorkers();
-});
+  window.addEventListener('beforeunload', () => {
+    unregisterAllServiceWorkers();
+  });
+}
 
 abstract class TestBaseWorker {
   protected readonly ctsOptions: CTSOptions;
@@ -171,7 +175,7 @@ export class TestServiceWorker extends TestBaseWorker {
     const selfPathDir = selfPath.substring(0, selfPath.lastIndexOf('/'));
     
     const serviceWorkerURL = new URL(
-      `${selfPathDir}/../../../${suite}/webworker/${fileName}.worker.js`
+      `${selfPathDir}/../../../${suite}/webworker/${fileName}.as_worker.js`
     ).toString();
 
     

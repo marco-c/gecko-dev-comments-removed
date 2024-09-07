@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../api/operation/texture_view/format_reinterpretation.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

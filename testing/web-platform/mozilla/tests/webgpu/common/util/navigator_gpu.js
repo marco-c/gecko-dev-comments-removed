@@ -1,7 +1,5 @@
 
 
- 
-
 import { ErrorWithExtra, assert, objectEquals } from './util.js';
 
 
@@ -72,7 +70,8 @@ export function getGPU(recorder) {
       if (recorder) {
         void promise.then(async (adapter) => {
           if (adapter) {
-            const info = await adapter.requestAdapterInfo();
+            
+            const info = adapter.info || (await adapter.requestAdapterInfo());
             const infoString = `Adapter: ${info.vendor} / ${info.architecture} / ${info.device}`;
             recorder.debug(new ErrorWithExtra(infoString, () => ({ adapterInfo: info })));
           }

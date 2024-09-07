@@ -3,8 +3,27 @@ import { ValidationTest } from '../api/validation/validation_test.js';
 export class CompatibilityTest extends ValidationTest {
   override async init() {
     await super.init();
-    if (!this.isCompatibility) {
-      this.skip('compatibility tests do not work on non-compatibility mode');
-    }
+  }
+
+  
+
+
+
+
+
+  expectValidationErrorInCompatibilityMode(fn: () => void, shouldError: boolean = true): void {
+    this.expectValidationError(fn, this.isCompatibility && shouldError);
+  }
+
+  
+
+
+
+  expectGPUErrorInCompatibilityMode<R>(
+    filter: GPUErrorFilter,
+    fn: () => R,
+    shouldError: boolean = true
+  ): R {
+    return this.expectGPUError(filter, fn, this.isCompatibility && shouldError);
   }
 }

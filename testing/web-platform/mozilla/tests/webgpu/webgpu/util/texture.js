@@ -1,6 +1,7 @@
 
 
-import { assert } from '../../common/util/util.js';import { getTextureCopyLayout } from './texture/layout.js';
+import { assert } from '../../common/util/util.js';
+import { getTextureCopyLayout } from './texture/layout.js';
 
 import { reifyExtent3D } from './unions.js';
 
@@ -9,7 +10,7 @@ import { reifyExtent3D } from './unions.js';
 
 
 export function createTextureFromTexelViews(
-device,
+t,
 texelViews,
 desc)
 {
@@ -19,7 +20,7 @@ desc)
   const { width, height, depthOrArrayLayers } = reifyExtent3D(desc.size);
 
   
-  const texture = device.createTexture({
+  const texture = t.createTextureTracked({
     ...desc,
     format: texelViews[0].format,
     usage: desc.usage | GPUTextureUsage.COPY_DST,
@@ -27,18 +28,19 @@ desc)
   });
 
   
-  const commandEncoder = device.createCommandEncoder();
+  const commandEncoder = t.device.createCommandEncoder();
   const stagingBuffers = [];
   for (let mipLevel = 0; mipLevel < texelViews.length; mipLevel++) {
     const {
       bytesPerRow,
+      rowsPerImage,
       mipSize: [mipWidth, mipHeight, mipDepthOrArray]
     } = getTextureCopyLayout(format, desc.dimension ?? '2d', [width, height, depthOrArrayLayers], {
       mipLevel
     });
 
     
-    const stagingBuffer = device.createBuffer({
+    const stagingBuffer = t.createBufferTracked({
       mappedAtCreation: true,
       size: bytesPerRow * mipHeight * mipDepthOrArray,
       usage: GPUBufferUsage.COPY_SRC
@@ -56,26 +58,15 @@ desc)
 
     
     commandEncoder.copyBufferToTexture(
-      { buffer: stagingBuffer, bytesPerRow },
+      { buffer: stagingBuffer, bytesPerRow, rowsPerImage },
       { texture, mipLevel },
       [mipWidth, mipHeight, mipDepthOrArray]
     );
   }
-  device.queue.submit([commandEncoder.finish()]);
+  t.device.queue.submit([commandEncoder.finish()]);
 
   
   stagingBuffers.forEach((value) => value.destroy());
 
   return texture;
-}
-
-
-
-
-export function createTextureFromTexelView(
-device,
-texelView,
-desc)
-{
-  return createTextureFromTexelViews(device, [texelView], desc);
 }

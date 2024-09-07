@@ -210,7 +210,7 @@ class DrawCall {
       size -= 1; 
       length -= 1; 
     }
-    const buffer = this.test.device.createBuffer({
+    const buffer = this.test.createBufferTracked({
       size,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST 
     });
@@ -487,7 +487,7 @@ class F extends TextureTestMixin(GPUTest) {
       buffers
     });
 
-    const colorAttachment = this.device.createTexture({
+    const colorAttachment = this.createTextureTracked({
       format: 'rgba8unorm',
       size: { width: 2, height: 1, depthOrArrayLayers: 1 },
       usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
@@ -499,9 +499,9 @@ class F extends TextureTestMixin(GPUTest) {
       colorAttachments: [
       {
         view: colorAttachmentView,
-        storeOp: 'store',
         clearValue: { r: 0.0, g: 1.0, b: 0.0, a: 1.0 },
-        loadOp: 'clear'
+        loadOp: 'clear',
+        storeOp: 'store'
       }]
 
     });

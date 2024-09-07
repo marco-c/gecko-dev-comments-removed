@@ -18,6 +18,7 @@ export { TestCaseRecorder } from '../internal/logging/test_case_recorder.js';
 
 
 
+
 export class SubcaseBatchState {
   constructor(
   recorder,
@@ -125,6 +126,8 @@ export class Fixture {
         if (WEBGL_lose_context) WEBGL_lose_context.loseContext();
       } else if ('destroy' in o) {
         o.destroy();
+      } else if ('destroyAsync' in o) {
+        await o.destroyAsync();
       } else if ('close' in o) {
         o.close();
       } else {
@@ -140,9 +143,27 @@ export class Fixture {
 
 
 
-
   trackForCleanup(o) {
-    this.objectsToCleanUp.push(o);
+    if (o instanceof Promise) {
+      this.eventualAsyncExpectation(() =>
+      o.then(
+        (o) => this.trackForCleanup(o),
+        () => {}
+      )
+      );
+      return o;
+    }
+
+    if (o instanceof GPUDevice) {
+      this.objectsToCleanUp.push({
+        async destroyAsync() {
+          o.destroy();
+          await o.lost;
+        }
+      });
+    } else {
+      this.objectsToCleanUp.push(o);
+    }
     return o;
   }
 
@@ -159,6 +180,12 @@ export class Fixture {
       }
     }
     return o;
+  }
+
+  
+  requestDeviceTracked(adapter, desc = undefined) {
+
+    return this.trackForCleanup(adapter.requestDevice(desc));
   }
 
   

@@ -36,9 +36,9 @@ async function runShaderTest(
   assert(stage === GPUShaderStage.COMPUTE, 'Only know how to deal with compute for now');
 
   
-  const constantsBuffer = t.device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM });
+  const constantsBuffer = t.createBufferTracked({ size: 4, usage: GPUBufferUsage.UNIFORM });
 
-  const resultBuffer = t.device.createBuffer({
+  const resultBuffer = t.createBufferTracked({
     size: 4,
     usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE,
   });
@@ -199,13 +199,6 @@ g.test('linear_memory')
     assert(_kTypeInfo !== undefined, 'not an indexable type');
     assert('arrayLength' in _kTypeInfo);
 
-    if (baseType === 'f16' && addressSpace === 'uniform' && containerType === 'array') {
-      
-      
-      
-      t.skip('Test logic does not handle array of f16 in the uniform address space');
-    }
-
     let usesCanary = false;
     let globalSource = '';
     let testFunctionSource = '';
@@ -330,21 +323,21 @@ struct TestData {
     let index = (${indexToTest})${exprIndexAddon};`;
           const exprZeroElement = `${_kTypeInfo.elementBaseType}()`;
           const exprElement = `s.data[index]`;
-
+          const suffices = _kTypeInfo.accessSuffixes ?? [''];
           switch (access) {
             case 'read':
               {
-                let exprLoadElement = isAtomic ? `atomicLoad(&${exprElement})` : exprElement;
-                if (addressSpace === 'uniform' && containerType === 'array') {
+                const exprLoadElement = isAtomic ? `atomicLoad(&${exprElement})` : exprElement;
+                let conditions = suffices.map(x => `${exprLoadElement}${x} != ${exprZeroElement}`);
+                if (containerType === 'matrix') {
                   
                   
-                  
-                  exprLoadElement += '[0]';
+                  conditions = conditions.map(c => `any(${c})`);
                 }
-                let condition = `${exprLoadElement} != ${exprZeroElement}`;
-                if (containerType === 'matrix') condition = `any(${condition})`;
-                testFunctionSource += `
-    if (${condition}) { return ${nextErrorReturnValue()}; }`;
+                conditions.forEach(c => {
+                  testFunctionSource += `
+    if (${c}) { return ${nextErrorReturnValue()}; }`;
+                });
               }
               break;
 
@@ -353,8 +346,10 @@ struct TestData {
                 testFunctionSource += `
     atomicStore(&s.data[index], ${exprZeroElement});`;
               } else {
-                testFunctionSource += `
-    s.data[index] = ${exprZeroElement};`;
+                suffices.forEach(x => {
+                  testFunctionSource += `
+    s.data[index]${x} = ${exprZeroElement};`;
+                });
               }
               break;
           }

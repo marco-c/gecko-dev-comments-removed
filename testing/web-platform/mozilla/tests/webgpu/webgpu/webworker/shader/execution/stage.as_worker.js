@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../shader/execution/stage.spec.js';
+import { wrapTestGroupForWorker } from '../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

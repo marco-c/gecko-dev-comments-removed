@@ -83,6 +83,8 @@ export class DevicePool {
         this.holders.delete(holder);
         if ('destroy' in holder.device) {
           holder.device.destroy();
+          
+          await holder.device.lost;
         }
 
         
@@ -311,6 +313,8 @@ class DeviceHolder implements DeviceProvider {
     if (!supportsFeature(adapter, descriptor)) {
       throw new FeaturesNotSupported('One or more features are not supported');
     }
+    
+    
     const device = await adapter.requestDevice(descriptor);
     assert(device !== null, 'requestDevice returned null');
 

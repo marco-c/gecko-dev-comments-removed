@@ -148,13 +148,11 @@ g.test('texture_binding')
     });
 
     
-    const outputTexture = t.trackForCleanup(
-      t.device.createTexture({
-        format: 'rgba8unorm',
-        size: [kTextureSize, kTextureSize],
-        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC,
-      })
-    );
+    const outputTexture = t.createTextureTracked({
+      format: 'rgba8unorm',
+      size: [kTextureSize, kTextureSize],
+      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC,
+    });
 
     
     
@@ -221,29 +219,25 @@ in view format and match in base format.`
     const inputTexelView = makeInputTexelView(format);
 
     
-    const renderTexture = t.trackForCleanup(
-      t.device.createTexture({
-        format,
-        size: [kTextureSize, kTextureSize],
-        usage:
-          GPUTextureUsage.RENDER_ATTACHMENT |
-          (sampleCount > 1 ? GPUTextureUsage.TEXTURE_BINDING : GPUTextureUsage.COPY_SRC),
-        viewFormats: [viewFormat],
-        sampleCount,
-      })
-    );
+    const renderTexture = t.createTextureTracked({
+      format,
+      size: [kTextureSize, kTextureSize],
+      usage:
+        GPUTextureUsage.RENDER_ATTACHMENT |
+        (sampleCount > 1 ? GPUTextureUsage.TEXTURE_BINDING : GPUTextureUsage.COPY_SRC),
+      viewFormats: [viewFormat],
+      sampleCount,
+    });
 
     const resolveTexture =
       sampleCount === 1
         ? undefined
-        : t.trackForCleanup(
-            t.device.createTexture({
-              format,
-              size: [kTextureSize, kTextureSize],
-              usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-              viewFormats: [viewFormat],
-            })
-          );
+        : t.createTextureTracked({
+            format,
+            size: [kTextureSize, kTextureSize],
+            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+            viewFormats: [viewFormat],
+          });
 
     
     
@@ -295,13 +289,11 @@ in view format and match in base format.`
     
     
     const singleSampleRenderTexture = resolveTexture
-      ? t.trackForCleanup(
-          t.device.createTexture({
-            format,
-            size: [kTextureSize, kTextureSize],
-            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-          })
-        )
+      ? t.createTextureTracked({
+          format,
+          size: [kTextureSize, kTextureSize],
+          usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+        })
       : renderTexture;
 
     if (resolveTexture) {

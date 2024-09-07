@@ -7,9 +7,11 @@ import { keysOf, objectsToRecord } from '../../../../../common/util/data_tables.
 import { assert } from '../../../../../common/util/util.js';
 import { kBit } from '../../../../util/constants.js';
 import {
+  concreteTypeOf,
+  isAbstractType,
+  isConvertible,
   kAllScalarsAndVectors,
   kConcreteNumericScalarsAndVectors,
-  kConvertableToFloatScalar,
   ScalarType,
   scalarTypeOf,
   Type,
@@ -23,6 +25,8 @@ import {
   kConstantAndOverrideStages,
   validateConstOrOverrideBinaryOpEval } from
 '../call/builtin/const_override_validation.js';
+
+import { resultType } from './result_type.js';
 
 export const g = makeTestGroup(ShaderValidationTest);
 
@@ -54,6 +58,7 @@ combine(
     (value) => !(value.startsWith('vec3') || value.startsWith('vec4'))
   )
 ).
+combine('compound_assignment', [false, true]).
 beginSubcases().
 combine('op', keysOf(kOperators))
 ).
@@ -71,36 +76,28 @@ fn((t) => {
   const rhs = kScalarAndVectorTypes[t.params.rhs];
   const lhsElement = scalarTypeOf(lhs);
   const rhsElement = scalarTypeOf(rhs);
+  const hasBool = lhsElement === Type.bool || rhsElement === Type.bool;
   const hasF16 = lhsElement === Type.f16 || rhsElement === Type.f16;
-  const code = `
+  const resType = resultType({ lhs, rhs, canConvertScalarToVector: true });
+  const resTypeIsTypeable = resType && !isAbstractType(scalarTypeOf(resType));
+  const code = t.params.compound_assignment ?
+  `
+${hasF16 ? 'enable f16;' : ''}
+fn f() {
+  var v = ${lhs.create(0).wgsl()};
+  v ${op.op}= ${rhs.create(0).wgsl()};
+}
+` :
+  `
 ${hasF16 ? 'enable f16;' : ''}
 const lhs = ${lhs.create(0).wgsl()};
 const rhs = ${rhs.create(0).wgsl()};
-const foo = lhs ${op.op} rhs;
+const foo ${resTypeIsTypeable ? `: ${resType}` : ''} = lhs ${op.op} rhs;
 `;
-
-  let elementsCompatible = lhsElement === rhsElement;
-  const elementTypes = [lhsElement, rhsElement];
-
-  
-  if (elementTypes.includes(Type.bool)) {
-    elementsCompatible = false;
-
-    
-  } else if (elementTypes.includes(Type.abstractInt)) {
-    elementsCompatible = true;
-
-    
-  } else if (elementTypes.includes(Type.abstractFloat)) {
-    elementsCompatible = elementTypes.every((e) => kConvertableToFloatScalar.includes(e));
+  let valid = !hasBool && resType !== null;
+  if (valid && t.params.compound_assignment) {
+    valid = valid && isConvertible(resType, concreteTypeOf(lhs));
   }
-
-  
-  let valid = elementsCompatible;
-  if (lhs instanceof VectorType && rhs instanceof VectorType) {
-    valid = valid && lhs.width === rhs.width;
-  }
-
   t.expectCompileResult(valid, code);
 });
 
