@@ -723,6 +723,9 @@ function makeRemoteTabResult(
 
 
 
+
+
+
 function makeSearchResult(
   queryContext,
   {
@@ -739,6 +742,7 @@ function makeSearchResult(
     providerName,
     inPrivateWindow,
     isPrivateEngine,
+    searchUrlDomainWithoutSuffix,
     heuristic = false,
     trending = false,
     isRichSuggestion = false,
@@ -786,10 +790,11 @@ function makeSearchResult(
     payload.url = uri;
   }
   if (providerName == "TabToSearch") {
-    payload.satisfiesAutofillThreshold = satisfiesAutofillThreshold;
-    if (payload.url.startsWith("www.")) {
-      payload.url = payload.url.substring(4);
+    if (searchUrlDomainWithoutSuffix.startsWith("www.")) {
+      searchUrlDomainWithoutSuffix = searchUrlDomainWithoutSuffix.substring(4);
     }
+    payload.searchUrlDomainWithoutSuffix = searchUrlDomainWithoutSuffix;
+    payload.satisfiesAutofillThreshold = satisfiesAutofillThreshold;
     payload.isGeneralPurposeEngine = false;
   }
 

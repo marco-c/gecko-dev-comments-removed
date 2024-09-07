@@ -470,7 +470,6 @@ add_task(async function shouldNavigate() {
     async startQuery(context, addCallback) {
       for (let result of this.results) {
         result.payload.searchString = context.searchString;
-        result.payload.shouldNavigate = true;
         result.payload.url = DUMMY_PAGE;
         addCallback(this, result);
       }
