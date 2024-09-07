@@ -160,14 +160,16 @@ already_AddRefed<TrustedHTML> TrustedTypePolicyFactory::EmptyHTML() {
   
   dom::PreserveWrapper(this);
 
-  return MakeRefPtr<TrustedHTML>(EmptyString()).forget();
+  RefPtr<TrustedHTML> result = new TrustedHTML(EmptyString());
+  return result.forget();
 }
 
 already_AddRefed<TrustedScript> TrustedTypePolicyFactory::EmptyScript() {
   
   dom::PreserveWrapper(this);
 
-  return MakeRefPtr<TrustedScript>(EmptyString()).forget();
+  RefPtr<TrustedScript> result = new TrustedScript(EmptyString());
+  return result.forget();
 }
 
 }  
