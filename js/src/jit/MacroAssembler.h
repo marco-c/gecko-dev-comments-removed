@@ -5077,6 +5077,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
 
+  void compareBigIntAndInt32(JSOp op, Register bigInt, Imm32 int32,
+                             Register scratch, Label* ifTrue, Label* ifFalse);
+
+  
+
+
 
 
 

@@ -1095,6 +1095,18 @@ void LIRGenerator::visitTest(MTest* test) {
       add(lir, test);
       return;
     }
+
+    
+    if (comp->compareType() == MCompare::Compare_BigInt_Int32) {
+      LAllocation lhs = useRegister(left);
+      LAllocation rhs = useRegisterOrInt32Constant(right);
+      LDefinition temp1 = temp();
+      LDefinition temp2 = !rhs.isConstant() ? temp() : LDefinition::BogusTemp();
+      auto* lir = new (alloc()) LCompareBigIntInt32AndBranch(
+          comp, lhs, rhs, temp1, temp2, ifTrue, ifFalse);
+      add(lir, test);
+      return;
+    }
   }
 
   
@@ -1329,14 +1341,6 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   }
 
   
-  if (comp->compareType() == MCompare::Compare_BigInt_Int32) {
-    auto* lir = new (alloc()) LCompareBigIntInt32(
-        useRegister(left), useRegister(right), temp(), temp());
-    define(lir, comp);
-    return;
-  }
-
-  
   if (comp->compareType() == MCompare::Compare_BigInt_Double) {
     auto* lir = new (alloc()) LCompareBigIntDouble(useRegisterAtStart(left),
                                                    useRegisterAtStart(right));
@@ -1430,6 +1434,17 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   if (comp->isFloat32Comparison()) {
     define(new (alloc()) LCompareF(useRegister(left), useRegister(right)),
            comp);
+    return;
+  }
+
+  
+  if (comp->compareType() == MCompare::Compare_BigInt_Int32) {
+    LAllocation lhs = useRegister(left);
+    LAllocation rhs = useRegisterOrInt32Constant(right);
+    LDefinition temp1 = temp();
+    LDefinition temp2 = !rhs.isConstant() ? temp() : LDefinition::BogusTemp();
+    auto* lir = new (alloc()) LCompareBigIntInt32(lhs, rhs, temp1, temp2);
+    define(lir, comp);
     return;
   }
 
