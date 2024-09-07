@@ -6,10 +6,7 @@
 
 
 
-loadScripts(
-  { name: "text.js", dir: MOCHITESTS_DIR },
-  { name: "attributes.js", dir: MOCHITESTS_DIR }
-);
+loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
 
 const boldAttrs = { "font-weight": "700" };
 
