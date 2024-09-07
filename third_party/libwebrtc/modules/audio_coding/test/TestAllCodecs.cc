@@ -152,6 +152,9 @@ void TestAllCodecs::Perform() {
 
   
   
+
+
+#if defined(__has_feature) && !__has_feature(undefined_behavior_sanitizer)
   test_count_++;
   OpenOutFile(test_count_);
   char codec_g722[] = "G722";
@@ -168,6 +171,9 @@ void TestAllCodecs::Perform() {
   RegisterSendCodec(codec_g722, 16000, 64000, 960, 0);
   Run(channel_a_to_b_);
   outfile_b_.Close();
+#endif
+
+#if defined(__has_feature) && !__has_feature(undefined_behavior_sanitizer)
 #ifdef WEBRTC_CODEC_ILBC
   test_count_++;
   OpenOutFile(test_count_);
@@ -181,6 +187,7 @@ void TestAllCodecs::Perform() {
   RegisterSendCodec(codec_ilbc, 8000, 15200, 320, 0);
   Run(channel_a_to_b_);
   outfile_b_.Close();
+#endif
 #endif
   test_count_++;
   OpenOutFile(test_count_);

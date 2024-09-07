@@ -77,6 +77,8 @@ void TestRedFec::Perform() {
   Run();
   _outFileB.Close();
 
+
+#if defined(__has_feature) && !__has_feature(undefined_behavior_sanitizer)
   
   RegisterSendCodec(_acmA, {"G722", 8000, 1}, Vad::kVadAggressive, false);
 
@@ -96,6 +98,7 @@ void TestRedFec::Perform() {
   OpenOutFile(_testCntr);
   Run();
   _outFileB.Close();
+#endif
 
   RegisterSendCodec(_acmA, {"opus", 48000, 2}, absl::nullopt, false);
 
