@@ -3,20 +3,14 @@
 
 loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
+const { CustomizableUITestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/CustomizableUITestUtils.sys.mjs"
+);
+let gCUITestUtils = new CustomizableUITestUtils(window);
+
 
 add_task(async function test_searchbar_a11y_tree() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.widget.inNavBar", true]],
-  });
-
-  
-  
-  
-  await new Promise(resolve => setTimeout(resolve, 100));
-  let searchbar = await TestUtils.waitForCondition(
-    () => document.getElementById("searchbar"),
-    "wait for search bar to appear"
-  );
+  let searchbar = await gCUITestUtils.addSearchBar();
 
   
   let popup = document.getElementById("PopupSearchAutoComplete");

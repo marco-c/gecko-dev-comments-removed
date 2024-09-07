@@ -279,14 +279,11 @@ add_UITour_task(async function test_getConfiguration_selectedSearchEngine() {
 
 add_UITour_task(async function test_setSearchTerm() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.widget.inNavBar", true]],
-  });
+  let searchbar = await gCUITestUtils.addSearchBar();
 
   const TERM = "UITour Search Term";
   await gContentAPI.setSearchTerm(TERM);
 
-  let searchbar = document.getElementById("searchbar");
   
   
   await waitForConditionPromise(
@@ -294,18 +291,15 @@ add_UITour_task(async function test_setSearchTerm() {
     "Correct term set"
   );
 
-  await SpecialPowers.popPrefEnv();
+  gCUITestUtils.removeSearchBar();
 });
 
 add_UITour_task(async function test_clearSearchTerm() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.widget.inNavBar", true]],
-  });
+  let searchbar = await gCUITestUtils.addSearchBar();
 
   await gContentAPI.setSearchTerm("");
 
-  let searchbar = document.getElementById("searchbar");
   
   
   await waitForConditionPromise(
@@ -313,5 +307,5 @@ add_UITour_task(async function test_clearSearchTerm() {
     "Search term cleared"
   );
 
-  await SpecialPowers.popPrefEnv();
+  gCUITestUtils.removeSearchBar();
 });

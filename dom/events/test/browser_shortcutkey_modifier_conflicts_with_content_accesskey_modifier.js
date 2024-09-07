@@ -1,3 +1,8 @@
+const { CustomizableUITestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/CustomizableUITestUtils.sys.mjs"
+);
+let gCUITestUtils = new CustomizableUITestUtils(window);
+
 add_task(async function () {
   
   
@@ -12,17 +17,16 @@ add_task(async function () {
           ["ui.key.generalAccessKey", -1],
           ["ui.key.chromeAccess", 0 ],
           ["ui.key.contentAccess", 4 ],
-          ["browser.search.widget.inNavBar", true],
         ],
       },
       resolve
     );
   });
+  let searchBar = await gCUITestUtils.addSearchBar();
 
   const kTestPage = "data:text/html,<body>simple web page</body>";
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, kTestPage);
 
-  let searchBar = BrowserSearch.searchBar;
   searchBar.focus();
 
   function promiseURLBarHasFocus() {

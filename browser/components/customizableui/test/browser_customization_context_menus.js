@@ -204,9 +204,7 @@ add_task(async function searchbar_context_move_to_panel_and_back() {
   
   
   
-  Services.prefs.setBoolPref("browser.search.widget.inNavBar", true);
-
-  let searchbar = document.getElementById("searchbar");
+  let searchbar = await gCUITestUtils.addSearchBar();
   
   
   await gCustomizeMode.addToPanel(searchbar);
