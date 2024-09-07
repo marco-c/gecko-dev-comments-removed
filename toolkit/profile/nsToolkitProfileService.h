@@ -94,8 +94,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   nsresult CreateTimesInternal(nsIFile* profileDir);
   void GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
                        nsIToolkitProfile** aResult);
-  nsresult GetProfileByStoreID(const nsACString& aStoreID,
-                               nsIToolkitProfile** aResult);
 
   nsresult GetProfileDescriptor(nsIFile* aRootDir, nsACString& aDescriptor,
                                 bool* aIsRelative);
@@ -109,7 +107,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool UseLegacyProfiles();
   nsresult CreateDefaultProfile(nsIToolkitProfile** aResult);
   void SetNormalDefault(nsIToolkitProfile* aProfile);
-  nsresult GetLocalDirFromRootDir(nsIFile* aRootDir, nsIFile** aResult);
 
   
   
@@ -121,8 +118,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   mozilla::LinkedList<RefPtr<nsToolkitProfile>> mProfiles;
   
   nsCOMPtr<nsIToolkitProfile> mCurrent;
-  
-  nsCOMPtr<nsIToolkitProfile> mGroupProfile;
   
   nsCOMPtr<nsIToolkitProfile> mDedicatedProfile;
   
