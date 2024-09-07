@@ -287,7 +287,20 @@ async function testOriginControls(
     await testQuarantinePopup(popup, extension.id);
 
     if (allowQuarantine) {
+      
+      
+      
+      
+      
+      
+      const promiseQuarantineAllowed = AddonTestUtils.promiseAddonEvent(
+        "onPropertyChanged",
+        (addon, changedProps) =>
+          addon.id === extension.id &&
+          changedProps.includes("quarantineIgnoredByUser")
+      );
       popup.button.click();
+      await promiseQuarantineAllowed;
     } else {
       popup.secondaryButton.click();
     }
