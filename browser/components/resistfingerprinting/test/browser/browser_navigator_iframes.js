@@ -47,33 +47,12 @@ const SPOOFED_APPVERSION = {
   other: "5.0 (X11)",
 };
 
-let cpuArch = Services.sysinfo.get("arch");
-if (cpuArch == "x86-64") {
-  
-  cpuArch = "x86_64";
-}
-
-
-
-
-const freezeCpu = Services.prefs.getBoolPref(
-  "network.http.useragent.freezeCpu",
-  false
-);
-
-let defaultLinuxCpu;
-if (freezeCpu) {
-  defaultLinuxCpu = AppConstants.platform == "android" ? "armv81" : "x86_64";
-} else {
-  defaultLinuxCpu = cpuArch;
-}
-
 const DEFAULT_PLATFORM = {
-  linux: `Linux ${defaultLinuxCpu}`,
+  linux: "Linux x86_64",
   win: "Win32",
   macosx: "MacIntel",
-  android: `Linux ${defaultLinuxCpu}`,
-  other: `Linux ${defaultLinuxCpu}`,
+  android: "Linux armv81",
+  other: "Linux x86_64",
 };
 
 const SPOOFED_PLATFORM = {
@@ -90,10 +69,11 @@ const SPOOFED_PLATFORM = {
 const WindowsOscpuPromise = (async () => {
   let WindowsOscpu = null;
   if (AppConstants.platform == "win") {
+    let cpuArch = Services.sysinfo.get("arch");
     let isWin11 = WindowsVersionInfo.get().buildNumber >= 22000;
     let isWow64 = (await Services.sysinfo.processInfo).isWow64;
     WindowsOscpu =
-      cpuArch == "x86_64" || isWow64 || (cpuArch == "aarch64" && isWin11)
+      cpuArch == "x86-64" || isWow64 || (cpuArch == "aarch64" && isWin11)
         ? "Windows NT 10.0; Win64; x64"
         : "Windows NT 10.0";
   }
@@ -101,10 +81,11 @@ const WindowsOscpuPromise = (async () => {
 })();
 
 const DEFAULT_OSCPU = {
-  linux: `Linux ${defaultLinuxCpu}`,
+  linux: "Linux x86_64",
+  
   macosx: "Intel Mac OS X 10.15",
-  android: `Linux ${defaultLinuxCpu}`,
-  other: `Linux ${defaultLinuxCpu}`,
+  android: "Linux armv81",
+  other: "Linux x86_64",
 };
 
 const SPOOFED_OSCPU = {
@@ -116,10 +97,11 @@ const SPOOFED_OSCPU = {
 };
 
 const DEFAULT_UA_OS = {
-  linux: `X11; Linux ${defaultLinuxCpu}`,
+  linux: "X11; Linux x86_64",
+  
   macosx: "Macintosh; Intel Mac OS X 10.15",
   android: `Android ${osVersion}; Mobile`,
-  other: `X11; Linux ${defaultLinuxCpu}`,
+  other: "X11; Linux x86_64",
 };
 
 const SPOOFED_UA_NAVIGATOR_OS = {
