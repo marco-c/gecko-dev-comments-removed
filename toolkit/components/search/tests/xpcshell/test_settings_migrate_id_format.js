@@ -27,6 +27,12 @@ const SEARCH_SETTINGS = {
       _isAppProvided: true,
       _metaData: { order: 1 },
     },
+    
+    
+    {
+      _name: "engine3",
+      _isAppProvided: true,
+    },
   ],
 };
 
