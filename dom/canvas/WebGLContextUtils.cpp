@@ -63,7 +63,7 @@ TexTarget TexImageTargetToTexTarget(TexImageTarget texImageTarget) {
 
 const char* GetEnumName(const GLenum val, const char* const defaultRet) {
   switch (val) {
-    case 0: 
+    case 0:  
       return "0";
 
 #define XX(x)        \
