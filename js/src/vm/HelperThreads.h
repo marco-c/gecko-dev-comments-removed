@@ -61,6 +61,8 @@ struct CompileTask;
 struct CompileTaskState;
 struct CompleteTier2GeneratorTask;
 using UniqueCompleteTier2GeneratorTask = UniquePtr<CompleteTier2GeneratorTask>;
+struct PartialTier2CompileTask;
+using UniquePartialTier2CompileTask = UniquePtr<PartialTier2CompileTask>;
 }  
 
 
@@ -140,7 +142,16 @@ void StartOffThreadWasmCompleteTier2Generator(
     wasm::UniqueCompleteTier2GeneratorTask task);
 
 
+
+void StartOffThreadWasmPartialTier2Compile(
+    wasm::UniquePartialTier2CompileTask task);
+
+
+
 void CancelOffThreadWasmCompleteTier2Generator();
+
+
+void CancelOffThreadWasmPartialTier2Compile();
 
 
 

@@ -33,6 +33,7 @@
 #include "jit/MacroAssembler.h"
 #include "jit/PerfSpewer.h"
 #include "util/Poison.h"
+#include "vm/HelperThreadState.h"  
 #ifdef MOZ_VTUNE
 #  include "vtune/VTuneWrapper.h"
 #endif
@@ -45,6 +46,7 @@
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
+using mozilla::Atomic;
 using mozilla::BinarySearch;
 using mozilla::BinarySearchIf;
 using mozilla::DebugOnly;
@@ -804,7 +806,52 @@ bool Code::createTier2LazyEntryStubs(const WriteGuard& guard,
   return true;
 }
 
+class Module::PartialTier2CompileTaskImpl : public PartialTier2CompileTask {
+  const SharedCode code_;
+  uint32_t funcIndex_;
+  Atomic<bool> cancelled_;
+
+ public:
+  PartialTier2CompileTaskImpl(const Code& code, uint32_t funcIndex)
+      : code_(&code), funcIndex_(funcIndex), cancelled_(false) {}
+
+  void cancel() override { cancelled_ = true; }
+
+  void runHelperThreadTask(AutoLockHelperThreadState& locked) override {
+    if (!cancelled_) {
+      AutoUnlockHelperThreadState unlock(locked);
+
+      
+      
+      bool success = CompilePartialTier2(*code_, funcIndex_);
+
+      
+      
+      
+
+      
+      
+      
+      
+      UniqueChars error;
+      UniqueCharsVector warnings;
+      ReportTier2ResultsOffThread(success, mozilla::Some(funcIndex_),
+                                  code_->codeMeta().scriptedCaller(), error,
+                                  warnings);
+    }
+
+    
+    js_delete(this);
+  }
+
+  ThreadType threadType() override {
+    return ThreadType::THREAD_TYPE_WASM_COMPILE_PARTIAL_TIER2;
+  }
+};
+
 bool Code::requestTierUp(uint32_t funcIndex) const {
+  
+  
   MOZ_ASSERT(mode_ == CompileMode::LazyTiering);
   FuncState& state = funcStates_[funcIndex - codeMeta_->numFuncImports];
   if (!state.tierUpState.compareExchange(TierUpState::NotRequested,
@@ -812,7 +859,16 @@ bool Code::requestTierUp(uint32_t funcIndex) const {
     return true;
   }
 
-  return CompilePartialTier2(*this, funcIndex);
+  auto task =
+      js::MakeUnique<Module::PartialTier2CompileTaskImpl>(*this, funcIndex);
+  if (!task) {
+    
+    
+    return false;
+  }
+
+  StartOffThreadWasmPartialTier2Compile(std::move(task));
+  return true;
 }
 
 bool Code::finishTier2(UniqueCodeBlock tier2CodeBlock,

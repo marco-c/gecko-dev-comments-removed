@@ -64,6 +64,7 @@ enum ThreadType {
   THREAD_TYPE_PROMISE_TASK,                   
   THREAD_TYPE_ION_FREE,                       
   THREAD_TYPE_WASM_GENERATOR_COMPLETE_TIER2,  
+  THREAD_TYPE_WASM_COMPILE_PARTIAL_TIER2,     
   THREAD_TYPE_WORKER,                         
   THREAD_TYPE_DELAZIFY,                       
   THREAD_TYPE_DELAZIFY_FREE,                  
@@ -86,8 +87,7 @@ namespace oom {
 
 
 const ThreadType FirstThreadTypeToTest = THREAD_TYPE_MAIN;
-const ThreadType LastThreadTypeToTest =
-    THREAD_TYPE_WASM_GENERATOR_COMPLETE_TIER2;
+const ThreadType LastThreadTypeToTest = THREAD_TYPE_WASM_COMPILE_PARTIAL_TIER2;
 
 extern bool InitThreadType(void);
 extern void SetThreadType(ThreadType);

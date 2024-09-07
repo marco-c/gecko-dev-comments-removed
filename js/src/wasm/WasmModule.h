@@ -28,6 +28,8 @@
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmTable.h"
 
+using mozilla::Maybe;
+
 namespace JS {
 class OptimizedEncodingListener;
 }
@@ -41,6 +43,15 @@ struct CompileArgs;
 
 
 using CompleteTier2Listener = RefPtr<JS::OptimizedEncodingListener>;
+
+
+
+
+
+void ReportTier2ResultsOffThread(bool success, Maybe<uint32_t> maybeFuncIndex,
+                                 const ScriptedCaller& scriptedCaller,
+                                 const UniqueChars& error,
+                                 const UniqueCharsVector& warnings);
 
 
 
@@ -129,6 +140,8 @@ class Module : public JS::WasmModule {
   class CompleteTier2GeneratorTaskImpl;
 
  public:
+  class PartialTier2CompileTaskImpl;
+
   Module(const ModuleMetadata& moduleMeta, const Code& code,
          bool loggingDeserialized = false)
       : moduleMeta_(&moduleMeta),

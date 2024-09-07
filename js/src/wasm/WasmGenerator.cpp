@@ -620,12 +620,16 @@ bool ModuleGenerator::initTasks() {
 
   MOZ_ASSERT(GetHelperThreadCount() > 1);
 
-  uint32_t numTasks;
-  if (CanUseExtraThreads() && GetHelperThreadCPUCount() > 1) {
+  MOZ_ASSERT(!parallel_);
+  uint32_t numTasks = 1;
+  if (  
+      CanUseExtraThreads() && GetHelperThreadCPUCount() > 1 &&
+      
+      
+      
+      compileState_ != CompileState::LazyTier2) {
     parallel_ = true;
     numTasks = 2 * GetMaxWasmCompilationThreads();
-  } else {
-    numTasks = 1;
   }
 
   if (!tasks_.initCapacity(numTasks)) {

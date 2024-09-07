@@ -57,10 +57,14 @@ static UniqueChars Tier2ResultsContext(const ScriptedCaller& scriptedCaller) {
              : UniqueChars();
 }
 
-static void ReportTier2ResultsOffThread(bool success,
-                                        const ScriptedCaller& scriptedCaller,
-                                        const UniqueChars& error,
-                                        const UniqueCharsVector& warnings) {
+void js::wasm::ReportTier2ResultsOffThread(bool success,
+                                           Maybe<uint32_t> maybeFuncIndex,
+                                           const ScriptedCaller& scriptedCaller,
+                                           const UniqueChars& error,
+                                           const UniqueCharsVector& warnings) {
+  
+  MOZ_ASSERT_IF(maybeFuncIndex.isSome(), !error && warnings.length() == 0);
+
   
   UniqueChars context = Tier2ResultsContext(scriptedCaller);
   const char* contextString = context ? context.get() : "unknown";
@@ -68,15 +72,22 @@ static void ReportTier2ResultsOffThread(bool success,
   
   if (!success) {
     const char* errorString = error ? error.get() : "out of memory";
-    LogOffThread("'%s': wasm tier-2 failed with '%s'.\n", contextString,
-                 errorString);
+    if (maybeFuncIndex.isSome()) {
+      LogOffThread(
+          "'%s': wasm partial tier-2 (func index %u) failed with '%s'.\n",
+          contextString, maybeFuncIndex.value(), errorString);
+    } else {
+      LogOffThread("'%s': wasm complete tier-2 failed with '%s'.\n",
+                   contextString, errorString);
+    }
   }
 
   
   size_t numWarnings = std::min<size_t>(warnings.length(), 3);
 
   for (size_t i = 0; i < numWarnings; i++) {
-    LogOffThread("'%s': wasm tier-2 warning: '%s'.\n'.", contextString,
+    
+    LogOffThread("'%s': wasm complete tier-2 warning: '%s'.\n'.", contextString,
                  warnings[i].get());
   }
   if (warnings.length() > numWarnings) {
@@ -118,8 +129,9 @@ class Module::CompleteTier2GeneratorTaskImpl
         
         
         
-        ReportTier2ResultsOffThread(
-            success, module_->codeMeta().scriptedCaller(), error, warnings);
+        ReportTier2ResultsOffThread(success, mozilla::Nothing(),
+                                    module_->codeMeta().scriptedCaller(), error,
+                                    warnings);
       }
     }
 
