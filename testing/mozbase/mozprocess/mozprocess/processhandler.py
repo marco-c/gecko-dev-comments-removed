@@ -604,6 +604,10 @@ falling back to not using job objects for managing child processes""",
                     
                     return self.returncode
 
+                
+                
+                the_timeout = 0.1 if timeout is None else timeout
+
                 if self._job:
                     self.debug("waiting with IO completion port")
                     
@@ -613,7 +617,18 @@ falling back to not using job objects for managing child processes""",
                     
                     
                     try:
-                        item = self._process_events.get(timeout=timeout)
+                        while True:
+                            try:
+                                item = self._process_events.get(timeout=the_timeout)
+                            except Empty:
+                                
+                                
+                                if timeout is None:
+                                    continue
+                                else:
+                                    raise
+                            break
+
                         
                         self._process_events.put(item)
                         if item[self.pid] == "FINISHED":
@@ -646,13 +661,17 @@ falling back to not using job objects for managing child processes""",
 
                     rc = None
                     if self._handle:
-                        if timeout is None:
-                            timeout = -1
-                        else:
+                        
+                        the_timeout = int(the_timeout * 1000)
+                        while True:
+                            rc = winprocess.WaitForSingleObject(
+                                self._handle, the_timeout
+                            )
                             
-                            timeout = timeout * 1000
-
-                        rc = winprocess.WaitForSingleObject(self._handle, timeout)
+                            
+                            if timeout is None and rc == winprocess.WAIT_TIMEOUT:
+                                continue
+                            break
 
                     if rc == winprocess.WAIT_TIMEOUT:
                         
