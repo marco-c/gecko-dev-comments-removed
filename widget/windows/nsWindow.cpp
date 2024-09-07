@@ -992,35 +992,37 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     }
   }
 
-  if (Preferences::GetBool("browser.privateWindowSeparation.enabled", true) &&
-      (aInitData->mIsPrivate)) {
+  {
     
     
     
     
-    if (!StaticPrefs::browser_privatebrowsing_autostart()) {
-      RefPtr<IPropertyStore> pPropStore;
-      if (!FAILED(SHGetPropertyStoreForWindow(mWnd, IID_IPropertyStore,
-                                              getter_AddRefs(pPropStore)))) {
-        PROPVARIANT pv;
-        nsAutoString aumid;
-        
-        
-        Unused << NS_WARN_IF(
-            !mozilla::widget::WinTaskbar::GenerateAppUserModelID(aumid, true));
-        if (!FAILED(InitPropVariantFromString(aumid.get(), &pv))) {
-          if (!FAILED(pPropStore->SetValue(PKEY_AppUserModel_ID, pv))) {
-            pPropStore->Commit();
-          }
-
-          PropVariantClear(&pv);
+    bool usePrivateAumid =
+        Preferences::GetBool("browser.privateWindowSeparation.enabled", true) &&
+        (aInitData->mIsPrivate) &&
+        !StaticPrefs::browser_privatebrowsing_autostart();
+    RefPtr<IPropertyStore> pPropStore;
+    if (!FAILED(SHGetPropertyStoreForWindow(mWnd, IID_IPropertyStore,
+                                            getter_AddRefs(pPropStore)))) {
+      PROPVARIANT pv;
+      nsAutoString aumid;
+      
+      
+      Unused << NS_WARN_IF(!mozilla::widget::WinTaskbar::GenerateAppUserModelID(
+          aumid, usePrivateAumid));
+      if (!FAILED(InitPropVariantFromString(aumid.get(), &pv))) {
+        if (!FAILED(pPropStore->SetValue(PKEY_AppUserModel_ID, pv))) {
+          pPropStore->Commit();
         }
+
+        PropVariantClear(&pv);
       }
-      HICON icon = ::LoadIconW(::GetModuleHandleW(nullptr),
-                               MAKEINTRESOURCEW(IDI_PBMODE));
-      SetBigIcon(icon);
-      SetSmallIcon(icon);
     }
+    HICON icon = ::LoadIconW(
+        ::GetModuleHandleW(nullptr),
+        MAKEINTRESOURCEW(usePrivateAumid ? IDI_PBMODE : IDI_APPICON));
+    SetBigIcon(icon);
+    SetSmallIcon(icon);
   }
 
   mDeviceNotifyHandle = InputDeviceUtils::RegisterNotification(mWnd);
