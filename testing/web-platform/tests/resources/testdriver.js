@@ -52,6 +52,58 @@
         
 
 
+        bidi: {
+            
+
+
+            log: {
+                
+
+
+                entry_added: {
+                    
+
+
+
+
+
+
+
+
+
+
+                    subscribe: async function (params = {}) {
+                        return window.test_driver_internal.bidi.log.entry_added.subscribe(params);
+                    },
+                    
+
+
+
+
+
+
+
+
+
+                    on: function (callback) {
+                        return window.test_driver_internal.bidi.log.entry_added.on(callback);
+                    },
+                    once: function () {
+                        return new Promise(resolve => {
+                            const remove_handler = window.test_driver_internal.bidi.log.entry_added.on(
+                                data => {
+                                    resolve(data);
+                                    remove_handler();
+                                });
+                        });
+                    },
+                }
+            }
+        },
+
+        
+
+
 
 
         set_test_context: function(context) {
@@ -1100,6 +1152,21 @@
 
 
         in_automation: false,
+
+        bidi: {
+            log: {
+                entry_added: {
+                    async subscribe() {
+                        throw new Error(
+                            "bidi.log.entry_added.subscribe is not implemented by testdriver-vendor.js");
+                    },
+                    on() {
+                        throw new Error(
+                            "bidi.log.entry_added.on is not implemented by testdriver-vendor.js");
+                    }
+                }
+            }
+        },
 
         async click(element, coords) {
             if (this.in_automation) {
