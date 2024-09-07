@@ -8,16 +8,25 @@
 
 "use strict";
 
+const CONFIG = [
+  { identifier: "defaultSearchEngine" },
+  { identifier: "anEngineEarlyInAlphabet" },
+  { identifier: "engineLaterInAlphabet" },
+  { identifier: "zEngineEvenLaterInAlphabet" },
+  { identifier: "secondEngineInSortOrder" },
+  { identifier: "zFirstEngineInSortOrder" },
+  {
+    orders: [
+      {
+        environment: { allRegionsAndLocales: true },
+        order: ["zFirstEngineInSortOrder", "secondEngineInSortOrder"],
+      },
+    ],
+  },
+];
+
 add_setup(async function () {
-  await SearchTestUtils.useTestEngines(
-    "data",
-    null,
-    (
-      await readJSONFile(
-        do_get_file("data/search-config-v2-no-order-hint.json")
-      )
-    ).data
-  );
+  SearchTestUtils.setRemoteSettingsConfig(CONFIG);
 
   Services.prefs.setBoolPref(
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
@@ -49,14 +58,14 @@ add_task(async function test_engine_sort_with_non_builtins_sort() {
 
   const EXPECTED_ORDER = [
     
-    "Test search engine",
+    "defaultSearchEngine",
     
-    "engine-chromeicon",
-    "engine-rel-searchform-purpose",
+    "zFirstEngineInSortOrder",
+    "secondEngineInSortOrder",
     
-    "engine-pref",
-    "engine-resourceicon",
-    "Test search engine (Reordered)",
+    "anEngineEarlyInAlphabet",
+    "engineLaterInAlphabet",
+    "zEngineEvenLaterInAlphabet",
   ];
 
   
