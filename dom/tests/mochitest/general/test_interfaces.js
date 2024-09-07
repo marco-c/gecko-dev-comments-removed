@@ -1460,7 +1460,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ValidityState", insecureContext: true },
   
-  { name: "VideoColorSpace", insecureContext: true, nightly: true },
+  { name: "VideoColorSpace", insecureContext: true },
   
   { name: "VideoDecoder" },
   
