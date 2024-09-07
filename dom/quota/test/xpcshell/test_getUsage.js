@@ -3,7 +3,7 @@
 
 
 
-function* testSteps() {
+async function testSteps() {
   const origins = [
     {
       origin: "http://example.com",
@@ -84,15 +84,17 @@ function* testSteps() {
     }
   }
 
+  function dummy() {}
+
   info("Clearing");
 
-  clear(continueToNextStepSync);
-  yield undefined;
+  let request = clear();
+  await requestFinished(request);
 
   info("Getting usage");
 
-  getUsage(grabResultAndContinueHandler,  true);
-  let result = yield undefined;
+  request = getUsage(dummy,  true);
+  let result = await requestFinished(request);
 
   info("Verifying result");
 
@@ -100,8 +102,8 @@ function* testSteps() {
 
   info("Clearing");
 
-  clear(continueToNextStepSync);
-  yield undefined;
+  request = clear();
+  await requestFinished(request);
 
   info("Installing package");
 
@@ -113,8 +115,8 @@ function* testSteps() {
 
   info("Getting usage");
 
-  getUsage(grabResultAndContinueHandler,  false);
-  result = yield undefined;
+  request = getUsage(dummy,  false);
+  result = await requestFinished(request);
 
   info("Verifying result");
 
@@ -122,12 +124,10 @@ function* testSteps() {
 
   info("Getting usage");
 
-  getUsage(grabResultAndContinueHandler,  true);
-  result = yield undefined;
+  request = getUsage(dummy,  true);
+  result = await requestFinished(request);
 
   info("Verifying result");
 
   verifyResult(result, allOrigins);
-
-  finishTest();
 }
