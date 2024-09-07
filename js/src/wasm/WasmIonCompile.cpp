@@ -55,6 +55,9 @@ using mozilla::Some;
 
 namespace {
 
+using UniqueCompileInfo = UniquePtr<CompileInfo>;
+using UniqueCompileInfoVector = Vector<UniqueCompileInfo, 1, SystemAllocPolicy>;
+
 using BlockVector = Vector<MBasicBlock*, 8, SystemAllocPolicy>;
 using DefVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 
@@ -245,6 +248,21 @@ class FunctionCompiler {
   using PendingBlockTargetVector =
       Vector<PendingBlockTarget, 0, SystemAllocPolicy>;
 
+  
+  
+  struct PendingInlineReturn {
+    PendingInlineReturn(MGoto* jump, DefVector&& results)
+        : jump(jump), results(std::move(results)) {}
+
+    MGoto* jump;
+    DefVector results;
+  };
+  using PendingInlineReturnVector =
+      Vector<PendingInlineReturn, 1, SystemAllocPolicy>;
+
+  
+  const FunctionCompiler* callerCompiler_;
+  const uint32_t inliningDepth_;
   const CompilerEnvironment& compilerEnv_;
   const CodeMetadata& codeMeta_;
   IonOpIter iter_;
@@ -268,6 +286,9 @@ class FunctionCompiler {
   
   
   ControlInstructionVector bodyDelegatePadPatches_;
+  
+  
+  PendingInlineReturnVector pendingInlineReturns_;
 
   
   MWasmParameter* instancePointer_;
@@ -277,14 +298,23 @@ class FunctionCompiler {
   wasm::TryNoteVector& tryNotes_;
 
   
+  
+  UniqueCompileInfoVector& compileInfos_;
+
+  
   VectorUniqueTryControl tryControlCache_;
 
  public:
+  
   FunctionCompiler(const CompilerEnvironment& compilerEnv,
                    const CodeMetadata& codeMeta, Decoder& decoder,
                    const FuncCompileInput& func, const ValTypeVector& locals,
-                   MIRGenerator& mirGen, TryNoteVector& tryNotes)
-      : compilerEnv_(compilerEnv),
+                   MIRGenerator& mirGen, const CompileInfo& compileInfo,
+                   TryNoteVector& tryNotes,
+                   UniqueCompileInfoVector& compileInfos)
+      : callerCompiler_(nullptr),
+        inliningDepth_(0),
+        compilerEnv_(compilerEnv),
         codeMeta_(codeMeta),
         iter_(codeMeta, decoder),
         functionBodyOffset_(decoder.beginOffset()),
@@ -293,7 +323,7 @@ class FunctionCompiler {
         lastReadCallSite_(0),
         alloc_(mirGen.alloc()),
         graph_(mirGen.graph()),
-        info_(mirGen.outerInfo()),
+        info_(compileInfo),
         mirGen_(mirGen),
         curBlock_(nullptr),
         maxStackArgBytes_(0),
@@ -301,7 +331,34 @@ class FunctionCompiler {
         blockDepth_(0),
         instancePointer_(nullptr),
         stackResultPointer_(nullptr),
-        tryNotes_(tryNotes) {}
+        tryNotes_(tryNotes),
+        compileInfos_(compileInfos) {}
+
+  
+  FunctionCompiler(const FunctionCompiler* callerCompiler, Decoder& decoder,
+                   const FuncCompileInput& func, const ValTypeVector& locals,
+                   const CompileInfo& compileInfo)
+      : callerCompiler_(callerCompiler),
+        inliningDepth_(callerCompiler_->inliningDepth() + 1),
+        compilerEnv_(callerCompiler_->compilerEnv_),
+        codeMeta_(callerCompiler_->codeMeta_),
+        iter_(codeMeta_, decoder),
+        functionBodyOffset_(decoder.beginOffset()),
+        func_(func),
+        locals_(locals),
+        lastReadCallSite_(0),
+        alloc_(callerCompiler_->alloc_),
+        graph_(callerCompiler_->graph_),
+        info_(compileInfo),
+        mirGen_(callerCompiler_->mirGen_),
+        curBlock_(nullptr),
+        maxStackArgBytes_(0),
+        loopDepth_(callerCompiler_->loopDepth_),
+        blockDepth_(0),
+        instancePointer_(callerCompiler_->instancePointer_),
+        stackResultPointer_(nullptr),
+        tryNotes_(callerCompiler_->tryNotes_),
+        compileInfos_(callerCompiler_->compileInfos_) {}
 
   const CodeMetadata& codeMeta() const { return codeMeta_; }
 
@@ -315,6 +372,9 @@ class FunctionCompiler {
   const FuncType& funcType() const {
     return codeMeta_.getFuncType(func_.index);
   }
+
+  bool isInlined() const { return callerCompiler_ != nullptr; }
+  uint32_t inliningDepth() const { return inliningDepth_; }
 
   MBasicBlock* getCurBlock() const { return curBlock_; }
   BytecodeOffset bytecodeOffset() const { return iter_.bytecodeOffset(); }
@@ -341,7 +401,7 @@ class FunctionCompiler {
     (void)tryControlCache_.append(std::move(tryControl));
   }
 
-  [[nodiscard]] bool init() {
+  [[nodiscard]] bool initTopLevel() {
     
 
     const ArgTypeVector args(funcType());
@@ -394,10 +454,64 @@ class FunctionCompiler {
     return true;
   }
 
-  void finish() {
-    mirGen().initWasmMaxStackArgBytes(maxStackArgBytes_);
+  [[nodiscard]] bool initInline(const DefVector& argValues) {
+    
+    if (!mirGen_.ensureBallast()) {
+      return false;
+    }
+    if (!newBlock(nullptr, &curBlock_)) {
+      return false;
+    }
 
-    MOZ_ASSERT(loopDepth_ == 0);
+    MBasicBlock* pred = callerCompiler_->curBlock_;
+    pred->end(MGoto::New(alloc(), curBlock_));
+    if (!curBlock_->addPredecessorWithoutPhis(pred)) {
+      return false;
+    }
+
+    
+    const FuncType& type = funcType();
+    for (uint32_t argIndex = 0; argIndex < type.args().length(); argIndex++) {
+      curBlock_->initSlot(info().localSlot(argIndex), argValues[argIndex]);
+    }
+
+    
+    instancePointer_ = callerCompiler_->instancePointer_;
+
+    
+    for (size_t i = type.args().length(); i < locals_.length(); i++) {
+      ValType slotValType = locals_[i];
+#ifndef ENABLE_WASM_SIMD
+      if (slotValType == ValType::V128) {
+        return iter().fail("Ion has no SIMD support yet");
+      }
+#endif
+      MDefinition* zero = constantZeroOfValType(slotValType);
+      curBlock_->initSlot(info().localSlot(i), zero);
+      if (!mirGen_.ensureBallast()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  
+  
+  
+  [[nodiscard]] CompileInfo* addInlineCallInfo(uint32_t numLocals) {
+    UniqueCompileInfo compileInfo = MakeUnique<CompileInfo>(numLocals);
+    if (!compileInfo || !compileInfos_.append(std::move(compileInfo))) {
+      return nullptr;
+    }
+    return compileInfos_[compileInfos_.length() - 1].get();
+  }
+
+  void finish() {
+    mirGen().accumulateWasmMaxStackArgBytes(maxStackArgBytes_);
+
+    MOZ_ASSERT(callerCompiler_ ? (loopDepth_ == callerCompiler_->loopDepth_)
+                               : (loopDepth_ == 0));
     MOZ_ASSERT(blockDepth_ == 0);
 #ifdef DEBUG
     for (PendingBlockTarget& targets : pendingBlocks_) {
@@ -2267,6 +2381,99 @@ class FunctionCompiler {
     return finishTryCall(&tryDesc);
   }
 
+  [[nodiscard]]
+  bool shouldInlineCallDirect(uint32_t funcIndex) {
+    
+    
+    
+    if (compilerEnv().mode() != CompileMode::LazyTiering) {
+      return false;
+    }
+
+    
+    if (inliningDepth() > JS::Prefs::wasm_experimental_inline_depth_limit()) {
+      return false;
+    }
+
+    
+    
+    if (inTryCode()) {
+      return false;
+    }
+
+    
+    const FuncDefRange& funcRange = codeMeta().funcDefRange(funcIndex);
+    return funcRange.bodyLength <=
+           JS::Prefs::wasm_experimental_inline_size_limit();
+  }
+
+  [[nodiscard]]
+  bool finishInlinedCallDirect(FunctionCompiler& calleeCompiler,
+                               DefVector* results) {
+    const PendingInlineReturnVector& calleeReturns =
+        calleeCompiler.pendingInlineReturns_;
+    const FuncType& calleeFuncType = calleeCompiler.funcType();
+
+    
+    iter_.addFeatureUsage(calleeCompiler.featureUsage());
+
+    
+    if (calleeReturns.empty()) {
+      curBlock_ = nullptr;
+      return true;
+    }
+
+    
+    MBasicBlock* lastBlockBeforeCall = curBlock_;
+    MBasicBlock* joinAfterCall = nullptr;
+    if (!newBlock(nullptr, &joinAfterCall)) {
+      return false;
+    }
+
+    
+    
+    joinAfterCall->inheritSlots(lastBlockBeforeCall);
+
+    
+    
+    
+    for (uint32_t i = 0; i < calleeFuncType.results().length(); i++) {
+      MPhi* phi = MPhi::New(alloc(), calleeFuncType.results()[i].toMIRType());
+      if (!phi || !phi->reserveLength(calleeReturns.length())) {
+        return false;
+      }
+      joinAfterCall->addPhi(phi);
+      if (!results->append(phi)) {
+        return false;
+      }
+    }
+
+    
+    
+    for (size_t i = 0; i < calleeReturns.length(); i++) {
+      const PendingInlineReturn& calleeReturn = calleeReturns[i];
+
+      
+      MBasicBlock* pred = calleeReturn.jump->block();
+      if (!joinAfterCall->addPredecessorWithoutPhis(pred)) {
+        return false;
+      }
+      calleeReturn.jump->replaceSuccessor(MGoto::TargetIndex, joinAfterCall);
+
+      
+      for (uint32_t resultIndex = 0;
+           resultIndex < calleeFuncType.results().length(); resultIndex++) {
+        MDefinition* result = (*results)[resultIndex];
+        ((MPhi*)(result))->addInput(calleeReturn.results[resultIndex]);
+      }
+    }
+
+    
+    curBlock_ = joinAfterCall;
+
+    return true;
+  }
+
   [[nodiscard]] bool callDirect(const FuncType& funcType, uint32_t funcIndex,
                                 uint32_t lineOrBytecode,
                                 const CallCompileState& call,
@@ -2291,6 +2498,12 @@ class FunctionCompiler {
                                       DefVector* results) {
     MOZ_ASSERT(!inDeadCode());
 
+    
+    
+    if (isInlined()) {
+      MOZ_CRASH();
+    }
+
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::ReturnFunc);
     auto callee = CalleeDesc::function(funcIndex);
     ArgTypeVector args(funcType);
@@ -2312,6 +2525,12 @@ class FunctionCompiler {
                                       DefVector* results) {
     MOZ_ASSERT(!inDeadCode());
 
+    
+    
+    if (isInlined()) {
+      MOZ_CRASH();
+    }
+
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Import);
     auto callee = CalleeDesc::import(globalDataOffset);
     ArgTypeVector args(funcType);
@@ -2332,6 +2551,12 @@ class FunctionCompiler {
                                         const CallCompileState& call,
                                         DefVector* results) {
     MOZ_ASSERT(!inDeadCode());
+
+    
+    
+    if (isInlined()) {
+      MOZ_CRASH();
+    }
 
     const FuncType& funcType = (*codeMeta_.types)[funcTypeIndex].funcType();
     CallIndirectId callIndirectId =
@@ -2563,9 +2788,22 @@ class FunctionCompiler {
 
   inline bool inDeadCode() const { return curBlock_ == nullptr; }
 
-  [[nodiscard]] bool returnValues(const DefVector& values) {
+  [[nodiscard]] bool returnValues(DefVector&& values) {
     if (inDeadCode()) {
       return true;
+    }
+
+    
+    
+    if (isInlined()) {
+      MGoto* jump = MGoto::New(alloc());
+      if (!jump) {
+        return false;
+      }
+      curBlock_->end(jump);
+      curBlock_ = nullptr;
+      return pendingInlineReturns_.emplaceBack(
+          PendingInlineReturn(jump, std::move(values)));
     }
 
     if (values.empty()) {
@@ -4959,6 +5197,8 @@ MDefinition* FunctionCompiler::unary<MAbs>(MDefinition* op, MIRType type) {
 
 }  
 
+bool EmitBodyExprs(FunctionCompiler& f);
+
 static bool EmitI32Const(FunctionCompiler& f) {
   int32_t i32;
   if (!f.iter().readI32Const(&i32)) {
@@ -5089,7 +5329,7 @@ static bool EmitEnd(FunctionCompiler& f) {
       if (!f.finishBlock(&postJoinDefs)) {
         return false;
       }
-      if (!f.returnValues(postJoinDefs)) {
+      if (!f.returnValues(std::move(postJoinDefs))) {
         return false;
       }
       f.iter().popEnd();
@@ -5223,7 +5463,7 @@ static bool EmitReturn(FunctionCompiler& f) {
     return false;
   }
 
-  return f.returnValues(values);
+  return f.returnValues(std::move(values));
 }
 
 static bool EmitUnreachable(FunctionCompiler& f) {
@@ -5361,6 +5601,52 @@ static bool EmitRethrow(FunctionCompiler& f) {
   return f.emitRethrow(relativeDepth);
 }
 
+static bool EmitInlineCall(FunctionCompiler& callerCompiler,
+                           const FuncType& funcType, uint32_t funcIndex,
+                           const DefVector& args, DefVector* results) {
+  UniqueChars error;
+  const Bytes& bytecode = callerCompiler.codeMeta().bytecode->bytes;
+  const FuncDefRange& funcRange =
+      callerCompiler.codeMeta().funcDefRange(funcIndex);
+  const uint8_t* bodyBegin = bytecode.begin() + funcRange.bytecodeOffset;
+  const uint8_t* bodyEnd = bodyBegin + funcRange.bodyLength;
+  FuncCompileInput func(funcIndex, funcRange.bytecodeOffset, bodyBegin, bodyEnd,
+                        Uint32Vector());
+  Decoder d(func.begin, func.end, func.lineOrBytecode, &error);
+
+  ValTypeVector locals;
+  if (!DecodeLocalEntriesWithParams(d, callerCompiler.codeMeta(), funcIndex,
+                                    &locals)) {
+    return false;
+  }
+
+  CompileInfo* compileInfo = callerCompiler.addInlineCallInfo(locals.length());
+  if (!compileInfo) {
+    return false;
+  }
+
+  FunctionCompiler calleeCompiler(&callerCompiler, d, func, locals,
+                                  *compileInfo);
+  if (!calleeCompiler.initInline(args)) {
+    MOZ_ASSERT(!error);
+    return false;
+  }
+
+  if (!calleeCompiler.startBlock()) {
+    MOZ_ASSERT(!error);
+    return false;
+  }
+
+  if (!EmitBodyExprs(calleeCompiler)) {
+    MOZ_ASSERT(!error);
+    return false;
+  }
+
+  calleeCompiler.finish();
+
+  return callerCompiler.finishInlinedCallDirect(calleeCompiler, results);
+}
+
 static bool EmitCallArgs(FunctionCompiler& f, const FuncType& funcType,
                          const DefVector& args, CallCompileState* call) {
   for (size_t i = 0, n = funcType.args().length(); i < n; ++i) {
@@ -5402,13 +5688,13 @@ static bool EmitCall(FunctionCompiler& f, bool asmJSFuncDef) {
 
   const FuncType& funcType = f.codeMeta().getFuncType(funcIndex);
 
-  CallCompileState call;
-  if (!EmitCallArgs(f, funcType, args, &call)) {
-    return false;
-  }
-
   DefVector results;
   if (f.codeMeta().funcIsImport(funcIndex)) {
+    CallCompileState call;
+    if (!EmitCallArgs(f, funcType, args, &call)) {
+      return false;
+    }
+
     uint32_t instanceDataOffset =
         f.codeMeta().offsetOfFuncImportInstanceData(funcIndex);
     if (!f.callImport(instanceDataOffset, lineOrBytecode, call, funcType,
@@ -5416,8 +5702,18 @@ static bool EmitCall(FunctionCompiler& f, bool asmJSFuncDef) {
       return false;
     }
   } else {
-    if (!f.callDirect(funcType, funcIndex, lineOrBytecode, call, &results)) {
-      return false;
+    if (f.shouldInlineCallDirect(funcIndex)) {
+      if (!EmitInlineCall(f, funcType, funcIndex, args, &results)) {
+        return false;
+      }
+    } else {
+      CallCompileState call;
+      if (!EmitCallArgs(f, funcType, args, &call)) {
+        return false;
+      }
+      if (!f.callDirect(funcType, funcIndex, lineOrBytecode, call, &results)) {
+        return false;
+      }
     }
   }
 
@@ -8182,7 +8478,7 @@ static bool EmitCallBuiltinModuleFunc(FunctionCompiler& f) {
   return true;
 }
 
-static bool EmitBodyExprs(FunctionCompiler& f) {
+bool EmitBodyExprs(FunctionCompiler& f) {
   if (!f.iter().startFunction(f.funcIndex(), f.locals())) {
     return false;
   }
@@ -9467,8 +9763,9 @@ static bool IonBuildMIR(Decoder& d, const CompilerEnvironment& compilerEnv,
                         const CodeMetadata& codeMeta,
                         const FuncCompileInput& func,
                         const ValTypeVector& locals, MIRGenerator& mir,
-                        TryNoteVector& tryNotes, FeatureUsage* observedFeatures,
-                        UniqueChars* error) {
+                        TryNoteVector& tryNotes,
+                        UniqueCompileInfoVector& compileInfos,
+                        FeatureUsage* observedFeatures, UniqueChars* error) {
   
   if (codeMeta.numMemories() > 0) {
     if (codeMeta.memories[0].indexType() == IndexType::I32) {
@@ -9479,8 +9776,9 @@ static bool IonBuildMIR(Decoder& d, const CompilerEnvironment& compilerEnv,
   }
 
   
-  FunctionCompiler f(compilerEnv, codeMeta, d, func, locals, mir, tryNotes);
-  if (!f.init()) {
+  FunctionCompiler f(compilerEnv, codeMeta, d, func, locals, mir,
+                     mir.outerInfo(), tryNotes, compileInfos);
+  if (!f.initTopLevel()) {
     return false;
   }
 
@@ -9556,11 +9854,12 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
 
     MIRGenerator mir(nullptr, options, &alloc, &graph, &compileInfo,
                      IonOptimizations.get(OptimizationLevel::Wasm));
+    UniqueCompileInfoVector compileInfos;
 
     
     FeatureUsage observedFeatures;
     if (!IonBuildMIR(d, compilerEnv, codeMeta, func, locals, mir,
-                     masm.tryNotes(), &observedFeatures, error)) {
+                     masm.tryNotes(), compileInfos, &observedFeatures, error)) {
       return false;
     }
 
@@ -9645,9 +9944,10 @@ bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
 
   
   TryNoteVector tryNotes;
+  UniqueCompileInfoVector compileInfos;
   FeatureUsage observedFeatures;
   if (!IonBuildMIR(d, compilerEnv, codeMeta, func, locals, mir, tryNotes,
-                   &observedFeatures, error)) {
+                   compileInfos, &observedFeatures, error)) {
     return false;
   }
 

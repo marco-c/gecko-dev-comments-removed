@@ -567,6 +567,9 @@ class MOZ_STACK_CLASS OpIter : private Policy {
 #endif
 
   FeatureUsage featureUsage() const { return featureUsage_; }
+  void addFeatureUsage(FeatureUsage featureUsage) {
+    featureUsage_ |= featureUsage;
+  }
 
   
   uint32_t currentOffset() const { return d_.currentOffset(); }
