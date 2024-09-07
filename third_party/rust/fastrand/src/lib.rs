@@ -94,13 +94,25 @@
 
 
 
-#![cfg_attr(not(feature = "std"), no_std)]
+
+
+
+
+#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
+#![doc(
+    html_favicon_url = "https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png"
+)]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png"
+)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 use core::convert::{TryFrom, TryInto};
 use core::ops::{Bound, RangeBounds};
@@ -136,9 +148,14 @@ impl Rng {
     
     #[inline]
     fn gen_u64(&mut self) -> u64 {
-        let s = self.0.wrapping_add(0xA0761D6478BD642F);
+        
+        
+        const WY_CONST_0: u64 = 0x2d35_8dcc_aa6c_78a5;
+        const WY_CONST_1: u64 = 0x8bb8_4b93_962e_acc9;
+
+        let s = self.0.wrapping_add(WY_CONST_0);
         self.0 = s;
-        let t = u128::from(s) * u128::from(s ^ 0xE7037ED1A0B428DB);
+        let t = u128::from(s) * u128::from(s ^ WY_CONST_1);
         (t as u64) ^ (t >> 64) as u64
     }
 
@@ -274,12 +291,12 @@ impl Rng {
     #[inline]
     #[must_use = "this creates a new instance of `Rng`; if you want to initialize the thread-local generator, use `fastrand::seed()` instead"]
     pub fn with_seed(seed: u64) -> Self {
-        let mut rng = Rng(0);
-
-        rng.seed(seed);
-        rng
+        Rng(seed)
     }
 
+    
+    
+    
     
     
     
