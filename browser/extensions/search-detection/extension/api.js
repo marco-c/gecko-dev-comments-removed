@@ -76,7 +76,12 @@ this.addonsSearchDetection = class extends ExtensionAPI {
                     patterns[pattern] = [];
                   }
 
-                  if (!patterns[pattern].includes(_extensionID)) {
+                  
+                  
+                  if (
+                    !patterns[pattern].includes(_extensionID) &&
+                    !_extensionID.endsWith("@search.mozilla.org")
+                  ) {
                     patterns[pattern].push(_extensionID);
                   }
                 });

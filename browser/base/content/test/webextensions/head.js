@@ -720,7 +720,12 @@ add_setup(async function head_setup() {
     }
 
     for (let addon of await AddonManager.getAllAddons()) {
-      if (!existingAddons.has(addon.id)) {
+      
+      
+      if (
+        !existingAddons.has(addon.id) &&
+        !(addon.isBuiltin && addon.id.endsWith("@search.mozilla.org"))
+      ) {
         ok(
           false,
           `Addon ${addon.id} was left installed at the end of the test`

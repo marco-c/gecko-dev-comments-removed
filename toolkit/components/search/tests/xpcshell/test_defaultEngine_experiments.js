@@ -126,7 +126,7 @@ add_task(async function test_experiment_setting_to_same_as_user() {
       "defaultEngineId",
       Services.search.defaultEngine.isAppProvided
     ),
-    "engine2"
+    "engine2@search.mozilla.orgdefault"
   );
 
   
@@ -136,7 +136,7 @@ add_task(async function test_experiment_setting_to_same_as_user() {
       "defaultEngineId",
       Services.search.defaultEngine.isAppProvided
     ),
-    "engine2"
+    "engine2@search.mozilla.orgdefault"
   );
 
   Assert.equal(
@@ -168,7 +168,7 @@ add_task(async function test_experiment_setting_to_same_as_user() {
       "defaultEngineId",
       Services.search.defaultEngine.isAppProvided
     ),
-    "engine2",
+    "engine2@search.mozilla.orgdefault",
     "Should have kept the saved attribute as the user's preference"
   );
 });
@@ -219,7 +219,7 @@ add_task(async function test_experiment_setting_user_changed_back_during() {
       "defaultEngineId",
       Services.search.defaultEngine.isAppProvided
     ),
-    "engine1"
+    "engine1@search.mozilla.orgdefault"
   );
 
   
@@ -294,7 +294,7 @@ add_task(async function test_experiment_setting_user_changed_back_private() {
       "privateDefaultEngineId",
       Services.search.defaultPrivateEngine.isAppProvided
     ),
-    "engine1"
+    "engine1@search.mozilla.orgdefault"
   );
 
   
@@ -363,7 +363,7 @@ add_task(async function test_experiment_setting_user_changed_to_other_during() {
       "defaultEngineId",
       Services.search.defaultEngine.isAppProvided
     ),
-    "engine2",
+    "engine2@search.mozilla.orgdefault",
     "Should have correctly set the user's default in settings"
   );
 
@@ -386,12 +386,21 @@ add_task(async function test_experiment_setting_user_changed_to_other_during() {
       "defaultEngineId",
       Services.search.defaultEngine.isAppProvided
     ),
-    "engine2",
+    "engine2@search.mozilla.orgdefault",
     "Should have kept the user's choice in settings"
   );
 });
 
 add_task(async function test_experiment_setting_user_hid_app_default_during() {
+  
+  
+  
+  
+  SearchUtils.GENERAL_SEARCH_ENGINE_IDS.add("engine1@search.mozilla.org");
+  SearchUtils.GENERAL_SEARCH_ENGINE_IDS.add("engine2@search.mozilla.org");
+  SearchUtils.GENERAL_SEARCH_ENGINE_IDS.add("exp2@search.mozilla.org");
+  SearchUtils.GENERAL_SEARCH_ENGINE_IDS.add("exp3@search.mozilla.org");
+
   Services.prefs.setBoolPref(
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
     false
@@ -463,7 +472,7 @@ add_task(async function test_experiment_setting_user_hid_app_default_during() {
       "defaultEngineId",
       Services.search.defaultEngine.isAppProvided
     ),
-    "engine2",
+    "engine2@search.mozilla.orgdefault",
     "Should have saved the choice in settings"
   );
 });

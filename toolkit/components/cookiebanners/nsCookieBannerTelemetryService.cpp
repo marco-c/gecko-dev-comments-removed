@@ -260,7 +260,7 @@ nsresult nsCookieBannerTelemetryService::MaybeReportGoogleGDPRChoiceTelemetry(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (!id.EqualsLiteral("google")) {
+  if (!id.EqualsLiteral("google@search.mozilla.orgdefault")) {
     return NS_OK;
   }
 
