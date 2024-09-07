@@ -18,6 +18,7 @@
 #include <cstring>
 #include <limits>
 
+#include "api/audio/audio_view.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -111,6 +112,25 @@ void CopyAudioIfNeeded(const T* const* src,
 
 
 
+template <typename T>
+void Deinterleave(const InterleavedView<const T>& interleaved,
+                  const DeinterleavedView<T>& deinterleaved) {
+  RTC_DCHECK_EQ(NumChannels(interleaved), NumChannels(deinterleaved));
+  RTC_DCHECK_EQ(SamplesPerChannel(interleaved),
+                SamplesPerChannel(deinterleaved));
+  const auto num_channels = NumChannels(interleaved);
+  const auto samples_per_channel = SamplesPerChannel(interleaved);
+  for (size_t i = 0; i < num_channels; ++i) {
+    MonoView<T> channel = deinterleaved[i];
+    size_t interleaved_idx = i;
+    for (size_t j = 0; j < samples_per_channel; ++j) {
+      channel[j] = interleaved[interleaved_idx];
+      interleaved_idx += num_channels;
+    }
+  }
+}
+
+
 
 template <typename T>
 void Deinterleave(const T* interleaved,
@@ -130,12 +150,32 @@ void Deinterleave(const T* interleaved,
 
 
 
+template <typename T>
+void Interleave(const DeinterleavedView<const T>& deinterleaved,
+                const InterleavedView<T>& interleaved) {
+  RTC_DCHECK_EQ(NumChannels(interleaved), NumChannels(deinterleaved));
+  RTC_DCHECK_EQ(SamplesPerChannel(interleaved),
+                SamplesPerChannel(deinterleaved));
+  for (size_t i = 0; i < deinterleaved.num_channels(); ++i) {
+    const auto channel = deinterleaved[i];
+    size_t interleaved_idx = i;
+    for (size_t j = 0; j < deinterleaved.samples_per_channel(); ++j) {
+      interleaved[interleaved_idx] = channel[j];
+      interleaved_idx += deinterleaved.num_channels();
+    }
+  }
+}
+
+
+
 
 template <typename T>
 void Interleave(const T* const* deinterleaved,
                 size_t samples_per_channel,
                 size_t num_channels,
-                T* interleaved) {
+                InterleavedView<T>& interleaved) {
+  RTC_DCHECK_EQ(NumChannels(interleaved), num_channels);
+  RTC_DCHECK_EQ(SamplesPerChannel(interleaved), samples_per_channel);
   for (size_t i = 0; i < num_channels; ++i) {
     const T* channel = deinterleaved[i];
     size_t interleaved_idx = i;

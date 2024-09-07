@@ -54,6 +54,11 @@ int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
   dst_sample_rate_hz_ = dst_sample_rate_hz;
   num_channels_ = num_channels;
 
+  
+  
+  
+  
+
   const size_t src_size_10ms_mono =
       static_cast<size_t>(src_sample_rate_hz / 100);
   const size_t dst_size_10ms_mono =
@@ -111,7 +116,7 @@ int PushResampler<T>::Resample(InterleavedView<const T> src,
 
   
   Interleave(channel_data_array_.data(), dst.samples_per_channel(),
-             num_channels_, &dst[0]);
+             num_channels_, dst);
   return static_cast<int>(dst.size());
 }
 
