@@ -109,9 +109,11 @@ static uint32_t ErrorNumber(RegExpError err) {
       return JSMSG_INVALID_QUANTIFIER;
     case RegExpError::kInvalidGroup:
       return JSMSG_INVALID_GROUP;
-    case RegExpError::kMultipleFlagDashes:
     case RegExpError::kRepeatedFlag:
+      return JSMSG_REPEATED_FLAG;
     case RegExpError::kInvalidFlagGroup:
+      return JSMSG_INVALID_FLAG_GROUP;
+    case RegExpError::kMultipleFlagDashes:
       
       
       
