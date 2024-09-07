@@ -14,9 +14,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#ifdef WEBRTC_UNIT_TEST
-#include <ostream>  
-#endif              
 #include "rtc_base/ip_address.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -132,13 +129,6 @@ class RTC_EXPORT SocketAddress {
 
   
   bool FromString(absl::string_view str);
-
-#ifdef WEBRTC_UNIT_TEST
-  inline std::ostream& operator<<(  
-      std::ostream& os) {           
-    return os << HostAsURIString() << ":" << port();
-  }
-#endif  
 
   
   
