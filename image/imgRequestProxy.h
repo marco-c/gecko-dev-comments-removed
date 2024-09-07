@@ -129,6 +129,28 @@ class imgRequestProxy : public mozilla::PreloaderBase,
 
   imgRequest* GetOwner() const;
 
+  struct LCPTimings {
+    bool AreSet() const { return mLoadTime.isSome() && mRenderTime.isSome(); }
+
+    void Reset() {
+      mLoadTime = mozilla::Nothing();
+      mRenderTime = mozilla::Nothing();
+    }
+
+    mozilla::Maybe<mozilla::TimeStamp> mLoadTime;
+    mozilla::Maybe<mozilla::TimeStamp> mRenderTime;
+
+    void Set(const mozilla::TimeStamp& aLoadTime,
+             const mozilla::TimeStamp& aRenderTime) {
+      mLoadTime = Some(aLoadTime);
+      mRenderTime = Some(aRenderTime);
+    }
+  };
+
+  LCPTimings& GetLCPTimings() { return mLCPTimings; }
+
+  const LCPTimings& GetLCPTimings() const { return mLCPTimings; }
+
  protected:
   friend class mozilla::image::ProgressTracker;
   friend class imgStatusNotifyRunnable;
@@ -198,6 +220,7 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   
   nsCOMPtr<nsIURI> mURI;
 
+  LCPTimings mLCPTimings;
   
   
   

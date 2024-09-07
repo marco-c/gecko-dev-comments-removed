@@ -17,9 +17,6 @@ namespace mozilla::dom {
 class PerformanceNavigationTiming;
 class PerformanceEventTiming;
 
-using ImageLCPEntryMap =
-    nsTHashMap<LCPEntryHashEntry, RefPtr<LargestContentfulPaint>>;
-
 using TextFrameUnions = nsTHashMap<nsRefPtrHashKey<Element>, nsRect>;
 
 class PerformanceMainThread final : public Performance,
@@ -122,11 +119,8 @@ class PerformanceMainThread final : public Performance,
     mImagesPendingRendering.AppendElement(aImagePendingRendering);
   }
 
-  void StoreImageLCPEntry(Element* aElement, imgRequestProxy* aImgRequestProxy,
-                          LargestContentfulPaint* aEntry);
-
-  already_AddRefed<LargestContentfulPaint> GetImageLCPEntry(
-      Element* aElement, imgRequestProxy* aImgRequestProxy);
+  bool IsPendingLCPCandidate(Element* aElement,
+                             imgRequestProxy* aImgRequestProxy);
 
   bool UpdateLargestContentfulPaintSize(double aSize);
   double GetLargestContentfulPaintSize() const {
@@ -186,19 +180,6 @@ class PerformanceMainThread final : public Performance,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ImageLCPEntryMap mImageLCPEntryMap;
-
-  
-  
   double mLargestContentfulPaintSize = 0.0;
 
   
@@ -208,16 +189,6 @@ class PerformanceMainThread final : public Performance,
   
   TextFrameUnions mTextFrameUnions;
 };
-
-inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& aCallback, ImageLCPEntryMap& aField,
-    const char* aName, uint32_t aFlags = 0) {
-  for (auto& entry : aField) {
-    RefPtr<LargestContentfulPaint>* lcpEntry = entry.GetModifiableData();
-    ImplCycleCollectionTraverse(aCallback, *lcpEntry, "ImageLCPEntryMap.mData",
-                                aCallback.Flags());
-  }
-}
 
 inline void ImplCycleCollectionTraverse(
     nsCycleCollectionTraversalCallback& aCallback, TextFrameUnions& aField,
