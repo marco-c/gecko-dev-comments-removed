@@ -125,6 +125,10 @@ class alignas(16) Instance {
 
   
   
+  int32_t onSuspendableStack_;
+
+  
+  
   
   const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier_;
 
@@ -306,6 +310,9 @@ class alignas(16) Instance {
   }
   static constexpr size_t offsetOfInterrupt() {
     return offsetof(Instance, interrupt_);
+  }
+  static constexpr size_t offsetOfOnSuspendableStack() {
+    return offsetof(Instance, onSuspendableStack_);
   }
   static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
     return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
