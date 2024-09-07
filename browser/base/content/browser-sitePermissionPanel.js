@@ -477,7 +477,7 @@ var gPermissionPanel = {
             let [permId] = permission.id.split(
               SitePermissions.PERM_KEY_DELIMITER
             );
-            if (permId != id) {
+            if (permId != id || permission.state != SitePermissions.ALLOW) {
               continue;
             }
             found = true;
@@ -979,6 +979,10 @@ var gPermissionPanel = {
         return null;
       }
     } else if (item) {
+      if (permission.state == SitePermissions.PROMPT) {
+        return null;
+      }
+      
       
       
       item.remove();
