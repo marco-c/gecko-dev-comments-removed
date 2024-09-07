@@ -3263,7 +3263,7 @@ bool TypedArrayObjectTemplate<float16>::getElementPure(TypedArrayObject* tarray,
 
 
 
-  *vp = JS::CanonicalizedDoubleValue(f16.toDouble());
+  *vp = JS::CanonicalizedDoubleValue(static_cast<double>(f16));
   return true;
 }
 

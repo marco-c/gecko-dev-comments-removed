@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <type_traits>
 
 namespace js {
 
@@ -179,45 +180,66 @@ inline float half2float_impl(unsigned int value) {
 }
 }  
 
-struct float16 {
+class float16 final {
   uint16_t val;
 
-  float16() = default;
-  float16(const float16& other) = default;
+ public:
+  
+  
+  
+  
+  
+  
 
-  explicit float16(float x) { *this = x; }
-  explicit float16(double x) { *this = x; }
+   float16() = default;
+  constexpr float16(const float16&) = default;
 
-  explicit float16(std::int8_t x) { *this = float(x); }
-  explicit float16(std::int16_t x) { *this = float(x); }
-  explicit float16(std::int32_t x) { *this = float(x); }
-  explicit float16(std::int64_t x) { *this = double(x); }
+  explicit float16(float x) : val(half::float2half_impl(x)) {}
+  explicit float16(double x) : val(half::float2half_impl(x)) {}
 
-  explicit float16(std::uint8_t x) { *this = float(x); }
-  explicit float16(std::uint16_t x) { *this = float(x); }
-  explicit float16(std::uint32_t x) { *this = float(x); }
-  explicit float16(std::uint64_t x) { *this = double(x); }
+  explicit float16(std::int8_t x) : float16(float(x)) {}
+  explicit float16(std::int16_t x) : float16(float(x)) {}
+  explicit float16(std::int32_t x) : float16(float(x)) {}
+  explicit float16(std::int64_t x) : float16(double(x)) {}
 
-  explicit float16(bool x) { *this = float(x); }
+  explicit float16(std::uint8_t x) : float16(float(x)) {}
+  explicit float16(std::uint16_t x) : float16(float(x)) {}
+  explicit float16(std::uint32_t x) : float16(float(x)) {}
+  explicit float16(std::uint64_t x) : float16(double(x)) {}
 
-  float16& operator=(const float16& x) = default;
+  explicit float16(bool x) : float16(float(x)) {}
+
+  constexpr float16& operator=(const float16&) = default;
 
   float16& operator=(float x) {
-    this->val = half::float2half_impl(x);
+    *this = float16{x};
     return *this;
   }
 
   float16& operator=(double x) {
-    this->val = half::float2half_impl(x);
+    *this = float16{x};
     return *this;
   }
 
-  float toFloat() { return half::half2float_impl<float>(this->val); }
+  explicit operator float() const { return half::half2float_impl<float>(val); }
+  explicit operator double() const {
+    return half::half2float_impl<double>(val);
+  }
 
-  double toDouble() { return half::half2float_impl<double>(this->val); }
+  uint16_t toRawBits() const { return val; }
+
+  static constexpr float16 fromRawBits(uint16_t bits) {
+    float16 f16{};
+    f16.val = bits;
+    return f16;
+  }
 };
 
 static_assert(sizeof(float16) == 2, "float16 has no extra padding");
+
+static_assert(
+    std::is_trivial_v<float16>,
+    "float16 must be trivial to be eligible for memcpy/memset optimizations");
 
 }  
 

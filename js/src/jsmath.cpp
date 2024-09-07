@@ -317,7 +317,7 @@ double js::RoundFloat16(double d) {
   
   
   
-  return f16.toDouble();
+  return static_cast<double>(f16);
 }
 
 static bool math_f16round(JSContext* cx, unsigned argc, Value* vp) {
