@@ -415,7 +415,7 @@ FT_BEGIN_HEADER
 
 #define FT_MSB( x )  ( 31 - _CountLeadingZeros( x ) )
 
-#elif defined( _M_ARM64 ) || defined( _M_ARM )
+#elif defined( _M_ARM64 ) || defined( _M_ARM ) || defined( _M_ARM64EC )
 
 #include <intrin.h>
 #pragma intrinsic( _CountLeadingZeros )
@@ -455,6 +455,12 @@ FT_BEGIN_HEADER
 
 #define FT_MSB( x )  FT_MSB_i386( x )
 
+#elif defined( __SunOS_5_11 )
+
+#include <string.h>
+
+#define FT_MSB( x )  ( fls( x ) - 1 )
+
 #elif defined( __DECC ) || defined( __DECCXX )
 
 #include <builtins.h>
@@ -489,8 +495,6 @@ FT_BEGIN_HEADER
             FT_Fixed  y );
 
 
-#if 0
-
   
 
 
@@ -509,10 +513,9 @@ FT_BEGIN_HEADER
 
 
 
-  FT_BASE( FT_Int32 )
-  FT_SqrtFixed( FT_Int32  x );
 
-#endif 
+  FT_BASE( FT_UInt32 )
+  FT_SqrtFixed( FT_UInt32  x );
 
 
 #define INT_TO_F26DOT6( x )    ( (FT_Long)(x) * 64  )    /* << 6  */

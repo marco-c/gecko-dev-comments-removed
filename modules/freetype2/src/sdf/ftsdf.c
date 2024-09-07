@@ -3837,7 +3837,7 @@
     }
 
     
-    if ( outline->n_points <= 0 || outline->n_contours <= 0 )
+    if ( outline->n_points == 0 || outline->n_contours == 0 )
       goto Exit;
 
     

@@ -24,6 +24,7 @@
 #include <freetype/tttables.h>
 #include <freetype/internal/ftobjs.h>
 #include <freetype/ftcolor.h>
+#include "freetype/fttypes.h"
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
 #include <freetype/ftmm.h>
@@ -1581,6 +1582,11 @@ FT_BEGIN_HEADER
     FT_UInt32             kern_avail_bits;
     FT_UInt32             kern_order_bits;
 
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+    FT_Byte*              gpos_table;
+    FT_Bool               gpos_kerning_available;
+#endif
+
 #ifdef TT_CONFIG_OPTION_BDF
     TT_BDFRec             bdf;
 #endif 
@@ -1649,9 +1655,9 @@ FT_BEGIN_HEADER
   {
     FT_Memory   memory;
     FT_UShort   max_points;
-    FT_Short    max_contours;
+    FT_UShort   max_contours;
     FT_UShort   n_points;    
-    FT_Short    n_contours;  
+    FT_UShort   n_contours;  
 
     FT_Vector*  org;         
     FT_Vector*  cur;         

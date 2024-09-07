@@ -49,6 +49,10 @@
 #include <freetype/internal/services/svbdf.h>
 #endif
 
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+#include "ttgpos.h"
+#endif
+
 #include "ttcmap.h"
 #include "ttkern.h"
 #include "ttmtx.h"
@@ -1251,6 +1255,12 @@
 #define PUT_PS_NAMES( a )  NULL
 #endif
 
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+#define PUT_GPOS_KERNING( a )  a
+#else
+#define PUT_GPOS_KERNING( a )  NULL
+#endif
+
   FT_DEFINE_SFNT_INTERFACE(
     sfnt_interface,
 
@@ -1274,6 +1284,8 @@
     tt_face_free_name,      
 
     tt_face_load_kern,      
+    PUT_GPOS_KERNING( tt_face_load_gpos ),
+                            
     tt_face_load_gasp,      
     tt_face_load_pclt,      
 
@@ -1291,6 +1303,9 @@
 
     
     tt_face_get_kerning,    
+
+    PUT_GPOS_KERNING( tt_face_get_gpos_kerning ),
+                           
 
     
     tt_face_load_font_dir,  

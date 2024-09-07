@@ -841,6 +841,7 @@ FT_BEGIN_HEADER
 
 
 
+
   FT_EXPORT( FT_Long )
   FT_Get_CMap_Format( FT_CharMap  charmap );
 

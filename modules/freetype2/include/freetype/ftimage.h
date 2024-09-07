@@ -24,6 +24,11 @@
 
 
 
+
+
+
+
+
 #ifndef FTIMAGE_H_
 #define FTIMAGE_H_
 
@@ -341,14 +346,14 @@ FT_BEGIN_HEADER
 
   typedef struct  FT_Outline_
   {
-    short       n_contours;      
-    short       n_points;        
+    unsigned short   n_contours;  
+    unsigned short   n_points;    
 
-    FT_Vector*  points;          
-    char*       tags;            
-    short*      contours;        
+    FT_Vector*       points;      
+    unsigned char*   tags;        
+    unsigned short*  contours;    
 
-    int         flags;           
+    int              flags;       
 
   } FT_Outline;
 
@@ -356,8 +361,8 @@ FT_BEGIN_HEADER
 
   
   
-#define FT_OUTLINE_CONTOURS_MAX  SHRT_MAX
-#define FT_OUTLINE_POINTS_MAX    SHRT_MAX
+#define FT_OUTLINE_CONTOURS_MAX  USHRT_MAX
+#define FT_OUTLINE_POINTS_MAX    USHRT_MAX
 
 
   

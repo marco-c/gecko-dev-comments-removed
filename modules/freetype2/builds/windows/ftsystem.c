@@ -197,7 +197,7 @@
 
 
   
-#if defined( WINAPI_FAMILY ) && WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP
+#ifdef _WINRT_DLL
 
 #define PACK_DWORD64( hi, lo )  ( ( (DWORD64)(hi) << 32 ) | (DWORD)(lo) )
 
@@ -248,10 +248,11 @@
                         dwCreationDisposition, &createExParams );
   }
 
-#endif
+#endif  
 
 
-#if defined( _WIN32_WCE )
+  
+#ifdef _WIN32_WCE
 
   
   #include <malloc.h>
@@ -291,9 +292,9 @@
                         dwFlagsAndAttributes, hTemplateFile );
   }
 
-#endif
+#endif  
 
-
+  
 #if defined( _WIN32_WCE ) || defined ( _WIN32_WINDOWS ) || \
     !defined( _WIN32_WINNT ) || _WIN32_WINNT <= 0x0400
 
@@ -311,7 +312,7 @@
       return TRUE;
   }
 
-#endif
+#endif  
 
 
   

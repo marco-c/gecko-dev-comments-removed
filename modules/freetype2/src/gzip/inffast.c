@@ -47,10 +47,7 @@
 
 
 
-void ZLIB_INTERNAL inflate_fast(
-    z_streamp strm,
-    unsigned start)
-{
+void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start) {
     struct inflate_state FAR *state;
     z_const unsigned char FAR *in;      
     z_const unsigned char FAR *last;    

@@ -1406,6 +1406,10 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
 #define FT_FACE_FLAG_SCALABLE          ( 1L <<  0 )
 #define FT_FACE_FLAG_FIXED_SIZES       ( 1L <<  1 )
 #define FT_FACE_FLAG_FIXED_WIDTH       ( 1L <<  2 )
@@ -3780,75 +3784,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   typedef enum  FT_Render_Mode_
   {
     FT_RENDER_MODE_NORMAL = 0,
@@ -4022,6 +3957,23 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5222,7 +5174,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  13
-#define FREETYPE_PATCH  2
+#define FREETYPE_PATCH  3
 
 
   

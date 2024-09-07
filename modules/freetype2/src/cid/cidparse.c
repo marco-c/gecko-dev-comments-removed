@@ -90,10 +90,15 @@
     if ( error )
       goto Exit;
 
-  Again:
-    
-    
+    if ( !stream->read ) {
+      
+      offset = stream->size;
+    }
+    else
     {
+      
+      
+
       
 
 
@@ -119,7 +124,8 @@
       FT_Byte*  p           = buffer;
 
 
-      for ( offset = FT_STREAM_POS(); ; offset += 256 )
+      offset = 0;
+      while ( 1 )
       {
         FT_ULong  stream_len;
 
@@ -127,7 +133,7 @@
         stream_len = stream->size - FT_STREAM_POS();
 
         read_len = FT_MIN( read_len, stream_len );
-        if ( FT_STREAM_READ( p, read_len ) )
+        if ( read_len && FT_STREAM_READ( p, read_len ) )
           goto Exit;
 
         
@@ -141,20 +147,23 @@
                ft_strncmp( (char*)p, STARTDATA, STARTDATA_LEN ) == 0 )
           {
             
-            offset += (FT_ULong)( p - buffer ) + STARTDATA_LEN + 1;
-            goto Found;
+            offset = FT_STREAM_POS() - read_len - read_offset
+                     + (FT_ULong)( p - buffer ) + STARTDATA_LEN + 1;
           }
           else if ( p[1] == 's'                                   &&
                     ft_strncmp( (char*)p, SFNTS, SFNTS_LEN ) == 0 )
           {
-            offset += (FT_ULong)( p - buffer ) + SFNTS_LEN + 1;
-            goto Found;
+            offset = FT_STREAM_POS() - read_len - read_offset
+                     + (FT_ULong)( p - buffer ) + SFNTS_LEN + 1;
           }
         }
 
-        if ( read_offset + read_len < STARTDATA_LEN )
+        if ( read_offset + read_len <= STARTDATA_LEN )
         {
-          FT_TRACE2(( "cid_parser_new: no `StartData' keyword found\n" ));
+          if ( offset )
+            goto Found;
+
+          FT_TRACE2(( "cid_parser_new: no `StartData` keyword found\n" ));
           error = FT_THROW( Invalid_File_Format );
           goto Exit;
         }
@@ -216,6 +225,7 @@
       {
         T1_TokenRec  type_token;
         FT_Long      binary_length;
+        FT_ULong     found_offset;
 
 
         parser->root.cursor = arg1;
@@ -234,6 +244,24 @@
             parser->binary_length = (FT_ULong)binary_length;
         }
 
+        
+        found_offset = (FT_ULong)( cur - parser->postscript )
+                       + STARTDATA_LEN + 1;
+        if ( found_offset != offset )
+        {
+          FT_FRAME_RELEASE( parser->postscript );
+
+          ps_len = found_offset - base_offset;
+          if ( FT_STREAM_SEEK( base_offset )                  ||
+               FT_FRAME_EXTRACT( ps_len, parser->postscript ) )
+            goto Exit;
+
+          parser->data_offset    = found_offset;
+          parser->postscript_len = ps_len;
+          parser->root.base      = parser->postscript;
+          parser->root.cursor    = parser->postscript;
+          parser->root.limit     = parser->root.cursor + ps_len;
+        }
         goto Exit;
       }
       else if ( cur[1] == 's'                                   &&
@@ -251,11 +279,8 @@
       cur  = parser->root.cursor;
     }
 
-    
-    
-    FT_FRAME_RELEASE( parser->postscript );
-    if ( !FT_STREAM_SEEK( offset ) )
-      goto Again;
+    FT_TRACE2(( "cid_parser_new: no `StartData` token found\n" ));
+    error = FT_THROW( Invalid_File_Format );
 
   Exit:
     return error;

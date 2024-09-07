@@ -69,13 +69,15 @@
 
   
   
-#define FT_MOVE_SIGN( x, x_unsigned, s ) \
-  FT_BEGIN_STMNT                         \
-    if ( x < 0 )                         \
-    {                                    \
-      x_unsigned = 0U - (x_unsigned);    \
-      s          = -s;                   \
-    }                                    \
+#define FT_MOVE_SIGN( utype, x, x_unsigned, s ) \
+  FT_BEGIN_STMNT                                \
+    if ( x < 0 )                                \
+    {                                           \
+      x_unsigned = 0U - (utype)x;               \
+      s          = -s;                          \
+    }                                           \
+    else                                        \
+      x_unsigned = (utype)x;                    \
   FT_END_STMNT
 
   
@@ -179,13 +181,9 @@
     FT_Long    d_;
 
 
-    a = (FT_UInt64)a_;
-    b = (FT_UInt64)b_;
-    c = (FT_UInt64)c_;
-
-    FT_MOVE_SIGN( a_, a, s );
-    FT_MOVE_SIGN( b_, b, s );
-    FT_MOVE_SIGN( c_, c, s );
+    FT_MOVE_SIGN( FT_UInt64, a_, a, s );
+    FT_MOVE_SIGN( FT_UInt64, b_, b, s );
+    FT_MOVE_SIGN( FT_UInt64, c_, c, s );
 
     d = c > 0 ? ( a * b + ( c >> 1 ) ) / c
               : 0x7FFFFFFFUL;
@@ -208,13 +206,9 @@
     FT_Long    d_;
 
 
-    a = (FT_UInt64)a_;
-    b = (FT_UInt64)b_;
-    c = (FT_UInt64)c_;
-
-    FT_MOVE_SIGN( a_, a, s );
-    FT_MOVE_SIGN( b_, b, s );
-    FT_MOVE_SIGN( c_, c, s );
+    FT_MOVE_SIGN( FT_UInt64, a_, a, s );
+    FT_MOVE_SIGN( FT_UInt64, b_, b, s );
+    FT_MOVE_SIGN( FT_UInt64, c_, c, s );
 
     d = c > 0 ? a * b / c
               : 0x7FFFFFFFUL;
@@ -257,11 +251,8 @@
     FT_Long    q_;
 
 
-    a = (FT_UInt64)a_;
-    b = (FT_UInt64)b_;
-
-    FT_MOVE_SIGN( a_, a, s );
-    FT_MOVE_SIGN( b_, b, s );
+    FT_MOVE_SIGN( FT_UInt64, a_, a, s );
+    FT_MOVE_SIGN( FT_UInt64, b_, b, s );
 
     q = b > 0 ? ( ( a << 16 ) + ( b >> 1 ) ) / b
               : 0x7FFFFFFFUL;
@@ -422,13 +413,9 @@
 
     
 
-    a = (FT_UInt32)a_;
-    b = (FT_UInt32)b_;
-    c = (FT_UInt32)c_;
-
-    FT_MOVE_SIGN( a_, a, s );
-    FT_MOVE_SIGN( b_, b, s );
-    FT_MOVE_SIGN( c_, c, s );
+    FT_MOVE_SIGN( FT_UInt32, a_, a, s );
+    FT_MOVE_SIGN( FT_UInt32, b_, b, s );
+    FT_MOVE_SIGN( FT_UInt32, c_, c, s );
 
     if ( c == 0 )
       a = 0x7FFFFFFFUL;
@@ -470,13 +457,9 @@
 
     
 
-    a = (FT_UInt32)a_;
-    b = (FT_UInt32)b_;
-    c = (FT_UInt32)c_;
-
-    FT_MOVE_SIGN( a_, a, s );
-    FT_MOVE_SIGN( b_, b, s );
-    FT_MOVE_SIGN( c_, c, s );
+    FT_MOVE_SIGN( FT_UInt32, a_, a, s );
+    FT_MOVE_SIGN( FT_UInt32, b_, b, s );
+    FT_MOVE_SIGN( FT_UInt32, c_, c, s );
 
     if ( c == 0 )
       a = 0x7FFFFFFFUL;
@@ -575,11 +558,8 @@
 
     
 
-    a = (FT_UInt32)a_;
-    b = (FT_UInt32)b_;
-
-    FT_MOVE_SIGN( a_, a, s );
-    FT_MOVE_SIGN( b_, b, s );
+    FT_MOVE_SIGN( FT_UInt32, a_, a, s );
+    FT_MOVE_SIGN( FT_UInt32, b_, b, s );
 
     if ( a + ( b >> 8 ) <= 8190UL )
       a = ( a * b + 0x8000UL ) >> 16;
@@ -614,11 +594,8 @@
 
     
 
-    a = (FT_UInt32)a_;
-    b = (FT_UInt32)b_;
-
-    FT_MOVE_SIGN( a_, a, s );
-    FT_MOVE_SIGN( b_, b, s );
+    FT_MOVE_SIGN( FT_UInt32, a_, a, s );
+    FT_MOVE_SIGN( FT_UInt32, b_, b, s );
 
     if ( b == 0 )
     {
@@ -829,11 +806,8 @@
     FT_Int     sx = 1, sy = 1, shift;
 
 
-    x = (FT_UInt32)x_;
-    y = (FT_UInt32)y_;
-
-    FT_MOVE_SIGN( x_, x, sx );
-    FT_MOVE_SIGN( y_, y, sy );
+    FT_MOVE_SIGN( FT_UInt32, x_, x, sx );
+    FT_MOVE_SIGN( FT_UInt32, y_, y, sy );
 
     
     if ( x == 0 )
@@ -913,43 +887,71 @@
   }
 
 
-#if 0
-
   
 
-  FT_BASE_DEF( FT_Int32 )
-  FT_SqrtFixed( FT_Int32  x )
+  FT_BASE_DEF( FT_UInt32 )
+  FT_SqrtFixed( FT_UInt32  v )
   {
-    FT_UInt32  root, rem_hi, rem_lo, test_div;
-    FT_Int     count;
+    if ( v == 0 )
+      return 0;
 
+#ifndef FT_INT64
 
-    root = 0;
-
-    if ( x > 0 )
+    
+    
+    
+    
+    
+    else if ( v > 0x10000U )
     {
-      rem_hi = 0;
-      rem_lo = (FT_UInt32)x;
-      count  = 24;
+      FT_UInt32  r = v >> 1;
+      FT_UInt32  q = ( v & 1 ) << 15;
+      FT_UInt32  b = 0x20000000;
+      FT_UInt32  t;
+
+
       do
       {
-        rem_hi   = ( rem_hi << 2 ) | ( rem_lo >> 30 );
-        rem_lo <<= 2;
-        root   <<= 1;
-        test_div = ( root << 1 ) + 1;
-
-        if ( rem_hi >= test_div )
+        t = q + b;
+        if ( r >= t )
         {
-          rem_hi -= test_div;
-          root   += 1;
+          r -= t;
+          q  = t + b;  
         }
-      } while ( --count );
-    }
+        r <<= 1;
+        b >>= 1;
 
-    return (FT_Int32)root;
-  }
+      } while ( b > 0x10 );  
+
+      return ( q + 0x40 ) >> 7;
+    }
+    else
+    {
+      FT_UInt32  r = ( v << 16 ) - 1;
+
+#else 
+
+    else
+    {
+      FT_UInt64  r = ( (FT_UInt64)v << 16 ) - 1;
 
 #endif 
+
+      FT_UInt32  q = 1 << ( ( 17 + FT_MSB( v ) ) >> 1 );
+      FT_UInt32  t;
+
+
+      
+      do
+      {
+        t = q;
+        q = ( t + (FT_UInt32)( r / t ) + 1 ) >> 1;
+
+      } while ( q != t );  
+
+      return q;
+    }
+  }
 
 
   
@@ -1094,11 +1096,8 @@
       FT_UInt32  factor;
 
 
-      scalar = (FT_UInt32)s[i];
-      factor = (FT_UInt32)f[i];
-
-      FT_MOVE_SIGN( s[i], scalar, sign );
-      FT_MOVE_SIGN( f[i], factor, sign );
+      FT_MOVE_SIGN( FT_UInt32, s[i], scalar, sign );
+      FT_MOVE_SIGN( FT_UInt32, f[i], factor, sign );
 
       ft_multo64( scalar, factor, &multResult );
 

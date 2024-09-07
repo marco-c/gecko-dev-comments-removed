@@ -295,7 +295,7 @@ read_header_file( FILE*  file,
     p = buff;
 
     
-    while ( *p && ( *p == ' ' || *p == '\\' ) )
+    while ( *p == ' ' || *p == '\t' )
       p++;
 
     

@@ -103,21 +103,6 @@
 #  define ARMCRC32
 #endif
 
-#ifndef Z_FREETYPE
-
-local z_crc_t multmodp OF((z_crc_t a, z_crc_t b));
-local z_crc_t x2nmodp OF((z_off64_t n, unsigned k));
-#endif  
-
-#if defined(W) && (!defined(ARMCRC32) || defined(DYNAMIC_CRC_TABLE))
-    local z_word_t byte_swap OF((z_word_t word));
-#endif
-
-#if defined(W) && !defined(ARMCRC32)
-    local z_crc_t crc_word OF((z_word_t data));
-    local z_word_t crc_word_big OF((z_word_t data));
-#endif
-
 #if defined(W) && (!defined(ARMCRC32) || defined(DYNAMIC_CRC_TABLE))
 
 
@@ -125,9 +110,7 @@ local z_crc_t x2nmodp OF((z_off64_t n, unsigned k));
 
 
 
-local z_word_t byte_swap(
-    z_word_t word)
-{
+local z_word_t byte_swap(z_word_t word) {
 #  if W == 8
     return
         (word & 0xff00000000000000) >> 56 |
@@ -148,24 +131,81 @@ local z_word_t byte_swap(
 }
 #endif
 
+#ifdef DYNAMIC_CRC_TABLE
+
+
+
+
+   local z_crc_t FAR x2n_table[32];
+#else
+
+
+
+
+#  include "crc32.h"
+#endif
+
 
 #define POLY 0xedb88320         /* p(x) reflected, with x^32 implied */
 
+#ifndef Z_FREETYPE
+
+
+
+
+
+local z_crc_t multmodp(z_crc_t a, z_crc_t b) {
+    z_crc_t m, p;
+
+    m = (z_crc_t)1 << 31;
+    p = 0;
+    for (;;) {
+        if (a & m) {
+            p ^= b;
+            if ((a & (m - 1)) == 0)
+                break;
+        }
+        m >>= 1;
+        b = b & 1 ? (b >> 1) ^ POLY : b >> 1;
+    }
+    return p;
+}
+
+
+
+
+
+local z_crc_t x2nmodp(z_off64_t n, unsigned k) {
+    z_crc_t p;
+
+    p = (z_crc_t)1 << 31;           
+    while (n) {
+        if (n & 1)
+            p = multmodp(x2n_table[k & 31], p);
+        n >>= 1;
+        k++;
+    }
+    return p;
+}
+
+#endif  
+
 #ifdef DYNAMIC_CRC_TABLE
 
+
+
+
 local z_crc_t FAR crc_table[256];
-local z_crc_t FAR x2n_table[32];
-local void make_crc_table OF((void));
 #ifdef W
    local z_word_t FAR crc_big_table[256];
    local z_crc_t FAR crc_braid_table[W][256];
    local z_word_t FAR crc_braid_big_table[W][256];
-   local void braid OF((z_crc_t [][256], z_word_t [][256], int, int));
+   local void braid(z_crc_t [][256], z_word_t [][256], int, int);
 #endif
 #ifdef MAKECRCH
-   local void write_table OF((FILE *, const z_crc_t FAR *, int));
-   local void write_table32hi OF((FILE *, const z_word_t FAR *, int));
-   local void write_table64 OF((FILE *, const z_word_t FAR *, int));
+   local void write_table(FILE *, const z_crc_t FAR *, int);
+   local void write_table32hi(FILE *, const z_word_t FAR *, int);
+   local void write_table64(FILE *, const z_word_t FAR *, int);
 #endif 
 
 
@@ -178,7 +218,6 @@ local void make_crc_table OF((void));
 
 
 typedef struct once_s once_t;
-local void once OF((once_t *, void (*)(void)));
 
 
 #if defined(__STDC__) && __STDC_VERSION__ >= 201112L && \
@@ -198,10 +237,7 @@ struct once_s {
 
 
 
-local void once(state, init)
-    once_t *state;
-    void (*init)(void);
-{
+local void once(once_t *state, void (*init)(void)) {
     if (!atomic_load(&state->done)) {
         if (atomic_flag_test_and_set(&state->begun))
             while (!atomic_load(&state->done))
@@ -224,10 +260,7 @@ struct once_s {
 
 
 
-local int test_and_set OF((int volatile *));
-local int test_and_set(
-    int volatile *flag)
-{
+local int test_and_set(int volatile *flag) {
     int was;
 
     was = *flag;
@@ -236,10 +269,7 @@ local int test_and_set(
 }
 
 
-local void once(state, init)
-    once_t *state;
-    void (*init)(void);
-{
+local void once(once_t *state, void (*init)(void)) {
     if (!state->done) {
         if (test_and_set(&state->begun))
             while (!state->done)
@@ -281,8 +311,7 @@ local once_t made = ONCE_INIT;
 
 
 
-local void make_crc_table()
-{
+local void make_crc_table(void) {
     unsigned i, j, n;
     z_crc_t p;
 
@@ -449,11 +478,7 @@ local void make_crc_table()
 
 
 
-local void write_table(
-    FILE *out,
-    const z_crc_t FAR *table,
-    int k)
-{
+local void write_table(FILE *out, const z_crc_t FAR *table, int k) {
     int n;
 
     for (n = 0; n < k; n++)
@@ -466,11 +491,7 @@ local void write_table(
 
 
 
-local void write_table32hi(
-    FILE *out,
-    const z_word_t FAR *table,
-    int k)
-{
+local void write_table32hi(FILE *out, const z_word_t FAR *table, int k) {
     int n;
 
     for (n = 0; n < k; n++)
@@ -486,11 +507,7 @@ local void write_table32hi(
 
 
 
-local void write_table64(
-    FILE *out,
-    const z_word_t FAR *table,
-    int k)
-{
+local void write_table64(FILE *out, const z_word_t FAR *table, int k) {
     int n;
 
     for (n = 0; n < k; n++)
@@ -500,8 +517,7 @@ local void write_table64(
 }
 
 
-int main()
-{
+int main(void) {
     make_crc_table();
     return 0;
 }
@@ -513,12 +529,7 @@ int main()
 
 
 
-local void braid(ltl, big, n, w)
-    z_crc_t ltl[][256];
-    z_word_t big[][256];
-    int n;
-    int w;
-{
+local void braid(z_crc_t ltl[][256], z_word_t big[][256], int n, int w) {
     int k;
     z_crc_t i, p, q;
     for (k = 0; k < w; k++) {
@@ -533,18 +544,7 @@ local void braid(ltl, big, n, w)
 }
 #endif
 
-#else 
-
-
-
-
-#include "crc32.h"
 #endif 
-
-
-
-
-
 
 #ifndef Z_FREETYPE
 
@@ -552,59 +552,14 @@ local void braid(ltl, big, n, w)
 
 
 
-local z_crc_t multmodp(
-    z_crc_t a,
-    z_crc_t b)
-{
-    z_crc_t m, p;
-
-    m = (z_crc_t)1 << 31;
-    p = 0;
-    for (;;) {
-        if (a & m) {
-            p ^= b;
-            if ((a & (m - 1)) == 0)
-                break;
-        }
-        m >>= 1;
-        b = b & 1 ? (b >> 1) ^ POLY : b >> 1;
-    }
-    return p;
-}
-
-
-
-
-
-local z_crc_t x2nmodp(
-    z_off64_t n,
-    unsigned k)
-{
-    z_crc_t p;
-
-    p = (z_crc_t)1 << 31;           
-    while (n) {
-        if (n & 1)
-            p = multmodp(x2n_table[k & 31], p);
-        n >>= 1;
-        k++;
-    }
-    return p;
-}
-
-
-
-
-
-const z_crc_t FAR * ZEXPORT get_crc_table()
-{
+const z_crc_t FAR * ZEXPORT get_crc_table(void) {
 #ifdef DYNAMIC_CRC_TABLE
     once(&made, make_crc_table);
 #endif 
     return (const z_crc_t FAR *)crc_table;
 }
 
-#endif  
+#endif   
 
 
 
@@ -625,11 +580,8 @@ const z_crc_t FAR * ZEXPORT get_crc_table()
 #define Z_BATCH_ZEROS 0xa10d3d0c    /* computed from Z_BATCH = 3990 */
 #define Z_BATCH_MIN 800             /* fewest words in a final batch */
 
-unsigned long ZEXPORT crc32_z(
-    unsigned long crc,
-    const unsigned char FAR *buf,
-    z_size_t len)
-{
+unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
+                              z_size_t len) {
     z_crc_t val;
     z_word_t crc1, crc2;
     const z_word_t *word;
@@ -729,18 +681,14 @@ unsigned long ZEXPORT crc32_z(
 
 
 
-local z_crc_t crc_word(
-    z_word_t data)
-{
+local z_crc_t crc_word(z_word_t data) {
     int k;
     for (k = 0; k < W; k++)
         data = (data >> 8) ^ crc_table[data & 0xff];
     return (z_crc_t)data;
 }
 
-local z_word_t crc_word_big(
-    z_word_t data)
-{
+local z_word_t crc_word_big(z_word_t data) {
     int k;
     for (k = 0; k < W; k++)
         data = (data << 8) ^
@@ -751,11 +699,8 @@ local z_word_t crc_word_big(
 #endif
 
 
-unsigned long ZEXPORT crc32_z(
-    unsigned long crc,
-    const unsigned char FAR *buf,
-    z_size_t len)
-{
+unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
+                              z_size_t len) {
     
     if (buf == Z_NULL) return 0;
 
@@ -1075,22 +1020,15 @@ unsigned long ZEXPORT crc32_z(
 #endif
 
 
-unsigned long ZEXPORT crc32(
-    unsigned long crc,
-    const unsigned char FAR *buf,
-    uInt len)
-{
+unsigned long ZEXPORT crc32(unsigned long crc, const unsigned char FAR *buf,
+                            uInt len) {
     return crc32_z(crc, buf, len);
 }
 
 #ifndef Z_FREETYPE
 
 
-uLong ZEXPORT crc32_combine64(
-    uLong crc1,
-    uLong crc2,
-    z_off64_t len2)
-{
+uLong ZEXPORT crc32_combine64(uLong crc1, uLong crc2, z_off64_t len2) {
 #ifdef DYNAMIC_CRC_TABLE
     once(&made, make_crc_table);
 #endif 
@@ -1098,18 +1036,12 @@ uLong ZEXPORT crc32_combine64(
 }
 
 
-uLong ZEXPORT crc32_combine(
-    uLong crc1,
-    uLong crc2,
-    z_off_t len2)
-{
+uLong ZEXPORT crc32_combine(uLong crc1, uLong crc2, z_off_t len2) {
     return crc32_combine64(crc1, crc2, (z_off64_t)len2);
 }
 
 
-uLong ZEXPORT crc32_combine_gen64(
-    z_off64_t len2)
-{
+uLong ZEXPORT crc32_combine_gen64(z_off64_t len2) {
 #ifdef DYNAMIC_CRC_TABLE
     once(&made, make_crc_table);
 #endif 
@@ -1117,18 +1049,12 @@ uLong ZEXPORT crc32_combine_gen64(
 }
 
 
-uLong ZEXPORT crc32_combine_gen(
-    z_off_t len2)
-{
+uLong ZEXPORT crc32_combine_gen(z_off_t len2) {
     return crc32_combine_gen64((z_off64_t)len2);
 }
 
 
-uLong ZEXPORT crc32_combine_op(
-    uLong crc1,
-    uLong crc2,
-    uLong op)
-{
+uLong ZEXPORT crc32_combine_op(uLong crc1, uLong crc2, uLong op) {
     return multmodp(op, crc1) ^ (crc2 & 0xffffffff);
 }
 

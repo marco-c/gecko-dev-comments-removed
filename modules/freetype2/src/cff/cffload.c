@@ -1202,17 +1202,21 @@
         {
           CFF_AxisCoords*  axis = &region->axisList[j];
 
-          FT_Int16  start14, peak14, end14;
+          FT_Int  start, peak, end;
 
 
-          if ( FT_READ_SHORT( start14 ) ||
-               FT_READ_SHORT( peak14 )  ||
-               FT_READ_SHORT( end14 )   )
+          if ( FT_READ_SHORT( start ) ||
+               FT_READ_SHORT( peak )  ||
+               FT_READ_SHORT( end )   )
             goto Exit;
 
-          axis->startCoord = FT_fdot14ToFixed( start14 );
-          axis->peakCoord  = FT_fdot14ToFixed( peak14 );
-          axis->endCoord   = FT_fdot14ToFixed( end14 );
+          
+          if ( ( start < 0 && end > 0 ) || start > peak || peak > end )
+            peak = 0;
+
+          axis->startCoord = FT_fdot14ToFixed( start );
+          axis->peakCoord  = FT_fdot14ToFixed( peak );
+          axis->endCoord   = FT_fdot14ToFixed( end );
         }
       }
 
@@ -1379,10 +1383,10 @@
       
       
       *subFont->blend_top++ = 255;
-      *subFont->blend_top++ = (FT_Byte)( sum >> 24 );
-      *subFont->blend_top++ = (FT_Byte)( sum >> 16 );
-      *subFont->blend_top++ = (FT_Byte)( sum >>  8 );
-      *subFont->blend_top++ = (FT_Byte)sum;
+      *subFont->blend_top++ = (FT_Byte)( (FT_UInt32)sum >> 24 );
+      *subFont->blend_top++ = (FT_Byte)( (FT_UInt32)sum >> 16 );
+      *subFont->blend_top++ = (FT_Byte)( (FT_UInt32)sum >>  8 );
+      *subFont->blend_top++ = (FT_Byte)( (FT_UInt32)sum );
     }
 
     
@@ -1495,44 +1499,31 @@
       for ( j = 0; j < lenNDV; j++ )
       {
         CFF_AxisCoords*  axis = &varRegion->axisList[j];
-        FT_Fixed         axisScalar;
 
 
         
         
-        if ( axis->startCoord > axis->peakCoord ||
-             axis->peakCoord > axis->endCoord   )
-          axisScalar = FT_FIXED_ONE;
-
-        else if ( axis->startCoord < 0 &&
-                  axis->endCoord > 0   &&
-                  axis->peakCoord != 0 )
-          axisScalar = FT_FIXED_ONE;
+        if ( axis->peakCoord == NDV[j] ||
+             axis->peakCoord == 0      )
+          continue;
 
         
-        else if ( axis->peakCoord == 0 )
-          axisScalar = FT_FIXED_ONE;
-
-        
-        else if ( NDV[j] < axis->startCoord ||
-                  NDV[j] > axis->endCoord   )
-          axisScalar = 0;
-
-        
-        else
+        else if ( NDV[j] <= axis->startCoord ||
+                  NDV[j] >= axis->endCoord   )
         {
-          if ( NDV[j] == axis->peakCoord )
-            axisScalar = FT_FIXED_ONE;
-          else if ( NDV[j] < axis->peakCoord )
-            axisScalar = FT_DivFix( NDV[j] - axis->startCoord,
-                                    axis->peakCoord - axis->startCoord );
-          else
-            axisScalar = FT_DivFix( axis->endCoord - NDV[j],
-                                    axis->endCoord - axis->peakCoord );
+          blend->BV[master] = 0;
+          break;
         }
 
         
-        blend->BV[master] = FT_MulFix( blend->BV[master], axisScalar );
+        else if ( NDV[j] < axis->peakCoord )
+          blend->BV[master] = FT_MulDiv( blend->BV[master],
+                                         NDV[j] - axis->startCoord,
+                                         axis->peakCoord - axis->startCoord );
+        else   
+          blend->BV[master] = FT_MulDiv( blend->BV[master],
+                                         axis->endCoord - NDV[j],
+                                         axis->endCoord - axis->peakCoord );
       }
 
       FT_TRACE4(( ", %f ",
