@@ -33,7 +33,7 @@ static JSObject* FindNamedConstructorForXray(
     JSContext* aCx, JS::Handle<jsid> aId, const WebIDLNameTableEntry* aEntry) {
   JSObject* interfaceObject =
       GetPerInterfaceObjectHandle(aCx, aEntry->mConstructorId, aEntry->mCreate,
-                                  DefineInterfaceProperty::No);
+                                   false);
   if (!interfaceObject) {
     return nullptr;
   }
@@ -161,13 +161,10 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
     return true;
   }
 
-  
-  
-  
   JS::Rooted<JSObject*> interfaceObject(
       aCx,
       GetPerInterfaceObjectHandle(aCx, entry->mConstructorId, entry->mCreate,
-                                  DefineInterfaceProperty::Always));
+                                   true));
   if (NS_WARN_IF(!interfaceObject)) {
     return Throw(aCx, NS_ERROR_FAILURE);
   }
@@ -238,12 +235,9 @@ bool WebIDLGlobalNameHash::ResolveForSystemGlobal(JSContext* aCx,
   
   const WebIDLNameTableEntry* entry = GetEntry(aId.toLinearString());
   if (entry && (!entry->mEnabled || entry->mEnabled(aCx, aObj))) {
-    
-    
-    
     if (NS_WARN_IF(!GetPerInterfaceObjectHandle(
             aCx, entry->mConstructorId, entry->mCreate,
-            DefineInterfaceProperty::Always))) {
+             true))) {
       return Throw(aCx, NS_ERROR_FAILURE);
     }
 

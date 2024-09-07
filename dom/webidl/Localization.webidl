@@ -59,7 +59,7 @@ dictionary L10nMessage {
 
 
 
-[Func="Document::DocumentSupportsL10n", Exposed=Window]
+[Func="IsChromeOrUAWidget", Exposed=Window]
 interface Localization {
   
 

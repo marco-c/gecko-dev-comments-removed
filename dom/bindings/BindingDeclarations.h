@@ -548,33 +548,14 @@ class SystemCallerGuarantee {
   operator CallerType() const { return CallerType::System; }
 };
 
-enum class DefineInterfaceProperty {
-  No,
-  CheckExposure,
-  Always,
-};
-
 class ProtoAndIfaceCache;
-using CreateInterfaceObjectsMethod =
-    void (*)(JSContext*, JS::Handle<JSObject*>, ProtoAndIfaceCache&,
-             DefineInterfaceProperty aDefineOnGlobal);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+typedef void (*CreateInterfaceObjectsMethod)(JSContext* aCx,
+                                             JS::Handle<JSObject*> aGlobal,
+                                             ProtoAndIfaceCache& aCache,
+                                             bool aDefineOnGlobal);
 JS::Handle<JSObject*> GetPerInterfaceObjectHandle(
     JSContext* aCx, size_t aSlotId, CreateInterfaceObjectsMethod aCreator,
-    DefineInterfaceProperty aDefineOnGlobal);
+    bool aDefineOnGlobal);
 
 namespace binding_detail {
 
