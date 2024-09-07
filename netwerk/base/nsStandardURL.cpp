@@ -661,7 +661,12 @@ void nsStandardURL::CoalescePath(netCoalesceFlags coalesceFlag, char* path) {
 
     
     
+    
     mBasename.mLen = static_cast<int32_t>(endOfBasename - mDirectory.mLen);
+    if (mExtension.mLen >= 0) {
+      mBasename.mLen -= 1;  
+      mBasename.mLen -= mExtension.mLen;
+    }
     mBasename.mPos = mDirectory.mPos + mDirectory.mLen;
 
     
