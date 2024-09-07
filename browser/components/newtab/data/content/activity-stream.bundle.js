@@ -3630,6 +3630,7 @@ const PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
+const PREF_SPOCS_STARTUPCACHE_ENABLED = "discoverystream.spocs.startupCache.enabled";
 const CardGrid_INTERSECTION_RATIO = 0.5;
 const CardGrid_VISIBLE = "visible";
 const CardGrid_VISIBILITY_CHANGE_EVENT = "visibilitychange";
@@ -3906,13 +3907,14 @@ class _CardGrid extends (external_React_default()).PureComponent {
     const showTopics = prefs[PREF_TOPICS_ENABLED];
     const selectedTopics = prefs[PREF_TOPICS_SELECTED];
     const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
+    const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
     const recs = this.props.data.recommendations.slice(0, items);
     const cards = [];
     let essentialReadsCards = [];
     let editorsPicksCards = [];
     for (let index = 0; index < items; index++) {
       const rec = recs[index];
-      cards.push(!rec || rec.placeholder ? external_React_default().createElement(PlaceholderDSCard, {
+      cards.push(!rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache ? external_React_default().createElement(PlaceholderDSCard, {
         key: `dscard-${index}`
       }) : external_React_default().createElement(DSCard, {
         key: `dscard-${rec.id}`,
@@ -4062,6 +4064,7 @@ _CardGrid.defaultProps = {
 };
 const CardGrid = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Prefs: state.Prefs,
+  App: state.App,
   DiscoveryStream: state.DiscoveryStream
 }))(_CardGrid);
 ;
@@ -5934,6 +5937,12 @@ function App(prevState = INITIAL_STATE.App, action) {
         initialized: true,
       });
     case actionTypes.TOP_SITES_UPDATED:
+      
+      
+      return Object.assign({}, prevState, action.data || {}, {
+        isForStartupCache: false,
+      });
+    case actionTypes.DISCOVERY_STREAM_SPOCS_UPDATE:
       
       
       return Object.assign({}, prevState, action.data || {}, {
