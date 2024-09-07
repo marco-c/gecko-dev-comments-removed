@@ -1,7 +1,7 @@
 import asyncio
 import pytest_asyncio
 
-from webdriver.bidi.error import NoSuchInterceptException
+from webdriver.bidi.error import NoSuchInterceptException, NoSuchRequestException
 
 from tests.support.sync import AsyncPoll
 from . import PAGE_EMPTY_TEXT
@@ -66,6 +66,14 @@ async def setup_blocked_request(
     Returns the `request` id of the intercepted request.
     """
 
+    
+    
+    blocked_requests = []
+
+    
+    
+    blocked_auth_requests = []
+
     async def setup_blocked_request(
         phase,
         context=top_context,
@@ -107,10 +115,7 @@ async def setup_blocked_request(
         async def on_event(method, data):
             events.append(data)
 
-        remove_listener = bidi_session.add_event_listener(
-            f"network.{phase}", on_event
-        )
-
+        remove_listener = bidi_session.add_event_listener(f"network.{phase}", on_event)
 
         network_event = wait_for_event(f"network.{phase}")
         if navigate:
@@ -125,7 +130,6 @@ async def setup_blocked_request(
         else:
             asyncio.ensure_future(fetch(blocked_url, context=context, **kwargs))
 
-
         
         
         
@@ -135,6 +139,30 @@ async def setup_blocked_request(
         [blocked_event] = [e for e in events if e["isBlocked"] is True]
         request = blocked_event["request"]["request"]
 
+        if phase == "authRequired":
+            blocked_auth_requests.append(request)
+        else:
+            blocked_requests.append(request)
+
         return request
 
-    return setup_blocked_request
+    yield setup_blocked_request
+
+    
+    for request in blocked_requests:
+        try:
+            await bidi_session.network.fail_request(request=request)
+        except NoSuchRequestException:
+            
+            pass
+
+    
+    for request in blocked_auth_requests:
+        try:
+            await bidi_session.network.continue_with_auth(
+                request=request, action="cancel"
+            )
+        except NoSuchRequestException:
+            
+            pass
+
