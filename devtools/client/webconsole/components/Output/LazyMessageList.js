@@ -52,8 +52,13 @@ loader.lazyRequireGetter(
 class LazyMessageList extends Component {
   static get propTypes() {
     return {
-      viewportRef: PropTypes.shape({ current: PropTypes.instanceOf(Element) })
-        .isRequired,
+      viewportRef: PropTypes.shape({
+        
+        
+        
+        
+        current: PropTypes.instanceOf(window.Element),
+      }).isRequired,
       items: PropTypes.array.isRequired,
       itemsToKeepAlive: PropTypes.shape({
         has: PropTypes.func,
