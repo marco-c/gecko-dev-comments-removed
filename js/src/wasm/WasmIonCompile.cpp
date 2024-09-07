@@ -4464,11 +4464,11 @@ class FunctionCompiler {
   
   
   [[nodiscard]] bool writeValueToStructField(
-      uint32_t lineOrBytecode, const StructField& field,
-      MDefinition* structObject, MDefinition* value,
+      uint32_t lineOrBytecode, const StructType& structType,
+      uint32_t fieldIndex, MDefinition* structObject, MDefinition* value,
       WasmPreBarrierKind preBarrierKind) {
-    StorageType fieldType = field.type;
-    uint32_t fieldOffset = field.offset;
+    StorageType fieldType = structType.fields_[fieldIndex].type;
+    uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
 
     bool areaIsOutline;
     uint32_t areaOffset;
@@ -4515,10 +4515,10 @@ class FunctionCompiler {
   
   
   [[nodiscard]] MDefinition* readValueFromStructField(
-      const StructField& field, FieldWideningOp wideningOp,
-      MDefinition* structObject) {
-    StorageType fieldType = field.type;
-    uint32_t fieldOffset = field.offset;
+      const StructType& structType, uint32_t fieldIndex,
+      FieldWideningOp wideningOp, MDefinition* structObject) {
+    StorageType fieldType = structType.fields_[fieldIndex].type;
+    uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
 
     bool areaIsOutline;
     uint32_t areaOffset;
@@ -4700,7 +4700,7 @@ class FunctionCompiler {
                                MDefinition* numElements, MDefinition* val,
                                WasmPreBarrierKind preBarrierKind) {
     mozilla::DebugOnly<MIRType> valMIRType = val->type();
-    StorageType elemType = arrayType.elementType_;
+    StorageType elemType = arrayType.elementType();
     MOZ_ASSERT(elemType.widenToValType().toMIRType() == valMIRType);
 
     uint32_t elemSize = elemType.size();
@@ -4827,7 +4827,7 @@ class FunctionCompiler {
     
     MDefinition* arrayObject =
         createArrayObject(lineOrBytecode, typeIndex, numElements,
-                          arrayType.elementType_.size(), false);
+                          arrayType.elementType().size(), false);
     if (!arrayObject) {
       return nullptr;
     }
@@ -7756,9 +7756,8 @@ static bool EmitStructNew(FunctionCompiler& f) {
     if (!f.mirGen().ensureBallast()) {
       return false;
     }
-    const StructField& field = structType.fields_[fieldIndex];
-    if (!f.writeValueToStructField(lineOrBytecode, field, structObject,
-                                   args[fieldIndex],
+    if (!f.writeValueToStructField(lineOrBytecode, structType, fieldIndex,
+                                   structObject, args[fieldIndex],
                                    WasmPreBarrierKind::None)) {
       return false;
     }
@@ -7826,8 +7825,8 @@ static bool EmitStructSet(FunctionCompiler& f) {
 
   
   const StructType& structType = (*f.codeMeta().types)[typeIndex].structType();
-  const StructField& field = structType.fields_[fieldIndex];
-  return f.writeValueToStructField(lineOrBytecode, field, structObject, value,
+  return f.writeValueToStructField(lineOrBytecode, structType, fieldIndex,
+                                   structObject, value,
                                    WasmPreBarrierKind::Normal);
 }
 
@@ -7848,9 +7847,8 @@ static bool EmitStructGet(FunctionCompiler& f, FieldWideningOp wideningOp) {
 
   
   const StructType& structType = (*f.codeMeta().types)[typeIndex].structType();
-  const StructField& field = structType.fields_[fieldIndex];
-  MDefinition* load =
-      f.readValueFromStructField(field, wideningOp, structObject);
+  MDefinition* load = f.readValueFromStructField(structType, fieldIndex,
+                                                 wideningOp, structObject);
   if (!load) {
     return false;
   }
@@ -7904,7 +7902,7 @@ static bool EmitArrayNewDefault(FunctionCompiler& f) {
   const ArrayType& arrayType = (*f.codeMeta().types)[typeIndex].arrayType();
   MDefinition* arrayObject =
       f.createArrayObject(lineOrBytecode, typeIndex, numElements,
-                          arrayType.elementType_.size(), true);
+                          arrayType.elementType().size(), true);
   if (!arrayObject) {
     return false;
   }
@@ -7935,7 +7933,7 @@ static bool EmitArrayNewFixed(FunctionCompiler& f) {
 
   
   const ArrayType& arrayType = (*f.codeMeta().types)[typeIndex].arrayType();
-  StorageType elemType = arrayType.elementType_;
+  StorageType elemType = arrayType.elementType();
   uint32_t elemSize = elemType.size();
   MDefinition* arrayObject =
       f.createArrayObject(lineOrBytecode, typeIndex, numElementsDef, elemSize,
@@ -8166,7 +8164,7 @@ static bool EmitArraySet(FunctionCompiler& f) {
 
   
   const ArrayType& arrayType = (*f.codeMeta().types)[typeIndex].arrayType();
-  StorageType elemType = arrayType.elementType_;
+  StorageType elemType = arrayType.elementType();
   uint32_t elemSize = elemType.size();
   MOZ_ASSERT(elemSize >= 1 && elemSize <= 16);
 
@@ -8198,7 +8196,7 @@ static bool EmitArrayGet(FunctionCompiler& f, FieldWideningOp wideningOp) {
 
   
   const ArrayType& arrayType = (*f.codeMeta().types)[typeIndex].arrayType();
-  StorageType elemType = arrayType.elementType_;
+  StorageType elemType = arrayType.elementType();
 
   MDefinition* load =
       f.readGcArrayValueAtIndex(elemType, wideningOp, arrayObject,
