@@ -416,9 +416,6 @@ class CodeBlock {
   CodeRangeUnwindInfoVector codeRangeUnwindInfos;
 
   
-  uint32_t debugStubOffset;
-
-  
   bool unregisterOnDestroy_;
 
   static constexpr CodeBlockKind kindFromTier(Tier tier) {
@@ -433,7 +430,6 @@ class CodeBlock {
       : code(nullptr),
         codeBlockIndex((size_t)-1),
         kind(kind),
-        debugStubOffset(0),
         unregisterOnDestroy_(false) {}
   ~CodeBlock();
 
@@ -809,6 +805,7 @@ class Code : public ShareableBase<Code> {
 
   const CodeBlock* sharedStubs_;
   const CodeBlock* completeTier1_;
+
   
   
   
@@ -830,6 +827,7 @@ class Code : public ShareableBase<Code> {
   
   mutable const CodeBlock* completeTier2_;
   mutable Atomic<bool> hasCompleteTier2_;
+
   
   
   mutable FuncStatesPointer funcStates_;
@@ -840,6 +838,12 @@ class Code : public ShareableBase<Code> {
 
   
   uint8_t* trapCode_;
+
+  
+  uint32_t debugStubOffset_;
+
+  
+  uint32_t requestTierUpStubOffset_;
 
   
   
@@ -911,6 +915,14 @@ class Code : public ShareableBase<Code> {
   uint32_t getFuncIndex(JSFunction* fun) const;
 
   uint8_t* trapCode() const { return trapCode_; }
+
+  uint32_t debugStubOffset() const { return debugStubOffset_; }
+  void setDebugStubOffset(uint32_t offs) { debugStubOffset_ = offs; }
+
+  uint32_t requestTierUpStubOffset() const { return requestTierUpStubOffset_; }
+  void setRequestTierUpStubOffset(uint32_t offs) {
+    requestTierUpStubOffset_ = offs;
+  }
 
   const Bytes& bytecode() const {
     MOZ_ASSERT(codeMeta().debugEnabled || mode_ == CompileMode::LazyTiering);

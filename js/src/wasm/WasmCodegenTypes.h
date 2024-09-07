@@ -380,16 +380,17 @@ using FuncOffsetsVector = Vector<FuncOffsets, 0, SystemAllocPolicy>;
 class CodeRange {
  public:
   enum Kind {
-    Function,          
-    InterpEntry,       
-    JitEntry,          
-    ImportInterpExit,  
-    ImportJitExit,     
-    BuiltinThunk,      
-    TrapExit,          
-    DebugStub,         
-    FarJumpIsland,     
-    Throw              
+    Function,           
+    InterpEntry,        
+    JitEntry,           
+    ImportInterpExit,   
+    ImportJitExit,      
+    BuiltinThunk,       
+    TrapExit,           
+    DebugStub,          
+    RequestTierUpStub,  
+    FarJumpIsland,      
+    Throw               
   };
 
  private:
@@ -560,7 +561,8 @@ class CallSiteDesc {
     LeaveFrame,     
     CollapseFrame,  
     StackSwitch,    
-    Breakpoint      
+    Breakpoint,     
+    RequestTierUp   
   };
   CallSiteDesc() : lineOrBytecode_(0), kind_(0) {}
   explicit CallSiteDesc(Kind kind) : lineOrBytecode_(0), kind_(kind) {

@@ -2319,6 +2319,14 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
   
   if (code().mode() == CompileMode::LazyTiering) {
+    setRequestTierUpStub(code().sharedStubs().segment->base() +
+                         code().requestTierUpStubOffset());
+  } else {
+    setRequestTierUpStub(nullptr);
+  }
+
+  
+  if (code().mode() == CompileMode::LazyTiering) {
     for (uint32_t funcIndex = codeMeta().numFuncImports;
          funcIndex < codeMeta().numFuncs(); funcIndex++) {
       funcDefInstanceData(funcIndex)->hotnessCounter = 1;

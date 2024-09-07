@@ -123,7 +123,8 @@ class ExitReason {
     ImportInterp,   
     BuiltinNative,  
     Trap,           
-    DebugStub       
+    DebugStub,      
+    RequestTierUp   
   };
 
  private:

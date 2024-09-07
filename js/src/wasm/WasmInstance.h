@@ -207,6 +207,10 @@ class alignas(16) Instance {
 
   
   
+  void* requestTierUpStub_ = nullptr;
+
+  
+  
   
   MOZ_ALIGNED_DECL(16, char data_);
 
@@ -282,6 +286,9 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfDebugStub() {
     return offsetof(Instance, debugStub_);
   }
+  static constexpr size_t offsetOfRequestTierUpStub() {
+    return offsetof(Instance, requestTierUpStub_);
+  }
 
   static constexpr size_t offsetOfRealm() { return offsetof(Instance, realm_); }
   static constexpr size_t offsetOfCx() { return offsetof(Instance, cx_); }
@@ -340,6 +347,7 @@ class alignas(16) Instance {
   JSContext* cx() const { return cx_; }
   void* debugStub() const { return debugStub_; }
   void setDebugStub(void* newStub) { debugStub_ = newStub; }
+  void setRequestTierUpStub(void* newStub) { requestTierUpStub_ = newStub; }
   JS::Realm* realm() const { return realm_; }
   bool debugEnabled() const { return !!maybeDebug_; }
   DebugState& debug() { return *maybeDebug_; }
