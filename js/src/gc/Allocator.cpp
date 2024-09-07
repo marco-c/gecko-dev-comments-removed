@@ -141,7 +141,7 @@ MOZ_NEVER_INLINE void* gc::CellAllocator::AllocTenuredCellForNurseryAlloc(
     MajorGCIfRequested(cx);
   }
 
-  return AllocTenuredCellUnchecked<allowGC>(cx, kind);
+  return AllocTenuredCellUnchecked<allowGC>(cx->zone(), kind);
 }
 template void* gc::CellAllocator::AllocTenuredCellForNurseryAlloc<NoGC>(
     JSContext*, AllocKind);
@@ -175,7 +175,7 @@ void* gc::CellAllocator::AllocTenuredCell(JSContext* cx, gc::AllocKind kind) {
     MajorGCIfRequested(cx);
   }
 
-  return AllocTenuredCellUnchecked<allowGC>(cx, kind);
+  return AllocTenuredCellUnchecked<allowGC>(cx->zone(), kind);
 }
 template void* gc::CellAllocator::AllocTenuredCell<NoGC>(JSContext*, AllocKind);
 template void* gc::CellAllocator::AllocTenuredCell<CanGC>(JSContext*,
@@ -183,19 +183,18 @@ template void* gc::CellAllocator::AllocTenuredCell<CanGC>(JSContext*,
 
 template <AllowGC allowGC>
 
-void* CellAllocator::AllocTenuredCellUnchecked(JSContext* cx, AllocKind kind) {
+void* CellAllocator::AllocTenuredCellUnchecked(JS::Zone* zone, AllocKind kind) {
   
-  Zone* zone = cx->zone();
   void* ptr = zone->arenas.freeLists().allocate(kind);
   if (MOZ_UNLIKELY(!ptr)) {
     
     
     
-    ptr = GCRuntime::refillFreeList(cx, kind);
+    ptr = GCRuntime::refillFreeList(zone, kind);
 
     if (MOZ_UNLIKELY(!ptr)) {
       if constexpr (allowGC) {
-        return RetryTenuredAlloc(cx, kind);
+        return RetryTenuredAlloc(zone, kind);
       }
 
       return nullptr;
@@ -203,7 +202,7 @@ void* CellAllocator::AllocTenuredCellUnchecked(JSContext* cx, AllocKind kind) {
   }
 
 #ifdef DEBUG
-  CheckIncrementalZoneState(cx, ptr);
+  CheckIncrementalZoneState(zone, ptr);
 #endif
 
   gcprobes::TenuredAlloc(ptr, kind);
@@ -215,25 +214,26 @@ void* CellAllocator::AllocTenuredCellUnchecked(JSContext* cx, AllocKind kind) {
 
   return ptr;
 }
-template void* CellAllocator::AllocTenuredCellUnchecked<NoGC>(JSContext* cx,
+template void* CellAllocator::AllocTenuredCellUnchecked<NoGC>(JS::Zone* zone,
                                                               AllocKind kind);
-template void* CellAllocator::AllocTenuredCellUnchecked<CanGC>(JSContext* cx,
+template void* CellAllocator::AllocTenuredCellUnchecked<CanGC>(JS::Zone* zone,
                                                                AllocKind kind);
 
-MOZ_NEVER_INLINE void* CellAllocator::RetryTenuredAlloc(JSContext* cx,
+MOZ_NEVER_INLINE void* CellAllocator::RetryTenuredAlloc(JS::Zone* zone,
                                                         AllocKind kind) {
-  cx->runtime()->gc.attemptLastDitchGC(cx);
+  JSRuntime* runtime = zone->runtimeFromMainThread();
+  runtime->gc.attemptLastDitchGC();
 
-  void* ptr = AllocTenuredCellUnchecked<NoGC>(cx, kind);
+  void* ptr = AllocTenuredCellUnchecked<NoGC>(zone, kind);
   if (!ptr) {
-    ReportOutOfMemory(cx);
+    ReportOutOfMemory(runtime->mainContextFromOwnThread());
     return nullptr;
   }
 
   return ptr;
 }
 
-void GCRuntime::attemptLastDitchGC(JSContext* cx) {
+void GCRuntime::attemptLastDitchGC() {
   
   
   
@@ -243,7 +243,7 @@ void GCRuntime::attemptLastDitchGC(JSContext* cx) {
     return;
   }
 
-  JS::PrepareForFullGC(cx);
+  JS::PrepareForFullGC(rt->mainContextFromOwnThread());
   gc(JS::GCOptions::Shrink, JS::GCReason::LAST_DITCH);
   waitBackgroundAllocEnd();
   waitBackgroundFreeEnd();
@@ -302,11 +302,11 @@ AllocSite* CellAllocator::MaybeGenerateMissingAllocSite(JSContext* cx,
 
 #ifdef DEBUG
 
-void CellAllocator::CheckIncrementalZoneState(JSContext* cx, void* ptr) {
+void CellAllocator::CheckIncrementalZoneState(JS::Zone* zone, void* ptr) {
   MOZ_ASSERT(ptr);
   TenuredCell* cell = reinterpret_cast<TenuredCell*>(ptr);
   TenuredChunkBase* chunk = detail::GetCellChunkBase(cell);
-  if (cx->zone()->isGCMarkingOrSweeping()) {
+  if (zone->isGCMarkingOrSweeping()) {
     MOZ_ASSERT(chunk->markBits.isMarkedBlack(cell));
   } else {
     MOZ_ASSERT(!chunk->markBits.isMarkedAny(cell));
@@ -339,14 +339,14 @@ void GCRuntime::startBackgroundAllocTaskIfIdle() {
 }
 
 
-void* GCRuntime::refillFreeList(JSContext* cx, AllocKind thingKind) {
-  MOZ_ASSERT(cx->zone()->arenas.freeLists().isEmpty(thingKind));
+void* GCRuntime::refillFreeList(JS::Zone* zone, AllocKind thingKind) {
+  MOZ_ASSERT(zone->arenas.freeLists().isEmpty(thingKind));
 
   
   
   MOZ_ASSERT(!JS::RuntimeHeapIsBusy(), "allocating while under GC");
 
-  return cx->zone()->arenas.refillFreeListAndAllocate(
+  return zone->arenas.refillFreeListAndAllocate(
       thingKind, ShouldCheckThresholds::CheckThresholds);
 }
 
