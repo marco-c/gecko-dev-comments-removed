@@ -315,8 +315,6 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
   void MaybeApplyDecodingForExtension(nsIRequest* request);
 
-  void SetShouldCloseWindow() { mShouldCloseWindow = true; }
-
  protected:
   bool IsDownloadSpam(nsIChannel* aChannel);
 
@@ -381,12 +379,6 @@ class nsExternalAppHandler final : public nsIStreamListener,
   bool mStopRequestIssued;
 
   bool mIsFileChannel;
-
-  
-
-
-
-  bool mShouldCloseWindow;
 
   
 
