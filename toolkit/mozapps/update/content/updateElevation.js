@@ -89,7 +89,7 @@ const gUpdateElevationDialog = {
     }
     window.close();
   },
-  onRestartNow() {
+  async onRestartNow() {
     
     
     
@@ -108,7 +108,7 @@ const gUpdateElevationDialog = {
     let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
-    um.elevationOptedIn();
+    await um.elevationOptedIn();
 
     
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
