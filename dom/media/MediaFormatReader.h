@@ -139,6 +139,12 @@ class MediaFormatReader final
   
   void UpdateMediaEngineId(uint64_t aMediaEngineId);
 
+  
+  
+  void SetEncryptedCustomIdent();
+
+  bool IsEncryptedCustomIdent() const { return mEncryptedCustomIdent; }
+
  protected:
   
   void UpdateBuffered();
@@ -900,6 +906,12 @@ class MediaFormatReader final
   
   
   TimeDuration mTotalWaitingForVideoDataTime;
+
+  
+  
+  
+  
+  Atomic<bool> mEncryptedCustomIdent;
 };
 
 }  

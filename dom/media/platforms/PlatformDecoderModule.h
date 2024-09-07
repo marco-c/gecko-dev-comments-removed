@@ -120,6 +120,10 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   using UseNullDecoder = media::UseNullDecoder;
   using NoWrapper = media::NoWrapper;
   using VideoFrameRate = media::VideoFrameRate;
+  enum class EncryptedCustomIdent : bool {
+    False,
+    True,
+  };
 
   explicit CreateDecoderParams(const TrackInfo& aConfig) : mConfig(aConfig) {}
   CreateDecoderParams(const CreateDecoderParams& aParams) = default;
@@ -185,6 +189,7 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   
   Maybe<uint64_t> mMediaEngineId;
   Maybe<TrackingId> mTrackingId;
+  EncryptedCustomIdent mEncryptedCustomIdent;
 
  private:
   void Set(layers::ImageContainer* aImageContainer) {
@@ -217,6 +222,9 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
     mMediaEngineId = aMediaEngineId;
   }
   void Set(const Maybe<TrackingId>& aTrackingId) { mTrackingId = aTrackingId; }
+  void Set(const EncryptedCustomIdent aEncryptedCustomIdent) {
+    mEncryptedCustomIdent = aEncryptedCustomIdent;
+  }
   void Set(const CreateDecoderParams& aParams) {
     
     mImageContainer = aParams.mImageContainer;
