@@ -136,6 +136,7 @@ const INTEGRATION_TEST_PAGE_SOURCES = [
   
   "same-url.sjs",
   "same-url.sjs",
+  "log-worker.js",
 ];
 
 if (isFissionEnabled() || isEveryFrameTargetEnabled()) {

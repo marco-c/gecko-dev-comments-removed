@@ -320,11 +320,12 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
     .getAllThreads()
     .find(thread => thread.name == "Main Thread");
 
+  
+  const expectedSameUrlSources = isEveryFrameTargetEnabled() ? 3 : 4;
   is(
     sourceActors.filter(actor => actor.thread == mainThread.actor).length,
-    
-    isEveryFrameTargetEnabled() ? 3 : 4,
-    "same-url.js is loaded 3 times in the main thread"
+    expectedSameUrlSources,
+    `same-url.js is loaded ${expectedSameUrlSources} times in the main thread`
   );
 
   if (isEveryFrameTargetEnabled()) {
