@@ -214,11 +214,24 @@ void APZUpdater::UpdateScrollDataAndTreeState(
             if (root == self->mScrollData.end()) {
               return;
             }
-            if ((self->mApz->UpdateHitTestingTree(
-                     WebRenderScrollDataWrapper(*self, &(root->second)),
-                     aOriginatingLayersId, paintSequenceNumber) ==
-                 APZCTreeManager::OriginatingLayersIdUpdated::No) &&
-                isFirstPaint) {
+
+            auto updatedIds = self->mApz->UpdateHitTestingTree(
+                WebRenderScrollDataWrapper(*self, &(root->second)),
+                aOriginatingLayersId, paintSequenceNumber);
+            bool originatingLayersIdWasSkipped = true;
+            for (auto id : updatedIds) {
+              if (id == aOriginatingLayersId) {
+                originatingLayersIdWasSkipped = false;
+              }
+
+              
+              
+              
+              
+              self->mScrollData[id].SetWasUpdateSkipped(false);
+            }
+
+            if (isFirstPaint && originatingLayersIdWasSkipped) {
               
               
               
@@ -227,7 +240,7 @@ void APZUpdater::UpdateScrollDataAndTreeState(
               
               
               
-              self->mScrollData[aOriginatingLayersId].SetWasUpdateSkipped();
+              self->mScrollData[aOriginatingLayersId].SetWasUpdateSkipped(true);
             }
           }));
 }

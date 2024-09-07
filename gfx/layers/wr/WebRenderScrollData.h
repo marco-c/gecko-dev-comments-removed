@@ -280,7 +280,9 @@ class WebRenderScrollData {
   
   void PrependUpdates(const WebRenderScrollData& aPreviousData);
 
-  void SetWasUpdateSkipped() { mWasUpdateSkipped = true; }
+  void SetWasUpdateSkipped(bool aWasUpdateSkipped) {
+    mWasUpdateSkipped = aWasUpdateSkipped;
+  }
   bool GetWasUpdateSkipped() const { return mWasUpdateSkipped; }
 
   friend struct IPC::ParamTraits<WebRenderScrollData>;
