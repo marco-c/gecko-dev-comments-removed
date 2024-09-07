@@ -297,7 +297,8 @@ class TenuredCell : public Cell {
   
   void fixupAfterMovingGC() {}
 
-  static inline CellColor getColor(MarkBitmap* bitmap, const TenuredCell* cell);
+  static inline CellColor getColor(ChunkMarkBitmap* bitmap,
+                                   const TenuredCell* cell);
 
 #ifdef DEBUG
   inline bool isAligned() const;
@@ -428,7 +429,7 @@ MOZ_ALWAYS_INLINE CellColor TenuredCell::color() const {
 }
 
 
-inline CellColor TenuredCell::getColor(MarkBitmap* bitmap,
+inline CellColor TenuredCell::getColor(ChunkMarkBitmap* bitmap,
                                        const TenuredCell* cell) {
   
   
