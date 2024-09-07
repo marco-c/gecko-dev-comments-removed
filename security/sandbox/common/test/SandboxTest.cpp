@@ -242,10 +242,10 @@ SandboxTest::StartTests(const nsTArray<nsCString>& aProcessesList) {
           
           
           
-          net::SocketProcessParent* parent =
+          RefPtr<net::SocketProcessParent> parent =
               net::SocketProcessParent::GetSingleton();
           if (parent) {
-            return InitializeSandboxTestingActors(parent, processPromise);
+            return InitializeSandboxTestingActors(parent.get(), processPromise);
           }
           return processPromise->Reject(NS_ERROR_FAILURE, __func__);
         });
