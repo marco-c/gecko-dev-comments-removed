@@ -68,7 +68,8 @@ int main(int argc, char* argv[]) {
     output = stdout;
   } else {
     
-    std::cerr << absl::ProgramUsageMessage();
+    absl::string_view usage = absl::ProgramUsageMessage();
+    fwrite(usage.data(), usage.size(), 1, stderr);
     return 1;
   }
 
