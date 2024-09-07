@@ -1310,9 +1310,40 @@ LayoutDeviceIntRegion WinUtils::ConvertHRGNToRegion(HRGN aRgn) {
   return rgn;
 }
 
+
+HRGN WinUtils::RegionToHRGN(const LayoutDeviceIntRegion& aRegion) {
+  const uint32_t count = aRegion.GetNumRects();
+  const size_t regionBytes = count * sizeof(RECT);
+  const size_t regionDataBytes = sizeof(RGNDATAHEADER) + regionBytes;
+  
+  
+  
+  auto buffer = MakeUnique<char[]>(regionDataBytes);
+  auto* data = reinterpret_cast<RGNDATA*>(buffer.get());
+  data->rdh.dwSize = sizeof(RGNDATAHEADER);
+  data->rdh.iType = RDH_RECTANGLES;
+  data->rdh.nCount = count;
+  data->rdh.nRgnSize = regionBytes;
+  data->rdh.rcBound = ToWinRect(aRegion.GetBounds());
+  RECT* buf = (RECT*)data->Buffer;
+  for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
+    *buf++ = ToWinRect(iter.Get());
+  }
+  return ::ExtCreateRegion(nullptr, regionDataBytes, data);
+}
+
 LayoutDeviceIntRect WinUtils::ToIntRect(const RECT& aRect) {
   return LayoutDeviceIntRect(aRect.left, aRect.top, aRect.right - aRect.left,
                              aRect.bottom - aRect.top);
+}
+
+RECT WinUtils::ToWinRect(const LayoutDeviceIntRect& aRect) {
+  return {
+      .left = aRect.x,
+      .top = aRect.y,
+      .right = aRect.XMost(),
+      .bottom = aRect.YMost(),
+  };
 }
 
 

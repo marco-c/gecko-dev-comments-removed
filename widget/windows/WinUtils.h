@@ -416,6 +416,11 @@ class WinUtils {
 
 
   static LayoutDeviceIntRegion ConvertHRGNToRegion(HRGN aRgn);
+  
+
+
+
+  static HRGN RegionToHRGN(const LayoutDeviceIntRegion&);
 
   
 
@@ -424,6 +429,8 @@ class WinUtils {
 
 
   static LayoutDeviceIntRect ToIntRect(const RECT& aRect);
+  
+  static RECT ToWinRect(const LayoutDeviceIntRect& aRect);
 
   
 
