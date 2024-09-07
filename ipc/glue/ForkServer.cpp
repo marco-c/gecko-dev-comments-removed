@@ -299,6 +299,13 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
   NS_LogTerm();
 
   MOZ_ASSERT(forkserver.mAppProcBuilder);
+
+  
+  
+  
+  
+  nsTraceRefcnt::CloseLogFilesAfterFork();
+
   
   
   
@@ -307,7 +314,7 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
   forkserver.mAppProcBuilder.reset();
 
   
-  nsTraceRefcnt::ResetLogFiles((*aArgv)[*aArgc - 1]);
+  nsTraceRefcnt::ReopenLogFilesAfterFork((*aArgv)[*aArgc - 1]);
 
   return false;
 }

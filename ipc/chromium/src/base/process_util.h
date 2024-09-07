@@ -262,15 +262,6 @@ class AppProcessBuilder {
 };
 
 void InitForkServerProcess();
-
-
-
-
-
-
-
-
-void RegisterForkServerNoCloseFD(int aFd);
 #endif
 
 

@@ -547,9 +547,6 @@ static bool InitLog(const EnvCharType* aEnvVar, const char* aMsg,
 #endif
     if (stream) {
       MozillaRegisterDebugFD(fileno(stream));
-#ifdef MOZ_ENABLE_FORKSERVER
-      base::RegisterForkServerNoCloseFD(fileno(stream));
-#endif
       *aResult = stream;
       fprintf(stderr,
               "### " ENVVAR_PRINTF " defined -- logging %s to " ENVVAR_PRINTF
@@ -1213,12 +1210,18 @@ void nsTraceRefcnt::StartLoggingClass(const char* aClass) {
 }
 
 #ifdef MOZ_ENABLE_FORKSERVER
-void nsTraceRefcnt::ResetLogFiles(const char* aProcType) {
-  AutoRestore<LoggingType> saveLogging(gLogging);
+void nsTraceRefcnt::CloseLogFilesAfterFork() {
+  
+  
+  
   gLogging = NoLogging;
 
   ClearLogs(true);
+}
 
+void nsTraceRefcnt::ReopenLogFilesAfterFork(const char* aProcType) {
+  
+  
   
   DoInitTraceLog(aProcType);
 }
