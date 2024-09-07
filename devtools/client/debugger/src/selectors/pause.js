@@ -238,6 +238,11 @@ export function getSelectedFrameId(state, thread) {
 
 export function isTopFrameSelected(state, thread) {
   const selectedFrameId = getSelectedFrameId(state, thread);
+  
+  
+  if (!selectedFrameId) {
+    return true;
+  }
   const topFrame = getTopFrame(state, thread);
   return selectedFrameId == topFrame?.id;
 }
