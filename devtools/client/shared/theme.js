@@ -4,35 +4,9 @@
 
 "use strict";
 
-const variableFileContents = require("raw!chrome://devtools/skin/variables.css");
-
-const THEME_SELECTOR_STRINGS = {
-  light: ":root.theme-light {",
-  dark: ":root.theme-dark {",
-  root: ":root {",
-};
 const THEME_PREF = "devtools.theme";
 
 
-
-
-
-function getThemeFile(name) {
-  
-  const selector = THEME_SELECTOR_STRINGS[name] || THEME_SELECTOR_STRINGS.light;
-
-  
-  
-  
-  
-  
-  
-  let theme = variableFileContents;
-  theme = theme.substring(theme.indexOf(selector));
-  theme = theme.substring(0, theme.indexOf("}"));
-
-  return theme;
-}
 
 
 
@@ -68,21 +42,22 @@ const getThemePrefValue = (exports.getThemePrefValue = () => {
 
 
 
-const getColor = (exports.getColor = (type, theme) => {
-  const themeName = theme || getTheme();
-  let themeFile = getThemeFile(themeName);
-  let match = themeFile.match(new RegExp("--theme-" + type + ": (.*);"));
-  const variableMatch = match ? match[1].match(/var\((.*)\)/) : null;
 
-  
-  
-  if (variableMatch) {
-    themeFile = getThemeFile("root");
-    match = themeFile.match(new RegExp(`${variableMatch[1]}: (.*);`));
+
+const getCssVariableColor = (exports.getCssVariableColor = (
+  variableName,
+  win
+) => {
+  const value = win
+    .getComputedStyle(win.document.documentElement)
+    .getPropertyValue(variableName);
+
+  if (!value) {
+    console.warn("Unknown", variableName, "CSS variable");
+    return null;
   }
 
-  
-  return match ? match[1] : null;
+  return value;
 });
 
 

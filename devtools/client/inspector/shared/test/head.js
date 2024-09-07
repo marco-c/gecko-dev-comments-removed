@@ -17,7 +17,7 @@ var {
   getInplaceEditorForSpan: inplaceEditor,
 } = require("resource://devtools/client/shared/inplace-editor.js");
 const {
-  getColor: getThemeColor,
+  getCssVariableColor,
 } = require("resource://devtools/client/shared/theme.js");
 
 const TEST_URL_ROOT =
@@ -111,8 +111,9 @@ function waitForSuccess(validatorFn, name = "untitled") {
 
 
 
-var getFontFamilyDataURL = async function (font, nodeFront) {
-  const fillStyle = getThemeColor("body-color");
+
+var getFontFamilyDataURL = async function (win, font, nodeFront) {
+  const fillStyle = getCssVariableColor("--theme-body-color", win);
 
   const { data } = await nodeFront.getFontFamilyDataURL(font, fillStyle);
   const dataURL = await data.string();

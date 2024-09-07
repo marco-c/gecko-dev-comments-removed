@@ -7,7 +7,9 @@
 const {
   gDevTools,
 } = require("resource://devtools/client/framework/devtools.js");
-const { getColor } = require("resource://devtools/client/shared/theme.js");
+const {
+  getCssVariableColor,
+} = require("resource://devtools/client/shared/theme.js");
 const {
   createFactory,
   createElement,
@@ -1034,7 +1036,10 @@ class FontInspector {
       
       includeVariations: !!this.pageStyle.supportsFontVariations,
       previewText,
-      previewFillStyle: getColor("body-color"),
+      previewFillStyle: getCssVariableColor(
+        "--theme-body-color",
+        this.document.ownerGlobal
+      ),
     };
 
     

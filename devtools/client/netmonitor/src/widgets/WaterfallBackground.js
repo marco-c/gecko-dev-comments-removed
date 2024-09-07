@@ -4,7 +4,9 @@
 
 "use strict";
 
-const { getColor } = require("resource://devtools/client/shared/theme.js");
+const {
+  getCssVariableColor,
+} = require("resource://devtools/client/shared/theme.js");
 const { colorUtils } = require("resource://devtools/shared/css/color.js");
 const {
   REQUESTS_WATERFALL,
@@ -123,12 +125,12 @@ class WaterfallBackground {
       REQUESTS_WATERFALL;
     drawTimestamp(
       state.timingMarkers.firstDocumentDOMContentLoadedTimestamp,
-      this.getThemeColorAsRgba(DOMCONTENTLOADED_TICKS_COLOR, state.theme)
+      this.getThemeColorAsRgba(DOMCONTENTLOADED_TICKS_COLOR)
     );
 
     drawTimestamp(
       state.timingMarkers.firstDocumentLoadTimestamp,
-      this.getThemeColorAsRgba(LOAD_TICKS_COLOR, state.theme)
+      this.getThemeColorAsRgba(LOAD_TICKS_COLOR)
     );
 
     
@@ -150,10 +152,11 @@ class WaterfallBackground {
 
 
 
-
-
-  getThemeColorAsRgba(colorName, theme) {
-    const colorStr = getColor(colorName, theme);
+  getThemeColorAsRgba(colorVariableName) {
+    const colorStr = getCssVariableColor(
+      colorVariableName,
+      document.ownerGlobal
+    );
     const color = new colorUtils.CssColor(colorStr);
     const { r, g, b } = color.getRGBATuple();
     return [r, g, b, REQUESTS_WATERFALL.TICKS_COLOR_OPACITY];
