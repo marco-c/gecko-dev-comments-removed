@@ -409,6 +409,7 @@ pub mod platform {
     
     
     
+    
     pub fn firefox_default_path() -> Option<PathBuf> {
         if let Some(path) = find_binary("firefox") {
             return Some(path);
@@ -418,6 +419,8 @@ pub mod platform {
         for &(prefix_home, trial_path) in [
             (false, "/Applications/Firefox.app"),
             (true, "Applications/Firefox.app"),
+            (false, "/Applications/Firefox Developer Edition.app"),
+            (true, "Applications/Firefox Developer Edition.app"),
             (false, "/Applications/Firefox Nightly.app"),
             (true, "Applications/Firefox Nightly.app"),
         ]
