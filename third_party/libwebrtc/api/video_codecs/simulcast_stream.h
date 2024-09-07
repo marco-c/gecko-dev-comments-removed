@@ -18,7 +18,7 @@ namespace webrtc {
 
 
 
-struct SimulcastStream {
+struct RTC_EXPORT SimulcastStream {
   
   
   unsigned char GetNumberOfTemporalLayers() const;
