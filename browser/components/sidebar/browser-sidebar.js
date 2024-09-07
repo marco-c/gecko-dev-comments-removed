@@ -1,12 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/**
+ * SidebarController handles logic such as toggling sidebar panels,
+ * dynamically adding menubar menu items for the View -> Sidebar menu,
+ * and provides APIs for sidebar extensions, etc.
+ */
 const defaultTools = {
   viewGenaiChatSidebar: "aichat",
   viewTabsSidebar: "syncedtabs",
@@ -34,14 +34,14 @@ var SidebarController = {
 
     let switcherMenuitem;
     const updateMenus = visible => {
-      
+      // Update visibility of View -> Sidebar menu item.
       const viewItem = document.getElementById(sidebar.menuId);
       if (viewItem) {
         viewItem.hidden = !visible;
       }
 
       let menuItem = document.getElementById(config.elementId);
-      
+      // Add/remove switcher menu item.
       if (visible && !menuItem) {
         switcherMenuitem = this.createMenuItem(commandID, sidebar);
         switcherMenuitem.setAttribute("id", config.elementId);
@@ -55,7 +55,7 @@ var SidebarController = {
       window.dispatchEvent(new CustomEvent("SidebarItemChanged"));
     };
 
-    
+    // Detect pref changes and handle initial state.
     XPCOMUtils.defineLazyPreferenceGetter(
       sidebar,
       "visible",
@@ -89,6 +89,9 @@ var SidebarController = {
           menuL10nId: "menu-view-history-button",
           revampL10nId: "sidebar-menu-history-label",
           iconUrl: "chrome://browser/content/firefoxview/view-history.svg",
+          contextMenuId: this.sidebarRevampEnabled
+            ? "sidebar-history-context-menu"
+            : undefined,
         }),
       ],
       [
@@ -103,6 +106,9 @@ var SidebarController = {
           menuL10nId: "menu-view-synced-tabs-sidebar",
           revampL10nId: "sidebar-menu-synced-tabs-label",
           iconUrl: "chrome://browser/content/firefoxview/view-syncedtabs.svg",
+          contextMenuId: this.sidebarRevampEnabled
+            ? "sidebar-synced-tabs-context-menu"
+            : undefined,
         }),
       ],
       [
@@ -128,7 +134,7 @@ var SidebarController = {
         url: "chrome://browser/content/genai/chat.html",
         menuId: "menu_genaiChatSidebar",
         menuL10nId: "menu-view-genai-chat",
-        
+        // Bug 1900915 to expose as conditional tool
         revampL10nId: "sidebar-menu-genai-chat-label",
         iconUrl: "chrome://mozapps/skin/extensions/category-discover.svg",
       }
@@ -157,9 +163,9 @@ var SidebarController = {
     return this._sidebars;
   },
 
-  
-
-
+  /**
+   * Returns a map of tools and extensions for use in the sidebar
+   */
   get toolsAndExtensions() {
     if (this._toolsAndExtensions) {
       return this._toolsAndExtensions;
@@ -175,8 +181,8 @@ var SidebarController = {
     return this._toolsAndExtensions;
   },
 
-  
-  
+  // Avoid getting the browser element from init() to avoid triggering the
+  // <browser> constructor during startup if the sidebar is hidden.
   get browser() {
     if (this._browser) {
       return this._browser;
@@ -187,13 +193,13 @@ var SidebarController = {
   DEFAULT_SIDEBAR_ID: "viewBookmarksSidebar",
   TOOLS_PREF: "sidebar.main.tools",
 
-  
-  
+  // lastOpenedId is set in show() but unlike currentID it's not cleared out on hide
+  // and isn't persisted across windows
   lastOpenedId: null,
 
   _box: null,
-  
-  
+  // The constructor of this label accesses the browser element due to the
+  // control="sidebar" attribute, so avoid getting this label during startup.
   get _title() {
     if (this.__title) {
       return this.__title;
@@ -213,9 +219,9 @@ var SidebarController = {
   _mainResizeObserverAdded: false,
   _mainResizeObserver: null,
 
-  
-
-
+  /**
+   * @type {MutationObserver | null}
+   */
   _observer: null,
 
   _initDeferred: Promise.withResolvers(),
@@ -234,8 +240,8 @@ var SidebarController = {
 
   get sidebarContainer() {
     if (!this._sidebarContainer) {
-      
-      
+      // This is the *parent* of the `sidebar-main` component.
+      // TODO: Rename this element in the markup in order to avoid confusion. (Bug 1904860)
       this._sidebarContainer = document.getElementById("sidebar-main");
     }
     return this._sidebarContainer;
@@ -279,7 +285,7 @@ var SidebarController = {
         !Object.hasOwn(sidebar, "extensionId") &&
         commandID !== "viewCustomizeSidebar"
       ) {
-        
+        // registerExtension() already creates menu items for extensions.
         const menuitem = this.createMenuItem(commandID, sidebar);
         menubar.appendChild(menuitem);
       }
@@ -335,7 +341,7 @@ var SidebarController = {
       }
     }
 
-    
+    // sets the sidebar to the left or right, based on a pref
     this.setPosition();
 
     this._inited = true;
@@ -349,11 +355,11 @@ var SidebarController = {
   },
 
   uninit() {
-    
+    // Set a flag to allow us to ignore pref changes while the host document is being unloaded.
     this._uninitializing = true;
 
-    
-    
+    // If this is the last browser window, persist various values that should be
+    // remembered for after a restart / reopening a browser window.
     let enumerator = Services.wm.getEnumerator("navigator:browser");
     if (!enumerator.hasMoreElements()) {
       let xulStore = Services.xulStore;
@@ -374,22 +380,22 @@ var SidebarController = {
     }
 
     if (this.revampComponentsLoaded) {
-      
-      
+      // Explicitly disconnect the `sidebar-main` element so that listeners
+      // setup by reactive controllers will also be removed.
       this.sidebarMain.remove();
     }
   },
 
-  
-
-
+  /**
+   * The handler for Services.obs.addObserver.
+   */
   observe(_subject, topic, _data) {
     switch (topic) {
       case "intl:app-locales-changed": {
         if (this.isOpen) {
-          
-          
-          
+          // The <tree> component used in history and bookmarks, but it does not
+          // support live switching the app locale. Reload the entire sidebar to
+          // invalidate any old text.
           this.hide();
           this.showInitially(this.lastOpenedId);
           break;
@@ -401,12 +407,12 @@ var SidebarController = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Ensure the title stays in sync with the source element, which updates for
+   * l10n changes.
+   *
+   * @param {HTMLElement} [element]
+   */
   observeTitleChanges(element) {
     if (!element) {
       return;
@@ -416,7 +422,7 @@ var SidebarController = {
       observer = new MutationObserver(() => {
         this.title = this.sidebars.get(this.lastOpenedId).title;
       });
-      
+      // Re-use the observer.
       this._observer = observer;
     }
     observer.disconnect();
@@ -426,9 +432,9 @@ var SidebarController = {
     });
   },
 
-  
-
-
+  /**
+   * Opens the switcher panel if it's closed, or closes it if it's open.
+   */
   toggleSwitcherPanel() {
     if (
       this._switcherPanel.state == "open" ||
@@ -440,11 +446,11 @@ var SidebarController = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Handles keydown on the the switcherTarget button
+   *
+   * @param  {Event} event
+   */
   handleKeydown(event) {
     switch (event.key) {
       case "Enter":
@@ -477,14 +483,14 @@ var SidebarController = {
       { once: true }
     );
 
-    
+    // Combine start/end position with ltr/rtl to set the label in the popup appropriately.
     let label =
       this._positionStart == RTL_UI
         ? gNavigatorBundle.getString("sidebar.moveToLeft")
         : gNavigatorBundle.getString("sidebar.moveToRight");
     this._reversePositionButton.setAttribute("label", label);
 
-    
+    // Open the sidebar switcher popup, anchored off the switcher toggle
     this._switcherPanel.hidden = false;
     this._switcherPanel.openPopup(this._switcherTarget);
 
@@ -495,26 +501,26 @@ var SidebarController = {
   updateShortcut({ keyId }) {
     let menuitem = this._switcherPanel?.querySelector(`[key="${keyId}"]`);
     if (!menuitem) {
-      
-      
+      // If the menu item doesn't exist yet then the accel text will be set correctly
+      // upon creation so there's nothing to do now.
       return;
     }
     menuitem.removeAttribute("acceltext");
   },
 
-  
-
-
+  /**
+   * Change the pref that will trigger a call to setPosition
+   */
   reversePosition() {
     Services.prefs.setBoolPref(this.POSITION_START_PREF, !this._positionStart);
   },
 
-  
-
-
-
+  /**
+   * Read the positioning pref and position the sidebar and the splitter
+   * appropriately within the browser container.
+   */
   setPosition() {
-    
+    // First reset all ordinals to match DOM ordering.
     let browser = document.getElementById("browser");
     [...browser.children].forEach((node, i) => {
       node.style.order = i + 1;
@@ -522,17 +528,17 @@ var SidebarController = {
     let sidebarContainer = document.getElementById("sidebar-main");
     let sidebarMain = document.querySelector("sidebar-main");
     if (!this._positionStart) {
-      
-      
-      
+      // DOM ordering is:     sidebar-main |  sidebar-box  | splitter |   appcontent  |
+      // Want to display as:  |   appcontent  | splitter |  sidebar-box  | sidebar-main
+      // So we just swap box and appcontent ordering and move sidebar-main to the end
       let appcontent = document.getElementById("appcontent");
       let boxOrdinal = this._box.style.order;
       this._box.style.order = appcontent.style.order;
 
       appcontent.style.order = boxOrdinal;
-      
+      // the launcher should be on the right of the sidebar-box
       sidebarContainer.style.order = parseInt(this._box.style.order) + 1;
-      
+      // Indicate we've switched ordering to the box
       this._box.setAttribute("positionend", true);
       sidebarMain.setAttribute("positionend", true);
       sidebarContainer.setAttribute("positionend", true);
@@ -550,16 +556,16 @@ var SidebarController = {
     }
   },
 
-  
-
-
+  /**
+   * Show/hide new sidebar based on sidebar.revamp pref
+   */
   async toggleRevampSidebar() {
     await this.promiseInitialized;
     let wasOpen = this.isOpen;
     if (wasOpen) {
       this.hide();
     }
-    
+    // Reset sidebars map but preserve any existing extensions
     let extensionsArr = [];
     for (const [commandID, sidebar] of this.sidebars.entries()) {
       if (sidebar.hasOwnProperty("extensionId")) {
@@ -573,7 +579,7 @@ var SidebarController = {
     if (!this.sidebarRevampEnabled) {
       this.sidebarMain.hidden = true;
       document.getElementById("sidebar-header").hidden = false;
-      
+      // Disable vertical tabs if revamped sidebar is turned off
       if (this.sidebarVerticalTabsEnabled) {
         Services.prefs.setBoolPref("sidebar.verticalTabs", false);
       }
@@ -586,38 +592,38 @@ var SidebarController = {
     await this.init();
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Try and adopt the status of the sidebar from another window.
+   *
+   * @param {Window} sourceWindow - Window to use as a source for sidebar status.
+   * @returns {boolean} true if we adopted the state, or false if the caller should
+   * initialize the state itself.
+   */
   adoptFromWindow(sourceWindow) {
-    
-    
-    
+    // If the opener had a sidebar, open the same sidebar in our window.
+    // The opener can be the hidden window too, if we're coming from the state
+    // where no windows are open, and the hidden window has no sidebar box.
     let sourceController = sourceWindow.SidebarController;
     if (!sourceController || !sourceController._box) {
-      
+      // no source UI or no _box means we also can't adopt the state.
       return false;
     }
 
-    
+    // If window is a popup, hide the sidebar
     if (!window.toolbar.visible && this.sidebarRevampEnabled) {
       document.getElementById("sidebar-main").hidden = true;
       return false;
     }
 
-    
-    
+    // Set sidebar command even if hidden, so that we keep the same sidebar
+    // even if it's currently closed.
     let commandID = sourceController._box.getAttribute("sidebarcommand");
     if (commandID) {
       this._box.setAttribute("sidebarcommand", commandID);
     }
 
-    
-    
+    // Adopt `expanded` and `hidden` states only if the opener was also using
+    // revamped sidebar.
     if (this.sidebarRevampEnabled && sourceController.revampComponentsLoaded) {
       this.promiseInitialized.then(() => {
         this.toggleExpanded(sourceController.sidebarMain.expanded);
@@ -627,12 +633,12 @@ var SidebarController = {
     }
 
     if (sourceController._box.hidden) {
-      
+      // just hidden means we have adopted the hidden state.
       return true;
     }
 
-    
-    
+    // dynamically generated sidebars will fail this check, but we still
+    // consider it adopted.
     if (!this.sidebars.has(commandID)) {
       return true;
     }
@@ -650,14 +656,14 @@ var SidebarController = {
     );
   },
 
-  
-
-
+  /**
+   * If loading a sidebar was delayed on startup, start the load now.
+   */
   startDelayedLoad() {
     let sourceWindow = window.opener;
-    
-    
-    
+    // No source window means this is the initial window.  If we're being
+    // opened from another window, check that it is one we might open a sidebar
+    // for.
     if (sourceWindow) {
       if (
         sourceWindow.closed ||
@@ -666,13 +672,13 @@ var SidebarController = {
       ) {
         return;
       }
-      
+      // Try to adopt the sidebar state from the source window
       if (this.adoptFromWindow(sourceWindow)) {
         return;
       }
     }
 
-    
+    // If we're not adopting settings from a parent window, set them now.
     let wasOpen = this._box.getAttribute("checked");
     if (!wasOpen) {
       return;
@@ -683,54 +689,65 @@ var SidebarController = {
       this.showInitially(commandID);
     } else {
       this._box.removeAttribute("checked");
-      
-      
-      
-      
-      
+      // Remove the |sidebarcommand| attribute, because the element it
+      // refers to no longer exists, so we should assume this sidebar
+      // panel has been uninstalled. (249883)
+      // We use setAttribute rather than removeAttribute so it persists
+      // correctly.
       this._box.setAttribute("sidebarcommand", "");
-      
-      
-      
-      
-      
-      
+      // On a startup in which the startup cache was invalidated (e.g. app update)
+      // extensions will not be started prior to delayedLoad, thus the
+      // sidebarcommand element will not exist yet.  Store the commandID so
+      // extensions may reopen if necessary.  A startup cache invalidation
+      // can be forced (for testing) by deleting compatibility.ini from the
+      // profile.
       this.lastOpenedId = commandID;
     }
   },
 
-  
-
-
-
+  /**
+   * Fire a "SidebarShown" event on the sidebar to give any interested parties
+   * a chance to update the button or whatever.
+   */
   _fireShowEvent() {
     let event = new CustomEvent("SidebarShown", { bubbles: true });
     this._switcherTarget.dispatchEvent(event);
   },
 
-  
-
-
-
-
-
+  /**
+   * Fire a "SidebarFocused" event on the sidebar's |window| to give the sidebar
+   * a chance to adjust focus as needed. An additional event is needed, because
+   * we don't want to focus the sidebar when it's opened on startup or in a new
+   * window, only when the user opens the sidebar.
+   */
   _fireFocusedEvent() {
     let event = new CustomEvent("SidebarFocused", { bubbles: true });
     this.browser.contentWindow.dispatchEvent(event);
   },
 
-  
-
-
+  /**
+   * True if the sidebar is currently open.
+   */
   get isOpen() {
     return !this._box.hidden;
   },
 
-  
-
-
+  /**
+   * The ID of the current sidebar.
+   */
   get currentID() {
     return this.isOpen ? this._box.getAttribute("sidebarcommand") : "";
+  },
+
+  /**
+   * The context menu of the current sidebar.
+   */
+  get currentContextMenu() {
+    const sidebar = this.sidebars.get(this.currentID);
+    if (!sidebar) {
+      return null;
+    }
+    return document.getElementById(sidebar.contextMenuId);
   },
 
   get title() {
@@ -741,16 +758,16 @@ var SidebarController = {
     this._title.value = value;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Toggle the visibility of the sidebar. If the sidebar is hidden or is open
+   * with a different commandID, then the sidebar will be opened using the
+   * specified commandID. Otherwise the sidebar will be hidden.
+   *
+   * @param  {string}  commandID     ID of the sidebar.
+   * @param  {DOMNode} [triggerNode] Node, usually a button, that triggered the
+   *                                 visibility toggling of the sidebar.
+   * @returns {Promise}
+   */
   toggle(commandID = this.lastOpenedId, triggerNode) {
     if (
       CustomizationHandler.isCustomizing() ||
@@ -758,10 +775,10 @@ var SidebarController = {
     ) {
       return Promise.resolve();
     }
-    
-    
-    
-    
+    // First priority for a default value is this.lastOpenedId which is set during show()
+    // and not reset in hide(), unlike currentID. If show() hasn't been called and we don't
+    // have a persisted command either, or the command doesn't exist anymore, then
+    // fallback to a default sidebar.
     if (!commandID) {
       commandID = this._box.getAttribute("sidebarcommand");
     }
@@ -788,10 +805,10 @@ var SidebarController = {
       case "hide-sidebar": {
         const isHidden = this.sidebarContainer.hidden;
         if (!isHidden && this.isOpen) {
-          
+          // Sidebar is currently visible, but now we want to hide it.
           this.hide();
         } else if (isHidden) {
-          
+          // Sidebar is currently hidden, but now we want to show it.
           this.toggleExpanded(true);
         }
         this.sidebarContainer.hidden = !isHidden;
@@ -801,36 +818,36 @@ var SidebarController = {
     this.updateToolbarButton();
   },
 
-  
-
-
+  /**
+   * Update `checked` state of the toolbar button.
+   */
   updateToolbarButton() {
     if (!this.sidebarRevampEnabled || !this.toolbarButton) {
-      
+      // For the non-revamped sidebar, this is handled by CustomizableWidgets.
       return;
     }
     switch (this.sidebarRevampVisibility) {
       case "always-show":
-        
+        // Toolbar button controls expanded state.
         this.toolbarButton.checked = this.sidebarMain.expanded;
         break;
       case "hide-sidebar":
-        
+        // Toolbar button controls hidden state.
         this.toolbarButton.checked = !this.sidebarContainer.hidden;
         break;
     }
   },
 
-  
-
-
-
-
+  /**
+   * Toggle the expanded state of the sidebar.
+   *
+   * @param {boolean} force - Optional true/false to toggle to
+   */
   toggleExpanded(force) {
     this._sidebarMain.expanded =
       typeof force == "boolean" ? force : !this._sidebarMain.expanded;
-    
-    
+    // Marking the tab container element as expanded or not simplifies the CSS logic
+    // and selectors considerably.
     gBrowser.tabContainer.toggleAttribute(
       "expanded",
       this._sidebarMain.expanded
@@ -844,20 +861,20 @@ var SidebarController = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Sets the disabled property for a tool when customizing sidebar options
+   *
+   * @param {string} commandID
+   */
   toggleTool(commandID) {
     let toggledTool = this.toolsAndExtensions.get(commandID);
     toggledTool.disabled = !toggledTool.disabled;
     if (!toggledTool.disabled) {
-      
+      // If re-enabling tool, remove from the map and add it to the end
       this.toolsAndExtensions.delete(commandID);
       this.toolsAndExtensions.set(commandID, toggledTool);
     }
-    
+    // Tools are persisted via a pref.
     if (!Object.hasOwn(toggledTool, "extensionId")) {
       const tools = new Set(this.sidebarRevampTools.split(","));
       const updatedTools = tools.has(defaultTools[commandID])
@@ -875,14 +892,14 @@ var SidebarController = {
 
   addOrUpdateExtension(commandID, extension) {
     if (this.toolsAndExtensions.has(commandID)) {
-      
+      // Update existing extension
       let extensionToUpdate = this.toolsAndExtensions.get(commandID);
       extensionToUpdate.icon = extension.icon;
       extensionToUpdate.iconUrl = extension.iconUrl;
       extensionToUpdate.tooltiptext = extension.label;
       window.dispatchEvent(new CustomEvent("SidebarItemChanged"));
     } else {
-      
+      // Add new extension
       this.toolsAndExtensions.set(commandID, {
         view: commandID,
         extensionId: extension.extensionId,
@@ -895,13 +912,13 @@ var SidebarController = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Add menu items for a browser extension. Add the extension to the
+   * `sidebars` map.
+   *
+   * @param {string} commandID
+   * @param {object} props
+   */
   registerExtension(commandID, props) {
     const sidebar = {
       title: props.title,
@@ -913,19 +930,19 @@ var SidebarController = {
       icon: props.icon,
       iconUrl: props.iconUrl,
       classAttribute: "menuitem-iconic webextension-menuitem",
-      
+      // The following properties are specific to extensions
       extensionId: props.extensionId,
       onload: props.onload,
     };
     this.sidebars.set(commandID, sidebar);
 
-    
+    // Insert a menuitem for View->Show Sidebars.
     const menuitem = this.createMenuItem(commandID, sidebar);
     document.getElementById("viewSidebarMenu").appendChild(menuitem);
     this.addOrUpdateExtension(commandID, sidebar);
 
     if (!this.sidebarRevampEnabled) {
-      
+      // Insert a toolbarbutton for the sidebar dropdown selector.
       let switcherMenuitem = this.createMenuItem(commandID, sidebar);
       switcherMenuitem.setAttribute("id", sidebar.switcherMenuId);
       switcherMenuitem.removeAttribute("type");
@@ -940,18 +957,18 @@ var SidebarController = {
     );
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Create a menu item for the View>Sidebars submenu in the menubar.
+   *
+   * @param {string} commandID
+   * @param {object} sidebar
+   * @returns {Element}
+   */
   createMenuItem(commandID, sidebar) {
     const menuitem = document.createXULElement("menuitem");
     menuitem.setAttribute("id", sidebar.menuId);
     menuitem.setAttribute("type", "checkbox");
-    
+    // Some menu items get checkbox type removed, so should show the sidebar
     menuitem.addEventListener("command", () =>
       this[menuitem.hasAttribute("type") ? "toggle" : "show"](commandID)
     );
@@ -970,16 +987,16 @@ var SidebarController = {
     return menuitem;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Update attributes on all existing menu items for a browser extension.
+   *
+   * @param {string} commandID
+   * @param {object} attributes
+   * @param {string} attributes.icon
+   * @param {string} attributes.iconUrl
+   * @param {string} attributes.label
+   * @param {boolean} needsRefresh
+   */
   setExtensionAttributes(commandID, attributes, needsRefresh) {
     const sidebar = this.sidebars.get(commandID);
     this._setExtensionAttributes(commandID, attributes, sidebar, needsRefresh);
@@ -1007,7 +1024,7 @@ var SidebarController = {
       updateAttributes(switcherMenu, sidebar);
     }
     if (this.initialized && this.currentID === commandID) {
-      
+      // Update the sidebar title if this extension is the current sidebar.
       this.title = label;
       if (this.isOpen && needsRefresh) {
         this.show(commandID);
@@ -1015,11 +1032,11 @@ var SidebarController = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Retrieve the list of registered browser extensions.
+   *
+   * @returns {Array}
+   */
   getExtensions() {
     const extensions = [];
     for (const [commandID, sidebar] of this.sidebars.entries()) {
@@ -1037,11 +1054,11 @@ var SidebarController = {
     return extensions;
   },
 
-  
-
-
-
-
+  /**
+   * Retrieve the list of tools in the sidebar
+   *
+   * @returns {Array}
+   */
   getTools() {
     return Object.keys(defaultTools).map(commandID => {
       const sidebar = this.sidebars.get(commandID);
@@ -1054,7 +1071,7 @@ var SidebarController = {
         iconUrl: sidebar.iconUrl,
         l10nId: sidebar.revampL10nId,
         disabled,
-        
+        // Reflect the current tool state defaulting to visible
         get hidden() {
           return !(sidebar.visible ?? true);
         },
@@ -1062,11 +1079,11 @@ var SidebarController = {
     });
   },
 
-  
-
-
-
-
+  /**
+   * Remove a browser extension.
+   *
+   * @param {string} commandID
+   */
   removeExtension(commandID) {
     const sidebar = this.sidebars.get(commandID);
     if (!sidebar) {
@@ -1082,22 +1099,22 @@ var SidebarController = {
     window.dispatchEvent(new CustomEvent("SidebarItemRemoved"));
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Show the sidebar.
+   *
+   * This wraps the internal method, including a ping to telemetry.
+   *
+   * @param {string}  commandID     ID of the sidebar to use.
+   * @param {DOMNode} [triggerNode] Node, usually a button, that triggered the
+   *                                showing of the sidebar.
+   * @returns {Promise<boolean>}
+   */
   async show(commandID, triggerNode) {
     let panelType = commandID.substring(4, commandID.length - 7);
     Services.telemetry.keyedScalarAdd("sidebar.opened", panelType, 1);
 
-    
-    
+    // Extensions without private window access wont be in the
+    // sidebars map.
     if (!this.sidebars.has(commandID)) {
       return false;
     }
@@ -1114,20 +1131,20 @@ var SidebarController = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Show the sidebar, without firing the focused event or logging telemetry.
+   * This is intended to be used when the sidebar is opened automatically
+   * when a window opens (not triggered by user interaction).
+   *
+   * @param {string} commandID ID of the sidebar.
+   * @returns {Promise<boolean>}
+   */
   async showInitially(commandID) {
     let panelType = commandID.substring(4, commandID.length - 7);
     Services.telemetry.keyedScalarAdd("sidebar.opened", panelType, 1);
 
-    
-    
+    // Extensions without private window access wont be in the
+    // sidebars map.
     if (!this.sidebars.has(commandID)) {
       return false;
     }
@@ -1137,13 +1154,13 @@ var SidebarController = {
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Implementation for show. Also used internally for sidebars that are shown
+   * when a window is opened and we don't want to ping telemetry.
+   *
+   * @param {string} commandID ID of the sidebar.
+   * @returns {Promise<void>}
+   */
   _show(commandID) {
     return new Promise(resolve => {
       if (this.sidebarRevampEnabled) {
@@ -1151,9 +1168,9 @@ var SidebarController = {
           new CustomEvent("sidebar-show", { detail: { viewId: commandID } })
         );
 
-        
-        
-        
+        // Whenever a panel is shown, the sidebar is collapsed. Upon hiding
+        // that panel afterwards, `expanded` reverts back to what it was prior
+        // to calling `show()`. Thus, we store the expanded state at this point.
         this._previousExpandedState = this.sidebarMain.expanded;
 
         this.toggleExpanded(false);
@@ -1167,7 +1184,8 @@ var SidebarController = {
       this._box.setAttribute("checked", "true");
       this._box.setAttribute("sidebarcommand", commandID);
 
-      let { icon, url, title, sourceL10nEl } = this.sidebars.get(commandID);
+      let { icon, url, title, sourceL10nEl, contextMenuId } =
+        this.sidebars.get(commandID);
       if (icon) {
         this._switcherTarget.style.setProperty(
           "--webextension-menuitem-image",
@@ -1179,19 +1197,25 @@ var SidebarController = {
         );
       }
 
-      
+      if (contextMenuId) {
+        this._box.setAttribute("context", contextMenuId);
+      } else {
+        this._box.removeAttribute("context");
+      }
+
+      // use to live update <tree> elements if the locale changes
       this.lastOpenedId = commandID;
-      
+      // These title changes only apply to the old sidebar menu
       if (!this.sidebarRevampEnabled) {
         this.title = title;
-        
+        // Keep the title element in the switcher in sync with any l10n changes.
         this.observeTitleChanges(sourceL10nEl);
       }
 
-      this.browser.setAttribute("src", url); 
+      this.browser.setAttribute("src", url); // kick off async load
 
       if (this.browser.contentDocument.location.href != url) {
-        
+        // make sure to clear the timeout if the load is aborted
         this.browser.addEventListener("unload", () => {
           if (this.browser.loadingTimerID) {
             clearTimeout(this.browser.loadingTimerID);
@@ -1202,13 +1226,13 @@ var SidebarController = {
         this.browser.addEventListener(
           "load",
           () => {
-            
-            
+            // We're handling the 'load' event before it bubbles up to the usual
+            // (non-capturing) event handlers. Let it bubble up before resolving.
             this.browser.loadingTimerID = setTimeout(() => {
               delete this.browser.loadingTimerID;
               resolve();
 
-              
+              // Now that the currentId is updated, fire a show event.
               this._fireShowEvent();
             }, 0);
           },
@@ -1217,18 +1241,18 @@ var SidebarController = {
       } else {
         resolve();
 
-        
+        // Now that the currentId is updated, fire a show event.
         this._fireShowEvent();
       }
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Hide the sidebar.
+   *
+   * @param {DOMNode} [triggerNode] Node, usually a button, that triggered the
+   *                                hiding of the sidebar.
+   */
   hide(triggerNode) {
     if (!this.isOpen) {
       return;
@@ -1238,8 +1262,8 @@ var SidebarController = {
     if (this.sidebarRevampEnabled) {
       this._box.dispatchEvent(new CustomEvent("sidebar-hide"));
 
-      
-      
+      // When visibility is set to "Hide Sidebar", we always want to revert
+      // back to an expanded state.
       this.toggleExpanded(
         this.sidebarRevampVisibility === "hide-sidebar" ||
           this._previousExpandedState
@@ -1247,15 +1271,16 @@ var SidebarController = {
     }
     this.selectMenuItem("");
 
-    
-    
-    
-    
-    
+    // Replace the document currently displayed in the sidebar with about:blank
+    // so that we can free memory by unloading the page. We need to explicitly
+    // create a new content viewer because the old one doesn't get destroyed
+    // until about:blank has loaded (which does not happen as long as the
+    // element is hidden).
     this.browser.setAttribute("src", "about:blank");
     this.browser.docShell?.createAboutBlankDocumentViewer(null, null);
 
     this._box.removeAttribute("checked");
+    this._box.removeAttribute("context");
     this._box.hidden = this._splitter.hidden = true;
 
     let selBrowser = gBrowser.selectedBrowser;
@@ -1266,10 +1291,10 @@ var SidebarController = {
     this.updateToolbarButton();
   },
 
-  
-
-
-
+  /**
+   * Sets the checked state only on the menu items of the specified sidebar, or
+   * none if the argument is an empty string.
+   */
   selectMenuItem(commandID) {
     for (let [id, { menuId, triggerButtonId }] of this.sidebars) {
       let menu = document.getElementById(menuId);
@@ -1310,7 +1335,7 @@ var SidebarController = {
       tabStrip.setAttribute("orient", "vertical");
       verticalTabs.append(tabStrip);
 
-      
+      // Enable revamped sidebar if vertical tabs is enabled
       if (!this.sidebarRevampEnabled) {
         Services.prefs.setBoolPref("sidebar.revamp", true);
       }
@@ -1319,7 +1344,7 @@ var SidebarController = {
       tabStrip.removeAttribute("expanded");
       tabStrip.setAttribute("orient", "horizontal");
 
-      
+      // make sure we put the tabstrip back in its original position in the TabsToolbar
       if (tabstripPlacement < tabsToolbarWidgets.length) {
         document
           .getElementById("TabsToolbar-customization-target")
@@ -1337,8 +1362,8 @@ var SidebarController = {
   },
 };
 
-
-
+// Add getters related to the position here, since we will want them
+// available for both startDelayedLoad and init.
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
   "_positionStart",
