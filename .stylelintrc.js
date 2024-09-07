@@ -65,7 +65,14 @@ module.exports = {
     "property-no-unknown": [
       true,
       {
-        ignoreProperties: ["overflow-clip-box"],
+        ignoreProperties: [
+          
+          
+          
+          "overflow-clip-box",
+          "overflow-clip-box-block",
+          "overflow-clip-box-inline",
+        ],
       },
     ],
 
