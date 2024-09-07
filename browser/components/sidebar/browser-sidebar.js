@@ -1499,6 +1499,11 @@ var SidebarController = {
       arrowScrollbox.setAttribute("orient", "vertical");
       tabStrip.setAttribute("orient", "vertical");
       verticalTabs.append(tabStrip);
+
+      
+      if (!this.sidebarRevampEnabled) {
+        Services.prefs.setBoolPref("sidebar.revamp", true);
+      }
     } else {
       arrowScrollbox.setAttribute("orient", "horizontal");
       tabStrip.removeAttribute("expanded");
