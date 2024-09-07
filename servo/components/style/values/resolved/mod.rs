@@ -6,6 +6,7 @@
 
 
 use app_units::Au;
+#[cfg(feature = "gecko")]
 use crate::media_queries::Device;
 use crate::properties::ComputedValues;
 use crate::ArcSlice;
@@ -18,9 +19,9 @@ mod counters;
 use crate::values::computed::{self, Length};
 
 
+#[cfg(feature = "gecko")]
 pub struct ResolvedElementInfo<'a> {
     
-    #[cfg(feature = "gecko")]
     pub element: crate::gecko::wrapper::GeckoElement<'a>,
 }
 
@@ -30,8 +31,10 @@ pub struct Context<'a> {
     pub style: &'a ComputedValues,
     
     
+    #[cfg(feature = "gecko")]
     pub device: &'a Device,
     
+    #[cfg(feature = "gecko")]
     pub element_info: ResolvedElementInfo<'a>,
 }
 

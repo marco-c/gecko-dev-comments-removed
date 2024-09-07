@@ -5,6 +5,7 @@
 
 
 use crate::parser::{Parse, ParserContext};
+#[cfg(feature = "gecko")]
 use crate::properties::{LonghandId, PropertyDeclarationId, PropertyId};
 use crate::values::generics::box_::{
     GenericContainIntrinsicSize, GenericLineClamp, GenericPerspective, GenericVerticalAlign,
@@ -1023,6 +1024,10 @@ bitflags! {
     }
 }
 
+#[cfg(feature="servo")]
+fn change_bits_for_longhand(longhand: LonghandId) -> WillChangeBits { WillChangeBits::empty() }
+
+#[cfg(feature = "gecko")]
 fn change_bits_for_longhand(longhand: LonghandId) -> WillChangeBits {
     match longhand {
         LonghandId::Opacity => WillChangeBits::OPACITY,
@@ -1663,6 +1668,7 @@ impl BreakBetween {
     
     
     
+    #[cfg_attr(feature = "servo", allow(unused))]
     #[inline]
     pub(crate) fn parse_legacy<'i>(
         _: &ParserContext,
@@ -1683,6 +1689,7 @@ impl BreakBetween {
     
     
     
+    #[cfg_attr(feature = "servo", allow(unused))]
     pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
@@ -1728,6 +1735,7 @@ impl BreakWithin {
     
     
     
+    #[cfg_attr(feature = "servo", allow(unused))]
     #[inline]
     pub(crate) fn parse_legacy<'i>(
         _: &ParserContext,
@@ -1745,6 +1753,7 @@ impl BreakWithin {
     
     
     
+    #[cfg_attr(feature = "servo", allow(unused))]
     pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,

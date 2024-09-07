@@ -93,11 +93,12 @@ pub mod longhands {
 }
 
 
-#[cfg(feature = "gecko")]
+% if engine == "gecko":
 #[allow(unsafe_code, missing_docs)]
 pub mod gecko {
     <%include file="/gecko.mako.rs" />
 }
+% endif
 
 
 macro_rules! unwrap_or_initial {
@@ -152,7 +153,7 @@ pub mod shorthands {
             "all",
             logical_longhands + other_longhands,
             engines="gecko servo",
-            spec="https://drafts.csswg.org/css-cascade-3/#all-shorthand"
+            spec="https:
         )
         ALL_SHORTHAND_LEN = len(logical_longhands) + len(other_longhands);
     %>
@@ -1615,12 +1616,14 @@ pub mod style_structs {
 
             
             
+            #[cfg(feature = "gecko")]
             pub fn specifies_scroll_timelines(&self) -> bool {
                 self.scroll_timeline_name_iter().any(|name| !name.is_none())
             }
 
             
             
+            #[cfg(feature = "gecko")]
             pub fn specifies_view_timelines(&self) -> bool {
                 self.view_timeline_name_iter().any(|name| !name.is_none())
             }

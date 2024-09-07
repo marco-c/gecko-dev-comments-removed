@@ -29,7 +29,13 @@ use crate::traversal::{DomTraversal, PerLevelTraversalData};
 use std::collections::VecDeque;
 
 
+#[cfg(feature = "gecko")]
 pub const STYLE_THREAD_STACK_SIZE_KB: usize = 256;
+
+
+
+#[cfg(feature = "servo")]
+pub const STYLE_THREAD_STACK_SIZE_KB: usize = 512;
 
 
 
@@ -74,6 +80,7 @@ fn distribute_one_chunk<'a, 'scope, E, D>(
     D: DomTraversal<E>,
 {
     scope.spawn_fifo(move |scope| {
+        #[cfg(feature = "gecko")]
         gecko_profiler_label!(Layout, StyleComputation);
         let mut tlc = tls.ensure(create_thread_local_context);
         let mut context = StyleContext {
