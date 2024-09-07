@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "Fetch.h"
 
@@ -42,6 +42,7 @@
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/URLSearchParams.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/net/CookieJarSettings.h"
 
 #include "BodyExtractor.h"
@@ -60,9 +61,9 @@ namespace mozilla::dom {
 
 namespace {
 
-// Step 17.2.1.2 and 17.2.2 of
-// https://fetch.spec.whatwg.org/#concept-http-network-fetch
-// If stream is readable, then error stream with ...
+
+
+
 void AbortStream(JSContext* aCx, ReadableStream* aReadableStream,
                  ErrorResult& aRv, JS::Handle<JS::Value> aReasonDetails) {
   if (aReadableStream->State() != ReadableStream::ReaderState::Readable) {
@@ -81,7 +82,7 @@ void AbortStream(JSContext* aCx, ReadableStream* aReadableStream,
   aReadableStream->ErrorNative(aCx, value, aRv);
 }
 
-}  // namespace
+}  
 
 class AbortSignalMainThread final : public AbortSignalImpl {
  public:
@@ -120,8 +121,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(AbortSignalMainThread)
 
 class AbortSignalProxy;
 
-// This runnable propagates changes from the AbortSignalImpl on workers to the
-// AbortSignalImpl on main-thread.
+
+
 class AbortSignalProxyRunnable final : public Runnable {
   RefPtr<AbortSignalProxy> mProxy;
 
@@ -132,19 +133,19 @@ class AbortSignalProxyRunnable final : public Runnable {
   NS_IMETHOD Run() override;
 };
 
-// This class orchestrates the proxying of AbortSignal operations between the
-// main thread and a worker thread.
+
+
 class AbortSignalProxy final : public AbortFollower {
-  // This is created and released on the main-thread.
+  
   RefPtr<AbortSignalImpl> mSignalImplMainThread;
 
-  // The main-thread event target for runnable dispatching.
+  
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 
-  // This value is used only when creating mSignalImplMainThread on the main
-  // thread, to create it in already-aborted state if necessary.  It does *not*
-  // reflect the instantaneous is-aborted status of the worker thread's
-  // AbortSignal.
+  
+  
+  
+  
   const bool mAborted;
 
  public:
@@ -159,7 +160,7 @@ class AbortSignalProxy final : public AbortFollower {
     Follow(aSignalImpl);
   }
 
-  // AbortFollower
+  
   void RunAbortAlgorithm() override;
 
   AbortSignalImpl* GetOrCreateSignalImplForMainThread() {
@@ -206,11 +207,11 @@ void AbortSignalProxy::RunAbortAlgorithm() {
 }
 
 class WorkerFetchResolver final : public FetchDriverObserver {
-  // Thread-safe:
+  
   RefPtr<PromiseWorkerProxy> mPromiseProxy;
   RefPtr<AbortSignalProxy> mSignalProxy;
 
-  // Touched only on the worker thread.
+  
   RefPtr<FetchObserver> mFetchObserver;
   RefPtr<WeakWorkerRef> mWorkerRef;
   bool mIsShutdown;
@@ -218,7 +219,7 @@ class WorkerFetchResolver final : public FetchDriverObserver {
   Atomic<bool> mNeedOnDataAvailable;
 
  public:
-  // Returns null if worker is shutting down.
+  
   static already_AddRefed<WorkerFetchResolver> Create(
       WorkerPrivate* aWorkerPrivate, Promise* aPromise,
       AbortSignalImpl* aSignalImpl, FetchObserver* aObserver) {
@@ -429,7 +430,7 @@ class MainThreadFetchRunnable : public Runnable {
     RefPtr<PromiseWorkerProxy> proxy = mResolver->PromiseProxy();
 
     {
-      // Acquire the proxy mutex while getting data from the WorkerPrivate...
+      
       MutexAutoLock lock(proxy->Lock());
       if (proxy->CleanedUp()) {
         NS_WARNING("Aborting Fetch because worker already shut down");
@@ -442,8 +443,8 @@ class MainThreadFetchRunnable : public Runnable {
       MOZ_ASSERT(principal);
       nsCOMPtr<nsILoadGroup> loadGroup = workerPrivate->GetLoadGroup();
       MOZ_ASSERT(loadGroup);
-      // We don't track if a worker is spawned from a tracking script for now,
-      // so pass false as the last argument to FetchDriver().
+      
+      
       fetch = new FetchDriver(mRequest.clonePtr(), principal, loadGroup,
                               workerPrivate->MainThreadEventTarget(),
                               workerPrivate->CookieJarSettings(),
@@ -464,8 +465,8 @@ class MainThreadFetchRunnable : public Runnable {
     RefPtr<AbortSignalImpl> signalImpl =
         mResolver->GetAbortSignalForMainThread();
 
-    // ...but release it before calling Fetch, because mResolver's callback can
-    // be called synchronously and they want the mutex, too.
+    
+    
     return fetch->Fetch(signalImpl, mResolver);
   }
 };
@@ -482,8 +483,8 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 
   MOZ_ASSERT(aGlobal);
 
-  // Double check that we have chrome privileges if the Request's content
-  // policy type has been overridden.
+  
+  
   MOZ_ASSERT_IF(aInput.IsRequest() &&
                     aInput.GetAsRequest().IsContentPolicyTypeOverridden(),
                 aCallerType == CallerType::System);
@@ -506,8 +507,8 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 
   SafeRefPtr<InternalRequest> internalRequest = request->GetInternalRequest();
 
-  // Restore information of InterceptedHttpChannel if they are passed with the
-  // Request. Since Request::Constructor would not copy these members.
+  
+  
   if (aInput.IsRequest()) {
     RefPtr<Request> inputReq = &aInput.GetAsRequest();
     SafeRefPtr<InternalRequest> inputInReq = inputReq->GetInternalRequest();
@@ -529,7 +530,7 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
   RefPtr<AbortSignalImpl> signalImpl = request->GetSignalImpl();
 
   if (signalImpl && signalImpl->Aborted()) {
-    // Already aborted signal rejects immediately.
+    
     JS::Rooted<JS::Value> reason(cx, signalImpl->RawReason());
     if (reason.get().isUndefined()) {
       aRv.Throw(NS_ERROR_DOM_ABORT_ERR);
@@ -592,7 +593,7 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
     RefPtr<FetchDriver> fetch =
         new FetchDriver(std::move(internalRequest), principal, loadGroup,
                         aGlobal->SerialEventTarget(), cookieJarSettings,
-                        nullptr,  // PerformanceStorage
+                        nullptr,  
                         isTrackingFetch);
     fetch->SetDocument(doc);
     resolver->SetLoadGroup(loadGroup);
@@ -601,9 +602,9 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
       return nullptr;
     }
   } else if (NS_IsMainThread() && internalRequest->GetKeepalive()) {
-    // keepalive is set to true, route the request through PFetch
-    // We plan to route all main-thread fetch request through PFetch.
-    // See Bug 1897129.
+    
+    
+    
 
     uint64_t bodyLength =
         internalRequest->BodyLength() > 0 ? internalRequest->BodyLength() : 0;
@@ -618,8 +619,8 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
     };
 
     if (!loadGroup) {
-      // if there is no load group for this request ensure that the request
-      // size does not exceed FETCH_KEEPALIVE_MAX_SIZE
+      
+      
       if (bodyLength > FETCH_KEEPALIVE_MAX_SIZE) {
         p->MaybeRejectWithTypeError<MSG_FETCH_FAILED>();
         return p.forget();
@@ -655,9 +656,9 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
     nsCOMPtr<Document> doc;
     nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
     nsIPrincipal* principal;
-    // we don't check if we this request is invoked from a tracking script
-    // we might add this capability in future.
-    // See Bug 1892406
+    
+    
+    
     if (window) {
       doc = window->GetExtantDoc();
       if (!doc) {
@@ -690,6 +691,8 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 
     actor->DoFetchOp(ipcArgs);
 
+    mozilla::glean::networking::fetch_keepalive_request_count.Get("main"_ns)
+        .Add(1);
     return p.forget();
   } else {
     WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
@@ -699,9 +702,9 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
       internalRequest->SetSkipServiceWorker();
     }
 
-    // PFetch gives no benefit for the fetch in the parent process.
-    // Dispatch fetch to the parent process main thread directly for that case.
-    // For child process, dispatch fetch op to the parent.
+    
+    
+    
     if (StaticPrefs::dom_workers_pFetch_enabled() && !XRE_IsParentProcess()) {
       RefPtr<FetchChild> actor =
           FetchChild::CreateForWorker(worker, p, signalImpl, observer);
@@ -760,11 +763,17 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 
       actor->DoFetchOp(ipcArgs);
 
+      if (internalRequest->GetKeepalive()) {
+        mozilla::glean::networking::fetch_keepalive_request_count
+            .Get("worker"_ns)
+            .Add(1);
+      }
+
       return p.forget();
     }
-    // Dispatch worker fetch to the main thread
-    // We do not check if keepalive flag is set for ChromeWorkers
-    // See Bug 1898664
+    
+    
+    
     RefPtr<WorkerFetchResolver> resolver =
         WorkerFetchResolver::Create(worker, p, signalImpl, observer);
     if (!resolver) {
@@ -818,10 +827,10 @@ void MainThreadFetchResolver::OnResponseAvailableInternal(
     nsCOMPtr<nsIGlobalObject> go = mPromise->GetParentObject();
     nsCOMPtr<nsPIDOMWindowInner> inner = do_QueryInterface(go);
 
-    // Notify the document when a fetch completes successfully. This is
-    // used by the password manager as a hint to observe DOM mutations.
-    // Call this prior to setting state to Complete so we can set up the
-    // observer before mutations occurs.
+    
+    
+    
+    
     Document* doc = inner ? inner->GetExtantDoc() : nullptr;
     if (doc) {
       doc->NotifyFetchOrXHRSuccess();
@@ -832,9 +841,9 @@ void MainThreadFetchResolver::OnResponseAvailableInternal(
     }
 
     mResponse = new Response(go, std::move(aResponse), mSignalImpl);
-    // response headers received from the network should be immutable
-    // all response header settings must be done before this point
-    // see Bug 1574174
+    
+    
+    
     ErrorResult result;
     mResponse->Headers_()->SetGuard(HeadersGuardEnum::Immutable, result);
     MOZ_ASSERT(!result.Failed());
@@ -885,7 +894,7 @@ MainThreadFetchResolver::~MainThreadFetchResolver() {
 
 class WorkerFetchResponseRunnable final : public MainThreadWorkerRunnable {
   RefPtr<WorkerFetchResolver> mResolver;
-  // Passed from main thread to worker thread after being initialized.
+  
   SafeRefPtr<InternalResponse> mInternalResponse;
 
  public:
@@ -906,7 +915,7 @@ class WorkerFetchResponseRunnable final : public MainThreadWorkerRunnable {
     }
 
     RefPtr<Promise> promise = mResolver->WorkerPromise(aWorkerPrivate);
-    // Once Worker had already started shutdown, workerPromise would be nullptr
+    
     if (!promise) {
       return true;
     }
@@ -923,9 +932,9 @@ class WorkerFetchResponseRunnable final : public MainThreadWorkerRunnable {
           new Response(global, mInternalResponse.clonePtr(),
                        mResolver->GetAbortSignalForTargetThread());
 
-      // response headers received from the network should be immutable,
-      // all response header settings must be done before this point
-      // see Bug 1574174
+      
+      
+      
       ErrorResult result;
       response->Headers_()->SetGuard(HeadersGuardEnum::Immutable, result);
       MOZ_ASSERT(!result.Failed());
@@ -1025,7 +1034,7 @@ class WorkerFetchResponseEndControlRunnable final
     return true;
   }
 
-  // Control runnable cancel already calls Run().
+  
 };
 
 void WorkerFetchResolver::OnResponseAvailableInternal(
@@ -1082,9 +1091,9 @@ void WorkerFetchResolver::OnResponseEnd(FetchDriverObserver::EndReason aReason,
     RefPtr<WorkerFetchResponseEndControlRunnable> cr =
         new WorkerFetchResponseEndControlRunnable(
             mPromiseProxy->GetWorkerPrivate(), this);
-    // This can fail if the worker thread is canceled or killed causing
-    // the PromiseWorkerProxy to give up its WorkerRef immediately,
-    // allowing the worker thread to become Dead.
+    
+    
+    
     if (!cr->Dispatch(mPromiseProxy->GetWorkerPrivate())) {
       NS_WARNING("Failed to dispatch WorkerFetchResponseEndControlRunnable");
     }
@@ -1106,19 +1115,19 @@ void WorkerFetchResolver::FlushConsoleReport() {
   }
 
   if (worker->IsServiceWorker()) {
-    // Flush to service worker
+    
     mReporter->FlushReportsToConsoleForServiceWorkerScope(
         worker->ServiceWorkerScope());
     return;
   }
 
   if (worker->IsSharedWorker()) {
-    // Flush to shared worker
+    
     worker->GetRemoteWorkerController()->FlushReportsOnMainThread(mReporter);
     return;
   }
 
-  // Flush to dedicated worker
+  
   mReporter->FlushConsoleReports(worker->GetLoadGroup());
 }
 
@@ -1233,8 +1242,8 @@ nsresult ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
   MOZ_ASSERT(aStream);
   MOZ_ASSERT(!*aStream);
 
-  // ReadableStreams should be handled by
-  // BodyExtractorReadableStream::GetAsStream.
+  
+  
   MOZ_ASSERT(!aBodyInit.IsReadableStream());
 
   nsAutoCString charset;
@@ -1326,7 +1335,7 @@ bool FetchBody<Derived>::BodyUsed() const {
     return true;
   }
 
-  // If this stream is disturbed, return true.
+  
   if (mReadableStreamBody) {
     return mReadableStreamBody->Disturbed();
   }
@@ -1350,17 +1359,17 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
 
   mBodyUsed = true;
 
-  // If we already have a ReadableStreamBody and it has been created by DOM, we
-  // have to lock it now because it can have been shared with other objects.
+  
+  
   if (mReadableStreamBody) {
     if (mFetchStreamReader) {
-      // Having FetchStreamReader means there's no nsIInputStream underlying it
+      
       MOZ_ASSERT(!mReadableStreamBody->MaybeGetInputStreamIfUnread());
       mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
       return;
     }
-    // We should have nsIInputStream at this point as long as it's still
-    // readable
+    
+    
     MOZ_ASSERT_IF(
         mReadableStreamBody->State() == ReadableStream::ReaderState::Readable,
         mReadableStreamBody->MaybeGetInputStreamIfUnread());
@@ -1405,15 +1414,15 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
   nsAutoCString mixedCaseMimeType;
   DerivedClass()->GetMimeType(mimeType, mixedCaseMimeType);
 
-  // Null bodies are a special-case in the fetch spec.  The Body mix-in can only
-  // be "disturbed" or "locked" if its associated "body" is non-null.
-  // Additionally, the Body min-in's "consume body" algorithm explicitly creates
-  // a fresh empty ReadableStream object in step 2.  This means that `bodyUsed`
-  // will never return true for a null body.
-  //
-  // To this end, we create a fresh (empty) body every time a request is made
-  // and consume its body here, without marking this FetchBody consumed via
-  // SetBodyUsed.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIInputStream> bodyStream;
   DerivedClass()->GetBody(getter_AddRefs(bodyStream));
   if (!bodyStream) {
@@ -1439,8 +1448,8 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
       MutableBlobStorage::eOnlyInMemory;
   const mozilla::UniquePtr<mozilla::ipc::PrincipalInfo>& principalInfo =
       DerivedClass()->GetPrincipalInfo();
-  // We support temporary file for blobs only if the principal is known and
-  // it's system or content not in private Browsing.
+  
+  
   if (principalInfo &&
       (principalInfo->type() ==
            mozilla::ipc::PrincipalInfo::TSystemPrincipalInfo ||
@@ -1475,7 +1484,7 @@ template already_AddRefed<Promise> FetchBody<EmptyBody>::ConsumeBody(
 template <class Derived>
 void FetchBody<Derived>::GetMimeType(nsACString& aMimeType,
                                      nsACString& aMixedCaseMimeType) {
-  // Extract mime type.
+  
   ErrorResult result;
   nsCString contentTypeValues;
   MOZ_ASSERT(DerivedClass()->GetInternalHeaders());
@@ -1483,10 +1492,10 @@ void FetchBody<Derived>::GetMimeType(nsACString& aMimeType,
                                             contentTypeValues, result);
   MOZ_ALWAYS_TRUE(!result.Failed());
 
-  // HTTP ABNF states Content-Type may have only one value.
-  // This is from the "parse a header value" of the fetch spec.
+  
+  
   if (!contentTypeValues.IsVoid() && contentTypeValues.Find(",") == -1) {
-    // Convert from a bytestring to a UTF8 CString.
+    
     CopyLatin1toUTF8(contentTypeValues, aMimeType);
     aMixedCaseMimeType = aMimeType;
     ToLowerCase(aMimeType);
@@ -1565,13 +1574,13 @@ already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
     return nullptr;
   }
 
-  // The spec immediately creates ReadableStream on Response/Request constructor
-  // via https://fetch.spec.whatwg.org/#concept-bodyinit-extract, but Gecko
-  // creates nsIInputStream there instead and creates ReadableStream only when
-  // .body is accessed. Thus we only follow step 4 of it here.
-  //
-  // Step 4: Otherwise, set stream to a new ReadableStream object, and set up
-  // stream with byte reading support.
+  
+  
+  
+  
+  
+  
+  
   auto algorithms =
       MakeRefPtr<NonAsyncInputToReadableStreamAlgorithms>(*inputStream);
   RefPtr<ReadableStream> body = ReadableStream::CreateByteNative(
@@ -1581,7 +1590,7 @@ already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
   }
   mReadableStreamBody = body;
 
-  // If the body has been already consumed, we lock the stream.
+  
   if (BodyUsed()) {
     LockStream(aCx, body, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
@@ -1614,7 +1623,7 @@ template already_AddRefed<ReadableStream> FetchBody<Response>::GetBody(
 template <class Derived>
 void FetchBody<Derived>::LockStream(JSContext* aCx, ReadableStream* aStream,
                                     ErrorResult& aRv) {
-  // This is native stream, creating a reader will not execute any JS code.
+  
   RefPtr<ReadableStreamDefaultReader> reader = aStream->GetReader(aRv);
   if (aRv.Failed()) {
     return;
@@ -1646,9 +1655,9 @@ void FetchBody<Derived>::MaybeTeeReadableStreamBody(
     return;
   }
 
-  // If this is a ReadableStream with an native source, this has been
-  // generated by a Fetch. In this case, Fetch will be able to recreate it
-  // again when GetBody() is called.
+  
+  
+  
   if (mReadableStreamBody->MaybeGetInputStreamIfUnread()) {
     *aBodyOut = nullptr;
     return;
@@ -1751,7 +1760,7 @@ EmptyBody::EmptyBody(nsIGlobalObject* aGlobal,
 
 EmptyBody::~EmptyBody() = default;
 
-/* static */
+
 already_AddRefed<EmptyBody> EmptyBody::Create(
     nsIGlobalObject* aGlobal, mozilla::ipc::PrincipalInfo* aPrincipalInfo,
     AbortSignalImpl* aAbortSignalImpl, const nsACString& aMimeType,
@@ -1779,4 +1788,4 @@ void EmptyBody::GetBody(nsIInputStream** aStream, int64_t* aBodyLength) {
   bodyStream.forget(aStream);
 }
 
-}  // namespace mozilla::dom
+}  
