@@ -9,11 +9,14 @@
 
 #include "mozilla/Maybe.h"
 
+#include "wasm/WasmSerialize.h"
+
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
 
-namespace js::wasm {
+namespace js {
+namespace wasm {
 
 
 
@@ -22,14 +25,19 @@ struct SectionRange {
   uint32_t start;
   uint32_t size;
 
+  WASM_CHECK_CACHEABLE_POD(start, size);
+
   uint32_t end() const { return start + size; }
   bool operator==(const SectionRange& rhs) const {
     return start == rhs.start && size == rhs.size;
   }
 };
 
+WASM_DECLARE_CACHEABLE_POD(SectionRange);
+
 using MaybeSectionRange = Maybe<SectionRange>;
 
+}  
 }  
 
 #endif 

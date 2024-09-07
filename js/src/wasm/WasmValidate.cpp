@@ -2550,8 +2550,8 @@ static bool DecodeExport(Decoder& d, CodeMetadata* codeMeta,
         return d.fail("exported function index out of bounds");
       }
 
-      codeMeta->declareFuncExported(funcIndex,  true,
-                                     true);
+      codeMeta->funcs[funcIndex].declareFuncExported( true,
+                                                      true);
       return moduleMeta->exports.emplaceBack(std::move(fieldName), funcIndex,
                                              DefinitionKind::Function);
     }
@@ -2675,8 +2675,8 @@ static bool DecodeStartSection(Decoder& d, CodeMetadata* codeMeta,
     return d.fail("start function must be nullary");
   }
 
-  codeMeta->declareFuncExported(funcIndex,  true,
-                                 false);
+  codeMeta->funcs[funcIndex].declareFuncExported( true,
+                                                  false);
   codeMeta->startFuncIndex = Some(funcIndex);
 
   return d.finishSection(*range, "start");
@@ -2819,8 +2819,8 @@ static bool DecodeElemSegment(Decoder& d, CodeMetadata* codeMeta,
 
         seg.elemIndices.infallibleAppend(elemIndex);
         if (!isAsmJS) {
-          codeMeta->declareFuncExported(elemIndex, false,
-                                        true);
+          codeMeta->funcs[elemIndex].declareFuncExported(false,
+                                                         true);
         }
       }
     } break;
@@ -3007,7 +3007,9 @@ static bool DecodeBranchHintingSection(Decoder& d, CodeMetadata* codeMeta) {
   }
 
   
-  codeMeta->parsedBranchHints = ParseBranchHintingSection(d, codeMeta);
+  if (!ParseBranchHintingSection(d, codeMeta)) {
+    codeMeta->branchHints.setFailedAndClear();
+  }
 
   d.finishCustomSection(BranchHintingSectionName, *range);
   return true;

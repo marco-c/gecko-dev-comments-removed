@@ -1127,54 +1127,70 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeMetadata, 664);
   
   MOZ_RELEASE_ASSERT(mode == MODE_SIZE || !item->isAsmJS());
+
   if constexpr (mode == MODE_ENCODE) {
     MOZ_ASSERT(!item->debugEnabled);
   }
 
   MOZ_TRY(Magic(coder, Marker::CodeMetadata));
-  
+
+  MOZ_TRY(CodePod(coder, &item->kind));
   MOZ_TRY((CodeRefPtr<mode, const CompileArgs, &CodeCompileArgs>(
       coder, &item->compileArgs)));
-  
-  MOZ_TRY(CodePodVector(coder, &item->memories));
-  
+
+  MOZ_TRY(CodePod(coder, &item->numFuncImports));
+  MOZ_TRY(CodePod(coder, &item->numGlobalImports));
+
   
   
   MOZ_TRY(
       (CodeRefPtr<mode, TypeContext, &CodeTypeContext>(coder, &item->types)));
-  
-  MOZ_TRY(CodePod(coder, &item->numFuncImports));
-  MOZ_TRY(CodePod(coder, &item->numGlobalImports));
-  MOZ_TRY((CodeVector<mode, GlobalDesc, &CodeGlobalDesc<mode>>(
-      coder, &item->globals)));
-  MOZ_TRY((CodeVector<mode, TagDesc, &CodeTagDesc<mode>>(coder, &item->tags)));
+  MOZ_TRY(CodePodVector(coder, &item->funcs));
   MOZ_TRY((
       CodeVector<mode, TableDesc, &CodeTableDesc<mode>>(coder, &item->tables)));
+  MOZ_TRY(CodePodVector(coder, &item->memories));
+  MOZ_TRY((CodeVector<mode, TagDesc, &CodeTagDesc<mode>>(coder, &item->tags)));
+  MOZ_TRY((CodeVector<mode, GlobalDesc, &CodeGlobalDesc<mode>>(
+      coder, &item->globals)));
+
+  MOZ_TRY((CodeMaybe<mode, uint32_t, &CodePod>(coder, &item->startFuncIndex)));
+
+  MOZ_TRY((
+      CodeVector<mode, RefType, &CodeRefType>(coder, &item->elemSegmentTypes)));
+
+  MOZ_TRY((CodeMaybe<mode, uint32_t, &CodePod>(coder, &item->dataCount)));
+
+  
+  
+
+  MOZ_TRY(CodePodVector(coder, &item->customSectionRanges));
+
+  MOZ_TRY((CodeMaybe<mode, SectionRange, &CodePod>(coder, &item->codeSection)));
+
+  MOZ_TRY((CodeMaybe<mode, uint32_t, &CodePod>(coder,
+                                               &item->nameCustomSectionIndex)));
+  MOZ_TRY(CodePod(coder, &item->moduleName));
+  MOZ_TRY(CodePodVector(coder, &item->funcNames));
+  
+  
+
+  
+
+  MOZ_TRY(CodePodVector(coder, &item->funcDefRanges));
+
+  MOZ_TRY(CodePod(coder, &item->funcDefsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->funcImportsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->typeDefsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->memoriesOffsetStart));
   MOZ_TRY(CodePod(coder, &item->tablesOffsetStart));
   MOZ_TRY(CodePod(coder, &item->tagsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->instanceDataLength));
-  
-  MOZ_TRY(CodePod(coder, &item->moduleName));
-  MOZ_TRY(CodePodVector(coder, &item->funcNames));
-  MOZ_TRY((CodeMaybe<mode, uint32_t, &CodePod>(coder, &item->startFuncIndex)));
-  MOZ_TRY((CodeMaybe<mode, uint32_t, &CodePod>(coder,
-                                               &item->nameCustomSectionIndex)));
-  MOZ_TRY(CodePodVector(coder, &item->funcs));
-  
-  
-  
-  
-  MOZ_TRY(CodePodVector(coder, &item->funcDefRanges));
-  MOZ_TRY(CodePod(coder, &item->parsedBranchHints));
+
   if constexpr (mode == MODE_DECODE) {
     
     item->debugEnabled = false;
     MOZ_ASSERT(!item->isAsmJS());
   }
-  
 
   return Ok();
 }
@@ -1206,6 +1222,20 @@ CoderResult CodeModuleMetadata(Coder<mode>& coder,
   MOZ_TRY(Magic(coder, Marker::CustomSections));
   MOZ_TRY((CodeVector<mode, CustomSection, &CodeCustomSection<mode>>(
       coder, &item->customSections)));
+  MOZ_TRY(CodePod(coder, &item->featureUsage));
+
+  
+  
+  if constexpr (mode == MODE_DECODE) {
+    if (item->codeMeta->nameCustomSectionIndex) {
+      item->codeMeta->namePayload =
+          item->customSections[*item->codeMeta->nameCustomSectionIndex].payload;
+    } else {
+      MOZ_RELEASE_ASSERT(!item->codeMeta->moduleName);
+      MOZ_RELEASE_ASSERT(item->codeMeta->funcNames.empty());
+    }
+  }
+
   return Ok();
 }
 
@@ -1352,17 +1382,6 @@ CoderResult CodeModule(Coder<MODE_DECODE>& coder, MutableModule* item) {
   SharedCode code;
   MOZ_TRY(Magic(coder, Marker::Code));
   MOZ_TRY(CodeSharedCode(coder, &code, *moduleMeta->codeMeta));
-
-  
-  
-  if (code->codeMeta().nameCustomSectionIndex) {
-    code->codeMeta().namePayload =
-        moduleMeta->customSections[*code->codeMeta().nameCustomSectionIndex]
-            .payload;
-  } else {
-    MOZ_RELEASE_ASSERT(!code->codeMeta().moduleName);
-    MOZ_RELEASE_ASSERT(code->codeMeta().funcNames.empty());
-  }
 
   *item = js_new<Module>(*moduleMeta, *code,
                           true);

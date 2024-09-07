@@ -194,8 +194,8 @@ bool CompileBuiltinModule(JSContext* cx,
       ReportOutOfMemory(cx);
       return false;
     }
-    codeMeta->declareFuncExported(funcIndex,  true,
-                                   true);
+    codeMeta->funcs[funcIndex].declareFuncExported( true,
+                                                    true);
   }
 
   

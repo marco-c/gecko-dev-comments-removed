@@ -4175,8 +4175,8 @@ static JSFunction* WasmFunctionCreate(JSContext* cx, HandleObject func,
   codeMeta->numFuncImports = 1;
 
   
-  codeMeta->declareFuncExported(0,  true,
-                                 true);
+  codeMeta->funcs[0].declareFuncExported( true,
+                                          true);
 
   
   
