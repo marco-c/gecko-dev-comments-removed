@@ -43,7 +43,7 @@ add_task(async function testOtherMenus() {
   const menus = [appMenu, ProtectionsPanel(), HelpMenu()];
 
   async function forceMenuItemStateUpdate() {
-    window.ReportBrokenSite.enableOrDisableMenuitems(window);
+    ReportBrokenSite.enableOrDisableMenuitems(window);
 
     
     
