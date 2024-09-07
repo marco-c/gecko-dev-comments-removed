@@ -188,8 +188,6 @@ class nsLineLayout {
 
   
 
-  nsPresContext* mPresContext;
-
   
 
 
@@ -341,9 +339,11 @@ class nsLineLayout {
  protected:
   
 
+  nsPresContext* const mPresContext;
+
   
   
-  nsFloatManager* mFloatManager;
+  nsFloatManager* const mFloatManager;
 
   const nsStyleText* mStyleText;  
   const ReflowInput& mLineContainerRI;
