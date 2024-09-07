@@ -5,13 +5,17 @@
 #ifndef MicrosoftEntraSSOUtils_h__
 #define MicrosoftEntraSSOUtils_h__
 
+#include "ErrorList.h"  
+#include "nsHttpChannel.h"
+
 namespace mozilla {
 namespace net {
 
 class nsHttpChannel;
 class MicrosoftEntraSSOUtils;  
 
-void AddMicrosoftEntraSSO(nsHttpChannel* aChannel);
+nsresult AddMicrosoftEntraSSO(nsHttpChannel* aChannel,
+                              std::function<void()>&& aResultCallback);
 
 }  
 }  
