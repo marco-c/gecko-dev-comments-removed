@@ -274,21 +274,23 @@ const assertResultsEquals = (toleranceFunc, actual, graphResources) => {
 
   for (let operandName in actual) {
     const expectedSuboutput = expectedOutputs[operandName];
+    const expectedDescriptor = expectedSuboutput.descriptor;
+    let expectedData = expectedSuboutput.data;
+
     outputData = actual[operandName];
     
     
     
-    if (typeof (expectedSuboutput.data) === 'number' &&
-        expectedSuboutput.dimensions &&
-        sizeOfShape(expectedSuboutput.dimensions) > 1) {
+    if (typeof (expectedData) === 'number' && expectedDescriptor.dimensions &&
+        sizeOfShape(expectedDescriptor.dimensions) > 1) {
       const size = Math.min(
-          kMaximumIndexToValidate, sizeOfShape(expectedSuboutput.dimensions));
-      expectedSuboutput.data = new Array(size).fill(expectedSuboutput.data);
+          kMaximumIndexToValidate, sizeOfShape(expectedDescriptor.dimensions));
+      expectedData = new Array(size).fill(expectedData);
       outputData = outputData.subarray(0, kMaximumIndexToValidate);
     }
     doAssert(
-        operatorName, outputData, expectedSuboutput.data, metricType,
-        toleranceValue, expectedSuboutput.dataType);
+        operatorName, outputData, expectedData, metricType, toleranceValue,
+        expectedDescriptor.dataType);
   }
 };
 
