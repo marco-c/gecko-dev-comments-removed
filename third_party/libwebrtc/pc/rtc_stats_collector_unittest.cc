@@ -3759,7 +3759,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   
   
   virtual void AddRef() const = 0;
-  virtual rtc::RefCountReleaseStatus Release() const = 0;
+  virtual RefCountReleaseStatus Release() const = 0;
 
   
   void OnStatsDelivered(

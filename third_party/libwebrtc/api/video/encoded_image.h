@@ -35,7 +35,7 @@ namespace webrtc {
 
 
 
-class EncodedImageBufferInterface : public rtc::RefCountInterface {
+class EncodedImageBufferInterface : public RefCountInterface {
  public:
   virtual const uint8_t* data() const = 0;
   

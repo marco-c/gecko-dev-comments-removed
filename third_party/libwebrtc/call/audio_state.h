@@ -23,7 +23,7 @@ class AudioTransport;
 
 
 
-class AudioState : public rtc::RefCountInterface {
+class AudioState : public RefCountInterface {
  public:
   struct Config {
     Config();

@@ -23,7 +23,7 @@
 namespace webrtc {
 
 
-class AudioEncoderFactory : public rtc::RefCountInterface {
+class AudioEncoderFactory : public RefCountInterface {
  public:
   
   virtual std::vector<AudioCodecSpec> GetSupportedEncoders() = 0;

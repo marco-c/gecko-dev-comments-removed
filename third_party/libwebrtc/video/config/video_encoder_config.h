@@ -91,7 +91,7 @@ class VideoEncoderConfig {
   
   
   
-  class EncoderSpecificSettings : public rtc::RefCountInterface {
+  class EncoderSpecificSettings : public RefCountInterface {
    public:
     
     
@@ -139,7 +139,7 @@ class VideoEncoderConfig {
     kScreen,
   };
 
-  class VideoStreamFactoryInterface : public rtc::RefCountInterface {
+  class VideoStreamFactoryInterface : public RefCountInterface {
    public:
     
     

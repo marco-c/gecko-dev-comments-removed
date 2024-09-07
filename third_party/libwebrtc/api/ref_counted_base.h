@@ -14,7 +14,7 @@
 
 #include "rtc_base/ref_counter.h"
 
-namespace rtc {
+namespace webrtc {
 
 class RefCountedBase {
  public:
@@ -93,6 +93,14 @@ class RefCountedNonVirtual {
   mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
 };
 
+}  
+
+
+
+namespace rtc {
+using RefCountedBase = webrtc::RefCountedBase;
+template <typename T>
+using RefCountedNonVirtual = webrtc::RefCountedNonVirtual<T>;
 }  
 
 #endif  

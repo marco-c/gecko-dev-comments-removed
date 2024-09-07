@@ -3739,7 +3739,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
     }
     
     EXPECT_EQ(adm.release()->Release(),
-              rtc::RefCountReleaseStatus::kDroppedLastRef);
+              webrtc::RefCountReleaseStatus::kDroppedLastRef);
   }
 }
 

@@ -44,8 +44,7 @@ namespace webrtc {
 
 
 
-class ConnectionContext final
-    : public rtc::RefCountedNonVirtual<ConnectionContext> {
+class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
  public:
   
   
@@ -106,7 +105,7 @@ class ConnectionContext final
   ConnectionContext(const Environment& env,
                     PeerConnectionFactoryDependencies* dependencies);
 
-  friend class rtc::RefCountedNonVirtual<ConnectionContext>;
+  friend class RefCountedNonVirtual<ConnectionContext>;
   ~ConnectionContext();
 
  private:

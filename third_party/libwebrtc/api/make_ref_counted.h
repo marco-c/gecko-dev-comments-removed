@@ -15,7 +15,7 @@
 
 #include "rtc_base/ref_counted_object.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace webrtc_make_ref_counted_internal {
 
@@ -113,6 +113,56 @@ template <
 scoped_refptr<FinalRefCountedObject<T>> make_ref_counted(Args&&... args) {
   return scoped_refptr<FinalRefCountedObject<T>>(
       new FinalRefCountedObject<T>(std::forward<Args>(args)...));
+}
+
+}  
+
+
+
+namespace rtc {
+
+
+
+
+
+template <typename T,
+          typename... Args,
+          typename std::enable_if<
+              std::is_convertible_v<T*, webrtc::RefCountInterface*> &&
+                  std::is_abstract_v<T>,
+              T>::type* = nullptr>
+scoped_refptr<T> make_ref_counted(Args&&... args) {
+  return webrtc::scoped_refptr<T>(
+      new webrtc::RefCountedObject<T>(std::forward<Args>(args)...));
+}
+
+
+
+template <typename T,
+          typename... Args,
+          typename std::enable_if<
+              !std::is_convertible_v<T*, webrtc::RefCountInterface*> &&
+                  webrtc::webrtc_make_ref_counted_internal::HasAddRefAndRelease<
+                      T>::value,
+              T>::type* = nullptr>
+scoped_refptr<T> make_ref_counted(Args&&... args) {
+  return webrtc::scoped_refptr<T>(new T(std::forward<Args>(args)...));
+}
+
+
+
+template <typename T,
+          typename... Args,
+          typename std::enable_if<
+              !std::is_convertible_v<T*, webrtc::RefCountInterface*> &&
+                  !webrtc::webrtc_make_ref_counted_internal::
+                      HasAddRefAndRelease<T>::value,
+
+              T>::type* = nullptr>
+scoped_refptr<webrtc::FinalRefCountedObject<T>> make_ref_counted(
+    Args&&... args) {
+  return webrtc::scoped_refptr<FinalRefCountedObject<T>>(
+      new webrtc::FinalRefCountedObject<T>(std::forward<Args>(args)...));
 }
 
 }  

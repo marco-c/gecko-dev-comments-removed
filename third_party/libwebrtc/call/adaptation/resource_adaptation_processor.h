@@ -84,7 +84,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   
   
   
-  class ResourceListenerDelegate : public rtc::RefCountInterface,
+  class ResourceListenerDelegate : public RefCountInterface,
                                    public ResourceListener {
    public:
     explicit ResourceListenerDelegate(ResourceAdaptationProcessor* processor);

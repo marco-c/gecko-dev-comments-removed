@@ -29,7 +29,7 @@ namespace webrtc {
 
 
 
-class AudioChannel : public rtc::RefCountInterface {
+class AudioChannel : public RefCountInterface {
  public:
   AudioChannel(Transport* transport,
                uint32_t local_ssrc,

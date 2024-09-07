@@ -25,31 +25,31 @@ bool HasOneRef(const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
   
   switch (buffer->type()) {
     case VideoFrameBuffer::Type::kI420: {
-      return static_cast<rtc::RefCountedObject<I420Buffer>*>(buffer.get())
+      return static_cast<RefCountedObject<I420Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     case VideoFrameBuffer::Type::kI444: {
-      return static_cast<rtc::RefCountedObject<I444Buffer>*>(buffer.get())
+      return static_cast<RefCountedObject<I444Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     case VideoFrameBuffer::Type::kI422: {
-      return static_cast<rtc::RefCountedObject<I422Buffer>*>(buffer.get())
+      return static_cast<RefCountedObject<I422Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     case VideoFrameBuffer::Type::kI010: {
-      return static_cast<rtc::RefCountedObject<I010Buffer>*>(buffer.get())
+      return static_cast<RefCountedObject<I010Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     case VideoFrameBuffer::Type::kI210: {
-      return static_cast<rtc::RefCountedObject<I210Buffer>*>(buffer.get())
+      return static_cast<RefCountedObject<I210Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     case VideoFrameBuffer::Type::kI410: {
-      return static_cast<rtc::RefCountedObject<I410Buffer>*>(buffer.get())
+      return static_cast<RefCountedObject<I410Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     case VideoFrameBuffer::Type::kNV12: {
-      return static_cast<rtc::RefCountedObject<NV12Buffer>*>(buffer.get())
+      return static_cast<RefCountedObject<NV12Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     default:
@@ -118,8 +118,8 @@ rtc::scoped_refptr<I420Buffer> VideoFrameBufferPool::CreateI420Buffer(
     
     
     
-    rtc::RefCountedObject<I420Buffer>* raw_buffer =
-        static_cast<rtc::RefCountedObject<I420Buffer>*>(existing_buffer.get());
+    RefCountedObject<I420Buffer>* raw_buffer =
+        static_cast<RefCountedObject<I420Buffer>*>(existing_buffer.get());
     
     
     return rtc::scoped_refptr<I420Buffer>(raw_buffer);
@@ -149,8 +149,8 @@ rtc::scoped_refptr<I444Buffer> VideoFrameBufferPool::CreateI444Buffer(
     
     
     
-    rtc::RefCountedObject<I444Buffer>* raw_buffer =
-        static_cast<rtc::RefCountedObject<I444Buffer>*>(existing_buffer.get());
+    RefCountedObject<I444Buffer>* raw_buffer =
+        static_cast<RefCountedObject<I444Buffer>*>(existing_buffer.get());
     
     
     return rtc::scoped_refptr<I444Buffer>(raw_buffer);
@@ -180,8 +180,8 @@ rtc::scoped_refptr<I422Buffer> VideoFrameBufferPool::CreateI422Buffer(
     
     
     
-    rtc::RefCountedObject<I422Buffer>* raw_buffer =
-        static_cast<rtc::RefCountedObject<I422Buffer>*>(existing_buffer.get());
+    RefCountedObject<I422Buffer>* raw_buffer =
+        static_cast<RefCountedObject<I422Buffer>*>(existing_buffer.get());
     
     
     return rtc::scoped_refptr<I422Buffer>(raw_buffer);
@@ -211,8 +211,8 @@ rtc::scoped_refptr<NV12Buffer> VideoFrameBufferPool::CreateNV12Buffer(
     
     
     
-    rtc::RefCountedObject<NV12Buffer>* raw_buffer =
-        static_cast<rtc::RefCountedObject<NV12Buffer>*>(existing_buffer.get());
+    RefCountedObject<NV12Buffer>* raw_buffer =
+        static_cast<RefCountedObject<NV12Buffer>*>(existing_buffer.get());
     
     
     return rtc::scoped_refptr<NV12Buffer>(raw_buffer);
@@ -242,8 +242,8 @@ rtc::scoped_refptr<I010Buffer> VideoFrameBufferPool::CreateI010Buffer(
     
     
     
-    rtc::RefCountedObject<I010Buffer>* raw_buffer =
-        static_cast<rtc::RefCountedObject<I010Buffer>*>(existing_buffer.get());
+    RefCountedObject<I010Buffer>* raw_buffer =
+        static_cast<RefCountedObject<I010Buffer>*>(existing_buffer.get());
     
     
     return rtc::scoped_refptr<I010Buffer>(raw_buffer);
@@ -269,8 +269,8 @@ rtc::scoped_refptr<I210Buffer> VideoFrameBufferPool::CreateI210Buffer(
     
     
     
-    rtc::RefCountedObject<I210Buffer>* raw_buffer =
-        static_cast<rtc::RefCountedObject<I210Buffer>*>(existing_buffer.get());
+    RefCountedObject<I210Buffer>* raw_buffer =
+        static_cast<RefCountedObject<I210Buffer>*>(existing_buffer.get());
     
     
     return rtc::scoped_refptr<I210Buffer>(raw_buffer);
@@ -296,8 +296,8 @@ rtc::scoped_refptr<I410Buffer> VideoFrameBufferPool::CreateI410Buffer(
     
     
     
-    rtc::RefCountedObject<I410Buffer>* raw_buffer =
-        static_cast<rtc::RefCountedObject<I410Buffer>*>(existing_buffer.get());
+    RefCountedObject<I410Buffer>* raw_buffer =
+        static_cast<RefCountedObject<I410Buffer>*>(existing_buffer.get());
     
     
     return rtc::scoped_refptr<I410Buffer>(raw_buffer);

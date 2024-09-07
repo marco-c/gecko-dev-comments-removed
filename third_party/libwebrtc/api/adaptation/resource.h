@@ -13,8 +13,8 @@
 
 #include <string>
 
+#include "api/ref_count.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -50,7 +50,7 @@ class RTC_EXPORT ResourceListener {
 
 
 
-class RTC_EXPORT Resource : public rtc::RefCountInterface {
+class RTC_EXPORT Resource : public RefCountInterface {
  public:
   Resource();
   

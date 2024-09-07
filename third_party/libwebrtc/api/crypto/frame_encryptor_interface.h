@@ -24,7 +24,7 @@ namespace webrtc {
 
 
 
-class FrameEncryptorInterface : public rtc::RefCountInterface {
+class FrameEncryptorInterface : public RefCountInterface {
  public:
   ~FrameEncryptorInterface() override {}
 

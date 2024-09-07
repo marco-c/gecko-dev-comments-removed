@@ -21,7 +21,7 @@ namespace webrtc {
 
 
 
-class AudioMixer : public rtc::RefCountInterface {
+class AudioMixer : public RefCountInterface {
  public:
   
   class Source {

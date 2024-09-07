@@ -30,7 +30,7 @@ class AsyncAudioProcessing final {
  public:
   
   
-  class Factory : public rtc::RefCountInterface {
+  class Factory : public RefCountInterface {
    public:
     Factory(const Factory&) = delete;
     Factory& operator=(const Factory&) = delete;

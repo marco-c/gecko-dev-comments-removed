@@ -56,7 +56,7 @@ class RtpReceiverInternal;
 
 
 
-class RTCStatsCollector : public rtc::RefCountInterface {
+class RTCStatsCollector : public RefCountInterface {
  public:
   static rtc::scoped_refptr<RTCStatsCollector> Create(
       PeerConnectionInternal* pc,

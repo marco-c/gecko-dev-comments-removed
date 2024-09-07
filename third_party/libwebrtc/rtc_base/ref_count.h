@@ -18,8 +18,11 @@
 namespace rtc {
 
 
-using webrtc::RefCountInterface;
-using webrtc::RefCountReleaseStatus;
+using RefCountInterface [[deprecated("Use webrtc::RefCountInterface")]] =
+    webrtc::RefCountInterface;
+using RefCountReleaseStatus
+    [[deprecated("Use webrtc::RefCountReleaseStatus")]] =
+        webrtc::RefCountReleaseStatus;
 
 }  
 

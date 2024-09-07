@@ -34,7 +34,7 @@ class RefCounter {
   
   
   
-  rtc::RefCountReleaseStatus DecRef() {
+  RefCountReleaseStatus DecRef() {
     
     
     
@@ -47,8 +47,8 @@ class RefCounter {
     int ref_count_after_subtract =
         ref_count_.fetch_sub(1, std::memory_order_acq_rel) - 1;
     return ref_count_after_subtract == 0
-               ? rtc::RefCountReleaseStatus::kDroppedLastRef
-               : rtc::RefCountReleaseStatus::kOtherRefsRemained;
+               ? RefCountReleaseStatus::kDroppedLastRef
+               : RefCountReleaseStatus::kOtherRefsRemained;
   }
 
   

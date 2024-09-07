@@ -21,7 +21,7 @@
 #include "rtc_base/ref_count.h"
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
 
