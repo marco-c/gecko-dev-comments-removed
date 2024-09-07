@@ -25,10 +25,12 @@ add_task(
       "UPGRADE_PIN_FIREFOX",
       "Screen has pin screen id"
     );
+    
+    
     equal(
       message.content.screens[0].content.primary_button.action.type,
-      "PIN_FIREFOX_TO_TASKBAR",
-      "Primary button has pin action type"
+      "MULTI_ACTION",
+      "Primary button has multi-action type"
     );
     sandbox.restore();
   }
