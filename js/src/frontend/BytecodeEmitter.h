@@ -751,9 +751,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   [[nodiscard]] bool emitComputedPropertyName(UnaryNode* computedPropName);
 
-  [[nodiscard]] bool emitObjAndKey(ParseNode* exprOrSuper, ParseNode* key,
-                                   ElemOpEmitter& eoe);
-
   
   
   
@@ -761,7 +758,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitElemOperands(PropertyByValue* elem,
                                       EmitElemOption opts);
 
-  [[nodiscard]] bool emitElemObjAndKey(PropertyByValue* elem, bool isSuper,
+  [[nodiscard]] bool emitElemObjAndKey(PropertyByValue* elem,
                                        ElemOpEmitter& eoe);
   [[nodiscard]] bool emitElemOpBase(JSOp op);
 
