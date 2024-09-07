@@ -64,6 +64,10 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
 
   already_AddRefed<BounceTrackingState> GetBounceTrackingState();
 
+  
+  
+  void DropBounceTrackingState();
+
  private:
   virtual ~BrowsingContextWebProgress();
 
