@@ -906,6 +906,14 @@ void HttpChannelChild::ProcessOnStopRequest(
           TimeDuration delay = now - start;
           glean::networking::http_content_ondatafinished_delay
               .AccumulateRawDuration(delay);
+          
+          
+          
+          
+          if (!NS_IsMainThread()) {
+            glean::networking::http_content_ondatafinished_delay_2
+                .AccumulateRawDuration(delay);
+          }
           timing->mOnDataFinishedTime = now;
           self->SendOnDataFinished(status);
         }));
