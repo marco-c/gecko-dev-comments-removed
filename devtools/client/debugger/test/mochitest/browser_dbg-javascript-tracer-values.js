@@ -14,6 +14,9 @@ add_task(async function testTracingValues() {
     "data:text/html," + encodeURIComponent(`<script>${jsCode}</script>`)
   );
 
+  
+  await toggleJsTracerMenuItem(dbg, "#jstracer-menu-item-console");
+
   await toggleJsTracerMenuItem(dbg, "#jstracer-menu-item-log-values");
 
   await toggleJsTracer(dbg.toolbox);

@@ -13,6 +13,9 @@ add_task(async function () {
   const dbg = await initDebugger("doc-scripts.html");
 
   
+  await toggleJsTracerMenuItem(dbg, "#jstracer-menu-item-console");
+
+  
   const preExistingIframeBrowsingContext = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [],
