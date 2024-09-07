@@ -695,6 +695,8 @@ class WindowGlobalTargetActor extends BaseTargetActor {
         watchpoints: true,
         
         navigation: true,
+        
+        viewportSizeOnResizeHighlighter: true,
       },
     };
 
