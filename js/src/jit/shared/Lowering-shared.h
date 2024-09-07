@@ -259,7 +259,7 @@ class LIRGeneratorShared {
 
   
   inline LInt64Allocation useInt64(MDefinition* mir, LUse::Policy policy,
-                                   bool useAtStart);
+                                   bool useAtStart = false);
   inline LInt64Allocation useInt64(MDefinition* mir, bool useAtStart = false);
   inline LInt64Allocation useInt64AtStart(MDefinition* mir);
   inline LInt64Allocation useInt64OrConstant(MDefinition* mir,

@@ -67,6 +67,18 @@ class RValueAllocation {
     TYPED_STACK = TYPED_STACK_MIN,
 
     
+    INT64_CST = 0x30,
+#if defined(JS_NUNBOX32)
+    INT64_REG_REG = 0x31,
+    INT64_REG_STACK = 0x32,
+    INT64_STACK_REG = 0x33,
+    INT64_STACK_STACK = 0x34,
+#elif defined(JS_PUNBOX64)
+    INT64_REG = 0x31,
+    INT64_STACK = 0x32,
+#endif
+
+    
     
     
     
@@ -270,6 +282,45 @@ class RValueAllocation {
     return RValueAllocation(RI_WITH_DEFAULT_CST, payloadOfIndex(riIndex),
                             payloadOfIndex(cstIndex));
   }
+
+  
+  static RValueAllocation Int64Constant(uint32_t lowIndex, uint32_t highIndex) {
+    return RValueAllocation(INT64_CST, payloadOfIndex(lowIndex),
+                            payloadOfIndex(highIndex));
+  }
+#if defined(JS_NUNBOX32)
+  static RValueAllocation Int64(Register low, Register high) {
+    return RValueAllocation(INT64_REG_REG, payloadOfRegister(low),
+                            payloadOfRegister(high));
+  }
+
+  static RValueAllocation Int64(Register low, int32_t highStackOffset) {
+    return RValueAllocation(INT64_REG_STACK, payloadOfRegister(low),
+                            payloadOfStackOffset(highStackOffset));
+  }
+
+  static RValueAllocation Int64(int32_t lowStackOffset, Register high) {
+    return RValueAllocation(INT64_STACK_REG,
+                            payloadOfStackOffset(lowStackOffset),
+                            payloadOfRegister(high));
+  }
+
+  static RValueAllocation Int64(int32_t lowStackOffset,
+                                int32_t highStackOffset) {
+    return RValueAllocation(INT64_STACK_STACK,
+                            payloadOfStackOffset(lowStackOffset),
+                            payloadOfStackOffset(highStackOffset));
+  }
+
+#elif defined(JS_PUNBOX64)
+  static RValueAllocation Int64(Register reg) {
+    return RValueAllocation(INT64_REG, payloadOfRegister(reg));
+  }
+
+  static RValueAllocation Int64(int32_t stackOffset) {
+    return RValueAllocation(INT64_STACK, payloadOfStackOffset(stackOffset));
+  }
+#endif
 
   void setNeedSideEffect() {
     MOZ_ASSERT(!needSideEffect() && mode_ != INVALID);

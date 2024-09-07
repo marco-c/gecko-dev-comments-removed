@@ -122,6 +122,21 @@ using namespace js::jit;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const RValueAllocation::Layout& RValueAllocation::layoutFromMode(Mode mode) {
   switch (mode) {
     case CONSTANT: {
@@ -200,6 +215,51 @@ const RValueAllocation::Layout& RValueAllocation::layoutFromMode(Mode mode) {
           PAYLOAD_INDEX, PAYLOAD_INDEX, "instruction with default"};
       return layout;
     }
+
+    case INT64_CST: {
+      static const RValueAllocation::Layout layout = {
+          PAYLOAD_INDEX, PAYLOAD_INDEX, "unpacked int64 constant"};
+      static_assert(2 * sizeof(int32_t) == sizeof(int64_t));
+      return layout;
+    }
+
+#if defined(JS_NUNBOX32)
+    case INT64_REG_REG: {
+      static const RValueAllocation::Layout layout = {PAYLOAD_GPR, PAYLOAD_GPR,
+                                                      "unpacked int64"};
+      return layout;
+    }
+
+    case INT64_REG_STACK: {
+      static const RValueAllocation::Layout layout = {
+          PAYLOAD_GPR, PAYLOAD_STACK_OFFSET, "unpacked int64"};
+      return layout;
+    }
+
+    case INT64_STACK_REG: {
+      static const RValueAllocation::Layout layout = {
+          PAYLOAD_STACK_OFFSET, PAYLOAD_GPR, "unpacked int64"};
+      return layout;
+    }
+
+    case INT64_STACK_STACK: {
+      static const RValueAllocation::Layout layout = {
+          PAYLOAD_STACK_OFFSET, PAYLOAD_STACK_OFFSET, "unpacked int64"};
+      return layout;
+    }
+#elif defined(JS_PUNBOX64)
+    case INT64_REG: {
+      static const RValueAllocation::Layout layout = {PAYLOAD_GPR, PAYLOAD_NONE,
+                                                      "unpacked int64"};
+      return layout;
+    }
+
+    case INT64_STACK: {
+      static const RValueAllocation::Layout layout = {
+          PAYLOAD_STACK_OFFSET, PAYLOAD_NONE, "unpacked int64"};
+      return layout;
+    }
+#endif
 
     default: {
       static const RValueAllocation::Layout regLayout = {
