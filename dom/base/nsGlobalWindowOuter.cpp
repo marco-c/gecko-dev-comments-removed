@@ -5128,7 +5128,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
       
       aError = OpenInternal(u""_ns, u""_ns, u""_ns,
                             false,             
-                            false,             
                             true,              
                             false,             
                             true,              
@@ -5576,7 +5575,6 @@ nsresult nsGlobalWindowOuter::Open(const nsAString& aUrl,
                                    BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
                       false,             
-                      false,             
                       true,              
                       false,             
                       true,              
@@ -5589,7 +5587,6 @@ nsresult nsGlobalWindowOuter::OpenJS(const nsAString& aUrl,
                                      const nsAString& aOptions,
                                      BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
-                      false,             
                       false,             
                       false,             
                       true,              
@@ -5609,7 +5606,6 @@ nsresult nsGlobalWindowOuter::OpenDialog(const nsAString& aUrl,
                                          BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
                       true,                     
-                      false,                    
                       true,                     
                       false,                    
                       true,                     
@@ -5626,7 +5622,6 @@ nsresult nsGlobalWindowOuter::OpenNoNavigate(const nsAString& aUrl,
                                              const nsAString& aOptions,
                                              BrowsingContext** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
-                      false,             
                       false,             
                       true,              
                       false,             
@@ -5652,7 +5647,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenDialogOuter(
   RefPtr<BrowsingContext> dialog;
   aError = OpenInternal(aUrl, aName, aOptions,
                         true,                
-                        false,               
                         false,               
                         false,               
                         true,                
@@ -6748,8 +6742,8 @@ class AutoUnblockScriptClosing {
 
 nsresult nsGlobalWindowOuter::OpenInternal(
     const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
-    bool aDialog, bool aContentModal, bool aCalledNoScript, bool aDoJSFixups,
-    bool aNavigate, nsIArray* argv, nsISupports* aExtraArgument,
+    bool aDialog, bool aCalledNoScript, bool aDoJSFixups, bool aNavigate,
+    nsIArray* argv, nsISupports* aExtraArgument,
     nsDocShellLoadState* aLoadState, bool aForceNoOpener, PrintKind aPrintKind,
     BrowsingContext** aReturn) {
 #ifdef DEBUG
@@ -6959,11 +6953,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       
       
       
-      Maybe<AutoNoJSAPI> nojsapi;
-      if (!aContentModal) {
-        nojsapi.emplace();
-      }
-
+      AutoNoJSAPI nojsapi;
       rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
                                  false, aDialog,
                                 aNavigate, aExtraArgument, isPopupSpamWindow,
