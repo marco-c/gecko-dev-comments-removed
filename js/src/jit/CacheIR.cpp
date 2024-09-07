@@ -10018,6 +10018,30 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachBigInt() {
+  
+  if (argc_ != 1 || !args_[0].isInt32()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  Int32OperandId int32Id = writer.guardToInt32(argId);
+
+  
+  writer.int32ToBigIntResult(int32Id);
+  writer.returnFromIC();
+
+  trackAttached("BigInt");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsIntN() {
   
   if (argc_ != 2 || !args_[0].isInt32() || !args_[1].isBigInt()) {
@@ -12048,6 +12072,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachAtomicsIsLockFree();
 
     
+    case InlinableNative::BigInt:
+      return tryAttachBigInt();
     case InlinableNative::BigIntAsIntN:
       return tryAttachBigIntAsIntN();
     case InlinableNative::BigIntAsUintN:
