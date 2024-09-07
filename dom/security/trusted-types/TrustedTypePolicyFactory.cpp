@@ -161,7 +161,7 @@ IS_TRUSTED_TYPE_IMPL(HTML);
 IS_TRUSTED_TYPE_IMPL(Script);
 IS_TRUSTED_TYPE_IMPL(ScriptURL);
 
-UniquePtr<TrustedHTML> TrustedTypePolicyFactory::EmptyHTML() {
+already_AddRefed<TrustedHTML> TrustedTypePolicyFactory::EmptyHTML() {
   
   
   
@@ -172,14 +172,14 @@ UniquePtr<TrustedHTML> TrustedTypePolicyFactory::EmptyHTML() {
   
   dom::PreserveWrapper(this);
 
-  return MakeUnique<TrustedHTML>(EmptyString());
+  return MakeRefPtr<TrustedHTML>(EmptyString()).forget();
 }
 
-UniquePtr<TrustedScript> TrustedTypePolicyFactory::EmptyScript() {
+already_AddRefed<TrustedScript> TrustedTypePolicyFactory::EmptyScript() {
   
   dom::PreserveWrapper(this);
 
-  return MakeUnique<TrustedScript>(EmptyString());
+  return MakeRefPtr<TrustedScript>(EmptyString()).forget();
 }
 
 }  
