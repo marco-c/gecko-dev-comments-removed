@@ -642,11 +642,6 @@ impl StylesheetInvalidationSet {
                 
                 self.invalidate_fully();
             },
-            PositionTry(..) => {
-                
-                
-                self.invalidate_fully();
-            },
         }
     }
 }
