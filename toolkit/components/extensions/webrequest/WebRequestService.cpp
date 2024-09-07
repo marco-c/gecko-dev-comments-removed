@@ -27,18 +27,20 @@ UniquePtr<WebRequestChannelEntry> WebRequestService::RegisterChannel(
     ChannelWrapper* aChannel) {
   UniquePtr<ChannelEntry> entry(new ChannelEntry(aChannel));
 
-  auto key = mChannelEntries.LookupForAdd(entry->mChannelId);
-  MOZ_DIAGNOSTIC_ASSERT(!key);
-  key.OrInsert([&entry]() { return entry.get(); });
+  mChannelEntries.WithEntryHandle(entry->mChannelId, [&](auto&& key) {
+    MOZ_DIAGNOSTIC_ASSERT(!key);
+    key.Insert(entry.get());
+  });
 
   return entry;
 }
 
 already_AddRefed<nsITraceableChannel> WebRequestService::GetTraceableChannel(
-    uint64_t aChannelId, nsAtom* aAddonId, ContentParent* aContentParent) {
+    uint64_t aChannelId, const WebExtensionPolicy& aAddon,
+    ContentParent* aContentParent) {
   if (auto entry = mChannelEntries.Get(aChannelId)) {
     if (entry->mChannel) {
-      return entry->mChannel->GetTraceableChannel(aAddonId, aContentParent);
+      return entry->mChannel->GetTraceableChannel(aAddon, aContentParent);
     }
   }
   return nullptr;
