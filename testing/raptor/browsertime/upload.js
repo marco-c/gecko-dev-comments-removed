@@ -42,7 +42,7 @@ async function waitForUpload(timeout, commands, context) {
 }
 
 module.exports = logTest("upload test", async function (context, commands) {
-  let uploadSiteUrl = `${context.options.browsertime.upload_url}`;
+  let uploadSiteUrl = `${context.options.browsertime.server_url}`;
   let iterations = `${context.options.browsertime.upload_iterations}`;
 
   await commands.measure.start(uploadSiteUrl);
@@ -77,14 +77,15 @@ module.exports = logTest("upload test", async function (context, commands) {
       let uploadTime = results.end - results.start;
 
       
-      let uploadBandwidth = (50 * 8) / (uploadTime / 1000.0);
+      let uploadBandwidth = (32 * 8) / (uploadTime / 1000.0);
       context.log.info(
         "upload results: " +
           results.upload_status +
           " duration: " +
           uploadTime +
-          " uploadBandwidth: " +
-          uploadBandwidth
+          "ms, uploadBandwidth: " +
+          uploadBandwidth +
+          "Mbit/s"
       );
       accumulatedResults.push(uploadBandwidth);
     });
