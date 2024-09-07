@@ -3986,8 +3986,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
                          const ReturnCallAdjustmentInfo& retCallInfo);
 #endif  
 
-  void updateCallRefMetrics(const Register funcRef, const Register scratch1,
-                            const Register scratch2);
+  void updateCallRefMetrics(size_t callRefIndex, const Register funcRef,
+                            const Register scratch1, const Register scratch2);
 
   
   
