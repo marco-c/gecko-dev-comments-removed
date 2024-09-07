@@ -656,8 +656,11 @@ static const wasm::TryNote* FindNonDelegateTryNote(
 
 
 
-static void WasmHandleRequestTierUp() {
-  JSContext* cx = TlsContext.get();  
+static void WasmHandleRequestTierUp(Instance* instance) {
+  JSContext* cx = instance->cx();
+
+  
+  MOZ_ASSERT(cx == TlsContext.get());
 
   
   
@@ -666,9 +669,16 @@ static void WasmHandleRequestTierUp() {
 
   JitActivation* activation = CallingActivation(cx);
   Frame* fp = activation->wasmExitFP();
-  Instance* instance = GetNearestEffectiveInstance(fp);
-  void* resumePC = fp->returnAddress();
 
+  
+  MOZ_ASSERT(instance == GetNearestEffectiveInstance(fp));
+
+  
+  
+  
+  
+  
+  void* resumePC = fp->returnAddress();
   const CodeRange* codeRange;
   const CodeBlock* codeBlock = LookupCodeBlock(resumePC, &codeRange);
   MOZ_RELEASE_ASSERT(codeBlock && codeRange);
@@ -1207,7 +1217,7 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
       *abiType = Args_General0;
       return FuncCast(WasmHandleDebugTrap, *abiType);
     case SymbolicAddress::HandleRequestTierUp:
-      *abiType = Args_General0;
+      *abiType = Args_General1;
       return FuncCast(WasmHandleRequestTierUp, *abiType);
     case SymbolicAddress::HandleThrow:
       *abiType = Args_General1;

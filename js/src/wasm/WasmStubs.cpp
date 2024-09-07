@@ -2880,6 +2880,9 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   
   
   
+  
+  
+  
 
   AutoCreatedBy acb(masm, "GenerateRequestTierUpStub");
   AssertExpectedSP(masm);
@@ -2906,15 +2909,41 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   masm.storePtr(scratch, Address(masm.getStackPointer(), 0));
 #endif
 
-  if (ShadowStackSpace) {
+  if (ShadowStackSpace > 0) {
     masm.subFromStackPtr(Imm32(ShadowStackSpace));
   }
   masm.assertStackAlignment(ABIStackAlignment);
 
+  
+  
+  
+  ABIArgGenerator abi;
+  ABIArg arg = abi.next(MIRType::Pointer);
+#ifndef JS_CODEGEN_X86
+  
+  MOZ_RELEASE_ASSERT(arg.kind() == ABIArg::GPR);
+  masm.movePtr(InstanceReg, arg.gpr());
+#else
+  
+  static_assert(ShadowStackSpace == 0);
+  
+  
+  MOZ_RELEASE_ASSERT(arg.kind() == ABIArg::Stack &&
+                     arg.offsetFromArgBase() == 0);
+  
+  masm.subFromStackPtr(Imm32(12));
+  masm.push(InstanceReg);
+#endif
+
   masm.call(SymbolicAddress::HandleRequestTierUp);
   
 
-  if (ShadowStackSpace) {
+#ifdef JS_CODEGEN_X86
+  
+  masm.addToStackPtr(Imm32(16));
+#endif
+
+  if (ShadowStackSpace > 0) {
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
 #ifndef JS_CODEGEN_ARM64
