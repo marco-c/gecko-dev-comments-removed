@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/dom/ImageUtils.h"
+#include "ImageUtils.h"
 
 #include "ImageContainer.h"
 #include "Intervals.h"
