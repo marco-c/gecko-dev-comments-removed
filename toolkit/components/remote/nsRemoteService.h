@@ -14,12 +14,6 @@
 #include "nsIFile.h"
 #include "nsProfileLock.h"
 
-enum RemoteResult {
-  REMOTE_NOT_FOUND = 0,
-  REMOTE_FOUND = 1,
-  REMOTE_ARG_BAD = 2
-};
-
 class nsRemoteService final : public nsIObserver {
  public:
   
@@ -32,7 +26,7 @@ class nsRemoteService final : public nsIObserver {
   void LockStartup();
   void UnlockStartup();
 
-  RemoteResult StartClient(const char* aStartupToken);
+  nsresult StartClient(const char* aStartupToken);
   void StartupServer();
   void ShutdownServer();
 
