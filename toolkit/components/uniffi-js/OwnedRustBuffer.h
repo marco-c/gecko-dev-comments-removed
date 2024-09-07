@@ -8,7 +8,6 @@
 #define mozilla_OwnedRustBuffer_h
 
 #include "mozilla/ErrorResult.h"
-#include "mozilla/ResultVariant.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/UniFFIRust.h"
 
@@ -41,9 +40,7 @@ class OwnedRustBuffer final {
   ~OwnedRustBuffer();
 
   
-  
-  
-  static Result<OwnedRustBuffer, nsCString> FromArrayBuffer(
+  static OwnedRustBuffer FromArrayBuffer(
       const mozilla::dom::ArrayBuffer& aArrayBuffer);
 
   
@@ -54,7 +51,8 @@ class OwnedRustBuffer final {
   
   
   
-  JSObject* IntoArrayBuffer(JSContext* cx);
+  void IntoArrayBuffer(JSContext* cx, JS::MutableHandle<JSObject*> aResult,
+                       ErrorResult& aError);
 
   
   bool IsValid() const { return mBuf.data != nullptr; }
