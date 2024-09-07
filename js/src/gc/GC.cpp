@@ -2029,15 +2029,21 @@ bool GCRuntime::checkEagerAllocTrigger(const HeapSize& size,
 }
 
 bool GCRuntime::shouldDecommit() const {
-  
-  
-  if (cleanUpEverything) {
-    return true;
+  switch (gcOptions()) {
+    case JS::GCOptions::Normal:
+      
+      
+      return !schedulingState.inHighFrequencyGCMode();
+    case JS::GCOptions::Shrink:
+      
+      
+      return true;
+    case JS::GCOptions::Shutdown:
+      
+      return false;
   }
 
-  
-  
-  return !schedulingState.inHighFrequencyGCMode();
+  MOZ_CRASH("Unexpected GCOptions value");
 }
 
 void GCRuntime::startDecommit() {
