@@ -1,0 +1,15 @@
+
+
+
+
+
+async function testSteps() {
+  const principal = getPrincipal("http://localhost");
+
+  const name = "test_getUsageForPrincipal.js";
+
+  info("Opening database");
+
+  let request = indexedDB.openForPrincipal(principal, name);
+  await openDBRequestSucceeded(request);
+}
