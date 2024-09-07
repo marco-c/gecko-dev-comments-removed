@@ -429,10 +429,6 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::create(
 }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-
-
-
-
 static ArrayObject* initialiseAndSetDisposeCapabilityHelper(
     JSContext* cx, JS::Handle<EnvironmentObject*> env, uint32_t slot) {
   JS::Value slotData = env->getReservedSlot(slot);
@@ -449,33 +445,19 @@ static ArrayObject* initialiseAndSetDisposeCapabilityHelper(
   return disposablesList;
 }
 
-ArrayObject* ModuleEnvironmentObject::getOrCreateDisposeCapability(
+ArrayObject* DisposableEnvironmentObject::getOrCreateDisposeCapability(
     JSContext* cx) {
-  Rooted<ModuleEnvironmentObject*> env(cx, this);
+  Rooted<DisposableEnvironmentObject*> env(cx, this);
   return initialiseAndSetDisposeCapabilityHelper(
       cx, env, DISPOSABLE_RESOURCE_STACK_SLOT);
 }
 
-JS::Value ModuleEnvironmentObject::getDisposables() {
+
+JS::Value DisposableEnvironmentObject::getDisposables() {
   return getReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT);
 }
 
-void ModuleEnvironmentObject::clearDisposables() {
-  setReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT, UndefinedValue());
-}
-
-ArrayObject* LexicalEnvironmentObject::getOrCreateDisposeCapability(
-    JSContext* cx) {
-  Rooted<LexicalEnvironmentObject*> env(cx, this);
-  return initialiseAndSetDisposeCapabilityHelper(
-      cx, env, DISPOSABLE_RESOURCE_STACK_SLOT);
-}
-
-JS::Value LexicalEnvironmentObject::getDisposables() {
-  return getReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT);
-}
-
-void LexicalEnvironmentObject::clearDisposables() {
+void DisposableEnvironmentObject::clearDisposables() {
   setReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT, UndefinedValue());
 }
 #endif
