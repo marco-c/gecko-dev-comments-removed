@@ -10,7 +10,7 @@
 namespace v8 {
 namespace internal {
 
-class ByteArray;
+class TrustedByteArray;
 
 
 
@@ -19,8 +19,8 @@ class RegExpBytecodePeepholeOptimization : public AllStatic {
  public:
   
   
-  static Handle<ByteArray> OptimizeBytecode(
-      Isolate* isolate, Zone* zone, Handle<String> source,
+  static Handle<TrustedByteArray> OptimizeBytecode(
+      Isolate* isolate, Zone* zone, DirectHandle<String> source,
       const uint8_t* bytecode, int length,
       const ZoneUnorderedMap<int, int>& jump_edges);
 };

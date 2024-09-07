@@ -452,9 +452,6 @@ class TextNode : public SeqRegExpNode {
     CASE_CHARACTER_MATCH,        
     CHARACTER_CLASS_MATCH        
   };
-  static bool SkipPass(TextEmitPassType pass, bool ignore_case);
-  static const int kFirstRealPass = SIMPLE_CHARACTER_MATCH;
-  static const int kLastPass = CHARACTER_CLASS_MATCH;
   void TextEmitPass(RegExpCompiler* compiler, TextEmitPassType pass,
                     bool preloaded, Trace* trace, bool first_element_checked,
                     int* checked_up_to);
