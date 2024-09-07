@@ -19,6 +19,8 @@ typedef __int64 int64_t;
 #  include <stdint.h>
 #endif
 
+#include "mozilla/DefineEnum.h"
+
 
 
 
@@ -76,15 +78,15 @@ CDM_API const char* GetCdmVersion();
 
 namespace cdm {
 
-enum Status : uint32_t {
-  kSuccess = 0,
+MOZ_DEFINE_ENUM_WITH_BASE_AND_TOSTRING(Status, uint32_t, (
+  kSuccess,
   kNeedMoreData,  
   kNoKey,         
   kInitializationError,    
   kDecryptError,           
   kDecodeError,            
   kDeferredInitialization  
-};
+));
 CHECK_TYPE(Status, 4, 4);
 
 
