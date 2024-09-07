@@ -401,6 +401,15 @@ nsTextFrame* nsFirstLetterFrame::CreateContinuationForFramesAfter(
     for (auto* frame : list) {
       frame->SetParent(letterContinuation);
     }
+    
+    
+    
+    if (!next->HasAnyStateBits(NS_FRAME_IS_FLUID_CONTINUATION)) {
+      next = static_cast<nsTextFrame*>(
+          presShell->FrameConstructor()->CreateContinuingFrame(
+              aFrame, letterContinuation));
+      list.InsertFrame(letterContinuation, nullptr, next);
+    }
     letterContinuation->SetInitialChildList(FrameChildListID::Principal,
                                             std::move(list));
   } else {
