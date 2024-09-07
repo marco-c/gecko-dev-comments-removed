@@ -642,6 +642,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<>("privacy.fingerprintingProtection.overrides", "");
    final Pref<Boolean> mFdlibmMathEnabled =
       new Pref<Boolean>("javascript.options.use_fdlibm_for_sin_cos_tan", false);
+   final Pref<Integer> mUserCharacteristicPingCurrentVersion =
+      new Pref<>("toolkit.telemetry.user_characteristics_ping.current_version", 0);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1706,6 +1708,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setTrustedRecursiveResolverUri(final @NonNull String uri) {
     mTrustedRecursiveResolverUri.commit(uri);
+    return this;
+  }
+
+  
+
+
+
+
+  public @NonNull int getUserCharacteristicPingCurrentVersion() {
+    return mUserCharacteristicPingCurrentVersion.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setUserCharacteristicPingCurrentVersion(final int version) {
+    mUserCharacteristicPingCurrentVersion.commit(version);
     return this;
   }
 
