@@ -53,13 +53,8 @@ void CanvasRenderThread::Start() {
   sCanvasRenderThreadEverStarted = true;
 #endif
 
-  
-  
   int32_t threadPref =
-      gfxVars::RemoteCanvasEnabled()
-          ? StaticPrefs::gfx_canvas_remote_worker_threads_AtStartup()
-          : 0;
-
+      StaticPrefs::gfx_canvas_remote_worker_threads_AtStartup();
   uint32_t threadLimit;
   if (threadPref < 0) {
     
