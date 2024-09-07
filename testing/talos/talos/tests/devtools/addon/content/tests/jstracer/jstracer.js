@@ -10,6 +10,8 @@ const {
   testSetup,
   testTeardown,
   runTest,
+  waitForDOMElement,
+  waitForDOMPredicate,
 } = require("damp-test/tests/head");
 const {
   waitForConsoleOutputChildListChange,
@@ -34,13 +36,38 @@ const TEST_URL = `data:text/html,<!DOCTYPE html><meta charset=utf8><script>
   </script>`;
 
 module.exports = async function () {
+  Services.prefs.setBoolPref(
+    "devtools.debugger.features.javascript-tracing",
+    true
+  );
   const tab = await testSetup(TEST_URL);
   const messageManager = tab.linkedBrowser.messageManager;
 
   
   const toolbox = await openToolbox("options");
 
-  const { resourceCommand, tracerCommand } = toolbox.commands;
+  await testServerPerformance(messageManager, toolbox);
+
+  await testWebConsolePerformance(messageManager, toolbox);
+
+  await testDebuggerSidebarPerformance(messageManager, toolbox);
+
+  Services.prefs.clearUserPref(
+    "devtools.debugger.javascript-tracing-log-method"
+  );
+  Services.prefs.clearUserPref("devtools.debugger.features.javascript-tracing");
+
+  await closeToolbox();
+
+  await testTeardown();
+};
+
+async function testServerPerformance(messageManager, toolbox) {
+  Services.prefs.setCharPref(
+    "devtools.debugger.javascript-tracing-log-method",
+    "console"
+  );
+  const { resourceCommand } = toolbox.commands;
 
   
   
@@ -61,7 +88,10 @@ module.exports = async function () {
   });
 
   
-  await tracerCommand.toggle();
+  await startTracing(toolbox);
+
+  
+  await toolbox.closeSplitConsole();
 
   let test = runTest("jstracer.server-performance.DAMP");
   
@@ -75,20 +105,23 @@ module.exports = async function () {
   await promise;
   test.done();
 
-  
-  await tracerCommand.toggle();
   await resourceCommand.unwatchResources(
     [resourceCommand.TYPES.JSTRACER_TRACE],
     {
       onAvailable,
     }
   );
-  await resourceCommand.clearResources([resourceCommand.TYPES.JSTRACER_TRACE]);
+
+  await stopAndClearTracerData(toolbox);
+}
+
+async function testWebConsolePerformance(messageManager, toolbox) {
+  const { hud } = await toolbox.selectTool("webconsole");
 
   
-  const { hud } = await toolbox.selectTool("webconsole");
-  await tracerCommand.toggle();
-  test = runTest("jstracer.ui-performance.DAMP");
+  await startTracing(toolbox);
+
+  const test = runTest("jstracer.webconsole-performance.DAMP");
   
   messageManager.loadFrameScript(
     "data:,(" +
@@ -105,6 +138,89 @@ module.exports = async function () {
   });
   test.done();
 
-  await closeToolbox();
-  await testTeardown();
-};
+  await stopAndClearTracerData(toolbox);
+}
+
+async function testDebuggerSidebarPerformance(messageManager, toolbox) {
+  Services.prefs.setCharPref(
+    "devtools.debugger.javascript-tracing-log-method",
+    "debugger-sidebar"
+  );
+
+  const panel = await toolbox.selectTool("jsdebugger");
+
+  
+  await startTracing(toolbox);
+
+  const test = runTest("jstracer.debugger-sidebar-performance.DAMP");
+  
+  messageManager.loadFrameScript(
+    "data:,(" +
+      encodeURIComponent(`content.document.documentElement.click()`) +
+      ")()",
+    true
+  );
+  
+  dump("Wait for tracer tree\n");
+  const traceTree = await waitForDOMElement(
+    panel.panelWin.document.body,
+    "#tracer-tab-panel .tree"
+  );
+  dump("Wait for first trace arrow element\n");
+  const firstTraceArrow = await waitForDOMElement(
+    traceTree,
+    ".arrow:not(.open)"
+  );
+  dump(" got the arrow\n");
+  firstTraceArrow.click();
+
+  
+  await waitForDOMPredicate(traceTree, function scrollDown() {
+    traceTree.scrollBy(0, 1000000);
+
+    
+    
+    
+    
+    const lastTreeNode = traceTree.lastElementChild?.previousElementSibling;
+    const traceDisplayName = lastTreeNode?.querySelector(
+      ".frame-link-function-display-name"
+    )?.textContent;
+
+    
+    if (traceDisplayName?.includes("λ c")) {
+      return true;
+    }
+    return false;
+  });
+  dump(" Found the last logged tree in the tree");
+
+  test.done();
+
+  await stopAndClearTracerData(toolbox);
+}
+
+async function startTracing(toolbox) {
+  const { tracerCommand } = toolbox.commands;
+  const onTracingActive = new Promise(resolve => {
+    tracerCommand.on("toggle", function listener() {
+      if (!tracerCommand.isTracingActive) {
+        return;
+      }
+      tracerCommand.off("toggle", listener);
+      resolve();
+    });
+  });
+  await tracerCommand.toggle();
+  
+  await onTracingActive;
+}
+
+async function stopAndClearTracerData(toolbox) {
+  const { tracerCommand, resourceCommand } = toolbox.commands;
+  
+  await tracerCommand.toggle();
+
+  
+  await resourceCommand.clearResources([resourceCommand.TYPES.JSTRACER_TRACE]);
+}
