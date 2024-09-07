@@ -465,7 +465,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "FontFaceSetLoadEvent", insecureContext: true },
   
-  { name: "FragmentDirective", insecureContext: true, nightly: true },
+  { name: "FragmentDirective", insecureContext: true },
   
   { name: "GainNode", insecureContext: true },
   
