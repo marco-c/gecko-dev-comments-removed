@@ -31,6 +31,17 @@ typedef std::numeric_limits<int16_t> limits_int16;
 
 
 
+constexpr int kMaxSampleRateHz = 384000;
+
+
+constexpr size_t kMaxSamplesPerChannel10ms = kMaxSampleRateHz / 100u;
+
+
+
+
+
+
+
 
 
 static inline float S16ToFloat(int16_t v) {

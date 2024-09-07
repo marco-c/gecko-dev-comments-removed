@@ -23,16 +23,13 @@ class PushSincResampler;
 
 
 template <typename T>
-class PushResampler {
+class PushResampler final {
  public:
   PushResampler();
-  virtual ~PushResampler();
-
-  
-  
-  int InitializeIfNeeded(int src_sample_rate_hz,
-                         int dst_sample_rate_hz,
-                         size_t num_channels);
+  PushResampler(size_t src_samples_per_channel,
+                size_t dst_samples_per_channel,
+                size_t num_channels);
+  ~PushResampler();
 
   
   
@@ -42,6 +39,12 @@ class PushResampler {
   int Resample(MonoView<const T> src, MonoView<T> dst);
 
  private:
+  
+  
+  void EnsureInitialized(size_t src_samples_per_channel,
+                         size_t dst_samples_per_channel,
+                         size_t num_channels);
+
   
   std::unique_ptr<T[]> source_;
   std::unique_ptr<T[]> destination_;

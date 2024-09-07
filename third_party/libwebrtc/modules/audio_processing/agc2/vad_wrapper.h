@@ -61,20 +61,17 @@ class VoiceActivityDetectorWrapper {
   ~VoiceActivityDetectorWrapper();
 
   
-  void Initialize(int sample_rate_hz);
-
-  
   
   
   float Analyze(AudioFrameView<const float> frame);
 
  private:
   const int vad_reset_period_frames_;
-  int frame_size_;
+  const int frame_size_;
   int time_to_vad_reset_;
-  PushResampler<float> resampler_;
   std::unique_ptr<MonoVad> vad_;
   std::vector<float> resampled_buffer_;
+  PushResampler<float> resampler_;
 };
 
 }  

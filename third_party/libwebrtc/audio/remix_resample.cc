@@ -61,14 +61,6 @@ void RemixAndResample(InterleavedView<const int16_t> src_data,
     src_data = downmixed;
   }
 
-  if (resampler->InitializeIfNeeded(sample_rate_hz, dst_frame->sample_rate_hz_,
-                                    src_data.num_channels()) == -1) {
-    RTC_FATAL() << "InitializeIfNeeded failed: sample_rate_hz = "
-                << sample_rate_hz << ", dst_frame->sample_rate_hz_ = "
-                << dst_frame->sample_rate_hz_
-                << ", num_channels = " << src_data.num_channels();
-  }
-
   
   
   

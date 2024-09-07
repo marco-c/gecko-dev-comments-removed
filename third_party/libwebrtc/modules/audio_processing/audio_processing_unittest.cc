@@ -2173,8 +2173,8 @@ TEST_P(AudioProcessingTest, Formats) {
       
       std::unique_ptr<float[]> cmp_data(new float[ref_length]);
 
-      PushResampler<float> resampler;
-      resampler.InitializeIfNeeded(out_rate, ref_rate, out_num);
+      PushResampler<float> resampler(out_samples_per_channel,
+                                     ref_samples_per_channel, out_num);
 
       
       
