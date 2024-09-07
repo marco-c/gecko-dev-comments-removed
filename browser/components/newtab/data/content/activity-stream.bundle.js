@@ -121,6 +121,7 @@ for (const type of [
   "DISCOVERY_STREAM_CONFIG_SET_VALUE",
   "DISCOVERY_STREAM_DEV_EXPIRE_CACHE",
   "DISCOVERY_STREAM_DEV_IDLE_DAILY",
+  "DISCOVERY_STREAM_DEV_SHOW_PLACEHOLDER",
   "DISCOVERY_STREAM_DEV_SYNC_RS",
   "DISCOVERY_STREAM_DEV_SYSTEM_TICK",
   "DISCOVERY_STREAM_EXPERIMENT_DATA",
@@ -673,6 +674,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.setConfigValue = this.setConfigValue.bind(this);
     this.expireCache = this.expireCache.bind(this);
     this.refreshCache = this.refreshCache.bind(this);
+    this.showPlaceholder = this.showPlaceholder.bind(this);
     this.idleDaily = this.idleDaily.bind(this);
     this.systemTick = this.systemTick.bind(this);
     this.syncRemoteSettings = this.syncRemoteSettings.bind(this);
@@ -717,6 +719,9 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
   }
   expireCache() {
     this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_EXPIRE_CACHE);
+  }
+  showPlaceholder() {
+    this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_SHOW_PLACEHOLDER);
   }
   idleDaily() {
     this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_IDLE_DAILY);
@@ -868,7 +873,10 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     }, "Trigger Idle Daily"), external_React_default().createElement("br", null), external_React_default().createElement("button", {
       className: "button",
       onClick: this.syncRemoteSettings
-    }, "Sync Remote Settings"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, prefToggles.map(pref => external_React_default().createElement(Row, {
+    }, "Sync Remote Settings"), external_React_default().createElement("br", null), external_React_default().createElement("button", {
+      className: "button",
+      onClick: this.showPlaceholder
+    }, "Show Placeholder Cards"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, prefToggles.map(pref => external_React_default().createElement(Row, {
       key: pref
     }, external_React_default().createElement("td", null, external_React_default().createElement(TogglePrefCheckbox, {
       checked: config[pref],
@@ -3157,7 +3165,15 @@ class _DSCard extends (external_React_default()).PureComponent {
       return external_React_default().createElement("div", {
         className: "ds-card placeholder",
         ref: this.setPlaceholderRef
-      });
+      }, external_React_default().createElement("div", {
+        className: "placeholder-image placeholder-fill"
+      }), external_React_default().createElement("div", {
+        className: "placeholder-label placeholder-fill"
+      }), external_React_default().createElement("div", {
+        className: "placeholder-header placeholder-fill"
+      }), external_React_default().createElement("div", {
+        className: "placeholder-description placeholder-fill"
+      }));
     }
     const {
       isRecentSave,
@@ -8869,7 +8885,6 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       )) {
         const spocsConfig = component.spocs;
         if (spocsConfig || component.feed) {
-          
           if (
             (component.feed && !feeds.data[component.feed.url]) ||
             (spocsConfig &&
@@ -8878,9 +8893,7 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
               !spocs.loaded)
           ) {
             components.push(placeholderComponent(component));
-            return renderedLayoutArray;
-          }
-          if (component.feed) {
+          } else if (component.feed) {
             components.push(handleComponentWithFeed(component));
           } else {
             components.push(handleComponent(component));

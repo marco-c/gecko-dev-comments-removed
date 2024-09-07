@@ -49,13 +49,19 @@ const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
 
 
 
-function withFullyLoadedAboutHome(taskFn) {
+async function withFullyLoadedAboutHome(taskFn) {
   const sandbox = sinon.createSandbox();
   sandbox
     .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
     .returns(
       "https://example.com/browser/browser/components/newtab/test/browser/topstories.json"
     );
+
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 1]],
+  });
 
   return BrowserTestUtils.withNewTab("about:home", async browser => {
     await SpecialPowers.spawn(browser, [], async () => {
