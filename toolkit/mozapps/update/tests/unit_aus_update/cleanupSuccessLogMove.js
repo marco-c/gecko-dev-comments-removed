@@ -37,24 +37,11 @@ async function run_test() {
     1,
     "the update manager update count" + MSG_SHOULD_EQUAL
   );
-
-  
-  
-  
-  history[0]
-    .QueryInterface(Ci.nsIWritablePropertyBag)
-    .setProperty("cleanupSuccessLogMoveTestValue", "value1");
-
   Assert.equal(
-    (await gUpdateManager.updateInstalledAtStartup())
-      .QueryInterface(Ci.nsIWritablePropertyBag)
-      .getProperty("cleanupSuccessLogMoveTestValue"),
-    history[0]
-      .QueryInterface(Ci.nsIWritablePropertyBag)
-      .getProperty("cleanupSuccessLogMoveTestValue"),
+    gUpdateManager.updateInstalledAtStartup,
+    history[0],
     "the update installed at startup should be the update from the history"
   );
-
   await waitForUpdateXMLFiles();
 
   let cancelations = Services.prefs.getIntPref(PREF_APP_UPDATE_CANCELATIONS, 0);
@@ -96,14 +83,14 @@ async function run_test() {
   Assert.ok(dir.exists(), MSG_SHOULD_EXIST);
 
   
-  await reloadUpdateManagerData();
+  reloadUpdateManagerData();
   await testPostUpdateProcessing();
 
   Assert.equal(
-    await gUpdateManager.updateInstalledAtStartup(),
+    gUpdateManager.updateInstalledAtStartup,
     null,
     "updateInstalledAtStartup should be cleared on next browser start"
   );
 
-  await doTestFinish();
+  doTestFinish();
 }

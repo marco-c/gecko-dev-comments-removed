@@ -313,9 +313,9 @@ add_task(
   }
 );
 
-add_task(async () => {
+add_task(() => {
   
   
   
-  await doTestFinish();
+  doTestFinish();
 });

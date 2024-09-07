@@ -42,11 +42,11 @@ add_task(async function test_updatePing() {
   registerCleanupFunction(async () => {
     let activeUpdateFile = getActiveUpdateFile();
     activeUpdateFile.remove(false);
-    await reloadUpdateManagerData(true);
+    reloadUpdateManagerData(true);
   });
   writeFile(XML_UPDATE, getActiveUpdateFile());
   writeSuccessUpdateStatusFile();
-  await reloadUpdateManagerData(false);
+  reloadUpdateManagerData(false);
 
   
   let archiveChecker = new TelemetryArchiveTesting.Checker();
@@ -55,9 +55,7 @@ add_task(async function test_updatePing() {
   
   
   
-  Cc["@mozilla.org/browser/clh;1"]
-    .getService(Ci.nsIBrowserHandler)
-    .getFirstWindowArgs();
+  Cc["@mozilla.org/browser/clh;1"].getService(Ci.nsIBrowserHandler).defaultArgs;
 
   
   
@@ -134,8 +132,8 @@ function getActiveUpdateFile() {
 
 
 
-async function reloadUpdateManagerData(skipFiles = false) {
-  await Cc["@mozilla.org/updates/update-manager;1"]
+function reloadUpdateManagerData(skipFiles = false) {
+  Cc["@mozilla.org/updates/update-manager;1"]
     .getService(Ci.nsIUpdateManager)
     .internal.reload(skipFiles);
 }

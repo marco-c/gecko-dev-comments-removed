@@ -123,7 +123,7 @@ add_task(async function testLangpackUpdateSuccess() {
   );
 
   
-  await reloadUpdateManagerData(true);
+  reloadUpdateManagerData(true);
 });
 
 add_task(async function testLangpackUpdateFails() {
@@ -162,7 +162,7 @@ add_task(async function testLangpackUpdateFails() {
   await notified;
 
   
-  await reloadUpdateManagerData(true);
+  reloadUpdateManagerData(true);
 });
 
 add_task(async function testLangpackStaged() {
@@ -212,7 +212,7 @@ add_task(async function testLangpackStaged() {
   await notified;
 
   
-  await reloadUpdateManagerData(true);
+  reloadUpdateManagerData(true);
 });
 
 add_task(async function testRedownload() {
@@ -286,7 +286,7 @@ add_task(async function testRedownload() {
   );
 
   
-  await reloadUpdateManagerData(true);
+  reloadUpdateManagerData(true);
 });
 
 add_task(async function finish() {

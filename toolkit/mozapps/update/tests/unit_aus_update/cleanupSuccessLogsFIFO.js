@@ -193,7 +193,7 @@ async function testCleanupSuccessLogsFIFO(
   Assert.ok(dir.exists(), MSG_SHOULD_EXIST);
 
   
-  await reloadUpdateManagerData(true);
+  reloadUpdateManagerData(true);
 }
 
 async function run_test() {
@@ -226,5 +226,5 @@ async function run_test() {
       }
     }
   }
-  await doTestFinish();
+  doTestFinish();
 }

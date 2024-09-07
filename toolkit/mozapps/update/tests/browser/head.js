@@ -102,7 +102,7 @@ add_setup(async function setupTestCommon() {
   ds.unregisterProvider(dirProvider);
 
   setUpdateTimerPrefs();
-  await reloadUpdateManagerData(true);
+  reloadUpdateManagerData(true);
   removeUpdateFiles(true);
   UpdateListener.reset();
   AppMenuNotifications.removeNotification(/.*/);
@@ -121,7 +121,7 @@ registerCleanupFunction(async () => {
   Services.env.set("MOZ_TEST_STAGING_ERROR", "");
   UpdateListener.reset();
   AppMenuNotifications.removeNotification(/.*/);
-  await reloadUpdateManagerData(true);
+  reloadUpdateManagerData(true);
   
   removeUpdateFiles(true);
   
@@ -658,7 +658,7 @@ function runDoorhangerUpdateTest(params, steps) {
       
       writeStatusFile(STATE_FAILED_CRC_ERROR);
       writeUpdatesToXMLFile(getLocalUpdatesXMLString(params.updates), true);
-      await reloadUpdateManagerData();
+      reloadUpdateManagerData();
       await testPostUpdateProcessing();
     }
 
