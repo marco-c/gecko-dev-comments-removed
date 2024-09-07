@@ -534,7 +534,7 @@ async function createAndMockRemoteSettings({
   
   
   TranslationsParent.clearCache();
-  TranslationsPanelShared.clearCache();
+  TranslationsPanelShared.clearLanguageListsCache();
 
   TranslationsParent.mockTranslationsEngine(
     remoteClients.translationModels.client,
@@ -549,7 +549,7 @@ async function createAndMockRemoteSettings({
 
       TranslationsParent.unmockTranslationsEngine();
       TranslationsParent.clearCache();
-      TranslationsPanelShared.clearCache();
+      TranslationsPanelShared.clearLanguageListsCache();
     },
     remoteClients,
   };
