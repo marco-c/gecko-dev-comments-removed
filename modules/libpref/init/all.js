@@ -3751,6 +3751,10 @@ pref("browser.translations.select.enable", false);
 pref("browser.translations.logLevel", "Error");
 
 
+
+pref("browser.translations.mostRecentTargetLanguages", "");
+
+
 pref("browser.translations.alwaysTranslateLanguages", "");
 
 

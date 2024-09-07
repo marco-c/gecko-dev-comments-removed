@@ -589,7 +589,29 @@ var FullPageTranslationsPanel = new (class {
         fromMenuList.value = "";
       }
 
-      toMenuList.value = userLangTag ?? "";
+      if (userLangTag && userLangTag !== docLangTag) {
+        
+        toMenuList.value = userLangTag;
+      } else {
+        
+        toMenuList.value =
+          await TranslationsParent.getTopPreferredSupportedToLang({
+            excludeLangTags: [
+              
+              docLangTag,
+              
+              fromMenuList.value,
+            ],
+          });
+      }
+
+      if (fromMenuList.value === toMenuList.value) {
+        
+        
+        
+        
+        toMenuList.value = "";
+      }
 
       this.onChangeLanguages();
 
@@ -809,7 +831,14 @@ var FullPageTranslationsPanel = new (class {
     }
     intro.hidden = true;
     fromMenuList.value = fromLanguage;
-    toMenuList.value = toLanguage;
+    toMenuList.value = await TranslationsParent.getTopPreferredSupportedToLang({
+      excludeLangTags: [
+        
+        fromLanguage,
+        
+        toLanguage,
+      ],
+    });
     this.onChangeLanguages();
   }
 

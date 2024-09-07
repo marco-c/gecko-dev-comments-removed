@@ -104,6 +104,7 @@ async function openAboutTranslations({
       
       ["browser.translations.enable", !disabled],
       ["browser.translations.logLevel", "All"],
+      ["browser.translations.mostRecentTargetLanguages", ""],
       ...(prefs ?? []),
     ],
   });
@@ -660,6 +661,7 @@ async function loadTestPage({
         ["browser.translations.automaticallyPopup", true],
         ["browser.translations.alwaysTranslateLanguages", ""],
         ["browser.translations.neverTranslateLanguages", ""],
+        ["browser.translations.mostRecentTargetLanguages", ""],
         
         
         
