@@ -30,128 +30,89 @@ class MacAutoreleasePool {
   NSAutoreleasePool* mPool;
 };
 
-#if defined(__x86_64__)
 
 
 
 
+static void LaunchTask(NSString* aPath, NSArray* aArguments) {
+  MacAutoreleasePool pool;
 
-
-bool IsProcessRosettaTranslated() {
-  int ret = 0;
-  size_t size = sizeof(ret);
-  if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
-    if (errno != ENOENT) {
-      fprintf(stderr, "Failed to check for translation environment\n");
-    }
-    return false;
+  NSTask* task = [[NSTask alloc] init];
+  [task setExecutableURL:[NSURL fileURLWithPath:aPath]];
+  if (aArguments) {
+    [task setArguments:aArguments];
   }
-  return (ret == 1);
+  [task launchAndReturnError:nil];
+  [task waitUntilExit];
+  [task release];
 }
 
-
-
-bool IsBinaryArmExecutable(const char* executablePath) {
-  bool isArmExecutable = false;
-
-  CFURLRef url = ::CFURLCreateFromFileSystemRepresentation(
-      kCFAllocatorDefault, (const UInt8*)executablePath, strlen(executablePath),
-      false);
-  if (!url) {
-    return false;
-  }
-
-  CFArrayRef archs = ::CFBundleCopyExecutableArchitecturesForURL(url);
-  if (!archs) {
-    CFRelease(url);
-    return false;
-  }
-
-  CFIndex archCount = ::CFArrayGetCount(archs);
-  for (CFIndex i = 0; i < archCount; i++) {
-    CFNumberRef currentArch =
-        static_cast<CFNumberRef>(::CFArrayGetValueAtIndex(archs, i));
-    int currentArchInt = 0;
-    if (!::CFNumberGetValue(currentArch, kCFNumberIntType, &currentArchInt)) {
-      continue;
-    }
-    if (currentArchInt == kCFBundleExecutableArchitectureARM64) {
-      isArmExecutable = true;
-      break;
-    }
-  }
-
-  CFRelease(url);
-  CFRelease(archs);
-
-  return isArmExecutable;
-}
-
-
-
-
-
-
-
-
-bool ShouldPreferArmLaunch(const char* archPath, const char* executablePath) {
-  
-  if (!IsProcessRosettaTranslated()) {
-    return false;
-  }
-
-  
-  NSFileManager* fileMgr = [NSFileManager defaultManager];
-  NSString* archPathString = [NSString stringWithUTF8String:archPath];
-  if (![fileMgr isExecutableFileAtPath:archPathString]) {
-    return false;
-  }
-
-  
-  return IsBinaryArmExecutable(executablePath);
-}
-#endif  
-
-void LaunchChild(int argc, const char** argv) {
+static void RegisterAppWithLaunchServices(NSString* aBundlePath) {
   MacAutoreleasePool pool;
 
   @try {
-    bool preferArmLaunch = false;
-
-#if defined(__x86_64__)
-    
-    
-    
-    
-    
-    
-    
-    preferArmLaunch = ShouldPreferArmLaunch(ARCH_PATH, argv[0]);
-#endif  
-
-    NSString* launchPath;
-    NSMutableArray* arguments;
-
-    if (preferArmLaunch) {
-      launchPath = [NSString stringWithUTF8String:ARCH_PATH];
-
-      
-      
-      arguments = [NSMutableArray arrayWithCapacity:argc + 2];
-      [arguments addObject:[NSString stringWithUTF8String:"-arm64"]];
-      [arguments addObject:[NSString stringWithUTF8String:"-x86_64"]];
-
-      
-      [arguments addObject:[NSString stringWithUTF8String:argv[0]]];
-    } else {
-      launchPath = [NSString stringWithUTF8String:argv[0]];
-      arguments = [NSMutableArray arrayWithCapacity:argc - 1];
+    OSStatus status =
+        LSRegisterURL((CFURLRef)[NSURL fileURLWithPath:aBundlePath], YES);
+    if (status != noErr) {
+      NSLog(@"We failed to register the app in the Launch Services database, "
+            @"which may lead to a failure to launch the app. Launch path: %@",
+            aBundlePath);
     }
+  } @catch (NSException* e) {
+    NSLog(@"%@: %@", e.name, e.reason);
+  }
+}
 
+static void StripQuarantineBit(NSString* aBundlePath) {
+  MacAutoreleasePool pool;
+
+  NSArray* arguments = @[ @"-dr", @"com.apple.quarantine", aBundlePath ];
+  LaunchTask(@"/usr/bin/xattr", arguments);
+}
+
+void LaunchMacApp(int argc, const char** argv) {
+  MacAutoreleasePool pool;
+
+  @try {
+    NSString* launchPath = [NSString stringWithUTF8String:argv[0]];
+    NSMutableArray* arguments = [NSMutableArray arrayWithCapacity:argc - 1];
     for (int i = 1; i < argc; i++) {
       [arguments addObject:[NSString stringWithUTF8String:argv[i]]];
     }
-    [NSTask launchedTaskWithLaunchPath:launchPath arguments:arguments];
+    if (![launchPath hasSuffix:@".app"]) {
+      
+      NSLog(@"The updater attempted to launch an app that was not a .app "
+            @"bundle. Please verify launch path: %@",
+            launchPath);
+      return;
+    }
+
+    StripQuarantineBit(launchPath);
+    RegisterAppWithLaunchServices(launchPath);
+
+    
+    
+    
+    __block dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    NSWorkspaceOpenConfiguration* config =
+        [NSWorkspaceOpenConfiguration configuration];
+    [config setArguments:arguments];
+    [config setCreatesNewApplicationInstance:YES];
+    [config setEnvironment:[[NSProcessInfo processInfo] environment]];
+
+    [[NSWorkspace sharedWorkspace]
+        openApplicationAtURL:[NSURL fileURLWithPath:launchPath]
+               configuration:config
+           completionHandler:^(NSRunningApplication* aChild, NSError* aError) {
+             if (aError) {
+               NSLog(@"launchchild_osx: Failed to run application. Error: %@",
+                     aError);
+             }
+             dispatch_semaphore_signal(semaphore);
+           }];
+
+    
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
   } @catch (NSException* e) {
     NSLog(@"%@: %@", e.name, e.reason);
   }
@@ -280,11 +241,10 @@ void CleanupElevatedMacUpdate(bool aFailureOccurred) {
                  error:nil];
   [manager removeItemAtPath:@"/Library/LaunchDaemons/org.mozilla.updater.plist"
                       error:nil];
-  const char* launchctlArgs[] = {"/bin/launchctl", "remove",
-                                 "org.mozilla.updater"};
+
   
   
-  LaunchChild(3, launchctlArgs);
+  LaunchTask(@"/bin/launchctl", @[ @"remove", @"org.mozilla.updater" ]);
 }
 
 
@@ -510,31 +470,6 @@ void SetGroupOwnershipAndPermissions(const char* aAppBundle) {
   }
 }
 
-
-
-
-static void LaunchTask(NSString* aPath, NSArray* aArguments) {
-  NSTask* task = [[NSTask alloc] init];
-  [task setExecutableURL:[NSURL fileURLWithPath:aPath]];
-  if (aArguments) {
-    [task setArguments:aArguments];
-  }
-  [task launchAndReturnError:nil];
-  [task release];
-}
-
-static void RegisterAppWithLaunchServices(NSString* aBundlePath) {
-  NSArray* arguments = @[ @"-f", aBundlePath ];
-  LaunchTask(@"/System/Library/Frameworks/CoreServices.framework/Frameworks/"
-             @"LaunchServices.framework/Support/lsregister",
-             arguments);
-}
-
-static void StripQuarantineBit(NSString* aBundlePath) {
-  NSArray* arguments = @[ @"-d", @"com.apple.quarantine", aBundlePath ];
-  LaunchTask(@"/usr/bin/xattr", arguments);
-}
-
 bool PerformInstallationFromDMG(int argc, char** argv) {
   MacAutoreleasePool pool;
   if (argc < 4) {
@@ -545,8 +480,8 @@ bool PerformInstallationFromDMG(int argc, char** argv) {
   if ([[NSFileManager defaultManager] copyItemAtPath:bundlePath
                                               toPath:destPath
                                                error:nil]) {
-    RegisterAppWithLaunchServices(destPath);
     StripQuarantineBit(destPath);
+    RegisterAppWithLaunchServices(destPath);
     return true;
   }
   return false;
