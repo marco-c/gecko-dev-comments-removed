@@ -124,13 +124,7 @@ HTMLImageElement::HTMLImageElement(
   AddStatesSilently(ElementState::BROKEN);
 }
 
-HTMLImageElement::~HTMLImageElement() {
-  nsImageLoadingContent::Destroy();
-  if (mInDocResponsiveContent) {
-    OwnerDoc()->RemoveResponsiveContent(this);
-    mInDocResponsiveContent = false;
-  }
-}
+HTMLImageElement::~HTMLImageElement() { nsImageLoadingContent::Destroy(); }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLImageElement, nsGenericHTMLElement,
                                    mResponsiveSelector)
@@ -352,16 +346,6 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
     mSrcsetTriggeringPrincipal = aMaybeScriptedPrincipal;
 
-    if (aValue) {
-      if (!mInDocResponsiveContent) {
-        OwnerDoc()->AddResponsiveContent(this);
-        mInDocResponsiveContent = true;
-      }
-    } else if (mInDocResponsiveContent && !IsInPicture()) {
-      OwnerDoc()->RemoveResponsiveContent(this);
-      mInDocResponsiveContent = false;
-    }
-
     PictureSourceSrcsetChanged(this, attrVal.String(), aNotify);
   } else if (aName == nsGkAtoms::sizes) {
     
@@ -478,13 +462,16 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   UpdateFormOwner();
 
+  const bool inPicture = IsInPicture();
+  const bool srcsetOrPicture = inPicture || HasAttr(nsGkAtoms::srcset);
+  if (srcsetOrPicture && aContext.InComposedDoc() && !mInDocResponsiveContent) {
+    aContext.OwnerDoc().AddResponsiveContent(this);
+    mInDocResponsiveContent = true;
+  }
+
   
   
-  if (IsInPicture()) {
-    if (!mInDocResponsiveContent) {
-      OwnerDoc()->AddResponsiveContent(this);
-      mInDocResponsiveContent = true;
-    }
+  if (inPicture) {
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
     UpdateSourceSyncAndQueueImageTask(false);
   }
@@ -500,14 +487,13 @@ void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
     }
   }
 
-  nsImageLoadingContent::UnbindFromTree();
-  nsGenericHTMLElement::UnbindFromTree(aContext);
-
-  if (mInDocResponsiveContent && !IsInPicture() &&
-      !HasAttr(nsGkAtoms::srcset)) {
+  if (mInDocResponsiveContent) {
     OwnerDoc()->RemoveResponsiveContent(this);
     mInDocResponsiveContent = false;
   }
+
+  nsImageLoadingContent::UnbindFromTree();
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 }
 
 void HTMLImageElement::UpdateFormOwner() {
@@ -537,11 +523,6 @@ void HTMLImageElement::UpdateFormOwner() {
 
 void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
-
-  if (mInDocResponsiveContent) {
-    aOldDoc->RemoveResponsiveContent(this);
-    OwnerDoc()->AddResponsiveContent(this);
-  }
 
   
   
@@ -880,6 +861,11 @@ void HTMLImageElement::PictureSourceSrcsetChanged(nsIContent* aSourceNode,
       principal = source->GetSrcsetTriggeringPrincipal();
     }
     mResponsiveSelector->SetCandidatesFromSourceSet(aNewValue, principal);
+  }
+
+  if (!mInDocResponsiveContent && IsInComposedDoc()) {
+    OwnerDoc()->AddResponsiveContent(this);
+    mInDocResponsiveContent = true;
   }
 
   
