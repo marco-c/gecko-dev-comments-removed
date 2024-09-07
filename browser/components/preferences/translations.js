@@ -161,9 +161,7 @@ let gTranslationsPane = {
       allDownloadSize += downloadSize;
       const hasAllFilesForLanguage =
         await TranslationsParent.hasAllFilesForLanguage(language.langTag);
-      const downloadPhase = hasAllFilesForLanguage
-        ? "downloaded"
-        : "uninstalled";
+      const downloadPhase = hasAllFilesForLanguage ? "downloaded" : "removed";
       this.downloadPhases.set(language.langTag, {
         downloadPhase,
         size: downloadSize,
@@ -173,7 +171,7 @@ let gTranslationsPane = {
     const allDownloadPhase =
       downloadCount === this.supportedLanguageTagsNames.length
         ? "downloaded"
-        : "uninstalled";
+        : "removed";
     this.downloadPhases.set("all", {
       downloadPhase: allDownloadPhase,
       size: allDownloadSize,
@@ -185,7 +183,7 @@ let gTranslationsPane = {
 
 
   buildDownloadLanguageList() {
-    const installList = document.querySelector(
+    const downloadList = document.querySelector(
       "#translations-settings-download-section .translations-settings-language-list"
     );
 
@@ -207,7 +205,7 @@ let gTranslationsPane = {
     
     
     
-    const allLangElement = installList.children[0];
+    const allLangElement = downloadList.children[0];
     let allLangButton = allLangElement.querySelector("moz-button");
 
     allLangButton.addEventListener("click", this);
@@ -230,7 +228,7 @@ let gTranslationsPane = {
       const mozButton = isDownloaded
         ? this.createIconButton(
             [
-              "translations-settings-delete-icon",
+              "translations-settings-remove-icon",
               "translations-settings-manage-downloaded-language-button",
             ],
             languageLabel.id
@@ -248,7 +246,7 @@ let gTranslationsPane = {
         languageLabel,
         languageSize,
       ]);
-      installList.appendChild(languageElement);
+      downloadList.appendChild(languageElement);
     }
 
     
@@ -256,7 +254,7 @@ let gTranslationsPane = {
       this.changeButtonState(
         allLangButton,
         "translations-settings-download-icon",
-        "translations-settings-delete-icon"
+        "translations-settings-remove-icon"
       );
     }
 
@@ -275,28 +273,28 @@ let gTranslationsPane = {
         if (
           eventNodeParent.id === "translations-settings-always-translate-popup"
         ) {
-          this.addAlwaysLanguage(event);
+          this.handleAddAlwaysTranslateLanguage(event);
         } else if (
           eventNodeParent.id === "translations-settings-never-translate-popup"
         ) {
-          this.addNeverLanguage(event);
+          this.handleAddNeverTranslateLanguage(event);
         }
         break;
       case "click":
         if (eventNodeClassList.contains("translations-settings-site-button")) {
-          this.deleteNeverTranslateSite(event);
+          this.handleRemoveNeverTranslateSite(event);
         } else if (
           eventNodeClassList.contains(
             "translations-settings-language-never-button"
           )
         ) {
-          this.deleteNeverTranslateLanguage(event);
+          this.handleRemoveNeverTranslateLanguage(event);
         } else if (
           eventNodeClassList.contains(
             "translations-settings-language-always-button"
           )
         ) {
-          this.deleteAlwaysTranslateLanguage(event);
+          this.handleRemoveAlwaysTranslateLanguage(event);
         } else if (
           eventNodeClassList.contains(
             "translations-settings-manage-downloaded-language-button"
@@ -309,20 +307,20 @@ let gTranslationsPane = {
               eventNodeParent.querySelector("label").id ===
               "translations-settings-download-all-languages"
             ) {
-              this.handleInstallAll(event);
+              this.handleDownloadAllLanguages(event);
             } else {
-              this.installLanguage(event);
+              this.handleDownloadLanguage(event);
             }
           } else if (
-            eventNodeClassList.contains("translations-settings-delete-icon")
+            eventNodeClassList.contains("translations-settings-remove-icon")
           ) {
             if (
               eventNodeParent.querySelector("label").id ===
               "translations-settings-download-all-languages"
             ) {
-              this.handleUninstallAll(event);
+              this.handleRemoveAllLanguages(event);
             } else {
-              this.unInstallLanguage(event);
+              this.handleRemoveLanguage(event);
             }
           }
         }
@@ -335,7 +333,7 @@ let gTranslationsPane = {
 
 
 
-  async addAlwaysLanguage(event) {
+  async handleAddAlwaysTranslateLanguage(event) {
     
     
     
@@ -355,7 +353,7 @@ let gTranslationsPane = {
 
 
 
-  async addNeverLanguage(event) {
+  async handleAddNeverTranslateLanguage(event) {
     
     
     
@@ -473,7 +471,7 @@ let gTranslationsPane = {
 
     const mozButton = this.createIconButton(
       [
-        "translations-settings-delete-icon",
+        "translations-settings-remove-icon",
         "translations-settings-site-button",
       ],
       languageLabel.id
@@ -642,7 +640,7 @@ let gTranslationsPane = {
 
     const mozButton = this.createIconButton(
       [
-        "translations-settings-delete-icon",
+        "translations-settings-remove-icon",
         "translations-settings-language-" + translatePrefix + "-button",
       ],
       languageLabel.id
@@ -726,7 +724,7 @@ let gTranslationsPane = {
 
 
 
-  deleteAlwaysTranslateLanguage(event) {
+  handleRemoveAlwaysTranslateLanguage(event) {
     TranslationsParent.removeLangTagFromPref(
       event.target.parentNode.querySelector("label").getAttribute("value"),
       ALWAYS_TRANSLATE_LANGS_PREF
@@ -738,7 +736,7 @@ let gTranslationsPane = {
 
 
 
-  deleteNeverTranslateLanguage(event) {
+  handleRemoveNeverTranslateLanguage(event) {
     TranslationsParent.removeLangTagFromPref(
       event.target.parentNode.querySelector("label").getAttribute("value"),
       NEVER_TRANSLATE_LANGS_PREF
@@ -750,7 +748,7 @@ let gTranslationsPane = {
 
 
 
-  deleteNeverTranslateSite(event) {
+  handleRemoveNeverTranslateSite(event) {
     TranslationsParent.setNeverTranslateSiteByOrigin(
       false,
       event.target.parentNode.querySelector("label").getAttribute("value")
@@ -772,12 +770,12 @@ let gTranslationsPane = {
 
   reloadDownloadPhases() {
     
-    const installList = document.querySelector(
+    const downloadList = document.querySelector(
       "#translations-settings-download-section .translations-settings-language-list"
     );
 
-    while (installList.firstElementChild) {
-      installList.firstElementChild.remove();
+    while (downloadList.firstElementChild) {
+      downloadList.firstElementChild.remove();
     }
     this.buildDownloadLanguageList();
   },
@@ -786,7 +784,7 @@ let gTranslationsPane = {
 
 
 
-  async installLanguage(event) {
+  async handleDownloadLanguage(event) {
     let eventButton = event.target;
     this.changeButtonState(
       eventButton,
@@ -811,7 +809,7 @@ let gTranslationsPane = {
         "translations-settings-loading-icon",
         "translations-settings-download-icon"
       );
-      this.updateDownloadPhase(langTag, "uninstalled");
+      this.updateDownloadPhase(langTag, "removed");
       console.error(error);
       return;
     }
@@ -819,16 +817,16 @@ let gTranslationsPane = {
     this.changeButtonState(
       eventButton,
       "translations-settings-loading-icon",
-      "translations-settings-delete-icon"
+      "translations-settings-remove-icon"
     );
     this.updateDownloadPhase(langTag, "downloaded");
 
     
-    const haveUninstalledItem = [...this.downloadPhases].some(
+    const haveRemovedItem = [...this.downloadPhases].some(
       ([k, v]) => v.downloadPhase != "downloaded" && k != "all"
     );
     if (
-      !haveUninstalledItem &&
+      !haveRemovedItem &&
       this.downloadPhases.get("all").downloadPhase !== "downloaded"
     ) {
       this.changeButtonState(
@@ -836,7 +834,7 @@ let gTranslationsPane = {
           "moz-button"
         ),
         "translations-settings-download-icon",
-        "translations-settings-delete-icon"
+        "translations-settings-remove-icon"
       );
       this.updateDownloadPhase("all", "downloaded");
     }
@@ -846,11 +844,11 @@ let gTranslationsPane = {
 
 
 
-  async unInstallLanguage(event) {
+  async handleRemoveLanguage(event) {
     let eventButton = event.target;
     this.changeButtonState(
       eventButton,
-      "translations-settings-delete-icon",
+      "translations-settings-remove-icon",
       "translations-settings-loading-icon"
     );
 
@@ -869,9 +867,9 @@ let gTranslationsPane = {
       this.changeButtonState(
         eventButton,
         "translations-settings-loading-icon",
-        "translations-settings-delete-icon"
+        "translations-settings-remove-icon"
       );
-      this.updateDownloadPhase(langTag, "uninstalled");
+      this.updateDownloadPhase(langTag, "removed");
       console.error(error);
       return;
     }
@@ -881,7 +879,7 @@ let gTranslationsPane = {
       "translations-settings-loading-icon",
       "translations-settings-download-icon"
     );
-    this.updateDownloadPhase(langTag, "uninstalled");
+    this.updateDownloadPhase(langTag, "removed");
 
     
     if (this.downloadPhases.get("all").downloadPhase === "downloaded") {
@@ -889,10 +887,10 @@ let gTranslationsPane = {
         event.target.parentNode.parentNode.children[0].querySelector(
           "moz-button"
         ),
-        "translations-settings-delete-icon",
+        "translations-settings-remove-icon",
         "translations-settings-download-icon"
       );
-      this.updateDownloadPhase("all", "uninstalled");
+      this.updateDownloadPhase("all", "removed");
     }
   },
 
@@ -900,7 +898,7 @@ let gTranslationsPane = {
 
 
 
-  async handleInstallAll(event) {
+  async handleDownloadAllLanguages(event) {
     
     this.disableDownloadButtons();
     let eventButton = event.target;
@@ -921,7 +919,7 @@ let gTranslationsPane = {
       this.changeButtonState(
         eventButton,
         "translations-settings-loading-icon",
-        "translations-settings-delete-icon"
+        "translations-settings-remove-icon"
       );
       this.updateAllLanguageDownloadButtons("downloaded");
     } catch (error) {
@@ -934,12 +932,12 @@ let gTranslationsPane = {
 
 
 
-  async handleUninstallAll(event) {
+  async handleRemoveAllLanguages(event) {
     let eventButton = event.target;
     this.disableDownloadButtons();
     this.changeButtonState(
       eventButton,
-      "translations-settings-delete-icon",
+      "translations-settings-remove-icon",
       "translations-settings-loading-icon"
     );
     this.updateDownloadPhase("all", "loading");
@@ -954,8 +952,8 @@ let gTranslationsPane = {
         "translations-settings-loading-icon",
         "translations-settings-download-icon"
       );
-      this.updateDownloadPhase("all", "uninstalled");
-      this.updateAllLanguageDownloadButtons("uninstalled");
+      this.updateDownloadPhase("all", "removed");
+      this.updateAllLanguageDownloadButtons("removed");
     } catch (error) {
       await this.reloadDownloadPhases();
       console.error(error);
@@ -969,11 +967,11 @@ let gTranslationsPane = {
 
 
   disableDownloadButtons() {
-    const installList = document.querySelector(
+    const downloadList = document.querySelector(
       "#translations-settings-download-section .translations-settings-language-list"
     );
     
-    for (const langElem of installList.querySelectorAll(
+    for (const langElem of downloadList.querySelectorAll(
       ".translations-settings-language:not(:first-child)"
     )) {
       const langButton = langElem.querySelector("moz-button");
@@ -990,12 +988,12 @@ let gTranslationsPane = {
 
 
   updateAllLanguageDownloadButtons(allLanguageDownloadStatus) {
-    const installList = document.querySelector(
+    const downloadList = document.querySelector(
       "#translations-settings-download-section .translations-settings-language-list"
     );
 
     
-    for (const langElem of installList.querySelectorAll(
+    for (const langElem of downloadList.querySelectorAll(
       ".translations-settings-language:not(:first-child)"
     )) {
       let langButton = langElem.querySelector("moz-button");
@@ -1015,22 +1013,19 @@ let gTranslationsPane = {
           downloadPhase === "loading"
             ? "translations-settings-loading-icon"
             : "translations-settings-download-icon",
-          "translations-settings-delete-icon"
+          "translations-settings-remove-icon"
         );
         this.updateDownloadPhase(langLabel.getAttribute("value"), "downloaded");
       } else if (
         downloadPhase === "downloaded" &&
-        allLanguageDownloadStatus === "uninstalled"
+        allLanguageDownloadStatus === "removed"
       ) {
         this.changeButtonState(
           langButton,
-          "translations-settings-delete-icon",
+          "translations-settings-remove-icon",
           "translations-settings-download-icon"
         );
-        this.updateDownloadPhase(
-          langLabel.getAttribute("value"),
-          "uninstalled"
-        );
+        this.updateDownloadPhase(langLabel.getAttribute("value"), "removed");
       }
     }
   },
