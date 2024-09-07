@@ -1332,6 +1332,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1897724",
+    platform: "all",
+    domain: "app.homewyse.com",
+    bug: "1897724",
+    config: {
+      matches: ["*://app.homewyse.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
