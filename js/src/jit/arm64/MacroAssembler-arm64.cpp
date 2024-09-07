@@ -212,7 +212,7 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   Label returnBaseline;
   Label returnIon;
   Label bailout;
-  Label wasm;
+  Label wasmInterpEntry;
   Label wasmCatch;
 
   
@@ -232,8 +232,9 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
                     Imm32(ExceptionResumeKind::ForcedReturnIon), &returnIon);
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Bailout),
                     &bailout);
-  asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Wasm),
-                    &wasm);
+  asMasm().branch32(Assembler::Equal, r0,
+                    Imm32(ExceptionResumeKind::WasmInterpEntry),
+                    &wasmInterpEntry);
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::WasmCatch),
                     &wasmCatch);
 
@@ -370,15 +371,14 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
 
   
   
-  
-  bind(&wasm);
+  bind(&wasmInterpEntry);
   Ldr(x29, MemOperand(PseudoStackPointer64,
                       ResumeFromException::offsetOfFramePointer()));
   Ldr(PseudoStackPointer64,
       MemOperand(PseudoStackPointer64,
                  ResumeFromException::offsetOfStackPointer()));
   syncStackPtr();
-  Mov(x23, int64_t(wasm::FailInstanceReg));
+  Mov(x23, int64_t(wasm::InterpFailInstanceReg));
   ret();
 
   

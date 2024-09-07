@@ -532,7 +532,7 @@ void MacroAssemblerX86::handleFailureWithHandlerTail(
   Label returnBaseline;
   Label returnIon;
   Label bailout;
-  Label wasm;
+  Label wasmInterpEntry;
   Label wasmCatch;
 
   loadPtr(Address(esp, ResumeFromException::offsetOfKind()), eax);
@@ -549,8 +549,9 @@ void MacroAssemblerX86::handleFailureWithHandlerTail(
                     Imm32(ExceptionResumeKind::ForcedReturnIon), &returnIon);
   asMasm().branch32(Assembler::Equal, eax, Imm32(ExceptionResumeKind::Bailout),
                     &bailout);
-  asMasm().branch32(Assembler::Equal, eax, Imm32(ExceptionResumeKind::Wasm),
-                    &wasm);
+  asMasm().branch32(Assembler::Equal, eax,
+                    Imm32(ExceptionResumeKind::WasmInterpEntry),
+                    &wasmInterpEntry);
   asMasm().branch32(Assembler::Equal, eax,
                     Imm32(ExceptionResumeKind::WasmCatch), &wasmCatch);
 
@@ -638,11 +639,10 @@ void MacroAssemblerX86::handleFailureWithHandlerTail(
 
   
   
-  
-  bind(&wasm);
+  bind(&wasmInterpEntry);
   loadPtr(Address(esp, ResumeFromException::offsetOfFramePointer()), ebp);
   loadPtr(Address(esp, ResumeFromException::offsetOfStackPointer()), esp);
-  movePtr(ImmPtr((const void*)wasm::FailInstanceReg), InstanceReg);
+  movePtr(ImmPtr((const void*)wasm::InterpFailInstanceReg), InstanceReg);
   masm.ret();
 
   

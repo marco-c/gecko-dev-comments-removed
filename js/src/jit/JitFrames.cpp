@@ -667,7 +667,7 @@ again:
 static JitFrameLayout* GetLastProfilingFrame(ResumeFromException* rfe) {
   switch (rfe->kind) {
     case ExceptionResumeKind::EntryFrame:
-    case ExceptionResumeKind::Wasm:
+    case ExceptionResumeKind::WasmInterpEntry:
     case ExceptionResumeKind::WasmCatch:
       return nullptr;
 
@@ -854,10 +854,10 @@ void HandleException(ResumeFromException* rfe) {
     
     
     
-    rfe->kind = ExceptionResumeKind::Wasm;
+    rfe->kind = ExceptionResumeKind::WasmInterpEntry;
     rfe->framePointer = (uint8_t*)iter.asWasm().unwoundCallerFP();
     rfe->stackPointer = (uint8_t*)iter.asWasm().unwoundAddressOfReturnAddress();
-    rfe->instance = (wasm::Instance*)wasm::FailInstanceReg;
+    rfe->instance = nullptr;
     rfe->target = nullptr;
   }
 }

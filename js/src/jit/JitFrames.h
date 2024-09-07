@@ -114,8 +114,7 @@ enum class ExceptionResumeKind : int32_t {
   Bailout,
 
   
-  
-  Wasm,
+  WasmInterpEntry,
 
   
   

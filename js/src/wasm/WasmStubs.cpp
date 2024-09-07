@@ -763,7 +763,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   
   Label success, join;
-  masm.branchPtr(Assembler::NotEqual, InstanceReg, Imm32(FailInstanceReg),
+  masm.branchPtr(Assembler::NotEqual, InstanceReg, Imm32(InterpFailInstanceReg),
                  &success);
   masm.move32(Imm32(false), scratch);
   masm.jump(&join);
@@ -1199,19 +1199,13 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   masm.assertStackAlignment(WasmStackAlignment);
 
   
-  
-  
-  Label exception;
-  masm.branchPtr(Assembler::Equal, InstanceReg, Imm32(FailInstanceReg),
-                 &exception);
-
-  
   masm.freeStackTo(frameSize - frameSizeExclFP);
 
   GenPrintf(DebugChannel::Function, masm, "wasm-function[%d]; returns ",
             fe.funcIndex());
 
   
+  Label exception;
   const ValTypeVector& results = funcType.results();
   if (results.length() == 0) {
     GenPrintf(DebugChannel::Function, masm, "void");
@@ -1278,7 +1272,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   MOZ_ASSERT(masm.framePushed() == 0);
 
   
-  if (funcType.args().length()) {
+  bool hasFallThroughForException = false;
+  if (oolCall.used()) {
     masm.bind(&oolCall);
     masm.setFramePushed(frameSize);
 
@@ -1323,13 +1318,16 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     
     masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg,
                       &rejoinBeforeCall);
+    hasFallThroughForException = true;
   }
 
   
   masm.bind(&exception);
   masm.setFramePushed(frameSize);
-  masm.freeStackTo(frameSize);
-  GenerateJitEntryThrow(masm, frameSize);
+  if (exception.used() || hasFallThroughForException) {
+    masm.freeStackTo(frameSize);
+    GenerateJitEntryThrow(masm, frameSize);
+  }
 
   return FinishOffsets(masm, offsets);
 }
@@ -1506,9 +1504,6 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 #endif
   masm.freeStackTo(fakeFramePushed);
   masm.assertStackAlignment(WasmStackAlignment);
-
-  masm.branchPtr(Assembler::Equal, InstanceReg, Imm32(wasm::FailInstanceReg),
-                 masm.exceptionLabel());
 
   
   GenPrintf(DebugChannel::Function, masm, "wasm-function[%d]; returns ",
