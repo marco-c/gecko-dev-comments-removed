@@ -6285,11 +6285,10 @@ var gCSSProperties = {
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(2px)",
       "calc(50%)",
       "calc(3*25px)",
@@ -6731,11 +6730,10 @@ var gCSSProperties = {
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(2px)",
       "calc(-2px)",
       "calc(0px)",
@@ -6760,17 +6758,13 @@ var gCSSProperties = {
       "30px",
       "50%",
       "0",
-      
-      
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(2px)",
       "calc(-2px)",
       "calc(0px)",
@@ -6797,11 +6791,10 @@ var gCSSProperties = {
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -6824,17 +6817,13 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      
-      
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -8821,16 +8810,12 @@ var gCSSProperties = {
       "15px",
       "3em",
       "15%",
-      
-      
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
       
       
       
@@ -10454,14 +10439,13 @@ var gCSSProperties = {
       "15px",
       "3em",
       "15%",
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(2px)",
       "calc(50%)",
       "calc(3*25px)",
@@ -10805,16 +10789,12 @@ var gCSSProperties = {
       "15px",
       "3em",
       "15%",
-      
-      
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
       
       
       
@@ -10958,14 +10938,13 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(2px)",
       "calc(50%)",
       "calc(3*25px)",
@@ -10988,17 +10967,13 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      
-      
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(2px)",
       "calc(50%)",
       "calc(3*25px)",
@@ -11021,14 +10996,13 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -11052,17 +11026,13 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      
-      
-      
       "max-content",
       "min-content",
       "fit-content",
-      "-moz-fit-content",
-      "-moz-available",
-      
       "-moz-max-content",
       "-moz-min-content",
+      "-moz-fit-content",
+      "-moz-available",
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
