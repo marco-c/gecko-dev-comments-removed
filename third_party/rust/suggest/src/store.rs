@@ -4,7 +4,7 @@
 
 
 use std::{
-    collections::BTreeSet,
+    collections::{hash_map::Entry, BTreeSet, HashMap, HashSet},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -18,14 +18,16 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     config::{SuggestGlobalConfig, SuggestProviderConfig},
-    db::{ConnectionType, Sqlite3Extension, SuggestDao, SuggestDb},
+    db::{ConnectionType, IngestedRecord, Sqlite3Extension, SuggestDao, SuggestDb},
     error::Error,
+    metrics::{DownloadTimer, SuggestIngestionMetrics, SuggestQueryMetrics},
     provider::SuggestionProvider,
     rs::{
-        Client, Record, RecordRequest, RemoteSettingsClient, SuggestAttachment, SuggestRecord,
+        Client, Collection, Record, RemoteSettingsClient, SuggestAttachment, SuggestRecord,
         SuggestRecordId, SuggestRecordType, DEFAULT_RECORDS_TYPES,
     },
-    Result, SuggestApiResult, Suggestion, SuggestionQuery,
+    suggestion::AmpSuggestionType,
+    QueryWithMetricsResult, Result, SuggestApiResult, Suggestion, SuggestionQuery,
 };
 
 
@@ -177,6 +179,15 @@ impl SuggestStore {
     
     #[handle_error(Error)]
     pub fn query(&self, query: SuggestionQuery) -> SuggestApiResult<Vec<Suggestion>> {
+        Ok(self.inner.query(query)?.suggestions)
+    }
+
+    
+    #[handle_error(Error)]
+    pub fn query_with_metrics(
+        &self,
+        query: SuggestionQuery,
+    ) -> SuggestApiResult<QueryWithMetricsResult> {
         self.inner.query(query)
     }
 
@@ -207,7 +218,10 @@ impl SuggestStore {
 
     
     #[handle_error(Error)]
-    pub fn ingest(&self, constraints: SuggestIngestionConstraints) -> SuggestApiResult<()> {
+    pub fn ingest(
+        &self,
+        constraints: SuggestIngestionConstraints,
+    ) -> SuggestApiResult<SuggestIngestionMetrics> {
         self.inner.ingest(constraints)
     }
 
@@ -231,17 +245,15 @@ impl SuggestStore {
     ) -> SuggestApiResult<Option<SuggestProviderConfig>> {
         self.inner.fetch_provider_config(provider)
     }
+
+    pub fn force_reingest(&self) {
+        self.inner.force_reingest()
+    }
 }
 
 
 #[derive(Clone, Default, Debug)]
 pub struct SuggestIngestionConstraints {
-    
-    
-    
-    
-    
-    pub max_suggestions: Option<u64>,
     pub providers: Option<Vec<SuggestionProvider>>,
     
     pub empty_only: bool,
@@ -302,11 +314,45 @@ impl<S> SuggestStoreInner<S> {
             .get_or_try_init(|| SuggestStoreDbs::open(&self.data_path, &self.extensions_to_load))
     }
 
-    fn query(&self, query: SuggestionQuery) -> Result<Vec<Suggestion>> {
-        if query.keyword.is_empty() || query.providers.is_empty() {
-            return Ok(Vec::new());
+    fn query(&self, query: SuggestionQuery) -> Result<QueryWithMetricsResult> {
+        let mut metrics = SuggestQueryMetrics::default();
+        let mut suggestions = vec![];
+
+        let unique_providers = query.providers.iter().collect::<HashSet<_>>();
+        let reader = &self.dbs()?.reader;
+        for provider in unique_providers {
+            let new_suggestions = metrics.measure_query(provider.to_string(), || {
+                reader.read(|dao| match provider {
+                    SuggestionProvider::Amp => {
+                        dao.fetch_amp_suggestions(&query, AmpSuggestionType::Desktop)
+                    }
+                    SuggestionProvider::AmpMobile => {
+                        dao.fetch_amp_suggestions(&query, AmpSuggestionType::Mobile)
+                    }
+                    SuggestionProvider::Wikipedia => dao.fetch_wikipedia_suggestions(&query),
+                    SuggestionProvider::Amo => dao.fetch_amo_suggestions(&query),
+                    SuggestionProvider::Pocket => dao.fetch_pocket_suggestions(&query),
+                    SuggestionProvider::Yelp => dao.fetch_yelp_suggestions(&query),
+                    SuggestionProvider::Mdn => dao.fetch_mdn_suggestions(&query),
+                    SuggestionProvider::Weather => dao.fetch_weather_suggestions(&query),
+                    SuggestionProvider::Fakespot => dao.fetch_fakespot_suggestions(&query),
+                })
+            })?;
+            suggestions.extend(new_suggestions);
         }
-        self.dbs()?.reader.read(|dao| dao.fetch_suggestions(&query))
+
+        
+        
+        
+        
+        suggestions.sort();
+        if let Some(limit) = query.limit.and_then(|limit| usize::try_from(limit).ok()) {
+            suggestions.truncate(limit);
+        }
+        Ok(QueryWithMetricsResult {
+            suggestions,
+            query_times: metrics.times,
+        })
     }
 
     fn dismiss_suggestion(&self, suggestion_url: String) -> Result<()> {
@@ -354,141 +400,210 @@ impl<S> SuggestStoreInner<S> {
             .reader
             .read(|dao| dao.get_provider_config(provider))
     }
+
+    
+    pub fn force_reingest(&self) {
+        let writer = &self.dbs().unwrap().writer;
+        writer.write(|dao| dao.force_reingest()).unwrap();
+    }
 }
 
 impl<S> SuggestStoreInner<S>
 where
     S: Client,
 {
-    pub fn ingest(&self, constraints: SuggestIngestionConstraints) -> Result<()> {
+    pub fn ingest(
+        &self,
+        constraints: SuggestIngestionConstraints,
+    ) -> Result<SuggestIngestionMetrics> {
         breadcrumb!("Ingestion starting");
         let writer = &self.dbs()?.writer;
+        let mut metrics = SuggestIngestionMetrics::default();
         if constraints.empty_only && !writer.read(|dao| dao.suggestions_table_empty())? {
-            return Ok(());
+            return Ok(metrics);
         }
 
         
         let ingest_record_types = if let Some(rt) = &constraints.providers {
             rt.iter()
-                .flat_map(|x| x.records_for_provider())
+                .map(|x| x.record_type())
+                
+                .chain([SuggestRecordType::Icon, SuggestRecordType::GlobalConfig])
                 .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect()
         } else {
-            DEFAULT_RECORDS_TYPES.to_vec()
+            DEFAULT_RECORDS_TYPES.into_iter().collect()
         };
 
         
+        let mut record_types_by_collection = HashMap::<Collection, Vec<SuggestRecordType>>::new();
+        for record_type in ingest_record_types {
+            record_types_by_collection
+                .entry(record_type.collection())
+                .or_default()
+                .push(record_type);
+        }
+
+        
         let mut write_scope = writer.write_scope()?;
-        for ingest_record_type in ingest_record_types {
-            breadcrumb!("Ingesting {ingest_record_type}");
-            write_scope
-                .write(|dao| self.ingest_records_by_type(ingest_record_type, dao, &constraints))?;
-            write_scope.err_if_interrupted()?;
+
+        
+        let ingested_records = write_scope.read(|dao| dao.get_ingested_records())?;
+
+        
+        for (collection, record_types) in record_types_by_collection {
+            breadcrumb!("Ingesting collection {}", collection.name());
+            let records =
+                write_scope.write(|dao| self.settings_client.get_records(collection, dao))?;
+
+            
+            
+            for record_type in record_types {
+                breadcrumb!("Ingesting {record_type}");
+                metrics.measure_ingest(record_type.to_string(), |download_timer| {
+                    let changes = RecordChanges::new(
+                        records.iter().filter(|r| r.record_type() == record_type),
+                        ingested_records.iter().filter(|i| {
+                            i.record_type == record_type.as_str()
+                                && i.collection == collection.name()
+                        }),
+                    );
+                    write_scope
+                        .write(|dao| self.ingest_records(dao, collection, changes, download_timer))
+                })?;
+                write_scope.err_if_interrupted()?;
+            }
         }
         breadcrumb!("Ingestion complete");
 
-        Ok(())
+        Ok(metrics)
     }
 
-    fn ingest_records_by_type(
+    fn ingest_records(
         &self,
-        ingest_record_type: SuggestRecordType,
         dao: &mut SuggestDao,
-        constraints: &SuggestIngestionConstraints,
+        collection: Collection,
+        changes: RecordChanges<'_>,
+        download_timer: &mut DownloadTimer,
     ) -> Result<()> {
-        let last_ingest_key = ingest_record_type.last_ingest_meta_key();
-        let request = RecordRequest {
-            record_type: ingest_record_type.to_string(),
-            last_modified: dao.get_meta::<u64>(&last_ingest_key)?,
-            limit: constraints.max_suggestions,
-        };
-
-        let records = self.settings_client.get_records(request)?;
-        for record in &records {
-            
-            
-            
-            
-            dao.delete_record_data(record)?;
+        for record in &changes.new {
+            log::trace!("Ingesting: {}", record.id.as_str());
+            self.ingest_record(dao, record, download_timer)?;
         }
-        self.ingest_records(dao, &records)?;
-        if let Some(max_last_modified) = records.iter().map(|r| r.last_modified).max() {
-            dao.put_last_ingest_if_newer(&last_ingest_key, max_last_modified)?;
+        for record in &changes.updated {
+            
+            
+            
+            
+            log::trace!("Reingesting: {}", record.id.as_str());
+            dao.delete_record_data(&record.id)?;
+            self.ingest_record(dao, record, download_timer)?;
         }
+        for record in &changes.deleted {
+            log::trace!("Deleting: {:?}", record.id);
+            dao.delete_record_data(&record.id)?;
+        }
+        dao.update_ingested_records(
+            collection.name(),
+            &changes.new,
+            &changes.updated,
+            &changes.deleted,
+        )?;
         Ok(())
     }
 
-    fn ingest_records(&self, dao: &mut SuggestDao, records: &[Record]) -> Result<()> {
-        for record in records {
-            if record.deleted {
-                continue;
-            }
-
-            let record_id = SuggestRecordId::from(&record.id);
-            let Ok(fields) =
-                serde_json::from_value(serde_json::Value::Object(record.fields.clone()))
-            else {
-                
-                
-                continue;
-            };
-
-            match fields {
-                SuggestRecord::AmpWikipedia => {
-                    self.ingest_attachment(dao, record, |dao, record_id, suggestions| {
+    fn ingest_record(
+        &self,
+        dao: &mut SuggestDao,
+        record: &Record,
+        download_timer: &mut DownloadTimer,
+    ) -> Result<()> {
+        match &record.payload {
+            SuggestRecord::AmpWikipedia => {
+                self.ingest_attachment(
+                    dao,
+                    record,
+                    download_timer,
+                    |dao, record_id, suggestions| {
                         dao.insert_amp_wikipedia_suggestions(record_id, suggestions)
-                    })?;
-                }
-                SuggestRecord::AmpMobile => {
-                    self.ingest_attachment(dao, record, |dao, record_id, suggestions| {
+                    },
+                )?;
+            }
+            SuggestRecord::AmpMobile => {
+                self.ingest_attachment(
+                    dao,
+                    record,
+                    download_timer,
+                    |dao, record_id, suggestions| {
                         dao.insert_amp_mobile_suggestions(record_id, suggestions)
-                    })?;
-                }
-                SuggestRecord::Icon => {
-                    let (Some(icon_id), Some(attachment)) =
-                        (record_id.as_icon_id(), record.attachment.as_ref())
-                    else {
-                        
-                        
-                        
-                        continue;
-                    };
-                    let data = record.require_attachment_data()?;
-                    dao.put_icon(icon_id, data, &attachment.mimetype)?;
-                }
-                SuggestRecord::Amo => {
-                    self.ingest_attachment(dao, record, |dao, record_id, suggestions| {
+                    },
+                )?;
+            }
+            SuggestRecord::Icon => {
+                let (Some(icon_id), Some(attachment)) =
+                    (record.id.as_icon_id(), record.attachment.as_ref())
+                else {
+                    
+                    
+                    
+                    return Ok(());
+                };
+                let data = self.settings_client.download_attachment(record)?;
+                dao.put_icon(icon_id, &data, &attachment.mimetype)?;
+            }
+            SuggestRecord::Amo => {
+                self.ingest_attachment(
+                    dao,
+                    record,
+                    download_timer,
+                    |dao, record_id, suggestions| {
                         dao.insert_amo_suggestions(record_id, suggestions)
-                    })?;
-                }
-                SuggestRecord::Pocket => {
-                    self.ingest_attachment(dao, record, |dao, record_id, suggestions| {
+                    },
+                )?;
+            }
+            SuggestRecord::Pocket => {
+                self.ingest_attachment(
+                    dao,
+                    record,
+                    download_timer,
+                    |dao, record_id, suggestions| {
                         dao.insert_pocket_suggestions(record_id, suggestions)
-                    })?;
-                }
-                SuggestRecord::Yelp => {
-                    self.ingest_attachment(dao, record, |dao, record_id, suggestions| {
-                        match suggestions.first() {
-                            Some(suggestion) => dao.insert_yelp_suggestions(record_id, suggestion),
-                            None => Ok(()),
-                        }
-                    })?;
-                }
-                SuggestRecord::Mdn => {
-                    self.ingest_attachment(dao, record, |dao, record_id, suggestions| {
+                    },
+                )?;
+            }
+            SuggestRecord::Yelp => {
+                self.ingest_attachment(
+                    dao,
+                    record,
+                    download_timer,
+                    |dao, record_id, suggestions| match suggestions.first() {
+                        Some(suggestion) => dao.insert_yelp_suggestions(record_id, suggestion),
+                        None => Ok(()),
+                    },
+                )?;
+            }
+            SuggestRecord::Mdn => {
+                self.ingest_attachment(
+                    dao,
+                    record,
+                    download_timer,
+                    |dao, record_id, suggestions| {
                         dao.insert_mdn_suggestions(record_id, suggestions)
-                    })?;
-                }
-                SuggestRecord::Weather(data) => dao.insert_weather_data(&record_id, &data)?,
-                SuggestRecord::GlobalConfig(config) => {
-                    dao.put_global_config(&SuggestGlobalConfig::from(&config))?
-                }
-                SuggestRecord::Fakespot => {
-                    self.ingest_attachment(dao, record, |dao, record_id, suggestions| {
+                    },
+                )?;
+            }
+            SuggestRecord::Weather(data) => dao.insert_weather_data(&record.id, data)?,
+            SuggestRecord::GlobalConfig(config) => {
+                dao.put_global_config(&SuggestGlobalConfig::from(config))?
+            }
+            SuggestRecord::Fakespot => {
+                self.ingest_attachment(
+                    dao,
+                    record,
+                    download_timer,
+                    |dao, record_id, suggestions| {
                         dao.insert_fakespot_suggestions(record_id, suggestions)
-                    })?;
-                }
+                    },
+                )?;
             }
         }
         Ok(())
@@ -498,6 +613,7 @@ where
         &self,
         dao: &mut SuggestDao,
         record: &Record,
+        download_timer: &mut DownloadTimer,
         ingestion_handler: impl FnOnce(&mut SuggestDao<'_>, &SuggestRecordId, &[T]) -> Result<()>,
     ) -> Result<()>
     where
@@ -507,17 +623,52 @@ where
             return Ok(());
         };
 
-        let attachment_data = record.require_attachment_data()?;
-        match serde_json::from_slice::<SuggestAttachment<T>>(attachment_data) {
-            Ok(attachment) => ingestion_handler(
-                dao,
-                &SuggestRecordId::from(&record.id),
-                attachment.suggestions(),
-            ),
+        let attachment_data =
+            download_timer.measure_download(|| self.settings_client.download_attachment(record))?;
+        match serde_json::from_slice::<SuggestAttachment<T>>(&attachment_data) {
+            Ok(attachment) => ingestion_handler(dao, &record.id, attachment.suggestions()),
             
             
             
             Err(_) => Ok(()),
+        }
+    }
+}
+
+
+struct RecordChanges<'a> {
+    new: Vec<&'a Record>,
+    updated: Vec<&'a Record>,
+    deleted: Vec<&'a IngestedRecord>,
+}
+
+impl<'a> RecordChanges<'a> {
+    fn new(
+        current: impl Iterator<Item = &'a Record>,
+        previously_ingested: impl Iterator<Item = &'a IngestedRecord>,
+    ) -> Self {
+        let mut ingested_map: HashMap<&str, &IngestedRecord> =
+            previously_ingested.map(|i| (i.id.as_str(), i)).collect();
+        
+        
+        let mut new = vec![];
+        let mut updated = vec![];
+        for r in current {
+            match ingested_map.entry(r.id.as_str()) {
+                Entry::Vacant(_) => new.push(r),
+                Entry::Occupied(e) => {
+                    if e.remove().last_modified != r.last_modified {
+                        updated.push(r);
+                    }
+                }
+            }
+        }
+        
+        let deleted = ingested_map.into_values().collect();
+        Self {
+            new,
+            deleted,
+            updated,
         }
     }
 }
@@ -535,28 +686,30 @@ where
         self.dbs().unwrap();
     }
 
-    pub fn force_reingest(&self, ingest_record_type: SuggestRecordType) {
-        
-        
-        self.benchmark_ingest_records_by_type(ingest_record_type);
+    pub fn ingest_records_by_type(&self, ingest_record_type: SuggestRecordType) {
         let writer = &self.dbs().unwrap().writer;
-        writer
-            .write(|dao| dao.clear_meta(ingest_record_type.last_ingest_meta_key().as_str()))
+        let mut timer = DownloadTimer::default();
+        let ingested_records = writer.read(|dao| dao.get_ingested_records()).unwrap();
+        let records = writer
+            .write(|dao| {
+                self.settings_client
+                    .get_records(ingest_record_type.collection(), dao)
+            })
             .unwrap();
-    }
 
-    pub fn benchmark_ingest_records_by_type(&self, ingest_record_type: SuggestRecordType) {
-        let writer = &self.dbs().unwrap().writer;
+        let changes = RecordChanges::new(
+            records
+                .iter()
+                .filter(|r| r.record_type() == ingest_record_type),
+            ingested_records
+                .iter()
+                .filter(|i| i.record_type == ingest_record_type.as_str()),
+        );
         writer
             .write(|dao| {
-                dao.clear_meta(ingest_record_type.last_ingest_meta_key().as_str())?;
-                self.ingest_records_by_type(
-                    ingest_record_type,
-                    dao,
-                    &SuggestIngestionConstraints::all_providers(),
-                )
+                self.ingest_records(dao, ingest_record_type.collection(), changes, &mut timer)
             })
-            .unwrap()
+            .unwrap();
     }
 
     pub fn table_row_counts(&self) -> Vec<(String, u32)> {
@@ -642,20 +795,12 @@ mod tests {
             }
         }
 
-        fn replace_client(&mut self, client: MockRemoteSettingsClient) {
-            self.inner.settings_client = client;
-        }
-
-        fn last_modified_timestamp(&self) -> u64 {
-            self.inner.settings_client.last_modified_timestamp
+        fn client_mut(&mut self) -> &mut MockRemoteSettingsClient {
+            &mut self.inner.settings_client
         }
 
         fn read<T>(&self, op: impl FnOnce(&SuggestDao) -> Result<T>) -> Result<T> {
             self.inner.dbs().unwrap().reader.read(op)
-        }
-
-        fn write<T>(&self, op: impl FnOnce(&mut SuggestDao) -> Result<T>) -> Result<T> {
-            self.inner.dbs().unwrap().writer.write(op)
         }
 
         fn count_rows(&self, table_name: &str) -> u64 {
@@ -669,12 +814,7 @@ mod tests {
         }
 
         fn fetch_suggestions(&self, query: SuggestionQuery) -> Vec<Suggestion> {
-            self.inner
-                .dbs()
-                .unwrap()
-                .reader
-                .read(|dao| Ok(dao.fetch_suggestions(&query).unwrap()))
-                .unwrap()
+            self.inner.query(query).unwrap().suggestions
         }
 
         pub fn fetch_global_config(&self) -> SuggestGlobalConfig {
@@ -696,7 +836,9 @@ mod tests {
     fn before_each() {
         static ONCE: Once = Once::new();
         ONCE.call_once(|| {
-            env_logger::init();
+            env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("trace"))
+                .is_test(true)
+                .init();
         });
     }
 
@@ -749,11 +891,11 @@ mod tests {
         assert!(!store.read(|dao| dao.suggestions_table_empty())?);
 
         
-        store.replace_client(MockRemoteSettingsClient::default().with_record(
+        store.client_mut().update_record(
             "data",
             "1234",
             json!([los_pollos_amp(), good_place_eats_amp()]),
-        ));
+        );
         store.ingest(SuggestIngestionConstraints {
             empty_only: true,
             ..SuggestIngestionConstraints::all_providers()
@@ -901,7 +1043,7 @@ mod tests {
         store.ingest(SuggestIngestionConstraints::all_providers());
         
         
-        store.replace_client(MockRemoteSettingsClient::default().with_record(
+        store.client_mut().update_record(
             "data",
             "1234",
             json!([
@@ -914,7 +1056,7 @@ mod tests {
                     "url": "https://penne.biz",
                 }))
             ]),
-        ));
+        );
         store.ingest(SuggestIngestionConstraints::all_providers());
 
         assert!(matches!(
@@ -952,26 +1094,26 @@ mod tests {
         
         
         
-        store.replace_client(
-            MockRemoteSettingsClient::default()
-                .with_record(
-                    "data",
-                    "1234",
-                    json!([
-                        los_pollos_amp().merge(json!({"icon": "1000"})),
-                        good_place_eats_amp()
-                    ]),
-                )
-                .with_icon(MockIcon {
-                    id: "1000",
-                    data: "new-los-pollos-icon",
-                    ..los_pollos_icon()
-                })
-                .with_icon(MockIcon {
-                    data: "new-good-place-eats-icon",
-                    ..good_place_eats_icon()
-                }),
-        );
+        store
+            .client_mut()
+            .update_record(
+                "data",
+                "1234",
+                json!([
+                    los_pollos_amp().merge(json!({"icon": "1000"})),
+                    good_place_eats_amp()
+                ]),
+            )
+            .delete_icon(los_pollos_icon())
+            .add_icon(MockIcon {
+                id: "1000",
+                data: "new-los-pollos-icon",
+                ..los_pollos_icon()
+            })
+            .update_icon(MockIcon {
+                data: "new-good-place-eats-icon",
+                ..good_place_eats_icon()
+            });
         store.ingest(SuggestIngestionConstraints::all_providers());
 
         assert!(matches!(
@@ -1019,18 +1161,17 @@ mod tests {
 
         
         
-        store.replace_client(
-            MockRemoteSettingsClient::default()
-                .with_record("amo-suggestions", "data-1", json!([relay_amo()]))
-                .with_record(
-                    "amo-suggestions",
-                    "data-2",
-                    json!([
-                        dark_mode_amo().merge(json!({"title": "Updated second suggestion"})),
-                        new_tab_override_amo(),
-                    ]),
-                ),
-        );
+        store
+            .client_mut()
+            .update_record("amo-suggestions", "data-1", json!([relay_amo()]))
+            .update_record(
+                "amo-suggestions",
+                "data-2",
+                json!([
+                    dark_mode_amo().merge(json!({"title": "Updated second suggestion"})),
+                    new_tab_override_amo(),
+                ]),
+            );
         store.ingest(SuggestIngestionConstraints::all_providers());
 
         assert_eq!(
@@ -1054,9 +1195,8 @@ mod tests {
     }
 
     
-    
     #[test]
-    fn ingest_tombstones() -> anyhow::Result<()> {
+    fn ingest_with_deletions() -> anyhow::Result<()> {
         before_each();
 
         let mut store = TestStore::new(
@@ -1077,14 +1217,10 @@ mod tests {
         );
         
         
-        
-        store.replace_client(
-            MockRemoteSettingsClient::default()
-                .with_tombstone("data", "data-1")
-                .with_record("data", "data-2", json!([good_place_eats_amp()]))
-                .with_icon_tombstone(los_pollos_icon())
-                .with_icon_tombstone(good_place_eats_icon()),
-        );
+        store
+            .client_mut()
+            .delete_record("quicksuggest", "data-1")
+            .delete_icon(good_place_eats_icon());
         store.ingest(SuggestIngestionConstraints::all_providers());
 
         assert_eq!(store.fetch_suggestions(SuggestionQuery::amp("lo")), vec![]);
@@ -1150,7 +1286,6 @@ mod tests {
                     json!([burnout_pocket(), multimatch_pocket(),]),
                 )
                 .with_record("yelp-suggestions", "data-4", json!([ramen_yelp(),]))
-                .with_record("yeld-suggestions", "data-4", json!([ramen_yelp(),]))
                 .with_record("mdn-suggestions", "data-5", json!([array_mdn(),]))
                 .with_icon(good_place_eats_icon())
                 .with_icon(california_icon())
@@ -1676,10 +1811,6 @@ mod tests {
 
         store.read(|dao| {
             assert_eq!(
-                dao.get_meta::<u64>(SuggestRecordType::Icon.last_ingest_meta_key().as_str())?,
-                Some(store.last_modified_timestamp())
-            );
-            assert_eq!(
                 dao.conn
                     .query_one::<i64>("SELECT count(*) FROM suggestions")?,
                 0
@@ -1700,24 +1831,11 @@ mod tests {
         let store = TestStore::new(
             MockRemoteSettingsClient::default()
                 .with_record("data", "data-1", json!([los_pollos_amp()]))
-                .with_record("yelp", "yelp-1", json!([ramen_yelp()]))
+                .with_record("yelp-suggestions", "yelp-1", json!([ramen_yelp()]))
                 .with_icon(los_pollos_icon()),
         );
 
-        
-        store.write(|dao| {
-            
-            dao.put_meta(
-                SuggestRecordType::AmpWikipedia
-                    .last_ingest_meta_key()
-                    .as_str(),
-                1,
-            )?;
-            Ok(())
-        })?;
-
         let constraints = SuggestIngestionConstraints {
-            max_suggestions: Some(100),
             providers: Some(vec![SuggestionProvider::Amp, SuggestionProvider::Pocket]),
             ..SuggestIngestionConstraints::all_providers()
         };
@@ -1733,57 +1851,6 @@ mod tests {
             store.fetch_suggestions(SuggestionQuery::yelp("best ramen")),
             vec![]
         );
-
-        store.read(|dao| {
-            
-            
-            assert_eq!(
-                dao.get_meta::<u64>(
-                    SuggestRecordType::AmpWikipedia
-                        .last_ingest_meta_key()
-                        .as_str()
-                )?,
-                Some(store.last_modified_timestamp())
-            );
-            
-            assert_eq!(
-                dao.get_meta::<u64>(SuggestRecordType::Icon.last_ingest_meta_key().as_str())?,
-                Some(store.last_modified_timestamp())
-            );
-            
-            
-            assert_eq!(
-                dao.get_meta::<u64>(SuggestRecordType::Pocket.last_ingest_meta_key().as_str())?,
-                None
-            );
-            
-            
-            assert_eq!(
-                dao.get_meta::<u64>(SuggestRecordType::Yelp.last_ingest_meta_key().as_str())?,
-                None
-            );
-            assert_eq!(
-                dao.get_meta::<u64>(SuggestRecordType::Amo.last_ingest_meta_key().as_str())?,
-                None
-            );
-            assert_eq!(
-                dao.get_meta::<u64>(SuggestRecordType::Mdn.last_ingest_meta_key().as_str())?,
-                None
-            );
-            assert_eq!(
-                dao.get_meta::<u64>(SuggestRecordType::AmpMobile.last_ingest_meta_key().as_str())?,
-                None
-            );
-            assert_eq!(
-                dao.get_meta::<u64>(
-                    SuggestRecordType::GlobalConfig
-                        .last_ingest_meta_key()
-                        .as_str()
-                )?,
-                None
-            );
-            Ok(())
-        })?;
 
         Ok(())
     }
@@ -2141,15 +2208,20 @@ mod tests {
         store.ingest(SuggestIngestionConstraints::all_providers());
         assert_eq!(
             store.fetch_suggestions(SuggestionQuery::fakespot("globe")),
-            vec![snowglobe_suggestion()],
+            vec![snowglobe_suggestion().with_fakespot_product_type_bonus(0.5)],
         );
         assert_eq!(
             store.fetch_suggestions(SuggestionQuery::fakespot("simpsons")),
             vec![simpsons_suggestion()],
         );
+        
+        
         assert_eq!(
             store.fetch_suggestions(SuggestionQuery::fakespot("snow")),
-            vec![simpsons_suggestion(), snowglobe_suggestion()],
+            vec![
+                snowglobe_suggestion().with_fakespot_product_type_bonus(0.5),
+                simpsons_suggestion(),
+            ],
         );
         
         assert_eq!(
@@ -2162,6 +2234,35 @@ mod tests {
             vec![simpsons_suggestion()],
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn fakespot_keywords() -> anyhow::Result<()> {
+        before_each();
+
+        let store = TestStore::new(
+            MockRemoteSettingsClient::default()
+                .with_record(
+                    "fakespot-suggestions",
+                    "fakespot-1",
+                    json!([
+                        // Snow normally returns the snowglobe first.  Test using the keyword field
+                        // to force the simpsons result first.
+                        snowglobe_fakespot(),
+                        simpsons_fakespot().merge(json!({"keywords": "snow"})),
+                    ]),
+                )
+                .with_icon(fakespot_amazon_icon()),
+        );
+        store.ingest(SuggestIngestionConstraints::all_providers());
+        assert_eq!(
+            store.fetch_suggestions(SuggestionQuery::fakespot("snow")),
+            vec![
+                simpsons_suggestion().with_fakespot_keyword_bonus(),
+                snowglobe_suggestion().with_fakespot_product_type_bonus(0.5),
+            ],
+        );
         Ok(())
     }
 
@@ -2213,15 +2314,12 @@ mod tests {
         
         
         
-        store.replace_client(
-            MockRemoteSettingsClient::default()
-                .with_record(
-                    "fakespot-suggestions",
-                    "fakespot-1",
-                    json!([snowglobe_fakespot()
-                        .merge(json!({"title": "Make Your Own Sea Glass Snow Globes"}))]),
-                )
-                .with_icon(fakespot_amazon_icon()),
+        store.client_mut().update_record(
+            "fakespot-suggestions",
+            "fakespot-1",
+            json!([
+                snowglobe_fakespot().merge(json!({"title": "Make Your Own Sea Glass Snow Globes"}))
+            ]),
         );
         store.ingest(SuggestIngestionConstraints::all_providers());
 
@@ -2242,6 +2340,74 @@ mod tests {
             vec![],
         );
 
+        Ok(())
+    }
+
+    
+    
+    #[test]
+    fn same_record_id_different_collections() -> anyhow::Result<()> {
+        before_each();
+
+        let mut store = TestStore::new(
+            MockRemoteSettingsClient::default()
+                
+                .with_record(
+                    "fakespot-suggestions",
+                    "fakespot-1",
+                    json!([snowglobe_fakespot()]),
+                )
+                
+                
+                .with_record("data", "fakespot-1", json![los_pollos_amp()])
+                .with_icon(los_pollos_icon())
+                .with_icon(fakespot_amazon_icon()),
+        );
+        store.ingest(SuggestIngestionConstraints::all_providers());
+        assert_eq!(
+            store.fetch_suggestions(SuggestionQuery::fakespot("globe")),
+            vec![snowglobe_suggestion().with_fakespot_product_type_bonus(0.5)],
+        );
+        assert_eq!(
+            store.fetch_suggestions(SuggestionQuery::amp("lo")),
+            vec![los_pollos_suggestion("los")],
+        );
+        
+        store
+            .client_mut()
+            .delete_record("quicksuggest", "fakespot-1")
+            .delete_icon(los_pollos_icon());
+        store.ingest(SuggestIngestionConstraints::all_providers());
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+
+        let record_keys = store
+            .read(|dao| dao.get_ingested_records())
+            .unwrap()
+            .into_iter()
+            .map(|r| format!("{}:{}", r.collection, r.id.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            record_keys
+                .iter()
+                .map(String::as_str)
+                .collect::<HashSet<_>>(),
+            HashSet::from([
+                "quicksuggest:icon-fakespot-amazon",
+                "fakespot-suggest-products:fakespot-1"
+            ]),
+        );
         Ok(())
     }
 }
