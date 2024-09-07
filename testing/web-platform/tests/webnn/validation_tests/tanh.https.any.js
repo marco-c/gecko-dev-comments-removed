@@ -6,5 +6,4 @@
 
 validateInputFromAnotherBuilder('tanh');
 
-validateUnaryOperation(
-    'tanh', floatingPointTypes,  true);
+validateUnaryOperation('tanh', floatingPointTypes);

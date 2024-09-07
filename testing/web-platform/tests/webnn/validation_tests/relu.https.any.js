@@ -6,4 +6,4 @@
 
 validateInputFromAnotherBuilder('relu');
 
-validateSingleInputOperation('relu',  true);
+validateSingleInputOperation('relu');

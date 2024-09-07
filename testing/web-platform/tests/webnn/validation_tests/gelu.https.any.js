@@ -6,4 +6,4 @@
 
 validateInputFromAnotherBuilder('gelu');
 
-validateSingleInputOperation('gelu',  true);
+validateSingleInputOperation('gelu');

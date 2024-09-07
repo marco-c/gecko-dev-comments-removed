@@ -408,10 +408,7 @@ function validateOptionsAxes(operationName) {
 
 
 
-
-
-function validateUnaryOperation(
-    operationName, supportedDataTypes, alsoBuildActivation = false) {
+function validateUnaryOperation(operationName, supportedDataTypes) {
   promise_test(async t => {
     const builder = new MLGraphBuilder(context);
     for (let dataType of supportedDataTypes) {
@@ -451,23 +448,13 @@ function validateUnaryOperation(
       }
     }
   }, `[${operationName}] Throw if the dataType is not supported for an unary operator.`);
-
-  if (alsoBuildActivation) {
-    promise_test(async t => {
-      const builder = new MLGraphBuilder(context);
-      builder[operationName]();
-    }, `[${operationName}] Test building an activation`);
-  }
 }
 
 
 
 
 
-
-
-function validateSingleInputOperation(
-    operationName, alsoBuildActivation = false) {
+function validateSingleInputOperation(operationName) {
   promise_test(async t => {
     const builder = new MLGraphBuilder(context);
     const supportedDataTypes =
@@ -503,13 +490,6 @@ function validateSingleInputOperation(
       }
     }
   }, `[${operationName}] Throw if the data type is not supported for the operator.`);
-
-  if (alsoBuildActivation) {
-    promise_test(async t => {
-      const builder = new MLGraphBuilder(context);
-      builder[operationName]();
-    }, `[${operationName}] Test building an activation.`);
-  }
 }
 
 

@@ -6,5 +6,4 @@
 
 validateInputFromAnotherBuilder('hardSwish');
 
-validateUnaryOperation(
-    'hardSwish', floatingPointTypes,  true);
+validateUnaryOperation('hardSwish', floatingPointTypes);
