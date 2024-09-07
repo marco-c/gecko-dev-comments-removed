@@ -251,7 +251,13 @@ void SendRequestAndExpectResponse(
           timedOut->mValue = true;
         }
       });
-  NS_DelayedDispatchToCurrentThread(do_AddRef(timer), 10000);
+#ifdef defined(MOZ_ASAN)
+  
+  constexpr uint32_t kCATimeout = 25000;
+#else
+  constexpr uint32_t kCATimeout = 10000;
+#endif
+  NS_DelayedDispatchToCurrentThread(do_AddRef(timer), kCATimeout);
   mozilla::SpinEventLoopUntil(
       "Waiting for ContentAnalysis result"_ns,
       [&, timedOut]() { return gotResponse.load() || timedOut->mValue; });
