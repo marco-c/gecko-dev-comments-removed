@@ -259,6 +259,12 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ImageData", insecureContext: true },
   
+  { name: "ImageDecoder", nightly: true },
+  
+  { name: "ImageTrack", nightly: true },
+  
+  { name: "ImageTrackList", nightly: true },
+  
   "Lock",
   
   "LockManager",
