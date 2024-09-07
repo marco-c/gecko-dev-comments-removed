@@ -19,6 +19,12 @@ const gCSSProperties1 = {
       { type: 'discrete', options: [ [ 'flex-start', 'flex-end' ] ] }
     ]
   },
+  'appearance': {
+    
+    types: [
+      { type: 'discrete' , options: [ [ 'auto', 'none' ] ] }
+    ]
+  },
   'backface-visibility': {
     
     types: [
