@@ -209,9 +209,23 @@ class TraverseRepositoryHelper : public CancelableHelper {
                                  const PersistenceType aPersistenceType) = 0;
 };
 
+class OriginUsageHelper : public CancelableHelper {
+ protected:
+  mozilla::Result<UsageInfo, nsresult> GetUsageForOrigin(
+      QuotaManager& aQuotaManager, PersistenceType aPersistenceType,
+      const OriginMetadata& aOriginMetadata);
+
+ private:
+  mozilla::Result<UsageInfo, nsresult> GetUsageForOriginEntries(
+      QuotaManager& aQuotaManager, PersistenceType aPersistenceType,
+      const OriginMetadata& aOriginMetadata, nsIFile& aDirectory,
+      bool aInitialized);
+};
+
 class GetUsageOp final
     : public OpenStorageDirectoryHelper<QuotaUsageRequestBase>,
-      public TraverseRepositoryHelper {
+      public TraverseRepositoryHelper,
+      public OriginUsageHelper {
   nsTArray<OriginUsage> mOriginUsages;
   nsTHashMap<nsCStringHashKey, uint32_t> mOriginUsagesIndex;
 
@@ -232,9 +246,9 @@ class GetUsageOp final
 
   RefPtr<BoolPromise> OpenDirectory() override;
 
-  nsresult DoDirectoryWork(QuotaManager& aQuotaManager) override;
-
   const Atomic<bool>& GetIsCanceledFlag() override;
+
+  nsresult DoDirectoryWork(QuotaManager& aQuotaManager) override;
 
   nsresult ProcessOrigin(QuotaManager& aQuotaManager, nsIFile& aOriginDir,
                          const bool aPersistent,
@@ -246,7 +260,8 @@ class GetUsageOp final
 };
 
 class GetOriginUsageOp final
-    : public OpenStorageDirectoryHelper<QuotaUsageRequestBase> {
+    : public OpenStorageDirectoryHelper<QuotaUsageRequestBase>,
+      public OriginUsageHelper {
   const OriginUsageParams mParams;
   PrincipalMetadata mPrincipalMetadata;
   UsageInfo mUsageInfo;
@@ -264,6 +279,8 @@ class GetOriginUsageOp final
   RefPtr<BoolPromise> OpenDirectory() override;
 
   virtual nsresult DoDirectoryWork(QuotaManager& aQuotaManager) override;
+
+  const Atomic<bool>& GetIsCanceledFlag() override;
 
   void GetResponse(UsageRequestResponse& aResponse) override;
 
@@ -1144,6 +1161,111 @@ nsresult TraverseRepositoryHelper::TraverseRepository(
   return NS_OK;
 }
 
+Result<UsageInfo, nsresult> OriginUsageHelper::GetUsageForOrigin(
+    QuotaManager& aQuotaManager, PersistenceType aPersistenceType,
+    const OriginMetadata& aOriginMetadata) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aOriginMetadata.mPersistenceType == aPersistenceType);
+
+  QM_TRY_INSPECT(const auto& directory,
+                 aQuotaManager.GetOriginDirectory(aOriginMetadata));
+
+  QM_TRY_INSPECT(const bool& exists,
+                 MOZ_TO_RESULT_INVOKE_MEMBER(directory, Exists));
+
+  if (!exists || GetIsCanceledFlag()) {
+    return UsageInfo();
+  }
+
+  
+  
+  bool initialized;
+
+  if (aPersistenceType == PERSISTENCE_TYPE_PERSISTENT) {
+    initialized = aQuotaManager.IsPersistentOriginInitializedInternal(
+        aOriginMetadata.mOrigin);
+  } else {
+    initialized = aQuotaManager.IsTemporaryStorageInitializedInternal();
+  }
+
+  return GetUsageForOriginEntries(aQuotaManager, aPersistenceType,
+                                  aOriginMetadata, *directory, initialized);
+}
+
+Result<UsageInfo, nsresult> OriginUsageHelper::GetUsageForOriginEntries(
+    QuotaManager& aQuotaManager, PersistenceType aPersistenceType,
+    const OriginMetadata& aOriginMetadata, nsIFile& aDirectory,
+    const bool aInitialized) {
+  AssertIsOnIOThread();
+
+  QM_TRY_RETURN((ReduceEachFileAtomicCancelable(
+      aDirectory, GetIsCanceledFlag(), UsageInfo{},
+      [&](UsageInfo oldUsageInfo, const nsCOMPtr<nsIFile>& file)
+          -> mozilla::Result<UsageInfo, nsresult> {
+        QM_TRY_INSPECT(
+            const auto& leafName,
+            MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoString, file, GetLeafName));
+
+        QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
+
+        switch (dirEntryKind) {
+          case nsIFileKind::ExistsAsDirectory: {
+            Client::Type clientType;
+            const bool ok =
+                Client::TypeFromText(leafName, clientType, fallible);
+            if (!ok) {
+              
+              
+              
+              UNKNOWN_FILE_WARNING(leafName);
+              break;
+            }
+
+            Client* const client = aQuotaManager.GetClient(clientType);
+            MOZ_ASSERT(client);
+
+            QM_TRY_INSPECT(const auto& usageInfo,
+                           aInitialized ? client->GetUsageForOrigin(
+                                              aPersistenceType, aOriginMetadata,
+                                              GetIsCanceledFlag())
+                                        : client->InitOrigin(
+                                              aPersistenceType, aOriginMetadata,
+                                              GetIsCanceledFlag()));
+            return oldUsageInfo + usageInfo;
+          }
+
+          case nsIFileKind::ExistsAsFile:
+            
+            
+            
+            
+            if (IsTempMetadata(leafName)) {
+              if (!aInitialized) {
+                QM_TRY(MOZ_TO_RESULT(file->Remove( false)));
+              }
+
+              break;
+            }
+
+            if (IsOriginMetadata(leafName) || IsOSMetadata(leafName) ||
+                IsDotFile(leafName)) {
+              break;
+            }
+
+            
+            
+            UNKNOWN_FILE_WARNING(leafName);
+            break;
+
+          case nsIFileKind::DoesNotExist:
+            
+            break;
+        }
+
+        return oldUsageInfo;
+      })));
+}
+
 GetUsageOp::GetUsageOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
                        const UsageRequestParams& aParams)
     : OpenStorageDirectoryHelper(std::move(aQuotaManager),
@@ -1322,6 +1444,12 @@ RefPtr<BoolPromise> GetOriginUsageOp::OpenDirectory() {
       OriginScope::FromOrigin(mPrincipalMetadata.mOrigin),
       Nullable<Client::Type>(),
        false);
+}
+
+const Atomic<bool>& GetOriginUsageOp::GetIsCanceledFlag() {
+  AssertIsOnIOThread();
+
+  return mCanceled;
 }
 
 nsresult GetOriginUsageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
