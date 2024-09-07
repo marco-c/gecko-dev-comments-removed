@@ -2782,11 +2782,6 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test fun purgeHistory() {
         
-        val geckoPrefs = sessionRule.getPrefs(
-            "fission.disableSessionHistoryInParent",
-        )
-        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
-        
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
         mainSession.loadUri("$TEST_ENDPOINT$HELLO_HTML_PATH")
