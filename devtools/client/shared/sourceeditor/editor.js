@@ -1275,11 +1275,18 @@ class Editor extends EventEmitter {
             
             
             const tokenAtPos = syntaxTree(transaction.state).resolve(pos, 1);
+            
+            
+            
+            
+            if (tokenAtPos.from !== pos) {
+              continue;
+            }
             const tokenString = line.text.slice(
               position.column,
               tokenAtPos.to - line.from
             );
-            
+            // Ignore any empty strings and opening braces
             if (
               tokenString === "" ||
               tokenString === "{" ||
@@ -1299,14 +1306,14 @@ class Editor extends EventEmitter {
       }
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * This updates the decorations for the marker specified
+     *
+     * @param {Array} markerDecorations - The current decorations displayed in the document
+     * @param {Array} marker - The current marker whose decoration should be update
+     * @param {Transaction} transaction
+     * @returns
+     */
     function updateDecorations(markerDecorations, marker, transaction) {
       const newDecorations = [];
 
@@ -1320,16 +1327,16 @@ class Editor extends EventEmitter {
       });
     }
 
-
-
-
-
-
-
-
-
-
-
+    /**
+     * This updates all the decorations for all the markers. This
+     * used in scenarios when an update to view (e.g vertically scrolling into a new viewport)
+     * requires all the marker decoraions.
+     *
+     * @param {Array} markerDecorations - The current decorations displayed in the document
+     * @param {Array} markers - All the cached markers
+     * @param {Object} transaction
+     * @returns
+     */
     function updateDecorationsForAllMarkers(
       markerDecorations,
       markers,
@@ -1367,28 +1374,28 @@ class Editor extends EventEmitter {
         return Decoration.none;
       },
       update(markerDecorations, transaction) {
-        
-        
-        
+        // Map the decorations through the transaction changes, this is important
+        // as it remaps the decorations from positions in the old document to
+        // positions in the new document.
         markerDecorations = markerDecorations.map(transaction.changes);
         for (const effect of transaction.effects) {
           if (effect.is(addEffect)) {
-            
+            // When a new marker is added
             markerDecorations = updateDecorations(
               markerDecorations,
               effect.value,
               transaction
             );
           } else if (effect.is(removeEffect)) {
-            
+            // When a marker is removed
             markerDecorations = removeDecorations(
               markerDecorations,
               effect.value
             );
           } else {
-            
-            
-            
+            // For updates that are not related to this marker decoration,
+            // we want to update the decorations when the editor is scrolled
+            // and a new viewport is loaded.
             markerDecorations = updateDecorationsForAllMarkers(
               markerDecorations,
               cachedPositionContentMarkers.values(),
@@ -1407,19 +1414,19 @@ class Editor extends EventEmitter {
     };
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * This adds a marker used to decorate token / content at
+   * a specific position (defined by a line and column).
+   * @param {Object} marker
+   * @param {String} marker.id
+   * @param {Array} marker.positions
+   * @param {Function} marker.createPositionElementNode
+   */
   setPositionContentMarker(marker) {
     const cm = editors.get(this);
 
-    
-    
+    // We store the marker an the view state, this is gives access to viewport data
+    // when defining updates to the StateField.
     marker._view = cm;
     this.#posContentMarkers.set(marker.id, marker);
     cm.dispatch({
@@ -1427,10 +1434,10 @@ class Editor extends EventEmitter {
     });
   }
 
-
-
-
-
+  /**
+   * This removes the marker which has the specified id
+   * @param {string} markerId - The unique identifier for this marker
+   */
   removePositionContentMarker(markerId) {
     const cm = editors.get(this);
     this.#posContentMarkers.delete(markerId);
@@ -1440,13 +1447,13 @@ class Editor extends EventEmitter {
     });
   }
 
-
-
-
-
-
-
-
+  /**
+   * Set event listeners for the line gutter
+   * @param {Object} domEventHandlers
+   *
+   * example usage:
+   *  const domEventHandlers = { click(event) { console.log(event);} }
+   */
   setGutterEventListeners(domEventHandlers) {
     const cm = editors.get(this);
     const {
