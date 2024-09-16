@@ -5124,15 +5124,24 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   }
 
   if (gDoProfileReset) {
-    if (EnvHasValue("MOZ_RESET_PROFILE_RESTART")) {
+    if (!EnvHasValue("MOZ_RESET_PROFILE_RESTART")) {
+      if (ARG_FOUND == CheckArgExists("first-startup")) {
+        
+        
+        
+        
+        SaveToEnv("MOZ_RESET_PROFILE_SESSION=0");
+      } else if (gDoMigration) {
+        
+        
+        
+        SaveToEnv("MOZ_RESET_PROFILE_SESSION=1");
+      }
+    } else {
+      
+      
+      SaveToEnv("MOZ_RESET_PROFILE_SESSION=1");
       SaveToEnv("MOZ_RESET_PROFILE_RESTART=");
-      
-      
-      
-      
-      
-      
-      SaveToEnv("MOZ_RESET_PROFILE_MIGRATE_SESSION=1");
     }
     
     mProfileLock->Unlock();
