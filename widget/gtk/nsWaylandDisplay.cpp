@@ -1,16 +1,16 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsWaylandDisplay.h"
 
 #include <dlfcn.h>
 
-#include "base/message_loop.h"    // for MessageLoop
-#include "base/task.h"            // for NewRunnableMethod, etc
-#include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
+#include "base/message_loop.h"    
+#include "base/task.h"            
+#include "mozilla/gfx/Logging.h"  
 #include "mozilla/StaticMutex.h"
 #include "mozilla/Array.h"
 #include "mozilla/StaticPtr.h"
@@ -58,23 +58,33 @@ nsWaylandDisplay* WaylandDisplayGet() {
 
 void nsWaylandDisplay::SetShm(wl_shm* aShm) { mShm = aShm; }
 
-struct PointerState {
-  wl_surface* surface;
-
+class EventSurface {
+ public:
   nsWindow* GetWindow() {
+    if (!surface) {
+      return nullptr;
+    }
     GdkWindow* window =
         static_cast<GdkWindow*>(wl_surface_get_user_data(surface));
     return window ? static_cast<nsWindow*>(
                         g_object_get_data(G_OBJECT(window), "nsWindow"))
                   : nullptr;
   }
-} sPointerState;
+  void Set(wl_surface* aSurface) { surface = aSurface; }
+  void Clear() { surface = nullptr; }
+
+ private:
+  wl_surface* surface = nullptr;
+};
+
+static EventSurface sTouchSurface;
 
 static void gesture_hold_begin(void* data,
                                struct zwp_pointer_gesture_hold_v1* hold,
                                uint32_t serial, uint32_t time,
                                struct wl_surface* surface, uint32_t fingers) {
-  RefPtr<nsWindow> window = sPointerState.GetWindow();
+  sTouchSurface.Set(surface);
+  RefPtr<nsWindow> window = sTouchSurface.GetWindow();
   if (!window) {
     return;
   }
@@ -85,7 +95,7 @@ static void gesture_hold_end(void* data,
                              struct zwp_pointer_gesture_hold_v1* hold,
                              uint32_t serial, uint32_t time,
                              int32_t cancelled) {
-  RefPtr<nsWindow> window = sPointerState.GetWindow();
+  RefPtr<nsWindow> window = sTouchSurface.GetWindow();
   if (!window) {
     return;
   }
@@ -99,14 +109,10 @@ static const struct zwp_pointer_gesture_hold_v1_listener gesture_hold_listener =
 
 static void pointer_handle_enter(void* data, struct wl_pointer* pointer,
                                  uint32_t serial, struct wl_surface* surface,
-                                 wl_fixed_t sx, wl_fixed_t sy) {
-  sPointerState.surface = surface;
-}
+                                 wl_fixed_t sx, wl_fixed_t sy) {}
 
 static void pointer_handle_leave(void* data, struct wl_pointer* pointer,
-                                 uint32_t serial, struct wl_surface* surface) {
-  sPointerState.surface = nullptr;
-}
+                                 uint32_t serial, struct wl_surface* surface) {}
 
 static void pointer_handle_motion(void* data, struct wl_pointer* pointer,
                                   uint32_t time, wl_fixed_t sx, wl_fixed_t sy) {
@@ -124,7 +130,7 @@ static void pointer_handle_frame(void* data, struct wl_pointer* pointer) {}
 
 static void pointer_handle_axis_source(
     void* data, struct wl_pointer* pointer,
-    /*enum wl_pointer_axis_source */ uint32_t source) {}
+     uint32_t source) {}
 
 static void pointer_handle_axis_stop(void* data, struct wl_pointer* pointer,
                                      uint32_t time, uint32_t axis) {}
@@ -188,7 +194,7 @@ static void seat_handle_capabilities(void* data, struct wl_seat* seat,
 
 static void seat_handle_name(void* data, struct wl_seat* seat,
                              const char* name) {
-  /* We don't care about the name. */
+  
 }
 
 static const struct wl_seat_listener seat_listener = {
@@ -209,8 +215,8 @@ void nsWaylandDisplay::RemoveSeat(int aSeatId) {
   }
 }
 
-/* This keymap routine is derived from weston-2.0.0/clients/simple-im.c
- */
+
+
 static void keyboard_handle_keymap(void* data, struct wl_keyboard* wl_keyboard,
                                    uint32_t format, int fd, uint32_t size) {
   KeymapWrapper::HandleKeymap(format, fd, size);
@@ -396,11 +402,11 @@ static void WlLogHandler(const char* format, va_list args) {
   VsprintfLiteral(error, format, args);
   gfxCriticalNote << "Wayland protocol error: " << error;
 
-  // See Bug 1826583 and Bug 1844653 for reference.
-  // "warning: queue %p destroyed while proxies still attached" and variants
-  // like "zwp_linux_dmabuf_feedback_v1@%d still attached" are exceptions on
-  // Wayland and non-fatal. They are triggered in certain versions of Mesa or
-  // the proprietary Nvidia driver and we don't want to crash because of them.
+  
+  
+  
+  
+  
   if (strstr(error, "still attached")) {
     return;
   }
@@ -410,8 +416,8 @@ static void WlLogHandler(const char* format, va_list args) {
 
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
     : mThreadId(PR_GetCurrentThread()), mDisplay(aDisplay) {
-  // GTK sets the log handler on display creation, thus we overwrite it here
-  // in a similar fashion
+  
+  
   wl_log_set_handler_client(WlLogHandler);
 
   mRegistry = wl_display_get_registry(mDisplay);
@@ -419,12 +425,12 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   wl_display_roundtrip(mDisplay);
   wl_display_roundtrip(mDisplay);
 
-  // Check we have critical Wayland interfaces.
-  // Missing ones indicates a compositor bug and we can't continue.
+  
+  
   MOZ_RELEASE_ASSERT(GetShm(), "We're missing shm interface!");
   MOZ_RELEASE_ASSERT(GetCompositor(), "We're missing compositor interface!");
   MOZ_RELEASE_ASSERT(GetSubcompositor(),
                      "We're missing subcompositor interface!");
 }
 
-}  // namespace mozilla::widget
+}  
