@@ -25,9 +25,17 @@ using dom::RootedDictionary;
 using dom::UniFFICallbackHandler;
 using dom::UniFFIScaffoldingCallCode;
 
-
 static Maybe<CallbackInterfaceInfo> GetCallbackInterfaceInfo(
-    uint64_t aInterfaceId);
+    uint64_t aInterfaceId) {
+  const Maybe<CallbackInterfaceInfo> cbiInfo =
+      UniFFIGetCallbackInterfaceInfo(aInterfaceId);
+#ifdef MOZ_UNIFFI_FIXTURES
+  if (!cbiInfo) {
+    return UniFFIFixturesGetCallbackInterfaceInfo(aInterfaceId);
+  }
+#endif
+  return cbiInfo;
+}
 
 void RegisterCallbackHandler(uint64_t aInterfaceId,
                              UniFFICallbackHandler& aCallbackHandler,

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use anyhow::{Context, Result};
 use askama::Template;
@@ -25,8 +25,8 @@ use render::js::JSBindingsTemplate;
 #[clap(about = "JS bindings generator for Rust")]
 #[clap(propagate_version = true)]
 struct CliArgs {
-    // This is a really convoluted set of arguments, but we're only expecting to be called by
-    // `mach_commands.py`
+    
+    
     #[clap(long, value_name = "FILE")]
     js_dir: Utf8PathBuf,
 
@@ -35,18 +35,15 @@ struct CliArgs {
 
     #[clap(long, value_name = "FILE")]
     cpp_path: Utf8PathBuf,
+
+    #[clap(long, value_name = "FILE")]
+    fixture_cpp_path: Utf8PathBuf,
 }
 
-/// Configuration for all components, read from `uniffi.toml`
+
 type ConfigMap = HashMap<String, Config>;
 
-/// FIXME: remove once we merge 0.28.x
-pub struct Component {
-    pub ci: ComponentInterface,
-    pub config: Config,
-}
 
-/// Configuration for a single Component
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Config {
     crate_name: String,
@@ -77,35 +74,29 @@ fn render(out_path: Utf8PathBuf, template: impl Template) -> Result<()> {
 
 fn render_cpp(
     path: Utf8PathBuf,
-    components: &Vec<Component>,
-    fixture_components: &Vec<Component>,
+    prefix: &str,
+    components: &Vec<(ComponentInterface, Config)>,
     function_ids: &FunctionIds,
     object_ids: &ObjectIds,
     callback_ids: &CallbackIds,
 ) -> Result<()> {
     render(
         path,
-        CPPScaffoldingTemplate::new(
-            components,
-            fixture_components,
-            function_ids,
-            object_ids,
-            callback_ids,
-        ),
+        CPPScaffoldingTemplate::new(prefix, components, function_ids, object_ids, callback_ids),
     )
 }
 
 fn render_js(
     out_dir: Utf8PathBuf,
-    components: &Vec<Component>,
+    components: &Vec<(ComponentInterface, Config)>,
     function_ids: &FunctionIds,
     object_ids: &ObjectIds,
     callback_ids: &CallbackIds,
 ) -> Result<()> {
-    for c in components {
+    for (ci, config) in components {
         let template = JSBindingsTemplate {
-            ci: &c.ci,
-            config: &c.config,
+            ci,
+            config,
             function_ids,
             object_ids,
             callback_ids,
@@ -127,7 +118,15 @@ pub fn run_main() -> Result<()> {
 
     render_cpp(
         args.cpp_path,
+        "UniFFI",
         &components.components,
+        &function_ids,
+        &object_ids,
+        &callback_ids,
+    )?;
+    render_cpp(
+        args.fixture_cpp_path,
+        "UniFFIFixtures",
         &components.fixture_components,
         &function_ids,
         &object_ids,
