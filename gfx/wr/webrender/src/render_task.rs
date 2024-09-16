@@ -2,7 +2,7 @@
 
 
 
-use api::{CompositeOperator, FilterPrimitive, FilterPrimitiveInput, FilterPrimitiveKind, SVGFE_GRAPH_MAX};
+use api::{CompositeOperator, FilterPrimitive, FilterPrimitiveInput, FilterPrimitiveKind};
 use api::{LineStyle, LineOrientation, ClipMode, MixBlendMode, ColorF, ColorSpace, FilterOpGraphPictureBufferId};
 use api::MAX_RENDER_TASK_SIZE;
 use api::units::*;
@@ -1644,15 +1644,13 @@ impl RenderTask {
         filter_nodes: &[(FilterGraphNode, FilterGraphOp)],
         frame_state: &mut FrameBuildingState,
         data_stores: &mut DataStores,
-        _uv_rect_kind: UvRectKind,
+        uv_rect_kind: UvRectKind,
         original_task_id: RenderTaskId,
-        source_subregion: LayoutRect,
-        target_subregion: LayoutRect,
-        prim_subregion: LayoutRect,
-        surface_rects_clipped: LayoutRect,
-        surface_rects_clipped_local: LayoutRect,
+        surface_rects_task_size: DeviceIntSize,
+        surface_rects_clipped: DeviceRect,
+        surface_rects_clipped_local: PictureRect,
     ) -> RenderTaskId {
-        const BUFFER_LIMIT: usize = SVGFE_GRAPH_MAX;
+        const BUFFER_LIMIT: usize = 256;
         let mut task_by_buffer_id: [RenderTaskId; BUFFER_LIMIT] = [RenderTaskId::INVALID; BUFFER_LIMIT];
         let mut subregion_by_buffer_id: [LayoutRect; BUFFER_LIMIT] = [LayoutRect::zero(); BUFFER_LIMIT];
         
@@ -1675,8 +1673,59 @@ impl RenderTask {
         
         
         
+        fn subregion_for_uvrectkind(kind: &UvRectKind, rect: LayoutRect) -> LayoutRect {
+            let used =
+            match kind {
+                UvRectKind::Quad{top_left: tl, top_right: _tr, bottom_left: _bl, bottom_right: br} => {
+                    LayoutRect::new(
+                        LayoutPoint::new(
+                            rect.min.x + rect.width() * tl.x / tl.w,
+                            rect.min.y + rect.height() * tl.y / tl.w,
+                        ),
+                        LayoutPoint::new(
+                            rect.min.x + rect.width() * br.x / br.w,
+                            rect.min.y + rect.height() * br.y / br.w,
+                        ),
+                    )
+                }
+                UvRectKind::Rect => {
+                    rect
+                }
+            };
+            
+            
+            
+            match used.is_empty() {
+                true => rect,
+                false => used,
+            }
+        }
+
         
-        fn uv_rect_kind_for_task_size(clipped: DeviceRect, unclipped: DeviceRect) -> UvRectKind {
+        
+        
+        
+        
+        
+        
+        fn uv_rect_kind_for_task_size(task_size: DeviceIntSize, inflate: i16) -> UvRectKind {
+            let unclipped = DeviceRect::new(
+                DevicePoint::new(
+                    inflate as f32,
+                    inflate as f32,
+                ),
+                DevicePoint::new(
+                    task_size.width as f32 - inflate as f32,
+                    task_size.height as f32 - inflate as f32,
+                ),
+            );
+            let clipped = DeviceRect::new(
+                DevicePoint::zero(),
+                DevicePoint::new(
+                    task_size.width as f32,
+                    task_size.height as f32,
+                ),
+            );
             let scale_x = 1.0 / clipped.width();
             let scale_y = 1.0 / clipped.height();
             UvRectKind::Quad{
@@ -1712,6 +1761,29 @@ impl RenderTask {
         let subregion_to_device_scale_y = surface_rects_clipped.height() / surface_rects_clipped_local.height();
         let subregion_to_device_offset_x = surface_rects_clipped.min.x - (surface_rects_clipped_local.min.x * subregion_to_device_scale_x).floor();
         let subregion_to_device_offset_y = surface_rects_clipped.min.y - (surface_rects_clipped_local.min.y * subregion_to_device_scale_y).floor();
+
+        
+        
+        let filter_subregion: LayoutRect = surface_rects_clipped.cast_unit();
+
+        
+        
+        
+        
+        
+        let source_subregion =
+            subregion_for_uvrectkind(
+                &uv_rect_kind,
+                surface_rects_clipped.cast_unit(),
+            )
+            .intersection(&filter_subregion)
+            .unwrap_or(LayoutRect::zero())
+            .round_out();
+
+        
+        let output_rect = filter_subregion.to_i32();
+        
+        let output_subregion = filter_subregion;
 
         
         let mut made_dependency_on_source = false;
@@ -2037,10 +2109,6 @@ impl RenderTask {
 
             
             
-            
-            
-            
-            
             used_subregion = used_subregion
                 .intersection(&full_subregion)
                 .unwrap_or(LayoutRect::zero())
@@ -2091,10 +2159,10 @@ impl RenderTask {
                     
                     
                     
-                    if k4 > 0.0 {
+                    if k4 != 0.0 {
                         
                         used_subregion = full_subregion;
-                    } else  if k1 > 0.0 && k2 == 0.0 && k3 == 0.0 {
+                    } else  if k1 != 0.0 && k2 == 0.0 && k3 == 0.0 && k4 == 0.0 {
                         
                         used_subregion = full_subregion
                             .intersection(&node_inputs[0].0.subregion)
@@ -2102,13 +2170,13 @@ impl RenderTask {
                             .intersection(&node_inputs[1].0.subregion)
                             .unwrap_or(LayoutRect::zero());
                     }
-                    else if k2 > 0.0 && k3 == 0.0 {
+                    else if k2 != 0.0 && k3 == 0.0 && k4 == 0.0 {
                         
                         used_subregion = full_subregion
                             .intersection(&node_inputs[0].0.subregion)
                             .unwrap_or(LayoutRect::zero());
                     }
-                    else if k2 == 0.0 && k3 > 0.0 {
+                    else if k2 == 0.0 && k3 != 0.0 && k4 == 0.0 {
                         
                         used_subregion = full_subregion
                             .intersection(&node_inputs[1].0.subregion)
@@ -2171,9 +2239,7 @@ impl RenderTask {
                 },
                 FilterGraphOp::SVGFESourceAlpha |
                 FilterGraphOp::SVGFESourceGraphic => {
-                    used_subregion = source_subregion
-                        .intersection(&full_subregion)
-                        .unwrap_or(LayoutRect::zero());
+                    used_subregion = source_subregion;
                 },
                 FilterGraphOp::SVGFESpecularLightingDistant{..} => {},
                 FilterGraphOp::SVGFESpecularLightingPoint{..} => {},
@@ -2197,89 +2263,64 @@ impl RenderTask {
             }
 
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let mut node_inflate = node.inflate;
+            let node_inflate = node.inflate;
+            let mut create_output_task = false;
             if is_output {
                 
-                used_subregion = target_subregion;
-                node_inflate = 0;
-            }
-
-            
-            
-            
-            
-            
-            let mut device_to_render_scale = 1.0;
-            let mut render_to_device_scale = 1.0;
-            let mut subregion = used_subregion;
-            let padded_subregion = match op {
-                FilterGraphOp::SVGFEGaussianBlur{std_deviation_x, std_deviation_y} |
-                FilterGraphOp::SVGFEDropShadow{std_deviation_x, std_deviation_y, ..} => {
-                    used_subregion
-                    .inflate(
-                        std_deviation_x.ceil() * BLUR_SAMPLE_SCALE,
-                        std_deviation_y.ceil() * BLUR_SAMPLE_SCALE)
-                }
-                _ => used_subregion,
-            };
-            while
-                padded_subregion.scale(device_to_render_scale, device_to_render_scale).round().width() + node_inflate as f32 * 2.0 > MAX_SURFACE_SIZE as f32 ||
-                padded_subregion.scale(device_to_render_scale, device_to_render_scale).round().height() + node_inflate as f32 * 2.0 > MAX_SURFACE_SIZE as f32 {
-                device_to_render_scale *= 0.5;
-                render_to_device_scale *= 2.0;
                 
-                
-                
-                subregion = used_subregion
-                    .scale(device_to_render_scale, device_to_render_scale)
-                    .round()
-                    .scale(render_to_device_scale, render_to_device_scale);
-            }
-
-            
-            
-            
-            
-            let node_task_rect: DeviceRect =
-                subregion
-                .scale(device_to_render_scale, device_to_render_scale)
-                .round()
-                .inflate(node_inflate as f32, node_inflate as f32)
-                .cast_unit();
-            let node_task_size = node_task_rect.to_i32().size();
-            let node_task_size =
-                if node_task_size.width < 1 || node_task_size.height < 1 {
-                    DeviceIntSize::new(1, 1)
+                if used_subregion.to_i32().contains_box(&output_rect) {
+                    used_subregion = output_subregion;
                 } else {
-                    node_task_size
-                };
+                    
+                    
+                    create_output_task = true;
+                }
+            }
 
             
             
-            let node_uv_rect_kind = uv_rect_kind_for_task_size(
-                subregion
-                .scale(device_to_render_scale, device_to_render_scale)
-                .round()
-                .inflate(node_inflate as f32, node_inflate as f32)
-                .cast_unit(),
-                prim_subregion
-                .scale(device_to_render_scale, device_to_render_scale)
-                .round()
-                .inflate(node_inflate as f32, node_inflate as f32)
-                .cast_unit(),
-            );
+            
+            
+            
+            
+            
+            let node_task_rect: DeviceIntRect = used_subregion.to_i32().cast_unit();
+            let mut node_task_size = node_task_rect.size().cast_unit();
 
             
-            let task_id;
+            
+            
+            
+            
+            
+            
+            
+            
+            while node_task_size.width as usize + node_inflate as usize * 2 > MAX_SURFACE_SIZE ||
+                node_task_size.height as usize + node_inflate as usize * 2 > MAX_SURFACE_SIZE {
+                node_task_size.width >>= 1;
+                node_task_size.height >>= 1;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            node_task_size.width += node_inflate as i32 * 2;
+            node_task_size.height += node_inflate as i32 * 2;
+
+            
+            
+            let node_uv_rect_kind =
+                uv_rect_kind_for_task_size(node_task_size, node_inflate);
+
+            
+            let mut task_id;
             match op {
                 FilterGraphOp::SVGFEGaussianBlur { std_deviation_x, std_deviation_y } => {
                     
@@ -2296,48 +2337,64 @@ impl RenderTask {
                     
                     
                     
-                    let adjusted_blur_std_deviation = DeviceSize::new(
-                        std_deviation_x.clamp(0.0, (i32::MAX / 2) as f32) * device_to_render_scale,
-                        std_deviation_y.clamp(0.0, (i32::MAX / 2) as f32) * device_to_render_scale,
+                    
+                    
+                    
+                    let mut adjusted_blur_std_deviation = DeviceSize::new(
+                        std_deviation_x,
+                        std_deviation_y,
                     );
                     let blur_subregion = blur_input.subregion
-                        .scale(device_to_render_scale, device_to_render_scale)
                         .inflate(
-                            adjusted_blur_std_deviation.width * BLUR_SAMPLE_SCALE,
-                            adjusted_blur_std_deviation.height * BLUR_SAMPLE_SCALE)
-                        .round_out();
+                            std_deviation_x.ceil() * BLUR_SAMPLE_SCALE,
+                            std_deviation_y.ceil() * BLUR_SAMPLE_SCALE);
                     let blur_task_size = blur_subregion.size().cast_unit();
                     
-                    let adjusted_blur_task_size =
+                    let mut adjusted_blur_task_size =
                         BlurTask::adjusted_blur_source_size(
                             blur_task_size,
                             adjusted_blur_std_deviation,
-                        ).to_f32();
-                    
-                    
-                    let corner = LayoutPoint::new(
-                            blur_subregion.min.x.floor() + ((
-                                blur_task_size.width -
-                                adjusted_blur_task_size.width) * 0.5).floor(),
-                            blur_subregion.min.y.floor() + ((
-                                blur_task_size.height -
-                                adjusted_blur_task_size.height) * 0.5).floor(),
                         );
                     
                     
-                    
-                    let blur_subregion =
-                        LayoutRect::new(
-                            corner,
-                            LayoutPoint::new(
-                                corner.x + adjusted_blur_task_size.width,
-                                corner.y + adjusted_blur_task_size.height,
-                            ),
+                    let corner = LayoutPoint::new(
+                            blur_subregion.min.x + ((
+                                blur_task_size.width as i32 -
+                                adjusted_blur_task_size.width) / 2) as f32,
+                            blur_subregion.min.y + ((
+                                blur_task_size.height as i32 -
+                                adjusted_blur_task_size.height) / 2) as f32,
                         )
-                        .scale(render_to_device_scale, render_to_device_scale);
+                        .floor();
+                    
+                    
+                    
+                    
+                    let blur_subregion = LayoutRect::new(
+                        corner,
+                        LayoutPoint::new(
+                            corner.x + adjusted_blur_task_size.width as f32,
+                            corner.y + adjusted_blur_task_size.height as f32,
+                        ),
+                    );
+                    
+                    
+                    while adjusted_blur_task_size.to_i32().width as usize > MAX_SURFACE_SIZE ||
+                        adjusted_blur_task_size.to_i32().height as usize > MAX_SURFACE_SIZE {
+                        adjusted_blur_task_size.width >>= 1;
+                        adjusted_blur_task_size.height >>= 1;
+                        adjusted_blur_std_deviation.width *= 0.5;
+                        adjusted_blur_std_deviation.height *= 0.5;
+                        if adjusted_blur_task_size.width < 2 {
+                            adjusted_blur_task_size.width = 2;
+                        }
+                        if adjusted_blur_task_size.height < 2 {
+                            adjusted_blur_task_size.height = 2;
+                        }
+                    }
 
                     let input_subregion_task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
-                        adjusted_blur_task_size.to_i32(),
+                        adjusted_blur_task_size,
                         RenderTaskKind::SVGFENode(
                             SVGFEFilterTask{
                                 node: FilterGraphNode{
@@ -2368,7 +2425,7 @@ impl RenderTask {
                             frame_state.rg_builder,
                             RenderTargetKind::Color,
                             None,
-                            adjusted_blur_task_size.to_i32(),
+                            adjusted_blur_task_size,
                         );
 
                     task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
@@ -2388,10 +2445,10 @@ impl RenderTask {
                                             source_padding: LayoutRect::zero(),
                                             target_padding: LayoutRect::zero(),
                                         }].to_vec(),
-                                    subregion,
+                                    subregion: used_subregion,
                                 },
                                 op: FilterGraphOp::SVGFEIdentity,
-                                content_origin: node_task_rect.min,
+                                content_origin: DevicePoint::zero(),
                                 extra_gpu_cache_handle: None,
                             }
                         ),
@@ -2414,48 +2471,64 @@ impl RenderTask {
                     
                     
                     
-                    let adjusted_blur_std_deviation = DeviceSize::new(
-                        std_deviation_x.clamp(0.0, (i32::MAX / 2) as f32) * device_to_render_scale,
-                        std_deviation_y.clamp(0.0, (i32::MAX / 2) as f32) * device_to_render_scale,
+                    
+                    
+                    
+                    let mut adjusted_blur_std_deviation = DeviceSize::new(
+                        std_deviation_x,
+                        std_deviation_y,
                     );
                     let blur_subregion = blur_input.subregion
-                        .scale(device_to_render_scale, device_to_render_scale)
                         .inflate(
-                            adjusted_blur_std_deviation.width * BLUR_SAMPLE_SCALE,
-                            adjusted_blur_std_deviation.height * BLUR_SAMPLE_SCALE)
-                        .round_out();
+                            std_deviation_x.ceil() * BLUR_SAMPLE_SCALE,
+                            std_deviation_y.ceil() * BLUR_SAMPLE_SCALE);
                     let blur_task_size = blur_subregion.size().cast_unit();
                     
-                    let adjusted_blur_task_size =
+                    let mut adjusted_blur_task_size =
                         BlurTask::adjusted_blur_source_size(
                             blur_task_size,
                             adjusted_blur_std_deviation,
-                        ).to_f32();
-                    
-                    
-                    let corner = LayoutPoint::new(
-                            blur_subregion.min.x.floor() + ((
-                                blur_task_size.width -
-                                adjusted_blur_task_size.width) * 0.5).floor(),
-                            blur_subregion.min.y.floor() + ((
-                                blur_task_size.height -
-                                adjusted_blur_task_size.height) * 0.5).floor(),
                         );
                     
                     
-                    
-                    let blur_subregion =
-                        LayoutRect::new(
-                            corner,
-                            LayoutPoint::new(
-                                corner.x + adjusted_blur_task_size.width,
-                                corner.y + adjusted_blur_task_size.height,
-                            ),
+                    let corner = LayoutPoint::new(
+                            blur_subregion.min.x + ((
+                                blur_task_size.width as i32 -
+                                adjusted_blur_task_size.width) / 2) as f32,
+                            blur_subregion.min.y + ((
+                                blur_task_size.height as i32 -
+                                adjusted_blur_task_size.height) / 2) as f32,
                         )
-                        .scale(render_to_device_scale, render_to_device_scale);
+                        .floor();
+                    
+                    
+                    
+                    
+                    let blur_subregion = LayoutRect::new(
+                        corner,
+                        LayoutPoint::new(
+                            corner.x + adjusted_blur_task_size.width as f32,
+                            corner.y + adjusted_blur_task_size.height as f32,
+                        ),
+                    );
+                    
+                    
+                    while adjusted_blur_task_size.to_i32().width as usize > MAX_SURFACE_SIZE ||
+                        adjusted_blur_task_size.to_i32().height as usize > MAX_SURFACE_SIZE {
+                        adjusted_blur_task_size.width >>= 1;
+                        adjusted_blur_task_size.height >>= 1;
+                        adjusted_blur_std_deviation.width *= 0.5;
+                        adjusted_blur_std_deviation.height *= 0.5;
+                        if adjusted_blur_task_size.width < 2 {
+                            adjusted_blur_task_size.width = 2;
+                        }
+                        if adjusted_blur_task_size.height < 2 {
+                            adjusted_blur_task_size.height = 2;
+                        }
+                    }
 
                     let input_subregion_task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
-                        adjusted_blur_task_size.to_i32(),
+                        adjusted_blur_task_size,
                         RenderTaskKind::SVGFENode(
                             SVGFEFilterTask{
                                 node: FilterGraphNode{
@@ -2474,7 +2547,7 @@ impl RenderTask {
                                     inflate: 0,
                                 },
                                 op: FilterGraphOp::SVGFEIdentity,
-                                content_origin: node_task_rect.min,
+                                content_origin: DevicePoint::zero(),
                                 extra_gpu_cache_handle: None,
                             }
                         ),
@@ -2493,12 +2566,12 @@ impl RenderTask {
                             frame_state.rg_builder,
                             RenderTargetKind::Color,
                             None,
-                            adjusted_blur_task_size.to_i32(),
+                            adjusted_blur_task_size,
                         );
 
                     
                     
-                    let blur_subregion_translated = blur_subregion
+                    let blur_subregion = blur_subregion
                         .translate(LayoutVector2D::new(dx, dy));
                     task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
                         node_task_size,
@@ -2514,13 +2587,13 @@ impl RenderTask {
                                         
                                         FilterGraphPictureReference{
                                             buffer_id: blur_input.buffer_id,
-                                            subregion: blur_subregion_translated,
+                                            subregion: blur_subregion,
                                             inflate: 0,
                                             offset: LayoutVector2D::zero(),
                                             source_padding: LayoutRect::zero(),
                                             target_padding: LayoutRect::zero(),
                                         }].to_vec(),
-                                    subregion,
+                                    subregion: used_subregion,
                                 },
                                 op: FilterGraphOp::SVGFEDropShadow{
                                     color,
@@ -2528,7 +2601,7 @@ impl RenderTask {
                                     dx: 0.0, dy: 0.0,
                                     std_deviation_x: 0.0, std_deviation_y: 0.0,
                                 },
-                                content_origin: node_task_rect.min,
+                                content_origin: DevicePoint::zero(),
                                 extra_gpu_cache_handle: None,
                             }
                         ),
@@ -2556,17 +2629,21 @@ impl RenderTask {
                                             buffer_id: FilterOpGraphPictureBufferId::None,
                                             
                                             
-                                            subregion: source_subregion.cast_unit(),
+                                            
+                                            
+                                            
+                                            
+                                            subregion: filter_subregion,
                                             offset: LayoutVector2D::zero(),
                                             inflate: 0,
                                             source_padding: LayoutRect::zero(),
                                             target_padding: LayoutRect::zero(),
                                         }
                                     ].to_vec(),
-                                    subregion: source_subregion.cast_unit(),
+                                    subregion: used_subregion,
                                 },
                                 op: op.clone(),
-                                content_origin: source_subregion.min.cast_unit(),
+                                content_origin: DevicePoint::zero(),
                                 extra_gpu_cache_handle: None,
                             }
                         ),
@@ -2589,11 +2666,11 @@ impl RenderTask {
                                     kept_by_optimizer: true,
                                     linear: node.linear,
                                     inputs: node_inputs.iter().map(|input| {input.0}).collect(),
-                                    subregion,
+                                    subregion: used_subregion,
                                     inflate: node_inflate,
                                 },
                                 op: op.clone(),
-                                content_origin: node_task_rect.min,
+                                content_origin: DevicePoint::zero(),
                                 extra_gpu_cache_handle: Some(filter_data.gpu_cache_handle),
                             }
                         ),
@@ -2621,11 +2698,11 @@ impl RenderTask {
                                     kept_by_optimizer: true,
                                     linear: node.linear,
                                     inputs: node_inputs.iter().map(|input| {input.0}).collect(),
-                                    subregion,
+                                    subregion: used_subregion,
                                     inflate: node_inflate,
                                 },
                                 op: op.clone(),
-                                content_origin: node_task_rect.min,
+                                content_origin: DevicePoint::zero(),
                                 extra_gpu_cache_handle: None,
                             }
                         ),
@@ -2648,10 +2725,46 @@ impl RenderTask {
             
             
             task_by_buffer_id[filter_index] = task_id;
-            subregion_by_buffer_id[filter_index] = subregion;
+            subregion_by_buffer_id[filter_index] = used_subregion;
 
             
             output_task_id = task_id;
+            if create_output_task {
+                
+                
+                
+                
+                
+                
+                let output_uv_rect_kind =
+                    uv_rect_kind_for_task_size(surface_rects_task_size, 0);
+                task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
+                    surface_rects_task_size,
+                    RenderTaskKind::SVGFENode(
+                        SVGFEFilterTask{
+                            node: FilterGraphNode{
+                                kept_by_optimizer: true,
+                                linear: false,
+                                inputs: [FilterGraphPictureReference{
+                                    buffer_id: FilterOpGraphPictureBufferId::None,
+                                    subregion: used_subregion,
+                                    offset: LayoutVector2D::zero(),
+                                    inflate: node_inflate,
+                                    source_padding: LayoutRect::zero(),
+                                    target_padding: LayoutRect::zero(),
+                                }].to_vec(),
+                                subregion: output_subregion,
+                                inflate: 0,
+                            },
+                            op: FilterGraphOp::SVGFEIdentity,
+                            content_origin: surface_rects_clipped.min,
+                            extra_gpu_cache_handle: None,
+                        }
+                    ),
+                ).with_uv_rect_kind(output_uv_rect_kind));
+                frame_state.rg_builder.add_dependency(task_id, output_task_id);
+                output_task_id = task_id;
+            }
         }
 
         

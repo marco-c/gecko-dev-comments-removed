@@ -1261,7 +1261,7 @@ WrFiltersStatus FilterInstance::BuildWebRenderSVGFiltersImpl(
 
   
   
-  static constexpr size_t maxFilters = wr::SVGFE_GRAPH_MAX;
+  static constexpr size_t maxFilters = 256;
   int16_t bufferIdMapping[maxFilters];
   
   if (instance.mFilterDescription.mPrimitives.Length() > maxFilters) {
