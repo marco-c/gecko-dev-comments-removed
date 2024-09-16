@@ -2698,6 +2698,9 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
     Compare_UInt64,
 
     
+    Compare_IntPtr,
+
+    
     Compare_UIntPtr,
 
     
@@ -2848,6 +2851,7 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
 
       case Compare_Int64:
       case Compare_UInt64:
+      case Compare_IntPtr:
       case Compare_UIntPtr:
       case Compare_WasmAnyRef:
         return false;
@@ -2876,6 +2880,9 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
         break;
       case Compare_UInt64:
         ty = "UInt64";
+        break;
+      case Compare_IntPtr:
+        ty = "IntPtr";
         break;
       case Compare_UIntPtr:
         ty = "UIntPtr";

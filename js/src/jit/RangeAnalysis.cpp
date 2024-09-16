@@ -203,7 +203,8 @@ bool RangeAnalysis::addBetaNodes() {
     }
 
     
-    MOZ_ASSERT(compare->compareType() != MCompare::Compare_UIntPtr);
+    MOZ_ASSERT(compare->compareType() != MCompare::Compare_IntPtr &&
+               compare->compareType() != MCompare::Compare_UIntPtr);
 
     MDefinition* left = compare->getOperand(0);
     MDefinition* right = compare->getOperand(1);
