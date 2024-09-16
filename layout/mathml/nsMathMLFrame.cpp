@@ -244,7 +244,7 @@ void nsMathMLFrame::ParseNumericValue(const nsString& aString,
 
   nsCSSUnit unit = cssValue.GetUnit();
 
-  if (unit == eCSSUnit_Percent || unit == eCSSUnit_Number) {
+  if (unit == eCSSUnit_Percent) {
     
     *aLengthValue = NSToCoordRound(
         *aLengthValue * (unit == eCSSUnit_Percent ? cssValue.GetPercentValue()
