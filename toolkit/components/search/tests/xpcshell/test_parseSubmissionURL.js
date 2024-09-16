@@ -13,10 +13,10 @@ add_task(async function setup() {
 
 add_task(async function test_parseSubmissionURL() {
   let engine1 = await SearchTestUtils.installOpenSearchEngine({
-    url: `${gDataUrl}engine.xml`,
+    url: `${gHttpURL}/data/engine.xml`,
   });
   let engine2 = await SearchTestUtils.installOpenSearchEngine({
-    url: `${gDataUrl}engine-fr.xml`,
+    url: `${gHttpURL}/data/engine-fr.xml`,
   });
 
   await SearchTestUtils.installSearchExtension({
@@ -36,7 +36,7 @@ add_task(async function test_parseSubmissionURL() {
   
   
   let engine5 = await SearchTestUtils.installOpenSearchEngine({
-    url: `${gDataUrl}engine2.xml`,
+    url: `${gHttpURL}/data/engine2.xml`,
   });
 
   

@@ -84,7 +84,7 @@ add_task(async function test_searchTermFromResult() {
 
   
   let engineISOCharset = await SearchTestUtils.installOpenSearchEngine({
-    url: `${gDataUrl}engine-fr.xml`,
+    url: `${gHttpURL}/data/engine-fr.xml`,
   });
 
   

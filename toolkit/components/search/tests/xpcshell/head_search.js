@@ -227,7 +227,7 @@ function isSubObjectOf(expectedObj, actualObj, skipProp) {
 
 
 
-var gDataUrl;
+var gHttpURL;
 
 
 
@@ -235,13 +235,11 @@ var gDataUrl;
 
 
 
-
-
-function useHttpServer(dir = "data") {
+function useHttpServer() {
   let httpServer = new HttpServer();
   httpServer.start(-1);
   httpServer.registerDirectory("/", do_get_cwd());
-  gDataUrl = `http://localhost:${httpServer.identity.primaryPort}/${dir}/`;
+  gHttpURL = `http://localhost:${httpServer.identity.primaryPort}`;
   registerCleanupFunction(async function cleanup_httpServer() {
     await new Promise(resolve => {
       httpServer.stop(resolve);
