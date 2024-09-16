@@ -40,7 +40,6 @@ namespace dom {
 
 class AudioStreamTrack;
 class VideoStreamTrack;
-class RTCStatsTimestampMaker;
 enum class CallerType : uint32_t;
 
 
@@ -140,14 +139,6 @@ class MediaStreamTrackSource : public nsISupports {
 
 
   virtual const PeerIdentity* GetPeerIdentity() const { return nullptr; }
-
-  
-
-
-
-  virtual const RTCStatsTimestampMaker* GetTimestampMaker() const {
-    return nullptr;
-  }
 
   
 
@@ -466,13 +457,6 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   const PeerIdentity* GetPeerIdentity() const {
     return GetSource().GetPeerIdentity();
-  }
-
-  
-
-
-  const RTCStatsTimestampMaker* GetTimestampMaker() const {
-    return GetSource().GetTimestampMaker();
   }
 
   ProcessedMediaTrack* GetTrack() const;

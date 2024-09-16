@@ -86,7 +86,12 @@ class VideoRenderer {
 
 
 
-  virtual void RenderVideoFrame(const webrtc::VideoFrame& video_frame) = 0;
+
+
+
+
+  virtual void RenderVideoFrame(const webrtc::VideoFrameBuffer& buffer,
+                                uint32_t time_stamp, int64_t render_time) = 0;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoRenderer)
 };

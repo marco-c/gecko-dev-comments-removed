@@ -8,9 +8,6 @@
 #define GFX_IMAGETYPES_H
 
 #include <stdint.h>  
-#include "mozilla/Maybe.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/Variant.h"
 
 namespace mozilla {
 
@@ -115,19 +112,11 @@ enum class StereoMode {
 
 namespace layers {
 
-using ContainerFrameID = uint32_t;
+typedef uint32_t ContainerFrameID;
 constexpr ContainerFrameID kContainerFrameID_Invalid = 0;
 
-using ContainerProducerID = uint32_t;
+typedef uint32_t ContainerProducerID;
 constexpr ContainerProducerID kContainerProducerID_Invalid = 0;
-
-
-using ContainerCaptureTime = Variant<Nothing, TimeStamp, int64_t>;
-
-
-using ContainerReceiveTime = Maybe<int64_t>;
-
-using ContainerRtpTimestamp = Maybe<uint32_t>;
 
 }  
 
