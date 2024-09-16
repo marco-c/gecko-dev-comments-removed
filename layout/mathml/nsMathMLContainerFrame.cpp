@@ -939,21 +939,13 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
   }
 
   
-  nsresult rv =
-      MeasureForWidth(aRenderingContext->GetDrawTarget(), aDesiredSize);
+  PlaceFlags flags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly);
+  nsresult rv = Place(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
   if (NS_FAILED(rv)) {
-    PlaceFlags flags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly);
     PlaceAsMrow(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
   }
 
   ClearSavedChildMetrics();
-}
-
-
-nsresult nsMathMLContainerFrame::MeasureForWidth(DrawTarget* aDrawTarget,
-                                                 ReflowOutput& aDesiredSize) {
-  PlaceFlags flags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly);
-  return Place(aDrawTarget, flags, aDesiredSize);
 }
 
 

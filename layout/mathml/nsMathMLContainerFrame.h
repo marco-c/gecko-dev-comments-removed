@@ -187,17 +187,6 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   
   
-  
-  
-  
-  
-  
-  virtual nsresult MeasureForWidth(DrawTarget* aDrawTarget,
-                                   ReflowOutput& aDesiredSize);
-
-  
-  
-  
   virtual nsresult ChildListChanged(int32_t aModType);
 
   
