@@ -106,7 +106,7 @@ add_setup(async function setup() {
 
   sinon
     .stub(RemoteSettingsUtils, "baseAttachmentsURL")
-    .returns(`${gHttpURL}/data/`);
+    .returns(`${gHttpURL}/icons/`);
 
   
   await insertRecordIntoCollection(client, {

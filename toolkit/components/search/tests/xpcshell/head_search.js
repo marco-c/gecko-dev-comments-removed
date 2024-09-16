@@ -286,7 +286,7 @@ function checkCountryResultTelemetry(aExpectedValue) {
 
 
 async function getFileDataBuffer(filename) {
-  return IOUtils.read(PathUtils.join(do_get_cwd().path, "data", filename));
+  return IOUtils.read(PathUtils.join(do_get_cwd().path, "icons", filename));
 }
 
 
