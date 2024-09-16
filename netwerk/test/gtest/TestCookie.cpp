@@ -748,7 +748,8 @@ TEST(TestCookie, TestCookieMain)
                                                  &attrs,     
                                                  nsICookie::SAMESITE_NONE,
                                                  nsICookie::SCHEME_HTTPS,
-                                                 false  
+                                                 false,   
+                                                 nullptr  
                                                  )));
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(
       "cookiemgr.test"_ns,             
@@ -761,7 +762,8 @@ TEST(TestCookie, TestCookieMain)
       PR_Now() / PR_USEC_PER_SEC + 2,  
       &attrs,                          
       nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
-      false  
+      false,   
+      nullptr  
       )));
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative("new.domain"_ns,  
                                                  "/rabbit"_ns,     
@@ -774,7 +776,8 @@ TEST(TestCookie, TestCookieMain)
                                                  &attrs,     
                                                  nsICookie::SAMESITE_NONE,
                                                  nsICookie::SCHEME_HTTPS,
-                                                 false  
+                                                 false,   
+                                                 nullptr  
                                                  )));
   
   nsTArray<RefPtr<nsICookie>> cookies;
