@@ -16,6 +16,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
+#include "mozilla/LayoutStructs.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -1471,6 +1472,8 @@ class nsLayoutUtils {
 
 
 
+
+
   enum {
     IGNORE_PADDING = 0x01,
     BAIL_IF_REFLOW_NEEDED = 0x02,  
@@ -1480,7 +1483,8 @@ class nsLayoutUtils {
       mozilla::PhysicalAxis aAxis, gfxContext* aRenderingContext,
       nsIFrame* aFrame, mozilla::IntrinsicISizeType aType,
       const mozilla::Maybe<LogicalSize>& aPercentageBasis = mozilla::Nothing(),
-      uint32_t aFlags = 0, nscoord aMarginBoxMinSizeClamp = NS_MAXSIZE);
+      uint32_t aFlags = 0, nscoord aMarginBoxMinSizeClamp = NS_MAXSIZE,
+      const mozilla::StyleSizeOverrides& aSizeOverrides = {});
   
 
 
@@ -1488,7 +1492,8 @@ class nsLayoutUtils {
       gfxContext* aRenderingContext, nsIFrame* aFrame,
       mozilla::IntrinsicISizeType aType,
       const mozilla::Maybe<LogicalSize>& aPercentageBasis = mozilla::Nothing(),
-      uint32_t aFlags = 0);
+      uint32_t aFlags = 0,
+      const mozilla::StyleSizeOverrides& aSizeOverrides = {});
 
   
 

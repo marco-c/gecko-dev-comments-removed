@@ -3863,6 +3863,7 @@ void FlexItem::ResolveStretchedCrossSize(nscoord aLineCrossSize) {
   
   
   
+  
   if (mAlignSelf._0 != StyleAlignFlags::STRETCH ||
       NumAutoMarginsInCrossAxis() != 0 || !IsCrossSizeAuto()) {
     return;
@@ -6433,6 +6434,8 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
 
   const bool useMozBoxCollapseBehavior =
       StyleVisibility()->UseLegacyCollapseBehavior();
+  const bool isSingleLine = StyleFlexWrap::Nowrap == stylePos->mFlexWrap;
+  const auto flexWM = GetWritingMode();
 
   
   
@@ -6451,11 +6454,10 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       continue;
     }
 
-    const IntrinsicSizeInput childInput(aInput, childFrame->GetWritingMode(),
-                                        GetWritingMode());
-    nscoord childISize = nsLayoutUtils::IntrinsicForContainer(
-        childInput.mContext, childFrame, aType,
-        childInput.mPercentageBasisForChildren);
+    const auto childWM = childFrame->GetWritingMode();
+    const IntrinsicSizeInput childInput(aInput, childWM, flexWM);
+    const auto* childStylePos =
+        nsLayoutUtils::GetStyleFrame(childFrame)->StylePosition();
 
     
     
@@ -6464,7 +6466,75 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
     
     
     
-    bool isSingleLine = (StyleFlexWrap::Nowrap == stylePos->mFlexWrap);
+    
+    
+    
+    const bool childShouldStretchCrossSize = [&]() {
+      if (!isSingleLine || axisTracker.IsColumnOriented()) {
+        
+        
+        return false;
+      }
+      if (!aInput.mPercentageBasisForChildren ||
+          aInput.mPercentageBasisForChildren->BSize(flexWM) ==
+              NS_UNCONSTRAINEDSIZE) {
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
+      const StyleAlignFlags alignSelf =
+          childStylePos->UsedAlignSelf(Style())._0;
+      if ((alignSelf != StyleAlignFlags::STRETCH &&
+           alignSelf != StyleAlignFlags::NORMAL) ||
+          childFrame->StyleMargin()->HasBlockAxisAuto(flexWM) ||
+          !childStylePos->BSize(flexWM).IsAuto()) {
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
+      
+      return true;
+    }();
+
+    StyleSizeOverrides sizeOverrides;
+    if (childShouldStretchCrossSize) {
+      nscoord stretchedCrossSize =
+          aInput.mPercentageBasisForChildren->BSize(flexWM);
+      if (childStylePos->mBoxSizing == StyleBoxSizing::Content) {
+        const nscoord mbp =
+            childFrame->IntrinsicBSizeOffsets().MarginBorderPadding();
+        stretchedCrossSize = std::max(0, stretchedCrossSize - mbp);
+      }
+      const auto stretchedStyleCrossSize = StyleSize::LengthPercentage(
+          LengthPercentage::FromAppUnits(stretchedCrossSize));
+      
+      if (flexWM.IsOrthogonalTo(childWM)) {
+        sizeOverrides.mStyleISize.emplace(stretchedStyleCrossSize);
+      } else {
+        sizeOverrides.mStyleBSize.emplace(stretchedStyleCrossSize);
+      }
+    }
+    nscoord childISize = nsLayoutUtils::IntrinsicForContainer(
+        childInput.mContext, childFrame, aType,
+        childInput.mPercentageBasisForChildren, 0, sizeOverrides);
+
+    
+    
+    
+    
+    
+    
+    
     if (axisTracker.IsRowOriented() &&
         (isSingleLine || aType == IntrinsicISizeType::PrefISize)) {
       containerISize += childISize;
