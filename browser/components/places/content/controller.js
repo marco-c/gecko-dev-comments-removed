@@ -465,17 +465,7 @@ PlacesController.prototype = {
 
 
   _shouldShowMenuItem(aMenuItem, aMetaData) {
-    if (
-      aMenuItem.hasAttribute("hide-if-private-browsing") &&
-      !PrivateBrowsingUtils.enabled
-    ) {
-      return false;
-    }
-
-    if (
-      aMenuItem.hasAttribute("hide-if-usercontext-disabled") &&
-      !Services.prefs.getBoolPref("privacy.userContext.enabled", false)
-    ) {
+    if (PlacesUIUtils.shouldHideOpenMenuItem(aMenuItem)) {
       return false;
     }
 
@@ -574,6 +564,10 @@ PlacesController.prototype = {
 
 
 
+
+
+
+
   buildContextMenu(aPopup) {
     var metadata = this._buildSelectionMetadata();
     var ip = this._view.insertionPoint;
@@ -593,9 +587,6 @@ PlacesController.prototype = {
           item.getAttribute("hide-if-no-insertion-point") == "true" &&
           noIp &&
           !(ip && ip.isTag && item.id == "placesContext_paste");
-        let hideIfPrivate =
-          item.getAttribute("hide-if-private-browsing") == "true" &&
-          PrivateBrowsingUtils.isWindowPrivate(window);
         
         let hideIfSingleClickOpens =
           item.getAttribute("hide-if-single-click-opens") == "true" &&
@@ -610,7 +601,6 @@ PlacesController.prototype = {
 
         let shouldHideItem =
           hideIfNoIP ||
-          hideIfPrivate ||
           hideIfSingleClickOpens ||
           hideIfNotSearch ||
           !this._shouldShowMenuItem(item, metadata);
