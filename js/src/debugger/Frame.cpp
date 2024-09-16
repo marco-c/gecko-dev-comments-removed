@@ -1135,14 +1135,14 @@ Result<Completion> js::DebuggerGenericEval(
     case EvalOptions::EnvKind::Global:
       MOZ_ASSERT(!iter);
       MOZ_ASSERT(envArg);
-      MOZ_ASSERT(IsGlobalLexicalEnvironment(envArg));
+      MOZ_ASSERT(envArg->is<GlobalLexicalEnvironmentObject>());
       MOZ_ASSERT(!bindings);
       break;
     case EvalOptions::EnvKind::GlobalWithExtraInnerBindings:
     case EvalOptions::EnvKind::GlobalWithExtraOuterBindings:
       MOZ_ASSERT(!iter);
       MOZ_ASSERT(envArg);
-      MOZ_ASSERT(IsGlobalLexicalEnvironment(envArg));
+      MOZ_ASSERT(envArg->is<GlobalLexicalEnvironmentObject>());
       MOZ_ASSERT(bindings);
       break;
   }
