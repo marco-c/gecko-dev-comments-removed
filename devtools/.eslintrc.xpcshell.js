@@ -6,7 +6,6 @@
 
 
 module.exports = {
-  extends: ["plugin:mozilla/xpcshell-test"],
   rules: {
     
     camelcase: "off",
