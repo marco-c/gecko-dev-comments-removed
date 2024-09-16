@@ -36,9 +36,9 @@ class CookieServiceParent : public PCookieServiceParent {
 
   void RemoveAll();
 
-  void RemoveCookie(const Cookie& aCookie);
+  void RemoveCookie(const Cookie& aCookie, const nsID* aOperationID);
 
-  void AddCookie(const Cookie& aCookie);
+  void AddCookie(const Cookie& aCookie, const nsID* aOperationID);
 
   
   
