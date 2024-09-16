@@ -48,8 +48,6 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(
   }
 
   if (mCodecID == AV_CODEC_ID_FLAC) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        mAudioInfo.mCodecSpecificConfig.is<FlacCodecSpecificData>());
     
     
     
@@ -70,6 +68,7 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(
     }
   }
 
+  
   
   RefPtr<MediaByteBuffer> audioCodecSpecificBinaryBlob =
       GetAudioCodecSpecificBlob(mAudioInfo.mCodecSpecificConfig);
