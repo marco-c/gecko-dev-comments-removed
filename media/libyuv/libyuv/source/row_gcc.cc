@@ -2626,7 +2626,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8_t* y_buf,
                                 uint8_t* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -2686,7 +2686,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8_t* y_buf,
                                  uint8_t* dst_rgb24,
                                  const struct YuvConstants* yuvconstants,
                                  int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "movdqa      %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
       "movdqa      %[kShuffleMaskARGBToRGB24],%%xmm6 \n"
@@ -2722,7 +2722,7 @@ void OMITFP I444ToRGB24Row_SSSE3(const uint8_t* y_buf,
                                  uint8_t* dst_rgb24,
                                  const struct YuvConstants* yuvconstants,
                                  int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "movdqa      %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
       "movdqa      %[kShuffleMaskARGBToRGB24],%%xmm6 \n"
@@ -2758,7 +2758,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8_t* y_buf,
                                 uint8_t* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -2787,7 +2787,7 @@ void OMITFP I422ToAR30Row_SSSE3(const uint8_t* y_buf,
                                 uint8_t* dst_ar30,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"  
@@ -2822,7 +2822,7 @@ void OMITFP I210ToARGBRow_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -2852,7 +2852,7 @@ void OMITFP I212ToARGBRow_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -2882,7 +2882,7 @@ void OMITFP I210ToAR30Row_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_ar30,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -2917,7 +2917,7 @@ void OMITFP I212ToAR30Row_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_ar30,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -2952,7 +2952,7 @@ void OMITFP I410ToARGBRow_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -3045,7 +3045,7 @@ void OMITFP I410ToAR30Row_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_ar30,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -3238,7 +3238,7 @@ void OMITFP P210ToAR30Row_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_ar30,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
       "psrlw       $14,%%xmm5                    \n"
@@ -3269,7 +3269,7 @@ void OMITFP P410ToAR30Row_SSSE3(const uint16_t* y_buf,
                                 uint8_t* dst_ar30,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
       "psrlw       $14,%%xmm5                    \n"
@@ -3301,7 +3301,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8_t* y_buf,
                                 uint8_t* dst_rgba,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "pcmpeqb     %%xmm5,%%xmm5                 \n"
@@ -3712,7 +3712,7 @@ void OMITFP I444ToARGBRow_AVX2(const uint8_t* y_buf,
                                uint8_t* dst_argb,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
@@ -3746,7 +3746,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8_t* y_buf,
                                uint8_t* dst_argb,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
@@ -3786,7 +3786,7 @@ void OMITFP I422ToARGBRow_AVX512BW(const uint8_t* y_buf,
                                    uint8_t* dst_argb,
                                    const struct YuvConstants* yuvconstants,
                                    int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX512BW(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%xmm5,%%xmm5,%%xmm5          \n"
@@ -3825,7 +3825,7 @@ void OMITFP I422ToAR30Row_AVX2(const uint8_t* y_buf,
                                uint8_t* dst_ar30,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  
@@ -3865,7 +3865,7 @@ void OMITFP I210ToARGBRow_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_argb,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
@@ -3900,7 +3900,7 @@ void OMITFP I212ToARGBRow_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_argb,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
@@ -3935,7 +3935,7 @@ void OMITFP I210ToAR30Row_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_ar30,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  
@@ -3975,7 +3975,7 @@ void OMITFP I212ToAR30Row_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_ar30,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  
@@ -4015,7 +4015,7 @@ void OMITFP I410ToARGBRow_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_argb,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
@@ -4120,7 +4120,7 @@ void OMITFP I410ToAR30Row_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_ar30,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  
@@ -4228,7 +4228,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8_t* y_buf,
                                uint8_t* dst_argb,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "sub         %[u_buf],%[v_buf]             \n"
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"
@@ -4430,7 +4430,7 @@ void OMITFP P210ToAR30Row_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_ar30,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  
       "vpsrlw      $14,%%ymm5,%%ymm5             \n"
@@ -4467,7 +4467,7 @@ void OMITFP P410ToAR30Row_AVX2(const uint16_t* y_buf,
                                uint8_t* dst_ar30,
                                const struct YuvConstants* yuvconstants,
                                int width) {
-  asm (
+  asm volatile (
     YUVTORGB_SETUP_AVX2(yuvconstants)
       "vpcmpeqb    %%ymm5,%%ymm5,%%ymm5          \n"  
       "vpsrlw      $14,%%ymm5,%%ymm5             \n"
@@ -5681,7 +5681,7 @@ void MergeXRGBRow_AVX2(const uint8_t* src_r,
                        const uint8_t* src_b,
                        uint8_t* dst_argb,
                        int width) {
-  asm(
+  asm volatile(
 
       LABELALIGN
       "1:                                        \n"
@@ -7381,7 +7381,7 @@ void ARGBUnattenuateRow_SSE2(const uint8_t* src_argb,
                              uint8_t* dst_argb,
                              int width) {
   uintptr_t alpha;
-  asm(
+  asm volatile(
       
       LABELALIGN
       "1:                                        \n"
@@ -7413,12 +7413,12 @@ void ARGBUnattenuateRow_SSE2(const uint8_t* src_argb,
       "jg          1b                            \n"
       : "+r"(src_argb),     // %0
         "+r"(dst_argb),     // %1
-        "+r"(width),        
-        "=&r"(alpha)        
-      : "r"(fixed_invtbl8)  
+        "+r"(width),        // %2
+        "=&r"(alpha)        // %3
+      : "r"(fixed_invtbl8)  // %4
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
-#endif
+#endif  
 
 #ifdef HAS_ARGBUNATTENUATEROW_AVX2
 
@@ -7841,7 +7841,7 @@ void ARGBAddRow_SSE2(const uint8_t* src_argb,
                      const uint8_t* src_argb1,
                      uint8_t* dst_argb,
                      int width) {
-  asm(
+  asm volatile(
       
       LABELALIGN
       "1:                                        \n"
@@ -7869,7 +7869,7 @@ void ARGBAddRow_AVX2(const uint8_t* src_argb,
                      const uint8_t* src_argb1,
                      uint8_t* dst_argb,
                      int width) {
-  asm(
+  asm volatile(
       
       LABELALIGN
       "1:                                        \n"
@@ -7897,7 +7897,7 @@ void ARGBSubtractRow_SSE2(const uint8_t* src_argb,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width) {
-  asm(
+  asm volatile(
       
       LABELALIGN
       "1:                                        \n"
@@ -7925,7 +7925,7 @@ void ARGBSubtractRow_AVX2(const uint8_t* src_argb,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width) {
-  asm(
+  asm volatile(
       
       LABELALIGN
       "1:                                        \n"
@@ -8479,8 +8479,8 @@ void ARGBAffineRow_SSE2(const uint8_t* src_argb,
         "+r"(src_argb_stride_temp),  // %1
         "+r"(dst_argb),              // %2
         "+r"(src_dudv),              // %3
-        "+rm"(width),                
-        "=&r"(temp)                  
+        "+rm"(width),                // %4
+        "=&r"(temp)                  // %5
       :
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
@@ -9026,7 +9026,7 @@ void HalfFloatRow_AVX2(const uint16_t* src,
 #endif
       : "memory", "cc", "xmm2", "xmm3", "xmm4", "xmm5");
 }
-#endif  
+#endif
 
 #ifdef HAS_HALFFLOATROW_F16C
 void HalfFloatRow_F16C(const uint16_t* src,
@@ -9099,7 +9099,7 @@ void ARGBColorTableRow_X86(uint8_t* dst_argb,
                            const uint8_t* table_argb,
                            int width) {
   uintptr_t pixel_temp;
-  asm(
+  asm volatile(
       
       LABELALIGN
       "1:                                        \n"
@@ -9118,10 +9118,10 @@ void ARGBColorTableRow_X86(uint8_t* dst_argb,
       "mov         %b1,-0x1(%0)                  \n"
       "dec         %2                            \n"
       "jg          1b                            \n"
-      : "+r"(dst_argb),     
-        "=&d"(pixel_temp),  
-        "+r"(width)         
-      : "r"(table_argb)     
+      : "+r"(dst_argb),     // %0
+        "=&d"(pixel_temp),  // %1
+        "+r"(width)         // %2
+      : "r"(table_argb)     // %3
       : "memory", "cc");
 }
 #endif  
@@ -9132,7 +9132,7 @@ void RGBColorTableRow_X86(uint8_t* dst_argb,
                           const uint8_t* table_argb,
                           int width) {
   uintptr_t pixel_temp;
-  asm(
+  asm volatile(
       
       LABELALIGN
       "1:                                        \n"
@@ -9148,10 +9148,10 @@ void RGBColorTableRow_X86(uint8_t* dst_argb,
       "mov         %b1,-0x2(%0)                  \n"
       "dec         %2                            \n"
       "jg          1b                            \n"
-      : "+r"(dst_argb),     
-        "=&d"(pixel_temp),  
-        "+r"(width)         
-      : "r"(table_argb)     
+      : "+r"(dst_argb),     // %0
+        "=&d"(pixel_temp),  // %1
+        "+r"(width)         // %2
+      : "r"(table_argb)     // %3
       : "memory", "cc");
 }
 #endif  
@@ -9246,13 +9246,13 @@ void ARGBLumaColorTableRow_SSSE3(const uint8_t* src_argb,
       "lea         0x10(%3),%3                   \n"
       "sub         $0x4,%4                       \n"
       "jg          1b                            \n"
-      : "=&d"(pixel_temp),  
-        "=&a"(table_temp),  
-        "+r"(src_argb),     
-        "+r"(dst_argb),     
-        "+rm"(width)        
-      : "r"(luma),          
-        "rm"(lumacoeff)     
+      : "=&d"(pixel_temp),  // %0
+        "=&a"(table_temp),  // %1
+        "+r"(src_argb),     // %2
+        "+r"(dst_argb),     // %3
+        "+rm"(width)        // %4
+      : "r"(luma),          // %5
+        "rm"(lumacoeff)     // %6
       : "memory", "cc", "xmm0", "xmm3", "xmm4", "xmm5");
 }
 #endif  
