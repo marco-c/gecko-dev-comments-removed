@@ -3992,7 +3992,9 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
     
   } else if (alignSelf == StyleAlignFlags::FLEX_END) {
     mPosition += aLine.LineCrossSize() - aItem.OuterCrossSize();
-  } else if (alignSelf == StyleAlignFlags::CENTER) {
+  } else if (alignSelf == StyleAlignFlags::CENTER ||
+             alignSelf == StyleAlignFlags::ANCHOR_CENTER) {
+    
     
     mPosition += (aLine.LineCrossSize() - aItem.OuterCrossSize()) / 2;
   } else if (alignSelf == StyleAlignFlags::BASELINE ||
