@@ -10,6 +10,7 @@
 #include "InputData.h"               
 #include "InputBlockState.h"         
 #include "OverscrollHandoffState.h"  
+#include "nsLayoutUtils.h"           
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/WheelEventBinding.h"  
 #include "mozilla/EventStateManager.h"      
@@ -331,7 +332,7 @@ APZEventResult APZInputBridge::ReceiveInputEvent(
       if (Maybe<APZWheelAction> action = ActionForWheelEvent(&wheelEvent)) {
         ScrollWheelInput::ScrollMode scrollMode =
             ScrollWheelInput::SCROLLMODE_INSTANT;
-        if (StaticPrefs::general_smoothScroll() &&
+        if (nsLayoutUtils::IsSmoothScrollingEnabled() &&
             ((wheelEvent.mDeltaMode ==
                   dom::WheelEvent_Binding::DOM_DELTA_LINE &&
               StaticPrefs::general_smoothScroll_mouseWheel()) ||
