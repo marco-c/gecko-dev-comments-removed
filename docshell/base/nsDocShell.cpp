@@ -8431,6 +8431,17 @@ uint32_t nsDocShell::GetSameDocumentNavigationFlags(nsIURI* aNewURI) {
   return flags;
 }
 
+struct SameDocumentNavigationState {
+  nsAutoCString mCurrentHash;
+  nsAutoCString mNewHash;
+  nsTArray<TextDirective> mTextDirectives;
+  bool mCurrentURIHasRef = false;
+  bool mNewURIHasRef = false;
+  bool mSameExceptHashes = false;
+  bool mSecureUpgradeURI = false;
+  bool mHistoryNavBetweenSameDoc = false;
+};
+
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                           SameDocumentNavigationState& aState) {
   MOZ_ASSERT(aLoadState);
@@ -8452,14 +8463,8 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
 
   
   
-  
-  nsTArray<TextDirective> textDirectives;
-  if (FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
-          aState.mNewHash, &textDirectives, aLoadState->URI())) {
-    if (Document* doc = GetDocument()) {
-      doc->FragmentDirective()->SetTextDirectives(std::move(textDirectives));
-    }
-  }
+  FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
+      aState.mNewHash, &aState.mTextDirectives, aLoadState->URI());
 
   if (currentURI && NS_SUCCEEDED(rvURINew)) {
     nsresult rvURIOld = currentURI->GetRef(aState.mCurrentHash);
@@ -8595,6 +8600,12 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   RefPtr<Document> doc = GetDocument();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
   doc->DoNotifyPossibleTitleChange();
+
+  
+  
+  
+  doc->FragmentDirective()->SetTextDirectives(
+      std::move(aState.mTextDirectives));
 
   nsCOMPtr<nsIURI> currentURI = mCurrentURI;
 

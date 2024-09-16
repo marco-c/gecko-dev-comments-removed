@@ -90,6 +90,8 @@ enum eCharsetReloadState {
   eCharsetReloadStopOrigional
 };
 
+struct SameDocumentNavigationState;
+
 class nsDocShell final : public nsDocLoader,
                          public nsIDocShell,
                          public nsIWebNavigation,
@@ -1031,16 +1033,6 @@ class nsDocShell final : public nsDocLoader,
   
   
   void UnblockEmbedderLoadEventForFailure(bool aFireFrameErrorEvent = false);
-
-  struct SameDocumentNavigationState {
-    nsAutoCString mCurrentHash;
-    nsAutoCString mNewHash;
-    bool mCurrentURIHasRef = false;
-    bool mNewURIHasRef = false;
-    bool mSameExceptHashes = false;
-    bool mSecureUpgradeURI = false;
-    bool mHistoryNavBetweenSameDoc = false;
-  };
 
   
   
