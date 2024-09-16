@@ -118,12 +118,6 @@ const startupPhases = {
       stat: 1,
     },
     {
-      
-      path: "ProfD:",
-      condition: WIN,
-      stat: 1,
-    },
-    {
       path: "ProfLD:.startup-incomplete",
       condition: !WIN, 
       close: 1,
