@@ -1015,6 +1015,15 @@ impl CacheTextureId {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DeferredResolveIndex(pub u32);
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct TextureSourceExternal {
+    pub index: DeferredResolveIndex,
+    pub kind: ImageBufferKind,
+    pub normalized_uvs: bool,
+}
+
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -1025,7 +1034,7 @@ pub enum TextureSource {
     
     TextureCache(CacheTextureId, Swizzle),
     
-    External(DeferredResolveIndex, ImageBufferKind),
+    External(TextureSourceExternal),
     
     
     Dummy,
@@ -1036,12 +1045,19 @@ impl TextureSource {
         match *self {
             TextureSource::TextureCache(..) => ImageBufferKind::Texture2D,
 
-            TextureSource::External(_, image_buffer_kind) => image_buffer_kind,
+            TextureSource::External(TextureSourceExternal { kind, .. }) => kind,
 
             
             TextureSource::Dummy => ImageBufferKind::Texture2D,
 
             TextureSource::Invalid => ImageBufferKind::Texture2D,
+        }
+    }
+
+    pub fn uses_normalized_uvs(&self) -> bool {
+        match *self {
+            TextureSource::External(TextureSourceExternal { normalized_uvs, .. }) => normalized_uvs,
+            _ => false,
         }
     }
 
