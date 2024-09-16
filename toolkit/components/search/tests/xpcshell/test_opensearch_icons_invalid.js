@@ -36,7 +36,7 @@ add_task(async function test_installedhttpplace() {
   
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url:
-      `${gHttpURL}/data/engineMaker.sjs?` +
+      `${gHttpURL}/sjs/engineMaker.sjs?` +
       JSON.stringify({
         baseURL: `${gHttpURL}/`,
         imageURL: `${gHttpURL}/head_search.js`,

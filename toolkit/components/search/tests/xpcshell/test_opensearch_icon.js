@@ -48,7 +48,7 @@ add_task(async function test_icon_types() {
     
     
     SearchTestUtils.installOpenSearchEngine({
-      url: `${gHttpURL}/data/engineMaker.sjs?${JSON.stringify(engineData)}`,
+      url: `${gHttpURL}/sjs/engineMaker.sjs?${JSON.stringify(engineData)}`,
     });
     let engine = await promiseEngineAdded;
     
