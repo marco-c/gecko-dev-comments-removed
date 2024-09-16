@@ -425,10 +425,9 @@ var gTests = [
     },
   },
   {
-    desc: "WebChannel disallows non-string message from non-whitelisted origin",
+    desc: "WebChannel disallows non-string messages",
     async run() {
       
-
 
 
 
@@ -449,51 +448,6 @@ var gTests = [
         },
         async function () {
           await testDonePromise;
-          channel.stopListening();
-        }
-      );
-    },
-  },
-  {
-    desc: "WebChannel allows both string and non-string message from whitelisted origin",
-    async run() {
-      
-
-
-
-      let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH));
-
-      let testDonePromise = new Promise((resolve, reject) => {
-        let sawObject = false;
-        let sawString = false;
-        channel.listen((id, message) => {
-          is(id, "objects");
-          if (message.type === "object") {
-            ok(!sawObject);
-            sawObject = true;
-          } else if (message.type === "string") {
-            ok(!sawString);
-            sawString = true;
-          } else {
-            reject(new Error(`Unknown message type: ${message.type}`));
-          }
-          if (sawObject && sawString) {
-            resolve();
-          }
-        });
-      });
-      const webchannelWhitelistPref = "webchannel.allowObject.urlWhitelist";
-      let origWhitelist = Services.prefs.getCharPref(webchannelWhitelistPref);
-      let newWhitelist = origWhitelist + " " + HTTP_PATH;
-      Services.prefs.setCharPref(webchannelWhitelistPref, newWhitelist);
-      await BrowserTestUtils.withNewTab(
-        {
-          gBrowser,
-          url: HTTP_PATH + HTTP_ENDPOINT + "?object",
-        },
-        async function () {
-          await testDonePromise;
-          Services.prefs.setCharPref(webchannelWhitelistPref, origWhitelist);
           channel.stopListening();
         }
       );
