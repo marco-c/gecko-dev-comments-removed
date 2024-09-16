@@ -299,9 +299,6 @@ module.exports = {
         "mozilla/reject-top-level-await": "error",
         
         
-        "no-redeclare": ["error", { builtinGlobals: false }],
-        
-        
         "no-unused-vars": [
           "error",
           {
