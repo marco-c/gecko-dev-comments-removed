@@ -656,6 +656,9 @@ nsCString getKeaGroupName(uint32_t aKeaGroup) {
     case ssl_grp_kem_xyber768d00:
       groupName = "xyber768d00"_ns;
       break;
+    case ssl_grp_kem_mlkem768x25519:
+      groupName = "mlkem768x25519"_ns;
+      break;
     case ssl_grp_ffdhe_2048:
       groupName = "FF 2048"_ns;
       break;
@@ -1038,7 +1041,6 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
                            channelInfo.keaKeyBits);
         break;
       case ssl_kea_ecdh_hybrid:
-        
         break;
       default:
         MOZ_CRASH("impossible KEA");
@@ -1137,6 +1139,7 @@ void SecretCallback(PRFileDesc* fd, PRUint16 epoch, SSLSecretDirection dir,
   MOZ_ASSERT(arg);
   NSSSocketControl* infoObject = (NSSSocketControl*)arg;
   if (epoch == 2 && dir == ssl_secret_read) {
+    
     
     
     

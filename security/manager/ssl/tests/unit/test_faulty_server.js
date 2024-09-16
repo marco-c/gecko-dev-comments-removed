@@ -72,8 +72,8 @@ add_task(
   {
     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
   },
-  async function testRetryXyber() {
-    const retryDomain = "xyber-net-interrupt.example.com";
+  async function testRetryMlkem768x25519() {
+    const retryDomain = "mlkem768x25519-net-interrupt.example.com";
 
     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
     Services.prefs.setCharPref("network.dns.localDomains", [retryDomain]);
@@ -82,7 +82,7 @@ add_task(
     
     
     
-    let countOfXyber = handlerCount("/callback/25497");
+    let countOfMlkem = handlerCount("/callback/4588");
     let countOfX25519 = handlerCount("/callback/29");
     let chan = makeChan(`https://${retryDomain}:8443`);
     let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
@@ -91,9 +91,9 @@ add_task(
     
     
     equal(
-      handlerCount("/callback/25497"),
-      countOfXyber + 1,
-      "negotiated xyber768d00"
+      handlerCount("/callback/4588"),
+      countOfMlkem + 1,
+      "negotiated mlkem768x25519"
     );
     equal(handlerCount("/callback/29"), countOfX25519 + 1, "negotiated x25519");
     if (!mozinfo.socketprocess_networking) {
@@ -111,8 +111,8 @@ add_task(
   {
     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
   },
-  async function testNoRetryXyber() {
-    const retryDomain = "xyber-alert-after-server-hello.example.com";
+  async function testNoRetryMlkem768x25519() {
+    const retryDomain = "mlkem768x25519-alert-after-server-hello.example.com";
 
     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
     Services.prefs.setCharPref("network.dns.localDomains", [retryDomain]);
@@ -121,7 +121,8 @@ add_task(
     
     
     
-    let countOfXyber = handlerCount("/callback/25497");
+    
+    let countOfMlkem = handlerCount("/callback/4588");
     let countOfX25519 = handlerCount("/callback/29");
     let chan = makeChan(`https://${retryDomain}:8443`);
     let [req] = await channelOpenPromise(chan, CL_EXPECT_FAILURE);
@@ -129,9 +130,9 @@ add_task(
     
     
     equal(
-      handlerCount("/callback/25497"),
-      countOfXyber + 1,
-      "negotiated xyber768d00"
+      handlerCount("/callback/4588"),
+      countOfMlkem + 1,
+      "negotiated mlkem768x25519"
     );
     equal(
       handlerCount("/callback/29"),
