@@ -11598,30 +11598,7 @@ void CodeGenerator::visitBigIntPow(LBigIntPow* ins) {
   
   masm.loadBigIntNonZero(lhs, base, ool->entry());
 
-  
-  {
-    
-    
-
-    Label start, loop;
-    masm.jump(&start);
-    masm.bind(&loop);
-
-    
-    masm.branchMulPtr(Assembler::Overflow, base, base, ool->entry());
-
-    masm.bind(&start);
-
-    
-    Label even;
-    masm.branchTest32(Assembler::Zero, exponent, Imm32(1), &even);
-    masm.branchMulPtr(Assembler::Overflow, base, dest, ool->entry());
-    masm.bind(&even);
-
-    
-    
-    masm.branchRshift32(Assembler::NonZero, Imm32(1), exponent, &loop);
-  }
+  masm.powPtr(base, exponent, dest, ool->entry());
 
   MOZ_ASSERT(temp1 == dest);
 

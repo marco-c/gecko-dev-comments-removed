@@ -4758,18 +4758,19 @@ void MacroAssembler::pow32(Register base, Register power, Register dest,
   Label done;
   branch32(Assembler::Equal, base, Imm32(1), &done);
 
+  
+  
+  
+  
+  
+  
+  branchTest32(Assembler::Signed, power, power, onOver);
+
   move32(base, temp1);   
   move32(power, temp2);  
 
-  
-  
-  
-  
-  
-  
   Label start;
-  branchTest32(Assembler::NotSigned, power, power, &start);
-  jump(onOver);
+  jump(&start);
 
   Label loop;
   bind(&loop);
@@ -4783,6 +4784,67 @@ void MacroAssembler::pow32(Register base, Register power, Register dest,
   Label even;
   branchTest32(Assembler::Zero, temp2, Imm32(1), &even);
   branchMul32(Assembler::Overflow, temp1, dest, onOver);
+  bind(&even);
+
+  
+  
+  branchRshift32(Assembler::NonZero, Imm32(1), temp2, &loop);
+
+  bind(&done);
+}
+
+void MacroAssembler::powPtr(Register base, Register power, Register dest,
+                            Label* onOver) {
+  powPtr(base, power, dest, base, power, onOver);
+}
+
+void MacroAssembler::powPtr(Register base, Register power, Register dest,
+                            Register temp1, Register temp2, Label* onOver) {
+  
+  
+
+  
+  branchTestPtr(Assembler::Signed, power, power, onOver);
+
+  movePtr(ImmWord(1), dest);  
+
+  
+  Label done;
+  branchPtr(Assembler::Equal, base, ImmWord(1), &done);
+
+  
+  Label notNegativeOne;
+  branchPtr(Assembler::NotEqual, base, ImmWord(-1), &notNegativeOne);
+  test32MovePtr(Assembler::NonZero, power, Imm32(1), base, dest);
+  jump(&done);
+  bind(&notNegativeOne);
+
+  
+  branchPtr(Assembler::GreaterThanOrEqual, power, Imm32(BigInt::DigitBits),
+            onOver);
+
+  if (base != temp1) {
+    movePtr(base, temp1);  
+  }
+  if (power != temp2) {
+    movePtr(power, temp2);  
+  }
+
+  Label start;
+  jump(&start);
+
+  Label loop;
+  bind(&loop);
+
+  
+  branchMulPtr(Assembler::Overflow, temp1, temp1, onOver);
+
+  bind(&start);
+
+  
+  Label even;
+  branchTest32(Assembler::Zero, temp2, Imm32(1), &even);
+  branchMulPtr(Assembler::Overflow, temp1, dest, onOver);
   bind(&even);
 
   
