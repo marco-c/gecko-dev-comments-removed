@@ -167,18 +167,28 @@ ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
 }
 
 NonSyntacticLexicalEnvironmentObject*
-ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
-                                                       HandleObject enclosing) {
-  
-  
-  RootedObject key(cx, enclosing);
-  if (enclosing->is<WithEnvironmentObject>()) {
-    MOZ_ASSERT(!enclosing->as<WithEnvironmentObject>().isSyntactic());
-    key = &enclosing->as<WithEnvironmentObject>().object();
-  }
+ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(
+    JSContext* cx, Handle<NonSyntacticVariablesObject*> enclosing) {
+  HandleObject key = enclosing;
 
   
   
+  
+  
+  
+  return getOrCreateNonSyntacticLexicalEnvironment(cx, enclosing, key,
+                                                    key);
+}
+
+NonSyntacticLexicalEnvironmentObject*
+ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(
+    JSContext* cx, Handle<WithEnvironmentObject*> enclosing) {
+  MOZ_ASSERT(!enclosing->isSyntactic());
+
+  
+  
+  RootedObject key(cx, &enclosing->as<WithEnvironmentObject>().object());
+
   
   
   
@@ -188,6 +198,16 @@ ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
   
   return getOrCreateNonSyntacticLexicalEnvironment(cx, enclosing, key,
                                                     key);
+}
+
+NonSyntacticLexicalEnvironmentObject*
+ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(
+    JSContext* cx, Handle<WithEnvironmentObject*> enclosing,
+    Handle<NonSyntacticVariablesObject*> key) {
+  MOZ_ASSERT(!enclosing->isSyntactic());
+
+  RootedObject thisv(cx, &enclosing->object());
+  return getOrCreateNonSyntacticLexicalEnvironment(cx, enclosing, key, thisv);
 }
 
 NonSyntacticLexicalEnvironmentObject*

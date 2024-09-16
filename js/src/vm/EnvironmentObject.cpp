@@ -924,16 +924,17 @@ const JSClass NonSyntacticVariablesObject::class_ = {
     JSCLASS_HAS_RESERVED_SLOTS(NonSyntacticVariablesObject::RESERVED_SLOTS),
 };
 
-bool js::CreateNonSyntacticEnvironmentChain(JSContext* cx,
-                                            HandleObjectVector envChain,
-                                            MutableHandleObject env) {
+NonSyntacticLexicalEnvironmentObject* js::CreateNonSyntacticEnvironmentChain(
+    JSContext* cx, HandleObjectVector envChain) {
   
   
   MOZ_RELEASE_ASSERT(!envChain.empty());
 
   RootedObject globalLexical(cx, &cx->global()->lexicalEnvironment());
-  if (!CreateObjectsForEnvironmentChain(cx, envChain, globalLexical, env)) {
-    return false;
+  Rooted<WithEnvironmentObject*> env(
+      cx, CreateObjectsForEnvironmentChain(cx, envChain, globalLexical));
+  if (!env) {
+    return nullptr;
   }
 
   
@@ -944,7 +945,7 @@ bool js::CreateNonSyntacticEnvironmentChain(JSContext* cx,
   
   
   if (!JSObject::setQualifiedVarObj(cx, env)) {
-    return false;
+    return nullptr;
   }
 
   
@@ -955,9 +956,8 @@ bool js::CreateNonSyntacticEnvironmentChain(JSContext* cx,
   
   
   
-  env.set(
-      ObjectRealm::get(env).getOrCreateNonSyntacticLexicalEnvironment(cx, env));
-  return !!env;
+  return ObjectRealm::get(env).getOrCreateNonSyntacticLexicalEnvironment(cx,
+                                                                         env);
 }
 
 
@@ -3406,10 +3406,10 @@ JSObject* js::GetDebugEnvironmentForGlobalLexicalEnvironment(JSContext* cx) {
   return GetDebugEnvironment(cx, ei);
 }
 
-bool js::CreateObjectsForEnvironmentChain(JSContext* cx,
-                                          HandleObjectVector chain,
-                                          HandleObject terminatingEnv,
-                                          MutableHandleObject envObj) {
+WithEnvironmentObject* js::CreateObjectsForEnvironmentChain(
+    JSContext* cx, HandleObjectVector chain, HandleObject terminatingEnv) {
+  MOZ_ASSERT(!chain.empty());
+
 #ifdef DEBUG
   for (size_t i = 0; i < chain.length(); ++i) {
     cx->check(chain[i]);
@@ -3425,13 +3425,12 @@ bool js::CreateObjectsForEnvironmentChain(JSContext* cx,
     withEnv =
         WithEnvironmentObject::createNonSyntactic(cx, chain[--i], enclosingEnv);
     if (!withEnv) {
-      return false;
+      return nullptr;
     }
     enclosingEnv = withEnv;
   }
 
-  envObj.set(enclosingEnv);
-  return true;
+  return withEnv;
 }
 
 JSObject& WithEnvironmentObject::object() const {
