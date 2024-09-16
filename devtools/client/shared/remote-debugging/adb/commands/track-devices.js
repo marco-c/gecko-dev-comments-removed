@@ -17,7 +17,17 @@ const {
 } = require("resource://devtools/client/shared/remote-debugging/adb/adb-process.js");
 const client = require("resource://devtools/client/shared/remote-debugging/adb/adb-client.js");
 
-const ADB_STATUS_OFFLINE = "offline";
+
+
+const ONLINE_STATES = new Set([
+  "bootloader",
+  "device",
+  "host",
+  "recovery",
+  "rescue",
+  "sideload",
+]);
+
 const OKAY = 0x59414b4f;
 
 
@@ -135,7 +145,7 @@ class TrackDevicesCommand extends EventEmitter {
       this.emit("no-devices-detected");
     } else {
       for (const [deviceId, status] of this._devices.entries()) {
-        if (status !== ADB_STATUS_OFFLINE) {
+        if (!this._isStatusOnline(status)) {
           this.emit("device-disconnected", deviceId);
         }
       }
@@ -144,10 +154,8 @@ class TrackDevicesCommand extends EventEmitter {
   }
 
   _fireConnectionEventIfNeeded(deviceId, currentStatus, newStatus) {
-    const isCurrentOnline = !!(
-      currentStatus && currentStatus !== ADB_STATUS_OFFLINE
-    );
-    const isNewOnline = !!(newStatus && newStatus !== ADB_STATUS_OFFLINE);
+    const isCurrentOnline = this._isStatusOnline(currentStatus);
+    const isNewOnline = this._isStatusOnline(newStatus);
 
     if (isCurrentOnline === isNewOnline) {
       return;
@@ -158,6 +166,10 @@ class TrackDevicesCommand extends EventEmitter {
     } else {
       this.emit("device-disconnected", deviceId);
     }
+  }
+
+  _isStatusOnline(status) {
+    return ONLINE_STATES.has(status);
   }
 }
 exports.TrackDevicesCommand = TrackDevicesCommand;
