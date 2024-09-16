@@ -6457,7 +6457,8 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
     const IntrinsicSizeInput childInput(aInput, childFrame->GetWritingMode(),
                                         GetWritingMode());
     nscoord childISize = nsLayoutUtils::IntrinsicForContainer(
-        childInput.mContext, childFrame, aType, childInput.mPercentageBasis);
+        childInput.mContext, childFrame, aType,
+        childInput.mPercentageBasisForChildren);
 
     
     

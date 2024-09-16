@@ -419,6 +419,7 @@ struct FrameBidiData {
 
 
 
+
 struct MOZ_STACK_CLASS IntrinsicSizeInput final {
   gfxContext* const mContext;
 
@@ -429,11 +430,14 @@ struct MOZ_STACK_CLASS IntrinsicSizeInput final {
   
   
   
-  Maybe<LogicalSize> mPercentageBasis;
+  
+  
+  Maybe<LogicalSize> mPercentageBasisForChildren;
 
   IntrinsicSizeInput(gfxContext* aContext,
-                     const Maybe<LogicalSize>& aPercentageBasis)
-      : mContext(aContext), mPercentageBasis(aPercentageBasis) {
+                     const Maybe<LogicalSize>& aPercentageBasisForChildren)
+      : mContext(aContext),
+        mPercentageBasisForChildren(aPercentageBasisForChildren) {
     MOZ_ASSERT(mContext);
   }
 
@@ -444,10 +448,11 @@ struct MOZ_STACK_CLASS IntrinsicSizeInput final {
   
   IntrinsicSizeInput(const IntrinsicSizeInput& aSource,
                      mozilla::WritingMode aToWM, mozilla::WritingMode aFromWM)
-      : IntrinsicSizeInput(aSource.mContext,
-                           aSource.mPercentageBasis.map([&](const auto& aPB) {
-                             return aPB.ConvertTo(aToWM, aFromWM);
-                           })) {}
+      : IntrinsicSizeInput(
+            aSource.mContext,
+            aSource.mPercentageBasisForChildren.map([&](const auto& aPB) {
+              return aPB.ConvertTo(aToWM, aFromWM);
+            })) {}
 };
 
 }  
