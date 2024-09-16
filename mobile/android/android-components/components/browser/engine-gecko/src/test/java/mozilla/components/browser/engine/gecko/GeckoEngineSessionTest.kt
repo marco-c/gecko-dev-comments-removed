@@ -1055,6 +1055,7 @@ class GeckoEngineSessionTest {
         )
         engineSession.settings.historyTrackingDelegate = historyTrackingDelegate
         engineSession.appRedirectUrl = emptyPageUrl
+        engineSession.initialLoad = false
 
         class MockHistoryList(
             items: List<GeckoSession.HistoryDelegate.HistoryItem>,
@@ -1096,6 +1097,33 @@ class GeckoEngineSessionTest {
         verify(historyTrackingDelegate, never()).onVisited(eq(emptyPageUrl), any())
         assertEquals("https://www.google.com", observedUrl)
         assertEquals("Google Search", observedTitle)
+    }
+
+    @Test
+    fun `GIVEN an app initiated request AND initial load WHEN user swipe back THEN the tab should display the loaded page`() = runTestOnMain {
+        val engineSession = GeckoEngineSession(
+            mock(),
+            geckoSessionProvider = geckoSessionProvider,
+            context = coroutineContext,
+        )
+
+        captureDelegates()
+
+        var observedUrl = "https://www.google.com"
+        val emptyPageUrl = "https://example.com"
+
+        engineSession.register(
+            object : EngineSession.Observer {
+                override fun onLocationChange(url: String, hasUserGesture: Boolean) { observedUrl = url }
+            },
+        )
+        engineSession.appRedirectUrl = emptyPageUrl
+        engineSession.initialLoad = true
+
+        navigationDelegate.value.onLocationChange(geckoSession, emptyPageUrl, emptyList(), false)
+        contentDelegate.value.onTitleChange(geckoSession, emptyPageUrl)
+
+        assertEquals("https://example.com", observedUrl)
     }
 
     @Test
