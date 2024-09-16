@@ -261,6 +261,20 @@ class Int32OrIntPtrPolicy final : private TypePolicy {
 
 
 template <unsigned Op>
+class IntPtrPolicy final : private TypePolicy {
+ public:
+  constexpr IntPtrPolicy() = default;
+  EMPTY_DATA_;
+  [[nodiscard]] static bool staticAdjustInputs(TempAllocator& alloc,
+                                               MInstruction* def);
+  [[nodiscard]] bool adjustInputs(TempAllocator& alloc,
+                                  MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
+};
+
+
+template <unsigned Op>
 class ConvertToInt32Policy final : public TypePolicy {
  public:
   constexpr ConvertToInt32Policy() = default;

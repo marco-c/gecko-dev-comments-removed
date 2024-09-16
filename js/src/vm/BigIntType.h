@@ -183,6 +183,11 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   
   
+  static bool isIntPtr(const BigInt* x, intptr_t* result);
+
+  
+  
+  
   static bool isNumber(const BigInt* x, double* result);
 
   static BigInt* asIntN(JSContext* cx, Handle<BigInt*> x, uint64_t bits);
