@@ -359,6 +359,18 @@ impl Zoom {
 
     
     #[inline]
+    pub fn is_document(self) -> bool {
+        self == Self::DOCUMENT
+    }
+
+    
+    #[inline]
+    pub fn inverted(&self) -> Self {
+        Self(Self::ONE.0 / self.0)
+    }
+
+    
+    #[inline]
     pub fn value(&self) -> f32 {
         self.0.to_float()
     }

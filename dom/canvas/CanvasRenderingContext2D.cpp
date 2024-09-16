@@ -6,6 +6,7 @@
 #include "CanvasRenderingContext2D.h"
 
 #include "mozilla/gfx/Helpers.h"
+#include "nsCSSValue.h"
 #include "nsXULElement.h"
 
 #include "nsMathUtils.h"
@@ -2602,14 +2603,8 @@ static already_AddRefed<StyleLockedDeclarationBlock> CreateDeclarationForServo(
     return nullptr;
   }
 
-  
-  
   if (aProperty == eCSSProperty_font) {
-    const nsCString normalString = "normal"_ns;
-    Servo_DeclarationBlock_SetPropertyById(
-        servoDeclarations, eCSSProperty_line_height, &normalString, false,
-        env.mUrlExtraData, StyleParsingMode::DEFAULT, env.mCompatMode,
-        env.mLoader, env.mRuleType, {});
+    Servo_DeclarationBlock_SanitizeForCanvas(servoDeclarations);
   }
 
   return servoDeclarations.forget();
@@ -2674,12 +2669,9 @@ static already_AddRefed<const ComputedStyle> GetFontStyleForServo(
   
   
   if (!sc->StyleFont()->mFont.family.is_system_font) {
-    nsAutoCString computedFontSize;
-    sc->GetComputedPropertyValue(eCSSProperty_font_size, computedFontSize);
-    Servo_DeclarationBlock_SetPropertyById(
-        declarations, eCSSProperty_font_size, &computedFontSize, false, nullptr,
-        StyleParsingMode::DEFAULT, eCompatibility_FullStandards, nullptr,
-        StyleCssRuleType::Style, {});
+    float px = sc->StyleFont()->mFont.size.ToCSSPixels();
+    Servo_DeclarationBlock_SetLengthValue(declarations, eCSSProperty_font_size,
+                                          px, eCSSUnit_Pixel);
   }
 
   
