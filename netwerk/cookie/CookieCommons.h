@@ -69,9 +69,6 @@ class CookieCommons final {
 
   static bool PathMatches(Cookie* aCookie, const nsACString& aPath);
 
-  static bool PathMatches(const nsACString& aCookiePath,
-                          const nsACString& aPath);
-
   static nsresult GetBaseDomain(nsIEffectiveTLDService* aTLDService,
                                 nsIURI* aHostURI, nsACString& aBaseDomain,
                                 bool& aRequireHostMatch);
@@ -115,16 +112,8 @@ class CookieCommons final {
   static already_AddRefed<nsICookieJarSettings> GetCookieJarSettings(
       nsIChannel* aChannel);
 
-  static bool ShouldIncludeCrossSiteCookie(Cookie* aCookie,
-                                           bool aPartitionForeign,
-                                           bool aInPrivateBrowsing,
-                                           bool aUsingStorageAccess);
-
-  static bool ShouldIncludeCrossSiteCookie(int32_t aSameSiteAttr,
-                                           bool aCookiePartitioned,
-                                           bool aPartitionForeign,
-                                           bool aInPrivateBrowsing,
-                                           bool aUsingStorageAccess);
+  static bool ShouldIncludeCrossSiteCookieForDocument(Cookie* aCookie,
+                                                      dom::Document* aDocument);
 
   static bool IsSchemeSupported(nsIPrincipal* aPrincipal);
   static bool IsSchemeSupported(nsIURI* aURI);
@@ -156,24 +145,6 @@ class CookieCommons final {
 
   static void GetServerDateHeader(nsIChannel* aChannel,
                                   nsACString& aServerDateHeader);
-
-  enum class SecurityChecksResult {
-    
-    eSecurityError,
-    
-    eDoNotContinue,
-    
-    eContinue,
-  };
-
-  
-  
-  
-  
-  
-  static SecurityChecksResult CheckGlobalAndRetrieveCookiePrincipals(
-      mozilla::dom::Document* aDocument, nsIPrincipal** aCookiePrincipal,
-      nsIPrincipal** aCookiePartitionedPrincipal);
 };
 
 }  

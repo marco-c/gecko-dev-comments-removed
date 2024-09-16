@@ -629,12 +629,6 @@ class ContentParent final : public PContentParent,
   
   void TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal);
 
-  
-  
-  
-  void AddPrincipalToCookieInProcessCache(nsIPrincipal* aPrincipal);
-  void TakeCookieInProcessCache(nsTArray<nsCOMPtr<nsIPrincipal>>& aList);
-
   nsresult TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal);
 
   
@@ -1574,8 +1568,6 @@ class ContentParent final : public PContentParent,
   nsTHashSet<nsCString> mActiveSecondaryPermissionKeys;
 
   nsTArray<nsCString> mBlobURLs;
-
-  nsTArray<nsCOMPtr<nsIPrincipal>> mCookieInContentListCache;
 
   
   
