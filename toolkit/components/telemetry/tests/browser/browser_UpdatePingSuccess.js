@@ -55,7 +55,9 @@ add_task(async function test_updatePing() {
   
   
   
-  Cc["@mozilla.org/browser/clh;1"].getService(Ci.nsIBrowserHandler).defaultArgs;
+  Cc["@mozilla.org/browser/clh;1"]
+    .getService(Ci.nsIBrowserHandler)
+    .getFirstWindowArgs();
 
   
   
