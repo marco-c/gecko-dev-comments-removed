@@ -6,13 +6,27 @@ import sys
 from .ansitowin32 import AnsiToWin32
 
 
-orig_stdout = None
-orig_stderr = None
+def _wipe_internal_state_for_tests():
+    global orig_stdout, orig_stderr
+    orig_stdout = None
+    orig_stderr = None
 
-wrapped_stdout = None
-wrapped_stderr = None
+    global wrapped_stdout, wrapped_stderr
+    wrapped_stdout = None
+    wrapped_stderr = None
 
-atexit_done = False
+    global atexit_done
+    atexit_done = False
+
+    global fixed_windows_console
+    fixed_windows_console = False
+
+    try:
+        
+        atexit.unregister(reset_all)
+    except AttributeError:
+        
+        pass
 
 
 def reset_all():
@@ -55,6 +69,29 @@ def deinit():
         sys.stderr = orig_stderr
 
 
+def just_fix_windows_console():
+    global fixed_windows_console
+
+    if sys.platform != "win32":
+        return
+    if fixed_windows_console:
+        return
+    if wrapped_stdout is not None or wrapped_stderr is not None:
+        
+        return
+
+    
+    
+    
+    new_stdout = AnsiToWin32(sys.stdout, convert=None, strip=None, autoreset=False)
+    if new_stdout.convert:
+        sys.stdout = new_stdout
+    new_stderr = AnsiToWin32(sys.stderr, convert=None, strip=None, autoreset=False)
+    if new_stderr.convert:
+        sys.stderr = new_stderr
+
+    fixed_windows_console = True
+
 @contextlib.contextmanager
 def colorama_text(*args, **kwargs):
     init(*args, **kwargs)
@@ -78,3 +115,7 @@ def wrap_stream(stream, convert, strip, autoreset, wrap):
         if wrapper.should_wrap():
             stream = wrapper.stream
     return stream
+
+
+
+_wipe_internal_state_for_tests()
