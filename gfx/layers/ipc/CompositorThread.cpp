@@ -174,7 +174,11 @@ void CompositorThreadHolder::Shutdown() {
 
 bool CompositorThreadHolder::IsInCompositorThread() {
   if (!CompositorThread()) {
-    return false;
+    
+    
+    
+    
+    return (sProfilerThreadId == profiler_current_thread_id());
   }
   bool in = false;
   MOZ_ALWAYS_SUCCEEDS(CompositorThread()->IsOnCurrentThread(&in));
