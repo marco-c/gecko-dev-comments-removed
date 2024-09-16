@@ -72,4 +72,10 @@ interface nsICookieNotification : nsISupports {
 
 
     [infallible] readonly attribute BrowsingContext browsingContext;
+
+    
+
+
+
+    readonly attribute nsIDPtr operationID;
 };
