@@ -1020,9 +1020,14 @@ class WithEnvironmentObject : public EnvironmentObject {
   
   WithScope& scope() const;
 
-  static inline size_t objectSlot() { return OBJECT_SLOT; }
+  static constexpr size_t objectSlot() { return OBJECT_SLOT; }
 
-  static inline size_t thisSlot() { return THIS_SLOT; }
+  static constexpr size_t thisSlot() { return THIS_SLOT; }
+
+  
+  static constexpr size_t offsetOfThisSlot() {
+    return getFixedSlotOffset(THIS_SLOT);
+  }
 };
 
 

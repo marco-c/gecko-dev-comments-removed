@@ -3427,6 +3427,40 @@ void MacroAssembler::loadResizableTypedArrayByteOffsetMaybeOutOfBoundsIntPtr(
   bind(&done);
 }
 
+void MacroAssembler::computeImplicitThis(Register env, ValueOperand output,
+                                         Label* slowPath) {
+  
+
+  Register scratch = output.scratchReg();
+  MOZ_ASSERT(scratch != env);
+
+  loadObjClassUnsafe(env, scratch);
+
+  
+  branchTestClassIsProxy(true, scratch, slowPath);
+
+  
+  Label nonWithEnv, done;
+  branchPtr(Assembler::NotEqual, scratch,
+            ImmPtr(&WithEnvironmentObject::class_), &nonWithEnv);
+  {
+    if (JitOptions.spectreObjectMitigations) {
+      spectreZeroRegister(Assembler::NotEqual, scratch, env);
+    }
+
+    loadValue(Address(env, WithEnvironmentObject::offsetOfThisSlot()), output);
+
+    jump(&done);
+  }
+  bind(&nonWithEnv);
+
+  
+  
+  moveValue(JS::UndefinedValue(), output);
+
+  bind(&done);
+}
+
 void MacroAssembler::loadDOMExpandoValueGuardGeneration(
     Register obj, ValueOperand output,
     JS::ExpandoAndGeneration* expandoAndGeneration, uint64_t generation,
