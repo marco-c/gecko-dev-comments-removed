@@ -1943,9 +1943,6 @@ pref("dom.use_watchdog", true);
 pref("dom.global_stop_script", true);
 
 
-pref("input_event_queue.supported", true);
-
-
 #if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
   pref("dom.ipc.processCount", 8);
 #elif defined(FUZZING_SNAPSHOT)

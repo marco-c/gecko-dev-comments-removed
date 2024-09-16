@@ -340,10 +340,6 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
 
   
   
-  mIsReadyToHandleInputEvents = !ContentParent::IsInputEventQueueSupported();
-
-  
-  
   
   if (aBrowsingContext->IsTop()) {
     RecomputeProcessPriority();
