@@ -454,9 +454,8 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
       
       
       
-      NS_ASSERTION(
-          (loadFlags & nsIChannel::LOAD_REPLACE) || !(mDocumentRequest.get()),
-          "Overwriting an existing document channel!");
+      NS_ASSERTION((loadFlags & nsIChannel::LOAD_REPLACE) || !mDocumentRequest,
+                   "Overwriting an existing document channel!");
 
       
       mDocumentRequest = request;

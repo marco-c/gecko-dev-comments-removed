@@ -9271,6 +9271,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   const bool isJavaScript = SchemeIsJavascript(aLoadState->URI());
+  const bool isExternalProtocol =
+      nsContentUtils::IsExternalProtocol(aLoadState->URI());
   const bool isDownload = !aLoadState->FileName().IsVoid();
   const bool toBeReset = !isJavaScript && MaybeInitTiming();
 
@@ -9279,6 +9281,9 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   if (mTiming && !isDownload) {
     mTiming->NotifyBeforeUnload();
   }
+  
+  
+  
   
   
   if (!isJavaScript && !isDownload &&
@@ -9380,7 +9385,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
-  if (!isJavaScript && !isDownload) {
+  if (!isJavaScript && !isDownload && !isExternalProtocol) {
     
     
     
