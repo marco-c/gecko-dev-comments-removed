@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/dom/WebGPUBinding.h"
 #include "CanvasContext.h"
@@ -34,7 +34,7 @@ inline void ImplCycleCollectionUnlink(dom::GPUCanvasConfiguration& aField) {
   aField.UnlinkForCC();
 }
 
-// -
+
 
 template <class T>
 inline void ImplCycleCollectionTraverse(
@@ -50,9 +50,9 @@ inline void ImplCycleCollectionUnlink(std::unique_ptr<T>& aField) {
   aField = nullptr;
 }
 
-}  // namespace mozilla
+}  
 
-// -
+
 
 namespace mozilla::webgpu {
 
@@ -70,7 +70,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CanvasContext)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-// -
+
 
 CanvasContext::CanvasContext() = default;
 
@@ -86,7 +86,7 @@ JSObject* CanvasContext::WrapObject(JSContext* aCx,
   return dom::GPUCanvasContext_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-// -
+
 
 void CanvasContext::GetCanvas(
     dom::OwningHTMLCanvasElementOrOffscreenCanvas& aRetVal) const {
@@ -104,9 +104,9 @@ void CanvasContext::GetCanvas(
 void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig) {
   Unconfigure();
 
-  // Bug 1864904: Failures in validation should throw a TypeError, per spec.
+  
 
-  // these formats are guaranteed by the spec
+  
   switch (aConfig.mFormat) {
     case dom::GPUTextureFormat::Rgba8unorm:
     case dom::GPUTextureFormat::Rgba8unorm_srgb:
@@ -124,14 +124,15 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig) {
   mConfig.reset(new dom::GPUCanvasConfiguration(aConfig));
   mRemoteTextureOwnerId = Some(layers::RemoteTextureOwnerId::GetNext());
   mUseExternalTextureInSwapChain =
+      aConfig.mDevice->mSupportExternalTextureInSwapChain &&
       wgpu_client_use_external_texture_in_swapChain(
-          aConfig.mDevice->mId, ConvertTextureFormat(aConfig.mFormat));
+          ConvertTextureFormat(aConfig.mFormat));
   if (!gfx::gfxVars::AllowWebGPUPresentWithoutReadback()) {
     mUseExternalTextureInSwapChain = false;
   }
 #ifdef XP_WIN
-  // When WebRender does not use hardware acceleration, disable external texture
-  // in swap chain. Since compositor device might not exist.
+  
+  
   if (gfx::gfxVars::UseSoftwareWebRender() &&
       !gfx::gfxVars::AllowSoftwareWebRenderD3D11()) {
     mUseExternalTextureInSwapChain = false;
@@ -173,12 +174,12 @@ NS_IMETHODIMP CanvasContext::SetDimensions(int32_t aWidth, int32_t aHeight) {
   aWidth = std::max(1, aWidth);
   aHeight = std::max(1, aHeight);
   const auto newSize = gfx::IntSize{aWidth, aHeight};
-  if (newSize == mCanvasSize) return NS_OK;  // No-op no-change resizes.
+  if (newSize == mCanvasSize) return NS_OK;  
 
   mCanvasSize = newSize;
   if (mConfig) {
     const auto copy = dom::GPUCanvasConfiguration{
-        *mConfig};  // So we can't null it out on ourselves.
+        *mConfig};  
     Configure(copy);
   }
   return NS_OK;
@@ -255,7 +256,7 @@ bool CanvasContext::UpdateWebRenderCanvasData(
 
   renderer = aCanvasData->CreateCanvasRenderer();
   if (!InitializeCanvasRenderer(aBuilder, renderer)) {
-    // Clear CanvasRenderer of WebRenderCanvasData
+    
     aCanvasData->ClearCanvasRenderer();
     return false;
   }
@@ -302,10 +303,10 @@ mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     gfxUtils::GetImageBufferWithRandomNoise(
         dataSurface,
-        /* aIsAlphaPremultiplied */ true, GetCookieJarSettings(), &*out_format);
+         true, GetCookieJarSettings(), &*out_format);
   }
 
-  return gfxUtils::GetImageBuffer(dataSurface, /* aIsAlphaPremultiplied */ true,
+  return gfxUtils::GetImageBuffer(dataSurface,  true,
                                   &*out_format);
 }
 
@@ -322,11 +323,11 @@ NS_IMETHODIMP CanvasContext::GetInputStream(const char* aMimeType,
 
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     gfxUtils::GetInputStreamWithRandomNoise(
-        dataSurface, /* aIsAlphaPremultiplied */ true, aMimeType,
+        dataSurface,  true, aMimeType,
         aEncoderOptions, GetCookieJarSettings(), aStream);
   }
 
-  return gfxUtils::GetInputStream(dataSurface, /* aIsAlphaPremultiplied */ true,
+  return gfxUtils::GetInputStream(dataSurface,  true,
                                   aMimeType, aEncoderOptions, aStream);
 }
 
@@ -347,8 +348,8 @@ already_AddRefed<mozilla::gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
 
   MOZ_ASSERT(mRemoteTextureOwnerId.isSome());
   return cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
-                         mGfxFormat, /* aPremultiply */ false,
-                         /* aYFlip */ false);
+                         mGfxFormat,  false,
+                          false);
 }
 
 Maybe<layers::SurfaceDescriptor> CanvasContext::GetFrontBuffer(
@@ -372,9 +373,9 @@ void CanvasContext::ForceNewFrame() {
     return;
   }
 
-  // Force a new frame to be built, which will execute the
-  // `CanvasContextType::WebGPU` switch case in `CreateWebRenderCommands` and
-  // populate the WR user data.
+  
+  
+  
   if (mCanvasElement) {
     mCanvasElement->InvalidateCanvas();
   } else if (mOffscreenCanvas) {
@@ -400,4 +401,4 @@ void CanvasContext::InvalidateCanvasContent() {
   }
 }
 
-}  // namespace mozilla::webgpu
+}  
