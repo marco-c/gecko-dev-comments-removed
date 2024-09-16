@@ -3438,7 +3438,13 @@ JSObject& WithEnvironmentObject::object() const {
 }
 
 JSObject* WithEnvironmentObject::withThis() const {
-  return &getReservedSlot(THIS_SLOT).toObject();
+  JSObject* obj = &getReservedSlot(THIS_SLOT).toObject();
+
+  
+  
+  MOZ_ASSERT(!IsWindow(obj));
+
+  return obj;
 }
 
 bool WithEnvironmentObject::isSyntactic() const {
