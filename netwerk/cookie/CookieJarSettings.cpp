@@ -395,7 +395,7 @@ void CookieJarSettings::Serialize(CookieJarSettingsArgs& aData) {
       continue;
     }
 
-    ipc::PrincipalInfo principalInfo;
+    mozilla::ipc::PrincipalInfo principalInfo;
     rv = PrincipalToPrincipalInfo(principal, &principalInfo,
                                   true );
     if (NS_WARN_IF(NS_FAILED(rv))) {
