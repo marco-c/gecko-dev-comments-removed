@@ -568,7 +568,8 @@ nsresult nsLoadGroup::RemoveRequestFromHashtable(nsIRequest* request,
 
   
   
-  if (mDefaultLoadIsTimed && NS_SUCCEEDED(aStatus)) {
+  if (mDefaultLoadIsTimed && NS_SUCCEEDED(aStatus) &&
+      request != mDefaultLoadRequest) {
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(request);
     if (timedChannel) {
       
