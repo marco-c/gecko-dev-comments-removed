@@ -16,6 +16,8 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/Unused.h"
 #include "mozIThirdPartyUtil.h"
@@ -23,10 +25,12 @@
 #include "nsICookiePermission.h"
 #include "nsICookieService.h"
 #include "nsIEffectiveTLDService.h"
+#include "nsIGlobalObject.h"
 #include "nsIHttpChannel.h"
 #include "nsIRedirectHistoryEntry.h"
 #include "nsIWebProgressListener.h"
 #include "nsNetUtil.h"
+#include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
 #include "ThirdPartyUtil.h"
 
@@ -47,31 +51,35 @@ bool CookieCommons::DomainMatches(Cookie* aCookie, const nsACString& aHost) {
 
 
 bool CookieCommons::PathMatches(Cookie* aCookie, const nsACString& aPath) {
-  const nsCString& cookiePath(aCookie->Path());
+  return PathMatches(aCookie->Path(), aPath);
+}
 
+
+bool CookieCommons::PathMatches(const nsACString& aCookiePath,
+                                const nsACString& aPath) {
   
   
   
-  if (cookiePath.IsEmpty()) {
+  if (aCookiePath.IsEmpty()) {
     return false;
   }
 
   
-  if (cookiePath.Equals(aPath)) {
+  if (aCookiePath.Equals(aPath)) {
     return true;
   }
 
   
   
-  bool isPrefix = StringBeginsWith(aPath, cookiePath);
-  if (isPrefix && cookiePath.Last() == '/') {
+  bool isPrefix = StringBeginsWith(aPath, aCookiePath);
+  if (isPrefix && aCookiePath.Last() == '/') {
     return true;
   }
 
   
   
   
-  uint32_t cookiePathLen = cookiePath.Length();
+  uint32_t cookiePathLen = aCookiePath.Length();
   return isPrefix && aPath[cookiePathLen] == '/';
 }
 
@@ -826,6 +834,138 @@ void CookieCommons::ComposeCookieString(nsTArray<RefPtr<Cookie>>& aCookieList,
   }
 }
 
+
+CookieCommons::SecurityChecksResult
+CookieCommons::CheckGlobalAndRetrieveCookiePrincipals(
+    Document* aDocument, nsIPrincipal** aCookiePrincipal,
+    nsIPrincipal** aCookiePartitionedPrincipal) {
+  MOZ_ASSERT(aCookiePrincipal);
+
+  nsCOMPtr<nsIPrincipal> cookiePrincipal;
+  nsCOMPtr<nsIPrincipal> cookiePartitionedPrincipal;
+
+  if (!NS_IsMainThread()) {
+    MOZ_ASSERT(!aDocument);
+
+    dom::WorkerPrivate* workerPrivate = dom::GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+
+    StorageAccess storageAccess = workerPrivate->StorageAccess();
+    if (storageAccess == StorageAccess::eDeny) {
+      return SecurityChecksResult::eDoNotContinue;
+    }
+
+    cookiePrincipal = workerPrivate->GetPrincipal();
+    if (NS_WARN_IF(!cookiePrincipal) || cookiePrincipal->GetIsNullPrincipal()) {
+      return SecurityChecksResult::eSecurityError;
+    }
+
+    
+    
+    
+    
+    
+    bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                   workerPrivate->CookieJarSettings()->GetPartitionForeign();
+    bool workerHasStorageAccess =
+        workerPrivate->StorageAccess() == StorageAccess::eAllow;
+
+    if (isCHIPS && workerHasStorageAccess) {
+      
+      MOZ_ASSERT(
+          cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
+      
+      
+      
+      
+      nsCOMPtr<nsIPrincipal> partitionedPrincipal =
+          workerPrivate->GetPartitionedPrincipal();
+      if (partitionedPrincipal && !partitionedPrincipal->OriginAttributesRef()
+                                       .mPartitionKey.IsEmpty()) {
+        cookiePartitionedPrincipal = partitionedPrincipal;
+      }
+    }
+  } else {
+    if (!aDocument) {
+      return SecurityChecksResult::eDoNotContinue;
+    }
+
+    cookiePrincipal = aDocument->EffectiveCookiePrincipal();
+    if (NS_WARN_IF(!cookiePrincipal) || cookiePrincipal->GetIsNullPrincipal()) {
+      return SecurityChecksResult::eSecurityError;
+    }
+
+    if (aDocument->CookieAccessDisabled()) {
+      return SecurityChecksResult::eDoNotContinue;
+    }
+
+    
+    
+    if (aDocument->GetSandboxFlags() & SANDBOXED_ORIGIN) {
+      return SecurityChecksResult::eSecurityError;
+    }
+
+    
+    
+    if (!StaticPrefs::dom_cookie_testing_enabled()) {
+      StorageAccess storageAccess = CookieAllowedForDocument(aDocument);
+      if (storageAccess == StorageAccess::eDeny) {
+        return SecurityChecksResult::eDoNotContinue;
+      }
+
+      if (ShouldPartitionStorage(storageAccess) &&
+          !StoragePartitioningEnabled(storageAccess,
+                                      aDocument->CookieJarSettings())) {
+        return SecurityChecksResult::eDoNotContinue;
+      }
+
+      
+      if (aDocument->IsCookieAverse()) {
+        return SecurityChecksResult::eDoNotContinue;
+      }
+    }
+
+    
+    
+    
+    
+    
+    bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                   aDocument->CookieJarSettings()->GetPartitionForeign();
+    bool documentHasStorageAccess = false;
+    nsresult rv = aDocument->HasStorageAccessSync(documentHasStorageAccess);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return SecurityChecksResult::eDoNotContinue;
+    }
+
+    if (isCHIPS && documentHasStorageAccess) {
+      
+      MOZ_ASSERT(
+          cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
+      
+      
+      
+      
+      if (!aDocument->PartitionedPrincipal()
+               ->OriginAttributesRef()
+               .mPartitionKey.IsEmpty()) {
+        cookiePartitionedPrincipal = aDocument->PartitionedPrincipal();
+      }
+    }
+  }
+
+  if (!IsSchemeSupported(cookiePrincipal)) {
+    return SecurityChecksResult::eDoNotContinue;
+  }
+
+  cookiePrincipal.forget(aCookiePrincipal);
+
+  if (aCookiePartitionedPrincipal) {
+    cookiePartitionedPrincipal.forget(aCookiePartitionedPrincipal);
+  }
+
+  return SecurityChecksResult::eContinue;
+}
 
 void CookieCommons::GetServerDateHeader(nsIChannel* aChannel,
                                         nsACString& aServerDateHeader) {

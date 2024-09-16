@@ -1098,6 +1098,8 @@ class Document : public nsINode,
 
   void DisableCookieAccess() { mDisableCookieAccess = true; }
 
+  bool CookieAccessDisabled() const { return mDisableCookieAccess; }
+
   void SetLinkHandlingEnabled(bool aValue) { mLinksEnabled = aValue; }
   bool LinkHandlingEnabled() { return mLinksEnabled; }
 
@@ -3753,6 +3755,8 @@ class Document : public nsINode,
   
   
   void UpdateIntersections(TimeStamp aNowTime);
+  
+  void UpdateRemoteFrameEffects();
   MOZ_CAN_RUN_SCRIPT void NotifyIntersectionObservers();
 
   DOMIntersectionObserver* GetLazyLoadObserver() { return mLazyLoadObserver; }

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+#include "CookieStore.h"
+#include "CookieStoreChild.h"
+#include "mozilla/ipc/PBackgroundChild.h"
+
+namespace mozilla {
+
+using namespace ipc;
+
+namespace dom {
+
+CookieStoreChild::CookieStoreChild() = default;
+
+CookieStoreChild::~CookieStoreChild() = default;
+
+void CookieStoreChild::Close() {
+  if (CanSend()) {
+    SendClose();
+  }
+}
+
+}  
+}  
