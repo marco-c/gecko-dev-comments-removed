@@ -48,8 +48,6 @@ function sanityChecks() {
 
 
 
-
-
 function createFile(path) {
   const { FileUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/FileUtils.sys.mjs"
@@ -78,14 +76,11 @@ function createFile(path) {
     ostream.close();
     fstream.close();
   } catch (e) {
-    return { ok: false, code: e.result };
+    return { ok: false };
   }
 
   return { ok: true };
 }
-
-
-
 
 
 
@@ -97,10 +92,8 @@ function createSymlink(path) {
   );
 
   try {
-    
-    
     const libc = ctypes.open(
-      Services.appinfo.OS === "Darwin" ? "libSystem.B.dylib" : "libc.so.6"
+      Services.appinfo.OS === "Darwin" ? "libSystem.B.dylib" : "libc.so"
     );
 
     const symlink = libc.declare(
@@ -111,20 +104,15 @@ function createSymlink(path) {
       ctypes.char.ptr 
     );
 
-    ctypes.errno = 0;
-    const rv = symlink("/etc", path);
-    const _errno = ctypes.errno;
-    if (rv < 0) {
-      return { ok: false, code: _errno };
+    if (symlink("/etc", path)) {
+      return { ok: false };
     }
   } catch (e) {
-    return { ok: false, code: e.result };
+    return { ok: false };
   }
 
   return { ok: true };
 }
-
-
 
 
 
@@ -139,13 +127,11 @@ function deleteFile(path) {
     const file = new FileUtils.File(path);
     file.remove(false);
   } catch (e) {
-    return { ok: false, code: e.result };
+    return { ok: false };
   }
 
   return { ok: true };
 }
-
-
 
 
 
@@ -167,13 +153,11 @@ function readDir(path) {
       numEntries++;
     }
   } catch (e) {
-    return { ok: false, numEntries, code: e.result };
+    return { ok: false, numEntries };
   }
 
   return { ok: true, numEntries };
 }
-
-
 
 
 
@@ -199,13 +183,11 @@ function readFile(path) {
     const available = istream.available();
     void istream.readBytes(available);
   } catch (e) {
-    return { ok: false, code: e.result };
+    return { ok: false };
   }
 
   return { ok: true };
 }
-
-
 
 
 
@@ -219,7 +201,7 @@ function statPath(path) {
     const file = new FileUtils.File(path);
     void file.lastModifiedTime;
   } catch (e) {
-    return { ok: false, code: e.result };
+    return { ok: false };
   }
 
   return { ok: true };

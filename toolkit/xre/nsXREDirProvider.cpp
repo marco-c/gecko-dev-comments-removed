@@ -80,6 +80,12 @@
 #  include "UIKitDirProvider.h"
 #endif
 
+#if defined(MOZ_CONTENT_TEMP_DIR)
+#  include "mozilla/SandboxSettings.h"
+#  include "nsID.h"
+#  include "mozilla/Unused.h"
+#endif
+
 #if defined(XP_MACOSX)
 #  define APP_REGISTRY_NAME "Application Registry"
 #elif defined(XP_WIN)
@@ -89,6 +95,16 @@
 #endif
 
 #define PREF_OVERRIDE_DIRNAME "preferences"
+
+#if defined(MOZ_CONTENT_TEMP_DIR)
+static already_AddRefed<nsIFile> GetProcessSandboxTempDir(
+    GeckoProcessType type);
+static nsresult DeleteDirIfExists(nsIFile* dir);
+static bool IsContentSandboxDisabled();
+static const char* GetProcessTempBaseDirKey();
+static already_AddRefed<nsIFile> CreateProcessSandboxTempDir(
+    GeckoProcessType procType);
+#endif
 
 nsXREDirProvider* gDirServiceProvider = nullptr;
 nsIFile* gDataDirHomeLocal = nullptr;
@@ -431,7 +447,17 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     NS_ENSURE_SUCCESS(rv, rv);
     bool unused;
     rv = dirsvc->GetFile("XCurProcD", &unused, getter_AddRefs(file));
-  } else if (!strcmp(aProperty, NS_APP_USER_CHROME_DIR)) {
+  }
+#if defined(MOZ_CONTENT_TEMP_DIR)
+  else if (!strcmp(aProperty, NS_APP_CONTENT_PROCESS_TEMP_DIR)) {
+    if (!mContentTempDir) {
+      rv = LoadContentProcessTempDir();
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    rv = mContentTempDir->Clone(getter_AddRefs(file));
+  }
+#endif  
+  else if (!strcmp(aProperty, NS_APP_USER_CHROME_DIR)) {
     
     
     
@@ -492,6 +518,166 @@ static void LoadDirIntoArray(nsIFile* dir, const char* const* aAppendList,
     aDirectories.AppendObject(subdir);
   }
 }
+
+#if defined(MOZ_CONTENT_TEMP_DIR)
+
+static const char* GetProcessTempBaseDirKey() { return NS_OS_TEMP_DIR; }
+
+
+
+
+
+
+nsresult nsXREDirProvider::LoadContentProcessTempDir() {
+  
+  if (XRE_IsParentProcess()) {
+    mContentProcessSandboxTempDir =
+        CreateProcessSandboxTempDir(GeckoProcessType_Content);
+    mContentTempDir = mContentProcessSandboxTempDir;
+  } else {
+    mContentTempDir = !IsContentSandboxDisabled()
+                          ? GetProcessSandboxTempDir(GeckoProcessType_Content)
+                          : nullptr;
+  }
+
+  if (!mContentTempDir) {
+    nsresult rv =
+        NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mContentTempDir));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  return NS_OK;
+}
+
+static bool IsContentSandboxDisabled() {
+  return !mozilla::BrowserTabsRemoteAutostart() ||
+         (!mozilla::IsContentSandboxEnabled());
+}
+
+
+
+
+
+static already_AddRefed<nsIFile> GetProcessSandboxTempDir(
+    GeckoProcessType type) {
+  nsCOMPtr<nsIFile> localFile;
+
+  nsresult rv = NS_GetSpecialDirectory(GetProcessTempBaseDirKey(),
+                                       getter_AddRefs(localFile));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(type == GeckoProcessType_Content);
+
+  const char* prefKey = "security.sandbox.content.tempDirSuffix";
+  nsAutoString tempDirSuffix;
+  rv = mozilla::Preferences::GetString(prefKey, tempDirSuffix);
+  if (NS_WARN_IF(NS_FAILED(rv)) || tempDirSuffix.IsEmpty()) {
+    return nullptr;
+  }
+
+  rv = localFile->Append(u"Temp-"_ns + tempDirSuffix);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  return localFile.forget();
+}
+
+
+
+
+
+
+
+static already_AddRefed<nsIFile> CreateProcessSandboxTempDir(
+    GeckoProcessType procType) {
+  if ((procType == GeckoProcessType_Content) && IsContentSandboxDisabled()) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(procType == GeckoProcessType_Content);
+
+  
+  const char* pref = "security.sandbox.content.tempDirSuffix";
+
+  nsresult rv;
+  nsAutoString tempDirSuffix;
+  mozilla::Preferences::GetString(pref, tempDirSuffix);
+
+  if (tempDirSuffix.IsEmpty()) {
+    nsID uuid;
+    rv = nsID::GenerateUUIDInPlace(uuid);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+
+    char uuidChars[NSID_LENGTH];
+    uuid.ToProvidedString(uuidChars);
+    tempDirSuffix.AssignASCII(uuidChars, NSID_LENGTH);
+#  ifdef XP_UNIX
+    
+    
+    tempDirSuffix.StripChars(u"{}");
+#  endif
+
+    
+    rv = mozilla::Preferences::SetString(pref, tempDirSuffix);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      
+      return nullptr;
+    }
+
+    nsCOMPtr<nsIPrefService> prefsvc = mozilla::Preferences::GetService();
+    if (!prefsvc || NS_FAILED((rv = prefsvc->SavePrefFile(nullptr)))) {
+      
+      
+      
+      
+      
+      NS_WARNING("Failed to save pref file, cannot create temp dir.");
+      return nullptr;
+    }
+  }
+
+  nsCOMPtr<nsIFile> sandboxTempDir = GetProcessSandboxTempDir(procType);
+  if (!sandboxTempDir) {
+    NS_WARNING("Failed to determine sandbox temp dir path.");
+    return nullptr;
+  }
+
+  
+  if (NS_FAILED(DeleteDirIfExists(sandboxTempDir))) {
+    NS_WARNING("Failed to reset sandbox temp dir.");
+    return nullptr;
+  }
+
+  
+  rv = sandboxTempDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Failed to create sandbox temp dir.");
+    return nullptr;
+  }
+
+  return sandboxTempDir.forget();
+}
+
+static nsresult DeleteDirIfExists(nsIFile* dir) {
+  if (dir) {
+    
+    nsresult rv = dir->Remove( true);
+    if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
+      return rv;
+    }
+  }
+  return NS_OK;
+}
+
+#endif  
 
 static const char* const kAppendPrefDir[] = {"defaults", "preferences",
                                              nullptr};
@@ -669,6 +855,15 @@ nsXREDirProvider::DoStartup() {
     mozilla::Telemetry::Accumulate(mozilla::Telemetry::SAFE_MODE_USAGE, mode);
 
     obsSvc->NotifyObservers(nullptr, "profile-initial-state", nullptr);
+
+#if defined(MOZ_CONTENT_TEMP_DIR)
+    
+    
+    
+    if (!mContentTempDir) {
+      mozilla::Unused << NS_WARN_IF(NS_FAILED(LoadContentProcessTempDir()));
+    }
+#endif
   }
   return NS_OK;
 }
@@ -700,6 +895,12 @@ void nsXREDirProvider::DoShutdown() {
 
   gDataDirProfileLocal = nullptr;
   gDataDirProfile = nullptr;
+
+#if defined(MOZ_CONTENT_TEMP_DIR)
+  if (XRE_IsParentProcess()) {
+    mozilla::Unused << DeleteDirIfExists(mContentProcessSandboxTempDir);
+  }
+#endif
 }
 
 #ifdef XP_WIN

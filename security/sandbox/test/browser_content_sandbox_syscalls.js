@@ -310,11 +310,19 @@ add_task(async function () {
       [{ lib, path, flags }],
       callOpen
     );
-    Assert.strictEqual(
-      fd,
-      -1,
-      "opening a file for writing in content temp is not permitted"
-    );
+    if (isMac()) {
+      Assert.strictEqual(
+        fd,
+        -1,
+        "opening a file for writing in content temp is not permitted"
+      );
+    } else {
+      Assert.greaterOrEqual(
+        fd,
+        0,
+        "opening a file for writing in content temp is permitted"
+      );
+    }
   }
 
   
