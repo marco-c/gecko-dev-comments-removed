@@ -352,7 +352,7 @@ void MobileViewportManager::UpdateResolutionForViewportSizeChange(
   
   
 
-  if (!aDisplayWidthChangeRatio) {
+  if (!aDisplayWidthChangeRatio || mContext->IsDocumentFullscreen()) {
     UpdateVisualViewportSize(zoom);
     return;
   }
