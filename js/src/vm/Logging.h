@@ -94,8 +94,10 @@ FOR_EACH_JS_LOG_MODULE(DECLARE_MODULE);
 
 
 
+#define JS_LOGGING 1
 
-#ifdef JS_JITSPEW
+
+#ifdef JS_LOGGING
 #  define JS_LOG(name, log_level, ...)                                  \
     do {                                                                \
       if (name##Module.shouldLog(log_level)) {                          \
@@ -106,6 +108,8 @@ FOR_EACH_JS_LOG_MODULE(DECLARE_MODULE);
 #else
 #  define JS_LOG(module, log_level, ...)
 #endif
+
+#undef JS_LOGGING
 
 }  
 
