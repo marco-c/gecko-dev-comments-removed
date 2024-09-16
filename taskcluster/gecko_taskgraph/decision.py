@@ -410,8 +410,8 @@ def get_decision_parameters(graph_config, options):
     
     parameters["android_perftest_backstop"] = is_backstop(
         parameters,
-        push_interval=40,
-        time_interval=60 * 8,
+        push_interval=30,
+        time_interval=60 * 6,
         backstop_strategy="android_perftest_backstop",
     )
 
