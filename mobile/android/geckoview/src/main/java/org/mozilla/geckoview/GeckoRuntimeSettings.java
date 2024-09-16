@@ -360,6 +360,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+    public @NonNull Builder disableShip(final boolean value) {
+      getSettings().mDisableShip.set(value);
+      return this;
+    }
+
+    
+
+
+
+
+
 
 
 
@@ -644,6 +655,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("javascript.options.use_fdlibm_for_sin_cos_tan", false);
    final Pref<Integer> mUserCharacteristicPingCurrentVersion =
       new Pref<>("toolkit.telemetry.user_characteristics_ping.current_version", 0);
+   PrefWithoutDefault<Boolean> mDisableShip =
+      new PrefWithoutDefault<Boolean>("fission.disableSessionHistoryInParent");
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1729,6 +1742,21 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public @NonNull GeckoRuntimeSettings setUserCharacteristicPingCurrentVersion(final int version) {
     mUserCharacteristicPingCurrentVersion.commit(version);
     return this;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  public @Nullable Boolean getDisableShip() {
+    return mDisableShip.get();
   }
 
   
