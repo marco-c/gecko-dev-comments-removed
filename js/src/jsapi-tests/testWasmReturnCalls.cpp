@@ -30,7 +30,7 @@ BEGIN_TEST(testWasmCheckSlowCallMarkerHit) {
 
   Label check, fail, end;
   masm.call(&check);
-  masm.wasmMarkSlowCall();
+  masm.wasmMarkCallAsSlow();
   masm.jump(&end);
 
   masm.bind(&check);

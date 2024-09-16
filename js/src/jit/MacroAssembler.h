@@ -3932,8 +3932,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              Register temp2)
       DEFINED_ON(x86, x64, arm, arm64, loong64, mips64, riscv64);
 
-  void wasmMarkSlowCall()
+  
+  void wasmMarkCallAsSlow()
       DEFINED_ON(x86, x64, arm, arm64, loong64, mips64, riscv64);
+
+  
+  CodeOffset wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
+                                const Register reg)
+      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64, riscv64);
 #endif
 
 #ifdef ENABLE_WASM_MEMORY64
