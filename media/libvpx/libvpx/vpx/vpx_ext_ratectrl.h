@@ -368,6 +368,8 @@ typedef struct vpx_rc_config {
   vpx_ext_rc_mode_t rc_mode; 
   int overshoot_percent;     
   int undershoot_percent;    
+  int min_base_q_index;      
+  int max_base_q_index;      
   int base_qp;               
 } vpx_rc_config_t;
 

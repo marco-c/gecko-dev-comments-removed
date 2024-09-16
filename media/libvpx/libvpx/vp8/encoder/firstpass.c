@@ -313,12 +313,6 @@ static double simple_weight(YV12_BUFFER_CONFIG *source) {
 }
 
 
-static int saturate_cast_double_to_int(double d) {
-  if (d > INT_MAX) return INT_MAX;
-  return (int)d;
-}
-
-
 static int frame_max_bits(VP8_COMP *cpi) {
   
 

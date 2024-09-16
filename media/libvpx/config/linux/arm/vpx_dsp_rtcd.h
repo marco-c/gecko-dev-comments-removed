@@ -1422,4 +1422,4 @@ static void setup_rtcd_internal(void)
 }  
 #endif
 
-#endif
+#endif  
