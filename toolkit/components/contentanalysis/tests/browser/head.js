@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { MockRegistrar } = ChromeUtils.importESModule(
-  "resource://testing-common/MockRegistrar.sys.mjs"
-);
-
 
 
 function xpcWrap(obj, iface) {
@@ -45,6 +41,9 @@ function mockService(serviceNames, contractId, interfaceObj, mockService) {
     QueryInterface: ChromeUtils.generateQI(serviceNames),
   };
   let o = xpcWrap(newService, interfaceObj);
+  const { MockRegistrar } = ChromeUtils.importESModule(
+    "resource://testing-common/MockRegistrar.sys.mjs"
+  );
   let cid = MockRegistrar.register(contractId, o);
   registerCleanupFunction(() => {
     MockRegistrar.unregister(cid);
