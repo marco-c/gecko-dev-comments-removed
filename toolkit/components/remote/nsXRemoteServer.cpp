@@ -97,7 +97,7 @@ bool nsXRemoteServer::HandleNewProperty(XID aWindowId, Display* aDisplay,
     int result;
     Atom actual_type;
     int actual_format;
-    unsigned long nitems, bytes_after;
+    unsigned long len, bytes_after;
     char* data = 0;
 
     result = XGetWindowProperty(aDisplay, aWindowId, aChangedAtom,
@@ -107,21 +107,25 @@ bool nsXRemoteServer::HandleNewProperty(XID aWindowId, Display* aDisplay,
                                 XA_STRING,      
                                 &actual_type,   
                                 &actual_format, 
-                                &nitems,        
+                                &len,           
                                 &bytes_after,   
                                 (unsigned char**)&data); 
 
 
 
     
-    if (result != Success) return false;
-
     
-    if (!data || !TO_LITTLE_ENDIAN32(*reinterpret_cast<int32_t*>(data)))
+    if (result != Success || bytes_after != 0) {
       return false;
+    }
 
     
-    const char* response = HandleCommandLine(data, aEventTime);
+    if (!data || !TO_LITTLE_ENDIAN32(*reinterpret_cast<int32_t*>(data))) {
+      return false;
+    }
+
+    
+    const char* response = HandleCommandLine(Span(data, len), aEventTime);
 
     
     XChangeProperty(aDisplay, aWindowId, sMozResponseAtom, XA_STRING, 8,
