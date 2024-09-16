@@ -14,7 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_43 Your_png_h_is_not_version_1_6_43;
+typedef png_libpng_version_1_6_44 Your_png_h_is_not_version_1_6_44;
 
 
 
@@ -794,7 +794,7 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.43" PNG_STRING_NEWLINE \
+      "libpng version 1.6.44" PNG_STRING_NEWLINE \
       "Copyright (c) 2018-2024 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
@@ -1203,6 +1203,24 @@ png_colorspace_sync(png_const_structrp png_ptr, png_inforp info_ptr)
 #endif 
 
 #ifdef PNG_COLORSPACE_SUPPORTED
+static int
+png_safe_add(png_int_32 *addend0_and_result, png_int_32 addend1,
+      png_int_32 addend2) {
+   
+
+
+
+
+   int addend0 = *addend0_and_result;
+   if (0x7fffffff - addend0 < addend1)
+      return 1;
+   addend0 += addend1;
+   if (0x7fffffff - addend1 < addend2)
+      return 1;
+   *addend0_and_result = addend0 + addend2;
+   return 0;
+}
+
 
 
 
@@ -1211,37 +1229,51 @@ png_colorspace_sync(png_const_structrp png_ptr, png_inforp info_ptr)
 static int
 png_xy_from_XYZ(png_xy *xy, const png_XYZ *XYZ)
 {
-   png_int_32 d, dwhite, whiteX, whiteY;
+   png_int_32 d, dred, dgreen, dwhite, whiteX, whiteY;
 
-   d = XYZ->red_X + XYZ->red_Y + XYZ->red_Z;
+   
+
+
+   d = XYZ->red_X;
+   if (png_safe_add(&d, XYZ->red_Y, XYZ->red_Z))
+      return 1;
    if (png_muldiv(&xy->redx, XYZ->red_X, PNG_FP_1, d) == 0)
       return 1;
    if (png_muldiv(&xy->redy, XYZ->red_Y, PNG_FP_1, d) == 0)
       return 1;
-   dwhite = d;
+   dred = d;
    whiteX = XYZ->red_X;
    whiteY = XYZ->red_Y;
 
-   d = XYZ->green_X + XYZ->green_Y + XYZ->green_Z;
+   d = XYZ->green_X;
+   if (png_safe_add(&d, XYZ->green_Y, XYZ->green_Z))
+      return 1;
    if (png_muldiv(&xy->greenx, XYZ->green_X, PNG_FP_1, d) == 0)
       return 1;
    if (png_muldiv(&xy->greeny, XYZ->green_Y, PNG_FP_1, d) == 0)
       return 1;
-   dwhite += d;
+   dgreen = d;
    whiteX += XYZ->green_X;
    whiteY += XYZ->green_Y;
 
-   d = XYZ->blue_X + XYZ->blue_Y + XYZ->blue_Z;
+   d = XYZ->blue_X;
+   if (png_safe_add(&d, XYZ->blue_Y, XYZ->blue_Z))
+      return 1;
    if (png_muldiv(&xy->bluex, XYZ->blue_X, PNG_FP_1, d) == 0)
       return 1;
    if (png_muldiv(&xy->bluey, XYZ->blue_Y, PNG_FP_1, d) == 0)
       return 1;
-   dwhite += d;
    whiteX += XYZ->blue_X;
    whiteY += XYZ->blue_Y;
 
    
 
+
+
+   if (png_safe_add(&d, dred, dgreen))
+      return 1;
+
+   dwhite = d;
 
    if (png_muldiv(&xy->whitex, whiteX, PNG_FP_1, dwhite) == 0)
       return 1;
@@ -1256,20 +1288,6 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 {
    png_fixed_point red_inverse, green_inverse, blue_scale;
    png_fixed_point left, right, denominator;
-
-   
-
-
-
-
-   if (xy->redx   < 0 || xy->redx > PNG_FP_1) return 1;
-   if (xy->redy   < 0 || xy->redy > PNG_FP_1-xy->redx) return 1;
-   if (xy->greenx < 0 || xy->greenx > PNG_FP_1) return 1;
-   if (xy->greeny < 0 || xy->greeny > PNG_FP_1-xy->greenx) return 1;
-   if (xy->bluex  < 0 || xy->bluex > PNG_FP_1) return 1;
-   if (xy->bluey  < 0 || xy->bluey > PNG_FP_1-xy->bluex) return 1;
-   if (xy->whitex < 0 || xy->whitex > PNG_FP_1) return 1;
-   if (xy->whitey < 5 || xy->whitey > PNG_FP_1-xy->whitex) return 1;
 
    
 
@@ -1451,16 +1469,16 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 
 
    if (png_muldiv(&left, xy->greenx-xy->bluex, xy->redy - xy->bluey, 7) == 0)
-      return 2;
+      return 1;
    if (png_muldiv(&right, xy->greeny-xy->bluey, xy->redx - xy->bluex, 7) == 0)
-      return 2;
+      return 1;
    denominator = left - right;
 
    
    if (png_muldiv(&left, xy->greenx-xy->bluex, xy->whitey-xy->bluey, 7) == 0)
-      return 2;
+      return 1;
    if (png_muldiv(&right, xy->greeny-xy->bluey, xy->whitex-xy->bluex, 7) == 0)
-      return 2;
+      return 1;
 
    
 
@@ -1473,9 +1491,9 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 
    
    if (png_muldiv(&left, xy->redy-xy->bluey, xy->whitex-xy->bluex, 7) == 0)
-      return 2;
+      return 1;
    if (png_muldiv(&right, xy->redx-xy->bluex, xy->whitey-xy->bluey, 7) == 0)
-      return 2;
+      return 1;
    if (png_muldiv(&green_inverse, xy->whitey, denominator, left-right) == 0 ||
        green_inverse <= xy->whitey)
       return 1;
@@ -1520,25 +1538,14 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 static int
 png_XYZ_normalize(png_XYZ *XYZ)
 {
-   png_int_32 Y;
-
-   if (XYZ->red_Y < 0 || XYZ->green_Y < 0 || XYZ->blue_Y < 0 ||
-      XYZ->red_X < 0 || XYZ->green_X < 0 || XYZ->blue_X < 0 ||
-      XYZ->red_Z < 0 || XYZ->green_Z < 0 || XYZ->blue_Z < 0)
-      return 1;
+   png_int_32 Y, Ytemp;
 
    
-
-
-
-
-   Y = XYZ->red_Y;
-   if (0x7fffffff - Y < XYZ->green_X)
+   Ytemp = XYZ->red_Y;
+   if (png_safe_add(&Ytemp, XYZ->green_Y, XYZ->blue_Y))
       return 1;
-   Y += XYZ->green_Y;
-   if (0x7fffffff - Y < XYZ->blue_X)
-      return 1;
-   Y += XYZ->blue_Y;
+
+   Y = Ytemp;
 
    if (Y != PNG_FP_1)
    {
