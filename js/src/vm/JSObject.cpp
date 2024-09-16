@@ -2267,6 +2267,14 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       id == NameToId(cx->names().escape)) {
     return true;
   }
+
+  
+  
+  
+  if (key == JSProto_Function && !JS::Prefs::experimental_promise_try() &&
+      id == NameToId(cx->names().try_)) {
+    return true;
+  }
 #endif
 
   if (key == JSProto_JSON &&

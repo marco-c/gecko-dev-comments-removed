@@ -4899,6 +4899,85 @@ PromiseObject* PromiseObject::unforgeableResolveWithNonPromise(
   return promise;
 }
 
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+static bool Promise_static_try(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedValue cVal(cx, args.thisv());
+
+  
+  if (!cVal.isObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_OBJECT_REQUIRED,
+                              "Receiver of Promise.try call");
+    return false;
+  }
+
+  
+  RootedObject c(cx, &cVal.toObject());
+  Rooted<PromiseCapability> promiseCapability(cx);
+  if (!NewPromiseCapability(cx, c, &promiseCapability, false)) {
+    return false;
+  }
+  HandleObject promiseObject = promiseCapability.promise();
+
+  
+  size_t argCount = args.length();
+  if (argCount > 0) {
+    argCount--;
+  }
+
+  InvokeArgs iargs(cx);
+  if (!iargs.init(cx, argCount)) {
+    return false;
+  }
+
+  for (size_t i = 0; i < argCount; i++) {
+    iargs[i].set(args[i + 1]);
+  }
+
+  HandleValue callbackfn = args.get(0);
+  RootedValue rval(cx);
+  bool ok = Call(cx, callbackfn, UndefinedHandleValue, iargs, &rval);
+
+  
+  if (!ok) {
+    RootedValue reason(cx);
+    Rooted<SavedFrame*> stack(cx);
+
+    if (!MaybeGetAndClearExceptionAndStack(cx, &reason, &stack)) {
+      return false;
+    }
+
+    
+    
+    if (!CallPromiseRejectFunction(cx, promiseCapability.reject(), reason,
+                                   promiseObject, stack,
+                                   UnhandledRejectionBehavior::Report)) {
+      return false;
+    }
+  } else {
+    
+    
+    
+    if (!CallPromiseResolveFunction(cx, promiseCapability.resolve(), rval,
+                                    promiseObject)) {
+      return false;
+    }
+  }
+
+  
+  args.rval().setObject(*promiseObject);
+  return true;
+}
+#endif
+
 
 
 
@@ -6980,6 +7059,9 @@ static const JSFunctionSpec promise_static_methods[] = {
     JS_FN("reject", Promise_reject, 1, 0),
     JS_FN("resolve", js::Promise_static_resolve, 1, 0),
     JS_FN("withResolvers", Promise_static_withResolvers, 0, 0),
+#ifdef NIGHTLY_BUILD
+    JS_FN("try", Promise_static_try, 1, 0),
+#endif
     JS_FS_END,
 };
 
