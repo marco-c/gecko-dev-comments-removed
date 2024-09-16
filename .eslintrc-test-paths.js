@@ -45,7 +45,6 @@ const xpcshellTestPaths = [
 
 
 const extraXpcshellTestPaths = [
-  "devtools/client/shared/remote-debugging/adb/xpcshell/",
   "devtools/platform/tests/xpcshell/",
   "dom/file/tests/",
   "dom/ipc/tests/",

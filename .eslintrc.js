@@ -14,9 +14,24 @@ const { rollouts } = require("./.eslintrc-rollouts.js");
 const fs = require("fs");
 const path = require("path");
 
-function readFile(filePath) {
+
+
+
+
+
+
+
+
+
+function removeOverrides(config) {
+  config = { ...config };
+  delete config.overrides;
+  return config;
+}
+
+function readFile(path) {
   return fs
-    .readFileSync(filePath, { encoding: "utf-8" })
+    .readFileSync(path, { encoding: "utf-8" })
     .split("\n")
     .filter(p => p && !p.startsWith("#"));
 }
@@ -138,8 +153,8 @@ module.exports = {
       extends: ["plugin:mozilla/general-test"],
     },
     {
-      ...xpcshellTestConfig,
-      files: testPaths.xpcshell.map(filePath => `${filePath}**`),
+      ...removeOverrides(xpcshellTestConfig),
+      files: testPaths.xpcshell.map(path => `${path}**`),
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
     {
@@ -147,7 +162,7 @@ module.exports = {
       
       
       
-      files: testPaths.xpcshell.map(filePath => `${filePath}head*.js`),
+      files: testPaths.xpcshell.map(path => `${path}head*.js`),
       rules: {
         "no-unused-vars": [
           "error",
@@ -164,7 +179,7 @@ module.exports = {
       
       
       
-      files: testPaths.xpcshell.map(filePath => `${filePath}test*.js`),
+      files: testPaths.xpcshell.map(path => `${path}test*.js`),
       rules: {
         
         "no-unused-vars": [
@@ -177,13 +192,13 @@ module.exports = {
       },
     },
     {
-      ...browserTestConfig,
-      files: testPaths.browser.map(filePath => `${filePath}**`),
+      ...removeOverrides(browserTestConfig),
+      files: testPaths.browser.map(path => `${path}**`),
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
     {
-      ...mochitestTestConfig,
-      files: testPaths.mochitest.map(filePath => `${filePath}**`),
+      ...removeOverrides(mochitestTestConfig),
+      files: testPaths.mochitest.map(path => `${path}**`),
       excludedFiles: [
         "**/*.jsm",
         "**/*.mjs",
@@ -191,8 +206,8 @@ module.exports = {
       ],
     },
     {
-      ...chromeTestConfig,
-      files: testPaths.chrome.map(filePath => `${filePath}**`),
+      ...removeOverrides(chromeTestConfig),
+      files: testPaths.chrome.map(path => `${path}**`),
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
     {
@@ -203,8 +218,8 @@ module.exports = {
         "mozilla/simpletest": true,
       },
       files: [
-        ...testPaths.mochitest.map(filePath => `${filePath}/**/*.js`),
-        ...testPaths.chrome.map(filePath => `${filePath}/**/*.js`),
+        ...testPaths.mochitest.map(path => `${path}/**/*.js`),
+        ...testPaths.chrome.map(path => `${path}/**/*.js`),
       ],
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
@@ -213,7 +228,7 @@ module.exports = {
       
       files: testPaths.xpcshell
         .concat(testPaths.browser)
-        .map(filePath => [`${filePath}/**/*.html`, `${filePath}/**/*.xhtml`])
+        .map(path => [`${path}/**/*.html`, `${path}/**/*.xhtml`])
         .flat(),
       rules: {
         
@@ -254,7 +269,7 @@ module.exports = {
     },
     {
       
-      files: httpTestingPaths.map(filePath => `${filePath}**`),
+      files: httpTestingPaths.map(path => `${path}**`),
       rules: {
         "@microsoft/sdl/no-insecure-url": "off",
       },
@@ -282,6 +297,9 @@ module.exports = {
         "mozilla/reject-importGlobalProperties": ["error", "everything"],
         "mozilla/reject-mixing-eager-and-lazy": "error",
         "mozilla/reject-top-level-await": "error",
+        
+        
+        "no-redeclare": ["error", { builtinGlobals: false }],
         
         
         "no-unused-vars": [

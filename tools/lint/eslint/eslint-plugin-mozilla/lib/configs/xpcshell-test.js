@@ -8,6 +8,47 @@ module.exports = {
     "mozilla/xpcshell": true,
   },
 
+  overrides: [
+    {
+      
+      
+      files: ["*.html", "*.xhtml"],
+      
+      
+      rules: {
+        "mozilla/no-comparison-or-assignment-inside-ok": "off",
+      },
+    },
+    {
+      
+      
+      
+      
+      files: "head*.js",
+      rules: {
+        "no-unused-vars": [
+          "error",
+          {
+            argsIgnorePattern: "^_",
+            vars: "local",
+          },
+        ],
+      },
+    },
+    {
+      
+      files: "test*.js",
+      rules: {
+        "no-unused-vars": [
+          "error",
+          {
+            argsIgnorePattern: "^_",
+            vars: "all",
+          },
+        ],
+      },
+    },
+  ],
   plugins: ["mozilla", "@microsoft/sdl"],
 
   rules: {
@@ -17,5 +58,6 @@ module.exports = {
 
     "mozilla/no-comparison-or-assignment-inside-ok": "error",
     "mozilla/no-useless-run-test": "error",
+    "no-shadow": "error",
   },
 };

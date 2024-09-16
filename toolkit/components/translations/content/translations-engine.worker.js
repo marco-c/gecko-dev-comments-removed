@@ -245,8 +245,11 @@ class Engine {
     this.bergamot = bergamot;
     
     this.languageTranslationModels = languageTranslationModelFiles.map(
-      modelFiles =>
-        BergamotUtils.constructSingleTranslationModel(bergamot, modelFiles)
+      languageTranslationModelFiles =>
+        BergamotUtils.constructSingleTranslationModel(
+          bergamot,
+          languageTranslationModelFiles
+        )
     );
 
     

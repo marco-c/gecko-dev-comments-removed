@@ -63,15 +63,14 @@ module.exports = {
         "mozilla/reject-importGlobalProperties": ["error", "everything"],
         "mozilla/reject-mixing-eager-and-lazy": "error",
         "mozilla/reject-top-level-await": "error",
+        
+        
+        "no-redeclare": ["error", { builtinGlobals: false }],
       },
     },
     {
       files: ["**/*.mjs", "**/*.jsx", "**/?(*.)worker.?(m)js"],
       rules: {
-        
-        
-        "no-redeclare": ["error", { builtinGlobals: true }],
-        "no-shadow": ["error", { allow: ["event"], builtinGlobals: true }],
         
         
         "no-unused-vars": [
@@ -89,6 +88,7 @@ module.exports = {
       rules: {
         "mozilla/reject-import-system-module-from-non-system": "error",
         "mozilla/reject-lazy-imports-into-globals": "error",
+        "no-shadow": ["error", { allow: ["event"], builtinGlobals: true }],
       },
     },
     {
@@ -285,7 +285,7 @@ module.exports = {
     "no-sequences": "error",
 
     
-    "no-shadow": "error",
+    
 
     
     

@@ -9,18 +9,12 @@ module.exports = {
   globals: {
     exports: true,
     isWorker: true,
+    loader: true,
+    module: true,
+    require: true,
     DebuggerNotificationObserver: true,
   },
   overrides: [
-    {
-      files: ["**/*.*"],
-      excludedFiles: ["**/*.sys.mjs", "**/*.worker.js"],
-      globals: {
-        loader: true,
-        module: true,
-        require: true,
-      },
-    },
     {
       files: ["client/framework/**"],
       rules: {
@@ -52,6 +46,12 @@ module.exports = {
       files: ["client/framework/test/**"],
       rules: {
         "mozilla/var-only-at-top-level": "off",
+      },
+    },
+    {
+      files: ["client/framework/**"],
+      rules: {
+        "no-shadow": "off",
       },
     },
     {
@@ -227,6 +227,12 @@ module.exports = {
     
     
     "no-return-assign": "error",
+    
+    
+    
+    
+    
+    "no-shadow": "error",
     
     
     "no-unused-vars": ["error", { argsIgnorePattern: "^_", vars: "all" }],

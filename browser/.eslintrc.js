@@ -22,5 +22,7 @@ module.exports = {
 
     
     "no-extend-native": "error",
+
+    "no-shadow": "error",
   },
 };

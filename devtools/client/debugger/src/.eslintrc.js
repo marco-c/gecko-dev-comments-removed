@@ -207,6 +207,8 @@ module.exports = {
     
     "no-proto": 2,
     
+    "no-redeclare": 2,
+    
     "no-regex-spaces": 2,
     
     "no-restricted-modules": 0,
@@ -219,6 +221,12 @@ module.exports = {
     "no-self-compare": 2,
     
     "no-sequences": 2,
+    
+    
+    
+    
+    
+    "no-shadow": 2,
     
     
     

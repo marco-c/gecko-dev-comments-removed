@@ -18,6 +18,18 @@ module.exports = {
     getRootDirectory: false,
   },
 
+  overrides: [
+    {
+      env: {
+        
+        
+        
+        "mozilla/simpletest": true,
+      },
+      files: ["*.js"],
+    },
+  ],
+
   plugins: ["mozilla"],
 
   rules: {
