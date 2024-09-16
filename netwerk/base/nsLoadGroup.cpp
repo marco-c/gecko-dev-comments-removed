@@ -568,8 +568,13 @@ nsresult nsLoadGroup::RemoveRequestFromHashtable(nsIRequest* request,
 
   
   
-  if (mDefaultLoadIsTimed && NS_SUCCEEDED(aStatus) &&
-      request != mDefaultLoadRequest) {
+  if (request == mDefaultLoadRequest) {
+    mDefaultStatus = aStatus;
+  }
+
+  
+  
+  if (mDefaultLoadIsTimed && NS_SUCCEEDED(aStatus)) {
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(request);
     if (timedChannel) {
       
@@ -580,21 +585,25 @@ nsresult nsLoadGroup::RemoveRequestFromHashtable(nsIRequest* request,
         ++mCachedRequests;
       }
 
-      rv = timedChannel->GetAsyncOpen(&timeStamp);
-      if (NS_SUCCEEDED(rv) && !timeStamp.IsNull()) {
-        Telemetry::AccumulateTimeDelta(
-            Telemetry::HTTP_SUBITEM_OPEN_LATENCY_TIME,
-            mDefaultRequestCreationTime, timeStamp);
-      }
+      if (request == mDefaultLoadRequest) {
+        TelemetryReportChannel(timedChannel, true);
+      } else {
+        rv = timedChannel->GetAsyncOpen(&timeStamp);
+        if (NS_SUCCEEDED(rv) && !timeStamp.IsNull()) {
+          Telemetry::AccumulateTimeDelta(
+              Telemetry::HTTP_SUBITEM_OPEN_LATENCY_TIME,
+              mDefaultRequestCreationTime, timeStamp);
+        }
 
-      rv = timedChannel->GetResponseStart(&timeStamp);
-      if (NS_SUCCEEDED(rv) && !timeStamp.IsNull()) {
-        Telemetry::AccumulateTimeDelta(
-            Telemetry::HTTP_SUBITEM_FIRST_BYTE_LATENCY_TIME,
-            mDefaultRequestCreationTime, timeStamp);
-      }
+        rv = timedChannel->GetResponseStart(&timeStamp);
+        if (NS_SUCCEEDED(rv) && !timeStamp.IsNull()) {
+          Telemetry::AccumulateTimeDelta(
+              Telemetry::HTTP_SUBITEM_FIRST_BYTE_LATENCY_TIME,
+              mDefaultRequestCreationTime, timeStamp);
+        }
 
-      TelemetryReportChannel(timedChannel, false);
+        TelemetryReportChannel(timedChannel, false);
+      }
     }
   }
 
@@ -802,22 +811,14 @@ nsLoadGroup::SetDefaultLoadFlags(uint32_t aFlags) {
 
 
 void nsLoadGroup::TelemetryReport() {
-  nsresult defaultStatus = NS_ERROR_INVALID_ARG;
   
   
-  if (mDefaultLoadRequest) {
-    mDefaultLoadRequest->GetStatus(&defaultStatus);
-  }
-  if (mDefaultLoadIsTimed && NS_SUCCEEDED(defaultStatus)) {
+  if (mDefaultLoadIsTimed && NS_SUCCEEDED(mDefaultStatus)) {
     Telemetry::Accumulate(Telemetry::HTTP_REQUEST_PER_PAGE, mTimedRequests);
     if (mTimedRequests) {
       Telemetry::Accumulate(Telemetry::HTTP_REQUEST_PER_PAGE_FROM_CACHE,
                             mCachedRequests * 100 / mTimedRequests);
     }
-
-    nsCOMPtr<nsITimedChannel> timedChannel =
-        do_QueryInterface(mDefaultLoadRequest);
-    if (timedChannel) TelemetryReportChannel(timedChannel, true);
   }
 
   mTimedRequests = 0;
