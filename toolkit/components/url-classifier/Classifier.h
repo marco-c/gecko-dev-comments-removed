@@ -206,6 +206,10 @@ class Classifier {
                                   const nsTArray<nsCString>& aFailedTableNames);
 
   
+  
+  void AsyncUpdateFinished();
+
+  
   bool ShouldAbort() const;
 
   
@@ -236,6 +240,12 @@ class Classifier {
 
   
   LookupCacheArray mNewLookupCaches;
+
+  
+  bool mAsyncUpdateInProgress;
+
+  
+  nsTArray<nsCOMPtr<nsIRunnable>> mPendingUpdates;
 
   
   bool mUpdateInterrupted;
