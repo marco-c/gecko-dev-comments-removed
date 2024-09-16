@@ -120,8 +120,14 @@ void nsMathMLmfracFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 nsresult nsMathMLmfracFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
                                               int32_t aModType) {
-  if (nsGkAtoms::linethickness_ == aAttribute) {
+  if (aNameSpaceID == kNameSpaceID_None &&
+      nsGkAtoms::linethickness_ == aAttribute) {
     InvalidateFrame();
+    
+    
+    PresShell()->FrameNeedsReflow(
+        this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
+    return NS_OK;
   }
   return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
                                                   aModType);
