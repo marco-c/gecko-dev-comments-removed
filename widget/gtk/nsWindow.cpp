@@ -6242,23 +6242,34 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   
   
   
-  g_signal_connect(mContainer, "enter-notify-event",
+  
+  
+  
+  
+  
+  
+  
+  GtkWidget* eventWidget = (mWindowType == WindowType::Popup &&
+                            gtk_window_get_modal(GTK_WINDOW(mShell)))
+                               ? mShell
+                               : GTK_WIDGET(mContainer);
+  g_signal_connect(eventWidget, "enter-notify-event",
                    G_CALLBACK(enter_notify_event_cb), nullptr);
-  g_signal_connect(mContainer, "leave-notify-event",
+  g_signal_connect(eventWidget, "leave-notify-event",
                    G_CALLBACK(leave_notify_event_cb), nullptr);
-  g_signal_connect(mContainer, "motion-notify-event",
+  g_signal_connect(eventWidget, "motion-notify-event",
                    G_CALLBACK(motion_notify_event_cb), nullptr);
-  g_signal_connect(mContainer, "button-press-event",
+  g_signal_connect(eventWidget, "button-press-event",
                    G_CALLBACK(button_press_event_cb), nullptr);
-  g_signal_connect(mContainer, "button-release-event",
+  g_signal_connect(eventWidget, "button-release-event",
                    G_CALLBACK(button_release_event_cb), nullptr);
-  g_signal_connect(mContainer, "scroll-event", G_CALLBACK(scroll_event_cb),
+  g_signal_connect(eventWidget, "scroll-event", G_CALLBACK(scroll_event_cb),
                    nullptr);
   if (gtk_check_version(3, 18, 0) == nullptr) {
-    g_signal_connect(mContainer, "event", G_CALLBACK(generic_event_cb),
+    g_signal_connect(eventWidget, "event", G_CALLBACK(generic_event_cb),
                      nullptr);
   }
-  g_signal_connect(mContainer, "touch-event", G_CALLBACK(touch_event_cb),
+  g_signal_connect(eventWidget, "touch-event", G_CALLBACK(touch_event_cb),
                    nullptr);
 
   LOG("  nsWindow type %d %s\n", int(mWindowType),
