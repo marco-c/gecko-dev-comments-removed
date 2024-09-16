@@ -257,6 +257,18 @@ class CacheKey {
   static constexpr nsStaticAtom* Viewport = nsGkAtoms::viewport;
 };
 
+
+bool DomainsAreActive(uint64_t aRequiredCacheDomains);
+
+
+
+
+bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains);
+
+#define ASSERT_DOMAINS_ACTIVE(aCacheDomains)  \
+  MOZ_ASSERT(DomainsAreActive(aCacheDomains), \
+             "Required domain(s) are not currently active.")
+
 }  
 }  
 
