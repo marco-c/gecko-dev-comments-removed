@@ -1907,15 +1907,26 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
   }
 
   PremultFunc premultOp = nullptr;
+  const auto wantPremultiply =
+      !bool(GetSurfaceFlags() & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
   if (decodedData->mAlpha) {
-    const auto wantPremultiply =
-        !bool(GetSurfaceFlags() & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
     const bool& hasPremultiply = decodedData->mAlpha->mPremultiplied;
-
-    if (wantPremultiply && !hasPremultiply) {
-      premultOp = libyuv::ARGBAttenuate;
-    } else if (!wantPremultiply && hasPremultiply) {
-      premultOp = libyuv::ARGBUnattenuate;
+    if (mTransform) {
+      
+      
+      
+      
+      if (hasPremultiply) {
+        premultOp = libyuv::ARGBUnattenuate;
+      }
+    } else {
+      
+      
+      if (wantPremultiply && !hasPremultiply) {
+        premultOp = libyuv::ARGBAttenuate;
+      } else if (!wantPremultiply && hasPremultiply) {
+        premultOp = libyuv::ARGBUnattenuate;
+      }
     }
   }
 
@@ -1935,6 +1946,15 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
 
   Maybe<SurfacePipe> pipe = Nothing();
 
+  SurfacePipeFlags pipeFlags = SurfacePipeFlags();
+  if (decodedData->mAlpha && mTransform) {
+    
+    
+    if (wantPremultiply) {
+      pipeFlags |= SurfacePipeFlags::PREMULTIPLY_ALPHA;
+    }
+  }
+
   if (mIsAnimated) {
     SurfaceFormat outFormat =
         decodedData->mAlpha ? SurfaceFormat::OS_RGBA : SurfaceFormat::OS_RGBX;
@@ -1946,10 +1966,11 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
     }
     pipe = SurfacePipeFactory::CreateSurfacePipe(
         this, Size(), OutputSize(), FullFrame(), format, outFormat, animParams,
-        mTransform, SurfacePipeFlags());
+        mTransform, pipeFlags);
   } else {
     pipe = SurfacePipeFactory::CreateReorientSurfacePipe(
-        this, Size(), OutputSize(), format, mTransform, GetOrientation());
+        this, Size(), OutputSize(), format, mTransform, GetOrientation(),
+        pipeFlags);
   }
 
   if (pipe.isNothing()) {
