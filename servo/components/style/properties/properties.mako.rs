@@ -2726,7 +2726,10 @@ impl<'a> StyleBuilder<'a> {
     pub fn resolved_specified_zoom(&self) -> computed::Zoom {
         let zoom = self.specified_zoom();
         if zoom.is_document() {
-            self.inherited_effective_zoom().inverted()
+            
+            
+            
+            self.inherited_effective_zoom().inverted().unwrap_or(computed::Zoom::ONE)
         } else {
             zoom
         }

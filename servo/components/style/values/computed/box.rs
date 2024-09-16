@@ -365,8 +365,11 @@ impl Zoom {
 
     
     #[inline]
-    pub fn inverted(&self) -> Self {
-        Self(Self::ONE.0 / self.0)
+    pub fn inverted(&self) -> Option<Self> {
+        if self.0.value == 0 {
+            return None;
+        }
+        Some(Self(Self::ONE.0 / self.0))
     }
 
     
