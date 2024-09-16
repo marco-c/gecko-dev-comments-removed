@@ -5,8 +5,14 @@
 
 
 
+use std::fmt::Write;
+
+use style_traits::CssWriter;
+use style_traits::ToCss;
+
 use crate::values::animated::ToAnimatedZero;
 use crate::values::generics::ratio::Ratio;
+use crate::values::DashedIdent;
 
 
 #[derive(
@@ -221,6 +227,7 @@ pub struct GenericAspectRatio<N> {
 }
 
 pub use self::GenericAspectRatio as AspectRatio;
+use crate::values::generics::Optional;
 
 impl<N> AspectRatio<N> {
     
@@ -238,4 +245,93 @@ impl<N> ToAnimatedZero for AspectRatio<N> {
     fn to_animated_zero(&self) -> Result<Self, ()> {
         Err(())
     }
+}
+
+
+
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem, ToComputedValue, ToResolvedValue)]
+#[repr(C)]
+pub struct GenericAnchorFunction<Percentage, LengthPercentage>
+where
+    Percentage: ToCss,
+    LengthPercentage: ToCss,
+{
+    
+    
+    pub target_element: Optional<DashedIdent>,
+    
+    
+    pub side: AnchorSide<Percentage>,
+    
+    pub fallback: Optional<LengthPercentage>,
+}
+
+impl<Percentage, LengthPercentage> ToCss for GenericAnchorFunction<Percentage, LengthPercentage>
+where
+    Percentage: ToCss,
+    LengthPercentage: ToCss,
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> std::fmt::Result
+    where
+        W: Write,
+    {
+        dest.write_str("anchor(")?;
+        if let Some(t) = self.target_element.as_ref() {
+            t.to_css(dest)?;
+            dest.write_str(" ")?;
+        }
+        self.side.to_css(dest)?;
+        if let Some(f) = self.fallback.as_ref() {
+            
+            dest.write_str(", ")?;
+            f.to_css(dest)?;
+        }
+        dest.write_str(")")
+    }
+}
+
+
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, Parse, ToComputedValue, ToResolvedValue
+)]
+#[repr(u8)]
+pub enum AnchorSideKeyword {
+    
+    Inside,
+    
+    Outside,
+    
+    Top,
+    
+    Left,
+    
+    Right,
+    
+    Bottom,
+    
+    
+    
+    Start,
+    
+    End,
+    
+    SelfStart,
+    
+    SelfEnd,
+    
+    Center,
+}
+
+
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem, ToComputedValue, ToResolvedValue
+)]
+#[repr(C)]
+pub enum AnchorSide<P> {
+    
+    Keyword(AnchorSideKeyword),
+    
+    Percentage(P),
 }

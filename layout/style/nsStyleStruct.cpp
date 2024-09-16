@@ -1039,7 +1039,7 @@ nsChangeHint nsStylePage::CalcDifference(const nsStylePage& aNewData) const {
 
 nsStylePosition::nsStylePosition()
     : mObjectPosition(Position::FromPercentage(0.5f)),
-      mOffset(StyleRectWithAllSides(LengthPercentageOrAuto::Auto())),
+      mOffset(StyleRectWithAllSides(StyleInset::Auto())),
       mWidth(StyleSize::Auto()),
       mMinWidth(StyleSize::Auto()),
       mMaxWidth(StyleMaxSize::None()),
@@ -1137,10 +1137,10 @@ nsStylePosition::nsStylePosition(const nsStylePosition& aSource)
   MOZ_COUNT_CTOR(nsStylePosition);
 }
 
-static bool IsAutonessEqual(const StyleRect<LengthPercentageOrAuto>& aSides1,
-                            const StyleRect<LengthPercentageOrAuto>& aSides2) {
+static bool IsEqualInsetType(const StyleRect<StyleInset>& aSides1,
+                             const StyleRect<StyleInset>& aSides2) {
   for (const auto side : mozilla::AllPhysicalSides()) {
-    if (aSides1.Get(side).IsAuto() != aSides2.Get(side).IsAuto()) {
+    if (aSides1.Get(side).tag != aSides2.Get(side).tag) {
       return false;
     }
   }
@@ -1304,8 +1304,9 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
+  
   if (mOffset != aNewData.mOffset) {
-    if (IsAutonessEqual(mOffset, aNewData.mOffset)) {
+    if (IsEqualInsetType(mOffset, aNewData.mOffset)) {
       hint |=
           nsChangeHint_RecomputePosition | nsChangeHint_UpdateParentOverflow;
     } else {

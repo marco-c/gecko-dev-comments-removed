@@ -9,6 +9,8 @@ use crate::parser::{Parse, ParserContext};
 use crate::Zero;
 use cssparser::Parser;
 use style_traits::ParseError;
+use style_traits::ToCss;
+use crate::values::generics::position::GenericAnchorFunction;
 
 
 #[allow(missing_docs)]
@@ -321,3 +323,42 @@ impl<LengthPercent> LengthPercentageOrNormal<LengthPercent> {
         LengthPercentageOrNormal::Normal
     }
 }
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToComputedValue, ToResolvedValue)]
+#[repr(C)]
+pub enum GenericInset<P, LP>
+where
+    P: ToCss,
+    LP: ToCss,
+{
+    
+    LengthPercentage(LP),
+    
+    Auto,
+    
+    
+    
+    AnchorFunction(Box<GenericAnchorFunction<P, LP>>),
+}
+
+impl<P, LP> GenericInset<P, LP>
+where
+    P: ToCss,
+    LP: ToCss,
+{
+    
+    #[inline]
+    pub fn auto() -> Self {
+        Self::Auto
+    }
+}
+
+pub use self::GenericInset as Inset;
