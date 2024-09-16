@@ -1243,6 +1243,12 @@ pub struct FilterOpGraphNode {
     pub subregion: LayoutRect,
 }
 
+
+
+
+
+pub const SVGFE_GRAPH_MAX: usize = 256;
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PeekPoke)]
 pub enum FilterOp {
