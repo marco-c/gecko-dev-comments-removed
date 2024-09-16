@@ -16,6 +16,7 @@ import {
 
 import { searchKeys } from "../../constants";
 import { scrollList } from "../../utils/result-list";
+import { createLocation } from "../../utils/location";
 
 import SearchInput from "../shared/SearchInput";
 
@@ -62,6 +63,7 @@ class SearchInFileBar extends Component {
       selectedSource: PropTypes.object.isRequired,
       setActiveSearch: PropTypes.func.isRequired,
       querySearchWorker: PropTypes.func.isRequired,
+      selectLocation: PropTypes.func.isRequired,
     };
   }
 
@@ -187,25 +189,8 @@ class SearchInFileBar extends Component {
     }
 
     const matches = await this.props.querySearchWorker(query, text, modifiers);
-
-    const res = find(ctx, query, true, modifiers, focusFirstResult);
-    if (!res) {
-      return;
-    }
-
-    const { ch, line } = res;
-
-    const matchIndex = matches.findIndex(
-      elm => elm.line === line && elm.ch === ch
-    );
-    this.setState({
-      results: {
-        matches,
-        matchIndex,
-        count: matches.length,
-        index: ch,
-      },
-    });
+    const results = find(ctx, query, true, modifiers, focusFirstResult);
+    this.setSearchResults(results, matches);
   };
 
   traverseResults = (e, reverse = false) => {
@@ -230,23 +215,69 @@ class SearchInFileBar extends Component {
     if (modifiers) {
       const findArgs = [ctx, query, true, modifiers];
       const results = reverse ? findPrev(...findArgs) : findNext(...findArgs);
-
-      if (!results) {
-        return;
-      }
-      const { ch, line } = results;
-      const matchIndex = matches.findIndex(
-        elm => elm.line === line && elm.ch === ch
-      );
-      this.setState({
-        results: {
-          matches,
-          matchIndex,
-          count: matches.length,
-          index: ch,
-        },
-      });
+      this.setSearchResults(results, matches);
     }
+  };
+
+  
+
+
+
+
+
+
+  setSearchResults(results, matches) {
+    if (!results) {
+      return;
+    }
+    const { ch, line } = results;
+    let matchContent = "";
+    const matchIndex = matches.findIndex(elm => {
+      if (elm.line === line && elm.ch === ch) {
+        matchContent = elm.match;
+        return true;
+      }
+      return false;
+    });
+
+    
+    if (features.codemirrorNext) {
+      this.setCursorLocation(line, ch, matchContent);
+    }
+
+    this.setState({
+      results: {
+        matches,
+        matchIndex,
+        count: matches.length,
+        index: ch,
+      },
+    });
+  }
+
+  
+
+
+
+
+
+
+  setCursorLocation = (line, ch, matchContent) => {
+    this.props.selectLocation(
+      createLocation({
+        source: this.props.selectedSource,
+        line: line + 1,
+        column: ch + matchContent.length,
+      }),
+      {
+        
+        
+        keepContext: false,
+
+        
+        highlight: false,
+      }
+    );
   };
 
   
@@ -372,4 +403,5 @@ export default connect(mapStateToProps, {
   setActiveSearch: actions.setActiveSearch,
   closeFileSearch: actions.closeFileSearch,
   querySearchWorker: actions.querySearchWorker,
+  selectLocation: actions.selectLocation,
 })(SearchInFileBar);
