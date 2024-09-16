@@ -285,7 +285,7 @@ module.exports = {
     "no-sequences": "error",
 
     
-    
+    "no-shadow": "error",
 
     
     
