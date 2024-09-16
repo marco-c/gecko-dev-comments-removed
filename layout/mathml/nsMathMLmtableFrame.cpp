@@ -665,7 +665,7 @@ nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
   if (!rgFrame || !rgFrame->IsTableRowGroupFrame()) return NS_OK;
 
   
-  if (aAttribute == nsGkAtoms::align) {
+  if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::align) {
     PresShell()->FrameNeedsReflow(this, IntrinsicDirty::None,
                                   NS_FRAME_IS_DIRTY);
     return NS_OK;
@@ -674,7 +674,8 @@ nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
   
   
   
-  if (aAttribute == nsGkAtoms::displaystyle_) {
+  if (aNameSpaceID == kNameSpaceID_None &&
+      aAttribute == nsGkAtoms::displaystyle_) {
     nsMathMLContainerFrame::RebuildAutomaticDataForChildren(GetParent());
     
     
@@ -686,32 +687,37 @@ nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
 
   
 
-  if (aAttribute == nsGkAtoms::rowspacing_ ||
-      aAttribute == nsGkAtoms::columnspacing_ ||
-      aAttribute == nsGkAtoms::framespacing_) {
+  if (aNameSpaceID == kNameSpaceID_None &&
+      (aAttribute == nsGkAtoms::rowspacing_ ||
+       aAttribute == nsGkAtoms::columnspacing_ ||
+       aAttribute == nsGkAtoms::framespacing_)) {
     nsMathMLmtableFrame* mathMLmtableFrame = do_QueryFrame(tableFrame);
     if (mathMLmtableFrame) {
       ParseSpacingAttribute(mathMLmtableFrame, aAttribute);
       mathMLmtableFrame->SetUseCSSSpacing();
     }
-  } else if (aAttribute == nsGkAtoms::rowalign_ ||
-             aAttribute == nsGkAtoms::rowlines_ ||
-             aAttribute == nsGkAtoms::columnalign_ ||
-             aAttribute == nsGkAtoms::columnlines_) {
+    PresShell()->FrameNeedsReflow(
+        this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
+    return NS_OK;
+  }
+
+  if (aNameSpaceID == kNameSpaceID_None &&
+      (aAttribute == nsGkAtoms::rowalign_ ||
+       aAttribute == nsGkAtoms::rowlines_ ||
+       aAttribute == nsGkAtoms::columnalign_ ||
+       aAttribute == nsGkAtoms::columnlines_)) {
     
     tableFrame->RemoveProperty(AttributeToProperty(aAttribute));
     
     ParseFrameAttribute(tableFrame, aAttribute, true);
-  } else {
-    
+    PresShell()->FrameNeedsReflow(
+        this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
     return NS_OK;
   }
 
   
-  PresShell()->FrameNeedsReflow(
-      this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
-
-  return NS_OK;
+  
+  return nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
 
 nsIFrame* nsMathMLmtableWrapperFrame::GetRowFrameAt(int32_t aRowIndex) {
@@ -1024,9 +1030,13 @@ nsresult nsMathMLmtrFrame::AttributeChanged(int32_t aNameSpaceID,
   
   
 
-  if (aAttribute != nsGkAtoms::rowalign_ &&
-      aAttribute != nsGkAtoms::columnalign_) {
-    return NS_OK;
+  if (aNameSpaceID != kNameSpaceID_None ||
+      (aAttribute != nsGkAtoms::rowalign_ &&
+       aAttribute != nsGkAtoms::columnalign_)) {
+    
+    
+    return nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
+                                              aModType);
   }
 
   RemoveProperty(AttributeToProperty(aAttribute));
@@ -1075,8 +1085,9 @@ nsresult nsMathMLmtdFrame::AttributeChanged(int32_t aNameSpaceID,
   
   
 
-  if (aAttribute == nsGkAtoms::rowalign_ ||
-      aAttribute == nsGkAtoms::columnalign_) {
+  if (aNameSpaceID == kNameSpaceID_None &&
+      (aAttribute == nsGkAtoms::rowalign_ ||
+       aAttribute == nsGkAtoms::columnalign_)) {
     RemoveProperty(AttributeToProperty(aAttribute));
 
     
@@ -1084,15 +1095,17 @@ nsresult nsMathMLmtdFrame::AttributeChanged(int32_t aNameSpaceID,
     return NS_OK;
   }
 
-  if (aAttribute == nsGkAtoms::rowspan ||
-      aAttribute == nsGkAtoms::columnspan_) {
+  if (aNameSpaceID == kNameSpaceID_None &&
+      (aAttribute == nsGkAtoms::rowspan ||
+       aAttribute == nsGkAtoms::columnspan_)) {
     
-    if (aAttribute == nsGkAtoms::columnspan_) aAttribute = nsGkAtoms::colspan;
     return nsTableCellFrame::AttributeChanged(aNameSpaceID, aAttribute,
                                               aModType);
   }
 
-  return NS_OK;
+  
+  
+  return nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
 
 StyleVerticalAlignKeyword nsMathMLmtdFrame::GetVerticalAlign() const {

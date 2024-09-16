@@ -47,6 +47,9 @@ nsMathMLmsqrtFrame::InheritAutomaticData(nsIFrame* aParent) {
 nsresult nsMathMLmsqrtFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
                                               int32_t aModType) {
+  
+  
+  
   return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
                                                   aModType);
 }

@@ -690,6 +690,7 @@ nsresult nsMathMLContainerFrame::AttributeChanged(int32_t aNameSpaceID,
   
   
   
+  
   PresShell()->FrameNeedsReflow(
       this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
 

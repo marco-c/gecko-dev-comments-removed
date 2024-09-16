@@ -669,8 +669,13 @@ nscoord nsMathMLmencloseFrame::FixInterFrameSpacing(
 nsresult nsMathMLmencloseFrame::AttributeChanged(int32_t aNameSpaceID,
                                                  nsAtom* aAttribute,
                                                  int32_t aModType) {
-  if (aAttribute == nsGkAtoms::notation_) {
+  if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::notation_) {
     InitNotations();
+    
+    
+    PresShell()->FrameNeedsReflow(
+        this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
+    return NS_OK;
   }
 
   return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
