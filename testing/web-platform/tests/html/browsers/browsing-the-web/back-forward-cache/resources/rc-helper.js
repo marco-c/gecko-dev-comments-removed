@@ -45,9 +45,9 @@ function sorted(s) {
 
 function matchReasons(expectedNotRestoredReasonsSet, notRestoredReasonsSet) {
   const missing = setMinus(
-    expectedNotRestoredReasonsSet, notRestoredReasonsSet, 'Missing reasons');
+    expectedNotRestoredReasonsSet, notRestoredReasonsSet);
   const extra = setMinus(
-      notRestoredReasonsSet, expectedNotRestoredReasonsSet, 'Extra reasons');
+      notRestoredReasonsSet, expectedNotRestoredReasonsSet);
   assert_true(missing.size == 0, `Expected: ${sorted(expectedNotRestoredReasonsSet)}\n` +
     `Got: ${sorted(notRestoredReasonsSet)}\n` +
     `Missing: ${sorted(missing)}\n` +
@@ -77,8 +77,11 @@ function extractReason(reasonSet) {
 
 
 
+
+
+
 async function assertNotRestoredFromBFCache(
-    remoteContextHelper, notRestoredReasons) {
+    remoteContextHelper, notRestoredReasons, preconditionFailReasons = null) {
   var beforeBFCache = await getBeforeBFCache(remoteContextHelper);
   assert_equals(beforeBFCache, undefined, 'document unexpectedly BFCached');
 
@@ -115,6 +118,20 @@ async function assertNotRestoredFromBFCache(
     }
   };
   collectReason(result);
+
+  
+  if (preconditionFailReasons) {
+    let preconditionFailReasonsSet = new Set(preconditionFailReasons);
+    const missing = setMinus(
+        preconditionFailReasonsSet, notRestoredReasonsSet);
+    const extra = setMinus(
+        notRestoredReasonsSet, preconditionFailReasonsSet);
+    
+    assert_implements_optional(
+        !(missing.size == 0 && extra.size == 0),
+        'Precondition fail reasons are reported.');
+  }
+
   matchReasons(expectedNotRestoredReasonsSet, notRestoredReasonsSet);
 }
 
