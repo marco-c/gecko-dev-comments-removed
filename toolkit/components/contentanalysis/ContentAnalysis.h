@@ -216,7 +216,6 @@ class ContentAnalysis final : public nsIContentAnalysis {
     mozilla::MoveOnlyFunction<void(RefPtr<nsIContentAnalysisResult>&&)>
         mResolver;
   };
-  static bool MightBeActive();
   
   
   

@@ -120,6 +120,20 @@ nsIContentAnalysisAcknowledgement::FinalAction ConvertResult(
 
 }  
 
+ bool nsIContentAnalysis::MightBeActive() {
+  
+  
+  
+  
+  
+  
+  static bool sIsEnabled =
+      mozilla::StaticPrefs::browser_contentanalysis_enabled();
+  
+  
+  return sIsEnabled;
+}
+
 namespace mozilla::contentanalysis {
 ContentAnalysisRequest::~ContentAnalysisRequest() {
 #ifdef XP_WIN
@@ -1046,23 +1060,8 @@ ContentAnalysis::GetIsActive(bool* aIsActive) {
 
 NS_IMETHODIMP
 ContentAnalysis::GetMightBeActive(bool* aMightBeActive) {
-  
-  
-  static bool sIsEnabled = StaticPrefs::browser_contentanalysis_enabled();
-  
-  
-  *aMightBeActive = sIsEnabled;
+  *aMightBeActive = nsIContentAnalysis::MightBeActive();
   return NS_OK;
-}
-
- bool ContentAnalysis::MightBeActive() {
-  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
-      mozilla::components::nsIContentAnalysis::Service();
-  NS_ENSURE_TRUE(contentAnalysis, false);
-
-  bool maybeActive = false;
-  return NS_SUCCEEDED(contentAnalysis->GetMightBeActive(&maybeActive)) &&
-         maybeActive;
 }
 
 NS_IMETHODIMP
