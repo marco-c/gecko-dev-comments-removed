@@ -1,12 +1,12 @@
 
 
-IDX_CALLBACK_FREE = 0
+_UNIFFI_IDX_CALLBACK_FREE = 0
 
 _UNIFFI_CALLBACK_SUCCESS = 0
 _UNIFFI_CALLBACK_ERROR = 1
 _UNIFFI_CALLBACK_UNEXPECTED_ERROR = 2
 
-class UniffiCallbackInterfaceFfiConverter:
+class _UniffiCallbackInterfaceFfiConverter:
     _handle_map = _UniffiHandleMap()
 
     @classmethod

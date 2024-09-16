@@ -174,15 +174,6 @@ impl MetadataBuffer {
     }
 
     
-    pub const fn concat_option_bool(self, value: Option<bool>) -> Self {
-        self.concat_value(match value {
-            None => 0,
-            Some(false) => 1,
-            Some(true) => 2,
-        })
-    }
-
-    
     
     
     

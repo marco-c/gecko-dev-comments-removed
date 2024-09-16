@@ -46,14 +46,18 @@
 
 
 
-use std::{borrow::Borrow, sync::Arc};
+
+
+
+
+use std::{borrow::Borrow, mem::ManuallyDrop, sync::Arc};
 
 use anyhow::bail;
 use bytes::Buf;
 
 use crate::{
-    FfiDefault, Handle, MetadataBuffer, Result, RustBuffer, RustCallStatus, RustCallStatusCode,
-    UnexpectedUniFFICallbackError,
+    FfiDefault, Handle, LiftArgsError, MetadataBuffer, Result, RustBuffer, RustCallError,
+    RustCallStatus, RustCallStatusCode, UnexpectedUniFFICallbackError,
 };
 
 
@@ -127,8 +131,6 @@ pub unsafe trait FfiConverter<UT>: Sized {
     
     fn try_read(buf: &mut &[u8]) -> Result<Self>;
 
-    
-    
     
     const TYPE_ID_META: MetadataBuffer;
 }
@@ -217,8 +219,6 @@ pub unsafe trait Lift<UT>: Sized {
             n => bail!("junk data left in buffer after lifting (count: {n})",),
         }
     }
-
-    const TYPE_ID_META: MetadataBuffer;
 }
 
 
@@ -249,8 +249,6 @@ pub unsafe trait Lower<UT>: Sized {
         Self::write(obj, &mut buf);
         RustBuffer::from_vec(buf)
     }
-
-    const TYPE_ID_META: MetadataBuffer;
 }
 
 
@@ -277,7 +275,7 @@ pub unsafe trait LowerReturn<UT>: Sized {
     
     
     
-    fn lower_return(obj: Self) -> Result<Self::ReturnType, RustBuffer>;
+    fn lower_return(v: Self) -> Result<Self::ReturnType, RustCallError>;
 
     
     
@@ -285,11 +283,36 @@ pub unsafe trait LowerReturn<UT>: Sized {
     
     
     
-    fn handle_failed_lift(arg_name: &str, e: anyhow::Error) -> Self {
-        panic!("Failed to convert arg '{arg_name}': {e}")
+    
+    
+    
+    
+    fn handle_failed_lift(error: LiftArgsError) -> Result<Self::ReturnType, RustCallError> {
+        let LiftArgsError { arg_name, error } = error;
+        Err(RustCallError::InternalError(format!(
+            "Failed to convert arg '{arg_name}': {error}"
+        )))
     }
+}
 
-    const TYPE_ID_META: MetadataBuffer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe trait LowerError<UT>: Sized {
+    
+    
+    
+    fn lower_error(obj: Self) -> RustBuffer;
 }
 
 
@@ -323,12 +346,12 @@ pub unsafe trait LiftReturn<UT>: Sized {
                     Self::handle_callback_unexpected_error(UnexpectedUniFFICallbackError::new(e))
                 }),
             RustCallStatusCode::Error => {
-                Self::lift_error(unsafe { call_status.error_buf.assume_init() })
+                Self::lift_error(ManuallyDrop::into_inner(call_status.error_buf))
             }
             _ => {
-                let e = <String as FfiConverter<crate::UniFfiTag>>::try_lift(unsafe {
-                    call_status.error_buf.assume_init()
-                })
+                let e = <String as FfiConverter<crate::UniFfiTag>>::try_lift(
+                    ManuallyDrop::into_inner(call_status.error_buf),
+                )
                 .unwrap_or_else(|e| format!("(Error lifting message: {e}"));
                 Self::handle_callback_unexpected_error(UnexpectedUniFFICallbackError::new(e))
             }
@@ -355,8 +378,6 @@ pub unsafe trait LiftReturn<UT>: Sized {
     fn handle_callback_unexpected_error(e: UnexpectedUniFFICallbackError) -> Self {
         panic!("Callback interface failure: {e}")
     }
-
-    const TYPE_ID_META: MetadataBuffer;
 }
 
 
@@ -375,6 +396,14 @@ pub unsafe trait LiftReturn<UT>: Sized {
 
 pub unsafe trait LiftRef<UT> {
     type LiftType: Lift<UT> + Borrow<Self>;
+}
+
+
+
+
+
+pub trait TypeId<UT> {
+    const TYPE_ID_META: MetadataBuffer;
 }
 
 pub trait ConvertError<UT>: Sized {
@@ -427,18 +456,24 @@ pub unsafe trait HandleAlloc<UT>: Send + Sync {
     
     
     
-    fn clone_handle(handle: Handle) -> Handle;
+    
+    
+    unsafe fn clone_handle(handle: Handle) -> Handle;
 
     
     
     
     
-    fn get_arc(handle: Handle) -> Arc<Self> {
+    
+    
+    unsafe fn get_arc(handle: Handle) -> Arc<Self> {
         Self::consume_handle(Self::clone_handle(handle))
     }
 
     
-    fn consume_handle(handle: Handle) -> Arc<Self>;
+    
+    
+    unsafe fn consume_handle(handle: Handle) -> Arc<Self>;
 }
 
 
@@ -465,18 +500,22 @@ macro_rules! derive_ffi_traits {
         $crate::derive_ffi_traits!(impl<UT> Lower<UT> for $ty);
         $crate::derive_ffi_traits!(impl<UT> Lift<UT> for $ty);
         $crate::derive_ffi_traits!(impl<UT> LowerReturn<UT> for $ty);
+        $crate::derive_ffi_traits!(impl<UT> LowerError<UT> for $ty);
         $crate::derive_ffi_traits!(impl<UT> LiftReturn<UT> for $ty);
         $crate::derive_ffi_traits!(impl<UT> LiftRef<UT> for $ty);
         $crate::derive_ffi_traits!(impl<UT> ConvertError<UT> for $ty);
+        $crate::derive_ffi_traits!(impl<UT> TypeId<UT> for $ty);
     };
 
     (local $ty:ty) => {
         $crate::derive_ffi_traits!(impl Lower<crate::UniFfiTag> for $ty);
         $crate::derive_ffi_traits!(impl Lift<crate::UniFfiTag> for $ty);
         $crate::derive_ffi_traits!(impl LowerReturn<crate::UniFfiTag> for $ty);
+        $crate::derive_ffi_traits!(impl LowerError<crate::UniFfiTag> for $ty);
         $crate::derive_ffi_traits!(impl LiftReturn<crate::UniFfiTag> for $ty);
         $crate::derive_ffi_traits!(impl LiftRef<crate::UniFfiTag> for $ty);
         $crate::derive_ffi_traits!(impl ConvertError<crate::UniFfiTag> for $ty);
+        $crate::derive_ffi_traits!(impl TypeId<crate::UniFfiTag> for $ty);
     };
 
     (impl $(<$($generic:ident),*>)? $(::uniffi::)? Lower<$ut:path> for $ty:ty $(where $($where:tt)*)?) => {
@@ -491,8 +530,6 @@ macro_rules! derive_ffi_traits {
             fn write(obj: Self, buf: &mut ::std::vec::Vec<u8>) {
                 <Self as $crate::FfiConverter<$ut>>::write(obj, buf)
             }
-
-            const TYPE_ID_META: $crate::MetadataBuffer = <Self as $crate::FfiConverter<$ut>>::TYPE_ID_META;
         }
     };
 
@@ -508,8 +545,6 @@ macro_rules! derive_ffi_traits {
             fn try_read(buf: &mut &[u8]) -> $crate::deps::anyhow::Result<Self> {
                 <Self as $crate::FfiConverter<$ut>>::try_read(buf)
             }
-
-            const TYPE_ID_META: $crate::MetadataBuffer = <Self as $crate::FfiConverter<$ut>>::TYPE_ID_META;
         }
     };
 
@@ -518,11 +553,18 @@ macro_rules! derive_ffi_traits {
         {
             type ReturnType = <Self as $crate::Lower<$ut>>::FfiType;
 
-            fn lower_return(obj: Self) -> $crate::deps::anyhow::Result<Self::ReturnType, $crate::RustBuffer> {
-                Ok(<Self as $crate::Lower<$ut>>::lower(obj))
+            fn lower_return(v: Self) -> $crate::deps::anyhow::Result<Self::ReturnType, $crate::RustCallError> {
+                ::std::result::Result::Ok(<Self as $crate::Lower<$ut>>::lower(v))
             }
+        }
+    };
 
-            const TYPE_ID_META: $crate::MetadataBuffer =<Self as $crate::Lower<$ut>>::TYPE_ID_META;
+    (impl $(<$($generic:ident),*>)? $(::uniffi::)? LowerError<$ut:path> for $ty:ty $(where $($where:tt)*)?) => {
+        unsafe impl $(<$($generic),*>)* $crate::LowerError<$ut> for $ty $(where $($where)*)*
+        {
+            fn lower_error(obj: Self) -> $crate::RustBuffer {
+                <Self as $crate::Lower<$ut>>::lower_into_rust_buffer(obj)
+            }
         }
     };
 
@@ -534,8 +576,6 @@ macro_rules! derive_ffi_traits {
             fn try_lift_successful_return(v: Self::ReturnType) -> $crate::Result<Self> {
                 <Self as $crate::Lift<$ut>>::try_lift(v)
             }
-
-            const TYPE_ID_META: $crate::MetadataBuffer = <Self as $crate::Lift<$ut>>::TYPE_ID_META;
         }
     };
 
@@ -569,20 +609,23 @@ macro_rules! derive_ffi_traits {
                 $crate::Handle::from_pointer(::std::sync::Arc::into_raw(::std::sync::Arc::new(value)))
             }
 
-            fn clone_handle(handle: $crate::Handle) -> $crate::Handle {
-                unsafe {
-                    ::std::sync::Arc::<::std::sync::Arc<Self>>::increment_strong_count(handle.as_pointer::<::std::sync::Arc<Self>>());
-                }
+            unsafe fn clone_handle(handle: $crate::Handle) -> $crate::Handle {
+                ::std::sync::Arc::<::std::sync::Arc<Self>>::increment_strong_count(handle.as_pointer::<::std::sync::Arc<Self>>());
                 handle
             }
 
-            fn consume_handle(handle: $crate::Handle) -> ::std::sync::Arc<Self> {
-                unsafe {
-                    ::std::sync::Arc::<Self>::clone(
-                        &std::sync::Arc::<::std::sync::Arc::<Self>>::from_raw(handle.as_pointer::<::std::sync::Arc<Self>>())
-                    )
-                }
+            unsafe fn consume_handle(handle: $crate::Handle) -> ::std::sync::Arc<Self> {
+                ::std::sync::Arc::<Self>::clone(
+                    &std::sync::Arc::<::std::sync::Arc::<Self>>::from_raw(handle.as_pointer::<::std::sync::Arc<Self>>())
+                )
             }
+        }
+    };
+
+    (impl $(<$($generic:ident),*>)? $(::uniffi::)? TypeId<$ut:path> for $ty:ty $(where $($where:tt)*)?) => {
+        impl $(<$($generic),*>)* $crate::TypeId<$ut> for $ty $(where $($where)*)*
+        {
+            const TYPE_ID_META: $crate::MetadataBuffer = <Self as $crate::FfiConverter<$ut>>::TYPE_ID_META;
         }
     };
 }
@@ -592,12 +635,12 @@ unsafe impl<T: Send + Sync, UT> HandleAlloc<UT> for T {
         Handle::from_pointer(Arc::into_raw(value))
     }
 
-    fn clone_handle(handle: Handle) -> Handle {
-        unsafe { Arc::increment_strong_count(handle.as_pointer::<T>()) };
+    unsafe fn clone_handle(handle: Handle) -> Handle {
+        Arc::increment_strong_count(handle.as_pointer::<T>());
         handle
     }
 
-    fn consume_handle(handle: Handle) -> Arc<Self> {
-        unsafe { Arc::from_raw(handle.as_pointer()) }
+    unsafe fn consume_handle(handle: Handle) -> Arc<Self> {
+        Arc::from_raw(handle.as_pointer())
     }
 }

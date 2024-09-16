@@ -28,7 +28,9 @@ impl Handle {
         self.0 as *const T
     }
 
-    pub fn from_raw(raw: u64) -> Option<Self> {
+    
+    
+    pub unsafe fn from_raw(raw: u64) -> Option<Self> {
         if raw == 0 {
             None
         } else {

@@ -1,9 +1,6 @@
 {%- match python_config.custom_types.get(name.as_str())  %}
 {% when None %}
 {
-
-{{ name }} = {{ builtin|type_name }}
-
 class _UniffiConverterType{{ name }}:
     @staticmethod
     def write(value, buf):
@@ -34,9 +31,6 @@ class _UniffiConverterType{{ name }}:
 {%- endfor %}
 {%- else %}
 {%- endmatch %}
-
-
-{{ name }} = {{ builtin|type_name }}
 
 {
 class _UniffiConverterType{{ name }}:

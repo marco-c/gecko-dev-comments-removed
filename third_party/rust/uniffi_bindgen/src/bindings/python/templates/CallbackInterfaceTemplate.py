@@ -10,4 +10,4 @@
 {% include "CallbackInterfaceImpl.py" %}
 
 
-{{ ffi_converter_name }} = UniffiCallbackInterfaceFfiConverter()
+{{ ffi_converter_name }} = _UniffiCallbackInterfaceFfiConverter()

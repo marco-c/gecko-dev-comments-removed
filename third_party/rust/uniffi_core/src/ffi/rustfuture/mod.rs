@@ -12,7 +12,7 @@ use scheduler::*;
 #[cfg(test)]
 mod tests;
 
-use crate::{derive_ffi_traits, Handle, HandleAlloc, LowerReturn, RustCallStatus};
+use crate::{derive_ffi_traits, Handle, HandleAlloc, LiftArgsError, LowerReturn, RustCallStatus};
 
 
 #[repr(i8)]
@@ -42,7 +42,7 @@ where
     
     
     
-    F: Future<Output = T> + Send + 'static,
+    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
     
     
     T: LowerReturn<UT> + Send + 'static,

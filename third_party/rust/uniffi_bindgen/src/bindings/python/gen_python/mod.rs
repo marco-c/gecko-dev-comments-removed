@@ -2,9 +2,9 @@
 
 
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use askama::Template;
-use camino::Utf8Path;
+
 use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -14,9 +14,9 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Debug;
 
 use crate::backend::TemplateExpression;
-use crate::bindings::python;
+
 use crate::interface::*;
-use crate::{BindingGenerator, BindingsConfig};
+use crate::VisitMut;
 
 mod callback_interface;
 mod compounds;
@@ -27,29 +27,6 @@ mod miscellany;
 mod object;
 mod primitives;
 mod record;
-
-pub struct PythonBindingGenerator;
-
-impl BindingGenerator for PythonBindingGenerator {
-    type Config = Config;
-
-    fn write_bindings(
-        &self,
-        ci: &ComponentInterface,
-        config: &Config,
-        out_dir: &Utf8Path,
-        try_format_code: bool,
-    ) -> Result<()> {
-        python::write_bindings(config, ci, out_dir, try_format_code)
-    }
-
-    fn check_library_path(&self, library_path: &Utf8Path, cdylib_name: Option<&str>) -> Result<()> {
-        if cdylib_name.is_none() {
-            bail!("Generate bindings for Python requires a cdylib, but {library_path} was given");
-        }
-        Ok(())
-    }
-}
 
 
 trait CodeType: Debug {
@@ -135,7 +112,7 @@ static KEYWORDS: Lazy<HashSet<String>> = Lazy::new(|| {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Config {
-    cdylib_name: Option<String>,
+    pub(super) cdylib_name: Option<String>,
     #[serde(default)]
     custom_types: HashMap<String, CustomTypeConfig>,
     #[serde(default)]
@@ -171,22 +148,8 @@ impl Config {
     }
 }
 
-impl BindingsConfig for Config {
-    fn update_from_ci(&mut self, ci: &ComponentInterface) {
-        self.cdylib_name
-            .get_or_insert_with(|| format!("uniffi_{}", ci.namespace()));
-    }
 
-    fn update_from_cdylib_name(&mut self, cdylib_name: &str) {
-        self.cdylib_name
-            .get_or_insert_with(|| cdylib_name.to_string());
-    }
-
-    fn update_from_dependency_configs(&mut self, _config_map: HashMap<&str, &Self>) {}
-}
-
-
-pub fn generate_python_bindings(config: &Config, ci: &ComponentInterface) -> Result<String> {
+pub fn generate_python_bindings(config: &Config, ci: &mut ComponentInterface) -> Result<String> {
     PythonWrapper::new(config.clone(), ci)
         .render()
         .context("failed to render python bindings")
@@ -298,6 +261,33 @@ impl<'a> TypeRenderer<'a> {
             });
         ""
     }
+
+    
+    
+    
+    
+    
+    
+    fn get_custom_type_aliases(&self) -> Vec<(String, &Type)> {
+        let mut ordered = vec![];
+        for type_ in self.ci.iter_types() {
+            if let Type::Custom { name, builtin, .. } = type_ {
+                match ordered.iter().position(|x: &(&str, &Type)| {
+                    x.1.iter_types()
+                        .any(|nested_type| *name == nested_type.as_codetype().type_label())
+                }) {
+                    
+                    Some(pos) => ordered.insert(pos, (name, builtin)),
+                    
+                    None => ordered.push((name, builtin)),
+                }
+            }
+        }
+        ordered
+            .into_iter()
+            .map(|(n, t)| (PythonCodeOracle.class_name(n), t))
+            .collect()
+    }
 }
 
 #[derive(Template)]
@@ -309,10 +299,13 @@ pub struct PythonWrapper<'a> {
     type_imports: BTreeSet<ImportRequirement>,
 }
 impl<'a> PythonWrapper<'a> {
-    pub fn new(config: Config, ci: &'a ComponentInterface) -> Self {
+    pub fn new(config: Config, ci: &'a mut ComponentInterface) -> Self {
+        ci.visit_mut(&PythonCodeOracle);
+
         let type_renderer = TypeRenderer::new(&config, ci);
         let type_helper_code = type_renderer.render().unwrap();
         let type_imports = type_renderer.imports.into_inner();
+
         Self {
             config,
             ci,
@@ -364,14 +357,14 @@ impl PythonCodeOracle {
 
     
     fn ffi_callback_name(&self, nm: &str) -> String {
-        format!("UNIFFI_{}", nm.to_shouty_snake_case())
+        format!("_UNIFFI_{}", nm.to_shouty_snake_case())
     }
 
     
     fn ffi_struct_name(&self, nm: &str) -> String {
         
         
-        format!("Uniffi{}", nm.to_upper_camel_case())
+        format!("_Uniffi{}", nm.to_upper_camel_case())
     }
 
     fn ffi_type_label(&self, ffi_type: &FfiType) -> String {
@@ -388,8 +381,8 @@ impl PythonCodeOracle {
             FfiType::Float64 => "ctypes.c_double".to_string(),
             FfiType::Handle => "ctypes.c_uint64".to_string(),
             FfiType::RustArcPtr(_) => "ctypes.c_void_p".to_string(),
-            FfiType::RustBuffer(maybe_suffix) => match maybe_suffix {
-                Some(suffix) => format!("_UniffiRustBuffer{suffix}"),
+            FfiType::RustBuffer(maybe_external) => match maybe_external {
+                Some(external_meta) => format!("_UniffiRustBuffer{}", external_meta.name),
                 None => "_UniffiRustBuffer".to_string(),
             },
             FfiType::RustCallStatus => "_UniffiRustCallStatus".to_string(),
@@ -418,8 +411,10 @@ impl PythonCodeOracle {
                 | FfiType::Int64 => "0".to_owned(),
                 FfiType::Float32 | FfiType::Float64 => "0.0".to_owned(),
                 FfiType::RustArcPtr(_) => "ctypes.c_void_p()".to_owned(),
-                FfiType::RustBuffer(maybe_suffix) => match maybe_suffix {
-                    Some(suffix) => format!("_UniffiRustBuffer{suffix}.default()"),
+                FfiType::RustBuffer(maybe_external) => match maybe_external {
+                    Some(external_meta) => {
+                        format!("_UniffiRustBuffer{}.default()", external_meta.name)
+                    }
                     None => "_UniffiRustBuffer.default()".to_owned(),
                 },
                 _ => unimplemented!("FFI return type: {t:?}"),
@@ -445,6 +440,84 @@ impl PythonCodeOracle {
         } else {
             (format!("{class_name}Protocol"), class_name)
         }
+    }
+}
+
+impl VisitMut for PythonCodeOracle {
+    fn visit_record(&self, record: &mut Record) {
+        record.rename(self.class_name(record.name()));
+    }
+
+    fn visit_object(&self, object: &mut Object) {
+        object.rename(self.class_name(object.name()));
+    }
+
+    fn visit_field(&self, field: &mut Field) {
+        field.rename(self.var_name(field.name()));
+    }
+
+    fn visit_ffi_field(&self, ffi_field: &mut FfiField) {
+        ffi_field.rename(self.var_name(ffi_field.name()));
+    }
+
+    fn visit_ffi_argument(&self, ffi_argument: &mut FfiArgument) {
+        ffi_argument.rename(self.class_name(ffi_argument.name()));
+    }
+
+    fn visit_enum(&self, is_error: bool, enum_: &mut Enum) {
+        if is_error {
+            enum_.rename(self.class_name(enum_.name()));
+        } else {
+            enum_.rename(self.enum_variant_name(enum_.name()));
+        }
+    }
+
+    fn visit_enum_key(&self, key: &mut String) -> String {
+        self.class_name(key)
+    }
+
+    fn visit_variant(&self, is_error: bool, variant: &mut Variant) {
+        
+        
+        
+        
+        
+
+        if is_error {
+            variant.rename(self.class_name(variant.name()));
+        } else {
+            variant.rename(self.enum_variant_name(variant.name()));
+        }
+    }
+
+    fn visit_type(&self, type_: &mut Type) {
+        
+        
+        
+        
+        
+        let name_transformer = |name: &str| self.class_name(name);
+        type_.rename_recursive(&name_transformer);
+    }
+
+    fn visit_method(&self, method: &mut Method) {
+        method.rename(self.fn_name(method.name()));
+    }
+
+    fn visit_argument(&self, argument: &mut Argument) {
+        argument.rename(self.var_name(argument.name()));
+    }
+
+    fn visit_constructor(&self, constructor: &mut Constructor) {
+        if !constructor.is_primary_constructor() {
+            constructor.rename(self.fn_name(constructor.name()));
+        }
+    }
+
+    fn visit_function(&self, function: &mut Function) {
+        
+        
+        function.rename(self.fn_name(function.name()));
     }
 }
 
@@ -509,6 +582,20 @@ pub mod filters {
         Ok(as_ct.as_codetype().type_label())
     }
 
+    
+    
+    
+    pub fn var_name(nm: &str) -> Result<String, askama::Error> {
+        Ok(PythonCodeOracle.var_name(nm))
+    }
+
+    
+    
+    
+    pub fn class_name(nm: &str) -> Result<String, askama::Error> {
+        Ok(PythonCodeOracle.class_name(nm))
+    }
+
     pub(super) fn ffi_converter_name(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
         Ok(String::from("_Uniffi") + &as_ct.as_codetype().ffi_converter_name()[3..])
     }
@@ -556,26 +643,6 @@ pub mod filters {
 
     pub fn ffi_default_value(return_type: Option<FfiType>) -> Result<String, askama::Error> {
         Ok(PythonCodeOracle.ffi_default_value(return_type.as_ref()))
-    }
-
-    
-    pub fn class_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(PythonCodeOracle.class_name(nm))
-    }
-
-    
-    pub fn fn_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(PythonCodeOracle.fn_name(nm))
-    }
-
-    
-    pub fn var_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(PythonCodeOracle.var_name(nm))
-    }
-
-    
-    pub fn enum_variant_py(nm: &str) -> Result<String, askama::Error> {
-        Ok(PythonCodeOracle.enum_variant_name(nm))
     }
 
     

@@ -160,7 +160,7 @@
 
 
 use anyhow::Result;
-use uniffi_meta::Checksum;
+use uniffi_meta::{Checksum, EnumShape};
 
 use super::record::Field;
 use super::{AsType, Literal, Type, TypeIterator};
@@ -176,24 +176,7 @@ pub struct Enum {
     pub(super) module_path: String,
     pub(super) discr_type: Option<Type>,
     pub(super) variants: Vec<Variant>,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(super) flat: bool,
+    pub(super) shape: EnumShape,
     pub(super) non_exhaustive: bool,
     #[checksum_ignore]
     pub(super) docstring: Option<String>,
@@ -202,6 +185,10 @@ pub struct Enum {
 impl Enum {
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn rename(&mut self, name: String) {
+        self.name = name;
     }
 
     pub fn variants(&self) -> &[Variant] {
@@ -248,7 +235,10 @@ impl Enum {
     }
 
     pub fn is_flat(&self) -> bool {
-        self.flat
+        match self.shape {
+            EnumShape::Error { flat } => flat,
+            EnumShape::Enum => self.variants.iter().all(|v| v.fields.is_empty()),
+        }
     }
 
     pub fn is_non_exhaustive(&self) -> bool {
@@ -262,14 +252,12 @@ impl Enum {
     pub fn docstring(&self) -> Option<&str> {
         self.docstring.as_deref()
     }
+}
 
-    
-    pub fn try_from_meta(meta: uniffi_meta::EnumMetadata, flat: bool) -> Result<Self> {
-        
-        
-        
-        
-        
+impl TryFrom<uniffi_meta::EnumMetadata> for Enum {
+    type Error = anyhow::Error;
+
+    fn try_from(meta: uniffi_meta::EnumMetadata) -> Result<Self> {
         Ok(Self {
             name: meta.name,
             module_path: meta.module_path,
@@ -279,7 +267,7 @@ impl Enum {
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<Result<_>>()?,
-            flat,
+            shape: meta.shape,
             non_exhaustive: meta.non_exhaustive,
             docstring: meta.docstring.clone(),
         })
@@ -310,6 +298,10 @@ pub struct Variant {
 impl Variant {
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn rename(&mut self, new_name: String) {
+        self.name = new_name;
     }
 
     pub fn fields(&self) -> &[Field] {
@@ -414,6 +406,7 @@ mod test {
         
         let ed = ci.get_enum_definition("TestEnumWithData").unwrap();
         assert!(!ed.is_flat());
+        assert_eq!(ed.shape, EnumShape::Enum);
         assert_eq!(ed.variants().len(), 3);
         assert_eq!(
             ed.variants().iter().map(|v| v.name()).collect::<Vec<_>>(),
@@ -462,6 +455,8 @@ mod test {
         );
         assert_eq!(ewd.variants()[0].fields().len(), 0);
         assert_eq!(ewd.variants()[1].fields().len(), 0);
+        assert!(ewd.is_flat());
+        assert_eq!(ewd.shape, EnumShape::Enum);
 
         
         
@@ -669,7 +664,7 @@ mod test {
             name: "test".to_string(),
             discr_type: None,
             variants: vec![],
-            flat: false,
+            shape: EnumShape::Enum,
             non_exhaustive: false,
             docstring: None,
         };

@@ -2,11 +2,10 @@
 
 #}
 
-#[::uniffi::derive_enum_for_udl(
-    {%- if e.is_non_exhaustive() -%}
-    non_exhaustive,
-    {%- endif %}
-)]
+#[::uniffi::udl_derive(Enum)]
+{%- if e.is_non_exhaustive() %}
+#[non_exhaustive]
+{%- endif %}
 enum r#{{ e.name() }} {
     {%- for variant in e.variants() %}
     r#{{ variant.name() }} {

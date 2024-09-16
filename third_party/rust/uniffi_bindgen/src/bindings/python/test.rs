@@ -2,8 +2,9 @@
 
 
 
-use crate::bindings::TargetLanguage;
-use crate::{bindings::RunScriptOptions, library_mode::generate_bindings, BindingGeneratorDefault};
+use crate::bindings::RunScriptOptions;
+use crate::cargo_metadata::CrateConfigSupplier;
+use crate::library_mode::generate_bindings;
 use anyhow::{Context, Result};
 use camino::Utf8Path;
 use std::env;
@@ -39,10 +40,8 @@ pub fn run_script(
     generate_bindings(
         &cdylib_path,
         None,
-        &BindingGeneratorDefault {
-            target_languages: vec![TargetLanguage::Python],
-            try_format_code: false,
-        },
+        &super::PythonBindingGenerator,
+        &CrateConfigSupplier::from(test_helper.cargo_metadata()),
         None,
         &out_dir,
         false,

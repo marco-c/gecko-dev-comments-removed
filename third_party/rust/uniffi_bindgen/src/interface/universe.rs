@@ -21,16 +21,16 @@ pub use uniffi_meta::{AsType, ExternalKind, NamespaceMetadata, ObjectImpl, Type,
 
 
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct TypeUniverse {
     
     pub namespace: NamespaceMetadata,
     pub namespace_docstring: Option<String>,
 
     
-    type_definitions: HashMap<String, Type>,
+    pub(super) type_definitions: HashMap<String, Type>,
     
-    all_known_types: BTreeSet<Type>,
+    pub(super) all_known_types: BTreeSet<Type>,
 }
 
 impl TypeUniverse {

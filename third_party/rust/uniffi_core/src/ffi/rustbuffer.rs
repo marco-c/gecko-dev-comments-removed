@@ -81,10 +81,7 @@ impl RustBuffer {
     
     
     
-    
-    
-    
-    pub unsafe fn from_raw_parts(data: *mut u8, len: u64, capacity: u64) -> Self {
+    pub(crate) unsafe fn from_raw_parts(data: *mut u8, len: u64, capacity: u64) -> Self {
         Self {
             capacity,
             len,

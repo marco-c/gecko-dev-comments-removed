@@ -29,22 +29,20 @@
 
 
 
+use crate::{BindingGenerator, Component, GenerationSettings};
+use anyhow::Result;
+use fs_err as fs;
 use std::process::Command;
 
-use anyhow::Result;
-use camino::Utf8Path;
-use fs_err as fs;
+mod gen_swift;
+use gen_swift::{generate_bindings, Config};
 
-pub mod gen_swift;
-pub use gen_swift::{generate_bindings, Config};
-mod test;
-
-use super::super::interface::ComponentInterface;
-pub use test::{run_script, run_test};
+#[cfg(feature = "bindgen-tests")]
+pub mod test;
 
 
 
-pub struct Bindings {
+struct Bindings {
     
     library: String,
     
@@ -53,45 +51,73 @@ pub struct Bindings {
     modulemap: Option<String>,
 }
 
+pub struct SwiftBindingGenerator;
+impl BindingGenerator for SwiftBindingGenerator {
+    type Config = Config;
 
-
-
-
-
-pub fn write_bindings(
-    config: &Config,
-    ci: &ComponentInterface,
-    out_dir: &Utf8Path,
-    try_format_code: bool,
-) -> Result<()> {
-    let Bindings {
-        header,
-        library,
-        modulemap,
-    } = generate_bindings(config, ci)?;
-
-    let source_file = out_dir.join(format!("{}.swift", config.module_name()));
-    fs::write(&source_file, library)?;
-
-    let header_file = out_dir.join(config.header_filename());
-    fs::write(header_file, header)?;
-
-    if let Some(modulemap) = modulemap {
-        let modulemap_file = out_dir.join(config.modulemap_filename());
-        fs::write(modulemap_file, modulemap)?;
+    fn new_config(&self, root_toml: &toml::Value) -> Result<Self::Config> {
+        Ok(
+            match root_toml.get("bindings").and_then(|b| b.get("swift")) {
+                Some(v) => v.clone().try_into()?,
+                None => Default::default(),
+            },
+        )
     }
 
-    if try_format_code {
-        if let Err(e) = Command::new("swiftformat")
-            .arg(source_file.as_str())
-            .output()
-        {
-            println!(
-                "Warning: Unable to auto-format {} using swiftformat: {e:?}",
-                source_file.file_name().unwrap(),
-            );
+    fn update_component_configs(
+        &self,
+        _settings: &GenerationSettings,
+        components: &mut Vec<Component<Self::Config>>,
+    ) -> Result<()> {
+        for c in &mut *components {
+            c.config
+                .module_name
+                .get_or_insert_with(|| c.ci.namespace().into());
         }
+        Ok(())
     }
 
-    Ok(())
+    
+    
+    
+    fn write_bindings(
+        &self,
+        settings: &GenerationSettings,
+        components: &[Component<Self::Config>],
+    ) -> Result<()> {
+        for Component { ci, config, .. } in components {
+            let Bindings {
+                header,
+                library,
+                modulemap,
+            } = generate_bindings(config, ci)?;
+
+            let source_file = settings
+                .out_dir
+                .join(format!("{}.swift", config.module_name()));
+            fs::write(&source_file, library)?;
+
+            let header_file = settings.out_dir.join(config.header_filename());
+            fs::write(header_file, header)?;
+
+            if let Some(modulemap) = modulemap {
+                let modulemap_file = settings.out_dir.join(config.modulemap_filename());
+                fs::write(modulemap_file, modulemap)?;
+            }
+
+            if settings.try_format_code {
+                if let Err(e) = Command::new("swiftformat")
+                    .arg(source_file.as_str())
+                    .output()
+                {
+                    println!(
+                        "Warning: Unable to auto-format {} using swiftformat: {e:?}",
+                        source_file.file_name().unwrap(),
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
