@@ -12,17 +12,6 @@ module.exports = {
     SpecialPowers: false,
   },
 
-  overrides: [
-    {
-      env: {
-        
-        
-        
-        "mozilla/simpletest": true,
-      },
-      files: ["*.js"],
-    },
-  ],
   plugins: ["mozilla"],
 
   rules: {
