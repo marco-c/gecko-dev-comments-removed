@@ -6,7 +6,6 @@ module.exports = {
     browser: true,
     "mozilla/browser-window": true,
     "mozilla/simpletest": true,
-    
   },
 
   
@@ -56,19 +55,6 @@ module.exports = {
     waitForExplicitFinish: false,
     waitForFocus: false,
   },
-
-  overrides: [
-    {
-      
-      
-      files: ["*.html", "*.xhtml"],
-      
-      
-      rules: {
-        "mozilla/no-comparison-or-assignment-inside-ok": "off",
-      },
-    },
-  ],
 
   plugins: ["mozilla"],
 
