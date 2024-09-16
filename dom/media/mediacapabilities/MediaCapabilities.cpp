@@ -798,8 +798,9 @@ Maybe<MediaContainerType> MediaCapabilities::CheckAudioConfiguration(
 
 bool MediaCapabilities::CheckTypeForMediaSource(const nsAString& aType) {
   IgnoredErrorResult rv;
-  MediaSource::IsTypeSupported(aType, nullptr ,
-                               rv);
+  MediaSource::IsTypeSupported(
+      aType, nullptr , rv,
+      Some(mParent->ShouldResistFingerprinting(RFPTarget::MediaCapabilities)));
 
   return !rv.Failed();
 }
