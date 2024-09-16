@@ -5,6 +5,14 @@ const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
 
+ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
+  const { QuickSuggestTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/QuickSuggestTestUtils.sys.mjs"
+  );
+  module.init(this);
+  return module;
+});
+
 const kDefaultWait = 2000;
 
 function is_element_visible(aElement, aMsg) {
@@ -332,4 +340,107 @@ async function mockDefaultFxAInstance() {
   registerCleanupFunction(unmock);
 
   return { mock, unmock };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function doSuggestVisibilityTest({
+  initialScenarios,
+  initialExpected,
+  nimbusVariables,
+  newExpected = initialExpected,
+  pane = "search",
+}) {
+  for (let scenario of initialScenarios) {
+    info(
+      "Running Suggest visibility test: " +
+        JSON.stringify(
+          {
+            scenario,
+            initialExpected,
+            nimbusVariables,
+            newExpected,
+          },
+          null,
+          2
+        )
+    );
+
+    
+    await QuickSuggestTestUtils.setScenario(scenario);
+
+    
+    await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
+    assertSuggestVisibility(initialExpected);
+
+    
+    await QuickSuggestTestUtils.withExperiment({
+      valueOverrides: nimbusVariables,
+      callback: async () => {
+        
+        assertSuggestVisibility(newExpected);
+
+        
+        
+        gBrowser.removeCurrentTab();
+        await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
+        assertSuggestVisibility(newExpected);
+      },
+    });
+
+    gBrowser.removeCurrentTab();
+  }
+
+  await QuickSuggestTestUtils.setScenario(null);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assertSuggestVisibility(expectedByElementId) {
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  for (let [elementId, { isVisible, l10nId }] of Object.entries(
+    expectedByElementId
+  )) {
+    let element = doc.getElementById(elementId);
+    Assert.strictEqual(
+      BrowserTestUtils.isVisible(element),
+      isVisible,
+      "The element should be visible as expected"
+    );
+    if (l10nId) {
+      Assert.equal(
+        element.dataset.l10nId,
+        l10nId,
+        "The l10n ID should be correct for element " + elementId
+      );
+    }
+  }
 }

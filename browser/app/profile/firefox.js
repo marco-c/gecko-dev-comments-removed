@@ -501,6 +501,9 @@ pref("browser.urlbar.quicksuggest.contextualOptIn.topPosition", true);
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
+pref("browser.urlbar.quicksuggest.hideSettingsUI", false);
+
+
 
 pref("browser.urlbar.quicksuggest.rustEnabled", true);
 

@@ -9,14 +9,6 @@ ChromeUtils.defineESModuleGetters(this, {
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
 });
 
-ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
-  const { QuickSuggestTestUtils: module } = ChromeUtils.importESModule(
-    "resource://testing-common/QuickSuggestTestUtils.sys.mjs"
-  );
-  module.init(this);
-  return module;
-});
-
 const CONTAINER_ID = "firefoxSuggestContainer";
 const NONSPONSORED_CHECKBOX_ID = "firefoxSuggestNonsponsored";
 const SPONSORED_CHECKBOX_ID = "firefoxSuggestSponsored";
@@ -31,170 +23,248 @@ const PREF_URLBAR_WEATHER_USER_ENABLED = "browser.urlbar.suggest.weather";
 
 
 
-
-const EXPECTED_L10N_IDS = {
-  locationBarGroupHeader: {
-    enabled: "addressbar-header-firefox-suggest",
-    disabled: "addressbar-header",
-  },
-  locationBarSuggestionLabel: {
-    enabled: "addressbar-suggest-firefox-suggest",
-    disabled: "addressbar-suggest",
-  },
-};
-
-
-
 requestLongerTimeout(10);
 
 
 
 
-add_task(async function historyToOffline() {
-  await doVisibilityTest({
-    initialScenario: "history",
-    initialExpectedVisibility: false,
-    newScenario: "offline",
-    newExpectedVisibility: true,
+add_task(async function history_suggestDisabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["history"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: false },
+      locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: false,
+    },
   });
 });
 
-add_task(async function historyToOnline() {
-  await doVisibilityTest({
-    initialScenario: "history",
-    initialExpectedVisibility: false,
-    newScenario: "online",
-    newExpectedVisibility: true,
+add_task(async function history_suggestEnabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["history"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: false },
+      locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: true,
+    },
+    newExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
   });
 });
 
-add_task(async function offlineToHistory() {
-  await doVisibilityTest({
-    initialScenario: "offline",
-    initialExpectedVisibility: true,
-    newScenario: "history",
-    newExpectedVisibility: false,
+add_task(async function history_suggestEnabled_hideSettingsUIDisabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["history"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: false },
+      locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: true,
+      quickSuggestHideSettingsUI: false,
+    },
+    newExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
   });
 });
 
-add_task(async function offlineToOnline() {
-  await doVisibilityTest({
-    initialScenario: "offline",
-    initialExpectedVisibility: true,
-    newScenario: "online",
-    newExpectedVisibility: true,
+add_task(async function history_suggestEnabled_hideSettingsUIEnabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["history"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: false },
+      locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: true,
+      quickSuggestHideSettingsUI: true,
+    },
   });
 });
 
-add_task(async function onlineToHistory() {
-  await doVisibilityTest({
-    initialScenario: "online",
-    initialExpectedVisibility: true,
-    newScenario: "history",
-    newExpectedVisibility: false,
+add_task(async function offlineOnline_suggestDisabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["offline", "online"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: false,
+    },
+    newExpected: {
+      [CONTAINER_ID]: { isVisible: false },
+      locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest",
+      },
+    },
   });
 });
 
-add_task(async function onlineToOffline() {
-  await doVisibilityTest({
-    initialScenario: "online",
-    initialExpectedVisibility: true,
-    newScenario: "offline",
-    newExpectedVisibility: true,
+add_task(async function offlineOnline_suggestEnabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["offline", "online"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: true,
+    },
   });
 });
 
+add_task(async function offlineOnline_hideSettingsUIDisabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["offline", "online"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestHideSettingsUI: false,
+    },
+  });
+});
 
+add_task(async function offlineOnline_hideSettingsUIEnabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["offline", "online"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestHideSettingsUI: true,
+    },
+    newExpected: {
+      [CONTAINER_ID]: { isVisible: false },
+      locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest",
+      },
+    },
+  });
+});
 
+add_task(async function offlineOnline_suggestEnabled_hideSettingsUIDisabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["offline", "online"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: true,
+      quickSuggestHideSettingsUI: false,
+    },
+  });
+});
 
-
-
-
-
-
-
-
-
-
-
-async function doVisibilityTest({
-  initialScenario,
-  initialExpectedVisibility,
-  newScenario,
-  newExpectedVisibility,
-}) {
-  info(
-    "Running visibility test: " +
-      JSON.stringify(
-        {
-          initialScenario,
-          initialExpectedVisibility,
-          newScenario,
-          newExpectedVisibility,
-        },
-        null,
-        2
-      )
-  );
-
-  
-  await QuickSuggestTestUtils.setScenario(initialScenario);
-
-  Assert.equal(
-    Services.prefs.getBoolPref("browser.urlbar.quicksuggest.enabled"),
-    initialExpectedVisibility,
-    `quicksuggest.enabled is correct after setting initial scenario, initialExpectedVisibility=${initialExpectedVisibility}`
-  );
-
-  
-  await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
-
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  let container = doc.getElementById(CONTAINER_ID);
-  Assert.equal(
-    BrowserTestUtils.isVisible(container),
-    initialExpectedVisibility,
-    `The container has the expected initial visibility, initialExpectedVisibility=${initialExpectedVisibility}`
-  );
-
-  
-  for (let [id, { enabled, disabled }] of Object.entries(EXPECTED_L10N_IDS)) {
-    Assert.equal(
-      doc.getElementById(id).dataset.l10nId,
-      initialExpectedVisibility ? enabled : disabled,
-      `Initial l10n ID for element with ID ${id}, initialExpectedVisibility=${initialExpectedVisibility}`
-    );
-  }
-
-  
-  await QuickSuggestTestUtils.setScenario(newScenario);
-
-  Assert.equal(
-    Services.prefs.getBoolPref("browser.urlbar.quicksuggest.enabled"),
-    newExpectedVisibility,
-    `quicksuggest.enabled is correct after setting new scenario, newExpectedVisibility=${newExpectedVisibility}`
-  );
-
-  
-  Assert.equal(
-    BrowserTestUtils.isVisible(container),
-    newExpectedVisibility,
-    `The container has the expected visibility after setting new scenario, newExpectedVisibility=${newExpectedVisibility}`
-  );
-
-  
-  for (let [id, { enabled, disabled }] of Object.entries(EXPECTED_L10N_IDS)) {
-    Assert.equal(
-      doc.getElementById(id).dataset.l10nId,
-      newExpectedVisibility ? enabled : disabled,
-      `New l10n ID for element with ID ${id}, newExpectedVisibility=${newExpectedVisibility}`
-    );
-  }
-
-  
-  gBrowser.removeCurrentTab();
-  await QuickSuggestTestUtils.setScenario(null);
-}
+add_task(async function offlineOnline_suggestEnabled_hideSettingsUIEnabled() {
+  await doSuggestVisibilityTest({
+    initialScenarios: ["offline", "online"],
+    initialExpected: {
+      [CONTAINER_ID]: { isVisible: true },
+      locationBarGroupHeader: {
+        isVisible: true,
+        l10nId: "addressbar-header-firefox-suggest",
+      },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest-firefox-suggest",
+      },
+    },
+    nimbusVariables: {
+      quickSuggestEnabled: true,
+      quickSuggestHideSettingsUI: true,
+    },
+    newExpected: {
+      [CONTAINER_ID]: { isVisible: false },
+      locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
+      locationBarSuggestionLabel: {
+        isVisible: true,
+        l10nId: "addressbar-suggest",
+      },
+    },
+  });
+});
 
 
 add_task(async function checkboxesAndInfoBox() {
