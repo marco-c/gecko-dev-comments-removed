@@ -809,11 +809,11 @@ impl<'b> Cascade<'b> {
         #[cfg(feature = "gecko")]
         apply!(FontSizeAdjust);
 
-        apply!(ColorScheme);
         #[cfg(feature = "gecko")]
         apply!(ForcedColorAdjust);
-
         
+        
+        apply!(ColorScheme);
         apply!(LineHeight);
     }
 
