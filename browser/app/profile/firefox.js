@@ -203,6 +203,13 @@ pref("app.update.langpack.enabled", true);
   
   
   pref("toolkit.backgroundtasks.defaultTimeoutSec", 600);
+
+  #if defined(ENABLE_TESTS)
+    
+    
+    pref("toolkit.backgroundtasks.tests.browserPrefsInherited", 15);
+    pref("toolkit.backgroundtasks.tests.browserPrefsOverriden", 16);
+  #endif
 #endif
 
 

@@ -45,3 +45,8 @@ pref("app.normandy.run_interval_seconds", 0);
 
 
 pref("nimbus.appId", "firefox-desktop-background-task");
+
+#if defined(ENABLE_TESTS)
+  
+  pref("toolkit.backgroundtasks.tests.browserPrefsOverriden", 26);
+#endif
