@@ -72,6 +72,8 @@ struct Control {
   bool deadThenBranch;         
   size_t tryNoteIndex;         
   CatchInfoVector catchInfos;  
+  size_t loopBytecodeStart;    
+  CodeOffset offsetOfCtrDec;   
 
   Control()
       : stackHeight(StackHeight::Invalid()),
@@ -80,7 +82,9 @@ struct Control {
         bceSafeOnExit(~BCESet(0)),
         deadOnArrival(false),
         deadThenBranch(false),
-        tryNoteIndex(0) {}
+        tryNoteIndex(0),
+        loopBytecodeStart(UINTPTR_MAX),
+        offsetOfCtrDec(CodeOffset()) {}
 
   Control(Control&&) = default;
   Control(const Control&) = delete;
@@ -1045,7 +1049,12 @@ struct BaseCompiler final {
   
   
   
-  [[nodiscard]] bool addHotnessCheck();
+  
+  [[nodiscard]] Maybe<CodeOffset> addHotnessCheck();
+
+  
+  
+  void patchHotnessCheck(CodeOffset offset, uint32_t step);
 
   
   [[nodiscard]] bool addInterruptCheck();

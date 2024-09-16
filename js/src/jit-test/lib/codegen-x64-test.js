@@ -25,6 +25,9 @@
 
 
 
+
+
+
 load(libdir + "codegen-test-common.js");
 
 
@@ -151,7 +154,9 @@ function codegenTestX64_adhoc(module_text, export_name, expected, options = {}) 
     let ins = wasmEvalText(module_text, {}, options.features);
     if (options.instanceBox)
         options.instanceBox.value = ins;
-    let output = wasmDis(ins.exports[export_name], {tier:"ion", asString:true});
+    let tierTxt = options.baseline ? "baseline" : "ion";
+    let output = wasmDis(ins.exports[export_name],
+                         {tier:tierTxt, asString:true});
     if (!options.no_prefix)
         expected = x64_prefix + '\n' + expected;
     if (!options.no_suffix)
@@ -165,9 +170,12 @@ function codegenTestX64_adhoc(module_text, export_name, expected, options = {}) 
         print(module_text);
         print("Actual output:")
         print(output);
-        print("Expected output (easy-to-read and fully-regex'd):")
+        print("Expected output (as text):")
         print(expected_pretty);
+        print("");
+        print("Expected output (as regex):")
         print(expected);
+        print("");
     }
     assertEq(success, true);
 }

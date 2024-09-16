@@ -693,6 +693,12 @@ static void WasmHandleRequestTierUp(Instance* instance) {
   
   
   
+  int32_t counter = instance->readHotnessCounter(funcIndex);
+  MOZ_RELEASE_ASSERT(counter >= -127 && counter <= -1);
+
+  
+  
+  
   
   
   

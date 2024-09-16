@@ -61,6 +61,86 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "wasm/WasmBaselineCompile.h"
 
 #include "wasm/WasmAnyRef.h"
@@ -368,6 +448,18 @@ void BaseCompiler::unstashI64(RegPtr regForInstance, RegI64 r) {
 
 
 
+static uint32_t BlockSizeToDownwardsStep(size_t blockBytecodeSize) {
+  MOZ_RELEASE_ASSERT(blockBytecodeSize <= size_t(MaxFunctionBytes));
+  const uint32_t BYTECODES_PER_STEP = 20;  
+  size_t step = blockBytecodeSize / BYTECODES_PER_STEP;
+  step = std::max<uint32_t>(step, 1);
+  step = std::min<uint32_t>(step, 127);
+  return uint32_t(step);
+}
+
+
+
+
 
 bool BaseCompiler::beginFunction() {
   AutoCreatedBy acb(masm, "(wasm)BaseCompiler::beginFunction");
@@ -551,7 +643,20 @@ bool BaseCompiler::beginFunction() {
   MOZ_ASSERT(stackMapGenerator_.framePushedAtEntryToBody.isNothing());
   stackMapGenerator_.framePushedAtEntryToBody.emplace(masm.framePushed());
 
-  return addHotnessCheck();
+  if (compilerEnv_.mode() == CompileMode::LazyTiering) {
+    size_t funcBytecodeSize = func_.end - func_.begin;
+    uint32_t step = BlockSizeToDownwardsStep(funcBytecodeSize);
+
+    
+    
+    Maybe<CodeOffset> ctrDecOffset = addHotnessCheck();
+    if (ctrDecOffset.isNothing()) {
+      return false;
+    }
+    patchHotnessCheck(ctrDecOffset.value(), step);
+  }
+
+  return true;
 }
 
 bool BaseCompiler::endFunction() {
@@ -946,11 +1051,11 @@ void BaseCompiler::restoreRegisterReturnValues(const ResultType& resultType) {
 
 class OutOfLineRequestTierUp : public OutOfLineCode {
   Register instance_;  
-  RegI32 scratch_;     
+  Maybe<RegI32> scratch_;    
   size_t lastOpcodeOffset_;  
 
  public:
-  OutOfLineRequestTierUp(Register instance, RegI32 scratch,
+  OutOfLineRequestTierUp(Register instance, Maybe<RegI32> scratch,
                          size_t lastOpcodeOffset)
       : instance_(instance),
         scratch_(scratch),
@@ -974,10 +1079,10 @@ class OutOfLineRequestTierUp : public OutOfLineCode {
       
       masm->xchgl(instance_, InstanceReg);
 #  elif JS_CODEGEN_ARM
-      
-      masm->mov(instance_, scratch_);  
+      masm->mov(instance_,
+                scratch_.value());  
       masm->mov(InstanceReg, instance_);
-      masm->mov(scratch_, InstanceReg);
+      masm->mov(scratch_.value(), InstanceReg);
 #  else
       MOZ_CRASH("BaseCompiler::OutOfLineRequestTierUp #1");
 #  endif
@@ -993,9 +1098,9 @@ class OutOfLineRequestTierUp : public OutOfLineCode {
 #  ifdef JS_CODEGEN_X86
       masm->xchgl(instance_, InstanceReg);
 #  elif JS_CODEGEN_ARM
-      masm->mov(instance_, scratch_);
+      masm->mov(instance_, scratch_.value());
       masm->mov(InstanceReg, instance_);
-      masm->mov(scratch_, InstanceReg);
+      masm->mov(scratch_.value(), InstanceReg);
 #  else
       MOZ_CRASH("BaseCompiler::OutOfLineRequestTierUp #2");
 #  endif
@@ -1006,11 +1111,16 @@ class OutOfLineRequestTierUp : public OutOfLineCode {
   }
 };
 
-bool BaseCompiler::addHotnessCheck() {
-  if (compilerEnv_.mode() != CompileMode::LazyTiering) {
-    return true;
-  }
-
+Maybe<CodeOffset> BaseCompiler::addHotnessCheck() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1038,23 +1148,38 @@ bool BaseCompiler::addHotnessCheck() {
       instance, wasm::Instance::offsetInData(
                     codeMeta_.offsetOfFuncDefInstanceData(func_.index)));
 
-  RegI32 counter = needI32();
+#if JS_CODEGEN_ARM
+  Maybe<RegI32> scratch = Some(needI32());
+#else
+  Maybe<RegI32> scratch = Nothing();
+#endif
 
   OutOfLineCode* ool = addOutOfLineCode(new (alloc_) OutOfLineRequestTierUp(
-      instance, counter, iter_.lastOpcodeOffset()));
+      instance, scratch, iter_.lastOpcodeOffset()));
   if (!ool) {
-    return false;
+    return Nothing();
   }
 
-  masm.load32(addressOfCounter, counter);
-  masm.branchSub32(Assembler::Signed,  
-                   Imm32(1), counter, ool->entry());
-  masm.store32(counter, addressOfCounter);
+  
+  
+  CodeOffset patchPoint = masm.sub32FromMemAndBranchIfNegativeWithPatch(
+      addressOfCounter, ool->entry());
 
   masm.bind(ool->rejoin());
 
-  freeI32(counter);
-  return true;
+  if (scratch.isSome()) {
+    freeI32(scratch.value());
+  }
+
+  
+  return masm.oom() ? Nothing() : Some(patchPoint);
+}
+
+void BaseCompiler::patchHotnessCheck(CodeOffset offset, uint32_t step) {
+  
+  
+  MOZ_RELEASE_ASSERT(step > 0 && step <= 127);
+  masm.patchSub32FromMemAndBranchIfNegative(offset, Imm32(step));
 }
 
 
@@ -3705,8 +3830,20 @@ bool BaseCompiler::emitLoop() {
     masm.bind(&controlItem(0).label);
     
     sync();
-    if (!addInterruptCheck() || !addHotnessCheck()) {
+    if (!addInterruptCheck()) {
       return false;
+    }
+
+    if (compilerEnv_.mode() == CompileMode::LazyTiering) {
+      
+      
+      
+      Maybe<CodeOffset> ctrDecOffset = addHotnessCheck();
+      if (ctrDecOffset.isNothing()) {
+        return false;
+      }
+      controlItem().loopBytecodeStart = iter_.lastOpcodeOffset();
+      controlItem().offsetOfCtrDec = ctrDecOffset.value();
     }
   }
 
@@ -3940,11 +4077,28 @@ bool BaseCompiler::emitEnd() {
       }
       iter_.popEnd();
       break;
-    case LabelKind::Loop:
+    case LabelKind::Loop: {
+      if (compilerEnv_.mode() == CompileMode::LazyTiering) {
+        
+        MOZ_ASSERT((controlItem().loopBytecodeStart != UINTPTR_MAX) ==
+                   (controlItem().offsetOfCtrDec.bound()));
+        if (controlItem().loopBytecodeStart != UINTPTR_MAX) {
+          
+          
+          
+          MOZ_ASSERT(controlItem().loopBytecodeStart <=
+                     iter_.lastOpcodeOffset());
+          size_t loopBytecodeSize =
+              iter_.lastOpcodeOffset() - controlItem().loopBytecodeStart;
+          uint32_t step = BlockSizeToDownwardsStep(loopBytecodeSize);
+          patchHotnessCheck(controlItem().offsetOfCtrDec, step);
+        }
+      }
       
       
       iter_.popEnd();
       break;
+    }
     case LabelKind::Then:
       if (!endIfThen(type)) {
         return false;
