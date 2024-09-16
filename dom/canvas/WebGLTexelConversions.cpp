@@ -4,6 +4,7 @@
 
 #include "WebGLContext.h"
 #include "WebGLTexelConversions.h"
+#include "GLBlitHelper.h"
 
 namespace mozilla {
 
@@ -82,7 +83,9 @@ class WebGLImageConverter {
 
 
   template <WebGLTexelFormat SrcFormat, WebGLTexelFormat DstFormat,
-            WebGLTexelPremultiplicationOp PremultiplicationOp>
+            WebGLTexelPremultiplicationOp PremultiplicationOp,
+            dom::PredefinedColorSpace SrcColorSpace,
+            dom::PredefinedColorSpace DstColorSpace>
   void run() {
     
     
@@ -92,8 +95,11 @@ class WebGLImageConverter {
     
     
 
+    bool sameColorSpace = (SrcColorSpace == DstColorSpace);
+
     if (SrcFormat == DstFormat &&
-        PremultiplicationOp == WebGLTexelPremultiplicationOp::None) {
+        PremultiplicationOp == WebGLTexelPremultiplicationOp::None &&
+        sameColorSpace) {
       
       
       
@@ -184,6 +190,17 @@ class WebGLImageConverter {
     const SrcType* srcRowStart = static_cast<const SrcType*>(mSrcStart);
     DstType* dstRowStart = static_cast<DstType*>(mDstStart);
 
+    static auto inColorSpace2 = gfx::ToColorSpace2(SrcColorSpace);
+    static auto outColorSpace2 = gfx::ToColorSpace2(DstColorSpace);
+
+    auto inColorProfile = gl::GLBlitHelper::ToColorProfileDesc(inColorSpace2);
+    auto outColorProfile = gl::GLBlitHelper::ToColorProfileDesc(outColorSpace2);
+
+    const auto conversion = color::ColorProfileConversionDesc::From({
+        .src = *inColorProfile,
+        .dst = *outColorProfile,
+    });
+
     
     for (size_t i = 0; i < mHeight; ++i) {
       const SrcType* srcRowEnd = srcRowStart + mWidth * NumElementsPerSrcTexel;
@@ -195,12 +212,27 @@ class WebGLImageConverter {
         
         
         
+        
         IntermediateSrcType unpackedSrc[MaxElementsPerTexel];
         IntermediateDstType unpackedDst[MaxElementsPerTexel];
 
         
         
         unpack<SrcFormat>(srcPtr, unpackedSrc);
+
+        if (!sameColorSpace) {
+          
+          float srcAsFloat[MaxElementsPerTexel];
+          convertType(unpackedSrc, srcAsFloat);
+          auto inTexelVec =
+              color::vec3({srcAsFloat[0], srcAsFloat[1], srcAsFloat[2]});
+          auto outTexelVec = conversion.DstFromSrc(inTexelVec);
+          srcAsFloat[0] = outTexelVec[0];
+          srcAsFloat[1] = outTexelVec[1];
+          srcAsFloat[2] = outTexelVec[2];
+          convertType(srcAsFloat, unpackedSrc);
+        }
+
         
         
         convertType(unpackedSrc, unpackedDst);
@@ -218,11 +250,54 @@ class WebGLImageConverter {
     mSuccess = true;
   }
 
+  template <WebGLTexelFormat SrcFormat, WebGLTexelFormat DstFormat,
+            WebGLTexelPremultiplicationOp PremultiplicationOp,
+            dom::PredefinedColorSpace SrcColorSpace>
+  void run(dom::PredefinedColorSpace dstColorSpace) {
+#define WEBGLIMAGECONVERTER_CASE_DSTCOLORSPACE(DstColorSpace)            \
+  case DstColorSpace:                                                    \
+    return run<SrcFormat, DstFormat, PremultiplicationOp, SrcColorSpace, \
+               DstColorSpace>();
+
+    switch (dstColorSpace) {
+      WEBGLIMAGECONVERTER_CASE_DSTCOLORSPACE(dom::PredefinedColorSpace::Srgb)
+      WEBGLIMAGECONVERTER_CASE_DSTCOLORSPACE(
+          dom::PredefinedColorSpace::Display_p3)
+      default:
+        MOZ_ASSERT(false, "unhandled case. Coding mistake?");
+    }
+
+#undef WEBGLIMAGECONVERTER_CASE_DSTCOLORSPACE
+  }
+
+  template <WebGLTexelFormat SrcFormat, WebGLTexelFormat DstFormat,
+            WebGLTexelPremultiplicationOp PremultiplicationOp>
+  void run(dom::PredefinedColorSpace srcColorSpace,
+           dom::PredefinedColorSpace dstColorSpace) {
+#define WEBGLIMAGECONVERTER_CASE_SRCCOLORSPACE(SrcColorSpace)             \
+  case SrcColorSpace:                                                     \
+    return run<SrcFormat, DstFormat, PremultiplicationOp, SrcColorSpace>( \
+        dstColorSpace);
+
+    switch (srcColorSpace) {
+      WEBGLIMAGECONVERTER_CASE_SRCCOLORSPACE(dom::PredefinedColorSpace::Srgb)
+      WEBGLIMAGECONVERTER_CASE_SRCCOLORSPACE(
+          dom::PredefinedColorSpace::Display_p3)
+      default:
+        MOZ_ASSERT(false, "unhandled case. Coding mistake?");
+    }
+
+#undef WEBGLIMAGECONVERTER_CASE_SRCCOLORSPACE
+  }
+
   template <WebGLTexelFormat SrcFormat, WebGLTexelFormat DstFormat>
-  void run(WebGLTexelPremultiplicationOp premultiplicationOp) {
+  void run(WebGLTexelPremultiplicationOp premultiplicationOp,
+           dom::PredefinedColorSpace srcColorSpace,
+           dom::PredefinedColorSpace dstColorSpace) {
 #define WEBGLIMAGECONVERTER_CASE_PREMULTIPLICATIONOP(PremultiplicationOp) \
   case PremultiplicationOp:                                               \
-    return run<SrcFormat, DstFormat, PremultiplicationOp>();
+    return run<SrcFormat, DstFormat, PremultiplicationOp>(srcColorSpace,  \
+                                                          dstColorSpace);
 
     switch (premultiplicationOp) {
       WEBGLIMAGECONVERTER_CASE_PREMULTIPLICATIONOP(
@@ -240,10 +315,13 @@ class WebGLImageConverter {
 
   template <WebGLTexelFormat SrcFormat>
   void run(WebGLTexelFormat dstFormat,
-           WebGLTexelPremultiplicationOp premultiplicationOp) {
-#define WEBGLIMAGECONVERTER_CASE_DSTFORMAT(DstFormat) \
-  case DstFormat:                                     \
-    return run<SrcFormat, DstFormat>(premultiplicationOp);
+           WebGLTexelPremultiplicationOp premultiplicationOp,
+           dom::PredefinedColorSpace srcColorSpace,
+           dom::PredefinedColorSpace dstColorSpace) {
+#define WEBGLIMAGECONVERTER_CASE_DSTFORMAT(DstFormat)                    \
+  case DstFormat:                                                        \
+    return run<SrcFormat, DstFormat>(premultiplicationOp, srcColorSpace, \
+                                     dstColorSpace);
 
     switch (dstFormat) {
       
@@ -283,10 +361,13 @@ class WebGLImageConverter {
 
  public:
   void run(WebGLTexelFormat srcFormat, WebGLTexelFormat dstFormat,
-           WebGLTexelPremultiplicationOp premultiplicationOp) {
-#define WEBGLIMAGECONVERTER_CASE_SRCFORMAT(SrcFormat) \
-  case SrcFormat:                                     \
-    return run<SrcFormat>(dstFormat, premultiplicationOp);
+           WebGLTexelPremultiplicationOp premultiplicationOp,
+           dom::PredefinedColorSpace srcColorSpace,
+           dom::PredefinedColorSpace dstColorSpace) {
+#define WEBGLIMAGECONVERTER_CASE_SRCFORMAT(SrcFormat)                    \
+  case SrcFormat:                                                        \
+    return run<SrcFormat>(dstFormat, premultiplicationOp, srcColorSpace, \
+                          dstColorSpace);
 
     switch (srcFormat) {
       
@@ -343,6 +424,8 @@ bool ConvertImage(size_t width, size_t height, const void* srcBegin,
                   WebGLTexelFormat srcFormat, bool srcPremultiplied,
                   void* dstBegin, size_t dstStride, gl::OriginPos dstOrigin,
                   WebGLTexelFormat dstFormat, bool dstPremultiplied,
+                  dom::PredefinedColorSpace srcColorSpace,
+                  dom::PredefinedColorSpace dstColorSpace,
                   bool* const out_wasTrivial) {
   *out_wasTrivial = true;
 
@@ -378,8 +461,10 @@ bool ConvertImage(size_t width, size_t height, const void* srcBegin,
     dstItrStride = -dstItrStride;
   }
 
+  bool sameColorSpace = (srcColorSpace == dstColorSpace);
+
   if (srcFormat == dstFormat &&
-      premultOp == WebGLTexelPremultiplicationOp::None) {
+      premultOp == WebGLTexelPremultiplicationOp::None && sameColorSpace) {
     
 
     const auto bytesPerPixel = TexelBytesForFormat(srcFormat);
@@ -397,8 +482,7 @@ bool ConvertImage(size_t width, size_t height, const void* srcBegin,
 
   WebGLImageConverter converter(width, height, srcItr, dstItr, srcStride,
                                 dstItrStride);
-  converter.run(srcFormat, dstFormat, premultOp);
-
+  converter.run(srcFormat, dstFormat, premultOp, srcColorSpace, dstColorSpace);
   if (!converter.Success()) {
     
     
