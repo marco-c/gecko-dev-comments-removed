@@ -847,7 +847,7 @@ void DecodedStreamData::WriteVideoToSegment(
     double aPlaybackRate) {
   RefPtr<layers::Image> image = aImage;
   aOutput->AppendFrame(image.forget(), aIntrinsicSize, aPrincipalHandle, false,
-                       aTimeStamp);
+                       aTimeStamp, media::TimeUnit::Invalid(), aStart);
   
   
   
