@@ -1225,6 +1225,14 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     mActiveEntry->SharedInfo()->mCacheKey = aUpdatedCacheKey;
   }
 
+  if (oldActiveEntry) {
+    
+    
+    
+    mActiveEntry->SetHasUserInteraction(
+        oldActiveEntry->GetHasUserInteraction());
+  }
+
   if (IsTop()) {
     Maybe<int32_t> previousEntryIndex, loadedEntryIndex;
     shistory->AddToRootSessionHistory(
@@ -1258,7 +1266,12 @@ void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
     return;
   }
 
+  
+  
+  
+  const bool hasUserInteraction = mActiveEntry->GetHasUserInteraction();
   mActiveEntry->SetInfo(aInfo);
+  mActiveEntry->SetHasUserInteraction(hasUserInteraction);
   
   nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
   if (shistory) {
