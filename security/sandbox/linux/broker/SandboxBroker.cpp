@@ -42,9 +42,6 @@
 namespace mozilla {
 
 
-static const nsLiteralCString tempDirPrefix("/tmp");
-
-
 
 
 
@@ -71,17 +68,6 @@ SandboxBroker::SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid,
     mFileDesc = -1;
     aClientFd = -1;
   }
-#if defined(MOZ_CONTENT_TEMP_DIR)
-  nsCOMPtr<nsIFile> tmpDir;
-  nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                                       getter_AddRefs(tmpDir));
-  if (NS_SUCCEEDED(rv)) {
-    rv = tmpDir->GetNativePath(mContentTempPath);
-    if (NS_FAILED(rv)) {
-      mContentTempPath.Truncate();
-    }
-  }
-#endif
 }
 
 UniquePtr<SandboxBroker> SandboxBroker::Create(
@@ -572,36 +558,6 @@ size_t SandboxBroker::ConvertRelativePath(char* aPath, size_t aBufSize,
   return aPathLen;
 }
 
-#if defined(MOZ_CONTENT_TEMP_DIR)
-size_t SandboxBroker::RemapTempDirs(char* aPath, size_t aBufSize,
-                                    size_t aPathLen) {
-  nsAutoCString path(aPath);
-
-  size_t prefixLen = 0;
-  if (!mTempPath.IsEmpty() && StringBeginsWith(path, mTempPath)) {
-    prefixLen = mTempPath.Length();
-  } else if (StringBeginsWith(path, tempDirPrefix)) {
-    prefixLen = tempDirPrefix.Length();
-  }
-
-  if (prefixLen) {
-    const nsDependentCSubstring cutPath =
-        Substring(path, prefixLen, path.Length() - prefixLen);
-
-    
-    if (!mContentTempPath.IsEmpty()) {
-      nsAutoCString tmpPath;
-      tmpPath.Assign(mContentTempPath);
-      tmpPath.Append(cutPath);
-      base::strlcpy(aPath, tmpPath.get(), aBufSize);
-      return strlen(aPath);
-    }
-  }
-
-  return aPathLen;
-}
-#endif
-
 nsCString SandboxBroker::ReverseSymlinks(const nsACString& aPath) {
   
   int32_t cutLength = aPath.Length();
@@ -678,38 +634,6 @@ void SandboxBroker::ThreadMain(void) {
   
   
   bool permissive = SandboxInfo::Get().Test(SandboxInfo::kPermissive);
-
-#if defined(MOZ_CONTENT_TEMP_DIR)
-  
-  nsCOMPtr<nsIFile> tmpDir;
-  nsresult rv =
-      GetSpecialSystemDirectory(OS_TemporaryDirectory, getter_AddRefs(tmpDir));
-  if (NS_SUCCEEDED(rv)) {
-    rv = tmpDir->GetNativePath(mTempPath);
-    if (NS_SUCCEEDED(rv)) {
-      
-      if (mTempPath.Last() == '/') {
-        mTempPath.Truncate(mTempPath.Length() - 1);
-      }
-    }
-  }
-  
-  
-  if (NS_FAILED(rv) || mTempPath.IsEmpty()) {
-    if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
-      SANDBOX_LOG("Tempdir: /tmp");
-    }
-  } else {
-    if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
-      SANDBOX_LOG("Tempdir: %s", mTempPath.get());
-    }
-    
-    
-    if (mTempPath.Equals(tempDirPrefix)) {
-      mTempPath.Truncate();
-    }
-  }
-#endif
 
   while (true) {
     struct iovec ios[2];
@@ -802,14 +726,6 @@ void SandboxBroker::ThreadMain(void) {
       pathLen = ConvertRelativePath(pathBuf, sizeof(pathBuf), pathLen);
       perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
 
-      
-#if defined(MOZ_CONTENT_TEMP_DIR)
-      if (!perms) {
-        
-        pathLen = RemapTempDirs(pathBuf, sizeof(pathBuf), pathLen);
-        perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
-      }
-#endif
       if (!perms) {
         
         

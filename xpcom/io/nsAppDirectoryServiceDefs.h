@@ -74,29 +74,4 @@
 
 #define NS_APP_PERMISSION_PARENT_DIR "permissionDBPDir"
 
-#if defined(MOZ_CONTENT_TEMP_DIR)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#  define NS_APP_CONTENT_PROCESS_TEMP_DIR "ContentTmpD"
-#endif  
-
 #endif  

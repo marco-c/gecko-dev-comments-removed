@@ -3,13 +3,25 @@
 
 "use strict";
 
+const lazy = {};
+
+
+ChromeUtils.defineLazyGetter(lazy, "LIBC", () =>
+  ChromeUtils.getLibcConstants()
+);
+
 
 async function createFileInHome() {
   let browser = gBrowser.selectedBrowser;
   let homeFile = fileInHomeDir();
   let path = homeFile.path;
   let fileCreated = await SpecialPowers.spawn(browser, [path], createFile);
-  ok(!fileCreated.ok, "creating a file in home dir is not permitted");
+  ok(!fileCreated.ok, "creating a file in home dir failed");
+  is(
+    fileCreated.code,
+    Cr.NS_ERROR_FILE_ACCESS_DENIED,
+    "creating a file in home dir failed with access denied"
+  );
   if (fileCreated.ok) {
     
     homeFile.remove(false);
@@ -22,36 +34,53 @@ async function createFileInHome() {
 async function createTempFile() {
   
   
-  let isOptWin = isWin() && !SpecialPowers.isDebugBuild;
+  let isDbgWin = isWin() && SpecialPowers.isDebugBuild;
 
   let browser = gBrowser.selectedBrowser;
   let path = fileInTempDir().path;
   let fileCreated = await SpecialPowers.spawn(browser, [path], createFile);
-  if (isMac() || isOptWin) {
-    ok(!fileCreated.ok, "creating a file in temp is not permitted");
+  if (isDbgWin) {
+    ok(fileCreated.ok, "creating a file in temp suceeded");
   } else {
-    ok(!!fileCreated.ok, "creating a file in temp is permitted");
-  }
-  
-  let fileDeleted = await SpecialPowers.spawn(browser, [path], deleteFile);
-  if (isMac() || isOptWin) {
-    
-    
-    
-    ok(!fileDeleted.ok, "deleting a file in temp is not permitted");
-  } else {
-    ok(!!fileDeleted.ok, "deleting a file in temp is permitted");
+    ok(!fileCreated.ok, "creating a file in temp failed");
+    is(
+      fileCreated.code,
+      Cr.NS_ERROR_FILE_ACCESS_DENIED,
+      "creating a file in temp failed with access denied"
+    );
   }
 
   
-  if (isMac()) {
+  let fileDeleted = await SpecialPowers.spawn(browser, [path], deleteFile);
+  if (isDbgWin) {
+    ok(fileDeleted.ok, "deleting a file in temp succeeded");
+  } else {
+    ok(!fileDeleted.ok, "deleting a file in temp failed");
+    const expectedError = isLinux()
+      ? Cr.NS_ERROR_FILE_ACCESS_DENIED
+      : Cr.NS_ERROR_FILE_NOT_FOUND;
+    is(
+      fileDeleted.code,
+      expectedError,
+      "deleting a file in temp failed with access denied"
+    );
+  }
+
+  
+  if (isMac() || isLinux()) {
     let path = fileInTempDir().path;
     let symlinkCreated = await SpecialPowers.spawn(
       browser,
       [path],
       createSymlink
     );
-    ok(!symlinkCreated.ok, "created a symlink in temp is not permitted");
+    ok(!symlinkCreated.ok, "created a symlink in temp failed");
+    const expectedError = isLinux() ? lazy.LIBC.EACCES : lazy.LIBC.EPERM;
+    is(
+      symlinkCreated.code,
+      expectedError,
+      "created a symlink in temp failed with access denied"
+    );
   }
 }
 

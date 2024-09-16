@@ -313,8 +313,6 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   void RemoveFromProcessList();
 
   
-  nsCString mTmpDirName;
-  
   nsCOMPtr<nsIFile> mProfileDir;
 
   mozilla::Atomic<bool> mDestroying;
