@@ -1848,6 +1848,7 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
 
     uint32_t profileSpace = qcms_profile_get_color_space(mInProfile);
     if (profileSpace != icSigGrayData) {
+      mUsePipeTransform = true;
       
       
       
@@ -1860,6 +1861,10 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
         outType = inType;
       }
     } else {
+      
+      
+      
+      mUsePipeTransform = false;
       if (mHasAlpha) {
         inType = QCMS_DATA_GRAYA_8;
         outType = gfxPlatform::GetCMSOSRGBAType();
@@ -1916,6 +1921,7 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
       
       
       
+      
       if (hasPremultiply) {
         premultOp = libyuv::ARGBUnattenuate;
       }
@@ -1944,8 +1950,6 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
   MOZ_LOG(sAVIFLog, LogLevel::Debug,
           ("[this=%p] calling SurfacePipeFactory::CreateSurfacePipe", this));
 
-  Maybe<SurfacePipe> pipe = Nothing();
-
   SurfacePipeFlags pipeFlags = SurfacePipeFlags();
   if (decodedData->mAlpha && mTransform) {
     
@@ -1954,6 +1958,9 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
       pipeFlags |= SurfacePipeFlags::PREMULTIPLY_ALPHA;
     }
   }
+
+  Maybe<SurfacePipe> pipe = Nothing();
+  auto* transform = mUsePipeTransform ? mTransform : nullptr;
 
   if (mIsAnimated) {
     SurfaceFormat outFormat =
@@ -1966,10 +1973,10 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
     }
     pipe = SurfacePipeFactory::CreateSurfacePipe(
         this, Size(), OutputSize(), FullFrame(), format, outFormat, animParams,
-        mTransform, pipeFlags);
+        transform, pipeFlags);
   } else {
     pipe = SurfacePipeFactory::CreateReorientSurfacePipe(
-        this, Size(), OutputSize(), format, mTransform, GetOrientation(),
+        this, Size(), OutputSize(), format, transform, GetOrientation(),
         pipeFlags);
   }
 
@@ -1982,8 +1989,29 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
   MOZ_LOG(sAVIFLog, LogLevel::Debug, ("[this=%p] writing to surface", this));
   const uint8_t* endOfRgbBuf = {rgbBuf.get() + rgbBufLength.value()};
   WriteState writeBufferResult = WriteState::NEED_MORE_DATA;
+  uint8_t* grayLine = nullptr;
+  int32_t multiplier = 1;
+  if (mTransform && !mUsePipeTransform) {
+    if (mHasAlpha) {
+      multiplier = 2;
+    }
+    
+    
+    grayLine = new uint8_t[multiplier * rgbSize.width];
+  }
   for (uint8_t* rowPtr = rgbBuf.get(); rowPtr < endOfRgbBuf;
        rowPtr += rgbStride.value()) {
+    if (mTransform && !mUsePipeTransform) {
+      
+      for (int32_t i = 0; i < rgbSize.width; i++) {
+        grayLine[multiplier * i] = rowPtr[i * bytesPerPixel + 1];
+        if (mHasAlpha) {
+          grayLine[multiplier * i + 1] = rowPtr[i * bytesPerPixel + 3];
+        }
+      }
+      qcms_transform_data(mTransform, grayLine, rowPtr, rgbSize.width);
+    }
+
     writeBufferResult = pipe->WriteBuffer(reinterpret_cast<uint32_t*>(rowPtr));
 
     Maybe<SurfaceInvalidRect> invalidRect = pipe->TakeInvalidRect();
@@ -1999,6 +2027,9 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
     } else if (writeBufferResult == WriteState::FINISHED) {
       MOZ_ASSERT(rowPtr + rgbStride.value() == endOfRgbBuf);
     }
+  }
+  if (mTransform && !mUsePipeTransform) {
+    delete[] grayLine;
   }
 
   MOZ_LOG(sAVIFLog, LogLevel::Debug,
