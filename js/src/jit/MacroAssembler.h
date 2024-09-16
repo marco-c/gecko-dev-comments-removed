@@ -1362,7 +1362,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
              Register temp2, Label* onOver);
   void powPtr(Register base, Register power, Register dest, Register temp1,
               Register temp2, Label* onOver);
-  void powPtr(Register base, Register power, Register dest, Label* onOver);
 
   void sameValueDouble(FloatRegister left, FloatRegister right,
                        FloatRegister temp, Register dest);
@@ -5063,35 +5062,21 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
 
 
-
-  void loadFirstBigIntDigitOrZero(Register bigInt, Register dest);
-
-  
-
-
-
-
-  void loadBigInt(Register bigInt, Register dest, Label* fail);
+  void loadBigIntDigit(Register bigInt, Register dest);
 
   
 
 
 
 
-  void loadBigIntNonZero(Register bigInt, Register dest, Label* fail);
+
+  void loadBigIntDigit(Register bigInt, Register dest, Label* fail);
 
   
 
 
 
-
-  void loadBigIntAbsolute(Register bigInt, Register dest, Label* fail);
-
-  
-
-
-
-  void bigIntDigitToSignedPtr(Register bigInt, Register digit, Label* fail);
+  void loadBigIntPtr(Register bigInt, Register dest, Label* fail);
 
   
 
@@ -5104,12 +5089,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
 
 
-  void initializeBigInt(Register bigInt, Register val);
-
-  
-
-
-  void initializeBigIntAbsolute(Register bigInt, Register val);
+  void initializeBigIntPtr(Register bigInt, Register val);
 
   
 
