@@ -251,8 +251,7 @@ AbstractWorker.prototype = {
         "id is",
         id
       );
-      let msg = exn.toMsg();
-      this.postMessage({ fail: msg, id, durationMs });
+      this.postMessage({ fail: exn.toMsg(), id, durationMs });
     } else {
       
       
