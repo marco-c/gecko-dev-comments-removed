@@ -153,7 +153,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   GetBrowserChildMessageManager() const {
     return mChildMessageManager;
   }
-  nsresult UpdatePositionAndSize(nsSubDocumentFrame* aIFrame);
+  nsresult UpdatePositionAndSize(nsSubDocumentFrame* aFrame);
   void PropagateIsUnderHiddenEmbedderElement(
       bool aIsUnderHiddenEmbedderElement);
 
@@ -329,9 +329,16 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  bool IsRemoteFrame();
+  bool IsRemoteFrame() const {
+    MOZ_ASSERT_IF(mIsRemoteFrame, !GetDocShell());
+    return mIsRemoteFrame;
+  }
 
-  mozilla::dom::RemoteBrowser* GetRemoteBrowser() const;
+  mozilla::dom::RemoteBrowser* GetRemoteBrowser() const {
+    return mRemoteBrowser;
+  }
+
+  bool HasRemoteBrowserBeenSized() const { return mRemoteBrowserSized; }
 
   
 
@@ -446,10 +453,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
   void AssertSafeToInit();
 
   
-  
-  void UpdateBaseWindowPositionAndSize(nsSubDocumentFrame* aIFrame);
-
-  
 
 
 
@@ -469,8 +472,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   bool TryRemoteBrowserInternal();
 
   
-  bool ShowRemoteFrame(const mozilla::ScreenIntSize& size,
-                       nsSubDocumentFrame* aFrame = nullptr);
+  bool ShowRemoteFrame(nsSubDocumentFrame* aFrame);
 
   void AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
                               nsIDocShellTreeOwner* aOwner);
@@ -548,6 +550,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   bool mLoadingOriginalSrc : 1;
 
   bool mRemoteBrowserShown : 1;
+  bool mRemoteBrowserSized : 1;
   bool mIsRemoteFrame : 1;
   
   
