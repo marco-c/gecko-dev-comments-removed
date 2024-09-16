@@ -18,6 +18,11 @@
 #  include "modules/desktop_capture/desktop_capturer.h"
 #endif
 
+#if defined(WEBRTC_MAC)
+#  include "mozilla/StaticPrefs_media.h"
+#  include "modules/desktop_capture/mac/screen_capturer_sck.h"
+#endif
+
 #define FAKE_ONDEVICECHANGE_EVENT_PERIOD_IN_MS 500
 
 static mozilla::LazyLogModule sGetUserMediaLog("GetUserMedia");
@@ -57,13 +62,21 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
   
   bool scaryKind = (aMediaSource == MediaSourceEnum::Screen ||
                     aMediaSource == MediaSourceEnum::Browser);
+  bool desktopKind = aMediaSource == MediaSourceEnum::Application ||
+                     aMediaSource == MediaSourceEnum::Screen ||
+                     aMediaSource == MediaSourceEnum::Window;
+  (void)desktopKind;  
 #if defined(WEBRTC_USE_PIPEWIRE)
   bool canRequestOsLevelPrompt =
       mozilla::StaticPrefs::media_webrtc_capture_allow_pipewire() &&
-      webrtc::DesktopCapturer::IsRunningUnderWayland() &&
-      (aMediaSource == MediaSourceEnum::Application ||
-       aMediaSource == MediaSourceEnum::Screen ||
-       aMediaSource == MediaSourceEnum::Window);
+      webrtc::DesktopCapturer::IsRunningUnderWayland() && desktopKind;
+#elif defined(WEBRTC_MAC)
+  bool canRequestOsLevelPrompt =
+      mozilla::StaticPrefs::
+          media_getdisplaymedia_screencapturekit_enabled_AtStartup() &&
+      mozilla::StaticPrefs::
+          media_getdisplaymedia_screencapturekit_picker_enabled_AtStartup() &&
+      webrtc::GenericCapturerSckWithPickerAvailable() && desktopKind;
 #else
   bool canRequestOsLevelPrompt = false;
 #endif
@@ -102,6 +115,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
     char deviceName[MediaEngineSource::kMaxDeviceNameLength];
     char uniqueId[MediaEngineSource::kMaxUniqueIdLength];
     bool scarySource = false;
+    bool placeholder = false;
 
     
     deviceName[0] = '\0';
@@ -110,7 +124,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
 
     error = GetChildAndCall(&CamerasChild::GetCaptureDevice, capEngine, i,
                             deviceName, sizeof(deviceName), uniqueId,
-                            sizeof(uniqueId), &scarySource);
+                            sizeof(uniqueId), &scarySource, &placeholder);
     if (error) {
       LOG(("camera:GetCaptureDevice: Failed %d", error));
       continue;
@@ -137,11 +151,13 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
     
     
     
-    aDevices->EmplaceBack(new MediaDevice(
-        this, aMediaSource, name, uuid, uuid,
-        MediaDevice::IsScary(scaryKind || scarySource),
-        canRequestOsLevelPrompt ? MediaDevice::OsPromptable::Yes
-                                : MediaDevice::OsPromptable::No));
+
+    aDevices->EmplaceBack(
+        new MediaDevice(this, aMediaSource, name, uuid, uuid,
+                        MediaDevice::IsScary(scaryKind || scarySource),
+                        canRequestOsLevelPrompt ? MediaDevice::OsPromptable::Yes
+                                                : MediaDevice::OsPromptable::No,
+                        MediaDevice::IsPlaceholder(placeholder)));
   }
 }
 

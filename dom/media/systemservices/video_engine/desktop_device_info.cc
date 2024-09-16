@@ -170,9 +170,16 @@ void DesktopDeviceInfoImpl<Type, Device>::Refresh() {
   std::unique_ptr<DesktopCapturer> cap;
   if constexpr (Type == CaptureDeviceType::Screen ||
                 Type == CaptureDeviceType::Window) {
+    cap = DesktopCapturer::CreateGenericCapturer(mOptions);
     if constexpr (Type == CaptureDeviceType::Screen) {
-      cap = DesktopCapturer::CreateScreenCapturer(mOptions);
+      if (!cap) {
+        cap = DesktopCapturer::CreateScreenCapturer(mOptions);
+      }
     } else if constexpr (Type == CaptureDeviceType::Window) {
+      if (cap) {
+        
+        return;
+      }
       cap = DesktopCapturer::CreateWindowCapturer(mOptions);
     }
 
