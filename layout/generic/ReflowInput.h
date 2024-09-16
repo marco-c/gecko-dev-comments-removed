@@ -13,6 +13,7 @@
 #include "nsStyleConsts.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/LayoutStructs.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"
 #include "LayoutConstants.h"
@@ -30,46 +31,6 @@ class nsReflowStatus;
 
 namespace mozilla {
 enum class LayoutFrameType : uint8_t;
-
-
-
-
-
-
-
-
-
-struct StyleSizeOverrides {
-  Maybe<StyleSize> mStyleISize;
-  Maybe<StyleSize> mStyleBSize;
-  Maybe<AspectRatio> mAspectRatio;
-
-  bool HasAnyOverrides() const { return mStyleISize || mStyleBSize; }
-  bool HasAnyLengthOverrides() const {
-    return (mStyleISize && mStyleISize->ConvertsToLength()) ||
-           (mStyleBSize && mStyleBSize->ConvertsToLength());
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mApplyOverridesVerbatim = false;
-};
 
 
 
