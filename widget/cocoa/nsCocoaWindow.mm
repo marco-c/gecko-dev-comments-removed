@@ -2843,6 +2843,14 @@ void nsCocoaWindow::CocoaWindowDidResize() {
     [titlebarContainerView setTransparent:NO];
   }
 
+  if (@available(macOS 11.0, *)) {
+    
+    
+    
+    
+    window.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
+  }
+
   if (!mGeckoWindow) {
     return;
   }
