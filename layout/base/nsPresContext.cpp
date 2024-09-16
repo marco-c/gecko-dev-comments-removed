@@ -572,9 +572,6 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
   auto restyleHint = RestyleHint{0};
   
   
-  
-  
-  
   if (prefName.EqualsLiteral("browser.display.document_color_use") ||
       prefName.EqualsLiteral("browser.display.foreground_color") ||
       prefName.EqualsLiteral("browser.display.background_color")) {

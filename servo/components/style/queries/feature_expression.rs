@@ -309,20 +309,6 @@ fn consume_operation_or_colon<'i>(
 fn disabled_by_pref(feature: &Atom, context: &ParserContext) -> bool {
     #[cfg(feature = "gecko")]
     {
-        if *feature == atom!("forced-colors") {
-            
-            
-            
-            return !context.chrome_rules_enabled() &&
-                !static_prefs::pref!("layout.css.forced-colors.enabled");
-        }
-        
-        
-        if *feature == atom!("prefers-contrast") {
-            return !context.chrome_rules_enabled() &&
-                !static_prefs::pref!("layout.css.prefers-contrast.enabled");
-        }
-
         
         
         if *feature == atom!("prefers-reduced-transparency") {
