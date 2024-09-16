@@ -23,7 +23,7 @@ namespace mozilla {
 namespace layers {
 
 static StaticRefPtr<CompositorThreadHolder> sCompositorThreadHolder;
-static Atomic<bool> sFinishedCompositorShutDown(false);
+static Atomic<bool> sCompositorThreadRunning(false);
 static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
 static ProfilerThreadId sProfilerThreadId;
 
@@ -43,7 +43,8 @@ CompositorThreadHolder::CompositorThreadHolder()
 }
 
 CompositorThreadHolder::~CompositorThreadHolder() {
-  sFinishedCompositorShutDown = true;
+  ReleaseAssertIsOnMainThread();
+  MOZ_ASSERT(!sCompositorThreadRunning);
 }
 
  already_AddRefed<nsIThread>
@@ -112,6 +113,7 @@ void CompositorThreadHolder::Start() {
   MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
   MOZ_ASSERT(!sCompositorThreadHolder,
              "The compositor thread has already been started!");
+  MOZ_ASSERT(!sCompositorThreadRunning);
 
   
   
@@ -124,7 +126,10 @@ void CompositorThreadHolder::Start() {
     gfxCriticalNote << "Compositor thread not started ("
                     << XRE_IsParentProcess() << ")";
     sCompositorThreadHolder = nullptr;
+    return;
   }
+
+  sCompositorThreadRunning = true;
 }
 
 void CompositorThreadHolder::Shutdown() {
@@ -143,24 +148,21 @@ void CompositorThreadHolder::Shutdown() {
   
   
   
-  CompositorThread()->Dispatch(NS_NewRunnableFunction(
-      "CompositorThreadHolder::Shutdown",
-      [compositorThreadHolder =
-           RefPtr<CompositorThreadHolder>(sCompositorThreadHolder),
-       backgroundHangMonitor = UniquePtr<mozilla::BackgroundHangMonitor>(
-           sBackgroundHangMonitor)]() {
+  CompositorThread()->Dispatch(
+      NS_NewRunnableFunction("CompositorThreadHolder::Shutdown", []() {
         VideoBridgeParent::UnregisterExternalImages();
         nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
         static_cast<nsThread*>(thread.get())->SetUseHangMonitor(false);
+        sCompositorThreadRunning = false;
       }));
+
+  SpinEventLoopUntil("CompositorThreadHolder::Shutdown"_ns, [&]() {
+    bool finished = !sCompositorThreadRunning;
+    return finished;
+  });
 
   sCompositorThreadHolder = nullptr;
   sBackgroundHangMonitor = nullptr;
-
-  SpinEventLoopUntil("CompositorThreadHolder::Shutdown"_ns, [&]() {
-    bool finished = sFinishedCompositorShutDown;
-    return finished;
-  });
 
   
   
