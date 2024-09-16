@@ -1321,21 +1321,6 @@ void CodeGenerator::visitWasmUint32ToFloat32(LWasmUint32ToFloat32* lir) {
                               ToFloatRegister(lir->output()));
 }
 
-void CodeGenerator::visitNotI(LNotI* ins) {
-  
-  masm.as_cmp(ToRegister(ins->input()), Imm8(0));
-  masm.emitSet(Assembler::Equal, ToRegister(ins->output()));
-}
-
-void CodeGenerator::visitNotI64(LNotI64* lir) {
-  Register64 input = ToRegister64(lir->getInt64Operand(0));
-  Register output = ToRegister(lir->output());
-
-  masm.ma_orr(input.low, input.high, output);
-  masm.as_cmp(output, Imm8(0));
-  masm.emitSet(Assembler::Equal, output);
-}
-
 void CodeGenerator::visitNotD(LNotD* ins) {
   
   
