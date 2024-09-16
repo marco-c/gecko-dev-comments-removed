@@ -142,6 +142,7 @@ void ClearKeySessionManager::CreateSession(uint32_t aPromiseId,
     
     
     
+    CK_LOGARRAY("Key ID: ", it->data(), it->size());
     neededKeys.push_back(*it);
     mDecryptionManager->ExpectKeyId(*it);
   }
