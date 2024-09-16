@@ -1060,8 +1060,14 @@ nsresult nsMathMLmoFrame::AttributeChanged(int32_t aNameSpaceID,
                                            int32_t aModType) {
   
   
-  if (nsGkAtoms::accent_ == aAttribute ||
-      nsGkAtoms::movablelimits_ == aAttribute) {
+  
+  
+  if (aAttribute == nsGkAtoms::accent_ || aAttribute == nsGkAtoms::form ||
+      aAttribute == nsGkAtoms::largeop_ || aAttribute == nsGkAtoms::maxsize_ ||
+      aAttribute == nsGkAtoms::minsize_ ||
+      aAttribute == nsGkAtoms::movablelimits_ ||
+      aAttribute == nsGkAtoms::rspace_ || aAttribute == nsGkAtoms::stretchy_ ||
+      aAttribute == nsGkAtoms::symmetric_ || aAttribute == nsGkAtoms::lspace_) {
     
     
     nsIFrame* target = this;

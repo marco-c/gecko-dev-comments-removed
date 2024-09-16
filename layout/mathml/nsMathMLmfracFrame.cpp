@@ -122,11 +122,11 @@ nsresult nsMathMLmfracFrame::AttributeChanged(int32_t aNameSpaceID,
                                               int32_t aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       nsGkAtoms::linethickness_ == aAttribute) {
+    
     InvalidateFrame();
     
-    
-    PresShell()->FrameNeedsReflow(
-        this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
+    PresShell()->FrameNeedsReflow(this, IntrinsicDirty::None,
+                                  NS_FRAME_IS_DIRTY);
     return NS_OK;
   }
   return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,

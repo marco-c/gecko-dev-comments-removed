@@ -672,20 +672,6 @@ nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
   }
 
   
-  
-  
-  if (aNameSpaceID == kNameSpaceID_None &&
-      aAttribute == nsGkAtoms::displaystyle_) {
-    nsMathMLContainerFrame::RebuildAutomaticDataForChildren(GetParent());
-    
-    
-    PresShell()->FrameNeedsReflow(GetParent(),
-                                  IntrinsicDirty::FrameAncestorsAndDescendants,
-                                  NS_FRAME_IS_DIRTY);
-    return NS_OK;
-  }
-
-  
 
   if (aNameSpaceID == kNameSpaceID_None &&
       (aAttribute == nsGkAtoms::rowspacing_ ||

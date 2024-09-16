@@ -671,10 +671,8 @@ nsresult nsMathMLmencloseFrame::AttributeChanged(int32_t aNameSpaceID,
                                                  int32_t aModType) {
   if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::notation_) {
     InitNotations();
-    
-    
-    PresShell()->FrameNeedsReflow(
-        this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
+    PresShell()->FrameNeedsReflow(this, IntrinsicDirty::FrameAndAncestors,
+                                  NS_FRAME_IS_DIRTY);
     return NS_OK;
   }
 

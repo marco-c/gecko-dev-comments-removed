@@ -118,8 +118,9 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   
   
-  nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+  
+  
+  
 
   
   nscoord MirrorIfRTL(nscoord aParentWidth, nscoord aChildWidth,
