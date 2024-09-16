@@ -2,7 +2,7 @@
 
 
 
-use std::{convert::TryInto, ops::RangeInclusive};
+use std::convert::TryInto;
 
 use nserror::nsresult;
 use nsstring::{nsCString, nsString};
@@ -12,11 +12,6 @@ use rusqlite::{
 };
 use storage_variant::{DataType, NsIVariantExt, VariantType};
 use xpcom::{interfaces::nsIVariant, RefPtr};
-
-
-
-const F64_INTEGER_RANGE: RangeInclusive<f64> =
-    ((-1i64 << f64::MANTISSA_DIGITS) + 1) as f64..=((1i64 << f64::MANTISSA_DIGITS) - 1) as f64;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Value(serde_json::Value);
@@ -29,21 +24,7 @@ impl Value {
                 DataType::Bool => bool::from_variant(variant)?.into(),
                 DataType::Int32 => i32::from_variant(variant)?.into(),
                 DataType::Int64 => i64::from_variant(variant)?.into(),
-                DataType::Double => {
-                    let value = f64::from_variant(variant)?;
-                    let n = value.trunc();
-                    if F64_INTEGER_RANGE.contains(&value) && value - n == 0.0 {
-                        
-                        
-                        
-                        
-                        
-                        
-                        (n as i64).into()
-                    } else {
-                        value.into()
-                    }
-                }
+                DataType::Double => f64::from_variant(variant)?.into(),
                 DataType::AString | DataType::WCharStr | DataType::WStringSizeIs => {
                     nsString::from_variant(variant)?.to_string().into()
                 }
@@ -74,6 +55,12 @@ impl Value {
             | serde_json::Value::Array(_)
             | serde_json::Value::Object(_) => Err(ValueError::ToVariant)?,
         })
+    }
+}
+
+impl From<serde_json::Value> for Value {
+    fn from(value: serde_json::Value) -> Self {
+        Self(value)
     }
 }
 
