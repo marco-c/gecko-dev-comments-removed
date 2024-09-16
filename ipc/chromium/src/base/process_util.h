@@ -242,14 +242,11 @@ class AppProcessBuilder {
   AppProcessBuilder();
   
   
-  bool ForkProcess(const std::vector<std::string>& argv,
-                   LaunchOptions&& options, ProcessHandle* process_handle);
+  
+  bool ForkProcess(LaunchOptions&& options, ProcessHandle* process_handle);
   
   
-  
-  
-  
-  
+  void SetExecInfo(std::vector<std::string>&& aArgv, environment_map&& aEnv);
   
   
   void InitAppProcess(int* argcp, char*** argvp);
@@ -259,6 +256,7 @@ class AppProcessBuilder {
 
   mozilla::ipc::FileDescriptorShuffle shuffle_;
   std::vector<std::string> argv_;
+  environment_map env_;
 };
 
 void InitForkServerProcess();
