@@ -13,7 +13,9 @@
 #define __GETOPT_H__
 
 
+#ifdef _WIN32
 #include <crtdefs.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
