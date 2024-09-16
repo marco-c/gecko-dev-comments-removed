@@ -1,0 +1,12 @@
+
+
+
+'use strict';
+
+
+
+
+async_test(t => {
+  assert_equals(window.popinContextType(), null);
+  t.done();
+}, "Verify PopinContextType is null on top-level page");
