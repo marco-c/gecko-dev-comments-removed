@@ -69,6 +69,9 @@ class CookieCommons final {
 
   static bool PathMatches(Cookie* aCookie, const nsACString& aPath);
 
+  static bool PathMatches(const nsACString& aCookiePath,
+                          const nsACString& aPath);
+
   static nsresult GetBaseDomain(nsIEffectiveTLDService* aTLDService,
                                 nsIURI* aHostURI, nsACString& aBaseDomain,
                                 bool& aRequireHostMatch);
@@ -145,6 +148,26 @@ class CookieCommons final {
 
   static void GetServerDateHeader(nsIChannel* aChannel,
                                   nsACString& aServerDateHeader);
+
+  enum class SecurityChecksResult {
+    
+    eSandboxedError,
+    
+    eSecurityError,
+    
+    eDoNotContinue,
+    
+    eContinue,
+  };
+
+  
+  
+  
+  
+  
+  static SecurityChecksResult CheckGlobalAndRetrieveCookiePrincipals(
+      mozilla::dom::Document* aDocument, nsIPrincipal** aCookiePrincipal,
+      nsIPrincipal** aCookiePartitionedPrincipal);
 };
 
 }  
