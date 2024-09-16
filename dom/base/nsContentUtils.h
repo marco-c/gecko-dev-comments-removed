@@ -1095,28 +1095,6 @@ class nsContentUtils {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool CanLoadImage(nsIURI* aURI, nsINode* aNode,
-                           Document* aLoadingDocument,
-                           nsIPrincipal* aLoadingPrincipal);
-
-  
-
-
   static bool DocumentInactiveForImageLoads(Document* aDocument);
 
   
