@@ -38,6 +38,7 @@ class RelocationOverlay;
 
 class GlobalObject;
 class NativeObject;
+class WithEnvironmentObject;
 
 enum class IntegrityLevel { Sealed, Frozen };
 
@@ -201,9 +202,6 @@ class JSObject
   bool isGenerationCountedGlobal() const {
     return hasFlag(js::ObjectFlag::GenerationCountedGlobal);
   }
-  static bool setGenerationCountedGlobal(JSContext* cx, JS::HandleObject obj) {
-    return setFlag(cx, obj, js::ObjectFlag::GenerationCountedGlobal);
-  }
 
   bool hasFuseProperty() const {
     return hasFlag(js::ObjectFlag::HasFuseProperty);
@@ -233,9 +231,12 @@ class JSObject
   
   
   inline bool isQualifiedVarObj() const;
-  static bool setQualifiedVarObj(JSContext* cx, JS::HandleObject obj) {
-    return setFlag(cx, obj, js::ObjectFlag::QualifiedVarObj);
-  }
+
+  
+  
+  
+  static inline bool setQualifiedVarObj(
+      JSContext* cx, JS::Handle<js::WithEnvironmentObject*> obj);
 
   
   

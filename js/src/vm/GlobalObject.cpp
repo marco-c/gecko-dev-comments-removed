@@ -598,13 +598,25 @@ GlobalObject* GlobalObject::createInternal(JSContext* cx,
   MOZ_ASSERT(clasp->flags & JSCLASS_IS_GLOBAL);
   MOZ_ASSERT(clasp->isTrace(JS_GlobalObjectTraceHook));
 
-  JSObject* obj = NewTenuredObjectWithGivenProto(cx, clasp, nullptr);
+  ObjectFlags objectFlags = {
+      ObjectFlag::QualifiedVarObj,
+      ObjectFlag::GenerationCountedGlobal,
+  };
+
+  JSObject* obj =
+      NewTenuredObjectWithGivenProto(cx, clasp, nullptr, objectFlags);
   if (!obj) {
     return nullptr;
   }
 
   Rooted<GlobalObject*> global(cx, &obj->as<GlobalObject>());
+
+  
   MOZ_ASSERT(global->isUnqualifiedVarObj());
+  MOZ_ASSERT(global->isQualifiedVarObj());
+
+  
+  MOZ_ASSERT(global->isGenerationCountedGlobal());
 
   {
     auto data = cx->make_unique<GlobalObjectData>(cx->zone());
@@ -634,13 +646,6 @@ GlobalObject* GlobalObject::createInternal(JSContext* cx,
   global->data().emptyGlobalScope.init(emptyGlobalScope);
 
   if (!GlobalObject::createIntrinsicsHolder(cx, global)) {
-    return nullptr;
-  }
-
-  if (!JSObject::setQualifiedVarObj(cx, global)) {
-    return nullptr;
-  }
-  if (!JSObject::setGenerationCountedGlobal(cx, global)) {
     return nullptr;
   }
 
