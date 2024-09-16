@@ -1148,6 +1148,7 @@ struct arena_t {
   
   
   mozilla::non_crypto::XorShift128PlusRNG* mPRNG;
+  bool mIsPRNGInitializing;
 
  public:
   
@@ -3424,29 +3425,32 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
   MOZ_DIAGNOSTIC_ASSERT(aSize == bin->mSizeClass);
 
   {
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(mRandomizeSmallAllocations && mPRNG == nullptr)) {
+    MaybeMutexAutoLock lock(mLock);
+
+    if (MOZ_UNLIKELY(mRandomizeSmallAllocations && mPRNG == nullptr &&
+                     !mIsPRNGInitializing)) {
       
       
       
       
-      
-      
-      mRandomizeSmallAllocations = false;
-      mozilla::Maybe<uint64_t> prngState1 = mozilla::RandomUint64();
-      mozilla::Maybe<uint64_t> prngState2 = mozilla::RandomUint64();
-      void* backing =
-          base_alloc(sizeof(mozilla::non_crypto::XorShift128PlusRNG));
-      mPRNG = new (backing) mozilla::non_crypto::XorShift128PlusRNG(
-          prngState1.valueOr(0), prngState2.valueOr(0));
-      mRandomizeSmallAllocations = true;
+      mIsPRNGInitializing = true;
+      mozilla::non_crypto::XorShift128PlusRNG* prng;
+      {
+        
+        mLock.Unlock();
+        mozilla::Maybe<uint64_t> prngState1 = mozilla::RandomUint64();
+        mozilla::Maybe<uint64_t> prngState2 = mozilla::RandomUint64();
+        void* backing =
+            base_alloc(sizeof(mozilla::non_crypto::XorShift128PlusRNG));
+        prng = new (backing) mozilla::non_crypto::XorShift128PlusRNG(
+            prngState1.valueOr(0), prngState2.valueOr(0));
+        mLock.Lock();
+      }
+      mPRNG = prng;
+      mIsPRNGInitializing = false;
     }
     MOZ_ASSERT(!mRandomizeSmallAllocations || mPRNG);
 
-    MaybeMutexAutoLock lock(mLock);
     run = bin->mCurrentRun;
     if (MOZ_UNLIKELY(!run || run->mNumFree == 0)) {
       run = bin->mCurrentRun = GetNonFullBinRun(bin);
@@ -4180,6 +4184,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
   MOZ_RELEASE_ASSERT(mLock.Init(doLock));
 
   mPRNG = nullptr;
+  mIsPRNGInitializing = false;
 
   mIsPrivate = aIsPrivate;
 
