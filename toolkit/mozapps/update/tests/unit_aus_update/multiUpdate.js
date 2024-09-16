@@ -352,7 +352,7 @@ async function multi_update_test(appUpdateAuto) {
 
   
   
-  reloadUpdateManagerData(true);
+  await reloadUpdateManagerData(true);
 
   
   prepareToDownloadVersion(FIRST_UPDATE_VERSION, true);
@@ -393,9 +393,9 @@ add_task(async function all_multi_update_tests() {
   await multi_update_test(true);
 
   
-  reloadUpdateManagerData(true);
+  await reloadUpdateManagerData(true);
 
   await multi_update_test(false);
 
-  doTestFinish();
+  await doTestFinish();
 });

@@ -3,7 +3,7 @@
 
 
 
-function run_test() {
+async function run_test() {
   setupTestCommon();
 
   
@@ -58,5 +58,5 @@ function run_test() {
     );
   }
 
-  doTestFinish();
+  await doTestFinish();
 }
