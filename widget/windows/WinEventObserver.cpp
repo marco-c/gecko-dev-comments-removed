@@ -4,7 +4,9 @@
 
 
 
+#include <corecrt_memcpy_s.h>
 #include <windows.h>
+#include <winternl.h>
 #include <winuser.h>
 #include <wtsapi32.h>
 
@@ -13,7 +15,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Maybe.h"
 #include "nsWindowDbg.h"
 #include "nsdefs.h"
 #include "nsXULAppAPI.h"
@@ -77,20 +78,38 @@ namespace evtwin_details {
 
 static void OnSessionChange(WPARAM wParam, LPARAM lParam) {
   if (wParam == WTS_SESSION_LOCK || wParam == WTS_SESSION_UNLOCK) {
-    Maybe<bool> isCurrentSession;
-    DWORD currentSessionId = 0;
-    if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &currentSessionId)) {
-      isCurrentSession = Nothing();
-    } else {
-      OBS_LOG(
-          "WinEventWindow OnSessionChange() wParam %zu lParam "
-          "%" PRIdLPTR " currentSessionId %lu",
-          wParam, lParam, currentSessionId);
-
-      isCurrentSession = Some(static_cast<DWORD>(lParam) == currentSessionId);
+    DWORD currentSessionId;
+    BOOL const rv =
+        ::ProcessIdToSessionId(::GetCurrentProcessId(), &currentSessionId);
+    if (rv) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(false, "::ProcessIdToSessionId() failed");
+      return;
     }
+
+    OBS_LOG("WinEventWindow OnSessionChange(): wParam=%zu lParam=%" PRIdLPTR
+            " currentSessionId=%lu",
+            wParam, lParam, currentSessionId);
+
+    
+    
+    
+    
+    if (currentSessionId != (DWORD)lParam) {
+      return;
+    }
+
     if (auto* wwot = WinWindowOcclusionTracker::Get()) {
-      wwot->OnSessionChange(wParam, isCurrentSession);
+      wwot->OnSessionChange(wParam);
     }
   }
 }
@@ -98,14 +117,22 @@ static void OnSessionChange(WPARAM wParam, LPARAM lParam) {
 static void OnPowerBroadcast(WPARAM wParam, LPARAM lParam) {
   if (wParam == PBT_POWERSETTINGCHANGE) {
     POWERBROADCAST_SETTING* setting = (POWERBROADCAST_SETTING*)lParam;
+    MOZ_ASSERT(setting);
 
-    if (setting &&
-        ::IsEqualGUID(setting->PowerSetting, GUID_SESSION_DISPLAY_STATUS) &&
+    if (::IsEqualGUID(setting->PowerSetting, GUID_SESSION_DISPLAY_STATUS) &&
         setting->DataLength == sizeof(DWORD)) {
-      bool displayOn = PowerMonitorOff !=
-                       static_cast<MONITOR_DISPLAY_STATE>(setting->Data[0]);
+      MONITOR_DISPLAY_STATE state{};
+      errno_t const err =
+          ::memcpy_s(&state, sizeof(state), setting->Data, setting->DataLength);
+      if (err) {
+        MOZ_ASSERT(false, "bad data in POWERBROADCAST_SETTING in lParam");
+        return;
+      }
 
-      OBS_LOG("WinEventWindow OnPowerBroadcast() displayOn %d", displayOn);
+      bool const displayOn = MONITOR_DISPLAY_STATE::PowerMonitorOff != state;
+
+      OBS_LOG("WinEventWindow OnPowerBroadcast(): displayOn=%d",
+              int(displayOn ? 1 : 0));
 
       if (auto* wwot = WinWindowOcclusionTracker::Get()) {
         wwot->OnDisplayStateChanged(displayOn);

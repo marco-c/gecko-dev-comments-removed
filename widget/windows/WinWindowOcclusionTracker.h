@@ -274,7 +274,7 @@ class WinWindowOcclusionTracker final {
  public:
   
   
-  void OnSessionChange(WPARAM aStatusCode, Maybe<bool> aIsCurrentSession);
+  void OnSessionChange(WPARAM aStatusCode);
 
   
   
