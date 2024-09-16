@@ -92,7 +92,10 @@ void ScrollSnapInfo::ForEachValidTargetFor(
     
     
     
-    if (!snappedPort.Intersects(target.mSnapArea)) {
+    
+    
+    
+    if (!snappedPort.EdgeInclusiveIntersection(target.mSnapArea)) {
       continue;
     }
 
