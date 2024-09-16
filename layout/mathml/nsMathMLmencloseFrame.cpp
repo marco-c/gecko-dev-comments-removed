@@ -296,23 +296,9 @@ void nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 }
 
 
-nsresult nsMathMLmencloseFrame::MeasureForWidth(DrawTarget* aDrawTarget,
-                                                ReflowOutput& aDesiredSize) {
-  PlaceFlags flags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly);
-  return PlaceInternal(aDrawTarget, flags, aDesiredSize);
-}
-
-
 nsresult nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
                                       const PlaceFlags& aFlags,
                                       ReflowOutput& aDesiredSize) {
-  return PlaceInternal(aDrawTarget, aFlags, aDesiredSize);
-}
-
-
-nsresult nsMathMLmencloseFrame::PlaceInternal(DrawTarget* aDrawTarget,
-                                              const PlaceFlags& aFlags,
-                                              ReflowOutput& aDesiredSize) {
   
   
   
