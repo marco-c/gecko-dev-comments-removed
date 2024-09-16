@@ -7,6 +7,7 @@
 #include "DecoderAgent.h"
 
 #include "ImageContainer.h"
+#include "MP4Decoder.h"
 #include "MediaDataDecoderProxy.h"
 #include "PDMFactory.h"
 #include "VideoUtils.h"
@@ -106,6 +107,10 @@ RefPtr<DecoderAgent::ConfigurePromise> DecoderAgent::Configure(
     params.mOptions += CreateDecoderParams::Option::LowLatency;
   }
   
+  if (MP4Decoder::IsAAC(mInfo->mMimeType)) {
+    params.mWrappers += media::Wrapper::MediaChangeMonitor;
+  }
+  
   if (StaticPrefs::media_test_null_decoder_creation_failure()) {
     params.mUseNullDecoder = CreateDecoderParams::UseNullDecoder(true);
   }
@@ -114,10 +119,10 @@ RefPtr<DecoderAgent::ConfigurePromise> DecoderAgent::Configure(
   
   params.mOptions += CreateDecoderParams::Option::KeepOriginalPts;
 
-  LOG("DecoderAgent #%d (%p) is creating a decoder - PreferSW: %s, "
-      "low-latency: %s",
-      mId, this, aPreferSoftwareDecoder ? "yes" : "no",
-      aLowLatency ? "yes" : "no");
+  LOG("DecoderAgent #%d (%p) is creating a decoder (mime: %s) - PreferSW: %s, "
+      "low-latency: %s, create-decoder-params: %s",
+      mId, this, mInfo->mMimeType.get(), aPreferSoftwareDecoder ? "yes" : "no",
+      aLowLatency ? "yes" : "no", params.ToString().get());
 
   RefPtr<ConfigurePromise> p = mConfigurePromise.Ensure(__func__);
 
