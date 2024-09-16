@@ -143,6 +143,18 @@ var gBrowserInit = {
     gNavToolbox.palette = document.getElementById(
       "BrowserToolbarPalette"
     ).content;
+
+    
+    
+    let nonRemovables = [
+      gBrowser.tabContainer,
+      document.getElementById("alltabs-button"),
+    ];
+    for (let elem of nonRemovables) {
+      elem.setAttribute("removable", "true");
+      
+      elem.setAttribute("skipintoolbarset", "true");
+    }
     for (let area of CustomizableUI.areas) {
       let type = CustomizableUI.getAreaType(area);
       if (type == CustomizableUI.TYPE_TOOLBAR) {
@@ -150,6 +162,11 @@ var gBrowserInit = {
         CustomizableUI.registerToolbarNode(node);
       }
     }
+    for (let elem of nonRemovables) {
+      elem.setAttribute("removable", "false");
+      elem.removeAttribute("skipintoolbarset");
+    }
+
     BrowserSearch.initPlaceHolder();
 
     
