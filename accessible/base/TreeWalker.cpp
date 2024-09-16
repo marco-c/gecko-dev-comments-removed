@@ -324,17 +324,7 @@ LocalAccessible* TreeWalker::AccessibleFor(nsIContent* aNode, uint32_t aFlags,
 
   
   if (!(aFlags & eWalkCache) && mContext->IsAcceptableChild(aNode)) {
-    
-    
-    
-    
-    
-    
-    
-    if (mDoc->RelocateARIAOwnedIfNeeded(aNode) && !aNode->IsXULElement()) {
-      *aSkipSubtree = true;
-      return nullptr;
-    }
+    mDoc->RelocateARIAOwnedIfNeeded(aNode);
     return GetAccService()->CreateAccessible(aNode, mContext, aSkipSubtree);
   }
 
