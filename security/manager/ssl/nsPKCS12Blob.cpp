@@ -161,8 +161,8 @@ nsresult nsPKCS12Blob::ExportToFile(nsIFile* aFile,
     
     SEC_PKCS12SafeInfo* certSafe;
     SEC_PKCS12SafeInfo* keySafe = SEC_PKCS12CreateUnencryptedSafe(ecx.get());
-    bool useModernCrypto = Preferences::GetBool(
-        "security.pki.use_modern_crypto_with_pkcs12", false);
+    bool useModernCrypto =
+        StaticPrefs::security_pki_use_modern_crypto_with_pkcs12();
     
     
     
