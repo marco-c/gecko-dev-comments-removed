@@ -71,6 +71,7 @@ module.exports = {
     {
       files: ["**/*.mjs", "**/*.jsx", "**/?(*.)worker.?(m)js"],
       rules: {
+        "no-shadow": ["error", { allow: ["event"], builtinGlobals: true }],
         
         
         "no-unused-vars": [
@@ -88,7 +89,6 @@ module.exports = {
       rules: {
         "mozilla/reject-import-system-module-from-non-system": "error",
         "mozilla/reject-lazy-imports-into-globals": "error",
-        "no-shadow": ["error", { allow: ["event"], builtinGlobals: true }],
       },
     },
     {
