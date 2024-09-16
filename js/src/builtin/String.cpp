@@ -34,6 +34,7 @@
 #  include "builtin/intl/FormatBuffer.h"
 #endif
 #include "builtin/RegExp.h"
+#include "gc/GC.h"
 #include "jit/InlinableNatives.h"
 #include "js/Conversions.h"
 #include "js/friend/ErrorMessages.h"  
@@ -3676,7 +3677,13 @@ static ArrayObject* SplitHelper(JSContext* cx, Handle<JSLinearString*> str,
   }
 
   
-  RootedValueVector splits(cx);
+  Rooted<ArrayObject*> substrings(cx, NewDenseEmptyArray(cx));
+  if (!substrings) {
+    return nullptr;
+  }
+
+  
+  AutoSelectGCHeap gcHeap(cx);
 
   
   size_t lastEndIndex = 0;
@@ -3722,16 +3729,17 @@ static ArrayObject* SplitHelper(JSContext* cx, Handle<JSLinearString*> str,
 
     
     size_t subLength = size_t(endIndex - sepLength - lastEndIndex);
-    JSString* sub = NewDependentString(cx, str, lastEndIndex, subLength);
+    JSString* sub =
+        NewDependentString(cx, str, lastEndIndex, subLength, gcHeap);
 
     
-    if (!sub || !splits.append(StringValue(sub))) {
+    if (!sub || !NewbornArrayPush(cx, substrings, StringValue(sub))) {
       return nullptr;
     }
 
     
-    if (splits.length() == limit) {
-      return NewDenseCopiedArray(cx, splits.length(), splits.begin());
+    if (substrings->length() == limit) {
+      return substrings;
     }
 
     
@@ -3742,16 +3750,16 @@ static ArrayObject* SplitHelper(JSContext* cx, Handle<JSLinearString*> str,
   }
 
   
-  JSString* sub =
-      NewDependentString(cx, str, lastEndIndex, strLength - lastEndIndex);
+  size_t subLength = strLength - lastEndIndex;
+  JSString* sub = NewDependentString(cx, str, lastEndIndex, subLength, gcHeap);
 
   
-  if (!sub || !splits.append(StringValue(sub))) {
+  if (!sub || !NewbornArrayPush(cx, substrings, StringValue(sub))) {
     return nullptr;
   }
 
   
-  return NewDenseCopiedArray(cx, splits.length(), splits.begin());
+  return substrings;
 }
 
 
