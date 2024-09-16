@@ -834,6 +834,32 @@ void CodeGeneratorARM64::emitBigIntMod(LBigIntMod* ins, Register dividend,
   masm.initializeBigInt(output, dividend);
 }
 
+void CodeGeneratorARM64::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,
+                                          Register divisor, Register output) {
+  
+
+  const ARMRegister dividend64(dividend, 64);
+  const ARMRegister divisor64(divisor, 64);
+  const ARMRegister output64(output, 64);
+
+  masm.Sdiv( output64, dividend64, divisor64);
+}
+
+void CodeGeneratorARM64::emitBigIntPtrMod(LBigIntPtrMod* ins, Register dividend,
+                                          Register divisor, Register output) {
+  
+
+  const ARMRegister dividend64(dividend, 64);
+  const ARMRegister divisor64(divisor, 64);
+  const ARMRegister output64(output, 64);
+
+  
+  masm.Sdiv(output64, dividend64, divisor64);
+
+  
+  masm.Msub( output64, output64, divisor64, dividend64);
+}
+
 void CodeGenerator::visitBitNotI(LBitNotI* ins) {
   const LAllocation* input = ins->getOperand(0);
   const LDefinition* output = ins->getDef(0);

@@ -1007,6 +1007,36 @@ void CodeGeneratorX86::emitBigIntMod(LBigIntMod* ins, Register dividend,
   masm.initializeBigInt(output, dividend);
 }
 
+void CodeGeneratorX86::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,
+                                        Register divisor, Register output) {
+  
+
+  MOZ_ASSERT(ToRegister(ins->temp0()) == edx);
+  MOZ_ASSERT(output == eax);
+
+  if (dividend != eax) {
+    masm.movePtr(dividend, eax);
+  }
+
+  
+  masm.cdq();
+
+  masm.idiv(divisor);
+}
+
+void CodeGeneratorX86::emitBigIntPtrMod(LBigIntPtrMod* ins, Register dividend,
+                                        Register divisor, Register output) {
+  
+
+  MOZ_ASSERT(dividend == eax);
+  MOZ_ASSERT(output == edx);
+
+  
+  masm.cdq();
+
+  masm.idiv(divisor);
+}
+
 void CodeGenerator::visitWasmSelectI64(LWasmSelectI64* lir) {
   MOZ_ASSERT(lir->mir()->type() == MIRType::Int64);
 
