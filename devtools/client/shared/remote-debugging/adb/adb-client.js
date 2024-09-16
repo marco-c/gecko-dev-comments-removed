@@ -26,6 +26,16 @@ function getBuffer(packet) {
 
 
 
+
+
+
+
+
+
+
+
+
+
 function unpackPacket(packet, ignoreResponse) {
   const buffer = getBuffer(packet);
   dumpn("Len buffer: " + buffer.byteLength);
@@ -33,11 +43,35 @@ function unpackPacket(packet, ignoreResponse) {
     dumpn("Packet empty");
     return { length: 0, data: "" };
   }
-  const lengthView = new Uint8Array(buffer, ignoreResponse ? 0 : 4, 4);
+  let index = 0;
+  let totalLength = 0;
+  const decodedText = [];
+
+  
   const decoder = new TextDecoder();
-  const length = parseInt(decoder.decode(lengthView), 16);
-  const text = new Uint8Array(buffer, ignoreResponse ? 4 : 8, length);
-  return { length, data: decoder.decode(text) };
+
+  
+  while (index < buffer.byteLength) {
+    
+    index += ignoreResponse ? 0 : 4;
+
+    
+    const lengthView = new Uint8Array(buffer, index, 4);
+    const length = parseInt(decoder.decode(lengthView), 16);
+
+    
+    index += 4;
+
+    
+    const text = new Uint8Array(buffer, index, length);
+    decodedText.push(decoder.decode(text));
+
+    
+    index += length;
+    
+    totalLength += length;
+  }
+  return { length: totalLength, data: decodedText.join("\n") };
 }
 
 
