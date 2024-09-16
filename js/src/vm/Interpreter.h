@@ -707,12 +707,6 @@ void ReportRuntimeLexicalError(JSContext* cx, unsigned errorNumber,
 
 void ReportInNotObjectError(JSContext* cx, HandleValue lref, HandleValue rref);
 
-
-
-
-void ReportRuntimeRedeclaration(JSContext* cx, Handle<PropertyName*> name,
-                                const char* redeclKind);
-
 bool ThrowCheckIsObject(JSContext* cx, CheckIsObjectKind kind);
 
 bool ThrowUninitializedThis(JSContext* cx);
