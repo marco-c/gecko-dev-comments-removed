@@ -2863,7 +2863,7 @@
 
 
  \
-    MACRO(BindGName, bind_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_GNAME|JOF_IC) \
+    MACRO(BindUnqualifiedGName, bind_unqualified_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_GNAME|JOF_IC) \
     
 
 

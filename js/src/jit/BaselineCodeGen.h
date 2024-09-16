@@ -233,7 +233,7 @@ class BaselineCodeGen {
 
   
   
-  bool tryOptimizeBindGlobalName();
+  bool tryOptimizeBindUnqualifiedGlobalName();
 
   [[nodiscard]] bool emitInitPropGetterSetter();
   [[nodiscard]] bool emitInitElemGetterSetter();

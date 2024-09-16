@@ -268,7 +268,7 @@ bool NameOpEmitter::prepareForRhs() {
         if (bce_->sc->hasNonSyntacticScope()) {
           op = JSOp::BindUnqualifiedName;
         } else {
-          op = JSOp::BindGName;
+          op = JSOp::BindUnqualifiedGName;
         }
         if (!bce_->emitAtomOp(op, atomIndex_)) {
           
