@@ -207,7 +207,7 @@ static void PaintTextShadowCallback(gfxContext* aCtx, nsPoint aShadowOffset,
 void nsDisplayTextOverflowMarker::Paint(nsDisplayListBuilder* aBuilder,
                                         gfxContext* aCtx) {
   nscolor foregroundColor =
-      nsLayoutUtils::GetColor(mFrame, &nsStyleText::mWebkitTextFillColor);
+      nsLayoutUtils::GetTextColor(mFrame, &nsStyleText::mWebkitTextFillColor);
 
   
   nsLayoutUtils::PaintTextShadow(mFrame, aCtx, mRect,

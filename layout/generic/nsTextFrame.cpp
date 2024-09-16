@@ -4883,8 +4883,8 @@ void nsTextFrame::GetTextDecorations(
       
       
       useOverride = true;
-      overrideColor =
-          nsLayoutUtils::GetColor(f, &nsStyleTextReset::mTextDecorationColor);
+      overrideColor = nsLayoutUtils::GetTextColor(
+          f, &nsStyleTextReset::mTextDecorationColor);
     }
 
     nsBlockFrame* fBlock = do_QueryFrame(f);
@@ -4938,11 +4938,11 @@ void nsTextFrame::GetTextDecorations(
         
         
         color = aColorResolution == eResolvedColors
-                    ? nsLayoutUtils::GetColor(f, &nsStyleSVG::mFill)
+                    ? nsLayoutUtils::GetTextColor(f, &nsStyleSVG::mFill)
                     : NS_SAME_AS_FOREGROUND_COLOR;
       } else {
-        color =
-            nsLayoutUtils::GetColor(f, &nsStyleTextReset::mTextDecorationColor);
+        color = nsLayoutUtils::GetTextColor(
+            f, &nsStyleTextReset::mTextDecorationColor);
       }
 
       bool swapUnderlineAndOverline =
@@ -6538,7 +6538,7 @@ void nsTextFrame::DrawEmphasisMarks(gfxContext* aContext, WritingMode aWM,
   nscolor color =
       aDecorationOverrideColor
           ? *aDecorationOverrideColor
-          : nsLayoutUtils::GetColor(this, &nsStyleText::mTextEmphasisColor);
+          : nsLayoutUtils::GetTextColor(this, &nsStyleText::mTextEmphasisColor);
   aContext->SetColor(sRGBColor::FromABGR(color));
   gfx::Point pt;
   if (!isTextCombined) {
