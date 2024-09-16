@@ -44,11 +44,11 @@ class nsOSHelperAppService final : public nsExternalHelperAppService {
   
   
   
-  virtual nsresult GetFileTokenForPath(const char16_t* platformAppPath,
-                                       nsIFile** aFile) override;
+  [[nodiscard]] nsresult GetFileTokenForPath(const char16_t* platformAppPath,
+                                             nsIFile** aFile) override;
 
-  nsresult OSProtocolHandlerExists(const char* aScheme,
-                                   bool* aHandlerExists) override;
+  [[nodiscard]] nsresult OSProtocolHandlerExists(const char* aScheme,
+                                                 bool* aHandlerExists) override;
 };
 
 #endif  
