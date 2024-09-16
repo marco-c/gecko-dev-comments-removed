@@ -149,6 +149,18 @@ void APZHandledResult::UpdateForTouchEvent(
                                           ? APZHandledPlace::HandledByRoot
                                           : APZHandledPlace::Unhandled,
                                       rootApzc});
+      if (aHandledResult && aHandledResult->IsHandledByRoot() &&
+          !mayTriggerPullToRefresh) {
+        MOZ_ASSERT(
+            !(aTarget->ScrollableDirections() & SideBits::eBottom),
+            "If we allowed moving the dynamic toolbar for the sub scroll "
+            "container, the sub scroll container should NOT be scrollable to "
+            "bottom");
+
+        
+        
+        aHandledResult->mOverscrollDirections -= ScrollDirection::eVertical;
+      }
     }
   }
 }
