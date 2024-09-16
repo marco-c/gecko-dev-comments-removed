@@ -286,7 +286,7 @@ nsresult nsDragSession::StartInvokingDragSession(nsIWidget* aWidget,
       dropResult = nsIDragService::DRAGDROP_ACTION_NONE;
 
     if (mDataTransfer) {
-      if (mozilla::StaticPrefs::widget_windows_allow_external_tab_drag()) {
+      if (!mozilla::StaticPrefs::widget_windows_allow_external_tab_drag()) {
         
         
         
