@@ -814,25 +814,6 @@ var SidebarController = {
     return this.show(commandID, triggerNode);
   },
 
-  
-  
-  
-  _approximateInverseEasing(scale) {
-    const kNumPoints = 20;
-    let inverse = 1 / scale;
-    let to = 1;
-    let points = [];
-    for (let i = 0; i < kNumPoints; ++i) {
-      let progress = i / kNumPoints;
-      let origAnimationValue = scale + (to - scale) * progress;
-      let wantedValue = 1 / origAnimationValue;
-      let inverseAnimationProgress = (wantedValue - inverse) / (to - inverse);
-      points.push(inverseAnimationProgress);
-    }
-    points.push(1);
-    return `linear(${points.join(", ")})`;
-  },
-
   async _animateSidebarMain() {
     let tabbox = document.getElementById("tabbrowser-tabbox");
     let animatingElements = [
@@ -859,61 +840,69 @@ var SidebarController = {
     const options = {
       duration: 300,
     };
-    let computeTransforms = (from, to) => {
-      
-      let delta = from.left - to.left;
-      let scale = to.width ? from.width / to.width : 1;
-      return [delta, scale];
-    };
     let animations = [];
+    let sidebarOnLeft = this._positionStart != RTL_UI;
     for (let i = 0; i < animatingElements.length; ++i) {
-      let el = animatingElements[i];
-      let from = fromRects[i];
-      let to = toRects[i];
-      let [translate, scale] = computeTransforms(from, to);
+      const el = animatingElements[i];
+      const from = fromRects[i];
+      const to = toRects[i];
+      const widthGrowth = to.width - from.width;
+      
+      
+      const isSidebar = el === this.sidebarContainer;
+
+      let fromTranslate = sidebarOnLeft
+        ? from.left - to.left
+        : from.right - to.right;
+      let toTranslate = 0;
+
+      
+      
+      
+      el.style.minWidth =
+        el.style.maxWidth =
+        el.style.marginLeft =
+        el.style.marginRight =
+          "";
+      if (widthGrowth < 0) {
+        el.style.minWidth = el.style.maxWidth = from.width + "px";
+        el.style["margin-" + (sidebarOnLeft ? "right" : "left")] =
+          widthGrowth + "px";
+        if (isSidebar) {
+          toTranslate = sidebarOnLeft ? widthGrowth : -widthGrowth;
+        }
+      } else if (isSidebar && !this._positionStart) {
+        fromTranslate += sidebarOnLeft ? -widthGrowth : widthGrowth;
+      }
       animations.push(
         el.animate(
           [
-            { translate: `${translate}px 0 0`, scale: `${scale} 1 1` },
-            { translate: "0", scale: "1" },
+            { translate: `${fromTranslate}px 0 0` },
+            { translate: `${toTranslate}px 0 0` },
           ],
           options
         )
       );
-      if (el != this.sidebarContainer) {
+      if (!isSidebar || !this._positionStart) {
         continue;
       }
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      let inverseElement = this.sidebarMain;
       animations.push(
-        inverseElement.animate(
-          [{ scale: `${1 / scale} 1 1` }, { scale: "1" }],
-          {
-            easing: this._approximateInverseEasing(scale),
-            ...options,
-          }
-        )
-      );
-      animations.push(
-        inverseElement.animate(
-          [
-            { transform: `translateX(${-translate}px)` },
-            { transform: `translateX(0)` },
-          ],
+        this.sidebarMain.animate(
+          [{ translate: "0" }, { translate: `${-toTranslate}px 0 0` }],
           options
         )
       );
     }
-    await Promise.all(animations.map(a => a.finished));
+    await Promise.allSettled(animations.map(a => a.finished));
+    for (let el of animatingElements) {
+      el.style.minWidth =
+        el.style.maxWidth =
+        el.style.marginLeft =
+        el.style.marginRight =
+          "";
+    }
   },
 
   async handleToolbarButtonClick() {
