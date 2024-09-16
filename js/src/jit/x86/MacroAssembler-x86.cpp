@@ -891,6 +891,21 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
 
 
 
+void MacroAssembler::flexibleQuotientPtr(
+    Register rhs, Register srcDest, bool isUnsigned,
+    const LiveRegisterSet& volatileLiveRegs) {
+  flexibleQuotient32(rhs, srcDest, isUnsigned, volatileLiveRegs);
+}
+
+void MacroAssembler::flexibleRemainderPtr(
+    Register rhs, Register srcDest, bool isUnsigned,
+    const LiveRegisterSet& volatileLiveRegs) {
+  flexibleRemainder32(rhs, srcDest, isUnsigned, volatileLiveRegs);
+}
+
+
+
+
 void MacroAssembler::loadStoreBuffer(Register ptr, Register buffer) {
   if (ptr != buffer) {
     movePtr(ptr, buffer);

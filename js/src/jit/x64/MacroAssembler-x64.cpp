@@ -741,6 +741,68 @@ void MacroAssemblerX64::convertDoubleToPtr(FloatRegister src, Register dest,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+void MacroAssemblerX64::flexibleDivMod64(Register rhs, Register lhsOutput,
+                                         bool isUnsigned, bool isDiv) {
+  if (lhsOutput == rhs) {
+    movq(ImmWord(isDiv ? 1 : 0), lhsOutput);
+    return;
+  }
+
+  
+  
+  Register regForRhs = (rhs == rax || rhs == rdx) ? rbx : rhs;
+
+  
+  
+  LiveGeneralRegisterSet preserve;
+  preserve.add(rdx);
+  preserve.add(rax);
+  preserve.add(regForRhs);
+
+  preserve.takeUnchecked(lhsOutput);
+
+  asMasm().PushRegsInMask(preserve);
+
+  
+  asMasm().moveRegPair(lhsOutput, rhs, rax, regForRhs);
+  if (oom()) {
+    return;
+  }
+
+  
+  if (isUnsigned) {
+    movq(ImmWord(0), rdx);
+    udivq(regForRhs);
+  } else {
+    cqo();
+    idivq(regForRhs);
+  }
+
+  Register result = isDiv ? rax : rdx;
+  if (result != lhsOutput) {
+    movq(result, lhsOutput);
+  }
+
+  asMasm().PopRegsInMask(preserve);
+}
+
+
+
+
+
 void MacroAssembler::setupUnalignedABICall(Register scratch) {
   setupNativeABICall();
   dynamicAlignment_ = true;
@@ -879,6 +941,21 @@ void MacroAssembler::moveValue(const ValueOperand& src,
 void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
   movWithPatch(ImmWord(src.asRawBits()), dest.valueReg());
   writeDataRelocation(src);
+}
+
+
+
+
+void MacroAssembler::flexibleQuotientPtr(
+    Register rhs, Register srcDest, bool isUnsigned,
+    const LiveRegisterSet& volatileLiveRegs) {
+  flexibleDivMod64(rhs, srcDest, isUnsigned,  true);
+}
+
+void MacroAssembler::flexibleRemainderPtr(
+    Register rhs, Register srcDest, bool isUnsigned,
+    const LiveRegisterSet& volatileLiveRegs) {
+  flexibleDivMod64(rhs, srcDest, isUnsigned,  false);
 }
 
 
