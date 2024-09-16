@@ -1497,6 +1497,17 @@ pref("network.http.throttle.max-time-ms", 500);
 
 pref("network.http.on_click_priority", true);
 
+
+
+pref("network.http.tailing.delay-quantum", 600);
+
+pref("network.http.tailing.delay-quantum-after-domcontentloaded", 100);
+
+
+pref("network.http.tailing.delay-max", 6000);
+
+pref("network.http.tailing.total-max", 45000);
+
 pref("network.proxy.http",                  "");
 pref("network.proxy.http_port",             0);
 pref("network.proxy.ssl",                   "");
