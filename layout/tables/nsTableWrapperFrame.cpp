@@ -250,7 +250,7 @@ nscoord nsTableWrapperFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 
     
     
-    const IntrinsicSizeInput input(aInput.mContext, Nothing());
+    const IntrinsicSizeInput input(aInput.mContext, Nothing(), Nothing());
 
     
     

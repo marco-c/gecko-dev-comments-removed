@@ -432,11 +432,25 @@ struct MOZ_STACK_CLASS IntrinsicSizeInput final {
   
   
   
+  
+  Maybe<LogicalSize> mContainingBlockSize;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Maybe<LogicalSize> mPercentageBasisForChildren;
 
   IntrinsicSizeInput(gfxContext* aContext,
+                     const Maybe<LogicalSize>& aContainingBlockSize,
                      const Maybe<LogicalSize>& aPercentageBasisForChildren)
       : mContext(aContext),
+        mContainingBlockSize(aContainingBlockSize),
         mPercentageBasisForChildren(aPercentageBasisForChildren) {
     MOZ_ASSERT(mContext);
   }
@@ -446,11 +460,15 @@ struct MOZ_STACK_CLASS IntrinsicSizeInput final {
   
   
   
-  IntrinsicSizeInput(const IntrinsicSizeInput& aSource,
+  
+  
+  
+  
+  IntrinsicSizeInput(const IntrinsicSizeInput& aParentInput,
                      mozilla::WritingMode aToWM, mozilla::WritingMode aFromWM)
       : IntrinsicSizeInput(
-            aSource.mContext,
-            aSource.mPercentageBasisForChildren.map([&](const auto& aPB) {
+            aParentInput.mContext, Nothing(),
+            aParentInput.mPercentageBasisForChildren.map([&](const auto& aPB) {
               return aPB.ConvertTo(aToWM, aFromWM);
             })) {}
 };
