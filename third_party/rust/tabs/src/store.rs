@@ -24,6 +24,13 @@ impl TabsStore {
         }
     }
 
+    
+    
+    
+    pub fn close_connection(&self) {
+        self.storage.lock().unwrap().close()
+    }
+
     pub fn set_local_tabs(&self, local_state: Vec<RemoteTab>) {
         self.storage.lock().unwrap().update_local_state(local_state);
     }
