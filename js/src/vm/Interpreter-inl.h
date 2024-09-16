@@ -15,21 +15,16 @@
 
 #include "js/friend/ErrorMessages.h"  
 #include "util/CheckedArithmetic.h"
-#include "vm/ArgumentsObject.h"
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"  
 #include "vm/JSAtomUtils.h"   
 #include "vm/Realm.h"
-#include "vm/SharedStencil.h"  
 #include "vm/StaticStrings.h"
 #include "vm/ThrowMsgKind.h"
 #ifdef ENABLE_RECORD_TUPLE
 #  include "vm/RecordTupleShared.h"
 #endif
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "vm/DisposableRecord-inl.h"
-#endif
 #include "vm/GlobalObject-inl.h"
 #include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"

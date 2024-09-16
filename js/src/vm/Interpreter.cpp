@@ -16,13 +16,10 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/WrappingOperations.h"
 
 #include <string.h>
 
 #include "jsapi.h"
-#include "jslibmath.h"
-#include "jsmath.h"
 #include "jsnum.h"
 
 #include "builtin/Array.h"
@@ -40,7 +37,6 @@
 #include "js/friend/WindowProxy.h"    
 #include "js/Printer.h"
 #include "proxy/DeadObjectProxy.h"
-#include "util/CheckedArithmetic.h"
 #include "util/StringBuilder.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
@@ -52,7 +48,6 @@
 #include "vm/EqualityOperations.h"  
 #include "vm/GeneratorObject.h"
 #include "vm/Iteration.h"
-#include "vm/JSAtomUtils.h"  
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
@@ -64,8 +59,7 @@
 #include "vm/Shape.h"
 #include "vm/SharedStencil.h"  
 #include "vm/StringType.h"
-#include "vm/ThrowMsgKind.h"  
-#include "vm/Time.h"
+#include "vm/ThrowMsgKind.h"     
 #include "vm/TypeofEqOperand.h"  
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  include "vm/UsingHint.h"
