@@ -3767,19 +3767,25 @@ AttachDecision BindNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
     return AttachDecision::NoAction;
   }
 
+  
+  
+  bool unqualifiedLookup = JSOp(*pc_) == JSOp::BindUnqualifiedName;
+
   JSObject* env = env_;
   Maybe<PropertyInfo> prop;
   while (true) {
-    if (!env->is<GlobalObject>() && !env->is<EnvironmentObject>()) {
-      return AttachDecision::NoAction;
+    
+    if (env->is<GlobalObject>()) {
+      break;
     }
-    if (env->is<WithEnvironmentObject>()) {
+
+    if (!env->is<EnvironmentObject>() || env->is<WithEnvironmentObject>()) {
       return AttachDecision::NoAction;
     }
 
     
     
-    if (env->isUnqualifiedVarObj()) {
+    if (unqualifiedLookup && env->isUnqualifiedVarObj()) {
       break;
     }
 
@@ -3797,9 +3803,16 @@ AttachDecision BindNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
   
   
   auto* holder = &env->as<NativeObject>();
-  if (prop.isSome() && holder->is<EnvironmentObject>() &&
-      (holder->getSlot(prop->slot()).isMagic() || !prop->writable())) {
-    return AttachDecision::NoAction;
+  if (prop.isSome() && holder->is<EnvironmentObject>()) {
+    
+    if (holder->getSlot(prop->slot()).isMagic()) {
+      return AttachDecision::NoAction;
+    }
+
+    
+    if (unqualifiedLookup && !prop->writable()) {
+      return AttachDecision::NoAction;
+    }
   }
 
   ObjOperandId lastObjId = objId;

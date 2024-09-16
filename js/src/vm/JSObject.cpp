@@ -1617,6 +1617,33 @@ bool js::LookupNameNoGC(JSContext* cx, PropertyName* name, JSObject* envChain,
   return true;
 }
 
+static bool IsTemporalDeadZone(JSContext* cx, HandleObject env, HandleId id,
+                               const PropertyResult& prop, bool* isTDZ) {
+  MOZ_ASSERT(prop.isFound());
+
+  
+  if (id.isAtom(cx->names().dot_this_)) {
+    *isTDZ = false;
+    return true;
+  }
+
+  
+  
+  
+  if (env->is<DebugEnvironmentProxy>()) {
+    RootedValue v(cx);
+    auto envProxy = env.as<DebugEnvironmentProxy>();
+    if (!DebugEnvironmentProxy::getMaybeSentinelValue(cx, envProxy, id, &v)) {
+      return false;
+    }
+    *isTDZ = IsUninitializedLexical(v);
+    return true;
+  }
+
+  *isTDZ = IsUninitializedLexicalSlot(env, prop);
+  return true;
+}
+
 JSObject* js::LookupNameWithGlobalDefault(JSContext* cx,
                                           Handle<PropertyName*> name,
                                           HandleObject envChain) {
@@ -1632,6 +1659,24 @@ JSObject* js::LookupNameWithGlobalDefault(JSContext* cx,
     }
     if (prop.isFound()) {
       break;
+    }
+  }
+
+  
+  
+  
+  
+  
+  if (pobj == env) {
+    MOZ_ASSERT(prop.isFound());
+
+    bool isTDZ;
+    if (!IsTemporalDeadZone(cx, env, id, prop, &isTDZ)) {
+      return nullptr;
+    }
+    if (isTDZ) {
+      ReportRuntimeLexicalError(cx, JSMSG_UNINITIALIZED_LEXICAL, name);
+      return nullptr;
     }
   }
 
@@ -1662,26 +1707,13 @@ JSObject* js::LookupNameUnqualified(JSContext* cx, Handle<PropertyName*> name,
   if (pobj == env) {
     MOZ_ASSERT(prop.isFound());
 
-    if (name != cx->names().dot_this_) {
-      
-      
-      bool isTDZ;
-      if (env->is<DebugEnvironmentProxy>()) {
-        RootedValue v(cx);
-        auto envProxy = env.as<DebugEnvironmentProxy>();
-        if (!DebugEnvironmentProxy::getMaybeSentinelValue(cx, envProxy, id,
-                                                          &v)) {
-          return nullptr;
-        }
-        isTDZ = IsUninitializedLexical(v);
-      } else {
-        isTDZ = IsUninitializedLexicalSlot(env, prop);
-      }
-
-      if (isTDZ) {
-        return RuntimeLexicalErrorObject::create(cx, env,
-                                                 JSMSG_UNINITIALIZED_LEXICAL);
-      }
+    bool isTDZ;
+    if (!IsTemporalDeadZone(cx, env, id, prop, &isTDZ)) {
+      return nullptr;
+    }
+    if (isTDZ) {
+      return RuntimeLexicalErrorObject::create(cx, env,
+                                               JSMSG_UNINITIALIZED_LEXICAL);
     }
 
     if (env->is<LexicalEnvironmentObject>() &&

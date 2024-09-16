@@ -2880,6 +2880,17 @@
 
 
  \
+    MACRO(BindUnqualifiedName, bind_unqualified_name, NULL, 5, 0, 1, JOF_ATOM|JOF_IC|JOF_USES_ENV) \
+    
+
+
+
+
+
+
+
+
+ \
     MACRO(BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_IC|JOF_USES_ENV) \
     
 
@@ -3031,6 +3042,9 @@
  \
     MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM) \
     
+
+
+
 
 
 
@@ -3383,6 +3397,7 @@
 
 
 
+
  \
     MACRO(EnterWith, enter_with, NULL, 5, 1, 0, JOF_SCOPE) \
     
@@ -3693,14 +3708,13 @@
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    IF_RECORD_TUPLE(, MACRO(239))     \
     IF_RECORD_TUPLE(, MACRO(240))     \
     IF_RECORD_TUPLE(, MACRO(241))     \
     IF_RECORD_TUPLE(, MACRO(242))     \
     IF_RECORD_TUPLE(, MACRO(243))     \
     IF_RECORD_TUPLE(, MACRO(244))     \
     IF_RECORD_TUPLE(, MACRO(245))     \
-    MACRO(246)                                   \
+    IF_RECORD_TUPLE(, MACRO(246))     \
     MACRO(247)                                   \
     MACRO(248)                                   \
     MACRO(249)                                   \
@@ -3712,14 +3726,13 @@
     MACRO(255)
 #else
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    IF_RECORD_TUPLE(, MACRO(236))     \
     IF_RECORD_TUPLE(, MACRO(237))     \
     IF_RECORD_TUPLE(, MACRO(238))     \
     IF_RECORD_TUPLE(, MACRO(239))     \
     IF_RECORD_TUPLE(, MACRO(240))     \
     IF_RECORD_TUPLE(, MACRO(241))     \
     IF_RECORD_TUPLE(, MACRO(242))     \
-    MACRO(243)                                   \
+    IF_RECORD_TUPLE(, MACRO(243))     \
     MACRO(244)                                   \
     MACRO(245)                                   \
     MACRO(246)                                   \

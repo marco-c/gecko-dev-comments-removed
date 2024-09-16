@@ -3707,6 +3707,21 @@ bool BaselineCodeGen<Handler>::emit_GetName() {
 }
 
 template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_BindUnqualifiedName() {
+  frame.syncStack(0);
+  masm.loadPtr(frame.addressOfEnvironmentChain(), R0.scratchReg());
+
+  
+  if (!emitNextIC()) {
+    return false;
+  }
+
+  
+  frame.push(R0);
+  return true;
+}
+
+template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_BindName() {
   frame.syncStack(0);
   masm.loadPtr(frame.addressOfEnvironmentChain(), R0.scratchReg());

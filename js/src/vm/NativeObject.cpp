@@ -2398,6 +2398,7 @@ bool js::GetNameBoundInEnvironment(JSContext* cx, HandleObject envArg,
   
   
   
+  
   RootedObject env(cx, MaybeUnwrapWithEnvironment(envArg));
   RootedValue receiver(cx, ObjectValue(*env));
   if (env->getOpsGetProperty()) {

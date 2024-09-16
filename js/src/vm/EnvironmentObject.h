@@ -1044,6 +1044,7 @@ class WithEnvironmentObject : public EnvironmentObject {
 
 
 
+
 class RuntimeLexicalErrorObject : public EnvironmentObject {
   static const unsigned ERROR_SLOT = 1;
 
