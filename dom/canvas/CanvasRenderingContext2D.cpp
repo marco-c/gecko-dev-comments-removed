@@ -2602,14 +2602,8 @@ static already_AddRefed<StyleLockedDeclarationBlock> CreateDeclarationForServo(
     return nullptr;
   }
 
-  
-  
   if (aProperty == eCSSProperty_font) {
-    const nsCString normalString = "normal"_ns;
-    Servo_DeclarationBlock_SetPropertyById(
-        servoDeclarations, eCSSProperty_line_height, &normalString, false,
-        env.mUrlExtraData, StyleParsingMode::DEFAULT, env.mCompatMode,
-        env.mLoader, env.mRuleType, {});
+    Servo_DeclarationBlock_SanitizeForCanvas(servoDeclarations);
   }
 
   return servoDeclarations.forget();

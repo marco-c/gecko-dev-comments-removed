@@ -5054,6 +5054,21 @@ fn set_property(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Servo_DeclarationBlock_SanitizeForCanvas(
+    declarations: &LockedDeclarationBlock,
+) {
+    use style::properties::PropertyDeclaration;
+    use style::values::specified::{LineHeight, XTextScale, Zoom};
+    
+    
+    write_locked_arc(declarations, |decls: &mut PropertyDeclarationBlock| {
+        decls.push(PropertyDeclaration::LineHeight(LineHeight::Normal), Importance::Normal);
+        decls.push(PropertyDeclaration::Zoom(Zoom::Document), Importance::Normal);
+        decls.push(PropertyDeclaration::XTextScale(XTextScale::None), Importance::Normal);
+    });
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Servo_DeclarationBlock_SetProperty(
     declarations: &LockedDeclarationBlock,
     property: &nsACString,
