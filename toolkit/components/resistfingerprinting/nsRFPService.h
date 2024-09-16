@@ -15,6 +15,7 @@
 #include "mozilla/gfx/Types.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/MediaDeviceInfoBinding.h"
+#include "mozilla/dom/ScreenOrientationBinding.h"
 #include "js/RealmOptions.h"
 #include "nsHashtablesFwd.h"
 #include "nsICookieJarSettings.h"
@@ -378,6 +379,14 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   static void GetMediaDeviceGroup(nsString& aGroup,
                                   mozilla::dom::MediaDeviceKind aKind);
+
+  
+  
+  static mozilla::dom::OrientationType OrientationSecondaryToPrimary(
+      mozilla::dom::OrientationType aOrientation);
+
+  
+  static uint16_t OrientationSecondaryToPrimary(uint16_t aAngle);
 
  private:
   nsresult Init();
