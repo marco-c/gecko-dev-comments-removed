@@ -529,16 +529,6 @@ void DisallowHTTPSRR(uint32_t& aCaps);
 
 nsLiteralCString HttpVersionToTelemetryLabel(HttpVersion version);
 
-enum class ProxyDNSStrategy : uint8_t {
-  
-  
-  ORIGIN = 1 << 0,
-  
-  PROXY = 1 << 1
-};
-
-ProxyDNSStrategy GetProxyDNSStrategyHelper(const char* aType, uint32_t aFlag);
-
 }  
 }  
 
