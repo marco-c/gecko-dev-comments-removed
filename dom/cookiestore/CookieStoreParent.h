@@ -8,6 +8,7 @@
 #define mozilla_dom_CookieStoreParent_h
 
 #include "mozilla/dom/PCookieStoreParent.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/MozPromise.h"
 
 namespace mozilla::dom {
@@ -56,7 +57,8 @@ class CookieStoreParent final : public PCookieStoreParent {
 
   
   
-  bool SetRequestOnMainThread(const nsAString& aDomain,
+  bool SetRequestOnMainThread(ThreadsafeContentParentHandle* aParent,
+                              const nsAString& aDomain,
                               const OriginAttributes& aOriginAttributes,
                               const nsAString& aName, const nsAString& aValue,
                               bool aSession, int64_t aExpires,
@@ -65,7 +67,8 @@ class CookieStoreParent final : public PCookieStoreParent {
 
   
   
-  bool DeleteRequestOnMainThread(const nsAString& aDomain,
+  bool DeleteRequestOnMainThread(ThreadsafeContentParentHandle* aParent,
+                                 const nsAString& aDomain,
                                  const OriginAttributes& aOriginAttributes,
                                  const nsAString& aName, const nsAString& aPath,
                                  bool aPartitioned, const nsID& aOperationID);
