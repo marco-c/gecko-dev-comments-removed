@@ -5414,18 +5414,12 @@ void nsGlobalWindowOuter::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
 }
 
 void nsGlobalWindowOuter::SizeToContentOuter(
-    CallerType aCallerType, const SizeToContentConstraints& aConstraints,
-    ErrorResult& aError) {
+    const SizeToContentConstraints& aConstraints, ErrorResult& aError) {
   if (!mDocShell) {
     return;
   }
 
-  
-
-
-
-
-  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsSubframe()) {
+  if (mBrowsingContext->IsSubframe()) {
     return;
   }
 
@@ -5443,8 +5437,6 @@ void nsGlobalWindowOuter::SizeToContentOuter(
     return aError.Throw(NS_ERROR_FAILURE);
   }
 
-  
-  
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner = GetTreeOwner();
   if (!treeOwner) {
     return aError.Throw(NS_ERROR_FAILURE);
@@ -5459,7 +5451,6 @@ void nsGlobalWindowOuter::SizeToContentOuter(
       presContext,
       "Should be non-nullptr if nsIDocumentViewer::GetContentSize() succeeded");
   CSSIntSize cssSize = *contentSize;
-  CheckSecurityWidthAndHeight(&cssSize.width, &cssSize.height, aCallerType);
 
   LayoutDeviceIntSize newDevSize(
       presContext->CSSPixelsToDevPixels(cssSize.width),
