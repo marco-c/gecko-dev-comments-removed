@@ -92,9 +92,6 @@ RefPtr<DecoderAgent::ConfigurePromise> DecoderAgent::Configure(
 
   RefPtr<layers::KnowsCompositor> knowsCompositor =
       layers::ImageBridgeChild::GetSingleton();
-  
-  
-  
 
   auto params = CreateDecoderParams{
       *mInfo,
