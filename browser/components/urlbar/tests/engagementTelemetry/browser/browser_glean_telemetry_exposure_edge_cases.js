@@ -372,7 +372,7 @@ async function do_exposure_append_underfilled({
   
   
   
-  assertExposureTelemetry([{ results: "search_suggest" }]);
+  assertExposureTelemetry([{ results: "search_suggest", terminal: "true" }]);
 
   
   queryResolver.resolve();
@@ -525,7 +525,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
   
   
   
-  assertExposureTelemetry([{ results: "search_suggest" }]);
+  assertExposureTelemetry([{ results: "search_suggest", terminal: "true" }]);
 
   
   queryResolver.resolve();
@@ -748,7 +748,7 @@ async function do_exposure_append_full(showExposureResults) {
   gURLBar.blur();
 
   
-  assertExposureTelemetry([{ results: "history" }]);
+  assertExposureTelemetry([{ results: "history", terminal: "true" }]);
 
   
   await SpecialPowers.popPrefEnv();
@@ -1038,7 +1038,7 @@ async function do_exposure_append_full_twice(showExposureResults) {
   
   
   
-  assertExposureTelemetry([{ results: "history" }]);
+  assertExposureTelemetry([{ results: "history", terminal: "true" }]);
 
   
   await secondQueryPromise;
