@@ -425,12 +425,12 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     return true;
   }
 
-  bool isInLoop();
-  [[nodiscard]] bool checkSingletonContext();
+  bool isInLoop() const;
+  [[nodiscard]] bool checkSingletonContext() const;
 
-  bool needsImplicitThis();
+  bool needsImplicitThis() const;
 
-  size_t countThisEnvironmentHops();
+  size_t countThisEnvironmentHops() const;
   [[nodiscard]] bool emitThisEnvironmentCallee();
   [[nodiscard]] bool emitSuperBase();
 
@@ -453,8 +453,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     }
   }
 
-  void reportError(ParseNode* pn, unsigned errorNumber, ...);
-  void reportError(uint32_t offset, unsigned errorNumber, ...);
+  void reportError(ParseNode* pn, unsigned errorNumber, ...) const;
+  void reportError(uint32_t offset, unsigned errorNumber, ...) const;
 
   
   bool intoScriptStencil(ScriptIndex scriptIndex);
@@ -469,10 +469,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   
-  [[nodiscard]] bool checkSideEffects(ParseNode* pn, bool* answer);
+  [[nodiscard]] bool checkSideEffects(ParseNode* pn, bool* answer) const;
 
 #ifdef DEBUG
-  [[nodiscard]] bool checkStrictOrSloppy(JSOp op);
+  [[nodiscard]] bool checkStrictOrSloppy(JSOp op) const;
 #endif
 
   
@@ -522,7 +522,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   
-  [[nodiscard]] bool getNslots(uint32_t* nslots);
+  [[nodiscard]] bool getNslots(uint32_t* nslots) const;
 
   
   [[nodiscard]] bool emitFunctionScript(FunctionNode* funNode);
@@ -609,7 +609,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitCall(JSOp op, uint16_t argc, ParseNode* pn = nullptr);
   [[nodiscard]] bool emitCallIncDec(UnaryNode* incDec);
 
-  uint32_t getOffsetForLoop(ParseNode* nextpn);
+  uint32_t getOffsetForLoop(ParseNode* nextpn) const;
 
   enum class GotoKind { Break, Continue };
   [[nodiscard]] bool emitGoto(NestableControl* target, GotoKind kind);
@@ -640,8 +640,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   void isPropertyListObjLiteralCompatible(ListNode* obj, bool* withValues,
-                                          bool* withoutValues);
-  bool isArrayObjLiteralCompatible(ListNode* array);
+                                          bool* withoutValues) const;
+  bool isArrayObjLiteralCompatible(ListNode* array) const;
 
   [[nodiscard]] bool emitPropertyList(ListNode* obj, PropertyEmitter& pe,
                                       PropListType type);
@@ -655,13 +655,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitObjLiteralArray(ListNode* array);
 
   
-  [[nodiscard]] bool isRHSObjLiteralCompatible(ParseNode* value);
+  [[nodiscard]] bool isRHSObjLiteralCompatible(ParseNode* value) const;
 
   [[nodiscard]] bool emitObjLiteralValue(ObjLiteralWriter& writer,
                                          ParseNode* value);
 
   mozilla::Maybe<MemberInitializers> setupMemberInitializers(
-      ListNode* classMembers, FieldPlacement placement);
+      ListNode* classMembers, FieldPlacement placement) const;
   [[nodiscard]] bool emitCreateFieldKeys(ListNode* obj,
                                          FieldPlacement placement);
   [[nodiscard]] bool emitCreateMemberInitializers(ClassEmitter& ce,
@@ -672,7 +672,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                                   bool hasHeritage
 #endif
   );
-  const MemberInitializers& findMemberInitializersForCall();
+  const MemberInitializers& findMemberInitializersForCall() const;
   [[nodiscard]] bool emitInitializeInstanceMembers(
       bool isDerivedClassConstructor);
   [[nodiscard]] bool emitInitializeStaticFields(ListNode* classMembers);
@@ -818,7 +818,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   [[nodiscard]] bool emitCopyDataProperties(CopyOption option);
 
-  JSOp getIterCallOp(JSOp callOp, SelfHostedIter selfHostedIter);
+  JSOp getIterCallOp(JSOp callOp, SelfHostedIter selfHostedIter) const;
 
   
   [[nodiscard]] bool emitIterable(ParseNode* value,
@@ -868,7 +868,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitAnonymousFunctionWithComputedName(
       ParseNode* node, FunctionPrefixKind prefixKind);
 
-  [[nodiscard]] bool setFunName(FunctionBox* fun, TaggedParserAtomIndex name);
+  void setFunName(FunctionBox* fun, TaggedParserAtomIndex name) const;
   [[nodiscard]] bool emitInitializer(ParseNode* initializer,
                                      ParseNode* pattern);
 
@@ -938,7 +938,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   [[nodiscard]] ParseNode* getCoordNode(ParseNode* callNode,
                                         ParseNode* calleeNode, JSOp op,
-                                        ListNode* argsList);
+                                        ListNode* argsList) const;
 
   [[nodiscard]] bool emitArguments(ListNode* argsList, bool isCall,
                                    bool isSpread, CallOrNewEmitter& cone);
@@ -1072,7 +1072,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 #endif
 
  private:
-  [[nodiscard]] SelfHostedIter getSelfHostedIterFor(ParseNode* parseNode);
+  [[nodiscard]] SelfHostedIter getSelfHostedIterFor(ParseNode* parseNode) const;
 
   [[nodiscard]] bool emitSelfHostedGetBuiltinConstructorOrPrototype(
       CallNode* callNode, bool isConstructor);

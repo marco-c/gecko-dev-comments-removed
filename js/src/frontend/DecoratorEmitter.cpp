@@ -26,7 +26,8 @@ DecoratorEmitter::DecoratorEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
 
 bool DecoratorEmitter::reverseDecoratorsToApplicationOrder(
-    const ListNode* decorators, DecoratorsVector& vec) {
+    const ListNode* decorators, DecoratorsVector& vec) const {
+  MOZ_ASSERT(!decorators->empty());
   if (!vec.resize(decorators->count())) {
     ReportOutOfMemory(bce_->fc);
     return false;
