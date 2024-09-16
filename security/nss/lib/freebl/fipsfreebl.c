@@ -356,16 +356,20 @@ freebl_fips_AES_PowerUpSelfTest(int aes_key_size)
     };
 
     const PRUint8 *aes_ecb_known_ciphertext =
-        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_ecb128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_ecb192_known_ciphertext : aes_ecb256_known_ciphertext;
+        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_ecb128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_ecb192_known_ciphertext
+                                                                                                                        : aes_ecb256_known_ciphertext;
 
     const PRUint8 *aes_cbc_known_ciphertext =
-        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_cbc128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_cbc192_known_ciphertext : aes_cbc256_known_ciphertext;
+        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_cbc128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_cbc192_known_ciphertext
+                                                                                                                        : aes_cbc256_known_ciphertext;
 
     const PRUint8 *aes_gcm_known_ciphertext =
-        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_gcm128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_gcm192_known_ciphertext : aes_gcm256_known_ciphertext;
+        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_gcm128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_gcm192_known_ciphertext
+                                                                                                                        : aes_gcm256_known_ciphertext;
 
     const PRUint8 *aes_cmac_known_ciphertext =
-        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_cmac128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_cmac192_known_ciphertext : aes_cmac256_known_ciphertext;
+        (aes_key_size == FIPS_AES_128_KEY_SIZE) ? aes_cmac128_known_ciphertext : (aes_key_size == FIPS_AES_192_KEY_SIZE) ? aes_cmac192_known_ciphertext
+                                                                                                                         : aes_cmac256_known_ciphertext;
 
     
     PRUint8 aes_computed_ciphertext[FIPS_AES_ENCRYPT_LENGTH * 2];

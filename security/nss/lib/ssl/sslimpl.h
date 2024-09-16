@@ -130,7 +130,7 @@ typedef enum { SSLAppOpRead = 0,
 #define DTLS_RETRANSMIT_FINISHED_MS 30000
 
 
-#define SSL_NAMED_GROUP_COUNT 32
+#define SSL_NAMED_GROUP_COUNT 33
 
 
 #define SSL_MAX_DH_KEY_BITS 8192

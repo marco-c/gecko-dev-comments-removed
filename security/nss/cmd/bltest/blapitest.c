@@ -2954,7 +2954,8 @@ print_td:
     fprintf(stdout, "%12s", "thrgput");
     fprintf(stdout, "\n");
     fprintf(stdout, "%8s", mode_strings[info->mode]);
-    fprintf(stdout, "_%c", (cxonly) ? 'c' : (encrypt) ? 'e' : 'd');
+    fprintf(stdout, "_%c", (cxonly) ? 'c' : (encrypt) ? 'e'
+                                                      : 'd');
     printPR_smpString("%12s", getHighUnitBytes(totalIn), "%12d", totalIn);
 
     td = !td;
@@ -3993,10 +3994,10 @@ main(int argc, char **argv)
     
     ioMode = (bltest.options[opt_B64].activated)
                  ? bltestBase64Encoded
-                 : (bltest.options[opt_Hex].activated)
-                       ? bltestHexStream
-                       : (bltest.options[opt_HexWSpc].activated) ? bltestHexSpaceDelim
-                                                                 : bltestBinary;
+             : (bltest.options[opt_Hex].activated)
+                 ? bltestHexStream
+             : (bltest.options[opt_HexWSpc].activated) ? bltestHexSpaceDelim
+                                                       : bltestBinary;
 
     if (bltest.options[opt_Exponent].activated)
         exponent = PORT_Atoi(bltest.options[opt_Exponent].arg);

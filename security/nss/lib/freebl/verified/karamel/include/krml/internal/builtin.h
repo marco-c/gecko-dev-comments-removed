@@ -7,6 +7,8 @@
 
 #if (defined(_WIN32) || defined(_WIN64))
 #include <malloc.h>
+#elif (defined(sun))
+#include <alloca.h>
 #endif
 
 

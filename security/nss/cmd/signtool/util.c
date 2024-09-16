@@ -793,14 +793,14 @@ chop(char *str)
         start = str;
 
         
-        while (isspace(*start)) {
+        while (isspace((unsigned char)*start)) {
             start++;
         }
 
         
         if (*start) {
             end = start + strlen(start) - 1;
-            while (isspace(*end) && end > start) {
+            while (isspace((unsigned char)*end) && end > start) {
                 end--;
             }
             *(end + 1) = '\0';

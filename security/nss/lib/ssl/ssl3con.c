@@ -5665,7 +5665,8 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
                 goto loser; 
             }
             if (!ss->firstHsDone) {
-                PORT_Assert(ss->ssl3.hs.dtls13ClientMessageBuffer.len == 0);
+                PORT_Assert(type == client_hello_retransmit ||
+                            ss->ssl3.hs.dtls13ClientMessageBuffer.len == 0);
                 sslBuffer_Clear(&ss->ssl3.hs.dtls13ClientMessageBuffer);
                 
                 rv = sslBuffer_Append(&ss->ssl3.hs.dtls13ClientMessageBuffer, chBuf.buf, chBuf.len);

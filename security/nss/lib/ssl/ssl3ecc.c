@@ -432,6 +432,40 @@ ssl_GetECGroupForServerSocket(sslSocket *ss)
 }
 
 
+
+
+
+
+
+
+static SECKEYPrivateKey *
+ssl_CreateECDHEPrivateKey(SECKEYECParams *param, SECKEYPublicKey **pubk, void *cx)
+{
+    SECKEYPrivateKey *privk = NULL;
+    CK_MECHANISM_TYPE type = CKM_NSS_ECDHE_NO_PAIRWISE_CHECK_KEY_PAIR_GEN;
+
+    PK11SlotInfo *slot = PK11_GetInternalSlot();
+    if (!slot || !PK11_DoesMechanism(slot, type) || PK11_IsFIPS()) {
+        if (slot) {
+            PK11_FreeSlot(slot);
+        }
+        return SECKEY_CreateECPrivateKey(param, pubk, cx);
+    }
+
+    privk = PK11_GenerateKeyPairWithOpFlags(slot, type, param, pubk,
+                                            PK11_ATTR_SESSION | PK11_ATTR_INSENSITIVE | PK11_ATTR_PUBLIC,
+                                            CKF_DERIVE, CKF_DERIVE, cx);
+    if (!privk) {
+        privk = PK11_GenerateKeyPairWithOpFlags(slot, type, param, pubk,
+                                                PK11_ATTR_SESSION | PK11_ATTR_SENSITIVE | PK11_ATTR_PRIVATE,
+                                                CKF_DERIVE, CKF_DERIVE, cx);
+    }
+
+    PK11_FreeSlot(slot);
+    return privk;
+}
+
+
 SECStatus
 ssl_CreateECDHEphemeralKeyPair(const sslSocket *ss,
                                const sslNamedGroupDef *ecGroup,
@@ -445,7 +479,7 @@ ssl_CreateECDHEphemeralKeyPair(const sslSocket *ss,
     if (ssl_NamedGroup2ECParams(NULL, ecGroup, &ecParams) != SECSuccess) {
         return SECFailure;
     }
-    privKey = SECKEY_CreateECPrivateKey(&ecParams, &pubKey, ss->pkcs11PinArg);
+    privKey = ssl_CreateECDHEPrivateKey(&ecParams, &pubKey, ss->pkcs11PinArg);
     SECITEM_FreeItem(&ecParams, PR_FALSE);
 
     if (!privKey || !pubKey ||

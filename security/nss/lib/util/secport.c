@@ -303,23 +303,23 @@ PORT_ArenaAlloc(PLArenaPool *arena, size_t size)
     } else
         
         if (ARENAPOOL_MAGIC == pool->magic) {
-        PZ_Lock(pool->lock);
+            PZ_Lock(pool->lock);
 #ifdef THREADMARK
-        
-        if (pool->marking_thread &&
-            pool->marking_thread != PR_GetCurrentThread()) {
             
+            if (pool->marking_thread &&
+                pool->marking_thread != PR_GetCurrentThread()) {
+                
+                PZ_Unlock(pool->lock);
+                PORT_SetError(SEC_ERROR_NO_MEMORY);
+                PORT_Assert(0);
+                return NULL;
+            } 
+#endif        
+            PL_ARENA_ALLOCATE(p, arena, size);
             PZ_Unlock(pool->lock);
-            PORT_SetError(SEC_ERROR_NO_MEMORY);
-            PORT_Assert(0);
-            return NULL;
-        } 
-#endif    
-        PL_ARENA_ALLOCATE(p, arena, size);
-        PZ_Unlock(pool->lock);
-    } else {
-        PL_ARENA_ALLOCATE(p, arena, size);
-    }
+        } else {
+            PL_ARENA_ALLOCATE(p, arena, size);
+        }
 
     if (!p) {
         PORT_SetError(SEC_ERROR_NO_MEMORY);

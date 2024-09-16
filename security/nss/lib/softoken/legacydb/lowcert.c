@@ -615,7 +615,7 @@ nsslowcert_GetCertificateEmailAddress(NSSLOWCERTCertificate *cert)
     
     str = emailAddr;
     while (str && *str) {
-        *str = tolower(*str);
+        *str = tolower((unsigned char)*str);
         str++;
     }
     return emailAddr;
@@ -717,7 +717,7 @@ nsslowcert_FixupEmailAddr(char *emailAddr)
 
     
     while (*str) {
-        *str = tolower(*str);
+        *str = tolower((unsigned char)*str);
         str++;
     }
 
