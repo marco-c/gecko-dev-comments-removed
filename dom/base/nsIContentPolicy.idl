@@ -446,8 +446,15 @@ interface nsIContentPolicy : nsISupports
 
 
 
+    TYPE_INTERNAL_EXTERNAL_RESOURCE = 61,
 
-    TYPE_END = 61,
+    
+
+
+
+
+
+    TYPE_END = 62,
 
 
     

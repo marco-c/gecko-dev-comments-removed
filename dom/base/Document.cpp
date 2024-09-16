@@ -215,6 +215,7 @@
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
+#include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/ResizeObserver.h"
 #include "mozilla/dom/RustTypes.h"
 #include "mozilla/dom/SVGElement.h"
@@ -431,6 +432,7 @@
 #include "nsStyleSheetService.h"
 #include "nsStyleStruct.h"
 #include "nsTextControlFrame.h"
+#include "nsSubDocumentFrame.h"
 #include "nsTextNode.h"
 #include "nsUnicharUtils.h"
 #include "nsWrapperCache.h"
@@ -1163,7 +1165,7 @@ nsresult ExternalResourceMap::PendingLoad::StartLoad(
   nsCOMPtr<nsIChannel> channel;
   rv = NS_NewChannel(getter_AddRefs(channel), aURI, aRequestingNode,
                      nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT,
-                     nsIContentPolicy::TYPE_OTHER,
+                     nsIContentPolicy::TYPE_INTERNAL_EXTERNAL_RESOURCE,
                      nullptr,  
                      loadGroup);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -7380,10 +7382,11 @@ bool Document::ShouldThrottleFrameRequests() const {
   
   
   
+  auto margin = DOMIntersectionObserver::LazyLoadingRootMargin();
   const IntersectionInput input = DOMIntersectionObserver::ComputeInput(
-      *el->OwnerDoc(),  nullptr,  nullptr);
-  const IntersectionOutput output =
-      DOMIntersectionObserver::Intersect(input, *el);
+      *el->OwnerDoc(),  nullptr, &margin);
+  const IntersectionOutput output = DOMIntersectionObserver::Intersect(
+      input, *el, DOMIntersectionObserver::BoxToUse::Content);
   return !output.Intersects();
 }
 
@@ -16839,6 +16842,66 @@ void Document::UpdateIntersections(TimeStamp aNowTime) {
   }
   EnumerateSubDocuments([aNowTime](Document& aDoc) {
     aDoc.UpdateIntersections(aNowTime);
+    return CallState::Continue;
+  });
+}
+
+void Document::UpdateRemoteFrameEffects() {
+  if (auto* wc = GetWindowContext(); wc && !wc->Children().IsEmpty()) {
+    auto margin = DOMIntersectionObserver::LazyLoadingRootMargin();
+    const IntersectionInput input = DOMIntersectionObserver::ComputeInput(
+        *this,  nullptr, &margin);
+    for (const RefPtr<BrowsingContext>& child : wc->Children()) {
+      Element* el = child->GetEmbedderElement();
+      if (!el) {
+        continue;
+      }
+      auto* rb = RemoteBrowser::GetFrom(el);
+      if (!rb) {
+        continue;
+      }
+      EffectsInfo info = [&] {
+        if (Hidden()) {
+          
+          
+          return EffectsInfo::FullyHidden();
+        }
+        const IntersectionOutput output = DOMIntersectionObserver::Intersect(
+            input, *el, DOMIntersectionObserver::BoxToUse::Content);
+        if (!output.Intersects()) {
+          
+          
+          return EffectsInfo::FullyHidden();
+        }
+        auto* frame = el->GetPrimaryFrame();
+        MOZ_ASSERT(frame, "How do we intersect with no frame?");
+        MOZ_ASSERT(frame->IsSubDocumentFrame(), "Hm?");
+        Maybe<nsRect> visibleRect;
+        gfx::MatrixScales rasterScale;
+        if (nsSubDocumentFrame* f = do_QueryFrame(frame)) {
+          visibleRect = f->GetVisibleRect();
+          if (!visibleRect) {
+            
+            
+            
+            visibleRect.emplace(*output.mIntersectionRect -
+                                output.mTargetRect.TopLeft());
+          }
+          rasterScale = f->GetRasterScale();
+        }
+        ParentLayerToScreenScale2D transformToAncestorScale =
+            ParentLayerToParentLayerScale(
+                frame->PresShell()->GetCumulativeResolution()) *
+            nsLayoutUtils::
+                GetTransformToAncestorScaleCrossProcessForFrameMetrics(frame);
+        return EffectsInfo::VisibleWithinRect(visibleRect, rasterScale,
+                                              transformToAncestorScale);
+      }();
+      rb->UpdateEffects(std::move(info));
+    }
+  }
+  EnumerateSubDocuments([](Document& aDoc) {
+    aDoc.UpdateRemoteFrameEffects();
     return CallState::Continue;
   });
 }
