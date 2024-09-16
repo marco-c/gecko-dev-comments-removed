@@ -76,6 +76,7 @@ pub enum ExternalImageSource<'a> {
 
 
 
+
 pub struct ExternalImage<'a> {
     
     pub uv: TexelRect,
@@ -144,6 +145,8 @@ pub struct ExternalImageData {
     pub channel_index: u8,
     
     pub image_type: ExternalImageType,
+    
+    pub normalized_uvs: bool,
 }
 
 
