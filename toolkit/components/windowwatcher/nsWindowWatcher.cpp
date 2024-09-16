@@ -599,6 +599,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
   MOZ_ASSERT(chromeContext->UseRemoteTabs());
 
   MaybeDisablePersistence(sizeSpec, chromeTreeOwner);
+
   SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec);
 
   nsCOMPtr<nsIRemoteTab> newBrowserParent;
@@ -1198,7 +1199,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     nsCOMPtr<nsIDocShellTreeOwner> newTreeOwner;
     targetDocShell->GetTreeOwner(getter_AddRefs(newTreeOwner));
     MaybeDisablePersistence(sizeSpec, newTreeOwner);
-    SizeOpenedWindow(newTreeOwner, aParent, isCallerChrome, sizeSpec);
   }
 
   if (aDialog && aArgv) {
@@ -1411,6 +1411,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
     
     targetBC->LoadURI(aLoadState);
+  }
+
+  if (isNewToplevelWindow) {
+    nsCOMPtr<nsIDocShellTreeOwner> newTreeOwner;
+    targetDocShell->GetTreeOwner(getter_AddRefs(newTreeOwner));
+    SizeOpenedWindow(newTreeOwner, aParent, isCallerChrome, sizeSpec);
   }
 
   if (windowIsModal) {

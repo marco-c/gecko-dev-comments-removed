@@ -696,17 +696,19 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
 }
 
 bool nsSubDocumentFrame::ReflowFinished() {
-  mPostedReflowCallback = false;
-  nsFrameLoader* fl = FrameLoader();
-  if (!fl) {
-    return false;
+  RefPtr<nsFrameLoader> frameloader = FrameLoader();
+  if (frameloader) {
+    AutoWeakFrame weakFrame(this);
+
+    frameloader->UpdatePositionAndSize(this);
+
+    if (weakFrame.IsAlive()) {
+      
+      mPostedReflowCallback = false;
+    }
+  } else {
+    mPostedReflowCallback = false;
   }
-  if (fl->IsRemoteFrame() && fl->HasRemoteBrowserBeenSized()) {
-    
-    
-    return false;
-  }
-  RefPtr { fl } -> UpdatePositionAndSize(this);
   return false;
 }
 

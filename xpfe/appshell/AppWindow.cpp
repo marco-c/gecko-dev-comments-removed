@@ -900,23 +900,6 @@ NS_IMETHODIMP AppWindow::SetVisibility(bool aVisibility) {
   nsCOMPtr<nsIWidget> window = mWindow;
   window->Show(aVisibility);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aVisibility && mDominantClientSize) {
-    if (RefPtr doc = mDocShell->GetDocument()) {
-      doc->FlushPendingNotifications(FlushType::Layout);
-      doc->UpdateRemoteFrameEffects();
-    }
-  }
-
   nsCOMPtr<nsIWindowMediator> windowMediator(
       do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
   if (windowMediator)

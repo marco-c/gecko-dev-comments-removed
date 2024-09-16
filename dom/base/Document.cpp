@@ -16808,81 +16808,59 @@ void Document::UpdateIntersections(TimeStamp aNowTime) {
   });
 }
 
-static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
-                                           const IntersectionInput& aInput,
-                                           bool aIsHidden) {
-  Element* el = aBc->GetEmbedderElement();
-  if (!el) {
-    return;
-  }
-  auto* rb = RemoteBrowser::GetFrom(el);
-  if (!rb) {
-    return;
-  }
-  const bool isInactiveTop = aBc->IsTop() && !aBc->IsActive();
-  nsSubDocumentFrame* subDocFrame = do_QueryFrame(el->GetPrimaryFrame());
-  rb->UpdateEffects([&] {
-    if (aIsHidden || isInactiveTop) {
-      
-      return EffectsInfo::FullyHidden();
-    }
-    const IntersectionOutput output = DOMIntersectionObserver::Intersect(
-        aInput, *el, DOMIntersectionObserver::BoxToUse::Content);
-    if (!output.Intersects()) {
-      
-      
-      return EffectsInfo::FullyHidden();
-    }
-    MOZ_ASSERT(el->GetPrimaryFrame(), "How do we intersect without a frame?");
-    if (MOZ_UNLIKELY(NS_WARN_IF(!subDocFrame))) {
-      
-      
-      return EffectsInfo::FullyHidden();
-    }
-    Maybe<nsRect> visibleRect;
-    gfx::MatrixScales rasterScale;
-    visibleRect = subDocFrame->GetVisibleRect();
-    if (!visibleRect) {
-      
-      
-      
-      visibleRect.emplace(*output.mIntersectionRect -
-                          output.mTargetRect.TopLeft());
-    }
-    rasterScale = subDocFrame->GetRasterScale();
-    ParentLayerToScreenScale2D transformToAncestorScale =
-        ParentLayerToParentLayerScale(
-            subDocFrame->PresShell()->GetCumulativeResolution()) *
-        nsLayoutUtils::GetTransformToAncestorScaleCrossProcessForFrameMetrics(
-            subDocFrame);
-    return EffectsInfo::VisibleWithinRect(visibleRect, rasterScale,
-                                          transformToAncestorScale);
-  }());
-  if (subDocFrame && !isInactiveTop) {
-    if (nsFrameLoader* fl = subDocFrame->FrameLoader()) {
-      fl->UpdatePositionAndSize(subDocFrame);
-    }
-  }
-}
-
 void Document::UpdateRemoteFrameEffects() {
-  auto margin = DOMIntersectionObserver::LazyLoadingRootMargin();
-  const IntersectionInput input = DOMIntersectionObserver::ComputeInput(
-      *this,  nullptr, &margin);
-  const bool hidden = Hidden();
-  if (auto* wc = GetWindowContext()) {
+  if (auto* wc = GetWindowContext(); wc && !wc->Children().IsEmpty()) {
+    auto margin = DOMIntersectionObserver::LazyLoadingRootMargin();
+    const IntersectionInput input = DOMIntersectionObserver::ComputeInput(
+        *this,  nullptr, &margin);
     for (const RefPtr<BrowsingContext>& child : wc->Children()) {
-      UpdateEffectsOnBrowsingContext(child, input, hidden);
-    }
-  }
-  if (XRE_IsParentProcess()) {
-    if (auto* bc = GetBrowsingContext(); bc && bc->IsTop()) {
-      bc->Canonical()->CallOnAllTopDescendants(
-          [&](CanonicalBrowsingContext* aDescendant) {
-            UpdateEffectsOnBrowsingContext(aDescendant, input, hidden);
-            return CallState::Continue;
-          },
-           false);
+      Element* el = child->GetEmbedderElement();
+      if (!el) {
+        continue;
+      }
+      auto* rb = RemoteBrowser::GetFrom(el);
+      if (!rb) {
+        continue;
+      }
+      EffectsInfo info = [&] {
+        if (Hidden()) {
+          
+          
+          return EffectsInfo::FullyHidden();
+        }
+        const IntersectionOutput output = DOMIntersectionObserver::Intersect(
+            input, *el, DOMIntersectionObserver::BoxToUse::Content);
+        if (!output.Intersects()) {
+          
+          
+          return EffectsInfo::FullyHidden();
+        }
+        auto* frame = el->GetPrimaryFrame();
+        MOZ_ASSERT(frame, "How do we intersect with no frame?");
+        nsSubDocumentFrame* subDocFrame = do_QueryFrame(frame);
+        if (MOZ_UNLIKELY(NS_WARN_IF(!subDocFrame))) {
+          
+          
+          return EffectsInfo::FullyHidden();
+        }
+        Maybe<nsRect> visibleRect = subDocFrame->GetVisibleRect();
+        if (!visibleRect) {
+          
+          
+          
+          visibleRect.emplace(*output.mIntersectionRect -
+                              output.mTargetRect.TopLeft());
+        }
+        const gfx::MatrixScales rasterScale = subDocFrame->GetRasterScale();
+        const ParentLayerToScreenScale2D transformToAncestorScale =
+            ParentLayerToParentLayerScale(
+                frame->PresShell()->GetCumulativeResolution()) *
+            nsLayoutUtils::
+                GetTransformToAncestorScaleCrossProcessForFrameMetrics(frame);
+        return EffectsInfo::VisibleWithinRect(visibleRect, rasterScale,
+                                              transformToAncestorScale);
+      }();
+      rb->UpdateEffects(std::move(info));
     }
   }
   EnumerateSubDocuments([](Document& aDoc) {

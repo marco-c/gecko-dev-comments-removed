@@ -3138,6 +3138,10 @@
         usingPreloadedContent,
       };
 
+      if (BookmarkingUI.isOnNewTabPage(uri)) {
+        this.getPanel(b).classList.add("newTabBrowserPanel");
+      }
+
       
       
       this.setDefaultIcon(tab, uri);
@@ -7228,6 +7232,13 @@
           if (this.mTab.hasAttribute("muted")) {
             this.mTab.linkedBrowser.mute();
           }
+
+          gBrowser
+            .getPanel(this.mBrowser)
+            .classList.toggle(
+              "newTabBrowserPanel",
+              BookmarkingUI.isOnNewTabPage(aLocation)
+            );
 
           if (gBrowser.isFindBarInitialized(this.mTab)) {
             let findBar = gBrowser.getCachedFindBar(this.mTab);
