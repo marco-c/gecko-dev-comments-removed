@@ -8,11 +8,11 @@ import React, {
   createFactory,
 } from "devtools/client/shared/vendor/react";
 import { div, button } from "devtools/client/shared/vendor/react-dom-factories";
-import SearchInput from "../shared/SearchInput";
+import EventListeners from "../shared/EventListeners";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import {
   getSelectedTraceIndex,
-  getTopTraces,
+  getFilteredTopTraces,
   getAllTraces,
   getTraceChildren,
   getTraceParents,
@@ -32,6 +32,11 @@ const {
 const {
   HTMLTooltip,
 } = require("resource://devtools/client/shared/widgets/tooltip/HTMLTooltip.js");
+
+const {
+  TabPanel,
+  Tabs,
+} = require("resource://devtools/client/shared/components/tabs/Tabs.js");
 
 import actions from "../../actions/index";
 
@@ -58,6 +63,9 @@ export class Tracer extends Component {
 
       
       renderedTraceCount: 0,
+
+      
+      selectedTabIndex: 0,
     };
 
     this.onSliderClick = this.onSliderClick.bind(this);
@@ -177,8 +185,10 @@ export class Tracer extends Component {
       traceChildren,
       traceParents,
     } = this.props;
-    if (!topTraces.length) {
+    
+    if (!allTraces.length) {
       if (!this.props.isTracing) {
+        
         return div(
           { className: "tracer-message" },
           "Tracer is off, or pending for next interaction/load."
@@ -190,7 +200,21 @@ export class Tracer extends Component {
       );
     }
 
-    const { searchStrings } = this.state;
+    
+    
+    if (!topTraces.length) {
+      
+      if (this.state.renderedTraceCount != this.props.traceCount) {
+        return div(
+          { className: "tracer-message" },
+          "All traces have been filtered out, in the slice of the record"
+        );
+      }
+      return div(
+        { className: "tracer-message" },
+        "All traces have been filtered out"
+      );
+    }
 
     
     let { startIndex, endIndex } = this.state;
@@ -245,27 +269,6 @@ export class Tracer extends Component {
         results.push(startIndex);
         collectAllSiblings(traceParents, traceChildren, startIndex, results);
         topTraces.unshift(...results);
-      }
-    }
-
-    if (searchStrings) {
-      topTraces = topTraces.filter(traceIndex => {
-        const trace = allTraces[traceIndex];
-        if (trace[TRACER_FIELDS_INDEXES.TYPE] != "event") {
-          return false;
-        }
-        let label = trace[TRACER_FIELDS_INDEXES.EVENT_NAME];
-        if (!label) {
-          return false;
-        }
-        label = label.toLowerCase();
-        return searchStrings.some(search => label.includes(search));
-      });
-      if (!topTraces.length) {
-        return div(
-          { className: "tracer-message" },
-          "No trace matches for the current search"
-        );
       }
     }
 
@@ -406,43 +409,15 @@ export class Tracer extends Component {
       this.state.startIndex + mousePositionRatio * this.state.renderedTraceCount
     );
 
-    this.props.selectTrace(index);
-  }
-
-  searchInputOnChange = e => {
+    const { traceParents } = this.props;
+    const parentIndex = getTraceParentIndex(traceParents, index);
     
     
-    
-    const searchStrings = e.target.value
-      .split(",")
-      .map(search => search.trim().toLowerCase())
-      .filter(search => !!search.length);
-    if (searchStrings.length) {
-      this.setState({
-        searchStrings,
-      });
-    } else {
-      this.setState({
-        searchStrings: null,
-      });
+    if (!this.props.topTraces.includes(parentIndex)) {
+      return;
     }
-  };
 
-  renderSearchInput() {
-    return React.createElement(SearchInput, {
-      query: this.state.query,
-      count: 0,
-      placeholder: "Search DOM Events (comma separated list)",
-      size: "small",
-      showErrorEmoji: false,
-      isLoading: false,
-      onChange: this.searchInputOnChange,
-      onKeyDown: () => {},
-      showClose: false,
-      showExcludePatterns: false,
-      showSearchModifiers: false,
-      searchOptions: {},
-    });
+    this.props.selectTrace(index);
   }
 
   onSliderWheel(event) {
@@ -530,6 +505,9 @@ export class Tracer extends Component {
   }
 
   focusOnTrace(traceIndex) {
+    
+    this.setState({ selectedTabIndex: 0 });
+
     const lastTraceIndex = findLastTraceIndex(
       this.props.traceChildren,
       traceIndex
@@ -682,15 +660,17 @@ export class Tracer extends Component {
         classnames.push("selected-after");
       }
     }
+
+    const isZoomed = this.state.renderedTraceCount != this.props.traceCount;
     return div(
       {
         className: "tracer-timeline",
-        ref: "timeline",
-        onWheel: this.onSliderWheel,
       },
       div(
         {
           className: `tracer-slider-box ${classnames.join(" ")}`,
+          ref: "timeline",
+          onWheel: this.onSliderWheel,
         },
         div(
           {
@@ -716,13 +696,20 @@ export class Tracer extends Component {
           this.renderEventsInSlider(),
           this.renderMutationsInSlider()
         )
-      )
+      ),
+      isZoomed
+        ? button(
+            {
+              className: "tracer-reset-zoom",
+              onClick: this.resetZoom,
+            },
+            "Reset zoom"
+          )
+        : null
     );
   }
 
   render() {
-    const isZoomed = this.state.renderedTraceCount != this.props.traceCount;
-
     const { runtimeVersions } = this.props;
 
     return div(
@@ -751,25 +738,36 @@ export class Tracer extends Component {
               },
               `Client and remote runtime have different versions (${runtimeVersions.localPlatformVersion} vs ${runtimeVersions.remotePlatformVersion}) . The Tracer may be broken because of protocol changes between these two versions. Please upgrade or downgrade one of the two to use the same major version.`
             )
-          : null,
-        this.renderSearchInput()
+          : null
       ),
-      isZoomed
-        ? div(
-            {
-              className: "tracer-timeline-toolbar",
-            },
-            button(
-              {
-                className: "tracer-reset-zoom",
-                onClick: this.resetZoom,
-              },
-              "Reset zoom"
-            )
-          )
-        : null,
       this.renderVerticalSliders(),
-      this.renderTree()
+      React.createElement(
+        Tabs,
+        {
+          activeTab: this.state.selectedTabIndex || 0,
+          onAfterChange: index => {
+            this.setState({ selectedTabIndex: index });
+          },
+        },
+        React.createElement(
+          TabPanel,
+          {
+            id: "tracer-traces",
+            title: "Call Traces",
+          },
+          this.renderTree()
+        ),
+        React.createElement(
+          TabPanel,
+          {
+            id: "tracer-events",
+            title: "DOM Events",
+          },
+          React.createElement(EventListeners, {
+            panelKey: "tracer",
+          })
+        )
+      )
     );
   }
 }
@@ -822,18 +820,43 @@ function collectAllSiblings(traceParents, traceChildren, traceIndex, results) {
 
 function getEventClassNameFromTraceEventName(eventName) {
   let eventType = "other";
-  if (eventName.startsWith("mouse") || eventName.startsWith("click")) {
+  
+  if (
+    eventName.startsWith("global.mouse") ||
+    eventName.startsWith("global.click") ||
+    eventName.startsWith("node.mouse") ||
+    eventName.startsWith("node.click")
+  ) {
     eventType = "mouse";
-  } else if (eventName.startsWith(" key")) {
+  } else if (
+    eventName.startsWith("global.key") ||
+    eventName.startsWith("node.key")
+  ) {
     eventType = "key";
   }
   return eventType;
 }
 
+
+
+
+
+
+
+
+
+function getTraceParentIndex(traceParents, index) {
+  const parentIndex = traceParents[index];
+  if (parentIndex == undefined) {
+    return index;
+  }
+  return getTraceParentIndex(traceParents, parentIndex);
+}
+
 const mapStateToProps = state => {
   return {
     isTracing: getIsCurrentlyTracing(state),
-    topTraces: getTopTraces(state),
+    topTraces: getFilteredTopTraces(state),
     allTraces: getAllTraces(state),
     traceChildren: getTraceChildren(state),
     traceParents: getTraceParents(state),

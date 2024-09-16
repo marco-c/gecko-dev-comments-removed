@@ -20,34 +20,40 @@ function generalEvent(groupID, eventType, condition) {
     name: eventType,
     message: `DOM '${eventType}' event`,
     eventType,
-    filter: "general",
+    
+    targetTypes: ["global", "node"],
     condition,
   };
 }
 function nodeEvent(groupID, eventType) {
   return {
     ...generalEvent(groupID, eventType),
-    filter: "node",
+    targetTypes: ["node"],
   };
 }
 function mediaNodeEvent(groupID, eventType) {
   return {
     ...generalEvent(groupID, eventType),
-    filter: "media",
+    targetTypes: ["node"],
+
+    
+    
+    isMediaEvent: true,
   };
 }
 function globalEvent(groupID, eventType) {
   return {
     ...generalEvent(groupID, eventType),
     message: `Global '${eventType}' event`,
-    filter: "global",
+    
+    targetTypes: ["global"],
   };
 }
 function xhrEvent(groupID, eventType) {
   return {
     ...generalEvent(groupID, eventType),
     message: `XHR '${eventType}' event`,
-    filter: "xhr",
+    targetTypes: ["xhr"],
   };
 }
 
@@ -55,7 +61,7 @@ function webSocketEvent(groupID, eventType) {
   return {
     ...generalEvent(groupID, eventType),
     message: `WebSocket '${eventType}' event`,
-    filter: "websocket",
+    targetTypes: ["websocket"],
   };
 }
 
@@ -63,7 +69,7 @@ function workerEvent(eventType) {
   return {
     ...generalEvent("worker", eventType),
     message: `Worker '${eventType}' event`,
-    filter: "worker",
+    targetTypes: ["worker"],
   };
 }
 
@@ -371,23 +377,10 @@ for (const eventBP of FLAT_EVENTS) {
     }
     SIMPLE_EVENTS[notificationType] = eventBP.id;
   } else if (eventBP.type === "event") {
-    const { eventType, filter } = eventBP;
+    const { eventType, targetTypes } = eventBP;
 
-    let targetTypes;
-    if (filter === "global") {
-      targetTypes = ["global"];
-    } else if (filter === "xhr") {
-      targetTypes = ["xhr"];
-    } else if (filter === "websocket") {
-      targetTypes = ["websocket"];
-    } else if (filter === "worker") {
-      targetTypes = ["worker"];
-    } else if (filter === "general") {
-      targetTypes = ["global", "node"];
-    } else if (filter === "node" || filter === "media") {
-      targetTypes = ["node"];
-    } else {
-      throw new Error("Unexpected filter type");
+    if (!Array.isArray(targetTypes) || !targetTypes.length) {
+      throw new Error("Expect a targetTypes array for each event definition");
     }
 
     for (const targetType of targetTypes) {
@@ -435,7 +428,9 @@ function eventBreakpointForNotification(dbg, notification) {
     }
     const eventBreakpoint = EVENTS_BY_ID[id];
 
-    if (eventBreakpoint.filter === "media") {
+    
+    
+    if (eventBreakpoint.isMediaEvent) {
       const currentTarget = evt.getProperty("currentTarget").return;
       if (!currentTarget) {
         return null;
@@ -496,6 +491,14 @@ exports.getAvailableEventBreakpoints = getAvailableEventBreakpoints;
 
 
 
+
+
+
+
+
+
+
+
 function getAvailableEventBreakpoints(global) {
   const available = [];
   for (const { name, items } of AVAILABLE_BREAKPOINTS) {
@@ -505,7 +508,19 @@ function getAvailableEventBreakpoints(global) {
         .filter(item => !item.condition || item.condition(global))
         .map(item => ({
           id: item.id,
+
+          
           name: item.name,
+
+          
+          type: item.type,
+
+          
+          notificationType: item.notificationType,
+
+          
+          eventType: item.eventType,
+          targetTypes: item.targetTypes,
         })),
     });
   }

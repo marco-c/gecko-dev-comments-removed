@@ -170,7 +170,9 @@ async function onTargetAvailable({ targetFront }) {
 
   
   
-  actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
+  actions
+    .addEventListenerBreakpoints("breakpoint", [])
+    .catch(e => console.error(e));
 
   await actions.addTarget(targetFront);
 }
