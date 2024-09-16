@@ -12,6 +12,7 @@ use style_traits::ToCss;
 
 use crate::values::animated::ToAnimatedZero;
 use crate::values::generics::ratio::Ratio;
+use crate::values::generics::Optional;
 use crate::values::DashedIdent;
 
 
@@ -227,7 +228,6 @@ pub struct GenericAspectRatio<N> {
 }
 
 pub use self::GenericAspectRatio as AspectRatio;
-use crate::values::generics::Optional;
 
 impl<N> AspectRatio<N> {
     
@@ -251,16 +251,26 @@ impl<N> ToAnimatedZero for AspectRatio<N> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem, ToComputedValue, ToResolvedValue)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToShmem,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+)]
 #[repr(C)]
-pub struct GenericAnchorFunction<Percentage, LengthPercentage>
-where
-    Percentage: ToCss,
-    LengthPercentage: ToCss,
-{
+pub struct GenericAnchorFunction<Percentage, LengthPercentage> {
     
     
-    pub target_element: Optional<DashedIdent>,
+    #[animation(constant)]
+    pub target_element: DashedIdent,
     
     
     pub side: AnchorSide<Percentage>,
@@ -278,8 +288,8 @@ where
         W: Write,
     {
         dest.write_str("anchor(")?;
-        if let Some(t) = self.target_element.as_ref() {
-            t.to_css(dest)?;
+        if !self.target_element.is_empty() {
+            self.target_element.to_css(dest)?;
             dest.write_str(" ")?;
         }
         self.side.to_css(dest)?;
@@ -294,7 +304,21 @@ where
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, Parse, ToComputedValue, ToResolvedValue
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    Parse,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
 )]
 #[repr(u8)]
 pub enum AnchorSideKeyword {
@@ -326,7 +350,21 @@ pub enum AnchorSideKeyword {
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem, ToComputedValue, ToResolvedValue
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
 )]
 #[repr(C)]
 pub enum AnchorSide<P> {

@@ -6,7 +6,7 @@
 
 use super::{Context, Number, ToComputedValue};
 use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
-use crate::values::computed::{NonNegativeNumber, Zoom, Percentage};
+use crate::values::computed::{NonNegativeNumber, Percentage, Zoom};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
     GenericLengthOrNumber, GenericLengthPercentageOrNormal, GenericMaxSize, GenericSize,
@@ -118,33 +118,6 @@ macro_rules! computed_length_percentage_or_auto {
 
 
 pub type Inset = generics::GenericInset<Percentage, LengthPercentage>;
-
-impl ToAnimatedValue for Inset {
-    type AnimatedValue = LengthPercentageOrAuto;
-
-    #[inline]
-    fn to_animated_value(self, context: &AnimatedContext) -> Self::AnimatedValue {
-        match self {
-            Self::LengthPercentage(l) => {
-                Self::AnimatedValue::LengthPercentage(l.to_animated_value(context))
-            },
-            Self::Auto => Self::AnimatedValue::Auto,
-            
-            Self::AnchorFunction(_) => Self::AnimatedValue::auto(),
-        }
-    }
-
-    #[inline]
-    fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        
-        match animated {
-            Self::AnimatedValue::Auto => Self::Auto,
-            Self::AnimatedValue::LengthPercentage(l) => {
-                Self::LengthPercentage(LengthPercentage::from_animated_value(l))
-            },
-        }
-    }
-}
 
 
 pub type LengthPercentageOrAuto = generics::GenericLengthPercentageOrAuto<LengthPercentage>;
