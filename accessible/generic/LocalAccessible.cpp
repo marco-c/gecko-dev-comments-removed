@@ -3337,6 +3337,15 @@ void LocalAccessible::SendCache(uint64_t aCacheDomain,
     return;
   }
 
+  
+  const uint64_t domainsToSend =
+      nsAccessibilityService::GetActiveCacheDomains() & aCacheDomain;
+
+  
+  if (domainsToSend == CacheDomain::None) {
+    return;
+  }
+
   DocAccessibleChild* ipcDoc = mDoc->IPCDoc();
   if (!ipcDoc) {
     
@@ -3347,7 +3356,7 @@ void LocalAccessible::SendCache(uint64_t aCacheDomain,
   }
 
   RefPtr<AccAttributes> fields =
-      BundleFieldsForCache(aCacheDomain, aUpdateType);
+      BundleFieldsForCache(domainsToSend, aUpdateType);
   if (!fields->Count()) {
     return;
   }
@@ -3369,7 +3378,8 @@ void LocalAccessible::SendCache(uint64_t aCacheDomain,
 }
 
 already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
-    uint64_t aCacheDomain, CacheUpdateType aUpdateType) {
+    uint64_t aCacheDomain, CacheUpdateType aUpdateType,
+    uint64_t aInitialDomains) {
   RefPtr<AccAttributes> fields = new AccAttributes();
 
   

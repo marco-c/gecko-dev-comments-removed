@@ -6,6 +6,7 @@
 #ifndef __nsAccessibilityService_h__
 #define __nsAccessibilityService_h__
 
+#include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/DocManager.h"
 #include "mozilla/a11y/FocusManager.h"
 #include "mozilla/a11y/Platform.h"
@@ -102,6 +103,10 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
  public:
   typedef mozilla::a11y::LocalAccessible LocalAccessible;
   typedef mozilla::a11y::DocAccessible DocAccessible;
+
+  static const uint64_t kDefaultCacheDomains =
+      mozilla::a11y::CacheDomain::NameAndDescription |
+      mozilla::a11y::CacheDomain::State;
 
   
   NS_IMETHOD ListenersChanged(nsIArray* aEventChanges) override;
@@ -273,6 +278,15 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
+  void SetCacheDomains(uint64_t aCacheDomains);
+
+  bool CacheDomainIsActive(uint64_t aCacheDomain) const {
+    return (gCacheDomains & aCacheDomain) != mozilla::a11y::CacheDomain::None;
+  }
+
+  
+
+
 
 
 
@@ -331,6 +345,8 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
     ePlatformAPI = 1 << 2,
   };
 
+  static uint64_t GetActiveCacheDomains() { return gCacheDomains; }
+
 #if defined(ANDROID)
   static mozilla::Monitor& GetAndroidMonitor();
 #endif
@@ -346,7 +362,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  bool Init();
+  bool Init(uint64_t aCacheDomains = kDefaultCacheDomains);
 
   
 
@@ -396,6 +412,11 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   static uint32_t gConsumers;
 
   
+
+
+  static uint64_t gCacheDomains;
+
+  
   using MarkupMap = nsTHashMap<nsAtom*, const mozilla::a11y::MarkupMapInfo*>;
   MarkupMap mHTMLMarkupMap;
   MarkupMap mMathMLMarkupMap;
@@ -420,7 +441,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   nsTHashMap<nsAtom*, const mozilla::a11y::XULMarkupMapInfo*> mXULMarkupMap;
 
   friend nsAccessibilityService* GetAccService();
-  friend nsAccessibilityService* GetOrCreateAccService(uint32_t);
+  friend nsAccessibilityService* GetOrCreateAccService(uint32_t, uint64_t);
   friend void MaybeShutdownAccService(uint32_t);
   friend void mozilla::a11y::PrefChanged(const char*, void*);
   friend mozilla::a11y::FocusManager* mozilla::a11y::FocusMgr();
@@ -442,7 +463,8 @@ inline nsAccessibilityService* GetAccService() {
 
 
 nsAccessibilityService* GetOrCreateAccService(
-    uint32_t aNewConsumer = nsAccessibilityService::ePlatformAPI);
+    uint32_t aNewConsumer = nsAccessibilityService::ePlatformAPI,
+    uint64_t aCacheDomains = nsAccessibilityService::GetActiveCacheDomains());
 
 
 

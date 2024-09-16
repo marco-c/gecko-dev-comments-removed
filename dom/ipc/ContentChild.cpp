@@ -2557,11 +2557,11 @@ mozilla::ipc::IPCResult ContentChild::RecvFlushMemory(const nsString& reason) {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvActivateA11y() {
+mozilla::ipc::IPCResult ContentChild::RecvActivateA11y(uint64_t aCacheDomains) {
 #ifdef ACCESSIBILITY
   
   
-  GetOrCreateAccService(nsAccessibilityService::eMainProcess);
+  GetOrCreateAccService(nsAccessibilityService::eMainProcess, aCacheDomains);
 #endif  
   return IPC_OK();
 }
@@ -2571,6 +2571,18 @@ mozilla::ipc::IPCResult ContentChild::RecvShutdownA11y() {
   
   
   MaybeShutdownAccService(nsAccessibilityService::eMainProcess);
+#endif
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvSetCacheDomains(
+    uint64_t aCacheDomains) {
+#ifdef ACCESSIBILITY
+  nsAccessibilityService* accService = GetAccService();
+  if (!accService) {
+    return IPC_FAIL(this, "Accessibility service should exist");
+  }
+  accService->SetCacheDomains(aCacheDomains);
 #endif
   return IPC_OK();
 }

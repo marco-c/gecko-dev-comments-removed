@@ -60,8 +60,9 @@ AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
   
   
   if (!aAcc->Document()->IsAccessibleBeingMoved(aAcc)) {
-    fields =
-        aAcc->BundleFieldsForCache(CacheDomain::All, CacheUpdateType::Initial);
+    fields = aAcc->BundleFieldsForCache(
+        nsAccessibilityService::GetActiveCacheDomains(),
+        CacheUpdateType::Initial);
     if (fields->Count() == 0) {
       fields = nullptr;
     }

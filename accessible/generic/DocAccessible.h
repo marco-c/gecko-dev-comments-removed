@@ -8,6 +8,7 @@
 
 #include "HyperTextAccessible.h"
 #include "AccEvent.h"
+#include "nsAccessibilityService.h"
 
 #include "nsClassHashtable.h"
 #include "nsTHashMap.h"
@@ -118,7 +119,8 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-  void QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain);
+  void QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain,
+                        bool aBypassActiveDomains = false);
 
   
 
@@ -560,7 +562,9 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-  void ProcessQueuedCacheUpdates();
+
+
+  void ProcessQueuedCacheUpdates(uint64_t aInitialDomains = 0);
 
   
 
@@ -816,6 +820,12 @@ class DocAccessible : public HyperTextAccessible,
   RefPtr<NotificationController> mNotificationController;
   friend class EventTree;
   friend class NotificationController;
+
+  
+
+
+
+  friend class ::nsAccessibilityService;
 
  private:
   void SetRoleMapEntryForDoc(dom::Element* aElement);

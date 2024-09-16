@@ -1617,7 +1617,7 @@ void ContentParent::Init() {
   
   
   if (GetAccService()) {
-    Unused << SendActivateA11y();
+    Unused << SendActivateA11y(nsAccessibilityService::GetActiveCacheDomains());
   }
 #endif  
 
@@ -3808,7 +3808,8 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     if (*aData == '1') {
       
       
-      Unused << SendActivateA11y();
+      Unused << SendActivateA11y(
+          nsAccessibilityService::GetActiveCacheDomains());
     } else {
       
       
