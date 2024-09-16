@@ -1034,83 +1034,83 @@ static bool EvaluateInEnv(
     return false;
   }
 
-  JS::Rooted<JSObject*> env(cx, envArg);
-  if (evalOptions.kind() == EvalOptions::EnvKind::FrameWithExtraBindings ||
-      evalOptions.kind() ==
-          EvalOptions::EnvKind::GlobalWithExtraInnerBindings) {
-    
-    env = CreateBindingsEnv(cx, env, bindingKeys, bindingValues);
-    if (!env) {
-      return false;
-    }
-  }
-
-  if (evalOptions.kind() == EvalOptions::EnvKind::Frame ||
-      evalOptions.kind() == EvalOptions::EnvKind::FrameWithExtraBindings) {
-    options.setNonSyntacticScope(true);
-
-    Rooted<Scope*> scope(cx,
-                         GlobalScope::createEmpty(cx, ScopeKind::NonSyntactic));
-    if (!scope) {
-      return false;
-    }
-
-    RootedScript script(
-        cx, frontend::CompileEvalScript(cx, options, srcBuf, scope, env));
-    if (!script) {
-      return false;
-    }
-
-    return ExecuteKernel(cx, script, env, frame, rval);
-  }
-
   
-  
-  
-  
-  
-
-  if (evalOptions.kind() ==
-      EvalOptions::EnvKind::GlobalWithExtraOuterBindings) {
-    options.setNonSyntacticScope(true);
-
-    MOZ_ASSERT(env == &cx->global()->lexicalEnvironment());
-
-    JS::Rooted<JSObject*> bindingsEnv(cx);
-
-    AutoReportFrontendContext fc(cx);
-    RootedScript script(cx, frontend::CompileGlobalScriptWithExtraBindings(
-                                cx, &fc, options, srcBuf, bindingKeys,
-                                bindingValues, &bindingsEnv));
-    if (!script) {
-      return false;
+  JS::Rooted<JSScript*> script(cx);
+  JS::Rooted<JSObject*> env(cx);
+  switch (evalOptions.kind()) {
+    case EvalOptions::EnvKind::FrameWithExtraBindings: {
+      env = CreateBindingsEnv(cx, envArg, bindingKeys, bindingValues);
+      if (!env) {
+        return false;
+      }
+      [[fallthrough]];
     }
+    case EvalOptions::EnvKind::Frame: {
+      
+      if (!env) {
+        env = envArg;
+      }
 
-    return ExecuteKernel(cx, script, bindingsEnv, frame, rval);
-  }
+      options.setNonSyntacticScope(true);
 
-  if (evalOptions.kind() ==
-      EvalOptions::EnvKind::GlobalWithExtraInnerBindings) {
-    options.setNonSyntacticScope(true);
+      Rooted<Scope*> scope(
+          cx, GlobalScope::createEmpty(cx, ScopeKind::NonSyntactic));
+      if (!scope) {
+        return false;
+      }
 
-    AutoReportFrontendContext fc(cx);
-    RootedScript script(cx,
-                        frontend::CompileGlobalScript(cx, &fc, options, srcBuf,
-                                                      ScopeKind::NonSyntactic));
-    if (!script) {
-      return false;
+      script = frontend::CompileEvalScript(cx, options, srcBuf, scope, env);
+      if (!script) {
+        return false;
+      }
+      break;
     }
+    case EvalOptions::EnvKind::Global: {
+      AutoReportFrontendContext fc(cx);
+      script = frontend::CompileGlobalScript(cx, &fc, options, srcBuf,
+                                             ScopeKind::Global);
+      if (!script) {
+        return false;
+      }
 
-    return ExecuteKernel(cx, script, env, frame, rval);
-  }
+      env = envArg;
+      break;
+    }
+    case EvalOptions::EnvKind::GlobalWithExtraOuterBindings: {
+      
+      
+      
+      
+      
 
-  MOZ_ASSERT(evalOptions.kind() == EvalOptions::EnvKind::Global);
+      MOZ_ASSERT(envArg == &cx->global()->lexicalEnvironment());
 
-  AutoReportFrontendContext fc(cx);
-  RootedScript script(cx, frontend::CompileGlobalScript(
-                              cx, &fc, options, srcBuf, ScopeKind::Global));
-  if (!script) {
-    return false;
+      options.setNonSyntacticScope(true);
+
+      AutoReportFrontendContext fc(cx);
+      script = frontend::CompileGlobalScriptWithExtraBindings(
+          cx, &fc, options, srcBuf, bindingKeys, bindingValues, &env);
+      if (!script) {
+        return false;
+      }
+      break;
+    }
+    case EvalOptions::EnvKind::GlobalWithExtraInnerBindings: {
+      env = CreateBindingsEnv(cx, envArg, bindingKeys, bindingValues);
+      if (!env) {
+        return false;
+      }
+
+      options.setNonSyntacticScope(true);
+
+      AutoReportFrontendContext fc(cx);
+      script = frontend::CompileGlobalScript(cx, &fc, options, srcBuf,
+                                             ScopeKind::NonSyntactic);
+      if (!script) {
+        return false;
+      }
+      break;
+    }
   }
 
   return ExecuteKernel(cx, script, env, frame, rval);
