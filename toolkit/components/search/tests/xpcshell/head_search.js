@@ -281,25 +281,6 @@ function checkCountryResultTelemetry(aExpectedValue) {
 
 
 
-async function setupRemoteSettings() {
-  const settings = await RemoteSettings("hijack-blocklists");
-  sinon.stub(settings, "get").returns([
-    {
-      id: "load-paths",
-      matches: ["[addon]searchignore@mozilla.com"],
-      _status: "synced",
-    },
-    {
-      id: "submission-urls",
-      matches: ["ignore=true"],
-      _status: "synced",
-    },
-  ]);
-}
-
-
-
-
 
 
 
