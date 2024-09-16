@@ -70,7 +70,7 @@ add_task(async () => {
       
       let style = window.getComputedStyle(tabIconOverlay);
       Assert.equal(
-        style.listStyleImage,
+        style.backgroundImage,
         'url("chrome://browser/skin/tabbrowser/tab-audio-playing-small.svg")',
         "Got the tab-icon-overlay image"
       );
