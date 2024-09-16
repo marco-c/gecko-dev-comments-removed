@@ -169,6 +169,13 @@ class RenderTextureHost {
  protected:
   virtual ~RenderTextureHost();
 
+  
+  
+  
+  
+  virtual std::pair<gfx::Point, gfx::Point> GetUvCoords(
+      gfx::IntSize aTextureSize) const;
+
   bool mIsFromDRMSource;
 
   
