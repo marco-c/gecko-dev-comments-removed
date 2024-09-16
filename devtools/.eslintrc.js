@@ -57,12 +57,6 @@ module.exports = {
     {
       files: ["client/framework/**"],
       rules: {
-        "no-shadow": "off",
-      },
-    },
-    {
-      files: ["client/framework/**"],
-      rules: {
         strict: "off",
       },
     },
@@ -233,12 +227,6 @@ module.exports = {
     
     
     "no-return-assign": "error",
-    
-    
-    
-    
-    
-    "no-shadow": "error",
     
     
     "no-unused-vars": ["error", { argsIgnorePattern: "^_", vars: "all" }],

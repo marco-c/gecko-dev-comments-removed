@@ -35,6 +35,5 @@ module.exports = {
     
     
     "mozilla/use-chromeutils-generateqi": "off",
-    "no-shadow": "error",
   },
 };

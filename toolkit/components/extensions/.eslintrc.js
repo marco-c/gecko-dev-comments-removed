@@ -164,9 +164,6 @@ module.exports = {
     "no-return-assign": "error",
 
     
-    "no-shadow": "off",
-
-    
     "no-sync": "off",
 
     

@@ -29,9 +29,9 @@ function removeOverrides(config) {
   return config;
 }
 
-function readFile(path) {
+function readFile(filePath) {
   return fs
-    .readFileSync(path, { encoding: "utf-8" })
+    .readFileSync(filePath, { encoding: "utf-8" })
     .split("\n")
     .filter(p => p && !p.startsWith("#"));
 }
@@ -154,7 +154,7 @@ module.exports = {
     },
     {
       ...removeOverrides(xpcshellTestConfig),
-      files: testPaths.xpcshell.map(path => `${path}**`),
+      files: testPaths.xpcshell.map(filePath => `${filePath}**`),
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
     {
@@ -162,7 +162,7 @@ module.exports = {
       
       
       
-      files: testPaths.xpcshell.map(path => `${path}head*.js`),
+      files: testPaths.xpcshell.map(filePath => `${filePath}head*.js`),
       rules: {
         "no-unused-vars": [
           "error",
@@ -179,7 +179,7 @@ module.exports = {
       
       
       
-      files: testPaths.xpcshell.map(path => `${path}test*.js`),
+      files: testPaths.xpcshell.map(filePath => `${filePath}test*.js`),
       rules: {
         
         "no-unused-vars": [
@@ -193,12 +193,12 @@ module.exports = {
     },
     {
       ...removeOverrides(browserTestConfig),
-      files: testPaths.browser.map(path => `${path}**`),
+      files: testPaths.browser.map(filePath => `${filePath}**`),
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
     {
       ...removeOverrides(mochitestTestConfig),
-      files: testPaths.mochitest.map(path => `${path}**`),
+      files: testPaths.mochitest.map(filePath => `${filePath}**`),
       excludedFiles: [
         "**/*.jsm",
         "**/*.mjs",
@@ -207,7 +207,7 @@ module.exports = {
     },
     {
       ...removeOverrides(chromeTestConfig),
-      files: testPaths.chrome.map(path => `${path}**`),
+      files: testPaths.chrome.map(filePath => `${filePath}**`),
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
     {
@@ -218,8 +218,8 @@ module.exports = {
         "mozilla/simpletest": true,
       },
       files: [
-        ...testPaths.mochitest.map(path => `${path}/**/*.js`),
-        ...testPaths.chrome.map(path => `${path}/**/*.js`),
+        ...testPaths.mochitest.map(filePath => `${filePath}/**/*.js`),
+        ...testPaths.chrome.map(filePath => `${filePath}/**/*.js`),
       ],
       excludedFiles: ["**/*.jsm", "**/*.mjs", "**/*.sjs"],
     },
@@ -228,7 +228,7 @@ module.exports = {
       
       files: testPaths.xpcshell
         .concat(testPaths.browser)
-        .map(path => [`${path}/**/*.html`, `${path}/**/*.xhtml`])
+        .map(filePath => [`${filePath}/**/*.html`, `${filePath}/**/*.xhtml`])
         .flat(),
       rules: {
         
@@ -269,7 +269,7 @@ module.exports = {
     },
     {
       
-      files: httpTestingPaths.map(path => `${path}**`),
+      files: httpTestingPaths.map(filePath => `${filePath}**`),
       rules: {
         "@microsoft/sdl/no-insecure-url": "off",
       },

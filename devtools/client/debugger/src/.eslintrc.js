@@ -224,12 +224,6 @@ module.exports = {
     
     
     
-    
-    
-    "no-shadow": 2,
-    
-    
-    
     "no-sparse-arrays": 2,
     
     "no-sync": 0,
