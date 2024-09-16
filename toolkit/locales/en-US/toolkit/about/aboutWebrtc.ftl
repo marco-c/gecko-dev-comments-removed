@@ -33,9 +33,6 @@ about-webrtc-aec-logging-toggled-off-state-msg = Captured log files can be found
 # The autorefresh checkbox causes a stats section to autorefresh its content when checked
 about-webrtc-auto-refresh-label = Auto Refresh
 
-# Determines the default state of the Auto Refresh check boxes
-about-webrtc-auto-refresh-default-label = Auto Refresh By Default
-
 # A button which forces a refresh of displayed statistics
 about-webrtc-force-refresh-button = Refresh
 
@@ -103,7 +100,9 @@ about-webrtc-selected = Selected
 
 about-webrtc-save-page-label = Save Page
 about-webrtc-enable-logging-label = Enable WebRTC Log Preset
-about-webrtc-stats-heading = Session Statistics
+about-webrtc-peerconnections-section-heading = RTCPeerConnection Statistics
+about-webrtc-peerconnections-section-show-msg = Show RTCPeerConnection Statistics
+about-webrtc-peerconnections-section-hide-msg = Hide RTCPeerConnection Statistics
 about-webrtc-stats-clear = Clear History
 about-webrtc-log-heading = Connection Log
 about-webrtc-log-clear = Clear Log
@@ -187,7 +186,15 @@ about-webrtc-configuration-element-provided = Provided
 about-webrtc-configuration-element-not-provided = Not Provided
 
 # The options set by the user in about:config that could impact a WebRTC call
-about-webrtc-custom-webrtc-configuration-heading = User Set WebRTC Preferences
+about-webrtc-user-modified-configuration-heading = User Modified WebRTC Configuration
+
+## These are displayed on the button that shows or hides the
+## user modified configuration disclosure
+
+about-webrtc-user-modified-configuration-show-msg = Show User Modified Configuration
+about-webrtc-user-modified-configuration-hide-msg = Hide User Modified Configuration
+
+##
 
 # Section header for estimated bandwidths of WebRTC media flows
 about-webrtc-bandwidth-stats-heading = Estimated Bandwidth
@@ -227,7 +234,7 @@ about-webrtc-save-page-complete-msg = Page saved to: { $path }
 # Variables:
 #  $frames (Number) - The number of frames encoded or decoded.
 about-webrtc-frames =
-  { $frames ->
+  { NUMBER($frames) ->
       [one] { $frames } frame
      *[other] { $frames } frames
   }
@@ -236,7 +243,7 @@ about-webrtc-frames =
 # Variables:
 #  $channels (Number) - The number of channels encoded or decoded.
 about-webrtc-channels =
-  { $channels ->
+  { NUMBER($channels) ->
       [one] { $channels } channel
      *[other] { $channels } channels
   }
@@ -245,7 +252,7 @@ about-webrtc-channels =
 # Variables:
 #  $packets (Number) - The number of packets received.
 about-webrtc-received-label =
-  { $packets ->
+  { NUMBER($packets) ->
       [one] Received { $packets } packet
      *[other] Received { $packets } packets
   }
@@ -254,7 +261,7 @@ about-webrtc-received-label =
 # Variables:
 #  $packets (Number) - The number of packets lost.
 about-webrtc-lost-label =
-  { $packets ->
+  { NUMBER($packets) ->
       [one] Lost { $packets } packet
      *[other] Lost { $packets } packets
   }
@@ -263,7 +270,7 @@ about-webrtc-lost-label =
 # Variables:
 #  $packets (Number) - The number of packets sent.
 about-webrtc-sent-label =
-  { $packets ->
+  { NUMBER($packets) ->
       [one] Sent { $packets } packet
      *[other] Sent { $packets } packets
   }
