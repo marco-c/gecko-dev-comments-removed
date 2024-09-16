@@ -17,8 +17,10 @@ pub type AddressType = *mut ::libc::c_void;
             target_arch = "x86_64",
             any(target_env = "gnu", target_env = "musl")
         ),
-        all(target_arch = "x86", target_env = "gnu")
-    )
+        all(target_arch = "x86", target_env = "gnu"),
+        all(target_arch = "aarch64", target_env = "gnu"),
+        all(target_arch = "riscv64", target_env = "gnu"),
+    ),
 ))]
 use libc::user_regs_struct;
 
@@ -170,6 +172,92 @@ libc_enum! {
     }
 }
 
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+libc_enum! {
+    #[repr(i32)]
+    /// Defines a specific register set, as used in `PTRACE_GETREGSET` and `PTRACE_SETREGSET`.
+    #[non_exhaustive]
+    pub enum RegisterSetValue {
+        NT_PRSTATUS,
+        NT_PRFPREG,
+        NT_PRPSINFO,
+        NT_TASKSTRUCT,
+        NT_AUXV,
+    }
+}
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+
+
+
+
+
+
+
+pub unsafe trait RegisterSet {
+    
+    const VALUE: RegisterSetValue;
+
+    
+    type Regs;
+}
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+
+pub mod regset {
+    use super::*;
+
+    #[derive(Debug, Clone, Copy)]
+    
+    pub enum NT_PRSTATUS {}
+
+    unsafe impl RegisterSet for NT_PRSTATUS {
+        const VALUE: RegisterSetValue = RegisterSetValue::NT_PRSTATUS;
+        type Regs = user_regs_struct;
+    }
+
+    #[derive(Debug, Clone, Copy)]
+    
+    pub enum NT_PRFPREG {}
+
+    unsafe impl RegisterSet for NT_PRFPREG {
+        const VALUE: RegisterSetValue = RegisterSetValue::NT_PRFPREG;
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        type Regs = libc::user_fpregs_struct;
+        #[cfg(target_arch = "aarch64")]
+        type Regs = libc::user_fpsimd_struct;
+        #[cfg(target_arch = "riscv64")]
+        type Regs = libc::__riscv_mc_d_ext_state;
+    }
+}
+
 libc_bitflags! {
     /// Ptrace options used in conjunction with the PTRACE_SETOPTIONS request.
     /// See `man ptrace` for more details.
@@ -217,6 +305,12 @@ fn ptrace_peek(
 }
 
 
+
+
+
+
+
+
 #[cfg(all(
     target_os = "linux",
     any(
@@ -230,6 +324,57 @@ fn ptrace_peek(
 pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
     ptrace_get_data::<user_regs_struct>(Request::PTRACE_GETREGS, pid)
 }
+
+
+
+
+
+
+
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(target_arch = "aarch64", target_arch = "riscv64")
+))]
+pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
+    getregset::<regset::NT_PRSTATUS>(pid)
+}
+
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+pub fn getregset<S: RegisterSet>(pid: Pid) -> Result<S::Regs> {
+    let request = Request::PTRACE_GETREGSET;
+    let mut data = mem::MaybeUninit::<S::Regs>::uninit();
+    let mut iov = libc::iovec {
+        iov_base: data.as_mut_ptr().cast(),
+        iov_len: mem::size_of::<S::Regs>(),
+    };
+    unsafe {
+        ptrace_other(
+            request,
+            pid,
+            S::VALUE as i32 as AddressType,
+            (&mut iov as *mut libc::iovec).cast(),
+        )?;
+    };
+    Ok(unsafe { data.assume_init() })
+}
+
+
+
+
+
+
 
 
 #[cfg(all(
@@ -248,10 +393,53 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
             Request::PTRACE_SETREGS as RequestType,
             libc::pid_t::from(pid),
             ptr::null_mut::<c_void>(),
-            &regs as *const _ as *const c_void,
+            &regs as *const user_regs_struct as *const c_void,
         )
     };
     Errno::result(res).map(drop)
+}
+
+
+
+
+
+
+
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(target_arch = "aarch64", target_arch = "riscv64")
+))]
+pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
+    setregset::<regset::NT_PRSTATUS>(pid, regs)
+}
+
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+pub fn setregset<S: RegisterSet>(pid: Pid, mut regs: S::Regs) -> Result<()> {
+    let mut iov = libc::iovec {
+        iov_base: (&mut regs as *mut S::Regs).cast(),
+        iov_len: mem::size_of::<S::Regs>(),
+    };
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_SETREGSET,
+            pid,
+            S::VALUE as i32 as AddressType,
+            (&mut iov as *mut libc::iovec).cast(),
+        )?;
+    }
+    Ok(())
 }
 
 
@@ -543,17 +731,15 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
 
 
 
-
-
-
-
-
-pub unsafe fn write(
-    pid: Pid,
-    addr: AddressType,
-    data: *mut c_void,
-) -> Result<()> {
-    unsafe { ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop) }
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub fn write(pid: Pid, addr: AddressType, data: c_long) -> Result<()> {
+    unsafe {
+        
+        
+        
+        ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data as *mut c_void)
+            .map(drop)
+    }
 }
 
 
@@ -564,17 +750,13 @@ pub fn read_user(pid: Pid, offset: AddressType) -> Result<c_long> {
 
 
 
-
-
-
-
-
-pub unsafe fn write_user(
-    pid: Pid,
-    offset: AddressType,
-    data: *mut c_void,
-) -> Result<()> {
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub fn write_user(pid: Pid, offset: AddressType, data: c_long) -> Result<()> {
     unsafe {
-        ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data).map(drop)
+        
+        
+        
+        ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data as *mut c_void)
+            .map(drop)
     }
 }

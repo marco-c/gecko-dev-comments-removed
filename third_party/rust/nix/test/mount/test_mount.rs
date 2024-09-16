@@ -54,6 +54,8 @@ fn test_mount_tmpfs_without_flags_allows_rwx() {
     assert_eq!(buf, SCRIPT_CONTENTS);
 
     
+    let _m = FORK_MTX.lock();
+    
     assert_eq!(
         EXPECTED_STATUS,
         Command::new(&test_path)
@@ -130,6 +132,8 @@ fn test_mount_noexec_disallows_exec() {
     );
 
     
+    let _m = FORK_MTX.lock();
+    
     assert_eq!(
         EACCES,
         Command::new(&test_path)
@@ -168,6 +172,8 @@ fn test_mount_bind() {
             .and_then(|mut f| f.write(SCRIPT_CONTENTS))
             .unwrap_or_else(|e| panic!("write failed: {e}"));
 
+        
+        let _m = FORK_MTX.lock();
         umount(mount_point.path())
             .unwrap_or_else(|e| panic!("umount failed: {e}"));
     }

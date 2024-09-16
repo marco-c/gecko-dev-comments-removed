@@ -294,6 +294,8 @@ impl Usage {
     }
 
     
+    #[cfg_attr(apple_targets, doc = " in bytes.")]
+    #[cfg_attr(not(apple_targets), doc = " in kilobytes.")]
     pub fn max_rss(&self) -> c_long {
         self.0.ru_maxrss
     }

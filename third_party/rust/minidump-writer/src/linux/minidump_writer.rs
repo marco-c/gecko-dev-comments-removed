@@ -1,4 +1,6 @@
+pub use crate::linux::auxv::{AuxvType, DirectAuxvDumpInfo};
 use crate::{
+    auxv::AuxvDumpInfo,
     dir_section::{DirSection, DumpBuf},
     linux::{
         app_memory::AppMemoryList,
@@ -8,10 +10,10 @@ use crate::{
         maps_reader::{MappingInfo, MappingList},
         ptrace_dumper::PtraceDumper,
         sections::*,
-        thread_info::Pid,
     },
     mem_writer::{Buffer, MemoryArrayWriter, MemoryWriter, MemoryWriterError},
     minidump_format::*,
+    Pid,
 };
 use std::{
     io::{Seek, Write},
@@ -42,6 +44,7 @@ pub struct MinidumpWriter {
     pub crash_context: Option<CrashContext>,
     pub crashing_thread_context: CrashingThreadContext,
     pub stop_timeout: Duration,
+    pub direct_auxv_dump_info: Option<DirectAuxvDumpInfo>,
 }
 
 
@@ -71,6 +74,7 @@ impl MinidumpWriter {
             crash_context: None,
             crashing_thread_context: CrashingThreadContext::None,
             stop_timeout: STOP_TIMEOUT,
+            direct_auxv_dump_info: None,
         }
     }
 
@@ -119,8 +123,28 @@ impl MinidumpWriter {
 
     
     
+    
+    
+    
+    
+    
+    pub fn set_direct_auxv_dump_info(
+        &mut self,
+        direct_auxv_dump_info: DirectAuxvDumpInfo,
+    ) -> &mut Self {
+        self.direct_auxv_dump_info = Some(direct_auxv_dump_info);
+        self
+    }
+
+    
+    
     pub fn dump(&mut self, destination: &mut (impl Write + Seek)) -> Result<Vec<u8>> {
-        let mut dumper = PtraceDumper::new(self.process_id, self.stop_timeout)?;
+        let auxv = self
+            .direct_auxv_dump_info
+            .clone()
+            .map(AuxvDumpInfo::from)
+            .unwrap_or_default();
+        let mut dumper = PtraceDumper::new(self.process_id, self.stop_timeout, auxv)?;
         dumper.suspend_threads()?;
         dumper.late_init()?;
 
@@ -182,7 +206,7 @@ impl MinidumpWriter {
 
         let stack_copy = match PtraceDumper::copy_from_process(
             self.blamed_thread,
-            valid_stack_pointer as *mut libc::c_void,
+            valid_stack_pointer,
             stack_len,
         ) {
             Ok(x) => x,

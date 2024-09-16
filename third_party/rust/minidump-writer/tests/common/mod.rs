@@ -9,16 +9,21 @@ type Error = Box<dyn error::Error + std::marker::Send + std::marker::Sync>;
 pub type Result<T> = result::Result<T, Error>;
 
 fn build_command() -> Command {
-    let mut cmd = Command::new("cargo");
+    let mut cmd;
+    if let Some(binary) = std::env::var_os("TEST_HELPER") {
+        cmd = Command::new(binary);
+    } else {
+        cmd = Command::new("cargo");
+        cmd.args(["run", "-q", "--bin", "test"]);
 
-    cmd.env("RUST_BACKTRACE", "1")
-        .args(["run", "-q", "--bin", "test"]);
+        
+        
+        
+        
+        cmd.args(["--target", current_platform::CURRENT_PLATFORM, "--"]);
+    }
 
-    
-    
-    
-    
-    cmd.args(["--target", current_platform::CURRENT_PLATFORM, "--"]);
+    cmd.env("RUST_BACKTRACE", "1");
 
     cmd
 }
