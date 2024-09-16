@@ -15,6 +15,8 @@ fn main() {
 
     if minor >= 77 {
         println!("cargo:rustc-check-cfg=cfg(no_core_cstr)");
+        println!("cargo:rustc-check-cfg=cfg(no_core_error)");
+        println!("cargo:rustc-check-cfg=cfg(no_core_net)");
         println!("cargo:rustc-check-cfg=cfg(no_core_num_saturating)");
         println!("cargo:rustc-check-cfg=cfg(no_core_try_from)");
         println!("cargo:rustc-check-cfg=cfg(no_diagnostic_namespace)");
@@ -88,8 +90,20 @@ fn main() {
 
     
     
+    if minor < 77 {
+        println!("cargo:rustc-cfg=no_core_net");
+    }
+
+    
+    
     if minor < 78 {
         println!("cargo:rustc-cfg=no_diagnostic_namespace");
+    }
+
+    
+    
+    if minor < 81 {
+        println!("cargo:rustc-cfg=no_core_error");
     }
 }
 
