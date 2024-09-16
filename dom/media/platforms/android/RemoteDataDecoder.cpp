@@ -222,17 +222,6 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
         mJavaDecoder->IsAdaptivePlaybackSupported();
     mIsHardwareAccelerated = mJavaDecoder->IsHardwareAccelerated();
 
-    
-    
-    
-    
-    const auto hardware = java::sdk::Build::HARDWARE()->ToString();
-    if (hardware.EqualsASCII("mt6735") || hardware.EqualsASCII("kirin980") ||
-        hardware.EqualsASCII("mt8696")) {
-      mTransformOverride = Some(
-          gfx::Matrix4x4::Scaling(1.0, -1.0, 1.0).PostTranslate(0.0, 1.0, 0.0));
-    }
-
     mMediaInfoFlag = MediaInfoFlag::None;
     mMediaInfoFlag |= mIsHardwareAccelerated ? MediaInfoFlag::HardwareDecoding
                                              : MediaInfoFlag::SoftwareDecoding;
@@ -427,7 +416,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
       RefPtr<layers::Image> img = new layers::SurfaceTextureImage(
           mSurfaceHandle, inputInfo.mImageSize, false ,
           gl::OriginPos::BottomLeft, mConfig.HasAlpha(), forceBT709ColorSpace,
-          mTransformOverride);
+           Nothing());
       img->AsSurfaceTextureImage()->RegisterSetCurrentCallback(
           std::move(releaseSample));
 
@@ -568,9 +557,6 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
   const VideoInfo mConfig;
   java::GeckoSurface::GlobalRef mSurface;
   AndroidSurfaceTextureHandle mSurfaceHandle{};
-  
-  
-  Maybe<gfx::Matrix4x4> mTransformOverride;
   
   bool mIsCodecSupportAdaptivePlayback = false;
   

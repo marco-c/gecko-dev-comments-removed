@@ -120,12 +120,6 @@ wr::WrExternalImage RenderTextureHostSWGL::LockSWGL(
   }
   const PlaneInfo& plane = mPlanes[aChannelIndex];
 
-  const auto uvs = GetUvCoords(plane.mSize);
-
-  
-  
-  
-  
   
   layers::TextureHost::NativeTexturePolicy policy =
       layers::TextureHost::BackendNativeTexturePolicy(
@@ -133,9 +127,10 @@ wr::WrExternalImage RenderTextureHostSWGL::LockSWGL(
   return policy == layers::TextureHost::NativeTexturePolicy::FORBID
              ? RawDataToWrExternalImage((uint8_t*)plane.mData,
                                         plane.mStride * plane.mSize.height)
-             : NativeTextureToWrExternalImage(plane.mTexture, uvs.first.x,
-                                              uvs.first.y, uvs.second.x,
-                                              uvs.second.y);
+             : NativeTextureToWrExternalImage(
+                   plane.mTexture, 0.0, 0.0,
+                   static_cast<float>(plane.mSize.width),
+                   static_cast<float>(plane.mSize.height));
 }
 
 void RenderTextureHostSWGL::UnlockSWGL() {

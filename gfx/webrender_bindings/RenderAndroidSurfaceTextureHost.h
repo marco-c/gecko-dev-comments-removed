@@ -69,12 +69,9 @@ class RenderAndroidSurfaceTextureHost final : public RenderTextureHostSWGL {
   virtual ~RenderAndroidSurfaceTextureHost();
   bool EnsureAttachedToGLContext();
 
-  already_AddRefed<gfx::DataSourceSurface> ReadTexImage();
+  gfx::Matrix4x4 GetTextureTransform() const;
 
-  
-  
-  std::pair<gfx::Point, gfx::Point> GetUvCoords(
-      gfx::IntSize aTextureSize) const override;
+  already_AddRefed<gfx::DataSourceSurface> ReadTexImage();
 
   enum PrepareStatus {
     STATUS_NONE,
