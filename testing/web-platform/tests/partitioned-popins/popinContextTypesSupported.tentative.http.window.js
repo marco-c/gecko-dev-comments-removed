@@ -1,0 +1,13 @@
+
+
+
+'use strict';
+
+
+
+
+async_test(t => {
+  
+  assert_array_equals(window.popinContextTypesSupported(), []);
+  t.done();
+}, "Verify no PopinContextType is supported on an insecure page");
