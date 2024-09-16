@@ -27,5 +27,5 @@ async_test(t => {
       'fetchLater()', t,
       getDeferredFetchPolicyInIframeHelperUrl(
           `${baseUrl}${HTTPS_NOTSAMESITE_ORIGIN}`),
-      expect_feature_unavailable_default,  'deferred-fetch');
-}, `${description} disallows cross-origin navigation in an iframe.`);
+      expect_feature_available_default,  'deferred-fetch');
+}, `${description} allows cross-origin navigation in an iframe.`);
