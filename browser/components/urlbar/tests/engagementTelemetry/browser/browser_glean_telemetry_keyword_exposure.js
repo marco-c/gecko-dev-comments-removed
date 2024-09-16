@@ -10,6 +10,7 @@ const WAIT_FOR_PING_TIMEOUT_MS = 1000;
 requestLongerTimeout(3);
 
 add_setup(async function test_setup() {
+  await PlacesUtils.history.clear();
   Services.fog.testResetFOG();
 
   
@@ -72,7 +73,10 @@ add_task(async function oneKeyword_dupeMatches_terminal_1() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["example", "example"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: true } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: true } },
+    ],
   });
 });
 
@@ -80,7 +84,10 @@ add_task(async function oneKeyword_dupeMatches_terminal_2() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["example", "exampl", "example"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: true } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: true } },
+    ],
   });
 });
 
@@ -88,7 +95,10 @@ add_task(async function oneKeyword_dupeMatches_terminal_3() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["exam", "example", "example"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: true } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: true } },
+    ],
   });
 });
 
@@ -96,7 +106,10 @@ add_task(async function oneKeyword_dupeMatches_terminal_4() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["exam", "example", "exampl", "example"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: true } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: true } },
+    ],
   });
 });
 
@@ -104,7 +117,10 @@ add_task(async function oneKeyword_dupeMatches_nonterminal_1() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["example", "example", "exampl"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: false } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: false } },
+    ],
   });
 });
 
@@ -112,7 +128,10 @@ add_task(async function oneKeyword_dupeMatches_nonterminal_2() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["exam", "example", "example", "exampl"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: false } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: false } },
+    ],
   });
 });
 
@@ -120,7 +139,10 @@ add_task(async function oneKeyword_dupeMatches_nonterminal_3() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["example", "exam", "example", "exampl"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: false } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: false } },
+    ],
   });
 });
 
@@ -128,7 +150,10 @@ add_task(async function oneKeyword_dupeMatches_nonterminal_4() {
   await doTest({
     keywords: ["example"],
     searchStrings: ["exam", "example", "exampl", "example", "exampl"],
-    expectedEvents: [{ extra: { keyword: "example", terminal: false } }],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: false } },
+      { extra: { keyword: "example", terminal: false } },
+    ],
   });
 });
 
@@ -222,8 +247,8 @@ add_task(async function manyKeywords_dupeMatches_terminal() {
   await doTest({
     keywords,
     searchStrings,
-    expectedEvents: keywords.map((keyword, i) => ({
-      extra: { keyword, terminal: i == keywords.length - 1 },
+    expectedEvents: searchStrings.map((keyword, i) => ({
+      extra: { keyword, terminal: i == 2 * keywords.length - 1 },
     })),
   });
 });
@@ -234,9 +259,33 @@ add_task(async function manyKeywords_dupeMatches_nonterminal() {
   await doTest({
     keywords,
     searchStrings,
-    expectedEvents: keywords.map(keyword => ({
+    expectedEvents: [...keywords, ...keywords].map(keyword => ({
       extra: { keyword, terminal: false },
     })),
+  });
+});
+
+add_task(async function manyResults() {
+  await doTest({
+    keywords: [
+      
+      { keyword: "foo", resultType: "history" },
+      { keyword: "foo", resultType: "history" },
+      { keyword: "foo", resultType: "history" },
+      
+      { keyword: "bar", resultType: "history" },
+      { keyword: "bar", resultType: "bookmark" },
+      { keyword: "baz", resultType: "bookmark" },
+    ],
+    searchStrings: ["foo", "bar", "baz", "bar"],
+    expectedEvents: [
+      { extra: { keyword: "foo", result: "history", terminal: false } },
+      { extra: { keyword: "bar", result: "history", terminal: false } },
+      { extra: { keyword: "bar", result: "bookmark", terminal: false } },
+      { extra: { keyword: "baz", result: "bookmark", terminal: false } },
+      { extra: { keyword: "bar", result: "history", terminal: true } },
+      { extra: { keyword: "bar", result: "bookmark", terminal: true } },
+    ],
   });
 });
 
@@ -284,7 +333,6 @@ add_task(async function engagement() {
 });
 
 
-
 add_task(async function nimbus() {
   let keywords = ["foo", "bar", "baz"];
   await doTest({
@@ -311,46 +359,79 @@ add_task(async function privateWindow() {
   await BrowserTestUtils.closeWindow(privateWin);
 });
 
-add_task(async function invalidPotentialExposureKeywords_pref() {
-  await doTest({
-    keywords: "not an array of keywords",
-    searchStrings: ["example", "not an array of keywords"],
-    expectedEvents: [],
-  });
-});
-
-add_task(async function invalidPotentialExposureKeywords_nimbus() {
-  await doTest({
-    useNimbus: true,
-    keywords: "not an array of keywords",
-    searchStrings: ["example", "not an array of keywords"],
-    expectedEvents: [],
-  });
-});
-
 async function doTest({
   keywords,
   searchStrings,
   expectedEvents,
-  endSession = null,
   useNimbus = false,
   win = window,
+  endSession = () =>
+    UrlbarTestUtils.promisePopupClose(win, () => win.gURLBar.blur()),
 }) {
-  endSession ||= () =>
-    UrlbarTestUtils.promisePopupClose(win, () => win.gURLBar.blur());
+  
+  let exposureResults = "history,bookmark";
+  let resultSourceByType = {
+    history: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    bookmark: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+  };
 
+  
+  keywords = keywords.map(keyword =>
+    typeof keyword == "string" ? { keyword, resultType: "history" } : keyword
+  );
+
+  
+  
+  let provider = new UrlbarTestUtils.TestProvider({
+    priority: Infinity,
+    results: [],
+  });
+  let getMatchingKeywords = context =>
+    keywords.filter(
+      ({ keyword }) => keyword == context.trimmedLowerCaseSearchString
+    );
+  provider.isActive = context => {
+    return !!getMatchingKeywords(context).length;
+  };
+  provider.startQuery = (context, addCallback) => {
+    let kws = getMatchingKeywords(context);
+    for (let { resultType } of kws) {
+      let source = resultSourceByType[resultType];
+      if (!source) {
+        let msg = "No result source for type: " + resultType;
+        Assert.ok(false, msg);
+        throw new Error(msg);
+      }
+      addCallback(
+        provider,
+        new UrlbarResult(UrlbarUtils.RESULT_TYPE.URL, source, {
+          url: "https://example.com/",
+        })
+      );
+    }
+  };
+  UrlbarProvidersManager.registerProvider(provider);
+  registerCleanupFunction(() =>
+    UrlbarProvidersManager.unregisterProvider(provider)
+  );
+
+  
   let nimbusCleanup;
-  let keywordsJson = JSON.stringify(keywords);
   if (useNimbus) {
     nimbusCleanup = await UrlbarTestUtils.initNimbusFeature({
-      potentialExposureKeywords: keywordsJson,
+      exposureResults,
+      recordKeywordExposures: true,
     });
   } else {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.urlbar.potentialExposureKeywords", keywordsJson]],
+      set: [
+        ["browser.urlbar.exposureResults", exposureResults],
+        ["browser.urlbar.recordKeywordExposures", true],
+      ],
     });
   }
 
+  
   let pingPromise = waitForPing();
 
   for (let value of searchStrings) {
@@ -387,12 +468,23 @@ async function doTest({
     await SpecialPowers.popPrefEnv();
   }
   Services.fog.testResetFOG();
+  UrlbarProvidersManager.unregisterProvider(provider);
+
+  Assert.deepEqual(
+    [...UrlbarPrefs.get("exposureResults").values()],
+    [],
+    "Sanity check: exposureResults is empty after clearing prefs/uninstalling experiment"
+  );
+  Assert.ok(
+    !UrlbarPrefs.get("recordKeywordExposures"),
+    "Sanity check: recordKeywordExposures is false after clearing prefs/uninstalling experiment"
+  );
 }
 
 function waitForPing() {
   return new Promise(resolve => {
-    GleanPings.urlbarPotentialExposure.testBeforeNextSubmit(() => {
-      let events = Glean.urlbar.potentialExposure.testGetValue();
+    GleanPings.urlbarKeywordExposure.testBeforeNextSubmit(() => {
+      let events = Glean.urlbar.keywordExposure.testGetValue();
       info("testBeforeNextSubmit got events: " + JSON.stringify(events));
       resolve(events);
     });
@@ -404,13 +496,19 @@ function assertEvents(actual, expected) {
 
   
   
-  expected = expected.map(e => ({
-    category: "urlbar",
-    name: "potential_exposure",
+  expected = expected.map(e => {
     
     
-    ...stringifyBooleans(e),
-  }));
+    e = stringifyBooleans(e);
+    
+    
+    e.extra.result ??= "history";
+    return {
+      category: "urlbar",
+      name: "keyword_exposure",
+      ...e,
+    };
+  });
 
   
   
