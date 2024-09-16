@@ -28,86 +28,78 @@ NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmspaceFrame)
 
 nsMathMLmspaceFrame::~nsMathMLmspaceFrame() = default;
 
-nsresult nsMathMLmspaceFrame::AttributeChanged(int32_t aNameSpaceID,
-                                               nsAtom* aAttribute,
-                                               int32_t aModType) {
-  if (aNameSpaceID == kNameSpaceID_None) {
-    bool hasDirtyAttributes = false;
-    if (aAttribute == nsGkAtoms::width) {
-      mWidth.mState = Attribute::ParsingState::Dirty;
-      hasDirtyAttributes = true;
-    } else if (aAttribute == nsGkAtoms::height) {
-      mHeight.mState = Attribute::ParsingState::Dirty;
-      hasDirtyAttributes = true;
-    } else if (aAttribute == nsGkAtoms::depth_) {
-      mDepth.mState = Attribute::ParsingState::Dirty;
-      hasDirtyAttributes = true;
-    }
-    if (hasDirtyAttributes) {
-      InvalidateFrame();
-      
-      
-      
-      PresShell()->FrameNeedsReflow(
-          this, IntrinsicDirty::FrameAncestorsAndDescendants,
-          NS_FRAME_IS_DIRTY);
-    }
-    return NS_OK;
-  }
-  return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
-                                                  aModType);
-}
-
-nscoord nsMathMLmspaceFrame::CalculateAttributeValue(nsAtom* aAtom,
-                                                     Attribute& aAttribute,
-                                                     uint32_t aFlags,
-                                                     float aFontSizeInflation) {
-  if (aAttribute.mState == Attribute::ParsingState::Dirty) {
-    nsAutoString value;
-    aAttribute.mState = Attribute::ParsingState::Invalid;
-    mContent->AsElement()->GetAttr(aAtom, value);
-    if (!value.IsEmpty()) {
-      if (dom::MathMLElement::ParseNumericValue(
-              value, aAttribute.mValue, aFlags, PresContext()->Document())) {
-        aAttribute.mState = Attribute::ParsingState::Valid;
-      } else {
-        ReportParseError(aAtom->GetUTF16String(), value.get());
-      }
-    }
-  }
-  
-  
-  if (aAttribute.mState == Attribute::ParsingState::Invalid ||
-      aAttribute.mValue.GetUnit() == eCSSUnit_Percent) {
-    return 0;
-  }
-  return CalcLength(PresContext(), mComputedStyle, aAttribute.mValue,
-                    aFontSizeInflation);
-}
-
-nsresult nsMathMLmspaceFrame::Place(DrawTarget* aDrawTarget,
-                                    const PlaceFlags& aFlags,
-                                    ReflowOutput& aDesiredSize) {
+void nsMathMLmspaceFrame::ProcessAttributes(nsPresContext* aPresContext) {
+  nsAutoString value;
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
 
   
   
   
-  nscoord width = CalculateAttributeValue(
-      nsGkAtoms::width, mWidth, dom::MathMLElement::PARSE_ALLOW_NEGATIVE,
-      fontSizeInflation);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mWidth = 0;
+  mContent->AsElement()->GetAttr(nsGkAtoms::width, value);
+  if (!value.IsEmpty()) {
+    ParseNumericValue(value, &mWidth, dom::MathMLElement::PARSE_ALLOW_NEGATIVE,
+                      aPresContext, mComputedStyle, fontSizeInflation);
+  }
 
   
   
-  nscoord height =
-      CalculateAttributeValue(nsGkAtoms::height, mHeight, 0, fontSizeInflation);
-  nscoord depth =
-      CalculateAttributeValue(nsGkAtoms::depth_, mDepth, 0, fontSizeInflation);
+  
+  
+  
+  
+  
+  
+  
+  
+  mHeight = 0;
+  mContent->AsElement()->GetAttr(nsGkAtoms::height, value);
+  if (!value.IsEmpty()) {
+    ParseNumericValue(value, &mHeight, 0, aPresContext, mComputedStyle,
+                      fontSizeInflation);
+  }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mDepth = 0;
+  mContent->AsElement()->GetAttr(nsGkAtoms::depth_, value);
+  if (!value.IsEmpty()) {
+    ParseNumericValue(value, &mDepth, 0, aPresContext, mComputedStyle,
+                      fontSizeInflation);
+  }
+}
+
+void nsMathMLmspaceFrame::Reflow(nsPresContext* aPresContext,
+                                 ReflowOutput& aDesiredSize,
+                                 const ReflowInput& aReflowInput,
+                                 nsReflowStatus& aStatus) {
+  MarkInReflow();
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+
+  ProcessAttributes(aPresContext);
+
+  const auto& borderPadding = GetUsedBorderAndPadding();
   mBoundingMetrics = nsBoundingMetrics();
-  mBoundingMetrics.width = width;
-  mBoundingMetrics.ascent = height;
-  mBoundingMetrics.descent = depth;
+  mBoundingMetrics.width = mWidth + borderPadding.LeftRight();
+  mBoundingMetrics.ascent = mHeight + borderPadding.top;
+  mBoundingMetrics.descent = mDepth + borderPadding.bottom;
   mBoundingMetrics.leftBearing = 0;
   mBoundingMetrics.rightBearing = mBoundingMetrics.width;
 
@@ -116,10 +108,16 @@ nsresult nsMathMLmspaceFrame::Place(DrawTarget* aDrawTarget,
   aDesiredSize.Height() = mBoundingMetrics.ascent + mBoundingMetrics.descent;
   
   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+}
 
-  
-  auto borderPadding = GetBorderPaddingForPlace(aFlags);
-  InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
-                                  mBoundingMetrics);
+
+nsresult nsMathMLmspaceFrame::MeasureForWidth(DrawTarget* aDrawTarget,
+                                              ReflowOutput& aDesiredSize) {
+  ProcessAttributes(PresContext());
+  mBoundingMetrics = nsBoundingMetrics();
+  auto offsets = IntrinsicISizeOffsets();
+  mBoundingMetrics.width = mWidth + offsets.BorderPadding();
+  aDesiredSize.Width() = std::max(0, mBoundingMetrics.width);
+  aDesiredSize.mBoundingMetrics = mBoundingMetrics;
   return NS_OK;
 }
