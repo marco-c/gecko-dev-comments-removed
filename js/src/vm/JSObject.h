@@ -786,19 +786,6 @@ inline bool ToPrimitive(JSContext* cx, JSType preferredType,
 MOZ_ALWAYS_INLINE const char* GetObjectClassName(JSContext* cx,
                                                  HandleObject obj);
 
-
-
-
-
-
-
-
-JSObject* GetThisObject(JSObject* obj);
-
-JSObject* GetThisObjectOfLexical(JSObject* env);
-
-JSObject* GetThisObjectOfWith(JSObject* env);
-
 } 
 
 namespace js {

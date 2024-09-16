@@ -2699,30 +2699,6 @@ JSObject* js::ToObjectSlowForPropertyAccess(JSContext* cx, JS::HandleValue val,
   return PrimitiveToObject(cx, val);
 }
 
-JSObject* js::GetThisObject(JSObject* obj) {
-  
-  
-  if (obj->is<GlobalObject>()) {
-    return ToWindowProxyIfWindow(obj);
-  }
-
-  
-  
-  MOZ_ASSERT(obj->is<NonSyntacticVariablesObject>() ||
-             !obj->is<EnvironmentObject>());
-
-  return obj;
-}
-
-JSObject* js::GetThisObjectOfLexical(JSObject* env) {
-  return env->as<ExtensibleLexicalEnvironmentObject>().thisObject();
-}
-
-JSObject* js::GetThisObjectOfWith(JSObject* env) {
-  MOZ_ASSERT(env->is<WithEnvironmentObject>());
-  return GetThisObject(env->as<WithEnvironmentObject>().withThis());
-}
-
 class GetObjectSlotNameFunctor : public JS::TracingContext::Functor {
   JSObject* obj;
 

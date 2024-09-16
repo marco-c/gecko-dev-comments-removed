@@ -921,6 +921,12 @@ class ClassBodyLexicalEnvironmentObject
 };
 
 
+
+
+
+JSObject* GetThisObject(JSObject* obj);
+
+
 class ExtensibleLexicalEnvironmentObject : public LexicalEnvironmentObject {
  public:
   JSObject* thisObject() const;

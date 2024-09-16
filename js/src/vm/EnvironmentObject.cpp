@@ -703,6 +703,21 @@ WasmFunctionCallObject* WasmFunctionCallObject::createHollowForDebug(
 
 
 
+JSObject* js::GetThisObject(JSObject* obj) {
+  
+  
+  if (obj->is<GlobalObject>()) {
+    return ToWindowProxyIfWindow(obj);
+  }
+
+  
+  
+  MOZ_ASSERT_IF(obj->is<EnvironmentObject>(),
+                obj->is<NonSyntacticVariablesObject>());
+
+  return obj;
+}
+
 WithEnvironmentObject* WithEnvironmentObject::create(JSContext* cx,
                                                      HandleObject object,
                                                      HandleObject enclosing,
