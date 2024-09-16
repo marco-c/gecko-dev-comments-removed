@@ -230,6 +230,9 @@ def setup_pdfpaint_test(config, test_instance):
 
     pdf_files = set()
     for pdf_info in test_manifest:
+        if not pdf_info.get("talos", True):
+            
+            continue
         if pdf_info.get("password", None) is not None:
             
             continue
