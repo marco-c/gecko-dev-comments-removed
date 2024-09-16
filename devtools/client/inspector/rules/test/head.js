@@ -707,13 +707,20 @@ async function openEyedropper(view, swatch) {
 
 
 
+
+
+
 async function getPropertiesForRuleIndex(
   view,
   ruleIndex,
   addCompatibilityData = false
 ) {
   const declaration = new Map();
-  const ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
+  let nodeIndex;
+  if (Array.isArray(ruleIndex)) {
+    [ruleIndex, nodeIndex] = ruleIndex;
+  }
+  const ruleEditor = getRuleViewRuleEditor(view, ruleIndex, nodeIndex);
 
   for (const currProp of ruleEditor?.rule?.textProps || []) {
     const icon = currProp.editor.unusedState;
@@ -922,6 +929,9 @@ async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
 
 
 
+
+
+
 async function checkDeclarationIsActive(view, ruleIndex, declaration) {
   const declarations = await getPropertiesForRuleIndex(view, ruleIndex);
   const [[name, value]] = Object.entries(declaration);
@@ -1102,10 +1112,14 @@ async function runCSSCompatibilityTests(view, inspector, tests) {
 
 
 
+
+
 async function runInactiveCSSTests(view, inspector, tests) {
   for (const test of tests) {
     if (test.selector) {
       await selectNode(test.selector, inspector);
+    } else if (typeof test.selectNode === "function") {
+      await test.selectNode(inspector);
     }
 
     if (test.activeDeclarations) {

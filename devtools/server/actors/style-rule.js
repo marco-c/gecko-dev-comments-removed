@@ -57,6 +57,12 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/utils/stylesheets-manager.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "DocumentWalker",
+  "devtools/server/actors/inspector/document-walker",
+  true
+);
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -69,11 +75,21 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 class StyleRuleActor extends Actor {
-  constructor(pageStyle, item, userAdded = false) {
+  
+
+
+
+
+
+
+
+
+  constructor({ pageStyle, item, userAdded = false, pseudoElement = null }) {
     super(pageStyle.conn, styleRuleSpec);
     this.pageStyle = pageStyle;
     this.rawStyle = item.style;
     this._userAdded = userAdded;
+    this._pseudoElement = pseudoElement;
     this._parentSheet = null;
     
     
@@ -269,6 +285,54 @@ class StyleRuleActor extends Actor {
     return data;
   }
 
+  
+
+
+
+
+  get currentlySelectedElement() {
+    let { selectedElement } = this.pageStyle;
+    if (!this._pseudoElement) {
+      return selectedElement;
+    }
+
+    
+    
+    
+    
+    
+    const pseudo = this._pseudoElement.replaceAll(":", "");
+    const nodeName = `_moz_generated_content_${pseudo}`;
+
+    if (selectedElement.nodeName !== nodeName) {
+      const walker = new DocumentWalker(
+        selectedElement,
+        selectedElement.ownerGlobal
+      );
+
+      for (let next = walker.firstChild(); next; next = walker.nextSibling()) {
+        if (next.nodeName === nodeName) {
+          selectedElement = next;
+          break;
+        }
+      }
+    }
+
+    return selectedElement;
+  }
+
+  get currentlySelectedElementComputedStyle() {
+    if (!this._pseudoElement) {
+      return this.pageStyle.cssLogic.computedStyle;
+    }
+
+    const { selectedElement } = this.pageStyle;
+    return selectedElement.ownerGlobal.getComputedStyle(
+      selectedElement,
+      this._pseudoElement
+    );
+  }
+
   getDocument(sheet) {
     if (!sheet.associatedDocument) {
       throw new Error(
@@ -378,8 +442,8 @@ class StyleRuleActor extends Actor {
         cssText,
         true
       );
-      const el = this.pageStyle.selectedElement;
-      const style = this.pageStyle.cssLogic.computedStyle;
+      const el = this.currentlySelectedElement;
+      const style = this.currentlySelectedElementComputedStyle;
 
       
       
@@ -1282,8 +1346,8 @@ class StyleRuleActor extends Actor {
   maybeRefresh(forceRefresh) {
     let hasChanged = false;
 
-    const el = this.pageStyle.selectedElement;
-    const style = CssLogic.getComputedStyle(el);
+    const el = this.currentlySelectedElement;
+    const style = this.currentlySelectedElementComputedStyle;
 
     for (const decl of this._declarations) {
       
