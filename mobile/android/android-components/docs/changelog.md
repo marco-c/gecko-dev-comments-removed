@@ -6,9 +6,15 @@ permalink: /changelog/
 
 # 132.0 (In Development)
 
+* **support-ktx**:
+    * ⚠️ `Int.dpToPx` will round the values to the nearest integer, instead of always rounding down. [Bug 1912988](https://bugzilla.mozilla.org/show_bug.cgi?id=1912988)
+
 # 131.0
 * **All components**
   * ⚠️Increased `compileSdkVersion` to 35 (Android 15)
+
+* **browser-store**
+  * Adds `desktopMode` property to the `BrowserStore` to know whether or not browsing is in desktop mode. [Bug 1790516](https://bugzilla.mozilla.org/show_bug.cgi?id=1790516)
 
 # 130.0
 
