@@ -1133,7 +1133,6 @@ class XPCShellTests(object):
                     mp.active_tests(
                         filters=filters,
                         noDefaultFilters=noDefaultFilters,
-                        strictExpressions=True,
                         **mozinfo.info,
                     ),
                 )
@@ -1580,22 +1579,22 @@ class XPCShellTests(object):
         )
 
         self.mozInfo["condprof"] = options.get("conditionedProfile", False)
-        self.mozInfo["msix"] = options.get("variant", "") == "msix"
+
+        if options.get("variant", ""):
+            self.mozInfo["msix"] = options["variant"] == "msix"
 
         self.mozInfo["is_ubuntu"] = "Ubuntu" in platform.version()
+
+        mozinfo.update(self.mozInfo)
 
         
         if self.mozInfo["os"] == "mac":
             (release, versioninfo, machine) = platform.mac_ver()
             versionNums = release.split(".")[:2]
             os_version = "%s.%s" % (versionNums[0], versionNums[1].ljust(2, "0"))
-            if os_version == "14.40" and self.mozInfo["arch"] == "aarch64":
+            if os_version == "14.40":
                 self.mozInfo["crashreporter"] = False
 
-        
-        self.mozInfo["e10s"] = self.mozInfo.get("e10s", False)
-
-        mozinfo.update(self.mozInfo)
         return True
 
     @property
