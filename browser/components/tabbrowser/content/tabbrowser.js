@@ -3268,10 +3268,13 @@
 
         
         
+        
+        
         if (
           select &&
           this.selectedTab.userContextId == userContextId &&
-          !SessionStore.isTabRestoring(this.selectedTab)
+          !SessionStore.isTabRestoring(this.selectedTab) &&
+          !this.tabContainer.verticalMode
         ) {
           tabWasReused = true;
           tab = this.selectedTab;
