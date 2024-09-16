@@ -9,6 +9,7 @@
 
 #include "nsIObserver.h"
 #include "mozilla/OriginAttributes.h"
+#include "mozilla/MoveOnlyFunction.h"
 
 class nsISerialEventTarget;
 
@@ -37,6 +38,8 @@ class CookieStoreNotifier final : public nsIObserver {
 
   void AddObserversOnMainThread(bool aPrivateBrowsing);
   void RemoveObserversOnMainThread(bool aPrivateBrowsing);
+
+  void DispatchEvent(const CookieListItem& aItem, bool aDeletedEvent);
 
   
   CookieStore* mCookieStore;
