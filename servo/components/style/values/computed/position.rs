@@ -8,7 +8,7 @@
 
 
 use crate::values::computed::{Integer, LengthPercentage, NonNegativeNumber, Percentage};
-use crate::values::generics::position::AspectRatio as GenericAspectRatio;
+use crate::values::generics::position::{AspectRatio as GenericAspectRatio, GenericInset};
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::PositionComponent as GenericPositionComponent;
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
@@ -37,6 +37,9 @@ pub type VerticalPosition = LengthPercentage;
 
 
 pub type AnchorFunction = GenericAnchorFunction<Percentage, LengthPercentage>;
+
+
+pub type Inset = GenericInset<Percentage, LengthPercentage>;
 
 impl Position {
     

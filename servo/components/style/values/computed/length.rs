@@ -6,7 +6,7 @@
 
 use super::{Context, Number, ToComputedValue};
 use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
-use crate::values::computed::{NonNegativeNumber, Percentage, Zoom};
+use crate::values::computed::{NonNegativeNumber, Zoom};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
     GenericLengthOrNumber, GenericLengthPercentageOrNormal, GenericMaxSize, GenericSize,
@@ -115,9 +115,6 @@ macro_rules! computed_length_percentage_or_auto {
         }
     };
 }
-
-
-pub type Inset = generics::GenericInset<Percentage, LengthPercentage>;
 
 
 pub type LengthPercentageOrAuto = generics::GenericLengthPercentageOrAuto<LengthPercentage>;
