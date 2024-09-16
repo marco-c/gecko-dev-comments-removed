@@ -26,7 +26,7 @@ class DesktopFrameIOSurface final : public DesktopFrame {
   
   
   static std::unique_ptr<DesktopFrameIOSurface> Wrap(
-      rtc::ScopedCFTypeRef<IOSurfaceRef> io_surface);
+      rtc::ScopedCFTypeRef<IOSurfaceRef> io_surface, CGRect rect = {});
 
   ~DesktopFrameIOSurface() override;
 
@@ -35,7 +35,12 @@ class DesktopFrameIOSurface final : public DesktopFrame {
 
  private:
   
-  explicit DesktopFrameIOSurface(rtc::ScopedCFTypeRef<IOSurfaceRef> io_surface);
+  DesktopFrameIOSurface(
+      rtc::ScopedCFTypeRef<IOSurfaceRef> io_surface,
+      uint8_t* data,
+      int32_t width,
+      int32_t height,
+      int32_t stride);
 
   const rtc::ScopedCFTypeRef<IOSurfaceRef> io_surface_;
 };
