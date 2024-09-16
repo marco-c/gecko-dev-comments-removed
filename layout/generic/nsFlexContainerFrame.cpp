@@ -2078,11 +2078,6 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
   StyleSizeOverrides sizeOverrides;
   if (aFlexItem.IsStretched()) {
     sizeOverrides.mStyleISize.emplace(aFlexItem.StyleCrossSize());
-    
-    
-    
-    
-    sizeOverrides.mAspectRatio.emplace(AspectRatio());
     FLEX_LOGV("Cross size override: %d", aFlexItem.CrossSize());
   }
   sizeOverrides.mStyleBSize.emplace(StyleSize::Auto());
