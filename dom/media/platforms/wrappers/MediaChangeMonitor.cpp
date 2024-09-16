@@ -6,6 +6,7 @@
 
 #include "MediaChangeMonitor.h"
 
+#include "Adts.h"
 #include "AnnexB.h"
 #include "H264.h"
 #include "H265.h"
@@ -588,6 +589,73 @@ class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 };
 #endif
 
+class AACCodecChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
+ public:
+  explicit AACCodecChangeMonitor(const AudioInfo& aInfo)
+      : mCurrentConfig(aInfo), mIsADTS(IsADTS(aInfo)) {}
+
+  bool CanBeInstantiated() const override { return true; }
+
+  MediaResult CheckForChange(MediaRawData* aSample) override {
+    bool isADTS =
+        ADTS::FrameHeader::MatchesSync(Span{aSample->Data(), aSample->Size()});
+    if (isADTS != mIsADTS) {
+      if (mIsADTS) {
+        if (!MakeAACSpecificConfig()) {
+          LOG("Failed to make AAC specific config");
+          return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR);
+        }
+        LOG("Reconfiguring decoder adts -> raw aac, with maked AAC specific "
+            "config: %zu bytes",
+            mCurrentConfig.mCodecSpecificConfig
+                .as<AudioCodecSpecificBinaryBlob>()
+                .mBinaryBlob->Length());
+      } else {
+        LOG("Reconfiguring decoder raw aac -> adts");
+        
+        mCurrentConfig.mCodecSpecificConfig =
+            AudioCodecSpecificVariant{NoCodecSpecificData{}};
+      }
+
+      mIsADTS = isADTS;
+      return MediaResult(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER);
+    }
+    return NS_OK;
+  }
+
+  const TrackInfo& Config() const override { return mCurrentConfig; }
+
+  MediaResult PrepareSample(MediaDataDecoder::ConversionRequired aConversion,
+                            MediaRawData* aSample,
+                            bool aNeedKeyFrame) override {
+    return NS_OK;
+  }
+
+ private:
+  static bool IsADTS(const AudioInfo& aInfo) {
+    return !aInfo.mCodecSpecificConfig.is<AacCodecSpecificData>() &&
+           !aInfo.mCodecSpecificConfig.is<AudioCodecSpecificBinaryBlob>();
+  }
+
+  bool MakeAACSpecificConfig() {
+    MOZ_ASSERT(IsADTS(mCurrentConfig));
+    
+    const uint8_t aacObjectType =
+        mCurrentConfig.mProfile ? mCurrentConfig.mProfile : 2;
+    auto r = ADTS::MakeSpecificConfig(aacObjectType, mCurrentConfig.mRate,
+                                      mCurrentConfig.mChannels);
+    if (r.isErr()) {
+      return false;
+    }
+    mCurrentConfig.mCodecSpecificConfig =
+        AudioCodecSpecificVariant{AudioCodecSpecificBinaryBlob{r.unwrap()}};
+    return true;
+  }
+
+  AudioInfo mCurrentConfig;
+  bool mIsADTS;
+};
+
 MediaChangeMonitor::MediaChangeMonitor(
     PDMFactory* aPDMFactory,
     UniquePtr<CodecChangeMonitor>&& aCodecChangeMonitor,
@@ -601,6 +669,7 @@ MediaChangeMonitor::MediaChangeMonitor(
 
 RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
     PDMFactory* aPDMFactory, const CreateDecoderParams& aParams) {
+  LOG("MediaChangeMonitor::Create, params = %s", aParams.ToString().get());
   UniquePtr<CodecChangeMonitor> changeMonitor;
   const VideoInfo& currentConfig = aParams.VideoConfig();
   if (VPXDecoder::IsVPX(currentConfig.mMimeType)) {
@@ -623,6 +692,7 @@ RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
   
   
   const CreateDecoderParams updatedParams{changeMonitor->Config(), aParams};
+  LOG("updated params = %s", updatedParams.ToString().get());
 
   RefPtr<MediaChangeMonitor> instance = new MediaChangeMonitor(
       aPDMFactory, std::move(changeMonitor), nullptr, updatedParams);
@@ -851,10 +921,12 @@ void MediaChangeMonitor::SetSeekThreshold(const media::TimeUnit& aTime) {
 RefPtr<MediaChangeMonitor::CreateDecoderPromise>
 MediaChangeMonitor::CreateDecoder() {
   mCurrentConfig = *mChangeMonitor->Config().GetAsVideoInfo();
+  CreateDecoderParams currentParams = {mCurrentConfig, mParams};
+  currentParams.mWrappers -= media::Wrapper::MediaChangeMonitor;
+  LOG("MediaChangeMonitor::CreateDecoder, current params = %s",
+      currentParams.ToString().get());
   RefPtr<CreateDecoderPromise> p =
-      mPDMFactory
-          ->CreateDecoder(
-              {mCurrentConfig, mParams, CreateDecoderParams::NoWrapper(true)})
+      mPDMFactory->CreateDecoder(currentParams)
           ->Then(
               GetCurrentSerialEventTarget(), __func__,
               [self = RefPtr{this}, this](RefPtr<MediaDataDecoder>&& aDecoder) {
