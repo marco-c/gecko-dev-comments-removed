@@ -85,6 +85,9 @@ var gExceptionPaths = [
 
   
   "chrome://global/content/antitracking/",
+
+  
+  "chrome://global/content/megalist/LoginFormComponent/",
 ];
 
 
