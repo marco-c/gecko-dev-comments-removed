@@ -34,8 +34,7 @@ ITEM_VALUE(NavigatorHWConcurrency,      1llu << 15)
 ITEM_VALUE(NavigatorOscpu,              1llu << 16)
 ITEM_VALUE(NavigatorPlatform,           1llu << 17)
 ITEM_VALUE(NavigatorUserAgent,          1llu << 18)
-
-ITEM_VALUE(StreamTrackLabel,            1llu << 19)
+ITEM_VALUE(PointerId,                   1llu << 19)
 ITEM_VALUE(StreamVideoFacingMode,       1llu << 20)
 ITEM_VALUE(JSDateTimeUTC,               1llu << 21)
 ITEM_VALUE(JSMathFdlibm,                1llu << 22)
@@ -94,8 +93,6 @@ ITEM_VALUE(SiteSpecificZoom,            1llu << 60)
 
 
 ITEM_VALUE(FontVisibilityRestrictGenerics, 1llu << 61)
-
-
 
 
 
