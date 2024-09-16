@@ -818,6 +818,14 @@ void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
   movl(dest, dest);  
 }
 
+void MacroAssembler::branchInt64NotInPtrRange(Register64 src, Label* label) {
+  
+}
+
+void MacroAssembler::branchUInt64NotInPtrRange(Register64 src, Label* label) {
+  branchTest64(Assembler::Signed, src, src, label);
+}
+
 void MacroAssembler::branchTest32(Condition cond, const AbsoluteAddress& lhs,
                                   Imm32 rhs, Label* label) {
   if (X86Encoding::IsAddressImmediate(lhs.addr)) {

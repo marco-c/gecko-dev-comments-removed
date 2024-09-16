@@ -352,6 +352,14 @@ static inline bool IsCompatibleLIRCoercion(MIRType to, MIRType from) {
     return true;
   }
 #  endif
+
+#  ifdef JS_64BIT
+  
+  if ((to == MIRType::IntPtr || to == MIRType::Int64) &&
+      (from == MIRType::IntPtr || from == MIRType::Int64)) {
+    return true;
+  }
+#  endif
   return false;
 }
 #endif

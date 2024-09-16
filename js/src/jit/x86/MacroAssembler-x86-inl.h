@@ -900,6 +900,22 @@ void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
   j(Assembler::Overflow, fail);
 }
 
+void MacroAssembler::branchInt64NotInPtrRange(Register64 src, Label* label) {
+  
+  
+  push(src.low);
+  sarl(Imm32(31), src.low);
+  cmp32(src.low, src.high);
+  pop(src.low);
+  j(Assembler::NotEqual, label);
+}
+
+void MacroAssembler::branchUInt64NotInPtrRange(Register64 src, Label* label) {
+  
+  branchTest32(Assembler::Signed, src.low, src.low, label);
+  branchTest32(Assembler::NonZero, src.high, src.high, label);
+}
+
 void MacroAssembler::branchAdd64(Condition cond, Imm64 imm, Register64 dest,
                                  Label* label) {
   add64(imm, dest);
