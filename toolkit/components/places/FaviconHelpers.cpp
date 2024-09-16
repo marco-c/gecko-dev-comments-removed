@@ -448,6 +448,14 @@ nsresult FetchIconPerSpec(const RefPtr<Database>& aDB,
       
       continue;
     }
+
+    int32_t isRich = stmt->AsInt32(3);
+    if (aPreferredWidth <= THRESHOLD_WIDTH && lastWidth > 0 && isRich) {
+      
+      
+      break;
+    }
+
     if (!aIconData.spec.IsEmpty() && width < aPreferredWidth) {
       
       
