@@ -2154,6 +2154,39 @@ this.PlacesPanelview = class PlacesPanelview extends PlacesViewBase {
     }
   }
 
+  destroyContextMenu() {
+    super.destroyContextMenu();
+    this.maybeClosePanel(PlacesUIUtils.lastContextMenuCommand);
+  }
+
+  
+
+
+
+
+
+
+
+  maybeClosePanel(command) {
+    switch (command) {
+      
+      
+      case "placesCmd_open:newcontainertab":
+      case "placesCmd_open:tab":
+        if (
+          this._viewElt.id != "PanelUI-bookmarks" ||
+          PlacesUIUtils.openInTabClosesMenu
+        ) {
+          this.panelMultiView.closest("panel").hidePopup();
+        }
+        break;
+      case "placesCmd_createBookmark":
+      case "placesCmd_deleteDataHost":
+        this.panelMultiView.closest("panel").hidePopup();
+        break;
+    }
+  }
+
   _onDragEnd() {
     this._draggedElt = null;
   }
