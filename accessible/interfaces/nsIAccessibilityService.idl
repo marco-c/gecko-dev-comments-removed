@@ -84,6 +84,15 @@ interface nsIAccessibilityService : nsISupports
 
 
 
+
+  void setCacheDomains(in unsigned long long aCacheDomains);
+
+  
+
+
+
+
+
   nsIAccessiblePivot createAccessiblePivot(in nsIAccessible aRoot);
 
   
