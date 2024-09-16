@@ -530,6 +530,13 @@ pub enum Sampling {
     
     
     Sample,
+
+    
+    First,
+
+    
+    
+    Either,
 }
 
 
@@ -615,7 +622,7 @@ pub enum StorageFormat {
     
     Rgb10a2Uint,
     Rgb10a2Unorm,
-    Rg11b10UFloat,
+    Rg11b10Ufloat,
 
     
     Rg32Uint,

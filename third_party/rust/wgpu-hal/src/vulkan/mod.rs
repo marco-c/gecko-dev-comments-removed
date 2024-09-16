@@ -493,9 +493,36 @@ struct PrivateCapabilities {
     
     can_present: bool,
     non_coherent_map_mask: wgt::BufferAddress,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     robust_buffer_access: bool,
+
     robust_image_access: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     robust_buffer_access2: bool,
+
     robust_image_access2: bool,
     zero_initialize_workgroup_memory: bool,
     image_format_list: bool,
@@ -1359,9 +1386,4 @@ fn get_lost_err() -> crate::DeviceError {
 
     #[allow(unreachable_code)]
     crate::DeviceError::Lost
-}
-
-#[cold]
-fn hal_usage_error<T: fmt::Display>(txt: T) -> ! {
-    panic!("wgpu-hal invariant was violated (usage error): {txt}")
 }

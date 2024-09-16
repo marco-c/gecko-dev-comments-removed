@@ -841,6 +841,16 @@ impl super::Adapter {
                 alignments: crate::Alignments {
                     buffer_copy_offset: wgt::BufferSize::new(4).unwrap(),
                     buffer_copy_pitch: wgt::BufferSize::new(4).unwrap(),
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    uniform_bounds_check_alignment: wgt::BufferSize::new(1).unwrap(),
                 },
             },
         })
@@ -1097,7 +1107,7 @@ impl crate::Adapter for super::Adapter {
             Tf::Rgba8Sint => renderable | storage,
             Tf::Rgb10a2Uint => renderable,
             Tf::Rgb10a2Unorm => filterable_renderable,
-            Tf::Rg11b10UFloat => filterable | float_renderable,
+            Tf::Rg11b10Ufloat => filterable | float_renderable,
             Tf::Rg32Uint => renderable,
             Tf::Rg32Sint => renderable,
             Tf::Rg32Float => unfilterable | float_renderable | texture_float_linear,

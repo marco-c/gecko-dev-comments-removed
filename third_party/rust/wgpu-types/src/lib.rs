@@ -13,6 +13,7 @@ use serde::Deserialize;
 #[cfg(any(feature = "serde", test))]
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
+use std::mem::size_of;
 use std::path::PathBuf;
 use std::{num::NonZeroU32, ops::Range};
 
@@ -401,7 +402,7 @@ bitflags::bitflags! {
         const SHADER_F16 = 1 << 8;
 
 
-        /// Allows for usage of textures of format [`TextureFormat::Rg11b10UFloat`] as a render target
+        /// Allows for usage of textures of format [`TextureFormat::Rg11b10Ufloat`] as a render target
         ///
         /// Supported platforms:
         /// - Vulkan
@@ -2553,7 +2554,7 @@ pub enum TextureFormat {
     
     Rgb10a2Unorm,
     
-    Rg11b10UFloat,
+    Rg11b10Ufloat,
 
     
     
@@ -2841,7 +2842,7 @@ impl<'de> Deserialize<'de> for TextureFormat {
                     "bgra8unorm-srgb" => TextureFormat::Bgra8UnormSrgb,
                     "rgb10a2uint" => TextureFormat::Rgb10a2Uint,
                     "rgb10a2unorm" => TextureFormat::Rgb10a2Unorm,
-                    "rg11b10ufloat" => TextureFormat::Rg11b10UFloat,
+                    "rg11b10ufloat" => TextureFormat::Rg11b10Ufloat,
                     "rg32uint" => TextureFormat::Rg32Uint,
                     "rg32sint" => TextureFormat::Rg32Sint,
                     "rg32float" => TextureFormat::Rg32Float,
@@ -2969,7 +2970,7 @@ impl Serialize for TextureFormat {
             TextureFormat::Bgra8UnormSrgb => "bgra8unorm-srgb",
             TextureFormat::Rgb10a2Uint => "rgb10a2uint",
             TextureFormat::Rgb10a2Unorm => "rgb10a2unorm",
-            TextureFormat::Rg11b10UFloat => "rg11b10ufloat",
+            TextureFormat::Rg11b10Ufloat => "rg11b10ufloat",
             TextureFormat::Rg32Uint => "rg32uint",
             TextureFormat::Rg32Sint => "rg32sint",
             TextureFormat::Rg32Float => "rg32float",
@@ -3211,7 +3212,7 @@ impl TextureFormat {
             | Self::Rgb9e5Ufloat
             | Self::Rgb10a2Uint
             | Self::Rgb10a2Unorm
-            | Self::Rg11b10UFloat
+            | Self::Rg11b10Ufloat
             | Self::Rg32Uint
             | Self::Rg32Sint
             | Self::Rg32Float
@@ -3319,7 +3320,7 @@ impl TextureFormat {
             | Self::Rgb9e5Ufloat
             | Self::Rgb10a2Uint
             | Self::Rgb10a2Unorm
-            | Self::Rg11b10UFloat
+            | Self::Rg11b10Ufloat
             | Self::Rg32Uint
             | Self::Rg32Sint
             | Self::Rg32Float
@@ -3438,7 +3439,7 @@ impl TextureFormat {
             Self::Bgra8UnormSrgb =>       (msaa_resolve, attachment),
             Self::Rgb10a2Uint =>          (        msaa, attachment),
             Self::Rgb10a2Unorm =>         (msaa_resolve, attachment),
-            Self::Rg11b10UFloat =>        (        msaa,   rg11b10f),
+            Self::Rg11b10Ufloat =>        (        msaa,   rg11b10f),
             Self::Rg32Uint =>             (        noaa,  all_flags),
             Self::Rg32Sint =>             (        noaa,  all_flags),
             Self::Rg32Float =>            (        noaa,  all_flags),
@@ -3549,7 +3550,7 @@ impl TextureFormat {
             | Self::Rg16Float
             | Self::Rgba16Float
             | Self::Rgb10a2Unorm
-            | Self::Rg11b10UFloat => Some(float),
+            | Self::Rg11b10Ufloat => Some(float),
 
             Self::R32Float | Self::Rg32Float | Self::Rgba32Float => Some(float32_sample_type),
 
@@ -3681,7 +3682,7 @@ impl TextureFormat {
             | Self::Rg16Sint
             | Self::Rg16Float => Some(4),
             Self::R32Uint | Self::R32Sint | Self::R32Float => Some(4),
-            Self::Rgb9e5Ufloat | Self::Rgb10a2Uint | Self::Rgb10a2Unorm | Self::Rg11b10UFloat => {
+            Self::Rgb9e5Ufloat | Self::Rgb10a2Uint | Self::Rgb10a2Unorm | Self::Rg11b10Ufloat => {
                 Some(4)
             }
 
@@ -3784,7 +3785,7 @@ impl TextureFormat {
             | Self::Rg32Float
             | Self::Rgb10a2Uint
             | Self::Rgb10a2Unorm
-            | Self::Rg11b10UFloat => Some(8),
+            | Self::Rg11b10Ufloat => Some(8),
             Self::Rgba32Uint | Self::Rgba32Sint | Self::Rgba32Float => Some(16),
             Self::Stencil8
             | Self::Depth16Unorm
@@ -3867,7 +3868,7 @@ impl TextureFormat {
             | Self::Rgba32Float
             | Self::Rgb10a2Uint
             | Self::Rgb10a2Unorm
-            | Self::Rg11b10UFloat => Some(4),
+            | Self::Rg11b10Ufloat => Some(4),
             Self::Stencil8
             | Self::Depth16Unorm
             | Self::Depth24Plus
@@ -3958,7 +3959,7 @@ impl TextureFormat {
             | Self::Rgba32Sint
             | Self::Rgba32Float => 4,
 
-            Self::Rgb9e5Ufloat | Self::Rg11b10UFloat => 3,
+            Self::Rgb9e5Ufloat | Self::Rg11b10Ufloat => 3,
             Self::Rgb10a2Uint | Self::Rgb10a2Unorm => 4,
 
             Self::Stencil8 | Self::Depth16Unorm | Self::Depth24Plus | Self::Depth32Float => 1,
@@ -4176,7 +4177,7 @@ fn texture_format_serialize() {
         "\"rgb10a2unorm\"".to_string()
     );
     assert_eq!(
-        serde_json::to_string(&TextureFormat::Rg11b10UFloat).unwrap(),
+        serde_json::to_string(&TextureFormat::Rg11b10Ufloat).unwrap(),
         "\"rg11b10ufloat\"".to_string()
     );
     assert_eq!(
@@ -4473,7 +4474,7 @@ fn texture_format_deserialize() {
     );
     assert_eq!(
         serde_json::from_str::<TextureFormat>("\"rg11b10ufloat\"").unwrap(),
-        TextureFormat::Rg11b10UFloat
+        TextureFormat::Rg11b10Ufloat
     );
     assert_eq!(
         serde_json::from_str::<TextureFormat>("\"rg32uint\"").unwrap(),
@@ -5546,7 +5547,17 @@ pub struct SurfaceConfiguration<V> {
     
     pub format: TextureFormat,
     
+    
+    
+    
+    
+    
     pub width: u32,
+    
+    
+    
+    
+    
     
     pub height: u32,
     
@@ -7228,7 +7239,7 @@ impl DrawIndirectArgs {
         unsafe {
             std::mem::transmute(std::slice::from_raw_parts(
                 std::ptr::from_ref(self).cast::<u8>(),
-                std::mem::size_of::<Self>(),
+                size_of::<Self>(),
             ))
         }
     }
@@ -7259,7 +7270,7 @@ impl DrawIndexedIndirectArgs {
         unsafe {
             std::mem::transmute(std::slice::from_raw_parts(
                 std::ptr::from_ref(self).cast::<u8>(),
-                std::mem::size_of::<Self>(),
+                size_of::<Self>(),
             ))
         }
     }
@@ -7284,7 +7295,7 @@ impl DispatchIndirectArgs {
         unsafe {
             std::mem::transmute(std::slice::from_raw_parts(
                 std::ptr::from_ref(self).cast::<u8>(),
-                std::mem::size_of::<Self>(),
+                size_of::<Self>(),
             ))
         }
     }
@@ -7306,6 +7317,13 @@ impl ShaderBoundChecks {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -7338,10 +7356,6 @@ impl Default for ShaderBoundChecks {
 
 
 
-
-
-
-
 #[derive(Clone, Debug, Default)]
 pub enum Dx12Compiler {
     
@@ -7349,6 +7363,10 @@ pub enum Dx12Compiler {
     
     #[default]
     Fxc,
+    
+    
+    
+    
     
     
     
@@ -7532,10 +7550,4 @@ pub enum DeviceLostReason {
     
     
     ReplacedCallback = 3,
-    
-    
-    
-    
-    
-    DeviceInvalid = 4,
 }

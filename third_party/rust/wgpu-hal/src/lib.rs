@@ -327,7 +327,7 @@ impl Drop for DropGuard {
 }
 
 #[cfg(any(gles, vulkan))]
-impl std::fmt::Debug for DropGuard {
+impl fmt::Debug for DropGuard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("DropGuard").finish()
     }
@@ -343,6 +343,18 @@ pub enum DeviceError {
     ResourceCreationFailed,
     #[error("Unexpected error variant (driver implementation is at fault)")]
     Unexpected,
+}
+
+#[allow(dead_code)] 
+#[cold]
+fn hal_usage_error<T: fmt::Display>(txt: T) -> ! {
+    panic!("wgpu-hal invariant was violated (usage error): {txt}")
+}
+
+#[allow(dead_code)] 
+#[cold]
+fn hal_internal_error<T: fmt::Display>(txt: T) -> ! {
+    panic!("wgpu-hal ran into a preventable internal error: {txt}")
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Error)]
@@ -712,6 +724,9 @@ pub trait Device: WasmNotSendSync {
     unsafe fn destroy_buffer(&self, buffer: <Self::A as Api>::Buffer);
 
     
+    unsafe fn add_raw_buffer(&self, buffer: &<Self::A as Api>::Buffer);
+
+    
     
     
     
@@ -802,6 +817,10 @@ pub trait Device: WasmNotSendSync {
         desc: &TextureDescriptor,
     ) -> Result<<Self::A as Api>::Texture, DeviceError>;
     unsafe fn destroy_texture(&self, texture: <Self::A as Api>::Texture);
+
+    
+    unsafe fn add_raw_texture(&self, texture: &<Self::A as Api>::Texture);
+
     unsafe fn create_texture_view(
         &self,
         texture: &<Self::A as Api>::Texture,
@@ -1232,6 +1251,38 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn set_bind_group(
         &mut self,
         layout: &<Self::A as Api>::PipelineLayout,
@@ -1284,10 +1335,42 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
     
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn begin_render_pass(
         &mut self,
         desc: &RenderPassDescriptor<<Self::A as Api>::QuerySet, <Self::A as Api>::TextureView>,
     );
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn end_render_pass(&mut self);
 
     unsafe fn set_render_pipeline(&mut self, pipeline: &<Self::A as Api>::RenderPipeline);
@@ -1354,10 +1437,40 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
     
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn begin_compute_pass(
         &mut self,
         desc: &ComputePassDescriptor<<Self::A as Api>::QuerySet>,
     );
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn end_compute_pass(&mut self);
 
     unsafe fn set_compute_pipeline(&mut self, pipeline: &<Self::A as Api>::ComputePipeline);
@@ -1635,9 +1748,27 @@ pub struct InstanceDescriptor<'a> {
 pub struct Alignments {
     
     pub buffer_copy_offset: wgt::BufferSize,
+
     
     
     pub buffer_copy_pitch: wgt::BufferSize,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub uniform_bounds_check_alignment: wgt::BufferSize,
 }
 
 #[derive(Clone, Debug)]
@@ -1807,6 +1938,40 @@ pub struct PipelineLayoutDescriptor<'a, B: DynBindGroupLayout + ?Sized> {
     pub push_constant_ranges: &'a [wgt::PushConstantRange],
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct BufferBinding<'a, B: DynBuffer + ?Sized> {
     
@@ -1925,6 +2090,26 @@ pub enum ShaderInput<'a> {
 
 pub struct ShaderModuleDescriptor<'a> {
     pub label: Label<'a>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub runtime_checks: bool,
 }
 

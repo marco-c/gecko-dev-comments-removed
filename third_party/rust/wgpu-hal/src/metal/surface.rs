@@ -1,26 +1,30 @@
 #![allow(clippy::let_unit_value)] 
 
-use std::{os::raw::c_void, ptr::NonNull, sync::Once, thread};
+use std::ffi::c_uint;
+use std::mem::ManuallyDrop;
+use std::ptr::NonNull;
+use std::sync::Once;
+use std::thread;
 
 use core_graphics_types::{
     base::CGFloat,
     geometry::{CGRect, CGSize},
 };
+use metal::foreign_types::ForeignType;
 use objc::{
     class,
     declare::ClassDecl,
     msg_send,
-    rc::autoreleasepool,
+    rc::{autoreleasepool, StrongPtr},
     runtime::{Class, Object, Sel, BOOL, NO, YES},
     sel, sel_impl,
 };
 use parking_lot::{Mutex, RwLock};
 
-#[cfg(target_os = "macos")]
 #[link(name = "QuartzCore", kind = "framework")]
 extern "C" {
     #[allow(non_upper_case_globals)]
-    static kCAGravityTopLeft: *mut Object;
+    static kCAGravityResize: *mut Object;
 }
 
 extern "C" fn layer_should_inherit_contents_scale_from_window(
@@ -46,6 +50,7 @@ impl HalManagedMetalLayerDelegate {
             type Fun = extern "C" fn(&Class, Sel, *mut Object, CGFloat, *mut Object) -> BOOL;
             let mut decl = ClassDecl::new(&class_name, class!(NSObject)).unwrap();
             unsafe {
+                
                 decl.add_class_method::<Fun>(
                     sel!(layer:shouldInheritContentsScale:fromWindow:),
                     layer_should_inherit_contents_scale_from_window,
@@ -58,9 +63,8 @@ impl HalManagedMetalLayerDelegate {
 }
 
 impl super::Surface {
-    fn new(view: Option<NonNull<Object>>, layer: metal::MetalLayer) -> Self {
+    fn new(layer: metal::MetalLayer) -> Self {
         Self {
-            view,
             render_layer: Mutex::new(layer),
             swapchain_format: RwLock::new(None),
             extent: RwLock::new(wgt::Extent3d::default()),
@@ -71,86 +75,183 @@ impl super::Surface {
 
     
     #[allow(clippy::transmute_ptr_to_ref)]
-    pub unsafe fn from_view(
-        view: *mut c_void,
-        delegate: Option<&HalManagedMetalLayerDelegate>,
-    ) -> Self {
-        let view = view.cast::<Object>();
-        let render_layer = {
-            let layer = unsafe { Self::get_metal_layer(view, delegate) };
-            let layer = layer.cast::<metal::MetalLayerRef>();
-            
-            
-            
-            
-            
-            
-            
-            
-            unsafe { &*layer }
-        }
-        .to_owned();
-        let _: *mut c_void = msg_send![view, retain];
-        Self::new(NonNull::new(view), render_layer)
+    pub unsafe fn from_view(view: NonNull<Object>) -> Self {
+        let layer = unsafe { Self::get_metal_layer(view) };
+        let layer = ManuallyDrop::new(layer);
+        
+        
+        let layer = unsafe { metal::MetalLayer::from_ptr(layer.cast()) };
+        Self::new(layer)
     }
 
     pub unsafe fn from_layer(layer: &metal::MetalLayerRef) -> Self {
         let class = class!(CAMetalLayer);
         let proper_kind: BOOL = msg_send![layer, isKindOfClass: class];
         assert_eq!(proper_kind, YES);
-        Self::new(None, layer.to_owned())
+        Self::new(layer.to_owned())
     }
 
     
-    pub(crate) unsafe fn get_metal_layer(
-        view: *mut Object,
-        delegate: Option<&HalManagedMetalLayerDelegate>,
-    ) -> *mut Object {
-        if view.is_null() {
-            panic!("window does not have a valid contentView");
-        }
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) unsafe fn get_metal_layer(view: NonNull<Object>) -> StrongPtr {
         let is_main_thread: BOOL = msg_send![class!(NSThread), isMainThread];
         if is_main_thread == NO {
             panic!("get_metal_layer cannot be called in non-ui thread.");
         }
 
-        let main_layer: *mut Object = msg_send![view, layer];
-        let class = class!(CAMetalLayer);
-        let is_valid_layer: BOOL = msg_send![main_layer, isKindOfClass: class];
+        
+        
+        #[cfg(target_os = "macos")]
+        let () = msg_send![view.as_ptr(), setWantsLayer: YES];
 
-        if is_valid_layer == YES {
-            main_layer
+        let root_layer: *mut Object = msg_send![view.as_ptr(), layer];
+        
+        
+        assert!(!root_layer.is_null(), "failed making the view layer-backed");
+
+        
+        
+        
+        
+        
+        
+        
+
+        let is_metal_layer: BOOL = msg_send![root_layer, isKindOfClass: class!(CAMetalLayer)];
+        if is_metal_layer == YES {
+            
+            
+            
+            
+            
+            
+            
+            
+            unsafe { StrongPtr::retain(root_layer) }
         } else {
             
-            let new_layer: *mut Object = msg_send![class, new];
-            let frame: CGRect = msg_send![main_layer, bounds];
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            let new_layer: *mut Object = msg_send![class!(CAMetalLayer), new];
+            let () = msg_send![root_layer, addSublayer: new_layer];
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let width_sizable = 1 << 1; 
+            let height_sizable = 1 << 4; 
+            let mask: c_uint = width_sizable | height_sizable;
+            let () = msg_send![new_layer, setAutoresizingMask: mask];
+
+            
+            
+            let frame: CGRect = msg_send![root_layer, bounds];
             let () = msg_send![new_layer, setFrame: frame];
-            #[cfg(target_os = "ios")]
-            {
-                
-                let () = msg_send![main_layer, addSublayer: new_layer];
-                
-                
-                let screen: *mut Object = msg_send![class!(UIScreen), mainScreen];
-                let scale_factor: CGFloat = msg_send![screen, nativeScale];
-                let () = msg_send![view, setContentScaleFactor: scale_factor];
-            };
-            #[cfg(target_os = "macos")]
-            {
-                let () = msg_send![view, setLayer: new_layer];
-                let () = msg_send![view, setWantsLayer: YES];
-                let () = msg_send![new_layer, setContentsGravity: unsafe { kCAGravityTopLeft }];
-                let window: *mut Object = msg_send![view, window];
-                if !window.is_null() {
-                    let scale_factor: CGFloat = msg_send![window, backingScaleFactor];
-                    let () = msg_send![new_layer, setContentsScale: scale_factor];
-                }
-            };
-            if let Some(delegate) = delegate {
-                let () = msg_send![new_layer, setDelegate: delegate.0];
-            }
-            new_layer
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let _: () = msg_send![new_layer, setContentsGravity: unsafe { kCAGravityResize }];
+
+            
+            
+            let scale_factor: CGFloat = msg_send![root_layer, contentsScale];
+            let () = msg_send![new_layer, setContentsScale: scale_factor];
+
+            let delegate = HalManagedMetalLayerDelegate::new();
+            let () = msg_send![new_layer, setDelegate: delegate.0];
+
+            unsafe { StrongPtr::new(new_layer) }
         }
     }
 
@@ -167,16 +268,6 @@ impl super::Surface {
             width: (size.width * scale) as u32,
             height: (size.height * scale) as u32,
             depth_or_array_layers: 1,
-        }
-    }
-}
-
-impl Drop for super::Surface {
-    fn drop(&mut self) {
-        if let Some(view) = self.view {
-            unsafe {
-                let () = msg_send![view.as_ptr(), release];
-            }
         }
     }
 }
@@ -210,19 +301,30 @@ impl crate::Surface for super::Surface {
             _ => (),
         }
 
-        let device_raw = device.shared.device.lock();
         
         
         
         
-        #[cfg(target_os = "ios")]
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[cfg(not(target_os = "macos"))]
         {
-            if let Some(view) = self.view {
-                let main_layer: *mut Object = msg_send![view.as_ptr(), layer];
-                let bounds: CGRect = msg_send![main_layer, bounds];
-                let () = msg_send![*render_layer, setFrame: bounds];
+            let superlayer: *mut Object = msg_send![render_layer.as_ptr(), superlayer];
+            if !superlayer.is_null() {
+                let scale_factor: CGFloat = msg_send![superlayer, contentsScale];
+                let () = msg_send![render_layer.as_ptr(), setContentsScale: scale_factor];
             }
         }
+
+        let device_raw = device.shared.device.lock();
         render_layer.set_device(&device_raw);
         render_layer.set_pixel_format(caps.map_format(config.format));
         render_layer.set_framebuffer_only(framebuffer_only);

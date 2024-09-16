@@ -53,7 +53,6 @@ impl crate::BufferTextureCopy {
 
 impl super::Temp {
     fn prepare_marker(&mut self, marker: &str) -> (&[u16], u32) {
-        
         self.marker.clear();
         self.marker.extend(marker.encode_utf16());
         self.marker.push(0);
@@ -265,7 +264,8 @@ impl crate::CommandEncoder for super::CommandEncoder {
     unsafe fn begin_encoding(&mut self, label: crate::Label) -> Result<(), crate::DeviceError> {
         let list = loop {
             if let Some(list) = self.free_lists.pop() {
-                let reset_result = unsafe { list.Reset(&self.allocator, None) }.into_result();
+                
+                let reset_result = unsafe { list.Reset(&self.allocator, None) };
                 if reset_result.is_ok() {
                     break Some(list);
                 }
@@ -314,7 +314,9 @@ impl crate::CommandEncoder for super::CommandEncoder {
         for cmd_buf in command_buffers {
             self.free_lists.push(cmd_buf.raw);
         }
-        let _todo_handle_error = unsafe { self.allocator.Reset() };
+        if let Err(e) = unsafe { self.allocator.Reset() } {
+            log::error!("ID3D12CommandAllocator::Reset() failed with {e}");
+        }
     }
 
     unsafe fn transition_buffers<'a, T>(&mut self, barriers: T)
@@ -724,8 +726,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
                         cat.clear_value.b as f32,
                         cat.clear_value.a as f32,
                     ];
-                    
-                    unsafe { list.ClearRenderTargetView(*rtv, &value, Some(&[])) };
+                    unsafe { list.ClearRenderTargetView(*rtv, &value, None) };
                 }
                 if let Some(ref target) = cat.resolve_target {
                     self.pass.resolves.push(super::PassResolve {
@@ -754,12 +755,23 @@ impl crate::CommandEncoder for super::CommandEncoder {
             if let Some(ds_view) = ds_view {
                 if flags != Direct3D12::D3D12_CLEAR_FLAGS::default() {
                     unsafe {
-                        list.ClearDepthStencilView(
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        (windows_core::Interface::vtable(list).ClearDepthStencilView)(
+                            windows_core::Interface::as_raw(list),
                             ds_view,
                             flags,
                             ds.clear_value.0,
                             ds.clear_value.1 as u8,
-                            &[],
+                            0,
+                            std::ptr::null(),
                         )
                     }
                 }

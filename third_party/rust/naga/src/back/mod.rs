@@ -3,6 +3,8 @@
 
 #![allow(dead_code)] 
 
+use crate::proc::ExpressionKindTracker;
+
 #[cfg(dot_out)]
 pub mod dot;
 #[cfg(glsl_out)]
@@ -118,6 +120,8 @@ pub struct FunctionCtx<'a> {
     pub expressions: &'a crate::Arena<crate::Expression>,
     
     pub named_expressions: &'a crate::NamedExpressions,
+    
+    pub expr_kind_tracker: ExpressionKindTracker,
 }
 
 impl FunctionCtx<'_> {
