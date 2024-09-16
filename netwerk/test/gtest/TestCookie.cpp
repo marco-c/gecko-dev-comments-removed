@@ -747,7 +747,9 @@ TEST(TestCookie, TestCookieMain)
                                                  INT64_MAX,  
                                                  &attrs,     
                                                  nsICookie::SAMESITE_NONE,
-                                                 nsICookie::SCHEME_HTTPS)));
+                                                 nsICookie::SCHEME_HTTPS,
+                                                 false  
+                                                 )));
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(
       "cookiemgr.test"_ns,             
       "/foo"_ns,                       
@@ -758,7 +760,9 @@ TEST(TestCookie, TestCookieMain)
       true,                            
       PR_Now() / PR_USEC_PER_SEC + 2,  
       &attrs,                          
-      nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS)));
+      nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS,
+      false  
+      )));
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative("new.domain"_ns,  
                                                  "/rabbit"_ns,     
                                                  "test3"_ns,       
@@ -769,7 +773,9 @@ TEST(TestCookie, TestCookieMain)
                                                  INT64_MAX,  
                                                  &attrs,     
                                                  nsICookie::SAMESITE_NONE,
-                                                 nsICookie::SCHEME_HTTPS)));
+                                                 nsICookie::SCHEME_HTTPS,
+                                                 false  
+                                                 )));
   
   nsTArray<RefPtr<nsICookie>> cookies;
   EXPECT_NS_SUCCEEDED(cookieMgr->GetCookies(cookies));
