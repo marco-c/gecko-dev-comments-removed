@@ -2089,6 +2089,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   inline void branchToComputedAddress(const BaseIndex& address) PER_ARCH;
 
+  
+  
+  
+  
+  CodeOffset sub32FromMemAndBranchIfNegativeWithPatch(
+      Address address, Label* label) PER_SHARED_ARCH;
+
+  
+  void patchSub32FromMemAndBranchIfNegative(CodeOffset offset,
+                                            Imm32 imm) PER_SHARED_ARCH;
+
  private:
   template <typename T, typename S, typename L>
   inline void branchPtrImpl(Condition cond, const T& lhs, const S& rhs, L label)
