@@ -317,7 +317,11 @@ class ContentAnalysis final : public nsIContentAnalysis {
       MOZ_ASSERT(NS_IsMainThread());
       mRequest = aRequest;
       mResultAction = Some(aResultAction);
-      SetExpirationTimer();
+      
+      
+      if (aResultAction != nsIContentAnalysisResponse::Action::eWarn) {
+        SetExpirationTimer();
+      }
     }
     Maybe<nsIContentAnalysisResponse::Action> ResultAction() const {
       MOZ_ASSERT(NS_IsMainThread());
@@ -331,6 +335,16 @@ class ContentAnalysis final : public nsIContentAnalysis {
       if (mExpirationTimer) {
         mExpirationTimer->Cancel();
       }
+    }
+    void UpdateWarnAction(nsIContentAnalysisResponse::Action aAction) {
+      MOZ_ASSERT(NS_IsMainThread());
+      MOZ_ASSERT(mRequest);
+      MOZ_ASSERT(mResultAction ==
+                 Some(nsIContentAnalysisResponse::Action::eWarn));
+      mResultAction = Some(aAction);
+      
+      
+      SetExpirationTimer();
     }
     enum class CacheResult : uint8_t {
       CannotBeCached = 0,
