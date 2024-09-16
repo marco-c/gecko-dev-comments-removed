@@ -173,6 +173,21 @@ const service_and_manufacturer_data_ad_packet = {
 
 
 
+const zero_and_ffff_manufacturer_uuid_ad_packet = {
+  deviceAddress: '07:07:07:07:07:07',
+  rssi: -10,
+  scanRecord: {
+    name: 'LE Device',
+    uuids: [uuid1234],
+    manufacturerData: {0x0000: manufacturer1Data, 0xFFFF: manufacturer2Data},
+  }
+};
+
+
+
+
+
+
 
 class TestCharacteristicProperties {
   
