@@ -2400,7 +2400,9 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
     }
   }
 
-  return SpeculativeConnect(ci, aCallbacks);
+  
+  return MaybeSpeculativeConnectWithHTTPSRR(ci, aCallbacks, 0,
+                                            EchConfigEnabled());
 }
 
 NS_IMETHODIMP
