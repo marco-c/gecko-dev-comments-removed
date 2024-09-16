@@ -11,39 +11,21 @@ pub struct Bar {
 
 
 
-#[test]
-fn non_meta_attribute_gets_own_error() {
-    let di = parse_quote! {
-        #[derive(Bar)]
-        #[bar(file = "motors/example_6.csv", st = RocketEngine)]
-        pub struct EstesC6;
-    };
-
-    let errors: darling::Error = Bar::from_derive_input(&di).unwrap_err().flatten();
-    
-    assert_eq!(1, errors.len());
-    
-    assert!(errors
-        .into_iter()
-        .any(|e| e.to_string().contains("expected lit")));
-}
-
 
 
 #[test]
 fn non_meta_attribute_does_not_block_others() {
     let di = parse_quote! {
         #[derive(Bar)]
-        #[bar(st = RocketEngine)]
+        #[bar(st = RocketEngine: Debug)]
         #[bar(file = "motors/example_6.csv")]
         pub struct EstesC6;
     };
 
     let errors: darling::Error = Bar::from_derive_input(&di).unwrap_err().flatten();
     
-    assert_eq!(1, errors.len());
     
-    assert!(errors
-        .into_iter()
-        .any(|e| e.to_string().contains("expected lit")));
+    
+    
+    assert_eq!(2, errors.len());
 }

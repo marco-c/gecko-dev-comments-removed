@@ -585,7 +585,7 @@ mod test {
     #[test]
     fn arg_group_send_sync() {
         fn foo<T: Send + Sync>(_: T) {}
-        foo(ArgGroup::new("test"))
+        foo(ArgGroup::new("test"));
     }
 
     #[test]

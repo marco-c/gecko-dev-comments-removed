@@ -36,10 +36,11 @@
 
 
 
-
-
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
+#![no_std]
+
+extern crate alloc;
 
 mod kebab;
 mod lower_camel;
@@ -63,17 +64,7 @@ pub use upper_camel::{
     AsUpperCamelCase, AsUpperCamelCase as AsPascalCase, ToPascalCase, ToUpperCamelCase,
 };
 
-use std::fmt;
-
-#[cfg(feature = "unicode")]
-fn get_iterator(s: &str) -> unicode_segmentation::UnicodeWords {
-    use unicode_segmentation::UnicodeSegmentation;
-    s.unicode_words()
-}
-#[cfg(not(feature = "unicode"))]
-fn get_iterator(s: &str) -> impl Iterator<Item = &str> {
-    s.split(|letter: char| !letter.is_ascii_alphanumeric())
-}
+use core::fmt;
 
 fn transform<F, G>(
     s: &str,
@@ -107,20 +98,12 @@ where
 
     let mut first_word = true;
 
-    for word in get_iterator(s) {
+    for word in s.split(|c: char| !c.is_alphanumeric()) {
         let mut char_indices = word.char_indices().peekable();
         let mut init = 0;
         let mut mode = WordMode::Boundary;
 
         while let Some((i, c)) = char_indices.next() {
-            
-            if c == '_' {
-                if init == i {
-                    init += 1;
-                }
-                continue;
-            }
-
             if let Some(&(next_i, next)) = char_indices.peek() {
                 
                 
@@ -134,7 +117,7 @@ where
 
                 
                 
-                if next == '_' || (next_mode == WordMode::Lowercase && next.is_uppercase()) {
+                if next_mode == WordMode::Lowercase && next.is_uppercase() {
                     if !first_word {
                         boundary(f)?;
                     }

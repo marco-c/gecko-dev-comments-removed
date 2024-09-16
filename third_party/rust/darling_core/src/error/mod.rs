@@ -126,6 +126,17 @@ impl Error {
     }
 
     
+    
+    
+    pub fn unknown_field_path_with_alts<'a, T, I>(field: &Path, alternates: I) -> Self
+    where
+        T: AsRef<str> + 'a,
+        I: IntoIterator<Item = &'a T>,
+    {
+        Error::new(ErrorUnknownField::with_alts(&path_to_string(field), alternates).into())
+    }
+
+    
     pub fn unsupported_shape(shape: &str) -> Self {
         Error::new(ErrorKind::UnsupportedShape {
             observed: shape.into(),
@@ -390,6 +401,51 @@ impl Error {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_sibling_alts_for_unknown_field<'a, T, I>(mut self, alternates: I) -> Self
+    where
+        T: AsRef<str> + 'a,
+        I: IntoIterator<Item = &'a T>,
+    {
+        
+        
+        if !self.locations.is_empty() {
+            return self;
+        }
+
+        if let ErrorKind::UnknownField(unknown_field) = &mut self.kind {
+            unknown_field.add_alts(alternates);
+        } else if let ErrorKind::Multiple(errors) = self.kind {
+            let alternates = alternates.into_iter().collect::<Vec<_>>();
+            self.kind = ErrorKind::Multiple(
+                errors
+                    .into_iter()
+                    .map(|err| {
+                        err.add_sibling_alts_for_unknown_field(
+                            
+                            
+                            
+                            
+                            alternates.clone(),
+                        )
+                    })
+                    .collect(),
+            )
+        }
+
+        self
+    }
+
+    
     fn prepend_at(mut self, mut locations: Vec<String>) -> Self {
         if !locations.is_empty() {
             locations.extend(self.locations);
@@ -578,7 +634,7 @@ impl StdError for Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.kind)?;
         if !self.locations.is_empty() {
             write!(f, " at {}", self.locations.join("/"))?;
@@ -775,7 +831,7 @@ impl Accumulator {
     
     #[must_use = "Accumulated errors should be handled or propagated to the caller"]
     pub fn into_inner(mut self) -> Vec<Error> {
-        match std::mem::replace(&mut self.0, None) {
+        match self.0.take() {
             Some(errors) => errors,
             None => panic!("darling internal error: Accumulator accessed after defuse"),
         }

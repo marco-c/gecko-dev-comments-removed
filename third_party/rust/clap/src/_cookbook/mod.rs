@@ -47,6 +47,7 @@
 
 
 
+
 pub mod cargo_example;
 pub mod cargo_example_derive;
 pub mod escaped_positional;
@@ -58,4 +59,5 @@ pub mod multicall_busybox;
 pub mod multicall_hostname;
 pub mod pacman;
 pub mod repl;
+pub mod repl_derive;
 pub mod typed_derive;

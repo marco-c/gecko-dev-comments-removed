@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(version, about, long_about = None)]
 struct Cli {
     
     #[arg(value_parser = port_in_range)]

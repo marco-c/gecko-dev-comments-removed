@@ -35,19 +35,25 @@ impl<'a> FieldsGen<'a> {
     
     pub(in crate::codegen) fn core_loop(&self) -> TokenStream {
         let arms = self.fields.as_ref().map(Field::as_match);
-
         
         
-        let handle_unknown = if self.allow_unknown_fields {
+        let handle_unknown = if self.fields.iter().any(|f| f.flatten) {
+            quote! {
+                __flatten.push(::darling::ast::NestedMeta::Meta(__inner.clone()));
+            }
+        }
+        
+        else if self.allow_unknown_fields {
             quote!()
-        } else {
+        }
+        
+        else {
+            let mut names = self.fields.iter().filter_map(Field::as_name).peekable();
             
             
-            let err_fn = if arms.is_empty() {
+            let err_fn = if names.peek().is_none() {
                 quote!(unknown_field(__other))
             } else {
-                let names = self.fields.as_ref().map(Field::as_name);
-                let names = names.iter();
                 quote!(unknown_field_with_alts(__other, &[#(#names),*]))
             };
 

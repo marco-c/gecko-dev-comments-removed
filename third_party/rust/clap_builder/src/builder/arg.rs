@@ -11,6 +11,9 @@ use std::{
 
 
 use super::{ArgFlags, ArgSettings};
+#[cfg(feature = "unstable-ext")]
+use crate::builder::ext::Extension;
+use crate::builder::ext::Extensions;
 use crate::builder::ArgPredicate;
 use crate::builder::IntoResettable;
 use crate::builder::OsStr;
@@ -85,7 +88,7 @@ pub struct Arg {
     pub(crate) terminator: Option<Str>,
     pub(crate) index: Option<usize>,
     pub(crate) help_heading: Option<Option<Str>>,
-    pub(crate) value_hint: Option<ValueHint>,
+    pub(crate) ext: Extensions,
 }
 
 
@@ -869,6 +872,14 @@ impl Arg {
         self.settings.unset(setting);
         self
     }
+
+    
+    #[cfg(feature = "unstable-ext")]
+    #[allow(clippy::should_implement_trait)]
+    pub fn add<T: ArgExt + Extension>(mut self, tagged: T) -> Self {
+        self.ext.set(tagged);
+        self
+    }
 }
 
 
@@ -1291,7 +1302,15 @@ impl Arg {
     
     #[must_use]
     pub fn value_hint(mut self, value_hint: impl IntoResettable<ValueHint>) -> Self {
-        self.value_hint = value_hint.into_resettable().into_option();
+        
+        match value_hint.into_resettable().into_option() {
+            Some(value_hint) => {
+                self.ext.set(value_hint);
+            }
+            None => {
+                self.ext.remove::<ValueHint>();
+            }
+        }
         self
     }
 
@@ -1517,9 +1536,6 @@ impl Arg {
         self
     }
 
-    
-    
-    
     
     
     
@@ -3953,6 +3969,21 @@ impl Arg {
     }
 
     
+    #[inline]
+    pub fn get_aliases(&self) -> Option<Vec<&str>> {
+        if self.aliases.is_empty() {
+            None
+        } else {
+            Some(
+                self.aliases
+                    .iter()
+                    .filter_map(|(s, v)| if !*v { Some(s.as_str()) } else { None })
+                    .collect(),
+            )
+        }
+    }
+
+    
     
     pub fn get_possible_values(&self) -> Vec<PossibleValue> {
         if !self.is_takes_value_set() {
@@ -4007,7 +4038,8 @@ impl Arg {
 
     
     pub fn get_value_hint(&self) -> ValueHint {
-        self.value_hint.unwrap_or_else(|| {
+        
+        self.ext.get::<ValueHint>().copied().unwrap_or_else(|| {
             if self.is_takes_value_set() {
                 let type_id = self.get_value_parser().type_id();
                 if type_id == AnyValueId::of::<std::path::PathBuf>() {
@@ -4078,7 +4110,9 @@ impl Arg {
     }
 
     pub(crate) fn is_takes_value_set(&self) -> bool {
-        self.get_action().takes_values()
+        self.get_num_args()
+            .unwrap_or_else(|| 1.into())
+            .takes_values()
     }
 
     
@@ -4092,8 +4126,8 @@ impl Arg {
     }
 
     
-    pub fn get_action(&self) -> &super::ArgAction {
-        const DEFAULT: super::ArgAction = super::ArgAction::Set;
+    pub fn get_action(&self) -> &ArgAction {
+        const DEFAULT: ArgAction = ArgAction::Set;
         self.action.as_ref().unwrap_or(&DEFAULT)
     }
 
@@ -4193,6 +4227,18 @@ impl Arg {
     pub fn is_ignore_case_set(&self) -> bool {
         self.is_set(ArgSettings::IgnoreCase)
     }
+
+    
+    #[cfg(feature = "unstable-ext")]
+    pub fn get<T: ArgExt + Extension>(&self) -> Option<&T> {
+        self.ext.get::<T>()
+    }
+
+    
+    #[cfg(feature = "unstable-ext")]
+    pub fn remove<T: ArgExt + Extension>(mut self) -> Option<T> {
+        self.ext.remove::<T>()
+    }
 }
 
 
@@ -4200,7 +4246,7 @@ impl Arg {
     pub(crate) fn _build(&mut self) {
         if self.action.is_none() {
             if self.num_vals == Some(ValueRange::EMPTY) {
-                let action = super::ArgAction::SetTrue;
+                let action = ArgAction::SetTrue;
                 self.action = Some(action);
             } else {
                 let action =
@@ -4209,9 +4255,9 @@ impl Arg {
                         
                         
                         
-                        super::ArgAction::Append
+                        ArgAction::Append
                     } else {
-                        super::ArgAction::Set
+                        ArgAction::Set
                     };
                 self.action = Some(action);
             }
@@ -4430,14 +4476,14 @@ impl Ord for Arg {
 impl Eq for Arg {}
 
 impl Display for Arg {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let plain = Styles::plain();
         self.stylized(&plain, None).fmt(f)
     }
 }
 
 impl fmt::Debug for Arg {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         let mut ds = f.debug_struct("Arg");
 
         #[allow(unused_mut)]
@@ -4467,8 +4513,8 @@ impl fmt::Debug for Arg {
             .field("terminator", &self.terminator)
             .field("index", &self.index)
             .field("help_heading", &self.help_heading)
-            .field("value_hint", &self.value_hint)
-            .field("default_missing_vals", &self.default_missing_vals);
+            .field("default_missing_vals", &self.default_missing_vals)
+            .field("ext", &self.ext);
 
         #[cfg(feature = "env")]
         {
@@ -4478,6 +4524,10 @@ impl fmt::Debug for Arg {
         ds.finish()
     }
 }
+
+
+#[cfg(feature = "unstable-ext")]
+pub trait ArgExt: Extension {}
 
 
 #[cfg(test)]
@@ -4517,7 +4567,7 @@ mod test {
             .action(ArgAction::SetTrue);
         f._build();
 
-        assert_eq!(f.to_string(), "--flag")
+        assert_eq!(f.to_string(), "--flag");
     }
 
     #[test]
@@ -4540,7 +4590,7 @@ mod test {
         f.short_aliases = vec![('b', true)];
         f._build();
 
-        assert_eq!(f.to_string(), "-a")
+        assert_eq!(f.to_string(), "-a");
     }
 
     #[test]

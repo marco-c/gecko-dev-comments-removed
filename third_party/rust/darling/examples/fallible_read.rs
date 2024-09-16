@@ -10,10 +10,10 @@ use darling::{FromDeriveInput, FromMeta};
 use syn::parse_str;
 
 #[derive(Debug, FromDeriveInput)]
-#[darling(attributes(my_trait), and_then = "MyInputReceiver::autocorrect")]
+#[darling(attributes(my_trait), and_then = MyInputReceiver::autocorrect)]
 pub struct MyInputReceiver {
     
-    #[darling(map = "MyInputReceiver::make_string_shouty")]
+    #[darling(map = MyInputReceiver::make_string_shouty)]
     name: String,
 
     

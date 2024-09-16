@@ -59,6 +59,11 @@ impl Flag {
     pub fn is_some(&self) -> bool {
         self.is_present()
     }
+
+    
+    pub fn span(&self) -> Span {
+        self.0.unwrap_or_else(Span::call_site)
+    }
 }
 
 impl FromMeta for Flag {

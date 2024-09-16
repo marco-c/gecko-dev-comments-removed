@@ -1,6 +1,10 @@
 use std::ffi::OsStr;
 
+
 pub trait OsStrExt: private::Sealed {
+    
+    
+    
     
     fn try_str(&self) -> Result<&str, std::str::Utf8Error>;
     
@@ -180,7 +184,7 @@ pub trait OsStrExt: private::Sealed {
 
 impl OsStrExt for OsStr {
     fn try_str(&self) -> Result<&str, std::str::Utf8Error> {
-        let bytes = to_bytes(self);
+        let bytes = self.as_encoded_bytes();
         std::str::from_utf8(bytes)
     }
 
@@ -189,22 +193,22 @@ impl OsStrExt for OsStr {
     }
 
     fn find(&self, needle: &str) -> Option<usize> {
-        let bytes = to_bytes(self);
+        let bytes = self.as_encoded_bytes();
         (0..=self.len().checked_sub(needle.len())?)
             .find(|&x| bytes[x..].starts_with(needle.as_bytes()))
     }
 
     fn strip_prefix(&self, prefix: &str) -> Option<&OsStr> {
-        let bytes = to_bytes(self);
+        let bytes = self.as_encoded_bytes();
         bytes.strip_prefix(prefix.as_bytes()).map(|s| {
             
             
             
-            unsafe { to_os_str_unchecked(s) }
+            unsafe { OsStr::from_encoded_bytes_unchecked(s) }
         })
     }
     fn starts_with(&self, prefix: &str) -> bool {
-        let bytes = to_bytes(self);
+        let bytes = self.as_encoded_bytes();
         bytes.starts_with(prefix.as_bytes())
     }
 
@@ -219,13 +223,18 @@ impl OsStrExt for OsStr {
     fn split_once(&self, needle: &'_ str) -> Option<(&OsStr, &OsStr)> {
         let start = self.find(needle)?;
         let end = start + needle.len();
-        let haystack = to_bytes(self);
+        let haystack = self.as_encoded_bytes();
         let first = &haystack[0..start];
         let second = &haystack[end..];
         
         
         
-        unsafe { Some((to_os_str_unchecked(first), to_os_str_unchecked(second))) }
+        unsafe {
+            Some((
+                OsStr::from_encoded_bytes_unchecked(first),
+                OsStr::from_encoded_bytes_unchecked(second),
+            ))
+        }
     }
 }
 
@@ -233,45 +242,6 @@ mod private {
     pub trait Sealed {}
 
     impl Sealed for std::ffi::OsStr {}
-}
-
-
-
-
-
-
-
-
-
-
-fn to_bytes(s: &OsStr) -> &[u8] {
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe { std::mem::transmute(s) }
-}
-
-
-
-
-
-
-
-unsafe fn to_os_str_unchecked(s: &[u8]) -> &OsStr {
-    
-    
-    
-    
-    
-    
-    
-    
-    std::mem::transmute(s)
 }
 
 pub struct Split<'s, 'n> {
@@ -284,18 +254,15 @@ impl<'s, 'n> Iterator for Split<'s, 'n> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let haystack = self.haystack?;
-        match haystack.split_once(self.needle) {
-            Some((first, second)) => {
-                if !haystack.is_empty() {
-                    debug_assert_ne!(haystack, second);
-                }
-                self.haystack = Some(second);
-                Some(first)
+        if let Some((first, second)) = haystack.split_once(self.needle) {
+            if !haystack.is_empty() {
+                debug_assert_ne!(haystack, second);
             }
-            None => {
-                self.haystack = None;
-                Some(haystack)
-            }
+            self.haystack = Some(second);
+            Some(first)
+        } else {
+            self.haystack = None;
+            Some(haystack)
         }
     }
 }
@@ -306,7 +273,12 @@ impl<'s, 'n> Iterator for Split<'s, 'n> {
 
 
 pub(crate) unsafe fn split_at(os: &OsStr, index: usize) -> (&OsStr, &OsStr) {
-    let bytes = to_bytes(os);
-    let (first, second) = bytes.split_at(index);
-    (to_os_str_unchecked(first), to_os_str_unchecked(second))
+    unsafe {
+        let bytes = os.as_encoded_bytes();
+        let (first, second) = bytes.split_at(index);
+        (
+            OsStr::from_encoded_bytes_unchecked(first),
+            OsStr::from_encoded_bytes_unchecked(second),
+        )
+    }
 }

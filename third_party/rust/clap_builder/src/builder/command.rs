@@ -320,6 +320,45 @@ impl Command {
     
     
     
+    #[must_use]
+    #[cfg_attr(debug_assertions, track_caller)]
+    pub fn mut_group<F>(mut self, arg_id: impl AsRef<str>, f: F) -> Self
+    where
+        F: FnOnce(ArgGroup) -> ArgGroup,
+    {
+        let id = arg_id.as_ref();
+        let index = self
+            .groups
+            .iter()
+            .position(|g| g.get_id() == id)
+            .unwrap_or_else(|| panic!("Group `{id}` is undefined"));
+        let a = self.groups.remove(index);
+
+        self.groups.push(f(a));
+        self
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -408,7 +447,7 @@ impl Command {
     
     #[must_use]
     pub fn groups(mut self, groups: impl IntoIterator<Item = impl Into<ArgGroup>>) -> Self {
-        for g in groups.into_iter() {
+        for g in groups {
             self = self.group(g.into());
         }
         self
@@ -545,7 +584,7 @@ impl Command {
     
     
     
-    pub fn error(&mut self, kind: ErrorKind, message: impl std::fmt::Display) -> Error {
+    pub fn error(&mut self, kind: ErrorKind, message: impl fmt::Display) -> Error {
         Error::raw(kind, message).format(self)
     }
 
@@ -592,7 +631,7 @@ impl Command {
     
     
     pub fn get_matches_mut(&mut self) -> ArgMatches {
-        self.try_get_matches_from_mut(&mut env::args_os())
+        self.try_get_matches_from_mut(env::args_os())
             .unwrap_or_else(|e| e.exit())
     }
 
@@ -746,7 +785,7 @@ impl Command {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let mut raw_args = clap_lex::RawArgs::new(itr.into_iter());
+        let mut raw_args = clap_lex::RawArgs::new(itr);
         let mut cursor = raw_args.cursor();
 
         if self.settings.is_set(AppSettings::Multicall) {
@@ -1132,6 +1171,8 @@ impl Command {
     
     
     
+    
+    
     #[cfg(feature = "color")]
     #[inline]
     #[must_use]
@@ -1251,6 +1292,35 @@ impl Command {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn disable_version_flag(self, yes: bool) -> Self {
         if yes {
@@ -1312,6 +1382,35 @@ impl Command {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1661,6 +1760,7 @@ impl Command {
     
     
     
+    
     #[must_use]
     pub fn long_about(mut self, long_about: impl IntoResettable<StyledStr>) -> Self {
         self.long_about = long_about.into_resettable().into_option();
@@ -1707,6 +1807,7 @@ impl Command {
     
     
     
+    
     #[must_use]
     pub fn after_long_help(mut self, help: impl IntoResettable<StyledStr>) -> Self {
         self.after_long_help = help.into_resettable().into_option();
@@ -1734,6 +1835,7 @@ impl Command {
         self
     }
 
+    
     
     
     
@@ -1989,6 +2091,21 @@ impl Command {
         self.settings.unset(setting);
         self.g_settings.unset(setting);
         self
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub fn flatten_help(self, yes: bool) -> Self {
+        if yes {
+            self.setting(AppSettings::FlattenHelp)
+        } else {
+            self.unset_setting(AppSettings::FlattenHelp)
+        }
     }
 
     
@@ -2455,7 +2572,7 @@ impl Command {
     #[must_use]
     pub fn long_flag_aliases(mut self, names: impl IntoIterator<Item = impl Into<Str>>) -> Self {
         for s in names {
-            self = self.long_flag_alias(s)
+            self = self.long_flag_alias(s);
         }
         self
     }
@@ -3277,6 +3394,20 @@ impl Command {
         self.usage_name.as_deref()
     }
 
+    #[inline]
+    #[cfg(feature = "usage")]
+    pub(crate) fn get_usage_name_fallback(&self) -> &str {
+        self.get_usage_name()
+            .unwrap_or_else(|| self.get_bin_name_fallback())
+    }
+
+    #[inline]
+    #[cfg(not(feature = "usage"))]
+    #[allow(dead_code)]
+    pub(crate) fn get_usage_name_fallback(&self) -> &str {
+        self.get_bin_name_fallback()
+    }
+
     
     #[inline]
     pub fn get_display_name(&self) -> Option<&str> {
@@ -3287,6 +3418,12 @@ impl Command {
     #[inline]
     pub fn get_bin_name(&self) -> Option<&str> {
         self.bin_name.as_deref()
+    }
+
+    
+    #[inline]
+    pub(crate) fn get_bin_name_fallback(&self) -> &str {
+        self.bin_name.as_deref().unwrap_or_else(|| self.get_name())
     }
 
     
@@ -3304,6 +3441,13 @@ impl Command {
     #[cfg(debug_assertions)]
     pub(crate) fn get_name_str(&self) -> &Str {
         &self.name
+    }
+
+    
+    pub fn get_name_and_visible_aliases(&self) -> Vec<&str> {
+        let mut names = vec![self.name.as_str()];
+        names.extend(self.get_visible_aliases());
+        names
     }
 
     
@@ -3350,6 +3494,12 @@ impl Command {
     #[inline]
     pub fn get_long_about(&self) -> Option<&StyledStr> {
         self.long_about.as_ref()
+    }
+
+    
+    #[inline]
+    pub fn is_flatten_help_set(&self) -> bool {
+        self.is_set(AppSettings::FlattenHelp)
     }
 
     
@@ -3403,6 +3553,15 @@ impl Command {
     #[inline]
     pub fn get_all_long_flag_aliases(&self) -> impl Iterator<Item = &str> + '_ {
         self.long_flag_aliases.iter().map(|a| a.0.as_str())
+    }
+
+    
+    #[inline]
+    pub fn get_aliases(&self) -> impl Iterator<Item = &str> + '_ {
+        self.aliases
+            .iter()
+            .filter(|(_, vis)| !*vis)
+            .map(|a| a.0.as_str())
     }
 
     #[inline]
@@ -3612,7 +3771,7 @@ impl Command {
     
     
     fn get_subcommands_containing(&self, arg: &Arg) -> Vec<&Self> {
-        let mut vec = std::vec::Vec::new();
+        let mut vec = Vec::new();
         for idx in 0..self.subcommands.len() {
             if self.subcommands[idx]
                 .args
@@ -4454,7 +4613,7 @@ impl Command {
 
     #[inline]
     pub(crate) fn set(&mut self, s: AppSettings) {
-        self.settings.set(s)
+        self.settings.set(s);
     }
 
     #[inline]
@@ -4518,7 +4677,7 @@ impl Command {
 
     
     
-    pub(crate) fn all_subcommand_names(&self) -> impl Iterator<Item = &str> + Captures {
+    pub(crate) fn all_subcommand_names(&self) -> impl Iterator<Item = &str> + Captures<'_> {
         self.get_subcommands().flat_map(|sc| {
             let name = sc.get_name();
             let aliases = sc.get_all_aliases();
@@ -4561,7 +4720,7 @@ impl Command {
                 if !args.contains(n) {
                     if self.find(n).is_some() {
                         debug!("Command::unroll_args_in_group:iter: this is an arg");
-                        args.push(n.clone())
+                        args.push(n.clone());
                     } else {
                         debug!("Command::unroll_args_in_group:iter: this is a group");
                         g_vec.push(n);
@@ -4592,7 +4751,7 @@ impl Command {
                 for r in arg.requires.iter().filter_map(&func) {
                     if let Some(req) = self.find(&r) {
                         if !req.requires.is_empty() {
-                            r_vec.push(req.get_id())
+                            r_vec.push(req.get_id());
                         }
                     }
                     args.push(r);
@@ -4742,18 +4901,21 @@ impl From<&'_ Command> for Command {
 }
 
 impl fmt::Display for Command {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)
     }
 }
 
+#[allow(dead_code)] 
 pub(crate) trait AppTag: crate::builder::ext::Extension {}
 
+#[allow(dead_code)] 
 #[derive(Default, Copy, Clone, Debug)]
 struct TermWidth(usize);
 
 impl AppTag for TermWidth {}
 
+#[allow(dead_code)] 
 #[derive(Default, Copy, Clone, Debug)]
 struct MaxTermWidth(usize);
 

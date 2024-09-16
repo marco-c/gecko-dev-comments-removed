@@ -110,6 +110,11 @@
 
 
 
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(missing_docs)]
+#![warn(clippy::print_stderr)]
+#![warn(clippy::print_stdout)]
+
 mod ext;
 
 use std::ffi::OsStr;
@@ -158,7 +163,7 @@ impl RawArgs {
     
     
     
-    pub fn new(iter: impl IntoIterator<Item = impl Into<std::ffi::OsString>>) -> Self {
+    pub fn new(iter: impl IntoIterator<Item = impl Into<OsString>>) -> Self {
         let iter = iter.into_iter();
         Self::from(iter)
     }
@@ -301,9 +306,13 @@ impl<'s> ParsedArg<'s> {
     }
 
     
-    pub fn is_number(&self) -> bool {
+    
+    
+    
+    pub fn is_negative_number(&self) -> bool {
         self.to_value()
-            .map(|s| s.parse::<f64>().is_ok())
+            .ok()
+            .and_then(|s| Some(is_number(s.strip_prefix('-')?)))
             .unwrap_or_default()
     }
 
@@ -408,8 +417,8 @@ impl<'s> ShortFlags<'s> {
     
     
     
-    pub fn is_number(&self) -> bool {
-        self.invalid_suffix.is_none() && self.utf8_prefix.as_str().parse::<f64>().is_ok()
+    pub fn is_negative_number(&self) -> bool {
+        self.invalid_suffix.is_none() && is_number(self.utf8_prefix.as_str())
     }
 
     
@@ -460,9 +469,42 @@ fn split_nonutf8_once(b: &OsStr) -> (&str, Option<&OsStr>) {
         Ok(s) => (s, None),
         Err(err) => {
             
+            
             let (valid, after_valid) = unsafe { ext::split_at(b, err.valid_up_to()) };
             let valid = valid.try_str().unwrap();
             (valid, Some(after_valid))
         }
+    }
+}
+
+fn is_number(arg: &str) -> bool {
+    
+    
+    
+    
+    let mut seen_dot = false;
+    let mut position_of_e = None;
+    for (i, c) in arg.as_bytes().iter().enumerate() {
+        match c {
+            
+            b'0'..=b'9' => {}
+
+            
+            
+            b'.' if !seen_dot && position_of_e.is_none() && i > 0 => seen_dot = true,
+
+            
+            
+            b'e' if position_of_e.is_none() && i > 0 => position_of_e = Some(i),
+
+            _ => return false,
+        }
+    }
+
+    
+    
+    match position_of_e {
+        Some(i) => i != arg.len() - 1,
+        None => true,
     }
 }

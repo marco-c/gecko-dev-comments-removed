@@ -43,6 +43,8 @@
 
 
 
+
+
 #![doc = include_str!("../examples/demo.rs")]
 
 
@@ -76,30 +78,17 @@
 
 
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/clap-rs/clap/master/assets/clap.png")]
-#![warn(
-    missing_docs,
-    missing_debug_implementations,
-    missing_copy_implementations,
-    trivial_casts,
-    unused_allocation,
-    trivial_numeric_casts,
-    clippy::single_char_pattern
-)]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![forbid(unsafe_code)]
-
-#![allow(clippy::single_component_path_imports)]
-#![allow(clippy::branches_sharing_code)]
-
-#![allow(clippy::if_same_then_else)]
-
-#![allow(clippy::collapsible_else_if)]
+#![warn(missing_docs)]
+#![warn(clippy::print_stderr)]
+#![warn(clippy::print_stdout)]
 
 pub use clap_builder::*;
 #[cfg(feature = "derive")]
 #[doc(hidden)]
-pub use clap_derive::{self, *};
+pub use clap_derive::{self, Args, Parser, Subcommand, ValueEnum};
 
 #[cfg(feature = "unstable-doc")]
 pub mod _cookbook;

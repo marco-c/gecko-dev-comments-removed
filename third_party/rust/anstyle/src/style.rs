@@ -7,6 +7,13 @@ use crate::reset::RESET;
 
 
 
+
+
+
+
+
+
+
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Style {
     fg: Option<crate::Color>,
@@ -91,9 +98,31 @@ impl Style {
     }
 
     
+    
+    
     #[inline]
-    pub fn render(self) -> impl core::fmt::Display {
+    pub fn render(self) -> impl core::fmt::Display + Copy {
         StyleDisplay(self)
+    }
+
+    fn fmt_to(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        use core::fmt::Display as _;
+
+        self.effects.render().fmt(f)?;
+
+        if let Some(fg) = self.fg {
+            fg.render_fg().fmt(f)?;
+        }
+
+        if let Some(bg) = self.bg {
+            bg.render_bg().fmt(f)?;
+        }
+
+        if let Some(underline) = self.underline {
+            underline.render_underline().fmt(f)?;
+        }
+
+        Ok(())
     }
 
     
@@ -121,7 +150,7 @@ impl Style {
     
     
     #[inline]
-    pub fn render_reset(self) -> impl core::fmt::Display {
+    pub fn render_reset(self) -> impl core::fmt::Display + Copy {
         if self != Self::new() {
             RESET
         } else {
@@ -260,22 +289,27 @@ impl Style {
 
 
 impl Style {
+    
     #[inline]
     pub const fn get_fg_color(self) -> Option<crate::Color> {
         self.fg
     }
 
+    
     #[inline]
+    #[allow(missing_docs)]
     pub const fn get_bg_color(self) -> Option<crate::Color> {
         self.bg
     }
 
     #[inline]
+    #[allow(missing_docs)]
     pub const fn get_underline_color(self) -> Option<crate::Color> {
         self.underline
     }
 
     #[inline]
+    #[allow(missing_docs)]
     pub const fn get_effects(self) -> crate::Effects {
         self.effects
     }
@@ -366,7 +400,7 @@ impl core::ops::SubAssign<crate::Effects> for Style {
 
 
 
-impl core::cmp::PartialEq<crate::Effects> for Style {
+impl PartialEq<crate::Effects> for Style {
     #[inline]
     fn eq(&self, other: &crate::Effects) -> bool {
         let other = Self::from(*other);
@@ -374,24 +408,30 @@ impl core::cmp::PartialEq<crate::Effects> for Style {
     }
 }
 
+impl core::fmt::Display for Style {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if f.alternate() {
+            self.render_reset().fmt(f)
+        } else {
+            self.fmt_to(f)
+        }
+    }
+}
+
+#[derive(Copy, Clone, Default, Debug)]
 struct StyleDisplay(Style);
 
 impl core::fmt::Display for StyleDisplay {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.0.effects.render().fmt(f)?;
-
-        if let Some(fg) = self.0.fg {
-            fg.render_fg().fmt(f)?;
-        }
-
-        if let Some(bg) = self.0.bg {
-            bg.render_bg().fmt(f)?;
-        }
-
-        if let Some(underline) = self.0.underline {
-            underline.render_underline().fmt(f)?;
-        }
-
-        Ok(())
+        self.0.fmt_to(f)
     }
+}
+
+#[test]
+#[cfg(feature = "std")]
+fn print_size_of() {
+    use std::mem::size_of;
+    dbg!(size_of::<Style>());
+    dbg!(size_of::<StyleDisplay>());
 }

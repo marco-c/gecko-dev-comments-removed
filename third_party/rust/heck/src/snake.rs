@@ -1,4 +1,8 @@
-use std::fmt;
+use alloc::{
+    borrow::ToOwned,
+    fmt,
+    string::{String, ToString},
+};
 
 use crate::{lowercase, transform};
 
@@ -77,13 +81,11 @@ mod tests {
     t!(test6: "SHOUTY_SNAKE_CASE" => "shouty_snake_case");
     t!(test7: "snake_case" => "snake_case");
     t!(test8: "this-contains_ ALLKinds OfWord_Boundaries" => "this_contains_all_kinds_of_word_boundaries");
-    #[cfg(feature = "unicode")]
     t!(test9: "XΣXΣ baﬄe" => "xσxς_baﬄe");
     t!(test10: "XMLHttpRequest" => "xml_http_request");
     t!(test11: "FIELD_NAME11" => "field_name11");
     t!(test12: "99BOTTLES" => "99bottles");
     t!(test13: "FieldNamE11" => "field_nam_e11");
-
     t!(test14: "abc123def456" => "abc123def456");
     t!(test16: "abc123DEF456" => "abc123_def456");
     t!(test17: "abc123Def456" => "abc123_def456");

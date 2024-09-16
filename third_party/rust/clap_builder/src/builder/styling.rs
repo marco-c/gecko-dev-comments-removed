@@ -21,26 +21,26 @@ pub use anstyle::*;
 #[derive(Clone, Debug)]
 #[allow(missing_copy_implementations)] 
 pub struct Styles {
-    header: anstyle::Style,
-    error: anstyle::Style,
-    usage: anstyle::Style,
-    literal: anstyle::Style,
-    placeholder: anstyle::Style,
-    valid: anstyle::Style,
-    invalid: anstyle::Style,
+    header: Style,
+    error: Style,
+    usage: Style,
+    literal: Style,
+    placeholder: Style,
+    valid: Style,
+    invalid: Style,
 }
 
 impl Styles {
     
     pub const fn plain() -> Self {
         Self {
-            header: anstyle::Style::new(),
-            error: anstyle::Style::new(),
-            usage: anstyle::Style::new(),
-            literal: anstyle::Style::new(),
-            placeholder: anstyle::Style::new(),
-            valid: anstyle::Style::new(),
-            invalid: anstyle::Style::new(),
+            header: Style::new(),
+            error: Style::new(),
+            usage: Style::new(),
+            literal: Style::new(),
+            placeholder: Style::new(),
+            valid: Style::new(),
+            invalid: Style::new(),
         }
     }
 
@@ -49,17 +49,15 @@ impl Styles {
         #[cfg(feature = "color")]
         {
             Self {
-                header: anstyle::Style::new().bold().underline(),
-                error: anstyle::Style::new()
-                    .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Red)))
+                header: Style::new().bold().underline(),
+                error: Style::new()
+                    .fg_color(Some(Color::Ansi(AnsiColor::Red)))
                     .bold(),
-                usage: anstyle::Style::new().bold().underline(),
-                literal: anstyle::Style::new().bold(),
-                placeholder: anstyle::Style::new(),
-                valid: anstyle::Style::new()
-                    .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Green))),
-                invalid: anstyle::Style::new()
-                    .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Yellow))),
+                usage: Style::new().bold().underline(),
+                literal: Style::new().bold(),
+                placeholder: Style::new(),
+                valid: Style::new().fg_color(Some(Color::Ansi(AnsiColor::Green))),
+                invalid: Style::new().fg_color(Some(Color::Ansi(AnsiColor::Yellow))),
             }
         }
         #[cfg(not(feature = "color"))]
@@ -70,49 +68,49 @@ impl Styles {
 
     
     #[inline]
-    pub const fn header(mut self, style: anstyle::Style) -> Self {
+    pub const fn header(mut self, style: Style) -> Self {
         self.header = style;
         self
     }
 
     
     #[inline]
-    pub const fn error(mut self, style: anstyle::Style) -> Self {
+    pub const fn error(mut self, style: Style) -> Self {
         self.error = style;
         self
     }
 
     
     #[inline]
-    pub const fn usage(mut self, style: anstyle::Style) -> Self {
+    pub const fn usage(mut self, style: Style) -> Self {
         self.usage = style;
         self
     }
 
     
     #[inline]
-    pub const fn literal(mut self, style: anstyle::Style) -> Self {
+    pub const fn literal(mut self, style: Style) -> Self {
         self.literal = style;
         self
     }
 
     
     #[inline]
-    pub const fn placeholder(mut self, style: anstyle::Style) -> Self {
+    pub const fn placeholder(mut self, style: Style) -> Self {
         self.placeholder = style;
         self
     }
 
     
     #[inline]
-    pub const fn valid(mut self, style: anstyle::Style) -> Self {
+    pub const fn valid(mut self, style: Style) -> Self {
         self.valid = style;
         self
     }
 
     
     #[inline]
-    pub const fn invalid(mut self, style: anstyle::Style) -> Self {
+    pub const fn invalid(mut self, style: Style) -> Self {
         self.invalid = style;
         self
     }
@@ -122,43 +120,43 @@ impl Styles {
 impl Styles {
     
     #[inline(always)]
-    pub const fn get_header(&self) -> &anstyle::Style {
+    pub const fn get_header(&self) -> &Style {
         &self.header
     }
 
     
     #[inline(always)]
-    pub const fn get_error(&self) -> &anstyle::Style {
+    pub const fn get_error(&self) -> &Style {
         &self.error
     }
 
     
     #[inline(always)]
-    pub const fn get_usage(&self) -> &anstyle::Style {
+    pub const fn get_usage(&self) -> &Style {
         &self.usage
     }
 
     
     #[inline(always)]
-    pub const fn get_literal(&self) -> &anstyle::Style {
+    pub const fn get_literal(&self) -> &Style {
         &self.literal
     }
 
     
     #[inline(always)]
-    pub const fn get_placeholder(&self) -> &anstyle::Style {
+    pub const fn get_placeholder(&self) -> &Style {
         &self.placeholder
     }
 
     
     #[inline(always)]
-    pub const fn get_valid(&self) -> &anstyle::Style {
+    pub const fn get_valid(&self) -> &Style {
         &self.valid
     }
 
     
     #[inline(always)]
-    pub const fn get_invalid(&self) -> &anstyle::Style {
+    pub const fn get_invalid(&self) -> &Style {
         &self.invalid
     }
 }

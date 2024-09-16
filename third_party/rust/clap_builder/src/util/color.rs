@@ -19,10 +19,6 @@ pub enum ColorChoice {
     
     
     
-    
-    
-    
-    
     Auto,
 
     
@@ -38,16 +34,8 @@ pub enum ColorChoice {
     
     
     
-    
-    
-    
-    
     Always,
 
-    
-    
-    
-    
     
     
     
