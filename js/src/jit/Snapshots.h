@@ -57,6 +57,11 @@ class RValueAllocation {
     RI_WITH_DEFAULT_CST = 0x0b,
 
     
+    INTPTR_CST = 0x0c,
+    INTPTR_REG = 0x0d,
+    INTPTR_STACK = 0x0e,
+
+    
     TYPED_REG_MIN = 0x10,
     TYPED_REG_MAX = 0x1f,
     TYPED_REG = TYPED_REG_MIN,
@@ -281,6 +286,25 @@ class RValueAllocation {
                                              uint32_t cstIndex) {
     return RValueAllocation(RI_WITH_DEFAULT_CST, payloadOfIndex(riIndex),
                             payloadOfIndex(cstIndex));
+  }
+
+  
+#if !defined(JS_64BIT)
+  static RValueAllocation IntPtrConstant(uint32_t index) {
+    return RValueAllocation(INTPTR_CST, payloadOfIndex(index));
+  }
+#else
+  static RValueAllocation IntPtrConstant(uint32_t lowIndex,
+                                         uint32_t highIndex) {
+    return RValueAllocation(INTPTR_CST, payloadOfIndex(lowIndex),
+                            payloadOfIndex(highIndex));
+  }
+#endif
+  static RValueAllocation IntPtr(Register reg) {
+    return RValueAllocation(INTPTR_REG, payloadOfRegister(reg));
+  }
+  static RValueAllocation IntPtr(int32_t offset) {
+    return RValueAllocation(INTPTR_STACK, payloadOfStackOffset(offset));
   }
 
   

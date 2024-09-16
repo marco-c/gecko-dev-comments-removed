@@ -559,6 +559,9 @@ class SnapshotIterator {
 
   int64_t readInt64();
 
+  
+  JS::BigInt* readBigInt(JSContext* cx);
+
   void traceAllocation(JSTracer* trc);
 
   template <class Op>
