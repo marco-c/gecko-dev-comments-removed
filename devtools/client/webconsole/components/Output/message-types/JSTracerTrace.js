@@ -86,7 +86,9 @@ function JSTracerTrace(props) {
   
   let messageBody;
   if (eventName) {
-    messageBody = [dom.span({ className: "jstracer-dom-event" }, eventName)];
+    messageBody = [
+      dom.span({ className: "jstracer-dom-event" }, `DOM | ${eventName}`),
+    ];
   } else if (typeof relatedTraceId == "number") {
     messageBody = [
       dom.span({ className: "jstracer-io" }, "⟵ "),
