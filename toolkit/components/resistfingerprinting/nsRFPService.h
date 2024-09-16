@@ -385,12 +385,14 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
                                   mozilla::dom::MediaDeviceKind aKind);
 
   
-  
-  static mozilla::dom::OrientationType OrientationSecondaryToPrimary(
-      mozilla::dom::OrientationType aOrientation);
+  static uint16_t ViewportSizeToAngle(int32_t aWidth, int32_t aHeight);
 
   
-  static uint16_t OrientationSecondaryToPrimary(uint16_t aAngle);
+  static dom::OrientationType ViewportSizeToOrientationType(int32_t aWidth,
+                                                            int32_t aHeight);
+
+  
+  static dom::OrientationType GetDefaultOrientationType();
 
  private:
   nsresult Init();
