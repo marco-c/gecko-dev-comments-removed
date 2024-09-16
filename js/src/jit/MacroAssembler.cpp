@@ -2128,13 +2128,20 @@ void MacroAssembler::loadBigIntPtr(Register bigInt, Register dest,
 
   
   
-  branchTestPtr(Assembler::Signed, dest, dest, fail);
 
-  
-  Label nonNegative;
+  Label nonNegative, done;
   branchIfBigIntIsNonNegative(bigInt, &nonNegative);
-  negPtr(dest);
+  {
+    
+    negPtr(dest);
+
+    
+    branchTestPtr(Assembler::NotSigned, dest, dest, fail);
+    jump(&done);
+  }
   bind(&nonNegative);
+  branchTestPtr(Assembler::Signed, dest, dest, fail);
+  bind(&done);
 }
 
 void MacroAssembler::initializeBigInt64(Scalar::Type type, Register bigInt,
