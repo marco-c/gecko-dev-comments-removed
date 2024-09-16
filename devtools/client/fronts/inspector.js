@@ -75,12 +75,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     }
 
     const promises = [this._getWalker(), this._getPageStyle()];
-    if (
-      this.targetFront.commands.descriptorFront.isTabDescriptor &&
-      
-      
-      this.targetFront.targetForm?.traits?.viewportSizeOnResizeHighlighter
-    ) {
+    if (this.targetFront.commands.descriptorFront.isTabDescriptor) {
       promises.push(this._enableViewportSizeOnResizeHighlighter());
     }
 
