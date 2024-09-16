@@ -505,7 +505,7 @@ pref("browser.urlbar.quicksuggest.enabled", false);
 pref("browser.urlbar.quicksuggest.rustEnabled", true);
 
 
-pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true);
+pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", false);
 
 
 pref("browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 0);

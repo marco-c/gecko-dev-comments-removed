@@ -7,10 +7,6 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  Region: "resource://gre/modules/Region.sys.mjs",
-});
-
 
 
 
@@ -27,7 +23,7 @@ const PREFS = [
     get: "getBoolPref",
     set: "setBoolPref",
     expectedOfflineValue: false,
-    expectedOtherValue: true,
+    expectedOtherValue: false,
   },
   {
     name: "browser.urlbar.suggest.quicksuggest.nonsponsored",
@@ -90,30 +86,38 @@ async function doTest({ locale, home, expectedOfflineDefault }) {
   }
 
   
-  Region._setHomeRegion(home, false);
-  await QuickSuggestTestUtils.withLocales([locale], async () => {
-    await UrlbarPrefs.updateFirefoxSuggestScenario();
-    for (let { name, get, expectedOfflineValue, expectedOtherValue } of PREFS) {
-      let expectedValue = expectedOfflineDefault
-        ? expectedOfflineValue
-        : expectedOtherValue;
+  await QuickSuggestTestUtils.withLocales({
+    homeRegion: home,
+    locales: [locale],
+    callback: async () => {
+      await UrlbarPrefs.updateFirefoxSuggestScenario();
+      for (let {
+        name,
+        get,
+        expectedOfflineValue,
+        expectedOtherValue,
+      } of PREFS) {
+        let expectedValue = expectedOfflineDefault
+          ? expectedOfflineValue
+          : expectedOtherValue;
 
-      
-      Assert.strictEqual(
-        Services.prefs.getDefaultBranch(name)[get](""),
-        expectedValue,
-        `Default pref value for ${name}, locale ${locale}, home ${home}`
-      );
+        
+        Assert.strictEqual(
+          Services.prefs.getDefaultBranch(name)[get](""),
+          expectedValue,
+          `Default pref value for ${name}, locale ${locale}, home ${home}`
+        );
 
-      
-      
-      
-      UrlbarPrefs.get(
-        name.replace("browser.urlbar.", ""),
-        expectedValue,
-        `UrlbarPrefs.get() value for ${name}, locale ${locale}, home ${home}`
-      );
-    }
+        
+        
+        
+        UrlbarPrefs.get(
+          name.replace("browser.urlbar.", ""),
+          expectedValue,
+          `UrlbarPrefs.get() value for ${name}, locale ${locale}, home ${home}`
+        );
+      }
+    },
   });
 
   
