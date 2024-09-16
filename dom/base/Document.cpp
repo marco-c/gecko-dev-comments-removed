@@ -16875,21 +16875,22 @@ void Document::UpdateRemoteFrameEffects() {
         }
         auto* frame = el->GetPrimaryFrame();
         MOZ_ASSERT(frame, "How do we intersect with no frame?");
-        MOZ_ASSERT(frame->IsSubDocumentFrame(), "Hm?");
-        Maybe<nsRect> visibleRect;
-        gfx::MatrixScales rasterScale;
-        if (nsSubDocumentFrame* f = do_QueryFrame(frame)) {
-          visibleRect = f->GetVisibleRect();
-          if (!visibleRect) {
-            
-            
-            
-            visibleRect.emplace(*output.mIntersectionRect -
-                                output.mTargetRect.TopLeft());
-          }
-          rasterScale = f->GetRasterScale();
+        nsSubDocumentFrame* subDocFrame = do_QueryFrame(frame);
+        if (MOZ_UNLIKELY(NS_WARN_IF(!subDocFrame))) {
+          
+          
+          return EffectsInfo::FullyHidden();
         }
-        ParentLayerToScreenScale2D transformToAncestorScale =
+        Maybe<nsRect> visibleRect = subDocFrame->GetVisibleRect();
+        if (!visibleRect) {
+          
+          
+          
+          visibleRect.emplace(*output.mIntersectionRect -
+                              output.mTargetRect.TopLeft());
+        }
+        const gfx::MatrixScales rasterScale = subDocFrame->GetRasterScale();
+        const ParentLayerToScreenScale2D transformToAncestorScale =
             ParentLayerToParentLayerScale(
                 frame->PresShell()->GetCumulativeResolution()) *
             nsLayoutUtils::
