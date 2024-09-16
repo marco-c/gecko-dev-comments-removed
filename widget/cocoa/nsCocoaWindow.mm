@@ -2844,11 +2844,13 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   }
 
   if (@available(macOS 11.0, *)) {
-    
-    
-    
-    
-    window.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
+    if ([window isKindOfClass:[ToolbarWindow class]]) {
+      
+      
+      
+      
+      window.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
+    }
   }
 
   if (!mGeckoWindow) {
@@ -3537,9 +3539,10 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     
     
     if (@available(macOS 11.0, *)) {
-      aWindow.titlebarSeparatorStyle = aWindow.titlebarAppearsTransparent
-                                           ? NSTitlebarSeparatorStyleNone
-                                           : NSTitlebarSeparatorStyleAutomatic;
+      aWindow.titlebarSeparatorStyle =
+          [aWindow isKindOfClass:[ToolbarWindow class]]
+              ? NSTitlebarSeparatorStyleAutomatic
+              : NSTitlebarSeparatorStyleNone;
     }
   }
 }
@@ -3777,26 +3780,6 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
     
     
     ChildViewMouseTracker::ResendLastMouseMoveEvent();
-  }
-}
-
-
-
-
-
-
-
-
-- (void)setTitlebarAppearsTransparent:(BOOL)aState {
-  BOOL stateChanged = self.titlebarAppearsTransparent != aState;
-  [super setTitlebarAppearsTransparent:aState];
-
-  if (stateChanged) {
-    if (@available(macOS 11.0, *)) {
-      self.titlebarSeparatorStyle = self.titlebarAppearsTransparent
-                                        ? NSTitlebarSeparatorStyleNone
-                                        : NSTitlebarSeparatorStyleAutomatic;
-    }
   }
 }
 
