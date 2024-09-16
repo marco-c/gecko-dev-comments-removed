@@ -99,6 +99,10 @@ bool UsingEmitter::emitThrowIfException() {
 
 
 
+
+
+
+
 bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
                                    CompletionKind initialCompletion) {
   MOZ_ASSERT(initialCompletion != CompletionKind::Return);
