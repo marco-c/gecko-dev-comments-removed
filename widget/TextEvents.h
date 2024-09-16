@@ -25,6 +25,7 @@
 #include "mozilla/ipc/IPCForwards.h"
 #include "nsCOMPtr.h"
 #include "nsHashtablesFwd.h"
+#include "nsIFrame.h"
 #include "nsISelectionListener.h"
 #include "nsITransferable.h"
 #include "nsRect.h"
@@ -1248,6 +1249,10 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
     bool mWidgetIsHit = false;
     
     bool mIsEditableContent = false;
+    
+    mozilla::dom::Element* mDropElement;
+    
+    nsIFrame* mDropFrame;
 
     Reply() = delete;
     explicit Reply(EventMessage aEventMessage) : mEventMessage(aEventMessage) {}

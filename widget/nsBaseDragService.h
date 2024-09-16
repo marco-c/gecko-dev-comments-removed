@@ -9,6 +9,7 @@
 #include "nsIDragService.h"
 #include "nsIDragSession.h"
 #include "nsCOMPtr.h"
+#include "nsIFrame.h"
 #include "nsRect.h"
 #include "nsPoint.h"
 #include "nsString.h"
@@ -42,6 +43,7 @@ class SourceSurface;
 }  
 
 namespace dom {
+class BrowserParent;
 class DataTransfer;
 class Selection;
 }  
@@ -195,6 +197,27 @@ class nsBaseDragSession : public nsIDragSession {
 
 
   void OpenDragPopup();
+
+  
+  struct EndDragSessionData {
+    bool mDoneDrag = false;
+    uint32_t mKeyModifiers = 0;
+  };
+
+  
+  
+  
+  mozilla::Maybe<EndDragSessionData> mEndDragSessionData;
+  
+  
+  nsWeakPtr mDelayedDropTarget;
+  
+  
+  WeakFrame mDelayedDropFrame;
+
+  
+  
+  RefPtr<mozilla::dom::BrowserParent> mDelayedDropBrowserParent;
 
   RefPtr<mozilla::dom::WindowContext> mSourceWindowContext;
   RefPtr<mozilla::dom::WindowContext> mSourceTopWindowContext;

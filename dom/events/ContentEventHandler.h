@@ -164,6 +164,9 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   MOZ_CAN_RUN_SCRIPT nsresult
   OnQueryDOMWidgetHittest(WidgetQueryContentEvent* aEvent);
+  
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnQueryDropTargetHittest(WidgetQueryContentEvent* aEvent);
 
   
   MOZ_CAN_RUN_SCRIPT nsresult OnSelectionEvent(WidgetSelectionEvent* aEvent);
@@ -611,6 +614,9 @@ class MOZ_STACK_CLASS ContentEventHandler {
   static nsRect GetCaretRectAfter(nsPresContext& aPresContext,
                                   const nsRect& aCharRect,
                                   const WritingMode& aWritingMode);
+
+  nsresult QueryHittestImpl(WidgetQueryContentEvent* aEvent, bool aFlushLayout,
+                            Element** aContentUnderMouse);
 };
 
 }  

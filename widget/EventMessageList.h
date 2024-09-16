@@ -289,6 +289,9 @@ NS_EVENT_MESSAGE(eQueryCharacterAtPoint)
 NS_EVENT_MESSAGE(eQueryDOMWidgetHittest)
 
 
+NS_EVENT_MESSAGE(eQueryDropTargetHittest)
+
+
 NS_EVENT_MESSAGE(eLoadStart)
 NS_EVENT_MESSAGE(eProgress)
 NS_EVENT_MESSAGE(eSuspend)
