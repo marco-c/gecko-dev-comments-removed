@@ -44,6 +44,12 @@ struct CliArgs {
 type ConfigMap = HashMap<String, Config>;
 
 
+pub struct Component {
+    pub ci: ComponentInterface,
+    pub config: Config,
+}
+
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Config {
     crate_name: String,
@@ -75,7 +81,7 @@ fn render(out_path: Utf8PathBuf, template: impl Template) -> Result<()> {
 fn render_cpp(
     path: Utf8PathBuf,
     prefix: &str,
-    components: &Vec<(ComponentInterface, Config)>,
+    components: &Vec<Component>,
     function_ids: &FunctionIds,
     object_ids: &ObjectIds,
     callback_ids: &CallbackIds,
@@ -88,15 +94,15 @@ fn render_cpp(
 
 fn render_js(
     out_dir: Utf8PathBuf,
-    components: &Vec<(ComponentInterface, Config)>,
+    components: &Vec<Component>,
     function_ids: &FunctionIds,
     object_ids: &ObjectIds,
     callback_ids: &CallbackIds,
 ) -> Result<()> {
-    for (ci, config) in components {
+    for c in components {
         let template = JSBindingsTemplate {
-            ci,
-            config,
+            ci: &c.ci,
+            config: &c.config,
             function_ids,
             object_ids,
             callback_ids,
