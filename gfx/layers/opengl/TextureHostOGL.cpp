@@ -571,6 +571,15 @@ void SurfaceTextureHost::PushResourceUpdates(
         wr::ImageBufferKind::TextureExternalBT709);
   }
 
+  
+  
+  
+  
+  
+  
+  const bool normalizedUvs =
+      aResources.GetBackendType() == WebRenderBackend::HARDWARE;
+
   switch (GetFormat()) {
     case gfx::SurfaceFormat::R8G8B8X8:
     case gfx::SurfaceFormat::R8G8B8A8: {
@@ -583,7 +592,7 @@ void SurfaceTextureHost::PushResourceUpdates(
                         : gfx::SurfaceFormat::B8G8R8X8;
       wr::ImageDescriptor descriptor(GetSize(), format);
       (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
-                            false);
+                           normalizedUvs);
       break;
     }
     default: {
