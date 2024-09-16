@@ -5853,8 +5853,7 @@ function WindowIsClosing(event) {
 
 
 
-
-function warnAboutClosingWindow(source) {
+function warnAboutClosingWindow() {
   
   let isPBWindow =
     PrivateBrowsingUtils.isWindowPrivate(window) &&
@@ -5863,8 +5862,7 @@ function warnAboutClosingWindow(source) {
   if (!isPBWindow && !toolbar.visible) {
     return gBrowser.warnAboutClosingTabs(
       gBrowser.visibleTabs.length,
-      gBrowser.closingTabsEnum.ALL,
-      source
+      gBrowser.closingTabsEnum.ALL
     );
   }
 
@@ -5904,8 +5902,7 @@ function warnAboutClosingWindow(source) {
       isPBWindow ||
       gBrowser.warnAboutClosingTabs(
         gBrowser.visibleTabs.length,
-        gBrowser.closingTabsEnum.ALL,
-        source
+        gBrowser.closingTabsEnum.ALL
       )
     );
   }
@@ -5930,8 +5927,7 @@ function warnAboutClosingWindow(source) {
     isPBWindow ||
     gBrowser.warnAboutClosingTabs(
       gBrowser.visibleTabs.length,
-      gBrowser.closingTabsEnum.ALL,
-      source
+      gBrowser.closingTabsEnum.ALL
     )
   );
 }
