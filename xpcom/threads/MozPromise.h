@@ -644,43 +644,39 @@ class MozPromise : public MozPromiseBase {
   
 
 
-
   template <typename ThisType, typename MethodType, typename ValueType>
-  static std::enable_if_t<TakesAnyArguments<MethodType>,
-                          MethodReturnType<MethodType>>
-  InvokeMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue) {
-    return (aThisVal->*aMethod)(std::forward<ValueType>(aValue));
-  }
-
-  template <typename ThisType, typename MethodType, typename ValueType>
-  static std::enable_if_t<!TakesAnyArguments<MethodType>,
-                          MethodReturnType<MethodType>>
-  InvokeMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue) {
-    return (aThisVal->*aMethod)();
-  }
-
-  
-  template <bool SupportChaining, typename ThisType, typename MethodType,
-            typename ValueType, typename CompletionPromiseType>
-  static std::enable_if_t<SupportChaining, void> InvokeCallbackMethod(
-      ThisType* aThisVal, MethodType aMethod, ValueType&& aValue,
-      CompletionPromiseType&& aCompletionPromise) {
-    auto p = InvokeMethod(aThisVal, aMethod, std::forward<ValueType>(aValue));
-    if (aCompletionPromise) {
-      p->ChainTo(aCompletionPromise.forget(), "<chained completion promise>");
+  static MethodReturnType<MethodType> InvokeMethod(ThisType* aThisVal,
+                                                   MethodType aMethod,
+                                                   ValueType&& aValue) {
+    if constexpr (TakesAnyArguments<MethodType>) {
+      return (aThisVal->*aMethod)(std::forward<ValueType>(aValue));
+    } else {
+      return (aThisVal->*aMethod)();
     }
   }
 
-  
-  template <bool SupportChaining, typename ThisType, typename MethodType,
-            typename ValueType, typename CompletionPromiseType>
-  static std::enable_if_t<!SupportChaining, void> InvokeCallbackMethod(
-      ThisType* aThisVal, MethodType aMethod, ValueType&& aValue,
-      CompletionPromiseType&& aCompletionPromise) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        !aCompletionPromise,
-        "Can't do promise chaining for a non-promise-returning method.");
-    InvokeMethod(aThisVal, aMethod, std::forward<ValueType>(aValue));
+  template <bool SupportChaining, typename PromiseType, typename ThisType,
+            typename MethodType, typename ValueType>
+  static RefPtr<PromiseType> InvokeCallbackMethod(ThisType* aThisVal,
+                                                  MethodType aMethod,
+                                                  ValueType&& aValue) {
+    if constexpr (SupportChaining) {
+      return InvokeMethod(aThisVal, aMethod, std::forward<ValueType>(aValue));
+    } else {
+      InvokeMethod(aThisVal, aMethod, std::forward<ValueType>(aValue));
+      return nullptr;
+    }
+  }
+
+  template <typename PromiseType>
+  static void MaybeChain(PromiseType* aFrom,
+                         RefPtr<typename PromiseType::Private>&& aTo) {
+    if (aTo) {
+      MOZ_DIAGNOSTIC_ASSERT(
+          aFrom,
+          "Can't do promise chaining for a non-promise-returning method.");
+      aFrom->ChainTo(aTo.forget(), "<chained completion promise>");
+    }
   }
 
   template <typename>
@@ -729,21 +725,22 @@ class MozPromise : public MozPromiseBase {
     }
 
     void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override {
-      if (aValue.IsResolve()) {
-        InvokeCallbackMethod<SupportChaining>(mThisVal.get(), mResolveMethod,
-                                              MaybeMove(aValue.ResolveValue()),
-                                              std::move(mCompletionPromise));
-      } else {
-        InvokeCallbackMethod<SupportChaining>(mThisVal.get(), mRejectMethod,
-                                              MaybeMove(aValue.RejectValue()),
-                                              std::move(mCompletionPromise));
-      }
+      RefPtr<PromiseType> result =
+          aValue.IsResolve()
+              ? InvokeCallbackMethod<SupportChaining, PromiseType>(
+                    mThisVal.get(), mResolveMethod,
+                    MaybeMove(aValue.ResolveValue()))
+              : InvokeCallbackMethod<SupportChaining, PromiseType>(
+                    mThisVal.get(), mRejectMethod,
+                    MaybeMove(aValue.RejectValue()));
 
       
       
       
       
       mThisVal = nullptr;
+
+      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
     }
 
    private:
@@ -789,15 +786,17 @@ class MozPromise : public MozPromiseBase {
     }
 
     void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override {
-      InvokeCallbackMethod<SupportChaining>(
-          mThisVal.get(), mResolveRejectMethod, MaybeMove(aValue),
-          std::move(mCompletionPromise));
+      RefPtr<PromiseType> result =
+          InvokeCallbackMethod<SupportChaining, PromiseType>(
+              mThisVal.get(), mResolveRejectMethod, MaybeMove(aValue));
 
       
       
       
       
       mThisVal = nullptr;
+
+      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
     }
 
    private:
@@ -853,15 +852,14 @@ class MozPromise : public MozPromiseBase {
       
       
       
-      if (aValue.IsResolve()) {
-        InvokeCallbackMethod<SupportChaining>(
-            mResolveFunction.ptr(), &ResolveFunction::operator(),
-            MaybeMove(aValue.ResolveValue()), std::move(mCompletionPromise));
-      } else {
-        InvokeCallbackMethod<SupportChaining>(
-            mRejectFunction.ptr(), &RejectFunction::operator(),
-            MaybeMove(aValue.RejectValue()), std::move(mCompletionPromise));
-      }
+      RefPtr<PromiseType> result =
+          aValue.IsResolve()
+              ? InvokeCallbackMethod<SupportChaining, PromiseType>(
+                    mResolveFunction.ptr(), &ResolveFunction::operator(),
+                    MaybeMove(aValue.ResolveValue()))
+              : InvokeCallbackMethod<SupportChaining, PromiseType>(
+                    mRejectFunction.ptr(), &RejectFunction::operator(),
+                    MaybeMove(aValue.RejectValue()));
 
       
       
@@ -869,6 +867,8 @@ class MozPromise : public MozPromiseBase {
       
       mResolveFunction.reset();
       mRejectFunction.reset();
+
+      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
     }
 
    private:
@@ -919,15 +919,18 @@ class MozPromise : public MozPromiseBase {
       
       
       
-      InvokeCallbackMethod<SupportChaining>(
-          mResolveRejectFunction.ptr(), &ResolveRejectFunction::operator(),
-          MaybeMove(aValue), std::move(mCompletionPromise));
+      RefPtr<PromiseType> result =
+          InvokeCallbackMethod<SupportChaining, PromiseType>(
+              mResolveRejectFunction.ptr(), &ResolveRejectFunction::operator(),
+              MaybeMove(aValue));
 
       
       
       
       
       mResolveRejectFunction.reset();
+
+      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
     }
 
    private:
