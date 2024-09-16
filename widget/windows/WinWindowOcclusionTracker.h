@@ -7,8 +7,7 @@
 #ifndef widget_windows_WinWindowOcclusionTracker_h
 #define widget_windows_WinWindowOcclusionTracker_h
 
-#include <windef.h>
-
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -16,7 +15,10 @@
 #include "nsIWeakReferenceUtils.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/WindowsVersion.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/widget/WindowOcclusionState.h"
+#include "mozilla/widget/WinEventObserver.h"
 #include "Units.h"
 #include "nsThreadUtils.h"
 
@@ -39,7 +41,8 @@ class UpdateOcclusionStateRunnable;
 
 
 
-class WinWindowOcclusionTracker final {
+class WinWindowOcclusionTracker final : public DisplayStatusListener,
+                                        public SessionChangeListener {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WinWindowOcclusionTracker)
 
@@ -57,6 +60,12 @@ class WinWindowOcclusionTracker final {
 
   
   static bool IsInWinWindowOcclusionThread();
+
+  
+  void EnsureDisplayStatusObserver();
+
+  
+  void EnsureSessionChangeObserver();
 
   
   
@@ -271,16 +280,15 @@ class WinWindowOcclusionTracker final {
   void UpdateOcclusionState(std::unordered_map<HWND, OcclusionState>* aMap,
                             bool aShowAllWindows);
 
- public:
   
   
-  void OnSessionChange(WPARAM aStatusCode);
+  void OnSessionChange(WPARAM aStatusCode,
+                       Maybe<bool> aIsCurrentSession) override;
 
   
   
-  void OnDisplayStateChanged(bool aDisplayOn);
+  void OnDisplayStateChanged(bool aDisplayOn) override;
 
- private:
   
   void MarkNonIconicWindowsOccluded();
 
@@ -307,6 +315,10 @@ class WinWindowOcclusionTracker final {
 
   
   bool mDisplayOn = true;
+
+  RefPtr<DisplayStatusObserver> mDisplayStatusObserver;
+
+  RefPtr<SessionChangeObserver> mSessionChangeObserver;
 
   
   RefPtr<SerializedTaskDispatcher> mSerializedTaskDispatcher;

@@ -36,8 +36,8 @@ class WinWindowOcclusionTrackerInteractiveTest : public ::testing::Test {
     WinWindowOcclusionTracker::Ensure();
     EXPECT_NE(nullptr, WinWindowOcclusionTracker::Get());
 
-    Preferences::SetBool(PREF_DISPLAY_STATE, true);
-    Preferences::SetBool(PREF_SESSION_LOCK, true);
+    WinWindowOcclusionTracker::Get()->EnsureDisplayStatusObserver();
+    WinWindowOcclusionTracker::Get()->EnsureSessionChangeObserver();
   }
 
   void TearDown() override {
@@ -268,15 +268,15 @@ TEST_F(WinWindowOcclusionTrackerInteractiveTest, LockScreenVisibleOcclusion) {
   
   DWORD currentSessionId = 0;
   ::ProcessIdToSessionId(::GetCurrentProcessId(), &currentSessionId);
-  ::PostMessage(WinEventWindow::GetHwndForTestingOnly(), WM_WTSSESSION_CHANGE,
+  ::PostMessage(WinEventHub::Get()->GetWnd(), WM_WTSSESSION_CHANGE,
                 WTS_SESSION_LOCK, currentSessionId);
 
   while (window->IsExpectingCall()) {
     WinWindowOcclusionTracker::Get()->TriggerCalculation();
 
     MSG msg;
-    bool gotMessage = ::PeekMessageW(
-        &msg, WinEventWindow::GetHwndForTestingOnly(), 0, 0, PM_REMOVE);
+    bool gotMessage =
+        ::PeekMessageW(&msg, WinEventHub::Get()->GetWnd(), 0, 0, PM_REMOVE);
     if (gotMessage) {
       ::TranslateMessage(&msg);
       ::DispatchMessageW(&msg);
@@ -309,15 +309,15 @@ TEST_F(WinWindowOcclusionTrackerInteractiveTest, LockScreenHiddenOcclusion) {
   
   DWORD currentSessionId = 0;
   ::ProcessIdToSessionId(::GetCurrentProcessId(), &currentSessionId);
-  PostMessage(WinEventWindow::GetHwndForTestingOnly(), WM_WTSSESSION_CHANGE,
+  PostMessage(WinEventHub::Get()->GetWnd(), WM_WTSSESSION_CHANGE,
               WTS_SESSION_LOCK, currentSessionId);
 
   while (window->IsExpectingCall()) {
     WinWindowOcclusionTracker::Get()->TriggerCalculation();
 
     MSG msg;
-    bool gotMessage = ::PeekMessageW(
-        &msg, WinEventWindow::GetHwndForTestingOnly(), 0, 0, PM_REMOVE);
+    bool gotMessage =
+        ::PeekMessageW(&msg, WinEventHub::Get()->GetWnd(), 0, 0, PM_REMOVE);
     if (gotMessage) {
       ::TranslateMessage(&msg);
       ::DispatchMessageW(&msg);
@@ -347,7 +347,7 @@ TEST_F(WinWindowOcclusionTrackerInteractiveTest, LockScreenDifferentSession) {
   
   DWORD currentSessionId = 0;
   ::ProcessIdToSessionId(::GetCurrentProcessId(), &currentSessionId);
-  ::PostMessage(WinEventWindow::GetHwndForTestingOnly(), WM_WTSSESSION_CHANGE,
+  ::PostMessage(WinEventHub::Get()->GetWnd(), WM_WTSSESSION_CHANGE,
                 WTS_SESSION_LOCK, currentSessionId + 1);
 
   window->SetExpectation(widget::OcclusionState::VISIBLE);
@@ -357,8 +357,8 @@ TEST_F(WinWindowOcclusionTrackerInteractiveTest, LockScreenDifferentSession) {
     WinWindowOcclusionTracker::Get()->TriggerCalculation();
 
     MSG msg;
-    bool gotMessage = ::PeekMessageW(
-        &msg, WinEventWindow::GetHwndForTestingOnly(), 0, 0, PM_REMOVE);
+    bool gotMessage =
+        ::PeekMessageW(&msg, WinEventHub::Get()->GetWnd(), 0, 0, PM_REMOVE);
     if (gotMessage) {
       ::TranslateMessage(&msg);
       ::DispatchMessageW(&msg);
