@@ -1,16 +1,16 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWaylandDisplay.h"
 
 #include <dlfcn.h>
 
-#include "base/message_loop.h"    
-#include "base/task.h"            
-#include "mozilla/gfx/Logging.h"  
+#include "base/message_loop.h"    // for MessageLoop
+#include "base/task.h"            // for NewRunnableMethod, etc
+#include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
 #include "mozilla/StaticMutex.h"
 #include "mozilla/Array.h"
 #include "mozilla/StaticPtr.h"
@@ -124,7 +124,7 @@ static void pointer_handle_frame(void* data, struct wl_pointer* pointer) {}
 
 static void pointer_handle_axis_source(
     void* data, struct wl_pointer* pointer,
-     uint32_t source) {}
+    /*enum wl_pointer_axis_source */ uint32_t source) {}
 
 static void pointer_handle_axis_stop(void* data, struct wl_pointer* pointer,
                                      uint32_t time, uint32_t axis) {}
@@ -144,7 +144,8 @@ static const struct moz_wl_pointer_listener pointer_listener = {
 };
 
 void nsWaylandDisplay::SetPointer(wl_pointer* aPointer) {
-  if (!mPointerGestures) {
+  if (!mPointerGestures || wl_proxy_get_version((struct wl_proxy*)aPointer) <
+                               WL_POINTER_RELEASE_SINCE_VERSION) {
     return;
   }
   MOZ_DIAGNOSTIC_ASSERT(!mPointer);
@@ -185,8 +186,14 @@ static void seat_handle_capabilities(void* data, struct wl_seat* seat,
   }
 }
 
+static void seat_handle_name(void* data, struct wl_seat* seat,
+                             const char* name) {
+  /* We don't care about the name. */
+}
+
 static const struct wl_seat_listener seat_listener = {
     seat_handle_capabilities,
+    seat_handle_name,
 };
 
 void nsWaylandDisplay::SetSeat(wl_seat* aSeat, int aSeatId) {
@@ -202,8 +209,8 @@ void nsWaylandDisplay::RemoveSeat(int aSeatId) {
   }
 }
 
-
-
+/* This keymap routine is derived from weston-2.0.0/clients/simple-im.c
+ */
 static void keyboard_handle_keymap(void* data, struct wl_keyboard* wl_keyboard,
                                    uint32_t format, int fd, uint32_t size) {
   KeymapWrapper::HandleKeymap(format, fd, size);
@@ -322,10 +329,9 @@ static void global_registry_handler(void* data, wl_registry* registry,
         registry, id, &zwp_pointer_constraints_v1_interface, 1);
     display->SetPointerConstraints(pointer_constraints);
   } else if (iface.EqualsLiteral("wl_compositor")) {
-    
-    
     auto* compositor = WaylandRegistryBind<wl_compositor>(
-        registry, id, &wl_compositor_interface, 4);
+        registry, id, &wl_compositor_interface,
+        WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION);
     display->SetCompositor(compositor);
   } else if (iface.EqualsLiteral("wl_subcompositor")) {
     auto* subcompositor = WaylandRegistryBind<wl_subcompositor>(
@@ -349,9 +355,11 @@ static void global_registry_handler(void* data, wl_registry* registry,
             registry, id, &xdg_dbus_annotation_manager_v1_interface, 1);
     display->SetXdgDbusAnnotationManager(annotationManager);
   } else if (iface.EqualsLiteral("wl_seat")) {
-    auto* seat =
-        WaylandRegistryBind<wl_seat>(registry, id, &wl_seat_interface, 1);
-    display->SetSeat(seat, id);
+    auto* seat = WaylandRegistryBind<wl_seat>(registry, id, &wl_seat_interface,
+                                              WL_POINTER_RELEASE_SINCE_VERSION);
+    if (seat) {
+      display->SetSeat(seat, id);
+    }
   } else if (iface.EqualsLiteral("wp_fractional_scale_manager_v1")) {
     auto* manager = WaylandRegistryBind<wp_fractional_scale_manager_v1>(
         registry, id, &wp_fractional_scale_manager_v1_interface, 1);
@@ -360,10 +368,12 @@ static void global_registry_handler(void* data, wl_registry* registry,
              iface.EqualsLiteral("zwp_primary_selection_device_manager_v1")) {
     display->EnablePrimarySelection();
   } else if (iface.EqualsLiteral("zwp_pointer_gestures_v1")) {
-    
     auto* gestures = WaylandRegistryBind<zwp_pointer_gestures_v1>(
-        registry, id, &zwp_pointer_gestures_v1_interface, 3);
-    display->SetPointerGestures(gestures);
+        registry, id, &zwp_pointer_gestures_v1_interface,
+        ZWP_POINTER_GESTURES_V1_GET_HOLD_GESTURE_SINCE_VERSION);
+    if (gestures) {
+      display->SetPointerGestures(gestures);
+    }
   }
 }
 
@@ -386,11 +396,11 @@ static void WlLogHandler(const char* format, va_list args) {
   VsprintfLiteral(error, format, args);
   gfxCriticalNote << "Wayland protocol error: " << error;
 
-  
-  
-  
-  
-  
+  // See Bug 1826583 and Bug 1844653 for reference.
+  // "warning: queue %p destroyed while proxies still attached" and variants
+  // like "zwp_linux_dmabuf_feedback_v1@%d still attached" are exceptions on
+  // Wayland and non-fatal. They are triggered in certain versions of Mesa or
+  // the proprietary Nvidia driver and we don't want to crash because of them.
   if (strstr(error, "still attached")) {
     return;
   }
@@ -400,8 +410,8 @@ static void WlLogHandler(const char* format, va_list args) {
 
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
     : mThreadId(PR_GetCurrentThread()), mDisplay(aDisplay) {
-  
-  
+  // GTK sets the log handler on display creation, thus we overwrite it here
+  // in a similar fashion
   wl_log_set_handler_client(WlLogHandler);
 
   mRegistry = wl_display_get_registry(mDisplay);
@@ -409,12 +419,12 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   wl_display_roundtrip(mDisplay);
   wl_display_roundtrip(mDisplay);
 
-  
-  
+  // Check we have critical Wayland interfaces.
+  // Missing ones indicates a compositor bug and we can't continue.
   MOZ_RELEASE_ASSERT(GetShm(), "We're missing shm interface!");
   MOZ_RELEASE_ASSERT(GetCompositor(), "We're missing compositor interface!");
   MOZ_RELEASE_ASSERT(GetSubcompositor(),
                      "We're missing subcompositor interface!");
 }
 
-}  
+}  // namespace mozilla::widget
