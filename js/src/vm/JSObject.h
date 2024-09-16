@@ -858,11 +858,11 @@ extern bool ReadPropertyDescriptors(
 
 
 extern bool LookupName(JSContext* cx, Handle<PropertyName*> name,
-                       HandleObject scopeChain, MutableHandleObject objp,
+                       HandleObject envChain, MutableHandleObject objp,
                        MutableHandleObject pobjp, PropertyResult* propp);
 
 extern bool LookupNameNoGC(JSContext* cx, PropertyName* name,
-                           JSObject* scopeChain, JSObject** objp,
+                           JSObject* envChain, JSObject** objp,
                            NativeObject** pobjp, PropertyResult* propp);
 
 
