@@ -30,7 +30,7 @@ use std::{
     fmt::{self, Debug},
     marker::{PhantomData, PhantomPinned},
     mem,
-    os::unix::io::{AsFd, AsRawFd, BorrowedFd},
+    os::unix::io::RawFd,
     pin::Pin,
     ptr, thread,
 };
@@ -55,7 +55,6 @@ libc_enum! {
         /// on supported operating systems only, do it like `fdatasync`
         #[cfg(any(apple_targets,
                   target_os = "linux",
-                  target_os = "freebsd",
                   netbsdlike))]
         O_DSYNC
     }
@@ -103,7 +102,7 @@ unsafe impl Sync for LibcAiocb {}
 
 
 #[repr(C)]
-struct AioCb<'a> {
+struct AioCb {
     aiocb: LibcAiocb,
     
     
@@ -113,10 +112,9 @@ struct AioCb<'a> {
     
     
     in_progress: bool,
-    _fd: PhantomData<BorrowedFd<'a>>,
 }
 
-impl<'a> AioCb<'a> {
+impl AioCb {
     pin_utils::unsafe_unpinned!(aiocb: LibcAiocb);
 
     fn aio_return(mut self: Pin<&mut Self>) -> Result<usize> {
@@ -141,23 +139,18 @@ impl<'a> AioCb<'a> {
         }
     }
 
-    fn common_init(
-        fd: BorrowedFd<'a>,
-        prio: i32,
-        sigev_notify: SigevNotify,
-    ) -> Self {
+    fn common_init(fd: RawFd, prio: i32, sigev_notify: SigevNotify) -> Self {
         
         
         
         
         let mut a = unsafe { mem::zeroed::<libc::aiocb>() };
-        a.aio_fildes = fd.as_raw_fd();
+        a.aio_fildes = fd;
         a.aio_reqprio = prio;
         a.aio_sigevent = SigEvent::new(sigev_notify).sigevent();
         AioCb {
             aiocb: LibcAiocb(a),
             in_progress: false,
-            _fd: PhantomData,
         }
     }
 
@@ -193,7 +186,7 @@ impl<'a> AioCb<'a> {
     }
 }
 
-impl<'a> Debug for AioCb<'a> {
+impl Debug for AioCb {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("AioCb")
             .field("aiocb", &self.aiocb.0)
@@ -202,7 +195,7 @@ impl<'a> Debug for AioCb<'a> {
     }
 }
 
-impl<'a> Drop for AioCb<'a> {
+impl Drop for AioCb {
     
     
     fn drop(&mut self) {
@@ -313,7 +306,7 @@ pub trait Aio {
     fn error(self: Pin<&mut Self>) -> Result<()>;
 
     
-    fn fd(&self) -> BorrowedFd;
+    fn fd(&self) -> RawFd;
 
     
     
@@ -371,10 +364,8 @@ macro_rules! aio_methods {
             self.aiocb().error()
         }
 
-        fn fd(&self) -> BorrowedFd<'a> {
-            // safe because self's lifetime is the same as the original file
-            // descriptor.
-            unsafe { BorrowedFd::borrow_raw(self.aiocb.aiocb.0.aio_fildes) }
+        fn fd(&self) -> RawFd {
+            self.aiocb.aiocb.0.aio_fildes
         }
 
         fn in_progress(&self) -> bool {
@@ -435,13 +426,13 @@ macro_rules! aio_methods {
 
 #[derive(Debug)]
 #[repr(transparent)]
-pub struct AioFsync<'a> {
-    aiocb: AioCb<'a>,
+pub struct AioFsync {
+    aiocb: AioCb,
     _pin: PhantomPinned,
 }
 
-impl<'a> AioFsync<'a> {
-    unsafe_pinned!(aiocb: AioCb<'a>);
+impl AioFsync {
+    unsafe_pinned!(aiocb: AioCb);
 
     
     pub fn mode(&self) -> AioFsyncMode {
@@ -460,7 +451,7 @@ impl<'a> AioFsync<'a> {
     
     
     pub fn new(
-        fd: BorrowedFd<'a>,
+        fd: RawFd,
         mode: AioFsyncMode,
         prio: i32,
         sigev_notify: SigevNotify,
@@ -478,7 +469,7 @@ impl<'a> AioFsync<'a> {
     }
 }
 
-impl<'a> Aio for AioFsync<'a> {
+impl Aio for AioFsync {
     type Output = ();
 
     aio_methods!();
@@ -499,7 +490,7 @@ impl<'a> Aio for AioFsync<'a> {
 
 
 
-impl<'a> AsRef<libc::aiocb> for AioFsync<'a> {
+impl AsRef<libc::aiocb> for AioFsync {
     fn as_ref(&self) -> &libc::aiocb {
         &self.aiocb.aiocb.0
     }
@@ -549,13 +540,13 @@ impl<'a> AsRef<libc::aiocb> for AioFsync<'a> {
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct AioRead<'a> {
-    aiocb: AioCb<'a>,
+    aiocb: AioCb,
     _data: PhantomData<&'a [u8]>,
     _pin: PhantomPinned,
 }
 
 impl<'a> AioRead<'a> {
-    unsafe_pinned!(aiocb: AioCb<'a>);
+    unsafe_pinned!(aiocb: AioCb);
 
     
     
@@ -579,7 +570,7 @@ impl<'a> AioRead<'a> {
     
     
     pub fn new(
-        fd: BorrowedFd<'a>,
+        fd: RawFd,
         offs: off_t,
         buf: &'a mut [u8],
         prio: i32,
@@ -670,14 +661,14 @@ impl<'a> AsRef<libc::aiocb> for AioRead<'a> {
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct AioReadv<'a> {
-    aiocb: AioCb<'a>,
+    aiocb: AioCb,
     _data: PhantomData<&'a [&'a [u8]]>,
     _pin: PhantomPinned,
 }
 
 #[cfg(target_os = "freebsd")]
 impl<'a> AioReadv<'a> {
-    unsafe_pinned!(aiocb: AioCb<'a>);
+    unsafe_pinned!(aiocb: AioCb);
 
     
     pub fn iovlen(&self) -> usize {
@@ -698,7 +689,7 @@ impl<'a> AioReadv<'a> {
     
     
     pub fn new(
-        fd: BorrowedFd<'a>,
+        fd: RawFd,
         offs: off_t,
         bufs: &mut [IoSliceMut<'a>],
         prio: i32,
@@ -781,13 +772,13 @@ impl<'a> AsRef<libc::aiocb> for AioReadv<'a> {
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct AioWrite<'a> {
-    aiocb: AioCb<'a>,
+    aiocb: AioCb,
     _data: PhantomData<&'a [u8]>,
     _pin: PhantomPinned,
 }
 
 impl<'a> AioWrite<'a> {
-    unsafe_pinned!(aiocb: AioCb<'a>);
+    unsafe_pinned!(aiocb: AioCb);
 
     
     
@@ -811,7 +802,7 @@ impl<'a> AioWrite<'a> {
     
     
     pub fn new(
-        fd: BorrowedFd<'a>,
+        fd: RawFd,
         offs: off_t,
         buf: &'a [u8],
         prio: i32,
@@ -899,14 +890,14 @@ impl<'a> AsRef<libc::aiocb> for AioWrite<'a> {
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct AioWritev<'a> {
-    aiocb: AioCb<'a>,
+    aiocb: AioCb,
     _data: PhantomData<&'a [&'a [u8]]>,
     _pin: PhantomPinned,
 }
 
 #[cfg(target_os = "freebsd")]
 impl<'a> AioWritev<'a> {
-    unsafe_pinned!(aiocb: AioCb<'a>);
+    unsafe_pinned!(aiocb: AioCb);
 
     
     pub fn iovlen(&self) -> usize {
@@ -927,7 +918,7 @@ impl<'a> AioWritev<'a> {
     
     
     pub fn new(
-        fd: BorrowedFd<'a>,
+        fd: RawFd,
         offs: off_t,
         bufs: &[IoSlice<'a>],
         prio: i32,
@@ -1015,8 +1006,8 @@ impl<'a> AsRef<libc::aiocb> for AioWritev<'a> {
 
 
 
-pub fn aio_cancel_all<F: AsFd>(fd: F) -> Result<AioCancelStat> {
-    match unsafe { libc::aio_cancel(fd.as_fd().as_raw_fd(), ptr::null_mut()) } {
+pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
+    match unsafe { libc::aio_cancel(fd, ptr::null_mut()) } {
         libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
         libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
         libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),

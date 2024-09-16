@@ -175,18 +175,12 @@
 macro_rules! cfg_aliases {
     
     (@cfg_is_set $cfgname:ident) => {
-        {
-            let cfg_var = stringify!($cfgname).to_uppercase().replace("-", "_");
-            let result = std::env::var(format!("CARGO_CFG_{}", &cfg_var)).is_ok();
-
-            // CARGO_CFG_DEBUG_ASSERTIONS _should_ be set for when debug assertions are enabled,
-            // but as of writing is not: see https://github.com/rust-lang/cargo/issues/5777
-            if !result && cfg_var == "DEBUG_ASSERTIONS" {
-                std::env::var("PROFILE") == Ok("debug".to_owned())
-            } else {
-                result
-            }
-        }
+        std::env::var(
+            format!(
+                "CARGO_CFG_{}",
+                &stringify!($cfgname).to_uppercase().replace("-", "_")
+            )
+        ).is_ok()
     };
     
     (@cfg_has_feature $feature:expr) => {
@@ -207,7 +201,7 @@ macro_rules! cfg_aliases {
                 "CARGO_CFG_{}",
                 &stringify!($cfgname).to_uppercase().replace("-", "_")
             )
-        ).unwrap_or("".to_owned()).split(",").find(|x| x == &$cfgvalue).is_some()
+        ).unwrap_or("".to_string()).split(",").find(|x| x == &$cfgvalue).is_some()
     };
 
     
@@ -365,7 +359,6 @@ macro_rules! cfg_aliases {
         }
 
         $(
-            println!("cargo:rustc-check-cfg=cfg({})", stringify!($alias));
             if $crate::cfg_aliases!(@parser $($config)*) {
                 println!("cargo:rustc-cfg={}", stringify!($alias));
             }

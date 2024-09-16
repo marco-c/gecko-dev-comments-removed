@@ -28,7 +28,7 @@ fn read_empty_signalfd() {
     };
 
     let mask = SigSet::empty();
-    let fd = SignalFd::with_flags(&mask, SfdFlags::SFD_NONBLOCK).unwrap();
+    let mut fd = SignalFd::with_flags(&mask, SfdFlags::SFD_NONBLOCK).unwrap();
 
     let res = fd.read_signal();
     assert!(res.unwrap().is_none());
@@ -47,7 +47,7 @@ fn test_signalfd() {
     mask.add(signal::SIGUSR1);
     mask.thread_block().unwrap();
 
-    let fd = SignalFd::new(&mask).unwrap();
+    let mut fd = SignalFd::new(&mask).unwrap();
 
     
     
@@ -72,7 +72,7 @@ fn test_signalfd_setmask() {
     
     let mut mask = SigSet::empty();
 
-    let fd = SignalFd::new(&mask).unwrap();
+    let mut fd = SignalFd::new(&mask).unwrap();
 
     mask.add(signal::SIGUSR1);
     mask.thread_block().unwrap();

@@ -1,7 +1,7 @@
 
 
 pub fn basename(f: &str) -> &str {
-    match f.rfind(['/', '\\']) {
+    match f.rfind(|c| c == '/' || c == '\\') {
         None => f,
         Some(index) => &f[(index + 1)..],
     }
