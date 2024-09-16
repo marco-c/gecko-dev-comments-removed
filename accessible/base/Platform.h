@@ -130,6 +130,12 @@ void PlatformRoleChangedEvent(Accessible* aTarget, const a11y::role& aRole,
                               uint8_t aRoleMapEntryIndex);
 #endif
 
+
+
+
+
+uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains);
+
 }  
 }  
 

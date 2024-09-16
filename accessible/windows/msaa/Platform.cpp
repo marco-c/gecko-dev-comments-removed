@@ -271,3 +271,12 @@ bool a11y::GetInstantiator(nsIFile** aOutInstantiator) {
 
   return NS_SUCCEEDED(gInstantiator->Clone(aOutInstantiator));
 }
+
+uint64_t a11y::GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
+  
+  
+  if (Compatibility::IsKnownScreenReader()) {
+    return CacheDomain::All;
+  }
+  return aCacheDomains;
+}

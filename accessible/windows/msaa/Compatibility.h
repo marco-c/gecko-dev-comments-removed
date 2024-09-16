@@ -58,6 +58,14 @@ class Compatibility {
   
 
 
+  static bool IsKnownScreenReader() {
+    return IsJAWS() || IsDolphin() || IsVisperoShared() ||
+           !!(sConsumers & NVDA);
+  }
+
+  
+
+
 
   static void GetHumanReadableConsumersStr(nsAString& aResult);
 

@@ -21,6 +21,7 @@
 
 #include "nsAppShell.h"
 #include "nsCocoaUtils.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Telemetry.h"
 
 
@@ -200,6 +201,102 @@ void PlatformRoleChangedEvent(Accessible* aTarget, const a11y::role& aRole,
   }
 }
 
+
+
+enum class Client : uint64_t {
+  Unknown,
+  VoiceOver,
+  SwitchControl,
+  FullKeyboardAccess,
+  VoiceControl
+};
+
+
+
+std::pair<EnumSet<Client>, Client> GetClients() {
+  EnumSet<Client> clients;
+  std::optional<Client> clientToLog;
+  auto AddClient = [&clients, &clientToLog](Client client) {
+    clients += client;
+    if (!clientToLog.has_value()) {
+      clientToLog = client;
+    }
+  };
+  if ([[NSWorkspace sharedWorkspace]
+          respondsToSelector:@selector(isVoiceOverEnabled)] &&
+      [[NSWorkspace sharedWorkspace] isVoiceOverEnabled]) {
+    AddClient(Client::VoiceOver);
+  } else if ([[NSWorkspace sharedWorkspace]
+                 respondsToSelector:@selector(isSwitchControlEnabled)] &&
+             [[NSWorkspace sharedWorkspace] isSwitchControlEnabled]) {
+    AddClient(Client::SwitchControl);
+  } else {
+    
+    
+    
+    
+    
+    Boolean exists;
+    int val = CFPreferencesGetAppIntegerValue(
+        CFSTR("FullKeyboardAccessEnabled"), CFSTR("com.apple.Accessibility"),
+        &exists);
+    if (exists && val == 1) {
+      AddClient(Client::FullKeyboardAccess);
+    } else {
+      val = CFPreferencesGetAppIntegerValue(CFSTR("CommandAndControlEnabled"),
+                                            CFSTR("com.apple.Accessibility"),
+                                            &exists);
+      if (exists && val == 1) {
+        AddClient(Client::VoiceControl);
+      } else {
+        AddClient(Client::Unknown);
+      }
+    }
+  }
+  return std::make_pair(clients, clientToLog.value());
+}
+
+
+constexpr const char* GetStringForClient(Client aClient) {
+  switch (aClient) {
+    case Client::Unknown:
+      return "Unknown";
+    case Client::VoiceOver:
+      return "VoiceOver";
+    case Client::SwitchControl:
+      return "SwitchControl";
+    case Client::FullKeyboardAccess:
+      return "FullKeyboardAccess";
+    case Client::VoiceControl:
+      return "VoiceControl";
+    default:
+      break;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown Client enum value!");
+  return "";
+}
+
+uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
+  auto [clients, _] = GetClients();
+  
+  if (clients.contains(Client::VoiceOver)) {
+    return CacheDomain::All;
+  }
+  if (clients.contains(Client::FullKeyboardAccess)) {
+    aCacheDomains |= CacheDomain::Bounds;
+  }
+  if (clients.contains(Client::SwitchControl)) {
+    
+    
+    return CacheDomain::All;
+  }
+  if (clients.contains(Client::VoiceControl)) {
+    
+    return CacheDomain::All;
+  }
+  return aCacheDomains;
+}
+
 }  
 }  
 
@@ -224,46 +321,16 @@ void PlatformRoleChangedEvent(Accessible* aTarget, const a11y::role& aRole,
     mozilla::a11y::sA11yShouldBeEnabled = ([value intValue] == 1);
     if (sA11yShouldBeEnabled) {
       
-      nsAutoString client;
-      if ([[NSWorkspace sharedWorkspace]
-              respondsToSelector:@selector(isVoiceOverEnabled)] &&
-          [[NSWorkspace sharedWorkspace] isVoiceOverEnabled]) {
-        client.Assign(u"VoiceOver"_ns);
-      } else if ([[NSWorkspace sharedWorkspace]
-                     respondsToSelector:@selector(isSwitchControlEnabled)] &&
-                 [[NSWorkspace sharedWorkspace] isSwitchControlEnabled]) {
-        client.Assign(u"SwitchControl"_ns);
-      } else {
-        
-        
-        
-        
-        
-        Boolean exists;
-        int val = CFPreferencesGetAppIntegerValue(
-            CFSTR("FullKeyboardAccessEnabled"),
-            CFSTR("com.apple.Accessibility"), &exists);
-        if (exists && val == 1) {
-          client.Assign(u"FullKeyboardAccess"_ns);
-        } else {
-          val = CFPreferencesGetAppIntegerValue(
-              CFSTR("CommandAndControlEnabled"),
-              CFSTR("com.apple.Accessibility"), &exists);
-          if (exists && val == 1) {
-            client.Assign(u"VoiceControl"_ns);
-          } else {
-            client.Assign(u"Unknown"_ns);
-          }
-        }
-      }
+      auto [_, clientToLog] = GetClients();
+      const char* client = GetStringForClient(clientToLog);
 
 #if defined(MOZ_TELEMETRY_REPORTING)
       mozilla::Telemetry::ScalarSet(
-          mozilla::Telemetry::ScalarID::A11Y_INSTANTIATORS, client);
+          mozilla::Telemetry::ScalarID::A11Y_INSTANTIATORS,
+          NS_ConvertASCIItoUTF16(client));
 #endif  
-      CrashReporter::RecordAnnotationNSCString(
-          CrashReporter::Annotation::AccessibilityClient,
-          NS_ConvertUTF16toUTF8(client));
+      CrashReporter::RecordAnnotationCString(
+          CrashReporter::Annotation::AccessibilityClient, client);
     }
   }
 

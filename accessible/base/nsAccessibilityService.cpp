@@ -340,6 +340,15 @@ LocalAccessible* CreateMenupopupAccessible(Element* aElement,
   return new XULMenupopupAccessible(aElement, aContext->Document());
 }
 
+static uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
+  
+  if (!XRE_IsParentProcess()) {
+    return aCacheDomains;
+  }
+
+  return a11y::GetCacheDomainsForKnownClients(aCacheDomains);
+}
+
 
 
 
