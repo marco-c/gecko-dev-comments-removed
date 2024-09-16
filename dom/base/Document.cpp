@@ -6551,28 +6551,43 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
   aCookie.Truncate();  
                        
 
-  nsCOMPtr<nsIPrincipal> cookiePrincipal;
-  nsCOMPtr<nsIPrincipal> cookiePartitionedPrincipal;
+  if (mDisableCookieAccess) {
+    return;
+  }
 
-  CookieCommons::SecurityChecksResult checkResult =
-      CookieCommons::CheckGlobalAndRetrieveCookiePrincipals(
-          this, getter_AddRefs(cookiePrincipal),
-          getter_AddRefs(cookiePartitionedPrincipal));
-  switch (checkResult) {
-    case CookieCommons::SecurityChecksResult::eSandboxedError:
-      aRv.ThrowSecurityError(
-          "Forbidden in a sandboxed document without the 'allow-same-origin' "
-          "flag.");
+  
+  
+  if (mSandboxFlags & SANDBOXED_ORIGIN) {
+    aRv.ThrowSecurityError(
+        "Forbidden in a sandboxed document without the 'allow-same-origin' "
+        "flag.");
+    return;
+  }
+
+  
+  
+  if (!StaticPrefs::dom_cookie_testing_enabled()) {
+    StorageAccess storageAccess = CookieAllowedForDocument(this);
+    if (storageAccess == StorageAccess::eDeny) {
       return;
+    }
 
-    case CookieCommons::SecurityChecksResult::eSecurityError:
-      [[fallthrough]];
-
-    case CookieCommons::SecurityChecksResult::eDoNotContinue:
+    if (ShouldPartitionStorage(storageAccess) &&
+        !StoragePartitioningEnabled(storageAccess, CookieJarSettings())) {
       return;
+    }
 
-    case CookieCommons::SecurityChecksResult::eContinue:
-      break;
+    
+    if (IsCookieAverse()) {
+      return;
+    }
+  }
+
+  
+  nsCOMPtr<nsICookieService> service =
+      do_GetService(NS_COOKIESERVICE_CONTRACTID);
+  if (!service) {
+    return;
   }
 
   bool thirdParty = true;
@@ -6588,13 +6603,35 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
     }
   }
 
-  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
+  nsCOMPtr<nsIPrincipal> cookiePrincipal = EffectiveCookiePrincipal();
 
-  MOZ_ASSERT(cookiePrincipal);
+  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
   principals.AppendElement(cookiePrincipal);
 
-  if (cookiePartitionedPrincipal) {
-    principals.AppendElement(cookiePartitionedPrincipal);
+  
+  
+  
+  
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                 CookieJarSettings()->GetPartitionForeign();
+  bool documentHasStorageAccess = false;
+  nsresult rv = HasStorageAccessSync(documentHasStorageAccess);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  if (isCHIPS && documentHasStorageAccess) {
+    
+    MOZ_ASSERT(cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
+    
+    
+    
+    
+    if (!PartitionedPrincipal()
+             ->OriginAttributesRef()
+             .mPartitionKey.IsEmpty()) {
+      principals.AppendElement(PartitionedPrincipal());
+    }
   }
 
   nsTArray<RefPtr<Cookie>> cookieList;
@@ -6602,16 +6639,13 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
   int64_t currentTimeInUsec = PR_Now();
   int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
 
-  
-  nsCOMPtr<nsICookieService> service =
-      do_GetService(NS_COOKIESERVICE_CONTRACTID);
-  if (!service) {
-    return;
-  }
-
   for (auto& principal : principals) {
+    if (!CookieCommons::IsSchemeSupported(principal)) {
+      return;
+    }
+
     nsAutoCString baseDomain;
-    nsresult rv = CookieCommons::GetBaseDomain(principal, baseDomain);
+    rv = CookieCommons::GetBaseDomain(principal, baseDomain);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
@@ -6653,9 +6687,8 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
         continue;
       }
 
-      if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookie(
-                            cookie, CookieJarSettings()->GetPartitionForeign(),
-                            IsInPrivateBrowsing(), UsingStorageAccess())) {
+      if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
+                            cookie, this)) {
         continue;
       }
 
@@ -6707,26 +6740,32 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
 }
 
 void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
-  nsCOMPtr<nsIPrincipal> cookiePrincipal;
+  if (mDisableCookieAccess) {
+    return;
+  }
 
-  CookieCommons::SecurityChecksResult checkResult =
-      CookieCommons::CheckGlobalAndRetrieveCookiePrincipals(
-          this, getter_AddRefs(cookiePrincipal), nullptr);
-  switch (checkResult) {
-    case CookieCommons::SecurityChecksResult::eSandboxedError:
-      aRv.ThrowSecurityError(
-          "Forbidden in a sandboxed document without the 'allow-same-origin' "
-          "flag.");
-      return;
+  
+  
+  if (mSandboxFlags & SANDBOXED_ORIGIN) {
+    aRv.ThrowSecurityError(
+        "Forbidden in a sandboxed document without the 'allow-same-origin' "
+        "flag.");
+    return;
+  }
 
-    case CookieCommons::SecurityChecksResult::eSecurityError:
-      [[fallthrough]];
+  StorageAccess storageAccess = CookieAllowedForDocument(this);
+  if (storageAccess == StorageAccess::eDeny) {
+    return;
+  }
 
-    case CookieCommons::SecurityChecksResult::eDoNotContinue:
-      return;
+  if (ShouldPartitionStorage(storageAccess) &&
+      !StoragePartitioningEnabled(storageAccess, CookieJarSettings())) {
+    return;
+  }
 
-    case CookieCommons::SecurityChecksResult::eContinue:
-      break;
+  
+  if (IsCookieAverse()) {
+    return;
   }
 
   if (!mDocumentURI) {
@@ -6790,9 +6829,8 @@ void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
                                                  nullptr, &thirdParty);
   }
 
-  if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookie(
-                        cookie, CookieJarSettings()->GetPartitionForeign(),
-                        IsInPrivateBrowsing(), UsingStorageAccess())) {
+  if (thirdParty &&
+      !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(cookie, this)) {
     return;
   }
 
