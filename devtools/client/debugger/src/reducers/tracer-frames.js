@@ -61,6 +61,9 @@ function initialState(previousState = {}) {
     activeDomEvents: [],
 
     
+    highlightedDomEvents: [],
+
+    
     selectedTraceIndex: null,
 
     
@@ -259,6 +262,28 @@ function update(state = initialState(), action) {
         ...state,
         mutableFilteredTopTraces,
         activeDomEvents: action.active,
+      };
+    }
+
+    case "HIGHLIGHT_EVENT_LISTENERS": {
+      
+      if (action.panelKey != "tracer") {
+        return state;
+      }
+
+      
+      const eventNames = [];
+      for (const [
+        eventName,
+        { id },
+      ] of state.domEventInfoByTracerName.entries()) {
+        if (action.eventIds.includes(id)) {
+          eventNames.push(eventName);
+        }
+      }
+      return {
+        ...state,
+        highlightedDomEvents: eventNames,
       };
     }
   }

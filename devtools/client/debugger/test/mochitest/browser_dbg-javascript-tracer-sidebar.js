@@ -256,6 +256,25 @@ add_task(async function () {
   is(domEventCategories[1].textContent, "Mouse");
 
   
+  is(
+    findAllElementsWithSelector(dbg, ".tracer-slider-event.highlighted").length,
+    0,
+    "No event is highlighted in the timeline"
+  );
+  info("Mouse over the Keyboard category");
+  EventUtils.synthesizeMouseAtCenter(
+    domEventCategories[0],
+    { type: "mousemove" },
+    dbg.win
+  );
+  await waitFor(() => {
+    return (
+      findAllElementsWithSelector(dbg, ".tracer-slider-event.highlighted")
+        .length == 1
+    );
+  }, "The setTimeout event is highlighted in the timeline");
+
+  
   is(findAllElementsWithSelector(dbg, ".tracer-slider-event").length, 2);
   info("Toggle off the Mouse and then the Keyboard events");
   domEventCategories[0].click();
