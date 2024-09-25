@@ -271,8 +271,26 @@ JS_PUBLIC_API JSString* JS::GetRequestedModuleSpecifier(
   CHECK_THREAD(cx);
   cx->check(moduleRecord);
 
-  auto& module = moduleRecord->as<ModuleObject>();
-  return module.requestedModules()[index].moduleRequest()->specifier();
+  auto* moduleRequest = moduleRecord->as<ModuleObject>()
+                            .requestedModules()[index]
+                            .moduleRequest();
+
+  
+  
+  
+  
+  
+  if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
+    UniqueChars printableKey = AtomToPrintableString(
+        cx, moduleRequest->getFirstUnsupportedAttributeKey());
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr,
+        JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
+        printableKey ? printableKey.get() : "");
+    return nullptr;
+  }
+
+  return moduleRequest->specifier();
 }
 
 JS_PUBLIC_API void JS::GetRequestedModuleSourcePos(
