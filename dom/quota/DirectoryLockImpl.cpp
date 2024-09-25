@@ -12,6 +12,21 @@
 
 namespace mozilla::dom::quota {
 
+namespace {
+
+
+
+
+
+
+
+
+
+
+const uint32_t kAcquireTimeoutMs = 30000;
+
+}  
+
 DirectoryLockImpl::DirectoryLockImpl(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
     const PersistenceScope& aPersistenceScope, const nsACString& aSuffix,
@@ -105,6 +120,11 @@ bool DirectoryLockImpl::MustWaitFor(const DirectoryLockImpl& aLock) const {
 
 void DirectoryLockImpl::NotifyOpenListener() {
   AssertIsOnOwningThread();
+
+  if (mAcquireTimer) {
+    mAcquireTimer->Cancel();
+    mAcquireTimer = nullptr;
+  }
 
   if (mInvalidated) {
     mAcquirePromiseHolder.Reject(NS_ERROR_FAILURE, __func__);
@@ -229,6 +249,23 @@ void DirectoryLockImpl::AcquireInternal() {
     NotifyOpenListener();
     return;
   }
+
+  mAcquireTimer = NS_NewTimer();
+
+  MOZ_ALWAYS_SUCCEEDS(mAcquireTimer->InitWithNamedFuncCallback(
+      [](nsITimer* aTimer, void* aClosure) {
+        if (!QM_LOG_TEST()) {
+          return;
+        }
+
+        auto* const lock = static_cast<DirectoryLockImpl*>(aClosure);
+
+        QM_LOG(("Directory lock [%p] is taking too long to be acquired", lock));
+
+        lock->Log();
+      },
+      this, kAcquireTimeoutMs, nsITimer::TYPE_ONE_SHOT,
+      "quota::DirectoryLockImpl::AcquireInternal"));
 
   if (!mExclusive || !mInternal) {
     return;
