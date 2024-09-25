@@ -5083,13 +5083,6 @@ bool jit::MakeLoopsContiguous(MIRGraph& graph) {
 
     
     
-    if (canOsr) {
-      UnmarkLoopBlocks(graph, header);
-      continue;
-    }
-
-    
-    
     MakeLoopContiguous(graph, header, numMarked);
   }
 
