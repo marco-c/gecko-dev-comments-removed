@@ -45,10 +45,14 @@ this.search = class extends ExtensionAPI {
               
               
               
+              
+              
+              
               if (
                 favIconUrl &&
-                favIconUrl.startsWith("moz-extension:") &&
-                !favIconUrl.startsWith(context.extension.baseURL)
+                (favIconUrl.startsWith("blob:") ||
+                  (favIconUrl.startsWith("moz-extension:") &&
+                    !favIconUrl.startsWith(context.extension.baseURL)))
               ) {
                 favIconUrl = await ExtensionUtils.makeDataURI(favIconUrl);
               }
