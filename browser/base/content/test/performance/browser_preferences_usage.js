@@ -158,7 +158,6 @@ add_task(async function navigate_around() {
       
       
       
-      
       ["browser.sessionhistory.max_total_viewers", 0],
     ],
   });
@@ -183,12 +182,6 @@ add_task(async function navigate_around() {
       min: 50,
       max: 51,
     };
-    
-    knownProblematicPrefs["dom.ipc.keepProcessesAlive.webIsolated.perOrigin"] =
-      {
-        min: 50,
-        max: 51,
-      };
     if (AppConstants.platform == "linux") {
       
       
