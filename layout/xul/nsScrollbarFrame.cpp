@@ -58,6 +58,45 @@ void nsScrollbarFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   AddStateBits(NS_FRAME_REFLOW_ROOT);
 }
 
+nsScrollbarFrame* nsScrollbarFrame::GetOppositeScrollbar() const {
+  ScrollContainerFrame* sc = do_QueryFrame(GetParent());
+  if (!sc) {
+    return nullptr;
+  }
+  auto* vScrollbar = sc->GetScrollbarBox( true);
+  if (vScrollbar == this) {
+    return sc->GetScrollbarBox( false);
+  }
+  MOZ_ASSERT(sc->GetScrollbarBox( false) == this,
+             "Which scrollbar are we?");
+  return vScrollbar;
+}
+
+void nsScrollbarFrame::ElementStateChanged(dom::ElementState aStates) {
+  if (!aStates.HasState(dom::ElementState::HOVER)) {
+    return;
+  }
+  
+  
+  InvalidateFrameSubtree();
+  if (!mContent->AsElement()->State().HasState(dom::ElementState::HOVER)) {
+    return;
+  }
+  mHasBeenHovered = true;
+  
+  
+  if (auto* opposite = GetOppositeScrollbar();
+      opposite && opposite->mHasBeenHovered) {
+    opposite->mHasBeenHovered = false;
+    opposite->InvalidateFrameSubtree();
+  }
+}
+
+void nsScrollbarFrame::WillBecomeActive() {
+  
+  mHasBeenHovered = false;
+}
+
 void nsScrollbarFrame::Destroy(DestroyContext& aContext) {
   aContext.AddAnonymousContent(mUpTopButton.forget());
   aContext.AddAnonymousContent(mDownTopButton.forget());
