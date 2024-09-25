@@ -92,6 +92,7 @@ var SidebarController = {
           contextMenuId: this.sidebarRevampEnabled
             ? "sidebar-history-context-menu"
             : undefined,
+          gleanEvent: Glean.history.sidebarToggle,
         }),
       ],
       [
@@ -122,6 +123,7 @@ var SidebarController = {
           revampL10nId: "sidebar-menu-bookmarks-label",
           iconUrl: "chrome://browser/skin/bookmark-hollow.svg",
           disabled: true,
+          gleanEvent: Glean.bookmarks.sidebarToggle,
         }),
       ],
     ]);
@@ -157,6 +159,7 @@ var SidebarController = {
         url: "chrome://browser/content/sidebar/sidebar-customize.html",
         revampL10nId: "sidebar-menu-customize-label",
         iconUrl: "chrome://browser/skin/preferences/category-general.svg",
+        gleanEvent: Glean.sidebarCustomize.panelToggle,
       });
     }
 
@@ -317,6 +320,29 @@ var SidebarController = {
         this._mainResizeObserver.observe(this.sidebarMain);
         this._mainResizeObserverAdded = true;
       }
+      if (!this._browserResizeObserver) {
+        let debounceTimeout = null;
+        this._browserResizeObserver = () => {
+          
+          if (!this._browserResizeObserverEnabled) {
+            return;
+          }
+          clearTimeout(debounceTimeout);
+          debounceTimeout = setTimeout(() => {
+            const current = this.browser.getBoundingClientRect().width;
+            const previous = this._browserWidth;
+            const percentage = (current / window.innerWidth) * 100;
+            this._browserWidth = current;
+            Glean.sidebar.resize.record({
+              current,
+              previous,
+              percentage,
+            });
+            Glean.sidebar.width.set(current);
+          }, 1000);
+        };
+        this.browser.addEventListener("resize", this._browserResizeObserver);
+      }
 
       let newTabButton = document.getElementById("vertical-tabs-newtab-button");
       if (!this._verticalNewTabListenerAdded) {
@@ -395,6 +421,7 @@ var SidebarController = {
       
       this.sidebarMain.remove();
     }
+    this.browser.removeEventListener("resize", this._browserResizeObserver);
   },
 
   
@@ -734,6 +761,15 @@ var SidebarController = {
   
 
 
+  _enableBrowserResizeObserver() {
+    this._browserResizeObserverEnabled = true;
+    this._browserWidth = this.browser.getBoundingClientRect().width;
+    Glean.sidebar.width.set(this._browserWidth);
+  },
+
+  
+
+
 
 
 
@@ -956,8 +992,12 @@ var SidebarController = {
 
 
   toggleExpanded(force) {
-    this._sidebarMain.expanded =
+    const expanded =
       typeof force == "boolean" ? force : !this._sidebarMain.expanded;
+    this._sidebarMain.expanded = expanded;
+    if (expanded) {
+      Glean.sidebar.expand.record();
+    }
     
     
     gBrowser.tabContainer.toggleAttribute(
@@ -1244,8 +1284,7 @@ var SidebarController = {
 
 
   async show(commandID, triggerNode) {
-    let panelType = commandID.substring(4, commandID.length - 7);
-    Services.telemetry.keyedScalarAdd("sidebar.opened", panelType, 1);
+    this._recordPanelToggle(commandID, true);
 
     
     
@@ -1274,8 +1313,7 @@ var SidebarController = {
 
 
   async showInitially(commandID) {
-    let panelType = commandID.substring(4, commandID.length - 7);
-    Services.telemetry.keyedScalarAdd("sidebar.opened", panelType, 1);
+    this._recordPanelToggle(commandID, true);
 
     
     
@@ -1368,6 +1406,7 @@ var SidebarController = {
 
               
               this._fireShowEvent();
+              this._enableBrowserResizeObserver();
             }, 0);
           },
           { capture: true, once: true }
@@ -1377,6 +1416,7 @@ var SidebarController = {
 
         
         this._fireShowEvent();
+        this._enableBrowserResizeObserver();
       }
     });
   },
@@ -1393,6 +1433,8 @@ var SidebarController = {
     }
 
     this.hideSwitcherPanel();
+    this._browserResizeObserverEnabled = false;
+    this._recordPanelToggle(this.currentID, false);
     if (this.sidebarRevampEnabled) {
       this._box.dispatchEvent(new CustomEvent("sidebar-hide"));
 
@@ -1423,6 +1465,28 @@ var SidebarController = {
       updateToggleControlLabel(triggerNode);
     }
     this.updateToolbarButton();
+  },
+
+  
+
+
+
+
+
+  _recordPanelToggle(commandID, opened) {
+    const sidebar = this.sidebars.get(commandID);
+    const isExtension = sidebar && Object.hasOwn(sidebar, "extensionId");
+    if (isExtension) {
+      const addonId = sidebar.extensionId;
+      const addonName = WebExtensionPolicy.getByID(addonId)?.name;
+      Glean.extension.sidebarToggle.record({
+        opened,
+        addon_id: AMTelemetry.getTrimmedString(addonId),
+        addon_name: addonName && AMTelemetry.getTrimmedString(addonName),
+      });
+    } else if (sidebar.gleanEvent) {
+      sidebar.gleanEvent.record({ opened });
+    }
   },
 
   
