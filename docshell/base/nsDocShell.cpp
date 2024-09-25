@@ -1329,20 +1329,7 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
         mEODForCurrentDocument = false;
         mIsRestoringDocument = true;
         mLoadGroup->AddRequest(channel, nullptr);
-        nsCOMPtr<nsIURI> uri;
-        if (doc->FragmentDirective()) {
-          
-          
-          if (mozilla::SessionHistoryInParent()) {
-            uri = mActiveEntry->GetURI();
-          } else if (mOSHE) {
-            uri = mOSHE->GetURI();
-          }
-        }
-        if (!uri) {
-          uri = doc->GetDocumentURI();
-        }
-        SetCurrentURI(uri, channel,
+        SetCurrentURI(doc->GetDocumentURI(), channel,
                        true,
                        false,
                        0);
