@@ -77,10 +77,8 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   [[nodiscard]] nsresult ClearByTimeRange(PRTime aFrom, PRTime aTo);
 
   
-  
   [[nodiscard]] nsresult ClearByOriginAttributesPattern(
-      const OriginAttributesPattern& aOriginAttributesPattern,
-      const Maybe<nsCString>& aSiteHost = Nothing());
+      const OriginAttributesPattern& aOriginAttributesPattern);
 
   
   [[nodiscard]] nsresult Clear();
@@ -162,8 +160,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   
   [[nodiscard]] static nsresult DeleteDataByOriginAttributesPattern(
       mozIStorageConnection* aDatabaseConnection,
-      const OriginAttributesPattern& aOriginAttributesPattern,
-      const Maybe<nsCString>& aSiteHost = Nothing());
+      const OriginAttributesPattern& aOriginAttributesPattern);
 
   
   [[nodiscard]] static nsresult ClearData(
@@ -216,11 +213,8 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
       BounceTrackingProtectionStorage::EntryType aEntryType);
 
   
-  
-  
   [[nodiscard]] nsresult DeleteDBEntriesByOriginAttributesPattern(
-      const OriginAttributesPattern& aOriginAttributesPattern,
-      const Maybe<nsCString>& aSiteHost = Nothing());
+      const OriginAttributesPattern& aOriginAttributesPattern);
 };
 
 
