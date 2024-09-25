@@ -5,6 +5,7 @@
 use crate::json_writer::JSONWriter;
 use crate::marker::schema::MarkerSchema;
 use crate::marker::{transmute_and_stream, ProfilerMarker};
+use std::any::TypeId;
 use std::collections::HashMap;
 use std::sync::{RwLock, RwLockReadGuard};
 
@@ -18,9 +19,7 @@ lazy_static! {
 pub struct DeserializerTagsState {
     
     
-    
-    
-    pub marker_tag_to_deserializer_tag: HashMap<usize, u8>,
+    pub marker_type_id_to_deserializer_tag: HashMap<TypeId, u8>,
     
     
     
@@ -47,7 +46,7 @@ pub struct MarkerTypeFunctions {
 impl DeserializerTagsState {
     fn new() -> Self {
         DeserializerTagsState {
-            marker_tag_to_deserializer_tag: HashMap::new(),
+            marker_type_id_to_deserializer_tag: HashMap::new(),
             marker_type_functions_1_based: vec![],
         }
     }
@@ -59,12 +58,12 @@ impl DeserializerTagsState {
 
 pub fn get_or_insert_deserializer_tag<T>() -> u8
 where
-    T: ProfilerMarker,
+    T: ProfilerMarker + 'static,
 {
-    let unique_marker_tag = T::marker_type_name as *const () as usize;
+    let type_id = TypeId::of::<T>();
     let mut state = DESERIALIZER_TAGS_STATE.write().unwrap();
 
-    match state.marker_tag_to_deserializer_tag.get(&unique_marker_tag) {
+    match state.marker_type_id_to_deserializer_tag.get(&type_id) {
         None => {
             
             let deserializer_tag = state.marker_type_functions_1_based.len() as u8 + 1;
@@ -75,8 +74,8 @@ where
             );
 
             state
-                .marker_tag_to_deserializer_tag
-                .insert(unique_marker_tag, deserializer_tag);
+                .marker_type_id_to_deserializer_tag
+                .insert(type_id, deserializer_tag);
             state
                 .marker_type_functions_1_based
                 .push(MarkerTypeFunctions {
