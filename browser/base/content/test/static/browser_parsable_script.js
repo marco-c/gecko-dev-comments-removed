@@ -12,17 +12,6 @@ const kAllowlist = new Set([
   /browser\/content\/browser\/places\/controller.js$/,
 ]);
 
-const kESModuleList = new Set([
-  /browser\/lockwise-card.js$/,
-  /browser\/monitor-card.js$/,
-  /browser\/proxy-card.js$/,
-  /browser\/vpn-card.js$/,
-  /toolkit\/content\/global\/certviewer\/components\/.*\.js$/,
-  /toolkit\/content\/global\/certviewer\/.*\.js$/,
-  /toolkit\/content\/global\/ml\/transformers.*\.js$/,
-  /chrome\/pdfjs\/content\/web\/.*\.js$/,
-]);
-
 
 
 
@@ -43,25 +32,6 @@ init();
 
 function uriIsAllowed(uri) {
   for (let allowlistItem of kAllowlist) {
-    if (allowlistItem.test(uri.spec)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-
-
-
-
-
-function uriIsESModule(uri) {
-  if (uri.filePath.endsWith(".mjs")) {
-    return true;
-  }
-
-  for (let allowlistItem of kESModuleList) {
     if (allowlistItem.test(uri.spec)) {
       return true;
     }
