@@ -3139,6 +3139,9 @@ class Document : public nsINode,
   
   void GetConnectedShadowRoots(nsTArray<RefPtr<ShadowRoot>>&) const;
 
+  void SynchronouslyUpdateRemoteBrowserDimensions(
+      bool aIncludeInactive = false);
+
   
   
   void NotifyMediaFeatureValuesChanged();
@@ -3755,7 +3758,7 @@ class Document : public nsINode,
   
   void UpdateIntersections(TimeStamp aNowTime);
   
-  void UpdateRemoteFrameEffects();
+  void UpdateRemoteFrameEffects(bool aIncludeInactive = false);
   MOZ_CAN_RUN_SCRIPT void NotifyIntersectionObservers();
 
   DOMIntersectionObserver* GetLazyLoadObserver() { return mLazyLoadObserver; }

@@ -912,8 +912,7 @@ NS_IMETHODIMP AppWindow::SetVisibility(bool aVisibility) {
   
   if (aVisibility && mDominantClientSize) {
     if (RefPtr doc = mDocShell->GetDocument()) {
-      doc->FlushPendingNotifications(FlushType::Layout);
-      doc->UpdateRemoteFrameEffects();
+      doc->SynchronouslyUpdateRemoteBrowserDimensions();
     }
   }
 
