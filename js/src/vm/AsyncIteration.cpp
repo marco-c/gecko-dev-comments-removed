@@ -986,6 +986,71 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
   return AsyncGeneratorReturned(cx, generator, thisOrRval);
 }
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+
+
+
+
+
+static bool AsyncIteratorDispose(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  JS::Rooted<JS::Value> O(cx, args.thisv());
+
+  
+  JS::Rooted<PromiseObject*> promise(cx,
+                                     PromiseObject::createSkippingExecutor(cx));
+  if (!promise) {
+    return false;
+  }
+
+  
+  JS::Rooted<JS::Value> returnMethod(cx);
+  if (!GetProperty(cx, O, cx->names().return_, &returnMethod)) {
+    
+    return AbruptRejectPromise(cx, args, promise, nullptr);
+  }
+
+  
+  
+  
+  if (returnMethod.isNullOrUndefined()) {
+    
+    
+    if (!PromiseObject::resolve(cx, promise, JS::UndefinedHandleValue)) {
+      return false;
+    }
+    args.rval().setObject(*promise);
+    return true;
+  }
+
+  
+  
+  if (!IsCallable(returnMethod)) {
+    ReportIsNotFunction(cx, returnMethod);
+    return AbruptRejectPromise(cx, args, promise, nullptr);
+  }
+
+  
+  
+  JS::Rooted<JS::Value> rval(cx);
+  if (!Call(cx, returnMethod, O, JS::UndefinedHandleValue, &rval)) {
+    
+    return AbruptRejectPromise(cx, args, promise, nullptr);
+  }
+
+  
+  if (!InternalAsyncIteratorDisposeAwait(cx, rval, promise)) {
+    return AbruptRejectPromise(cx, args, promise, nullptr);
+  }
+
+  
+  args.rval().setObject(*promise);
+  return true;
+}
+#endif
+
 static const JSFunctionSpec async_generator_methods[] = {
     JS_FN("next", js::AsyncGeneratorNext, 1, 0),
     JS_FN("throw", js::AsyncGeneratorThrow, 1, 0),
@@ -1254,6 +1319,9 @@ bool GlobalObject::initAsyncFromSyncIteratorProto(
 
 static const JSFunctionSpec async_iterator_proto_methods[] = {
     JS_SELF_HOSTED_SYM_FN(asyncIterator, "AsyncIteratorIdentity", 0, 0),
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    JS_SYM_FN(asyncDispose, AsyncIteratorDispose, 0, 0),
+#endif
     JS_FS_END,
 };
 
@@ -1271,6 +1339,9 @@ static const JSFunctionSpec async_iterator_proto_methods_with_helpers[] = {
     JS_SELF_HOSTED_FN("every", "AsyncIteratorEvery", 1, 0),
     JS_SELF_HOSTED_FN("find", "AsyncIteratorFind", 1, 0),
     JS_SELF_HOSTED_SYM_FN(asyncIterator, "AsyncIteratorIdentity", 0, 0),
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    JS_SYM_FN(asyncDispose, AsyncIteratorDispose, 0, 0),
+#endif
     JS_FS_END,
 };
 

@@ -2220,7 +2220,18 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
       
       resolutionMode = RejectMode;
       handlerResult = argument;
-    } else {
+    }
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    else if (handlerNum == PromiseHandler::AsyncIteratorDisposeAwaitFulfilled) {
+      
+      
+      
+      
+      
+      handlerResult = JS::UndefinedValue();
+    }
+#endif
+    else {
       
 
       MOZ_ASSERT(handlerNum ==
@@ -5605,6 +5616,25 @@ template <typename T>
   extraStep(reaction);
   return PerformPromiseThenWithReaction(cx, unwrappedPromise, reaction);
 }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+
+
+
+
+
+
+
+
+[[nodiscard]] bool js::InternalAsyncIteratorDisposeAwait(
+    JSContext* cx, JS::Handle<JS::Value> value,
+    JS::Handle<JSObject*> resultPromise) {
+  auto extra = [](JS::Handle<PromiseReactionRecord*> reaction) {};
+  return InternalAwait(cx, value, resultPromise,
+                       PromiseHandler::AsyncIteratorDisposeAwaitFulfilled,
+                       PromiseHandler::Thrower, extra);
+}
+#endif
 
 [[nodiscard]] bool js::InternalAsyncGeneratorAwait(
     JSContext* cx, JS::Handle<AsyncGeneratorObject*> generator,
