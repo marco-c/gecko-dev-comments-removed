@@ -45,9 +45,13 @@ const Cm = Components.manager;
 
 load("../data/xpcshellConstantsPP.js");
 
-const DIR_MACOS = AppConstants.platform == "macosx" ? "Contents/MacOS/" : "";
+
+
+const DIR_CONTENTS = AppConstants.platform == "macosx" ? "Contents/" : "";
+const DIR_MACOS =
+  AppConstants.platform == "macosx" ? DIR_CONTENTS + "MacOS/" : "";
 const DIR_RESOURCES =
-  AppConstants.platform == "macosx" ? "Contents/Resources/" : "";
+  AppConstants.platform == "macosx" ? DIR_CONTENTS + "Resources/" : "";
 const TEST_FILE_SUFFIX = AppConstants.platform == "macosx" ? "_mac" : "";
 const FILE_COMPLETE_MAR = "complete" + TEST_FILE_SUFFIX + ".mar";
 const FILE_PARTIAL_MAR = "partial" + TEST_FILE_SUFFIX + ".mar";
@@ -75,13 +79,19 @@ const APP_BIN_SUFFIX =
   AppConstants.platform == "linux" ? "-bin" : mozinfo.bin_suffix;
 const FILE_APP_BIN = AppConstants.MOZ_APP_NAME + APP_BIN_SUFFIX;
 const FILE_COMPLETE_EXE = "complete.exe";
-const FILE_HELPER_BIN = "TestAUSHelper" + mozinfo.bin_suffix;
+const FILE_HELPER_BIN =
+  AppConstants.platform == "macosx"
+    ? "callback_app.app/Contents/MacOS/TestAUSHelper"
+    : "TestAUSHelper" + mozinfo.bin_suffix;
+const FILE_HELPER_APP =
+  AppConstants.platform == "macosx" ? "callback_app.app" : FILE_HELPER_BIN;
 const FILE_MAINTENANCE_SERVICE_BIN = "maintenanceservice.exe";
 const FILE_MAINTENANCE_SERVICE_INSTALLER_BIN =
   "maintenanceservice_installer.exe";
 const FILE_OLD_VERSION_MAR = "old_version.mar";
 const FILE_PARTIAL_EXE = "partial.exe";
-const FILE_UPDATER_BIN = "updater" + mozinfo.bin_suffix;
+const FILE_UPDATER_BIN =
+  "updater" + (AppConstants.platform == "macosx" ? ".app" : mozinfo.bin_suffix);
 
 const PERFORMING_STAGED_UPDATE = "Performing a staged update";
 const CALL_QUIT = "calling QuitProgressUI";
@@ -145,8 +155,21 @@ var gPIDPersistProcess;
 
 
 
-var gCallbackBinFile = "callback_app" + mozinfo.bin_suffix;
 var gCallbackArgs = ["./", "callback.log", "Test Arg 2", "Test Arg 3"];
+var gCallbackApp = (() => {
+  if (AppConstants.platform == "macosx") {
+    return "callback_app.app";
+  }
+  return "callback_app" + mozinfo.bin_suffix;
+})();
+
+var gCallbackBinFile = (() => {
+  if (AppConstants.platform == "macosx") {
+    return FILE_HELPER_BIN;
+  }
+  return "callback_app" + mozinfo.bin_suffix;
+})();
+
 var gPostUpdateBinFile = "postup_app" + mozinfo.bin_suffix;
 
 var gTimeoutRuns = 0;
@@ -227,7 +250,43 @@ var gTestFilesCommonMac = [
     description: "Should never change",
     fileName: FILE_UPDATE_SETTINGS_FRAMEWORK,
     relPathDir:
-      "Contents/MacOS/updater.app/Contents/Frameworks/UpdateSettings.framework/",
+      DIR_MACOS + "updater.app/Contents/Frameworks/UpdateSettings.framework/",
+    originalContents: null,
+    compareContents: null,
+    originalFile: null,
+    compareFile: null,
+    originalPerms: null,
+    comparePerms: null,
+    existingFile: true,
+  },
+  {
+    description: "Should never change",
+    fileName: FILE_INFO_PLIST,
+    relPathDir: DIR_CONTENTS,
+    originalContents: DIR_APP_INFO_PLIST_FILE_CONTENTS,
+    compareContents: DIR_APP_INFO_PLIST_FILE_CONTENTS,
+    originalFile: null,
+    compareFile: null,
+    originalPerms: null,
+    comparePerms: null,
+    existingFile: true,
+  },
+  {
+    description: "Should never change",
+    fileName: FILE_INFO_PLIST,
+    relPathDir: DIR_MACOS + "updater.app/Contents/",
+    originalContents: null,
+    compareContents: null,
+    originalFile: null,
+    compareFile: null,
+    originalPerms: null,
+    comparePerms: null,
+    existingFile: true,
+  },
+  {
+    description: "Should never change",
+    fileName: FILE_INFO_PLIST,
+    relPathDir: DIR_MACOS + "callback_app.app/Contents/",
     originalContents: null,
     compareContents: null,
     originalFile: null,
@@ -1909,6 +1968,21 @@ function removeUpdateInProgressLockFile(aDir) {
   Assert.ok(!file.exists(), MSG_SHOULD_NOT_EXIST + getMsgPath(file.path));
 }
 
+function stripQuarantineBitFromPath(aPath) {
+  if (AppConstants.platform != "macosx") {
+    do_throw("macOS-only function called by a different platform!");
+  }
+
+  let args = ["-dr", "com.apple.quarantine", aPath];
+  let stripQuarantineBitProcess = Cc[
+    "@mozilla.org/process/util;1"
+  ].createInstance(Ci.nsIProcess);
+  let xattrBin = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  xattrBin.initWithPath("/usr/bin/xattr");
+  stripQuarantineBitProcess.init(xattrBin);
+  stripQuarantineBitProcess.run(true, args, args.length);
+}
+
 
 
 
@@ -1916,15 +1990,15 @@ function removeUpdateInProgressLockFile(aDir) {
 
 
 function copyTestUpdaterToBinDir() {
-  let updaterLeafName =
-    AppConstants.platform == "macosx" ? "updater.app" : FILE_UPDATER_BIN;
-  let testUpdater = getTestDirFile(updaterLeafName);
+  let testUpdater = getTestDirFile(FILE_UPDATER_BIN);
   let updater = getGREBinDir();
-  updater.append(updaterLeafName);
+  updater.append(FILE_UPDATER_BIN);
   if (!updater.exists()) {
-    testUpdater.copyToFollowingLinks(updater.parent, updaterLeafName);
+    testUpdater.copyToFollowingLinks(updater.parent, FILE_UPDATER_BIN);
   }
+
   if (AppConstants.platform == "macosx") {
+    stripQuarantineBitFromPath(updater.path);
     updater.append("Contents");
     updater.append("MacOS");
     updater.append("org.mozilla.updater");
@@ -2051,8 +2125,8 @@ function runUpdate(
 
   let svcOriginalLog;
   if (gIsServiceTest) {
-    copyFileToTestAppDir(FILE_MAINTENANCE_SERVICE_BIN, false);
-    copyFileToTestAppDir(FILE_MAINTENANCE_SERVICE_INSTALLER_BIN, false);
+    copyFileToTestAppDir(FILE_MAINTENANCE_SERVICE_BIN, DIR_MACOS);
+    copyFileToTestAppDir(FILE_MAINTENANCE_SERVICE_INSTALLER_BIN, DIR_MACOS);
     if (aCheckSvcLog) {
       svcOriginalLog = readServiceLogFile();
     }
@@ -2067,6 +2141,7 @@ function runUpdate(
   if (!gUpdateBin) {
     gUpdateBin = copyTestUpdaterToBinDir();
   }
+
   Assert.ok(
     gUpdateBin.exists(),
     MSG_SHOULD_EXIST + getMsgPath(gUpdateBin.path)
@@ -2077,7 +2152,7 @@ function runUpdate(
   let applyToDirPath = aApplyToDirPath || getApplyDirFile().path;
   let stageDirPath = aApplyToDirPath || getStageDirFile().path;
 
-  let callbackApp = getApplyDirFile(DIR_RESOURCES + gCallbackBinFile);
+  let callbackApp = getApplyDirFile(DIR_MACOS + gCallbackApp);
   Assert.ok(
     callbackApp.exists(),
     MSG_SHOULD_EXIST + ", path: " + callbackApp.path
@@ -2548,19 +2623,19 @@ function setupAppFiles({ requiresOmnijar = false } = {}) {
   
   
   let appFiles = [
-    { relPath: FILE_APP_BIN, inGreDir: false },
-    { relPath: FILE_APPLICATION_INI, inGreDir: true },
-    { relPath: "dependentlibs.list", inGreDir: true },
+    { relPath: FILE_APP_BIN, inDir: DIR_MACOS },
+    { relPath: FILE_APPLICATION_INI, inDir: DIR_RESOURCES },
+    { relPath: "dependentlibs.list", inDir: DIR_RESOURCES },
   ];
 
   if (requiresOmnijar) {
-    appFiles.push({ relPath: AppConstants.OMNIJAR_NAME, inGreDir: true });
+    appFiles.push({ relPath: AppConstants.OMNIJAR_NAME, inDir: DIR_RESOURCES });
 
     if (AppConstants.MOZ_BUILD_APP == "browser") {
       
       appFiles.push({
         relPath: "browser/" + AppConstants.OMNIJAR_NAME,
-        inGreDir: true,
+        inDir: DIR_RESOURCES,
       });
     }
   }
@@ -2569,8 +2644,8 @@ function setupAppFiles({ requiresOmnijar = false } = {}) {
   
   if (AppConstants.platform == "linux") {
     appFiles.push(
-      { relPath: "icons/updater.png", inGreDir: true },
-      { relPath: "libsoftokn3.so", inGreDir: true }
+      { relPath: "icons/updater.png", inDir: DIR_RESOURCES },
+      { relPath: "libsoftokn3.so", inDir: DIR_RESOURCES }
     );
   }
 
@@ -2588,13 +2663,13 @@ function setupAppFiles({ requiresOmnijar = false } = {}) {
   let line = {};
   do {
     hasMore = fis.readLine(line);
-    appFiles.push({ relPath: line.value, inGreDir: false });
+    appFiles.push({ relPath: line.value, inDir: DIR_MACOS });
   } while (hasMore);
 
   fis.close();
 
   appFiles.forEach(function CMAF_FLN_FE(aAppFile) {
-    copyFileToTestAppDir(aAppFile.relPath, aAppFile.inGreDir);
+    copyFileToTestAppDir(aAppFile.relPath, aAppFile.inDir);
   });
 
   copyTestUpdaterToBinDir();
@@ -2616,14 +2691,35 @@ function setupAppFiles({ requiresOmnijar = false } = {}) {
 
 
 
+function copyFileToTestAppDir(aFileRelPath, aDir) {
+  let srcFile;
+  let destFile;
 
-
-
-function copyFileToTestAppDir(aFileRelPath, aInGreDir) {
   
   
-  let srcFile = aInGreDir ? gGREDirOrig.clone() : gGREBinDirOrig.clone();
-  let destFile = aInGreDir ? getGREDir() : getGREBinDir();
+  if (AppConstants.platform == "macosx") {
+    switch (aDir) {
+      case DIR_RESOURCES:
+        srcFile = gGREDirOrig.clone();
+        destFile = getGREDir();
+        break;
+      case DIR_MACOS:
+        srcFile = gGREBinDirOrig.clone();
+        destFile = getGREBinDir();
+        break;
+      case DIR_CONTENTS:
+        srcFile = gGREBinDirOrig.parent.clone();
+        destFile = getGREBinDir().parent;
+        break;
+      default:
+        debugDump("invalid path given. Path: " + aDir);
+        break;
+    }
+  } else {
+    srcFile = gGREDirOrig.clone();
+    destFile = getGREDir();
+  }
+
   let fileRelPath = aFileRelPath;
   let pathParts = fileRelPath.split("/");
   for (let i = 0; i < pathParts.length; i++) {
@@ -2640,10 +2736,6 @@ function copyFileToTestAppDir(aFileRelPath, aInGreDir) {
         ".app exists. Path: " +
         srcFile.path
     );
-    
-    
-    srcFile = aInGreDir ? gGREDirOrig.clone() : gGREBinDirOrig.clone();
-    destFile = aInGreDir ? getGREDir() : getGREBinDir();
     for (let i = 0; i < pathParts.length; i++) {
       if (pathParts[i]) {
         srcFile.append(
@@ -3180,17 +3272,24 @@ async function setupUpdaterTest(
   let mar = getTestDirFile(aMarFile);
   mar.copyToFollowingLinks(updatesPatchDir, FILE_UPDATE_MAR);
 
+  let helperApp = getTestDirFile(FILE_HELPER_APP);
   let helperBin = getTestDirFile(FILE_HELPER_BIN);
+  helperApp.permissions = PERMS_DIRECTORY;
   helperBin.permissions = PERMS_DIRECTORY;
-  let afterApplyBinDir = getApplyDirFile(DIR_RESOURCES);
-  helperBin.copyToFollowingLinks(afterApplyBinDir, gCallbackBinFile);
+  let afterApplyBinDir = getApplyDirFile(DIR_MACOS);
+
   helperBin.copyToFollowingLinks(afterApplyBinDir, gPostUpdateBinFile);
+  helperApp.copyToFollowingLinks(afterApplyBinDir, gCallbackApp);
 
   
   
   
   if (!gUpdateBin) {
     gUpdateBin = copyTestUpdaterToBinDir();
+  }
+
+  if (AppConstants.platform == "macosx") {
+    stripQuarantineBitFromPath(afterApplyBinDir.parent.parent.path);
   }
 
   gTestFiles.forEach(function SUT_TF_FE(aTestFile) {
@@ -3366,11 +3465,7 @@ function createUpdaterINI(
   }
 
   let exeRelPathMac =
-    "ExeRelPath=" +
-    aExeRelPathPrefix +
-    DIR_RESOURCES +
-    gPostUpdateBinFile +
-    "\n";
+    "ExeRelPath=" + aExeRelPathPrefix + DIR_MACOS + gPostUpdateBinFile + "\n";
   let exeRelPathWin =
     "ExeRelPath=" + aExeRelPathPrefix + gPostUpdateBinFile + "\n";
   let updaterIniContents =
@@ -4044,9 +4139,10 @@ function checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists) {
 
 
 function checkCallbackLog(
-  appLaunchLog = getApplyDirFile(DIR_RESOURCES + gCallbackArgs[1])
+  appLaunchLog = getApplyDirFile(DIR_MACOS + gCallbackArgs[1])
 ) {
   if (!appLaunchLog.exists()) {
+    debugDump("Callback log does not exist yet. Path: " + appLaunchLog.path);
     
     do_timeout(FILE_IN_USE_TIMEOUT_MS, checkCallbackLog);
     return;
@@ -4107,7 +4203,7 @@ function checkCallbackLog(
 
 
 function getPostUpdateFile(aSuffix) {
-  return getApplyDirFile(DIR_RESOURCES + gPostUpdateBinFile + aSuffix);
+  return getApplyDirFile(DIR_MACOS + gPostUpdateBinFile + aSuffix);
 }
 
 
