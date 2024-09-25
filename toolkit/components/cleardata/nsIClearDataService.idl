@@ -189,6 +189,9 @@ interface nsIClearDataService : nsISupports
 
   
 
+
+  const uint32_t CLEAR_PASSWORDS = 1 << 5;
+
   
 
 
