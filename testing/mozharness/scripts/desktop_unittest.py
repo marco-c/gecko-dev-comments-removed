@@ -5,10 +5,6 @@
 
 
 
-"""desktop_unittest.py
-
-author: Jordan Lund
-"""
 
 import copy
 import glob
