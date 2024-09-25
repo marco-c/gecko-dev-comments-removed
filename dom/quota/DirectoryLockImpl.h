@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef DOM_QUOTA_DIRECTORYLOCKIMPL_H_
 #define DOM_QUOTA_DIRECTORYLOCKIMPL_H_
@@ -41,8 +41,8 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
 
   const bool mExclusive;
 
-  // Internal quota manager operations use this flag to prevent directory lock
-  // registraction/unregistration from updating origin access time, etc.
+  
+  
   const bool mInternal;
 
   const bool mShouldUpdateLockIdTable;
@@ -95,7 +95,7 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
                   OriginScope::FromOrigin(aOriginMetadata.mOrigin),
                   aOriginMetadata.mStorageOrigin, aOriginMetadata.mIsPrivate,
                   Nullable<Client::Type>(),
-                  /* aExclusive */ true, /* aInternal */ true,
+                   true,  true,
                   ShouldUpdateLockIdTableFlag::No, DirectoryLockCategory::None);
   }
 
@@ -124,15 +124,15 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
 
   bool IsPending() const { return mPending; }
 
-  // Ideally, we would have just one table (instead of these two:
-  // QuotaManager::mDirectoryLocks and QuotaManager::mDirectoryLockIdTable) for
-  // all registered locks. However, some directory locks need to be accessed off
-  // the PBackground thread, so the access must be protected by the quota mutex.
-  // The problem is that directory locks for eviction must be currently created
-  // while the mutex lock is already acquired. So we decided to have two tables
-  // for now and to not register directory locks for eviction in
-  // QuotaManager::mDirectoryLockIdTable. This can be improved in future after
-  // some refactoring of the mutex locking.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool ShouldUpdateLockIdTable() const { return mShouldUpdateLockIdTable; }
 
   bool ShouldUpdateLockTable() {
@@ -142,7 +142,7 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
 
   bool Overlaps(const DirectoryLockImpl& aLock) const;
 
-  // Test whether this DirectoryLock needs to wait for the given lock.
+  
   bool MustWaitFor(const DirectoryLockImpl& aLock) const;
 
   void AddBlockingLock(DirectoryLockImpl& aLock) {
@@ -176,7 +176,7 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
 
   void Unregister();
 
-  // DirectoryLock interface
+  
 
   NS_INLINE_DECL_REFCOUNTING(DirectoryLockImpl, override)
 
@@ -189,6 +189,8 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
   bool MustWait() const override;
 
   nsTArray<RefPtr<DirectoryLock>> LocksMustWaitFor() const override;
+
+  bool Invalidated() const override { return mInvalidated; }
 
   bool Dropped() const override { return mDropped; }
 
@@ -210,7 +212,7 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
 
   void Log() const override;
 
-  // OriginDirectoryLock interface
+  
 
   PersistenceType GetPersistenceType() const override {
     MOZ_DIAGNOSTIC_ASSERT(mPersistenceScope.IsValue());
@@ -233,7 +235,7 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
     return mOriginScope.GetOrigin();
   }
 
-  // ClientDirectoryLock interface
+  
 
   Client::Type ClientType() const override {
     MOZ_DIAGNOSTIC_ASSERT(!mClientType.IsNull());
@@ -242,7 +244,7 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
     return mClientType.Value();
   }
 
-  // UniversalDirectoryLock interface
+  
 
   const PersistenceScope& PersistenceScopeRef() const override {
     return mPersistenceScope;
@@ -289,6 +291,6 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
   void AcquireInternal();
 };
 
-}  // namespace mozilla::dom::quota
+}  
 
-#endif  // DOM_QUOTA_DIRECTORYLOCKIMPL_H_
+#endif  
