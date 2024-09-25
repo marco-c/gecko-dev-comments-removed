@@ -445,8 +445,7 @@ nsresult nsHttpResponseHead::ParseHeaderLine_locked(
 
   
   
-  if (StaticPrefs::network_http_reject_NULs_in_response_header_values() &&
-      val.FindChar('\0') >= 0) {
+  if (val.FindChar('\0') >= 0) {
     return NS_ERROR_DOM_INVALID_HEADER_VALUE;
   }
 
