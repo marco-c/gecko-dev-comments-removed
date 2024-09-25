@@ -108,11 +108,6 @@ bool ThreadEventQueue::PutEventInternal(already_AddRefed<nsIRunnable>&& aEvent,
           aPriority = EventQueuePriority::Low;
         }
       }
-
-      if (aPriority == EventQueuePriority::Control &&
-          !StaticPrefs::threads_control_event_queue_enabled()) {
-        aPriority = EventQueuePriority::MediumHigh;
-      }
     }
 
     MutexAutoLock lock(mLock);
@@ -250,10 +245,9 @@ size_t ThreadEventQueue::SizeOfExcludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) {
   size_t n = 0;
 
-  n += mBaseQueue->SizeOfIncludingThis(aMallocSizeOf);
-
   {
     MutexAutoLock lock(mLock);
+    n += mBaseQueue->SizeOfIncludingThis(aMallocSizeOf);
     n += mNestedQueues.ShallowSizeOfExcludingThis(aMallocSizeOf);
     for (auto& queue : mNestedQueues) {
       n += queue.mEventTarget->SizeOfIncludingThis(aMallocSizeOf);
