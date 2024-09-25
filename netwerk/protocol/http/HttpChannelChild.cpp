@@ -3042,9 +3042,12 @@ HttpChannelChild::RetargetDeliveryTo(nsISerialEventTarget* aNewTarget) {
     return rv;
   }
 
+  
+  
+  
+  MOZ_ASSERT(mOnDataAvailableStartTime.IsNull());
   {
     MutexAutoLock lock(mEventTargetMutex);
-    MOZ_ASSERT(!mODATarget);
     RetargetDeliveryToImpl(aNewTarget, lock);
   }
 
