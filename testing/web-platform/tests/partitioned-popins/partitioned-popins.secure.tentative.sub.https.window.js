@@ -8,6 +8,7 @@
 
 
 
+
 async_test(t => {
   let targets = "";
 
@@ -27,6 +28,12 @@ async_test(t => {
   try {
     window.open("/partitioned-popins/resources/partitioned-popins.close.html", '_blank', 'popin');
     targets += "PathOnly-";
+  } catch (_) {}
+
+  
+  try {
+    window.open("", '_blank', 'popin');
+    targets += "Empty-";
   } catch (_) {}
 
   assert_equals(targets, "Secure-PathOnly-");
