@@ -127,7 +127,7 @@ function RegExpMatch(string) {
 
     if (global) {
       
-      var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
+      var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG) || !!(flags & REGEXP_UNICODESETS_FLAG);
 
       
       return RegExpGlobalMatchOpt(rx, S, fullUnicode);
@@ -154,7 +154,7 @@ function RegExpMatchSlowPath(rx, S) {
   }
 
   
-  var fullUnicode = callFunction(std_String_includes, flags, "u");
+  var fullUnicode = callFunction(std_String_includes, flags, "u") || callFunction(std_String_includes, flags, "v");
 
   
   rx.lastIndex = 0;
@@ -394,7 +394,7 @@ function RegExpReplaceSlowPath(
   var fullUnicode = false;
   if (global) {
     
-    fullUnicode = callFunction(std_String_includes, flags, "u");
+    fullUnicode = callFunction(std_String_includes, flags, "u") || callFunction(std_String_includes, flags, "v");
 
     
     rx.lastIndex = 0;
@@ -751,7 +751,7 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
 
 function RegExpGlobalReplaceOptSimple(rx, S, lengthS, replaceValue, flags) {
   
-  var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
+  var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG) || !!(flags &  REGEXP_UNICODESETS_FLAG);
 
   
   var lastIndex = 0;
@@ -1391,7 +1391,7 @@ function RegExpStringIteratorNext() {
     REGEXP_STRING_ITERATOR_FLAGS_SLOT
   );
   var global = !!(flags & REGEXP_GLOBAL_FLAG);
-  var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
+  var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG) || !!(flags & REGEXP_UNICODESETS_FLAG);
 
   if (lastIndex >= 0) {
     assert(IsRegExpObject(regexp), "|regexp| is a RegExp object");
