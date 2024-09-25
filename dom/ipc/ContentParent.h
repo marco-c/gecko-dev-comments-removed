@@ -25,6 +25,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/HalTypes.h"
+#include "mozilla/IdleTaskRunner.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReportingProcess.h"
@@ -405,7 +406,10 @@ class ContentParent final : public PContentParent,
 
 
 
-  bool MaybeBeginShutDown(bool aIgnoreKeepAlivePref = false);
+
+
+  void MaybeBeginShutDown(bool aImmediate = false,
+                          bool aIgnoreKeepAlivePref = false);
 
   TestShellParent* CreateTestShell();
 
@@ -1614,6 +1618,8 @@ class ContentParent final : public PContentParent,
   
   
   UniquePtr<mozilla::ipc::SharedPreferenceSerializer> mPrefSerializer;
+
+  RefPtr<IdleTaskRunner> mMaybeBeginShutdownRunner;
 
   static uint32_t sMaxContentProcesses;
   static uint32_t sPageLoadEventCounter;

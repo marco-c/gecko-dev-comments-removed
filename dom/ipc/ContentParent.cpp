@@ -747,7 +747,9 @@ void ContentParent::ReleaseCachedProcesses() {
   }
 
   for (const auto& cp : fixArray) {
-    if (cp->MaybeBeginShutDown( true)) {
+    cp->MaybeBeginShutDown( true,
+                            true);
+    if (cp->IsDead()) {
       
       
       cp->ShutDownMessageManager();
@@ -2093,8 +2095,19 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
 
 UniqueContentParentKeepAlive ContentParent::TryAddKeepAlive(
     uint64_t aBrowserId) {
-  return UniqueContentParentKeepAliveFromThreadsafe(
-      mThreadsafeHandle->TryAddKeepAlive(aBrowserId));
+  UniqueContentParentKeepAlive keepAlive =
+      UniqueContentParentKeepAliveFromThreadsafe(
+          mThreadsafeHandle->TryAddKeepAlive(aBrowserId));
+  
+  
+  
+  
+  
+  if (keepAlive && mMaybeBeginShutdownRunner) {
+    mMaybeBeginShutdownRunner->Cancel();
+    mMaybeBeginShutdownRunner = nullptr;
+  }
+  return keepAlive;
 }
 
 UniqueContentParentKeepAlive ContentParent::AddKeepAlive(uint64_t aBrowserId) {
@@ -2118,8 +2131,26 @@ void ContentParent::RemoveKeepAlive(uint64_t aBrowserId) {
   MaybeBeginShutDown();
 }
 
-bool ContentParent::MaybeBeginShutDown(bool aIgnoreKeepAlivePref) {
+void ContentParent::MaybeBeginShutDown(bool aImmediate,
+                                       bool aIgnoreKeepAlivePref) {
   AssertIsOnMainThread();
+  MOZ_ASSERT(!aIgnoreKeepAlivePref || aImmediate,
+             "aIgnoreKeepAlivePref requires aImmediate");
+
+  
+  
+  bool immediate =
+      aImmediate || IsDead() ||
+      AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed) ||
+      StaticPrefs::dom_ipc_processReuse_unusedGraceMs() == 0;
+
+  
+  auto cancelIdleTask = MakeScopeExit([&] {
+    if (mMaybeBeginShutdownRunner) {
+      mMaybeBeginShutdownRunner->Cancel();
+      mMaybeBeginShutdownRunner = nullptr;
+    }
+  });
 
   {
     RecursiveMutexAutoLock lock(mThreadsafeHandle->mMutex);
@@ -2127,7 +2158,7 @@ bool ContentParent::MaybeBeginShutDown(bool aIgnoreKeepAlivePref) {
     
     if (IsLaunching() ||
         !mThreadsafeHandle->mKeepAlivesPerBrowserId.IsEmpty()) {
-      return false;
+      return;
     }
 
     
@@ -2151,13 +2182,50 @@ bool ContentParent::MaybeBeginShutDown(bool aIgnoreKeepAlivePref) {
               static_cast<size_t>(processesToKeepAlive)) {
         
         
-        return false;
+        return;
       }
     }
 
-    
-    mThreadsafeHandle->mShutdownStarted = true;
+    if (immediate) {
+      
+      mThreadsafeHandle->mShutdownStarted = true;
+    }
   }
+
+  
+  
+  
+  
+  if (!immediate) {
+    
+    cancelIdleTask.release();
+
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("MaybeBeginShutDown(%d) would begin shutdown, %s", OtherChildID(),
+             mMaybeBeginShutdownRunner ? "already delayed" : "delaying"));
+
+    if (!mMaybeBeginShutdownRunner) {
+      TimeDuration startDelay = TimeDuration::FromMilliseconds(
+          StaticPrefs::dom_ipc_processReuse_unusedGraceMs());
+      TimeDuration maxDelay = startDelay + TimeDuration::FromSeconds(1);
+      mMaybeBeginShutdownRunner = IdleTaskRunner::Create(
+          [self = RefPtr{this}](TimeStamp) -> bool {
+            MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                    ("MaybeBeginShutDown(%d) resuming after delay",
+                     self->OtherChildID()));
+            self->MaybeBeginShutDown( true);
+            return true;
+          },
+          "ContentParent::IdleMaybeBeginShutdown", startDelay, maxDelay,
+           TimeDuration::FromMilliseconds(3),
+           false, [] { return false; });
+    }
+    return;
+  }
+
+  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+          ("MaybeBeginShutDown(%d) shutdown starting (%u bps)", OtherChildID(),
+           ManagedPBrowserParent().Count()));
 
   MarkAsDead();
   SignalImpendingShutdownToContentJS();
@@ -2171,7 +2239,6 @@ bool ContentParent::MaybeBeginShutDown(bool aIgnoreKeepAlivePref) {
     
     AsyncSendShutDownMessage();
   }
-  return true;
 }
 
 void ContentParent::StartSendShutdownTimer() {
