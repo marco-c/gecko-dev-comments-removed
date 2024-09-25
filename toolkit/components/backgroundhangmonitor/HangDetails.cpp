@@ -20,7 +20,7 @@
 #include "mozilla/GfxMessageUtils.h"  
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Try.h"
-#include "BaseProfilerSharedLibraries.h"
+#include "SharedLibraries.h"
 
 static const char MAGIC[] = "permahangsavev1";
 
