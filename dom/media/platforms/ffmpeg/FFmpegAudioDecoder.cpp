@@ -98,6 +98,17 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
         DecideAudioPlaybackChannels(mAudioInfo) == 1) {
       mLib->av_dict_set(&options, "apply_phase_inv", "false", 0);
     }
+    
+    
+    
+    if (mAudioInfo.mChannels > 2 &&
+        (!mExtraData || mExtraData->Length() < 10)) {
+      FFMPEG_LOG(
+          "Cannot initialize decoder with %d channels without extradata of at "
+          "least 10 bytes",
+          mAudioInfo.mChannels);
+      return InitPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+    }
   }
 
   MediaResult rv = InitDecoder(&options);
