@@ -701,23 +701,29 @@ class WebDriverRun(TimedRunner):
             self.result = True, self.func(self.protocol, self.url, self.timeout)
         except (webdriver_error.TimeoutException, webdriver_error.ScriptTimeoutException):
             self.result = False, ("EXTERNAL-TIMEOUT", None)
-        except socket.timeout:
-            
-            
-            self.result = False, ("CRASH", None)
         except Exception as e:
-            if (isinstance(e, webdriver_error.WebDriverException) and
-                    e.http_status == 408 and
-                    e.status_code == "asynchronous script timeout"):
+            status, message = None, None
+            if isinstance(e, socket.timeout):
                 
-                self.result = False, ("EXTERNAL-TIMEOUT", None)
-            else:
+                
+                status = "CRASH"
+            elif isinstance(e, webdriver_error.WebDriverException):
+                
+                
+                
+                
+                
+                if e.http_status == 500 and e.status_code == "disconnected":
+                    status = "CRASH"
+            if status is None:
                 status = "INTERNAL-ERROR" if self.protocol.is_alive() else "CRASH"
+
+            if status != "EXTERNAL-TIMEOUT":
                 message = str(getattr(e, "message", ""))
                 if message:
                     message += "\n"
                 message += traceback.format_exc()
-                self.result = False, (status, message)
+            self.result = False, (status, message)
         finally:
             self.result_flag.set()
 
