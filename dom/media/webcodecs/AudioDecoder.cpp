@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/AudioDecoder.h"
 #include "mozilla/dom/AudioDecoderBinding.h"
+#include "mozilla/dom/TypedArray.h"
 
 #include "DecoderTraits.h"
 #include "MediaContainerType.h"
@@ -155,6 +156,7 @@ static bool CanDecodeAudio(const Config& aConfig) {
   if (IsOnAndroid() && IsAACCodecString(param.mParsedCodec)) {
     return false;
   }
+  bool typeSupported = false;
   
   
   
@@ -164,11 +166,30 @@ static bool CanDecodeAudio(const Config& aConfig) {
       if (DecoderTraits::CanHandleContainerType(
               *containerType, nullptr ) !=
           CANPLAY_NO) {
-        return true;
+        typeSupported = true;
       }
     }
   }
-  return false;
+
+  if (!typeSupported) {
+    return false;
+  }
+
+  
+  
+  
+  if constexpr (std::is_same_v<Config, AudioDecoderConfigInternal>) {
+    if (aConfig.mCodec.EqualsLiteral("opus")) {
+      if (aConfig.mNumberOfChannels > 2 &&
+          (!aConfig.mDescription || aConfig.mDescription->Length() < 10)) {
+        LOG("Opus needs a description of at least 10 bytes when decoding > 2 "
+            "channels");
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
