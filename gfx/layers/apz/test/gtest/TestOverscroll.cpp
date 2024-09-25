@@ -7,6 +7,7 @@
 #include "APZCBasicTester.h"
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
+#include "mozilla/ScrollPositionUpdate.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 
@@ -2213,3 +2214,30 @@ TEST_F(APZCOverscrollTester, FillOutGutterWhileAnimating) {
   EXPECT_FALSE(apzc->IsOverscrolled());
 }
 #endif
+
+
+TEST_F(APZCOverscrollTester, ProgrammaticScroll) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+
+  
+  
+  
+  
+  ScrollMetadata metadata = apzc->GetScrollMetadata();
+  nsTArray<ScrollPositionUpdate> scrollUpdates;
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewSmoothScroll(
+      ScrollMode::SmoothMsd, ScrollOrigin::Other,
+      CSSPoint::ToAppUnits(CSSPoint(0, 100000)), ScrollTriggeredByScript::Yes,
+      nullptr));
+  metadata.SetScrollUpdates(scrollUpdates);
+  metadata.GetMetrics().SetScrollGeneration(
+      scrollUpdates.LastElement().GetGeneration());
+  apzc->NotifyLayersUpdated(metadata, false,
+                            true);
+
+  apzc->AssertStateIsSmoothMsdScroll();
+
+  while (SampleAnimationOneFrame()) {
+    EXPECT_FALSE(apzc->IsOverscrolled());
+  }
+}

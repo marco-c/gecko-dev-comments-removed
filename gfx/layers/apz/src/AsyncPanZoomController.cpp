@@ -4046,14 +4046,6 @@ void AsyncPanZoomController::HandleFlingOverscroll(
   }
 }
 
-void AsyncPanZoomController::HandleSmoothScrollOverscroll(
-    const ParentLayerPoint& aVelocity, SideBits aOverscrollSideBits) {
-  
-  
-  HandleFlingOverscroll(aVelocity, aOverscrollSideBits,
-                        BuildOverscrollHandoffChain(), nullptr);
-}
-
 ParentLayerPoint AsyncPanZoomController::ConvertDestinationToDelta(
     CSSPoint& aDestination) const {
   ParentLayerPoint startPoint, endPoint;

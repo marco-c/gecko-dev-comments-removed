@@ -76,45 +76,11 @@ bool SmoothMsdScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   mApzc.mX.AdjustDisplacement(displacement.x, adjustedOffset.x, overscroll.x);
   mApzc.mY.AdjustDisplacement(displacement.y, adjustedOffset.y, overscroll.y);
   mApzc.ScrollBy(adjustedOffset / zoom);
-  
-  
-  
-  
-  
-  if (!IsZero(overscroll / zoom)) {
-    
-    
 
-    
-    
-    
-    if (mApzc.IsZero(overscroll.x)) {
-      velocity.x = 0;
-    } else if (mApzc.IsZero(overscroll.y)) {
-      velocity.y = 0;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mDeferredTasks.AppendElement(NewRunnableMethod<ParentLayerPoint, SideBits>(
-        "layers::AsyncPanZoomController::HandleSmoothScrollOverscroll", &mApzc,
-        &AsyncPanZoomController::HandleSmoothScrollOverscroll, velocity,
-        apz::GetOverscrollSideBits(overscroll)));
-    return false;
-  }
-
-  return true;
+  bool reachedEndOfScrollRange = !IsZero(overscroll / zoom);
+  
+  
+  return !reachedEndOfScrollRange;
 }
 
 void SmoothMsdScrollAnimation::SetDestination(

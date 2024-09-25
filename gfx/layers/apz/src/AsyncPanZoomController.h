@@ -1627,9 +1627,6 @@ class AsyncPanZoomController {
       const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
       const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
 
-  void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity,
-                                    SideBits aOverscrollSideBits);
-
   
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity,
                                 SideBits aOverscrollSideBits);
