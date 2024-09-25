@@ -24,7 +24,7 @@
 
 #include "EHABIStackWalk.h"
 
-#include "SharedLibraries.h"
+#include "shared-libraries.h"
 #include "platform.h"
 
 #include "mozilla/Atomics.h"
@@ -560,7 +560,7 @@ void EHAddrSpace::Update() {
     
     
     EHTable tab(reinterpret_cast<const void*>(lib.GetStart()),
-                lib.GetEnd() - lib.GetStart(), lib.DebugPath());
+                lib.GetEnd() - lib.GetStart(), lib.GetNativeDebugPath());
     if (tab.isValid()) tables.push_back(tab);
   }
   space = new EHAddrSpace(tables);

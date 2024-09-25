@@ -4,8 +4,8 @@
 
 
 
-#ifndef SHARED_LIBRARIES_H_
-#define SHARED_LIBRARIES_H_
+#ifndef BASE_PROFILER_SHARED_LIBRARIES_H_
+#define BASE_PROFILER_SHARED_LIBRARIES_H_
 
 #include "BaseProfiler.h"
 
@@ -14,12 +14,6 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#include <tuple>
-
-namespace IPC {
-template <typename T>
-struct ParamTraits;
-}  
 
 class SharedLibrary {
  public:
@@ -39,6 +33,37 @@ class SharedLibrary {
         mDebugPath(aDebugPath),
         mVersion(aVersion),
         mArch(aArch) {}
+
+  SharedLibrary(const SharedLibrary& aEntry)
+      : mStart(aEntry.mStart),
+        mEnd(aEntry.mEnd),
+        mOffset(aEntry.mOffset),
+        mBreakpadId(aEntry.mBreakpadId),
+        mCodeId(aEntry.mCodeId),
+        mModuleName(aEntry.mModuleName),
+        mModulePath(aEntry.mModulePath),
+        mDebugName(aEntry.mDebugName),
+        mDebugPath(aEntry.mDebugPath),
+        mVersion(aEntry.mVersion),
+        mArch(aEntry.mArch) {}
+
+  SharedLibrary& operator=(const SharedLibrary& aEntry) {
+    
+    if (this == &aEntry) return *this;
+
+    mStart = aEntry.mStart;
+    mEnd = aEntry.mEnd;
+    mOffset = aEntry.mOffset;
+    mBreakpadId = aEntry.mBreakpadId;
+    mCodeId = aEntry.mCodeId;
+    mModuleName = aEntry.mModuleName;
+    mModulePath = aEntry.mModulePath;
+    mDebugName = aEntry.mDebugName;
+    mDebugPath = aEntry.mDebugPath;
+    mVersion = aEntry.mVersion;
+    mArch = aEntry.mArch;
+    return *this;
+  }
 
   bool operator==(const SharedLibrary& other) const {
     return (mStart == other.mStart) && (mEnd == other.mEnd) &&
@@ -61,16 +86,10 @@ class SharedLibrary {
   const std::string& GetDebugPath() const { return mDebugPath; }
   const std::string& GetVersion() const { return mVersion; }
   const std::string& GetArch() const { return mArch; }
-  size_t SizeOf() const {
-    return sizeof *this + mBreakpadId.length() + mCodeId.length() +
-           mModuleName.length() * 2 + mModulePath.length() * 2 +
-           mDebugName.length() * 2 + mDebugPath.length() * 2 +
-           mVersion.length() + mArch.size();
-  }
-
-  SharedLibrary() : mStart{0}, mEnd{0}, mOffset{0} {}
 
  private:
+  SharedLibrary() : mStart{0}, mEnd{0}, mOffset{0} {}
+
   uintptr_t mStart;
   uintptr_t mEnd;
   uintptr_t mOffset;
@@ -92,8 +111,6 @@ class SharedLibrary {
   std::string mDebugPath;
   std::string mVersion;
   std::string mArch;
-
-  friend struct IPC::ParamTraits<SharedLibrary>;
 };
 
 static bool CompareAddresses(const SharedLibrary& first,
@@ -104,12 +121,12 @@ static bool CompareAddresses(const SharedLibrary& first,
 class SharedLibraryInfo {
  public:
 #ifdef MOZ_GECKO_PROFILER
-  MFBT_API static SharedLibraryInfo GetInfoForSelf();
+  static SharedLibraryInfo GetInfoForSelf();
 #  ifdef XP_WIN
-  MFBT_API static SharedLibraryInfo GetInfoFromPath(const wchar_t* aPath);
+  static SharedLibraryInfo GetInfoFromPath(const wchar_t* aPath);
 #  endif
 
-  MFBT_API static void Initialize();
+  static void Initialize();
 #else
   static SharedLibraryInfo GetInfoForSelf() { return SharedLibraryInfo(); }
 #  ifdef XP_WIN
@@ -121,12 +138,9 @@ class SharedLibraryInfo {
   static void Initialize() {}
 #endif
 
-  void AddSharedLibrary(SharedLibrary entry) { mEntries.push_back(entry); }
+  SharedLibraryInfo() {}
 
-  void AddAllSharedLibraries(const SharedLibraryInfo& sharedLibraryInfo) {
-    mEntries.insert(mEntries.end(), sharedLibraryInfo.mEntries.begin(),
-                    sharedLibraryInfo.mEntries.end());
-  }
+  void AddSharedLibrary(SharedLibrary entry) { mEntries.push_back(entry); }
 
   const SharedLibrary& GetEntry(size_t i) const { return mEntries[i]; }
 
@@ -149,44 +163,15 @@ class SharedLibraryInfo {
     std::sort(mEntries.begin(), mEntries.end(), CompareAddresses);
   }
 
-  
-  
-  
-  
-  
-  void DeduplicateEntries() {
-    static auto cmpSort = [](const SharedLibrary& a, const SharedLibrary& b) {
-      return std::tie(a.GetModuleName(), a.GetBreakpadId()) <
-             std::tie(b.GetModuleName(), b.GetBreakpadId());
-    };
-    static auto cmpEqual = [](const SharedLibrary& a, const SharedLibrary& b) {
-      return std::tie(a.GetModuleName(), a.GetBreakpadId()) ==
-             std::tie(b.GetModuleName(), b.GetBreakpadId());
-    };
-    
-    
-    std::sort(mEntries.begin(), mEntries.end(), cmpSort);
-    
-    mEntries.erase(std::unique(mEntries.begin(), mEntries.end(), cmpEqual),
-                   mEntries.end());
-  }
-
   void Clear() { mEntries.clear(); }
 
-  size_t SizeOf() const {
-    size_t size = 0;
-
-    for (const auto& item : mEntries) {
-      size += item.SizeOf();
-    }
-
-    return size;
-  }
-
  private:
-  std::vector<SharedLibrary> mEntries;
+#ifdef XP_WIN
+  void AddSharedLibraryFromModuleInfo(const wchar_t* aModulePath,
+                                      mozilla::Maybe<HMODULE> aModule);
+#endif
 
-  friend struct IPC::ParamTraits<SharedLibraryInfo>;
+  std::vector<SharedLibrary> mEntries;
 };
 
 #endif  
