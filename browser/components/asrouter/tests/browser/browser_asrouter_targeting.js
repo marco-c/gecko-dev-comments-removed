@@ -520,6 +520,18 @@ add_task(async function checkAddonsInfo() {
     "should correctly provide `isWebExtension` property"
   );
 
+  ok(
+    Object.prototype.hasOwnProperty.call(testAddon, "hidden") &&
+      testAddon.hidden === false,
+    "should correctly provide `hidden` property"
+  );
+
+  ok(
+    Object.prototype.hasOwnProperty.call(testAddon, "isBuiltin") &&
+      testAddon.isBuiltin === false,
+    "should correctly provide `isBuiltin` property"
+  );
+
   
   
 
