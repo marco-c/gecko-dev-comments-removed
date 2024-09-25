@@ -4,6 +4,8 @@
 
 
 
+TEST_DIRS += ["test"]
+
 XPIDL_SOURCES += [
     "nsISDBCallbacks.idl",
     "nsISDBConnection.idl",
