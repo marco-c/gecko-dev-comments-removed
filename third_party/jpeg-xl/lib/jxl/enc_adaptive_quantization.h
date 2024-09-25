@@ -7,10 +7,10 @@
 #define LIB_JXL_ENC_ADAPTIVE_QUANTIZATION_H_
 
 #include <jxl/cms_interface.h>
-#include <stddef.h>
 
-#include "lib/jxl/ac_strategy.h"
 #include "lib/jxl/base/data_parallel.h"
+#include "lib/jxl/base/rect.h"
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/enc_cache.h"
 #include "lib/jxl/frame_header.h"
 #include "lib/jxl/image.h"
@@ -24,6 +24,7 @@
 namespace jxl {
 
 struct AuxOut;
+class AcStrategyImage;
 
 
 
@@ -39,8 +40,8 @@ StatusOr<ImageF> InitialQuantField(float butteraugli_target,
 
 float InitialQuantDC(float butteraugli_target);
 
-void AdjustQuantField(const AcStrategyImage& ac_strategy, const Rect& rect,
-                      float butteraugli_target, ImageF* quant_field);
+Status AdjustQuantField(const AcStrategyImage& ac_strategy, const Rect& rect,
+                        float butteraugli_target, ImageF* quant_field);
 
 
 

@@ -8,71 +8,21 @@
 
 
 
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cstdarg>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <type_traits>
 #include <utility>
 
 #include "lib/jxl/base/common.h"
 #include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/sanitizer_definitions.h"
-
-#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
-#include "sanitizer/common_interface_defs.h"  
-#endif                                        
 
 namespace jxl {
 
 
-
-
-
-#ifndef JXL_ENABLE_ASSERT
-#define JXL_ENABLE_ASSERT 1
-#endif
-
-#ifndef JXL_ENABLE_CHECK
-#define JXL_ENABLE_CHECK 1
-#endif
-
-
-
-
-#if defined(JXL_DEBUG_ON_ERROR) || defined(JXL_CRASH_ON_ERROR)
-#undef JXL_DEBUG_ON_ERROR
-#define JXL_DEBUG_ON_ERROR 1
-#else  
-#ifdef NDEBUG
-#define JXL_DEBUG_ON_ERROR 0
-#else  
-#define JXL_DEBUG_ON_ERROR 1
-#endif  
-#endif  
-
-
-
-#if defined(JXL_DEBUG_ON_ALL_ERROR)
-#undef JXL_DEBUG_ON_ALL_ERROR
-#define JXL_DEBUG_ON_ALL_ERROR 1
-
-#undef JXL_DEBUG_ON_ERROR
-#define JXL_DEBUG_ON_ERROR 1
-#else  
-#define JXL_DEBUG_ON_ALL_ERROR 0
-#endif  
-
-
 #ifndef JXL_DEBUG_V_LEVEL
 #define JXL_DEBUG_V_LEVEL 0
-#endif  
-
-
-
-#ifndef JXL_DEBUG_ON_ABORT
-#define JXL_DEBUG_ON_ABORT JXL_DEBUG_ON_ERROR
 #endif  
 
 #ifdef USE_ANDROID_LOGGER
@@ -135,85 +85,43 @@ inline JXL_NOINLINE bool Debug(const char* format, ...) {
 #define JXL_DEBUG_V(level, format, ...)
 #endif
 
-
-
-#ifdef JXL_DEBUG_WARNING
-#undef JXL_DEBUG_WARNING
-#define JXL_DEBUG_WARNING 1
-#else  
-#ifdef NDEBUG
-#define JXL_DEBUG_WARNING 0
-#else  
-#define JXL_DEBUG_WARNING 1
-#endif  
-#endif  
 #define JXL_WARNING(format, ...) \
-  JXL_DEBUG(JXL_DEBUG_WARNING, format, ##__VA_ARGS__)
+  JXL_DEBUG(JXL_IS_DEBUG_BUILD, format, ##__VA_ARGS__)
 
+#if JXL_IS_DEBUG_BUILD
 
 JXL_NORETURN inline JXL_NOINLINE bool Abort() {
-#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
-  
-  
-  
-  __sanitizer_print_stack_trace();
-#endif  
-
-#if JXL_COMPILER_MSVC
-  __debugbreak();
-  abort();
-#else
-  __builtin_trap();
-#endif
+  JXL_PRINT_STACK_TRACE();
+  JXL_CRASH();
 }
+#endif
 
-
-#define JXL_ABORT(format, ...)                                              \
-  ((JXL_DEBUG_ON_ABORT) && ::jxl::Debug(("%s:%d: JXL_ABORT: " format "\n"), \
-                                        __FILE__, __LINE__, ##__VA_ARGS__), \
-   ::jxl::Abort())
-
-
-
-
-
-#define JXL_UNREACHABLE(format, ...)                                   \
+#if JXL_IS_DEBUG_BUILD
+#define JXL_DEBUG_ABORT(format, ...)                                   \
   do {                                                                 \
-    if (JXL_DEBUG_WARNING) {                                           \
-      ::jxl::Debug(("%s:%d: JXL_UNREACHABLE: " format "\n"), __FILE__, \
+    if (JXL_DEBUG_ON_ABORT) {                                          \
+      ::jxl::Debug(("%s:%d: JXL_DEBUG_ABORT: " format "\n"), __FILE__, \
                    __LINE__, ##__VA_ARGS__);                           \
-      ::jxl::Abort();                                                  \
-    } else {                                                           \
-      JXL_UNREACHABLE_BUILTIN;                                         \
     }                                                                  \
-  } while (0)
-
-
-#if JXL_ENABLE_ASSERT
-#define JXL_ASSERT(condition)                                      \
-  do {                                                             \
-    if (!(condition)) {                                            \
-      JXL_DEBUG(JXL_DEBUG_ON_ABORT, "JXL_ASSERT: %s", #condition); \
-      ::jxl::Abort();                                              \
-    }                                                              \
-  } while (0)
+    ::jxl::Abort();                                                    \
+  } while (0);
 #else
-#define JXL_ASSERT(condition) \
-  do {                        \
-  } while (0)
+#define JXL_DEBUG_ABORT(format, ...)
 #endif
 
 
 
-#ifndef JXL_IS_DEBUG_BUILD
-#if !defined(NDEBUG) || defined(ADDRESS_SANITIZER) ||         \
-    defined(MEMORY_SANITIZER) || defined(THREAD_SANITIZER) || \
-    defined(__clang_analyzer__)
-#define JXL_IS_DEBUG_BUILD 1
-#else
-#define JXL_IS_DEBUG_BUILD 0
+
+
+#if JXL_IS_DEBUG_BUILD
+#define JXL_UNREACHABLE(format, ...)                                          \
+  (::jxl::Debug(("%s:%d: JXL_UNREACHABLE: " format "\n"), __FILE__, __LINE__, \
+                ##__VA_ARGS__),                                               \
+   ::jxl::Abort(), JXL_FAILURE(format, ##__VA_ARGS__))
+#else  
+#define JXL_UNREACHABLE(format, ...) \
+  JXL_FAILURE("internal: " format, ##__VA_ARGS__)
 #endif
-#endif  
 
 
 
@@ -228,25 +136,7 @@ JXL_NORETURN inline JXL_NOINLINE bool Abort() {
     }                                                               \
   } while (0)
 #else
-#define JXL_DASSERT(condition) \
-  do {                         \
-  } while (0)
-#endif
-
-
-#if JXL_ENABLE_CHECK
-#define JXL_CHECK(condition)                                      \
-  do {                                                            \
-    if (!(condition)) {                                           \
-      JXL_DEBUG(JXL_DEBUG_ON_ABORT, "JXL_CHECK: %s", #condition); \
-      ::jxl::Abort();                                             \
-    }                                                             \
-  } while (0)
-#else
-#define JXL_CHECK(condition) \
-  do {                       \
-    (void)(condition);       \
-  } while (0)
+#define JXL_DASSERT(condition)
 #endif
 
 
@@ -294,6 +184,25 @@ JXL_NORETURN inline JXL_NOINLINE bool Abort() {
       return jxl_return_if_error_status;                 \
     }                                                    \
   } while (0)
+
+#if JXL_IS_DEBUG_BUILD
+
+#define JXL_ENSURE(condition)                     \
+  do {                                            \
+    if (!(condition)) {                           \
+      ::jxl::Debug("JXL_ENSURE: %s", #condition); \
+      ::jxl::Abort();                             \
+    }                                             \
+  } while (0)
+#else
+
+#define JXL_ENSURE(condition)                           \
+  do {                                                  \
+    if (!(condition)) {                                 \
+      return JXL_FAILURE("JXL_ENSURE: %s", #condition); \
+    }                                                   \
+  } while (0)
+#endif
 
 enum class StatusCode : int32_t {
   
@@ -346,8 +255,7 @@ static constexpr Status OkStatus() { return Status(StatusCode::kOk); }
 inline JXL_FORMAT(2, 3) Status
     StatusMessage(const Status status, const char* format, ...) {
   
-  
-  if ((JXL_DEBUG_ON_ERROR && status.IsFatalError()) ||
+  if ((JXL_IS_DEBUG_BUILD && status.IsFatalError()) ||
       (JXL_DEBUG_ON_ALL_ERROR && !status)) {
     va_list args;
     va_start(args, format);
@@ -358,10 +266,10 @@ inline JXL_FORMAT(2, 3) Status
 #endif
     va_end(args);
   }
-#ifdef JXL_CRASH_ON_ERROR
+#if JXL_CRASH_ON_ERROR
   
   if (status.IsFatalError()) {
-    Abort();
+    ::jxl::Abort();
   }
 #endif  
   return status;
@@ -380,7 +288,7 @@ class JXL_MUST_USE_RESULT StatusOr {
  public:
   
   StatusOr(StatusCode code) : code_(code) {
-    JXL_ASSERT(code_ != StatusCode::kOk);
+    JXL_DASSERT(code_ != StatusCode::kOk);
   }
 
   
@@ -419,8 +327,8 @@ class JXL_MUST_USE_RESULT StatusOr {
 
   
   
-  T value() && {
-    JXL_ASSERT(ok());
+  T value_() && {
+    JXL_DASSERT(ok());
     return std::move(storage_.data_);
   }
 
@@ -449,19 +357,21 @@ class JXL_MUST_USE_RESULT StatusOr {
 #define PRIVATE_JXL_ASSIGN_OR_RETURN_IMPL(name, lhs, statusor) \
   auto name = statusor;                                        \
   JXL_RETURN_IF_ERROR(name.status());                          \
-  lhs = std::move(name).value();
+  lhs = std::move(name).value_();
 
 
+#define JXL_ASSIGN_OR_QUIT(lhs, statusor, message)                     \
+  PRIVATE_JXL_ASSIGN_OR_QUIT_IMPL(                                     \
+      JXL_JOIN(assign_or_temporary_variable, __LINE__), lhs, statusor, \
+      message)
 
-#define JXL_ASSIGN_OR_DIE(lhs, statusor) \
-  PRIVATE_JXL_ASSIGN_OR_DIE_IMPL(        \
-      JXL_JOIN(assign_or_die_temporary_variable, __LINE__), lhs, statusor)
 
-
-#define PRIVATE_JXL_ASSIGN_OR_DIE_IMPL(name, lhs, statusor) \
-  auto name = statusor;                                     \
-  if (!name.ok()) jxl::Abort();                             \
-  lhs = std::move(name).value();
+#define PRIVATE_JXL_ASSIGN_OR_QUIT_IMPL(name, lhs, statusor, message) \
+  auto name = statusor;                                               \
+  if (!name.ok()) {                                                   \
+    QUIT(message);                                                    \
+  }                                                                   \
+  lhs = std::move(name).value_();
 
 
 }  

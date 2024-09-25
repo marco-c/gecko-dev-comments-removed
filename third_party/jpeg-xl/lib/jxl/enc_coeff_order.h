@@ -6,23 +6,24 @@
 #ifndef LIB_JXL_ENC_COEFF_ORDER_H_
 #define LIB_JXL_ENC_COEFF_ORDER_H_
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
 
-#include "lib/jxl/ac_strategy.h"
 #include "lib/jxl/base/compiler_specific.h"
+#include "lib/jxl/base/rect.h"
 #include "lib/jxl/base/status.h"
-#include "lib/jxl/coeff_order.h"
 #include "lib/jxl/coeff_order_fwd.h"
+#include "lib/jxl/common.h"
 #include "lib/jxl/dct_util.h"
-#include "lib/jxl/dec_bit_reader.h"
 #include "lib/jxl/enc_bit_writer.h"
-#include "lib/jxl/enc_params.h"
 #include "lib/jxl/frame_dimensions.h"
 
 namespace jxl {
 
 struct AuxOut;
+class AcStrategyImage;
+enum class LayerType : uint8_t;
 
 
 
@@ -32,24 +33,25 @@ std::pair<uint32_t, uint32_t> ComputeUsedOrders(
 
 
 
-void ComputeCoeffOrder(SpeedTier speed, const ACImage& acs,
-                       const AcStrategyImage& ac_strategy,
-                       const FrameDimensions& frame_dim,
-                       uint32_t& all_used_orders, uint32_t prev_used_acs,
-                       uint32_t current_used_acs, uint32_t current_used_orders,
-                       coeff_order_t* JXL_RESTRICT order);
+Status ComputeCoeffOrder(SpeedTier speed, const ACImage& acs,
+                         const AcStrategyImage& ac_strategy,
+                         const FrameDimensions& frame_dim,
+                         uint32_t& all_used_orders, uint32_t prev_used_acs,
+                         uint32_t current_used_acs,
+                         uint32_t current_used_orders,
+                         coeff_order_t* JXL_RESTRICT order);
 
-void EncodeCoeffOrders(uint16_t used_orders,
-                       const coeff_order_t* JXL_RESTRICT order,
-                       BitWriter* writer, size_t layer,
-                       AuxOut* JXL_RESTRICT aux_out);
+Status EncodeCoeffOrders(uint16_t used_orders,
+                         const coeff_order_t* JXL_RESTRICT order,
+                         BitWriter* writer, LayerType layer,
+                         AuxOut* JXL_RESTRICT aux_out);
 
 
 
 
-void EncodePermutation(const coeff_order_t* JXL_RESTRICT order, size_t skip,
-                       size_t size, BitWriter* writer, int layer,
-                       AuxOut* aux_out);
+Status EncodePermutation(const coeff_order_t* JXL_RESTRICT order, size_t skip,
+                         size_t size, BitWriter* writer, LayerType layer,
+                         AuxOut* aux_out);
 
 }  
 

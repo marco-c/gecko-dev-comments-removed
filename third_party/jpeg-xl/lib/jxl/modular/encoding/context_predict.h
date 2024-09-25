@@ -6,9 +6,17 @@
 #ifndef LIB_JXL_MODULAR_ENCODING_CONTEXT_PREDICT_H_
 #define LIB_JXL_MODULAR_ENCODING_CONTEXT_PREDICT_H_
 
-#include <utility>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
+#include "lib/jxl/base/bits.h"
+#include "lib/jxl/base/compiler_specific.h"
+#include "lib/jxl/base/status.h"
+#include "lib/jxl/field_encodings.h"
 #include "lib/jxl/fields.h"
 #include "lib/jxl/image_ops.h"
 #include "lib/jxl/modular/modular_image.h"
@@ -63,7 +71,7 @@ struct State {
   pixel_type_w pred = 0;  
   std::vector<uint32_t> pred_errors[kNumPredictors];
   std::vector<int32_t> error;
-  const Header header;
+  const Header &header;
 
   
   
@@ -82,7 +90,7 @@ struct State {
     return static_cast<uint64_t>(x) << kPredExtraBits;
   }
 
-  State(Header header, size_t xsize, size_t ysize) : header(header) {
+  State(const Header &header, size_t xsize, size_t ysize) : header(header) {
     
     
     for (auto &pred_error : pred_errors) {

@@ -8,14 +8,11 @@
 
 
 
-#include <cmath>  
-#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
-#include "lib/jxl/base/bits.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_bit_reader.h"
@@ -24,6 +21,7 @@
 namespace jxl {
 
 struct AuxOut;
+enum class LayerType : uint8_t;
 struct BitWriter;
 
 
@@ -185,8 +183,8 @@ Status Read(BitReader* reader, Fields* JXL_RESTRICT fields);
 
 bool CanRead(BitReader* reader, Fields* JXL_RESTRICT fields);
 
-Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer, size_t layer,
-             AuxOut* aux_out);
+Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer,
+             LayerType layer, AuxOut* aux_out);
 }  
 
 
@@ -275,14 +273,14 @@ class ExtensionStates {
   Status IsEnded() const { return (ended_ & 1) != 0; }
 
   void Begin() {
-    JXL_ASSERT(!IsBegun());
-    JXL_ASSERT(!IsEnded());
+    JXL_DASSERT(!IsBegun());
+    JXL_DASSERT(!IsEnded());
     begun_ += 1;
   }
 
   void End() {
-    JXL_ASSERT(IsBegun());
-    JXL_ASSERT(!IsEnded());
+    JXL_DASSERT(IsBegun());
+    JXL_DASSERT(!IsEnded());
     ended_ += 1;
   }
 
@@ -299,13 +297,13 @@ class ExtensionStates {
 class VisitorBase : public Visitor {
  public:
   explicit VisitorBase() = default;
-  ~VisitorBase() override { JXL_ASSERT(depth_ == 0); }
+  ~VisitorBase() override { JXL_DASSERT(depth_ == 0); }
 
   
   
   Status Visit(Fields* fields) override {
+    JXL_ENSURE(depth_ < Bundle::kMaxExtensions);
     depth_ += 1;
-    JXL_ASSERT(depth_ <= Bundle::kMaxExtensions);
     extension_states_.Push();
 
     const Status ok = fields->VisitFields(this);
@@ -313,14 +311,14 @@ class VisitorBase : public Visitor {
     if (ok) {
       
       
-      JXL_ASSERT(!extension_states_.IsBegun() || extension_states_.IsEnded());
+      JXL_DASSERT(!extension_states_.IsBegun() || extension_states_.IsEnded());
     } else {
       
       
     }
 
     extension_states_.Pop();
-    JXL_ASSERT(depth_ != 0);
+    JXL_DASSERT(depth_ != 0);
     depth_ -= 1;
 
     return ok;

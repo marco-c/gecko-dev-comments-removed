@@ -8,8 +8,9 @@
 
 
 
+#include "lib/jxl/base/rect.h"
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_cache.h"
-#include "lib/jxl/image.h"
 #include "lib/jxl/loop_filter.h"
 
 namespace jxl {
@@ -23,8 +24,8 @@ constexpr float kMinSigma = -3.90524291751269967465540850526868f;
 
 
 
-void ComputeSigma(const LoopFilter& lf, const Rect& block_rect,
-                  PassesDecoderState* state);
+Status ComputeSigma(const LoopFilter& lf, const Rect& block_rect,
+                    PassesDecoderState* state);
 
 }  
 

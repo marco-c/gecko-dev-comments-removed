@@ -24,7 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(__cplusplus) || defined(c_plusplus)
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -300,6 +300,7 @@ typedef enum {
 
 
 
+
   JXL_DEC_BOX = 0x4000,
 
   
@@ -318,6 +319,11 @@ typedef enum {
 
 
   JXL_DEC_FRAME_PROGRESSION = 0x8000,
+
+  
+
+
+  JXL_DEC_BOX_COMPLETE = 0x10000,
 } JxlDecoderStatus;
 
 
@@ -1457,7 +1463,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderFlushImage(JxlDecoder* dec);
 JXL_EXPORT JxlDecoderStatus
 JxlDecoderSetImageOutBitDepth(JxlDecoder* dec, const JxlBitDepth* bit_depth);
 
-#if defined(__cplusplus) || defined(c_plusplus)
+#ifdef __cplusplus
 }
 #endif
 

@@ -37,6 +37,8 @@ struct CompressParams {
   bool max_error_mode = false;
   float max_error[3] = {0.0, 0.0, 0.0};
 
+  bool disable_perceptual_optimizations = false;
+
   SpeedTier speed_tier = SpeedTier::kSquirrel;
   int brotli_effort = -1;
 
@@ -106,9 +108,12 @@ struct CompressParams {
 
   
   ModularOptions options;
+
+  
   int responsive = -1;
   int colorspace = -1;
   int move_to_front_from_channel = -1;
+
   
   float channel_colors_pre_transform_percent = 95.f;
   

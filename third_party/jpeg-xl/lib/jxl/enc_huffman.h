@@ -6,6 +6,10 @@
 #ifndef LIB_JXL_ENC_HUFFMAN_H_
 #define LIB_JXL_ENC_HUFFMAN_H_
 
+#include <cstddef>
+#include <cstdint>
+
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/enc_bit_writer.h"
 
 namespace jxl {
@@ -13,9 +17,9 @@ namespace jxl {
 
 
 
-void BuildAndStoreHuffmanTree(const uint32_t* histogram, size_t length,
-                              uint8_t* depth, uint16_t* bits,
-                              BitWriter* writer);
+Status BuildAndStoreHuffmanTree(const uint32_t* histogram, size_t length,
+                                uint8_t* depth, uint16_t* bits,
+                                BitWriter* writer);
 
 }  
 

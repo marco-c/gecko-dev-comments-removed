@@ -8,10 +8,13 @@
 
 
 
-#include <stdint.h>
 #include <sys/types.h>
 
 #include "lib/jxl/base/sanitizer_definitions.h"
+
+#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
+#include "sanitizer/common_interface_defs.h"  
+#endif                                        
 
 
 
@@ -63,14 +66,6 @@
 #endif
 
 #if JXL_COMPILER_MSVC
-#define JXL_UNREACHABLE_BUILTIN __assume(false)
-#elif JXL_COMPILER_CLANG || JXL_COMPILER_GCC >= 405
-#define JXL_UNREACHABLE_BUILTIN __builtin_unreachable()
-#else
-#define JXL_UNREACHABLE_BUILTIN
-#endif
-
-#if JXL_COMPILER_MSVC
 #define JXL_MAYBE_UNUSED
 #else
 
@@ -95,6 +90,11 @@
 #else
 #define JXL_LIKELY(expr) __builtin_expect(!!(expr), 1)
 #define JXL_UNLIKELY(expr) __builtin_expect(!!(expr), 0)
+#endif
+
+#if JXL_COMPILER_MSVC
+#include <stdint.h>
+using ssize_t = intptr_t;
 #endif
 
 
@@ -150,8 +150,71 @@
 #define JXL_FORMAT(idx_fmt, idx_arg)
 #endif
 
+
+#if defined(_MSC_VER) && !defined(__clang__) && defined(_MSVC_LANG) && \
+    _MSVC_LANG > __cplusplus
+#define JXL_CXX_LANG _MSVC_LANG
+#else
+#define JXL_CXX_LANG __cplusplus
+#endif
+
+
+#define JXL_CXX_17 201703
+
+
+#if defined(JXL_IS_DEBUG_BUILD)
+#undef JXL_IS_DEBUG_BUILD
+#define JXL_IS_DEBUG_BUILD 1
+#elif defined(NDEBUG)
+#define JXL_IS_DEBUG_BUILD 0
+#else
+#define JXL_IS_DEBUG_BUILD 1
+#endif
+
+#if defined(JXL_CRASH_ON_ERROR)
+#undef JXL_CRASH_ON_ERROR
+#define JXL_CRASH_ON_ERROR 1
+#else
+#define JXL_CRASH_ON_ERROR 0
+#endif
+
+#if JXL_CRASH_ON_ERROR && !JXL_IS_DEBUG_BUILD
+#error "JXL_CRASH_ON_ERROR requires JXL_IS_DEBUG_BUILD"
+#endif
+
+
+
+#if defined(JXL_DEBUG_ON_ALL_ERROR)
+#undef JXL_DEBUG_ON_ALL_ERROR
+#define JXL_DEBUG_ON_ALL_ERROR 1
+#else
+#define JXL_DEBUG_ON_ALL_ERROR 0
+#endif
+
+#if JXL_DEBUG_ON_ALL_ERROR && !JXL_IS_DEBUG_BUILD
+#error "JXL_DEBUG_ON_ALL_ERROR requires JXL_IS_DEBUG_BUILD"
+#endif
+
+
+
+#if !defined(JXL_DEBUG_ON_ABORT)
+#define JXL_DEBUG_ON_ABORT JXL_IS_DEBUG_BUILD
+#endif  
+
+#if JXL_DEBUG_ON_ABORT && !JXL_IS_DEBUG_BUILD
+#error "JXL_DEBUG_ON_ABORT requires JXL_IS_DEBUG_BUILD"
+#endif
+
+#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
+#define JXL_PRINT_STACK_TRACE() __sanitizer_print_stack_trace();
+#else
+#define JXL_PRINT_STACK_TRACE()
+#endif
+
 #if JXL_COMPILER_MSVC
-using ssize_t = intptr_t;
+#define JXL_CRASH() __debugbreak(), (void)abort()
+#else
+#define JXL_CRASH() (void)__builtin_trap()
 #endif
 
 #endif  

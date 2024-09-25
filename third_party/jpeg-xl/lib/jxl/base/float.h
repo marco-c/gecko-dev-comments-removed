@@ -62,9 +62,7 @@ static Status JXL_INLINE LoadFloatRow(const uint8_t* src, size_t count,
 
     case JXL_TYPE_UINT8:
       for (size_t i = 0; i < count; ++i) {
-        
-        
-        callback(i, (src[stride * i] * 257) * scale);
+        callback(i, src[stride * i] * scale);
       }
       return true;
 

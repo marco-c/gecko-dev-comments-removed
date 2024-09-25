@@ -9,11 +9,14 @@
 
 
 
+#include <jxl/memory_manager.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
 #include "lib/jxl/ans_params.h"
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_ans.h"
 #include "lib/jxl/enc_ans_params.h"
 #include "lib/jxl/enc_bit_writer.h"
@@ -21,6 +24,7 @@
 namespace jxl {
 
 struct AuxOut;
+enum class LayerType : uint8_t;
 
 #define USE_MULT_BY_RECIPROCAL
 
@@ -94,31 +98,31 @@ struct Token {
 
 
 
-float ANSPopulationCost(const ANSHistBin* data, size_t alphabet_size);
+StatusOr<float> ANSPopulationCost(const ANSHistBin* data, size_t alphabet_size);
 
 
 
-void EncodeHistograms(const std::vector<uint8_t>& context_map,
-                      const EntropyEncodingData& codes, BitWriter* writer,
-                      size_t layer, AuxOut* aux_out);
+Status EncodeHistograms(const std::vector<uint8_t>& context_map,
+                        const EntropyEncodingData& codes, BitWriter* writer,
+                        LayerType layer, AuxOut* aux_out);
 
 
 
 
 
-size_t BuildAndEncodeHistograms(const HistogramParams& params,
-                                size_t num_contexts,
-                                std::vector<std::vector<Token>>& tokens,
-                                EntropyEncodingData* codes,
-                                std::vector<uint8_t>* context_map,
-                                BitWriter* writer, size_t layer,
-                                AuxOut* aux_out);
+
+StatusOr<size_t> BuildAndEncodeHistograms(
+    JxlMemoryManager* memory_manager, const HistogramParams& params,
+    size_t num_contexts, std::vector<std::vector<Token>>& tokens,
+    EntropyEncodingData* codes, std::vector<uint8_t>* context_map,
+    BitWriter* writer, LayerType layer, AuxOut* aux_out);
 
 
-void WriteTokens(const std::vector<Token>& tokens,
-                 const EntropyEncodingData& codes,
-                 const std::vector<uint8_t>& context_map, size_t context_offset,
-                 BitWriter* writer, size_t layer, AuxOut* aux_out);
+Status WriteTokens(const std::vector<Token>& tokens,
+                   const EntropyEncodingData& codes,
+                   const std::vector<uint8_t>& context_map,
+                   size_t context_offset, BitWriter* writer, LayerType layer,
+                   AuxOut* aux_out);
 
 
 size_t WriteTokens(const std::vector<Token>& tokens,

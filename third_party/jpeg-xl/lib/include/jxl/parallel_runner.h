@@ -40,7 +40,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(__cplusplus) || defined(c_plusplus)
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -50,6 +50,11 @@ extern "C" {
 
 
 typedef int JxlParallelRetCode;
+
+
+
+
+#define JXL_PARALLEL_RET_SUCCESS (0)
 
 
 
@@ -150,7 +155,7 @@ typedef JxlParallelRetCode (*JxlParallelRunner)(
 
 
 
-#if defined(__cplusplus) || defined(c_plusplus)
+#ifdef __cplusplus
 }
 #endif
 

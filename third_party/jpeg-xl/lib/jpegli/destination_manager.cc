@@ -52,7 +52,7 @@ struct MemoryDestinationManager {
   jpeg_destination_mgr pub;
   
   uint8_t** output;
-  unsigned long* output_size;
+  unsigned long* output_size;  
   
   uint8_t* temp_buffer;
   
@@ -113,7 +113,7 @@ void jpegli_stdio_dest(j_compress_ptr cinfo, FILE* outfile) {
 }
 
 void jpegli_mem_dest(j_compress_ptr cinfo, unsigned char** outbuffer,
-                     unsigned long* outsize) {
+                     unsigned long* outsize ) {
   if (outbuffer == nullptr || outsize == nullptr) {
     JPEGLI_ERROR("jpegli_mem_dest: Invalid destination.");
   }

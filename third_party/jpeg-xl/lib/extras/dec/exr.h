@@ -8,6 +8,8 @@
 
 
 
+#include <cstdint>
+
 #include "lib/extras/dec/color_hints.h"
 #include "lib/extras/packed_image.h"
 #include "lib/jxl/base/data_parallel.h"

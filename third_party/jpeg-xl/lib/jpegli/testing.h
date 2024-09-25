@@ -8,14 +8,6 @@
 
 
 
-
-
-#pragma push_macro("PRIdS")
-#pragma push_macro("PRIuS")
-#include "gmock/gmock.h"
-#pragma pop_macro("PRIuS")
-#pragma pop_macro("PRIdS")
-
 #include "gtest/gtest.h"
 
 
@@ -27,9 +19,19 @@
 #endif
 
 
+#define JPEGLI_TEST_ENSURE_TRUE(C) \
+  if (!(C)) return false;
 
-MATCHER_P(IsSlightlyBelow, max, "") {
-  return max * 0.75 <= arg && arg <= max * 1.0;
-}
+#define QUIT(M) FAIL() << M
+
+
+
+#define EXPECT_SLIGHTLY_BELOW(A, E)       \
+  {                                       \
+    double _actual = (A);                 \
+    double _expected = (E);               \
+    EXPECT_LE(_actual, _expected);        \
+    EXPECT_GE(_actual, 0.75 * _expected); \
+  }
 
 #endif  

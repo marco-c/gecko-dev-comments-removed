@@ -10,8 +10,6 @@
 
 #include <cmath>
 #include <cstdio>
-#include <functional>
-#include <vector>
 
 #include "lib/jxl/base/status.h"
 
@@ -79,27 +77,6 @@ T operator*(const Array<T, N>& x, const Array<T, N>& y) {
   }
   return r;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-std::vector<double> RunSimplex(
-    int dim, double amount, int max_iterations,
-    const std::function<double(const std::vector<double>&)>& fun);
-std::vector<double> RunSimplex(
-    int dim, double amount, int max_iterations, const std::vector<double>& init,
-    const std::function<double(const std::vector<double>&)>& fun);
 
 
 

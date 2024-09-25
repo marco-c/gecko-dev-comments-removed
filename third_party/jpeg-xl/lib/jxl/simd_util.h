@@ -5,16 +5,13 @@
 
 #ifndef LIB_JXL_SIMD_UTIL_H_
 #define LIB_JXL_SIMD_UTIL_H_
-#include <stddef.h>
+
+#include <cstddef>
 
 namespace jxl {
 
 
 size_t MaxVectorSize();
-
-
-
-size_t BytesPerRow(size_t xsize, size_t sizeof_t);
 
 }  
 

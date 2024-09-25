@@ -5,6 +5,12 @@
 
 #include "lib/jxl/base/data_parallel.h"
 
+#include <jxl/parallel_runner.h>
+
+#include <cstddef>
+#include <cstdint>
+
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/test_utils.h"
 #include "lib/jxl/testing.h"
 
@@ -51,8 +57,9 @@ typedef int (*JxlParallelRunInit)();
 
 TEST_F(DataParallelTest, RunnerCalledParameters) {
   EXPECT_TRUE(pool_.Run(
-      1234, 5678, [](size_t ) { return true; },
-      [](uint32_t , size_t ) { return; }));
+      1234, 5678, [](size_t ) -> Status { return true; },
+      [](uint32_t , size_t ) -> Status { return true; },
+      "Test"));
   EXPECT_EQ(1, runner_called_);
   EXPECT_NE(nullptr, init_);
   EXPECT_NE(nullptr, func_);
@@ -64,21 +71,29 @@ TEST_F(DataParallelTest, RunnerCalledParameters) {
 TEST_F(DataParallelTest, RunnerFailurePropagates) {
   runner_return_ = -1;  
   EXPECT_FALSE(pool_.Run(
-      1234, 5678, [](size_t ) { return false; },
-      [](uint32_t , size_t ) { return; }));
+      1234, 5678,
+      [](size_t ) -> Status { return JXL_FAILURE("init"); },
+      [](uint32_t , size_t ) -> Status { return true; },
+      "TestA"));
   EXPECT_FALSE(RunOnPool(
-      nullptr, 1234, 5678, [](size_t ) { return false; },
-      [](uint32_t , size_t ) { return; }, "Test"));
+      nullptr, 1234, 5678,
+      [](size_t ) -> Status { return JXL_FAILURE("init"); },
+      [](uint32_t , size_t ) -> Status { return true; },
+      "TestB"));
 }
 
 TEST_F(DataParallelTest, RunnerNotCalledOnEmptyRange) {
   runner_return_ = -1;  
   EXPECT_TRUE(pool_.Run(
-      123, 123, [](size_t ) { return false; },
-      [](uint32_t , size_t ) { return; }));
+      123, 123,
+      [](size_t ) -> Status { return JXL_FAILURE("init"); },
+      [](uint32_t , size_t ) -> Status { return true; },
+      "TestA"));
   EXPECT_TRUE(RunOnPool(
-      nullptr, 123, 123, [](size_t ) { return false; },
-      [](uint32_t , size_t ) { return; }, "Test"));
+      nullptr, 123, 123,
+      [](size_t ) -> Status { return JXL_FAILURE("init"); },
+      [](uint32_t , size_t ) -> Status { return true; },
+      "TestB"));
   
   
   EXPECT_EQ(0, runner_called_);

@@ -15,6 +15,8 @@
 
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
+#include "lib/jxl/base/matrix_ops.h"
+#include "lib/jxl/base/rect.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/color_encoding_internal.h"
 #include "lib/jxl/image.h"
@@ -39,7 +41,7 @@ struct OutputEncodingInfo {
   
   float orig_intensity_target;
   
-  float orig_inverse_matrix[9];
+  Matrix3x3 orig_inverse_matrix;
   bool default_transform;
   bool xyb_encoded;
   
@@ -60,7 +62,7 @@ struct OutputEncodingInfo {
   
   
   
-  float luminances[3];
+  Vector3 luminances;
   
   float desired_intensity_target;
   bool cms_set = false;
@@ -75,14 +77,14 @@ struct OutputEncodingInfo {
 
 
 
-void OpsinToLinearInplace(Image3F* JXL_RESTRICT inout, ThreadPool* pool,
-                          const OpsinParams& opsin_params);
+Status OpsinToLinearInplace(Image3F* JXL_RESTRICT inout, ThreadPool* pool,
+                            const OpsinParams& opsin_params);
 
 
 
-void OpsinToLinear(const Image3F& opsin, const Rect& rect, ThreadPool* pool,
-                   Image3F* JXL_RESTRICT linear,
-                   const OpsinParams& opsin_params);
+Status OpsinToLinear(const Image3F& opsin, const Rect& rect, ThreadPool* pool,
+                     Image3F* JXL_RESTRICT linear,
+                     const OpsinParams& opsin_params);
 
 
 
@@ -90,8 +92,8 @@ void OpsinToLinear(const Image3F& opsin, const Rect& rect, ThreadPool* pool,
 void YcbcrToRgb(const Image3F& ycbcr, Image3F* rgb, const Rect& rect);
 
 bool HasFastXYBTosRGB8();
-void FastXYBTosRGB8(const float* input[4], uint8_t* output, bool is_rgba,
-                    size_t xsize);
+Status FastXYBTosRGB8(const float* input[4], uint8_t* output, bool is_rgba,
+                      size_t xsize);
 
 }  
 

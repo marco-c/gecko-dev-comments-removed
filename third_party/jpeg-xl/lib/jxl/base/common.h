@@ -70,6 +70,8 @@ std::unique_ptr<T> make_unique(Args&&... args) {
 using std::make_unique;
 #endif
 
+typedef std::array<float, 3> Color;
+
 
 
 template <typename T>

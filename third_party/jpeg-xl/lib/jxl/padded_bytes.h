@@ -8,17 +8,17 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>  
+#include <jxl/memory_manager.h>
 
 #include <algorithm>  
+#include <cstddef>
+#include <cstdint>
+#include <cstring>  
 #include <initializer_list>
 #include <utility>  
 
-#include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
-#include "lib/jxl/cache_aligned.h"
+#include "lib/jxl/memory_manager_internal.h"
 
 namespace jxl {
 
@@ -29,38 +29,30 @@ namespace jxl {
 class PaddedBytes {
  public:
   
-  PaddedBytes() : size_(0), capacity_(0) {}
+  explicit PaddedBytes(JxlMemoryManager* memory_manager)
+      : memory_manager_(memory_manager), size_(0), capacity_(0) {}
 
-  explicit PaddedBytes(size_t size) : size_(size), capacity_(0) {
-    reserve(size);
-  }
-
-  PaddedBytes(size_t size, uint8_t value) : size_(size), capacity_(0) {
-    reserve(size);
-    if (size_ != 0) {
-      memset(data(), value, size);
-    }
-  }
-
-  PaddedBytes(const PaddedBytes& other) : size_(other.size_), capacity_(0) {
-    reserve(size_);
-    if (data() != nullptr) memcpy(data(), other.data(), size_);
-  }
-  PaddedBytes& operator=(const PaddedBytes& other) {
-    
-    resize(other.size());
-    if (data() != nullptr) memmove(data(), other.data(), size_);
-    return *this;
+  static StatusOr<PaddedBytes> WithInitialSpace(
+      JxlMemoryManager* memory_manager, size_t size) {
+    PaddedBytes result(memory_manager);
+    JXL_RETURN_IF_ERROR(result.Init(size));
+    return result;
   }
 
   
+  PaddedBytes(const PaddedBytes&) = delete;
+  PaddedBytes& operator=(const PaddedBytes&) = delete;
+
+  
   PaddedBytes(PaddedBytes&& other) noexcept
-      : size_(other.size_),
+      : memory_manager_(other.memory_manager_),
+        size_(other.size_),
         capacity_(other.capacity_),
         data_(std::move(other.data_)) {
     other.size_ = other.capacity_ = 0;
   }
   PaddedBytes& operator=(PaddedBytes&& other) noexcept {
+    memory_manager_ = other.memory_manager_;
     size_ = other.size_;
     capacity_ = other.capacity_;
     data_ = std::move(other.data_);
@@ -71,7 +63,10 @@ class PaddedBytes {
     return *this;
   }
 
+  JxlMemoryManager* memory_manager() const { return memory_manager_; }
+
   void swap(PaddedBytes& other) noexcept {
+    std::swap(memory_manager_, other.memory_manager_);
     std::swap(size_, other.size_);
     std::swap(capacity_, other.capacity_);
     std::swap(data_, other.data_);
@@ -81,78 +76,81 @@ class PaddedBytes {
   
   
   
-  
-  void reserve(size_t capacity) {
-    if (capacity <= capacity_) return;
+  Status reserve(size_t capacity) {
+    if (capacity <= capacity_) return true;
 
     size_t new_capacity = std::max(capacity, 3 * capacity_ / 2);
     new_capacity = std::max<size_t>(64, new_capacity);
 
     
-    CacheAlignedUniquePtr new_data = AllocateArray(new_capacity + 8);
-    if (new_data == nullptr) {
-      
-      size_ = capacity_ = 0;
-      return;
-    }
+    JXL_ASSIGN_OR_RETURN(
+        AlignedMemory new_data,
+        AlignedMemory::Create(memory_manager_, new_capacity + 8));
 
-    if (data_ == nullptr) {
+    if (data_.address<void>() == nullptr) {
       
-      new_data[0] = 0;
+      new_data.address<uint8_t>()[0] = 0;
     } else {
       
-      memcpy(new_data.get(), data_.get(), size_);
+      memmove(new_data.address<void>(), data_.address<void>(), size_);
       
       
-      new_data[size_] = 0;
+      new_data.address<uint8_t>()[size_] = 0;
     }
 
     capacity_ = new_capacity;
-    std::swap(new_data, data_);
+    data_ = std::move(new_data);
+    return true;
   }
 
   
   
   
   
-  void resize(size_t size) {
-    reserve(size);
-    size_ = (data() == nullptr) ? 0 : size;
+  Status resize(size_t size) {
+    JXL_RETURN_IF_ERROR(reserve(size));
+    size_ = size;
+    return true;
   }
 
   
-  void resize(size_t size, uint8_t value) {
+  Status resize(size_t size, uint8_t value) {
     size_t old_size = size_;
-    resize(size);
+    JXL_RETURN_IF_ERROR(resize(size));
     if (size_ > old_size) {
       memset(data() + old_size, value, size_ - old_size);
     }
+    return true;
   }
 
   
-  void push_back(uint8_t x) {
+  Status push_back(uint8_t x) {
     if (size_ == capacity_) {
-      reserve(capacity_ + 1);
-      if (data() == nullptr) return;
+      JXL_RETURN_IF_ERROR(reserve(capacity_ + 1));
     }
 
-    data_[size_++] = x;
+    data_.address<uint8_t>()[size_++] = x;
+    return true;
   }
 
   size_t size() const { return size_; }
   size_t capacity() const { return capacity_; }
 
-  uint8_t* data() { return data_.get(); }
-  const uint8_t* data() const { return data_.get(); }
+  uint8_t* data() { return data_.address<uint8_t>(); }
+  const uint8_t* data() const { return data_.address<uint8_t>(); }
 
   
 
-  void clear() { resize(0); }
+  void clear() {
+    
+    static_cast<void>(resize(0));
+  }
   bool empty() const { return size() == 0; }
 
-  void assign(std::initializer_list<uint8_t> il) {
-    resize(il.size());
+  Status assign(std::initializer_list<uint8_t> il) {
+    JXL_RETURN_IF_ERROR(resize(il.size()));
     memcpy(data(), il.begin(), il.size());
+    return true;
   }
 
   uint8_t* begin() { return data(); }
@@ -169,47 +167,38 @@ class PaddedBytes {
     return data()[i];
   }
 
-  uint8_t& back() {
-    JXL_ASSERT(size() != 0);
-    return data()[size() - 1];
-  }
-  const uint8_t& back() const {
-    JXL_ASSERT(size() != 0);
-    return data()[size() - 1];
-  }
-
   template <typename T>
-  void append(const T& other) {
-    append(reinterpret_cast<const uint8_t*>(other.data()),
-           reinterpret_cast<const uint8_t*>(other.data()) + other.size());
+  Status append(const T& other) {
+    return append(
+        reinterpret_cast<const uint8_t*>(other.data()),
+        reinterpret_cast<const uint8_t*>(other.data()) + other.size());
   }
 
-  void append(const uint8_t* begin, const uint8_t* end) {
+  Status append(const uint8_t* begin, const uint8_t* end) {
     if (end - begin > 0) {
       size_t old_size = size();
-      resize(size() + (end - begin));
+      JXL_RETURN_IF_ERROR(resize(size() + (end - begin)));
       memcpy(data() + old_size, begin, end - begin);
     }
+    return true;
   }
 
  private:
-  void BoundsCheck(size_t i) const {
-    
-    JXL_ASSERT(i <= size());
+  Status Init(size_t size) {
+    size_ = size;
+    return reserve(size);
   }
 
+  void BoundsCheck(size_t i) const {
+    
+    JXL_DASSERT(i <= size());
+  }
+
+  JxlMemoryManager* memory_manager_;
   size_t size_;
   size_t capacity_;
-  CacheAlignedUniquePtr data_;
+  AlignedMemory data_;
 };
-
-template <typename T>
-static inline void Append(const T& s, PaddedBytes* out,
-                          size_t* JXL_RESTRICT byte_pos) {
-  memcpy(out->data() + *byte_pos, s.data(), s.size());
-  *byte_pos += s.size();
-  JXL_CHECK(*byte_pos <= out->size());
-}
 
 }  
 

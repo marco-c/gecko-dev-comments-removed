@@ -91,9 +91,9 @@ inline HWY_MAYBE_UNUSED bool HasFastXYBTosRGB8() {
 #endif
 }
 
-inline HWY_MAYBE_UNUSED void FastXYBTosRGB8(const float* input[4],
-                                            uint8_t* output, bool is_rgba,
-                                            size_t xsize) {
+inline HWY_MAYBE_UNUSED Status FastXYBTosRGB8(const float* input[4],
+                                              uint8_t* output, bool is_rgba,
+                                              size_t xsize) {
   
 #if HWY_TARGET == HWY_NEON
   
@@ -328,12 +328,13 @@ inline HWY_MAYBE_UNUSED void FastXYBTosRGB8(const float* input[4],
       }
     }
   }
+  return true;
 #else
   (void)input;
   (void)output;
   (void)is_rgba;
   (void)xsize;
-  JXL_UNREACHABLE("Unreachable");
+  return JXL_UNREACHABLE("unsupported platform");
 #endif
 }
 
