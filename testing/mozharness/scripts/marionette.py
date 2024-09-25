@@ -417,6 +417,11 @@ class MarionetteTest(TestingMixin, MercurialScript, TransferMixin, CodeCoverageM
         
         env["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "1"
 
+        
+        
+        if self._is_windows():
+            env["PYTHONIOENCODING"] = "utf-8"
+
         env = self.query_env(partial_env=env)
 
         try:
