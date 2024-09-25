@@ -45,10 +45,6 @@ class WorkletThread final : public nsThread, public nsIObserver {
 
   void Terminate();
 
-  
-  
-  static uint32_t StackSize();
-
  private:
   explicit WorkletThread(WorkletImpl* aWorkletImpl);
   ~WorkletThread();
