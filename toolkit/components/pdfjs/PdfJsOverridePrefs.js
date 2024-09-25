@@ -18,9 +18,6 @@
   
   pref("pdfjs.annotationEditorMode", -1);
 
-  
-  pref("pdfjs.enableFloatingToolbar", true);
-
 #else
 
   #if defined(EARLY_BETA_OR_EARLIER)
