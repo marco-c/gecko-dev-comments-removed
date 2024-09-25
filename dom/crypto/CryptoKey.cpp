@@ -304,7 +304,8 @@ nsresult CryptoKey::AddPublicKeyData(SECKEYPublicKey* aPublicKey) {
   MOZ_ASSERT(GetKeyType() == PRIVATE);
   
   MOZ_ASSERT(mPrivateKey &&
-             (mPrivateKey->keyType == ecKey || mPrivateKey->keyType == edKey));
+             (mPrivateKey->keyType == ecKey || mPrivateKey->keyType == edKey ||
+              mPrivateKey->keyType == ecMontKey));
   
   MOZ_ASSERT(aPublicKey->keyType == mPrivateKey->keyType);
 
@@ -329,12 +330,16 @@ nsresult CryptoKey::AddPublicKeyData(SECKEYPublicKey* aPublicKey) {
   CK_BBOOL falseValue = CK_FALSE;
 
   
-
+  
+  
+  
   CK_KEY_TYPE ecValue;
   if (mPrivateKey->keyType == ecKey) {
     ecValue = CKK_EC;
   } else if (mPrivateKey->keyType == edKey) {
     ecValue = CKK_EC_EDWARDS;
+  } else if (mPrivateKey->keyType == ecMontKey) {
+    ecValue = CKK_EC_MONTGOMERY;
   } else {
     return NS_ERROR_DOM_OPERATION_ERR;
   }

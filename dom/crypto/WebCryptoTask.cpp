@@ -2768,6 +2768,7 @@ nsresult GenerateAsymmetricKeyTask::DoCrypto() {
   
   
   if (mMechanism == CKM_EC_KEY_PAIR_GEN ||
+      mMechanism == CKM_EC_MONTGOMERY_KEY_PAIR_GEN ||
       mMechanism == CKM_EC_EDWARDS_KEY_PAIR_GEN) {
     rv = mKeyPair->mPrivateKey->AddPublicKeyData(mPublicKey.get());
     NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_OPERATION_ERR);
