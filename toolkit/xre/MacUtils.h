@@ -1,0 +1,17 @@
+
+
+
+
+
+#ifndef MacUtils_h_
+#define MacUtils_h_
+
+#include <Cocoa/Cocoa.h>
+
+namespace mozilla::MacUtils {
+
+void LaunchTask(NSString* aPath, NSArray* aArguments);
+
+}  
+
+#endif

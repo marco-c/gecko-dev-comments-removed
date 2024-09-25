@@ -42,13 +42,42 @@ void AddToCommandLine(const char* inArgText) {
 
 void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
   sArgs = static_cast<char**>(malloc(kArgsGrowSize * sizeof(char*)));
-  if (!sArgs) return;
+  if (!sArgs) {
+    return;
+  }
   sArgsAllocated = kArgsGrowSize;
   sArgs[0] = nullptr;
   sArgsUsed = 0;
 
+  NSString* path = [NSString stringWithUTF8String:argv[0]];
   
-  for (int arg = 0; arg < argc; arg++) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (![path hasSuffix:@"org.mozilla.updater"] && ![path hasSuffix:@".app"]) {
+    
+    
+    
+    
+    
+    path = [[[path stringByDeletingLastPathComponent]
+        stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+  }
+  if (![path hasSuffix:@"org.mozilla.updater"] && ![path hasSuffix:@".app"]) {
+    
+    
+    return;
+  }
+  AddToCommandLine(path.UTF8String);
+
+  
+  for (int arg = 1; arg < argc; arg++) {
     char* flag = argv[arg];
     
     
