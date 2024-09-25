@@ -217,7 +217,14 @@ static Directionality GetDirectionFromText(const Text* aTextNode,
 
 
 
-Directionality WalkDescendantsAndGetDirectionFromText(nsINode* aRoot) {
+
+Directionality ContainedTextAutoDirectionality(nsINode* aRoot,
+                                               bool aCanExcludeRoot) {
+  MOZ_ASSERT_IF(aCanExcludeRoot, aRoot->IsElement());
+  if (aCanExcludeRoot && EstablishesOwnDirection(aRoot->AsElement())) {
+    return Directionality::Unset;
+  }
+
   nsIContent* child = aRoot->GetFirstChild();
   while (child) {
     if (child->IsElement() && EstablishesOwnDirection(child->AsElement())) {
@@ -277,21 +284,7 @@ Directionality ComputeAutoDirectionFromAssignedNodes(
       MOZ_ASSERT(assignedElement);
 
       
-      
-      
-      if (Maybe<nsAutoString> maybe =
-              GetValueIfFormAssociatedElement(assignedElement)) {
-        const nsAutoString& value = maybe.value();
-        childDirection =
-            GetDirectionFromText(value.BeginReading(), value.Length());
-        if (childDirection == Directionality::Unset && !value.IsEmpty()) {
-          childDirection = Directionality::Ltr;
-        }
-      }
-      
-      if (ParticipatesInAutoDirection(assignedElement)) {
-        childDirection = ComputeAutoDirectionality(assignedElement, aNotify);
-      }
+      childDirection = ContainedTextAutoDirectionality(assignedElement, true);
     }
 
     
@@ -329,7 +322,7 @@ static Directionality ComputeAutoDirectionality(Element* aElement,
   }
 
   
-  Directionality nodeDir = WalkDescendantsAndGetDirectionFromText(aElement);
+  Directionality nodeDir = ContainedTextAutoDirectionality(aElement, false);
   if (nodeDir != Directionality::Unset) {
     return nodeDir;
   }
