@@ -9,6 +9,9 @@
 #include "mozilla/AppShutdown.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/HTMLVideoElementBinding.h"
+#ifdef MOZ_WEBRTC
+#  include "mozilla/dom/RTCStatsReport.h"
+#endif
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsSize.h"
@@ -712,29 +715,25 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
     return;
   }
 
-  gfx::IntSize frameSize;
-  ImageContainer::FrameID frameID = layers::kContainerFrameID_Invalid;
+  
+  
+  
+  
+  const ImageContainer::OwningImage* selected = nullptr;
   bool composited = false;
-
-  
-  
-  
-  
   for (const auto& image : images) {
     if (image.mTimeStamp <= aNowTime) {
       
       
       
-      frameSize = image.mImage->GetSize();
-      frameID = image.mFrameID;
+      selected = &image;
       composited = true;
     } else if (!aNextTickTime || image.mTimeStamp <= aNextTickTime.ref()) {
       
       
       
       
-      frameSize = image.mImage->GetSize();
-      frameID = image.mFrameID;
+      selected = &image;
       composited = false;
     } else {
       
@@ -744,14 +743,15 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
 
   
   
-  if (frameID == layers::kContainerFrameID_Invalid ||
-      frameID == mLastPresentedFrameID) {
+  if (!selected || selected->mFrameID == layers::kContainerFrameID_Invalid ||
+      selected->mFrameID == mLastPresentedFrameID) {
     return;
   }
 
   
   
   
+  gfx::IntSize frameSize = selected->mImage->GetSize();
   if (NS_WARN_IF(frameSize.IsEmpty())) {
     return;
   }
@@ -767,20 +767,78 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
 
   aMd.mWidth = frameSize.width;
   aMd.mHeight = frameSize.height;
-  aMd.mMediaTime = CurrentTime();
+
+  
+  
+  aMd.mMediaTime = selected->mMediaTime.IsValid()
+                       ? selected->mMediaTime.ToSeconds()
+                       : CurrentTime();
 
   
   
   
   
   
-  aMd.mPresentedFrames = frameID;
+  
+  
+  
+  
+  if (selected->mProcessingDuration.IsValid()) {
+    aMd.mProcessingDuration.Construct(
+        selected->mProcessingDuration.ToBase(10000).ToSeconds());
+  }
+
+#ifdef MOZ_WEBRTC
+  
+  if (selected->mRtpTimestamp) {
+    aMd.mRtpTimestamp.Construct(*selected->mRtpTimestamp);
+  }
+
+  
+  
+  bool hasCaptureTimeNtp = selected->mWebrtcCaptureTime.is<int64_t>();
+  bool hasReceiveTimeReal = selected->mWebrtcReceiveTime.isSome();
+  if (hasCaptureTimeNtp || hasReceiveTimeReal) {
+    if (const auto* timestampMaker =
+            mSelectedVideoStreamTrack->GetTimestampMaker()) {
+      if (hasCaptureTimeNtp) {
+        aMd.mCaptureTime.Construct(
+            RTCStatsTimestamp::FromNtp(
+                *timestampMaker,
+                webrtc::Timestamp::Micros(
+                    selected->mWebrtcCaptureTime.as<int64_t>()))
+                .ToDom());
+      }
+      if (hasReceiveTimeReal) {
+        aMd.mReceiveTime.Construct(
+            RTCStatsTimestamp::FromRealtime(
+                *timestampMaker,
+                webrtc::Timestamp::Micros(*selected->mWebrtcReceiveTime))
+                .ToDom());
+      }
+    }
+  }
+
+  
+  
+  if (selected->mWebrtcCaptureTime.is<TimeStamp>()) {
+    if (nsPIDOMWindowInner* win = OwnerDoc()->GetInnerWindow()) {
+      if (Performance* perf = win->GetPerformance()) {
+        aMd.mCaptureTime.Construct(perf->TimeStampToDOMHighResForRendering(
+            selected->mWebrtcCaptureTime.as<TimeStamp>()));
+      }
+    }
+  }
+#endif
 
   
   
   
+  
+  
+  aMd.mPresentedFrames = selected->mFrameID;
 
-  mLastPresentedFrameID = frameID;
+  mLastPresentedFrameID = selected->mFrameID;
   mVideoFrameRequestManager.Take(aCallbacks);
 
   NS_DispatchToMainThread(NewRunnableMethod(
