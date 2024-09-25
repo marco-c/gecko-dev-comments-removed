@@ -305,10 +305,18 @@ void ScreenCapturerSck::EnsureVisible() {
   SCContentSharingPickerConfiguration* config = picker.defaultConfiguration;
   config.allowedPickerModes = picker_modes_;
   picker.defaultConfiguration = config;
+  SCShareableContentStyle style = SCShareableContentStyleNone;
   
-  
-  
-  SCShareableContentStyle style = SCShareableContentStyleDisplay;
+  if (@available(macOS 15, *)) {
+    
+    
+    
+  } else {
+    
+    
+    
+    style = SCShareableContentStyleDisplay;
+  }
   if (picker_modes_ == SCContentSharingPickerModeSingleDisplay) {
     style = SCShareableContentStyleDisplay;
   } else if (picker_modes_ == SCContentSharingPickerModeSingleWindow ||
