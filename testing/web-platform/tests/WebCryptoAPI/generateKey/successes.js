@@ -16,6 +16,7 @@ function run_test(algorithmNames, slowTest) {
 
 
 
+
     var allTestVectors = [ 
         {name: "AES-CTR",  resultType: CryptoKey, usages: ["encrypt", "decrypt", "wrapKey", "unwrapKey"], mandatoryUsages: []},
         {name: "AES-CBC",  resultType: CryptoKey, usages: ["encrypt", "decrypt", "wrapKey", "unwrapKey"], mandatoryUsages: []},
@@ -68,9 +69,32 @@ function run_test(algorithmNames, slowTest) {
                 } else {
                     assert_goodCryptoKey(result, algorithm, extractable, usages, "secret");
                 }
+                return result;
             }, function(err) {
-                assert_unreached("Threw an unexpected error: " + err.toString());
-            });
+                assert_unreached("generateKey threw an unexpected error: " + err.toString());
+            })
+            .then(async function (result) {
+                if (resultType === "CryptoKeyPair") {
+                    await Promise.all([
+                        subtle.exportKey('jwk', result.publicKey),
+                        subtle.exportKey('spki', result.publicKey),
+                        result.publicKey.algorithm.name.startsWith('RSA') ? undefined : subtle.exportKey('raw', result.publicKey),
+                        ...(extractable ? [
+                            subtle.exportKey('jwk', result.privateKey),
+                            subtle.exportKey('pkcs8', result.privateKey),
+                        ] : [])
+                    ]);
+                } else {
+                    if (extractable) {
+                        await Promise.all([
+                            subtle.exportKey('raw', result),
+                            subtle.exportKey('jwk', result),
+                        ]);
+                    }
+                }
+            }, function(err) {
+                assert_unreached("exportKey threw an unexpected error: " + err.toString());
+            })
         }, testTag + ": generateKey" + parameterString(algorithm, extractable, usages));
     }
 
