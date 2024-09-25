@@ -4329,22 +4329,22 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
   DeviceColor color = aOptions.mCompositionOp == CompositionOp::OP_CLEAR
                           ? DeviceColor(1, 1, 1, 1)
                           : static_cast<const ColorPattern&>(aPattern).mColor;
-#if defined(XP_MACOSX) || defined(XP_WIN)
+#if defined(XP_MACOSX)
   
-  bool usePreblend = aUseSubpixelAA;
+  
+  
+  
+  bool usePreblend = aUseSubpixelAA ||
+                     (aFont->GetType() == FontType::MAC &&
+                      static_cast<ScaledFontMac*>(aFont)->UseFontSmoothing());
+#elif defined(XP_WIN)
+  
+  
+  bool usePreblend =
+      aUseSubpixelAA || aOptions.mAntialiasMode != AntialiasMode::NONE;
 #else
   
   bool usePreblend = false;
-#endif
-
-#ifdef XP_MACOSX
-  
-  
-  
-  if (aFont->GetType() == FontType::MAC &&
-      static_cast<ScaledFontMac*>(aFont)->UseFontSmoothing()) {
-    usePreblend = true;
-  }
 #endif
 
   
