@@ -3600,14 +3600,8 @@ var XULBrowserWindow = {
   },
 
   
-  _state: null,
-  _lastLocation: null,
   _event: null,
   _lastLocationForEvent: null,
-  
-  
-  
-  _isSecureContext: null,
 
   
   
@@ -3656,39 +3650,21 @@ var XULBrowserWindow = {
   onSecurityChange(aWebProgress, aRequest, aState, _aIsSimulated) {
     
     
-    let uri = gBrowser.currentURI;
-    let spec = uri.spec;
-    let isSecureContext = gBrowser.securityUI.isSecureContext;
-    if (
-      this._state == aState &&
-      this._lastLocation == spec &&
-      this._isSecureContext === isSecureContext
-    ) {
-      
-      
-      gIdentityHandler.refreshIdentityBlock();
-      return;
-    }
-    this._state = aState;
-    this._lastLocation = spec;
-    this._isSecureContext = isSecureContext;
-
-    
-    
     gURLBar.formatValue();
 
     
     
+    let uri = gBrowser.currentURI;
     let uriOverride = this._securityURIOverride(gBrowser.selectedBrowser);
     if (uriOverride) {
       uri = uriOverride;
-      this._state |= Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
+      aState |= Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
     }
 
     try {
       uri = Services.io.createExposableURI(uri);
     } catch (e) {}
-    gIdentityHandler.updateIdentity(this._state, uri);
+    gIdentityHandler.updateIdentity(aState, uri);
   },
 
   
