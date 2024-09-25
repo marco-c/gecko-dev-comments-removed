@@ -500,26 +500,7 @@ impl Device {
     
     #[inline]
     pub fn forced_colors(&self) -> ForcedColors {
-        if self.document().mIsBeingUsedAsImage() {
-            
-            return ForcedColors::None;
-        }
-        let prefs = self.pref_sheet_prefs();
-        if !prefs.mUseDocumentColors {
-            return ForcedColors::Active;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        if cfg!(target_os = "windows") && prefs.mUseAccessibilityTheme && prefs.mIsChrome {
-            return ForcedColors::Requested;
-        }
-        ForcedColors::None
+        self.pres_context().map_or(ForcedColors::None, |pc| pc.mForcedColors)
     }
 
     

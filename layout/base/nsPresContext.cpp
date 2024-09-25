@@ -297,7 +297,8 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
 #ifdef DEBUG
       mInitialized(false),
 #endif
-      mOverriddenOrEmbedderColorScheme(dom::PrefersColorSchemeOverride::None) {
+      mOverriddenOrEmbedderColorScheme(dom::PrefersColorSchemeOverride::None),
+      mForcedColors(StyleForcedColors::None) {
 #ifdef DEBUG
   PodZero(&mLayoutPhaseCount);
 #endif
@@ -328,6 +329,7 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
   }
 
   UpdateFontVisibility();
+  UpdateForcedColors( false);
 }
 
 static const char* gExactCallbackPrefs[] = {
@@ -617,6 +619,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
   if (PreferenceSheet::AffectedByPref(prefName)) {
     restyleHint |= RestyleHint::RestyleSubtree();
     PreferenceSheet::Refresh();
+    UpdateForcedColors();
   }
 
   
@@ -734,6 +737,46 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
 #endif
 
   return NS_OK;
+}
+
+void nsPresContext::UpdateForcedColors(bool aNotify) {
+  auto old = mForcedColors;
+  mForcedColors = [&] {
+    if (Document()->IsBeingUsedAsImage()) {
+      return StyleForcedColors::None;
+    }
+
+    
+
+    const auto& prefs = PrefSheetPrefs();
+    if (!prefs.mUseDocumentColors) {
+      return StyleForcedColors::Active;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+#ifdef XP_WINDOWS
+    if (prefs.mUseAccessibilityTheme && prefs.mIsChrome) {
+      return StyleForcedColors::Requested;
+    }
+#endif
+    return StyleForcedColors::None;
+  }();
+  if (aNotify && mForcedColors != old) {
+    MediaFeatureValuesChanged(
+        MediaFeatureChange::ForPreferredColorSchemeOrForcedColorsChange(),
+        MediaFeatureChangePropagation::JustThisDocument);
+  }
+}
+
+bool nsPresContext::ForcingColors() const {
+  return mForcedColors == StyleForcedColors::Active;
 }
 
 bool nsPresContext::UpdateFontVisibility() {
@@ -924,7 +967,7 @@ void nsPresContext::SetColorSchemeOverride(
 
   if (mDocument->PreferredColorScheme() != oldScheme) {
     MediaFeatureValuesChanged(
-        MediaFeatureChange::ForPreferredColorSchemeChange(),
+        MediaFeatureChange::ForPreferredColorSchemeOrForcedColorsChange(),
         MediaFeatureChangePropagation::JustThisDocument);
   }
 }
@@ -962,6 +1005,8 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     }
     return browsingContext->GetEmbedderColorSchemes().mPreferred;
   }());
+
+  UpdateForcedColors();
 
   SetInRDMPane(top->GetInRDMPane());
 
@@ -1845,6 +1890,7 @@ void nsPresContext::ThemeChangedInternal() {
   LookAndFeel::HandleGlobalThemeChange();
 
   
+  
   RecomputeBrowsingContextDependentData();
 
   
@@ -1949,7 +1995,7 @@ void nsPresContext::EmulateMedium(nsAtom* aMediaType) {
 
   MediaFeatureChange change(MediaFeatureChangeReason::MediumChange);
   if (oldScheme != mDocument->PreferredColorScheme()) {
-    change |= MediaFeatureChange::ForPreferredColorSchemeChange();
+    change |= MediaFeatureChange::ForPreferredColorSchemeOrForcedColorsChange();
   }
   MediaFeatureValuesChanged(change,
                             MediaFeatureChangePropagation::JustThisDocument);

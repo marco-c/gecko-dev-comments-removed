@@ -77,7 +77,7 @@ struct MediaFeatureChange {
     return *this;
   }
 
-  static MediaFeatureChange ForPreferredColorSchemeChange() {
+  static MediaFeatureChange ForPreferredColorSchemeOrForcedColorsChange() {
     
     
     
