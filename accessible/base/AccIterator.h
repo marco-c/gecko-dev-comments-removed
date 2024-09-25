@@ -16,6 +16,10 @@
 class nsITreeView;
 
 namespace mozilla {
+namespace dom {
+class Element;
+}
+
 namespace a11y {
 class DocAccessibleParent;
 
@@ -206,6 +210,7 @@ class XULDescriptionIterator : public AccIterable {
 
 
 
+
 class IDRefsIterator : public AccIterable {
  public:
   IDRefsIterator(DocAccessible* aDoc, nsIContent* aContent,
@@ -240,6 +245,8 @@ class IDRefsIterator : public AccIterable {
   nsIContent* mContent;
   DocAccessible* mDoc;
   nsAString::index_type mCurrIdx;
+  nsTArray<dom::Element*> mElements;
+  uint32_t mElemIdx;
 };
 
 
