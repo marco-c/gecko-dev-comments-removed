@@ -320,17 +320,27 @@
     url.searchParams.append('pipe', formattedHeaders.join('|'));
   }
 
-  function windowExecutorCreator({target = '_blank', features} = {}) {
-    return (url, documentContent) => {
-      if (url && url.substring(0, 5) == 'data:') {
-        throw new TypeError('Windows cannot use data: URLs.');
-      }
-
+  function windowExecutorCreator(
+    { target = '_blank', features } = {}, remoteContextWrapper) {
+    let openWindow = (url, target, features, documentContent) => {
       const w = window.open(url, target, features);
       if (documentContent) {
         w.document.open();
         w.document.write(documentContent);
         w.document.close();
+      }
+    };
+
+    return (url, documentContent) => {
+      if (url && url.substring(0, 5) == 'data:') {
+        throw new TypeError('Windows cannot use data: URLs.');
+      }
+
+      if (remoteContextWrapper) {
+        return remoteContextWrapper.executeScript(
+          openWindow, [url, target, features, documentContent]);
+      } else {
+        openWindow(url, target, features, documentContent);
       }
     };
   }
@@ -523,6 +533,23 @@
     addIframeSrcdoc(extraConfig, attributes = {}) {
       return this.helper.createContext({
         executorCreator: iframeSrcdocExecutorCreator(this, attributes),
+        extraConfig,
+      });
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    addWindow(extraConfig, options) {
+      return this.helper.createContext({
+        executorCreator: windowExecutorCreator(options, this),
         extraConfig,
       });
     }
