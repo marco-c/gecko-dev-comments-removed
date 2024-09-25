@@ -1504,12 +1504,6 @@ static bool IsInputReused(LInstruction* ins, LUse* use) {
 bool BacktrackingAllocator::buildLivenessInfo() {
   JitSpew(JitSpew_RegAlloc, "Beginning liveness analysis");
 
-  Vector<MBasicBlock*, 1, SystemAllocPolicy> loopWorkList;
-  BitSet loopDone(graph.numBlockIds());
-  if (!loopDone.init(alloc())) {
-    return false;
-  }
-
   size_t numRanges = 0;
 
   for (size_t i = graph.numBlocks(); i > 0; i--) {
@@ -1752,68 +1746,35 @@ bool BacktrackingAllocator::buildLivenessInfo() {
       
       
       
+
+      MBasicBlock* backedge = mblock->backedge();
+
       
-      MBasicBlock* loopBlock = mblock->backedge();
-      while (true) {
-        
-        MOZ_ASSERT(loopBlock->id() >= mblock->id());
+      CodePosition from = entryOf(mblock->lir());
+      CodePosition to = exitOf(backedge->lir()).next();
 
-        
-        CodePosition from = entryOf(loopBlock->lir());
-        CodePosition to = exitOf(loopBlock->lir()).next();
-
-        for (BitSet::Iterator liveRegId(live); liveRegId; ++liveRegId) {
-          if (!vregs[*liveRegId].addInitialRange(alloc(), from, to,
-                                                 &numRanges)) {
-            return false;
-          }
-        }
-
-        
-        liveIn[loopBlock->id()].insertAll(live);
-
-        
-        loopDone.insert(loopBlock->id());
-
-        
-        
-        
-        if (loopBlock != mblock) {
-          for (size_t i = 0; i < loopBlock->numPredecessors(); i++) {
-            MBasicBlock* pred = loopBlock->getPredecessor(i);
-            if (loopDone.contains(pred->id())) {
-              continue;
-            }
-            if (!loopWorkList.append(pred)) {
-              return false;
-            }
-          }
-        }
-
-        
-        if (loopWorkList.empty()) {
-          break;
-        }
-
-        
-        MBasicBlock* osrBlock = graph.mir().osrBlock();
-        while (!loopWorkList.empty()) {
-          loopBlock = loopWorkList.popCopy();
-          if (loopBlock != osrBlock) {
-            break;
-          }
-        }
-
-        
-        
-        if (loopBlock == osrBlock) {
-          MOZ_ASSERT(loopWorkList.empty());
-          break;
+      for (BitSet::Iterator liveRegId(live); liveRegId; ++liveRegId) {
+        if (!vregs[*liveRegId].addInitialRange(alloc(), from, to, &numRanges)) {
+          return false;
         }
       }
 
-      
-      loopDone.clear();
+      if (mblock != backedge) {
+        
+        MOZ_ASSERT(graph.getBlock(i - 1) == mblock->lir());
+        size_t j = i;
+        while (true) {
+          MBasicBlock* loopBlock = graph.getBlock(j)->mir();
+
+          
+          liveIn[loopBlock->id()].insertAll(live);
+
+          if (loopBlock == backedge) {
+            break;
+          }
+          j++;
+        }
+      }
     }
 
     MOZ_ASSERT_IF(!mblock->numPredecessors(), live.empty());
