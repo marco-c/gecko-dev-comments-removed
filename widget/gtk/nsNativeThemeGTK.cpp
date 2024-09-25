@@ -1127,16 +1127,58 @@ LayoutDeviceIntSize nsNativeThemeGTK::GetMinimumWidgetSize(
                                     GetWidgetScaleFactor(aFrame));
 }
 
-bool nsNativeThemeGTK::WidgetAttributeChangeRequiresRepaint(
-    StyleAppearance aAppearance, nsAtom* aAttribute) {
+NS_IMETHODIMP
+nsNativeThemeGTK::WidgetStateChanged(nsIFrame* aFrame,
+                                     StyleAppearance aAppearance,
+                                     nsAtom* aAttribute, bool* aShouldRepaint,
+                                     const nsAttrValue* aOldValue) {
+  *aShouldRepaint = false;
+
+  if (IsWidgetNonNative(aFrame, aAppearance) != NonNative::No) {
+    return Theme::WidgetStateChanged(aFrame, aAppearance, aAttribute,
+                                     aShouldRepaint, aOldValue);
+  }
+
   
   if (aAppearance == StyleAppearance::Progresschunk ||
       aAppearance == StyleAppearance::ProgressBar ||
       aAppearance == StyleAppearance::Tooltip ||
       aAppearance == StyleAppearance::MozWindowDecorations) {
-    return false;
+    return NS_OK;
   }
-  return Theme::WidgetAttributeChangeRequiresRepaint(aAppearance, aAttribute);
+
+  if (aAppearance == StyleAppearance::MozWindowTitlebar ||
+      aAppearance == StyleAppearance::MozWindowTitlebarMaximized ||
+      aAppearance == StyleAppearance::MozWindowButtonClose ||
+      aAppearance == StyleAppearance::MozWindowButtonMinimize ||
+      aAppearance == StyleAppearance::MozWindowButtonMaximize ||
+      aAppearance == StyleAppearance::MozWindowButtonRestore) {
+    *aShouldRepaint = true;
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (!aAttribute) {
+    
+    *aShouldRepaint = true;
+    return NS_OK;
+  }
+
+  
+  
+  *aShouldRepaint = false;
+  if (aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::checked ||
+      aAttribute == nsGkAtoms::selected ||
+      aAttribute == nsGkAtoms::visuallyselected ||
+      aAttribute == nsGkAtoms::focused || aAttribute == nsGkAtoms::readonly ||
+      aAttribute == nsGkAtoms::_default ||
+      aAttribute == nsGkAtoms::menuactive || aAttribute == nsGkAtoms::open) {
+    *aShouldRepaint = true;
+    return NS_OK;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP

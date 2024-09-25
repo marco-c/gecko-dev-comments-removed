@@ -180,8 +180,13 @@ class nsITheme : public nsISupports {
   }
 
   
-  virtual bool WidgetAttributeChangeRequiresRepaint(StyleAppearance,
-                                                    nsAtom* aAttribute);
+
+
+
+
+  NS_IMETHOD WidgetStateChanged(nsIFrame* aFrame, StyleAppearance aWidgetType,
+                                nsAtom* aAttribute, bool* aShouldRepaint,
+                                const nsAttrValue* aOldValue) = 0;
 
   NS_IMETHOD ThemeChanged() = 0;
 

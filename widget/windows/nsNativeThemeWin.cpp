@@ -1290,18 +1290,49 @@ LayoutDeviceIntSize nsNativeThemeWin::GetMinimumWidgetSize(
   return result;
 }
 
-bool nsNativeThemeWin::WidgetAttributeChangeRequiresRepaint(
-    StyleAppearance aAppearance, nsAtom* aAttribute) {
+NS_IMETHODIMP
+nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
+                                     StyleAppearance aAppearance,
+                                     nsAtom* aAttribute, bool* aShouldRepaint,
+                                     const nsAttrValue* aOldValue) {
   
   if (aAppearance == StyleAppearance::Progresschunk ||
       aAppearance == StyleAppearance::ProgressBar ||
       aAppearance == StyleAppearance::Tabpanels ||
       aAppearance == StyleAppearance::Tabpanel ||
       aAppearance == StyleAppearance::Separator) {
-    return false;
+    *aShouldRepaint = false;
+    return NS_OK;
   }
 
-  return Theme::WidgetAttributeChangeRequiresRepaint(aAppearance, aAttribute);
+  
+  
+  if ((aAppearance == StyleAppearance::Menulist ||
+       aAppearance == StyleAppearance::MenulistButton) &&
+      nsNativeTheme::IsHTMLContent(aFrame)) {
+    *aShouldRepaint = true;
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (!aAttribute) {
+    
+    *aShouldRepaint = true;
+  } else {
+    
+    
+    *aShouldRepaint = false;
+    if (aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::checked ||
+        aAttribute == nsGkAtoms::selected ||
+        aAttribute == nsGkAtoms::visuallyselected ||
+        aAttribute == nsGkAtoms::readonly || aAttribute == nsGkAtoms::open ||
+        aAttribute == nsGkAtoms::menuactive || aAttribute == nsGkAtoms::focused)
+      *aShouldRepaint = true;
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP

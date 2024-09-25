@@ -1631,21 +1631,29 @@ nsITheme::Transparency Theme::GetWidgetTransparency(
   return eUnknownTransparency;
 }
 
-bool Theme::WidgetAttributeChangeRequiresRepaint(StyleAppearance aAppearance,
-                                                 nsAtom* aAttribute) {
-  
-  
-  
-  
-  return aAttribute == nsGkAtoms::disabled ||
-         aAttribute == nsGkAtoms::checked ||
-         aAttribute == nsGkAtoms::selected ||
-         aAttribute == nsGkAtoms::visuallyselected ||
-         aAttribute == nsGkAtoms::menuactive ||
-         aAttribute == nsGkAtoms::sortDirection ||
-         aAttribute == nsGkAtoms::focused ||
-         aAttribute == nsGkAtoms::_default || aAttribute == nsGkAtoms::open ||
-         aAttribute == nsGkAtoms::hover;
+NS_IMETHODIMP
+Theme::WidgetStateChanged(nsIFrame* aFrame, StyleAppearance aAppearance,
+                          nsAtom* aAttribute, bool* aShouldRepaint,
+                          const nsAttrValue* aOldValue) {
+  if (!aAttribute) {
+    
+    *aShouldRepaint = true;
+  } else {
+    
+    
+    *aShouldRepaint = false;
+    if (aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::checked ||
+        aAttribute == nsGkAtoms::selected ||
+        aAttribute == nsGkAtoms::visuallyselected ||
+        aAttribute == nsGkAtoms::menuactive ||
+        aAttribute == nsGkAtoms::sortDirection ||
+        aAttribute == nsGkAtoms::focused || aAttribute == nsGkAtoms::_default ||
+        aAttribute == nsGkAtoms::open || aAttribute == nsGkAtoms::hover) {
+      *aShouldRepaint = true;
+    }
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
