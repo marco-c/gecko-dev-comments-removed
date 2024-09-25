@@ -569,16 +569,6 @@ void nsMathMLContainerFrame::PropagatePresentationDataFromChildAt(
 void nsMathMLContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                               const nsDisplayListSet& aLists) {
   BuildDisplayListForInline(aBuilder, aLists);
-
-#if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
-  
-  
-  
-  
-  
-  
-  DisplayBoundingMetrics(aBuilder, this, mReference, mBoundingMetrics, aLists);
-#endif
 }
 
 

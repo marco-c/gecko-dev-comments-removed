@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsIMathMLFrame_h___
 #define nsIMathMLFrame_h___
 
@@ -296,12 +295,6 @@ struct nsPresentationData {
 
 
 
-
-
-#define NS_MATHML_SHOW_BOUNDING_METRICS 0x10000000U
-
-
-
 #define NS_MATHML_IS_COMPRESSED(_flags) \
   (NS_MATHML_COMPRESSED == ((_flags) & NS_MATHML_COMPRESSED))
 
@@ -321,10 +314,6 @@ struct nsPresentationData {
 
 #define NS_MATHML_STRETCH_WAS_DONE(_flags) \
   (NS_MATHML_STRETCH_DONE == ((_flags) & NS_MATHML_STRETCH_DONE))
-
-#define NS_MATHML_PAINT_BOUNDING_METRICS(_flags) \
-  (NS_MATHML_SHOW_BOUNDING_METRICS ==            \
-   ((_flags) & NS_MATHML_SHOW_BOUNDING_METRICS))
 
 
 

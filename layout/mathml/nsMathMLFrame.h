@@ -268,13 +268,6 @@ class nsMathMLFrame : public nsIMathMLFrame {
                                    nscoord& aRadicalVerticalGap);
 
  protected:
-#if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
-  void DisplayBoundingMetrics(mozilla::nsDisplayListBuilder* aBuilder,
-                              nsIFrame* aFrame, const nsPoint& aPt,
-                              const nsBoundingMetrics& aMetrics,
-                              const nsDisplayListSet& aLists);
-#endif
-
   
 
 
