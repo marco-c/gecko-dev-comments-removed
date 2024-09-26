@@ -2479,14 +2479,6 @@ bool FlexItem::CanMainSizeInfluenceCrossSize() const {
   if (IsInlineAxisCrossAxis()) {
     
     
-
-    
-    
-    if (mFrame->HasAnyStateBits(
-            NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE)) {
-      return true;
-    }
-    
     
     if (mFrame->IsBlockFrame() || mFrame->IsTableWrapperFrame()) {
       
@@ -5304,8 +5296,6 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
           sizeOverrides.mStyleISize.emplace(item.StyleMainSize());
         } else {
           sizeOverrides.mStyleBSize.emplace(item.StyleMainSize());
-          nsLayoutUtils::MarkIntrinsicISizesDirtyIfDependentOnBSize(
-              item.Frame());
         }
         FLEX_ITEM_LOG(item.Frame(), "Sizing item in cross axis");
         FLEX_LOGV("Main size override: %d", item.MainSize());
