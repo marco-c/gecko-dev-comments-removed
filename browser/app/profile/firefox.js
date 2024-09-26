@@ -3094,11 +3094,7 @@ pref("browser.firefox-view.feature-tour", "{\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\
 
 pref("browser.firefox-view.view-count", 0);
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.firefox-view.max-history-rows", 0);
-#else
-  pref("browser.firefox-view.max-history-rows", 300);
-#endif
+pref("browser.firefox-view.max-history-rows", 0);
 
 pref("browser.firefox-view.virtual-list.enabled", true);
 
