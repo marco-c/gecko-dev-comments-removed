@@ -122,6 +122,12 @@
         "browser.tabs.allow_transparent_browser",
         false
       );
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_tabGroupsEnabled",
+        "browser.tabs.groups.enabled",
+        false
+      );
 
       if (AppConstants.MOZ_CRASHREPORTER) {
         ChromeUtils.defineESModuleGetters(this, {
@@ -7816,6 +7822,16 @@ var TabContextMenu = {
     
     
     showFullScreenViewContextMenuItems(aPopupMenu);
+
+    let contextAddTabToNewGroup = document.getElementById(
+      "context_addTabToNewGroup"
+    );
+    if (gBrowser._tabGroupsEnabled) {
+      contextAddTabToNewGroup.hidden = false;
+      contextAddTabToNewGroup.setAttribute("data-l10n-args", tabCountInfo);
+    } else {
+      contextAddTabToNewGroup.hidden = true;
+    }
 
     
     document.getElementById("context_reloadTab").hidden = multiselectionContext;
