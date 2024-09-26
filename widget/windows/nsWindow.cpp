@@ -4957,18 +4957,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       }
     } break;
 
-    case WM_FONTCHANGE: {
-      
-      
-      
-      if (mWindowType != WindowType::Invisible) {
-        break;
-      }
-
-      
-      gfxPlatform::GetPlatform()->UpdateFontList();
-    } break;
-
     case WM_SETTINGCHANGE: {
       if (wParam == SPI_SETCLIENTAREAANIMATION ||
           wParam == SPI_SETKEYBOARDDELAY || wParam == SPI_SETMOUSEVANISH ||
