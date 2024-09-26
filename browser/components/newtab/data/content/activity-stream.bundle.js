@@ -3652,6 +3652,85 @@ const TopicsWidget = (0,external_ReactRedux_namespaceObject.connect)(state => ({
 
 
 
+const PREF_CONTEXTUAL_CONTENT_LISTFEED_TITLE = "discoverystream.contextualContent.listFeedTitle";
+function ListFeed({
+  type,
+  firstVisibleTimestamp,
+  recs
+}) {
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const listFeedTitle = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values)[PREF_CONTEXTUAL_CONTENT_LISTFEED_TITLE];
+  
+  const listFeedRecs = recs.filter(rec => !rec.flight_id).slice(0, 5);
+  const {
+    length: listLength
+  } = listFeedRecs;
+  
+  const fullList = listLength >= 5;
+  return external_React_default().createElement("div", {
+    className: `list-feed ${fullList ? "full-height" : ""} ${listLength > 2 ? "span-2" : "span-1"}`
+  }, external_React_default().createElement("div", {
+    className: "list-feed-inner-wrapper"
+  }, external_React_default().createElement("h1", {
+    className: "list-feed-title",
+    id: "list-feed-title"
+  }, external_React_default().createElement("span", {
+    className: "icon icon-trending"
+  }), listFeedTitle), external_React_default().createElement("div", {
+    className: "list-feed-content",
+    role: "menu",
+    "aria-labelledby": "list-feed-title"
+  }, listFeedRecs.map((rec, index) => {
+    if (!rec || rec.placeholder) {
+      return external_React_default().createElement(DSCard, {
+        key: `list-card-${index}`,
+        placeholder: true,
+        isListCard: true
+      });
+    }
+    return external_React_default().createElement(DSCard, {
+      key: `list-card-${rec.id}`,
+      pos: rec.pos,
+      flightId: rec.flight_id,
+      image_src: rec.image_src,
+      raw_image_src: rec.raw_image_src,
+      word_count: rec.word_count,
+      time_to_read: rec.time_to_read,
+      title: rec.title,
+      topic: rec.topic,
+      excerpt: rec.excerpt,
+      url: rec.url,
+      id: rec.id,
+      shim: rec.shim,
+      fetchTimestamp: rec.fetchTimestamp,
+      type: type,
+      context: rec.context,
+      sponsor: rec.sponsor,
+      sponsored_by_override: rec.sponsored_by_override,
+      dispatch: dispatch,
+      source: rec.domain,
+      publisher: rec.publisher,
+      pocket_id: rec.pocket_id,
+      context_type: rec.context_type,
+      bookmarkGuid: rec.bookmarkGuid,
+      recommendation_id: rec.recommendation_id,
+      firstVisibleTimestamp: firstVisibleTimestamp,
+      scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
+      recommended_at: rec.recommended_at,
+      received_rank: rec.received_rank,
+      isListCard: true
+    });
+  }))));
+}
+
+;
+
+
+
+
+
+
+
 
 
 
@@ -3666,6 +3745,7 @@ const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
 const PREF_SPOCS_STARTUPCACHE_ENABLED = "discoverystream.spocs.startupCache.enabled";
 const PREF_LIST_FEED_ENABLED = "discoverystream.contextualContent.enabled";
+const PREF_LIST_FEED_SELECTED_FEED = "discoverystream.contextualContent.selectedFeed";
 const CardGrid_INTERSECTION_RATIO = 0.5;
 const CardGrid_VISIBLE = "visible";
 const CardGrid_VISIBILITY_CHANGE_EVENT = "visibilitychange";
@@ -3947,7 +4027,9 @@ class _CardGrid extends (external_React_default()).PureComponent {
     const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
     const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
     const listFeedEnabled = prefs[PREF_LIST_FEED_ENABLED];
-    const recs = this.props.data.recommendations.slice(0, items);
+    const listFeedSelectedFeed = prefs[PREF_LIST_FEED_SELECTED_FEED];
+    
+    const recs = this.props.data.recommendations.filter(item => !item.feedName).slice(0, items);
     const cards = [];
     let essentialReadsCards = [];
     let editorsPicksCards = [];
@@ -4026,16 +4108,15 @@ class _CardGrid extends (external_React_default()).PureComponent {
       }
     }
     if (listFeedEnabled) {
+      const listFeed = external_React_default().createElement(ListFeed
       
+      , {
+        recs: this.props.data.recommendations.filter(item => item.feedName === listFeedSelectedFeed),
+        firstVisibleTimestamp: this.props.firstVisibleTimestamp,
+        type: this.props.type
+      });
       
-      
-      
-      
-      
-      
-      
-      
-      
+      cards.splice(2, 1, listFeed);
     }
     let moreRecsHeader = "";
     

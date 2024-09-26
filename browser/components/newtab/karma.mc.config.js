@@ -197,6 +197,26 @@ module.exports = function (config) {
                 functions: 100,
                 branches: 74.63,
               },
+            
+
+
+            "content-src/components/DiscoveryStreamComponents/ListFeed/ListFeed.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            
+
+
+            "content-src/components/DiscoveryStreamComponents/CardGrid/CardGrid.jsx":
+              {
+                statements: 90.48,
+                lines: 90.48,
+                functions: 84,
+                branches: 68.75,
+              },
             "content-src/components/DiscoveryStreamComponents/**/*.jsx": {
               statements: 90.48,
               lines: 90.48,
