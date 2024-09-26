@@ -1159,7 +1159,7 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
   
   
 
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeMetadata, 888);
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeMetadata, 904);
   
   MOZ_RELEASE_ASSERT(mode == MODE_SIZE || !item->isAsmJS());
 
@@ -1219,6 +1219,12 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
            mode, SharedBytes,
            &CodeRefPtr<mode, const ShareableBytes, CodeShareableBytes>>(
       coder, &item->bytecode)));
+
+  
+  
+  
+  
+  
 
   MOZ_TRY(CodePod(coder, &item->funcDefsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->funcImportsOffsetStart));

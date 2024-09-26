@@ -2400,7 +2400,7 @@ class FunctionCompiler {
   }
 
   [[nodiscard]]
-  bool shouldInlineCallDirect(uint32_t funcIndex) {
+  bool shouldInlineCall(InliningHeuristics::CallKind kind, uint32_t funcIndex) {
     
     
     
@@ -2410,11 +2410,6 @@ class FunctionCompiler {
 
     
     if (codeMeta().funcIsImport(funcIndex)) {
-      return false;
-    }
-
-    
-    if (inliningDepth() > JS::Prefs::wasm_experimental_inline_depth_limit()) {
       return false;
     }
 
@@ -2431,9 +2426,10 @@ class FunctionCompiler {
     }
 
     
-    const FuncDefRange& funcRange = codeMeta().funcDefRange(funcIndex);
-    return funcRange.bodyLength <=
-           JS::Prefs::wasm_experimental_inline_size_limit();
+    
+    uint32_t inlineeBodySize = codeMeta().funcDefRange(funcIndex).bodyLength;
+    return codeMeta_.inliningHeuristics.isSmallEnoughToInline(
+        kind, inliningDepth(), inlineeBodySize);
   }
 
   [[nodiscard]]
@@ -5844,7 +5840,7 @@ static bool EmitCall(FunctionCompiler& f, bool asmJSFuncDef) {
       return false;
     }
   } else {
-    if (f.shouldInlineCallDirect(funcIndex)) {
+    if (f.shouldInlineCall(InliningHeuristics::CallKind::Direct, funcIndex)) {
       if (!EmitInlineCall(f, funcType, funcIndex, args, &results)) {
         return false;
       }
@@ -7946,7 +7942,9 @@ static bool EmitCallRef(FunctionCompiler& f) {
     return true;
   }
 
-  if (hint.isInlineFunc() && f.shouldInlineCallDirect(hint.inlineFuncIndex())) {
+  if (hint.isInlineFunc() &&
+      f.shouldInlineCall(InliningHeuristics::CallKind::CallRef,
+                         hint.inlineFuncIndex())) {
     DefVector results;
     if (!EmitSpeculativeInlineCallRef(f, bytecodeOffset, *funcType,
                                       hint.inlineFuncIndex(), callee, args,

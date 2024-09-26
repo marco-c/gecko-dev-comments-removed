@@ -10,6 +10,7 @@
 #include "mozilla/Atomics.h"
 
 #include "wasm/WasmBinaryTypes.h"
+#include "wasm/WasmHeuristics.h"
 #include "wasm/WasmInstanceData.h"  
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmProcess.h"  
@@ -150,6 +151,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   ModuleHash debugHash;
+
+  
+  const LazyTieringHeuristics lazyTieringHeuristics;
+  const InliningHeuristics inliningHeuristics;
 
   
   
