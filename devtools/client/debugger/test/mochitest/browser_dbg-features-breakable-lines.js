@@ -78,7 +78,7 @@ add_task(async function testBreakableLinesOverReloads() {
   
   if (isEveryFrameTargetEnabled()) {
     is(
-      getCM(dbg).getValue(),
+      getEditorContent(dbg),
       `Error: Incorrect contents fetched, please reload.`
     );
   }

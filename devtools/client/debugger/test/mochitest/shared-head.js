@@ -268,7 +268,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
       }
 
       
-      return getCM(dbg).getValue() !== DEBUGGER_L10N.getStr("loadingText");
+      return getEditorContent(dbg) !== DEBUGGER_L10N.getStr("loadingText");
     },
     "selected source"
   );
@@ -839,7 +839,7 @@ async function selectSourceFromSourceTree(
   await clickElement(dbg, "sourceNode", sourcePosition);
   await waitForSelectedSource(dbg, fileName);
   await waitFor(
-    () => getCM(dbg).getValue() !== `Loading…`,
+    () => getEditorContent(dbg) !== `Loading…`,
     "Wait for source to completely load"
   );
 }
@@ -2153,6 +2153,14 @@ function getLineCount(dbg) {
 
 function waitForSearchState(dbg) {
   return waitFor(() => getCMEditor(dbg).isSearchStateReady());
+}
+
+
+
+
+
+function getEditorContent(dbg) {
+  return getCMEditor(dbg).getEditorContent();
 }
 
 
