@@ -14,12 +14,10 @@
 #include "mozilla/ErrorNames.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Telemetry.h"
-#include "mozilla/TelemetryComms.h"
-#include "mozilla/TelemetryEventEnums.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/ScopedLogExtraInfo.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "nsIConsoleService.h"
 #include "nsIFile.h"
 #include "nsServiceManagerUtils.h"
@@ -54,8 +52,6 @@ RefPtr<BoolPromise> CreateAndRejectBoolPromiseFromQMResult(
 }
 
 namespace dom::quota {
-
-using namespace mozilla::Telemetry;
 
 namespace {
 
@@ -554,75 +550,59 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
     
     
 
-    auto extra = Some([&] {
-      auto res = CopyableTArray<EventExtraEntry>{};
-      res.SetCapacity(9);
-
-      res.AppendElement(EventExtraEntry{
-          "context"_ns,
-          MOZ_NO_VALIDATE(
-              contextTainted,
-              "Context has been data-reviewed for telemetry transmission.")});
+    mozilla::glean::dom_quota_try::ErrorStepExtra extra;
+    extra.context = Some(MOZ_NO_VALIDATE(
+        contextTainted,
+        "Context has been data-reviewed for telemetry transmission."));
 
 #    ifdef QM_ERROR_STACKS_ENABLED
-      if (!frameIdString.IsEmpty()) {
-        res.AppendElement(
-            EventExtraEntry{"frame_id"_ns, nsCString{frameIdString}});
-      }
+    if (!frameIdString.IsEmpty()) {
+      extra.frameId = Some(frameIdString);
+    }
 
-      if (!processIdString.IsEmpty()) {
-        res.AppendElement(
-            EventExtraEntry{"process_id"_ns, nsCString{processIdString}});
-      }
+    if (!processIdString.IsEmpty()) {
+      extra.processId = Some(processIdString);
+    }
 #    endif
 
-      if (!rvName.IsEmpty()) {
-        res.AppendElement(EventExtraEntry{"result"_ns, nsCString{rvName}});
-      }
+    if (!rvName.IsEmpty()) {
+      extra.result = Some(rvName);
+    }
 
-      
-      
-      
-      
-      static MOZ_THREAD_LOCAL(uint32_t) sSequenceNumber;
+    
+    
+    
+    
+    static MOZ_THREAD_LOCAL(uint32_t) sSequenceNumber;
 
-      
-      MOZ_ALWAYS_TRUE(sSequenceNumber.init());
+    
+    MOZ_ALWAYS_TRUE(sSequenceNumber.init());
 
-      
-      
-      const auto newSeqNum = sSequenceNumber.get() + 1;
-      const auto threadId =
-          mozilla::baseprofiler::profiler_current_thread_id().ToNumber();
+    
+    
+    const auto newSeqNum = sSequenceNumber.get() + 1;
+    const auto threadId = baseprofiler::profiler_current_thread_id().ToNumber();
 
-      const auto threadIdAndSequence =
-          (static_cast<uint64_t>(threadId) << 32) | (newSeqNum & 0xFFFFFFFF);
+    const auto threadIdAndSequence =
+        (static_cast<uint64_t>(threadId) << 32) | (newSeqNum & 0xFFFFFFFF);
 
-      res.AppendElement(
-          EventExtraEntry{"seq"_ns, IntToCString(threadIdAndSequence)});
+    extra.seq = Some(threadIdAndSequence);
 
-      sSequenceNumber.set(newSeqNum);
+    sSequenceNumber.set(newSeqNum);
 
-      res.AppendElement(EventExtraEntry{"severity"_ns, severityString});
+    extra.severity = Some(severityString);
 
-      res.AppendElement(
-          EventExtraEntry{"source_file"_ns, nsCString(sourceFileRelativePath)});
+    extra.sourceFile = Some(sourceFileRelativePath);
 
-      res.AppendElement(
-          EventExtraEntry{"source_line"_ns, IntToCString(aSourceFileLine)});
+    extra.sourceLine = Some(aSourceFileLine);
 
 #    ifdef QM_ERROR_STACKS_ENABLED
-      if (!stackIdString.IsEmpty()) {
-        res.AppendElement(
-            EventExtraEntry{"stack_id"_ns, nsCString{stackIdString}});
-      }
+    if (!stackIdString.IsEmpty()) {
+      extra.stackId = Some(stackIdString);
+    }
 #    endif
 
-      return res;
-    }());
-
-    Telemetry::RecordEvent(Telemetry::EventID::DomQuotaTry_Error_Step,
-                           Nothing(), extra);
+    glean::dom_quota_try::error_step.Record(Some(extra));
   }
 #  endif
 }
