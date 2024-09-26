@@ -112,6 +112,10 @@ MALLOC_DECL(jemalloc_free_dirty_pages, void)
 
 
 
+MALLOC_DECL(jemalloc_free_excess_dirty_pages, void)
+
+
+
 MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
 
 
