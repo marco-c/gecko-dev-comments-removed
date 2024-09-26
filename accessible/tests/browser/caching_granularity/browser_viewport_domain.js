@@ -10,6 +10,7 @@ addAccessibleTask(
   async function (browser, docAcc) {
     
     
+    
     await testCachingPerPlatform(docAcc, "viewport", () => {
       docAcc.getState({}, {});
     });

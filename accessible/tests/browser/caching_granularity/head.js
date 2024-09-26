@@ -123,7 +123,8 @@ async function testCachingPerPlatform(accessible, attribute, queryCb) {
       attribute == "layout-guess" ||
       attribute == "language" ||
       attribute == "text" ||
-      attribute == "style")
+      attribute == "style" ||
+      attribute == "viewport")
   ) {
     
     
