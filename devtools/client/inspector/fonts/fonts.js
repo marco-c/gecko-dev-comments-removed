@@ -118,7 +118,6 @@ class FontInspector {
     this.update = this.update.bind(this);
     this.updateFontVariationSettings =
       this.updateFontVariationSettings.bind(this);
-    this.onResourceAvailable = this.onResourceAvailable.bind(this);
 
     this.init();
   }
@@ -184,11 +183,6 @@ class FontInspector {
     this.inspector.selection.on("new-node-front", this.onNewNode);
     
     this.inspector.sidebar.on("fontinspector-selected", this.onNewNode);
-
-    this.inspector.toolbox.resourceCommand.watchResources(
-      [this.inspector.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT],
-      { onAvailable: this.onResourceAvailable }
-    );
 
     
     gDevTools.on("theme-switched", this.onThemeChanged);
@@ -330,12 +324,6 @@ class FontInspector {
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     gDevTools.off("theme-switched", this.onThemeChanged);
 
-    this.inspector.toolbox.resourceCommand.unwatchResources(
-      [this.inspector.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT],
-      { onAvailable: this.onResourceAvailable }
-    );
-
-    this.fontsHighlighter = null;
     this.document = null;
     this.inspector = null;
     this.node = null;
@@ -346,21 +334,6 @@ class FontInspector {
     this.store = null;
     this.writers.clear();
     this.writers = null;
-  }
-
-  onResourceAvailable(resources) {
-    for (const resource of resources) {
-      if (
-        resource.resourceType ===
-          this.inspector.commands.resourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name === "will-navigate" &&
-        resource.targetFront.isTopLevel
-      ) {
-        
-        
-        this.fontsHighlighter = null;
-      }
-    }
   }
 
   
@@ -896,32 +869,24 @@ class FontInspector {
 
 
   async onToggleFontHighlight(font, show, isForCurrentElement = true) {
-    if (!this.fontsHighlighter) {
-      try {
-        this.fontsHighlighter =
-          await this.inspector.inspectorFront.getHighlighterByType(
-            HIGHLIGHTER_TYPES.FONTS
-          );
-      } catch (e) {
-        
-        
-        this.onToggleFontHighlight = () => {};
-        return;
-      }
-    }
-
     try {
       if (show) {
         const node = isForCurrentElement
-          ? this.node
+          ? this.inspector.selection.nodeFront
           : this.node.walkerFront.rootNode;
 
-        await this.fontsHighlighter.show(node, {
-          CSSFamilyName: font.CSSFamilyName,
-          name: font.name,
-        });
+        await this.inspector.highlighters.showHighlighterTypeForNode(
+          HIGHLIGHTER_TYPES.FONTS,
+          node,
+          {
+            CSSFamilyName: font.CSSFamilyName,
+            name: font.name,
+          }
+        );
       } else {
-        await this.fontsHighlighter.hide();
+        await this.inspector.highlighters.hideHighlighterType(
+          HIGHLIGHTER_TYPES.FONTS
+        );
       }
     } catch (e) {
       
