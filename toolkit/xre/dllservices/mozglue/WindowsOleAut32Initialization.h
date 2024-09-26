@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef mozilla_WindowsOleAut32Initialization_h
+#define mozilla_WindowsOleAut32Initialization_h
+
+#include "mozilla/Types.h"
+
+namespace mozilla {
+
+
+
+MFBT_API bool WindowsOleAut32Initialization();
+
+}  
+
+#endif  

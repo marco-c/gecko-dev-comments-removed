@@ -10,11 +10,12 @@ GeckoCppUnitTests(
         "TestDllInterceptor",
         "TestIATPatcher",
         "TestMMPolicy",
+        "TestOleAut32Initialization",
     ],
     linkage=None,
 )
 
-if CONFIG["CPU_ARCH"] in ("x86", "x86_64"):
+if CONFIG["TARGET_CPU"] in ("x86", "x86_64"):
     
     GeckoCppUnitTests(
         [
