@@ -370,11 +370,6 @@ class ProfilerTracingListener {
     return false;
   }
 
-  onTracingInfiniteLoop() {
-    this.traceActor.stopTracing();
-    return true;
-  }
-
   
 
 

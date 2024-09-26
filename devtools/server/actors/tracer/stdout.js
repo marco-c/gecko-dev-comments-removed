@@ -50,11 +50,6 @@ class StdoutTracingListener {
     return true;
   }
 
-  onTracingInfiniteLoop() {
-    
-    return true;
-  }
-
   
 
 
