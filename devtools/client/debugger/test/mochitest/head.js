@@ -259,14 +259,6 @@ function getRange(start, end) {
 
 
 
-function waitForSearchState(dbg) {
-  const cm = getCM(dbg);
-  return waitFor(() => cm.state.search);
-}
-
-
-
-
 function assertCursorPosition(dbg, expectedLine, expectedColumn, message) {
   const cursorPosition = findElementWithSelector(dbg, ".cursor-position");
   if (!cursorPosition) {
