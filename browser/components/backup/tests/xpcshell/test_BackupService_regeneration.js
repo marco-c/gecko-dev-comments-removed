@@ -145,6 +145,13 @@ async function expectRegeneration(taskFn, msg) {
     return Promise.resolve();
   });
 
+  
+  
+  Services.prefs.setBoolPref("browser.backup.scheduled.enabled", true);
+  
+  
+  sandbox.stub(bs, "onIdle").returns();
+
   bs.initBackupScheduler();
 
   await taskFn();
@@ -210,6 +217,13 @@ async function expectNoRegeneration(taskFn, msg) {
     regenerationPromise.reject();
     return Promise.resolve();
   });
+
+  
+  
+  Services.prefs.setBoolPref("browser.backup.scheduled.enabled", true);
+  
+  
+  sandbox.stub(bs, "onIdle").returns();
 
   bs.initBackupScheduler();
 
