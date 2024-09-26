@@ -1,8 +1,8 @@
 use alloc::vec::Vec;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "write_std")]
 type IndexSet<K> = indexmap::IndexSet<K>;
-#[cfg(not(feature = "std"))]
+#[cfg(not(feature = "write_std"))]
 type IndexSet<K> = indexmap::IndexSet<K, hashbrown::hash_map::DefaultHashBuilder>;
 
 
@@ -30,6 +30,7 @@ impl<'a> StringTable<'a> {
     
     
     
+    #[allow(dead_code)]
     pub fn get_id(&self, string: &[u8]) -> StringId {
         let id = self.strings.get_index_of(string).unwrap();
         StringId(id)
@@ -38,6 +39,7 @@ impl<'a> StringTable<'a> {
     
     
     
+    #[allow(dead_code)]
     pub fn get_string(&self, id: StringId) -> &'a [u8] {
         self.strings.get_index(id.0).unwrap()
     }
@@ -50,6 +52,8 @@ impl<'a> StringTable<'a> {
         self.offsets[id.0]
     }
 
+    
+    
     
     
     
@@ -77,6 +81,29 @@ impl<'a> StringTable<'a> {
                 previous = string;
             }
         }
+    }
+
+    
+    
+    
+    
+    
+    #[allow(dead_code)]
+    pub fn size(&self, base: usize) -> usize {
+        
+        let mut ids: Vec<_> = (0..self.strings.len()).collect();
+        sort(&mut ids, 1, &self.strings);
+
+        let mut size = base;
+        let mut previous = &[][..];
+        for id in ids {
+            let string = self.strings.get_index(id).unwrap();
+            if !previous.ends_with(string) {
+                size += string.len() + 1;
+                previous = string;
+            }
+        }
+        size
     }
 }
 

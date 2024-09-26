@@ -39,10 +39,11 @@ use crate::utils::MakeMaybeUninit;
 
 
 
+#[repr(C)]
 pub struct ArrayVec<T, const CAP: usize> {
+    len: LenUint,
     
     xs: [MaybeUninit<T>; CAP],
-    len: LenUint,
 }
 
 impl<T, const CAP: usize> Drop for ArrayVec<T, CAP> {
@@ -77,6 +78,8 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
+    #[inline]
+    #[track_caller]
     pub fn new() -> ArrayVec<T, CAP> {
         assert_capacity_limit!(CAP);
         unsafe {
@@ -172,6 +175,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
+    #[track_caller]
     pub fn push(&mut self, element: T) {
         ArrayVecImpl::push(self, element)
     }
@@ -277,6 +281,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
+    #[track_caller]
     pub fn insert(&mut self, index: usize, element: T) {
         self.try_insert(index, element).unwrap()
     }
@@ -507,7 +512,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
             }
             if DELETED {
                 unsafe {
-                    let hole_slot = g.v.as_mut_ptr().add(g.processed_len - g.deleted_cnt);
+                    let hole_slot = cur.sub(g.deleted_cnt);
                     ptr::copy_nonoverlapping(cur, hole_slot, 1);
                 }
             }
@@ -748,6 +753,7 @@ impl<T, const CAP: usize> DerefMut for ArrayVec<T, CAP> {
 
 
 impl<T, const CAP: usize> From<[T; CAP]> for ArrayVec<T, CAP> {
+    #[track_caller]
     fn from(array: [T; CAP]) -> Self {
         let array = ManuallyDrop::new(array);
         let mut vec = <ArrayVec<T, CAP>>::new();
@@ -843,10 +849,47 @@ impl<T, const CAP: usize> IntoIterator for ArrayVec<T, CAP> {
 }
 
 
+#[cfg(feature = "zeroize")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl<Z: zeroize::Zeroize, const CAP: usize> zeroize::Zeroize for ArrayVec<Z, CAP> {
+    fn zeroize(&mut self) {
+        
+        self.iter_mut().zeroize();
+        
+        self.clear();
+        
+        self.xs.zeroize();
+    }
+}
+
 
 pub struct IntoIter<T, const CAP: usize> {
     index: usize,
     v: ArrayVec<T, CAP>,
+}
+impl<T, const CAP: usize> IntoIter<T, CAP> {
+    
+    pub fn as_slice(&self) -> &[T] {
+        &self.v[self.index..]
+    }
+
+    
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        &mut self.v[self.index..]
+    }
 }
 
 impl<T, const CAP: usize> Iterator for IntoIter<T, CAP> {
@@ -978,9 +1021,8 @@ impl<'a, T: 'a, const CAP: usize> Drop for Drain<'a, T, CAP> {
                 
                 let start = source_vec.len();
                 let tail = self.tail_start;
-                let src = source_vec.as_ptr().add(tail);
-                let dst = source_vec.as_mut_ptr().add(start);
-                ptr::copy(src, dst, self.tail_len);
+                let ptr = source_vec.as_mut_ptr();
+                ptr::copy(ptr.add(tail), ptr.add(start), self.tail_len);
                 source_vec.set_len(start + self.tail_len);
             }
         }
@@ -1012,6 +1054,7 @@ impl<T, const CAP: usize> Extend<T> for ArrayVec<T, CAP> {
     
     
     
+    #[track_caller]
     fn extend<I: IntoIterator<Item=T>>(&mut self, iter: I) {
         unsafe {
             self.extend_from_iter::<_, true>(iter)
@@ -1021,6 +1064,7 @@ impl<T, const CAP: usize> Extend<T> for ArrayVec<T, CAP> {
 
 #[inline(never)]
 #[cold]
+#[track_caller]
 fn extend_panic() {
     panic!("ArrayVec: capacity exceeded in extend/from_iter");
 }
@@ -1032,6 +1076,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
+    #[track_caller]
     pub(crate) unsafe fn extend_from_iter<I, const CHECK: bool>(&mut self, iterable: I)
         where I: IntoIterator<Item = T>
     {
@@ -1055,7 +1100,9 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
             if let Some(elt) = iter.next() {
                 if ptr == end_ptr && CHECK { extend_panic(); }
                 debug_assert_ne!(ptr, end_ptr);
-                ptr.write(elt);
+                if mem::size_of::<T>() != 0 {
+                    ptr.write(elt);
+                }
                 ptr = raw_ptr_add(ptr, 1);
                 guard.data += 1;
             } else {
@@ -1082,7 +1129,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
 unsafe fn raw_ptr_add<T>(ptr: *mut T, offset: usize) -> *mut T {
     if mem::size_of::<T>() == 0 {
         
-        (ptr as usize).wrapping_add(offset) as _
+        ptr.cast::<u8>().wrapping_add(offset).cast::<T>()
     } else {
         ptr.add(offset)
     }
@@ -1263,5 +1310,39 @@ impl<'de, T: Deserialize<'de>, const CAP: usize> Deserialize<'de> for ArrayVec<T
         }
 
         deserializer.deserialize_seq(ArrayVecVisitor::<T, CAP>(PhantomData))
+    }
+}
+
+#[cfg(feature = "borsh")]
+
+impl<T, const CAP: usize> borsh::BorshSerialize for ArrayVec<T, CAP>
+where
+    T: borsh::BorshSerialize,
+{
+    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+        <[T] as borsh::BorshSerialize>::serialize(self.as_slice(), writer)
+    }
+}
+
+#[cfg(feature = "borsh")]
+
+impl<T, const CAP: usize> borsh::BorshDeserialize for ArrayVec<T, CAP>
+where
+    T: borsh::BorshDeserialize,
+{
+    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+        let mut values = Self::new();
+        let len = <u32 as borsh::BorshDeserialize>::deserialize_reader(reader)?;
+        for _ in 0..len {
+            let elem = <T as borsh::BorshDeserialize>::deserialize_reader(reader)?;
+            if let Err(_) = values.try_push(elem) {
+                return Err(borsh::io::Error::new(
+                    borsh::io::ErrorKind::InvalidData,
+                    format!("Expected an array with no more than {} items", CAP),
+                ));
+            }
+        }
+
+        Ok(values)
     }
 }

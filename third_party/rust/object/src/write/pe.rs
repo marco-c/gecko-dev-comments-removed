@@ -47,6 +47,8 @@ pub struct Writer<'a> {
 
 impl<'a> Writer<'a> {
     
+    
+    
     pub fn new(
         is_64: bool,
         section_alignment: u32,

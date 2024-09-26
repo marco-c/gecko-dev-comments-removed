@@ -7,6 +7,40 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(doc)]
+use crate::pe;
+
 mod file;
 pub use file::*;
 

@@ -6,7 +6,7 @@ use crate::pe;
 use crate::pe::ImageSectionHeader;
 use crate::read::{
     self, CompressedData, CompressedFileRange, ObjectSection, ObjectSegment, ReadError, ReadRef,
-    Relocation, Result, SectionFlags, SectionIndex, SectionKind, SegmentFlags,
+    Relocation, RelocationMap, Result, SectionFlags, SectionIndex, SectionKind, SegmentFlags,
 };
 
 use super::{ImageNtHeaders, PeFile, SectionTable};
@@ -52,6 +52,8 @@ pub type PeSegment64<'data, 'file, R = &'data [u8]> =
     PeSegment<'data, 'file, pe::ImageNtHeaders64, R>;
 
 
+
+
 #[derive(Debug)]
 pub struct PeSegment<'data, 'file, Pe, R = &'data [u8]>
 where
@@ -60,6 +62,22 @@ where
 {
     file: &'file PeFile<'data, Pe, R>,
     section: &'data pe::ImageSectionHeader,
+}
+
+impl<'data, 'file, Pe, R> PeSegment<'data, 'file, Pe, R>
+where
+    Pe: ImageNtHeaders,
+    R: ReadRef<'data>,
+{
+    
+    pub fn pe_file(&self) -> &'file PeFile<'data, Pe, R> {
+        self.file
+    }
+
+    
+    pub fn pe_section(&self) -> &'data pe::ImageSectionHeader {
+        self.section
+    }
 }
 
 impl<'data, 'file, Pe, R> read::private::Sealed for PeSegment<'data, 'file, Pe, R>
@@ -174,6 +192,8 @@ pub type PeSection64<'data, 'file, R = &'data [u8]> =
     PeSection<'data, 'file, pe::ImageNtHeaders64, R>;
 
 
+
+
 #[derive(Debug)]
 pub struct PeSection<'data, 'file, Pe, R = &'data [u8]>
 where
@@ -183,6 +203,22 @@ where
     pub(super) file: &'file PeFile<'data, Pe, R>,
     pub(super) index: SectionIndex,
     pub(super) section: &'data pe::ImageSectionHeader,
+}
+
+impl<'data, 'file, Pe, R> PeSection<'data, 'file, Pe, R>
+where
+    Pe: ImageNtHeaders,
+    R: ReadRef<'data>,
+{
+    
+    pub fn pe_file(&self) -> &'file PeFile<'data, Pe, R> {
+        self.file
+    }
+
+    
+    pub fn pe_section(&self) -> &'data pe::ImageSectionHeader {
+        self.section
+    }
 }
 
 impl<'data, 'file, Pe, R> read::private::Sealed for PeSection<'data, 'file, Pe, R>
@@ -253,12 +289,12 @@ where
     }
 
     #[inline]
-    fn name_bytes(&self) -> Result<&[u8]> {
+    fn name_bytes(&self) -> Result<&'data [u8]> {
         self.section.name(self.file.common.symbols.strings())
     }
 
     #[inline]
-    fn name(&self) -> Result<&str> {
+    fn name(&self) -> Result<&'data str> {
         let name = self.name_bytes()?;
         str::from_utf8(name)
             .ok()
@@ -282,6 +318,10 @@ where
 
     fn relocations(&self) -> PeRelocationIterator<'data, 'file, R> {
         PeRelocationIterator(PhantomData)
+    }
+
+    fn relocation_map(&self) -> read::Result<RelocationMap> {
+        RelocationMap::new(self.file, self)
     }
 
     fn flags(&self) -> SectionFlags {
@@ -418,6 +458,8 @@ impl pe::ImageSectionHeader {
         }
     }
 }
+
+
 
 
 #[derive(Debug)]

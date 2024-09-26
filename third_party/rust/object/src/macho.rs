@@ -305,7 +305,6 @@ pub struct DyldCacheHeader<E: Endian> {
     pub images_count: U32<E>, 
     
     pub dyld_base_address: U64<E>, 
-    
     reserved1: [u8; 32], 
     
     pub local_symbols_offset: U64<E>, 
@@ -313,23 +312,14 @@ pub struct DyldCacheHeader<E: Endian> {
     pub local_symbols_size: U64<E>, 
     
     pub uuid: [u8; 16], 
-    
     reserved2: [u8; 32], 
-    
     reserved3: [u8; 32], 
-    
     reserved4: [u8; 32], 
-    
     reserved5: [u8; 32], 
-    
     reserved6: [u8; 32], 
-    
     reserved7: [u8; 32], 
-    
     reserved8: [u8; 32], 
-    
     reserved9: [u8; 32], 
-    
     reserved10: [u8; 32], 
     
     pub subcaches_offset: U32<E>, 
@@ -337,7 +327,6 @@ pub struct DyldCacheHeader<E: Endian> {
     pub subcaches_count: U32<E>, 
     
     pub symbols_subcache_uuid: [u8; 16], 
-    
     reserved11: [u8; 32], 
     
     
@@ -351,15 +340,10 @@ pub struct DyldCacheHeader<E: Endian> {
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct DyldCacheMappingInfo<E: Endian> {
-    
     pub address: U64<E>,
-    
     pub size: U64<E>,
-    
     pub file_offset: U64<E>,
-    
     pub max_prot: U32<E>,
-    
     pub init_prot: U32<E>,
 }
 
@@ -367,27 +351,36 @@ pub struct DyldCacheMappingInfo<E: Endian> {
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct DyldCacheImageInfo<E: Endian> {
-    
     pub address: U64<E>,
-    
     pub mod_time: U64<E>,
-    
     pub inode: U64<E>,
-    
     pub path_file_offset: U32<E>,
-    
     pub pad: U32<E>,
+}
+
+
+
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct DyldSubCacheEntryV1<E: Endian> {
+    
+    pub uuid: [u8; 16],
+    
+    pub cache_vm_offset: U64<E>,
 }
 
 
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
-pub struct DyldSubCacheInfo<E: Endian> {
+pub struct DyldSubCacheEntryV2<E: Endian> {
     
     pub uuid: [u8; 16],
     
-    pub cumulative_size: U64<E>,
+    pub cache_vm_offset: U64<E>,
+    
+    pub file_suffix: [u8; 32],
 }
 
 
@@ -1978,6 +1971,8 @@ pub const PLATFORM_IOSSIMULATOR: u32 = 7;
 pub const PLATFORM_TVOSSIMULATOR: u32 = 8;
 pub const PLATFORM_WATCHOSSIMULATOR: u32 = 9;
 pub const PLATFORM_DRIVERKIT: u32 = 10;
+pub const PLATFORM_XROS: u32 = 11;
+pub const PLATFORM_XROSSIMULATOR: u32 = 12;
 
 
 pub const TOOL_CLANG: u32 = 1;
@@ -3251,7 +3246,8 @@ unsafe_impl_endian_pod!(
     DyldCacheHeader,
     DyldCacheMappingInfo,
     DyldCacheImageInfo,
-    DyldSubCacheInfo,
+    DyldSubCacheEntryV1,
+    DyldSubCacheEntryV2,
     MachHeader32,
     MachHeader64,
     LoadCommand,
