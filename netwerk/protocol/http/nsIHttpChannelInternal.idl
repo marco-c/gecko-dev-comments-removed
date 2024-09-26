@@ -539,6 +539,14 @@ interface nsIHttpChannelInternal : nsISupports
 
     readonly attribute nsresult lastTransportStatus;
 
+
+    
+
+
+
+    [must_use] void internalRedirectTo(in nsIURI aTargetURI);
+
+
     
 
 
