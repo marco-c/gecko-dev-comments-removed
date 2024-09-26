@@ -2949,8 +2949,18 @@
       return group;
     },
 
-    removeTabGroup(group) {
-      this.removeTabs(group.tabs);
+    
+
+
+
+
+
+
+
+
+
+    removeTabGroup(group, options = {}) {
+      this.removeTabs(group.tabs, options);
     },
 
     adoptTabGroup(group, index) {
