@@ -193,14 +193,13 @@ void QuotaUsageChecker::CheckQuotaHeadroom() {
   
   
   if ((groupAvailable + mOriginUsage) < groupHeadroom) {
-    nsAutoCString host;
-    nsresult rv = mPrincipal->GetHost(host);
+    nsAutoCString baseDomain;
+    nsresult rv = mPrincipal->GetBaseDomain(baseDomain);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
-
-    rv = csd->DeleteDataFromBaseDomain(
-        host, false, nsIClearDataService::CLEAR_DOM_QUOTA, this);
+    rv = csd->DeleteDataFromSite(baseDomain, false,
+                                 nsIClearDataService::CLEAR_DOM_QUOTA, this);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
