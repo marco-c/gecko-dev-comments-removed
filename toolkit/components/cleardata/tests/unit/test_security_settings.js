@@ -100,9 +100,8 @@ add_task(async function test_baseDomain() {
 
   
   await new Promise(aResolve => {
-    Services.clearData.deleteDataFromSite(
+    Services.clearData.deleteDataFromBaseDomain(
       "example.net",
-      {},
       false,
       Ci.nsIClearDataService.CLEAR_HSTS,
       aResolve
@@ -146,9 +145,8 @@ add_task(async function test_baseDomain() {
 
   
   await new Promise(aResolve => {
-    Services.clearData.deleteDataFromSite(
+    Services.clearData.deleteDataFromBaseDomain(
       "example.net",
-      {},
       false,
       Ci.nsIClearDataService.CLEAR_CLIENT_AUTH_REMEMBER_SERVICE,
       aResolve

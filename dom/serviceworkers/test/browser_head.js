@@ -84,9 +84,8 @@ async function clear_qm_origin_group_via_clearData(origin) {
 
   
   await new Promise((resolve, reject) => {
-    Services.clearData.deleteDataFromSite(
+    Services.clearData.deleteDataFromBaseDomain(
       baseDomain,
-      {},
       false,
       Services.clearData.CLEAR_DOM_QUOTA,
       failedFlags => {

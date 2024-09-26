@@ -1052,14 +1052,8 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
       cb->OnDataDeleted(0);
     } else {
       
-
-      
-      
-      nsAutoCString hostToPurge(host);
-      nsContentUtils::MaybeFixIPv6Host(hostToPurge);
-
-      rv = clearDataService->DeleteDataFromSiteAndOriginAttributesPatternString(
-          hostToPurge, u""_ns, false, TRACKER_PURGE_FLAGS, cb);
+      rv = clearDataService->DeleteDataFromBaseDomain(host, false,
+                                                      TRACKER_PURGE_FLAGS, cb);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         clearPromise->Reject(0, __func__);
       }

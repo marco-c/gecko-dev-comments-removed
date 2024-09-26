@@ -139,28 +139,6 @@ interface nsIEffectiveTLDService : nsISupports
 
 
 
-    ACString getSchemelessSiteFromHost(in AUTF8String aHost);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ACString getSite(in nsIURI aURI);
 
     

@@ -137,9 +137,8 @@ async function runTestBaseDomain(storageType) {
 
   
   await new Promise(aResolve => {
-    Services.clearData.deleteDataFromSite(
+    Services.clearData.deleteDataFromBaseDomain(
       "example.net",
-      {},
       false,
       Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
       aResolve
