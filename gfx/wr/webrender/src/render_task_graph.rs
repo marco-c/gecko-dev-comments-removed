@@ -18,15 +18,18 @@ use crate::resource_cache::ResourceCache;
 use crate::texture_pack::GuillotineAllocator;
 use crate::prim_store::DeferredResolve;
 use crate::image_source::{resolve_image, resolve_cached_render_task};
-use crate::util::VecHelper;
 use smallvec::SmallVec;
-use std::mem;
 use topological_sort::TopologicalSort;
 
 use crate::render_target::{RenderTargetList, ColorRenderTarget};
 use crate::render_target::{PictureCacheTarget, TextureCacheRenderTarget, AlphaRenderTarget};
-use crate::util::Allocation;
+use crate::util::{Allocation, VecHelper};
 use std::{usize, f32};
+
+use crate::internal_types::{FrameVec, FrameMemory};
+
+#[cfg(test)]
+use crate::frame_allocator::FrameAllocator;
 
 
 
@@ -142,7 +145,7 @@ pub struct SubPass {
     
     pub surface: SubPassSurface,
     
-    pub task_ids: Vec<RenderTaskId>,
+    pub task_ids: FrameVec<RenderTaskId>,
 }
 
 
@@ -151,12 +154,12 @@ pub struct SubPass {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Pass {
     
-    pub task_ids: Vec<RenderTaskId>,
+    pub task_ids: FrameVec<RenderTaskId>,
     
-    pub sub_passes: Vec<SubPass>,
+    pub sub_passes: FrameVec<SubPass>,
     
     
-    pub textures_to_invalidate: Vec<CacheTextureId>,
+    pub textures_to_invalidate: FrameVec<CacheTextureId>,
 }
 
 
@@ -165,16 +168,16 @@ pub struct Pass {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct RenderTaskGraph {
     
-    pub tasks: Vec<RenderTask>,
+    pub tasks: FrameVec<RenderTask>,
 
     
-    pub passes: Vec<Pass>,
+    pub passes: FrameVec<Pass>,
 
     
     frame_id: FrameId,
 
     
-    pub task_data: Vec<RenderTaskData>,
+    pub task_data: FrameVec<RenderTaskData>,
 
     
     #[cfg(test)]
@@ -278,20 +281,26 @@ impl RenderTaskGraphBuilder {
         &mut self,
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
-        deferred_resolves: &mut Vec<DeferredResolve>,
+        deferred_resolves: &mut FrameVec<DeferredResolve>,
         max_shared_surface_size: i32,
+        memory: &FrameMemory,
     ) -> RenderTaskGraph {
         
         let task_count = self.tasks.len();
-        let tasks = mem::replace(
-            &mut self.tasks,
-            Vec::with_capacity(task_count),
-        );
+
+        
+        
+        
+        
+        let mut tasks = memory.new_vec_with_capacity(task_count);
+        for task in self.tasks.drain(..) {
+            tasks.push(task)
+        }
 
         let mut graph = RenderTaskGraph {
             tasks,
-            passes: Vec::new(),
-            task_data: Vec::with_capacity(task_count),
+            passes: memory.new_vec(),
+            task_data: memory.new_vec_with_capacity(task_count),
             frame_id: self.frame_id,
             #[cfg(test)]
             surface_count: 0,
@@ -308,7 +317,7 @@ impl RenderTaskGraphBuilder {
         
 
         let mut pass_count = 0;
-        let mut passes = Vec::new();
+        let mut passes = memory.new_vec();
         let mut task_sorter = TopologicalSort::<RenderTaskId>::new();
 
         
@@ -365,9 +374,9 @@ impl RenderTaskGraphBuilder {
         
         for _ in 0 .. pass_count {
             graph.passes.push(Pass {
-                task_ids: Vec::new(),
-                sub_passes: Vec::new(),
-                textures_to_invalidate: Vec::new(),
+                task_ids: memory.new_vec(),
+                sub_passes: memory.new_vec(),
+                textures_to_invalidate: memory.new_vec(),
             });
         }
 
@@ -493,6 +502,9 @@ impl RenderTaskGraphBuilder {
                                 graph.unique_surfaces.insert(texture_id);
                             }
 
+                            let mut task_ids = memory.new_vec();
+                            task_ids.push(*task_id);
+
                             
                             pass.sub_passes.push(SubPass {
                                 surface: SubPassSurface::Dynamic {
@@ -500,7 +512,7 @@ impl RenderTaskGraphBuilder {
                                     target_kind: kind,
                                     used_rect: DeviceIntRect::from_origin_and_size(p, size),
                                 },
-                                task_ids: vec![*task_id],
+                                task_ids,
                             });
                         }
 
@@ -524,7 +536,8 @@ impl RenderTaskGraphBuilder {
                                 assert_eq!(existing_size, rect.size());
 
                                 let kind = graph.tasks[parent_task_id.index as usize].kind.target_kind();
-
+                                let mut task_ids = memory.new_vec();
+                                task_ids.push(*task_id);
                                 
                                 pass.sub_passes.push(SubPass {
                                     surface: SubPassSurface::Dynamic {
@@ -532,7 +545,7 @@ impl RenderTaskGraphBuilder {
                                         target_kind: kind,
                                         used_rect: rect,        
                                     },
-                                    task_ids: vec![*task_id],
+                                    task_ids,
                                 });
 
                                 let task = &mut graph.tasks[task_id.index as usize];
@@ -546,11 +559,13 @@ impl RenderTaskGraphBuilder {
                     RenderTaskLocation::Static { ref surface, .. } => {
                         
                         
+                        let mut task_ids = memory.new_vec();
+                        task_ids.push(*task_id);
                         pass.sub_passes.push(SubPass {
                             surface: SubPassSurface::Persistent {
                                 surface: surface.clone(),
                             },
-                            task_ids: vec![*task_id],
+                            task_ids,
                         });
                     }
                     RenderTaskLocation::CacheRequest { .. } => {
@@ -729,11 +744,12 @@ impl RenderTaskGraph {
 
     #[cfg(test)]
     pub fn new_for_testing() -> Self {
+        let allocator = FrameAllocator::fallback();
         RenderTaskGraph {
-            tasks: Vec::new(),
-            passes: Vec::new(),
+            tasks: allocator.clone().new_vec(),
+            passes: allocator.clone().new_vec(),
             frame_id: FrameId::INVALID,
-            task_data: Vec::new(),
+            task_data: allocator.clone().new_vec(),
             surface_count: 0,
             unique_surfaces: FastHashSet::default(),
         }
@@ -819,18 +835,18 @@ pub struct RenderPass {
     pub alpha: RenderTargetList<AlphaRenderTarget>,
     pub color: RenderTargetList<ColorRenderTarget>,
     pub texture_cache: FastHashMap<CacheTextureId, TextureCacheRenderTarget>,
-    pub picture_cache: Vec<PictureCacheTarget>,
-    pub textures_to_invalidate: Vec<CacheTextureId>,
+    pub picture_cache: FrameVec<PictureCacheTarget>,
+    pub textures_to_invalidate: FrameVec<CacheTextureId>,
 }
 
 impl RenderPass {
     
-    pub fn new(src: &Pass) -> Self {
+    pub fn new(src: &Pass, memory: &mut FrameMemory) -> Self {
         RenderPass {
-            color: RenderTargetList::new(),
-            alpha: RenderTargetList::new(),
+            color: RenderTargetList::new(memory.allocator()),
+            alpha: RenderTargetList::new(memory.allocator()),
             texture_cache: FastHashMap::default(),
-            picture_cache: Vec::new(),
+            picture_cache: memory.allocator().new_vec(),
             textures_to_invalidate: src.textures_to_invalidate.clone(),
         }
     }
@@ -1066,7 +1082,8 @@ impl RenderTaskGraphBuilder {
         gc.prepare_for_frames();
         gc.begin_frame(frame_stamp);
 
-        let g = self.end_frame(&mut rc, &mut gc, &mut Vec::new(), 2048);
+        let frame_memory = FrameMemory::fallback();
+        let g = self.end_frame(&mut rc, &mut gc, &mut frame_memory.new_vec(), 2048, &frame_memory);
         g.print();
 
         assert_eq!(g.passes.len(), pass_count);

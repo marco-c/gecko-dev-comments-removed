@@ -12,6 +12,7 @@
 
 
 use crate::gpu_types::UvRectKind;
+use crate::internal_types::{FrameMemory, FrameVec};
 use crate::renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use crate::util::ScaleOffset;
 use api::units::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceRect, LayoutRect, PictureRect};
@@ -209,7 +210,7 @@ struct DeferredBlock {
 
 
 pub struct GpuBufferWriter<'a, T> {
-    buffer: &'a mut Vec<T>,
+    buffer: &'a mut FrameVec<T>,
     deferred: &'a mut Vec<DeferredBlock>,
     index: usize,
     block_count: usize,
@@ -217,7 +218,7 @@ pub struct GpuBufferWriter<'a, T> {
 
 impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
     fn new(
-        buffer: &'a mut Vec<T>,
+        buffer: &'a mut FrameVec<T>,
         deferred: &'a mut Vec<DeferredBlock>,
         index: usize,
         block_count: usize,
@@ -270,14 +271,18 @@ impl<'a, T> Drop for GpuBufferWriter<'a, T> {
 }
 
 pub struct GpuBufferBuilderImpl<T> {
-    data: Vec<T>,
+    
+    
+    data: FrameVec<T>,
+    
+    
     deferred: Vec<DeferredBlock>,
 }
 
 impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRect> {
-    pub fn new() -> Self {
+    pub fn new(memory: &FrameMemory) -> Self {
         GpuBufferBuilderImpl {
-            data: Vec::new(),
+            data: memory.new_vec(),
             deferred: Vec::new(),
         }
     }
@@ -383,7 +388,7 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuBuffer<T> {
-    pub data: Vec<T>,
+    pub data: FrameVec<T>,
     pub size: DeviceIntSize,
     pub format: ImageFormat,
 }
@@ -394,11 +399,11 @@ impl<T> GpuBuffer<T> {
     }
 }
 
-
 #[test]
 fn test_gpu_buffer_sizing_push() {
+    let frame_memory = FrameMemory::fallback();
     let render_task_graph = RenderTaskGraph::new_for_testing();
-    let mut builder = GpuBufferBuilderF::new();
+    let mut builder = GpuBufferBuilderF::new(&frame_memory);
 
     let row = vec![GpuBufferBlockF::EMPTY; MAX_VERTEX_TEXTURE_WIDTH];
     builder.push(&row);
@@ -412,8 +417,9 @@ fn test_gpu_buffer_sizing_push() {
 
 #[test]
 fn test_gpu_buffer_sizing_writer() {
+    let frame_memory = FrameMemory::fallback();
     let render_task_graph = RenderTaskGraph::new_for_testing();
-    let mut builder = GpuBufferBuilderF::new();
+    let mut builder = GpuBufferBuilderF::new(&frame_memory);
 
     let mut writer = builder.write_blocks(MAX_VERTEX_TEXTURE_WIDTH);
     for _ in 0 .. MAX_VERTEX_TEXTURE_WIDTH {
