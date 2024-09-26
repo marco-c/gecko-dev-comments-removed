@@ -1,3 +1,12 @@
+import random
+import urllib
+from datetime import datetime, timedelta, timezone
+
+from webdriver.bidi.modules.network import (
+    NetworkStringValue,
+    SetCookieHeader,
+)
+
 from .. import (
     any_bool,
     any_dict,
@@ -8,15 +17,10 @@ from .. import (
     any_string,
     any_string_or_null,
     assert_cookies,
+    int_interval,
     recursive_compare,
 )
 
-from webdriver.bidi.modules.network import (
-    NetworkStringValue,
-    SetCookieHeader,
-)
-
-from datetime import datetime, timedelta, timezone
 
 def assert_bytes_value(bytes_value):
     assert bytes_value["type"] in ["string", "base64"]
@@ -286,6 +290,22 @@ def create_header(overrides=None, value_overrides=None):
     return header
 
 
+def get_cached_url(content_type, response):
+    """
+    Build a URL for a resource which will be fully cached.
+
+    :param content_type: Response content type eg "text/css".
+    :param response: Response body>
+
+    :return: Relative URL as a string, typically should be used with the
+        `url` fixture.
+    """
+    
+    
+    query_string = f"status=200&contenttype={content_type}&response={response}&nocache={random.random()}"
+    return f"/webdriver/tests/support/http_handlers/cached.py?{query_string}"
+
+
 
 HTTP_STATUS_AND_STATUS_TEXT = [
     (101, "Switching Protocols"),
@@ -343,6 +363,9 @@ PAGE_REDIRECT_HTTP_EQUIV = (
 PAGE_REDIRECTED_HTML = "/webdriver/tests/bidi/network/support/redirected.html"
 PAGE_SERVICEWORKER_HTML = "/webdriver/tests/bidi/network/support/serviceworker.html"
 
+STYLESHEET_GREY_BACKGROUND = urllib.parse.quote_plus("html, body { background-color: #ccc; }")
+STYLESHEET_RED_COLOR = urllib.parse.quote_plus("html, body { color: red; }")
+
 AUTH_REQUIRED_EVENT = "network.authRequired"
 BEFORE_REQUEST_SENT_EVENT = "network.beforeRequestSent"
 FETCH_ERROR_EVENT = "network.fetchError"
@@ -357,6 +380,13 @@ PHASE_TO_EVENT_MAP = {
 
 expires_a_day_from_now = datetime.now(timezone.utc) + timedelta(days=1)
 expires_a_day_from_now_timestamp = int(expires_a_day_from_now.timestamp())
+
+
+
+expires_interval = int_interval(
+    expires_a_day_from_now_timestamp - 1,
+    expires_a_day_from_now_timestamp + 1,
+)
 
 
 
@@ -484,7 +514,7 @@ SET_COOKIE_TEST_PARAMETERS = [
         ),
         None,
         {
-            "expiry": expires_a_day_from_now_timestamp,
+            "expiry": expires_interval,
             "httpOnly": False,
             "name": "foo",
             "path": "/",
