@@ -10,7 +10,7 @@ var NotificationTest = (function () {
     
     var context = {};
 
-    (function executeRemainingTests(remainingTests) {
+    (async function executeRemainingTests(remainingTests) {
       if (!remainingTests.length) {
         callback();
         return;
@@ -21,14 +21,14 @@ var NotificationTest = (function () {
       var startTest = nextTest.call.bind(nextTest, context, finishTest);
 
       try {
-        startTest();
+        await startTest();
         
         
         if (nextTest.length === 0) {
           finishTest();
         }
       } catch (e) {
-        ok(false, "Test threw exception!");
+        ok(false, `Test threw exception: ${e}`);
         finishTest();
       }
     })(tests);
