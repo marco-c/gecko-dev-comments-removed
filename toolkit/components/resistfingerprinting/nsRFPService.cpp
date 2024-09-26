@@ -1435,51 +1435,26 @@ nsRFPService::CleanRandomKeyByPrincipal(nsIPrincipal* aPrincipal) {
 }
 
 NS_IMETHODIMP
-nsRFPService::CleanRandomKeyByDomain(const nsACString& aDomain) {
+nsRFPService::CleanRandomKeyBySite(
+    const nsACString& aSchemelessSite,
+    JS::Handle<JS::Value> aOriginAttributesPattern, JSContext* aCx) {
   MOZ_ASSERT(XRE_IsParentProcess());
+  NS_ENSURE_ARG_POINTER(aCx);
 
-  
-  nsCOMPtr<nsIURI> httpURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(httpURI), "http://"_ns + aDomain);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  OriginAttributes attrs;
-  attrs.SetPartitionKey(httpURI, false);
-
-  
-  
   OriginAttributesPattern pattern;
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
+  if (!aOriginAttributesPattern.isObject() ||
+      !pattern.Init(aCx, aOriginAttributesPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  if (!pattern.mPartitionKeyPattern.WasPassed()) {
+    pattern.mPartitionKeyPattern.Construct();
+  }
+  pattern.mPartitionKeyPattern.Value().mBaseDomain.Construct(
+      NS_ConvertUTF8toUTF16(aSchemelessSite));
+
   ClearBrowsingSessionKey(pattern);
 
-  
-  
-  
-  attrs.SetPartitionKey(httpURI, true);
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
-  ClearBrowsingSessionKey(pattern);
-
-  
-  nsCOMPtr<nsIURI> httpsURI;
-  rv = NS_NewURI(getter_AddRefs(httpsURI), "https://"_ns + aDomain);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  attrs.SetPartitionKey(httpsURI, false);
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
-  ClearBrowsingSessionKey(pattern);
-
-  
-  
-  
-  attrs.SetPartitionKey(httpsURI, true);
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
-  ClearBrowsingSessionKey(pattern);
   return NS_OK;
 }
 
