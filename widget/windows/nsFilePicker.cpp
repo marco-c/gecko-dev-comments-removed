@@ -228,9 +228,28 @@ static nsTArray<T> Copy(nsTArray<T> const& arr) {
 
 
 enum Strategy {
+  
+  
   LocalOnly,
+
+  
   RemoteOnly,
+
+  
+  
   RemoteWithFallback,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   FallbackUnlessCrash,
 };
 
