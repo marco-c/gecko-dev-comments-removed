@@ -554,15 +554,17 @@ void MacroAssembler::branchIfObjectEmulatesUndefined(Register objReg,
       scratch);
   branchPtr(Assembler::Equal, scratch, ImmPtr(nullptr), &done);
 
-  
-  
   loadObjClassUnsafe(objReg, scratch);
-
-  branchTestClassIsProxy(true, scratch, slowCheck);
 
   Address flags(scratch, JSClass::offsetOfFlags());
   branchTest32(Assembler::NonZero, flags, Imm32(JSCLASS_EMULATES_UNDEFINED),
                label);
+
+  
+  branchTestClassIsProxy(false, scratch, &done);
+  branchTestProxyHandlerFamily(Assembler::Equal, objReg, scratch,
+                               &Wrapper::family, slowCheck);
+
   bind(&done);
 }
 
