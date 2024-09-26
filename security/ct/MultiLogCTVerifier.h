@@ -11,10 +11,11 @@
 
 #include "CTLogVerifier.h"
 #include "CTVerifyResult.h"
+#include "SignedCertificateTimestamp.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
 #include "mozpkix/Time.h"
-#include "SignedCertificateTimestamp.h"
+#include "signature_cache_ffi.h"
 
 namespace mozilla {
 namespace ct {
@@ -27,6 +28,8 @@ void DecodeSCTs(pkix::Input encodedSctList,
 
 class MultiLogCTVerifier {
  public:
+  MultiLogCTVerifier();
+
   
   void AddLog(CTLogVerifier&& log);
 
@@ -80,6 +83,11 @@ class MultiLogCTVerifier {
 
   
   std::vector<CTLogVerifier> mLogs;
+
+  
+  
+  
+  UniquePtr<SignatureCache, decltype(&signature_cache_free)> mSignatureCache;
 };
 
 }  

@@ -17,8 +17,11 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "nsString.h"
+#include "mozilla/glean/GleanMetrics.h"
+#include "mozpkix/pkixder.h"
 #include "mozpkix/pkixtypes.h"
+#include "nsString.h"
+#include "signature_cache_ffi.h"
 #include "sslt.h"
 
 #if defined(_MSC_VER)
@@ -264,6 +267,13 @@ class CertVerifier {
   
   UniquePtr<mozilla::ct::MultiLogCTVerifier> mCTVerifier;
 
+  
+  
+  
+  
+  
+  UniquePtr<SignatureCache, decltype(&signature_cache_free)> mSignatureCache;
+
   void LoadKnownCTLogs();
   mozilla::pkix::Result VerifyCertificateTransparencyPolicy(
       NSSCertDBTrustDomain& trustDomain,
@@ -276,6 +286,18 @@ mozilla::pkix::Result IsCertBuiltInRoot(pkix::Input certInput, bool& result);
 mozilla::pkix::Result CertListContainsExpectedKeys(const CERTCertList* certList,
                                                    const char* hostname,
                                                    mozilla::pkix::Time time);
+
+
+
+
+
+mozilla::pkix::Result VerifySignedDataWithCache(
+    mozilla::pkix::der::PublicKeyAlgorithm publicKeyAlg,
+    mozilla::glean::impl::DenominatorMetric telemetryDenominator,
+    mozilla::glean::impl::NumeratorMetric telemetryNumerator,
+    mozilla::pkix::Input data, mozilla::pkix::DigestAlgorithm digestAlgorithm,
+    mozilla::pkix::Input signature, mozilla::pkix::Input subjectPublicKeyInfo,
+    SignatureCache* signatureCache, void* pinArg);
 
 }  
 }  
