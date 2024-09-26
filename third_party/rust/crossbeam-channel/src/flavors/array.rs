@@ -8,8 +8,9 @@
 
 
 
+use std::boxed::Box;
 use std::cell::UnsafeCell;
-use std::mem::MaybeUninit;
+use std::mem::{self, MaybeUninit};
 use std::ptr;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
 use std::time::Instant;
@@ -520,37 +521,38 @@ impl<T> Channel<T> {
 
 impl<T> Drop for Channel<T> {
     fn drop(&mut self) {
-        
-        let head = *self.head.get_mut();
-        let tail = *self.tail.get_mut();
-
-        let hix = head & (self.mark_bit - 1);
-        let tix = tail & (self.mark_bit - 1);
-
-        let len = if hix < tix {
-            tix - hix
-        } else if hix > tix {
-            self.cap - hix + tix
-        } else if (tail & !self.mark_bit) == head {
-            0
-        } else {
-            self.cap
-        };
-
-        
-        for i in 0..len {
+        if mem::needs_drop::<T>() {
             
-            let index = if hix + i < self.cap {
-                hix + i
+            let head = *self.head.get_mut();
+            let tail = *self.tail.get_mut();
+
+            let hix = head & (self.mark_bit - 1);
+            let tix = tail & (self.mark_bit - 1);
+
+            let len = if hix < tix {
+                tix - hix
+            } else if hix > tix {
+                self.cap - hix + tix
+            } else if (tail & !self.mark_bit) == head {
+                0
             } else {
-                hix + i - self.cap
+                self.cap
             };
 
-            unsafe {
-                debug_assert!(index < self.buffer.len());
-                let slot = self.buffer.get_unchecked_mut(index);
-                let msg = &mut *slot.msg.get();
-                msg.as_mut_ptr().drop_in_place();
+            
+            for i in 0..len {
+                
+                let index = if hix + i < self.cap {
+                    hix + i
+                } else {
+                    hix + i - self.cap
+                };
+
+                unsafe {
+                    debug_assert!(index < self.buffer.len());
+                    let slot = self.buffer.get_unchecked_mut(index);
+                    (*slot.msg.get()).assume_init_drop();
+                }
             }
         }
     }

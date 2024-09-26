@@ -2,6 +2,7 @@
 
 
 
+use std::boxed::Box;
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};

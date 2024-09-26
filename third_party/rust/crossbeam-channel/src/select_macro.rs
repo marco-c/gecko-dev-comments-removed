@@ -685,7 +685,7 @@ macro_rules! crossbeam_channel_internal {
         $default:tt
     ) => {{
         const _LEN: usize = $crate::crossbeam_channel_internal!(@count ($($cases)*));
-        let _handle: &$crate::internal::SelectHandle = &$crate::never::<()>();
+        let _handle: &dyn $crate::internal::SelectHandle = &$crate::never::<()>();
 
         #[allow(unused_mut)]
         let mut _sel = [(_handle, 0, ::std::ptr::null()); _LEN];
@@ -750,7 +750,7 @@ macro_rules! crossbeam_channel_internal {
         $cases:tt
     ) => {{
         let _oper: $crate::SelectedOperation<'_> = {
-            let _oper = $crate::internal::select(&mut $sel);
+            let _oper = $crate::internal::select(&mut $sel, _IS_BIASED);
 
             // Erase the lifetime so that `sel` can be dropped early even without NLL.
             unsafe { ::std::mem::transmute(_oper) }
@@ -772,7 +772,7 @@ macro_rules! crossbeam_channel_internal {
         $cases:tt
     ) => {{
         let _oper: ::std::option::Option<$crate::SelectedOperation<'_>> = {
-            let _oper = $crate::internal::try_select(&mut $sel);
+            let _oper = $crate::internal::try_select(&mut $sel, _IS_BIASED);
 
             // Erase the lifetime so that `sel` can be dropped early even without NLL.
             unsafe { ::std::mem::transmute(_oper) }
@@ -802,7 +802,7 @@ macro_rules! crossbeam_channel_internal {
         $cases:tt
     ) => {{
         let _oper: ::std::option::Option<$crate::SelectedOperation<'_>> = {
-            let _oper = $crate::internal::select_timeout(&mut $sel, $timeout);
+            let _oper = $crate::internal::select_timeout(&mut $sel, $timeout, _IS_BIASED);
 
             // Erase the lifetime so that `sel` can be dropped early even without NLL.
             unsafe { ::std::mem::transmute(_oper) }
@@ -1106,11 +1106,37 @@ macro_rules! crossbeam_channel_internal {
 
 
 
+
 #[macro_export]
 macro_rules! select {
     ($($tokens:tt)*) => {
-        $crate::crossbeam_channel_internal!(
-            $($tokens)*
-        )
+        {
+            const _IS_BIASED: bool = false;
+
+            $crate::crossbeam_channel_internal!(
+                $($tokens)*
+            )
+        }
+    };
+}
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! select_biased {
+    ($($tokens:tt)*) => {
+        {
+            const _IS_BIASED: bool = true;
+
+            $crate::crossbeam_channel_internal!(
+                $($tokens)*
+            )
+        }
     };
 }

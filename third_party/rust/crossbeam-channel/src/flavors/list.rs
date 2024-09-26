@@ -1,5 +1,6 @@
 
 
+use std::boxed::Box;
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
 use std::mem::MaybeUninit;
@@ -582,7 +583,22 @@ impl<T> Channel<T> {
         }
 
         let mut head = self.head.index.load(Ordering::Acquire);
-        let mut block = self.head.block.load(Ordering::Acquire);
+        
+        
+        
+        let mut block = self.head.block.swap(ptr::null_mut(), Ordering::AcqRel);
+
+        
+        if head >> SHIFT != tail >> SHIFT {
+            
+            
+            
+            
+            while block.is_null() {
+                backoff.snooze();
+                block = self.head.block.load(Ordering::Acquire);
+            }
+        }
 
         unsafe {
             
@@ -593,8 +609,7 @@ impl<T> Channel<T> {
                     
                     let slot = (*block).slots.get_unchecked(offset);
                     slot.wait_write();
-                    let p = &mut *slot.msg.get();
-                    p.as_mut_ptr().drop_in_place();
+                    (*slot.msg.get()).assume_init_drop();
                 } else {
                     (*block).wait_next();
                     
@@ -612,7 +627,6 @@ impl<T> Channel<T> {
             }
         }
         head &= !MARK_BIT;
-        self.head.block.store(ptr::null_mut(), Ordering::Release);
         self.head.index.store(head, Ordering::Release);
     }
 
@@ -652,8 +666,7 @@ impl<T> Drop for Channel<T> {
                 if offset < BLOCK_CAP {
                     
                     let slot = (*block).slots.get_unchecked(offset);
-                    let p = &mut *slot.msg.get();
-                    p.as_mut_ptr().drop_in_place();
+                    (*slot.msg.get()).assume_init_drop();
                 } else {
                     
                     let next = *(*block).next.get_mut();
