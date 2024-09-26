@@ -339,8 +339,9 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     
     if ((pos->BSizeDependsOnContainer(wm) &&
-         !(pos->BSize(wm).IsAuto() && pos->mOffset.GetBEnd(wm).IsAuto() &&
-           !pos->mOffset.GetBStart(wm).IsAuto())) ||
+         !(pos->BSize(wm).IsAuto() &&
+           pos->GetInset(LogicalSide::BEnd, wm).IsAuto() &&
+           !pos->GetInset(LogicalSide::BStart, wm).IsAuto())) ||
         pos->MinBSizeDependsOnContainer(wm) ||
         pos->MaxBSizeDependsOnContainer(wm) ||
         !IsFixedPaddingSize(padding->mPadding.GetBStart(wm)) ||
@@ -362,7 +363,7 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
   
   
   if (aCBWidthChanged) {
-    if (!IsFixedOffset(pos->mOffset.Get(eSideLeft))) {
+    if (!IsFixedOffset(pos->GetInset(eSideLeft))) {
       return true;
     }
     
@@ -374,17 +375,17 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     if ((wm.GetInlineDir() == WritingMode::InlineDir::RTL ||
          wm.GetBlockDir() == WritingMode::BlockDir::RL) &&
-        !pos->mOffset.Get(eSideRight).IsAuto()) {
+        !pos->GetInset(eSideRight).IsAuto()) {
       return true;
     }
   }
   if (aCBHeightChanged) {
-    if (!IsFixedOffset(pos->mOffset.Get(eSideTop))) {
+    if (!IsFixedOffset(pos->GetInset(eSideTop))) {
       return true;
     }
     
     if (wm.GetInlineDir() == WritingMode::InlineDir::BTT &&
-        !pos->mOffset.Get(eSideBottom).IsAuto()) {
+        !pos->GetInset(eSideBottom).IsAuto()) {
       return true;
     }
   }

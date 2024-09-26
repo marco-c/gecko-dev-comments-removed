@@ -1305,7 +1305,7 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
-  if (mOffset != aNewData.mOffset) {
+  if (!InsetEquals(aNewData)) {
     if (IsEqualInsetType(mOffset, aNewData.mOffset)) {
       hint |=
           nsChangeHint_RecomputePosition | nsChangeHint_UpdateParentOverflow;
@@ -1353,6 +1353,8 @@ StyleJustifySelf nsStylePosition::UsedJustifySelf(
   }
   return {StyleAlignFlags::NORMAL};
 }
+
+const StyleInset nsStylePosition::kAutoInset = StyleInset::Auto();
 
 
 
