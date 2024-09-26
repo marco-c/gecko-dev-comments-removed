@@ -306,6 +306,7 @@ where
         CascadeMode::Visited { unvisited_context } => {
             context.builder.custom_properties = unvisited_context.builder.custom_properties.clone();
             context.builder.writing_mode = unvisited_context.builder.writing_mode;
+            context.builder.color_scheme = unvisited_context.builder.color_scheme;
             
             
             
@@ -762,11 +763,14 @@ impl<'b> Cascade<'b> {
 
         let has_writing_mode = apply!(WritingMode) | apply!(Direction) | apply!(TextOrientation);
         if has_writing_mode {
-            self.compute_writing_mode(context);
+            context.builder.writing_mode = WritingMode::new(context.builder.get_inherited_box())
         }
 
         if apply!(Zoom) {
-            self.compute_zoom(context);
+            context.builder.effective_zoom = context
+                .builder
+                .inherited_effective_zoom()
+                .compute_effective(context.builder.specified_zoom());
             
             
             
@@ -813,7 +817,9 @@ impl<'b> Cascade<'b> {
         apply!(ForcedColorAdjust);
         
         
-        apply!(ColorScheme);
+        if apply!(ColorScheme) {
+            context.builder.color_scheme = context.builder.get_inherited_ui().color_scheme_bits();
+        }
         apply!(LineHeight);
     }
 
@@ -942,17 +948,6 @@ impl<'b> Cascade<'b> {
         
         
         (CASCADE_PROPERTY[longhand_id as usize])(&declaration, context);
-    }
-
-    fn compute_zoom(&self, context: &mut computed::Context) {
-        context.builder.effective_zoom = context
-            .builder
-            .inherited_effective_zoom()
-            .compute_effective(context.builder.specified_zoom());
-    }
-
-    fn compute_writing_mode(&self, context: &mut computed::Context) {
-        context.builder.writing_mode = WritingMode::new(context.builder.get_inherited_box())
     }
 
     fn compute_visited_style_if_needed<E>(

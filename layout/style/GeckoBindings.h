@@ -492,10 +492,10 @@ GeckoImplicitScopeRoot Gecko_StyleSheet_ImplicitScopeRoot(
 bool Gecko_IsDocumentBody(const mozilla::dom::Element* element);
 
 bool Gecko_IsDarkColorScheme(const mozilla::dom::Document*,
-                             const mozilla::StyleColorScheme*);
+                             const mozilla::StyleColorSchemeFlags*);
 nscolor Gecko_ComputeSystemColor(mozilla::StyleSystemColor,
                                  const mozilla::dom::Document*,
-                                 const mozilla::StyleColorScheme*);
+                                 const mozilla::StyleColorSchemeFlags*);
 
 
 
