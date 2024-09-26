@@ -10,7 +10,7 @@
 #include "mozilla/Attributes.h"
 #include <CoreFoundation/CFBase.h>  
 #include <CoreVideo/CVBuffer.h>     
-                                    
+
 #if TARGET_OS_IPHONE
 inline bool OSSupportsSVC() {
   
