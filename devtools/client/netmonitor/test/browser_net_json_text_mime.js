@@ -72,6 +72,14 @@ add_task(async function () {
 
   testResponseTab();
 
+  
+  ok(rawResponseToggle.checked, "Raw toggle is checked");
+  wait = waitForDOM(document, "#response-panel .data-header");
+  rawResponseToggle.focus();
+  EventUtils.synthesizeKey("VK_SPACE", {}, rawResponseToggle.ownerGlobal);
+  await wait;
+  ok(!rawResponseToggle.checked, "Raw toggle is unchecked");
+
   await teardown(monitor);
 
   function testJsonSectionInResponseTab() {
