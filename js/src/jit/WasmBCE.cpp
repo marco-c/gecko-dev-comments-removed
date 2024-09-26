@@ -28,7 +28,7 @@ using LastSeenMap = js::HashMap<uint32_t, MDefinition*, DefaultHasher<uint32_t>,
 
 
 
-bool jit::EliminateBoundsChecks(MIRGenerator* mir, MIRGraph& graph) {
+bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
   JitSpew(JitSpew_WasmBCE, "Begin");
   
   LastSeenMap lastSeen;

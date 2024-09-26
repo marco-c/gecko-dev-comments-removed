@@ -1239,7 +1239,7 @@ bool ValueNumberer::cleanupOSRFixups() {
   return RemoveUnmarkedBlocks(mir_, graph_, numMarked);
 }
 
-ValueNumberer::ValueNumberer(MIRGenerator* mir, MIRGraph& graph)
+ValueNumberer::ValueNumberer(const MIRGenerator* mir, MIRGraph& graph)
     : mir_(mir),
       graph_(graph),
       

@@ -25,7 +25,7 @@ using namespace js::jit;
 
 
 
-bool jit::BranchHinting(MIRGenerator* mir, MIRGraph& graph) {
+bool jit::BranchHinting(const MIRGenerator* mir, MIRGraph& graph) {
   JitSpew(JitSpew_BranchHint, "Beginning BranchHinting pass");
 
   
