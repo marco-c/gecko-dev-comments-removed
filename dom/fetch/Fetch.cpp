@@ -706,6 +706,22 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
     
     
     if (StaticPrefs::dom_workers_pFetch_enabled() && !XRE_IsParentProcess()) {
+      if (internalRequest->GetKeepalive()) {
+        uint64_t bodyLength = internalRequest->BodyLength() > 0
+                                  ? internalRequest->BodyLength()
+                                  : 0;
+
+        
+        
+        
+        
+        
+        if (bodyLength > FETCH_KEEPALIVE_MAX_SIZE) {
+          p->MaybeRejectWithTypeError<MSG_FETCH_FAILED>();
+          return p.forget();
+        }
+      }
+
       RefPtr<FetchChild> actor =
           FetchChild::CreateForWorker(worker, p, signalImpl, observer);
       if (!actor) {
