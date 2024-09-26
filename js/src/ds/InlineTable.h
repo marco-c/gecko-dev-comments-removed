@@ -86,8 +86,15 @@ class InlineTable : private AllocPolicy {
 
     Table table(*static_cast<AllocPolicy*>(this));
 
+    
+    
+    if (!table.reserve(InlineEntries + 1)) {
+      return false;
+    }
+
     InlineEntry* end = inlineStart() + InlineEntries;
     for (InlineEntry* it = inlineStart(); it != end; ++it) {
+      
       if (!it->moveTo(table)) {
         return false;
       }
