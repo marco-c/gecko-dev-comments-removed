@@ -3,6 +3,7 @@ def main(request, response):
     
     headers = setNoCacheAndCORSHeaders(request, response)
     headers[0] = (b"Content-Type", b"text/html")
+    headers.append((b'Popin-Policy', b"partitioned=*"))
     message = request.GET[b'message']
     message += b"HTTP("
     message += request.headers.get(b"Sec-Popin-Context", b"missing")

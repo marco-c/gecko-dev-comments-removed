@@ -24,9 +24,15 @@ def main(request, response):
   start_on = query.get("startOn")
   start_on_s = f"'{start_on[0]}'" if start_on else "null"
 
+  headers = [("Content-Type", "text/html")]
   
   
-  return (status, [("Content-Type", "text/html")], f"""
+  if request.headers.get(b"Sec-Popin-Context") == b"partitioned":
+    headers.append((b'Popin-Policy', b"partitioned=*"))
+
+  
+  
+  return (status, headers, f"""
 <!DOCTYPE HTML>
 <base href="{html.escape(request.url)}">
 <script src="/common/dispatcher/dispatcher.js"></script>
