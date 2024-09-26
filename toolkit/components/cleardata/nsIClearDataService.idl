@@ -75,7 +75,8 @@ interface nsIClearDataService : nsISupports
 
 
 
-  void deleteDataFromBaseDomain(in AUTF8String aDomainOrHost,
+
+  void deleteDataFromSite(in AUTF8String aSchemelessSite,
                                 in boolean aIsUserRequest,
                                 in uint32_t aFlags,
                                 in nsIClearDataCallback aCallback);

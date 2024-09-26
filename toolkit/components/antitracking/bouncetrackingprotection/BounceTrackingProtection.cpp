@@ -1052,8 +1052,8 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
       cb->OnDataDeleted(0);
     } else {
       
-      rv = clearDataService->DeleteDataFromBaseDomain(host, false,
-                                                      TRACKER_PURGE_FLAGS, cb);
+      rv = clearDataService->DeleteDataFromSite(host, false,
+                                                TRACKER_PURGE_FLAGS, cb);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         clearPromise->Reject(0, __func__);
       }
