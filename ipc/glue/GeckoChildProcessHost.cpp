@@ -1699,6 +1699,11 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   
   mCmdLine->AppendLooseValue(UTF8ToWide(ChildProcessType()));
 
+  
+  for (auto& file : mChildArgs.mFiles) {
+    mLaunchOptions->handles_to_inherit.push_back(file.get());
+  }
+
 #  ifdef MOZ_SANDBOX
   if (mUseSandbox) {
     
