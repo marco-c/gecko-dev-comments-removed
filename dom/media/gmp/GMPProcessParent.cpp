@@ -35,10 +35,6 @@ using std::vector;
 using mozilla::gmp::GMPProcessParent;
 using mozilla::ipc::GeckoChildProcessHost;
 
-#ifdef MOZ_WIDGET_ANDROID
-static const int kInvalidFd = -1;
-#endif
-
 namespace mozilla::gmp {
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -129,7 +125,7 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
   };
 
   nsresult rv;
-  vector<string> args;
+  geckoargs::ChildProcessArgs args;
   UniquePtr<ipc::SharedPreferenceSerializer> prefSerializer;
 
   ipc::ProcessChild::AddPlatformBuildID(args);
@@ -158,9 +154,8 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
     prefSerializer->AddSharedPrefCmdLineArgs(*this, args);
   }
 
-  if (StaticPrefs::media_gmp_use_native_event_processing()) {
-    geckoargs::sPluginNativeEvent.Put(args);
-  }
+  geckoargs::sPluginNativeEvent.Put(
+      StaticPrefs::media_gmp_use_native_event_processing(), args);
 
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   GMP_LOG_DEBUG("GMPProcessParent::Launch() mLaunchArch: %d", mLaunchArch);
@@ -234,17 +229,10 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
   }
 #endif
 
-#ifdef MOZ_WIDGET_ANDROID
-  
-  
-  AddFdToRemap(kInvalidFd, kInvalidFd);
-  AddFdToRemap(kInvalidFd, kInvalidFd);
-#endif
-
   
   
   
-  return SyncLaunch(args, aTimeoutMs);
+  return SyncLaunch(std::move(args), aTimeoutMs);
 }
 
 void GMPProcessParent::Delete(nsCOMPtr<nsIRunnable> aCallback) {

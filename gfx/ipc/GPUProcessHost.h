@@ -66,7 +66,7 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  bool Launch(StringVector aExtraOpts);
+  bool Launch(geckoargs::ChildProcessArgs aExtraOpts);
 
   
   
