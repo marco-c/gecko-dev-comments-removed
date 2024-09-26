@@ -119,11 +119,7 @@ where
     }
 
     
-    
-    
-    
-    
-    if element.is_mathml_element() || element.is_xul_element() {
+    if element.is_mathml_element() {
         return true;
     }
 
