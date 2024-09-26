@@ -124,7 +124,9 @@ let dialog = {
 
       
       
-      if (app instanceof Ci.nsILocalHandlerApp) {
+      if (app instanceof Ci.nsIGIOHandlerApp) {
+        elm.setAttribute("image", "moz-icon://" + app.id + "?size=32");
+      } else if (app instanceof Ci.nsILocalHandlerApp) {
         
         let uri = Services.io.newFileURI(app.executable);
         elm.setAttribute("image", "moz-icon://" + uri.spec + "?size=32");
