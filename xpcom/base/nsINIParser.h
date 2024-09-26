@@ -40,26 +40,20 @@ class nsINIParser {
 
 
 
-  typedef bool (*INISectionCallback)(const char* aSection, void* aClosure);
-
-  
 
 
-  nsresult GetSections(INISectionCallback aCB, void* aClosure);
-
-  
-
-
-
-  typedef bool (*INIStringCallback)(const char* aString, const char* aValue,
-                                    void* aClosure);
+  nsresult GetSections(std::function<bool(const char*)>&& aCallback);
 
   
 
 
 
-  nsresult GetStrings(const char* aSection, INIStringCallback aCB,
-                      void* aClosure);
+
+
+
+  nsresult GetStrings(
+      const char* aSection,
+      std::function<bool(const char*, const char*)>&& aCallback);
 
   
 
