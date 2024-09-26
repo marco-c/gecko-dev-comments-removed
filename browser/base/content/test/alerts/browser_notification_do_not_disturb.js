@@ -14,8 +14,7 @@ const ALERT_SERVICE = Cc["@mozilla.org/alerts-service;1"]
   .QueryInterface(Ci.nsIAlertsDoNotDisturb);
 
 const PAGE =
-  
-  "http://example.org/browser/browser/base/content/test/alerts/file_dom_notifications.html";
+  "https://example.org/browser/browser/base/content/test/alerts/file_dom_notifications.html";
 
 
 

@@ -15,7 +15,6 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/OwningNonNull.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/AppNotificationServiceOptionsBinding.h"
@@ -32,6 +31,7 @@
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "Navigator.h"
+#include "NotificationUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
@@ -54,6 +54,8 @@
 #include "nsXULAppAPI.h"
 
 namespace mozilla::dom {
+
+using namespace notification;
 
 struct NotificationStrings {
   const nsString mID;
@@ -211,10 +213,12 @@ class NotificationPermissionRequest : public ContentPermissionRequestBase,
   NS_IMETHOD Allow(JS::Handle<JS::Value> choices) override;
 
   NotificationPermissionRequest(nsIPrincipal* aPrincipal,
+                                nsIPrincipal* aEffectiveStoragePrincipal,
                                 nsPIDOMWindowInner* aWindow, Promise* aPromise,
                                 NotificationPermissionCallback* aCallback)
       : ContentPermissionRequestBase(aPrincipal, aWindow, "notification"_ns,
                                      "desktop-notification"_ns),
+        mEffectiveStoragePrincipal(aEffectiveStoragePrincipal),
         mPermission(NotificationPermission::Default),
         mPromise(aPromise),
         mCallback(aCallback) {
@@ -231,6 +235,7 @@ class NotificationPermissionRequest : public ContentPermissionRequestBase,
 
   MOZ_CAN_RUN_SCRIPT nsresult ResolvePromise();
   nsresult DispatchResolvePromise();
+  nsCOMPtr<nsIPrincipal> mEffectiveStoragePrincipal;
   NotificationPermission mPermission;
   RefPtr<Promise> mPromise;
   RefPtr<NotificationPermissionCallback> mCallback;
@@ -253,22 +258,33 @@ class ReleaseNotificationControlRunnable final
 };
 
 class GetPermissionRunnable final : public WorkerMainThreadRunnable {
-  NotificationPermission mPermission;
-
  public:
-  explicit GetPermissionRunnable(WorkerPrivate* aWorker)
+  explicit GetPermissionRunnable(WorkerPrivate* aWorker,
+                                 bool aUseRegularPrincipal,
+                                 PermissionCheckPurpose aPurpose)
       : WorkerMainThreadRunnable(aWorker, "Notification :: Get Permission"_ns),
-        mPermission(NotificationPermission::Denied) {}
+        mUseRegularPrincipal(aUseRegularPrincipal),
+        mPurpose(aPurpose) {}
 
   bool MainThreadRun() override {
-    ErrorResult result;
     MOZ_ASSERT(mWorkerRef);
-    mPermission = Notification::GetPermissionInternal(
-        mWorkerRef->Private()->GetPrincipal(), result);
+    WorkerPrivate* workerPrivate = mWorkerRef->Private();
+    nsIPrincipal* principal = workerPrivate->GetPrincipal();
+    nsIPrincipal* effectiveStoragePrincipal =
+        mUseRegularPrincipal ? principal
+                             : workerPrivate->GetPartitionedPrincipal();
+    mPermission =
+        GetNotificationPermission(principal, effectiveStoragePrincipal,
+                                  workerPrivate->IsSecureContext(), mPurpose);
     return true;
   }
 
   NotificationPermission GetPermission() { return mPermission; }
+
+ private:
+  NotificationPermission mPermission = NotificationPermission::Denied;
+  bool mUseRegularPrincipal;
+  PermissionCheckPurpose mPurpose;
 };
 
 class FocusWindowRunnable final : public Runnable {
@@ -487,30 +503,14 @@ NS_IMPL_QUERY_INTERFACE_CYCLE_COLLECTION_INHERITED(
 
 NS_IMETHODIMP
 NotificationPermissionRequest::Run() {
-  bool isSystem = mPrincipal->IsSystemPrincipal();
-  bool blocked = false;
-  if (isSystem) {
+  if (IsNotificationAllowedFor(mPrincipal)) {
     mPermission = NotificationPermission::Granted;
-  } else if (mPrincipal->GetIsInPrivateBrowsing() &&
-             !StaticPrefs::dom_webnotifications_privateBrowsing_enabled()) {
+  } else if (IsNotificationForbiddenFor(
+                 mPrincipal, mEffectiveStoragePrincipal,
+                 mWindow->IsSecureContext(),
+                 PermissionCheckPurpose::PermissionRequest,
+                 mWindow->GetExtantDoc())) {
     mPermission = NotificationPermission::Denied;
-    blocked = true;
-  } else {
-    
-
-    if (mPrincipal->SchemeIs("file")) {
-      mPermission = NotificationPermission::Granted;
-    } else if (!mWindow->IsSecureContext()) {
-      mPermission = NotificationPermission::Denied;
-      blocked = true;
-      nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
-      if (doc) {
-        nsContentUtils::ReportToConsole(
-            nsIScriptError::errorFlag, "DOM"_ns, doc,
-            nsContentUtils::eDOM_PROPERTIES,
-            "NotificationsInsecureRequestIsForbidden");
-      }
-    }
   }
 
   
@@ -535,22 +535,6 @@ NotificationPermissionRequest::Run() {
     nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
     if (doc) {
       doc->WarnOnceAbout(Document::eNotificationsRequireUserGestureDeprecation);
-    }
-  }
-
-  
-  
-  if (!isSystem && !blocked &&
-      !StaticPrefs::dom_webnotifications_allowcrossoriginiframe() &&
-      !mPrincipal->Subsumes(mTopLevelPrincipal)) {
-    mPermission = NotificationPermission::Denied;
-    blocked = true;
-    nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
-    if (doc) {
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::errorFlag, "DOM"_ns, doc,
-          nsContentUtils::eDOM_PROPERTIES,
-          "NotificationsCrossOriginIframeRequestIsForbidden");
     }
   }
 
@@ -605,7 +589,7 @@ nsresult NotificationPermissionRequest::ResolvePromise() {
       }
     }
 
-    mPermission = Notification::TestPermission(mPrincipal);
+    mPermission = GetRawNotificationPermission(mPrincipal);
   }
   if (mCallback) {
     ErrorResult error;
@@ -717,6 +701,7 @@ Notification::Notification(nsIGlobalObject* aGlobal, const nsAString& aID,
   if (!NS_IsMainThread()) {
     mWorkerPrivate = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(mWorkerPrivate);
+    mWorkerUseRegularPrincipal = mWorkerPrivate->UseRegularPrincipal();
   }
 }
 
@@ -1353,9 +1338,16 @@ void Notification::ShowInternal() {
   ErrorResult result;
   NotificationPermission permission = NotificationPermission::Denied;
   if (mWorkerPrivate) {
-    permission = GetPermissionInternal(mWorkerPrivate->GetPrincipal(), result);
+    nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
+    nsIPrincipal* effectiveStoragePrincipal =
+        mWorkerUseRegularPrincipal ? principal
+                                   : mWorkerPrivate->GetPartitionedPrincipal();
+    permission = GetNotificationPermission(
+        principal, effectiveStoragePrincipal, mWorkerPrivate->IsSecureContext(),
+        PermissionCheckPurpose::NotificationShow);
   } else {
-    permission = GetPermissionInternal(GetOwnerWindow(), result);
+    permission = GetPermissionInternal(
+        GetOwnerWindow(), PermissionCheckPurpose::NotificationShow, result);
   }
   
   MOZ_ASSERT_IF(result.Failed(), permission == NotificationPermission::Denied);
@@ -1495,7 +1487,9 @@ already_AddRefed<Promise> Notification::RequestPermission(
   }
 
   nsCOMPtr<nsIPrincipal> principal = sop->GetPrincipal();
-  if (!principal) {
+  nsCOMPtr<nsIPrincipal> effectiveStoragePrincipal =
+      sop->GetEffectiveStoragePrincipal();
+  if (!principal || !effectiveStoragePrincipal) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
   }
@@ -1508,8 +1502,9 @@ already_AddRefed<Promise> Notification::RequestPermission(
   if (aCallback.WasPassed()) {
     permissionCallback = &aCallback.Value();
   }
-  nsCOMPtr<nsIRunnable> request = new NotificationPermissionRequest(
-      principal, window, promise, permissionCallback);
+  nsCOMPtr<nsIRunnable> request =
+      new NotificationPermissionRequest(principal, effectiveStoragePrincipal,
+                                        window, promise, permissionCallback);
 
   window->AsGlobal()->Dispatch(request.forget());
 
@@ -1520,30 +1515,34 @@ already_AddRefed<Promise> Notification::RequestPermission(
 NotificationPermission Notification::GetPermission(const GlobalObject& aGlobal,
                                                    ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  return GetPermission(global, aRv);
+  return GetPermission(global, PermissionCheckPurpose::PermissionAttribute,
+                       aRv);
 }
 
 
-NotificationPermission Notification::GetPermission(nsIGlobalObject* aGlobal,
-                                                   ErrorResult& aRv) {
+NotificationPermission Notification::GetPermission(
+    nsIGlobalObject* aGlobal, PermissionCheckPurpose aPurpose,
+    ErrorResult& aRv) {
   if (NS_IsMainThread()) {
-    return GetPermissionInternal(aGlobal->GetAsInnerWindow(), aRv);
-  } else {
-    WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(worker);
-    RefPtr<GetPermissionRunnable> r = new GetPermissionRunnable(worker);
-    r->Dispatch(worker, Canceling, aRv);
-    if (aRv.Failed()) {
-      return NotificationPermission::Denied;
-    }
-
-    return r->GetPermission();
+    return GetPermissionInternal(aGlobal->GetAsInnerWindow(), aPurpose, aRv);
   }
+
+  WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT(worker);
+  RefPtr<GetPermissionRunnable> r = new GetPermissionRunnable(
+      worker, worker->UseRegularPrincipal(), aPurpose);
+  r->Dispatch(worker, Canceling, aRv);
+  if (aRv.Failed()) {
+    return NotificationPermission::Denied;
+  }
+
+  return r->GetPermission();
 }
 
 
 NotificationPermission Notification::GetPermissionInternal(
-    nsPIDOMWindowInner* aWindow, ErrorResult& aRv) {
+    nsPIDOMWindowInner* aWindow, PermissionCheckPurpose aPurpose,
+    ErrorResult& aRv) {
   
   nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aWindow);
   if (!sop) {
@@ -1552,71 +1551,15 @@ NotificationPermission Notification::GetPermissionInternal(
   }
 
   nsCOMPtr<nsIPrincipal> principal = sop->GetPrincipal();
-  if (!principal) {
+  nsCOMPtr<nsIPrincipal> effectiveStoragePrincipal =
+      sop->GetEffectiveStoragePrincipal();
+  if (!principal || !effectiveStoragePrincipal) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return NotificationPermission::Denied;
   }
 
-  if (principal->GetIsInPrivateBrowsing() &&
-      !StaticPrefs::dom_webnotifications_privateBrowsing_enabled()) {
-    return NotificationPermission::Denied;
-  }
-  
-  
-  if (!StaticPrefs::dom_webnotifications_allowcrossoriginiframe()) {
-    nsCOMPtr<nsIScriptObjectPrincipal> topSop =
-        do_QueryInterface(aWindow->GetBrowsingContext()->Top()->GetDOMWindow());
-    nsIPrincipal* topPrincipal = topSop ? topSop->GetPrincipal() : nullptr;
-    if (!topPrincipal || !principal->Subsumes(topPrincipal)) {
-      return NotificationPermission::Denied;
-    }
-  }
-
-  return GetPermissionInternal(principal, aRv);
-}
-
-
-NotificationPermission Notification::GetPermissionInternal(
-    nsIPrincipal* aPrincipal, ErrorResult& aRv) {
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aPrincipal);
-
-  if (aPrincipal->IsSystemPrincipal()) {
-    return NotificationPermission::Granted;
-  } else {
-    
-    if (aPrincipal->SchemeIs("file")) {
-      return NotificationPermission::Granted;
-    }
-  }
-
-  return TestPermission(aPrincipal);
-}
-
-
-NotificationPermission Notification::TestPermission(nsIPrincipal* aPrincipal) {
-  AssertIsOnMainThread();
-
-  uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
-
-  nsCOMPtr<nsIPermissionManager> permissionManager =
-      components::PermissionManager::Service();
-  if (!permissionManager) {
-    return NotificationPermission::Default;
-  }
-
-  permissionManager->TestExactPermissionFromPrincipal(
-      aPrincipal, "desktop-notification"_ns, &permission);
-
-  
-  switch (permission) {
-    case nsIPermissionManager::ALLOW_ACTION:
-      return NotificationPermission::Granted;
-    case nsIPermissionManager::DENY_ACTION:
-      return NotificationPermission::Denied;
-    default:
-      return NotificationPermission::Default;
-  }
+  return GetNotificationPermission(principal, effectiveStoragePrincipal,
+                                   aWindow->IsSecureContext(), aPurpose);
 }
 
 nsresult Notification::ResolveIconAndSoundURL(nsIGlobalObject* aGlobal,
@@ -2219,7 +2162,8 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   
   
   
-  NotificationPermission permission = GetPermission(aGlobal, aRv);
+  NotificationPermission permission =
+      GetPermission(aGlobal, PermissionCheckPurpose::NotificationShow, aRv);
 
   
   
