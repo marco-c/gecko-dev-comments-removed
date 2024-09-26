@@ -3091,6 +3091,16 @@ class Editor extends EventEmitter {
   }
 
   
+  setCursorAt(line, column) {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const position = cm.state.doc.line(line + 1).from + column;
+      return cm.dispatch({ selection: { anchor: position, head: position } });
+    }
+    return cm.setCursor({ line, ch: column });
+  }
+
+  
   getEditorContent() {
     const cm = editors.get(this);
     if (this.config.cm6) {

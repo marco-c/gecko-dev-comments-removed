@@ -2164,6 +2164,17 @@ function getEditorContent(dbg) {
 }
 
 
+
+
+
+
+
+
+function setEditorCursorAt(dbg, line, column) {
+  return getCMEditor(dbg).setCursorAt(line, column);
+}
+
+
 function getCM(dbg) {
   const el = dbg.win.document.querySelector(".CodeMirror");
   return el.CodeMirror;
