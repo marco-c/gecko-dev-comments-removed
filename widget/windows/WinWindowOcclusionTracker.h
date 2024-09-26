@@ -7,7 +7,8 @@
 #ifndef widget_windows_WinWindowOcclusionTracker_h
 #define widget_windows_WinWindowOcclusionTracker_h
 
-#include <string>
+#include <windef.h>
+
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -15,10 +16,7 @@
 #include "nsIWeakReferenceUtils.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/WindowsVersion.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/widget/WindowOcclusionState.h"
-#include "mozilla/widget/WinEventObserver.h"
 #include "Units.h"
 #include "nsThreadUtils.h"
 
@@ -41,8 +39,7 @@ class UpdateOcclusionStateRunnable;
 
 
 
-class WinWindowOcclusionTracker final : public DisplayStatusListener,
-                                        public SessionChangeListener {
+class WinWindowOcclusionTracker final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WinWindowOcclusionTracker)
 
@@ -60,12 +57,6 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
 
   
   static bool IsInWinWindowOcclusionThread();
-
-  
-  void EnsureDisplayStatusObserver();
-
-  
-  void EnsureSessionChangeObserver();
 
   
   
@@ -280,15 +271,16 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
   void UpdateOcclusionState(std::unordered_map<HWND, OcclusionState>* aMap,
                             bool aShowAllWindows);
 
+ public:
   
   
-  void OnSessionChange(WPARAM aStatusCode,
-                       Maybe<bool> aIsCurrentSession) override;
+  void OnSessionChange(WPARAM aStatusCode, Maybe<bool> aIsCurrentSession);
 
   
   
-  void OnDisplayStateChanged(bool aDisplayOn) override;
+  void OnDisplayStateChanged(bool aDisplayOn);
 
+ private:
   
   void MarkNonIconicWindowsOccluded();
 
@@ -315,10 +307,6 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
 
   
   bool mDisplayOn = true;
-
-  RefPtr<DisplayStatusObserver> mDisplayStatusObserver;
-
-  RefPtr<SessionChangeObserver> mSessionChangeObserver;
 
   
   RefPtr<SerializedTaskDispatcher> mSerializedTaskDispatcher;
