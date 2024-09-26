@@ -58,6 +58,7 @@ interface nsIAppShellService : nsISupports
   [noscript]
   void createHiddenWindow();
 
+  [noscript]
   void destroyHiddenWindow();
 
   
@@ -91,13 +92,6 @@ interface nsIAppShellService : nsISupports
 
 
 
-  readonly attribute boolean applicationProvidedHiddenWindow;
-
-  
-
-
-
-
 
 
 
@@ -112,6 +106,7 @@ interface nsIAppShellService : nsISupports
   void unregisterTopLevelWindow(in nsIAppWindow aWindow);
 
   
+
 
 
   readonly attribute boolean hasHiddenWindow;

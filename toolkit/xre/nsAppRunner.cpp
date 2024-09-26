@@ -5639,25 +5639,12 @@ nsresult XREMain::XRE_mainRun() {
     SaveToEnv("XRE_RESTARTED_BY_PROFILE_MANAGER=");
 
     if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-      
-      
 #ifdef XP_MACOSX
-      bool lazyHiddenWindow = false;
-#else
-      bool lazyHiddenWindow = true;
-#endif
-
-#ifdef MOZ_BACKGROUNDTASKS
-      if (BackgroundTasks::IsBackgroundTaskMode()) {
-        
-        lazyHiddenWindow = true;
-      }
-#endif
-
-      if (!lazyHiddenWindow) {
+      if (!BackgroundTasks::IsBackgroundTaskMode()) {
         rv = appStartup->CreateHiddenWindow();
         NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
       }
+#endif
 
 #ifdef XP_WIN
       Preferences::RegisterCallbackAndCall(
