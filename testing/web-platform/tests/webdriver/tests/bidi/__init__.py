@@ -149,8 +149,9 @@ async def get_element_dimensions(bidi_session, context, element):
     return remote_mapping_to_dict(result["value"])
 
 
-async def get_viewport_dimensions(bidi_session, context: str, with_scrollbar: bool = True):
-    if with_scrollbar == True:
+async def get_viewport_dimensions(bidi_session, context: str,
+      with_scrollbar: bool = True, quirk_mode: bool = False):
+    if with_scrollbar:
         expression = """
             ({
                 height: window.innerHeight,
@@ -158,11 +159,17 @@ async def get_viewport_dimensions(bidi_session, context: str, with_scrollbar: bo
             });
         """
     else:
-        expression = """
-            ({
-                height: document.documentElement.clientHeight,
-                width: document.documentElement.clientWidth,
-            });
+        
+        
+        
+        
+        element_expression = \
+            "document.body" if quirk_mode else "document.documentElement"
+        expression = f"""
+            ({{
+                height: {element_expression}.clientHeight,
+                width: {element_expression}.clientWidth,
+            }});
         """
     result = await bidi_session.script.evaluate(
         expression=expression,
