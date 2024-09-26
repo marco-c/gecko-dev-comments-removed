@@ -811,7 +811,7 @@ uint8_t nsHttpHandler::UrgencyFromCoSFlags(uint32_t cos,
     
     urgency = 6;
   } else if (cos & nsIClassOfService::Tail) {
-    urgency = 6;
+    urgency = mozilla::StaticPrefs::network_http_tailing_urgency();
   } else {
     
     urgency = 4;
@@ -1620,20 +1620,20 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
                                    &mTailBlockingEnabled);
   }
   if (PREF_CHANGED(HTTP_PREF("tailing.delay-quantum"))) {
-    Unused << Preferences::GetInt(HTTP_PREF("tailing.delay-quantum"), &val);
+    val = StaticPrefs::network_http_tailing_delay_quantum();
     mTailDelayQuantum = (uint32_t)clamped(val, 0, 60000);
   }
   if (PREF_CHANGED(HTTP_PREF("tailing.delay-quantum-after-domcontentloaded"))) {
-    Unused << Preferences::GetInt(
-        HTTP_PREF("tailing.delay-quantum-after-domcontentloaded"), &val);
+    val = StaticPrefs::
+        network_http_tailing_delay_quantum_after_domcontentloaded();
     mTailDelayQuantumAfterDCL = (uint32_t)clamped(val, 0, 60000);
   }
   if (PREF_CHANGED(HTTP_PREF("tailing.delay-max"))) {
-    Unused << Preferences::GetInt(HTTP_PREF("tailing.delay-max"), &val);
+    val = StaticPrefs::network_http_tailing_delay_max();
     mTailDelayMax = (uint32_t)clamped(val, 0, 60000);
   }
   if (PREF_CHANGED(HTTP_PREF("tailing.total-max"))) {
-    Unused << Preferences::GetInt(HTTP_PREF("tailing.total-max"), &val);
+    val = StaticPrefs::network_http_tailing_total_max();
     mTailTotalMax = (uint32_t)clamped(val, 0, 60000);
   }
 
