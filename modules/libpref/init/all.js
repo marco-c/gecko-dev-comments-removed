@@ -1330,10 +1330,6 @@ pref("network.websocket.timeout.ping.response", 10);
 
 
 
-pref("network.websocket.extensions.permessage-deflate", true);
-
-
-
 
 pref("network.websocket.max-connections", 200);
 
