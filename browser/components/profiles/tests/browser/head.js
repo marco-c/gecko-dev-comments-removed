@@ -75,6 +75,31 @@ function makeFakeProfileDirs() {
   return appD.path;
 }
 
+function updateProfD(profileDir) {
+  let profD = profileDir.clone();
+
+  let provider = {
+    getFile(prop, persistent) {
+      persistent.value = true;
+      if (prop === "ProfD") {
+        return profD.clone();
+      }
+
+      throw Components.Exception("", Cr.NS_ERROR_FAILURE);
+    },
+
+    QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
+  };
+
+  
+  Services.dirsvc.registerProvider(provider);
+
+  
+  try {
+    Services.dirsvc.undefine("ProfD");
+  } catch (ex) {}
+}
+
 async function setupMockDB() {
   makeFakeProfileDirs();
 
@@ -97,6 +122,8 @@ async function setupMockDB() {
     themeFg: "redFG",
     themeBg: "blueBG",
   });
+
+  updateProfD(await profile.rootDir);
 
   return profile;
 }
