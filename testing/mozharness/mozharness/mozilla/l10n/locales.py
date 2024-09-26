@@ -2,8 +2,6 @@
 
 
 
-
-
 """Localization."""
 
 import os

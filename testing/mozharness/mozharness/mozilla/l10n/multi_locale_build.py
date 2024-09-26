@@ -2,8 +2,6 @@
 
 
 
-
-
 """multi_locale_build.py
 
 This should be a mostly generic multilocale build script.

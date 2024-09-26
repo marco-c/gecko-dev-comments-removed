@@ -2,8 +2,6 @@
 
 
 
-
-
 """configtest.py
 
 Verify the .json and .py files in the configs/ directory are well-formed.

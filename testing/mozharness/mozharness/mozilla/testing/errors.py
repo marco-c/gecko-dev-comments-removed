@@ -2,8 +2,6 @@
 
 
 
-
-
 """Mozilla error lists for running tests.
 
 Error lists are used to parse output in mozharness.base.log.OutputParser.

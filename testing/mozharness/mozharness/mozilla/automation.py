@@ -2,8 +2,6 @@
 
 
 
-
-
 """Code to integration with automation.
 """
 

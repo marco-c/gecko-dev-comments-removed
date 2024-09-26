@@ -2,8 +2,6 @@
 
 
 
-
-
 """Generic error lists.
 
 Error lists are used to parse output in mozharness.base.log.OutputParser.

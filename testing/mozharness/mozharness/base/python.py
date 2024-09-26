@@ -2,8 +2,6 @@
 
 
 
-
-
 """Python usage, esp. virtualenv.
 """
 

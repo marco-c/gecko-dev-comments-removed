@@ -2,8 +2,6 @@
 
 
 
-
-
 """Support for fetching secrets from the secrets API
 """
 

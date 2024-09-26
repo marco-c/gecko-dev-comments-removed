@@ -2,8 +2,6 @@
 
 
 
-
-
 """Generic VCS support.
 """
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 """desktop_l10n.py
 
 This script manages Desktop repacks for nightly builds.

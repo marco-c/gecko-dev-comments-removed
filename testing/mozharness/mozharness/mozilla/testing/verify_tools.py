@@ -3,8 +3,6 @@
 
 
 
-
-
 from mozharness.base.script import PostScriptAction
 from mozharness.mozilla.testing.per_test_base import SingleTestMixin
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 """
 run awsy tests in a virtualenv
 """

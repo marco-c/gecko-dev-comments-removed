@@ -2,8 +2,6 @@
 
 
 
-
-
 config = {
     "options": [
         "--prefs-root=%(test_path)s/prefs",

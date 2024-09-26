@@ -2,8 +2,6 @@
 
 
 
-
-
 """vcstools.py
 
 Author: Armen Zambrano G.

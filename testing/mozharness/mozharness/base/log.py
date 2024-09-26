@@ -2,8 +2,6 @@
 
 
 
-
-
 """Generic logging classes and functionalities for single and multi file logging.
 Capturing console output and providing general logging functionalities.
 

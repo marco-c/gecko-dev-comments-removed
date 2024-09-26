@@ -3,8 +3,6 @@
 
 
 
-
-
 import datetime
 import functools
 import glob

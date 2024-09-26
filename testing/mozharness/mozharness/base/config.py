@@ -2,8 +2,6 @@
 
 
 
-
-
 """Generic config parsing and dumping, the way I remember it from scripts
 gone by.
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 """fx_desktop_build.py.
 
 script harness to build nightly firefox within Mozilla's build environment

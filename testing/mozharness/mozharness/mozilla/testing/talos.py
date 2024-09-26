@@ -2,8 +2,6 @@
 
 
 
-
-
 """
 run talos tests in a virtualenv
 """

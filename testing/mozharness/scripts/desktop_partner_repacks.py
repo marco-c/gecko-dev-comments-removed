@@ -2,8 +2,6 @@
 
 
 
-
-
 """desktop_partner_repacks.py
 
 This script manages Desktop partner repacks for beta/release builds.
