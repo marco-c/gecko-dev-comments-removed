@@ -331,6 +331,10 @@ void HTMLIFrameElement::SetLazyLoading() {
     return;
   }
 
+  if (!StaticPrefs::dom_iframe_lazy_loading_enabled()) {
+    return;
+  }
+
   
   
   Document* doc = OwnerDoc();
