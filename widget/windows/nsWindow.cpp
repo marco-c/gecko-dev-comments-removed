@@ -89,7 +89,6 @@
 #include <wtsapi32.h>
 #include <process.h>
 #include <commctrl.h>
-#include <dbt.h>
 #include <unknwn.h>
 #include <psapi.h>
 #include <rpc.h>
@@ -1021,8 +1020,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     SetSmallIcon(icon);
   }
 
-  mDeviceNotifyHandle = InputDeviceUtils::RegisterNotification(mWnd);
-
   
   
   
@@ -1154,9 +1151,6 @@ void nsWindow::Destroy() {
 
 
   DestroyLayerManager();
-
-  InputDeviceUtils::UnregisterNotification(mDeviceNotifyHandle);
-  mDeviceNotifyHandle = nullptr;
 
   
   
@@ -4954,20 +4948,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
           break;
         default:
           break;
-      }
-    } break;
-
-    case WM_DEVICECHANGE: {
-      if (wParam == DBT_DEVICEARRIVAL || wParam == DBT_DEVICEREMOVECOMPLETE) {
-        DEV_BROADCAST_HDR* hdr = reinterpret_cast<DEV_BROADCAST_HDR*>(lParam);
-        
-        
-        
-        
-        if (hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
-          
-          NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
-        }
       }
     } break;
 
