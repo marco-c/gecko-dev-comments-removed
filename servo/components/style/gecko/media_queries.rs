@@ -17,7 +17,7 @@ use crate::properties::ComputedValues;
 use crate::string_cache::Atom;
 use crate::values::computed::font::GenericFontFamily;
 use crate::values::computed::{ColorScheme, Length, NonNegativeLength};
-use crate::values::specified::color::SystemColor;
+use crate::values::specified::color::{SystemColor, ColorSchemeFlags};
 use crate::values::specified::font::{FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX};
 use crate::values::specified::ViewportVariant;
 use crate::values::{CustomIdent, KeyframesName};
@@ -507,14 +507,14 @@ impl Device {
     pub(crate) fn system_nscolor(
         &self,
         system_color: SystemColor,
-        color_scheme: &ColorScheme,
+        color_scheme: ColorSchemeFlags,
     ) -> u32 {
-        unsafe { bindings::Gecko_ComputeSystemColor(system_color, self.document(), color_scheme) }
+        unsafe { bindings::Gecko_ComputeSystemColor(system_color, self.document(), &color_scheme) }
     }
 
     
-    pub(crate) fn is_dark_color_scheme(&self, color_scheme: &ColorScheme) -> bool {
-        unsafe { bindings::Gecko_IsDarkColorScheme(self.document(), color_scheme) }
+    pub(crate) fn is_dark_color_scheme(&self, color_scheme: ColorSchemeFlags) -> bool {
+        unsafe { bindings::Gecko_IsDarkColorScheme(self.document(), &color_scheme) }
     }
 
     
@@ -522,16 +522,14 @@ impl Device {
     
     
     pub fn default_background_color(&self) -> AbsoluteColor {
-        let normal = ColorScheme::normal();
-        convert_nscolor_to_absolute_color(self.system_nscolor(SystemColor::Canvas, &normal))
+        convert_nscolor_to_absolute_color(self.system_nscolor(SystemColor::Canvas, ColorScheme::normal().bits))
     }
 
     
     
     
     pub fn default_color(&self) -> AbsoluteColor {
-        let normal = ColorScheme::normal();
-        convert_nscolor_to_absolute_color(self.system_nscolor(SystemColor::Canvastext, &normal))
+        convert_nscolor_to_absolute_color(self.system_nscolor(SystemColor::Canvastext, ColorScheme::normal().bits))
     }
 
     
