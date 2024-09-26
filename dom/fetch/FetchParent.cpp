@@ -211,7 +211,7 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
   return IPC_OK();
 }
 
-IPCResult FetchParent::RecvAbortFetchOp() {
+IPCResult FetchParent::RecvAbortFetchOp(bool aForceAbort) {
   FETCH_LOG(("FetchParent::RecvAbortFetchOp [%p]", this));
   AssertIsOnBackgroundThread();
 
@@ -219,6 +219,16 @@ IPCResult FetchParent::RecvAbortFetchOp() {
     FETCH_LOG(("FetchParent::RecvAbortFetchOp [%p], Already aborted", this));
     return IPC_OK();
   }
+
+  if (!aForceAbort && mRequest && mRequest->GetKeepalive() && !mIsWorkerFetch) {
+    
+    
+    
+    
+    FETCH_LOG(("Skip aborting fetch as the request is marked keepalive"));
+    return IPC_OK();
+  }
+
   mIsDone = true;
 
   RefPtr<FetchParent> self = this;
@@ -336,13 +346,11 @@ void FetchParent::ActorDestroy(ActorDestroyReason aReason) {
   if (!mRequest) {
     return;
   }
+
   
   
-  if (mRequest->GetKeepalive()) {
-    FETCH_LOG(("Skip aborting fetch as the request is marked keepalive"));
-  } else {
-    RecvAbortFetchOp();
-  }
+  RecvAbortFetchOp(false);
+
   
 }
 
