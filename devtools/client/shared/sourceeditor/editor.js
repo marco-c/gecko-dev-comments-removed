@@ -247,6 +247,11 @@ class Editor extends EventEmitter {
         el.append(doc.createTextNode(`\\u${char.codePointAt(0).toString(16)}`));
         return el;
       },
+      
+      
+      
+      
+      styleSelectedText: true,
     };
 
     
