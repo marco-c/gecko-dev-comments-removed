@@ -282,6 +282,9 @@ class alignas(16) Instance {
   
   
   
+  
+  
+  
   uintptr_t traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
                        uint8_t* nextPC,
                        uintptr_t highestByteVisitedInPrevFrame);
