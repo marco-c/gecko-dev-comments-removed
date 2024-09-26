@@ -2316,6 +2316,9 @@ void Loader::NotifyObserversForCachedSheet(SheetLoadData& aLoadData) {
   }
 
   channel->SetContentType("text/css"_ns);
+
+  
+
   obsService->NotifyObservers(channel, "http-on-stylesheet-cache-response",
                               nullptr);
 }
