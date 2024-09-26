@@ -13,6 +13,10 @@ add_task(async () => {
   const threads = ["GeckoMain"];
   const features = ["nostacksampling"];
   await Services.profiler.StartProfiler(entries, interval, features, threads);
+  
+  
+  
+  await Services.profiler.Pause();
   const profileData = await Services.profiler.getProfileDataAsync();
   await Services.profiler.StopProfiler();
   const { markers, stringTable } = profileData.threads[0];
