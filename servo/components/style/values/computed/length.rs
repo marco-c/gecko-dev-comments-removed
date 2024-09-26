@@ -9,7 +9,8 @@ use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
 use crate::values::computed::{NonNegativeNumber, Zoom};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
-    GenericLengthOrNumber, GenericLengthPercentageOrNormal, GenericMaxSize, GenericSize,
+    GenericAnchorSizeFunction, GenericLengthOrNumber, GenericLengthPercentageOrNormal,
+    GenericMaxSize, GenericSize,
 };
 use crate::values::generics::NonNegative;
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
@@ -562,3 +563,6 @@ pub type Size = GenericSize<NonNegativeLengthPercentage>;
 
 
 pub type MaxSize = GenericMaxSize<NonNegativeLengthPercentage>;
+
+
+pub type AnchorSizeFunction = GenericAnchorSizeFunction<LengthPercentage>;
