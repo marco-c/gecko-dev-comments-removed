@@ -426,7 +426,7 @@ struct arena_chunk_t {
   size_t ndirty;
 
   
-  arena_chunk_map_t map[1];  
+  arena_chunk_map_t map[];  
 };
 
 
@@ -577,8 +577,8 @@ DEFINE_GLOBAL(size_t) gChunkNumPages = kChunkSize >> gPageSize2Pow;
 
 DEFINE_GLOBAL(size_t)
 gChunkHeaderNumPages =
-    1 + (((sizeof(arena_chunk_t) +
-           sizeof(arena_chunk_map_t) * (gChunkNumPages - 1) + gPageSizeMask) &
+    1 + (((sizeof(arena_chunk_t) + sizeof(arena_chunk_map_t) * gChunkNumPages +
+           gPageSizeMask) &
           ~gPageSizeMask) >>
          gPageSize2Pow);
 
@@ -1020,7 +1020,7 @@ struct arena_run_t {
 #endif
 
   
-  unsigned mRegionsMask[1];  
+  unsigned mRegionsMask[];  
 };
 
 struct arena_bin_t {
@@ -1199,7 +1199,7 @@ struct arena_t {
   
   
   
-  arena_bin_t mBins[1];  
+  arena_bin_t mBins[];  
 
   explicit arena_t(arena_params_t* aParams, bool aIsPrivate);
   ~arena_t();
@@ -1910,7 +1910,7 @@ arena_t* TypedBaseAlloc<arena_t>::sFirstFree = nullptr;
 template <>
 size_t TypedBaseAlloc<arena_t>::size_of() {
   
-  return sizeof(arena_t) + (sizeof(arena_bin_t) * (NUM_SMALL_CLASSES - 1));
+  return sizeof(arena_t) + (sizeof(arena_bin_t) * NUM_SMALL_CLASSES);
 }
 
 template <typename T>
