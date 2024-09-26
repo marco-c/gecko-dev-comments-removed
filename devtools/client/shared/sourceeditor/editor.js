@@ -3091,6 +3091,15 @@ class Editor extends EventEmitter {
   }
 
   
+  getLineCount() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      return cm.state.doc.lines;
+    }
+    return cm.lineCount();
+  }
+
+  
 
 
 

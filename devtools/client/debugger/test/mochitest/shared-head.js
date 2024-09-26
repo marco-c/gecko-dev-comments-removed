@@ -2144,6 +2144,11 @@ function getCMEditor(dbg) {
 }
 
 
+function getLineCount(dbg) {
+  return getCMEditor(dbg).getLineCount();
+}
+
+
 function getCM(dbg) {
   const el = dbg.win.document.querySelector(".CodeMirror");
   return el.CodeMirror;
