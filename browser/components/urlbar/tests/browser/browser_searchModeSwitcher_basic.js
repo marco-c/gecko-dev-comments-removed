@@ -226,8 +226,11 @@ async function test_navigate_switcher(navKey, navTimes, searchMode) {
 
   await UrlbarTestUtils.assertSearchMode(window, searchMode);
 
-  info("Press the close button and escape search mode");
-  window.document.querySelector("#searchmode-switcher-close").click();
+  info("Exit the search mode");
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    EventUtils.synthesizeKey("KEY_Escape");
+  });
+  EventUtils.synthesizeKey("KEY_Escape");
   await UrlbarTestUtils.assertSearchMode(window, null);
 }
 
@@ -615,7 +618,13 @@ add_task(async function test_urlbar_text_after_previewed_search_mode() {
   });
 
   info("Click on the content area");
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(gBrowser.selectedBrowser, {});
+  AccessibilityUtils.resetEnv();
   await UrlbarTestUtils.assertSearchMode(window, null);
 
   info("Choose any search engine from the switcher");
