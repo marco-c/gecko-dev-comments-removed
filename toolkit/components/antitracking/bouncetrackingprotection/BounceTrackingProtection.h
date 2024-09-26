@@ -107,12 +107,13 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
 
   
   nsCOMPtr<nsIBTPRemoteExceptionList> mRemoteExceptionList;
+  RefPtr<GenericNonExclusivePromise> mRemoteExceptionListInitPromise;
 
   
   nsTHashSet<nsCStringHashKey> mRemoteSiteHostExceptions;
 
   
-  RefPtr<GenericPromise> EnsureRemoteExceptionListService();
+  RefPtr<GenericNonExclusivePromise> EnsureRemoteExceptionListService();
 
   
   using PurgeBounceTrackersMozPromise =

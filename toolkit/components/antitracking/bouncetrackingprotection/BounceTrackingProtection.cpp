@@ -785,28 +785,40 @@ nsresult BounceTrackingProtection::LogBounceTrackersClassifiedToWebConsole(
   return NS_OK;
 }
 
-RefPtr<GenericPromise>
+RefPtr<GenericNonExclusivePromise>
 BounceTrackingProtection::EnsureRemoteExceptionListService() {
   
-  if (mRemoteExceptionList) {
-    return GenericPromise::CreateAndResolve(true, __func__);
+  if (mRemoteExceptionListInitPromise) {
+    return mRemoteExceptionListInitPromise;
   }
 
   
   nsresult rv;
   mRemoteExceptionList =
       do_GetService(NS_NSIBTPEXCEPTIONLISTSERVICE_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, GenericPromise::CreateAndReject(rv, __func__));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mRemoteExceptionListInitPromise =
+        GenericNonExclusivePromise::CreateAndReject(rv, __func__);
+    return mRemoteExceptionListInitPromise;
+  }
 
   
   
   RefPtr<dom::Promise> jsPromise;
   rv = mRemoteExceptionList->Init(this, getter_AddRefs(jsPromise));
-  NS_ENSURE_SUCCESS(rv, GenericPromise::CreateAndReject(rv, __func__));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mRemoteExceptionListInitPromise =
+        GenericNonExclusivePromise::CreateAndReject(rv, __func__);
+    return mRemoteExceptionListInitPromise;
+  }
   MOZ_ASSERT(jsPromise);
 
   
-  return PromiseNativeWrapper::ConvertJSPromiseToMozPromise(jsPromise);
+  
+  mRemoteExceptionListInitPromise =
+      PromiseNativeWrapper::ConvertJSPromiseToMozPromise(jsPromise);
+
+  return mRemoteExceptionListInitPromise;
 }
 
 RefPtr<BounceTrackingProtection::PurgeBounceTrackersMozPromise>
@@ -839,8 +851,8 @@ BounceTrackingProtection::PurgeBounceTrackers() {
   
   EnsureRemoteExceptionListService()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [self,
-       resultPromise](const GenericPromise::ResolveOrRejectValue& aResult) {
+      [self, resultPromise](
+          const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
         if (aResult.IsReject()) {
           nsresult rv = aResult.RejectValue();
           resultPromise->Reject(rv, __func__);
