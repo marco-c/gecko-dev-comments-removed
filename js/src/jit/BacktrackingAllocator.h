@@ -180,27 +180,17 @@ class VirtualRegister;
 class LiveRange : public TempObject {
  public:
   
-  
-  
   class BundleLink : public InlineForwardListNode<BundleLink> {};
-  class RegisterLink : public InlineForwardListNode<RegisterLink> {};
 
   using BundleLinkIterator = InlineForwardListIterator<BundleLink>;
-  using RegisterLinkIterator = InlineForwardListIterator<RegisterLink>;
 
   
   BundleLink bundleLink;
-  RegisterLink registerLink;
 
   static LiveRange* get(BundleLink* link) {
     return reinterpret_cast<LiveRange*>(reinterpret_cast<uint8_t*>(link) -
                                         offsetof(LiveRange, bundleLink));
   }
-  static LiveRange* get(RegisterLink* link) {
-    return reinterpret_cast<LiveRange*>(reinterpret_cast<uint8_t*>(link) -
-                                        offsetof(LiveRange, registerLink));
-  }
-
   struct Range {
     
     CodePosition from;
@@ -497,6 +487,13 @@ class LiveBundle : public TempObject {
 
 
 class VirtualRegister {
+ public:
+  
+  
+  using RangeVector = Vector<LiveRange*, 4, BackgroundSystemAllocPolicy>;
+  class RangeIterator;
+
+ private:
   
   LNode* ins_ = nullptr;
 
@@ -505,7 +502,15 @@ class VirtualRegister {
 
   
   
-  InlineForwardList<LiveRange::RegisterLink> ranges_;
+  
+  RangeVector ranges_;
+
+#ifdef DEBUG
+  
+  
+  
+  size_t activeRangeIterators_ = 0;
+#endif
 
   
   bool isTemp_ = false;
@@ -518,8 +523,31 @@ class VirtualRegister {
   
   bool mustCopyInput_ = false;
 
+  
+  bool rangesSorted_ = true;
+
   void operator=(const VirtualRegister&) = delete;
   VirtualRegister(const VirtualRegister&) = delete;
+
+  void sortRanges();
+
+#ifdef DEBUG
+  void assertRangesSorted();
+#else
+  void assertRangesSorted() {}
+#endif
+
+  void ensureRangesSorted() {
+    if (rangesSorted_) {
+      assertRangesSorted();
+    } else {
+      sortRanges();
+    }
+  }
+  RangeVector& sortedRanges() {
+    ensureRangesSorted();
+    return ranges_;
+  }
 
  public:
   VirtualRegister() = default;
@@ -549,25 +577,26 @@ class VirtualRegister {
   void setMustCopyInput() { mustCopyInput_ = true; }
   bool mustCopyInput() { return mustCopyInput_; }
 
-  LiveRange::RegisterLinkIterator rangesBegin() const {
-    return ranges_.begin();
+  bool hasRanges() const { return !ranges_.empty(); }
+  LiveRange* firstRange() {
+    ensureRangesSorted();
+    return ranges_.back();
   }
-  LiveRange::RegisterLinkIterator rangesBegin(LiveRange* range) const {
-    return ranges_.begin(&range->registerLink);
+  LiveRange* lastRange() {
+    ensureRangesSorted();
+    return ranges_[0];
   }
-  bool hasRanges() const { return !!rangesBegin(); }
-  LiveRange* firstRange() const { return LiveRange::get(*rangesBegin()); }
-  LiveRange* lastRange() const { return LiveRange::get(ranges_.back()); }
   LiveRange* rangeFor(CodePosition pos, bool preferRegister = false) const;
-  void removeRange(LiveRange* range);
-  void addRange(LiveRange* range);
 
-  void removeRangeAndIncrement(LiveRange::RegisterLinkIterator& iter) {
-    ranges_.removeAndIncrement(iter);
-  }
+  void removeRange(RangeIterator& iter);
+  void removeLastRange(LiveRange* range);
   void removeRangesForBundle(LiveBundle* bundle);
+  template <typename Pred>
+  void removeRangesIf(Pred&& pred);
 
-  LiveBundle* firstBundle() const { return firstRange()->bundle(); }
+  [[nodiscard]] bool addRange(LiveRange* range);
+
+  LiveBundle* firstBundle() { return firstRange()->bundle(); }
 
   [[nodiscard]] bool addInitialRange(TempAllocator& alloc, CodePosition from,
                                      CodePosition to);
@@ -576,23 +605,62 @@ class VirtualRegister {
 
   
   
+  
   class MOZ_RAII RangeIterator {
-    LiveRange::RegisterLinkIterator iter_;
+    RangeVector& ranges_;
+    
+    
+    size_t pos_;
+#ifdef DEBUG
+    VirtualRegister* reg_;
+#endif
 
    public:
-    explicit RangeIterator(VirtualRegister& reg) : iter_(reg.rangesBegin()) {}
+    explicit RangeIterator(VirtualRegister& reg)
+        : ranges_(reg.sortedRanges()), pos_(ranges_.length()) {
+#ifdef DEBUG
+      reg_ = &reg;
+      reg.activeRangeIterators_++;
+#endif
+    }
+    RangeIterator(VirtualRegister& reg, size_t index)
+        : ranges_(reg.sortedRanges()), pos_(index + 1) {
+      MOZ_ASSERT(index < ranges_.length());
+#ifdef DEBUG
+      reg_ = &reg;
+      reg.activeRangeIterators_++;
+#endif
+    }
+
+#ifdef DEBUG
+    ~RangeIterator() {
+      MOZ_ASSERT(reg_->activeRangeIterators_ > 0);
+      reg_->activeRangeIterators_--;
+    }
+#endif
 
     RangeIterator(RangeIterator&) = delete;
     void operator=(RangeIterator&) = delete;
 
-    bool done() const { return !bool(iter_); }
+    bool done() const { return pos_ == 0; }
 
     explicit operator bool() const { return !done(); }
 
-    LiveRange* operator*() const { return LiveRange::get(*iter_); }
+    LiveRange* operator*() const {
+      MOZ_ASSERT(!done());
+      return ranges_[pos_ - 1];
+    }
     LiveRange* operator->() { return operator*(); }
 
-    void operator++(int) { iter_++; }
+    size_t index() const {
+      MOZ_ASSERT(!done());
+      return pos_ - 1;
+    }
+
+    void operator++(int) {
+      MOZ_ASSERT(!done());
+      pos_--;
+    }
   };
 };
 
