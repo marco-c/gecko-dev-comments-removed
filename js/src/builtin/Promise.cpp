@@ -1806,9 +1806,6 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
   }
 
   
-  ReportUsageCounter(cx, C, SUBCLASSING_PROMISE, SUBCLASSING_TYPE_II);
-
-  
   
   
   Handle<PropertyName*> funName = cx->names().empty_;

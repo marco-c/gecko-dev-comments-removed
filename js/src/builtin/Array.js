@@ -681,9 +681,7 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
       
       
       
-      var A = IsConstructor(C) ?
-        (ReportUsageCounter(C, SUBCLASS_ARRAY_TYPE_II), constructContentFunction(C, C)) : [];
-
+      var A = IsConstructor(C) ? constructContentFunction(C, C) : [];
 
       
       var k = 0;
@@ -751,7 +749,7 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     
     
     
-    var A = IsConstructor(C) ? (ReportUsageCounter(C, SUBCLASS_ARRAY_TYPE_II), constructContentFunction(C, C, len)) : std_Array(len);
+    var A = IsConstructor(C) ? constructContentFunction(C, C, len) : std_Array(len);
 
     
     var k = 0;
@@ -815,7 +813,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     }
 
     
-    var A = IsConstructor(C) ? (ReportUsageCounter(C, SUBCLASS_ARRAY_TYPE_II), constructContentFunction(C, C)) : [];
+    var A = IsConstructor(C) ? constructContentFunction(C, C) : [];
 
     
     var k = 0;
@@ -858,7 +856,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
 
   
   var A = IsConstructor(C)
-    ? (ReportUsageCounter(C, SUBCLASS_ARRAY_TYPE_II), constructContentFunction(C, C, len))
+    ? constructContentFunction(C, C, len)
     : std_Array(len);
 
   
@@ -1032,9 +1030,6 @@ function ArraySpeciesCreate(originalArray, length) {
   }
 
   
-  if (C !== originalConstructor) {
-    ReportUsageCounter(C, SUBCLASS_ARRAY_TYPE_III);
-  }
   return constructContentFunction(C, C, length);
 }
 
