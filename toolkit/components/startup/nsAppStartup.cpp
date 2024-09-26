@@ -347,11 +347,16 @@ nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
 #ifdef XP_MACOSX
     else if (mConsiderQuitStopper == suspiciousCount) {
       
-      if (!appShell) return NS_OK;
-      bool hasHiddenWindow = false;
-      appShell->GetHasHiddenWindow(&hasHiddenWindow);
+
       
-      if (hasHiddenWindow) {
+      if (!appShell) return NS_OK;
+
+      bool usefulHiddenWindow;
+      appShell->GetApplicationProvidedHiddenWindow(&usefulHiddenWindow);
+      nsCOMPtr<nsIAppWindow> hiddenWindow;
+      appShell->GetHiddenWindow(getter_AddRefs(hiddenWindow));
+      
+      if (!hiddenWindow || usefulHiddenWindow) {
         return NS_OK;
       }
 
