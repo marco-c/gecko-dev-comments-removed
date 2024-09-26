@@ -44,17 +44,27 @@ async function run_test() {
   
   
   
+  
   gTestFiles = gTestFilesPartialSuccess;
   let channelPrefs = getTestFileByName(FILE_CHANNEL_PREFS);
   let f = gGREDirOrig.clone();
-  f.append("defaults");
-  f.append("pref");
-  f.append("channel-prefs.js");
+  if (AppConstants.platform == "macosx") {
+    f = f.parent;
+    f.append("Frameworks");
+    f.append("ChannelPrefs.framework");
+    f.append("ChannelPrefs");
+  } else {
+    f.append("defaults");
+    f.append("pref");
+    f.append("channel-prefs.js");
+  }
+
   
   
   channelPrefs.originalFile = null;
   channelPrefs.originalContents = readFile(f);
   channelPrefs.compareContents = channelPrefs.originalContents;
+
   gTestDirs = gTestDirsPartialSuccess;
   
   
