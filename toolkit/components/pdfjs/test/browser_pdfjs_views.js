@@ -38,7 +38,7 @@ add_task(async function test() {
         );
 
         
-        var sidebar = content.document.querySelector("#sidebarToggleButton");
+        var sidebar = content.document.querySelector("button#sidebarToggle");
         var outerContainer =
           content.document.querySelector("div#outerContainer");
 
