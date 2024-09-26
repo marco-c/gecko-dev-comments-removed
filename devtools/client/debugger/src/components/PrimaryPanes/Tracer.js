@@ -581,6 +581,9 @@ export class Tracer extends Component {
     const { topTraces, allTraces, traceChildren } = this.props;
     const { startIndex, endIndex } = this.state;
 
+    
+    const onePixelPercent = 1 / this.refs.timeline.clientHeight;
+
     const displayedTraceEvents = [];
     for (const traceIndex of topTraces) {
       
@@ -595,25 +598,33 @@ export class Tracer extends Component {
     }
 
     return displayedTraceEvents.map(traceIndex => {
-      const eventPositionInPercent = this.tracePositionInPercent(traceIndex);
-      const lastTraceIndex = findLastTraceIndex(traceChildren, traceIndex);
-      const eventHeightInPercent = Math.round(
-        ((lastTraceIndex - traceIndex) / this.state.renderedTraceCount) * 100
-      );
       const trace = allTraces[traceIndex];
       if (trace[TRACER_FIELDS_INDEXES.TYPE] != "event") {
         return null;
       }
+
+      const eventPositionInPercent = this.tracePositionInPercent(traceIndex);
+      const lastTraceIndex = findLastTraceIndex(traceChildren, traceIndex);
+      const eventHeightInPercentFloat =
+        ((lastTraceIndex - traceIndex) / this.state.renderedTraceCount) * 100;
+      const eventHeightInPercent = Math.round(eventHeightInPercentFloat);
       const eventName = trace[TRACER_FIELDS_INDEXES.EVENT_NAME];
       const eventType = getEventClassNameFromTraceEventName(eventName);
 
       
       const highlighted = this.props.highlightedDomEvents.includes(eventName);
 
+      
+      
+      let sizeClass = "";
+      if (eventHeightInPercent < onePixelPercent) {
+        sizeClass = "size-subpixel";
+      }
+
       return div({
         className: `tracer-slider-event ${eventType}${
           highlighted ? " highlighted" : ""
-        }`,
+        } ${sizeClass}`,
         "data-trace-index": traceIndex,
         style: {
           top: `${eventPositionInPercent}%`,
