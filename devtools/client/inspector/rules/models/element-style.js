@@ -569,6 +569,8 @@ class ElementStyle {
         continue;
       }
 
+      const isNestedDeclarations = rule.domRule.isNestedDeclarations;
+
       
       
       
@@ -589,7 +591,8 @@ class ElementStyle {
       const isElementStyle = rule.domRule.type === ELEMENT_STYLE;
 
       const filterCondition =
-        pseudo === "" ? isStyleRule || isElementStyle : isPseudoElementRule;
+        isNestedDeclarations ||
+        (pseudo === "" ? isStyleRule || isElementStyle : isPseudoElementRule);
 
       
       if (filterCondition) {
