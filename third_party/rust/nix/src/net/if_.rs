@@ -3,9 +3,9 @@
 
 
 
-use std::fmt;
-use crate::{Error, NixPath, Result};
-use libc::c_uint;
+use std::{ffi::{CStr, CString}, fmt};
+use crate::{errno::Errno, Error, NixPath, Result};
+use libc::{c_uint, IF_NAMESIZE};
 
 #[cfg(not(solarish))]
 
@@ -24,6 +24,19 @@ pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
     } else {
         Ok(if_index)
     }
+}
+
+
+pub fn if_indextoname(index: c_uint) -> Result<CString> {
+    
+    let mut buf = vec![0u8; IF_NAMESIZE];
+
+    let return_buf = unsafe {
+        libc::if_indextoname(index, buf.as_mut_ptr().cast())
+    };
+
+    Errno::result(return_buf.cast())?;
+    Ok(CStr::from_bytes_until_nul(buf.as_slice()).unwrap().to_owned())
 }
 
 libc_bitflags!(

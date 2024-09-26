@@ -4,26 +4,15 @@
 
 
 
-use crate::errors::AuxvReaderError;
-use byteorder::{NativeEndian, ReadBytesExt};
-use std::fs::File;
-use std::io::{BufReader, Read};
 
-pub type Result<T> = std::result::Result<T, AuxvReaderError>;
-
-
-#[cfg(target_pointer_width = "32")]
-pub type AuxvType = u32;
-
-#[cfg(target_pointer_width = "64")]
-pub type AuxvType = u64;
-
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct AuxvPair {
-    pub key: AuxvType,
-    pub value: AuxvType,
-}
+use {
+    super::{AuxvError, AuxvPair, AuxvType},
+    byteorder::{NativeEndian, ReadBytesExt},
+    std::{
+        fs::File,
+        io::{BufReader, Read},
+    },
+};
 
 
 pub struct ProcfsAuxvIter {
@@ -48,7 +37,7 @@ impl ProcfsAuxvIter {
 }
 
 impl Iterator for ProcfsAuxvIter {
-    type Item = Result<AuxvPair>;
+    type Item = Result<AuxvPair, AuxvError>;
     fn next(&mut self) -> Option<Self::Item> {
         if !self.keep_going {
             return None;
@@ -65,7 +54,7 @@ impl Iterator for ProcfsAuxvIter {
                 Ok(n) => {
                     if n == 0 {
                         
-                        return Some(Err(AuxvReaderError::InvalidFormat));
+                        return Some(Err(AuxvError::InvalidFormat));
                     }
 
                     read_bytes += n;

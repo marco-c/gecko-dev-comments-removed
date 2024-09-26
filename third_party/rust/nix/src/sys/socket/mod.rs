@@ -13,6 +13,7 @@ use libc::{self, c_int, size_t, socklen_t};
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
 use libc::{
     c_void, iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
+    MSG_CTRUNC,
 };
 #[cfg(not(target_os = "redox"))]
 use std::io::{IoSlice, IoSliceMut};
@@ -601,11 +602,17 @@ pub struct RecvMsg<'a, 's, S> {
 impl<'a, S> RecvMsg<'a, '_, S> {
     
     
-    pub fn cmsgs(&self) -> CmsgIterator {
-        CmsgIterator {
+    
+    pub fn cmsgs(&self) -> Result<CmsgIterator> {
+
+        if self.mhdr.msg_flags & MSG_CTRUNC == MSG_CTRUNC {
+            return Err(Errno::ENOBUFS);
+        }
+
+        Ok(CmsgIterator {
             cmsghdr: self.cmsghdr,
             mhdr: &self.mhdr
-        }
+        })
     }
 }
 
@@ -773,7 +780,7 @@ pub enum ControlMessageOwned {
     #[cfg(target_os = "linux")]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    UdpGroSegments(u16),
+    UdpGroSegments(i32),
 
     
     
@@ -949,7 +956,7 @@ impl ControlMessageOwned {
             #[cfg(target_os = "linux")]
             #[cfg(feature = "net")]
             (libc::SOL_UDP, libc::UDP_GRO) => {
-                let gso_size: u16 = unsafe { ptr::read_unaligned(p as *const _) };
+                let gso_size: i32 = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::UdpGroSegments(gso_size)
             },
             #[cfg(any(linux_android, target_os = "fuchsia"))]
