@@ -265,13 +265,13 @@ bool GPUProcessManager::LaunchGPUProcess() {
   mProcessAttemptLastTime = TimeStamp::Now();
   mProcessStable = false;
 
-  geckoargs::ChildProcessArgs extraArgs;
+  std::vector<std::string> extraArgs;
   ipc::ProcessChild::AddPlatformBuildID(extraArgs);
 
   
   
   mProcess = new GPUProcessHost(this);
-  if (!mProcess->Launch(std::move(extraArgs))) {
+  if (!mProcess->Launch(extraArgs)) {
     DisableGPUProcess("Failed to launch GPU process");
   }
 

@@ -9,7 +9,6 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Types.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "nsXULAppAPI.h"
 #include <vector>
 
@@ -27,9 +26,7 @@ class FileDescriptor;
 
 
 
-MOZ_EXPORT void SandboxEarlyInit(
-    Maybe<mozilla::UniqueFileHandle>&& aSandboxReporter,
-    Maybe<mozilla::UniqueFileHandle>&& aChrootClient);
+MOZ_EXPORT void SandboxEarlyInit();
 
 
 

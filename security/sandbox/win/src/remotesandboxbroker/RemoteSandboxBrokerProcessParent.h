@@ -28,15 +28,6 @@ class RemoteSandboxBrokerProcessParent final
 
   using mozilla::ipc::GeckoChildProcessHost::GetChildProcessHandle;
 
-  
-  
-  
-  
-  
-  void AddHandleToShare(HANDLE aHandle) {
-    mLaunchOptions->handles_to_inherit.push_back(aHandle);
-  }
-
  private:
   ~RemoteSandboxBrokerProcessParent();
 

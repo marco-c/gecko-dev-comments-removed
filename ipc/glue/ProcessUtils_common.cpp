@@ -72,18 +72,40 @@ bool SharedPreferenceSerializer::SerializeToSharedMemory(
 
 void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
     mozilla::ipc::GeckoChildProcessHost& procHost,
-    geckoargs::ChildProcessArgs& aExtraOpts) const {
-  UniqueFileHandle prefsHandle = DuplicateFileHandle(GetPrefsHandle());
-  MOZ_RELEASE_ASSERT(prefsHandle, "failed to duplicate prefs handle");
-  UniqueFileHandle prefMapHandle = DuplicateFileHandle(GetPrefMapHandle());
-  MOZ_RELEASE_ASSERT(prefMapHandle, "failed to duplicate pref map handle");
+    std::vector<std::string>& aExtraOpts) const {
+#if defined(XP_WIN)
+  
+  
+  procHost.AddHandleToShare(GetPrefsHandle().get());
+  procHost.AddHandleToShare(GetPrefMapHandle().get());
+  geckoargs::sPrefsHandle.Put((uintptr_t)(GetPrefsHandle().get()), aExtraOpts);
+  geckoargs::sPrefMapHandle.Put((uintptr_t)(GetPrefMapHandle().get()),
+                                aExtraOpts);
+#else
+  
+  
+  
+  
+  
+  
+  
+  procHost.AddFdToRemap(GetPrefsHandle().get(), kPrefsFileDescriptor);
+  procHost.AddFdToRemap(GetPrefMapHandle().get(), kPrefMapFileDescriptor);
+#endif
 
   
-  geckoargs::sPrefsHandle.Put(std::move(prefsHandle), aExtraOpts);
   geckoargs::sPrefsLen.Put((uintptr_t)(GetPrefsLength()), aExtraOpts);
-  geckoargs::sPrefMapHandle.Put(std::move(prefMapHandle), aExtraOpts);
   geckoargs::sPrefMapSize.Put((uintptr_t)(GetPrefMapSize()), aExtraOpts);
 }
+
+#if defined(ANDROID) || defined(XP_IOS)
+static int gPrefsFd = -1;
+static int gPrefMapFd = -1;
+
+void SetPrefsFd(int aFd) { gPrefsFd = aFd; }
+
+void SetPrefMapFd(int aFd) { gPrefMapFd = aFd; }
+#endif
 
 SharedPreferenceDeserializer::SharedPreferenceDeserializer() {
   MOZ_COUNT_CTOR(SharedPreferenceDeserializer);
@@ -94,24 +116,58 @@ SharedPreferenceDeserializer::~SharedPreferenceDeserializer() {
 }
 
 bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
-    UniqueFileHandle aPrefsHandle, UniqueFileHandle aPrefMapHandle,
-    uint64_t aPrefsLen, uint64_t aPrefMapSize) {
-  if (!aPrefsHandle || !aPrefMapHandle || !aPrefsLen || !aPrefMapSize) {
+    uint64_t aPrefsHandle, uint64_t aPrefMapHandle, uint64_t aPrefsLen,
+    uint64_t aPrefMapSize) {
+  Maybe<base::SharedMemoryHandle> prefsHandle;
+
+#ifdef XP_WIN
+  prefsHandle = Some(UniqueFileHandle(HANDLE((uintptr_t)(aPrefsHandle))));
+  if (!aPrefsHandle) {
     return false;
   }
 
-  mPrefMapHandle.emplace(std::move(aPrefMapHandle));
+  FileDescriptor::UniquePlatformHandle handle(
+      HANDLE((uintptr_t)(aPrefMapHandle)));
+  if (!aPrefMapHandle) {
+    return false;
+  }
+
+  mPrefMapHandle.emplace(std::move(handle));
+#endif
 
   mPrefsLen = Some((uintptr_t)(aPrefsLen));
+  if (!aPrefsLen) {
+    return false;
+  }
 
   mPrefMapSize = Some((uintptr_t)(aPrefMapSize));
+  if (!aPrefMapSize) {
+    return false;
+  }
+
+#if defined(ANDROID) || defined(XP_IOS)
+  
+  MOZ_RELEASE_ASSERT(gPrefsFd != -1);
+  prefsHandle = Some(UniqueFileHandle(gPrefsFd));
+
+  mPrefMapHandle.emplace(UniqueFileHandle(gPrefMapFd));
+#elif XP_UNIX
+  prefsHandle = Some(UniqueFileHandle(kPrefsFileDescriptor));
+
+  mPrefMapHandle.emplace(UniqueFileHandle(kPrefMapFileDescriptor));
+#endif
+
+  if (prefsHandle.isNothing() || mPrefsLen.isNothing() ||
+      mPrefMapHandle.isNothing() || mPrefMapSize.isNothing()) {
+    return false;
+  }
 
   
   
   Preferences::InitSnapshot(mPrefMapHandle.ref(), *mPrefMapSize);
 
   
-  if (!mShmem.SetHandle(std::move(aPrefsHandle),  true)) {
+  if (!mShmem.SetHandle(std::move(*prefsHandle),  true)) {
     NS_ERROR("failed to open shared memory in the child");
     return false;
   }
@@ -131,44 +187,83 @@ const FileDescriptor& SharedPreferenceDeserializer::GetPrefMapHandle() const {
   return mPrefMapHandle.ref();
 }
 
+#ifdef XP_UNIX
+
+
+static const int kJSInitFileDescriptor = 11;
+#endif
+
 void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
-                        geckoargs::ChildProcessArgs& aExtraOpts) {
+                        std::vector<std::string>& aExtraOpts) {
 #if defined(ANDROID) || defined(XP_IOS)
   
   return;
 #else
   auto& shmem = xpc::SelfHostedShmem::GetSingleton();
-  UniqueFileHandle handle = DuplicateFileHandle(shmem.Handle());
+  const mozilla::UniqueFileHandle& uniqHandle = shmem.Handle();
   size_t len = shmem.Content().Length();
 
   
   
-  if (!handle || !len) {
+  if (!uniqHandle || !len) {
     return;
   }
 
+  mozilla::detail::FileHandleType handle = uniqHandle.get();
   
-  geckoargs::sJsInitHandle.Put(std::move(handle), aExtraOpts);
+#  if defined(XP_WIN)
+  
+  procHost.AddHandleToShare(HANDLE(handle));
+  geckoargs::sJsInitHandle.Put((uintptr_t)(HANDLE(handle)), aExtraOpts);
+#  else
+  
+  
+  
+  
+  
+  
+  
+  procHost.AddFdToRemap(handle, kJSInitFileDescriptor);
+#  endif
+
+  
   geckoargs::sJsInitLen.Put((uintptr_t)(len), aExtraOpts);
 #endif
 }
 
-bool ImportSharedJSInit(UniqueFileHandle aJsInitHandle, uint64_t aJsInitLen) {
+bool ImportSharedJSInit(uint64_t aJsInitHandle, uint64_t aJsInitLen) {
   
   
-  if (!aJsInitLen || !aJsInitHandle) {
+  if (!aJsInitLen) {
     return true;
   }
 
-  size_t len = (uintptr_t)(aJsInitLen);
-  if (!len) {
+#ifdef XP_WIN
+  if (!aJsInitHandle) {
+    return true;
+  }
+#endif
+
+#ifdef XP_WIN
+  base::SharedMemoryHandle handle(HANDLE((uintptr_t)(aJsInitHandle)));
+  if (!aJsInitHandle) {
     return false;
   }
+#endif
+
+  size_t len = (uintptr_t)(aJsInitLen);
+  if (!aJsInitLen) {
+    return false;
+  }
+
+#ifdef XP_UNIX
+  auto handle = UniqueFileHandle(kJSInitFileDescriptor);
+#endif
 
   
   
   auto& shmem = xpc::SelfHostedShmem::GetSingleton();
-  if (!shmem.InitFromChild(std::move(aJsInitHandle), len)) {
+  if (!shmem.InitFromChild(std::move(handle), len)) {
     NS_ERROR("failed to open shared memory in the child");
     return false;
   }

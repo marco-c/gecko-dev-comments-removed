@@ -7,7 +7,6 @@
 #define __FORKSERVICE_CHILD_H_
 
 #include "base/process_util.h"
-#include "mozilla/GeckoArgs.h"
 #include "nsIObserver.h"
 #include "nsString.h"
 #include "mozilla/ipc/MiniTransceiver.h"
@@ -34,6 +33,16 @@ class ForkServiceChild {
   ForkServiceChild(int aFd, GeckoChildProcessHost* aProcess);
   virtual ~ForkServiceChild();
 
+  struct Args {
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+    int mForkFlags = 0;
+    bool mChroot = false;
+#endif
+    nsTArray<nsCString> mArgv;
+    nsTArray<EnvVar> mEnv;
+    nsTArray<FdMapping> mFdsRemap;
+  };
+
   
 
 
@@ -43,9 +52,10 @@ class ForkServiceChild {
 
 
 
-  Result<Ok, LaunchError> SendForkNewSubprocess(
-      geckoargs::ChildProcessArgs&& aArgs, base::LaunchOptions&& aOptions,
-      pid_t* aPid);
+
+
+
+  Result<Ok, LaunchError> SendForkNewSubprocess(const Args& aArgs, pid_t* aPid);
 
   
 
@@ -56,7 +66,6 @@ class ForkServiceChild {
 
   static void StartForkServer();
   static void StopForkServer();
-
   
 
 

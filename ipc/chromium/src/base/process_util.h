@@ -33,11 +33,21 @@
 #include "base/process.h"
 
 #include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 
 #include "mozilla/ipc/LaunchError.h"
+
+#if defined(MOZ_ENABLE_FORKSERVER)
+#  include "nsStringFwd.h"
+#  include "mozilla/ipc/FileDescriptorShuffle.h"
+
+namespace mozilla {
+namespace ipc {
+class FileDescriptor;
+}
+}  
+#endif
 
 #if defined(XP_DARWIN)
 struct kinfo_proc;
@@ -149,6 +159,10 @@ struct LaunchOptions {
   file_handle_mapping_vector fds_to_remap;
 #endif
 
+#if defined(MOZ_ENABLE_FORKSERVER)
+  bool use_forkserver = false;
+#endif
+
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
   
@@ -158,7 +172,7 @@ struct LaunchOptions {
   
   
   int fork_flags = 0;
-  mozilla::UniqueFileHandle sandbox_chroot_server;
+  bool sandbox_chroot = false;
 #endif
 
 #ifdef XP_DARWIN
@@ -210,6 +224,44 @@ Result<Ok, LaunchError> LaunchApp(const std::vector<std::string>& argv,
 EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
 #endif
 
+#if defined(MOZ_ENABLE_FORKSERVER)
+
+
+
+
+
+
+
+
+
+
+
+
+class AppProcessBuilder {
+ public:
+  AppProcessBuilder();
+  
+  
+  
+  bool ForkProcess(LaunchOptions&& options, ProcessHandle* process_handle);
+  
+  
+  void SetExecInfo(std::vector<std::string>&& aArgv, environment_map&& aEnv);
+  
+  
+  void InitAppProcess(int* argcp, char*** argvp);
+
+ private:
+  void ReplaceArguments(int* argcp, char*** argvp);
+
+  mozilla::ipc::FileDescriptorShuffle shuffle_;
+  std::vector<std::string> argv_;
+  environment_map env_;
+};
+
+void InitForkServerProcess();
+#endif
+
 
 
 
@@ -257,6 +309,11 @@ class EnvironmentLog {
 
   DISALLOW_EVIL_CONSTRUCTORS(EnvironmentLog);
 };
+
+#if defined(MOZ_ENABLE_FORKSERVER)
+typedef std::tuple<nsCString, nsCString> EnvVar;
+typedef std::tuple<mozilla::ipc::FileDescriptor, int> FdMapping;
+#endif
 
 }  
 

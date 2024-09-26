@@ -266,12 +266,26 @@ static CrashGenerationServer* crashServer;
 static std::terminate_handler oldTerminateHandler = nullptr;
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
+
+
+static const char kNullNotifyPipe[] = "-";
 static char* childCrashNotifyPipe;
 
 #elif defined(XP_LINUX)
 static int serverSocketFd = -1;
 static int clientSocketFd = -1;
 
+
+
+
+static FileHandle gMagicChildCrashReportFd =
+#  if defined(MOZ_WIDGET_ANDROID)
+    
+    kInvalidFileHandle
+#  else
+    4
+#  endif  
+    ;
 #endif
 
 
@@ -3486,22 +3500,38 @@ static void OOPDeinit() {
 #endif
 }
 
+#if defined(XP_WIN) || defined(XP_MACOSX)
 
-CrashPipeType GetChildNotificationPipe() {
+const char* GetChildNotificationPipe() {
+  if (!GetEnabled()) return kNullNotifyPipe;
+
+  MOZ_ASSERT(OOPInitialized());
+
+  return childCrashNotifyPipe;
+}
+#endif
+
+#if defined(XP_LINUX)
+
+
+bool CreateNotificationPipeForChild(int* childCrashFd, int* childCrashRemapFd) {
   if (!GetEnabled()) {
-    return nullptr;
+    *childCrashFd = -1;
+    *childCrashRemapFd = -1;
+    return true;
   }
 
   MOZ_ASSERT(OOPInitialized());
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
-  return childCrashNotifyPipe;
-#elif defined(XP_LINUX)
-  return DuplicateFileHandle(clientSocketFd);
-#endif
+  *childCrashFd = clientSocketFd;
+  *childCrashRemapFd = gMagicChildCrashReportFd;
+
+  return true;
 }
 
-bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe) {
+#endif  
+
+bool SetRemoteExceptionHandler(const char* aCrashPipe) {
   MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
   RegisterRuntimeExceptionModule();
   InitializeAppNotes();
@@ -3537,7 +3567,7 @@ bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe) {
       path, ChildFilter, ChildMinidumpCallback,
       nullptr,  
       true,     
-      aCrashPipe.release());
+      gMagicChildCrashReportFd);
 #elif defined(XP_MACOSX)
   gExceptionHandler = new google_breakpad::ExceptionHandler(
       "", ChildFilter, ChildMinidumpCallback,
@@ -3868,5 +3898,11 @@ bool UnsetRemoteExceptionHandler(bool wasSet) {
 
   return true;
 }
+
+#if defined(MOZ_WIDGET_ANDROID)
+void SetNotificationPipeForChild(int childCrashFd) {
+  gMagicChildCrashReportFd = childCrashFd;
+}
+#endif
 
 }  

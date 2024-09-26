@@ -15,7 +15,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 #include "CrashAnnotations.h"
 
@@ -280,17 +279,33 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
                             nsIFile** aTargetDumpOut);
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
-using CrashPipeType = const char*;
+
+const char* GetChildNotificationPipe();
+
 #else
-using CrashPipeType = mozilla::UniqueFileHandle;
-#endif
 
 
-CrashPipeType GetChildNotificationPipe();
 
 
-bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe);
+
+
+
+
+
+
+bool CreateNotificationPipeForChild(int* childCrashFd, int* childCrashRemapFd);
+
+#endif  
+
+
+bool SetRemoteExceptionHandler(const char* aCrashPipe = nullptr);
 bool UnsetRemoteExceptionHandler(bool wasSet = true);
+
+#if defined(MOZ_WIDGET_ANDROID)
+
+
+void SetNotificationPipeForChild(FileHandle childCrashFd);
+#endif
 
 }  
 

@@ -13,7 +13,6 @@
 #include "chrome/common/ipc_message.h"
 #include "mojo/core/ports/port_ref.h"
 
-#include "mozilla/GeckoArgs.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/NodeChannel.h"
@@ -96,8 +95,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   
   
   
-  bool AsyncLaunch(
-      geckoargs::ChildProcessArgs aExtraOpts = geckoargs::ChildProcessArgs{});
+  bool AsyncLaunch(StringVector aExtraOpts = StringVector());
 
   virtual bool WaitUntilConnected(int32_t aTimeoutMs = 0);
 
@@ -113,16 +111,14 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   
   
   
-  bool LaunchAndWaitForProcessHandle(
-      geckoargs::ChildProcessArgs aExtraOpts = geckoargs::ChildProcessArgs());
+  bool LaunchAndWaitForProcessHandle(StringVector aExtraOpts = StringVector());
   bool WaitForProcessHandle();
 
   
   
   
-  bool SyncLaunch(
-      geckoargs::ChildProcessArgs aExtraOpts = geckoargs::ChildProcessArgs(),
-      int32_t timeoutMs = 0);
+  bool SyncLaunch(StringVector aExtraOpts = StringVector(),
+                  int32_t timeoutMs = 0);
 
   virtual void OnChannelConnected(base::ProcessId peer_pid);
 
@@ -167,6 +163,17 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
 
 #ifdef XP_DARWIN
   task_t GetChildTask();
+#endif
+
+#ifdef XP_WIN
+
+  void AddHandleToShare(HANDLE aHandle) {
+    mLaunchOptions->handles_to_inherit.push_back(aHandle);
+  }
+#else
+  void AddFdToRemap(int aSrcFd, int aDstFd) {
+    mLaunchOptions->fds_to_remap.push_back(std::make_pair(aSrcFd, aDstFd));
+  }
 #endif
 
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
@@ -248,7 +255,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
     PROCESS_ERROR
   } mProcessState MOZ_GUARDED_BY(mMonitor);
 
-  bool PrepareLaunch(geckoargs::ChildProcessArgs& aExtraOpts);
+  void PrepareLaunch();
 
 #ifdef XP_WIN
   void InitWindowsGroupID();

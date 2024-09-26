@@ -20,11 +20,10 @@ namespace ipc {
 
 class IOThreadChild : public ChildThread {
  public:
-  explicit IOThreadChild(IPC::Channel::ChannelHandle aClientChannel,
-                         base::ProcessId aParentPid)
+  explicit IOThreadChild(base::ProcessId aParentPid)
       : ChildThread(base::Thread::Options(MessageLoop::TYPE_IO,
                                            0),
-                    std::move(aClientChannel), aParentPid) {}
+                    aParentPid) {}
 
   ~IOThreadChild() = default;
 

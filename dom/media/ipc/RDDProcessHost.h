@@ -48,7 +48,7 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  bool Launch(geckoargs::ChildProcessArgs aExtraOpts);
+  bool Launch(StringVector aExtraOpts);
 
   
   

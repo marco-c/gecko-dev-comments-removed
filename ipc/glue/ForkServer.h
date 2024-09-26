@@ -15,22 +15,24 @@ namespace ipc {
 
 class ForkServer {
  public:
-  ForkServer(int* aArgc, char*** aArgv);
-  ~ForkServer() = default;
+  
+  
+  static constexpr int kClientPipeFd = 3;
+
+  ForkServer();
+  ~ForkServer() {};
 
   void InitProcess(int* aArgc, char*** aArgv);
   bool HandleMessages();
 
   
-  bool OnMessageReceived(UniquePtr<IPC::Message> message);
+  void OnMessageReceived(UniquePtr<IPC::Message> message);
 
   static bool RunForkServer(int* aArgc, char*** aArgv);
 
  private:
   UniquePtr<MiniTransceiver> mTcver;
-
-  int* mArgc;
-  char*** mArgv;
+  UniquePtr<base::AppProcessBuilder> mAppProcBuilder;
 };
 
 enum {
