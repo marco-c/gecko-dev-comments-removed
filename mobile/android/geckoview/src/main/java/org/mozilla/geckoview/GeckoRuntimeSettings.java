@@ -616,6 +616,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<Boolean> mAboutConfig = new Pref<>("general.aboutConfig.enable", false);
    final Pref<Boolean> mForceUserScalable =
       new Pref<>("browser.ui.zoom.force-user-scalable", false);
+   final PrefWithoutDefault<Integer> mWebContentIsolationStrategy =
+      new PrefWithoutDefault<>("fission.webContentIsolationStrategy");
    final Pref<Boolean> mAutofillLogins =
       new Pref<Boolean>("signon.autofillForms", true);
    final Pref<Boolean> mAutomaticallyOfferPopup =
@@ -1480,6 +1482,59 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setAboutConfigEnabled(final boolean flag) {
     mAboutConfig.commit(flag);
+    return this;
+  }
+
+  
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({STRATEGY_ISOLATE_NOTHING, STRATEGY_ISOLATE_EVERYTHING, STRATEGY_ISOLATE_HIGH_VALUE})
+  public @interface WebContentIsolationStrategy {};
+
+  
+
+
+
+
+  public static final int STRATEGY_ISOLATE_NOTHING = 0;
+
+  
+
+
+
+  public static final int STRATEGY_ISOLATE_EVERYTHING = 1;
+
+  
+
+
+
+
+  public static final int STRATEGY_ISOLATE_HIGH_VALUE = 2;
+
+  
+
+
+
+
+
+
+
+
+  public @Nullable Integer getWebContentIsolationStrategy() {
+    return mWebContentIsolationStrategy.get();
+  }
+
+  
+
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setWebContentIsolationStrategy(
+      final @NonNull @WebContentIsolationStrategy Integer strategy) {
+    mWebContentIsolationStrategy.commit(strategy);
     return this;
   }
 
