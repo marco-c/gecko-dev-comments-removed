@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>Reference: stretching intrinsic ratio items with 'normal' and/or 'stretch' and min/max-size, with Automatic Minimum Size clamping</title>
@@ -44,7 +44,7 @@
 <div class="grid r"><img class="na"></div>
 <div class="grid r"><img class="na mxw2"></div>
 
-<pre></pre>
+<pre><!--min-height:20px--></pre>
 <div class="grid r mh20"><img class="mh20"></div>
 <div class="grid r mh20"><img class="mh20 mxw10"></div>
 <div class="grid r mh20"><img class="start mh20"></div>
@@ -54,7 +54,7 @@
 <div class="grid r mh20"><img class="na mh20"></div>
 <div class="grid r mh20"><img class="na mh20 mxw10"></div>
 
-<pre></pre>
+<pre><!--min-height:0--></pre>
 <div class="grid r"><img class="mh0"></div>
 <div class="grid r"><img class="mh0 mxw10"></div>
 <div class="grid r"><img class="start mh0"></div>
@@ -64,7 +64,7 @@
 <div class="grid r"><img class="na mh0"></div>
 <div class="grid r"><img class="na mh0 mxw2"></div>
 
-<pre></pre>
+<pre><!----></pre>
 
 <div class="grid w4"><img></div>
 <div class="grid w4"><img class="mxw2"></div>
@@ -75,7 +75,7 @@
 <div class="grid w4"><img class="na"></div>
 <div class="grid w4"><img class="na mxw2"></div>
 
-<pre></pre>
+<pre><!--min-width:20px--></pre>
 <div class="grid mw20"><img class="mw20"></div>
 <div class="grid mw20"><img class="mw20 mxh10"></div>
 <div class="grid mw20"><img class="start mw20"></div>
@@ -85,7 +85,7 @@
 <div class="grid mw20"><img class="na mw20"></div>
 <div class="grid mw20"><img class="na mw20 mxh10"></div>
 
-<pre></pre>
+<pre><!--min-width:0--></pre>
 <div class="grid w4"><img class="mw0"></div>
 <div class="grid w4"><img class="mw0 mxh10"></div>
 <div class="grid w4"><img class="start mw0"></div>
@@ -95,7 +95,7 @@
 <div class="grid w4"><img class="na mw0"></div>
 <div class="grid w4"><img class="na mw0 mxh10"></div>
 
-<pre></pre>
+<pre><!--width:20px--></pre>
 
 <div class="grid r"><img class="w20"></div>
 <div class="grid r"><img class="w20 mxh10"></div>
@@ -106,7 +106,7 @@
 <div class="grid r"><img class="na w20"></div>
 <div class="grid r"><img class="na w20 mxh2"></div>
 
-<pre></pre>
+<pre><!--width:20px--></pre>
 
 <div class="grid mw20"><img class="start w20"></div>
 <div class="grid mw20"><img class="start w20 mxh10"></div>
@@ -117,7 +117,7 @@
 <div class="grid mw20"><img class="na w20"></div>
 <div class="grid mw20"><img class="na w20 mxh10"></div>
 
-<pre></pre>
+<pre><!--height:20px--></pre>
 
 <div class="grid r mh20"><img class="h20"></div>
 <div class="grid r mh20"><img class="h20 mxw10"></div>
@@ -128,7 +128,7 @@
 <div class="grid r mh20"><img class="an h20"></div>
 <div class="grid r mh20"><img class="an h20 mxw10"></div>
 
-<pre></pre>
+<pre><!--height:20px--></pre>
 
 <div class="grid w4"><img class="h20"></div>
 <div class="grid w4"><img class="h20 mxw2"></div>
@@ -146,15 +146,15 @@ var imgSizes =
 [
   ['4px', '4px'],
   ['16px', '16px'],
-  ['16px', '4px'],
-  ['10px', '4px'],
+  ['4px', '4px'],
+  ['4px', '4px'],
   ['4px', '4px'],
   ['2px', '2px'],
   ['20px', '20px'],
   ['10px', '20px'],
   ['20px', '20px'],
   ['10px', '20px'],
-  ['16px', '20px'],
+  ['20px', '20px'],
   ['10px', '20px'],
   ['20px', '20px'],
   ['10px', '20px'],
@@ -162,15 +162,15 @@ var imgSizes =
   ['10px', '10px'],
   ['16px', '16px'],
   ['10px', '10px'],
-  ['16px', '4px'],
-  ['10px', '4px'],
+  ['4px', '4px'],
+  ['4px', '4px'],
   ['16px', '16px'],
   ['2px', '2px'],
   ['4px', '4px'],
   ['2px', '2px'],
   ['16px', '16px'],
   ['2px', '2px'],
-  ['16px', '32px'],
+  ['32px', '32px'],
   ['2px', '32px'],
   ['16px', '16px'],
   ['2px', '2px'],
@@ -178,16 +178,16 @@ var imgSizes =
   ['20px', '10px'],
   ['20px', '20px'],
   ['20px', '10px'],
-  ['20px', '32px'],
-  ['20px', '10px'],
+  ['32px', '32px'],
+  ['32px', '10px'],
   ['20px', '20px'],
   ['20px', '10px'],
   ['16px', '16px'],
   ['10px', '10px'],
   ['16px', '16px'],
   ['10px', '10px'],
-  ['16px', '32px'],
-  ['16px', '10px'],
+  ['32px', '32px'],
+  ['32px', '10px'],
   ['16px', '16px'],
   ['10px', '10px'],
   ['20px', '20px'],
