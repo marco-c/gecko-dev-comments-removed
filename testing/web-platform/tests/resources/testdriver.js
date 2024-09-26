@@ -197,7 +197,6 @@
 
 
 
-
         click: function(element) {
             if (!inView(element)) {
                 element.scrollIntoView({behavior: "instant",
