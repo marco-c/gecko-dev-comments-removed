@@ -635,9 +635,16 @@ RefPtr<WebGLContext> WebGLContext::Create(HostWebGLContext* host,
     
     
     
+    const bool offCompositorThread = gfx::gfxVars::UseCanvasRenderThread() ||
+                                     !gfx::gfxVars::SupportsThreadsafeGL();
     types[layers::SurfaceDescriptor::TSurfaceDescriptorGPUVideo] =
-        gfx::gfxVars::UseCanvasRenderThread() ||
-        !gfx::gfxVars::SupportsThreadsafeGL();
+        offCompositorThread;
+    
+    
+    
+    
+    types[layers::SurfaceDescriptor::TSurfaceDescriptorExternalImage] =
+        offCompositorThread;
     if (webgl->gl->IsANGLE()) {
       types[layers::SurfaceDescriptor::TSurfaceDescriptorD3D10] = true;
       types[layers::SurfaceDescriptor::TSurfaceDescriptorDXGIYCbCr] = true;
@@ -1580,6 +1587,15 @@ void WebGLContext::DummyReadFramebufferOperation() {
   if (status != LOCAL_GL_FRAMEBUFFER_COMPLETE) {
     ErrorInvalidFramebufferOperation("Framebuffer must be complete.");
   }
+}
+
+layers::SharedSurfacesHolder* WebGLContext::GetSharedSurfacesHolder() const {
+  const auto* outOfProcess = mHost ? mHost->mOwnerData.outOfProcess : nullptr;
+  if (outOfProcess) {
+    return outOfProcess->mSharedSurfacesHolder;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unexpected use of SharedSurfacesHolder in process!");
+  return nullptr;
 }
 
 dom::ContentParentId WebGLContext::GetContentId() const {

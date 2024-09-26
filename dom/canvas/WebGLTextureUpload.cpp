@@ -21,6 +21,7 @@
 #include "mozilla/dom/ImageBitmap.h"
 #include "mozilla/dom/ImageData.h"
 #include "mozilla/dom/OffscreenCanvas.h"
+#include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_webgl.h"
@@ -70,6 +71,10 @@ Maybe<TexUnpackBlobDesc> FromImageBitmap(const GLenum target, Maybe<uvec3> size,
   }
 
   
+  Maybe<layers::SurfaceDescriptor> sd;
+  layers::SharedSurfacesChild::Share(surf, sd);
+
+  
   
   
   return Some(TexUnpackBlobDesc{target,
@@ -79,7 +84,7 @@ Maybe<TexUnpackBlobDesc> FromImageBitmap(const GLenum target, Maybe<uvec3> size,
                                 {},
                                 Some(imageSize),
                                 nullptr,
-                                {},
+                                sd,
                                 surf,
                                 {},
                                 false});
@@ -199,6 +204,11 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
 
     
     dataSurf = surf->GetDataSurface();
+  }
+
+  if (!sd) {
+    
+    layers::SharedSurfacesChild::Share(dataSurf, sd);
   }
 
   

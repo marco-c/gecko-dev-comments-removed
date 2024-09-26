@@ -11,6 +11,7 @@
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/SharedSurfacesParent.h"
 #include "mozilla/layers/TextureHost.h"
 #include "mozilla/layers/VideoBridgeParent.h"
 #include "mozilla/RefPtr.h"
@@ -315,6 +316,15 @@ static bool SDIsNullRemoteDecoder(const layers::SurfaceDescriptor& sd) {
 }
 
 
+
+static bool SDIsExternalImage(const layers::SurfaceDescriptor& sd) {
+  return sd.type() ==
+             layers::SurfaceDescriptor::TSurfaceDescriptorExternalImage &&
+         sd.get_SurfaceDescriptorExternalImage().source() ==
+             wr::ExternalImageSource::SharedSurfaces;
+}
+
+
 std::unique_ptr<TexUnpackBlob> TexUnpackBlob::Create(
     const TexUnpackBlobDesc& desc) {
   return std::unique_ptr<TexUnpackBlob>{[&]() -> TexUnpackBlob* {
@@ -339,7 +349,8 @@ std::unique_ptr<TexUnpackBlob> TexUnpackBlob::Create(
       
       
       
-      if (SDIsRGBBuffer(*desc.sd) || SDIsNullRemoteDecoder(*desc.sd)) {
+      if (SDIsRGBBuffer(*desc.sd) || SDIsNullRemoteDecoder(*desc.sd) ||
+          SDIsExternalImage(*desc.sd)) {
         return new TexUnpackSurface(desc);
       }
       return new TexUnpackImage(desc);
@@ -999,6 +1010,17 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
         return false;
       }
       surf = texture->GetAsSurface();
+    } else if (SDIsExternalImage(sd)) {
+      const auto& sdei = sd.get_SurfaceDescriptorExternalImage();
+      if (auto* sharedSurfacesHolder = webgl->GetSharedSurfacesHolder()) {
+        surf = sharedSurfacesHolder->Get(sdei.id());
+      }
+      if (!surf) {
+        
+        
+        gfxCriticalNote << "TexUnpackSurface failed to get ExternalImage";
+        return false;
+      }
     } else {
       MOZ_ASSERT_UNREACHABLE("Unexpected surface descriptor!");
     }
