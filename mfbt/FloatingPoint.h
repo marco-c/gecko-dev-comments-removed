@@ -216,24 +216,14 @@ static MOZ_ALWAYS_INLINE int_fast16_t ExponentComponent(T aValue) {
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE T PositiveInfinity() {
-  
-
-
-
-  typedef FloatingPoint<T> Traits;
-  return BitwiseCast<T>(Traits::kExponentBits);
+static constexpr MOZ_ALWAYS_INLINE T PositiveInfinity() {
+  return std::numeric_limits<T>::infinity();
 }
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE T NegativeInfinity() {
-  
-
-
-
-  typedef FloatingPoint<T> Traits;
-  return BitwiseCast<T>(Traits::kSignBit | Traits::kExponentBits);
+static constexpr MOZ_ALWAYS_INLINE T NegativeInfinity() {
+  return -std::numeric_limits<T>::infinity();
 }
 
 
@@ -306,10 +296,14 @@ SpecificNaN(int signbit, typename FloatingPoint<T>::Bits significand) {
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE T MinNumberValue() {
-  typedef FloatingPoint<T> Traits;
-  typedef typename Traits::Bits Bits;
-  return BitwiseCast<T>(Bits(1));
+static constexpr MOZ_ALWAYS_INLINE T MinNumberValue() {
+  return std::numeric_limits<T>::denorm_min();
+}
+
+
+template <typename T>
+static constexpr MOZ_ALWAYS_INLINE T MaxNumberValue() {
+  return std::numeric_limits<T>::max();
 }
 
 namespace detail {
