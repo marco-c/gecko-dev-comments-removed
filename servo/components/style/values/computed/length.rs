@@ -566,3 +566,6 @@ pub type MaxSize = GenericMaxSize<NonNegativeLengthPercentage>;
 
 
 pub type AnchorSizeFunction = GenericAnchorSizeFunction<LengthPercentage>;
+
+
+pub type Margin = generics::GenericMargin<LengthPercentage>;

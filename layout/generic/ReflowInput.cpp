@@ -1135,9 +1135,9 @@ void ReflowInput::CalculateBorderPaddingMargin(
     
     
     const nscoord start = nsLayoutUtils::ComputeCBDependentValue(
-        aContainingBlockSize, mStyleMargin->mMargin.Get(startSide));
+        aContainingBlockSize, mStyleMargin->GetMargin(startSide));
     const nscoord end = nsLayoutUtils::ComputeCBDependentValue(
-        aContainingBlockSize, mStyleMargin->mMargin.Get(endSide));
+        aContainingBlockSize, mStyleMargin->GetMargin(endSide));
     marginStartEnd = start + end;
   }
 
@@ -1865,8 +1865,10 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     nscoord availMarginSpace =
         aCBSize.ISize(cbwm) - offsets.IStartEnd(cbwm) - margin.IStartEnd(cbwm) -
         borderPadding.IStartEnd(cbwm) - computedSize.ISize(cbwm);
-    marginIStartIsAuto = mStyleMargin->mMargin.GetIStart(cbwm).IsAuto();
-    marginIEndIsAuto = mStyleMargin->mMargin.GetIEnd(cbwm).IsAuto();
+    marginIStartIsAuto =
+        mStyleMargin->GetMargin(LogicalSide::IStart, cbwm).IsAuto();
+    marginIEndIsAuto =
+        mStyleMargin->GetMargin(LogicalSide::IEnd, cbwm).IsAuto();
     ComputeAbsPosInlineAutoMargin(availMarginSpace, cbwm, marginIStartIsAuto,
                                   marginIEndIsAuto, margin, offsets);
   }
@@ -1920,8 +1922,10 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     
     
     nscoord availMarginSpace = autoBSize - computedSize.BSize(cbwm);
-    marginBStartIsAuto = mStyleMargin->mMargin.GetBStart(cbwm).IsAuto();
-    marginBEndIsAuto = mStyleMargin->mMargin.GetBEnd(cbwm).IsAuto();
+    marginBStartIsAuto =
+        mStyleMargin->GetMargin(LogicalSide::BStart, cbwm).IsAuto();
+    marginBEndIsAuto =
+        mStyleMargin->GetMargin(LogicalSide::BEnd, cbwm).IsAuto();
 
     ComputeAbsPosBlockAutoMargin(availMarginSpace, cbwm, marginBStartIsAuto,
                                  marginBEndIsAuto, margin, offsets);
@@ -2663,9 +2667,10 @@ void ReflowInput::CalculateBlockSideMargins() {
 
   
   
-  const auto& styleSides = mStyleMargin->mMargin;
-  bool isAutoStartMargin = styleSides.GetIStart(cbWM).IsAuto();
-  bool isAutoEndMargin = styleSides.GetIEnd(cbWM).IsAuto();
+  bool isAutoStartMargin =
+      mStyleMargin->GetMargin(LogicalSide::IStart, cbWM).IsAuto();
+  bool isAutoEndMargin =
+      mStyleMargin->GetMargin(LogicalSide::IEnd, cbWM).IsAuto();
   if (!isAutoStartMargin && !isAutoEndMargin) {
     
     
@@ -2895,7 +2900,7 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
     LogicalMargin m(aCBWM);
     for (const LogicalSide side : LogicalSides::All) {
       m.Side(side, aCBWM) = nsLayoutUtils::ComputeCBDependentValue(
-          aPercentBasis, styleMargin->mMargin.Get(side, aCBWM));
+          aPercentBasis, styleMargin->GetMargin(side, aCBWM));
     }
     SetComputedLogicalMargin(aCBWM, m);
   } else {

@@ -125,9 +125,8 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   if (mPD->mPrintSettings->GetHonorPageRuleMargins()) {
-    const auto& margin = kidReflowInput.mStyleMargin->mMargin;
     for (const auto side : mozilla::AllPhysicalSides()) {
-      if (!margin.Get(side).IsAuto()) {
+      if (!kidReflowInput.mStyleMargin->GetMargin(side).IsAuto()) {
         
         
         const nscoord computed =

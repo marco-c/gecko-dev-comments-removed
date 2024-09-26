@@ -1876,7 +1876,7 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
         
         
         
-        const auto& margin = ctx->StyleMargin()->mMargin.Get(aSide);
+        const auto& margin = ctx->StyleMargin()->GetMargin(aSide);
         if (!margin.ConvertsToLength() ||
             margin.AsLengthPercentage().ToLength() != 0) {
           return true;

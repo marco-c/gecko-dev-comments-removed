@@ -985,7 +985,7 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
       
       
       Side side = SideForPaddingOrMarginOrInsetProperty(aPropID);
-      return !style->StyleMargin()->mMargin.Get(side).ConvertsToLength();
+      return !style->StyleMargin()->GetMargin(side).ConvertsToLength();
     }
     default:
       return false;
@@ -2088,10 +2088,10 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetBorderWidthFor(
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetMarginFor(Side aSide) {
-  const auto& margin = StyleMargin()->mMargin.Get(aSide);
+  const auto& margin = StyleMargin()->GetMargin(aSide);
   if (!mInnerFrame || margin.ConvertsToLength()) {
     auto val = MakeRefPtr<nsROCSSPrimitiveValue>();
-    SetValueToLengthPercentageOrAuto(val, margin, false);
+    SetValueToMargin(val, margin);
     return val.forget();
   }
   AssertFlushedPendingReflows();
@@ -2194,6 +2194,16 @@ void nsComputedDOMStyle::SetValueToInset(nsROCSSPrimitiveValue* aValue,
     return;
   }
   SetValueToLengthPercentage(aValue, aInset.AsLengthPercentage(), false);
+}
+
+void nsComputedDOMStyle::SetValueToMargin(nsROCSSPrimitiveValue* aValue,
+                                          const mozilla::StyleMargin& aMargin) {
+  
+  if (!aMargin.IsLengthPercentage()) {
+    aValue->SetString("auto");
+    return;
+  }
+  SetValueToLengthPercentage(aValue, aMargin.AsLengthPercentage(), false);
 }
 
 void nsComputedDOMStyle::SetValueToLengthPercentage(

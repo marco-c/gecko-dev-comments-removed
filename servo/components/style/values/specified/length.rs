@@ -16,7 +16,7 @@ use crate::values::computed::{self, CSSPixelLength, Context};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
     GenericAnchorSizeFunction, GenericLengthOrNumber, GenericLengthPercentageOrNormal,
-    GenericMaxSize, GenericSize,
+    GenericMargin, GenericMaxSize, GenericSize,
 };
 use crate::values::generics::NonNegative;
 use crate::values::specified::calc::{self, CalcNode};
@@ -2057,3 +2057,36 @@ pub type NonNegativeLengthOrNumber = GenericLengthOrNumber<NonNegativeLength, No
 
 
 pub type AnchorSizeFunction = GenericAnchorSizeFunction<LengthPercentage>;
+
+
+pub type Margin = GenericMargin<LengthPercentage>;
+
+impl Margin {
+    
+    
+    #[inline]
+    pub fn parse_quirky<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        allow_quirks: AllowQuirks,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(l) = input.try_parse(|i| LengthPercentage::parse_quirky(context, i, allow_quirks))
+        {
+            return Ok(Self::LengthPercentage(l));
+        }
+        if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
+            return Ok(Self::Auto);
+        }
+        let inner = AnchorSizeFunction::parse(context, input)?;
+        Ok(Self::AnchorSizeFunction(Box::new(inner)))
+    }
+}
+
+impl Parse for Margin {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_quirky(context, input, AllowQuirks::No)
+    }
+}

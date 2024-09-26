@@ -368,7 +368,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
     }
 
     for (const auto side : mozilla::AllPhysicalSides()) {
-      aMargin.Side(side) = mMargin.Get(side).AsLengthPercentage().ToLength();
+      aMargin.Side(side) = GetMargin(side).AsLengthPercentage().ToLength();
     }
     return true;
   }
@@ -386,7 +386,33 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   inline bool HasInlineAxisAuto(mozilla::WritingMode aWM) const;
   inline bool HasAuto(mozilla::LogicalAxis, mozilla::WritingMode) const;
 
-  mozilla::StyleRect<mozilla::LengthPercentageOrAuto> mMargin;
+  
+  
+  
+  static const mozilla::StyleMargin kZeroMargin;
+  const mozilla::StyleMargin& GetMargin(mozilla::Side aSide) const {
+    const auto& result = mMargin.Get(aSide);
+    if (MOZ_UNLIKELY(result.IsAnchorSizeFunction())) {
+      return kZeroMargin;
+    }
+    return result;
+  }
+
+  bool MarginEquals(const nsStyleMargin& aOther) const {
+    for (const auto side : mozilla::AllPhysicalSides()) {
+      if (GetMargin(side) != aOther.GetMargin(side)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  
+  
+  inline const mozilla::StyleMargin& GetMargin(mozilla::LogicalSide aSide,
+                                               mozilla::WritingMode aWM) const;
+
+  mozilla::StyleRect<mozilla::StyleMargin> mMargin;
   mozilla::StyleRect<mozilla::StyleLength> mScrollMargin;
   
   
