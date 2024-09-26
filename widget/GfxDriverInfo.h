@@ -232,6 +232,7 @@ enum DriverVendor : uint8_t {
   MesaSWUnknown,
   
   MesaR600,
+  MesaRadeonsi,
   
   MesaNouveau,
   
