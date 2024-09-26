@@ -570,8 +570,11 @@ void MacroAssemblerLOONG64::ma_addPtrTestOverflow(Register rd, Register rj,
     }
 
     as_add_d(rd, rj, rk);
+    
+    
+    
     as_slti(scratch, rj, 0);
-    as_slt(scratch2, rd, rj);
+    as_slt(scratch2, rd, rk);
     ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
   }
 }
