@@ -82,6 +82,9 @@ def guess_mozinfo_from_task(task, repo="", test_tags=[]):
     
     info["release_or_beta"] = not info["nightly_build"]  
     info["webrtc"] = not info["mingwclang"]
+    info["opt"] = (
+        not info["debug"] and not info["asan"] and not info["tsan"] and not info["ccov"]
+    )
 
     for platform in ("android", "linux", "mac", "win"):
         if p_os["name"].startswith(platform):
