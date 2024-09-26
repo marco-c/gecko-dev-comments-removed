@@ -324,8 +324,8 @@ static bool HaveSpecifiedSize(const nsStylePosition* aStylePosition) {
   
   
   
-  return aStylePosition->mWidth.IsLengthPercentage() &&
-         aStylePosition->mHeight.IsLengthPercentage();
+  return aStylePosition->GetWidth().IsLengthPercentage() &&
+         aStylePosition->GetHeight().IsLengthPercentage();
 }
 
 template <typename SizeOrMaxSize>
@@ -362,8 +362,8 @@ static bool SizeDependsOnIntrinsicSize(const ReflowInput& aReflowInput) {
   
   
   
-  return !position.mHeight.ConvertsToLength() ||
-         !position.mWidth.ConvertsToLength() ||
+  return !position.GetHeight().ConvertsToLength() ||
+         !position.GetWidth().ConvertsToLength() ||
          DependsOnIntrinsicSize(position.MinISize(wm)) ||
          DependsOnIntrinsicSize(position.MaxISize(wm)) ||
          aReflowInput.mFrame->IsFlexItem();
@@ -2840,7 +2840,7 @@ static bool IsInAutoWidthTableCellForQuirk(nsIFrame* aFrame) {
   if (ancestor->Style()->GetPseudoType() == PseudoStyleType::cellContent) {
     
     nsIFrame* grandAncestor = static_cast<nsIFrame*>(ancestor->GetParent());
-    return grandAncestor && grandAncestor->StylePosition()->mWidth.IsAuto();
+    return grandAncestor && grandAncestor->StylePosition()->GetWidth().IsAuto();
   }
   return false;
 }

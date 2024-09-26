@@ -294,8 +294,8 @@ void SVGForeignObjectFrame::NotifySVGChanged(uint32_t aFlags) {
 
     
     
-    if (StylePosition()->mWidth.HasPercent() ||
-        StylePosition()->mHeight.HasPercent()) {
+    if (StylePosition()->GetWidth().HasPercent() ||
+        StylePosition()->GetHeight().HasPercent()) {
       needNewBounds = true;
       needReflow = true;
     }

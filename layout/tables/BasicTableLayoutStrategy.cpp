@@ -171,6 +171,7 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
         
       case StyleSize::Tag::Auto:
       case StyleSize::Tag::LengthPercentage:
+      case StyleSize::Tag::AnchorSizeFunction:
         break;
     }
   }

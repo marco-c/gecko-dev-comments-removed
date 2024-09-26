@@ -1990,15 +1990,15 @@ nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
   GetImage(aRowIndex, aCol, aUseContext, aComputedStyle, getter_AddRefs(image));
 
   const nsStylePosition* myPosition = aComputedStyle->StylePosition();
-  if (myPosition->mWidth.ConvertsToLength()) {
-    int32_t val = myPosition->mWidth.ToLength();
+  if (myPosition->GetWidth().ConvertsToLength()) {
+    int32_t val = myPosition->GetWidth().ToLength();
     r.width += val;
   } else {
     needWidth = true;
   }
 
-  if (myPosition->mHeight.ConvertsToLength()) {
-    int32_t val = myPosition->mHeight.ToLength();
+  if (myPosition->GetHeight().ConvertsToLength()) {
+    int32_t val = myPosition->GetHeight().ToLength();
     r.height += val;
   } else {
     needHeight = true;
@@ -2049,17 +2049,17 @@ nsSize nsTreeBodyFrame::GetImageDestSize(ComputedStyle* aComputedStyle,
   
   const nsStylePosition* myPosition = aComputedStyle->StylePosition();
 
-  if (myPosition->mWidth.ConvertsToLength()) {
+  if (myPosition->GetWidth().ConvertsToLength()) {
     
-    size.width = myPosition->mWidth.ToLength();
+    size.width = myPosition->GetWidth().ToLength();
   } else {
     
     needWidth = true;
   }
 
-  if (myPosition->mHeight.ConvertsToLength()) {
+  if (myPosition->GetHeight().ConvertsToLength()) {
     
-    size.height = myPosition->mHeight.ToLength();
+    size.height = myPosition->GetHeight().ToLength();
   } else {
     
     needHeight = true;
@@ -2138,13 +2138,13 @@ int32_t nsTreeBodyFrame::GetRowHeight() {
     const nsStylePosition* myPosition = rowContext->StylePosition();
 
     nscoord minHeight = 0;
-    if (myPosition->mMinHeight.ConvertsToLength()) {
-      minHeight = myPosition->mMinHeight.ToLength();
+    if (myPosition->GetMinHeight().ConvertsToLength()) {
+      minHeight = myPosition->GetMinHeight().ToLength();
     }
 
     nscoord height = 0;
-    if (myPosition->mHeight.ConvertsToLength()) {
-      height = myPosition->mHeight.ToLength();
+    if (myPosition->GetHeight().ConvertsToLength()) {
+      height = myPosition->GetHeight().ToLength();
     }
 
     if (height < minHeight) height = minHeight;
@@ -2176,8 +2176,8 @@ int32_t nsTreeBodyFrame::GetIndentation() {
       GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeIndentation());
   if (indentContext) {
     const nsStylePosition* myPosition = indentContext->StylePosition();
-    if (myPosition->mWidth.ConvertsToLength()) {
-      return myPosition->mWidth.ToLength();
+    if (myPosition->GetWidth().ConvertsToLength()) {
+      return myPosition->GetWidth().ToLength();
     }
   }
 
@@ -2806,8 +2806,8 @@ ImgDrawResult nsTreeBodyFrame::PaintSeparator(int32_t aRowIndex,
 
   
   nscoord height;
-  if (stylePosition->mHeight.ConvertsToLength()) {
-    height = stylePosition->mHeight.ToLength();
+  if (stylePosition->GetHeight().ConvertsToLength()) {
+    height = stylePosition->GetHeight().ToLength();
   } else {
     
     height = nsPresContext::CSSPixelsToAppUnits(2);
@@ -3524,8 +3524,8 @@ ImgDrawResult nsTreeBodyFrame::PaintDropFeedback(
 
     
     nscoord width;
-    if (stylePosition->mWidth.ConvertsToLength()) {
-      width = stylePosition->mWidth.ToLength();
+    if (stylePosition->GetWidth().ConvertsToLength()) {
+      width = stylePosition->GetWidth().ToLength();
     } else {
       
       width = nsPresContext::CSSPixelsToAppUnits(50);
@@ -3533,8 +3533,8 @@ ImgDrawResult nsTreeBodyFrame::PaintDropFeedback(
 
     
     nscoord height;
-    if (stylePosition->mHeight.ConvertsToLength()) {
-      height = stylePosition->mHeight.ToLength();
+    if (stylePosition->GetHeight().ConvertsToLength()) {
+      height = stylePosition->GetHeight().ToLength();
     } else {
       
       height = nsPresContext::CSSPixelsToAppUnits(2);
