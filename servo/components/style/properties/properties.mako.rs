@@ -37,7 +37,7 @@ use crate::str::CssStringWriter;
 use crate::values::{
     computed,
     resolved,
-    specified::{font::SystemFont, length::LineHeightBase, color::ColorSchemeFlags},
+    specified::{font::SystemFont, length::LineHeightBase},
 };
 use std::cell::Cell;
 use super::{
@@ -2358,10 +2358,6 @@ pub struct StyleBuilder<'a> {
     pub writing_mode: WritingMode,
 
     
-    
-    pub color_scheme: ColorSchemeFlags,
-
-    
     pub effective_zoom: computed::Zoom,
 
     
@@ -2390,7 +2386,7 @@ impl<'a> StyleBuilder<'a> {
         let inherited_style = parent_style.unwrap_or(reset_style);
 
         let flags = inherited_style.flags.inherited();
-        Self {
+        StyleBuilder {
             device,
             stylist,
             inherited_style,
@@ -2403,7 +2399,6 @@ impl<'a> StyleBuilder<'a> {
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: inherited_style.writing_mode,
             effective_zoom: inherited_style.effective_zoom,
-            color_scheme: inherited_style.get_inherited_ui().color_scheme_bits(),
             flags: Cell::new(flags),
             visited_style: None,
             % for style_struct in data.active_style_structs():
@@ -2430,7 +2425,7 @@ impl<'a> StyleBuilder<'a> {
     ) -> Self {
         let reset_style = device.default_computed_values();
         let inherited_style = parent_style.unwrap_or(reset_style);
-        Self {
+        StyleBuilder {
             device,
             stylist,
             inherited_style,
@@ -2443,7 +2438,6 @@ impl<'a> StyleBuilder<'a> {
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: style_to_derive_from.writing_mode,
             effective_zoom: style_to_derive_from.effective_zoom,
-            color_scheme: style_to_derive_from.get_inherited_ui().color_scheme_bits(),
             flags: Cell::new(style_to_derive_from.flags),
             visited_style: None,
             % for style_struct in data.active_style_structs():
