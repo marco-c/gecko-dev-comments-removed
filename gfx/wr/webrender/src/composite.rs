@@ -483,8 +483,8 @@ impl CompositeStatePreallocator {
         self.tiles.record_vec(&state.tiles);
         self.external_surfaces.record_vec(&state.external_surfaces);
         self.occluders.record_vec(&state.occluders.occluders);
-        self.occluders_events.record_vec(&state.occluders.events);
-        self.occluders_active.record_vec(&state.occluders.active);
+        self.occluders_events.record_vec(&state.occluders.scratch.events);
+        self.occluders_active.record_vec(&state.occluders.scratch.active);
         self.descriptor_surfaces.record_vec(&state.descriptor.surfaces);
     }
 
@@ -492,8 +492,8 @@ impl CompositeStatePreallocator {
         self.tiles.preallocate_framevec(&mut state.tiles);
         self.external_surfaces.preallocate_framevec(&mut state.external_surfaces);
         self.occluders.preallocate_framevec(&mut state.occluders.occluders);
-        self.occluders_events.preallocate_framevec(&mut state.occluders.events);
-        self.occluders_active.preallocate_framevec(&mut state.occluders.active);
+        self.occluders_events.preallocate_framevec(&mut state.occluders.scratch.events);
+        self.occluders_active.preallocate_framevec(&mut state.occluders.scratch.active);
         self.descriptor_surfaces.preallocate_vec(&mut state.descriptor.surfaces);
     }
 }
@@ -1410,26 +1410,41 @@ impl OcclusionEvent {
 
 
 
+pub struct OccludersScratchBuffers {
+    events: FrameVec<OcclusionEvent>,
+    active: FrameVec<ops::Range<i32>>,
+}
+
+impl Default for OccludersScratchBuffers {
+    fn default() -> Self {
+        OccludersScratchBuffers {
+            events: FrameVec::new_in(FrameAllocator::fallback()),
+            active: FrameVec::new_in(FrameAllocator::fallback()),
+        }
+    }
+}
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Occluders {
     occluders: FrameVec<Occluder>,
 
     
-
-    #[cfg_attr(feature = "serde", serde(skip))]
-    events: FrameVec<OcclusionEvent>,
-
-    #[cfg_attr(feature = "serde", serde(skip))]
-    active: FrameVec<ops::Range<i32>>,
+    #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
+    scratch: OccludersScratchBuffers,
 }
 
 impl Occluders {
     fn new(memory: &FrameMemory) -> Self {
         Occluders {
             occluders: memory.new_vec(),
-            events: memory.new_vec(),
-            active: memory.new_vec(),
+            scratch: OccludersScratchBuffers {
+                events: memory.new_vec(),
+                active: memory.new_vec(),    
+            }
         }
     }
 
@@ -1479,8 +1494,8 @@ impl Occluders {
         
         
 
-        self.events.clear();
-        self.active.clear();
+        self.scratch.events.clear();
+        self.scratch.active.clear();
 
         let mut area = 0;
 
@@ -1493,37 +1508,37 @@ impl Occluders {
                 if let Some(rect) = occluder.world_rect.intersection(clip_rect) {
                     let x0 = rect.min.x;
                     let x1 = x0 + rect.width();
-                    self.events.push(OcclusionEvent::new(rect.min.y, OcclusionEventKind::Begin, x0, x1));
-                    self.events.push(OcclusionEvent::new(rect.min.y + rect.height(), OcclusionEventKind::End, x0, x1));
+                    self.scratch.events.push(OcclusionEvent::new(rect.min.y, OcclusionEventKind::Begin, x0, x1));
+                    self.scratch.events.push(OcclusionEvent::new(rect.min.y + rect.height(), OcclusionEventKind::End, x0, x1));
                 }
             }
         }
 
         
-        if self.events.is_empty() {
+        if self.scratch.events.is_empty() {
             return 0;
         }
 
         
-        self.events.sort_by_key(|e| e.y);
-        let mut cur_y = self.events[0].y;
+        self.scratch.events.sort_by_key(|e| e.y);
+        let mut cur_y = self.scratch.events[0].y;
 
         
-        for event in &self.events {
+        for event in &self.scratch.events {
             
             let dy = event.y - cur_y;
 
             
-            if dy != 0 && !self.active.is_empty() {
+            if dy != 0 && !self.scratch.active.is_empty() {
                 assert!(dy > 0);
 
                 
-                self.active.sort_by_key(|i| i.start);
+                self.scratch.active.sort_by_key(|i| i.start);
                 let mut query = 0;
-                let mut cur = self.active[0].start;
+                let mut cur = self.scratch.active[0].start;
 
                 
-                for interval in &self.active {
+                for interval in &self.scratch.active {
                     cur = interval.start.max(cur);
                     query += (interval.end - cur).max(0);
                     cur = cur.max(interval.end);
@@ -1536,11 +1551,11 @@ impl Occluders {
             
             match event.kind {
                 OcclusionEventKind::Begin => {
-                    self.active.push(event.x_range.clone());
+                    self.scratch.active.push(event.x_range.clone());
                 }
                 OcclusionEventKind::End => {
-                    let index = self.active.iter().position(|i| *i == event.x_range).unwrap();
-                    self.active.remove(index);
+                    let index = self.scratch.active.iter().position(|i| *i == event.x_range).unwrap();
+                    self.scratch.active.remove(index);
                 }
             }
 
