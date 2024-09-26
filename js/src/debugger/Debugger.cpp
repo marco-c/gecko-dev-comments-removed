@@ -5408,10 +5408,84 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       }
       hasLine = true;
       line = uintLine;
+      lineEnd = line;
     } else {
       JS_ReportErrorNumberASCII(
           cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
           "query object's 'line' property", "neither undefined nor an integer");
+      return false;
+    }
+
+    
+    RootedValue startProperty(cx);
+    if (!GetProperty(cx, query, query, cx->names().start, &startProperty)) {
+      return false;
+    }
+    if (startProperty.isObject()) {
+      Rooted<JSObject*> startObject(cx, &startProperty.toObject());
+      RootedValue startLineProp(cx);
+      if (!GetProperty(cx, startObject, startObject, cx->names().line,
+                       &startLineProp)) {
+        return false;
+      }
+      if (!startLineProp.isNumber()) {
+        JS_ReportErrorNumberASCII(
+            cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
+            "query object's 'start.line' property", "not a number");
+        return false;
+      }
+      double doubleLine = startLineProp.toNumber();
+      uint32_t uintLine = (uint32_t)doubleLine;
+      if (doubleLine <= 0 || uintLine != doubleLine) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_DEBUG_BAD_LINE);
+        return false;
+      }
+      hasLine = true;
+      line = uintLine;
+    } else if (!startProperty.isUndefined()) {
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
+          "query object's 'start' property", "neither undefined nor an object");
+      return false;
+    }
+
+    
+    RootedValue endProperty(cx);
+    if (!GetProperty(cx, query, query, cx->names().end, &endProperty)) {
+      return false;
+    }
+    if (endProperty.isObject()) {
+      Rooted<JSObject*> endObject(cx, &endProperty.toObject());
+      RootedValue endLineProp(cx);
+      if (!GetProperty(cx, endObject, endObject, cx->names().line,
+                       &endLineProp)) {
+        return false;
+      }
+      if (!endLineProp.isNumber()) {
+        JS_ReportErrorNumberASCII(
+            cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
+            "query object's 'end.line' property", "not a number");
+        return false;
+      }
+      double doubleLine = endLineProp.toNumber();
+      uint32_t uintLine = (uint32_t)doubleLine;
+      if (doubleLine <= 0 || uintLine != doubleLine) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_DEBUG_BAD_LINE);
+        return false;
+      }
+      lineEnd = uintLine;
+    } else if (!endProperty.isUndefined()) {
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
+          "query object's 'end' property", "neither undefined nor an object");
+      return false;
+    }
+
+    if (startProperty.isUndefined() ^ endProperty.isUndefined()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_QUERY_USE_START_AND_END_TOGETHER);
       return false;
     }
 
@@ -5613,6 +5687,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   }
 
  private:
+  static const uint32_t LINE_CONSTRAINT_NOT_PROVIDED = 0;
+
   
   RootedValue url;
 
@@ -5635,8 +5711,14 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   bool hasLine = false;
 
   
-  uint32_t line = 0;
 
+  uint32_t line = LINE_CONSTRAINT_NOT_PROVIDED;
+
+  
+
+  uint32_t lineEnd = LINE_CONSTRAINT_NOT_PROVIDED;
+
+  
   
   
   
@@ -5695,8 +5777,10 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   void updateSourceOffsetLowerBound(const SourceExtent& extent) {
     
     
-    MOZ_ASSERT(extent.lineno <= line);
-    if (extent.lineno == line) {
+    MOZ_ASSERT(line != LINE_CONSTRAINT_NOT_PROVIDED &&
+               lineEnd != LINE_CONSTRAINT_NOT_PROVIDED);
+    MOZ_ASSERT(extent.lineno <= lineEnd);
+    if (extent.lineno >= line) {
       return;
     }
 
@@ -5715,7 +5799,12 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     const SourceExtent& extent = script->extent();
 
     
-    if (extent.lineno > line) {
+    
+    
+    MOZ_ASSERT(line != LINE_CONSTRAINT_NOT_PROVIDED &&
+               lineEnd != LINE_CONSTRAINT_NOT_PROVIDED);
+    MOZ_ASSERT(line <= lineEnd);
+    if (extent.lineno > lineEnd) {
       return false;
     }
 
