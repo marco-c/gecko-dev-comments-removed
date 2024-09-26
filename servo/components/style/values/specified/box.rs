@@ -1536,11 +1536,6 @@ pub enum Appearance {
     ScrollbarthumbVertical,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ScrollbartrackHorizontal,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    ScrollbartrackVertical,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Scrollcorner,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
