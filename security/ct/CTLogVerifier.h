@@ -13,9 +13,11 @@
 #include "CTLog.h"
 #include "CTUtils.h"
 #include "SignedCertificateTimestamp.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
 #include "mozpkix/pkix.h"
+#include "signature_cache_ffi.h"
 
 namespace mozilla {
 namespace ct {
@@ -52,7 +54,8 @@ class CTLogVerifier {
   
   
   pkix::Result Verify(const LogEntry& entry,
-                      const SignedCertificateTimestamp& sct);
+                      const SignedCertificateTimestamp& sct,
+                      SignatureCache* signatureCache);
 
   
   
@@ -64,8 +67,10 @@ class CTLogVerifier {
   
   
   
-  pkix::Result VerifySignature(pkix::Input data, pkix::Input signature);
-  pkix::Result VerifySignature(const Buffer& data, const Buffer& signature);
+  pkix::Result VerifySignature(pkix::Input data, pkix::Input signature,
+                               SignatureCache* signatureCache);
+  pkix::Result VerifySignature(const Buffer& data, const Buffer& signature,
+                               SignatureCache* signatureCache);
 
   
   
