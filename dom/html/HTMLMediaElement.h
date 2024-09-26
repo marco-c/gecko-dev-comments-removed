@@ -92,6 +92,7 @@ namespace mozilla::dom {
 
 #define TIMEUPDATE_MS 250
 
+class HTMLVideoElement;
 class MediaError;
 class MediaSource;
 class PlayPromise;
@@ -151,6 +152,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   explicit HTMLMediaElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
   void Init();
+
+  virtual HTMLVideoElement* AsHTMLVideoElement() { return nullptr; };
 
   
   
