@@ -274,7 +274,8 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
-  mozilla::SandboxEarlyInit();
+  mozilla::SandboxEarlyInit(geckoargs::sSandboxReporter.Get(aArgc, aArgv),
+                            geckoargs::sChrootClient.Get(aArgc, aArgv));
   
   
   mozilla::GetNumberOfProcessors();

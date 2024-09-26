@@ -23,10 +23,6 @@ class SandboxReporterClient {
 
   
   
-  explicit SandboxReporterClient(SandboxReport::ProcType aProcType);
-
-  
-  
   SandboxReport MakeReport(const void* aContext);
 
   void SendReport(const SandboxReport& aReport);

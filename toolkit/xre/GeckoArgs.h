@@ -189,6 +189,13 @@ static CommandLineArg<bool> sDisableDynamicDllBlocklist{
     "-disableDynamicBlocklist", "disabledynamicblocklist"};
 #endif  
 
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+static CommandLineArg<UniqueFileHandle> sSandboxReporter{"-sandboxReporter",
+                                                         "sandboxreporter"};
+static CommandLineArg<UniqueFileHandle> sChrootClient{"-chrootClient",
+                                                      "chrootclient"};
+#endif
+
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
 #endif

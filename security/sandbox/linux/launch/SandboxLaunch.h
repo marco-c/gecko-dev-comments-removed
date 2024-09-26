@@ -8,6 +8,7 @@
 #define mozilla_SandboxLaunch_h
 
 #include "base/process_util.h"
+#include "mozilla/GeckoArgs.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "nsXULAppAPI.h"
 #include <vector>
@@ -32,7 +33,8 @@ class SandboxLaunch final {
   
   
   
-  static void Configure(GeckoProcessType aType, SandboxingKind aKind,
+  static bool Configure(GeckoProcessType aType, SandboxingKind aKind,
+                        geckoargs::ChildProcessArgs& aExtraOpts,
                         LaunchOptions* aOptions);
 
   
@@ -57,7 +59,6 @@ class SandboxLaunch final {
  private:
   int mFlags;
   int mChrootServer;
-  int mChrootClient;
 
   void StartChrootServer();
 };
