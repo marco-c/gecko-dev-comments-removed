@@ -20,6 +20,11 @@ pub trait ConnectionPath {
 }
 
 
+pub trait ToConnectionIncident {
+    fn to_incident(&self) -> Option<ConnectionIncident>;
+}
+
+
 
 
 pub trait ConnectionOpener {
@@ -44,6 +49,13 @@ pub trait ConnectionOpener {
 }
 
 
+pub trait ConnectionMaintenanceTask {
+    type Error;
+
+    fn run(self, conn: &mut rusqlite::Connection) -> Result<(), Self::Error>;
+}
+
+
 pub struct Connection {
     
     conn: Mutex<rusqlite::Connection>,
@@ -55,6 +67,9 @@ pub struct Connection {
     
     
     interrupt_handle: InterruptHandle,
+
+    
+    incidents: Mutex<Vec<ConnectionIncident>>,
 }
 
 impl Connection {
@@ -100,28 +115,45 @@ impl Connection {
         Self {
             conn: Mutex::new(conn),
             interrupt_handle,
+            incidents: Mutex::default(),
         }
     }
 
     
-    pub fn read<T, E>(
-        &self,
-        f: impl FnOnce(&rusqlite::Connection) -> Result<T, E>,
-    ) -> Result<T, E> {
-        let conn = self.conn.lock().unwrap();
-        f(&*conn)
+    pub fn incidents(&self) -> ConnectionIncidents<'_> {
+        ConnectionIncidents(self)
+    }
+
+    
+    pub fn read<T, E>(&self, f: impl FnOnce(&rusqlite::Connection) -> Result<T, E>) -> Result<T, E>
+    where
+        E: ToConnectionIncident,
+    {
+        self.reporting(|conn| f(conn))
     }
 
     
     pub fn write<T, E>(&self, f: impl FnOnce(&mut Transaction<'_>) -> Result<T, E>) -> Result<T, E>
     where
-        E: From<rusqlite::Error>,
+        E: From<rusqlite::Error> + ToConnectionIncident,
     {
+        self.reporting(|conn| {
+            let mut tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let value = f(&mut tx)?;
+            tx.commit()?;
+            Ok(value)
+        })
+    }
+
+    
+    pub fn maintenance<M>(&self, task: M) -> Result<(), M::Error>
+    where
+        M: ConnectionMaintenanceTask,
+    {
+        
+        
         let mut conn = self.conn.lock().unwrap();
-        let mut tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let result = f(&mut tx)?;
-        tx.commit()?;
-        Ok(result)
+        task.run(&mut conn)
     }
 
     
@@ -134,11 +166,58 @@ impl Connection {
     pub fn into_inner(self) -> rusqlite::Connection {
         Mutex::into_inner(self.conn).unwrap()
     }
+
+    
+    fn reporting<T, E>(
+        &self,
+        f: impl FnOnce(&mut rusqlite::Connection) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: ToConnectionIncident,
+    {
+        let result = {
+            let mut conn = self.conn.lock().unwrap();
+            f(&mut *conn)
+        };
+        result.inspect_err(|err| {
+            if let Some(incident) = err.to_incident() {
+                self.incidents.lock().unwrap().push(incident);
+            }
+        })
+    }
 }
 
 impl Debug for Connection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("Connection { .. }")
+    }
+}
+
+
+
+#[derive(Debug)]
+pub struct ConnectionIncidents<'a>(&'a Connection);
+
+impl<'a> ConnectionIncidents<'a> {
+    
+    pub fn map<T>(self, f: impl FnOnce(UnresolvedIncidents<'_>) -> T) -> T {
+        let mut incidents = self.0.incidents.lock().unwrap();
+        f(UnresolvedIncidents(&mut incidents))
+    }
+}
+
+#[derive(Debug)]
+pub struct UnresolvedIncidents<'a>(&'a mut Vec<ConnectionIncident>);
+
+impl<'a> UnresolvedIncidents<'a> {
+    
+    pub fn iter(&self) -> impl Iterator<Item = ConnectionIncident> + '_ {
+        self.0.iter().copied()
+    }
+
+    
+    pub fn resolve(self) {
+        self.0.clear();
     }
 }
 
@@ -166,5 +245,44 @@ impl ConnectionType {
                     | OpenFlags::SQLITE_OPEN_READ_WRITE
             }
         }
+    }
+}
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ConnectionIncident {
+    CorruptFile,
+    CorruptIndex,
+    CorruptForeignKey,
+}
+
+impl ToConnectionIncident for rusqlite::Error {
+    fn to_incident(&self) -> Option<ConnectionIncident> {
+        let Self::SqliteFailure(err, message) = self else {
+            return None;
+        };
+        Some(match (err.code, err.extended_code, message) {
+            (rusqlite::ErrorCode::DatabaseCorrupt, rusqlite::ffi::SQLITE_CORRUPT_INDEX, _) => {
+                ConnectionIncident::CorruptIndex
+            }
+            (rusqlite::ErrorCode::DatabaseCorrupt, _, _) => ConnectionIncident::CorruptFile,
+            (rusqlite::ErrorCode::Unknown, _, Some(message))
+                if message.contains("foreign key mismatch")
+                    || message.contains("no such table") =>
+            {
+                
+                
+                
+                
+                
+                ConnectionIncident::CorruptForeignKey
+            }
+            _ => return None,
+        })
     }
 }
