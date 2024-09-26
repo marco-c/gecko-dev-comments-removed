@@ -3320,7 +3320,8 @@ void SVGTextFrame::ReflowSVG() {
     
     
     if (mLastContextScale != 0.0f) {
-      mRect.Inflate(ceil(presContext->AppUnitsPerDevPixel() / mLastContextScale));
+      mRect.Inflate(
+          ceil(presContext->AppUnitsPerDevPixel() / mLastContextScale));
     }
   }
 
