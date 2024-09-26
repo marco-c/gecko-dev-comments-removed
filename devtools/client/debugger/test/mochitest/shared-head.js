@@ -65,6 +65,10 @@ const DEBUGGER_L10N = new LocalizationHelper(
   "devtools/client/locales/debugger.properties"
 );
 
+const isCm6Enabled = Services.prefs.getBoolPref(
+  "devtools.debugger.features.codemirror-next"
+);
+
 
 
 
@@ -2122,6 +2126,16 @@ function rightClickObjectInspectorNode(dbg, node) {
     () => objectInspector.querySelectorAll(".node").length !== properties
   );
 }
+
+
+
+
+
+
+function getCMEditor(dbg) {
+  return dbg.win.codemirrorEditor;
+}
+
 
 function getCM(dbg) {
   const el = dbg.win.document.querySelector(".CodeMirror");
