@@ -9,6 +9,8 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   CATEGORIZATION_SETTINGS: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  SearchSERPDomainToCategoriesMap:
+    "resource:///modules/SearchSERPTelemetry.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [
@@ -146,9 +148,10 @@ add_task(async function test_categorization_reporting() {
 add_task(async function test_no_reporting_if_download_failure() {
   resetTelemetry();
 
-  
-  
-  await client.attachments.cacheImpl.delete(categorizationRecord.id);
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(RemoteSettings(TELEMETRY_CATEGORIZATION_KEY).attachments, "download")
+    .throws(new Error("Simulated Download Error"));
 
   let observeDownloadError = TestUtils.consoleMessageObserved(msg => {
     return (
@@ -172,11 +175,13 @@ add_task(async function test_no_reporting_if_download_failure() {
   
   assertCategorizationValues([]);
 
+  await sandbox.restore();
+
   
-  await client.attachments.cacheImpl.set(
-    categorizationRecord.id,
-    categorizationAttachment
-  );
+  
+  
+  await SearchSERPDomainToCategoriesMap.uninit();
+  await SearchSERPDomainToCategoriesMap.init();
 });
 
 add_task(async function test_no_reporting_if_no_records() {
@@ -195,11 +200,22 @@ add_task(async function test_no_reporting_if_no_records() {
 
   let url = getSERPUrl("searchTelemetryDomainCategorizationReporting.html");
   info("Load a sample SERP with organic results.");
-  let promise = waitForPageWithCategorizedDomains();
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  await promise;
 
+  info("Wait roughly the amount of time a categorization event should occur.");
+  let waitPromise = sleep(1000);
+  let categorizationPromise = waitForPageWithCategorizedDomains();
+  let result = await Promise.race([
+    waitPromise.then(() => false),
+    categorizationPromise.then(() => true),
+  ]);
+  Assert.equal(
+    result,
+    false,
+    "Received a categorization event before the timeout."
+  );
   await BrowserTestUtils.removeTab(tab);
+
   
   assertCategorizationValues([]);
 });

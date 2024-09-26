@@ -60,7 +60,6 @@ const TEST_PROVIDER_INFO = [
 ];
 
 const originalHomeRegion = Region.home;
-const originalCurrentRegion = Region.current;
 
 add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
@@ -77,6 +76,9 @@ add_setup(async function () {
   Region._setHomeRegion("DE", false);
   Assert.equal(Region.home, "DE", "Region");
 
+  
+  await TestUtils.waitForTick();
+
   registerCleanupFunction(async () => {
     
     
@@ -90,7 +92,6 @@ add_setup(async function () {
     }
 
     Region._setHomeRegion(originalHomeRegion);
-    Region._setCurrentRegion(originalCurrentRegion);
 
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     resetTelemetry();
