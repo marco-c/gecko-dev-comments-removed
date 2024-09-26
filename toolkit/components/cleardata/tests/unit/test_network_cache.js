@@ -180,8 +180,9 @@ add_task(async function test_deleteFromBaseDomain() {
 
     
     await new Promise(aResolve => {
-      Services.clearData.deleteDataFromBaseDomain(
+      Services.clearData.deleteDataFromSite(
         "foo.com",
+        {},
         true,
         Ci.nsIClearDataService.CLEAR_NETWORK_CACHE,
         value => {
@@ -219,8 +220,9 @@ add_task(async function test_deleteFromBaseDomain() {
 
     
     await new Promise(aResolve => {
-      Services.clearData.deleteDataFromBaseDomain(
+      Services.clearData.deleteDataFromSite(
         "example.com",
+        {},
         true,
         Ci.nsIClearDataService.CLEAR_NETWORK_CACHE,
         value => {
