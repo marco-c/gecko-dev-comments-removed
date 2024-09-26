@@ -619,12 +619,28 @@ class PathGroupedSource(TestQueueBuilder):
         state["prev_group_key"] = (subsuite, test_type, path)
         return rv
 
+    def in_one_group(self,
+                     subsuite: str,
+                     tests: List[wpttest.Test]) -> bool:
+        small_subsuite_size = self.kwargs.get("small_subsuite_size", 0)
+        return len(subsuite) > 0 and len(tests) <= small_subsuite_size
+
     def make_groups(self, tests_by_type: TestsByType) -> List[TestGroup]:
         groups = []
         state: MutableMapping[str, Any] = {}
         for (subsuite, test_type), tests in tests_by_type.items():
+            
+            
+            
+            
+            in_one_group = self.in_one_group(subsuite, tests)
+            if in_one_group:
+                state["prev_group_key"] = (subsuite, test_type, [""])
+                group_metadata = self.group_metadata(state)
+                groups.append(TestGroup(deque(), subsuite, test_type, group_metadata))
+
             for test in tests:
-                if self.new_group(state, subsuite, test_type, test):
+                if not in_one_group and self.new_group(state, subsuite, test_type, test):
                     group_metadata = self.group_metadata(state)
                     groups.append(TestGroup(deque(), subsuite, test_type, group_metadata))
                 group, _, _, metadata = groups[-1]
@@ -636,10 +652,13 @@ class PathGroupedSource(TestQueueBuilder):
         groups = defaultdict(list)
         state: MutableMapping[str, Any] = {}
         for (subsuite, test_type), tests in tests_by_type.items():
+            in_one_group = self.in_one_group(subsuite, tests)
             for test in tests:
-                if self.new_group(state, subsuite, test_type, test):
+                if not in_one_group and self.new_group(state, subsuite, test_type, test):
                     group = self.group_metadata(state)['scope']
-                if subsuite:
+                if in_one_group:
+                    group_name = f"{subsuite}:/"
+                elif subsuite:
                     group_name = f"{subsuite}:{group}"
                 else:
                     group_name = group
@@ -651,6 +670,11 @@ class PathGroupedSource(TestQueueBuilder):
 
 
 class FullyParallelGroupedSource(PathGroupedSource):
+    def in_one_group(self,
+                     subsuite: str,
+                     tests: List[wpttest.Test]) -> bool:
+        return False
+
     
     
     
