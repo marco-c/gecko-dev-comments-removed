@@ -15,6 +15,7 @@ use std::os::raw::c_void;
 use std::sync::Arc;
 use std::mem::replace;
 
+use crate::internal_types::FrameVec;
 
 
 const NEARLY_ZERO: f32 = 1.0 / 4096.0;
@@ -108,7 +109,6 @@ impl<T> VecHelper<T> for Vec<T> {
         replace(self, Vec::with_capacity(len + 8))
     }
 }
-
 
 
 
@@ -1384,7 +1384,7 @@ impl Preallocator {
     }
 
     
-    pub fn record_vec<T>(&mut self, vec: &Vec<T>) {
+    pub fn record_vec<T>(&mut self, vec: &[T]) {
         let len = vec.len();
         if len > self.size {
             self.size = len;
@@ -1405,6 +1405,18 @@ impl Preallocator {
     
     
     pub fn preallocate_vec<T>(&self, vec: &mut Vec<T>) {
+        let len = vec.len();
+        let cap = self.preallocation_size();
+        if len < cap {
+            vec.reserve(cap - len);
+        }
+    }
+
+    
+    
+    
+    
+    pub fn preallocate_framevec<T>(&self, vec: &mut FrameVec<T>) {
         let len = vec.len();
         let cap = self.preallocation_size();
         if len < cap {
