@@ -1,7 +1,0 @@
-
-
-
-
-import value from './json-idempotency_FIXTURE.json' assert { type: 'json' };
-
-globalThis.viaSecondModule = value;

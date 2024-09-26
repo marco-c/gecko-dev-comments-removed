@@ -9,16 +9,10 @@
 
 
 
-const expected = [
-  "ownKeys options",
-  "getOwnPropertyDescriptor options.overflow",
-  "get options.overflow",
-];
-
 let actual = [];
 const options = TemporalHelpers.propertyBagObserver(actual, { overflow: "constrain" }, "options");
 
 assert.throws(RangeError, () => Temporal.PlainDate.from("2020-13-34", options));
-assert.compareArray(actual, expected);
+assert.compareArray(actual, [], "options read after ISO string parsing");
 
 reportCompare(0, 0);

@@ -21,7 +21,7 @@ for (let ctor of ctors) {
   
   const taWrite = new ctor(rab);
   for (let i = 0; i < 4; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
 
   
@@ -38,7 +38,7 @@ for (let ctor of ctors) {
     3
   ]);
   for (let i = 0; i < 4; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
   fixedLengthWithOffset.copyWithin(0, 1);
   assert.compareArray(ToNumbers(fixedLengthWithOffset), [
@@ -46,7 +46,7 @@ for (let ctor of ctors) {
     3
   ]);
   for (let i = 0; i < 4; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
   lengthTracking.copyWithin(0, 2);
   assert.compareArray(ToNumbers(lengthTracking), [
@@ -64,7 +64,7 @@ for (let ctor of ctors) {
   
   rab.resize(3 * ctor.BYTES_PER_ELEMENT);
   for (let i = 0; i < 3; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
 
   
@@ -93,7 +93,7 @@ for (let ctor of ctors) {
 
   
   rab.resize(1 * ctor.BYTES_PER_ELEMENT);
-  WriteToTypedArray(taWrite, 0, 0);
+  taWrite[0] = MayNeedBigInt(taWrite, 0);
   assert.throws(TypeError, () => {
     fixedLength.copyWithin(0, 1, 1);
   });
@@ -125,7 +125,7 @@ for (let ctor of ctors) {
   
   rab.resize(6 * ctor.BYTES_PER_ELEMENT);
   for (let i = 0; i < 6; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
 
   
@@ -142,7 +142,7 @@ for (let ctor of ctors) {
     3
   ]);
   for (let i = 0; i < 6; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
   fixedLengthWithOffset.copyWithin(0, 1);
   assert.compareArray(ToNumbers(fixedLengthWithOffset), [
@@ -150,7 +150,7 @@ for (let ctor of ctors) {
     3
   ]);
   for (let i = 0; i < 6; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
 
   
@@ -165,7 +165,7 @@ for (let ctor of ctors) {
     5
   ]);
   for (let i = 0; i < 6; ++i) {
-    WriteToTypedArray(taWrite, i, i);
+    taWrite[i] = MayNeedBigInt(taWrite, i);
   }
 
   

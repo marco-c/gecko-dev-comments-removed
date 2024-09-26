@@ -21,7 +21,7 @@ for (let ctor of ctors) {
   
   const taWrite = new ctor(rab);
   for (let i = 0; i < 4; ++i) {
-    WriteToTypedArray(taWrite, i, 2 * i);
+    taWrite[i] = MayNeedBigInt(taWrite, 2 * i);
   }
 
   
@@ -94,7 +94,7 @@ for (let ctor of ctors) {
   
   rab.resize(6 * ctor.BYTES_PER_ELEMENT);
   for (let i = 0; i < 6; ++i) {
-    WriteToTypedArray(taWrite, i, 2 * i);
+    taWrite[i] = MayNeedBigInt(taWrite, 2 * i);
   }
 
   

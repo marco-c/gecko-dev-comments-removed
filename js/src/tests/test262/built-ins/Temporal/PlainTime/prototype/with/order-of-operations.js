@@ -15,10 +15,6 @@ const expected = [
   "get fields.calendar",
   "get fields.timeZone",
   
-  "get options.overflow",
-  "get options.overflow.toString",
-  "call options.overflow.toString",
-  
   "get fields.hour",
   "get fields.hour.valueOf",
   "call fields.hour.valueOf",
@@ -37,6 +33,10 @@ const expected = [
   "get fields.second",
   "get fields.second.valueOf",
   "call fields.second.valueOf",
+  
+  "get options.overflow",
+  "get options.overflow.toString",
+  "call options.overflow.toString",
 ];
 const actual = [];
 

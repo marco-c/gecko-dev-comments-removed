@@ -68,6 +68,7 @@ testPropertyOfStrings({
     "\u{1F1E8}\u{1F1F3}",
     "\u{1F1E8}\u{1F1F4}",
     "\u{1F1E8}\u{1F1F5}",
+    "\u{1F1E8}\u{1F1F6}",
     "\u{1F1E8}\u{1F1F7}",
     "\u{1F1E8}\u{1F1FA}",
     "\u{1F1E8}\u{1F1FB}",

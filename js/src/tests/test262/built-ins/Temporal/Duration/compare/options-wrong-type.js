@@ -18,7 +18,7 @@ const badOptions = [
 ];
 
 for (const value of badOptions) {
-  assert.throws(TypeError, () => Temporal.Duration.compare({ hours: 1 }, { minutes: 60 }, value),
+  assert.throws(TypeError, () => Temporal.Duration.compare({ hours: 1 }, { hours: 1 }, value),
     `TypeError on wrong options type ${typeof value}`);
 };
 

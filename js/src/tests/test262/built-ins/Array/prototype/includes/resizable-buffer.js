@@ -10,13 +10,6 @@
 
 
 
-function MayNeedBigInt(ta, n) {
-  if (typeof n == 'number' && (ta instanceof BigInt64Array || ta instanceof BigUint64Array)) {
-    return BigInt(n);
-  }
-  return n;
-}
-
 for (let ctor of ctors) {
   const rab = CreateResizableArrayBuffer(4 * ctor.BYTES_PER_ELEMENT, 8 * ctor.BYTES_PER_ELEMENT);
   const fixedLength = new ctor(rab, 0, 4);
@@ -27,7 +20,7 @@ for (let ctor of ctors) {
   
   const taWrite = new ctor(rab);
   for (let i = 0; i < 4; ++i) {
-    WriteToTypedArray(taWrite, i, 2 * i);
+    taWrite[i] = MayNeedBigInt(taWrite, 2 * i);
   }
 
   
@@ -101,7 +94,7 @@ for (let ctor of ctors) {
   
   rab.resize(6 * ctor.BYTES_PER_ELEMENT);
   for (let i = 0; i < 6; ++i) {
-    WriteToTypedArray(taWrite, i, 2 * i);
+    taWrite[i] = MayNeedBigInt(taWrite, 2 * i);
   }
 
   

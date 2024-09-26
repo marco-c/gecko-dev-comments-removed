@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+    typeof AsyncDisposableStack, 'function',
+    'The value of `typeof AsyncDisposableStack` is "function"');
+
+
+verifyProperty(AsyncDisposableStack, 'prototype', {
+  value: AsyncDisposableStack.prototype,
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
+
+reportCompare(0, 0);

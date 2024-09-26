@@ -8,6 +8,14 @@
 
 
 
+
+
+
+
+
+
+
+
 function asyncTest(testFunc) {
   if (!Object.hasOwn(globalThis, "$DONE")) {
     throw new Test262Error("asyncTest called without async flag");
@@ -30,86 +38,70 @@ function asyncTest(testFunc) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 assert.throwsAsync = function (expectedErrorConstructor, func, message) {
   return new Promise(function (resolve) {
-    var innerThenable;
-    if (message === undefined) {
-      message = "";
-    } else {
-      message += " ";
-    }
-    if (typeof func === "function") {
-      try {
-        innerThenable = func();
-        if (
-          innerThenable === null ||
-          typeof innerThenable !== "object" ||
-          typeof innerThenable.then !== "function"
-        ) {
-          message +=
-            "Expected to obtain an inner promise that would reject with a" +
-            expectedErrorConstructor.name +
-            " but result was not a thenable";
-          throw new Test262Error(message);
-        }
-      } catch (thrown) {
-        message +=
-          "Expected a " +
-          expectedErrorConstructor.name +
-          " to be thrown asynchronously but an exception was thrown synchronously while obtaining the inner promise";
-        throw new Test262Error(message);
+    var fail = function (detail) {
+      if (message === undefined) {
+        throw new Test262Error(detail);
       }
-    } else {
-      message +=
-        "assert.throwsAsync called with an argument that is not a function";
-      throw new Test262Error(message);
+      throw new Test262Error(message + " " + detail);
+    };
+    if (typeof expectedErrorConstructor !== "function") {
+      fail("assert.throwsAsync called with an argument that is not an error constructor");
     }
-
+    if (typeof func !== "function") {
+      fail("assert.throwsAsync called with an argument that is not a function");
+    }
+    var expectedName = expectedErrorConstructor.name;
+    var expectation = "Expected a " + expectedName + " to be thrown asynchronously";
+    var res;
     try {
-      resolve(innerThenable.then(
-        function () {
-          message +=
-            "Expected a " +
-            expectedErrorConstructor.name +
-            " to be thrown asynchronously but no exception was thrown at all";
-          throw new Test262Error(message);
-        },
-        function (thrown) {
-          var expectedName, actualName;
-          if (typeof thrown !== "object" || thrown === null) {
-            message += "Thrown value was not an object!";
-            throw new Test262Error(message);
-          } else if (thrown.constructor !== expectedErrorConstructor) {
-            expectedName = expectedErrorConstructor.name;
-            actualName = thrown.constructor.name;
-            if (expectedName === actualName) {
-              message +=
-                "Expected a " +
-                expectedName +
-                " but got a different error constructor with the same name";
-            } else {
-              message +=
-                "Expected a " + expectedName + " but got a " + actualName;
-            }
-            throw new Test262Error(message);
-          }
-        }
-      ));
+      res = func();
     } catch (thrown) {
-      if (typeof thrown !== "object" || thrown === null) {
-        message +=
-          "Expected a " +
-          expectedErrorConstructor.name +
-          " to be thrown asynchronously but innerThenable synchronously threw a value that was not an object ";
-      } else {
-        message +=
-          "Expected a " +
-          expectedErrorConstructor.name +
-          " to be thrown asynchronously but a " +
-          thrown.constructor.name +
-          " was thrown synchronously";
-      }
-      throw new Test262Error(message);
+      fail(expectation + " but the function threw synchronously");
     }
+    if (res === null || typeof res !== "object" || typeof res.then !== "function") {
+      fail(expectation + " but result was not a thenable");
+    }
+    var onResFulfilled, onResRejected;
+    var resSettlementP = new Promise(function (onFulfilled, onRejected) {
+      onResFulfilled = onFulfilled;
+      onResRejected = onRejected;
+    });
+    try {
+      res.then(onResFulfilled, onResRejected)
+    } catch (thrown) {
+      fail(expectation + " but .then threw synchronously");
+    }
+    resolve(resSettlementP.then(
+      function () {
+        fail(expectation + " but no exception was thrown at all");
+      },
+      function (thrown) {
+        var actualName;
+        if (thrown === null || typeof thrown !== "object") {
+          fail(expectation + " but thrown value was not an object");
+        } else if (thrown.constructor !== expectedErrorConstructor) {
+          actualName = thrown.constructor.name;
+          if (expectedName === actualName) {
+            fail(expectation +
+              " but got a different error constructor with the same name");
+          }
+          fail(expectation + " but got a " + actualName);
+        }
+      }
+    ));
   });
 };

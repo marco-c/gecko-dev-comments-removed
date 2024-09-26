@@ -9,16 +9,10 @@
 
 
 
-const expected = [
-  "get options.overflow",
-  "get options.overflow.toString",
-  "call options.overflow.toString",
-];
-
 let actual = [];
 const options = TemporalHelpers.propertyBagObserver(actual, { overflow: "constrain" }, "options");
 
 assert.throws(RangeError, () => Temporal.PlainMonthDay.from("13-34", options));
-assert.compareArray(actual, expected);
+assert.compareArray(actual, [], "options read after string parsing");
 
 reportCompare(0, 0);

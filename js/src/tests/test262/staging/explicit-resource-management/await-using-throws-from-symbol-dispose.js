@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function() {
+  async function TestDisposeMethodThrows() {
+    await using x = {
+      value: 1,
+      [Symbol.dispose]() {
+        throw new Test262Error('Symbol.dispose is throwing!');
+      }
+    };
+  }
+
+  await assert.throwsAsync(
+      Test262Error, () => TestDisposeMethodThrows(),
+      'Symbol.dispose is throwing!');
+});

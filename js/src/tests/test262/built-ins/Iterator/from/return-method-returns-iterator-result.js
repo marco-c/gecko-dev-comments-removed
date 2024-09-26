@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const iter = {};
+const wrapper = Iterator.from(iter);
+
+const result = wrapper.return();
+assert(result.hasOwnProperty("value"));
+assert.sameValue(result.value, undefined);
+assert.sameValue(result.done, true);
+
+reportCompare(0, 0);

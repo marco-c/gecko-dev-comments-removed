@@ -14,27 +14,6 @@ const expected = [
   "get fields.calendar",
   "get fields.timeZone",
   
-  "ownKeys options",
-  "getOwnPropertyDescriptor options.overflow",
-  "get options.overflow",
-  "getOwnPropertyDescriptor options.extra",
-  "get options.extra",
-  
-  "get this.calendar.dateFromFields",
-  "get this.calendar.fields",
-  "get this.calendar.mergeFields",
-  
-  "call this.calendar.fields",
-  
-  "get this.calendar.day",
-  "call this.calendar.day",
-  "get this.calendar.month",
-  "call this.calendar.month",
-  "get this.calendar.monthCode",
-  "call this.calendar.monthCode",
-  "get this.calendar.year",
-  "call this.calendar.year",
-  
   "get fields.day",
   "get fields.day.valueOf",
   "call fields.day.valueOf",
@@ -48,17 +27,13 @@ const expected = [
   "get fields.year.valueOf",
   "call fields.year.valueOf",
   
-  "call this.calendar.mergeFields",
-  
-  "call this.calendar.dateFromFields",
-  
+  "get options.overflow",
   "get options.overflow.toString",
   "call options.overflow.toString",
 ];
 const actual = [];
 
-const calendar = TemporalHelpers.calendarObserver(actual, "this.calendar");
-const instance = new Temporal.PlainDate(2000, 5, 2, calendar);
+const instance = new Temporal.PlainDate(2000, 5, 2, "iso8601");
 
 actual.splice(0);
 

@@ -20,7 +20,7 @@ let resizeTo;
 
 
 
-function ResizeMidIteration(n) {
+function ResizeMidIteration(acc, n) {
   return CollectValuesAndResize(n, values, rab, resizeAfter, resizeTo);
 }
 

@@ -15,6 +15,8 @@
 
 const matchSymbols = buildString({
   loneCodePoints: [
+    0x000305,
+    0x000323,
     0x003037,
     0x01B000,
     0x01B155
@@ -71,7 +73,9 @@ const nonMatchSymbols = buildString({
   ],
   ranges: [
     [0x00DC00, 0x00DFFF],
-    [0x000000, 0x003000],
+    [0x000000, 0x000304],
+    [0x000306, 0x000322],
+    [0x000324, 0x003000],
     [0x003004, 0x003007],
     [0x003020, 0x00302F],
     [0x003038, 0x00303B],

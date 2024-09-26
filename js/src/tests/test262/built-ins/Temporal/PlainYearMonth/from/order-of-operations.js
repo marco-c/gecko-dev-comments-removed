@@ -9,11 +9,14 @@
 
 
 
-const expected = [
+const expectedOptionsReading = [
   
   "get options.overflow",
   "get options.overflow.toString",
   "call options.overflow.toString",
+];
+
+const expected = [
   
   "get fields.calendar",
   
@@ -26,7 +29,7 @@ const expected = [
   "get fields.year",
   "get fields.year.valueOf",
   "call fields.year.valueOf",
-];
+].concat(expectedOptionsReading);
 const actual = [];
 
 const fields = TemporalHelpers.propertyBagObserver(actual, {
@@ -43,5 +46,15 @@ const options = TemporalHelpers.propertyBagObserver(actual, {
 
 Temporal.PlainYearMonth.from(fields, options);
 assert.compareArray(actual, expected, "order of operations");
+
+actual.splice(0);  
+
+Temporal.PlainYearMonth.from(new Temporal.PlainYearMonth(2000, 5), options);
+assert.compareArray(actual, expectedOptionsReading, "order of operations when cloning a PlainYearMonth instance");
+
+actual.splice(0);
+
+Temporal.PlainYearMonth.from("2000-05", options);
+assert.compareArray(actual, expectedOptionsReading, "order of operations when parsing a string");
 
 reportCompare(0, 0);

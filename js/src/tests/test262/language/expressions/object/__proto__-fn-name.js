@@ -15,14 +15,12 @@
 
 
 
-
-
 var o;
 
 o = {
-  __proto__: function() {}
+  __proto__: function () {},
 };
 
-assert(o.__proto__.name !== '__proto__');
+assert(Object.getPrototypeOf(o).name !== "__proto__");
 
 reportCompare(0, 0);
