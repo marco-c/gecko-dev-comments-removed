@@ -263,6 +263,18 @@ LRESULT CALLBACK WinEventWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam,
       evtwin_details::OnPowerBroadcast(wParam, lParam);
     } break;
 
+    case WM_SYSCOLORCHANGE: {
+      
+      
+      evtwin_details::NotifyThemeChanged(widget::ThemeChangeKind::Style);
+    } break;
+
+    case WM_THEMECHANGED: {
+      
+      evtwin_details::NotifyThemeChanged(
+          widget::ThemeChangeKind::StyleAndLayout);
+    } break;
+
     case WM_FONTCHANGE: {
       
       gfxPlatform::GetPlatform()->UpdateFontList();

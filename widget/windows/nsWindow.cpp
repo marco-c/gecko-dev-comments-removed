@@ -4917,19 +4917,10 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       MOZ_ASSERT_UNREACHABLE("Our process was supposed to exit.");
     } break;
 
-    case WM_SYSCOLORCHANGE:
-      
-      
-      NotifyThemeChanged(widget::ThemeChangeKind::Style);
-      break;
-
     case WM_THEMECHANGED: {
       
       UpdateNonClientMargins();
       nsUXThemeData::UpdateNativeThemeInfo();
-
-      
-      NotifyThemeChanged(widget::ThemeChangeKind::StyleAndLayout);
 
       UpdateDarkModeToolbar();
 
