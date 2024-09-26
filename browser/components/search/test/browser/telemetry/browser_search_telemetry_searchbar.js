@@ -78,8 +78,12 @@ add_setup(async function () {
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
+  
+  Services.telemetry.setEventRecordingEnabled("navigation", true);
+
   registerCleanupFunction(async function () {
     Services.telemetry.canRecordExtended = oldCanRecord;
+    Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
 });
 
@@ -123,6 +127,18 @@ add_task(async function test_plainQuery() {
     search_hist,
     "other-MozSearch.searchbar",
     1
+  );
+
+  
+  TelemetryTestUtils.assertEvents(
+    [
+      {
+        object: "searchbar",
+        value: "enter",
+        extra: { engine: "other-MozSearch" },
+      },
+    ],
+    { category: "navigation", method: "search" }
   );
 
   
@@ -181,6 +197,18 @@ add_task(async function test_oneOff_enter() {
     search_hist,
     "other-MozSearch2.searchbar",
     1
+  );
+
+  
+  TelemetryTestUtils.assertEvents(
+    [
+      {
+        object: "searchbar",
+        value: "oneoff",
+        extra: { engine: "other-MozSearch2" },
+      },
+    ],
+    { category: "navigation", method: "search" }
   );
 
   
@@ -321,6 +349,18 @@ async function checkSuggestionClick(clickOptions, waitForActionFn) {
     search_hist,
     searchEngineId + ".searchbar",
     1
+  );
+
+  
+  TelemetryTestUtils.assertEvents(
+    [
+      {
+        object: "searchbar",
+        value: "suggestion",
+        extra: { engine: searchEngineId },
+      },
+    ],
+    { category: "navigation", method: "search" }
   );
 
   

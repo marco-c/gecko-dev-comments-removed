@@ -32,6 +32,9 @@ add_setup(async function () {
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
+  
+  Services.telemetry.setEventRecordingEnabled("navigation", true);
+
   await SpecialPowers.pushPrefEnv({
     set: [
       [
@@ -43,6 +46,7 @@ add_setup(async function () {
 
   registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();
+    Services.telemetry.setEventRecordingEnabled("navigation", false);
     Services.telemetry.canRecordExtended = oldCanRecord;
   });
 });
@@ -100,6 +104,18 @@ add_task(async function test_abouthome_activitystream_simpleQuery() {
     search_hist,
     "other-MozSearch.abouthome",
     1
+  );
+
+  
+  TelemetryTestUtils.assertEvents(
+    [
+      {
+        object: "about_home",
+        value: "enter",
+        extra: { engine: "other-MozSearch" },
+      },
+    ],
+    { category: "navigation", method: "search" }
   );
 
   

@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 const { SearchSERPTelemetry } = ChromeUtils.importESModule(
@@ -110,6 +111,25 @@ function assertScalarDoesNotExist(scalar) {
   Assert.ok(!(scalar in scalars), scalar + " must not be recorded.");
 }
 
+function assertTelemetryEvents() {
+  TelemetryTestUtils.assertEvents(
+    [
+      ["navigation", "search", "urlbar", "enter", { engine: "Example" }],
+      [
+        "navigation",
+        "search",
+        "urlbar_persisted",
+        "enter",
+        { engine: "Example" },
+      ],
+    ],
+    {
+      category: "navigation",
+      method: "search",
+    }
+  );
+}
+
 
 
 add_task(async function search_after_search() {
@@ -134,6 +154,9 @@ add_task(async function search_after_search() {
     "Example.urlbar-persisted",
     1
   );
+
+  
+  assertTelemetryEvents();
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -161,6 +184,9 @@ add_task(async function switch_to_tab_and_search() {
     1
   );
 
+  
+  assertTelemetryEvents();
+
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 });
@@ -186,6 +212,9 @@ add_task(async function handle_revert() {
     "Example.urlbar-persisted",
     1
   );
+
+  
+  assertTelemetryEvents();
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -220,6 +249,9 @@ add_task(async function back_and_forth() {
     "Example.urlbar-persisted",
     1
   );
+
+  
+  assertTelemetryEvents();
 
   BrowserTestUtils.removeTab(tab);
 });
