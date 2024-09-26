@@ -118,19 +118,10 @@ static bool SetFrameRate(VTCompressionSessionRef& aSession, int64_t aFPS) {
 
 static bool SetRealtime(VTCompressionSessionRef& aSession, bool aEnabled) {
   LOGD("Set real time: %s", aEnabled ? "yes" : "no");
-  if (aEnabled) {
-    return VTSessionSetProperty(aSession, kVTCompressionPropertyKey_RealTime,
-                                kCFBooleanTrue) == noErr &&
-           VTSessionSetProperty(aSession,
-                                kVTCompressionPropertyKey_AllowFrameReordering,
-                                kCFBooleanFalse) == noErr;
-  }
   
   return VTSessionSetProperty(aSession, kVTCompressionPropertyKey_RealTime,
-                              kCFBooleanFalse) == noErr &&
-         VTSessionSetProperty(aSession,
-                              kVTCompressionPropertyKey_AllowFrameReordering,
-                              kCFBooleanFalse) == noErr;
+                              aEnabled ? kCFBooleanTrue : kCFBooleanFalse) ==
+         noErr;
 }
 
 static bool SetProfileLevel(VTCompressionSessionRef& aSession,
