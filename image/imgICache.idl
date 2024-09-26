@@ -69,7 +69,8 @@ interface imgICache : nsISupports
 
 
 
-  void removeEntriesFromBaseDomainInAllProcesses(in ACString aBaseDomain);
+  [implicit_jscontext]
+  void removeEntriesFromSiteInAllProcesses(in ACString aBaseDomain, in jsval OriginAttributesPattern);
 
   
 
