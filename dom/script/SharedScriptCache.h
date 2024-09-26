@@ -189,9 +189,8 @@ class SharedScriptCache final
   
   static void LoadCompleted(SharedScriptCache*, ScriptLoadData&);
   using Base::LoadCompleted;
-  static void Clear(const Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal = Nothing(),
-                    const Maybe<nsCString>& aSchemelessSite = Nothing(),
-                    const Maybe<OriginAttributesPattern>& aPattern = Nothing());
+  static void Clear(nsIPrincipal* aForPrincipal = nullptr,
+                    const nsACString* aBaseDomain = nullptr);
 
  protected:
   ~SharedScriptCache();

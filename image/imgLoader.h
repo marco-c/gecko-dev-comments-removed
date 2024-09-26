@@ -336,10 +336,8 @@ class imgLoader final : public imgILoader,
 
   void VerifyCacheSizes();
 
-  nsresult RemoveEntriesInternal(
-      const mozilla::Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal,
-      const mozilla::Maybe<nsCString>& aSchemelessSite,
-      const mozilla::Maybe<mozilla::OriginAttributesPattern>& aPattern);
+  nsresult RemoveEntriesInternal(nsIPrincipal* aPrincipal,
+                                 const nsACString* aBaseDomain);
 
   
   

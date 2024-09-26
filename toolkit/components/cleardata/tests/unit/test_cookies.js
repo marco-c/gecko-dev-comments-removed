@@ -263,9 +263,8 @@ add_task(async function test_baseDomain_cookies() {
 
   
   await new Promise(aResolve => {
-    Services.clearData.deleteDataFromSite(
+    Services.clearData.deleteDataFromBaseDomain(
       "example.net",
-      {},
       false,
       Ci.nsIClearDataService.CLEAR_COOKIES,
       aResolve
@@ -355,9 +354,8 @@ add_task(async function test_baseDomain_cookies_subdomain() {
 
   
   await new Promise(aResolve => {
-    Services.clearData.deleteDataFromSite(
-      "example.net",
-      {},
+    Services.clearData.deleteDataFromBaseDomain(
+      "test.example.net",
       false,
       Ci.nsIClearDataService.CLEAR_COOKIES,
       aResolve

@@ -8,116 +8,112 @@
 "use strict";
 
 
-add_task(
-  async function test_removing_shutdown_exception_permission_only_clears_cookie_permissions() {
-    let uri = Services.io.newURI("https://example.net");
-    let principal = Services.scriptSecurityManager.createContentPrincipal(
-      uri,
-      {}
+add_task(async function test_removing_shutdown_exception_permission() {
+  let uri = Services.io.newURI("https://example.net");
+  let principal = Services.scriptSecurityManager.createContentPrincipal(
+    uri,
+    {}
+  );
+
+  
+  Services.perms.addFromPrincipal(
+    principal,
+    "cookie",
+    Services.perms.ALLOW_ACTION
+  );
+
+  
+  Services.perms.addFromPrincipal(
+    principal,
+    "notcookie",
+    Services.perms.ALLOW_ACTION
+  );
+
+  await new Promise(aResolve => {
+    Services.clearData.deleteData(
+      Ci.nsIClearDataService.CLEAR_SHUTDOWN_EXCEPTIONS,
+      value => {
+        Assert.equal(value, 0);
+        aResolve();
+      }
     );
+  });
 
-    
-    Services.perms.addFromPrincipal(
-      principal,
-      "cookie",
-      Services.perms.ALLOW_ACTION
+  
+  Assert.equal(
+    Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
+    Services.perms.UNKNOWN_ACTION,
+    "the cookie permission has been removed"
+  );
+  Assert.equal(
+    Services.perms.testExactPermissionFromPrincipal(principal, "notcookie"),
+    Services.perms.ALLOW_ACTION,
+    "the other permission has not been removed"
+  );
+
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      aResolve()
     );
+  });
 
-    
-    Services.perms.addFromPrincipal(
-      principal,
-      "notcookie",
-      Services.perms.ALLOW_ACTION
+  Assert.equal(Services.perms.all.length, 0, "check all removed");
+});
+
+
+add_task(async function test_removing_shutdown_exception_permission() {
+  let uri = Services.io.newURI("https://example.net");
+  let principal = Services.scriptSecurityManager.createContentPrincipal(
+    uri,
+    {}
+  );
+
+  
+  Services.perms.addFromPrincipal(
+    principal,
+    "cookie",
+    Services.perms.ALLOW_ACTION
+  );
+
+  
+  Services.perms.addFromPrincipal(
+    principal,
+    "notcookie",
+    Services.perms.ALLOW_ACTION
+  );
+
+  await new Promise(aResolve => {
+    Services.clearData.deleteData(
+      Ci.nsIClearDataService.CLEAR_SITE_PERMISSIONS,
+      value => {
+        Assert.equal(value, 0);
+        aResolve();
+      }
     );
+  });
 
-    await new Promise(aResolve => {
-      Services.clearData.deleteData(
-        Ci.nsIClearDataService.CLEAR_SHUTDOWN_EXCEPTIONS,
-        value => {
-          Assert.equal(value, 0);
-          aResolve();
-        }
-      );
-    });
+  
+  Assert.equal(
+    Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
+    Services.perms.ALLOW_ACTION,
+    "the cookie permission has not been removed"
+  );
+  Assert.equal(
+    Services.perms.testExactPermissionFromPrincipal(principal, "notcookie"),
+    Services.perms.UNKNOWN_ACTION,
+    "the other permission has been removed"
+  );
 
-    
-    Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
-      Services.perms.UNKNOWN_ACTION,
-      "the cookie permission has been removed"
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      aResolve()
     );
-    Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "notcookie"),
-      Services.perms.ALLOW_ACTION,
-      "the other permission has not been removed"
-    );
+  });
 
-    
-    await new Promise(aResolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        aResolve()
-      );
-    });
-
-    Assert.equal(Services.perms.all.length, 0, "check all removed");
-  }
-);
-
-
-add_task(
-  async function test_removing_site_permissions_skips_cookie_permissions() {
-    let uri = Services.io.newURI("https://example.net");
-    let principal = Services.scriptSecurityManager.createContentPrincipal(
-      uri,
-      {}
-    );
-
-    
-    Services.perms.addFromPrincipal(
-      principal,
-      "cookie",
-      Services.perms.ALLOW_ACTION
-    );
-
-    
-    Services.perms.addFromPrincipal(
-      principal,
-      "notcookie",
-      Services.perms.ALLOW_ACTION
-    );
-
-    await new Promise(aResolve => {
-      Services.clearData.deleteData(
-        Ci.nsIClearDataService.CLEAR_SITE_PERMISSIONS,
-        value => {
-          Assert.equal(value, 0);
-          aResolve();
-        }
-      );
-    });
-
-    
-    Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
-      Services.perms.ALLOW_ACTION,
-      "the cookie permission has not been removed"
-    );
-    Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "notcookie"),
-      Services.perms.UNKNOWN_ACTION,
-      "the other permission has been removed"
-    );
-
-    
-    await new Promise(aResolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        aResolve()
-      );
-    });
-
-    Assert.equal(Services.perms.all.length, 0, "check all removed");
-  }
-);
+  Assert.equal(Services.perms.all.length, 0, "check all removed");
+});
 
 
 add_task(async function test_removing_all_permissions() {
@@ -162,76 +158,6 @@ add_task(async function test_removing_all_permissions() {
     Services.perms.UNKNOWN_ACTION,
     "the other permission has been removed"
   );
-
-  
-  await new Promise(aResolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      aResolve()
-    );
-  });
-
-  Assert.equal(Services.perms.all.length, 0, "check all removed");
-});
-
-
-
-
-add_task(async function test_removeBySiteAndOAPattern() {
-  let principalRegular = Services.scriptSecurityManager.createContentPrincipal(
-    Services.io.newURI("https://example.net"),
-    {}
-  );
-  let principalRegularSub =
-    Services.scriptSecurityManager.createContentPrincipal(
-      Services.io.newURI("https://sub.example.net"),
-      {}
-    );
-  let principalUnrelated =
-    Services.scriptSecurityManager.createContentPrincipal(
-      Services.io.newURI("https://example.org"),
-      {}
-    );
-
-  info("add 'cookie' (== clear on shutdown exception) permissions");
-  [principalRegular, principalRegularSub, principalUnrelated].forEach(
-    principal => {
-      Services.perms.addFromPrincipal(
-        principal,
-        "cookie",
-        Services.perms.ALLOW_ACTION
-      );
-    }
-  );
-
-  info("Clear all permissions for schemeless site example.net");
-  await new Promise(aResolve => {
-    Services.clearData.deleteDataFromSite(
-      "example.net",
-      {},
-      true,
-      Ci.nsIClearDataService.CLEAR_SHUTDOWN_EXCEPTIONS,
-      value => {
-        Assert.equal(value, 0);
-        aResolve();
-      }
-    );
-  });
-
-  [principalRegular, principalRegularSub].forEach(principal => {
-    Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
-      Services.perms.UNKNOWN_ACTION,
-      "cookie permission has been removed for " + principal.origin
-    );
-  });
-
-  [principalUnrelated].forEach(principal => {
-    Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
-      Services.perms.ALLOW_ACTION,
-      "cookie permission still exists for " + principal.origin
-    );
-  });
 
   
   await new Promise(aResolve => {

@@ -31,7 +31,6 @@
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FetchPriority.h"
@@ -1399,71 +1398,46 @@ imgLoader::RemoveEntriesFromPrincipalInAllProcesses(nsIPrincipal* aPrincipal) {
     loader = imgLoader::NormalLoader();
   }
 
-  return loader->RemoveEntriesInternal(Some(aPrincipal), Nothing(), Nothing());
+  return loader->RemoveEntriesInternal(aPrincipal, nullptr);
 }
 
 NS_IMETHODIMP
-imgLoader::RemoveEntriesFromSiteInAllProcesses(
-    const nsACString& aSchemelessSite,
-    JS::Handle<JS::Value> aOriginAttributesPattern, JSContext* aCx) {
+imgLoader::RemoveEntriesFromBaseDomainInAllProcesses(
+    const nsACString& aBaseDomain) {
   if (!XRE_IsParentProcess()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  OriginAttributesPattern pattern;
-  if (!aOriginAttributesPattern.isObject() ||
-      !pattern.Init(aCx, aOriginAttributesPattern)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
   for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
-    Unused << cp->SendClearImageCacheFromSite(aSchemelessSite, pattern);
+    Unused << cp->SendClearImageCacheFromBaseDomain(aBaseDomain);
   }
 
-  return RemoveEntriesInternal(Nothing(), Some(nsCString(aSchemelessSite)),
-                               Some(pattern));
+  return RemoveEntriesInternal(nullptr, &aBaseDomain);
 }
 
-nsresult imgLoader::RemoveEntriesInternal(
-    const Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal,
-    const Maybe<nsCString>& aSchemelessSite,
-    const Maybe<OriginAttributesPattern>& aPattern) {
+nsresult imgLoader::RemoveEntriesInternal(nsIPrincipal* aPrincipal,
+                                          const nsACString* aBaseDomain) {
   
-  if ((!aPrincipal && !aSchemelessSite) || (aPrincipal && aSchemelessSite) ||
-      aSchemelessSite.isSome() != aPattern.isSome()) {
+  if ((!aPrincipal && !aBaseDomain) || (aPrincipal && aBaseDomain)) {
     return NS_ERROR_INVALID_ARG;
   }
 
   nsCOMPtr<nsIEffectiveTLDService> tldService;
   AutoTArray<RefPtr<imgCacheEntry>, 128> entriesToBeRemoved;
 
-  Maybe<OriginAttributesPattern> patternWithPartitionKey = Nothing();
-  if (aPattern) {
-    
-    OriginAttributesPattern pattern(aPattern.ref());
-    pattern.mPartitionKeyPattern.Construct();
-    pattern.mPartitionKeyPattern.Value().mBaseDomain.Construct(
-        NS_ConvertUTF8toUTF16(aSchemelessSite.ref()));
-
-    patternWithPartitionKey.emplace(std::move(pattern));
-  }
-
   
   for (const auto& entry : mCache) {
     const auto& key = entry.GetKey();
 
     const bool shouldRemove = [&] {
-      
-      
-
       if (aPrincipal) {
         nsCOMPtr<nsIPrincipal> keyPrincipal =
             BasePrincipal::CreateContentPrincipal(key.URI(),
                                                   key.OriginAttributesRef());
-        return keyPrincipal->Equals(aPrincipal.ref());
+        return keyPrincipal->Equals(aPrincipal);
       }
 
-      if (!aSchemelessSite) {
+      if (!aBaseDomain) {
         return false;
       }
       
@@ -1481,43 +1455,31 @@ nsresult imgLoader::RemoveEntriesInternal(
       }
 
       bool hasRootDomain = false;
-      rv = tldService->HasRootDomain(host, aSchemelessSite.ref(),
-                                     &hasRootDomain);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return false;
-      }
-
-      if (hasRootDomain && aPattern->Matches(key.OriginAttributesRef())) {
+      rv = tldService->HasRootDomain(host, *aBaseDomain, &hasRootDomain);
+      if (NS_SUCCEEDED(rv) && hasRootDomain) {
         return true;
       }
 
       
-      Maybe<OriginAttributes> originAttributesWithPartitionKey;
-      {
-        OriginAttributes attrs;
-        if (attrs.PopulateFromSuffix(key.IsolationKeyRef())) {
-          OriginAttributes attrsWithPartitionKey(key.OriginAttributesRef());
-          attrsWithPartitionKey.mPartitionKey = attrs.mPartitionKey;
-          originAttributesWithPartitionKey.emplace(
-              std::move(attrsWithPartitionKey));
-        }
+      
+
+      
+      
+
+      if (key.IsolationKeyRef().Equals(*aBaseDomain)) {
+        return true;
       }
 
       
       
-      if (originAttributesWithPartitionKey.isSome()) {
-        nsAutoCString oaSuffixForPrinting;
-        originAttributesWithPartitionKey->CreateSuffix(oaSuffixForPrinting);
-
-        nsAutoString patternForPrinting;
-        patternWithPartitionKey->ToJSON(patternForPrinting);
-
-        return patternWithPartitionKey.ref().Matches(
-            originAttributesWithPartitionKey.ref());
+      OriginAttributes attrs;
+      if (!attrs.PopulateFromSuffix(key.IsolationKeyRef())) {
+        
+        return false;
       }
 
-      
-      return aSchemelessSite->Equals(key.IsolationKeyRef());
+      return StoragePrincipalHelper::PartitionKeyHasBaseDomain(
+          attrs.mPartitionKey, *aBaseDomain);
     }();
 
     if (shouldRemove) {

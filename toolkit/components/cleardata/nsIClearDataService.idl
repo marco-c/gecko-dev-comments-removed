@@ -75,25 +75,10 @@ interface nsIClearDataService : nsISupports
 
 
 
-
-
-
-  void deleteDataFromSite(in AUTF8String aSchemelessSite,
-                                in jsval aOriginAttributesPattern,
+  void deleteDataFromBaseDomain(in AUTF8String aDomainOrHost,
                                 in boolean aIsUserRequest,
                                 in uint32_t aFlags,
                                 in nsIClearDataCallback aCallback);
-
-  
-
-
-
-
-  void deleteDataFromSiteAndOriginAttributesPatternString(in AUTF8String aSchemelessSite,
-                              in AString aOriginAttributesPatternString,
-                              in boolean aIsUserRequest,
-                              in uint32_t aFlags,
-                              in nsIClearDataCallback aCallback);
 
   
 
