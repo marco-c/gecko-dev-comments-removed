@@ -2647,13 +2647,9 @@ WorkerPrivate::WorkerPrivate(
   
   mMainThreadEventTargetForMessaging =
       ThrottledEventQueue::Create(target, "Worker queue for messaging");
-  if (StaticPrefs::dom_worker_use_medium_high_event_queue()) {
-    mMainThreadEventTarget = ThrottledEventQueue::Create(
-        GetMainThreadSerialEventTarget(), "Worker queue",
-        nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
-  } else {
-    mMainThreadEventTarget = mMainThreadEventTargetForMessaging;
-  }
+  mMainThreadEventTarget = ThrottledEventQueue::Create(
+      GetMainThreadSerialEventTarget(), "Worker queue",
+      nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
   mMainThreadDebuggeeEventTarget =
       ThrottledEventQueue::Create(target, "Worker debuggee queue");
   if (IsParentWindowPaused() || IsFrozen()) {
