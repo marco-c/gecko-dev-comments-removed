@@ -472,14 +472,14 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
 
 void CodeGeneratorLOONG64::emitBigIntPtrDiv(LBigIntPtrDiv* ins,
                                             Register dividend, Register divisor,
-                                            Register output, Label* fail) {
+                                            Register output) {
   
   masm.as_div_d( output, dividend, divisor);
 }
 
 void CodeGeneratorLOONG64::emitBigIntPtrMod(LBigIntPtrMod* ins,
                                             Register dividend, Register divisor,
-                                            Register output, Label* fail) {
+                                            Register output) {
   
   masm.as_mod_d( output, dividend, divisor);
 }
