@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef jit_DominatorTree_h
+#define jit_DominatorTree_h
+
+namespace js::jit {
+
+class MIRGraph;
+
+[[nodiscard]] bool BuildDominatorTree(MIRGraph& graph);
+void ClearDominatorTree(MIRGraph& graph);
+
+}  
+
+#endif 
