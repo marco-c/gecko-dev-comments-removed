@@ -2423,19 +2423,19 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         stretchB = (stretchI == eStretch ? eStretch : eStretchPreservingRatio);
       }
 
+      
       if (stretchI == eStretch) {
         tentISize = iSize;  
         if (stretchB == eStretch) {
           tentBSize = bSize;  
-        } else if (stretchB == eStretchPreservingRatio && aspectRatio) {
+        } else if (aspectRatio) {
           
           tentBSize = aspectRatio.ComputeRatioDependentSize(
               LogicalAxis::Block, aWM, iSize, boxSizingAdjust);
         }
       } else if (stretchB == eStretch) {
         tentBSize = bSize;  
-        if (stretchI == eStretchPreservingRatio && aspectRatio) {
-          
+        if (aspectRatio) {
           tentISize = aspectRatio.ComputeRatioDependentSize(
               LogicalAxis::Inline, aWM, bSize, boxSizingAdjust);
         }
