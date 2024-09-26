@@ -7818,6 +7818,15 @@ var TabContextMenu = {
       menuItem.disabled = disabled;
     }
 
+    let contextNewTabButton = document.getElementById("context_openANewTab");
+    
+    document.l10n.setAttributes(
+      contextNewTabButton,
+      gBrowser.tabContainer?.verticalMode
+        ? "tab-context-new-tab-open-vertical"
+        : "tab-context-new-tab-open"
+    );
+
     
     document.getElementById("context_undoCloseTab").disabled =
       SessionStore.getClosedTabCount() == 0;
@@ -7910,16 +7919,35 @@ var TabContextMenu = {
     document.getElementById("context_duplicateTabs").hidden =
       !multiselectionContext;
 
-    
-    
     let closeTabsToTheStartItem = document.getElementById(
       "context_closeTabsToTheStart"
     );
-    let noTabsToStart = !gBrowser.getTabsToTheStartFrom(this.contextTab).length;
-    closeTabsToTheStartItem.disabled = noTabsToStart;
+
+    
+    document.l10n.setAttributes(
+      closeTabsToTheStartItem,
+      gBrowser.tabContainer?.verticalMode
+        ? "close-tabs-to-the-start-vertical"
+        : "close-tabs-to-the-start"
+    );
+
     let closeTabsToTheEndItem = document.getElementById(
       "context_closeTabsToTheEnd"
     );
+
+    
+    document.l10n.setAttributes(
+      closeTabsToTheEndItem,
+      gBrowser.tabContainer?.verticalMode
+        ? "close-tabs-to-the-end-vertical"
+        : "close-tabs-to-the-end"
+    );
+
+    
+    
+    let noTabsToStart = !gBrowser.getTabsToTheStartFrom(this.contextTab).length;
+    closeTabsToTheStartItem.disabled = noTabsToStart;
+
     let noTabsToEnd = !gBrowser.getTabsToTheEndFrom(this.contextTab).length;
     closeTabsToTheEndItem.disabled = noTabsToEnd;
 
