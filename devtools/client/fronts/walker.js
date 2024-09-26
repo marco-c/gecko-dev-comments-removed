@@ -61,6 +61,9 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     
     this.rootNode = types.getType("domnode").read(json.root, this);
 
+    
+    this.rfpCSSColorScheme = json.rfpCSSColorScheme;
+
     this.traits = json.traits;
   }
 
