@@ -6747,24 +6747,31 @@ nsresult EventStateManager::DoContentCommandEvent(
   nsCOMPtr<nsPIWindowRoot> root = window->GetTopWindowRoot();
   NS_ENSURE_TRUE(root, NS_ERROR_FAILURE);
   const char* cmd;
+  bool maybeNeedToHandleInRemote = false;
   switch (aEvent->mMessage) {
     case eContentCommandCut:
       cmd = "cmd_cut";
+      maybeNeedToHandleInRemote = true;
       break;
     case eContentCommandCopy:
       cmd = "cmd_copy";
+      maybeNeedToHandleInRemote = true;
       break;
     case eContentCommandPaste:
       cmd = "cmd_paste";
+      maybeNeedToHandleInRemote = true;
       break;
     case eContentCommandDelete:
       cmd = "cmd_delete";
+      maybeNeedToHandleInRemote = true;
       break;
     case eContentCommandUndo:
       cmd = "cmd_undo";
+      maybeNeedToHandleInRemote = true;
       break;
     case eContentCommandRedo:
       cmd = "cmd_redo";
+      maybeNeedToHandleInRemote = true;
       break;
     case eContentCommandPasteTransferable:
       cmd = "cmd_pasteTransferable";
@@ -6774,6 +6781,20 @@ nsresult EventStateManager::DoContentCommandEvent(
       break;
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  if (XRE_IsParentProcess() && maybeNeedToHandleInRemote) {
+    if (BrowserParent* remote = BrowserParent::GetFocused()) {
+      if (!aEvent->mOnlyEnabledCheck) {
+        remote->SendSimpleContentCommandEvent(*aEvent);
+      }
+      
+      
+      
+      
+      aEvent->mIsEnabled = true;
+      aEvent->mSucceeded = true;
+      return NS_OK;
+    }
   }
   
   
@@ -6864,8 +6885,12 @@ nsresult EventStateManager::DoContentCommandInsertTextEvent(
   if (XRE_IsParentProcess()) {
     
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      remote->SendInsertText(aEvent->mString.ref());
-      aEvent->mIsEnabled = true;  
+      if (!aEvent->mOnlyEnabledCheck) {
+        remote->SendInsertText(*aEvent);
+      }
+      
+      
+      aEvent->mIsEnabled = true;
       aEvent->mSucceeded = true;
       return NS_OK;
     }
@@ -6901,10 +6926,12 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
   if (XRE_IsParentProcess()) {
     
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      Unused << remote->SendReplaceText(
-          aEvent->mSelection.mReplaceSrcString, aEvent->mString.ref(),
-          aEvent->mSelection.mOffset, aEvent->mSelection.mPreventSetSelection);
-      aEvent->mIsEnabled = true;  
+      if (!aEvent->mOnlyEnabledCheck) {
+        Unused << remote->SendReplaceText(*aEvent);
+      }
+      
+      
+      aEvent->mIsEnabled = true;
       aEvent->mSucceeded = true;
       return NS_OK;
     }
