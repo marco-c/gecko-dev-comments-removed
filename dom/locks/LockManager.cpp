@@ -87,6 +87,9 @@ already_AddRefed<LockManager> LockManager::Create(nsIGlobalObject& aGlobal) {
           manager->Shutdown();
           manager->mWorkerRef = nullptr;
         });
+    
+    
+    
   }
 
   return manager.forget();
