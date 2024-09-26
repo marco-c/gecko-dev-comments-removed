@@ -139,6 +139,9 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
     return &mCaptureEndedEvent;
   }
 
+  void GetCapabilities(
+      dom::MediaTrackCapabilities& aOutCapabilities) const override;
+
  private:
   
 
@@ -210,6 +213,8 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   
   
   const RefPtr<media::Refcountable<dom::MediaTrackSettings>> mSettings;
+  const RefPtr<media::Refcountable<dom::MediaTrackCapabilities>>
+      mTrackCapabilities;
   MozPromiseHolder<GenericNonExclusivePromise> mFirstFramePromiseHolder;
   RefPtr<GenericNonExclusivePromise> mFirstFramePromise;
 

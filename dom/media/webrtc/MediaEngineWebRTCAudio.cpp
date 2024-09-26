@@ -56,6 +56,13 @@ MediaEngineWebRTCMicrophoneSource::MediaEngineWebRTCMicrophoneSource(
           new media::Refcountable<dom::MediaTrackSettings>(),
           
           
+           false)),
+      mCapabilities(new nsMainThreadPtrHolder<
+                    media::Refcountable<dom::MediaTrackCapabilities>>(
+          "MediaEngineWebRTCMicrophoneSource::mCapabilities",
+          new media::Refcountable<dom::MediaTrackCapabilities>(),
+          
+          
            false)) {
   MOZ_ASSERT(aMediaDevice->mMediaSource == MediaSourceEnum::Microphone);
 #ifndef ANDROID
@@ -69,6 +76,37 @@ MediaEngineWebRTCMicrophoneSource::MediaEngineWebRTCMicrophoneSource(
   mSettings->mChannelCount.Construct(0);
 
   mState = kReleased;
+
+  
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      __func__, [capabilities = mCapabilities,
+                 deviceMaxChannelCount = mDeviceMaxChannelCount] {
+        nsTArray<bool> echoCancellation;
+        echoCancellation.AppendElement(true);
+        echoCancellation.AppendElement(false);
+        capabilities->mEchoCancellation.Reset();
+        capabilities->mEchoCancellation.Construct(std::move(echoCancellation));
+
+        nsTArray<bool> autoGainControl;
+        autoGainControl.AppendElement(true);
+        autoGainControl.AppendElement(false);
+        capabilities->mAutoGainControl.Reset();
+        capabilities->mAutoGainControl.Construct(std::move(autoGainControl));
+
+        nsTArray<bool> noiseSuppression;
+        noiseSuppression.AppendElement(true);
+        noiseSuppression.AppendElement(false);
+        capabilities->mNoiseSuppression.Reset();
+        capabilities->mNoiseSuppression.Construct(std::move(noiseSuppression));
+
+        if (deviceMaxChannelCount) {
+          dom::ULongRange channelCountRange;
+          channelCountRange.mMax.Construct(deviceMaxChannelCount);
+          channelCountRange.mMin.Construct(1);
+          capabilities->mChannelCount.Reset();
+          capabilities->mChannelCount.Construct(channelCountRange);
+        }
+      }));
 }
 
 nsresult MediaEngineWebRTCMicrophoneSource::EvaluateSettings(
@@ -409,6 +447,12 @@ void MediaEngineWebRTCMicrophoneSource::GetSettings(
     dom::MediaTrackSettings& aOutSettings) const {
   MOZ_ASSERT(NS_IsMainThread());
   aOutSettings = *mSettings;
+}
+
+void MediaEngineWebRTCMicrophoneSource::GetCapabilities(
+    dom::MediaTrackCapabilities& aOutCapabilities) const {
+  MOZ_ASSERT(NS_IsMainThread());
+  aOutCapabilities = *mCapabilities;
 }
 
 AudioInputProcessing::AudioInputProcessing(uint32_t aMaxChannelCount)

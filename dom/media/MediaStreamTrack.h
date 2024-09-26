@@ -185,6 +185,8 @@ class MediaStreamTrackSource : public nsISupports {
 
   virtual void GetSettings(dom::MediaTrackSettings& aResult) {};
 
+  virtual void GetCapabilities(dom::MediaTrackCapabilities& aResult) {};
+
   
 
 
