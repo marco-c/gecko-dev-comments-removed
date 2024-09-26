@@ -1,13 +1,11 @@
 use core::fmt::Debug;
 use core::{iter, result, slice, str};
 
-use crate::endian::BigEndian as BE;
-use crate::pod::Pod;
-use crate::read::{
-    self, CompressedData, CompressedFileRange, Error, ObjectSection, ReadError, ReadRef,
-    RelocationMap, Result, SectionFlags, SectionIndex, SectionKind,
+use crate::{
+    xcoff, BigEndian as BE, CompressedData, CompressedFileRange, Pod, SectionFlags, SectionKind,
 };
-use crate::xcoff;
+
+use crate::read::{self, Error, ObjectSection, ReadError, ReadRef, Result, SectionIndex};
 
 use super::{AuxHeader, FileHeader, Rel, XcoffFile, XcoffRelocationIterator};
 
@@ -53,8 +51,6 @@ pub type XcoffSection64<'data, 'file, R = &'data [u8]> =
     XcoffSection<'data, 'file, xcoff::FileHeader64, R>;
 
 
-
-
 #[derive(Debug)]
 pub struct XcoffSection<'data, 'file, Xcoff, R = &'data [u8]>
 where
@@ -67,21 +63,6 @@ where
 }
 
 impl<'data, 'file, Xcoff: FileHeader, R: ReadRef<'data>> XcoffSection<'data, 'file, Xcoff, R> {
-    
-    pub fn xcoff_file(&self) -> &'file XcoffFile<'data, Xcoff, R> {
-        self.file
-    }
-
-    
-    pub fn xcoff_section(&self) -> &'data Xcoff::SectionHeader {
-        self.section
-    }
-
-    
-    pub fn xcoff_relocations(&self) -> Result<&'data [Xcoff::Rel]> {
-        self.section.relocations(self.file.data)
-    }
-
     fn bytes(&self) -> Result<&'data [u8]> {
         self.section
             .data(self.file.data)
@@ -153,11 +134,11 @@ where
         self.data().map(CompressedData::none)
     }
 
-    fn name_bytes(&self) -> read::Result<&'data [u8]> {
+    fn name_bytes(&self) -> read::Result<&[u8]> {
         Ok(self.section.name())
     }
 
-    fn name(&self) -> read::Result<&'data str> {
+    fn name(&self) -> read::Result<&str> {
         let name = self.name_bytes()?;
         str::from_utf8(name)
             .ok()
@@ -199,15 +180,11 @@ where
     }
 
     fn relocations(&self) -> Self::RelocationIterator {
-        let rel = self.xcoff_relocations().unwrap_or(&[]);
+        let rel = self.section.relocations(self.file.data).unwrap_or(&[]);
         XcoffRelocationIterator {
             file: self.file,
             relocations: rel.iter(),
         }
-    }
-
-    fn relocation_map(&self) -> read::Result<RelocationMap> {
-        RelocationMap::new(self.file, self)
     }
 
     fn flags(&self) -> SectionFlags {
@@ -220,8 +197,6 @@ where
         self.compressed_data()?.decompress()
     }
 }
-
-
 
 
 #[derive(Debug, Clone, Copy)]

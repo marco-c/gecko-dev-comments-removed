@@ -21,22 +21,8 @@ where
     Elf: FileHeader,
     R: ReadRef<'data>,
 {
-    file: &'file ElfFile<'data, Elf, R>,
-    iter: iter::Enumerate<slice::Iter<'data, Elf::SectionHeader>>,
-}
-
-impl<'data, 'file, Elf, R> ElfComdatIterator<'data, 'file, Elf, R>
-where
-    Elf: FileHeader,
-    R: ReadRef<'data>,
-{
-    pub(super) fn new(
-        file: &'file ElfFile<'data, Elf, R>,
-    ) -> ElfComdatIterator<'data, 'file, Elf, R> {
-        let mut iter = file.sections.iter().enumerate();
-        iter.next(); 
-        ElfComdatIterator { file, iter }
-    }
+    pub(super) file: &'file ElfFile<'data, Elf, R>,
+    pub(super) iter: iter::Enumerate<slice::Iter<'data, Elf::SectionHeader>>,
 }
 
 impl<'data, 'file, Elf, R> Iterator for ElfComdatIterator<'data, 'file, Elf, R>
@@ -62,8 +48,6 @@ pub type ElfComdat32<'data, 'file, Endian = Endianness, R = &'data [u8]> =
 
 pub type ElfComdat64<'data, 'file, Endian = Endianness, R = &'data [u8]> =
     ElfComdat<'data, 'file, elf::FileHeader64<Endian>, R>;
-
-
 
 
 #[derive(Debug)]
@@ -96,16 +80,6 @@ where
             sections,
         })
     }
-
-    
-    pub fn elf_file(&self) -> &'file ElfFile<'data, Elf, R> {
-        self.file
-    }
-
-    
-    pub fn elf_section_header(&self) -> &'data Elf::SectionHeader {
-        self.section
-    }
 }
 
 impl<'data, 'file, Elf, R> read::private::Sealed for ElfComdat<'data, 'file, Elf, R>
@@ -132,14 +106,14 @@ where
         SymbolIndex(self.section.sh_info(self.file.endian) as usize)
     }
 
-    fn name_bytes(&self) -> read::Result<&'data [u8]> {
+    fn name_bytes(&self) -> read::Result<&[u8]> {
         
-        let index = self.symbol();
+        let index = self.section.sh_info(self.file.endian) as usize;
         let symbol = self.file.symbols.symbol(index)?;
         symbol.name(self.file.endian, self.file.symbols.strings())
     }
 
-    fn name(&self) -> read::Result<&'data str> {
+    fn name(&self) -> read::Result<&str> {
         let name = self.name_bytes()?;
         str::from_utf8(name)
             .ok()

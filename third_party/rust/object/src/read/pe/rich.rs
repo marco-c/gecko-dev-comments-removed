@@ -2,10 +2,9 @@
 
 use core::mem;
 
-use crate::endian::{LittleEndian as LE, U32};
-use crate::pe;
 use crate::pod::bytes_of_slice;
-use crate::read::{Bytes, ReadRef};
+use crate::read::Bytes;
+use crate::{pe, LittleEndian as LE, ReadRef, U32};
 
 
 #[derive(Debug, Clone, Copy)]

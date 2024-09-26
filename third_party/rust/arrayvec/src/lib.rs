@@ -15,10 +15,6 @@
 
 
 
-
-
-
-
 #![doc(html_root_url="https://docs.rs/arrayvec/0.7/")]
 #![cfg_attr(not(feature="std"), no_std)]
 

@@ -11,9 +11,6 @@ use super::FileHeader;
 
 
 
-
-
-
 #[derive(Debug, Clone)]
 pub struct AttributesSection<'data, Elf: FileHeader> {
     endian: Elf::Endian,
@@ -27,8 +24,9 @@ impl<'data, Elf: FileHeader> AttributesSection<'data, Elf> {
         let mut data = Bytes(data);
 
         
-        
-        let version = data.read::<u8>().cloned().unwrap_or(b'A');
+        let version = *data
+            .read::<u8>()
+            .read_error("Invalid ELF attributes section offset or size")?;
 
         Ok(AttributesSection {
             endian,
@@ -70,14 +68,14 @@ impl<'data, Elf: FileHeader> AttributesSubsectionIterator<'data, Elf> {
             return Ok(None);
         }
 
-        let result = self.parse().map(Some);
+        let result = self.parse();
         if result.is_err() {
             self.data = Bytes(&[]);
         }
         result
     }
 
-    fn parse(&mut self) -> Result<AttributesSubsection<'data, Elf>> {
+    fn parse(&mut self) -> Result<Option<AttributesSubsection<'data, Elf>>> {
         
         let mut data = self.data;
         let length = data
@@ -94,28 +92,18 @@ impl<'data, Elf: FileHeader> AttributesSubsectionIterator<'data, Elf> {
         data.skip(4)
             .read_error("Invalid ELF attributes subsection length")?;
 
-        
         let vendor = data
             .read_string()
             .read_error("Invalid ELF attributes vendor")?;
 
-        Ok(AttributesSubsection {
+        Ok(Some(AttributesSubsection {
             endian: self.endian,
             length,
             vendor,
             data,
-        })
+        }))
     }
 }
-
-impl<'data, Elf: FileHeader> Iterator for AttributesSubsectionIterator<'data, Elf> {
-    type Item = Result<AttributesSubsection<'data, Elf>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next().transpose()
-    }
-}
-
 
 
 
@@ -162,14 +150,14 @@ impl<'data, Elf: FileHeader> AttributesSubsubsectionIterator<'data, Elf> {
             return Ok(None);
         }
 
-        let result = self.parse().map(Some);
+        let result = self.parse();
         if result.is_err() {
             self.data = Bytes(&[]);
         }
         result
     }
 
-    fn parse(&mut self) -> Result<AttributesSubsubsection<'data>> {
+    fn parse(&mut self) -> Result<Option<AttributesSubsubsection<'data>>> {
         
         
         
@@ -193,7 +181,6 @@ impl<'data, Elf: FileHeader> AttributesSubsubsectionIterator<'data, Elf> {
         data.skip(1 + 4)
             .read_error("Invalid ELF attributes sub-subsection length")?;
 
-        
         let indices = if tag == elf::Tag_Section || tag == elf::Tag_Symbol {
             data.read_string()
                 .map(Bytes)
@@ -204,20 +191,12 @@ impl<'data, Elf: FileHeader> AttributesSubsubsectionIterator<'data, Elf> {
             return Err(Error("Unimplemented ELF attributes sub-subsection tag"));
         };
 
-        Ok(AttributesSubsubsection {
+        Ok(Some(AttributesSubsubsection {
             tag,
             length,
             indices,
             data,
-        })
-    }
-}
-
-impl<'data, Elf: FileHeader> Iterator for AttributesSubsubsectionIterator<'data, Elf> {
-    type Item = Result<AttributesSubsubsection<'data>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next().transpose()
+        }))
     }
 }
 
@@ -281,15 +260,6 @@ impl<'data> AttributeIndexIterator<'data> {
         if self.data.is_empty() {
             return Ok(None);
         }
-
-        let result = self.parse().map(Some);
-        if result.is_err() {
-            self.data = Bytes(&[]);
-        }
-        result
-    }
-
-    fn parse(&mut self) -> Result<u32> {
         let err = "Invalid ELF attribute index";
         self.data
             .read_uleb128()
@@ -297,14 +267,7 @@ impl<'data> AttributeIndexIterator<'data> {
             .try_into()
             .map_err(|_| ())
             .read_error(err)
-    }
-}
-
-impl<'data> Iterator for AttributeIndexIterator<'data> {
-    type Item = Result<u32>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next().transpose()
+            .map(Some)
     }
 }
 

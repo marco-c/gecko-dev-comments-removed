@@ -24,8 +24,6 @@ pub unsafe trait Pod: Copy + 'static {}
 
 
 
-
-
 #[inline]
 pub fn from_bytes<T: Pod>(data: &[u8]) -> Result<(&T, &[u8])> {
     let size = mem::size_of::<T>();
@@ -40,8 +38,6 @@ pub fn from_bytes<T: Pod>(data: &[u8]) -> Result<(&T, &[u8])> {
     let val = unsafe { &*ptr.cast() };
     Ok((val, tail))
 }
-
-
 
 
 
@@ -67,8 +63,6 @@ pub fn from_bytes_mut<T: Pod>(data: &mut [u8]) -> Result<(&mut T, &mut [u8])> {
 
 
 
-
-
 #[inline]
 pub fn slice_from_bytes<T: Pod>(data: &[u8], count: usize) -> Result<(&[T], &[u8])> {
     let size = count.checked_mul(mem::size_of::<T>()).ok_or(())?;
@@ -83,8 +77,6 @@ pub fn slice_from_bytes<T: Pod>(data: &[u8], count: usize) -> Result<(&[T], &[u8
     let slice = unsafe { slice::from_raw_parts(ptr.cast(), count) };
     Ok((slice, tail))
 }
-
-
 
 
 
@@ -108,38 +100,6 @@ pub fn slice_from_bytes_mut<T: Pod>(
     
     let slice = unsafe { slice::from_raw_parts_mut(ptr.cast(), count) };
     Ok((slice, tail))
-}
-
-
-
-
-
-
-
-#[inline]
-pub fn slice_from_all_bytes<T: Pod>(data: &[u8]) -> Result<&[T]> {
-    let count = data.len() / mem::size_of::<T>();
-    let (slice, tail) = slice_from_bytes(data, count)?;
-    if !tail.is_empty() {
-        return Err(());
-    }
-    Ok(slice)
-}
-
-
-
-
-
-
-
-#[inline]
-pub fn slice_from_all_bytes_mut<T: Pod>(data: &mut [u8]) -> Result<&mut [T]> {
-    let count = data.len() / mem::size_of::<T>();
-    let (slice, tail) = slice_from_bytes_mut(data, count)?;
-    if !tail.is_empty() {
-        return Err(());
-    }
-    Ok(slice)
 }
 
 
@@ -195,8 +155,6 @@ macro_rules! unsafe_impl_pod {
 }
 
 unsafe_impl_pod!(u8, u16, u32, u64);
-
-unsafe impl<const N: usize, T: Pod> Pod for [T; N] {}
 
 #[cfg(test)]
 mod tests {
@@ -265,7 +223,7 @@ mod tests {
         assert_eq!(tail, tail_mut);
 
         let (y, tail) = slice_from_bytes::<u16>(&bytes[2..], 2).unwrap();
-        let (y_mut, tail_mut) = slice_from_bytes_mut::<u16>(&mut bytes_mut[2..], 2).unwrap();
+        let (y_mut, tail_mut) = slice_from_bytes::<u16>(&mut bytes_mut[2..], 2).unwrap();
         assert_eq!(y, &x[1..3]);
         assert_eq!(y, y_mut);
         assert_eq!(tail, &bytes[6..]);

@@ -3,13 +3,11 @@ use core::convert::TryInto;
 use core::fmt::Debug;
 use core::mem;
 
-use crate::elf;
-use crate::endian::{self, Endian, Endianness, U32};
-use crate::pod::Pod;
 use crate::read::{
     self, util, Architecture, ByteString, Bytes, Error, Export, FileFlags, Import, Object,
     ObjectKind, ReadError, ReadRef, SectionIndex, StringTable, SymbolIndex,
 };
+use crate::{elf, endian, Endian, Endianness, Pod, U32};
 
 use super::{
     CompressionHeader, Dyn, ElfComdat, ElfComdatIterator, ElfDynamicRelocationIterator, ElfSection,
@@ -19,14 +17,8 @@ use super::{
 };
 
 
-
-
-
 pub type ElfFile32<'data, Endian = Endianness, R = &'data [u8]> =
     ElfFile<'data, elf::FileHeader32<Endian>, R>;
-
-
-
 
 pub type ElfFile64<'data, Endian = Endianness, R = &'data [u8]> =
     ElfFile<'data, elf::FileHeader64<Endian>, R>;
@@ -90,53 +82,13 @@ where
     }
 
     
-    #[deprecated(note = "Use `elf_header` instead")]
     pub fn raw_header(&self) -> &'data Elf {
         self.header
     }
 
     
-    #[deprecated(note = "Use `elf_program_headers` instead")]
     pub fn raw_segments(&self) -> &'data [Elf::ProgramHeader] {
         self.segments
-    }
-
-    
-    pub fn elf_header(&self) -> &'data Elf {
-        self.header
-    }
-
-    
-    
-    
-    pub fn elf_program_headers(&self) -> &'data [Elf::ProgramHeader] {
-        self.segments
-    }
-
-    
-    
-    
-    pub fn elf_section_table(&self) -> &SectionTable<'data, Elf, R> {
-        &self.sections
-    }
-
-    
-    
-    
-    pub fn elf_symbol_table(&self) -> &SymbolTable<'data, Elf, R> {
-        &self.symbols
-    }
-
-    
-    
-    
-    pub fn elf_dynamic_symbol_table(&self) -> &SymbolTable<'data, Elf, R> {
-        &self.dynamic_symbols
-    }
-
-    
-    pub fn elf_relocation_sections(&self) -> &RelocationSections {
-        &self.relocations
     }
 
     fn raw_section_by_name<'file>(
@@ -147,7 +99,7 @@ where
             .section_by_name(self.endian, section_name)
             .map(|(index, section)| ElfSection {
                 file: self,
-                index,
+                index: SectionIndex(index),
                 section,
             })
     }
@@ -182,21 +134,22 @@ where
 {
 }
 
-impl<'data, Elf, R> Object<'data> for ElfFile<'data, Elf, R>
+impl<'data, 'file, Elf, R> Object<'data, 'file> for ElfFile<'data, Elf, R>
 where
+    'data: 'file,
     Elf: FileHeader,
-    R: ReadRef<'data>,
+    R: 'file + ReadRef<'data>,
 {
-    type Segment<'file> = ElfSegment<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type SegmentIterator<'file> = ElfSegmentIterator<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type Section<'file> = ElfSection<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type SectionIterator<'file> = ElfSectionIterator<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type Comdat<'file> = ElfComdat<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type ComdatIterator<'file> = ElfComdatIterator<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type Symbol<'file> = ElfSymbol<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type SymbolIterator<'file> = ElfSymbolIterator<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type SymbolTable<'file> = ElfSymbolTable<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
-    type DynamicRelocationIterator<'file> = ElfDynamicRelocationIterator<'data, 'file, Elf, R> where Self: 'file, 'data: 'file;
+    type Segment = ElfSegment<'data, 'file, Elf, R>;
+    type SegmentIterator = ElfSegmentIterator<'data, 'file, Elf, R>;
+    type Section = ElfSection<'data, 'file, Elf, R>;
+    type SectionIterator = ElfSectionIterator<'data, 'file, Elf, R>;
+    type Comdat = ElfComdat<'data, 'file, Elf, R>;
+    type ComdatIterator = ElfComdatIterator<'data, 'file, Elf, R>;
+    type Symbol = ElfSymbol<'data, 'file, Elf, R>;
+    type SymbolIterator = ElfSymbolIterator<'data, 'file, Elf, R>;
+    type SymbolTable = ElfSymbolTable<'data, 'file, Elf, R>;
+    type DynamicRelocationIterator = ElfDynamicRelocationIterator<'data, 'file, Elf, R>;
 
     fn architecture(&self) -> Architecture {
         match (
@@ -225,9 +178,6 @@ where
             
             (elf::EM_S390, true) => Architecture::S390x,
             (elf::EM_SBF, _) => Architecture::Sbf,
-            (elf::EM_SHARC, false) => Architecture::Sharc,
-            (elf::EM_SPARC, false) => Architecture::Sparc,
-            (elf::EM_SPARC32PLUS, false) => Architecture::Sparc32Plus,
             (elf::EM_SPARCV9, true) => Architecture::Sparc64,
             (elf::EM_XTENSA, false) => Architecture::Xtensa,
             _ => Architecture::Unknown,
@@ -255,14 +205,14 @@ where
         }
     }
 
-    fn segments(&self) -> ElfSegmentIterator<'data, '_, Elf, R> {
+    fn segments(&'file self) -> ElfSegmentIterator<'data, 'file, Elf, R> {
         ElfSegmentIterator {
             file: self,
             iter: self.segments.iter(),
         }
     }
 
-    fn section_by_name_bytes<'file>(
+    fn section_by_name_bytes(
         &'file self,
         section_name: &[u8],
     ) -> Option<ElfSection<'data, 'file, Elf, R>> {
@@ -270,7 +220,10 @@ where
             .or_else(|| self.zdebug_section_by_name(section_name))
     }
 
-    fn section_by_index(&self, index: SectionIndex) -> read::Result<ElfSection<'data, '_, Elf, R>> {
+    fn section_by_index(
+        &'file self,
+        index: SectionIndex,
+    ) -> read::Result<ElfSection<'data, 'file, Elf, R>> {
         let section = self.sections.section(index)?;
         Ok(ElfSection {
             file: self,
@@ -279,16 +232,25 @@ where
         })
     }
 
-    fn sections(&self) -> ElfSectionIterator<'data, '_, Elf, R> {
-        ElfSectionIterator::new(self)
+    fn sections(&'file self) -> ElfSectionIterator<'data, 'file, Elf, R> {
+        ElfSectionIterator {
+            file: self,
+            iter: self.sections.iter().enumerate(),
+        }
     }
 
-    fn comdats(&self) -> ElfComdatIterator<'data, '_, Elf, R> {
-        ElfComdatIterator::new(self)
+    fn comdats(&'file self) -> ElfComdatIterator<'data, 'file, Elf, R> {
+        ElfComdatIterator {
+            file: self,
+            iter: self.sections.iter().enumerate(),
+        }
     }
 
-    fn symbol_by_index(&self, index: SymbolIndex) -> read::Result<ElfSymbol<'data, '_, Elf, R>> {
-        let symbol = self.symbols.symbol(index)?;
+    fn symbol_by_index(
+        &'file self,
+        index: SymbolIndex,
+    ) -> read::Result<ElfSymbol<'data, 'file, Elf, R>> {
+        let symbol = self.symbols.symbol(index.0)?;
         Ok(ElfSymbol {
             endian: self.endian,
             symbols: &self.symbols,
@@ -297,11 +259,15 @@ where
         })
     }
 
-    fn symbols(&self) -> ElfSymbolIterator<'data, '_, Elf, R> {
-        ElfSymbolIterator::new(self.endian, &self.symbols)
+    fn symbols(&'file self) -> ElfSymbolIterator<'data, 'file, Elf, R> {
+        ElfSymbolIterator {
+            endian: self.endian,
+            symbols: &self.symbols,
+            index: 0,
+        }
     }
 
-    fn symbol_table(&self) -> Option<ElfSymbolTable<'data, '_, Elf, R>> {
+    fn symbol_table(&'file self) -> Option<ElfSymbolTable<'data, 'file, Elf, R>> {
         if self.symbols.is_empty() {
             return None;
         }
@@ -311,11 +277,15 @@ where
         })
     }
 
-    fn dynamic_symbols(&self) -> ElfSymbolIterator<'data, '_, Elf, R> {
-        ElfSymbolIterator::new(self.endian, &self.dynamic_symbols)
+    fn dynamic_symbols(&'file self) -> ElfSymbolIterator<'data, 'file, Elf, R> {
+        ElfSymbolIterator {
+            endian: self.endian,
+            symbols: &self.dynamic_symbols,
+            index: 0,
+        }
     }
 
-    fn dynamic_symbol_table(&self) -> Option<ElfSymbolTable<'data, '_, Elf, R>> {
+    fn dynamic_symbol_table(&'file self) -> Option<ElfSymbolTable<'data, 'file, Elf, R>> {
         if self.dynamic_symbols.is_empty() {
             return None;
         }
@@ -325,7 +295,7 @@ where
         })
     }
 
-    fn dynamic_relocations<'file>(
+    fn dynamic_relocations(
         &'file self,
     ) -> Option<ElfDynamicRelocationIterator<'data, 'file, Elf, R>> {
         Some(ElfDynamicRelocationIterator {
@@ -335,24 +305,17 @@ where
         })
     }
 
+    
     fn imports(&self) -> read::Result<Vec<Import<'data>>> {
-        let versions = self.sections.versions(self.endian, self.data)?;
-
         let mut imports = Vec::new();
-        for (index, symbol) in self.dynamic_symbols.enumerate() {
+        for symbol in self.dynamic_symbols.iter() {
             if symbol.is_undefined(self.endian) {
                 let name = symbol.name(self.endian, self.dynamic_symbols.strings())?;
                 if !name.is_empty() {
-                    let library = if let Some(svt) = versions.as_ref() {
-                        let vi = svt.version_index(self.endian, index);
-                        svt.version(vi)?.and_then(|v| v.file())
-                    } else {
-                        None
-                    }
-                    .unwrap_or(&[]);
+                    
                     imports.push(Import {
                         name: ByteString(name),
-                        library: ByteString(library),
+                        library: ByteString(&[]),
                     });
                 }
             }
@@ -360,6 +323,7 @@ where
         Ok(imports)
     }
 
+    
     fn exports(&self) -> read::Result<Vec<Export<'data>>> {
         let mut exports = Vec::new();
         for symbol in self.dynamic_symbols.iter() {
@@ -713,18 +677,6 @@ pub trait FileHeader: Debug + Pod {
     }
 
     
-    
-    
-    fn section_strings_index<'data, R: ReadRef<'data>>(
-        &self,
-        endian: Self::Endian,
-        data: R,
-    ) -> read::Result<SectionIndex> {
-        self.shstrndx(endian, data)
-            .map(|index| SectionIndex(index as usize))
-    }
-
-    
     fn section_strings<'data, R: ReadRef<'data>>(
         &self,
         endian: Self::Endian,
@@ -734,8 +686,8 @@ pub trait FileHeader: Debug + Pod {
         if sections.is_empty() {
             return Ok(StringTable::default());
         }
-        let index = self.section_strings_index(endian, data)?;
-        let shstrtab = sections.get(index.0).read_error("Invalid ELF e_shstrndx")?;
+        let index = self.shstrndx(endian, data)? as usize;
+        let shstrtab = sections.get(index).read_error("Invalid ELF e_shstrndx")?;
         let strings = if let Some((shstrtab_offset, shstrtab_size)) = shstrtab.file_range(endian) {
             let shstrtab_end = shstrtab_offset
                 .checked_add(shstrtab_size)

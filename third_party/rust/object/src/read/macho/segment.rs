@@ -49,8 +49,6 @@ pub type MachOSegment64<'data, 'file, Endian = Endianness, R = &'data [u8]> =
     MachOSegment<'data, 'file, macho::MachHeader64<Endian>, R>;
 
 
-
-
 #[derive(Debug)]
 pub struct MachOSegment<'data, 'file, Mach, R = &'data [u8]>
 where
@@ -66,20 +64,10 @@ where
     Mach: MachHeader,
     R: ReadRef<'data>,
 {
-    
-    pub fn macho_file(&self) -> &'file MachOFile<'data, Mach, R> {
-        self.file
-    }
-
-    
-    pub fn macho_segment(&self) -> &'data Mach::Segment {
-        self.internal.segment
-    }
-
     fn bytes(&self) -> Result<&'data [u8]> {
         self.internal
             .segment
-            .data(self.file.endian, self.internal.data)
+            .data(self.file.endian, self.file.data)
             .read_error("Invalid Mach-O segment size or offset")
     }
 }
@@ -159,12 +147,8 @@ where
 
 #[derive(Debug, Clone, Copy)]
 pub(super) struct MachOSegmentInternal<'data, Mach: MachHeader, R: ReadRef<'data>> {
-    pub segment: &'data Mach::Segment,
-    
-    
-    
-    
     pub data: R,
+    pub segment: &'data Mach::Segment,
 }
 
 
