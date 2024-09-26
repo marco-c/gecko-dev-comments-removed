@@ -60,39 +60,7 @@ using namespace mozilla::ipc;
 namespace IPC {
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace {
-
-
-
-static int gClientChannelFd =
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
-    
-    -1
-#else
-    3
-#endif  
-    ;
-
-
 
 bool ErrorIsBrokenPipe(int err) { return err == EPIPE || err == ECONNRESET; }
 
@@ -134,12 +102,6 @@ static inline ssize_t corrected_sendmsg(int socket,
 
 }  
 
-
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
-void Channel::SetClientChannelFd(int fd) { gClientChannelFd = fd; }
-#endif  
-
-int Channel::GetClientChannelHandle() { return gClientChannelFd; }
 
 Channel::ChannelImpl::ChannelImpl(ChannelHandle pipe, Mode mode,
                                   base::ProcessId other_pid)

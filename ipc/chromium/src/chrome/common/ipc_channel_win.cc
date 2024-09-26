@@ -755,16 +755,6 @@ void Channel::SetOtherPid(base::ProcessId other_pid) {
 
 bool Channel::IsClosed() const { return channel_impl_->IsClosed(); }
 
-HANDLE Channel::GetClientChannelHandle() {
-  
-  
-  std::wstring switchValue = CommandLine::ForCurrentProcess()->GetSwitchValue(
-      switches::kProcessChannelID);
-
-  uint32_t handleInt = std::stoul(switchValue);
-  return Uint32ToHandle(handleInt);
-}
-
 
 bool Channel::CreateRawPipe(ChannelHandle* server, ChannelHandle* client) {
   std::wstring pipe_name =
