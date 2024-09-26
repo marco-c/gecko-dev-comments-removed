@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Url Preview */
 
 .url-preview {
   border-bottom: 1px solid var(--theme-splitter-color);
@@ -24,8 +24,8 @@
   outline: none;
 }
 .url-preview td.splitter {
-  
-
+  /* This makes sure that the column spans the width of the
+    side bar so the contained horizontal splitter is visible */
   width: 100vw !important;
 }
 
@@ -57,7 +57,7 @@
 .url-preview .treeTable .treeLabelCell {
   --tree-label-cell-indent: 0 !important;
 }
-
+/* Indent the array params */
 .url-preview .treeTable .treeRow[aria-level="4"] .treeLabelCell {
   text-indent: 15px;
 }
@@ -66,10 +66,10 @@
   text-transform: capitalize;
 }
 
-
+/* Collapsed url */
 .url-preview tr.treeRow:first-child .treeLabelCell {
   font-weight: bold;
-  color: var(--theme-icon-dimmed-color);
+  color: var(--theme-comment);
 }
 
 .url-preview tr.treeRow .treeLabelCell {
@@ -92,7 +92,7 @@
 
 .url-preview .url-scheme,
 .url-preview .url-chars {
-  color: var(--theme-icon-dimmed-color);
+  color: var(--theme-comment);
 }
 
 .url-preview .url-params-name {
