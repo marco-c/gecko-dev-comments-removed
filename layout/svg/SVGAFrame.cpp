@@ -33,10 +33,6 @@ class SVGAFrame final : public SVGDisplayContainerFrame {
             nsIFrame* aPrevInFlow) override;
 #endif
 
-  
-  nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
-
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(u"SVGA"_ns, aResult);
@@ -71,18 +67,5 @@ void SVGAFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   SVGDisplayContainerFrame::Init(aContent, aParent, aPrevInFlow);
 }
 #endif 
-
-nsresult SVGAFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                     int32_t aModType) {
-  if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::transform) {
-    
-    
-    
-    
-    NotifySVGChanged(TRANSFORM_CHANGED);
-  }
-
-  return NS_OK;
-}
 
 }  

@@ -181,8 +181,7 @@ nsresult SVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
         SVGUtils::NotifyChildrenOfSVGChange(this, flags);
       }
 
-    } else if (aAttribute == nsGkAtoms::transform ||
-               aAttribute == nsGkAtoms::preserveAspectRatio ||
+    } else if (aAttribute == nsGkAtoms::preserveAspectRatio ||
                aAttribute == nsGkAtoms::viewBox || aAttribute == nsGkAtoms::x ||
                aAttribute == nsGkAtoms::y) {
       
@@ -192,11 +191,6 @@ nsresult SVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
           this, aAttribute == nsGkAtoms::viewBox
                     ? TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED
                     : TRANSFORM_CHANGED);
-
-      
-      
-      
-      
 
       if (aAttribute == nsGkAtoms::x || aAttribute == nsGkAtoms::y) {
         nsLayoutUtils::PostRestyleEvent(
