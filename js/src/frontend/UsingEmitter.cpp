@@ -96,6 +96,32 @@ bool UsingEmitter::emitThrowIfException() {
   return true;
 }
 
+bool UsingEmitter::emitResourcePropertyAccess(TaggedParserAtomIndex prop,
+                                              unsigned resourcesFromTop) {
+  
+  
+  
+  
+  MOZ_ASSERT(resourcesFromTop >= 1);
+
+  if (!bce_->emitDupAt(resourcesFromTop, 2)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::GetElem)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitAtomOp(JSOp::GetProp, prop)) {
+    
+    return false;
+  }
+
+  return true;
+}
+
 
 
 
@@ -218,60 +244,16 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Dup2)) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::GetElem)) {
-    
-    return false;
-  }
-
   
-  
-  
-  
-  
-  if (!bce_->emit1(JSOp::Dup)) {
-    
-    return false;
-  }
-
-  if (!bce_->emitAtomOp(JSOp::GetProp,
-                        TaggedParserAtomIndex::WellKnown::hint())) {
-    
-    return false;
-  }
-
-  if (!bce_->emitDupAt(1)) {
-    
-    return false;
-  }
-
-  if (!bce_->emitAtomOp(JSOp::GetProp,
-                        TaggedParserAtomIndex::WellKnown::method())) {
-    
-    return false;
-  }
-
-  if (!bce_->emitPickN(2)) {
-    
-    return false;
-  }
-
-  if (!bce_->emitAtomOp(JSOp::GetProp,
-                        TaggedParserAtomIndex::WellKnown::value())) {
-    
-    return false;
-  }
 
   if (hasAwaitUsing_) {
     
 
     
     
-    if (!bce_->emitDupAt(2)) {
+    
+    
+    if (!emitResourcePropertyAccess(TaggedParserAtomIndex::WellKnown::hint())) {
       
       return false;
     }
@@ -285,12 +267,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
       return false;
     }
 
-    if (!bce_->emitDupAt(9)) {
-      
-      return false;
-    }
-
-    if (!bce_->emitDupAt(9)) {
+    if (!bce_->emitDupAt(6, 2)) {
       
       return false;
     }
@@ -339,7 +316,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     }
 
     
-    if (!bce_->emitPickN(9)) {
+    if (!bce_->emitPickN(6)) {
       
       return false;
     }
@@ -354,7 +331,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
       return false;
     }
 
-    if (!bce_->emitUnpickN(8)) {
+    if (!bce_->emitUnpickN(5)) {
       
       return false;
     }
@@ -368,7 +345,9 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
   
 
   
-  if (!bce_->emitDupAt(1)) {
+  
+  
+  if (!emitResourcePropertyAccess(TaggedParserAtomIndex::WellKnown::method())) {
     
     return false;
   }
@@ -398,7 +377,17 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Dup2)) {
+  
+  
+  if (!emitResourcePropertyAccess(TaggedParserAtomIndex::WellKnown::method())) {
+    
+    return false;
+  }
+
+  
+  
+  if (!emitResourcePropertyAccess(TaggedParserAtomIndex::WellKnown::value(),
+                                  2)) {
     
     return false;
   }
@@ -412,7 +401,8 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
   if (hasAwaitUsing_) {
     
     
-    if (!bce_->emitDupAt(3)) {
+    if (!emitResourcePropertyAccess(TaggedParserAtomIndex::WellKnown::hint(),
+                                    2)) {
       
       return false;
     }
@@ -429,7 +419,9 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     }
 
     
-    if (!bce_->emitPickN(8)) {
+
+    
+    if (!bce_->emitPickN(5)) {
       
       return false;
     }
@@ -444,7 +436,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
       return false;
     }
 
-    if (!bce_->emitUnpickN(8)) {
+    if (!bce_->emitUnpickN(5)) {
       
       return false;
     }
@@ -474,7 +466,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emitPickN(6)) {
+  if (!bce_->emitPickN(3)) {
     
     return false;
   }
@@ -499,7 +491,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
       return false;
     }
 
-    if (!bce_->emitPickN(8)) {
+    if (!bce_->emitPickN(5)) {
       
       return false;
     }
@@ -509,7 +501,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
       return false;
     }
   } else {
-    if (!bce_->emitPickN(7)) {
+    if (!bce_->emitPickN(4)) {
       
       return false;
     }
@@ -531,7 +523,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emitUnpickN(5)) {
+  if (!bce_->emitUnpickN(2)) {
     
     return false;
   }
@@ -541,7 +533,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emitUnpickN(6)) {
+  if (!bce_->emitUnpickN(3)) {
     
     return false;
   }
@@ -558,7 +550,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emitUnpickN(5)) {
+  if (!bce_->emitUnpickN(2)) {
     
     return false;
   }
@@ -568,7 +560,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emitUnpickN(6)) {
+  if (!bce_->emitUnpickN(3)) {
     
     return false;
   }
@@ -585,11 +577,6 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
 
   
 
-  if (!bce_->emitPopN(3)) {
-    
-    return false;
-  }
-
   
   
   
@@ -598,7 +585,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (!bce_->emitPopN(4)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
