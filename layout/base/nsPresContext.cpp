@@ -766,7 +766,7 @@ void nsPresContext::UpdateForcedColors(bool aNotify) {
     
     
     
-#ifdef XP_WINDOWS
+#ifdef XP_WIN
     if (prefs.mUseAccessibilityTheme && prefs.mIsChrome) {
       return StyleForcedColors::Requested;
     }
