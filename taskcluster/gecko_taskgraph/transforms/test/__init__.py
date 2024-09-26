@@ -17,7 +17,6 @@ what should run where. this is the wrong place for special-casing platforms,
 for example - use `all_tests.py` instead.
 """
 
-
 import logging
 from importlib import import_module
 
@@ -410,7 +409,13 @@ def run_remaining_transforms(config, tasks):
         
         
         
+        
         ("chunk", None),
+        (
+            "os_integration",
+            lambda t: t.get("attributes", {}).get("unittest_variant")
+            == "os-integration",
+        ),
     )
 
     for task in tasks:
