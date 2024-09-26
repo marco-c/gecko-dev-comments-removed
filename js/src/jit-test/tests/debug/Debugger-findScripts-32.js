@@ -68,6 +68,7 @@ assertFound({url:scriptname, start: {line: 6}, end: {line: 7}}, gfw.script);
 assertFound({url:scriptname, start: {line: 12}, end: {line: 12}}, gfw.script);
 assertFound({url:scriptname, start: {line: 20}, end: {line: 20}}, gjw.script);
 
+assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 20}, end: {line: 7}}), Error);
 
 
 assertFound({url:scriptname, innermost: true, start: {line: 20}, end: {line: 20}}, gjw.script);
