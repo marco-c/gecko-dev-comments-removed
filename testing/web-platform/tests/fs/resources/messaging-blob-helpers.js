@@ -21,19 +21,21 @@ async function create_message_target_data_uri(test) {
 
 
 async function create_message_target_html_without_subresources(test) {
-  const test_helpers_script = await fetch_text('resources/test-helpers.js');
+  const test_helpers_script =
+      await fetch_text('../fs/resources/test-helpers.js');
 
   const messaging_helpers_script =
-    await fetch_text('resources/messaging-helpers.js');
+      await fetch_text('../fs/resources/messaging-helpers.js');
 
   const messaging_serialize_helpers_script =
-    await fetch_text('resources/messaging-serialize-helpers.js');
+      await fetch_text('../fs/resources/messaging-serialize-helpers.js');
 
   const message_target_script =
-    await fetch_text('resources/message-target.js');
+      await fetch_text('../fs/resources/message-target.js');
 
   
-  const iframe = await add_iframe(test, { src: 'resources/message-target.html' });
+  const iframe =
+      await add_iframe(test, {src: '../fs/resources/message-target.html'});
   const iframe_script =
     iframe.contentWindow.document.getElementById('inline_script').outerHTML;
   iframe.remove();
