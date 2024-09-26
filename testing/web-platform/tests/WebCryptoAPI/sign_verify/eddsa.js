@@ -1,10 +1,10 @@
 
-function run_test() {
+function run_test(algorithmName) {
   var subtle = self.crypto.subtle; 
 
   
   
-  var testVectors = getTestVectors();
+  var testVectors = getTestVectors(algorithmName);
 
   testVectors.forEach(function(vector) {
       var algorithm = {name: vector.algorithmName};
