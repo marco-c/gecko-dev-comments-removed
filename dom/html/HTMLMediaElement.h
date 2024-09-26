@@ -1237,7 +1237,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
 
 
-  void DispatchAsyncSourceError(nsIContent* aSourceElement);
+  void DispatchAsyncSourceError(nsIContent* aSourceElement,
+                                const nsACString& aErrorDetails);
 
   
 
