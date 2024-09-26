@@ -1131,6 +1131,19 @@ Result<Ok, LaunchError> BaseProcessLauncher::DoSetup() {
   geckoargs::sParentPid.Put(static_cast<uint64_t>(base::GetCurrentProcId()),
                             mChildArgs);
 
+  if (!CrashReporter::IsDummy() && CrashReporter::GetEnabled()) {
+#if defined(MOZ_WIDGET_COCOA) || defined(XP_WIN)
+    geckoargs::sCrashReporter.Put(CrashReporter::GetChildNotificationPipe(),
+                                  mChildArgs);
+#elif defined(XP_UNIX)
+    UniqueFileHandle childCrashFd = CrashReporter::GetChildNotificationPipe();
+    if (!childCrashFd) {
+      return Err(LaunchError("DuplicateFileHandle failed"));
+    }
+    geckoargs::sCrashReporter.Put(std::move(childCrashFd), mChildArgs);
+#endif
+  }
+
   return Ok();
 }
 
@@ -1301,27 +1314,9 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
 #  endif
   }
 
-  if (!CrashReporter::IsDummy()) {
-#  if defined(MOZ_WIDGET_COCOA)
-    mChildArgv.push_back(CrashReporter::GetChildNotificationPipe());
-#  elif defined(XP_UNIX)
-    int childCrashFd, childCrashRemapFd;
-    if (NS_WARN_IF(!CrashReporter::CreateNotificationPipeForChild(
-            &childCrashFd, &childCrashRemapFd))) {
-      return Err(LaunchError("CR::CreateNotificationPipeForChild"));
-    }
-
-    if (0 <= childCrashFd) {
-      mLaunchOptions->fds_to_remap.push_back(
-          std::pair<int, int>(childCrashFd, childCrashRemapFd));
-      
-      mChildArgs.mArgs.push_back("true");
-    } else {
-      
-      mChildArgs.mArgs.push_back("false");
-    }
-#  endif
-  }
+  
+  
+  
 
 #  ifdef MOZ_WIDGET_COCOA
   {
@@ -1717,9 +1712,6 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
 
   
   mCmdLine->AppendLooseValue(mGroupId.get());
-
-  mCmdLine->AppendLooseValue(
-      UTF8ToWide(CrashReporter::GetChildNotificationPipe()));
 
   
   mCmdLine->AppendLooseValue(UTF8ToWide(mChildIDString));
