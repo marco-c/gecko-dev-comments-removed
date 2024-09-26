@@ -1038,17 +1038,6 @@
 
 
 
-
-#if defined(__cpp_constinit)
-#  define MOZ_CONSTINIT constinit
-#elif defined(__clang__)
-#  define MOZ_CONSTINIT [[clang::require_constant_initialization]]
-#else
-#  define MOZ_CONSTINIT
-#endif
-
-
-
 #ifdef __clang__
 #  define MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA MOZ_CAN_RUN_SCRIPT_BOUNDARY
 #else

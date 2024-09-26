@@ -70,9 +70,8 @@ static StaticAutoPtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
 
 
 StaticMutex sProcessSupportedMutex;
-MOZ_CONSTINIT static EnumeratedArray<RemoteDecodeIn,
-                                     Maybe<media::MediaCodecsSupported>,
-                                     size_t(RemoteDecodeIn::SENTINEL)>
+static EnumeratedArray<RemoteDecodeIn, Maybe<media::MediaCodecsSupported>,
+                       size_t(RemoteDecodeIn::SENTINEL)>
     sProcessSupported MOZ_GUARDED_BY(sProcessSupportedMutex);
 
 class ShutdownObserver final : public nsIObserver {
