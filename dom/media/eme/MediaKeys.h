@@ -170,8 +170,6 @@ class MediaKeys final : public nsIObserver,
   
   constexpr static const char* kMediaKeysRequestTopic = "mediakeys-request";
 
-  nsCString GetMediaKeySystemConfigurationString() const;
-
  private:
   
   
