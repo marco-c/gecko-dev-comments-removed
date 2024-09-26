@@ -46,29 +46,18 @@ enum class TruncateKind;
 
 struct LoopIterationBound : public TempObject {
   
-  MBasicBlock* header;
-
   
   
   
   
-  
-  MTest* test;
+  const MTest* test;
 
   
   
   LinearSum boundSum;
 
-  
-  
-  LinearSum currentSum;
-
-  LoopIterationBound(MBasicBlock* header, MTest* test,
-                     const LinearSum& boundSum, const LinearSum& currentSum)
-      : header(header),
-        test(test),
-        boundSum(boundSum),
-        currentSum(currentSum) {}
+  LoopIterationBound(const MTest* test, const LinearSum& boundSum)
+      : test(test), boundSum(boundSum) {}
 };
 
 using LoopIterationBoundVector =
