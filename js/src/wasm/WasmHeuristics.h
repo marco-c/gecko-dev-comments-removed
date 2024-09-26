@@ -47,9 +47,9 @@ class LazyTieringHeuristics {
   
   
   
-  static constexpr float scale_[7] = {4050.0, 1350.0, 450.0,
-                                      150.0,  
-                                      50.0,   16.67,  5.56};
+  static constexpr float scale_[7] = {27.0,  9.0,   3.0,
+                                      1.0,  
+                                      0.333, 0.111, 0.037};
 
  public:
   LazyTieringHeuristics() {
@@ -73,9 +73,21 @@ class LazyTieringHeuristics {
       
       
       
-      float thresholdF = float(bodyLength);
-      thresholdF = thresholdF * sqrtf(thresholdF);
+      
+      
+      
+      
+      
+      float thresholdF = 30000.0 + 4000.0 * float(bodyLength);
+
+      
+      
+      thresholdF *= 0.25;
+
+      
       thresholdF *= scale_[level_ - (MIN_LEVEL + 1)];
+
+      
       thresholdF = std::max<float>(thresholdF, 10.0);   
       thresholdF = std::min<float>(thresholdF, 2.0e9);  
       int32_t thresholdI = int32_t(thresholdF);

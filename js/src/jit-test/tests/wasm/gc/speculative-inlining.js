@@ -2,7 +2,7 @@
 
 
 
-const tierUpThreshold = 2250;
+const tierUpThreshold = 14000;
 
 let {importFunc} = wasmEvalText(`
   (module (func (export "importFunc") (result i32) i32.const 2))
@@ -59,6 +59,8 @@ for ([funcToInline, funcToInlineExpected] of testFuncs) {
   for (let i = 0; i <= tierUpThreshold; i++) {
     invokeTestWith(exports, funcToInline, funcToInlineExpected);
   }
+  
+  
   
   
   
