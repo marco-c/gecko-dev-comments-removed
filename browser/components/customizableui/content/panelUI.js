@@ -338,7 +338,7 @@ const PanelUI = {
         this.showSubView("PanelUI-history", target);
         break;
       case "appMenu-passwords-button":
-        LoginHelper.openPasswordManager(window, { entryPoint: "Mainmenu" });
+        LoginHelper.openPasswordManager(window, { entryPoint: "mainmenu" });
         break;
       case "appMenu-fullscreen-button2":
         
