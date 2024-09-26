@@ -1040,11 +1040,13 @@ void Http2Session::SendHello() {
     
     numberOfEntries++;
 
-    NetworkEndian::writeUint16(
-        packet + kFrameHeaderBytes + (6 * numberOfEntries),
-        SETTINGS_TYPE_MAX_CONCURRENT);
-    
-    numberOfEntries++;
+    if (StaticPrefs::network_http_http2_send_push_max_concurrent_frame()) {
+      NetworkEndian::writeUint16(
+          packet + kFrameHeaderBytes + (6 * numberOfEntries),
+          SETTINGS_TYPE_MAX_CONCURRENT);
+      
+      numberOfEntries++;
+    }
 
     mWaitingForSettingsAck = true;
   }
