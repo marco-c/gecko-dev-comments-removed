@@ -20,7 +20,8 @@
 #include "nsServiceManagerUtils.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
-
+#include "nsImportModule.h"
+#include "nsIOpenTabsProvider.h"
 #include "imgIContainer.h"
 #include "imgITools.h"
 
@@ -70,7 +71,7 @@ class AsyncFaviconDataReady final : public nsIFaviconDataCallback {
                         int aIconIndex, int aTimeStamp)
       : mSearchResult(std::move(aSearchResult)),
         mIconIndex(aIconIndex),
-        mTimeStamp(aTimeStamp) {};
+        mTimeStamp(aTimeStamp) {}
 
  private:
   ~AsyncFaviconDataReady() {}
@@ -411,11 +412,12 @@ nsresult nsGNOMEShellHistoryService::QueryHistory(
   return NS_OK;
 }
 
-static void DBusGetIDKeyForURI(int aIndex, nsAutoCString& aUri,
+static void DBusGetIDKeyForURI(int aIndex, bool aIsOpen, nsAutoCString& aUri,
                                nsAutoCString& aIDKey) {
   
   
-  aIDKey = nsPrintfCString("%.2d:%s", aIndex, aUri.get());
+  aIDKey =
+      nsPrintfCString("%.2d:%c:%s", aIndex, aIsOpen ? 'o' : 'h', aUri.get());
 }
 
 
@@ -456,8 +458,15 @@ void nsGNOMEShellHistorySearchResult::HandleSearchResultReply() {
           new AsyncFaviconDataReady(this, i, mTimeStamp);
       favIconSvc->GetFaviconDataForPage(iconIri, callback, 0);
 
+      bool isOpen = false;
+      for (const auto& openuri : mOpenTabs) {
+        if (openuri.Equals(uri)) {
+          isOpen = true;
+          break;
+        }
+      }
       nsAutoCString idKey;
-      DBusGetIDKeyForURI(i, uri, idKey);
+      DBusGetIDKeyForURI(i, isOpen, uri, idKey);
 
       g_variant_builder_add(&b, "s", idKey.get());
     }
@@ -479,8 +488,30 @@ void nsGNOMEShellHistorySearchResult::ReceiveSearchResultContainer(
   
   if (mSearchProvider->SetSearchResult(this)) {
     mHistResultContainer = aHistResultContainer;
-    HandleSearchResultReply();
   }
+
+  
+  nsresult rv;
+  nsCOMPtr<nsIOpenTabsProvider> provider =
+      do_ImportESModule("resource:///modules/OpenTabsProvider.sys.mjs", &rv);
+  if (NS_FAILED(rv)) {
+    
+    NS_WARNING("Failed to determine currently open tabs. Using history only.");
+  }
+
+  nsTArray<nsCString> openTabs;
+  if (provider) {
+    rv = provider->GetOpenTabs(openTabs);
+    if (NS_FAILED(rv)) {
+      
+      NS_WARNING(
+          "Failed to determine currently open tabs. Using history only.");
+    }
+  }
+  
+  mOpenTabs = std::move(openTabs);
+
+  HandleSearchResultReply();
 }
 
 void nsGNOMEShellHistorySearchResult::SetHistoryIcon(int aTimeStamp,
