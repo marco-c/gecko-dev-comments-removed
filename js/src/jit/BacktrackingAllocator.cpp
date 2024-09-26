@@ -3687,42 +3687,51 @@ bool BacktrackingAllocator::moveAtEdge(LBlock* predecessor, LBlock* successor,
 }
 
 
-bool BacktrackingAllocator::deadRange(LiveRange* range) {
-  
-  if (range->hasUses() || range->hasDefinition()) {
-    return false;
-  }
-
-  CodePosition start = range->from();
-  LNode* ins = insData[start];
-  if (start == entryOf(ins->block())) {
-    return false;
-  }
-
-  VirtualRegister& reg = range->vreg();
-
-  
-  LiveRange::RegisterLinkIterator iter = reg.rangesBegin(range);
-  for (iter++; iter; iter++) {
-    LiveRange* laterRange = LiveRange::get(*iter);
-    if (laterRange->from() > range->from()) {
+void BacktrackingAllocator::removeDeadRanges(VirtualRegister& reg) {
+  auto isDeadRange = [&](LiveRange* range) {
+    
+    if (range->hasUses() || range->hasDefinition()) {
       return false;
     }
-  }
 
-  
-  LNode* last = insData[range->to().previous()];
-  if (last->isGoto() &&
-      last->toGoto()->target()->id() < last->block()->mir()->id()) {
-    return false;
-  }
+    CodePosition start = range->from();
+    LNode* ins = insData[start];
+    if (start == entryOf(ins->block())) {
+      return false;
+    }
 
-  
-  if (reg.usedByPhi()) {
-    return false;
-  }
+    
+    LiveRange::RegisterLinkIterator iter = reg.rangesBegin(range);
+    for (iter++; iter; iter++) {
+      LiveRange* laterRange = LiveRange::get(*iter);
+      if (laterRange->from() > range->from()) {
+        return false;
+      }
+    }
 
-  return true;
+    
+    LNode* last = insData[range->to().previous()];
+    if (last->isGoto() &&
+        last->toGoto()->target()->id() < last->block()->mir()->id()) {
+      return false;
+    }
+
+    
+    if (reg.usedByPhi()) {
+      return false;
+    }
+
+    return true;
+  };
+
+  for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter;) {
+    LiveRange* range = LiveRange::get(*iter);
+    if (isDeadRange(range)) {
+      reg.removeRangeAndIncrement(iter);
+    } else {
+      iter++;
+    }
+  }
 }
 
 bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
@@ -3743,7 +3752,11 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
       return false;
     }
 
-    for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter;) {
+    
+    removeDeadRanges(reg);
+
+    for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter;
+         iter++) {
       LiveRange* range = LiveRange::get(*iter);
 
       if (mir->shouldCancel(
@@ -3752,15 +3765,8 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
       }
 
       
-      if (deadRange(range)) {
-        reg.removeRangeAndIncrement(iter);
-        continue;
-      }
-
-      
       
       if (range->hasDefinition()) {
-        iter++;
         continue;
       }
 
@@ -3769,7 +3775,6 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
       CodePosition start = range->from();
       LNode* ins = insData[start];
       if (start == entryOf(ins->block())) {
-        iter++;
         continue;
       }
 
@@ -3787,7 +3792,6 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
         }
       }
       if (skip) {
-        iter++;
         continue;
       }
 
@@ -3812,8 +3816,6 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
           return false;
         }
       }
-
-      iter++;
     }
   }
 
