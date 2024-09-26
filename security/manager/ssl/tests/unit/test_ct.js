@@ -9,7 +9,6 @@ do_get_profile();
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.pki.certificate_transparency.mode");
-  Services.prefs.clearUserPref("security.test.built_in_root_hash");
   let cert = constructCertFromFile("test_ct/ct-valid.example.com.pem");
   setCertTrust(cert, ",,");
 });
@@ -17,25 +16,6 @@ registerCleanupFunction(() => {
 function run_test() {
   Services.prefs.setIntPref("security.pki.certificate_transparency.mode", 1);
   add_tls_server_setup("BadCertAndPinningServer", "test_ct");
-
-  
-  
-  add_ct_test(
-    "ct-unknown-log.example.com",
-    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE
-  );
-
-  add_test(function set_test_root_as_built_in() {
-    
-    
-    let rootCert = constructCertFromFile("test_ct/test-ca.pem");
-    Services.prefs.setCharPref(
-      "security.test.built_in_root_hash",
-      rootCert.sha256Fingerprint
-    );
-    run_next_test();
-  });
-
   
   
   
@@ -46,6 +26,19 @@ function run_test() {
   
   add_ct_test(
     "ct-insufficient-scts.example.com",
+    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
+  );
+
+  
+  
+  add_test(() => {
+    let cert = constructCertFromFile("test_ct/ct-valid.example.com.pem");
+    setCertTrust(cert, "CTu,,");
+    clearSessionCache();
+    run_next_test();
+  });
+  add_ct_test(
+    "ct-valid.example.com",
     Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
   );
 
@@ -66,23 +59,6 @@ function run_test() {
   
   add_ct_test(
     "ct-unknown-log.example.com",
-    Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
-  );
-
-  
-  
-  add_test(() => {
-    let cert = constructCertFromFile("test_ct/ct-valid.example.com.pem");
-    Services.prefs.setCharPref(
-      "security.test.built_in_root_hash",
-      cert.sha256Fingerprint
-    );
-    setCertTrust(cert, "CTu,,");
-    clearSessionCache();
-    run_next_test();
-  });
-  add_ct_test(
-    "ct-valid.example.com",
     Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
   );
 
