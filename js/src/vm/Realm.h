@@ -809,13 +809,6 @@ class JS::Realm : public JS::shadow::Realm {
 
   js::RealmFuses realmFuses;
 
-  
-  using WeakScriptSet =
-      GCHashSet<js::WeakHeapPtr<JSScript*>,
-                js::StableCellHasher<js::WeakHeapPtr<JSScript*>>,
-                js::SystemAllocPolicy>;
-  JS::WeakCache<WeakScriptSet> generationCounterDependentScripts;
-
  private:
   void purgeForOfPicChain();
 };
