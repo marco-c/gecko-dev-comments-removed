@@ -1252,13 +1252,6 @@ nsDisplayRemote::nsDisplayRemote(nsDisplayListBuilder* aBuilder,
 namespace mozilla {
 
 void nsDisplayRemote::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
-  nsPresContext* pc = mFrame->PresContext();
-  nsFrameLoader* fl = GetFrameLoader();
-  if (pc->GetPrintSettings() && fl->IsRemoteFrame()) {
-    
-    fl->UpdatePositionAndSize(static_cast<nsSubDocumentFrame*>(mFrame));
-  }
-
   DrawTarget* target = aCtx->GetDrawTarget();
   if (!target->IsRecording() || mPaintData.mTabId == 0) {
     NS_WARNING("Remote iframe not rendered");
@@ -1273,7 +1266,8 @@ void nsDisplayRemote::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
   
   
   
-  const int32_t appUnitsPerDevPixel = pc->AppUnitsPerDevPixel();
+  const int32_t appUnitsPerDevPixel =
+      mFrame->PresContext()->AppUnitsPerDevPixel();
 
   gfxContextMatrixAutoSaveRestore saveMatrix(aCtx);
   gfxFloat targetAuPerDev =

@@ -16840,9 +16840,10 @@ static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
       
       return EffectsInfo::FullyHidden();
     }
-    Maybe<nsRect> visibleRect;
-    gfx::MatrixScales rasterScale;
-    visibleRect = subDocFrame->GetVisibleRect();
+    Maybe<nsRect> visibleRect = subDocFrame->GetVisibleRect();
+    if (subDocFrame->PresContext()->IsPrintingOrPrintPreview()) {
+      visibleRect = Some(subDocFrame->GetDestRect());
+    }
     if (!visibleRect) {
       
       
@@ -16850,7 +16851,7 @@ static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
       visibleRect.emplace(*output.mIntersectionRect -
                           output.mTargetRect.TopLeft());
     }
-    rasterScale = subDocFrame->GetRasterScale();
+    gfx::MatrixScales rasterScale = subDocFrame->GetRasterScale();
     ParentLayerToScreenScale2D transformToAncestorScale =
         ParentLayerToParentLayerScale(
             subDocFrame->PresShell()->GetCumulativeResolution()) *
