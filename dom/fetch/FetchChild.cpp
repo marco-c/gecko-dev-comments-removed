@@ -272,6 +272,7 @@ RefPtr<FetchChild> FetchChild::CreateForMainThread(
     RefPtr<FetchObserver> aObserver) {
   RefPtr<FetchChild> actor = MakeRefPtr<FetchChild>(
       std::move(aPromise), std::move(aSignalImpl), std::move(aObserver));
+  actor->mIsKeepAliveRequest = true;
   FETCH_LOG(("FetchChild::CreateForMainThread actor[%p]", actor.get()));
 
   return actor;
@@ -412,7 +413,7 @@ void FetchChild::RunAbortAlgorithm() {
     return;
   }
   if (mWorkerRef || mIsKeepAliveRequest) {
-    Unused << SendAbortFetchOp(true);
+    Unused << SendAbortFetchOp();
   }
 }
 
@@ -420,14 +421,13 @@ void FetchChild::DoFetchOp(const FetchOpArgs& aArgs) {
   FETCH_LOG(("FetchChild::DoFetchOp [%p]", this));
   
   
-  mIsKeepAliveRequest = aArgs.request().keepalive();
   if (mIsKeepAliveRequest) {
     mKeepaliveRequestSize =
         aArgs.request().bodySize() > 0 ? aArgs.request().bodySize() : 0;
   }
   if (mSignalImpl) {
     if (mSignalImpl->Aborted()) {
-      Unused << SendAbortFetchOp(true);
+      Unused << SendAbortFetchOp();
       return;
     }
     Follow(mSignalImpl);
@@ -436,10 +436,6 @@ void FetchChild::DoFetchOp(const FetchOpArgs& aArgs) {
 }
 
 void FetchChild::Shutdown() {
-  
-  
-  
-
   FETCH_LOG(("FetchChild::Shutdown [%p]", this));
   if (mIsShutdown) {
     return;
@@ -455,7 +451,22 @@ void FetchChild::Shutdown() {
   Unfollow();
   mSignalImpl = nullptr;
   mCSPEventListener = nullptr;
-  SendAbortFetchOp(false);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mIsKeepAliveRequest) {
+    Unused << SendAbortFetchOp();
+  }
 
   mWorkerRef = nullptr;
 }
@@ -466,14 +477,16 @@ void FetchChild::ActorDestroy(ActorDestroyReason aReason) {
   if (mIsKeepAliveRequest) {
     
     
-    if (NS_IsMainThread()) {
-      MOZ_ASSERT(mPromise->GetGlobalObject());
-      nsCOMPtr<nsILoadGroup> loadGroup =
-          FetchUtil::GetLoadGroupFromGlobal(mPromise->GetGlobalObject());
-      if (loadGroup) {
-        FetchUtil::DecrementPendingKeepaliveRequestSize(loadGroup,
-                                                        mKeepaliveRequestSize);
-      }
+    
+    
+
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(mPromise->GetGlobalObject());
+    nsCOMPtr<nsILoadGroup> loadGroup =
+        FetchUtil::GetLoadGroupFromGlobal(mPromise->GetGlobalObject());
+    if (loadGroup) {
+      FetchUtil::DecrementPendingKeepaliveRequestSize(loadGroup,
+                                                      mKeepaliveRequestSize);
     }
   }
   mPromise = nullptr;
