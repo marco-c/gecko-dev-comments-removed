@@ -219,6 +219,25 @@ void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
 
   
   Unused << aProcess->SendRegisterBrowsingContextGroup(Id(), inits);
+
+  
+  
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    BrowsingContext* focused = fm->GetFocusedBrowsingContextInChrome();
+    if (focused && focused->Group() != this) {
+      focused = nullptr;
+    }
+    BrowsingContext* active = fm->GetActiveBrowsingContextInChrome();
+    if (active && active->Group() != this) {
+      active = nullptr;
+    }
+
+    if (focused || active) {
+      Unused << aProcess->SendSetupFocusedAndActive(
+          focused, fm->GetActionIdForFocusedBrowsingContextInChrome(), active,
+          fm->GetActionIdForActiveBrowsingContextInChrome());
+    }
+  }
 }
 
 void BrowsingContextGroup::Unsubscribe(ContentParent* aProcess) {
@@ -541,29 +560,6 @@ bool BrowsingContextGroup::DialogsAreBeingAbused() {
 bool BrowsingContextGroup::IsPotentiallyCrossOriginIsolated() {
   return GetBrowsingContextGroupIdFlags(mId) &
          kPotentiallyCrossOriginIsolatedFlag;
-}
-
-void BrowsingContextGroup::NotifyFocusedOrActiveBrowsingContextToProcess(
-    ContentParent* aProcess) {
-  MOZ_DIAGNOSTIC_ASSERT(aProcess);
-  
-  
-  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
-    BrowsingContext* focused = fm->GetFocusedBrowsingContextInChrome();
-    if (focused && focused->Group() != this) {
-      focused = nullptr;
-    }
-    BrowsingContext* active = fm->GetActiveBrowsingContextInChrome();
-    if (active && active->Group() != this) {
-      active = nullptr;
-    }
-
-    if (focused || active) {
-      Unused << aProcess->SendSetupFocusedAndActive(
-          focused, fm->GetActionIdForFocusedBrowsingContextInChrome(), active,
-          fm->GetActionIdForActiveBrowsingContextInChrome());
-    }
-  }
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(BrowsingContextGroup, mContexts,
