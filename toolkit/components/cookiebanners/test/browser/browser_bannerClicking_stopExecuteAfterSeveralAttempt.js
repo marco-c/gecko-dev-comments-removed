@@ -270,8 +270,9 @@ add_task(async function testClearDataServiceWithStopExecuteAfterOneAttempt() {
 
   
   await new Promise(aResolve => {
-    Services.clearData.deleteDataFromBaseDomain(
+    Services.clearData.deleteDataFromSite(
       TEST_DOMAIN_A,
+      {},
       true ,
       Ci.nsIClearDataService.CLEAR_COOKIE_BANNER_EXECUTED_RECORD,
       aResolve
