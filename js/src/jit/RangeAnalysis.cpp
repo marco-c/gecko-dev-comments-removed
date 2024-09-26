@@ -2959,6 +2959,10 @@ struct ComputedTruncateKind {
 
 static ComputedTruncateKind ComputeRequestedTruncateKind(
     const MDefinition* candidate) {
+  
+  
+  MOZ_ASSERT(candidate->canTruncate());
+
   bool isCapturedResult =
       false;  
   bool isObservableResult =
@@ -3049,6 +3053,10 @@ static ComputedTruncateKind ComputeRequestedTruncateKind(
 static ComputedTruncateKind ComputeTruncateKind(const MDefinition* candidate) {
   
   
+  MOZ_ASSERT(candidate->canTruncate());
+
+  
+  
   if (candidate->isCompare()) {
     return {TruncateKind::TruncateAfterBailouts};
   }
@@ -3137,6 +3145,10 @@ void RangeAnalysis::adjustTruncatedInputs(MDefinition* truncated) {
 
 bool RangeAnalysis::canTruncate(const MDefinition* def,
                                 TruncateKind kind) const {
+  
+  
+  MOZ_ASSERT(def->canTruncate());
+
   if (kind == TruncateKind::NoTruncate) {
     return false;
   }
@@ -3218,10 +3230,15 @@ bool RangeAnalysis::truncate() {
         default:;
       }
 
+      
+      if (!iter->canTruncate()) {
+        continue;
+      }
+
       auto [kind, shouldClone] = ComputeTruncateKind(*iter);
 
       
-      if (!canTruncate(*iter, kind) || !iter->canTruncate()) {
+      if (!canTruncate(*iter, kind)) {
         continue;
       }
 
@@ -3254,10 +3271,15 @@ bool RangeAnalysis::truncate() {
     }
     for (MPhiIterator iter(block->phisBegin()), end(block->phisEnd());
          iter != end; ++iter) {
+      
+      if (!iter->canTruncate()) {
+        continue;
+      }
+
       auto [kind, shouldClone] = ComputeTruncateKind(*iter);
 
       
-      if (shouldClone || !canTruncate(*iter, kind) || !iter->canTruncate()) {
+      if (shouldClone || !canTruncate(*iter, kind)) {
         continue;
       }
 
