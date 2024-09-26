@@ -88,6 +88,9 @@ var gExceptionPaths = [
 
   
   "chrome://global/content/megalist/LoginFormComponent/",
+
+  
+  "chrome://global/content/ml/",
 ];
 
 
