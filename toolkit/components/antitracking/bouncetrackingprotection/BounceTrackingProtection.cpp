@@ -535,7 +535,7 @@ BounceTrackingProtection::ClearAll() {
 }
 
 NS_IMETHODIMP
-BounceTrackingProtection::ClearBySiteHostAndOA(
+BounceTrackingProtection::ClearBySiteHostAndOriginAttributes(
     const nsACString& aSiteHost, JS::Handle<JS::Value> aOriginAttributes,
     JSContext* aCx) {
   NS_ENSURE_ARG_POINTER(aCx);
@@ -553,10 +553,23 @@ BounceTrackingProtection::ClearBySiteHostAndOA(
 }
 
 NS_IMETHODIMP
-BounceTrackingProtection::ClearBySiteHost(const nsACString& aSiteHost) {
-  BounceTrackingState::ResetAll();
+BounceTrackingProtection::ClearBySiteHostAndOriginAttributesPattern(
+    const nsACString& aSiteHost, JS::Handle<JS::Value> aOriginAttributesPattern,
+    JSContext* aCx) {
+  NS_ENSURE_ARG_POINTER(aCx);
 
-  return mStorage->ClearBySiteHost(aSiteHost, nullptr);
+  OriginAttributesPattern pattern;
+  if (!aOriginAttributesPattern.isObject() ||
+      !pattern.Init(aCx, aOriginAttributesPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  BounceTrackingState::ResetAllForOriginAttributesPattern(pattern);
+
+  
+  return mStorage->ClearByOriginAttributesPattern(pattern,
+                                                  Some(nsCString(aSiteHost)));
 }
 
 NS_IMETHODIMP
