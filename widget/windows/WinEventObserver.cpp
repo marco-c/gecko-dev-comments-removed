@@ -4,7 +4,6 @@
 
 
 
-#include <corecrt_memcpy_s.h>
 #include <windows.h>
 #include <winternl.h>
 #include <winuser.h>
