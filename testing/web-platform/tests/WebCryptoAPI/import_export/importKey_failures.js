@@ -20,8 +20,10 @@ function run_test(algorithmNames) {
     var allTestVectors = [ 
         {name: "Ed25519", privateUsages: ["sign"], publicUsages: ["verify"]},
         {name: "Ed448", privateUsages: ["sign"], publicUsages: ["verify"]},
+        {name: "ECDSA", privateUsages: ["sign"], publicUsages: ["verify"]},
         {name: "X25519",  privateUsages: ["deriveKey", "deriveBits"], publicUsages: []},
         {name: "X448",  privateUsages: ["deriveKey", "deriveBits"], publicUsages: []},
+        {name: "ECDH",  privateUsages: ["deriveKey", "deriveBits"], publicUsages: []}
     ];
 
     var testVectors = [];
@@ -109,6 +111,10 @@ function run_test(algorithmNames) {
         return [];
     }
 
+    function isPrivateKey(data) {
+        return data.d !== undefined;
+    }
+
 
 
 
@@ -121,8 +127,8 @@ function run_test(algorithmNames) {
     
     testVectors.forEach(function(vector) {
         var name = vector.name;
-        validKeyData.forEach(function(test) {
-            allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+        allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+            getValidKeyData(algorithm).forEach(function(test) {
                 invalidUsages(validUsages(vector, test.format, test.data)).forEach(function(usages) {
                     [true, false].forEach(function(extractable) {
                         testError(test.format, algorithm, test.data, name, usages, extractable, "SyntaxError", "Bad usages");
@@ -136,8 +142,8 @@ function run_test(algorithmNames) {
     
     testVectors.forEach(function(vector) {
         var name = vector.name;
-        validKeyData.filter((test) => test.format === 'pkcs8' || (test.format === 'jwk' && test.data.d)).forEach(function(test) {
-            allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+        allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+            getValidKeyData(algorithm).filter((test) => test.format === 'pkcs8' || (test.format === 'jwk' && isPrivateKey(test.data))).forEach(function(test) {
                 [true, false].forEach(function(extractable) {
                     testError(test.format, algorithm, test.data, name, [], extractable, "SyntaxError", "Empty usages");
                 });
@@ -148,8 +154,8 @@ function run_test(algorithmNames) {
     
     testVectors.forEach(function(vector) {
         var name = vector.name;
-        badKeyLengthData.forEach(function(test) {
-            allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+        allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+            getBadKeyLengthData(algorithm).forEach(function(test) {
                 allValidUsages(validUsages(vector, test.format, test.data)).forEach(function(usages) {
                     [true, false].forEach(function(extractable) {
                         testError(test.format, algorithm, test.data, name, usages, extractable, "DataError", "Bad key length");
@@ -162,8 +168,8 @@ function run_test(algorithmNames) {
     
     testVectors.forEach(function(vector) {
         var name = vector.name;
-        missingJWKFieldKeyData.forEach(function(test) {
-            allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+        allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+           getMissingJWKFieldKeyData(algorithm).forEach(function(test) {
                 allValidUsages(validUsages(vector, 'jwk', test.data)).forEach(function(usages) {
                     [true, false].forEach(function(extractable) {
                         testError('jwk', algorithm, test.data, name, usages, extractable, "DataError", "Missing JWK '" + test.param + "' parameter");
@@ -176,8 +182,8 @@ function run_test(algorithmNames) {
     
     testVectors.forEach(function(vector) {
         var name = vector.name;
-        invalidJWKKeyData.forEach(function(data) {
-            allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+        allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+            getMismatchedJWKKeyData(algorithm).forEach(function(data) {
                 allValidUsages(vector.privateUsages).forEach(function(usages) {
                     [true].forEach(function(extractable) {
                         testError('jwk', algorithm, data, name, usages, extractable, "DataError", "Invalid key pair");
