@@ -3,7 +3,7 @@
 
 
 use crate::animate::{AnimationFieldAttrs, AnimationInputAttrs, AnimationVariantAttrs};
-use derive_common::cg;
+use crate::cg;
 use proc_macro2::TokenStream;
 use quote::TokenStreamExt;
 use syn;

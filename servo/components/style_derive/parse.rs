@@ -3,7 +3,7 @@
 
 
 use crate::to_css::{CssBitflagAttrs, CssVariantAttrs};
-use derive_common::cg;
+use crate::cg;
 use proc_macro2::{Span, TokenStream};
 use quote::TokenStreamExt;
 use syn::{self, DeriveInput, Ident, Path};
