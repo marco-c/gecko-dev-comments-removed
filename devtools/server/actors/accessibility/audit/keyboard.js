@@ -12,7 +12,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "getCSSStyleRules",
+  "getMatchingCSSRules",
   "resource://devtools/shared/inspector/css-logic.js",
   true
 );
@@ -44,9 +44,6 @@ const {
     SCORES: { FAIL, WARNING },
   },
 } = require("resource://devtools/shared/constants.js");
-
-
-const STYLE_RULE = 1;
 
 
 const CLICK_ACTION = "click";
@@ -167,19 +164,15 @@ function hasStylesForFocusRelatedPseudoClass(
   currentNode,
   pseudoClass
 ) {
-  const defaultRules = getCSSStyleRules(currentNode);
+  const defaultRules = getMatchingCSSRules(currentNode);
 
   InspectorUtils.addPseudoClassLock(focusableNode, pseudoClass);
 
   
   
-  const tempRules = getCSSStyleRules(currentNode);
+  const tempRules = getMatchingCSSRules(currentNode);
   const properties = new Set();
   for (const rule of tempRules) {
-    if (rule.type !== STYLE_RULE) {
-      continue;
-    }
-
     if (!defaultRules.includes(rule)) {
       for (let index = 0; index < rule.style.length; index++) {
         properties.add(rule.style.item(index));

@@ -563,12 +563,12 @@ exports.getBindingElementAndPseudo = getBindingElementAndPseudo;
 
 
 
-function getCSSStyleRules(node) {
+function getMatchingCSSRules(node) {
   const { bindingElement, pseudo } = getBindingElementAndPseudo(node);
-  const rules = InspectorUtils.getCSSStyleRules(bindingElement, pseudo);
+  const rules = InspectorUtils.getMatchingCSSRules(bindingElement, pseudo);
   return rules;
 }
-exports.getCSSStyleRules = getCSSStyleRules;
+exports.getMatchingCSSRules = getMatchingCSSRules;
 
 
 

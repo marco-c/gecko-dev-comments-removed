@@ -214,6 +214,8 @@ impl RuleTree {
             current = current.parent().unwrap().clone();
         }
 
+        let cascade_priority = CascadePriority::new(level, layer_order);
+
         
         
         
@@ -222,16 +224,14 @@ impl RuleTree {
         
         
         
-        
-        
-        if current.cascade_priority().cascade_level() == level {
+        if current.cascade_priority() == cascade_priority {
             *important_rules_changed |= level.is_important();
 
-            let current_decls = current.style_source().unwrap().as_declarations();
+            let current_decls = current.style_source().unwrap().get();
 
             
             
-            if let (Some(ref pdb), Some(ref current_decls)) = (pdb, current_decls) {
+            if let Some(ref pdb) = pdb {
                 
                 
                 
@@ -241,19 +241,16 @@ impl RuleTree {
                 
                 
                 
-                let is_here_already = ArcBorrow::ptr_eq(pdb, current_decls);
+                let is_here_already = ArcBorrow::ptr_eq(pdb, &current_decls.borrow_arc());
                 if is_here_already {
                     debug!("Picking the fast path in rule replacement");
                     return None;
                 }
             }
 
-            if current_decls.is_some() {
-                current = current.parent().unwrap().clone();
-            }
+            current = current.parent().unwrap().clone();
         }
 
-        
         
         
         
@@ -264,7 +261,7 @@ impl RuleTree {
                     current = current.ensure_child(
                         self.root(),
                         StyleSource::from_declarations(pdb.clone_arc()),
-                        CascadePriority::new(level, layer_order),
+                        cascade_priority,
                     );
                     *important_rules_changed = true;
                 }
@@ -273,7 +270,7 @@ impl RuleTree {
                     current = current.ensure_child(
                         self.root(),
                         StyleSource::from_declarations(pdb.clone_arc()),
-                        CascadePriority::new(level, layer_order),
+                        cascade_priority,
                     );
                 }
             }

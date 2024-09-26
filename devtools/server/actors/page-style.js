@@ -842,7 +842,7 @@ class PageStyleActor extends Actor {
     
     const includeStartingStyleRules =
       !inherited && DISPLAY_STARTING_STYLE_RULES;
-    const domRules = InspectorUtils.getCSSStyleRules(
+    const domRules = InspectorUtils.getMatchingCSSRules(
       node,
       pseudo,
       CssLogic.hasVisitedState(node),

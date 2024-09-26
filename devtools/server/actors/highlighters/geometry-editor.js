@@ -17,7 +17,7 @@ const {
   getCurrentZoom,
 } = require("resource://devtools/shared/layout/utils.js");
 const {
-  getCSSStyleRules,
+  getMatchingCSSRules,
 } = require("resource://devtools/shared/inspector/css-logic.js");
 
 const GEOMETRY_LABEL_SIZE = 6;
@@ -139,7 +139,7 @@ function getDefinedGeometryProperties(node) {
   }
 
   
-  const cssRules = getCSSStyleRules(node);
+  const cssRules = getMatchingCSSRules(node);
   for (let i = 0; i < cssRules.length; i++) {
     const rule = cssRules[i];
     for (const name of GeoProp.allProps()) {

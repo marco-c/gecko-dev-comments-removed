@@ -138,19 +138,22 @@ impl RuleCache {
         guards: &StylesheetGuards,
         mut rule_node: Option<&'r StrongRuleNode>,
     ) -> Option<&'r StrongRuleNode> {
+        use crate::rule_tree::CascadeLevel;
         while let Some(node) = rule_node {
-            match node.style_source() {
-                Some(s) => match s.as_declarations() {
-                    Some(decls) => {
-                        let cascade_level = node.cascade_level();
-                        let decls = decls.read_with(cascade_level.guard(guards));
-                        if decls.contains_any_reset() {
-                            break;
-                        }
-                    },
-                    None => break,
-                },
-                None => {},
+            let priority = node.cascade_priority();
+            let cascade_level = priority.cascade_level();
+            let should_try_to_skip =
+                cascade_level.is_animation() ||
+                matches!(cascade_level, CascadeLevel::PresHints) ||
+                priority.layer_order().is_style_attribute_layer();
+            if !should_try_to_skip {
+                break;
+            }
+            if let Some(source) = node.style_source() {
+                let decls = source.get().read_with(cascade_level.guard(guards));
+                if decls.contains_any_reset() {
+                    break;
+                }
             }
             rule_node = node.parent();
         }

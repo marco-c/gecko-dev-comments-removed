@@ -30,7 +30,7 @@
 const nodeConstants = require("resource://devtools/shared/dom-node-constants.js");
 const {
   getBindingElementAndPseudo,
-  getCSSStyleRules,
+  getMatchingCSSRules,
   hasVisitedState,
   isAgentStylesheet,
   isAuthorStylesheet,
@@ -586,7 +586,7 @@ class CssLogic {
         this.viewedElement === element ? STATUS.MATCHED : STATUS.PARENT_MATCH;
 
       try {
-        domRules = getCSSStyleRules(element);
+        domRules = getMatchingCSSRules(element);
       } catch (ex) {
         console.log("CL__buildMatchedRules error: " + ex);
         continue;
@@ -608,10 +608,6 @@ class CssLogic {
         
         for (let i = domRules.length - 1; i >= 0; i--) {
           const domRule = domRules[i];
-          if (!CSSStyleRule.isInstance(domRule)) {
-            continue;
-          }
-
           const sheet = this.getSheet(domRule.parentStyleSheet, -1);
           if (sheet._passId !== this._passId) {
             sheet.index = sheetIndex++;
