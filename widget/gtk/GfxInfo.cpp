@@ -963,8 +963,8 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         WindowProtocol::XWayland, DriverVendor::MesaAll, DeviceFamily::All,
         nsIGfxInfo::FEATURE_WEBRENDER,
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
-        V(21, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_BUG_1635186",
-        "Mesa 21.0.0.0");
+        V(17, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_BUG_1635186",
+        "Mesa 17.0.0.0");
 
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
@@ -1118,6 +1118,14 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_WEBRENDER_PARTIAL_PRESENT,
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
         V(0, 0, 0, 0), "FEATURE_ROLLOUT_WR_PARTIAL_PRESENT_NVIDIA_BINARY", "");
+
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        WindowProtocol::XWayland, DriverVendor::MesaAll, DeviceFamily::All,
+        nsIGfxInfo::FEATURE_WEBRENDER_PARTIAL_PRESENT,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
+        V(21, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_PARTIAL_PRESENT_BUG_1677892",
+        "Mesa 21.0.0.0");
 
     
 
