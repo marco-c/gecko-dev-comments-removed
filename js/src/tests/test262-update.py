@@ -24,7 +24,6 @@ UNSUPPORTED_FEATURES = set(
         "Atomics.waitAsync",  
         "legacy-regexp",  
         "set-methods",  
-        "explicit-resource-management",  
         "source-phase-imports",
         "source-phase-imports-module-source",
         "Math.sumPrecise",
@@ -46,6 +45,7 @@ FEATURE_CHECK_NEEDED = {
     "Float16Array": "!this.hasOwnProperty('Float16Array')",
     "RegExp.escape": "!RegExp.escape",
     "promise-try": "!Promise.try",
+    "explicit-resource-management": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))",  
 }
 RELEASE_OR_BETA = set(
     [
