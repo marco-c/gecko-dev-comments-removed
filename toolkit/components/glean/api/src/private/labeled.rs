@@ -42,12 +42,12 @@ mod private {
     
     impl Sealed for LabeledBooleanMetric {
         type GleanMetric = glean::private::BooleanMetric;
-        fn from_glean_metric(_id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
+        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
             if need_ipc() {
                 
                 LabeledBooleanMetric::Child(crate::private::boolean::BooleanMetricIpc)
             } else {
-                LabeledBooleanMetric::Parent(metric)
+                LabeledBooleanMetric::Parent { id, inner: metric }
             }
         }
     }
