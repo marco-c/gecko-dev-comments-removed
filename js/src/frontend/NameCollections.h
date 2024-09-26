@@ -23,29 +23,7 @@
 #include "js/Utility.h"      
 #include "js/Vector.h"       
 
-namespace js {
-
-namespace detail {
-
-
-
-template <>
-class DefaultKeyPolicy<frontend::TrivialTaggedParserAtomIndex> {
- public:
-  DefaultKeyPolicy() = delete;
-  DefaultKeyPolicy(const frontend::TrivialTaggedParserAtomIndex&) = delete;
-
-  static bool isTombstone(const frontend::TrivialTaggedParserAtomIndex& atom) {
-    return atom.isNull();
-  }
-  static void setToTombstone(frontend::TrivialTaggedParserAtomIndex& atom) {
-    atom = frontend::TrivialTaggedParserAtomIndex::null();
-  }
-};
-
-}  
-
-namespace frontend {
+namespace js::frontend {
 
 class FunctionBox;
 
@@ -449,7 +427,6 @@ class PooledVectorPtr : public PooledCollectionPtr<Vector, PooledVectorPtr> {
   }
 };
 
-}  
 }  
 
 #endif  
