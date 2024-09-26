@@ -215,6 +215,22 @@ static bool CanDecode(const Config& aConfig) {
   if (!IsSupportedVideoCodec(param.mParsedCodec)) {
     return false;
   }
+
+  
+  
+  
+  
+  if (IsH264CodecString(param.mParsedCodec)) {
+    uint8_t profile, constraint;
+    H264_LEVEL level;
+    bool supported =
+        ExtractH264CodecDetails(aConfig.mCodec, profile, constraint, level,
+                                H264CodecStringStrictness::Strict);
+    if (!supported) {
+      return false;
+    }
+  }
+
   
   
   
