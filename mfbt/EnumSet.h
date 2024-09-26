@@ -82,7 +82,7 @@ class EnumSet {
   
 
 
-  void operator+=(const EnumSet& aEnumSet) {
+  constexpr void operator+=(const EnumSet& aEnumSet) {
     IncVersion();
     mBitField |= aEnumSet.mBitField;
   }
@@ -90,7 +90,7 @@ class EnumSet {
   
 
 
-  EnumSet operator+(const EnumSet& aEnumSet) const {
+  constexpr EnumSet operator+(const EnumSet& aEnumSet) const {
     EnumSet result(*this);
     result += aEnumSet;
     return result;
@@ -99,7 +99,7 @@ class EnumSet {
   
 
 
-  void operator-=(T aEnum) {
+  constexpr void operator-=(T aEnum) {
     IncVersion();
     mBitField &= ~(BitFor(aEnum));
   }
@@ -107,7 +107,7 @@ class EnumSet {
   
 
 
-  EnumSet operator-(T aEnum) const {
+  constexpr EnumSet operator-(T aEnum) const {
     EnumSet result(*this);
     result -= aEnum;
     return result;
@@ -116,7 +116,7 @@ class EnumSet {
   
 
 
-  void operator-=(const EnumSet& aEnumSet) {
+  constexpr void operator-=(const EnumSet& aEnumSet) {
     IncVersion();
     mBitField &= ~(aEnumSet.mBitField);
   }
@@ -124,7 +124,7 @@ class EnumSet {
   
 
 
-  EnumSet operator-(const EnumSet& aEnumSet) const {
+  constexpr EnumSet operator-(const EnumSet& aEnumSet) const {
     EnumSet result(*this);
     result -= aEnumSet;
     return result;
@@ -133,7 +133,7 @@ class EnumSet {
   
 
 
-  void clear() {
+  constexpr void clear() {
     IncVersion();
     mBitField = Serialized();
   }
@@ -141,7 +141,7 @@ class EnumSet {
   
 
 
-  void operator&=(const EnumSet& aEnumSet) {
+  constexpr void operator&=(const EnumSet& aEnumSet) {
     IncVersion();
     mBitField &= aEnumSet.mBitField;
   }
@@ -149,7 +149,7 @@ class EnumSet {
   
 
 
-  EnumSet operator&(const EnumSet& aEnumSet) const {
+  constexpr EnumSet operator&(const EnumSet& aEnumSet) const {
     EnumSet result(*this);
     result &= aEnumSet;
     return result;
@@ -158,36 +158,38 @@ class EnumSet {
   
 
 
-  bool operator==(const EnumSet& aEnumSet) const {
+  constexpr bool operator==(const EnumSet& aEnumSet) const {
     return mBitField == aEnumSet.mBitField;
   }
 
   
 
 
-  bool operator==(T aEnum) const { return mBitField == BitFor(aEnum); }
+  constexpr bool operator==(T aEnum) const {
+    return mBitField == BitFor(aEnum);
+  }
 
   
 
 
-  bool operator!=(const EnumSet& aEnumSet) const {
+  constexpr bool operator!=(const EnumSet& aEnumSet) const {
     return !operator==(aEnumSet);
   }
 
   
 
 
-  bool operator!=(T aEnum) const { return !operator==(aEnum); }
+  constexpr bool operator!=(T aEnum) const { return !operator==(aEnum); }
 
   
 
 
-  bool contains(T aEnum) const { return HasBitFor(aEnum); }
+  constexpr bool contains(T aEnum) const { return HasBitFor(aEnum); }
 
   
 
 
-  bool contains(const EnumSet& aEnumSet) const {
+  constexpr bool contains(const EnumSet& aEnumSet) const {
     return (mBitField & aEnumSet.mBitField) == aEnumSet.mBitField;
   }
 
@@ -206,7 +208,7 @@ class EnumSet {
     }
   }
 
-  bool isEmpty() const {
+  constexpr bool isEmpty() const {
     if constexpr (std::is_unsigned_v<Serialized>) {
       return mBitField == 0;
     } else {

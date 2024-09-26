@@ -637,7 +637,7 @@ const char gc::ZealModeHelpText[] =
 
 
 
-static const EnumSet<ZealMode> YieldPointZealModes = {
+static constexpr EnumSet<ZealMode> YieldPointZealModes = {
     ZealMode::YieldBeforeRootMarking,
     ZealMode::YieldBeforeMarking,
     ZealMode::YieldBeforeSweeping,
@@ -649,19 +649,19 @@ static const EnumSet<ZealMode> YieldPointZealModes = {
     ZealMode::YieldWhileGrayMarking};
 
 
-static const EnumSet<ZealMode> IncrementalSliceZealModes =
+static constexpr EnumSet<ZealMode> IncrementalSliceZealModes =
     YieldPointZealModes +
     EnumSet<ZealMode>{ZealMode::IncrementalMultipleSlices};
 
 
-static const EnumSet<ZealMode> PeriodicGCZealModes =
+static constexpr EnumSet<ZealMode> PeriodicGCZealModes =
     IncrementalSliceZealModes + EnumSet<ZealMode>{ZealMode::Alloc,
                                                   ZealMode::GenerationalGC,
                                                   ZealMode::Compact};
 
 
 
-static const EnumSet<ZealMode> ExclusiveZealModes =
+static constexpr EnumSet<ZealMode> ExclusiveZealModes =
     PeriodicGCZealModes + EnumSet<ZealMode>{ZealMode::VerifierPre};
 
 void GCRuntime::setZeal(uint8_t zeal, uint32_t frequency) {
