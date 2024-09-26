@@ -5,6 +5,8 @@ use crate::pe;
 use crate::read::{Bytes, Error, ReadError, Result};
 
 
+
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct RelocationBlockIterator<'data> {
     data: Bytes<'data>,
@@ -21,6 +23,15 @@ impl<'data> RelocationBlockIterator<'data> {
         if self.data.is_empty() {
             return Ok(None);
         }
+
+        let result = self.parse().map(Some);
+        if result.is_err() {
+            self.data = Bytes(&[]);
+        }
+        result
+    }
+
+    fn parse(&mut self) -> Result<RelocationIterator<'data>> {
         let header = self
             .data
             .read::<pe::ImageBaseRelocation>()
@@ -36,11 +47,19 @@ impl<'data> RelocationBlockIterator<'data> {
             .read_slice::<U16<LE>>(count as usize)
             .read_error("Invalid PE reloc block size")?
             .iter();
-        Ok(Some(RelocationIterator {
+        Ok(RelocationIterator {
             virtual_address,
             size,
             relocs,
-        }))
+        })
+    }
+}
+
+impl<'data> Iterator for RelocationBlockIterator<'data> {
+    type Item = Result<RelocationIterator<'data>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next().transpose()
     }
 }
 
