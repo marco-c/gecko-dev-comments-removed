@@ -2358,18 +2358,6 @@ static bool EvaluateDynamicImportOptions(
   }
 
   
-  
-  if (attributesValue.isUndefined() &&
-      cx->options().importAttributesAssertSyntax()) {
-    
-    RootedId assertId(cx, NameToId(cx->names().assert_));
-    if (!GetProperty(cx, attributesWrapperObject, attributesWrapperObject,
-                     assertId, &attributesValue)) {
-      return false;
-    }
-  }
-
-  
   if (attributesValue.isUndefined()) {
     return true;
   }

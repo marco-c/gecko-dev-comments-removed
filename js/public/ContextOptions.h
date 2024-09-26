@@ -122,14 +122,6 @@ class JS_PUBLIC_API ContextOptions {
     return *this;
   }
 
-  bool importAttributesAssertSyntax() const {
-    return compileOptions_.importAttributesAssertSyntax();
-  }
-  ContextOptions& setImportAttributesAssertSyntax(bool enabled) {
-    compileOptions_.setImportAttributesAssertSyntax(enabled);
-    return *this;
-  }
-
   
   
   bool disableEvalSecurityChecks() const { return disableEvalSecurityChecks_; }
