@@ -9,6 +9,7 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/CloseWatcher.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 
@@ -67,6 +68,11 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
   void StorePreviouslyFocusedElement();
 
   nsWeakPtr mPreviouslyFocusedElement;
+
+  
+  
+  
+  RefPtr<CloseWatcher> mCloseWatcher;
 };
 
 }  

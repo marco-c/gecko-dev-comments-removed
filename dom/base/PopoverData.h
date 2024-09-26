@@ -16,6 +16,8 @@
 
 namespace mozilla::dom {
 
+class CloseWatcher;
+
 
 enum class PopoverAttributeState : uint8_t {
   None,
@@ -48,6 +50,8 @@ class PopoverData {
  public:
   PopoverData() = default;
   ~PopoverData() = default;
+
+  CloseWatcher& EnsureCloseWatcher(nsGenericHTMLElement* aElement);
 
   PopoverAttributeState GetPopoverAttributeState() const { return mState; }
   void SetPopoverAttributeState(PopoverAttributeState aState) {
@@ -101,6 +105,11 @@ class PopoverData {
   nsWeakPtr mInvokerElement;
   bool mIsShowingOrHiding = false;
   RefPtr<PopoverToggleEventTask> mTask;
+
+  
+  
+  
+  RefPtr<CloseWatcher> mCloseWatcher;
 };
 }  
 
