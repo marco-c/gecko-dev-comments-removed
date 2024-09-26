@@ -93,22 +93,28 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
 
   nsresult CreateTimesInternal(nsIFile* profileDir);
   void GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
-                       nsIToolkitProfile** aResult);
-  nsresult GetProfileByStoreID(const nsACString& aStoreID,
-                               nsIToolkitProfile** aResult);
+                       nsToolkitProfile** aResult);
+  already_AddRefed<nsToolkitProfile> GetProfileByStoreID(
+      const nsACString& aStoreID);
 
   nsresult GetProfileDescriptor(nsIFile* aRootDir, nsACString& aDescriptor,
                                 bool* aIsRelative);
-  nsresult GetProfileDescriptor(nsIToolkitProfile* aProfile,
+  nsresult GetProfileDescriptor(nsToolkitProfile* aProfile,
                                 nsACString& aDescriptor, bool* aIsRelative);
-  bool IsProfileForCurrentInstall(nsIToolkitProfile* aProfile);
-  void ClearProfileFromOtherInstalls(nsIToolkitProfile* aProfile);
-  nsresult MaybeMakeDefaultDedicatedProfile(nsIToolkitProfile* aProfile,
+  bool IsProfileForCurrentInstall(nsToolkitProfile* aProfile);
+  void ClearProfileFromOtherInstalls(nsToolkitProfile* aProfile);
+  nsresult MaybeMakeDefaultDedicatedProfile(nsToolkitProfile* aProfile,
                                             bool* aResult);
   bool IsSnapEnvironment();
   bool UseLegacyProfiles();
-  nsresult CreateDefaultProfile(nsIToolkitProfile** aResult);
-  void SetNormalDefault(nsIToolkitProfile* aProfile);
+  nsresult CreateDefaultProfile(nsToolkitProfile** aResult);
+  nsresult CreateUniqueProfile(nsIFile* aRootDir, const nsACString& aNamePrefix,
+                               nsToolkitProfile** aResult);
+  nsresult CreateProfile(nsIFile* aRootDir, const nsACString& aName,
+                         nsToolkitProfile** aResult);
+  already_AddRefed<nsToolkitProfile> GetProfileByName(const nsACString& aName);
+  void SetNormalDefault(nsToolkitProfile* aProfile);
+  already_AddRefed<nsToolkitProfile> GetDefaultProfile();
   nsresult GetLocalDirFromRootDir(nsIFile* aRootDir, nsIFile** aResult);
 
   
@@ -120,16 +126,16 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   mozilla::LinkedList<RefPtr<nsToolkitProfile>> mProfiles;
   
-  nsCOMPtr<nsIToolkitProfile> mCurrent;
+  RefPtr<nsToolkitProfile> mCurrent;
   
-  nsCOMPtr<nsIToolkitProfile> mGroupProfile;
+  RefPtr<nsToolkitProfile> mGroupProfile;
   
-  nsCOMPtr<nsIToolkitProfile> mDedicatedProfile;
+  RefPtr<nsToolkitProfile> mDedicatedProfile;
   
-  nsCOMPtr<nsIToolkitProfile> mNormalDefault;
+  RefPtr<nsToolkitProfile> mNormalDefault;
   
   
-  nsCOMPtr<nsIToolkitProfile> mDevEditionDefault;
+  RefPtr<nsToolkitProfile> mDevEditionDefault;
   
   nsCOMPtr<nsIFile> mAppData;
   
