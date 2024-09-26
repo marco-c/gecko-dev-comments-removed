@@ -676,6 +676,7 @@
 
 
 
+
 #include "jit/BacktrackingAllocator.h"
 
 #include "mozilla/BinarySearch.h"
@@ -1123,10 +1124,23 @@ void VirtualRegister::sortRanges() {
   }
 
   
-  auto compareRange = [](LiveRange* a, LiveRange* b) -> bool {
-    return a->from() > b->from();
+  
+  
+  
+  
+  
+  auto compareRanges = [](LiveRange* a, LiveRange* b) -> bool {
+    if (a->from() != b->from()) {
+      return a->from() > b->from();
+    }
+    if (a->to() != b->to()) {
+      return a->to() > b->to();
+    }
+    
+    MOZ_ASSERT_IF(a != b, a->bundle()->id() != b->bundle()->id());
+    return a->bundle()->id() > b->bundle()->id();
   };
-  std::sort(ranges_.begin(), ranges_.end(), compareRange);
+  std::sort(ranges_.begin(), ranges_.end(), compareRanges);
 
   rangesSorted_ = true;
 }
@@ -2188,7 +2202,8 @@ bool BacktrackingAllocator::tryMergeReusedRegister(VirtualRegister& def,
 
   
   
-  LiveBundle* secondBundle = LiveBundle::FallibleNew(alloc(), nullptr, nullptr);
+  LiveBundle* secondBundle =
+      LiveBundle::FallibleNew(alloc(), nullptr, nullptr, getNextBundleId());
   if (!secondBundle) {
     return false;
   }
@@ -2207,7 +2222,8 @@ bool BacktrackingAllocator::mergeAndQueueRegisters() {
       continue;
     }
 
-    LiveBundle* bundle = LiveBundle::FallibleNew(alloc(), nullptr, nullptr);
+    LiveBundle* bundle =
+        LiveBundle::FallibleNew(alloc(), nullptr, nullptr, getNextBundleId());
     if (!bundle) {
       return false;
     }
@@ -2606,7 +2622,8 @@ bool BacktrackingAllocator::splitAt(LiveBundle* bundle,
   bool spillBundleIsNew = false;
   LiveBundle* spillBundle = bundle->spillParent();
   if (!spillBundle) {
-    spillBundle = LiveBundle::FallibleNew(alloc(), bundle->spillSet(), nullptr);
+    spillBundle = LiveBundle::FallibleNew(alloc(), bundle->spillSet(), nullptr,
+                                          getNextBundleId());
     if (!spillBundle) {
       return false;
     }
@@ -2636,8 +2653,8 @@ bool BacktrackingAllocator::splitAt(LiveBundle* bundle,
   LiveBundleVector newBundles;
 
   
-  LiveBundle* activeBundle =
-      LiveBundle::FallibleNew(alloc(), bundle->spillSet(), spillBundle);
+  LiveBundle* activeBundle = LiveBundle::FallibleNew(
+      alloc(), bundle->spillSet(), spillBundle, getNextBundleId());
   if (!activeBundle || !newBundles.append(activeBundle)) {
     return false;
   }
@@ -2651,8 +2668,8 @@ bool BacktrackingAllocator::splitAt(LiveBundle* bundle,
     LiveRange* range = *iter;
 
     if (UseNewBundle(splitPositions, range->from(), &activeSplitPosition)) {
-      activeBundle =
-          LiveBundle::FallibleNew(alloc(), bundle->spillSet(), spillBundle);
+      activeBundle = LiveBundle::FallibleNew(alloc(), bundle->spillSet(),
+                                             spillBundle, getNextBundleId());
       if (!activeBundle || !newBundles.append(activeBundle)) {
         return false;
       }
@@ -2691,8 +2708,8 @@ bool BacktrackingAllocator::splitAt(LiveBundle* bundle,
              activeRange->usesBegin()->pos != use->pos ||
              activeRange->usesBegin()->usePolicy() == LUse::FIXED ||
              use->usePolicy() == LUse::FIXED)) {
-          activeBundle =
-              LiveBundle::FallibleNew(alloc(), bundle->spillSet(), spillBundle);
+          activeBundle = LiveBundle::FallibleNew(
+              alloc(), bundle->spillSet(), spillBundle, getNextBundleId());
           if (!activeBundle || !newBundles.append(activeBundle)) {
             return false;
           }
@@ -2883,8 +2900,8 @@ bool BacktrackingAllocator::trySplitAcrossHotcode(LiveBundle* bundle,
     return splitAt(bundle, splitPositions);
   }
 
-  LiveBundle* hotBundle = LiveBundle::FallibleNew(alloc(), bundle->spillSet(),
-                                                  bundle->spillParent());
+  LiveBundle* hotBundle = LiveBundle::FallibleNew(
+      alloc(), bundle->spillSet(), bundle->spillParent(), getNextBundleId());
   if (!hotBundle) {
     return false;
   }
@@ -2893,8 +2910,8 @@ bool BacktrackingAllocator::trySplitAcrossHotcode(LiveBundle* bundle,
   LiveBundle* coldBundle = nullptr;
 
   if (testbed) {
-    coldBundle = LiveBundle::FallibleNew(alloc(), bundle->spillSet(),
-                                         bundle->spillParent());
+    coldBundle = LiveBundle::FallibleNew(
+        alloc(), bundle->spillSet(), bundle->spillParent(), getNextBundleId());
     if (!coldBundle) {
       return false;
     }
@@ -2923,8 +2940,9 @@ bool BacktrackingAllocator::trySplitAcrossHotcode(LiveBundle* bundle,
         }
       } else {
         if (!preBundle) {
-          preBundle = LiveBundle::FallibleNew(alloc(), bundle->spillSet(),
-                                              bundle->spillParent());
+          preBundle =
+              LiveBundle::FallibleNew(alloc(), bundle->spillSet(),
+                                      bundle->spillParent(), getNextBundleId());
           if (!preBundle) {
             return false;
           }
@@ -2944,8 +2962,9 @@ bool BacktrackingAllocator::trySplitAcrossHotcode(LiveBundle* bundle,
         }
       } else {
         if (!postBundle) {
-          postBundle = LiveBundle::FallibleNew(alloc(), bundle->spillSet(),
-                                               bundle->spillParent());
+          postBundle =
+              LiveBundle::FallibleNew(alloc(), bundle->spillSet(),
+                                      bundle->spillParent(), getNextBundleId());
           if (!postBundle) {
             return false;
           }
@@ -4490,12 +4509,12 @@ UniqueChars LiveRange::toString() const {
 UniqueChars LiveBundle::toString() const {
   AutoEnterOOMUnsafeRegion oomUnsafe;
 
-  UniqueChars buf = JS_smprintf("LB%u(", debugId());
+  UniqueChars buf = JS_smprintf("LB%u(", id());
 
   if (buf) {
     if (spillParent()) {
-      buf = JS_sprintf_append(std::move(buf), "parent=LB%u",
-                              spillParent()->debugId());
+      buf =
+          JS_sprintf_append(std::move(buf), "parent=LB%u", spillParent()->id());
     } else {
       buf = JS_sprintf_append(std::move(buf), "parent=none");
     }

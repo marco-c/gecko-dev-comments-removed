@@ -385,14 +385,6 @@ class SpillSet : public TempObject {
   void setAllocation(LAllocation alloc);
 };
 
-#ifdef JS_JITSPEW
-
-
-
-static mozilla::Atomic<uint32_t> LiveBundle_debugIdCounter =
-    mozilla::Atomic<uint32_t>{0};
-#endif
-
 
 
 
@@ -412,24 +404,19 @@ class LiveBundle : public TempObject {
   
   LiveBundle* spillParent_;
 
-#ifdef JS_JITSPEW
   
   
   
-  uint32_t debugId_;
-#endif
+  
+  const uint32_t id_;
 
-  LiveBundle(SpillSet* spill, LiveBundle* spillParent)
-      : spill_(spill), spillParent_(spillParent) {
-#ifdef JS_JITSPEW
-    debugId_ = LiveBundle_debugIdCounter++;
-#endif
-  }
+  LiveBundle(SpillSet* spill, LiveBundle* spillParent, uint32_t id)
+      : spill_(spill), spillParent_(spillParent), id_(id) {}
 
  public:
   static LiveBundle* FallibleNew(TempAllocator& alloc, SpillSet* spill,
-                                 LiveBundle* spillParent) {
-    return new (alloc.fallible()) LiveBundle(spill, spillParent);
+                                 LiveBundle* spillParent, uint32_t id) {
+    return new (alloc.fallible()) LiveBundle(spill, spillParent, id);
   }
 
   using RangeIterator = InlineForwardListIterator<LiveRange>;
@@ -467,9 +454,9 @@ class LiveBundle : public TempObject {
 
   LiveBundle* spillParent() const { return spillParent_; }
 
-#ifdef JS_JITSPEW
-  uint32_t debugId() const { return debugId_; }
+  uint32_t id() const { return id_; }
 
+#ifdef JS_JITSPEW
   
   UniqueChars toString() const;
 #endif
@@ -734,6 +721,9 @@ class BacktrackingAllocator : protected RegisterAllocator {
 
   Vector<LiveBundle*, 4, BackgroundSystemAllocPolicy> spilledBundles;
 
+  
+  uint32_t nextBundleId_ = 0;
+
   using LiveBundleVector = Vector<LiveBundle*, 4, BackgroundSystemAllocPolicy>;
 
   
@@ -745,6 +735,8 @@ class BacktrackingAllocator : protected RegisterAllocator {
     MOZ_ASSERT(alloc->isUse());
     return vregs[alloc->toUse()->virtualRegister()];
   }
+
+  uint32_t getNextBundleId() { return nextBundleId_++; }
 
   
   [[nodiscard]] bool addMove(LMoveGroup* moves, LiveRange* from, LiveRange* to,
