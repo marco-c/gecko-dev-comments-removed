@@ -367,10 +367,12 @@ pub trait Parser<'i> {
 
 
 
-#[derive(Clone, Eq, Debug, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Clone, Eq, Debug, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 pub struct SelectorList<Impl: SelectorImpl>(
-    #[shmem(field_bound)] ThinArcUnion<SpecificityAndFlags, Component<Impl>, (), Selector<Impl>>,
+    #[cfg_attr(feature = "to_shmem", shmem(field_bound))]
+    ThinArcUnion<SpecificityAndFlags, Component<Impl>, (), Selector<Impl>>,
 );
 
 impl<Impl: SelectorImpl> SelectorList<Impl> {
@@ -800,10 +802,13 @@ impl FeaturelessHostMatches {
 
 
 
-#[derive(Clone, Eq, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 #[repr(transparent)]
-pub struct Selector<Impl: SelectorImpl>(#[shmem(field_bound)] SelectorData<Impl>);
+pub struct Selector<Impl: SelectorImpl>(
+    #[cfg_attr(feature = "to_shmem", shmem(field_bound))] SelectorData<Impl>,
+);
 
 impl<Impl: SelectorImpl> Selector<Impl> {
     
@@ -1565,7 +1570,8 @@ impl<'a, Impl: SelectorImpl> Iterator for AncestorIter<'a, Impl> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
 pub enum Combinator {
     Child,        
     Descendant,   
@@ -1613,8 +1619,9 @@ impl Combinator {
 }
 
 
-#[derive(Copy, Clone, Eq, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 pub enum NthType {
     Child,
     LastChild,
@@ -1641,8 +1648,9 @@ impl NthType {
 
 
 
-#[derive(Copy, Clone, Eq, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 pub struct NthSelectorData {
     pub ty: NthType,
     pub is_function: bool,
@@ -1741,10 +1749,11 @@ impl NthSelectorData {
 
 
 
-#[derive(Clone, Eq, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 pub struct NthOfSelectorData<Impl: SelectorImpl>(
-    #[shmem(field_bound)] ThinArc<NthSelectorData, Selector<Impl>>,
+    #[cfg_attr(feature = "to_shmem", shmem(field_bound))] ThinArc<NthSelectorData, Selector<Impl>>,
 );
 
 impl<Impl: SelectorImpl> NthOfSelectorData<Impl> {
@@ -1771,7 +1780,8 @@ impl<Impl: SelectorImpl> NthOfSelectorData<Impl> {
 }
 
 
-#[derive(Clone, Copy, Eq, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
 pub enum RelativeSelectorMatchHint {
     
     InSubtree,
@@ -1900,13 +1910,14 @@ impl RelativeSelectorCombinatorCount {
 }
 
 
-#[derive(Clone, Eq, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 pub struct RelativeSelector<Impl: SelectorImpl> {
     
     pub match_hint: RelativeSelectorMatchHint,
     
-    #[shmem(field_bound)]
+    #[cfg_attr(feature = "to_shmem", shmem(field_bound))]
     pub selector: Selector<Impl>,
 }
 
@@ -1985,16 +1996,17 @@ impl<Impl: SelectorImpl> RelativeSelector<Impl> {
 
 
 
-#[derive(Clone, Eq, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 pub enum Component<Impl: SelectorImpl> {
     LocalName(LocalName<Impl>),
 
-    ID(#[shmem(field_bound)] Impl::Identifier),
-    Class(#[shmem(field_bound)] Impl::Identifier),
+    ID(#[cfg_attr(feature = "to_shmem", shmem(field_bound))] Impl::Identifier),
+    Class(#[cfg_attr(feature = "to_shmem", shmem(field_bound))] Impl::Identifier),
 
     AttributeInNoNamespaceExists {
-        #[shmem(field_bound)]
+        #[cfg_attr(feature = "to_shmem", shmem(field_bound))]
         local_name: Impl::LocalName,
         local_name_lower: Impl::LocalName,
     },
@@ -2002,7 +2014,7 @@ pub enum Component<Impl: SelectorImpl> {
     AttributeInNoNamespace {
         local_name: Impl::LocalName,
         operator: AttrSelectorOperator,
-        #[shmem(field_bound)]
+        #[cfg_attr(feature = "to_shmem", shmem(field_bound))]
         value: Impl::AttrValue,
         case_sensitivity: ParsedCaseSensitivity,
     },
@@ -2013,10 +2025,10 @@ pub enum Component<Impl: SelectorImpl> {
     ExplicitAnyNamespace,
 
     ExplicitNoNamespace,
-    DefaultNamespace(#[shmem(field_bound)] Impl::NamespaceUrl),
+    DefaultNamespace(#[cfg_attr(feature = "to_shmem", shmem(field_bound))] Impl::NamespaceUrl),
     Namespace(
-        #[shmem(field_bound)] Impl::NamespacePrefix,
-        #[shmem(field_bound)] Impl::NamespaceUrl,
+        #[cfg_attr(feature = "to_shmem", shmem(field_bound))] Impl::NamespacePrefix,
+        #[cfg_attr(feature = "to_shmem", shmem(field_bound))] Impl::NamespaceUrl,
     ),
 
     
@@ -2035,7 +2047,7 @@ pub enum Component<Impl: SelectorImpl> {
     ParentSelector,
     Nth(NthSelectorData),
     NthOf(NthOfSelectorData<Impl>),
-    NonTSPseudoClass(#[shmem(field_bound)] Impl::NonTSPseudoClass),
+    NonTSPseudoClass(#[cfg_attr(feature = "to_shmem", shmem(field_bound))] Impl::NonTSPseudoClass),
     
     
     
@@ -2050,7 +2062,7 @@ pub enum Component<Impl: SelectorImpl> {
     Slotted(Selector<Impl>),
     
     
-    Part(#[shmem(field_bound)] Box<[Impl::Identifier]>),
+    Part(#[cfg_attr(feature = "to_shmem", shmem(field_bound))] Box<[Impl::Identifier]>),
     
     
     
@@ -2083,7 +2095,7 @@ pub enum Component<Impl: SelectorImpl> {
     
     Invalid(Arc<String>),
     
-    PseudoElement(#[shmem(field_bound)] Impl::PseudoElement),
+    PseudoElement(#[cfg_attr(feature = "to_shmem", shmem(field_bound))] Impl::PseudoElement),
 
     Combinator(Combinator),
 
@@ -2274,10 +2286,11 @@ impl<Impl: SelectorImpl> Component<Impl> {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, ToShmem)]
-#[shmem(no_bounds)]
+#[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "to_shmem", derive(ToShmem))]
+#[cfg_attr(feature = "to_shmem", shmem(no_bounds))]
 pub struct LocalName<Impl: SelectorImpl> {
-    #[shmem(field_bound)]
+    #[cfg_attr(feature = "to_shmem", shmem(field_bound))]
     pub name: Impl::LocalName,
     pub lower_name: Impl::LocalName,
 }
