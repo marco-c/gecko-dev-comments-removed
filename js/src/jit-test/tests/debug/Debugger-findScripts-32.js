@@ -51,6 +51,12 @@ assertNotFound({url:scriptname, line: 8, start: {line: 3}, end: {line: 3}}, gfw.
 assertFound({url:scriptname, line: 3, start: {line: 8}, end: {line: 8}}, gfw.script);
 
 
+assertThrowsTypeError({start: {line: 8}, end: {line: 8}});
+assertFound({source:gfw.script.source, start: {line: 8}, end: {line: 8}}, gfw.script);
+
+assertNotFound({displayURL:"f.js", start: {line: 8}, end: {line: 8}}, gfw.script);
+
+
 
 assertNotFound({url:scriptname, start: {line: 14}, end: {line: 16}}, gfw.script);
 
