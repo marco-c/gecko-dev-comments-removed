@@ -412,7 +412,7 @@ void FetchChild::RunAbortAlgorithm() {
     return;
   }
   if (mWorkerRef || mIsKeepAliveRequest) {
-    Unused << SendAbortFetchOp();
+    Unused << SendAbortFetchOp(true);
   }
 }
 
@@ -427,7 +427,7 @@ void FetchChild::DoFetchOp(const FetchOpArgs& aArgs) {
   }
   if (mSignalImpl) {
     if (mSignalImpl->Aborted()) {
-      Unused << SendAbortFetchOp();
+      Unused << SendAbortFetchOp(true);
       return;
     }
     Follow(mSignalImpl);
@@ -436,6 +436,10 @@ void FetchChild::DoFetchOp(const FetchOpArgs& aArgs) {
 }
 
 void FetchChild::Shutdown() {
+  
+  
+  
+
   FETCH_LOG(("FetchChild::Shutdown [%p]", this));
   if (mIsShutdown) {
     return;
@@ -451,22 +455,7 @@ void FetchChild::Shutdown() {
   Unfollow();
   mSignalImpl = nullptr;
   mCSPEventListener = nullptr;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mIsKeepAliveRequest) {
-    Unused << SendAbortFetchOp();
-  }
+  SendAbortFetchOp(false);
 
   mWorkerRef = nullptr;
 }
@@ -475,8 +464,6 @@ void FetchChild::ActorDestroy(ActorDestroyReason aReason) {
   FETCH_LOG(("FetchChild::ActorDestroy [%p]", this));
   
   if (mIsKeepAliveRequest) {
-    
-    
     
     
     if (NS_IsMainThread()) {
