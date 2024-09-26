@@ -798,7 +798,7 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
   
   bool hasCaptureTimeNtp = selected->mWebrtcCaptureTime.is<int64_t>();
   bool hasReceiveTimeReal = selected->mWebrtcReceiveTime.isSome();
-  if (hasCaptureTimeNtp || hasReceiveTimeReal) {
+  if (mSelectedVideoStreamTrack && (hasCaptureTimeNtp || hasReceiveTimeReal)) {
     if (const auto* timestampMaker =
             mSelectedVideoStreamTrack->GetTimestampMaker()) {
       if (hasCaptureTimeNtp) {
