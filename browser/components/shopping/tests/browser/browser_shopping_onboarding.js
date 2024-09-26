@@ -96,6 +96,10 @@ add_task(async function test_showOnboarding_notOptedIn() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shopping.experience2023.integratedSidebar", false]],
+  });
+
   await BrowserTestUtils.withNewTab(
     {
       url: "about:shoppingsidebar",
@@ -131,6 +135,86 @@ add_task(async function test_showOnboarding_notOptedIn() {
         ok(
           !content.document.getElementById("multi-stage-message-root").hidden,
           "message is shown"
+        );
+
+        ok(
+          content.document.querySelector(".FS_OPT_IN"),
+          "Rendered correct message"
+        );
+      });
+    }
+  );
+
+  if (!AppConstants.platform != "linux") {
+    await Services.fog.testFlushAllChildren();
+    const events = Glean.shopping.surfaceOnboardingDisplayed.testGetValue();
+
+    if (events) {
+      Assert.greater(events.length, 0);
+      Assert.equal(events[0].category, "shopping");
+      Assert.equal(events[0].name, "surface_onboarding_displayed");
+    } else {
+      info("Failed to get Glean value due to unknown bug. See bug 1862389.");
+    }
+  }
+});
+
+
+
+
+
+
+add_task(async function test_showOnboarding_notOptedIn_integrated_sidebar() {
+  
+  setOnboardingPrefs({ active: false, optedIn: 0, telemetryEnabled: true });
+
+  Services.fog.testResetFOG();
+  await Services.fog.testFlushAllChildren();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shopping.experience2023.integratedSidebar", true]],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    {
+      url: "about:shoppingsidebar",
+      gBrowser,
+    },
+    async browser => {
+      
+      let actor =
+        gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getExistingActor(
+          "ShoppingSidebar"
+        );
+      actor.updateProductURL("https://example.com/product/B09TJGHL5F");
+
+      await SpecialPowers.spawn(browser, [], async () => {
+        let shoppingContainer = await ContentTaskUtils.waitForCondition(
+          () => content.document.querySelector("shopping-container"),
+          "shopping-container"
+        );
+
+        let containerElem =
+          shoppingContainer.shadowRoot.getElementById("shopping-container");
+        let messageSlot = containerElem.getElementsByTagName("slot");
+
+        
+        
+        ok(messageSlot.length, `message slot element exists`);
+        is(
+          messageSlot[0].name,
+          "multi-stage-message-slot",
+          "multi-stage-message-slot showing opt-in message rendered"
+        );
+
+        ok(
+          !content.document.getElementById("multi-stage-message-root").hidden,
+          "message is shown"
+        );
+
+        ok(
+          content.document.querySelector(".FS_OPT_IN_SIDEBAR_VARIANT"),
+          "Rendered correct message"
         );
       });
     }
@@ -189,11 +273,17 @@ add_task(async function test_hideOnboarding_optedIn() {
 
 
 
+
 add_task(async function test_hideOnboarding_onClose() {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
   
   setOnboardingPrefs({ active: false, optedIn: 0, telemetryEnabled: true });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shopping.experience2023.integratedSidebar", false]],
+  });
+
   await BrowserTestUtils.withNewTab(
     {
       url: "about:shoppingsidebar",
@@ -240,6 +330,7 @@ add_task(async function test_hideOnboarding_onClose() {
   Assert.equal(events[0].category, "shopping");
   Assert.equal(events[0].name, "surface_not_now_clicked");
 });
+
 
 
 
