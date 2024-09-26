@@ -330,7 +330,8 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   static Maybe<nsTArray<uint8_t>> GenerateKey(nsIChannel* aChannel);
   static Maybe<nsTArray<uint8_t>> GenerateKeyForServiceWorker(
-      nsIURI* aURI, bool aForeignByAncestorContext);
+      nsIURI* aFirstPartyURI, nsIPrincipal* aPrincipal,
+      bool aForeignByAncestorContext);
 
   
   
