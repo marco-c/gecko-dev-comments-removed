@@ -18,7 +18,8 @@ import { kRenderEncoderTypes, kMaximumLimitBaseParams, makeLimitTestGroup } from
     vertex: {
       module,
       buffers
-    }
+    },
+    depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'always' }
   };
 }
 
