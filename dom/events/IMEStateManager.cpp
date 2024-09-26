@@ -571,9 +571,17 @@ void IMEStateManager::OnUpdateHTMLEditorRootElement(HTMLEditor& aHTMLEditor,
   }
 
   MOZ_ASSERT(aNewRootElement);
+  const IMEState newState = GetNewIMEState(*presContext, nullptr);
   
-  IMEState newState = GetNewIMEState(*presContext, nullptr);
-  MOZ_ASSERT(newState.mEnabled == IMEEnabled::Enabled);
+  
+  
+  
+  if (MOZ_UNLIKELY(newState.mEnabled != IMEEnabled::Enabled)) {
+    MOZ_LOG(sISMLog, LogLevel::Warning,
+            ("  OnUpdateHTMLEditorRootElement(): WARNING, Not updating IME "
+             "state because of the new IME state is not \"enabled\""));
+    return;
+  }
   InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
                             InputContextAction::GOT_FOCUS);
   InputContext::Origin origin =
