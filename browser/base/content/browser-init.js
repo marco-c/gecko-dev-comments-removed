@@ -335,10 +335,6 @@ var gBrowserInit = {
 
     this._cancelDelayedStartup();
 
-    
-    
-    Services.appShell.hiddenDOMWindow;
-
     gBrowser.addEventListener(
       "PermissionStateChange",
       function () {
