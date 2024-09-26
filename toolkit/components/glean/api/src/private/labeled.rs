@@ -57,12 +57,12 @@ mod private {
     
     impl Sealed for LabeledStringMetric {
         type GleanMetric = glean::private::StringMetric;
-        fn from_glean_metric(_id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
+        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
             if need_ipc() {
                 
                 LabeledStringMetric::Child(crate::private::string::StringMetricIpc)
             } else {
-                LabeledStringMetric::Parent(metric)
+                LabeledStringMetric::Parent { id, inner: metric }
             }
         }
     }
