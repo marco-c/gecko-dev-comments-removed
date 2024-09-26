@@ -568,7 +568,7 @@ bitflags::bitflags! {
         /// may also create uniform arrays of storage textures.
         ///
         /// ex.
-        /// - `var textures: array<texture_storage_2d<f32, write>, 10>` (WGSL)
+        /// - `var textures: array<texture_storage_2d<r32float, write>, 10>` (WGSL)
         /// - `uniform image2D textures[10]` (GLSL)
         ///
         /// This capability allows them to exist and to be indexed by dynamically uniform
@@ -1965,6 +1965,7 @@ impl TextureViewDimension {
 
 
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -2021,6 +2022,7 @@ impl BlendFactor {
         }
     }
 }
+
 
 
 
@@ -2098,8 +2100,6 @@ impl Default for BlendComponent {
         Self::REPLACE
     }
 }
-
-
 
 
 
@@ -6705,6 +6705,7 @@ pub enum BindingType {
         
         multisampled: bool,
     },
+    
     
     
     

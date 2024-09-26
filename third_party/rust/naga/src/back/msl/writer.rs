@@ -376,6 +376,11 @@ pub struct Writer<W> {
     
     
     struct_member_pads: FastHashSet<(Handle<crate::Type>, u32)>,
+
+    
+    
+    
+    loop_reachable_macro_name: String,
 }
 
 impl crate::Scalar {
@@ -665,6 +670,7 @@ impl<W: Write> Writer<W> {
             #[cfg(test)]
             put_block_stack_pointers: Default::default(),
             struct_member_pads: FastHashSet::default(),
+            loop_reachable_macro_name: String::default(),
         }
     }
 
@@ -673,6 +679,125 @@ impl<W: Write> Writer<W> {
     #[allow(clippy::missing_const_for_fn)]
     pub fn finish(self) -> W {
         self.out
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn emit_loop_reachable_macro(&mut self) -> BackendResult {
+        if !self.loop_reachable_macro_name.is_empty() {
+            return Ok(());
+        }
+
+        self.loop_reachable_macro_name = self.namer.call("LOOP_IS_REACHABLE");
+        let loop_reachable_volatile_name = self.namer.call("unpredictable_jump_over_loop");
+        writeln!(
+            self.out,
+            "#define {} if (volatile bool {} = true; {})",
+            self.loop_reachable_macro_name,
+            loop_reachable_volatile_name,
+            loop_reachable_volatile_name,
+        )?;
+
+        Ok(())
     }
 
     fn put_call_parameters(
@@ -2924,10 +3049,15 @@ impl<W: Write> Writer<W> {
                     ref continuing,
                     break_if,
                 } => {
+                    self.emit_loop_reachable_macro()?;
                     if !continuing.is_empty() || break_if.is_some() {
                         let gate_name = self.namer.call("loop_init");
                         writeln!(self.out, "{level}bool {gate_name} = true;")?;
-                        writeln!(self.out, "{level}while(true) {{")?;
+                        writeln!(
+                            self.out,
+                            "{level}{} while(true) {{",
+                            self.loop_reachable_macro_name,
+                        )?;
                         let lif = level.next();
                         let lcontinuing = lif.next();
                         writeln!(self.out, "{lif}if (!{gate_name}) {{")?;
@@ -2942,7 +3072,11 @@ impl<W: Write> Writer<W> {
                         writeln!(self.out, "{lif}}}")?;
                         writeln!(self.out, "{lif}{gate_name} = false;")?;
                     } else {
-                        writeln!(self.out, "{level}while(true) {{")?;
+                        writeln!(
+                            self.out,
+                            "{level}{} while(true) {{",
+                            self.loop_reachable_macro_name,
+                        )?;
                     }
                     self.put_block(level.next(), body, context)?;
                     writeln!(self.out, "{level}}}")?;
@@ -3379,6 +3513,7 @@ impl<W: Write> Writer<W> {
             &[CLAMPED_LOD_LOAD_PREFIX],
             &mut self.names,
         );
+        self.loop_reachable_macro_name.clear();
         self.struct_member_pads.clear();
 
         writeln!(
