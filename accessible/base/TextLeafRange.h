@@ -12,6 +12,7 @@
 #include "AccAttributes.h"
 #include "nsDirection.h"
 #include "nsIAccessibleText.h"
+#include "mozilla/FunctionRef.h"
 
 namespace mozilla {
 namespace dom {
@@ -165,12 +166,9 @@ class TextLeafPoint final {
 
 
 
-
-
   LayoutDeviceIntRect CharBounds();
 
   
-
 
 
 
@@ -300,8 +298,13 @@ class TextLeafRange final {
 
 
 
-
   LayoutDeviceIntRect Bounds() const;
+
+  
+
+
+
+  nsTArray<LayoutDeviceIntRect> LineRects() const;
 
   
 
@@ -329,6 +332,17 @@ class TextLeafRange final {
  private:
   TextLeafPoint mStart;
   TextLeafPoint mEnd;
+
+  
+
+
+
+
+
+
+
+  using LineRectCallback = FunctionRef<void(LayoutDeviceIntRect)>;
+  bool WalkLineRects(LineRectCallback aCallback) const;
 
  public:
   

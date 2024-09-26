@@ -2018,40 +2018,40 @@ bool TextLeafRange::Crop(Accessible* aContainer) {
 }
 
 LayoutDeviceIntRect TextLeafRange::Bounds() const {
-  if (mEnd == mStart || mEnd < mStart) {
-    return LayoutDeviceIntRect();
-  }
-
-  bool locatedFinalLine = false;
-  TextLeafPoint currPoint = mStart;
-  LayoutDeviceIntRect result = currPoint.CharBounds();
-
   
-  
-  while (!locatedFinalLine) {
-    
-    
-    
-    
-    TextLeafPoint lineStartPoint = currPoint.FindBoundary(
-        nsIAccessibleText::BOUNDARY_LINE_START, eDirNext);
-    TextLeafPoint lastPointInLine = lineStartPoint.FindBoundary(
-        nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-    
-    
-    if (lineStartPoint == currPoint || mEnd <= lastPointInLine) {
-      lastPointInLine = mEnd;
-      locatedFinalLine = true;
-    }
+  LayoutDeviceIntRect result = TextLeafPoint{mStart}.CharBounds();
+  const bool succeeded =
+      WalkLineRects([&result](LayoutDeviceIntRect aLineRect) {
+        result.UnionRect(result, aLineRect);
+      });
 
-    LayoutDeviceIntRect currLine = currPoint.CharBounds();
-    currLine.UnionRect(currLine, lastPointInLine.CharBounds());
-    result.UnionRect(result, currLine);
-
-    currPoint = lineStartPoint;
+  if (!succeeded) {
+    return {};
   }
-
   return result;
+}
+
+nsTArray<LayoutDeviceIntRect> TextLeafRange::LineRects() const {
+  
+  
+  Maybe<LayoutDeviceIntRect> contentBounds;
+  if (Accessible* doc = nsAccUtils::DocumentFor(mStart.mAcc)) {
+    contentBounds.emplace(doc->Bounds());
+  }
+
+  nsTArray<LayoutDeviceIntRect> lineRects;
+  WalkLineRects([&lineRects, &contentBounds](LayoutDeviceIntRect aLineRect) {
+    
+    bool boundsVisible = true;
+    if (contentBounds.isSome()) {
+      boundsVisible = aLineRect.IntersectRect(aLineRect, *contentBounds);
+    }
+    if (boundsVisible) {
+      lineRects.AppendElement(aLineRect);
+    }
+  });
+
+  return lineRects;
 }
 
 TextLeafPoint TextLeafRange::TextLeafPointAtScreenPoint(int32_t aX,
@@ -2199,6 +2199,40 @@ void TextLeafRange::ScrollIntoView(uint32_t aScrollType) const {
 
   nsCoreUtils::ScrollSubstringTo(mStart.mAcc->AsLocal()->GetFrame(), domRange,
                                  aScrollType);
+}
+
+bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
+  if (mEnd <= mStart) {
+    return false;
+  }
+
+  bool locatedFinalLine = false;
+  TextLeafPoint currPoint = mStart;
+
+  
+  while (!locatedFinalLine) {
+    
+    
+    
+    
+    TextLeafPoint lineStartPoint = currPoint.FindBoundary(
+        nsIAccessibleText::BOUNDARY_LINE_START, eDirNext);
+    TextLeafPoint lastPointInLine = lineStartPoint.FindBoundary(
+        nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
+    
+    
+    if (lineStartPoint == currPoint || mEnd <= lastPointInLine) {
+      lastPointInLine = mEnd;
+      locatedFinalLine = true;
+    }
+
+    LayoutDeviceIntRect currLine = currPoint.CharBounds();
+    currLine.UnionRect(currLine, lastPointInLine.CharBounds());
+    aCallback(currLine);
+
+    currPoint = lineStartPoint;
+  }
+  return true;
 }
 
 TextLeafRange::Iterator TextLeafRange::Iterator::BeginIterator(
