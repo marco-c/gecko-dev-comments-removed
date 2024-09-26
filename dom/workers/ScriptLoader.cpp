@@ -243,10 +243,6 @@ void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
   
   if (aWorkerPrivate->WorkerType() == WorkerType::Module &&
       aWorkerScriptType != DebuggerScript) {
-    if (!StaticPrefs::dom_workers_modules_enabled()) {
-      aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-      return;
-    }
     MOZ_ASSERT(aIsMainScript);
     
     RefPtr<JS::loader::ScriptLoadRequest> mainScript = loader->GetMainScript();
@@ -515,10 +511,6 @@ already_AddRefed<WorkerScriptLoader> WorkerScriptLoader::Create(
   nsIGlobalObject* global = self->GetGlobal();
   self->mController = global->GetController();
 
-  if (!StaticPrefs::dom_workers_modules_enabled()) {
-    return self.forget();
-  }
-
   
   self->InitModuleLoader();
 
@@ -701,10 +693,6 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     
     
 
-    if (!StaticPrefs::dom_workers_modules_enabled()) {
-      mRv.ThrowTypeError("Modules in workers are currently disallowed.");
-      return nullptr;
-    }
     RefPtr<WorkerModuleLoader::ModuleLoaderBase> moduleLoader =
         GetGlobal()->GetModuleLoader(nullptr);
 
@@ -1256,8 +1244,7 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
   }
 
   RefPtr<JS::loader::ClassicScript> classicScript = nullptr;
-  if (StaticPrefs::dom_workers_modules_enabled() &&
-      !mWorkerRef->Private()->IsServiceWorker()) {
+  if (!mWorkerRef->Private()->IsServiceWorker()) {
     
     
     
