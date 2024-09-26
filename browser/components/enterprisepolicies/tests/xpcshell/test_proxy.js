@@ -106,7 +106,8 @@ add_task(async function test_proxy_addresses() {
 
   checkProxyPref("http", "http.proxy.example.com", 10);
   checkProxyPref("ssl", "http.proxy.example.com", 10);
-  checkProxyPref("socks", "http.proxy.example.com", 10);
+  
+  checkProxyPref("socks", "socks.proxy.example.com", 40);
 
   
   Assert.equal(
