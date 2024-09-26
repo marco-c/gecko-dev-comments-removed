@@ -725,6 +725,9 @@ this.AccessibilityUtils = (function () {
         ((role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON ||
           role == Ci.nsIAccessibleRole.ROLE_TOGGLE_BUTTON) &&
           node.closest('[role="toolbar"]')) ||
+        
+        (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
+          node.getRootNode().host?.tagName?.toLowerCase() === "moz-radio") ||
         shouldIgnoreTabIndex(node))
     );
   }
