@@ -248,17 +248,33 @@ inline bool IsInitialSize(const StyleMaxSize& aSize, const LogicalAxis aAxis) {
              : aSize.BehavesLikeInitialValueOnBlockAxis();
 }
 
+static Maybe<nscoord> GetPercentageBasisForAR(
+    const LogicalAxis aRatioDeterminingAxis, const WritingMode aWM,
+    const Maybe<LogicalSize>& aContainingBlockSize) {
+  if (!aContainingBlockSize) {
+    return Nothing();
+  }
+
+  const nscoord basis = aContainingBlockSize->Size(aRatioDeterminingAxis, aWM);
+  
+  
+  return basis == NS_UNCONSTRAINEDSIZE ? Nothing() : Some(basis);
+}
+
 template <typename Type>
 static Maybe<nscoord> ComputeTransferredSize(
     const Type& aRatioDeterminingSize, const LogicalAxis aAxis,
     const WritingMode aWM, const AspectRatio& aAspectRatio,
-    BoxSizingAdjustment& aBoxSizingAdjustment) {
+    BoxSizingAdjustment& aBoxSizingAdjustment,
+    const Maybe<LogicalSize>& aContainingBlockSize) {
+  
+  const Maybe<nscoord> basis = GetPercentageBasisForAR(
+      GetOrthogonalAxis(aAxis), aWM, aContainingBlockSize);
   nscoord rdSize = 0;
   if (aRatioDeterminingSize.ConvertsToLength()) {
     rdSize = aRatioDeterminingSize.ToLength();
-  } else if (aRatioDeterminingSize.HasPercent()) {
-    
-    return Nothing();
+  } else if (aRatioDeterminingSize.HasPercent() && basis) {
+    rdSize = aRatioDeterminingSize.AsLengthPercentage().Resolve(*basis);
   } else {
     
     return Nothing();
@@ -282,7 +298,8 @@ struct RepeatTrackSizingInput {
   
   void InitFromStyle(LogicalAxis aAxis, WritingMode aWM,
                      const ComputedStyle* aStyle,
-                     const AspectRatio& aAspectRatio) {
+                     const AspectRatio& aAspectRatio,
+                     const Maybe<LogicalSize>& aContainingBlockSize) {
     const auto& pos = aStyle->StylePosition();
     BoxSizingAdjustment boxSizingAdjustment(aWM, *aStyle);
 
@@ -301,7 +318,8 @@ struct RepeatTrackSizingInput {
       
       const auto& styleRDMinSize = pos->MinSize(GetOrthogonalAxis(aAxis), aWM);
       if (Maybe<nscoord> resolvedMinSize = ComputeTransferredSize(
-              styleRDMinSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment)) {
+              styleRDMinSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment,
+              aContainingBlockSize)) {
         min = *resolvedMinSize;
       }
     }
@@ -313,7 +331,8 @@ struct RepeatTrackSizingInput {
     } else if (aAspectRatio && IsInitialSize(styleMaxSize, aAxis)) {
       const auto& styleRDMaxSize = pos->MaxSize(GetOrthogonalAxis(aAxis), aWM);
       if (Maybe<nscoord> resolvedMaxSize = ComputeTransferredSize(
-              styleRDMaxSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment)) {
+              styleRDMaxSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment,
+              aContainingBlockSize)) {
         max = std::max(min, *resolvedMaxSize);
       }
     }
@@ -325,7 +344,8 @@ struct RepeatTrackSizingInput {
     } else if (aAspectRatio && IsInitialSize(styleSize, aAxis)) {
       const auto& styleRDSize = pos->Size(GetOrthogonalAxis(aAxis), aWM);
       if (Maybe<nscoord> resolvedSize = ComputeTransferredSize(
-              styleRDSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment)) {
+              styleRDSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment,
+              aContainingBlockSize)) {
         size = Clamp(*resolvedSize, min, max);
       }
     }
@@ -4918,14 +4938,20 @@ void nsGridContainerFrame::Grid::SubgridPlaceGridItems(
   
   RepeatTrackSizingInput repeatSizing(state.mWM);
   if (!childGrid->IsColSubgrid() && state.mColFunctions.mHasRepeatAuto) {
+    
+    
+    
+    
+    
     repeatSizing.InitFromStyle(LogicalAxis::Inline, state.mWM,
                                state.mFrame->Style(),
-                               state.mFrame->GetAspectRatio());
+                               state.mFrame->GetAspectRatio(), Nothing());
   }
   if (!childGrid->IsRowSubgrid() && state.mRowFunctions.mHasRepeatAuto) {
+    
     repeatSizing.InitFromStyle(LogicalAxis::Block, state.mWM,
                                state.mFrame->Style(),
-                               state.mFrame->GetAspectRatio());
+                               state.mFrame->GetAspectRatio(), Nothing());
   }
 
   PlaceGridItems(state, repeatSizing);
@@ -9568,9 +9594,9 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
   
   RepeatTrackSizingInput repeatSizing(state.mWM);
   if (!IsColSubgrid() && state.mColFunctions.mHasRepeatAuto) {
-    repeatSizing.InitFromStyle(LogicalAxis::Inline, state.mWM,
-                               state.mFrame->Style(),
-                               state.mFrame->GetAspectRatio());
+    repeatSizing.InitFromStyle(
+        LogicalAxis::Inline, state.mWM, state.mFrame->Style(),
+        state.mFrame->GetAspectRatio(), aInput.mContainingBlockSize);
   }
   if ((!IsRowSubgrid() && state.mRowFunctions.mHasRepeatAuto &&
        !(state.mGridStyle->mGridAutoFlow & StyleGridAutoFlow::ROW)) ||
@@ -9578,9 +9604,9 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
     
     
     
-    repeatSizing.InitFromStyle(LogicalAxis::Block, state.mWM,
-                               state.mFrame->Style(),
-                               state.mFrame->GetAspectRatio());
+    repeatSizing.InitFromStyle(
+        LogicalAxis::Block, state.mWM, state.mFrame->Style(),
+        state.mFrame->GetAspectRatio(), aInput.mContainingBlockSize);
   }
 
   Grid grid;
