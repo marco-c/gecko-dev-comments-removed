@@ -427,6 +427,13 @@ class ContentCacheInParent final : public ContentCache {
 
 
 
+  void OnContentCommandEvent(
+      const WidgetContentCommandEvent& aContentCommandEvent);
+
+  
+
+
+
 
 
 
@@ -489,7 +496,8 @@ class ContentCacheInParent final : public ContentCache {
   
   
   [[nodiscard]] uint32_t PendingEventsNeedingAck() const {
-    uint32_t ret = mPendingSetSelectionEventNeedingAck;
+    uint32_t ret = mPendingSetSelectionEventNeedingAck +
+                   mPendingContentCommandEventNeedingAck;
     for (const HandlingCompositionData& data : mHandlingCompositions) {
       ret += data.mPendingEventsNeedingAck;
     }
@@ -599,6 +607,9 @@ class ContentCacheInParent final : public ContentCache {
   
   
   uint32_t mPendingSetSelectionEventNeedingAck = 0u;
+  
+  
+  uint32_t mPendingContentCommandEventNeedingAck = 0u;
   
   
   
