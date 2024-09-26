@@ -1,0 +1,15 @@
+
+
+
+
+
+function sendFetchRequest() {
+    
+    const urlString = self.location.search.replace("?param=", "");
+    postMessage('started');
+    fetch(`${urlString}`, { keepalive: true });
+}
+
+sendFetchRequest();
+
+self.close();
