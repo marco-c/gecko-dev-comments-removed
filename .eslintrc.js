@@ -57,8 +57,12 @@ module.exports = {
   
   
   
-  extends: ["plugin:mozilla/recommended"],
-  plugins: ["mozilla", "import", "json"],
+  extends: [
+    "plugin:mozilla/recommended",
+    "plugin:json/recommended-with-comments",
+    "prettier",
+  ],
+  plugins: ["mozilla", "html", "import", "json"],
   overrides: [
     {
       files: [

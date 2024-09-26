@@ -37,11 +37,7 @@ module.exports = {
 
   
   
-  extends: [
-    "eslint:recommended",
-    "prettier",
-    "plugin:json/recommended-with-comments",
-  ],
+  extends: ["eslint:recommended"],
 
   overrides: [
     {
@@ -136,7 +132,7 @@ module.exports = {
   },
 
   
-  plugins: ["html", "json", "no-unsanitized"],
+  plugins: ["no-unsanitized"],
 
   
   
