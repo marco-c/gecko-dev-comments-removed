@@ -35,12 +35,12 @@ impl ConnectionMaintenanceTask for Checker {
 
 
 
-pub trait IntoChecker {
-    fn into_checker(self) -> CheckerAction;
+pub trait IntoChecker<C> {
+    fn into_checker(self) -> CheckerAction<C>;
 }
 
-impl IntoChecker for ConnectionIncidents<'_> {
-    fn into_checker(self) -> CheckerAction {
+impl IntoChecker<Checker> for ConnectionIncidents<'_> {
+    fn into_checker(self) -> CheckerAction<Checker> {
         self.map(|incidents| {
             let (penalty, checks) = incidents.iter().fold(
                 (Penalty::default(), Checks::default()),
@@ -65,9 +65,9 @@ impl IntoChecker for ConnectionIncidents<'_> {
 
 
 #[derive(Debug)]
-pub enum CheckerAction {
+pub enum CheckerAction<C> {
     Skip,
-    Check(Checker),
+    Check(C),
     Replace,
 }
 
