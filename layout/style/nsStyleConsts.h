@@ -147,32 +147,6 @@ enum class StyleShapeSourceType : uint8_t {
 };
 
 
-enum class StyleUserFocus : uint8_t {
-  None,
-  Ignore,
-  Normal,
-};
-
-
-enum class StyleUserInput : uint8_t {
-  None,
-  Auto,
-};
-
-
-enum class StyleUserModify : uint8_t {
-  ReadOnly,
-  ReadWrite,
-  WriteOnly,
-};
-
-
-enum class StyleInert : uint8_t {
-  None,
-  Inert,
-};
-
-
 enum class StyleWindowDragging : uint8_t {
   Default,
   Drag,
@@ -330,20 +304,6 @@ enum class ListStyle : uint8_t {
 
 
 enum class StyleListStylePosition : uint8_t { Inside, Outside };
-
-
-enum class StylePointerEvents : uint8_t {
-  None,
-  Visiblepainted,
-  Visiblefill,
-  Visiblestroke,
-  Visible,
-  Painted,
-  Fill,
-  Stroke,
-  All,
-  Auto,
-};
 
 enum class StyleIsolation : uint8_t {
   Auto,
