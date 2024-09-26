@@ -49,7 +49,8 @@ class NetworkEventContentWatcher {
     this.onUpdated = onUpdated;
 
     this.httpFailedOpeningRequest = this.httpFailedOpeningRequest.bind(this);
-    this.httpOnImageCacheResponse = this.httpOnImageCacheResponse.bind(this);
+    this.httpOnResourceCacheResponse =
+      this.httpOnResourceCacheResponse.bind(this);
 
     Services.obs.addObserver(
       this.httpFailedOpeningRequest,
@@ -57,8 +58,14 @@ class NetworkEventContentWatcher {
     );
 
     Services.obs.addObserver(
-      this.httpOnImageCacheResponse,
+      this.httpOnResourceCacheResponse,
       "http-on-image-cache-response"
+    );
+
+    
+    Services.obs.addObserver(
+      this.httpOnResourceCacheResponse,
+      "http-on-stylesheet-cache-response"
     );
   }
   
@@ -93,9 +100,10 @@ class NetworkEventContentWatcher {
     });
   }
 
-  httpOnImageCacheResponse(subject, topic) {
+  httpOnResourceCacheResponse(subject, topic) {
     if (
-      topic != "http-on-image-cache-response" ||
+      (topic != "http-on-image-cache-response" &&
+        topic != "http-on-stylesheet-cache-response") ||
       !(subject instanceof Ci.nsIHttpChannel)
     ) {
       return;
@@ -111,6 +119,7 @@ class NetworkEventContentWatcher {
       return;
     }
 
+    
     
     const hasURI = Array.from(this.networkEvents.values()).some(
       networkEvent => networkEvent.uri === channel.URI.spec
@@ -267,8 +276,13 @@ class NetworkEventContentWatcher {
     );
 
     Services.obs.removeObserver(
-      this.httpOnImageCacheResponse,
+      this.httpOnResourceCacheResponse,
       "http-on-image-cache-response"
+    );
+
+    Services.obs.removeObserver(
+      this.httpOnResourceCacheResponse,
+      "http-on-stylesheet-cache-response"
     );
   }
 }
