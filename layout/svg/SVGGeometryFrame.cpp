@@ -442,37 +442,32 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    Rect pathBBoxExtents = pathInBBoxSpace->GetBounds();
-    if (!pathBBoxExtents.IsFinite()) {
-      
-      
-      return bbox;
-    }
-
-    
-    if (getFill) {
+    if (getFill && !getStroke) {
+      Rect pathBBoxExtents = pathInBBoxSpace->GetBounds();
+      if (!pathBBoxExtents.IsFinite()) {
+        
+        
+        return bbox;
+      }
       bbox = pathBBoxExtents;
     }
 
     
     if (getStroke) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
       Rect strokeBBoxExtents;
       if (StaticPrefs::svg_Moz2D_strokeBounds_enabled()) {
-        SVGContentUtils::AutoStrokeOptions strokeOptions;
-        SVGContentUtils::GetStrokeOptions(
-            &strokeOptions, element, Style(), nullptr,
-            SVGContentUtils::eIgnoreStrokeDashing);
         gfxMatrix userToOuterSVG;
         if (SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
           Matrix outerSVGToUser = ToMatrix(userToOuterSVG);
@@ -488,7 +483,17 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
           strokeBBoxExtents = pathInUserSpace->GetStrokedBounds(
               strokeOptions, aToBBoxUserspace);
         }
+        if (strokeBBoxExtents.IsEmpty() && getFill) {
+          strokeBBoxExtents = pathInBBoxSpace->GetBounds();
+          if (!strokeBBoxExtents.IsFinite()) {
+            return bbox;
+          }
+        }
       } else {
+        Rect pathBBoxExtents = pathInBBoxSpace->GetBounds();
+        if (!pathBBoxExtents.IsFinite()) {
+          return bbox;
+        }
         strokeBBoxExtents = ToRect(SVGUtils::PathExtentsToMaxStrokeExtents(
             ThebesRect(pathBBoxExtents), this, ThebesMatrix(aToBBoxUserspace)));
       }
