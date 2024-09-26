@@ -367,6 +367,15 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   NS_IMETHOD GetLastTransportStatus(nsresult* aLastTransportStatus) override;
 
+  NS_IMETHOD GetCaps(uint32_t* aCaps) override {
+    if (!aCaps) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
+    *aCaps = mCaps;
+    return NS_OK;
+  }
+
   NS_IMETHOD SetClassicScriptHintCharset(
       const nsAString& aClassicScriptHintCharset) override;
   NS_IMETHOD GetClassicScriptHintCharset(
@@ -459,7 +468,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
     return mResponseTrailers.get();
   }
 
-  void SetDummyChannelForImageCache();
+  void SetDummyChannelForCachedResource();
 
   const NetAddr& GetSelfAddr() { return mSelfAddr; }
   const NetAddr& GetPeerAddr() { return mPeerAddr; }
@@ -599,12 +608,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   
   virtual void DoAsyncAbort(nsresult aStatus) = 0;
-
-  
-  
-  
-  
-  void NotifySetCookie(const nsACString& aCookie);
 
   void MaybeReportTimingData();
   nsIURI* GetReferringPage();
@@ -1017,7 +1020,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   const bool mCachedOpaqueResponseBlockingPref;
   bool mChannelBlockedByOpaqueResponse;
 
-  bool mDummyChannelForImageCache;
+  bool mDummyChannelForCachedResource;
 
   bool mHasContentDecompressed;
 
