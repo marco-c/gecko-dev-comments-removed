@@ -25,7 +25,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/TelemetryComms.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "private/pprio.h"
 #include "nsInputStreamPump.h"
 #include "nsThreadUtils.h"
@@ -876,9 +876,23 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   bool isOmniJa = StringBeginsWith(fileName, "omni.ja!"_ns);
 
   Telemetry::SetEventRecordingEnabled("zero_byte_load"_ns, true);
-  Telemetry::EventID eventType = Telemetry::EventID::Zero_byte_load_Load_Others;
   if (StringEndsWith(fileName, ".ftl"_ns)) {
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Ftl;
+    
+    
+    
+    
+    
+    if (!isTest && aStatus == NS_ERROR_FILE_NOT_FOUND) {
+      return;
+    }
+
+    glean::zero_byte_load::LoadFtlExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_ftl.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".dtd"_ns)) {
     
     
@@ -886,9 +900,21 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
       return;
     }
 
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Dtd;
+    glean::zero_byte_load::LoadDtdExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_dtd.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".properties"_ns)) {
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Properties;
+    glean::zero_byte_load::LoadPropertiesExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_properties.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".js"_ns) ||
              StringEndsWith(fileName, ".jsm"_ns) ||
              StringEndsWith(fileName, ".mjs"_ns)) {
@@ -898,9 +924,22 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     if (!isTest && !isOmniJa) {
       return;
     }
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Js;
+
+    glean::zero_byte_load::LoadJsExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_js.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".xml"_ns)) {
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Xml;
+    glean::zero_byte_load::LoadXmlExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_xml.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".xhtml"_ns)) {
     
     
@@ -913,7 +952,13 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
       return;
     }
 
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Xhtml;
+    glean::zero_byte_load::LoadXhtmlExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_xhtml.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".css"_ns)) {
     
     if (aStatus == NS_BINDING_ABORTED) {
@@ -925,11 +970,32 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     if (!isOmniJa && aStatus == NS_ERROR_CORRUPTED_CONTENT) {
       return;
     }
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Css;
+
+    glean::zero_byte_load::LoadCssExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_css.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".json"_ns)) {
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Json;
+    
+    
+    
+    
+    
+    if (!isTest && aStatus == NS_ERROR_FILE_NOT_FOUND) {
+      return;
+    }
+
+    glean::zero_byte_load::LoadJsonExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_json.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".html"_ns)) {
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Html;
     
     if (!isOmniJa) {
       return;
@@ -942,68 +1008,73 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
         aStatus == NS_ERROR_FAILURE) {
       return;
     }
+
+    glean::zero_byte_load::LoadHtmlExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_html.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".png"_ns)) {
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Png;
     
     
     if (!isOmniJa || aStatus == NS_BINDING_ABORTED) {
       return;
     }
+
+    glean::zero_byte_load::LoadPngExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_png.Record(Some(extra));
   } else if (StringEndsWith(fileName, ".svg"_ns)) {
-    eventType = Telemetry::EventID::Zero_byte_load_Load_Svg;
     
     
     if (!isOmniJa || aStatus == NS_BINDING_ABORTED) {
       return;
     }
-  }
+    glean::zero_byte_load::LoadSvgExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_svg.Record(Some(extra));
+  } else {  
+    
+    
+    
+    if (!isTest && (!isOmniJa || (aStatus == NS_BINDING_ABORTED &&
+                                  StringEndsWith(fileName, ".ico"_ns)))) {
+      return;
+    }
 
-  
-  
-  
-  if (!isTest && eventType == Telemetry::EventID::Zero_byte_load_Load_Others &&
-      (!isOmniJa || (aStatus == NS_BINDING_ABORTED &&
-                     StringEndsWith(fileName, ".ico"_ns)))) {
-    return;
-  }
+    
+    
+    if (fileName.EqualsLiteral(
+            "omni.ja!/chrome/browser/search-extensions/google/favicon.ico") &&
+        aStatus == NS_BINDING_ABORTED) {
+      return;
+    }
 
-  
-  
-  
-  
-  
-  if (!isTest &&
-      (eventType == Telemetry::EventID::Zero_byte_load_Load_Ftl ||
-       eventType == Telemetry::EventID::Zero_byte_load_Load_Json) &&
-      aStatus == NS_ERROR_FILE_NOT_FOUND) {
-    return;
-  }
+    
+    
+    if (fileName.EqualsLiteral("omni.ja!/update.locale") &&
+        aStatus == NS_ERROR_FILE_NOT_FOUND) {
+      return;
+    }
 
-  
-  
-  if (fileName.EqualsLiteral(
-          "omni.ja!/chrome/browser/search-extensions/google/favicon.ico") &&
-      aStatus == NS_BINDING_ABORTED) {
-    return;
+    glean::zero_byte_load::LoadOthersExtra extra = {
+        .cancelled = Some(aCanceled),
+        .fileName = Some(fileName),
+        .status = Some(errorCString),
+        .sync = Some(aIsSync),
+    };
+    glean::zero_byte_load::load_others.Record(Some(extra));
   }
-
-  
-  
-  if (fileName.EqualsLiteral("omni.ja!/update.locale") &&
-      aStatus == NS_ERROR_FILE_NOT_FOUND) {
-    return;
-  }
-
-  auto res = CopyableTArray<Telemetry::EventExtraEntry>{};
-  res.SetCapacity(4);
-  res.AppendElement(
-      Telemetry::EventExtraEntry{"sync"_ns, aIsSync ? "true"_ns : "false"_ns});
-  res.AppendElement(
-      Telemetry::EventExtraEntry{"file_name"_ns, nsCString(fileName)});
-  res.AppendElement(Telemetry::EventExtraEntry{"status"_ns, errorCString});
-  res.AppendElement(Telemetry::EventExtraEntry{
-      "cancelled"_ns, aCanceled ? "true"_ns : "false"_ns});
-  Telemetry::RecordEvent(eventType, Nothing{}, Some(res));
 }
 
 NS_IMETHODIMP
