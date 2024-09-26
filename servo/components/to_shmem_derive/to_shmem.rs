@@ -2,10 +2,12 @@
 
 
 
+use darling::{FromDeriveInput, FromField};
 use derive_common::cg;
 use proc_macro2::TokenStream;
-use syn;
+use syn::{self, parse_quote};
 use synstructure::{BindStyle, Structure};
+use quote::quote;
 
 pub fn derive(mut input: syn::DeriveInput) -> TokenStream {
     let mut where_clause = input.generics.where_clause.take();
