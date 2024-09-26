@@ -1566,7 +1566,8 @@ void EventStateManager::HandleQueryContentEvent(
 
   
   
-  if (mIMEContentObserver) {
+  
+  if (mIMEContentObserver && aEvent->mMessage != eQueryDropTargetHittest) {
     RefPtr<IMEContentObserver> contentObserver = mIMEContentObserver;
     contentObserver->HandleQueryContentEvent(aEvent);
     return;
