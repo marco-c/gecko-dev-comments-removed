@@ -190,7 +190,23 @@ void JitSpewCont(JitSpewChannel channel, const char* fmt, ...)
     MOZ_FORMAT_PRINTF(2, 3);
 void JitSpewFin(JitSpewChannel channel);
 void JitSpewHeader(JitSpewChannel channel);
-bool JitSpewEnabled(JitSpewChannel channel);
+
+}  
+
+namespace jitspew::detail {
+extern bool LoggingChecked;
+extern uint64_t LoggingBits;
+extern mozilla::Atomic<uint32_t, mozilla::Relaxed> filteredOutCompilations;
+}  
+
+namespace jit {
+
+static inline bool JitSpewEnabled(JitSpewChannel channel) {
+  MOZ_ASSERT(jitspew::detail::LoggingChecked);
+  return (jitspew::detail::LoggingBits & (uint64_t(1) << uint32_t(channel))) &&
+         !jitspew::detail::filteredOutCompilations;
+}
+
 void JitSpewVA(JitSpewChannel channel, const char* fmt, va_list ap)
     MOZ_FORMAT_PRINTF(2, 0);
 void JitSpewStartVA(JitSpewChannel channel, const char* fmt, va_list ap)
@@ -282,7 +298,7 @@ static inline void DisableChannel(JitSpewChannel) {}
 static inline void EnableIonDebugSyncLogging() {}
 static inline void EnableIonDebugAsyncLogging() {}
 
-#endif 
+#endif
 
 }  
 }  
