@@ -16841,7 +16841,10 @@ static void UpdateEffectsOnBrowsingContext(BrowsingContext* aBc,
       return EffectsInfo::FullyHidden();
     }
     Maybe<nsRect> visibleRect = subDocFrame->GetVisibleRect();
-    if (subDocFrame->PresContext()->IsPrintingOrPrintPreview()) {
+    
+    
+    
+    if (subDocFrame->PresContext()->IsPaginated()) {
       visibleRect = Some(subDocFrame->GetDestRect());
     }
     if (!visibleRect) {
