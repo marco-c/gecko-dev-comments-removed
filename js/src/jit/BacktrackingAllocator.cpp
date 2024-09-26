@@ -994,23 +994,27 @@ bool VirtualRegister::addInitialRange(TempAllocator& alloc, CodePosition from,
 
       
       
-      continue;
+    } else {
+      
+      MOZ_ASSERT(existing->from() >= merged->from());
+      if (existing->to() > merged->to()) {
+        merged->setTo(existing->to());
+      }
+
+      MOZ_ASSERT(!existing->hasDefinition());
+      existing->tryToMoveDefAndUsesInto(merged);
+      MOZ_ASSERT(!existing->hasUses());
     }
 
-    
-    MOZ_ASSERT(existing->from() >= merged->from());
-    if (existing->to() > merged->to()) {
-      merged->setTo(existing->to());
-    }
-
-    MOZ_ASSERT(!existing->hasDefinition());
-    existing->tryToMoveDefAndUsesInto(merged);
-    MOZ_ASSERT(!existing->hasUses());
-
-    removeRange(iter);
+    removeFirstRange(iter);
   }
 
-  if (!merged) {
+  if (merged) {
+    
+    if (!ranges_.append(merged)) {
+      return false;
+    }
+  } else {
     
     MOZ_ASSERT_IF(hasRanges(), to < ranges_.back()->from());
 
@@ -1058,7 +1062,7 @@ void VirtualRegister::setInitialDefinition(CodePosition from) {
 
 LiveRange* VirtualRegister::rangeFor(CodePosition pos,
                                      bool preferRegister ) {
-  ensureRangesSorted();
+  assertRangesSorted();
 
   size_t len = ranges_.length();
 
@@ -1113,9 +1117,10 @@ LiveRange* VirtualRegister::rangeFor(CodePosition pos,
 }
 
 void VirtualRegister::sortRanges() {
-  MOZ_ASSERT(!rangesSorted_);
-  MOZ_ASSERT(activeRangeIterators_ == 0,
-             "shouldn't sort while there are active iterators");
+  if (rangesSorted_) {
+    assertRangesSorted();
+    return;
+  }
 
   
   auto compareRange = [](LiveRange* a, LiveRange* b) -> bool {
@@ -1161,30 +1166,9 @@ bool VirtualRegister::addRange(LiveRange* range) {
   return true;
 }
 
-void VirtualRegister::removeRange(RangeIterator& iter) {
-  size_t index = iter.index();
-  MOZ_ASSERT(index < ranges_.length());
-
-  
-  
-  if (index == ranges_.length() - 1) {
-    ranges_.popBack();
-    return;
-  }
-  if (index == ranges_.length() - 2) {
-    ranges_[index] = ranges_.popCopy();
-    return;
-  }
-
-  ranges_[index] = ranges_.popCopy();
-  rangesSorted_ = false;
-}
-
-void VirtualRegister::removeLastRange(LiveRange* range) {
-  MOZ_ASSERT(rangesSorted_);
-  RangeIterator iter(*this,  0);
-  MOZ_ASSERT(*iter == range);
-  removeRange(iter);
+void VirtualRegister::removeFirstRange(RangeIterator& iter) {
+  MOZ_ASSERT(iter.index() == ranges_.length() - 1);
+  ranges_.popBack();
 }
 
 void VirtualRegister::removeRangesForBundle(LiveBundle* bundle) {
@@ -1196,8 +1180,37 @@ void VirtualRegister::removeRangesForBundle(LiveBundle* bundle) {
 
 template <typename Pred>
 void VirtualRegister::removeRangesIf(Pred&& pred) {
-  ensureRangesSorted();
+  assertRangesSorted();
   ranges_.eraseIf([&](LiveRange* range) { return pred(ranges_, range); });
+}
+
+
+bool VirtualRegister::replaceLastRangeLinear(LiveRange* old, LiveRange* newPre,
+                                             LiveRange* newPost) {
+  assertRangesSorted();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(ranges_[0] == old);
+  MOZ_ASSERT(old->from() <= newPre->from());
+  MOZ_ASSERT(newPre->from() <= newPost->from());
+
+  ranges_[0] = newPost;
+
+  if (!ranges_.insert(ranges_.begin() + 1, newPre)) {
+    return false;
+  }
+
+  assertRangesSorted();
+  return true;
 }
 
 
@@ -2162,11 +2175,11 @@ bool BacktrackingAllocator::tryMergeReusedRegister(VirtualRegister& def,
                    inputOf(def.ins()).bits());
 
   LiveBundle* firstBundle = inputRange->bundle();
-  input.removeLastRange(inputRange);
-  if (!input.addRange(preRange)) {
-    return false;
-  }
-  if (!input.addRange(postRange)) {
+
+  
+  
+  
+  if (!input.replaceLastRangeLinear(inputRange, preRange, postRange)) {
     return false;
   }
 
@@ -3653,6 +3666,13 @@ bool BacktrackingAllocator::insertAllRanges(LiveRangePlusSet& set,
   return true;
 }
 
+void BacktrackingAllocator::sortVirtualRegisterRanges() {
+  for (size_t i = 1; i < graph.numVirtualRegisters(); i++) {
+    VirtualRegister& reg = vregs[i];
+    reg.sortRanges();
+  }
+}
+
 
 bool BacktrackingAllocator::pickStackSlot(SpillSet* spillSet) {
   
@@ -4701,6 +4721,10 @@ bool BacktrackingAllocator::go() {
   JitSpewCont(JitSpew_RegAlloc, "\n");
   JitSpew(JitSpew_RegAlloc, "Spill-bundle allocation loop complete");
   JitSpewCont(JitSpew_RegAlloc, "\n");
+
+  
+  
+  sortVirtualRegisterRanges();
 
   if (!pickStackSlots()) {
     return false;
