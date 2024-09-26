@@ -358,8 +358,6 @@ NS_EVENT_MESSAGE(eContentCommandLookUpDictionary)
 
 
 NS_EVENT_MESSAGE(eContentCommandScroll)
-NS_EVENT_MESSAGE_FIRST_LAST(eContentCommandEvent, eContentCommandCut,
-                            eContentCommandScroll)
 
 
 NS_EVENT_MESSAGE(eGestureNotify)

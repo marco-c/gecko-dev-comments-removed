@@ -78,20 +78,9 @@ class WidgetContentCommandEvent : public WidgetGUIEvent {
     bool mPreventSetSelection = false;  
   } mSelection;
 
-  
-  
-  
-  
   bool mOnlyEnabledCheck;  
 
   bool mSucceeded;  
-
-  
-  
-  
-  
-  
-  
   bool mIsEnabled;  
 
   void AssignContentCommandEventData(const WidgetContentCommandEvent& aEvent,
