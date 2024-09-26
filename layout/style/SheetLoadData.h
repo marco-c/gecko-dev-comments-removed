@@ -98,6 +98,7 @@ class SheetLoadData final
   NS_DECL_ISUPPORTS
 
   css::Loader& Loader() { return *mLoader; }
+  const css::Loader& Loader() const { return *mLoader; }
 
   void DidCancelLoad() { mIsCancelled = true; }
 
@@ -209,6 +210,17 @@ class SheetLoadData final
   
   
   
+  
+  
+  
+  
+  bool mShouldEmulateNotificationsForCachedLoad : 1;
+
+  
+  
+  
+  
+  
   const StylePreloadKind mPreloadKind;
 
   nsINode* GetRequestingNode() const;
@@ -275,6 +287,11 @@ class SheetLoadData final
 
   void StartLoading() override;
   void SetLoadCompleted() override;
+  void OnCoalescedTo(const SheetLoadData& aExistingLoad) override {
+    if (&aExistingLoad.Loader() != &Loader()) {
+      mShouldEmulateNotificationsForCachedLoad = true;
+    }
+  }
 
   void Cancel() override { mIsCancelled = true; }
 
