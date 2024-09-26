@@ -171,6 +171,8 @@ class FetchService final : public nsIObserver {
 
     void Cancel();
 
+    bool IsLocalHostFetch() const;
+
     
     void OnResponseEnd(FetchDriverObserver::EndReason aReason,
                        JS::Handle<JS::Value> aReasonDetails) override;
