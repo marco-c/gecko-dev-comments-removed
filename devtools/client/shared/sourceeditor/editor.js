@@ -3101,6 +3101,15 @@ class Editor extends EventEmitter {
   }
 
   
+  getEditorFileMode() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      return cm.contentDOM.dataset.language;
+    }
+    return cm.getOption("mode").name;
+  }
+
+  
   getEditorContent() {
     const cm = editors.get(this);
     if (this.config.cm6) {
