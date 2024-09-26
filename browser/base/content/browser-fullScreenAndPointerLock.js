@@ -798,7 +798,7 @@ var FullScreen = {
     
     
     let target = aEvent.originalTarget;
-    if (target.localName == "tooltip" || target.id == "tab-preview-panel") {
+    if (target.localName == "tooltip") {
       return;
     }
     if (
