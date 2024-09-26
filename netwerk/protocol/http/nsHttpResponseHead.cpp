@@ -371,57 +371,42 @@ nsresult nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
 
   int32_t index = line.FindChar(' ');
 
-  if ((mVersion == HttpVersion::v0_9) || (index == -1)) {
+  if (mVersion == HttpVersion::v0_9 || index == -1) {
     mStatus = 200;
     AssignDefaultStatusText();
-  } else if (StaticPrefs::network_http_strict_response_status_line_parsing()) {
-    
-    const char* p = start + index + 1;
-    while (p < end && NS_IsHTTPWhitespace(*p)) ++p;
-    if (p == end || !mozilla::IsAsciiDigit(*p)) {
-      return NS_ERROR_PARSING_HTTP_STATUS_LINE;
-    }
-    const char* codeStart = p;
-    while (p < end && mozilla::IsAsciiDigit(*p)) ++p;
-
-    
-    
-    if (p - codeStart > 3 || (p < end && !NS_IsHTTPWhitespace(*p))) {
-      return NS_ERROR_PARSING_HTTP_STATUS_LINE;
-    }
-
-    
-    nsDependentCSubstring strCode(codeStart, p - codeStart);
-    nsresult rv;
-    mStatus = strCode.ToInteger(&rv);
-    if (NS_FAILED(rv)) {
-      return NS_ERROR_PARSING_HTTP_STATUS_LINE;
-    }
-
-    
-    while (p < end && NS_IsHTTPWhitespace(*p)) ++p;
-    if (p != end) {
-      mStatusText = nsDependentCSubstring(p, end - p);
-    }
-  } else {
-    
-    const char* p = start + index + 1;
-    mStatus = (uint16_t)atoi(p);
-    if (mStatus == 0) {
-      LOG(("mal-formed response status; assuming status = 200\n"));
-      mStatus = 200;
-    }
-
-    
-    index = line.FindChar(' ', p - start);
-    if (index == -1) {
-      AssignDefaultStatusText();
-    } else {
-      p = start + index + 1;
-      mStatusText = nsDependentCSubstring(p, end - p);
-    }
+    LOG1(("Have status line [version=%u status=%u statusText=%s]\n",
+          unsigned(mVersion), unsigned(mStatus), mStatusText.get()));
+    return NS_OK;
   }
 
+  
+  const char* p = start + index + 1;
+  while (p < end && NS_IsHTTPWhitespace(*p)) ++p;
+  if (p == end || !mozilla::IsAsciiDigit(*p)) {
+    return NS_ERROR_PARSING_HTTP_STATUS_LINE;
+  }
+  const char* codeStart = p;
+  while (p < end && mozilla::IsAsciiDigit(*p)) ++p;
+
+  
+  
+  if (p - codeStart > 3 || (p < end && !NS_IsHTTPWhitespace(*p))) {
+    return NS_ERROR_PARSING_HTTP_STATUS_LINE;
+  }
+
+  
+  nsDependentCSubstring strCode(codeStart, p - codeStart);
+  nsresult rv;
+  mStatus = strCode.ToInteger(&rv);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_PARSING_HTTP_STATUS_LINE;
+  }
+
+  
+  while (p < end && NS_IsHTTPWhitespace(*p)) ++p;
+  if (p != end) {
+    mStatusText = nsDependentCSubstring(p, end - p);
+  }
   LOG1(("Have status line [version=%u status=%u statusText=%s]\n",
         unsigned(mVersion), unsigned(mStatus), mStatusText.get()));
   return NS_OK;
