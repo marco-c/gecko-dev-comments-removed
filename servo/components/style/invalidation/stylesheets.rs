@@ -597,6 +597,9 @@ impl StylesheetInvalidationSet {
                     }
                 }
             },
+            NestedDeclarations(..) => {
+                
+            },
             Namespace(..) => {
                 
                 

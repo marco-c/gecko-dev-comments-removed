@@ -325,6 +325,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSNamespaceRule", insecureContext: true },
   
+  { name: "CSSNestedDeclarations", insecureContext: true },
+  
   { name: "CSSPageDescriptors", insecureContext: true },
   
   { name: "CSSPageRule", insecureContext: true },

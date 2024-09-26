@@ -382,6 +382,14 @@ pub struct SelectorList<Impl: SelectorImpl>(
 );
 
 impl<Impl: SelectorImpl> SelectorList<Impl> {
+    
+    pub fn mark_as_intentionally_leaked(&self) {
+        if let ArcUnionBorrow::Second(ref list) = self.0.borrow() {
+            list.with_arc(|list| list.mark_as_intentionally_leaked())
+        }
+        self.slice().iter().for_each(|s| s.mark_as_intentionally_leaked())
+    }
+
     pub fn from_one(selector: Selector<Impl>) -> Self {
         #[cfg(debug_assertions)]
         let selector_repr = unsafe { *(&selector as *const _ as *const usize) };
@@ -476,13 +484,12 @@ pub enum ParseRelative {
 
 impl<Impl: SelectorImpl> SelectorList<Impl> {
     
-    pub fn ampersand() -> Self {
-        Self::from_one(Selector::ampersand())
-    }
-
-    
     pub fn scope() -> Self {
         Self::from_one(Selector::scope())
+    }
+    
+    pub fn implicit_scope() -> Self {
+        Self::from_one(Selector::implicit_scope())
     }
 
     
@@ -822,16 +829,6 @@ impl<Impl: SelectorImpl> Selector<Impl> {
         self.0.mark_as_intentionally_leaked()
     }
 
-    fn ampersand() -> Self {
-        Self(ThinArc::from_header_and_iter(
-            SpecificityAndFlags {
-                specificity: 0,
-                flags: SelectorFlags::HAS_PARENT,
-            },
-            std::iter::once(Component::ParentSelector),
-        ))
-    }
-
     fn scope() -> Self {
         Self(ThinArc::from_header_and_iter(
             SpecificityAndFlags {
@@ -839,6 +836,17 @@ impl<Impl: SelectorImpl> Selector<Impl> {
                 flags: SelectorFlags::HAS_SCOPE,
             },
             std::iter::once(Component::Scope),
+        ))
+    }
+
+    
+    fn implicit_scope() -> Self {
+        Self(ThinArc::from_header_and_iter(
+            SpecificityAndFlags {
+                specificity: 0,
+                flags: SelectorFlags::HAS_SCOPE,
+            },
+            std::iter::once(Component::ImplicitScope),
         ))
     }
 
