@@ -943,6 +943,14 @@ void LiveBundle::removeRange(LiveRange* range) {
   MOZ_CRASH();
 }
 
+void LiveBundle::removeAllRangesFromVirtualRegisters() {
+  for (LiveRange::BundleLinkIterator iter = rangesBegin(); iter; iter++) {
+    LiveRange* range = LiveRange::get(*iter);
+    MOZ_ASSERT(!range->hasUses());
+    range->vreg().removeRange(range);
+  }
+}
+
 
 
 
@@ -2217,11 +2225,7 @@ bool BacktrackingAllocator::updateVirtualRegisterListsThenRequeueBundles(
   }
 
   
-  for (LiveRange::BundleLinkIterator iter = bundle->rangesBegin(); iter;
-       iter++) {
-    LiveRange* range = LiveRange::get(*iter);
-    range->vreg().removeRange(range);
-  }
+  bundle->removeAllRangesFromVirtualRegisters();
 
   
   for (size_t i = 0; i < newBundles.length(); i++) {
@@ -3462,9 +3466,8 @@ bool BacktrackingAllocator::spill(LiveBundle* bundle) {
       MOZ_ASSERT(parentRange->contains(range));
       MOZ_ASSERT(&range->vreg() == &parentRange->vreg());
       range->tryToMoveDefAndUsesInto(parentRange);
-      MOZ_ASSERT(!range->hasUses());
-      range->vreg().removeRange(range);
     }
+    bundle->removeAllRangesFromVirtualRegisters();
     return true;
   }
 
