@@ -3025,6 +3025,15 @@ int NS_main(int argc, NS_tchar** argv) {
   bool isDMGInstall = false;
 
 #ifdef XP_MACOSX
+  if (argc > 2 && NS_tstrcmp(argv[1], NS_T("--openAppBundle")) == 0) {
+    
+    
+    
+    
+    LaunchMacApp(argc - 2, (const char**)argv + 2);
+    return 0;
+  }
+
   
   
   

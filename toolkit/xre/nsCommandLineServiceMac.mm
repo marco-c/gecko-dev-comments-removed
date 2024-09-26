@@ -8,6 +8,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "MacApplicationDelegate.h"
+#include "MacAutoreleasePool.h"
 #include <cstring>
 #include <Cocoa/Cocoa.h>
 
@@ -41,6 +42,8 @@ void AddToCommandLine(const char* inArgText) {
 
 
 void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
+  mozilla::MacAutoreleasePool pool;
+
   sArgs = static_cast<char**>(malloc(kArgsGrowSize * sizeof(char*)));
   if (!sArgs) {
     return;
@@ -50,6 +53,19 @@ void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
   sArgsUsed = 0;
 
   NSString* path = [NSString stringWithUTF8String:argv[0]];
+  if (forRestart &&
+      [path hasSuffix:[NSString stringWithUTF8String:MOZ_APP_NAME]]) {
+    
+    
+    
+    
+    NSString* updaterPath = [[path stringByDeletingLastPathComponent]
+        stringByAppendingPathComponent:
+            @"updater.app/Contents/MacOS/org.mozilla.updater"];
+    AddToCommandLine(updaterPath.UTF8String);
+    AddToCommandLine("--openAppBundle");
+  }
+
   
   
   
