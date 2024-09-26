@@ -1,133 +1,218 @@
 
 
-function test() {
-  waitForExplicitFinish();
-  var nonPrivateWin = OpenBrowserWindow();
-  ok(
-    !PrivateBrowsingUtils.isWindowPrivate(nonPrivateWin),
+
+
+add_task(async function testOpenBrowserWindow() {
+  let win = OpenBrowserWindow();
+  Assert.ok(
+    !PrivateBrowsingUtils.isWindowPrivate(win),
     "OpenBrowserWindow() should open a normal window"
   );
-  nonPrivateWin.close();
+  await BrowserTestUtils.closeWindow(win);
 
-  var privateWin = OpenBrowserWindow({ private: true });
-  ok(
-    PrivateBrowsingUtils.isWindowPrivate(privateWin),
+  win = OpenBrowserWindow({ private: true });
+  Assert.ok(
+    PrivateBrowsingUtils.isWindowPrivate(win),
     "OpenBrowserWindow({private: true}) should open a private window"
   );
+  await BrowserTestUtils.closeWindow(win);
 
-  nonPrivateWin = OpenBrowserWindow({ private: false });
-  ok(
-    !PrivateBrowsingUtils.isWindowPrivate(nonPrivateWin),
+  win = OpenBrowserWindow({ private: false });
+  Assert.ok(
+    !PrivateBrowsingUtils.isWindowPrivate(win),
     "OpenBrowserWindow({private: false}) should open a normal window"
   );
-  nonPrivateWin.close();
+  await BrowserTestUtils.closeWindow(win);
 
-  whenDelayedStartupFinished(privateWin, function () {
-    nonPrivateWin = privateWin.OpenBrowserWindow({ private: false });
-    ok(
-      !PrivateBrowsingUtils.isWindowPrivate(nonPrivateWin),
-      "privateWin.OpenBrowserWindow({private: false}) should open a normal window"
-    );
-
-    nonPrivateWin.close();
-
-    [
-      {
-        normal: "menu_newNavigator",
-        private: "menu_newPrivateWindow",
-        accesskey: true,
-      },
-      {
-        normal: "appmenu_newNavigator",
-        private: "appmenu_newPrivateWindow",
-        accesskey: false,
-      },
-    ].forEach(function (menu) {
-      let newWindow = privateWin.document.getElementById(menu.normal);
-      let newPrivateWindow = privateWin.document.getElementById(menu.private);
-      if (newWindow && newPrivateWindow) {
-        ok(
-          !newPrivateWindow.hidden,
-          "New Private Window menu item should be hidden"
-        );
-        isnot(
-          newWindow.label,
-          newPrivateWindow.label,
-          "New Window's label shouldn't be overwritten"
-        );
-        if (menu.accesskey) {
-          isnot(
-            newWindow.accessKey,
-            newPrivateWindow.accessKey,
-            "New Window's accessKey shouldn't be overwritten"
-          );
-        }
-        isnot(
-          newWindow.command,
-          newPrivateWindow.command,
-          "New Window's command shouldn't be overwritten"
-        );
-      }
-    });
-
-    is(
-      privateWin.gBrowser.tabs[0].label,
-      "New Private Tab",
-      "New tabs in the private browsing windows should have 'New Private Tab' as the title."
-    );
-
-    privateWin.close();
-
-    Services.prefs.setBoolPref("browser.privatebrowsing.autostart", true);
-    privateWin = OpenBrowserWindow({ private: true });
-    whenDelayedStartupFinished(privateWin, function () {
-      [
-        {
-          normal: "menu_newNavigator",
-          private: "menu_newPrivateWindow",
-          accessKey: true,
-        },
-        {
-          normal: "appmenu_newNavigator",
-          private: "appmenu_newPrivateWindow",
-          accessKey: false,
-        },
-      ].forEach(function (menu) {
-        let newWindow = privateWin.document.getElementById(menu.normal);
-        let newPrivateWindow = privateWin.document.getElementById(menu.private);
-        if (newWindow && newPrivateWindow) {
-          ok(
-            newPrivateWindow.hidden,
-            "New Private Window menu item should be hidden"
-          );
-          is(
-            newWindow.label,
-            newPrivateWindow.label,
-            "New Window's label should be overwritten"
-          );
-          if (menu.accesskey) {
-            is(
-              newWindow.accessKey,
-              newPrivateWindow.accessKey,
-              "New Window's accessKey should be overwritten"
-            );
-          }
-          is(
-            newWindow.command,
-            newPrivateWindow.command,
-            "New Window's command should be overwritten"
-          );
-        }
-      });
-
-      is(
-        privateWin.gBrowser.tabs[0].label,
-        "New Tab",
-        "Normal tab title is used also in the permanent private browsing mode."
-      );
-      privateWin.close();
-      Services.prefs.clearUserPref("browser.privatebrowsing.autostart");
-      finish();
-    });
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.privatebrowsing.autostart", true]],
   });
+
+  win = OpenBrowserWindow();
+  Assert.ok(
+    PrivateBrowsingUtils.isWindowPrivate(win),
+    "OpenBrowserWindow() in PBM should open a private window"
+  );
+  await BrowserTestUtils.closeWindow(win);
+
+  win = OpenBrowserWindow({ private: true });
+  Assert.ok(
+    PrivateBrowsingUtils.isWindowPrivate(win),
+    "OpenBrowserWindow({private: true}) in PBM should open a private window"
+  );
+  await BrowserTestUtils.closeWindow(win);
+
+  win = OpenBrowserWindow({ private: false });
+  Assert.ok(
+    PrivateBrowsingUtils.isWindowPrivate(win),
+    "OpenBrowserWindow({private: false}) in PBM should open a private window"
+  );
+  await BrowserTestUtils.closeWindow(win);
+
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assertMenuItems(
+  newWindowItem,
+  privateWindowItem,
+  expect,
+  useIsVisible = true
+) {
+  Assert.ok(newWindowItem);
+  Assert.ok(privateWindowItem);
+
+  if (useIsVisible) {
+    Assert.ok(
+      BrowserTestUtils.isVisible(newWindowItem),
+      "New window item should be visible"
+    );
+  } else {
+    
+    
+    Assert.ok(!newWindowItem.hidden, "New window item should be visible");
+  }
+
+  Assert.equal(
+    newWindowItem.getAttribute("key"),
+    "key_newNavigator",
+    "New window item should use the same key"
+  );
+  Assert.equal(
+    newWindowItem.getAttribute("data-l10n-id"),
+    expect.newWindowL10nId
+  );
+
+  if (!expect.privateVisible) {
+    if (useIsVisible) {
+      Assert.ok(
+        BrowserTestUtils.isHidden(privateWindowItem),
+        "Private window item should be hidden"
+      );
+    } else {
+      Assert.ok(
+        privateWindowItem.hidden,
+        "Private window item should be hidden"
+      );
+    }
+    
+  } else {
+    if (useIsVisible) {
+      Assert.ok(
+        BrowserTestUtils.isVisible(privateWindowItem),
+        "Private window item should be visible"
+      );
+    } else {
+      Assert.ok(
+        !privateWindowItem.hidden,
+        "Private window item should be visible"
+      );
+    }
+    Assert.equal(
+      privateWindowItem.getAttribute("key"),
+      "key_privatebrowsing",
+      "Private window item should use the same key"
+    );
+    Assert.equal(
+      privateWindowItem.getAttribute("data-l10n-id"),
+      expect.privateWindowL10nId
+    );
+  }
 }
+
+
+
+
+
+
+
+
+
+async function checkWindowMenus(win, expectBoth) {
+  
+  assertMenuItems(
+    win.document.getElementById("menu_newNavigator"),
+    win.document.getElementById("menu_newPrivateWindow"),
+    {
+      privateVisible: expectBoth,
+      
+      
+      newWindowL10nId: expectBoth
+        ? "menu-file-new-window"
+        : "menu-file-new-private-window",
+      privateWindowL10nId: "menu-file-new-private-window",
+    },
+    
+    
+    false
+  );
+
+  
+  let appMenuButton = win.document.getElementById("PanelUI-menu-button");
+  let appMenu = win.document.getElementById("appMenu-popup");
+  let menuShown = BrowserTestUtils.waitForEvent(appMenu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(appMenuButton, {}, win);
+  await menuShown;
+
+  
+  assertMenuItems(
+    win.document.getElementById("appMenu-new-window-button2"),
+    win.document.getElementById("appMenu-new-private-window-button2"),
+    {
+      privateVisible: expectBoth,
+      
+      
+      newWindowL10nId: expectBoth
+        ? "appmenuitem-new-window"
+        : "appmenuitem-new-private-window",
+      privateWindowL10nId: "appmenuitem-new-private-window",
+    }
+  );
+
+  appMenu.hidePopup();
+}
+
+add_task(async function testNewWindowMenuItems() {
+  
+  let win = await BrowserTestUtils.openNewBrowserWindow({
+    private: false,
+  });
+  await checkWindowMenus(win, true);
+  Assert.equal(win.gBrowser.currentURI.spec, "about:blank");
+  await BrowserTestUtils.closeWindow(win);
+
+  
+  win = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  await checkWindowMenus(win, true);
+  Assert.equal(win.gBrowser.currentURI.spec, "about:privatebrowsing");
+  await BrowserTestUtils.closeWindow(win);
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.privatebrowsing.autostart", true]],
+  });
+
+  win = await BrowserTestUtils.openNewBrowserWindow();
+  await checkWindowMenus(win, false);
+  Assert.equal(win.gBrowser.currentURI.spec, "about:blank");
+  await BrowserTestUtils.closeWindow(win);
+
+  await SpecialPowers.popPrefEnv();
+});
