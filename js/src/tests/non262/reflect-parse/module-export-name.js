@@ -110,11 +110,6 @@ if (getRealmConfiguration("importAttributes")) {
   `, [
     importDecl([importSpec(literal("x"), ident("y"))], moduleRequest(literal("module"), [importAttribute(ident("type"), literal("json"))])),
   ]);
-  assertModule(`
-    import {"x" as y} from "module" assert {type: "json"};
-  `, [
-    importDecl([importSpec(literal("x"), ident("y"))], moduleRequest(literal("module"), [importAttribute(ident("type"), literal("json"))])),
-  ]);
 }
 
 if (typeof reportCompare === "function")

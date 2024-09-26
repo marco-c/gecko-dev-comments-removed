@@ -340,7 +340,7 @@ if (getRealmConfiguration("importAttributes")) {
                 []
             )
         )
-    ]).assert(parseAsModule("import a from 'b' assert {}"));
+    ]).assert(parseAsModule("import a from 'b' with {}"));
 
     program([
         importDeclaration(
@@ -357,7 +357,7 @@ if (getRealmConfiguration("importAttributes")) {
                 ]
             )
         )
-    ]).assert(parseAsModule("import a from 'b' assert { type: 'js' }"));
+    ]).assert(parseAsModule("import a from 'b' with { type: 'js' }"));
 
     program([
         importDeclaration(
@@ -374,7 +374,7 @@ if (getRealmConfiguration("importAttributes")) {
                 ]
             )
         )
-    ]).assert(parseAsModule("import a from 'b' assert { foo: 'bar' }"));
+    ]).assert(parseAsModule("import a from 'b' with { foo: 'bar' }"));
 
     program([
         importDeclaration(
@@ -428,16 +428,10 @@ if (getRealmConfiguration("importAttributes")) {
                 ]
             )
         )
-    ]).assert(parseAsModule("import a from 'b' assert { type: 'js', foo: 'bar' }"));
+    ]).assert(parseAsModule("import a from 'b' with { type: 'js', foo: 'bar' }"));
 
     assertThrowsInstanceOf(function () {
-        parseAsModule("import a from 'b' assert { type: type }");
-    }, SyntaxError);
-
-    assertThrowsInstanceOf(function () {
-        
-        parseAsModule(`import foo from "foo"
-        assert {type: 'js' }`);
+        parseAsModule("import a from 'b' with { type: type }");
     }, SyntaxError);
 }
 
