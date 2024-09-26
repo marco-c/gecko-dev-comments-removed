@@ -21,6 +21,7 @@ SOURCES += [
 SOURCES["lz4/xxhash.c"].flags += ["-Wno-unused-function"]
 
 DEFINES["LZ4LIB_VISIBILITY"] = ""
+DEFINES["LZ4FLIB_VISIBILITY"] = ""
 
 
 FINAL_LIBRARY = "js"
