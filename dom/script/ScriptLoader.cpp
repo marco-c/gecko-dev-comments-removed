@@ -733,11 +733,11 @@ static void AdjustPriorityAndClassOfServiceForLinkPreloadScripts(
     return;
   }
 
+  const auto fetchPriority = ToFetchPriority(aRequest->FetchPriority());
   if (nsCOMPtr<nsISupportsPriority> supportsPriority =
           do_QueryInterface(aChannel)) {
     LOG(("Is <link rel=[module]preload"));
 
-    const auto fetchPriority = ToFetchPriority(aRequest->FetchPriority());
     
     
     
@@ -752,6 +752,10 @@ static void AdjustPriorityAndClassOfServiceForLinkPreloadScripts(
                        adjustedPriority);
 #endif
   }
+
+  if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(aChannel)) {
+    cos->SetFetchPriorityDOM(fetchPriority);
+  }
 }
 
 void AdjustPriorityForNonLinkPreloadScripts(nsIChannel* aChannel,
@@ -762,10 +766,10 @@ void AdjustPriorityForNonLinkPreloadScripts(nsIChannel* aChannel,
     return;
   }
 
+  const auto fetchPriority = ToFetchPriority(aRequest->FetchPriority());
   if (nsCOMPtr<nsISupportsPriority> supportsPriority =
           do_QueryInterface(aChannel)) {
     LOG(("Is not <link rel=[module]preload"));
-    const auto fetchPriority = ToFetchPriority(aRequest->FetchPriority());
 
     
     
@@ -800,6 +804,9 @@ void AdjustPriorityForNonLinkPreloadScripts(nsIChannel* aChannel,
                          adjustedPriority);
 #endif
     }
+  }
+  if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(aChannel)) {
+    cos->SetFetchPriorityDOM(fetchPriority);
   }
 }
 

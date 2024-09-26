@@ -855,12 +855,16 @@ nsresult FetchDriver::HttpFetch(
                        nsIClassOfService::Tail);
   }
 
+  const auto fetchPriority = ToFetchPriority(mRequest->GetPriorityMode());
+  if (cos) {
+    cos->SetFetchPriorityDOM(fetchPriority);
+  }
+
   if (nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(chan)) {
     if (mIsTrackingFetch &&
         StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
       p->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
     } else if (StaticPrefs::network_fetchpriority_enabled()) {
-      const auto fetchPriority = ToFetchPriority(mRequest->GetPriorityMode());
       
       
       
