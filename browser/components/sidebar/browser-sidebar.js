@@ -966,7 +966,7 @@ var SidebarController = {
     }
   },
 
-  async handleToolbarButtonClick() {
+  handleToolbarButtonClick() {
     switch (this.sidebarRevampVisibility) {
       case "always-show":
         if (this._animationEnabled && !window.gReduceMotion) {
@@ -985,6 +985,7 @@ var SidebarController = {
           this.toggleExpanded(true);
         }
         this.sidebarContainer.hidden = !isHidden;
+        this.updateToolbarButton();
         break;
       }
     }
@@ -1002,10 +1003,16 @@ var SidebarController = {
       case "always-show":
         
         this.toolbarButton.checked = this.sidebarMain.expanded;
+        this.toolbarButton.dataset.l10nId = this.toolbarButton.checked
+          ? "sidebar-toolbar-collapse-sidebar"
+          : "sidebar-toolbar-expand-sidebar";
         break;
       case "hide-sidebar":
         
         this.toolbarButton.checked = !this.sidebarContainer.hidden;
+        this.toolbarButton.dataset.l10nId = this.toolbarButton.checked
+          ? "sidebar-toolbar-hide-sidebar"
+          : "sidebar-toolbar-show-sidebar";
         break;
     }
   },
@@ -1630,7 +1637,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
   "sidebarRevampVisibility",
   "sidebar.visibility",
-  "always-show"
+  "always-show",
+  () => {
+    if (!SidebarController.uninitializing) {
+      SidebarController.updateToolbarButton();
+    }
+  }
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
