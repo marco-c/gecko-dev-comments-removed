@@ -478,6 +478,14 @@ class Loader final {
   friend class SheetLoadData;
   friend class StreamLoader;
 
+  enum class UsePreload : bool { No, Yes };
+  enum class UseLoadGroup : bool { No, Yes };
+
+  nsresult NewStyleSheetChannel(SheetLoadData& aLoadData, CORSMode aCorsMode,
+                                UsePreload aUsePreload,
+                                UseLoadGroup aUseLoadGroup,
+                                nsIChannel** aOutChannel);
+
   
   [[nodiscard]] bool MaybeDeferLoad(SheetLoadData& aLoadData,
                                     SheetState aSheetState,
@@ -569,6 +577,9 @@ class Loader final {
 
   
   void NotifyOfCachedLoad(RefPtr<SheetLoadData>);
+
+  
+  void NotifyObserversForCachedSheet(SheetLoadData&);
 
   
   void StartDeferredLoads();
