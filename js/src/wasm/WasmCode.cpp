@@ -469,6 +469,9 @@ SharedCodeSegment CodeSegment::createFromMasmWithBumpAlloc(
   
   uint32_t codeLength = masm.bytesNeeded();
 
+  
+  size_t roundedUpAllocationSize = 0;
+
   {
     auto guard = code->data().writeLock();
 
@@ -503,7 +506,7 @@ SharedCodeSegment CodeSegment::createFromMasmWithBumpAlloc(
     size_t offsetInSegment = 0;
     segment = AllocateCodePagesFrom(guard->lazyFuncSegments, requestLength,
                                     allowLastDitchGC, &offsetInSegment,
-                                    nullptr);
+                                    &roundedUpAllocationSize);
     if (!segment) {
       return nullptr;
     }
@@ -512,6 +515,13 @@ SharedCodeSegment CodeSegment::createFromMasmWithBumpAlloc(
 
     pageStart = segment->base() + offsetInSegment;
     codeStart = pageStart + fuzz;
+  }
+
+  
+  {
+    auto guard = code->codeMeta().stats.writeLock();
+    guard->partialCodeBytesMapped += roundedUpAllocationSize;
+    guard->partialCodeBytesUsed += codeLength;
   }
 
   Maybe<AutoMarkJitCodeWritableForThread> writable;

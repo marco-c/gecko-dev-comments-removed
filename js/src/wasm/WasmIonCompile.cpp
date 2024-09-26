@@ -259,8 +259,64 @@ class FunctionCompiler {
       Vector<PendingInlineReturn, 1, SystemAllocPolicy>;
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  FunctionCompiler* toplevelCompiler_;
+
+  
+  
+  
   const FunctionCompiler* callerCompiler_;
   const uint32_t inliningDepth_;
+
+  
+  
+  
+  struct InliningStats {
+    size_t topLevelBytecodeSize = 0;        
+    size_t inlinedDirectBytecodeSize = 0;   
+    size_t inlinedDirectFunctions = 0;      
+    size_t inlinedCallRefBytecodeSize = 0;  
+    size_t inlinedCallRefFunctions = 0;     
+    bool allZero() const {
+      return (topLevelBytecodeSize | inlinedDirectBytecodeSize |
+              inlinedDirectFunctions | inlinedCallRefBytecodeSize |
+              inlinedCallRefFunctions) == 0;
+    }
+  };
+  InliningStats stats;
+
   const CompilerEnvironment& compilerEnv_;
   const CodeMetadata& codeMeta_;
   IonOpIter iter_;
@@ -311,8 +367,10 @@ class FunctionCompiler {
                    MIRGenerator& mirGen, const CompileInfo& compileInfo,
                    TryNoteVector& tryNotes,
                    UniqueCompileInfoVector& compileInfos)
-      : callerCompiler_(nullptr),
+      : toplevelCompiler_(nullptr),
+        callerCompiler_(nullptr),
         inliningDepth_(0),
+        stats(),
         compilerEnv_(compilerEnv),
         codeMeta_(codeMeta),
         iter_(codeMeta, decoder),
@@ -332,13 +390,17 @@ class FunctionCompiler {
         instancePointer_(nullptr),
         stackResultPointer_(nullptr),
         tryNotes_(tryNotes),
-        compileInfos_(compileInfos) {}
+        compileInfos_(compileInfos) {
+    stats.topLevelBytecodeSize = func.end - func.begin;
+  }
 
   
-  FunctionCompiler(const FunctionCompiler* callerCompiler, Decoder& decoder,
+  FunctionCompiler(FunctionCompiler* toplevelCompiler,
+                   const FunctionCompiler* callerCompiler, Decoder& decoder,
                    const FuncCompileInput& func, const ValTypeVector& locals,
                    const CompileInfo& compileInfo)
-      : callerCompiler_(callerCompiler),
+      : toplevelCompiler_(toplevelCompiler),
+        callerCompiler_(callerCompiler),
         inliningDepth_(callerCompiler_->inliningDepth() + 1),
         compilerEnv_(callerCompiler_->compilerEnv_),
         codeMeta_(callerCompiler_->codeMeta_),
@@ -359,7 +421,29 @@ class FunctionCompiler {
         instancePointer_(callerCompiler_->instancePointer_),
         stackResultPointer_(nullptr),
         tryNotes_(callerCompiler_->tryNotes_),
-        compileInfos_(callerCompiler_->compileInfos_) {}
+        compileInfos_(callerCompiler_->compileInfos_) {
+    MOZ_ASSERT(toplevelCompiler && callerCompiler);
+  }
+
+  ~FunctionCompiler() {
+    MOZ_ASSERT((toplevelCompiler_ == nullptr) == (callerCompiler_ == nullptr));
+    if (toplevelCompiler_) {
+      
+      MOZ_ASSERT(stats.allZero());
+    } else {
+      
+      
+      
+      MOZ_ASSERT(stats.topLevelBytecodeSize > 0);
+      auto guard = codeMeta().stats.writeLock();
+      guard->partialNumFuncs += 1;
+      guard->partialBCSize += stats.topLevelBytecodeSize;
+      guard->partialNumFuncsInlinedDirect += stats.inlinedDirectFunctions;
+      guard->partialBCInlinedSizeDirect += stats.inlinedDirectBytecodeSize;
+      guard->partialNumFuncsInlinedCallRef += stats.inlinedCallRefFunctions;
+      guard->partialBCInlinedSizeCallRef += stats.inlinedCallRefBytecodeSize;
+    }
+  }
 
   const CodeMetadata& codeMeta() const { return codeMeta_; }
 
@@ -376,6 +460,22 @@ class FunctionCompiler {
 
   bool isInlined() const { return callerCompiler_ != nullptr; }
   uint32_t inliningDepth() const { return inliningDepth_; }
+
+  
+  void updateInliningStats(size_t inlineeBytecodeSize,
+                           InliningHeuristics::CallKind callKind) {
+    MOZ_ASSERT(!toplevelCompiler_ && !callerCompiler_);
+    MOZ_ASSERT(stats.topLevelBytecodeSize > 0);
+    if (callKind == InliningHeuristics::CallKind::Direct) {
+      stats.inlinedDirectBytecodeSize += inlineeBytecodeSize;
+      stats.inlinedDirectFunctions += 1;
+    } else {
+      MOZ_ASSERT(callKind == InliningHeuristics::CallKind::CallRef);
+      stats.inlinedCallRefBytecodeSize += inlineeBytecodeSize;
+      stats.inlinedCallRefFunctions += 1;
+    }
+  }
+  FunctionCompiler* toplevelCompiler() { return toplevelCompiler_; }
 
   MBasicBlock* getCurBlock() const { return curBlock_; }
   BytecodeOffset bytecodeOffset() const { return iter_.bytecodeOffset(); }
@@ -5733,6 +5833,7 @@ static bool EmitRethrow(FunctionCompiler& f) {
 
 static bool EmitInlineCall(FunctionCompiler& callerCompiler,
                            const FuncType& funcType, uint32_t funcIndex,
+                           InliningHeuristics::CallKind callKind,
                            const DefVector& args, DefVector* results) {
   UniqueChars error;
   const Bytes& bytecode = callerCompiler.codeMeta().bytecode->bytes;
@@ -5755,7 +5856,18 @@ static bool EmitInlineCall(FunctionCompiler& callerCompiler,
     return false;
   }
 
-  FunctionCompiler calleeCompiler(&callerCompiler, d, func, locals,
+  
+  FunctionCompiler* toplevel = nullptr;
+  if (callerCompiler.toplevelCompiler()) {
+    toplevel = callerCompiler.toplevelCompiler();
+  } else {
+    toplevel = &callerCompiler;
+  }
+
+  
+  toplevel->updateInliningStats(funcRange.bodyLength, callKind);
+
+  FunctionCompiler calleeCompiler(toplevel, &callerCompiler, d, func, locals,
                                   *compileInfo);
   if (!calleeCompiler.initInline(args)) {
     MOZ_ASSERT(!error);
@@ -5840,8 +5952,9 @@ static bool EmitCall(FunctionCompiler& f, bool asmJSFuncDef) {
       return false;
     }
   } else {
-    if (f.shouldInlineCall(InliningHeuristics::CallKind::Direct, funcIndex)) {
-      if (!EmitInlineCall(f, funcType, funcIndex, args, &results)) {
+    const auto callKind = InliningHeuristics::CallKind::Direct;
+    if (f.shouldInlineCall(callKind, funcIndex)) {
+      if (!EmitInlineCall(f, funcType, funcIndex, callKind, args, &results)) {
         return false;
       }
     } else {
@@ -7889,7 +8002,9 @@ static bool EmitSpeculativeInlineCallRef(
 
   
   DefVector inlineResults;
-  if (!EmitInlineCall(f, funcType, expectedFuncIndex, args, &inlineResults)) {
+  if (!EmitInlineCall(f, funcType, expectedFuncIndex,
+                      InliningHeuristics::CallKind::CallRef, args,
+                      &inlineResults)) {
     return false;
   }
 
