@@ -957,7 +957,8 @@ class TestRunnerManager(threading.Thread):
             self._ensure_runner_stopped()
             
             
-            self.browser.stop(force=True)
+            if self.browser:
+                self.browser.stop(force=True)
         except (OSError, PermissionError):
             self.logger.error("Failed to stop either the runner or the browser process",
                               exc_info=True)
