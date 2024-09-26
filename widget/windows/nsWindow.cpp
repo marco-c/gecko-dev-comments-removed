@@ -4957,55 +4957,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       }
     } break;
 
-    case WM_SETTINGCHANGE: {
-      if (wParam == SPI_SETCLIENTAREAANIMATION ||
-          wParam == SPI_SETKEYBOARDDELAY || wParam == SPI_SETMOUSEVANISH ||
-          wParam == MOZ_SPI_SETCURSORSIZE) {
-        
-        
-        
-        
-        NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
-        break;
-      }
-      if (wParam == SPI_SETFONTSMOOTHING ||
-          wParam == SPI_SETFONTSMOOTHINGTYPE) {
-        gfxDWriteFont::UpdateSystemTextVars();
-        break;
-      }
-      if (wParam == SPI_SETWORKAREA) {
-        
-        
-        
-        ScreenHelperWin::RefreshScreens();
-        break;
-      }
-      if (auto lParamString = reinterpret_cast<const wchar_t*>(lParam)) {
-        if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
-          
-          
-          NotifyThemeChanged(widget::ThemeChangeKind::Style);
-          break;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        if (mWindowType == WindowType::Invisible) {
-          if (!wcscmp(lParamString, L"UserInteractionMode") ||
-              !wcscmp(lParamString, L"ConvertibleSlateMode") ||
-              !wcscmp(lParamString, L"SystemDockMode")) {
-            NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
-            WindowsUIUtils::UpdateInTabletMode();
-          }
-        }
-      }
-    } break;
-
     case WM_DEVICECHANGE: {
       if (wParam == DBT_DEVICEARRIVAL || wParam == DBT_DEVICEREMOVECOMPLETE) {
         DEV_BROADCAST_HDR* hdr = reinterpret_cast<DEV_BROADCAST_HDR*>(lParam);
