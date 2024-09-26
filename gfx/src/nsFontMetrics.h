@@ -59,9 +59,6 @@ class nsFontMetrics final {
   struct MOZ_STACK_CLASS Params {
     nsAtom* language = nullptr;
     bool explicitLanguage = false;
-#ifdef XP_WIN
-    bool allowForceGDIClassic = true;
-#endif
     FontOrientation orientation = eHorizontal;
     gfxUserFontSet* userFontSet = nullptr;
     gfxTextPerfMetrics* textPerf = nullptr;
@@ -249,10 +246,6 @@ class nsFontMetrics final {
 
   int32_t AppUnitsPerDevPixel() const { return mP2A; }
 
-#ifdef XP_WIN
-  bool AllowForceGDIClassic() const { return mAllowForceGDIClassic; }
-#endif
-
  private:
   
   ~nsFontMetrics();
@@ -274,10 +267,6 @@ class nsFontMetrics final {
   
   
   const bool mExplicitLanguage;
-
-#ifdef XP_WIN
-  const bool mAllowForceGDIClassic = true;
-#endif
 
   
   
