@@ -55,6 +55,12 @@ class URLQueryStringStripper final : public nsIObserver,
   nsresult StripForCopyOrShareInternal(nsIURI* aURI, nsIURI** strippedURI,
                                        int& aStripCount, bool aStripNestedURIs);
 
+  
+  
+  
+  nsresult CanStripForCopyOrShareInternal(nsIURI* aURI, bool* aCanStrip,
+                                          bool aStripNestedURIs);
+
   nsTHashSet<nsCString> mList;
   nsTHashSet<nsCString> mAllowList;
   nsCOMPtr<nsIURLQueryStrippingListService> mListService;
