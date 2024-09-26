@@ -904,9 +904,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
-  nsresult CheckLocationChangeRateLimit(CallerType aCallerType);
+  nsresult CheckNavigationRateLimit(CallerType aCallerType);
 
-  void ResetLocationChangeRateLimit();
+  void ResetNavigationRateLimit();
 
   mozilla::dom::DisplayMode DisplayMode() { return Top()->GetDisplayMode(); }
 
@@ -1454,8 +1454,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  uint32_t mLocationChangeRateLimitCount;
-  mozilla::TimeStamp mLocationChangeRateLimitSpanStart;
+  uint32_t mNavigationRateLimitCount;
+  mozilla::TimeStamp mNavigationRateLimitSpanStart;
 
   mozilla::LinkedList<dom::Location> mLocations;
 };

@@ -84,7 +84,7 @@ class GeckoInstance(object):
         "dom.max_chrome_script_run_time": 0,
         "dom.max_script_run_time": 0,
         
-        "dom.navigation.locationChangeRateLimit.count": 0,
+        "dom.navigation.navigationRateLimit.count": 0,
         
         "dom.push.connection.enabled": False,
         

@@ -3830,17 +3830,16 @@ bool BrowsingContext::ShouldUpdateSessionHistory(uint32_t aLoadType) {
           (IsForceReloadType(aLoadType) && IsSubframe()));
 }
 
-nsresult BrowsingContext::CheckLocationChangeRateLimit(CallerType aCallerType) {
+nsresult BrowsingContext::CheckNavigationRateLimit(CallerType aCallerType) {
   
   if (aCallerType == CallerType::System) {
     return NS_OK;
   }
 
   
-  uint32_t limitCount =
-      StaticPrefs::dom_navigation_locationChangeRateLimit_count();
+  uint32_t limitCount = StaticPrefs::dom_navigation_navigationRateLimit_count();
   uint32_t timeSpanSeconds =
-      StaticPrefs::dom_navigation_locationChangeRateLimit_timespan();
+      StaticPrefs::dom_navigation_navigationRateLimit_timespan();
 
   
   if (limitCount == 0 || timeSpanSeconds == 0) {
@@ -3849,15 +3848,15 @@ nsresult BrowsingContext::CheckLocationChangeRateLimit(CallerType aCallerType) {
 
   TimeDuration throttleSpan = TimeDuration::FromSeconds(timeSpanSeconds);
 
-  if (mLocationChangeRateLimitSpanStart.IsNull() ||
-      ((TimeStamp::Now() - mLocationChangeRateLimitSpanStart) > throttleSpan)) {
+  if (mNavigationRateLimitSpanStart.IsNull() ||
+      ((TimeStamp::Now() - mNavigationRateLimitSpanStart) > throttleSpan)) {
     
-    mLocationChangeRateLimitSpanStart = TimeStamp::Now();
-    mLocationChangeRateLimitCount = 1;
+    mNavigationRateLimitSpanStart = TimeStamp::Now();
+    mNavigationRateLimitCount = 1;
     return NS_OK;
   }
 
-  if (mLocationChangeRateLimitCount >= limitCount) {
+  if (mNavigationRateLimitCount >= limitCount) {
     
 
     Document* doc = GetDocument();
@@ -3870,14 +3869,14 @@ nsresult BrowsingContext::CheckLocationChangeRateLimit(CallerType aCallerType) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  mLocationChangeRateLimitCount++;
+  mNavigationRateLimitCount++;
   return NS_OK;
 }
 
-void BrowsingContext::ResetLocationChangeRateLimit() {
+void BrowsingContext::ResetNavigationRateLimit() {
   
   
-  mLocationChangeRateLimitSpanStart = TimeStamp();
+  mNavigationRateLimitSpanStart = TimeStamp();
 }
 
 void BrowsingContext::LocationCreated(dom::Location* aLocation) {
