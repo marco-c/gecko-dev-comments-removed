@@ -29,7 +29,7 @@ class UiaText : public ITextProvider {
        __RPC__deref_out_opt ITextRangeProvider** aRetVal);
 
   virtual HRESULT STDMETHODCALLTYPE RangeFromPoint(
-       struct UiaPoint point,
+       struct UiaPoint aPoint,
        __RPC__deref_out_opt ITextRangeProvider** aRetVal);
 
   virtual  HRESULT STDMETHODCALLTYPE get_DocumentRange(

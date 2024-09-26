@@ -271,6 +271,11 @@ class TextLeafRange final {
   explicit TextLeafRange() {}
 
   
+  static TextLeafRange FromAccessible(Accessible* aAcc) {
+    return {{aAcc, 0}, {aAcc, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT}};
+  }
+
+  
 
 
 
@@ -297,6 +302,13 @@ class TextLeafRange final {
 
 
   LayoutDeviceIntRect Bounds() const;
+
+  
+
+
+
+
+  TextLeafPoint TextLeafPointAtScreenPoint(int32_t aX, int32_t aY) const;
 
   
 
