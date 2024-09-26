@@ -548,10 +548,10 @@ function fillSelect(elementId, values) {
 
 
 window.onload = async function () {
-  await displayInfo();
-  loadExample("summary");
   fillSelect("dtype", DTYPE);
   fillSelect("taskName", TASKS);
+  loadExample("summary");
+  await displayInfo();
 
   document
     .getElementById("inferenceButton")
