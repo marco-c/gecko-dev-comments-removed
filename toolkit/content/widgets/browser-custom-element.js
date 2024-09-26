@@ -195,6 +195,10 @@
             try {
               
               
+              dragSession.sendStoreDropTargetAndDelayEndDragSession(event);
+
+              
+              
               
               let caPromises = [];
               let items = event.dataTransfer.items;
@@ -251,12 +255,11 @@
 
               if (!caPromises.length) {
                 
+                dragSession.sendDispatchToDropTargetAndResumeEndDragSession(
+                  true
+                );
                 return;
               }
-
-              
-              
-              dragSession.sendStoreDropTargetAndDelayEndDragSession(event);
 
               
               
