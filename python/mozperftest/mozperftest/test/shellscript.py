@@ -7,12 +7,13 @@ import pathlib
 import platform
 import shutil
 import signal
+import sys
 import time
 
 import mozprocess
 
 from mozperftest.layers import Layer
-from mozperftest.utils import ON_TRY, archive_folder, temp_dir
+from mozperftest.utils import ON_TRY, archive_folder, install_package, temp_dir
 
 
 class UnknownScriptError(Exception):
@@ -66,6 +67,12 @@ class ShellScriptRunner(Layer):
         self.metrics = []
         self.timed_out = False
         self.output_timed_out = False
+
+    def setup(self):
+        
+        deps = ["opencv-python==4.10.0.84"]
+        for dep in deps:
+            install_package(self.mach_cmd.virtualenv_manager, dep)
 
     def kill(self, proc):
         if "win" in platform.system().lower():
@@ -135,6 +142,28 @@ class ShellScriptRunner(Layer):
             os.environ["APP"] = self.get_arg("app")
             os.environ["TESTING_DIR"] = testing_dir
             os.environ["BROWSER_BINARY"] = metadata.binary
+            os.environ["PYTHON_PATH_SHELL_SCRIPT"] = sys.executable
+
+            
+            
+            
+            
+            venv_site_lib = str(
+                pathlib.Path(
+                    self.mach_cmd.virtualenv_manager.bin_path, "..", "lib"
+                ).resolve()
+            )
+            venv_site_packages = pathlib.Path(
+                venv_site_lib,
+                f"python{sys.version_info.major}.{sys.version_info.minor}",
+                "site-packages",
+            )
+            if not venv_site_packages.exists():
+                venv_site_packages = pathlib.Path(
+                    venv_site_lib,
+                    "site-packages",
+                )
+            os.environ["PYTHON_PACKAGES"] = str(venv_site_packages)
 
             mozprocess.run_and_wait(
                 cmd,
