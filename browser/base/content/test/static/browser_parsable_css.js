@@ -105,8 +105,6 @@ let propNameAllowlist = [
     isFromDevTools: false,
   },
   { propName: "--browser-stack-z-index-rdm-toolbar", isFromDevTools: false },
-  
-  { propName: "--in-content-border-hover", isFromDevTools: false },
 
   
   
