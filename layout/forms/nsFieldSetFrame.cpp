@@ -341,7 +341,7 @@ nscoord nsFieldSetFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
     
     
     contentWidth = nsLayoutUtils::IntrinsicForContainer(
-        aInput.mContext, inner, aType, Nothing(),
+        aInput.mContext, inner, aType, aInput.mPercentageBasisForChildren,
         nsLayoutUtils::IGNORE_PADDING);
   }
 
