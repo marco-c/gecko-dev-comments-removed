@@ -66,6 +66,7 @@
 #include "nsIClassOfService.h"
 #include "nsICacheInfoChannel.h"
 #include "nsITimedChannel.h"
+#include "nsITimer.h"
 #include "nsIScriptElement.h"
 #include "nsISupportsPriority.h"
 #include "nsIDocShell.h"
@@ -268,6 +269,10 @@ ScriptLoader::~ScriptLoader() {
   }
 
   mModuleLoader = nullptr;
+
+  if (mProcessPendingRequestsAsyncBypassParserBlocking) {
+    mProcessPendingRequestsAsyncBypassParserBlocking->Cancel();
+  }
 }
 
 void ScriptLoader::SetGlobalObject(nsIGlobalObject* aGlobalObject) {
@@ -2147,27 +2152,24 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
 
   aRequest->SetReady();
 
-  if (aRequest == mParserBlockingRequest) {
-    if (!ReadyToExecuteParserBlockingScripts()) {
-      
-      
-      ProcessPendingRequestsAsync();
-      return NS_OK;
-    }
-
-    
-    mParserBlockingRequest = nullptr;
-    UnblockParser(aRequest);
-    ProcessRequest(aRequest);
-    ContinueParserAsync(aRequest);
-    return NS_OK;
-  }
-
   
-  if ((aRequest->GetScriptLoadContext()->IsAsyncScript() ||
+  
+  if (aRequest != mParserBlockingRequest &&
+      (aRequest->GetScriptLoadContext()->IsAsyncScript() ||
        aRequest->GetScriptLoadContext()->IsBlockingScript()) &&
       !aRequest->isInList()) {
-    return ProcessRequest(aRequest);
+    if (aRequest->GetScriptLoadContext()->IsAsyncScript()) {
+      
+      
+      aRequest->GetScriptLoadContext()->mInAsyncList = false;
+      AddAsyncRequest(aRequest);
+    } else {
+      MOZ_ASSERT(
+          false,
+          "This should not run ever with the current default prefs. The "
+          "request should not run synchronously but added to some queue.");
+      return ProcessRequest(aRequest);
+    }
   }
 
   
@@ -3231,9 +3233,9 @@ bool ScriptLoader::HasPendingDynamicImports() const {
 
 void ScriptLoader::ProcessPendingRequestsAsync() {
   if (HasPendingRequests()) {
-    nsCOMPtr<nsIRunnable> task =
-        NewRunnableMethod("dom::ScriptLoader::ProcessPendingRequests", this,
-                          &ScriptLoader::ProcessPendingRequests);
+    nsCOMPtr<nsIRunnable> task = NewRunnableMethod<bool>(
+        "dom::ScriptLoader::ProcessPendingRequests", this,
+        &ScriptLoader::ProcessPendingRequests, false);
     if (mDocument) {
       mDocument->Dispatch(task.forget());
     } else {
@@ -3242,15 +3244,48 @@ void ScriptLoader::ProcessPendingRequestsAsync() {
   }
 }
 
-void ScriptLoader::ProcessPendingRequests() {
+void ProcessPendingRequestsCallback(nsITimer* aTimer, void* aClosure) {
+  RefPtr<ScriptLoader> sl = static_cast<ScriptLoader*>(aClosure);
+  sl->ProcessPendingRequests(true);
+}
+
+void ScriptLoader::ProcessPendingRequestsAsyncBypassParserBlocking() {
+  MOZ_ASSERT(HasPendingRequests());
+
+  if (!mProcessPendingRequestsAsyncBypassParserBlocking) {
+    mProcessPendingRequestsAsyncBypassParserBlocking = NS_NewTimer();
+  }
+
+  
+  
+  
+  mProcessPendingRequestsAsyncBypassParserBlocking->InitWithNamedFuncCallback(
+      ProcessPendingRequestsCallback, this, 2500, nsITimer::TYPE_ONE_SHOT,
+      "ProcessPendingRequestsAsyncBypassParserBlocking");
+}
+
+void ScriptLoader::ProcessPendingRequests(bool aAllowBypassingParserBlocking) {
   RefPtr<ScriptLoadRequest> request;
 
-  if (mParserBlockingRequest && mParserBlockingRequest->IsFinished() &&
-      ReadyToExecuteParserBlockingScripts()) {
-    request.swap(mParserBlockingRequest);
-    UnblockParser(request);
-    ProcessRequest(request);
-    ContinueParserAsync(request);
+  if (mProcessPendingRequestsAsyncBypassParserBlocking) {
+    mProcessPendingRequestsAsyncBypassParserBlocking->Cancel();
+  }
+
+  if (mParserBlockingRequest) {
+    if (mParserBlockingRequest->IsFinished() &&
+        ReadyToExecuteParserBlockingScripts()) {
+      request.swap(mParserBlockingRequest);
+      UnblockParser(request);
+      ProcessRequest(request);
+      ContinueParserAsync(request);
+      ProcessPendingRequestsAsync();
+      return;
+    }
+
+    if (!aAllowBypassingParserBlocking) {
+      ProcessPendingRequestsAsyncBypassParserBlocking();
+      return;
+    }
   }
 
   while (ReadyToExecuteParserBlockingScripts() && !mXSLTRequests.isEmpty() &&
