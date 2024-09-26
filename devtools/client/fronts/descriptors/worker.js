@@ -37,6 +37,7 @@ class WorkerDescriptorFront extends DescriptorMixin(
     
     this.targetForm = json;
     this._url = json.url;
+    this.origin = json.origin;
     this.type = json.type;
     this.scope = json.scope;
     this.fetch = json.fetch;
