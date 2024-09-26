@@ -1,11 +1,10 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=767779
+-->
 <head>
   <title>Test for Bug 767779</title>
-  <script type="application/javascript" src="/MochiKit/MochiKit.js"></script>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script src="/tests/SimpleTest/WindowSnapshot.js"></script>
   <script type="application/javascript" src="imgutils.js"></script>
@@ -30,7 +29,7 @@ function main()
 window.onload = main;
 </script>
 </pre>
-<div id="content"> 
+<div id="content"> <!-- style="display: none" -->
   <div id="referenceDiv" style="height: 40px; width: 40px;
                                 display: none; background: #18ff00;"></div>
   <div id="animatedImage">

@@ -1,11 +1,10 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=552605
+-->
 <head>
   <title>Test for Bug 552605</title>
-  <script type="application/javascript" src="/MochiKit/MochiKit.js"></script>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script src="/tests/SimpleTest/WindowSnapshot.js"></script>
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
@@ -45,7 +44,7 @@ function check()
 
 </script>
 </pre>
-<div id="content"> 
+<div id="content"> <!-- style="display: none" -->
 <img src="bug552605.sjs" onload="check()" id="test-image1"></iframe>
 <img src="bug552605.sjs" onload="check()" id="test-image2"></iframe>
 </div>
