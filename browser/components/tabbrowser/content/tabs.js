@@ -155,10 +155,6 @@
       if (oldValue == "vertical" && newValue == "horizontal") {
         this._resetVerticalPinnedTabs();
       }
-      if (this.overflowing) {
-        
-        this.removeAttribute("overflow");
-      }
       this._positionPinnedTabs();
 
       this.#updateTabMinWidth();
