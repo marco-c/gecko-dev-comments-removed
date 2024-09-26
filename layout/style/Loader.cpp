@@ -987,6 +987,15 @@ static void RecordUseCountersIfNeeded(Document* aDoc,
   aDoc->MaybeWarnAboutZoom();
 }
 
+void Loader::MaybePutIntoLoadsPerformed(SheetLoadData& aLoadData) {
+  if (!aLoadData.mURI) {
+    
+    return;
+  }
+  auto key = SheetLoadDataHashKey(aLoadData);
+  mLoadsPerformed.PutEntry(key);
+}
+
 
 
 
@@ -1030,8 +1039,6 @@ std::tuple<RefPtr<StyleSheet>, Loader::SheetState> Loader::CreateSheet(
       if (cacheResult.mCompleteValue) {
         sheet = cacheResult.mCompleteValue->Clone(nullptr, nullptr);
         mDocument->SetDidHitCompleteSheetCache();
-        RecordUseCountersIfNeeded(mDocument, *sheet);
-        mLoadsPerformed.PutEntry(key);
       } else {
         MOZ_ASSERT(cacheResult.mLoadingOrPendingValue);
         sheet = cacheResult.mLoadingOrPendingValue->ValueForCache();
@@ -1684,9 +1691,10 @@ Loader::Completed Loader::ParseSheet(
 
 void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
   RecordUseCountersIfNeeded(mDocument, *aData.mSheet);
+  MaybePutIntoLoadsPerformed(aData);
+
   RefPtr loadDispatcher = aData.PrepareLoadEventIfNeeded();
   if (aData.mURI) {
-    mLoadsPerformed.PutEntry(SheetLoadDataHashKey(aData));
     aData.NotifyStop(aStatus);
     
     
@@ -2118,8 +2126,10 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
   
   RefPtr<StyleSheet> sheet;
   SheetState state;
+  bool isReusableSheet = false;
   if (aReusableSheets && aReusableSheets->FindReusableStyleSheet(aURL, sheet)) {
     state = SheetState::Complete;
+    isReusableSheet = true;
   } else {
     
     std::tie(sheet, state) = CreateSheet(
@@ -2146,6 +2156,12 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
     
     
     
+    if (!isReusableSheet) {
+      
+      
+      RecordUseCountersIfNeeded(mDocument, *data->mSheet);
+      MaybePutIntoLoadsPerformed(*data);
+    }
     data->mIntentionallyDropped = true;
     return NS_OK;
   }
