@@ -2939,9 +2939,13 @@ class _DSCard extends (external_React_default()).PureComponent {
       height: 101
     }];
     this.listCardImageSizes = [{
-      mediaMatcher: "default",
+      mediaMatcher: "(min-width: 1122px)",
       width: 75,
       height: 75
+    }, {
+      mediaMatcher: "default",
+      width: 50,
+      height: 50
     }];
   }
   doesLinkTopicMatchSelectedTopic() {
@@ -4022,9 +4026,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
       }
     }
     if (listFeedEnabled) {
-      
-      
-      
       
       
       
