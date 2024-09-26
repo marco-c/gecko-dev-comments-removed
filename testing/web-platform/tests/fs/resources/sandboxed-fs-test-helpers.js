@@ -11,18 +11,38 @@ function getFileSystemType() {
   return 'sandboxed';
 }
 
-async function cleanupSandboxedFileSystem() {
-  const dir = await navigator.storage.getDirectory();
-  for await (let entry of dir.values())
-    await dir.removeEntry(entry.name, {recursive: entry.kind === 'directory'});
+async function cleanupDirectory(dir, ignoreRejections) {
+  
+  const entries = await Array.fromAsync(dir.values());
+
+  
+  const remove_entry_promises = entries.map(
+      entry =>
+          dir.removeEntry(entry.name, {recursive: entry.kind === 'directory'}));
+
+  
+  if (ignoreRejections) {
+    await Promise.allSettled(remove_entry_promises);
+  } else {
+    await Promise.all(remove_entry_promises);
+  }
 }
 
 function directory_test(func, description) {
   promise_test(async t => {
-    
-    await cleanupSandboxedFileSystem();
-
     const dir = await navigator.storage.getDirectory();
+
+    
+    await cleanupDirectory(dir,  false);
+
+    
+    t.add_cleanup(async () => {
+      
+      
+      await cleanupDirectory(dir,  true);
+    });
+
+
     await func(t, dir);
   }, description);
 }

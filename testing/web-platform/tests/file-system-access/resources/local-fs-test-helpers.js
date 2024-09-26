@@ -31,15 +31,37 @@ const directory_promise = (async () => {
   return entries;
 })();
 
+async function cleanupDirectory(dir, ignoreRejections) {
+  
+  const entries = await Array.fromAsync(dir.values());
+
+  
+  const remove_entry_promises = entries.map(
+      entry =>
+          dir.removeEntry(entry.name, {recursive: entry.kind === 'directory'}));
+
+  
+  if (ignoreRejections) {
+    await Promise.allSettled(remove_entry_promises);
+  } else {
+    await Promise.all(remove_entry_promises);
+  }
+}
+
 function directory_test(func, description) {
   promise_test(async t => {
     const directory = await directory_promise;
+
     
+    await cleanupDirectory(directory,  false);
+
     
-    for await (let entry of directory.values()) {
-      await directory.removeEntry(
-          entry.name, {recursive: entry.kind === 'directory'});
-    }
+    t.add_cleanup(async () => {
+      
+      
+      await cleanupDirectory(directory,  true);
+    });
+
     await func(t, directory);
   }, description);
 }
