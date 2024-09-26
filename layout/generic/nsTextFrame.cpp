@@ -5103,7 +5103,7 @@ nsRect nsTextFrame::UpdateTextEmphasis(WritingMode aWM,
   info->advance = info->textRun->GetAdvanceWidth();
 
   
-  LogicalSide side = styleText->TextEmphasisSide(aWM);
+  LogicalSide side = styleText->TextEmphasisSide(aWM, StyleFont()->mLanguage);
   LogicalSize frameSize = GetLogicalSize(aWM);
   
   
