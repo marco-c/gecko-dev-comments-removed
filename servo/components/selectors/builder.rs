@@ -29,6 +29,11 @@ use servo_arc::{Arc, ThinArc};
 use smallvec::SmallVec;
 use std::cmp;
 use std::slice;
+use bitflags::bitflags;
+use derive_more::{Add, AddAssign};
+
+#[cfg(feature = "to_shmem")]
+use to_shmem_derive::ToShmem;
 
 
 
