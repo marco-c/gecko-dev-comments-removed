@@ -47,27 +47,27 @@ impl Store {
     }
 
     
-    fn open(&self) -> Result<OpenStore, StoreError> {
+    fn open(&self) -> Result<OpenStoreGuard<'_>, StoreError> {
         let mut state = self.state.lock().unwrap();
         Ok(match &*state {
             StoreState::Created(path) => {
-                let store = OpenStore::new(path)?;
+                let store = Arc::new(OpenStore::new(path)?);
                 *state = StoreState::Open(store.clone());
-                store
+                OpenStoreGuard::new(store, self.waiter.guard())
             }
-            StoreState::Open(store) => store.clone(),
+            StoreState::Open(store) => OpenStoreGuard::new(store.clone(), self.waiter.guard()),
             StoreState::Closed => Err(StoreError::Closed)?,
         })
     }
 
     
-    pub fn writer(&self) -> Result<ConnectionGuard<'_>, StoreError> {
-        Ok(ConnectionGuard::new(self.open()?.writer, &self.waiter))
+    pub fn writer(&self) -> Result<Writer<'_>, StoreError> {
+        Ok(Writer(self.open()?))
     }
 
     
-    pub fn reader(&self) -> Result<ConnectionGuard<'_>, StoreError> {
-        Ok(ConnectionGuard::new(self.open()?.reader, &self.waiter))
+    pub fn reader(&self) -> Result<Reader<'_>, StoreError> {
+        Ok(Reader(self.open()?))
     }
 
     
@@ -79,6 +79,7 @@ impl Store {
             StoreState::Open(store) => store,
         };
 
+        
         store.reader.interrupt();
 
         
@@ -87,13 +88,9 @@ impl Store {
 
         
         
-        let reader = Arc::into_inner(store.reader).expect("invariant violation");
-        let writer = Arc::into_inner(store.writer).expect("invariant violation");
+        let store = Arc::into_inner(store).expect("invariant violation");
 
-        
-        
-        let _ = reader.into_inner().close();
-        let _ = writer.into_inner().close();
+        store.close();
     }
 }
 
@@ -154,79 +151,116 @@ impl ConnectionPath for StorePath {
     }
 }
 
-pub struct ConnectionGuard<'a> {
-    conn: Arc<Connection>,
-    waiter: &'a OperationWaiter,
+
+struct OpenStoreGuard<'a> {
+    store: Arc<OpenStore>,
+    
+    
+    
+    
+    
+    _guard: OperationGuard<'a>,
 }
 
-impl<'a> ConnectionGuard<'a> {
-    fn new(conn: Arc<Connection>, waiter: &'a OperationWaiter) -> Self {
-        *waiter.count.lock().unwrap() += 1;
-        Self { conn, waiter }
+impl<'a> OpenStoreGuard<'a> {
+    fn new(store: Arc<OpenStore>, guard: OperationGuard<'a>) -> Self {
+        Self {
+            store,
+            _guard: guard,
+        }
     }
 }
 
-impl<'a> Deref for ConnectionGuard<'a> {
+
+pub struct Writer<'a>(OpenStoreGuard<'a>);
+
+impl<'a> Deref for Writer<'a> {
     type Target = Connection;
 
     fn deref(&self) -> &Self::Target {
-        &self.conn
+        &self.0.store.writer
     }
 }
 
-impl<'a> Drop for ConnectionGuard<'a> {
-    fn drop(&mut self) {
-        let mut count = self.waiter.count.lock().unwrap();
-        *count -= 1;
-        self.waiter.monitor.notify_one();
+
+pub struct Reader<'a>(OpenStoreGuard<'a>);
+
+impl<'a> Deref for Reader<'a> {
+    type Target = Connection;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0.store.reader
     }
 }
 
 #[derive(Debug)]
 enum StoreState {
     Created(StorePath),
-    Open(OpenStore),
+    Open(Arc<OpenStore>),
     Closed,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 struct OpenStore {
-    writer: Arc<Connection>,
-    reader: Arc<Connection>,
+    writer: Connection,
+    reader: Connection,
 }
 
 impl OpenStore {
     fn new(path: &StorePath) -> Result<Self, StoreError> {
         
         
-        let writer = Connection::new::<Schema, _>(path, ConnectionType::ReadWrite)?;
-        let reader = Connection::new::<Schema, _>(path, ConnectionType::ReadOnly)?;
-        Ok(Self {
-            writer: Arc::new(writer),
-            reader: Arc::new(reader),
-        })
+        let writer = Connection::new::<Schema>(path, ConnectionType::ReadWrite)?;
+        let reader = Connection::new::<Schema>(path, ConnectionType::ReadOnly)?;
+        Ok(Self { writer, reader })
+    }
+
+    fn close(self) {
+        
+        
+        let _ = self.reader.into_inner().close();
+        let _ = self.writer.into_inner().close();
     }
 }
 
 #[derive(Debug)]
 struct OperationWaiter {
     count: Mutex<usize>,
-    monitor: Condvar,
+    cvar: Condvar,
 }
 
 impl OperationWaiter {
     fn new() -> Self {
         Self {
             count: Mutex::new(0),
-            monitor: Condvar::new(),
+            cvar: Condvar::new(),
         }
+    }
+
+    
+    
+    fn guard(&self) -> OperationGuard<'_> {
+        *self.count.lock().unwrap() += 1;
+        OperationGuard(self)
     }
 
     
     fn wait(&self) {
         let mut count = self.count.lock().unwrap();
         while *count > 0 {
-            count = self.monitor.wait(count).unwrap();
+            count = self.cvar.wait(count).unwrap();
+        }
+    }
+}
+
+struct OperationGuard<'a>(&'a OperationWaiter);
+
+impl<'a> Drop for OperationGuard<'a> {
+    fn drop(&mut self) {
+        let mut count = self.0.count.lock().unwrap();
+        *count -= 1;
+        if *count == 0 {
+            self.0.cvar.notify_all();
         }
     }
 }
