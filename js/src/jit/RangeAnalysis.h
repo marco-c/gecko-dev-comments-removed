@@ -66,7 +66,7 @@ using LoopIterationBoundVector =
 
 struct SymbolicBound : public TempObject {
  private:
-  SymbolicBound(LoopIterationBound* loop, const LinearSum& sum)
+  SymbolicBound(const LoopIterationBound* loop, const LinearSum& sum)
       : loop(loop), sum(sum) {}
 
  public:
@@ -76,9 +76,10 @@ struct SymbolicBound : public TempObject {
   
   
   
-  LoopIterationBound* loop;
+  const LoopIterationBound* loop;
 
-  static SymbolicBound* New(TempAllocator& alloc, LoopIterationBound* loop,
+  static SymbolicBound* New(TempAllocator& alloc,
+                            const LoopIterationBound* loop,
                             const LinearSum& sum) {
     return new (alloc) SymbolicBound(loop, sum);
   }
@@ -91,11 +92,6 @@ struct SymbolicBound : public TempObject {
 };
 
 class RangeAnalysis {
- protected:
-  bool blockDominates(MBasicBlock* b, MBasicBlock* b2);
-  void replaceDominatedUsesWith(MDefinition* orig, MDefinition* dom,
-                                MBasicBlock* block);
-
   const MIRGenerator* mir;
   MIRGraph& graph_;
   Vector<MBinaryBitwiseInstruction*, 16, SystemAllocPolicy> bitops;
@@ -115,20 +111,20 @@ class RangeAnalysis {
   [[nodiscard]] bool removeUnnecessaryBitops();
 
  private:
-  bool canTruncate(MDefinition* def, TruncateKind kind) const;
+  bool canTruncate(const MDefinition* def, TruncateKind kind) const;
   void adjustTruncatedInputs(MDefinition* def);
 
   
   LoopIterationBoundVector loopIterationBounds;
 
  private:
-  [[nodiscard]] bool analyzeLoop(MBasicBlock* header);
-  LoopIterationBound* analyzeLoopIterationCount(MBasicBlock* header,
-                                                MTest* test,
+  [[nodiscard]] bool analyzeLoop(const MBasicBlock* header);
+  LoopIterationBound* analyzeLoopIterationCount(const MBasicBlock* header,
+                                                const MTest* test,
                                                 BranchDirection direction);
-  void analyzeLoopPhi(LoopIterationBound* loopBound, MPhi* phi);
-  [[nodiscard]] bool tryHoistBoundsCheck(MBasicBlock* header,
-                                         MBoundsCheck* ins);
+  void analyzeLoopPhi(const LoopIterationBound* loopBound, MPhi* phi);
+  [[nodiscard]] bool tryHoistBoundsCheck(const MBasicBlock* header,
+                                         const MBoundsCheck* ins);
 };
 
 class Range : public TempObject {

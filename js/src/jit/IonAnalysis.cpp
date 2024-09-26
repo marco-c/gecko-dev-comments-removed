@@ -3923,7 +3923,7 @@ SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space,
 
 
 
-bool jit::ExtractLinearInequality(MTest* test, BranchDirection direction,
+bool jit::ExtractLinearInequality(const MTest* test, BranchDirection direction,
                                   SimpleLinearSum* plhs, MDefinition** prhs,
                                   bool* plessEqual) {
   if (!test->getOperand(0)->isCompare()) {
@@ -4784,7 +4784,8 @@ MDefinition* jit::ConvertLinearSum(TempAllocator& alloc, MBasicBlock* block,
 
 
 
-size_t jit::MarkLoopBlocks(MIRGraph& graph, MBasicBlock* header, bool* canOsr) {
+size_t jit::MarkLoopBlocks(MIRGraph& graph, const MBasicBlock* header,
+                           bool* canOsr) {
 #ifdef DEBUG
   for (ReversePostorderIterator i = graph.rpoBegin(), e = graph.rpoEnd();
        i != e; ++i) {
@@ -4873,7 +4874,7 @@ size_t jit::MarkLoopBlocks(MIRGraph& graph, MBasicBlock* header, bool* canOsr) {
 }
 
 
-void jit::UnmarkLoopBlocks(MIRGraph& graph, MBasicBlock* header) {
+void jit::UnmarkLoopBlocks(MIRGraph& graph, const MBasicBlock* header) {
   MBasicBlock* backedge = header->backedge();
   for (ReversePostorderIterator i = graph.rpoBegin(header);; ++i) {
     MOZ_ASSERT(i != graph.rpoEnd(),
