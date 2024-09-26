@@ -44,6 +44,7 @@ patch_file5="$(pwd)/taskcluster/scripts/misc/mingw-widl.patch"
 patch_file6="$(pwd)/taskcluster/scripts/misc/mingw-dispatchqueue.patch"
 patch_file10="$(pwd)/taskcluster/scripts/misc/mingw-ts_sd.patch"
 patch_file11="$(pwd)/taskcluster/scripts/misc/mingw-composition.patch"
+patch_file12="$(pwd)/taskcluster/scripts/misc/mingw-wintrust.patch"
 
 prepare() {
   pushd $MOZ_FETCHES_DIR/mingw-w64
@@ -54,6 +55,7 @@ prepare() {
   patch -p1 <$patch_file6
   patch -p1 <$patch_file10
   patch -p1 <$patch_file11
+  patch -p1 <$patch_file12
   popd
 }
 
@@ -183,6 +185,7 @@ build_runtimes() {
       -DLIBUNWIND_ENABLE_CROSS_UNWINDING=FALSE \
       -DLIBUNWIND_CXX_FLAGS="${DEBUG_FLAGS} -Wno-dll-attribute-on-redeclaration -nostdinc++ -DPSAPI_VERSION=2" \
       -DLIBUNWIND_C_FLAGS="-Wno-dll-attribute-on-redeclaration" \
+      -DLIBUNWIND_ENABLE_FRAME_APIS=ON \
       -DLIBCXXABI_USE_COMPILER_RT=ON \
       -DLIBCXXABI_ENABLE_EXCEPTIONS=ON \
       -DLIBCXXABI_ENABLE_THREADS=ON \
