@@ -158,8 +158,8 @@ class nsITheme : public nsISupports {
 
 
 
-  virtual nscoord GetCheckboxRadioPrefSize() {
-    return mozilla::CSSPixel::ToAppUnits(9);
+  virtual mozilla::CSSCoord GetCheckboxRadioPrefSize() {
+    return mozilla::CSSCoord(9.0f);
   }
 
   

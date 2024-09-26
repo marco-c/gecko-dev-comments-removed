@@ -30,10 +30,10 @@ NS_QUERYFRAME_HEAD(nsCheckboxRadioFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsAtomicContainerFrame)
 
 nscoord nsCheckboxRadioFrame::DefaultSize() {
-  if (StyleDisplay()->HasAppearance()) {
-    return PresContext()->Theme()->GetCheckboxRadioPrefSize();
-  }
-  return CSSPixel::ToAppUnits(13);
+  const CSSCoord size = StyleDisplay()->HasAppearance()
+                            ? PresContext()->Theme()->GetCheckboxRadioPrefSize()
+                            : CSSCoord(13.0f);
+  return CSSPixel::ToAppUnits(Style()->EffectiveZoom().Zoom(size));
 }
 
 
@@ -92,7 +92,8 @@ Maybe<nscoord> nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
   
   
   
-  auto bp = CSSPixel::ToAppUnits(2);  
+  
+  auto bp = CSSPixel::ToAppUnits(Style()->EffectiveZoom().Zoom(2.0f));
   return Some(aWM.IsLineInverted() ? std::min(bp, BSize(aWM))
                                    : std::max(0, BSize(aWM) - bp));
 }
