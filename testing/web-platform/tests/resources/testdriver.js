@@ -1141,6 +1141,82 @@
 
         run_bounce_tracking_mitigations: function (context = null) {
             return window.test_driver_internal.run_bounce_tracking_mitigations(context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        create_virtual_pressure_source: function(source_type, metadata={}, context=null) {
+            return window.test_driver_internal.create_virtual_pressure_source(source_type, metadata, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        update_virtual_pressure_source: function(source_type, sample, context=null) {
+            return window.test_driver_internal.update_virtual_pressure_source(source_type, sample, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        remove_virtual_pressure_source: function(source_type, context=null) {
+            return window.test_driver_internal.remove_virtual_pressure_source(source_type, context);
         }
     };
 
@@ -1356,6 +1432,18 @@
 
         async run_bounce_tracking_mitigations(context=null) {
             throw new Error("run_bounce_tracking_mitigations() is not implemented by testdriver-vendor.js");
+        },
+
+        async create_virtual_pressure_source(source_type, metadata={}, context=null) {
+            throw new Error("create_virtual_pressure_source() is not implemented by testdriver-vendor.js");
+        },
+
+        async update_virtual_pressure_source(source_type, sample, context=null) {
+            throw new Error("update_virtual_pressure_source() is not implemented by testdriver-vendor.js");
+        },
+
+        async remove_virtual_pressure_source(source_type, context=null) {
+            throw new Error("remove_virtual_pressure_source() is not implemented by testdriver-vendor.js");
         }
     };
 })();
