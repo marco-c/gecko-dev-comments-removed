@@ -944,10 +944,16 @@ void LiveBundle::removeRange(LiveRange* range) {
 }
 
 void LiveBundle::removeAllRangesFromVirtualRegisters() {
+  VirtualRegister* prevVreg = nullptr;
   for (LiveRange::BundleLinkIterator iter = rangesBegin(); iter; iter++) {
     LiveRange* range = LiveRange::get(*iter);
     MOZ_ASSERT(!range->hasUses());
-    range->vreg().removeRange(range);
+    if (&range->vreg() != prevVreg) {
+      
+      
+      range->vreg().removeRangesForBundle(this);
+      prevVreg = &range->vreg();
+    }
   }
 }
 
@@ -1063,6 +1069,17 @@ void VirtualRegister::removeRange(LiveRange* range) {
     }
   }
   MOZ_CRASH();
+}
+
+void VirtualRegister::removeRangesForBundle(LiveBundle* bundle) {
+  for (LiveRange::RegisterLinkIterator iter(rangesBegin()); iter;) {
+    LiveRange* range = LiveRange::get(*iter);
+    if (range->bundle() == bundle) {
+      ranges_.removeAndIncrement(iter);
+    } else {
+      iter++;
+    }
+  }
 }
 
 
