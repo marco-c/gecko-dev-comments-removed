@@ -77,6 +77,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "mozilla/widget/WinEventObserver.h"
 #include "mozilla/widget/WinMessages.h"
 #include "nsLookAndFeel.h"
 #include "nsWindow.h"
@@ -842,6 +843,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   
   
   MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  WinEventWindow::Ensure();
 
   widget::InitData defaultInitData;
   if (!aInitData) aInitData = &defaultInitData;
