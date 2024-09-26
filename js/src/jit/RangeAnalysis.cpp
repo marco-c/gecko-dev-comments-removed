@@ -2950,10 +2950,15 @@ static bool CloneForDeadBranches(TempAllocator& alloc,
   return true;
 }
 
+struct ComputedTruncateKind {
+  TruncateKind kind = TruncateKind::NoTruncate;
+  bool shouldClone = false;
+};
 
 
-static TruncateKind ComputeRequestedTruncateKind(const MDefinition* candidate,
-                                                 bool* shouldClone) {
+
+static ComputedTruncateKind ComputeRequestedTruncateKind(
+    const MDefinition* candidate) {
   bool isCapturedResult =
       false;  
   bool isObservableResult =
@@ -3022,6 +3027,7 @@ static TruncateKind ComputeRequestedTruncateKind(const MDefinition* candidate,
   
   
   
+  bool shouldClone = false;
   if (isCapturedResult && needsConversion && !safeToConvert) {
     
     
@@ -3031,21 +3037,20 @@ static TruncateKind ComputeRequestedTruncateKind(const MDefinition* candidate,
     
     if (!JitOptions.disableRecoverIns && isRecoverableResult &&
         candidate->canRecoverOnBailout()) {
-      *shouldClone = true;
+      shouldClone = true;
     } else {
       kind = std::min(kind, TruncateKind::TruncateAfterBailouts);
     }
   }
 
-  return kind;
+  return {kind, shouldClone};
 }
 
-static TruncateKind ComputeTruncateKind(const MDefinition* candidate,
-                                        bool* shouldClone) {
+static ComputedTruncateKind ComputeTruncateKind(const MDefinition* candidate) {
   
   
   if (candidate->isCompare()) {
-    return TruncateKind::TruncateAfterBailouts;
+    return {TruncateKind::TruncateAfterBailouts};
   }
 
   
@@ -3063,11 +3068,11 @@ static TruncateKind ComputeTruncateKind(const MDefinition* candidate,
   }
 
   if (canHaveRoundingErrors) {
-    return TruncateKind::NoTruncate;
+    return {TruncateKind::NoTruncate};
   }
 
   
-  return ComputeRequestedTruncateKind(candidate, shouldClone);
+  return ComputeRequestedTruncateKind(candidate);
 }
 
 static void RemoveTruncatesOnOutput(MDefinition* truncated) {
@@ -3213,8 +3218,7 @@ bool RangeAnalysis::truncate() {
         default:;
       }
 
-      bool shouldClone = false;
-      TruncateKind kind = ComputeTruncateKind(*iter, &shouldClone);
+      auto [kind, shouldClone] = ComputeTruncateKind(*iter);
 
       
       if (!canTruncate(*iter, kind) || !iter->canTruncate()) {
@@ -3250,8 +3254,7 @@ bool RangeAnalysis::truncate() {
     }
     for (MPhiIterator iter(block->phisBegin()), end(block->phisEnd());
          iter != end; ++iter) {
-      bool shouldClone = false;
-      TruncateKind kind = ComputeTruncateKind(*iter, &shouldClone);
+      auto [kind, shouldClone] = ComputeTruncateKind(*iter);
 
       
       if (shouldClone || !canTruncate(*iter, kind) || !iter->canTruncate()) {
