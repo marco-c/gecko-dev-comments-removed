@@ -183,11 +183,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
  protected:
   explicit SVGTextFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
-      : SVGDisplayContainerFrame(aStyle, aPresContext, kClassID),
-        mTrailingUndisplayedCharacters(0),
-        mFontSizeScaleFactor(1.0f),
-        mLastContextScale(1.0f),
-        mLengthAdjustScaleFactor(1.0f) {
+      : SVGDisplayContainerFrame(aStyle, aPresContext, kClassID) {
     AddStateBits(NS_FRAME_SVG_LAYOUT | NS_FRAME_IS_SVG_TEXT |
                  NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY |
                  NS_STATE_SVG_POSITIONING_DIRTY);
@@ -542,7 +538,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
-  uint32_t mTrailingUndisplayedCharacters;
+  uint32_t mTrailingUndisplayedCharacters = 0;
 
   
 
@@ -571,20 +567,20 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
-  float mFontSizeScaleFactor;
+  float mFontSizeScaleFactor = 1.0f;
 
   
 
 
 
 
-  float mLastContextScale;
+  float mLastContextScale = 1.0f;
 
   
 
 
 
-  float mLengthAdjustScaleFactor;
+  float mLengthAdjustScaleFactor = 1.0f;
 };
 
 }  

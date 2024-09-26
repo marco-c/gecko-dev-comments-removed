@@ -2979,42 +2979,39 @@ void SVGTextFrame::NotifySVGChanged(uint32_t aFlags) {
 
   bool needNewBounds = false;
   bool needGlyphMetricsUpdate = false;
-  bool needNewCanvasTM = false;
-
   if ((aFlags & COORD_CONTEXT_CHANGED) &&
       HasAnyStateBits(NS_STATE_SVG_POSITIONING_MAY_USE_PERCENTAGES)) {
     needGlyphMetricsUpdate = true;
   }
 
   if (aFlags & TRANSFORM_CHANGED) {
-    needNewCanvasTM = true;
     if (mCanvasTM && mCanvasTM->IsSingular()) {
       
       needNewBounds = true;
       needGlyphMetricsUpdate = true;
     }
+    mCanvasTM = nullptr;
     if (StyleSVGReset()->HasNonScalingStroke()) {
       
       
       needNewBounds = true;
     }
-  }
 
-  
-  
-  
-  
-  if (needNewCanvasTM && mLastContextScale != 0.0f) {
-    mCanvasTM = nullptr;
     
     
-    if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-      
-      float scale = GetContextScale(this);
-      float change = scale / mLastContextScale;
-      if (change >= 2.0f || change <= 0.5f) {
+    
+    
+    const float scale = GetContextScale(this);
+    if (scale != mLastContextScale) {
+      if (mLastContextScale == 0.0f) {
         needNewBounds = true;
         needGlyphMetricsUpdate = true;
+      } else {
+        float change = scale / mLastContextScale;
+        if (change >= 2.0f || change <= 0.5f) {
+          needNewBounds = true;
+          needGlyphMetricsUpdate = true;
+        }
       }
     }
   }
@@ -3322,7 +3319,9 @@ void SVGTextFrame::ReflowSVG() {
     
     
     
-    mRect.Inflate(ceil(presContext->AppUnitsPerDevPixel() / mLastContextScale));
+    if (mLastContextScale != 0.0f) {
+      mRect.Inflate(ceil(presContext->AppUnitsPerDevPixel() / mLastContextScale));
+    }
   }
 
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
@@ -5130,6 +5129,9 @@ void SVGTextFrame::DoReflow() {
 #define PRECISE_SIZE 200.0
 
 bool SVGTextFrame::UpdateFontSizeScaleFactor() {
+  float contextScale = GetContextScale(this);
+  mLastContextScale = contextScale;
+
   double oldFontSizeScaleFactor = mFontSizeScaleFactor;
 
   bool geometricPrecision = false;
@@ -5168,9 +5170,6 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
     mFontSizeScaleFactor = PRECISE_SIZE / min;
     return mFontSizeScaleFactor != oldFontSizeScaleFactor;
   }
-
-  float contextScale = GetContextScale(this);
-  mLastContextScale = contextScale;
 
   double minTextRunSize = min * contextScale;
   double maxTextRunSize = max * contextScale;
