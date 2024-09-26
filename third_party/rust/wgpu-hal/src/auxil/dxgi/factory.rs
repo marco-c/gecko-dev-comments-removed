@@ -138,7 +138,7 @@ pub fn create_factory(
         
         
         
-        if lib_dxgi.debug_interface1().is_ok() {
+        if let Ok(Some(_)) = lib_dxgi.debug_interface1() {
             factory_flags |= Dxgi::DXGI_CREATE_FACTORY_DEBUG;
         }
 
