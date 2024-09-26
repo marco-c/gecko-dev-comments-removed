@@ -4,8 +4,7 @@
 
 
 function findPopup(browser = gBrowser) {
-  
-  return browser.tabContainer.querySelectorAll(".new-tab-popup")[1];
+  return browser.tabContainer.querySelector(".new-tab-popup");
 }
 
 function findContextPopup() {
