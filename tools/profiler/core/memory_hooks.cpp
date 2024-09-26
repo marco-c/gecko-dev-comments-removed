@@ -303,6 +303,10 @@ static void EnsureAllocationTrackerIsInstalled() {
 
 
 
+
+
+
+
 #if !defined(XP_DARWIN) && !defined(XP_LINUX)
 #  define PROFILER_THREAD_LOCAL(T) MOZ_THREAD_LOCAL(T)
 #else
@@ -579,9 +583,6 @@ BaseProfilerCount* install_memory_hooks() {
   if (!sCounter) {
     sCounter = new ProfilerCounterTotal("malloc", "Memory",
                                         "Amount of allocated memory");
-    
-    
-    ThreadIntercept::Init();
   } else {
     sCounter->Clear();
     sCounter->Register();
@@ -640,6 +641,12 @@ void unregister_memory_counter() {
   if (sCounter) {
     sCounter->Unregister();
   }
+}
+
+void memory_hooks_tls_init() {
+  
+  
+  ThreadIntercept::Init();
 }
 
 }  
