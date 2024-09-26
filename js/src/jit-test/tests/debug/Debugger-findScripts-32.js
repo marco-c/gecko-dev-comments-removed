@@ -119,17 +119,19 @@ assertThrowsInstanceOf(() => dbg.findScripts({url:scriptname, start: {line: 6}, 
 assertFound({url:scriptname, start: {line: 6}, end: {line: 10, column: COLUMN_LIMIT}}, gfw.script);
 
 
-
 assertFound({url:scriptname, start: {line: 19, column: 10}, end: {line: 20}}, gjw.script);
 assertFound({url:scriptname, start: {line: 19, column: 11}, end: {line: 20}}, gjw.script);
 assertFound({url:scriptname, start: {line: 19, column: 24}, end: {line: 20}}, gjw.script);
-assertFound({url:scriptname, start: {line: 19, column: 34}, end: {line: 20}}, gjw.script);
+assertFound({url:scriptname, start: {line: 19, column: 33}, end: {line: 20}}, gjw.script);
 
 assertFound({url:scriptname, start: {line: 20, column: 10}, end: {line: 20}}, gjw.script);
 assertFound({url:scriptname, start: {line: 20, column: 11}, end: {line: 20}}, gjw.script);
 assertFound({url:scriptname, start: {line: 20, column: 24}, end: {line: 20}}, gjw.script);
 
-assertNotFound({url:scriptname, start: {line: 20, column: 34}, end: {line: 20}}, gjw.script);
+assertNotFound({url:scriptname, start: {line: 20, column: 33}, end: {line: 20}}, gjw.script);
+assertFound({url:scriptname, start: {line: 20, column: 32}, end: {line: 20}}, gjw.script);
+assertNotFound({url:scriptname, start: {line: 11, column: 5}, end: {line: 13}}, ggw.script);
+assertFound({url:scriptname, start: {line: 11, column: 4}, end: {line: 13}}, ggw.script);
 
 assertFound({url:scriptname, start: {line: 20, column: 10}, end: {line: 21}}, gjw.script);
 assertFound({url:scriptname, start: {line: 20, column: 11}, end: {line: 21}}, gjw.script);
@@ -146,6 +148,6 @@ assertFound({url:scriptname, start: {line: 19}, end: {line: 20, column: 11}}, gj
 
 assertFound({url:scriptname, start: {line: 20, column: 11}, end: {line: 20, column: 23}}, gjw.script);
 assertNotFound({url:scriptname, start: {line: 20, column: 1}, end: {line: 20, column: 10}}, gjw.script);
-assertNotFound({url:scriptname, start: {line: 20, column: 34}, end: {line: 20, column: 35}}, gjw.script);
+assertNotFound({url:scriptname, start: {line: 20, column: 33}, end: {line: 20, column: 35}}, gjw.script);
 
 assertNotFound({url:scriptname, start: {line: 20, column: 7}, end: {line: 20, column: 5}}, gfw.script);
