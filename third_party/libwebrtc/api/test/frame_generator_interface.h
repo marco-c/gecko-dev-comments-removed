@@ -44,6 +44,9 @@ class FrameGeneratorInterface {
   
   
   virtual VideoFrameData NextFrame() = 0;
+  
+  
+  virtual void SkipNextFrame() { NextFrame(); }
 
   
   virtual void ChangeResolution(size_t width, size_t height) = 0;
