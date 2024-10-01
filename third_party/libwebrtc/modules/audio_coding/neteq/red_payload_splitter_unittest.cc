@@ -16,6 +16,8 @@
 #include <utility>  
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/environment/environment.h"
+#include "api/environment/environment_factory.h"
 #include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -286,6 +288,7 @@ TEST(RedPayloadSplitter, TwoPacketsThreePayloads) {
 
 
 TEST(RedPayloadSplitter, CheckRedPayloads) {
+  const Environment env = CreateEnvironment();
   PacketList packet_list;
   for (uint8_t i = 0; i <= 3; ++i) {
     
@@ -296,7 +299,7 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   
   
   DecoderDatabase decoder_database(
-      rtc::make_ref_counted<MockAudioDecoderFactory>(), absl::nullopt);
+      env, make_ref_counted<MockAudioDecoderFactory>(), absl::nullopt);
   decoder_database.RegisterPayload(0, SdpAudioFormat("cn", 8000, 1));
   decoder_database.RegisterPayload(1, SdpAudioFormat("pcmu", 8000, 1));
   decoder_database.RegisterPayload(2,
@@ -321,6 +324,7 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
 
 
 TEST(RedPayloadSplitter, CheckRedPayloadsRecursiveRed) {
+  const Environment env = CreateEnvironment();
   PacketList packet_list;
   for (uint8_t i = 0; i <= 3; ++i) {
     
@@ -331,7 +335,7 @@ TEST(RedPayloadSplitter, CheckRedPayloadsRecursiveRed) {
   
   
   DecoderDatabase decoder_database(
-      rtc::make_ref_counted<MockAudioDecoderFactory>(), absl::nullopt);
+      env, make_ref_counted<MockAudioDecoderFactory>(), absl::nullopt);
   decoder_database.RegisterPayload(kRedPayloadType,
                                    SdpAudioFormat("red", 8000, 1));
 
