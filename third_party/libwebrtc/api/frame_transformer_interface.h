@@ -106,6 +106,10 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   
   
   virtual absl::optional<uint8_t> AudioLevel() const = 0;
+
+  
+  
+  virtual absl::optional<Timestamp> ReceiveTime() const = 0;
 };
 
 
