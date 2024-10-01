@@ -7,11 +7,13 @@ const dbg = new Debugger(g);
 var base = stackPointerInfo();
 var estimatedLimit = base - 300000;
 var checkFailed = false;
+var checksPerformed = {};
 
 
 
 function checkStack(s) {
   var sp = stackPointerInfo();
+  checksPerformed[s] = true;
   if (sp < estimatedLimit || sp > base) {
     print(`Check failed: ${sp} not in [${estimatedLimit}, ${base}], at ${s}`);
     checkFailed = true;
@@ -21,9 +23,13 @@ checkStack();
 assertEq(checkFailed, false);
 
 dbg.onEnterFrame = function(frame) {
+  if (frame.type != "wasmcall") {
+    return;
+  }
   checkStack("enter");
   frame.onStep = () => {
     checkStack("step");
+    frame.offset; 
   };
   frame.onPop = () => {
     checkStack("pop");
@@ -82,3 +88,6 @@ drainJobQueue();
 `);
 
 assertEq(checkFailed, false);
+for (let i of ['enter', 'step', 'pop', 'exception']) {
+  assertEq(i in checksPerformed, true, `${i} check performed`);
+}
