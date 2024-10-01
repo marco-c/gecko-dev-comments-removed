@@ -419,6 +419,12 @@ class Browsertime(Perftest):
             
             self.results_handler.perfstats = True
 
+        if test.get("support_class", None):
+            
+            
+            
+            browsertime_options.extend(["--browsertime.support_class", "true"])
+
         if self.config["app"] in ("fenix",):
             
             browsertime_options.extend(
@@ -1056,7 +1062,10 @@ class Browsertime(Perftest):
                         "USB_POWER_METER_SERIAL_NUMBER", ""
                     )
 
-                cmd.extend(["--android.usbPowerTesting", "true"])
+                if test.get("type") == "benchmark":
+                    cmd.extend(["--browsertime.power_test", "true"])
+                else:
+                    cmd.extend(["--android.usbPowerTesting", "true"])
 
             mozprocess.run_and_wait(
                 cmd,

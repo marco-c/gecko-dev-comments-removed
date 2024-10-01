@@ -1166,6 +1166,7 @@ class Raptor(
     def download_and_extract(self, extract_dirs=None, suite_categories=None):
         
         extract_dirs = [
+            "bin/*",
             "tools/wptserve/*",
             "tools/wpt_third_party/h2/*",
             "tools/wpt_third_party/pywebsocket3/*",
@@ -1366,6 +1367,18 @@ class Raptor(
         
         env["SCRIPTSPATH"] = scripts_path
         env["EXTERNALTOOLSPATH"] = external_tools_path
+        env["XPCSHELL_PATH"] = os.path.join(
+            self.query_abs_dirs()["abs_test_install_dir"], "bin", "xpcshell.exe"
+        )
+        if os.path.exists(env["XPCSHELL_PATH"]) and not self.run_local:
+            dest = os.path.join(
+                self.query_abs_dirs()["abs_work_dir"],
+                "application",
+                "firefox",
+                "xpcshell.exe",
+            )
+            copyfile(env["XPCSHELL_PATH"], dest)
+            env["XPCSHELL_PATH"] = dest
 
         
         if self.is_release_build:
