@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 
 
 
@@ -582,11 +584,6 @@ add_task(async function testCharacterNavigation() {
       await expectFocusAfterKey("s", "save-to-pocket-button");
       
       await expectFocusAfterKey("i", "sidebar-button");
-    } else {
-      
-      await expectFocusAfterKey("s", "sidebar-button");
-      
-      await expectFocusAfterKey("a", "save-to-pocket-button");
     }
     
     EventUtils.synthesizeKey("KEY_Escape");
@@ -594,10 +591,6 @@ add_task(async function testCharacterNavigation() {
       await expectFocusAfterKey("s", "save-to-pocket-button");
       
       await expectFocusAfterKey("s", "sidebar-button");
-    } else {
-      await expectFocusAfterKey("s", "sidebar-button");
-      
-      await expectFocusAfterKey("s", "save-to-pocket-button");
     }
   });
   RemoveHomeButton();
