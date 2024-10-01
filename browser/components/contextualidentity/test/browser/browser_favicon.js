@@ -6,6 +6,11 @@ let { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
 
+let lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  LinkHandlerParent: "resource:///actors/LinkHandlerParent.sys.mjs",
+});
+
 const USER_CONTEXTS = ["default", "personal", "work"];
 
 let gHttpServer = null;
@@ -93,7 +98,6 @@ add_task(async function test() {
 
   let serverPort = gHttpServer.identity.primaryPort;
   let testURL = "http://localhost:" + serverPort + "/";
-  let testFaviconURL = "http://localhost:" + serverPort + "/favicon.png";
 
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     gUserContextId = userContextId;
@@ -105,31 +109,31 @@ add_task(async function test() {
     let tabInfo = await openTabInUserContext(testURL, userContextId);
 
     
+    let onFaviconReady = new Promise(resolve => {
+      let listener = name => {
+        if (name == "SetIcon") {
+          lazy.LinkHandlerParent.removeListenerForTests(listener);
+          resolve();
+        }
+      };
+
+      lazy.LinkHandlerParent.addListenerForTests(listener);
+    });
+
+    
     await SpecialPowers.spawn(
       tabInfo.browser,
       [{ userContext: USER_CONTEXTS[userContextId] }],
       function (arg) {
         content.document.cookie = "userContext=" + arg.userContext;
+        
+        let link = content.document.createElement("link");
+        link.setAttribute("rel", "icon");
+        link.setAttribute("href", "favicon.png");
+        content.document.head.append(link);
       }
     );
-
-    let pageURI = NetUtil.newURI(testURL);
-    let favIconURI = NetUtil.newURI(testFaviconURL);
-
-    await new Promise(resolve => {
-      PlacesUtils.favicons.setAndFetchFaviconForPage(
-        pageURI,
-        favIconURI,
-        true,
-        PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
-        {
-          onComplete() {
-            resolve();
-          },
-        },
-        tabInfo.browser.contentPrincipal
-      );
-    });
+    await onFaviconReady;
 
     BrowserTestUtils.removeTab(tabInfo.tab);
   }
