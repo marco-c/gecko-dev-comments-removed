@@ -67,17 +67,22 @@ let dialog = {
 
 
 
-  triggeringPrincipalIsTop() {
+
+  shouldShowPrincipal() {
     if (!this._principal) {
       return false;
     }
 
     let topContentPrincipal =
       this._browsingContext?.top.embedderElement?.contentPrincipal;
-    if (!topContentPrincipal) {
-      return false;
-    }
-    return this._principal.equals(topContentPrincipal);
+
+    let shownScheme =
+      this._browsingContext.currentWindowGlobal.documentURI.scheme;
+    return (
+      !topContentPrincipal ||
+      !topContentPrincipal.equals(this._principal) ||
+      !["http", "https", "file"].includes(shownScheme)
+    );
   },
 
   
@@ -92,7 +97,7 @@ let dialog = {
       return "permission-dialog-description-extension";
     }
 
-    if (this._principal?.schemeIs("file")) {
+    if (this._principal?.schemeIs("file") && !this.shouldShowPrincipal()) {
       if (this._preferredHandlerName) {
         return "permission-dialog-description-file-app";
       }
@@ -107,10 +112,7 @@ let dialog = {
       return "permission-dialog-description-system-noapp";
     }
 
-    
-    
-    
-    if (!this.triggeringPrincipalIsTop() && this.displayPrePath) {
+    if (this.shouldShowPrincipal() && this.userReadablePrincipal) {
       if (this._preferredHandlerName) {
         return "permission-dialog-description-host-app";
       }
@@ -149,18 +151,30 @@ let dialog = {
 
 
 
-  get displayPrePath() {
+
+
+
+  get userReadablePrincipal() {
     if (!this._principal) {
       return null;
     }
 
     
     
-    if (this._principal.isNullPrincipal) {
-      return this._principal.precursorPrincipal?.exposablePrePath;
+    let p = this._principal.isNullPrincipal
+      ? this._principal.precursorPrincipal
+      : this._principal;
+    
+    
+    if (p?.schemeIs("file")) {
+      try {
+        let { file } = p.URI.QueryInterface(Ci.nsIFileURL);
+        return file.path;
+      } catch (_ex) {
+        return p.spec;
+      }
     }
-
-    return this._principal?.exposablePrePath;
+    return p?.exposablePrePath;
   },
 
   initL10n() {
@@ -184,7 +198,7 @@ let dialog = {
 
     let description = document.getElementById("description");
 
-    let host = this.displayPrePath;
+    let host = this.userReadablePrincipal;
     let scheme = this._handlerInfo.type;
 
     document.l10n.setAttributes(description, this.l10nDescriptionId, {
