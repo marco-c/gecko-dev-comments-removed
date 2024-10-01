@@ -167,7 +167,13 @@ MFTDecoder::SetDecoderOutputType(
 
   
   
-  RefPtr<IMFMediaType> outputType;
+  
+  
+  
+  
+  RefPtr<IMFMediaType> outputType, lastOutputType;
+  GUID lastOutputSubtype;
+  bool foundCompatibleType  = false;
   UINT32 typeIndex = 0;
   while (SUCCEEDED(mDecoder->GetOutputAvailableType(
       0, typeIndex++, getter_AddRefs(outputType)))) {
@@ -175,20 +181,34 @@ MFTDecoder::SetDecoderOutputType(
     RETURN_IF_FAILED(outputType->GetGUID(MF_MT_SUBTYPE, &outSubtype));
     LOGV("Searching compatible type, input=%s, output=%s",
          GetSubTypeStr(aSubType).get(), GetSubTypeStr(outSubtype).get());
+    lastOutputType = outputType;
+    lastOutputSubtype = outSubtype;
     if (aSubType == outSubtype) {
-      RETURN_IF_FAILED(aCallback(outputType));
-      RETURN_IF_FAILED(mDecoder->SetOutputType(0, outputType, 0));
-      RETURN_IF_FAILED(mDecoder->GetOutputStreamInfo(0, &mOutputStreamInfo));
-      mMFTProvidesOutputSamples = IsFlagSet(mOutputStreamInfo.dwFlags,
-                                            MFT_OUTPUT_STREAM_PROVIDES_SAMPLES);
-      mOutputType = outputType;
-      mOutputSubType = outSubtype;
-      return S_OK;
+      foundCompatibleType  = true;
+      break;
     }
     outputType = nullptr;
   }
-  LOG("Can't find compatible output type!");
-  return E_FAIL;
+
+  if (!lastOutputType) {
+    LOG("No available output type!");
+    return E_FAIL;
+  }
+
+  if (foundCompatibleType ) {
+    LOG("Found compatible type %s", GetSubTypeStr(aSubType).get());
+  } else {
+    LOG("Can't find a compatible output type, use the last available type %s",
+        GetSubTypeStr(lastOutputSubtype).get());
+  }
+  RETURN_IF_FAILED(aCallback(lastOutputType));
+  RETURN_IF_FAILED(mDecoder->SetOutputType(0, lastOutputType, 0));
+  RETURN_IF_FAILED(mDecoder->GetOutputStreamInfo(0, &mOutputStreamInfo));
+  mMFTProvidesOutputSamples =
+      IsFlagSet(mOutputStreamInfo.dwFlags, MFT_OUTPUT_STREAM_PROVIDES_SAMPLES);
+  mOutputType = lastOutputType;
+  mOutputSubType = lastOutputSubtype;
+  return S_OK;
 }
 
 HRESULT
