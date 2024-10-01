@@ -191,8 +191,15 @@ int32_t Dav1dDecoder::Decode(const EncodedImage& encoded_image,
           .set_color_space(encoded_image.ColorSpace())
           .build();
 
-  decode_complete_callback_->Decoded(decoded_frame, absl::nullopt,
-                                     absl::nullopt);
+  
+  
+  
+  
+  
+  
+  absl::optional<uint8_t> qp = dav1d_picture.frame_hdr->quant.yac;
+  decode_complete_callback_->Decoded(decoded_frame,
+                                     absl::nullopt, qp);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
