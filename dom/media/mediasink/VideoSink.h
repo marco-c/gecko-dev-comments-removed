@@ -89,9 +89,8 @@ class VideoSink : public MediaSink {
   
   
   
-  
-  void RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime = 0,
-                         const TimeStamp& aClickTimeStamp = TimeStamp());
+  void RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime,
+                         const TimeStamp& aClockTimeStamp);
 
   
   
