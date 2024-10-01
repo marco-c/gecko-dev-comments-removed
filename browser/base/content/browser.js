@@ -992,6 +992,7 @@ const gClickAndHoldListenersOnElement = {
 
   _keypressHandler(aEvent) {
     if (aEvent.key == " " || aEvent.key == "Enter") {
+      aEvent.preventDefault();
       
       
       
@@ -1014,7 +1015,11 @@ const gClickAndHoldListenersOnElement = {
         this._mouseupHandler(e);
         break;
       case "keypress":
-        this._keypressHandler(e);
+        
+        
+        if (!e.defaultPrevented) {
+          this._keypressHandler(e);
+        }
         break;
     }
   },
