@@ -93,6 +93,9 @@ class VoiceProcessingAudioUnit {
   bool Uninitialize();
 
   
+  bool SetMicrophoneMute(bool enable);
+
+  
   OSStatus Render(AudioUnitRenderActionFlags* flags,
                   const AudioTimeStamp* time_stamp,
                   UInt32 output_bus_number,
