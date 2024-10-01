@@ -4072,6 +4072,10 @@ MDefinition* MTruncateBigIntToInt64::foldsTo(TempAllocator& alloc) {
   
   if (input->isIntPtrToBigInt()) {
     auto* intPtr = input->toIntPtrToBigInt()->input();
+    if (intPtr->isConstant()) {
+      intptr_t c = intPtr->toConstant()->toIntPtr();
+      return MConstant::NewInt64(alloc, int64_t(c));
+    }
     return MIntPtrToInt64::New(alloc, intPtr);
   }
 
@@ -4105,6 +4109,17 @@ MDefinition* MToInt64::foldsTo(TempAllocator& alloc) {
       return MConstant::NewInt64(alloc, int64_t(c));
     }
     return MExtendInt32ToInt64::New(alloc, int32,  false);
+  }
+
+  
+  
+  if (input->isIntPtrToBigInt()) {
+    auto* intPtr = input->toIntPtrToBigInt()->input();
+    if (intPtr->isConstant()) {
+      intptr_t c = intPtr->toConstant()->toIntPtr();
+      return MConstant::NewInt64(alloc, int64_t(c));
+    }
+    return MIntPtrToInt64::New(alloc, intPtr);
   }
 
   
