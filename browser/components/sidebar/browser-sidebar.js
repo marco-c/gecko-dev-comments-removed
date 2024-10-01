@@ -596,17 +596,13 @@ var SidebarController = {
       
       sidebarContainer.style.order = parseInt(this._box.style.order) + 1;
       
-      this._box.toggleAttribute("positionend", true);
-      sidebarMain.toggleAttribute("positionend", true);
-      sidebarContainer.toggleAttribute("positionend", true);
-      this.toolbarButton &&
-        this.toolbarButton.toggleAttribute("positionend", true);
+      this._box.setAttribute("positionend", true);
+      sidebarMain.setAttribute("positionend", true);
+      sidebarContainer.setAttribute("positionend", true);
     } else {
-      this._box.toggleAttribute("positionend", false);
-      sidebarMain.toggleAttribute("positionend", false);
-      sidebarContainer.toggleAttribute("positionend", false);
-      this.toolbarButton &&
-        this.toolbarButton.toggleAttribute("positionend", false);
+      this._box.removeAttribute("positionend");
+      sidebarMain.removeAttribute("positionend");
+      sidebarContainer.removeAttribute("positionend");
     }
 
     this.hideSwitcherPanel();
@@ -986,9 +982,10 @@ var SidebarController = {
         if (!isHidden && this.isOpen) {
           
           this.hide();
+        } else if (isHidden) {
+          
+          this.toggleExpanded(true);
         }
-        
-        this.toggleExpanded(isHidden);
         this.sidebarContainer.hidden = !isHidden;
         this.updateToolbarButton();
         break;
@@ -1004,11 +1001,6 @@ var SidebarController = {
       
       return;
     }
-    this.toolbarButton.toggleAttribute("expanded", this.sidebarMain.expanded);
-    this.toolbarButton.toggleAttribute(
-      "open",
-      this._box.hasAttribute("checked")
-    );
     switch (this.sidebarRevampVisibility) {
       case "always-show":
         
@@ -1016,7 +1008,6 @@ var SidebarController = {
         this.toolbarButton.dataset.l10nId = this.toolbarButton.checked
           ? "sidebar-toolbar-collapse-sidebar"
           : "sidebar-toolbar-expand-sidebar";
-        this.toolbarButton.toggleAttribute("shown", true);
         break;
       case "hide-sidebar":
         
@@ -1024,7 +1015,6 @@ var SidebarController = {
         this.toolbarButton.dataset.l10nId = this.toolbarButton.checked
           ? "sidebar-toolbar-hide-sidebar"
           : "sidebar-toolbar-show-sidebar";
-        this.toolbarButton.toggleAttribute("shown", false);
         break;
     }
   },
