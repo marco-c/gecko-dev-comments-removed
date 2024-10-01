@@ -2827,12 +2827,6 @@ nsAutoRegion nsWindow::ComputeNonClientHRGN() {
   return nsAutoRegion(winRgn.out());
 }
 
-void nsWindow::InvalidateNonClientRegion() {
-  nsAutoRegion winRgn(ComputeNonClientHRGN());
-  
-  RedrawWindow(mWnd, nullptr, winRgn, RDW_FRAME | RDW_INVALIDATE);
-}
-
 
 
 
@@ -5075,10 +5069,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       }
 
     case WM_NCACTIVATE: {
-      
-
-
-
       if (!mCustomNonClient) {
         break;
       }
@@ -5091,24 +5081,14 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       
       
-      if (mFrameState->GetSizeMode() != nsSizeMode_Fullscreen) break;
-
-      if (wParam == TRUE) {
-        
-        *aRetValue = FALSE;  
-        result = true;
-        
-        InvalidateNonClientRegion();
-        break;
-      } else {
-        
-        *aRetValue = TRUE;  
-        result = true;
-        
-        InvalidateNonClientRegion();
-        break;
-      }
-    }
+      
+      
+      
+      
+      
+      
+      lParam = -1;
+    } break;
 
     case WM_NCPAINT: {
       
@@ -5116,6 +5096,12 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
 
       gfxDWriteFont::UpdateSystemTextVars();
+      if (mCustomNonClient) {
+        
+        
+        
+        mNeedsNCAreaClear = true;
+      }
     } break;
 
     case WM_POWERBROADCAST:

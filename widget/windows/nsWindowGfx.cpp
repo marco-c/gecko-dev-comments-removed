@@ -180,7 +180,6 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   const bool usingMemoryDC =
       renderer->GetBackendType() == LayersBackend::LAYERS_NONE &&
       mTransparencyMode == TransparencyMode::Transparent;
-  HDC hDC = nullptr;
   const LayoutDeviceIntRect winRect = [&] {
     RECT r;
     ::GetWindowRect(mWnd, &r);
@@ -189,19 +188,21 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   }();
   LayoutDeviceIntRegion region;
   LayoutDeviceIntRegion translucentRegion;
+  
+  
+  
+  
+  
+  
+  
+  HDC hDC = ::BeginPaint(mWnd, &ps);
   if (usingMemoryDC) {
-    
-    
-    
-    ::BeginPaint(mWnd, &ps);
     ::EndPaint(mWnd, &ps);
-
     
     
     hDC = mBasicLayersSurface->GetTransparentDC();
     region = translucentRegion = LayoutDeviceIntRegion{winRect};
   } else {
-    hDC = ::BeginPaint(mWnd, &ps);
     region = GetRegionToPaint(ps, hDC);
     if (mTransparencyMode == TransparencyMode::Transparent) {
       translucentRegion = LayoutDeviceIntRegion{winRect};
