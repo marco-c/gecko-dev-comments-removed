@@ -127,9 +127,6 @@ class RetransmissionQueue {
   size_t unacked_items() const { return outstanding_data_.unacked_items(); }
 
   
-  bool can_send_data() const;
-
-  
   
   
   bool ShouldSendForwardTsn(webrtc::Timestamp now);
@@ -217,9 +214,6 @@ class RetransmissionQueue {
 
   DcSctpSocketCallbacks& callbacks_;
   const DcSctpOptions options_;
-  
-  
-  const size_t min_bytes_required_to_send_;
   
   const bool partial_reliability_;
   const absl::string_view log_prefix_;
