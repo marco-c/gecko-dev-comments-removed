@@ -15,6 +15,7 @@
 #include <string>
 
 #include "api/audio_codecs/audio_format.h"
+#include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
@@ -46,9 +47,7 @@ namespace webrtc {
 
 class AudioEgress : public AudioSender, public AudioPacketizationCallback {
  public:
-  AudioEgress(RtpRtcpInterface* rtp_rtcp,
-              Clock* clock,
-              TaskQueueFactory* task_queue_factory);
+  AudioEgress(const Environment& env, RtpRtcpInterface* rtp_rtcp);
   ~AudioEgress() override;
 
   
