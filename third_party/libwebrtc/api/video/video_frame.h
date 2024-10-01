@@ -193,13 +193,9 @@ class RTC_EXPORT VideoFrame {
   void set_rtp_timestamp(uint32_t rtp_timestamp) {
     timestamp_rtp_ = rtp_timestamp;
   }
-  
-  void set_timestamp(uint32_t timestamp) { timestamp_rtp_ = timestamp; }
 
   
   uint32_t rtp_timestamp() const { return timestamp_rtp_; }
-  
-  uint32_t timestamp() const { return timestamp_rtp_; }
 
   
   void set_ntp_time_ms(int64_t ntp_time_ms) { ntp_time_ms_ = ntp_time_ms; }
@@ -229,14 +225,6 @@ class RTC_EXPORT VideoFrame {
   RenderParameters render_parameters() const { return render_parameters_; }
   void set_render_parameters(const RenderParameters& render_parameters) {
     render_parameters_ = render_parameters;
-  }
-
-  
-  
-  
-  [[deprecated("Use render_parameters() instead.")]] absl::optional<int32_t>
-  max_composition_delay_in_frames() const {
-    return render_parameters_.max_composition_delay_in_frames;
   }
 
   
