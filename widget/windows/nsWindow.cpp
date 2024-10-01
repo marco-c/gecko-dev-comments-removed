@@ -5087,6 +5087,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       
+      
       lParam = -1;
     } break;
 
