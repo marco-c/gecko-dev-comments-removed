@@ -10,6 +10,8 @@
 #ifndef CALL_CALL_CONFIG_H_
 #define CALL_CALL_CONFIG_H_
 
+#include <memory>
+
 #include "api/environment/environment.h"
 #include "api/fec_controller.h"
 #include "api/metronome/metronome.h"
@@ -32,7 +34,9 @@ struct CallConfig {
   explicit CallConfig(const Environment& env,
                       TaskQueueBase* network_task_queue = nullptr);
 
-  CallConfig(const CallConfig&);
+  
+  CallConfig(CallConfig&&) = default;
+  CallConfig& operator=(CallConfig&& other) = default;
 
   ~CallConfig();
 
@@ -58,12 +62,17 @@ struct CallConfig {
       nullptr;
 
   
+  
+  std::unique_ptr<NetworkControllerFactoryInterface>
+      per_call_network_controller_factory;
+  
+  
   NetworkControllerFactoryInterface* network_controller_factory = nullptr;
 
   
   NetEqFactory* neteq_factory = nullptr;
 
-  TaskQueueBase* const network_task_queue_ = nullptr;
+  TaskQueueBase* network_task_queue_ = nullptr;
   
   RtpTransportControllerSendFactoryInterface*
       rtp_transport_controller_send_factory = nullptr;

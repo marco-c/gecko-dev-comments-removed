@@ -73,7 +73,7 @@ void RtpReplayer::Replay(
 
   
   CallConfig call_config(CreateEnvironment());
-  std::unique_ptr<Call> call(Call::Create(call_config));
+  std::unique_ptr<Call> call(Call::Create(std::move(call_config)));
   SetupVideoStreams(&receive_stream_configs, stream_state.get(), call.get());
 
   
