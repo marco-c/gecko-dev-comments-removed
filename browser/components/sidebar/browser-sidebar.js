@@ -1005,10 +1005,6 @@ var SidebarController = {
       return;
     }
     this.toolbarButton.toggleAttribute("expanded", this.sidebarMain.expanded);
-    this.toolbarButton.toggleAttribute(
-      "open",
-      this._box.hasAttribute("checked")
-    );
     switch (this.sidebarRevampVisibility) {
       case "always-show":
         
@@ -1016,7 +1012,6 @@ var SidebarController = {
         this.toolbarButton.dataset.l10nId = this.toolbarButton.checked
           ? "sidebar-toolbar-collapse-sidebar"
           : "sidebar-toolbar-expand-sidebar";
-        this.toolbarButton.toggleAttribute("shown", true);
         break;
       case "hide-sidebar":
         
@@ -1024,7 +1019,6 @@ var SidebarController = {
         this.toolbarButton.dataset.l10nId = this.toolbarButton.checked
           ? "sidebar-toolbar-hide-sidebar"
           : "sidebar-toolbar-show-sidebar";
-        this.toolbarButton.toggleAttribute("shown", false);
         break;
     }
   },
