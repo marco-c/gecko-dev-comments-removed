@@ -1259,11 +1259,13 @@
       children.pop();
 
       
-      Array.from(children).forEach((node, index) => {
-        if (node.tagName == "tab-group") {
-          children.splice(index, 1, ...node.tabs);
+      
+      
+      for (let i = children.length - 1; i >= 0; i--) {
+        if (children[i].tagName == "tab-group") {
+          children.splice(i, 1, ...children[i].tabs);
         }
-      });
+      }
 
       let allChildren = [...verticalPinnedTabsContainer.children, ...children];
       this._allTabs = allChildren;
