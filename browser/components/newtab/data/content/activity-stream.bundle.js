@@ -2856,6 +2856,7 @@ const DefaultMeta = ({
   mayHaveThumbsUpDown,
   onThumbsUpClick,
   onThumbsDownClick,
+  isListCard,
   state
 }) => external_React_default().createElement("div", {
   className: "meta"
@@ -2872,7 +2873,7 @@ const DefaultMeta = ({
   className: "title clamp"
 }, title), excerpt && external_React_default().createElement("p", {
   className: "excerpt clamp"
-}, excerpt)), mayHaveThumbsUpDown && external_React_default().createElement(DSThumbsUpDownButtons, {
+}, excerpt)), !isListCard && mayHaveThumbsUpDown && external_React_default().createElement(DSThumbsUpDownButtons, {
   onThumbsDownClick: onThumbsDownClick,
   onThumbsUpClick: onThumbsUpClick,
   sponsor: sponsor,
@@ -3675,7 +3676,7 @@ function ListFeed({
   } = listFeedRecs;
   
   const fullList = listLength >= 5;
-  return external_React_default().createElement("div", {
+  return listLength > 0 && external_React_default().createElement("div", {
     className: `list-feed ${fullList ? "full-height" : ""} ${listLength > 2 ? "span-2" : "span-1"}`
   }, external_React_default().createElement("div", {
     className: "list-feed-inner-wrapper"
@@ -3697,7 +3698,7 @@ function ListFeed({
       });
     }
     return external_React_default().createElement(DSCard, {
-      key: `list-card-${rec.id}`,
+      key: `list-card-${index}`,
       pos: rec.pos,
       flightId: rec.flight_id,
       image_src: rec.image_src,
