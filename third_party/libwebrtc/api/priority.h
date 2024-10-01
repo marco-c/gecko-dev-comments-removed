@@ -29,9 +29,7 @@ enum class Priority {
 class PriorityValue
     : public webrtc::StrongAlias<class PriorityValueTag, uint16_t> {
  public:
-  
-  
-  PriorityValue(Priority priority) {  
+  explicit PriorityValue(Priority priority) {
     switch (priority) {
       case Priority::kVeryLow:
         value_ = 128;
