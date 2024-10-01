@@ -115,61 +115,6 @@ interface nsIFaviconService : nsISupports
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  mozIPlacesPendingOperation setAndFetchFaviconForPage(
-    in nsIURI aPageURI,
-    in nsIURI aFaviconURI,
-    in boolean aForceReload,
-    in unsigned long aFaviconLoadType,
-    [optional] in nsIFaviconDataCallback aCallback,
-    [optional] in nsIPrincipal aLoadingPrincipal,
-    [optional] in unsigned long long aRequestContextID);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   void setFaviconForPage(
     in nsIURI aPageURI,
     in nsIURI aFaviconURI,
