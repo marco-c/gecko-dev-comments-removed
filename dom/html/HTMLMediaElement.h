@@ -796,8 +796,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void DispatchAsyncTestingEvent(const nsAString& aName) override;
 
-  AbstractThread* AbstractMainThread() const final;
-
   
   
   
