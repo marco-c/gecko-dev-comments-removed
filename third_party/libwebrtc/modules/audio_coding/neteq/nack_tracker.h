@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/field_trials_view.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/gtest_prod_util.h"
 
@@ -54,7 +55,7 @@ class NackTracker {
   
   static const size_t kNackListSizeLimit = 500;  
                                                  
-  NackTracker();
+  explicit NackTracker(const FieldTrialsView& field_trials);
   ~NackTracker();
 
   
@@ -99,7 +100,7 @@ class NackTracker {
 
   
   struct Config {
-    Config();
+    explicit Config(const FieldTrialsView& field_trials);
 
     
     double packet_loss_forget_factor = 0.996;
