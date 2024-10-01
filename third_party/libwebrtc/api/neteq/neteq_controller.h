@@ -67,6 +67,7 @@ class NetEqController {
     int max_packets_in_buffer;
     int base_min_delay_ms;
     TickTimer* tick_timer;
+    
     webrtc::Clock* clock = nullptr;
   };
 
