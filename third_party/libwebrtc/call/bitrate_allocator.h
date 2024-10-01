@@ -22,6 +22,7 @@
 #include "api/call/bitrate_allocation.h"
 #include "api/sequence_checker.h"
 #include "api/transport/network_types.h"
+#include "api/units/data_rate.h"
 #include "rtc_base/system/no_unique_address.h"
 
 namespace webrtc {
@@ -37,6 +38,8 @@ class BitrateAllocatorObserver {
   
   
   virtual uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) = 0;
+  
+  virtual absl::optional<DataRate> GetUsedRate() const = 0;
 
  protected:
   virtual ~BitrateAllocatorObserver() {}
@@ -44,6 +47,12 @@ class BitrateAllocatorObserver {
 
 
 
+
+enum class TrackRateElasticity {
+  kCanContributeUnusedRate,
+  kCanConsumeExtraRate,
+  kCanContributeAndConsume
+};
 
 struct MediaStreamAllocationConfig {
   
@@ -61,6 +70,7 @@ struct MediaStreamAllocationConfig {
   
   
   double bitrate_priority;
+  absl::optional<TrackRateElasticity> rate_elasticity;
 };
 
 
@@ -82,10 +92,12 @@ struct AllocatableTrack {
       : observer(observer),
         config(allocation_config),
         allocated_bitrate_bps(-1),
+        last_used_bitrate_bps(-1),
         media_ratio(1.0) {}
   BitrateAllocatorObserver* observer;
   MediaStreamAllocationConfig config;
   int64_t allocated_bitrate_bps;
+  int64_t last_used_bitrate_bps;
   double media_ratio;  
 
   uint32_t LastAllocatedBitrate() const;
