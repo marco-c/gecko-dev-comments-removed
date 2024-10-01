@@ -15,7 +15,6 @@
 
 #include "api/environment/environment.h"
 #include "api/neteq/neteq_controller.h"
-#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -28,17 +27,7 @@ class NetEqControllerFactory {
   
   virtual std::unique_ptr<NetEqController> Create(
       const Environment& env,
-      const NetEqController::Config& config) const {
-    return CreateNetEqController(config);
-  }
-
- private:
-  
-  virtual std::unique_ptr<NetEqController> CreateNetEqController(
-      const NetEqController::Config& config) const {
-    RTC_DCHECK_NOTREACHED();
-    return nullptr;
-  }
+      const NetEqController::Config& config) const = 0;
 };
 
 }  
