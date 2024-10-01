@@ -171,6 +171,9 @@ class LossBasedBweV2 {
   
   double GetAverageReportedLossRatio() const;
   double GetAverageReportedPacketLossRatio() const;
+  
+  
+  
   double GetAverageReportedByteLossRatio() const;
   std::vector<ChannelParameters> GetCandidates(bool in_alr) const;
   DataRate GetCandidateBandwidthUpperBound() const;

@@ -1793,6 +1793,55 @@ TEST_F(LossBasedBweV2Test, UseByteLossRate) {
       DataRate::KilobitsPerSec(150));
 }
 
+TEST_F(LossBasedBweV2Test, UseByteLossRateIgnoreLossSpike) {
+  ExplicitKeyValueConfig key_value_config(
+      "WebRTC-Bwe-LossBasedBweV2/"
+      "UseByteLossRate:true,ObservationWindowSize:5/");
+  LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
+  const DataRate kDelayBasedEstimate = DataRate::KilobitsPerSec(500);
+  loss_based_bandwidth_estimator.SetBandwidthEstimate(kDelayBasedEstimate);
+
+  
+  for (int i = 0; i < 5; ++i) {
+    loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+        CreatePacketResultsWithReceivedPackets(
+            Timestamp::Zero() +
+            i * kObservationDurationLowerBound),
+        kDelayBasedEstimate,
+        false);
+  }
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      CreatePacketResultsWith100pLossRate(
+          Timestamp::Zero() +
+          5 * kObservationDurationLowerBound),
+      kDelayBasedEstimate,
+      false);
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      CreatePacketResultsWithReceivedPackets(
+          Timestamp::Zero() +
+          6 * kObservationDurationLowerBound),
+      kDelayBasedEstimate,
+      false);
+  EXPECT_EQ(loss_based_bandwidth_estimator.GetLossBasedResult().state,
+            LossBasedState::kDelayBasedEstimate);
+  EXPECT_EQ(
+      loss_based_bandwidth_estimator.GetLossBasedResult().bandwidth_estimate,
+      kDelayBasedEstimate);
+
+  
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      CreatePacketResultsWith100pLossRate(
+          Timestamp::Zero() +
+          7 * kObservationDurationLowerBound),
+      kDelayBasedEstimate,
+      false);
+  EXPECT_EQ(loss_based_bandwidth_estimator.GetLossBasedResult().state,
+            LossBasedState::kDecreasing);
+  EXPECT_LT(
+      loss_based_bandwidth_estimator.GetLossBasedResult().bandwidth_estimate,
+      kDelayBasedEstimate);
+}
+
 TEST_F(LossBasedBweV2Test, PaceAtLossBasedEstimate) {
   ExplicitKeyValueConfig key_value_config(ShortObservationConfig(
       "PaceAtLossBasedEstimate:true,PaddingDuration:1000ms"));
