@@ -601,7 +601,13 @@ static void _attach_accelerator_data (hb_subset_plan_t* plan,
 hb_face_t *
 hb_subset_or_fail (hb_face_t *source, const hb_subset_input_t *input)
 {
-  if (unlikely (!input || !source)) return hb_face_get_empty ();
+  if (unlikely (!input || !source)) return nullptr;
+
+  if (unlikely (!source->get_num_glyphs ()))
+  {
+    DEBUG_MSG (SUBSET, nullptr, "No glyphs in source font.");
+    return nullptr;
+  }
 
   hb_subset_plan_t *plan = hb_subset_plan_create_or_fail (source, input);
   if (unlikely (!plan)) {

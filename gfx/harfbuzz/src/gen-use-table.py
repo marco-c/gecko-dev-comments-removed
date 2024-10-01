@@ -389,7 +389,11 @@ def map_to_use(data):
 		
 		if U in [0x11302, 0x11303, 0x114C1]: UIPC = Top
 
-		assert (UIPC in [Not_Applicable, Visual_Order_Left] or U == 0x0F7F or
+		
+		if U == 0x113CF: UIPC = Bottom
+
+		assert (UIPC in [Not_Applicable, Visual_Order_Left] or
+			U in {0x0F7F, 0x11A3A} or
 			USE in use_positions), "%s %s %s %s %s %s %s" % (hex(U), UIPC, USE, UISC, UDI, UGC, AJT)
 
 		pos_mapping = use_positions.get(USE, None)

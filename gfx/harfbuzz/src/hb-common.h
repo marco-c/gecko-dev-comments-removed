@@ -514,6 +514,13 @@ hb_language_matches (hb_language_t language,
 
 
 
+
+
+
+
+
+
+
 typedef enum
 {
   HB_SCRIPT_COMMON			= HB_TAG ('Z','y','y','y'), 
@@ -730,6 +737,17 @@ typedef enum
 
   HB_SCRIPT_KAWI			= HB_TAG ('K','a','w','i'), 
   HB_SCRIPT_NAG_MUNDARI			= HB_TAG ('N','a','g','m'), 
+
+  
+
+
+  HB_SCRIPT_GARAY			= HB_TAG ('G','a','r','a'), 
+  HB_SCRIPT_GURUNG_KHEMA		= HB_TAG ('G','u','k','h'), 
+  HB_SCRIPT_KIRAT_RAI			= HB_TAG ('K','r','a','i'), 
+  HB_SCRIPT_OL_ONAL			= HB_TAG ('O','n','a','o'), 
+  HB_SCRIPT_SUNUWAR			= HB_TAG ('S','u','n','u'), 
+  HB_SCRIPT_TODHRI			= HB_TAG ('T','o','d','r'), 
+  HB_SCRIPT_TULU_TIGALARI		= HB_TAG ('T','u','t','g'), 
 
   
   HB_SCRIPT_INVALID			= HB_TAG_NONE,

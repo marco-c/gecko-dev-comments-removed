@@ -90,16 +90,13 @@ DEFINE_NULL_INSTANCE (hb_face_t) =
 {
   HB_OBJECT_HEADER_STATIC,
 
-  nullptr, 
-  nullptr, 
-  nullptr, 
-
   0,    
   1000, 
   0,    
 
   
 };
+
 
 
 
@@ -194,6 +191,22 @@ _hb_face_for_data_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void
   return blob;
 }
 
+static unsigned
+_hb_face_for_data_get_table_tags (const hb_face_t *face HB_UNUSED,
+				  unsigned int start_offset,
+				  unsigned int *table_count,
+				  hb_tag_t *table_tags,
+				  void *user_data)
+{
+  hb_face_for_data_closure_t *data = (hb_face_for_data_closure_t *) user_data;
+
+  const OT::OpenTypeFontFile &ot_file = *data->blob->as<OT::OpenTypeFontFile> ();
+  const OT::OpenTypeFontFace &ot_face = ot_file.get_face (data->index);
+
+  return ot_face.get_table_tags (start_offset, table_count, table_tags);
+}
+
+
 
 
 
@@ -240,6 +253,10 @@ hb_face_create (hb_blob_t    *blob,
   face = hb_face_create_for_tables (_hb_face_for_data_reference_table,
 				    closure,
 				    _hb_face_for_data_closure_destroy);
+  hb_face_set_get_table_tags_func (face,
+				   _hb_face_for_data_get_table_tags,
+				   closure,
+				   nullptr);
 
   face->index = index;
 
@@ -305,6 +322,9 @@ hb_face_destroy (hb_face_t *face)
 
   face->data.fini ();
   face->table.fini ();
+
+  if (face->get_table_tags_destroy)
+    face->get_table_tags_destroy (face->get_table_tags_user_data);
 
   if (face->destroy)
     face->destroy (face->user_data);
@@ -558,6 +578,37 @@ hb_face_get_glyph_count (const hb_face_t *face)
 
 
 
+HB_EXTERN void
+hb_face_set_get_table_tags_func (hb_face_t *face,
+				 hb_get_table_tags_func_t func,
+				 void                    *user_data,
+				 hb_destroy_func_t        destroy)
+{
+  if (hb_object_is_immutable (face))
+  {
+    if (destroy)
+      destroy (user_data);
+  }
+
+  if (face->get_table_tags_destroy)
+    face->get_table_tags_destroy (face->get_table_tags_user_data);
+
+  face->get_table_tags_func = func;
+  face->get_table_tags_user_data = user_data;
+  face->get_table_tags_destroy = destroy;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -568,19 +619,14 @@ hb_face_get_table_tags (const hb_face_t *face,
 			unsigned int *table_count, 
 			hb_tag_t     *table_tags )
 {
-  if (face->destroy != (hb_destroy_func_t) _hb_face_for_data_closure_destroy)
+  if (!face->get_table_tags_func)
   {
     if (table_count)
       *table_count = 0;
     return 0;
   }
 
-  hb_face_for_data_closure_t *data = (hb_face_for_data_closure_t *) face->user_data;
-
-  const OT::OpenTypeFontFile &ot_file = *data->blob->as<OT::OpenTypeFontFile> ();
-  const OT::OpenTypeFontFace &ot_face = ot_file.get_face (data->index);
-
-  return ot_face.get_table_tags (start_offset, table_count, table_tags);
+  return face->get_table_tags_func (face, start_offset, table_count, table_tags, face->get_table_tags_user_data);
 }
 
 

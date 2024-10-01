@@ -2339,7 +2339,11 @@ struct COLR
                                   c->plan->colrv1_varstore_inner_maps.as_array ()))
         return_trace (false);
 
-      if (!out->varStore.serialize_serialize (c->serializer,
+      
+
+      if (item_vars.get_region_list () &&
+          item_vars.get_vardata_encodings () &&
+          !out->varStore.serialize_serialize (c->serializer,
                                               item_vars.has_long_word (),
                                               c->plan->axis_tags,
                                               item_vars.get_region_list (),
@@ -2347,6 +2351,8 @@ struct COLR
         return_trace (false);
 
       
+
+
 
       if (optimize)
       {

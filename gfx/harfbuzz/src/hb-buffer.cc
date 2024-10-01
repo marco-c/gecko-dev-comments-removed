@@ -271,6 +271,7 @@ hb_buffer_t::similar (const hb_buffer_t &src)
   replacement = src.replacement;
   invisible = src.invisible;
   not_found = src.not_found;
+  not_found_variation_selector = src.not_found_variation_selector;
 }
 
 void
@@ -283,6 +284,7 @@ hb_buffer_t::reset ()
   replacement = HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT;
   invisible = 0;
   not_found = 0;
+  not_found_variation_selector = HB_CODEPOINT_INVALID;
 
   clear ();
 }
@@ -705,6 +707,7 @@ DEFINE_NULL_INSTANCE (hb_buffer_t) =
   HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT,
   0, 
   0, 
+  HB_CODEPOINT_INVALID, 
 
 
   HB_BUFFER_CONTENT_TYPE_INVALID,
@@ -1358,6 +1361,46 @@ hb_codepoint_t
 hb_buffer_get_not_found_glyph (const hb_buffer_t *buffer)
 {
   return buffer->not_found;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_buffer_set_not_found_variation_selector_glyph (hb_buffer_t    *buffer,
+						  hb_codepoint_t  not_found_variation_selector)
+{
+  buffer->not_found_variation_selector = not_found_variation_selector;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+hb_codepoint_t
+hb_buffer_get_not_found_variation_selector_glyph (const hb_buffer_t *buffer)
+{
+  return buffer->not_found_variation_selector;
 }
 
 
