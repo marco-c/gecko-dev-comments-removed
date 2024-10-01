@@ -135,6 +135,12 @@ add_task(async function test_toggle_vertical_tabs() {
   );
 
   
+  
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
+
+  
   EventUtils.synthesizeMouseAtPoint(
     containerRect.left + containerRect.width / 2,
     tabRect.bottom + 100,
@@ -158,6 +164,8 @@ add_task(async function test_toggle_vertical_tabs() {
   );
 
   is(gBrowser.tabs.length, 4, "Tabstrip now has four tabs");
+
+  AccessibilityUtils.resetEnv();
 
   const toolbarContextMenu = document.getElementById("toolbar-context-menu");
   EventUtils.synthesizeMouseAtPoint(
