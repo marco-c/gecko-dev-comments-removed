@@ -219,6 +219,8 @@ class RefTestCase(object):
         
         self.slow = False
         
+        self.heavy = False
+        
         
         self.is_test262_raw = False
 
@@ -306,6 +308,8 @@ class RefTestCase(object):
             ans += ", random"
         if self.slow:
             ans += ", slow"
+        if self.heavy:
+            ans += ", heavy"
         if "-d" in self.options:
             ans += ", debugMode"
         return ans

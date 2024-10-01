@@ -126,6 +126,8 @@ class JitTest:
         
         self.slow = False
         
+        self.heavy = False
+        
         self.allow_oom = False
         
         self.allow_unhandlable_oom = False
@@ -167,6 +169,7 @@ class JitTest:
         t = JitTest(self.path)
         t.jitflags = self.jitflags[:]
         t.slow = self.slow
+        t.heavy = self.heavy
         t.allow_oom = self.allow_oom
         t.allow_unhandlable_oom = self.allow_unhandlable_oom
         t.allow_overrecursed = self.allow_overrecursed
@@ -310,6 +313,8 @@ class JitTest:
                 else:
                     if name == "slow":
                         test.slow = True
+                    elif name == "heavy":
+                        test.heavy = True
                     elif name == "allow-oom":
                         test.allow_oom = True
                     elif name == "allow-unhandlable-oom":
