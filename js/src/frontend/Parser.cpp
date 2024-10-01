@@ -377,6 +377,10 @@ typename ParseHandler::ListNodeResult
 GeneralParser<ParseHandler, Unit>::parse() {
   MOZ_ASSERT(checkOptionsCalled_);
 
+  
+  
+  MOZ_ASSERT(!foldConstants_, "constant folding not supported here");
+
   SourceExtent extent = SourceExtent::makeGlobalExtent(
        0, options().lineno,
       JS::LimitedColumnNumberOneOrigin::fromUnlimited(
@@ -408,19 +412,6 @@ GeneralParser<ParseHandler, Unit>::parse() {
 
   if (!CheckParseTree(this->fc_, alloc_, stmtList)) {
     return errorResult();
-  }
-
-  if (foldConstants_) {
-    Node node = stmtList;
-    
-    
-    if (!pc_->useAsmOrInsideUseAsm()) {
-      if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
-                         &handler_)) {
-        return errorResult();
-      }
-    }
-    stmtList = handler_.asListNode(node);
   }
 
   return stmtList;
