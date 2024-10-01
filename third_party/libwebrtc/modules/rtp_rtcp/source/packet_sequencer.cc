@@ -41,6 +41,7 @@ PacketSequencer::PacketSequencer(uint32_t media_ssrc,
   
   
   
+  
   constexpr uint16_t kMaxInitRtpSeqNumber = 0x7fff;  
   media_sequence_number_ = random.Rand(1, kMaxInitRtpSeqNumber);
   rtx_sequence_number_ = random.Rand(1, kMaxInitRtpSeqNumber);
