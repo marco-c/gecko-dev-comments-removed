@@ -7259,13 +7259,17 @@ void nsWindow::SetWindowTranslucencyInner(TransparencyMode aMode) {
   }
 
   MOZ_ASSERT(WinUtils::GetTopLevelHWND(mWnd, true) == mWnd);
-  LONG_PTR exStyle = ::GetWindowLongPtr(mWnd, GWL_EXSTYLE);
-  if (aMode == TransparencyMode::Transparent) {
-    exStyle |= WS_EX_LAYERED;
-  } else {
-    exStyle &= ~WS_EX_LAYERED;
+  if (IsPopup()) {
+    
+    
+    LONG_PTR exStyle = ::GetWindowLongPtr(mWnd, GWL_EXSTYLE);
+    if (aMode == TransparencyMode::Transparent) {
+      exStyle |= WS_EX_LAYERED;
+    } else {
+      exStyle &= ~WS_EX_LAYERED;
+    }
+    ::SetWindowLongPtrW(mWnd, GWL_EXSTYLE, exStyle);
   }
-  ::SetWindowLongPtrW(mWnd, GWL_EXSTYLE, exStyle);
 
   mTransparencyMode = aMode;
 
@@ -8039,35 +8043,14 @@ void nsWindow::PickerClosed() {
 }
 
 bool nsWindow::WidgetTypeSupportsAcceleration() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return mTransparencyMode != TransparencyMode::Transparent &&
-         !(IsPopup() && DeviceManagerDx::Get()->IsWARP());
+  if (IsPopup()) {
+    
+    
+    
+    return mTransparencyMode != TransparencyMode::Transparent &&
+           !DeviceManagerDx::Get()->IsWARP();
+  }
+  return true;
 }
 
 bool nsWindow::DispatchTouchEventFromWMPointer(

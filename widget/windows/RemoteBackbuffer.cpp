@@ -255,13 +255,7 @@ class PresentableSharedImage {
 
   bool PresentToWindow(HWND aWindowHandle, TransparencyMode aTransparencyMode,
                        Span<const IpcSafeRect> aDirtyRects) {
-    if (aTransparencyMode == TransparencyMode::Transparent) {
-      
-      
-      HWND topLevelWindow = WinUtils::GetTopLevelHWND(aWindowHandle, true);
-      MOZ_ASSERT(::GetWindowLongPtr(topLevelWindow, GWL_EXSTYLE) &
-                 WS_EX_LAYERED);
-
+    if (::GetWindowLongPtrW(aWindowHandle, GWL_EXSTYLE) & WS_EX_LAYERED) {
       BLENDFUNCTION bf = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
       POINT srcPos = {0, 0};
       RECT clientRect = {};
@@ -287,7 +281,7 @@ class PresentableSharedImage {
       }
 
       return !!::UpdateLayeredWindow(
-          topLevelWindow, nullptr , nullptr , &winSize,
+          aWindowHandle, nullptr , nullptr , &winSize,
           mDeviceContext, &srcPos, 0 , &bf, ULW_ALPHA);
     }
 
