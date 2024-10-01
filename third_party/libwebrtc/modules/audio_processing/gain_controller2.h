@@ -68,6 +68,7 @@ class GainController2 {
   
   
   
+  
   void Process(absl::optional<float> speech_probability,
                bool input_volume_changed,
                AudioBuffer* audio);
