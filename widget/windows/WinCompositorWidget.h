@@ -27,15 +27,13 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
   virtual void LeavePresentLock() = 0;
   virtual void OnDestroyWindow() = 0;
   virtual bool OnWindowResize(const LayoutDeviceIntSize& aSize) = 0;
-  virtual void OnWindowModeChange(nsSizeMode aSizeMode) = 0;
 
   
   virtual void UpdateTransparency(TransparencyMode aMode) = 0;
   virtual void ClearTransparentWindow() = 0;
 
   
-  virtual void NotifyVisibilityUpdated(nsSizeMode aSizeMode,
-                                       bool aIsFullyOccluded) = 0;
+  virtual void NotifyVisibilityUpdated(bool aIsFullyOccluded) = 0;
 
   
 
@@ -76,7 +74,6 @@ class WinCompositorWidget : public CompositorWidget {
   bool HasFxrOutputHandler() const { return !!mFxrHandler; }
   FxROutputHandler* GetFxrOutputHandler() const { return mFxrHandler.get(); }
 
-  virtual nsSizeMode GetWindowSizeMode() const = 0;
   virtual bool GetWindowIsFullyOccluded() const = 0;
 
   virtual void UpdateCompositorWnd(const HWND aCompositorWnd,
