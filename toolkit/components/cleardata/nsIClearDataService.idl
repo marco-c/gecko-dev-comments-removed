@@ -177,6 +177,17 @@ interface nsIClearDataService : nsISupports
 
 
 
+
+
+
+
+  boolean hostMatchesSite(in AUTF8String aHost, in jsval aOriginAttributes, in AUTF8String aSchemelessSite, [optional] in jsval aOriginAttributesPattern);
+
+
+  
+
+
+
   
 
 
