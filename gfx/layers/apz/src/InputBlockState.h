@@ -7,7 +7,8 @@
 #ifndef mozilla_layers_InputBlockState_h
 #define mozilla_layers_InputBlockState_h
 
-#include "InputData.h"           
+#include "InputData.h"  
+#include "Units.h"
 #include "mozilla/RefCounted.h"  
 #include "mozilla/RefPtr.h"      
 #include "mozilla/StaticPrefs_apz.h"
@@ -93,6 +94,10 @@ class InputBlockState : public RefCounted<InputBlockState> {
 
 
   virtual bool MustStayActive() = 0;
+
+  const ScreenToParentLayerMatrix4x4& GetTransformToApzc() const {
+    return mTransformToApzc;
+  }
 
  protected:
   virtual void UpdateTargetApzc(
