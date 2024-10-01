@@ -26,15 +26,6 @@ add_setup(async function () {
     ],
   });
   await MerinoTestUtils.initWeather();
-
-  
-  
-  
-  
-  
-  registerAddTasksWithRustSetup(async () => {
-    await QuickSuggest.weather._test_fetch();
-  });
 });
 
 
@@ -356,7 +347,6 @@ async function doDismissTest(command) {
 
   
   UrlbarPrefs.clear("suggest.weather");
-  await QuickSuggest.weather._test_fetch();
 
   
   await QuickSuggestTestUtils.forceSync();

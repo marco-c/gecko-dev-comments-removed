@@ -452,10 +452,6 @@ pref("browser.urlbar.clipboard.featureGate", false);
 
 
 
-pref("browser.urlbar.weather.ignoreVPN", false);
-
-
-
 
 pref("browser.urlbar.weather.minKeywordLength", 0);
 
