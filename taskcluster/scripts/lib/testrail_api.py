@@ -3,6 +3,14 @@
 
 
 
+
+
+
+
+
+
+
+
 """
 This module provides a TestRail class for interfacing with the TestRail API, enabling the creation and management of test milestones, test runs, and updating test cases. It facilitates automation and integration of TestRail functionalities into testing workflows, particularly for projects requiring automated test management and reporting.
 
@@ -69,12 +77,25 @@ class TestRail:
         }
         return self.client.send_post(f"add_run/{project_id}", data)
 
-    def does_milestone_exist(self, project_id, milestone_name, num_of_milestones=10):
+    def does_milestone_exist(self, project_id, milestone_name):
+        """
+        Check if a milestone with a specific name exists among open milestones.
+
+        Args:
+            project_id (int): ID of the project.
+            milestone_name (str): Name of the milestone to search for.
+
+        Returns:
+            bool: True if the milestone exists, False otherwise.
+        """
         if not all([project_id, milestone_name]):
             raise ValueError("Project ID and milestone name must be provided.")
+
         
-        milestones = self._get_milestones(project_id)[-num_of_milestones:]
-        return any(milestone_name == milestone["name"] for milestone in milestones)
+        response = self._get_milestones(project_id, is_completed=False)
+        milestones = response.get("milestones", [])
+        
+        return any(milestone["name"] == milestone_name for milestone in milestones)
 
     def update_test_run_tests(self, test_run_id, test_status):
         if not all([test_run_id, test_status]):
@@ -101,10 +122,54 @@ class TestRail:
             raise ValueError("Milestone ID must be provided.")
         return self.client.send_get(f"get_milestone/{milestone_id}")
 
-    def _get_milestones(self, project_id):
+    def _get_milestones(self, project_id, **filters):
+        """
+        Retrieves milestones for a given project with optional filters.
+
+        Args:
+            project_id (int): The ID of the project.
+            **filters: Arbitrary keyword arguments representing API filters.
+
+        Available Filters:
+            is_completed (bool or int):
+                - Set to True or 1 to return completed milestones only.
+                - Set to False or 0 to return open (active/upcoming) milestones only.
+
+            is_started (bool or int):
+                - Set to True or 1 to return started milestones only.
+                - Set to False or 0 to return upcoming milestones only.
+
+            limit (int):
+                - The number of milestones the response should return.
+                - The default response size is 250 milestones.
+
+            offset (int):
+                - Where to start counting the milestones from (the offset).
+                - Used for pagination.
+
+        Returns:
+            dict: The API response containing milestones.
+        """
+
         if not project_id:
             raise ValueError("Project ID must be provided.")
-        return self.client.send_get(f"get_milestones/{project_id}")["milestones"]
+
+        
+        endpoint = f"get_milestones/{project_id}"
+
+        
+        if filters:
+            
+            for key in ["is_completed", "is_started"]:
+                if key in filters and isinstance(filters[key], bool):
+                    filters[key] = int(filters[key])
+
+            
+            query_params = "&".join(f"{key}={value}" for key, value in filters.items())
+            endpoint = f"{endpoint}&{query_params}"
+
+        
+        return self.client.send_get(endpoint)
 
     def _get_tests(self, test_run_id):
         if not test_run_id:
