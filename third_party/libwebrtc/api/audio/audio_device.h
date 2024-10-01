@@ -42,6 +42,12 @@ class AudioDeviceModule : public webrtc::RefCountInterface {
     kDefaultDevice = -2
   };
 
+
+#if defined(WEBRTC_IOS)
+  enum MutedSpeechEvent { kMutedSpeechStarted, kMutedSpeechEnded };
+  typedef void (^MutedSpeechEventHandler)(MutedSpeechEvent event);
+#endif  
+
   struct Stats {
     
     
