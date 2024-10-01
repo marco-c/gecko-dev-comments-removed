@@ -91,7 +91,7 @@ impl<L, N, P, LP, C, Image, U, Integer, A, T, R, Transform>
 
 
 #[derive(
-    Animate, Clone, ToCss, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq,
+    Animate, Clone, ToCss, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq, ToShmem
 )]
 #[animation(no_bound(Image, Url))]
 pub enum GenericValueComponent<
@@ -147,7 +147,7 @@ pub enum GenericValueComponent<
 }
 
 
-#[derive(Clone, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct ComponentList<Component> {
     
     pub multiplier: Multiplier,
@@ -200,7 +200,7 @@ impl<Component: ToCss> ToCss for ComponentList<Component> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToComputedValue, ToResolvedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
 pub struct Value<Component> {
     
     pub(crate) v: ValueInner<Component>,
@@ -236,7 +236,7 @@ impl<Component> Value<Component> {
 
 
 #[derive(
-    Animate, ToComputedValue, ToResolvedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq,
+    Animate, ToComputedValue, ToResolvedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq, ToShmem,
 )]
 pub enum ValueInner<Component> {
     
@@ -327,11 +327,11 @@ impl ComputedValue {
         }
     }
 
-    fn to_declared_value(&self) -> Arc<ComputedPropertyValue> {
+    fn to_declared_value(&self) -> properties::CustomDeclarationValue {
         if let ValueInner::Universal(ref var) = self.v {
-            return Arc::clone(var);
+            return properties::CustomDeclarationValue::Unparsed(Arc::clone(var));
         }
-        Arc::new(self.to_variable_value())
+        properties::CustomDeclarationValue::Parsed(Arc::new(ToComputedValue::from_computed_value(self)))
     }
 
     
@@ -617,53 +617,55 @@ impl CustomAnimatedValue {
         context: &mut computed::Context,
         _initial: &properties::ComputedValues,
     ) -> Option<Self> {
-        let value = match declaration.value {
-            properties::CustomDeclarationValue::Value(ref v) => v,
+        let computed_value = match declaration.value {
+            properties::CustomDeclarationValue::Unparsed(ref value) => {
+                debug_assert!(
+                    context.builder.stylist.is_some(),
+                    "Need a Stylist to get property registration!"
+                );
+                let registration = context
+                    .builder
+                    .stylist
+                    .unwrap()
+                    .get_custom_property_registration(&declaration.name);
+                if registration.syntax.is_universal() {
+                    
+                    ComputedValue {
+                        v: ValueInner::Universal(Arc::clone(value)),
+                        url_data: value.url_data.clone(),
+                    }
+                } else {
+                    let mut input = cssparser::ParserInput::new(&value.css);
+                    let mut input = CSSParser::new(&mut input);
+                    SpecifiedValue::compute(
+                        &mut input,
+                        registration,
+                        &value.url_data,
+                        context,
+                        AllowComputationallyDependent::Yes,
+                    ).unwrap_or_else(|_| {
+                        ComputedValue {
+                            v: ValueInner::Universal(Arc::clone(value)),
+                            url_data: value.url_data.clone(),
+                        }
+                    })
+                }
+            }
+            properties::CustomDeclarationValue::Parsed(ref v) => v.to_computed_value(context),
             
             
             properties::CustomDeclarationValue::CSSWideKeyword(..) => return None,
         };
-
-        debug_assert!(
-            context.builder.stylist.is_some(),
-            "Need a Stylist to get property registration!"
-        );
-        let registration = context
-            .builder
-            .stylist
-            .unwrap()
-            .get_custom_property_registration(&declaration.name);
-
-        
-        let computed_value = if registration.syntax.is_universal() {
-            None
-        } else {
-            let mut input = cssparser::ParserInput::new(&value.css);
-            let mut input = CSSParser::new(&mut input);
-            SpecifiedValue::compute(
-                &mut input,
-                registration,
-                &value.url_data,
-                context,
-                AllowComputationallyDependent::Yes,
-            )
-            .ok()
-        };
-
-        let value = computed_value.unwrap_or_else(|| ComputedValue {
-            v: ValueInner::Universal(Arc::clone(value)),
-            url_data: value.url_data.clone(),
-        });
         Some(Self {
             name: declaration.name.clone(),
-            value,
+            value: computed_value,
         })
     }
 
     pub(crate) fn to_declaration(&self) -> properties::PropertyDeclaration {
         properties::PropertyDeclaration::Custom(properties::CustomDeclaration {
             name: self.name.clone(),
-            value: properties::CustomDeclarationValue::Value(self.value.to_declared_value()),
+            value: self.value.to_declared_value(),
         })
     }
 }

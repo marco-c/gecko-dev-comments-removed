@@ -153,7 +153,9 @@ pub struct VariableDeclaration {
 #[derive(Clone, PartialEq, ToCss, ToShmem)]
 pub enum CustomDeclarationValue {
     
-    Value(Arc<custom_properties::SpecifiedValue>),
+    Unparsed(Arc<custom_properties::SpecifiedValue>),
+    
+    Parsed(Arc<crate::properties_and_values::value::SpecifiedValue>),
     
     CSSWideKeyword(CSSWideKeyword),
 }
@@ -845,7 +847,7 @@ impl PropertyDeclaration {
             PropertyId::Custom(property_name) => {
                 let value = match input.try_parse(CSSWideKeyword::parse) {
                     Ok(keyword) => CustomDeclarationValue::CSSWideKeyword(keyword),
-                    Err(()) => CustomDeclarationValue::Value(Arc::new(
+                    Err(()) => CustomDeclarationValue::Unparsed(Arc::new(
                         custom_properties::VariableValue::parse(input, &context.url_data)?,
                     )),
                 };
