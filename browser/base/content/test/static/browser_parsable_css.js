@@ -117,15 +117,6 @@ let propNameAllowlist = [
 
   
   {
-    propName: "--timing-marker-dom-content-loaded-color",
-    isFromDevTools: true,
-  },
-  {
-    propName: "--timing-marker-load-color",
-    isFromDevTools: true,
-  },
-  
-  {
     propName: "--scale-round-x",
     isFromDevTools: false,
   },
