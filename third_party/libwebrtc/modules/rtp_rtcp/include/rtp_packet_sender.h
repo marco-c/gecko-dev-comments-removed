@@ -17,24 +17,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 
-namespace webrtc {
 
-class RtpPacketSender {
- public:
-  virtual ~RtpPacketSender() = default;
-
-  
-  
-  
-  virtual void EnqueuePackets(
-      std::vector<std::unique_ptr<RtpPacketToSend>> packets) = 0;
-
-  
-  
-  
-  virtual void RemovePacketsForSsrc(uint32_t ssrc) {}
-};
-
-}  
+#include "api/rtp_packet_sender.h"
 
 #endif  
