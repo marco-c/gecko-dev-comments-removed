@@ -10,6 +10,8 @@
 
 #include <memory>
 
+#include "api/environment/environment.h"
+#include "api/environment/environment_factory.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -30,14 +32,21 @@ const std::vector<RtpExtensionSize> kNoRtpHeaderExtensionSizes;
 }  
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
+  
+  
+  static SimulatedClock* const clock = new SimulatedClock(1);
+  static const Environment* const env =
+      new Environment(CreateEnvironment(clock));
+
   size_t i = 0;
   if (size < 5 || size > 200) {
     return;
   }
-  SimulatedClock clock(1 + data[i++]);
-  FlexfecSender sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc, kNoMid,
-                       kNoRtpHeaderExtensions, kNoRtpHeaderExtensionSizes,
-                       nullptr , &clock);
+  
+  clock->AdvanceTimeMicroseconds(1 + data[i++] - clock->TimeInMicroseconds());
+  FlexfecSender sender(*env, kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
+                       kNoMid, kNoRtpHeaderExtensions,
+                       kNoRtpHeaderExtensionSizes, nullptr );
   FecProtectionParams params = {
       data[i++], static_cast<int>(data[i++] % 100),
       data[i++] <= 127 ? kFecMaskRandom : kFecMaskBursty};
