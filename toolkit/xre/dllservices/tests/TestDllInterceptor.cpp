@@ -21,6 +21,7 @@
 #pragma comment(lib, "oleaut32.lib")
 
 #include "AssemblyPayloads.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsProcessMitigations.h"
@@ -78,8 +79,9 @@ struct payload {
   }
 };
 
-extern "C" __declspec(dllexport) __declspec(noinline) payload
-rotatePayload(payload p) {
+extern "C" MOZ_NEVER_INLINE MOZ_NOPROFILE MOZ_NOINSTRUMENT
+    __declspec(dllexport) payload
+    rotatePayload(payload p) {
   UINT64 tmp = p.a;
   p.a = p.b;
   p.b = p.c;
@@ -90,8 +92,9 @@ rotatePayload(payload p) {
 
 
 
-extern "C" __declspec(dllexport) __declspec(noinline) payload
-payloadNotHooked(payload p) {
+extern "C" MOZ_NEVER_INLINE MOZ_NOPROFILE MOZ_NOINSTRUMENT
+    __declspec(dllexport) payload
+    payloadNotHooked(payload p) {
   
   p.a ^= p.b;
   p.b ^= p.c;
@@ -798,7 +801,7 @@ bool TestShortDetour() {
   return true;
 #else
   return true;
-#endif
+#endif  
 }
 
 constexpr uintptr_t NoStubAddressCheck = 0;
@@ -816,10 +819,7 @@ struct TestCase {
         mSkipExec(aSkipExec) {}
 } g_AssemblyTestCases[] = {
 #if defined(__clang__)
-
-
-#  ifndef MOZ_CODE_COVERAGE
-#    if defined(_M_X64)
+#  if defined(_M_X64)
     
     
     TestCase("MovPushRet", JumpDestination,
@@ -834,7 +834,7 @@ struct TestCase {
     TestCase("IndirectCall", NoStubAddressCheck),
     TestCase("MovImm64", NoStubAddressCheck),
     TestCase("RexCmpRipRelativeBytePtr", NoStubAddressCheck),
-#    elif defined(_M_IX86)
+#  elif defined(_M_IX86)
     
     TestCase("PushRet", NoStubAddressCheck,
              mozilla::IsUserShadowStackEnabled()),
@@ -843,13 +843,12 @@ struct TestCase {
     TestCase("Opcode83", NoStubAddressCheck),
     TestCase("LockPrefix", NoStubAddressCheck),
     TestCase("LooksLikeLockPrefix", NoStubAddressCheck),
-#    endif
-#    if !defined(DEBUG)
+#  endif
+#  if !defined(DEBUG)
     
     TestCase("UnsupportedOp", ExpectedFail),
-#    endif  
-#  endif    
-#endif      
+#  endif  
+#endif    
 };
 
 template <typename InterceptorType>
@@ -1207,8 +1206,7 @@ bool TestDetouredCallUnwindInfo() {
 }
 #endif  
 
-#ifndef MOZ_CODE_COVERAGE
-#  if defined(_M_X64) || defined(_M_IX86)
+#if defined(_M_X64) || defined(_M_IX86)
 bool TestSpareBytesAfterDetour() {
   WindowsDllInterceptor interceptor;
   interceptor.Init("TestDllInterceptor.exe");
@@ -1234,7 +1232,7 @@ bool TestSpareBytesAfterDetour() {
     return false;
   }
   uint8_t* funcBytes = reinterpret_cast<uint8_t*>(funcAddr);
-#    if defined(_M_X64)
+#  if defined(_M_X64)
   
   
   if (*(funcBytes + 13) != 0x90 || *(funcBytes + 14) != 0x90 ||
@@ -1248,7 +1246,7 @@ bool TestSpareBytesAfterDetour() {
   printf(
       "TEST-PASS | WindowsDllInterceptor | "
       "SpareBytesAfterDetour has correct nop bytes after the patch.\n");
-#    elif defined(_M_IX86)
+#  elif defined(_M_IX86)
   
   
   if (*(funcBytes + 5) != 0x90) {
@@ -1261,13 +1259,13 @@ bool TestSpareBytesAfterDetour() {
   printf(
       "TEST-PASS | WindowsDllInterceptor | "
       "SpareBytesAfterDetour has correct nop bytes after the patch.\n");
-#    endif
+#  endif
 
   return true;
 }
-#  endif  
+#endif  
 
-#  if defined(_M_X64)
+#if defined(_M_X64)
 bool TestSpareBytesAfterDetourFor10BytePatch() {
   ShortInterceptor interceptor;
   interceptor.TestOnlyDetourInit(
@@ -1312,7 +1310,6 @@ bool TestSpareBytesAfterDetourFor10BytePatch() {
       "patch.\n");
   return true;
 }
-#  endif
 #endif  
 
 bool TestDynamicCodePolicy() {
@@ -1391,16 +1388,12 @@ bool TestIsEqualToGlobalValue() {
   fflush(stdout);
   return true;
 }
-#endif
+#endif  
 
 extern "C" int wmain(int argc, wchar_t* argv[]) {
   LARGE_INTEGER start;
   QueryPerformanceCounter(&start);
 
-  
-  
-  
-#ifndef MOZ_CODE_COVERAGE
   payload initial = {0x12345678, 0xfc4e9d31, 0x87654321};
   payload p0, p1;
   ZeroMemory(&p0, sizeof(p0));
@@ -1480,7 +1473,6 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
     fflush(stdout);
     return 1;
   }
-#endif
 
   CredHandle credHandle;
   memset(&credHandle, 0, sizeof(CredHandle));

@@ -143,7 +143,6 @@ __declspec(dllexport) MOZ_NAKED bool IsEqualToGlobalValue(
       "retq;");
 }
 
-#    if !defined(MOZ_CODE_COVERAGE)
 
 
 MOZ_NAKED void DetouredCallCode(uintptr_t aCallee) {
@@ -183,7 +182,6 @@ MOZ_NAKED __declspec(dllexport noinline) void DetouredCallJumper(
   
   asm volatile("jmpq *0(%rip)");
 }
-#    endif  
 
 #  elif defined(_M_IX86)
 constexpr uintptr_t JumpDestination = 0x7fff0000;
