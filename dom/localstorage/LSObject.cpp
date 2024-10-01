@@ -1139,8 +1139,11 @@ RequestHelper::Run() {
       
       
       if (mActor && !mActor->Finishing()) {
-        mActor->SendCancel();
+        if (mActor->SendCancel()) {
+          glean::ls_request::send_cancellation.Add();
+        }
       }
+
       return NS_OK;
     }
 
