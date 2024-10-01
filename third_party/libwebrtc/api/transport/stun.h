@@ -650,45 +650,6 @@ std::unique_ptr<StunAttribute> CopyStunAttribute(
     rtc::ByteBufferWriter* tmp_buffer_ptr = 0);
 
 
-extern const char TURN_MAGIC_COOKIE_VALUE[4];
-
-
-
-
-enum RelayMessageType {
-  
-  
-  
-  
-  STUN_SEND_REQUEST = 0x0004,
-  STUN_SEND_RESPONSE = 0x0104,
-  STUN_SEND_ERROR_RESPONSE = 0x0114,
-  STUN_DATA_INDICATION = 0x0115,
-};
-
-
-
-enum RelayAttributeType {
-  STUN_ATTR_LIFETIME = 0x000d,             
-  STUN_ATTR_MAGIC_COOKIE = 0x000f,         
-  STUN_ATTR_BANDWIDTH = 0x0010,            
-  STUN_ATTR_DESTINATION_ADDRESS = 0x0011,  
-  STUN_ATTR_SOURCE_ADDRESS2 = 0x0012,      
-  STUN_ATTR_DATA = 0x0013,                 
-  STUN_ATTR_OPTIONS = 0x8001,              
-};
-
-
-class RelayMessage : public StunMessage {
- public:
-  using StunMessage::StunMessage;
-
- protected:
-  StunAttributeValueType GetAttributeValueType(int type) const override;
-  StunMessage* CreateNew() const override;
-};
-
-
 enum TurnMessageType : uint16_t {
   STUN_ALLOCATE_REQUEST = 0x0003,
   STUN_ALLOCATE_RESPONSE = 0x0103,
@@ -707,19 +668,15 @@ enum TurnMessageType : uint16_t {
 };
 
 enum TurnAttributeType {
-  STUN_ATTR_CHANNEL_NUMBER = 0x000C,    
-  STUN_ATTR_TURN_LIFETIME = 0x000d,     
-  STUN_ATTR_XOR_PEER_ADDRESS = 0x0012,  
-  
-  
+  STUN_ATTR_CHANNEL_NUMBER = 0x000C,       
+  STUN_ATTR_LIFETIME = 0x000d,             
+  STUN_ATTR_XOR_PEER_ADDRESS = 0x0012,     
+  STUN_ATTR_DATA = 0x0013,                 
   STUN_ATTR_XOR_RELAYED_ADDRESS = 0x0016,  
   STUN_ATTR_EVEN_PORT = 0x0018,            
   STUN_ATTR_REQUESTED_TRANSPORT = 0x0019,  
   STUN_ATTR_DONT_FRAGMENT = 0x001A,        
   STUN_ATTR_RESERVATION_TOKEN = 0x0022,    
-  
-  
-  
 };
 
 
