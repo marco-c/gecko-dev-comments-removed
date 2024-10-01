@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"            
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/Span.h"             
+#include "mozilla/Variant.h"          
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -245,19 +246,36 @@ class BigIntStencil {
 
   
   
-  mozilla::Span<char16_t> source_;
+  
+  
+  mozilla::Variant<mozilla::Span<char16_t>, int64_t> bigInt_{int64_t{}};
+
+  
+  mozilla::Span<char16_t>& source() {
+    if (bigInt_.is<int64_t>()) {
+      bigInt_ = mozilla::AsVariant(mozilla::Span<char16_t>{});
+    }
+    return bigInt_.as<mozilla::Span<char16_t>>();
+  }
+  const mozilla::Span<char16_t>& source() const {
+    return bigInt_.as<mozilla::Span<char16_t>>();
+  }
+
+  [[nodiscard]] bool initFromChars(FrontendContext* fc, LifoAlloc& alloc,
+                                   mozilla::Span<const char16_t> buf);
 
  public:
   BigIntStencil() = default;
 
   [[nodiscard]] bool init(FrontendContext* fc, LifoAlloc& alloc,
-                          const mozilla::Span<const char16_t> buf);
+                          mozilla::Span<const char16_t> buf);
+
+  [[nodiscard]] bool init(FrontendContext* fc, LifoAlloc& alloc,
+                          const BigIntStencil& other);
 
   BigInt* createBigInt(JSContext* cx) const;
 
   bool isZero() const;
-
-  mozilla::Span<const char16_t> source() const { return source_; }
 
 #ifdef DEBUG
   bool isContainedIn(const LifoAlloc& alloc) const;

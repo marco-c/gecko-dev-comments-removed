@@ -8,6 +8,7 @@
 #define vm_BigIntType_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/Range.h"
 #include "mozilla/Span.h"
@@ -129,10 +130,13 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
                                      bool isNegative,
                                      js::gc::Heap heap = js::gc::Heap::Default);
   static BigInt* createFromDouble(JSContext* cx, double d);
-  static BigInt* createFromUint64(JSContext* cx, uint64_t n);
-  static BigInt* createFromInt64(JSContext* cx, int64_t n);
+  static BigInt* createFromUint64(JSContext* cx, uint64_t n,
+                                  js::gc::Heap heap = js::gc::Heap::Default);
+  static BigInt* createFromInt64(JSContext* cx, int64_t n,
+                                 js::gc::Heap heap = js::gc::Heap::Default);
   static BigInt* createFromIntPtr(JSContext* cx, intptr_t n);
-  static BigInt* createFromDigit(JSContext* cx, Digit d, bool isNegative);
+  static BigInt* createFromDigit(JSContext* cx, Digit d, bool isNegative,
+                                 js::gc::Heap heap = js::gc::Heap::Default);
   static BigInt* createFromNonZeroRawUint64(JSContext* cx, uint64_t n,
                                             bool isNegative);
   
@@ -505,7 +509,8 @@ extern JS::BigInt* ParseBigIntLiteral(
 
 
 
-extern bool BigIntLiteralIsZero(const mozilla::Range<const char16_t>& chars);
+extern mozilla::Maybe<int64_t> ParseBigInt64Literal(
+    mozilla::Range<const char16_t> chars);
 
 extern JS::BigInt* ToBigInt(JSContext* cx, JS::Handle<JS::Value> v);
 extern JS::Result<int64_t> ToBigInt64(JSContext* cx, JS::Handle<JS::Value> v);
