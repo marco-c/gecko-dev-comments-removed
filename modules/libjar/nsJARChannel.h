@@ -95,7 +95,7 @@ class nsJARChannel final : public nsIJARChannel,
   
   struct {
     bool isCanceled = false;
-    mozilla::Atomic<uint32_t> suspendCount {0};
+    mozilla::Atomic<uint32_t> suspendCount{0};
   } mPendingEvent;
 
   nsCOMPtr<nsIInputStreamPump> mPump;
