@@ -40,25 +40,14 @@ size_t RemoveFromMapByValue(Map* map, const Value& value) {
   return EraseIf(*map, [&](const auto& elem) { return elem.second == value; });
 }
 
-
-
-
-
-std::string CheckMidLength(absl::string_view mid) {
-  std::string new_mid(mid);
-  if (new_mid.length() > BaseRtpStringExtension::kMaxValueSizeBytes) {
-    RTC_LOG(LS_WARNING) << "`mid` attribute too long. Truncating.";
-    new_mid.resize(BaseRtpStringExtension::kMaxValueSizeBytes);
-  }
-  return new_mid;
-}
-
 }  
 
 RtpDemuxerCriteria::RtpDemuxerCriteria(
     absl::string_view mid,
     absl::string_view rsid )
-    : mid_(CheckMidLength(mid)), rsid_(rsid) {}
+    : mid_(mid), rsid_(rsid) {
+  RTC_DCHECK(mid.length() <= BaseRtpStringExtension::kMaxValueSizeBytes);
+}
 
 RtpDemuxerCriteria::RtpDemuxerCriteria() = default;
 RtpDemuxerCriteria::~RtpDemuxerCriteria() = default;
