@@ -46,9 +46,10 @@ class AudioDecoderFactory : public RefCountInterface {
   
   
   
-  virtual std::unique_ptr<AudioDecoder> MakeAudioDecoder(
-      const SdpAudioFormat& format,
-      absl::optional<AudioCodecPairId> codec_pair_id) {
+  [[deprecated("bugs.webrtc.org/356878416 - Use `Create` instead")]]  
+  virtual std::unique_ptr<AudioDecoder>
+  MakeAudioDecoder(const SdpAudioFormat& format,
+                   absl::optional<AudioCodecPairId> codec_pair_id) {
     RTC_DCHECK_NOTREACHED();
     return nullptr;
   }
@@ -59,7 +60,10 @@ class AudioDecoderFactory : public RefCountInterface {
       const Environment& env,
       const SdpAudioFormat& format,
       absl::optional<AudioCodecPairId> codec_pair_id) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     return MakeAudioDecoder(format, codec_pair_id);
+#pragma clang diagnostic pop
   }
 };
 
