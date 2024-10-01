@@ -364,7 +364,7 @@ static already_AddRefed<VideoData> CreateVideoDataFromWebrtcVideoFrame(
   
   
   TimeUnit timestamp =
-      media::TimeUnit(aFrame.timestamp(), cricket::kVideoCodecClockrate);
+      media::TimeUnit(aFrame.rtp_timestamp(), cricket::kVideoCodecClockrate);
   return VideoData::CreateFromImage(image->GetSize(), 0, timestamp, aDuration,
                                     image, aIsKeyFrame, timestamp);
 }
