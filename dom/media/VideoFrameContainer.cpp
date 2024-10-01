@@ -152,14 +152,9 @@ void VideoFrameContainer::SetCurrentFramesLocked(
   mImageContainer->GetCurrentImages(&oldImages);
 
   PrincipalHandle principalHandle = PRINCIPAL_HANDLE_NONE;
-  ImageContainer::FrameID lastFrameIDForOldPrincipalHandle =
-      mFrameIDForPendingPrincipalHandle - 1;
   if (mPendingPrincipalHandle != PRINCIPAL_HANDLE_NONE &&
-      ((!oldImages.IsEmpty() &&
-        oldImages.LastElement().mFrameID >= lastFrameIDForOldPrincipalHandle) ||
-       (!aImages.IsEmpty() &&
-        aImages[0].mFrameID > lastFrameIDForOldPrincipalHandle))) {
-    
+      (aImages.IsEmpty() ||
+       aImages[0].mFrameID >= mFrameIDForPendingPrincipalHandle)) {
     
     
     
