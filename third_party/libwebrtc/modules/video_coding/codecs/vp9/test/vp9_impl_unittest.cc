@@ -584,7 +584,7 @@ TEST(Vp9ImplTest, SpatialUpswitchNotAtGOFBoundary) {
               ElementsAre(GenericLayerIs(0, 0), GenericLayerIs(1, 0)));
 }
 
-TEST_F(TestVp9Impl, DISABLED_DisableEnableBaseLayerTriggersKeyFrame) {
+TEST_F(TestVp9Impl, DisableEnableBaseLayerTriggersKeyFrame) {
   
   
   test::ScopedFieldTrials override_field_trials(
@@ -740,8 +740,7 @@ TEST_F(TestVp9Impl, DISABLED_DisableEnableBaseLayerTriggersKeyFrame) {
   }
 }
 
-TEST(Vp9ImplTest,
-     DISABLED_DisableEnableBaseLayerWithSvcControllerTriggersKeyFrame) {
+TEST(Vp9ImplTest, DisableEnableBaseLayerWithSvcControllerTriggersKeyFrame) {
   
   
   const size_t num_spatial_layers = 3;
