@@ -1544,8 +1544,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Window", insecureContext: true },
   
-  { name: "WGSLLanguageFeatures", nightly: true },
-  
   { name: "Worker", insecureContext: true },
   
   { name: "Worklet", insecureContext: false },
