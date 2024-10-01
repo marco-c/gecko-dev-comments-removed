@@ -18,12 +18,31 @@ use crate::skv::{
 };
 
 
+#[derive(Clone, Debug)]
+pub enum SourceDatabases {
+    
+    Named(Vec<NamedSourceDatabase>),
+
+    
+    All {
+        conflict_policy: ConflictPolicy,
+        cleanup_policy: CleanupPolicy,
+    },
+}
+
+
+#[derive(Clone, Debug)]
+pub struct NamedSourceDatabase {
+    pub name: DatabaseName,
+    pub conflict_policy: ConflictPolicy,
+    pub cleanup_policy: CleanupPolicy,
+}
+
+
 pub struct RkvImporter<'a, W, S> {
     writer: W,
-    sources: Vec<(DatabaseName, S)>,
+    sources: Vec<(NamedSourceDatabase, S)>,
     store: &'a SkvStore,
-    conflict_policy: ConflictPolicy,
-    cleanup_policy: CleanupPolicy,
 }
 
 impl<'env, 'a, T, D> RkvImporter<'a, Writer<T>, SingleStore<D>>
@@ -32,67 +51,44 @@ where
     D: BackendDatabase,
 {
     
-    pub fn for_database<'rkv: 'env, E>(
-        env: &'rkv Rkv<E>,
-        store: &'a SkvStore,
-        name: &str,
-    ) -> Result<Self, ImporterError>
-    where
-        E: BackendEnvironment<'env, Database = D, RwTransaction = T>,
-    {
-        Self::new(env, store, std::iter::once(name.to_owned().into()))
-    }
-
     
-    pub fn for_all_databases<'rkv: 'env, E>(
+    pub fn new<'rkv: 'env, E>(
         env: &'rkv Rkv<E>,
         store: &'a SkvStore,
+        dbs: SourceDatabases,
     ) -> Result<Self, ImporterError>
     where
         E: BackendEnvironment<'env, Database = D, RwTransaction = T>,
     {
-        let names = env
-            .get_dbs()?
+        let dbs = match dbs {
+            SourceDatabases::Named(dbs) => dbs,
+            SourceDatabases::All {
+                conflict_policy,
+                cleanup_policy,
+            } => env
+                .get_dbs()?
+                .into_iter()
+                .map(|name| {
+                    Ok(NamedSourceDatabase {
+                        name: name.try_into()?,
+                        conflict_policy,
+                        cleanup_policy,
+                    })
+                })
+                .collect::<Result<_, ImporterError>>()?,
+        };
+        let sources = dbs
             .into_iter()
-            .map(|name| name.try_into())
-            .collect::<Result<Vec<_>, ImporterError>>()?;
-        Self::new(env, store, names)
-    }
-
-    fn new<'rkv: 'env, E>(
-        env: &'rkv Rkv<E>,
-        store: &'a SkvStore,
-        names: impl IntoIterator<Item = DatabaseName>,
-    ) -> Result<Self, ImporterError>
-    where
-        E: BackendEnvironment<'env, Database = D, RwTransaction = T>,
-    {
-        let sources = names
-            .into_iter()
-            .map(|name| {
-                let source = env.open_single(Some(name.as_str()), StoreOptions::default())?;
-                Ok((name, source))
+            .map(|db| {
+                let store = env.open_single(Some(db.name.as_str()), StoreOptions::default())?;
+                Ok((db, store))
             })
             .collect::<Result<_, ImporterError>>()?;
         Ok(Self {
             writer: env.write()?,
             sources,
             store,
-            conflict_policy: ConflictPolicy::Error,
-            cleanup_policy: CleanupPolicy::Keep,
         })
-    }
-
-    
-    pub fn conflict_policy(&mut self, policy: ConflictPolicy) -> &mut Self {
-        self.conflict_policy = policy;
-        self
-    }
-
-    
-    pub fn cleanup_policy(&mut self, policy: CleanupPolicy) -> &mut Self {
-        self.cleanup_policy = policy;
-        self
     }
 
     
@@ -104,13 +100,13 @@ where
     pub fn import(&'env self) -> Result<(), ImporterError> {
         let writer = self.store.writer()?;
         writer.write(|tx| {
-            for (name, store) in &self.sources {
+            for (db, store) in &self.sources {
                 let importer = RkvSingleStoreImporter {
-                    name,
+                    name: &db.name,
                     reader: &self.writer,
                     store,
                     tx,
-                    conflict_policy: self.conflict_policy,
+                    conflict_policy: db.conflict_policy,
                 };
                 importer.import()?;
             }
@@ -120,18 +116,15 @@ where
 
     
     pub fn cleanup(mut self) {
-        match self.cleanup_policy {
-            CleanupPolicy::Keep => {
-                
-                self.writer.abort();
-            }
-            CleanupPolicy::Delete => {
-                for (_, store) in self.sources {
+        for (db, store) in self.sources {
+            match db.cleanup_policy {
+                CleanupPolicy::Keep => continue,
+                CleanupPolicy::Delete => {
                     let _ = store.clear(&mut self.writer);
                 }
-                let _ = self.writer.commit();
             }
         }
+        let _ = self.writer.commit();
     }
 }
 
@@ -219,7 +212,7 @@ where
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct DatabaseName(String);
+pub struct DatabaseName(String);
 
 impl From<String> for DatabaseName {
     fn from(value: String) -> Self {
