@@ -30,30 +30,60 @@ const dropBracketIfIPv6 = host =>
     ? host.slice(1, -1)
     : host;
 
+const isSubdomain = (otherDomain, baseDomain) => {
+  return otherDomain == baseDomain || otherDomain.endsWith("." + baseDomain);
+};
 
 
-function fromExtPartitionKey(extPartitionKey) {
+
+function fromExtPartitionKey(extPartitionKey, cookieUrl) {
   if (!extPartitionKey) {
     
     return "";
   }
-  const { topLevelSite } = extPartitionKey;
+  const { topLevelSite, hasCrossSiteAncestor } = extPartitionKey;
   
   
   if (topLevelSite) {
     
     try {
-      return ChromeUtils.getPartitionKeyFromURL(topLevelSite);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (cookieUrl == null) {
+        let topLevelSiteURI = Services.io.newURI(topLevelSite);
+        let topLevelSiteFilter = Services.eTLD.getSite(topLevelSiteURI);
+        if (topLevelSiteURI.port != -1) {
+          topLevelSiteFilter += `:${topLevelSiteURI.port}`;
+        }
+        return topLevelSiteFilter;
+      }
+      return ChromeUtils.getPartitionKeyFromURL(
+        topLevelSite,
+        cookieUrl,
+        hasCrossSiteAncestor ?? undefined
+      );
     } catch (e) {
       throw new ExtensionError("Invalid value for 'partitionKey' attribute");
     }
+  } else if (topLevelSite == null && hasCrossSiteAncestor != null) {
+    
+    throw new ExtensionError("Invalid value for 'partitionKey' attribute");
   }
   
   return "";
 }
 
 
-function toExtPartitionKey(partitionKey) {
+
+function getExtPartitionKey(cookie) {
+  let partitionKey = cookie.originAttributes.partitionKey;
   if (!partitionKey) {
     
     
@@ -65,15 +95,34 @@ function toExtPartitionKey(partitionKey) {
   
   if (!partitionKey.startsWith("(")) {
     
-    return { topLevelSite: `https://${partitionKey}` };
+    let hasCrossSiteAncestor = !isSubdomain(cookie.host, partitionKey);
+    return { topLevelSite: `https://${partitionKey}`, hasCrossSiteAncestor };
   }
   
-  let [scheme, domain, port] = partitionKey.slice(1, -1).split(",");
+  let [scheme, domain, opt1, opt2] = partitionKey.slice(1, -1).split(",");
+  
+  let fbac = false;
+  let port;
+  if (opt2) {
+    
+    port = opt1;
+    fbac = true;
+  } else if (opt1 == "f") {
+    fbac = true;
+  } else if (opt1) {
+    port = opt1;
+  }
+
+  
   let topLevelSite = `${scheme}://${domain}`;
   if (port) {
     topLevelSite += `:${port}`;
   }
-  return { topLevelSite };
+
+  
+  
+  let hasCrossSiteAncestor = fbac || !isSubdomain(cookie.host, domain);
+  return { topLevelSite, hasCrossSiteAncestor };
 }
 
 const convertCookie = ({ cookie, isPrivate }) => {
@@ -88,7 +137,7 @@ const convertCookie = ({ cookie, isPrivate }) => {
     sameSite: SAME_SITE_STATUSES[cookie.sameSite],
     session: cookie.isSession,
     firstPartyDomain: cookie.originAttributes.firstPartyDomain || "",
-    partitionKey: toExtPartitionKey(cookie.originAttributes.partitionKey),
+    partitionKey: getExtPartitionKey(cookie),
   };
 
   if (!cookie.isSession) {
@@ -106,10 +155,6 @@ const convertCookie = ({ cookie, isPrivate }) => {
   }
 
   return result;
-};
-
-const isSubdomain = (otherDomain, baseDomain) => {
-  return otherDomain == baseDomain || otherDomain.endsWith("." + baseDomain);
 };
 
 
@@ -240,7 +285,7 @@ const oaFromDetails = (details, context, allowPattern) => {
     privateBrowsingId: 0,
     
     firstPartyDomain: details.firstPartyDomain ?? "",
-    partitionKey: fromExtPartitionKey(details.partitionKey),
+    partitionKey: fromExtPartitionKey(details.partitionKey, details.url),
   };
 
   let isPrivate = context.incognito;
@@ -272,6 +317,7 @@ const oaFromDetails = (details, context, allowPattern) => {
 
   
   let isPattern = false;
+  let topLevelSiteFilter;
   if (allowPattern) {
     
     
@@ -292,9 +338,23 @@ const oaFromDetails = (details, context, allowPattern) => {
     if (details.partitionKey && details.partitionKey.topLevelSite == null) {
       delete originAttributes.partitionKey;
       isPattern = true;
+    } else if (details.partitionKey?.topLevelSite && details.url == null) {
+      
+      
+      
+      topLevelSiteFilter = originAttributes.partitionKey;
+      delete originAttributes.partitionKey;
+      isPattern = true;
     }
   }
-  return { originAttributes, isPattern, isPrivate, storeId };
+
+  return {
+    originAttributes,
+    isPattern,
+    isPrivate,
+    storeId,
+    topLevelSiteFilter,
+  };
 };
 
 
@@ -328,7 +388,8 @@ const query = function* (detailsIn, props, context, allowPattern) {
     }
     throw e;
   }
-  let { originAttributes, isPattern, isPrivate, storeId } = parsedOA;
+  let { originAttributes, isPattern, isPrivate, storeId, topLevelSiteFilter } =
+    parsedOA;
 
   if ("domain" in details) {
     details.domain = details.domain.toLowerCase().replace(/^\./, "");
@@ -428,6 +489,29 @@ const query = function* (detailsIn, props, context, allowPattern) {
     
     if (!context.extension.allowedOrigins.matchesCookie(cookie)) {
       return false;
+    }
+
+    
+    
+    if (topLevelSiteFilter) {
+      let cookiePartitionKey = getExtPartitionKey(cookie);
+      let cookiePartitionSite = cookiePartitionKey?.topLevelSite;
+
+      
+      
+      
+      
+      if (!cookiePartitionKey || topLevelSiteFilter !== cookiePartitionSite) {
+        return false;
+      }
+
+      if (
+        detailsIn.partitionKey.hasCrossSiteAncestor != null &&
+        detailsIn.partitionKey.hasCrossSiteAncestor !=
+          cookiePartitionKey.hasCrossSiteAncestor
+      ) {
+        return false;
+      }
     }
 
     return true;
@@ -653,9 +737,7 @@ this.cookies = class extends ExtensionAPIPersistent {
               name: details.name,
               storeId,
               firstPartyDomain: cookie.originAttributes.firstPartyDomain,
-              partitionKey: toExtPartitionKey(
-                cookie.originAttributes.partitionKey
-              ),
+              partitionKey: getExtPartitionKey(cookie),
             });
           }
 

@@ -7,6 +7,7 @@
 #include "ChromeUtils.h"
 
 #include "JSOracleParent.h"
+#include "ThirdPartyUtil.h"
 #include "js/CallAndConstruct.h"  
 #include "js/ColumnNumber.h"  
 #include "js/CharacterEncoding.h"
@@ -1310,27 +1311,68 @@ void ChromeUtils::GetBaseDomainFromPartitionKey(dom::GlobalObject& aGlobal,
 
 
 void ChromeUtils::GetPartitionKeyFromURL(dom::GlobalObject& aGlobal,
-                                         const nsAString& aURL,
+                                         const nsAString& aTopLevelUrl,
+                                         const nsAString& aSubresourceUrl,
+                                         const Optional<bool>& aForeignContext,
                                          nsAString& aPartitionKey,
                                          ErrorResult& aRv) {
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aURL);
-  if (NS_SUCCEEDED(rv) && uri->SchemeIs("chrome")) {
+  nsCOMPtr<nsIURI> topLevelURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(topLevelURI), aTopLevelUrl);
+  if (NS_SUCCEEDED(rv) && topLevelURI->SchemeIs("chrome")) {
     rv = NS_ERROR_FAILURE;
   }
-
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aPartitionKey.Truncate();
     aRv.Throw(rv);
     return;
   }
 
-  mozilla::OriginAttributes attrs;
-  
-  
-  
-  attrs.SetPartitionKey(uri, false);
+  bool foreignResource;
+  bool fallback = false;
+  if (!aSubresourceUrl.IsEmpty()) {
+    nsCOMPtr<nsIURI> resourceURI;
+    rv = NS_NewURI(getter_AddRefs(resourceURI), aSubresourceUrl);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aPartitionKey.Truncate();
+      aRv.Throw(rv);
+      return;
+    }
 
+    ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
+    if (!thirdPartyUtil) {
+      aPartitionKey.Truncate();
+      aRv.Throw(NS_ERROR_SERVICE_NOT_AVAILABLE);
+      return;
+    }
+
+    rv = thirdPartyUtil->IsThirdPartyURI(topLevelURI, resourceURI,
+                                         &foreignResource);
+    if (NS_FAILED(rv)) {
+      
+      foreignResource = true;
+      fallback = true;
+    }
+  } else {
+    
+    foreignResource = true;
+    fallback = true;
+  }
+
+  
+  
+  
+  
+  if (aForeignContext.WasPassed() && !aForeignContext.Value() &&
+      foreignResource && !fallback) {
+    aPartitionKey.Truncate();
+    aRv.Throw(nsresult::NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  bool foreignByAncestorContext = aForeignContext.WasPassed() &&
+                                  aForeignContext.Value() && !foreignResource;
+  mozilla::OriginAttributes attrs;
+  attrs.SetPartitionKey(topLevelURI, foreignByAncestorContext);
   aPartitionKey = attrs.mPartitionKey;
 }
 
