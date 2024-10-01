@@ -30,7 +30,20 @@ class AudioEncoderFactory : public RefCountInterface {
   struct Options {
     
     
+    
     int payload_type = -1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     absl::optional<AudioCodecPairId> codec_pair_id;
   };
 
@@ -45,52 +58,11 @@ class AudioEncoderFactory : public RefCountInterface {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual absl::Nullable<std::unique_ptr<AudioEncoder>>
-  Create(const Environment& env, const SdpAudioFormat& format, Options options);
-
-  
-  
-  virtual std::unique_ptr<AudioEncoder> MakeAudioEncoder(
-      int payload_type,
+  virtual absl::Nullable<std::unique_ptr<AudioEncoder>> Create(
+      const Environment& env,
       const SdpAudioFormat& format,
-      absl::optional<AudioCodecPairId> codec_pair_id);
+      Options options) = 0;
 };
-
-
-
-
-
-inline absl::Nullable<std::unique_ptr<AudioEncoder>>
-AudioEncoderFactory::Create(const Environment& env,
-                            const SdpAudioFormat& format,
-                            Options options) {
-  return MakeAudioEncoder(options.payload_type, format, options.codec_pair_id);
-}
-
-inline absl::Nullable<std::unique_ptr<AudioEncoder>>
-AudioEncoderFactory::MakeAudioEncoder(
-    int payload_type,
-    const SdpAudioFormat& format,
-    absl::optional<AudioCodecPairId> codec_pair_id) {
-  
-  
-  RTC_CHECK_NOTREACHED();
-}
 
 }  
 
