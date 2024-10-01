@@ -2256,11 +2256,7 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 
 
 
-#ifdef NIGHTLY_BUILD
 pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate,3pcd");
-#else
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate");
-#endif
 
 
 
