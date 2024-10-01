@@ -567,6 +567,8 @@ bool RTPSenderVideo::SendVideo(int payload_type,
     
     
     
+    
+    
     RTC_LOG(LS_WARNING) << "Disable dependency descriptor because failed to "
                            "attach it to a key frame.";
     video_structure_ = nullptr;
