@@ -2965,4 +2965,43 @@ class TranslationsSettingsTestUtils {
 
     return elements;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static async downaloadButtonClick(langButton, buttonIcon, logMsg) {
+    if (
+      !langButton.parentNode
+        .querySelector("moz-button")
+        .classList.contains(buttonIcon)
+    ) {
+      await BrowserTestUtils.waitForMutationCondition(
+        langButton.parentNode.querySelector("moz-button"),
+        { attributes: true, attributeFilter: ["class"] },
+        () =>
+          langButton.parentNode
+            .querySelector("moz-button")
+            .classList.contains(buttonIcon)
+      );
+    }
+    ok(
+      langButton.parentNode
+        .querySelector("moz-button")
+        .classList.contains(buttonIcon),
+      logMsg
+    );
+  }
 }
