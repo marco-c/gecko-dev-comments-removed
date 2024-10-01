@@ -9,19 +9,26 @@
 
 
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "api/environment/environment.h"
+#include "api/environment/environment_factory.h"
 #include "rtc_base/checks.h"
 #include "test/fuzzers/audio_encoder_fuzzer.h"
 
 namespace webrtc {
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
+  
+  
+  static const Environment* const env = new Environment(CreateEnvironment());
+
   AudioEncoderOpus::Config config;
   config.frame_size_ms = 20;
   RTC_CHECK(config.IsOk());
-  constexpr int kPayloadType = 100;
+
   FuzzAudioEncoder(
       {data, size},
-      AudioEncoderOpus::MakeAudioEncoder(config, kPayloadType));
+      AudioEncoderOpus::MakeAudioEncoder(*env, config,
+                                                     {.payload_type = 100}));
 }
 
 }  
