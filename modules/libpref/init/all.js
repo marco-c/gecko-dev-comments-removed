@@ -3981,6 +3981,10 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   
   
   pref("remote.prefs.recommended", true);
+
+  
+  
+  pref("remote.retry-on-abort", true);
 #endif
 
 

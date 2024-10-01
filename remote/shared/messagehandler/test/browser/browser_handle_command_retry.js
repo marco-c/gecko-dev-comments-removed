@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { isInitialDocument } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/messagehandler/transports/BrowsingContextUtils.sys.mjs"
+);
+
 
 const { PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
@@ -17,23 +21,53 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
 
 
 
-
 add_task(async function test_default_retry() {
-  const tab = BrowserTestUtils.addTab(
+  let tab = BrowserTestUtils.addTab(
+    gBrowser,
+    "https://example.com/document-builder.sjs?html=tab"
+  );
+
+  let rootMessageHandler = createRootMessageHandler("session-id-retry");
+
+  try {
+    const initialBrowsingContext = tab.linkedBrowser.browsingContext;
+    ok(
+      isInitialDocument(initialBrowsingContext),
+      "Module method needs to run in the initial document"
+    );
+
+    info("Call a module method which will throw");
+    const onBlockedOneTime = rootMessageHandler.handleCommand({
+      moduleName: "retry",
+      commandName: "blockedOneTime",
+      destination: {
+        type: WindowGlobalMessageHandler.type,
+        id: initialBrowsingContext.id,
+      },
+    });
+
+    await onBlockedOneTime;
+
+    ok(
+      !isInitialDocument(tab.linkedBrowser.browsingContext),
+      "module method to be successful"
+    );
+  } finally {
+    await cleanup(rootMessageHandler, tab, false);
+  }
+
+  
+
+  tab = BrowserTestUtils.addTab(
     gBrowser,
     "https://example.com/document-builder.sjs?html=tab"
   );
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  const browsingContext = tab.linkedBrowser.browsingContext;
-
-  const rootMessageHandler = createRootMessageHandler("session-id-no-retry");
-
-  info("Wait until the isLoadingDocument flag is false on the webProgress");
-  await TestUtils.waitForCondition(
-    () => !browsingContext.webProgress.isLoadingDocument
-  );
 
   try {
+    rootMessageHandler = createRootMessageHandler("session-id-no-retry");
+    const browsingContext = tab.linkedBrowser.browsingContext;
+
     info("Call a module method which will throw");
     const onBlockedOneTime = rootMessageHandler.handleCommand({
       moduleName: "retry",
@@ -47,24 +81,7 @@ add_task(async function test_default_retry() {
     
     await BrowserTestUtils.reloadTab(tab);
 
-    await Assert.rejects(
-      onBlockedOneTime,
-      e => e.name == "AbortError",
-      "Caught the expected abort error when reloading"
-    );
-
-    
-    
-    const onReload = BrowserTestUtils.reloadTab(tab);
-    await rootMessageHandler.handleCommand({
-      moduleName: "retry",
-      commandName: "blockedOneTime",
-      destination: {
-        type: WindowGlobalMessageHandler.type,
-        id: browsingContext.id,
-      },
-    });
-    await onReload;
+    await onBlockedOneTime;
   } finally {
     await cleanup(rootMessageHandler, tab);
   }
@@ -72,7 +89,7 @@ add_task(async function test_default_retry() {
 
 
 
-add_task(async function test_no_retry() {
+add_task(async function test_forced_no_retry() {
   const tab = BrowserTestUtils.addTab(
     gBrowser,
     "https://example.com/document-builder.sjs?html=tab"
@@ -111,7 +128,7 @@ add_task(async function test_no_retry() {
 
 
 
-add_task(async function test_retry() {
+add_task(async function test_forced_retry() {
   const tab = BrowserTestUtils.addTab(
     gBrowser,
     "https://example.com/document-builder.sjs?html=tab"

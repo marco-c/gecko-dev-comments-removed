@@ -6,35 +6,67 @@ from webdriver.bidi.modules.script import ContextTarget
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.parametrize("type_hint", ["tab", "window"])
-async def test_when_context_created(
-    bidi_session, wait_for_event, wait_for_future_safe, type_hint
-):
-    await bidi_session.session.subscribe(events=["browsingContext.contextCreated"])
-    on_context_created = wait_for_event("browsingContext.contextCreated")
+DOCUMENT_LOADED_SCRIPT = """
+    new Promise(resolve => {
+        const checkDone = () => {
+            if (window.location.href !== "about:blank") {
+                resolve(window.location.href);
+            }
+        };
+
+        if (document.readyState === "complete") {
+            checkDone();
+        }
+        window.addEventListener("load", checkDone);
+    })
+    """
+
+PAGE = "/webdriver/tests/support/html/default.html?pipe=trickle(d1)"
+
+
+async def test_retry_during_initial_load(bidi_session, url, new_tab):
+    page_url = url(PAGE)
 
     
     
+    result = await bidi_session.script.evaluate(
+        expression=f"""window.open("{page_url}")""",
+        await_promise=False,
+        target=ContextTarget(new_tab["context"]),
+    )
+    new_window = result["value"]
+
+    try:
+        
+        result = await bidi_session.script.evaluate(
+            expression=DOCUMENT_LOADED_SCRIPT,
+            await_promise=True,
+            target=ContextTarget(new_window["context"]),
+        )
+
+        assert result["value"] == page_url
+    finally:
+        await bidi_session.browsing_context.close(context=new_window["context"])
+
+
+async def test_retry_during_navigation(bidi_session, new_tab, url):
+    page_url = url(PAGE)
+
     
-    task = asyncio.create_task(
-        bidi_session.browsing_context.create(type_hint=type_hint)
+    
+    asyncio.create_task(
+        bidi_session.browsing_context.navigate(
+            context=new_tab["context"], url=page_url, wait="none"
+        )
     )
 
-    context_info = await wait_for_future_safe(on_context_created)
-
-    
-    
     
     
     
     result = await bidi_session.script.evaluate(
-        expression="new Promise(r => window.requestAnimationFrame(() => r('done')))",
+        expression=DOCUMENT_LOADED_SCRIPT,
         await_promise=True,
-        target=ContextTarget(context_info["context"]),
+        target=ContextTarget(new_tab["context"]),
     )
 
-    new_tab = await task
-
-    assert result["value"] == "done"
-
-    await bidi_session.browsing_context.close(context=new_tab["context"])
+    assert result["value"] == page_url
