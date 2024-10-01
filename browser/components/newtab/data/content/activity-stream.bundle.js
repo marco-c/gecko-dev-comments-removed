@@ -3684,7 +3684,7 @@ function ListFeed({
     className: "list-feed-title",
     id: "list-feed-title"
   }, external_React_default().createElement("span", {
-    className: "icon icon-trending"
+    className: "icon icon-newsfeed"
   }), listFeedTitle), external_React_default().createElement("div", {
     className: "list-feed-content",
     role: "menu",
