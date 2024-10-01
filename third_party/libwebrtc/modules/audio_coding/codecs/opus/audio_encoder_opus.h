@@ -61,10 +61,6 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
                        const AudioEncoderOpusConfig& config,
                        int payload_type);
 
-  [[deprecated("bugs.webrtc.org/343086059")]] AudioEncoderOpusImpl(
-      const AudioEncoderOpusConfig& config,
-      int payload_type);
-
   ~AudioEncoderOpusImpl() override;
 
   AudioEncoderOpusImpl(const AudioEncoderOpusImpl&) = delete;
@@ -126,10 +122,8 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
  private:
   class PacketLossFractionSmoother;
 
-  
-  
   AudioEncoderOpusImpl(
-      const FieldTrialsView& field_trials,
+      const Environment& env,
       const AudioEncoderOpusConfig& config,
       int payload_type,
       const AudioNetworkAdaptorCreator& audio_network_adaptor_creator,
