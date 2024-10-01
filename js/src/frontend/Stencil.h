@@ -275,7 +275,10 @@ class BigIntStencil {
 
   BigInt* createBigInt(JSContext* cx) const;
 
+  
   bool isZero() const;
+  bool inplaceNegate();
+  bool inplaceBitNot();
 
 #ifdef DEBUG
   bool isContainedIn(const LifoAlloc& alloc) const;
