@@ -3,6 +3,15 @@
 
 
 
+
+
+const path = require("path");
+const usbPowerProfiler = require(path.join(
+  process.env.BROWSERTIME_ROOT,
+  "node_modules",
+  "usb-power-profiling",
+  "usb-power-profiling.js"
+));
 const os = require("os");
 
 class SupportMeasurements {
@@ -28,7 +37,7 @@ class SupportMeasurements {
         start: "_startMeasureCPU",
         stop: "_stopMeasureCPU",
       },
-      "power-usage": {
+      powerUsage: {
         run: measurePower,
         start: "_startMeasurePower",
         stop: "_stopMeasurePower",
@@ -115,11 +124,28 @@ class SupportMeasurements {
   }
 
   async _startMeasurePower() {
-    
+    if (this.isAndroid) {
+      await usbPowerProfiler.startSampling();
+      this.startPowerTime = Date.now();
+    }
   }
 
-  async _stopMeasurePower() {
-    
+  async _stopMeasurePower(measurementName) {
+    if (this.isAndroid) {
+      let powerUsageData = await usbPowerProfiler.getPowerData(
+        this.startPowerTime,
+        Date.now()
+      );
+      let powerUsage = powerUsageData[0].samples.data.reduce(
+        (currSum, currVal) => currSum + Number.parseInt(currVal[1]),
+        0
+      );
+      await usbPowerProfiler.stopSampling();
+
+      this.commands.measure.addObject({
+        [measurementName]: [powerUsage],
+      });
+    }
   }
 
   async _startMeasureTime() {
