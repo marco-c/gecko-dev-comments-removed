@@ -279,6 +279,11 @@ class VSyncEncodeAdapterMode : public AdapterMode {
     worker_sequence_checker_.Detach();
   }
 
+  void PrepareShutdown() {
+    MutexLock lock(&queue_lock_);
+    queue_ = nullptr;
+  }
+
   
   void OnFrame(Timestamp post_time,
                bool queue_overload,
@@ -309,7 +314,12 @@ class VSyncEncodeAdapterMode : public AdapterMode {
   };
 
   Clock* const clock_;
-  TaskQueueBase* queue_;
+  
+  
+  
+  Mutex queue_lock_;
+  TaskQueueBase* queue_ RTC_GUARDED_BY(queue_lock_)
+      RTC_PT_GUARDED_BY(queue_lock_);
   RTC_NO_UNIQUE_ADDRESS SequenceChecker queue_sequence_checker_;
   rtc::scoped_refptr<PendingTaskSafetyFlag> queue_safety_flag_;
   
@@ -826,12 +836,23 @@ void VSyncEncodeAdapterMode::EncodeAllEnqueuedFrames() {
                  (post_time - input.time_when_posted_us).ms());
 
     const VideoFrame frame = std::move(input.video_frame);
-    queue_->PostTask(SafeTask(queue_safety_flag_, [this, post_time, frame] {
-      RTC_DCHECK_RUN_ON(queue_);
+    MutexLock lock(&queue_lock_);
+    if (queue_) {
+      queue_->PostTask(SafeTask(queue_safety_flag_, [this, post_time, frame] {
+        {
+          MutexLock lock(&queue_lock_);
+          if (!queue_) {
+            return;
+          }
+          RTC_DCHECK_RUN_ON(queue_);
+        }
 
-      
-      callback_->OnFrame(post_time, false, frame);
-    }));
+        
+        
+        
+        callback_->OnFrame(post_time, false, frame);
+      }));
+    }
   }
 
   input_queue_.clear();
@@ -858,6 +879,7 @@ FrameCadenceAdapterImpl::~FrameCadenceAdapterImpl() {
   
   
   if (metronome_) {
+    vsync_encode_adapter_->PrepareShutdown();
     absl::Cleanup cleanup = [adapter = std::move(vsync_encode_adapter_)] {};
     worker_queue_->PostTask([cleanup = std::move(cleanup)] {});
   }
