@@ -332,20 +332,6 @@ int16_t WebRtcOpus_SetBandwidth(OpusEncInst* inst, int32_t bandwidth);
 
 
 
-int32_t WebRtcOpus_GetInDtx(OpusEncInst* inst);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

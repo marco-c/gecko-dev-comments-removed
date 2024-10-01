@@ -38,9 +38,6 @@ enum {
 constexpr char kPlcUsePrevDecodedSamplesFieldTrial[] =
     "WebRTC-Audio-OpusPlcUsePrevDecodedSamples";
 
-constexpr char kAvoidNoisePumpingDuringDtxFieldTrial[] =
-    "WebRTC-Audio-OpusAvoidNoisePumpingDuringDtx";
-
 static int FrameSizePerChannel(int frame_size_ms, int sample_rate_hz) {
   RTC_DCHECK_GT(frame_size_ms, 0);
   RTC_DCHECK_EQ(frame_size_ms % 10, 0);
@@ -57,46 +54,6 @@ static int MaxFrameSizePerChannel(int sample_rate_hz) {
 
 static int DefaultFrameSizePerChannel(int sample_rate_hz) {
   return FrameSizePerChannel(20, sample_rate_hz);
-}
-
-
-
-static bool WebRtcOpus_IsHighEnergyRefreshDtxPacket(
-    OpusEncInst* inst,
-    rtc::ArrayView<const int16_t> frame,
-    rtc::ArrayView<const uint8_t> encoded) {
-  if (encoded.size() <= 2) {
-    return false;
-  }
-  int number_frames =
-      frame.size() / DefaultFrameSizePerChannel(inst->sample_rate_hz);
-  if (number_frames > 0 &&
-      WebRtcOpus_PacketHasVoiceActivity(encoded.data(), encoded.size()) == 0) {
-    const float average_frame_energy =
-        std::accumulate(frame.begin(), frame.end(), 0.0f,
-                        [](float a, int32_t b) { return a + b * b; }) /
-        number_frames;
-    if (WebRtcOpus_GetInDtx(inst) == 1 &&
-        average_frame_energy >= inst->smooth_energy_non_active_frames * 0.5f) {
-      
-      
-      
-      
-      
-      return true;
-    }
-    
-    
-    
-    if (average_frame_energy < inst->smooth_energy_non_active_frames * 0.5f) {
-      inst->smooth_energy_non_active_frames = average_frame_energy;
-    } else {
-      inst->smooth_energy_non_active_frames +=
-          (average_frame_energy - inst->smooth_energy_non_active_frames) *
-          0.25f;
-    }
-  }
-  return false;
 }
 
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
@@ -134,9 +91,6 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
   state->in_dtx_mode = 0;
   state->channels = channels;
   state->sample_rate_hz = sample_rate_hz;
-  state->smooth_energy_non_active_frames = 0.0f;
-  state->avoid_noise_pumping_during_dtx =
-      webrtc::field_trial::IsEnabled(kAvoidNoisePumpingDuringDtxFieldTrial);
 
   *inst = state;
   return 0;
@@ -182,8 +136,6 @@ int16_t WebRtcOpus_MultistreamEncoderCreate(
   state->in_dtx_mode = 0;
   state->channels = channels;
   state->sample_rate_hz = sample_rate_hz;
-  state->smooth_energy_non_active_frames = 0.0f;
-  state->avoid_noise_pumping_during_dtx = false;
 
   *inst = state;
   return 0;
@@ -241,21 +193,6 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
     }
   }
 
-  if (inst->avoid_noise_pumping_during_dtx && WebRtcOpus_GetUseDtx(inst) == 1 &&
-      WebRtcOpus_IsHighEnergyRefreshDtxPacket(
-          inst, rtc::MakeArrayView(audio_in, samples),
-          rtc::MakeArrayView(encoded, res))) {
-    
-    
-    
-    
-    
-    
-    encoded[0] = encoded[0] & 0b11111100;
-    inst->in_dtx_mode = 1;
-    
-    return 1;
-  }
   inst->in_dtx_mode = 0;
   return res;
 }
@@ -436,19 +373,6 @@ int16_t WebRtcOpus_SetForceChannels(OpusEncInst* inst, size_t num_channels) {
   } else {
     return -1;
   }
-}
-
-int32_t WebRtcOpus_GetInDtx(OpusEncInst* inst) {
-  if (!inst) {
-    return -1;
-  }
-#ifdef OPUS_GET_IN_DTX
-  int32_t in_dtx;
-  if (ENCODER_CTL(inst, OPUS_GET_IN_DTX(&in_dtx)) == 0) {
-    return in_dtx;
-  }
-#endif
-  return -1;
 }
 
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst,
