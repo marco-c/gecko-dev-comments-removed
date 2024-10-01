@@ -471,10 +471,6 @@ AudioProcessingImpl::AudioProcessingImpl(
     RTC_LOG(LS_INFO) << "Denormal disabler unsupported";
   }
 
-  
-  
-  config_.transient_suppression.enabled = false;
-
   RTC_LOG(LS_INFO) << "AudioProcessing: " << config_.ToString();
 
   
@@ -709,10 +705,6 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
       config_.capture_level_adjustment != config.capture_level_adjustment;
 
   config_ = config;
-
-  
-  
-  config_.transient_suppression.enabled = false;
 
   if (aec_config_changed) {
     InitializeEchoController();
@@ -2186,9 +2178,6 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
   apm_config.ns_enabled = config_.noise_suppression.enabled;
   apm_config.ns_level = static_cast<int>(config_.noise_suppression.level);
 
-  
-  
-  apm_config.transient_suppression_enabled = false;
   apm_config.experiments_description = experiments_description;
   apm_config.pre_amplifier_enabled = config_.pre_amplifier.enabled;
   apm_config.pre_amplifier_fixed_gain_factor =

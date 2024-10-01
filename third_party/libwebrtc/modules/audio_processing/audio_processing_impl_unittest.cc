@@ -959,36 +959,4 @@ INSTANTIATE_TEST_SUITE_P(
                                  .input_volume_controller = {.enabled = true},
                                  .adaptive_digital = {.enabled = true}}}));
 
-TEST(AudioProcessingImplTest, CanDisableTransientSuppressor) {
-  constexpr AudioProcessing::Config kOriginal = {
-      .transient_suppression = {.enabled = false}};
-
-  
-  auto adjusted =
-      AudioProcessingBuilder().SetConfig(kOriginal).Create()->GetConfig();
-  EXPECT_FALSE(adjusted.transient_suppression.enabled);
-
-  
-  auto apm = AudioProcessingBuilder().Create();
-  apm->ApplyConfig(kOriginal);
-  adjusted = apm->GetConfig();
-  EXPECT_FALSE(apm->GetConfig().transient_suppression.enabled);
-}
-
-TEST(AudioProcessingImplTest, CannotEnableTs) {
-  constexpr AudioProcessing::Config kOriginal = {
-      .transient_suppression = {.enabled = true}};
-
-  
-  auto adjusted =
-      AudioProcessingBuilder().SetConfig(kOriginal).Create()->GetConfig();
-  EXPECT_FALSE(adjusted.transient_suppression.enabled);
-
-  
-  auto apm = AudioProcessingBuilder().Create();
-  apm->ApplyConfig(kOriginal);
-  adjusted = apm->GetConfig();
-  EXPECT_FALSE(adjusted.transient_suppression.enabled);
-}
-
 }  

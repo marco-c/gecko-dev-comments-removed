@@ -222,6 +222,7 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
     } noise_suppression;
 
     
+    
     struct TransientSuppression {
       bool enabled = false;
     } transient_suppression;
