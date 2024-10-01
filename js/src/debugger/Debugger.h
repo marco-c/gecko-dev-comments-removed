@@ -752,6 +752,10 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
+
+
+
+
   using FrameMap = HashMap<AbstractFramePtr, HeapPtr<DebuggerFrame*>,
                            DefaultHasher<AbstractFramePtr>, ZoneAllocPolicy>;
   FrameMap frames;
