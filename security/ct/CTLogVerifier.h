@@ -7,8 +7,6 @@
 #ifndef CTLogVerifier_h
 #define CTLogVerifier_h
 
-#include <memory>
-
 #include "CTKnownLogs.h"
 #include "CTLog.h"
 #include "CTUtils.h"
@@ -72,11 +70,6 @@ class CTLogVerifier {
   pkix::Result VerifySignature(const Buffer& data, const Buffer& signature,
                                SignatureCache* signatureCache);
 
-  
-  
-  
-  
-  UniqueSECKEYPublicKey mPublicECKey;
   Buffer mSubjectPublicKeyInfo;
   Buffer mKeyId;
   DigitallySigned::SignatureAlgorithm mSignatureAlgorithm;
