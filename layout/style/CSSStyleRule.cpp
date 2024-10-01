@@ -194,15 +194,21 @@ void CSSStyleRule::SetSelectorText(const nsACString& aSelectorText) {
     return;
   }
 
-  if (StyleSheet* sheet = GetStyleSheet()) {
-    sheet->WillDirty();
+  StyleSheet* sheet = GetStyleSheet();
+  if (!sheet) {
+    return;
+  }
+  sheet->WillDirty();
 
-    
-    
-    const StyleStylesheetContents* contents = sheet->RawContents();
-    if (Servo_StyleRule_SetSelectorText(contents, mRawRule, &aSelectorText)) {
-      sheet->RuleChanged(this, StyleRuleChangeKind::Generic);
-    }
+  auto state = ContainingRuleState::From(mParentRule);
+
+  
+  
+  const StyleStylesheetContents* contents = sheet->RawContents();
+  if (Servo_StyleRule_SetSelectorText(
+          contents, mRawRule, &aSelectorText,
+          state.mParseRelativeType.ptrOr(nullptr))) {
+    sheet->RuleChanged(this, StyleRuleChangeKind::Generic);
   }
 }
 
