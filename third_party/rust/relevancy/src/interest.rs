@@ -34,7 +34,7 @@ impl ToSql for InterestVectorKind {
 
 
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord, uniffi::Enum)]
 #[repr(u32)]
 pub enum Interest {
     
@@ -149,7 +149,7 @@ impl ToSql for Interest {
 
 
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq, uniffi::Record)]
 pub struct InterestVector {
     pub inconclusive: u32,
     pub animals: u32,

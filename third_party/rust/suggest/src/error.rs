@@ -79,7 +79,7 @@ pub impl<T> Result<T, rusqlite::Error> {
 
 
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, uniffi::Error)]
 #[non_exhaustive]
 pub enum SuggestApiError {
     #[error("Network error: {reason}")]

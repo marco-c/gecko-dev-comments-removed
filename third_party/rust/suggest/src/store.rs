@@ -34,6 +34,7 @@ use crate::{
 
 
 
+#[derive(uniffi::Object)]
 pub struct SuggestStoreBuilder(Mutex<SuggestStoreBuilderInner>);
 
 #[derive(Default)]
@@ -50,7 +51,9 @@ impl Default for SuggestStoreBuilder {
     }
 }
 
+#[uniffi::export]
 impl SuggestStoreBuilder {
+    #[uniffi::constructor]
     pub fn new() -> SuggestStoreBuilder {
         Self(Mutex::new(SuggestStoreBuilderInner::default()))
     }
@@ -60,6 +63,7 @@ impl SuggestStoreBuilder {
         self
     }
 
+    
     pub fn cache_path(self: Arc<Self>, _path: String) -> Arc<Self> {
         
         self
@@ -75,6 +79,11 @@ impl SuggestStoreBuilder {
         self
     }
 
+    
+    
+    
+    
+    
     pub fn load_extension(
         self: Arc<Self>,
         library: String,
@@ -109,7 +118,7 @@ impl SuggestStoreBuilder {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, uniffi::Enum)]
 pub enum InterruptKind {
     
     Read,
@@ -148,13 +157,16 @@ pub enum InterruptKind {
 
 
 
+#[derive(uniffi::Object)]
 pub struct SuggestStore {
     inner: SuggestStoreInner<RemoteSettingsClient>,
 }
 
+#[uniffi::export]
 impl SuggestStore {
     
     #[handle_error(Error)]
+    #[uniffi::constructor(default(settings_config = None))]
     pub fn new(
         path: &str,
         settings_config: Option<RemoteSettingsConfig>,
@@ -212,6 +224,7 @@ impl SuggestStore {
     
     
     
+    #[uniffi::method(default(kind = None))]
     pub fn interrupt(&self, kind: Option<InterruptKind>) {
         self.inner.interrupt(kind)
     }
@@ -245,18 +258,29 @@ impl SuggestStore {
     ) -> SuggestApiResult<Option<SuggestProviderConfig>> {
         self.inner.fetch_provider_config(provider)
     }
+}
 
+impl SuggestStore {
     pub fn force_reingest(&self) {
         self.inner.force_reingest()
     }
 }
 
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, uniffi::Record)]
 pub struct SuggestIngestionConstraints {
+    #[uniffi(default = None)]
     pub providers: Option<Vec<SuggestionProvider>>,
+    #[uniffi(default = None)]
     pub provider_constraints: Option<SuggestionProviderConstraints>,
     
+    
+    
+    
+    
+    
+    
+    #[uniffi(default = false)]
     pub empty_only: bool,
 }
 

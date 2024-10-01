@@ -5,9 +5,11 @@
 use std::time::Instant;
 
 
+#[derive(uniffi::Record)]
 pub struct LabeledTimingSample {
     pub label: String,
-    pub value: u64, 
+    
+    pub value: u64,
 }
 
 impl LabeledTimingSample {
@@ -19,9 +21,11 @@ impl LabeledTimingSample {
 
 
 
-#[derive(Default)]
+#[derive(Default, uniffi::Record)]
 pub struct SuggestIngestionMetrics {
+    
     pub ingestion_times: Vec<LabeledTimingSample>,
+    
     pub download_times: Vec<LabeledTimingSample>,
 }
 

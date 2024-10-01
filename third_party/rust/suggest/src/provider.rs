@@ -24,7 +24,7 @@ pub(crate) const DEFAULT_INGEST_PROVIDERS: [SuggestionProvider; 6] = [
 ];
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, uniffi::Enum)]
 #[repr(u8)]
 pub enum SuggestionProvider {
     Amp = 1,
@@ -121,7 +121,13 @@ impl ToSql for SuggestionProvider {
     }
 }
 
-#[derive(Clone, Default, Debug)]
+
+
+#[derive(Clone, Default, Debug, uniffi::Record)]
 pub struct SuggestionProviderConstraints {
+    
+    
+    
+    #[uniffi(default = None)]
     pub exposure_suggestion_types: Option<Vec<String>>,
 }
