@@ -3370,6 +3370,41 @@ bool NativeKey::GetFollowingCharMessage(MSG& aCharMsg) {
       return true;
     }
 
+    const auto nextKeyMsgAfter = [&]() -> Maybe<MSG> {
+      MSG nextKeyMsgAfter;
+      if (WinUtils::PeekMessage(&nextKeyMsgAfter, mMsg.hwnd, WM_KEYFIRST,
+                                WM_KEYLAST, PM_NOREMOVE | PM_NOYIELD)) {
+        return Some(nextKeyMsgAfter);
+      }
+      return Nothing();
+    }();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (IsDeadCharMessage(removedMsg.message) && !removedMsg.wParam &&
+        !WinUtils::GetScanCode(removedMsg.lParam) && nextKeyMsgAfter.isSome() &&
+        MayBeSameCharMessage(nextKeyMsgAfter.ref(), nextKeyMsg)) {
+      MOZ_LOG(
+          gKeyLog, LogLevel::Warning,
+          ("%p   NativeKey::GetFollowingCharMessage(), WARNING, succeeded to "
+           "remove a dead char message, but the removed message's wParam is 0 "
+           "and the found message still in the queue, nextKeyMsg=%s but "
+           "removedMsg=%s",
+           this, ToString(nextKeyMsg).get(), ToString(removedMsg).get()));
+      return false;
+    }
+
     
     
     
@@ -3392,13 +3427,11 @@ bool NativeKey::GetFollowingCharMessage(MSG& aCharMsg) {
         ToString(kFoundCharMsg).get(), ToString(removedMsg).get());
     CrashReporter::AppendAppNotesToCrashReport(info);
     
-    MSG nextKeyMsgAfter;
-    if (WinUtils::PeekMessage(&nextKeyMsgAfter, mMsg.hwnd, WM_KEYFIRST,
-                              WM_KEYLAST, PM_NOREMOVE | PM_NOYIELD)) {
+    if (nextKeyMsgAfter.isSome()) {
       nsPrintfCString info(
           "\nNext key message after unexpected char message "
           "removed: %s, ",
-          ToString(nextKeyMsgAfter).get());
+          ToString(nextKeyMsgAfter.ref()).get());
       CrashReporter::AppendAppNotesToCrashReport(info);
     } else {
       CrashReporter::AppendAppNotesToCrashReport(
