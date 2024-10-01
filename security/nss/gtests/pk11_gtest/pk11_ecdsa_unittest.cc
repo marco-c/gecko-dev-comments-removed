@@ -203,7 +203,13 @@ TEST_F(Pkcs11EcdsaSha256Test, ImportPointNotOnCurve) {
 
 TEST_F(Pkcs11EcdsaSha256Test, ImportNoPublicKey) {
   DataBuffer k(kP256Pkcs8NoPublicKey, sizeof(kP256Pkcs8NoPublicKey));
-  EXPECT_FALSE(ImportPrivateKey(k));
+  ScopedSECKEYPrivateKey privKey(ImportPrivateKey(k));
+  ASSERT_TRUE(privKey);
+
+  ScopedSECKEYPublicKey pubKey(SECKEY_ConvertToPublicKey(privKey.get()));
+  ASSERT_TRUE(pubKey);
+
+  ASSERT_NE(pubKey->u.ec.publicValue.len, 0ul);
 };
 
 

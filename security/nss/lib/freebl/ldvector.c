@@ -446,6 +446,9 @@ static const struct FREEBLVectorStr vector = {
 
     X25519_DerivePublicKey,
     
+
+    EC_DerivePublicKey,
+    
 };
 
 const FREEBLVector*
