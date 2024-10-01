@@ -22,11 +22,32 @@ enum class StylePreloadKind : uint8_t {
   FromLinkRelPreloadElement,
   
   FromLinkRelPreloadHeader,
+  
+  FromEarlyHintsHeader,
 };
 
-inline bool IsLinkRelPreload(StylePreloadKind aKind) {
+inline bool IsLinkRelPreloadOrEarlyHint(StylePreloadKind aKind) {
   return aKind == StylePreloadKind::FromLinkRelPreloadElement ||
-         aKind == StylePreloadKind::FromLinkRelPreloadHeader;
+         aKind == StylePreloadKind::FromLinkRelPreloadHeader ||
+         aKind == StylePreloadKind::FromEarlyHintsHeader;
+}
+
+inline bool ShouldAssumeStandardsMode(StylePreloadKind aKind) {
+  switch (aKind) {
+    case StylePreloadKind::FromLinkRelPreloadHeader:
+    case StylePreloadKind::FromEarlyHintsHeader:
+      
+      
+      
+      
+      
+      return true;
+    case StylePreloadKind::None:
+    case StylePreloadKind::FromParser:
+    case StylePreloadKind::FromLinkRelPreloadElement:
+      break;
+  }
+  return false;
 }
 
 }  
