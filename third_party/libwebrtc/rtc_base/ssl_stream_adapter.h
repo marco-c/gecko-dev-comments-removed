@@ -130,8 +130,8 @@ class SSLStreamAdapter : public StreamInterface {
   
   virtual void SetServerRole(SSLRole role = SSL_SERVER) = 0;
 
-  
-  virtual void SetMode(SSLMode mode) = 0;
+  [[deprecated("Only DTLS is supported by the stream adapter")]] virtual void
+  SetMode(SSLMode mode) = 0;
 
   
   

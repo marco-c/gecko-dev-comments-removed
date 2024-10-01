@@ -90,7 +90,7 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter,
   
   
   int StartSSL() override;
-  void SetMode(SSLMode mode) override;
+  [[deprecated]] void SetMode(SSLMode mode) override;
   void SetMaxProtocolVersion(SSLProtocolVersion version) override;
   void SetInitialRetransmissionTimeout(int timeout_ms) override;
 
