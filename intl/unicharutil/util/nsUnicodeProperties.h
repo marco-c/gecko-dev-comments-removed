@@ -32,10 +32,10 @@ extern const nsUGenCategory sDetailedToGeneralCategory[];
 
 
 enum VerticalOrientation {
-  VERTICAL_ORIENTATION_U = 0,
-  VERTICAL_ORIENTATION_R = 1,
+  VERTICAL_ORIENTATION_R = 0,
+  VERTICAL_ORIENTATION_Tr = 1,
   VERTICAL_ORIENTATION_Tu = 2,
-  VERTICAL_ORIENTATION_Tr = 3
+  VERTICAL_ORIENTATION_U = 3,
 };
 
 
@@ -142,7 +142,8 @@ inline nsUGenCategory GetGenCategory(uint32_t aCh) {
 }
 
 inline VerticalOrientation GetVerticalOrientation(uint32_t aCh) {
-  return VerticalOrientation(GetCharProps2(aCh).mVertOrient);
+  return VerticalOrientation(intl::UnicodeProperties::GetIntPropertyValue(
+      aCh, intl::UnicodeProperties::IntProperty::VerticalOrientation));
 }
 
 inline IdentifierType GetIdentifierType(uint32_t aCh) {
