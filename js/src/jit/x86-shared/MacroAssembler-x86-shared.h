@@ -920,13 +920,69 @@ class MacroAssemblerX86Shared : public Assembler {
     movzbl(source, dest);
   }
 
-  void emitSet(Assembler::Condition cond, Register dest,
+ private:
+  template <typename T>
+  static bool aliasesEmitSetRegister(T src, Register dest) {
+    if constexpr (std::is_base_of_v<Register, T>) {
+      return src == dest;
+    } else if constexpr (std::is_base_of_v<Address, T>) {
+      return src.base == dest;
+    } else if constexpr (std::is_base_of_v<BaseIndex, T>) {
+      return src.base == dest || src.index == dest;
+    } else if constexpr (std::is_base_of_v<ValueOperand, T>) {
+      return src.aliases(dest);
+    } else {
+      static_assert(
+          std::is_base_of_v<Imm32, T> || std::is_base_of_v<Imm64, T> ||
+              std::is_base_of_v<ImmPtr, T> || std::is_base_of_v<ImmWord, T>,
+          "unhandled operand");
+      return false;
+    }
+  }
+
+ public:
+  bool maybeEmitSetZeroByteRegister(Register dest) {
+    
+    
+    
+    
+    if (AllocatableGeneralRegisterSet(Registers::SingleByteRegs).has(dest)) {
+      xorl(dest, dest);
+      return true;
+    }
+    return false;
+  }
+
+  template <typename T>
+  bool maybeEmitSetZeroByteRegister(T src, Register dest) {
+    
+    if (!aliasesEmitSetRegister(src, dest)) {
+      return maybeEmitSetZeroByteRegister(dest);
+    }
+    return false;
+  }
+
+  template <typename T1, typename T2>
+  bool maybeEmitSetZeroByteRegister(T1 lhs, T2 rhs, Register dest) {
+    
+    if (!aliasesEmitSetRegister(lhs, dest) &&
+        !aliasesEmitSetRegister(rhs, dest)) {
+      return maybeEmitSetZeroByteRegister(dest);
+    }
+    return false;
+  }
+
+  void emitSet(Assembler::Condition cond, Register dest, bool destIsZero,
                Assembler::NaNCond ifNaN = Assembler::NaN_HandledByCond) {
     if (AllocatableGeneralRegisterSet(Registers::SingleByteRegs).has(dest)) {
       
       
       setCC(cond, dest);
-      movzbl(dest, dest);
+
+      
+      if (!destIsZero) {
+        movzbl(dest, dest);
+      }
 
       if (ifNaN != Assembler::NaN_HandledByCond) {
         Label noNaN;
@@ -953,21 +1009,6 @@ class MacroAssemblerX86Shared : public Assembler {
       bind(&ifFalse);
       mov(ImmWord(0), dest);
 
-      bind(&end);
-    }
-  }
-
-  void emitSetRegisterIf(AssemblerX86Shared::Condition cond, Register dest) {
-    if (AllocatableGeneralRegisterSet(Registers::SingleByteRegs).has(dest)) {
-      
-      
-      setCC(cond, dest);
-      movzbl(dest, dest);
-    } else {
-      Label end;
-      movl(Imm32(1), dest);
-      j(cond, &end);
-      mov(ImmWord(0), dest);
       bind(&end);
     }
   }
