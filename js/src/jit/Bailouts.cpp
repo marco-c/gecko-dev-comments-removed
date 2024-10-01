@@ -314,9 +314,11 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
   } else {
     
     
+    
+    
     savedExc.drop();
     MOZ_ASSERT(!bailoutInfo);
-    MOZ_ASSERT(cx->isExceptionPending());
+    MOZ_ASSERT(cx->isExceptionPending() || cx->hadUncatchableException());
   }
 
   

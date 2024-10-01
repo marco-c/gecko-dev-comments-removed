@@ -613,16 +613,26 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ContextData<bool> hadResourceExhaustion_;
 
+  
+  
+  js::ContextData<bool> hadUncatchableException_;
+
  public:
   bool hadResourceExhaustion() const {
     return hadResourceExhaustion_ || js::oom::simulator.isThreadSimulatingAny();
   }
+  bool hadUncatchableException() const { return hadUncatchableException_; }
 #endif
 
  public:
   void reportResourceExhaustion() {
 #ifdef DEBUG
     hadResourceExhaustion_ = true;
+#endif
+  }
+  void reportUncatchableException() {
+#ifdef DEBUG
+    hadUncatchableException_ = true;
 #endif
   }
 
