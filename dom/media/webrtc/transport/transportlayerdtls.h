@@ -145,6 +145,7 @@ class TransportLayerDtls final : public TransportLayer {
                         UniqueCERTCertificate& cert) const;
 
   void RecordHandshakeCompletionTelemetry(const char* aResult);
+  void RecordStartedHandshakeTelemetry();
   void RecordTlsTelemetry();
 
   static PRBool WriteSrtpXtn(PRFileDesc* fd, SSLHandshakeType message,
@@ -181,6 +182,9 @@ class TransportLayerDtls final : public TransportLayer {
   nsCOMPtr<nsITimer> timer_ = nullptr;
   bool auth_hook_called_ = false;
   bool cert_ok_ = false;
+
+  
+  bool handshakeTelemetryRecorded = false;
 };
 
 }  
