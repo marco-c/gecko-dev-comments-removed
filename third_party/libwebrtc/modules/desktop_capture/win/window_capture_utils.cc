@@ -187,6 +187,13 @@ bool GetCroppedWindowRect(HWND window,
       is_maximized) {
     
     
+    RECT rect;
+    DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS, &rect,
+                          sizeof(RECT));
+    
+    if (original_rect && rect.left == original_rect->left()) {
+      return true;
+    }
     LONG style = GetWindowLong(window, GWL_STYLE);
     if (style & WS_THICKFRAME || style & DS_MODALFRAME) {
       int width = GetSystemMetrics(SM_CXSIZEFRAME);
