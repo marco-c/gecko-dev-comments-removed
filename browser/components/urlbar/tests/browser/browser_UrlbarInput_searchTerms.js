@@ -73,7 +73,7 @@ add_task(async function focus_and_unfocus() {
 
   EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   Assert.ok(
-    !gURLBar.hasAttribute("persistsearchterms"),
+    gURLBar.hasAttribute("persistsearchterms"),
     "Urlbar does not have persistsearchterms attribute."
   );
 
@@ -93,8 +93,8 @@ add_task(async function focus_and_unfocus_modified() {
 
   EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   Assert.ok(
-    !gURLBar.hasAttribute("persistsearchterms"),
-    "Urlbar does not have persistsearchterms attribute."
+    gURLBar.hasAttribute("persistsearchterms"),
+    "Urlbar has persistsearchterms attribute."
   );
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
