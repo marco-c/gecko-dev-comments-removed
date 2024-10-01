@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+#include "api/transport/test/create_feedback_generator.h"
+
+#include <memory>
+
+#include "api/transport/test/feedback_generator_interface.h"
+#include "test/network/feedback_generator.h"
+
+namespace webrtc {
+
+std::unique_ptr<FeedbackGenerator> CreateFeedbackGenerator(
+    FeedbackGenerator::Config confg) {
+  return std::make_unique<FeedbackGeneratorImpl>(confg);
+}
+
+}  

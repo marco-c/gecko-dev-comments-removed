@@ -14,6 +14,9 @@
 
 
 
+#if defined(WEBRTC_POSIX)
+#include <sys/socket.h>
+#endif
 #include <stddef.h>
 #include <stdint.h>
 
@@ -25,6 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "rtc_base/byte_buffer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/socket_address.h"
 
