@@ -16,8 +16,13 @@ import android.os.Looper;
 import android.os.Message;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.webrtc.EglBase.EglConnection;
 
 
@@ -122,7 +127,10 @@ public class EglThread implements RenderSynchronizer.Listener {
   private final HandlerWithExceptionCallbacks handler;
   private final EglConnection eglConnection;
   private final RenderSynchronizer renderSynchronizer;
-  private final List<RenderUpdate> pendingRenderUpdates = new ArrayList<>();
+  
+  private final Map<UUID, RenderUpdate> pendingRenderUpdates = new HashMap<>();
+  
+  private final List<RenderUpdate> pendingRenderUpdatesQueued = new ArrayList<>();
   private boolean renderWindowOpen = true;
 
   private EglThread(
@@ -189,11 +197,24 @@ public class EglThread implements RenderSynchronizer.Listener {
 
 
 
+
+
+  public void scheduleRenderUpdate(UUID id, RenderUpdate update) {
+    if (renderWindowOpen) {
+      update.update( true);
+    } else {
+      pendingRenderUpdates.put(id, update);
+    }
+  }
+
+  
+  
+  @Deprecated
   public void scheduleRenderUpdate(RenderUpdate update) {
     if (renderWindowOpen) {
-      update.update(true);
+      update.update( true);
     } else {
-      pendingRenderUpdates.add(update);
+      pendingRenderUpdatesQueued.add(update);
     }
   }
 
@@ -202,10 +223,14 @@ public class EglThread implements RenderSynchronizer.Listener {
     handler.post(
         () -> {
           renderWindowOpen = true;
-          for (RenderUpdate update : pendingRenderUpdates) {
-            update.update(false);
+          for (RenderUpdate update : pendingRenderUpdates.values()) {
+            update.update( false);
           }
           pendingRenderUpdates.clear();
+          for (RenderUpdate update: pendingRenderUpdatesQueued) {
+            update.update( false);
+          }
+          pendingRenderUpdatesQueued.clear();
         });
   }
 
