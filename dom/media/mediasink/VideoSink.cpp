@@ -70,8 +70,7 @@ VideoSink::VideoSink(AbstractThread* aThread, MediaSink* aAudioSink,
       mPendingDroppedCount(0),
       mHasVideo(false),
       mUpdateScheduler(aThread),
-      mVideoQueueSendToCompositorSize(aVQueueSentToCompositerSize),
-      mMinVideoQueueSize(StaticPrefs::media_ruin_av_sync_enabled() ? 1 : 0)
+      mVideoQueueSendToCompositorSize(aVQueueSentToCompositerSize)
 #ifdef XP_WIN
       ,
       mHiResTimersRequested(false)
@@ -520,11 +519,12 @@ void VideoSink::UpdateRenderedVideoFrames() {
   uint32_t droppedInSink = 0;
 
   
-  media::TimeUnit lastFrameEndTime;
-  while (VideoQueue().GetSize() > mMinVideoQueueSize &&
+  
+  
+  
+  while (VideoQueue().GetSize() > 1 &&
          clockTime >= VideoQueue().PeekFront()->GetEndTime()) {
     RefPtr<VideoData> frame = VideoQueue().PopFront();
-    lastFrameEndTime = frame->GetEndTime();
     if (frame->IsSentToCompositor()) {
       sentToCompositorCount++;
     } else {
@@ -583,16 +583,31 @@ void VideoSink::UpdateRenderedVideoFrames() {
                             droppedInSink, droppedInCompositor});
   }
 
-  
-  
-  
   RefPtr<VideoData> currentFrame = VideoQueue().PeekFront();
-  mVideoFrameEndTime =
-      std::max(mVideoFrameEndTime,
-               currentFrame ? currentFrame->GetEndTime() : lastFrameEndTime);
+  if (currentFrame) {
+    
+    
+    mVideoFrameEndTime =
+        std::max(mVideoFrameEndTime, currentFrame->GetEndTime());
 
-  RenderVideoFrames(mVideoQueueSendToCompositorSize, clockTime.ToMicroseconds(),
-                    nowTime);
+    
+    
+    
+    
+    
+    
+    
+    
+    if (currentFrame->GetEndTime() >= clockTime ||
+        
+        
+        
+        
+        StaticPrefs::media_ruin_av_sync_enabled()) {
+      RenderVideoFrames(mVideoQueueSendToCompositorSize,
+                        clockTime.ToMicroseconds(), nowTime);
+    }
+  }
 
   MaybeResolveEndPromise();
 
@@ -622,7 +637,15 @@ void VideoSink::MaybeResolveEndPromise() {
   
   if (VideoQueue().IsFinished() && VideoQueue().GetSize() <= 1 &&
       !mVideoSinkEndRequest.Exists()) {
+    TimeStamp nowTime;
+    const auto clockTime = mAudioSink->GetPosition(&nowTime);
+
     if (VideoQueue().GetSize() == 1) {
+      
+      
+      
+      
+      RenderVideoFrames(1, clockTime.ToMicroseconds(), nowTime);
       
       RefPtr<VideoData> frame = VideoQueue().PopFront();
       if (mPendingDroppedCount > 0) {
@@ -631,19 +654,6 @@ void VideoSink::MaybeResolveEndPromise() {
       } else {
         mFrameStats.NotifyPresentedFrame();
       }
-    }
-
-    TimeStamp nowTime;
-    const auto clockTime = mAudioSink->GetPosition(&nowTime);
-
-    
-    
-    
-    
-    
-    mContainer->ClearFutureFrames(nowTime);
-    if (mSecondaryContainer) {
-      mSecondaryContainer->ClearFutureFrames(nowTime);
     }
 
     if (clockTime < mVideoFrameEndTime) {
