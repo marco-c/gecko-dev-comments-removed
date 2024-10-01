@@ -136,6 +136,15 @@ impl<T> Synchronized<T> {
     }
 
     
+    pub fn map_with<F: Fn(&T) + 'static>(&self, f: F) {
+        
+        
+        let borrow = self.borrow();
+        f(&*borrow);
+        self.on_change(f);
+    }
+
+    
     pub fn mapped<U: 'static, F: Fn(&T) -> U + 'static>(&self, f: F) -> Synchronized<U> {
         let s = Synchronized::new(f(&*self.borrow()));
         self.update_on_change(&s, f);

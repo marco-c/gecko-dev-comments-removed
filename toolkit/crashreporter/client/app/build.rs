@@ -27,7 +27,7 @@ fn windows_manifest() {
         .active_code_page(manifest::ActiveCodePage::Legacy)
         
         
-        .gdi_scaling(manifest::Setting::Enabled);
+        .dpi_awareness(manifest::DpiAwareness::PerMonitorV2);
 
     embed_manifest(manifest).expect("unable to embed windows manifest file");
 
