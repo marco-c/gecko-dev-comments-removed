@@ -121,6 +121,9 @@ class MFTDecoder final {
   GUID mOutputSubType;
 
   
+  GUID mMajorType;
+
+  
   bool mMFTProvidesOutputSamples = false;
 
   
