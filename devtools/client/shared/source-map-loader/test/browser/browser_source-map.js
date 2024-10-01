@@ -158,6 +158,18 @@ add_task(async function testBaseURLErrorHandling() {
     await gSourceMapLoader.getOriginalURLs(source);
     ok(false, "Should throw");
   } catch (e) {
-    is(e.message, "URL constructor: http:://example.com/ is not a valid URL.");
+    
+    ok(
+      e.message.startsWith(
+        "URL constructor: http:://example.com/ is not a valid URL."
+      ),
+      "the worker thrown with the right error message"
+    );
+    ok(
+      e.message.includes(
+        "getOriginalURLs@resource://devtools/client/shared/source-map-loader/source-map.js"
+      ),
+      "Found at least one frame of the stack"
+    );
   }
 });
