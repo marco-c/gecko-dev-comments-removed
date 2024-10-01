@@ -11665,11 +11665,9 @@ Parser<FullParseHandler, Unit>::newBigInt() {
     return errorResult();
   }
 
-  bool isZero = this->bigInts()[index].isZero();
-
   
   
-  return handler_.newBigInt(index, isZero, pos());
+  return handler_.newBigInt(index, pos());
 }
 
 template <typename Unit>
