@@ -1037,7 +1037,6 @@ impl Renderer {
                         None
                     };
 
-                    
                     if let Some(memory) = prev_frame_memory {
                         
                         

@@ -277,6 +277,9 @@ class RenderThread final {
   WebRenderThreadPool& ThreadPoolLP() { return mThreadPoolLP; }
 
   
+  WrChunkPool* MemoryChunkPool() { return mChunkPool; }
+
+  
   
   MaybeWebRenderGlyphRasterThread& GlyphRasterThread() {
     return mGlyphRasterThread;
@@ -461,6 +464,7 @@ class RenderThread final {
 
   WebRenderThreadPool mThreadPool;
   WebRenderThreadPool mThreadPoolLP;
+  WrChunkPool* mChunkPool;
   MaybeWebRenderGlyphRasterThread mGlyphRasterThread;
 
   UniquePtr<WebRenderProgramCache> mProgramCache;
