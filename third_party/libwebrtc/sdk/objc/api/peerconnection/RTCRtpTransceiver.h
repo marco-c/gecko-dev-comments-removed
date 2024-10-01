@@ -123,7 +123,12 @@ RTC_OBJC_EXPORT
 
 
 
-- (void)setCodecPreferences:(NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *)codecs;
+- (BOOL)setCodecPreferences:(NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *_Nullable)codecs
+                      error:(NSError **_Nullable)error;
+
+
+- (void)setCodecPreferences:(NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *_Nullable)codecs
+    RTC_OBJC_DEPRECATED("Use setCodecPreferences:error: instead.");
 
 
 

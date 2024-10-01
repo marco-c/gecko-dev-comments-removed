@@ -24,6 +24,9 @@
 #endif
 
 
+#define RTC_OBJC_DEPRECATED(msg) __attribute__((deprecated(msg)))
+
+
 #define RTC_SYMBOL_CONCAT_HELPER(a, b) a##b
 #define RTC_SYMBOL_CONCAT(a, b) RTC_SYMBOL_CONCAT_HELPER(a, b)
 
