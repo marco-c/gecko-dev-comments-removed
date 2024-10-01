@@ -1323,7 +1323,14 @@ bool ContentParent::ValidatePrincipal(
 
   if (aPrincipal->SchemeIs("about")) {
     uint32_t flags = 0;
-    if (NS_FAILED(aPrincipal->GetAboutModuleFlags(&flags))) {
+    nsresult rv = aPrincipal->GetAboutModuleFlags(&flags);
+    if (rv == nsresult::NS_ERROR_FACTORY_NOT_REGISTERED) {
+      
+      
+      
+      return true;
+    }
+    if (NS_FAILED(rv)) {
       return false;
     }
 
