@@ -142,27 +142,10 @@ class DecisionLogic : public NetEqController {
 
   
   
-  bool ReinitAfterExpands(NetEqController::NetEqStatus status) const;
-
-  
-  
   bool PacketTooEarly(NetEqController::NetEqStatus status) const;
-  bool MaxWaitForPacket(NetEqController::NetEqStatus status) const;
-  bool ShouldContinueExpand(NetEqController::NetEqStatus status) const;
+
   int GetPlayoutDelayMs(NetEqController::NetEqStatus status) const;
 
-  
-  
-  struct Config {
-    Config();
-
-    bool enable_stable_delay_mode = true;
-    bool combine_concealment_decision = true;
-    int deceleration_target_level_offset_ms = 85;
-    int packet_history_size_ms = 2000;
-    absl::optional<int> cng_timeout_ms = 1000;
-  };
-  Config config_;
   std::unique_ptr<DelayManager> delay_manager_;
   std::unique_ptr<BufferLevelFilter> buffer_level_filter_;
   std::unique_ptr<PacketArrivalHistory> packet_arrival_history_;
