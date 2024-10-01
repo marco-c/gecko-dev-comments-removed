@@ -1537,12 +1537,42 @@ const SingleSelect = ({
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
+  const autoTriggerAllowed = itemAction => {
+    
+    const allowedActions = ["SET_PREF"];
+    const allowedPrefs = ["sidebar.revamp", "sidebar.verticalTabs"];
+    const checkAction = action => {
+      if (!allowedActions.includes(action.type)) {
+        return false;
+      }
+      if (action.type === "SET_PREF" && !allowedPrefs.includes(action.data?.pref.name)) {
+        return false;
+      }
+      return true;
+    };
+    if (itemAction.type === "MULTI_ACTION") {
+      
+      return !itemAction.data.actions.some(action => !checkAction(action));
+    }
+    return checkAction(itemAction);
+  };
+
   
   
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     if (isSingleSelect && !activeSingleSelect) {
-      let newActiveSingleSelect = content.tiles?.selected || content.tiles.data[0].id;
+      let newActiveSingleSelect = content.tiles?.selected || content.tiles?.data[0].id;
       setActiveSingleSelect(newActiveSingleSelect);
+      let selectedTile = content.tiles?.data.find(opt => opt.id === newActiveSingleSelect);
+      
+      
+      if (isSingleSelect && content.tiles?.autoTrigger && autoTriggerAllowed(selectedTile?.action)) {
+        handleAction({
+          currentTarget: {
+            value: selectedTile.id
+          }
+        });
+      }
     }
   }, []); 
 
