@@ -39,12 +39,12 @@ class nsFileChannel : public nsBaseChannel,
                                              nsCString& contentType,
                                              bool async);
 
-  [[nodiscard]] virtual nsresult OpenContentStream(
-      bool async, nsIInputStream** result, nsIChannel** channel) override;
+  [[nodiscard]] nsresult OpenContentStream(bool async, nsIInputStream** result,
+                                           nsIChannel** channel) override;
 
   
   
-  virtual nsresult ListenerBlockingPromise(BlockingPromise** promise) override;
+  nsresult ListenerBlockingPromise(BlockingPromise** promise) override;
 
  private:
   nsresult FixupContentLength(bool async);
