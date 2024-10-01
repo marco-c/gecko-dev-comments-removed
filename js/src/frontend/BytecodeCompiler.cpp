@@ -804,8 +804,7 @@ bool SourceAwareCompiler<Unit>::createSourceAndParser(FrontendContext* fc) {
              CanLazilyParse(compilationState_.input.options));
   if (compilationState_.canLazilyParse) {
     syntaxParser.emplace(fc_, options, sourceBuffer_.units(),
-                         sourceBuffer_.length(),
-                          false, compilationState_,
+                         sourceBuffer_.length(), compilationState_,
                           nullptr);
     if (!syntaxParser->checkOptions()) {
       return false;
@@ -813,8 +812,7 @@ bool SourceAwareCompiler<Unit>::createSourceAndParser(FrontendContext* fc) {
   }
 
   parser.emplace(fc_, options, sourceBuffer_.units(), sourceBuffer_.length(),
-                  true, compilationState_,
-                 syntaxParser.ptrOr(nullptr));
+                 compilationState_, syntaxParser.ptrOr(nullptr));
   parser->ss = compilationState_.source.get();
   return parser->checkOptions();
 }
@@ -1443,7 +1441,6 @@ static bool CompileLazyFunctionToStencilMaybeInstantiate(
   }
 
   Parser<FullParseHandler, Unit> parser(fc, input.options, units, length,
-                                         true,
                                         compilationState,
                                          nullptr);
   if (!parser.checkOptions()) {

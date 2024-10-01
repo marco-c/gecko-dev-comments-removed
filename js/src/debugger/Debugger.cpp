@@ -6662,8 +6662,7 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   frontend::Parser<frontend::FullParseHandler, char16_t> parser(
-      &fc, options, chars.twoByteChars(), length,
-       false, compilationState,
+      &fc, options, chars.twoByteChars(), length, compilationState,
        nullptr);
   if (!parser.checkOptions() || parser.parse().isErr()) {
     

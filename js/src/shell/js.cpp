@@ -5795,7 +5795,6 @@ static bool DumpAST(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
 
   AutoReportFrontendContext fc(cx);
   Parser<FullParseHandler, Unit> parser(&fc, options, units, length,
-                                         false,
                                         compilationState,
                                          nullptr);
   if (!parser.checkOptions()) {
@@ -6171,8 +6170,7 @@ static bool SyntaxParse(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   Parser<frontend::SyntaxParseHandler, char16_t> parser(
-      &fc, options, chars, length,
-       false, compilationState,
+      &fc, options, chars, length, compilationState,
        nullptr);
   if (!parser.checkOptions()) {
     return false;
