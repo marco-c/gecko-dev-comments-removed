@@ -14,7 +14,6 @@
 #include "mozilla/StyleColorInlines.h"  
 #include "nsTArray.h"                   
 
-struct gfxFontFeature;
 struct gfxFontStyle;
 
 

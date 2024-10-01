@@ -11,24 +11,9 @@
 #include "nsTHashtable.h"
 #include "nsTArray.h"
 #include "nsString.h"
+#include "mozilla/gfx/FontFeature.h"
 
-
-struct gfxFontFeature {
-  uint32_t
-      mTag;  
-  uint32_t mValue;  
-                    
-};
-
-inline bool operator<(const gfxFontFeature& a, const gfxFontFeature& b) {
-  return (a.mTag < b.mTag) || ((a.mTag == b.mTag) && (a.mValue < b.mValue));
-}
-
-inline bool operator==(const gfxFontFeature& a, const gfxFontFeature& b) {
-  return (a.mTag == b.mTag) && (a.mValue == b.mValue);
-}
-
-class nsAtom;
+using gfxFontFeature = mozilla::gfx::FontFeature;
 
 class gfxFontFeatureValueSet final {
  public:

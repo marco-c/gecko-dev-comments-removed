@@ -6,7 +6,6 @@
 
 use crate::gecko_bindings::bindings;
 use crate::gecko_bindings::structs;
-use crate::gecko_bindings::structs::ScreenColorGamut;
 use crate::media_queries::{Device, MediaType};
 use crate::parser::ParserContext;
 use crate::queries::feature::{AllowsRanges, Evaluator, FeatureFlags, QueryFeatureDescription};
@@ -150,7 +149,7 @@ fn eval_monochrome(context: &Context) -> i32 {
 
 #[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, PartialOrd, ToCss)]
 #[repr(u8)]
-enum ColorGamut {
+pub enum ColorGamut {
     
     Srgb,
     
@@ -168,12 +167,7 @@ fn eval_color_gamut(context: &Context, query_value: Option<ColorGamut>) -> bool 
     let color_gamut =
         unsafe { bindings::Gecko_MediaFeatures_ColorGamut(context.device().document()) };
     
-    query_value <=
-        match color_gamut {
-            ScreenColorGamut::Srgb => ColorGamut::Srgb,
-            ScreenColorGamut::P3 => ColorGamut::P3,
-            ScreenColorGamut::Rec2020 => ColorGamut::Rec2020,
-        }
+    query_value <= color_gamut
 }
 
 
