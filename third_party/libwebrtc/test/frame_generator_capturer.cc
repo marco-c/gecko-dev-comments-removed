@@ -189,28 +189,20 @@ void FrameGeneratorCapturer::AddOrUpdateSink(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
   TestVideoCapturer::AddOrUpdateSink(sink, wants);
-  MutexLock lock(&lock_);
-  if (sink_wants_observer_) {
-    
-    sink_wants_observer_->OnSinkWantsChanged(sink, wants);
+  {
+    MutexLock lock(&lock_);
+    if (sink_wants_observer_) {
+      
+      sink_wants_observer_->OnSinkWantsChanged(sink, wants);
+    }
   }
-  UpdateFps(GetSinkWants().max_framerate_fps);
+  ChangeFramerate(GetSinkWants().max_framerate_fps);
 }
 
 void FrameGeneratorCapturer::RemoveSink(
     rtc::VideoSinkInterface<VideoFrame>* sink) {
   TestVideoCapturer::RemoveSink(sink);
-
-  MutexLock lock(&lock_);
-  UpdateFps(GetSinkWants().max_framerate_fps);
-}
-
-void FrameGeneratorCapturer::UpdateFps(int max_fps) {
-  if (max_fps < target_capture_fps_) {
-    wanted_fps_.emplace(max_fps);
-  } else {
-    wanted_fps_.reset();
-  }
+  ChangeFramerate(GetSinkWants().max_framerate_fps);
 }
 
 void FrameGeneratorCapturer::ForceFrame() {
@@ -220,8 +212,6 @@ void FrameGeneratorCapturer::ForceFrame() {
 
 int FrameGeneratorCapturer::GetCurrentConfiguredFramerate() {
   MutexLock lock(&lock_);
-  if (wanted_fps_ && *wanted_fps_ < target_capture_fps_)
-    return *wanted_fps_;
   return target_capture_fps_;
 }
 
