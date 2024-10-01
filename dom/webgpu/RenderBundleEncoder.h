@@ -44,7 +44,7 @@ class RenderBundleEncoder final : public ObjectBase, public ChildOf<Device> {
 
  public:
   
-  void SetBindGroup(uint32_t aSlot, const BindGroup& aBindGroup,
+  void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,
                     const dom::Sequence<uint32_t>& aDynamicOffsets);
   
   void SetPipeline(const RenderPipeline& aPipeline);
