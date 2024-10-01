@@ -67,7 +67,7 @@ struct DataChannelInit {
   int id = -1;
 
   
-  absl::optional<Priority> priority;
+  absl::optional<PriorityValue> priority;
 };
 
 
@@ -172,7 +172,7 @@ class RTC_EXPORT DataChannelInterface : public RefCountInterface {
   
   
   virtual int id() const = 0;
-  virtual Priority priority() const { return Priority::kLow; }
+  virtual PriorityValue priority() const;
   virtual DataState state() const = 0;
   
   
