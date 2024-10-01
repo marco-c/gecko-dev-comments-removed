@@ -36,7 +36,7 @@ add_task(async function () {
   
   
   info("Select an unloaded source");
-  const onSourceSelected = selectSource(dbg, "simple1.js", 6);
+  selectSource(dbg, "simple1.js", 6);
 
   
   
@@ -44,7 +44,7 @@ add_task(async function () {
   const location = createLocation({ source: simple1 });
   is(getSettledSourceTextContent(location), null);
 
-  await onSourceSelected;
+  await waitForSelectedSource(dbg, "simple1.js");
   ok(getSettledSourceTextContent(location).value.value);
   assertHighlightLocation(dbg, "simple1.js", 6);
 });

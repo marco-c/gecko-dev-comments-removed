@@ -222,8 +222,6 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
     getSourceActorsForSource,
     getSourceActorBreakableLines,
     getFirstSourceActorForGeneratedSource,
-    getSelectedFrame,
-    getCurrentThread,
   } = dbg.selectors;
 
   return waitForState(
@@ -249,13 +247,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
       }
 
       
-      
-      if (
-        getSelectedFrame(getCurrentThread())?.location.source.id ==
-          location.source.id &&
-        !getSymbols(location) &&
-        !isWasmBinarySource(location.source)
-      ) {
+      if (!getSymbols(location) && !isWasmBinarySource(location.source)) {
         return false;
       }
 
@@ -607,8 +599,6 @@ async function waitForPaused(
   if (options.shouldWaitForLoadedScopes) {
     await waitForLoadedScopes(dbg);
   }
-
-  
   await waitForSelectedSource(dbg, url);
 }
 
