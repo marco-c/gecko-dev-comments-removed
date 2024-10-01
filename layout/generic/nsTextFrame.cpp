@@ -8152,6 +8152,12 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
   }
 
   mFrag = aTextFrame->TextFragment();
+
+  const uint32_t textOffset =
+      AssertedCast<uint32_t>(aTextFrame->GetContentOffset());
+  const uint32_t textLen =
+      AssertedCast<uint32_t>(aTextFrame->GetContentLength());
+
   
   
   
@@ -8165,24 +8171,38 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
     
     nsString maskedText;
     maskedText.SetCapacity(mFrag->GetLength());
-    for (uint32_t i = 0; i < mFrag->GetLength(); ++i) {
-      mIterator.SetOriginalOffset(i);
-      uint32_t skippedOffset = mIterator.GetSkippedOffset();
+    
+    
+    
+    uint32_t i = 0;
+    
+    while (i < textOffset) {
+      maskedText.Append(mFrag->CharAt(i++));
+    }
+    
+    while (i < textOffset + textLen) {
+      uint32_t skippedOffset = mIterator.ConvertOriginalToSkipped(i);
+      bool mask =
+          skippedOffset < transformedTextRun->GetLength()
+              ? transformedTextRun->mStyles[skippedOffset]->mMaskPassword
+              : false;
       if (mFrag->IsHighSurrogateFollowedByLowSurrogateAt(i)) {
-        if (transformedTextRun->mStyles[skippedOffset]->mMaskPassword) {
+        if (mask) {
           maskedText.Append(kPasswordMask);
           maskedText.Append(kPasswordMask);
         } else {
           maskedText.Append(mFrag->CharAt(i));
           maskedText.Append(mFrag->CharAt(i + 1));
         }
-        ++i;
+        i += 2;
       } else {
-        maskedText.Append(
-            transformedTextRun->mStyles[skippedOffset]->mMaskPassword
-                ? kPasswordMask
-                : mFrag->CharAt(i));
+        maskedText.Append(mask ? kPasswordMask : mFrag->CharAt(i));
+        ++i;
       }
+    }
+    
+    while (i < mFrag->GetLength()) {
+      maskedText.Append(mFrag->CharAt(i++));
     }
     mMaskedFrag.SetTo(maskedText, mFrag->IsBidi(), true);
     mFrag = &mMaskedFrag;
@@ -8193,11 +8213,6 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
       mFrag, aTrimSpaces ? nsTextFrame::TrimmedOffsetFlags::Default
                          : nsTextFrame::TrimmedOffsetFlags::NoTrimAfter |
                                nsTextFrame::TrimmedOffsetFlags::NoTrimBefore);
-
-  const uint32_t textOffset =
-      AssertedCast<uint32_t>(aTextFrame->GetContentOffset());
-  const uint32_t textLen =
-      AssertedCast<uint32_t>(aTextFrame->GetContentLength());
 
   
   
