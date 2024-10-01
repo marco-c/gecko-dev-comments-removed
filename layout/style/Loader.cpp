@@ -80,9 +80,6 @@ using namespace mozilla::dom;
 using namespace mozilla::net;
 
 
-#define SNIFFING_BUFFER_SIZE 1024
-
-
 
 
 
@@ -592,28 +589,23 @@ static bool GetCharsetFromData(const char* aStyleSheetData,
 
 NotNull<const Encoding*> SheetLoadData::DetermineNonBOMEncoding(
     const nsACString& aSegment, nsIChannel* aChannel) const {
-  const Encoding* encoding;
+  
+  constexpr size_t kSniffingBufferSize = 1024;
   nsAutoCString label;
-
   
   if (aChannel && NS_SUCCEEDED(aChannel->GetContentCharset(label))) {
-    encoding = Encoding::ForLabel(label);
-    if (encoding) {
+    if (const auto* encoding = Encoding::ForLabel(label)) {
       return WrapNotNull(encoding);
     }
   }
 
   
-  auto sniffingLength = aSegment.Length();
-  if (sniffingLength > SNIFFING_BUFFER_SIZE) {
-    sniffingLength = SNIFFING_BUFFER_SIZE;
-  }
+  auto sniffingLength = std::min(aSegment.Length(), kSniffingBufferSize);
   if (GetCharsetFromData(aSegment.BeginReading(), sniffingLength, label)) {
-    encoding = Encoding::ForLabel(label);
-    if (encoding == UTF_16BE_ENCODING || encoding == UTF_16LE_ENCODING) {
-      return UTF_8_ENCODING;
-    }
-    if (encoding) {
+    if (const auto* encoding = Encoding::ForLabel(label)) {
+      if (encoding == UTF_16BE_ENCODING || encoding == UTF_16LE_ENCODING) {
+        return UTF_8_ENCODING;
+      }
       return WrapNotNull(encoding);
     }
   }
