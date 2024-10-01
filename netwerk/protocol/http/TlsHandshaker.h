@@ -67,13 +67,11 @@ class TlsHandshaker : public nsITlsHandshakeCallbackListener {
   virtual ~TlsHandshaker();
 
   void Check0RttEnabled(nsITLSSocketControl* ssl);
-  void ReportSecureConnectionStart();
 
   
   bool mSetupSSLCalled{false};
   bool mNPNComplete{false};
 
-  bool mSecureConnectionStartReported{false};
   bool mTlsHandshakeComplitionPending{false};
   
   

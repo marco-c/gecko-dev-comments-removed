@@ -547,9 +547,6 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   }
 
   
-  mTransaction = trans;
-
-  
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   trans->GetSecurityCallbacks(getter_AddRefs(callbacks));
   SetSecurityCallbacks(callbacks);
@@ -560,6 +557,9 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   } else {
     ChangeConnectionState(ConnectionState::TLS_HANDSHAKING);
   }
+
+  
+  mTransaction = trans;
 
   nsCOMPtr<nsITLSSocketControl> tlsSocketControl;
   if (NS_SUCCEEDED(mSocketTransport->GetTlsSocketControl(
@@ -2267,11 +2267,6 @@ void nsHttpConnection::CheckForTraffic(bool check) {
 }
 
 void nsHttpConnection::SetEvent(nsresult aStatus) {
-  LOG(("nsHttpConnection::SetEvent [this=%p status=%" PRIx32 "]\n", this,
-       static_cast<uint32_t>(aStatus)));
-  if (!mBootstrappedTimingsSet) {
-    mBootstrappedTimingsSet = true;
-  }
   switch (aStatus) {
     case NS_NET_STATUS_RESOLVING_HOST:
       mBootstrappedTimings.domainLookupStart = TimeStamp::Now();
