@@ -119,6 +119,12 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   
 
 
+  static nsresult GetSpecIgnoringFragmentDirective(
+      nsCOMPtr<nsIURI>& aURI, nsACString& aSpecIgnoringFragmentDirective);
+
+  
+
+
 
 
 
