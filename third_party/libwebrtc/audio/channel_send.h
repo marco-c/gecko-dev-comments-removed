@@ -111,6 +111,12 @@ class ChannelSendInterface {
   virtual void SetEncoderToPacketizerFrameTransformer(
       rtc::scoped_refptr<webrtc::FrameTransformerInterface>
           frame_transformer) = 0;
+
+  
+  virtual absl::optional<DataRate> GetUsedRate() const = 0;
+
+  
+  virtual void RegisterPacketOverhead(int packet_byte_overhead) = 0;
 };
 
 std::unique_ptr<ChannelSendInterface> CreateChannelSend(
