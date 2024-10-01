@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+const MOZILLA_NAMESPACE = "stylelint-plugin-mozilla";
+
+function namespace(ruleName) {
+  return `${MOZILLA_NAMESPACE}/${ruleName}`;
+}
+
+module.exports = { namespace };

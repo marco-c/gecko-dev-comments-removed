@@ -25,8 +25,10 @@ const ignoreFiles = [
 
 module.exports = {
   extends: ["stylelint-config-recommended"],
+  plugins: ["./tools/lint/stylelint/stylelint-plugin-mozilla"],
   ignoreFiles,
   rules: {
+    "stylelint-plugin-mozilla/no-base-design-tokens": true,
     
     "color-no-invalid-hex": null,
     "font-family-no-missing-generic-family-keyword": [
