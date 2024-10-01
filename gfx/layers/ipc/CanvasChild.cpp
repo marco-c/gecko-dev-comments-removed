@@ -390,6 +390,14 @@ void CanvasChild::EndTransaction() {
     }
   }
 
+  
+  
+  
+  if (mRecorder) {
+    mRecorder->ClearProcessedExternalSurfaces();
+    mRecorder->ClearProcessedExternalImages();
+  }
+
   ++mTransactionsSinceGetDataSurface;
 }
 
