@@ -70,6 +70,9 @@ static StaticAutoPtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
 
 
 StaticMutex sProcessSupportedMutex;
+#ifndef MOZ_DEBUG
+MOZ_CONSTINIT
+#endif
 static EnumeratedArray<RemoteDecodeIn, Maybe<media::MediaCodecsSupported>,
                        size_t(RemoteDecodeIn::SENTINEL)>
     sProcessSupported MOZ_GUARDED_BY(sProcessSupportedMutex);
