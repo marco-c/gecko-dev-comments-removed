@@ -2,9 +2,7 @@
 
 
 
-use std::{io, path::PathBuf};
-
-use nsstring::nsAString;
+use std::{borrow::Borrow, io, path::PathBuf};
 
 
 
@@ -14,29 +12,66 @@ use nsstring::nsAString;
 
 
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+pub struct WidePathBuf(Vec<u16>);
 
-
-
-pub fn canonicalize(path: &nsAString) -> io::Result<PathBuf> {
-    #[cfg(windows)]
-    {
-        use std::{ffi::OsString, os::windows::prelude::*};
-        std::fs::canonicalize(OsString::from_wide(&*path))
+impl WidePathBuf {
+    
+    pub fn new(wide: impl AsRef<[u16]>) -> Self {
+        Self(wide.as_ref().into())
     }
-    #[cfg(unix)]
-    {
-        use std::{
-            ffi::{CStr, CString, OsString},
-            os::unix::prelude::*,
-        };
-        let path = CString::new(String::from_utf16(&*path).map_err(io::Error::other)?)?;
-        let mut bytes = [0 as libc::c_char; libc::PATH_MAX as usize];
-        let ptr = unsafe { libc::realpath(path.as_ptr(), bytes[..].as_mut_ptr()) };
-        if ptr.is_null() {
-            return Err(io::Error::last_os_error());
+
+    
+    pub fn as_wide(&self) -> &[u16] {
+        &self.0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn canonicalize(&self) -> io::Result<PathBuf> {
+        #[cfg(windows)]
+        {
+            use std::{ffi::OsString, os::windows::prelude::*};
+            std::fs::canonicalize(OsString::from_wide(&*self.0))
         }
-        Ok(OsString::from_vec(unsafe { CStr::from_ptr(ptr) }.to_bytes().into()).into())
+        #[cfg(unix)]
+        {
+            use std::{
+                ffi::{CStr, CString, OsString},
+                os::unix::prelude::*,
+            };
+            let path = CString::new(String::from_utf16(&*self.0).map_err(io::Error::other)?)?;
+            let mut bytes = [0 as libc::c_char; libc::PATH_MAX as usize];
+            let ptr = unsafe { libc::realpath(path.as_ptr(), bytes[..].as_mut_ptr()) };
+            if ptr.is_null() {
+                return Err(io::Error::last_os_error());
+            }
+            Ok(OsString::from_vec(unsafe { CStr::from_ptr(ptr) }.to_bytes().into()).into())
+        }
+        #[cfg(all(not(unix), not(windows)))]
+        compile_error!("`WidePathBuf::canonicalize` requires Windows or Unix")
     }
-    #[cfg(all(not(unix), not(windows)))]
-    compile_error!("`kvstore::fs::canonicalize` requires Windows or Unix")
+}
+
+
+
+impl<T> PartialEq<T> for WidePathBuf
+where
+    T: Borrow<str>,
+{
+    fn eq(&self, other: &T) -> bool {
+        other
+            .borrow()
+            .encode_utf16()
+            .eq(self.as_wide().iter().copied())
+    }
 }
