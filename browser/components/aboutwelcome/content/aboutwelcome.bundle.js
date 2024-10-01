@@ -875,6 +875,16 @@ const MultiStageProtonScreen = props => {
     }
     return () => {};
   }, [autoAdvance, handleAction, order]);
+
+  
+  
+  
+  if (props.content.narrow) {
+    document.querySelector("#multi-stage-message-root")?.setAttribute("narrow", "");
+  } else {
+    
+    document.querySelector("#multi-stage-message-root")?.removeAttribute("narrow");
+  }
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreen, {
     content: props.content,
     id: props.id,
