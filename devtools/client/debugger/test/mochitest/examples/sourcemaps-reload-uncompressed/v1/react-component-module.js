@@ -1,2 +1,6 @@
 
 var isReactComponent = true;
+
+function pauseInReact() {
+  debugger;
+}
