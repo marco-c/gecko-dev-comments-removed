@@ -659,16 +659,18 @@ class DebuggerImmediateRunnable final : public WorkerThreadRunnable {
     
   }
 
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override {
-    JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
-    JS::Rooted<JS::Value> callable(
-        aCx, JS::ObjectOrNullValue(mHandler->CallableOrNull()));
-    JS::HandleValueArray args = JS::HandleValueArray::empty();
     JS::Rooted<JS::Value> rval(aCx);
+    IgnoredErrorResult rv;
+    MOZ_KnownLive(mHandler)->Call({}, &rval, rv);
 
-    
-    return JS_CallFunctionValue(aCx, global, callable, args, &rval);
+    return !rv.Failed();
   }
 };
 
