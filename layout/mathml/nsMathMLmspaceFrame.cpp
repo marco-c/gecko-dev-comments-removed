@@ -114,6 +114,12 @@ nsresult nsMathMLmspaceFrame::Place(DrawTarget* aDrawTarget,
   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
 
   
+  const PlaceFlags flags;
+  auto sizes = GetWidthAndHeightForPlaceAdjustment(flags);
+  ApplyAdjustmentForWidthAndHeight(flags, sizes, aDesiredSize,
+                                   mBoundingMetrics);
+
+  
   auto borderPadding = GetBorderPaddingForPlace(aFlags);
   InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
                                   mBoundingMetrics);

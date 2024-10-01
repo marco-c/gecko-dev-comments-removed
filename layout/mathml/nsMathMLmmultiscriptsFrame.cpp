@@ -560,6 +560,11 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   aDesiredSize.mBoundingMetrics = boundingMetrics;
 
   
+  auto sizes = aFrame->GetWidthAndHeightForPlaceAdjustment(aFlags);
+  aFrame->ApplyAdjustmentForWidthAndHeight(aFlags, sizes, aDesiredSize,
+                                           boundingMetrics);
+
+  
   auto borderPadding = aFrame->GetBorderPaddingForPlace(aFlags);
   InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize, boundingMetrics);
 

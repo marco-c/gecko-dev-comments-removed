@@ -356,6 +356,18 @@ nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
 
   
+  auto sizes = GetWidthAndHeightForPlaceAdjustment(aFlags);
+  auto shiftX = ApplyAdjustmentForWidthAndHeight(aFlags, sizes, aDesiredSize,
+                                                 mBoundingMetrics);
+  if (sizes.width) {
+    
+    
+    dxNum += shiftX;
+    dxDen += shiftX;
+    width = *sizes.width;
+  }
+
+  
   auto borderPadding = GetBorderPaddingForPlace(aFlags);
   InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
                                   mBoundingMetrics);

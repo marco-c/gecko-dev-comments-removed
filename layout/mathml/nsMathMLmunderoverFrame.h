@@ -58,6 +58,8 @@ class nsMathMLmunderoverFrame final : public nsMathMLContainerFrame,
   virtual ~nsMathMLmunderoverFrame();
 
  private:
+  bool IsMathContentBoxHorizontallyCentered() const final;
+
   
   
   

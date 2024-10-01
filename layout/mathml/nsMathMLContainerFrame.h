@@ -157,6 +157,11 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
     
     
     IgnoreBorderPadding,
+
+    
+    
+    
+    DoNotAdjustForWidthAndHeight,
   };
   using PlaceFlags = mozilla::EnumSet<PlaceFlag>;
 
@@ -246,6 +251,18 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
                    nsReflowStatus& aStatus);
 
   nsMargin GetBorderPaddingForPlace(const PlaceFlags& aFlags);
+
+  struct WidthAndHeightForPlaceAdjustment {
+    mozilla::Maybe<nscoord> width;
+    mozilla::Maybe<nscoord> height;
+  };
+  WidthAndHeightForPlaceAdjustment GetWidthAndHeightForPlaceAdjustment(
+      const PlaceFlags& aFlags);
+
+  virtual bool IsMathContentBoxHorizontallyCentered() const { return false; }
+  nscoord ApplyAdjustmentForWidthAndHeight(
+      const PlaceFlags& aFlags, const WidthAndHeightForPlaceAdjustment& aSizes,
+      ReflowOutput& aReflowOutput, nsBoundingMetrics& aBoundingMetrics);
 
  protected:
   

@@ -180,8 +180,9 @@ nsresult nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
   } else {
     
     
-    PlaceFlags flags =
-        aFlags + PlaceFlag::MeasureOnly + PlaceFlag::IgnoreBorderPadding;
+    PlaceFlags flags = aFlags + PlaceFlag::MeasureOnly +
+                       PlaceFlag::IgnoreBorderPadding +
+                       PlaceFlag::DoNotAdjustForWidthAndHeight;
     nsresult rv = nsMathMLContainerFrame::Place(aDrawTarget, flags, baseSize);
     if (NS_FAILED(rv)) {
       DidReflowChildren(PrincipalChildList().FirstChild());
@@ -318,6 +319,12 @@ nsresult nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
 
   
+  const PlaceFlags flags;
+  auto sizes = GetWidthAndHeightForPlaceAdjustment(flags);
+  nscoord shiftX = ApplyAdjustmentForWidthAndHeight(flags, sizes, aDesiredSize,
+                                                    mBoundingMetrics);
+
+  
   auto borderPadding = GetBorderPaddingForPlace(aFlags);
   InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
                                   mBoundingMetrics);
@@ -360,7 +367,7 @@ nsresult nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
                         MirrorIfRTL(aDesiredSize.Width(), baseSize.Width(), dx),
                         dy, ReflowChildFlags::Default);
     } else {
-      nscoord dx_left = borderPadding.left;
+      nscoord dx_left = borderPadding.left + shiftX;
       if (!isRTL) {
         dx_left += bmSqr.width;
       }

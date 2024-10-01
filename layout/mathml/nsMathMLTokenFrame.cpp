@@ -179,12 +179,18 @@ nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget,
                           std::max(mBoundingMetrics.descent, descent);
 
   
+  auto sizes = GetWidthAndHeightForPlaceAdjustment(aFlags);
+  auto shiftX = ApplyAdjustmentForWidthAndHeight(aFlags, sizes, aDesiredSize,
+                                                 mBoundingMetrics);
+
+  
   auto borderPadding = GetBorderPaddingForPlace(aFlags);
   InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
                                   mBoundingMetrics);
 
   if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
     nscoord dx = borderPadding.left;
+    dx += shiftX;
     for (nsIFrame* childFrame : PrincipalChildList()) {
       ReflowOutput childSize(aDesiredSize.GetWritingMode());
       GetReflowAndBoundingMetricsFor(childFrame, childSize,

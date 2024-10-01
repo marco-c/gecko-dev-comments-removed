@@ -270,8 +270,9 @@ nsresult nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
   
   
   ReflowOutput baseSize(aDesiredSize.GetWritingMode());
-  PlaceFlags flags =
-      aFlags + PlaceFlag::MeasureOnly + PlaceFlag::IgnoreBorderPadding;
+  PlaceFlags flags = aFlags + PlaceFlag::MeasureOnly +
+                     PlaceFlag::IgnoreBorderPadding +
+                     PlaceFlag::DoNotAdjustForWidthAndHeight;
   nsresult rv = nsMathMLContainerFrame::Place(aDrawTarget, flags, baseSize);
 
   if (NS_FAILED(rv)) {
@@ -526,6 +527,11 @@ nsresult nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
         2 * kPhasorangleWidth * mRuleThickness - mBoundingMetrics.descent);
 
   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+
+  
+  auto sizes = GetWidthAndHeightForPlaceAdjustment(aFlags);
+  dx_left += ApplyAdjustmentForWidthAndHeight(aFlags, sizes, aDesiredSize,
+                                              mBoundingMetrics);
 
   
   auto borderPadding = GetBorderPaddingForPlace(aFlags);
