@@ -61,10 +61,10 @@ pub struct PrecomputedExponential {
     
     
     #[serde(skip)]
-    bucket_ranges: OnceCell<Vec<u64>>,
-    min: u64,
-    max: u64,
-    bucket_count: usize,
+    pub(crate) bucket_ranges: OnceCell<Vec<u64>>,
+    pub(crate) min: u64,
+    pub(crate) max: u64,
+    pub(crate) bucket_count: usize,
 }
 
 impl Bucketing for PrecomputedExponential {

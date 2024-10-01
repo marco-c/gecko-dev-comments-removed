@@ -2,17 +2,16 @@
 
 
 
+use std::mem;
 use std::sync::Arc;
 
 use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
-use crate::histogram::{Bucketing, Histogram, HistogramType};
+use crate::histogram::{Bucketing, Histogram, HistogramType, LinearOrExponential};
 use crate::metrics::{DistributionData, Metric, MetricType};
 use crate::storage::StorageManager;
 use crate::CommonMetricData;
 use crate::Glean;
-
-
 
 
 #[derive(Clone, Debug)]
@@ -268,5 +267,115 @@ impl CustomDistributionMetric {
         crate::core::with_glean(|glean| {
             test_get_num_recorded_errors(glean, self.meta(), error).unwrap_or(0)
         })
+    }
+
+    
+    
+    
+    
+    pub fn start_buffer(&self) -> LocalCustomDistribution<'_> {
+        LocalCustomDistribution::new(self)
+    }
+
+    fn commit_histogram(&self, histogram: Histogram<LinearOrExponential>) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| {
+            glean
+                .storage()
+                .record_with(glean, &metric.meta, move |old_value| {
+                    match metric.histogram_type {
+                        HistogramType::Linear => {
+                            let mut hist =
+                                if let Some(Metric::CustomDistributionLinear(hist)) = old_value {
+                                    hist
+                                } else {
+                                    Histogram::linear(
+                                        metric.range_min,
+                                        metric.range_max,
+                                        metric.bucket_count as usize,
+                                    )
+                                };
+
+                            hist._merge(&histogram);
+                            Metric::CustomDistributionLinear(hist)
+                        }
+                        HistogramType::Exponential => {
+                            let mut hist = if let Some(Metric::CustomDistributionExponential(
+                                hist,
+                            )) = old_value
+                            {
+                                hist
+                            } else {
+                                Histogram::exponential(
+                                    metric.range_min,
+                                    metric.range_max,
+                                    metric.bucket_count as usize,
+                                )
+                            };
+
+                            hist._merge(&histogram);
+                            Metric::CustomDistributionExponential(hist)
+                        }
+                    }
+                });
+        });
+    }
+}
+
+
+
+
+
+pub struct LocalCustomDistribution<'a> {
+    histogram: Histogram<LinearOrExponential>,
+    metric: &'a CustomDistributionMetric,
+}
+
+impl<'a> LocalCustomDistribution<'a> {
+    
+    fn new(metric: &'a CustomDistributionMetric) -> Self {
+        let histogram = match metric.histogram_type {
+            HistogramType::Linear => Histogram::<LinearOrExponential>::_linear(
+                metric.range_min,
+                metric.range_max,
+                metric.bucket_count as usize,
+            ),
+            HistogramType::Exponential => Histogram::<LinearOrExponential>::_exponential(
+                metric.range_min,
+                metric.range_max,
+                metric.bucket_count as usize,
+            ),
+        };
+        Self { histogram, metric }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn accumulate(&mut self, sample: u64) {
+        self.histogram.accumulate(sample)
+    }
+
+    
+    pub fn abandon(mut self) {
+        self.histogram.clear();
+    }
+}
+
+impl Drop for LocalCustomDistribution<'_> {
+    fn drop(&mut self) {
+        if self.histogram.is_empty() {
+            return;
+        }
+
+        
+        
+        let empty = Histogram::_linear(0, 0, 0);
+        let buffer = mem::replace(&mut self.histogram, empty);
+        self.metric.commit_histogram(buffer);
     }
 }

@@ -295,6 +295,8 @@ pub fn get_timestamp_ms() -> u64 {
 
 
 
+
+
 pub fn persist_ping_lifetime_data() {
     glean_core::glean_persist_ping_lifetime_data();
 }

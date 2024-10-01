@@ -69,7 +69,8 @@ pub use crate::metrics::labeled::{
 };
 pub use crate::metrics::{
     BooleanMetric, CounterMetric, CustomDistributionMetric, Datetime, DatetimeMetric,
-    DenominatorMetric, DistributionData, EventMetric, MemoryDistributionMetric, MemoryUnit,
+    DenominatorMetric, DistributionData, EventMetric, LocalCustomDistribution,
+    LocalMemoryDistribution, LocalTimingDistribution, MemoryDistributionMetric, MemoryUnit,
     NumeratorMetric, ObjectMetric, PingType, QuantityMetric, Rate, RateMetric, RecordedEvent,
     RecordedExperiment, StringListMetric, StringMetric, TextMetric, TimeUnit, TimerId,
     TimespanMetric, TimingDistributionMetric, UrlMetric, UuidMetric,
@@ -699,6 +700,8 @@ pub fn shutdown() {
         }
     });
 }
+
+
 
 
 
