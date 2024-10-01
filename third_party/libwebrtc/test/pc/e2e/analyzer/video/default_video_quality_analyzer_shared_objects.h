@@ -151,6 +151,11 @@ struct StreamStats {
   
   
   std::map<int, SamplesStatsCounter> spatial_layers_qp;
+  
+  
+  
+  
+  SamplesStatsCounter rendered_frame_qp;
 
   int64_t total_encoded_images_payload = 0;
   

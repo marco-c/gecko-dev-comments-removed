@@ -72,6 +72,8 @@ class VideoQualityAnalyzerInterface
     
     
     absl::optional<int32_t> decode_time_ms = absl::nullopt;
+    
+    absl::optional<uint8_t> qp = absl::nullopt;
   };
 
   ~VideoQualityAnalyzerInterface() override = default;

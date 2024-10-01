@@ -72,6 +72,11 @@ struct FrameStats {
   
   
   std::map<int, SamplesStatsCounter> spatial_layers_qp;
+  
+  
+  
+  
+  absl::optional<uint8_t> decoded_frame_qp = absl::nullopt;
 
   absl::optional<int> decoded_frame_width = absl::nullopt;
   absl::optional<int> decoded_frame_height = absl::nullopt;

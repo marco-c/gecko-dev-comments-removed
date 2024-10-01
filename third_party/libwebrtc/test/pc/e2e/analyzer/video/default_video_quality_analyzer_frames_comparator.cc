@@ -552,6 +552,14 @@ void DefaultVideoQualityAnalyzerFramesComparator::ProcessComparison(
           StatsSample(*comparison.frame_stats.decoded_frame_width *
                           *comparison.frame_stats.decoded_frame_height,
                       frame_stats.decode_end_time, metadata));
+      
+      
+      
+      if (frame_stats.decoded_frame_qp.has_value()) {
+        stats->rendered_frame_qp.AddSample(
+            StatsSample(static_cast<double>(*frame_stats.decoded_frame_qp),
+                        frame_stats.decode_end_time, metadata));
+      }
     }
 
     if (frame_stats.prev_frame_rendered_time.has_value() &&
