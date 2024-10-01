@@ -633,8 +633,16 @@ class Telemetry {
       extra = {};
     }
     extra.session_id = this.sessionId;
+    if (value !== null) {
+      extra.value = value;
+    }
 
-    Services.telemetry.recordEvent(CATEGORY, method, object, value, extra);
+    
+    
+    const eventName = `${method}_${object}`.replace(/(_[a-z])/g, c =>
+      c[1].toUpperCase()
+    );
+    Glean.devtoolsMain[eventName]?.record(extra);
   }
 
   
