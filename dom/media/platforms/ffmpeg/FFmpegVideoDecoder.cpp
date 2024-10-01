@@ -323,6 +323,17 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVAAPIDecoder() {
     FFMPEG_LOG("  couldn't find ffmpeg VA-API decoder");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
   }
+  
+  
+  
+  
+  if (!strcmp(codec->name, "libopenh264") &&
+      !StaticPrefs::media_ffmpeg_allow_openh264()) {
+    FFMPEG_LOG("  unable to find codec (openh264 disabled by pref)");
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_FATAL_ERR,
+        RESULT_DETAIL("unable to find codec (openh264 disabled by pref)"));
+  }
   FFMPEG_LOG("  codec %s : %s", codec->name, codec->long_name);
 
   if (!(mCodecContext = mLib->avcodec_alloc_context3(codec))) {

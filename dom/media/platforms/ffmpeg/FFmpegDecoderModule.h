@@ -103,17 +103,28 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
                mimeType.BeginReading()));
       return media::DecodeSupportSet{};
     }
-    AVCodecID codec = audioCodec != AV_CODEC_ID_NONE ? audioCodec : videoCodec;
-    bool supports = !!FFmpegDataDecoder<V>::FindAVCodec(mLib, codec);
+    AVCodecID codecId =
+        audioCodec != AV_CODEC_ID_NONE ? audioCodec : videoCodec;
+    AVCodec* codec = FFmpegDataDecoder<V>::FindAVCodec(mLib, codecId);
     MOZ_LOG(sPDMLog, LogLevel::Debug,
             ("FFmpeg decoder %s requested type '%s'",
-             supports ? "supports" : "rejects", mimeType.BeginReading()));
-    if (supports) {
-      
-      
-      return media::DecodeSupport::SoftwareDecode;
+             !!codec ? "supports" : "rejects", mimeType.BeginReading()));
+    if (!codec) {
+      return media::DecodeSupportSet{};
     }
-    return media::DecodeSupportSet{};
+    
+    
+    
+    
+    if (!strcmp(codec->name, "libopenh264") &&
+        !StaticPrefs::media_ffmpeg_allow_openh264()) {
+      MOZ_LOG(sPDMLog, LogLevel::Debug,
+              ("FFmpeg decoder rejects as openh264 disabled by pref"));
+      return media::DecodeSupportSet{};
+    }
+    
+    
+    return media::DecodeSupport::SoftwareDecode;
   }
 
  protected:

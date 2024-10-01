@@ -89,6 +89,8 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVDictionary** aOptions) {
   }
   
   
+  
+  
   if (!strcmp(codec->name, "libopenh264") &&
       !StaticPrefs::media_ffmpeg_allow_openh264()) {
     FFMPEG_LOG("  unable to find codec (openh264 disabled by pref)");
