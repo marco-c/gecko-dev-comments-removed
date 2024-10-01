@@ -44,6 +44,32 @@ add_task(async function browser_loader() {
   BrowserTestUtils.removeTab(tab);
 });
 
+add_task(async function places_loader() {
+  await cleanup();
+
+  
+  await PlacesTestUtils.addVisits(PAGE_URL);
+  let faviconData = new Map();
+  faviconData.set(PAGE_URL, ICON_URL);
+  
+  await Promise.race([
+    PlacesTestUtils.addFavicons(faviconData),
+    
+    new Promise(resolve => setTimeout(resolve, 1000)),
+  ]);
+  await new Promise((resolve, reject) => {
+    PlacesUtils.favicons.getFaviconURLForPage(
+      Services.io.newURI(PAGE_URL),
+      foundIconURI => {
+        if (foundIconURI) {
+          reject(new Error("An icon has been stored " + foundIconURI.spec));
+        }
+        resolve();
+      }
+    );
+  });
+});
+
 async function later_addition(iconUrl) {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE_URL);
   registerCleanupFunction(async () => {

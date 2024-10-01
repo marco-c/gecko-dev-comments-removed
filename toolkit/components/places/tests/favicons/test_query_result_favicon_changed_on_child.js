@@ -35,10 +35,13 @@ add_task(async function test_query_result_favicon_changed_on_child() {
         
         
         
-        PlacesUtils.favicons.setFaviconForPage(
+        PlacesUtils.favicons.setAndFetchFaviconForPage(
           PAGE_URI,
           SMALLPNG_DATA_URI,
-          SMALLPNG_DATA_URI
+          false,
+          PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
+          null,
+          Services.scriptSecurityManager.getSystemPrincipal()
         );
       }
     },
@@ -107,10 +110,13 @@ add_task(
     );
 
     let promise = promiseFaviconChanged(PAGE_URI2, SMALLPNG_DATA_URI);
-    PlacesUtils.favicons.setFaviconForPage(
+    PlacesUtils.favicons.setAndFetchFaviconForPage(
       PAGE_URI2,
       SMALLPNG_DATA_URI,
-      SMALLPNG_DATA_URI
+      false,
+      PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
+      null,
+      Services.scriptSecurityManager.getSystemPrincipal()
     );
     await promise;
 
