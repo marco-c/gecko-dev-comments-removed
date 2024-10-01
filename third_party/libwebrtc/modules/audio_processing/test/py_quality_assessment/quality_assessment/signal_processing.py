@@ -1,10 +1,10 @@
-
-
-
-
-
-
-
+# Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
 """Signal processing utility module.
 """
 
@@ -188,12 +188,12 @@ class SignalProcessingUtils(object):
         if signal.channels != 1:
             raise NotImplementedError(
                 'multiple-channel clipping not implemented')
-        if signal.sample_width != 2:  
+        if signal.sample_width != 2:  # Note that signal.sample_width is in bytes.
             raise exceptions.SignalProcessingException(
                 'hard-clipping detection only supported for 16 bit samples')
         samples = cls.AudioSegmentToRawData(signal)
 
-        
+        # Detect adjacent clipped samples.
         samples_type_info = np.iinfo(samples.dtype)
         mask_min = samples == samples_type_info.min
         mask_max = samples == samples_type_info.max
@@ -220,12 +220,12 @@ class SignalProcessingUtils(object):
     Returns:
       AudioSegment instance.
     """
-        
+        # Get samples.
         assert signal.channels == 1, (
             'multiple-channel recordings not supported')
         samples = signal.get_array_of_samples()
 
-        
+        # Convolve.
         logging.info(
             'applying %d order impulse response to a signal lasting %d ms',
             len(impulse_response), len(signal))
@@ -235,16 +235,16 @@ class SignalProcessingUtils(object):
                                                          np.int16)
         logging.info('convolution computed')
 
-        
+        # Cast.
         convolved_samples = array.array(signal.array_type, convolved_samples)
 
-        
+        # Verify.
         logging.debug('signal length: %d samples', len(samples))
         logging.debug('convolved signal length: %d samples',
                       len(convolved_samples))
         assert len(convolved_samples) > len(samples)
 
-        
+        # Generate convolved signal AudioSegment instance.
         convolved_signal = pydub.AudioSegment(data=convolved_samples,
                                               metadata={
                                                   'sample_width':
@@ -315,45 +315,45 @@ class SignalProcessingUtils(object):
     Returns:
       An AudioSegment instance.
     """
-        
-        if target_snr == -np.Inf:
-            
+        # Handle infinite target SNR.
+        if target_snr == -np.inf:
+            # Return a copy of noise.
             logging.warning('SNR = -Inf, returning noise')
             return cls.Copy(noise)
-        elif target_snr == np.Inf:
-            
+        elif target_snr == np.inf:
+            # Return a copy of signal.
             logging.warning('SNR = +Inf, returning signal')
             return cls.Copy(signal)
 
-        
+        # Check signal and noise power.
         signal_power = float(signal.dBFS)
         noise_power = float(noise.dBFS)
-        if signal_power == -np.Inf:
+        if signal_power == -np.inf:
             logging.error('signal has -Inf power, cannot mix')
             raise exceptions.SignalProcessingException(
                 'cannot mix a signal with -Inf power')
-        if noise_power == -np.Inf:
+        if noise_power == -np.inf:
             logging.error('noise has -Inf power, cannot mix')
             raise exceptions.SignalProcessingException(
                 'cannot mix a signal with -Inf power')
 
-        
+        # Mix.
         gain_db = signal_power - noise_power - target_snr
         signal_duration = len(signal)
         noise_duration = len(noise)
         if signal_duration <= noise_duration:
-            
-            
+            # Ignore `pad_noise`, `noise` is truncated if longer that `signal`, the
+            # mix will have the same length of `signal`.
             return signal.overlay(noise.apply_gain(gain_db))
         elif pad_noise == cls.MixPadding.NO_PADDING:
-            
-            
+            # `signal` is longer than `noise`, but no padding is applied to `noise`.
+            # Truncate `signal`.
             return noise.overlay(signal, gain_during_overlay=gain_db)
         elif pad_noise == cls.MixPadding.ZERO_PADDING:
-            
+            # TODO(alessiob): Check that this works as expected.
             return signal.overlay(noise.apply_gain(gain_db))
         elif pad_noise == cls.MixPadding.LOOP:
-            
+            # `signal` is longer than `noise`, extend `noise` by looping.
             return signal.overlay(noise.apply_gain(gain_db), loop=True)
         else:
             raise exceptions.SignalProcessingException('invalid padding type')

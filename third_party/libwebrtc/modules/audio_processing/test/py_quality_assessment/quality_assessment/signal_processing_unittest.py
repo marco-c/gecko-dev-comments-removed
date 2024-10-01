@@ -37,7 +37,7 @@ class TestSignalProcessing(unittest.TestCase):
 
         
         mix_neg_inf = signal_processing.SignalProcessingUtils.MixSignals(
-            signal, noise, -np.Inf)
+            signal, noise, -np.inf)
         self.assertTrue(len(noise), len(mix_neg_inf))  
         mix_neg_inf_samples = mix_neg_inf.get_array_of_samples()
         self.assertTrue(  
@@ -56,7 +56,7 @@ class TestSignalProcessing(unittest.TestCase):
 
         
         mix_pos_inf = signal_processing.SignalProcessingUtils.MixSignals(
-            signal, noise, np.Inf)
+            signal, noise, np.inf)
         self.assertTrue(len(signal), len(mix_pos_inf))  
         mix_pos_inf_samples = mix_pos_inf.get_array_of_samples()
         self.assertTrue(  
