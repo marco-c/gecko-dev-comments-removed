@@ -74,6 +74,8 @@ class WMFVideoMFTManager : public MFTManager {
 
   bool CanUseDXVA(IMFMediaType* aInputType, IMFMediaType* aOutputType);
 
+  GUID GetOutputSubtype() const;
+
   
   
   

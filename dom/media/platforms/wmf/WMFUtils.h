@@ -74,6 +74,11 @@ bool StreamTypeIsAudio(const WMFStreamType& aType);
 
 WMFStreamType GetStreamTypeFromMimeType(const nsCString& aMimeType);
 
+GUID GetOutputSubType(const gfx::ColorDepth& aColorDepth,
+                      bool aIsHardwareDecoding);
+
+nsCString GetSubTypeStr(const GUID& aSubtype);
+
 
 
 
