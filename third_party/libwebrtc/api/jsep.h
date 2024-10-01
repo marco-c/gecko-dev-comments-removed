@@ -117,7 +117,8 @@ RTC_EXPORT const char* SdpTypeToString(SdpType type);
 
 
 
-absl::optional<SdpType> SdpTypeFromString(const std::string& type_str);
+RTC_EXPORT absl::optional<SdpType> SdpTypeFromString(
+    const std::string& type_str);
 
 
 
