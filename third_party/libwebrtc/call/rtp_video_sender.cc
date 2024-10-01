@@ -176,9 +176,8 @@ std::unique_ptr<VideoFecGenerator> MaybeCreateFecGenerator(
              !ShouldDisableRedAndUlpfec(false, rtp,
                                         env.field_trials())) {
     
-    return std::make_unique<UlpfecGenerator>(rtp.ulpfec.red_payload_type,
-                                             rtp.ulpfec.ulpfec_payload_type,
-                                             &env.clock());
+    return std::make_unique<UlpfecGenerator>(env, rtp.ulpfec.red_payload_type,
+                                             rtp.ulpfec.ulpfec_payload_type);
   }
 
   
