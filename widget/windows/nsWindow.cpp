@@ -2687,8 +2687,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     mNonClientOffset.left = 0;
     mNonClientOffset.right = 0;
 
-    mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge();
-    if (maybeEdge) {
+    if (mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge()) {
       auto edge = maybeEdge.value();
       if (ABE_LEFT == edge) {
         mNonClientOffset.left -= kHiddenTaskbarSize;
@@ -2697,19 +2696,13 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
       } else if (ABE_BOTTOM == edge || ABE_TOP == edge) {
         mNonClientOffset.bottom -= kHiddenTaskbarSize;
       }
-
-      
-      
-      
-      
-      UINT clearEdge = (edge == ABE_TOP) ? ABE_BOTTOM : edge;
-      mClearNCEdge = Some(clearEdge);
     }
   } else {
     mNonClientOffset = NormalWindowNonClientOffset();
   }
 
   UpdateOpaqueRegionInternal();
+  mNeedsNCAreaClear = true;
 
   if (aReflowWindow) {
     
@@ -2765,7 +2758,7 @@ void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
   UpdateNonClientMargins();
 }
 
-void nsWindow::InvalidateNonClientRegion() {
+nsAutoRegion nsWindow::ComputeNonClientHRGN() {
   
   
   
@@ -2781,24 +2774,26 @@ void nsWindow::InvalidateNonClientRegion() {
   RECT rect;
   GetWindowRect(mWnd, &rect);
   MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
-  HRGN winRgn = CreateRectRgnIndirect(&rect);
+  nsAutoRegion winRgn(::CreateRectRgnIndirect(&rect));
 
   
   
   
-  GetWindowRect(mWnd, &rect);
+  ::GetWindowRect(mWnd, &rect);
   rect.top += mCaptionHeight;
   rect.right -= mHorResizeMargin;
   rect.bottom -= mVertResizeMargin;
   rect.left += mHorResizeMargin;
-  MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
-  HRGN clientRgn = CreateRectRgnIndirect(&rect);
-  CombineRgn(winRgn, winRgn, clientRgn, RGN_DIFF);
-  DeleteObject(clientRgn);
+  ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
+  nsAutoRegion clientRgn(::CreateRectRgnIndirect(&rect));
+  ::CombineRgn(winRgn, winRgn, clientRgn, RGN_DIFF);
+  return nsAutoRegion(winRgn.out());
+}
 
+void nsWindow::InvalidateNonClientRegion() {
+  nsAutoRegion winRgn(ComputeNonClientHRGN());
   
   RedrawWindow(mWnd, nullptr, winRgn, RDW_FRAME | RDW_INVALIDATE);
-  DeleteObject(winRgn);
 }
 
 
@@ -5000,12 +4995,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       auto GeckoClientToWinScreenRect =
           [&origin](LayoutDeviceIntRect aRect) -> RECT {
         aRect.MoveBy(origin);
-        return {
-            .left = aRect.x,
-            .top = aRect.y,
-            .right = aRect.XMost(),
-            .bottom = aRect.YMost(),
-        };
+        return WinUtils::ToWinRect(aRect);
       };
       auto SetButton = [&](size_t aIndex, WindowButtonType aType) {
         info->rgrect[aIndex] =

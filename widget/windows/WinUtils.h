@@ -33,12 +33,10 @@
 #include "nsIDownloader.h"
 #include "nsIURI.h"
 #include "nsIWidget.h"
-#include "nsIThread.h"
+#include "nsWindowsHelpers.h"
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/HalScreenConfiguration.h"
-#include "mozilla/HashTable.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
@@ -417,10 +415,7 @@ class WinUtils {
 
   static LayoutDeviceIntRegion ConvertHRGNToRegion(HRGN aRgn);
   
-
-
-
-  static HRGN RegionToHRGN(const LayoutDeviceIntRegion&);
+  static nsAutoRegion RegionToHRGN(const LayoutDeviceIntRegion&);
 
   
 

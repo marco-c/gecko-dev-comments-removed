@@ -99,27 +99,20 @@ static IconMetrics sIconMetrics[] = {
 
 
 
-LayoutDeviceIntRegion nsWindow::GetRegionToPaint(bool aForceFullRepaint,
-                                                 PAINTSTRUCT ps, HDC aDC) {
-  if (aForceFullRepaint) {
-    RECT paintRect;
-    ::GetClientRect(mWnd, &paintRect);
-    return LayoutDeviceIntRegion(WinUtils::ToIntRect(paintRect));
-  }
-
+LayoutDeviceIntRegion nsWindow::GetRegionToPaint(const PAINTSTRUCT& ps,
+                                                 HDC aDC) const {
+  LayoutDeviceIntRegion fullRegion(WinUtils::ToIntRect(ps.rcPaint));
   HRGN paintRgn = ::CreateRectRgn(0, 0, 0, 0);
-  if (paintRgn != nullptr) {
-    int result = GetRandomRgn(aDC, paintRgn, SYSRGN);
-    if (result == 1) {
+  if (paintRgn) {
+    if (GetRandomRgn(aDC, paintRgn, SYSRGN) == 1) {
       POINT pt = {0, 0};
       ::MapWindowPoints(nullptr, mWnd, &pt, 1);
       ::OffsetRgn(paintRgn, pt.x, pt.y);
+      fullRegion.AndWith(WinUtils::ConvertHRGNToRegion(paintRgn));
     }
-    LayoutDeviceIntRegion rgn(WinUtils::ConvertHRGNToRegion(paintRgn));
     ::DeleteObject(paintRgn);
-    return rgn;
   }
-  return LayoutDeviceIntRegion(WinUtils::ToIntRect(ps.rcPaint));
+  return fullRegion;
 }
 
 nsIWidgetListener* nsWindow::GetPaintListener() {
@@ -164,44 +157,21 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
   WebRenderLayerManager* layerManager = renderer->AsWebRender();
 
-  if (mClearNCEdge) {
-    
-    HDC hdc;
-    RECT rect;
-    hdc = ::GetWindowDC(mWnd);
-    ::GetWindowRect(mWnd, &rect);
-    ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
-    switch (mClearNCEdge.value()) {
-      case ABE_TOP:
-        rect.bottom = rect.top + kHiddenTaskbarSize;
-        break;
-      case ABE_LEFT:
-        rect.right = rect.left + kHiddenTaskbarSize;
-        break;
-      case ABE_BOTTOM:
-        rect.top = rect.bottom - kHiddenTaskbarSize;
-        break;
-      case ABE_RIGHT:
-        rect.left = rect.right - kHiddenTaskbarSize;
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Invalid edge value");
-        break;
-    }
-    ::FillRect(hdc, &rect,
-               reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH)));
-    ::ReleaseDC(mWnd, hdc);
+  const bool didResize = !mBounds.IsEqualEdges(mLastPaintBounds);
 
-    mClearNCEdge.reset();
-  }
-
-  if (knowsCompositor && layerManager &&
-      !mBounds.IsEqualEdges(mLastPaintBounds)) {
+  if (didResize && knowsCompositor && layerManager) {
     
     
     layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
   }
   mLastPaintBounds = mBounds;
+
+  RefPtr<nsWindow> strongThis(this);
+  if (nsIWidgetListener* listener = GetPaintListener()) {
+    
+    
+    listener->WillPaintWindow(this);
+  }
 
   
   
@@ -210,8 +180,15 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   const bool usingMemoryDC =
       renderer->GetBackendType() == LayersBackend::LAYERS_NONE &&
       mTransparencyMode == TransparencyMode::Transparent;
-
   HDC hDC = nullptr;
+  const LayoutDeviceIntRect winRect = [&] {
+    RECT r;
+    ::GetWindowRect(mWnd, &r);
+    ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&r, 2);
+    return WinUtils::ToIntRect(r);
+  }();
+  LayoutDeviceIntRegion region;
+  LayoutDeviceIntRegion translucentRegion;
   if (usingMemoryDC) {
     
     
@@ -222,19 +199,30 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
     
     
     hDC = mBasicLayersSurface->GetTransparentDC();
+    region = translucentRegion = LayoutDeviceIntRegion{winRect};
   } else {
     hDC = ::BeginPaint(mWnd, &ps);
+    region = GetRegionToPaint(ps, hDC);
+    if (mTransparencyMode == TransparencyMode::Transparent) {
+      translucentRegion = LayoutDeviceIntRegion{winRect};
+      translucentRegion.SubOut(mOpaqueRegion);
+      region.OrWith(translucentRegion);
+    }
   }
 
-  const bool forceRepaint = mTransparencyMode == TransparencyMode::Transparent;
-  const LayoutDeviceIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
-
-  RefPtr<nsWindow> strongThis(this);
-
-  if (nsIWidgetListener* listener = GetPaintListener()) {
+  if (!usingMemoryDC && (mNeedsNCAreaClear || didResize)) {
     
-    listener->WillPaintWindow(this);
+    
+    auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
+    nsAutoRegion regionToClear(ComputeNonClientHRGN());
+    if (mTransparencyMode == TransparencyMode::Transparent &&
+        !translucentRegion.IsEmpty()) {
+      nsAutoRegion translucent(WinUtils::RegionToHRGN(translucentRegion));
+      ::CombineRgn(regionToClear, regionToClear, translucent, RGN_OR);
+    }
+    ::FillRgn(hDC, regionToClear, black);
   }
+  mNeedsNCAreaClear = false;
 
   bool didPaint = false;
   auto endPaint = MakeScopeExit([&] {
