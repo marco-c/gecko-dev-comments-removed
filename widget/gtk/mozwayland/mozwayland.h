@@ -139,6 +139,10 @@ static inline void wl_surface_damage_buffer(struct wl_surface* wl_surface,
 }
 #endif
 
+#ifndef WL_POINTER_RELEASE_SINCE_VERSION
+#  define WL_POINTER_RELEASE_SINCE_VERSION 3
+#endif
+
 #ifndef WL_POINTER_AXIS_ENUM
 #  define WL_POINTER_AXIS_ENUM
 
@@ -226,54 +230,6 @@ enum wl_pointer_axis_relative_direction {
 
   WL_POINTER_AXIS_RELATIVE_DIRECTION_INVERTED = 1,
 };
-#endif 
-
-#ifndef WL_POINTER_AXIS_SOURCE_ENUM
-#  define WL_POINTER_AXIS_SOURCE_ENUM
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum wl_pointer_axis_source {
-  
-
-
-  WL_POINTER_AXIS_SOURCE_WHEEL = 0,
-  
-
-
-  WL_POINTER_AXIS_SOURCE_FINGER = 1,
-  
-
-
-  WL_POINTER_AXIS_SOURCE_CONTINUOUS = 2,
-  
-
-
-
-  WL_POINTER_AXIS_SOURCE_WHEEL_TILT = 3,
-};
-
-
-
-#  define WL_POINTER_AXIS_SOURCE_WHEEL_TILT_SINCE_VERSION 6
 #endif 
 
 
@@ -583,14 +539,6 @@ struct moz_wl_pointer_listener {
   void (*axis_relative_direction)(void* data, struct wl_pointer* wl_pointer,
                                   uint32_t axis, uint32_t direction);
 };
-
-#ifndef WL_POINTER_RELEASE_SINCE_VERSION
-#  define WL_POINTER_RELEASE_SINCE_VERSION 3
-#endif
-
-#ifndef WL_POINTER_AXIS_VALUE120_SINCE_VERSION
-#  define WL_POINTER_AXIS_VALUE120_SINCE_VERSION 8
-#endif
 
 #ifdef __cplusplus
 }
