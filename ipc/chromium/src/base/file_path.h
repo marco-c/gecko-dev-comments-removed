@@ -70,7 +70,6 @@
 #include <string>
 
 #include "base/basictypes.h"
-#include "base/compiler_specific.h"
 
 
 
@@ -189,8 +188,8 @@ class FilePath {
   
   
   
-  FilePath Append(const StringType& component) const WARN_UNUSED_RESULT;
-  FilePath Append(const FilePath& component) const WARN_UNUSED_RESULT;
+  [[nodiscard]] FilePath Append(const StringType& component) const;
+  [[nodiscard]] FilePath Append(const FilePath& component) const;
 
   
   
@@ -198,7 +197,7 @@ class FilePath {
   
   
   
-  FilePath AppendASCII(const std::string& component) const WARN_UNUSED_RESULT;
+  [[nodiscard]] FilePath AppendASCII(const std::string& component) const;
 
   
   
