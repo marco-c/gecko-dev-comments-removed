@@ -165,6 +165,12 @@ add_task(async function test_fog_event_works() {
   Assert.deepEqual(expectedExtra, events[1].extra);
 
   
+  Glean.testOnlyIpc.eventWithExtra.record(null);
+  events = Glean.testOnlyIpc.eventWithExtra.testGetValue();
+  Assert.equal(3, events.length, "Recorded another event.");
+  Assert.equal(events[2].extra, null);
+
+  
   
   let extra3 = {
     extra1_nonexistent_extra: "this does not crash",
