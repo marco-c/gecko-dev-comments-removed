@@ -81,6 +81,11 @@ fn find_components(
 ) -> Result<Vec<Component>> {
     let mut components = uniffi_bindgen::find_components(library_path, config_supplier)?
         .into_iter()
+        
+        .filter(|component| {
+            let namespace = component.ci.namespace();
+            namespace != "errorsupport" && namespace != "fixture_callbacks"
+        })
         .map(|component| {
             Ok(Component {
                 config: toml::Value::Table(component.config).try_into()?,
