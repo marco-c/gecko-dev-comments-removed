@@ -283,6 +283,29 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+  [must_use] nsIQuotaRequest
+  clearStoragesForClient(in nsIPrincipal aPrincipal,
+                         in AString aClientType,
+                         [optional] in ACString aPersistenceType);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
