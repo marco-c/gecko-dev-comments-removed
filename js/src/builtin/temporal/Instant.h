@@ -90,18 +90,6 @@ JS::BigInt* ToEpochNanoseconds(JSContext* cx, const Instant& instant);
 
 
 
-Wrapped<InstantObject*> ToTemporalInstant(JSContext* cx,
-                                          JS::Handle<JS::Value> item);
-
-
-
-
-bool ToTemporalInstant(JSContext* cx, JS::Handle<JS::Value> item,
-                       Instant* result);
-
-
-
-
 InstantObject* CreateTemporalInstant(JSContext* cx, const Instant& instant);
 
 
