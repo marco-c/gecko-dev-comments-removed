@@ -406,6 +406,32 @@ static void AddGLDependencies(SandboxBroker::Policy* policy) {
     nsAutoCString snapDesktopShare(snapDesktopDir);
     snapDesktopShare.AppendLiteral("/usr/share");
     policy->AddDir(rdonly, snapDesktopShare.get());
+
+    
+    
+    if (const char* drircConfigDir = PR_GetEnv("DRIRC_CONFIGDIR")) {
+      nsAutoCString drircConfigShare(drircConfigDir);
+      policy->AddDir(rdonly, drircConfigShare.get());
+    }
+
+    
+    
+    
+    
+    
+
+    if (const char* eglExternalPlatformConfigDir =
+            PR_GetEnv("__EGL_EXTERNAL_PLATFORM_CONFIG_DIRS")) {
+      nsAutoCString eglExternalPlatformConfigShare(
+          eglExternalPlatformConfigDir);
+      policy->AddDir(rdonly, eglExternalPlatformConfigShare.get());
+    }
+
+    if (const char* eglVendorLibraryDir =
+            PR_GetEnv("__EGL_VENDOR_LIBRARY_DIRS")) {
+      nsAutoCString eglVendorLibraryShare(eglVendorLibraryDir);
+      policy->AddDir(rdonly, eglVendorLibraryShare.get());
+    }
   }
 
   
