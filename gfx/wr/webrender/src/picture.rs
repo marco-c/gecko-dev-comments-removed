@@ -3347,6 +3347,18 @@ impl TileCacheInstance {
                             break;
                         }
 
+                        
+                        
+                        
+                        
+                        if let Err(SliceAtomic) = promotion_result {
+                            if prim_data.kind. color_depth != ColorDepth::Color8 {
+                                
+                                promotion_result = Ok(kind);
+                                break;
+                            }
+                        }
+
                         self.maybe_report_promotion_failure(promotion_result, pic_coverage_rect, &mut promotion_failure_reported);
                     }
 
