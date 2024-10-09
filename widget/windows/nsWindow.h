@@ -706,8 +706,8 @@ class nsWindow final : public nsBaseWidget {
   void OnCloakChanged(bool aCloaked);
 
 #ifdef DEBUG
-  virtual nsresult SetHiDPIMode(bool aHiDPI) override;
-  virtual nsresult RestoreHiDPIMode() override;
+  nsresult SetHiDPIMode(bool aHiDPI) override;
+  nsresult RestoreHiDPIMode() override;
 #endif
 
   
