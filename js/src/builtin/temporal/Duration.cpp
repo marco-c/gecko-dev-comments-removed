@@ -1856,7 +1856,7 @@ static bool GetTemporalRelativeToOption(
     JSContext* cx, Handle<JSObject*> options,
     MutableHandle<Wrapped<PlainDateObject*>> plainRelativeTo,
     MutableHandle<ZonedDateTime> zonedRelativeTo,
-    MutableHandle<TimeZoneRecord> timeZoneRecord) {
+    MutableHandle<TimeZoneValue> timeZoneValue) {
   
   Rooted<Value> value(cx);
   if (!GetProperty(cx, options, options, cx->names().relativeTo, &value)) {
@@ -1867,7 +1867,7 @@ static bool GetTemporalRelativeToOption(
   if (value.isUndefined()) {
     plainRelativeTo.set(nullptr);
     zonedRelativeTo.set(ZonedDateTime{});
-    timeZoneRecord.set(TimeZoneRecord{});
+    timeZoneValue.set(TimeZoneValue{});
     return true;
   }
 
@@ -1899,15 +1899,9 @@ static bool GetTemporalRelativeToOption(
       }
 
       
-      Rooted<TimeZoneRecord> timeZoneRec(cx);
-      if (!CreateTimeZoneMethodsRecord(cx, timeZone, &timeZoneRec)) {
-        return false;
-      }
-
-      
       plainRelativeTo.set(nullptr);
       zonedRelativeTo.set(ZonedDateTime{instant, timeZone, calendar});
-      timeZoneRecord.set(timeZoneRec);
+      timeZoneValue.set(timeZone);
       return true;
     }
 
@@ -1915,7 +1909,7 @@ static bool GetTemporalRelativeToOption(
     if (obj->canUnwrapAs<PlainDateObject>()) {
       plainRelativeTo.set(obj);
       zonedRelativeTo.set(ZonedDateTime{});
-      timeZoneRecord.set(TimeZoneRecord{});
+      timeZoneValue.set(TimeZoneValue{});
       return true;
     }
 
@@ -1937,7 +1931,7 @@ static bool GetTemporalRelativeToOption(
       
       plainRelativeTo.set(plainDate);
       zonedRelativeTo.set(ZonedDateTime{});
-      timeZoneRecord.set(TimeZoneRecord{});
+      timeZoneValue.set(TimeZoneValue{});
       return true;
     }
 
@@ -2120,24 +2114,18 @@ static bool GetTemporalRelativeToOption(
 
     plainRelativeTo.set(plainDate);
     zonedRelativeTo.set(ZonedDateTime{});
-    timeZoneRecord.set(TimeZoneRecord{});
+    timeZoneValue.set(TimeZoneValue{});
     return true;
   }
 
   
 
   
-  Rooted<TimeZoneRecord> timeZoneRec(cx);
-  if (!CreateTimeZoneMethodsRecord(cx, timeZone, &timeZoneRec)) {
-    return false;
-  }
-
-  
   Instant epochNanoseconds;
-  if (!InterpretISODateTimeOffset(
-          cx, dateTime, offsetBehaviour, offsetNs, timeZoneRec,
-          TemporalDisambiguation::Compatible, TemporalOffset::Reject,
-          matchBehaviour, &epochNanoseconds)) {
+  if (!InterpretISODateTimeOffset(cx, dateTime, offsetBehaviour, offsetNs,
+                                  timeZone, TemporalDisambiguation::Compatible,
+                                  TemporalOffset::Reject, matchBehaviour,
+                                  &epochNanoseconds)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(epochNanoseconds));
@@ -2145,7 +2133,7 @@ static bool GetTemporalRelativeToOption(
   
   plainRelativeTo.set(nullptr);
   zonedRelativeTo.set(ZonedDateTime{epochNanoseconds, timeZone, calendar});
-  timeZoneRecord.set(timeZoneRec);
+  timeZoneValue.set(timeZone);
   return true;
 }
 
@@ -2536,7 +2524,7 @@ struct DurationNudge {
 static bool NudgeToCalendarUnit(
     JSContext* cx, const NormalizedDuration& duration,
     const Instant& destEpochNs, const PlainDateTime& dateTime,
-    Handle<CalendarRecord> calendar, Handle<TimeZoneRecord> timeZone,
+    Handle<CalendarRecord> calendar, Handle<TimeZoneValue> timeZone,
     Increment increment, TemporalUnit unit, TemporalRoundingMode roundingMode,
     DurationNudge* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -2671,7 +2659,7 @@ static bool NudgeToCalendarUnit(
   
   Instant startEpochNs;
   Instant endEpochNs;
-  if (!timeZone.receiver()) {
+  if (!timeZone) {
     
     startEpochNs = GetUTCEpochNanoseconds({start, dateTime.time});
 
@@ -2830,7 +2818,7 @@ static bool NudgeToCalendarUnit(
 static bool NudgeToZonedTime(JSContext* cx, const NormalizedDuration& duration,
                              const PlainDateTime& dateTime,
                              Handle<CalendarRecord> calendar,
-                             Handle<TimeZoneRecord> timeZone,
+                             Handle<TimeZoneValue> timeZone,
                              Increment increment, TemporalUnit unit,
                              TemporalRoundingMode roundingMode,
                              DurationNudge* result) {
@@ -3062,7 +3050,7 @@ static bool NudgeToDayOrTime(JSContext* cx, const NormalizedDuration& duration,
 static bool BubbleRelativeDuration(
     JSContext* cx, const NormalizedDuration& duration,
     const DurationNudge& nudge, const PlainDateTime& dateTime,
-    Handle<CalendarRecord> calendar, Handle<TimeZoneRecord> timeZone,
+    Handle<CalendarRecord> calendar, Handle<TimeZoneValue> timeZone,
     TemporalUnit largestUnit, TemporalUnit smallestUnit,
     NormalizedDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -3151,7 +3139,7 @@ static bool BubbleRelativeDuration(
 
       
       Instant endEpochNs;
-      if (!timeZone.receiver()) {
+      if (!timeZone) {
         
         endEpochNs = GetUTCEpochNanoseconds({end, dateTime.time});
       } else {
@@ -3201,7 +3189,7 @@ static bool BubbleRelativeDuration(
 bool js::temporal::RoundRelativeDuration(
     JSContext* cx, const NormalizedDuration& duration,
     const Instant& destEpochNs, const PlainDateTime& dateTime,
-    Handle<CalendarRecord> calendar, Handle<TimeZoneRecord> timeZone,
+    Handle<CalendarRecord> calendar, Handle<TimeZoneValue> timeZone,
     TemporalUnit largestUnit, Increment increment, TemporalUnit smallestUnit,
     TemporalRoundingMode roundingMode, RoundedRelativeDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -3210,9 +3198,8 @@ bool js::temporal::RoundRelativeDuration(
   MOZ_ASSERT(largestUnit <= smallestUnit);
 
   
-  bool irregularLengthUnit =
-      (smallestUnit < TemporalUnit::Day) ||
-      (timeZone.receiver() && smallestUnit == TemporalUnit::Day);
+  bool irregularLengthUnit = (smallestUnit < TemporalUnit::Day) ||
+                             (timeZone && smallestUnit == TemporalUnit::Day);
 
   
 
@@ -3225,7 +3212,7 @@ bool js::temporal::RoundRelativeDuration(
                              &nudge)) {
       return false;
     }
-  } else if (timeZone.receiver()) {
+  } else if (timeZone) {
     
     if (!NudgeToZonedTime(cx, duration, dateTime, calendar, timeZone, increment,
                           smallestUnit, roundingMode, &nudge)) {
@@ -3526,14 +3513,14 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   
   Rooted<Wrapped<PlainDateObject*>> plainRelativeTo(cx);
   Rooted<ZonedDateTime> zonedRelativeTo(cx);
-  Rooted<TimeZoneRecord> timeZone(cx);
+  Rooted<TimeZoneValue> timeZone(cx);
   if (options) {
     if (!GetTemporalRelativeToOption(cx, options, &plainRelativeTo,
                                      &zonedRelativeTo, &timeZone)) {
       return false;
     }
     MOZ_ASSERT(!plainRelativeTo || !zonedRelativeTo);
-    MOZ_ASSERT_IF(zonedRelativeTo, timeZone.receiver());
+    MOZ_ASSERT_IF(zonedRelativeTo, timeZone);
   }
 
   
@@ -4012,7 +3999,7 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   Rooted<JSObject*> relativeTo(cx);
   Rooted<Wrapped<PlainDateObject*>> plainRelativeTo(cx);
   Rooted<ZonedDateTime> zonedRelativeTo(cx);
-  Rooted<TimeZoneRecord> timeZone(cx);
+  Rooted<TimeZoneValue> timeZone(cx);
   if (args.get(0).isString()) {
     
 
@@ -4085,7 +4072,7 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
       return false;
     }
     MOZ_ASSERT(!plainRelativeTo || !zonedRelativeTo);
-    MOZ_ASSERT_IF(zonedRelativeTo, timeZone.receiver());
+    MOZ_ASSERT_IF(zonedRelativeTo, timeZone);
 
     
     if (!GetRoundingIncrementOption(cx, options, &roundingIncrement)) {
@@ -4400,7 +4387,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   Rooted<JSObject*> relativeTo(cx);
   Rooted<Wrapped<PlainDateObject*>> plainRelativeTo(cx);
   Rooted<ZonedDateTime> zonedRelativeTo(cx);
-  Rooted<TimeZoneRecord> timeZone(cx);
+  Rooted<TimeZoneValue> timeZone(cx);
   auto unit = TemporalUnit::Auto;
   if (args.get(0).isString()) {
     
@@ -4428,7 +4415,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
       return false;
     }
     MOZ_ASSERT(!plainRelativeTo || !zonedRelativeTo);
-    MOZ_ASSERT_IF(zonedRelativeTo, timeZone.receiver());
+    MOZ_ASSERT_IF(zonedRelativeTo, timeZone);
 
     
     if (!GetTemporalUnitValuedOption(cx, totalOf, TemporalUnitKey::Unit,

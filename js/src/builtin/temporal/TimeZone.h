@@ -192,27 +192,6 @@ class MOZ_STACK_CLASS TimeZoneValue final {
   void trace(JSTracer* trc);
 };
 
-class MOZ_STACK_CLASS TimeZoneRecord final {
-  TimeZoneValue receiver_;
-
- public:
-  
-
-
-  TimeZoneRecord() = default;
-
-  explicit TimeZoneRecord(const TimeZoneValue& receiver)
-      : receiver_(receiver) {}
-
-  const auto& receiver() const { return receiver_; }
-
-  
-  auto* receiverDoNotUse() const { return &receiver_; }
-
-  
-  void trace(JSTracer* trc);
-};
-
 struct Instant;
 struct ParsedTimeZone;
 struct PlainDateTime;
@@ -308,13 +287,6 @@ PlainDateTime GetPlainDateTimeFor(const Instant& instant,
 
 
 
-bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneRecord> timeZone,
-                         const Instant& instant, PlainDateTime* result);
-
-
-
-
-
 bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                          const Instant& instant, PlainDateTime* result);
 
@@ -323,13 +295,6 @@ bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
 
 bool GetInstantFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                    JS::Handle<PlainDateTimeObject*> dateTime,
-                   TemporalDisambiguation disambiguation, Instant* result);
-
-
-
-
-bool GetInstantFor(JSContext* cx, JS::Handle<TimeZoneRecord> timeZone,
-                   JS::Handle<PlainDateTimeWithCalendar> dateTime,
                    TemporalDisambiguation disambiguation, Instant* result);
 
 
@@ -353,28 +318,14 @@ JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
 
 
 
-JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<TimeZoneRecord> timeZone,
+JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              JS::Handle<Wrapped<InstantObject*>> instant);
-
-
-
-
-bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneRecord> timeZone,
-                             JS::Handle<Wrapped<InstantObject*>> instant,
-                             int64_t* offsetNanoseconds);
 
 
 
 
 bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              JS::Handle<Wrapped<InstantObject*>> instant,
-                             int64_t* offsetNanoseconds);
-
-
-
-
-bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneRecord> timeZone,
-                             const Instant& instant,
                              int64_t* offsetNanoseconds);
 
 
@@ -389,7 +340,7 @@ using InstantVector = JS::StackGCVector<Wrapped<InstantObject*>>;
 
 
 
-bool GetPossibleInstantsFor(JSContext* cx, JS::Handle<TimeZoneRecord> timeZone,
+bool GetPossibleInstantsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                             JS::Handle<PlainDateTimeWithCalendar> dateTime,
                             JS::MutableHandle<InstantVector> list);
 
@@ -399,7 +350,7 @@ bool GetPossibleInstantsFor(JSContext* cx, JS::Handle<TimeZoneRecord> timeZone,
 
 bool DisambiguatePossibleInstants(
     JSContext* cx, JS::Handle<InstantVector> possibleInstants,
-    JS::Handle<TimeZoneRecord> timeZone, const PlainDateTime& dateTime,
+    JS::Handle<TimeZoneValue> timeZone, const PlainDateTime& dateTime,
     TemporalDisambiguation disambiguation,
     JS::MutableHandle<Wrapped<InstantObject*>> result);
 
@@ -418,13 +369,6 @@ bool GetNamedTimeZonePreviousTransition(JSContext* cx,
                                         JS::Handle<TimeZoneValue> timeZone,
                                         const Instant& epochInstant,
                                         mozilla::Maybe<Instant>* result);
-
-
-
-
-bool CreateTimeZoneMethodsRecord(JSContext* cx,
-                                 JS::Handle<TimeZoneValue> timeZone,
-                                 JS::MutableHandle<TimeZoneRecord> result);
 
 
 bool WrapTimeZoneValueObject(
@@ -469,19 +413,6 @@ class MutableWrappedPtrOperations<temporal::TimeZoneValue, Wrapper>
         JS::MutableHandle<temporal::BuiltinTimeZoneObject*>::fromMarkedLocation(
             container().address());
     return temporal::WrapTimeZoneValueObject(cx, mh);
-  }
-};
-
-template <typename Wrapper>
-class WrappedPtrOperations<temporal::TimeZoneRecord, Wrapper> {
-  const auto& container() const {
-    return static_cast<const Wrapper*>(this)->get();
-  }
-
- public:
-  JS::Handle<temporal::TimeZoneValue> receiver() const {
-    return JS::Handle<temporal::TimeZoneValue>::fromMarkedLocation(
-        container().receiverDoNotUse());
   }
 };
 
