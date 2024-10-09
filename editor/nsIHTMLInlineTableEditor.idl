@@ -17,4 +17,9 @@ interface nsIHTMLInlineTableEditor : nsISupports
 
   [setter_can_run_script]
   attribute boolean inlineTableEditingEnabled;
+
+  
+
+
+  [infallible] readonly attribute boolean isInlineTableEditingActive;
 };

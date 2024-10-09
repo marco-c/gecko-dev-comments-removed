@@ -32,6 +32,11 @@ interface nsIHTMLObjectResizer : nsISupports
   
 
 
+  [infallible] readonly attribute boolean isObjectResizingActive;
+
+  
+
+
 
   void hideResizers();
 };

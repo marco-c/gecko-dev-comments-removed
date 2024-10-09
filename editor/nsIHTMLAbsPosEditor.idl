@@ -15,6 +15,11 @@ interface nsIHTMLAbsPosEditor : nsISupports
   [setter_can_run_script]
   attribute boolean absolutePositioningEnabled;
 
+  
+
+
+  [infallible] readonly attribute boolean isAbsolutePositioningActive;
+
 
   
 
