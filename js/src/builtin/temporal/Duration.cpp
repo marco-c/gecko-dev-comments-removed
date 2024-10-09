@@ -2660,7 +2660,11 @@ static bool NudgeToCalendarUnit(
     endDuration = {duration.date.years, duration.date.months,
                    duration.date.weeks, r2};
   }
+
+  
   MOZ_ASSERT_IF(sign > 0, r1 >= 0 && r1 < r2);
+
+  
   MOZ_ASSERT_IF(sign < 0, r1 <= 0 && r1 > r2);
 
   
@@ -2708,27 +2712,33 @@ static bool NudgeToCalendarUnit(
     }
   }
 
+  
   if (sign > 0) {
+    
     if (startEpochNs > destEpochNs || destEpochNs >= endEpochNs) {
       JS_ReportErrorNumberASCII(
           cx, GetErrorMessage, nullptr,
           JSMSG_TEMPORAL_ZONED_DATE_TIME_INCONSISTENT_INSTANT);
       return false;
     }
+
+    
     MOZ_ASSERT(startEpochNs <= destEpochNs && destEpochNs < endEpochNs);
   } else {
+    
     if (endEpochNs >= destEpochNs || destEpochNs > startEpochNs) {
       JS_ReportErrorNumberASCII(
           cx, GetErrorMessage, nullptr,
           JSMSG_TEMPORAL_ZONED_DATE_TIME_INCONSISTENT_INSTANT);
       return false;
     }
+
+    
     MOZ_ASSERT(endEpochNs < destEpochNs && destEpochNs <= startEpochNs);
   }
-  MOZ_ASSERT(startEpochNs != endEpochNs);
 
   
-  auto unsignedRoundingMode = GetUnsignedRoundingMode(roundingMode, sign < 0);
+  MOZ_ASSERT(startEpochNs != endEpochNs);
 
   
   auto numerator = (destEpochNs - startEpochNs).toNanoseconds();
@@ -2747,6 +2757,8 @@ static bool NudgeToCalendarUnit(
 
   
   
+  
+  
   double total = mozilla::UnspecifiedNaN<double>();
   if (roundingMode == TemporalRoundingMode::Trunc &&
       increment == Increment{1}) {
@@ -2763,6 +2775,9 @@ static bool NudgeToCalendarUnit(
     auto n = Int128{r1} * denominator + numerator * Int128{sign};
     total = FractionToDouble(n, denominator);
   }
+
+  
+  auto unsignedRoundingMode = GetUnsignedRoundingMode(roundingMode, sign < 0);
 
   
   
@@ -2811,9 +2826,6 @@ static bool NudgeToCalendarUnit(
   } else {
     didExpandCalendarUnit = true;
   }
-
-  
-  
 
   
   auto resultDuration = didExpandCalendarUnit ? endDuration : startDuration;
@@ -2884,6 +2896,7 @@ static bool NudgeToZonedTime(JSContext* cx, const NormalizedDuration& duration,
   auto daySpan = NormalizedTimeDurationFromEpochNanosecondsDifference(
       endEpochNs, startEpochNs);
 
+  
   
 
   
