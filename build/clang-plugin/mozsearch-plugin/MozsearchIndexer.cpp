@@ -925,6 +925,11 @@ public:
     return Super::TraverseCXXDestructorDecl(D);
   }
 
+  bool TraverseLambdaExpr(LambdaExpr *E) {
+    AutoSetContext Asc(this, nullptr, true);
+    return Super::TraverseLambdaExpr(E);
+  }
+
   
   struct Context {
     
@@ -972,7 +977,7 @@ public:
 
     AutoSetContext *Ctxt = CurDeclContext;
     while (Ctxt) {
-      if (Ctxt->Decl != D) {
+      if (Ctxt->Decl && Ctxt->Decl != D) {
         return translateContext(Ctxt->Decl);
       }
       Ctxt = Ctxt->Prev;
