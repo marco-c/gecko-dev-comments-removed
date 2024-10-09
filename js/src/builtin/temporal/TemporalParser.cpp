@@ -681,11 +681,7 @@ class TemporalParser final {
 
   
   
-  
-  
-  
-  
-  bool hasSign() const { return hasOneOf({'+', '-', 0x2212}); }
+  bool hasSign() const { return hasOneOf({'+', '-'}); }
 
   
 
@@ -858,9 +854,7 @@ class TemporalParser final {
   }
 
   
-  bool hasDateTimeUTCOffsetStart() {
-    return hasOneOf({'Z', 'z', '+', '-', 0x2212});
-  }
+  bool hasDateTimeUTCOffsetStart() { return hasOneOf({'Z', 'z', '+', '-'}); }
 
   mozilla::Result<TimeZoneString, ParserError> dateTimeUTCOffset();
 

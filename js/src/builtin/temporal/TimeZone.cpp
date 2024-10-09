@@ -2121,10 +2121,6 @@ bool js::temporal::GetInstantFor(JSContext* cx, Handle<TimeZoneValue> timeZone,
 
 
 
-
-
-
-
 static bool IsOffsetTimeZoneIdentifierPrefix(JSLinearString* offsetString) {
   
   if (offsetString->empty()) {
@@ -2133,7 +2129,7 @@ static bool IsOffsetTimeZoneIdentifierPrefix(JSLinearString* offsetString) {
 
   
   char16_t ch = offsetString->latin1OrTwoByteChar(0);
-  return ch == '+' || ch == '-' || ch == 0x2212;
+  return ch == '+' || ch == '-';
 }
 
 
