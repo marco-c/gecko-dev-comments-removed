@@ -342,7 +342,7 @@ bool EmitterScope::prepareForDisposableScopeBody(BytecodeEmitter* bce) {
       return false;
     }
 
-    if (isSwitchBlock_ == IsSwitchBlock::Yes) {
+    if (blockKind_ == BlockKind::Switch) {
       
       
       
@@ -384,7 +384,7 @@ bool EmitterScope::emitSwitchBlockEndForDisposableScopeBodyEnd(
     BytecodeEmitter* bce) {
   MOZ_ASSERT(hasDisposables());
 
-  if (isSwitchBlock_ == IsSwitchBlock::Yes) {
+  if (blockKind_ == BlockKind::Switch) {
     
     if (!bce->emit1(JSOp::Pop)) {
       return false;
@@ -409,7 +409,11 @@ bool EmitterScope::emitDisposableScopeBodyEndForNonLocalJump(
 }
 
 bool EmitterScope::emitDisposableScopeBodyEnd(BytecodeEmitter* bce) {
-  if (hasDisposables()) {
+  
+  
+  
+  
+  if (hasDisposables() && (blockKind_ != BlockKind::ForOf)) {
     if (!usingEmitter_->emitEnd()) {
       return false;
     }
@@ -430,7 +434,7 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
                                 LexicalScope::ParserData* bindings
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
                                 ,
-                                IsSwitchBlock isSwitchBlock
+                                BlockKind blockKind
 #endif
 ) {
   MOZ_ASSERT(kind != ScopeKind::NamedLambda &&
@@ -499,7 +503,10 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
   }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  isSwitchBlock_ = isSwitchBlock;
+  MOZ_ASSERT_IF(blockKind_ != BlockKind::Other, kind == ScopeKind::Lexical);
+  MOZ_ASSERT_IF(kind != ScopeKind::Lexical, blockKind_ == BlockKind::Other);
+
+  blockKind_ = blockKind;
 
   if (!prepareForDisposableScopeBody(bce)) {
     return false;
