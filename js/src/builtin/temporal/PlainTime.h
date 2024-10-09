@@ -141,12 +141,6 @@ struct TemporalTimeLike final {
 
 
 
-bool ToTemporalTimeRecord(JSContext* cx, JS::Handle<JSObject*> temporalTimeLike,
-                          TemporalTimeLike* result);
-
-
-
-
 
 bool RegulateTime(JSContext* cx, const TemporalTimeLike& time,
                   TemporalOverflow overflow, PlainTime* result);

@@ -25,6 +25,7 @@
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/Temporal.h"
+#include "builtin/temporal/TemporalFields.h"
 #include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalRoundingMode.h"
 #include "builtin/temporal/TemporalTypes.h"
@@ -527,6 +528,65 @@ NormalizedTimeDuration js::temporal::DifferenceTime(const PlainTime& time1,
 
 
 
+static bool ToTemporalTimeRecord(JSContext* cx,
+                                 Handle<JSObject*> temporalTimeLike,
+                                 TemporalTimeLike* result) {
+  
+
+  
+  Rooted<TemporalFields> partial(cx);
+  if (!PreparePartialTemporalFields(cx, temporalTimeLike,
+                                    {
+                                        TemporalField::Hour,
+                                        TemporalField::Minute,
+                                        TemporalField::Second,
+                                        TemporalField::Millisecond,
+                                        TemporalField::Microsecond,
+                                        TemporalField::Nanosecond,
+                                    },
+                                    &partial)) {
+    return false;
+  }
+
+  
+
+  
+  if (partial.has(TemporalField::Hour)) {
+    result->hour = partial.hour();
+  }
+
+  
+  if (partial.has(TemporalField::Minute)) {
+    result->minute = partial.minute();
+  }
+
+  
+  if (partial.has(TemporalField::Second)) {
+    result->second = partial.second();
+  }
+
+  
+  if (partial.has(TemporalField::Millisecond)) {
+    result->millisecond = partial.millisecond();
+  }
+
+  
+  if (partial.has(TemporalField::Microsecond)) {
+    result->microsecond = partial.microsecond();
+  }
+
+  
+  if (partial.has(TemporalField::Nanosecond)) {
+    result->nanosecond = partial.nanosecond();
+  }
+
+  
+  return true;
+}
+
+
+
+
 static bool ToTemporalTime(JSContext* cx, Handle<Value> item,
                            TemporalOverflow overflow, PlainTime* result) {
   
@@ -569,7 +629,7 @@ static bool ToTemporalTime(JSContext* cx, Handle<Value> item,
     }
 
     
-    TemporalTimeLike timeResult;
+    TemporalTimeLike timeResult{};
     if (!ToTemporalTimeRecord(cx, itemObj, &timeResult)) {
       return false;
     }
@@ -600,20 +660,6 @@ static bool ToTemporalTime(JSContext* cx, Handle<Value> item,
 
   
   return true;
-}
-
-
-
-
-static PlainTimeObject* ToTemporalTime(JSContext* cx, Handle<Value> item,
-                                       TemporalOverflow overflow) {
-  PlainTime time;
-  if (!ToTemporalTime(cx, item, overflow, &time)) {
-    return nullptr;
-  }
-  MOZ_ASSERT(IsValidTime(time));
-
-  return CreateTemporalTime(cx, time);
 }
 
 
@@ -662,91 +708,6 @@ int32_t js::temporal::CompareTemporalTime(const PlainTime& one,
 
   
   return 0;
-}
-
-
-
-
-static bool ToTemporalTimeRecord(JSContext* cx,
-                                 Handle<JSObject*> temporalTimeLike,
-                                 TemporalTimeLike* result) {
-  
-
-  
-  
-
-  
-  bool any = false;
-
-  
-  Rooted<Value> value(cx);
-  auto getTimeProperty = [&](Handle<PropertyName*> property, const char* name,
-                             double* num) {
-    
-    if (!GetProperty(cx, temporalTimeLike, temporalTimeLike, property,
-                     &value)) {
-      return false;
-    }
-
-    
-    if (!value.isUndefined()) {
-      
-      any = true;
-
-      
-      if (!ToIntegerWithTruncation(cx, value, name, num)) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  if (!getTimeProperty(cx->names().hour, "hour", &result->hour)) {
-    return false;
-  }
-  if (!getTimeProperty(cx->names().microsecond, "microsecond",
-                       &result->microsecond)) {
-    return false;
-  }
-  if (!getTimeProperty(cx->names().millisecond, "millisecond",
-                       &result->millisecond)) {
-    return false;
-  }
-  if (!getTimeProperty(cx->names().minute, "minute", &result->minute)) {
-    return false;
-  }
-  if (!getTimeProperty(cx->names().nanosecond, "nanosecond",
-                       &result->nanosecond)) {
-    return false;
-  }
-  if (!getTimeProperty(cx->names().second, "second", &result->second)) {
-    return false;
-  }
-
-  
-  if (!any) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_PLAIN_TIME_MISSING_UNIT);
-    return false;
-  }
-
-  
-
-  
-  return true;
-}
-
-
-
-
-bool js::temporal::ToTemporalTimeRecord(JSContext* cx,
-                                        Handle<JSObject*> temporalTimeLike,
-                                        TemporalTimeLike* result) {
-  
-  *result = {};
-
-  
-  return ::ToTemporalTimeRecord(cx, temporalTimeLike, result);
 }
 
 static int64_t TimeToNanos(const PlainTime& time) {
@@ -1096,12 +1057,18 @@ static bool PlainTime_from(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  auto* result = ToTemporalTime(cx, args.get(0), overflow);
-  if (!result) {
+  PlainTime result;
+  if (!ToTemporalTime(cx, args.get(0), overflow, &result)) {
+    return false;
+  }
+  MOZ_ASSERT(IsValidTime(result));
+
+  auto* obj = temporal::CreateTemporalTime(cx, result);
+  if (!obj) {
     return false;
   }
 
-  args.rval().setObject(*result);
+  args.rval().setObject(*obj);
   return true;
 }
 
