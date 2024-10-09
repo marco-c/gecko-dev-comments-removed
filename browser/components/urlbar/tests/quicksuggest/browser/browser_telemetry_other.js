@@ -30,7 +30,6 @@ add_setup(async function () {
   await UrlbarTestUtils.formHistory.clear();
 
   Services.telemetry.clearScalars();
-  Services.telemetry.clearEvents();
 
   
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
@@ -48,23 +47,12 @@ add_setup(async function () {
 
 
 
-
 add_task(async function enableToggled() {
-  Services.telemetry.clearEvents();
-
-  
   
   let enabled = UrlbarPrefs.get("suggest.quicksuggest.nonsponsored");
   for (let i = 0; i < 2; i++) {
     enabled = !enabled;
     UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", enabled);
-    QuickSuggestTestUtils.assertEvents([
-      {
-        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-        method: "enable_toggled",
-        object: enabled ? "enabled" : "disabled",
-      },
-    ]);
     Assert.equal(
       TelemetryEnvironment.currentEnvironment.settings.userPrefs[
         "browser.urlbar.suggest.quicksuggest.nonsponsored"
@@ -81,7 +69,6 @@ add_task(async function enableToggled() {
   });
   enabled = !enabled;
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", enabled);
-  QuickSuggestTestUtils.assertEvents([]);
   await SpecialPowers.popPrefEnv();
 
   
@@ -93,21 +80,11 @@ add_task(async function enableToggled() {
 
 
 add_task(async function sponsoredToggled() {
-  Services.telemetry.clearEvents();
-
-  
   
   let enabled = UrlbarPrefs.get("suggest.quicksuggest.sponsored");
   for (let i = 0; i < 2; i++) {
     enabled = !enabled;
     UrlbarPrefs.set("suggest.quicksuggest.sponsored", enabled);
-    QuickSuggestTestUtils.assertEvents([
-      {
-        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-        method: "sponsored_toggled",
-        object: enabled ? "enabled" : "disabled",
-      },
-    ]);
     Assert.equal(
       TelemetryEnvironment.currentEnvironment.settings.userPrefs[
         "browser.urlbar.suggest.quicksuggest.sponsored"
@@ -124,7 +101,6 @@ add_task(async function sponsoredToggled() {
   });
   enabled = !enabled;
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", enabled);
-  QuickSuggestTestUtils.assertEvents([]);
   await SpecialPowers.popPrefEnv();
 
   
@@ -134,23 +110,12 @@ add_task(async function sponsoredToggled() {
 
 
 
-
 add_task(async function dataCollectionToggled() {
-  Services.telemetry.clearEvents();
-
-  
   
   let enabled = UrlbarPrefs.get("quicksuggest.dataCollection.enabled");
   for (let i = 0; i < 2; i++) {
     enabled = !enabled;
     UrlbarPrefs.set("quicksuggest.dataCollection.enabled", enabled);
-    QuickSuggestTestUtils.assertEvents([
-      {
-        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-        method: "data_collect_toggled",
-        object: enabled ? "enabled" : "disabled",
-      },
-    ]);
     Assert.equal(
       TelemetryEnvironment.currentEnvironment.settings.userPrefs[
         "browser.urlbar.quicksuggest.dataCollection.enabled"
@@ -167,7 +132,6 @@ add_task(async function dataCollectionToggled() {
   });
   enabled = !enabled;
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", enabled);
-  QuickSuggestTestUtils.assertEvents([]);
   await SpecialPowers.popPrefEnv();
 
   

@@ -166,10 +166,6 @@ async function setUpTelemetryTest({
 
 
 
-
-
-
-
 async function doTelemetryTest({
   index,
   suggestion,
@@ -190,7 +186,6 @@ async function doTelemetryTest({
     }),
 }) {
   Services.telemetry.clearScalars();
-  Services.telemetry.clearEvents();
 
   await doImpressionOnlyTest({
     index,
@@ -249,8 +244,6 @@ async function doTelemetryTest({
 
 
 
-
-
 async function doImpressionOnlyTest({
   index,
   suggestion,
@@ -259,8 +252,6 @@ async function doImpressionOnlyTest({
   showSuggestion,
 }) {
   info("Starting impression-only test");
-
-  Services.telemetry.clearEvents();
 
   let expectedPings = expected.ping ? [expected.ping] : [];
   let gleanPingCount = watchGleanPings(expectedPings);
@@ -327,9 +318,6 @@ async function doImpressionOnlyTest({
   info("Checking scalars. Expected: " + JSON.stringify(expected.scalars));
   QuickSuggestTestUtils.assertScalars(expected.scalars);
 
-  info("Checking events. Expected: " + JSON.stringify([expected.event]));
-  QuickSuggestTestUtils.assertEvents([expected.event]);
-
   Assert.equal(
     expectedPings.length,
     gleanPingCount.value,
@@ -367,8 +355,6 @@ async function doImpressionOnlyTest({
 
 
 
-
-
 async function doClickTest({
   index,
   suggestion,
@@ -377,8 +363,6 @@ async function doClickTest({
   showSuggestion,
 }) {
   info("Starting click test");
-
-  Services.telemetry.clearEvents();
 
   let expectedPings = expected.pings ?? [];
   let gleanPingCount = watchGleanPings(expectedPings);
@@ -404,9 +388,6 @@ async function doClickTest({
 
   info("Checking scalars. Expected: " + JSON.stringify(expected.scalars));
   QuickSuggestTestUtils.assertScalars(expected.scalars);
-
-  info("Checking events. Expected: " + JSON.stringify([expected.event]));
-  QuickSuggestTestUtils.assertEvents([expected.event]);
 
   Assert.equal(
     expectedPings.length,
@@ -447,8 +428,6 @@ async function doClickTest({
 
 
 
-
-
 async function doCommandTest({
   index,
   suggestion,
@@ -458,8 +437,6 @@ async function doCommandTest({
   showSuggestion,
 }) {
   info("Starting command test: " + JSON.stringify({ commandOrArray }));
-
-  Services.telemetry.clearEvents();
 
   let expectedPings = expected.pings ?? [];
   let gleanPingCount = watchGleanPings(expectedPings);
@@ -502,9 +479,6 @@ async function doCommandTest({
 
   info("Checking scalars. Expected: " + JSON.stringify(expected.scalars));
   QuickSuggestTestUtils.assertScalars(expected.scalars);
-
-  info("Checking events. Expected: " + JSON.stringify([expected.event]));
-  QuickSuggestTestUtils.assertEvents([expected.event]);
 
   Assert.equal(
     expectedPings.length,

@@ -30,7 +30,6 @@ add_setup(async function () {
   await UrlbarTestUtils.formHistory.clear();
 
   Services.telemetry.clearScalars();
-  Services.telemetry.clearEvents();
 
   
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
@@ -48,7 +47,6 @@ add_setup(async function () {
 
 
 add_tasks_with_rust(async function abandonment() {
-  Services.telemetry.clearEvents();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "sponsored",
@@ -62,14 +60,12 @@ add_tasks_with_rust(async function abandonment() {
     gURLBar.blur();
   });
   QuickSuggestTestUtils.assertScalars({});
-  QuickSuggestTestUtils.assertEvents([]);
 });
 
 
 
 add_tasks_with_rust(async function noQuickSuggestResult() {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
-    Services.telemetry.clearEvents();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: "noImpression_noQuickSuggestResult",
@@ -80,7 +76,6 @@ add_tasks_with_rust(async function noQuickSuggestResult() {
       EventUtils.synthesizeKey("KEY_Enter");
     });
     QuickSuggestTestUtils.assertScalars({});
-    QuickSuggestTestUtils.assertEvents([]);
   });
   await PlacesUtils.history.clear();
 });
@@ -88,8 +83,6 @@ add_tasks_with_rust(async function noQuickSuggestResult() {
 
 
 add_tasks_with_rust(async function hiddenRow() {
-  Services.telemetry.clearEvents();
-
   
   
   let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
@@ -215,7 +208,6 @@ add_tasks_with_rust(async function hiddenRow() {
   
   
   QuickSuggestTestUtils.assertScalars({});
-  QuickSuggestTestUtils.assertEvents([]);
 
   BrowserTestUtils.removeTab(tab);
   UrlbarProvidersManager.unregisterProvider(provider);
@@ -227,8 +219,6 @@ add_tasks_with_rust(async function hiddenRow() {
 
 
 add_tasks_with_rust(async function notAddedToView() {
-  Services.telemetry.clearEvents();
-
   
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     
@@ -251,7 +241,6 @@ add_tasks_with_rust(async function notAddedToView() {
     
     
     QuickSuggestTestUtils.assertScalars({});
-    QuickSuggestTestUtils.assertEvents([]);
   });
 });
 
@@ -259,8 +248,6 @@ add_tasks_with_rust(async function notAddedToView() {
 
 
 add_tasks_with_rust(async function previousResultStillVisible() {
-  Services.telemetry.clearEvents();
-
   
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     
@@ -315,18 +302,6 @@ add_tasks_with_rust(async function previousResultStillVisible() {
     QuickSuggestTestUtils.assertScalars({
       [TELEMETRY_SCALARS.IMPRESSION_SPONSORED]: index + 1,
     });
-    QuickSuggestTestUtils.assertEvents([
-      {
-        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-        method: "engagement",
-        object: "impression_only",
-        extra: {
-          match_type: "firefox-suggest",
-          position: String(index + 1),
-          suggestion_type: "sponsored",
-        },
-      },
-    ]);
     Assert.ok(pingSubmitted, "Glean ping was submitted");
   });
 });
