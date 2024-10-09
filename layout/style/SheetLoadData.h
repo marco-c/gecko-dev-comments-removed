@@ -254,6 +254,7 @@ class SheetLoadData final
   bool mIntentionallyDropped = false;
 
   
+  
   TimeStamp mLoadStart;
 
   const bool mRecordErrors;
@@ -296,11 +297,7 @@ class SheetLoadData final
 
   void StartLoading() override;
   void SetLoadCompleted() override;
-  void OnCoalescedTo(const SheetLoadData& aExistingLoad) override {
-    if (&aExistingLoad.Loader() != &Loader()) {
-      mShouldEmulateNotificationsForCachedLoad = true;
-    }
-  }
+  void OnCoalescedTo(const SheetLoadData& aExistingLoad) override;
 
   void Cancel() override { mIsCancelled = true; }
 
