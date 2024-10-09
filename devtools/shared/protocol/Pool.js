@@ -98,6 +98,8 @@ class Pool extends EventEmitter {
         parent.unmanage(actor);
       }
     }
+    
+    actor.persistedActorID = actor.actorID;
 
     this._poolMap.set(actor.actorID, actor);
     actor.parentPool = this;

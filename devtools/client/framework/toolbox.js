@@ -894,7 +894,8 @@ Toolbox.prototype = {
       this._updateFrames({
         frames: [
           {
-            id: targetFront.actorID,
+            
+            id: targetFront.persistedActorID,
             destroy: true,
           },
         ],
