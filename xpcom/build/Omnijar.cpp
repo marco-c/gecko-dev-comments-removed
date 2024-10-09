@@ -9,6 +9,7 @@
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
 #include "mozilla/GeckoArgs.h"
+#include "mozilla/ipc/ProcessChild.h"
 #include "nsIFile.h"
 #include "nsZipArchive.h"
 #include "nsNetUtil.h"
@@ -218,14 +219,29 @@ nsresult Omnijar::GetURIString(Type aType, nsACString& aResult) {
   return NS_OK;
 }
 
+#if defined(MOZ_WIDGET_ANDROID) && defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
+#  define ANDROID_DIAGNOSTIC_CRASH_OR_EXIT(_msg) MOZ_CRASH(_msg)
+#elif defined(MOZ_WIDGET_ANDROID)
+#  define ANDROID_DIAGNOSTIC_CRASH_OR_EXIT(_msg) ipc::ProcessChild::QuickExit()
+#else
+#  define ANDROID_DIAGNOSTIC_CRASH_OR_EXIT(_msg)
+#endif
+
 void Omnijar::ChildProcessInit(int& aArgc, char** aArgv) {
   nsCOMPtr<nsIFile> greOmni, appOmni;
 
+  
+  
+  
+  
   if (auto greOmniStr = geckoargs::sGREOmni.Get(aArgc, aArgv)) {
     if (NS_WARN_IF(NS_FAILED(
             XRE_GetFileFromPath(*greOmniStr, getter_AddRefs(greOmni))))) {
+      ANDROID_DIAGNOSTIC_CRASH_OR_EXIT("XRE_GetFileFromPath failed");
       greOmni = nullptr;
     }
+  } else {
+    ANDROID_DIAGNOSTIC_CRASH_OR_EXIT("sGREOmni.Get failed");
   }
   if (auto appOmniStr = geckoargs::sAppOmni.Get(aArgc, aArgv)) {
     if (NS_WARN_IF(NS_FAILED(
@@ -233,10 +249,6 @@ void Omnijar::ChildProcessInit(int& aArgc, char** aArgv) {
       appOmni = nullptr;
     }
   }
-
-#if defined(MOZ_WIDGET_ANDROID)
-  MOZ_RELEASE_ASSERT(greOmni, "Android builds are always packaged");
-#endif
 
   
   
@@ -253,5 +265,7 @@ void Omnijar::ChildProcessInit(int& aArgc, char** aArgv) {
     MOZ_ASSERT(!appOmni);
   }
 }
+
+#undef ANDROID_DIAGNOSTIC_CRASH_OR_EXIT
 
 } 
