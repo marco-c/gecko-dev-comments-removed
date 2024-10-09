@@ -563,27 +563,6 @@ bool CalendarYearMonthFromFields(
 
 
 
-Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
-    JSContext* cx, JS::Handle<CalendarRecord> calendar,
-    JS::Handle<PlainObject*> fields);
-
-
-
-
-Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
-    JSContext* cx, JS::Handle<CalendarRecord> calendar,
-    JS::Handle<PlainMonthDayObject*> fields);
-
-
-
-
-Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
-    JSContext* cx, JS::Handle<CalendarRecord> calendar,
-    JS::Handle<PlainObject*> fields, JS::Handle<PlainObject*> options);
-
-
-
-
 bool CalendarMonthDayFromFields(
     JSContext* cx, JS::Handle<CalendarValue> calendar,
     JS::Handle<JSObject*> fields, TemporalOverflow overflow,

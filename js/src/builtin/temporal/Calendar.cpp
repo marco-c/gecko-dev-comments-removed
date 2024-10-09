@@ -4002,57 +4002,6 @@ bool js::temporal::CalendarMonthDayFromFields(
   return CreateTemporalMonthDay(cx, date, calendar, result);
 }
 
-
-
-
-static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
-    Handle<PlainObject*> maybeOptions) {
-  auto overflow = TemporalOverflow::Constrain;
-  if (maybeOptions) {
-    if (!GetTemporalOverflowOption(cx, maybeOptions, &overflow)) {
-      return nullptr;
-    }
-  }
-
-  Rooted<PlainMonthDayWithCalendar> result(cx);
-  if (!CalendarMonthDayFromFields(cx, calendar.receiver(), fields, overflow,
-                                  &result)) {
-    return nullptr;
-  }
-  return CreateTemporalMonthDay(cx, result.date(), result.calendar());
-}
-
-
-
-
-Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar,
-    Handle<PlainObject*> fields) {
-  
-  return ::CalendarMonthDayFromFields(cx, calendar, fields, nullptr);
-}
-
-
-
-
-Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar,
-    Handle<PlainMonthDayObject*> fields) {
-  
-  return ::CalendarMonthDayFromFields(cx, calendar, fields, nullptr);
-}
-
-
-
-
-Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
-    Handle<PlainObject*> options) {
-  
-  return ::CalendarMonthDayFromFields(cx, calendar, fields, options);
-}
-
 using PropertyHashSet = JS::GCHashSet<JS::PropertyKey>;
 using PropertyVector = JS::StackGCVector<JS::PropertyKey>;
 

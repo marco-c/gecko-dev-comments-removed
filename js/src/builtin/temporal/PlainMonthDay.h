@@ -93,6 +93,13 @@ PlainMonthDayObject* CreateTemporalMonthDay(JSContext* cx,
 
 
 
+PlainMonthDayObject* CreateTemporalMonthDay(
+    JSContext* cx, JS::Handle<PlainMonthDayWithCalendar> monthDay);
+
+
+
+
+
 bool CreateTemporalMonthDay(
     JSContext* cx, const PlainDate& date, JS::Handle<CalendarValue> calendar,
     JS::MutableHandle<PlainMonthDayWithCalendar> result);
