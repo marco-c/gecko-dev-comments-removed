@@ -365,10 +365,15 @@ class InspectorCommand {
 
 
   async getCSSDeclarationBlockIssues(domRuleDeclarations) {
+    
+    
+    const nonCustomPropertyDeclarations = domRuleDeclarations.filter(
+      decl => !decl.isCustomProperty
+    );
     const resultIndex =
       this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations.length;
     this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations.push(
-      domRuleDeclarations
+      nonCustomPropertyDeclarations
     );
 
     
@@ -410,9 +415,8 @@ class InspectorCommand {
 
 
   #batchedGetCSSDeclarationBlockIssues = async () => {
-    const declarations = Array.from(
-      this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations
-    );
+    const declarations =
+      this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations;
     this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations = [];
 
     const { targetFront } = this.commands.targetCommand;
