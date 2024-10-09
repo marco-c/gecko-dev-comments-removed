@@ -203,7 +203,11 @@ void VideoSink::SetPlaying(bool aPlaying) {
     
     TimeStamp nowTime;
     const auto clockTime = mAudioSink->GetPosition(&nowTime);
-    RenderVideoFrames(1, clockTime.ToMicroseconds(), nowTime);
+    RefPtr<VideoData> currentFrame = VideoQueue().PeekFront();
+    if (currentFrame) {
+      RenderVideoFrames(Span(&currentFrame, 1), clockTime.ToMicroseconds(),
+                        nowTime);
+    }
     if (mContainer) {
       mContainer->ClearCachedResources();
     }
@@ -428,14 +432,13 @@ void VideoSink::DisconnectListener() {
   mFinishListener.Disconnect();
 }
 
-void VideoSink::RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime,
+void VideoSink::RenderVideoFrames(Span<const RefPtr<VideoData>> aFrames,
+                                  int64_t aClockTime,
                                   const TimeStamp& aClockTimeStamp) {
   AUTO_PROFILER_LABEL("VideoSink::RenderVideoFrames", MEDIA_PLAYBACK);
   AssertOwnerThread();
 
-  AutoTArray<RefPtr<VideoData>, 16> frames;
-  VideoQueue().GetFirstElements(aMaxFrames, &frames);
-  if (frames.IsEmpty() || !mContainer) {
+  if (aFrames.IsEmpty() || !mContainer) {
     return;
   }
 
@@ -445,8 +448,8 @@ void VideoSink::RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime,
   AutoTArray<ImageContainer::NonOwningImage, 16> images;
   TimeStamp lastFrameTime;
   double playbackRate = mAudioSink->PlaybackRate();
-  for (uint32_t i = 0; i < frames.Length(); ++i) {
-    VideoData* frame = frames[i];
+  for (uint32_t i = 0; i < aFrames.Length(); ++i) {
+    VideoData* frame = aFrames[i];
     bool wasSent = frame->IsSentToCompositor();
     frame->MarkSentToCompositor();
 
@@ -497,10 +500,10 @@ void VideoSink::RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime,
   }
 
   if (images.Length() > 0) {
-    mContainer->SetCurrentFrames(frames[0]->mDisplay, images);
+    mContainer->SetCurrentFrames(aFrames[0]->mDisplay, images);
 
     if (mSecondaryContainer) {
-      mSecondaryContainer->SetCurrentFrames(frames[0]->mDisplay, images);
+      mSecondaryContainer->SetCurrentFrames(aFrames[0]->mDisplay, images);
     }
   }
 }
@@ -522,10 +525,12 @@ void VideoSink::UpdateRenderedVideoFrames() {
   
   
   
+  RefPtr<VideoData> lastExpiredFrameInCompositor;
   while (VideoQueue().GetSize() > 1 &&
          clockTime >= VideoQueue().PeekFront()->GetEndTime()) {
     RefPtr<VideoData> frame = VideoQueue().PopFront();
     if (frame->IsSentToCompositor()) {
+      lastExpiredFrameInCompositor = frame;
       sentToCompositorCount++;
     } else {
       droppedInSink++;
@@ -583,6 +588,7 @@ void VideoSink::UpdateRenderedVideoFrames() {
                             droppedInSink, droppedInCompositor});
   }
 
+  AutoTArray<RefPtr<VideoData>, 16> frames;
   RefPtr<VideoData> currentFrame = VideoQueue().PeekFront();
   if (currentFrame) {
     
@@ -598,15 +604,33 @@ void VideoSink::UpdateRenderedVideoFrames() {
     
     
     
-    if (currentFrame->GetEndTime() >= clockTime ||
+    if (  
+        currentFrame->GetEndTime() >= clockTime ||
+        
+        
+        
+        
+        
+        
+        currentFrame->IsSentToCompositor() ||
         
         
         
         
         StaticPrefs::media_ruin_av_sync_enabled()) {
-      RenderVideoFrames(mVideoQueueSendToCompositorSize,
-                        clockTime.ToMicroseconds(), nowTime);
+      VideoQueue().GetFirstElements(
+          std::max(2u, mVideoQueueSendToCompositorSize), &frames);
+    } else if (lastExpiredFrameInCompositor) {
+      
+      
+      
+      
+      frames.AppendElement(lastExpiredFrameInCompositor);
     }
+    RenderVideoFrames(Span(frames.Elements(),
+                           std::min<size_t>(frames.Length(),
+                                            mVideoQueueSendToCompositorSize)),
+                      clockTime.ToMicroseconds(), nowTime);
   }
 
   MaybeResolveEndPromise();
@@ -614,8 +638,6 @@ void VideoSink::UpdateRenderedVideoFrames() {
   
   
   
-  nsTArray<RefPtr<VideoData>> frames;
-  VideoQueue().GetFirstElements(2, &frames);
   if (frames.Length() < 2) {
     return;
   }
@@ -642,12 +664,12 @@ void VideoSink::MaybeResolveEndPromise() {
 
     if (VideoQueue().GetSize() == 1) {
       
-      
-      
-      
-      RenderVideoFrames(1, clockTime.ToMicroseconds(), nowTime);
-      
       RefPtr<VideoData> frame = VideoQueue().PopFront();
+      
+      
+      
+      
+      RenderVideoFrames(Span(&frame, 1), clockTime.ToMicroseconds(), nowTime);
       if (mPendingDroppedCount > 0) {
         mFrameStats.Accumulate({0, 0, 0, 0, 0, 1});
         mPendingDroppedCount--;
