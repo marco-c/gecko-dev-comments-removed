@@ -77,13 +77,18 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   rv = NS_CheckPortSafety(mURI);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  bool isNotDownload = mLoadState->FileName().IsVoid();
-
-  
-  if (isNotDownload && mLoadGroup) {
+  if (mLoadGroup) {
+    const bool isDownload = !mLoadState->FileName().IsVoid();
+    const bool isExternalProtocol =
+        nsContentUtils::IsExternalProtocol(mLoadState->URI());
     
     
-    mLoadGroup->AddRequest(this, nullptr);
+    
+    if (!isDownload && !isExternalProtocol) {
+      
+      
+      mLoadGroup->AddRequest(this, nullptr);
+    }
   }
 
   if (mCanceled) {
