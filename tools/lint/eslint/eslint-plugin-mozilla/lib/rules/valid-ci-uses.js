@@ -54,8 +54,8 @@ const platformSpecificInterfaces = new Map([
   ["amIFoo", "any"],
   ["nsIMeh", "any"],
   
-  ["nsIAndroidBridge", "any"],
-  ["nsIAndroidView", "any"],
+  ["nsIGeckoViewBridge", "any"],
+  ["nsIGeckoViewView", "any"],
   
   ["nsICodeCoverage", "any"],
   

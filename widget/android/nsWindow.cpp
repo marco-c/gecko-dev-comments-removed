@@ -1037,7 +1037,7 @@ class NPZCSupport final
   }
 };
 
-NS_IMPL_ISUPPORTS(AndroidView, nsIAndroidEventDispatcher, nsIAndroidView)
+NS_IMPL_ISUPPORTS(AndroidView, nsIGeckoViewEventDispatcher, nsIGeckoViewView)
 
 nsresult AndroidView::GetInitData(JSContext* aCx,
                                   JS::MutableHandle<JS::Value> aOut) {
