@@ -436,6 +436,31 @@ bool js::temporal::CreateTemporalDateTime(
   return true;
 }
 
+
+
+
+
+bool js::temporal::CreateTemporalDateTime(JSContext* cx, const PlainDate& date,
+                                          const PlainTime& time,
+                                          PlainDateTime* result) {
+  auto dateTime = PlainDateTime{date, time};
+
+  
+  if (!ThrowIfInvalidISODateTime(cx, dateTime)) {
+    return false;
+  }
+
+  
+  if (!ISODateTimeWithinLimits(dateTime)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_TIME_INVALID);
+    return false;
+  }
+
+  *result = dateTime;
+  return true;
+}
+
 #ifdef DEBUG
 static bool IsPositiveInteger(double value) {
   return IsInteger(value) && value >= 0;

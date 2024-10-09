@@ -200,6 +200,13 @@ bool CreateTemporalDateTime(
 
 
 
+
+bool CreateTemporalDateTime(JSContext* cx, const PlainDate& date,
+                            const PlainTime& time, PlainDateTime* result);
+
+
+
+
 bool InterpretTemporalDateTimeFields(JSContext* cx,
                                      JS::Handle<CalendarValue> calendar,
                                      JS::Handle<TemporalFields> fields,
