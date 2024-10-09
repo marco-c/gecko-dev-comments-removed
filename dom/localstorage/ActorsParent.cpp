@@ -2209,6 +2209,15 @@ class PrepareDatastoreOp
 
     
     
+    OpenDirectory,
+
+    
+    
+    
+    DirectoryOpenPending,
+
+    
+    
     CheckExistingOperations,
 
     
@@ -2221,11 +2230,6 @@ class PrepareDatastoreOp
     
     
     PreparationPending,
-
-    
-    
-    
-    DirectoryOpenPending,
 
     
     
@@ -2248,6 +2252,7 @@ class PrepareDatastoreOp
   RefPtr<PrepareDatastoreOp> mDelayedOp;
   RefPtr<ClientDirectoryLock> mPendingDirectoryLock;
   RefPtr<DirectoryLock> mDirectoryLock;
+  RefPtr<DirectoryLock> mExtraDirectoryLock;
   RefPtr<Connection> mConnection;
   RefPtr<Datastore> mDatastore;
   UniquePtr<ArchivedOriginScope> mArchivedOriginScope;
@@ -2317,6 +2322,8 @@ class PrepareDatastoreOp
   ~PrepareDatastoreOp() override;
 
   nsresult Start() override;
+
+  nsresult OpenDirectory();
 
   nsresult CheckExistingOperations();
 
@@ -6719,18 +6726,20 @@ nsresult PrepareDatastoreOp::Start() {
   }
 
   mState = State::Nesting;
-  mNestedState = NestedState::CheckExistingOperations;
+  mNestedState = NestedState::OpenDirectory;
 
+  
+  
   MOZ_ALWAYS_SUCCEEDS(OwningEventTarget()->Dispatch(this, NS_DISPATCH_NORMAL));
 
   return NS_OK;
 }
 
-nsresult PrepareDatastoreOp::CheckExistingOperations() {
+nsresult PrepareDatastoreOp::OpenDirectory() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == State::Nesting);
-  MOZ_ASSERT(mNestedState == NestedState::CheckExistingOperations);
-  MOZ_ASSERT(gPrepareDatastoreOps);
+  MOZ_ASSERT(mNestedState == NestedState::OpenDirectory);
+  MOZ_ASSERT(!mDirectoryLock);
 
   if (NS_WARN_IF(QuotaClient::IsShuttingDownOnBackgroundThread()) ||
       !MayProceed()) {
@@ -6777,6 +6786,41 @@ nsresult PrepareDatastoreOp::CheckExistingOperations() {
   MOZ_ASSERT(OriginIsKnown());
 
   mPrivateBrowsingId = privateBrowsingId;
+
+  QuotaManager* quotaManager = QuotaManager::Get();
+  MOZ_ASSERT(quotaManager);
+
+  mNestedState = NestedState::DirectoryOpenPending;
+
+  quotaManager
+      ->OpenClientDirectory({mOriginMetadata, mozilla::dom::quota::Client::LS},
+                            SomeRef(mPendingDirectoryLock))
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr(this)](
+              const ClientDirectoryLockPromise::ResolveOrRejectValue& aValue) {
+            self->mPendingDirectoryLock = nullptr;
+
+            if (aValue.IsResolve()) {
+              self->DirectoryLockAcquired(aValue.ResolveValue());
+            } else {
+              self->DirectoryLockFailed();
+            }
+          });
+
+  return NS_OK;
+}
+
+nsresult PrepareDatastoreOp::CheckExistingOperations() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mState == State::Nesting);
+  MOZ_ASSERT(mNestedState == NestedState::CheckExistingOperations);
+  MOZ_ASSERT(gPrepareDatastoreOps);
+
+  if (NS_WARN_IF(QuotaClient::IsShuttingDownOnBackgroundThread()) ||
+      !MayProceed()) {
+    return NS_ERROR_ABORT;
+  }
 
   mNestedState = NestedState::CheckClosingDatastore;
 
@@ -6862,7 +6906,6 @@ nsresult PrepareDatastoreOp::BeginDatastorePreparationInternal() {
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
   MOZ_ASSERT(MayProceed());
   MOZ_ASSERT(OriginIsKnown());
-  MOZ_ASSERT(!mDirectoryLock);
 
   if ((mDatastore = GetDatastore(Origin()))) {
     MOZ_ASSERT(!mDatastore->IsClosed());
@@ -6874,26 +6917,7 @@ nsresult PrepareDatastoreOp::BeginDatastorePreparationInternal() {
     return NS_OK;
   }
 
-  QuotaManager* quotaManager = QuotaManager::Get();
-  MOZ_ASSERT(quotaManager);
-
-  mNestedState = NestedState::DirectoryOpenPending;
-
-  quotaManager
-      ->OpenClientDirectory({mOriginMetadata, mozilla::dom::quota::Client::LS},
-                            SomeRef(mPendingDirectoryLock))
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr(this)](
-              const ClientDirectoryLockPromise::ResolveOrRejectValue& aValue) {
-            self->mPendingDirectoryLock = nullptr;
-
-            if (aValue.IsResolve()) {
-              self->DirectoryLockAcquired(aValue.ResolveValue());
-            } else {
-              self->DirectoryLockFailed();
-            }
-          });
+  SendToIOThread();
 
   return NS_OK;
 }
@@ -6901,7 +6925,7 @@ nsresult PrepareDatastoreOp::BeginDatastorePreparationInternal() {
 void PrepareDatastoreOp::SendToIOThread() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == State::Nesting);
-  MOZ_ASSERT(mNestedState == NestedState::DirectoryOpenPending);
+  MOZ_ASSERT(mNestedState == NestedState::PreparationPending);
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
   MOZ_ASSERT(MayProceed());
 
@@ -7387,6 +7411,10 @@ nsresult PrepareDatastoreOp::NestedRun() {
   nsresult rv;
 
   switch (mNestedState) {
+    case NestedState::OpenDirectory:
+      rv = OpenDirectory();
+      break;
+
     case NestedState::CheckExistingOperations:
       rv = CheckExistingOperations();
       break;
@@ -7437,7 +7465,9 @@ void PrepareDatastoreOp::GetResponse(LSRequestResponse& aResponse) {
     return;
   }
 
-  if (!mDatastore) {
+  if (mDatastore) {
+    mExtraDirectoryLock = std::move(mDirectoryLock);
+  } else {
     MOZ_ASSERT(mUsage == mDEBUGUsage);
 
     RefPtr<QuotaObject> quotaObject;
@@ -7587,12 +7617,15 @@ void PrepareDatastoreOp::Cleanup() {
 
     mDatastore = nullptr;
 
+    SafeDropDirectoryLock(mExtraDirectoryLock);
+
     CleanupMetadata();
   } else if (mConnection) {
     
     
     MOZ_ASSERT(NS_FAILED(ResultCode()));
     MOZ_ASSERT(mDirectoryLock);
+    MOZ_ASSERT(!mExtraDirectoryLock);
 
     
     
@@ -7607,6 +7640,7 @@ void PrepareDatastoreOp::Cleanup() {
     
     MOZ_ASSERT_IF(mDirectoryLock,
                   NS_FAILED(ResultCode()) || mDatabaseNotAvailable);
+    MOZ_ASSERT(!mExtraDirectoryLock);
 
     
     
@@ -7682,7 +7716,11 @@ void PrepareDatastoreOp::DirectoryLockAcquired(DirectoryLock* aLock) {
     return;
   }
 
-  SendToIOThread();
+  mNestedState = NestedState::CheckExistingOperations;
+
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(OwningEventTarget()->Dispatch(this, NS_DISPATCH_NORMAL));
 }
 
 void PrepareDatastoreOp::DirectoryLockFailed() {
