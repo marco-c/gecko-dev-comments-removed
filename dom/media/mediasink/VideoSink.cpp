@@ -534,6 +534,7 @@ void VideoSink::UpdateRenderedVideoFrames() {
       sentToCompositorCount++;
     } else {
       droppedInSink++;
+      mDroppedInSinkSequenceDuration += frame->mDuration;
       VSINK_LOG_V("discarding video frame mTime=%" PRId64
                   " clock_time=%" PRId64,
                   frame->mTime.ToMicroseconds(), clockTime.ToMicroseconds());
@@ -602,8 +603,6 @@ void VideoSink::UpdateRenderedVideoFrames() {
     
     
     
-    
-    
     if (  
         currentFrame->GetEndTime() >= clockTime ||
         
@@ -615,9 +614,14 @@ void VideoSink::UpdateRenderedVideoFrames() {
         currentFrame->IsSentToCompositor() ||
         
         
+        clockTime - currentFrame->GetEndTime() <
+            mDroppedInSinkSequenceDuration ||
+        
+        
         
         
         StaticPrefs::media_ruin_av_sync_enabled()) {
+      mDroppedInSinkSequenceDuration = media::TimeUnit::Zero();
       VideoQueue().GetFirstElements(
           std::max(2u, mVideoQueueSendToCompositorSize), &frames);
     } else if (lastExpiredFrameInCompositor) {

@@ -120,12 +120,14 @@ TEST(TestVideoSink, FrameThrottling)
   
   NS_ProcessPendingEvents(nullptr);
   EXPECT_EQ(container->CurrentIntrinsicSize().value(), size3);
+  EXPECT_EQ(frameStatistics->GetDroppedSinkFrames(), 0u);
 
   
   stream->ManualDataCallback(static_cast<long>(
-      nextFrameTime.ToTicksAtRate(audioRate) + 2 - stream->Position()));
+      nextFrameTime.ToTicksAtRate(audioRate) + 11 - stream->Position()));
+  
   gfx::IntSize size5{1, 5};
-  PushVideoFrame(size5, TimeUnit(1, audioRate));
+  PushVideoFrame(size5, TimeUnit(8, audioRate));
   
   
   
@@ -137,9 +139,25 @@ TEST(TestVideoSink, FrameThrottling)
       [&] { return container->CurrentIntrinsicSize().value() == size4; });
 
   
+  gfx::IntSize size6{1, 6};
+  PushVideoFrame(size6, TimeUnit(1, audioRate));
+  NS_ProcessPendingEvents(nullptr);
+  
+  
+  EXPECT_EQ(frameStatistics->GetDroppedSinkFrames(), 1u);
+  EXPECT_EQ(container->CurrentIntrinsicSize().value(), size6);
+
+  gfx::IntSize size7{1, 7};
+  PushVideoFrame(size7, TimeUnit(1, audioRate));
+  NS_ProcessPendingEvents(nullptr);
+  
+  
+  EXPECT_EQ(container->CurrentIntrinsicSize().value(), size6);
+
+  
   videoSink->SetPlaying(false);
-  EXPECT_EQ(container->CurrentIntrinsicSize().value(), size5);
-  EXPECT_EQ(frameStatistics->GetDroppedSinkFrames(), 0u);
+  EXPECT_EQ(container->CurrentIntrinsicSize().value(), size7);
+  EXPECT_EQ(frameStatistics->GetDroppedSinkFrames(), 1u);
   videoSink->Stop();
   videoSink->Shutdown();
 }
