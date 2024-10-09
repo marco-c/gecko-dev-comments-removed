@@ -814,10 +814,9 @@ bool js::temporal::GetTemporalCalendarWithISODefault(
 
 
 
-static JSLinearString* ToTemporalCalendarIdentifier(JSContext* cx,
-                                                    CalendarId id) {
-  
-  return NewStringCopy<CanGC>(cx, CalendarIdToBcp47(id));
+std::string_view js::temporal::ToTemporalCalendarIdentifier(
+    const CalendarValue& calendar) {
+  return CalendarIdToBcp47(calendar.identifier());
 }
 
 
@@ -825,19 +824,8 @@ static JSLinearString* ToTemporalCalendarIdentifier(JSContext* cx,
 
 JSLinearString* js::temporal::ToTemporalCalendarIdentifier(
     JSContext* cx, Handle<CalendarValue> calendar) {
-  return ToTemporalCalendarIdentifier(cx, calendar.identifier());
-}
-
-bool js::temporal::ToTemporalCalendar(JSContext* cx,
-                                      const CalendarValue& calendar,
-                                      MutableHandle<Value> result) {
-  auto* str = ToTemporalCalendarIdentifier(cx, calendar.identifier());
-  if (!str) {
-    return false;
-  }
-
-  result.setString(str);
-  return true;
+  
+  return NewStringCopy<CanGC>(cx, ToTemporalCalendarIdentifier(calendar));
 }
 
 
@@ -4671,63 +4659,4 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
   auto calendarId = BuiltinCalendarId(calendar.receiver());
   return BuiltinCalendarDateUntil(cx, calendarId, one, two, largestUnit,
                                   result);
-}
-
-
-
-
-bool js::temporal::CalendarEquals(JSContext* cx, Handle<CalendarValue> one,
-                                  Handle<CalendarValue> two, bool* equals) {
-  
-  Rooted<JSLinearString*> calendarOne(cx,
-                                      ToTemporalCalendarIdentifier(cx, one));
-  if (!calendarOne) {
-    return false;
-  }
-
-  
-  JSLinearString* calendarTwo = ToTemporalCalendarIdentifier(cx, two);
-  if (!calendarTwo) {
-    return false;
-  }
-
-  
-  *equals = EqualStrings(calendarOne, calendarTwo);
-  return true;
-}
-
-
-
-
-bool js::temporal::CalendarEqualsOrThrow(JSContext* cx,
-                                         Handle<CalendarValue> one,
-                                         Handle<CalendarValue> two) {
-  
-  Rooted<JSLinearString*> calendarOne(cx,
-                                      ToTemporalCalendarIdentifier(cx, one));
-  if (!calendarOne) {
-    return false;
-  }
-
-  
-  JSLinearString* calendarTwo = ToTemporalCalendarIdentifier(cx, two);
-  if (!calendarTwo) {
-    return false;
-  }
-
-  
-  if (EqualStrings(calendarOne, calendarTwo)) {
-    return true;
-  }
-
-  
-  
-  if (auto charsOne = QuoteString(cx, calendarOne)) {
-    if (auto charsTwo = QuoteString(cx, calendarTwo)) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE,
-                               charsOne.get(), charsTwo.get());
-    }
-  }
-  return false;
 }

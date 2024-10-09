@@ -268,11 +268,13 @@ bool GetTemporalCalendarWithISODefault(JSContext* cx,
 
 
 
+std::string_view ToTemporalCalendarIdentifier(const CalendarValue& calendar);
+
+
+
+
 JSLinearString* ToTemporalCalendarIdentifier(
     JSContext* cx, JS::Handle<CalendarValue> calendar);
-
-bool ToTemporalCalendar(JSContext* cx, const CalendarValue& calendar,
-                        JS::MutableHandle<JS::Value> result);
 
 enum class CalendarField {
   Year,
@@ -542,14 +544,10 @@ Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
 
 
 
-bool CalendarEquals(JSContext* cx, JS::Handle<CalendarValue> one,
-                    JS::Handle<CalendarValue> two, bool* equals);
-
-
-
-
-bool CalendarEqualsOrThrow(JSContext* cx, JS::Handle<CalendarValue> one,
-                           JS::Handle<CalendarValue> two);
+inline bool CalendarEquals(const CalendarValue& one, const CalendarValue& two) {
+  
+  return one.identifier() == two.identifier();
+}
 
 
 

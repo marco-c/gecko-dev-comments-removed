@@ -1583,7 +1583,11 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   }
 
   
-  if (!CalendarEqualsOrThrow(cx, calendarValue, otherCalendar)) {
+  if (!CalendarEquals(calendarValue, otherCalendar)) {
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr, JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE,
+        ToTemporalCalendarIdentifier(calendarValue).data(),
+        ToTemporalCalendarIdentifier(otherCalendar).data());
     return false;
   }
 
@@ -2587,10 +2591,8 @@ static bool PlainDate_equals(JSContext* cx, const CallArgs& args) {
   }
 
   
-  bool equals = date == other.date();
-  if (equals && !CalendarEquals(cx, calendar, other.calendar(), &equals)) {
-    return false;
-  }
+  bool equals =
+      date == other.date() && CalendarEquals(calendar, other.calendar());
 
   args.rval().setBoolean(equals);
   return true;
