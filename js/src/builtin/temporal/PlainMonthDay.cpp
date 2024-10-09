@@ -189,23 +189,6 @@ bool js::temporal::CreateTemporalMonthDay(
   return true;
 }
 
-template <typename T, typename... Ts>
-static bool ToTemporalCalendarForMonthDay(JSContext* cx,
-                                          Handle<JSObject*> object,
-                                          MutableHandle<CalendarValue> result) {
-  if (auto* unwrapped = object->maybeUnwrapIf<T>()) {
-    result.set(unwrapped->calendar());
-    return result.wrap(cx);
-  }
-
-  if constexpr (sizeof...(Ts) > 0) {
-    return ToTemporalCalendarForMonthDay<Ts...>(cx, object, result);
-  }
-
-  result.set(CalendarValue());
-  return true;
-}
-
 
 
 
@@ -226,24 +209,13 @@ static bool ToTemporalMonthDay(
   }
 
   
-  Rooted<CalendarValue> calendar(cx);
-  if (!::ToTemporalCalendarForMonthDay<PlainDateObject, PlainDateTimeObject,
-                                       PlainYearMonthObject,
-                                       ZonedDateTimeObject>(cx, item,
-                                                            &calendar)) {
-    return false;
-  }
-  if (!calendar) {
-    
-    Rooted<Value> calendarLike(cx);
-    if (!GetProperty(cx, item, item, cx->names().calendar, &calendarLike)) {
-      return false;
-    }
+  
+  
 
-    
-    if (!ToTemporalCalendarWithISODefault(cx, calendarLike, &calendar)) {
-      return false;
-    }
+  
+  Rooted<CalendarValue> calendar(cx);
+  if (!GetTemporalCalendarWithISODefault(cx, item, &calendar)) {
+    return false;
   }
 
   

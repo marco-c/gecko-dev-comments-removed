@@ -738,24 +738,6 @@ bool js::temporal::ToTemporalCalendar(JSContext* cx,
 
 
 
-
-
-bool js::temporal::ToTemporalCalendarWithISODefault(
-    JSContext* cx, Handle<Value> temporalCalendarLike,
-    MutableHandle<CalendarValue> result) {
-  
-  if (temporalCalendarLike.isUndefined()) {
-    result.set(CalendarValue(CalendarId::ISO8601));
-    return true;
-  }
-
-  
-  return ToTemporalCalendar(cx, temporalCalendarLike, result);
-}
-
-
-
-
 bool js::temporal::GetTemporalCalendarWithISODefault(
     JSContext* cx, Handle<JSObject*> item,
     MutableHandle<CalendarValue> result) {
@@ -778,7 +760,16 @@ bool js::temporal::GetTemporalCalendarWithISODefault(
   }
 
   
-  return ToTemporalCalendarWithISODefault(cx, calendarValue, result);
+  
+  
+  
+
+  
+  if (calendarValue.isUndefined()) {
+    result.set(CalendarValue(CalendarId::ISO8601));
+    return true;
+  }
+  return ToTemporalCalendar(cx, calendarValue, result);
 }
 
 
