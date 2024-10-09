@@ -394,21 +394,26 @@ class VendorManifest(MozbuildObject):
         for pattern in patterns:
             pattern_full_path = mozpath.join(directory, pattern)
             
+            
             if os.path.isdir(pattern_full_path):
                 
                 
                 paths.extend(
-                    iglob_hidden(mozpath.join(pattern_full_path, "**"), recursive=True)
+                    sorted(
+                        iglob_hidden(
+                            mozpath.join(pattern_full_path, "**"), recursive=True
+                        )
+                    )
                 )
             
+            
             else:
-                paths.extend(iglob_hidden(pattern_full_path, recursive=True))
+                paths.extend(sorted(iglob_hidden(pattern_full_path, recursive=True)))
         
         
-        
-        final_paths = sorted(
-            [mozpath.normsep(path) for path in paths if not os.path.isdir(path)]
-        )
+        final_paths = [
+            mozpath.normsep(path) for path in paths if not os.path.isdir(path)
+        ]
         return final_paths
 
     def fetch_and_unpack(self, revision):
