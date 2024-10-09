@@ -953,13 +953,6 @@ inline bool CalendarMethodsRecordIsBuiltin(const CalendarRecord& calendar) {
 }
 
 
-
-
-
-bool IsBuiltinAccess(JSContext* cx, JS::Handle<CalendarObject*> calendar,
-                     std::initializer_list<CalendarField> fieldNames);
-
-
 bool WrapCalendarValue(JSContext* cx, JS::MutableHandle<JS::Value> calendar);
 
 } 

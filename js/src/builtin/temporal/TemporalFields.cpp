@@ -411,8 +411,6 @@ static void AssignFromFallback(TemporalField fieldName,
 
 
 
-
-
 bool js::temporal::PrepareTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
     mozilla::EnumSet<TemporalField> fieldNames,
