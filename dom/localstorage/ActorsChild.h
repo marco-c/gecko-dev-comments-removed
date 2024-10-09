@@ -56,7 +56,6 @@ class LSSnapshot;
 
 
 
-
 class LSDatabaseChild final : public PBackgroundLSDatabaseChild {
   friend class mozilla::ipc::BackgroundChildImpl;
   friend class LSDatabase;
@@ -77,7 +76,7 @@ class LSDatabaseChild final : public PBackgroundLSDatabaseChild {
 
   ~LSDatabaseChild();
 
-  void SendDeleteMeInternal();
+  void SendDelete();
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
