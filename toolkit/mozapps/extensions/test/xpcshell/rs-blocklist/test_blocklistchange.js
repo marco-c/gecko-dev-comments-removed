@@ -38,6 +38,12 @@ const useMLBF = Services.prefs.getBoolPref(
   true
 );
 
+
+
+if (useMLBF) {
+  Services.prefs.setBoolPref("extensions.blocklist.softblock.enabled", true);
+}
+
 var testserver = createHttpServer({ hosts: ["example.com"] });
 
 function permissionPromptHandler(subject) {
@@ -270,7 +276,14 @@ if (useMLBF) {
           filter_expression: targetApplication && BLOCK_APP_FILTER_EXPRESSION,
           stash: {
             
-            blocked: [`${guid}:${v}.0`, `${guid}:${v}`],
+            
+            
+            softblocked: guid.startsWith("soft")
+              ? [`${guid}:${v}.0`, `${guid}:${v}`]
+              : [],
+            blocked: !guid.startsWith("soft")
+              ? [`${guid}:${v}.0`, `${guid}:${v}`]
+              : [],
             unblocked: [],
           },
         });
@@ -422,20 +435,6 @@ function check_addon(
   aExpectedSoftDisabled,
   aExpectedState
 ) {
-  if (useMLBF) {
-    if (aAddon.id.startsWith("soft")) {
-      if (aExpectedState === Ci.nsIBlocklistService.STATE_SOFTBLOCKED) {
-        
-        
-        
-        
-        aExpectedUserDisabled = aAddon.userDisabled;
-        aExpectedSoftDisabled = false;
-        aExpectedState = Ci.nsIBlocklistService.STATE_BLOCKED;
-      }
-    }
-  }
-
   Assert.notEqual(aAddon, null);
   info(
     "Testing " +
@@ -1255,11 +1254,16 @@ add_task(async function run_manual_update_test() {
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
   
-  const sv2 = useMLBF ? "1.0" : "2.0";
-  check_addon(s1, sv2, true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(s2, sv2, true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(s3, sv2, false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(s4, sv2, true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s1, "1.0", true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s2, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(
+    s3,
+    "1.0",
+    false,
+    false,
+    Ci.nsIBlocklistService.STATE_SOFTBLOCKED
+  );
+  check_addon(s4, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
   
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
@@ -1326,10 +1330,15 @@ add_task(async function run_manual_update_2_test() {
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
   
-  const sv2 = useMLBF ? "1.0" : "2.0";
-  check_addon(s1, sv2, true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(s2, sv2, true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(s3, sv2, false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s1, "1.0", true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s2, "1.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(
+    s3,
+    "1.0",
+    false,
+    false,
+    Ci.nsIBlocklistService.STATE_SOFTBLOCKED
+  );
   
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);

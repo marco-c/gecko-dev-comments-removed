@@ -3,6 +3,12 @@
 
 "use strict";
 
+
+
+
+AddonTestUtils.useRealCertChecks = true;
+createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
+
 const prefsDefaults = Services.prefs.getDefaultBranch("");
 const defaultSoftBlockEnabledPrefValue =
   prefsDefaults.getPrefType("extensions.blocklist.softblock.enabled") ===
@@ -49,6 +55,7 @@ add_setup(async () => {
       blob: await load_mlbf_record_as_blob("mlbf-softblocked1.bin"),
     }
   );
+  await promiseStartupManager();
 });
 
 add_task(async function fetch_and_apply_valid_softblocks_mlbf() {
@@ -90,9 +97,6 @@ add_task(async function fetch_and_apply_valid_softblocks_mlbf() {
 });
 
 add_task(async function public_api_uses_softblock_mlbf() {
-  createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
-  await promiseStartupManager();
-
   await AddonTestUtils.loadBlocklistRawData({
     extensionsMLBF: [MLBF_SOFTBLOCK_RECORD],
   });
@@ -370,4 +374,104 @@ add_task(async function blockstate_changes_on_hardblock_stashes() {
   );
 
   
+});
+
+
+
+
+add_task(async function signed_xpi_softblocked_on_install() {
+  
+  const SIGNED_ADDON_XPI_FILE = do_get_file("amosigned.xpi");
+  const SIGNED_ADDON_ID = "amosigned-xpi@tests.mozilla.org";
+  const SIGNED_ADDON_VERSION = "2.2";
+  const SIGNED_ADDON_KEY = `${SIGNED_ADDON_ID}:${SIGNED_ADDON_VERSION}`;
+
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash: {
+          blocked: [],
+          softblocked: [SIGNED_ADDON_KEY],
+          unblocked: [],
+        },
+        stash_time: Date.now(),
+      },
+    ],
+  });
+
+  const install = await promiseInstallFile(SIGNED_ADDON_XPI_FILE);
+  Assert.equal(
+    install.error,
+    AddonManager.ERROR_SOFT_BLOCKED,
+    "Install should have an error"
+  );
+
+  
+  
+  
+  
+  let addon = await promiseAddonByID(SIGNED_ADDON_ID);
+  Assert.equal(addon.blocklistState, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  Assert.ok(addon.softDisabled, "Blocked add-on is disabled on install");
+
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash: {
+          blocked: [],
+          softblocked: [],
+          unblocked: [SIGNED_ADDON_KEY],
+        },
+        stash_time: Date.now(),
+      },
+    ],
+  });
+
+  await ExtensionBlocklistMLBF._onUpdate();
+  Assert.equal(addon.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
+  Assert.ok(!addon.softDisabled, "Re-enabled after unblock");
+
+  await addon.uninstall();
+});
+
+
+
+
+add_task(async function unsigned_not_softblocked() {
+  const UNSIGNED_ADDON_ID = softBlockedAddon.id;
+  const UNSIGNED_ADDON_VERSION = softBlockedAddon.version;
+
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      
+      
+      MLBF_SOFTBLOCK_RECORD,
+    ],
+  });
+
+  await ExtensionBlocklistMLBF._onUpdate();
+
+  
+  let unsignedAddonFile = createTempWebExtensionFile({
+    manifest: {
+      version: UNSIGNED_ADDON_VERSION,
+      browser_specific_settings: { gecko: { id: UNSIGNED_ADDON_ID } },
+    },
+  });
+
+  
+  let [addon] = await Promise.all([
+    AddonManager.installTemporaryAddon(unsignedAddonFile),
+    promiseWebExtensionStartup(UNSIGNED_ADDON_ID),
+  ]);
+
+  Assert.equal(addon.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
+  Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_MISSING);
+  Assert.equal(addon.signedDate, null);
+  Assert.equal(
+    await Blocklist.getAddonBlocklistState(addon),
+    Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
+    "Unsigned temporary add-on is not blocked"
+  );
+  await addon.uninstall();
 });
