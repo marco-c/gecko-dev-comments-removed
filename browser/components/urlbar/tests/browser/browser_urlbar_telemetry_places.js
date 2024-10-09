@@ -103,9 +103,6 @@ add_setup(async function () {
   Services.telemetry.canRecordExtended = true;
 
   
-  Services.telemetry.setEventRecordingEnabled("navigation", true);
-
-  
   
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
@@ -121,7 +118,6 @@ add_setup(async function () {
     Services.telemetry.canRecordExtended = oldCanRecord;
     await PlacesUtils.history.clear();
     await PlacesUtils.bookmarks.eraseEverything();
-    Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
 });
 

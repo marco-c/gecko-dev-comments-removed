@@ -1398,12 +1398,6 @@ var gMainPane = {
 
   initPrimaryBrowserLanguageUI() {
     
-    Services.telemetry.setEventRecordingEnabled(
-      "intl.ui.browserLanguage",
-      true
-    );
-
-    
     let menulist = document.getElementById("primaryBrowserLocale");
     new SelectionChangedMenulist(menulist, event => {
       gMainPane.onPrimaryBrowserLanguageMenuChange(event);
