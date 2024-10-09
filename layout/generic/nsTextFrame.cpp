@@ -1776,12 +1776,15 @@ static nscoord LetterSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
     
     
     
-    Length spacing = aStyleText.mLetterSpacing;
-    spacing.ScaleBy(GetSVGFontSizeScaleFactor(aFrame));
-    return spacing.ToAppUnits();
+    
+    
+    return GetSVGFontSizeScaleFactor(aFrame) *
+           aStyleText.mLetterSpacing.Resolve(
+               [&] { return aFrame->StyleFont()->mSize.ToAppUnits(); });
   }
 
-  return aStyleText.mLetterSpacing.ToAppUnits();
+  return aStyleText.mLetterSpacing.Resolve(
+      [&] { return aFrame->StyleFont()->mSize.ToAppUnits(); });
 }
 
 
@@ -1815,7 +1818,7 @@ static gfx::ShapedTextFlags GetSpacingFlags(
   
   
   
-  bool nonStandardSpacing = !ls.IsZero() || !ws.IsDefinitelyZero();
+  bool nonStandardSpacing = !ls.IsDefinitelyZero() || !ws.IsDefinitelyZero();
   return nonStandardSpacing ? gfx::ShapedTextFlags::TEXT_ENABLE_SPACING
                             : gfx::ShapedTextFlags();
 }
@@ -3697,8 +3700,9 @@ static gfxFloat ComputeTabWidthAppUnits(const nsIFrame* aFrame) {
                                            : nsFontMetrics::eHorizontal);
   nscoord spaceWidth = nscoord(
       NS_round(metrics.spaceWidth * cb->PresContext()->AppUnitsPerDevPixel()));
-  return spaces * (spaceWidth + styleText->mLetterSpacing.ToAppUnits() +
-                   styleText->mWordSpacing.Resolve(spaceWidth));
+  return spaces *
+         (spaceWidth + styleText->mLetterSpacing.Resolve(fm->EmHeight()) +
+          styleText->mWordSpacing.Resolve(spaceWidth));
 }
 
 void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,

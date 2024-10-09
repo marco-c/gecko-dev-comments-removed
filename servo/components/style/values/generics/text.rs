@@ -4,11 +4,9 @@
 
 
 
-use crate::parser::ParserContext;
 use crate::Zero;
-use cssparser::Parser;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, ToCss};
+use style_traits::{CssWriter, ToCss};
 
 
 #[derive(
@@ -56,42 +54,6 @@ impl<N: ToCss + Zero, I: ToCss + Zero> ToCss for InitialLetter<N, I> {
             self.sink.to_css(dest)?;
         }
         Ok(())
-    }
-}
-
-
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-pub enum Spacing<Value> {
-    
-    Normal,
-    
-    Value(Value),
-}
-
-impl<Value> Spacing<Value> {
-    
-    #[inline]
-    pub fn normal() -> Self {
-        Spacing::Normal
-    }
-
-    
-    #[inline]
-    pub fn parse_with<'i, 't, F>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-        parse: F,
-    ) -> Result<Self, ParseError<'i>>
-    where
-        F: FnOnce(&ParserContext, &mut Parser<'i, 't>) -> Result<Value, ParseError<'i>>,
-    {
-        if input
-            .try_parse(|i| i.expect_ident_matching("normal"))
-            .is_ok()
-        {
-            return Ok(Spacing::Normal);
-        }
-        parse(context, input).map(Spacing::Value)
     }
 }
 
