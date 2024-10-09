@@ -2568,33 +2568,6 @@ static bool PlainDateTime_getISOFields(JSContext* cx, unsigned argc,
 
 
 
-static bool PlainDateTime_getCalendar(JSContext* cx, const CallArgs& args) {
-  auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
-  Rooted<CalendarValue> calendar(cx, temporalDateTime->calendar());
-
-  
-  auto* obj = ToTemporalCalendarObject(cx, calendar);
-  if (!obj) {
-    return false;
-  }
-
-  args.rval().setObject(*obj);
-  return true;
-}
-
-
-
-
-static bool PlainDateTime_getCalendar(JSContext* cx, unsigned argc, Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_getCalendar>(cx,
-                                                                          args);
-}
-
-
-
-
 
 static bool PlainDateTime_toZonedDateTime(JSContext* cx, const CallArgs& args) {
   Rooted<PlainDateTimeObject*> dateTime(
@@ -2737,7 +2710,6 @@ static const JSFunctionSpec PlainDateTime_prototype_methods[] = {
     JS_FN("toPlainDate", PlainDateTime_toPlainDate, 0, 0),
     JS_FN("toPlainTime", PlainDateTime_toPlainTime, 0, 0),
     JS_FN("getISOFields", PlainDateTime_getISOFields, 0, 0),
-    JS_FN("getCalendar", PlainDateTime_getCalendar, 0, 0),
     JS_FS_END,
 };
 
