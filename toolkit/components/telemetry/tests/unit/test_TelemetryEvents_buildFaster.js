@@ -245,6 +245,7 @@ add_task(async function test_dynamicBuiltinEventsDisabledByDefault() {
 
   
   
+  Telemetry.setEventRecordingEnabled(TEST_EVENT_NAME, false);
   Telemetry.recordEvent(TEST_EVENT_NAME, "test1", "object1");
 
   

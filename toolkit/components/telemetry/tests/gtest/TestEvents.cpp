@@ -41,6 +41,9 @@ TEST_F(TelemetryTestFixture, RecordEventNative) {
       "limit which at time of writing was 80 bytes.");
 
   
+  Telemetry::SetEventRecordingEnabled(category, false);
+
+  
   TelemetryEvent::RecordEventNative(
       Telemetry::EventID::TelemetryTest_Test1_Object1, Nothing(), Nothing());
 
@@ -133,7 +136,6 @@ TEST_F(TelemetryTestFixture, GIFFTValue) {
   const nsCString category("telemetry.test");
   const nsCString method("mirror_with_extra");
   const nsCString object("object1");
-  Telemetry::SetEventRecordingEnabled(category, true);
 
   
   

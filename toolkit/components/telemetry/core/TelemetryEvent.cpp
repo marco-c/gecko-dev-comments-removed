@@ -335,7 +335,7 @@ nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 nsTHashSet<nsCString> gCategoryNames;
 
 
-nsTHashSet<nsCString> gEnabledCategories;
+nsTHashSet<nsCString> gDisabledCategories;
 
 
 
@@ -503,7 +503,7 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
                                   processType, dynamicNonBuiltin);
 
   
-  if (!gEnabledCategories.Contains(GetCategory(lock, eventKey))) {
+  if (gDisabledCategories.Contains(GetCategory(lock, eventKey))) {
     return RecordEventResult::Ok;
   }
 
@@ -581,12 +581,6 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
   
   if (aBuiltin) {
     gCategoryNames.Insert(category);
-  }
-
-  if (!aBuiltin) {
-    
-    
-    gEnabledCategories.Insert(category);
   }
 }
 
@@ -750,9 +744,6 @@ void TelemetryEvent::InitializeGlobalState(bool aCanRecordBase,
     gCategoryNames.Insert(info.common_info.category());
   }
 
-  
-  gEnabledCategories.Insert("avif"_ns);
-
   gInitDone = true;
 }
 
@@ -765,7 +756,7 @@ void TelemetryEvent::DeInitializeGlobalState() {
 
   gEventNameIDMap.Clear();
   gCategoryNames.Clear();
-  gEnabledCategories.Clear();
+  gDisabledCategories.Clear();
   gEventRecords.Clear();
 
   gDynamicEventInfo = nullptr;
@@ -1394,10 +1385,10 @@ void TelemetryEvent::SetEventRecordingEnabled(const nsACString& category,
     return;
   }
 
-  if (enabled) {
-    gEnabledCategories.Insert(category);
+  if (!enabled) {
+    gDisabledCategories.Insert(category);
   } else {
-    gEnabledCategories.Remove(category);
+    gDisabledCategories.Remove(category);
   }
 }
 
@@ -1427,7 +1418,7 @@ size_t TelemetryEvent::SizeOfIncludingThis(
   }
 
   n += gCategoryNames.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  n += gEnabledCategories.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  n += gDisabledCategories.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   if (gDynamicEventInfo) {
     n += gDynamicEventInfo->ShallowSizeOfIncludingThis(aMallocSizeOf);

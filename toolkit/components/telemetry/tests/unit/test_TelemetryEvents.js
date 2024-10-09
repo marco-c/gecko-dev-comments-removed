@@ -170,6 +170,9 @@ add_task(async function test_recording_state() {
     ["telemetry.test.second", "test", "object1"],
   ];
 
+  Telemetry.setEventRecordingEnabled("telemetry.test", false);
+  Telemetry.setEventRecordingEnabled("telemetry.test.second", false);
+
   
   events.forEach(e => Telemetry.recordEvent(...e));
   TelemetryTestUtils.assertEvents([]);
