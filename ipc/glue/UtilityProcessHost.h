@@ -55,7 +55,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  bool Launch(StringVector aExtraOpts);
+  bool Launch(geckoargs::ChildProcessArgs aExtraOpts);
 
   using LaunchPromiseType = MozPromise<Ok, LaunchError, false>;
   
@@ -135,7 +135,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void RejectPromise(LaunchError);
 
 #if defined(MOZ_WMF_CDM) && defined(MOZ_SANDBOX) && !defined(MOZ_ASAN)
-  void EnsureWidevineL1PathForSandbox(StringVector& aExtraOpts);
+  void EnsureWidevineL1PathForSandbox(geckoargs::ChildProcessArgs& aExtraOpts);
 #endif
 
 #if defined(MOZ_WMF_CDM) && defined(MOZ_SANDBOX)
