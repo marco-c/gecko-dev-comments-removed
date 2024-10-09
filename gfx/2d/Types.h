@@ -954,10 +954,11 @@ struct sRGBColor {
 
 struct DeviceColor {
  public:
-  DeviceColor() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {}
-  DeviceColor(Float aR, Float aG, Float aB, Float aA)
+  constexpr DeviceColor() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {}
+  constexpr DeviceColor(Float aR, Float aG, Float aB, Float aA)
       : r(aR), g(aG), b(aB), a(aA) {}
-  DeviceColor(Float aR, Float aG, Float aB) : r(aR), g(aG), b(aB), a(1.0f) {}
+  constexpr DeviceColor(Float aR, Float aG, Float aB)
+      : r(aR), g(aG), b(aB), a(1.0f) {}
 
   
 
