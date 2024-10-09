@@ -10,7 +10,7 @@
 
 
 #ifdef WIN32_LEAN_AND_MEAN
-#undef WIN32_LEAN_AND_MEAN
+#  undef WIN32_LEAN_AND_MEAN
 #endif
 #include "primpl.h"
 
@@ -19,33 +19,24 @@ typedef DWORD (*IntervalFuncType)(void);
 static IntervalFuncType intervalFunc;
 #endif
 
-void
-_PR_MD_INTERVAL_INIT()
-{
+void _PR_MD_INTERVAL_INIT() {
 #ifdef WINCE
-    HMODULE mmtimerlib = LoadLibraryW(L"mmtimer.dll");  
-    if (mmtimerlib) {
-        intervalFunc = (IntervalFuncType)GetProcAddress(mmtimerlib,
-                       "timeGetTime");
-    } else {
-        intervalFunc = &GetTickCount;
-    }
+  HMODULE mmtimerlib = LoadLibraryW(L"mmtimer.dll"); 
+  if (mmtimerlib) {
+    intervalFunc = (IntervalFuncType)GetProcAddress(mmtimerlib, "timeGetTime");
+  } else {
+    intervalFunc = &GetTickCount;
+  }
 #endif
 }
 
-PRIntervalTime
-_PR_MD_GET_INTERVAL()
-{
-    
+PRIntervalTime _PR_MD_GET_INTERVAL() {
+  
 #ifdef WINCE
-    return (*intervalFunc)();
+  return (*intervalFunc)();
 #else
-    return timeGetTime();
+  return timeGetTime();
 #endif
 }
 
-PRIntervalTime
-_PR_MD_INTERVAL_PER_SEC()
-{
-    return 1000;
-}
+PRIntervalTime _PR_MD_INTERVAL_PER_SEC() { return 1000; }

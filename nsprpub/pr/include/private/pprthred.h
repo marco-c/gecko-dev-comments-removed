@@ -12,13 +12,6 @@
 
 #include "nspr.h"
 
-#if defined(XP_OS2)
-#define INCL_DOS
-#define INCL_DOSERRORS
-#define INCL_WIN
-#include <os2.h>
-#endif
-
 PR_BEGIN_EXTERN_C
 
 
@@ -283,15 +276,6 @@ NSPR_API(PRMonitor*) PR_CTestAndEnterMonitor(void *address);
 
 
 
-#if defined(XP_OS2)
-
-
-
-
-
-NSPR_API(void) PR_OS2_SetFloatExcpHandler(EXCEPTIONREGISTRATIONRECORD* e);
-NSPR_API(void) PR_OS2_UnsetFloatExcpHandler(EXCEPTIONREGISTRATIONRECORD* e);
-#endif 
 
 
 #define PR_InMonitor(m)     (PR_GetMonitorEntryCount(m) > 0)

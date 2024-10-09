@@ -3,13 +3,13 @@
 
 
 
-#ifndef prwin16_h___
-#define prwin16_h___
+#ifndef prwin_h___
+#define prwin_h___
 
 
 
 
-#if (defined(XP_PC) && !defined(_WIN32) && !defined(XP_OS2) && defined(MOZILLA_CLIENT)) || defined(WIN16)
+#if (defined(XP_PC) && !defined(_WIN32) && defined(MOZILLA_CLIENT))
 #include <stdio.h>
 
 PR_BEGIN_EXTERN_C

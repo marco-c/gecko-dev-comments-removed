@@ -160,15 +160,10 @@ union PRNetAddr {
         PRIPv6Addr ip;                  
         PRUint32 scope_id;              
     } ipv6;
-#if defined(XP_UNIX) || defined(XP_OS2) || defined(XP_WIN)
+#if defined(XP_UNIX) || defined(XP_WIN)
     struct {                            
         PRUint16 family;                
-#ifdef XP_OS2
-        char path[108];                 
-        
-#else
         char path[104];                 
-#endif
     } local;
 #endif
 };
