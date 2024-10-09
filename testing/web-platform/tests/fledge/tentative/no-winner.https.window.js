@@ -12,6 +12,9 @@
 
 
 
+
+
+
 "use strict;"
 
 
@@ -21,7 +24,7 @@
 
 
 
-const COMMON_SCRIPT_ERRORS = [
+const COMMON_NETWORK_ERRORS = [
   'error=close-connection',
   'error=http-error',
   'error=no-content-type',
@@ -33,7 +36,7 @@ const COMMON_SCRIPT_ERRORS = [
 ];
 
 const BIDDING_LOGIC_SCRIPT_ERRORS = [
-  ...COMMON_SCRIPT_ERRORS,
+  ...COMMON_NETWORK_ERRORS,
   'error=no-generateBid',
   'generateBid=throw 1;',
   'generateBid=This does not compile',
@@ -48,11 +51,11 @@ const BIDDING_LOGIC_SCRIPT_ERRORS = [
   'generateBid=return {render: interestGroup.ads[0].renderURL};',
   
   'generateBid=return {bid:0, render: interestGroup.ads[0].renderURL};',
-  'generateBid=return {bid:-1, render: interestGroup.ads[0].renderURL};',
+  'generateBid=return {bid:-1, render: interestGroup.ads[0].renderURL};'
 ];
 
 const DECISION_LOGIC_SCRIPT_ERRORS = [
-  ...COMMON_SCRIPT_ERRORS,
+  ...COMMON_NETWORK_ERRORS,
   'error=no-scoreAd',
   'scoreAd=throw 1;',
   'scoreAd=This does not compile',
@@ -65,7 +68,12 @@ const DECISION_LOGIC_SCRIPT_ERRORS = [
   'scoreAd=return 0;',
   'scoreAd=return -1;',
   'scoreAd=return {desirability: 0};',
-  'scoreAd=return {desirability: -1};',
+  'scoreAd=return {desirability: -1};'
+];
+
+const BIDDING_WASM_HELPER_ERRORS = [
+  ...COMMON_NETWORK_ERRORS,
+  'error=not-wasm'
 ];
 
 for (error of BIDDING_LOGIC_SCRIPT_ERRORS) {
@@ -86,4 +94,14 @@ for (error of DECISION_LOGIC_SCRIPT_ERRORS) {
       test, { auctionConfigOverrides: { decisionLogicURL: decisionLogicURL } }
     );
   }).bind(undefined, error), `Decision logic script: ${error}`);
+}
+
+for (error of BIDDING_WASM_HELPER_ERRORS) {
+  subsetTest(promise_test, (async (error, test) => {
+    let biddingWasmHelperURL =
+        `${BASE_URL}resources/wasm-helper.py?${error}`;
+    await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
+      test, { interestGroupOverrides: { biddingWasmHelperURL: biddingWasmHelperURL } }
+    );
+  }).bind(undefined, error), `Bidding WASM helper: ${error}`);
 }

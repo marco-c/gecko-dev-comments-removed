@@ -14,6 +14,7 @@
 
 
 
+
 function validateWithOneIg(decoded) {
   assert_equals(decoded.message.version, 0);
   assert_equals(decoded.message.publisher, window.location.hostname);
