@@ -1346,10 +1346,6 @@ pref("network.websocket.delay-failed-reconnects", true);
 
 
 
-pref("dom.server-events.default-reconnection-time", 5000); 
-
-
-
 
 pref("network.dns.ipv4OnlyDomains", "");
 
@@ -3959,6 +3955,9 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   
   
   pref("remote.active-protocols", 1);
+
+  
+  pref("remote.events.async.enabled", false);
 
   
   #if defined(NIGHTLY_BUILD)

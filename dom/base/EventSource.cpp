@@ -46,10 +46,10 @@
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIScriptError.h"
 #include "nsContentUtils.h"
-#include "mozilla/Preferences.h"
 #include "xpcpublic.h"
 #include "nsWrapperCacheInlines.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsError.h"
 #include "mozilla/Encoding.h"
 #include "ReferrerInfo.h"
@@ -494,50 +494,6 @@ void EventSourceImpl::CleanupOnMainThread() {
   mSrc = nullptr;
 }
 
-class InitRunnable final : public WorkerMainThreadRunnable {
- public:
-  InitRunnable(WorkerPrivate* aWorkerPrivate,
-               RefPtr<EventSourceImpl> aEventSourceImpl, const nsAString& aURL)
-      : WorkerMainThreadRunnable(aWorkerPrivate, "EventSource :: Init"_ns),
-        mESImpl(std::move(aEventSourceImpl)),
-        mURL(aURL),
-        mRv(NS_ERROR_NOT_INITIALIZED) {
-    MOZ_ASSERT(aWorkerPrivate);
-    aWorkerPrivate->AssertIsOnWorkerThread();
-    MOZ_ASSERT(mESImpl);
-  }
-
-  bool MainThreadRun() override {
-    
-    MOZ_ASSERT(mWorkerRef);
-    WorkerPrivate* wp = mWorkerRef->Private()->GetTopLevelWorker();
-    nsPIDOMWindowInner* window = wp->GetWindow();
-    Document* doc = window ? window->GetExtantDoc() : nullptr;
-    nsCOMPtr<nsIPrincipal> principal =
-        doc ? doc->NodePrincipal() : wp->GetPrincipal();
-    if (!principal) {
-      mRv = NS_ERROR_FAILURE;
-      return true;
-    }
-    ErrorResult rv;
-    mESImpl->Init(nullptr, principal, mURL, rv);
-    mRv = rv.StealNSResult();
-
-    
-    
-    mESImpl = nullptr;
-
-    return true;
-  }
-
-  nsresult ErrorCode() const { return mRv; }
-
- private:
-  RefPtr<EventSourceImpl> mESImpl;
-  const nsAString& mURL;
-  nsresult mRv;
-};
-
 class ConnectRunnable final : public WorkerMainThreadRunnable {
  public:
   explicit ConnectRunnable(WorkerPrivate* aWorkerPrivate,
@@ -565,7 +521,6 @@ class ConnectRunnable final : public WorkerMainThreadRunnable {
 };
 
 nsresult EventSourceImpl::ParseURL(const nsAString& aURL) {
-  AssertIsOnMainThread();
   MOZ_ASSERT(!mIsShutDown);
   
   nsCOMPtr<nsIURI> baseURI;
@@ -629,7 +584,6 @@ void EventSourceImpl::RemoveWindowObservers() {
 void EventSourceImpl::Init(nsIGlobalObject* aWindowGlobal,
                            nsIPrincipal* aPrincipal, const nsAString& aURL,
                            ErrorResult& aRv) {
-  AssertIsOnMainThread();
   
   MOZ_ASSERT_IF(aWindowGlobal, mIsMainThread);
   MOZ_ASSERT(aPrincipal);
@@ -642,7 +596,9 @@ void EventSourceImpl::Init(nsIGlobalObject* aWindowGlobal,
   
   if (JSContext* cx = nsContentUtils::GetCurrentJSContext()) {
     mCallingLocation = JSCallingLocation::Get();
-    mInnerWindowID = nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx);
+    if (mIsMainThread) {
+      mInnerWindowID = nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx);
+    }
   }
 
   if (mIsMainThread) {
@@ -659,9 +615,10 @@ void EventSourceImpl::Init(nsIGlobalObject* aWindowGlobal,
     }
   }
 
-  mReconnectionTime =
-      Preferences::GetInt("dom.server-events.default-reconnection-time",
-                          DEFAULT_RECONNECTION_TIME_VALUE);
+  mReconnectionTime = StaticPrefs::dom_serverEvents_defaultReconnectionTime();
+  if (!mReconnectionTime) {
+    mReconnectionTime = DEFAULT_RECONNECTION_TIME_VALUE;
+  }
 
   mUnicodeDecoder = UTF_8_ENCODING->NewDecoderWithBOMRemoval();
 }
@@ -953,7 +910,6 @@ NS_IMETHODIMP_(bool)
 EventSourceImpl::IsOnCurrentThreadInfallible() { return IsTargetThread(); }
 
 nsresult EventSourceImpl::GetBaseURI(nsIURI** aBaseURI) {
-  AssertIsOnMainThread();
   MOZ_ASSERT(!mIsShutDown);
   NS_ENSURE_ARG_POINTER(aBaseURI);
 
@@ -2023,23 +1979,15 @@ already_AddRefed<EventSource> EventSource::Constructor(
 
     eventSource->mESImpl->mInnerWindowID = workerPrivate->WindowID();
 
-    RefPtr<InitRunnable> initRunnable =
-        new InitRunnable(workerPrivate, eventSource->mESImpl, aURL);
-    initRunnable->Dispatch(workerPrivate, Canceling, aRv);
-    if (NS_WARN_IF(aRv.Failed())) {
-      return nullptr;
-    }
-
-    aRv = initRunnable->ErrorCode();
+    eventSource->mESImpl->Init(nullptr, workerPrivate->GetPrincipal(), aURL,
+                               aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
     }
 
     
     
-    
-    if (!eventSource->mESImpl ||
-        !eventSource->mESImpl->CreateWorkerRef(workerPrivate)) {
+    if (!eventSource->mESImpl->CreateWorkerRef(workerPrivate)) {
       
       
       if (eventSource->mESImpl) {
