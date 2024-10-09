@@ -111,7 +111,7 @@ static mozilla::UniquePtr<mozilla::intl::TimeZone> CreateIntlTimeZone(
 }
 
 static mozilla::intl::TimeZone* GetOrCreateIntlTimeZone(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone) {
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone) {
   
   if (auto* tz = timeZone->getTimeZone()) {
     return tz;
@@ -123,8 +123,7 @@ static mozilla::intl::TimeZone* GetOrCreateIntlTimeZone(
   }
   timeZone->setTimeZone(tz);
 
-  intl::AddICUCellMemory(timeZone,
-                         TimeZoneObjectMaybeBuiltin::EstimatedMemoryUse);
+  intl::AddICUCellMemory(timeZone, BuiltinTimeZoneObject::EstimatedMemoryUse);
   return tz;
 }
 
@@ -282,7 +281,7 @@ class EpochInstantList final {
 
 
 static bool GetNamedTimeZoneEpochNanoseconds(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone,
     const PlainDateTime& dateTime, EpochInstantList& instants) {
   MOZ_ASSERT(timeZone->offsetMinutes().isUndefined());
   MOZ_ASSERT(IsValidISODateTime(dateTime));
@@ -365,7 +364,7 @@ static bool GetNamedTimeZoneEpochNanoseconds(
 
 
 static bool GetNamedTimeZoneOffsetNanoseconds(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone,
     const Instant& epochInstant, int64_t* offset) {
   MOZ_ASSERT(timeZone->offsetMinutes().isUndefined());
 
@@ -395,7 +394,7 @@ static bool GetNamedTimeZoneOffsetNanoseconds(
 
 
 bool js::temporal::GetNamedTimeZoneNextTransition(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone,
     const Instant& epochInstant, mozilla::Maybe<Instant>* result) {
   MOZ_ASSERT(timeZone->offsetMinutes().isUndefined());
 
@@ -438,7 +437,7 @@ bool js::temporal::GetNamedTimeZoneNextTransition(
 
 
 bool js::temporal::GetNamedTimeZonePreviousTransition(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone,
     const Instant& epochInstant, mozilla::Maybe<Instant>* result) {
   MOZ_ASSERT(timeZone->offsetMinutes().isUndefined());
 
@@ -708,8 +707,7 @@ bool js::temporal::CreateTimeZoneMethodsRecord(
 bool js::temporal::WrapTimeZoneValueObject(JSContext* cx,
                                            MutableHandle<JSObject*> timeZone) {
   
-  
-  if (MOZ_LIKELY(timeZone->is<TimeZoneObjectMaybeBuiltin>() &&
+  if (MOZ_LIKELY(timeZone->is<BuiltinTimeZoneObject>() &&
                  timeZone->compartment() == cx->compartment())) {
     return true;
   }
@@ -718,14 +716,9 @@ bool js::temporal::WrapTimeZoneValueObject(JSContext* cx,
   
   auto* unwrappedTimeZone = timeZone->maybeUnwrapIf<BuiltinTimeZoneObject>();
   if (!unwrappedTimeZone) {
-    return cx->compartment()->wrap(cx, timeZone);
+    temporal::ReportDeadWrapperOrAccessDenied(cx, timeZone);
+    return false;
   }
-
-  
-  
-  
-  
-  
 
   const auto& offsetMinutes = unwrappedTimeZone->offsetMinutes();
   if (offsetMinutes.isInt32()) {
@@ -757,7 +750,7 @@ bool js::temporal::WrapTimeZoneValueObject(JSContext* cx,
 
 
 static bool BuiltinGetOffsetNanosecondsFor(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone,
     const Instant& instant, int64_t* offsetNanoseconds) {
   
 
@@ -1333,7 +1326,7 @@ PlainDateTimeObject* js::temporal::GetPlainDateTimeFor(
 
 
 static bool BuiltinGetPossibleInstantsFor(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone,
     const PlainDateTime& dateTime, EpochInstantList& possibleInstants) {
   MOZ_ASSERT(possibleInstants.length() == 0);
 
@@ -1374,7 +1367,7 @@ static bool BuiltinGetPossibleInstantsFor(
 }
 
 static bool BuiltinGetPossibleInstantsFor(
-    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    JSContext* cx, Handle<BuiltinTimeZoneObject*> timeZone,
     const PlainDateTime& dateTime, MutableHandle<InstantVector> list) {
   
   EpochInstantList possibleInstants;
@@ -1870,11 +1863,11 @@ bool js::temporal::GetInstantFor(JSContext* cx, Handle<TimeZoneValue> timeZone,
   return GetInstantFor(cx, timeZoneRec, dateTime, disambiguation, result);
 }
 
-void js::temporal::TimeZoneObjectMaybeBuiltin::finalize(JS::GCContext* gcx,
-                                                        JSObject* obj) {
+void js::temporal::BuiltinTimeZoneObject::finalize(JS::GCContext* gcx,
+                                                   JSObject* obj) {
   MOZ_ASSERT(gcx->onMainThread());
 
-  if (auto* timeZone = obj->as<TimeZoneObjectMaybeBuiltin>().getTimeZone()) {
+  if (auto* timeZone = obj->as<BuiltinTimeZoneObject>().getTimeZone()) {
     intl::RemoveICUCellMemory(gcx, obj, EstimatedMemoryUse);
     delete timeZone;
   }
