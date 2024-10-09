@@ -9957,15 +9957,29 @@ Document* Document::Open(const Optional<nsAString>& ,
   
   nsCOMPtr<Document> callerDoc = GetEntryDocument();
   if (!callerDoc) {
-    
-    
-    
-    
-    
-    
+    if (nsIGlobalObject* callerGlobal = GetEntryGlobal()) {
+      if (callerGlobal->IsXPCSandbox()) {
+        if (nsIPrincipal* principal = callerGlobal->PrincipalOrNull()) {
+          if (principal->Equals(NodePrincipal())) {
+            
+            
+            callerDoc = this;
+          }
+        }
+      }
+    }
 
-    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return nullptr;
+    if (!callerDoc) {
+      
+      
+      
+      
+      
+      
+
+      aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
+      return nullptr;
+    }
   }
 
   
