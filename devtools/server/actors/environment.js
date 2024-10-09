@@ -8,10 +8,6 @@ const {
   environmentSpec,
 } = require("resource://devtools/shared/specs/environment.js");
 
-const {
-  createValueGrip,
-} = require("resource://devtools/server/actors/object/utils.js");
-
 
 
 
@@ -58,17 +54,13 @@ class EnvironmentActor extends Actor {
     
     if (this.obj.parent) {
       form.parent = this.threadActor
-        .createEnvironmentActor(this.obj.parent, this.getParent())
+        .createEnvironmentActor(this.obj.parent, this.threadActor)
         .form();
     }
 
     
     if (this.obj.type == "object" || this.obj.type == "with") {
-      form.object = createValueGrip(
-        this.obj.object,
-        this.getParent(),
-        this.threadActor.objectGrip
-      );
+      form.object = this.threadActor.createValueGrip(this.obj.object);
     }
 
     
@@ -127,23 +119,11 @@ class EnvironmentActor extends Actor {
         configurable: desc.configurable,
       };
       if ("value" in desc) {
-        descForm.value = createValueGrip(
-          desc.value,
-          this.getParent(),
-          this.threadActor.objectGrip
-        );
+        descForm.value = this.threadActor.createValueGrip(desc.value);
         descForm.writable = desc.writable;
       } else {
-        descForm.get = createValueGrip(
-          desc.get,
-          this.getParent(),
-          this.threadActor.objectGrip
-        );
-        descForm.set = createValueGrip(
-          desc.set,
-          this.getParent(),
-          this.threadActor.objectGrip
-        );
+        descForm.get = this.threadActor.createValueGrip(desc.get);
+        descForm.set = this.threadActor.createValueGrip(desc.set);
       }
       arg[name] = descForm;
       bindings.arguments.push(arg);
@@ -178,23 +158,11 @@ class EnvironmentActor extends Actor {
         configurable: desc.configurable,
       };
       if ("value" in desc) {
-        descForm.value = createValueGrip(
-          desc.value,
-          this.getParent(),
-          this.threadActor.objectGrip
-        );
+        descForm.value = this.threadActor.createValueGrip(desc.value);
         descForm.writable = desc.writable;
       } else {
-        descForm.get = createValueGrip(
-          desc.get || undefined,
-          this.getParent(),
-          this.threadActor.objectGrip
-        );
-        descForm.set = createValueGrip(
-          desc.set || undefined,
-          this.getParent(),
-          this.threadActor.objectGrip
-        );
+        descForm.get = this.threadActor.createValueGrip(desc.get || undefined);
+        descForm.set = this.threadActor.createValueGrip(desc.set || undefined);
       }
       bindings.variables[name] = descForm;
     }
