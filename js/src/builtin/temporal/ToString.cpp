@@ -308,42 +308,32 @@ static void FormatDateTimeUTCOffsetRounded(TemporalStringBuilder& result,
 
 
 static bool FormatCalendarAnnotation(TemporalStringBuilder& result,
-                                     std::string_view id,
+                                     const CalendarValue& calendar,
                                      ShowCalendar showCalendar) {
+  
+
   switch (showCalendar) {
     case ShowCalendar::Never:
       return true;
 
     case ShowCalendar::Auto: {
-      if (id == "iso8601") {
+      if (calendar.identifier() == CalendarId::ISO8601) {
         return true;
       }
       [[fallthrough]];
     }
 
-    case ShowCalendar::Always:
+    case ShowCalendar::Always: {
+      auto id = ToTemporalCalendarIdentifier(calendar);
       return result.appendCalendarAnnnotation(id, Critical::No);
+    }
 
-    case ShowCalendar::Critical:
+    case ShowCalendar::Critical: {
+      auto id = ToTemporalCalendarIdentifier(calendar);
       return result.appendCalendarAnnnotation(id, Critical::Yes);
+    }
   }
   MOZ_CRASH("bad calendar option");
-}
-
-
-
-
-static bool MaybeFormatCalendarAnnotation(TemporalStringBuilder& result,
-                                          const CalendarValue& calendar,
-                                          ShowCalendar showCalendar) {
-  
-  if (showCalendar == ShowCalendar::Never) {
-    return true;
-  }
-
-  
-  auto calendarIdentifier = ToTemporalCalendarIdentifier(calendar);
-  return FormatCalendarAnnotation(result, calendarIdentifier, showCalendar);
 }
 
 static bool FormatTimeZoneAnnotation(TemporalStringBuilder& result,
@@ -420,8 +410,8 @@ JSString* js::temporal::TemporalDateToString(
   FormatDateString(result, date);
 
   
-  if (!MaybeFormatCalendarAnnotation(result, temporalDate->calendar(),
-                                     showCalendar)) {
+  if (!FormatCalendarAnnotation(result, temporalDate->calendar(),
+                                showCalendar)) {
     return nullptr;
   }
 
@@ -450,7 +440,7 @@ JSString* js::temporal::TemporalDateTimeToString(JSContext* cx,
   FormatDateTimeString(result, dateTime, precision);
 
   
-  if (!MaybeFormatCalendarAnnotation(result, calendar, showCalendar)) {
+  if (!FormatCalendarAnnotation(result, calendar, showCalendar)) {
     return nullptr;
   }
 
@@ -489,10 +479,9 @@ JSString* js::temporal::TemporalMonthDayToString(
 
   
   auto date = ToPlainDate(monthDay);
-  auto calendarIdentifier = ToTemporalCalendarIdentifier(monthDay->calendar());
   if (showCalendar == ShowCalendar::Always ||
       showCalendar == ShowCalendar::Critical ||
-      calendarIdentifier != "iso8601") {
+      monthDay->calendar().identifier() != CalendarId::ISO8601) {
     FormatDateString(result, date);
   } else {
     result.appendTwoDigit(date.month);
@@ -501,7 +490,7 @@ JSString* js::temporal::TemporalMonthDayToString(
   }
 
   
-  if (!FormatCalendarAnnotation(result, calendarIdentifier, showCalendar)) {
+  if (!FormatCalendarAnnotation(result, monthDay->calendar(), showCalendar)) {
     return nullptr;
   }
 
@@ -522,10 +511,9 @@ JSString* js::temporal::TemporalYearMonthToString(
 
   
   auto date = ToPlainDate(yearMonth);
-  auto calendarIdentifier = ToTemporalCalendarIdentifier(yearMonth->calendar());
   if (showCalendar == ShowCalendar::Always ||
       showCalendar == ShowCalendar::Critical ||
-      calendarIdentifier != "iso8601") {
+      yearMonth->calendar().identifier() != CalendarId::ISO8601) {
     FormatDateString(result, date);
   } else {
     result.appendYear(date.year);
@@ -534,7 +522,7 @@ JSString* js::temporal::TemporalYearMonthToString(
   }
 
   
-  if (!FormatCalendarAnnotation(result, calendarIdentifier, showCalendar)) {
+  if (!FormatCalendarAnnotation(result, yearMonth->calendar(), showCalendar)) {
     return nullptr;
   }
 
@@ -589,8 +577,8 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
   }
 
   
-  if (!MaybeFormatCalendarAnnotation(result, zonedDateTime.calendar(),
-                                     showCalendar)) {
+  if (!FormatCalendarAnnotation(result, zonedDateTime.calendar(),
+                                showCalendar)) {
     return nullptr;
   }
 
