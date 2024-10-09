@@ -410,7 +410,7 @@ class WebTransportSession:
             _logger.warn(
                 "Sending a datagram while that's now allowed - discarding it")
             return
-        flow_id = self.session_id
+        stream_id = self.session_id
         if self._http.datagram_setting is not None:
             
             
@@ -418,8 +418,8 @@ class WebTransportSession:
             
             
             
-            flow_id = self._protocol._session_stream_id // 4
-        self._http.send_datagram(flow_id=flow_id, data=data)
+            stream_id = self._protocol._session_stream_id
+        self._http.send_datagram(stream_id=stream_id, data=data)
 
     def stop_stream(self, stream_id: int, code: int) -> None:
         """
