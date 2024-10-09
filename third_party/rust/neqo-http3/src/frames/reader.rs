@@ -55,7 +55,7 @@ impl<'a> StreamReaderConnectionWrapper<'a> {
     }
 }
 
-impl<'a> StreamReader for StreamReaderConnectionWrapper<'a> {
+impl StreamReader for StreamReaderConnectionWrapper<'_> {
     
     
     
@@ -76,7 +76,7 @@ impl<'a> StreamReaderRecvStreamWrapper<'a> {
     }
 }
 
-impl<'a> StreamReader for StreamReaderRecvStreamWrapper<'a> {
+impl StreamReader for StreamReaderRecvStreamWrapper<'_> {
     
     
     

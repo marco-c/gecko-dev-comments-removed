@@ -1487,7 +1487,7 @@ impl OrderGroup {
     }
 }
 
-impl<'a> Iterator for OrderGroupIter<'a> {
+impl Iterator for OrderGroupIter<'_> {
     type Item = StreamId;
     fn next(&mut self) -> Option<Self::Item> {
         
