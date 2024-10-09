@@ -294,8 +294,7 @@ void QuotaManagerDependencyFixture::ClearStoragesForOrigin(
     ASSERT_TRUE(quotaManager);
 
     Await(quotaManager->ClearStoragesForOrigin( Nothing(),
-                                               principalInfo,
-                                                Nothing()));
+                                               principalInfo));
   });
 }
 
