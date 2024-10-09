@@ -264,18 +264,6 @@ DurationObject* CreateTemporalDuration(JSContext* cx, const Duration& duration);
 
 
 
-Wrapped<DurationObject*> ToTemporalDuration(JSContext* cx,
-                                            JS::Handle<JS::Value> item);
-
-
-
-
-bool ToTemporalDuration(JSContext* cx, JS::Handle<JS::Value> item,
-                        Duration* result);
-
-
-
-
 bool ToTemporalDurationRecord(JSContext* cx,
                               JS::Handle<JS::Value> temporalDurationLike,
                               Duration* result);
