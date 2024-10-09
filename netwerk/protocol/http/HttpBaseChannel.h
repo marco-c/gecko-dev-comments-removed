@@ -485,7 +485,17 @@ class HttpBaseChannel : public nsHashPropertyBag,
     return mResponseTrailers.get();
   }
 
-  void SetDummyChannelForCachedResource();
+  
+  
+  
+  UniquePtr<nsHttpResponseHead> MaybeCloneResponseHeadForCachedResource();
+
+  
+  
+  
+  
+  void SetDummyChannelForCachedResource(
+      const nsHttpResponseHead* aMaybeResponseHead = nullptr);
 
   const NetAddr& GetSelfAddr() { return mSelfAddr; }
   const NetAddr& GetPeerAddr() { return mPeerAddr; }
