@@ -11,7 +11,6 @@ Also contains a few additional utilities not found in :py:mod:`os.path`.
 
 
 
-
 import os
 import posixpath
 import re
