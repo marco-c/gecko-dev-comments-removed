@@ -219,12 +219,41 @@ FileSystemTaskParentBase::Run() {
   
   
   
+  
+  
+
+  
+  
+  if (NS_IsMainThread()) {
+    MOZ_ASSERT(MainThreadNeeded());
+
+    nsresult rv = MainThreadWork();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      SetError(rv);
+    }
+
+    
+    rv = mBackgroundEventTarget->Dispatch(this, NS_DISPATCH_NORMAL);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    return NS_OK;
+  }
 
   
   if (!mozilla::ipc::IsOnBackgroundThread()) {
     nsresult rv = IOWork();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       SetError(rv);
+    }
+
+    if (MainThreadNeeded()) {
+      rv = GetMainThreadSerialEventTarget()->Dispatch(this, NS_DISPATCH_NORMAL);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      return NS_OK;
     }
 
     

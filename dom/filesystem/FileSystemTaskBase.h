@@ -99,6 +99,16 @@ class FileSystemParams;
 
 
 
+
+
+
+
+
+
+
+
+
+
 class FileSystemTaskChildBase : public PFileSystemRequestChild {
   friend class PFileSystemRequestChild;
 
@@ -198,6 +208,16 @@ class FileSystemTaskParentBase : public Runnable {
 
 
   virtual nsresult IOWork() = 0;
+
+  
+  virtual nsresult MainThreadWork() {
+    MOZ_CRASH("This method should be implemented");
+    return NS_OK;
+  }
+
+  
+  
+  virtual bool MainThreadNeeded() const { return false; };
 
   
 
