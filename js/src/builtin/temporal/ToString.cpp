@@ -45,6 +45,8 @@ enum class TemporalStringFormat {
   Instant,
 };
 
+enum class Critical : bool { No, Yes };
+
 class TemporalStringBuilder {
   JSStringBuilder sb_;
 
@@ -145,9 +147,19 @@ class TemporalStringBuilder {
     }
   }
 
-  auto* finishString() { return sb_.finishString(); }
+  bool appendCalendarAnnnotation(std::string_view id, Critical critical) {
+    std::string_view start = bool(critical) ? "[!u-ca=" : "[u-ca=";
+    return sb_.append(start.data(), start.length()) &&
+           sb_.append(id.data(), id.length()) && sb_.append(']');
+  }
 
-  auto& builder() { return sb_; }
+  bool appendTimeZoneAnnnotation(const JSLinearString* id, Critical critical) {
+    std::string_view start = bool(critical) ? "[!" : "[";
+    return sb_.append(start.data(), start.length()) && sb_.append(id) &&
+           sb_.append(']');
+  }
+
+  auto* finishString() { return sb_.finishString(); }
 };
 
 
@@ -296,28 +308,24 @@ static void FormatDateTimeUTCOffsetRounded(TemporalStringBuilder& result,
 
 
 static bool FormatCalendarAnnotation(TemporalStringBuilder& result,
-                                     JSLinearString* id,
+                                     std::string_view id,
                                      ShowCalendar showCalendar) {
   switch (showCalendar) {
     case ShowCalendar::Never:
       return true;
 
     case ShowCalendar::Auto: {
-      if (StringEqualsLiteral(id, "iso8601")) {
+      if (id == "iso8601") {
         return true;
       }
       [[fallthrough]];
     }
 
-    case ShowCalendar::Always: {
-      auto& sb = result.builder();
-      return sb.append("[u-ca=") && sb.append(id) && sb.append(']');
-    }
+    case ShowCalendar::Always:
+      return result.appendCalendarAnnnotation(id, Critical::No);
 
-    case ShowCalendar::Critical: {
-      auto& sb = result.builder();
-      return sb.append("[!u-ca=") && sb.append(id) && sb.append(']');
-    }
+    case ShowCalendar::Critical:
+      return result.appendCalendarAnnnotation(id, Critical::Yes);
   }
   MOZ_CRASH("bad calendar option");
 }
@@ -325,9 +333,8 @@ static bool FormatCalendarAnnotation(TemporalStringBuilder& result,
 
 
 
-static bool MaybeFormatCalendarAnnotation(JSContext* cx,
-                                          TemporalStringBuilder& result,
-                                          Handle<CalendarValue> calendar,
+static bool MaybeFormatCalendarAnnotation(TemporalStringBuilder& result,
+                                          const CalendarValue& calendar,
                                           ShowCalendar showCalendar) {
   
   if (showCalendar == ShowCalendar::Never) {
@@ -335,32 +342,22 @@ static bool MaybeFormatCalendarAnnotation(JSContext* cx,
   }
 
   
-  JSLinearString* calendarIdentifier =
-      ToTemporalCalendarIdentifier(cx, calendar);
-  if (!calendarIdentifier) {
-    return false;
-  }
-
-  
+  auto calendarIdentifier = ToTemporalCalendarIdentifier(calendar);
   return FormatCalendarAnnotation(result, calendarIdentifier, showCalendar);
 }
 
 static bool FormatTimeZoneAnnotation(TemporalStringBuilder& result,
-                                     JSLinearString* id,
+                                     const JSLinearString* id,
                                      ShowTimeZoneName showTimeZone) {
   switch (showTimeZone) {
     case ShowTimeZoneName::Never:
       return true;
 
-    case ShowTimeZoneName::Auto: {
-      auto& sb = result.builder();
-      return sb.append("[") && sb.append(id) && sb.append(']');
-    }
+    case ShowTimeZoneName::Auto:
+      return result.appendTimeZoneAnnnotation(id, Critical::No);
 
-    case ShowTimeZoneName::Critical: {
-      auto& sb = result.builder();
-      return sb.append("[!") && sb.append(id) && sb.append(']');
-    }
+    case ShowTimeZoneName::Critical:
+      return result.appendTimeZoneAnnnotation(id, Critical::Yes);
   }
   MOZ_CRASH("bad time zone option");
 }
@@ -399,13 +396,8 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
   }
 
   
-
-  
   int64_t offsetNanoseconds = 0;
   if (timeZone) {
-    
-
-    
     if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
       return nullptr;
     }
@@ -421,10 +413,8 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
   
   Rooted<JSString*> timeZoneString(cx);
   if (!timeZone) {
-    
     result.append('Z');
   } else {
-    
     FormatDateTimeUTCOffsetRounded(result, offsetNanoseconds);
   }
 
@@ -440,8 +430,6 @@ JSString* js::temporal::TemporalDateToString(
     ShowCalendar showCalendar) {
   auto date = ToPlainDate(temporalDate);
 
-  
-
   TemporalStringBuilder result(cx, TemporalStringFormat::Date);
   if (!result.reserve()) {
     return nullptr;
@@ -451,8 +439,8 @@ JSString* js::temporal::TemporalDateToString(
   FormatDateString(result, date);
 
   
-  Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
-  if (!MaybeFormatCalendarAnnotation(cx, result, calendar, showCalendar)) {
+  if (!MaybeFormatCalendarAnnotation(result, temporalDate->calendar(),
+                                     showCalendar)) {
     return nullptr;
   }
 
@@ -469,18 +457,19 @@ JSString* js::temporal::TemporalDateTimeToString(JSContext* cx,
                                                  Handle<CalendarValue> calendar,
                                                  Precision precision,
                                                  ShowCalendar showCalendar) {
+  
+  MOZ_ASSERT(IsValidISODateTime(dateTime));
+
   TemporalStringBuilder result(cx, TemporalStringFormat::DateTime);
   if (!result.reserve()) {
     return nullptr;
   }
 
   
-
-  
   FormatDateTimeString(result, dateTime, precision);
 
   
-  if (!MaybeFormatCalendarAnnotation(cx, result, calendar, showCalendar)) {
+  if (!MaybeFormatCalendarAnnotation(result, calendar, showCalendar)) {
     return nullptr;
   }
 
@@ -495,8 +484,6 @@ JSString* js::temporal::TemporalDateTimeToString(JSContext* cx,
 JSString* js::temporal::TemporalTimeToString(JSContext* cx,
                                              const PlainTime& time,
                                              Precision precision) {
-  
-
   TemporalStringBuilder result(cx, TemporalStringFormat::Time);
   if (!result.reserve()) {
     return nullptr;
@@ -514,38 +501,17 @@ JSString* js::temporal::TemporalTimeToString(JSContext* cx,
 JSString* js::temporal::TemporalMonthDayToString(
     JSContext* cx, Handle<PlainMonthDayObject*> monthDay,
     ShowCalendar showCalendar) {
-  
-
   TemporalStringBuilder result(cx, TemporalStringFormat::MonthDay);
   if (!result.reserve()) {
     return nullptr;
   }
 
   
-  Rooted<CalendarValue> calendar(cx, monthDay->calendar());
-  JSString* str = ToTemporalCalendarIdentifier(cx, calendar);
-  if (!str) {
-    return nullptr;
-  }
-
-  Rooted<JSLinearString*> calendarIdentifier(cx, str->ensureLinear(cx));
-  if (!calendarIdentifier) {
-    return nullptr;
-  }
-
-  
   auto date = ToPlainDate(monthDay);
+  auto calendarIdentifier = ToTemporalCalendarIdentifier(monthDay->calendar());
   if (showCalendar == ShowCalendar::Always ||
       showCalendar == ShowCalendar::Critical ||
-      !StringEqualsLiteral(calendarIdentifier, "iso8601")) {
-    
-    
-    
-    
-    
-    
-    
-
+      calendarIdentifier != "iso8601") {
     FormatDateString(result, date);
   } else {
     result.appendTwoDigit(date.month);
@@ -568,38 +534,17 @@ JSString* js::temporal::TemporalMonthDayToString(
 JSString* js::temporal::TemporalYearMonthToString(
     JSContext* cx, Handle<PlainYearMonthObject*> yearMonth,
     ShowCalendar showCalendar) {
-  
-
   TemporalStringBuilder result(cx, TemporalStringFormat::YearMonth);
   if (!result.reserve()) {
     return nullptr;
   }
 
   
-  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
-  JSString* str = ToTemporalCalendarIdentifier(cx, calendar);
-  if (!str) {
-    return nullptr;
-  }
-
-  Rooted<JSLinearString*> calendarIdentifier(cx, str->ensureLinear(cx));
-  if (!calendarIdentifier) {
-    return nullptr;
-  }
-
-  
   auto date = ToPlainDate(yearMonth);
+  auto calendarIdentifier = ToTemporalCalendarIdentifier(yearMonth->calendar());
   if (showCalendar == ShowCalendar::Always ||
       showCalendar == ShowCalendar::Critical ||
-      !StringEqualsLiteral(calendarIdentifier, "iso8601")) {
-    
-    
-    
-    
-    
-    
-    
-
+      calendarIdentifier != "iso8601") {
     FormatDateString(result, date);
   } else {
     result.appendYear(date.year);
@@ -663,7 +608,7 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
   }
 
   
-  if (!MaybeFormatCalendarAnnotation(cx, result, zonedDateTime.calendar(),
+  if (!MaybeFormatCalendarAnnotation(result, zonedDateTime.calendar(),
                                      showCalendar)) {
     return nullptr;
   }
