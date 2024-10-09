@@ -627,9 +627,7 @@ void TErrorResult<CleanupPolicy>::SetPendingException(JSContext* cx,
   AssertInOwningThread();
   if (IsUncatchableException()) {
     
-    JS_ClearPendingException(cx);
-    
-    
+    JS::ReportUncatchableException(cx);
     mResult = NS_OK;
     return;
   }

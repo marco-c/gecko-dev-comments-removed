@@ -395,7 +395,7 @@ static bool Quit(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   gQuitting = true;
-  
+  JS::ReportUncatchableException(cx);
   return false;
 }
 
