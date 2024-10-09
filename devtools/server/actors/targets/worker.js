@@ -47,7 +47,7 @@ class WorkerTargetActor extends BaseTargetActor {
     super(conn, Targets.TYPES.WORKER, workerTargetSpec);
 
     
-    this.workerGlobal = workerGlobal;
+    this.#workerGlobal = workerGlobal;
     this.sessionContext = sessionContext;
 
     
@@ -84,6 +84,12 @@ class WorkerTargetActor extends BaseTargetActor {
     this.manage(this._consoleActor);
     this.manage(this.tracerActor);
     this.manage(this.objectsManagerActor);
+  }
+
+  #workerGlobal = null;
+
+  get targetGlobal() {
+    return this.#workerGlobal;
   }
 
   
@@ -134,7 +140,7 @@ class WorkerTargetActor extends BaseTargetActor {
       this._sourcesManager = null;
     }
 
-    this.workerGlobal = null;
+    this.#workerGlobal = null;
     this._dbg = null;
     this._consoleActor = null;
     this.threadActor = null;

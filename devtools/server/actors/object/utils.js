@@ -447,7 +447,7 @@ function makeDebuggeeValue(targetActor, value) {
   
   
   
-  const valueGlobal = isWorker ? targetActor.workerGlobal : Cu.getGlobalForObject(value);
+  const valueGlobal = isWorker ? targetActor.targetGlobal : Cu.getGlobalForObject(value);
   let dbgGlobal;
   try {
     dbgGlobal = targetActor.dbg.makeGlobalObjectReference(

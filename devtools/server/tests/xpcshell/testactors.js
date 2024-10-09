@@ -204,7 +204,12 @@ class TestTargetActor extends BaseTargetActor {
 
   targetType = Targets.TYPES.FRAME;
 
+  
   get window() {
+    return this._global;
+  }
+
+  get targetGlobal() {
     return this._global;
   }
 
