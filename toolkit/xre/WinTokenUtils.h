@@ -11,7 +11,41 @@
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
 LauncherResult<bool> IsAdminWithoutUac();
+
+
+
+
+
+
+
+
+LauncherResult<bool> UserHasAdminPrivileges();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+LauncherResult<bool> UserIsLocalSystem();
 
 }  
 

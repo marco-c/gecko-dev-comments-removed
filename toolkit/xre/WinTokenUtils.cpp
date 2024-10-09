@@ -5,23 +5,21 @@
 
 
 #include "WinTokenUtils.h"
-#include "nsWindowsHelpers.h"
 
 using namespace mozilla;
 
 
 
-static LauncherResult<bool> IsMemberOfAdministrators(
-    const nsAutoHandle& aToken) {
-  BYTE adminsGroupSid[SECURITY_MAX_SID_SIZE];
-  DWORD adminsGroupSidSize = sizeof(adminsGroupSid);
-  if (!CreateWellKnownSid(WinBuiltinAdministratorsSid, nullptr, adminsGroupSid,
-                          &adminsGroupSidSize)) {
+static LauncherResult<bool> IsMemberOfSidType(
+    const nsAutoHandle& aToken, const WELL_KNOWN_SID_TYPE aWellKnownSid) {
+  BYTE sid[SECURITY_MAX_SID_SIZE];
+  DWORD sidSize = sizeof(sid);
+  if (!CreateWellKnownSid(aWellKnownSid, nullptr, sid, &sidSize)) {
     return LAUNCHER_ERROR_FROM_LAST();
   }
 
   BOOL isMember;
-  if (!CheckTokenMembership(aToken, adminsGroupSid, &isMember)) {
+  if (!CheckTokenMembership(aToken, sid, &isMember)) {
     return LAUNCHER_ERROR_FROM_LAST();
   }
   return !!isMember;
@@ -51,22 +49,27 @@ LauncherResult<bool> IsAdminWithoutUac() {
   
   
   
-  LauncherResult<bool> containsAdminGroup =
-      IsMemberOfAdministrators(nsAutoHandle());
-  if (containsAdminGroup.isErr()) {
-    return containsAdminGroup.propagateErr();
-  }
+  return UserHasAdminPrivileges().andThen(
+      [](bool containsAdminGroup) -> LauncherResult<bool> {
+        if (!containsAdminGroup) {
+          
+          
+          return false;
+        }
 
-  if (!containsAdminGroup.unwrap()) {
-    return false;
-  }
+        
+        
+        return IsUacEnabled().map(
+            [](bool isUacEnabled) { return !isUacEnabled; });
+      });
+}
 
-  LauncherResult<bool> isUacEnabled = IsUacEnabled();
-  if (isUacEnabled.isErr()) {
-    return isUacEnabled.propagateErr();
-  }
+LauncherResult<bool> UserHasAdminPrivileges() {
+  return IsMemberOfSidType(nsAutoHandle(), WinBuiltinAdministratorsSid);
+}
 
-  return !isUacEnabled.unwrap();
+LauncherResult<bool> UserIsLocalSystem() {
+  return IsMemberOfSidType(nsAutoHandle(), WinLocalSystemSid);
 }
 
 }  

@@ -55,6 +55,7 @@
 #ifdef XP_WIN
 #  include "mozilla/Maybe.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
+#  include "mozilla/WinTokenUtils.h"
 #  include <climits>
 #endif  
 
@@ -130,14 +131,14 @@ BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
 
 
 
-#  define EXIT_WHEN_ELEVATED(path, handle, retCode) \
-    {                                               \
-      if (handle != INVALID_HANDLE_VALUE) {         \
-        CloseHandle(handle);                        \
-      }                                             \
-      if (NS_tremove(path) && errno != ENOENT) {    \
-        return retCode;                             \
-      }                                             \
+#  define EXIT_WHEN_ELEVATED(handle, retCode) \
+    {                                         \
+      if (handle != INVALID_HANDLE_VALUE) {   \
+        CloseHandle(handle);                  \
+      }                                       \
+      if (gIsElevated) {                      \
+        return retCode;                       \
+      }                                       \
     }
 #endif
 
@@ -2881,7 +2882,6 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
                                      int callbackIndex
 #ifdef XP_WIN
                                      ,
-                                     const WCHAR* elevatedLockFilePath,
                                      HANDLE updateLockFileHandle
 #elif XP_MACOSX
                                      ,
@@ -2940,7 +2940,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
       LOG(("Not launching Windows post update process because !gSucceeded"));
     }
 
-    EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 0);
+    EXIT_WHEN_ELEVATED(updateLockFileHandle, 0);
 #elif XP_MACOSX
     if (!gIsElevated) {
       if (gSucceeded) {
@@ -3123,18 +3123,31 @@ int NS_main(int argc, NS_tchar** argv) {
   gPatchDirPath[MAXPATHLEN - 1] = NS_T('\0');
 
 #ifdef XP_WIN
-  NS_tchar elevatedLockFilePath[MAXPATHLEN] = {NS_T('\0')};
-  NS_tsnprintf(elevatedLockFilePath,
-               sizeof(elevatedLockFilePath) / sizeof(elevatedLockFilePath[0]),
-               NS_T("%s\\update_elevated.lock"), gPatchDirPath);
-  gUseSecureOutputPath =
-      sUsingService || (NS_tremove(elevatedLockFilePath) && errno != ENOENT);
+  auto isAdmin = mozilla::UserHasAdminPrivileges();
+  if (isAdmin.isErr()) {
+    fprintf(stderr,
+            "Failed to query if the current process has admin privileges.\n");
+    return 1;
+  }
+  auto isLocalSystem = mozilla::UserIsLocalSystem();
+  if (isLocalSystem.isErr()) {
+    fprintf(
+        stderr,
+        "Failed to query if the current process has LocalSystem privileges.\n");
+    return 1;
+  }
 
   
   
   
-  gIsElevated =
-      GetFileAttributesW(elevatedLockFilePath) != INVALID_FILE_ATTRIBUTES;
+  
+  
+  
+  
+  
+  
+  gIsElevated = isAdmin.unwrap() || isLocalSystem.unwrap();
+  gUseSecureOutputPath = sUsingService || gIsElevated;
 #elif defined(XP_MACOSX)
     
     
@@ -3587,26 +3600,9 @@ int NS_main(int argc, NS_tchar** argv) {
            (noServiceFallback || forceServiceFallback))) {
         LOG(("Can't open lock file - seems like we need elevation"));
 
-        HANDLE elevatedFileHandle;
-        if (NS_tremove(elevatedLockFilePath) && errno != ENOENT) {
-          LOG(("Unable to create elevated lock file! Exiting"));
-          output_finish();
-          return 1;
-        }
-
-        elevatedFileHandle = CreateFileW(
-            elevatedLockFilePath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-            OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
-        if (elevatedFileHandle == INVALID_HANDLE_VALUE) {
-          LOG(("Unable to create elevated lock file! Exiting"));
-          output_finish();
-          return 1;
-        }
-
         auto cmdLine = mozilla::MakeCommandLine(argc - 1, argv + 1);
         if (!cmdLine) {
           LOG(("Failed to make command line! Exiting"));
-          CloseHandle(elevatedFileHandle);
           output_finish();
           return 1;
         }
@@ -3848,17 +3844,6 @@ int NS_main(int argc, NS_tchar** argv) {
             sinfo.lpVerb = L"open";
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            CloseHandle(elevatedFileHandle);
-            
-            
             if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
               CloseHandle(updateLockFileHandle);
             }
@@ -3926,8 +3911,6 @@ int NS_main(int argc, NS_tchar** argv) {
                  "'succeeded'."));
           }
         }
-
-        CloseHandle(elevatedFileHandle);
 
         if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
           CloseHandle(updateLockFileHandle);
@@ -4016,7 +3999,7 @@ int NS_main(int argc, NS_tchar** argv) {
       WriteStatusFile(WRITE_ERROR_APPLY_DIR_PATH);
       LOG(("NS_main: unable to find apply to dir: " LOG_S, gWorkingDirPath));
       output_finish();
-      EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+      EXIT_WHEN_ELEVATED(updateLockFileHandle, 1);
       if (argc > callbackIndex) {
         LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
                           sUsingService);
@@ -4070,7 +4053,7 @@ int NS_main(int argc, NS_tchar** argv) {
         WriteStatusFile(WRITE_ERROR_CALLBACK_PATH);
         LOG(("NS_main: unable to find callback file: " LOG_S, targetPath));
         output_finish();
-        EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+        EXIT_WHEN_ELEVATED(updateLockFileHandle, 1);
         if (argc > callbackIndex) {
           LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
                             sUsingService);
@@ -4119,7 +4102,7 @@ int NS_main(int argc, NS_tchar** argv) {
 
           
           
-          EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+          EXIT_WHEN_ELEVATED(updateLockFileHandle, 1);
           return 1;
         }
 
@@ -4136,7 +4119,7 @@ int NS_main(int argc, NS_tchar** argv) {
                " into place at " LOG_S,
                argv[callbackIndex], gCallbackBackupPath));
           output_finish();
-          EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+          EXIT_WHEN_ELEVATED(updateLockFileHandle, 1);
           LaunchCallbackApp(argv[callbackIndex], argc - callbackIndex,
                             argv + callbackIndex, sUsingService);
           return 1;
@@ -4211,7 +4194,7 @@ int NS_main(int argc, NS_tchar** argv) {
                    gCallbackBackupPath));
             }
             output_finish();
-            EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+            EXIT_WHEN_ELEVATED(updateLockFileHandle, 1);
             LaunchCallbackApp(argv[5], argc - callbackIndex,
                               argv + callbackIndex, sUsingService);
             return 1;
@@ -4322,7 +4305,6 @@ int NS_main(int argc, NS_tchar** argv) {
   int retVal = LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex
 #ifdef XP_WIN
                                                 ,
-                                                elevatedLockFilePath,
                                                 updateLockFileHandle
 #elif XP_MACOSX
                                                   ,
