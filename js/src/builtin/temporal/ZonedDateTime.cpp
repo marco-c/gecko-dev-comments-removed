@@ -992,11 +992,6 @@ bool js::temporal::DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
 static bool TimeZoneEqualsOrThrow(JSContext* cx, Handle<TimeZoneValue> one,
                                   Handle<TimeZoneValue> two) {
   
-  if (one.isObject() && two.isObject() && one.toObject() == two.toObject()) {
-    return true;
-  }
-
-  
   Rooted<JSString*> timeZoneOne(cx, ToTemporalTimeZoneIdentifier(cx, one));
   if (!timeZoneOne) {
     return false;
@@ -3352,13 +3347,6 @@ static bool ZonedDateTime_getTimeZoneTransition(JSContext* cx,
 
   
   auto timeZone = zonedDateTime.timeZone();
-  if (!timeZone.isString()) {
-    JS_ReportErrorASCII(cx, "Temporal.TimeZone is slated for removal");
-    return false;
-  }
-
-  
-  auto timeZoneId = timeZone.toString();
 
   
   auto direction = Direction::Next;
@@ -3385,7 +3373,7 @@ static bool ZonedDateTime_getTimeZoneTransition(JSContext* cx,
   }
 
   
-  if (!timeZoneId->offsetMinutes().isUndefined()) {
+  if (timeZone.isOffset()) {
     args.rval().setNull();
     return true;
   }
@@ -3393,7 +3381,7 @@ static bool ZonedDateTime_getTimeZoneTransition(JSContext* cx,
   
   
 
-  auto* linearTimeZoneId = timeZoneId->identifier()->ensureLinear(cx);
+  auto* linearTimeZoneId = timeZone.identifier()->ensureLinear(cx);
   if (!linearTimeZoneId) {
     return false;
   }
@@ -3405,13 +3393,13 @@ static bool ZonedDateTime_getTimeZoneTransition(JSContext* cx,
   
   mozilla::Maybe<Instant> transition;
   if (direction == Direction::Next) {
-    if (!GetNamedTimeZoneNextTransition(cx, timeZoneId, zonedDateTime.instant(),
+    if (!GetNamedTimeZoneNextTransition(cx, timeZone, zonedDateTime.instant(),
                                         &transition)) {
       return false;
     }
   } else {
     if (!GetNamedTimeZonePreviousTransition(
-            cx, timeZoneId, zonedDateTime.instant(), &transition)) {
+            cx, timeZone, zonedDateTime.instant(), &transition)) {
       return false;
     }
   }
