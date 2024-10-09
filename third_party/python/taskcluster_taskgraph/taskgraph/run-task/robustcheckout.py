@@ -337,6 +337,7 @@ def _docheckout(
     @contextlib.contextmanager
     def timeit(op, behavior):
         behaviors.add(behavior)
+        start = 0
         errored = False
         try:
             start = time.time()
@@ -345,7 +346,7 @@ def _docheckout(
             errored = True
             raise
         finally:
-            elapsed = time.time() - start  
+            elapsed = time.time() - start
 
             if errored:
                 op += "_errored"
@@ -672,6 +673,7 @@ def _docheckout(
     
     
     havewantedrev = False
+    checkoutrevision = None
 
     if revision:
         try:
@@ -748,6 +750,7 @@ def _docheckout(
         
         
         
+        old_sparse_fn = None
         try:
             old_sparse_fn = getattr(repo.dirstate, "_sparsematchfn", None)
             if old_sparse_fn is not None:
@@ -761,12 +764,12 @@ def _docheckout(
                     abort_on_err=True,
                     
                     
-                    **{"print": None, "print0": None, "dirs": None, "files": None}
+                    **{"print": None, "print0": None, "dirs": None, "files": None},
                 ):
                     raise error.Abort(b"error purging")
         finally:
-            if old_sparse_fn is not None:  
-                repo.dirstate._sparsematchfn = old_sparse_fn  
+            if old_sparse_fn is not None:
+                repo.dirstate._sparsematchfn = old_sparse_fn
 
     
 
@@ -781,11 +784,11 @@ def _docheckout(
         
         
         try:
-            repo.filectx(sparse_profile, changeid=checkoutrevision).data()  
+            repo.filectx(sparse_profile, changeid=checkoutrevision).data()
         except error.ManifestLookupError:
             raise error.Abort(
                 b"sparse profile %s does not exist at revision "
-                b"%s" % (sparse_profile, checkoutrevision)  
+                b"%s" % (sparse_profile, checkoutrevision)
             )
 
         old_config = sparsemod.parseconfig(
@@ -843,10 +846,10 @@ def _docheckout(
     behavior = "update-sparse" if sparse_profile else "update"
 
     with timeit(op, behavior):
-        if commands.update(ui, repo, rev=checkoutrevision, clean=True):  
+        if commands.update(ui, repo, rev=checkoutrevision, clean=True):
             raise error.Abort(b"error updating")
 
-    ui.write(b"updated to %s\n" % checkoutrevision)  
+    ui.write(b"updated to %s\n" % checkoutrevision)
 
     return None
 
