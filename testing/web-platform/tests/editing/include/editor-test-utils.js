@@ -100,6 +100,24 @@ class EditorTestUtils {
     );
   }
 
+  sendCopyShortcutKey() {
+    return this.sendKey(
+      "c",
+      this.window.navigator.platform.includes("Mac")
+        ? this.kMeta
+        : this.kControl
+    );
+  }
+
+  sendPasteShortcutKey() {
+    return this.sendKey(
+      "v",
+      this.window.navigator.platform.includes("Mac")
+        ? this.kMeta
+        : this.kControl
+    );
+  }
+
   
   
   

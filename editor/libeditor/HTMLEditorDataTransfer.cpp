@@ -27,6 +27,8 @@
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/DOMStringList.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/FileReader.h"
@@ -130,11 +132,24 @@ nsresult HTMLEditor::InsertDroppedDataTransferAsAction(
                          "MaybeDispatchBeforeInputEvent() failed");
     return rv;
   }
+
+  if (MOZ_UNLIKELY(!aDroppedAt.IsInContentNode())) {
+    NS_WARNING("Dropped into non-content node");
+    return NS_OK;
+  }
+
+  const RefPtr<Element> editingHost = ComputeEditingHost(
+      *aDroppedAt.ContainerAs<nsIContent>(), LimitInBodyElement::No);
+  if (MOZ_UNLIKELY(!editingHost)) {
+    NS_WARNING("Dropped onto non-editable node");
+    return NS_OK;
+  }
+
   uint32_t numItems = aDataTransfer.MozItemCount();
   for (uint32_t i = 0; i < numItems; ++i) {
     DebugOnly<nsresult> rvIgnored =
         InsertFromDataTransfer(&aDataTransfer, i, aSourcePrincipal, aDroppedAt,
-                               DeleteSelectedContent::No);
+                               DeleteSelectedContent::No, *editingHost);
     if (NS_WARN_IF(Destroyed())) {
       return NS_OK;
     }
@@ -1359,7 +1374,8 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
 class MOZ_STACK_CLASS HTMLEditor::HTMLTransferablePreparer {
  public:
   HTMLTransferablePreparer(const HTMLEditor& aHTMLEditor,
-                           nsITransferable** aTransferable);
+                           nsITransferable** aTransferable,
+                           const Element* aEditingHost);
 
   nsresult Run();
 
@@ -1367,19 +1383,24 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLTransferablePreparer {
   void AddDataFlavorsInBestOrder(nsITransferable& aTransferable) const;
 
   const HTMLEditor& mHTMLEditor;
+  const Element* const mEditingHost;
   nsITransferable** mTransferable;
 };
 
 HTMLEditor::HTMLTransferablePreparer::HTMLTransferablePreparer(
-    const HTMLEditor& aHTMLEditor, nsITransferable** aTransferable)
-    : mHTMLEditor{aHTMLEditor}, mTransferable{aTransferable} {
+    const HTMLEditor& aHTMLEditor, nsITransferable** aTransferable,
+    const Element* aEditingHost)
+    : mHTMLEditor{aHTMLEditor},
+      mEditingHost(aEditingHost),
+      mTransferable{aTransferable} {
   MOZ_ASSERT(mTransferable);
   MOZ_ASSERT(!*mTransferable);
 }
 
 nsresult HTMLEditor::PrepareHTMLTransferable(
-    nsITransferable** aTransferable) const {
-  HTMLTransferablePreparer htmlTransferablePreparer{*this, aTransferable};
+    nsITransferable** aTransferable, const Element* aEditingHost) const {
+  HTMLTransferablePreparer htmlTransferablePreparer{*this, aTransferable,
+                                                    aEditingHost};
   return htmlTransferablePreparer.Run();
 }
 
@@ -1418,7 +1439,8 @@ void HTMLEditor::HTMLTransferablePreparer::AddDataFlavorsInBestOrder(
   
   
   
-  if (!mHTMLEditor.IsPlaintextMailComposer()) {
+  if (!mHTMLEditor.IsPlaintextMailComposer() &&
+      !(mEditingHost && mEditingHost->IsContentEditablePlainTextOnly())) {
     DebugOnly<nsresult> rvIgnored =
         aTransferable.AddDataFlavor(kNativeHTMLMime);
     NS_WARNING_ASSERTION(
@@ -2130,7 +2152,7 @@ static void GetStringFromDataTransfer(const DataTransfer* aDataTransfer,
 nsresult HTMLEditor::InsertFromDataTransfer(
     const DataTransfer* aDataTransfer, uint32_t aIndex,
     nsIPrincipal* aSourcePrincipal, const EditorDOMPoint& aDroppedAt,
-    DeleteSelectedContent aDeleteSelectedContent) {
+    DeleteSelectedContent aDeleteSelectedContent, const Element& aEditingHost) {
   MOZ_ASSERT(GetEditAction() == EditAction::eDrop ||
              GetEditAction() == EditAction::ePaste);
   MOZ_ASSERT(mPlaceholderBatch,
@@ -2149,7 +2171,8 @@ nsresult HTMLEditor::InsertFromDataTransfer(
   const bool hasPrivateHTMLFlavor =
       types->Contains(NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext));
 
-  const bool isPlaintextEditor = IsPlaintextMailComposer();
+  const bool isPlaintextEditor = IsPlaintextMailComposer() ||
+                                 aEditingHost.IsContentEditablePlainTextOnly();
   const SafeToInsertData safeToInsertData =
       IsSafeToInsertData(aSourcePrincipal);
 
@@ -2295,13 +2318,23 @@ nsresult HTMLEditor::HandlePaste(AutoEditActionDataSetter& aEditActionData,
                          "CanHandleAndMaybeDispatchBeforeInputEvent() failed");
     return rv;
   }
-  rv = PasteInternal(aClipboardType);
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
+  }
+  rv = PasteInternal(aClipboardType, *editingHost);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::PasteInternal() failed");
   return rv;
 }
 
-nsresult HTMLEditor::PasteInternal(nsIClipboard::ClipboardType aClipboardType) {
+nsresult HTMLEditor::PasteInternal(nsIClipboard::ClipboardType aClipboardType,
+                                   const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (MOZ_UNLIKELY(!IsModifiable())) {
+    return NS_OK;
+  }
 
   
   nsresult rv = NS_OK;
@@ -2314,7 +2347,7 @@ nsresult HTMLEditor::PasteInternal(nsIClipboard::ClipboardType aClipboardType) {
 
   
   nsCOMPtr<nsITransferable> transferable;
-  rv = PrepareHTMLTransferable(getter_AddRefs(transferable));
+  rv = PrepareHTMLTransferable(getter_AddRefs(transferable), &aEditingHost);
   if (NS_FAILED(rv)) {
     NS_WARNING("HTMLEditor::PrepareHTMLTransferable() failed");
     return rv;
@@ -2333,11 +2366,6 @@ nsresult HTMLEditor::PasteInternal(nsIClipboard::ClipboardType aClipboardType) {
   if (NS_FAILED(rv)) {
     NS_WARNING("nsIClipboard::GetData() failed");
     return rv;
-  }
-
-  
-  if (!IsModifiable()) {
-    return NS_OK;
   }
 
   
@@ -2433,6 +2461,12 @@ nsresult HTMLEditor::HandlePasteTransferable(
     return rv;
   }
 
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
+  }
+
   RefPtr<DataTransfer> dataTransfer = GetInputEventDataTransfer();
   if (dataTransfer->HasFile() && dataTransfer->MozItemCount() > 0) {
     
@@ -2440,7 +2474,7 @@ nsresult HTMLEditor::HandlePasteTransferable(
         *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
     rv = InsertFromDataTransfer(dataTransfer, 0, nullptr, EditorDOMPoint(),
-                                DeleteSelectedContent::Yes);
+                                DeleteSelectedContent::Yes, *editingHost);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::InsertFromDataTransfer("
                          "DeleteSelectedContent::Yes) failed");
@@ -2549,6 +2583,9 @@ nsresult HTMLEditor::PasteNoFormattingAsAction(
   }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::CommitComposition() failed, but ignored");
+  if (MOZ_UNLIKELY(!IsModifiable())) {
+    return NS_OK;
+  }
 
   
   nsCOMPtr<nsIClipboard> clipboard(
@@ -2579,10 +2616,6 @@ nsresult HTMLEditor::PasteNoFormattingAsAction(
     NS_WARNING(
         "EditorUtils::CreateTransferableForPlainText() returned nullptr, but "
         "ignored");
-    return NS_OK;
-  }
-
-  if (!IsModifiable()) {
     return NS_OK;
   }
 
@@ -2619,6 +2652,12 @@ bool HTMLEditor::CanPaste(nsIClipboard::ClipboardType aClipboardType) const {
     return false;
   }
 
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (!editingHost) {
+    return false;
+  }
+
   nsresult rv;
   nsCOMPtr<nsIClipboard> clipboard(
       do_GetService("@mozilla.org/widget/clipboard;1", &rv));
@@ -2628,7 +2667,8 @@ bool HTMLEditor::CanPaste(nsIClipboard::ClipboardType aClipboardType) const {
   }
 
   
-  if (IsPlaintextMailComposer()) {
+  if (IsPlaintextMailComposer() ||
+      editingHost->IsContentEditablePlainTextOnly()) {
     AutoTArray<nsCString, ArrayLength(textEditorFlavors)> flavors;
     flavors.AppendElements<const char*>(Span<const char*>(textEditorFlavors));
     bool haveFlavors;
@@ -2654,6 +2694,12 @@ bool HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable) {
     return false;
   }
 
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (!editingHost) {
+    return false;
+  }
+
   
   if (!aTransferable) {
     return true;
@@ -2664,7 +2710,8 @@ bool HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable) {
   
   const char** flavors;
   size_t length;
-  if (IsPlaintextMailComposer()) {
+  if (IsPlaintextMailComposer() ||
+      editingHost->IsContentEditablePlainTextOnly()) {
     flavors = textEditorFlavors;
     length = ArrayLength(textEditorFlavors);
   } else {
@@ -2702,8 +2749,15 @@ nsresult HTMLEditor::HandlePasteAsQuotation(
     return rv;
   }
 
-  if (IsPlaintextMailComposer()) {
-    nsresult rv = PasteAsPlaintextQuotation(aClipboardType);
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (!editingHost) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (IsPlaintextMailComposer() ||
+      editingHost->IsContentEditablePlainTextOnly()) {
+    nsresult rv = PasteAsPlaintextQuotation(aClipboardType, *editingHost);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::PasteAsPlaintextQuotation() failed");
     return rv;
@@ -2804,13 +2858,13 @@ nsresult HTMLEditor::HandlePasteAsQuotation(
     return rv;
   }
 
-  rv = PasteInternal(aClipboardType);
+  rv = PasteInternal(aClipboardType, *editingHost);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::PasteInternal() failed");
   return rv;
 }
 
 nsresult HTMLEditor::PasteAsPlaintextQuotation(
-    nsIClipboard::ClipboardType aSelectionType) {
+    nsIClipboard::ClipboardType aSelectionType, const Element& aEditingHost) {
   
   nsresult rv;
   nsCOMPtr<nsIClipboard> clipboard =
@@ -2877,7 +2931,7 @@ nsresult HTMLEditor::PasteAsPlaintextQuotation(
 
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-  rv = InsertAsPlaintextQuotation(stuffToPaste, true, 0);
+  rv = InsertAsPlaintextQuotation(stuffToPaste, AddCites::Yes, aEditingHost);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::InsertAsPlaintextQuotation() failed");
   return rv;
@@ -2969,20 +3023,26 @@ NS_IMETHODIMP HTMLEditor::InsertTextWithQuotations(
     return NS_OK;
   }
 
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   AutoTransactionBatch bundleAllTransactions(*this, __FUNCTION__);
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
-  rv = InsertTextWithQuotationsInternal(aStringToInsert);
+  rv = InsertTextWithQuotationsInternal(aStringToInsert, *editingHost);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::InsertTextWithQuotationsInternal() failed");
   return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult HTMLEditor::InsertTextWithQuotationsInternal(
-    const nsAString& aStringToInsert) {
+    const nsAString& aStringToInsert, const Element& aEditingHost) {
   MOZ_ASSERT(!aStringToInsert.IsEmpty());
   
   
@@ -3052,10 +3112,8 @@ nsresult HTMLEditor::InsertTextWithQuotationsInternal(
     
     
     const nsAString& curHunk = Substring(hunkStart, lineStart);
-    nsCOMPtr<nsINode> dummyNode;
     if (curHunkIsQuoted) {
-      rv =
-          InsertAsPlaintextQuotation(curHunk, false, getter_AddRefs(dummyNode));
+      rv = InsertAsPlaintextQuotation(curHunk, AddCites::No, aEditingHost);
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -3082,7 +3140,14 @@ nsresult HTMLEditor::InsertTextWithQuotationsInternal(
 
 nsresult HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
                                        nsINode** aNodeInserted) {
-  if (IsPlaintextMailComposer()) {
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (IsPlaintextMailComposer() ||
+      editingHost->IsContentEditablePlainTextOnly()) {
     AutoEditActionDataSetter editActionData(*this, EditAction::eInsertText);
     MOZ_ASSERT(!aQuotedText.IsVoid());
     editActionData.SetData(aQuotedText);
@@ -3095,7 +3160,8 @@ nsresult HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
     }
     AutoPlaceholderBatch treatAsOneTransaction(
         *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-    rv = InsertAsPlaintextQuotation(aQuotedText, true, aNodeInserted);
+    rv = InsertAsPlaintextQuotation(aQuotedText, AddCites::Yes, *editingHost,
+                                    aNodeInserted);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::InsertAsPlaintextQuotation() failed");
     return EditorBase::ToGenericNSResult(rv);
@@ -3125,7 +3191,8 @@ nsresult HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
 
 
 nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
-                                                bool aAddCites,
+                                                AddCites aAddCites,
+                                                const Element& aEditingHost,
                                                 nsINode** aNodeInserted) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
@@ -3183,59 +3250,67 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  Result<RefPtr<Element>, nsresult> spanElementOrError =
-      DeleteSelectionAndCreateElement(
-          *nsGkAtoms::span, [](HTMLEditor&, Element& aSpanElement,
-                               const EditorDOMPoint& aPointToInsert) {
-            
-            DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
-                kNameSpaceID_None, nsGkAtoms::mozquote, u"true"_ns,
-                aSpanElement.IsInComposedDoc());
-            NS_WARNING_ASSERTION(
-                NS_SUCCEEDED(rvIgnored),
-                nsPrintfCString(
-                    "Element::SetAttr(nsGkAtoms::mozquote, \"true\", %s) "
-                    "failed",
-                    aSpanElement.IsInComposedDoc() ? "true" : "false")
-                    .get());
-            
-            if (aPointToInsert.IsContainerHTMLElement(nsGkAtoms::body)) {
+  RefPtr<Element> containerSpanElement;
+  if (!aEditingHost.IsContentEditablePlainTextOnly()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    Result<RefPtr<Element>, nsresult> spanElementOrError =
+        DeleteSelectionAndCreateElement(
+            *nsGkAtoms::span, [](HTMLEditor&, Element& aSpanElement,
+                                 const EditorDOMPoint& aPointToInsert) {
+              
+              
               DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
-                  kNameSpaceID_None, nsGkAtoms::style,
-                  nsLiteralString(u"white-space: pre-wrap; display: block; "
-                                  u"width: 98vw;"),
-                  false);
+                  kNameSpaceID_None, nsGkAtoms::mozquote, u"true"_ns,
+                  aSpanElement.IsInComposedDoc());
               NS_WARNING_ASSERTION(
                   NS_SUCCEEDED(rvIgnored),
-                  "Element::SetAttr(nsGkAtoms::style, \"pre-wrap, block\", "
-                  "false) failed, but ignored");
-            } else {
-              DebugOnly<nsresult> rvIgnored =
-                  aSpanElement.SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                                       u"white-space: pre-wrap;"_ns, false);
-              NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                                   "Element::SetAttr(nsGkAtoms::style, "
-                                   "\"pre-wrap\", false) failed, but ignored");
-            }
-            return NS_OK;
-          });
-  NS_WARNING_ASSERTION(spanElementOrError.isOk(),
-                       "HTMLEditor::DeleteSelectionAndCreateElement(nsGkAtoms::"
-                       "span) failed, but ignored");
-
-  
-  
-  
-  
-  if (spanElementOrError.isOk()) {
+                  nsPrintfCString(
+                      "Element::SetAttr(nsGkAtoms::mozquote, \"true\", %s) "
+                      "failed",
+                      aSpanElement.IsInComposedDoc() ? "true" : "false")
+                      .get());
+              
+              
+              if (aPointToInsert.IsContainerHTMLElement(nsGkAtoms::body)) {
+                DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
+                    kNameSpaceID_None, nsGkAtoms::style,
+                    nsLiteralString(u"white-space: pre-wrap; display: block; "
+                                    u"width: 98vw;"),
+                    false);
+                NS_WARNING_ASSERTION(
+                    NS_SUCCEEDED(rvIgnored),
+                    "Element::SetAttr(nsGkAtoms::style, \"pre-wrap, block\", "
+                    "false) failed, but ignored");
+              } else {
+                DebugOnly<nsresult> rvIgnored =
+                    aSpanElement.SetAttr(kNameSpaceID_None, nsGkAtoms::style,
+                                         u"white-space: pre-wrap;"_ns, false);
+                NS_WARNING_ASSERTION(
+                    NS_SUCCEEDED(rvIgnored),
+                    "Element::SetAttr(nsGkAtoms::style, "
+                    "\"pre-wrap\", false) failed, but ignored");
+              }
+              return NS_OK;
+            });
+    if (MOZ_UNLIKELY(spanElementOrError.isErr())) {
+      NS_WARNING(
+          "HTMLEditor::DeleteSelectionAndCreateElement(nsGkAtoms::span) "
+          "failed");
+      return NS_OK;
+    }
+    
+    
+    
+    
     MOZ_ASSERT(spanElementOrError.inspect());
-    rv = CollapseSelectionToStartOf(
+    nsresult rv = CollapseSelectionToStartOf(
         MOZ_KnownLive(*spanElementOrError.inspect()));
     if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
       NS_WARNING(
@@ -3246,18 +3321,19 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
         "EditorBase::CollapseSelectionToStartOf() failed, but ignored");
+    containerSpanElement = spanElementOrError.unwrap();
   }
 
   
   
-  if (aAddCites) {
-    rv = InsertWithQuotationsAsSubAction(aQuotedText);
+  if (aAddCites == AddCites::Yes) {
+    nsresult rv = InsertWithQuotationsAsSubAction(aQuotedText);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::InsertWithQuotationsAsSubAction() failed");
       return rv;
     }
   } else {
-    rv = InsertTextAsSubAction(aQuotedText, SelectionHandling::Delete);
+    nsresult rv = InsertTextAsSubAction(aQuotedText, SelectionHandling::Delete);
     if (NS_FAILED(rv)) {
       NS_WARNING("EditorBase::InsertTextAsSubAction() failed");
       return rv;
@@ -3265,33 +3341,31 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   }
 
   
-  if (spanElementOrError.isErr()) {
-    return NS_OK;
-  }
-
   
-  EditorRawDOMPoint afterNewSpanElement(
-      EditorRawDOMPoint::After(*spanElementOrError.inspect()));
-  NS_WARNING_ASSERTION(
-      afterNewSpanElement.IsSet(),
-      "Failed to set after the new <span> element, but ignored");
-  if (afterNewSpanElement.IsSet()) {
-    nsresult rv = CollapseSelectionTo(afterNewSpanElement);
-    if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      NS_WARNING(
-          "EditorBase::CollapseSelectionTo() caused destroying the editor");
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
+  if (containerSpanElement) {
+    EditorRawDOMPoint afterNewSpanElement(
+        EditorRawDOMPoint::After(*containerSpanElement));
     NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "EditorBase::CollapseSelectionTo() failed, but ignored");
-  }
+        afterNewSpanElement.IsSet(),
+        "Failed to set after the new <span> element, but ignored");
+    if (afterNewSpanElement.IsSet()) {
+      nsresult rv = CollapseSelectionTo(afterNewSpanElement);
+      if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        NS_WARNING(
+            "EditorBase::CollapseSelectionTo() caused destroying the editor");
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "EditorBase::CollapseSelectionTo() failed, but ignored");
+    }
 
-  
-  
-  
-  if (aNodeInserted) {
-    spanElementOrError.unwrap().forget(aNodeInserted);
+    
+    
+    
+    if (aNodeInserted) {
+      containerSpanElement.forget(aNodeInserted);
+    }
   }
 
   return NS_OK;
@@ -3304,6 +3378,12 @@ NS_IMETHODIMP HTMLEditor::Rewrap(bool aRespectNewlines) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
                          "CanHandleAndMaybeDispatchBeforeInputEvent(), failed");
     return EditorBase::ToGenericNSResult(rv);
+  }
+
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -3351,7 +3431,7 @@ NS_IMETHODIMP HTMLEditor::Rewrap(bool aRespectNewlines) {
   AutoTransactionBatch bundleAllTransactions(*this, __FUNCTION__);
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-  rv = InsertTextWithQuotationsInternal(wrapped);
+  rv = InsertTextWithQuotationsInternal(wrapped, *editingHost);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::InsertTextWithQuotationsInternal() failed");
   return EditorBase::ToGenericNSResult(rv);
@@ -3361,8 +3441,15 @@ NS_IMETHODIMP HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
                                                  const nsAString& aCitation,
                                                  bool aInsertHTML,
                                                  nsINode** aNodeInserted) {
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
+  }
+
   
-  if (IsPlaintextMailComposer()) {
+  if (IsPlaintextMailComposer() ||
+      editingHost->IsContentEditablePlainTextOnly()) {
     NS_ASSERTION(
         !aInsertHTML,
         "InsertAsCitedQuotation: trying to insert html into plaintext editor");
@@ -3380,7 +3467,8 @@ NS_IMETHODIMP HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
 
     AutoPlaceholderBatch treatAsOneTransaction(
         *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-    rv = InsertAsPlaintextQuotation(aQuotedText, true, aNodeInserted);
+    rv = InsertAsPlaintextQuotation(aQuotedText, AddCites::Yes, *editingHost,
+                                    aNodeInserted);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::InsertAsPlaintextQuotation() failed");
     return EditorBase::ToGenericNSResult(rv);
