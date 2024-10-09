@@ -44,8 +44,11 @@ function cloneTest(value, verifyFunc) {
     const store = tx.objectStore('store');
     await promiseForRequest(t, store.put(value, 'key'));
     const result = await promiseForRequest(t, store.get('key'));
-    await verifyFunc(value, result);
+    
+    
+    
     await promiseForTransaction(t, tx);
+    await verifyFunc(value, result);
   }, describe(value));
 }
 
