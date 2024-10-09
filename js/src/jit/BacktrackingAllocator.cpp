@@ -3904,6 +3904,59 @@ static void AssertCorrectRangeForPosition(const VirtualRegister& reg,
 #endif
 }
 
+
+bool BacktrackingAllocator::createMoveGroupsForControlFlowEdges(
+    const VirtualRegister& reg, const ControlFlowEdgeVector& edges) {
+  
+  
+  
+  
+
+  VirtualRegister::RangeIterator iter(reg);
+  LiveRange* nonRegisterRange = nullptr;
+
+  for (const ControlFlowEdge& edge : edges) {
+    CodePosition pos = edge.predecessorExit;
+
+    
+    LiveRange* predecessorRange = nullptr;
+    while (true) {
+      if (iter.done() || iter->from() > pos) {
+        
+        predecessorRange = nonRegisterRange;
+        break;
+      }
+      if (iter->to() <= pos) {
+        
+        iter++;
+        continue;
+      }
+      MOZ_ASSERT(iter->covers(pos));
+      if (iter->bundle()->allocation().isRegister()) {
+        predecessorRange = *iter;
+        break;
+      }
+      if (!nonRegisterRange || iter->to() > nonRegisterRange->to()) {
+        nonRegisterRange = *iter;
+      }
+      iter++;
+    }
+    MOZ_ASSERT(predecessorRange);
+    AssertCorrectRangeForPosition(reg, pos, predecessorRange);
+
+    if (!alloc().ensureBallast()) {
+      return false;
+    }
+    JitSpew(JitSpew_RegAlloc, "    (moveAtEdge#2)");
+    if (!moveAtEdge(edge.predecessor, edge.successor, predecessorRange,
+                    edge.successorRange, reg.type())) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
   
   JitSpew(JitSpew_RegAlloc, "ResolveControlFlow: begin");
@@ -4075,8 +4128,15 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
 
   
   
+  ControlFlowEdgeVector edges;
   for (size_t i = 1; i < graph.numVirtualRegisters(); i++) {
     VirtualRegister& reg = vregs[i];
+
+    
+    
+    
+    
+    edges.clear();
     for (VirtualRegister::RangeIterator iter(reg); iter; iter++) {
       LiveRange* targetRange = *iter;
 
@@ -4097,21 +4157,33 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
 
         for (size_t j = 0; j < successor->mir()->numPredecessors(); j++) {
           LBlock* predecessor = successor->mir()->getPredecessor(j)->lir();
-          if (targetRange->covers(exitOf(predecessor))) {
+          CodePosition predecessorExit = exitOf(predecessor);
+          if (targetRange->covers(predecessorExit)) {
             continue;
           }
-
-          if (!alloc().ensureBallast()) {
-            return false;
-          }
-          JitSpew(JitSpew_RegAlloc, "    (moveAtEdge#2)");
-          LiveRange* from = reg.rangeFor(exitOf(predecessor), true);
-          if (!moveAtEdge(predecessor, successor, from, targetRange,
-                          reg.type())) {
+          if (!edges.emplaceBack(predecessor, successor, targetRange,
+                                 predecessorExit)) {
             return false;
           }
         }
       }
+    }
+
+    if (edges.empty()) {
+      continue;
+    }
+
+    
+    
+    
+    auto compareEdges = [](const ControlFlowEdge& a, const ControlFlowEdge& b) {
+      return a.predecessorExit < b.predecessorExit;
+    };
+    std::sort(edges.begin(), edges.end(), compareEdges);
+
+    
+    if (!createMoveGroupsForControlFlowEdges(reg, edges)) {
+      return false;
     }
   }
 
