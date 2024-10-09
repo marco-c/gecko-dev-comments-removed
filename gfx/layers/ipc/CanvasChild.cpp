@@ -406,6 +406,8 @@ void CanvasChild::DropFreeBuffersWhenDormant() {
   
   if (mDormant && mRecorder) {
     mRecorder->DropFreeBuffers();
+    
+    SendDropFreeBuffersWhenDormant();
   }
 }
 

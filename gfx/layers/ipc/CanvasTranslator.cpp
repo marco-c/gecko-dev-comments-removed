@@ -756,6 +756,9 @@ void CanvasTranslator::HandleCanvasTranslatorEvents() {
       case CanvasTranslatorEvent::Tag::ClearCachedResources:
         ClearCachedResources();
         break;
+      case CanvasTranslatorEvent::Tag::DropFreeBuffersWhenDormant:
+        DropFreeBuffersWhenDormant();
+        break;
     }
 
     event.reset(nullptr);
@@ -1029,23 +1032,30 @@ void CanvasTranslator::PrepareShmem(int64_t aTextureId) {
   }
 }
 
-void CanvasTranslator::ClearCachedResources() {
-  mUsedDataSurfaceForSurfaceDescriptor = nullptr;
-  mUsedWrapperForSurfaceDescriptor = nullptr;
-  mUsedSurfaceDescriptorForSurfaceDescriptor = Nothing();
-
+void CanvasTranslator::CacheDataSnapshots() {
   if (mSharedContext) {
     
     
     
     
-    mSharedContext->OnMemoryPressure();
     for (auto const& entry : mTextureInfo) {
       if (gfx::DrawTargetWebgl* webgl = entry.second.GetDrawTargetWebgl()) {
         webgl->EnsureDataSnapshot();
       }
     }
   }
+}
+
+void CanvasTranslator::ClearCachedResources() {
+  mUsedDataSurfaceForSurfaceDescriptor = nullptr;
+  mUsedWrapperForSurfaceDescriptor = nullptr;
+  mUsedSurfaceDescriptorForSurfaceDescriptor = Nothing();
+
+  if (mSharedContext) {
+    mSharedContext->OnMemoryPressure();
+  }
+
+  CacheDataSnapshots();
 }
 
 ipc::IPCResult CanvasTranslator::RecvClearCachedResources() {
@@ -1063,6 +1073,27 @@ ipc::IPCResult CanvasTranslator::RecvClearCachedResources() {
     DispatchToTaskQueue(
         NewRunnableMethod("CanvasTranslator::ClearCachedResources", this,
                           &CanvasTranslator::ClearCachedResources));
+  }
+  return IPC_OK();
+}
+
+void CanvasTranslator::DropFreeBuffersWhenDormant() { CacheDataSnapshots(); }
+
+ipc::IPCResult CanvasTranslator::RecvDropFreeBuffersWhenDormant() {
+  if (mDeactivated) {
+    
+    return IPC_OK();
+  }
+
+  if (UsePendingCanvasTranslatorEvents()) {
+    MutexAutoLock lock(mCanvasTranslatorEventsLock);
+    mPendingCanvasTranslatorEvents.emplace_back(
+        CanvasTranslatorEvent::DropFreeBuffersWhenDormant());
+    PostCanvasTranslatorEvents(lock);
+  } else {
+    DispatchToTaskQueue(
+        NewRunnableMethod("CanvasTranslator::DropFreeBuffersWhenDormant", this,
+                          &CanvasTranslator::DropFreeBuffersWhenDormant));
   }
   return IPC_OK();
 }
