@@ -485,12 +485,7 @@ var FullZoom = {
   
 
 
-
-
-  resetFromURLBar(event) {
-    if (event.button > 0) {
-      return;
-    }
+  resetFromURLBar() {
     this.reset();
     this.resetScalingZoom();
   },
