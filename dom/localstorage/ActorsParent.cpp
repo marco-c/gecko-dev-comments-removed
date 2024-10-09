@@ -1796,10 +1796,6 @@ class Database final
 
   const PrincipalInfo& GetPrincipalInfo() const { return mPrincipalInfo; }
 
-  bool IsOwnedByProcess(ContentParentId aContentParentId) const {
-    return mContentParentId && mContentParentId.value() == aContentParentId;
-  }
-
   const Maybe<ContentParentId>& ContentParentIdRef() const {
     return mContentParentId;
   }
@@ -8734,9 +8730,18 @@ void QuotaClient::AbortOperationsForLocks(
 void QuotaClient::AbortOperationsForProcess(ContentParentId aContentParentId) {
   AssertIsOnBackgroundThread();
 
+  
+  Maybe<ContentParentId> contentParentId;
+
+  if (aContentParentId) {
+    contentParentId = Some(aContentParentId);
+  }
+
+  
+
   RequestAllowToCloseDatabasesMatching(
-      [&aContentParentId](const auto& database) {
-        return database.IsOwnedByProcess(aContentParentId);
+      [&contentParentId](const auto& database) {
+        return database.ContentParentIdRef() == contentParentId;
       });
 }
 
