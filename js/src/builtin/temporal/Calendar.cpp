@@ -3671,48 +3671,6 @@ bool js::temporal::CalendarDateFromFields(
   return CreateTemporalDate(cx, date, calendar, result);
 }
 
-
-
-
-static PlainDateObject* CalendarDateFromFields(JSContext* cx,
-                                               Handle<CalendarRecord> calendar,
-                                               Handle<PlainObject*> fields,
-                                               Handle<JSObject*> maybeOptions) {
-  auto overflow = TemporalOverflow::Constrain;
-  if (maybeOptions) {
-    if (!GetTemporalOverflowOption(cx, maybeOptions, &overflow)) {
-      return nullptr;
-    }
-  }
-
-  Rooted<PlainDateWithCalendar> result(cx);
-  if (!CalendarDateFromFields(cx, calendar.receiver(), fields, overflow,
-                              &result)) {
-    return nullptr;
-  }
-  return CreateTemporalDate(cx, result);
-}
-
-
-
-
-Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar,
-    Handle<PlainObject*> fields) {
-  
-  return ::CalendarDateFromFields(cx, calendar, fields, nullptr);
-}
-
-
-
-
-Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
-    Handle<PlainObject*> options) {
-  
-  return ::CalendarDateFromFields(cx, calendar, fields, options);
-}
-
 struct RegulatedISOYearMonth final {
   double year = 0;
   int32_t month = 0;
