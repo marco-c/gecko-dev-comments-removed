@@ -41,16 +41,6 @@ TEST_F(TelemetryTestFixture, RecordEventNative) {
       "limit which at time of writing was 80 bytes.");
 
   
-  Telemetry::SetEventRecordingEnabled(category, false);
-
-  
-  TelemetryEvent::RecordEventNative(
-      Telemetry::EventID::TelemetryTest_Test1_Object1, Nothing(), Nothing());
-
-  
-  Telemetry::SetEventRecordingEnabled(category, true);
-
-  
   TelemetryEvent::RecordEventNative(
       Telemetry::EventID::TelemetryTest_Test2_Object1, Nothing(), Nothing());
 

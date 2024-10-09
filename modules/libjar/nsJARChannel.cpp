@@ -24,7 +24,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "private/pprio.h"
 #include "nsInputStreamPump.h"
@@ -871,7 +870,6 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   bool isTest = fileName.Find("test_empty_file.zip!") != -1;
   bool isOmniJa = StringBeginsWith(fileName, "omni.ja!"_ns);
 
-  Telemetry::SetEventRecordingEnabled("zero_byte_load"_ns, true);
   if (StringEndsWith(fileName, ".ftl"_ns)) {
     
     
