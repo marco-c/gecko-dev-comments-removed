@@ -624,6 +624,7 @@ static bool DifferenceTemporalInstant(JSContext* cx,
   
   DifferenceSettings settings;
   if (args.hasDefined(1)) {
+    
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
     if (!options) {
@@ -631,16 +632,9 @@ static bool DifferenceTemporalInstant(JSContext* cx,
     }
 
     
-    Rooted<PlainObject*> resolvedOptions(cx,
-                                         SnapshotOwnProperties(cx, options));
-    if (!resolvedOptions) {
-      return false;
-    }
-
-    
-    if (!GetDifferenceSettings(
-            cx, operation, resolvedOptions, TemporalUnitGroup::Time,
-            TemporalUnit::Nanosecond, TemporalUnit::Second, &settings)) {
+    if (!GetDifferenceSettings(cx, operation, options, TemporalUnitGroup::Time,
+                               TemporalUnit::Nanosecond, TemporalUnit::Second,
+                               &settings)) {
       return false;
     }
   } else {
