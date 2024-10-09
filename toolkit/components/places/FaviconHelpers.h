@@ -14,7 +14,6 @@
 #include "nsThreadUtils.h"
 #include "nsProxyRelease.h"
 #include "imgLoader.h"
-#include "PlacesCompletionCallback.h"
 
 class nsIPrincipal;
 
@@ -151,14 +150,10 @@ class AsyncSetIconForPage final : public Runnable {
 
 
 
-
-
   AsyncSetIconForPage(const IconData& aIcon, const PageData& aPage,
-                      PlacesCompletionCallback* aCallback,
                       dom::Promise* aPromise);
 
  private:
-  nsMainThreadPtrHandle<PlacesCompletionCallback> mCallback;
   nsMainThreadPtrHandle<dom::Promise> mPromise;
   IconData mIcon;
   PageData mPage;
