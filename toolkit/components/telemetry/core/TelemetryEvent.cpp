@@ -12,6 +12,7 @@
 #include "js/Array.h"  
 #include "js/PropertyAndElement.h"  
 #include "mozilla/Maybe.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
@@ -52,6 +53,47 @@ using mozilla::Telemetry::Common::MsSinceProcessStart;
 using mozilla::Telemetry::Common::ToJSString;
 
 namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
+
+namespace geckoprofiler::markers {
+
+struct EventMarker {
+  static constexpr mozilla::Span<const char> MarkerTypeName() {
+    return mozilla::MakeStringSpan("TEvent");
+  }
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+      const nsCString& aCategory, const nsCString& aMethod,
+      const nsCString& aObject, const Maybe<nsCString>& aValue) {
+    aWriter.UniqueStringProperty("cat", aCategory);
+    aWriter.UniqueStringProperty("met", aMethod);
+    aWriter.UniqueStringProperty("obj", aObject);
+    if (aValue.isSome()) {
+      aWriter.StringProperty("val", aValue.value());
+    }
+  }
+  using MS = mozilla::MarkerSchema;
+  static MS MarkerTypeDisplay() {
+    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
+    schema.AddKeyLabelFormatSearchable("cat", "Category",
+                                       MS::Format::UniqueString,
+                                       MS::Searchable::Searchable);
+    schema.AddKeyLabelFormatSearchable(
+        "met", "Method", MS::Format::UniqueString, MS::Searchable::Searchable);
+    schema.AddKeyLabelFormatSearchable(
+        "obj", "Object", MS::Format::UniqueString, MS::Searchable::Searchable);
+    schema.AddKeyLabelFormatSearchable("val", "Value", MS::Format::String,
+                                       MS::Searchable::Searchable);
+    schema.SetTooltipLabel(
+        "{marker.data.cat}.{marker.data.met}#{marker.data.obj} "
+        "{marker.data.val}");
+    schema.SetTableLabel(
+        "{marker.name} - {marker.data.cat}.{marker.data.met}#"
+        "{marker.data.obj} {marker.data.val}");
+    return schema;
+  }
+};
+
+}  
 
 
 
@@ -293,7 +335,7 @@ nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 nsTHashSet<nsCString> gCategoryNames;
 
 
-nsTHashSet<nsCString> gEnabledCategories;
+nsTHashSet<nsCString> gDisabledCategories;
 
 
 
@@ -461,7 +503,7 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
                                   processType, dynamicNonBuiltin);
 
   
-  if (!gEnabledCategories.Contains(GetCategory(lock, eventKey))) {
+  if (gDisabledCategories.Contains(GetCategory(lock, eventKey))) {
     return RecordEventResult::Ok;
   }
 
@@ -539,12 +581,6 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
   
   if (aBuiltin) {
     gCategoryNames.Insert(category);
-  }
-
-  if (!aBuiltin) {
-    
-    
-    gEnabledCategories.Insert(category);
   }
 }
 
@@ -708,9 +744,6 @@ void TelemetryEvent::InitializeGlobalState(bool aCanRecordBase,
     gCategoryNames.Insert(info.common_info.category());
   }
 
-  
-  gEnabledCategories.Insert("avif"_ns);
-
   gInitDone = true;
 }
 
@@ -723,7 +756,7 @@ void TelemetryEvent::DeInitializeGlobalState() {
 
   gEventNameIDMap.Clear();
   gCategoryNames.Clear();
-  gEnabledCategories.Clear();
+  gDisabledCategories.Clear();
   gEventRecords.Clear();
 
   gDynamicEventInfo = nullptr;
@@ -754,6 +787,9 @@ nsresult TelemetryEvent::RecordChildEvents(
     
     double relativeTimestamp =
         (e.timestamp - TimeStamp::ProcessCreation()).ToMilliseconds();
+
+    PROFILER_MARKER("ChildEvent", TELEMETRY, {}, EventMarker, e.category,
+                    e.method, e.object, e.value);
 
     ::RecordEvent(locker, aProcessType, relativeTimestamp, e.category, e.method,
                   e.object, e.value, e.extra);
@@ -807,6 +843,10 @@ nsresult TelemetryEvent::RecordEvent(const nsACString& aCategory,
         LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Extra);
     return NS_OK;
   }
+
+  PROFILER_MARKER("Event", TELEMETRY, {}, EventMarker,
+                  PromiseFlatCString(aCategory), PromiseFlatCString(aMethod),
+                  PromiseFlatCString(aObject), value);
 
   
   ExtraArray extra;
@@ -959,6 +999,10 @@ void TelemetryEvent::RecordEventNative(
   const nsCString category(info.common_info.category());
   const nsCString method(info.method());
   const nsCString object(info.object());
+
+  PROFILER_MARKER("Event", TELEMETRY, {}, EventMarker, category, method, object,
+                  value);
+
   if (!XRE_IsParentProcess()) {
     RecordEventResult res;
     {
@@ -1341,10 +1385,10 @@ void TelemetryEvent::SetEventRecordingEnabled(const nsACString& category,
     return;
   }
 
-  if (enabled) {
-    gEnabledCategories.Insert(category);
+  if (!enabled) {
+    gDisabledCategories.Insert(category);
   } else {
-    gEnabledCategories.Remove(category);
+    gDisabledCategories.Remove(category);
   }
 }
 
@@ -1374,7 +1418,7 @@ size_t TelemetryEvent::SizeOfIncludingThis(
   }
 
   n += gCategoryNames.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  n += gEnabledCategories.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  n += gDisabledCategories.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   if (gDynamicEventInfo) {
     n += gDynamicEventInfo->ShallowSizeOfIncludingThis(aMallocSizeOf);
