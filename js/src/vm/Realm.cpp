@@ -61,7 +61,6 @@ Realm::Realm(Compartment* comp, const JS::RealmOptions& options)
 Realm::~Realm() {
   MOZ_ASSERT(!hasBeenEnteredIgnoringJit());
   MOZ_ASSERT(!isDebuggee());
-  MOZ_ASSERT(!localAllocSite);
 
   
   if (lcovRealm_) {

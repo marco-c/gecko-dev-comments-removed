@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_CompileWrappers_h
 #define jit_CompileWrappers_h
@@ -41,17 +41,17 @@ enum class AllocKind : uint8_t;
 
 class FreeSpan;
 
-}  
+}  // namespace gc
 
 namespace jit {
 
 class JitRuntime;
 
-
-
-
-
-
+// During Ion compilation we need access to various bits of the current
+// compartment, runtime and so forth. However, since compilation can run off
+// thread while the main thread is mutating the VM, this access needs
+// to be restricted. The classes below give the compiler an interface to access
+// all necessary information in a threadsafe fashion.
 
 class CompileRuntime {
   JSRuntime* runtime();
@@ -65,7 +65,7 @@ class CompileRuntime {
 
   const JitRuntime* jitRuntime();
 
-  
+  // Compilation does not occur off thread when the Gecko Profiler is enabled.
   GeckoProfilerRuntime& geckoProfiler();
 
   bool hadOutOfMemory();
@@ -93,7 +93,7 @@ class CompileRuntime {
   const void* addressOfIonBailAfterCounter();
 #endif
 
-  
+  // DOM callbacks must be threadsafe (and will hopefully be removed soon).
   const DOMCallbacks* DOMcallbacks();
 
   bool runtimeMatches(JSRuntime* rt);
@@ -128,7 +128,6 @@ class CompileZone {
 
   gc::AllocSite* catchAllAllocSite(JS::TraceKind traceKind,
                                    gc::CatchAllAllocSite siteKind);
-  gc::AllocSite* tenuringAllocSite();
 
   bool hasRealmWithAllocMetadataBuilder();
 };
@@ -178,7 +177,7 @@ class JitCompileOptions {
 #endif
 };
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif  
+#endif  // jit_CompileWrappers_h

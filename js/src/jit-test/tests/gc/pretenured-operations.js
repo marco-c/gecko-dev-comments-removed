@@ -38,7 +38,3 @@ check(() => { return Array(); });
 check(() => { return Array(100); });
 check(() => { return new Array(); });
 check(() => { return new Array(100); });
-
-
-let fdo = new FakeDOMObject();
-check(() => { return fdo.doBar(); })
