@@ -11,4 +11,12 @@ fn main() {
     if target.contains("windows") {
         println!("cargo:rustc-link-lib=winmm");
     }
+
+    
+    
+    
+    println!("cargo:rustc-check-cfg=cfg(neqo_sanitize)");
+    if env::var("CARGO_CFG_SANITIZE").is_ok() {
+        println!("cargo:rustc-cfg=neqo_sanitize");
+    }
 }

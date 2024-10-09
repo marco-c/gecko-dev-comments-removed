@@ -245,15 +245,26 @@ impl Args {
             "handshake" | "transfer" | "retry" | "ecn" => {
                 self.shared.use_old_http = true;
             }
-            "zerortt" | "resumption" => {
+            "resumption" => {
                 if self.urls.len() < 2 {
-                    qerror!("Warning: resumption tests won't work without >1 URL");
+                    qerror!("Warning: resumption test won't work without >1 URL");
+                    exit(127);
+                }
+                self.shared.use_old_http = true;
+                self.resume = true;
+            }
+            "zerortt" => {
+                if self.urls.len() < 2 {
+                    qerror!("Warning: zerortt test won't work without >1 URL");
                     exit(127);
                 }
                 self.shared.use_old_http = true;
                 self.resume = true;
                 
                 self.shared.quic_parameters.no_pmtud = true;
+                
+                
+                self.shared.quic_parameters.no_pacing = true;
             }
             "multiconnect" => {
                 self.shared.use_old_http = true;

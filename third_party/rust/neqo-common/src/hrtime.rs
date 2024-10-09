@@ -374,7 +374,9 @@ impl Drop for Time {
 
 #[cfg(all(
     test,
-    not(all(any(target_os = "macos", target_os = "windows"), feature = "ci"))
+    not(all(any(target_os = "macos", target_os = "windows"), feature = "ci")),
+    
+    not(neqo_sanitize),
 ))]
 mod test {
     use std::{

@@ -92,32 +92,19 @@ impl RecvStreams {
     }
 
     pub fn clear_terminal(&mut self, send_streams: &SendStreams, role: Role) -> (u64, u64) {
-        let recv_to_remove = self
-            .streams
-            .iter()
-            .filter_map(|(id, stream)| {
-                
-                
-                if stream.is_terminal() && (id.is_uni() || !send_streams.exists(*id)) {
-                    Some(*id)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-
         let mut removed_bidi = 0;
         let mut removed_uni = 0;
-        for id in &recv_to_remove {
-            self.streams.remove(id);
-            if id.is_remote_initiated(role) {
+        self.streams.retain(|id, s| {
+            let dead = s.is_terminal() && (id.is_uni() || !send_streams.exists(*id));
+            if dead && id.is_remote_initiated(role) {
                 if id.is_bidi() {
                     removed_bidi += 1;
                 } else {
                     removed_uni += 1;
                 }
             }
-        }
+            !dead
+        });
 
         (removed_bidi, removed_uni)
     }
