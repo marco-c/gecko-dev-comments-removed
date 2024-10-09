@@ -28,9 +28,10 @@ class ObjectsManagerActor extends Actor {
   releaseObjects(actorIDs) {
     for (const actorID of actorIDs) {
       const actor = this.conn.getActor(actorID);
-      
       if (actor) {
         actor.release();
+        
+        actor.destroy();
       }
     }
   }
