@@ -181,12 +181,30 @@ function makeMockContentAnalysis() {
       if (this.errorValue) {
         throw this.errorValue;
       }
-      let response = makeContentAnalysisResponse(
-        this.getAction(),
-        request.requestToken
-      );
+
       
-      setTimeout(() => {
+      
+      setTimeout(async () => {
+        let isDir = false;
+        try {
+          isDir = (await IOUtils.stat(request.filePath)).type == "directory";
+        } catch {}
+        if (isDir) {
+          
+          
+          
+          this.realCAService.analyzeContentRequestCallback(
+            request,
+            autoAcknowledge,
+            callback
+          );
+          return;
+        }
+
+        let response = makeContentAnalysisResponse(
+          this.getAction(),
+          request.requestToken
+        );
         callback.contentResult(response);
       }, 0);
     },
