@@ -115,7 +115,10 @@ interface nsIFaviconService : nsISupports
 
 
 
-  void setFaviconForPage(
+
+
+  [implicit_jscontext, must_use]
+  Promise setFaviconForPage(
     in nsIURI aPageURI,
     in nsIURI aFaviconURI,
     in nsIURI aDataURL,
