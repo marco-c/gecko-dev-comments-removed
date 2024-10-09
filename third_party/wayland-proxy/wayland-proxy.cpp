@@ -93,6 +93,8 @@ class ProxiedConnection {
   
   bool Process();
 
+  void PrintConnectionInfo();
+
   ~ProxiedConnection();
 
  private:
@@ -101,9 +103,11 @@ class ProxiedConnection {
 
   bool TransferOrQueue(
       int aSourceSocket, int aSourcePollFlags, int aDestSocket,
-      std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue);
+      std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue,
+      int& aStatSent, int& aStatReceived);
   bool FlushQueue(int aDestSocket, int aDestPollFlags,
-                  std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue);
+                  std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue,
+                  int& aStatSent);
 
   
   
@@ -128,6 +132,14 @@ class ProxiedConnection {
   
   std::vector<std::unique_ptr<WaylandMessage>> mToCompositorQueue;
   std::vector<std::unique_ptr<WaylandMessage>> mToApplicationQueue;
+
+  int mStatRecvFromCompositor = 0;
+  int mStatSentToCompositor = 0;
+  int mStatSentToCompositorLater = 0;
+
+  int mStatRecvFromClient = 0;
+  int mStatSentToClient = 0;
+  int mStatSentToClientLater = 0;
 };
 
 WaylandMessage::~WaylandMessage() {
@@ -355,6 +367,8 @@ bool ProxiedConnection::ConnectToCompositor() {
         return false;
     }
   }
+
+  Print("ConnectToCompositor() Connected to compositor");
   return true;
 }
 
@@ -363,17 +377,18 @@ bool ProxiedConnection::ConnectToCompositor() {
 
 bool ProxiedConnection::TransferOrQueue(
     int aSourceSocket, int aSourcePollFlags, int aDestSocket,
-    std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue) {
+    std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue,
+    int& aStatSent, int& aStatReceived) {
   
   if (!(aSourcePollFlags & POLLIN)) {
     return true;
   }
 
-  while (1) {
+  while (true) {
     int availableData = 0;
     if (ioctl(aSourceSocket, FIONREAD, &availableData) < 0) {
       
-      Warning("ProxiedConnection::TransferOrQueue() broken source socket %s\n");
+      Warning("ProxiedConnection::TransferOrQueue() broken source socket\n");
       return false;
     }
     if (availableData == 0) {
@@ -389,20 +404,25 @@ bool ProxiedConnection::TransferOrQueue(
       
       return true;
     }
-    if (!message->Write(aDestSocket)) {
-      if (message->Failed()) {
-        
-        return false;
-      }
-      aMessageQueue->push_back(std::move(message));
+    aStatReceived++;
+
+    if (message->Write(aDestSocket)) {
+      aStatSent++;
+      continue;
     }
+    if (message->Failed()) {
+      
+      return false;
+    }
+    aMessageQueue->push_back(std::move(message));
   }
 }
 
 
 bool ProxiedConnection::FlushQueue(
     int aDestSocket, int aDestPollFlags,
-    std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue) {
+    std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue,
+    int& aStatSent) {
   
   if (!(aDestPollFlags & POLLOUT) || aMessageQueue.empty()) {
     return true;
@@ -418,6 +438,7 @@ bool ProxiedConnection::FlushQueue(
       }
       break;
     }
+    aStatSent++;
     message++;
   }
 
@@ -429,25 +450,56 @@ bool ProxiedConnection::FlushQueue(
   return true;
 }
 
+void ProxiedConnection::PrintConnectionInfo() {
+  constexpr char animation[] = {'-','\\','|','/'};
+  static unsigned int animationState = 0;
+  animationState = (animationState + 1) % sizeof(animation);
+
+  static bool isCharDevice = []() {
+    struct stat st;
+    if (fstat(STDERR_FILENO, &st)) {
+      return false;
+    }
+    return (S_ISCHR(st.st_mode));
+  }();
+
+  fprintf(stderr,"%s[%p][%c] compositor [%d] -> [%d] delay [%d] pending [%d] | application [%d] -> [%d] delayed [%d] pending [%d]%c",
+  isCharDevice ? "\r" : "",
+  this,
+  animation[animationState],
+  mStatRecvFromCompositor,
+  mStatSentToClient,
+  mStatSentToClientLater,
+  mStatRecvFromCompositor - mStatSentToClient - mStatSentToClientLater,
+  mStatRecvFromClient,
+  mStatSentToCompositor,
+  mStatSentToCompositorLater,
+  mStatRecvFromClient - mStatSentToCompositor - mStatSentToCompositorLater,
+  isCharDevice ? ' ' : '\n');
+}
+
 bool ProxiedConnection::Process() {
   if (mFailed) {
+    Print("ProxiedConnection::Process(): Connection failed\n");
     return false;
   }
 
   
   if (mApplicationFlags & (POLLHUP | POLLERR)) {
+    Print("ProxiedConnection::Process(): Client socket is not listening\n");
     return false;
   }
 
   
   if (mCompositorConnected) {
     if (mCompositorFlags & (POLLHUP | POLLERR)) {
+      Print("ProxiedConnection::Process(): Compositor socket is not listening\n");
       return false;
     }
   } else {
     
     if (!ConnectToCompositor()) {
-      Print("Failed to connect to compositor\n");
+      Error("ProxiedConnection::Process(): Failed to connect to compositor\n");
       return false;
     }
     
@@ -457,15 +509,36 @@ bool ProxiedConnection::Process() {
     }
   }
 
-  mFailed =
-      !TransferOrQueue(mCompositorSocket, mCompositorFlags, mApplicationSocket,
-                       &mToApplicationQueue) ||
-      !TransferOrQueue(mApplicationSocket, mApplicationFlags, mCompositorSocket,
-                       &mToCompositorQueue) ||
-      !FlushQueue(mCompositorSocket, mCompositorFlags, mToCompositorQueue) ||
-      !FlushQueue(mApplicationSocket, mApplicationFlags, mToApplicationQueue);
+  mFailed = true;
+  if (!TransferOrQueue(mCompositorSocket, mCompositorFlags, mApplicationSocket,
+                       &mToApplicationQueue, mStatRecvFromCompositor,
+                       mStatSentToClient)) {
+    Error("ProxiedConnection::Process(): Failed to read data from compositor!");
+    return false;
+  }
+  if (!TransferOrQueue(mApplicationSocket, mApplicationFlags, mCompositorSocket,
+                       &mToCompositorQueue, mStatRecvFromClient,
+                       mStatSentToCompositor)) {
+    Error("ProxiedConnection::Process(): Failed to read data from client!");
+    return false;
+  }
+  if (!FlushQueue(mCompositorSocket, mCompositorFlags, mToCompositorQueue,
+                  mStatSentToCompositorLater)) {
+    Error("ProxiedConnection::Process(): Failed to flush queue to compositor!");
+    return false;
+  }
+  if (!FlushQueue(mApplicationSocket, mApplicationFlags, mToApplicationQueue,
+                  mStatSentToClientLater)) {
+    Error("ProxiedConnection::Process(): Failed to flush queue to client!");
+    return false;
+  }
 
-  return !mFailed;
+  if (sPrintInfo) {
+    PrintConnectionInfo();
+  }
+
+  mFailed = false;
+  return true;
 }
 
 bool WaylandProxy::CheckWaylandDisplay(const char* aWaylandDisplay) {
@@ -492,6 +565,8 @@ bool WaylandProxy::CheckWaylandDisplay(const char* aWaylandDisplay) {
       case EISCONN:
       case ETIMEDOUT:
         
+        Info("CheckWaylandDisplay(): Wayland display %s non-fatal error %s\n",
+             mWaylandDisplay, strerror(errno));
         ret = true;
         break;
       default:
@@ -667,11 +742,12 @@ bool WaylandProxy::PollConnections() {
         case EINTR:
         case EAGAIN:
           if (IsChildAppTerminated()) {
+            Info("PollConnections(): ChildAppTerminated\n");
             return false;
           }
           continue;
         default:
-          Error("Run: poll() error");
+          Error("PollConnections(): poll() error");
           return false;
       }
     }
@@ -730,8 +806,20 @@ bool WaylandProxy::ProcessConnections() {
 }
 
 void WaylandProxy::Run() {
-  while (!IsChildAppTerminated() && PollConnections() && ProcessConnections())
-    ;
+  while (1) {
+    if (IsChildAppTerminated()) {
+      Info("quit - ChildAppTerminated\n");
+      break;
+    }
+    if (!PollConnections()) {
+      Info("quit - no connection\n");
+      break;
+    }
+    if (!ProcessConnections()) {
+      Info("quit - failed to process connections\n");
+      break;
+    }
+  }
 }
 
 WaylandProxy::~WaylandProxy() {
