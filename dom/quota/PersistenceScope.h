@@ -163,6 +163,9 @@ class PersistenceScope {
   bool operator==(const PersistenceScope& aOther) = delete;
 };
 
+bool MatchesBestEffortPersistenceScope(
+    const PersistenceScope& aPersistenceScope);
+
 }  
 
 #endif  
