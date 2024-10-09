@@ -32,25 +32,29 @@ function makeOffscreenCanvas() {
     });
 }
 
-var imageBitmapVideoPromise = new Promise(function(resolve, reject) {
-    var video = document.createElement("video");
-    video.oncanplaythrough = function() {
-        resolve(video);
-    };
-    video.onerror = reject;
+function makeMakeVideo(src) {
+    return function () {
+        return new Promise(function(resolve, reject) {
+            var video = document.createElement("video");
+            video.oncanplaythrough = function() {
+                resolve(video);
+            };
+            video.onerror = reject;
 
-    
-    
-    
-    video.preload = "auto";
-    video.src = getVideoURI("/images/pattern");
+            
+            
+            
+            video.preload = "auto";
+            video.src = getVideoURI(src);
 
-    
-    window._video = video;
-});
+            
+            window._video = video;
+        });
+    }
+}
 
 function makeVideo() {
-    return imageBitmapVideoPromise;
+  return makeMakeVideo("/images/pattern")();
 }
 
 var imageBitmapDataUrlVideoPromise = fetch(getVideoURI("/images/pattern"))
