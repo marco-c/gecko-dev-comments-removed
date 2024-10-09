@@ -182,22 +182,10 @@ bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
 
 
 
-bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
-                             const Instant& ns2,
-                             JS::Handle<TimeZoneValue> timeZone,
-                             JS::Handle<CalendarRecord> calendar,
-                             TemporalUnit largestUnit,
-                             const PlainDateTime& startDateTime,
-                             NormalizedDuration* result);
-
-
-
-
-
 
 bool DifferenceZonedDateTimeWithRounding(
     JSContext* cx, const Instant& ns1, const Instant& ns2,
-    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarRecord> calendar,
+    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
     const PlainDateTime& precalculatedPlainDateTime,
     const DifferenceSettings& settings, Duration* result);
 
@@ -218,7 +206,7 @@ bool DifferenceZonedDateTimeWithRounding(JSContext* cx, const Instant& ns1,
 
 bool DifferenceZonedDateTimeWithRounding(
     JSContext* cx, const Instant& ns1, const Instant& ns2,
-    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarRecord> calendar,
+    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
     const PlainDateTime& precalculatedPlainDateTime, TemporalUnit unit,
     double* result);
 
