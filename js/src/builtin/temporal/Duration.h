@@ -74,10 +74,7 @@ inline Duration ToDuration(const DurationObject* duration) {
 
 class Increment;
 class CalendarValue;
-class PlainDateObject;
 class TimeZoneValue;
-class ZonedDateTime;
-class ZonedDateTimeObject;
 enum class TemporalRoundingMode;
 enum class TemporalUnit;
 
@@ -85,19 +82,7 @@ enum class TemporalUnit;
 
 
 
-int32_t DurationSign(const Duration& duration);
-
-
-
-
-
 int32_t DurationSign(const DateDuration& duration);
-
-
-
-
-
-int32_t DurationSign(const NormalizedDuration& duration);
 
 
 
@@ -307,11 +292,6 @@ bool RoundRelativeDuration(
 
 double DivideNormalizedTimeDuration(const NormalizedTimeDuration& duration,
                                     TemporalUnit unit);
-
-
-
-
-int32_t DaysUntil(const PlainDate& earlier, const PlainDate& later);
 
 } 
 
