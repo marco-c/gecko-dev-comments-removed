@@ -907,6 +907,7 @@ static bool DifferenceTemporalPlainTime(JSContext* cx,
   
   DifferenceSettings settings;
   if (args.hasDefined(1)) {
+    
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
     if (!options) {
@@ -914,16 +915,9 @@ static bool DifferenceTemporalPlainTime(JSContext* cx,
     }
 
     
-    Rooted<PlainObject*> resolvedOptions(cx,
-                                         SnapshotOwnProperties(cx, options));
-    if (!resolvedOptions) {
-      return false;
-    }
-
-    
-    if (!GetDifferenceSettings(
-            cx, operation, resolvedOptions, TemporalUnitGroup::Time,
-            TemporalUnit::Nanosecond, TemporalUnit::Hour, &settings)) {
+    if (!GetDifferenceSettings(cx, operation, options, TemporalUnitGroup::Time,
+                               TemporalUnit::Nanosecond, TemporalUnit::Hour,
+                               &settings)) {
       return false;
     }
   } else {
