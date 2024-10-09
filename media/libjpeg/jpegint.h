@@ -249,6 +249,9 @@ struct jpeg_decomp_master {
 
   
   JDIMENSION last_good_iMCU_row;
+
+  
+  jpeg_saved_marker_ptr marker_list_end;
 };
 
 
@@ -442,6 +445,12 @@ struct jpeg_color_quantizer {
 #define MAX(a, b)       ((a) > (b) ? (a) : (b))
 #undef MIN
 #define MIN(a, b)       ((a) < (b) ? (a) : (b))
+
+#ifdef ZERO_BUFFERS
+#define MALLOC(size)  calloc(1, size)
+#else
+#define MALLOC(size)  malloc(size)
+#endif
 
 
 

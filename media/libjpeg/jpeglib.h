@@ -18,6 +18,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef JPEGLIB_H
 #define JPEGLIB_H
 
@@ -575,7 +585,6 @@ struct jpeg_decompress_struct {
 
   int actual_number_of_colors;  
   JSAMPARRAY colormap;          
-
 
 
 

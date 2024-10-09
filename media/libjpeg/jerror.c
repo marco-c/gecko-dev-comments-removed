@@ -42,8 +42,6 @@
 
 
 
-
-
 #define JMESSAGE(code, string)  string,
 
 static const char * const jpeg_std_message_table[] = {

@@ -51,6 +51,7 @@ jpeg_abort(j_common_ptr cinfo)
 
 
     ((j_decompress_ptr)cinfo)->marker_list = NULL;
+    ((j_decompress_ptr)cinfo)->master->marker_list_end = NULL;
   } else {
     cinfo->global_state = CSTATE_START;
   }

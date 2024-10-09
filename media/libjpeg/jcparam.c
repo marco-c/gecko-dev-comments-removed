@@ -233,7 +233,7 @@ jpeg_set_defaults(j_compress_ptr cinfo)
 
 
 
-  if (cinfo->data_precision == 12 && !cinfo->arith_code)
+  if (cinfo->data_precision == 12)
     cinfo->optimize_coding = TRUE;
 
   

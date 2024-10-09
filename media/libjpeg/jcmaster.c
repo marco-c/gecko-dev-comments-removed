@@ -751,22 +751,25 @@ jinit_c_master_control(j_compress_ptr cinfo, boolean transcode_only)
   
   initial_setup(cinfo, transcode_only);
 
-  if (cinfo->master->lossless ||        
-      (cinfo->progressive_mode && !cinfo->arith_code))
-    cinfo->optimize_coding = TRUE; 
+  if (cinfo->arith_code)
+    cinfo->optimize_coding = FALSE;
+  else {
+    if (cinfo->master->lossless ||      
+        cinfo->progressive_mode)
+      cinfo->optimize_coding = TRUE; 
 
-  for (i = 0; i < NUM_HUFF_TBLS; i++) {
-    if (cinfo->dc_huff_tbl_ptrs[i] != NULL ||
-        cinfo->ac_huff_tbl_ptrs[i] != NULL) {
-      empty_huff_tables = FALSE;
-      break;
+    for (i = 0; i < NUM_HUFF_TBLS; i++) {
+      if (cinfo->dc_huff_tbl_ptrs[i] != NULL ||
+          cinfo->ac_huff_tbl_ptrs[i] != NULL) {
+        empty_huff_tables = FALSE;
+        break;
+      }
     }
-  }
-  if (cinfo->data_precision == 12 && !cinfo->arith_code &&
-      !cinfo->optimize_coding &&
-      (empty_huff_tables || using_std_huff_tables(cinfo)))
-    cinfo->optimize_coding = TRUE; 
+    if (cinfo->data_precision == 12 && !cinfo->optimize_coding &&
+        (empty_huff_tables || using_std_huff_tables(cinfo)))
+      cinfo->optimize_coding = TRUE; 
 
+  }
 
   
   if (transcode_only) {

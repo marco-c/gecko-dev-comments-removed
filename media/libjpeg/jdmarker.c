@@ -819,13 +819,11 @@ save_marker(j_decompress_ptr cinfo)
   
   if (cur_marker != NULL) {     
     
-    if (cinfo->marker_list == NULL) {
-      cinfo->marker_list = cur_marker;
+    if (cinfo->marker_list == NULL || cinfo->master->marker_list_end == NULL) {
+      cinfo->marker_list = cinfo->master->marker_list_end = cur_marker;
     } else {
-      jpeg_saved_marker_ptr prev = cinfo->marker_list;
-      while (prev->next != NULL)
-        prev = prev->next;
-      prev->next = cur_marker;
+      cinfo->master->marker_list_end->next = cur_marker;
+      cinfo->master->marker_list_end = cur_marker;
     }
     
     data = cur_marker->data;
