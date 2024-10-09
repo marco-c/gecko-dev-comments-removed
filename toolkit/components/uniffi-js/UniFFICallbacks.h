@@ -8,6 +8,7 @@
 #define mozilla_UniFFICallbacks_h
 
 #include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/UniFFIRust.h"
 #include "mozilla/dom/UniFFIScaffolding.h"
 
@@ -19,32 +20,14 @@ namespace mozilla::uniffi {
 
 
 
-typedef void (*CallbackInitFunc)(ForeignCallback, RustCallStatus*);
-
-
-
-
-
-
-
-struct CallbackInterfaceInfo {
-  
-  const char* mName;
-  
-  StaticRefPtr<dom::UniFFICallbackHandler>* mHandler;
-  
-  ForeignCallback mForeignCallback;
-  
-  
-  CallbackInitFunc mInitForeignCallback;
-};
-
-
 
 
 void RegisterCallbackHandler(uint64_t aInterfaceId,
                              dom::UniFFICallbackHandler& aCallbackHandler,
                              ErrorResult& aError);
+
+
+
 
 
 
@@ -58,9 +41,53 @@ void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError);
 
 
 
-MOZ_CAN_RUN_SCRIPT
-void QueueCallback(uint64_t aInterfaceId, uint64_t aHandle, uint32_t aMethod,
-                   const uint8_t* aArgsData, int32_t aArgsLen);
+
+
+
+
+
+class UniffiCallbackMethodHandlerBase {
+ protected:
+  
+  const char* mInterfaceName;
+  uint64_t mObjectHandle;
+
+  
+  MOZ_CAN_RUN_SCRIPT
+  virtual void MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler,
+                        ErrorResult& aError) = 0;
+
+ public:
+  UniffiCallbackMethodHandlerBase(const char* aInterfaceName,
+                                  uint64_t aObjectHandle)
+      : mInterfaceName(aInterfaceName), mObjectHandle(aObjectHandle) {}
+
+  virtual ~UniffiCallbackMethodHandlerBase() = default;
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static void FireAndForget(
+      UniquePtr<UniffiCallbackMethodHandlerBase> aHandler,
+      StaticRefPtr<dom::UniFFICallbackHandler>* aJsHandler);
+};
+
+
+
+class UniffiCallbackFreeHandler : public UniffiCallbackMethodHandlerBase {
+ public:
+  UniffiCallbackFreeHandler(const char* aInterfaceName, uint64_t aObjectHandle)
+      : UniffiCallbackMethodHandlerBase(aInterfaceName, aObjectHandle) {}
+  void MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler,
+                ErrorResult& aError) override;
+};
 
 }  
 

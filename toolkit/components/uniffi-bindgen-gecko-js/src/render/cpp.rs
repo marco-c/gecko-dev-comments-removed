@@ -17,8 +17,10 @@
 use std::collections::HashSet;
 
 use askama::Template;
-use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
-use uniffi_bindgen::interface::{ComponentInterface, FfiDefinition, FfiFunction, FfiType};
+use heck::{ToSnakeCase, ToUpperCamelCase};
+use uniffi_bindgen::interface::{
+    AsType, CallbackInterface, ComponentInterface, FfiDefinition, FfiFunction, FfiType,
+};
 
 use crate::{CallbackIds, Component, FunctionIds, ObjectIds};
 
@@ -156,18 +158,56 @@ impl CPPScaffoldingTemplate {
             .flat_map(|c| {
                 c.ci.callback_interface_definitions()
                     .iter()
-                    .map(move |cbi| CallbackInterfaceCpp {
-                        id: callback_ids.get(&c.ci, cbi),
-                        name: format!("{}:{}", c.ci.namespace(), cbi.name()),
-                        handler_fn: format!("CallbackHandler{}", cbi.name().to_upper_camel_case()),
-                        static_var: format!(
-                            "JS_CALLBACK_HANDLER_{}",
-                            cbi.name().to_shouty_snake_case(),
-                        ),
-                        init_fn: cbi.ffi_init_callback().name().to_owned(),
+                    .map(move |cbi| {
+                        let cbi_name = cbi.name().to_upper_camel_case();
+                        CallbackInterfaceCpp {
+                            id: callback_ids.get(&c.ci, cbi),
+                            name: format!("{}:{}", c.ci.namespace(), cbi.name()),
+                            js_handler_var: format!("gCallbackInterfaceJsHandler{cbi_name}"),
+                            vtable: Self::callback_interface_vtable(&c.ci, cbi),
+                            free_fn: format!("callbackInterfaceFree{cbi_name}"),
+                            init_fn: cbi.ffi_init_callback().name().to_owned(),
+                        }
                     })
             })
             .collect()
+    }
+
+    fn callback_interface_vtable(
+        ci: &ComponentInterface,
+        cbi: &CallbackInterface,
+    ) -> CallbackInterfaceVTable {
+        let cbi_name = cbi.name().to_upper_camel_case();
+        let cbi_name_snake = cbi.name().to_snake_case();
+
+        CallbackInterfaceVTable {
+            type_: cpp_type(&cbi.vtable()),
+            var_name: format!("kCallbackInterfaceVtable{cbi_name}"),
+            method_handlers: cbi
+                .vtable_methods()
+                .iter()
+                .map(|(_, method)| {
+                    let method_name = method.name().to_upper_camel_case();
+                    let method_name_snake = method.name().to_snake_case();
+                    CallbackMethodHandler {
+                        fn_name: format!("callback_interface_{cbi_name_snake}_{method_name_snake}"),
+                        class_name: format!("CallbackInterfaceMethod{cbi_name}{method_name}"),
+                        arguments: method
+                            .arguments()
+                            .iter()
+                            .map(|arg| CallbackMethodArgument {
+                                name: arg.name().to_snake_case(),
+                                type_: cpp_type(&arg.as_type().into()),
+                                scaffolding_converter: scaffolding_converter(
+                                    ci,
+                                    &arg.as_type().into(),
+                                ),
+                            })
+                            .collect(),
+                    }
+                })
+                .collect(),
+        }
     }
 
     fn scaffolding_calls(
@@ -263,9 +303,40 @@ struct PointerType {
 struct CallbackInterfaceCpp {
     id: usize,
     name: String,
-    handler_fn: String,
-    static_var: String,
+    
+    js_handler_var: String,
+    vtable: CallbackInterfaceVTable,
+    free_fn: String,
     init_fn: String,
+}
+
+
+
+
+struct CallbackInterfaceVTable {
+    
+    type_: String,
+    
+    var_name: String,
+    
+    
+    
+    method_handlers: Vec<CallbackMethodHandler>,
+}
+
+
+struct CallbackMethodHandler {
+    
+    fn_name: String,
+    
+    class_name: String,
+    arguments: Vec<CallbackMethodArgument>,
+}
+
+struct CallbackMethodArgument {
+    name: String,
+    type_: String,
+    scaffolding_converter: String,
 }
 
 struct ScaffoldingCall {

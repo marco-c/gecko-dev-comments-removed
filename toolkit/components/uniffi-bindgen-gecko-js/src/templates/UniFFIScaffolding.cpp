@@ -1,5 +1,8 @@
 
 
+
+
+
 #include "nsString.h"
 #include "nsPrintfCString.h"
 #include "mozilla/Logging.h"
@@ -20,6 +23,7 @@ using dom::ArrayBuffer;
 using dom::AutoEntryScript;
 using dom::GlobalObject;
 using dom::RootedDictionary;
+using dom::Nullable;
 using dom::Promise;
 using dom::UniFFIScaffoldingValue;
 using dom::Sequence;
@@ -65,44 +69,147 @@ const static mozilla::uniffi::UniFFIPointerType {{ pointer_type.name }} {
 
 {%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in all_callback_interfaces.iter() %}
 {{ preprocessor_condition }}
+
 {%- for cbi in callback_interfaces %}
-MOZ_CAN_RUN_SCRIPT
-extern "C" int {{ cbi.handler_fn }}(uint64_t aHandle, uint32_t aMethod, const uint8_t* aArgsData, int32_t aArgsLen, RustBuffer* aOutBuffer) {
-    
-    
-    
-    
-    
-    mozilla::uniffi::QueueCallback({{ cbi.id }}, aHandle, aMethod, aArgsData, aArgsLen);
-    return CALLBACK_INTERFACE_SUCCESS;
-}
-static StaticRefPtr<dom::UniFFICallbackHandler> {{ cbi.static_var }};
-{%- endfor %}
-{{ preprocessor_condition_end }}
-{%- endfor %}
+static StaticRefPtr<dom::UniFFICallbackHandler> {{ cbi.js_handler_var }};
 
+{%- for handler in cbi.vtable.method_handlers %}
+{%- let method_index = loop.index0 %}
 
-Maybe<CallbackInterfaceInfo> GetCallbackInterfaceInfo(uint64_t aInterfaceId) {
-    switch(aInterfaceId) {
-        {%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in all_callback_interfaces.iter() %}
-{{ preprocessor_condition }}
-        {%- for cbi in callback_interfaces %}
-        case {{ cbi.id }}: {
-            return Some(CallbackInterfaceInfo {
-                "{{ cbi.name }}",
-                &{{ cbi.static_var }},
-                {{ cbi.handler_fn }},
-                {{ cbi.init_fn }},
-            });
-        }
-        {%- endfor %}
-{{ preprocessor_condition_end }}
-        {%- endfor %}
+class {{ handler.class_name }} : public UniffiCallbackMethodHandlerBase {
+private:
+  
+  {%- for a in handler.arguments %}
+  typename {{ a.scaffolding_converter }}::IntermediateType {{ a.name }};
+  {%- endfor %}
 
-        default:
-            return Nothing();
+public:
+  {{ handler.class_name }}(size_t aObjectHandle{%- for a in handler.arguments %}, {{ a.type_ }} {{ a.name }}{%- endfor %})
+    : UniffiCallbackMethodHandlerBase("{{ cbi.name }}", aObjectHandle)
+    {%- for a in handler.arguments %}, {{ a.name }}({{ a.scaffolding_converter }}::FromRust({{ a.name }})){% endfor %} {
+  }
+
+  MOZ_CAN_RUN_SCRIPT
+  void MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
+    Sequence<dom::UniFFIScaffoldingValue> uniffiArgs;
+
+    
+    if (!uniffiArgs.AppendElements({{ handler.arguments.len() }}, mozilla::fallible)) {
+      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
+      return;
     }
+
+    
+    {%- for a in handler.arguments %}
+    {{ a.scaffolding_converter }}::IntoJs(
+      aCx,
+      std::move(this->{{ a.name }}),
+      &uniffiArgs[{{ loop.index0 }}],
+      aError);
+    if (aError.Failed()) {
+        return;
+    }
+    {%- endfor %}
+
+    
+    
+    dom::Nullable<dom::UniFFIScaffoldingValue> returnValue;
+    
+    aJsHandler->Call(mObjectHandle, {{ method_index }}, uniffiArgs, returnValue, aError);
+  }
+};
+
+extern "C" void {{ handler.fn_name }}(
+    uint64_t uniffiHandle,
+    {% for a in handler.arguments %}{{ a.type_ }} {{ a.name }}, {% endfor %}
+    void* uniffiOutReturn,
+    RustCallStatus* uniffiCallStatus
+) {
+  UniquePtr<UniffiCallbackMethodHandlerBase> handler = MakeUnique<{{ handler.class_name }}>(uniffiHandle{% for a in handler.arguments %}, {{ a.name }}{%- endfor %});
+  
+
+  
+  
+  
+  UniffiCallbackMethodHandlerBase::FireAndForget(std::move(handler), &{{ cbi.js_handler_var }});
 }
+
+{%- endfor %}
+
+extern "C" void {{ cbi.free_fn }}(uint64_t uniffiHandle) {
+  
+  
+  
+  UniffiCallbackMethodHandlerBase::FireAndForget(MakeUnique<UniffiCallbackFreeHandler>("{{ cbi.name }}", uniffiHandle), &{{ cbi.js_handler_var }});
+}
+
+
+static {{ cbi.vtable.type_ }} {{ cbi.vtable.var_name }} {
+  {%- for handler in cbi.vtable.method_handlers %}
+  {{ handler.fn_name }},
+  {%- endfor %}
+  {{ cbi.free_fn }}
+};
+
+{%- endfor %}
+{{ preprocessor_condition_end }}
+{%- endfor %}
+
+void RegisterCallbackHandler(uint64_t aInterfaceId, UniFFICallbackHandler& aCallbackHandler, ErrorResult& aError) {
+  switch (aInterfaceId) {
+    {%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in all_callback_interfaces.iter() %}
+    {{ preprocessor_condition }}
+
+    {%- for cbi in callback_interfaces %}
+    case {{ cbi.id }}: {
+      if ({{ cbi.js_handler_var }}) {
+        aError.ThrowUnknownError("[UniFFI] Callback handler already registered for {{ cbi.name }}"_ns);
+        return;
+      }
+
+      {{ cbi.js_handler_var }} = &aCallbackHandler;
+      {{ cbi.init_fn }}(&{{ cbi.vtable.var_name }});
+      break;
+    }
+
+
+    {%- endfor %}
+    {{ preprocessor_condition_end }}
+    {%- endfor %}
+
+    default:
+      aError.ThrowUnknownError(nsPrintfCString("Unknown interface id: %" PRIu64, aInterfaceId));
+      return;
+  }
+}
+
+void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError) {
+  switch (aInterfaceId) {
+    {%- for (preprocessor_condition, callback_interfaces, preprocessor_condition_end) in all_callback_interfaces.iter() %}
+    {{ preprocessor_condition }}
+
+    {%- for cbi in callback_interfaces %}
+    case {{ cbi.id }}: {
+      if (!{{ cbi.js_handler_var }}) {
+        aError.ThrowUnknownError("[UniFFI] Callback handler not registered for {{ cbi.name }}"_ns);
+        return;
+      }
+
+      {{ cbi.js_handler_var }} = nullptr;
+      break;
+    }
+
+
+    {%- endfor %}
+    {{ preprocessor_condition_end }}
+    {%- endfor %}
+
+    default:
+      aError.ThrowUnknownError(nsPrintfCString("Unknown interface id: %" PRIu64, aInterfaceId));
+      return;
+  }
+}
+
 
 
 {%- for (preprocessor_condition, scaffolding_calls, preprocessor_condition_end) in all_scaffolding_calls.iter() %}
@@ -110,67 +217,67 @@ Maybe<CallbackInterfaceInfo> GetCallbackInterfaceInfo(uint64_t aInterfaceId) {
 {%- for scaffolding_call in scaffolding_calls %}
 class {{ scaffolding_call.handler_class_name }} : public UniffiHandlerBase {
 private:
-    
-    {%- for arg in scaffolding_call.arguments %}
-    typename {{ arg.scaffolding_converter }}::IntermediateType {{ arg.var_name }};
-    {%- endfor %}
+  
+  {%- for arg in scaffolding_call.arguments %}
+  typename {{ arg.scaffolding_converter }}::IntermediateType {{ arg.var_name }};
+  {%- endfor %}
 
-    
-    {%- match scaffolding_call.return_type %}
-    {%- when Some(return_type) %}
-    typename {{ return_type.scaffolding_converter }}::IntermediateType mUniffiReturnValue;
-    {%- else %}
-    {%- endmatch %}
+  
+  {%- match scaffolding_call.return_type %}
+  {%- when Some(return_type) %}
+  typename {{ return_type.scaffolding_converter }}::IntermediateType mUniffiReturnValue;
+  {%- else %}
+  {%- endmatch %}
 
 public:
-    void PrepareRustArgs(const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+  void PrepareRustArgs(const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+    {%- for arg in scaffolding_call.arguments %}
+    {{ arg.scaffolding_converter }}::FromJs(aArgs[{{ loop.index0 }}], &{{ arg.var_name }}, aError);
+    if (aError.Failed()) {
+      return;
+    }
+    {%- endfor %}
+  }
+
+  void MakeRustCall() override {
+    RustCallStatus callStatus{};
+    {%- match scaffolding_call.return_type %}
+    {%- when Some(return_type) %}
+    mUniffiReturnValue = {{ return_type.scaffolding_converter }}::FromRust(
+      {{ scaffolding_call.ffi_func_name }}(
         {%- for arg in scaffolding_call.arguments %}
-        {{ arg.scaffolding_converter }}::FromJs(aArgs[{{ loop.index0 }}], &{{ arg.var_name }}, aError);
-        if (aError.Failed()) {
-            return;
-        }
+        {{ arg.scaffolding_converter }}::IntoRust(std::move({{ arg.var_name }})),
         {%- endfor %}
-    }
+        &callStatus
+      )
+    );
+    {%- else %}
+    {{ scaffolding_call.ffi_func_name }}(
+      {%- for arg in scaffolding_call.arguments %}
+      {{ arg.scaffolding_converter }}::IntoRust(std::move({{ arg.var_name }})),
+      {%- endfor %}
+      &callStatus
+    );
+    {%- endmatch %}
 
-    void MakeRustCall() override {
-        RustCallStatus callStatus{};
-        {%- match scaffolding_call.return_type %}
-        {%- when Some(return_type) %}
-        mUniffiReturnValue = {{ return_type.scaffolding_converter }}::FromRust(
-            {{ scaffolding_call.ffi_func_name }}(
-                {%- for arg in scaffolding_call.arguments %}
-                {{ arg.scaffolding_converter }}::IntoRust(std::move({{ arg.var_name }})),
-                {%- endfor %}
-                &callStatus
-            )
-        );
-        {%- else %}
-        {{ scaffolding_call.ffi_func_name }}(
-            {%- for arg in scaffolding_call.arguments %}
-            {{ arg.scaffolding_converter }}::IntoRust(std::move({{ arg.var_name }})),
-            {%- endfor %}
-            &callStatus
-        );
-        {%- endmatch %}
-
-        mUniffiCallStatusCode = callStatus.code;
-        if (callStatus.error_buf.data) {
-            mUniffiCallStatusErrorBuf = OwnedRustBuffer(callStatus.error_buf);
-        }
+    mUniffiCallStatusCode = callStatus.code;
+    if (callStatus.error_buf.data) {
+      mUniffiCallStatusErrorBuf = OwnedRustBuffer(callStatus.error_buf);
     }
+  }
 
-    virtual void ExtractSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::UniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
-        {%- match scaffolding_call.return_type %}
-        {%- when Some(return_type) %}
-        {{ return_type.scaffolding_converter }}::IntoJs(
-          aCx,
-          std::move(mUniffiReturnValue),
-          aDest,
-          aError
-        );
-        {%- else %}
-        {%- endmatch %}
-    }
+  virtual void ExtractSuccessfulCallResult(JSContext* aCx, dom::Optional<dom::UniFFIScaffoldingValue>& aDest, ErrorResult& aError) override {
+    {%- match scaffolding_call.return_type %}
+    {%- when Some(return_type) %}
+    {{ return_type.scaffolding_converter }}::IntoJs(
+      aCx,
+      std::move(mUniffiReturnValue),
+      &aDest.Construct(),
+      aError
+    );
+    {%- else %}
+    {%- endmatch %}
+  }
 };
 
 {%- endfor %}
@@ -183,7 +290,7 @@ UniquePtr<UniffiHandlerBase> GetHandler(uint64_t aId) {
 {{ preprocessor_condition }}
     {%- for call in scaffolding_calls %}
     case {{ call.function_id }}: {
-        return MakeUnique<{{ call.handler_class_name }}>();
+      return MakeUnique<{{ call.handler_class_name }}>();
     }
     {%- endfor %}
 {{ preprocessor_condition_end }}
