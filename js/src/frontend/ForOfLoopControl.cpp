@@ -175,6 +175,19 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  
+  
+  
+  
+  NonLocalIteratorCloseUsingEmitter disposeBeforeIterClose(bce);
+
+  if (!disposeBeforeIterClose.prepareForIteratorClose(currentScope)) {
+    
+    return false;
+  }
+#endif
+
   if (!bce->emit1(JSOp::Dup)) {
     
     return false;
@@ -185,6 +198,13 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     
     return false;
   }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  if (!disposeBeforeIterClose.emitEnd()) {
+    
+    return false;
+  }
+#endif
 
   if (isTarget) {
     

@@ -19,8 +19,6 @@ class EmitterScope;
 
 class MOZ_STACK_CLASS UsingEmitter {
  private:
-  BytecodeEmitter* bce_;
-
   mozilla::Maybe<TryEmitter> tryEmitter_;
 
   
@@ -39,12 +37,17 @@ class MOZ_STACK_CLASS UsingEmitter {
   [[nodiscard]] bool emitResourcePropertyAccess(TaggedParserAtomIndex prop,
                                                 unsigned resourcesFromTop = 1);
 
+ protected:
+  BytecodeEmitter* bce_;
+
   [[nodiscard]] bool emitDisposeLoop(
-      EmitterScope& es,
+      EmitterScope& es, bool hasAsyncDisposables,
       CompletionKind initialCompletion = CompletionKind::Normal);
 
  public:
   explicit UsingEmitter(BytecodeEmitter* bce);
+
+  bool hasAwaitUsing() const { return hasAwaitUsing_; }
 
   [[nodiscard]] bool prepareForDisposableScopeBody();
 
@@ -55,6 +58,59 @@ class MOZ_STACK_CLASS UsingEmitter {
   [[nodiscard]] bool prepareForForOfIteratorCloseOnThrow();
 
   [[nodiscard]] bool emitNonLocalJump(EmitterScope* present);
+
+  [[nodiscard]] bool emitEnd();
+
+  [[nodiscard]] bool emitNonLocalJumpNeedingIteratorClose(
+      EmitterScope* present);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS NonLocalIteratorCloseUsingEmitter
+    : protected UsingEmitter {
+ private:
+  mozilla::Maybe<TryEmitter> tryClosingIterator_;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
+
+    
+    IteratorClose,
+
+    
+    End
+  };
+  State state_ = State::Start;
+#endif
+
+ public:
+  explicit NonLocalIteratorCloseUsingEmitter(BytecodeEmitter* bce)
+      : UsingEmitter(bce) {}
+
+  [[nodiscard]] bool prepareForIteratorClose(EmitterScope& es);
 
   [[nodiscard]] bool emitEnd();
 };

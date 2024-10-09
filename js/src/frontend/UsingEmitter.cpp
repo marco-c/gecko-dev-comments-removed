@@ -129,7 +129,7 @@ bool UsingEmitter::emitResourcePropertyAccess(TaggedParserAtomIndex prop,
 
 
 
-bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
+bool UsingEmitter::emitDisposeLoop(EmitterScope& es, bool hasAsyncDisposables,
                                    CompletionKind initialCompletion) {
   MOZ_ASSERT(initialCompletion != CompletionKind::Return);
 
@@ -138,7 +138,12 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
   
   
 
-  if (hasAwaitUsing_) {
+  
+  
+  
+  
+  
+  if (hasAsyncDisposables) {
     
     
     
@@ -167,7 +172,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
       return false;
     }
 
-    if (hasAwaitUsing_) {
+    if (hasAsyncDisposables) {
       
       if (!bce_->emitPickN(4)) {
         
@@ -246,7 +251,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
 
   
 
-  if (hasAwaitUsing_) {
+  if (hasAsyncDisposables) {
     
 
     
@@ -398,7 +403,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (hasAwaitUsing_) {
+  if (hasAsyncDisposables) {
     
     
     if (!emitResourcePropertyAccess(TaggedParserAtomIndex::WellKnown::hint(),
@@ -590,7 +595,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (hasAwaitUsing_) {
+  if (hasAsyncDisposables) {
     
 
     
@@ -635,7 +640,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (hasAwaitUsing_) {
+  if (hasAsyncDisposables) {
     
     if (!bce_->emitPickN(3)) {
       
@@ -691,7 +696,7 @@ bool UsingEmitter::emitDisposeLoop(EmitterScope& es,
     return false;
   }
 
-  if (hasAwaitUsing_) {
+  if (hasAsyncDisposables) {
     
 
     if (!bce_->emitPickN(2)) {
@@ -1004,7 +1009,7 @@ bool UsingEmitter::prepareForForOfLoopIteration() {
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
 
-  if (!emitDisposeLoop(*es)) {
+  if (!emitDisposeLoop(*es, hasAwaitUsing_)) {
     
     return false;
   }
@@ -1023,7 +1028,7 @@ bool UsingEmitter::prepareForForOfIteratorCloseOnThrow() {
     return false;
   }
 
-  if (!emitDisposeLoop(*es, CompletionKind::Throw)) {
+  if (!emitDisposeLoop(*es, hasAwaitUsing_, CompletionKind::Throw)) {
     
     return false;
   }
@@ -1040,7 +1045,7 @@ bool UsingEmitter::prepareForForOfIteratorCloseOnThrow() {
 bool UsingEmitter::emitNonLocalJump(EmitterScope* present) {
   MOZ_ASSERT(present->hasDisposables());
 
-  if (!emitDisposeLoop(*present)) {
+  if (!emitDisposeLoop(*present, hasAwaitUsing_)) {
     
     return false;
   }
@@ -1056,7 +1061,7 @@ bool UsingEmitter::emitEnd() {
   
   
   
-  if (!emitDisposeLoop(*es)) {
+  if (!emitDisposeLoop(*es, hasAwaitUsing_)) {
     
     return false;
   }
@@ -1083,7 +1088,7 @@ bool UsingEmitter::emitEnd() {
     return false;
   }
 
-  if (!emitDisposeLoop(*es, CompletionKind::Throw)) {
+  if (!emitDisposeLoop(*es, hasAwaitUsing_, CompletionKind::Throw)) {
     
     return false;
   }
@@ -1103,5 +1108,214 @@ bool UsingEmitter::emitEnd() {
     return false;
   }
 
+  return true;
+}
+
+
+
+
+bool NonLocalIteratorCloseUsingEmitter::prepareForIteratorClose(
+    EmitterScope& es) {
+  MOZ_ASSERT(state_ == State::Start);
+  
+  
+  
+  
+  if (!es.hasDisposables()) {
+#ifdef DEBUG
+    state_ = State::IteratorClose;
+#endif
+    return true;
+  }
+
+  
+
+  if (!emitDisposeLoop(es, es.hasAsyncDisposables())) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPickN(2)) {
+    
+    return false;
+  }
+
+  tryClosingIterator_.emplace(bce_, TryEmitter::Kind::TryCatch,
+                              TryEmitter::ControlKind::NonSyntactic);
+
+  if (!tryClosingIterator_->emitTry()) {
+    
+    return false;
+  }
+
+#ifdef DEBUG
+  state_ = State::IteratorClose;
+#endif
+  return true;
+}
+
+
+
+
+
+
+
+
+
+bool NonLocalIteratorCloseUsingEmitter::emitEnd() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(state_ == State::IteratorClose);
+
+  if (!tryClosingIterator_.isSome()) {
+#ifdef DEBUG
+    state_ = State::End;
+#endif
+    return true;
+  }
+
+  
+
+  if (!tryClosingIterator_->emitCatch()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPickN(2)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifDisposeWasThrowing(bce_);
+
+  if (!ifDisposeWasThrowing.emitThenElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::True)) {
+    
+    return false;
+  }
+
+  
+  
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!ifDisposeWasThrowing.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPickN(2)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::True)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!ifDisposeWasThrowing.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!tryClosingIterator_->emitEnd()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifThrowing(bce_);
+
+  if (!ifThrowing.emitThenElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Throw)) {
+    
+    return false;
+  }
+
+  if (!ifThrowing.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!ifThrowing.emitEnd()) {
+    
+    return false;
+  }
+
+#ifdef DEBUG
+  state_ = State::End;
+#endif
   return true;
 }
