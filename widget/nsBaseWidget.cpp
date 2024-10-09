@@ -440,37 +440,42 @@ void nsBaseWidget::SetWidgetListener(nsIWidgetListener* aWidgetListener) {
 }
 
 already_AddRefed<nsIWidget> nsBaseWidget::CreateChild(
-    const LayoutDeviceIntRect& aRect, widget::InitData* aInitData,
-    bool aForceUseIWidgetParent) {
-  nsIWidget* parent = this;
-  nsNativeWidget nativeParent = nullptr;
-
-  if (!aForceUseIWidgetParent) {
-    
-    
-    
-    nativeParent = parent ? parent->GetNativeData(NS_NATIVE_WIDGET) : nullptr;
-    parent = nativeParent ? nullptr : parent;
-    MOZ_ASSERT(!parent || !nativeParent, "messed up logic");
-  }
-
+    const LayoutDeviceIntRect& aRect, widget::InitData& aInitData) {
   nsCOMPtr<nsIWidget> widget;
-  if (aInitData && aInitData->mWindowType == WindowType::Popup) {
-    widget = AllocateChildPopupWidget();
-  } else {
-    widget = nsIWidget::CreateChildWindow();
+  switch (mWidgetType) {
+    case WidgetType::Native: {
+      if (aInitData.mWindowType == WindowType::Popup) {
+        widget = AllocateChildPopupWidget();
+      } else {
+        widget = nsIWidget::CreateChildWindow();
+      }
+      break;
+    }
+    case WidgetType::Headless:
+      widget = nsIWidget::CreateHeadlessWidget();
+      break;
+    case WidgetType::Puppet: {
+      
+      MOZ_ASSERT(aInitData.mWindowType == WindowType::Popup,
+                 "Creating non-popup puppet widget?");
+      widget = nsIWidget::CreatePuppetWidget(nullptr);
+      break;
+    }
   }
 
-  if (widget && mNeedFastSnaphot) {
+  if (!widget) {
+    return nullptr;
+  }
+
+  if (mNeedFastSnaphot) {
     widget->SetNeedFastSnaphot();
   }
 
-  if (widget &&
-      NS_SUCCEEDED(widget->Create(parent, nativeParent, aRect, aInitData))) {
-    return widget.forget();
+  if (NS_FAILED(widget->Create(this, aRect, &aInitData))) {
+    return nullptr;
   }
 
-  return nullptr;
+  return widget.forget();
 }
 
 

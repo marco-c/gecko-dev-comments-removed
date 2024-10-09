@@ -858,8 +858,7 @@ void SetWindowStyles(HWND aWnd, const WindowStyles& aStyles) {
 }  
 
 
-nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
-                          const LayoutDeviceIntRect& aRect,
+nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                           widget::InitData* aInitData) {
   
   
@@ -890,12 +889,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   HWND parent = nullptr;
   if (aParent) {  
-    parent = aParent ? (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW) : nullptr;
+    parent = (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW);
     mParent = aParent;
-  } else {  
-    parent = (HWND)aNativeParent;
-    mParent =
-        aNativeParent ? WinUtils::GetNSWindowPtr((HWND)aNativeParent) : nullptr;
   }
 
   mIsRTL = aInitData->mRTL;
@@ -909,11 +904,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       .ex = static_cast<LONG_PTR>(WindowExStyle()),
   };
 
-  if (mWindowType == WindowType::Popup) {
-    if (!aParent) {
-      parent = nullptr;
-    }
-  } else {
+  if (mWindowType != WindowType::Popup) {
     
     if (aInitData->mClipChildren) {
       desiredStyles.style |= WS_CLIPCHILDREN;

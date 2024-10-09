@@ -2245,10 +2245,8 @@ nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
       
       rv = view->AttachToTopLevelWidget(mParentWidget);
       mAttachedToParent = true;
-    } else if (!mParentWidget || aContainerView) {
-      rv = view->CreateWidget(true, false);
     } else {
-      rv = view->CreateWidgetForParent(mParentWidget, true, false);
+      rv = view->CreateWidget(mParentWidget, true, false);
     }
     if (NS_FAILED(rv)) return rv;
   }
@@ -3234,7 +3232,7 @@ bool nsDocumentViewer::ShouldAttachToTopLevel() {
   }
 
   
-  if (nsIWidget::UsePuppetWidgets()) {
+  if (nsIWidget::UsePuppetWidgets() || mParentWidget->IsPuppetWidget()) {
     return true;
   }
 

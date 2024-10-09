@@ -69,18 +69,12 @@ class PuppetWidget : public nsBaseWidget,
   
   
   using nsBaseWidget::Create;  
-  virtual nsresult Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
-                          const LayoutDeviceIntRect& aRect,
-                          widget::InitData* aInitData = nullptr) override;
-  void InfallibleCreate(nsIWidget* aParent, nsNativeWidget aNativeParent,
-                        const LayoutDeviceIntRect& aRect,
+  nsresult Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
+                  widget::InitData* aInitData = nullptr) override;
+  void InfallibleCreate(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                         widget::InitData* aInitData = nullptr);
 
   void InitIMEState();
-
-  virtual already_AddRefed<nsIWidget> CreateChild(
-      const LayoutDeviceIntRect& aRect, widget::InitData* aInitData = nullptr,
-      bool aForceUseIWidgetParent = false) override;
 
   virtual void Destroy() override;
 

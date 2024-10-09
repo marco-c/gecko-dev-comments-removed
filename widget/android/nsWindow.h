@@ -146,7 +146,6 @@ class nsWindow final : public nsBaseWidget {
 
   using nsBaseWidget::Create;  
   [[nodiscard]] nsresult Create(nsIWidget* aParent,
-                                nsNativeWidget aNativeParent,
                                 const LayoutDeviceIntRect& aRect,
                                 InitData* aInitData) override;
   void Destroy() override;

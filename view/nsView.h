@@ -282,7 +282,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  nsresult CreateWidget(bool aEnableDragDrop = true,
+  nsresult CreateWidget(nsIWidget* aParent, bool aEnableDragDrop = true,
                         bool aResetVisibility = true);
 
   
@@ -290,19 +290,9 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  nsresult CreateWidgetForParent(nsIWidget* aParentWidget,
-                                 bool aEnableDragDrop = true,
-                                 bool aResetVisibility = true);
-
-  
 
 
-
-
-
-
-  nsresult CreateWidgetForPopup(mozilla::widget::InitData*,
-                                nsIWidget* aParentWidget = nullptr);
+  nsresult CreateWidgetForPopup(mozilla::widget::InitData*, nsIWidget* aParent);
 
   
 

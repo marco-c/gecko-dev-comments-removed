@@ -435,10 +435,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
-                                        nsNativeWidget aNativeParent,
                                         const LayoutDeviceIntRect& aRect,
                                         InitData* = nullptr) = 0;
 
@@ -451,12 +448,11 @@ class nsIWidget : public nsISupports {
 
 
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
-                                        nsNativeWidget aNativeParent,
                                         const DesktopIntRect& aRect,
                                         InitData* aInitData = nullptr) {
     LayoutDeviceIntRect devPixRect =
         RoundedToInt(aRect * GetDesktopToDeviceScale());
-    return Create(aParent, aNativeParent, devPixRect, aInitData);
+    return Create(aParent, devPixRect, aInitData);
   }
 
   
@@ -470,14 +466,8 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
-
-
   virtual already_AddRefed<nsIWidget> CreateChild(
-      const LayoutDeviceIntRect& aRect, InitData* = nullptr,
-      bool aForceUseIWidgetParent = false) = 0;
+      const LayoutDeviceIntRect& aRect, InitData&) = 0;
 
   
 
@@ -2064,6 +2054,16 @@ class nsIWidget : public nsISupports {
 
   virtual double GetDefaultScaleInternal() { return 1.0; }
 
+  
+  
+  
+  enum class WidgetType : uint8_t {
+    Native,
+    Headless,
+    Puppet,
+  };
+  bool IsPuppetWidget() const { return mWidgetType == WidgetType::Puppet; }
+
   using WindowButtonType = mozilla::WindowButtonType;
 
   
@@ -2096,6 +2096,7 @@ class nsIWidget : public nsISupports {
   
   bool mOnDestroyCalled;
   WindowType mWindowType;
+  WidgetType mWidgetType = WidgetType::Native;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIWidget, NS_IWIDGET_IID)

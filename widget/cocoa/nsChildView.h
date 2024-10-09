@@ -296,7 +296,6 @@ class nsChildView final : public nsBaseWidget {
 
   
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
-                                        nsNativeWidget aNativeParent,
                                         const LayoutDeviceIntRect& aRect,
                                         InitData* = nullptr) override;
 

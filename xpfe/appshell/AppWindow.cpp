@@ -210,10 +210,9 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
   }
 
   mWindow->SetWidgetListener(&mWidgetListenerDelegate);
-  rv = mWindow->Create((nsIWidget*)parentWidget,  
-                       nullptr,                   
-                       deskRect,                  
-                       &widgetInitData);          
+  rv = mWindow->Create(parentWidget.get(),  
+                       deskRect,            
+                       &widgetInitData);    
   NS_ENSURE_SUCCESS(rv, rv);
 
   LayoutDeviceIntRect r = mWindow->GetClientBounds();
@@ -238,9 +237,9 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
   mDocShell->SetTreeOwner(mChromeTreeOwner);
 
   r.MoveTo(0, 0);
-  NS_ENSURE_SUCCESS(mDocShell->InitWindow(nullptr, mWindow, r.X(), r.Y(),
-                                          r.Width(), r.Height()),
-                    NS_ERROR_FAILURE);
+  NS_ENSURE_SUCCESS(
+      mDocShell->InitWindow(mWindow, r.X(), r.Y(), r.Width(), r.Height()),
+      NS_ERROR_FAILURE);
 
   
   mDocShell->AddProgressListener(this, nsIWebProgress::NOTIFY_STATE_NETWORK);
@@ -492,8 +491,7 @@ NS_IMETHODIMP AppWindow::RollupAllPopups() {
 
 
 
-NS_IMETHODIMP AppWindow::InitWindow(nativeWindow aParentNativeWindow,
-                                    nsIWidget* parentWidget, int32_t x,
+NS_IMETHODIMP AppWindow::InitWindow(nsIWidget* parentWidget, int32_t x,
                                     int32_t y, int32_t cx, int32_t cy) {
   
   NS_ASSERTION(false, "Not Yet Implemented");
@@ -821,28 +819,6 @@ NS_IMETHODIMP AppWindow::GetParentWidget(nsIWidget** aParentWidget) {
 }
 
 NS_IMETHODIMP AppWindow::SetParentWidget(nsIWidget* aParentWidget) {
-  
-  NS_ASSERTION(false, "Not Yet Implemented");
-  return NS_OK;
-}
-
-NS_IMETHODIMP AppWindow::GetParentNativeWindow(
-    nativeWindow* aParentNativeWindow) {
-  NS_ENSURE_ARG_POINTER(aParentNativeWindow);
-
-  nsCOMPtr<nsIWidget> parentWidget;
-  NS_ENSURE_SUCCESS(GetParentWidget(getter_AddRefs(parentWidget)),
-                    NS_ERROR_FAILURE);
-
-  if (parentWidget) {
-    *aParentNativeWindow = parentWidget->GetNativeData(NS_NATIVE_WIDGET);
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP AppWindow::SetParentNativeWindow(
-    nativeWindow aParentNativeWindow) {
   
   NS_ASSERTION(false, "Not Yet Implemented");
   return NS_OK;
