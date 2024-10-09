@@ -220,10 +220,30 @@ static void PreloadSandboxLib(base::environment_map* aEnv) {
   (*aEnv)["LD_PRELOAD"] = preload.get();
 }
 
-static void AttachSandboxReporter(base::file_handle_mapping_vector* aFdMap) {
-  int srcFd, dstFd;
-  SandboxReporter::Singleton()->GetClientFileDescriptorMapping(&srcFd, &dstFd);
-  aFdMap->push_back({srcFd, dstFd});
+static bool AttachSandboxReporter(geckoargs::ChildProcessArgs& aExtraOpts) {
+  UniqueFileHandle clientFileDescriptor(
+      dup(SandboxReporter::Singleton()->GetClientFileDescriptor()));
+  if (!clientFileDescriptor) {
+    SANDBOX_LOG_ERRNO("dup");
+    return false;
+  }
+
+  geckoargs::sSandboxReporter.Put(std::move(clientFileDescriptor), aExtraOpts);
+  return true;
+}
+
+static bool AttachSandboxChroot(geckoargs::ChildProcessArgs& aExtraOpts,
+                                base::LaunchOptions* aOptions) {
+  int fds[2];
+  int rv = socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, fds);
+  if (rv != 0) {
+    SANDBOX_LOG_ERRNO("socketpair");
+    return false;
+  }
+
+  geckoargs::sChrootClient.Put(UniqueFileHandle{fds[0]}, aExtraOpts);
+  aOptions->sandbox_chroot_server.reset(fds[1]);
+  return true;
 }
 
 static int GetEffectiveSandboxLevel(GeckoProcessType aType,
@@ -264,20 +284,21 @@ static int GetEffectiveSandboxLevel(GeckoProcessType aType,
 }
 
 
-void SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
+bool SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
+                              geckoargs::ChildProcessArgs& aExtraOpts,
                               LaunchOptions* aOptions) {
-  MOZ_ASSERT(aOptions->fork_flags == 0 && !aOptions->sandbox_chroot);
+  MOZ_ASSERT(aOptions->fork_flags == 0 && !aOptions->sandbox_chroot_server);
   auto info = SandboxInfo::Get();
 
   
   if (!info.Test(SandboxInfo::kHasSeccompBPF)) {
-    return;
+    return true;
   }
 
   
   int level = GetEffectiveSandboxLevel(aType, aKind);
   if (level == 0) {
-    return;
+    return true;
   }
 
   
@@ -285,7 +306,9 @@ void SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
   
   aOptions->env_map["MOZ_SANDBOXED"] = "1";
   PreloadSandboxLib(&aOptions->env_map);
-  AttachSandboxReporter(&aOptions->fds_to_remap);
+  if (!AttachSandboxReporter(aExtraOpts)) {
+    return false;
+  }
 
   bool canChroot = false;
   int flags = 0;
@@ -307,7 +330,7 @@ void SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
 
   
   if (!info.Test(SandboxInfo::kHasUserNamespaces)) {
-    return;
+    return true;
   }
 
   switch (aType) {
@@ -360,49 +383,33 @@ void SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
       break;
   }
 
+  if (canChroot && !AttachSandboxChroot(aExtraOpts, aOptions)) {
+    return false;
+  }
+
   if (canChroot || flags != 0) {
     flags |= CLONE_NEWUSER;
   }
 
   aOptions->env_map[kSandboxChrootEnvFlag] = std::to_string(canChroot ? 1 : 0);
 
-  aOptions->sandbox_chroot = canChroot;
   aOptions->fork_flags = flags;
+  return true;
 }
 
-SandboxLaunch::SandboxLaunch()
-    : mFlags(0), mChrootServer(-1), mChrootClient(-1) {}
+SandboxLaunch::SandboxLaunch() : mFlags(0), mChrootServer(-1) {}
 
 SandboxLaunch::~SandboxLaunch() {
-  if (mChrootClient >= 0) {
-    close(mChrootClient);
-  }
   if (mChrootServer >= 0) {
     close(mChrootServer);
   }
 }
 
 bool SandboxLaunch::Prepare(LaunchOptions* aOptions) {
-  MOZ_ASSERT(mChrootClient < 0 && mChrootServer < 0);
+  MOZ_ASSERT(mChrootServer < 0);
 
   mFlags = aOptions->fork_flags;
-
-  
-  
-  
-  
-  if (aOptions->sandbox_chroot) {
-    int fds[2];
-    int rv = socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, fds);
-    if (rv != 0) {
-      SANDBOX_LOG_ERRNO("socketpair");
-      return false;
-    }
-    mChrootClient = fds[0];
-    mChrootServer = fds[1];
-
-    aOptions->fds_to_remap.push_back({mChrootClient, kSandboxChrootClientFd});
-  }
+  mChrootServer = aOptions->sandbox_chroot_server.release();
 
   return true;
 }
@@ -636,11 +643,6 @@ pid_t SandboxLaunch::Fork() {
 
   if (mChrootServer >= 0) {
     StartChrootServer();
-    
-    
-    
-    
-    mChrootClient = -1;
   }
 
   

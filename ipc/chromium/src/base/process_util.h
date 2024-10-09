@@ -33,6 +33,7 @@
 #include "base/process.h"
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 
@@ -172,7 +173,7 @@ struct LaunchOptions {
   
   
   int fork_flags = 0;
-  bool sandbox_chroot = false;
+  mozilla::UniqueFileHandle sandbox_chroot_server;
 #endif
 
 #ifdef XP_DARWIN

@@ -36,7 +36,7 @@ class SandboxReporter final : public PlatformThread::Delegate {
 
   
   
-  void GetClientFileDescriptorMapping(int* aSrcFd, int* aDstFd) const;
+  int GetClientFileDescriptor() const;
 
   
   

@@ -36,7 +36,7 @@ class ForkServiceChild {
   struct Args {
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
     int mForkFlags = 0;
-    bool mChroot = false;
+    UniqueFileHandle mChrootServer;
 #endif
     nsTArray<nsCString> mArgv;
     nsTArray<EnvVar> mEnv;
@@ -55,7 +55,7 @@ class ForkServiceChild {
 
 
 
-  Result<Ok, LaunchError> SendForkNewSubprocess(const Args& aArgs, pid_t* aPid);
+  Result<Ok, LaunchError> SendForkNewSubprocess(Args&& aArgs, pid_t* aPid);
 
   
 
