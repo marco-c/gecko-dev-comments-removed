@@ -4,8 +4,19 @@
 
 
 
+const useMLBF = Services.prefs.getBoolPref(
+  "extensions.blocklist.useMLBF",
+  true
+);
 
-enable_blocklist_v2_instead_of_useMLBF();
+
+
+if (useMLBF) {
+  Services.prefs.setBoolPref("extensions.blocklist.softblock.enabled", true);
+}
+
+
+
 
 const URI_EXTENSION_BLOCKLIST_DIALOG =
   "chrome://mozapps/content/extensions/blocklist.xhtml";
@@ -15,6 +26,13 @@ const PREF_BLOCKLIST_ITEM_URL = "extensions.blocklist.itemURL";
 Services.prefs.setCharPref(
   PREF_BLOCKLIST_ITEM_URL,
   "http://example.com/blocklist/%blockID%"
+);
+
+
+const PREF_BLOCKLIST_ADDONITEM_URL = "extensions.blocklist.addonItemURL";
+Services.prefs.setCharPref(
+  PREF_BLOCKLIST_ADDONITEM_URL,
+  "https://example.com/blocked-addon/%addonID%/%addonVersion%/"
 );
 
 async function getAddonBlocklistURL(addon) {
@@ -130,8 +148,23 @@ function createAddon(addon) {
 }
 
 const BLOCKLIST_DATA = {
+  
   start: {
-    
+    extensionsMLBF: [
+      {
+        stash: {
+          softblocked: [
+            "test_bug455906_4@tests.mozilla.org:5",
+            "test_bug455906_5@tests.mozilla.org:5",
+          ],
+          blocked: [
+            "test_bug455906_6@tests.mozilla.org:5",
+            "dummy_bug455906_1@tests.mozilla.org:5",
+          ],
+          unblocked: [],
+        },
+      },
+    ],
     extensions: [
       {
         guid: "test_bug455906_4@tests.mozilla.org",
@@ -151,23 +184,46 @@ const BLOCKLIST_DATA = {
       },
     ],
   },
+  
   warn: {
-    
+    extensionsMLBF: ADDONS.filter(a => a.id.startsWith("test_")).map(a => ({
+      stash: {
+        softblocked: [`${a.id}:${a.version}`],
+        blocked: [],
+        unblocked: [],
+      },
+    })),
     extensions: ADDONS.filter(a => a.id.startsWith("test_")).map(a => ({
       guid: a.id,
       versionRange: [{ severity: "-1" }],
     })),
   },
+  
   block: {
-    
+    extensionsMLBF: ADDONS.filter(a => a.id.startsWith("test_")).map(a => ({
+      stash: {
+        blocked: [`${a.id}:${a.version}`],
+        softblocked: [],
+        unblocked: [],
+      },
+    })),
     extensions: ADDONS.filter(a => a.id.startsWith("test_")).map(a => ({
       guid: a.id,
       blockID: a.id,
       versionRange: [],
     })),
   },
+  
   empty: {
-    
+    extensionsMLBF: [
+      {
+        stash: {
+          blocked: ["dummy_bug455906_2@tests.mozilla.org:5"],
+          softblocked: [],
+          unblocked: [],
+        },
+      },
+    ],
     extensions: [
       {
         guid: "dummy_bug455906_2@tests.mozilla.org",
@@ -183,10 +239,15 @@ async function loadBlocklist(id, callback) {
   await AddonTestUtils.loadBlocklistRawData(BLOCKLIST_DATA[id]);
 }
 
-function create_blocklistURL(blockID) {
-  let url = Services.urlFormatter.formatURLPref(PREF_BLOCKLIST_ITEM_URL);
-  url = url.replace(/%blockID%/g, blockID);
-  return url;
+function create_blocklistURL(addon) {
+  if (!useMLBF) {
+    let url = Services.urlFormatter.formatURLPref(PREF_BLOCKLIST_ITEM_URL);
+    url = url.replace(/%blockID%/g, addon.id);
+    return url;
+  }
+  let url = Services.urlFormatter.formatURLPref(PREF_BLOCKLIST_ADDONITEM_URL);
+  const { id, version } = addon;
+  return url.replace(/%addonID%/g, id).replace(/%addonVersion%/g, version);
 }
 
 
@@ -234,7 +295,7 @@ function checkAddonState(addon, state) {
   return checkAddon(addon.id, addon, state);
 }
 
-add_task(async function setup() {
+add_setup(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "3");
 
   await promiseStartupManager();
@@ -407,26 +468,11 @@ add_task(async function test_pt3() {
   });
 
   
-  equal(
-    await getAddonBlocklistURL(addons[0]),
-    create_blocklistURL(addons[0].id)
-  );
-  equal(
-    await getAddonBlocklistURL(addons[1]),
-    create_blocklistURL(addons[1].id)
-  );
-  equal(
-    await getAddonBlocklistURL(addons[2]),
-    create_blocklistURL(addons[2].id)
-  );
-  equal(
-    await getAddonBlocklistURL(addons[3]),
-    create_blocklistURL(addons[3].id)
-  );
-  equal(
-    await getAddonBlocklistURL(addons[4]),
-    create_blocklistURL(addons[4].id)
-  );
+  equal(await getAddonBlocklistURL(addons[0]), create_blocklistURL(addons[0]));
+  equal(await getAddonBlocklistURL(addons[1]), create_blocklistURL(addons[1]));
+  equal(await getAddonBlocklistURL(addons[2]), create_blocklistURL(addons[2]));
+  equal(await getAddonBlocklistURL(addons[3]), create_blocklistURL(addons[3]));
+  equal(await getAddonBlocklistURL(addons[4]), create_blocklistURL(addons[4]));
 
   
   checkAddonState(addons[5], {

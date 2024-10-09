@@ -3,7 +3,16 @@
 
 
 
-enable_blocklist_v2_instead_of_useMLBF();
+const useMLBF = Services.prefs.getBoolPref(
+  "extensions.blocklist.useMLBF",
+  true
+);
+
+
+
+if (useMLBF) {
+  Services.prefs.setBoolPref("extensions.blocklist.softblock.enabled", true);
+}
 
 
 
@@ -34,6 +43,18 @@ add_task(async function test_softblock() {
   Assert.ok(!s1.isActive);
 
   await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash: {
+          softblocked: ["softblock1@tests.mozilla.org:1.0"],
+          blocked: [],
+          unblocked: [],
+        },
+        stash_time: Date.now(),
+      },
+    ],
+    
+    
     extensions: [
       {
         guid: "softblock1@tests.mozilla.org",
