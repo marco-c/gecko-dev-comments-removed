@@ -66,6 +66,14 @@ interface nsIChannelEventSink : nsISupports
 
 
 
+    const unsigned long REDIRECT_TRANSPARENT = 1 << 5;
+
+    
+
+
+
+
+
 
 
 

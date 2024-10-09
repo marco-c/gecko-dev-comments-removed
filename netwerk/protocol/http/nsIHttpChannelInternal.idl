@@ -544,7 +544,7 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
-    [must_use] void internalRedirectTo(in nsIURI aTargetURI);
+    [must_use] void transparentRedirectTo(in nsIURI aTargetURI);
 
 
     
