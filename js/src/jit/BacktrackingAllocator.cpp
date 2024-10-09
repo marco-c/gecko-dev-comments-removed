@@ -3934,22 +3934,16 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
         continue;
       }
 
+#ifdef DEBUG
       
       
-      
-      bool skip = false;
       for (VirtualRegister::RangeIterator prevIter(reg); *prevIter != range;
            prevIter++) {
-        LiveRange* prevRange = *prevIter;
-        if (prevRange->covers(start) && prevRange->bundle()->allocation() ==
-                                            range->bundle()->allocation()) {
-          skip = true;
-          break;
-        }
+        MOZ_ASSERT_IF(
+            prevIter->covers(start),
+            prevIter->bundle()->allocation() != range->bundle()->allocation());
       }
-      if (skip) {
-        continue;
-      }
+#endif
 
       if (!alloc().ensureBallast()) {
         return false;
