@@ -156,7 +156,7 @@ static PlainYearMonthObject* CreateTemporalYearMonth(
 
 
 
-PlainYearMonthObject* js::temporal::CreateTemporalYearMonth(
+static PlainYearMonthObject* CreateTemporalYearMonth(
     JSContext* cx, const PlainDate& date, Handle<CalendarValue> calendar) {
   const auto& [isoYear, isoMonth, isoDay] = date;
 

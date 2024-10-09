@@ -88,13 +88,6 @@ class MOZ_STACK_CLASS PlainYearMonthWithCalendar final {
 
 
 PlainYearMonthObject* CreateTemporalYearMonth(
-    JSContext* cx, const PlainDate& date, JS::Handle<CalendarValue> calendar);
-
-
-
-
-
-PlainYearMonthObject* CreateTemporalYearMonth(
     JSContext* cx, JS::Handle<PlainYearMonthWithCalendar> yearMonth);
 
 
