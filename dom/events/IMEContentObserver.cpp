@@ -1954,15 +1954,12 @@ void IMEContentObserver::IMENotificationSender::SendFocusSet() {
 
   observer->mIMEHasFocus = true;
   
-#ifdef XP_MACOSX
+  
+  
   
   
   
   observer->UpdateSelectionCache(true);
-#else
-  
-  observer->UpdateSelectionCache(false);
-#endif  
   MOZ_LOG(sIMECOLog, LogLevel::Info,
           ("0x%p IMENotificationSender::SendFocusSet(), sending "
            "NOTIFY_IME_OF_FOCUS...",
