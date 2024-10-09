@@ -1017,12 +1017,7 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
-  bool equalTimeZone;
-  if (!TimeZoneEquals(cx, zonedDateTime.timeZone(), other.timeZone(),
-                      &equalTimeZone)) {
-    return false;
-  }
-  if (!equalTimeZone) {
+  if (!TimeZoneEquals(zonedDateTime.timeZone(), other.timeZone())) {
     if (auto one = QuoteString(cx, zonedDateTime.timeZone().identifier())) {
       if (auto two = QuoteString(cx, other.timeZone().identifier())) {
         JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
@@ -1330,13 +1325,7 @@ static bool ZonedDateTime_timeZoneId(JSContext* cx, const CallArgs& args) {
   auto* zonedDateTime = &args.thisv().toObject().as<ZonedDateTimeObject>();
 
   
-  Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
-  auto* timeZoneId = ToTemporalTimeZoneIdentifier(cx, timeZone);
-  if (!timeZoneId) {
-    return false;
-  }
-
-  args.rval().setString(timeZoneId);
+  args.rval().setString(zonedDateTime->timeZone().identifier());
   return true;
 }
 
@@ -2748,14 +2737,9 @@ static bool ZonedDateTime_equals(JSContext* cx, const CallArgs& args) {
   }
 
   
-  bool equals = zonedDateTime.instant() == other.instant();
-  if (equals && !TimeZoneEquals(cx, zonedDateTime.timeZone(), other.timeZone(),
-                                &equals)) {
-    return false;
-  }
-  if (equals) {
-    equals = CalendarEquals(zonedDateTime.calendar(), other.calendar());
-  }
+  bool equals = zonedDateTime.instant() == other.instant() &&
+                TimeZoneEquals(zonedDateTime.timeZone(), other.timeZone()) &&
+                CalendarEquals(zonedDateTime.calendar(), other.calendar());
 
   args.rval().setBoolean(equals);
   return true;
@@ -3025,11 +3009,7 @@ static bool ZonedDateTime_getTimeZoneTransition(JSContext* cx,
   
   
 
-  auto* linearTimeZoneId = timeZone.identifier()->ensureLinear(cx);
-  if (!linearTimeZoneId) {
-    return false;
-  }
-  if (StringEqualsLiteral(linearTimeZoneId, "UTC")) {
+  if (StringEqualsLiteral(timeZone.identifier(), "UTC")) {
     args.rval().setNull();
     return true;
   }

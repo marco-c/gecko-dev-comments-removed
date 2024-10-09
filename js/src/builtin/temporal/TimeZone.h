@@ -22,6 +22,7 @@
 #include "js/Value.h"
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"
+#include "vm/StringType.h"
 
 class JSLinearString;
 class JS_PUBLIC_API JSTracer;
@@ -49,8 +50,8 @@ class BuiltinTimeZoneObject : public NativeObject {
   
   static constexpr size_t EstimatedMemoryUse = 6840;
 
-  JSString* identifier() const {
-    return getFixedSlot(IDENTIFIER_SLOT).toString();
+  JSLinearString* identifier() const {
+    return &getFixedSlot(IDENTIFIER_SLOT).toString()->asLinear();
   }
 
   const auto& offsetMinutes() const {
@@ -239,20 +240,20 @@ enum class TemporalDisambiguation;
 
 
 
-bool IsValidTimeZoneName(JSContext* cx, JS::Handle<JSString*> timeZone,
+bool IsValidTimeZoneName(JSContext* cx, JS::Handle<JSLinearString*> timeZone,
                          JS::MutableHandle<JSAtom*> validatedTimeZone);
 
 
 
 
-JSString* CanonicalizeTimeZoneName(JSContext* cx,
-                                   JS::Handle<JSLinearString*> timeZone);
+JSLinearString* CanonicalizeTimeZoneName(JSContext* cx,
+                                         JS::Handle<JSLinearString*> timeZone);
 
 
 
 
-BuiltinTimeZoneObject* CreateTemporalTimeZone(JSContext* cx,
-                                              JS::Handle<JSString*> identifier);
+BuiltinTimeZoneObject* CreateTemporalTimeZone(
+    JSContext* cx, JS::Handle<JSLinearString*> identifier);
 
 
 
@@ -270,14 +271,7 @@ bool ToTemporalTimeZone(JSContext* cx, JS::Handle<ParsedTimeZone> string,
 
 
 
-JSString* ToTemporalTimeZoneIdentifier(JSContext* cx,
-                                       JS::Handle<TimeZoneValue> timeZone);
-
-
-
-
-bool TimeZoneEquals(JSContext* cx, JS::Handle<TimeZoneValue> one,
-                    JS::Handle<TimeZoneValue> two, bool* equals);
+bool TimeZoneEquals(const TimeZoneValue& one, const TimeZoneValue& two);
 
 
 
