@@ -99,20 +99,20 @@ class ObjectActor extends Actor {
 
 
 
+
   constructor(
+    thread,
     obj,
     {
-      thread,
       createValueGrip: createValueGripHook,
       getGripDepth,
       incrementGripDepth,
       decrementGripDepth,
       customFormatterObjectTagDepth,
       customFormatterConfigDbgObj,
-    },
-    conn
+    }
   ) {
-    super(conn, objectSpec);
+    super(thread.conn, objectSpec);
 
     assert(
       !obj.optimizedOut,

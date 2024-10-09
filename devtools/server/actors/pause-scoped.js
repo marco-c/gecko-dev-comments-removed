@@ -11,8 +11,8 @@ class PauseScopedObjectActor extends ObjectActor {
 
 
 
-  constructor(obj, hooks, conn) {
-    super(obj, hooks, conn);
+  constructor(thread, obj, hooks) {
+    super(thread, obj, hooks);
 
     this.hooks.isThreadLifetimePool = hooks.isThreadLifetimePool;
 
