@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef DOM_INDEXEDDB_NOTIFYUTILS_H_
+#define DOM_INDEXEDDB_NOTIFYUTILS_H_
+
+namespace mozilla::dom::indexedDB {
+
+void NotifyDatabaseWorkStarted();
+
+}  
+
+#endif  
