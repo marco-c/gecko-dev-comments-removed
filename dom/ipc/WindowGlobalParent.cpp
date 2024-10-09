@@ -1381,16 +1381,9 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvReloadWithHttpsOnlyException() {
 
   
   
-  
-  
-  
   nsCOMPtr<nsIURI> newURI;
-  if (!BrowsingContext()->IsTop()) {
-    newURI = innerURI;
-  } else {
-    Unused << NS_MutateURI(innerURI).SetScheme("http"_ns).Finalize(
-        getter_AddRefs(newURI));
-  }
+  Unused << NS_MutateURI(innerURI).SetScheme("http"_ns).Finalize(
+      getter_AddRefs(newURI));
 
   OriginAttributes originAttributes =
       TopWindowContext()->DocumentPrincipal()->OriginAttributesRef();

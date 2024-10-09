@@ -29,28 +29,35 @@ function initPage() {
   document
     .getElementById("learnMoreLink")
     .setAttribute("href", baseSupportURL + "https-only-prefs");
+  document
+    .getElementById("mixedContentLearnMoreLink")
+    .setAttribute("href", baseSupportURL + "mixed-content");
+
+  const isTopLevel = window.top == window;
+  if (!isTopLevel) {
+    for (const id of ["explanation-continue", "goBack", "openInsecure"]) {
+      document.getElementById(id).remove();
+    }
+    document.getElementById("explanation-iframe").removeAttribute("hidden");
+    return;
+  }
 
   document
     .getElementById("openInsecure")
     .addEventListener("click", onOpenInsecureButtonClick);
+  document
+    .getElementById("goBack")
+    .addEventListener("click", onReturnButtonClick);
 
   const delay = RPMGetIntPref("security.dialog_enable_delay", 1000);
   setTimeout(() => {
     document.getElementById("openInsecure").removeAttribute("inert");
   }, delay);
 
-  if (window.top == window) {
-    document
-      .getElementById("goBack")
-      .addEventListener("click", onReturnButtonClick);
-    addAutofocus("#goBack", "beforeend");
-  } else {
-    document.getElementById("goBack").remove();
-  }
+  addAutofocus("#goBack", "beforeend");
 
-  const isTopLevel = window.top == window;
   const hasWWWPrefix = pageUrl.href.startsWith("https://www.");
-  if (isTopLevel && !hasWWWPrefix) {
+  if (!hasWWWPrefix) {
     
     
 
