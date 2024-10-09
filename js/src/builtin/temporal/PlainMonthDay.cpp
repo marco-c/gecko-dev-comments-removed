@@ -223,12 +223,7 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
 
     
     Rooted<CalendarRecord> calendar(cx);
-    if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                     {
-                                         CalendarMethod::Fields,
-                                         CalendarMethod::MonthDayFromFields,
-                                     },
-                                     &calendar)) {
+    if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
       return nullptr;
     }
 
@@ -309,11 +304,7 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::MonthDayFromFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return nullptr;
   }
 
@@ -550,13 +541,7 @@ static bool PlainMonthDay_with(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MergeFields,
-                                       CalendarMethod::MonthDayFromFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
@@ -770,13 +755,7 @@ static bool PlainMonthDay_toPlainDate(JSContext* cx, const CallArgs& args) {
   
   Rooted<CalendarValue> calendarValue(cx, monthDay->calendar());
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateFromFields,
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MergeFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 

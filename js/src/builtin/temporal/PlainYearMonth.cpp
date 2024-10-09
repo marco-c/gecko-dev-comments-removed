@@ -229,12 +229,7 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
 
     
     Rooted<CalendarRecord> calendar(cx);
-    if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                     {
-                                         CalendarMethod::Fields,
-                                         CalendarMethod::YearMonthFromFields,
-                                     },
-                                     &calendar)) {
+    if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
       return nullptr;
     }
 
@@ -298,11 +293,7 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::YearMonthFromFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return nullptr;
   }
 
@@ -422,14 +413,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
 
   
   Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar,
-                                   {
-                                       CalendarMethod::DateAdd,
-                                       CalendarMethod::DateFromFields,
-                                       CalendarMethod::DateUntil,
-                                       CalendarMethod::Fields,
-                                   },
-                                   &calendarRec)) {
+  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
     return false;
   }
 
@@ -604,15 +588,7 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   
   Rooted<CalendarValue> calendarValue(cx, yearMonth->calendar());
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateAdd,
-                                       CalendarMethod::DateFromFields,
-                                       CalendarMethod::Day,
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::YearMonthFromFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   };
 
@@ -1144,13 +1120,7 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MergeFields,
-                                       CalendarMethod::YearMonthFromFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
@@ -1441,13 +1411,7 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   
   Rooted<CalendarValue> calendarValue(cx, yearMonth->calendar());
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateFromFields,
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MergeFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 

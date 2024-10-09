@@ -460,12 +460,7 @@ static Wrapped<PlainDateObject*> ToTemporalDate(
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateFromFields,
-                                       CalendarMethod::Fields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return nullptr;
   }
 
@@ -989,10 +984,6 @@ static Wrapped<PlainDateObject*> AddDate(JSContext* cx,
                                          const Duration& duration,
                                          Handle<JSObject*> options) {
   
-  MOZ_ASSERT(
-      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-  
 
   
   if (HasYearsMonthsOrWeeks(duration)) {
@@ -1024,10 +1015,6 @@ static Wrapped<PlainDateObject*> AddDate(JSContext* cx,
 Wrapped<PlainDateObject*> js::temporal::AddDate(
     JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<Wrapped<PlainDateObject*>> date, const DateDuration& duration) {
-  
-  MOZ_ASSERT(
-      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
   
 
   
@@ -1075,10 +1062,6 @@ static Wrapped<PlainDateObject*> AddDate(
   auto duration = ToDuration(unwrappedDuration);
 
   
-  MOZ_ASSERT(
-      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-  
 
   
   if (HasYearsMonthsOrWeeks(duration)) {
@@ -1111,10 +1094,6 @@ bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
                            const PlainDate& date, const DateDuration& duration,
                            Handle<JSObject*> options, PlainDate* result) {
   
-  MOZ_ASSERT(
-      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-  
 
   
   if (HasYearsMonthsOrWeeks(duration)) {
@@ -1142,10 +1121,6 @@ bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
                            const PlainDate& date, const DateDuration& duration,
                            PlainDate* result) {
   
-  MOZ_ASSERT(
-      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-  
 
   
   if (HasYearsMonthsOrWeeks(duration)) {
@@ -1168,10 +1143,6 @@ bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
 bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
                            Handle<Wrapped<PlainDateObject*>> date,
                            const DateDuration& duration, PlainDate* result) {
-  
-  MOZ_ASSERT(
-      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
   
 
   
@@ -1661,12 +1632,7 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateAdd,
-                                       CalendarMethod::DateUntil,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
@@ -2224,12 +2190,7 @@ static bool PlainDate_toPlainYearMonth(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::YearMonthFromFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
@@ -2299,12 +2260,7 @@ static bool PlainDate_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MonthDayFromFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
@@ -2400,11 +2356,7 @@ static bool PlainDate_add(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateAdd,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
@@ -2457,11 +2409,7 @@ static bool PlainDate_subtract(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateAdd,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
@@ -2520,13 +2468,7 @@ static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
   
   Rooted<CalendarValue> calendarValue(cx, temporalDate->calendar());
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::DateFromFields,
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MergeFields,
-                                   },
-                                   &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue, &calendar)) {
     return false;
   }
 
