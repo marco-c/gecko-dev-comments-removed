@@ -11,6 +11,7 @@
 #include "js/loader/LoadedScript.h"          
 #include "js/loader/ScriptKind.h"            
 #include "js/loader/ScriptLoadRequest.h"     
+#include "mozilla/RefPtr.h"                  
 #include "mozilla/WeakPtr.h"                 
 #include "mozilla/CORSMode.h"                
 #include "mozilla/MemoryReporting.h"         
@@ -135,8 +136,7 @@ class ScriptLoadData final
   bool IsSyncLoad() const override { return true; }
 
   SubResourceNetworkMetadataHolder* GetNetworkMetadata() const override {
-    
-    return nullptr;
+    return mNetworkMetadata.get();
   }
 
   void StartLoading() override {}
@@ -163,6 +163,7 @@ class ScriptLoadData final
   ScriptLoader* mLoader;
   ScriptHashKey mKey;
   RefPtr<JS::loader::LoadedScript> mLoadedScript;
+  RefPtr<SubResourceNetworkMetadataHolder> mNetworkMetadata;
 };
 
 struct SharedScriptCacheTraits {
