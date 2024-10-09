@@ -670,9 +670,9 @@ static int32_t CompareISODateTime(const PlainDateTime& one,
 
 
 static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
-                        Handle<CalendarRecord> calendar,
+                        Handle<CalendarValue> calendar,
                         const NormalizedDuration& duration,
-                        Handle<JSObject*> options, PlainDateTime* result) {
+                        TemporalOverflow overflow, PlainDateTime* result) {
   MOZ_ASSERT(IsValidDuration(duration));
 
   
@@ -700,7 +700,7 @@ static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
 
   
   PlainDate addedDate;
-  if (!AddDate(cx, calendar, datePart, dateDuration, options, &addedDate)) {
+  if (!AddDate(cx, calendar, datePart, dateDuration, overflow, &addedDate)) {
     return false;
   }
 
@@ -879,10 +879,9 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
   auto destEpochNs = GetUTCEpochNanoseconds(two);
 
   
-  Rooted<CalendarRecord> calendarRec(cx, CalendarRecord{calendar});
   Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
   RoundedRelativeDuration relative;
-  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, calendarRec,
+  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, calendar,
                              timeZone, settings.largestUnit,
                              settings.roundingIncrement, settings.smallestUnit,
                              settings.roundingMode, &relative)) {
@@ -942,10 +941,9 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
   auto destEpochNs = GetUTCEpochNanoseconds(two);
 
   
-  Rooted<CalendarRecord> calendarRec(cx, CalendarRecord{calendar});
   Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
   RoundedRelativeDuration relative;
-  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, calendarRec,
+  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, calendar,
                              timeZone, unit, Increment{1}, unit,
                              TemporalRoundingMode::Trunc, &relative)) {
     return false;
@@ -1061,22 +1059,22 @@ static bool AddDurationToOrSubtractDurationFromPlainDateTime(
   }
 
   
-  Rooted<JSObject*> options(cx);
+  auto overflow = TemporalOverflow::Constrain;
   if (args.hasDefined(1)) {
     const char* name =
         operation == PlainDateTimeDuration::Add ? "add" : "subtract";
-    options = RequireObjectArg(cx, "options", name, args[1]);
-  } else {
-    options = NewPlainObjectWithProto(cx, nullptr);
-  }
-  if (!options) {
-    return false;
-  }
 
-  
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, dateTime.calendar(), &calendar)) {
-    return false;
+    
+    Rooted<JSObject*> options(cx,
+                              RequireObjectArg(cx, "options", name, args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
+      return false;
+    }
   }
 
   
@@ -1087,7 +1085,8 @@ static bool AddDurationToOrSubtractDurationFromPlainDateTime(
 
   
   PlainDateTime result;
-  if (!AddDateTime(cx, dateTime, calendar, normalized, options, &result)) {
+  if (!AddDateTime(cx, dateTime, dateTime.calendar(), normalized, overflow,
+                   &result)) {
     return false;
   }
 
