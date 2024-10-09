@@ -22,6 +22,7 @@
 #include "mozilla/RangeUtils.h"           
 #include "mozilla/dom/DocumentInlines.h"  
 #include "mozilla/dom/Element.h"          
+#include "mozilla/dom/ElementInlines.h"  
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
@@ -1076,6 +1077,13 @@ bool HTMLEditUtils::ShouldInsertLinefeedCharacter(
 
   if (!aPointToInsert.IsInContentNode()) {
     return false;
+  }
+
+  
+  
+  if (aEditingHost.IsContentEditablePlainTextOnly()) {
+    return EditorUtils::IsNewLinePreformatted(
+        *aPointToInsert.ContainerAs<nsIContent>());
   }
 
   
