@@ -9,6 +9,9 @@
 #include "mozilla/dom/BindingIPCUtils.h"
 
 
+#include "mozilla/dom/FetchIPCTypes.h"
+
+
 #undef None
 
 #include "mozilla/dom/WorkerBinding.h"
@@ -18,6 +21,23 @@ namespace IPC {
 template <>
 struct ParamTraits<mozilla::dom::WorkerType>
     : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::WorkerType> {};
+
+template <>
+struct ParamTraits<mozilla::dom::WorkerOptions> {
+  typedef mozilla::dom::WorkerOptions paramType;
+
+  static void Write(MessageWriter* aWriter, const paramType& aParam) {
+    WriteParam(aWriter, aParam.mType);
+    WriteParam(aWriter, aParam.mCredentials);
+    WriteParam(aWriter, aParam.mName);
+  }
+
+  static bool Read(MessageReader* aReader, paramType* aResult) {
+    return ReadParam(aReader, &aResult->mType) &&
+           ReadParam(aReader, &aResult->mCredentials) &&
+           ReadParam(aReader, &aResult->mName);
+  }
+};
 
 }  
 
