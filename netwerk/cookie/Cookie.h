@@ -38,6 +38,14 @@ class Cookie final : public nsICookie {
   NS_DECL_ISUPPORTS
   NS_DECL_NSICOOKIE
 
+  static Cookie* Cast(nsICookie* aCookie) {
+    return static_cast<Cookie*>(aCookie);
+  }
+
+  static const Cookie* Cast(const nsICookie* aCookie) {
+    return static_cast<const Cookie*>(aCookie);
+  }
+
  private:
   
   Cookie(const CookieStruct& aCookieData,
@@ -143,21 +151,25 @@ class Cookie final : public nsICookie {
 
 class CompareCookiesForSending {
  public:
-  bool Equals(const Cookie* aCookie1, const Cookie* aCookie2) const {
-    return aCookie1->CreationTime() == aCookie2->CreationTime() &&
-           aCookie2->Path().Length() == aCookie1->Path().Length();
+  bool Equals(const nsICookie* aCookie1, const nsICookie* aCookie2) const {
+    return Cookie::Cast(aCookie1)->CreationTime() ==
+               Cookie::Cast(aCookie2)->CreationTime() &&
+           Cookie::Cast(aCookie2)->Path().Length() ==
+               Cookie::Cast(aCookie1)->Path().Length();
   }
 
-  bool LessThan(const Cookie* aCookie1, const Cookie* aCookie2) const {
+  bool LessThan(const nsICookie* aCookie1, const nsICookie* aCookie2) const {
     
-    int32_t result = aCookie2->Path().Length() - aCookie1->Path().Length();
+    int32_t result = Cookie::Cast(aCookie2)->Path().Length() -
+                     Cookie::Cast(aCookie1)->Path().Length();
     if (result != 0) return result < 0;
 
     
     
     
     
-    return aCookie1->CreationTime() < aCookie2->CreationTime();
+    return Cookie::Cast(aCookie1)->CreationTime() <
+           Cookie::Cast(aCookie2)->CreationTime();
   }
 };
 

@@ -415,11 +415,16 @@ const query = function* (detailsIn, props, context, allowPattern) {
   if (host && !isPattern) {
     
     
-    cookies = Services.cookies.getCookiesFromHost(host, originAttributes);
+    cookies = Services.cookies.getCookiesFromHost(
+      host,
+      originAttributes,
+       true
+    );
   } else {
     cookies = Services.cookies.getCookiesWithOriginAttributes(
       JSON.stringify(originAttributes),
-      host
+      host,
+       true
     );
   }
 
@@ -617,7 +622,6 @@ this.cookies = class extends ExtensionAPIPersistent {
         get: function (details) {
           validateFirstPartyDomain(details);
 
-          
           let allowed = ["url", "name"];
           for (let cookie of query(details, allowed, context)) {
             return Promise.resolve(convertCookie(cookie));

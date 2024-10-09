@@ -228,13 +228,17 @@ interface nsICookieManager : nsISupports
 
 
 
+
+
   [implicit_jscontext]
   Array<nsICookie> getCookiesFromHost(in AUTF8String aHost,
-                                      in jsval aOriginAttributes);
+                                      in jsval aOriginAttributes,
+                                      [optional] in boolean aSorted);
 
   [notxpcom]
   nsresult getCookiesFromHostNative(in AUTF8String aHost,
                                     in OriginAttributesPtr aOriginAttributes,
+                                    in boolean aSorted,
                                     out Array<nsICookie> aCookies);
 
   
@@ -248,8 +252,11 @@ interface nsICookieManager : nsISupports
 
 
 
+
+
   Array<nsICookie> getCookiesWithOriginAttributes(in AString aPattern,
-                                                  [optional] in AUTF8String aHost);
+                                                  [optional] in AUTF8String aHost,
+                                                  [optional] in boolean aSorted);
 
   
 
