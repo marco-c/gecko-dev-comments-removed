@@ -237,7 +237,6 @@ const zones = [
   "Asia/Bishkek",
   "Asia/Brunei",
   "Asia/Chita",
-  "Asia/Choibalsan",
   "Asia/Chongqing",
   "Asia/Colombo",
   "Asia/Damascus",

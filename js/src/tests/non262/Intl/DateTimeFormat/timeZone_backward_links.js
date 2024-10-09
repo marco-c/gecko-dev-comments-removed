@@ -35,6 +35,7 @@ const links = {
     "Arctic/Longyearbyen": "Europe/Oslo",
     "Asia/Ashkhabad": "Asia/Ashgabat",
     "Asia/Calcutta": "Asia/Kolkata",
+    "Asia/Choibalsan": "Asia/Ulaanbaatar",
     "Asia/Chungking": "Asia/Chongqing",
     "Asia/Dacca": "Asia/Dhaka",
     "Asia/Istanbul": "Europe/Istanbul",
