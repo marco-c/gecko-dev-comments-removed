@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=590363
+-->
 <head>
   <title>Test for Bug 590363</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -42,7 +42,7 @@ var testData = [
   [ 'month',    true ],
   [ 'week',     true ],
   [ 'datetime-local', true ]
-  // 'file' is treated separatly.
+  // 'file' is treated separately.
 ];
 
 var nonTrivialSanitizing = [ 'number', 'date', 'time', 'color', 'month', 'week',

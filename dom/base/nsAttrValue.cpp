@@ -2144,7 +2144,7 @@ size_t nsAttrValue::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
         
       } else if (Type() == eAtomArray && container->mValue.mAtomArray) {
         
-        n += container->mValue.mAtomArray->mArray.ShallowSizeOfIncludingThis(
+        n += container->mValue.mAtomArray->ShallowSizeOfIncludingThis(
             aMallocSizeOf);
       }
       break;
