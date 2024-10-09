@@ -1576,8 +1576,7 @@ bool js::temporal::BalanceTimeDuration(JSContext* cx,
 
 static bool UnbalanceDateDurationRelative(
     JSContext* cx, const DateDuration& duration,
-    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<CalendarRecord> calendar, int64_t* result) {
+    Handle<PlainDateWithCalendar> plainRelativeTo, int64_t* result) {
   MOZ_ASSERT(IsValidDuration(duration));
 
   auto [years, months, weeks, days] = duration;
@@ -1589,24 +1588,26 @@ static bool UnbalanceDateDurationRelative(
   }
 
   
+  if (!plainRelativeTo) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
+                              "relativeTo");
+    return false;
+  }
+
+  
   auto yearsMonthsWeeksDuration = DateDuration{years, months, weeks};
 
   
-  auto later =
-      CalendarDateAdd(cx, calendar, plainRelativeTo, yearsMonthsWeeksDuration);
-  if (!later) {
+  PlainDate later;
+  if (!CalendarDateAdd(cx, plainRelativeTo.calendar(), plainRelativeTo,
+                       yearsMonthsWeeksDuration, TemporalOverflow::Constrain,
+                       &later)) {
     return false;
   }
-  auto laterDate = ToPlainDate(&later.unwrap());
-
-  auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
-  if (!unwrappedRelativeTo) {
-    return false;
-  }
-  auto relativeToDate = ToPlainDate(unwrappedRelativeTo);
 
   
-  int32_t yearsMonthsWeeksInDay = DaysUntil(relativeToDate, laterDate);
+  int32_t yearsMonthsWeeksInDay = DaysUntil(plainRelativeTo, later);
 
   
   *result = days + yearsMonthsWeeksInDay;
@@ -1850,9 +1851,12 @@ static JSString* TemporalDurationToString(JSContext* cx,
 
 static bool GetTemporalRelativeToOption(
     JSContext* cx, Handle<JSObject*> options,
-    MutableHandle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    MutableHandle<ZonedDateTime> zonedRelativeTo,
-    MutableHandle<TimeZoneValue> timeZoneValue) {
+    MutableHandle<PlainDateWithCalendar> plainRelativeTo,
+    MutableHandle<ZonedDateTime> zonedRelativeTo) {
+  
+  plainRelativeTo.set(PlainDateWithCalendar{});
+  zonedRelativeTo.set(ZonedDateTime{});
+
   
   Rooted<Value> value(cx);
   if (!GetProperty(cx, options, options, cx->names().relativeTo, &value)) {
@@ -1861,9 +1865,6 @@ static bool GetTemporalRelativeToOption(
 
   
   if (value.isUndefined()) {
-    plainRelativeTo.set(nullptr);
-    zonedRelativeTo.set(ZonedDateTime{});
-    timeZoneValue.set(TimeZoneValue{});
     return true;
   }
 
@@ -1895,23 +1896,26 @@ static bool GetTemporalRelativeToOption(
       }
 
       
-      plainRelativeTo.set(nullptr);
       zonedRelativeTo.set(ZonedDateTime{instant, timeZone, calendar});
-      timeZoneValue.set(timeZone);
       return true;
     }
 
     
-    if (obj->canUnwrapAs<PlainDateObject>()) {
-      plainRelativeTo.set(obj);
-      zonedRelativeTo.set(ZonedDateTime{});
-      timeZoneValue.set(TimeZoneValue{});
+    if (auto* plainDate = obj->maybeUnwrapIf<PlainDateObject>()) {
+      auto date = ToPlainDate(plainDate);
+
+      Rooted<CalendarValue> calendar(cx, plainDate->calendar());
+      if (!calendar.wrap(cx)) {
+        return false;
+      }
+
+      plainRelativeTo.set(PlainDateWithCalendar{date, calendar});
       return true;
     }
 
     
     if (auto* dateTime = obj->maybeUnwrapIf<PlainDateTimeObject>()) {
-      auto plainDateTime = ToPlainDate(dateTime);
+      auto date = ToPlainDate(dateTime);
 
       Rooted<CalendarValue> calendar(cx, dateTime->calendar());
       if (!calendar.wrap(cx)) {
@@ -1919,15 +1923,7 @@ static bool GetTemporalRelativeToOption(
       }
 
       
-      auto* plainDate = CreateTemporalDate(cx, plainDateTime, calendar);
-      if (!plainDate) {
-        return false;
-      }
-
-      
-      plainRelativeTo.set(plainDate);
-      zonedRelativeTo.set(ZonedDateTime{});
-      timeZoneValue.set(TimeZoneValue{});
+      plainRelativeTo.set(PlainDateWithCalendar{date, calendar});
       return true;
     }
 
@@ -1936,7 +1932,6 @@ static bool GetTemporalRelativeToOption(
       return false;
     }
 
-    
     Rooted<CalendarRecord> calendarRec(cx);
     if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
       return false;
@@ -1965,13 +1960,11 @@ static bool GetTemporalRelativeToOption(
       return false;
     }
 
-    
     Rooted<PlainObject*> dateOptions(cx, NewPlainObjectWithProto(cx, nullptr));
     if (!dateOptions) {
       return false;
     }
 
-    
     Rooted<Value> overflow(cx, StringValue(cx->names().constrain));
     if (!DefineDataProperty(cx, dateOptions, cx->names().overflow, overflow)) {
       return false;
@@ -2098,15 +2091,7 @@ static bool GetTemporalRelativeToOption(
   
   if (!timeZone) {
     
-    auto* plainDate = CreateTemporalDate(cx, dateTime.date, calendar);
-    if (!plainDate) {
-      return false;
-    }
-
-    plainRelativeTo.set(plainDate);
-    zonedRelativeTo.set(ZonedDateTime{});
-    timeZoneValue.set(TimeZoneValue{});
-    return true;
+    return CreateTemporalDate(cx, dateTime.date, calendar, plainRelativeTo);
   }
 
   
@@ -2122,41 +2107,7 @@ static bool GetTemporalRelativeToOption(
   MOZ_ASSERT(IsValidEpochInstant(epochNanoseconds));
 
   
-  plainRelativeTo.set(nullptr);
   zonedRelativeTo.set(ZonedDateTime{epochNanoseconds, timeZone, calendar});
-  timeZoneValue.set(timeZone);
-  return true;
-}
-
-
-
-
-
-static bool CreateCalendarMethodsRecordFromRelativeTo(
-    JSContext* cx, Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<ZonedDateTime> zonedRelativeTo,
-    MutableHandle<CalendarRecord> result) {
-  
-  if (zonedRelativeTo) {
-    return CreateCalendarMethodsRecord(cx, zonedRelativeTo.calendar(), result);
-  }
-
-  
-  if (plainRelativeTo) {
-    auto* unwrapped = plainRelativeTo.unwrap(cx);
-    if (!unwrapped) {
-      return false;
-    }
-
-    Rooted<CalendarValue> calendar(cx, unwrapped->calendar());
-    if (!calendar.wrap(cx)) {
-      return false;
-    }
-
-    return CreateCalendarMethodsRecord(cx, calendar, result);
-  }
-
-  
   return true;
 }
 
@@ -3506,34 +3457,30 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  Rooted<Wrapped<PlainDateObject*>> plainRelativeTo(cx);
+  Rooted<PlainDateWithCalendar> plainRelativeTo(cx);
   Rooted<ZonedDateTime> zonedRelativeTo(cx);
-  Rooted<TimeZoneValue> timeZone(cx);
   if (options) {
     if (!GetTemporalRelativeToOption(cx, options, &plainRelativeTo,
-                                     &zonedRelativeTo, &timeZone)) {
+                                     &zonedRelativeTo)) {
       return false;
     }
     MOZ_ASSERT(!plainRelativeTo || !zonedRelativeTo);
-    MOZ_ASSERT_IF(zonedRelativeTo, timeZone);
   }
 
   
-  auto hasCalendarUnit = [](const auto& d) {
-    return d.years != 0 || d.months != 0 || d.weeks != 0;
-  };
-  bool calendarUnitsPresent = hasCalendarUnit(one) || hasCalendarUnit(two);
+  auto normOne = CreateNormalizedDurationRecord(one);
+  auto normTwo = CreateNormalizedDurationRecord(two);
+  bool calendarUnitsOrDaysPresent =
+      normOne.date != DateDuration{} || normTwo.date != DateDuration{};
 
   
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecordFromRelativeTo(cx, plainRelativeTo,
-                                                 zonedRelativeTo, &calendar)) {
-    return false;
-  }
+  if (zonedRelativeTo && calendarUnitsOrDaysPresent) {
+    
+    auto timeZone = zonedRelativeTo.timeZone();
 
-  
-  if (zonedRelativeTo &&
-      (calendarUnitsPresent || one.days != 0 || two.days != 0)) {
+    
+    auto calendar = zonedRelativeTo.calendar();
+
     
     const auto& instant = zonedRelativeTo.instant();
 
@@ -3544,21 +3491,23 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    auto normalized1 = CreateNormalizedDurationRecord(one);
+    const auto& normalized1 = normOne;
 
     
-    auto normalized2 = CreateNormalizedDurationRecord(two);
+    const auto& normalized2 = normTwo;
+
+    Rooted<CalendarRecord> calendarRec(cx, calendar);
 
     
     Instant after1;
-    if (!AddZonedDateTime(cx, instant, timeZone, calendar, normalized1,
+    if (!AddZonedDateTime(cx, instant, timeZone, calendarRec, normalized1,
                           dateTime, &after1)) {
       return false;
     }
 
     
     Instant after2;
-    if (!AddZonedDateTime(cx, instant, timeZone, calendar, normalized2,
+    if (!AddZonedDateTime(cx, instant, timeZone, calendarRec, normalized2,
                           dateTime, &after2)) {
       return false;
     }
@@ -3569,37 +3518,20 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  int64_t days1, days2;
-  if (calendarUnitsPresent) {
-    
-    if (!plainRelativeTo) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
-                                "relativeTo");
-      return false;
-    }
+  int64_t days1;
+  if (!UnbalanceDateDurationRelative(cx, normOne.date, plainRelativeTo,
+                                     &days1)) {
+    return false;
+  }
 
-    
-    if (!UnbalanceDateDurationRelative(cx, one.toDateDuration(),
-                                       plainRelativeTo, calendar, &days1)) {
-      return false;
-    }
-
-    
-    if (!UnbalanceDateDurationRelative(cx, two.toDateDuration(),
-                                       plainRelativeTo, calendar, &days2)) {
-      return false;
-    }
-  } else {
-    
-    days1 = mozilla::AssertedCast<int64_t>(one.days);
-
-    
-    days2 = mozilla::AssertedCast<int64_t>(two.days);
+  int64_t days2;
+  if (!UnbalanceDateDurationRelative(cx, normTwo.date, plainRelativeTo,
+                                     &days2)) {
+    return false;
   }
 
   
-  auto normalized1 = NormalizeTimeDuration(one);
+  auto normalized1 = normOne.time;
 
   
   if (!Add24HourDaysToNormalizedTimeDuration(cx, normalized1, days1,
@@ -3608,7 +3540,7 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  auto normalized2 = NormalizeTimeDuration(two);
+  auto normalized2 = normTwo.time;
 
   
   if (!Add24HourDaysToNormalizedTimeDuration(cx, normalized2, days2,
@@ -3987,10 +3919,8 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   TemporalUnit largestUnit;
   auto roundingMode = TemporalRoundingMode::HalfExpand;
   auto roundingIncrement = Increment{1};
-  Rooted<JSObject*> relativeTo(cx);
-  Rooted<Wrapped<PlainDateObject*>> plainRelativeTo(cx);
+  Rooted<PlainDateWithCalendar> plainRelativeTo(cx);
   Rooted<ZonedDateTime> zonedRelativeTo(cx);
-  Rooted<TimeZoneValue> timeZone(cx);
   if (args.get(0).isString()) {
     
 
@@ -4059,11 +3989,10 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalRelativeToOption(cx, options, &plainRelativeTo,
-                                     &zonedRelativeTo, &timeZone)) {
+                                     &zonedRelativeTo)) {
       return false;
     }
     MOZ_ASSERT(!plainRelativeTo || !zonedRelativeTo);
-    MOZ_ASSERT_IF(zonedRelativeTo, timeZone);
 
     
     if (!GetRoundingIncrementOption(cx, options, &roundingIncrement)) {
@@ -4188,7 +4117,8 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     const auto& instant = zonedRelativeTo.instant();
 
     
-    if (!GetPlainDateTimeFor(cx, timeZone, instant, &relativeToDateTime)) {
+    if (!GetPlainDateTimeFor(cx, zonedRelativeTo.timeZone(), instant,
+                             &relativeToDateTime)) {
       return false;
     }
     precalculatedPlainDateTime =
@@ -4200,22 +4130,19 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecordFromRelativeTo(cx, plainRelativeTo,
-                                                 zonedRelativeTo, &calendar)) {
-    return false;
-  }
-
-  
   auto normDuration = CreateNormalizedDurationRecord(duration);
-
-  
 
   
   Duration roundResult;
   if (zonedRelativeTo) {
     
-    auto relativeEpochNs = zonedRelativeTo.instant();
+    auto timeZone = zonedRelativeTo.timeZone();
+
+    
+    auto calendar = zonedRelativeTo.calendar();
+
+    
+    const auto& relativeEpochNs = zonedRelativeTo.instant();
 
     
     const auto& relativeInstant = relativeEpochNs;
@@ -4223,8 +4150,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     
     if (precalculatedPlainDateTime) {
       
+      Rooted<CalendarRecord> calendarRec(cx, calendar);
       Instant targetEpochNs;
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendarRec,
                             normDuration, *precalculatedPlainDateTime,
                             &targetEpochNs)) {
         return false;
@@ -4232,7 +4160,7 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
 
       
       if (!DifferenceZonedDateTimeWithRounding(
-              cx, relativeEpochNs, targetEpochNs, timeZone, calendar.receiver(),
+              cx, relativeEpochNs, targetEpochNs, timeZone, calendar,
               *precalculatedPlainDateTime,
               {
                   smallestUnit,
@@ -4245,8 +4173,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
       }
     } else {
       
+      Rooted<CalendarRecord> calendarRec(cx, calendar);
       Instant targetEpochNs;
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendarRec,
                             normDuration, &targetEpochNs)) {
         return false;
       }
@@ -4265,12 +4194,6 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
       }
     }
   } else if (plainRelativeTo) {
-    auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
-    if (!unwrappedRelativeTo) {
-      return false;
-    }
-    auto sourceDate = ToPlainDate(unwrappedRelativeTo);
-
     
     auto targetTime = AddTime(PlainTime{}, normDuration.time);
 
@@ -4285,16 +4208,16 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
 
     
     PlainDate targetDate;
-    if (!AddDate(cx, calendar.receiver(), sourceDate, dateDuration,
+    if (!AddDate(cx, plainRelativeTo.calendar(), plainRelativeTo, dateDuration,
                  TemporalOverflow::Constrain, &targetDate)) {
       return false;
     }
 
     
-    auto sourceDateTime = PlainDateTime{sourceDate, {}};
+    auto sourceDateTime = PlainDateTime{plainRelativeTo, {}};
     auto targetDateTime = PlainDateTime{targetDate, targetTime.time};
     if (!DifferencePlainDateTimeWithRounding(cx, sourceDateTime, targetDateTime,
-                                             calendar.receiver(),
+                                             plainRelativeTo.calendar(),
                                              {
                                                  smallestUnit,
                                                  largestUnit,
@@ -4372,10 +4295,8 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   auto duration = ToDuration(durationObj);
 
   
-  Rooted<JSObject*> relativeTo(cx);
-  Rooted<Wrapped<PlainDateObject*>> plainRelativeTo(cx);
+  Rooted<PlainDateWithCalendar> plainRelativeTo(cx);
   Rooted<ZonedDateTime> zonedRelativeTo(cx);
-  Rooted<TimeZoneValue> timeZone(cx);
   auto unit = TemporalUnit::Auto;
   if (args.get(0).isString()) {
     
@@ -4399,11 +4320,10 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalRelativeToOption(cx, totalOf, &plainRelativeTo,
-                                     &zonedRelativeTo, &timeZone)) {
+                                     &zonedRelativeTo)) {
       return false;
     }
     MOZ_ASSERT(!plainRelativeTo || !zonedRelativeTo);
-    MOZ_ASSERT_IF(zonedRelativeTo, timeZone);
 
     
     if (!GetTemporalUnitValuedOption(cx, totalOf, TemporalUnitKey::Unit,
@@ -4432,7 +4352,8 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
     const auto& instant = zonedRelativeTo.instant();
 
     
-    if (!GetPlainDateTimeFor(cx, timeZone, instant, &relativeToDateTime)) {
+    if (!GetPlainDateTimeFor(cx, zonedRelativeTo.timeZone(), instant,
+                             &relativeToDateTime)) {
       return false;
     }
     precalculatedPlainDateTime =
@@ -4444,22 +4365,19 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecordFromRelativeTo(cx, plainRelativeTo,
-                                                 zonedRelativeTo, &calendar)) {
-    return false;
-  }
-
-  
   auto normDuration = CreateNormalizedDurationRecord(duration);
-
-  
 
   
   double total;
   if (zonedRelativeTo) {
     
-    auto relativeEpochNs = zonedRelativeTo.instant();
+    auto timeZone = zonedRelativeTo.timeZone();
+
+    
+    auto calendar = zonedRelativeTo.calendar();
+
+    
+    const auto& relativeEpochNs = zonedRelativeTo.instant();
 
     
     const auto& relativeInstant = relativeEpochNs;
@@ -4467,13 +4385,15 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
     
     Instant targetEpochNs;
     if (precalculatedPlainDateTime) {
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+      Rooted<CalendarRecord> calendarRec(cx, calendar);
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendarRec,
                             normDuration, *precalculatedPlainDateTime,
                             &targetEpochNs)) {
         return false;
       }
     } else {
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+      Rooted<CalendarRecord> calendarRec(cx, calendar);
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendarRec,
                             normDuration, &targetEpochNs)) {
         return false;
       }
@@ -4482,7 +4402,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
     
     if (unit <= TemporalUnit::Day) {
       if (!DifferenceZonedDateTimeWithRounding(
-              cx, relativeEpochNs, targetEpochNs, timeZone, calendar.receiver(),
+              cx, relativeEpochNs, targetEpochNs, timeZone, calendar,
               *precalculatedPlainDateTime, unit, &total)) {
         return false;
       }
@@ -4491,12 +4411,6 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
                                                   relativeEpochNs, unit);
     }
   } else if (plainRelativeTo) {
-    auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
-    if (!unwrappedRelativeTo) {
-      return false;
-    }
-    auto sourceDate = ToPlainDate(unwrappedRelativeTo);
-
     
     auto targetTime = AddTime(PlainTime{}, normDuration.time);
 
@@ -4511,17 +4425,17 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
 
     
     PlainDate targetDate;
-    if (!AddDate(cx, calendar.receiver(), sourceDate, dateDuration,
+    if (!AddDate(cx, plainRelativeTo.calendar(), plainRelativeTo, dateDuration,
                  TemporalOverflow::Constrain, &targetDate)) {
       return false;
     }
 
     
-    auto sourceDateTime = PlainDateTime{sourceDate, {}};
+    auto sourceDateTime = PlainDateTime{plainRelativeTo, {}};
     auto targetDateTime = PlainDateTime{targetDate, targetTime.time};
     if (!::DifferencePlainDateTimeWithRounding(
-            cx, sourceDateTime, targetDateTime, calendar.receiver(), unit,
-            &total)) {
+            cx, sourceDateTime, targetDateTime, plainRelativeTo.calendar(),
+            unit, &total)) {
       return false;
     }
   } else {
