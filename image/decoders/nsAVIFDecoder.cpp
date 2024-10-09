@@ -673,6 +673,9 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     
     
     if (aShouldSendTelemetry && r != 0) {
+      
+      
+
       mozilla::glean::avif::Dav1dGetPictureReturnValueExtra extra = {
           .value = Some(nsPrintfCString("%d", r)),
       };

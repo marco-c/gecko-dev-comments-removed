@@ -537,6 +537,16 @@ interface nsITelemetry : nsISupports
 
 
 
+  void setEventRecordingEnabled(in ACString aCategory, in boolean aEnabled);
+
+  
+
+
+
+
+
+
+
 
 
 

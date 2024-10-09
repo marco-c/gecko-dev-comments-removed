@@ -549,6 +549,16 @@ class MOZ_RAII AutoScalarTimer {
   const nsString key;
 };
 
+
+
+
+
+
+
+
+
+void SetEventRecordingEnabled(const nsACString& aCategory, bool aEnabled);
+
 }  
 }  
 

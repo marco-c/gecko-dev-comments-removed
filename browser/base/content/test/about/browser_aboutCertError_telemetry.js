@@ -40,6 +40,11 @@ add_task(async function checkTelemetryClickEvents() {
     return !events || !events.length;
   });
 
+  
+  
+  
+  Services.telemetry.setEventRecordingEnabled("security.ui.certerror", true);
+
   for (let useFrame of [false, true]) {
     let recordedObjects = [
       "advanced_button",
@@ -148,4 +153,12 @@ add_task(async function checkTelemetryClickEvents() {
       BrowserTestUtils.removeTab(gBrowser.selectedTab);
     }
   }
+
+  let enableCertErrorUITelemetry = Services.prefs.getBoolPref(
+    "security.certerrors.recordEventTelemetry"
+  );
+  Services.telemetry.setEventRecordingEnabled(
+    "security.ui.certerror",
+    enableCertErrorUITelemetry
+  );
 });

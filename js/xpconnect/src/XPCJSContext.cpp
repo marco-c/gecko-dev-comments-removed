@@ -586,6 +586,7 @@ AutoScriptActivity::~AutoScriptActivity() {
 }
 
 static const double sChromeSlowScriptTelemetryCutoff(10.0);
+static bool sTelemetryEventEnabled(false);
 
 
 bool XPCJSContext::InterruptCallback(JSContext* cx) {
@@ -1443,6 +1444,11 @@ void XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth) {
       }
     }
     if (hangDuration > limit) {
+      if (!sTelemetryEventEnabled) {
+        sTelemetryEventEnabled = true;
+        Telemetry::SetEventRecordingEnabled("slow_script_warning"_ns, true);
+      }
+
       
       
       nsCString durationStr;

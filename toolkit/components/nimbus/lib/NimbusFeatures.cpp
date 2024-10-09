@@ -195,6 +195,7 @@ nsresult NimbusFeatures::RecordExposureEvent(const nsACString& aFeatureId,
     
     return NS_ERROR_UNEXPECTED;
   }
+  Telemetry::SetEventRecordingEnabled("normandy"_ns, true);
   glean::normandy::expose_nimbus_experiment.Record(
       Some(glean::normandy::ExposeNimbusExperimentExtra{
           .branchslug = Some(branchName),

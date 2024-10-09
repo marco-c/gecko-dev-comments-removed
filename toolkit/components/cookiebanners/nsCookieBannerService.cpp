@@ -1126,6 +1126,14 @@ nsCookieBannerService::OnLocationChange(nsIWebProgress* aWebProgress,
       return NS_OK;
     }
 
+    
+    
+    static bool sTelemetryEventEnabled = false;
+    if (!sTelemetryEventEnabled) {
+      sTelemetryEventEnabled = true;
+      Telemetry::SetEventRecordingEnabled("cookie_banner"_ns, true);
+    }
+
     glean::cookie_banners::ReloadExtra extra = {
         .hasClickRule = Some(hasClickRuleInData),
         .hasCookieRule = Some(hasCookieRuleInData),

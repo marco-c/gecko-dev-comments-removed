@@ -103,6 +103,7 @@ function DevTools() {
 
   EventEmitter.decorate(this);
   this._telemetry = new Telemetry();
+  this._telemetry.setEventRecordingEnabled(true);
 
   
   this._commandsPromiseByWebExtId = new Map(); 

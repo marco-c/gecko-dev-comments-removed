@@ -119,9 +119,13 @@ this.telemetry = class extends ExtensionAPI {
             throw new ExtensionUtils.ExtensionError(ex);
           }
         },
-        setEventRecordingEnabled(_category, _enabled) {
+        setEventRecordingEnabled(category, enabled) {
           desktopCheck();
-          
+          try {
+            Services.telemetry.setEventRecordingEnabled(category, enabled);
+          } catch (ex) {
+            throw new ExtensionUtils.ExtensionError(ex);
+          }
         },
         registerEvents(_category, _data) {
           desktopCheck();

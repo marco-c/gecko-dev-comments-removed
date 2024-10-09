@@ -83,6 +83,8 @@ add_task(async function () {
   await TelemetryController.testSetup();
   
   await setEmptyPrefWatchlist();
+  
+  Telemetry.setEventRecordingEnabled("telemetry.test", true);
 
   
   Telemetry.registerEvents("telemetry.test.dynamic", {

@@ -42,6 +42,13 @@ TEST_F(TelemetryTestFixture, RecordEventNative) {
 
   
   TelemetryEvent::RecordEventNative(
+      Telemetry::EventID::TelemetryTest_Test1_Object1, Nothing(), Nothing());
+
+  
+  Telemetry::SetEventRecordingEnabled(category, true);
+
+  
+  TelemetryEvent::RecordEventNative(
       Telemetry::EventID::TelemetryTest_Test2_Object1, Nothing(), Nothing());
 
   
@@ -126,6 +133,7 @@ TEST_F(TelemetryTestFixture, GIFFTValue) {
   const nsCString category("telemetry.test");
   const nsCString method("mirror_with_extra");
   const nsCString object("object1");
+  Telemetry::SetEventRecordingEnabled(category, true);
 
   
   

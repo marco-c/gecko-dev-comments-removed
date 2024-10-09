@@ -335,6 +335,9 @@ nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 nsTHashSet<nsCString> gCategoryNames;
 
 
+nsTHashSet<nsCString> gEnabledCategories;
+
+
 
 typedef nsUint32HashKey ProcessIDHashKey;
 typedef nsTArray<EventRecord> EventRecordArray;
@@ -369,6 +372,19 @@ unsigned int GetDataset(const StaticMutexAutoLock& lock,
   return (*gDynamicEventInfo)[eventKey.id].recordOnRelease
              ? nsITelemetry::DATASET_ALL_CHANNELS
              : nsITelemetry::DATASET_PRERELEASE_CHANNELS;
+}
+
+nsCString GetCategory(const StaticMutexAutoLock& lock,
+                      const EventKey& eventKey) {
+  if (!eventKey.dynamic) {
+    return gEventInfo[eventKey.id].common_info.category();
+  }
+
+  if (!gDynamicEventInfo) {
+    return ""_ns;
+  }
+
+  return (*gDynamicEventInfo)[eventKey.id].category;
 }
 
 bool CanRecordEvent(const StaticMutexAutoLock& lock, const EventKey& eventKey,
@@ -482,8 +498,14 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
   }
 
   
+  
   TelemetryScalar::SummarizeEvent(UniqueEventName(category, method, object),
                                   processType, dynamicNonBuiltin);
+
+  
+  if (!gEnabledCategories.Contains(GetCategory(lock, eventKey))) {
+    return RecordEventResult::Ok;
+  }
 
   EventRecordArray* eventRecords = GetEventRecordsForProcess(lock, processType);
   eventRecords->AppendElement(EventRecord(timestamp, eventKey, value, extra));
@@ -559,6 +581,12 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
   
   if (aBuiltin) {
     gCategoryNames.Insert(category);
+  }
+
+  if (!aBuiltin) {
+    
+    
+    gEnabledCategories.Insert(category);
   }
 }
 
@@ -722,6 +750,9 @@ void TelemetryEvent::InitializeGlobalState(bool aCanRecordBase,
     gCategoryNames.Insert(info.common_info.category());
   }
 
+  
+  gEnabledCategories.Insert("avif"_ns);
+
   gInitDone = true;
 }
 
@@ -734,6 +765,7 @@ void TelemetryEvent::DeInitializeGlobalState() {
 
   gEventNameIDMap.Clear();
   gCategoryNames.Clear();
+  gEnabledCategories.Clear();
   gEventRecords.Clear();
 
   gDynamicEventInfo = nullptr;
@@ -1348,6 +1380,27 @@ void TelemetryEvent::ClearEvents() {
   gEventRecords.Clear();
 }
 
+void TelemetryEvent::SetEventRecordingEnabled(const nsACString& category,
+                                              bool enabled) {
+  StaticMutexAutoLock locker(gTelemetryEventsMutex);
+
+  if (!gCategoryNames.Contains(category)) {
+    LogToBrowserConsole(
+        nsIScriptError::warningFlag,
+        NS_ConvertUTF8toUTF16(
+            nsLiteralCString(
+                "Unknown category for SetEventRecordingEnabled: ") +
+            category));
+    return;
+  }
+
+  if (enabled) {
+    gEnabledCategories.Insert(category);
+  } else {
+    gEnabledCategories.Remove(category);
+  }
+}
+
 size_t TelemetryEvent::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) {
   StaticMutexAutoLock locker(gTelemetryEventsMutex);
@@ -1374,6 +1427,7 @@ size_t TelemetryEvent::SizeOfIncludingThis(
   }
 
   n += gCategoryNames.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  n += gEnabledCategories.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   if (gDynamicEventInfo) {
     n += gDynamicEventInfo->ShallowSizeOfIncludingThis(aMallocSizeOf);
