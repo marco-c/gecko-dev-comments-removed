@@ -820,7 +820,7 @@ class MediaDecoderStateMachine::DecodingState
   bool mIsPrerolling = true;
 
   
-  DelayedScheduler mDormantTimer;
+  DelayedScheduler<TimeStamp> mDormantTimer;
 
   MediaEventListener mOnAudioPopped;
   MediaEventListener mOnVideoPopped;

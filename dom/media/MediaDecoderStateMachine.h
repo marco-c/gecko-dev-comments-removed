@@ -410,7 +410,7 @@ class MediaDecoderStateMachine
   bool mDispatchedStateMachine;
 
   
-  DelayedScheduler mDelayedScheduler;
+  DelayedScheduler<TimeStamp> mDelayedScheduler;
 
   
   
@@ -484,7 +484,7 @@ class MediaDecoderStateMachine
   bool mVideoDecodeSuspended;
 
   
-  DelayedScheduler mVideoDecodeSuspendTimer;
+  DelayedScheduler<TimeStamp> mVideoDecodeSuspendTimer;
 
   
   VideoDecodeMode mVideoDecodeMode;
