@@ -100,20 +100,11 @@ class ObjectActor extends Actor {
 
 
 
-
-
-
-
-
-
   constructor(
     threadActor,
     obj,
     {
       createValueGrip: createValueGripHook,
-      getGripDepth,
-      incrementGripDepth,
-      decrementGripDepth,
       customFormatterObjectTagDepth,
       customFormatterConfigDbgObj,
     }
@@ -137,9 +128,6 @@ class ObjectActor extends Actor {
 
     this.hooks = {
       createValueGrip: createValueGripHook,
-      getGripDepth,
-      incrementGripDepth,
-      decrementGripDepth,
       customFormatterObjectTagDepth,
       customFormatterConfigDbgObj,
     };
@@ -160,7 +148,10 @@ class ObjectActor extends Actor {
   
 
 
-  form() {
+
+
+
+  form({ depth = 0 } = {}) {
     const g = {
       type: "object",
       actor: this.actorID,
@@ -192,9 +183,7 @@ class ObjectActor extends Actor {
       
       
       g.class = "Proxy";
-      this.hooks.incrementGripDepth();
-      previewers.Proxy[0](this, g, null);
-      this.hooks.decrementGripDepth();
+      previewers.Proxy[0](this, g, depth + 1);
       return g;
     }
 
@@ -214,14 +203,11 @@ class ObjectActor extends Actor {
       isError: this.obj.isError,
     });
 
-    this.hooks.incrementGripDepth();
-
     if (g.class == "Function") {
       g.isClassConstructor = this.obj.isClassConstructor;
     }
 
-    this._populateGripPreview(g);
-    this.hooks.decrementGripDepth();
+    this._populateGripPreview(g, depth + 1);
 
     if (
       this.safeRawObj &&
@@ -284,10 +270,15 @@ class ObjectActor extends Actor {
   
 
 
-  _populateGripPreview(grip) {
+
+
+
+
+
+  _populateGripPreview(grip, depth) {
     for (const previewer of previewers[this.className] || previewers.Object) {
       try {
-        const previewerResult = previewer(this, grip);
+        const previewerResult = previewer(this, grip, depth);
         if (previewerResult) {
           return;
         }

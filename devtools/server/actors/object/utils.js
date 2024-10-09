@@ -139,7 +139,7 @@ function createValueGrip(threadActor, value, pool, depth = 0, objectActorAttribu
       return value;
 
     case "string":
-      return createStringGrip(pool, value, depth);
+      return createStringGrip(pool, value);
 
     case "number":
       if (value === Infinity) {
@@ -565,28 +565,26 @@ function createObjectGrip(
     }
 
     if (pool.objectActors.has(object)) {
-      return pool.objectActors.get(object).form();
+      return pool.objectActors.get(object).form({ depth });
     }
 
     
     
     
     if (threadActor.threadLifetimePool.objectActors.has(object)) {
-      return threadActor.threadLifetimePool.objectActors.get(object).form();
+      return threadActor.threadLifetimePool.objectActors.get(object).form({ depth });
     }
   }
 
   const ActorClass = isGripForThreadActor ? PauseScopedObjectActor : ObjectActor;
 
-  let gripDepth = depth;
   const actor = new ActorClass(threadActor, object, {
     
     ...objectActorAttributes,
 
-    getGripDepth: () => gripDepth,
-    incrementGripDepth: () => gripDepth++,
-    decrementGripDepth: () => gripDepth--,
-    createValueGrip: value => createValueGrip(threadActor, value, pool, gripDepth, objectActorAttributes),
+    
+    
+    createValueGrip: value => createValueGrip(threadActor, value, pool, depth + 1, objectActorAttributes),
   });
   pool.manage(actor);
 
@@ -594,7 +592,9 @@ function createObjectGrip(
     pool.objectActors.set(object, actor);
   }
 
-  return actor.form();
+  
+  
+  return actor.form({ depth });
 }
 
 module.exports = {
