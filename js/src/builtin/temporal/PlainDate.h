@@ -204,13 +204,6 @@ PlainDate BalanceISODate(int32_t year, int32_t month, int32_t day);
 
 PlainDate BalanceISODateNew(int32_t year, int32_t month, int32_t day);
 
-
-
-
-
-bool IsBuiltinAccess(JSContext* cx, JS::Handle<PlainDateObject*> date,
-                     std::initializer_list<CalendarField> fieldNames);
-
 } 
 
 namespace js {
