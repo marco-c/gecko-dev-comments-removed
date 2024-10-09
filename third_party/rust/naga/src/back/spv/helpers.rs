@@ -88,17 +88,6 @@ impl crate::AddressSpace {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 pub fn global_needs_wrapper(ir_module: &crate::Module, var: &crate::GlobalVariable) -> bool {
     match var.space {
         crate::AddressSpace::Uniform

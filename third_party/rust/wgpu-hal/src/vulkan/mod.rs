@@ -418,7 +418,13 @@ impl Surface {
             swapchain.next_present_time = Some(present_timing);
         } else {
             
-            panic!("Tried to set display timing properties without the corresponding feature ({features:?}) enabled.");
+            panic!(
+                concat!(
+                    "Tried to set display timing properties ",
+                    "without the corresponding feature ({:?}) enabled."
+                ),
+                features
+            );
         }
     }
 }

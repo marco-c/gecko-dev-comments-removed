@@ -12,13 +12,28 @@ use crate::{arena::Handle, proc::BoundsCheckPolicy};
 
 
 
+
+
 pub(super) enum BoundsCheckResult {
     
     KnownInBounds(u32),
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Computed(Word),
 
+    
+    
+    
     
     
     Conditional(Word),
@@ -38,98 +53,163 @@ impl<'w> BlockContext<'w> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(super) fn write_runtime_array_length(
         &mut self,
         array: Handle<crate::Expression>,
         block: &mut Block,
     ) -> Result<Word, Error> {
         
+        let binding_array_index_id: Option<Word>;
+
+        
+        let global_handle: Handle<crate::GlobalVariable>;
+
         
         
         
         
-        let (opt_array_index_id, global_handle, opt_last_member_index) = match self
-            .ir_function
-            .expressions[array]
-        {
+        
+        
+        let opt_last_member_index: Option<u32>;
+
+        
+        
+        match self.ir_function.expressions[array] {
             crate::Expression::AccessIndex { base, index } => {
                 match self.ir_function.expressions[base] {
-                    
-                    
-                    
                     crate::Expression::AccessIndex {
                         base: base_outer,
                         index: index_outer,
                     } => match self.ir_function.expressions[base_outer] {
+                        
+                        
+                        
                         crate::Expression::GlobalVariable(handle) => {
                             let index_id = self.get_index_constant(index_outer);
-                            (Some(index_id), handle, Some(index))
+                            binding_array_index_id = Some(index_id);
+                            global_handle = handle;
+                            opt_last_member_index = Some(index);
                         }
-                        _ => return Err(Error::Validation("array length expression case-1a")),
+                        _ => {
+                            return Err(Error::Validation(
+                                "array length expression: AccessIndex(AccessIndex(Global))",
+                            ))
+                        }
                     },
-                    
-                    
-                    
                     crate::Expression::Access {
                         base: base_outer,
                         index: index_outer,
                     } => match self.ir_function.expressions[base_outer] {
+                        
+                        
+                        
                         crate::Expression::GlobalVariable(handle) => {
                             let index_id = self.cached[index_outer];
-                            (Some(index_id), handle, Some(index))
+                            binding_array_index_id = Some(index_id);
+                            global_handle = handle;
+                            opt_last_member_index = Some(index);
                         }
-                        _ => return Err(Error::Validation("array length expression case-1b")),
+                        _ => {
+                            return Err(Error::Validation(
+                                "array length expression: AccessIndex(Access(Global))",
+                            ))
+                        }
                     },
-                    
                     crate::Expression::GlobalVariable(handle) => {
-                        let global = &self.ir_module.global_variables[handle];
-                        match self.ir_module.types[global.ty].inner {
-                            
-                            crate::TypeInner::BindingArray { .. } => (Some(index), handle, None),
-                            
-                            _ => (None, handle, Some(index)),
-                        }
+                        
+                        
+                        
+                        
+                        binding_array_index_id = None;
+                        global_handle = handle;
+                        opt_last_member_index = Some(index);
                     }
-                    _ => return Err(Error::Validation("array length expression case-1c")),
+                    _ => {
+                        return Err(Error::Validation(
+                            "array length expression: AccessIndex(<unexpected>)",
+                        ))
+                    }
                 }
             }
-            
-            crate::Expression::Access { base, index } => match self.ir_function.expressions[base] {
-                crate::Expression::GlobalVariable(handle) => {
-                    let index_id = self.cached[index];
-                    let global = &self.ir_module.global_variables[handle];
-                    match self.ir_module.types[global.ty].inner {
-                        crate::TypeInner::BindingArray { .. } => (Some(index_id), handle, None),
-                        _ => return Err(Error::Validation("array length expression case-2a")),
-                    }
-                }
-                _ => return Err(Error::Validation("array length expression case-2b")),
-            },
-            
             crate::Expression::GlobalVariable(handle) => {
-                let global = &self.ir_module.global_variables[handle];
-                if !global_needs_wrapper(self.ir_module, global) {
-                    return Err(Error::Validation("array length expression case-3"));
-                }
-                (None, handle, None)
+                
+                
+                binding_array_index_id = None;
+                global_handle = handle;
+                opt_last_member_index = None;
             }
             _ => return Err(Error::Validation("array length expression case-4")),
         };
 
+        
+        
+        
+        
+        
+        
+        let global = &self.ir_module.global_variables[global_handle];
+        match (
+            &self.ir_module.types[global.ty].inner,
+            binding_array_index_id,
+        ) {
+            (&crate::TypeInner::BindingArray { .. }, Some(_)) => {}
+            (_, None) => {}
+            _ => {
+                return Err(Error::Validation(
+                    "array length expression: bad binding array inference",
+                ))
+            }
+        }
+
+        
+        
         let gvar = self.writer.global_variables[global_handle].clone();
         let global = &self.ir_module.global_variables[global_handle];
-        let (last_member_index, gvar_id) = match opt_last_member_index {
-            Some(index) => (index, gvar.access_id),
-            None => {
-                if !global_needs_wrapper(self.ir_module, global) {
-                    return Err(Error::Validation(
-                        "pointer to a global that is not a wrapped array",
-                    ));
-                }
+        let needs_wrapper = global_needs_wrapper(self.ir_module, global);
+        let (last_member_index, gvar_id) = match (opt_last_member_index, needs_wrapper) {
+            (Some(index), false) => {
+                
+                
+                
+                (index, gvar.access_id)
+            }
+            (None, true) => {
+                
+                
+                
+                
                 (0, gvar.var_id)
             }
+            _ => {
+                return Err(Error::Validation(
+                    "array length expression: bad SPIR-V wrapper struct inference",
+                ));
+            }
         };
-        let structure_id = match opt_array_index_id {
+
+        let structure_id = match binding_array_index_id {
             
             Some(index_id) => {
                 let element_type_id = match self.ir_module.types[global.ty].inner {
@@ -308,6 +388,8 @@ impl<'w> BlockContext<'w> {
     
     
     
+    
+    
     fn write_index_comparison(
         &mut self,
         sequence: Handle<crate::Expression>,
@@ -411,6 +493,18 @@ impl<'w> BlockContext<'w> {
         selection.finish(self, loaded_value)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

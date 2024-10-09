@@ -64,9 +64,10 @@ impl Instance {
                 
                 
                 
-                return Err(crate::InstanceError::new(String::from(
-                    "canvas.getContext() returned null; webgl2 not available or canvas already in use"
-                )));
+                return Err(crate::InstanceError::new(String::from(concat!(
+                    "canvas.getContext() returned null; ",
+                    "webgl2 not available or canvas already in use"
+                ))));
             }
             Err(js_error) => {
                 

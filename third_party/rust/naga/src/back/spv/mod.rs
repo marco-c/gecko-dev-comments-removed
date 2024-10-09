@@ -144,6 +144,7 @@ struct Function {
     signature: Option<Instruction>,
     parameters: Vec<FunctionArgument>,
     variables: crate::FastHashMap<Handle<crate::LocalVariable>, LocalVariable>,
+    internal_variables: Vec<LocalVariable>,
     blocks: Vec<TerminatedBlock>,
     entry_point_context: Option<EntryPointContext>,
 }
@@ -466,8 +467,40 @@ enum CachedConstant {
     ZeroValue(Word),
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone)]
 struct GlobalVariable {
+    
+    
     
     
     
@@ -485,8 +518,13 @@ struct GlobalVariable {
     
     
     
+    
+    
+    
     handle_id: Word,
 
+    
+    
     
     
     
@@ -625,12 +663,6 @@ impl BlockContext<'_> {
         self.writer
             .get_pointer_id(&self.ir_module.types, handle, class)
     }
-}
-
-#[derive(Clone, Copy, Default)]
-struct LoopContext {
-    continuing_id: Option<Word>,
-    break_id: Option<Word>,
 }
 
 pub struct Writer {

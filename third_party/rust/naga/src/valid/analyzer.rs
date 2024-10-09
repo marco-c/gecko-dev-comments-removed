@@ -595,17 +595,10 @@ impl FunctionInfo {
                 let uniform = match arg.binding {
                     Some(crate::Binding::BuiltIn(
                         
-                        crate::BuiltIn::FrontFacing
-                        
-                        | crate::BuiltIn::WorkGroupId
+                        crate::BuiltIn::WorkGroupId
                         | crate::BuiltIn::WorkGroupSize
-                        | crate::BuiltIn::NumWorkGroups)
-                    ) => true,
-                    
-                    Some(crate::Binding::Location {
-                        interpolation: Some(crate::Interpolation::Flat),
-                        ..
-                    }) => true,
+                        | crate::BuiltIn::NumWorkGroups,
+                    )) => true,
                     _ => false,
                 };
                 Uniformity {
