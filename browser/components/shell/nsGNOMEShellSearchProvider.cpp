@@ -423,6 +423,7 @@ static void DBusGetIDKeyForURI(int aIndex, bool aIsOpen, nsAutoCString& aUri,
 
 void nsGNOMEShellHistorySearchResult::HandleSearchResultReply() {
   MOZ_ASSERT(mReply);
+  MOZ_ASSERT(mHistResultContainer);
 
   GVariantBuilder b;
   g_variant_builder_init(&b, G_VARIANT_TYPE("as"));
@@ -486,9 +487,11 @@ void nsGNOMEShellHistorySearchResult::ReceiveSearchResultContainer(
   
   
   
-  if (mSearchProvider->SetSearchResult(this)) {
-    mHistResultContainer = aHistResultContainer;
+  if (!mSearchProvider->SetSearchResult(this)) {
+    return;
   }
+
+  mHistResultContainer = aHistResultContainer;
 
   
   nsresult rv;
