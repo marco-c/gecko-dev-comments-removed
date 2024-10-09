@@ -122,7 +122,6 @@ class CalendarObject : public NativeObject {
 
 
 
-
 class MOZ_STACK_CLASS CalendarValue final {
   JS::Value value_{};
 
@@ -159,24 +158,9 @@ class MOZ_STACK_CLASS CalendarValue final {
   
 
 
-  bool isString() const { return value_.isInt32(); }
-
-  
-
-
-  bool isObject() const { return value_.isObject(); }
-
-  
-
-
-  CalendarId toString() const {
+  CalendarId identifier() const {
     return static_cast<CalendarId>(value_.toInt32());
   }
-
-  
-
-
-  JSObject* toObject() const { return &value_.toObject(); }
 
   void trace(JSTracer* trc);
 
@@ -873,14 +857,6 @@ bool CreateCalendarMethodsRecord(JSContext* cx,
                                  JS::MutableHandle<CalendarRecord> result);
 
 
-
-
-inline bool CalendarMethodsRecordIsBuiltin(const CalendarRecord& calendar) {
-  
-  return calendar.receiver().isString();
-}
-
-
 bool WrapCalendarValue(JSContext* cx, JS::MutableHandle<JS::Value> calendar);
 
 } 
@@ -901,19 +877,7 @@ class WrappedPtrOperations<temporal::CalendarValue, Wrapper> {
         container().valueDoNotUse());
   }
 
-  JS::Handle<JS::Value> toObjectValue() const {
-    MOZ_ASSERT(isObject());
-    return JS::Handle<JS::Value>::fromMarkedLocation(
-        container().valueDoNotUse());
-  }
-
-  bool isString() const { return container().isString(); }
-
-  bool isObject() const { return container().isObject(); }
-
-  temporal::CalendarId toString() const { return container().toString(); }
-
-  JSObject* toObject() const { return container().toObject(); }
+  temporal::CalendarId identifier() const { return container().identifier(); }
 };
 
 template <typename Wrapper>

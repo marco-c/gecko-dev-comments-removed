@@ -284,8 +284,7 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
   
   if (!hasYear) {
     
-    MOZ_ASSERT(calendarValue.isString() &&
-               calendarValue.toString() == CalendarId::ISO8601);
+    MOZ_ASSERT(calendarValue.identifier() == CalendarId::ISO8601);
 
     
     constexpr int32_t referenceISOYear = 1972;
