@@ -1,12 +1,11 @@
 
 
 
-
 'use strict';
 
 
 
-pressure_test(async (t, mockPressureService) => {
+promise_test(async (t) => {
   const observer = new PressureObserver(() => {});
   t.add_cleanup(() => observer.disconnect());
 

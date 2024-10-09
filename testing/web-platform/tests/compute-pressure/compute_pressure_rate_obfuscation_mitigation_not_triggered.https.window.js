@@ -3,9 +3,18 @@
 
 
 
+
+
+
+
 'use strict';
 
-pressure_test(async (t, mockPressureService) => {
+pressure_test(async (t) => {
+  await create_virtual_pressure_source('cpu');
+  t.add_cleanup(async () => {
+    await remove_virtual_pressure_source('cpu');
+  });
+
   const sampleIntervalInMs = 100;
   const readings = ['nominal', 'fair', 'serious', 'critical'];
   
@@ -13,31 +22,23 @@ pressure_test(async (t, mockPressureService) => {
   const minPenaltyTimeInMs = 5000;
   const minChangesThreshold = 50;
 
-  const changes = await new Promise(async resolve => {
-    const observerChanges = [];
-    const observer = new PressureObserver(changes => {
-      observerChanges.push(changes);
-    });
-
-    observer.observe('cpu', {sampleInterval: sampleIntervalInMs});
-    mockPressureService.startPlatformCollector(sampleIntervalInMs);
-    let i = 0;
-    
-    
-    
-    
-    while (observerChanges.length < minChangesThreshold) {
-      mockPressureService.setPressureUpdate(
-          'cpu', readings[i++ % readings.length]);
-      
-      await new Promise((resolve) => t.step_timeout(resolve, 0));
-      await t.step_wait(
-          () => mockPressureService.updatesDelivered() >= i,
-          `At least ${i} readings have been delivered`);
-    }
-    observer.disconnect();
-    resolve(observerChanges);
+  const changes = [];
+  const observer = new PressureObserver(updates => {
+    changes.push(updates);
   });
+  t.add_cleanup(() => observer.disconnect());
+  await observer.observe('cpu', {sampleInterval: sampleIntervalInMs});
+
+  let i = 0;
+  while (changes.length < minChangesThreshold) {
+    await update_virtual_pressure_source(
+        'cpu', readings[i++ % readings.length]);
+    await t.step_wait(
+        () => changes.length >= i,
+        `At least ${i} readings have been delivered`);
+  }
+  observer.disconnect();
+
   assert_equals(changes.length, minChangesThreshold);
 
   for (let i = 0; i < (changes.length - 1); i++) {
@@ -48,3 +49,5 @@ pressure_test(async (t, mockPressureService) => {
         'Not in sample time boundaries');
   }
 }, 'No rate obfuscation mitigation should happen, when number of changes is below minimum changes before penalty');
+
+mark_as_done();
