@@ -1692,7 +1692,9 @@ var gUnifiedExtensions = {
     
     
     
-    const container = document.getElementById(area);
+    const container = CustomizableUI.getCustomizationTarget(
+      document.getElementById(area)
+    );
 
     let moved = false;
     let currentPosition = 0;

@@ -144,16 +144,25 @@ var gBrowserInit = {
       "BrowserToolbarPalette"
     ).content;
 
+    let isVerticalTabs = Services.prefs.getBoolPref(
+      "sidebar.verticalTabs",
+      false
+    );
+    let nonRemovables;
+    let isPopup = !window.toolbar.visible;
+
     
     
-    let nonRemovables = [
-      gBrowser.tabContainer,
-      document.getElementById("alltabs-button"),
-    ];
-    for (let elem of nonRemovables) {
-      elem.setAttribute("removable", "true");
-      
-      elem.setAttribute("skipintoolbarset", "true");
+    if (isVerticalTabs && !isPopup) {
+      nonRemovables = [
+        gBrowser.tabContainer,
+        document.getElementById("alltabs-button"),
+      ];
+      for (let elem of nonRemovables) {
+        elem.setAttribute("removable", "true");
+        
+        elem.setAttribute("skipintoolbarset", "true");
+      }
     }
     for (let area of CustomizableUI.areas) {
       let type = CustomizableUI.getAreaType(area);
@@ -162,11 +171,35 @@ var gBrowserInit = {
         CustomizableUI.registerToolbarNode(node);
       }
     }
-    for (let elem of nonRemovables) {
-      elem.setAttribute("removable", "false");
-      elem.removeAttribute("skipintoolbarset");
-    }
+    if (isVerticalTabs && !isPopup) {
+      
+      setToolbarVisibility(
+        document.getElementById(CustomizableUI.AREA_VERTICAL_TABSTRIP),
+        true,
+        false,
+        false
+      );
+      let tabstripToolbar = document.getElementById(
+        CustomizableUI.AREA_TABSTRIP
+      );
+      let wasCollapsed = tabstripToolbar.collapsed;
+      TabBarVisibility.update();
+      if (tabstripToolbar.collapsed !== wasCollapsed) {
+        let eventParams = {
+          detail: {
+            visible: !tabstripToolbar.collapsed,
+          },
+          bubbles: true,
+        };
+        let event = new CustomEvent("toolbarvisibilitychange", eventParams);
+        tabstripToolbar.dispatchEvent(event);
+      }
 
+      for (let elem of nonRemovables) {
+        elem.setAttribute("removable", "false");
+        elem.removeAttribute("skipintoolbarset");
+      }
+    }
     BrowserSearch.initPlaceHolder();
 
     
