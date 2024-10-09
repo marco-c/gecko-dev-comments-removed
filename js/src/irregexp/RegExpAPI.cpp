@@ -114,10 +114,7 @@ static uint32_t ErrorNumber(RegExpError err) {
     case RegExpError::kInvalidFlagGroup:
       return JSMSG_INVALID_FLAG_GROUP;
     case RegExpError::kMultipleFlagDashes:
-      
-      
-      
-      MOZ_CRASH("Mode modifiers not supported");
+      return JSMSG_MULTIPLE_FLAG_DASHES;
     case RegExpError::kNotLinear:
       
       
