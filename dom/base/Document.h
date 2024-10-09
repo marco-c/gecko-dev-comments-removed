@@ -3158,6 +3158,10 @@ class Document : public nsINode,
 
   void SetNavigationTiming(nsDOMNavigationTiming* aTiming);
 
+  inline void SetPageloadEventFeature(uint32_t aFeature) {
+    mPageloadEventFeatures |= aFeature;
+  }
+
   nsContentList* ImageMapList();
 
   
@@ -5423,6 +5427,10 @@ class Document : public nsINode,
 
   
   bool mShouldNotifyFormOrPasswordRemoved;
+
+  
+  
+  uint32_t mPageloadEventFeatures = 0;
 
   
   void RecordPageLoadEventTelemetry(
