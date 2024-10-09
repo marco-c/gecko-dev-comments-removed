@@ -2065,8 +2065,8 @@ static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<JSObject*> mergedFields(
-      cx, CalendarMergeFields(cx, calendarRec, fields, partialDate));
+  Rooted<PlainObject*> mergedFields(
+      cx, CalendarMergeFields(cx, calendar, fields, partialDate));
   if (!mergedFields) {
     return false;
   }

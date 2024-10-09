@@ -4113,13 +4113,16 @@ static bool IsPlainDataObject(PlainObject* obj) {
 
 
 
-static PlainObject* BuiltinCalendarMergeFields(
-    JSContext* cx, CalendarId calendarId, Handle<PlainObject*> fields,
+PlainObject* js::temporal::CalendarMergeFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> additionalFields) {
-  MOZ_ASSERT(IsPlainDataObject(fields));
-  MOZ_ASSERT(IsPlainDataObject(additionalFields));
+  auto calendarId = calendar.identifier();
 
   
+
+  
+  MOZ_ASSERT(IsPlainDataObject(fields));
+  MOZ_ASSERT(IsPlainDataObject(additionalFields));
 
   
   
@@ -4208,16 +4211,6 @@ static PlainObject* BuiltinCalendarMergeFields(
 
   
   return merged;
-}
-
-
-
-
-JSObject* js::temporal::CalendarMergeFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
-    Handle<PlainObject*> additionalFields) {
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarMergeFields(cx, calendarId, fields, additionalFields);
 }
 
 

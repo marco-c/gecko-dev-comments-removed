@@ -298,10 +298,10 @@ bool CalendarFields(JSContext* cx, JS::Handle<CalendarRecord> calendar,
 
 
 
-JSObject* CalendarMergeFields(JSContext* cx,
-                              JS::Handle<CalendarRecord> calendar,
-                              JS::Handle<PlainObject*> fields,
-                              JS::Handle<PlainObject*> additionalFields);
+PlainObject* CalendarMergeFields(JSContext* cx,
+                                 JS::Handle<CalendarValue> calendar,
+                                 JS::Handle<PlainObject*> fields,
+                                 JS::Handle<PlainObject*> additionalFields);
 
 
 
