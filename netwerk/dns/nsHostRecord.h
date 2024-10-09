@@ -128,6 +128,8 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   friend class mozilla::net::TRR;
   friend class mozilla::net::TRRQuery;
 
+  using DNSResolverType = mozilla::net::DNSResolverType;
+
   explicit nsHostRecord(const nsHostKey& key);
   virtual ~nsHostRecord() = default;
 
@@ -173,6 +175,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     mTrrAttempts = 0;
     mTRRSuccess = false;
     mNativeSuccess = false;
+    mResolverType = DNSResolverType::Native;
   }
 
   virtual void OnCompleteLookup() {}
@@ -219,6 +222,9 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   mozilla::Atomic<int32_t> mTrrAttempts{0};
 
   
+  mozilla::Atomic<DNSResolverType> mResolverType{DNSResolverType::Native};
+
+  
   
   
   bool negative = false;
@@ -260,7 +266,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
 class AddrHostRecord final : public nsHostRecord {
   using Mutex = mozilla::Mutex;
-  using DNSResolverType = mozilla::net::DNSResolverType;
 
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(ADDRHOSTRECORD_IID)
@@ -327,7 +332,6 @@ class AddrHostRecord final : public nsHostRecord {
   virtual void Reset() override {
     nsHostRecord::Reset();
     StoreNativeUsed(false);
-    mResolverType = DNSResolverType::Native;
   }
 
   virtual void OnCompleteLookup() override {
@@ -337,9 +341,6 @@ class AddrHostRecord final : public nsHostRecord {
   }
 
   void ResolveComplete() override;
-
-  
-  mozilla::Atomic<DNSResolverType> mResolverType{DNSResolverType::Native};
 
   
   
