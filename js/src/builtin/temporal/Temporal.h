@@ -318,6 +318,20 @@ enum class ShowOffset { Auto, Never };
 bool GetTemporalShowOffsetOption(JSContext* cx, JS::Handle<JSObject*> options,
                                  ShowOffset* result);
 
+enum class Direction { Next, Previous };
+
+
+
+
+bool GetDirectionOption(JSContext* cx, JS::Handle<JSObject*> options,
+                        Direction* result);
+
+
+
+
+bool GetDirectionOption(JSContext* cx, JS::Handle<JSString*> direction,
+                        Direction* result);
+
 
 
 

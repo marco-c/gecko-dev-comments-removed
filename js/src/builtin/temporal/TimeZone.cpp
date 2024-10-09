@@ -398,10 +398,9 @@ static bool GetNamedTimeZoneOffsetNanoseconds(
 
 
 
-static bool GetNamedTimeZoneNextTransition(JSContext* cx,
-                                           Handle<TimeZoneObject*> timeZone,
-                                           const Instant& epochInstant,
-                                           mozilla::Maybe<Instant>* result) {
+bool js::temporal::GetNamedTimeZoneNextTransition(
+    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
+    const Instant& epochInstant, mozilla::Maybe<Instant>* result) {
   MOZ_ASSERT(timeZone->offsetMinutes().isUndefined());
 
   
@@ -442,8 +441,8 @@ static bool GetNamedTimeZoneNextTransition(JSContext* cx,
 
 
 
-static bool GetNamedTimeZonePreviousTransition(
-    JSContext* cx, Handle<TimeZoneObject*> timeZone,
+bool js::temporal::GetNamedTimeZonePreviousTransition(
+    JSContext* cx, Handle<TimeZoneObjectMaybeBuiltin*> timeZone,
     const Instant& epochInstant, mozilla::Maybe<Instant>* result) {
   MOZ_ASSERT(timeZone->offsetMinutes().isUndefined());
 

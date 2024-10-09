@@ -3402,6 +3402,108 @@ static bool ZonedDateTime_startOfDay(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool ZonedDateTime_getTimeZoneTransition(JSContext* cx,
+                                                const CallArgs& args) {
+  Rooted<ZonedDateTime> zonedDateTime(
+      cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
+
+  
+  auto timeZone = zonedDateTime.timeZone();
+  if (!timeZone.isString()) {
+    JS_ReportErrorASCII(cx, "Temporal.TimeZone is slated for removal");
+    return false;
+  }
+
+  
+  auto timeZoneId = timeZone.toString();
+
+  
+  auto direction = Direction::Next;
+  if (args.get(0).isString()) {
+    
+
+    
+    Rooted<JSString*> directionString(cx, args[0].toString());
+    if (!GetDirectionOption(cx, directionString, &direction)) {
+      return false;
+    }
+  } else {
+    
+    Rooted<JSObject*> options(cx, RequireObjectArg(cx, "getTimeZoneTransition",
+                                                   "direction", args.get(0)));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!GetDirectionOption(cx, options, &direction)) {
+      return false;
+    }
+  }
+
+  
+  if (!timeZoneId->offsetMinutes().isUndefined()) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
+  
+
+  auto* linearTimeZoneId = timeZoneId->identifier()->ensureLinear(cx);
+  if (!linearTimeZoneId) {
+    return false;
+  }
+  if (StringEqualsLiteral(linearTimeZoneId, "UTC")) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
+  mozilla::Maybe<Instant> transition;
+  if (direction == Direction::Next) {
+    if (!GetNamedTimeZoneNextTransition(cx, timeZoneId, zonedDateTime.instant(),
+                                        &transition)) {
+      return false;
+    }
+  } else {
+    if (!GetNamedTimeZonePreviousTransition(
+            cx, timeZoneId, zonedDateTime.instant(), &transition)) {
+      return false;
+    }
+  }
+
+  
+  if (!transition) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
+  auto* result = CreateTemporalZonedDateTime(cx, *transition, timeZone,
+                                             zonedDateTime.calendar());
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool ZonedDateTime_getTimeZoneTransition(JSContext* cx, unsigned argc,
+                                                Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsZonedDateTime,
+                              ZonedDateTime_getTimeZoneTransition>(cx, args);
+}
+
+
+
+
 static bool ZonedDateTime_toInstant(JSContext* cx, const CallArgs& args) {
   auto* zonedDateTime = &args.thisv().toObject().as<ZonedDateTimeObject>();
   auto instant = ToInstant(zonedDateTime);
@@ -3740,6 +3842,7 @@ static const JSFunctionSpec ZonedDateTime_prototype_methods[] = {
     JS_FN("toJSON", ZonedDateTime_toJSON, 0, 0),
     JS_FN("valueOf", ZonedDateTime_valueOf, 0, 0),
     JS_FN("startOfDay", ZonedDateTime_startOfDay, 0, 0),
+    JS_FN("getTimeZoneTransition", ZonedDateTime_getTimeZoneTransition, 1, 0),
     JS_FN("toInstant", ZonedDateTime_toInstant, 0, 0),
     JS_FN("toPlainDate", ZonedDateTime_toPlainDate, 0, 0),
     JS_FN("toPlainTime", ZonedDateTime_toPlainTime, 0, 0),
