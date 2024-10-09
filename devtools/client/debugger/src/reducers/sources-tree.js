@@ -30,7 +30,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BinarySearch: "resource://gre/modules/BinarySearch.sys.mjs",
 });
 
-export function initialSourcesTreeState() {
+export function initialSourcesTreeState({ isWebExtension } = {}) {
   return {
     
     
@@ -57,7 +57,7 @@ export function initialSourcesTreeState() {
 
     
     
-    isWebExtension: false,
+    isWebExtension,
 
     
 
@@ -205,11 +205,6 @@ export default function update(state = initialSourcesTreeState(), action) {
 
 function addThread(state, thread) {
   const threadActorID = thread.actor;
-  
-  
-  if (thread.isTopLevel) {
-    state.isWebExtension = thread.isWebExtension;
-  }
   let threadItem = state.threadItems.find(item => {
     return item.threadActorID == threadActorID;
   });

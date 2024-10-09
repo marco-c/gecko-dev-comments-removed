@@ -299,6 +299,9 @@ function TargetMixin(parentClass) {
       );
     }
 
+    
+    
+    
     get isWebExtension() {
       return !!(
         this.targetForm &&
@@ -328,25 +331,6 @@ function TargetMixin(parentClass) {
         this.targetForm.actor &&
         this.targetForm.actor.match(/conn\d+\.parentProcessTarget\d+/)
       );
-    }
-
-    getExtensionPathName(url) {
-      
-      if (!this.isWebExtension) {
-        throw new Error("Target is not a WebExtension");
-      }
-
-      try {
-        const parsedURL = new URL(url);
-        
-        if (parsedURL.protocol !== "moz-extension:") {
-          return url;
-        }
-        return parsedURL.pathname;
-      } catch (e) {
-        
-        return url;
-      }
     }
 
     

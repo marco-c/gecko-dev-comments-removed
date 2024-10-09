@@ -3330,8 +3330,8 @@ Toolbox.prototype = {
         throw new Error("Unsupported scope: " + scope);
       }
     } else if (this.target.name && this.target.name != this.target.url) {
-      const url = this.target.isWebExtension
-        ? this.target.getExtensionPathName(this.target.url)
+      const url = this._descriptorFront.isWebExtensionDescriptor
+        ? this.getExtensionPathName(this.target.url)
         : getUnicodeUrl(this.target.url);
       title = L10N.getFormatStr(
         "toolbox.titleTemplate2",
@@ -3348,6 +3348,26 @@ Toolbox.prototype = {
       name: "set-host-title",
       title,
     });
+  },
+
+  
+
+
+
+
+
+
+  getExtensionPathName(url) {
+    if (!URL.canParse(url)) {
+      
+      return url;
+    }
+    const parsedURL = new URL(url);
+    
+    if (parsedURL.protocol !== "moz-extension:") {
+      return url;
+    }
+    return parsedURL.pathname;
   },
 
   
