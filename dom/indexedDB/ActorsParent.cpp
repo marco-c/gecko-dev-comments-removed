@@ -15310,6 +15310,9 @@ nsresult OpenDatabaseOp::DoDatabaseWork() {
 
   MOZ_ALWAYS_SUCCEEDS(connection->Close());
 
+  SleepIfEnabled(
+      StaticPrefs::dom_indexedDB_databaseInitialization_pauseOnIOThreadMs());
+
   
   
   mState = (mMetadata->mCommonMetadata.version() == mRequestedVersion)
