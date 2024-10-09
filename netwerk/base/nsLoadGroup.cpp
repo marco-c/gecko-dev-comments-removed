@@ -1075,9 +1075,7 @@ nsresult nsLoadGroup::MergeLoadFlags(nsIRequest* aRequest,
   oldFlags = flags;
 
   
-  flags |= (mLoadFlags &
-            (LOAD_BACKGROUND | LOAD_BYPASS_CACHE | LOAD_FROM_CACHE |
-             VALIDATE_ALWAYS | VALIDATE_ONCE_PER_SESSION | VALIDATE_NEVER));
+  flags |= mLoadFlags & kInheritedLoadFlags;
 
   
   flags |= mDefaultLoadFlags;

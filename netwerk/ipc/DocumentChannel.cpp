@@ -32,6 +32,7 @@
 #include "nsILoadInfo.h"
 #include "nsIStreamListener.h"
 #include "nsIURI.h"
+#include "nsLoadGroup.h"
 #include "nsMimeTypes.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
@@ -294,25 +295,30 @@ DocumentChannel::SetTRRMode(nsIRequest::TRRMode aTRRMode) {
 }
 
 NS_IMETHODIMP DocumentChannel::SetLoadFlags(nsLoadFlags aLoadFlags) {
+  nsLoadFlags mayChange = 0;
+  if (mLoadInfo->GetExternalContentPolicyType() ==
+      ExtContentPolicy::TYPE_OBJECT) {
+    
+    
+    
+    mayChange = mWasOpened ? LOAD_DOCUMENT_URI : ~0u;
+  } else if (!mWasOpened) {
+    
+    
+    mayChange = nsLoadGroup::kInheritedLoadFlags;
+  }
+
   
-  
-  auto contentPolicy = mLoadInfo->GetExternalContentPolicyType();
-  if (contentPolicy == ExtContentPolicy::TYPE_OBJECT) {
-    if (mWasOpened) {
-      MOZ_DIAGNOSTIC_ASSERT(
-          aLoadFlags == (mLoadFlags | nsIChannel::LOAD_DOCUMENT_URI),
-          "After the channel has been opened, can only set the "
-          "`LOAD_DOCUMENT_URI` flag.");
-    }
+  if ((mLoadFlags & ~mayChange) == (aLoadFlags & ~mayChange)) {
     mLoadFlags = aLoadFlags;
     return NS_OK;
   }
-
   MOZ_CRASH_UNSAFE_PRINTF(
       "DocumentChannel::SetLoadFlags: Don't set flags after creation "
       "(differing flags %x != %x)",
       (mLoadFlags ^ aLoadFlags) & mLoadFlags,
       (mLoadFlags ^ aLoadFlags) & aLoadFlags);
+  return NS_OK;
 }
 
 NS_IMETHODIMP DocumentChannel::GetOriginalURI(nsIURI** aOriginalURI) {

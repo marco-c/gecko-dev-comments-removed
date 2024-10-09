@@ -61,6 +61,18 @@ class nsLoadGroup : public nsILoadGroup,
   void SetGroupObserver(nsIRequestObserver* aObserver,
                         bool aIncludeBackgroundRequests);
 
+  
+
+
+
+
+
+
+
+  static constexpr nsLoadFlags kInheritedLoadFlags =
+      LOAD_BACKGROUND | LOAD_BYPASS_CACHE | LOAD_FROM_CACHE | VALIDATE_ALWAYS |
+      VALIDATE_ONCE_PER_SESSION | VALIDATE_NEVER;
+
  protected:
   virtual ~nsLoadGroup();
 
