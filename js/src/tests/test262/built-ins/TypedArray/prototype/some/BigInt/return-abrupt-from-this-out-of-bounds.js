@@ -41,7 +41,7 @@ testWithBigIntTypedArrayConstructors(TA => {
 
   var expectedError;
   try {
-    ab.resize(BPE * 3 - 1);
+    ab.resize(BPE * 2);
     
     
     

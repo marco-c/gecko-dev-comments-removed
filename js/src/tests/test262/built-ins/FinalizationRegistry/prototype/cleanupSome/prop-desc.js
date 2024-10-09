@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof FinalizationRegistry.prototype.cleanupSome, 'function');
+
+verifyProperty(FinalizationRegistry.prototype, 'cleanupSome', {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);
