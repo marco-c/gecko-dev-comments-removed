@@ -383,8 +383,7 @@ class nsDocShellLoadState final {
   
   
   nsLoadFlags CalculateChannelLoadFlags(
-      mozilla::dom::BrowsingContext* aBrowsingContext,
-      mozilla::Maybe<bool> aUriModified,
+      mozilla::dom::BrowsingContext* aBrowsingContext, bool aUriModified,
       mozilla::Maybe<bool> aIsEmbeddingBlockedError);
 
   mozilla::dom::DocShellLoadStateInit Serialize(
