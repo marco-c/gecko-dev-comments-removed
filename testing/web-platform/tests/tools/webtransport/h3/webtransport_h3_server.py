@@ -1,6 +1,7 @@
 
 
 import asyncio
+import contextlib
 import logging
 import os
 import ssl
@@ -9,17 +10,21 @@ import threading
 import traceback
 from enum import IntEnum
 from urllib.parse import urlparse
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 
 from aioquic.buffer import Buffer  
 from aioquic.asyncio import QuicConnectionProtocol, serve  
 from aioquic.asyncio.client import connect  
+from aioquic.asyncio.protocol import QuicStreamAdapter  
 from aioquic.h3.connection import H3_ALPN, FrameType, H3Connection, ProtocolError, SettingsError  
 from aioquic.h3.events import H3Event, HeadersReceived, WebTransportStreamDataReceived, DatagramReceived, DataReceived  
 from aioquic.quic.configuration import QuicConfiguration  
 from aioquic.quic.connection import logger as quic_connection_logger  
-from aioquic.quic.connection import stream_is_unidirectional
+from aioquic.quic.connection import (
+    stream_is_client_initiated,
+    stream_is_unidirectional,
+)
 from aioquic.quic.events import QuicEvent, ProtocolNegotiated, ConnectionTerminated, StreamReset  
 from aioquic.tls import SessionTicket  
 
@@ -602,6 +607,25 @@ async def _connect_server_with_timeout(host: str, port: int, timeout: float) -> 
     return True
 
 
+def _close_unusable_writer(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    stream_id = cast(QuicStreamAdapter, writer.transport).stream_id
+    if stream_is_unidirectional(stream_id) and not stream_is_client_initiated(stream_id):
+        with contextlib.suppress(ValueError):
+            writer.close()
+
+
 async def _connect_to_server(host: str, port: int) -> None:
     configuration = QuicConfiguration(
         alpn_protocols=H3_ALPN,
@@ -609,5 +633,6 @@ async def _connect_to_server(host: str, port: int) -> None:
         verify_mode=ssl.CERT_NONE,
     )
 
-    async with connect(host, port, configuration=configuration) as protocol:
+    async with connect(host, port, configuration=configuration,
+                       stream_handler=_close_unusable_writer) as protocol:
         await protocol.ping()
