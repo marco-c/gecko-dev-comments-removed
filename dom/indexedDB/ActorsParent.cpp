@@ -15965,6 +15965,8 @@ void OpenDatabaseOp::EnsureDatabaseActor() {
 
   MOZ_RELEASE_ASSERT(mInPrivateBrowsing == maybeKey.isSome());
 
+  const bool directoryLockInvalidated = mDirectoryLock->Invalidated();
+
   
   
   mDatabase = MakeSafeRefPtr<Database>(
@@ -15986,6 +15988,10 @@ void OpenDatabaseOp::EnsureDatabaseActor() {
                        mMetadata.clonePtr(),
                        WrapNotNullUnchecked(mDatabase.unsafeGetRawPtr())))
                .get();
+  }
+
+  if (directoryLockInvalidated) {
+    mDatabase->Invalidate();
   }
 
   
