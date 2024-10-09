@@ -322,6 +322,21 @@ def android_install_geckoview_test_runner(command_context, args):
     return 0
 
 
+@SubCommand("android", "installFenixRelease", """Install fenix Release""")
+@CommandArgument("args", nargs=argparse.REMAINDER)
+def android_install_fenix_release(command_context, args):
+    gradle(
+        command_context,
+        ["installFenixRelease"] + args,
+        verbose=True,
+        gradle_path=mozpath.join(
+            command_context.topsrcdir, "mobile", "android", "fenix", "gradlew"
+        ),
+        topsrcdir=mozpath.join(command_context.topsrcdir, "mobile", "android", "fenix"),
+    )
+    return 0
+
+
 @SubCommand(
     "android",
     "install-geckoview-test_runner-aab",
@@ -519,10 +534,16 @@ def android_geckoview_docs(
     help="Verbose output for what commands the build is running.",
 )
 @CommandArgument("args", nargs=argparse.REMAINDER)
-def gradle(command_context, args, verbose=False):
+def gradle(command_context, args, verbose=False, gradle_path=None, topsrcdir=None):
     if not verbose:
         
         command_context.log_manager.terminal_handler.setLevel(logging.CRITICAL)
+
+    if not gradle_path:
+        gradle_path = command_context.substs["GRADLE"]
+
+    if not topsrcdir:
+        topsrcdir = mozpath.join(command_context.topsrcdir)
 
     
     
@@ -576,11 +597,11 @@ def gradle(command_context, args, verbose=False):
     if should_print_status:
         print("BUILDSTATUS " + str(time.time()) + " START_Gradle " + args[0])
     rv = command_context.run_process(
-        [command_context.substs["GRADLE"]] + gradle_flags + args,
+        [gradle_path] + gradle_flags + args,
         explicit_env=env,
         pass_thru=True,  
         ensure_exit_code=False,  
-        cwd=mozpath.join(command_context.topsrcdir),
+        cwd=topsrcdir,
     )
     if should_print_status:
         print("BUILDSTATUS " + str(time.time()) + " END_Gradle " + args[0])
