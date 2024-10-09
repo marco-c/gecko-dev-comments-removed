@@ -181,7 +181,8 @@ class ProcessExecutionMixin(LoggingMixin):
                         sig = signal.SIGINT
                     elif sig == signal.SIGINT:
                         
-                        sig = signal.SIGKILL
+                        
+                        getattr(signal, "SIGKILL", sig)
 
         if ensure_exit_code is False:
             return status
