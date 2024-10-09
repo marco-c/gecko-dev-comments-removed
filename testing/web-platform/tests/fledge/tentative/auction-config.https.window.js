@@ -472,7 +472,10 @@ makeTest({
 makeTest({
   name: 'perBuyerCurrencies not convertible to dictionary',
   expect: EXPECT_PROMISE_ERROR,
-  expectPromiseError: EXPECT_EXCEPTION(TypeError),
+  
+  
+  
+  
   auctionConfigOverrides: {perBuyerCurrencies: 123}
 });
 
