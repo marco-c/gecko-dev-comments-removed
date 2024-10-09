@@ -3944,22 +3944,34 @@ static bool ISOMonthDayFromFields(JSContext* cx, Handle<TemporalFields> fields,
 
 
 
-static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
-    JSContext* cx, CalendarId calendarId, Handle<JSObject*> fields,
-    Handle<JSObject*> maybeOptions) {
-  
+bool js::temporal::CalendarMonthDayFromFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    TemporalOverflow overflow,
+    MutableHandle<PlainMonthDayWithCalendar> result) {
+  auto calendarId = calendar.identifier();
 
   
   auto relevantFieldNames = {TemporalField::Day, TemporalField::Month,
                              TemporalField::MonthCode, TemporalField::Year};
 
   
-  Rooted<TemporalFields> dateFields(cx);
+  PlainDate date;
   if (calendarId == CalendarId::ISO8601) {
     
+    Rooted<TemporalFields> dateFields(cx);
     if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
                                {TemporalField::Day}, &dateFields)) {
-      return nullptr;
+      return false;
+    }
+
+    
+    if (!ISOResolveMonth(cx, &dateFields)) {
+      return false;
+    }
+
+    
+    if (!ISOMonthDayFromFields(cx, dateFields, overflow, &date)) {
+      return false;
     }
   } else {
     
@@ -3967,49 +3979,27 @@ static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
         CalendarFieldDescriptors(calendarId, FieldType::MonthDay);
 
     
+    Rooted<TemporalFields> dateFields(cx);
     if (!PrepareTemporalFields(cx, fields, relevantFieldNames, {},
                                calendarRelevantFieldDescriptors, &dateFields)) {
-      return nullptr;
-    }
-  }
-
-  
-  auto overflow = TemporalOverflow::Constrain;
-  if (maybeOptions) {
-    if (!GetTemporalOverflowOption(cx, maybeOptions, &overflow)) {
-      return nullptr;
-    }
-  }
-
-  
-  PlainDate result;
-  if (calendarId == CalendarId::ISO8601) {
-    
-    if (!ISOResolveMonth(cx, &dateFields)) {
-      return nullptr;
+      return false;
     }
 
-    
-    if (!ISOMonthDayFromFields(cx, dateFields, overflow, &result)) {
-      return nullptr;
-    }
-  } else {
     
     if (!CalendarResolveFields(cx, calendarId, dateFields,
                                FieldType::MonthDay)) {
-      return nullptr;
+      return false;
     }
 
     
     if (!CalendarMonthDayToISOReferenceDate(cx, calendarId, dateFields,
-                                            overflow, &result)) {
-      return nullptr;
+                                            overflow, &date)) {
+      return false;
     }
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(calendarId));
-  return CreateTemporalMonthDay(cx, result, calendar);
+  return CreateTemporalMonthDay(cx, date, calendar, result);
 }
 
 
@@ -4018,9 +4008,19 @@ static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
 static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
     JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
     Handle<PlainObject*> maybeOptions) {
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarMonthDayFromFields(cx, calendarId, fields,
-                                           maybeOptions);
+  auto overflow = TemporalOverflow::Constrain;
+  if (maybeOptions) {
+    if (!GetTemporalOverflowOption(cx, maybeOptions, &overflow)) {
+      return nullptr;
+    }
+  }
+
+  Rooted<PlainMonthDayWithCalendar> result(cx);
+  if (!CalendarMonthDayFromFields(cx, calendar.receiver(), fields, overflow,
+                                  &result)) {
+    return nullptr;
+  }
+  return CreateTemporalMonthDay(cx, result.date(), result.calendar());
 }
 
 
