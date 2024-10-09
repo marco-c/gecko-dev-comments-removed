@@ -3891,6 +3891,19 @@ void BacktrackingAllocator::removeDeadRanges(VirtualRegister& reg) {
   reg.removeRangesIf(isDeadRange);
 }
 
+static void AssertCorrectRangeForPosition(const VirtualRegister& reg,
+                                          CodePosition pos,
+                                          const LiveRange* range) {
+  MOZ_ASSERT(range->covers(pos));
+#ifdef DEBUG
+  
+  
+  LiveRange* expected = reg.rangeFor(pos,  true);
+  MOZ_ASSERT(range->bundle()->allocation().isRegister() ==
+             expected->bundle()->allocation().isRegister());
+#endif
+}
+
 bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
   
   JitSpew(JitSpew_RegAlloc, "ResolveControlFlow: begin");
@@ -3912,7 +3925,29 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
     
     removeDeadRanges(reg);
 
-    for (VirtualRegister::RangeIterator iter(reg); iter; iter++) {
+    LiveRange* registerRange = nullptr;
+    LiveRange* nonRegisterRange = nullptr;
+    VirtualRegister::RangeIterator iter(reg);
+
+    
+    
+    
+    auto moveToNextRange = [&](LiveRange* range) {
+      MOZ_ASSERT(*iter == range);
+      if (range->bundle()->allocation().isRegister()) {
+        if (!registerRange || range->to() > registerRange->to()) {
+          registerRange = range;
+        }
+      } else {
+        if (!nonRegisterRange || range->to() > nonRegisterRange->to()) {
+          nonRegisterRange = range;
+        }
+      }
+      iter++;
+    };
+
+    
+    while (!iter.done()) {
       LiveRange* range = *iter;
 
       if (mir->shouldCancel(
@@ -3923,6 +3958,7 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
       
       
       if (range->hasDefinition()) {
+        moveToNextRange(range);
         continue;
       }
 
@@ -3931,41 +3967,60 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
       CodePosition start = range->from();
       LNode* ins = insData[start];
       if (start == entryOf(ins->block())) {
+        moveToNextRange(range);
         continue;
       }
 
-#ifdef DEBUG
       
       
-      for (VirtualRegister::RangeIterator prevIter(reg); *prevIter != range;
-           prevIter++) {
-        MOZ_ASSERT_IF(
-            prevIter->covers(start),
-            prevIter->bundle()->allocation() != range->bundle()->allocation());
+      LiveRange* predecessorRange = nullptr;
+      if (registerRange && start.previous() < registerRange->to()) {
+        predecessorRange = registerRange;
+      } else {
+        MOZ_ASSERT(nonRegisterRange);
+        MOZ_ASSERT(start.previous() < nonRegisterRange->to());
+        predecessorRange = nonRegisterRange;
       }
+      AssertCorrectRangeForPosition(reg, start.previous(), predecessorRange);
+
+      
+      do {
+        range = *iter;
+        MOZ_ASSERT(!range->hasDefinition());
+
+        if (!alloc().ensureBallast()) {
+          return false;
+        }
+
+#ifdef DEBUG
+        
+        
+        for (VirtualRegister::RangeIterator prevIter(reg); *prevIter != range;
+             prevIter++) {
+          MOZ_ASSERT_IF(prevIter->covers(start),
+                        prevIter->bundle()->allocation() !=
+                            range->bundle()->allocation());
+        }
 #endif
 
-      if (!alloc().ensureBallast()) {
-        return false;
-      }
+        if (start.subpos() == CodePosition::INPUT) {
+          JitSpewIfEnabled(JitSpew_RegAlloc, "    moveInput (%s) <- (%s)",
+                           range->toString().get(),
+                           predecessorRange->toString().get());
+          if (!moveInput(ins->toInstruction(), predecessorRange, range,
+                         reg.type())) {
+            return false;
+          }
+        } else {
+          JitSpew(JitSpew_RegAlloc, "    (moveAfter)");
+          if (!moveAfter(ins->toInstruction(), predecessorRange, range,
+                         reg.type())) {
+            return false;
+          }
+        }
 
-      LiveRange* predecessorRange =
-          reg.rangeFor(start.previous(),  true);
-      if (start.subpos() == CodePosition::INPUT) {
-        JitSpewIfEnabled(JitSpew_RegAlloc, "    moveInput (%s) <- (%s)",
-                         range->toString().get(),
-                         predecessorRange->toString().get());
-        if (!moveInput(ins->toInstruction(), predecessorRange, range,
-                       reg.type())) {
-          return false;
-        }
-      } else {
-        JitSpew(JitSpew_RegAlloc, "    (moveAfter)");
-        if (!moveAfter(ins->toInstruction(), predecessorRange, range,
-                       reg.type())) {
-          return false;
-        }
-      }
+        moveToNextRange(range);
+      } while (!iter.done() && iter->from() == start);
     }
   }
 
