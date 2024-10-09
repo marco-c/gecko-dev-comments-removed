@@ -2198,15 +2198,16 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
 
   auto* parentFrame = GetParent();
   const bool isGridItem = IsGridItem();
-  const bool isFlexItem =
-      IsFlexItem() && !parentFrame->HasAnyStateBits(
-                          NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
+
   
   
   
-  LogicalAxis flexMainAxis = LogicalAxis::Block;
-  if (isFlexItem && nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)) {
-    flexMainAxis = LogicalAxis::Inline;
+  Maybe<LogicalAxis> flexItemMainAxis;
+  if (IsFlexItem() && !parentFrame->HasAnyStateBits(
+                          NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX)) {
+    flexItemMainAxis = Some(nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)
+                                ? LogicalAxis::Inline
+                                : LogicalAxis::Block);
   }
 
   
@@ -2288,10 +2289,13 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     }
   }
 
+  
+  
+  
+  const bool isFlexItemInlineAxisMainAxis =
+      flexItemMainAxis && *flexItemMainAxis == LogicalAxis::Inline;
   const auto& maxISizeCoord = stylePos->MaxISize(aWM);
-
-  if (!maxISizeCoord.IsNone() &&
-      !(isFlexItem && flexMainAxis == LogicalAxis::Inline)) {
+  if (!maxISizeCoord.IsNone() && !isFlexItemInlineAxisMainAxis) {
     maxISize = ComputeISizeValue(aRenderingContext, aWM, aCBSize,
                                  boxSizingAdjust, boxSizingToMarginEdgeISize,
                                  maxISizeCoord, styleBSize, aspectRatio, aFlags)
@@ -2300,14 +2304,8 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     maxISize = nscoord_MAX;
   }
 
-  
-  
-  
-
   const auto& minISizeCoord = stylePos->MinISize(aWM);
-
-  if (!minISizeCoord.IsAuto() &&
-      !(isFlexItem && flexMainAxis == LogicalAxis::Inline)) {
+  if (!minISizeCoord.IsAuto() && !isFlexItemInlineAxisMainAxis) {
     minISize = ComputeISizeValue(aRenderingContext, aWM, aCBSize,
                                  boxSizingAdjust, boxSizingToMarginEdgeISize,
                                  minISizeCoord, styleBSize, aspectRatio, aFlags)
@@ -2351,10 +2349,14 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     }
   }
 
+  
+  
+  
+  const bool isFlexItemBlockAxisMainAxis =
+      flexItemMainAxis && *flexItemMainAxis == LogicalAxis::Block;
   const auto& maxBSizeCoord = stylePos->MaxBSize(aWM);
-
   if (!nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM)) &&
-      !(isFlexItem && flexMainAxis == LogicalAxis::Block)) {
+      !isFlexItemBlockAxisMainAxis) {
     maxBSize = nsLayoutUtils::ComputeBSizeValue(
         aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
         maxBSizeCoord.AsLengthPercentage());
@@ -2363,9 +2365,8 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   }
 
   const auto& minBSizeCoord = stylePos->MinBSize(aWM);
-
   if (!nsLayoutUtils::IsAutoBSize(minBSizeCoord, aCBSize.BSize(aWM)) &&
-      !(isFlexItem && flexMainAxis == LogicalAxis::Block)) {
+      !isFlexItemBlockAxisMainAxis) {
     minBSize = nsLayoutUtils::ComputeBSizeValue(
         aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
         minBSizeCoord.AsLengthPercentage());

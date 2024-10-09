@@ -6365,18 +6365,16 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       alignCB = grandParent;
     }
   }
-  const bool isFlexItem =
-      IsFlexItem() && !parentFrame->HasAnyStateBits(
-                          NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
+
   
   
   
-  LogicalAxis flexMainAxis =
-      LogicalAxis::Inline;  
-  if (isFlexItem) {
-    flexMainAxis = nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)
-                       ? LogicalAxis::Inline
-                       : LogicalAxis::Block;
+  Maybe<LogicalAxis> flexItemMainAxis;
+  if (IsFlexItem() && !parentFrame->HasAnyStateBits(
+                          NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX)) {
+    flexItemMainAxis = Some(nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)
+                                ? LogicalAxis::Inline
+                                : LogicalAxis::Block);
   }
 
   const bool isOrthogonal = aWM.IsOrthogonalTo(alignCB->GetWritingMode());
@@ -6516,7 +6514,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   const bool isFlexItemInlineAxisMainAxis =
-      isFlexItem && flexMainAxis == LogicalAxis::Inline;
+      flexItemMainAxis && *flexItemMainAxis == LogicalAxis::Inline;
   
   
   const bool shouldIgnoreMinMaxISize =
@@ -6656,7 +6654,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     
     
     const bool isFlexItemBlockAxisMainAxis =
-        isFlexItem && flexMainAxis == LogicalAxis::Block;
+        flexItemMainAxis && *flexItemMainAxis == LogicalAxis::Block;
     
     
     const bool shouldIgnoreMinMaxBSize =
