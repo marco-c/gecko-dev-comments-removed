@@ -1325,6 +1325,12 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
 
   mChildArgs.mArgs.push_back(ChildProcessType());
 
+#  if !defined(MOZ_WIDGET_ANDROID)
+  
+  
+  geckoargs::AddToFdsToRemap(mChildArgs, mLaunchOptions->fds_to_remap);
+#  endif
+
   return Ok();
 }
 #endif  

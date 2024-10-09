@@ -25,6 +25,17 @@ struct ChildProcessArgs {
   std::vector<UniqueFileHandle> mFiles;
 };
 
+#ifdef XP_UNIX
+
+
+void SetPassedFileHandles(Span<int> aFiles);
+void SetPassedFileHandles(std::vector<UniqueFileHandle>&& aFiles);
+
+
+void AddToFdsToRemap(const ChildProcessArgs& aArgs,
+                     std::vector<std::pair<int, int>>& aFdsToRemap);
+#endif
+
 template <typename T>
 struct CommandLineArg {
   Maybe<T> Get(int& aArgc, char** aArgv,
