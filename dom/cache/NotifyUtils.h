@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef DOM_CACHE_NOTIFYUTILS_H_
+#define DOM_CACHE_NOTIFYUTILS_H_
+
+namespace mozilla::dom::cache {
+
+void NotifyDatabaseWorkStarted();
+
+}  
+
+#endif  
