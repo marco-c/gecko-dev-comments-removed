@@ -40,23 +40,20 @@ AnimationTimeline::~AnimationTimeline() { mAnimationOrder.clear(); }
 bool AnimationTimeline::Tick(TickState& aState) {
   bool needsTicks = false;
 
-  nsTArray<Animation*> animationsToRemove;
-
-  for (Animation* animation = mAnimationOrder.getFirst(); animation;
-       animation =
-           static_cast<LinkedListElement<Animation>*>(animation)->getNext()) {
+  AutoTArray<RefPtr<Animation>, 32> animationsToTick;
+  for (Animation* animation : mAnimationOrder) {
     MOZ_ASSERT(mAnimations.Contains(animation),
                "The sampling order list should be a subset of the hashset");
     MOZ_ASSERT(!animation->IsHiddenByContentVisibility(),
                "The sampling order list should not contain any animations "
                "that are hidden by content-visibility");
+    animationsToTick.AppendElement(animation);
+  }
 
+  for (Animation* animation : animationsToTick) {
     
     if (animation->GetTimeline() != this) {
-      
-      
-      MOZ_ASSERT(!animation->GetTimeline());
-      animationsToRemove.AppendElement(animation);
+      RemoveAnimation(animation);
       continue;
     }
 
@@ -65,14 +62,9 @@ bool AnimationTimeline::Tick(TickState& aState) {
     
     
     animation->Tick(aState);
-
     if (!animation->NeedsTicks()) {
-      animationsToRemove.AppendElement(animation);
+      RemoveAnimation(animation);
     }
-  }
-
-  for (Animation* animation : animationsToRemove) {
-    RemoveAnimation(animation);
   }
 
   return needsTicks;
@@ -90,11 +82,12 @@ void AnimationTimeline::NotifyAnimationUpdated(Animation& aAnimation) {
 }
 
 void AnimationTimeline::RemoveAnimation(Animation* aAnimation) {
-  MOZ_ASSERT(!aAnimation->GetTimeline() || aAnimation->GetTimeline() == this);
-  if (static_cast<LinkedListElement<Animation>*>(aAnimation)->isInList()) {
+  if (static_cast<LinkedListElement<Animation>*>(aAnimation)->isInList() &&
+      MOZ_LIKELY(!aAnimation->GetTimeline() ||
+                 aAnimation->GetTimeline() == this)) {
+    static_cast<LinkedListElement<Animation>*>(aAnimation)->remove();
     MOZ_ASSERT(mAnimations.Contains(aAnimation),
                "The sampling order list should be a subset of the hashset");
-    static_cast<LinkedListElement<Animation>*>(aAnimation)->remove();
   }
   mAnimations.Remove(aAnimation);
 }

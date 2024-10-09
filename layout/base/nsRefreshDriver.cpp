@@ -2258,6 +2258,10 @@ void nsRefreshDriver::UpdateIntersectionObservations(TimeStamp aNowTime) {
   mNeedToUpdateIntersectionObservations = false;
 }
 
+void nsRefreshDriver::UpdateRemoteFrameEffects() {
+  mPresContext->Document()->UpdateRemoteFrameEffects();
+}
+
 void nsRefreshDriver::UpdateRelevancyOfContentVisibilityAutoFrames() {
   if (!mNeedToUpdateContentRelevancy) {
     return;
@@ -2311,8 +2315,15 @@ void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
 }
 
 static CallState UpdateAndReduceAnimations(Document& aDocument) {
-  for (DocumentTimeline* timeline : aDocument.Timelines()) {
-    timeline->WillRefresh();
+  {
+    AutoTArray<RefPtr<DocumentTimeline>, 32> timelinesToTick;
+    for (DocumentTimeline* timeline : aDocument.Timelines()) {
+      timelinesToTick.AppendElement(timeline);
+    }
+
+    for (DocumentTimeline* tl : timelinesToTick) {
+      tl->WillRefresh();
+    }
   }
 
   if (nsPresContext* pc = aDocument.GetPresContext()) {
@@ -2342,7 +2353,8 @@ void nsRefreshDriver::UpdateAnimationsAndSendEvents() {
     
     
     nsAutoMicroTask mt;
-    UpdateAndReduceAnimations(*mPresContext->Document());
+    RefPtr doc = mPresContext->Document();
+    UpdateAndReduceAnimations(*doc);
   }
 
   
@@ -2885,6 +2897,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
     
     mCompositionPayloads.Clear();
   }
+
+  
+  
+  UpdateRemoteFrameEffects();
 
 #ifndef ANDROID 
   double totalMs = (TimeStamp::Now() - mTickStart).ToMilliseconds();

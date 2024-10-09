@@ -13,13 +13,10 @@ namespace mozilla {
 NS_IMPL_CYCLE_COLLECTION(ScrollTimelineAnimationTracker, mPendingSet, mDocument)
 
 void ScrollTimelineAnimationTracker::TriggerPendingAnimations() {
-  for (auto iter = mPendingSet.begin(), end = mPendingSet.end(); iter != end;
-       ++iter) {
-    dom::Animation* animation = *iter;
-
+  for (RefPtr<dom::Animation>& animation :
+       ToTArray<AutoTArray<RefPtr<dom::Animation>, 32>>(mPendingSet)) {
     MOZ_ASSERT(animation->GetTimeline() &&
                !animation->GetTimeline()->IsMonotonicallyIncreasing());
-
     
     
     
@@ -39,9 +36,7 @@ void ScrollTimelineAnimationTracker::TriggerPendingAnimations() {
       
       continue;
     }
-
-    
-    mPendingSet.Remove(iter);
+    mPendingSet.Remove(animation);
   }
 }
 
