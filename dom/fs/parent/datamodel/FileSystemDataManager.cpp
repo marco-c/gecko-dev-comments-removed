@@ -324,17 +324,33 @@ void FileSystemDataManager::Unregister() {
 void FileSystemDataManager::RegisterActor(
     NotNull<FileSystemManagerParent*> aActor) {
   MOZ_ASSERT(!mBackgroundThreadAccessible.Access()->mActors.Contains(aActor));
+  MOZ_ASSERT(mState == State::Open);
+  MOZ_ASSERT(mDirectoryLock);
 
   mBackgroundThreadAccessible.Access()->mActors.Insert(aActor);
 
 #ifdef DEBUG
   aActor->SetRegistered(true);
 #endif
+
+  
+  
+  
+  
+  
+  
+  
+
+  if (mDirectoryLock->Invalidated()) {
+    aActor->RequestAllowToClose();
+  }
 }
 
 void FileSystemDataManager::UnregisterActor(
     NotNull<FileSystemManagerParent*> aActor) {
   MOZ_ASSERT(mBackgroundThreadAccessible.Access()->mActors.Contains(aActor));
+  MOZ_ASSERT(mState == State::Open);
+  MOZ_ASSERT(mDirectoryLock);
 
   mBackgroundThreadAccessible.Access()->mActors.Remove(aActor);
 
