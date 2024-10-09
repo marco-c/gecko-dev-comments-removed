@@ -32,6 +32,12 @@ struct XREChildData {
 
 
   mozilla::sandboxing::ProvideLogFunctionCb ProvideLogFunction = nullptr;
+
+  
+
+
+
+  sandbox::BrokerServices* sandboxBrokerServices = nullptr;
 #endif
 };
 

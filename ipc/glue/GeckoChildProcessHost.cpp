@@ -75,6 +75,9 @@
 #    include "WinUtils.h"
 #    include "mozilla/Preferences.h"
 #    include "mozilla/sandboxing/sandboxLogging.h"
+#    if defined(_ARM64_)
+#      include "mozilla/remoteSandboxBroker.h"
+#    endif
 #  endif
 
 #  include "mozilla/NativeNt.h"
@@ -135,7 +138,7 @@ struct LaunchResults {
   UniqueBEProcessCapabilityGrant mForegroundCapabilityGrant;
 #endif
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  UniquePtr<SandboxBroker> mSandboxBroker;
+  RefPtr<AbstractSandboxBroker> mSandboxBroker;
 #endif
 };
 typedef mozilla::MozPromise<LaunchResults, LaunchError, true>
@@ -457,6 +460,13 @@ GeckoChildProcessHost::~GeckoChildProcessHost() {
       mChildProcessHandle = 0;
     }
   }
+
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+  if (mSandboxBroker) {
+    mSandboxBroker->Shutdown();
+    mSandboxBroker = nullptr;
+  }
+#endif
 }
 
 base::ProcessHandle GeckoChildProcessHost::GetChildProcessHandle() {
@@ -1540,7 +1550,19 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
 #  if defined(MOZ_SANDBOX) || defined(_ARM64_)
   const bool isGMP = mProcessType == GeckoProcessType_GMPlugin;
   const bool isWidevine = isGMP && Contains(mChildArgs, "gmp-widevinecdm");
-#  endif  
+#    if defined(_ARM64_)
+  bool useRemoteSandboxBroker = false;
+  if (mLaunchArch & (base::PROCESS_ARCH_I386 | base::PROCESS_ARCH_X86_64)) {
+    
+    
+    
+    
+    exePath = exePath.DirName().AppendASCII("i686").Append(exePath.BaseName());
+    useRemoteSandboxBroker =
+        mProcessType != GeckoProcessType_RemoteSandboxBroker;
+  }
+#    endif  
+#  endif    
 
   mCmdLine.emplace(exePath.ToWStringHack());
 
@@ -1563,7 +1585,12 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   }
 
 #  if defined(MOZ_SANDBOX)
-  mResults.mSandboxBroker = MakeUnique<SandboxBroker>();
+#    if defined(_ARM64_)
+  if (useRemoteSandboxBroker)
+    mResults.mSandboxBroker = new RemoteSandboxBroker(mLaunchArch);
+  else
+#    endif  
+    mResults.mSandboxBroker = new SandboxBroker();
 
   
   
@@ -1638,6 +1665,9 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
         }
         mUseSandbox = true;
       }
+      break;
+    case GeckoProcessType_RemoteSandboxBroker:
+      
       break;
     case GeckoProcessType_Default:
     default:
