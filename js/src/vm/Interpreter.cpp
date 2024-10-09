@@ -435,9 +435,8 @@ static MOZ_ALWAYS_INLINE bool MaybeEnterInterpreterTrampoline(JSContext* cx,
 static void AssertExceptionResult(JSContext* cx) {
   
   
-  MOZ_ASSERT_IF(cx->shouldAssertExceptionOnFalseReturn(),
-                cx->isExceptionPending() || cx->isPropagatingForcedReturn() ||
-                    cx->hadUncatchableException());
+  MOZ_ASSERT(cx->isExceptionPending() || cx->isPropagatingForcedReturn() ||
+             cx->hadUncatchableException());
 }
 
 

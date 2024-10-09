@@ -13007,9 +13007,6 @@ bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   cx->runtime()->profilingScripts =
       enableCodeCoverage || enableDisassemblyDumps;
 
-  
-  cx->setShouldAssertExceptionOnFalseReturn();
-
 #ifdef JS_ENABLE_SMOOSH
   if (op.getBoolOption("smoosh")) {
     JS::ContextOptionsRef(cx).setTrySmoosh(true);
