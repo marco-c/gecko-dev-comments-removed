@@ -282,10 +282,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-
-
-  nsresult CreateWidget(mozilla::widget::InitData* aWidgetInitData = nullptr,
-                        bool aEnableDragDrop = true,
+  nsresult CreateWidget(bool aEnableDragDrop = true,
                         bool aResetVisibility = true);
 
   
@@ -294,7 +291,6 @@ class nsView final : public nsIWidgetListener {
 
 
   nsresult CreateWidgetForParent(nsIWidget* aParentWidget,
-                                 mozilla::widget::InitData* = nullptr,
                                  bool aEnableDragDrop = true,
                                  bool aResetVisibility = true);
 

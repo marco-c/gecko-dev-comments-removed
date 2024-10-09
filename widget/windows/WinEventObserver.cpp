@@ -34,11 +34,6 @@
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 #define CURRENT_MODULE() reinterpret_cast<HMODULE>(&__ImageBase)
 
-
-
-
-const wchar_t kClassNameHidden2[] = L"MozillaHiddenWindowClass2";
-
 namespace mozilla::widget {
 
 LazyLogModule gWinEventWindowLog("WinEventWindow");
@@ -66,7 +61,7 @@ void WinEventWindow::Ensure() {
   HMODULE const hSelf = CURRENT_MODULE();
   WNDCLASSW const wc = {.lpfnWndProc = WinEventWindow::WndProc,
                         .hInstance = hSelf,
-                        .lpszClassName = kClassNameHidden2};
+                        .lpszClassName = kClassNameHidden};
   ATOM const atom = ::RegisterClassW(&wc);
   if (!atom) {
     

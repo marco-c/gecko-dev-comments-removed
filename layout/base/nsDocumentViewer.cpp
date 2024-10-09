@@ -2216,8 +2216,7 @@ nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
     return NS_OK;
   }
 
-  bool shouldAttach = ShouldAttachToTopLevel();
-
+  const bool shouldAttach = ShouldAttachToTopLevel();
   if (shouldAttach) {
     
     DetachFromTopLevelWidget();
@@ -2242,27 +2241,14 @@ nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
   
   
   if (!mDocument->IsResourceDoc() && (mParentWidget || !aContainerView)) {
-    
-    
-    
-    
-    widget::InitData initData;
-    widget::InitData* initDataPtr;
-    if (!mParentWidget) {
-      initDataPtr = &initData;
-      initData.mWindowType = widget::WindowType::Invisible;
-    } else {
-      initDataPtr = nullptr;
-    }
-
     if (shouldAttach) {
       
       rv = view->AttachToTopLevelWidget(mParentWidget);
       mAttachedToParent = true;
-    } else if (!aContainerView && mParentWidget) {
-      rv = view->CreateWidgetForParent(mParentWidget, initDataPtr, true, false);
+    } else if (!mParentWidget || aContainerView) {
+      rv = view->CreateWidget(true, false);
     } else {
-      rv = view->CreateWidget(initDataPtr, true, false);
+      rv = view->CreateWidgetForParent(mParentWidget, true, false);
     }
     if (NS_FAILED(rv)) return rv;
   }

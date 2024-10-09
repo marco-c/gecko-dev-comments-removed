@@ -873,12 +873,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   widget::InitData defaultInitData;
   if (!aInitData) aInitData = &defaultInitData;
 
-  nsIWidget* baseParent =
-      aInitData->mWindowType == WindowType::Dialog ||
-              aInitData->mWindowType == WindowType::TopLevel ||
-              aInitData->mWindowType == WindowType::Invisible
-          ? nullptr
-          : aParent;
+  MOZ_DIAGNOSTIC_ASSERT(aInitData->mWindowType != WindowType::Invisible);
+
+  nsIWidget* baseParent = aInitData->mWindowType == WindowType::Dialog ||
+                                  aInitData->mWindowType == WindowType::TopLevel
+                              ? nullptr
+                              : aParent;
 
   mIsTopWidgetWindow = (nullptr == baseParent);
   mBounds = aRect;
@@ -888,7 +888,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   BaseCreate(baseParent, aInitData);
 
-  HWND parent;
+  HWND parent = nullptr;
   if (aParent) {  
     parent = aParent ? (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW) : nullptr;
     mParent = aParent;
@@ -913,9 +913,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     if (!aParent) {
       parent = nullptr;
     }
-  } else if (mWindowType == WindowType::Invisible) {
-    
-    desiredStyles.style &= ~WS_CHILDWINDOW;
   } else {
     
     if (aInitData->mClipChildren) {
@@ -1093,8 +1090,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
   }
 
-  if (mWindowType != WindowType::Invisible &&
-      MouseScrollHandler::Device::IsFakeScrollableWindowNeeded()) {
+  if (MouseScrollHandler::Device::IsFakeScrollableWindowNeeded()) {
     
     
     
@@ -1263,8 +1259,6 @@ static LPWSTR const gStockApplicationIcon = MAKEINTRESOURCEW(32512);
 static const wchar_t* ChooseWindowClass(WindowType aWindowType) {
   const wchar_t* className = [aWindowType] {
     switch (aWindowType) {
-      case WindowType::Invisible:
-        return kClassNameHidden;
       case WindowType::Dialog:
         return kClassNameDialog;
       case WindowType::Popup:
@@ -1348,7 +1342,6 @@ DWORD nsWindow::WindowStyle() {
       [[fallthrough]];
 
     case WindowType::TopLevel:
-    case WindowType::Invisible:
       style = WS_OVERLAPPED | WS_CLIPCHILDREN | WS_DLGFRAME | WS_BORDER |
               WS_THICKFRAME | kTitlebarItemsWindowStyles;
       break;
@@ -1594,6 +1587,9 @@ void nsWindow::Show(bool aState) {
     
     
     mIsShowingPreXULSkeletonUI = false;
+    
+    
+    SetCursor(Cursor{eCursor_standard});
 #if defined(ACCESSIBILITY)
     
     
@@ -5855,24 +5851,23 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_GESTURENOTIFY: {
-      if (mWindowType != WindowType::Invisible) {
-        
-        
-        
-        
+      
+      
+      
+      
 
-        GESTURENOTIFYSTRUCT* gestureinfo = (GESTURENOTIFYSTRUCT*)lParam;
-        nsPointWin touchPoint;
-        touchPoint = gestureinfo->ptsLocation;
-        touchPoint.ScreenToClient(mWnd);
-        WidgetGestureNotifyEvent gestureNotifyEvent(true, eGestureNotify, this);
-        gestureNotifyEvent.mRefPoint =
-            LayoutDeviceIntPoint::FromUnknownPoint(touchPoint);
-        nsEventStatus status;
-        DispatchEvent(&gestureNotifyEvent, status);
-        mDisplayPanFeedback = gestureNotifyEvent.mDisplayPanFeedback;
-        if (!mTouchWindow)
-          mGesture.SetWinGestureSupport(mWnd, gestureNotifyEvent.mPanDirection);
+      GESTURENOTIFYSTRUCT* gestureinfo = (GESTURENOTIFYSTRUCT*)lParam;
+      nsPointWin touchPoint;
+      touchPoint = gestureinfo->ptsLocation;
+      touchPoint.ScreenToClient(mWnd);
+      WidgetGestureNotifyEvent gestureNotifyEvent(true, eGestureNotify, this);
+      gestureNotifyEvent.mRefPoint =
+          LayoutDeviceIntPoint::FromUnknownPoint(touchPoint);
+      nsEventStatus status;
+      DispatchEvent(&gestureNotifyEvent, status);
+      mDisplayPanFeedback = gestureNotifyEvent.mDisplayPanFeedback;
+      if (!mTouchWindow) {
+        mGesture.SetWinGestureSupport(mWnd, gestureNotifyEvent.mPanDirection);
       }
       result = false;  
     } break;
@@ -6553,11 +6548,6 @@ void nsWindow::OnWindowPosChanging(WINDOWPOS* info) {
   }
 
   
-  if (mWindowType == WindowType::Invisible) {
-    info->flags &= ~SWP_SHOWWINDOW;
-  }
-
-  
   
   
   static bool sDWMUnhidesPopups = IsWin10Sep2018UpdateOrLater();
@@ -7189,7 +7179,7 @@ a11y::LocalAccessible* nsWindow::GetAccessible() {
   if (a11y::PlatformDisabledState() == a11y::ePlatformIsDisabled)
     return nullptr;
 
-  if (mInDtor || mOnDestroyCalled || mWindowType == WindowType::Invisible) {
+  if (mInDtor || mOnDestroyCalled) {
     return nullptr;
   }
 
