@@ -2014,7 +2014,7 @@ static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<PlainObject*> fields(cx);
-  JS::RootedVector<PropertyKey> fieldNames(cx);
+  mozilla::EnumSet<TemporalField> fieldNames{};
   if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, temporalDate,
                                           {
                                               CalendarField::Day,

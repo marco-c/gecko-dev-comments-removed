@@ -13,6 +13,7 @@
 #include "mozilla/RangedPtr.h"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <iterator>
 #include <stdint.h>
@@ -25,7 +26,6 @@
 
 #include "builtin/temporal/Crash.h"
 #include "builtin/temporal/Temporal.h"
-#include "ds/Sort.h"
 #include "gc/Barrier.h"
 #include "gc/Tracer.h"
 #include "js/AllocPolicy.h"
@@ -61,6 +61,87 @@ void TemporalFields::trace(JSTracer* trc) {
   TraceNullableRoot(trc, &era, "TemporalFields::era");
   TraceRoot(trc, &timeZone, "TemporalFields::timeZone");
 }
+
+template <typename T, const auto& sorted>
+class SortedEnumSet {
+  mozilla::EnumSet<T> fields_;
+
+ public:
+  explicit SortedEnumSet(mozilla::EnumSet<T> fields) : fields_(fields) {}
+
+  class Iterator {
+    mozilla::EnumSet<T> fields_;
+    size_t index_;
+
+    void findNext() {
+      while (index_ < sorted.size() && !fields_.contains(sorted[index_])) {
+        index_++;
+      }
+    }
+
+    void findPrevious() {
+      while (index_ > 0 && !fields_.contains(sorted[index_])) {
+        index_--;
+      }
+    }
+
+   public:
+    
+    using difference_type = ptrdiff_t;
+    using value_type = TemporalField;
+    using pointer = TemporalField*;
+    using reference = TemporalField&;
+    using iterator_category = std::bidirectional_iterator_tag;
+
+    Iterator(mozilla::EnumSet<T> fields, size_t index)
+        : fields_(fields), index_(index) {
+      findNext();
+    }
+
+    bool operator==(const Iterator& other) const {
+      MOZ_ASSERT(fields_ == other.fields_);
+      return index_ == other.index_;
+    }
+
+    bool operator!=(const Iterator& other) const { return !(*this == other); }
+
+    auto operator*() const {
+      MOZ_ASSERT(index_ < sorted.size());
+      MOZ_ASSERT(fields_.contains(sorted[index_]));
+      return sorted[index_];
+    }
+
+    auto& operator++() {
+      MOZ_ASSERT(index_ < sorted.size());
+      index_++;
+      findNext();
+      return *this;
+    }
+
+    auto operator++(int) {
+      auto result = *this;
+      ++(*this);
+      return result;
+    }
+
+    auto& operator--() {
+      MOZ_ASSERT(index_ > 0);
+      index_--;
+      findPrevious();
+      return *this;
+    }
+
+    auto operator--(int) {
+      auto result = *this;
+      --(*this);
+      return result;
+    }
+  };
+
+  Iterator begin() const { return Iterator{fields_, 0}; };
+
+  Iterator end() const { return Iterator{fields_, sorted.size()}; }
+};
 
 PropertyName* js::temporal::ToPropertyName(JSContext* cx, TemporalField field) {
   switch (field) {
@@ -130,32 +211,34 @@ static constexpr const char* ToCString(TemporalField field) {
   JS_CONSTEXPR_CRASH("invalid temporal field name");
 }
 
-static JS::UniqueChars QuoteString(JSContext* cx, const char* str) {
-  Sprinter sprinter(cx);
-  if (!sprinter.init()) {
-    return nullptr;
+template <typename T, size_t N>
+static constexpr bool IsSorted(const std::array<T, N>& arr) {
+  for (size_t i = 1; i < arr.size(); i++) {
+    auto a = std::string_view{ToCString(arr[i - 1])};
+    auto b = std::string_view{ToCString(arr[i])};
+    if (a.compare(b) >= 0) {
+      return false;
+    }
   }
-  mozilla::Range range(reinterpret_cast<const Latin1Char*>(str),
-                       std::strlen(str));
-  QuoteString<QuoteTarget::String>(&sprinter, range);
-  return sprinter.release();
+  return true;
 }
 
-static JS::UniqueChars QuoteString(JSContext* cx, PropertyKey key) {
-  if (key.isString()) {
-    return QuoteString(cx, key.toString());
-  }
+static constexpr auto sortedTemporalFields = std::array{
+    TemporalField::Day,         TemporalField::Era,
+    TemporalField::EraYear,     TemporalField::Hour,
+    TemporalField::Microsecond, TemporalField::Millisecond,
+    TemporalField::Minute,      TemporalField::Month,
+    TemporalField::MonthCode,   TemporalField::Nanosecond,
+    TemporalField::Offset,      TemporalField::Second,
+    TemporalField::TimeZone,    TemporalField::Year,
+};
 
-  if (key.isInt()) {
-    Int32ToCStringBuf buf;
-    size_t length;
-    const char* str = Int32ToCString(&buf, key.toInt(), &length);
-    return DuplicateString(cx, str, length);
-  }
+static_assert(IsSorted(sortedTemporalFields));
 
-  MOZ_ASSERT(key.isSymbol());
-  return QuoteString(cx, key.toSymbol()->description());
-}
+
+
+
+using SortedTemporalFields = SortedEnumSet<TemporalField, sortedTemporalFields>;
 
 mozilla::Maybe<TemporalField> js::temporal::ToTemporalField(
     JSContext* cx, PropertyKey property) {
@@ -266,55 +349,12 @@ static bool TemporalFieldConvertValue(JSContext* cx, TemporalField field,
 
     case TemporalField::TimeZone:
       
+
+      
       return true;
   }
   MOZ_CRASH("invalid temporal field name");
 }
-
-static int32_t ComparePropertyKey(PropertyKey x, PropertyKey y) {
-  MOZ_ASSERT(x.isAtom() || x.isInt());
-  MOZ_ASSERT(y.isAtom() || y.isInt());
-
-  if (MOZ_LIKELY(x.isAtom() && y.isAtom())) {
-    return CompareStrings(x.toAtom(), y.toAtom());
-  }
-
-  if (x.isInt() && y.isInt()) {
-    return x.toInt() - y.toInt();
-  }
-
-  uint32_t index = uint32_t(x.isInt() ? x.toInt() : y.toInt());
-  JSAtom* str = x.isAtom() ? x.toAtom() : y.toAtom();
-
-  char16_t buf[UINT32_CHAR_BUFFER_LENGTH];
-  mozilla::RangedPtr<char16_t> end(std::end(buf), buf, std::end(buf));
-  mozilla::RangedPtr<char16_t> start = BackfillIndexInCharBuffer(index, end);
-
-  int32_t result = CompareChars(start.get(), end - start, str);
-  return x.isInt() ? result : -result;
-}
-
-#ifdef DEBUG
-static bool IsSorted(const TemporalFieldNames& fieldNames) {
-  return std::is_sorted(
-      fieldNames.begin(), fieldNames.end(),
-      [](auto x, auto y) { return ComparePropertyKey(x, y) < 0; });
-}
-#endif
-
-template <typename T, size_t N>
-static constexpr bool IsSorted(const std::array<T, N>& arr) {
-  for (size_t i = 1; i < arr.size(); i++) {
-    auto a = std::string_view{ToCString(arr[i - 1])};
-    auto b = std::string_view{ToCString(arr[i])};
-    if (a.compare(b) >= 0) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static_assert(IsSorted(js::temporal::detail::sortedTemporalFields));
 
 static void AssignFromFallback(TemporalField fieldName,
                                MutableHandle<TemporalFields> result) {
@@ -370,6 +410,7 @@ static void AssignFromFallback(TemporalField fieldName,
       break;
   }
 }
+
 
 
 
@@ -525,11 +566,8 @@ bool js::temporal::PrepareTemporalFields(
     } else {
       
       if (requiredFields.contains(fieldName)) {
-        if (auto chars = QuoteString(cx, cstr)) {
-          JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                    JSMSG_TEMPORAL_MISSING_PROPERTY,
-                                    chars.get());
-        }
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TEMPORAL_MISSING_PROPERTY, cstr);
         return false;
       }
 
@@ -552,7 +590,7 @@ bool js::temporal::PrepareTemporalFields(
 
 PlainObject* js::temporal::PrepareTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
-    Handle<TemporalFieldNames> fieldNames,
+    mozilla::EnumSet<TemporalField> fieldNames,
     mozilla::EnumSet<TemporalField> requiredFields) {
   
 
@@ -565,20 +603,15 @@ PlainObject* js::temporal::PrepareTemporalFields(
   
 
   
-  MOZ_ASSERT(IsSorted(fieldNames));
-
-  
-  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
-             fieldNames.end());
 
   
   Rooted<Value> value(cx);
-  for (size_t i = 0; i < fieldNames.length(); i++) {
-    Handle<PropertyKey> property = fieldNames[i];
+  Rooted<PropertyKey> property(cx);
+  for (auto fieldName : SortedTemporalFields{fieldNames}) {
+    property = NameToId(ToPropertyName(cx, fieldName));
 
     
-    MOZ_ASSERT(property != NameToId(cx->names().constructor));
-    MOZ_ASSERT(property != NameToId(cx->names().proto_));
+    
 
     
     if (!GetProperty(cx, fields, fields, property, &value)) {
@@ -586,28 +619,25 @@ PlainObject* js::temporal::PrepareTemporalFields(
     }
 
     
-    if (auto fieldName = ToTemporalField(cx, property)) {
-      if (!value.isUndefined()) {
-        
 
-        
-        if (!TemporalFieldConvertValue(cx, *fieldName, &value)) {
-          return nullptr;
-        }
-      } else {
-        
-        if (requiredFields.contains(*fieldName)) {
-          if (auto chars = QuoteString(cx, property.toString())) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                      JSMSG_TEMPORAL_MISSING_PROPERTY,
-                                      chars.get());
-          }
-          return nullptr;
-        }
+    if (!value.isUndefined()) {
+      
 
-        
-        value = TemporalFieldDefaultValue(*fieldName);
+      
+      if (!TemporalFieldConvertValue(cx, fieldName, &value)) {
+        return nullptr;
       }
+    } else {
+      
+      if (requiredFields.contains(fieldName)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TEMPORAL_MISSING_PROPERTY,
+                                  ToCString(fieldName));
+        return nullptr;
+      }
+
+      
+      value = TemporalFieldDefaultValue(fieldName);
     }
 
     
@@ -630,7 +660,7 @@ PlainObject* js::temporal::PrepareTemporalFields(
 
 PlainObject* js::temporal::PreparePartialTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
-    Handle<TemporalFieldNames> fieldNames) {
+    mozilla::EnumSet<TemporalField> fieldNames) {
   
 
   
@@ -643,20 +673,15 @@ PlainObject* js::temporal::PreparePartialTemporalFields(
   bool any = false;
 
   
-  MOZ_ASSERT(IsSorted(fieldNames));
-
-  
-  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
-             fieldNames.end());
 
   
   Rooted<Value> value(cx);
-  for (size_t i = 0; i < fieldNames.length(); i++) {
-    Handle<PropertyKey> property = fieldNames[i];
+  Rooted<PropertyKey> property(cx);
+  for (auto fieldName : SortedTemporalFields{fieldNames}) {
+    property = NameToId(ToPropertyName(cx, fieldName));
 
     
-    MOZ_ASSERT(property != NameToId(cx->names().constructor));
-    MOZ_ASSERT(property != NameToId(cx->names().proto_));
+    
 
     
     if (!GetProperty(cx, fields, fields, property, &value)) {
@@ -668,11 +693,8 @@ PlainObject* js::temporal::PreparePartialTemporalFields(
       
       any = true;
 
-      
-      if (auto fieldName = ToTemporalField(cx, property)) {
-        if (!TemporalFieldConvertValue(cx, *fieldName, &value)) {
-          return nullptr;
-        }
+      if (!TemporalFieldConvertValue(cx, fieldName, &value)) {
+        return nullptr;
       }
 
       
@@ -697,89 +719,6 @@ PlainObject* js::temporal::PreparePartialTemporalFields(
   return result;
 }
 
-using CalendarFieldNames = JS::StackGCVector<JS::PropertyKey>;
-
-
-
-
-static bool CalendarFields(JSContext* cx, Handle<CalendarValue> calendar,
-                           mozilla::EnumSet<CalendarField> fieldNames,
-                           MutableHandle<CalendarFieldNames> result) {
-  MOZ_ASSERT(result.empty());
-
-  
-
-  
-  auto temporalFields = CalendarFields(calendar, fieldNames);
-
-  
-  if (!result.reserve(temporalFields.size())) {
-    return false;
-  }
-
-  
-  for (auto field : SortedTemporalFields{temporalFields}) {
-    auto* name = ToPropertyName(cx, field);
-    result.infallibleAppend(NameToId(name));
-  }
-
-  return true;
-}
-
-
-
-
-
-static bool PrepareCalendarFieldsAndFieldNames(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    mozilla::EnumSet<CalendarField> calendarFieldNames,
-    mozilla::EnumSet<TemporalField> nonCalendarFieldNames,
-    mozilla::EnumSet<TemporalField> requiredFieldNames,
-    MutableHandle<PlainObject*> resultFields,
-    MutableHandle<TemporalFieldNames> resultFieldNames) {
-  
-
-  
-  JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar, calendarFieldNames, &fieldNames)) {
-    return false;
-  }
-
-  
-  if (nonCalendarFieldNames.size() != 0) {
-    if (!AppendSorted(cx, fieldNames.get(), nonCalendarFieldNames)) {
-      return false;
-    }
-  }
-
-  
-  auto* flds =
-      PrepareTemporalFields(cx, fields, fieldNames, requiredFieldNames);
-  if (!flds) {
-    return false;
-  }
-
-  
-  resultFields.set(flds);
-  resultFieldNames.set(std::move(fieldNames.get()));
-  return true;
-}
-
-
-
-
-
-bool js::temporal::PrepareCalendarFieldsAndFieldNames(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    mozilla::EnumSet<CalendarField> calendarFieldNames,
-    MutableHandle<PlainObject*> resultFields,
-    MutableHandle<TemporalFieldNames> resultFieldNames) {
-  return ::PrepareCalendarFieldsAndFieldNames(cx, calendar, fields,
-                                              calendarFieldNames, {}, {},
-                                              resultFields, resultFieldNames);
-}
-
-#ifdef DEBUG
 static auto AsTemporalFieldSet(mozilla::EnumSet<CalendarField> values) {
   using T = std::underlying_type_t<TemporalField>;
   static_assert(std::is_same_v<T, std::underlying_type_t<CalendarField>>);
@@ -798,7 +737,61 @@ static auto AsTemporalFieldSet(mozilla::EnumSet<CalendarField> values) {
   return result;
 }
 
-static constexpr mozilla::EnumSet<TemporalField> NonCalendarFieldNames = {
+
+
+
+
+static bool PrepareCalendarFieldsAndFieldNames(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    mozilla::EnumSet<CalendarField> calendarFieldNames,
+    mozilla::EnumSet<TemporalField> nonCalendarFieldNames,
+    mozilla::EnumSet<TemporalField> requiredFieldNames,
+    MutableHandle<PlainObject*> resultFields,
+    mozilla::EnumSet<TemporalField>* resultFieldNames) {
+  auto calendarId = calendar.identifier();
+
+  
+
+  
+  auto fieldNames = AsTemporalFieldSet(calendarFieldNames);
+
+  
+  if (calendarId != CalendarId::ISO8601) {
+    fieldNames += CalendarFieldDescriptors(calendar, calendarFieldNames);
+  }
+
+  
+  fieldNames += nonCalendarFieldNames;
+
+  
+  auto* flds =
+      PrepareTemporalFields(cx, fields, fieldNames, requiredFieldNames);
+  if (!flds) {
+    return false;
+  }
+
+  
+  resultFields.set(flds);
+  *resultFieldNames = fieldNames;
+  return true;
+}
+
+
+
+
+
+bool js::temporal::PrepareCalendarFieldsAndFieldNames(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    mozilla::EnumSet<CalendarField> calendarFieldNames,
+    MutableHandle<PlainObject*> resultFields,
+    mozilla::EnumSet<TemporalField>* resultFieldNames) {
+  return ::PrepareCalendarFieldsAndFieldNames(cx, calendar, fields,
+                                              calendarFieldNames, {}, {},
+                                              resultFields, resultFieldNames);
+}
+
+#ifdef DEBUG
+static constexpr auto NonCalendarFieldNames = mozilla::EnumSet<TemporalField>{
     TemporalField::Hour,        TemporalField::Minute,
     TemporalField::Second,      TemporalField::Millisecond,
     TemporalField::Microsecond, TemporalField::Nanosecond,
@@ -830,188 +823,11 @@ PlainObject* js::temporal::PrepareCalendarFields(
 
   
   Rooted<PlainObject*> resultFields(cx);
-  JS::RootedVector<PropertyKey> resultFieldNames(cx);
+  mozilla::EnumSet<TemporalField> resultFieldNames{};
   if (!::PrepareCalendarFieldsAndFieldNames(
           cx, calendar, fields, calendarFieldNames, nonCalendarFieldNames,
           requiredFieldNames, &resultFields, &resultFieldNames)) {
     return nullptr;
   }
   return resultFields;
-}
-
-
-
-
-bool js::temporal::ConcatTemporalFieldNames(
-    const TemporalFieldNames& receiverFieldNames,
-    const TemporalFieldNames& inputFieldNames,
-    TemporalFieldNames& concatenatedFieldNames) {
-  MOZ_ASSERT(IsSorted(receiverFieldNames));
-  MOZ_ASSERT(IsSorted(inputFieldNames));
-  MOZ_ASSERT(concatenatedFieldNames.empty());
-
-  auto appendUnique = [&](auto key) {
-    if (concatenatedFieldNames.empty() ||
-        concatenatedFieldNames.back() != key) {
-      return concatenatedFieldNames.append(key);
-    }
-    return true;
-  };
-
-  size_t i = 0;
-  size_t j = 0;
-
-  
-  while (i < receiverFieldNames.length() && j < inputFieldNames.length()) {
-    auto x = receiverFieldNames[i];
-    auto y = inputFieldNames[j];
-
-    PropertyKey z;
-    if (ComparePropertyKey(x, y) <= 0) {
-      z = x;
-      i++;
-    } else {
-      z = y;
-      j++;
-    }
-    if (!appendUnique(z)) {
-      return false;
-    }
-  }
-
-  
-  while (i < receiverFieldNames.length()) {
-    if (!appendUnique(receiverFieldNames[i++])) {
-      return false;
-    }
-  }
-
-  
-  while (j < inputFieldNames.length()) {
-    if (!appendUnique(inputFieldNames[j++])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool js::temporal::AppendSorted(
-    JSContext* cx, TemporalFieldNames& fieldNames,
-    mozilla::EnumSet<TemporalField> additionalNames) {
-  
-  MOZ_ASSERT(IsSorted(fieldNames));
-  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
-             fieldNames.end());
-
-  
-  MOZ_ASSERT(additionalNames.size() > 0);
-
-  
-  if (!fieldNames.growBy(additionalNames.size())) {
-    return false;
-  }
-
-  auto sortedAdditionalNames = SortedTemporalFields{additionalNames};
-  const auto sortedAdditionalNamesBegin = sortedAdditionalNames.begin();
-
-  const auto* left = std::prev(fieldNames.end(), additionalNames.size());
-  auto right = sortedAdditionalNames.end();
-  auto* out = fieldNames.end();
-
-  
-  while (left != fieldNames.begin() && right != sortedAdditionalNamesBegin) {
-    MOZ_ASSERT(out != fieldNames.begin());
-    auto x = *std::prev(left);
-    auto y = NameToId(ToPropertyName(cx, *std::prev(right)));
-
-    int32_t r = ComparePropertyKey(x, y);
-
-    
-    if (r == 0) {
-      if (auto chars = QuoteString(cx, x)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_TEMPORAL_DUPLICATE_PROPERTY,
-                                  chars.get());
-      }
-      return false;
-    }
-
-    
-    PropertyKey z;
-    if (r > 0) {
-      z = x;
-      left--;
-    } else {
-      z = y;
-      right--;
-    }
-    *--out = z;
-  }
-
-  
-  if (left == out) {
-    MOZ_ASSERT(right == sortedAdditionalNamesBegin);
-    return true;
-  }
-
-  
-  while (left != fieldNames.begin()) {
-    MOZ_ASSERT(out != fieldNames.begin());
-    *--out = *--left;
-  }
-
-  
-  while (right != sortedAdditionalNamesBegin) {
-    MOZ_ASSERT(out != fieldNames.begin());
-    *--out = NameToId(ToPropertyName(cx, *--right));
-  }
-
-  
-  MOZ_ASSERT(out == fieldNames.begin());
-
-  return true;
-}
-
-bool js::temporal::SortTemporalFieldNames(JSContext* cx,
-                                          TemporalFieldNames& fieldNames) {
-  
-  TemporalFieldNames scratch(cx);
-  if (!scratch.resize(fieldNames.length())) {
-    return false;
-  }
-
-  
-  auto comparator = [](const auto& x, const auto& y, bool* lessOrEqual) {
-    *lessOrEqual = ComparePropertyKey(x, y) <= 0;
-    return true;
-  };
-  MOZ_ALWAYS_TRUE(MergeSort(fieldNames.begin(), fieldNames.length(),
-                            scratch.begin(), comparator));
-
-  for (size_t i = 0; i < fieldNames.length(); i++) {
-    auto property = fieldNames[i];
-
-    
-    if (property == NameToId(cx->names().constructor) ||
-        property == NameToId(cx->names().proto_)) {
-      if (auto chars = QuoteString(cx, property)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_TEMPORAL_INVALID_PROPERTY, chars.get());
-      }
-      return false;
-    }
-
-    
-    if (i > 0 && property == fieldNames[i - 1]) {
-      if (auto chars = QuoteString(cx, property)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_TEMPORAL_DUPLICATE_PROPERTY,
-                                  chars.get());
-      }
-      return false;
-    }
-  }
-
-  return true;
 }

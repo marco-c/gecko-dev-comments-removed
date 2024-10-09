@@ -262,8 +262,8 @@ enum class CalendarField {
 
 
 
-mozilla::EnumSet<TemporalField> CalendarFields(
-    const CalendarValue& calendar, mozilla::EnumSet<CalendarField> fieldNames);
+mozilla::EnumSet<TemporalField> CalendarFieldDescriptors(
+    const CalendarValue& calendar, mozilla::EnumSet<CalendarField> type);
 
 
 

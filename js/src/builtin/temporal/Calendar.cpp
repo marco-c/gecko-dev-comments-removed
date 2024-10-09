@@ -2995,20 +2995,17 @@ static FieldDescriptors CalendarFieldDescriptors(CalendarId calendar,
 
 
 
-static FieldDescriptors CalendarFieldDescriptors(
-    CalendarId calendar, mozilla::EnumSet<CalendarField> type) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  mozilla::EnumSet<TemporalField> relevant;
-  mozilla::EnumSet<TemporalField> required;
+mozilla::EnumSet<TemporalField> js::temporal::CalendarFieldDescriptors(
+    const CalendarValue& calendar, mozilla::EnumSet<CalendarField> type) {
+  auto calendarId = calendar.identifier();
+  MOZ_ASSERT(calendarId != CalendarId::ISO8601);
 
   
   
-  if (type.contains(CalendarField::Year) && CalendarEraRelevant(calendar)) {
-    relevant += {TemporalField::Era, TemporalField::EraYear};
+  if (type.contains(CalendarField::Year) && CalendarEraRelevant(calendarId)) {
+    return {TemporalField::Era, TemporalField::EraYear};
   }
-
-  return {relevant, required};
+  return {};
 }
 
 
@@ -3130,47 +3127,6 @@ static bool CalendarResolveFields(JSContext* cx, CalendarId calendar,
   
 
   return true;
-}
-
-static TemporalField ToTemporalField(CalendarField field) {
-  switch (field) {
-    case CalendarField::Year:
-      return TemporalField::Year;
-    case CalendarField::Month:
-      return TemporalField::Month;
-    case CalendarField::MonthCode:
-      return TemporalField::MonthCode;
-    case CalendarField::Day:
-      return TemporalField::Day;
-  }
-  MOZ_CRASH("invalid calendar field name");
-}
-
-
-
-
-mozilla::EnumSet<TemporalField> js::temporal::CalendarFields(
-    const CalendarValue& calendar, mozilla::EnumSet<CalendarField> fieldNames) {
-  auto calendarId = calendar.identifier();
-
-  
-
-  
-  mozilla::EnumSet<TemporalField> temporalFields{};
-  for (auto fieldName : fieldNames) {
-    temporalFields += ::ToTemporalField(fieldName);
-  }
-
-  
-  if (calendarId != CalendarId::ISO8601) {
-    auto extraFieldDescriptors =
-        CalendarFieldDescriptors(calendarId, fieldNames);
-
-    temporalFields += extraFieldDescriptors.relevant;
-    temporalFields += extraFieldDescriptors.required;
-  }
-
-  return temporalFields;
 }
 
 
