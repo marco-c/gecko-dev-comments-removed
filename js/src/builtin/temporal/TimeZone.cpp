@@ -88,10 +88,6 @@ void js::temporal::TimeZoneValue::trace(JSTracer* trc) {
 
 void js::temporal::TimeZoneRecord::trace(JSTracer* trc) {
   receiver_.trace(trc);
-  TraceNullableRoot(trc, &getOffsetNanosecondsFor_,
-                    "TimeZoneMethods::getOffsetNanosecondsFor");
-  TraceNullableRoot(trc, &getPossibleInstantsFor_,
-                    "TimeZoneMethods::getPossibleInstantsFor");
 }
 
 static mozilla::UniquePtr<mozilla::intl::TimeZone> CreateIntlTimeZone(
@@ -665,42 +661,10 @@ JSString* js::temporal::ToTemporalTimeZoneIdentifier(
 
 
 
-static bool TimeZoneMethodsRecordLookup(JSContext* cx,
-                                        MutableHandle<TimeZoneRecord> timeZone,
-                                        TimeZoneMethod methodName) {
-  MOZ_CRASH("invalid time zone");
-}
-
-
-
-
 bool js::temporal::CreateTimeZoneMethodsRecord(
     JSContext* cx, Handle<TimeZoneValue> timeZone,
-    mozilla::EnumSet<TimeZoneMethod> methods,
     MutableHandle<TimeZoneRecord> result) {
-  MOZ_ASSERT(!methods.isEmpty());
-
-  
   result.set(TimeZoneRecord{timeZone});
-
-#ifdef DEBUG
-  
-  result.get().lookedUp() += methods;
-#endif
-
-  
-  if (timeZone.isString()) {
-    return true;
-  }
-
-  
-  for (auto method : methods) {
-    if (!TimeZoneMethodsRecordLookup(cx, result, method)) {
-      return false;
-    }
-  }
-
-  
   return true;
 }
 
@@ -778,70 +742,17 @@ static bool BuiltinGetOffsetNanosecondsFor(
 
 
 
-static bool GetOffsetNanosecondsForSlow(JSContext* cx,
-                                        Handle<TimeZoneRecord> timeZone,
-                                        Handle<Wrapped<InstantObject*>> instant,
-                                        int64_t* offsetNanoseconds) {
-  
-  Rooted<Value> fval(cx, ObjectValue(*timeZone.getOffsetNanosecondsFor()));
-  auto thisv = timeZone.receiver().toObject();
-  Rooted<Value> instantVal(cx, ObjectValue(*instant));
-  Rooted<Value> rval(cx);
-  if (!Call(cx, fval, thisv, instantVal, &rval)) {
-    return false;
-  }
-
-  
-
-  
-  if (!rval.isNumber()) {
-    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, rval,
-                     nullptr, "not a number");
-    return false;
-  }
-
-  
-  double num = rval.toNumber();
-  if (!IsInteger(num) || std::abs(num) >= ToNanoseconds(TemporalUnit::Day)) {
-    ToCStringBuf cbuf;
-    const char* numStr = NumberToCString(&cbuf, num);
-
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_TIMEZONE_NANOS_RANGE, numStr);
-    return false;
-  }
-
-  
-  *offsetNanoseconds = int64_t(num);
-  return true;
-}
-
-
-
-
 bool js::temporal::GetOffsetNanosecondsFor(
     JSContext* cx, Handle<TimeZoneRecord> timeZone,
     Handle<Wrapped<InstantObject*>> instant, int64_t* offsetNanoseconds) {
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetOffsetNanosecondsFor));
-
-  
-  auto getOffsetNanosecondsFor = timeZone.getOffsetNanosecondsFor();
-  if (!getOffsetNanosecondsFor) {
-    auto* unwrapped = instant.unwrap(cx);
-    if (!unwrapped) {
-      return false;
-    }
-    auto instant = ToInstant(unwrapped);
-    auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
-
-    return BuiltinGetOffsetNanosecondsFor(cx, builtin, instant,
-                                          offsetNanoseconds);
+  auto* unwrapped = instant.unwrap(cx);
+  if (!unwrapped) {
+    return false;
   }
+  auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
 
-  
-  return ::GetOffsetNanosecondsForSlow(cx, timeZone, instant,
-                                       offsetNanoseconds);
+  return BuiltinGetOffsetNanosecondsFor(cx, builtin, ToInstant(unwrapped),
+                                        offsetNanoseconds);
 }
 
 
@@ -851,11 +762,7 @@ bool js::temporal::GetOffsetNanosecondsFor(
     JSContext* cx, Handle<TimeZoneValue> timeZone,
     Handle<Wrapped<InstantObject*>> instant, int64_t* offsetNanoseconds) {
   Rooted<TimeZoneRecord> timeZoneRec(cx);
-  if (!CreateTimeZoneMethodsRecord(cx, timeZone,
-                                   {
-                                       TimeZoneMethod::GetOffsetNanosecondsFor,
-                                   },
-                                   &timeZoneRec)) {
+  if (!CreateTimeZoneMethodsRecord(cx, timeZone, &timeZoneRec)) {
     return false;
   }
 
@@ -869,23 +776,9 @@ bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
                                            Handle<TimeZoneRecord> timeZone,
                                            const Instant& instant,
                                            int64_t* offsetNanoseconds) {
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetOffsetNanosecondsFor));
-
-  
-  auto getOffsetNanosecondsFor = timeZone.getOffsetNanosecondsFor();
-  if (!getOffsetNanosecondsFor) {
-    auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
-    return BuiltinGetOffsetNanosecondsFor(cx, builtin, instant,
-                                          offsetNanoseconds);
-  }
-
-  
-  Rooted<InstantObject*> obj(cx, CreateTemporalInstant(cx, instant));
-  if (!obj) {
-    return false;
-  }
-  return ::GetOffsetNanosecondsForSlow(cx, timeZone, obj, offsetNanoseconds);
+  auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
+  return BuiltinGetOffsetNanosecondsFor(cx, builtin, instant,
+                                        offsetNanoseconds);
 }
 
 
@@ -896,11 +789,7 @@ bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
                                            const Instant& instant,
                                            int64_t* offsetNanoseconds) {
   Rooted<TimeZoneRecord> timeZoneRec(cx);
-  if (!CreateTimeZoneMethodsRecord(cx, timeZone,
-                                   {
-                                       TimeZoneMethod::GetOffsetNanosecondsFor,
-                                   },
-                                   &timeZoneRec)) {
+  if (!CreateTimeZoneMethodsRecord(cx, timeZone, &timeZoneRec)) {
     return false;
   }
 
@@ -1250,10 +1139,6 @@ bool js::temporal::GetPlainDateTimeFor(JSContext* cx,
   MOZ_ASSERT(IsValidEpochInstant(instant));
 
   
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetOffsetNanosecondsFor));
-
-  
   int64_t offsetNanoseconds;
   if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
     return false;
@@ -1276,11 +1161,7 @@ bool js::temporal::GetPlainDateTimeFor(JSContext* cx,
                                        const Instant& instant,
                                        PlainDateTime* result) {
   Rooted<TimeZoneRecord> timeZoneRec(cx);
-  if (!CreateTimeZoneMethodsRecord(cx, timeZone,
-                                   {
-                                       TimeZoneMethod::GetOffsetNanosecondsFor,
-                                   },
-                                   &timeZoneRec)) {
+  if (!CreateTimeZoneMethodsRecord(cx, timeZone, &timeZoneRec)) {
     return false;
   }
 
@@ -1393,120 +1274,12 @@ static bool BuiltinGetPossibleInstantsFor(
 
 
 
-static bool GetPossibleInstantsForSlow(
-    JSContext* cx, Handle<TimeZoneRecord> timeZone,
-    Handle<Wrapped<PlainDateTimeObject*>> dateTime,
-    MutableHandle<InstantVector> list) {
-  MOZ_ASSERT(list.empty());
-
-  
-  Rooted<Value> fval(cx, ObjectValue(*timeZone.getPossibleInstantsFor()));
-  auto thisv = timeZone.receiver().toObject();
-  Rooted<Value> arg(cx, ObjectValue(*dateTime));
-  Rooted<Value> rval(cx);
-  if (!Call(cx, fval, thisv, arg, &rval)) {
-    return false;
-  }
-
-  
-
-  
-  JS::ForOfIterator iterator(cx);
-  if (!iterator.init(rval)) {
-    return false;
-  }
-
-  
-
-  
-  auto min = Instant::max();
-  auto max = Instant::min();
-  Rooted<Value> nextValue(cx);
-  while (true) {
-    
-    bool done;
-    if (!iterator.next(&nextValue, &done)) {
-      return false;
-    }
-
-    
-    if (done) {
-      
-      if (list.length() > 1) {
-        
-
-        
-        constexpr auto nsPerDay =
-            InstantSpan::fromNanoseconds(ToNanoseconds(TemporalUnit::Day));
-        if ((max - min).abs() > nsPerDay) {
-          JS_ReportErrorNumberASCII(
-              cx, GetErrorMessage, nullptr,
-              JSMSG_TEMPORAL_TIMEZONE_OFFSET_SHIFT_ONE_DAY);
-          return false;
-        }
-      }
-
-      
-      return true;
-    }
-
-    
-    if (nextValue.isObject()) {
-      JSObject* obj = &nextValue.toObject();
-      if (auto* unwrapped = obj->maybeUnwrapIf<InstantObject>()) {
-        auto instant = ToInstant(unwrapped);
-        min = std::min(min, instant);
-        max = std::max(max, instant);
-
-        if (!list.append(obj)) {
-          return false;
-        }
-        continue;
-      }
-    }
-
-    
-    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, nextValue,
-                     nullptr, "not an instant");
-
-    
-    iterator.closeThrow();
-    return false;
-  }
-}
-
-
-
-
 static bool GetPossibleInstantsFor(
     JSContext* cx, Handle<TimeZoneRecord> timeZone,
     Handle<Wrapped<PlainDateTimeObject*>> dateTimeObj,
     const PlainDateTime& dateTime, MutableHandle<InstantVector> list) {
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetPossibleInstantsFor));
-
-  
-  auto getPossibleInstantsFor = timeZone.getPossibleInstantsFor();
-  if (!getPossibleInstantsFor) {
-    bool arrayIterationSane;
-    if (timeZone.receiver().isString()) {
-      
-      arrayIterationSane = true;
-    } else {
-      
-      if (!IsArrayIterationSane(cx, &arrayIterationSane)) {
-        return false;
-      }
-    }
-
-    if (arrayIterationSane) {
-      auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
-      return BuiltinGetPossibleInstantsFor(cx, builtin, dateTime, list);
-    }
-  }
-
-  
-  return GetPossibleInstantsForSlow(cx, timeZone, dateTimeObj, list);
+  auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
+  return BuiltinGetPossibleInstantsFor(cx, builtin, dateTime, list);
 }
 
 
@@ -1516,36 +1289,9 @@ bool js::temporal::GetPossibleInstantsFor(
     JSContext* cx, Handle<TimeZoneRecord> timeZone,
     Handle<PlainDateTimeWithCalendar> dateTime,
     MutableHandle<InstantVector> list) {
-  
-  auto getPossibleInstantsFor = timeZone.getPossibleInstantsFor();
-  if (!getPossibleInstantsFor) {
-    bool arrayIterationSane;
-    if (timeZone.receiver().isString()) {
-      
-      arrayIterationSane = true;
-    } else {
-      
-      if (!IsArrayIterationSane(cx, &arrayIterationSane)) {
-        return false;
-      }
-    }
-
-    if (arrayIterationSane) {
-      auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
-      return BuiltinGetPossibleInstantsFor(cx, builtin,
-                                           ToPlainDateTime(dateTime), list);
-    }
-  }
-
-  Rooted<PlainDateTimeObject*> dateTimeObj(
-      cx, CreateTemporalDateTime(cx, ToPlainDateTime(dateTime),
-                                 dateTime.calendar()));
-  if (!dateTimeObj) {
-    return false;
-  }
-
-  
-  return GetPossibleInstantsForSlow(cx, timeZone, dateTimeObj, list);
+  auto builtin = timeZone.receiver().toTimeZoneObjectMaybeBuiltin();
+  return BuiltinGetPossibleInstantsFor(cx, builtin, ToPlainDateTime(dateTime),
+                                       list);
 }
 
 
@@ -1569,16 +1315,6 @@ bool js::temporal::DisambiguatePossibleInstants(
     Handle<TimeZoneRecord> timeZone, const PlainDateTime& dateTime,
     TemporalDisambiguation disambiguation,
     MutableHandle<Wrapped<InstantObject*>> result) {
-  
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetPossibleInstantsFor));
-
-  
-  MOZ_ASSERT_IF(possibleInstants.empty() &&
-                    disambiguation != TemporalDisambiguation::Reject,
-                TimeZoneMethodsRecordHasLookedUp(
-                    timeZone, TimeZoneMethod::GetOffsetNanosecondsFor));
-
   
   if (possibleInstants.length() == 1) {
     result.set(possibleInstants[0]);
@@ -1748,14 +1484,6 @@ static bool GetInstantFor(JSContext* cx, Handle<TimeZoneRecord> timeZone,
                           Handle<Wrapped<PlainDateTimeObject*>> dateTime,
                           TemporalDisambiguation disambiguation,
                           MutableHandle<Wrapped<InstantObject*>> result) {
-  
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetOffsetNanosecondsFor));
-
-  
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetPossibleInstantsFor));
-
   auto* unwrappedDateTime = dateTime.unwrap(cx);
   if (!unwrappedDateTime) {
     return false;
@@ -1782,12 +1510,7 @@ bool js::temporal::GetInstantFor(JSContext* cx, Handle<TimeZoneValue> timeZone,
                                  TemporalDisambiguation disambiguation,
                                  Instant* result) {
   Rooted<TimeZoneRecord> timeZoneRec(cx);
-  if (!CreateTimeZoneMethodsRecord(cx, timeZone,
-                                   {
-                                       TimeZoneMethod::GetOffsetNanosecondsFor,
-                                       TimeZoneMethod::GetPossibleInstantsFor,
-                                   },
-                                   &timeZoneRec)) {
+  if (!CreateTimeZoneMethodsRecord(cx, timeZone, &timeZoneRec)) {
     return false;
   }
 
@@ -1812,14 +1535,6 @@ bool js::temporal::GetInstantFor(JSContext* cx, Handle<TimeZoneRecord> timeZone,
                                  Handle<PlainDateTimeWithCalendar> dateTime,
                                  TemporalDisambiguation disambiguation,
                                  Instant* result) {
-  
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetOffsetNanosecondsFor));
-
-  
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetPossibleInstantsFor));
-
   
   Rooted<InstantVector> possibleInstants(cx, InstantVector(cx));
   if (!GetPossibleInstantsFor(cx, timeZone, dateTime, &possibleInstants)) {
@@ -1851,12 +1566,7 @@ bool js::temporal::GetInstantFor(JSContext* cx, Handle<TimeZoneValue> timeZone,
                                  TemporalDisambiguation disambiguation,
                                  Instant* result) {
   Rooted<TimeZoneRecord> timeZoneRec(cx);
-  if (!CreateTimeZoneMethodsRecord(cx, timeZone,
-                                   {
-                                       TimeZoneMethod::GetOffsetNanosecondsFor,
-                                       TimeZoneMethod::GetPossibleInstantsFor,
-                                   },
-                                   &timeZoneRec)) {
+  if (!CreateTimeZoneMethodsRecord(cx, timeZone, &timeZoneRec)) {
     return false;
   }
 
