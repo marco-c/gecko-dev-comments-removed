@@ -447,8 +447,10 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
 
     test_tags = get_test_tags(config, env)
     if test_tags:
-        env["MOZHARNESS_TEST_TAG"] = json.dumps(test_tags)
-        mh_command.extend(["--tag={}".format(x) for x in test_tags])
+        
+        if test["suite"] not in ["talos", "raptor"]:
+            env["MOZHARNESS_TEST_TAG"] = json.dumps(test_tags)
+            mh_command.extend(["--tag={}".format(x) for x in test_tags])
 
     
     elif mozharness.get("chunked") or test["chunks"] > 1:
