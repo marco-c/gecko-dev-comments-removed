@@ -654,30 +654,30 @@ SurfaceFormat GfxFormatForCairoSurface(cairo_surface_t* surface) {
   return CairoContentToGfxFormat(cairo_surface_get_content(surface));
 }
 
+
+
+
+
+
+
+
+static void EscapeForCairo(nsACString& aStr) {
+  for (size_t i = aStr.Length(); i > 0;) {
+    --i;
+    if (aStr[i] == '\'') {
+      aStr.ReplaceLiteral(i, 1, "\\'");
+    } else if (aStr[i] == '\\') {
+      aStr.ReplaceLiteral(i, 1, "\\\\");
+    }
+  }
+}
+
 void DrawTargetCairo::Link(const char* aDest, const char* aURI,
                            const Rect& aRect) {
   if ((!aURI || !*aURI) && (!aDest || !*aDest)) {
     
     return;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  auto escapeForCairo = [](nsACString& aStr) {
-    for (size_t i = aStr.Length(); i > 0;) {
-      --i;
-      if (aStr[i] == '\'') {
-        aStr.ReplaceLiteral(i, 1, "\\'");
-      } else if (aStr[i] == '\\') {
-        aStr.ReplaceLiteral(i, 1, "\\\\");
-      }
-    }
-  };
 
   double x = aRect.x, y = aRect.y, w = aRect.width, h = aRect.height;
   cairo_user_to_device(mContext, &x, &y);
@@ -686,12 +686,12 @@ void DrawTargetCairo::Link(const char* aDest, const char* aURI,
 
   if (aDest && *aDest) {
     nsAutoCString dest(aDest);
-    escapeForCairo(dest);
+    EscapeForCairo(dest);
     attributes.AppendPrintf(" dest='%s'", dest.get());
   }
   if (aURI && *aURI) {
     nsAutoCString uri(aURI);
-    escapeForCairo(uri);
+    EscapeForCairo(uri);
     attributes.AppendPrintf(" uri='%s'", uri.get());
   }
 
@@ -710,12 +710,7 @@ void DrawTargetCairo::Destination(const char* aDestination,
   }
 
   nsAutoCString dest(aDestination);
-  for (size_t i = dest.Length(); i > 0;) {
-    --i;
-    if (dest[i] == '\'') {
-      dest.ReplaceLiteral(i, 1, "\\'");
-    }
-  }
+  EscapeForCairo(dest);
 
   double x = aPoint.x, y = aPoint.y;
   cairo_user_to_device(mContext, &x, &y);
