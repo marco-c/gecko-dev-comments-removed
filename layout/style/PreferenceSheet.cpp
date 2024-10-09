@@ -270,6 +270,11 @@ void PreferenceSheet::Initialize() {
     }
   }
 
+  
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
   nsAutoString useDocumentColorPref;
   switch (StaticPrefs::browser_display_document_color_use()) {
     case 1:
