@@ -151,11 +151,15 @@ class AsyncSetIconForPage final : public Runnable {
 
 
 
+
+
   AsyncSetIconForPage(const IconData& aIcon, const PageData& aPage,
-                      PlacesCompletionCallback* aCallback);
+                      PlacesCompletionCallback* aCallback,
+                      dom::Promise* aPromise);
 
  private:
   nsMainThreadPtrHandle<PlacesCompletionCallback> mCallback;
+  nsMainThreadPtrHandle<dom::Promise> mPromise;
   IconData mIcon;
   PageData mPage;
 };
