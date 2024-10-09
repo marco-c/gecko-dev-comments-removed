@@ -1299,9 +1299,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
-      case SYS_SENDMMSG:  
-        return Some(Allow());
-
 #ifdef ANDROID
       case SYS_SOCKET:
         return Some(Error(EACCES));
@@ -2040,7 +2037,7 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
       case SYS_RECVMMSG:
         return Some(Allow());
 
-        
+      
       case SYS_SENDMMSG:
         return Some(Allow());
 
