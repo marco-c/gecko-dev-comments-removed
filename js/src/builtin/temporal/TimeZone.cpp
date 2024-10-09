@@ -636,18 +636,8 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx,
   
 
   
-  if (string.name()) {
-    
-
-    
-    Rooted<JSString*> timeZoneName(
-        cx, ValidateAndCanonicalizeTimeZoneName(cx, string.name()));
-    if (!timeZoneName) {
-      return false;
-    }
-
-    
-    auto* obj = ::CreateBuiltinTimeZone(cx, timeZoneName);
+  if (!string.name()) {
+    auto* obj = ::CreateBuiltinTimeZone(cx, string.offset());
     if (!obj) {
       return false;
     }
@@ -657,7 +647,14 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx,
   }
 
   
-  auto* obj = ::CreateBuiltinTimeZone(cx, string.offset());
+  Rooted<JSString*> timeZoneName(
+      cx, ValidateAndCanonicalizeTimeZoneName(cx, string.name()));
+  if (!timeZoneName) {
+    return false;
+  }
+
+  
+  auto* obj = ::CreateBuiltinTimeZone(cx, timeZoneName);
   if (!obj) {
     return false;
   }
@@ -669,83 +666,27 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx,
 
 
 
-static bool ObjectImplementsTemporalTimeZoneProtocol(JSContext* cx,
-                                                     Handle<JSObject*> object,
-                                                     bool* result) {
-  
-  MOZ_ASSERT(!object->canUnwrapAs<TimeZoneObject>(),
-             "TimeZone objects handled in the caller");
-
-  
-  for (auto key : {
-           &JSAtomState::getOffsetNanosecondsFor,
-           &JSAtomState::getPossibleInstantsFor,
-           &JSAtomState::id,
-       }) {
-    
-    bool has;
-    if (!HasProperty(cx, object, cx->names().*key, &has)) {
-      return false;
-    }
-    if (!has) {
-      *result = false;
-      return true;
-    }
-  }
-
-  
-  *result = true;
-  return true;
-}
-
-
-
-
 bool js::temporal::ToTemporalTimeZone(JSContext* cx,
                                       Handle<Value> temporalTimeZoneLike,
                                       MutableHandle<TimeZoneValue> result) {
   
-  Rooted<Value> timeZoneLike(cx, temporalTimeZoneLike);
-  if (timeZoneLike.isObject()) {
-    Rooted<JSObject*> obj(cx, &timeZoneLike.toObject());
-
-    
-    if (obj->canUnwrapAs<TimeZoneObject>()) {
-      result.set(TimeZoneValue(obj));
-      return true;
-    }
+  if (temporalTimeZoneLike.isObject()) {
+    JSObject* obj = &temporalTimeZoneLike.toObject();
 
     
     if (auto* zonedDateTime = obj->maybeUnwrapIf<ZonedDateTimeObject>()) {
       result.set(zonedDateTime->timeZone());
       return result.wrap(cx);
     }
-
-    
-    bool implementsTimeZoneProtocol;
-    if (!ObjectImplementsTemporalTimeZoneProtocol(
-            cx, obj, &implementsTimeZoneProtocol)) {
-      return false;
-    }
-    if (!implementsTimeZoneProtocol) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_TEMPORAL_INVALID_OBJECT,
-                               "Temporal.TimeZone", obj->getClass()->name);
-      return false;
-    }
-
-    
-    result.set(TimeZoneValue(obj));
-    return true;
   }
 
   
-  if (!timeZoneLike.isString()) {
+  if (!temporalTimeZoneLike.isString()) {
     ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK,
-                     timeZoneLike, nullptr, "not a string");
+                     temporalTimeZoneLike, nullptr, "not a string");
     return false;
   }
-  Rooted<JSString*> identifier(cx, timeZoneLike.toString());
+  Rooted<JSString*> identifier(cx, temporalTimeZoneLike.toString());
 
   
   Rooted<ParsedTimeZone> timeZoneName(cx);
