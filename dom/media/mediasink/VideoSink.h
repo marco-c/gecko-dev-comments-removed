@@ -142,7 +142,7 @@ class VideoSink : public MediaSink {
   bool mHasVideo;
 
   
-  DelayedScheduler<TimeStamp> mUpdateScheduler;
+  DelayedScheduler mUpdateScheduler;
 
   
   

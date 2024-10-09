@@ -6,7 +6,6 @@
 
 #include "MediaTimer.h"
 
-#include "mozilla/AwakeTimeStamp.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SharedThreadPool.h"
@@ -17,10 +16,9 @@
 
 namespace mozilla {
 
-template <typename T>
-MediaTimer<T>::MediaTimer(bool aFuzzy)
+MediaTimer::MediaTimer(bool aFuzzy)
     : mMonitor("MediaTimer Monitor"),
-      mCreationTimeStamp(T::Now()),
+      mCreationTimeStamp(TimeStamp::Now()),
       mUpdateScheduled(false),
       mFuzzy(aFuzzy) {
   TIMER_LOG("MediaTimer::MediaTimer");
@@ -33,8 +31,7 @@ MediaTimer<T>::MediaTimer(bool aFuzzy)
   mTimer = NS_NewTimer(mThread);
 }
 
-template <typename T>
-void MediaTimer<T>::DispatchDestroy() {
+void MediaTimer::DispatchDestroy() {
   
   
   
@@ -48,9 +45,7 @@ void MediaTimer<T>::DispatchDestroy() {
   (void)rv;
 }
 
-
-template <typename T>
-void MediaTimer<T>::Destroy() {
+void MediaTimer::Destroy() {
   MOZ_ASSERT(OnMediaTimerThread());
   TIMER_LOG("MediaTimer::Destroy");
 
@@ -66,22 +61,19 @@ void MediaTimer<T>::Destroy() {
   delete this;
 }
 
-template <typename T>
-bool MediaTimer<T>::OnMediaTimerThread() {
+bool MediaTimer::OnMediaTimerThread() {
   bool rv = false;
   mThread->IsOnCurrentThread(&rv);
   return rv;
 }
 
-template <typename T>
-RefPtr<MediaTimerPromise> MediaTimer<T>::WaitFor(
-    const typename T::DurationType& aDuration, StaticString aCallSite) {
-  return WaitUntil(T::Now() + aDuration, aCallSite);
+RefPtr<MediaTimerPromise> MediaTimer::WaitFor(const TimeDuration& aDuration,
+                                              StaticString aCallSite) {
+  return WaitUntil(TimeStamp::Now() + aDuration, aCallSite);
 }
 
-template <typename T>
-RefPtr<MediaTimerPromise> MediaTimer<T>::WaitUntil(const T& aTimeStamp,
-                                                   StaticString aCallSite) {
+RefPtr<MediaTimerPromise> MediaTimer::WaitUntil(const TimeStamp& aTimeStamp,
+                                                StaticString aCallSite) {
   MonitorAutoLock mon(mMonitor);
   TIMER_LOG("MediaTimer::WaitUntil %" PRId64, RelativeMicroseconds(aTimeStamp));
   Entry e(aTimeStamp, aCallSite);
@@ -91,15 +83,13 @@ RefPtr<MediaTimerPromise> MediaTimer<T>::WaitUntil(const T& aTimeStamp,
   return p;
 }
 
-template <typename T>
-void MediaTimer<T>::Cancel() {
+void MediaTimer::Cancel() {
   MonitorAutoLock mon(mMonitor);
   TIMER_LOG("MediaTimer::Cancel");
   Reject();
 }
 
-template <typename T>
-void MediaTimer<T>::ScheduleUpdate() {
+void MediaTimer::ScheduleUpdate() {
   mMonitor.AssertCurrentThreadOwns();
   if (mUpdateScheduled) {
     return;
@@ -114,26 +104,23 @@ void MediaTimer<T>::ScheduleUpdate() {
   (void)rv;
 }
 
-template <typename T>
-void MediaTimer<T>::Update() {
+void MediaTimer::Update() {
   MonitorAutoLock mon(mMonitor);
   UpdateLocked();
 }
 
-template <typename T>
-bool MediaTimer<T>::IsExpired(const T& aTarget, const T& aNow) {
+bool MediaTimer::IsExpired(const TimeStamp& aTarget, const TimeStamp& aNow) {
   MOZ_ASSERT(OnMediaTimerThread());
   mMonitor.AssertCurrentThreadOwns();
   
   
   
   
-  T t = mFuzzy ? aTarget - T::DurationType::FromMilliseconds(1) : aTarget;
+  TimeStamp t = mFuzzy ? aTarget - TimeDuration::FromMilliseconds(1) : aTarget;
   return t <= aNow;
 }
 
-template <typename T>
-void MediaTimer<T>::UpdateLocked() {
+void MediaTimer::UpdateLocked() {
   MOZ_ASSERT(OnMediaTimerThread());
   mMonitor.AssertCurrentThreadOwns();
   mUpdateScheduled = false;
@@ -141,10 +128,10 @@ void MediaTimer<T>::UpdateLocked() {
   TIMER_LOG("MediaTimer::UpdateLocked");
 
   
-  T now = T::Now();
+  TimeStamp now = TimeStamp::Now();
   while (!mEntries.empty() && IsExpired(mEntries.top().mTimeStamp, now)) {
     mEntries.top().mPromise->Resolve(true, __func__);
-    DebugOnly<T> poppedTimeStamp = mEntries.top().mTimeStamp;
+    DebugOnly<TimeStamp> poppedTimeStamp = mEntries.top().mTimeStamp;
     mEntries.pop();
     MOZ_ASSERT_IF(!mEntries.empty(),
                   *&poppedTimeStamp <= mEntries.top().mTimeStamp);
@@ -157,15 +144,13 @@ void MediaTimer<T>::UpdateLocked() {
   }
 
   
-  if (!TimerIsArmed() ||
-      mEntries.top().mTimeStamp < mCurrentTimerTarget.value()) {
+  if (!TimerIsArmed() || mEntries.top().mTimeStamp < mCurrentTimerTarget) {
     CancelTimerIfArmed();
     ArmTimer(mEntries.top().mTimeStamp, now);
   }
 }
 
-template <typename T>
-void MediaTimer<T>::Reject() {
+void MediaTimer::Reject() {
   mMonitor.AssertCurrentThreadOwns();
   while (!mEntries.empty()) {
     mEntries.top().mPromise->Reject(false, __func__);
@@ -173,51 +158,35 @@ void MediaTimer<T>::Reject() {
   }
 }
 
-template <typename T>
- void MediaTimer<T>::TimerCallback(nsITimer* aTimer,
-                                               void* aClosure) {
-  static_cast<MediaTimer<T>*>(aClosure)->TimerFired();
+
+
+
+
+
+
+
+
+void MediaTimer::TimerCallback(nsITimer* aTimer, void* aClosure) {
+  static_cast<MediaTimer*>(aClosure)->TimerFired();
 }
 
-template <typename T>
-void MediaTimer<T>::TimerFired() {
+void MediaTimer::TimerFired() {
   MonitorAutoLock mon(mMonitor);
   MOZ_ASSERT(OnMediaTimerThread());
-  mCurrentTimerTarget = Nothing();
+  mCurrentTimerTarget = TimeStamp();
   UpdateLocked();
 }
 
-template <typename T>
-void MediaTimer<T>::ArmTimer(const T& aTarget, const T& aNow) {
+void MediaTimer::ArmTimer(const TimeStamp& aTarget, const TimeStamp& aNow) {
   MOZ_DIAGNOSTIC_ASSERT(!TimerIsArmed());
   MOZ_DIAGNOSTIC_ASSERT(aTarget > aNow);
 
-  const typename T::DurationType delay = aTarget - aNow;
+  const TimeDuration delay = aTarget - aNow;
   TIMER_LOG("MediaTimer::ArmTimer delay=%.3fms", delay.ToMilliseconds());
-  mCurrentTimerTarget.emplace(aTarget);
-  TimeDuration duration =
-      TimeDuration::FromMicroseconds(delay.ToMicroseconds());
+  mCurrentTimerTarget = aTarget;
   MOZ_ALWAYS_SUCCEEDS(mTimer->InitHighResolutionWithNamedFuncCallback(
-      &TimerCallback, this, duration, nsITimer::TYPE_ONE_SHOT,
+      &TimerCallback, this, delay, nsITimer::TYPE_ONE_SHOT,
       "MediaTimer::TimerCallback"));
 }
-
-template <typename T>
-bool MediaTimer<T>::TimerIsArmed() {
-  return mCurrentTimerTarget.isSome();
-}
-
-template <typename T>
-void MediaTimer<T>::CancelTimerIfArmed() {
-  MOZ_ASSERT(OnMediaTimerThread());
-  if (TimerIsArmed()) {
-    TIMER_LOG("MediaTimer::CancelTimerIfArmed canceling timer");
-    mTimer->Cancel();
-    mCurrentTimerTarget = Nothing();
-  }
-}
-
-template class MediaTimer<AwakeTimeStamp>;
-template class MediaTimer<TimeStamp>;
 
 }  

@@ -245,8 +245,7 @@ struct DeviceState {
   
   
   
-  const RefPtr<MediaTimer<TimeStamp>> mDisableTimer =
-      new MediaTimer<TimeStamp>();
+  const RefPtr<MediaTimer> mDisableTimer = new MediaTimer();
 
   
   
@@ -2620,7 +2619,7 @@ void MediaManager::DeviceListChanged() {
   if (mDeviceChangeTimer) {
     mDeviceChangeTimer->Cancel();
   } else {
-    mDeviceChangeTimer = MakeRefPtr<MediaTimer<TimeStamp>>();
+    mDeviceChangeTimer = MakeRefPtr<MediaTimer>();
   }
   
   
