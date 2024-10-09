@@ -124,29 +124,9 @@ ZonedDateTimeObject* CreateTemporalZonedDateTime(
 
 
 
-bool AddDaysToZonedDateTime(JSContext* cx, const Instant& instant,
-                            const PlainDateTime& dateTime,
-                            JS::Handle<TimeZoneValue> timeZone,
-                            JS::Handle<CalendarValue> calendar, int64_t days,
-                            TemporalOverflow overflow, Instant* result);
-
-
-
-
-
-bool AddDaysToZonedDateTime(JSContext* cx, const Instant& instant,
-                            const PlainDateTime& dateTime,
-                            JS::Handle<TimeZoneValue> timeZone,
-                            JS::Handle<CalendarValue> calendar, int64_t days,
-                            Instant* result);
-
-
-
-
-
 bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
                       JS::Handle<TimeZoneValue> timeZone,
-                      JS::Handle<CalendarRecord> calendar,
+                      JS::Handle<CalendarValue> calendar,
                       const NormalizedDuration& duration, Instant* result);
 
 
@@ -155,27 +135,8 @@ bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
 
 bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
                       JS::Handle<TimeZoneValue> timeZone,
-                      JS::Handle<CalendarRecord> calendar,
+                      JS::Handle<CalendarValue> calendar,
                       const NormalizedDuration& duration,
-                      const PlainDateTime& dateTime, Instant* result);
-
-
-
-
-
-bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
-                      JS::Handle<TimeZoneValue> timeZone,
-                      JS::Handle<CalendarRecord> calendar,
-                      const DateDuration& duration, Instant* result);
-
-
-
-
-
-bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
-                      JS::Handle<TimeZoneValue> timeZone,
-                      JS::Handle<CalendarRecord> calendar,
-                      const DateDuration& duration,
                       const PlainDateTime& dateTime, Instant* result);
 
 
