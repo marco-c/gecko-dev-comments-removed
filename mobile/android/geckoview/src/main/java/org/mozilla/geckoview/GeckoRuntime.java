@@ -1054,4 +1054,14 @@ public final class GeckoRuntime implements Parcelable {
           return new GeckoRuntime[size];
         }
       };
+
+  
+
+
+
+
+  @AnyThread
+  public boolean isInteractiveWidgetDefaultResizesVisual() {
+    return GeckoAppShell.isInteractiveWidgetDefaultResizesVisual();
+  }
 }

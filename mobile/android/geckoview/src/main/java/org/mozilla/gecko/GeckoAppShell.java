@@ -1598,6 +1598,9 @@ public class GeckoAppShell {
   @WrapForJNI
   public static native boolean isGpuProcessEnabled();
 
+  @WrapForJNI
+  public static native boolean isInteractiveWidgetDefaultResizesVisual();
+
   @SuppressLint("NewApi")
   public static boolean isIsolatedProcess() {
     
