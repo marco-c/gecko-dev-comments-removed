@@ -43,7 +43,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
     this.client = client;
-    this._pauseGrips = {};
     this._threadGrips = {};
     
     
@@ -197,22 +196,8 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
   
 
 
-
-
-
   pauseGrip(grip) {
-    if (grip.actor in this._pauseGrips) {
-      return this._pauseGrips[grip.actor];
-    }
-
-    const objectFront = new ObjectFront(
-      this.conn,
-      this.targetFront,
-      this,
-      grip
-    );
-    this._pauseGrips[grip.actor] = objectFront;
-    return objectFront;
+    return new ObjectFront(this.conn, this.targetFront, this, grip);
   }
 
   
@@ -226,14 +211,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
       this[gripCacheName][id].valid = false;
     }
     this[gripCacheName] = {};
-  }
-
-  
-
-
-
-  _clearPauseGrips() {
-    this._clearObjectFronts("_pauseGrips");
   }
 
   _beforePaused(packet) {
@@ -259,7 +236,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     
     
     this._lastPausePacket = packet;
-    this._clearPauseGrips();
   }
 
   getLastPausePacket() {
