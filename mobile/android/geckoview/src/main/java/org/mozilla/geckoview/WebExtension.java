@@ -2965,29 +2965,4 @@ public class WebExtension {
       this.initData = initData;
     }
   }
-
-  
-
-
-
-  public static class PermissionPromptResponse {
-    
-    @Nullable public final Boolean isPermissionsGranted;
-
-    
-    @Nullable public final Boolean isPrivateModeGranted;
-
-    
-
-
-
-
-
-    public PermissionPromptResponse(
-        final @Nullable Boolean isPermissionsGranted,
-        final @Nullable Boolean isPrivateModeGranted) {
-      this.isPermissionsGranted = isPermissionsGranted;
-      this.isPrivateModeGranted = isPrivateModeGranted;
-    }
-  }
 }
