@@ -22,7 +22,6 @@
 
 namespace js {
 struct ClassSpec;
-class PropertyName;
 }  
 
 namespace js::temporal {
@@ -120,8 +119,6 @@ constexpr Increment MaximumTemporalDurationRoundingIncrement(
   
   return Increment{1000};
 }
-
-PropertyName* TemporalUnitToString(JSContext* cx, TemporalUnit unit);
 
 enum class TemporalUnitGroup {
   
@@ -351,12 +348,6 @@ bool ToPositiveIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
 bool ToIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
                              const char* name, double* result);
 
-
-
-
-JSObject* GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
-                    JS::Handle<PropertyName*> name);
-
 enum class TemporalDifference { Since, Until };
 
 inline const char* ToName(TemporalDifference difference) {
@@ -396,11 +387,6 @@ inline bool GetDifferenceSettings(JSContext* cx, TemporalDifference operation,
                                TemporalUnit::Nanosecond, fallbackSmallestUnit,
                                smallestLargestDefaultUnit, result);
 }
-
-
-
-
-bool IsArrayIterationSane(JSContext* cx, bool* result);
 
 } 
 

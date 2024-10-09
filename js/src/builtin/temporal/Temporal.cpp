@@ -59,7 +59,6 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/ObjectOperations.h"
-#include "vm/PIC.h"
 #include "vm/Realm.h"
 #include "vm/StringType.h"
 
@@ -192,35 +191,6 @@ bool js::temporal::ValidateTemporalRoundingIncrement(JSContext* cx,
 
   
   return true;
-}
-
-PropertyName* js::temporal::TemporalUnitToString(JSContext* cx,
-                                                 TemporalUnit unit) {
-  switch (unit) {
-    case TemporalUnit::Auto:
-      break;
-    case TemporalUnit::Year:
-      return cx->names().year;
-    case TemporalUnit::Month:
-      return cx->names().month;
-    case TemporalUnit::Week:
-      return cx->names().week;
-    case TemporalUnit::Day:
-      return cx->names().day;
-    case TemporalUnit::Hour:
-      return cx->names().hour;
-    case TemporalUnit::Minute:
-      return cx->names().minute;
-    case TemporalUnit::Second:
-      return cx->names().second;
-    case TemporalUnit::Millisecond:
-      return cx->names().millisecond;
-    case TemporalUnit::Microsecond:
-      return cx->names().microsecond;
-    case TemporalUnit::Nanosecond:
-      return cx->names().nanosecond;
-  }
-  MOZ_CRASH("invalid temporal unit");
 }
 
 static Handle<PropertyName*> ToPropertyName(JSContext* cx,
@@ -1350,30 +1320,6 @@ bool js::temporal::ToIntegerWithTruncation(JSContext* cx, Handle<Value> value,
 
 
 
-JSObject* js::temporal::GetMethod(JSContext* cx, Handle<JSObject*> object,
-                                  Handle<PropertyName*> name) {
-  
-  Rooted<Value> value(cx);
-  if (!GetProperty(cx, object, object, name, &value)) {
-    return nullptr;
-  }
-
-  
-  if (!IsCallable(value)) {
-    if (auto chars = StringToNewUTF8CharsZ(cx, *name)) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_PROPERTY_NOT_CALLABLE, chars.get());
-    }
-    return nullptr;
-  }
-
-  
-  return &value.toObject();
-}
-
-
-
-
 
 bool js::temporal::GetDifferenceSettings(
     JSContext* cx, TemporalDifference operation, Handle<JSObject*> options,
@@ -1457,14 +1403,6 @@ bool js::temporal::GetDifferenceSettings(
   
   *result = {smallestUnit, largestUnit, roundingMode, roundingIncrement};
   return true;
-}
-
-bool temporal::IsArrayIterationSane(JSContext* cx, bool* result) {
-  auto* stubChain = ForOfPIC::getOrCreate(cx);
-  if (!stubChain) {
-    return false;
-  }
-  return stubChain->tryOptimizeArray(cx, result);
 }
 
 static JSObject* CreateTemporalObject(JSContext* cx, JSProtoKey key) {
