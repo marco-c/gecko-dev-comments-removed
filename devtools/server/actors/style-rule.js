@@ -327,9 +327,21 @@ class StyleRuleActor extends Actor {
     }
 
     const { selectedElement } = this.pageStyle;
+
+    
+    
+    
+    
+    
+    
+    const isPseudoElementParentSelected =
+      selectedElement.implementedPseudoElement !== this._pseudoElement;
+
     return selectedElement.ownerGlobal.getComputedStyle(
       selectedElement,
-      this._pseudoElement
+      
+      
+      isPseudoElementParentSelected ? this._pseudoElement : null
     );
   }
 
