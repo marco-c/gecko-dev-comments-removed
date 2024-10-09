@@ -264,25 +264,28 @@ add_task(async function test_fog_timing_distribution_works() {
 
   Glean.testOnly.whatTimeIsIt.stopAndAccumulate(t2); 
   Glean.testOnly.whatTimeIsIt.stopAndAccumulate(t3); 
+  
+  Glean.testOnly.whatTimeIsIt.accumulateSingleSample(5000); 
+  Glean.testOnly.whatTimeIsIt.accumulateSamples([2000, 8000]); 
 
   let data = Glean.testOnly.whatTimeIsIt.testGetValue();
 
   
-  Assert.equal(2, data.count, "Count of entries is correct");
+  Assert.equal(5, data.count, "Count of entries is correct");
 
   const NANOS_IN_MILLIS = 1e6;
   
   const EPSILON = 40000;
 
   
-  Assert.greater(data.sum, 15 * NANOS_IN_MILLIS - EPSILON);
+  Assert.greater(data.sum, 30 * NANOS_IN_MILLIS - EPSILON);
 
   
   
   Assert.equal(
-    2,
+    5,
     Object.entries(data.values).reduce((acc, [, count]) => acc + count, 0),
-    "Only two buckets with samples"
+    "Only five buckets with samples"
   );
 });
 

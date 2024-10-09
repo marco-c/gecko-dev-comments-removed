@@ -21,6 +21,8 @@ struct GleanDistributionData;
 
 namespace mozilla::glean {
 
+class GleanTimingDistribution;
+
 namespace impl {
 class TimingDistributionMetric {
  public:
@@ -91,6 +93,8 @@ class TimingDistributionMetric {
 
  private:
   const uint32_t mId;
+
+  friend class mozilla::glean::GleanTimingDistribution;
 };
 }  
 
@@ -105,6 +109,8 @@ class GleanTimingDistribution final : public GleanMetric {
   uint64_t Start();
   void StopAndAccumulate(uint64_t aId);
   void Cancel(uint64_t aId);
+  void AccumulateSamples(const nsTArray<int64_t>& aSamples);
+  void AccumulateSingleSample(int64_t aSample);
 
   void TestGetValue(const nsACString& aPingName,
                     dom::Nullable<dom::GleanDistributionData>& aRetval,
