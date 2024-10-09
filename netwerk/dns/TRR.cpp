@@ -389,9 +389,8 @@ nsresult TRR::SendHTTPRequest() {
 
   
   
-  RefPtr<AddrHostRecord> addrRec = do_QueryObject(mRec);
-  if (addrRec) {
-    addrRec->mResolverType = ResolverType();
+  if (mRec) {
+    mRec->mResolverType = ResolverType();
   }
 
   NS_NewTimerWithCallback(
