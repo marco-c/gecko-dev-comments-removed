@@ -32,6 +32,12 @@ namespace mozilla::media {
 
 
 
+bool HostnameInPref(const char* aPrefList, const nsCString& aHostName);
+
+
+
+
+
 
 
 
