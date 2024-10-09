@@ -113,6 +113,9 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   
   if (NS_IsMainThread()) {
+    mSheetLoadData->mNetworkMetadata =
+        new SubResourceNetworkMetadataHolder(aRequest);
+
     if (mOnDataFinishedTime) {
       
       

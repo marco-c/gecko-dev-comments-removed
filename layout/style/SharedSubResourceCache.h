@@ -27,6 +27,7 @@
 
 
 #include "mozilla/PrincipalHashKey.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsTHashMap.h"
 #include "nsIMemoryReporter.h"
@@ -36,9 +37,41 @@
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
+#include "nsISupportsImpl.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/CacheablePerformanceTimingData.h"
 
 namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+class SubResourceNetworkMetadataHolder {
+ public:
+  SubResourceNetworkMetadataHolder() = delete;
+
+  explicit SubResourceNetworkMetadataHolder(nsIRequest* aRequest);
+
+  const dom::CacheablePerformanceTimingData* GetPerfData() const {
+    return mPerfData.ptrOr(nullptr);
+  }
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SubResourceNetworkMetadataHolder)
+
+ private:
+  ~SubResourceNetworkMetadataHolder() = default;
+
+  mozilla::Maybe<dom::CacheablePerformanceTimingData> mPerfData;
+
+  
+};
 
 enum class CachedSubResourceState {
   Miss,
@@ -55,6 +88,8 @@ struct SharedSubResourceCacheLoadingValueBase {
   virtual bool IsLoading() const = 0;
   virtual bool IsCancelled() const = 0;
   virtual bool IsSyncLoad() const = 0;
+
+  virtual SubResourceNetworkMetadataHolder* GetNetworkMetadata() const = 0;
 
   virtual void StartLoading() = 0;
   virtual void SetLoadCompleted() = 0;
@@ -113,11 +148,13 @@ class SharedSubResourceCache {
  protected:
   struct CompleteSubResource {
     RefPtr<Value> mResource;
+    RefPtr<SubResourceNetworkMetadataHolder> mNetworkMetadata;
     CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
     bool mWasSyncLoad = false;
 
     explicit CompleteSubResource(LoadingValue& aValue)
         : mResource(aValue.ValueForCache()),
+          mNetworkMetadata(aValue.GetNetworkMetadata()),
           mExpirationTime(aValue.ExpirationTime()),
           mWasSyncLoad(aValue.IsSyncLoad()) {}
 
@@ -127,6 +164,8 @@ class SharedSubResourceCache {
  public:
   struct Result {
     Value* mCompleteValue = nullptr;
+    RefPtr<SubResourceNetworkMetadataHolder> mNetworkMetadata;
+
     LoadingValue* mLoadingOrPendingValue = nullptr;
     CachedSubResourceState mState = CachedSubResourceState::Miss;
 
@@ -134,6 +173,7 @@ class SharedSubResourceCache {
 
     explicit constexpr Result(const CompleteSubResource& aCompleteSubResource)
         : mCompleteValue(aCompleteSubResource.mResource.get()),
+          mNetworkMetadata(aCompleteSubResource.mNetworkMetadata),
           mLoadingOrPendingValue(nullptr),
           mState(CachedSubResourceState::Complete) {}
 

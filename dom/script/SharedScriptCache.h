@@ -7,13 +7,13 @@
 #ifndef mozilla_dom_SharedScriptCache_h
 #define mozilla_dom_SharedScriptCache_h
 
-#include "PLDHashTable.h"                 
-#include "js/loader/LoadedScript.h"       
-#include "js/loader/ScriptKind.h"         
-#include "js/loader/ScriptLoadRequest.h"  
-#include "mozilla/WeakPtr.h"              
-#include "mozilla/CORSMode.h"             
-#include "mozilla/MemoryReporting.h"      
+#include "PLDHashTable.h"                    
+#include "js/loader/LoadedScript.h"          
+#include "js/loader/ScriptKind.h"            
+#include "js/loader/ScriptLoadRequest.h"     
+#include "mozilla/WeakPtr.h"                 
+#include "mozilla/CORSMode.h"                
+#include "mozilla/MemoryReporting.h"         
 #include "mozilla/SharedSubResourceCache.h"  
 #include "mozilla/dom/CacheExpirationTime.h"  
 #include "nsIMemoryReporter.h"  
@@ -133,6 +133,11 @@ class ScriptLoadData final
   bool IsLoading() const override { return false; }
   bool IsCancelled() const override { return false; }
   bool IsSyncLoad() const override { return true; }
+
+  SubResourceNetworkMetadataHolder* GetNetworkMetadata() const override {
+    
+    return nullptr;
+  }
 
   void StartLoading() override {}
   void SetLoadCompleted() override {}
