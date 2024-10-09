@@ -2315,15 +2315,8 @@ void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
 }
 
 static CallState UpdateAndReduceAnimations(Document& aDocument) {
-  {
-    AutoTArray<RefPtr<DocumentTimeline>, 32> timelinesToTick;
-    for (DocumentTimeline* timeline : aDocument.Timelines()) {
-      timelinesToTick.AppendElement(timeline);
-    }
-
-    for (DocumentTimeline* tl : timelinesToTick) {
-      tl->WillRefresh();
-    }
+  for (DocumentTimeline* timeline : aDocument.Timelines()) {
+    timeline->WillRefresh();
   }
 
   if (nsPresContext* pc = aDocument.GetPresContext()) {
@@ -2353,8 +2346,7 @@ void nsRefreshDriver::UpdateAnimationsAndSendEvents() {
     
     
     nsAutoMicroTask mt;
-    RefPtr doc = mPresContext->Document();
-    UpdateAndReduceAnimations(*doc);
+    UpdateAndReduceAnimations(*mPresContext->Document());
   }
 
   
@@ -2459,7 +2451,6 @@ void nsRefreshDriver::RunFrameRequestCallbacks(
     AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
         "Paint", "requestAnimationFrame callbacks", GRAPHICS,
         doc->InnerWindowID());
-    const TimeStamp startTime = TimeStamp::Now();
     for (const auto& callback : callbacks) {
       if (doc->IsCanceledFrameRequestCallback(callback.mHandle)) {
         continue;
@@ -2473,14 +2464,6 @@ void nsRefreshDriver::RunFrameRequestCallbacks(
       
       LogFrameRequestCallback::Run run(callback.mCallback);
       MOZ_KnownLive(callback.mCallback)->Call(timeStamp);
-    }
-
-    if (doc->GetReadyStateEnum() == Document::READYSTATE_COMPLETE) {
-      glean::performance_responsiveness::req_anim_frame_callback
-          .AccumulateRawDuration(TimeStamp::Now() - startTime);
-    } else {
-      glean::performance_pageload::req_anim_frame_callback
-          .AccumulateRawDuration(TimeStamp::Now() - startTime);
     }
   }
 }
