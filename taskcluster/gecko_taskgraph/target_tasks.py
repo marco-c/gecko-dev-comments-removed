@@ -948,9 +948,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             if "fennec" in try_name:
                 return False
             
-            if "chrome-m" not in try_name and "-qr" not in platform:
-                return False
-            
             if "-live" in try_name:
                 return True
             
