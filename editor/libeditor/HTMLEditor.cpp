@@ -7035,10 +7035,26 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     }
     
     
-    nsIContent* const selectionFocusNode = nsIContent::FromNodeOrNull(
-        SelectionRef().GetMayCrossShadowBoundaryFocusNode());
-    if (selectionFocusNode) {
-      return selectionFocusNode;
+    nsIContent* selectionCommonAncestor = nullptr;
+    for (uint32_t i : IntegerRange(SelectionRef().RangeCount())) {
+      nsRange* range = SelectionRef().GetRangeAt(i);
+      MOZ_ASSERT(range);
+      nsIContent* commonAncestor =
+          nsIContent::FromNodeOrNull(range->GetCommonAncestorContainer(
+              IgnoreErrors(), AllowRangeCrossShadowBoundary::Yes));
+      if (MOZ_UNLIKELY(!commonAncestor)) {
+        continue;
+      }
+      if (!selectionCommonAncestor) {
+        selectionCommonAncestor = commonAncestor;
+      } else {
+        selectionCommonAncestor =
+            nsContentUtils::GetCommonFlattenedTreeAncestorForSelection(
+                commonAncestor, selectionCommonAncestor);
+      }
+    }
+    if (selectionCommonAncestor) {
+      return selectionCommonAncestor;
     }
     
     nsPIDOMWindowInner* const innerWindow = document->GetInnerWindow();
