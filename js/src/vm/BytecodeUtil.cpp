@@ -406,21 +406,12 @@ class BytecodeParser {
   
   
   
-  bool isStackDump;
+  bool isStackDump = false;
 #endif
 
  public:
   BytecodeParser(JSContext* cx, LifoAlloc& alloc, JSScript* script)
-      : cx_(cx),
-        alloc_(alloc),
-        script_(cx, script),
-        codeArray_(nullptr)
-#ifdef DEBUG
-        ,
-        isStackDump(false)
-#endif
-  {
-  }
+      : cx_(cx), alloc_(alloc), script_(cx, script), codeArray_(nullptr) {}
 
   bool parse();
 
