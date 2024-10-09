@@ -244,11 +244,8 @@ bool SemiNCA::computeDominators() {
     auto& state = state_[block->id()];
     if (state.idom == 0) {
       
-      MOZ_RELEASE_ASSERT(block->immediateDominator() == *block);
       block->setImmediateDominator(*block);
     } else {
-      MOZ_RELEASE_ASSERT(block->immediateDominator() ==
-                         state_[state.idom].block);
       block->setImmediateDominator(state_[state.idom].block);
     }
     block->unmark();
@@ -259,117 +256,9 @@ bool SemiNCA::computeDominators() {
   return true;
 }
 
-
-
-static MBasicBlock* IntersectDominators(MBasicBlock* block1,
-                                        MBasicBlock* block2) {
-  MBasicBlock* finger1 = block1;
-  MBasicBlock* finger2 = block2;
-
-  MOZ_ASSERT(finger1);
-  MOZ_ASSERT(finger2);
-
-  
-  
-
-  
-  
-  
-  
-
-  while (finger1->id() != finger2->id()) {
-    while (finger1->id() > finger2->id()) {
-      MBasicBlock* idom = finger1->immediateDominator();
-      if (idom == finger1) {
-        return nullptr;  
-      }
-      finger1 = idom;
-    }
-
-    while (finger2->id() > finger1->id()) {
-      MBasicBlock* idom = finger2->immediateDominator();
-      if (idom == finger2) {
-        return nullptr;  
-      }
-      finger2 = idom;
-    }
-  }
-  return finger1;
-}
-
 static bool ComputeImmediateDominators(MIRGraph& graph) {
-  
-  MBasicBlock* startBlock = graph.entryBlock();
-  startBlock->setImmediateDominator(startBlock);
-
-  
-  MBasicBlock* osrBlock = graph.osrBlock();
-  if (osrBlock) {
-    osrBlock->setImmediateDominator(osrBlock);
-  }
-
-  bool changed = true;
-
-  while (changed) {
-    changed = false;
-
-    ReversePostorderIterator block = graph.rpoBegin();
-
-    
-    for (; block != graph.rpoEnd(); block++) {
-      
-      
-      if (block->immediateDominator() == *block) {
-        continue;
-      }
-
-      
-      
-      if (MOZ_UNLIKELY(block->numPredecessors() == 0)) {
-        block->setImmediateDominator(*block);
-        continue;
-      }
-
-      MBasicBlock* newIdom = block->getPredecessor(0);
-
-      
-      for (size_t i = 1; i < block->numPredecessors(); i++) {
-        MBasicBlock* pred = block->getPredecessor(i);
-        if (pred->immediateDominator() == nullptr) {
-          continue;
-        }
-
-        newIdom = IntersectDominators(pred, newIdom);
-
-        
-        if (newIdom == nullptr) {
-          block->setImmediateDominator(*block);
-          changed = true;
-          break;
-        }
-      }
-
-      if (newIdom && block->immediateDominator() != newIdom) {
-        block->setImmediateDominator(newIdom);
-        changed = true;
-      }
-    }
-  }
-
-#ifdef DEBUG
-  
-  for (MBasicBlockIterator block(graph.begin()); block != graph.end();
-       block++) {
-    MOZ_ASSERT(block->immediateDominator() != nullptr);
-  }
-#endif
-
-#ifdef DEBUG
   SemiNCA semiNCA(graph);
   return semiNCA.computeDominators();
-#else
-  return true;
-#endif
 }
 
 bool jit::BuildDominatorTree(MIRGraph& graph) {
