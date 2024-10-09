@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var descriptor = Object.getOwnPropertyDescriptor(AsyncDisposableStack.prototype, 'disposed');
+
+var stack = new AsyncDisposableStack();
+
+
+descriptor.get.call(stack);
+
+assert.throws(TypeError, function() {
+  descriptor.get.call([]);
+});
+
+reportCompare(0, 0);

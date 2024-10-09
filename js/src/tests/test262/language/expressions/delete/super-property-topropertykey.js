@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var key = {
+  toString() {
+    throw new Test262Error("ToPropertyKey performed");
+  }
+};
+
+var obj = {
+  m() {
+    delete super[key];
+  }
+};
+
+assert.throws(ReferenceError, () => obj.m());
+
+reportCompare(0, 0);

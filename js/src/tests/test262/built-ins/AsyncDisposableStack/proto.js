@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(AsyncDisposableStack),
+  Function.prototype,
+  'Object.getPrototypeOf(AsyncDisposableStack) returns the value of `Function.prototype`'
+);
+
+reportCompare(0, 0);
