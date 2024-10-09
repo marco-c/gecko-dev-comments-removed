@@ -516,30 +516,6 @@ static bool ParseMonthCode(JSContext* cx, CalendarId calendarId,
   return true;
 }
 
-template <typename T, typename... Ts>
-static bool ToPlainDate(JSObject* temporalDateLike, PlainDate* result) {
-  if (auto* obj = temporalDateLike->maybeUnwrapIf<T>()) {
-    *result = ToPlainDate(obj);
-    return true;
-  }
-  if constexpr (sizeof...(Ts) > 0) {
-    return ToPlainDate<Ts...>(temporalDateLike, result);
-  }
-  return false;
-}
-
-template <typename... Ts>
-static bool ToPlainDate(JSContext* cx, Handle<Value> temporalDateLike,
-                        PlainDate* result) {
-  if (temporalDateLike.isObject()) {
-    if (ToPlainDate<Ts...>(&temporalDateLike.toObject(), result)) {
-      return true;
-    }
-  }
-
-  return ToTemporalDate(cx, temporalDateLike, result);
-}
-
 #ifdef DEBUG
 static bool StringIsAsciiLowerCase(mozilla::Span<const char> str) {
   return std::all_of(str.begin(), str.end(), [](char ch) {
@@ -3639,23 +3615,34 @@ static bool ISODateFromFields(JSContext* cx, Handle<TemporalFields> fields,
 
 
 
-static PlainDateObject* BuiltinCalendarDateFromFields(
-    JSContext* cx, CalendarId calendarId, Handle<JSObject*> fields,
-    Handle<JSObject*> maybeOptions) {
-  
+bool js::temporal::CalendarDateFromFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    TemporalOverflow overflow, MutableHandle<PlainDateWithCalendar> result) {
+  auto calendarId = calendar.identifier();
 
   
   auto relevantFieldNames = {TemporalField::Day, TemporalField::Month,
                              TemporalField::MonthCode, TemporalField::Year};
 
   
-  Rooted<TemporalFields> dateFields(cx);
+  PlainDate date;
   if (calendarId == CalendarId::ISO8601) {
     
+    Rooted<TemporalFields> dateFields(cx);
     if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
                                {TemporalField::Day, TemporalField::Year},
                                &dateFields)) {
-      return nullptr;
+      return false;
+    }
+
+    
+    if (!ISOResolveMonth(cx, &dateFields)) {
+      return false;
+    }
+
+    
+    if (!ISODateFromFields(cx, dateFields, overflow, &date)) {
+      return false;
     }
   } else {
     
@@ -3663,13 +3650,34 @@ static PlainDateObject* BuiltinCalendarDateFromFields(
         CalendarFieldDescriptors(calendarId, FieldType::Date);
 
     
+    Rooted<TemporalFields> dateFields(cx);
     if (!PrepareTemporalFields(cx, fields, relevantFieldNames, {},
                                calendarRelevantFieldDescriptors, &dateFields)) {
-      return nullptr;
+      return false;
+    }
+
+    
+    if (!CalendarResolveFields(cx, calendarId, dateFields, FieldType::Date)) {
+      return false;
+    }
+
+    
+    if (!CalendarDateToISO(cx, calendarId, dateFields, overflow, &date)) {
+      return false;
     }
   }
 
   
+  return CreateTemporalDate(cx, date, calendar, result);
+}
+
+
+
+
+static PlainDateObject* CalendarDateFromFields(JSContext* cx,
+                                               Handle<CalendarRecord> calendar,
+                                               Handle<PlainObject*> fields,
+                                               Handle<JSObject*> maybeOptions) {
   auto overflow = TemporalOverflow::Constrain;
   if (maybeOptions) {
     if (!GetTemporalOverflowOption(cx, maybeOptions, &overflow)) {
@@ -3677,43 +3685,12 @@ static PlainDateObject* BuiltinCalendarDateFromFields(
     }
   }
 
-  
-  PlainDate result;
-  if (calendarId == CalendarId::ISO8601) {
-    
-    if (!ISOResolveMonth(cx, &dateFields)) {
-      return nullptr;
-    }
-
-    
-    if (!ISODateFromFields(cx, dateFields, overflow, &result)) {
-      return nullptr;
-    }
-  } else {
-    
-    if (!CalendarResolveFields(cx, calendarId, dateFields, FieldType::Date)) {
-      return nullptr;
-    }
-
-    
-    if (!CalendarDateToISO(cx, calendarId, dateFields, overflow, &result)) {
-      return nullptr;
-    }
+  Rooted<PlainDateWithCalendar> result(cx);
+  if (!CalendarDateFromFields(cx, calendar.receiver(), fields, overflow,
+                              &result)) {
+    return nullptr;
   }
-
-  
-  Rooted<CalendarValue> calendar(cx, CalendarValue(calendarId));
-  return CreateTemporalDate(cx, result, calendar);
-}
-
-
-
-
-static Wrapped<PlainDateObject*> CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
-    Handle<PlainObject*> maybeOptions) {
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarDateFromFields(cx, calendarId, fields, maybeOptions);
+  return CreateTemporalDate(cx, result);
 }
 
 
@@ -4532,10 +4509,15 @@ bool js::temporal::CalendarDateAdd(JSContext* cx,
 
 
 
-static bool BuiltinCalendarDateUntil(JSContext* cx, CalendarId calendarId,
+bool js::temporal::CalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      const PlainDate& one, const PlainDate& two,
                                      TemporalUnit largestUnit,
                                      DateDuration* result) {
+  MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
+
+  auto calendarId = calendar.identifier();
+
   
 
   
@@ -4551,7 +4533,20 @@ static bool BuiltinCalendarDateUntil(JSContext* cx, CalendarId calendarId,
 
 
 
-static bool BuiltinCalendarDateUntil(JSContext* cx, CalendarId calendarId,
+static bool BuiltinCalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarRecord> calendar,
+                                     const PlainDate& one, const PlainDate& two,
+                                     TemporalUnit largestUnit,
+                                     DateDuration* result) {
+  return temporal::CalendarDateUntil(cx, calendar.receiver(), one, two,
+                                     largestUnit, result);
+}
+
+
+
+
+static bool BuiltinCalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarRecord> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
                                      TemporalUnit largestUnit,
@@ -4571,7 +4566,7 @@ static bool BuiltinCalendarDateUntil(JSContext* cx, CalendarId calendarId,
   auto dateTwo = ToPlainDate(unwrappedTwo);
 
   
-  return BuiltinCalendarDateUntil(cx, calendarId, dateOne, dateTwo, largestUnit,
+  return BuiltinCalendarDateUntil(cx, calendar, dateOne, dateTwo, largestUnit,
                                   result);
 }
 
@@ -4585,9 +4580,7 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
                                      DateDuration* result) {
   MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
 
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarDateUntil(cx, calendarId, one, two, largestUnit,
-                                  result);
+  return BuiltinCalendarDateUntil(cx, calendar, one, two, largestUnit, result);
 }
 
 
@@ -4612,9 +4605,7 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
   MOZ_ASSERT_IF(largestUnitProp, largestUnitProp->configurable());
 #endif
 
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarDateUntil(cx, calendarId, one, two, largestUnit,
-                                  result);
+  return BuiltinCalendarDateUntil(cx, calendar, one, two, largestUnit, result);
 }
 
 
@@ -4628,9 +4619,7 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
                                      DateDuration* result) {
   MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
 
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarDateUntil(cx, calendarId, one, two, largestUnit,
-                                  result);
+  return BuiltinCalendarDateUntil(cx, calendar, one, two, largestUnit, result);
 }
 
 
@@ -4656,7 +4645,5 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
   MOZ_ASSERT_IF(largestUnitProp, largestUnitProp->configurable());
 #endif
 
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarDateUntil(cx, calendarId, one, two, largestUnit,
-                                  result);
+  return BuiltinCalendarDateUntil(cx, calendar, one, two, largestUnit, result);
 }

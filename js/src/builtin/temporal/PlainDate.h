@@ -122,20 +122,14 @@ bool ThrowIfInvalidISODate(JSContext* cx, double year, double month,
 
 
 
-bool ToTemporalDate(JSContext* cx, JS::Handle<JS::Value> item,
-                    PlainDate* result);
-
-
-
-
-bool ToTemporalDate(JSContext* cx, JS::Handle<JS::Value> item,
-                    JS::MutableHandle<PlainDateWithCalendar> result);
-
-
-
-
 PlainDateObject* CreateTemporalDate(JSContext* cx, const PlainDate& date,
                                     JS::Handle<CalendarValue> calendar);
+
+
+
+
+PlainDateObject* CreateTemporalDate(JSContext* cx,
+                                    JS::Handle<PlainDateWithCalendar> date);
 
 
 
