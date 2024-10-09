@@ -10,6 +10,7 @@
 #include "mozilla/Array.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 
 #include "ds/AvlTree.h"
 #include "ds/PriorityQueue.h"
@@ -711,27 +712,10 @@ class BacktrackingAllocator : protected RegisterAllocator {
   
   LiveRangeSet hotcode;
 
-  struct CallRange : public TempObject, public InlineListNode<CallRange> {
-    LiveRange::Range range;
-
-    CallRange(CodePosition from, CodePosition to) : range(from, to) {}
-
-    
-    static int compare(CallRange* v0, CallRange* v1) {
-      if (v0->range.to <= v1->range.from) {
-        return -1;
-      }
-      if (v0->range.from >= v1->range.to) {
-        return 1;
-      }
-      return 0;
-    }
-  };
-
   
-  using CallRangeList = InlineList<CallRange>;
-  CallRangeList callRangesList;
-  AvlTree<CallRange*, CallRange> callRanges;
+  
+  
+  Vector<CodePosition, 16, BackgroundSystemAllocPolicy> callPositions;
 
   
   struct SpillSlot : public TempObject,
@@ -838,6 +822,10 @@ class BacktrackingAllocator : protected RegisterAllocator {
   [[nodiscard]] bool buildLivenessInfo();
 
   
+  mozilla::Maybe<size_t> lookupFirstCallPositionInRange(CodePosition from,
+                                                        CodePosition to);
+
+  
   [[nodiscard]] bool tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1);
   void allocateStackDefinition(VirtualRegister& reg);
   [[nodiscard]] bool tryMergeReusedRegister(VirtualRegister& def,
@@ -929,8 +917,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
       : RegisterAllocator(mir, lir, graph),
         testbed(testbed),
         liveIn(mir->alloc()),
-        vregs(mir->alloc()),
-        callRanges(nullptr) {}
+        vregs(mir->alloc()) {}
 
   [[nodiscard]] bool go();
 };

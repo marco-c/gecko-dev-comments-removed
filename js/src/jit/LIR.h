@@ -1923,6 +1923,9 @@ class LIRGraph {
   uint32_t numInstructions_;
 
   
+  uint32_t numCallInstructions_ = 0;
+
+  
   uint32_t localSlotsSize_;
   
   uint32_t argumentSlotCount_;
@@ -1955,6 +1958,10 @@ class LIRGraph {
   }
   uint32_t getInstructionId() { return numInstructions_++; }
   uint32_t numInstructions() const { return numInstructions_; }
+
+  void incNumCallInstructions() { numCallInstructions_++; }
+  uint32_t numCallInstructions() const { return numCallInstructions_; }
+
   void setLocalSlotsSize(uint32_t localSlotsSize) {
     localSlotsSize_ = localSlotsSize;
   }

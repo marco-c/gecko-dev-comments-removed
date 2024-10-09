@@ -680,6 +680,7 @@
 #include "jit/BacktrackingAllocator.h"
 
 #include "mozilla/BinarySearch.h"
+#include "mozilla/Maybe.h"
 
 #include <algorithm>
 
@@ -691,6 +692,7 @@ using namespace js;
 using namespace js::jit;
 
 using mozilla::DebugOnly;
+using mozilla::Maybe;
 
 
 
@@ -1567,7 +1569,6 @@ bool BacktrackingAllocator::init() {
   }
 
   hotcode.setAllocator(lifoAlloc);
-  callRanges.setAllocator(lifoAlloc);
 
   
   
@@ -1659,6 +1660,13 @@ static bool IsInputReused(LInstruction* ins, LUse* use) {
 bool BacktrackingAllocator::buildLivenessInfo() {
   JitSpew(JitSpew_RegAlloc, "Beginning liveness analysis");
 
+  
+  
+  if (!callPositions.growByUninitialized(graph.numCallInstructions())) {
+    return false;
+  }
+  size_t prevCallPositionIndex = callPositions.length();
+
   for (size_t i = graph.numBlocks(); i > 0; i--) {
     if (mir->shouldCancel("Build Liveness Info (main loop)")) {
       return false;
@@ -1731,16 +1739,13 @@ bool BacktrackingAllocator::buildLivenessInfo() {
           }
         }
 
-        CallRange* callRange = new (alloc().fallible())
-            CallRange(outputOf(*ins), outputOf(*ins).next());
-        if (!callRange) {
-          return false;
-        }
-
-        callRangesList.pushFront(callRange);
-        if (!callRanges.insert(callRange)) {
-          return false;
-        }
+        
+        
+        MOZ_ASSERT(prevCallPositionIndex > 0);
+        MOZ_ASSERT_IF(prevCallPositionIndex < callPositions.length(),
+                      outputOf(*ins) < callPositions[prevCallPositionIndex]);
+        prevCallPositionIndex--;
+        callPositions[prevCallPositionIndex] = outputOf(*ins);
       }
 
       for (size_t i = 0; i < ins->numDefs(); i++) {
@@ -1935,8 +1940,36 @@ bool BacktrackingAllocator::buildLivenessInfo() {
     MOZ_ASSERT_IF(!mblock->numPredecessors(), live.empty());
   }
 
+  MOZ_RELEASE_ASSERT(prevCallPositionIndex == 0,
+                     "Must have initialized all call positions");
+
   JitSpew(JitSpew_RegAlloc, "Completed liveness analysis");
   return true;
+}
+
+Maybe<size_t> BacktrackingAllocator::lookupFirstCallPositionInRange(
+    CodePosition from, CodePosition to) {
+  MOZ_ASSERT(from < to);
+
+  
+  size_t len = callPositions.length();
+  size_t index;
+  mozilla::BinarySearch(callPositions, 0, len, from, &index);
+  MOZ_ASSERT(index <= len);
+
+  if (index == len) {
+    
+    MOZ_ASSERT_IF(len > 0, callPositions.back() < from);
+    return {};
+  }
+
+  if (callPositions[index] >= to) {
+    
+    return {};
+  }
+
+  MOZ_ASSERT(callPositions[index] >= from && callPositions[index] < to);
+  return mozilla::Some(index);
 }
 
 
@@ -2801,60 +2834,80 @@ bool BacktrackingAllocator::splitAcrossCalls(LiveBundle* bundle) {
   
 
   
-  SplitPositionVector callPositions;
+  
+  
+  SplitPositionVector bundleCallPositions;
+
   for (LiveBundle::RangeIterator iter = bundle->rangesBegin(); iter; iter++) {
     LiveRange* range = *iter;
-    CallRange searchRange(range->from(), range->to());
-    CallRange* callRange;
-    if (!callRanges.contains(&searchRange, &callRange)) {
+
+    
+    
+    
+
+    CodePosition from = range->from().next();
+    if (from == range->to()) {
       
       continue;
     }
-    MOZ_ASSERT(range->covers(callRange->range.from));
 
     
-    
-    for (CallRangeList::reverse_iterator riter =
-             callRangesList.rbegin(callRange);
-         riter != callRangesList.rend(); ++riter) {
-      CodePosition pos = riter->range.from;
-      if (range->covers(pos)) {
-        callRange = *riter;
-      } else {
-        break;
-      }
+    Maybe<size_t> index = lookupFirstCallPositionInRange(from, range->to());
+    if (!index.isSome()) {
+      
+      continue;
     }
 
     
-    for (CallRangeList::iterator iter = callRangesList.begin(callRange);
-         iter != callRangesList.end(); ++iter) {
-      CodePosition pos = iter->range.from;
-      if (!range->covers(pos)) {
+    size_t startIndex = *index;
+    size_t endIndex = startIndex;
+    while (endIndex < callPositions.length() - 1) {
+      if (callPositions[endIndex + 1] >= range->to()) {
         break;
       }
+      endIndex++;
+    }
 
-      
-      
-      if (range->covers(pos.previous())) {
-        MOZ_ASSERT_IF(callPositions.length(), pos > callPositions.back());
-        if (!callPositions.append(pos)) {
-          return false;
-        }
-      }
+    MOZ_ASSERT(startIndex <= endIndex);
+
+#ifdef DEBUG
+    auto inRange = [range](CodePosition pos) {
+      return range->covers(pos) && pos != range->from();
+    };
+
+    
+    MOZ_ASSERT(inRange(callPositions[startIndex]));
+    MOZ_ASSERT_IF(startIndex > 0, !inRange(callPositions[startIndex - 1]));
+
+    
+    MOZ_ASSERT(inRange(callPositions[endIndex]));
+    MOZ_ASSERT_IF(endIndex + 1 < callPositions.length(),
+                  !inRange(callPositions[endIndex + 1]));
+
+    
+    MOZ_ASSERT_IF(!bundleCallPositions.empty(),
+                  bundleCallPositions.back() < callPositions[startIndex]);
+#endif
+
+    const CodePosition* start = &callPositions[startIndex];
+    size_t count = endIndex - startIndex + 1;
+    if (!bundleCallPositions.append(start, start + count)) {
+      return false;
     }
   }
-  MOZ_ASSERT(callPositions.length());
+
+  MOZ_ASSERT(!bundleCallPositions.empty());
 
 #ifdef JS_JITSPEW
   JitSpewStart(JitSpew_RegAlloc, "  .. split across calls at ");
-  for (size_t i = 0; i < callPositions.length(); ++i) {
+  for (size_t i = 0; i < bundleCallPositions.length(); ++i) {
     JitSpewCont(JitSpew_RegAlloc, "%s%u", i != 0 ? ", " : "",
-                callPositions[i].bits());
+                bundleCallPositions[i].bits());
   }
   JitSpewFin(JitSpew_RegAlloc);
 #endif
 
-  return splitAt(bundle, callPositions);
+  return splitAt(bundle, bundleCallPositions);
 }
 
 bool BacktrackingAllocator::trySplitAcrossHotcode(LiveBundle* bundle,
