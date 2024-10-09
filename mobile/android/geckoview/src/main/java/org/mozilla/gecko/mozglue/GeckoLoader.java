@@ -414,13 +414,7 @@ public final class GeckoLoader {
 
   
   public static native void nativeRun(
-      String[] args,
-      int prefsFd,
-      int prefMapFd,
-      int ipcFd,
-      int crashFd,
-      boolean xpcshell,
-      String outFilePath);
+      String[] args, int[] fds, boolean xpcshell, String outFilePath);
 
   private static native void loadGeckoLibsNative();
 
