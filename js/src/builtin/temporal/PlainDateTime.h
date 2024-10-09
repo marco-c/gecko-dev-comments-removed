@@ -107,6 +107,7 @@ inline PlainDateTime ToPlainDateTime(const PlainDateTimeObject* dateTime) {
 
 struct DifferenceSettings;
 class Increment;
+enum class TemporalOverflow;
 enum class TemporalRoundingMode;
 enum class TemporalUnit;
 
@@ -135,83 +136,6 @@ bool ISODateTimeWithinLimits(const PlainDate& date);
 
 
 bool ISODateTimeWithinLimits(double year, double month, double day);
-
-
-
-
-
-PlainDateTimeObject* CreateTemporalDateTime(JSContext* cx,
-                                            const PlainDateTime& dateTime,
-                                            JS::Handle<CalendarValue> calendar);
-
-
-
-
-Wrapped<PlainDateTimeObject*> ToTemporalDateTime(JSContext* cx,
-                                                 JS::Handle<JS::Value> item);
-
-
-
-
-bool ToTemporalDateTime(JSContext* cx, JS::Handle<JS::Value> item,
-                        PlainDateTime* result);
-
-
-
-
-bool InterpretTemporalDateTimeFields(JSContext* cx,
-                                     JS::Handle<CalendarRecord> calendar,
-                                     JS::Handle<PlainObject*> fields,
-                                     JS::Handle<PlainObject*> options,
-                                     PlainDateTime* result);
-
-
-
-
-bool InterpretTemporalDateTimeFields(JSContext* cx,
-                                     JS::Handle<CalendarRecord> calendar,
-                                     JS::Handle<PlainObject*> fields,
-                                     PlainDateTime* result);
-
-
-
-
-
-PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
-                               Increment increment, TemporalUnit unit,
-                               TemporalRoundingMode roundingMode);
-
-
-
-
-
-bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
-                           const PlainDateTime& two,
-                           JS::Handle<CalendarRecord> calendar,
-                           TemporalUnit largestUnit,
-                           NormalizedDuration* result);
-
-
-
-
-
-
-bool DifferencePlainDateTimeWithRounding(JSContext* cx,
-                                         const PlainDateTime& one,
-                                         const PlainDateTime& two,
-                                         JS::Handle<CalendarRecord> calendar,
-                                         const DifferenceSettings& settings,
-                                         Duration* result);
-
-
-
-
-
-bool DifferencePlainDateTimeWithRounding(JSContext* cx,
-                                         const PlainDateTime& one,
-                                         const PlainDateTime& two,
-                                         JS::Handle<CalendarRecord> calendar,
-                                         TemporalUnit unit, double* result);
 
 class MOZ_STACK_CLASS PlainDateTimeWithCalendar final {
   PlainDateTime dateTime_;
@@ -254,10 +178,91 @@ inline const auto& ToPlainDateTime(const PlainDateTimeWithCalendar& dateTime) {
 
 
 
+PlainDateTimeObject* CreateTemporalDateTime(JSContext* cx,
+                                            const PlainDateTime& dateTime,
+                                            JS::Handle<CalendarValue> calendar);
+
+
+
+
+
+PlainDateTimeObject* CreateTemporalDateTime(
+    JSContext* cx, JS::Handle<PlainDateTimeWithCalendar> dateTime);
+
+
+
+
+
 bool CreateTemporalDateTime(
     JSContext* cx, const PlainDateTime& dateTime,
     JS::Handle<CalendarValue> calendar,
     JS::MutableHandle<PlainDateTimeWithCalendar> result);
+
+
+
+
+bool InterpretTemporalDateTimeFields(JSContext* cx,
+                                     JS::Handle<CalendarValue> calendar,
+                                     JS::Handle<PlainObject*> fields,
+                                     TemporalOverflow overflow,
+                                     PlainDateTime* result);
+
+
+
+
+bool InterpretTemporalDateTimeFields(JSContext* cx,
+                                     JS::Handle<CalendarRecord> calendar,
+                                     JS::Handle<PlainObject*> fields,
+                                     JS::Handle<PlainObject*> options,
+                                     PlainDateTime* result);
+
+
+
+
+bool InterpretTemporalDateTimeFields(JSContext* cx,
+                                     JS::Handle<CalendarRecord> calendar,
+                                     JS::Handle<PlainObject*> fields,
+                                     PlainDateTime* result);
+
+
+
+
+
+PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
+                               Increment increment, TemporalUnit unit,
+                               TemporalRoundingMode roundingMode);
+
+
+
+
+
+bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
+                           const PlainDateTime& two,
+                           JS::Handle<CalendarValue> calendar,
+                           TemporalUnit largestUnit,
+                           NormalizedDuration* result);
+
+
+
+
+
+
+bool DifferencePlainDateTimeWithRounding(JSContext* cx,
+                                         const PlainDateTime& one,
+                                         const PlainDateTime& two,
+                                         JS::Handle<CalendarValue> calendar,
+                                         const DifferenceSettings& settings,
+                                         Duration* result);
+
+
+
+
+
+bool DifferencePlainDateTimeWithRounding(JSContext* cx,
+                                         const PlainDateTime& one,
+                                         const PlainDateTime& two,
+                                         JS::Handle<CalendarValue> calendar,
+                                         TemporalUnit unit, double* result);
 
 } 
 
