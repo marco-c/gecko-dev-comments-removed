@@ -159,30 +159,26 @@ static void CacheDirAndAutoClear(nsIProperties* aDirSvc, const char* aDirKey,
 void SandboxBroker::GeckoDependentInitialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool haveXPCOM = XRE_GetProcessType() != GeckoProcessType_RemoteSandboxBroker;
-  if (haveXPCOM) {
-    
-    
-    nsresult rv;
-    nsCOMPtr<nsIProperties> dirSvc =
-        do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
-    if (NS_FAILED(rv)) {
-      MOZ_ASSERT(false,
-                 "Failed to get directory service, cannot cache directories "
-                 "for rules.");
-      LOG_E(
-          "Failed to get directory service, cannot cache directories for "
-          "rules.");
-      return;
-    }
-
-    CacheDirAndAutoClear(dirSvc, NS_APP_USER_PROFILE_50_DIR, &sProfileDir);
-    CacheDirAndAutoClear(dirSvc, NS_WIN_LOCAL_APPDATA_DIR, &sLocalAppDataDir);
-#ifdef ENABLE_SYSTEM_EXTENSION_DIRS
-    CacheDirAndAutoClear(dirSvc, XRE_USER_SYS_EXTENSION_DIR,
-                         &sUserExtensionsDir);
-#endif
+  
+  
+  nsresult rv;
+  nsCOMPtr<nsIProperties> dirSvc =
+      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) {
+    MOZ_ASSERT(false,
+               "Failed to get directory service, cannot cache directories "
+               "for rules.");
+    LOG_E(
+        "Failed to get directory service, cannot cache directories for "
+        "rules.");
+    return;
   }
+
+  CacheDirAndAutoClear(dirSvc, NS_APP_USER_PROFILE_50_DIR, &sProfileDir);
+  CacheDirAndAutoClear(dirSvc, NS_WIN_LOCAL_APPDATA_DIR, &sLocalAppDataDir);
+#ifdef ENABLE_SYSTEM_EXTENSION_DIRS
+  CacheDirAndAutoClear(dirSvc, XRE_USER_SYS_EXTENSION_DIR, &sUserExtensionsDir);
+#endif
 
   
   
