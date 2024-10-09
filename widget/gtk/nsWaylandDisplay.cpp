@@ -1,16 +1,16 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWaylandDisplay.h"
 
 #include <dlfcn.h>
 
-#include "base/message_loop.h"    
-#include "base/task.h"            
-#include "mozilla/gfx/Logging.h"  
+#include "base/message_loop.h"    // for MessageLoop
+#include "base/task.h"            // for NewRunnableMethod, etc
+#include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
 #include "mozilla/StaticMutex.h"
 #include "mozilla/Array.h"
 #include "mozilla/StaticPtr.h"
@@ -51,6 +51,11 @@ nsWaylandDisplay* WaylandDisplayGet() {
     if (!waylandDisplay) {
       return nullptr;
     }
+    // We're setting Wayland client buffer size here (i.e. our write buffer).
+    // Server buffer size is set by compositor and we may use the same buffer
+    // sizes on both sides. Mutter uses 1024 * 1024 (1M) so let's use the same
+    // value.
+    wl_display_set_max_buffer_size(waylandDisplay, 1024 * 1024);
     gWaylandDisplay = new nsWaylandDisplay(waylandDisplay);
   }
   return gWaylandDisplay;
@@ -98,8 +103,8 @@ class WaylandPointerEvent {
       return;
     }
 
-    
-    
+    // nsWindow::OnSmoothScrollEvent() may spin event loop so
+    // mWindow/mSource/delta may be replaced.
     int32_t source = mSource;
     float deltaX = mDeltaX;
     float deltaY = mDeltaY;
@@ -107,7 +112,7 @@ class WaylandPointerEvent {
     mSource = -1;
     mDeltaX = mDeltaY = 0.0f;
 
-    
+    // We process wheel events only now.
     if (source != WL_POINTER_AXIS_SOURCE_WHEEL) {
       return;
     }
@@ -191,7 +196,7 @@ static void pointer_handle_frame(void* data, struct wl_pointer* pointer) {
 
 static void pointer_handle_axis_source(
     void* data, struct wl_pointer* pointer,
-     uint32_t source) {
+    /*enum wl_pointer_axis_source */ uint32_t source) {
   sScrollEvent.SetSource(source);
 }
 
@@ -206,31 +211,31 @@ static void pointer_handle_axis_value120(void* data, struct wl_pointer* pointer,
   sScrollEvent.SetDelta120(axis, value);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Example of scroll events we get for various devices. Note that
+ * even three different devices has the same wl_pointer.
+ *
+ * Standard mouse wheel:
+ *
+ *  pointer_handle_axis_source pointer 0x7fd14fd4bac0 source 0
+ *  pointer_handle_axis_value120 pointer 0x7fd14fd4bac0 value 120
+ *  pointer_handle_axis pointer 0x7fd14fd4bac0 time 9470441 value 10.000000
+ *  pointer_handle_frame
+ *
+ * Hi-res mouse wheel:
+ *
+ * pointer_handle_axis_source pointer 0x7fd14fd4bac0 source 0
+ * pointer_handle_axis_value120 pointer 0x7fd14fd4bac0 value -24
+ * pointer_handle_axis pointer 0x7fd14fd4bac0 time 9593205 value -1.992188
+ * pointer_handle_frame
+ *
+ * Touchpad:
+ *
+ * pointer_handle_axis_source pointer 0x7fd14fd4bac0 source 1
+ * pointer_handle_axis pointer 0x7fd14fd4bac0 time 9431830 value 0.312500
+ * pointer_handle_axis pointer 0x7fd14fd4bac0 time 9431830 value -1.015625
+ * pointer_handle_frame
+ */
 
 static const struct moz_wl_pointer_listener pointer_listener = {
     pointer_handle_enter,         pointer_handle_leave,
@@ -285,7 +290,7 @@ static void seat_handle_capabilities(void* data, struct wl_seat* seat,
 
 static void seat_handle_name(void* data, struct wl_seat* seat,
                              const char* name) {
-  
+  /* We don't care about the name. */
 }
 
 static const struct wl_seat_listener seat_listener = {
@@ -306,8 +311,8 @@ void nsWaylandDisplay::RemoveSeat(int aSeatId) {
   }
 }
 
-
-
+/* This keymap routine is derived from weston-2.0.0/clients/simple-im.c
+ */
 static void keyboard_handle_keymap(void* data, struct wl_keyboard* wl_keyboard,
                                    uint32_t format, int fd, uint32_t size) {
   KeymapWrapper::HandleKeymap(format, fd, size);
@@ -496,11 +501,11 @@ static void WlLogHandler(const char* format, va_list args) {
   VsprintfLiteral(error, format, args);
   gfxCriticalNote << "Wayland protocol error: " << error;
 
-  
-  
-  
-  
-  
+  // See Bug 1826583 and Bug 1844653 for reference.
+  // "warning: queue %p destroyed while proxies still attached" and variants
+  // like "zwp_linux_dmabuf_feedback_v1@%d still attached" are exceptions on
+  // Wayland and non-fatal. They are triggered in certain versions of Mesa or
+  // the proprietary Nvidia driver and we don't want to crash because of them.
   if (strstr(error, "still attached")) {
     return;
   }
@@ -510,8 +515,8 @@ static void WlLogHandler(const char* format, va_list args) {
 
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
     : mThreadId(PR_GetCurrentThread()), mDisplay(aDisplay) {
-  
-  
+  // GTK sets the log handler on display creation, thus we overwrite it here
+  // in a similar fashion
   wl_log_set_handler_client(WlLogHandler);
 
   mRegistry = wl_display_get_registry(mDisplay);
@@ -519,12 +524,12 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   wl_display_roundtrip(mDisplay);
   wl_display_roundtrip(mDisplay);
 
-  
-  
+  // Check we have critical Wayland interfaces.
+  // Missing ones indicates a compositor bug and we can't continue.
   MOZ_RELEASE_ASSERT(GetShm(), "We're missing shm interface!");
   MOZ_RELEASE_ASSERT(GetCompositor(), "We're missing compositor interface!");
   MOZ_RELEASE_ASSERT(GetSubcompositor(),
                      "We're missing subcompositor interface!");
 }
 
-}  
+}  // namespace mozilla::widget
