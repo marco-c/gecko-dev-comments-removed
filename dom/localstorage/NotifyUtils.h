@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef DOM_LOCALSTORAGE_NOTIFYUTILS_H_
+#define DOM_LOCALSTORAGE_NOTIFYUTILS_H_
+
+namespace mozilla::dom::localstorage {
+
+void NotifyDatabaseWorkStarted();
+
+}  
+
+#endif  
