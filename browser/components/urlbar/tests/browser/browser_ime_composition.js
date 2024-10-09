@@ -235,6 +235,17 @@ async function test_composition(keepPanelOpenDuringImeComposition) {
 async function test_composition_searchMode_preview(
   keepPanelOpenDuringImeComposition
 ) {
+  if (UrlbarPrefs.getScotchBonnetPref("searchRestrictKeywords.featureGate")) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        
+        
+        
+        
+        ["browser.urlbar.maxRichResults", 99],
+      ],
+    });
+  }
   info("Check Search Mode preview is retained by composition");
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -262,6 +273,9 @@ async function test_composition_searchMode_preview(
     entry: "keywordoffer",
   });
   await UrlbarTestUtils.exitSearchMode(window);
+  if (UrlbarPrefs.getScotchBonnetPref("searchRestrictKeywords.featureGate")) {
+    await SpecialPowers.popPrefEnv();
+  }
 }
 
 async function test_composition_tabToSearch(keepPanelOpenDuringImeComposition) {

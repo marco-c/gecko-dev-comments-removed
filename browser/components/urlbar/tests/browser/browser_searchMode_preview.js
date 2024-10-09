@@ -18,6 +18,17 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.suggest.quickactions", false]],
   });
+  if (UrlbarPrefs.getScotchBonnetPref("searchRestrictKeywords.featureGate")) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        
+        
+        
+        
+        ["browser.urlbar.maxRichResults", 99],
+      ],
+    });
+  }
 
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
