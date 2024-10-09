@@ -777,10 +777,7 @@ void WebRenderAPI::Pause() {
 
   layers::SynchronousTask task("Pause");
   auto event = MakeUnique<PauseEvent>(&task);
-  
-  
-  
-  RunOnRenderThread(std::move(event));
+  RenderThread::Get()->PostEvent(mId, std::move(event));
 
   task.Wait();
 }
@@ -807,10 +804,7 @@ bool WebRenderAPI::Resume() {
   bool result = false;
   layers::SynchronousTask task("Resume");
   auto event = MakeUnique<ResumeEvent>(&task, &result);
-  
-  
-  
-  RunOnRenderThread(std::move(event));
+  RenderThread::Get()->PostEvent(mId, std::move(event));
 
   task.Wait();
   return result;
