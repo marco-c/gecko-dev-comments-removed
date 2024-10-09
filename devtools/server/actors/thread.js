@@ -284,10 +284,6 @@ class ThreadActor extends Actor {
     return this.threadLifetimePool.objectActors.get(raw);
   }
 
-  createValueGrip(value) {
-    return createValueGrip(value, this.threadLifetimePool, this.objectGrip);
-  }
-
   get sourcesManager() {
     return this.targetActor.sourcesManager;
   }
@@ -1146,16 +1142,14 @@ class ThreadActor extends Actor {
       return packet;
     }
 
-    const createGrip = value =>
-      createValueGrip(value, this._pausePool, this.objectGrip);
     packet.why.frameFinished = {};
 
     if (completion.hasOwnProperty("return")) {
-      packet.why.frameFinished.return = createGrip(completion.return);
+      packet.why.frameFinished.return = this.createValueGrip(completion.return);
     } else if (completion.hasOwnProperty("yield")) {
-      packet.why.frameFinished.return = createGrip(completion.yield);
+      packet.why.frameFinished.return = this.createValueGrip(completion.yield);
     } else if (completion.hasOwnProperty("throw")) {
-      packet.why.frameFinished.throw = createGrip(completion.throw);
+      packet.why.frameFinished.throw = this.createValueGrip(completion.throw);
     }
 
     return packet;
@@ -1762,6 +1756,26 @@ class ThreadActor extends Actor {
 
 
 
+
+
+
+
+
+  createValueGrip(value) {
+    if (this._pausePool) {
+      return createValueGrip(value, this._pausePool, this.pauseObjectGrip);
+    }
+    return createValueGrip(value, this.threadLifetimePool, this.objectGrip);
+  }
+
+  
+
+
+
+
+
+
+
   objectGrip(value, pool) {
     if (!pool.objectActors) {
       pool.objectActors = new WeakMap();
@@ -1782,13 +1796,7 @@ class ThreadActor extends Actor {
         getGripDepth: () => this._gripDepth,
         incrementGripDepth: () => this._gripDepth++,
         decrementGripDepth: () => this._gripDepth--,
-        createValueGrip: v => {
-          if (this._pausePool) {
-            return createValueGrip(v, this._pausePool, this.pauseObjectGrip);
-          }
-
-          return createValueGrip(v, this.threadLifetimePool, this.objectGrip);
-        },
+        createValueGrip: v => this.createValueGrip(v),
         isThreadLifetimePool: () =>
           actor.getParent() !== this.threadLifetimePool,
       },
@@ -2044,7 +2052,7 @@ class ThreadActor extends Actor {
 
       packet.why = {
         type: PAUSE_REASONS.EXCEPTION,
-        exception: createValueGrip(value, this._pausePool, this.objectGrip),
+        exception: this.createValueGrip(value),
       };
       this.emit("paused", packet);
 
