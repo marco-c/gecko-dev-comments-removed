@@ -495,10 +495,8 @@ impl OpenStore {
     }
 
     fn close(self) {
-        
-        
-        let _ = self.reader.into_inner().close();
-        let _ = self.writer.into_inner().close();
+        self.reader.close();
+        self.writer.close();
     }
 }
 

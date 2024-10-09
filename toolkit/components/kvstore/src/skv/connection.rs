@@ -118,6 +118,7 @@ impl Connection {
                 
                 tx.execute_batch(&format!("PRAGMA user_version = {};", M::MAX_SCHEMA_VERSION))?;
                 tx.commit()?;
+                let _ = conn.execute_batch("PRAGMA optimize(0x10002);");
                 Ok(Self::with_connection(conn))
             }
         }
@@ -175,9 +176,12 @@ impl Connection {
     }
 
     
-    
-    pub fn into_inner(self) -> rusqlite::Connection {
-        Mutex::into_inner(self.conn).unwrap()
+    pub fn close(self) {
+        let conn = Mutex::into_inner(self.conn).unwrap();
+        let _ = conn.execute_batch("PRAGMA optimize;");
+        
+        
+        let _ = conn.close();
     }
 
     
