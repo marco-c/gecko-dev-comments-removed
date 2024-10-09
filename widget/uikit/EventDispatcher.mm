@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#include "EventDispatcher.h"
+
+namespace mozilla::widget {
+
+NS_IMPL_ISUPPORTS(EventDispatcher, nsIGeckoViewEventDispatcher)
+
+bool EventDispatcher::HasListener(const char16_t* aEvent) { return false; }
+
+}  
