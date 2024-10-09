@@ -1578,6 +1578,9 @@ public class WebExtension {
       public static final int ERROR_ADMIN_INSTALL_ONLY = -13;
 
       
+      public static final int ERROR_SOFT_BLOCKED = -14;
+
+      
       public static final int ERROR_USER_CANCELED = -100;
 
       
@@ -1632,6 +1635,7 @@ public class WebExtension {
           ErrorCodes.ERROR_POSTPONED,
           ErrorCodes.ERROR_UNSUPPORTED_ADDON_TYPE,
           ErrorCodes.ERROR_ADMIN_INSTALL_ONLY,
+          ErrorCodes.ERROR_SOFT_BLOCKED,
         })
     public @interface Codes {}
 
@@ -1792,6 +1796,12 @@ public class WebExtension {
 
 
     public static final int APP_VERSION = 1 << 5;
+
+    
+
+
+
+    public static final int SOFT_BLOCKLIST = 1 << 6;
   }
 
   @Retention(RetentionPolicy.SOURCE)
@@ -1803,6 +1813,7 @@ public class WebExtension {
         DisabledFlags.APP,
         DisabledFlags.SIGNATURE,
         DisabledFlags.APP_VERSION,
+        DisabledFlags.SOFT_BLOCKLIST,
       })
   public @interface EnabledFlags {}
 
@@ -2143,6 +2154,8 @@ public class WebExtension {
           disabledFlags |= DisabledFlags.USER;
         } else if (flag.equals("blocklistDisabled")) {
           disabledFlags |= DisabledFlags.BLOCKLIST;
+        } else if (flag.equals("softBlocklistDisabled")) {
+          disabledFlags |= DisabledFlags.SOFT_BLOCKLIST;
         } else if (flag.equals("appDisabled")) {
           disabledFlags |= DisabledFlags.APP;
         } else if (flag.equals("signatureDisabled")) {
