@@ -320,6 +320,11 @@ function setupMocks({ fxaDevices = null, state, syncEnabled = true }) {
       }),
     };
   });
+
+  
+  sandbox
+    .stub(SyncedTabs._internal, "_getClientFxaDeviceId")
+    .callsFake(clientId => clientId);
   
   
   
