@@ -53,9 +53,9 @@ void GleanEvent::Record(
   
   auto id = EventIdForMetric(mEvent.mId);
   if (id) {
-    Telemetry::RecordEvent(id.extract(),
-                           telValue.IsVoid() ? Nothing() : Some(telValue),
-                           telExtras.IsEmpty() ? Nothing() : Some(telExtras));
+    TelemetryEvent::RecordEventNative(
+        id.extract(), telValue.IsVoid() ? Nothing() : Some(telValue),
+        telExtras.IsEmpty() ? Nothing() : Some(telExtras));
   }
 
   
