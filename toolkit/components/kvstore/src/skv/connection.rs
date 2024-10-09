@@ -9,7 +9,9 @@
 
 use std::{borrow::Cow, fmt::Debug, num::NonZeroU32, path::Path, sync::Mutex};
 
-use rusqlite::{InterruptHandle, OpenFlags, Transaction, TransactionBehavior};
+use rusqlite::{config::DbConfig, InterruptHandle, OpenFlags, Transaction, TransactionBehavior};
+
+use crate::skv;
 
 
 
@@ -25,25 +27,15 @@ pub trait ToConnectionIncident {
 }
 
 
-
-
-pub trait ConnectionOpener {
+pub trait ConnectionMigrator {
     
     const MAX_SCHEMA_VERSION: u32;
 
-    type Error: From<rusqlite::Error>;
-
-    
-    
-    
-    fn setup(_conn: &mut rusqlite::Connection) -> Result<(), Self::Error> {
-        Ok(())
-    }
+    type Error;
 
     
     fn create(tx: &mut Transaction<'_>) -> Result<(), Self::Error>;
 
-    
     
     fn upgrade(tx: &mut Transaction<'_>, to_version: NonZeroU32) -> Result<(), Self::Error>;
 }
@@ -74,15 +66,36 @@ pub struct Connection {
 
 impl Connection {
     
-    pub fn new<O>(path: &impl ConnectionPath, type_: ConnectionType) -> Result<Self, O::Error>
+    pub fn new<M>(path: &impl ConnectionPath, type_: ConnectionType) -> Result<Self, M::Error>
     where
-        O: ConnectionOpener,
+        M: ConnectionMigrator,
+        M::Error: From<rusqlite::Error>,
     {
         let mut conn = rusqlite::Connection::open_with_flags(
             path.as_path(),
             path.flags().union(type_.flags()),
         )?;
-        O::setup(&mut conn)?;
+
+        conn.execute_batch(
+            "PRAGMA journal_mode = WAL;
+             PRAGMA journal_size_limit = 524288; -- 512 KB.
+             PRAGMA foreign_keys = ON;
+             PRAGMA temp_store = MEMORY;
+             PRAGMA secure_delete = ON;
+             PRAGMA auto_vacuum = INCREMENTAL;
+            ",
+        )?;
+
+        
+        conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DEFENSIVE, true)?;
+
+        
+        conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DQS_DML, false)?;
+        conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DQS_DDL, false)?;
+        conn.set_db_config(DbConfig::SQLITE_DBCONFIG_TRUSTED_SCHEMA, true)?;
+
+        skv::functions::register(&mut conn)?;
+
         match type_ {
             ConnectionType::ReadOnly => Ok(Self::with_connection(conn)),
             ConnectionType::ReadWrite => {
@@ -91,19 +104,19 @@ impl Connection {
                 let mut tx = conn.transaction_with_behavior(TransactionBehavior::Exclusive)?;
                 match tx.query_row_and_then("PRAGMA user_version", [], |row| row.get(0)) {
                     Ok(mut version @ 1..) => {
-                        while version < O::MAX_SCHEMA_VERSION {
-                            O::upgrade(&mut tx, NonZeroU32::new(version + 1).unwrap())?;
+                        while version < M::MAX_SCHEMA_VERSION {
+                            M::upgrade(&mut tx, NonZeroU32::new(version + 1).unwrap())?;
                             version += 1;
                         }
                     }
-                    Ok(0) => O::create(&mut tx)?,
+                    Ok(0) => M::create(&mut tx)?,
                     Err(err) => Err(err)?,
                 }
                 
                 
                 
                 
-                tx.execute_batch(&format!("PRAGMA user_version = {}", O::MAX_SCHEMA_VERSION))?;
+                tx.execute_batch(&format!("PRAGMA user_version = {};", M::MAX_SCHEMA_VERSION))?;
                 tx.commit()?;
                 Ok(Self::with_connection(conn))
             }
