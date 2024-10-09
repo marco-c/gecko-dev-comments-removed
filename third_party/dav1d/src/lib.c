@@ -31,7 +31,7 @@
 #include <errno.h>
 #include <string.h>
 
-#if defined(__linux__) && defined(HAVE_DLSYM)
+#if defined(__linux__) && HAVE_DLSYM
 #include <dlfcn.h>
 #endif
 
@@ -90,7 +90,7 @@ static void close_internal(Dav1dContext **const c_out, int flush);
 
 NO_SANITIZE("cfi-icall") 
 static COLD size_t get_stack_size_internal(const pthread_attr_t *const thread_attr) {
-#if defined(__linux__) && defined(HAVE_DLSYM) && defined(__GLIBC__)
+#if defined(__linux__) && HAVE_DLSYM && defined(__GLIBC__)
     
 
 
