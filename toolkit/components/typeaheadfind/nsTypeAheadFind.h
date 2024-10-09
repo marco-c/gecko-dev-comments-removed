@@ -28,8 +28,6 @@ class Selection;
 }  
 }  
 
-#define TYPEAHEADFIND_NOTFOUND_WAV_URL "chrome://global/content/notfound.wav"
-
 class nsTypeAheadFind : public nsITypeAheadFind,
                         public nsIObserver,
                         public nsSupportsWeakReference,
@@ -49,7 +47,6 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   nsresult PrefsReset();
 
   void SaveFind();
-  void PlayNotFoundSound();
   nsresult GetWebBrowserFind(nsIDocShell* aDocShell,
                              nsIWebBrowserFind** aWebBrowserFind);
 
@@ -88,7 +85,6 @@ class nsTypeAheadFind : public nsITypeAheadFind,
 
   
   nsString mTypeAheadBuffer;
-  nsCString mNotFoundSoundURL;
 
   
   
@@ -100,9 +96,6 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   nsCOMPtr<mozilla::dom::Element>
       mFoundEditable;           
   RefPtr<nsRange> mFoundRange;  
-  
-  
-  uint32_t mLastFindLength;
 
   
   RefPtr<nsRange> mStartFindRange;
