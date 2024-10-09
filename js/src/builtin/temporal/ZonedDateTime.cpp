@@ -965,44 +965,6 @@ bool js::temporal::DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
 
 
 
-static bool TimeZoneEqualsOrThrow(JSContext* cx, Handle<TimeZoneValue> one,
-                                  Handle<TimeZoneValue> two) {
-  
-  Rooted<JSString*> timeZoneOne(cx, ToTemporalTimeZoneIdentifier(cx, one));
-  if (!timeZoneOne) {
-    return false;
-  }
-
-  
-  Rooted<JSString*> timeZoneTwo(cx, ToTemporalTimeZoneIdentifier(cx, two));
-  if (!timeZoneTwo) {
-    return false;
-  }
-
-  
-  bool equals;
-  if (!TimeZoneEquals(cx, timeZoneOne, timeZoneTwo, &equals)) {
-    return false;
-  }
-  if (equals) {
-    return true;
-  }
-
-  
-  
-  if (auto charsOne = QuoteString(cx, timeZoneOne)) {
-    if (auto charsTwo = QuoteString(cx, timeZoneTwo)) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_TEMPORAL_TIMEZONE_INCOMPATIBLE,
-                               charsOne.get(), charsTwo.get());
-    }
-  }
-  return false;
-}
-
-
-
-
 
 
 static bool DifferenceZonedDateTimeWithRounding(
@@ -1273,7 +1235,19 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
-  if (!TimeZoneEqualsOrThrow(cx, zonedDateTime.timeZone(), other.timeZone())) {
+  bool equalTimeZone;
+  if (!TimeZoneEquals(cx, zonedDateTime.timeZone(), other.timeZone(),
+                      &equalTimeZone)) {
+    return false;
+  }
+  if (!equalTimeZone) {
+    if (auto one = QuoteString(cx, zonedDateTime.timeZone().identifier())) {
+      if (auto two = QuoteString(cx, other.timeZone().identifier())) {
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_TEMPORAL_TIMEZONE_INCOMPATIBLE,
+                                 one.get(), two.get());
+      }
+    }
     return false;
   }
 
