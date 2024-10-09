@@ -68,45 +68,21 @@ import sys
 import warnings
 
 
+from .table_vs16 import VS16_NARROW_TO_WIDE
 from .table_wide import WIDE_EASTASIAN
 from .table_zero import ZERO_WIDTH
 from .unicode_versions import list_versions
 
 try:
+    
     from functools import lru_cache
 except ImportError:
+    
     
     from backports.functools_lru_cache import lru_cache
 
 
-_UNICODE_CMPTABLE = None
-_PY3 = (sys.version_info[0] >= 3)
-
-
-
-
-
-
-ZERO_WIDTH_CF = set([
-    0,       
-    0x034F,  
-    0x200B,  
-    0x200C,  
-    0x200D,  
-    0x200E,  
-    0x200F,  
-    0x2028,  
-    0x2029,  
-    0x202A,  
-    0x202B,  
-    0x202C,  
-    0x202D,  
-    0x202E,  
-    0x2060,  
-    0x2061,  
-    0x2062,  
-    0x2063,  
-])
+_PY3 = sys.version_info[0] >= 3
 
 
 def _bisearch(ucs, table):
@@ -143,8 +119,8 @@ def wcwidth(wc, unicode_version='auto'):
 
     :param str wc: A single Unicode character.
     :param str unicode_version: A Unicode version number, such as
-        ``'6.0.0'``, the list of available version levels may be
-        listed by pairing function :func:`list_versions`.
+        ``'6.0.0'``. A list of version levels suported by wcwidth
+        is returned by :func:`list_versions`.
 
         Any version string may be specified without error -- the nearest
         matching version is selected.  When ``latest`` (default), the
@@ -157,57 +133,18 @@ def wcwidth(wc, unicode_version='auto'):
         character occupies on a graphic terminal (1 or 2) is returned.
     :rtype: int
 
-    The following have a column width of -1:
-
-        - C0 control characters (U+001 through U+01F).
-
-        - C1 control characters and DEL (U+07F through U+0A0).
-
-    The following have a column width of 0:
-
-    - Non-spacing and enclosing combining characters (general
-      category code Mn or Me in the Unicode database).
-
-    - NULL (``U+0000``).
-
-    - COMBINING GRAPHEME JOINER (``U+034F``).
-
-    - ZERO WIDTH SPACE (``U+200B``) *through*
-      RIGHT-TO-LEFT MARK (``U+200F``).
-
-    - LINE SEPARATOR (``U+2028``) *and*
-      PARAGRAPH SEPARATOR (``U+2029``).
-
-    - LEFT-TO-RIGHT EMBEDDING (``U+202A``) *through*
-      RIGHT-TO-LEFT OVERRIDE (``U+202E``).
-
-    - WORD JOINER (``U+2060``) *through*
-      INVISIBLE SEPARATOR (``U+2063``).
-
-    The following have a column width of 1:
-
-    - SOFT HYPHEN (``U+00AD``).
-
-    - All remaining characters, including all printable ISO 8859-1
-      and WGL4 characters, Unicode control characters, etc.
-
-    The following have a column width of 2:
-
-        - Spacing characters in the East Asian Wide (W) or East Asian
-          Full-width (F) category as defined in Unicode Technical
-          Report #11 have a column width of 2.
-
-         - Some kinds of Emoji or symbols.
+    See :ref:`Specification` for details of cell measurement.
     """
-    
-    
-    
-    ucs = ord(wc)
-    if ucs in ZERO_WIDTH_CF:
-        return 0
+    ucs = ord(wc) if wc else 0
 
     
-    if ucs < 32 or 0x07F <= ucs < 0x0A0:
+    
+    
+    if 32 <= ucs < 0x7f:
+        return 1
+
+    
+    if ucs and ucs < 32 or 0x07F <= ucs < 0x0A0:
         return -1
 
     _unicode_version = _wcmatch_version(unicode_version)
@@ -216,6 +153,7 @@ def wcwidth(wc, unicode_version='auto'):
     if _bisearch(ucs, ZERO_WIDTH[_unicode_version]):
         return 0
 
+    
     return 1 + _bisearch(ucs, WIDE_EASTASIAN[_unicode_version])
 
 
@@ -224,28 +162,56 @@ def wcswidth(pwcs, n=None, unicode_version='auto'):
     Given a unicode string, return its printable length on a terminal.
 
     :param str pwcs: Measure width of given unicode string.
-    :param int n: When ``n`` is None (default), return the length of the
-        entire string, otherwise width the first ``n`` characters specified.
+    :param int n: When ``n`` is None (default), return the length of the entire
+        string, otherwise only the first ``n`` characters are measured. This
+        argument exists only for compatibility with the C POSIX function
+        signature. It is suggested instead to use python's string slicing
+        capability, ``wcswidth(pwcs[:n])``
     :param str unicode_version: An explicit definition of the unicode version
         level to use for determination, may be ``auto`` (default), which uses
         the Environment Variable, ``UNICODE_VERSION`` if defined, or the latest
         available unicode version, otherwise.
     :rtype: int
-    :returns: The width, in cells, necessary to display the first ``n``
-        characters of the unicode string ``pwcs``.  Returns ``-1`` if
-        a non-printable character is encountered.
+    :returns: The width, in cells, needed to display the first ``n`` characters
+        of the unicode string ``pwcs``.  Returns ``-1`` for C0 and C1 control
+        characters!
+
+    See :ref:`Specification` for details of cell measurement.
     """
     
-    
-
+    _unicode_version = None
     end = len(pwcs) if n is None else n
-    idx = slice(0, end)
     width = 0
-    for char in pwcs[idx]:
+    idx = 0
+    last_measured_char = None
+    while idx < end:
+        char = pwcs[idx]
+        if char == u'\u200D':
+            
+            idx += 2
+            continue
+        if char == u'\uFE0F' and last_measured_char:
+            
+            
+            
+            if _unicode_version is None:
+                _unicode_version = _wcversion_value(_wcmatch_version(unicode_version))
+            if _unicode_version >= (9, 0, 0):
+                width += _bisearch(ord(last_measured_char), VS16_NARROW_TO_WIDE["9.0.0"])
+                last_measured_char = None
+            idx += 1
+            continue
+        
         wcw = wcwidth(char, unicode_version)
         if wcw < 0:
-            return -1
+            
+            return wcw
+        if wcw > 0:
+            
+            
+            last_measured_char = char
         width += wcw
+        idx += 1
     return width
 
 
@@ -293,10 +259,14 @@ def _wcmatch_version(given_version):
     
     
     
+    
+    
     _return_str = not _PY3 and isinstance(given_version, str)
 
     if _return_str:
-        unicode_versions = [ucs.encode() for ucs in list_versions()]
+        
+        
+        unicode_versions = list(map(lambda ucs: ucs.encode(), list_versions()))
     else:
         unicode_versions = list_versions()
     latest_version = unicode_versions[-1]
@@ -372,4 +342,4 @@ def _wcmatch_version(given_version):
         
         if cmp_next_version > cmp_given:
             return unicode_version
-    assert False, ("Code path unreachable", given_version, unicode_versions)
+    assert False, ("Code path unreachable", given_version, unicode_versions)  

@@ -13,6 +13,8 @@ SUPPORTED_ATTRIBUTES = (
     "url",
     "platform",
     "protocol",
+    "username",
+    "access_token",
 )
 
 
@@ -22,6 +24,7 @@ def parse(url, check_domain=True):
     parsed_info["port"] = ""
     parsed_info["path_raw"] = ""
     parsed_info["groups_path"] = ""
+    parsed_info["owner"] = ""
 
     
     map(parsed_info.setdefault, SUPPORTED_ATTRIBUTES)
@@ -34,14 +37,13 @@ def parse(url, check_domain=True):
 
             
             if not match:
-                
                 continue
 
             
             domain = match.group("domain")
             
             if check_domain:
-                if platform.DOMAINS and not (domain in platform.DOMAINS):
+                if platform.DOMAINS and domain not in platform.DOMAINS:
                     continue
                 if platform.SKIP_DOMAINS and domain in platform.SKIP_DOMAINS:
                     continue

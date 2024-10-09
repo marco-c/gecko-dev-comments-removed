@@ -1,5 +1,5 @@
 """
-wcwidth module.
+Wcwidth module.
 
 https://github.com/jquast/wcwidth
 """
@@ -11,6 +11,7 @@ https://github.com/jquast/wcwidth
 
 from .wcwidth import ZERO_WIDTH  
 from .wcwidth import (WIDE_EASTASIAN,
+                      VS16_NARROW_TO_WIDE,
                       wcwidth,
                       wcswidth,
                       _bisearch,
@@ -25,13 +26,4 @@ __all__ = ('wcwidth', 'wcswidth', 'list_versions')
 
 
 
-
-
-
-
-
-
-
-
-
-__version__ = '0.2.5'
+__version__ = '0.2.13'

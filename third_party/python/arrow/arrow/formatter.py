@@ -29,7 +29,6 @@ FORMAT_W3C: Final[str] = "YYYY-MM-DD HH:mm:ssZZ"
 
 
 class DateTimeFormatter:
-
     
     
     
@@ -41,18 +40,15 @@ class DateTimeFormatter:
     locale: locales.Locale
 
     def __init__(self, locale: str = DEFAULT_LOCALE) -> None:
-
         self.locale = locales.get_locale(locale)
 
     def format(cls, dt: datetime, fmt: str) -> str:
-
         
         return cls._FORMAT_RE.sub(
             lambda m: cast(str, cls._format_token(dt, m.group(0))), fmt
         )
 
     def _format_token(self, dt: datetime, token: Optional[str]) -> Optional[str]:
-
         if token and token.startswith("[") and token.endswith("]"):
             return token[1:-1]
 

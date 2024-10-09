@@ -11,7 +11,7 @@ if sys.implementation.name != "cpython":
 
 if not NO_EXTENSIONS:  
     try:
-        from ._quoting_c import _Quoter, _Unquoter  
+        from ._quoting_c import _Quoter, _Unquoter
     except ImportError:  
         from ._quoting_py import _Quoter, _Unquoter  
 else:

@@ -7,7 +7,9 @@ import six
 
 from .base import Resource
 from .util import (calculate_mac,
-                   utc_now)
+                   strings_match,
+                   utc_now,
+                   validate_header_attr)
 from .exc import (CredentialsLookupError,
                   InvalidBewit,
                   MacMismatch,
@@ -40,25 +42,15 @@ def get_bewit(resource):
     if resource.ext is None:
         ext = ''
     else:
+        validate_header_attr(resource.ext, name='ext')
         ext = resource.ext
 
     
     
     
     
-    
-    
-    client_id = six.text_type(resource.credentials['id'])
-    if "\\" in client_id:
-        log.warn("Stripping backslash character(s) '\\' from client_id")
-        client_id = client_id.replace("\\", "")
-
-    
-    
-    
-    
     inner_bewit = u"{id}\\{exp}\\{mac}\\{ext}".format(
-        id=client_id,
+        id=resource.credentials['id'],
         exp=resource.timestamp,
         mac=mac,
         ext=ext,
@@ -83,10 +75,10 @@ def parse_bewit(bewit):
     :type bewit: str
     """
     decoded_bewit = b64decode(bewit).decode('ascii')
-    bewit_parts = decoded_bewit.split("\\", 3)
+    bewit_parts = decoded_bewit.split("\\")
     if len(bewit_parts) != 4:
         raise InvalidBewit('Expected 4 parts to bewit: %s' % decoded_bewit)
-    return bewittuple(*decoded_bewit.split("\\", 3))
+    return bewittuple(*bewit_parts)
 
 
 def strip_bewit(url):
@@ -146,7 +138,7 @@ def check_bewit(url, credential_lookup, now=None):
     mac = calculate_mac('bewit', res, None)
     mac = mac.decode('ascii')
 
-    if mac != bewit.mac:
+    if not strings_match(mac, bewit.mac):
         raise MacMismatch('bewit with mac {bewit_mac} did not match expected mac {expected_mac}'
                           .format(bewit_mac=bewit.mac,
                                   expected_mac=mac))

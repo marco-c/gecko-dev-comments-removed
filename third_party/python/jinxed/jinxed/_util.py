@@ -9,6 +9,7 @@
 Utility objects
 """
 
+
 import os
 import platform
 import sys
@@ -18,11 +19,8 @@ if sys.version_info[:2] < (3, 3):
 else:
     from unittest import mock  
 
-if sys.version_info[0] < 3:  
-    BASESTRING = basestring  
-else:
-    BASESTRING = str
 
+BASESTRING = basestring if sys.version_info[0] < 3 else str  
 IS_WINDOWS = platform.system() == 'Windows'
 
 

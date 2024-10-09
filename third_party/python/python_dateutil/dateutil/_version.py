@@ -1,5 +1,4 @@
-# coding: utf-8
 
 
-version = '2.8.2'
-version_tuple = (2, 8, 2)
+__version__ = version = '2.9.0.post0'
+__version_tuple__ = version_tuple = (2, 9, 0)

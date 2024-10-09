@@ -76,12 +76,12 @@ class TParm(object):
                                 type(param).__name__)
         self.params = list(params)
 
-        static = kwargs.get('static', None)
+        static = kwargs.get('static')
         self.static = {} if static is None else static
-        dynamic = kwargs.get('static', None)
-        self.dynamic = {} if dynamic is None else dynamic
+        self.dynamic = {}
 
     def __call__(self, string, *params):
+        self.dynamic = {}  
         return self.child(*params).parse(string)
 
     def _literal_percent(self, group):  
