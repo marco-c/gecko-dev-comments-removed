@@ -192,6 +192,19 @@ class TextComposition final {
 
 
 
+
+
+
+
+  [[nodiscard]] bool CanRequsetIMEToCommitOrCancelComposition() const {
+    return !mIsRequestingCommit && !mIsRequestingCancel &&
+           !mRequestedToCommitOrCancel && !mHasReceivedCommitEvent;
+  }
+
+  
+
+
+
   [[nodiscard]] bool EditorHasHandledLatestChange() const {
     return EditorIsHandlingLatestChange() ||
            (mLastRanges == mRanges && mLastData == mString);
@@ -411,19 +424,6 @@ class TextComposition final {
   
   
   bool mWasCompositionStringEmpty;
-
-  
-
-
-
-
-
-
-
-  bool CanRequsetIMEToCommitOrCancelComposition() const {
-    return !mIsRequestingCommit && !mIsRequestingCancel &&
-           !mRequestedToCommitOrCancel && !mHasReceivedCommitEvent;
-  }
 
   
 
