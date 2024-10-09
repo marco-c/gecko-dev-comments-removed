@@ -94,6 +94,13 @@ PlainYearMonthObject* CreateTemporalYearMonth(
 
 
 
+PlainYearMonthObject* CreateTemporalYearMonth(
+    JSContext* cx, JS::Handle<PlainYearMonthWithCalendar> yearMonth);
+
+
+
+
+
 bool CreateTemporalYearMonth(
     JSContext* cx, const PlainDate& date, JS::Handle<CalendarValue> calendar,
     JS::MutableHandle<PlainYearMonthWithCalendar> result);
