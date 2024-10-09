@@ -5237,12 +5237,9 @@ static bool StackDump(JSContext* cx, unsigned argc, Value* vp) {
 }
 #endif
 
-MOZ_ASAN_IGNORE static bool StackPointerInfo(JSContext* cx, unsigned argc,
-                                             Value* vp) {
+static bool StackPointerInfo(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  
-  
   
   
   args.rval().setInt32(int32_t(reinterpret_cast<size_t>(&args) & 0xfffffff));

@@ -214,10 +214,6 @@ bool DebuggerFrame::resume(const FrameIter& iter) {
   return true;
 }
 
-void DebuggerFrame::suspendWasmFrame(JS::GCContext* gcx) {
-  freeFrameIterData(gcx);
-}
-
 bool DebuggerFrame::hasAnyHooks() const {
   return !getReservedSlot(ONSTEP_HANDLER_SLOT).isUndefined() ||
          !getReservedSlot(ONPOP_HANDLER_SLOT).isUndefined();
@@ -1229,15 +1225,8 @@ Result<Completion> DebuggerFrame::eval(JSContext* cx,
 
 bool DebuggerFrame::isOnStack() const {
   
+  
   return !getFixedSlot(FRAME_ITER_SLOT).isUndefined();
-}
-
-bool DebuggerFrame::isOnStackOrSuspendedWasmStack() const {
-  
-  
-  
-  return !getFixedSlot(FRAME_ITER_SLOT).isUndefined() ||
-         getFixedSlot(GENERATOR_INFO_SLOT).isUndefined();
 }
 
 OnStepHandler* DebuggerFrame::onStepHandler() const {
