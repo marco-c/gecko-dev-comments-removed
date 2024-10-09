@@ -2,13 +2,13 @@
 
 
 
-__version__ = "11.2.1"
+__version__ = "10.0.2"
 
 
 
 
 
-MAX_DEPENDENCIES = 9999
+MAX_DEPENDENCIES = 99
 
 
 

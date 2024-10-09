@@ -3,7 +3,7 @@
 
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import List
 
 from .graph import Graph
 from .task import Task
@@ -21,7 +21,7 @@ class TaskGraph:
     tasks are "linked from" their dependents.
     """
 
-    tasks: Dict[str, Task]
+    tasks: List[Task]
     graph: Graph
 
     def __post_init__(self):

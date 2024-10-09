@@ -7,7 +7,7 @@ import logging
 import os
 import re
 import subprocess
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from shutil import which
 
 from taskgraph.util.path import ancestors
@@ -40,68 +40,52 @@ class Repository(ABC):
 
         try:
             return subprocess.check_output(  
-                cmd,  
-                cwd=self.path,
-                env=self._env,
-                encoding="utf-8",
-                **kwargs,
+                cmd, cwd=self.path, env=self._env, encoding="utf-8", **kwargs  
             )
         except subprocess.CalledProcessError as e:
             if e.returncode in return_codes:
                 return ""
             raise
 
-    @property
-    @abstractmethod
-    def tool(self) -> str:
+    @abstractproperty
+    def tool(self) -> str:  
         """Version control system being used, either 'hg' or 'git'."""
 
-    @property
-    @abstractmethod
-    def head_rev(self) -> str:
+    @abstractproperty
+    def head_rev(self) -> str:  
         """Hash of HEAD revision."""
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def base_rev(self):
         """Hash of revision the current topic branch is based on."""
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def branch(self):
         """Current branch or bookmark the checkout has active."""
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def all_remote_names(self):
         """Name of all configured remote repositories."""
 
-    @property
-    @abstractmethod
-    def default_remote_name(self) -> str:
+    @abstractproperty
+    def default_remote_name(self):
         """Name the VCS defines for the remote repository when cloning
         it for the first time. This name may not exist anymore if users
         changed the default configuration, for instance."""
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def remote_name(self):
         """Name of the remote repository."""
 
     def _get_most_suitable_remote(self, remote_instructions):
         remotes = self.all_remote_names
+        if len(remotes) == 1:  
+            return remotes[0]  
 
-        
-        if remotes is None:
-            raise RuntimeError("No valid remotes found")
-
-        if len(remotes) == 1:
-            return remotes[0]
-
-        if self.default_remote_name in remotes:
+        if self.default_remote_name in remotes:  
             return self.default_remote_name
 
-        first_remote = remotes[0]
+        first_remote = remotes[0]  
         logger.warning(
             f"Unable to determine which remote repository to use between: {remotes}. "
             f'Arbitrarily using the first one "{first_remote}". Please set an '
@@ -111,8 +95,7 @@ class Repository(ABC):
 
         return first_remote
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def default_branch(self):
         """Name of the default branch."""
 
@@ -194,13 +177,8 @@ class Repository(ABC):
 
 
 class HgRepository(Repository):
-    @property
-    def tool(self) -> str:
-        return "hg"
-
-    @property
-    def default_remote_name(self) -> str:
-        return "default"
+    tool = "hg"  
+    default_remote_name = "default"  
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -339,13 +317,8 @@ class HgRepository(Repository):
 
 
 class GitRepository(Repository):
-    @property
-    def tool(self) -> str:
-        return "git"
-
-    @property
-    def default_remote_name(self) -> str:
-        return "origin"
+    tool = "git"  
+    default_remote_name = "origin"  
 
     _LS_REMOTE_PATTERN = re.compile(r"ref:\s+refs/heads/(?P<branch_name>\S+)\s+HEAD")
 
