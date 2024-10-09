@@ -7,7 +7,7 @@
 
 
 
-import { setSymbols } from "./symbols";
+import { setSymbols } from "../sources/symbols";
 import { setInScopeLines } from "../ast/index";
 import { prettyPrintAndSelectSource } from "./prettyPrint";
 import { addTab, closeTab } from "../tabs";
@@ -37,6 +37,8 @@ import {
   hasPrettyTab,
   isSourceActorWithSourceMap,
   getSourceByActorId,
+  getSelectedFrame,
+  getCurrentThread,
 } from "../../selectors/index";
 
 
@@ -320,15 +322,28 @@ export function selectLocation(
       dispatch(closeTab(loadedSource));
     }
 
-    await dispatch(setSymbols(location));
+    const selectedFrame = getSelectedFrame(
+      getState(),
+      getCurrentThread(getState())
+    );
+    if (
+      selectedFrame &&
+      (selectedFrame.location.source.id == location.source.id ||
+        selectedFrame.generatedLocation.source.id == location.source.id)
+    ) {
+      
+      
+      
+      await dispatch(setSymbols(location));
 
-    
-    if (getSelectedLocation(getState()) != location) {
-      return;
+      
+      if (getSelectedLocation(getState()) != location) {
+        return;
+      }
+
+      
+      dispatch(setInScopeLines());
     }
-
-    
-    dispatch(setInScopeLines());
 
     
     

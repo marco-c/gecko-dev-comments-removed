@@ -14,6 +14,8 @@ add_task(async function () {
   await addBreakpoint(dbg, longSrc, 66);
   invokeInTab("testModel");
   await waitForPaused(dbg, "long.js");
+  
+  await waitForScrolling(getCM(dbg));
 
   const pauseScrollTop = getScrollTop(dbg);
 

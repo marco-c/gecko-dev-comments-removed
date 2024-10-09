@@ -57,12 +57,14 @@ export function paused(pauseInfo) {
 
       
       await dispatch(fetchScopes(selectedFrame));
+      validateSelectedFrame(getState(), selectedFrame);
 
       
       
       const atException = why.type == "exception";
       if (!atException || !isEvaluatingExpression(getState(), thread)) {
         await dispatch(evaluateExpressions(selectedFrame));
+        validateSelectedFrame(getState(), selectedFrame);
       }
     }
   };
