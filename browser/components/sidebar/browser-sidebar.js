@@ -867,6 +867,18 @@ var SidebarController = {
     return this.show(commandID, triggerNode);
   },
 
+  _toggleHideSidebar() {
+    const isHidden = this.sidebarContainer.hidden;
+    if (!isHidden && this.isOpen) {
+      
+      this.hide();
+    } else if (isHidden) {
+      
+      this.toggleExpanded(true);
+    }
+    this.sidebarContainer.hidden = !isHidden;
+  },
+
   async _animateSidebarMain() {
     let tabbox = document.getElementById("tabbrowser-tabbox");
     let animatingElements = [
@@ -894,7 +906,11 @@ var SidebarController = {
     };
     let fromRects = getRects();
 
-    this.toggleExpanded();
+    if (this.sidebarRevampVisibility === "hide-sidebar") {
+      this._toggleHideSidebar();
+    } else {
+      this.toggleExpanded();
+    }
 
     
     
@@ -971,27 +987,13 @@ var SidebarController = {
     }
   },
 
-  handleToolbarButtonClick() {
-    switch (this.sidebarRevampVisibility) {
-      case "always-show":
-        if (this._animationEnabled && !window.gReduceMotion) {
-          this._animateSidebarMain();
-        } else {
-          this.toggleExpanded();
-        }
-        break;
-      case "hide-sidebar": {
-        const isHidden = this.sidebarContainer.hidden;
-        if (!isHidden && this.isOpen) {
-          
-          this.hide();
-        }
-        
-        this.toggleExpanded(isHidden);
-        this.sidebarContainer.hidden = !isHidden;
-        this.updateToolbarButton();
-        break;
-      }
+  async handleToolbarButtonClick() {
+    if (this._animationEnabled && !window.gReduceMotion) {
+      this._animateSidebarMain();
+    } else if (this.sidebarRevampVisibility === "hide-sidebar") {
+      this._toggleHideSidebar();
+    } else {
+      this.toggleExpanded();
     }
   },
 
