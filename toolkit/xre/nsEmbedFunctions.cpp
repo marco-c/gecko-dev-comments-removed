@@ -113,10 +113,6 @@
 #  endif
 #endif
 
-#ifdef MOZ_JPROF
-#  include "jprof.h"
-#endif
-
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
 #  include "mozilla/sandboxing/SandboxInitialization.h"
 #  include "mozilla/sandboxing/sandboxLogging.h"
@@ -289,11 +285,6 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   
   
   mozilla::GetNumberOfProcessors();
-#endif
-
-#ifdef MOZ_JPROF
-  
-  setupProfilingStuff();
 #endif
 
 #if defined(XP_WIN)

@@ -217,10 +217,6 @@
 #  include "mozilla/Logging.h"
 #endif
 
-#ifdef MOZ_JPROF
-#  include "jprof.h"
-#endif
-
 #include "nsExceptionHandler.h"
 #include "nsICrashReporter.h"
 #include "nsIPrefService.h"
@@ -2507,11 +2503,6 @@ void UnlockProfile() {
 nsresult LaunchChild(bool aBlankCommandLine, bool aTryExec) {
   
   
-
-#ifdef MOZ_JPROF
-  
-  unsetenv("JPROF_ISCHILD");
-#endif
 
   if (aBlankCommandLine) {
     gRestartArgc = 1;
@@ -4869,11 +4860,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #ifdef MOZ_X11
   
   XRE_InstallX11ErrorHandler();
-#endif
-
-  
-#ifdef MOZ_JPROF
-  setupProfilingStuff();
 #endif
 
   bool canRun = false;
