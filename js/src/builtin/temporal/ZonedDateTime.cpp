@@ -1572,7 +1572,7 @@ static bool ZonedDateTime_era(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarEra(cx, zonedDateTime.calendar(), dateTime, args.rval());
+  return CalendarEra(cx, zonedDateTime.calendar(), dateTime.date, args.rval());
 }
 
 
@@ -1599,7 +1599,8 @@ static bool ZonedDateTime_eraYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarEraYear(cx, zonedDateTime.calendar(), dateTime, args.rval());
+  return CalendarEraYear(cx, zonedDateTime.calendar(), dateTime.date,
+                         args.rval());
 }
 
 
@@ -1626,7 +1627,7 @@ static bool ZonedDateTime_year(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarYear(cx, zonedDateTime.calendar(), dateTime, args.rval());
+  return CalendarYear(cx, zonedDateTime.calendar(), dateTime.date, args.rval());
 }
 
 
@@ -1653,7 +1654,8 @@ static bool ZonedDateTime_month(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarMonth(cx, zonedDateTime.calendar(), dateTime, args.rval());
+  return CalendarMonth(cx, zonedDateTime.calendar(), dateTime.date,
+                       args.rval());
 }
 
 
@@ -1680,7 +1682,8 @@ static bool ZonedDateTime_monthCode(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarMonthCode(cx, zonedDateTime.calendar(), dateTime, args.rval());
+  return CalendarMonthCode(cx, zonedDateTime.calendar(), dateTime.date,
+                           args.rval());
 }
 
 
@@ -1701,12 +1704,6 @@ static bool ZonedDateTime_day(JSContext* cx, const CallArgs& args) {
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
 
   
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, zonedDateTime.calendar(), &calendar)) {
-    return false;
-  }
-
-  
   PlainDateTime dateTime;
   if (!GetPlainDateTimeFor(cx, zonedDateTime.timeZone(),
                            zonedDateTime.instant(), &dateTime)) {
@@ -1714,7 +1711,7 @@ static bool ZonedDateTime_day(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarDay(cx, calendar, dateTime, args.rval());
+  return CalendarDay(cx, zonedDateTime.calendar(), dateTime.date, args.rval());
 }
 
 
@@ -1966,7 +1963,8 @@ static bool ZonedDateTime_dayOfWeek(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarDayOfWeek(cx, zonedDateTime.calendar(), dateTime, args.rval());
+  return CalendarDayOfWeek(cx, zonedDateTime.calendar(), dateTime.date,
+                           args.rval());
 }
 
 
@@ -1994,7 +1992,8 @@ static bool ZonedDateTime_dayOfYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarDayOfYear(cx, zonedDateTime.calendar(), dateTime, args.rval());
+  return CalendarDayOfYear(cx, zonedDateTime.calendar(), dateTime.date,
+                           args.rval());
 }
 
 
@@ -2022,7 +2021,7 @@ static bool ZonedDateTime_weekOfYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarWeekOfYear(cx, zonedDateTime.calendar(), dateTime,
+  return CalendarWeekOfYear(cx, zonedDateTime.calendar(), dateTime.date,
                             args.rval());
 }
 
@@ -2051,7 +2050,7 @@ static bool ZonedDateTime_yearOfWeek(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarYearOfWeek(cx, zonedDateTime.calendar(), dateTime,
+  return CalendarYearOfWeek(cx, zonedDateTime.calendar(), dateTime.date,
                             args.rval());
 }
 
@@ -2153,7 +2152,7 @@ static bool ZonedDateTime_daysInWeek(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarDaysInWeek(cx, zonedDateTime.calendar(), dateTime,
+  return CalendarDaysInWeek(cx, zonedDateTime.calendar(), dateTime.date,
                             args.rval());
 }
 
@@ -2182,7 +2181,7 @@ static bool ZonedDateTime_daysInMonth(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarDaysInMonth(cx, zonedDateTime.calendar(), dateTime,
+  return CalendarDaysInMonth(cx, zonedDateTime.calendar(), dateTime.date,
                              args.rval());
 }
 
@@ -2211,7 +2210,7 @@ static bool ZonedDateTime_daysInYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarDaysInYear(cx, zonedDateTime.calendar(), dateTime,
+  return CalendarDaysInYear(cx, zonedDateTime.calendar(), dateTime.date,
                             args.rval());
 }
 
@@ -2240,7 +2239,7 @@ static bool ZonedDateTime_monthsInYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarMonthsInYear(cx, zonedDateTime.calendar(), dateTime,
+  return CalendarMonthsInYear(cx, zonedDateTime.calendar(), dateTime.date,
                               args.rval());
 }
 
@@ -2270,7 +2269,7 @@ static bool ZonedDateTime_inLeapYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return CalendarInLeapYear(cx, zonedDateTime.calendar(), dateTime,
+  return CalendarInLeapYear(cx, zonedDateTime.calendar(), dateTime.date,
                             args.rval());
 }
 

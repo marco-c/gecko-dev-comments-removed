@@ -1854,13 +1854,11 @@ static bool PlainDate_calendarId(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_era(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarEra(cx, calendar, temporalDate, args.rval());
+  return CalendarEra(cx, calendar, ToPlainDate(temporalDate), args.rval());
 }
 
 
@@ -1876,13 +1874,11 @@ static bool PlainDate_era(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_eraYear(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarEraYear(cx, calendar, temporalDate, args.rval());
+  return CalendarEraYear(cx, calendar, ToPlainDate(temporalDate), args.rval());
 }
 
 
@@ -1898,13 +1894,11 @@ static bool PlainDate_eraYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_year(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarYear(cx, calendar, temporalDate, args.rval());
+  return CalendarYear(cx, calendar, ToPlainDate(temporalDate), args.rval());
 }
 
 
@@ -1920,13 +1914,11 @@ static bool PlainDate_year(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_month(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarMonth(cx, calendar, temporalDate, args.rval());
+  return CalendarMonth(cx, calendar, ToPlainDate(temporalDate), args.rval());
 }
 
 
@@ -1942,13 +1934,12 @@ static bool PlainDate_month(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_monthCode(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarMonthCode(cx, calendar, temporalDate, args.rval());
+  return CalendarMonthCode(cx, calendar, ToPlainDate(temporalDate),
+                           args.rval());
 }
 
 
@@ -1964,13 +1955,11 @@ static bool PlainDate_monthCode(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_day(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarDay(cx, calendar, temporalDate, args.rval());
+  return CalendarDay(cx, calendar, ToPlainDate(temporalDate), args.rval());
 }
 
 
@@ -1986,13 +1975,12 @@ static bool PlainDate_day(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_dayOfWeek(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarDayOfWeek(cx, calendar, temporalDate, args.rval());
+  return CalendarDayOfWeek(cx, calendar, ToPlainDate(temporalDate),
+                           args.rval());
 }
 
 
@@ -2008,13 +1996,12 @@ static bool PlainDate_dayOfWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_dayOfYear(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarDayOfYear(cx, calendar, temporalDate, args.rval());
+  return CalendarDayOfYear(cx, calendar, ToPlainDate(temporalDate),
+                           args.rval());
 }
 
 
@@ -2030,13 +2017,12 @@ static bool PlainDate_dayOfYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_weekOfYear(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarWeekOfYear(cx, calendar, temporalDate, args.rval());
+  return CalendarWeekOfYear(cx, calendar, ToPlainDate(temporalDate),
+                            args.rval());
 }
 
 
@@ -2052,13 +2038,12 @@ static bool PlainDate_weekOfYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_yearOfWeek(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarYearOfWeek(cx, calendar, temporalDate, args.rval());
+  return CalendarYearOfWeek(cx, calendar, ToPlainDate(temporalDate),
+                            args.rval());
 }
 
 
@@ -2074,13 +2059,12 @@ static bool PlainDate_yearOfWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_daysInWeek(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarDaysInWeek(cx, calendar, temporalDate, args.rval());
+  return CalendarDaysInWeek(cx, calendar, ToPlainDate(temporalDate),
+                            args.rval());
 }
 
 
@@ -2096,13 +2080,12 @@ static bool PlainDate_daysInWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_daysInMonth(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarDaysInMonth(cx, calendar, temporalDate, args.rval());
+  return CalendarDaysInMonth(cx, calendar, ToPlainDate(temporalDate),
+                             args.rval());
 }
 
 
@@ -2118,13 +2101,12 @@ static bool PlainDate_daysInMonth(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_daysInYear(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarDaysInYear(cx, calendar, temporalDate, args.rval());
+  return CalendarDaysInYear(cx, calendar, ToPlainDate(temporalDate),
+                            args.rval());
 }
 
 
@@ -2140,13 +2122,12 @@ static bool PlainDate_daysInYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_monthsInYear(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarMonthsInYear(cx, calendar, temporalDate, args.rval());
+  return CalendarMonthsInYear(cx, calendar, ToPlainDate(temporalDate),
+                              args.rval());
 }
 
 
@@ -2162,13 +2143,12 @@ static bool PlainDate_monthsInYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_inLeapYear(JSContext* cx, const CallArgs& args) {
-  
-  Rooted<PlainDateObject*> temporalDate(
-      cx, &args.thisv().toObject().as<PlainDateObject>());
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-  return CalendarInLeapYear(cx, calendar, temporalDate, args.rval());
+  return CalendarInLeapYear(cx, calendar, ToPlainDate(temporalDate),
+                            args.rval());
 }
 
 
