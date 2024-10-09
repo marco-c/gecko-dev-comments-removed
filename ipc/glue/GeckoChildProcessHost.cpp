@@ -254,7 +254,6 @@ class BaseProcessLauncher {
   char mChildIDString[32];
 
   
-  IPC::Channel::ChannelHandle mClientChannelHandle;
   nsCOMPtr<nsIFile> mAppDir;
 };
 
@@ -287,16 +286,13 @@ class PosixProcessLauncher : public BaseProcessLauncher {
   PosixProcessLauncher(GeckoChildProcessHost* aHost,
                        geckoargs::ChildProcessArgs&& aExtraOpts)
       : BaseProcessLauncher(aHost, std::move(aExtraOpts)),
-        mProfileDir(aHost->mProfileDir),
-        mChannelDstFd(IPC::Channel::GetClientChannelHandle()) {}
+        mProfileDir(aHost->mProfileDir) {}
 
  protected:
   virtual Result<Ok, LaunchError> DoSetup() override;
   virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
 
   nsCOMPtr<nsIFile> mProfileDir;
-
-  int mChannelDstFd;
 };
 
 #  if defined(XP_MACOSX)
@@ -1177,7 +1173,7 @@ Result<Ok, LaunchError> BaseProcessLauncher::DoFinishLaunch() {
   
   
   
-  mClientChannelHandle = nullptr;
+  mChildArgs.mFiles.clear();
 
   return Ok();
 }
@@ -1262,22 +1258,6 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
 
   FilePath exePath;
   BinPathType pathType = GetPathToBinary(exePath, mProcessType);
-
-  
-  
-  
-  if (mProcessType != GeckoProcessType_ForkServer) {
-#  if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_UIKIT)
-    
-    
-    MOZ_ASSERT(mChannelDstFd >= 0);
-#  endif
-    mLaunchOptions->fds_to_remap.push_back(
-        std::pair<int, int>(mClientChannelHandle.get(), mChannelDstFd));
-  }
-
-  
-  
 
   
   
@@ -1587,16 +1567,8 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   }
 #  endif  
 
-  
-  std::wstring processChannelID =
-      std::to_wstring(uint32_t(uintptr_t(mClientChannelHandle.get())));
-  mLaunchOptions->handles_to_inherit.push_back(mClientChannelHandle.get());
-  mCmdLine->AppendSwitchWithValue(switches::kProcessChannelID,
-                                  processChannelID);
-
-  for (std::vector<std::string>::iterator it = mExtraOpts.begin();
-       it != mExtraOpts.end(); ++it) {
-    mCmdLine->AppendLooseValue(UTF8ToWide(*it));
+  for (const std::string& arg : mChildArgs.mArgs) {
+    mCmdLine->AppendLooseValue(UTF8ToWide(arg));
   }
 
 #  if defined(MOZ_SANDBOX)
@@ -1937,11 +1909,13 @@ RefPtr<ProcessLaunchPromise> BaseProcessLauncher::Launch(
   
   if (mProcessType != GeckoProcessType_ForkServer) {
     IPC::Channel::ChannelHandle serverHandle;
-    if (!IPC::Channel::CreateRawPipe(&serverHandle, &mClientChannelHandle)) {
+    IPC::Channel::ChannelHandle clientHandle;
+    if (!IPC::Channel::CreateRawPipe(&serverHandle, &clientHandle)) {
       return ProcessLaunchPromise::CreateAndReject(LaunchError("CreateRawPipe"),
                                                    __func__);
     }
     aHost->InitializeChannel(std::move(serverHandle));
+    geckoargs::sIPCHandle.Put(std::move(clientHandle), mChildArgs);
   }
 
   return InvokeAsync(mLaunchThread, this, __func__,

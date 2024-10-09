@@ -295,14 +295,15 @@ class IPDLUnitTestProcessChild : public ipc::ProcessChild {
 
 
 extern UniquePtr<ipc::ProcessChild> (*gMakeIPDLUnitTestProcessChild)(
-    base::ProcessId, const nsID&);
+    IPC::Channel::ChannelHandle, base::ProcessId, const nsID&);
 
 
 int _childProcessEntryPointStaticConstructor = ([] {
   gMakeIPDLUnitTestProcessChild =
-      [](base::ProcessId aParentPid,
+      [](IPC::Channel::ChannelHandle aClientChannel, base::ProcessId aParentPid,
          const nsID& aMessageChannelId) -> UniquePtr<ipc::ProcessChild> {
-    return MakeUnique<IPDLUnitTestProcessChild>(aParentPid, aMessageChannelId);
+    return MakeUnique<IPDLUnitTestProcessChild>(std::move(aClientChannel),
+                                                aParentPid, aMessageChannelId);
   };
   return 0;
 })();
