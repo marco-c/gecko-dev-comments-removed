@@ -59,7 +59,8 @@ class VendorPython(MozbuildObject):
         self.log_manager.enable_unstructured()
 
         vendor_dir = Path(self.topsrcdir) / "third_party" / "python"
-        requirements_txt = vendor_dir / "requirements.txt"
+        requirements_file_name = "requirements.txt"
+        requirements_path = vendor_dir / requirements_file_name
         uv_lock_file = vendor_dir / "uv.lock"
         vendored_lock_file_hash_file = vendor_dir / "uv.lock.hash"
 
@@ -109,7 +110,7 @@ class VendorPython(MozbuildObject):
                 "--format",
                 "requirements-txt",
                 "-o",
-                requirements_txt,
+                requirements_file_name,
                 "-q",
             ],
             cwd=vendor_dir,
@@ -122,7 +123,7 @@ class VendorPython(MozbuildObject):
         
         
         
-        remove_environment_markers_from_requirements_txt(requirements_txt)
+        remove_environment_markers_from_requirements_txt(requirements_path)
 
         with TemporaryDirectory() as tmp:
             
@@ -134,7 +135,7 @@ class VendorPython(MozbuildObject):
                     "pip",
                     "download",
                     "-r",
-                    str(requirements_txt),
+                    str(requirements_path),
                     "--no-deps",
                     "--dest",
                     tmp,
