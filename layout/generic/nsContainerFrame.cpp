@@ -2258,6 +2258,8 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   const bool hasIntrinsicBSize = maybeIntrinsicBSize.isSome();
   nscoord intrinsicBSize = std::max(0, maybeIntrinsicBSize.valueOr(0));
 
+  Maybe<nscoord> iSizeToFillCB;
+  Maybe<nscoord> bSizeToFillCB;
   if (!isAutoOrMaxContentISize) {
     iSize = ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
                               boxSizingToMarginEdgeISize, styleISize,
@@ -2280,8 +2282,8 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
       }
       if (stretchI != eNoStretch ||
           aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) {
-        iSize = std::max(nscoord(0), cbSize - aBorderPadding.ISize(aWM) -
-                                         aMargin.ISize(aWM));
+        iSizeToFillCB.emplace(std::max(
+            0, cbSize - aBorderPadding.ISize(aWM) - aMargin.ISize(aWM)));
       }
     } else {
       
@@ -2340,8 +2342,8 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
       }
       if (stretchB != eNoStretch ||
           aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize)) {
-        bSize = std::max(nscoord(0), cbSize - aBorderPadding.BSize(aWM) -
-                                         aMargin.BSize(aWM));
+        bSizeToFillCB.emplace(std::max(
+            0, cbSize - aBorderPadding.BSize(aWM) - aMargin.BSize(aWM)));
       }
     } else {
       
@@ -2376,6 +2378,16 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
 
   NS_ASSERTION(aCBSize.ISize(aWM) != NS_UNCONSTRAINEDSIZE,
                "Our containing block must not have unconstrained inline-size!");
+  MOZ_ASSERT(!(stretchI != eNoStretch ||
+               aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) ||
+                 iSizeToFillCB,
+             "iSizeToFillCB must be valid when stretching or clamping in the "
+             "inline axis!");
+  MOZ_ASSERT(!(stretchB != eNoStretch ||
+               aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize)) ||
+                 bSizeToFillCB,
+             "bSizeToFillCB must be valid when stretching or clamping in the "
+             "block axis!");
 
   
   if (isAutoOrMaxContentISize) {
@@ -2405,7 +2417,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
       
       
       if (aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize) &&
-          stretchI != eStretch && tentISize > iSize) {
+          stretchI != eStretch && tentISize > *iSizeToFillCB) {
         stretchI = (stretchB == eStretch ? eStretch : eStretchPreservingRatio);
       }
 
@@ -2420,40 +2432,41 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
 
       
       if (aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize) &&
-          stretchB != eStretch && tentBSize > bSize) {
+          stretchB != eStretch && tentBSize > *bSizeToFillCB) {
         stretchB = (stretchI == eStretch ? eStretch : eStretchPreservingRatio);
       }
 
       
       if (stretchI == eStretch) {
-        tentISize = iSize;  
+        tentISize = *iSizeToFillCB;  
         if (stretchB == eStretch) {
-          tentBSize = bSize;  
+          tentBSize = *bSizeToFillCB;  
         } else if (aspectRatio) {
           
           tentBSize = aspectRatio.ComputeRatioDependentSize(
-              LogicalAxis::Block, aWM, iSize, boxSizingAdjust);
+              LogicalAxis::Block, aWM, *iSizeToFillCB, boxSizingAdjust);
         }
       } else if (stretchB == eStretch) {
-        tentBSize = bSize;  
+        tentBSize = *bSizeToFillCB;  
         if (aspectRatio) {
           tentISize = aspectRatio.ComputeRatioDependentSize(
-              LogicalAxis::Inline, aWM, bSize, boxSizingAdjust);
+              LogicalAxis::Inline, aWM, *bSizeToFillCB, boxSizingAdjust);
         }
       } else if (stretchI == eStretchPreservingRatio && aspectRatio) {
-        tentISize = iSize;  
+        tentISize = *iSizeToFillCB;  
         tentBSize = aspectRatio.ComputeRatioDependentSize(
-            LogicalAxis::Block, aWM, iSize, boxSizingAdjust);
-        if (stretchB == eStretchPreservingRatio && tentBSize > bSize) {
+            LogicalAxis::Block, aWM, *iSizeToFillCB, boxSizingAdjust);
+        if (stretchB == eStretchPreservingRatio && tentBSize > *bSizeToFillCB) {
           
-          tentBSize = bSize;  
+          tentBSize = *bSizeToFillCB;  
           tentISize = aspectRatio.ComputeRatioDependentSize(
-              LogicalAxis::Inline, aWM, bSize, boxSizingAdjust);
+              LogicalAxis::Inline, aWM, *bSizeToFillCB, boxSizingAdjust);
         }
       } else if (stretchB == eStretchPreservingRatio && aspectRatio) {
-        tentBSize = bSize;  
+        
+        tentBSize = *bSizeToFillCB;
         tentISize = aspectRatio.ComputeRatioDependentSize(
-            LogicalAxis::Inline, aWM, bSize, boxSizingAdjust);
+            LogicalAxis::Inline, aWM, *bSizeToFillCB, boxSizingAdjust);
       }
 
       
@@ -2477,40 +2490,39 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     } else {
       
       bSize = CSSMinMax(bSize, minBSize, maxBSize);
-      if (stretchI != eStretch) {
-        if (aspectRatio) {
-          iSize = aspectRatio.ComputeRatioDependentSize(
-              LogicalAxis::Inline, aWM, bSize, boxSizingAdjust);
-        } else if (hasIntrinsicISize) {
-          if (!(aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize) &&
-                intrinsicISize > iSize)) {
-            iSize = intrinsicISize;
-          }  
-        } else {
-          iSize = fallbackIntrinsicSize.ISize(aWM);
-        }
-      }  
+      if (stretchI == eStretch) {
+        iSize = *iSizeToFillCB;
+      } else if (aspectRatio) {
+        iSize = aspectRatio.ComputeRatioDependentSize(LogicalAxis::Inline, aWM,
+                                                      bSize, boxSizingAdjust);
+      } else if (hasIntrinsicISize) {
+        iSize = aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize) &&
+                        intrinsicISize > *iSizeToFillCB
+                    ? *iSizeToFillCB
+                    : intrinsicISize;
+      } else {
+        iSize = fallbackIntrinsicSize.ISize(aWM);
+      }
       iSize = CSSMinMax(iSize, minISize, maxISize);
     }
   } else {
     if (isAutoBSize) {
       
       iSize = CSSMinMax(iSize, minISize, maxISize);
-      if (stretchB != eStretch) {
-        if (aspectRatio) {
-          bSize = aspectRatio.ComputeRatioDependentSize(LogicalAxis::Block, aWM,
-                                                        iSize, boxSizingAdjust);
-        } else if (hasIntrinsicBSize) {
-          if (!(aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize) &&
-                intrinsicBSize > bSize)) {
-            bSize = intrinsicBSize;
-          }  
-        } else {
-          bSize = fallbackIntrinsicSize.BSize(aWM);
-        }
-      }  
+      if (stretchB == eStretch) {
+        bSize = *bSizeToFillCB;
+      } else if (aspectRatio) {
+        bSize = aspectRatio.ComputeRatioDependentSize(LogicalAxis::Block, aWM,
+                                                      iSize, boxSizingAdjust);
+      } else if (hasIntrinsicBSize) {
+        bSize = aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize) &&
+                        intrinsicBSize > *bSizeToFillCB
+                    ? *bSizeToFillCB
+                    : intrinsicBSize;
+      } else {
+        bSize = fallbackIntrinsicSize.BSize(aWM);
+      }
       bSize = CSSMinMax(bSize, minBSize, maxBSize);
-
     } else {
       
       iSize = CSSMinMax(iSize, minISize, maxISize);
