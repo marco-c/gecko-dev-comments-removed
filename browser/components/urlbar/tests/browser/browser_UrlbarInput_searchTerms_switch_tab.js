@@ -112,7 +112,7 @@ add_task(async function user_overwrites_search_term_with_blank_string() {
 
   
   
-  assertSearchStringIsInUrlbar(SEARCH_STRING, { userTypedValue: "" });
+  assertSearchStringIsInUrlbar(SEARCH_STRING);
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
