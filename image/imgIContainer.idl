@@ -21,9 +21,12 @@ webidl Document;
 #include "limits.h"
 
 class gfxContext;
+class nsIFrame;
 
 namespace mozilla {
-struct AspectRatio;
+class TimeStamp;
+class SVGImageContext;
+struct MediaFeatureChange;
 
 namespace gfx {
 class SourceSurface;
@@ -33,31 +36,19 @@ class WindowRenderer;
 namespace layers {
 class ImageContainer;
 }
-}
 
-class nsIFrame;
-
-namespace mozilla {
-class TimeStamp;
-class SVGImageContext;
-struct MediaFeatureChange;
-}
-
-namespace mozilla {
 namespace image {
-
 class ImageRegion;
 class ImageIntRegion;
 class WebRenderImageProvider;
 struct Orientation;
 struct Resolution;
-
 }
 }
 
 %}
 
-native MaybeAspectRatio(mozilla::Maybe<mozilla::AspectRatio>);
+native AspectRatio(mozilla::AspectRatio);
 native ImgDrawResult(mozilla::image::ImgDrawResult);
 [ptr] native gfxContext(gfxContext);
 [ref] native gfxMatrix(gfxMatrix);
@@ -118,7 +109,8 @@ interface imgIContainer : nsISupports
 
 
 
-  [notxpcom, nostdcall] readonly attribute MaybeAspectRatio intrinsicRatio;
+
+  [notxpcom, nostdcall] readonly attribute AspectRatio intrinsicRatio;
 
   
 
