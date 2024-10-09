@@ -758,13 +758,9 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
   if (IsSmallPopup()) {
     return false;
   }
-  
-  
-  
   if (mWindowType == WindowType::Popup) {
-    return HasRemoteContent() && mCompositedScreen;
+    return HasRemoteContent();
   }
-
   return true;
 }
 
@@ -5911,7 +5907,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   ConstrainSize(&mBounds.width, &mBounds.height);
   mLastSizeRequest = mBounds.Size();
 
-  bool popupNeedsAlphaVisual =
+  const bool popupNeedsAlphaVisual =
       mWindowType == WindowType::Popup && aInitData &&
       aInitData->mTransparencyMode == TransparencyMode::Transparent;
 
@@ -6009,6 +6005,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
         gtk_widget_set_visual(mShell, visual);
         mHasAlphaVisual = true;
       }
+    } else {
+      
+      mIsTransparent = false;
     }
   }
 
@@ -6830,8 +6829,13 @@ void nsWindow::SetTransparencyMode(TransparencyMode aMode) {
     
     
     if (isTransparent) {
-      NS_WARNING("Transparent mode not supported on non-popup windows.");
+      NS_WARNING(
+          "Non-initial transparent mode not supported on non-popup windows.");
     }
+    return;
+  }
+
+  if (!mCompositedScreen) {
     return;
   }
 
