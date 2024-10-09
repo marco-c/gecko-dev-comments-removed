@@ -390,7 +390,7 @@ static bool MaybeFormatTimeZoneAnnotation(JSContext* cx,
 
 
 JSString* js::temporal::TemporalInstantToString(JSContext* cx,
-                                                Handle<InstantObject*> instant,
+                                                const Instant& instant,
                                                 Handle<TimeZoneValue> timeZone,
                                                 Precision precision) {
   TemporalStringBuilder result(cx, TemporalStringFormat::Instant);
@@ -413,7 +413,7 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
   }
 
   
-  auto dateTime = GetPlainDateTimeFor(ToInstant(instant), offsetNanoseconds);
+  auto dateTime = GetPlainDateTimeFor(instant, offsetNanoseconds);
 
   
   FormatDateTimeString(result, dateTime, precision);

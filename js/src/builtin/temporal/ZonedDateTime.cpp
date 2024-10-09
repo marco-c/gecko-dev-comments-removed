@@ -148,7 +148,7 @@ bool js::temporal::InterpretISODateTimeOffset(
              offsetOption == TemporalOffset::Reject);
 
   
-  Rooted<InstantVector> possibleInstants(cx, InstantVector(cx));
+  PossibleInstants possibleInstants;
   if (!GetPossibleInstantsFor(cx, timeZone, temporalDateTime,
                               &possibleInstants)) {
     return false;
@@ -157,10 +157,7 @@ bool js::temporal::InterpretISODateTimeOffset(
   
   if (!possibleInstants.empty()) {
     
-    Rooted<Wrapped<InstantObject*>> candidate(cx);
-    for (size_t i = 0; i < possibleInstants.length(); i++) {
-      candidate = possibleInstants[i];
-
+    for (const auto& candidate : possibleInstants) {
       
       int64_t candidateNanoseconds;
       if (!GetOffsetNanosecondsFor(cx, timeZone, candidate,
@@ -172,12 +169,7 @@ bool js::temporal::InterpretISODateTimeOffset(
 
       
       if (candidateNanoseconds == offsetNanoseconds) {
-        auto* unwrapped = candidate.unwrap(cx);
-        if (!unwrapped) {
-          return false;
-        }
-
-        *result = ToInstant(unwrapped);
+        *result = candidate;
         return true;
       }
 
@@ -189,13 +181,8 @@ bool js::temporal::InterpretISODateTimeOffset(
 
         
         if (roundedCandidateNanoseconds == offsetNanoseconds) {
-          auto* unwrapped = candidate.unwrap(cx);
-          if (!unwrapped) {
-            return false;
-          }
-
           
-          *result = ToInstant(unwrapped);
+          *result = candidate;
           return true;
         }
       }
@@ -210,20 +197,15 @@ bool js::temporal::InterpretISODateTimeOffset(
   }
 
   
-  Rooted<Wrapped<InstantObject*>> instant(cx);
+  Instant instant;
   if (!DisambiguatePossibleInstants(cx, possibleInstants, timeZone,
                                     ToPlainDateTime(temporalDateTime),
                                     disambiguation, &instant)) {
     return false;
   }
 
-  auto* unwrappedInstant = instant.unwrap(cx);
-  if (!unwrappedInstant) {
-    return false;
-  }
-
   
-  *result = ToInstant(unwrappedInstant);
+  *result = instant;
   return true;
 }
 
@@ -2478,17 +2460,18 @@ static bool ZonedDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<PlainDateTimeObject*> dateTime(
-      cx,
-      GetPlainDateTimeFor(cx, instant, calendar.receiver(), offsetNanoseconds));
-  if (!dateTime) {
+  auto dateTime = GetPlainDateTimeFor(instant, offsetNanoseconds);
+  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
+  Rooted<PlainDateTimeObject*> dateTimeObj(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar.receiver()));
+  if (!dateTimeObj) {
     return false;
   }
 
   
   Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, dateTime,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, dateTimeObj,
                                           {
                                               CalendarField::Day,
                                               CalendarField::Month,
@@ -2506,12 +2489,12 @@ static bool ZonedDateTime_with(JSContext* cx, const CallArgs& args) {
     FieldName name;
     int32_t value;
   } timeFields[] = {
-      {&JSAtomState::hour, dateTime->isoHour()},
-      {&JSAtomState::minute, dateTime->isoMinute()},
-      {&JSAtomState::second, dateTime->isoSecond()},
-      {&JSAtomState::millisecond, dateTime->isoMillisecond()},
-      {&JSAtomState::microsecond, dateTime->isoMicrosecond()},
-      {&JSAtomState::nanosecond, dateTime->isoNanosecond()},
+      {&JSAtomState::hour, dateTime.time.hour},
+      {&JSAtomState::minute, dateTime.time.minute},
+      {&JSAtomState::second, dateTime.time.second},
+      {&JSAtomState::millisecond, dateTime.time.millisecond},
+      {&JSAtomState::microsecond, dateTime.time.microsecond},
+      {&JSAtomState::nanosecond, dateTime.time.nanosecond},
   };
 
   Rooted<Value> timeFieldValue(cx);
@@ -3508,9 +3491,14 @@ static bool ZonedDateTime_toPlainDateTime(JSContext* cx, const CallArgs& args) {
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
 
   
-  auto* result =
-      GetPlainDateTimeFor(cx, zonedDateTime.timeZone(), zonedDateTime.instant(),
-                          zonedDateTime.calendar());
+  PlainDateTime dateTime;
+  if (!GetPlainDateTimeFor(cx, zonedDateTime.timeZone(),
+                           zonedDateTime.instant(), &dateTime)) {
+    return false;
+  }
+  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
+
+  auto* result = CreateTemporalDateTime(cx, dateTime, zonedDateTime.calendar());
   if (!result) {
     return false;
   }

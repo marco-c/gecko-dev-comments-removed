@@ -547,7 +547,11 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
       }
 
       
-      return GetPlainDateTimeFor(cx, timeZone, epochInstant, calendar);
+      PlainDateTime dateTime;
+      if (!GetPlainDateTimeFor(cx, timeZone, epochInstant, &dateTime)) {
+        return nullptr;
+      }
+      return CreateTemporalDateTime(cx, dateTime, calendar);
     }
 
     
@@ -2502,7 +2506,8 @@ static bool PlainDateTime_toZonedDateTime(JSContext* cx, const CallArgs& args) {
 
   
   Instant instant;
-  if (!GetInstantFor(cx, timeZone, dateTime, disambiguation, &instant)) {
+  if (!GetInstantFor(cx, timeZone, ToPlainDateTime(dateTime), disambiguation,
+                     &instant)) {
     return false;
   }
 

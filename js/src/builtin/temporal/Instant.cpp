@@ -1166,14 +1166,8 @@ static bool Instant_toString(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto ns = RoundTemporalInstant(instant, precision.increment, precision.unit,
-                                 roundingMode);
-
-  
-  Rooted<InstantObject*> roundedInstant(cx, CreateTemporalInstant(cx, ns));
-  if (!roundedInstant) {
-    return false;
-  }
+  auto roundedInstant = RoundTemporalInstant(instant, precision.increment,
+                                             precision.unit, roundingMode);
 
   
   JSString* str = TemporalInstantToString(cx, roundedInstant, timeZone,
@@ -1199,8 +1193,7 @@ static bool Instant_toString(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Instant_toLocaleString(JSContext* cx, const CallArgs& args) {
-  Rooted<InstantObject*> instant(cx,
-                                 &args.thisv().toObject().as<InstantObject>());
+  auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
 
   
   Rooted<TimeZoneValue> timeZone(cx);
@@ -1227,8 +1220,7 @@ static bool Instant_toLocaleString(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Instant_toJSON(JSContext* cx, const CallArgs& args) {
-  Rooted<InstantObject*> instant(cx,
-                                 &args.thisv().toObject().as<InstantObject>());
+  auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
 
   
   Rooted<TimeZoneValue> timeZone(cx);
