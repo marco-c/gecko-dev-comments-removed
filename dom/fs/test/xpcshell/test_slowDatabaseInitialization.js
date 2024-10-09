@@ -58,8 +58,7 @@ add_task(
       ok(false, "Should have thrown");
     } catch (e) {
       ok(true, "Should have thrown");
-      
-      Assert.strictEqual(e, undefined, "Threw right result code");
+      Assert.strictEqual(e.name, "AbortError", "Threw right result code");
     }
 
     info("Waiting for origin to finish clearing");
