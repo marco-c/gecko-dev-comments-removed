@@ -169,7 +169,6 @@ class HTMLEditUtils final {
 
 
 
-
   [[nodiscard]] static bool IsBlockElement(const nsIContent& aContent,
                                            BlockInlineCheck aBlockInlineCheck);
 

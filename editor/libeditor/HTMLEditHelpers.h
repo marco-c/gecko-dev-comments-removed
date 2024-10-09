@@ -46,11 +46,7 @@ enum class BlockInlineCheck : uint8_t {
   UseHTMLDefaultStyle,
   
   
-  
-  
   UseComputedDisplayOutsideStyle,
-  
-  
   
   
   

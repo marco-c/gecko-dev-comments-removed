@@ -231,8 +231,7 @@ bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent,
   if (aContent.IsHTMLElement(nsGkAtoms::br)) {
     return false;
   }
-  if (!StaticPrefs::editor_block_inline_check_use_computed_style() ||
-      aBlockInlineCheck == BlockInlineCheck::UseHTMLDefaultStyle) {
+  if (aBlockInlineCheck == BlockInlineCheck::UseHTMLDefaultStyle) {
     return IsHTMLBlockElementByDefault(aContent);
   }
   
@@ -284,8 +283,7 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
   if (aContent.IsHTMLElement(nsGkAtoms::br)) {
     return true;
   }
-  if (!StaticPrefs::editor_block_inline_check_use_computed_style() ||
-      aBlockInlineCheck == BlockInlineCheck::UseHTMLDefaultStyle) {
+  if (aBlockInlineCheck == BlockInlineCheck::UseHTMLDefaultStyle) {
     return !IsHTMLBlockElementByDefault(aContent);
   }
   
@@ -963,9 +961,6 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
 
   const auto [isListItem, isTableCell, hasAppearance] =
       [&]() MOZ_NEVER_INLINE_DEBUG -> std::tuple<bool, bool, bool> {
-    if (!StaticPrefs::editor_block_inline_check_use_computed_style()) {
-      return {IsListItem(&aNode), IsTableCell(&aNode), false};
-    }
     
     
     if (aNode.OwnerDoc()->GetDocumentElement() == &aNode ||

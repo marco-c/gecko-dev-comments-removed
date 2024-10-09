@@ -98,7 +98,6 @@ interface nsIHTMLEditor : nsISupports
 
 
 
-
   [can_run_script]
   boolean nodeIsBlock(in Node aNode);
 
