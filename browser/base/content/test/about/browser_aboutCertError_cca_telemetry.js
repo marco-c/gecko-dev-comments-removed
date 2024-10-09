@@ -1,16 +1,13 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
 const ISSUED_BY_CCA_SITE = "https://issued-by-cca.example.com";
 const UNKNOWN_ISSUER_SITE = "https://untrusted.example.com";
 
-Services.telemetry.setEventRecordingEnabled("security.ui.certerror", true);
-
 registerCleanupFunction(async () => {
   await resetTelemetry();
-  Services.telemetry.setEventRecordingEnabled("security.ui.certerror", false);
 });
 
 async function resetTelemetry() {
@@ -65,7 +62,7 @@ add_task(async function test_cca_site() {
   );
   info("Loading and waiting for the certificate error page");
   await pageLoaded;
-  
+  // Check that telemetry indicates this was issued by CCA.
   await checkTelemetry("true");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
@@ -88,7 +85,7 @@ add_task(async function test_non_cca_site() {
   );
   info("Loading and waiting for the certificate error page");
   await pageLoaded;
-  
+  // Check that telemetry indicates this was not issued by CCA.
   await checkTelemetry("false");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

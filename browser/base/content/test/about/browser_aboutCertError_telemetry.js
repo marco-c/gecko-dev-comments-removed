@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -19,18 +19,18 @@ add_task(async function checkTelemetryClickEvents() {
     Services.telemetry.canRecordExtended = oldCanRecord;
   });
 
-  
-  
-  
+  // For obvious reasons event telemetry in the content processes updates with
+  // the main processs asynchronously, so we need to wait for the main process
+  // to catch up through the entire test.
 
-  
-  
-  
-  
-  
+  // There's an arbitrary interval of 2 seconds in which the content
+  // processes sync their event data with the parent process, we wait
+  // this out to ensure that we clear everything that is left over from
+  // previous tests and don't receive random events in the middle of our tests.
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
   await new Promise(c => setTimeout(c, 2000));
 
-  
+  // Clear everything.
   Services.telemetry.clearEvents();
   await TestUtils.waitForCondition(() => {
     let events = Services.telemetry.snapshotEvents(
@@ -39,11 +39,6 @@ add_task(async function checkTelemetryClickEvents() {
     ).content;
     return !events || !events.length;
   });
-
-  
-  
-  
-  Services.telemetry.setEventRecordingEnabled("security.ui.certerror", true);
 
   for (let useFrame of [false, true]) {
     let recordedObjects = [
@@ -134,7 +129,7 @@ add_task(async function checkTelemetryClickEvents() {
         `recorded telemetry for the click on ${object}, useFrame: ${useFrame}`
       );
 
-      
+      // We opened an extra tab for the SUMO page, need to close it.
       if (object == "learn_more_link") {
         BrowserTestUtils.removeTab(gBrowser.selectedTab);
       }
@@ -153,12 +148,4 @@ add_task(async function checkTelemetryClickEvents() {
       BrowserTestUtils.removeTab(gBrowser.selectedTab);
     }
   }
-
-  let enableCertErrorUITelemetry = Services.prefs.getBoolPref(
-    "security.certerrors.recordEventTelemetry"
-  );
-  Services.telemetry.setEventRecordingEnabled(
-    "security.ui.certerror",
-    enableCertErrorUITelemetry
-  );
 });
