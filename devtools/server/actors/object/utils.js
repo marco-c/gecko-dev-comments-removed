@@ -30,6 +30,13 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/object.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "PauseScopedObjectActor",
+  "resource://devtools/server/actors/pause-scoped.js",
+  true
+);
+
 
 loader.lazyRequireGetter(
   this,
@@ -119,13 +126,20 @@ function unwrapDebuggeeValue(value) {
 
 
 
-function createValueGrip(value, pool, makeObjectGrip) {
+
+
+
+
+
+
+
+function createValueGrip(threadActor, value, pool, depth = 0, objectActorAttributes = {}) {
   switch (typeof value) {
     case "boolean":
       return value;
 
     case "string":
-      return createStringGrip(pool, value);
+      return createStringGrip(pool, value, depth);
 
     case "number":
       if (value === Infinity) {
@@ -175,10 +189,16 @@ function createValueGrip(value, pool, makeObjectGrip) {
           missingArguments: value.missingArguments,
         };
       }
-      return makeObjectGrip(value, pool);
+      return createObjectGrip(
+        threadActor,
+        value,
+        pool,
+        depth,
+        objectActorAttributes,
+      );
 
     case "symbol":
-      return symbolGrip(value, pool);
+      return symbolGrip(threadActor, value, pool);
 
     default:
       assert(false, "Failed to provide a grip for: " + value);
@@ -508,15 +528,7 @@ function createValueGripForTarget(
   depth = 0,
   objectActorAttributes = {}
 ) {
-  const makeObjectGrip = (objectActorValue, pool) =>
-    createObjectGrip(
-      targetActor,
-      depth,
-      objectActorValue,
-      pool,
-      objectActorAttributes
-    );
-  return createValueGrip(value, targetActor, makeObjectGrip);
+  return createValueGrip(targetActor.threadActor, value, targetActor, depth, objectActorAttributes);
 }
 
 
@@ -537,25 +549,50 @@ function createValueGripForTarget(
 
 
 function createObjectGrip(
-  targetActor,
-  depth,
+  threadActor,
   object,
   pool,
-  objectActorAttributes = {}
+  depth,
+  objectActorAttributes = {},
 ) {
-  let gripDepth = depth;
-  const actor = new ObjectActor(
-    targetActor.threadActor,
-    object,
-    {
-      ...objectActorAttributes,
-      getGripDepth: () => gripDepth,
-      incrementGripDepth: () => gripDepth++,
-      decrementGripDepth: () => gripDepth--,
-      createValueGrip: v => createValueGripForTarget(targetActor, v, gripDepth),
+  const isGripForThreadActor = pool == threadActor.threadLifetimePool || pool == threadActor.pauseLifetimePool;
+
+  
+  
+  if (isGripForThreadActor) {
+    if (!pool.objectActors) {
+      pool.objectActors = new WeakMap();
     }
-  );
+
+    if (pool.objectActors.has(object)) {
+      return pool.objectActors.get(object).form();
+    }
+
+    
+    
+    
+    if (threadActor.threadLifetimePool.objectActors.has(object)) {
+      return threadActor.threadLifetimePool.objectActors.get(object).form();
+    }
+  }
+
+  const ActorClass = isGripForThreadActor ? PauseScopedObjectActor : ObjectActor;
+
+  let gripDepth = depth;
+  const actor = new ActorClass(threadActor, object, {
+    
+    ...objectActorAttributes,
+
+    getGripDepth: () => gripDepth,
+    incrementGripDepth: () => gripDepth++,
+    decrementGripDepth: () => gripDepth--,
+    createValueGrip: value => createValueGrip(threadActor, value, pool, gripDepth, objectActorAttributes),
+  });
   pool.manage(actor);
+
+  if (isGripForThreadActor) {
+    pool.objectActors.set(object, actor);
+  }
 
   return actor.form();
 }

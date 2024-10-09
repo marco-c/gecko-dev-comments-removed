@@ -48,12 +48,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "PauseScopedObjectActor",
-  "resource://devtools/server/actors/pause-scoped.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "EventLoop",
   "resource://devtools/server/actors/utils/event-loop.js",
   true
@@ -223,8 +217,6 @@ class ThreadActor extends Actor {
     this.createCompletionGrip = this.createCompletionGrip.bind(this);
     this.onDebuggerStatement = this.onDebuggerStatement.bind(this);
     this.onNewScript = this.onNewScript.bind(this);
-    this.objectGrip = this.objectGrip.bind(this);
-    this.pauseObjectGrip = this.pauseObjectGrip.bind(this);
     this._onOpeningRequest = this._onOpeningRequest.bind(this);
     this._onNewDebuggee = this._onNewDebuggee.bind(this);
     this._onExceptionUnwind = this._onExceptionUnwind.bind(this);
@@ -270,6 +262,10 @@ class ThreadActor extends Actor {
   
   get attached() {
     return this.state == STATES.RUNNING || this.state == STATES.PAUSED;
+  }
+
+  get pauseLifetimePool() {
+    return this._pausePool;
   }
 
   get threadLifetimePool() {
@@ -1760,56 +1756,11 @@ class ThreadActor extends Actor {
 
 
   createValueGrip(value) {
-    if (this._pausePool) {
-      return createValueGrip(value, this._pausePool, this.pauseObjectGrip);
-    }
-    return createValueGrip(value, this.threadLifetimePool, this.objectGrip);
-  }
+    
+    
+    const pool = this._pausePool || this.threadLifetimePool;
 
-  
-
-
-
-
-
-
-
-  objectGrip(value, pool) {
-    if (!pool.objectActors) {
-      pool.objectActors = new WeakMap();
-    }
-
-    if (pool.objectActors.has(value)) {
-      return pool.objectActors.get(value).form();
-    }
-
-    if (this.threadLifetimePool.objectActors.has(value)) {
-      return this.threadLifetimePool.objectActors.get(value).form();
-    }
-
-    const actor = new PauseScopedObjectActor(this, value, {
-      getGripDepth: () => this._gripDepth,
-      incrementGripDepth: () => this._gripDepth++,
-      decrementGripDepth: () => this._gripDepth--,
-      createValueGrip: v => this.createValueGrip(v),
-    });
-    pool.manage(actor);
-    pool.objectActors.set(value, actor);
-    return actor.form();
-  }
-
-  
-
-
-
-
-
-  pauseObjectGrip(value) {
-    if (!this._pausePool) {
-      throw new Error("Object grip requested while not paused.");
-    }
-
-    return this.objectGrip(value, this._pausePool);
+    return createValueGrip(this, value, pool);
   }
 
   _onWindowReady({ isTopLevel, isBFCache }) {
@@ -1917,9 +1868,10 @@ class ThreadActor extends Actor {
       },
       pkt => {
         
-        pkt.why.nodeGrip = this.objectGrip(targetObj, this._pausePool);
+        
+        pkt.why.nodeGrip = this.createValueGrip(targetObj);
         pkt.why.ancestorGrip = ancestorObj
-          ? this.objectGrip(ancestorObj, this._pausePool)
+          ? this.createValueGrip(ancestorObj)
           : null;
         pkt.why.action = action;
         return pkt;

@@ -20,8 +20,9 @@ loader.lazyRequireGetter(
 
 
 class SymbolActor extends Actor {
-  constructor(conn, symbol) {
-    super(conn, symbolSpec);
+  constructor(threadActor, symbol) {
+    super(threadActor.conn, symbolSpec);
+    this.threadActor = threadActor;
     this.symbol = symbol;
   }
 
@@ -35,6 +36,8 @@ class SymbolActor extends Actor {
     
     this._releaseActor();
     super.destroy();
+
+    this.threadActor = null;
   }
 
   
@@ -48,7 +51,7 @@ class SymbolActor extends Actor {
     const name = getSymbolName(this.symbol);
     if (name !== undefined) {
       
-      form.name = createValueGrip(name, this.getParent());
+      form.name = createValueGrip(this.threadActor, name, this.getParent());
     }
     return form;
   }
@@ -88,7 +91,9 @@ function getSymbolName(symbol) {
 
 
 
-function symbolGrip(sym, pool) {
+
+
+function symbolGrip(threadActor, sym, pool) {
   if (!pool.symbolActors) {
     pool.symbolActors = Object.create(null);
   }
@@ -97,7 +102,7 @@ function symbolGrip(sym, pool) {
     return pool.symbolActors[sym].form();
   }
 
-  const actor = new SymbolActor(pool.conn, sym);
+  const actor = new SymbolActor(threadActor, sym);
   pool.manage(actor);
   pool.symbolActors[sym] = actor;
   return actor.form();
