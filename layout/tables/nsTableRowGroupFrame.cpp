@@ -655,14 +655,6 @@ void nsTableRowGroupFrame::CalculateRowBSizes(nsPresContext* aPresContext,
             cellDesSize.BSize(wm) = rowFrame->CalcCellActualBSize(
                 cellFrame, cellDesSize.BSize(wm), wm);
             cellFrameSize.BSize(wm) = cellDesSize.BSize(wm);
-            if (cellFrame->HasVerticalAlignBaseline()) {
-              
-              
-              
-              
-              cellFrameSize.BSize(wm) +=
-                  rowFrame->GetMaxCellAscent() - cellFrame->GetCellBaseline();
-            }
 
             if (bsizeOfAreaSpanned < cellFrameSize.BSize(wm)) {
               
