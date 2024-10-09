@@ -154,10 +154,7 @@ var gBrowserInit = {
     
     
     if (isVerticalTabs && !isPopup) {
-      nonRemovables = [
-        gBrowser.tabContainer,
-        document.getElementById("alltabs-button"),
-      ];
+      nonRemovables = [gBrowser.tabContainer];
       for (let elem of nonRemovables) {
         elem.setAttribute("removable", "true");
         
