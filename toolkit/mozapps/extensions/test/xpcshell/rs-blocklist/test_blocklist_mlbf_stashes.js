@@ -7,22 +7,90 @@ Services.prefs.setBoolPref("extensions.blocklist.useMLBF", true);
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
 
+const { STATE_NOT_BLOCKED, STATE_SOFTBLOCKED, STATE_BLOCKED } =
+  Ci.nsIBlocklistService;
 const ExtensionBlocklistMLBF = getExtensionBlocklistMLBF();
-const MLBF_LOAD_ATTEMPTS = [];
-ExtensionBlocklistMLBF._fetchMLBF = async record => {
+const { RS_ATTACHMENT_ID, RS_ATTACHMENT_TYPE, RS_SOFTBLOCKS_ATTACHMENT_ID } =
+  ExtensionBlocklistMLBF;
+
+
+
+
+const MLBF_MOCK_BLOCKS = {
+  [RS_ATTACHMENT_ID]: new Set(),
+  [RS_SOFTBLOCKS_ATTACHMENT_ID]: new Set(),
+};
+
+const getBlockKey = addon => `${addon.id}:${addon.version}`;
+function clearMLBFMockBlocks() {
+  MLBF_MOCK_BLOCKS[RS_ATTACHMENT_ID].clear();
+  MLBF_MOCK_BLOCKS[RS_SOFTBLOCKS_ATTACHMENT_ID].clear();
+}
+
+
+
+
+function mockMLBFBlocks(blockStatePerBlockKey) {
+  clearMLBFMockBlocks();
+  for (const [blockKey, blocklistState] of Object.entries(
+    blockStatePerBlockKey
+  )) {
+    const blocklistStates = Array.isArray(blocklistState)
+      ? blocklistState
+      : [blocklistState];
+    for (const blockState of blocklistStates) {
+      switch (blockState) {
+        case STATE_NOT_BLOCKED:
+          
+          
+          break;
+        case STATE_SOFTBLOCKED:
+          MLBF_MOCK_BLOCKS[RS_SOFTBLOCKS_ATTACHMENT_ID].add(blockKey);
+          break;
+        case STATE_BLOCKED:
+          MLBF_MOCK_BLOCKS[RS_ATTACHMENT_ID].add(blockKey);
+          break;
+        default:
+          throw new Error(
+            `Unexpected blocklistState value ${blockState} for blockKey ${blockKey}`
+          );
+      }
+    }
+  }
+}
+
+let MLBF_CHECKED_BLOCKS = [];
+let MLBF_LOAD_ATTEMPTS = [];
+const mockGetMLBFData = async (record, attachmentId, _mlbfData) => {
   MLBF_LOAD_ATTEMPTS.push(record);
   return {
-    generationTime: 0,
+    generationTime: record?.generation_time ?? 0,
     cascadeFilter: {
       has(blockKey) {
-        if (blockKey === "@onlyblockedbymlbf:1") {
-          return true;
-        }
-        throw new Error("bloom filter should not be used in this test");
+        info(`MLBF data ${attachmentId} being checked for ${blockKey}`);
+        MLBF_CHECKED_BLOCKS.push([attachmentId, blockKey]);
+        return MLBF_MOCK_BLOCKS[attachmentId].has(blockKey);
       },
     },
   };
 };
+ExtensionBlocklistMLBF._getMLBFData = mockGetMLBFData;
+
+function assertMLBFBlockChecks(expected, msg) {
+  Assert.deepEqual(
+    MLBF_CHECKED_BLOCKS,
+    expected,
+    msg ?? "Found the expected entries in MLBF_CHECKED_BLOCKS"
+  );
+  MLBF_CHECKED_BLOCKS = [];
+}
+function assertNoRemainingMLBFBlockChecks() {
+  assertMLBFBlockChecks(
+    [],
+    "Expect no unchecked MLBF_CHECKED_BLOCKS entries after all tests have been executed"
+  );
+}
+registerCleanupFunction(assertNoRemainingMLBFBlockChecks);
 
 async function checkBlockState(addonId, version, expectBlocked) {
   let addon = {
@@ -39,12 +107,28 @@ async function checkBlockState(addonId, version, expectBlocked) {
   }
 }
 
-add_task(async function setup() {
+add_setup(async function setup() {
   await promiseStartupManager();
+
+  
+  
+  
+  
+  
+  registerCleanupFunction(async () => {
+    await ExtensionBlocklistMLBF._updatePromise;
+  });
+
+  
+  
+  
+  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [] });
+  MLBF_LOAD_ATTEMPTS = [];
 });
 
 
 add_task(async function basic_stash() {
+  mockMLBFBlocks({ "@onlyblockedbymlbf:1": STATE_BLOCKED });
   await AddonTestUtils.loadBlocklistRawData({
     extensionsMLBF: [
       {
@@ -60,6 +144,7 @@ add_task(async function basic_stash() {
   await checkBlockState("@notblocked", "2", false);
   
   await checkBlockState("@blocked", "2", false);
+  assertNoRemainingMLBFBlockChecks();
 
   Assert.equal(
     await Blocklist.getAddonBlocklistState({
@@ -71,19 +156,41 @@ add_task(async function basic_stash() {
     Ci.nsIBlocklistService.STATE_BLOCKED,
     "falls through to MLBF if entry is not found in stash"
   );
+  assertMLBFBlockChecks(
+    [[RS_ATTACHMENT_ID, "@onlyblockedbymlbf:1"]],
+    "Expect the hard-blocks MLBF data to have been checked"
+  );
 
-  Assert.deepEqual(MLBF_LOAD_ATTEMPTS, [null], "MLBF attachment not found");
+  Assert.deepEqual(
+    MLBF_LOAD_ATTEMPTS,
+    Blocklist.isSoftBlockEnabled ? [null, null] : [null],
+    "MLBF attachment not found"
+  );
 });
 
 
 
 add_task(async function privileged_addon_blocked_by_stash() {
+  mockMLBFBlocks({ "@sysaddonblocked-mlbf:1": STATE_BLOCKED });
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash_time: 0,
+        stash: {
+          blocked: ["@sysaddonblocked:1"],
+          unblocked: [],
+          softblocked: [],
+        },
+      },
+    ],
+  });
   const system_addon = {
-    id: "@blocked",
+    id: "@sysaddonblocked",
     version: "1",
     signedDate: new Date(0), 
     signedState: AddonManager.SIGNEDSTATE_PRIVILEGED,
   };
+
   Assert.equal(
     await Blocklist.getAddonBlocklistState(system_addon),
     Ci.nsIBlocklistService.STATE_BLOCKED,
@@ -96,14 +203,23 @@ add_task(async function privileged_addon_blocked_by_stash() {
     Ci.nsIBlocklistService.STATE_BLOCKED,
     "Privileged system add-ons can still be blocked by a stash"
   );
+  
+  assertNoRemainingMLBFBlockChecks();
 
   
   
-  system_addon.id = "@onlyblockedbymlbf";
+  system_addon.id = "@sysaddonblocked-mlbf";
   Assert.equal(
     await Blocklist.getAddonBlocklistState(system_addon),
     Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
     "Privileged add-ons cannot be blocked via a MLBF"
+  );
+  assertMLBFBlockChecks(
+    [
+      [RS_ATTACHMENT_ID, "@sysaddonblocked-mlbf:1"],
+      [RS_SOFTBLOCKS_ATTACHMENT_ID, "@sysaddonblocked-mlbf:1"],
+    ],
+    "Expect the hard-blocks and soft-blocks MLBF data to have been checked"
   );
   
   
@@ -112,8 +228,21 @@ add_task(async function privileged_addon_blocked_by_stash() {
 
 
 add_task(async function langpack_blocked_by_stash() {
+  mockMLBFBlocks({ "@langpackblocked-mlbf:1": STATE_BLOCKED });
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash_time: 0,
+        stash: {
+          blocked: ["@langpackblocked:1"],
+          unblocked: [],
+          softblocked: [],
+        },
+      },
+    ],
+  });
   const langpack_addon = {
-    id: "@blocked",
+    id: "@langpackblocked",
     type: "locale",
     version: "1",
     signedDate: new Date(0), 
@@ -124,21 +253,33 @@ add_task(async function langpack_blocked_by_stash() {
     Ci.nsIBlocklistService.STATE_BLOCKED,
     "Langpack add-ons can still be blocked by a stash"
   );
+  assertNoRemainingMLBFBlockChecks();
 
   
   
-  langpack_addon.id = "@onlyblockedbymlbf";
+  langpack_addon.id = "@langpackblocked-mlbf";
   if (AppConstants.NIGHTLY_BUILD) {
     Assert.equal(
       await Blocklist.getAddonBlocklistState(langpack_addon),
       Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
       "Langpack add-ons cannot be blocked via a MLBF on Nightly"
     );
+    assertMLBFBlockChecks(
+      [
+        [RS_ATTACHMENT_ID, "@langpackblocked-mlbf:1"],
+        [RS_SOFTBLOCKS_ATTACHMENT_ID, "@langpackblocked-mlbf:1"],
+      ],
+      "Expect the hard-blocks and soft-blocks MLBF data to have been checked"
+    );
   } else {
     Assert.equal(
       await Blocklist.getAddonBlocklistState(langpack_addon),
       Ci.nsIBlocklistService.STATE_BLOCKED,
       "Langpack add-ons can be blocked via a MLBF on non-Nightly"
+    );
+    assertMLBFBlockChecks(
+      [[RS_ATTACHMENT_ID, "@langpackblocked-mlbf:1"]],
+      "Expect the hard-blocks MLBF data to have been checked"
     );
   }
 });
@@ -165,6 +306,8 @@ add_task(async function invalid_stashes() {
   
   await checkBlockState("@broken", "1", false);
   await checkBlockState("@broken", "2", false);
+
+  assertNoRemainingMLBFBlockChecks();
 });
 
 
@@ -187,6 +330,8 @@ add_task(async function stash_time_order() {
 
   await checkBlockState("@b", "1", true);
   await checkBlockState("@b", "2", true);
+
+  assertNoRemainingMLBFBlockChecks();
 });
 
 
@@ -199,7 +344,11 @@ add_task(async function mlbf_bloomfilter_full_ignored() {
 
   
   
-  Assert.deepEqual(MLBF_LOAD_ATTEMPTS, [null], "no matching MLBFs found");
+  Assert.deepEqual(
+    MLBF_LOAD_ATTEMPTS,
+    Blocklist.isSoftBlockEnabled ? [null, null] : [null],
+    "no matching MLBFs found"
+  );
 });
 
 
@@ -217,3 +366,285 @@ add_task(async function mlbf_generation_time_recent() {
     "expected to load most recent MLBF"
   );
 });
+
+async function test_stashes_vs_mlbf_data_timestamps({ softBlockEnabled }) {
+  
+  Assert.equal(
+    Blocklist.isSoftBlockEnabled,
+    softBlockEnabled,
+    `Expect soft-blocks feature to be ${
+      softBlockEnabled ? "enabled" : "disabled"
+    }`
+  );
+
+  const runBlocklistTest = async ({
+    testCase,
+    testSetup: { addon, records, mlbfBlocks },
+    expected: { mlbfBlockChecks, blocklistState },
+  }) => {
+    info(`===== Running test case: ${testCase}`);
+    
+    
+    Assert.deepEqual(
+      records.filter(
+        record => record.stash_time == null && record.generation_time == null
+      ),
+      [],
+      "All testSetup records should have a timestamp"
+    );
+    MLBF_LOAD_ATTEMPTS = [];
+    await AddonTestUtils.loadBlocklistRawData({
+      extensionsMLBF: [...records],
+    });
+    
+    
+    Assert.deepEqual(
+      MLBF_LOAD_ATTEMPTS,
+      softBlockEnabled
+        ? records.filter(r => r.attachment)
+        : records.filter(r => r.attachment_type === RS_ATTACHMENT_TYPE),
+      "Got the expected mlbf load attempts"
+    );
+    Assert.notEqual(
+      addon.signedDate,
+      undefined,
+      "testAddon signedDate should not be undefined"
+    );
+    Assert.equal(
+      addon.signedState,
+      AddonManager.SIGNEDSTATE_SIGNED,
+      "testAddon signedState should be SIGNEDSTATE_SIGNED"
+    );
+    mockMLBFBlocks(mlbfBlocks);
+    
+    Assert.equal(
+      await Blocklist.getAddonBlocklistState(addon),
+      blocklistState,
+      "Got the expected blocklist state"
+    );
+    
+    
+    assertMLBFBlockChecks(mlbfBlockChecks);
+  };
+
+  const baseAddon = {
+    version: "1",
+    signedState: AddonManager.SIGNEDSTATE_SIGNED,
+    
+  };
+  const notInMLBFAddon = { id: "@not-in-mlbf-addon", ...baseAddon };
+  const hardBlockedAddon = { id: "@mlbf-hardblock", ...baseAddon };
+  const softBlockedAddon = { id: "@mlbf-softblock", ...baseAddon };
+
+  const MLBF_RECORD = {
+    attachment_type: ExtensionBlocklistMLBF.RS_ATTACHMENT_TYPE,
+    attachment: {},
+    
+  };
+  const MLBF_SOFTBLOCK_RECORD = {
+    attachment_type: ExtensionBlocklistMLBF.RS_SOFTBLOCKS_ATTACHMENT_TYPE,
+    attachment: {},
+    
+  };
+
+  await runBlocklistTest({
+    testCase: "hard-block stash and mlbf older than soft-blocks mlbf",
+    testSetup: {
+      addon: { ...softBlockedAddon, signedDate: new Date(0) },
+      records: [
+        {
+          stash: {
+            blocked: [getBlockKey(softBlockedAddon)],
+            softblocked: [],
+            unblocked: [],
+          },
+          stash_time: 10,
+        },
+        { ...MLBF_RECORD, generation_time: 10 },
+        { ...MLBF_SOFTBLOCK_RECORD, generation_time: 20 },
+      ],
+      mlbfBlocks: {
+        [getBlockKey(softBlockedAddon)]: STATE_SOFTBLOCKED,
+      },
+    },
+    expected: {
+      blocklistState: softBlockEnabled ? STATE_SOFTBLOCKED : STATE_BLOCKED,
+      mlbfBlockChecks: softBlockEnabled
+        ? [[RS_SOFTBLOCKS_ATTACHMENT_ID, getBlockKey(softBlockedAddon)]]
+        : [],
+    },
+  });
+
+  await runBlocklistTest({
+    testCase:
+      "unblocked stash and hard-blocks mlbf older than soft-blocks mlbf",
+    testSetup: {
+      addon: { ...softBlockedAddon, signedDate: new Date(0) },
+      records: [
+        {
+          stash: {
+            blocked: [],
+            softblocked: [],
+            unblocked: [getBlockKey(softBlockedAddon)],
+          },
+          stash_time: 20,
+        },
+        { ...MLBF_RECORD, generation_time: 10 },
+        { ...MLBF_SOFTBLOCK_RECORD, generation_time: 30 },
+      ],
+      mlbfBlocks: {
+        [getBlockKey(softBlockedAddon)]: STATE_SOFTBLOCKED,
+      },
+    },
+    expected: {
+      blocklistState: softBlockEnabled ? STATE_SOFTBLOCKED : STATE_NOT_BLOCKED,
+      mlbfBlockChecks: softBlockEnabled
+        ? [[RS_SOFTBLOCKS_ATTACHMENT_ID, getBlockKey(softBlockedAddon)]]
+        : [],
+    },
+  });
+
+  await runBlocklistTest({
+    testCase: "soft-blocked stash more recent than soft-blocks mlbf",
+    testSetup: {
+      addon: { ...notInMLBFAddon, signedDate: new Date(0) },
+      records: [
+        {
+          stash: {
+            blocked: [],
+            softblocked: [getBlockKey(notInMLBFAddon)],
+            unblocked: [],
+          },
+          stash_time: 20,
+        },
+        { ...MLBF_RECORD, generation_time: 10 },
+        { ...MLBF_SOFTBLOCK_RECORD, generation_time: 10 },
+      ],
+      mlbfBlocks: {},
+    },
+    expected: {
+      blocklistState: softBlockEnabled ? STATE_SOFTBLOCKED : STATE_NOT_BLOCKED,
+      
+      
+      mlbfBlockChecks: softBlockEnabled
+        ? []
+        : [[RS_ATTACHMENT_ID, getBlockKey(notInMLBFAddon)]],
+    },
+  });
+
+  await runBlocklistTest({
+    testCase:
+      "unblocked stash more recent than soft-blocks mlbf and as recent as hard-blocks mlbf",
+    testSetup: {
+      addon: { ...softBlockedAddon, signedDate: new Date(0) },
+      records: [
+        {
+          stash: {
+            blocked: [],
+            softblocked: [],
+            unblocked: [getBlockKey(softBlockedAddon)],
+          },
+          stash_time: 20,
+        },
+        { ...MLBF_RECORD, generation_time: 20 },
+        { ...MLBF_SOFTBLOCK_RECORD, generation_time: 10 },
+      ],
+      mlbfBlocks: {
+        [getBlockKey(softBlockedAddon)]: STATE_SOFTBLOCKED,
+      },
+    },
+    expected: {
+      blocklistState: STATE_NOT_BLOCKED,
+      mlbfBlockChecks: [],
+    },
+  });
+
+  await runBlocklistTest({
+    testCase:
+      "unblocked stash more recent than hard-blocks and older than soft-blocks mlbf",
+    testSetup: {
+      addon: { ...hardBlockedAddon, signedDate: new Date(0) },
+      records: [
+        {
+          stash: {
+            blocked: [],
+            softblocked: [],
+            unblocked: [getBlockKey(hardBlockedAddon)],
+          },
+          
+          stash_time: 20,
+        },
+        { ...MLBF_RECORD, generation_time: 10 },
+        { ...MLBF_SOFTBLOCK_RECORD, generation_time: 30 },
+      ],
+      mlbfBlocks: {
+        [getBlockKey(hardBlockedAddon)]: STATE_BLOCKED,
+      },
+    },
+    expected: {
+      blocklistState: STATE_NOT_BLOCKED,
+      
+      
+      mlbfBlockChecks: softBlockEnabled
+        ? [[RS_SOFTBLOCKS_ATTACHMENT_ID, getBlockKey(hardBlockedAddon)]]
+        : [],
+    },
+  });
+
+  await runBlocklistTest({
+    testCase: "stash and hard-blocks mlbf older than soft-blocks mlbf",
+    testSetup: {
+      addon: { ...hardBlockedAddon, signedDate: new Date(0) },
+      records: [
+        {
+          stash: {
+            blocked: [],
+            softblocked: [],
+            unblocked: [getBlockKey(hardBlockedAddon)],
+          },
+          
+          stash_time: 10,
+        },
+        
+        { ...MLBF_RECORD, generation_time: 20 },
+        { ...MLBF_SOFTBLOCK_RECORD, generation_time: 30 },
+      ],
+      mlbfBlocks: {
+        
+        
+        [getBlockKey(hardBlockedAddon)]: [STATE_BLOCKED, STATE_SOFTBLOCKED],
+      },
+    },
+    expected: {
+      
+      
+      
+      
+      blocklistState: softBlockEnabled ? STATE_SOFTBLOCKED : STATE_BLOCKED,
+      mlbfBlockChecks: softBlockEnabled
+        ? [
+            [RS_ATTACHMENT_ID, getBlockKey(hardBlockedAddon)],
+            [RS_SOFTBLOCKS_ATTACHMENT_ID, getBlockKey(hardBlockedAddon)],
+          ]
+        : [[RS_ATTACHMENT_ID, getBlockKey(hardBlockedAddon)]],
+    },
+  });
+}
+
+add_task(
+  {
+    pref_set: [["extensions.blocklist.softblock.enabled", true]],
+  },
+  function stashes_vs_mlbf_data_timestamps_on_softblock_enabled() {
+    return test_stashes_vs_mlbf_data_timestamps({ softBlockEnabled: true });
+  }
+);
+
+add_task(
+  {
+    pref_set: [["extensions.blocklist.softblock.enabled", false]],
+  },
+  function stashes_vs_mlbf_data_timestamps_on_softblock_enabled() {
+    return test_stashes_vs_mlbf_data_timestamps({ softBlockEnabled: false });
+  }
+);
