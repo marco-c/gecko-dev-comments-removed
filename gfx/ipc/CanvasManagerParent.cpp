@@ -23,7 +23,7 @@
 
 namespace mozilla::gfx {
 
-MOZ_RUNINIT CanvasManagerParent::ManagerSet CanvasManagerParent::sManagers;
+CanvasManagerParent::ManagerSet CanvasManagerParent::sManagers;
 
  void CanvasManagerParent::Init(
     Endpoint<PCanvasManagerParent>&& aEndpoint,

@@ -17,7 +17,7 @@ using namespace mozilla::dom;
 namespace mozilla::gfx {
 
 StaticMutex CanvasShutdownManager::sManagersMutex;
-MOZ_RUNINIT std::set<CanvasShutdownManager*> CanvasShutdownManager::sManagers;
+std::set<CanvasShutdownManager*> CanvasShutdownManager::sManagers;
 
 
 

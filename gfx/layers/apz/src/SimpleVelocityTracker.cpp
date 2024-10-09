@@ -21,8 +21,7 @@ namespace layers {
 
 
 
-MOZ_RUNINIT const TimeDuration MIN_VELOCITY_SAMPLE_TIME =
-    TimeDuration::FromMilliseconds(5);
+const TimeDuration MIN_VELOCITY_SAMPLE_TIME = TimeDuration::FromMilliseconds(5);
 
 extern StaticAutoPtr<StyleComputedTimingFunction> gVelocityCurveFunction;
 

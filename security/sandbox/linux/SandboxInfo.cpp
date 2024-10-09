@@ -175,7 +175,7 @@ static bool CanCreateUserNamespace() {
 }
 
 
-MOZ_RUNINIT const SandboxInfo SandboxInfo::sSingleton = SandboxInfo();
+const SandboxInfo SandboxInfo::sSingleton = SandboxInfo();
 
 SandboxInfo::SandboxInfo() {
   int flags = 0;

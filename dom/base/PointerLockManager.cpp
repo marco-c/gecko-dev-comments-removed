@@ -34,10 +34,10 @@ using mozilla::dom::Element;
 using mozilla::dom::WindowContext;
 
 
-MOZ_RUNINIT static nsWeakPtr sLockedElement;
+static nsWeakPtr sLockedElement;
 
 
-MOZ_RUNINIT static nsWeakPtr sLockedDoc;
+static nsWeakPtr sLockedDoc;
 
 
 static BrowserParent* sLockedRemoteTarget = nullptr;

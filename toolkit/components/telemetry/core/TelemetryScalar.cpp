@@ -1186,18 +1186,18 @@ bool gCanRecordBase;
 bool gCanRecordExtended;
 
 
-MOZ_RUNINIT ScalarMapType gScalarNameIDMap(kScalarCount);
+ScalarMapType gScalarNameIDMap(kScalarCount);
 
 
 
 
-MOZ_RUNINIT ProcessesScalarsMapType gScalarStorageMap;
+ProcessesScalarsMapType gScalarStorageMap;
 
-MOZ_RUNINIT ProcessesKeyedScalarsMapType gKeyedScalarStorageMap;
+ProcessesKeyedScalarsMapType gKeyedScalarStorageMap;
 
 
-MOZ_RUNINIT ProcessesScalarsMapType gDynamicBuiltinScalarStorageMap;
-MOZ_RUNINIT ProcessesKeyedScalarsMapType gDynamicBuiltinKeyedScalarStorageMap;
+ProcessesScalarsMapType gDynamicBuiltinScalarStorageMap;
+ProcessesKeyedScalarsMapType gDynamicBuiltinKeyedScalarStorageMap;
 }  
 
 

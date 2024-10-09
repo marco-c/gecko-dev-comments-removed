@@ -861,13 +861,9 @@
 #    ifndef XGILL_PLUGIN
 #      define MOZ_UNANNOTATED __attribute__((annotate("moz_unannotated")))
 #      define MOZ_ANNOTATED __attribute__((annotate("moz_annotated")))
-#      define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
-#      define MOZ_GENERATED __attribute__((annotate("moz_generated")))
 #    else
 #      define MOZ_UNANNOTATED
 #      define MOZ_ANNOTATED
-#      define MOZ_RUNINIT
-#      define MOZ_GENERATED
 #    endif
 
 
@@ -889,8 +885,6 @@
 #    define MOZ_CAN_RUN_SCRIPT_BOUNDARY
 #    define MOZ_MUST_OVERRIDE
 #    define MOZ_STATIC_CLASS
-#    define MOZ_RUNINIT
-#    define MOZ_GENERATED
 #    define MOZ_STATIC_LOCAL_CLASS
 #    define MOZ_STACK_CLASS
 #    define MOZ_NONHEAP_CLASS

@@ -261,7 +261,7 @@ class SharedSubResourceCache {
  protected:
   
   
-  inline static MOZ_RUNINIT MOZ_GENERATED StaticRefPtr<Derived> sSingleton;
+  inline static StaticRefPtr<Derived> sSingleton;
 };
 
 template <typename Traits, typename Derived>

@@ -227,7 +227,7 @@ using namespace mozilla::layout;
 using PaintFrameFlags = nsLayoutUtils::PaintFrameFlags;
 typedef ScrollableLayerGuid::ViewID ViewID;
 
-MOZ_RUNINIT PresShell::CapturingContentInfo PresShell::sCapturingContentInfo;
+PresShell::CapturingContentInfo PresShell::sCapturingContentInfo;
 
 
 struct RangePaintInfo {

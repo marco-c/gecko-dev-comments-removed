@@ -20,8 +20,8 @@
 
 namespace mozilla {
 
-MOZ_RUNINIT  DataMutexBase<ProfilerChild::ProfilerChildAndUpdate,
-                                       baseprofiler::detail::BaseProfilerMutex>
+ DataMutexBase<ProfilerChild::ProfilerChildAndUpdate,
+                           baseprofiler::detail::BaseProfilerMutex>
     ProfilerChild::sPendingChunkManagerUpdate{
         "ProfilerChild::sPendingChunkManagerUpdate"};
 

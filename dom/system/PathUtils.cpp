@@ -90,8 +90,8 @@ nsresult PathUtils::InitFileWithPath(nsIFile* aFile, const nsAString& aPath) {
   return aFile->InitWithPath(aPath);
 }
 
-MOZ_RUNINIT StaticDataMutex<Maybe<PathUtils::DirectoryCache>>
-    PathUtils::sDirCache{"sDirCache"};
+StaticDataMutex<Maybe<PathUtils::DirectoryCache>> PathUtils::sDirCache{
+    "sDirCache"};
 
 
 

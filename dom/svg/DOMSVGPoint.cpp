@@ -37,8 +37,7 @@ class MOZ_RAII AutoChangePointNotifier {
   DOMSVGPoint* const mValue;
 };
 
-MOZ_RUNINIT static SVGAttrTearoffTable<SVGPoint, DOMSVGPoint>
-    sSVGTranslateTearOffTable;
+static SVGAttrTearoffTable<SVGPoint, DOMSVGPoint> sSVGTranslateTearOffTable;
 
 
 

@@ -51,8 +51,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-MOZ_RUNINIT static const nscoord kMediumBorderWidth =
-    nsPresContext::CSSPixelsToAppUnits(3);
+static const nscoord kMediumBorderWidth = nsPresContext::CSSPixelsToAppUnits(3);
 
 
 

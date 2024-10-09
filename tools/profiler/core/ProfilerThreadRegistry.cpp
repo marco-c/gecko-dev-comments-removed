@@ -9,11 +9,10 @@
 namespace mozilla::profiler {
 
 
-MOZ_RUNINIT ThreadRegistry::RegistryContainer
-    ThreadRegistry::sRegistryContainer;
+ThreadRegistry::RegistryContainer ThreadRegistry::sRegistryContainer;
 
 
-MOZ_RUNINIT ThreadRegistry::RegistryMutex ThreadRegistry::sRegistryMutex;
+ThreadRegistry::RegistryMutex ThreadRegistry::sRegistryMutex;
 
 #if !defined(MOZ_GECKO_PROFILER)
 

@@ -278,8 +278,7 @@ class MOZ_RAII PSAutoLock {
   detail::BaseProfilerAutoLock mLock;
 };
 
-MOZ_RUNINIT detail::BaseProfilerMutex PSAutoLock::gPSMutex{
-    "Base Profiler mutex"};
+detail::BaseProfilerMutex PSAutoLock::gPSMutex{"Base Profiler mutex"};
 
 
 

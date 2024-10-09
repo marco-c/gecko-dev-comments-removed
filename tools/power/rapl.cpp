@@ -48,8 +48,6 @@
 #include <numeric>
 #include <vector>
 
-#define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
-
 
 
 
@@ -606,7 +604,7 @@ static double gSampleInterval_sec;
 static RAPL* gRapl;
 
 
-MOZ_RUNINIT static std::vector<double> gTotals_W;
+static std::vector<double> gTotals_W;
 
 
 
