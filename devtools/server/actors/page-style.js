@@ -658,7 +658,11 @@ class PageStyleActor extends Actor {
       return rules;
     }
 
-    const elementStyle = this._styleRef(bindingElement, pseudo);
+    const elementStyle = this._styleRef(
+      bindingElement,
+      
+      null
+    );
     const showElementStyles = !inherited && !pseudo;
     const showInheritedStyles =
       inherited && this._hasInheritedProps(bindingElement.style);
