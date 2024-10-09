@@ -1,0 +1,157 @@
+
+
+
+
+
+
+
+
+
+async function run_test() {
+  var gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
+
+  
+  if (!(gfxInfo instanceof Ci.nsIGfxInfoDebug)) {
+    do_test_finished();
+    return;
+  }
+
+  gfxInfo.QueryInterface(Ci.nsIGfxInfoDebug);
+
+  
+  const OS = Services.appinfo.OS;
+  
+  switch (OS) {
+    case "WINNT":
+      gfxInfo.spoofVendorID("0xabcd");
+      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofDriverVersion("8.52.322.2201");
+      
+      gfxInfo.spoofOSVersion(0x60001);
+      break;
+    case "Linux":
+      gfxInfo.spoofVendorID("0xabcd");
+      gfxInfo.spoofDeviceID("0x1234");
+      break;
+    case "Darwin":
+      gfxInfo.spoofVendorID("0xabcd");
+      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofOSVersion(0xa0900);
+      break;
+    case "Android":
+      gfxInfo.spoofVendorID("0xabcd");
+      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofDriverVersion("5");
+      break;
+  }
+
+  do_test_pending();
+
+  createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "15.0", "8");
+  await promiseStartupManager();
+
+  function checkBlocklist() {
+    var failureId = {};
+    var status;
+
+    status = gfxInfo.getFeatureStatusStr("DIRECT2D", failureId);
+    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
+    Assert.equal(failureId.value, "FEATURE_FAILURE_DL_BLOCKLIST_g1");
+
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_9_LAYERS", failureId);
+    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
+    Assert.equal(failureId.value, "FEATURE_FAILURE_DL_BLOCKLIST_g2");
+
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_10_LAYERS", failureId);
+    Assert.equal(status, "STATUS_OK");
+    Assert.equal(failureId.value, "");
+
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_10_1_LAYERS", failureId);
+    Assert.equal(status, "STATUS_OK");
+    Assert.equal(failureId.value, "");
+
+    status = gfxInfo.getFeatureStatusStr("OPENGL_LAYERS");
+    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
+
+    status = gfxInfo.getFeatureStatusStr("WEBGL_OPENGL", failureId);
+    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
+    Assert.equal(failureId.value, "FEATURE_FAILURE_DL_BLOCKLIST_g11");
+
+    status = gfxInfo.getFeatureStatusStr("WEBGL_ANGLE", failureId);
+    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
+    Assert.equal(failureId.value, "FEATURE_FAILURE_DL_BLOCKLIST_NO_ID");
+
+    status = gfxInfo.getFeatureStatusStr("WEBGL2", failureId);
+    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
+    Assert.equal(failureId.value, "FEATURE_FAILURE_DL_BLOCKLIST_NO_ID");
+
+    status = gfxInfo.getFeatureStatusStr("STAGEFRIGHT", failureId);
+    Assert.equal(status, "STATUS_OK");
+
+    status = gfxInfo.getFeatureStatusStr(
+      "WEBRTC_HW_ACCELERATION_H264",
+      failureId
+    );
+    if (OS == "Android" && status != "STATUS_OK") {
+      
+      Assert.equal(status, "BLOCKED_DEVICE");
+      Assert.equal(failureId.value, "FEATURE_FAILURE_WEBRTC_H264");
+    } else {
+      Assert.equal(status, "STATUS_OK");
+    }
+
+    status = gfxInfo.getFeatureStatusStr(
+      "WEBRTC_HW_ACCELERATION_ENCODE",
+      failureId
+    );
+    if (OS == "Android" && status != "STATUS_OK") {
+      Assert.equal(status, "BLOCKED_DEVICE");
+      Assert.equal(failureId.value, "FEATURE_FAILURE_WEBRTC_ENCODE");
+    } else {
+      Assert.equal(status, "STATUS_OK");
+    }
+
+    status = gfxInfo.getFeatureStatusStr(
+      "WEBRTC_HW_ACCELERATION_DECODE",
+      failureId
+    );
+    if (OS == "Android" && status != "STATUS_OK") {
+      Assert.equal(status, "BLOCKED_DEVICE");
+      Assert.equal(failureId.value, "FEATURE_FAILURE_WEBRTC_DECODE");
+    } else {
+      Assert.equal(status, "STATUS_OK");
+    }
+
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_11_LAYERS", failureId);
+    Assert.equal(status, "STATUS_OK");
+
+    status = gfxInfo.getFeatureStatusStr("HARDWARE_VIDEO_DECODING", failureId);
+    if (OS == "Linux" && status != "STATUS_OK") {
+      
+      
+      Assert.equal(status, "BLOCKED_PLATFORM_TEST");
+      Assert.equal(
+        failureId.value,
+        "FEATURE_FAILURE_VIDEO_DECODING_TEST_FAILED"
+      );
+    } else {
+      Assert.equal(status, "STATUS_OK");
+    }
+
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_11_ANGLE", failureId);
+    Assert.equal(status, "STATUS_OK");
+
+    status = gfxInfo.getFeatureStatusStr("DX_INTEROP2", failureId);
+    Assert.equal(status, "STATUS_OK");
+
+    do_test_finished();
+  }
+
+  Services.obs.addObserver(function () {
+    
+    
+    executeSoon(checkBlocklist);
+  }, "blocklist-data-gfxItems");
+
+  mockGfxBlocklistItemsFromDisk("../data/test_gfxBlocklist_AllOS.json");
+}

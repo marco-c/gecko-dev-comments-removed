@@ -21,23 +21,24 @@ async function run_test() {
   
   switch (Services.appinfo.OS) {
     case "WINNT":
-      gfxInfo.spoofVendorID("0xdcdc");
+      gfxInfo.spoofVendorID("0xdcba");
       gfxInfo.spoofDeviceID("0x1234");
-      gfxInfo.spoofDriverVersion("8.52.322.1111");
+      gfxInfo.spoofDriverVersion("8.52.322.2201");
       
       gfxInfo.spoofOSVersion(0x60001);
       break;
     case "Linux":
-      
-      do_test_finished();
-      return;
+      gfxInfo.spoofVendorID("0xdcba");
+      gfxInfo.spoofDeviceID("0x1234");
+      break;
     case "Darwin":
-      
-      do_test_finished();
-      return;
+      gfxInfo.spoofVendorID("0xdcba");
+      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofOSVersion(0xa0900);
+      break;
     case "Android":
-      gfxInfo.spoofVendorID("dcdc");
-      gfxInfo.spoofDeviceID("uiop");
+      gfxInfo.spoofVendorID("dcba");
+      gfxInfo.spoofDeviceID("asdf");
       gfxInfo.spoofDriverVersion("5");
       break;
   }
@@ -47,13 +48,12 @@ async function run_test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "8");
   await promiseStartupManager();
 
-  function checkBlacklist() {
-    var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
+  function checkBlocklist() {
+    var status = gfxInfo.getFeatureStatusStr("DIRECT2D");
+    Assert.equal(status, "STATUS_OK");
 
-    
-    status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT3D_9_LAYERS);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_9_LAYERS");
+    Assert.equal(status, "STATUS_OK");
 
     do_test_finished();
   }
@@ -61,8 +61,8 @@ async function run_test() {
   Services.obs.addObserver(function () {
     
     
-    executeSoon(checkBlacklist);
+    executeSoon(checkBlocklist);
   }, "blocklist-data-gfxItems");
 
-  mockGfxBlocklistItemsFromDisk("../data/test_gfxBlacklist.json");
+  mockGfxBlocklistItemsFromDisk("../data/test_gfxBlocklist.json");
 }

@@ -53,26 +53,26 @@ async function run_test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "8");
   await promiseStartupManager();
 
-  function blacklistAdded() {
+  function blocklistAdded() {
     
     
-    executeSoon(ensureBlacklistSet);
+    executeSoon(ensureBlocklistSet);
   }
-  function ensureBlacklistSet() {
-    var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
+  function ensureBlocklistSet() {
+    var status = gfxInfo.getFeatureStatusStr("DIRECT2D");
+    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
 
     
-    status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT3D_9_LAYERS);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_9_LAYERS");
+    Assert.equal(status, "STATUS_OK");
 
     Assert.equal(
       Services.prefs.getIntPref("gfx.blacklist.direct2d"),
-      Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION
+      "BLOCKED_DRIVER_VERSION"
     );
 
-    Services.obs.removeObserver(blacklistAdded, "blocklist-data-gfxItems");
-    Services.obs.addObserver(blacklistRemoved, "blocklist-data-gfxItems");
+    Services.obs.removeObserver(blocklistAdded, "blocklist-data-gfxItems");
+    Services.obs.addObserver(blocklistRemoved, "blocklist-data-gfxItems");
     mockGfxBlocklistItems([
       {
         os: "WINNT 6.1",
@@ -95,18 +95,18 @@ async function run_test() {
     ]);
   }
 
-  function blacklistRemoved() {
+  function blocklistRemoved() {
     
     
-    executeSoon(ensureBlacklistUnset);
+    executeSoon(ensureBlocklistUnset);
   }
-  function ensureBlacklistUnset() {
-    var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+  function ensureBlocklistUnset() {
+    var status = gfxInfo.getFeatureStatusStr("DIRECT2D");
+    Assert.equal(status, "STATUS_OK");
 
     
-    status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT3D_9_LAYERS);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_9_LAYERS");
+    Assert.equal(status, "STATUS_OK");
 
     var exists = false;
     try {
@@ -119,6 +119,6 @@ async function run_test() {
     do_test_finished();
   }
 
-  Services.obs.addObserver(blacklistAdded, "blocklist-data-gfxItems");
-  mockGfxBlocklistItemsFromDisk("../data/test_gfxBlacklist.json");
+  Services.obs.addObserver(blocklistAdded, "blocklist-data-gfxItems");
+  mockGfxBlocklistItemsFromDisk("../data/test_gfxBlocklist.json");
 }

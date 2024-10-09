@@ -21,9 +21,9 @@ async function run_test() {
   
   switch (Services.appinfo.OS) {
     case "WINNT":
-      gfxInfo.spoofVendorID("0xdcdc");
+      gfxInfo.spoofVendorID("0xabcd");
       gfxInfo.spoofDeviceID("0x1234");
-      gfxInfo.spoofDriverVersion("8.52.322.1110");
+      gfxInfo.spoofDriverVersion("8.52.322.2202");
       
       gfxInfo.spoofOSVersion(0x60001);
       break;
@@ -36,9 +36,9 @@ async function run_test() {
       do_test_finished();
       return;
     case "Android":
-      gfxInfo.spoofVendorID("dcdc");
-      gfxInfo.spoofDeviceID("uiop");
-      gfxInfo.spoofDriverVersion("4");
+      gfxInfo.spoofVendorID("abcd");
+      gfxInfo.spoofDeviceID("wxyz");
+      gfxInfo.spoofDriverVersion("6");
       break;
   }
 
@@ -47,13 +47,12 @@ async function run_test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "8");
   await promiseStartupManager();
 
-  function checkBlacklist() {
-    var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+  function checkBlocklist() {
+    var status = gfxInfo.getFeatureStatusStr("DIRECT2D");
+    Assert.equal(status, "STATUS_OK");
 
-    
-    status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT3D_9_LAYERS);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    status = gfxInfo.getFeatureStatusStr("DIRECT3D_9_LAYERS");
+    Assert.equal(status, "STATUS_OK");
 
     do_test_finished();
   }
@@ -61,8 +60,8 @@ async function run_test() {
   Services.obs.addObserver(function () {
     
     
-    executeSoon(checkBlacklist);
+    executeSoon(checkBlocklist);
   }, "blocklist-data-gfxItems");
 
-  mockGfxBlocklistItemsFromDisk("../data/test_gfxBlacklist.json");
+  mockGfxBlocklistItemsFromDisk("../data/test_gfxBlocklist.json");
 }
