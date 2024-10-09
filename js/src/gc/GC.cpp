@@ -1096,6 +1096,13 @@ bool GCRuntime::setParameter(JSContext* cx, JSGCParamKey key, uint32_t value) {
   FinishGC(cx);
   waitBackgroundSweepEnd();
 
+  
+  
+  
+  if (key == JSGC_NURSERY_ENABLED && cx->generationalDisabled > 0) {
+    return false;
+  }
+
   AutoLockGC lock(this);
   return setParameter(key, value, lock);
 }
