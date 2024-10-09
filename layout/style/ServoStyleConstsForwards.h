@@ -125,10 +125,6 @@ class ImageTracker;
 
 }  
 
-namespace ipc {
-class ByteBuf;
-}  
-
 
 
 
