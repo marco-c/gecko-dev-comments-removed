@@ -188,6 +188,8 @@ let interfaceNamesInGlobalScope = [
   
   "Event",
   
+  "EventSource",
+  
   "EventTarget",
   
   "ExtendableEvent",
