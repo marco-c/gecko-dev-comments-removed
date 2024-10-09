@@ -1003,7 +1003,7 @@ var SidebarController = {
       
       return;
     }
-    this.toolbarButton.toggleAttribute("expanded", this.sidebarMain.expanded);
+    toolbarButton.toggleAttribute("expanded", this.sidebarMain.expanded);
     switch (this.sidebarRevampVisibility) {
       case "always-show":
         
