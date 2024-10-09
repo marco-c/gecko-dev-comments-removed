@@ -1147,9 +1147,13 @@ bool ParseConditionTable(const ots::Font *font,
 
   
   if (filter_range_min_value < -0x4000 || 
-      filter_range_max_value > 0x4000 || 
-      filter_range_min_value > filter_range_max_value) {
+      filter_range_max_value > 0x4000) { 
     return OTS_FAILURE_MSG("Invalid filter range in condition");
+  }
+
+  
+  if (filter_range_min_value > filter_range_max_value) {
+    OTS_WARNING("Misordered filter range in condition table");
   }
 
   return true;
