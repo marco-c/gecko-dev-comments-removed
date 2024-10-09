@@ -7774,59 +7774,32 @@ var StatusPanel = {
 var TabBarVisibility = {
   _initialUpdateDone: false,
 
-  update(force = false) {
+  update() {
     let toolbar = document.getElementById("TabsToolbar");
-    let hideTabstrip = false;
-    let isPopup = !window.toolbar.visible;
-    let isVerticalTabs = Services.prefs.getBoolPref(
-      "sidebar.verticalTabs",
-      false
-    );
-    let nonPopupWithVerticalTabs = !isPopup && isVerticalTabs;
+    let collapse = false;
     if (
       !gBrowser  ||
       gBrowser.visibleTabs.length == 1
     ) {
-      hideTabstrip = isPopup;
+      collapse = !window.toolbar.visible;
     }
 
-    if (nonPopupWithVerticalTabs) {
-      
-      
-      
-      
-      hideTabstrip = true;
-      TabsInTitlebar.allowedBy("tabs-visible", true);
-    } else {
-      TabsInTitlebar.allowedBy("tabs-visible", !hideTabstrip);
-    }
-
-    if (
-      hideTabstrip == toolbar.collapsed &&
-      !force &&
-      this._initialUpdateDone
-    ) {
+    if (collapse == toolbar.collapsed && this._initialUpdateDone) {
       return;
     }
     this._initialUpdateDone = true;
 
-    toolbar.collapsed = hideTabstrip;
+    toolbar.collapsed = collapse;
     let navbar = document.getElementById("nav-bar");
-    navbar.toggleAttribute("tabs-hidden", hideTabstrip);
-    
-    navbar.classList.toggle(
-      "browser-titlebar",
-      TabsInTitlebar.enabled && hideTabstrip
-    );
-    navbar.classList.toggle("titlebar-color", hideTabstrip);
+    navbar.toggleAttribute("tabs-hidden", collapse);
 
-    document.getElementById("menu_closeWindow").hidden = hideTabstrip;
+    document.getElementById("menu_closeWindow").hidden = collapse;
     document.l10n.setAttributes(
       document.getElementById("menu_close"),
-      hideTabstrip
-        ? "tabbrowser-menuitem-close"
-        : "tabbrowser-menuitem-close-tab"
+      collapse ? "tabbrowser-menuitem-close" : "tabbrowser-menuitem-close-tab"
     );
+
+    TabsInTitlebar.allowedBy("tabs-visible", !collapse);
   },
 };
 
