@@ -130,6 +130,11 @@ class ObjectActor extends Actor {
     this.threadActor = threadActor;
     this.rawObj = obj.unsafeDereference();
     this.safeRawObj = this.#getSafeRawObject();
+
+    
+    
+    this.className = this.obj.class;
+
     this.hooks = {
       createValueGrip: createValueGripHook,
       getGripDepth,
@@ -165,7 +170,7 @@ class ObjectActor extends Actor {
     if (unwrapped === undefined) {
       
       
-      g.class = "InvisibleToDebugger: " + this.obj.class;
+      g.class = "InvisibleToDebugger: " + this.className;
       return g;
     }
 
@@ -199,7 +204,7 @@ class ObjectActor extends Actor {
       
       
       
-      class: unwrapped === null ? "Restricted" : this.obj.class,
+      class: unwrapped === null ? "Restricted" : this.className,
       ownPropertyLength: Number.isFinite(ownPropertyLength)
         ? ownPropertyLength
         : undefined,
@@ -280,12 +285,9 @@ class ObjectActor extends Actor {
 
 
   _populateGripPreview(grip) {
-    
-    
-    const className = this.obj.class;
-    for (const previewer of previewers[className] || previewers.Object) {
+    for (const previewer of previewers[this.className] || previewers.Object) {
       try {
-        const previewerResult = previewer(this, grip, className);
+        const previewerResult = previewer(this, grip);
         if (previewerResult) {
           return;
         }
@@ -432,7 +434,11 @@ class ObjectActor extends Actor {
     
     
     
-    if (isArray(this.obj) || ["Object", "String"].includes(this.obj.class)) {
+    if (
+      this.className == "Object" ||
+      this.className == "String" ||
+      isArray(this.obj)
+    ) {
       obj = obj.proto;
       level++;
     }
