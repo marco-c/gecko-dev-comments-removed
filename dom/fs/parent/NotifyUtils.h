@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef DOM_FS_PARENT_NOTIFYUTILS_H_
+#define DOM_FS_PARENT_NOTIFYUTILS_H_
+
+namespace mozilla::dom::fs {
+
+void NotifyDatabaseWorkStarted();
+
+}  
+
+#endif  
