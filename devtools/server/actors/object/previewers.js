@@ -172,8 +172,27 @@ const previewers = {
   ],
 
   RegExp: [
-    function({ obj, hooks }, grip) {
-      const str = DevToolsUtils.callPropertyOnObject(obj, "toString");
+    function(objectActor, grip, rawObj) {
+      const { obj, hooks } = objectActor;
+      let str;
+      if (isWorker) {
+        
+        
+        
+        
+        
+        try {
+          str = DevToolsUtils.callPropertyOnObject(obj, "toString");
+        } catch(e) {
+          
+          
+          grip.displayString = "RegExp with overloaded toString";
+        }
+      } else {
+        const { RegExp } = objectActor.targetActor.targetGlobal;
+        str = RegExp.prototype.toString.call(rawObj);
+      }
+
       if (typeof str != "string") {
         return false;
       }
@@ -184,8 +203,20 @@ const previewers = {
   ],
 
   Date: [
-    function({ obj, hooks }, grip) {
-      const time = DevToolsUtils.callPropertyOnObject(obj, "getTime");
+    function(objectActor, grip, rawObj) {
+      const { obj, hooks } = objectActor;
+      let time;
+      if (isWorker) {
+        
+        
+        const raw = objectActor.obj.unsafeDereference();
+        
+        
+        time = Date.prototype.getTime.call(raw);
+      } else {
+        const { Date } = objectActor.targetActor.targetGlobal;
+        time = Date.prototype.getTime.call(rawObj);
+      }
       if (typeof time != "number") {
         return false;
       }
