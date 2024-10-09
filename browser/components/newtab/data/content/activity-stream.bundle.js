@@ -10150,7 +10150,9 @@ const NEWTAB_DARK_THEME = {
 
 function Logo() {
   return external_React_default().createElement("div", {
-    className: "logo-and-wordmark"
+    className: "logo-and-wordmark",
+    role: "img",
+    "data-l10n-id": "newtab-logo-and-wordmark"
   }, external_React_default().createElement("div", {
     className: "logo"
   }), external_React_default().createElement("div", {
