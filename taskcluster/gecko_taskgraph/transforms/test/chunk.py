@@ -176,6 +176,7 @@ def set_test_manifests(config, tasks):
         elif (
             get_test_tags(config, task.get("worker", {}).get("env", {}))
             and not task["test-manifests"]["active"]
+            and not task["test-manifests"]["other_dirs"]
         ):
             
             continue
