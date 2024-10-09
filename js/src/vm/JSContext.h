@@ -617,11 +617,17 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ContextData<bool> hadUncatchableException_;
 
+  
+  js::ContextData<bool> shouldAssertExceptionOnFalseReturn_;
+
  public:
   bool hadResourceExhaustion() const {
     return hadResourceExhaustion_ || js::oom::simulator.isThreadSimulatingAny();
   }
   bool hadUncatchableException() const { return hadUncatchableException_; }
+  bool shouldAssertExceptionOnFalseReturn() const {
+    return shouldAssertExceptionOnFalseReturn_;
+  }
 #endif
 
  public:
@@ -631,8 +637,16 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 #endif
   }
   void reportUncatchableException() {
+    
+    
+    clearPendingException();
 #ifdef DEBUG
     hadUncatchableException_ = true;
+#endif
+  }
+  void setShouldAssertExceptionOnFalseReturn() {
+#ifdef DEBUG
+    shouldAssertExceptionOnFalseReturn_ = true;
 #endif
   }
 

@@ -553,6 +553,20 @@ extern JS_PUBLIC_API bool CreateError(
     JSErrorReport* report, HandleString message,
     Handle<mozilla::Maybe<Value>> cause, MutableHandleValue rval);
 
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void ReportUncatchableException(JSContext* cx);
+
 } 
 
 #endif 

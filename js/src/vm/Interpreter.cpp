@@ -432,6 +432,14 @@ static MOZ_ALWAYS_INLINE bool MaybeEnterInterpreterTrampoline(JSContext* cx,
   return Interpret(cx, state);
 }
 
+static void AssertExceptionResult(JSContext* cx) {
+  
+  
+  MOZ_ASSERT_IF(cx->shouldAssertExceptionOnFalseReturn(),
+                cx->isExceptionPending() || cx->isPropagatingForcedReturn() ||
+                    cx->hadUncatchableException());
+}
+
 
 
 
@@ -488,7 +496,9 @@ bool js::RunScript(JSContext* cx, RunState& state) {
   }
 
   bool ok = MaybeEnterInterpreterTrampoline(cx, state);
-
+  if (!ok) {
+    AssertExceptionResult(cx);
+  }
   return ok;
 }
 #ifdef _MSC_VER
@@ -519,6 +529,8 @@ MOZ_ALWAYS_INLINE bool CallJSNative(JSContext* cx, Native native,
   if (ok) {
     cx->check(args.rval());
     MOZ_ASSERT_IF(!alreadyThrowing, !cx->isExceptionPending());
+  } else {
+    AssertExceptionResult(cx);
   }
   return ok;
 }
