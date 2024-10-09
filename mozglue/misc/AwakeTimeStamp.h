@@ -26,9 +26,12 @@ class AwakeTimeDuration;
 
 
 
+
+
 class AwakeTimeStamp {
  public:
   MFBT_API static AwakeTimeStamp NowLoRes();
+  MFBT_API static AwakeTimeStamp Now();
   MFBT_API void operator+=(const AwakeTimeDuration& aOther);
   MFBT_API void operator-=(const AwakeTimeDuration& aOther);
   MFBT_API bool operator<(const AwakeTimeStamp& aOther) const {
