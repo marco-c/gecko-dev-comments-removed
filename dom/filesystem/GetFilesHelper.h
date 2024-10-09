@@ -31,6 +31,8 @@ class GetFilesCallback {
  public:
   NS_INLINE_DECL_REFCOUNTING(GetFilesCallback);
 
+  
+  
   virtual void Callback(nsresult aStatus,
                         const FallibleTArray<RefPtr<BlobImpl>>& aBlobImpls) = 0;
 
