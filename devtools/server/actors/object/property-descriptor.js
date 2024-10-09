@@ -23,7 +23,11 @@ const {
 
 
 
-function propertyDescriptor(objectActor, name, onlyEnumerable) {
+
+
+
+
+function propertyDescriptor(objectActor, name, depth, onlyEnumerable) {
   if (!DevToolsUtils.isSafeDebuggerObject(objectActor.obj)) {
     return undefined;
   }
@@ -62,18 +66,18 @@ function propertyDescriptor(objectActor, name, onlyEnumerable) {
 
   if ("value" in desc) {
     retval.writable = desc.writable;
-    retval.value = objectActor.hooks.createValueGrip(desc.value);
+    retval.value = objectActor.createValueGrip(desc.value, depth);
   } else if (objectActor.threadActor.getWatchpoint(rawObj, name.toString())) {
     const watchpoint = objectActor.threadActor.getWatchpoint(rawObj, name.toString());
-    retval.value = objectActor.hooks.createValueGrip(watchpoint.desc.value);
+    retval.value = objectActor.createValueGrip(watchpoint.desc.value, depth);
     retval.watchpoint = watchpoint.watchpointType;
   } else {
     if ("get" in desc) {
-      retval.get = objectActor.hooks.createValueGrip(desc.get);
+      retval.get = objectActor.createValueGrip(desc.get, depth);
     }
 
     if ("set" in desc) {
-      retval.set = objectActor.hooks.createValueGrip(desc.set);
+      retval.set = objectActor.createValueGrip(desc.set, depth);
     }
   }
   return retval;

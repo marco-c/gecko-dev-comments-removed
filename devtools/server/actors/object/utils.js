@@ -581,10 +581,6 @@ function createObjectGrip(
   const actor = new ActorClass(threadActor, object, {
     
     ...objectActorAttributes,
-
-    
-    
-    createValueGrip: value => createValueGrip(threadActor, value, pool, depth + 1, objectActorAttributes),
   });
   pool.manage(actor);
 
