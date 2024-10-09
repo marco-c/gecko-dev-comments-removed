@@ -201,9 +201,6 @@ const nsAttrValue::EnumTable SMILTimedElement::sRestartModeTable[] = {
     {"never", RESTART_NEVER},
     {nullptr, 0}};
 
-const SMILMilestone SMILTimedElement::sMaxMilestone(
-    std::numeric_limits<SMILTime>::max(), false);
-
 
 
 
