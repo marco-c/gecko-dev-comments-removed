@@ -47,7 +47,7 @@ module.exports = async function ({
   onAvailableArray([[ResourceCommand.TYPES.CONSOLE_MESSAGE, messages]]);
 
   
-  webConsoleFront.on("consoleAPICall", message => {
+  webConsoleFront.on("consoleAPICall", ({ message }) => {
     
     
     if (message.clonedFromContentProcess) {

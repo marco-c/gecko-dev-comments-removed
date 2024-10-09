@@ -21,6 +21,11 @@ self.addEventListener("message", function (event) {
   if (event.data === "install-service-worker") {
     canInstall = true;
   }
+  if (event.data === "install-service-worker-and-pause") {
+    canInstall = true;
+    
+    debugger;
+  }
 });
 
 
