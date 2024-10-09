@@ -697,12 +697,41 @@ PlainObject* js::temporal::PreparePartialTemporalFields(
   return result;
 }
 
+using CalendarFieldNames = JS::StackGCVector<JS::PropertyKey>;
+
+
+
+
+static bool CalendarFields(JSContext* cx, Handle<CalendarValue> calendar,
+                           mozilla::EnumSet<CalendarField> fieldNames,
+                           MutableHandle<CalendarFieldNames> result) {
+  MOZ_ASSERT(result.empty());
+
+  
+
+  
+  auto temporalFields = CalendarFields(calendar, fieldNames);
+
+  
+  if (!result.reserve(temporalFields.size())) {
+    return false;
+  }
+
+  
+  for (auto field : SortedTemporalFields{temporalFields}) {
+    auto* name = ToPropertyName(cx, field);
+    result.infallibleAppend(NameToId(name));
+  }
+
+  return true;
+}
+
 
 
 
 
 static bool PrepareCalendarFieldsAndFieldNames(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     mozilla::EnumSet<CalendarField> calendarFieldNames,
     mozilla::EnumSet<TemporalField> nonCalendarFieldNames,
     mozilla::EnumSet<TemporalField> requiredFieldNames,
@@ -741,7 +770,7 @@ static bool PrepareCalendarFieldsAndFieldNames(
 
 
 bool js::temporal::PrepareCalendarFieldsAndFieldNames(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     mozilla::EnumSet<CalendarField> calendarFieldNames,
     MutableHandle<PlainObject*> resultFields,
     MutableHandle<TemporalFieldNames> resultFieldNames) {
@@ -782,7 +811,7 @@ static constexpr mozilla::EnumSet<TemporalField> NonCalendarFieldNames = {
 
 
 PlainObject* js::temporal::PrepareCalendarFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     mozilla::EnumSet<CalendarField> calendarFieldNames,
     mozilla::EnumSet<TemporalField> nonCalendarFieldNames,
     mozilla::EnumSet<TemporalField> requiredFieldNames) {

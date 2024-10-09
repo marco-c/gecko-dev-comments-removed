@@ -554,14 +554,9 @@ static bool ToTemporalDateTime(
     return false;
   }
 
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
-
   
   Rooted<PlainObject*> fields(
-      cx, PrepareCalendarFields(cx, calendarRec, item,
+      cx, PrepareCalendarFields(cx, calendar, item,
                                 {
                                     CalendarField::Day,
                                     CalendarField::Month,
@@ -1750,15 +1745,11 @@ static bool PlainDateTime_with(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarValue> calendar(cx, dateTime->calendar());
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
 
   
   Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, dateTime,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, dateTime,
                                           {
                                               CalendarField::Day,
                                               CalendarField::Month,

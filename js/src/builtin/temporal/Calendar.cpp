@@ -814,10 +814,6 @@ bool js::temporal::CreateCalendarMethodsRecord(
   return true;
 }
 
-static CalendarId BuiltinCalendarId(const CalendarValue& calendar) {
-  return calendar.identifier();
-}
-
 static auto ToAnyCalendarKind(CalendarId id) {
   switch (id) {
     case CalendarId::ISO8601:
@@ -3150,18 +3146,6 @@ static bool CalendarResolveFields(JSContext* cx, CalendarId calendar,
   return true;
 }
 
-static constexpr auto sortedCalendarFields = std::array{
-    CalendarField::Day,
-    CalendarField::Month,
-    CalendarField::MonthCode,
-    CalendarField::Year,
-};
-
-
-
-
-using SortedCalendarFields = SortedEnumSet<CalendarField, sortedCalendarFields>;
-
 static TemporalField ToTemporalField(CalendarField field) {
   switch (field) {
     case CalendarField::Year:
@@ -3179,20 +3163,16 @@ static TemporalField ToTemporalField(CalendarField field) {
 
 
 
-static bool BuiltinCalendarFields(JSContext* cx, CalendarId calendarId,
-                                  mozilla::EnumSet<CalendarField> fieldNames,
-                                  CalendarFieldNames& result) {
-  MOZ_ASSERT(result.empty());
+mozilla::EnumSet<TemporalField> js::temporal::CalendarFields(
+    const CalendarValue& calendar, mozilla::EnumSet<CalendarField> fieldNames) {
+  auto calendarId = calendar.identifier();
 
   
 
   
   mozilla::EnumSet<TemporalField> temporalFields{};
   for (auto fieldName : fieldNames) {
-    
-
-    
-    temporalFields += ToTemporalField(fieldName);
+    temporalFields += ::ToTemporalField(fieldName);
   }
 
   
@@ -3204,29 +3184,7 @@ static bool BuiltinCalendarFields(JSContext* cx, CalendarId calendarId,
     temporalFields += extraFieldDescriptors.required;
   }
 
-  
-  if (!result.reserve(temporalFields.size())) {
-    return false;
-  }
-
-  
-  for (auto field : SortedTemporalFields{temporalFields}) {
-    auto* name = ToPropertyName(cx, field);
-    result.infallibleAppend(NameToId(name));
-  }
-
-  return true;
-}
-
-
-
-
-bool js::temporal::CalendarFields(JSContext* cx,
-                                  Handle<CalendarRecord> calendar,
-                                  mozilla::EnumSet<CalendarField> fieldNames,
-                                  MutableHandle<CalendarFieldNames> result) {
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarFields(cx, calendarId, fieldNames, result.get());
+  return temporalFields;
 }
 
 

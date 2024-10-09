@@ -247,14 +247,9 @@ static bool ToTemporalMonthDay(
     }
   }
 
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
-
   
   Rooted<PlainObject*> fields(
-      cx, PrepareCalendarFields(cx, calendarRec, item,
+      cx, PrepareCalendarFields(cx, calendar, item,
                                 {
                                     CalendarField::Day,
                                     CalendarField::Month,
@@ -532,15 +527,10 @@ static bool PlainMonthDay_with(JSContext* cx, const CallArgs& args) {
   
   Rooted<CalendarValue> calendar(cx, monthDay->calendar());
 
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
-
   
   Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, monthDay,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, monthDay,
                                           {
                                               CalendarField::Day,
                                               CalendarField::Month,
@@ -748,15 +738,10 @@ static bool PlainMonthDay_toPlainDate(JSContext* cx, const CallArgs& args) {
   
   Rooted<CalendarValue> calendar(cx, monthDay->calendar());
 
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
-
   
   Rooted<PlainObject*> receiverFields(cx);
   JS::RootedVector<PropertyKey> receiverFieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, monthDay,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, monthDay,
                                           {
                                               CalendarField::Day,
                                               CalendarField::MonthCode,
@@ -769,7 +754,7 @@ static bool PlainMonthDay_toPlainDate(JSContext* cx, const CallArgs& args) {
   
   Rooted<PlainObject*> inputFields(cx);
   JS::RootedVector<PropertyKey> inputFieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, item,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, item,
                                           {
                                               CalendarField::Year,
                                           },

@@ -258,14 +258,9 @@ static bool ToTemporalYearMonth(
     return false;
   }
 
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
-
   
   Rooted<PlainObject*> fields(
-      cx, PrepareCalendarFields(cx, calendarRec, item,
+      cx, PrepareCalendarFields(cx, calendar, item,
                                 {
                                     CalendarField::Month,
                                     CalendarField::MonthCode,
@@ -416,15 +411,10 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
     return true;
   }
 
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
-
   
   Rooted<PlainObject*> thisFields(cx);
   JS::RootedVector<PropertyKey> thisFieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, yearMonth,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
                                           {
                                               CalendarField::MonthCode,
                                               CalendarField::Year,
@@ -580,15 +570,11 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
 
   
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  };
 
   
   Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, yearMonth,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
                                           {
                                               CalendarField::MonthCode,
                                               CalendarField::Year,
@@ -1077,15 +1063,11 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
 
   
   Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, yearMonth,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
                                           {
                                               CalendarField::Month,
                                               CalendarField::MonthCode,
@@ -1370,15 +1352,10 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
-  Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-    return false;
-  }
-
   
   Rooted<PlainObject*> receiverFields(cx);
   JS::RootedVector<PropertyKey> receiverFieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, yearMonth,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
                                           {
                                               CalendarField::MonthCode,
                                               CalendarField::Year,
@@ -1391,7 +1368,7 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   
   Rooted<PlainObject*> inputFields(cx);
   JS::RootedVector<PropertyKey> inputFieldNames(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, item,
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, item,
                                           {
                                               CalendarField::Day,
                                           },

@@ -313,7 +313,7 @@ PlainObject* PreparePartialTemporalFields(
 
 
 bool PrepareCalendarFieldsAndFieldNames(
-    JSContext* cx, JS::Handle<CalendarRecord> calendar,
+    JSContext* cx, JS::Handle<CalendarValue> calendar,
     JS::Handle<JSObject*> fields,
     mozilla::EnumSet<CalendarField> calendarFieldNames,
     JS::MutableHandle<PlainObject*> resultFields,
@@ -324,7 +324,7 @@ bool PrepareCalendarFieldsAndFieldNames(
 
 
 PlainObject* PrepareCalendarFields(
-    JSContext* cx, JS::Handle<CalendarRecord> calendar,
+    JSContext* cx, JS::Handle<CalendarValue> calendar,
     JS::Handle<JSObject*> fields,
     mozilla::EnumSet<CalendarField> calendarFieldNames,
     mozilla::EnumSet<TemporalField> nonCalendarFieldNames = {},
