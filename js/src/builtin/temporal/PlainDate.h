@@ -166,6 +166,13 @@ bool AddISODate(JSContext* cx, const PlainDate& date,
 
 
 
+bool AddDate(JSContext* cx, JS::Handle<CalendarValue> calendar,
+             const PlainDate& date, const DateDuration& duration,
+             TemporalOverflow overflow, PlainDate* result);
+
+
+
+
 Wrapped<PlainDateObject*> AddDate(JSContext* cx,
                                   JS::Handle<CalendarRecord> calendar,
                                   JS::Handle<Wrapped<PlainDateObject*>> date,

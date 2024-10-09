@@ -3793,22 +3793,34 @@ static bool ISOYearMonthFromFields(JSContext* cx, Handle<TemporalFields> fields,
 
 
 
-static PlainYearMonthObject* BuiltinCalendarYearMonthFromFields(
-    JSContext* cx, CalendarId calendarId, Handle<JSObject*> fields,
-    Handle<JSObject*> maybeOptions) {
-  
+bool js::temporal::CalendarYearMonthFromFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    TemporalOverflow overflow,
+    MutableHandle<PlainYearMonthWithCalendar> result) {
+  auto calendarId = calendar.identifier();
 
   
   auto relevantFieldNames = {TemporalField::Month, TemporalField::MonthCode,
                              TemporalField::Year};
 
   
-  Rooted<TemporalFields> dateFields(cx);
+  PlainDate date;
   if (calendarId == CalendarId::ISO8601) {
     
+    Rooted<TemporalFields> dateFields(cx);
     if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
                                {TemporalField::Year}, &dateFields)) {
-      return nullptr;
+      return false;
+    }
+
+    
+    if (!ISOResolveMonth(cx, &dateFields)) {
+      return false;
+    }
+
+    
+    if (!ISOYearMonthFromFields(cx, dateFields, overflow, &date)) {
+      return false;
     }
   } else {
     
@@ -3816,9 +3828,10 @@ static PlainYearMonthObject* BuiltinCalendarYearMonthFromFields(
         CalendarFieldDescriptors(calendarId, FieldType::YearMonth);
 
     
+    Rooted<TemporalFields> dateFields(cx);
     if (!PrepareTemporalFields(cx, fields, relevantFieldNames, {},
                                calendarRelevantFieldDescriptors, &dateFields)) {
-      return nullptr;
+      return false;
     }
 
     
@@ -3826,44 +3839,21 @@ static PlainYearMonthObject* BuiltinCalendarYearMonthFromFields(
 
     
     dateFields.day() = firstDayIndex;
-  }
 
-  
-  auto overflow = TemporalOverflow::Constrain;
-  if (maybeOptions) {
-    if (!GetTemporalOverflowOption(cx, maybeOptions, &overflow)) {
-      return nullptr;
-    }
-  }
-
-  
-  PlainDate result;
-  if (calendarId == CalendarId::ISO8601) {
-    
-    if (!ISOResolveMonth(cx, &dateFields)) {
-      return nullptr;
-    }
-
-    
-    if (!ISOYearMonthFromFields(cx, dateFields, overflow, &result)) {
-      return nullptr;
-    }
-  } else {
     
     if (!CalendarResolveFields(cx, calendarId, dateFields,
                                FieldType::YearMonth)) {
-      return nullptr;
+      return false;
     }
 
     
-    if (!CalendarDateToISO(cx, calendarId, dateFields, overflow, &result)) {
-      return nullptr;
+    if (!CalendarDateToISO(cx, calendarId, dateFields, overflow, &date)) {
+      return false;
     }
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(calendarId));
-  return CreateTemporalYearMonth(cx, result, calendar);
+  return CreateTemporalYearMonth(cx, date, calendar, result);
 }
 
 
@@ -3872,9 +3862,19 @@ static PlainYearMonthObject* BuiltinCalendarYearMonthFromFields(
 static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
     JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
     Handle<PlainObject*> maybeOptions) {
-  auto calendarId = BuiltinCalendarId(calendar.receiver());
-  return BuiltinCalendarYearMonthFromFields(cx, calendarId, fields,
-                                            maybeOptions);
+  auto overflow = TemporalOverflow::Constrain;
+  if (maybeOptions) {
+    if (!GetTemporalOverflowOption(cx, maybeOptions, &overflow)) {
+      return nullptr;
+    }
+  }
+
+  Rooted<PlainYearMonthWithCalendar> result(cx);
+  if (!CalendarYearMonthFromFields(cx, calendar.receiver(), fields, overflow,
+                                   &result)) {
+    return nullptr;
+  }
+  return CreateTemporalYearMonth(cx, result.date(), result.calendar());
 }
 
 
@@ -4218,6 +4218,31 @@ JSObject* js::temporal::CalendarMergeFields(
     Handle<PlainObject*> additionalFields) {
   auto calendarId = BuiltinCalendarId(calendar.receiver());
   return BuiltinCalendarMergeFields(cx, calendarId, fields, additionalFields);
+}
+
+
+
+
+bool js::temporal::CalendarDateAdd(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
+                                   const PlainDate& date,
+                                   const DateDuration& duration,
+                                   TemporalOverflow overflow,
+                                   PlainDate* result) {
+  MOZ_ASSERT(IsValidISODate(date));
+  MOZ_ASSERT(IsValidDuration(duration));
+
+  auto calendarId = calendar.identifier();
+
+  
+
+  
+  if (calendarId == CalendarId::ISO8601) {
+    return AddISODate(cx, date, duration, overflow, result);
+  }
+
+  
+  return CalendarDateAddition(cx, calendarId, date, duration, overflow, result);
 }
 
 
