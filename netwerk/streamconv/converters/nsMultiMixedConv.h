@@ -151,15 +151,17 @@ class nsMultiMixedConv : public nsIStreamConverter {
   nsCOMPtr<nsIStreamListener> mFinalListener;  
                                                
 
-  nsCOMPtr<nsIChannel>
-      mChannel;  
-  RefPtr<nsPartChannel> mPartChannel;  
-                                       
+  
+  nsCOMPtr<nsIChannel> mChannel;
+  
+  
+  RefPtr<nsPartChannel> mPartChannel;
   nsCOMPtr<nsISupports> mContext;
   nsCString mContentType;
   nsCString mContentDisposition;
   nsCString mContentSecurityPolicy;
   nsCString mRootContentSecurityPolicy;
+  nsCString mRootContentDisposition;
   uint64_t mContentLength{UINT64_MAX};
   uint64_t mTotalSent{0};
 
