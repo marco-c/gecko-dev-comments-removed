@@ -52,8 +52,8 @@ class FormatterError extends Error {
 
 
 function customFormatterHeader(objectActor) {
-  const rawValue = objectActor.rawValue();
-  const globalWrapper = Cu.getGlobalForObject(rawValue);
+  const { rawObj } = objectActor;
+  const globalWrapper = Cu.getGlobalForObject(rawObj);
   const global = globalWrapper?.wrappedJSObject;
 
   
@@ -247,8 +247,8 @@ function processFormatterForHeader({
 
 
 async function customFormatterBody(objectActor, formatter) {
-  const rawValue = objectActor.rawValue();
-  const globalWrapper = Cu.getGlobalForObject(rawValue);
+  const { rawObj } = objectActor;
+  const globalWrapper = Cu.getGlobalForObject(rawObj);
   const global = globalWrapper?.wrappedJSObject;
 
   const customFormatterIndex = global.devtoolsFormatters.indexOf(formatter);

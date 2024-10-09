@@ -128,6 +128,8 @@ class ObjectActor extends Actor {
     this.obj = obj;
     this.targetActor = threadActor.targetActor;
     this.threadActor = threadActor;
+    this.rawObj = obj.unsafeDereference();
+    this.safeRawObj = this.#getSafeRawObject();
     this.hooks = {
       createValueGrip: createValueGripHook,
       getGripDepth,
@@ -136,10 +138,6 @@ class ObjectActor extends Actor {
       customFormatterObjectTagDepth,
       customFormatterConfigDbgObj,
     };
-  }
-
-  rawValue() {
-    return this.obj.unsafeDereference();
   }
 
   addWatchpoint(property, label, watchpointType) {
@@ -217,18 +215,21 @@ class ObjectActor extends Actor {
       g.isClassConstructor = this.obj.isClassConstructor;
     }
 
-    const raw = this.getRawObject();
-    this._populateGripPreview(g, raw);
+    this._populateGripPreview(g);
     this.hooks.decrementGripDepth();
 
-    if (raw && Node.isInstance(raw) && lazy.ContentDOMReference) {
+    if (
+      this.safeRawObj &&
+      Node.isInstance(this.safeRawObj) &&
+      lazy.ContentDOMReference
+    ) {
       
       
       
       
       
       try {
-        g.contentDomReference = lazy.ContentDOMReference.get(raw);
+        g.contentDomReference = lazy.ContentDOMReference.get(this.safeRawObj);
       } catch (e) {}
     }
 
@@ -259,8 +260,8 @@ class ObjectActor extends Actor {
     return null;
   }
 
-  getRawObject() {
-    let raw = this.obj.unsafeDereference();
+  #getSafeRawObject() {
+    let raw = this.rawObj;
 
     
     
@@ -278,13 +279,13 @@ class ObjectActor extends Actor {
   
 
 
-  _populateGripPreview(grip, raw) {
+  _populateGripPreview(grip) {
     
     
     const className = this.obj.class;
     for (const previewer of previewers[className] || previewers.Object) {
       try {
-        const previewerResult = previewer(this, grip, raw, className);
+        const previewerResult = previewer(this, grip, className);
         if (previewerResult) {
           return;
         }
@@ -747,6 +748,8 @@ class ObjectActor extends Actor {
     }
     this._customFormatterItem = null;
     this.obj = null;
+    this.rawObj = null;
+    this.safeRawObj = null;
     this.threadActor = null;
   }
 }

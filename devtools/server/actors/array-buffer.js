@@ -22,10 +22,10 @@ class ArrayBufferActor extends Actor {
     super(conn, arrayBufferSpec);
     this.buffer = buffer;
     this.bufferLength = buffer.byteLength;
-  }
 
-  rawValue() {
-    return this.buffer;
+    
+    
+    this.rawObj = this.buffer;
   }
 
   form() {
