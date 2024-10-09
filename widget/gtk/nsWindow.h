@@ -258,6 +258,7 @@ class nsWindow final : public nsBaseWidget {
   gboolean OnKeyReleaseEvent(GdkEventKey* aEvent);
 
   void OnScrollEvent(GdkEventScroll* aEvent);
+  void OnSmoothScrollEvent(uint32_t aTime, float aDeltaX, float aDeltaY);
 
   void OnVisibilityNotifyEvent(GdkVisibilityState aState);
   void OnWindowStateEvent(GtkWidget* aWidget, GdkEventWindowState* aEvent);
@@ -902,14 +903,31 @@ class nsWindow final : public nsBaseWidget {
   RefPtr<nsWindow> mWaylandPopupNext;
   RefPtr<nsWindow> mWaylandPopupPrev;
 
-#ifdef MOZ_ENABLE_DBUS
-  RefPtr<mozilla::widget::DBusMenuBar> mDBusMenuBar;
-#endif
-
   
   
   
   LayoutDeviceIntSize mMoveToRectPopupSize;
+
+#ifdef MOZ_ENABLE_DBUS
+  RefPtr<mozilla::widget::DBusMenuBar> mDBusMenuBar;
+#endif
+
+  struct LastMouseCoordinates {
+    template <typename Event>
+    void Set(Event* aEvent) {
+      mX = aEvent->x;
+      mY = aEvent->y;
+      mRootX = aEvent->x_root;
+      mRootY = aEvent->y_root;
+    }
+
+    float mX = 0.0f, mY = 0.0f;
+    float mRootX = 0.0f, mRootY = 0.0f;
+  } mLastMouseCoordinates;
+
+  
+  
+  guint32 mLastSmoothScrollEventTime = GDK_CURRENT_TIME;
 
   
 
