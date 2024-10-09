@@ -27,6 +27,17 @@ void FileSystemManagerChild::CloseAllWritables(
   nsTArray<RefPtr<BoolPromise>> promises;
   CloseAllWritablesImpl(promises);
 
+  
+  
+  
+  
+  
+  
+  if (promises.IsEmpty()) {
+    aCallback();
+    return;
+  }
+
   BoolPromise::AllSettled(GetCurrentSerialEventTarget(), promises)
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [callback = std::move(aCallback)](
