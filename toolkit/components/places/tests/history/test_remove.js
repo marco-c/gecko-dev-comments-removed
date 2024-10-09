@@ -281,11 +281,16 @@ add_task(async function test_error_cases() {
 add_task(async function test_orphans() {
   let uri = NetUtil.newURI("http://moz.org/");
   await PlacesTestUtils.addVisits({ uri });
-  await PlacesTestUtils.setFaviconForPage(
-    uri,
-    SMALLPNG_DATA_URI,
-    SMALLPNG_DATA_URI
-  );
+
+  await new Promise(resolve => {
+    PlacesUtils.favicons.setFaviconForPage(
+      uri,
+      SMALLPNG_DATA_URI,
+      SMALLPNG_DATA_URI,
+      null,
+      resolve
+    );
+  });
 
   
   let faviconURI = Services.io.newURI(uri.spec + "favicon.ico");

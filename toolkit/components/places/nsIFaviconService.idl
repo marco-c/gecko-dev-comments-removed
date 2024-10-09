@@ -9,6 +9,7 @@ interface nsIURI;
 interface nsIPrincipal;
 interface mozIPlacesPendingOperation;
 interface nsIFaviconDataCallback;
+interface PlacesCompletionCallback;
 
 [scriptable, uuid(e81e0b0c-b9f1-4c2e-8f3c-b809933cf73c)]
 interface nsIFaviconService : nsISupports
@@ -111,12 +112,15 @@ interface nsIFaviconService : nsISupports
 
 
 
-  [implicit_jscontext, must_use]
-  Promise setFaviconForPage(
+
+
+
+  void setFaviconForPage(
     in nsIURI aPageURI,
     in nsIURI aFaviconURI,
     in nsIURI aDataURL,
     [optional] in PRTime aExpiration,
+    [optional] in PlacesCompletionCallback aCallback,
     [optional] in boolean isRichIcon
   );
 
