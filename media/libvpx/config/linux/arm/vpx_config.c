@@ -6,5 +6,5 @@
 
 
 #include "vpx/vpx_codec.h"
-static const char* const cfg = "--target=armv7-linux-gcc --enable-external-build --disable-examples --disable-install-docs --disable-unit-tests --enable-multi-res-encoding --size-limit=8192x4608 --enable-pic --disable-avx512 --enable-runtime-cpu-detect --enable-realtime-only --log=/home/cm/Work/gecko-dev/media/libvpx/config/linux/arm/config.log";
+static const char* const cfg = "--target=armv7-linux-gcc --enable-external-build --disable-examples --disable-install-docs --disable-unit-tests --enable-multi-res-encoding --size-limit=8192x4608 --enable-pic --disable-avx512 --enable-runtime-cpu-detect --enable-realtime-only --log=/builds/worker/checkouts/gecko/media/libvpx/config/linux/arm/config.log";
 const char *vpx_codec_build_config(void) {return cfg;}

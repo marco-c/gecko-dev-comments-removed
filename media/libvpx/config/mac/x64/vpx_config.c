@@ -6,5 +6,5 @@
 
 
 #include "vpx/vpx_codec.h"
-static const char* const cfg = "--target=x86_64-darwin9-gcc --enable-external-build --disable-examples --disable-install-docs --disable-unit-tests --enable-multi-res-encoding --size-limit=8192x4608 --enable-pic --disable-avx512 --enable-postproc --enable-vp9-postproc --as=yasm --log=/home/cm/Work/gecko-dev/media/libvpx/config/mac/x64/config.log";
+static const char* const cfg = "--target=x86_64-darwin9-gcc --enable-external-build --disable-examples --disable-install-docs --disable-unit-tests --enable-multi-res-encoding --size-limit=8192x4608 --enable-pic --disable-avx512 --enable-postproc --enable-vp9-postproc --as=yasm --log=/builds/worker/checkouts/gecko/media/libvpx/config/mac/x64/config.log";
 const char *vpx_codec_build_config(void) {return cfg;}

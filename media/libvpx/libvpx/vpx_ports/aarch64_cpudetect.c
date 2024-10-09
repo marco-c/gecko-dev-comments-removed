@@ -16,7 +16,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#if !CONFIG_RUNTIME_CPU_DETECT || defined(__OpenBSD__)
+#if !CONFIG_RUNTIME_CPU_DETECT
 
 static int arm_get_cpu_caps(void) {
   
@@ -78,7 +78,35 @@ static int arm_get_cpu_caps(void) {
   }
 #endif  
 #endif  
+#if HAVE_NEON_I8MM
+
+
+#if defined(PF_ARM_SVE_I8MM_INSTRUCTIONS_AVAILABLE)
   
+  
+  
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_I8MM_INSTRUCTIONS_AVAILABLE)) {
+    flags |= HAS_NEON_I8MM;
+  }
+#endif  
+#endif  
+#if HAVE_SVE
+
+#if defined(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)) {
+    flags |= HAS_SVE;
+  }
+#endif  
+#endif  
+#if HAVE_SVE2
+
+
+#if defined(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)
+  if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)) {
+    flags |= HAS_SVE2;
+  }
+#endif  
+#endif  
   return flags;
 }
 
