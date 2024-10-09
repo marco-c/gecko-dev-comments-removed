@@ -9409,8 +9409,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
-  
-  
   if (!isJavaScript && !isDownload && !isExternalProtocol) {
     
     
