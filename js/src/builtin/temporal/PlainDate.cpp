@@ -209,9 +209,8 @@ static PlainDate ConstrainISODate(const PlainDate& date) {
 
 
 
-bool js::temporal::RegulateISODate(JSContext* cx, const PlainDate& date,
-                                   TemporalOverflow overflow,
-                                   PlainDate* result) {
+static bool RegulateISODate(JSContext* cx, const PlainDate& date,
+                            TemporalOverflow overflow, PlainDate* result) {
   
   if (overflow == TemporalOverflow::Constrain) {
     *result = ::ConstrainISODate(date);
@@ -888,11 +887,15 @@ static bool HasYearsMonthsOrWeeks(const DateDuration& duration) {
 
 
 
-bool js::temporal::AddDate(JSContext* cx, Handle<CalendarValue> calendar,
-                           const PlainDate& date, const Duration& duration,
-                           TemporalOverflow overflow, PlainDate* result) {
+static bool AddDate(JSContext* cx, Handle<CalendarValue> calendar,
+                    const PlainDate& date, const Duration& duration,
+                    TemporalOverflow overflow, PlainDate* result) {
   MOZ_ASSERT(ISODateTimeWithinLimits(date));
   MOZ_ASSERT(IsValidDuration(duration));
+
+  
+  
+  
 
   
   if (HasYearsMonthsOrWeeks(duration)) {
