@@ -185,22 +185,6 @@ PlainDateTimeObject* CreateTemporalDateTime(JSContext* cx,
 
 
 
-PlainDateTimeObject* CreateTemporalDateTime(
-    JSContext* cx, JS::Handle<PlainDateTimeWithCalendar> dateTime);
-
-
-
-
-
-bool CreateTemporalDateTime(
-    JSContext* cx, const PlainDateTime& dateTime,
-    JS::Handle<CalendarValue> calendar,
-    JS::MutableHandle<PlainDateTimeWithCalendar> result);
-
-
-
-
-
 bool CreateTemporalDateTime(JSContext* cx, const PlainDate& date,
                             const PlainTime& time, PlainDateTime* result);
 
@@ -220,16 +204,6 @@ bool InterpretTemporalDateTimeFields(JSContext* cx,
 PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
                                Increment increment, TemporalUnit unit,
                                TemporalRoundingMode roundingMode);
-
-
-
-
-
-bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
-                           const PlainDateTime& two,
-                           JS::Handle<CalendarValue> calendar,
-                           TemporalUnit largestUnit,
-                           NormalizedDuration* result);
 
 
 

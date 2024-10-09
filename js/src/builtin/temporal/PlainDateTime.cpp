@@ -406,7 +406,7 @@ PlainDateTimeObject* js::temporal::CreateTemporalDateTime(
 
 
 
-PlainDateTimeObject* js::temporal::CreateTemporalDateTime(
+static PlainDateTimeObject* CreateTemporalDateTime(
     JSContext* cx, Handle<PlainDateTimeWithCalendar> dateTime) {
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
   return CreateTemporalDateTime(cx, dateTime, dateTime.calendar());
@@ -416,7 +416,7 @@ PlainDateTimeObject* js::temporal::CreateTemporalDateTime(
 
 
 
-bool js::temporal::CreateTemporalDateTime(
+static bool CreateTemporalDateTime(
     JSContext* cx, const PlainDateTime& dateTime,
     Handle<CalendarValue> calendar,
     MutableHandle<PlainDateTimeWithCalendar> result) {
@@ -730,12 +730,11 @@ static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
 
 
 
-bool js::temporal::DifferenceISODateTime(JSContext* cx,
-                                         const PlainDateTime& one,
-                                         const PlainDateTime& two,
-                                         Handle<CalendarValue> calendar,
-                                         TemporalUnit largestUnit,
-                                         NormalizedDuration* result) {
+static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
+                                  const PlainDateTime& two,
+                                  Handle<CalendarValue> calendar,
+                                  TemporalUnit largestUnit,
+                                  NormalizedDuration* result) {
   
   MOZ_ASSERT(IsValidISODateTime(one));
   MOZ_ASSERT(IsValidISODateTime(two));
