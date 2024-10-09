@@ -3117,17 +3117,15 @@ void nsPresContext::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
     return;
   }
 
-  if (interactiveWidget == InteractiveWidget::ResizesContent ||
-      mKeyboardHeight == 0) {
-    
-    
-    
-    
-    
-    if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
-      mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
-      mPresShell->AddResizeEventFlushObserverIfNeeded();
-    }
+  
+  
+  
+  
+  
+  
+  if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
+    mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
+    mPresShell->AddResizeEventFlushObserverIfNeeded();
   }
 
   mDynamicToolbarHeight = mDynamicToolbarMaxHeight + aOffset;
