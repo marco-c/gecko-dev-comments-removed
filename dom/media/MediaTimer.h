@@ -10,10 +10,11 @@
 #  include <queue>
 
 #  include "mozilla/AbstractThread.h"
-#  include "mozilla/IntegerPrintfMacros.h"
+#  include "mozilla/AwakeTimeStamp.h"
 #  include "mozilla/Monitor.h"
 #  include "mozilla/MozPromise.h"
 #  include "mozilla/RefPtr.h"
+#  include "mozilla/SharedThreadPool.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/Unused.h"
 #  include "nsITimer.h"
@@ -26,16 +27,17 @@ extern LazyLogModule gMediaTimerLog;
     MOZ_ASSERT(gMediaTimerLog);                                \
     MOZ_LOG(gMediaTimerLog, LogLevel::Debug,                   \
             ("[MediaTimer=%p relative_t=%" PRId64 "]" x, this, \
-             RelativeMicroseconds(TimeStamp::Now()), ##__VA_ARGS__))
+             RelativeMicroseconds(T::Now()), ##__VA_ARGS__))
 
 
 
-typedef MozPromise<bool, bool,  true> MediaTimerPromise;
+using MediaTimerPromise = MozPromise<bool, bool, true>;
 
 
 
 
 
+template <typename T>
 class MediaTimer {
  public:
   explicit MediaTimer(bool aFuzzy = false);
@@ -43,45 +45,45 @@ class MediaTimer {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(MediaTimer,
                                                      DispatchDestroy());
 
-  RefPtr<MediaTimerPromise> WaitFor(const TimeDuration& aDuration,
+  RefPtr<MediaTimerPromise> WaitFor(const typename T::DurationType& aDuration,
                                     StaticString aCallSite);
-  RefPtr<MediaTimerPromise> WaitUntil(const TimeStamp& aTimeStamp,
+
+  RefPtr<MediaTimerPromise> WaitUntil(const T& aTimeStamp,
                                       StaticString aCallSite);
-  void Cancel();  
+
+  
+  void Cancel();
 
  private:
   virtual ~MediaTimer() { MOZ_ASSERT(OnMediaTimerThread()); }
 
-  void DispatchDestroy();  
-  void Destroy();          
-
+  void DispatchDestroy();
+  
+  void Destroy();
   bool OnMediaTimerThread();
   void ScheduleUpdate();
   void Update();
   void UpdateLocked();
-  bool IsExpired(const TimeStamp& aTarget, const TimeStamp& aNow);
+  bool IsExpired(const T& aTarget, const T& aNow);
   void Reject();
+  
+
+
+
+
 
   static void TimerCallback(nsITimer* aTimer, void* aClosure);
   void TimerFired();
-  void ArmTimer(const TimeStamp& aTarget, const TimeStamp& aNow);
+  void ArmTimer(const T& aTarget, const T& aNow);
 
-  bool TimerIsArmed() { return !mCurrentTimerTarget.IsNull(); }
-
-  void CancelTimerIfArmed() {
-    MOZ_ASSERT(OnMediaTimerThread());
-    if (TimerIsArmed()) {
-      TIMER_LOG("MediaTimer::CancelTimerIfArmed canceling timer");
-      mTimer->Cancel();
-      mCurrentTimerTarget = TimeStamp();
-    }
-  }
+  bool TimerIsArmed();
+  void CancelTimerIfArmed();
 
   struct Entry {
-    TimeStamp mTimeStamp;
+    T mTimeStamp;
     RefPtr<MediaTimerPromise::Private> mPromise;
 
-    explicit Entry(const TimeStamp& aTimeStamp, StaticString aCallSite)
+    explicit Entry(const T& aTimeStamp, StaticString aCallSite)
         : mTimeStamp(aTimeStamp),
           mPromise(new MediaTimerPromise::Private(aCallSite)) {}
 
@@ -97,12 +99,12 @@ class MediaTimer {
   std::priority_queue<Entry> mEntries;
   Monitor mMonitor MOZ_UNANNOTATED;
   nsCOMPtr<nsITimer> mTimer;
-  TimeStamp mCurrentTimerTarget;
+  Maybe<T> mCurrentTimerTarget;
 
   
   
-  TimeStamp mCreationTimeStamp;
-  int64_t RelativeMicroseconds(const TimeStamp& aTimeStamp) {
+  T mCreationTimeStamp;
+  int64_t RelativeMicroseconds(const T& aTimeStamp) {
     return (int64_t)(aTimeStamp - mCreationTimeStamp).ToMicroseconds();
   }
 
@@ -111,33 +113,33 @@ class MediaTimer {
 };
 
 
+template <typename T>
 class DelayedScheduler {
  public:
   explicit DelayedScheduler(nsISerialEventTarget* aTargetThread,
                             bool aFuzzy = false)
-      : mTargetThread(aTargetThread), mMediaTimer(new MediaTimer(aFuzzy)) {
+      : mTargetThread(aTargetThread), mMediaTimer(new MediaTimer<T>(aFuzzy)) {
     MOZ_ASSERT(mTargetThread);
   }
 
-  bool IsScheduled() const { return !mTarget.IsNull(); }
+  bool IsScheduled() const { return mTarget.isSome(); }
 
   void Reset() {
     MOZ_ASSERT(mTargetThread->IsOnCurrentThread(),
                "Must be on target thread to disconnect");
     mRequest.DisconnectIfExists();
-    mTarget = TimeStamp();
+    mTarget = Nothing();
   }
 
   template <typename ResolveFunc, typename RejectFunc>
-  void Ensure(mozilla::TimeStamp& aTarget, ResolveFunc&& aResolver,
-              RejectFunc&& aRejector) {
+  void Ensure(T& aTarget, ResolveFunc&& aResolver, RejectFunc&& aRejector) {
     MOZ_ASSERT(mTargetThread->IsOnCurrentThread());
-    if (IsScheduled() && mTarget <= aTarget) {
+    if (IsScheduled() && mTarget.value() <= aTarget) {
       return;
     }
     Reset();
-    mTarget = aTarget;
-    mMediaTimer->WaitUntil(mTarget, __func__)
+    mTarget.emplace(aTarget);
+    mMediaTimer->WaitUntil(mTarget.value(), __func__)
         ->Then(mTargetThread, __func__, std::forward<ResolveFunc>(aResolver),
                std::forward<RejectFunc>(aRejector))
         ->Track(mRequest);
@@ -146,15 +148,18 @@ class DelayedScheduler {
   void CompleteRequest() {
     MOZ_ASSERT(mTargetThread->IsOnCurrentThread());
     mRequest.Complete();
-    mTarget = TimeStamp();
+    mTarget = Nothing();
   }
 
  private:
   nsCOMPtr<nsISerialEventTarget> mTargetThread;
-  RefPtr<MediaTimer> mMediaTimer;
+  RefPtr<MediaTimer<T>> mMediaTimer;
+  Maybe<T> mTarget;
   MozPromiseRequestHolder<mozilla::MediaTimerPromise> mRequest;
-  TimeStamp mTarget;
 };
+
+using MediaTimerTimeStamp = MediaTimer<TimeStamp>;
+using MediaTimerAwakeTimeStamp = MediaTimer<AwakeTimeStamp>;
 
 }  
 
