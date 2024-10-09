@@ -585,6 +585,9 @@ class Loader final {
   void NotifyObserversForCachedSheet(SheetLoadData&);
 
   
+  void AddPerformanceEntryForCachedSheet(SheetLoadData&);
+
+  
   void StartDeferredLoads();
 
   
