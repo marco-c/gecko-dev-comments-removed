@@ -11,6 +11,8 @@ namespace mozilla::dom::localstorage {
 
 void NotifyDatabaseWorkStarted();
 
+void NotifyRequestFinalizationStarted();
+
 }  
 
 #endif  
