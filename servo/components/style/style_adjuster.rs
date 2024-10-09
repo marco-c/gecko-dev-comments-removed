@@ -490,13 +490,13 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             
             
             ContainerType::InlineSize => {
-                new_contain.insert(Contain::LAYOUT | Contain::STYLE | Contain::INLINE_SIZE)
+                new_contain.insert(Contain::STYLE | Contain::INLINE_SIZE)
             },
             
             
             
             ContainerType::Size => {
-                new_contain.insert(Contain::LAYOUT | Contain::STYLE | Contain::SIZE)
+                new_contain.insert(Contain::STYLE | Contain::SIZE)
             },
         }
         if new_contain == old_contain {

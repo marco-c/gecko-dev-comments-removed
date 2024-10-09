@@ -6603,8 +6603,10 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
   
   
   
+  
   const auto* disp = aStyle->StyleDisplay();
   return disp->IsContainPaint() || disp->IsContainLayout() ||
+         disp->mContainerType != StyleContainerType::Normal ||
          disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
          disp->IsAbsolutelyPositionedStyle() || disp->IsFloatingStyle() ||
          aStyle->StylePosition()->mAlignContent.primary !=
