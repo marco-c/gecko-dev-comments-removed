@@ -1,5 +1,6 @@
 ChromeUtils.defineESModuleGetters(this, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
+  ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
 });
 
 const BASE = getRootDirectory(gTestPath).replace(
@@ -326,11 +327,15 @@ function checkNotification(
     for (let i in permissions) {
       let [key, param] = permissions[i];
       const expected = formatExtValue(key, param);
-      is(
-        ul.children[i].textContent,
-        expected,
-        `Permission number ${i + 1} is correct`
-      );
+      
+      
+      
+      
+      
+      const permDescriptionEl = ul.children[i].querySelector("label")
+        ? ul.children[i].firstElementChild.value
+        : ul.children[i].textContent;
+      is(permDescriptionEl, expected, `Permission number ${i + 1} is correct`);
     }
     if (expectIncognitoCheckbox) {
       const lastEntry = ul.children[permissions.length];
@@ -416,15 +421,34 @@ async function testInstallMethod(installFn) {
       
       
       
+      
+      
+      
+      
+      
+      const hostPermissions = !ExtensionsUI.SHOW_FULL_DOMAINS_LIST
+        ? [
+            [
+              "webext-perms-host-description-wildcard",
+              { domain: "wildcard.domain" },
+            ],
+            [
+              "webext-perms-host-description-one-site",
+              { domain: "singlehost.domain" },
+            ],
+          ]
+        : [
+            [
+              "webext-perms-host-description-multiple-domains",
+              { domainCount: 2 },
+            ],
+          ];
+
+      
+      
+      
       checkNotification(panel, /^jar:file:\/\/.*\/icon\.png$/, [
-        [
-          "webext-perms-host-description-wildcard",
-          { domain: "wildcard.domain" },
-        ],
-        [
-          "webext-perms-host-description-one-site",
-          { domain: "singlehost.domain" },
-        ],
+        ...hostPermissions,
         ["webext-perms-description-nativeMessaging"],
         
         
