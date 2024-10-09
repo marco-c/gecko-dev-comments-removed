@@ -99,14 +99,11 @@ class ObjectActor extends Actor {
 
 
 
-
-
   constructor(
     obj,
     {
       thread,
       createValueGrip: createValueGripHook,
-      createEnvironmentActor,
       getGripDepth,
       incrementGripDepth,
       decrementGripDepth,
@@ -126,7 +123,6 @@ class ObjectActor extends Actor {
     this.thread = thread;
     this.hooks = {
       createValueGrip: createValueGripHook,
-      createEnvironmentActor,
       getGripDepth,
       incrementGripDepth,
       decrementGripDepth,

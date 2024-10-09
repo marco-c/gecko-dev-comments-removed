@@ -532,35 +532,6 @@ function createValueGripForTarget(
 
 
 
-function createEnvironmentActor(environment, targetActor) {
-  if (!environment) {
-    return undefined;
-  }
-
-  if (environment.actor) {
-    return environment.actor;
-  }
-
-  const actor = new EnvironmentActor(environment, targetActor);
-  targetActor.manage(actor);
-  environment.actor = actor;
-
-  return actor;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -582,7 +553,6 @@ function createObjectGrip(
       incrementGripDepth: () => gripDepth++,
       decrementGripDepth: () => gripDepth--,
       createValueGrip: v => createValueGripForTarget(targetActor, v, gripDepth),
-      createEnvironmentActor: env => createEnvironmentActor(env, targetActor),
     },
     targetActor.conn
   );

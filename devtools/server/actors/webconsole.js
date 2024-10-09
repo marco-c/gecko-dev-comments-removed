@@ -63,12 +63,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "EnvironmentActor",
-  "resource://devtools/server/actors/environment.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "EventEmitter",
   "resource://devtools/shared/event-emitter.js"
 );
@@ -353,33 +347,6 @@ class WebConsoleActor extends Actor {
 
 
 
-
-
-
-
-
-  createEnvironmentActor(environment) {
-    if (!environment) {
-      return undefined;
-    }
-
-    if (environment.actor) {
-      return environment.actor;
-    }
-
-    const actor = new EnvironmentActor(environment, this);
-    this.manage(actor);
-    environment.actor = actor;
-
-    return actor;
-  }
-
-  
-
-
-
-
-
   createValueGrip(value) {
     return createValueGrip(value, this, this.objectGrip);
   }
@@ -429,7 +396,6 @@ class WebConsoleActor extends Actor {
         incrementGripDepth: () => this._gripDepth++,
         decrementGripDepth: () => this._gripDepth--,
         createValueGrip: v => this.createValueGrip(v),
-        createEnvironmentActor: env => this.createEnvironmentActor(env),
       },
       this.conn
     );
