@@ -27,7 +27,10 @@ EXCLUDED_PACKAGES = {
     "vsdownload",
     
     "moz.build",
-    "requirements.in",
+    
+    "uv.lock",
+    "pyproject.toml",
+    "requirements.txt",
     
     
     
@@ -42,74 +45,69 @@ class VendorPython(MozbuildObject):
         MozbuildObject.__init__(self, *args, virtualenv_name="vendor", **kwargs)
 
     def vendor(self, keep_extra_files=False):
-        from mach.python_lockfile import PoetryHandle
-
         self.populate_logger()
         self.log_manager.enable_unstructured()
 
         vendor_dir = Path(self.topsrcdir) / "third_party" / "python"
-        requirements_in = vendor_dir / "requirements.in"
-        poetry_lockfile = vendor_dir / "poetry.lock"
-        _sort_requirements_in(requirements_in)
+        requirements_txt = vendor_dir / "requirements.txt"
 
-        with TemporaryDirectory() as work_dir:
-            work_dir = Path(work_dir)
-            poetry = PoetryHandle(work_dir)
-            poetry.add_requirements_in_file(requirements_in)
-            poetry.reuse_existing_lockfile(poetry_lockfile)
-            lockfiles = poetry.generate_lockfiles(do_update=False)
+        
+        os.environ["UV_PROJECT_ENVIRONMENT"] = os.environ.get("VIRTUAL_ENV", None)
 
+        subprocess.check_call(["uv", "lock"], cwd=vendor_dir)
+
+        
+        subprocess.check_call(
+            [
+                "uv",
+                "export",
+                "--format",
+                "requirements-txt",
+                "-o",
+                requirements_txt,
+                "-q",
+            ],
+            cwd=vendor_dir,
+        )
+
+        
+        
+        
+        
+        
+        
+        
+        remove_environment_markers_from_requirements_txt(requirements_txt)
+
+        with TemporaryDirectory() as tmp:
             
             
-            
-            
-            
-            
-            
-            pip_lockfile_without_markers = work_dir / "requirements.no-markers.txt"
-            shutil.copy(str(lockfiles.pip_lockfile), str(pip_lockfile_without_markers))
-            remove_environment_markers_from_requirements_txt(
-                pip_lockfile_without_markers
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "download",
+                    "-r",
+                    str(requirements_txt),
+                    "--no-deps",
+                    "--dest",
+                    tmp,
+                    "--abi",
+                    "none",
+                    "--platform",
+                    "any",
+                ]
             )
+            _purge_vendor_dir(vendor_dir)
+            self._extract(tmp, vendor_dir, keep_extra_files)
 
-            with TemporaryDirectory() as tmp:
-                
-                
-                subprocess.check_call(
-                    [
-                        sys.executable,
-                        "-m",
-                        "pip",
-                        "download",
-                        "-r",
-                        str(pip_lockfile_without_markers),
-                        "--no-deps",
-                        "--dest",
-                        tmp,
-                        "--abi",
-                        "none",
-                        "--platform",
-                        "any",
-                    ]
-                )
-                _purge_vendor_dir(vendor_dir)
-                self._extract(tmp, vendor_dir, keep_extra_files)
-
-            requirements_out = vendor_dir / "requirements.txt"
-
-            
-            
-            
-            
-            
-            _copy_file_strip_carriage_return(lockfiles.pip_lockfile, requirements_out)
-            _copy_file_strip_carriage_return(lockfiles.poetry_lockfile, poetry_lockfile)
-            self.repository.add_remove_files(vendor_dir)
-            
-            
-            egg_info_files = list(vendor_dir.glob("**/*.egg-info/*"))
-            if egg_info_files:
-                self.repository.add_remove_files(*egg_info_files)
+        self.repository.add_remove_files(vendor_dir)
+        
+        
+        egg_info_files = list(vendor_dir.glob("**/*.egg-info/*"))
+        if egg_info_files:
+            self.repository.add_remove_files(*egg_info_files)
 
     def _extract(self, src, dest, keep_extra_files=False):
         """extract source distribution into vendor directory"""
@@ -168,26 +166,6 @@ class VendorPython(MozbuildObject):
                 _denormalize_symlinks(package_dir)
 
 
-def _sort_requirements_in(requirements_in: Path):
-    requirements = {}
-    with requirements_in.open(mode="r", newline="\n") as f:
-        comments = []
-        for line in f.readlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                comments.append(line)
-                continue
-            name, version = line.split("==")
-            requirements[name] = version, comments
-            comments = []
-
-    with requirements_in.open(mode="w", newline="\n") as f:
-        for name, (version, comments) in sorted(requirements.items()):
-            if comments:
-                f.write("{}\n".format("\n".join(comments)))
-            f.write("{}=={}\n".format(name, version))
-
-
 def remove_environment_markers_from_requirements_txt(requirements_txt: Path):
     with requirements_txt.open(mode="r", newline="\n") as f:
         lines = f.readlines()
@@ -227,7 +205,3 @@ def _denormalize_symlinks(target):
             link_target = os.path.realpath(f.path)
             os.unlink(f.path)
             shutil.copyfile(link_target, f.path)
-
-
-def _copy_file_strip_carriage_return(file_src: Path, file_dst):
-    shutil.copyfileobj(file_src.open(mode="r"), file_dst.open(mode="w", newline="\n"))
