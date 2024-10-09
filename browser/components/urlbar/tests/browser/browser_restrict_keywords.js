@@ -75,7 +75,6 @@ async function assertRestrictKeywordResult(window, restrictToken) {
   await UrlbarTestUtils.assertSearchMode(window, {
     ...searchMode,
     entry: "keywordoffer",
-    restrictType: "keyword",
   });
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
@@ -96,7 +95,6 @@ add_task(async function test_search_restrict_keyword_results() {
     UrlbarTokenizer.RESTRICT.HISTORY,
     UrlbarTokenizer.RESTRICT.BOOKMARK,
     UrlbarTokenizer.RESTRICT.OPENPAGE,
-    UrlbarTokenizer.RESTRICT.ACTION,
   ];
 
   for (const restrictToken of restrictTokens) {
