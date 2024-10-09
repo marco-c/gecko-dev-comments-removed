@@ -3152,6 +3152,24 @@ public class GeckoSession {
   }
 
   
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<JSONObject> getWebCompatInfo() {
+    return mEventDispatcher
+        .queryString("GeckoView:GetWebCompatInfo")
+        .map(
+            value -> {
+              if (value == null) {
+                throw new IllegalStateException("Unable to get web compat info");
+              }
+              return new JSONObject(value);
+            });
+  }
+
+  
   private GeckoDisplay mDisplay;
 
    interface Owner {

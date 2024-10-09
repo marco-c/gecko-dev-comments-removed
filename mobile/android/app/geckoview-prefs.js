@@ -145,6 +145,9 @@ pref("browser.translations.enable", true);
 pref("browser.translations.geckoview.enableAllTestMocks", false);
 
 
+pref("browser.webcompat.geckoview.enableAllTestMocks", false);
+
+
 pref("browser.xul.error_pages.expert_bad_cert", false);
 
 
