@@ -131,7 +131,7 @@ function dumpSdp(test) {
 
 function waitForAnIceCandidate(pc) {
   return new Promise(resolve => {
-    if (!pc.localRequiresTrickleIce || pc._local_ice_candidates.length) {
+    if (!pc.localRequiresTrickleIce || pc._new_local_ice_candidates.length) {
       resolve();
     } else {
       
