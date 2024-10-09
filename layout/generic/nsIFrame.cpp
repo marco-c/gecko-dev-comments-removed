@@ -9184,6 +9184,9 @@ nsresult nsIFrame::PeekOffsetForCharacter(PeekOffsetStruct* aPos,
 
   nsIFrame::FrameSearchResult peekSearchState = CONTINUE;
 
+  const bool forceEditableRegion =
+      aPos->mOptions.contains(PeekOffsetOption::ForceEditableRegion);
+
   while (peekSearchState != FOUND) {
     const bool movingInFrameDirection = IsMovingInFrameDirection(
         current.mFrame, aPos->mDirection,
@@ -9198,6 +9201,13 @@ nsresult nsIFrame::PeekOffsetForCharacter(PeekOffsetStruct* aPos,
       options.mRespectClusters = aPos->mAmount == eSelectCluster;
       peekSearchState =
           current.PeekOffsetCharacter(movingInFrameDirection, options);
+      if (peekSearchState == FOUND && forceEditableRegion &&
+          !current.mFrame->ContentIsEditable()) {
+        
+        
+        
+        peekSearchState = CONTINUE_UNSELECTABLE;
+      }
     }
 
     current.mMovedOverNonSelectableText |=
