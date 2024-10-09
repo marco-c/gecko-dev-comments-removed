@@ -2722,44 +2722,35 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
     Rooted<JSObject*> item(cx, &args[0].toObject());
 
     
-    if (item->canUnwrapAs<TimeZoneObject>()) {
-      
-      timeZone.set(TimeZoneValue(item));
+    Rooted<Value> timeZoneLike(cx);
+    if (!GetProperty(cx, item, item, cx->names().timeZone, &timeZoneLike)) {
+      return false;
+    }
 
+    
+    if (timeZoneLike.isUndefined()) {
       
-    } else {
-      
-      Rooted<Value> timeZoneLike(cx);
-      if (!GetProperty(cx, item, item, cx->names().timeZone, &timeZoneLike)) {
+      if (!ToTemporalTimeZone(cx, args[0], &timeZone)) {
         return false;
       }
 
       
-      if (timeZoneLike.isUndefined()) {
-        
-        if (!ToTemporalTimeZone(cx, args[0], &timeZone)) {
-          return false;
-        }
+    } else {
+      
+      if (!ToTemporalTimeZone(cx, timeZoneLike, &timeZone)) {
+        return false;
+      }
 
-        
-      } else {
-        
-        if (!ToTemporalTimeZone(cx, timeZoneLike, &timeZone)) {
-          return false;
-        }
+      
+      Rooted<Value> temporalTime(cx);
+      if (!GetProperty(cx, item, item, cx->names().plainTime, &temporalTime)) {
+        return false;
+      }
 
-        
-        Rooted<Value> temporalTime(cx);
-        if (!GetProperty(cx, item, item, cx->names().plainTime,
-                         &temporalTime)) {
+      
+      if (!temporalTime.isUndefined()) {
+        if (!ToTemporalTime(cx, temporalTime, &time)) {
           return false;
-        }
-
-        
-        if (!temporalTime.isUndefined()) {
-          if (!ToTemporalTime(cx, temporalTime, &time)) {
-            return false;
-          }
         }
       }
     }
