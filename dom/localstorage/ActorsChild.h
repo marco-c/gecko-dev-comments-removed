@@ -76,7 +76,7 @@ class LSDatabaseChild final : public PBackgroundLSDatabaseChild {
 
   ~LSDatabaseChild();
 
-  void SendDelete();
+  void Shutdown();
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;

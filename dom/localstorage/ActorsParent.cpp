@@ -2791,6 +2791,10 @@ using PrivateDatastoreHashtable =
 
 UniquePtr<PrivateDatastoreHashtable> gPrivateDatastores;
 
+using DatabaseArray = nsTArray<Database*>;
+
+StaticAutoPtr<DatabaseArray> gDatabases;
+
 using LiveDatabaseArray = nsTArray<NotNull<CheckedUnsafePtr<Database>>>;
 
 StaticAutoPtr<LiveDatabaseArray> gLiveDatabases;
@@ -3202,6 +3206,8 @@ void InitializeLocalStorage() {
 #endif
 }
 
+namespace {
+
 already_AddRefed<PBackgroundLSDatabaseParent> AllocPBackgroundLSDatabaseParent(
     const PrincipalInfo& aPrincipalInfo, const uint32_t& aPrivateBrowsingId,
     const uint64_t& aDatastoreId) {
@@ -3227,12 +3233,12 @@ already_AddRefed<PBackgroundLSDatabaseParent> AllocPBackgroundLSDatabaseParent(
   
   
   
+  
 
   RefPtr<Database> database =
       new Database(aPrincipalInfo, preparedDatastore->GetContentParentId(),
                    preparedDatastore->Origin(), aPrivateBrowsingId);
 
-  
   return database.forget();
 }
 
@@ -3266,6 +3272,25 @@ bool RecvPBackgroundLSDatabaseConstructor(PBackgroundLSDatabaseParent* aActor,
   }
 
   return true;
+}
+
+}  
+
+bool RecvCreateBackgroundLSDatabaseParent(
+    const PrincipalInfo& aPrincipalInfo, const uint32_t& aPrivateBrowsingId,
+    const uint64_t& aDatastoreId,
+    Endpoint<PBackgroundLSDatabaseParent>&& aParentEndpoint) {
+  RefPtr<PBackgroundLSDatabaseParent> parent = AllocPBackgroundLSDatabaseParent(
+      aPrincipalInfo, aPrivateBrowsingId, aDatastoreId);
+  if (!parent) {
+    return false;
+  }
+
+  
+  MOZ_ALWAYS_TRUE(aParentEndpoint.Bind(parent));
+
+  return RecvPBackgroundLSDatabaseConstructor(parent, aPrincipalInfo,
+                                              aPrivateBrowsingId, aDatastoreId);
 }
 
 PBackgroundLSObserverParent* AllocPBackgroundLSObserverParent(
@@ -5305,12 +5330,25 @@ Database::Database(const PrincipalInfo& aPrincipalInfo,
 #endif
 {
   AssertIsOnOwningThread();
+
+  if (!gDatabases) {
+    gDatabases = new DatabaseArray();
+  }
+
+  gDatabases->AppendElement(this);
 }
 
 Database::~Database() {
   AssertIsOnOwningThread();
   MOZ_ASSERT_IF(mActorWasAlive, mAllowedToClose);
   MOZ_ASSERT_IF(mActorWasAlive, mActorDestroyed);
+
+  MOZ_ASSERT(gDatabases);
+  gDatabases->RemoveElement(this);
+
+  if (gDatabases->IsEmpty()) {
+    gDatabases = nullptr;
+  }
 }
 
 void Database::SetActorAlive(Datastore* aDatastore) {
@@ -5387,7 +5425,7 @@ void Database::ForceKill() {
     return;
   }
 
-  Unused << PBackgroundLSDatabaseParent::Send__delete__(this);
+  Close();
 }
 
 void Database::Stringify(nsACString& aResult) const {
@@ -5398,7 +5436,7 @@ void Database::Stringify(nsACString& aResult) const {
   aResult.Append(kQuotaGenericDelimiter);
 
   aResult.AppendLiteral("OtherProcessActor:");
-  aResult.AppendInt(BackgroundParent::IsOtherProcessActor(Manager()));
+  aResult.AppendInt(mContentParentId.isSome());
   aResult.Append(kQuotaGenericDelimiter);
 
   aResult.AppendLiteral("Origin:");
@@ -8858,6 +8896,18 @@ void QuotaClient::FinalizeShutdown() {
     gConnectionThread->Shutdown();
 
     gConnectionThread = nullptr;
+  }
+
+  if (gDatabases) {
+    nsTArray<RefPtr<Database>> databases;
+
+    for (const auto& database : *gDatabases) {
+      databases.AppendElement(database);
+    }
+
+    for (const auto& database : databases) {
+      database->Close();
+    }
   }
 }
 
