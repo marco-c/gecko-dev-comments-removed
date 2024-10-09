@@ -5,7 +5,6 @@
 
 
 #include "WebSocketLog.h"
-#include "base/compiler_specific.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/net/NeckoChild.h"
 #include "WebSocketChannelChild.h"
