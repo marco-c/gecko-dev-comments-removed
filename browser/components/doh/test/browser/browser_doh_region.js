@@ -36,15 +36,9 @@ add_task(async function testPrefFirstRollout() {
   Region._setHomeRegion("UK");
   await ensureTRRMode(2); 
 
-  is(Preferences.get("doh-rollout.home-region-changed"), true);
-
-  await DoHController._uninit();
-  await DoHConfigController._uninit();
-
   
-  
-  await DoHConfigController.init();
-  await DoHController.init();
+  Services.obs.notifyObservers(null, "idle-daily");
+
   is(Preferences.get("doh-rollout.home-region"), "UK");
 
   is(
