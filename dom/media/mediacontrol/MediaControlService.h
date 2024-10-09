@@ -36,7 +36,7 @@ class MediaControlService final : public nsIObserver {
 
   
   static void GenerateMediaControlKey(const GlobalObject& global,
-                                      MediaControlKey aKey);
+                                      MediaControlKey aKey, double aSeekTime);
   static void GetCurrentActiveMediaMetadata(const GlobalObject& aGlobal,
                                             MediaMetadataInit& aMetadata);
   static MediaSessionPlaybackState GetCurrentMediaSessionPlaybackState(
@@ -70,7 +70,7 @@ class MediaControlService final : public nsIObserver {
 
 
 
-  void GenerateTestMediaControlKey(MediaControlKey aKey);
+  void GenerateTestMediaControlKey(MediaControlKey aKey, double aSeekValue);
   MediaMetadataBase GetMainControllerMediaMetadata() const;
   MediaSessionPlaybackState GetMainControllerPlaybackState() const;
 

@@ -19,10 +19,7 @@ const videoId = "video";
 
 add_task(async function setupTestingPref() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.media.mediasession.enabled", true],
-      ["media.mediacontrol.testingevents.enabled", true],
-    ],
+    set: [["media.mediacontrol.testingevents.enabled", true]],
   });
 });
 
@@ -49,6 +46,24 @@ add_task(async function triggerDefaultActionHandler() {
 
     info(`default action handler should pause media`);
     await checkOrWaitUntilMediaPauses(tab, { videoId });
+
+    info(`test 'seekto' action`);
+    await simulateMediaAction(tab, "seekto", 2.0);
+
+    info(`default action handler should set currentTime`);
+    await checkOrWaitUntilMediaSeek(tab, { videoId }, 2.0);
+
+    info(`test 'seekforward' action`);
+    await simulateMediaAction(tab, "seekforward", 1.0);
+
+    info(`default action handler should set currentTime`);
+    await checkOrWaitUntilMediaSeek(tab, { videoId }, 3.0);
+
+    info(`test 'seekbackward' action`);
+    await simulateMediaAction(tab, "seekbackward", 1.0);
+
+    info(`default action handler should set currentTime`);
+    await checkOrWaitUntilMediaSeek(tab, { videoId }, 2.0);
 
     info(`test 'play' action`);
     await simulateMediaAction(tab, "play");
@@ -139,7 +154,7 @@ add_task(
           await pauseAllMedia(tab);
 
           info(
-            `press '${action}' would trigger default andler on main frame because it doesn't set action handler`
+            `press '${action}' would trigger default handler on main frame because it doesn't set action handler`
           );
           await simulateMediaAction(tab, action);
           await checkOrWaitUntilMediaPlays(tab, { videoId });
@@ -150,7 +165,7 @@ add_task(
           await checkOrWaitUntilMediaPlays(tab, { frameId });
         } else {
           info(
-            `press '${action}' would trigger default andler on main frame because it doesn't set action handler`
+            `press '${action}' would trigger default handler on main frame because it doesn't set action handler`
           );
           await simulateMediaAction(tab, action);
           await checkOrWaitUntilMediaPauses(tab, { videoId });
@@ -316,6 +331,30 @@ function checkOrWaitUntilMediaPlays(tab, { videoId, frameId }) {
   );
 }
 
+function checkOrWaitUntilMediaSeek(tab, { videoId }, expectedTime) {
+  return SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [videoId, expectedTime],
+    (videoId, expectedTime) => {
+      return new Promise(r => {
+        const video = content.document.getElementById(videoId);
+        ok(video.paused, "video is paused");
+        if (video.currentTime == expectedTime) {
+          ok(true, `media has been seeked`);
+          r();
+        } else {
+          info(`wait until media seeked`);
+          video.ontimeupdate = () => {
+            video.ontimeupdate = null;
+            is(video.currentTime, expectedTime, `correct time set`);
+            r();
+          };
+        }
+      });
+    }
+  );
+}
+
 function setActionHandler(tab, action, frameId = null) {
   return SpecialPowers.spawn(
     tab.linkedBrowser,
@@ -369,12 +408,12 @@ async function waitUntilActionHandlerIsTriggered(tab, action, frameId = null) {
   );
 }
 
-async function simulateMediaAction(tab, action) {
+async function simulateMediaAction(tab, action, seekValue = 0.0) {
   const controller = tab.linkedBrowser.browsingContext.mediaController;
   if (!controller.isActive) {
     await new Promise(r => (controller.onactivated = r));
   }
-  MediaControlService.generateMediaControlKey(action);
+  MediaControlService.generateMediaControlKey(action, seekValue);
 }
 
 function loadIframe(tab, iframeId, url) {

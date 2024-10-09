@@ -351,7 +351,8 @@ void ContentMediaController::RemoveReceiver(
   mReceivers.RemoveElement(aListener);
 }
 
-void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
+void ContentMediaController::HandleMediaKey(MediaControlKey aKey,
+                                            Maybe<SeekDetails> aDetails) {
   MOZ_ASSERT(NS_IsMainThread());
   if (mReceivers.IsEmpty()) {
     return;
@@ -365,13 +366,15 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
       PauseOrStopMedia();
       return;
     case MediaControlKey::Play:
-      [[fallthrough]];
     case MediaControlKey::Stop:
+    case MediaControlKey::Seekto:
+    case MediaControlKey::Seekforward:
+    case MediaControlKey::Seekbackward:
       
       
       
       for (auto& receiver : Reversed(mReceivers)) {
-        receiver->HandleMediaKey(aKey);
+        receiver->HandleMediaKey(aKey, aDetails);
       }
       return;
     default:
