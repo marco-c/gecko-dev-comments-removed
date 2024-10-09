@@ -1294,7 +1294,7 @@ nsresult gfxFontUtils::ReadCanonicalName(const char* aNameData,
 
 
 const uint16_t ANY = 0xffff;
-const gfxFontUtils::MacFontNameCharsetMapping
+MOZ_RUNINIT const gfxFontUtils::MacFontNameCharsetMapping
     gfxFontUtils::gMacFontNameCharsets[] = {
         {ENCODING_ID_MAC_ROMAN, LANG_ID_MAC_ENGLISH, MACINTOSH_ENCODING},
         {ENCODING_ID_MAC_ROMAN, LANG_ID_MAC_ICELANDIC, X_USER_DEFINED_ENCODING},
@@ -1325,14 +1325,14 @@ const gfxFontUtils::MacFontNameCharsetMapping
          GB18030_ENCODING},
         {ENCODING_ID_MAC_SIMP_CHINESE, ANY, GB18030_ENCODING}};
 
-const Encoding* gfxFontUtils::gISOFontNameCharsets[] = {
+MOZ_RUNINIT const Encoding* gfxFontUtils::gISOFontNameCharsets[] = {
      WINDOWS_1252_ENCODING, 
      nullptr, 
 
      WINDOWS_1252_ENCODING 
 };
 
-const Encoding* gfxFontUtils::gMSFontNameCharsets[] = {
+MOZ_RUNINIT const Encoding* gfxFontUtils::gMSFontNameCharsets[] = {
      UTF_16BE_ENCODING,
      UTF_16BE_ENCODING,
      SHIFT_JIS_ENCODING,

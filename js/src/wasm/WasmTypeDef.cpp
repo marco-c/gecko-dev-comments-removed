@@ -331,15 +331,26 @@ CheckedInt32 StructLayout::close() {
 }
 
 bool StructType::init() {
+  bool isDefaultable = true;
+
   StructLayout layout;
   for (FieldType& field : fields_) {
     CheckedInt32 offset = layout.addField(field.type);
     if (!offset.isValid()) {
       return false;
     }
+
+    
     if (!fieldOffsets_.append(offset.value())) {
       return false;
     }
+
+    
+    if (!field.type.isDefaultable()) {
+      isDefaultable = false;
+    }
+
+    
     if (!field.type.isRefRepr()) {
       continue;
     }
@@ -363,8 +374,9 @@ bool StructType::init() {
   if (!size.isValid()) {
     return false;
   }
-  size_ = size.value();
 
+  size_ = size.value();
+  isDefaultable_ = isDefaultable;
   return true;
 }
 
@@ -512,7 +524,7 @@ struct RecGroupHashPolicy {
   static HashNumber hash(Lookup lookup) { return lookup->hash(); }
 
   static bool match(const SharedRecGroup& lhs, Lookup rhs) {
-    return RecGroup::matches(*rhs, *lhs);
+    return RecGroup::isoEquals(*rhs, *lhs);
   }
 };
 
@@ -570,7 +582,7 @@ class TypeIdSet {
   }
 };
 
-ExclusiveData<TypeIdSet> typeIdSet(mutexid::WasmTypeIdSet);
+MOZ_RUNINIT ExclusiveData<TypeIdSet> typeIdSet(mutexid::WasmTypeIdSet);
 
 void wasm::PurgeCanonicalTypes() {
   ExclusiveData<TypeIdSet>::Guard locked = typeIdSet.lock();

@@ -57,7 +57,7 @@ static EnumeratedArray<RemoteDecodeIn, StaticRefPtr<GenericNonExclusivePromise>,
 
 
 
-static StaticDataMutex<StaticRefPtr<nsIThread>>
+MOZ_RUNINIT static StaticDataMutex<StaticRefPtr<nsIThread>>
     sRemoteDecoderManagerChildThread("sRemoteDecoderManagerChildThread");
 
 

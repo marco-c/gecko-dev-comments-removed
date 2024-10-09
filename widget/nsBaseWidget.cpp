@@ -116,7 +116,7 @@ int32_t nsIWidget::sPointerIdCounter = 0;
 
 
 uint64_t AutoObserverNotifier::sObserverId = 0;
- nsTHashMap<uint64_t, nsCOMPtr<nsIObserver>>
+MOZ_RUNINIT  nsTHashMap<uint64_t, nsCOMPtr<nsIObserver>>
     AutoObserverNotifier::sSavedObservers;
 
 

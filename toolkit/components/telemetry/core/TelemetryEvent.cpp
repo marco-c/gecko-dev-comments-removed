@@ -329,13 +329,13 @@ bool gCanRecordBase;
 bool gCanRecordExtended;
 
 
-nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
+MOZ_RUNINIT nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 
 
-nsTHashSet<nsCString> gCategoryNames;
+MOZ_RUNINIT nsTHashSet<nsCString> gCategoryNames;
 
 
-nsTHashSet<nsCString> gEnabledCategories;
+MOZ_RUNINIT nsTHashSet<nsCString> gEnabledCategories;
 
 
 
@@ -344,7 +344,7 @@ typedef nsTArray<EventRecord> EventRecordArray;
 typedef nsClassHashtable<ProcessIDHashKey, EventRecordArray>
     EventRecordsMapType;
 
-EventRecordsMapType gEventRecords;
+MOZ_RUNINIT EventRecordsMapType gEventRecords;
 
 
 

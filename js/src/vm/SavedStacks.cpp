@@ -1989,9 +1989,10 @@ JSObject* SavedStacks::MetadataBuilder::build(
 const SavedStacks::MetadataBuilder SavedStacks::metadataBuilder;
 
 
-ReconstructedSavedFramePrincipals ReconstructedSavedFramePrincipals::IsSystem;
+MOZ_RUNINIT ReconstructedSavedFramePrincipals
+    ReconstructedSavedFramePrincipals::IsSystem;
 
-ReconstructedSavedFramePrincipals
+MOZ_RUNINIT ReconstructedSavedFramePrincipals
     ReconstructedSavedFramePrincipals::IsNotSystem;
 
 UniqueChars BuildUTF8StackString(JSContext* cx, JSPrincipals* principals,

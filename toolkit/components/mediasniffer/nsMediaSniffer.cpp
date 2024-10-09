@@ -75,7 +75,7 @@ struct nsMediaSnifferFtypEntry : nsMediaSnifferEntry {
 };
 
 
-nsMediaSnifferFtypEntry sFtypEntries[] = {
+MOZ_RUNINIT nsMediaSnifferFtypEntry sFtypEntries[] = {
     {PATTERN_ENTRY("\xFF\xFF\xFF", "mp4", VIDEO_MP4),
      PatternLabel::ftyp_mp4},  
     {PATTERN_ENTRY("\xFF\xFF\xFF", "avc", VIDEO_MP4),

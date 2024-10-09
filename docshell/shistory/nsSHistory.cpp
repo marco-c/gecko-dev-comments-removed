@@ -82,7 +82,7 @@ struct ListHelper {
   LinkedList<nsSHistory> mList;
 };
 
-static ListHelper gSHistoryList;
+MOZ_RUNINIT static ListHelper gSHistoryList;
 
 
 int32_t nsSHistory::sHistoryMaxTotalViewers = -1;

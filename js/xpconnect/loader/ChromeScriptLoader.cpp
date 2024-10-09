@@ -197,7 +197,7 @@ class AsyncScriptCompileTask final : public Task {
 };
 
  mozilla::StaticMutex AsyncScriptCompileTask::sOngoingTasksMutex;
- Vector<AsyncScriptCompileTask*>
+MOZ_RUNINIT  Vector<AsyncScriptCompileTask*>
     AsyncScriptCompileTask::sOngoingTasks;
  bool AsyncScriptCompileTask::sIsShutdownRegistered = false;
 

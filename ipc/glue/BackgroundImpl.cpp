@@ -746,7 +746,8 @@ bool ParentImpl::sShutdownHasStarted = false;
 
 
 
-ChildImpl::ThreadInfoWrapper ChildImpl::sParentAndContentProcessThreadInfo;
+MOZ_RUNINIT ChildImpl::ThreadInfoWrapper
+    ChildImpl::sParentAndContentProcessThreadInfo;
 
 bool ChildImpl::sShutdownHasStarted = false;
 

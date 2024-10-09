@@ -49,7 +49,7 @@ const char* kCertWildcard = "default-ee";
 
 
 
-const FaultyServerHost sFaultyServerHosts[]{
+MOZ_RUNINIT const FaultyServerHost sFaultyServerHosts[]{
     {kHostOk, kCertWildcard, None},
     {kHostUnknown, kCertWildcard, UnknownSNI},
     {kHostZeroRttAlertBadMac, kCertWildcard, ZeroRtt},

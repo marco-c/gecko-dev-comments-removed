@@ -154,8 +154,9 @@ class ProfileBufferGlobalController final {
 };
 
 
-DataMutexBase<ProfileBufferGlobalController::ParentChunkManagerAndPendingUpdate,
-              baseprofiler::detail::BaseProfilerMutex>
+MOZ_RUNINIT DataMutexBase<
+    ProfileBufferGlobalController::ParentChunkManagerAndPendingUpdate,
+    baseprofiler::detail::BaseProfilerMutex>
     ProfileBufferGlobalController::sParentChunkManagerAndPendingUpdate{
         "ProfileBufferGlobalController::sParentChunkManagerAndPendingUpdate"};
 
