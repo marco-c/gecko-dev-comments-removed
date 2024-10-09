@@ -14,10 +14,9 @@ import six
 from six import StringIO, string_types
 
 try:
-    from configparser import SafeConfigParser as ConfigParser
+    from six.moves.configparser import SafeConfigParser as ConfigParser
 except ImportError:  
     from configparser import ConfigParser
-
 try:
     ConfigParser.read_file
 except AttributeError:  

@@ -3,13 +3,13 @@
 
 
 import argparse
-import configparser
 import io
 import os
 import sys
 import zipfile
 
 import mozlog
+from six.moves import configparser
 
 from mozversion import errors
 
