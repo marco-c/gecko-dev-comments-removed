@@ -33,7 +33,7 @@ class ClassificationEnum(enum.Enum):
 
 
 class Platforms(ClassificationEnum):
-    ANDROID_A51 = {"value": "android-a51", "index": 0}
+    ANDROID_A55 = {"value": "android-a55", "index": 0}
     ANDROID = {"value": "android", "index": 1}
     WINDOWS = {"value": "windows", "index": 2}
     LINUX = {"value": "linux", "index": 3}
@@ -216,15 +216,15 @@ class ClassificationProvider:
     @property
     def platforms(self):
         return {
-            Platforms.ANDROID_A51.value: {
-                "query": "'android 'a51 'shippable 'aarch64",
+            Platforms.ANDROID_A55.value: {
+                "query": "'android 'a55 'shippable 'aarch64",
                 "restriction": check_for_android,
                 "platform": Platforms.ANDROID.value,
             },
             Platforms.ANDROID.value: {
                 
                 
-                "query": "'android 'a51 'shippable 'aarch64",
+                "query": "'android 'a55 'shippable 'aarch64",
                 "restriction": check_for_android,
                 "platform": Platforms.ANDROID.value,
             },
