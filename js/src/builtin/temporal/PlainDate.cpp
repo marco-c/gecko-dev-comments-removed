@@ -2387,62 +2387,6 @@ static bool PlainDate_toPlainDateTime(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool PlainDate_getISOFields(JSContext* cx, const CallArgs& args) {
-  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
-  auto date = ToPlainDate(temporalDate);
-  auto calendar = temporalDate->calendar();
-
-  
-  Rooted<IdValueVector> fields(cx, IdValueVector(cx));
-
-  
-  Rooted<Value> cal(cx);
-  if (!ToTemporalCalendar(cx, calendar, &cal)) {
-    return false;
-  }
-  if (!fields.emplaceBack(NameToId(cx->names().calendar), cal)) {
-    return false;
-  }
-
-  
-  if (!fields.emplaceBack(NameToId(cx->names().isoDay), Int32Value(date.day))) {
-    return false;
-  }
-
-  
-  if (!fields.emplaceBack(NameToId(cx->names().isoMonth),
-                          Int32Value(date.month))) {
-    return false;
-  }
-
-  
-  if (!fields.emplaceBack(NameToId(cx->names().isoYear),
-                          Int32Value(date.year))) {
-    return false;
-  }
-
-  
-  auto* obj = NewPlainObjectWithUniqueNames(cx, fields);
-  if (!obj) {
-    return false;
-  }
-
-  args.rval().setObject(*obj);
-  return true;
-}
-
-
-
-
-static bool PlainDate_getISOFields(JSContext* cx, unsigned argc, Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsPlainDate, PlainDate_getISOFields>(cx, args);
-}
-
-
-
-
 static bool PlainDate_add(JSContext* cx, const CallArgs& args) {
   Rooted<PlainDateObject*> temporalDate(
       cx, &args.thisv().toObject().as<PlainDateObject>());
@@ -2984,7 +2928,6 @@ static const JSFunctionSpec PlainDate_prototype_methods[] = {
     JS_FN("toPlainMonthDay", PlainDate_toPlainMonthDay, 0, 0),
     JS_FN("toPlainYearMonth", PlainDate_toPlainYearMonth, 0, 0),
     JS_FN("toPlainDateTime", PlainDate_toPlainDateTime, 0, 0),
-    JS_FN("getISOFields", PlainDate_getISOFields, 0, 0),
     JS_FN("add", PlainDate_add, 1, 0),
     JS_FN("subtract", PlainDate_subtract, 1, 0),
     JS_FN("with", PlainDate_with, 1, 0),
