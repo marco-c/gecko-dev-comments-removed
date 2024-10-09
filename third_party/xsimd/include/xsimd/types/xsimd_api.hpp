@@ -639,6 +639,20 @@ namespace xsimd
 
 
     template <class T, class A>
+    XSIMD_INLINE size_t count(batch_bool<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::count<A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+    template <class T, class A>
     XSIMD_INLINE batch<T, A> decr(batch<T, A> const& x) noexcept
     {
         detail::static_check_supported_config<T, A>();
