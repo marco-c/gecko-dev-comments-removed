@@ -534,11 +534,6 @@ class PeerConnectionImpl final
     return mTimestampMaker;
   }
 
-  
-  
-  
-  static bool HostnameInPref(const char* aPrefList, const nsCString& aHostName);
-
   void StampTimecard(const char* aEvent);
 
   bool RelayOnly() const {
