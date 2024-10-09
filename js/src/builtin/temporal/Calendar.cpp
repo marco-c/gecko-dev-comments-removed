@@ -115,10 +115,6 @@ void js::temporal::CalendarValue::trace(JSTracer* trc) {
   TraceRoot(trc, &value_, "CalendarValue::value");
 }
 
-void js::temporal::CalendarRecord::trace(JSTracer* trc) {
-  receiver_.trace(trc);
-}
-
 bool js::temporal::WrapCalendarValue(JSContext* cx,
                                      MutableHandle<JS::Value> calendar) {
   MOZ_ASSERT(calendar.isInt32());
@@ -802,16 +798,6 @@ JSLinearString* js::temporal::ToTemporalCalendarIdentifier(
     JSContext* cx, Handle<CalendarValue> calendar) {
   
   return NewStringCopy<CanGC>(cx, ToTemporalCalendarIdentifier(calendar));
-}
-
-
-
-
-bool js::temporal::CreateCalendarMethodsRecord(
-    JSContext* cx, Handle<CalendarValue> calendar,
-    MutableHandle<CalendarRecord> result) {
-  result.set(CalendarRecord{calendar});
-  return true;
 }
 
 static auto ToAnyCalendarKind(CalendarId id) {

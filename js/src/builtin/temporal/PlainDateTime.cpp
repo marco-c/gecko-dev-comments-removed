@@ -469,32 +469,6 @@ bool js::temporal::InterpretTemporalDateTimeFields(
 
 
 
-bool js::temporal::InterpretTemporalDateTimeFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
-    Handle<PlainObject*> options, PlainDateTime* result) {
-  auto overflow = TemporalOverflow::Constrain;
-  if (!GetTemporalOverflowOption(cx, options, &overflow)) {
-    return false;
-  }
-
-  return InterpretTemporalDateTimeFields(cx, calendar.receiver(), fields,
-                                         overflow, result);
-}
-
-
-
-
-bool js::temporal::InterpretTemporalDateTimeFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
-    PlainDateTime* result) {
-  auto overflow = TemporalOverflow::Constrain;
-  return InterpretTemporalDateTimeFields(cx, calendar.receiver(), fields,
-                                         overflow, result);
-}
-
-
-
-
 static bool ToTemporalDateTime(
     JSContext* cx, Handle<JSObject*> item, TemporalOverflow overflow,
     MutableHandle<PlainDateTimeWithCalendar> result) {

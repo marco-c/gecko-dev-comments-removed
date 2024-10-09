@@ -210,23 +210,6 @@ bool InterpretTemporalDateTimeFields(JSContext* cx,
 
 
 
-bool InterpretTemporalDateTimeFields(JSContext* cx,
-                                     JS::Handle<CalendarRecord> calendar,
-                                     JS::Handle<PlainObject*> fields,
-                                     JS::Handle<PlainObject*> options,
-                                     PlainDateTime* result);
-
-
-
-
-bool InterpretTemporalDateTimeFields(JSContext* cx,
-                                     JS::Handle<CalendarRecord> calendar,
-                                     JS::Handle<PlainObject*> fields,
-                                     PlainDateTime* result);
-
-
-
-
 
 PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
                                Increment increment, TemporalUnit unit,

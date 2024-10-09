@@ -1573,7 +1573,6 @@ bool js::temporal::BalanceTimeDuration(JSContext* cx,
 
 
 
-
 static bool UnbalanceDateDurationRelative(
     JSContext* cx, const DateDuration& duration,
     Handle<PlainDateWithCalendar> plainRelativeTo, int64_t* result) {
@@ -1932,11 +1931,6 @@ static bool GetTemporalRelativeToOption(
       return false;
     }
 
-    Rooted<CalendarRecord> calendarRec(cx);
-    if (!CreateCalendarMethodsRecord(cx, calendar, &calendarRec)) {
-      return false;
-    }
-
     
     Rooted<PlainObject*> fields(
         cx, PrepareCalendarFields(cx, calendar, obj,
@@ -1960,19 +1954,9 @@ static bool GetTemporalRelativeToOption(
       return false;
     }
 
-    Rooted<PlainObject*> dateOptions(cx, NewPlainObjectWithProto(cx, nullptr));
-    if (!dateOptions) {
-      return false;
-    }
-
-    Rooted<Value> overflow(cx, StringValue(cx->names().constrain));
-    if (!DefineDataProperty(cx, dateOptions, cx->names().overflow, overflow)) {
-      return false;
-    }
-
     
-    if (!InterpretTemporalDateTimeFields(cx, calendarRec, fields, dateOptions,
-                                         &dateTime)) {
+    if (!InterpretTemporalDateTimeFields(
+            cx, calendar, fields, TemporalOverflow::Constrain, &dateTime)) {
       return false;
     }
 
