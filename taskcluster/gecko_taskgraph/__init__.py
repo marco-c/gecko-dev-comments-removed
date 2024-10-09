@@ -14,12 +14,6 @@ from gecko_taskgraph.config import graph_config_schema
 GECKO = os.path.normpath(os.path.realpath(os.path.join(__file__, "..", "..", "..")))
 
 
-
-
-
-MAX_DEPENDENCIES = 99
-
-
 taskgraph_config.graph_config_schema = graph_config_schema
 
 
