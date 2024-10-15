@@ -22,7 +22,7 @@ async function test() {
 
   
   assertNumberOfVisibleTabs(2, "there are two visible tabs");
-  gBrowser.showOnlyTheseTabs([gBrowser.tabs[0]]);
+  BrowserTestUtils.showOnlyTheseTabs(gBrowser, [gBrowser.tabs[0]]);
   assertNumberOfVisibleTabs(1, "there is one visible tab");
   ok(tab.hidden, "newly created tab is now hidden");
 

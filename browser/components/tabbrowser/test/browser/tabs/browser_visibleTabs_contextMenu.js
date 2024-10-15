@@ -18,7 +18,7 @@ add_task(async function test() {
 
   
   gBrowser.selectedTab = testTab;
-  gBrowser.showOnlyTheseTabs([testTab]);
+  BrowserTestUtils.showOnlyTheseTabs(gBrowser, [testTab]);
   is(gBrowser.visibleTabs.length, 1, "now there is only one visible tab");
 
   
@@ -78,7 +78,7 @@ add_task(async function test() {
 
   
   let allTabs = Array.from(gBrowser.tabs);
-  gBrowser.showOnlyTheseTabs(allTabs);
+  BrowserTestUtils.showOnlyTheseTabs(gBrowser, allTabs);
 
   
   updateTabContextMenu(testTab);

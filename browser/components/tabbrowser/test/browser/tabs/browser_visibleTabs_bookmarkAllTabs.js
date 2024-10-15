@@ -21,7 +21,7 @@ function test() {
     function () {
       
       gBrowser.selectedTab = testTab2;
-      gBrowser.showOnlyTheseTabs([testTab2]);
+      BrowserTestUtils.showOnlyTheseTabs(gBrowser, [testTab2]);
       is(gBrowser.visibleTabs.length, 1, "1 tab should be visible");
 
       
@@ -42,7 +42,7 @@ function test() {
 
       
       let allTabs = Array.from(gBrowser.tabs);
-      gBrowser.showOnlyTheseTabs(allTabs);
+      BrowserTestUtils.showOnlyTheseTabs(gBrowser, allTabs);
 
       
       gBrowser.removeTab(testTab2);
