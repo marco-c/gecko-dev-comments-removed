@@ -51,6 +51,22 @@ bool date_now(JSContext* cx, unsigned argc, JS::Value* vp);
 
 bool date_valueOf(JSContext* cx, unsigned argc, JS::Value* vp);
 
+struct YearMonthDay {
+  
+  int32_t year;
+
+  
+  uint32_t month;
+
+  
+  uint32_t day;
+};
+
+
+
+
+YearMonthDay ToYearMonthDay(int64_t epochMilliseconds);
+
 } 
 
 #endif 

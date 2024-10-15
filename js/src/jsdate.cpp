@@ -205,13 +205,6 @@ static inline double TimeFromYear(double y) {
   return ::DayFromYear(y) * msPerDay;
 }
 
-namespace {
-struct YearMonthDay {
-  int32_t year;
-  uint32_t month;
-  uint32_t day;
-};
-}  
 
 
 
@@ -228,10 +221,7 @@ struct YearMonthDay {
 
 
 
-
-static YearMonthDay ToYearMonthDay(double t) {
-  MOZ_ASSERT(ToInteger(t) == t);
-
+static YearMonthDay ToYearMonthDay(int64_t time) {
   
   
   
@@ -280,8 +270,7 @@ static YearMonthDay ToYearMonthDay(double t) {
   
   constexpr int64_t minTime = minDays * int64_t(msPerDay);
   [[maybe_unused]] constexpr int64_t maxTime = maxDays * int64_t(msPerDay);
-  MOZ_ASSERT(double(minTime) <= t && t <= double(maxTime));
-  const int64_t time = int64_t(t);
+  MOZ_ASSERT(minTime <= time && time <= maxTime);
 
   
   
@@ -341,6 +330,16 @@ static YearMonthDay ToYearMonthDay(double t) {
   const uint32_t D_G = D + 1;
 
   return {Y_G, M_G, D_G};
+}
+
+static YearMonthDay ToYearMonthDay(double t) {
+  MOZ_ASSERT(IsInteger(t));
+  MOZ_ASSERT(double(INT64_MIN) <= t && t <= double(INT64_MAX));
+  return ::ToYearMonthDay(int64_t(t));
+}
+
+YearMonthDay js::ToYearMonthDay(int64_t epochMilliseconds) {
+  return ::ToYearMonthDay(epochMilliseconds);
 }
 
 static double YearFromTime(double t) {
@@ -1976,7 +1975,7 @@ void DateObject::fillLocalTimeSlots() {
 
   setReservedSlot(LOCAL_TIME_SLOT, DoubleValue(localTime));
 
-  const auto [year, month, day] = ToYearMonthDay(localTime);
+  const auto [year, month, day] = ::ToYearMonthDay(localTime);
 
   setReservedSlot(LOCAL_YEAR_SLOT, Int32Value(year));
   setReservedSlot(LOCAL_MONTH_SLOT, Int32Value(int32_t(month)));
