@@ -308,7 +308,7 @@ function getVisibleSelectedFrameColumn(dbg) {
 
 
 function assertLineIsBreakable(dbg, file, line, shouldBeBreakable) {
-  const lineInfo = getCM(dbg).lineInfo(line - 1);
+  const lineInfo = getCMEditor(dbg).lineInfo(isCm6Enabled ? line - 1 : line);
   const lineText = `${line}| ${lineInfo.text.substring(0, 50)}${
     lineInfo.text.length > 50 ? "…" : ""
   } — in ${file}`;
@@ -1538,6 +1538,18 @@ async function getEditorLineGutter(dbg, line) {
 }
 
 
+async function scrollAndGetEditorLineGutterElement(dbg, line) {
+  await scrollEditorIntoView(dbg, isCm6Enabled ? line : line - 1, 0);
+  const els = findAllElementsWithSelector(
+    dbg,
+    isCm6Enabled
+      ? ".cm-gutter.cm-lineNumbers .cm-gutterElement"
+      : ".CodeMirror-code .CodeMirror-linenumber"
+  );
+  return [...els].find(el => el.innerText == line);
+}
+
+
 
 
 
@@ -2221,7 +2233,7 @@ function isScrolledPositionVisible(dbg, line, column = 0) {
   line = isCm6Enabled ? line + 1 : line;
   return getCMEditor(dbg).isPositionVisible(line, column);
 }
-     
+
 function setSelection(dbg, startLine, endLine) {
   getCMEditor(dbg).setSelectionAt(
     { line: startLine, column: 0 },
