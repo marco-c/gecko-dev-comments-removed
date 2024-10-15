@@ -40,8 +40,7 @@ add_task(async function () {
 
   
   
-  const { top } = cm.getScrollInfo();
-  is(top, 0, "First search term is not in view");
+  ok(isScrolledPositionVisible(dbg, 0), "First search term is not in view");
 
   
   info("Switching to paused file via frame click");

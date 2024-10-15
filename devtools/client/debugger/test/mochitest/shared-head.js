@@ -368,7 +368,7 @@ function assertHighlightLocation(dbg, source, line) {
 
 
 
-function _assertDebugLine(dbg, line, column) {
+async function _assertDebugLine(dbg, line, column) {
   const source = dbg.selectors.getSelectedSource();
   
   if (isWasmBinarySource(source)) {
@@ -389,7 +389,7 @@ function _assertDebugLine(dbg, line, column) {
 
   
   
-  getCM(dbg).scrollIntoView({ line, ch: 0 });
+  await scrollEditorIntoView(dbg, line, 0);
 
   if (!lineInfo.wrapClass) {
     const pauseLine = getVisibleSelectedFrameLine(dbg);
@@ -2185,9 +2185,40 @@ function setEditorCursorAt(dbg, line, column) {
 }
 
 
+
+
+
+
+
+
+
+async function scrollEditorIntoView(dbg, line, column) {
+  const onScrolled = waitForScrolling(dbg);
+  line = isCm6Enabled ? line + 1 : line;
+  getCMEditor(dbg).scrollTo(line, column);
+  
+  
+  
+  return onScrolled;
+}
+
+
 function getCM(dbg) {
   const el = dbg.win.document.querySelector(".CodeMirror");
   return el.CodeMirror;
+}
+
+
+
+
+
+
+
+
+
+function isScrolledPositionVisible(dbg, line, column = 0) {
+  line = isCm6Enabled ? line + 1 : line;
+  return getCMEditor(dbg).isPositionVisible(line, column);
 }
 
 
@@ -2202,20 +2233,13 @@ function getCoordsFromPosition(cm, { line, ch }) {
 async function getTokenFromPosition(dbg, { line, column = 0 }) {
   info(`Get token at ${line}:${column}`);
   const cm = getCM(dbg);
+  await scrollEditorIntoView(dbg, line, column);
 
-  
-  
-  const cmPosition = { line: line - 1, ch: column - 1 };
+  if (isCm6Enabled) {
+    return getCMEditor(dbg).getElementAtPos(line, column);
+  }
 
-  const onScrolled = waitForScrolling(cm);
-  cm.scrollIntoView(cmPosition, 0);
-
-  
-  
-  
-  await onScrolled;
-
-  const { left, top } = getCoordsFromPosition(cm, cmPosition);
+  const { left, top } = getCoordsFromPosition(cm, { line, ch: column });
 
   
   
@@ -2225,10 +2249,29 @@ async function getTokenFromPosition(dbg, { line, column = 0 }) {
   return dbg.win.document.elementFromPoint(left, top + lineHeightOffset);
 }
 
-async function waitForScrolling(codeMirror) {
+
+
+
+
+
+
+
+
+async function waitForScrolling(dbg, { useTimeoutFallback = true } = {}) {
   return new Promise(resolve => {
-    codeMirror.on("scroll", resolve);
-    setTimeout(resolve, 500);
+    const editor = getCMEditor(dbg);
+    if (isCm6Enabled) {
+      editor.once("cm-editor-scrolled", resolve);
+    } else {
+      function onScroll() {
+        editor.codeMirror.off("scroll", onScroll);
+        resolve();
+      }
+      editor.codeMirror.on("scroll", onScroll);
+    }
+    if (useTimeoutFallback) {
+      setTimeout(resolve, 500);
+    }
   });
 }
 
@@ -2236,11 +2279,11 @@ async function codeMirrorGutterElement(dbg, line) {
   info(`CodeMirror line ${line}`);
   const cm = getCM(dbg);
 
-  const position = { line: line - 1, ch: 0 };
-  cm.scrollIntoView(position, 0);
-  await waitForScrolling(cm);
+  line = isCm6Enabled ? line : line - 1;
+  await scrollEditorIntoView(dbg, line, 0);
+  await waitForScrolling(dbg);
 
-  const coords = getCoordsFromPosition(cm, position);
+  const coords = getCoordsFromPosition(cm, { line, ch: 0 });
 
   const { left, top } = coords;
 
@@ -2449,10 +2492,7 @@ async function tryHovering(dbg, line, column, elementName) {
 
 async function tryHoverTokenAtLine(dbg, expression, line, column, elementName) {
   info("Scroll codeMirror to make the token visible");
-  const cm = getCM(dbg);
-  const onScrolled = waitForScrolling(cm);
-  cm.scrollIntoView({ line: line - 1, ch: 0 }, 0);
-  await onScrolled;
+  await scrollEditorIntoView(dbg, line, 0);
 
   
   const tokenEl = getTokenElAtLine(dbg, expression, line, column);
