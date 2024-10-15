@@ -818,9 +818,6 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
   
   
   if (mMatchAboutBlank && aDoc.IsTopLevelOpaqueAboutBlank()) {
-    if (StaticPrefs::extensions_script_about_blank_without_permission()) {
-      return true;
-    }
     if (mHasActiveTabPermission) {
       return true;
     }
