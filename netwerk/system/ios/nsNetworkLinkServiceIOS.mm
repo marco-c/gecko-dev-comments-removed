@@ -1,0 +1,9 @@
+
+
+
+
+
+#include "nsINetworkLinkService.h"
+
+
+bool nsINetworkLinkService::HasNonLocalIPv6Address() { return false; }

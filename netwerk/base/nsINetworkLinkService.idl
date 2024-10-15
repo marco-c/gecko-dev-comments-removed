@@ -87,6 +87,10 @@ interface nsINetworkLinkService : nsISupports
 
 
   readonly attribute unsigned long platformDNSIndications;
+
+  %{C++
+    static bool HasNonLocalIPv6Address();
+  %}
 };
 
 %{C++
