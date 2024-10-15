@@ -10767,11 +10767,36 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   CSSToScreenScale defaultScale =
       layoutDeviceScale * LayoutDeviceToScreenScale(1.0);
 
-  
-  
-  const bool fullscreen = Fullscreen();
   auto* bc = GetBrowsingContext();
-  if (bc && bc->ForceDesktopViewport() && !IsAboutPage() && !fullscreen) {
+  const bool inRDM = bc && bc->InRDMPane();
+  const bool ignoreMetaTag = [&] {
+    if (!nsLayoutUtils::ShouldHandleMetaViewport(this)) {
+      return true;
+    }
+    if (Fullscreen()) {
+      
+      return true;
+    }
+    if (inRDM && bc->ForceDesktopViewport()) {
+      
+      
+      return true;
+    }
+    return false;
+  }();
+
+  if (ignoreMetaTag) {
+    return nsViewportInfo(aDisplaySize, defaultScale,
+                          nsLayoutUtils::AllowZoomingForDocument(this)
+                              ? nsViewportInfo::ZoomFlag::AllowZoom
+                              : nsViewportInfo::ZoomFlag::DisallowZoom,
+                          StaticPrefs::apz_allow_zooming_out()
+                              ? nsViewportInfo::ZoomBehaviour::Mobile
+                              : nsViewportInfo::ZoomBehaviour::Desktop);
+  }
+
+  
+  if (bc && bc->ForceDesktopViewport() && !IsAboutPage()) {
     CSSCoord viewportWidth =
         StaticPrefs::browser_viewport_desktopWidth() / fullZoom;
     CSSToScreenScale scaleToFit(aDisplaySize.width / viewportWidth);
@@ -10782,17 +10807,6 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
                           nsViewportInfo::ZoomFlag::AllowZoom,
                           nsViewportInfo::ZoomBehaviour::Mobile,
                           nsViewportInfo::AutoScaleFlag::AutoScale);
-  }
-
-  
-  if (fullscreen || !nsLayoutUtils::ShouldHandleMetaViewport(this)) {
-    return nsViewportInfo(aDisplaySize, defaultScale,
-                          nsLayoutUtils::AllowZoomingForDocument(this)
-                              ? nsViewportInfo::ZoomFlag::AllowZoom
-                              : nsViewportInfo::ZoomFlag::DisallowZoom,
-                          StaticPrefs::apz_allow_zooming_out()
-                              ? nsViewportInfo::ZoomBehaviour::Mobile
-                              : nsViewportInfo::ZoomBehaviour::Desktop);
   }
 
   
@@ -10929,15 +10943,13 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       
       if (maxWidth == nsViewportInfo::kAuto && !mValidScaleFloat) {
-        if (bc && bc->TouchEventsOverride() == TouchEventsOverride::Enabled &&
-            bc->InRDMPane()) {
+        maxWidth = StaticPrefs::browser_viewport_desktopWidth();
+        if (inRDM &&
+            bc->TouchEventsOverride() == TouchEventsOverride::Enabled) {
           
           
           
-          maxWidth = nsViewportInfo::Max(
-              displaySize.width, StaticPrefs::browser_viewport_desktopWidth());
-        } else {
-          maxWidth = StaticPrefs::browser_viewport_desktopWidth();
+          maxWidth = nsViewportInfo::Max(displaySize.width, maxWidth);
         }
         
         
