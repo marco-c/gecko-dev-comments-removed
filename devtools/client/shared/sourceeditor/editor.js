@@ -2970,7 +2970,7 @@ class Editor extends EventEmitter {
     }
 
     if (this.config.cm6) {
-      const pos = this.#posToOffset(cm.state.doc, line, column);
+      const pos = this.#positionToOffset(line, column);
       if (pos == null) {
         return false;
       }
@@ -3020,13 +3020,10 @@ class Editor extends EventEmitter {
 
 
 
-
-  #posToOffset(doc, line, col) {
-    if (!this.config.cm6) {
-      throw new Error("This function is only compatible with CM6");
-    }
+  #positionToOffset(line, col = 0) {
+    const cm = editors.get(this);
     try {
-      const offset = doc.line(line);
+      const offset = cm.state.doc.line(line);
       return offset.from + col;
     } catch (e) {
       
@@ -3087,7 +3084,7 @@ class Editor extends EventEmitter {
       } = this.#CodeMirror6;
 
       if (!this.isPositionVisible(line, column)) {
-        const offset = this.#posToOffset(cm.state.doc, line, column);
+        const offset = this.#positionToOffset(line, column);
         if (offset == null) {
           return;
         }
@@ -3122,8 +3119,8 @@ class Editor extends EventEmitter {
   setSelectionAt(start, end) {
     const cm = editors.get(this);
     if (this.config.cm6) {
-      const from = this.#posToOffset(start.line, start.column);
-      const to = this.#posToOffset(end.line, end.column);
+      const from = this.#positionToOffset(start.line, start.column);
+      const to = this.#positionToOffset(end.line, end.column);
       if (from == null || to == null) {
         return;
       }
@@ -3176,7 +3173,7 @@ class Editor extends EventEmitter {
   getCoords(line, column = 0) {
     const cm = editors.get(this);
     if (this.config.cm6) {
-      const offset = this.#posToOffset(line, column);
+      const offset = this.#positionToOffset(line, column);
       if (offset == null) {
         return null;
       }
@@ -3189,7 +3186,7 @@ class Editor extends EventEmitter {
 
   
   getElementAtPos(line, column) {
-    const offset = this.#posToOffset(line, column);
+    const offset = this.#positionToOffset(line, column);
     const el = this.#getElementAtOffset(offset);
     return el;
   }
