@@ -257,6 +257,7 @@ class TestWindowRect(MarionetteTestCase):
         
 
         os = self.marionette.session_capabilities["platformName"]
+        version = self.marionette.session_capabilities["moz:platformVersion"]
 
         
         
@@ -278,7 +279,12 @@ class TestWindowRect(MarionetteTestCase):
         
         elif os == "mac":
             self.assertEqual(-8, new_position["x"])
-            self.assertEqual(23, new_position["y"])
+            
+            
+            if int(version.split(".")[0]) >= 20:
+                self.assertEqual(25, new_position["y"])
+            else:
+                self.assertEqual(23, new_position["y"])
 
         
         
