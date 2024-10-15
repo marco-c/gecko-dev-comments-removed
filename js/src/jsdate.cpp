@@ -137,11 +137,24 @@ static inline double PositiveModulo(double dividend, double divisor) {
   return result + (+0.0);
 }
 
-static inline int32_t FloorDiv(int32_t dividend, int32_t divisor) {
+template <typename T>
+static inline std::enable_if_t<std::is_integral_v<T>, int32_t> PositiveModulo(
+    T dividend, int32_t divisor) {
   MOZ_ASSERT(divisor > 0);
 
-  int32_t quotient = dividend / divisor;
-  int32_t remainder = dividend % divisor;
+  int32_t result = dividend % divisor;
+  if (result < 0) {
+    result += divisor;
+  }
+  return result;
+}
+
+template <typename T>
+static inline T FloorDiv(T dividend, int32_t divisor) {
+  MOZ_ASSERT(divisor > 0);
+
+  T quotient = dividend / divisor;
+  T remainder = dividend % divisor;
   if (remainder < 0) {
     quotient -= 1;
   }
@@ -160,7 +173,9 @@ static inline double Day(double t) { return floor(t / msPerDay); }
 
 
 
-static double TimeWithinDay(double t) { return PositiveModulo(t, msPerDay); }
+static int32_t TimeWithinDay(int64_t t) {
+  return PositiveModulo(t, int32_t(msPerDay));
+}
 
 
 
@@ -705,33 +720,33 @@ static double UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
 }
 
 
-static double HourFromTime(double t) {
-  return PositiveModulo(floor(t / msPerHour), HoursPerDay);
+static int32_t HourFromTime(int64_t t) {
+  return PositiveModulo(FloorDiv(t, msPerHour), int32_t(HoursPerDay));
 }
 
-static double MinFromTime(double t) {
-  return PositiveModulo(floor(t / msPerMinute), MinutesPerHour);
+static int32_t MinFromTime(int64_t t) {
+  return PositiveModulo(FloorDiv(t, msPerMinute), int32_t(MinutesPerHour));
 }
 
-static double SecFromTime(double t) {
-  return PositiveModulo(floor(t / msPerSecond), SecondsPerMinute);
+static int32_t SecFromTime(int64_t t) {
+  return PositiveModulo(FloorDiv(t, msPerSecond), int32_t(SecondsPerMinute));
 }
 
-static double msFromTime(double t) { return PositiveModulo(t, msPerSecond); }
+static int32_t msFromTime(int64_t t) {
+  return PositiveModulo(t, int32_t(msPerSecond));
+}
 
 HourMinuteSecond js::ToHourMinuteSecond(int64_t epochMilliseconds) {
-  double time = double(epochMilliseconds);
-
-  double hour = HourFromTime(time);
+  int32_t hour = HourFromTime(epochMilliseconds);
   MOZ_ASSERT(0 <= hour && hour < HoursPerDay);
 
-  double minute = MinFromTime(time);
+  int32_t minute = MinFromTime(epochMilliseconds);
   MOZ_ASSERT(0 <= minute && minute < MinutesPerHour);
 
-  double second = SecFromTime(time);
+  int32_t second = SecFromTime(epochMilliseconds);
   MOZ_ASSERT(0 <= minute && minute < SecondsPerMinute);
 
-  return {int32_t(hour), int32_t(minute), int32_t(second)};
+  return {hour, minute, second};
 }
 
 
@@ -2265,20 +2280,33 @@ static bool date_getHours(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getUTCHours(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getUTCHours");
   if (!unwrapped) {
     return false;
   }
 
-  double result = unwrapped->UTCTime().toNumber();
-  if (std::isfinite(result)) {
-    result = HourFromTime(result);
-  }
+  
+  double t = unwrapped->UTCTime().toNumber();
+  MOZ_ASSERT(IsTimeValue(t));
 
-  args.rval().setNumber(result);
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+  int64_t tv = static_cast<int64_t>(t);
+
+  
+  args.rval().setInt32(HourFromTime(tv));
   return true;
 }
 
@@ -2305,21 +2333,34 @@ static bool date_getMinutes(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped =
       UnwrapAndTypeCheckThis<DateObject>(cx, args, "getUTCMinutes");
   if (!unwrapped) {
     return false;
   }
 
-  double result = unwrapped->UTCTime().toNumber();
-  if (std::isfinite(result)) {
-    result = MinFromTime(result);
-  }
+  
+  double t = unwrapped->UTCTime().toNumber();
+  MOZ_ASSERT(IsTimeValue(t));
 
-  args.rval().setNumber(result);
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+  int64_t tv = static_cast<int64_t>(t);
+
+  
+  args.rval().setInt32(MinFromTime(tv));
   return true;
 }
 
@@ -2345,23 +2386,42 @@ static bool date_getSeconds(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped =
       UnwrapAndTypeCheckThis<DateObject>(cx, args, "getUTCSeconds");
   if (!unwrapped) {
     return false;
   }
 
-  double result = unwrapped->UTCTime().toNumber();
-  if (std::isfinite(result)) {
-    result = SecFromTime(result);
-  }
+  
+  double t = unwrapped->UTCTime().toNumber();
+  MOZ_ASSERT(IsTimeValue(t));
 
-  args.rval().setNumber(result);
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+  int64_t tv = static_cast<int64_t>(t);
+
+  
+  args.rval().setInt32(SecFromTime(tv));
   return true;
 }
+
+
+
+
+
+
 
 
 
@@ -2378,17 +2438,25 @@ static bool getMilliseconds(JSContext* cx, unsigned argc, Value* vp,
                             const char* methodName) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, methodName);
   if (!unwrapped) {
     return false;
   }
 
-  double result = unwrapped->UTCTime().toNumber();
-  if (std::isfinite(result)) {
-    result = msFromTime(result);
-  }
+  
+  double t = unwrapped->UTCTime().toNumber();
+  MOZ_ASSERT(IsTimeValue(t));
 
-  args.rval().setNumber(result);
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+  int64_t tv = static_cast<int64_t>(t);
+
+  
+  args.rval().setInt32(msFromTime(tv));
   return true;
 }
 
@@ -3014,10 +3082,11 @@ static bool date_setUTCDate(JSContext* cx, unsigned argc, Value* vp) {
     args.rval().setNaN();
     return true;
   }
+  int64_t tv = static_cast<int64_t>(t);
 
   
-  double newDate = MakeDate(MakeDay(::YearFromTime(t), ::MonthFromTime(t), dt),
-                            TimeWithinDay(t));
+  double newDate = MakeDate(
+      MakeDay(::YearFromTime(tv), ::MonthFromTime(tv), dt), TimeWithinDay(tv));
 
   
   ClippedTime v = TimeClip(newDate);
@@ -3120,15 +3189,16 @@ static bool date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
     args.rval().setNaN();
     return true;
   }
+  int64_t tv = static_cast<int64_t>(t);
 
   
   if (args.length() <= 1) {
-    dt = DateFromTime(t);
+    dt = DateFromTime(tv);
   }
 
   
   double newDate =
-      MakeDate(MakeDay(::YearFromTime(t), m, dt), TimeWithinDay(t));
+      MakeDate(MakeDay(::YearFromTime(tv), m, dt), TimeWithinDay(tv));
 
   
   ClippedTime v = TimeClip(newDate);
@@ -3222,8 +3292,11 @@ static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(IsTimeValue(t));
 
   
+  int64_t tv;
   if (std::isnan(t)) {
-    t = 0;
+    tv = 0;
+  } else {
+    tv = static_cast<int64_t>(t);
   }
 
   
@@ -3235,7 +3308,7 @@ static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   
   double m;
   if (args.length() <= 1) {
-    m = MonthFromTime(t);
+    m = MonthFromTime(tv);
   } else {
     if (!ToNumber(cx, args[1], &m)) {
       return false;
@@ -3245,7 +3318,7 @@ static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   
   double dt;
   if (args.length() <= 2) {
-    dt = DateFromTime(t);
+    dt = DateFromTime(tv);
   } else {
     if (!ToNumber(cx, args[2], &dt)) {
       return false;
@@ -3253,7 +3326,7 @@ static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double newDate = MakeDate(MakeDay(y, m, dt), TimeWithinDay(t));
+  double newDate = MakeDate(MakeDay(y, m, dt), TimeWithinDay(tv));
 
   
   ClippedTime v = TimeClip(newDate);
@@ -3355,34 +3428,45 @@ static bool date_toUTCString(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_toISOString(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype", "toISOString");
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "toISOString");
   if (!unwrapped) {
     return false;
   }
 
+  
   double utctime = unwrapped->UTCTime().toNumber();
+  MOZ_ASSERT(IsTimeValue(utctime));
+
+  
   if (!std::isfinite(utctime)) {
     JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                               JSMSG_INVALID_DATE);
     return false;
   }
-
   int64_t epochMilliseconds = static_cast<int64_t>(utctime);
 
+  
+
+  
   auto [year, month, day] = ::ToYearMonthDay(epochMilliseconds);
   auto [hour, minute, second] = ToHourMinuteSecond(epochMilliseconds);
 
   char buf[100];
   if (year < 0 || year > 9999) {
     SprintfLiteral(buf, "%+.6d-%.2u-%.2uT%.2d:%.2d:%.2d.%.3dZ", year, month + 1,
-                   day, hour, minute, second, int(msFromTime(utctime)));
+                   day, hour, minute, second, msFromTime(epochMilliseconds));
   } else {
     SprintfLiteral(buf, "%.4d-%.2u-%.2uT%.2d:%.2d:%.2d.%.3dZ", year, month + 1,
-                   day, hour, minute, second, int(msFromTime(utctime)));
+                   day, hour, minute, second, msFromTime(epochMilliseconds));
   }
 
   JSString* str = NewStringCopyZ<CanGC>(cx, buf);
