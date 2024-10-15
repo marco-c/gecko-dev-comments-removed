@@ -37,14 +37,10 @@ var gTabsPanel = {
   },
 
   hasHiddenTabsExcludingFxView() {
-    const hiddenTabCount = gBrowser.tabs.length - gBrowser.visibleTabs.length;
-
     
-    
-    if (hiddenTabCount == 1) {
-      return !FirefoxViewHandler.tab?.hidden;
-    }
-    return hiddenTabCount > 0;
+    return gBrowser.tabs.some(
+      tab => tab.hidden && tab != FirefoxViewHandler.tab
+    );
   },
 
   init() {

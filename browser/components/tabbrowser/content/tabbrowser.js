@@ -384,6 +384,18 @@
       return this.tabContainer.visibleTabs;
     },
 
+    
+
+
+
+    get openTabCount() {
+      let count = this.tabs.length - this._removingTabs.size;
+      if (FirefoxViewHandler.tab) {
+        count--;
+      }
+      return count;
+    },
+
     getDuplicateTabsToClose(aTab) {
       
       
