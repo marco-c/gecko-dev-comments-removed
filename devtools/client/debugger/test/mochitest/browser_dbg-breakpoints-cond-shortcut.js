@@ -12,15 +12,12 @@ add_task(async function () {
 
   await selectSource(dbg, "long.js");
   await waitForSelectedSource(dbg, "long.js");
-  
-  
-  await waitForDocumentLoadComplete(dbg);
+
   info(
     "toggle conditional panel with shortcut: no breakpoints, default cursorPosition"
   );
-  await pressKey(dbg, "toggleCondPanel");
+  pressKey(dbg, "toggleCondPanel");
   await waitForConditionalPanelFocus(dbg);
-
   ok(
     !!(await getConditionalPanelAtLine(dbg, 1)),
     "conditional panel panel is open on line 1"
