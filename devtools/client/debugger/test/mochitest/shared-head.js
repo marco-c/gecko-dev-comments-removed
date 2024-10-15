@@ -2284,12 +2284,6 @@ async function scrollEditorIntoView(dbg, line, column) {
 }
 
 
-function getCM(dbg) {
-  const el = dbg.win.document.querySelector(".CodeMirror");
-  return el.CodeMirror;
-}
-
-
 
 
 
@@ -2328,7 +2322,6 @@ function getCoordsFromPosition(dbg, line, ch) {
 
 async function getTokenFromPosition(dbg, { line, column = 0 }) {
   info(`Get token at ${line}:${column}`);
-  const cm = getCM(dbg);
   line = isCm6Enabled ? line : line - 1;
   column = isCm6Enabled ? column : column - 1;
   await scrollEditorIntoView(dbg, line, column);
@@ -2375,7 +2368,6 @@ async function waitForScrolling(dbg, { useTimeoutFallback = true } = {}) {
 
 async function codeMirrorGutterElement(dbg, line) {
   info(`CodeMirror line ${line}`);
-  const cm = getCM(dbg);
 
   line = isCm6Enabled ? line : line - 1;
   await scrollEditorIntoView(dbg, line, 0);
