@@ -603,31 +603,30 @@ RefPtr<DtlsIdentity> PeerConnectionImpl::Identity() const {
 
 class CompareCodecPriority {
  public:
-  void SetPreferredCodec(int32_t preferredCodec) {
-    
-    
-    
-    std::ostringstream os;
-    os << preferredCodec;
-    mPreferredCodec = os.str();
+  void SetPreferredCodec(const nsCString& preferredCodec) {
+    mPreferredCodec = preferredCodec;
   }
 
   bool operator()(const UniquePtr<JsepCodecDescription>& lhs,
                   const UniquePtr<JsepCodecDescription>& rhs) const {
-    if (!mPreferredCodec.empty() && lhs->mDefaultPt == mPreferredCodec &&
-        rhs->mDefaultPt != mPreferredCodec) {
-      return true;
+    
+    if (!mPreferredCodec.IsEmpty()) {
+      const bool lhsMatches = mPreferredCodec.EqualsIgnoreCase(lhs->mName) ||
+                              mPreferredCodec.EqualsIgnoreCase(lhs->mDefaultPt);
+      const bool rhsMatches = mPreferredCodec.EqualsIgnoreCase(rhs->mName) ||
+                              mPreferredCodec.EqualsIgnoreCase(rhs->mDefaultPt);
+      
+      if (lhsMatches && !rhsMatches) {
+        return true;
+      }
     }
-
-    if (lhs->mStronglyPreferred && !rhs->mStronglyPreferred) {
-      return true;
-    }
-
-    return false;
+    
+    return (lhs->mStronglyPreferred && !rhs->mStronglyPreferred);
   }
 
  private:
-  std::string mPreferredCodec;
+  
+  nsCString mPreferredCodec;
 };
 
 class ConfigureCodec {
@@ -812,14 +811,14 @@ nsresult PeerConnectionImpl::ConfigureJsepSessionCodecs() {
   
   CompareCodecPriority comparator;
 
-  
-  int32_t preferredCodec = 0;
-  branch->GetIntPref("media.navigator.video.preferred_codec", &preferredCodec);
-
-  if (preferredCodec) {
+  nsCString preferredCodec;
+  if (NS_SUCCEEDED(branch->GetCharPref("media.navigator.video.preferred_codec",
+                                       preferredCodec))) {
+    preferredCodec.CompressWhitespace(true, true);
     comparator.SetPreferredCodec(preferredCodec);
   }
 
+  
   mJsepSession->SortCodecs(comparator);
   return NS_OK;
 }
