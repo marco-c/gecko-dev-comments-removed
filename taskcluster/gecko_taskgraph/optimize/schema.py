@@ -29,7 +29,6 @@ default_optimizations = (
     {"skip-unless-android-perftest-backstop": None},
     
     {"skip-unless-changed": [str]},
-    {"skip-unless-missing-or-changed": [voluptuous.Any(str, [str])]},
     
     {"skip-unless-schedules": list(schedules.ALL_COMPONENTS)},
     
