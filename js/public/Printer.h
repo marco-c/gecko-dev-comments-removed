@@ -205,7 +205,8 @@ class JS_PUBLIC_API GenericPrinter {
   virtual void flush() {  }
 
   
-  virtual void reportOutOfMemory();
+  
+  virtual void setPendingOutOfMemory();
 
   
   virtual bool hadOutOfMemory() const { return hadOOM_; }
@@ -468,7 +469,7 @@ class JS_PUBLIC_API EscapePrinter final : public GenericPrinter {
   }
   size_t index() const final { return out.index(); }
   void flush() final { out.flush(); }
-  void reportOutOfMemory() final { out.reportOutOfMemory(); }
+  void setPendingOutOfMemory() final { out.setPendingOutOfMemory(); }
   bool hadOutOfMemory() const final { return out.hadOutOfMemory(); }
 };
 
