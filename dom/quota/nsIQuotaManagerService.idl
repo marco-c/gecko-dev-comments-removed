@@ -117,9 +117,14 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+
+
+
+
   [must_use] nsIQuotaRequest
   initializeTemporaryOrigin(in ACString aPersistenceType,
-                            in nsIPrincipal aPrincipal);
+                            in nsIPrincipal aPrincipal,
+                            [optional] in boolean aCreateIfNonExistent);
 
   
 

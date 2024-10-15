@@ -19,6 +19,7 @@ class GroupInfo;
 class OriginInfo final {
   friend class CanonicalQuotaObject;
   friend class GroupInfo;
+  friend class PersistOp;
   friend class QuotaManager;
 
  public:
@@ -65,6 +66,12 @@ class OriginInfo final {
 
   bool IsExtensionOrigin() const { return mIsExtension; }
 
+  bool LockedDirectoryExists() const {
+    AssertCurrentThreadOwnsQuotaMutex();
+
+    return mDirectoryExists;
+  }
+
   OriginMetadata FlattenToOriginMetadata() const;
 
   FullOriginMetadata LockedFlattenToFullOriginMetadata() const;
@@ -95,6 +102,8 @@ class OriginInfo final {
   }
 
   void LockedPersist();
+
+  void LockedDirectoryCreated();
 
   nsTHashMap<nsStringHashKey, NotNull<CanonicalQuotaObject*>>
       mCanonicalQuotaObjects;
