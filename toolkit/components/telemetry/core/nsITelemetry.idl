@@ -389,16 +389,6 @@ interface nsITelemetry : nsISupports
 
 
 
-
-
-
-  void setHistogramRecordingEnabled(in ACString id, in boolean enabled);
-
-  
-
-
-
-
   void asyncFetchTelemetryData(in nsIFetchTelemetryDataCallback aCallback);
 
   
