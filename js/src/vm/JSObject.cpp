@@ -2302,8 +2302,11 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
-  if (key == JSProto_Math && !JS::Prefs::experimental_math_sumprecise() &&
-      id == NameToId(cx->names().sumPrecise)) {
+  
+  
+  
+  if (key == JSProto_Function && !JS::Prefs::experimental_joint_iteration() &&
+      id == NameToId(cx->names().zip)) {
     return true;
   }
 #endif

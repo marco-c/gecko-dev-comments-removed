@@ -962,3 +962,15 @@ function IteratorFind(predicate) {
     }
   }
 }
+
+
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+function IteratorZip(predicate) {
+  return false;
+}
+#endif
