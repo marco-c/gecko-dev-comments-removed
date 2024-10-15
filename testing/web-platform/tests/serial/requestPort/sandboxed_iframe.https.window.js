@@ -16,10 +16,6 @@ promise_test(async (t) => {
   await new Promise(resolve => {
     window.addEventListener('message', t.step_func(messageEvent => {
       
-      if ((messageEvent.data.type || '').startsWith('testdriver-')) {
-        return;
-      }
-      
       
       assert_true(messageEvent.data.includes('NotFoundError'));
       resolve();
