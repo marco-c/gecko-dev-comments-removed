@@ -361,6 +361,9 @@ nsresult nsHttpHandler::Init() {
     usageOfHTTPSRRPrefs[2] = StaticPrefs::network_dns_echconfig_enabled();
     Telemetry::ScalarSet(Telemetry::ScalarID::NETWORKING_HTTPS_RR_PREFS_USAGE,
                          static_cast<uint32_t>(usageOfHTTPSRRPrefs.to_ulong()));
+    Telemetry::ScalarSet(Telemetry::ScalarID::NETWORKING_HTTP3_ENABLED,
+                         StaticPrefs::network_http_http3_enable());
+
     mActivityDistributor = components::HttpActivityDistributor::Service();
 
     auto initQLogDir = [&]() {
@@ -409,9 +412,6 @@ nsresult nsHttpHandler::Init() {
   Preferences::RegisterPrefixCallbacks(nsHttpHandler::PrefsChanged,
                                        gCallbackPrefs, this);
   PrefsChanged(nullptr);
-
-  Telemetry::ScalarSet(Telemetry::ScalarID::NETWORKING_HTTP3_ENABLED,
-                       StaticPrefs::network_http_http3_enable());
 
   mCompatFirefox.AssignLiteral("Firefox/" MOZILLA_UAVERSION);
 
