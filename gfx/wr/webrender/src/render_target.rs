@@ -80,70 +80,6 @@ pub struct RenderTargetContext<'a, 'rc> {
 
 
 
-pub trait RenderTarget {
-    
-    fn new(
-        target_kind: RenderTargetKind,
-        texture_id: CacheTextureId,
-        screen_size: DeviceIntSize,
-        gpu_supports_fast_clears: bool,
-        used_rect: DeviceIntRect,
-        memory: &FrameMemory,
-    ) -> Self;
-
-    
-    
-    fn build(
-        &mut self,
-        _ctx: &mut RenderTargetContext,
-        _gpu_cache: &mut GpuCache,
-        _render_tasks: &RenderTaskGraph,
-        _prim_headers: &mut PrimitiveHeaders,
-        _transforms: &mut TransformPalette,
-        _z_generator: &mut ZBufferIdGenerator,
-        _prim_instances: &[PrimitiveInstance],
-        _cmd_buffers: &CommandBufferList,
-        _gpu_buffer_builder: &mut GpuBufferBuilder,
-    ) {
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn add_task(
-        &mut self,
-        task_id: RenderTaskId,
-        ctx: &RenderTargetContext,
-        gpu_cache: &mut GpuCache,
-        gpu_buffer_builder: &mut GpuBufferBuilder,
-        render_tasks: &RenderTaskGraph,
-        clip_store: &ClipStore,
-        transforms: &mut TransformPalette,
-    );
-
-    fn needs_depth(&self) -> bool;
-    fn texture_id(&self) -> CacheTextureId;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -158,11 +94,11 @@ pub trait RenderTarget {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct RenderTargetList<T> {
-    pub targets: FrameVec<T>,
+pub struct RenderTargetList {
+    pub targets: FrameVec<ColorRenderTarget>,
 }
 
-impl<T: RenderTarget> RenderTargetList<T> {
+impl RenderTargetList {
     pub fn new(allocator: FrameAllocator) -> Self {
         RenderTargetList {
             targets: allocator.new_vec(),
@@ -211,6 +147,12 @@ const NUM_PATTERNS: usize = crate::pattern::NUM_PATTERNS as usize;
 
 
 
+
+
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ColorRenderTarget {
@@ -245,8 +187,8 @@ pub struct ColorRenderTarget {
     pub one_clears: FrameVec<RenderTaskId>,
 }
 
-impl RenderTarget for ColorRenderTarget {
-    fn new(
+impl ColorRenderTarget {
+    pub fn new(
         target_kind: RenderTargetKind,
         texture_id: CacheTextureId,
         screen_size: DeviceIntSize,
@@ -278,7 +220,7 @@ impl RenderTarget for ColorRenderTarget {
         }
     }
 
-    fn build(
+    pub fn build(
         &mut self,
         ctx: &mut RenderTargetContext,
         gpu_cache: &mut GpuCache,
@@ -366,11 +308,11 @@ impl RenderTarget for ColorRenderTarget {
         }
     }
 
-    fn texture_id(&self) -> CacheTextureId {
+    pub fn texture_id(&self) -> CacheTextureId {
         self.texture_id
     }
 
-    fn add_task(
+    pub fn add_task(
         &mut self,
         task_id: RenderTaskId,
         ctx: &RenderTargetContext,
@@ -562,7 +504,7 @@ impl RenderTarget for ColorRenderTarget {
         );
     }
 
-    fn needs_depth(&self) -> bool {
+    pub fn needs_depth(&self) -> bool {
         self.alpha_batch_containers.iter().any(|ab| {
             !ab.opaque_batches.is_empty()
         })
