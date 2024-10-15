@@ -943,6 +943,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       mIsCloaked = mozilla::IsCloaked(mWnd);
       mFrameState->ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
 
+      MOZ_ASSERT(BoundsUseDesktopPixels());
+      auto scale = GetDesktopToDeviceScale();
+      mBounds = mLastPaintBounds = LayoutDeviceIntRect::FromUnknownRect(
+          DesktopIntRect::Round(LayoutDeviceRect(GetBounds()) / scale)
+              .ToUnknownRect());
+
       
       
       
