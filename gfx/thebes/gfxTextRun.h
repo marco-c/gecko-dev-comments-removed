@@ -904,6 +904,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
  public:
   typedef mozilla::intl::Script Script;
   typedef gfxShapedText::CompressedGlyph CompressedGlyph;
+  friend class MathMLTextRunFactory;
+  friend class nsCaseTransformTextRunFactory;
 
   static void
   Shutdown();  
@@ -1062,18 +1064,6 @@ class gfxFontGroup final : public gfxTextRunFactory {
       int32_t aAppUnitsPerDevPixel, mozilla::gfx::ShapedTextFlags aFlags,
       LazyReferenceDrawTargetGetter& aRefDrawTargetGetter);
 
-  void CheckForUpdatedPlatformList() {
-    auto* pfl = gfxPlatformFontList::PlatformFontList();
-    if (mFontListGeneration != pfl->GetGeneration()) {
-      
-      mLastPrefFamily = FontFamily();
-      mLastPrefFont = nullptr;
-      mDefaultFont = nullptr;
-      mFonts.Clear();
-      BuildFontList();
-    }
-  }
-
   nsAtom* Language() const { return mLanguage.get(); }
 
   
@@ -1086,6 +1076,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
  protected:
   friend class mozilla::PostTraversalTask;
+  friend class DeferredClearResolvedFonts;
 
   struct TextRange {
     TextRange(uint32_t aStart, uint32_t aEnd, gfxFont* aFont,
@@ -1401,6 +1392,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   bool mExplicitLanguage;  
 
+  bool mResolvedFonts = false;  
+
   eFontPresentation mEmojiPresentation = eFontPresentation::Any;
 
   
@@ -1428,7 +1421,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
       mozilla::gfx::ShapedTextFlags aFlags, nsTextFrameUtils::Flags aFlags2);
 
   
-  void BuildFontList();
+  
+  void EnsureFontList();
 
   
   

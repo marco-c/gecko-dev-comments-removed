@@ -770,10 +770,11 @@ bool nsCaseTransformTextRunFactory::TransformString(
               
               
               
+              auto* fontGroup = aTextRun->GetFontGroup();
+              fontGroup->EnsureFontList();
               FontMatchType matchType;
-              RefPtr<gfxFont> mathFont =
-                  aTextRun->GetFontGroup()->FindFontForChar(
-                      ch2, 0, 0, intl::Script::COMMON, nullptr, &matchType);
+              RefPtr<gfxFont> mathFont = fontGroup->FindFontForChar(
+                  ch2, 0, 0, intl::Script::COMMON, nullptr, &matchType);
               if (mathFont) {
                 ch = ch2;
               }
