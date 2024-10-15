@@ -317,6 +317,7 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   nsCOMPtr<nsISerialEventTarget> mODATarget MOZ_GUARDED_BY(mEventTargetMutex);
+  Atomic<bool, mozilla::Relaxed> mGotDataAvailable{false};
   
   Mutex mEventTargetMutex{"HttpChannelChild::EventTargetMutex"};
 
