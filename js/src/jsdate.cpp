@@ -786,6 +786,9 @@ static double MakeFullYear(double year) {
 
 
 
+
+
+
 static bool date_UTC(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date", "UTC");
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -857,13 +860,7 @@ static bool date_UTC(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double yr = y;
-  if (!std::isnan(y)) {
-    double yint = ToInteger(y);
-    if (0 <= yint && yint <= 99) {
-      yr = 1900 + yint;
-    }
-  }
+  double yr = MakeFullYear(y);
 
   
   ClippedTime time =
@@ -4128,6 +4125,11 @@ static bool NewDateObject(JSContext* cx, const CallArgs& args, ClippedTime t) {
   return true;
 }
 
+
+
+
+
+
 static bool ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t) {
   const char* locale = cx->realm()->getLocale();
   if (!locale) {
@@ -4137,167 +4139,193 @@ static bool ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t) {
                     FormatSpec::DateTime, args.rval());
 }
 
+
+
+
+
+
 static bool DateNoArguments(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(args.isConstructing());
   MOZ_ASSERT(args.length() == 0);
 
+  
   ClippedTime now = NowAsMillis(cx);
 
-  if (args.isConstructing()) {
-    return NewDateObject(cx, args, now);
-  }
-
-  return ToDateString(cx, args, now);
+  
+  return NewDateObject(cx, args, now);
 }
 
+
+
+
+
+
 static bool DateOneArgument(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(args.isConstructing());
   MOZ_ASSERT(args.length() == 1);
 
-  if (args.isConstructing()) {
-    if (args[0].isObject()) {
-      RootedObject obj(cx, &args[0].toObject());
+  
+  MutableHandle<Value> value = args[0];
 
-      ESClass cls;
-      if (!GetBuiltinClass(cx, obj, &cls)) {
-        return false;
-      }
+  
+  if (value.isObject()) {
+    RootedObject obj(cx, &value.toObject());
 
-      if (cls == ESClass::Date) {
-        RootedValue unboxed(cx);
-        if (!Unbox(cx, obj, &unboxed)) {
-          return false;
-        }
-
-        return NewDateObject(cx, args, TimeClip(unboxed.toNumber()));
-      }
-    }
-
-    if (!ToPrimitive(cx, args[0])) {
+    ESClass cls;
+    if (!GetBuiltinClass(cx, obj, &cls)) {
       return false;
     }
 
-    ClippedTime t;
-    if (args[0].isString()) {
-      JSLinearString* linearStr = args[0].toString()->ensureLinear(cx);
-      if (!linearStr) {
+    if (cls == ESClass::Date) {
+      RootedValue unboxed(cx);
+      if (!Unbox(cx, obj, &unboxed)) {
         return false;
       }
 
-      if (!ParseDate(ForceUTC(cx->realm()), linearStr, &t)) {
-        t = ClippedTime::invalid();
-      }
-    } else {
-      double d;
-      if (!ToNumber(cx, args[0], &d)) {
-        return false;
-      }
-      t = TimeClip(d);
+      
+      return NewDateObject(cx, args, TimeClip(unboxed.toNumber()));
     }
-
-    return NewDateObject(cx, args, t);
   }
 
-  return ToDateString(cx, args, NowAsMillis(cx));
+  
+  if (!ToPrimitive(cx, value)) {
+    return false;
+  }
+
+  
+  ClippedTime t;
+  if (value.isString()) {
+    JSLinearString* linearStr = value.toString()->ensureLinear(cx);
+    if (!linearStr) {
+      return false;
+    }
+
+    if (!ParseDate(ForceUTC(cx->realm()), linearStr, &t)) {
+      t = ClippedTime::invalid();
+    }
+  } else {
+    double d;
+    if (!ToNumber(cx, value, &d)) {
+      return false;
+    }
+    t = TimeClip(d);
+  }
+
+  
+  return NewDateObject(cx, args, t);
 }
 
+
+
+
+
+
 static bool DateMultipleArguments(JSContext* cx, const CallArgs& args) {
+  
+  MOZ_ASSERT(args.isConstructing());
   MOZ_ASSERT(args.length() >= 2);
 
   
-  if (args.isConstructing()) {
-    
-    double y;
-    if (!ToNumber(cx, args[0], &y)) {
-      return false;
-    }
-
-    
-    double m;
-    if (!ToNumber(cx, args[1], &m)) {
-      return false;
-    }
-
-    
-    double dt;
-    if (args.length() >= 3) {
-      if (!ToNumber(cx, args[2], &dt)) {
-        return false;
-      }
-    } else {
-      dt = 1;
-    }
-
-    
-    double h;
-    if (args.length() >= 4) {
-      if (!ToNumber(cx, args[3], &h)) {
-        return false;
-      }
-    } else {
-      h = 0;
-    }
-
-    
-    double min;
-    if (args.length() >= 5) {
-      if (!ToNumber(cx, args[4], &min)) {
-        return false;
-      }
-    } else {
-      min = 0;
-    }
-
-    
-    double s;
-    if (args.length() >= 6) {
-      if (!ToNumber(cx, args[5], &s)) {
-        return false;
-      }
-    } else {
-      s = 0;
-    }
-
-    
-    double milli;
-    if (args.length() >= 7) {
-      if (!ToNumber(cx, args[6], &milli)) {
-        return false;
-      }
-    } else {
-      milli = 0;
-    }
-
-    
-    double yr = y;
-    if (!std::isnan(y)) {
-      double yint = ToInteger(y);
-      if (0 <= yint && yint <= 99) {
-        yr = 1900 + yint;
-      }
-    }
-
-    
-    double finalDate = MakeDate(MakeDay(yr, m, dt), MakeTime(h, min, s, milli));
-
-    
-    return NewDateObject(cx, args,
-                         TimeClip(UTC(ForceUTC(cx->realm()), finalDate)));
+  double y;
+  if (!ToNumber(cx, args[0], &y)) {
+    return false;
   }
 
-  return ToDateString(cx, args, NowAsMillis(cx));
+  
+  double m;
+  if (!ToNumber(cx, args[1], &m)) {
+    return false;
+  }
+
+  
+  double dt;
+  if (args.length() >= 3) {
+    if (!ToNumber(cx, args[2], &dt)) {
+      return false;
+    }
+  } else {
+    dt = 1;
+  }
+
+  
+  double h;
+  if (args.length() >= 4) {
+    if (!ToNumber(cx, args[3], &h)) {
+      return false;
+    }
+  } else {
+    h = 0;
+  }
+
+  
+  double min;
+  if (args.length() >= 5) {
+    if (!ToNumber(cx, args[4], &min)) {
+      return false;
+    }
+  } else {
+    min = 0;
+  }
+
+  
+  double s;
+  if (args.length() >= 6) {
+    if (!ToNumber(cx, args[5], &s)) {
+      return false;
+    }
+  } else {
+    s = 0;
+  }
+
+  
+  double milli;
+  if (args.length() >= 7) {
+    if (!ToNumber(cx, args[6], &milli)) {
+      return false;
+    }
+  } else {
+    milli = 0;
+  }
+
+  
+  double yr = MakeFullYear(y);
+
+  
+  double finalDate = MakeDate(MakeDay(yr, m, dt), MakeTime(h, min, s, milli));
+
+  
+  return NewDateObject(cx, args,
+                       TimeClip(UTC(ForceUTC(cx->realm()), finalDate)));
 }
+
+
+
+
+
 
 static bool DateConstructor(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSConstructorProfilerEntry pseudoFrame(cx, "Date");
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  if (args.length() == 0) {
+  
+  if (!args.isConstructing()) {
+    return ToDateString(cx, args, NowAsMillis(cx));
+  }
+
+  
+  unsigned numberOfArgs = args.length();
+
+  
+  if (numberOfArgs == 0) {
     return DateNoArguments(cx, args);
   }
 
-  if (args.length() == 1) {
+  
+  if (numberOfArgs == 1) {
     return DateOneArgument(cx, args);
   }
 
+  
   return DateMultipleArguments(cx, args);
 }
 
