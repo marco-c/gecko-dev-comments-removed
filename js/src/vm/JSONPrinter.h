@@ -87,10 +87,6 @@ class JSONPrinter {
   void endList();
   void endInlineList();
 
-  
-  
-  void outOfMemory() { out_.reportOutOfMemory(); }
-
  protected:
   void beginInline();
   void endInline();
