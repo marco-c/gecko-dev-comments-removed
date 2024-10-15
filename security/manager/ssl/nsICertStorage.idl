@@ -203,16 +203,6 @@ interface nsICertStorage : nsISupports {
 
 
 
-
-  [must_use]
-  void addCRLiteDelta(in Array<octet> delta, in ACString filename, in nsICertStorageCallback callback);
-
-  
-
-
-
-
-
   [must_use, noscript]
   boolean isCertRevokedByStash(in Array<octet> issuerSPKI, in Array<octet> serialNumber);
 
