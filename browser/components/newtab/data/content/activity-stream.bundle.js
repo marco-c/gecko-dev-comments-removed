@@ -2956,7 +2956,7 @@ class _DSCard extends (external_React_default()).PureComponent {
   }
   doesLinkTopicMatchSelectedTopic() {
     
-    if (this.props.selectedTopics === "") {
+    if (!this.props.selectedTopics) {
       return "not-set";
     }
 
