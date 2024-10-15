@@ -214,11 +214,8 @@ function makeMockContentAnalysis() {
     },
 
     getURIForBrowsingContext(aBrowsingContext) {
-      
-      
-      
       this.browsingContextsForURIs.push(aBrowsingContext);
-      return aBrowsingContext.currentURI;
+      return this.realCAService.getURIForBrowsingContext(aBrowsingContext);
     },
   };
 }
