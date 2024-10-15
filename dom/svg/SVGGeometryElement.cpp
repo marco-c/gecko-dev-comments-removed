@@ -207,9 +207,7 @@ bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
         
         
         
-        RefPtr<PathBuilder> builder = path->TransformedCopyToBuilder(mat);
-
-        path = builder->Finish();
+        Path::Transform(path, mat);
         point = mat.TransformPoint(point);
       }
     }
@@ -281,8 +279,7 @@ float SVGGeometryElement::GetPathLengthScale(PathLengthScaleForType aFor) {
         
         auto matrix = LocalTransform();
         if (!matrix.IsIdentity()) {
-          RefPtr<PathBuilder> builder = path->TransformedCopyToBuilder(matrix);
-          path = builder->Finish();
+          Path::Transform(path, matrix);
         }
       }
       return path->ComputeLength() / authorsPathLengthEstimate;
