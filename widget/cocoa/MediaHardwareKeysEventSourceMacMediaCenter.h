@@ -39,8 +39,7 @@ class MediaHardwareKeysEventSourceMacMediaCenter final
   bool IsOpened() const override;
   void SetPlaybackState(dom::MediaSessionPlaybackState aState) override;
   void SetMediaMetadata(const dom::MediaMetadataBase& aMetadata) override;
-  
-  void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override {}
+  void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override;
   void SetPositionState(const Maybe<dom::PositionState>& aState) override;
 
  private:
