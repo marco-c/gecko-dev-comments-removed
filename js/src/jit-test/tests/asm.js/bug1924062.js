@@ -1,0 +1,9 @@
+function a() {
+  "use asm"
+  function b() {}
+  return b;
+}
+
+try { disnative(a); } catch (e) {}
+
+try { disnative(a()); } catch (e) {}
