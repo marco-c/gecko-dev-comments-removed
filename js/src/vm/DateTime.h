@@ -26,24 +26,23 @@ class Realm;
 namespace js {
 
 
-constexpr double HoursPerDay = 24;
-constexpr double MinutesPerHour = 60;
-constexpr double SecondsPerMinute = 60;
-constexpr double msPerSecond = 1000;
-constexpr double msPerMinute = msPerSecond * SecondsPerMinute;
-constexpr double msPerHour = msPerMinute * MinutesPerHour;
-
-
-constexpr double msPerDay = msPerHour * HoursPerDay;
 
 
 
 
+constexpr int32_t HoursPerDay = 24;
+constexpr int32_t MinutesPerHour = 60;
+constexpr int32_t SecondsPerMinute = 60;
+constexpr int32_t msPerSecond = 1000;
+constexpr int32_t msPerMinute = msPerSecond * SecondsPerMinute;
+constexpr int32_t msPerHour = msPerMinute * MinutesPerHour;
+constexpr int32_t msPerDay = msPerHour * HoursPerDay;
 
 
 
-constexpr unsigned SecondsPerHour = 60 * 60;
-constexpr unsigned SecondsPerDay = SecondsPerHour * 24;
+
+constexpr int32_t SecondsPerHour = 60 * 60;
+constexpr int32_t SecondsPerDay = SecondsPerHour * 24;
 
 constexpr double StartOfTime = -8.64e15;
 constexpr double EndOfTime = 8.64e15;
