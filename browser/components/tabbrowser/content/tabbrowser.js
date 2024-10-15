@@ -7788,6 +7788,7 @@ var TabBarVisibility = {
 
   update(force = false) {
     let toolbar = document.getElementById("TabsToolbar");
+    let navbar = document.getElementById("nav-bar");
     let hideTabstrip = false;
     let isPopup = !window.toolbar.visible;
     let isVerticalTabs = Services.prefs.getBoolPref(
@@ -7813,24 +7814,24 @@ var TabBarVisibility = {
       TabsInTitlebar.allowedBy("tabs-visible", !hideTabstrip);
     }
 
-    if (
-      hideTabstrip == toolbar.collapsed &&
-      !force &&
-      this._initialUpdateDone
-    ) {
-      return;
-    }
-    this._initialUpdateDone = true;
-
-    toolbar.collapsed = hideTabstrip;
-    let navbar = document.getElementById("nav-bar");
     navbar.toggleAttribute("tabs-hidden", hideTabstrip);
     
     navbar.classList.toggle(
       "browser-titlebar",
       TabsInTitlebar.enabled && hideTabstrip
     );
-    navbar.classList.toggle("titlebar-color", hideTabstrip);
+
+    if (
+      hideTabstrip == toolbar.collapsed &&
+      !force &&
+      this._initialUpdateDone
+    ) {
+      
+      return;
+    }
+    this._initialUpdateDone = true;
+
+    toolbar.collapsed = hideTabstrip;
 
     document.getElementById("menu_closeWindow").hidden = hideTabstrip;
     document.l10n.setAttributes(
