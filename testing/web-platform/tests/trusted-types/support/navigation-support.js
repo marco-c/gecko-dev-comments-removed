@@ -1,20 +1,24 @@
 const kNavigationAttempted = "navigationattempted=1";
 
 function navigateToJavascriptURL(reportOnly) {
-    const params = new URLSearchParams(location.search);
+    let params = new URLSearchParams(location.search);
+
     if (!!params.get("defaultpolicy")) {
-      trustedTypes.createPolicy("default", {
-          createScript: s => s.replace("continue", "defaultpolicywashere"),
-      });
+        trustedTypes.createPolicy("default", {
+            createScript: s => {
+                return s.replace("continue", "defaultpolicywashere")
+            },
+        });
     }
 
     function bounceEventToOpener(e) {
-      const msg = {};
-      for (const field of ["effectiveDirective", "sample", "type"]) {
-        msg[field] = e[field];
-      }
-      msg["uri"] = location.href;
-      window.opener.postMessage(msg, "*");
+        const msg = {};
+        for (const field of ["effectiveDirective", "sample", "type"]) {
+            msg[field] = e[field];
+        }
+
+        msg["uri"] = location.href;
+        window.opener.postMessage(msg, "*");
     }
 
     
@@ -29,27 +33,43 @@ function navigateToJavascriptURL(reportOnly) {
         
         
         target_script = `location.href='${location.href.replace("-report-only", "") +
-            (location.href.includes("?") ? "&" : "?") + kNavigationAttempted + "&continue"}';`;
+            (location.href.endsWith(".html") ? "?" : "&") + kNavigationAttempted + "&continue"}';`;
     } else {
         
         
         target_script = `location.href='${location.href + "&" + kNavigationAttempted}&continue';`;
     }
-    const target = `javascript:${target_script}`;
 
-    const anchor = document.getElementById("anchor");
-    anchor.href = target;
+    function getAndPreparareNavigationElement(javaScriptURL) {
+        let target = "_self";
+        if (!!params.get("frame")) {
+            const frame = document.createElement("iframe");
+            frame.src = "frame-without-trusted-types.html";
+            frames.name = "frame";
+            document.body.appendChild(frame);
+            target = "frame";
+        }
 
-    if (!!params.get("frame")) {
-      const frame = document.createElement("iframe");
-      frame.src = "frame-without-trusted-types.html";
-      frames.name = "frame";
-      document.body.appendChild(frame);
-      anchor.target = "frame";
+        if (!!params.get("form-submission")) {
+            const submit = document.getElementById("submit");
+
+            
+            submit.formAction = javaScriptURL;
+            submit.formTarget = target;
+
+            return submit;
+        }
+
+        const anchor = document.getElementById("anchor");
+        anchor.href = javaScriptURL;
+        anchor.target = target;
+        return anchor;
     }
+
+    const navigationElement = getAndPreparareNavigationElement(`javascript:${target_script}`);
 
     
     if (!location.search.includes(kNavigationAttempted)) {
-      document.addEventListener("DOMContentLoaded", _ => anchor.click());
+       document.addEventListener("DOMContentLoaded", _ => navigationElement.click());
     }
 }
