@@ -177,18 +177,14 @@ class AsyncGetFaviconURLForPage final : public Runnable {
 
 
 
-
-
-  AsyncGetFaviconURLForPage(const nsACString& aPageSpec,
-                            const nsACString& aPageHost,
+  AsyncGetFaviconURLForPage(const nsCOMPtr<nsIURI>& aPageURI,
                             uint16_t aPreferredWidth,
                             nsIFaviconDataCallback* aCallback);
 
  private:
   uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
-  nsCString mPageSpec;
-  nsCString mPageHost;
+  nsCOMPtr<nsIURI> mPageURI;
 };
 
 
@@ -210,18 +206,14 @@ class AsyncGetFaviconDataForPage final : public Runnable {
 
 
 
-
-
-  AsyncGetFaviconDataForPage(const nsACString& aPageSpec,
-                             const nsACString& aPageHost,
+  AsyncGetFaviconDataForPage(const nsCOMPtr<nsIURI>& aPageURI,
                              uint16_t aPreferredWidth,
                              nsIFaviconDataCallback* aCallback);
 
  private:
   uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
-  nsCString mPageSpec;
-  nsCString mPageHost;
+  nsCOMPtr<nsIURI> mPageURI;
 };
 
 

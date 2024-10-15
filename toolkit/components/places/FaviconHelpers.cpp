@@ -386,11 +386,19 @@ nsresult FetchIconInfo(const RefPtr<Database>& aDB, uint16_t aPreferredWidth,
 }
 
 nsresult FetchIconPerSpec(const RefPtr<Database>& aDB,
-                          const nsACString& aPageSpec,
-                          const nsACString& aPageHost, IconData& aIconData,
+                          const nsCOMPtr<nsIURI>& aPageURI, IconData& aIconData,
                           uint16_t aPreferredWidth) {
-  MOZ_ASSERT(!aPageSpec.IsEmpty(), "Page spec must not be empty.");
   MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(aPageURI, "URI must exist.");
+
+  nsAutoCString pageSpec;
+  nsresult rv = aPageURI->GetSpec(pageSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(!pageSpec.IsEmpty(), "Page spec must not be empty.");
+
+  nsAutoCString pageHost;
+  
+  Unused << aPageURI->GetHost(pageHost);
 
   const uint16_t THRESHOLD_WIDTH = 64;
 
@@ -428,30 +436,64 @@ nsresult FetchIconPerSpec(const RefPtr<Database>& aDB,
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoper(stmt);
 
-  nsresult rv = URIBinder::Bind(stmt, "url"_ns, aPageSpec);
+  rv = URIBinder::Bind(stmt, "url"_ns, pageSpec);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = stmt->BindUTF8StringByName("host"_ns, aPageHost);
+  rv = stmt->BindUTF8StringByName("host"_ns, pageHost);
   NS_ENSURE_SUCCESS(rv, rv);
-  int32_t hashIdx = PromiseFlatCString(aPageSpec).RFind("#");
+  int32_t hashIdx = PromiseFlatCString(pageSpec).RFind("#");
   rv = stmt->BindInt32ByName("hash_idx"_ns, hashIdx + 1);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   
   
+  
+  
+  
+  
+  
+
   bool hasResult;
-  int32_t lastWidth = 0;
+
+  struct IconInfo {
+    int32_t width = 0;
+    int32_t isRich = 0;
+    nsAutoCString spec;
+    bool isSet() { return width > 0; };
+  };
+
+  IconInfo svgIcon;
+  IconInfo lastIcon;
+  IconInfo selectedIcon;
+
+  bool preferNonRichIcons = aPreferredWidth <= THRESHOLD_WIDTH;
+
   while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
     int32_t width;
     rv = stmt->GetInt32(0, &width);
-    if (lastWidth == width) {
+    if (lastIcon.width == width) {
       
       
       continue;
     }
 
     int32_t isRich = stmt->AsInt32(3);
-    if (aPreferredWidth <= THRESHOLD_WIDTH && lastWidth > 0 && isRich) {
+    int32_t isSVG = (width == UINT16_MAX);
+
+    nsAutoCString iconURL;
+    stmt->GetUTF8String(1, iconURL);
+
+    
+    
+    
+    
+    if (isSVG && !svgIcon.isSet()) {
+      if ((preferNonRichIcons && !isRich) || !preferNonRichIcons) {
+        svgIcon = {width, isRich, iconURL};
+      }
+    }
+
+    if (preferNonRichIcons && lastIcon.isSet() && isRich && !lastIcon.isRich) {
       
       
       break;
@@ -460,11 +502,37 @@ nsresult FetchIconPerSpec(const RefPtr<Database>& aDB,
     if (!aIconData.spec.IsEmpty() && width < aPreferredWidth) {
       
       
+
+      
+      
+      
+      if (aPreferredWidth - width < abs(lastIcon.width - aPreferredWidth) / 4) {
+        selectedIcon = {width, isRich};
+        rv = stmt->GetUTF8String(1, aIconData.spec);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
       break;
     }
-    lastWidth = width;
+
+    lastIcon = {width, isRich};
+
+    selectedIcon = {width, isRich};
     rv = stmt->GetUTF8String(1, aIconData.spec);
     NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (svgIcon.isSet() && !svgIcon.spec.IsEmpty()) {
+    if ((selectedIcon.width != aPreferredWidth) ||
+        (preferNonRichIcons && selectedIcon.isRich)) {
+      aIconData.spec = svgIcon.spec;
+    }
   }
 
   return NS_OK;
@@ -693,15 +761,14 @@ AsyncSetIconForPage::Run() {
 
 
 AsyncGetFaviconURLForPage::AsyncGetFaviconURLForPage(
-    const nsACString& aPageSpec, const nsACString& aPageHost,
-    uint16_t aPreferredWidth, nsIFaviconDataCallback* aCallback)
+    const nsCOMPtr<nsIURI>& aPageURI, uint16_t aPreferredWidth,
+    nsIFaviconDataCallback* aCallback)
     : Runnable("places::AsyncGetFaviconURLForPage"),
       mPreferredWidth(aPreferredWidth == 0 ? UINT16_MAX : aPreferredWidth),
       mCallback(new nsMainThreadPtrHolder<nsIFaviconDataCallback>(
-          "AsyncGetFaviconURLForPage::mCallback", aCallback)) {
+          "AsyncGetFaviconURLForPage::mCallback", aCallback)),
+      mPageURI(aPageURI) {
   MOZ_ASSERT(NS_IsMainThread());
-  mPageSpec.Assign(aPageSpec);
-  mPageHost.Assign(aPageHost);
 }
 
 NS_IMETHODIMP
@@ -711,13 +778,12 @@ AsyncGetFaviconURLForPage::Run() {
   RefPtr<Database> DB = Database::GetDatabase();
   NS_ENSURE_STATE(DB);
   IconData iconData;
-  nsresult rv =
-      FetchIconPerSpec(DB, mPageSpec, mPageHost, iconData, mPreferredWidth);
+  nsresult rv = FetchIconPerSpec(DB, mPageURI, iconData, mPreferredWidth);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   PageData pageData;
-  pageData.spec.Assign(mPageSpec);
+  mPageURI->GetSpec(pageData.spec);
 
   nsCOMPtr<nsIRunnable> event =
       new NotifyIconObservers(iconData, pageData, mCallback);
@@ -731,15 +797,14 @@ AsyncGetFaviconURLForPage::Run() {
 
 
 AsyncGetFaviconDataForPage::AsyncGetFaviconDataForPage(
-    const nsACString& aPageSpec, const nsACString& aPageHost,
-    uint16_t aPreferredWidth, nsIFaviconDataCallback* aCallback)
+    const nsCOMPtr<nsIURI>& aPageURI, uint16_t aPreferredWidth,
+    nsIFaviconDataCallback* aCallback)
     : Runnable("places::AsyncGetFaviconDataForPage"),
       mPreferredWidth(aPreferredWidth == 0 ? UINT16_MAX : aPreferredWidth),
       mCallback(new nsMainThreadPtrHolder<nsIFaviconDataCallback>(
-          "AsyncGetFaviconDataForPage::mCallback", aCallback)) {
+          "AsyncGetFaviconDataForPage::mCallback", aCallback)),
+      mPageURI(aPageURI) {
   MOZ_ASSERT(NS_IsMainThread());
-  mPageSpec.Assign(aPageSpec);
-  mPageHost.Assign(aPageHost);
 }
 
 NS_IMETHODIMP
@@ -749,8 +814,7 @@ AsyncGetFaviconDataForPage::Run() {
   RefPtr<Database> DB = Database::GetDatabase();
   NS_ENSURE_STATE(DB);
   IconData iconData;
-  nsresult rv =
-      FetchIconPerSpec(DB, mPageSpec, mPageHost, iconData, mPreferredWidth);
+  nsresult rv = FetchIconPerSpec(DB, mPageURI, iconData, mPreferredWidth);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!iconData.spec.IsEmpty()) {
@@ -761,7 +825,7 @@ AsyncGetFaviconDataForPage::Run() {
   }
 
   PageData pageData;
-  pageData.spec.Assign(mPageSpec);
+  mPageURI->GetSpec(pageData.spec);
 
   nsCOMPtr<nsIRunnable> event =
       new NotifyIconObservers(iconData, pageData, mCallback);
@@ -882,9 +946,13 @@ AsyncCopyFavicons::Run() {
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsCOMPtr<nsIURI> pageURI;
+  rv = NS_NewURI(getter_AddRefs(pageURI), mFromPage.spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   
   
-  rv = FetchIconPerSpec(DB, mFromPage.spec, ""_ns, icon, UINT16_MAX);
+  rv = FetchIconPerSpec(DB, pageURI, icon, UINT16_MAX);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (icon.spec.IsEmpty()) {
