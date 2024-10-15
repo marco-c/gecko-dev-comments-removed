@@ -1,6 +1,9 @@
 
 
 
+import unittest
+
+import mozinfo
 
 from marionette_driver.errors import InvalidArgumentException
 from marionette_harness import MarionetteTestCase
@@ -82,6 +85,9 @@ class TestWindowRect(MarionetteTestCase):
         with self.assertRaises(InvalidArgumentException):
             self.marionette.set_window_rect(height=None, width=None, x=None, y=None)
 
+    @unittest.skipIf(
+        mozinfo.display == "wayland", "Wayland doesn't support window positioning"
+    )
     def test_set_position(self):
         old_position = self.marionette.window_rect
         wanted_position = {"x": old_position["x"] + 10, "y": old_position["y"] + 10}
@@ -154,8 +160,10 @@ class TestWindowRect(MarionetteTestCase):
         )
         expected_rect = self.marionette.window_rect
 
-        self.assertEqual(new_rect["x"], wanted_rect["x"])
-        self.assertEqual(new_rect["y"], wanted_rect["y"])
+        if mozinfo.display != "wayland":
+            self.assertEqual(new_rect["x"], wanted_rect["x"])
+            self.assertEqual(new_rect["y"], wanted_rect["y"])
+
         self.assertEqual(
             new_rect["width"],
             wanted_rect["width"],
@@ -170,8 +178,11 @@ class TestWindowRect(MarionetteTestCase):
                 new_rect["height"], wanted_rect["height"]
             ),
         )
-        self.assertEqual(new_rect["x"], expected_rect["x"])
-        self.assertEqual(new_rect["y"], expected_rect["y"])
+
+        if mozinfo.display != "wayland":
+            self.assertEqual(new_rect["x"], wanted_rect["x"])
+            self.assertEqual(new_rect["y"], wanted_rect["y"])
+
         self.assertEqual(
             new_rect["width"],
             expected_rect["width"],
@@ -256,7 +267,8 @@ class TestWindowRect(MarionetteTestCase):
         
         
         
-        elif os == "linux":
+        
+        elif os == "linux" and mozinfo.display != "wayland":
             
             self.assertLessEqual(new_position["x"], 0)
             self.assertLessEqual(new_position["y"], 0)
