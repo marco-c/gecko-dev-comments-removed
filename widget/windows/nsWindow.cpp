@@ -943,12 +943,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       mIsCloaked = mozilla::IsCloaked(mWnd);
       mFrameState->ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
 
-      MOZ_ASSERT(BoundsUseDesktopPixels());
-      auto scale = GetDesktopToDeviceScale();
-      mBounds = mLastPaintBounds = LayoutDeviceIntRect::FromUnknownRect(
-          DesktopIntRect::Round(LayoutDeviceRect(GetBounds()) / scale)
-              .ToUnknownRect());
-
       
       
       
@@ -1919,39 +1913,6 @@ void nsWindow::Move(double aX, double aY) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
-    MOZ_ASSERT(mWnd);
-    WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
-    VERIFY(::GetWindowPlacement(mWnd, &pl));
-
-    HMONITOR monitor = ::MonitorFromWindow(mWnd, MONITOR_DEFAULTTONULL);
-    if (NS_WARN_IF(!monitor)) {
-      return;
-    }
-    MONITORINFO mi = {sizeof(MONITORINFO)};
-    VERIFY(::GetMonitorInfo(monitor, &mi));
-
-    int32_t deltaX =
-        x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
-    int32_t deltaY =
-        y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
-    pl.rcNormalPosition.left += deltaX;
-    pl.rcNormalPosition.right += deltaX;
-    pl.rcNormalPosition.top += deltaY;
-    pl.rcNormalPosition.bottom += deltaY;
-    VERIFY(::SetWindowPlacement(mWnd, &pl));
-    return;
-  }
-
   mBounds.MoveTo(x, y);
 
   if (mWnd) {
@@ -1976,13 +1937,45 @@ void nsWindow::Move(double aX, double aY) {
       }
     }
 #endif
-    UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE;
-    double oldScale = mDefaultScale;
-    mResizeState = IN_SIZEMOVE;
-    VERIFY(::SetWindowPos(mWnd, nullptr, x, y, 0, 0, flags));
-    mResizeState = NOT_RESIZING;
-    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
-      ChangedDPI();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+      WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
+      VERIFY(::GetWindowPlacement(mWnd, &pl));
+
+      HMONITOR monitor = ::MonitorFromWindow(mWnd, MONITOR_DEFAULTTONULL);
+      if (NS_WARN_IF(!monitor)) {
+        return;
+      }
+      MONITORINFO mi = {sizeof(MONITORINFO)};
+      VERIFY(::GetMonitorInfo(monitor, &mi));
+
+      int32_t deltaX =
+          x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
+      int32_t deltaY =
+          y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
+      pl.rcNormalPosition.left += deltaX;
+      pl.rcNormalPosition.right += deltaX;
+      pl.rcNormalPosition.top += deltaY;
+      pl.rcNormalPosition.bottom += deltaY;
+      VERIFY(::SetWindowPlacement(mWnd, &pl));
+    } else {
+      UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE;
+      double oldScale = mDefaultScale;
+      mResizeState = IN_SIZEMOVE;
+      VERIFY(::SetWindowPos(mWnd, nullptr, x, y, 0, 0, flags));
+      mResizeState = NOT_RESIZING;
+      if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+        ChangedDPI();
+      }
     }
 
     ResizeDirectManipulationViewport();
@@ -2016,19 +2009,6 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
   }
 
   
-  if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
-    MOZ_ASSERT(mWnd);
-    WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
-    VERIFY(::GetWindowPlacement(mWnd, &pl));
-    pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
-    pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + GetHeight(height);
-    mResizeState = RESIZING;
-    VERIFY(::SetWindowPlacement(mWnd, &pl));
-    mResizeState = NOT_RESIZING;
-    return;
-  }
-
-  
   bool wasLocking = mAspectRatio != 0.0;
   mBounds.SizeTo(width, height);
   if (wasLocking) {
@@ -2036,18 +2016,33 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
   }
 
   if (mWnd) {
-    UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE;
-    if (!aRepaint) {
-      flags |= SWP_NOREDRAW;
+    
+    if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+      WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
+      VERIFY(::GetWindowPlacement(mWnd, &pl));
+      pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
+      pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + GetHeight(height);
+      mResizeState = RESIZING;
+      VERIFY(::SetWindowPlacement(mWnd, &pl));
+      mResizeState = NOT_RESIZING;
+    } else {
+      UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE;
+
+      if (!aRepaint) {
+        flags |= SWP_NOREDRAW;
+      }
+
+      double oldScale = mDefaultScale;
+      mResizeState = RESIZING;
+      VERIFY(
+          ::SetWindowPos(mWnd, nullptr, 0, 0, width, GetHeight(height), flags));
+
+      mResizeState = NOT_RESIZING;
+      if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+        ChangedDPI();
+      }
     }
-    double oldScale = mDefaultScale;
-    mResizeState = RESIZING;
-    VERIFY(
-        ::SetWindowPos(mWnd, nullptr, 0, 0, width, GetHeight(height), flags));
-    mResizeState = NOT_RESIZING;
-    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
-      ChangedDPI();
-    }
+
     ResizeDirectManipulationViewport();
   }
 
@@ -2085,54 +2080,52 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
   }
 
   
-  if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
-    MOZ_ASSERT(mWnd);
-    WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
-    VERIFY(::GetWindowPlacement(mWnd, &pl));
-
-    HMONITOR monitor = ::MonitorFromWindow(mWnd, MONITOR_DEFAULTTONULL);
-    if (NS_WARN_IF(!monitor)) {
-      return;
-    }
-    MONITORINFO mi = {sizeof(MONITORINFO)};
-    VERIFY(::GetMonitorInfo(monitor, &mi));
-
-    int32_t deltaX =
-        x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
-    int32_t deltaY =
-        y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
-    pl.rcNormalPosition.left += deltaX;
-    pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
-    pl.rcNormalPosition.top += deltaY;
-    pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + GetHeight(height);
-    VERIFY(::SetWindowPlacement(mWnd, &pl));
-    return;
-  }
-
-  
   mBounds.SetRect(x, y, width, height);
 
   if (mWnd) {
-    UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
-    if (!aRepaint) {
-      flags |= SWP_NOREDRAW;
-    }
+    
+    if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+      WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
+      VERIFY(::GetWindowPlacement(mWnd, &pl));
 
-    double oldScale = mDefaultScale;
-    mResizeState = RESIZING;
-    VERIFY(
-        ::SetWindowPos(mWnd, nullptr, x, y, width, GetHeight(height), flags));
-    mResizeState = NOT_RESIZING;
-    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
-      ChangedDPI();
-    }
+      HMONITOR monitor = ::MonitorFromWindow(mWnd, MONITOR_DEFAULTTONULL);
+      if (NS_WARN_IF(!monitor)) {
+        return;
+      }
+      MONITORINFO mi = {sizeof(MONITORINFO)};
+      VERIFY(::GetMonitorInfo(monitor, &mi));
 
-    if (mTransitionWnd) {
-      
-      
-      
-      ::SetWindowPos(mTransitionWnd, HWND_TOPMOST, 0, 0, 0, 0,
-                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+      int32_t deltaX =
+          x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
+      int32_t deltaY =
+          y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
+      pl.rcNormalPosition.left += deltaX;
+      pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
+      pl.rcNormalPosition.top += deltaY;
+      pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + GetHeight(height);
+      VERIFY(::SetWindowPlacement(mWnd, &pl));
+    } else {
+      UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
+      if (!aRepaint) {
+        flags |= SWP_NOREDRAW;
+      }
+
+      double oldScale = mDefaultScale;
+      mResizeState = RESIZING;
+      VERIFY(
+          ::SetWindowPos(mWnd, nullptr, x, y, width, GetHeight(height), flags));
+      mResizeState = NOT_RESIZING;
+      if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+        ChangedDPI();
+      }
+
+      if (mTransitionWnd) {
+        
+        
+        
+        ::SetWindowPos(mTransitionWnd, HWND_TOPMOST, 0, 0, 0, 0,
+                       SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+      }
     }
 
     ResizeDirectManipulationViewport();
