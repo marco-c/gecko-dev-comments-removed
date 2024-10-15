@@ -18,6 +18,7 @@
 #include "mozilla/net/DNS.h"
 #include "nsIDNSByTypeRecord.h"
 #include "mozilla/Logging.h"
+#include "nsIDNSService.h"
 
 #if defined(XP_WIN)
 #  define DNSQUERY_AVAILABLE 1
@@ -44,11 +45,9 @@ class DNSPacket;
 
 
 
-
-
-
 nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
-                     uint16_t aFlags, AddrInfo** aAddrInfo, bool aGetTtl);
+                     nsIDNSService::DNSFlags aFlags, AddrInfo** aAddrInfo,
+                     bool aGetTtl);
 
 
 
@@ -73,13 +72,15 @@ void DNSThreadShutdown();
 
 
 
-nsresult ResolveHTTPSRecord(const nsACString& aHost, uint16_t aFlags,
+nsresult ResolveHTTPSRecord(const nsACString& aHost,
+                            nsIDNSService::DNSFlags aFlags,
                             TypeRecordResultType& aResult, uint32_t& aTTL);
 
 
 
 
-nsresult ResolveHTTPSRecordImpl(const nsACString& aHost, uint16_t aFlags,
+nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
+                                nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL);
 
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
@@ -87,7 +88,7 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
 
 
 nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
-                                         uint16_t aFlags,
+                                         nsIDNSService::DNSFlags aFlags,
                                          TypeRecordResultType& aResult,
                                          uint32_t& aTTL);
 
@@ -101,14 +102,17 @@ class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
 
  private:
   virtual ~NativeDNSResolverOverride() = default;
-  mozilla::RWLock mLock MOZ_UNANNOTATED{"NativeDNSResolverOverride"};
+  mozilla::RWLock mLock{"NativeDNSResolverOverride"};
 
-  nsTHashMap<nsCStringHashKey, nsTArray<NetAddr>> mOverrides;
-  nsTHashMap<nsCStringHashKey, nsCString> mCnames;
-  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mHTTPSRecordOverrides;
+  nsTHashMap<nsCStringHashKey, nsTArray<NetAddr>> mOverrides
+      MOZ_GUARDED_BY(mLock);
+  nsTHashMap<nsCStringHashKey, nsCString> mCnames MOZ_GUARDED_BY(mLock);
+  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mHTTPSRecordOverrides
+      MOZ_GUARDED_BY(mLock);
 
   friend bool FindAddrOverride(const nsACString& aHost, uint16_t aAddressFamily,
-                               uint16_t aFlags, AddrInfo** aAddrInfo);
+                               nsIDNSService::DNSFlags aFlags,
+                               AddrInfo** aAddrInfo);
   friend bool FindHTTPSRecordOverride(const nsACString& aHost,
                                       TypeRecordResultType& aResult);
 };

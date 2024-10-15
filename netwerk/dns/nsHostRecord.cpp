@@ -15,10 +15,11 @@
 
 
 
-#define RES_KEY_FLAGS(_f)                                              \
-  ((_f) &                                                              \
-   (nsHostResolver::RES_CANON_NAME | nsHostResolver::RES_DISABLE_TRR | \
-    nsIDNSService::RESOLVE_TRR_MODE_MASK | nsHostResolver::RES_IP_HINT))
+#define RES_KEY_FLAGS(_f)                   \
+  ((_f) &                                   \
+   (nsIDNSService::RESOLVE_CANONICAL_NAME | \
+    nsIDNSService::RESOLVE_DISABLE_TRR |    \
+    nsIDNSService::RESOLVE_TRR_MODE_MASK | nsIDNSService::RESOLVE_IP_HINT))
 
 #define IS_ADDR_TYPE(_type) ((_type) == nsIDNSService::RESOLVE_TYPE_DEFAULT)
 #define IS_OTHER_TYPE(_type) ((_type) != nsIDNSService::RESOLVE_TYPE_DEFAULT)
