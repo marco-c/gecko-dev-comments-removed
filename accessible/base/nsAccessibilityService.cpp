@@ -1574,6 +1574,13 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
 
   
   
+  if (XRE_IsParentProcess() &&
+      StaticPrefs::accessibility_enable_all_cache_domains_AtStartup()) {
+    gCacheDomains = CacheDomain::All;
+  }
+
+  
+  
   gCacheDomains = ::GetCacheDomainsForKnownClients(aCacheDomains);
 
   statistics::A11yInitialized();
