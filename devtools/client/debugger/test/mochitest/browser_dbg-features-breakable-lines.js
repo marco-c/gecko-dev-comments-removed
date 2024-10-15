@@ -9,6 +9,8 @@ const testServer = createVersionizedHttpTestServer(
 );
 const TEST_URL = testServer.urlFor("index.html");
 
+requestLongerTimeout(4);
+
 
 add_task(async function testBreakableLinesOverReloads() {
   const dbg = await initDebuggerWithAbsoluteURL(

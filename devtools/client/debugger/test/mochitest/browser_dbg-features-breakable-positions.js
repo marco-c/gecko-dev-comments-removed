@@ -178,7 +178,7 @@ async function assertBreakablePositions(
     );
     
     if (!positions) {
-      assertLineIsBreakable(dbg, file, line, false);
+      await assertLineIsBreakable(dbg, file, line, false);
       continue;
     }
     const { columns } = positions;
