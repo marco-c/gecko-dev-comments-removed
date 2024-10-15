@@ -467,9 +467,7 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
           if (aSuccess) {
             promise->MaybeResolve(device);
           } else {
-            
-            
-            
+            device->CleanupUnregisteredInParent();
             promise->MaybeRejectWithInvalidStateError(
                 "Unable to fulfill requested features and limits");
           }
