@@ -10,6 +10,8 @@
 
 
 
+
+
 "use strict;"
 
 
@@ -239,4 +241,44 @@ makeTest({
   fieldName: 'reportingTimeout',
   fieldValue: 50,
   auctionConfigOverrides: {fieldValue: undefined}
+});
+
+makeTest({
+  name: 'AuctionConfig.sellerSignals is null',
+  fieldName: 'sellerSignals',
+  fieldValue: undefined,
+  auctionConfigOverrides: {sellerSignals: null}
+});
+
+makeTest({
+  name: 'AuctionConfig.sellerSignals is explicit undefined',
+  fieldName: 'sellerSignals',
+  fieldValue: undefined,
+  auctionConfigOverrides: {sellerSignals: Promise.resolve(undefined)}
+});
+
+makeTest({
+  name: 'AuctionConfig.sellerSignals is "null"',
+  fieldName: 'sellerSignals',
+  fieldValue: 'null',
+});
+
+makeTest({
+  name: 'AuctionConfig.auctionSignals is null',
+  fieldName: 'auctionSignals',
+  fieldValue: undefined,
+  auctionConfigOverrides: {sellerSignals: null}
+});
+
+makeTest({
+  name: 'AuctionConfig.auctionSignals is explicit undefined',
+  fieldName: 'auctionSignals',
+  fieldValue: undefined,
+  auctionConfigOverrides: {auctionSignals: Promise.resolve(undefined)}
+});
+
+makeTest({
+  name: 'AuctionConfig.auctionSignals is "null"',
+  fieldName: 'auctionSignals',
+  fieldValue: 'null',
 });

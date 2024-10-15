@@ -13,6 +13,7 @@
 
 
 
+
 "use strict;"
 
 subsetTest(promise_test, async test => {
@@ -615,3 +616,35 @@ subsetTest(promise_test, async test => {
       { directFromSellerSignalsHeaderAdSlot: 'adSlot/1' }
   );
 }, 'Test invalid directFromSellerSignals with duplicate values in response.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  await fetchDirectFromSellerSignals({'Buyer-Origin': window.location.origin});
+  await runReportTest(
+      test, uuid,
+      directFromSellerSignalsValidatorCode(
+          uuid, 'sellerSignals/null',
+           null,  null),
+      
+      [createSellerReportURL(uuid), createBidderReportURL(uuid)],
+      
+      null,
+      
+      {directFromSellerSignalsHeaderAdSlot: 'null'});
+}, 'directFromSellerSignals slot named "null"');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  await fetchDirectFromSellerSignals({'Buyer-Origin': window.location.origin});
+  await runReportTest(
+      test, uuid,
+      directFromSellerSignalsValidatorCode(
+          uuid,  null,
+           null,  null),
+      
+      [createSellerReportURL(uuid), createBidderReportURL(uuid)],
+      
+      null,
+      
+      {directFromSellerSignalsHeaderAdSlot: null});
+}, 'null directFromSellerSignals slot');
