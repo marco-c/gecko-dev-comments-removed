@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var proto = Object.getPrototypeOf(SuppressedError.prototype);
+
+assert.sameValue(proto, Error.prototype);
+
+reportCompare(0, 0);

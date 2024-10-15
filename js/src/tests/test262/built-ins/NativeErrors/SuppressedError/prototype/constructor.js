@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(SuppressedError.prototype, 'constructor', {
+  value: SuppressedError,
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

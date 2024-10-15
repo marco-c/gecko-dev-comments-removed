@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Base {
+  constructor() {
+    throw new Test262Error("base constructor called");
+  }
+}
+
+class Derived extends Base {
+  constructor() {
+    delete super[(super(), 0)];
+  }
+}
+
+assert.throws(ReferenceError, () => new Derived);
+
+reportCompare(0, 0);

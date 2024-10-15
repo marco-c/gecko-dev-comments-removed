@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+assert.sameValue(Object.isExtensible(stack), true);
+
+reportCompare(0, 0);
