@@ -203,14 +203,17 @@ class MapObject : public NativeObject {
 
   PreBarrieredTable* nurseryTable() {
     MOZ_ASSERT(IsInsideNursery(this));
-    return maybePtrFromReservedSlot<PreBarrieredTable>(DataSlot);
+    return reinterpret_cast<PreBarrieredTable*>(unbarrieredTable());
   }
   ValueMap* tenuredTable() {
     MOZ_ASSERT(!IsInsideNursery(this));
     return getTableUnchecked();
   }
   ValueMap* getTableUnchecked() {
-    return maybePtrFromReservedSlot<ValueMap>(DataSlot);
+    return reinterpret_cast<ValueMap*>(unbarrieredTable());
+  }
+  UnbarrieredTable* unbarrieredTable() {
+    return maybePtrFromReservedSlot<UnbarrieredTable>(DataSlot);
   }
 
   static inline bool setWithHashableKey(JSContext* cx, MapObject* obj,
@@ -364,7 +367,10 @@ class SetObject : public NativeObject {
   static const JSPropertySpec staticProperties[];
 
   ValueSet* getTableUnchecked() {
-    return maybePtrFromReservedSlot<ValueSet>(DataSlot);
+    return reinterpret_cast<ValueSet*>(unbarrieredTable());
+  }
+  UnbarrieredTable* unbarrieredTable() {
+    return maybePtrFromReservedSlot<UnbarrieredTable>(DataSlot);
   }
 
   static bool finishInit(JSContext* cx, HandleObject ctor, HandleObject proto);
