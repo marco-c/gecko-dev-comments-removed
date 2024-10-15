@@ -3151,12 +3151,14 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
       
       QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(true)));
-    }
 
-    
-    
-    if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
-      aQuotaManager.PersistOrigin(originMetadata);
+      QM_TRY(MOZ_TO_RESULT(stream->Close()));
+
+      
+      
+      if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
+        aQuotaManager.PersistOrigin(originMetadata);
+      }
     }
   }
 
