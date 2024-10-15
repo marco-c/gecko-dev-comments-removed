@@ -134,6 +134,14 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
 
   
   
+  
+  [[nodiscard]] nsresult PurgeStateForHostAndOriginAttributes(
+      const nsACString& aHost, PRTime bounceTime,
+      const OriginAttributes& aOriginAttributes,
+      ClearDataMozPromise** aClearPromise);
+
+  
+  
   bool mPurgeInProgress = false;
 
   

@@ -983,10 +983,6 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = NS_OK;
-  nsCOMPtr<nsIClearDataService> clearDataService =
-      do_GetService("@mozilla.org/clear-data-service;1", &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -1059,69 +1055,92 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     }
 
     
-    RefPtr<ClearDataMozPromise::Private> clearPromise =
-        new ClearDataMozPromise::Private(__func__);
-    RefPtr<ClearDataCallback> cb =
-        new ClearDataCallback(clearPromise, host, bounceTime);
-
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Info,
             ("%s: Purging bounce tracker. siteHost: %s, bounceTime: %" PRIu64
              " aStateGlobal: %s",
              __FUNCTION__, PromiseFlatCString(host).get(), bounceTime,
              aStateGlobal->Describe().get()));
 
-    if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
-        nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {
-      
-      
-      cb->OnDataDeleted(0);
-    } else {
-      
-      
-      nsAutoCString hostToPurge(host);
-      nsContentUtils::MaybeFixIPv6Host(hostToPurge);
-
-      
-      
-      
-      
-      
-      
-      const OriginAttributes& oa = aStateGlobal->OriginAttributesRef();
-
-      nsAutoString oaPatternString;
-      OriginAttributesPattern pattern;
-      
-      
-      
-      pattern.mUserContextId.Construct(oa.mUserContextId);
-      pattern.mPrivateBrowsingId.Construct((oa.mPrivateBrowsingId));
-      pattern.mGeckoViewSessionContextId.Construct(
-          oa.mGeckoViewSessionContextId);
-
-      if (NS_WARN_IF(!pattern.ToJSON(oaPatternString))) {
-        
-        continue;
-      }
-
-      rv = clearDataService->DeleteDataFromSiteAndOriginAttributesPatternString(
-          hostToPurge, oaPatternString, false, TRACKER_PURGE_FLAGS, cb);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        clearPromise->Reject(0, __func__);
-      }
-    }
-
-    aClearPromises.AppendElement(clearPromise);
-
     
     
     
     bounceTrackerCandidatesToRemove.AppendElement(host);
+
+    RefPtr<ClearDataMozPromise> clearDataPromise;
+    rv = PurgeStateForHostAndOriginAttributes(
+        host, bounceTime, aStateGlobal->OriginAttributesRef(),
+        getter_AddRefs(clearDataPromise));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+    MOZ_ASSERT(clearDataPromise);
+
+    aClearPromises.AppendElement(clearDataPromise);
   }
 
   
   
   return aStateGlobal->RemoveBounceTrackers(bounceTrackerCandidatesToRemove);
+}
+
+nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
+    const nsACString& aHost, PRTime bounceTime,
+    const OriginAttributes& aOriginAttributes,
+    ClearDataMozPromise** aClearPromise) {
+  MOZ_ASSERT(!aHost.IsEmpty());
+  MOZ_ASSERT(aClearPromise);
+
+  RefPtr<ClearDataMozPromise::Private> clearPromise =
+      new ClearDataMozPromise::Private(__func__);
+  RefPtr<ClearDataCallback> cb =
+      new ClearDataCallback(clearPromise, aHost, bounceTime);
+
+  if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
+      nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {
+    
+    
+    cb->OnDataDeleted(0);
+
+    clearPromise.forget(aClearPromise);
+    return NS_OK;
+  }
+
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIClearDataService> clearDataService =
+      do_GetService("@mozilla.org/clear-data-service;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  nsAutoCString hostToPurge(aHost);
+  nsContentUtils::MaybeFixIPv6Host(hostToPurge);
+
+  
+  
+  
+  
+  
+  
+  nsAutoString oaPatternString;
+  OriginAttributesPattern pattern;
+
+  
+  
+  
+  pattern.mUserContextId.Construct(aOriginAttributes.mUserContextId);
+  pattern.mPrivateBrowsingId.Construct(aOriginAttributes.mPrivateBrowsingId);
+  pattern.mGeckoViewSessionContextId.Construct(
+      aOriginAttributes.mGeckoViewSessionContextId);
+
+  NS_ENSURE_TRUE(pattern.ToJSON(oaPatternString), NS_ERROR_FAILURE);
+
+  rv = clearDataService->DeleteDataFromSiteAndOriginAttributesPatternString(
+      hostToPurge, oaPatternString, false, TRACKER_PURGE_FLAGS, cb);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  clearPromise.forget(aClearPromise);
+
+  return NS_OK;
 }
 
 nsresult BounceTrackingProtection::ClearExpiredUserInteractions(
