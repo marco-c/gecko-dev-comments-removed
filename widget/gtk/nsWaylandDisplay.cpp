@@ -509,7 +509,8 @@ nsWaylandDisplay::~nsWaylandDisplay() = default;
 static void WlLogHandler(const char* format, va_list args) {
   char error[1000];
   VsprintfLiteral(error, format, args);
-  gfxCriticalNote << "Wayland protocol error: " << error;
+  gfxCriticalNote << "(" << GetDesktopEnvironmentIdentifier().get()
+                  << ") Wayland protocol error: " << error;
 
   
   
@@ -520,7 +521,8 @@ static void WlLogHandler(const char* format, va_list args) {
     return;
   }
 
-  MOZ_CRASH_UNSAFE(error);
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s", GetDesktopEnvironmentIdentifier().get(),
+                          error);
 }
 
 void WlCompositorCrashHandler() {
