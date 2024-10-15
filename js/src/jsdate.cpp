@@ -523,10 +523,7 @@ double DateTimeHelper::localTZA(DateTimeInfo::ForceUTC forceUTC, double t,
 
 
 double DateTimeHelper::localTime(DateTimeInfo::ForceUTC forceUTC, double t) {
-  if (!std::isfinite(t)) {
-    return GenericNaN();
-  }
-
+  MOZ_ASSERT(std::isfinite(t));
   MOZ_ASSERT(StartOfTime <= t && t <= EndOfTime);
   return t + localTZA(forceUTC, t, DateTimeInfo::TimeZoneOffset::UTC);
 }
@@ -534,9 +531,7 @@ double DateTimeHelper::localTime(DateTimeInfo::ForceUTC forceUTC, double t) {
 
 
 double DateTimeHelper::UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
-  if (!std::isfinite(t)) {
-    return GenericNaN();
-  }
+  MOZ_ASSERT(std::isfinite(t));
 
   if (t < (StartOfTime - msPerDay) || t > (EndOfTime + msPerDay)) {
     return GenericNaN();
@@ -591,9 +586,7 @@ bool DateTimeHelper::isRepresentableAsTime32(double t) {
 
 double DateTimeHelper::daylightSavingTA(DateTimeInfo::ForceUTC forceUTC,
                                         double t) {
-  if (!std::isfinite(t)) {
-    return GenericNaN();
-  }
+  MOZ_ASSERT(std::isfinite(date));
 
   
 
@@ -613,6 +606,8 @@ double DateTimeHelper::daylightSavingTA(DateTimeInfo::ForceUTC forceUTC,
 
 double DateTimeHelper::adjustTime(DateTimeInfo::ForceUTC forceUTC,
                                   double date) {
+  MOZ_ASSERT(std::isfinite(date));
+
   double localTZA = DateTimeInfo::localTZA(forceUTC);
   double t = daylightSavingTA(forceUTC, date) + localTZA;
   t = (localTZA >= 0) ? fmod(t, msPerDay) : -fmod(msPerDay - t, msPerDay);
@@ -621,10 +616,13 @@ double DateTimeHelper::adjustTime(DateTimeInfo::ForceUTC forceUTC,
 
 
 double DateTimeHelper::localTime(DateTimeInfo::ForceUTC forceUTC, double t) {
+  MOZ_ASSERT(std::isfinite(t));
   return t + adjustTime(forceUTC, t);
 }
 
 double DateTimeHelper::UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
+  MOZ_ASSERT(std::isfinite(t));
+
   
   
   
@@ -637,11 +635,30 @@ double DateTimeHelper::UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
 }
 #endif 
 
+
+
+
+
+
 static double LocalTime(DateTimeInfo::ForceUTC forceUTC, double t) {
+  MOZ_ASSERT(std::isfinite(t));
+
+  
   return DateTimeHelper::localTime(forceUTC, t);
 }
 
+
+
+
+
+
 static double UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
+  
+  if (!std::isfinite(t)) {
+    return GenericNaN();
+  }
+
+  
   return DateTimeHelper::UTC(forceUTC, t);
 }
 
@@ -3359,6 +3376,9 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
                                           DateTimeInfo::ForceUTC forceUTC,
                                           const char* locale, double utcTime,
                                           double localTime) {
+  MOZ_ASSERT(std::isfinite(utcTime));
+  MOZ_ASSERT(std::isfinite(localTime));
+
   char16_t tzbuf[100];
   tzbuf[0] = ' ';
   tzbuf[1] = '(';
@@ -3389,6 +3409,9 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
 
 PRMJTime DateTimeHelper::toPRMJTime(DateTimeInfo::ForceUTC forceUTC,
                                     double localTime, double utcTime) {
+  MOZ_ASSERT(std::isfinite(localTime));
+  MOZ_ASSERT(std::isfinite(utcTime));
+
   auto [year, month, day] = ::ToYearMonthDay(localTime);
   auto [hour, minute, second] = ::ToHourMinuteSecond(localTime);
 
@@ -3410,6 +3433,9 @@ PRMJTime DateTimeHelper::toPRMJTime(DateTimeInfo::ForceUTC forceUTC,
 size_t DateTimeHelper::formatTime(DateTimeInfo::ForceUTC forceUTC, char* buf,
                                   size_t buflen, const char* fmt,
                                   double utcTime, double localTime) {
+  MOZ_ASSERT(std::isfinite(utcTime));
+  MOZ_ASSERT(std::isfinite(localTime));
+
   PRMJTime prtm = toPRMJTime(forceUTC, localTime, utcTime);
 
   
@@ -3428,6 +3454,9 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
                                           DateTimeInfo::ForceUTC forceUTC,
                                           const char* locale, double utcTime,
                                           double localTime) {
+  MOZ_ASSERT(std::isfinite(utcTime));
+  MOZ_ASSERT(std::isfinite(localTime));
+
   char tzbuf[100];
 
   size_t tzlen =
