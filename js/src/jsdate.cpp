@@ -20,6 +20,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TextUtils.h"
 
@@ -164,12 +165,40 @@ static constexpr T FloorDiv(T dividend, int32_t divisor) {
   return quotient;
 }
 
+#ifdef DEBUG
 
 
 
 
 
-static inline int32_t Day(int64_t t) { return FloorDiv(t, msPerDay); }
+static inline bool IsTimeValue(double t) {
+  if (std::isnan(t)) {
+    return true;
+  }
+  return IsInteger(t) && StartOfTime <= t && t <= EndOfTime;
+}
+#endif
+
+
+
+
+static inline bool IsLocalTimeValue(double t) {
+  if (std::isnan(t)) {
+    return true;
+  }
+  return IsInteger(t) && (StartOfTime - msPerDay) < t &&
+         t < (EndOfTime + msPerDay);
+}
+
+
+
+
+
+
+static inline int32_t Day(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
+  return int32_t(FloorDiv(t, msPerDay));
+}
 
 
 
@@ -177,6 +206,7 @@ static inline int32_t Day(int64_t t) { return FloorDiv(t, msPerDay); }
 
 
 static int32_t TimeWithinDay(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
   return PositiveModulo(t, int32_t(msPerDay));
 }
 
@@ -192,6 +222,8 @@ static inline bool IsLeapYear(double year) {
 }
 
 static constexpr bool IsLeapYear(int32_t year) {
+  MOZ_ASSERT(mozilla::Abs(year) <= 2'000'000);
+
   
   int32_t d = (year % 100 != 0) ? 4 : 16;
   return (year & (d - 1)) == 0;
@@ -209,6 +241,8 @@ static inline double DayFromYear(double y) {
 }
 
 static constexpr int32_t DayFromYear(int32_t y) {
+  MOZ_ASSERT(mozilla::Abs(y) <= 2'000'000);
+
   
   return 365 * (y - 1970) + FloorDiv((y - 1969), 4) -
          FloorDiv((y - 1901), 100) + FloorDiv((y - 1601), 400);
@@ -359,7 +393,10 @@ YearMonthDay js::ToYearMonthDay(int64_t time) {
 
 
 
-static int32_t YearFromTime(int64_t t) { return ToYearMonthDay(t).year; }
+static int32_t YearFromTime(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
+  return ToYearMonthDay(t).year;
+}
 
 
 
@@ -376,14 +413,20 @@ static double DayWithinYear(int64_t t, double year) {
 
 
 
-static int32_t MonthFromTime(int64_t t) { return ToYearMonthDay(t).month; }
+static int32_t MonthFromTime(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
+  return int32_t(ToYearMonthDay(t).month);
+}
 
 
 
 
 
 
-static int32_t DateFromTime(int64_t t) { return ToYearMonthDay(t).day; }
+static int32_t DateFromTime(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
+  return int32_t(ToYearMonthDay(t).day);
+}
 
 
 
@@ -391,9 +434,7 @@ static int32_t DateFromTime(int64_t t) { return ToYearMonthDay(t).day; }
 
 
 static int32_t WeekDay(int64_t t) {
-  
-
-
+  MOZ_ASSERT(IsLocalTimeValue(t));
 
   int32_t result = (Day(t) + 4) % 7;
   if (result < 0) {
@@ -589,31 +630,6 @@ JS_PUBLIC_API void JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter) {
   sJitter = jitter;
 }
 
-#ifdef DEBUG
-
-
-
-
-
-static inline bool IsTimeValue(double t) {
-  if (std::isnan(t)) {
-    return true;
-  }
-  return IsInteger(t) && StartOfTime <= t && t <= EndOfTime;
-}
-#endif
-
-
-
-
-static inline bool IsLocalTimeValue(double t) {
-  if (std::isnan(t)) {
-    return true;
-  }
-  return IsInteger(t) && (StartOfTime - msPerDay) < t &&
-         t < (EndOfTime + msPerDay);
-}
-
 #if JS_HAS_INTL_API
 int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo::ForceUTC forceUTC,
                                           int64_t epochMilliseconds,
@@ -772,6 +788,7 @@ static double UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
 
 
 static int32_t HourFromTime(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
   return PositiveModulo(FloorDiv(t, msPerHour), int32_t(HoursPerDay));
 }
 
@@ -781,6 +798,7 @@ static int32_t HourFromTime(int64_t t) {
 
 
 static int32_t MinFromTime(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
   return PositiveModulo(FloorDiv(t, msPerMinute), int32_t(MinutesPerHour));
 }
 
@@ -790,6 +808,7 @@ static int32_t MinFromTime(int64_t t) {
 
 
 static int32_t SecFromTime(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
   return PositiveModulo(FloorDiv(t, msPerSecond), int32_t(SecondsPerMinute));
 }
 
@@ -799,10 +818,13 @@ static int32_t SecFromTime(int64_t t) {
 
 
 static int32_t msFromTime(int64_t t) {
+  MOZ_ASSERT(IsLocalTimeValue(t));
   return PositiveModulo(t, int32_t(msPerSecond));
 }
 
 HourMinuteSecond js::ToHourMinuteSecond(int64_t epochMilliseconds) {
+  MOZ_ASSERT(IsLocalTimeValue(epochMilliseconds));
+
   int32_t hour = HourFromTime(epochMilliseconds);
   MOZ_ASSERT(0 <= hour && hour < HoursPerDay);
 
