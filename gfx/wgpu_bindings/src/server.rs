@@ -162,12 +162,6 @@ pub struct FfiLUID {
 
 
 
-
-
-
-
-
-
 #[allow(unused_variables)]
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_instance_request_adapter(
