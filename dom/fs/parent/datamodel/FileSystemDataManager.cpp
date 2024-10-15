@@ -28,6 +28,7 @@
 #include "mozilla/dom/quota/ClientImpl.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
+#include "mozilla/dom/quota/HashKeys.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
@@ -49,21 +50,13 @@ namespace mozilla::dom::fs::data {
 namespace {
 
 
-class nsCStringHashKeyDM : public nsCStringHashKey {
- public:
-  explicit nsCStringHashKeyDM(const nsCStringHashKey::KeyTypePointer aKey)
-      : nsCStringHashKey(aKey) {}
-  enum { ALLOW_MEMMOVE = false };
-};
-
-
 
 
 
 
 
 using FileSystemDataManagerHashKey =
-    std::conditional<ReleaseAssertEnabled::value, nsCStringHashKeyDM,
+    std::conditional<ReleaseAssertEnabled::value, quota::nsCStringHashKeyDM,
                      nsCStringHashKey>::type;
 
 

@@ -79,6 +79,7 @@
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
 #include "mozilla/dom/quota/FirstInitializationAttemptsImpl.h"
+#include "mozilla/dom/quota/HashKeys.h"
 #include "mozilla/dom/quota/OriginScope.h"
 #include "mozilla/dom/quota/PersistenceScope.h"
 #include "mozilla/dom/quota/PersistenceType.h"
@@ -2752,14 +2753,6 @@ using PrepareDatastoreOpArray =
     nsTArray<NotNull<CheckedUnsafePtr<PrepareDatastoreOp>>>;
 
 StaticAutoPtr<PrepareDatastoreOpArray> gPrepareDatastoreOps;
-
-
-class nsCStringHashKeyDM : public nsCStringHashKey {
- public:
-  explicit nsCStringHashKeyDM(const nsCStringHashKey::KeyTypePointer aKey)
-      : nsCStringHashKey(aKey) {}
-  enum { ALLOW_MEMMOVE = false };
-};
 
 
 
