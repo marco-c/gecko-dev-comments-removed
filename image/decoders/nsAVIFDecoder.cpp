@@ -1850,13 +1850,9 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
       
       
       
-      if (mHasAlpha) {
-        inType = QCMS_DATA_RGBA_8;
-        outType = QCMS_DATA_RGBA_8;
-      } else {
-        inType = gfxPlatform::GetCMSOSRGBAType();
-        outType = inType;
-      }
+      
+      inType = gfxPlatform::GetCMSOSRGBAType();
+      outType = inType;
     } else {
       
       

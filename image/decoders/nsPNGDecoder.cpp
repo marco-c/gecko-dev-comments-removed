@@ -668,6 +668,9 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
       
       
       
+      
+      
+      
       if (transparency == TransparencyType::eAlpha) {
         inType = QCMS_DATA_RGBA_8;
         outType = QCMS_DATA_RGBA_8;
@@ -676,6 +679,7 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
         outType = inType;
       }
     } else {
+      
       if (color_type & PNG_COLOR_MASK_ALPHA) {
         inType = QCMS_DATA_GRAYA_8;
         outType = gfxPlatform::GetCMSOSRGBAType();
@@ -691,9 +695,7 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   } else if ((sRGBTag && decoder->mCMSMode == CMSMode::TaggedOnly) ||
              decoder->mCMSMode == CMSMode::All) {
     
-    
-    
-    
+    decoder->mUsePipeTransform = true;
     if (transparency == TransparencyType::eAlpha) {
       decoder->mTransform =
           decoder->GetCMSsRGBTransform(SurfaceFormat::R8G8B8A8);
@@ -701,7 +703,6 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
       decoder->mTransform =
           decoder->GetCMSsRGBTransform(SurfaceFormat::OS_RGBA);
     }
-    decoder->mUsePipeTransform = true;
   }
 
 #ifdef PNG_APNG_SUPPORTED
