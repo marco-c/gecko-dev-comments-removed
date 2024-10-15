@@ -11,16 +11,15 @@
 
 namespace mozilla::dom {
 
+
+
+
 class StorageAccessPermissionStatus final : public PermissionStatus {
  public:
-  explicit StorageAccessPermissionStatus(nsPIDOMWindowInner* aWindow);
+  explicit StorageAccessPermissionStatus(nsIGlobalObject* aGlobal);
 
  private:
-  RefPtr<SimplePromise> UpdateState() override;
-
-  bool MaybeUpdatedBy(nsIPermission* aPermission) const override;
-  bool MaybeUpdatedByNotifyOnly(
-      nsPIDOMWindowInner* aInnerWindow) const override;
+  already_AddRefed<PermissionStatusSink> CreateSink() override;
 };
 
 }  

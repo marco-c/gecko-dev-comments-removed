@@ -6,12 +6,11 @@
 
 #include "PermissionObserver.h"
 
-#include "mozilla/dom/PermissionStatus.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/Services.h"
-#include "mozilla/UniquePtr.h"
 #include "nsIObserverService.h"
 #include "nsIPermission.h"
+#include "PermissionStatusSink.h"
 #include "PermissionUtils.h"
 
 namespace mozilla::dom {
@@ -22,9 +21,13 @@ PermissionObserver* gInstance = nullptr;
 
 NS_IMPL_ISUPPORTS(PermissionObserver, nsIObserver, nsISupportsWeakReference)
 
-PermissionObserver::PermissionObserver() { MOZ_ASSERT(!gInstance); }
+PermissionObserver::PermissionObserver() {
+  MOZ_ASSERT_DEBUG_OR_FUZZING(NS_IsMainThread());
+  MOZ_ASSERT(!gInstance);
+}
 
 PermissionObserver::~PermissionObserver() {
+  MOZ_ASSERT_DEBUG_OR_FUZZING(NS_IsMainThread());
   MOZ_ASSERT(mSinks.IsEmpty());
   MOZ_ASSERT(gInstance == this);
 
@@ -33,6 +36,8 @@ PermissionObserver::~PermissionObserver() {
 
 
 already_AddRefed<PermissionObserver> PermissionObserver::GetInstance() {
+  MOZ_ASSERT_DEBUG_OR_FUZZING(NS_IsMainThread());
+
   RefPtr<PermissionObserver> instance = gInstance;
   if (!instance) {
     instance = new PermissionObserver();
@@ -58,14 +63,16 @@ already_AddRefed<PermissionObserver> PermissionObserver::GetInstance() {
   return instance.forget();
 }
 
-void PermissionObserver::AddSink(PermissionStatus* aSink) {
+void PermissionObserver::AddSink(PermissionStatusSink* aSink) {
+  MOZ_ASSERT_DEBUG_OR_FUZZING(NS_IsMainThread());
   MOZ_ASSERT(aSink);
   MOZ_ASSERT(!mSinks.Contains(aSink));
 
   mSinks.AppendElement(aSink);
 }
 
-void PermissionObserver::RemoveSink(PermissionStatus* aSink) {
+void PermissionObserver::RemoveSink(PermissionStatusSink* aSink) {
+  MOZ_ASSERT_DEBUG_OR_FUZZING(NS_IsMainThread());
   MOZ_ASSERT(aSink);
   MOZ_ASSERT(mSinks.Contains(aSink));
 
@@ -75,6 +82,7 @@ void PermissionObserver::RemoveSink(PermissionStatus* aSink) {
 NS_IMETHODIMP
 PermissionObserver::Observe(nsISupports* aSubject, const char* aTopic,
                             const char16_t* aData) {
+  MOZ_ASSERT_DEBUG_OR_FUZZING(NS_IsMainThread());
   MOZ_ASSERT(!strcmp(aTopic, "perm-changed") ||
              !strcmp(aTopic, "perm-changed-notify-only"));
 
@@ -102,15 +110,15 @@ PermissionObserver::Observe(nsISupports* aSubject, const char* aTopic,
 
   Maybe<PermissionName> permission = TypeToPermissionName(type);
   if (permission) {
-    for (auto* sink : mSinks) {
-      if (sink->mName != permission.value()) {
+    for (PermissionStatusSink* sink : mSinks) {
+      if (sink->Name() != permission.value()) {
         continue;
       }
       
       
       
-      if (perm && sink->MaybeUpdatedBy(perm)) {
-        sink->PermissionChanged();
+      if (perm && sink->MaybeUpdatedByOnMainThread(perm)) {
+        sink->PermissionChangedOnMainThread();
       }
       
       
@@ -119,8 +127,9 @@ PermissionObserver::Observe(nsISupports* aSubject, const char* aTopic,
       
       
       
-      if (innerWindow && sink->MaybeUpdatedByNotifyOnly(innerWindow)) {
-        sink->PermissionChanged();
+      if (innerWindow &&
+          sink->MaybeUpdatedByNotifyOnlyOnMainThread(innerWindow)) {
+        sink->PermissionChangedOnMainThread();
       }
     }
   }
