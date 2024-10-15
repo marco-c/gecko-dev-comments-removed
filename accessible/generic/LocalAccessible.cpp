@@ -3639,7 +3639,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       }
     }
 
-    boundsChanged = IsInitialPush(CacheDomain::Bounds) ||
+    
+    
+    
+    boundsChanged = IsInitialPush(CacheDomain::Bounds) || !mBounds ||
                     !newBoundsRect.IsEqualEdges(mBounds.value());
     if (boundsChanged) {
       mBounds = Some(newBoundsRect);
