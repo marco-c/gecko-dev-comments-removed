@@ -282,9 +282,7 @@ nsresult ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
     
     
     
-    nsresult rv = retarget->RetargetDeliveryTo(mCacheStream.OwnerThread());
-    MOZ_ASSERT(NS_SUCCEEDED(rv));  
-    return rv;
+    retarget->RetargetDeliveryTo(mCacheStream.OwnerThread());
   }
 
   return NS_OK;
