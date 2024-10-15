@@ -5,20 +5,21 @@
 
 
 #include "mozilla/dom/PermissionStatus.h"
+#include "mozilla/PermissionDelegateHandler.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Permission.h"
 #include "mozilla/Services.h"
 #include "nsIPermissionManager.h"
+#include "PermissionObserver.h"
 #include "PermissionUtils.h"
-#include "PermissionStatusSink.h"
 #include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 
-PermissionStatus::PermissionStatus(nsIGlobalObject* aGlobal,
+PermissionStatus::PermissionStatus(nsPIDOMWindowInner* aWindow,
                                    PermissionName aName)
-    : DOMEventTargetHelper(aGlobal),
+    : DOMEventTargetHelper(aWindow),
       mName(aName),
       mState(PermissionState::Denied) {
   KeepAliveIfHasListenersFor(nsGkAtoms::onchange);
@@ -27,26 +28,24 @@ PermissionStatus::PermissionStatus(nsIGlobalObject* aGlobal,
 
 
 RefPtr<PermissionStatus::SimplePromise> PermissionStatus::Init() {
-  mSink = CreateSink();
-  MOZ_ASSERT(mSink);
+  
+  
+  
+  
+  mObserver = PermissionObserver::GetInstance();
+  if (NS_WARN_IF(!mObserver)) {
+    return SimplePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
 
-  return mSink->Init()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr(this)](const PermissionStatusSink::PermissionStatePromise::
-                                ResolveOrRejectValue& aResult) {
-        if (aResult.IsResolve()) {
-          self->mState = self->ComputeStateFromAction(aResult.ResolveValue());
-          return SimplePromise::CreateAndResolve(NS_OK, __func__);
-        }
+  mObserver->AddSink(this);
 
-        return SimplePromise::CreateAndReject(aResult.RejectValue(), __func__);
-      });
+  
+  return UpdateState();
 }
 
 PermissionStatus::~PermissionStatus() {
-  if (mSink) {
-    mSink->Disentangle();
-    mSink = nullptr;
+  if (mObserver) {
+    mObserver->RemoveSink(this);
   }
 }
 
@@ -60,27 +59,110 @@ nsLiteralCString PermissionStatus::GetPermissionType() const {
 }
 
 
-void PermissionStatus::PermissionChanged(uint32_t aAction) {
-  PermissionState newState = ComputeStateFromAction(aAction);
-  if (mState == newState) {
-    return;
+
+
+
+RefPtr<PermissionStatus::SimplePromise> PermissionStatus::UpdateState() {
+  
+  
+  
+
+  
+  
+  
+
+  RefPtr<nsGlobalWindowInner> window = GetOwnerWindow();
+  if (NS_WARN_IF(!window)) {
+    return SimplePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  mState = newState;
+  RefPtr<Document> document = window->GetExtantDoc();
+  if (NS_WARN_IF(!document)) {
+    return SimplePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  uint32_t action = nsIPermissionManager::DENY_ACTION;
+
+  PermissionDelegateHandler* permissionHandler =
+      document->GetPermissionDelegateHandler();
+  if (NS_WARN_IF(!permissionHandler)) {
+    return SimplePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  nsresult rv = permissionHandler->GetPermissionForPermissionsAPI(
+      GetPermissionType(), &action);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return SimplePromise::CreateAndReject(rv, __func__);
+  }
+
+  mState = ActionToPermissionState(action, mName, *document);
+  return SimplePromise::CreateAndResolve(NS_OK, __func__);
+}
+
+bool PermissionStatus::MaybeUpdatedBy(nsIPermission* aPermission) const {
+  NS_ENSURE_TRUE(aPermission, false);
+  RefPtr<nsGlobalWindowInner> window = GetOwnerWindow();
+  if (NS_WARN_IF(!window)) {
+    return false;
+  }
+
+  Document* doc = window->GetExtantDoc();
+  if (NS_WARN_IF(!doc)) {
+    return false;
+  }
+
+  nsCOMPtr<nsIPrincipal> principal =
+      Permission::ClonePrincipalForPermission(doc->NodePrincipal());
+  NS_ENSURE_TRUE(principal, false);
+  nsCOMPtr<nsIPrincipal> permissionPrincipal;
+  aPermission->GetPrincipal(getter_AddRefs(permissionPrincipal));
+  if (!permissionPrincipal) {
+    return false;
+  }
+  return permissionPrincipal->Equals(principal);
+}
+
+bool PermissionStatus::MaybeUpdatedByNotifyOnly(
+    nsPIDOMWindowInner* aInnerWindow) const {
+  return false;
+}
+
+
+void PermissionStatus::PermissionChanged() {
+  auto oldState = mState;
+  RefPtr<PermissionStatus> self(this);
+  
+  
+  
+  
+  
+  
+  
 
   
-  
-  RefPtr<AsyncEventDispatcher> eventDispatcher =
-      new AsyncEventDispatcher(this, u"change"_ns, CanBubble::eNo);
-  eventDispatcher->PostDOMEvent();
+  UpdateState()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self, oldState]() {
+        if (self->mState != oldState) {
+          
+          
+          RefPtr<AsyncEventDispatcher> eventDispatcher =
+              new AsyncEventDispatcher(self.get(), u"change"_ns,
+                                       CanBubble::eNo);
+          eventDispatcher->PostDOMEvent();
+        }
+      },
+      []() {
+
+      });
 }
 
 void PermissionStatus::DisconnectFromOwner() {
   IgnoreKeepAliveIfHasListenersFor(nsGkAtoms::onchange);
 
-  if (mSink) {
-    mSink->Disentangle();
-    mSink = nullptr;
+  if (mObserver) {
+    mObserver->RemoveSink(this);
+    mObserver = nullptr;
   }
 
   DOMEventTargetHelper::DisconnectFromOwner();
@@ -88,21 +170,6 @@ void PermissionStatus::DisconnectFromOwner() {
 
 void PermissionStatus::GetType(nsACString& aName) const {
   aName.Assign(GetPermissionType());
-}
-
-already_AddRefed<PermissionStatusSink> PermissionStatus::CreateSink() {
-  RefPtr<PermissionStatusSink> sink =
-      new PermissionStatusSink(this, mName, GetPermissionType());
-  return sink.forget();
-}
-
-PermissionState PermissionStatus::ComputeStateFromAction(uint32_t aAction) {
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
-  if (NS_WARN_IF(!global)) {
-    return PermissionState::Denied;
-  }
-
-  return ActionToPermissionState(aAction, mName, global);
 }
 
 }  

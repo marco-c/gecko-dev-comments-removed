@@ -302,10 +302,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "PerformanceServerTiming", insecureContext: false },
   
-  { name: "Permissions", insecureContext: true },
-  
-  { name: "PermissionStatus", insecureContext: true },
-  
   { name: "ProgressEvent", insecureContext: true },
   
   { name: "PromiseRejectionEvent", insecureContext: true },

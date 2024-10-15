@@ -292,10 +292,6 @@ let interfaceNamesInGlobalScope = [
   
   "PerformanceServerTiming",
   
-  "Permissions",
-  
-  "PermissionStatus",
-  
   "ProgressEvent",
   
   "PromiseRejectionEvent",
