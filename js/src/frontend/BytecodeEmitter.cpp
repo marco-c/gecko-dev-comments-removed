@@ -8396,6 +8396,75 @@ bool BytecodeEmitter::emitOptionalCall(CallNode* callNode, OptionalEmitter& oe,
   return true;
 }
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+bool BytecodeEmitter::emitSelfHostedDisposeResources(CallNode* callNode,
+                                                     DisposalKind kind) {
+  ListNode* argsList = callNode->args();
+  MOZ_ASSERT(argsList->count() == 2);
+
+  ParseNode* resourcesNode = argsList->head();
+  ParseNode* countNode = resourcesNode->pn_next;
+
+  DisposalEmitter de(this, bool(kind), CompletionKind::Normal);
+
+  if (!de.prepareForDisposeCapability()) {
+    
+    return false;
+  }
+
+  if (!emitTree(resourcesNode)) {
+    
+    return false;
+  }
+
+  if (!emitTree(countNode)) {
+    
+    return false;
+  }
+
+  if (!de.emitEnd(*innermostEmitterScope())) {
+    
+    return false;
+  }
+
+  
+
+  InternalIfEmitter ifThrow(this);
+
+  if (!ifThrow.emitThenElse()) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Throw)) {
+    
+    return false;
+  }
+
+  if (!ifThrow.emitElse()) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!ifThrow.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
+
+  return true;
+}
+#endif
+
 bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
   
 
@@ -8494,6 +8563,12 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
     if (calleeName == TaggedParserAtomIndex::WellKnown::IteratorClose()) {
       return emitSelfHostedIteratorClose(callNode);
     }
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    if (calleeName ==
+        TaggedParserAtomIndex::WellKnown::DisposeResourcesAsync()) {
+      return emitSelfHostedDisposeResources(callNode, DisposalKind::Async);
+    }
+#endif
 #ifdef DEBUG
     if (calleeName ==
             TaggedParserAtomIndex::WellKnown::UnsafeGetReservedSlot() ||

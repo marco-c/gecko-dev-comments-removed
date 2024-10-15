@@ -155,6 +155,7 @@ module.exports = {
         SetIsInlinableLargeFunction: "readonly",
         ToNumeric: "readonly",
         ToString: "readonly",
+        DisposeResourcesAsync: "readonly",
 
         
         

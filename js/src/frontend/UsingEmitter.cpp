@@ -202,6 +202,7 @@ bool DisposalEmitter::prepareForDisposeCapability() {
 
 
 
+
 bool DisposalEmitter::emitEnd(EmitterScope& es) {
   MOZ_ASSERT(state_ == State::DisposeCapability);
   MOZ_ASSERT(initialCompletion_ != CompletionKind::Return);

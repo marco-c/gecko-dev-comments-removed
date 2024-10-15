@@ -5,94 +5,6 @@
 
 
 
-
-
-
-
-
-
-async function DisposeResources(disposeCapability) {
-
-  var hadError = false;
-  var latestException = undefined;
-
-  
-  var needsAwait = false;
-
-  
-  var hasAwaited = false;
-
-  
-  
-  var index = disposeCapability.length - 1;
-  while (index >= 0) {
-    var resource = disposeCapability[index--];
-
-    
-    var value = resource.value;
-
-    
-    var hint = resource.hint;
-    assert(hint === USING_HINT_ASYNC, "expected async-dispose hint for AsyncDisposableStack");
-
-    
-    var method = resource.method;
-
-    
-    if (method !== undefined) {
-      var result;
-      try {
-        
-        result = callContentFunction(method, value);
-
-        
-        
-        
-        
-        await result;
-
-        
-        hasAwaited = true;
-      } catch (e) {
-        
-
-        
-        if (hadError) {
-          
-          latestException = CreateSuppressedError(e, latestException);
-        } else {
-          
-          
-          latestException = e;
-          hadError = true;
-        }
-      }
-    } else {
-      
-      
-      needsAwait = true;
-    }
-  }
-
-  
-  if (needsAwait && !hasAwaited) {
-    
-    await undefined;
-  }
-
-  
-  
-  
-
-  
-  if (hadError) {
-    throw latestException;
-  }
-}
-
-
-
-
 async function $AsyncDisposableStackDisposeAsync() {
   
   var asyncDisposableStack = this;
@@ -133,10 +45,7 @@ async function $AsyncDisposableStackDisposeAsync() {
   if (disposeCapability === undefined) {
     return undefined;
   }
-  
-  
-  
-  await DisposeResources(disposeCapability);
+  DisposeResourcesAsync(disposeCapability, disposeCapability.length);
 
   
   
