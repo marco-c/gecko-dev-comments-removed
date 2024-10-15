@@ -4057,6 +4057,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  void wasmTrapOnFailedInstanceCall(Register resultRegister,
+                                    wasm::FailureMode failureMode,
+                                    wasm::BytecodeOffset bytecodeOffset);
+
+  
+  
+  
+  
   
   
   void wasmBoundsCheckRange32(Register index, Register length, Register limit,
