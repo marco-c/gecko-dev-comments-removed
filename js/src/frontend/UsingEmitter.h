@@ -17,6 +17,63 @@ namespace js::frontend {
 struct BytecodeEmitter;
 class EmitterScope;
 
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS DisposalEmitter {
+ private:
+  BytecodeEmitter* bce_;
+  bool hasAsyncDisposables_;
+  CompletionKind initialCompletion_;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
+
+    
+    DisposeCapability,
+
+    
+    End
+  };
+  State state_ = State::Start;
+#endif
+
+  [[nodiscard]] bool emitResourcePropertyAccess(TaggedParserAtomIndex prop,
+                                                unsigned resourcesFromTop = 1);
+
+ public:
+  DisposalEmitter(BytecodeEmitter* bce, bool hasAsyncDisposables,
+                  CompletionKind initialCompletion)
+      : bce_(bce),
+        hasAsyncDisposables_(hasAsyncDisposables),
+        initialCompletion_(initialCompletion) {}
+
+  [[nodiscard]] bool prepareForDisposeCapability();
+
+  [[nodiscard]] bool emitEnd(EmitterScope& es);
+};
+
 class MOZ_STACK_CLASS UsingEmitter {
  private:
   mozilla::Maybe<TryEmitter> tryEmitter_;
@@ -34,20 +91,19 @@ class MOZ_STACK_CLASS UsingEmitter {
 
   [[nodiscard]] bool emitTakeDisposeCapability();
 
-  [[nodiscard]] bool emitResourcePropertyAccess(TaggedParserAtomIndex prop,
-                                                unsigned resourcesFromTop = 1);
-
  protected:
   BytecodeEmitter* bce_;
 
-  [[nodiscard]] bool emitDisposeLoop(
-      EmitterScope& es, bool hasAsyncDisposables,
+  [[nodiscard]] bool emitDisposeResourcesForEnvironment(
+      EmitterScope& es,
       CompletionKind initialCompletion = CompletionKind::Normal);
 
  public:
   explicit UsingEmitter(BytecodeEmitter* bce);
 
   bool hasAwaitUsing() const { return hasAwaitUsing_; }
+
+  void setHasAwaitUsing(bool hasAwaitUsing) { hasAwaitUsing_ = hasAwaitUsing; }
 
   [[nodiscard]] bool prepareForDisposableScopeBody();
 
