@@ -1,7 +1,6 @@
 
 
 
-
 const { assertStackTrace, startProfiling, endProfiling, assertEqPreciseStacks } = WasmHelpers;
 
 const options = getJitCompilerOptions();

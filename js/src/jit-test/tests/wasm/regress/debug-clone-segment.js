@@ -1,6 +1,5 @@
 
 
-
 var mod = new WebAssembly.Module(wasmTextToBinary(`
     (module
         (func (export "func_0") (result i32)

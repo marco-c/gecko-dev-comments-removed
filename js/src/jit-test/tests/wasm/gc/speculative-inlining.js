@@ -59,12 +59,6 @@ for ([funcToInline, funcToInlineExpected] of testFuncs) {
   for (let i = 0; i <= tierUpThreshold; i++) {
     invokeTestWith(exports, funcToInline, funcToInlineExpected);
   }
-  
-  
-  
-  
-  
-  sleep(0.05);
   assertEq(wasmFunctionTier(test), "optimized");
 
   

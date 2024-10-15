@@ -1,6 +1,5 @@
 
 
-
 const Module = WebAssembly.Module;
 const Instance = WebAssembly.Instance;
 const Table = WebAssembly.Table;
