@@ -209,19 +209,19 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
       translucentRegion.SubOut(mOpaqueRegion);
       region.OrWith(translucentRegion);
     }
-  }
 
-  if (!usingMemoryDC && (mNeedsNCAreaClear || didResize)) {
-    
-    
-    auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
-    nsAutoRegion regionToClear(ComputeNonClientHRGN());
-    if (mTransparencyMode == TransparencyMode::Transparent &&
-        !translucentRegion.IsEmpty()) {
-      nsAutoRegion translucent(WinUtils::RegionToHRGN(translucentRegion));
-      ::CombineRgn(regionToClear, regionToClear, translucent, RGN_OR);
+    if (mNeedsNCAreaClear ||
+        (didResize && mTransparencyMode == TransparencyMode::Transparent)) {
+      
+      
+      auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
+      nsAutoRegion regionToClear(ComputeNonClientHRGN());
+      if (!translucentRegion.IsEmpty()) {
+        nsAutoRegion translucent(WinUtils::RegionToHRGN(translucentRegion));
+        ::CombineRgn(regionToClear, regionToClear, translucent, RGN_OR);
+      }
+      ::FillRgn(hDC, regionToClear, black);
     }
-    ::FillRgn(hDC, regionToClear, black);
   }
   mNeedsNCAreaClear = false;
 
