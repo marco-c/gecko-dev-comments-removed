@@ -674,8 +674,16 @@ add_task(async function test_tabGroupContextMenuMoveTabToGroupBasics() {
         "group2 menu item has correct label"
       );
       Assert.ok(
-        group2Item.getAttribute("image").includes('fill="blue"'),
+        group2Item.style
+          .getPropertyValue("--tab-group-color")
+          .includes("--tab-group-color-blue"),
         "group2 menu item chicklet has correct color"
+      );
+      Assert.ok(
+        group2Item.style
+          .getPropertyValue("--tab-group-color-invert")
+          .includes("--tab-group-color-blue-invert"),
+        "group2 menu item chicklet has correct inverted color"
       );
 
       const group1Item = submenu[2];
@@ -690,8 +698,16 @@ add_task(async function test_tabGroupContextMenuMoveTabToGroupBasics() {
         "group1 menu item has correct label"
       );
       Assert.ok(
-        group1Item.getAttribute("image").includes('fill="red"'),
+        group1Item.style
+          .getPropertyValue("--tab-group-color")
+          .includes("--tab-group-color-red"),
         "group1 menu item chicklet has correct color"
+      );
+      Assert.ok(
+        group1Item.style
+          .getPropertyValue("--tab-group-color-invert")
+          .includes("--tab-group-color-red-invert"),
+        "group1 menu item chicklet has correct inverted color"
       );
     }
   );
@@ -947,13 +963,15 @@ add_task(async function test_tabsContainNoTabGroups() {
 
 
 add_task(async function test_tabGroupCreatePanel() {
-  let tabgroupPanel = document.getElementById("tab-group-editor").panel;
+  let tabgroupEditor = document.getElementById("tab-group-editor");
+  let tabgroupPanel = tabgroupEditor.panel;
   let nameField = tabgroupPanel.querySelector("#tab-group-name");
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
 
   let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
   let group = gBrowser.addTabGroup("cyan", "Food", [tab]);
   await panelShown;
+  Assert.ok(tabgroupEditor.createMode, "Group editor is in create mode");
   
   Assert.ok(
     nameField.value == group.label,
@@ -1002,5 +1020,82 @@ add_task(async function test_tabGroupCreatePanel() {
   Assert.ok(group.label == "Shopping");
   Assert.ok(group.color == "red");
 
-  await removeTabGroup(group);
+  
+  panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
+  EventUtils.synthesizeMouseAtCenter(
+    group.querySelector(".tab-group-label"),
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  await panelShown;
+  Assert.ok(tabgroupPanel.state == "open", "Tabgroup edit panel is open");
+  Assert.ok(!tabgroupEditor.createMode, "Group editor is not in create mode");
+
+  panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
+  EventUtils.synthesizeKey("KEY_Escape");
+  await panelHidden;
+  gBrowser.removeTabGroup(group, { animate: false });
+});
+
+async function createTabGroupAndOpenEditPanel() {
+  let tabgroupEditor = document.getElementById("tab-group-editor");
+  let tabgroupPanel = tabgroupEditor.panel;
+  let tab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
+    animate: false,
+  });
+
+  let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
+  let group = gBrowser.addTabGroup("cyan", "Food", [tab]);
+  await panelShown;
+
+  
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
+  tabgroupPanel.querySelector("#tab-group-editor-button-create").click();
+  await panelHidden;
+
+  panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
+  EventUtils.synthesizeMouseAtCenter(
+    group.querySelector(".tab-group-label"),
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  return new Promise(resolve => {
+    panelShown.then(() => {
+      resolve({ tabgroupEditor, tabgroupPanel, tab, group });
+    });
+  });
+}
+
+add_task(async function test_tabGroupPanelAddTab() {
+  let { tabgroupPanel, group } = await createTabGroupAndOpenEditPanel();
+
+  let addNewTabButton = tabgroupPanel.querySelector(
+    "#tabGroupEditor_addNewTabInGroup"
+  );
+
+  Assert.equal(group.tabs.length, 1, "Group has 1 tab");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
+  addNewTabButton.click();
+  await panelHidden;
+  Assert.ok(tabgroupPanel.state === "closed", "Group editor is closed");
+  Assert.equal(group.tabs.length, 2, "Group has 2 tabs");
+
+  for (let tab of group.tabs) {
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
+add_task(async function test_tabGroupPanelUngroupTabs() {
+  let { tabgroupPanel, tab, group } = await createTabGroupAndOpenEditPanel();
+  let ungroupTabsButton = tabgroupPanel.querySelector(
+    "#tabGroupEditor_ungroupTabs"
+  );
+
+  Assert.ok(tab.group.id == group.id, "Tab is in group");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "hidden");
+  ungroupTabsButton.click();
+  await panelHidden;
+  Assert.ok(!tab.group, "Tab is no longer grouped");
+
+  BrowserTestUtils.removeTab(tab);
 });
