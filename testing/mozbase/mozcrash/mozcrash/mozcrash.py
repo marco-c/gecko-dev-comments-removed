@@ -14,6 +14,7 @@ import tempfile
 import traceback
 import zipfile
 from collections import namedtuple
+from urllib.request import urlopen
 
 import mozfile
 import mozinfo
@@ -290,7 +291,7 @@ class CrashInfo(object):
             self.remove_symbols = True
             self.logger.info("Downloading symbols from: %s" % self.symbols_path)
             
-            data = six.moves.urllib.request.urlopen(self.symbols_path)
+            data = urlopen(self.symbols_path)
             with tempfile.TemporaryFile() as symbols_file:
                 symbols_file.write(data.read())
                 

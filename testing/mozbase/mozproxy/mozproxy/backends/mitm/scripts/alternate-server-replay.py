@@ -15,13 +15,13 @@ import signal
 import time
 import typing
 from collections import defaultdict
+from urllib.parse import parse_qsl, unquote, urlparse
 
 from mitmproxy import ctx, exceptions, http, io
 
 
 from mitmproxy.proxy.protocol import tls
 from mitmproxy.proxy.protocol.http2 import Http2Layer, SafeH2Connection
-from six.moves import urllib
 
 _PROTO = {}
 
@@ -190,8 +190,8 @@ class AlternateServerPlayback:
 
         
         
-        _, _, path, _, query, _ = urllib.parse.urlparse(urllib.parse.unquote(r.url))
-        queriesArray = urllib.parse.parse_qsl(query, keep_blank_values=True)
+        _, _, path, _, query, _ = urlparse(unquote(r.url))
+        queriesArray = parse_qsl(query, keep_blank_values=True)
 
         key = [str(r.port), str(r.scheme), str(r.method), str(path)]
         key.append(str(r.raw_content))
@@ -279,9 +279,7 @@ class AlternateServerPlayback:
 
                 
                 if ctx.options.upload_dir:
-                    parsed_url = urllib.parse.urlparse(
-                        urllib.parse.unquote(f.request.url)
-                    )
+                    parsed_url = urlparse(unquote(f.request.url))
                     self.netlocs[parsed_url.netloc][f.response.status_code] += 1
                     self.calls.append(
                         {
