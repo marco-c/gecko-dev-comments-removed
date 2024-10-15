@@ -61,7 +61,8 @@ class AllocSite {
     Normal = 0,
     Unknown = 1,
     Optimized = 2,
-    Missing = 3
+    Missing = 3,
+    Tenuring = 4,
   };
   enum class State : uint32_t { ShortLived = 0, Unknown = 1, LongLived = 2 };
 
@@ -91,10 +92,10 @@ class AllocSite {
   
   
   
-  uint32_t pcOffset_ : 30;
-  static constexpr uint32_t InvalidPCOffset = Bit(30) - 1;
+  uint32_t pcOffset_ : 29;
+  static constexpr uint32_t InvalidPCOffset = Bit(29) - 1;
 
-  uint32_t kind_ : 2;
+  uint32_t kind_ : 3;
 
   
   
@@ -165,6 +166,12 @@ class AllocSite {
     kind_ = uint32_t(Kind::Optimized);
   }
 
+  void initTenuringSite(JS::Zone* zone) {
+    assertUninitialized();
+    zone_ = zone;
+    kind_ = uint32_t(Kind::Tenuring);
+  }
+
   
   void initWasm(JS::Zone* zone) {
     assertUninitialized();
@@ -212,6 +219,7 @@ class AllocSite {
   bool isUnknown() const { return kind() == Kind::Unknown; }
   bool isOptimized() const { return kind() == Kind::Optimized; }
   bool isMissing() const { return kind() == Kind::Missing; }
+  bool isTenuring() const { return kind() == Kind::Tenuring; }
 
   Kind kind() const {
     MOZ_ASSERT((Kind(kind_) == Kind::Normal || Kind(kind_) == Kind::Missing) ==
@@ -224,10 +232,13 @@ class AllocSite {
   
   
   Heap initialHeap() const {
-    if (!isNormal()) {
-      return Heap::Default;
+    if (isNormal()) {
+      return state() == State::LongLived ? Heap::Tenured : Heap::Default;
     }
-    return state() == State::LongLived ? Heap::Tenured : Heap::Default;
+    if (isTenuring()) {
+      return Heap::Tenured;
+    }
+    return Heap::Default;
   }
 
   bool hasNurseryAllocations() const {
@@ -317,6 +328,10 @@ class PretenuringZone {
 
   
   
+  AllocSite tenuringAllocSite;
+
+  
+  
   AllocSite promotedAllocSites[NurseryTraceKinds];
 
   
@@ -344,6 +359,7 @@ class PretenuringZone {
       promotedAllocSites[i].initUnknownSite(zone, JS::TraceKind(i));
     }
     optimizedAllocSite.initOptimizedSite(zone);
+    tenuringAllocSite.initTenuringSite(zone);
   }
 
   AllocSite& unknownAllocSite(JS::TraceKind kind) {
