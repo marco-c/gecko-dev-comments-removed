@@ -17,6 +17,7 @@
 #include "mozilla/EventQueue.h"
 #include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"
+#include "nsThreadUtils.h"  
 
 #include <atomic>
 #include <vector>
