@@ -34,8 +34,8 @@ class NeckoParent : public PNeckoParent {
 
   NeckoParent();
 
-  [[nodiscard]] static const char* GetValidatedOriginAttributes(
-      const SerializedLoadContext& aSerialized, PContentParent* aBrowser,
+  static void GetValidatedOriginAttributes(
+      const SerializedLoadContext& aSerialized, PContentParent* aContent,
       nsIPrincipal* aRequestingPrincipal, mozilla::OriginAttributes& aAttrs);
 
   
@@ -43,12 +43,11 @@ class NeckoParent : public PNeckoParent {
 
 
 
-
-
-  [[nodiscard]] static const char* CreateChannelLoadContext(
-      PBrowserParent* aBrowser, PContentParent* aContent,
-      const SerializedLoadContext& aSerialized,
-      nsIPrincipal* aRequestingPrincipal, nsCOMPtr<nsILoadContext>& aResult);
+  static void CreateChannelLoadContext(PBrowserParent* aBrowser,
+                                       PContentParent* aContent,
+                                       const SerializedLoadContext& aSerialized,
+                                       nsIPrincipal* aRequestingPrincipal,
+                                       nsCOMPtr<nsILoadContext>& aResult);
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
   PCookieServiceParent* AllocPCookieServiceParent();
