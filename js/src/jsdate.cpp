@@ -243,7 +243,7 @@ static inline int64_t TimeFromYear(int32_t y) {
 
 
 
-static YearMonthDay ToYearMonthDay(int64_t time) {
+YearMonthDay js::ToYearMonthDay(int64_t time) {
   
   
   
@@ -354,16 +354,12 @@ static YearMonthDay ToYearMonthDay(int64_t time) {
   return {Y_G, M_G, D_G};
 }
 
-YearMonthDay js::ToYearMonthDay(int64_t epochMilliseconds) {
-  return ::ToYearMonthDay(epochMilliseconds);
-}
 
 
 
 
 
-
-static int32_t YearFromTime(int64_t t) { return ::ToYearMonthDay(t).year; }
+static int32_t YearFromTime(int64_t t) { return ToYearMonthDay(t).year; }
 
 
 
@@ -380,14 +376,14 @@ static double DayWithinYear(int64_t t, double year) {
 
 
 
-static int32_t MonthFromTime(int64_t t) { return ::ToYearMonthDay(t).month; }
+static int32_t MonthFromTime(int64_t t) { return ToYearMonthDay(t).month; }
 
 
 
 
 
 
-static int32_t DateFromTime(int64_t t) { return ::ToYearMonthDay(t).day; }
+static int32_t DateFromTime(int64_t t) { return ToYearMonthDay(t).day; }
 
 
 
@@ -682,7 +678,7 @@ int32_t DateTimeHelper::daylightSavingTA(DateTimeInfo::ForceUTC forceUTC,
 
 
   if (!isRepresentableAsTime32(t)) {
-    auto [year, month, day] = ::ToYearMonthDay(t);
+    auto [year, month, day] = ToYearMonthDay(t);
 
     int equivalentYear = equivalentYearForDST(year);
     double equivalentDay = MakeDay(equivalentYear, month, day);
@@ -2163,7 +2159,7 @@ void DateObject::fillLocalTimeSlots() {
 
   setReservedSlot(LOCAL_TIME_SLOT, DoubleValue(localTime));
 
-  const auto [year, month, day] = ::ToYearMonthDay(localTime);
+  const auto [year, month, day] = ToYearMonthDay(localTime);
 
   setReservedSlot(LOCAL_YEAR_SLOT, Int32Value(year));
   setReservedSlot(LOCAL_MONTH_SLOT, Int32Value(int32_t(month)));
@@ -3619,7 +3615,7 @@ static bool date_toUTCString(JSContext* cx, unsigned argc, Value* vp) {
   int64_t epochMilliseconds = static_cast<int64_t>(utctime);
 
   
-  auto [year, month, day] = ::ToYearMonthDay(epochMilliseconds);
+  auto [year, month, day] = ToYearMonthDay(epochMilliseconds);
   auto [hour, minute, second] = ToHourMinuteSecond(epochMilliseconds);
 
   char buf[100];
@@ -3666,7 +3662,7 @@ static bool date_toISOString(JSContext* cx, unsigned argc, Value* vp) {
   
 
   
-  auto [year, month, day] = ::ToYearMonthDay(epochMilliseconds);
+  auto [year, month, day] = ToYearMonthDay(epochMilliseconds);
   auto [hour, minute, second] = ToHourMinuteSecond(epochMilliseconds);
 
   char buf[100];
@@ -3765,7 +3761,7 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
 
 PRMJTime DateTimeHelper::toPRMJTime(DateTimeInfo::ForceUTC forceUTC,
                                     int64_t localTime, int64_t utcTime) {
-  auto [year, month, day] = ::ToYearMonthDay(localTime);
+  auto [year, month, day] = ToYearMonthDay(localTime);
   auto [hour, minute, second] = ToHourMinuteSecond(localTime);
 
   PRMJTime prtm;
@@ -3890,7 +3886,7 @@ static bool FormatDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
   switch (format) {
     case FormatSpec::DateTime: {
       
-      auto [year, month, day] = ::ToYearMonthDay(localTime);
+      auto [year, month, day] = ToYearMonthDay(localTime);
       auto [hour, minute, second] = ToHourMinuteSecond(localTime);
       SprintfLiteral(buf, "%s %s %.2u %.4d %.2d:%.2d:%.2d GMT%+.4d",
                      days[int(WeekDay(localTime))], months[month], day, year,
@@ -3899,7 +3895,7 @@ static bool FormatDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
     }
     case FormatSpec::Date: {
       
-      auto [year, month, day] = ::ToYearMonthDay(localTime);
+      auto [year, month, day] = ToYearMonthDay(localTime);
       SprintfLiteral(buf, "%s %s %.2u %.4d", days[int(WeekDay(localTime))],
                      months[month], day, year);
       break;
