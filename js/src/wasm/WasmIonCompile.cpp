@@ -2528,8 +2528,8 @@ class FunctionCompiler {
     
     
     uint32_t inlineeBodySize = codeMeta().funcDefRange(funcIndex).bodyLength;
-    return codeMeta_.inliningHeuristics.isSmallEnoughToInline(
-        kind, inliningDepth(), inlineeBodySize);
+    return InliningHeuristics::isSmallEnoughToInline(kind, inliningDepth(),
+                                                     inlineeBodySize);
   }
 
   [[nodiscard]]

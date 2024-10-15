@@ -153,10 +153,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   ModuleHash debugHash;
 
   
-  const LazyTieringHeuristics lazyTieringHeuristics;
-  const InliningHeuristics inliningHeuristics;
-
-  
   struct ProtectedOptimizationStats {
     
     

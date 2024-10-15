@@ -36,10 +36,6 @@ namespace wasm {
 
 
 class LazyTieringHeuristics {
-  
-  
-  
-  uint32_t level_ = 0;  
   static constexpr uint32_t MIN_LEVEL = 1;
   static constexpr uint32_t MAX_LEVEL = 9;
 
@@ -52,24 +48,28 @@ class LazyTieringHeuristics {
                                       0.333, 0.111, 0.037};
 
  public:
-  LazyTieringHeuristics() {
-    level_ = JS::Prefs::wasm_lazy_tiering_level();
+  
+  
+  
+  
+  
+  static uint32_t rawLevel() {
+    uint32_t level = JS::Prefs::wasm_lazy_tiering_level();
     
-    level_ = std::max<uint32_t>(level_, MIN_LEVEL);
-    level_ = std::min<uint32_t>(level_, MAX_LEVEL);
+    level = std::max<uint32_t>(level, MIN_LEVEL);
+    level = std::min<uint32_t>(level, MAX_LEVEL);
+    return level;
   }
 
   
-  uint32_t level() const { return level_; }
-
-  
   
   
   
   
 
-  int32_t estimateIonCompilationCost(uint32_t bodyLength) const {
-    if (MOZ_LIKELY(MIN_LEVEL < level_ && level_ < MAX_LEVEL)) {
+  static int32_t estimateIonCompilationCost(uint32_t bodyLength) {
+    uint32_t level = rawLevel();
+    if (MOZ_LIKELY(MIN_LEVEL < level && level < MAX_LEVEL)) {
       
       
       
@@ -85,7 +85,7 @@ class LazyTieringHeuristics {
       thresholdF *= 0.25;
 
       
-      thresholdF *= scale_[level_ - (MIN_LEVEL + 1)];
+      thresholdF *= scale_[level - (MIN_LEVEL + 1)];
 
       
       thresholdF = std::max<float>(thresholdF, 10.0);   
@@ -94,11 +94,11 @@ class LazyTieringHeuristics {
       MOZ_RELEASE_ASSERT(thresholdI >= 0);
       return thresholdI;
     }
-    if (level_ == MIN_LEVEL) {
+    if (level == MIN_LEVEL) {
       
       return INT32_MAX;
     }
-    if (level_ == MAX_LEVEL) {
+    if (level == MAX_LEVEL) {
       
       return 0;
     }
@@ -107,30 +107,27 @@ class LazyTieringHeuristics {
 };
 
 class InliningHeuristics {
-  
-  
-  
-  
-  uint32_t level_ = 0;  
   static constexpr uint32_t MIN_LEVEL = 1;
   static constexpr uint32_t MAX_LEVEL = 9;
 
-  bool directAllowed_ = true;   
-  bool callRefAllowed_ = true;  
  public:
-  InliningHeuristics() {
-    directAllowed_ = JS::Prefs::wasm_direct_inlining();
-    callRefAllowed_ = JS::Prefs::wasm_call_ref_inlining();
-    level_ = JS::Prefs::wasm_inlining_level();
-    
-    level_ = std::max<uint32_t>(level_, MIN_LEVEL);
-    level_ = std::min<uint32_t>(level_, MAX_LEVEL);
-  }
-
   
-  uint32_t level() const { return level_; }
-  bool directAllowed() const { return directAllowed_; }
-  bool callRefAllowed() const { return callRefAllowed_; }
+  
+  
+  
+  
+  
+  static uint32_t rawLevel() {
+    uint32_t level = JS::Prefs::wasm_inlining_level();
+    
+    level = std::max<uint32_t>(level, MIN_LEVEL);
+    level = std::min<uint32_t>(level, MAX_LEVEL);
+    return level;
+  }
+  static bool rawDirectAllowed() { return JS::Prefs::wasm_direct_inlining(); }
+  static bool rawCallRefAllowed() {
+    return JS::Prefs::wasm_call_ref_inlining();
+  }
 
   
   
@@ -139,13 +136,13 @@ class InliningHeuristics {
   
   
   enum class CallKind { Direct, CallRef };
-  bool isSmallEnoughToInline(CallKind callKind, uint32_t inliningDepth,
-                             uint32_t bodyLength) const {
+  static bool isSmallEnoughToInline(CallKind callKind, uint32_t inliningDepth,
+                                    uint32_t bodyLength) {
     
     MOZ_RELEASE_ASSERT(inliningDepth <= 10);  
     
-    if ((callKind == CallKind::Direct && !directAllowed_) ||
-        (callKind == CallKind::CallRef && !callRefAllowed_)) {
+    if ((callKind == CallKind::Direct && !rawDirectAllowed()) ||
+        (callKind == CallKind::CallRef && !rawCallRefAllowed())) {
       return false;
     }
     
@@ -161,8 +158,9 @@ class InliningHeuristics {
     static constexpr int32_t baseSize[9] = {0,   50,  100, 150,
                                             200,  
                                             250, 300, 350, 400};
-    MOZ_RELEASE_ASSERT(level_ >= MIN_LEVEL && level_ <= MAX_LEVEL);
-    int32_t allowedSize = baseSize[level_ - MIN_LEVEL];
+    uint32_t level = rawLevel();
+    MOZ_RELEASE_ASSERT(level >= MIN_LEVEL && level <= MAX_LEVEL);
+    int32_t allowedSize = baseSize[level - MIN_LEVEL];
     allowedSize -= int32_t(50 * inliningDepth);
     return allowedSize > 0 && bodyLength <= uint32_t(allowedSize);
   }
