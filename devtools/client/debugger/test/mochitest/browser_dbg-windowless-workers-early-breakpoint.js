@@ -21,7 +21,7 @@ add_task(async function () {
   await waitForPaused(dbg, "simple-worker.js");
 
   
-  assertPausedAtSourceAndLine(dbg, workerSource.id, 1);
+  await assertPausedAtSourceAndLine(dbg, workerSource.id, 1);
   
   
   
@@ -35,6 +35,6 @@ add_task(async function () {
   await waitForPaused(dbg, "simple-worker.js");
 
   
-  assertPausedAtSourceAndLine(dbg, workerSource.id, 10);
+  await assertPausedAtSourceAndLine(dbg, workerSource.id, 10);
   await removeBreakpoint(dbg, workerSource.id, 10, 3);
 });

@@ -59,7 +59,7 @@ add_task(async function () {
   await waitForPaused(dbg);
   
   
-  assertPausedAtSourceAndLine(dbg, source.id, 8);
+  await assertPausedAtSourceAndLine(dbg, source.id, 8);
 
   
   await hasConsoleMessage(dbg, "second call 44");
@@ -80,7 +80,7 @@ add_task(async function () {
   await waitForPaused(dbg);
   
   
-  assertPausedAtSourceAndLine(
+  await assertPausedAtSourceAndLine(
     dbg,
     findSource(dbg, "script-switching-02.js").id,
     6
