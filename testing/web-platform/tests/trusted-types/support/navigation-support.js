@@ -1,3 +1,4 @@
+const kNavigationAttempted = "navigationattempted=1";
 
 function navigateToJavascriptURL(reportOnly) {
     const params = new URLSearchParams(location.search);
@@ -27,12 +28,12 @@ function navigateToJavascriptURL(reportOnly) {
     if (reportOnly) {
         
         
-        target_script = `location.href='${location.href.replace("-report-only", "") + "#continue"}';`;
+        target_script = `location.href='${location.href.replace("-report-only", "") +
+            (location.href.includes("?") ? "&" : "?") + kNavigationAttempted + "&continue"}';`;
     } else {
         
         
-        
-        target_script = `location.href='${location.href}&continue';`;
+        target_script = `location.href='${location.href + "&" + kNavigationAttempted}&continue';`;
     }
     const target = `javascript:${target_script}`;
 
@@ -47,6 +48,8 @@ function navigateToJavascriptURL(reportOnly) {
       anchor.target = "frame";
     }
 
-    if (!location.hash)
+    
+    if (!location.search.includes(kNavigationAttempted)) {
       document.addEventListener("DOMContentLoaded", _ => anchor.click());
+    }
 }
