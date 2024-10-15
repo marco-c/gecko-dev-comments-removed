@@ -587,6 +587,7 @@ const AVAILABLE_INJECTIONS = [
         "*://*.lafoodbank.org/*", 
         "*://rutamayacoffee.com/*", 
         "*://ottoandspike.com.au/*", 
+        "*://give.umrelief.org/give/*", 
       ],
       js: [
         {
