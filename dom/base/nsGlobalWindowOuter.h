@@ -941,11 +941,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   
   
-  
-  bool ConfirmDialogIfNeeded();
-
-  
-  
   void CheckForDPIChange();
 
  private:
