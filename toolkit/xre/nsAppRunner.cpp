@@ -229,6 +229,7 @@
 #include "GTestRunner.h"
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include "gfxAndroidPlatform.h"
 #  include "mozilla/java/GeckoAppShellWrappers.h"
 #endif
 
@@ -4750,6 +4751,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       if (!disableWaylandProxy && XRE_IsParentProcess() && waylandEnabled) {
         auto* proxyLog = getenv("WAYLAND_PROXY_LOG");
         WaylandProxy::SetVerbose(proxyLog && *proxyLog);
+        WaylandProxy::SetCompositorCrashHandler(WlCompositorCrashHandler);
         gWaylandProxy = WaylandProxy::Create();
         if (gWaylandProxy) {
           gWaylandProxy->RunThread();
@@ -5843,6 +5845,12 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   
   gfxPlatformMac::RegisterSupplementalFonts();
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  gfxAndroidPlatform::InitializeFontAPI();
 #endif
 
 #ifdef MOZ_CODE_COVERAGE
