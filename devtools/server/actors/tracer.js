@@ -219,7 +219,9 @@ class TracerActor extends Actor {
     
     lazy.JSTracer.removeTracingListener(this.tracingListener);
     
-    this.#stopResult = this.tracingListener.stop();
+    this.#stopResult = this.tracingListener.stop(
+      lazy.JSTracer.maybeGetNativeTrace()
+    );
     this.tracingListener = null;
 
     lazy.JSTracer.stopTracing();

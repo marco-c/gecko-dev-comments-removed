@@ -51,10 +51,6 @@
 #  define PROFILER_SET_JS_CONTEXT(cx)
 #  define PROFILER_CLEAR_JS_CONTEXT()
 
-namespace mozilla {
-class CycleCollectedJSContext;
-}
-
 
 
 
@@ -231,7 +227,7 @@ void profiler_js_interrupt_callback();
 
 #  define PROFILER_SET_JS_CONTEXT(cx) profiler_set_js_context(cx)
 #  define PROFILER_CLEAR_JS_CONTEXT() profiler_clear_js_context()
-void profiler_set_js_context(mozilla::CycleCollectedJSContext* aCx);
+void profiler_set_js_context(JSContext* aCx);
 void profiler_clear_js_context();
 
 

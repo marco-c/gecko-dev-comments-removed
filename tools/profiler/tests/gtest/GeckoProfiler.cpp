@@ -476,10 +476,10 @@ static void TestLockedRWOnThread(
 
   
   
-  static_assert(std::is_same_v<decltype(aData.SetCycleCollectedJSContext(
-                                   std::declval<CycleCollectedJSContext*>())),
-                               void>);
-  aData.ClearCycleCollectedJSContext();
+  static_assert(
+      std::is_same_v<decltype(aData.SetJSContext(std::declval<JSContext*>())),
+                     void>);
+  aData.ClearJSContext();
   aData.PollJSSampling();
 };
 
@@ -1677,9 +1677,6 @@ TEST(GeckoProfiler, FeaturesAndParams)
   {
     uint32_t availableFeatures = profiler_get_available_features();
     const char* filters[] = {""};
-
-    
-    availableFeatures &= ~ProfilerFeature::Tracing;
 
     profiler_start(PowerOfTwo32(88888), 10, availableFeatures, filters,
                    MOZ_ARRAY_LENGTH(filters), 0, Some(15.0));

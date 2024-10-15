@@ -279,19 +279,6 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, private JS::JobQueue {
     MOZ_ASSERT_UNREACHABLE("Not supported");
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void BeginExecutionTracingAsync();
-  void EndExecutionTracingAsync();
-
  private:
   
   

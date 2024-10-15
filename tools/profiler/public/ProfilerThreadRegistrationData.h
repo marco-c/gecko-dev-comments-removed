@@ -100,10 +100,6 @@ template <typename... Ts>
   return Intersect(a1, a2) != ThreadProfilingFeatures::NotProfiled;
 }
 
-namespace mozilla {
-class CycleCollectedJSContext;
-}
-
 namespace mozilla::profiler {
 
 
@@ -163,9 +159,8 @@ class ThreadRegistrationData {
   
   
   
-  CycleCollectedJSContext* mCCJSContext = nullptr;
+  JSContext* mJSContext = nullptr;
 
-  
   
   
   JsFrame* mJsFrameBuffer = nullptr;
@@ -435,10 +430,7 @@ class ThreadRegistrationUnlockedReaderAndAtomicRWOnThread
   
   
 
-  [[nodiscard]] JSContext* GetJSContext() const;
-  [[nodiscard]] CycleCollectedJSContext* GetCycleCollectedJSContext() const {
-    return mCCJSContext;
-  }
+  [[nodiscard]] JSContext* GetJSContext() const { return mJSContext; }
 
  protected:
   ThreadRegistrationUnlockedReaderAndAtomicRWOnThread(const char* aName,
@@ -529,8 +521,8 @@ class ThreadRegistrationLockedRWFromAnyThread
 class ThreadRegistrationLockedRWOnThread
     : public ThreadRegistrationLockedRWFromAnyThread {
  public:
-  void SetCycleCollectedJSContext(CycleCollectedJSContext* aCCJSContext);
-  void ClearCycleCollectedJSContext();
+  void SetJSContext(JSContext* aJSContext);
+  void ClearJSContext();
 
   
   void PollJSSampling();
