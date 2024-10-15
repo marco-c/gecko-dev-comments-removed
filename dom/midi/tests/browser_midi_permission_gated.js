@@ -425,22 +425,7 @@ add_task(async function testRequestMIDIAccess() {
     "Expected Glean event recorded."
   );
 
-  
-  
-  let events = AddonTestUtils.getAMTelemetryEvents();
-  Assert.deepEqual(
-    events.filter(evt => evt.method == "reportSuspiciousSite")[0],
-    {
-      method: "reportSuspiciousSite",
-      object: "suspiciousSite",
-      value: "example.com",
-      extra: undefined,
-    }
-  );
-  assertSitePermissionInstallTelemetryEvents(
-    ["site_warning", "cancelled"],
-    events
-  );
+  assertSitePermissionInstallTelemetryEvents(["site_warning", "cancelled"]);
 });
 
 add_task(async function testIframeRequestMIDIAccess() {
@@ -720,11 +705,8 @@ add_task(function teardown_telemetry_events() {
 
 
 
-function assertSitePermissionInstallTelemetryEvents(
-  expectedSteps,
-  events = null
-) {
-  let amInstallEvents = (events ?? AddonTestUtils.getAMTelemetryEvents())
+function assertSitePermissionInstallTelemetryEvents(expectedSteps) {
+  let amInstallEvents = AddonTestUtils.getAMTelemetryEvents()
     .filter(evt => evt.method === "install" && evt.object === "sitepermission")
     .map(evt => evt.extra.step);
 
