@@ -506,7 +506,6 @@ class Editor extends PureComponent {
     }
   };
   
-  
   openMenu(event, line, ch) {
     event.stopPropagation();
     event.preventDefault();
@@ -531,7 +530,9 @@ class Editor extends PureComponent {
 
     const target = event.target;
     const { id: sourceId } = selectedSource;
-    line = line ?? lineAtHeight(editor, sourceId, event);
+    if (!features.codemirrorNext) {
+      line = line ?? lineAtHeight(editor, sourceId, event);
+    }
 
     if (typeof line != "number") {
       return;
