@@ -22,6 +22,7 @@
 #include <iterator>
 #include <utility>
 
+#include "jsdate.h"
 #include "jsnum.h"
 #include "jspubtd.h"
 #include "jstypes.h"
@@ -778,39 +779,8 @@ bool js::temporal::TimeZoneEquals(const TimeZoneValue& one,
 
 
 
-static inline double PositiveModulo(double dividend, double divisor) {
-  MOZ_ASSERT(divisor > 0);
-  MOZ_ASSERT(std::isfinite(divisor));
-
-  double result = std::fmod(dividend, divisor);
-  if (result < 0) {
-    result += divisor;
-  }
-  return result + (+0.0);
-}
-
-
-static double HourFromTime(double t) {
-  return PositiveModulo(std::floor(t / msPerHour), HoursPerDay);
-}
-
-static double MinFromTime(double t) {
-  return PositiveModulo(std::floor(t / msPerMinute), MinutesPerHour);
-}
-
-static double SecFromTime(double t) {
-  return PositiveModulo(std::floor(t / msPerSecond), SecondsPerMinute);
-}
-
-static double msFromTime(double t) { return PositiveModulo(t, msPerSecond); }
-
-
-
 
 static PlainDateTime GetISOPartsFromEpoch(const Instant& instant) {
-  
-  
-
   
   MOZ_ASSERT(IsValidEpochInstant(instant));
 
@@ -818,28 +788,21 @@ static PlainDateTime GetISOPartsFromEpoch(const Instant& instant) {
   int32_t remainderNs = instant.nanoseconds % 1'000'000;
 
   
-  double epochMilliseconds = double(instant.floorToMilliseconds());
+  
+  
+  int32_t millisecond = instant.nanoseconds / 1'000'000;
 
   
-  int32_t year = int32_t(JS::YearFromTime(epochMilliseconds));
+  int64_t epochMilliseconds = instant.floorToMilliseconds();
 
   
-  int32_t month = int32_t(JS::MonthFromTime(epochMilliseconds)) + 1;
+  auto ymd = ToYearMonthDay(epochMilliseconds);
+  int32_t year = ymd.year;
+  int32_t month = ymd.month + 1;
+  int32_t day = ymd.day;
 
   
-  int32_t day = int32_t(JS::DayFromTime(epochMilliseconds));
-
-  
-  int32_t hour = int32_t(HourFromTime(epochMilliseconds));
-
-  
-  int32_t minute = int32_t(MinFromTime(epochMilliseconds));
-
-  
-  int32_t second = int32_t(SecFromTime(epochMilliseconds));
-
-  
-  int32_t millisecond = int32_t(msFromTime(epochMilliseconds));
+  auto [hour, minute, second] = ToHourMinuteSecond(epochMilliseconds);
 
   
   int32_t microsecond = remainderNs / 1000;
