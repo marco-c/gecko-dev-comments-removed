@@ -1119,10 +1119,13 @@ class GeckoEngineSession(
                 return
             }
 
-            appRedirectUrl?.let {
-                if (url == appRedirectUrl) {
-                    goBack(false)
-                    return
+            // if it is an initial load then we can't go back. We should update the URL.
+            if (!initialLoad) {
+                appRedirectUrl?.let {
+                    if (url == appRedirectUrl) {
+                        goBack(false)
+                        return
+                    }
                 }
             }
 
@@ -1780,6 +1783,7 @@ class GeckoEngineSession(
         this.geckoSession = geckoSessionProvider()
 
         defaultSettings?.trackingProtectionPolicy?.let { updateTrackingProtection(it) }
+        defaultSettings?.desktopModeEnabled?.let { toggleDesktopMode(enable = it, reload = false) }
         defaultSettings?.requestInterceptor?.let { settings.requestInterceptor = it }
         defaultSettings?.historyTrackingDelegate?.let { settings.historyTrackingDelegate = it }
         defaultSettings?.testingModeEnabled?.let {
