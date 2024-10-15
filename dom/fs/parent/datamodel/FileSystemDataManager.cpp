@@ -56,7 +56,8 @@ namespace {
 
 
 using FileSystemDataManagerHashKey =
-    std::conditional<ReleaseAssertEnabled::value, quota::nsCStringHashKeyDM,
+    std::conditional<ReleaseAssertEnabled::value,
+                     quota::nsCStringHashKeyWithDisabledMemmove,
                      nsCStringHashKey>::type;
 
 
