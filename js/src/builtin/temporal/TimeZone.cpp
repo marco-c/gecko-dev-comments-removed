@@ -796,10 +796,7 @@ static PlainDateTime GetISOPartsFromEpoch(const Instant& instant) {
   int64_t epochMilliseconds = instant.floorToMilliseconds();
 
   
-  auto ymd = ToYearMonthDay(epochMilliseconds);
-  int32_t year = ymd.year;
-  int32_t month = ymd.month + 1;
-  int32_t day = ymd.day;
+  auto [year, month, day] = ToYearMonthDay(epochMilliseconds);
 
   
   auto [hour, minute, second] = ToHourMinuteSecond(epochMilliseconds);
@@ -812,7 +809,7 @@ static PlainDateTime GetISOPartsFromEpoch(const Instant& instant) {
 
   
   PlainDateTime result = {
-      {year, month, day},
+      {year, month + 1, day},
       {hour, minute, second, millisecond, microsecond, nanosecond}};
 
   
