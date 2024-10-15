@@ -16530,6 +16530,12 @@ bool CodeGenerator::generate() {
     return false;
   }
 
+  size_t maxSafepointIndices =
+      graph.numSafepoints() + graph.extraSafepointUses();
+  if (!safepointIndices_.reserve(maxSafepointIndices)) {
+    return false;
+  }
+
   perfSpewer_.recordOffset(masm, "Prologue");
   if (!generatePrologue()) {
     return false;
@@ -16581,6 +16587,30 @@ bool CodeGenerator::generate() {
   if (!encodeSafepoints()) {
     return false;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(safepointIndices_.length() <= maxSafepointIndices);
 
   return !masm.oom();
 }

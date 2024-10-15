@@ -62,8 +62,7 @@ class CodeGeneratorShared : public LElementVisitor {
   
   uint32_t inboundStackArgBytes_;
 
-  js::Vector<CodegenSafepointIndex, 0, BackgroundSystemAllocPolicy>
-      safepointIndices_;
+  js::Vector<CodegenSafepointIndex, 0, JitAllocPolicy> safepointIndices_;
   js::Vector<OsiIndex, 0, BackgroundSystemAllocPolicy> osiIndices_;
 
   

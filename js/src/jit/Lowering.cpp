@@ -674,6 +674,7 @@ void LIRGenerator::visitApplyArgs(MApplyArgs* apply) {
 
     lir = new (alloc())
         LApplyArgsGeneric(function, argc, thisValue, tempObj, tempCopy);
+    lirGraph_.addExtraSafepointUses(1);
   }
 
   
@@ -709,6 +710,7 @@ void LIRGenerator::visitApplyArgsObj(MApplyArgsObj* apply) {
 
     lir = new (alloc())
         LApplyArgsObj(function, argsObj, thisValue, tempObj, tempCopy);
+    lirGraph_.addExtraSafepointUses(1);
   }
 
   
@@ -744,6 +746,7 @@ void LIRGenerator::visitApplyArray(MApplyArray* apply) {
 
     lir = new (alloc())
         LApplyArrayGeneric(function, elements, thisValue, tempObj, tempCopy);
+    lirGraph_.addExtraSafepointUses(1);
   }
 
   
@@ -784,6 +787,7 @@ void LIRGenerator::visitConstructArgs(MConstructArgs* mir) {
 
     lir = new (alloc())
         LConstructArgsGeneric(function, argc, newTarget, thisValue, temp);
+    lirGraph_.addExtraSafepointUses(1);
   }
 
   
@@ -823,6 +827,7 @@ void LIRGenerator::visitConstructArray(MConstructArray* mir) {
 
     lir = new (alloc())
         LConstructArrayGeneric(function, elements, newTarget, thisValue, temp);
+    lirGraph_.addExtraSafepointUses(1);
   }
 
   

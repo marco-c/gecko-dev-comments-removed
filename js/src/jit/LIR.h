@@ -1929,6 +1929,8 @@ class LIRGraph {
   uint32_t localSlotsSize_;
   
   uint32_t argumentSlotCount_;
+  
+  uint32_t extraSafepointUses_;
 
   MIRGraph& mir_;
 
@@ -1970,6 +1972,8 @@ class LIRGraph {
     argumentSlotCount_ = argumentSlotCount;
   }
   uint32_t argumentSlotCount() const { return argumentSlotCount_; }
+  void addExtraSafepointUses(uint32_t extra) { extraSafepointUses_ += extra; }
+  uint32_t extraSafepointUses() const { return extraSafepointUses_; }
   [[nodiscard]] bool addConstantToPool(const Value& v, uint32_t* index);
   size_t numConstants() const { return constantPool_.length(); }
   Value* constantPool() { return &constantPool_[0]; }
