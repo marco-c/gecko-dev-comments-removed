@@ -1872,7 +1872,8 @@ gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
   }
   
   
-  mCurrGeneration = 0;
+  mCurrGeneration = GetGeneration();
+  BuildFontList();
 }
 
 gfxFontGroup::~gfxFontGroup() {
@@ -1886,25 +1887,11 @@ static StyleGenericFontFamily GetDefaultGeneric(nsAtom* aLanguage) {
       ->GetDefaultGeneric();
 }
 
-void gfxFontGroup::EnsureFontList() {
+void gfxFontGroup::BuildFontList() {
   
-  auto* pfl = gfxPlatformFontList::PlatformFontList();
-  if (mFontListGeneration != pfl->GetGeneration()) {
-    
-    mLastPrefFamily = FontFamily();
-    mLastPrefFont = nullptr;
-    mDefaultFont = nullptr;
-    mResolvedFonts = false;
-  }
-
-  
-  if (mResolvedFonts) {
-    return;
-  }
-
-  
-  mFonts.Clear();
   AutoTArray<FamilyAndGeneric, 10> fonts;
+  gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
+  mFontListGeneration = pfl->GetGeneration();
 
   
   for (const StyleSingleFontFamily& name : mFamilyList.list.AsSpan()) {
@@ -1948,9 +1935,6 @@ void gfxFontGroup::EnsureFontList() {
       AddFamilyToFontList(f.mFamily.mUnshared, f.mGeneric);
     }
   }
-
-  mFontListGeneration = pfl->GetGeneration();
-  mResolvedFonts = true;
 }
 
 void gfxFontGroup::AddPlatformFont(const nsACString& aName, bool aQuotedName,
@@ -2244,7 +2228,8 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
 
 already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
     uint32_t aCh, StyleGenericFontFamily* aGeneric, bool* aIsFirst) {
-  EnsureFontList();
+  
+  CheckForUpdatedPlatformList();
 
   uint32_t count = mFonts.Length();
   bool loading = false;
@@ -2328,7 +2313,6 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
 }
 
 already_AddRefed<gfxFont> gfxFontGroup::GetFirstMathFont() {
-  EnsureFontList();
   uint32_t count = mFonts.Length();
   for (uint32_t i = 0; i < count; ++i) {
     RefPtr<gfxFont> font = GetFontAt(i);
@@ -3641,22 +3625,26 @@ void gfxFontGroup::SetUserFontSet(gfxUserFontSet* aUserFontSet) {
 }
 
 uint64_t gfxFontGroup::GetGeneration() {
-  return mUserFontSet ? mUserFontSet->GetGeneration() : 0;
+  if (!mUserFontSet) return 0;
+  return mUserFontSet->GetGeneration();
 }
 
 uint64_t gfxFontGroup::GetRebuildGeneration() {
-  return mUserFontSet ? mUserFontSet->GetRebuildGeneration() : 0;
+  if (!mUserFontSet) return 0;
+  return mUserFontSet->GetRebuildGeneration();
 }
 
 void gfxFontGroup::UpdateUserFonts() {
   if (mCurrGeneration < GetRebuildGeneration()) {
     
-    mResolvedFonts = false;
+    mFonts.Clear();
     ClearCachedData();
+    BuildFontList();
     mCurrGeneration = GetGeneration();
   } else if (mCurrGeneration != GetGeneration()) {
     
     ClearCachedData();
+
     uint32_t len = mFonts.Length();
     for (uint32_t i = 0; i < len; i++) {
       FamilyFace& ff = mFonts[i];
@@ -3665,30 +3653,22 @@ void gfxFontGroup::UpdateUserFonts() {
       }
       ff.CheckState(mSkipDrawing);
     }
+
     mCurrGeneration = GetGeneration();
   }
 }
 
 bool gfxFontGroup::ContainsUserFont(const gfxUserFontEntry* aUserFont) {
   UpdateUserFonts();
-
   
-  
-  if (mResolvedFonts) {
-    uint32_t len = mFonts.Length();
-    for (uint32_t i = 0; i < len; i++) {
-      FamilyFace& ff = mFonts[i];
-      if (ff.EqualsUserFont(aUserFont)) {
-        return true;
-      }
+  uint32_t len = mFonts.Length();
+  for (uint32_t i = 0; i < len; i++) {
+    FamilyFace& ff = mFonts[i];
+    if (ff.EqualsUserFont(aUserFont)) {
+      return true;
     }
-    return false;
   }
-
-  
-  
-  
-  return true;
+  return false;
 }
 
 already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(

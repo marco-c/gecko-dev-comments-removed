@@ -520,7 +520,7 @@ void MathMLTextRunFactory::RebuildTextRun(
   bool doMathvariantStyling = true;
 
   
-  fontGroup->EnsureFontList();
+  fontGroup->CheckForUpdatedPlatformList();
 
   for (uint32_t i = 0; i < length; ++i) {
     int extraChars = 0;

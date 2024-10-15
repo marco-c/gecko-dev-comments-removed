@@ -4494,6 +4494,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     mSetTextCount++;
     auto* pfl = gfxPlatformFontList::PlatformFontList();
     pfl->Lock();
+    mFontgrp->CheckForUpdatedPlatformList();
     mFontgrp->UpdateUserFonts();  
     
     gfx::ShapedTextFlags flags = mTextRunFlags;
@@ -5127,6 +5128,9 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
         NS_ERROR("Default canvas font is invalid");
       }
     }
+  } else {
+    
+    fontGroup->CheckForUpdatedPlatformList();
   }
 
   return fontGroup;
