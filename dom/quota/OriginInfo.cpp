@@ -14,6 +14,12 @@
 
 namespace mozilla::dom::quota {
 
+
+
+
+
+
+
 OriginInfo::OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
                        const nsACString& aStorageOrigin, bool aIsPrivate,
                        const ClientUsageArray& aClientUsages, uint64_t aUsage,
@@ -28,6 +34,7 @@ OriginInfo::OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
       mIsPrivate(aIsPrivate),
       mAccessed(false),
       mPersisted(aPersisted),
+      mIsExtension(StringBeginsWith(aOrigin, "moz-extension://"_ns)),
       mDirectoryExists(aDirectoryExists) {
   MOZ_ASSERT(aGroupInfo);
   MOZ_ASSERT_IF(!aIsPrivate, aOrigin == aStorageOrigin);
@@ -35,14 +42,6 @@ OriginInfo::OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
   MOZ_ASSERT(aClientUsages.Length() == Client::TypeMax());
   MOZ_ASSERT_IF(aPersisted,
                 aGroupInfo->mPersistenceType == PERSISTENCE_TYPE_DEFAULT);
-
-  
-  
-  
-  
-  
-  
-  mIsExtension = StringBeginsWith(mOrigin, "moz-extension://"_ns);
 
 #ifdef DEBUG
   QuotaManager* quotaManager = QuotaManager::Get();
