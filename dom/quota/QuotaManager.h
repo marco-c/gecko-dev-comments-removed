@@ -187,8 +187,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
-  int64_t NoteOriginDirectoryCreated(const OriginMetadata& aOriginMetadata,
-                                     bool aPersisted);
+  int64_t NoteOriginDirectoryCreated(const OriginMetadata& aOriginMetadata);
 
   
   void DecreaseUsageForClient(const ClientMetadata& aClientMetadata,

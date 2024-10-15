@@ -3106,8 +3106,7 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
     
     
     if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
-      timestamp = aQuotaManager.NoteOriginDirectoryCreated(
-          originMetadata,  true);
+      timestamp = aQuotaManager.NoteOriginDirectoryCreated(originMetadata);
     } else {
       timestamp = PR_Now();
     }
@@ -3115,6 +3114,10 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
     QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
         *directory, timestamp,
          true, originMetadata)));
+
+    if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
+      aQuotaManager.PersistOrigin(originMetadata);
+    }
   } else {
     QM_TRY_INSPECT(
         const bool& persisted,
