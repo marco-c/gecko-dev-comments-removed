@@ -216,7 +216,12 @@ interface nsIAccessibleEvent : nsISupports
   
 
 
-  const unsigned long EVENT_LAST_ENTRY = 0x0029;
+  const unsigned long EVENT_LIVE_REGION_CHANGED = 0x0029;
+
+  
+
+
+  const unsigned long EVENT_LAST_ENTRY = 0x002a;
 
   
 

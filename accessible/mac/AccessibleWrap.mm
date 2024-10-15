@@ -35,34 +35,11 @@ AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
     : LocalAccessible(aContent, aDoc),
       mNativeObject(nil),
       mNativeInited(false) {
-  if (aContent && aContent->IsElement() && aDoc) {
+  if (aContent && aDoc && IsLiveRegion(aContent)) {
     
     
     DocAccessibleWrap* doc = static_cast<DocAccessibleWrap*>(aDoc);
-    static const dom::Element::AttrValuesArray sLiveRegionValues[] = {
-        nsGkAtoms::OFF, nsGkAtoms::polite, nsGkAtoms::assertive, nullptr};
-    int32_t attrValue = nsAccUtils::FindARIAAttrValueIn(
-        aContent->AsElement(), nsGkAtoms::aria_live, sLiveRegionValues,
-        eIgnoreCase);
-    if (attrValue == 0) {
-      
-    } else if (attrValue > 0) {
-      
-      doc->QueueNewLiveRegion(this);
-    } else if (const nsRoleMapEntry* roleMap =
-                   aria::GetRoleMap(aContent->AsElement())) {
-      
-      if (roleMap->liveAttRule == ePoliteLiveAttr ||
-          roleMap->liveAttRule == eAssertiveLiveAttr) {
-        doc->QueueNewLiveRegion(this);
-      }
-    } else if (nsStaticAtom* value = GetAccService()->MarkupAttribute(
-                   aContent, nsGkAtoms::aria_live)) {
-      
-      if (value == nsGkAtoms::polite || value == nsGkAtoms::assertive) {
-        doc->QueueNewLiveRegion(this);
-      }
-    }
+    doc->QueueNewLiveRegion(this);
   }
 }
 
@@ -167,9 +144,56 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
     doc->ProcessNewLiveRegions();
   }
 
+  if ((eventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED ||
+       eventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
+       eventType == nsIAccessibleEvent::EVENT_NAME_CHANGE) &&
+      !aEvent->FromUserInput()) {
+    for (LocalAccessible* container = aEvent->GetAccessible(); container;
+         container = container->LocalParent()) {
+      if (container->HasOwnContent() && IsLiveRegion(container->GetContent())) {
+        
+        Document()->FireDelayedEvent(
+            nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED, container);
+      }
+    }
+  }
+
   return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
+}
+
+bool AccessibleWrap::IsLiveRegion(nsIContent* aContent) {
+  if (!aContent || !aContent->IsElement()) {
+    return false;
+  }
+
+  static const dom::Element::AttrValuesArray sLiveRegionValues[] = {
+      nsGkAtoms::OFF, nsGkAtoms::polite, nsGkAtoms::assertive, nullptr};
+  int32_t attrValue = nsAccUtils::FindARIAAttrValueIn(
+      aContent->AsElement(), nsGkAtoms::aria_live, sLiveRegionValues,
+      eIgnoreCase);
+  if (attrValue == 0) {
+    
+  } else if (attrValue > 0) {
+    
+    return true;
+  } else if (const nsRoleMapEntry* roleMap =
+                 aria::GetRoleMap(aContent->AsElement())) {
+    
+    if (roleMap->liveAttRule == ePoliteLiveAttr ||
+        roleMap->liveAttRule == eAssertiveLiveAttr) {
+      return true;
+    }
+  } else if (nsStaticAtom* value = GetAccService()->MarkupAttribute(
+                 aContent, nsGkAtoms::aria_live)) {
+    
+    if (value == nsGkAtoms::polite || value == nsGkAtoms::assertive) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 
