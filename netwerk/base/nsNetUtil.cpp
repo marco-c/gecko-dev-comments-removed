@@ -1864,6 +1864,14 @@ nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
     if (NS_FAILED(rv)) return rv;
   }
 
+  
+  
+  if (aCharset && !scheme.IsEmpty() &&
+      (scheme.EqualsLiteral("ws") || scheme.EqualsLiteral("wss") ||
+       !SchemeIsSpecial(scheme))) {
+    aCharset = "UTF-8";
+  }
+
   if (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("ws")) {
     return NewStandardURI(aSpec, aCharset, aBaseURI, NS_HTTP_DEFAULT_PORT,
                           aURI);
