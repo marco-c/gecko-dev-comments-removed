@@ -1556,6 +1556,44 @@ async function scrollAndGetEditorLineGutterElement(dbg, line) {
 
 
 
+async function getNodeAtEditorLine(dbg, line) {
+  if (!isCm6Enabled) {
+    return getEditorLine(dbg, line);
+  }
+  
+  
+  await scrollEditorIntoView(dbg, line, 0);
+  return getCMEditor(dbg).getElementAtLine(line);
+}
+
+async function getConditionalPanelAtLine(dbg, line) {
+  info(`Get conditional panel at line ${line}`);
+  let el = await getNodeAtEditorLine(dbg, line);
+  if (isCm6Enabled) {
+    
+    
+    el = el.nextSibling;
+  }
+  return el.querySelector(".conditional-breakpoint-panel");
+}
+
+async function waitForConditionalPanelFocus(dbg) {
+  if (isCm6Enabled) {
+    return waitFor(
+      () =>
+        dbg.win.document.activeElement.classList.contains("cm-content") &&
+        dbg.win.document.activeElement.closest(".conditional-breakpoint-panel")
+    );
+  }
+  return waitFor(() => dbg.win.document.activeElement.tagName === "TEXTAREA");
+}
+
+
+
+
+
+
+
 
 
 
@@ -1838,8 +1876,12 @@ const selectors = {
     `.outline-list__element:nth-child(${i}) .function-signature`,
   outlineItems: ".outline-list__element",
   conditionalPanel: ".conditional-breakpoint-panel",
-  conditionalPanelInput: ".conditional-breakpoint-panel textarea",
-  logPanelInput: ".conditional-breakpoint-panel.log-point textarea",
+  conditionalPanelInput: `.conditional-breakpoint-panel  ${
+    isCm6Enabled ? ".cm-content" : "textarea"
+  }`,
+  logPanelInput: `.conditional-breakpoint-panel.log-point ${
+    isCm6Enabled ? ".cm-content" : "textarea"
+  }`,
   conditionalBreakpointInSecPane: ".breakpoint.is-conditional",
   logPointPanel: ".conditional-breakpoint-panel.log-point",
   logPointInSecPane: ".breakpoint.is-log",
@@ -2087,6 +2129,11 @@ async function typeInPanel(dbg, text, inLogPanel = false) {
   
   pressKey(dbg, "End");
   type(dbg, text);
+  
+  
+  if (isCm6Enabled) {
+    await wait(1000);
+  }
   pressKey(dbg, "Enter");
 }
 
@@ -2197,6 +2244,7 @@ function getEditorContent(dbg) {
 
 
 function setEditorCursorAt(dbg, line, column) {
+  scrollEditorIntoView(dbg, line, 0);
   return getCMEditor(dbg).setCursorAt(line, column);
 }
 
