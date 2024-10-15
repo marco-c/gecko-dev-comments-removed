@@ -170,12 +170,12 @@ bool FeatureOptions::init(JSContext* cx, HandleValue val) {
           return false;
         }
 
+        
         if (!jsStringBuiltins) {
-          JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                   JSMSG_WASM_UNKNOWN_BUILTIN);
-          return false;
+          continue;
         }
 
+        
         if (this->jsStringBuiltins && jsStringBuiltins) {
           JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                    JSMSG_WASM_DUPLICATE_BUILTIN);
