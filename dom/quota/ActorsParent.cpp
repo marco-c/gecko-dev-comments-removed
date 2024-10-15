@@ -1335,6 +1335,13 @@ bool IsDirectoryLockBlockedByUninitStorageOperation(
                                   DirectoryLockCategory::UninitStorage);
 }
 
+bool IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation(
+    const RefPtr<DirectoryLock>& aDirectoryLock) {
+  return IsDirectoryLockBlockedBy(aDirectoryLock,
+                                  {DirectoryLockCategory::UninitStorage,
+                                   DirectoryLockCategory::UninitOrigins});
+}
+
 }  
 
 
@@ -5374,15 +5381,22 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentOrigin(
                 GetInfoFromValidatedPrincipalInfo(aPrincipalInfo),
                 CreateAndRejectBoolPromise);
 
-  
-  
-  
-  
-
   RefPtr<UniversalDirectoryLock> directoryLock = CreateDirectoryLockInternal(
       PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
       OriginScope::FromOrigin(principalMetadata.mOrigin),
       Nullable<Client::Type>(),  false);
+
+  
+  
+  
+  
+  
+  
+  if (IsPersistentOriginInitialized(aPrincipalInfo) &&
+      !IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation(
+          directoryLock)) {
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
 
   return directoryLock->Acquire()->Then(
       GetCurrentSerialEventTarget(), __func__,
@@ -5401,6 +5415,21 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentOrigin(
     const PrincipalInfo& aPrincipalInfo,
     RefPtr<UniversalDirectoryLock> aDirectoryLock) {
   AssertIsOnOwningThread();
+  MOZ_ASSERT(aDirectoryLock);
+  MOZ_ASSERT(aDirectoryLock->Acquired());
+
+  
+  
+  
+  
+  
+  
+  
+  if (IsPersistentOriginInitialized(aPrincipalInfo)) {
+    DropDirectoryLock(aDirectoryLock);
+
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
 
   auto initializePersistentOriginOp = CreateInitializePersistentOriginOp(
       WrapMovingNotNullUnchecked(this), aPrincipalInfo,
@@ -5522,15 +5551,22 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryOrigin(
                 GetInfoFromValidatedPrincipalInfo(aPrincipalInfo),
                 CreateAndRejectBoolPromise);
 
-  
-  
-  
-  
-
   RefPtr<UniversalDirectoryLock> directoryLock = CreateDirectoryLockInternal(
       PersistenceScope::CreateFromValue(aPersistenceType),
       OriginScope::FromOrigin(principalMetadata.mOrigin),
       Nullable<Client::Type>(),  false);
+
+  
+  
+  
+  
+  
+  
+  if (IsTemporaryOriginInitialized(aPersistenceType, aPrincipalInfo) &&
+      !IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation(
+          directoryLock)) {
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
 
   return directoryLock->Acquire()->Then(
       GetCurrentSerialEventTarget(), __func__,
@@ -5549,6 +5585,21 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryOrigin(
     PersistenceType aPersistenceType, const PrincipalInfo& aPrincipalInfo,
     RefPtr<UniversalDirectoryLock> aDirectoryLock) {
   AssertIsOnOwningThread();
+  MOZ_ASSERT(aDirectoryLock);
+  MOZ_ASSERT(aDirectoryLock->Acquired());
+
+  
+  
+  
+  
+  
+  
+  
+  if (IsTemporaryOriginInitialized(aPersistenceType, aPrincipalInfo)) {
+    DropDirectoryLock(aDirectoryLock);
+
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
 
   auto initializeTemporaryOriginOp = CreateInitializeTemporaryOriginOp(
       WrapMovingNotNullUnchecked(this), aPersistenceType, aPrincipalInfo,
