@@ -164,7 +164,7 @@ class Editor extends EventEmitter {
   searchState = {
     cursors: [],
     currentCursorIndex: -1,
-    query: null,
+    query: "",
   };
 
   #abortController;
@@ -3040,6 +3040,12 @@ class Editor extends EventEmitter {
     return inXView && inYView;
   }
 
+  
+
+
+
+
+
   #posToLineColumn(pos) {
     const cm = editors.get(this);
     if (!pos) {
@@ -3231,6 +3237,42 @@ class Editor extends EventEmitter {
     const offset = this.#positionToOffset(line);
     const el = this.#getElementAtOffset(offset);
     return el.closest(".cm-line");
+  }
+
+  
+  getSearchQuery() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      return this.searchState.query.toString();
+    }
+    return cm.state.search.query;
+  }
+
+  
+  
+  getSearchSelection() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const cursor =
+        this.searchState.cursors[this.searchState.currentCursorIndex];
+      if (!cursor) {
+        return { text: "", line: -1, column: -1 };
+      }
+
+      const cursorPosition = this.#posToLineColumn(cursor.to);
+      
+      return {
+        text: cursor.match[0],
+        line: cursorPosition.line - 1,
+        column: cursorPosition.column,
+      };
+    }
+    const cursor = cm.getCursor();
+    return {
+      text: cm.getSelection(),
+      line: cursor.line,
+      column: cursor.ch,
+    };
   }
 
   

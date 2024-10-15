@@ -2302,6 +2302,14 @@ function setSelection(dbg, startLine, endLine) {
   );
 }
 
+function getSearchQuery(dbg) {
+  return getCMEditor(dbg).getSearchQuery();
+}
+
+function getSearchSelection(dbg) {
+  return getCMEditor(dbg).getSearchSelection();
+}
+
 
 function getEditorFileMode(dbg) {
   return getCMEditor(dbg).getEditorFileMode();
