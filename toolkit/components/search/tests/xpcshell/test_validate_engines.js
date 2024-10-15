@@ -4,49 +4,115 @@
 
 
 
+
 "use strict";
 
-const { SearchService } = ChromeUtils.importESModule(
-  "resource://gre/modules/SearchService.sys.mjs"
-);
+const IDS = new Set();
 
-const ss = new SearchService();
+function uniqueId(id) {
+  while (IDS.has(id)) {
+    id += "_";
+  }
+  IDS.add(id);
+  return id;
+}
 
-add_task(async function test_validate_engines() {
+
+
+
+
+
+
+
+
+
+
+function* generateSubvariants(subVariants) {
+  if (!subVariants) {
+    yield undefined;
+    return;
+  }
+
+  for (let subVariant of subVariants) {
+    yield [
+      {
+        ...subVariant,
+        optional: undefined,
+        environment: { allRegionsAndLocales: true },
+      },
+    ];
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+function* generateVariants(variants) {
+  for (let variant of variants) {
+    for (let subVariants of generateSubvariants(variant.subVariants)) {
+      yield [
+        {
+          ...variant,
+          optional: undefined,
+          environment: { allRegionsAndLocales: true },
+          subVariants,
+        },
+      ];
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function* generateEngineVariants(engine) {
+  for (let variants of generateVariants(engine.variants)) {
+    let id = uniqueId(engine.identifier);
+    yield {
+      ...engine,
+      base: {
+        ...engine.base,
+        
+        name: id,
+      },
+      identifier: id,
+      variants,
+    };
+  }
+}
+
+add_task(async function test_validate_all_engines_and_variants() {
   let settings = RemoteSettings(SearchUtils.SETTINGS_KEY);
   let config = await settings.get();
-
-  
-  
-  
-  
-  
-  consoleAllowList.push("Could not load app provided search engine");
-  config = config.map(obj => {
+  config = config.flatMap(obj => {
     if (obj.recordType == "engine") {
-      return {
-        recordType: "engine",
-        identifier: obj.identifier,
-        base: {
-          name: obj.base.name,
-          urls: {
-            search: {
-              base: obj.base.urls.search.base || "",
-              searchTermParamName: "q",
-            },
-          },
-        },
-        variants: [
-          {
-            environment: { allRegionsAndLocales: true },
-          },
-        ],
-      };
+      return [...generateEngineVariants(obj)];
     }
-
     return obj;
   });
 
   sinon.stub(settings, "get").returns(config);
-  await ss.init();
+  await Services.search.init();
+
+  for (let id of IDS) {
+    Assert.ok(
+      !!Services.search.getEngineById(id),
+      `Engine with id '${id}' was found.`
+    );
+  }
 });
