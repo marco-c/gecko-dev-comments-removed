@@ -372,6 +372,12 @@ class QuotaManager final : public BackgroundThreadObject {
       const PrincipalInfo& aPrincipalInfo,
       RefPtr<UniversalDirectoryLock> aDirectoryLock);
 
+  RefPtr<BoolPromise> PersistentOriginInitialized(
+      const PrincipalInfo& aPrincipalInfo);
+
+  bool IsPersistentOriginInitializedInternal(
+      const OriginMetadata& aOriginMetadata) const;
+
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
@@ -384,6 +390,9 @@ class QuotaManager final : public BackgroundThreadObject {
   RefPtr<BoolPromise> InitializeTemporaryOrigin(
       PersistenceType aPersistenceType, const PrincipalInfo& aPrincipalInfo,
       RefPtr<UniversalDirectoryLock> aDirectoryLock);
+
+  RefPtr<BoolPromise> TemporaryOriginInitialized(
+      PersistenceType aPersistenceType, const PrincipalInfo& aPrincipalInfo);
 
   bool IsTemporaryOriginInitializedInternal(
       const OriginMetadata& aOriginMetadata) const;
@@ -454,6 +463,14 @@ class QuotaManager final : public BackgroundThreadObject {
   RefPtr<BoolPromise> ClearPrivateRepository();
 
   RefPtr<BoolPromise> ClearStorage();
+
+  RefPtr<BoolPromise> ShutdownStoragesForOrigin(
+      Maybe<PersistenceType> aPersistenceType,
+      const PrincipalInfo& aPrincipalInfo);
+
+  RefPtr<BoolPromise> ShutdownStoragesForClient(
+      Maybe<PersistenceType> aPersistenceType,
+      const PrincipalInfo& aPrincipalInfo, Client::Type aClientType);
 
   RefPtr<BoolPromise> ShutdownStorage(
       Maybe<OriginOperationCallbackOptions> aCallbackOptions = Nothing(),

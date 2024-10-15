@@ -49,6 +49,34 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+
+
+  [must_use] nsIQuotaRequest
+  persistentOriginInitialized(in nsIPrincipal aPrincipal);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [must_use] nsIQuotaRequest
+  temporaryOriginInitialized(in ACString aPersistenceType,
+                             in nsIPrincipal aPrincipal);
+
+  
+
+
+
+
+
+
   [must_use] nsIQuotaRequest
   init();
 
@@ -335,6 +363,23 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+  [must_use] nsIQuotaRequest
+  resetStoragesForPrincipal(in nsIPrincipal aPrincipal,
+                            [optional] in ACString aPersistenceType);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -343,9 +388,9 @@ interface nsIQuotaManagerService : nsISupports
 
 
   [must_use] nsIQuotaRequest
-  resetStoragesForPrincipal(in nsIPrincipal aPrincipal,
-                            [optional] in ACString aPersistenceType,
-                            [optional] in AString aClientType);
+  resetStoragesForClient(in nsIPrincipal aPrincipal,
+                         in AString aClientType,
+                         [optional] in ACString aPersistenceType);
 
   
 
