@@ -2267,7 +2267,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
-#ifdef NIGHTLY_BUILD
   if (key == JSProto_Uint8Array &&
       !JS::Prefs::experimental_uint8array_base64() &&
       (id == NameToId(cx->names().setFromBase64) ||
@@ -2286,6 +2285,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
+#ifdef NIGHTLY_BUILD
   
   
   
