@@ -393,6 +393,12 @@ class JS::Realm : public JS::shadow::Realm {
   bool allocatedDuringIncrementalGC_;
   bool initializingGlobal_ = true;
 
+  
+  
+  
+  
+  bool isTracingExecution_ = false;
+
   js::UniquePtr<js::coverage::LCovRealm> lcovRealm_ = nullptr;
 
  public:
@@ -690,6 +696,24 @@ class JS::Realm : public JS::shadow::Realm {
 
   void setIsDebuggee();
   void unsetIsDebuggee();
+
+  bool isTracingExecution() { return isTracingExecution_; }
+
+  void enableExecutionTracing() {
+    isTracingExecution_ = true;
+    setIsDebuggee();
+    updateDebuggerObservesAllExecution();
+  }
+
+  void disableExecutionTracing() {
+    isTracingExecution_ = false;
+    
+    
+    updateDebuggerObservesAllExecution();
+    if (!hasDebuggers()) {
+      unsetIsDebuggee();
+    }
+  }
 
   DebuggerVector& getDebuggers(const JS::AutoRequireNoGC& nogc) {
     return debuggers_;
