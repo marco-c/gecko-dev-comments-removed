@@ -710,6 +710,29 @@ static double MakeTime(double hour, double min, double sec, double ms) {
 
 
 
+static double MakeFullYear(double year) {
+  
+  if (std::isnan(year)) {
+    return year;
+  }
+
+  
+  double truncated = ToInteger(year);
+
+  
+  if (0 <= truncated && truncated <= 99) {
+    return 1900 + truncated;
+  }
+
+  
+  return truncated;
+}
+
+
+
+
+
+
 
 
 static bool date_UTC(JSContext* cx, unsigned argc, Value* vp) {
@@ -2348,55 +2371,35 @@ static bool date_getTimezoneOffset(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_setTime(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setTime"));
   if (!unwrapped) {
     return false;
   }
 
-  if (args.length() == 0) {
-    unwrapped->setUTCTime(ClippedTime::invalid(), args.rval());
-    return true;
-  }
-
+  
   double result;
-  if (!ToNumber(cx, args[0], &result)) {
+  if (!ToNumber(cx, args.get(0), &result)) {
     return false;
   }
 
+  
   unwrapped->setUTCTime(TimeClip(result), args.rval());
   return true;
 }
 
-static bool GetMsecsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
-                              double t, double* millis) {
-  if (args.length() <= i) {
-    *millis = msFromTime(t);
-    return true;
-  }
-  return ToNumber(cx, args[i], millis);
-}
 
-static bool GetSecsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
-                             double t, double* sec) {
-  if (args.length() <= i) {
-    *sec = SecFromTime(t);
-    return true;
-  }
-  return ToNumber(cx, args[i], sec);
-}
 
-static bool GetMinsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
-                             double t, double* mins) {
-  if (args.length() <= i) {
-    *mins = MinFromTime(t);
-    return true;
-  }
-  return ToNumber(cx, args[i], mins);
-}
+
 
 
 static bool date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
@@ -2408,13 +2411,24 @@ static bool date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
   if (!unwrapped) {
     return false;
   }
-  double t = LocalTime(unwrapped->forceUTC(), unwrapped->UTCTime().toNumber());
+
+  
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double ms;
   if (!ToNumber(cx, args.get(0), &ms)) {
     return false;
   }
+
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  t = LocalTime(unwrapped->forceUTC(), t);
 
   
   double time = MakeTime(HourFromTime(t), MinFromTime(t), SecFromTime(t), ms);
@@ -2428,9 +2442,14 @@ static bool date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCMilliseconds"));
   if (!unwrapped) {
@@ -2445,6 +2464,14 @@ static bool date_setUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
   if (!ToNumber(cx, args.get(0), &milli)) {
     return false;
   }
+
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
   double time =
       MakeTime(HourFromTime(t), MinFromTime(t), SecFromTime(t), milli);
 
@@ -2457,9 +2484,14 @@ static bool date_setUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setSeconds"));
   if (!unwrapped) {
@@ -2467,7 +2499,7 @@ static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = LocalTime(unwrapped->forceUTC(), unwrapped->UTCTime().toNumber());
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double s;
@@ -2477,8 +2509,22 @@ static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double milli;
-  if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
+  if (args.length() > 1 && !ToNumber(cx, args[1], &milli)) {
     return false;
+  }
+
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  t = LocalTime(unwrapped->forceUTC(), t);
+
+  
+  if (args.length() <= 1) {
+    milli = msFromTime(t);
   }
 
   
@@ -2494,9 +2540,14 @@ static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCSeconds"));
   if (!unwrapped) {
@@ -2514,8 +2565,19 @@ static bool date_setUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double milli;
-  if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
+  if (args.length() > 1 && !ToNumber(cx, args[1], &milli)) {
     return false;
+  }
+
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  if (args.length() <= 1) {
+    milli = msFromTime(t);
   }
 
   
@@ -2531,9 +2593,14 @@ static bool date_setUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setMinutes"));
   if (!unwrapped) {
@@ -2541,7 +2608,7 @@ static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = LocalTime(unwrapped->forceUTC(), unwrapped->UTCTime().toNumber());
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double m;
@@ -2551,14 +2618,33 @@ static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double s;
-  if (!GetSecsOrDefault(cx, args, 1, t, &s)) {
+  if (args.length() > 1 && !ToNumber(cx, args[1], &s)) {
     return false;
   }
 
   
   double milli;
-  if (!GetMsecsOrDefault(cx, args, 2, t, &milli)) {
+  if (args.length() > 2 && !ToNumber(cx, args[2], &milli)) {
     return false;
+  }
+
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  t = LocalTime(unwrapped->forceUTC(), t);
+
+  
+  if (args.length() <= 1) {
+    s = SecFromTime(t);
+  }
+
+  
+  if (args.length() <= 2) {
+    milli = msFromTime(t);
   }
 
   
@@ -2573,9 +2659,14 @@ static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCMinutes"));
   if (!unwrapped) {
@@ -2593,14 +2684,30 @@ static bool date_setUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double s;
-  if (!GetSecsOrDefault(cx, args, 1, t, &s)) {
+  if (args.length() > 1 && !ToNumber(cx, args[1], &s)) {
     return false;
   }
 
   
   double milli;
-  if (!GetMsecsOrDefault(cx, args, 2, t, &milli)) {
+  if (args.length() > 2 && !ToNumber(cx, args[2], &milli)) {
     return false;
+  }
+
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  if (args.length() <= 1) {
+    s = SecFromTime(t);
+  }
+
+  
+  if (args.length() <= 2) {
+    milli = msFromTime(t);
   }
 
   
@@ -2615,9 +2722,14 @@ static bool date_setUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setHours"));
   if (!unwrapped) {
@@ -2625,7 +2737,7 @@ static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = LocalTime(unwrapped->forceUTC(), unwrapped->UTCTime().toNumber());
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double h;
@@ -2635,20 +2747,44 @@ static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double m;
-  if (!GetMinsOrDefault(cx, args, 1, t, &m)) {
+  if (args.length() > 1 && !ToNumber(cx, args[1], &m)) {
     return false;
   }
 
   
   double s;
-  if (!GetSecsOrDefault(cx, args, 2, t, &s)) {
+  if (args.length() > 2 && !ToNumber(cx, args[2], &s)) {
     return false;
   }
 
   
   double milli;
-  if (!GetMsecsOrDefault(cx, args, 3, t, &milli)) {
+  if (args.length() > 3 && !ToNumber(cx, args[3], &milli)) {
     return false;
+  }
+
+  
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  t = LocalTime(unwrapped->forceUTC(), t);
+
+  
+  if (args.length() <= 1) {
+    m = MinFromTime(t);
+  }
+
+  
+  if (args.length() <= 2) {
+    s = SecFromTime(t);
+  }
+
+  
+  if (args.length() <= 3) {
+    milli = msFromTime(t);
   }
 
   
@@ -2663,9 +2799,14 @@ static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setUTCHours(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCHours"));
   if (!unwrapped) {
@@ -2683,27 +2824,48 @@ static bool date_setUTCHours(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double m;
-  if (!GetMinsOrDefault(cx, args, 1, t, &m)) {
+  if (args.length() > 1 && !ToNumber(cx, args[1], &m)) {
     return false;
   }
 
   
   double s;
-  if (!GetSecsOrDefault(cx, args, 2, t, &s)) {
+  if (args.length() > 2 && !ToNumber(cx, args[2], &s)) {
     return false;
   }
 
   
   double milli;
-  if (!GetMsecsOrDefault(cx, args, 3, t, &milli)) {
+  if (args.length() > 3 && !ToNumber(cx, args[3], &milli)) {
     return false;
   }
 
   
-  double newDate = MakeDate(Day(t), MakeTime(h, m, s, milli));
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
 
   
-  ClippedTime v = TimeClip(newDate);
+  if (args.length() <= 1) {
+    m = MinFromTime(t);
+  }
+
+  
+  if (args.length() <= 2) {
+    s = SecFromTime(t);
+  }
+
+  
+  if (args.length() <= 3) {
+    milli = msFromTime(t);
+  }
+
+  
+  double date = MakeDate(Day(t), MakeTime(h, m, s, milli));
+
+  
+  ClippedTime v = TimeClip(date);
 
   
   unwrapped->setUTCTime(v, args.rval());
@@ -2711,9 +2873,14 @@ static bool date_setUTCHours(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setDate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setDate"));
   if (!unwrapped) {
@@ -2721,17 +2888,26 @@ static bool date_setDate(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = LocalTime(unwrapped->forceUTC(), unwrapped->UTCTime().toNumber());
+  double t = unwrapped->UTCTime().toNumber();
 
   
-  double date;
-  if (!ToNumber(cx, args.get(0), &date)) {
+  double dt;
+  if (!ToNumber(cx, args.get(0), &dt)) {
     return false;
   }
 
   
-  double newDate = MakeDate(
-      MakeDay(::YearFromTime(t), ::MonthFromTime(t), date), TimeWithinDay(t));
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  t = LocalTime(unwrapped->forceUTC(), t);
+
+  
+  double newDate = MakeDate(MakeDay(::YearFromTime(t), ::MonthFromTime(t), dt),
+                            TimeWithinDay(t));
 
   
   ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), newDate));
@@ -2741,9 +2917,15 @@ static bool date_setDate(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_setUTCDate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCDate"));
   if (!unwrapped) {
@@ -2754,14 +2936,20 @@ static bool date_setUTCDate(JSContext* cx, unsigned argc, Value* vp) {
   double t = unwrapped->UTCTime().toNumber();
 
   
-  double date;
-  if (!ToNumber(cx, args.get(0), &date)) {
+  double dt;
+  if (!ToNumber(cx, args.get(0), &dt)) {
     return false;
   }
 
   
-  double newDate = MakeDate(
-      MakeDay(::YearFromTime(t), ::MonthFromTime(t), date), TimeWithinDay(t));
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  double newDate = MakeDate(MakeDay(::YearFromTime(t), ::MonthFromTime(t), dt),
+                            TimeWithinDay(t));
 
   
   ClippedTime v = TimeClip(newDate);
@@ -2771,28 +2959,15 @@ static bool date_setUTCDate(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static bool GetDateOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
-                             double t, double* date) {
-  if (args.length() <= i) {
-    *date = DateFromTime(t);
-    return true;
-  }
-  return ToNumber(cx, args[i], date);
-}
 
-static bool GetMonthOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
-                              double t, double* month) {
-  if (args.length() <= i) {
-    *month = ::MonthFromTime(t);
-    return true;
-  }
-  return ToNumber(cx, args[i], month);
-}
+
+
 
 
 static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setMonth"));
   if (!unwrapped) {
@@ -2800,7 +2975,7 @@ static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = LocalTime(unwrapped->forceUTC(), unwrapped->UTCTime().toNumber());
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double m;
@@ -2809,14 +2984,28 @@ static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double date;
-  if (!GetDateOrDefault(cx, args, 1, t, &date)) {
+  double dt;
+  if (args.length() > 1 && !ToNumber(cx, args[1], &dt)) {
     return false;
   }
 
   
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  t = LocalTime(unwrapped->forceUTC(), t);
+
+  
+  if (args.length() <= 1) {
+    dt = DateFromTime(t);
+  }
+
+  
   double newDate =
-      MakeDate(MakeDay(::YearFromTime(t), m, date), TimeWithinDay(t));
+      MakeDate(MakeDay(::YearFromTime(t), m, dt), TimeWithinDay(t));
 
   
   ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), newDate));
@@ -2827,9 +3016,14 @@ static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCMonth"));
   if (!unwrapped) {
@@ -2846,14 +3040,25 @@ static bool date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double date;
-  if (!GetDateOrDefault(cx, args, 1, t, &date)) {
+  double dt;
+  if (args.length() > 1 && !ToNumber(cx, args[1], &dt)) {
     return false;
   }
 
   
+  if (std::isnan(t)) {
+    args.rval().setNaN();
+    return true;
+  }
+
+  
+  if (args.length() <= 1) {
+    dt = DateFromTime(t);
+  }
+
+  
   double newDate =
-      MakeDate(MakeDay(::YearFromTime(t), m, date), TimeWithinDay(t));
+      MakeDate(MakeDay(::YearFromTime(t), m, dt), TimeWithinDay(t));
 
   
   ClippedTime v = TimeClip(newDate);
@@ -2863,24 +3068,15 @@ static bool date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static double ThisLocalTimeOrZero(DateTimeInfo::ForceUTC forceUTC,
-                                  Handle<DateObject*> dateObj) {
-  double t = dateObj->UTCTime().toNumber();
-  if (std::isnan(t)) {
-    return +0;
-  }
-  return LocalTime(forceUTC, t);
-}
 
-static double ThisUTCTimeOrZero(Handle<DateObject*> dateObj) {
-  double t = dateObj->as<DateObject>().UTCTime().toNumber();
-  return std::isnan(t) ? +0 : t;
-}
+
+
 
 
 static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setFullYear"));
   if (!unwrapped) {
@@ -2888,7 +3084,7 @@ static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = ThisLocalTimeOrZero(unwrapped->forceUTC(), unwrapped);
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double y;
@@ -2897,19 +3093,34 @@ static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  if (std::isnan(t)) {
+    t = 0;
+  } else {
+    t = LocalTime(unwrapped->forceUTC(), t);
+  }
+
+  
   double m;
-  if (!GetMonthOrDefault(cx, args, 1, t, &m)) {
-    return false;
+  if (args.length() <= 1) {
+    m = MonthFromTime(t);
+  } else {
+    if (!ToNumber(cx, args[1], &m)) {
+      return false;
+    }
   }
 
   
-  double date;
-  if (!GetDateOrDefault(cx, args, 2, t, &date)) {
-    return false;
+  double dt;
+  if (args.length() <= 2) {
+    dt = DateFromTime(t);
+  } else {
+    if (!ToNumber(cx, args[2], &dt)) {
+      return false;
+    }
   }
 
   
-  double newDate = MakeDate(MakeDay(y, m, date), TimeWithinDay(t));
+  double newDate = MakeDate(MakeDay(y, m, dt), TimeWithinDay(t));
 
   
   ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), newDate));
@@ -2920,9 +3131,14 @@ static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCFullYear"));
   if (!unwrapped) {
@@ -2930,7 +3146,12 @@ static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = ThisUTCTimeOrZero(unwrapped);
+  double t = unwrapped->UTCTime().toNumber();
+
+  
+  if (std::isnan(t)) {
+    t = 0;
+  }
 
   
   double y;
@@ -2940,18 +3161,26 @@ static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double m;
-  if (!GetMonthOrDefault(cx, args, 1, t, &m)) {
-    return false;
+  if (args.length() <= 1) {
+    m = MonthFromTime(t);
+  } else {
+    if (!ToNumber(cx, args[1], &m)) {
+      return false;
+    }
   }
 
   
-  double date;
-  if (!GetDateOrDefault(cx, args, 2, t, &date)) {
-    return false;
+  double dt;
+  if (args.length() <= 2) {
+    dt = DateFromTime(t);
+  } else {
+    if (!ToNumber(cx, args[2], &dt)) {
+      return false;
+    }
   }
 
   
-  double newDate = MakeDate(MakeDay(y, m, date), TimeWithinDay(t));
+  double newDate = MakeDate(MakeDay(y, m, dt), TimeWithinDay(t));
 
   
   ClippedTime v = TimeClip(newDate);
@@ -2962,9 +3191,14 @@ static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   Rooted<DateObject*> unwrapped(
       cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setYear"));
   if (!unwrapped) {
@@ -2972,7 +3206,7 @@ static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double t = ThisLocalTimeOrZero(unwrapped->forceUTC(), unwrapped);
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double y;
@@ -2981,25 +3215,26 @@ static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (std::isnan(y)) {
-    unwrapped->setUTCTime(ClippedTime::invalid(), args.rval());
-    return true;
+  if (std::isnan(t)) {
+    t = 0;
+  } else {
+    t = LocalTime(unwrapped->forceUTC(), t);
   }
 
   
-  double yint = ToInteger(y);
-  if (0 <= yint && yint <= 99) {
-    yint += 1900;
-  }
+  double yyyy = MakeFullYear(y);
 
   
-  double day = MakeDay(yint, ::MonthFromTime(t), DateFromTime(t));
+  double day = MakeDay(yyyy, ::MonthFromTime(t), DateFromTime(t));
 
   
-  double u = UTC(unwrapped->forceUTC(), MakeDate(day, TimeWithinDay(t)));
+  double date = MakeDate(day, TimeWithinDay(t));
 
   
-  unwrapped->setUTCTime(TimeClip(u), args.rval());
+  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), date));
+
+  
+  unwrapped->setUTCTime(u, args.rval());
   return true;
 }
 
