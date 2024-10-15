@@ -1143,6 +1143,8 @@ class Editor extends EventEmitter {
 
 
 
+
+
   setLineContentMarker(marker) {
     const cm = editors.get(this);
     
@@ -1184,11 +1186,20 @@ class Editor extends EventEmitter {
     const cachedPositionContentMarkers = this.#posContentMarkers;
 
     class NodeWidget extends WidgetType {
-      constructor(line, column, markerId, createElementNode) {
+      constructor({
+        line,
+        column,
+        markerId,
+        createElementNode,
+        getMarkerEqualityValue,
+      }) {
         super();
         this.line = line;
         this.column = column;
         this.markerId = markerId;
+        this.equalityValue = getMarkerEqualityValue
+          ? getMarkerEqualityValue(line, column)
+          : {};
         this.toDOM = () => createElementNode(line, column);
       }
 
@@ -1196,7 +1207,16 @@ class Editor extends EventEmitter {
         return (
           this.line == widget.line &&
           this.column == widget.column &&
-          this.markerId == widget.markerId
+          this.markerId == widget.markerId &&
+          this.#isCustomValueEqual(widget)
+        );
+      }
+
+      #isCustomValueEqual(widget) {
+        return Object.keys(this.equalityValue).every(
+          key =>
+            widget.equalityValue.hasOwnProperty(key) &&
+            widget.equalityValue[key] === this.equalityValue[key]
         );
       }
     }
@@ -1255,12 +1275,13 @@ class Editor extends EventEmitter {
             
             
             const nodeDecoration = Decoration.widget({
-              widget: new NodeWidget(
-                position.line,
-                position.column,
-                marker.id,
-                marker.createPositionElementNode
-              ),
+              widget: new NodeWidget({
+                line: position.line,
+                column: position.column,
+                markerId: marker.id,
+                createElementNode: marker.createPositionElementNode,
+                getMarkerEqualityValue: marker.getMarkerEqualityValue,
+              }),
               
               
               side: 1,
