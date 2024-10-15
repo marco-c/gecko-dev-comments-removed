@@ -501,6 +501,10 @@ pref("browser.urlbar.quicksuggest.hideSettingsUI", false);
 
 
 
+pref("browser.urlbar.quicksuggest.rankingMode", "default");
+
+
+
 pref("browser.urlbar.quicksuggest.rustEnabled", true);
 
 
