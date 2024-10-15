@@ -145,31 +145,31 @@ class FuncType {
   HashNumber hash(const RecGroup* recGroup) const {
     HashNumber hn = 0;
     for (const ValType& vt : args_) {
-      hn = mozilla::AddToHash(hn, vt.forMatch(recGroup).hash());
+      hn = mozilla::AddToHash(hn, vt.forIsoEquals(recGroup).hash());
     }
     for (const ValType& vt : results_) {
-      hn = mozilla::AddToHash(hn, vt.forMatch(recGroup).hash());
+      hn = mozilla::AddToHash(hn, vt.forIsoEquals(recGroup).hash());
     }
     return hn;
   }
 
   
   
-  static bool matches(const RecGroup* lhsRecGroup, const FuncType& lhs,
-                      const RecGroup* rhsRecGroup, const FuncType& rhs) {
+  static bool isoEquals(const RecGroup* lhsRecGroup, const FuncType& lhs,
+                        const RecGroup* rhsRecGroup, const FuncType& rhs) {
     if (lhs.args_.length() != rhs.args_.length() ||
         lhs.results_.length() != rhs.results_.length()) {
       return false;
     }
     for (uint32_t i = 0; i < lhs.args_.length(); i++) {
-      if (lhs.args_[i].forMatch(lhsRecGroup) !=
-          rhs.args_[i].forMatch(rhsRecGroup)) {
+      if (lhs.args_[i].forIsoEquals(lhsRecGroup) !=
+          rhs.args_[i].forIsoEquals(rhsRecGroup)) {
         return false;
       }
     }
     for (uint32_t i = 0; i < lhs.results_.length(); i++) {
-      if (lhs.results_[i].forMatch(lhsRecGroup) !=
-          rhs.results_[i].forMatch(rhsRecGroup)) {
+      if (lhs.results_[i].forIsoEquals(lhsRecGroup) !=
+          rhs.results_[i].forIsoEquals(rhsRecGroup)) {
         return false;
       }
     }
@@ -262,17 +262,18 @@ struct FieldType {
 
   HashNumber hash(const RecGroup* recGroup) const {
     HashNumber hn = 0;
-    hn = mozilla::AddToHash(hn, type.forMatch(recGroup).hash());
+    hn = mozilla::AddToHash(hn, type.forIsoEquals(recGroup).hash());
     hn = mozilla::AddToHash(hn, HashNumber(isMutable));
     return hn;
   }
 
   
   
-  static bool matches(const RecGroup* lhsRecGroup, const FieldType& lhs,
-                      const RecGroup* rhsRecGroup, const FieldType& rhs) {
+  static bool isoEquals(const RecGroup* lhsRecGroup, const FieldType& lhs,
+                        const RecGroup* rhsRecGroup, const FieldType& rhs) {
     return lhs.isMutable == rhs.isMutable &&
-           lhs.type.forMatch(lhsRecGroup) == rhs.type.forMatch(rhsRecGroup);
+           lhs.type.forIsoEquals(lhsRecGroup) ==
+               rhs.type.forIsoEquals(rhsRecGroup);
   }
 
   
@@ -301,15 +302,23 @@ using OutlineTraceOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
 
 class StructType {
  public:
-  FieldTypeVector fields_;  
-
-  uint32_t size_;  
+  
+  FieldTypeVector fields_;
+  
+  uint32_t size_;
+  
   FieldOffsetVector fieldOffsets_;
+  
+  
   InlineTraceOffsetVector inlineTraceOffsets_;
+  
+  
   OutlineTraceOffsetVector outlineTraceOffsets_;
+  
+  bool isDefaultable_;
 
  public:
-  StructType() : size_(0) {}
+  StructType() : size_(0), isDefaultable_(false) {}
 
   explicit StructType(FieldTypeVector&& fields)
       : fields_(std::move(fields)), size_(0) {}
@@ -319,14 +328,7 @@ class StructType {
 
   [[nodiscard]] bool init();
 
-  bool isDefaultable() const {
-    for (auto& field : fields_) {
-      if (!field.type.isDefaultable()) {
-        return false;
-      }
-    }
-    return true;
-  }
+  bool isDefaultable() const { return isDefaultable_; }
 
   uint32_t fieldOffset(uint32_t fieldIndex) const {
     return fieldOffsets_[fieldIndex];
@@ -342,15 +344,15 @@ class StructType {
 
   
   
-  static bool matches(const RecGroup* lhsRecGroup, const StructType& lhs,
-                      const RecGroup* rhsRecGroup, const StructType& rhs) {
+  static bool isoEquals(const RecGroup* lhsRecGroup, const StructType& lhs,
+                        const RecGroup* rhsRecGroup, const StructType& rhs) {
     if (lhs.fields_.length() != rhs.fields_.length()) {
       return false;
     }
     for (uint32_t i = 0; i < lhs.fields_.length(); i++) {
       const FieldType& lhsField = lhs.fields_[i];
       const FieldType& rhsField = rhs.fields_[i];
-      if (!FieldType::matches(lhsRecGroup, lhsField, rhsRecGroup, rhsField)) {
+      if (!FieldType::isoEquals(lhsRecGroup, lhsField, rhsRecGroup, rhsField)) {
         return false;
       }
     }
@@ -442,10 +444,10 @@ class ArrayType {
 
   
   
-  static bool matches(const RecGroup* lhsRecGroup, const ArrayType& lhs,
-                      const RecGroup* rhsRecGroup, const ArrayType& rhs) {
-    return FieldType::matches(lhsRecGroup, lhs.fieldType_, rhsRecGroup,
-                              rhs.fieldType_);
+  static bool isoEquals(const RecGroup* lhsRecGroup, const ArrayType& lhs,
+                        const RecGroup* rhsRecGroup, const ArrayType& rhs) {
+    return FieldType::isoEquals(lhsRecGroup, lhs.fieldType_, rhsRecGroup,
+                                rhs.fieldType_);
   }
 
   
@@ -699,6 +701,8 @@ class TypeDef {
 
   bool isArrayType() const { return kind_ == TypeDefKind::Array; }
 
+  bool isGcType() const { return isStructType() || isArrayType(); }
+
   const FuncType& funcType() const {
     MOZ_ASSERT(isFuncType());
     return funcType_;
@@ -731,12 +735,13 @@ class TypeDef {
 
   
   
-  static inline uintptr_t forMatch(const TypeDef* typeDef,
-                                   const RecGroup* recGroup);
+  static inline uintptr_t forIsoEquals(const TypeDef* typeDef,
+                                       const RecGroup* recGroup);
 
   HashNumber hash() const {
     HashNumber hn = HashNumber(kind_);
-    hn = mozilla::AddToHash(hn, TypeDef::forMatch(superTypeDef_, &recGroup()));
+    hn = mozilla::AddToHash(hn,
+                            TypeDef::forIsoEquals(superTypeDef_, &recGroup()));
     hn = mozilla::AddToHash(hn, isFinal_);
     switch (kind_) {
       case TypeDefKind::Func:
@@ -756,27 +761,27 @@ class TypeDef {
 
   
   
-  static bool matches(const TypeDef& lhs, const TypeDef& rhs) {
+  static bool isoEquals(const TypeDef& lhs, const TypeDef& rhs) {
     if (lhs.kind_ != rhs.kind_) {
       return false;
     }
     if (lhs.isFinal_ != rhs.isFinal_) {
       return false;
     }
-    if (TypeDef::forMatch(lhs.superTypeDef_, &lhs.recGroup()) !=
-        TypeDef::forMatch(rhs.superTypeDef_, &rhs.recGroup())) {
+    if (TypeDef::forIsoEquals(lhs.superTypeDef_, &lhs.recGroup()) !=
+        TypeDef::forIsoEquals(rhs.superTypeDef_, &rhs.recGroup())) {
       return false;
     }
     switch (lhs.kind_) {
       case TypeDefKind::Func:
-        return FuncType::matches(&lhs.recGroup(), lhs.funcType_,
-                                 &rhs.recGroup(), rhs.funcType_);
+        return FuncType::isoEquals(&lhs.recGroup(), lhs.funcType_,
+                                   &rhs.recGroup(), rhs.funcType_);
       case TypeDefKind::Struct:
-        return StructType::matches(&lhs.recGroup(), lhs.structType_,
-                                   &rhs.recGroup(), rhs.structType_);
+        return StructType::isoEquals(&lhs.recGroup(), lhs.structType_,
+                                     &rhs.recGroup(), rhs.structType_);
       case TypeDefKind::Array:
-        return ArrayType::matches(&lhs.recGroup(), lhs.arrayType_,
-                                  &rhs.recGroup(), rhs.arrayType_);
+        return ArrayType::isoEquals(&lhs.recGroup(), lhs.arrayType_,
+                                    &rhs.recGroup(), rhs.arrayType_);
       case TypeDefKind::None:
         MOZ_CRASH("can't match TypeDefKind::None");
     }
@@ -1049,6 +1054,16 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
     return (uint32_t)groupTypeIndex;
   }
 
+  bool hasGcType() const {
+    for (uint32_t groupTypeIndex = 0; groupTypeIndex < numTypes();
+         groupTypeIndex++) {
+      if (type(groupTypeIndex).isGcType()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   HashNumber hash() const {
     HashNumber hn = 0;
     for (uint32_t i = 0; i < numTypes(); i++) {
@@ -1059,12 +1074,12 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
 
   
   
-  static bool matches(const RecGroup& lhs, const RecGroup& rhs) {
+  static bool isoEquals(const RecGroup& lhs, const RecGroup& rhs) {
     if (lhs.numTypes() != rhs.numTypes()) {
       return false;
     }
     for (uint32_t i = 0; i < lhs.numTypes(); i++) {
-      if (!TypeDef::matches(lhs.type(i), rhs.type(i))) {
+      if (!TypeDef::isoEquals(lhs.type(i), rhs.type(i))) {
         return false;
       }
     }
@@ -1186,7 +1201,6 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
   }
 
   
-  
   [[nodiscard]] bool addRecGroup(SharedRecGroup recGroup) {
     
     MOZ_ASSERT(!pendingRecGroup_);
@@ -1233,6 +1247,15 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
 
   const SharedRecGroupVector& groups() const { return recGroups_; }
 
+  bool hasGcType() const {
+    for (const SharedRecGroup& recGroup : groups()) {
+      if (recGroup->hasGcType()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   
 
   uint32_t indexOf(const TypeDef& typeDef) const {
@@ -1275,8 +1298,8 @@ class TypeHandle {
 
 
 
-inline uintptr_t TypeDef::forMatch(const TypeDef* typeDef,
-                                   const RecGroup* recGroup) {
+inline uintptr_t TypeDef::forIsoEquals(const TypeDef* typeDef,
+                                       const RecGroup* recGroup) {
   
   
   static_assert(alignof(TypeDef) > 1);
@@ -1295,11 +1318,11 @@ inline uintptr_t TypeDef::forMatch(const TypeDef* typeDef,
 }
 
 
-inline MatchTypeCode MatchTypeCode::forMatch(PackedTypeCode ptc,
-                                             const RecGroup* recGroup) {
-  MatchTypeCode mtc = {};
+inline IsoEqualsTypeCode IsoEqualsTypeCode::forIsoEquals(
+    PackedTypeCode ptc, const RecGroup* recGroup) {
+  IsoEqualsTypeCode mtc = {};
   mtc.typeCode = PackedRepr(ptc.typeCode());
-  mtc.typeRef = TypeDef::forMatch(ptc.typeDef(), recGroup);
+  mtc.typeRef = TypeDef::forIsoEquals(ptc.typeDef(), recGroup);
   mtc.nullable = ptc.isNullable();
   return mtc;
 }

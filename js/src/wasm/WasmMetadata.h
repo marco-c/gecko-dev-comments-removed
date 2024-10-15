@@ -349,6 +349,13 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     callRefHints[callRefIndex] = hint.toRepr();
   }
 
+  size_t codeSectionSize() const {
+    if (codeSection) {
+      return codeSection->size;
+    }
+    return 0;
+  }
+
   
   
   bool getFuncNameForWasm(NameContext ctx, uint32_t funcIndex,

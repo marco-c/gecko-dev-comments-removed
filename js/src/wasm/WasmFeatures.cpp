@@ -304,7 +304,7 @@ bool wasm::CodeCachingAvailable(JSContext* cx) {
 #else
 
   
-  if (ExperimentalCompilePipelineAvailable(cx)) {
+  if (JS::Prefs::wasm_lazy_tiering() || JS::Prefs::wasm_lazy_tiering_for_gc()) {
     return false;
   }
 

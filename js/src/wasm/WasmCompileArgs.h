@@ -300,7 +300,7 @@ struct CompilerEnvironment {
   CompilerEnvironment(CompileMode mode, Tier tier, DebugEnabled debugEnabled);
 
   
-  void computeParameters(Decoder& d);
+  void computeParameters(const ModuleMetadata& moduleMeta);
 
   
   

@@ -182,6 +182,7 @@ class Module : public JS::WasmModule {
 
   
 
+  bool canSerialize() const;
   [[nodiscard]] bool serialize(Bytes* bytes) const;
   static RefPtr<Module> deserialize(const uint8_t* begin, size_t size);
   bool loggingDeserialized() const { return loggingDeserialized_; }

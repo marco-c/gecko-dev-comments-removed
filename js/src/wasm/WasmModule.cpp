@@ -184,8 +184,7 @@ bool Module::finishTier2(UniqueCodeBlock tier2CodeBlock,
   
   
 
-  if (completeTier2Listener_ &&
-      code_->codeMeta().features().builtinModules.hasNone()) {
+  if (completeTier2Listener_ && canSerialize()) {
     Bytes bytes;
     if (serialize(&bytes)) {
       completeTier2Listener_->storeOptimizedEncoding(bytes.begin(),
