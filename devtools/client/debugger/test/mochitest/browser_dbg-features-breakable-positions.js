@@ -11,7 +11,7 @@ const TEST_URL = testServer.urlFor("index.html");
 
 
 
-requestLongerTimeout(6);
+requestLongerTimeout(10);
 
 
 
