@@ -3590,14 +3590,7 @@ toolbar#nav-bar {
                 
                 
                 
-                
-                
-                firefox_symbol_path = os.path.join(
-                    options.topobjdir, "dist", "crashreporter-symbols"
-                )
-                if not os.path.isdir(firefox_symbol_path):
-                    os.mkdir(firefox_symbol_path)
-                symbolicate_profile_json(profile_path, firefox_symbol_path)
+                symbolicate_profile_json(profile_path, options.symbolsPath)
                 view_gecko_profile_from_mochitest(
                     profile_path, options, profiler_logger
                 )
