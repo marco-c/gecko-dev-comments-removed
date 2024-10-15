@@ -2070,6 +2070,12 @@ bool WinUtils::GetTimezoneName(wchar_t* aBuffer) {
   return true;
 }
 
+bool WinUtils::MicaEnabled() {
+  static bool sEnabled =
+      IsWin1122H2OrLater() && StaticPrefs::widget_windows_mica_AtStartup();
+  return sEnabled;
+}
+
 
 
 
@@ -2138,12 +2144,6 @@ static LONG SetRelativeScaleStep(LUID aAdapterId, int32_t aRelativeScaleStep) {
   setDPIScale.scaleRel = aRelativeScaleStep;
 
   return DisplayConfigSetDeviceInfo(&setDPIScale.header);
-}
-
-bool WinUtils::MicaEnabled() {
-  static bool sEnabled =
-      IsWin1122H2OrLater() && StaticPrefs::widget_windows_mica_AtStartup();
-  return sEnabled;
 }
 
 nsresult WinUtils::SetHiDPIMode(bool aHiDPI) {
