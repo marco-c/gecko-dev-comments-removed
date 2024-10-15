@@ -643,13 +643,16 @@ impl RenderTaskGraphBuilder {
                 
                 
                 
-                let source = cache_item.texture_id;
                 task.uv_rect_handle = cache_item.uv_rect_handle;
-                task.location = RenderTaskLocation::Static {
-                    surface: StaticRenderTaskSurface::ReadOnly { source },
-                    rect: cache_item.uv_rect,
-                };
+                if let RenderTaskLocation::CacheRequest { .. } = &task.location {
+                    let source = cache_item.texture_id;
+                    task.location = RenderTaskLocation::Static {
+                        surface: StaticRenderTaskSurface::ReadOnly { source },
+                        rect: cache_item.uv_rect,
+                    };
+                }
             }
+
             
             
             let target_rect = task.get_target_rect();
