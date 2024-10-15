@@ -1909,6 +1909,9 @@ const selectors = {
   threadsPaneItem: i => `.threads-pane .thread:nth-child(${i})`,
   threadsPaneItemPause: i => `${selectors.threadsPaneItem(i)}.paused`,
   CodeMirrorLines: isCm6Enabled ? ".cm-content" : ".CodeMirror-lines",
+  inlinePreview: isCm6Enabled
+    ? ".cm-content .inline-preview"
+    : ".CodeMirror-code .CodeMirror-widget",
   inlinePreviewLabels: ".inline-preview .inline-preview-label",
   inlinePreviewValues: ".inline-preview .inline-preview-value",
   inlinePreviewOpenInspector: ".inline-preview-value button.open-inspector",
@@ -2359,7 +2362,6 @@ async function codeMirrorGutterElement(dbg, line) {
 
   line = isCm6Enabled ? line : line - 1;
   await scrollEditorIntoView(dbg, line, 0);
-  await waitForScrolling(dbg);
 
   const coords = getCoordsFromPosition(dbg, line);
 
@@ -2573,7 +2575,7 @@ async function tryHoverTokenAtLine(dbg, expression, line, column, elementName) {
   await scrollEditorIntoView(dbg, line, 0);
 
   
-  const tokenEl = getTokenElAtLine(dbg, expression, line, column);
+  const tokenEl = await getTokenElAtLine(dbg, expression, line, column);
   if (!tokenEl) {
     throw new Error(
       `Couldn't find token <${expression}> on ${line}:${column}\n`
@@ -2602,29 +2604,40 @@ async function tryHoverToken(dbg, tokenEl, elementName) {
 
 
 
-function getTokenElAtLine(dbg, expression, line, column = 0) {
+async function getTokenElAtLine(dbg, expression, line, column = 0) {
   info(`Search for <${expression}> token on ${line}:${column}`);
-  
-  const lineGutterEl = [
-    ...dbg.win.document.querySelectorAll(".CodeMirror-linenumber"),
-  ].find(el => el.textContent === `${line}`);
+  let editorLineEl;
+  if (isCm6Enabled) {
+    
+    editorLineEl = getCMEditor(dbg).getElementAtLine(line);
+  } else {
+    
+    const lineGutterEl = [
+      ...dbg.win.document.querySelectorAll(".CodeMirror-linenumber"),
+    ].find(el => el.textContent === `${line}`);
+
+    
+    editorLineEl = lineGutterEl
+      .closest(".CodeMirror-gutter-wrapper")
+      .parentElement.querySelector(".CodeMirror-line");
+  }
 
   
-  const editorLineEl = lineGutterEl
-    .closest(".CodeMirror-gutter-wrapper")
-    .parentElement.querySelector(".CodeMirror-line");
+  const tokenParent = isCm6Enabled
+    ? editorLineEl
+    : editorLineEl.querySelector(".CodeMirror-line > span");
 
-  
+  const tokenElements = [...tokenParent.childNodes];
   let currentColumn = 1;
-  return Array.from(editorLineEl.childNodes[0].childNodes).find(child => {
-    const childText = child.textContent;
+  return tokenElements.find(el => {
+    const childText = el.textContent;
     currentColumn += childText.length;
 
     
     if (currentColumn < column) {
       return false;
     }
-    return childText === expression;
+    return childText == expression;
   });
 }
 
