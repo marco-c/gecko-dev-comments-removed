@@ -228,14 +228,6 @@ class SearchInFileBar extends Component {
 
   setSearchResults(results, matches) {
     if (!results) {
-      this.setState({
-        results: {
-          matches,
-          matchIndex: 0,
-          count: matches.length,
-          index: -1,
-        },
-      });
       return;
     }
     const { ch, line } = results;

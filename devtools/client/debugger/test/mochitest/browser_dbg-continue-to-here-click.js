@@ -30,7 +30,7 @@ add_task(async function () {
   
   await waitForPaused(dbg);
 
-  await assertPausedAtSourceAndLine(
+  assertPausedAtSourceAndLine(
     dbg,
     findSource(dbg, "pause-points.js").id,
     lineToContinueTo,

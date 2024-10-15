@@ -21,20 +21,18 @@ add_task(async function () {
   await waitForPaused(dbg);
 
   info("Starting a search for 'bar'");
+  const cm = getCM(dbg);
   pressKey(dbg, "fileSearch");
   is(dbg.selectors.getActiveSearch(), "file");
   const el = getFocusedEl(dbg);
   type(dbg, "bar");
   await waitForSearchState(dbg);
-  await waitFor(() => {
-    return getSearchQuery(dbg).includes("bar");
-  });
-  is(getSearchSelection(dbg).line, 1);
+
   info("Ensuring 'bar' matches are highlighted");
   pressKey(dbg, "Enter");
-  is(getSearchSelection(dbg).line, 4);
+  is(cm.state.search.posFrom.line, 1);
   pressKey(dbg, "Enter");
-  is(getSearchSelection(dbg).line, 1);
+  is(cm.state.search.posFrom.line, 4);
 
   info("Switching files via frame click");
   const frames = findAllElements(dbg, "frames");
@@ -42,7 +40,8 @@ add_task(async function () {
 
   
   
-  ok(isScrolledPositionVisible(dbg, 0), "First search term is not in view");
+  const { top } = cm.getScrollInfo();
+  is(top, 0, "First search term is not in view");
 
   
   info("Switching to paused file via frame click");
@@ -51,16 +50,15 @@ add_task(async function () {
   type(dbg, "func");
   await waitForSearchState(dbg);
   pressMouseDown(dbg, frames[0]);
-  await waitFor(() => {
-    return getSearchQuery(dbg).includes("func");
-  });
-  is(getSearchSelection(dbg).line, 0);
+  await waitFor(() => cm.state.search.query === "func");
+
   
   pressKey(dbg, "Enter");
-  await waitFor(() => getSearchSelection(dbg).line === 1);
+  await waitFor(() => cm.state.search.posFrom.line === 0);
+  is(cm.state.search.posFrom.line, 0);
   pressKey(dbg, "Enter");
-  
-  await waitFor(() => getSearchSelection(dbg).line === 0);
+  await waitFor(() => cm.state.search.posFrom.line === 1);
+  is(cm.state.search.posFrom.line, 1);
 });
 
 function getFocusedEl(dbg) {

@@ -57,7 +57,7 @@ add_task(async function () {
   
   
   await selectSource(dbg, "fib.c");
-  await assertLineIsBreakable(dbg, source.url, 14, true);
+  assertLineIsBreakable(dbg, source.url, 14, true);
 
   await waitForSourcesInSourceTree(dbg, [
     "doc-wasm-sourcemaps.html",
@@ -77,11 +77,7 @@ add_task(async function () {
 
   await waitForPausedInOriginalFileAndToggleMapScopes(dbg);
 
-  await assertPausedAtSourceAndLine(
-    dbg,
-    findSource(dbg, "fib.c").id,
-    breakpointLine
-  );
+  assertPausedAtSourceAndLine(dbg, findSource(dbg, "fib.c").id, breakpointLine);
   await assertBreakpoint(dbg, breakpointLine);
   
   
@@ -117,7 +113,7 @@ add_task(async function () {
     keepContext: false,
   });
 
-  await assertLineIsBreakable(dbg, binarySource.url, binaryLine, true);
+  assertLineIsBreakable(dbg, binarySource.url, binaryLine, true);
 
   await addBreakpoint(dbg, binarySource, virtualBinaryLine);
   invokeInTab("runWasm");
@@ -126,7 +122,7 @@ add_task(async function () {
   
   await waitForPaused(dbg);
   
-  await assertPausedAtSourceAndLine(dbg, binarySource.id, virtualBinaryLine);
+  assertPausedAtSourceAndLine(dbg, binarySource.id, virtualBinaryLine);
 
   
   info(
@@ -138,11 +134,7 @@ add_task(async function () {
   
   await waitForPausedInOriginalFileAndToggleMapScopes(dbg);
 
-  await assertPausedAtSourceAndLine(
-    dbg,
-    findSource(dbg, "fib.c").id,
-    breakpointLine
-  );
+  assertPausedAtSourceAndLine(dbg, findSource(dbg, "fib.c").id, breakpointLine);
 
   info("Reselect the binary source");
   await dbg.actions.selectLocation(createLocation({ source: binarySource }), {

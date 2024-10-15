@@ -19,11 +19,7 @@ add_task(async function test() {
   
   
   await waitForPaused(dbg, "bundle.js");
-  await assertPausedAtSourceAndLine(
-    dbg,
-    findSource(dbg, "bundle.js").id,
-    52411
-  );
+  assertPausedAtSourceAndLine(dbg, findSource(dbg, "bundle.js").id, 52411);
 
   await stepIn(dbg);
 
@@ -48,9 +44,5 @@ add_task(async function test() {
 
   
   
-  await assertPausedAtSourceAndLine(
-    dbg,
-    findSource(dbg, "step-in-test.js").id,
-    7679
-  );
+  assertPausedAtSourceAndLine(dbg, findSource(dbg, "step-in-test.js").id, 7679);
 });

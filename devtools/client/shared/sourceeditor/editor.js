@@ -12,7 +12,6 @@ const {
 } = require("resource://devtools/shared/indentation.js");
 
 const { debounce } = require("resource://devtools/shared/debounce.js");
-const nodeConstants = require("resource://devtools/shared/dom-node-constants.js");
 
 const ENABLE_CODE_FOLDING = "devtools.editor.enableCodeFolding";
 const KEYMAP_PREF = "devtools.editor.keymap";
@@ -164,14 +163,13 @@ class Editor extends EventEmitter {
   searchState = {
     cursors: [],
     currentCursorIndex: -1,
-    query: "",
+    query: null,
   };
 
   #abortController;
   
   
   #currentDocumentId = null;
-  #currentDocument = null;
   #CodeMirror6;
   #compartments;
   #effects;
@@ -708,7 +706,7 @@ class Editor extends EventEmitter {
 
     
     this.#editorDOMEventHandlers.scroll = [
-      debounce(this.#cacheScrollSnapshot, 250),
+      debounce(this.cacheScrollSnapshot, 250),
     ];
 
     const extensions = [
@@ -1011,6 +1009,14 @@ class Editor extends EventEmitter {
   }
 
   #createEventHandlers() {
+    function posToLineColumn(pos, view) {
+      if (!pos) {
+        return { line: null, column: null };
+      }
+      const cursor = view.state.doc.lineAt(pos);
+      const column = pos - cursor.from;
+      return { line: cursor.number, column };
+    }
     const eventHandlers = {};
     for (const eventName in this.#editorDOMEventHandlers) {
       const handlers = this.#editorDOMEventHandlers[eventName];
@@ -1024,8 +1030,9 @@ class Editor extends EventEmitter {
           
           event.target.ownerGlobal.setTimeout(() => {
             const view = editor.viewState;
-            const cursorPos = this.#posToLineColumn(
-              view.state.selection.main.head
+            const cursorPos = posToLineColumn(
+              view.state.selection.main.head,
+              view
             );
             handler(event, view, cursorPos.line, cursorPos.column);
           }, 0);
@@ -1069,13 +1076,12 @@ class Editor extends EventEmitter {
     });
   }
 
-  #cacheScrollSnapshot = () => {
+  cacheScrollSnapshot = () => {
     const cm = editors.get(this);
-    if (!this.#currentDocumentId) {
+    if (this.#currentDocumentId) {
       return;
     }
     this.#scrollSnapshots.set(this.#currentDocumentId, cm.scrollSnapshot());
-    this.emitForTests("cm-editor-scrolled");
   };
 
   
@@ -1143,8 +1149,6 @@ class Editor extends EventEmitter {
 
 
 
-
-
   setLineContentMarker(marker) {
     const cm = editors.get(this);
     
@@ -1156,7 +1160,7 @@ class Editor extends EventEmitter {
     });
   }
 
-  
+
 
 
 
@@ -1168,7 +1172,7 @@ class Editor extends EventEmitter {
     });
   }
 
-  
+
 
 
 
@@ -1186,20 +1190,11 @@ class Editor extends EventEmitter {
     const cachedPositionContentMarkers = this.#posContentMarkers;
 
     class NodeWidget extends WidgetType {
-      constructor({
-        line,
-        column,
-        markerId,
-        createElementNode,
-        getMarkerEqualityValue,
-      }) {
+      constructor(line, column, markerId, createElementNode) {
         super();
         this.line = line;
         this.column = column;
         this.markerId = markerId;
-        this.equalityValue = getMarkerEqualityValue
-          ? getMarkerEqualityValue(line, column)
-          : {};
         this.toDOM = () => createElementNode(line, column);
       }
 
@@ -1207,16 +1202,7 @@ class Editor extends EventEmitter {
         return (
           this.line == widget.line &&
           this.column == widget.column &&
-          this.markerId == widget.markerId &&
-          this.#isCustomValueEqual(widget)
-        );
-      }
-
-      #isCustomValueEqual(widget) {
-        return Object.keys(this.equalityValue).every(
-          key =>
-            widget.equalityValue.hasOwnProperty(key) &&
-            widget.equalityValue[key] === this.equalityValue[key]
+          this.markerId == widget.markerId
         );
       }
     }
@@ -1275,13 +1261,12 @@ class Editor extends EventEmitter {
             
             
             const nodeDecoration = Decoration.widget({
-              widget: new NodeWidget({
-                line: position.line,
-                column: position.column,
-                markerId: marker.id,
-                createElementNode: marker.createPositionElementNode,
-                getMarkerEqualityValue: marker.getMarkerEqualityValue,
-              }),
+              widget: new NodeWidget(
+                position.line,
+                position.column,
+                marker.id,
+                marker.createPositionElementNode
+              ),
               
               
               side: 1,
@@ -2060,12 +2045,6 @@ class Editor extends EventEmitter {
 
   getDoc() {
     const cm = editors.get(this);
-    if (this.config.cm6) {
-      if (!this.#currentDocument) {
-        this.#currentDocument = { id: this.#currentDocumentId };
-      }
-      return this.#currentDocument;
-    }
     return cm.getDoc();
   }
 
@@ -2088,47 +2067,24 @@ class Editor extends EventEmitter {
     return this.wasmOffsetToLine(maybeOffset);
   }
 
-  
-
-
-
-
-
   lineInfo(lineOrOffset) {
-    let line = this.toLineIfWasmOffset(lineOrOffset);
+    const line = this.toLineIfWasmOffset(lineOrOffset);
     if (line == undefined) {
       return null;
     }
     const cm = editors.get(this);
-    if (this.config.cm6) {
-      
-      line = line + 1;
-      const el = this.getElementAtLine(line);
-      
-      
-      const markedSpans = [...el.querySelectorAll("span")].filter(span =>
-        span.className.includes("debug-expression")
-      );
 
+    if (this.config.cm6) {
       return {
-        text: cm.state.doc.lineAt(line)?.text,
+        
+        text: cm.state.doc.lineAt(line + 1)?.text,
         
         line: null,
-        handle: {
-          markedSpans: markedSpans
-            ? markedSpans.map(span => {
-                const { column } = this.#posToLineColumn(cm.posAtDOM(span));
-                return {
-                  marker: { className: span.className },
-                  from: column,
-                };
-              })
-            : null,
-        },
+        handle: null,
         gutterMarkers: null,
         textClass: null,
         bgClass: null,
-        wrapClass: el.className,
+        wrapClass: null,
         widgets: null,
       };
     }
@@ -2197,11 +2153,6 @@ class Editor extends EventEmitter {
 
       if (documentId) {
         this.#currentDocumentId = documentId;
-        
-        
-        if (!scrollSnapshot) {
-          this.#cacheScrollSnapshot();
-        }
       }
     } else {
       cm.setValue(value);
@@ -2258,15 +2209,10 @@ class Editor extends EventEmitter {
 
 
   resetIndentUnit() {
-    if (this.isDestroyed()) {
-      return;
-    }
     const cm = editors.get(this);
+
     const iterFn = (start, maxEnd, callback) => {
       if (!this.config.cm6) {
-        if (this.isDestroyed()) {
-          return;
-        }
         cm.eachLine(start, maxEnd, line => {
           return callback(line.text);
         });
@@ -2641,6 +2587,15 @@ class Editor extends EventEmitter {
   
 
 
+
+  getCoordsFromPosition({ line, ch }) {
+    const cm = editors.get(this);
+    return cm.charCoords({ line: ~~line, ch: ~~ch });
+  }
+
+  
+
+
   canUndo() {
     const cm = editors.get(this);
     return cm.historySize().undo > 0;
@@ -2987,29 +2942,10 @@ class Editor extends EventEmitter {
 
 
 
-  #getElementAtOffset(offset) {
-    const cm = editors.get(this);
-    const el = cm.domAtPos(offset).node;
-    if (!el) {
-      return null;
-    }
-    
-    
-    if (el.nodeType == nodeConstants.TEXT_NODE) {
-      return el.parentElement;
-    }
-    return el;
-  }
-
-  
 
 
 
-
-
-
-  isPositionVisible(line, column) {
-    const cm = editors.get(this);
+  #isPositionVisible(cm, line, column) {
     let inXView, inYView;
 
     function withinBounds(x, min, max) {
@@ -3017,11 +2953,8 @@ class Editor extends EventEmitter {
     }
 
     if (this.config.cm6) {
-      const pos = this.#positionToOffset(line, column);
-      if (pos == null) {
-        return false;
-      }
-      const coords = cm.coordsAtPos(pos);
+      const pos = this.#posToOffset(cm.state.doc, line, column);
+      const coords = pos && cm.coordsAtPos(pos);
       if (!coords) {
         return false;
       }
@@ -3067,31 +3000,13 @@ class Editor extends EventEmitter {
 
 
 
-  #posToLineColumn(pos) {
-    const cm = editors.get(this);
-    if (!pos) {
-      return {
-        line: null,
-        column: null,
-      };
+
+  #posToOffset(doc, line, col) {
+    if (!this.config.cm6) {
+      throw new Error("This function is only compatible with CM6");
     }
-    const line = cm.state.doc.lineAt(pos);
-    return {
-      line: line.number,
-      column: pos - line.from,
-    };
-  }
-
-  
-
-
-
-
-
-  #positionToOffset(line, col = 0) {
-    const cm = editors.get(this);
     try {
-      const offset = cm.state.doc.line(line);
+      const offset = doc.line(line);
       return offset.from + col;
     } catch (e) {
       
@@ -3128,7 +3043,7 @@ class Editor extends EventEmitter {
     const {
       codemirrorView: { EditorView },
     } = this.#CodeMirror6;
-    return cm.dispatch({
+    cm.dispatch({
       effects: EditorView.scrollIntoView(position, {
         x: "nearest",
         y: "center",
@@ -3142,18 +3057,15 @@ class Editor extends EventEmitter {
 
 
   scrollTo(line, column) {
-    if (this.isDestroyed()) {
-      return;
-    }
     const cm = editors.get(this);
     if (this.config.cm6) {
       const {
         codemirrorView: { EditorView },
       } = this.#CodeMirror6;
 
-      if (!this.isPositionVisible(line, column)) {
-        const offset = this.#positionToOffset(line, column);
-        if (offset == null) {
+      if (!this.#isPositionVisible(cm, line, column)) {
+        const offset = this.#posToOffset(cm.state.doc, line, column);
+        if (!offset) {
           return;
         }
         cm.dispatch({
@@ -3173,31 +3085,13 @@ class Editor extends EventEmitter {
 
       const { top, left } = cm.charCoords({ line, ch: column }, "local");
 
-      if (!this.isPositionVisible(line, column)) {
+      if (!this.#isPositionVisible(cm, line, column)) {
         const scroller = cm.getScrollerElement();
         const centeredX = Math.max(left - scroller.offsetWidth / 2, 0);
         const centeredY = Math.max(top - scroller.offsetHeight / 2, 0);
 
         cm.scrollTo(centeredX, centeredY);
       }
-    }
-  }
-
-  
-  setSelectionAt(start, end) {
-    const cm = editors.get(this);
-    if (this.config.cm6) {
-      const from = this.#positionToOffset(start.line, start.column);
-      const to = this.#positionToOffset(end.line, end.column);
-      if (from == null || to == null) {
-        return;
-      }
-      cm.dispatch({ selection: { anchor: from, head: to } });
-    } else {
-      cm.setSelection(
-        { line: start.line - 1, ch: start.column },
-        { line: end.line - 1, ch: end.column }
-      );
     }
   }
 
@@ -3235,72 +3129,6 @@ class Editor extends EventEmitter {
       return !!this.searchState.cursors;
     }
     return !!cm.state.search;
-  }
-
-  
-  getCoords(line, column = 0) {
-    const cm = editors.get(this);
-    if (this.config.cm6) {
-      const offset = this.#positionToOffset(line, column);
-      if (offset == null) {
-        return null;
-      }
-      return cm.coordsAtPos(offset);
-    }
-    
-    
-    return cm.charCoords({ line: ~~line, ch: ~~column });
-  }
-
-  
-  
-  getElementAtLine(line) {
-    const offset = this.#positionToOffset(line);
-    const el = this.#getElementAtOffset(offset);
-    return el.closest(".cm-line");
-  }
-
-  
-  getSearchQuery() {
-    const cm = editors.get(this);
-    if (this.config.cm6) {
-      return this.searchState.query.toString();
-    }
-    return cm.state.search.query;
-  }
-
-  
-  
-  getSearchSelection() {
-    const cm = editors.get(this);
-    if (this.config.cm6) {
-      const cursor =
-        this.searchState.cursors[this.searchState.currentCursorIndex];
-      if (!cursor) {
-        return { text: "", line: -1, column: -1 };
-      }
-
-      const cursorPosition = this.#posToLineColumn(cursor.to);
-      
-      return {
-        text: cursor.match[0],
-        line: cursorPosition.line - 1,
-        column: cursorPosition.column,
-      };
-    }
-    const cursor = cm.getCursor();
-    return {
-      text: cm.getSelection(),
-      line: cursor.line,
-      column: cursor.ch,
-    };
-  }
-
-  
-  getElementAtPos(line, column) {
-    const offset = this.#positionToOffset(line, column);
-    const el = this.#getElementAtOffset(offset);
-    return el;
   }
 
   
@@ -3344,7 +3172,7 @@ class Editor extends EventEmitter {
   }
 
   isDestroyed() {
-    return !this.config || !editors.get(this);
+    return !editors.get(this);
   }
 
   destroy() {
@@ -3381,10 +3209,6 @@ class Editor extends EventEmitter {
       cm.doc.cm = null;
     }
 
-    
-    if (cm?.destroy) {
-      cm.destroy();
-    }
     this.emit("destroy");
   }
 
