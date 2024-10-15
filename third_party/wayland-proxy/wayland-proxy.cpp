@@ -29,6 +29,8 @@
 
 #include "wayland-proxy.h"
 
+CompositorCrashHandler WaylandProxy::sCompositorCrashHandler = nullptr;
+
 
 #define MAX_LIBWAY_FDS 28
 #define MAX_DATA_SIZE 4096
@@ -92,6 +94,7 @@ class ProxiedConnection {
   
   
   bool Process();
+  void ProcessFailure();
 
   void PrintConnectionInfo();
 
@@ -121,7 +124,8 @@ class ProxiedConnection {
   static constexpr int sMaxFailedCompositorConnections = 100;
 
   
-  bool mFailed = false;
+  bool mApplicationFailed = false;
+  bool mCompositorFailed = false;
 
   int mCompositorSocket = -1;
   int mCompositorFlags = 0;
@@ -368,7 +372,7 @@ bool ProxiedConnection::ConnectToCompositor() {
     }
   }
 
-  Print("ConnectToCompositor() Connected to compositor");
+  Print("ConnectToCompositor() Connected to compositor\n");
   return true;
 }
 
@@ -479,14 +483,10 @@ void ProxiedConnection::PrintConnectionInfo() {
 }
 
 bool ProxiedConnection::Process() {
-  if (mFailed) {
-    Print("ProxiedConnection::Process(): Connection failed\n");
-    return false;
-  }
-
   
   if (mApplicationFlags & (POLLHUP | POLLERR)) {
     Print("ProxiedConnection::Process(): Client socket is not listening\n");
+    mApplicationFailed = true;
     return false;
   }
 
@@ -494,12 +494,14 @@ bool ProxiedConnection::Process() {
   if (mCompositorConnected) {
     if (mCompositorFlags & (POLLHUP | POLLERR)) {
       Print("ProxiedConnection::Process(): Compositor socket is not listening\n");
+      mCompositorFailed = true;
       return false;
     }
   } else {
     
     if (!ConnectToCompositor()) {
       Error("ProxiedConnection::Process(): Failed to connect to compositor\n");
+      mCompositorFailed = true;
       return false;
     }
     
@@ -509,27 +511,30 @@ bool ProxiedConnection::Process() {
     }
   }
 
-  mFailed = true;
   if (!TransferOrQueue(mCompositorSocket, mCompositorFlags, mApplicationSocket,
                        &mToApplicationQueue, mStatRecvFromCompositor,
                        mStatSentToClient)) {
     Error("ProxiedConnection::Process(): Failed to read data from compositor!");
+    mCompositorFailed = true;
     return false;
   }
   if (!TransferOrQueue(mApplicationSocket, mApplicationFlags, mCompositorSocket,
                        &mToCompositorQueue, mStatRecvFromClient,
                        mStatSentToCompositor)) {
     Error("ProxiedConnection::Process(): Failed to read data from client!");
+    mApplicationFailed = true;
     return false;
   }
   if (!FlushQueue(mCompositorSocket, mCompositorFlags, mToCompositorQueue,
                   mStatSentToCompositorLater)) {
     Error("ProxiedConnection::Process(): Failed to flush queue to compositor!");
+    mCompositorFailed = true;
     return false;
   }
   if (!FlushQueue(mApplicationSocket, mApplicationFlags, mToApplicationQueue,
                   mStatSentToClientLater)) {
     Error("ProxiedConnection::Process(): Failed to flush queue to client!");
+    mApplicationFailed = true;
     return false;
   }
 
@@ -537,9 +542,23 @@ bool ProxiedConnection::Process() {
     PrintConnectionInfo();
   }
 
-  mFailed = false;
   return true;
 }
+
+void ProxiedConnection::ProcessFailure() {
+  if (mCompositorFailed) {
+    struct stat buffer;
+    if (stat(mWaylandDisplay, &buffer) < 0) {
+      Print("ProxiedConnection(): compositor crashed!\n");
+      WaylandProxy::CompositorCrashed();
+    } else {
+      Print("ProxiedConnection(): compositor fails to read/write events!\n");
+    }
+  } else if (mApplicationFailed) {
+    Print("ProxiedConnection(): application fails to read/write events!\n");
+  }
+}
+
 
 bool WaylandProxy::CheckWaylandDisplay(const char* aWaylandDisplay) {
   struct sockaddr_un addr = {};
@@ -791,7 +810,7 @@ bool WaylandProxy::ProcessConnections() {
   std::vector<std::unique_ptr<ProxiedConnection>>::iterator connection;
   for (connection = mConnections.begin(); connection != mConnections.end();) {
     if (!(*connection)->Process()) {
-      Info("remove connection\n");
+      (*connection)->ProcessFailure();
       connection = mConnections.erase(connection);
       if (mConnections.empty()) {
         
@@ -935,4 +954,14 @@ void WaylandProxy::ErrorPlain(const char* aFormat, ...) {
   va_start(args, aFormat);
   vfprintf(stderr, aFormat, args);
   va_end(args);
+}
+
+void WaylandProxy::SetCompositorCrashHandler(CompositorCrashHandler aCrashHandler) {
+  sCompositorCrashHandler = aCrashHandler;
+}
+
+void WaylandProxy::CompositorCrashed() {
+  if (sCompositorCrashHandler) {
+    sCompositorCrashHandler();
+  }
 }
