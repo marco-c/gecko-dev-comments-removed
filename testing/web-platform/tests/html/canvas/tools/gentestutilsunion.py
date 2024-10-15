@@ -366,13 +366,22 @@ class _Variant():
             'size': (100, 50),
             
             
+            
             'name': '',
+            
+            'file_variant_names': [],
             
             
             'grid_variant_names': [],
             
             
             'variant_names': [],
+            
+            
+            'file_variant_name': '',
+            
+            
+            'grid_variant_name': '',
             
             
             
@@ -398,12 +407,17 @@ class _Variant():
     def with_grid_variant_name(self, name: str) -> '_Variant':
         """Addend a variant name to include in the grid element label."""
         self._add_variant_name(name)
+        self._params['grid_variant_name'] += (
+            ('.' if self.params['grid_variant_name'] else '') + name)
         self._params['grid_variant_names'] += [name]
         return self
 
     def with_file_variant_name(self, name: str) -> '_Variant':
         """Addend a variant name to include in the generated file name."""
         self._add_variant_name(name)
+        self._params['file_variant_name'] += (
+            ('.' if self.params['file_variant_name'] else '') + name)
+        self._params['file_variant_names'] += [name]
         if self.params.get('append_variants_to_name', True):
             self._params['name'] += '.' + name
         return self
