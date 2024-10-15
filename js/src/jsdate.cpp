@@ -126,6 +126,9 @@ static DateTimeInfo::ForceUTC ForceUTC(const Realm* realm) {
 
 
 
+
+
+
 static inline double PositiveModulo(double dividend, double divisor) {
   MOZ_ASSERT(divisor > 0);
   MOZ_ASSERT(std::isfinite(divisor));
@@ -703,17 +706,36 @@ static double UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
 }
 
 
+
+
+
+
 static int32_t HourFromTime(int64_t t) {
   return PositiveModulo(FloorDiv(t, msPerHour), int32_t(HoursPerDay));
 }
+
+
+
+
+
 
 static int32_t MinFromTime(int64_t t) {
   return PositiveModulo(FloorDiv(t, msPerMinute), int32_t(MinutesPerHour));
 }
 
+
+
+
+
+
 static int32_t SecFromTime(int64_t t) {
   return PositiveModulo(FloorDiv(t, msPerSecond), int32_t(SecondsPerMinute));
 }
+
+
+
+
+
 
 static int32_t msFromTime(int64_t t) {
   return PositiveModulo(t, int32_t(msPerSecond));
@@ -731,6 +753,10 @@ HourMinuteSecond js::ToHourMinuteSecond(int64_t epochMilliseconds) {
 
   return {hour, minute, second};
 }
+
+
+
+
 
 
 static double MakeTime(double hour, double min, double sec, double ms) {
@@ -1940,6 +1966,11 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const JSLinearString* s,
              : ParseDate(forceUTC, s->twoByteChars(nogc), s->length(), result);
 }
 
+
+
+
+
+
 static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date", "parse");
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -2086,31 +2117,40 @@ void DateObject::fillLocalTimeSlots() {
 
 
 
+
 static bool date_getTime(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getTime");
   if (!unwrapped) {
     return false;
   }
 
+  
   args.rval().set(unwrapped->UTCTime());
   return true;
 }
 
+
+
+
+
+
 static bool date_getYear(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getYear");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
 
   Value yearVal = unwrapped->localYear();
   if (yearVal.isInt32()) {
-    
     int year = yearVal.toInt32() - 1900;
     args.rval().setInt32(year);
   } else {
@@ -2119,15 +2159,23 @@ static bool date_getYear(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getFullYear(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getFullYear");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
+
   args.rval().set(unwrapped->localYear());
   return true;
 }
@@ -2163,15 +2211,23 @@ static bool date_getUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getMonth(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getMonth");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
+
   args.rval().set(unwrapped->localMonth());
   return true;
 }
@@ -2206,14 +2262,21 @@ static bool date_getUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getDate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getDate");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
 
   args.rval().set(unwrapped->localDate());
@@ -2250,15 +2313,23 @@ static bool date_getUTCDate(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getDay(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getDay");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
+
   args.rval().set(unwrapped->localDay());
   return true;
 }
@@ -2293,14 +2364,21 @@ static bool date_getUTCDay(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getHours(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getHours");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
 
   
@@ -2346,14 +2424,21 @@ static bool date_getUTCHours(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getMinutes(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getMinutes");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
 
   
@@ -2400,14 +2485,21 @@ static bool date_getUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_getSeconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "getSeconds");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
 
   
@@ -2504,15 +2596,22 @@ static bool date_getUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
   return getMilliseconds(cx, argc, vp, "getUTCMilliseconds");
 }
 
+
+
+
+
+
 static bool date_getTimezoneOffset(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped =
       UnwrapAndTypeCheckThis<DateObject>(cx, args, "getTimezoneOffset");
   if (!unwrapped) {
     return false;
   }
 
+  
   unwrapped->fillLocalTimeSlots();
 
   double utctime = unwrapped->UTCTime().toNumber();
@@ -3523,6 +3622,10 @@ static bool date_toISOString(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
 static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype", "toJSON");
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -3551,14 +3654,12 @@ static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
   if (!IsCallable(toISO)) {
     JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                               JSMSG_BAD_TOISOSTRING_PROP);
     return false;
   }
 
-  
   return Call(cx, toISO, obj, args.rval());
 }
 
@@ -3823,6 +3924,10 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
 }
 
 
+
+
+
+
 static bool date_toLocaleString(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype", "toLocaleString");
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -3847,6 +3952,11 @@ static bool date_toLocaleString(JSContext* cx, unsigned argc, Value* vp) {
 
   return ToLocaleFormatHelper(cx, unwrapped, format, args.rval());
 }
+
+
+
+
+
 
 static bool date_toLocaleDateString(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype",
@@ -3874,6 +3984,11 @@ static bool date_toLocaleDateString(JSContext* cx, unsigned argc, Value* vp) {
   return ToLocaleFormatHelper(cx, unwrapped, format, args.rval());
 }
 
+
+
+
+
+
 static bool date_toLocaleTimeString(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype",
                                         "toLocaleTimeString");
@@ -3889,16 +4004,23 @@ static bool date_toLocaleTimeString(JSContext* cx, unsigned argc, Value* vp) {
 }
 #endif 
 
+
+
+
+
+
 static bool date_toTimeString(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype", "toTimeString");
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped =
       UnwrapAndTypeCheckThis<DateObject>(cx, args, "toTimeString");
   if (!unwrapped) {
     return false;
   }
 
+  
   const char* locale = unwrapped->realm()->getLocale();
   if (!locale) {
     return false;
@@ -3908,16 +4030,23 @@ static bool date_toTimeString(JSContext* cx, unsigned argc, Value* vp) {
                     args.rval());
 }
 
+
+
+
+
+
 static bool date_toDateString(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype", "toDateString");
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped =
       UnwrapAndTypeCheckThis<DateObject>(cx, args, "toDateString");
   if (!unwrapped) {
     return false;
   }
 
+  
   const char* locale = unwrapped->realm()->getLocale();
   if (!locale) {
     return false;
@@ -3951,15 +4080,22 @@ static bool date_toSource(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
 static bool date_toString(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date.prototype", "toString");
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "toString");
   if (!unwrapped) {
     return false;
   }
 
+  
   const char* locale = unwrapped->realm()->getLocale();
   if (!locale) {
     return false;
@@ -3969,17 +4105,28 @@ static bool date_toString(JSContext* cx, unsigned argc, Value* vp) {
                     args.rval());
 }
 
+
+
+
+
+
 bool js::date_valueOf(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   auto* unwrapped = UnwrapAndTypeCheckThis<DateObject>(cx, args, "valueOf");
   if (!unwrapped) {
     return false;
   }
 
+  
   args.rval().set(unwrapped->UTCTime());
   return true;
 }
+
+
+
+
 
 
 static bool date_toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
@@ -4000,7 +4147,7 @@ static bool date_toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
     hint = JSTYPE_STRING;
   }
 
-  args.rval().set(args.thisv());
+  
   RootedObject obj(cx, &args.thisv().toObject());
   return OrdinaryToPrimitive(cx, obj, hint, args.rval());
 }
