@@ -18,12 +18,6 @@ function insertAndClickAnchor(browser) {
   });
 }
 
-function promiseWaitForFocus(aWindow) {
-  return new Promise(resolve => {
-    waitForFocus(resolve, aWindow);
-  });
-}
-
 
 
 
@@ -63,10 +57,7 @@ add_task(async function test_new_tab() {
     await prepareNonRemoteBrowser(testWindow, testBrowser);
     info("Non-remote browser prepared");
 
-    let tabOpenEventPromise = BrowserTestUtils.waitForEvent(
-      testWindow.gBrowser.tabContainer,
-      "TabOpen"
-    );
+    let tabOpenEventPromise = waitForNewTabEvent(testWindow.gBrowser);
     await insertAndClickAnchor(testBrowser);
 
     let newTab = (await tabOpenEventPromise).target;
