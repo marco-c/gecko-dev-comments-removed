@@ -274,7 +274,7 @@ impl NeqoHttp3Conn {
         {
             
             let _ = conn.set_groups(&[
-                neqo_crypto::TLS_GRP_KEM_XYBER768D00,
+                neqo_crypto::TLS_GRP_KEM_MLKEM768X25519,
                 neqo_crypto::TLS_GRP_EC_X25519,
                 neqo_crypto::TLS_GRP_EC_SECP256R1,
                 neqo_crypto::TLS_GRP_EC_SECP384R1,

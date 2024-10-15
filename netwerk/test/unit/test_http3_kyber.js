@@ -62,11 +62,7 @@ function makeChan(uri) {
 
 add_task(async function test_kyber_success() {
   let listener = new Http3Listener();
-  
-  
-  
-  
-  listener.expectedKeaGroup = "x25519";
+  listener.expectedKeaGroup = "mlkem768x25519";
   let chan = makeChan("https://foo.example.com");
   await chanPromise(chan, listener);
 });
