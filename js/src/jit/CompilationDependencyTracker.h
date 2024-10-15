@@ -15,6 +15,7 @@
 struct JSContext;
 
 namespace js::jit {
+class MIRGenerator;
 
 struct CompilationDependency {
   enum class Type { GetIterator, EmulatesUndefined, Limit };
@@ -25,7 +26,8 @@ struct CompilationDependency {
   virtual bool operator==(CompilationDependency& other) = 0;
 
   
-  virtual bool checkDependency() = 0;
+  
+  virtual bool checkDependency(JSContext* cx) = 0;
   [[nodiscard]] virtual bool registerDependency(JSContext* cx,
                                                 HandleScript script) = 0;
 
@@ -58,9 +60,10 @@ struct CompilationDependencyTracker {
     return dependencies.append(std::move(clone));
   }
 
-  bool checkDependencies() {
+  
+  bool checkDependencies(JSContext* cx) {
     for (auto& dep : dependencies) {
-      if (!dep->checkDependency()) {
+      if (!dep->checkDependency(cx)) {
         return false;
       }
     }
