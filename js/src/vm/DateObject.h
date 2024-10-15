@@ -16,8 +16,12 @@ namespace js {
 
 class DateObject : public NativeObject {
   
+  
+  
   static const uint32_t UTC_TIME_SLOT = 0;
 
+  
+  
   
   
   
@@ -27,6 +31,9 @@ class DateObject : public NativeObject {
   static const uint32_t UTC_TIME_ZONE_OFFSET_SLOT = 1;
 
   
+
+
+
 
 
 
@@ -66,7 +73,15 @@ class DateObject : public NativeObject {
     return clipped;
   }
 
+  
+
+
+
   const js::Value& UTCTime() const { return getFixedSlot(UTC_TIME_SLOT); }
+
+  
+
+
   const js::Value& localTime() const {
     return getReservedSlot(LOCAL_TIME_SLOT);
   }
@@ -80,16 +95,39 @@ class DateObject : public NativeObject {
   
   void fillLocalTimeSlots();
 
+  
+
+
+
   const js::Value& localYear() const {
     return getReservedSlot(LOCAL_YEAR_SLOT);
   }
+
+  
+
+
+
   const js::Value& localMonth() const {
     return getReservedSlot(LOCAL_MONTH_SLOT);
   }
+
+  
+
+
+
   const js::Value& localDate() const {
     return getReservedSlot(LOCAL_DATE_SLOT);
   }
+
+  
+
+
+
   const js::Value& localDay() const { return getReservedSlot(LOCAL_DAY_SLOT); }
+
+  
+
+
 
   const js::Value& localSecondsIntoYear() const {
     return getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
