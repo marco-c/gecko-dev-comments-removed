@@ -8,6 +8,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
+  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
   DownloadPaths: "resource://gre/modules/DownloadPaths.sys.mjs",
   ExtensionControlledPopup:
     "resource:///modules/ExtensionControlledPopup.sys.mjs",
@@ -1605,6 +1606,17 @@ this.tabs = class extends ExtensionAPIPersistent {
           }
           if (hidden.length) {
             let win = Services.wm.getMostRecentWindow("navigator:browser");
+
+            
+            
+            if (!CustomizableUI.widgetIsLikelyVisible("alltabs-button", win)) {
+              CustomizableUI.addWidgetToArea(
+                "alltabs-button",
+                CustomizableUI.verticalTabsEnabled
+                  ? CustomizableUI.AREA_NAVBAR
+                  : CustomizableUI.AREA_TABSTRIP
+              );
+            }
             tabHidePopup.open(win, extension.id);
           }
           return hidden;
