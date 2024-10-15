@@ -15563,8 +15563,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   if (fireEvents) {
     
     
-    popoverHTMLEl->FireToggleEvent(PopoverVisibilityState::Showing,
-                                   PopoverVisibilityState::Hidden,
+    popoverHTMLEl->FireToggleEvent(u"open"_ns, u"closed"_ns,
                                    u"beforetoggle"_ns);
 
     

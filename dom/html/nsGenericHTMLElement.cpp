@@ -3408,18 +3408,13 @@ already_AddRefed<ToggleEvent> nsGenericHTMLElement::CreateToggleEvent(
   return event.forget();
 }
 
-bool nsGenericHTMLElement::FireToggleEvent(PopoverVisibilityState aOldState,
-                                           PopoverVisibilityState aNewState,
+bool nsGenericHTMLElement::FireToggleEvent(const nsAString& aOldState,
+                                           const nsAString& aNewState,
                                            const nsAString& aType) {
-  auto stringForState = [](PopoverVisibilityState state) {
-    return state == PopoverVisibilityState::Hidden ? u"closed"_ns : u"open"_ns;
-  };
-  const auto cancelable = aType == u"beforetoggle"_ns &&
-                                  aNewState == PopoverVisibilityState::Showing
+  const auto cancelable = aType == u"beforetoggle"_ns && aNewState == u"open"_ns
                               ? Cancelable::eYes
                               : Cancelable::eNo;
-  RefPtr event = CreateToggleEvent(aType, stringForState(aOldState),
-                                   stringForState(aNewState), cancelable);
+  RefPtr event = CreateToggleEvent(aType, aOldState, aNewState, cancelable);
   EventDispatcher::DispatchDOMEvent(this, nullptr, event, nullptr, nullptr);
   return event->DefaultPrevented();
 }
@@ -3454,7 +3449,12 @@ void nsGenericHTMLElement::RunPopoverToggleEventTask(
   data->ClearToggleEventTask();
   
   
-  FireToggleEvent(aOldState, data->GetPopoverVisibilityState(), u"toggle"_ns);
+  auto stringForState = [](PopoverVisibilityState state) {
+    return state == PopoverVisibilityState::Hidden ? u"closed"_ns : u"open"_ns;
+  };
+  FireToggleEvent(stringForState(aOldState),
+                  stringForState(data->GetPopoverVisibilityState()),
+                  u"toggle"_ns);
 }
 
 
@@ -3480,8 +3480,7 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aInvoker,
   });
 
   
-  if (FireToggleEvent(PopoverVisibilityState::Hidden,
-                      PopoverVisibilityState::Showing, u"beforetoggle"_ns)) {
+  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
     return;
   }
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
