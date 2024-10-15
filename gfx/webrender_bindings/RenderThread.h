@@ -128,8 +128,12 @@ class WebRenderPipelineInfo final {
 
 class RendererEvent {
  public:
+  RendererEvent() : mCreationTimeStamp(TimeStamp::Now()) {}
   virtual ~RendererEvent() = default;
   virtual void Run(RenderThread& aRenderThread, wr::WindowId aWindow) = 0;
+  virtual const char* Name() = 0;
+
+  const TimeStamp mCreationTimeStamp;
 };
 
 
@@ -433,7 +437,8 @@ class RenderThread final {
   void InitDeviceTask();
   void HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender,
                          bool aTrackedFrame, Maybe<FramePublishId> aPublishId);
-  void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent);
+  void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent,
+                bool aViaWebRender);
   void PostRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
   void DoAccumulateMemoryReport(MemoryReport,
