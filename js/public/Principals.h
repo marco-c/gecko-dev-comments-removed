@@ -26,10 +26,19 @@ struct JSPrincipals {
 
 #ifdef JS_DEBUG
   
-  uint32_t debugToken;
+  uint32_t debugToken = 0;
 #endif
 
   JSPrincipals() = default;
+
+  struct RefCount {
+    const uint32_t value;
+    constexpr explicit RefCount(uint32_t value) : refcount(value) {}
+    RefCount(const RefCount&) = delete;
+  };
+  
+
+  explicit constexpr JSPrincipals(RefCount c) : refcount{c.value} {}
 
   void setDebugToken(uint32_t token) {
 #ifdef JS_DEBUG
