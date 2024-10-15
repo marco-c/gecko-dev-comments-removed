@@ -98,7 +98,7 @@ AudioSink::~AudioSink() {
 }
 
 nsresult AudioSink::InitializeAudioStream(
-    const PlaybackParams& aParams, const RefPtr<AudioDeviceInfo>& aAudioDevice,
+    const RefPtr<AudioDeviceInfo>& aAudioDevice,
     AudioSink::InitializationType aInitializationType) {
   if (aInitializationType == AudioSink::InitializationType::UNMUTING) {
     
@@ -133,18 +133,18 @@ nsresult AudioSink::InitializeAudioStream(
     return rv;
   }
 
+  return NS_OK;
+}
+
+RefPtr<MediaSink::EndedPromise> AudioSink::Start(
+    const PlaybackParams& aParams, const media::TimeUnit& aStartTime) {
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
+
   
   
   mAudioStream->SetVolume(aParams.mVolume);
   mAudioStream->SetPlaybackRate(aParams.mPlaybackRate);
   mAudioStream->SetPreservesPitch(aParams.mPreservesPitch);
-
-  return NS_OK;
-}
-
-RefPtr<MediaSink::EndedPromise> AudioSink::Start(
-    const media::TimeUnit& aStartTime) {
-  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
 
   mAudioQueueListener = mAudioQueue.PushEvent().Connect(
       mOwnerThread, this, &AudioSink::OnAudioPushed);

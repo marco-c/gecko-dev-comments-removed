@@ -47,13 +47,13 @@ class AudioSink : private AudioStream::DataSource {
   ~AudioSink();
 
   
-  nsresult InitializeAudioStream(const PlaybackParams& aParams,
-                                 const RefPtr<AudioDeviceInfo>& aAudioDevice,
+  nsresult InitializeAudioStream(const RefPtr<AudioDeviceInfo>& aAudioDevice,
                                  InitializationType aInitializationType);
 
   
   
-  RefPtr<MediaSink::EndedPromise> Start(const media::TimeUnit& aStartTime);
+  RefPtr<MediaSink::EndedPromise> Start(const PlaybackParams& aParams,
+                                        const media::TimeUnit& aStartTime);
 
   
 

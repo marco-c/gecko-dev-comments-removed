@@ -332,8 +332,8 @@ void AudioSinkWrapper::StartAudioSink(UniquePtr<AudioSink> aAudioSink,
   AssertOwnerThread();
   MOZ_ASSERT(!mAudioSink);
   mAudioSink = std::move(aAudioSink);
-  mAudioSink->Start(aStartTime)
-      ->Then(mOwnerThread.get(), __func__, this,
+  mAudioSink->Start(mParams, aStartTime)
+      ->Then(mOwnerThread.GetEventTarget(), __func__, this,
              &AudioSinkWrapper::OnAudioEnded)
       ->Track(mAudioSinkEndedRequest);
 }
@@ -370,37 +370,36 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
   ++mAsyncCreateCount;
   using Promise =
       MozPromise<UniquePtr<AudioSink>, nsresult,  true>;
-  return InvokeAsync(mAsyncInitTaskQueue,
-                     "MaybeAsyncCreateAudioSink (Async part: initialization)",
-                     [self = RefPtr<AudioSinkWrapper>(this),
-                      audioSink{std::move(audioSink)},
-                      audioDevice = mAudioDevice, this]() mutable {
-                       if (!audioSink || !mAsyncInitTaskQueue->IsEmpty()) {
-                         
-                         
-                         
-                         return Promise::CreateAndResolve(nullptr, __func__);
-                       }
+  return InvokeAsync(
+             mAsyncInitTaskQueue,
+             "MaybeAsyncCreateAudioSink (Async part: initialization)",
+             [self = RefPtr<AudioSinkWrapper>(this),
+              audioSink{std::move(audioSink)}, audioDevice = mAudioDevice,
+              this]() mutable {
+               if (!audioSink || !mAsyncInitTaskQueue->IsEmpty()) {
+                 
+                 
+                 
+                 return Promise::CreateAndResolve(nullptr, __func__);
+               }
 
-                       LOG("AudioSink initialization on background thread");
-                       
-                       
-                       
-                       
-                       
-                       
-                       nsresult rv = audioSink->InitializeAudioStream(
-                           mParams, audioDevice,
-                           AudioSink::InitializationType::UNMUTING);
-                       if (NS_FAILED(rv)) {
-                         LOG("Async AudioSink initialization failed");
-                         return Promise::CreateAndReject(rv, __func__);
-                       }
-                       return Promise::CreateAndResolve(std::move(audioSink),
-                                                        __func__);
-                     })
+               LOG("AudioSink initialization on background thread");
+               
+               
+               
+               
+               
+               
+               nsresult rv = audioSink->InitializeAudioStream(
+                   audioDevice, AudioSink::InitializationType::UNMUTING);
+               if (NS_FAILED(rv)) {
+                 LOG("Async AudioSink initialization failed");
+                 return Promise::CreateAndReject(rv, __func__);
+               }
+               return Promise::CreateAndResolve(std::move(audioSink), __func__);
+             })
       ->Then(
-          mOwnerThread,
+          mOwnerThread.GetEventTarget(),
           "MaybeAsyncCreateAudioSink (Async part: start from MDSM thread)",
           [self = RefPtr<AudioSinkWrapper>(this), audioDevice = mAudioDevice,
            this](Promise::ResolveOrRejectValue&& aValue) mutable {
@@ -478,7 +477,7 @@ nsresult AudioSinkWrapper::SyncCreateAudioSink(const TimeUnit& aStartTime) {
 
   UniquePtr<AudioSink> audioSink = mSinkCreator();
   nsresult rv = audioSink->InitializeAudioStream(
-      mParams, mAudioDevice, AudioSink::InitializationType::INITIAL);
+      mAudioDevice, AudioSink::InitializationType::INITIAL);
   if (NS_FAILED(rv)) {
     LOG("Sync AudioSinkWrapper initialization failed");
     
