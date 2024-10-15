@@ -741,7 +741,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest, nsresult status) {
     newPartPending = mNewPartPending;
   }
   if (isMultipart && newPartPending) {
-    OnDataAvailable(aRequest, nullptr, 0, 0);
+    Unused << OnDataAvailable(aRequest, nullptr, 0, 0);
   }
 
   

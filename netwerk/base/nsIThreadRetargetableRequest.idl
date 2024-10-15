@@ -31,7 +31,7 @@ interface nsIThreadRetargetableRequest : nsISupports
 
 
 
-  void retargetDeliveryTo(in nsISerialEventTarget aNewTarget);
+  [must_use] void retargetDeliveryTo(in nsISerialEventTarget aNewTarget);
 
   
 
