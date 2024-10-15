@@ -17,6 +17,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ModelHub: "chrome://global/content/ml/ModelHub.sys.mjs",
 });
 
+const { EngineProcess, PipelineOptions } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/EngineProcess.sys.mjs"
+);
+
 
 
 
@@ -27,6 +31,7 @@ const MODEL_HUB_ROOT_URL = Services.prefs.getStringPref(
 const MODEL_HUB_URL_TEMPLATE = Services.prefs.getStringPref(
   "browser.ml.modelHubUrlTemplate"
 );
+const THIRTY_SECONDS = 30 * 1000;
 
 let modelHub = null;
 let modelCache = null;
@@ -63,6 +68,7 @@ const NUM_THREADS = Array.from(
   { length: navigator.hardwareConcurrency || 4 },
   (_, i) => i + 1
 );
+let engineParent = null;
 
 
 
@@ -118,6 +124,7 @@ const INFERENCE_PAD_PRESETS = {
     device: "wasm",
   },
 };
+const PREDEFINED = Object.keys(INFERENCE_PAD_PRESETS);
 
 
 
@@ -145,14 +152,130 @@ function formatBytes(bytes) {
   return `${size[0]} ${size[1]}`;
 }
 
+let updateStatusInterval = null;
 
 
 
 
 
-async function displayProcessInfo() {
+
+
+async function updateStatus() {
+  if (!engineParent) {
+    return;
+  }
+
+  let info;
+
+  
+  try {
+    info = await engineParent.getStatus();
+  } catch (e) {
+    engineParent = null; 
+    info = new Map();
+  }
+
+  
+  let tableContainer = document.getElementById("statusTableContainer");
+
+  
+  if (info.size === 0) {
+    tableContainer.innerHTML = ""; 
+    if (updateStatusInterval) {
+      clearInterval(updateStatusInterval); 
+      updateStatusInterval = null; 
+    }
+    return; 
+  }
+
+  
+  let fragment = document.createDocumentFragment();
+
+  
+  let table = document.createElement("table");
+  table.border = "1";
+
+  
+  let thead = document.createElement("thead");
+  let headerRow = document.createElement("tr");
+
+  let columns = [
+    "Engine ID",
+    "Status",
+    "Model ID",
+    "Quantization",
+    "Device",
+    "Timeout",
+  ];
+
+  columns.forEach(col => {
+    let th = document.createElement("th");
+    th.textContent = col;
+    headerRow.appendChild(th);
+  });
+
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  
+  let tbody = document.createElement("tbody");
+
+  
+  for (let [engineId, engineInfo] of info.entries()) {
+    let row = document.createElement("tr");
+
+    
+    let engineIdCell = document.createElement("td");
+    engineIdCell.textContent = engineId;
+    row.appendChild(engineIdCell);
+
+    let statusCell = document.createElement("td");
+    statusCell.textContent = engineInfo.status;
+    row.appendChild(statusCell);
+
+    let modelIdCell = document.createElement("td");
+    modelIdCell.textContent = engineInfo.options?.modelId || "N/A";
+    row.appendChild(modelIdCell);
+
+    let dtypeCell = document.createElement("td");
+    dtypeCell.textContent = engineInfo.options?.dtype || "N/A";
+    row.appendChild(dtypeCell);
+
+    let deviceCell = document.createElement("td");
+    deviceCell.textContent = engineInfo.options?.device || "N/A";
+    row.appendChild(deviceCell);
+
+    let timeoutCell = document.createElement("td");
+    timeoutCell.textContent = engineInfo.options?.timeoutMS || "N/A";
+    row.appendChild(timeoutCell);
+
+    
+    tbody.appendChild(row);
+  }
+
+  table.appendChild(tbody);
+  fragment.appendChild(table);
+
+  
+  tableContainer.innerHTML = "";
+  tableContainer.appendChild(fragment);
+
+  
+  if (!updateStatusInterval) {
+    updateStatusInterval = setInterval(updateStatus, 1000); 
+  }
+}
+
+let updateInterval;
+
+
+
+
+
+
+async function updateProcInfo() {
   let info = await ChromeUtils.requestProcInfo();
-  let tableContainer = document.getElementById("runningInference");
+  let tableContainer = document.getElementById("procInfoTableContainer");
   let fragment = document.createDocumentFragment();
   let table = document.createElement("table");
   table.border = "1";
@@ -193,30 +316,28 @@ async function displayProcessInfo() {
   if (foundInference) {
     table.appendChild(tbody);
     fragment.appendChild(table);
+
+    if (!updateInterval) {
+      
+      updateInterval = setInterval(updateProcInfo, 5000);
+    }
   } else {
     let noneLabel = document.createElement("div");
     document.l10n.setAttributes(noneLabel, "about-inference-no-processes");
     fragment.appendChild(noneLabel);
+
+    
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      updateInterval = null; 
+    }
   }
 
   tableContainer.innerHTML = "";
   tableContainer.appendChild(fragment);
 }
 
-
-
-
-
-
-async function displayInfo() {
-  if (!ML_ENABLE) {
-    let warning = document.getElementById("warning");
-    warning.style.display = "block";
-    document.getElementById("content").style.display = "none";
-  } else {
-    document.getElementById("content").style.display = "block";
-  }
-
+async function updateModels() {
   let cache = await lazy.IndexedDBCache.init();
   let models = await cache.listModels();
   let modelFilesDiv = document.getElementById("modelFiles");
@@ -294,8 +415,39 @@ async function displayInfo() {
 
   modelFilesDiv.innerHTML = "";
   modelFilesDiv.appendChild(fragment);
+}
 
-  await displayProcessInfo();
+async function refreshPage() {
+  const ml_enable = Services.prefs.getBoolPref("browser.ml.enable");
+  const content = document.getElementById("content");
+  const warning = document.getElementById("warning");
+  if (!ml_enable) {
+    if (warning.style.display !== "block") {
+      warning.style.display = "block";
+    }
+    if (content.style.display !== "none") {
+      content.style.display = "none";
+    }
+  } else {
+    if (content.style.display !== "block") {
+      content.style.display = "block";
+    }
+    if (warning.style.display !== "none") {
+      warning.style.display = "none";
+    }
+  }
+  await updateModels();
+  await updateProcInfo();
+  await updateStatus();
+}
+
+
+
+
+
+
+async function displayInfo() {
+  await refreshPage();
 }
 
 function setSelectOption(selectId, optionValue) {
@@ -322,6 +474,9 @@ function setSelectOption(selectId, optionValue) {
 }
 
 function loadExample(name) {
+  const textarea = document.getElementById("inferencePad");
+  textarea.value = 0;
+
   let data = INFERENCE_PAD_PRESETS[name];
   let padContent = { inputArgs: data.inputArgs, runOptions: data.runOptions };
   document.getElementById("inferencePad").value = JSON.stringify(
@@ -335,15 +490,6 @@ function loadExample(name) {
   setSelectOption("modelHub", data.modelHub);
   setSelectOption("dtype", data.dtype);
   setSelectOption("device", data.device);
-}
-
-function formatJSON() {
-  const textarea = document.getElementById("inferencePad");
-  const jsonInput = textarea.value;
-
-  const jsonObject = JSON.parse(jsonInput);
-  const formattedJson = JSON.stringify(jsonObject, null, 2); 
-  textarea.value = formattedJson;
 }
 
 async function runInference() {
@@ -381,16 +527,20 @@ async function runInference() {
     device,
     dtype,
     numThreads,
+    timeoutMS: THIRTY_SECONDS,
   };
-
-  const { createEngine } = ChromeUtils.importESModule(
-    "chrome://global/content/ml/EngineProcess.sys.mjs"
-  );
 
   appendTextConsole("Creating engine if needed");
   let engine;
   try {
-    engine = await createEngine(initData, appendConsole);
+    const pipelineOptions = new PipelineOptions(initData);
+    const engineParent = await getEngineParent();
+
+    engine = await engineParent.getEngine(pipelineOptions, progressData => {
+      engineNotification(progressData).catch(err => {
+        console.error("Error in engineNotification:", err);
+      });
+    });
   } catch (e) {
     appendTextConsole(e);
     throw e;
@@ -413,12 +563,13 @@ async function runInference() {
         "Make sure you started Firefox with MOZ_ALLOW_EXTERNAL_ML_HUB=1"
       );
     }
-
+    engineParent = null; 
     throw e;
   }
 
   appendTextConsole(`Results: ${JSON.stringify(res, null, 2)}`);
   appendTextConsole(`Metrics: ${JSON.stringify(res.metrics, null, 2)}`);
+  await refreshPage();
 }
 
 function updateDownloadProgress(data) {
@@ -464,7 +615,7 @@ function updateDownloadProgress(data) {
   }
 }
 
-function appendConsole(data) {
+async function engineNotification(data) {
   let text;
   const textarea = document.getElementById("console");
   switch (data.type) {
@@ -478,6 +629,7 @@ function appendConsole(data) {
       text = JSON.stringify(data);
   }
   textarea.value += (textarea.value ? "\n" : "") + text;
+  await refreshPage();
 }
 
 function appendTextConsole(text) {
@@ -548,17 +700,48 @@ function fillSelect(elementId, values) {
   });
 }
 
+function showTab(tabIndex) {
+  
+  const tabs = document.querySelectorAll(".tab-content");
+  tabs.forEach((tab, index) => {
+    tab.classList.remove("active");
+    if (index === tabIndex) {
+      tab.classList.add("active");
+    }
+  });
+
+  
+  const menuItems = document.querySelectorAll(".tab-menu li");
+  menuItems.forEach((item, index) => {
+    item.classList.remove("active");
+    if (index === tabIndex) {
+      item.classList.add("active");
+    }
+  });
+}
+
+async function getEngineParent() {
+  if (!engineParent) {
+    engineParent = await EngineProcess.getMLEngineParent();
+  }
+  return engineParent;
+}
+
 
 
 
 
 
 window.onload = async function () {
+  showTab(0);
   fillSelect("dtype", DTYPE);
   fillSelect("taskName", TASKS);
   fillSelect("numThreads", NUM_THREADS);
+  fillSelect("predefined", PREDEFINED);
+
+  document.getElementById("predefined").value = "summary";
   loadExample("summary");
-  await displayInfo();
+  document.getElementById("console").value = "";
 
   document
     .getElementById("inferenceButton")
@@ -580,6 +763,11 @@ window.onload = async function () {
     .getElementById("http.limit")
     .addEventListener("change", updateHttpContext);
 
+  const menuItems = document.querySelectorAll(".tab-menu li");
+  menuItems.forEach((item, index) => {
+    item.addEventListener("click", () => showTab(index));
+  });
+
   updateHttpContext();
-  setInterval(displayInfo, 5000);
+  await refreshPage();
 };
