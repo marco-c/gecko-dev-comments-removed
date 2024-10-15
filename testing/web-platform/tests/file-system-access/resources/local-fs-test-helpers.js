@@ -151,14 +151,13 @@ function framed_test(func, description) {
       try {
         
         const handles = [
-          null,                          
-          newIframe(same_site_origin),   
-          null,                          
-          newIframe(cross_site_origin),  
-          newIframeCredentialless(same_site_origin),  
           null,  
-          newIframeCredentialless(
-              cross_site_origin),  
+          newIframe(same_site_origin),  
+          null,  
+          newIframe(cross_site_origin),  
+          newAnonymousIframe(same_site_origin),  
+          null,  
+          newAnonymousIframe(cross_site_origin),  
         ];
         
         const setUpQueue = token();
@@ -166,10 +165,8 @@ function framed_test(func, description) {
           child_frame_js(same_site_origin, "newIframe", setUpQueue));
         handles[FRAME_CONTEXT.thirdPartySameSite_AncestorBit] =
           await receive(setUpQueue);
-        send(
-            newIframeCredentialless(cross_site_origin),
-            child_frame_js(
-                same_site_origin, 'newIframeCredentialless', setUpQueue));
+        send(newAnonymousIframe(cross_site_origin),
+          child_frame_js(same_site_origin, "newAnonymousIframe", setUpQueue));
         handles[FRAME_CONTEXT.anonymousFrameSameSite_AncestorBit] =
           await receive(setUpQueue);
 
