@@ -42,8 +42,8 @@ add_task(async function test_unused_click_doesnt_consume_activation() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
+      
       ["dom.disable_open_during_load", true],
-      ["dom.block_multiple_popups", true],
     ],
   });
   await BrowserTestUtils.withNewTab(TEST_PATH + "click.html", async browser => {
@@ -75,8 +75,8 @@ add_task(async function test_click_without_href_doesnt_consume_activation() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
+      
       ["dom.disable_open_during_load", true],
-      ["dom.block_multiple_popups", true],
     ],
   });
   await BrowserTestUtils.withNewTab(TEST_PATH + "click.html", async browser => {
