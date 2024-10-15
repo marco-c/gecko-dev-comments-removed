@@ -16535,6 +16535,9 @@ bool CodeGenerator::generate() {
   if (!safepointIndices_.reserve(maxSafepointIndices)) {
     return false;
   }
+  if (!osiIndices_.reserve(graph.numSafepoints())) {
+    return false;
+  }
 
   perfSpewer_.recordOffset(masm, "Prologue");
   if (!generatePrologue()) {
@@ -16611,6 +16614,10 @@ bool CodeGenerator::generate() {
   
   
   MOZ_ASSERT(safepointIndices_.length() <= maxSafepointIndices);
+
+  
+  
+  MOZ_ASSERT(osiIndices_.length() == graph.numSafepoints());
 
   return !masm.oom();
 }
