@@ -77,7 +77,11 @@ add_task(async function () {
 
   await waitForPausedInOriginalFileAndToggleMapScopes(dbg);
 
-  assertPausedAtSourceAndLine(dbg, findSource(dbg, "fib.c").id, breakpointLine);
+  await assertPausedAtSourceAndLine(
+    dbg,
+    findSource(dbg, "fib.c").id,
+    breakpointLine
+  );
   await assertBreakpoint(dbg, breakpointLine);
   
   
@@ -122,7 +126,7 @@ add_task(async function () {
   
   await waitForPaused(dbg);
   
-  assertPausedAtSourceAndLine(dbg, binarySource.id, virtualBinaryLine);
+  await assertPausedAtSourceAndLine(dbg, binarySource.id, virtualBinaryLine);
 
   
   info(
@@ -134,7 +138,11 @@ add_task(async function () {
   
   await waitForPausedInOriginalFileAndToggleMapScopes(dbg);
 
-  assertPausedAtSourceAndLine(dbg, findSource(dbg, "fib.c").id, breakpointLine);
+  await assertPausedAtSourceAndLine(
+    dbg,
+    findSource(dbg, "fib.c").id,
+    breakpointLine
+  );
 
   info("Reselect the binary source");
   await dbg.actions.selectLocation(createLocation({ source: binarySource }), {
