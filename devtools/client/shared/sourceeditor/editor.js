@@ -2594,15 +2594,6 @@ class Editor extends EventEmitter {
   
 
 
-
-  getCoordsFromPosition({ line, ch }) {
-    const cm = editors.get(this);
-    return cm.charCoords({ line: ~~line, ch: ~~ch });
-  }
-
-  
-
-
   canUndo() {
     const cm = editors.get(this);
     return cm.historySize().undo > 0;
@@ -3161,6 +3152,21 @@ class Editor extends EventEmitter {
       return !!this.searchState.cursors;
     }
     return !!cm.state.search;
+  }
+
+  
+  getCoords(line, column = 0) {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const offset = this.#posToOffset(line, column);
+      if (offset == null) {
+        return null;
+      }
+      return cm.coordsAtPos(offset);
+    }
+    
+    
+    return cm.charCoords({ line: ~~line, ch: ~~column });
   }
 
   
