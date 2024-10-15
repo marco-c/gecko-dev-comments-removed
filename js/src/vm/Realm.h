@@ -809,6 +809,16 @@ class JS::Realm : public JS::shadow::Realm {
 
   js::RealmFuses realmFuses;
 
+  
+  
+  
+  
+  js::gc::AllocSite* localAllocSite = nullptr;
+
+  static size_t offsetOfLocalAllocSite() {
+    return offsetof(JS::Realm, localAllocSite);
+  }
+
  private:
   void purgeForOfPicChain();
 };

@@ -128,6 +128,7 @@
 #include "js/Equality.h"        
 #include "js/ErrorReport.h"     
 #include "js/Exception.h"       
+#include "js/experimental/BindingAllocs.h"  
 #include "js/experimental/CodeCoverage.h"   
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/CTypes.h"         
@@ -10351,7 +10352,9 @@ static ExtraGlobalBindingWithHelp extraGlobalBindingsWithHelp[] = {
 "    FakeDOMObject.prototype.global\n"
 "      Getter/setter with JSJitInfo::AliasEverything\n"
 "    FakeDOMObject.prototype.doFoo()\n"
-"      Method with JSJitInfo"},
+"      Method with JSJitInfo\n"
+"    FakeDOMObject.prototype.getObject()\n"
+"      Method with JSJitInfo that returns an object."},
 };
 
 
@@ -10830,6 +10833,26 @@ static bool dom_doFoo(JSContext* cx, HandleObject obj, void* self,
   return true;
 }
 
+static bool dom_doBar(JSContext* cx, HandleObject obj, void* self,
+                      const JSJitMethodCallArgs& args) {
+  MOZ_ASSERT(JS::GetClass(obj) == GetDomClass());
+  MOZ_ASSERT(self == DOM_PRIVATE_VALUE);
+  MOZ_ASSERT(cx->realm() == args.callee().as<JSFunction>().realm());
+
+  static const JSClass barClass = {
+      "BarObj",
+  };
+
+  JSObject* retObj =
+      JS_NewObjectWithGivenProtoAndUseAllocSite(cx, &barClass, nullptr);
+  if (!retObj) {
+    return false;
+  }
+
+  args.rval().setObject(*retObj);
+  return true;
+}
+
 static const JSJitInfo dom_x_getterinfo = {
     {(JSJitGetterOp)dom_get_x},
     {0}, 
@@ -10929,6 +10952,22 @@ static const JSJitInfo doFoo_methodinfo = {
     0                           
 };
 
+static const JSJitInfo doBar_methodinfo = {
+    {(JSJitGetterOp)dom_doBar},
+    {0}, 
+    {0}, 
+    JSJitInfo::Method,
+    JSJitInfo::AliasEverything, 
+    JSVAL_TYPE_OBJECT,          
+    false,                      
+    false,                      
+    false,                      
+    false,                      
+    false,                      
+    false,                      
+    0                           
+};
+
 static const JSPropertySpec dom_props[] = {
     JSPropertySpec::nativeAccessors("x", JSPROP_ENUMERATE, dom_genericGetter,
                                     &dom_x_getterinfo, dom_genericSetter,
@@ -10943,6 +10982,8 @@ static const JSPropertySpec dom_props[] = {
 
 static const JSFunctionSpec dom_methods[] = {
     JS_FNINFO("doFoo", dom_genericMethod, &doFoo_methodinfo, 3,
+              JSPROP_ENUMERATE),
+    JS_FNINFO("doBar", dom_genericMethod, &doBar_methodinfo, 3,
               JSPROP_ENUMERATE),
     JS_FS_END,
 };
