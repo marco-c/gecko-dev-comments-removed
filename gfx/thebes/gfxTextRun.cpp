@@ -3460,13 +3460,21 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
     
     
     
+    
     if ((font = GetFontAt(0, ch)) != nullptr && font->HasCharacter(ch) &&
-        (sizeof(T) == sizeof(uint8_t) ||
-         (!IsClusterExtender(ch) && ch != NARROW_NO_BREAK_SPACE &&
-          !gfxFontUtils::IsJoinControl(ch) &&
-          !gfxFontUtils::IsJoinCauser(prevCh) &&
-          !gfxFontUtils::IsVarSelector(ch) &&
-          GetEmojiPresentation(ch) == TextOnly))) {
+        
+        
+        
+        ((sizeof(T) == sizeof(uint8_t) &&
+          (mEmojiPresentation != eFontPresentation::EmojiExplicit ||
+           GetEmojiPresentation(ch) == TextOnly)) ||
+         
+         (sizeof(T) == sizeof(char16_t) &&
+          (!IsClusterExtender(ch) && ch != NARROW_NO_BREAK_SPACE &&
+           !gfxFontUtils::IsJoinControl(ch) &&
+           !gfxFontUtils::IsJoinCauser(prevCh) &&
+           !gfxFontUtils::IsVarSelector(ch) &&
+           GetEmojiPresentation(ch) == TextOnly)))) {
       matchType = {FontMatchType::Kind::kFontGroup, mFonts[0].Generic()};
     } else {
       font =
