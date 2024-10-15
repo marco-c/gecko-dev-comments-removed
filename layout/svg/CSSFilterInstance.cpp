@@ -130,10 +130,10 @@ nsresult CSSFilterInstance::SetAttributesForBrightness(
   atts.mTypes[kChannelROrRGB] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_LINEAR;
   atts.mTypes[kChannelG] = (uint8_t)SVG_FECOMPONENTTRANSFER_SAME_AS_R;
   atts.mTypes[kChannelB] = (uint8_t)SVG_FECOMPONENTTRANSFER_SAME_AS_R;
-  float slopeIntercept[2];
+  std::array<float, 2> slopeIntercept;
   slopeIntercept[kComponentTransferSlopeIndex] = value;
   slopeIntercept[kComponentTransferInterceptIndex] = intercept;
-  atts.mValues[kChannelROrRGB].AppendElements(slopeIntercept, 2);
+  atts.mValues[kChannelROrRGB].AppendElements(Span(slopeIntercept));
 
   atts.mTypes[kChannelA] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY;
 
@@ -151,10 +151,10 @@ nsresult CSSFilterInstance::SetAttributesForContrast(
   atts.mTypes[kChannelROrRGB] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_LINEAR;
   atts.mTypes[kChannelG] = (uint8_t)SVG_FECOMPONENTTRANSFER_SAME_AS_R;
   atts.mTypes[kChannelB] = (uint8_t)SVG_FECOMPONENTTRANSFER_SAME_AS_R;
-  float slopeIntercept[2];
+  std::array<float, 2> slopeIntercept;
   slopeIntercept[kComponentTransferSlopeIndex] = value;
   slopeIntercept[kComponentTransferInterceptIndex] = intercept;
-  atts.mValues[kChannelROrRGB].AppendElements(slopeIntercept, 2);
+  atts.mValues[kChannelROrRGB].AppendElements(Span(slopeIntercept));
 
   atts.mTypes[kChannelA] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY;
 
@@ -192,8 +192,7 @@ nsresult CSSFilterInstance::SetAttributesForGrayscale(
   atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_SATURATE;
 
   
-  float value = 1 - ClampFactor(mFilter.AsGrayscale());
-  atts.mValues.AppendElements(&value, 1);
+  atts.mValues.AppendElement(1 - ClampFactor(mFilter.AsGrayscale()));
 
   aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
@@ -206,8 +205,7 @@ nsresult CSSFilterInstance::SetAttributesForHueRotate(
   atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_HUE_ROTATE;
 
   
-  float value = mFilter.AsHueRotate().ToDegrees();
-  atts.mValues.AppendElements(&value, 1);
+  atts.mValues.AppendElement(mFilter.AsHueRotate().ToDegrees());
 
   aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
@@ -219,15 +217,13 @@ nsresult CSSFilterInstance::SetAttributesForInvert(
   float value = ClampFactor(mFilter.AsInvert());
 
   
-  float invertTableValues[2];
-  invertTableValues[0] = value;
-  invertTableValues[1] = 1 - value;
+  std::array<float, 2> invertTableValues = {value, 1 - value};
 
   
   atts.mTypes[kChannelROrRGB] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_TABLE;
   atts.mTypes[kChannelG] = (uint8_t)SVG_FECOMPONENTTRANSFER_SAME_AS_R;
   atts.mTypes[kChannelB] = (uint8_t)SVG_FECOMPONENTTRANSFER_SAME_AS_R;
-  atts.mValues[kChannelROrRGB].AppendElements(invertTableValues, 2);
+  atts.mValues[kChannelROrRGB].AppendElements(Span(invertTableValues));
 
   atts.mTypes[kChannelA] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY;
 
@@ -252,8 +248,7 @@ nsresult CSSFilterInstance::SetAttributesForSaturate(
   atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_SATURATE;
 
   
-  float value = mFilter.AsSaturate();
-  atts.mValues.AppendElements(&value, 1);
+  atts.mValues.AppendElement(mFilter.AsSaturate());
 
   aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
@@ -266,8 +261,7 @@ nsresult CSSFilterInstance::SetAttributesForSepia(
   atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_SEPIA;
 
   
-  float value = ClampFactor(mFilter.AsSepia());
-  atts.mValues.AppendElements(&value, 1);
+  atts.mValues.AppendElement(ClampFactor(mFilter.AsSepia()));
 
   aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
