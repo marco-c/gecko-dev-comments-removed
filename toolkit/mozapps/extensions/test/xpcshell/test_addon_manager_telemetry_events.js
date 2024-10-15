@@ -224,6 +224,7 @@ add_task(
       addon_id: "basic@test.extension",
       source: FAKE_INSTALL_TELEMETRY_INFO.source,
       source_method: FAKE_INSTALL_TELEMETRY_INFO.method,
+      blocklist_state: `${Ci.nsIBlocklistService.STATE_NOT_BLOCKED}`,
     };
     Assert.deepEqual(
       AddonTestUtils.getAMGleanEvents("manage"),
@@ -238,7 +239,10 @@ add_task(
     const manageEvents = amEvents.filter(evt =>
       EVENT_METHODS_MANAGE.includes(evt.method)
     );
-    const expectedExtra = FAKE_INSTALL_TELEMETRY_INFO;
+    const expectedExtra = {
+      ...FAKE_INSTALL_TELEMETRY_INFO,
+      blocklist_state: `${Ci.nsIBlocklistService.STATE_NOT_BLOCKED}`,
+    };
     const expectedManageEvents = [
       {
         method: "disable",
@@ -263,6 +267,19 @@ add_task(
       manageEvents,
       expectedManageEvents,
       "Got the expected addonsManager.manage events"
+    );
+
+    
+    
+    
+    
+    
+    
+    
+    Assert.deepEqual(
+      AddonTestUtils.getAMGleanEvents("disableExtension"),
+      [{ value: gleanManage.addon_id, method: "disable", ...expectedExtra }],
+      "Verify disableExtension addonsManager metrics_legacy.yaml metric isn't invalid"
     );
 
     Services.fog.testResetFOG();

@@ -12,6 +12,9 @@ createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42.0", "42.0");
 
 AddonTestUtils.usePrivilegedSignatures = false;
 
+const { AMTelemetry } = ChromeUtils.importESModule(
+  "resource://gre/modules/AddonManager.sys.mjs"
+);
 const { Downloader } = ChromeUtils.importESModule(
   "resource://services-settings/Attachments.sys.mjs"
 );
@@ -743,6 +746,11 @@ add_task(async function update_softblocked_to_unblocked() {
 });
 
 add_task(async function update_softblocked_to_hardblocked() {
+  
+  
+  AMTelemetry.telemetrySetupDone = false;
+  AMTelemetry.onStartup();
+
   Services.fog.testResetFOG();
 
   await AddonTestUtils.loadBlocklistRawData({
@@ -784,6 +792,26 @@ add_task(async function update_softblocked_to_hardblocked() {
     addon.softDisabled,
     false,
     `${addon.id} version 0.2 to not be softDisabled after being explicitly re-enabled`
+  );
+
+  Assert.deepEqual(
+    Glean.addonsManager.manage.testGetValue().map(evt => {
+      delete evt.timestamp;
+      return evt;
+    }),
+    [
+      {
+        category: "addons_manager",
+        name: "manage",
+        extra: {
+          method: "enable",
+          addon_id: addon.id,
+          blocklist_state: "1", 
+          addon_type: "extension",
+        },
+      },
+    ],
+    "Expect addonsManager manage enable event to include the expected blocklistState"
   );
 
   
