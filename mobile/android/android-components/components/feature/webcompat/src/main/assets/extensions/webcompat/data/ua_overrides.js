@@ -1422,6 +1422,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1921410",
+    platform: "linux",
+    domain: "beta.maps.apple.com",
+    bug: "1921410",
+    config: {
+      matches: ["*://beta.maps.apple.com/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getWindowsUA(originalUA);
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
