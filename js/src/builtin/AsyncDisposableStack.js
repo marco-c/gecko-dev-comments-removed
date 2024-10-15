@@ -51,4 +51,4 @@ async function $AsyncDisposableStackDisposeAsync() {
   
   return undefined;
 }
-SetCanonicalName($AsyncDisposableStackDisposeAsync, 'disposeAsync');
+SetCanonicalName($AsyncDisposableStackDisposeAsync, "disposeAsync");

@@ -156,6 +156,7 @@ module.exports = {
         ToNumeric: "readonly",
         ToString: "readonly",
         DisposeResourcesAsync: "readonly",
+        DisposeResourcesSync: "readonly",
 
         
         

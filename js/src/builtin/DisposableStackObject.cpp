@@ -11,8 +11,6 @@
 #include "js/friend/ErrorMessages.h"
 #include "js/PropertyAndElement.h"
 #include "js/PropertySpec.h"
-#include "vm/BytecodeUtil.h"
-#include "vm/DisposableRecord.h"
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
@@ -132,155 +130,6 @@ using namespace js;
                                              JS::Value* vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
   return JS::CallNonGenericMethod<is, use_impl>(cx, args);
-}
-
-
-
-
-
-
-
-
-
-
-template <typename ClearFn>
-MOZ_ALWAYS_INLINE bool DisposeResources(
-    JSContext* cx, JS::Handle<ArrayObject*> disposeCapability, ClearFn clear) {
-  uint32_t index = disposeCapability->getDenseInitializedLength();
-
-  
-  MOZ_ASSERT(!cx->isExceptionPending());
-  bool hadError = false;
-  JS::Rooted<JS::Value> latestException(cx);
-
-  
-  
-  while (index) {
-    --index;
-    JS::Value val = disposeCapability->getDenseElement(index);
-
-    MOZ_ASSERT(val.isObject());
-
-    JS::Rooted<DisposableRecordObject*> resource(
-        cx, &val.toObject().as<DisposableRecordObject>());
-
-    
-    JS::Rooted<JS::Value> value(cx, resource->getObject());
-
-    
-    
-    JS::Rooted<JS::Value> method(cx, resource->getMethod());
-
-    
-    if (method.isUndefined()) {
-      continue;
-    }
-
-    
-    JS::Rooted<JS::Value> rval(cx);
-    if (!Call(cx, method, value, &rval)) {
-      
-      if (hadError) {
-        
-        JS::Rooted<JS::Value> result(cx);
-        if (!cx->getPendingException(&result)) {
-          return false;
-        }
-        cx->clearPendingException();
-
-        
-        JS::Rooted<JS::Value> suppressed(cx, latestException);
-
-        
-        ErrorObject* errorObj = CreateSuppressedError(cx, result, suppressed);
-        if (!errorObj) {
-          return false;
-        }
-        
-        latestException.set(ObjectValue(*errorObj));
-      } else {
-        
-        
-        hadError = true;
-        if (cx->isExceptionPending()) {
-          if (!cx->getPendingException(&latestException)) {
-            return false;
-          }
-          cx->clearPendingException();
-        }
-      }
-    }
-  }
-
-  
-  
-  clear();
-
-  
-  if (hadError) {
-    cx->setPendingException(latestException, ShouldCaptureStack::Maybe);
-    return false;
-  }
-
-  return true;
-}
-
-
-
-
-
-bool DisposableStackObject::disposeResources(JSContext* cx) {
-  MOZ_ASSERT(state() == DisposableState::Pending);
-
-  
-  setState(DisposableState::Disposed);
-
-  
-  
-  if (isDisposableResourceStackEmpty()) {
-    return true;
-  }
-
-  JS::Rooted<ArrayObject*> disposeCapability(cx,
-                                             nonEmptyDisposableResourceStack());
-
-  auto clearFn = [&]() { clearDisposableResourceStack(); };
-
-  return DisposeResources(cx, disposeCapability, clearFn);
-}
-
-
-
-
-
-
- bool DisposableStackObject::dispose_impl(
-    JSContext* cx, const JS::CallArgs& args) {
-  
-  JS::Rooted<DisposableStackObject*> disposableStack(
-      cx, &args.thisv().toObject().as<DisposableStackObject>());
-
-  
-  
-  
-  
-  if (disposableStack->state() == DisposableState::Disposed) {
-    args.rval().setUndefined();
-    return true;
-  }
-
-  
-  if (!disposableStack->disposeResources(cx)) {
-    return false;
-  }
-  args.rval().setUndefined();
-  return true;
-}
-
- bool DisposableStackObject::dispose(JSContext* cx, unsigned argc,
-                                                 JS::Value* vp) {
-  JS::CallArgs args = CallArgsFromVp(argc, vp);
-  return JS::CallNonGenericMethod<is, dispose_impl>(cx, args);
 }
 
 
@@ -486,26 +335,6 @@ bool DisposableStackObject::disposeResources(JSContext* cx) {
   return JS::CallNonGenericMethod<is, disposed_impl>(cx, args);
 }
 
- bool DisposableStackObject::finishInit(
-    JSContext* cx, JS::Handle<JSObject*> ctor, JS::Handle<JSObject*> proto) {
-  JS::Handle<NativeObject*> nativeProto = proto.as<NativeObject>();
-
-  JS::Rooted<JS::Value> disposeFn(cx);
-  JS::Rooted<JS::PropertyKey> disposeId(cx, NameToId(cx->names().dispose));
-  if (!NativeGetProperty(cx, nativeProto, disposeId, &disposeFn)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  JS::Rooted<JS::PropertyKey> disposeSym(
-      cx, JS::PropertyKey::Symbol(cx->wellKnownSymbols().dispose));
-  return NativeDefineDataProperty(cx, nativeProto, disposeSym, disposeFn, 0);
-}
-
 const JSPropertySpec DisposableStackObject::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "DisposableStack", JSPROP_READONLY),
     JS_PSG("disposed", disposed, 0),
@@ -514,13 +343,11 @@ const JSPropertySpec DisposableStackObject::properties[] = {
 
 const JSFunctionSpec DisposableStackObject::methods[] = {
     JS_FN("use", DisposableStackObject::use, 1, 0),
-    JS_FN("dispose", DisposableStackObject::dispose, 0, 0),
+    JS_SELF_HOSTED_FN("dispose", "$DisposableStackDispose", 0, 0),
     JS_FN("defer", DisposableStackObject::defer, 1, 0),
     JS_FN("move", DisposableStackObject::move, 0, 0),
     JS_FN("adopt", DisposableStackObject::adopt, 2, 0),
-    
-    
-    JS_SYM_FN(dispose, DisposableStackObject::dispose, 0, 0),
+    JS_SELF_HOSTED_SYM_FN(dispose, "$DisposableStackDispose", 0, 0),
     JS_FS_END,
 };
 
@@ -532,7 +359,7 @@ const ClassSpec DisposableStackObject::classSpec_ = {
     nullptr,
     DisposableStackObject::methods,
     DisposableStackObject::properties,
-    DisposableStackObject::finishInit,
+    nullptr,
 };
 
 const JSClass DisposableStackObject::class_ = {
