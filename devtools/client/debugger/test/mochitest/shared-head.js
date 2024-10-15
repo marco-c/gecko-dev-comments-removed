@@ -2314,6 +2314,7 @@ function getCoordsFromPosition(dbg, line, ch) {
 async function getTokenFromPosition(dbg, { line, column = 0 }) {
   info(`Get token at ${line}:${column}`);
   const cm = getCM(dbg);
+  line = isCm6Enabled ? line : line - 1;
   await scrollEditorIntoView(dbg, line, column);
 
   if (isCm6Enabled) {
@@ -2396,16 +2397,21 @@ async function clickAtPos(dbg, pos) {
   info(
     `Clicking on token ${tokenEl.innerText} in line ${tokenEl.parentNode.innerText}`
   );
-  tokenEl.dispatchEvent(
-    new PointerEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      view: dbg.win,
-      
-      clientX: left + 1,
-      clientY: top + 1,
-    })
-  );
+  
+  if (isCm6Enabled) {
+    EventUtils.synthesizeMouseAtCenter(tokenEl, {}, dbg.win);
+  } else {
+    tokenEl.dispatchEvent(
+      new PointerEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: dbg.win,
+        
+        clientX: left + 1,
+        clientY: top + 1,
+      })
+    );
+  }
 }
 
 async function rightClickAtPos(dbg, pos) {
@@ -2413,8 +2419,12 @@ async function rightClickAtPos(dbg, pos) {
   if (!el) {
     return;
   }
-
-  EventUtils.synthesizeMouseAtCenter(el, { type: "contextmenu" }, dbg.win);
+  
+  
+  if (isCm6Enabled) {
+    EventUtils.synthesizeMouseAtCenter(el, {}, dbg.win);
+  }
+  rightClickEl(dbg, el);
 }
 
 async function hoverAtPos(dbg, pos) {
