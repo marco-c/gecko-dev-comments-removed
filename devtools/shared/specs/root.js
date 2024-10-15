@@ -22,6 +22,14 @@ const rootSpecPrototype = {
   typeName: "root",
 
   methods: {
+    connect: {
+      request: {
+        
+        frontendVersion: Option(0, "string"),
+      },
+      response: {},
+    },
+
     getRoot: {
       request: {},
       response: RetVal("json"),

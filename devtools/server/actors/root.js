@@ -219,6 +219,17 @@ class RootActor extends Actor {
 
 
 
+
+
+
+
+  
+  connect({ frontendVersion }) {}
+
+  
+
+
+
   getRoot() {
     
     if (!this._globalActorPool) {
