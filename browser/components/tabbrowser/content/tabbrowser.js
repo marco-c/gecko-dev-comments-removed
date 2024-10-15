@@ -2953,6 +2953,22 @@
       return t;
     },
 
+    
+
+
+
+
+
+
+    _createTabGroup(id, color, collapsed, label = "") {
+      let group = document.createXULElement("tab-group", { is: "tab-group" });
+      group.id = id;
+      group.collapsed = collapsed;
+      group.color = color;
+      group.label = label;
+      return group;
+    },
+
     addTabGroup(color = "", label = "", tabs) {
       if (!tabs?.length) {
         throw new Error("Cannot create tab group with zero tabs");
@@ -2962,10 +2978,8 @@
         color = this.tabGroupMenu.nextUnusedColor;
       }
 
-      let group = document.createXULElement("tab-group", { is: "tab-group" });
-      group.id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
-      group.color = color;
-      group.label = label;
+      let id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
+      let group = this._createTabGroup(id, color, false, label);
       this.tabContainer.appendChild(group);
       group.addTabs(tabs);
       group.dispatchEvent(new CustomEvent("TabGroupCreate", { bubbles: true }));
@@ -3304,12 +3318,41 @@
       }
     },
 
-    createTabsForSessionRestore(restoreTabsLazily, selectTab, tabDataList) {
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    createTabsForSessionRestore(
+      restoreTabsLazily,
+      selectTab,
+      tabDataList,
+      tabGroupDataList
+    ) {
       let tabs = [];
       let tabsFragment = document.createDocumentFragment();
       let tabToSelect = null;
       let hiddenTabs = new Map();
       let shouldUpdateForPinnedTabs = false;
+      
+      let tabGroupWorkingData = new Map();
+
+      for (const tabGroupData of tabGroupDataList) {
+        tabGroupWorkingData.set(tabGroupData.id, {
+          stateData: tabGroupData,
+          node: undefined,
+          containingTabsFragment: document.createDocumentFragment(),
+        });
+      }
 
       
       
@@ -3407,6 +3450,25 @@
             
             shouldUpdateForPinnedTabs = true;
           }
+        } else if (tabData.groupId) {
+          let { groupId } = tabData;
+          const tabGroup = tabGroupWorkingData.get(groupId);
+          
+          
+          if (tabGroup) {
+            tabGroup.containingTabsFragment.appendChild(tab);
+            
+            
+            if (!tabGroup.node) {
+              tabGroup.node = this._createTabGroup(
+                tabGroup.stateData.id,
+                tabGroup.stateData.color,
+                tabGroup.stateData.collapsed,
+                tabGroup.stateData.name
+              );
+              tabsFragment.appendChild(tabGroup.node);
+            }
+          }
         } else {
           if (tab.hidden) {
             tab.hidden = true;
@@ -3424,6 +3486,13 @@
 
       
       this.tabContainer.appendChild(tabsFragment);
+
+      
+      for (const tabGroup of tabGroupWorkingData.values()) {
+        if (tabGroup.node) {
+          tabGroup.node.appendChild(tabGroup.containingTabsFragment);
+        }
+      }
 
       for (let [tab, hiddenBy] of hiddenTabs) {
         let event = document.createEvent("Events");

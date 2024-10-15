@@ -117,6 +117,12 @@ const TAB_EVENTS = [
   "TabHide",
   "TabPinned",
   "TabUnpinned",
+  "TabGroupCreate",
+  "TabGroupRemove",
+  "TabGrouped",
+  "TabUngrouped",
+  "TabGroupCollapse",
+  "TabGroupExpand",
 ];
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -178,6 +184,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/sessionstore/SessionStoreHelper.sys.mjs",
   TabAttributes: "resource:///modules/sessionstore/TabAttributes.sys.mjs",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
+  TabGroupState: "resource:///modules/sessionstore/TabGroupState.sys.mjs",
   TabState: "resource:///modules/sessionstore/TabState.sys.mjs",
   TabStateCache: "resource:///modules/sessionstore/TabStateCache.sys.mjs",
   TabStateFlusher: "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
@@ -839,7 +846,10 @@ var SessionStoreInternal = {
   // defaults to now if no session was restored or timestamp doesn't exist
   _sessionStartTime: Date.now(),
 
-  // states for all currently opened windows
+  /**
+   * states for all currently opened windows
+   * @type {object.<WindowID, WindowStateData>}
+   */
   _windows: {},
 
   // counter for creating unique window IDs
@@ -1687,6 +1697,14 @@ var SessionStoreInternal = {
       case "SwapDocShells":
         this.saveStateDelayed(win);
         break;
+      case "TabGroupCreate":
+      case "TabGroupRemove":
+      case "TabGrouped":
+      case "TabUngrouped":
+      case "TabGroupCollapse":
+      case "TabGroupExpand":
+        this.saveStateDelayed(win);
+        break;
       case "oop-browser-crashed":
       case "oop-browser-buildid-mismatch":
         if (aEvent.isTopFrame) {
@@ -1746,6 +1764,7 @@ var SessionStoreInternal = {
     // and create its data object
     this._windows[aWindow.__SSi] = {
       tabs: [],
+      groups: [],
       selected: 0,
       _closedTabs: [],
       _lastClosedTabGroupCount: -1,
@@ -4731,6 +4750,7 @@ var SessionStoreInternal = {
 
     let tabbrowser = aWindow.gBrowser;
     let tabs = tabbrowser.tabs;
+    /** @type {WindowStateData} */
     let winData = this._windows[aWindow.__SSi];
     let tabsData = (winData.tabs = []);
 
@@ -4742,6 +4762,13 @@ var SessionStoreInternal = {
       let tabData = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
       tabMap.set(tab, tabData);
       tabsData.push(tabData);
+    }
+
+    // update tab group state for this window
+    winData.groups = [];
+    for (let tabGroup of aWindow.gBrowser.tabGroups) {
+      let tabGroupData = lazy.TabGroupState.collect(tabGroup);
+      winData.groups.push(tabGroupData);
     }
 
     let selectedIndex = tabbrowser.tabbox.selectedIndex + 1;
@@ -4894,13 +4921,16 @@ var SessionStoreInternal = {
       this._restore_on_demand;
 
     this._log.debug(
-      `restoreWindow, will restore ${winData.tabs.length} tabs, restoreTabsLazily: ${restoreTabsLazily}`
+      `restoreWindow, will restore ${winData.tabs.length} tabs and ${
+        winData.groups?.length ?? 0
+      } tab groups, restoreTabsLazily: ${restoreTabsLazily}`
     );
     if (winData.tabs.length) {
       var tabs = tabbrowser.createTabsForSessionRestore(
         restoreTabsLazily,
         selectTab,
-        winData.tabs
+        winData.tabs,
+        winData.groups ?? []
       );
       this._log.debug(
         `restoreWindow, createTabsForSessionRestore returned ${tabs.length} tabs`
