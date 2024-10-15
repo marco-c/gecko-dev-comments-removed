@@ -23,6 +23,8 @@ class DefaultAgent final : public nsIDefaultAgent {
   ~DefaultAgent() = default;
 };
 
+nsresult getSecondsSinceLastAppRun(int64_t* secondsElapsed);
+
 }  
 
 #endif  
