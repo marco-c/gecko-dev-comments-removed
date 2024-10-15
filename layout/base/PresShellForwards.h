@@ -147,7 +147,9 @@ enum class ScrollFlags {
   ScrollSmoothAuto = 1 << 4,
   TriggeredByScript = 1 << 5,
   
-  AnchorScrollFlags = (1 << 1) | (1 << 2),
+  
+  
+  AnchorScrollFlags = (1 << 1) | (1 << 2) | (1 << 5),
   ALL_BITS = (1 << 6) - 1,
 };
 
