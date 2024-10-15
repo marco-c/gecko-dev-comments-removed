@@ -67,6 +67,22 @@ struct YearMonthDay {
 
 YearMonthDay ToYearMonthDay(int64_t epochMilliseconds);
 
+struct HourMinuteSecond {
+  
+  int32_t hour;
+
+  
+  int32_t minute;
+
+  
+  int32_t second;
+};
+
+
+
+
+HourMinuteSecond ToHourMinuteSecond(int64_t epochMilliseconds);
+
 } 
 
 #endif 
