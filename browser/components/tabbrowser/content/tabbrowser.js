@@ -4551,11 +4551,6 @@
       this.tabContainer._invalidateCachedTabs();
 
       
-      if (aTab.hidden) {
-        this.tabContainer._updateHiddenTabsStatus();
-      }
-
-      
       for (let i = aTab._tPos; i < this.tabs.length; i++) {
         this.tabs[i]._tPos = i;
       }
@@ -5143,7 +5138,6 @@
       this.tabContainer._invalidateCachedVisibleTabs();
 
       this.tabContainer._updateCloseButtons();
-      this.tabContainer._updateHiddenTabsStatus();
       if (aTab.multiselected) {
         this._updateMultiselectedTabCloseButtonTooltip();
       }
@@ -5169,7 +5163,6 @@
       this.tabContainer._invalidateCachedVisibleTabs();
 
       this.tabContainer._updateCloseButtons();
-      this.tabContainer._updateHiddenTabsStatus();
       if (aTab.multiselected) {
         this._updateMultiselectedTabCloseButtonTooltip();
       }
