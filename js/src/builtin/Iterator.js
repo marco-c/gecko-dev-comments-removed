@@ -6,6 +6,17 @@ function IteratorIdentity() {
   return this;
 }
 
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+function IteratorRange(start, end, optionOrStep) {
+  return false;
+}
+#endif
+
 
 function IteratorNext(iteratorRecord, value) {
   
