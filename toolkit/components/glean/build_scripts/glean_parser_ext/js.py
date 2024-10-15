@@ -57,9 +57,7 @@ PING_INDEX_BITS = 16
 
 
 
-
-
-PHF_SIZE = 2048
+PHF_SIZE = 1024
 
 
 def ping_entry(ping_id, ping_string_index):
