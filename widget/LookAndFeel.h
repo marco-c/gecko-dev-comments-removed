@@ -105,6 +105,9 @@ class LookAndFeel {
     WindowsAccentColorInTitlebar,
 
     
+    WindowsMica,
+
+    
 
 
 

@@ -1073,6 +1073,13 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   
   SetColorScheme(Nothing());
 
+  if (WinUtils::MicaEnabled() && !IsPopup()) {
+    
+    const DWM_SYSTEMBACKDROP_TYPE tabbedWindow = DWMSBT_TABBEDWINDOW;
+    DwmSetWindowAttribute(mWnd, DWMWA_SYSTEMBACKDROP_TYPE, &tabbedWindow,
+                          sizeof tabbedWindow);
+  }
+
   if (mOpeningAnimationSuppressed) {
     SuppressAnimation(true);
   }
@@ -7267,6 +7274,10 @@ void nsWindow::UpdateOpaqueRegionInternal() {
     }
   }
   DwmExtendFrameIntoClientArea(mWnd, &margins);
+  if (mTransparencyMode == TransparencyMode::Transparent) {
+    mNeedsNCAreaClear = true;
+    Invalidate();
+  }
 }
 
 
