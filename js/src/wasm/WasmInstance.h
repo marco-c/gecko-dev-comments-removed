@@ -635,7 +635,7 @@ class alignas(16) Instance {
                               void* secondStringArg);
   static int32_t stringCompare(Instance* instance, void* firstStringArg,
                                void* secondStringArg);
-#endif 
+#endif  
 };
 
 bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,
