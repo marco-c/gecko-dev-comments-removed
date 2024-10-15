@@ -3006,7 +3006,8 @@ class nsLayoutUtils {
 
 
 
-  static bool FrameIsScrolledOutOfViewInCrossProcess(const nsIFrame* aFrame);
+  static bool FrameRectIsScrolledOutOfViewInCrossProcess(
+      const nsIFrame* aFrame, const nsRect& aFrameRect);
 
   
 
