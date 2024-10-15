@@ -871,7 +871,7 @@ bool nsCocoaWindow::NeedsRecreateToReshow() {
 }
 
 void nsCocoaWindow::SetParent(nsIWidget* aNewParent) {
-  MOZ_ASSERT_UNREACHABLE("Should only be called on child widgets");
+  
 
   if (mParent) {
     mParent->RemoveChild(this);
