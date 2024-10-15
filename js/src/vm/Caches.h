@@ -526,8 +526,6 @@ class StringToAtomCache {
   }
 };
 
-#ifdef MOZ_EXECUTION_TRACING
-
 
 
 
@@ -609,8 +607,6 @@ class TracingCaches {
   }
 };
 
-#endif 
-
 class RuntimeCaches {
  public:
   MegamorphicCache megamorphicCache;
@@ -618,10 +614,7 @@ class RuntimeCaches {
   UncompressedSourceCache uncompressedSourceCache;
   EvalCache evalCache;
   StringToAtomCache stringToAtomCache;
-
-#ifdef MOZ_EXECUTION_TRACING
   TracingCaches tracingCaches;
-#endif
 
   
   
@@ -644,9 +637,7 @@ class RuntimeCaches {
       megamorphicSetPropCache->bumpGeneration();
     }
     scopeCache.purge();
-#ifdef MOZ_EXECUTION_TRACING
     tracingCaches.clearOnCompaction();
-#endif
   }
 
   void purgeStencils() {

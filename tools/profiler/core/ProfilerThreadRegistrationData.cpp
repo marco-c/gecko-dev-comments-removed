@@ -129,14 +129,6 @@ static void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info) {
       info.size, info.inNursery);
 }
 
-JSContext* ThreadRegistrationUnlockedReaderAndAtomicRWOnThread::GetJSContext()
-    const {
-  if (!mCCJSContext) {
-    return nullptr;
-  }
-  return mCCJSContext->Context();
-}
-
 void ThreadRegistrationLockedRWFromAnyThread::SetProfilingFeaturesAndData(
     ThreadProfilingFeatures aProfilingFeatures,
     ProfiledThreadData* aProfiledThreadData, const PSAutoLock&) {
@@ -147,7 +139,7 @@ void ThreadRegistrationLockedRWFromAnyThread::SetProfilingFeaturesAndData(
   MOZ_ASSERT(aProfiledThreadData);
   mProfiledThreadData = aProfiledThreadData;
 
-  if (mCCJSContext) {
+  if (mJSContext) {
     
     
     MOZ_ASSERT(!mJsFrameBuffer);
@@ -157,7 +149,7 @@ void ThreadRegistrationLockedRWFromAnyThread::SetProfilingFeaturesAndData(
   
   MOZ_ASSERT((mProfilingFeatures != ThreadProfilingFeatures::NotProfiled) ==
              !!mProfiledThreadData);
-  MOZ_ASSERT((mCCJSContext &&
+  MOZ_ASSERT((mJSContext &&
               (mProfilingFeatures != ThreadProfilingFeatures::NotProfiled)) ==
              !!mJsFrameBuffer);
 }
@@ -175,17 +167,15 @@ void ThreadRegistrationLockedRWFromAnyThread::ClearProfilingFeaturesAndData(
   
   MOZ_ASSERT((mProfilingFeatures != ThreadProfilingFeatures::NotProfiled) ==
              !!mProfiledThreadData);
-  MOZ_ASSERT((mCCJSContext &&
+  MOZ_ASSERT((mJSContext &&
               (mProfilingFeatures != ThreadProfilingFeatures::NotProfiled)) ==
              !!mJsFrameBuffer);
 }
 
-void ThreadRegistrationLockedRWOnThread::SetCycleCollectedJSContext(
-    CycleCollectedJSContext* aCx) {
-  MOZ_ASSERT(aCx && !mCCJSContext);
-  MOZ_ASSERT(aCx->Context());
+void ThreadRegistrationLockedRWOnThread::SetJSContext(JSContext* aJSContext) {
+  MOZ_ASSERT(aJSContext && !mJSContext);
 
-  mCCJSContext = aCx;
+  mJSContext = aJSContext;
 
   if (mProfiledThreadData) {
     MOZ_ASSERT((mProfilingFeatures != ThreadProfilingFeatures::NotProfiled) ==
@@ -198,16 +188,16 @@ void ThreadRegistrationLockedRWOnThread::SetCycleCollectedJSContext(
 
   
   
-  js::SetContextProfilingStack(aCx->Context(), &ProfilingStackRef());
+  js::SetContextProfilingStack(aJSContext, &ProfilingStackRef());
 
   
-  MOZ_ASSERT((mCCJSContext &&
+  MOZ_ASSERT((mJSContext &&
               (mProfilingFeatures != ThreadProfilingFeatures::NotProfiled)) ==
              !!mJsFrameBuffer);
 }
 
-void ThreadRegistrationLockedRWOnThread::ClearCycleCollectedJSContext() {
-  mCCJSContext = nullptr;
+void ThreadRegistrationLockedRWOnThread::ClearJSContext() {
+  mJSContext = nullptr;
 
   if (mJsFrameBuffer) {
     delete[] mJsFrameBuffer;
@@ -215,14 +205,14 @@ void ThreadRegistrationLockedRWOnThread::ClearCycleCollectedJSContext() {
   }
 
   
-  MOZ_ASSERT((mCCJSContext &&
+  MOZ_ASSERT((mJSContext &&
               (mProfilingFeatures != ThreadProfilingFeatures::NotProfiled)) ==
              !!mJsFrameBuffer);
 }
 
 void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
   
-  if (mCCJSContext) {
+  if (mJSContext) {
     
     
     
@@ -232,24 +222,24 @@ void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
     
     
     
-    JSContext* cx = mCCJSContext->Context();
     if (mJSSampling == ACTIVE_REQUESTED) {
       mJSSampling = ACTIVE;
-      js::EnableContextProfilingStack(cx, true);
+      js::EnableContextProfilingStack(mJSContext, true);
 
       if (JSAllocationsEnabled()) {
         
-        JS::EnableRecordingAllocations(cx, profiler_add_js_allocation_marker,
-                                       0.01);
+        JS::EnableRecordingAllocations(mJSContext,
+                                       profiler_add_js_allocation_marker, 0.01);
       }
-      js::RegisterContextProfilingEventMarker(cx, profiler_add_js_marker);
+      js::RegisterContextProfilingEventMarker(mJSContext,
+                                              profiler_add_js_marker);
 
     } else if (mJSSampling == INACTIVE_REQUESTED) {
       mJSSampling = INACTIVE;
-      js::EnableContextProfilingStack(cx, false);
+      js::EnableContextProfilingStack(mJSContext, false);
 
       if (JSAllocationsEnabled()) {
-        JS::DisableRecordingAllocations(cx);
+        JS::DisableRecordingAllocations(mJSContext);
       }
     }
   }
