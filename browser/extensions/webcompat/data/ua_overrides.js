@@ -1404,6 +1404,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1919004",
+    platform: "android",
+    domain: "www.editoracontexto.com.br",
+    bug: "1919004",
+    config: {
+      matches: ["*://www.editoracontexto.com.br/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
