@@ -40,6 +40,15 @@ interface nsIQuotaManagerService : nsISupports
 
 
   [must_use] nsIQuotaRequest
+  persistentStorageInitialized();
+
+  
+
+
+
+
+
+  [must_use] nsIQuotaRequest
   temporaryStorageInitialized();
 
   
@@ -79,6 +88,16 @@ interface nsIQuotaManagerService : nsISupports
 
   [must_use] nsIQuotaRequest
   init();
+
+  
+
+
+
+
+
+
+  [must_use] nsIQuotaRequest
+  initializePersistentStorage();
 
   
 
