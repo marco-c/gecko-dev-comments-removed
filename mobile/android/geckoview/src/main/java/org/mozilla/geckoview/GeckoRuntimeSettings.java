@@ -349,6 +349,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+    public @NonNull Builder fissionEnabled(final boolean enabled) {
+      getSettings().mFissionEnabled.set(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
     public @NonNull Builder translationsOfferPopup(final boolean enabled) {
       getSettings().setTranslationsOfferPopup(enabled);
       return this;
@@ -614,6 +626,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<Boolean> mDevToolsConsoleToLogcat =
       new Pref<>("devtools.console.stdout.chrome", true);
    final Pref<Boolean> mAboutConfig = new Pref<>("general.aboutConfig.enable", false);
+   final PrefWithoutDefault<Boolean> mFissionEnabled =
+      new PrefWithoutDefault<>("fission.autostart");
    final Pref<Boolean> mForceUserScalable =
       new Pref<>("browser.ui.zoom.force-user-scalable", false);
    final PrefWithoutDefault<Integer> mWebContentIsolationStrategy =
@@ -1566,6 +1580,16 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getLoginAutofillEnabled() {
     return mAutofillLogins.get();
+  }
+
+  
+
+
+
+
+
+  public @Nullable Boolean getFissionEnabled() {
+    return mFissionEnabled.get();
   }
 
   
