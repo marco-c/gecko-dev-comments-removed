@@ -88,54 +88,6 @@ static Atomic<bool, Relaxed> sJitter;
 static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed>
     sReduceMicrosecondTimePrecisionCallback;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace {
 
 class DateTimeHelper {
@@ -186,20 +138,46 @@ static inline double PositiveModulo(double dividend, double divisor) {
   return result + (+0.0);
 }
 
+
+
+
+
+
 static inline double Day(double t) { return floor(t / msPerDay); }
+
+
+
+
+
 
 static double TimeWithinDay(double t) { return PositiveModulo(t, msPerDay); }
 
 
+
+
+
+
+
 static inline bool IsLeapYear(double year) {
-  MOZ_ASSERT(ToInteger(year) == year);
+  MOZ_ASSERT(IsInteger(year));
   return fmod(year, 4) == 0 && (fmod(year, 100) != 0 || fmod(year, 400) == 0);
 }
 
+
+
+
+
+
 static inline double DayFromYear(double y) {
+  
   return 365 * (y - 1970) + floor((y - 1969) / 4.0) -
          floor((y - 1901) / 100.0) + floor((y - 1601) / 400.0);
 }
+
+
+
+
+
 
 static inline double TimeFromYear(double y) {
   return ::DayFromYear(y) * msPerDay;
@@ -342,6 +320,11 @@ YearMonthDay js::ToYearMonthDay(int64_t epochMilliseconds) {
   return ::ToYearMonthDay(epochMilliseconds);
 }
 
+
+
+
+
+
 static double YearFromTime(double t) {
   if (!std::isfinite(t)) {
     return GenericNaN();
@@ -351,10 +334,19 @@ static double YearFromTime(double t) {
 }
 
 
+
+
+
+
 static double DayWithinYear(double t, double year) {
   MOZ_ASSERT_IF(std::isfinite(t), ::YearFromTime(t) == year);
   return Day(t) - ::DayFromYear(year);
 }
+
+
+
+
+
 
 static double MonthFromTime(double t) {
   if (!std::isfinite(t)) {
@@ -365,6 +357,10 @@ static double MonthFromTime(double t) {
 }
 
 
+
+
+
+
 static double DateFromTime(double t) {
   if (!std::isfinite(t)) {
     return GenericNaN();
@@ -372,6 +368,10 @@ static double DateFromTime(double t) {
   const auto day = ToYearMonthDay(t).day;
   return double(day);
 }
+
+
+
+
 
 
 static int WeekDay(double t) {
@@ -404,6 +404,10 @@ template <typename T>
 static inline int DayFromMonth(T month, bool isLeapYear) = delete;
 
 
+
+
+
+
 static double MakeDay(double year, double month, double date) {
   
   if (!std::isfinite(year) || !std::isfinite(month) || !std::isfinite(date)) {
@@ -419,16 +423,22 @@ static double MakeDay(double year, double month, double date) {
   double ym = y + floor(m / 12);
 
   
+
+  
   int mn = int(PositiveModulo(m, 12));
 
   
   bool leap = IsLeapYear(ym);
-
   double yearday = floor(TimeFromYear(ym) / msPerDay);
   double monthday = DayFromMonth(mn, leap);
 
+  
   return yearday + monthday + dt - 1;
 }
+
+
+
+
 
 
 static inline double MakeDate(double day, double time) {
