@@ -2226,7 +2226,7 @@ function rightClickObjectInspectorNode(dbg, node) {
 
 
 function getCMEditor(dbg) {
-  return dbg.win.codemirrorEditor;
+  return dbg.win.codeMirrorSourceEditorTestInstance;
 }
 
 
