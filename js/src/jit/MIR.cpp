@@ -5704,15 +5704,25 @@ void MCompare::trySpecializeFloat32(TempAllocator& alloc) {
 }
 
 MDefinition* MNot::foldsTo(TempAllocator& alloc) {
-  
-  if (MConstant* inputConst = input()->maybeConstantValue()) {
-    bool b;
-    if (inputConst->valueToBoolean(&b)) {
-      if (type() == MIRType::Int32 || type() == MIRType::Int64) {
-        return MConstant::New(alloc, Int32Value(!b));
-      }
-      return MConstant::New(alloc, BooleanValue(!b));
+  auto foldConstant = [&alloc](MDefinition* input, MIRType type) -> MConstant* {
+    MConstant* inputConst = input->maybeConstantValue();
+    if (!inputConst) {
+      return nullptr;
     }
+    bool b;
+    if (!inputConst->valueToBoolean(&b)) {
+      return nullptr;
+    }
+    if (type == MIRType::Int32) {
+      return MConstant::New(alloc, Int32Value(!b));
+    }
+    MOZ_ASSERT(type == MIRType::Boolean);
+    return MConstant::New(alloc, BooleanValue(!b));
+  };
+
+  
+  if (MConstant* folded = foldConstant(input(), type())) {
+    return folded;
   }
 
   
@@ -5739,12 +5749,20 @@ MDefinition* MNot::foldsTo(TempAllocator& alloc) {
 
   
   if (input()->isInt64ToBigInt()) {
-    return MNot::New(alloc, input()->toInt64ToBigInt()->input());
+    MDefinition* int64 = input()->toInt64ToBigInt()->input();
+    if (MConstant* folded = foldConstant(int64, type())) {
+      return folded;
+    }
+    return MNot::New(alloc, int64);
   }
 
   
   if (input()->isIntPtrToBigInt()) {
-    return MNot::New(alloc, input()->toIntPtrToBigInt()->input());
+    MDefinition* intPtr = input()->toIntPtrToBigInt()->input();
+    if (MConstant* folded = foldConstant(intPtr, type())) {
+      return folded;
+    }
+    return MNot::New(alloc, intPtr);
   }
 
   return this;
