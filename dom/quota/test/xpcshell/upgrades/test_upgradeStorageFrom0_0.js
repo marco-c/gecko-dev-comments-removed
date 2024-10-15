@@ -144,7 +144,6 @@ function* testSteps() {
       request = initTemporaryOrigin(
         origin.persistence,
         principal,
-         true,
         continueToNextStepSync
       );
       yield undefined;

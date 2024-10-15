@@ -131,8 +131,7 @@ TEST_F(TestFileSystemOriginInitialization, EmptyOriginDirectory) {
   
   ASSERT_NO_FATAL_FAILURE(InitializeStorage());
   ASSERT_NO_FATAL_FAILURE(InitializeTemporaryStorage());
-  ASSERT_NO_FATAL_FAILURE(
-      InitializeTemporaryOrigin( true));
+  ASSERT_NO_FATAL_FAILURE(InitializeTemporaryOrigin());
 
   
   
