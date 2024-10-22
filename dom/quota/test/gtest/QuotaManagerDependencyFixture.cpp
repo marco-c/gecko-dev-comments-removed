@@ -359,13 +359,15 @@ void QuotaManagerDependencyFixture::InitializeTemporaryClient(
 }
 
 
+PrincipalMetadata QuotaManagerDependencyFixture::GetTestPrincipalMetadata() {
+  return {""_ns, "example.com"_ns, "http://example.com"_ns,
+          "http://example.com"_ns,
+           false};
+}
+
+
 OriginMetadata QuotaManagerDependencyFixture::GetTestOriginMetadata() {
-  return {""_ns,
-          "example.com"_ns,
-          "http://example.com"_ns,
-          "http://example.com"_ns,
-           false,
-          PERSISTENCE_TYPE_DEFAULT};
+  return {GetTestPrincipalMetadata(), PERSISTENCE_TYPE_DEFAULT};
 }
 
 
@@ -374,13 +376,16 @@ ClientMetadata QuotaManagerDependencyFixture::GetTestClientMetadata() {
 }
 
 
+PrincipalMetadata
+QuotaManagerDependencyFixture::GetOtherTestPrincipalMetadata() {
+  return {""_ns, "other-example.com"_ns, "http://other-example.com"_ns,
+          "http://other-example.com"_ns,
+           false};
+}
+
+
 OriginMetadata QuotaManagerDependencyFixture::GetOtherTestOriginMetadata() {
-  return {""_ns,
-          "other-example.com"_ns,
-          "http://other-example.com"_ns,
-          "http://other-example.com"_ns,
-           false,
-          PERSISTENCE_TYPE_DEFAULT};
+  return {GetOtherTestPrincipalMetadata(), PERSISTENCE_TYPE_DEFAULT};
 }
 
 
