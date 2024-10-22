@@ -98,7 +98,9 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
   void DispatchTrustedEvent(const nsAString& aName);
   void DispatchTestEvent(const nsAString& aName);
 
-  void CancelChannelAndListener();
+  void CancelChannelAndListener(bool aCheckRFP);
+
+  bool ShouldResistFingerprinting(RFPTarget aRfpTarget);
 
   
   void MaybeDispatchLoadResource();

@@ -114,7 +114,8 @@ WebVTTListener::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     mElement->SetReadyState(TextTrackReadyState::Loaded);
   }
 
-  mElement->CancelChannelAndListener();
+  
+  mElement->CancelChannelAndListener(true);
 
   return aStatus;
 }

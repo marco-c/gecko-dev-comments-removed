@@ -93,6 +93,7 @@ ITEM_VALUE(SiteSpecificZoom,            1llu << 60)
 
 
 ITEM_VALUE(FontVisibilityRestrictGenerics, 1llu << 61)
+ITEM_VALUE(WebVTT,                      1llu << 62)
 
 
 

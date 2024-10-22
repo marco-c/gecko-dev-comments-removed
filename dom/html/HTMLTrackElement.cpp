@@ -93,7 +93,8 @@ class WindowDestroyObserver final : public nsIObserver {
       NS_ENSURE_SUCCESS(rv, rv);
       if (innerID == mInnerID) {
         if (mTrackElement) {
-          mTrackElement->CancelChannelAndListener();
+          
+          mTrackElement->CancelChannelAndListener(false);
         }
         UnRegisterWindowDestroyObserver();
       }
@@ -128,7 +129,8 @@ HTMLTrackElement::~HTMLTrackElement() {
   if (mWindowDestroyObserver) {
     mWindowDestroyObserver->UnRegisterWindowDestroyObserver();
   }
-  CancelChannelAndListener();
+  
+  CancelChannelAndListener(false);
 }
 
 NS_IMPL_ELEMENT_CLONE(HTMLTrackElement)
@@ -250,8 +252,15 @@ void HTMLTrackElement::MaybeDispatchLoadResource() {
 
   
   
-  if (mTrack->Mode() == TextTrackMode::Disabled) {
+  bool resistFingerprinting = ShouldResistFingerprinting(RFPTarget::WebVTT);
+  if (mTrack->Mode() == TextTrackMode::Disabled && !resistFingerprinting) {
     LOG("Do not load resource for disable track");
+    return;
+  }
+
+  
+  
+  if (resistFingerprinting && ReadyState() == TextTrackReadyState::Loading) {
     return;
   }
 
@@ -294,7 +303,8 @@ void HTMLTrackElement::LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener) {
   NS_ENSURE_TRUE_VOID(NS_SUCCEEDED(rv));
   LOG("Trying to load from src=%s", NS_ConvertUTF16toUTF8(src).get());
 
-  CancelChannelAndListener();
+  
+  CancelChannelAndListener(true);
 
   
   
@@ -470,7 +480,11 @@ void HTMLTrackElement::DispatchTrustedEvent(const nsAString& aName) {
                                        Cancelable::eNo);
 }
 
-void HTMLTrackElement::CancelChannelAndListener() {
+void HTMLTrackElement::CancelChannelAndListener(bool aCheckRFP) {
+  if (aCheckRFP && ShouldResistFingerprinting(RFPTarget::WebVTT)) {
+    return;
+  }
+
   if (mChannel) {
     mChannel->CancelWithReason(NS_BINDING_ABORTED,
                                "HTMLTrackElement::CancelChannelAndListener"_ns);
@@ -482,6 +496,15 @@ void HTMLTrackElement::CancelChannelAndListener() {
     mListener->Cancel();
     mListener = nullptr;
   }
+}
+
+bool HTMLTrackElement::ShouldResistFingerprinting(RFPTarget aRfpTarget) {
+  Document* doc = OwnerDoc();
+  if (!doc) {
+    return nsContentUtils::ShouldResistFingerprinting("Null document",
+                                                      aRfpTarget);
+  }
+  return doc->ShouldResistFingerprinting(aRfpTarget);
 }
 
 void HTMLTrackElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
