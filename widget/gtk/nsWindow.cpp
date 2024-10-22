@@ -4245,39 +4245,16 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
 
 Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
     const LayoutDeviceIntPoint& aPoint) {
-  const bool canResize = [&] {
-    
-    if (mSizeMode != nsSizeMode_Normal) {
-      return false;
-    }
-    if (mIsPIPWindow) {
-      
-      
-      return true;
-    }
-    if (!mDrawInTitlebar) {
-      return false;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return mDrawInTitlebar && IsKdeDesktopEnvironment();
-  }();
-
-  if (!canResize) {
+  
+  
+  if (mSizeMode != nsSizeMode_Normal || !mIsPIPWindow) {
     return Nothing();
   }
 
   
   
   
-  const int resizerHeight = (mIsPIPWindow ? 15 : 1) * GdkCeiledScaleFactor();
+  const int resizerHeight = 15 * GdkCeiledScaleFactor();
   const int resizerWidth = resizerHeight * 4;
 
   const int topDist = aPoint.y;
@@ -4297,10 +4274,6 @@ Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
       return Some(GDK_WINDOW_EDGE_NORTH_WEST);
     }
     return waylandLimitedResize ? Nothing() : Some(GDK_WINDOW_EDGE_NORTH);
-  }
-
-  if (!mIsPIPWindow) {
-    return Nothing();
   }
 
   if (bottomDist <= resizerHeight && mResizableEdges.Bottom()) {
