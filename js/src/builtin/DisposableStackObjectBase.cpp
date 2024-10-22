@@ -59,44 +59,33 @@ bool js::ThrowIfOnDisposeNotCallable(JSContext* cx,
 
 
 
-bool js::CreateDisposableResource(
-    JSContext* cx, JS::Handle<JS::Value> obj, UsingHint hint,
-    JS::Handle<mozilla::Maybe<JS::Value>> methodVal,
-    JS::MutableHandle<JS::Value> result) {
+
+bool js::CreateDisposableResource(JSContext* cx, JS::Handle<JS::Value> objVal,
+                                  UsingHint hint,
+                                  JS::MutableHandle<JS::Value> result) {
+  
   
   JS::Rooted<JS::Value> method(cx);
   JS::Rooted<JS::Value> object(cx);
-  if (!methodVal.isSome()) {
+  
+  if (objVal.isNullOrUndefined()) {
     
-    if (obj.isNullOrUndefined()) {
-      
-      
-      object.setUndefined();
-      method.setUndefined();
-    } else {
-      
-      
-      if (!obj.isObject()) {
-        return ThrowCheckIsObject(cx, CheckIsObjectKind::Disposable);
-      }
-
-      
-      
-      object.set(obj);
-      if (!GetDisposeMethod(cx, object, hint, &method)) {
-        return false;
-      }
-    }
+    
+    object.setUndefined();
+    method.setUndefined();
   } else {
     
     
-    if (!IsCallable(*methodVal)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DISPOSE_NOT_CALLABLE);
+    if (!objVal.isObject()) {
+      return ThrowCheckIsObject(cx, CheckIsObjectKind::Disposable);
+    }
+
+    
+    
+    object.set(objVal);
+    if (!GetDisposeMethod(cx, object, hint, &method)) {
       return false;
     }
-    object.set(obj);
-    method.set(*methodVal);
   }
 
   
@@ -116,37 +105,79 @@ bool js::CreateDisposableResource(
 
 
 
+bool js::CreateDisposableResource(JSContext* cx, JS::Handle<JS::Value> obj,
+                                  UsingHint hint,
+                                  JS::Handle<JS::Value> methodVal,
+                                  JS::MutableHandle<JS::Value> result) {
+  JS::Rooted<JS::Value> method(cx);
+  JS::Rooted<JS::Value> object(cx);
 
-bool js::AddDisposableResource(
-    JSContext* cx, JS::Handle<ArrayObject*> disposeCapability,
-    JS::Handle<JS::Value> val, UsingHint hint,
-    JS::Handle<mozilla::Maybe<JS::Value>> methodVal) {
+  
+  
+  if (!IsCallable(methodVal)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_DISPOSE_NOT_CALLABLE);
+    return false;
+  }
+  object.set(obj);
+  method.set(methodVal);
+
+  
+  
+  
+  DisposableRecordObject* disposableRecord =
+      DisposableRecordObject::create(cx, object, method, hint);
+  if (!disposableRecord) {
+    return false;
+  }
+  result.set(ObjectValue(*disposableRecord));
+
+  return true;
+}
+
+
+
+
+
+bool js::AddDisposableResource(JSContext* cx,
+                               JS::Handle<ArrayObject*> disposeCapability,
+                               JS::Handle<JS::Value> val, UsingHint hint) {
   JS::Rooted<JS::Value> resource(cx);
 
   
-  if (!methodVal.isSome()) {
-    
-    
-    if (val.isNullOrUndefined() && hint == UsingHint::Sync) {
-      return true;
-    }
-
-    
-    if (!CreateDisposableResource(cx, val, hint, methodVal, &resource)) {
-      return false;
-    }
-  } else {
-    
-    
-    MOZ_ASSERT(val.isUndefined());
-
-    
-    
-    if (!CreateDisposableResource(cx, val, hint, methodVal, &resource)) {
-      return false;
-    }
+  
+  
+  
+  if (val.isNullOrUndefined() && hint == UsingHint::Sync) {
+    return true;
   }
 
+  
+  if (!CreateDisposableResource(cx, val, hint, &resource)) {
+    return false;
+  }
+
+  
+  return NewbornArrayPush(cx, disposeCapability, resource);
+}
+
+
+
+
+bool js::AddDisposableResource(JSContext* cx,
+                               JS::Handle<ArrayObject*> disposeCapability,
+                               JS::Handle<JS::Value> val, UsingHint hint,
+                               JS::Handle<JS::Value> methodVal) {
+  JS::Rooted<JS::Value> resource(cx);
+  
+  
+  MOZ_ASSERT(val.isUndefined());
+
+  
+  
+  if (!CreateDisposableResource(cx, val, hint, methodVal, &resource)) {
+    return false;
+  }
   
   return NewbornArrayPush(cx, disposeCapability, resource);
 }
