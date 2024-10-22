@@ -4550,7 +4550,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       "data-section-id": id
     }, external_React_default().createElement("div", {
       className: "section-top-bar"
-    }, external_React_default().createElement("h3", {
+    }, external_React_default().createElement("h2", {
       className: `section-title-container ${hasSubtitleClassName}`,
       style: titleStyle
     }, external_React_default().createElement("span", {
@@ -10157,7 +10157,9 @@ const NEWTAB_DARK_THEME = {
 
 
 function Logo() {
-  return external_React_default().createElement("div", {
+  return external_React_default().createElement("h1", {
+    className: "logo-and-wordmark-wrapper"
+  }, external_React_default().createElement("div", {
     className: "logo-and-wordmark",
     role: "img",
     "data-l10n-id": "newtab-logo-and-wordmark"
@@ -10165,7 +10167,7 @@ function Logo() {
     className: "logo"
   }), external_React_default().createElement("div", {
     className: "wordmark"
-  }));
+  })));
 }
 
 ;
