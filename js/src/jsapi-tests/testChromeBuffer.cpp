@@ -9,6 +9,7 @@
 #include "js/CallAndConstruct.h"          
 #include "js/CompilationAndEvaluation.h"  
 #include "js/ContextOptions.h"
+#include "js/EnvironmentChain.h"    
 #include "js/GlobalObject.h"        
 #include "js/PropertyAndElement.h"  
 #include "js/SourceText.h"          
@@ -87,8 +88,8 @@ BEGIN_TEST(testChromeBuffer) {
       JS::CompileOptions options(cx);
       options.setFileAndLine("", 0);
 
-      JS::RootedObjectVector emptyScopeChain(cx);
-      fun = JS::CompileFunction(cx, emptyScopeChain, options, "trusted", 1,
+      JS::EnvironmentChain emptyEnvChain(cx, JS::SupportUnscopables::No);
+      fun = JS::CompileFunction(cx, emptyEnvChain, options, "trusted", 1,
                                 &paramName, srcBuf);
       CHECK(fun);
       CHECK(JS_DefineProperty(cx, trusted_glob, "trusted", fun,
@@ -118,8 +119,8 @@ BEGIN_TEST(testChromeBuffer) {
     JS::CompileOptions options(cx);
     options.setFileAndLine("", 0);
 
-    JS::RootedObjectVector emptyScopeChain(cx);
-    fun = JS::CompileFunction(cx, emptyScopeChain, options, "untrusted", 1,
+    JS::EnvironmentChain emptyEnvChain(cx, JS::SupportUnscopables::No);
+    fun = JS::CompileFunction(cx, emptyEnvChain, options, "untrusted", 1,
                               &paramName, srcBuf);
     CHECK(fun);
     CHECK(JS_DefineProperty(cx, global, "untrusted", fun, JSPROP_ENUMERATE));
@@ -165,8 +166,8 @@ BEGIN_TEST(testChromeBuffer) {
       JS::CompileOptions options(cx);
       options.setFileAndLine("", 0);
 
-      JS::RootedObjectVector emptyScopeChain(cx);
-      fun = JS::CompileFunction(cx, emptyScopeChain, options, "trusted", 1,
+      JS::EnvironmentChain emptyEnvChain(cx, JS::SupportUnscopables::No);
+      fun = JS::CompileFunction(cx, emptyEnvChain, options, "trusted", 1,
                                 &paramName, srcBuf);
       CHECK(fun);
       CHECK(JS_DefineProperty(cx, trusted_glob, "trusted", fun,
@@ -192,8 +193,8 @@ BEGIN_TEST(testChromeBuffer) {
     JS::CompileOptions options(cx);
     options.setFileAndLine("", 0);
 
-    JS::RootedObjectVector emptyScopeChain(cx);
-    fun = JS::CompileFunction(cx, emptyScopeChain, options, "untrusted", 1,
+    JS::EnvironmentChain emptyEnvChain(cx, JS::SupportUnscopables::No);
+    fun = JS::CompileFunction(cx, emptyEnvChain, options, "untrusted", 1,
                               &paramName, srcBuf);
     CHECK(fun);
     CHECK(JS_DefineProperty(cx, global, "untrusted", fun, JSPROP_ENUMERATE));
@@ -226,8 +227,8 @@ BEGIN_TEST(testChromeBuffer) {
       JS::CompileOptions options(cx);
       options.setFileAndLine("", 0);
 
-      JS::RootedObjectVector emptyScopeChain(cx);
-      fun = JS::CompileFunction(cx, emptyScopeChain, options, "trusted", 0,
+      JS::EnvironmentChain emptyEnvChain(cx, JS::SupportUnscopables::No);
+      fun = JS::CompileFunction(cx, emptyEnvChain, options, "trusted", 0,
                                 nullptr, srcBuf);
       CHECK(fun);
       CHECK(JS_DefineProperty(cx, trusted_glob, "trusted", fun,
@@ -254,8 +255,8 @@ BEGIN_TEST(testChromeBuffer) {
     JS::CompileOptions options(cx);
     options.setFileAndLine("", 0);
 
-    JS::RootedObjectVector emptyScopeChain(cx);
-    fun = JS::CompileFunction(cx, emptyScopeChain, options, "untrusted", 1,
+    JS::EnvironmentChain emptyEnvChain(cx, JS::SupportUnscopables::No);
+    fun = JS::CompileFunction(cx, emptyEnvChain, options, "untrusted", 1,
                               &paramName, srcBuf);
     CHECK(fun);
     CHECK(JS_DefineProperty(cx, global, "untrusted", fun, JSPROP_ENUMERATE));

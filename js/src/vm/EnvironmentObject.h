@@ -20,6 +20,11 @@
 #include "vm/Scope.h"
 #include "vm/ScopeKind.h"  
 
+namespace JS {
+class JS_PUBLIC_API EnvironmentChain;
+enum class SupportUnscopables : bool;
+};  
+
 namespace js {
 
 class AbstractGeneratorObject;
@@ -30,6 +35,18 @@ class ModuleObject;
 
 extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
                                                    jsbytecode* pc);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -982,13 +999,16 @@ class NonSyntacticVariablesObject : public EnvironmentObject {
 };
 
 NonSyntacticLexicalEnvironmentObject* CreateNonSyntacticEnvironmentChain(
-    JSContext* cx, JS::HandleObjectVector envChain);
+    JSContext* cx, const JS::EnvironmentChain& envChain);
 
 
 class WithEnvironmentObject : public EnvironmentObject {
   static constexpr uint32_t OBJECT_SLOT = 1;
   static constexpr uint32_t THIS_SLOT = 2;
-  static constexpr uint32_t SCOPE_SLOT = 3;
+  
+  
+  
+  static constexpr uint32_t SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT = 3;
 
  public:
   static const JSClass class_;
@@ -996,12 +1016,12 @@ class WithEnvironmentObject : public EnvironmentObject {
   static constexpr uint32_t RESERVED_SLOTS = 4;
   static constexpr ObjectFlags OBJECT_FLAGS = {};
 
-  static WithEnvironmentObject* create(JSContext* cx, HandleObject object,
-                                       HandleObject enclosing,
-                                       Handle<WithScope*> scope);
-  static WithEnvironmentObject* createNonSyntactic(JSContext* cx,
-                                                   HandleObject object,
-                                                   HandleObject enclosing);
+  static WithEnvironmentObject* create(
+      JSContext* cx, HandleObject object, HandleObject enclosing,
+      Handle<WithScope*> scope, JS::SupportUnscopables supportUnscopables);
+  static WithEnvironmentObject* createNonSyntactic(
+      JSContext* cx, HandleObject object, HandleObject enclosing,
+      JS::SupportUnscopables supportUnscopables);
 
   
   JSObject& object() const;
@@ -1016,6 +1036,10 @@ class WithEnvironmentObject : public EnvironmentObject {
 
 
   bool isSyntactic() const;
+
+  
+  
+  bool supportUnscopables() const;
 
   
   WithScope& scope() const;
@@ -1565,7 +1589,8 @@ inline bool IsFrameInitialEnvironment(AbstractFramePtr frame,
 }
 
 WithEnvironmentObject* CreateObjectsForEnvironmentChain(
-    JSContext* cx, HandleObjectVector chain, HandleObject terminatingEnv);
+    JSContext* cx, const JS::EnvironmentChain& envChain,
+    HandleObject terminatingEnv);
 
 ModuleObject* GetModuleObjectForScript(JSScript* script);
 

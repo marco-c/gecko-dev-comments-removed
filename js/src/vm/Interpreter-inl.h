@@ -97,7 +97,8 @@ inline bool FetchName(JSContext* cx, HandleObject receiver, HandleObject holder,
 
   
   if (!receiver->is<NativeObject>() || !holder->is<NativeObject>() ||
-      receiver->is<WithEnvironmentObject>()) {
+      (receiver->is<WithEnvironmentObject>() &&
+       receiver->as<WithEnvironmentObject>().supportUnscopables())) {
     Rooted<jsid> id(cx, NameToId(name));
     if (!GetProperty(cx, receiver, receiver, id, vp)) {
       return false;
@@ -108,8 +109,11 @@ inline bool FetchName(JSContext* cx, HandleObject receiver, HandleObject holder,
       
       vp.set(holder->as<NativeObject>().getSlot(propInfo.slot()));
     } else {
+      
+      
+      RootedObject normalized(cx, MaybeUnwrapWithEnvironment(receiver));
       RootedId id(cx, NameToId(name));
-      if (!NativeGetExistingProperty(cx, receiver, holder.as<NativeObject>(),
+      if (!NativeGetExistingProperty(cx, normalized, holder.as<NativeObject>(),
                                      id, propInfo, vp)) {
         return false;
       }

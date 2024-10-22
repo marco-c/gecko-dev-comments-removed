@@ -11,6 +11,7 @@
 
 #include "js/CallAndConstruct.h"
 #include "js/CompilationAndEvaluation.h"  
+#include "js/EnvironmentChain.h"          
 #include "js/PropertyAndElement.h"        
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
@@ -22,7 +23,7 @@
 using namespace js;
 
 BEGIN_TEST(testFunctionNonSyntactic) {
-  JS::RootedObjectVector scopeChain(cx);
+  JS::EnvironmentChain envChain(cx, JS::SupportUnscopables::No);
 
   {
     JS::RootedObject scopeObj(cx, JS_NewPlainObject(cx));
@@ -30,7 +31,7 @@ BEGIN_TEST(testFunctionNonSyntactic) {
     JS::RootedValue val(cx);
     val.setNumber(1);
     CHECK(JS_DefineProperty(cx, scopeObj, "foo", val, JSPROP_ENUMERATE));
-    CHECK(scopeChain.append(scopeObj));
+    CHECK(envChain.append(scopeObj));
   }
 
   {
@@ -39,7 +40,7 @@ BEGIN_TEST(testFunctionNonSyntactic) {
     JS::RootedValue val(cx);
     val.setNumber(20);
     CHECK(JS_DefineProperty(cx, scopeObj, "bar", val, JSPROP_ENUMERATE));
-    CHECK(scopeChain.append(scopeObj));
+    CHECK(envChain.append(scopeObj));
   }
 
   {
@@ -50,8 +51,8 @@ BEGIN_TEST(testFunctionNonSyntactic) {
 
     JS::CompileOptions options(cx);
     options.setFileAndLine(__FILE__, __LINE__);
-    RootedFunction fun(cx, JS::CompileFunction(cx, scopeChain, options, "test",
-                                               0, nullptr, srcBuf));
+    RootedFunction fun(cx, JS::CompileFunction(cx, envChain, options, "test", 0,
+                                               nullptr, srcBuf));
     CHECK(fun);
 
     CHECK(fun->enclosingScope()->kind() == ScopeKind::NonSyntactic);
@@ -76,8 +77,8 @@ BEGIN_TEST(testFunctionNonSyntactic) {
 
     JS::CompileOptions options(cx);
     options.setFileAndLine(__FILE__, __LINE__);
-    RootedFunction fun(cx, JS::CompileFunction(cx, scopeChain, options, "test",
-                                               1, args, srcBuf));
+    RootedFunction fun(cx, JS::CompileFunction(cx, envChain, options, "test", 1,
+                                               args, srcBuf));
     CHECK(fun);
 
     CHECK(fun->enclosingScope()->kind() == ScopeKind::NonSyntactic);
