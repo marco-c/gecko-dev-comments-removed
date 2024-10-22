@@ -446,18 +446,23 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
 add_task(async function testSourceTreeWithWebExtensionContentScript() {
   const extension = await installAndStartContentScriptExtension();
 
-  info("Without the chrome preference, the content script doesn't show up");
-  await pushPref("devtools.chrome.enabled", false);
+  
+  await pushPref("devtools.debugger.show-content-scripts", false);
   let dbg = await initDebugger("doc-content-script-sources.html");
   
   await wait(1000);
   await waitForSourcesInSourceTree(dbg, []);
   await dbg.toolbox.closeToolbox();
 
-  info("With the chrome preference, the content script shows up");
-  await pushPref("devtools.chrome.enabled", true);
   const toolbox = await openToolboxForTab(gBrowser.selectedTab, "jsdebugger");
   dbg = createDebuggerContext(toolbox);
+
+  info("Enable the content script setting");
+  await toggleSourcesTreeSettingsMenuItem(dbg, {
+    className: ".debugger-settings-menu-item-show-content-scripts",
+    isChecked: false,
+  });
+
   await waitForSourcesInSourceTree(dbg, ["content_script.js"]);
   await selectSource(dbg, "content_script.js");
   ok(

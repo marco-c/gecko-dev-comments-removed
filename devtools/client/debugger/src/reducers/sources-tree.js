@@ -67,22 +67,53 @@ export function initialSourcesTreeState({ isWebExtension } = {}) {
 
 
 
-    chromeAndExtensionsEnabled: prefs.chromeAndExtensionsEnabled,
+    showContentScripts: prefs.showContentScripts,
+
+    mutableExtensionSources: [],
   };
 }
 
 
 export default function update(state = initialSourcesTreeState(), action) {
   switch (action.type) {
+    case "SHOW_CONTENT_SCRIPTS": {
+      prefs.showContentScripts = action.shouldShow;
+      if (action.shouldShow) {
+        const threadItems = [...state.threadItems];
+        let changed = false;
+        for (const { source, sourceActor } of state.mutableExtensionSources) {
+          changed |= addSource(threadItems, source, sourceActor);
+        }
+        if (changed) {
+          return {
+            ...state,
+            showContentScripts: true,
+            threadItems,
+          };
+        }
+      } else {
+        return removeSources(
+          { ...state, showContentScripts: false },
+          state.mutableExtensionSources.map(({ source }) => source)
+        );
+      }
+      return state;
+    }
     case "ADD_ORIGINAL_SOURCES": {
       const { generatedSourceActor } = action;
-      const validOriginalSources = action.originalSources.filter(source =>
-        isSourceVisibleInSourceTree(
+      const validOriginalSources = action.originalSources.filter(source => {
+        if (source.isExtension) {
+          state.mutableExtensionSources.push({
+            source,
+            sourceActor: generatedSourceActor,
+          });
+        }
+        return isSourceVisibleInSourceTree(
           source,
-          state.chromeAndExtensionsEnabled,
+          state.showContentScripts,
           state.isWebExtension
-        )
-      );
+        );
+      });
       if (!validOriginalSources.length) {
         return state;
       }
@@ -106,13 +137,19 @@ export default function update(state = initialSourcesTreeState(), action) {
       
       
       
-      const newSourceActors = action.sourceActors.filter(sourceActor =>
-        isSourceVisibleInSourceTree(
+      const newSourceActors = action.sourceActors.filter(sourceActor => {
+        if (sourceActor.sourceObject.isExtension) {
+          state.mutableExtensionSources.push({
+            source: sourceActor.sourceObject,
+            sourceActor,
+          });
+        }
+        return isSourceVisibleInSourceTree(
           sourceActor.sourceObject,
-          state.chromeAndExtensionsEnabled,
+          state.showContentScripts,
           state.isWebExtension
-        )
-      );
+        );
+      });
       if (!newSourceActors.length) {
         return state;
       }
@@ -231,6 +268,35 @@ function addThread(state, thread) {
   }
 }
 
+function removeSources(state, sources) {
+  let changed = false;
+  const threadItems = [...state.threadItems];
+
+  for (const source of sources) {
+    for (const threadItem of threadItems) {
+      const sourceTreeItem = findSourceInThreadItem(source, threadItem);
+      if (sourceTreeItem) {
+        changed = true;
+        
+        const { children } = sourceTreeItem.parent;
+        children.splice(children.indexOf(sourceTreeItem), 1);
+
+        
+        let item = sourceTreeItem.parent;
+        while (!item.children.length) {
+          item.parent.children.splice(item.parent.children.indexOf(item), 1);
+          item = item.parent;
+        }
+      }
+    }
+  }
+
+  if (changed) {
+    return { ...state, threadItems };
+  }
+  return state;
+}
+
 function updateBlackbox(state, sources, shouldBlackBox) {
   const threadItems = [...state.threadItems];
 
@@ -244,6 +310,7 @@ function updateBlackbox(state, sources, shouldBlackBox) {
           ...sourceTreeItem,
           isBlackBoxed: shouldBlackBox,
         });
+        threadItem.children = [...threadItem.children];
       }
     }
   }
@@ -281,7 +348,7 @@ function updateProjectDirectoryRoot(state, uniquePath, name) {
 
 function isSourceVisibleInSourceTree(
   source,
-  chromeAndExtensionsEnabled,
+  showContentScripts,
   debuggeeIsWebExtension
 ) {
   return (
@@ -291,9 +358,7 @@ function isSourceVisibleInSourceTree(
     !isPretty(source) &&
     
     
-    (!source.isExtension ||
-      chromeAndExtensionsEnabled ||
-      debuggeeIsWebExtension)
+    (!source.isExtension || showContentScripts || debuggeeIsWebExtension)
   );
 }
 
@@ -382,6 +447,15 @@ function findSourceInThreadItem(source, threadItem) {
   if (!groupItem) return null;
 
   const parentPath = path.substring(0, path.lastIndexOf("/"));
+
+  
+  
+  if (!parentPath) {
+    return groupItem.children.find(item => {
+      return item.type == "source" && item.source == source;
+    });
+  }
+
   const directoryItem = groupItem._allGroupDirectoryItems.find(item => {
     return item.type == "directory" && item.path == parentPath;
   });
