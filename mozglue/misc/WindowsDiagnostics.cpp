@@ -13,7 +13,7 @@
 #include <windows.h>
 #include <winternl.h>
 
-#if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && defined(_M_X64)
+#if defined(_M_AMD64)
 
 namespace mozilla {
 
@@ -23,9 +23,9 @@ static bool sIsSingleStepping = false;
 
 MFBT_API AutoOnSingleStepCallback::AutoOnSingleStepCallback(
     OnSingleStepCallback aOnSingleStepCallback, void* aState) {
-  MOZ_DIAGNOSTIC_ASSERT(!sIsSingleStepping && !sOnSingleStepCallback &&
-                            !sOnSingleStepCallbackState,
-                        "Single-stepping is already active");
+  MOZ_RELEASE_ASSERT(!sIsSingleStepping && !sOnSingleStepCallback &&
+                         !sOnSingleStepCallbackState,
+                     "Single-stepping is already active");
 
   sOnSingleStepCallback = std::move(aOnSingleStepCallback);
   sOnSingleStepCallbackState = aState;
@@ -42,7 +42,7 @@ MFBT_API AutoOnSingleStepCallback::~AutoOnSingleStepCallback() {
 
 
 
-MFBT_API MOZ_NEVER_INLINE __attribute__((naked)) void EnableTrapFlag() {
+MFBT_API MOZ_NEVER_INLINE MOZ_NAKED void EnableTrapFlag() {
   asm volatile(
       "pushfq;"
       "orw $0x100,(%rsp);"
@@ -53,7 +53,7 @@ MFBT_API MOZ_NEVER_INLINE __attribute__((naked)) void EnableTrapFlag() {
 
 
 
-MFBT_API MOZ_NEVER_INLINE __attribute__((naked)) void DisableTrapFlag() {
+MFBT_API MOZ_NEVER_INLINE MOZ_NAKED void DisableTrapFlag() {
   asm volatile("retq;");
 }
 

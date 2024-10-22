@@ -7,9 +7,27 @@
 #ifndef mozilla_StackWalk_windows_h
 #define mozilla_StackWalk_windows_h
 
+#include "mozilla/Array.h"
 #include "mozilla/Types.h"
 
 #if defined(_M_AMD64) || defined(_M_ARM64)
+
+
+
+
+
+
+
+
+
+
+MFBT_API
+void InitializeStackWalkLocks(const mozilla::Array<void*, 2>& aStackWalkLocks);
+
+
+
+
+
 
 
 
