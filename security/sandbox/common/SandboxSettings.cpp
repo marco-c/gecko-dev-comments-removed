@@ -20,6 +20,7 @@
 #ifdef XP_WIN
 #  include "mozilla/gfx/gfxVars.h"
 #  include "mozilla/WindowsVersion.h"
+#  include "nsAppRunner.h"
 #  include "nsExceptionHandler.h"
 #  include "PDMFactory.h"
 #endif  
@@ -123,6 +124,23 @@ nsIXULRuntime::ContentWin32kLockdownState GetContentWin32kLockdownState() {
 #endif  
 }
 
+#if defined(XP_WIN)
+static bool IsWebglOutOfProcessEnabled() {
+  if (StaticPrefs::webgl_out_of_process_force()) {
+    return true;
+  }
+
+  
+  
+  
+  if (gfx::gfxVars::IsInitialized() && !gfx::gfxVars::AllowWebglOop()) {
+    return false;
+  }
+
+  return StaticPrefs::webgl_out_of_process();
+}
+#endif
+
 int GetEffectiveContentSandboxLevel() {
   if (PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX")) {
     return 0;
@@ -156,8 +174,9 @@ int GetEffectiveContentSandboxLevel() {
 #if defined(XP_WIN)
   
   
+  
   if (level >= 8 &&
-      (!StaticPrefs::webgl_out_of_process() ||
+      (gSafeMode || !IsWebglOutOfProcessEnabled() ||
        !PDMFactory::AllDecodersAreRemote() ||
        !StaticPrefs::network_process_enabled() ||
        !Preferences::GetBool("media.peerconnection.mtransport_process"))) {
