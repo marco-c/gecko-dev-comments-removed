@@ -4,27 +4,53 @@
 
 
 
+
+
+
 #ifndef mozilla_ipc_SharedMemory_h
 #define mozilla_ipc_SharedMemory_h
 
-#include <cstddef>
+#ifndef RUST_BINDGEN
 
-#include "chrome/common/ipc_message_utils.h"
-#include "mozilla/Assertions.h"
-#include "nsISupportsImpl.h"  
+#  include <cstddef>
 
-#ifdef XP_DARWIN
-#  include "mozilla/ipc/SharedMemoryImpl_mach.h"
-#else
-#  include "mozilla/ipc/SharedMemoryImpl_chromium.h"
-#endif
+#  include "mozilla/Maybe.h"
+#  include "mozilla/UniquePtrExtensions.h"
+#  include "nsISupportsImpl.h"  
+
+#  if !(defined(XP_DARWIN) || defined(XP_WIN))
+#    include <string>
+#  endif
+
+namespace IPC {
+class MessageWriter;
+class MessageReader;
+}  
+
+namespace {
+enum Rights { RightsNone = 0, RightsRead = 1 << 0, RightsWrite = 1 << 1 };
+}  
 
 namespace mozilla::ipc {
 
-class SharedMemory : public SharedMemoryImpl {
+#  if defined(XP_DARWIN)
+using SharedMemoryHandle = mozilla::UniqueMachSendRight;
+#  else
+using SharedMemoryHandle = mozilla::UniqueFileHandle;
+#  endif
+
+class SharedMemory {
   ~SharedMemory();
 
+  
  public:
+  using Handle = SharedMemoryHandle;
+
+  enum OpenRights {
+    RightsReadOnly = RightsRead,
+    RightsReadWrite = RightsRead | RightsWrite,
+  };
+
   SharedMemory();
 
   
@@ -33,34 +59,127 @@ class SharedMemory : public SharedMemoryImpl {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedMemory)
 
   size_t Size() const { return mMappedSize; }
+  size_t MaxSize() const { return mAllocSize; }
+
+  bool Create(size_t nBytes, bool freezable = false);
+  bool Map(size_t nBytes, void* fixedAddress = nullptr);
+  void Unmap();
+  void* Memory() const;
+  
+  
+  
+  Span<uint8_t> TakeMapping();
+
+  Handle TakeHandleAndUnmap() {
+    auto handle = TakeHandle();
+    Unmap();
+    return handle;
+  }
+  Handle TakeHandle();
+  Handle CloneHandle() {
+    mFreezable = false;
+    return SharedMemory::CloneHandle(mHandle);
+  }
   void CloseHandle() { TakeHandle(); }
+  bool SetHandle(Handle aHandle, OpenRights aRights);
+  bool IsValid() const { return IsHandleValid(mHandle); }
+  static bool IsHandleValid(const Handle& aHandle) {
+    
+    
+    return !(aHandle == NULLHandle());
+  }
+  static Handle NULLHandle() { return nullptr; }
+
+  bool CreateFreezable(size_t nBytes) { return Create(nBytes, true); }
+
+  [[nodiscard]] bool Freeze() {
+    Unmap();
+    return ReadOnlyCopy(this);
+  }
 
   bool WriteHandle(IPC::MessageWriter* aWriter);
   bool ReadHandle(IPC::MessageReader* aReader);
   void Protect(char* aAddr, size_t aSize, int aRights);
 
+  static size_t PageAlignedSize(size_t aSize);
+
+  
+ public:
+  [[nodiscard]] bool ReadOnlyCopy(SharedMemory* ro_out);
+
   static void SystemProtect(char* aAddr, size_t aSize, int aRights);
   [[nodiscard]] static bool SystemProtectFallible(char* aAddr, size_t aSize,
                                                   int aRights);
+  static Handle CloneHandle(const Handle& aHandle);
   static size_t SystemPageSize();
-  static size_t PageAlignedSize(size_t aSize);
+  static void* FindFreeAddressSpace(size_t size);
 
-  bool Create(size_t nBytes);
-  bool Map(size_t nBytes, void* fixedAddress = nullptr);
-  void Unmap();
-  void* Memory() const;
-
+  
  private:
+  bool CreateImpl(size_t size, bool freezable);
+  Maybe<void*> MapImpl(size_t nBytes, void* fixedAddress);
+  static void UnmapImpl(size_t nBytes, void* address);
+  Maybe<Handle> ReadOnlyCopyImpl();
+  void ResetImpl();
+
+  
+ private:
+  struct MappingDeleter {
+    size_t mMappedSize = 0;
+    explicit MappingDeleter(size_t size) : mMappedSize(size) {}
+    MappingDeleter() = default;
+    void operator()(void* ptr) {
+      MOZ_ASSERT(mMappedSize != 0);
+      UnmapImpl(mMappedSize, ptr);
+      
+      
+      
+      mMappedSize = 0;
+    }
+  };
+  using UniqueMapping = mozilla::UniquePtr<void, MappingDeleter>;
+
+  
+  Handle mHandle = NULLHandle();
   
   
   
   
   size_t mAllocSize;
   
+  UniqueMapping mMemory;
+  
   
   size_t mMappedSize;
+  
+  bool mFreezable = false;
+  
+  bool mReadOnly = false;
+  
+  bool mExternalHandle = false;
+
+#  if !defined(XP_DARWIN) && !defined(XP_WIN)
+  
+ public:
+  
+  
+  
+  
+  static bool AppendPosixShmPrefix(std::string* str, pid_t pid);
+
+  
+  static bool UsingPosixShm();
+
+#    ifndef ANDROID
+ private:
+  mozilla::UniqueFileHandle mFrozenFile;
+  bool mIsMemfd = false;
+#    endif
+#  endif
 };
 
 }  
+
+#endif
 
 #endif  
