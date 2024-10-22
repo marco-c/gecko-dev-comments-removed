@@ -27,7 +27,7 @@ struct OriginMetadata;
 class QuotaManager;
 
 
-class OriginDirectoryLock final : public DirectoryLockImpl {
+class OriginDirectoryLock : public DirectoryLockImpl {
   friend class QuotaManager;
 
  public:
