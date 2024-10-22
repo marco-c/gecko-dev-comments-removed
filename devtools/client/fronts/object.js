@@ -47,6 +47,11 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
     parentFront.manage(this);
   }
 
+  form(data) {
+    this.actorID = data.actor;
+    this._grip = data;
+  }
+
   skipDestroy() {
     
     
@@ -369,6 +374,16 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
   
   const existingFront = conn.getFrontByID(packet.actor);
   if (existingFront) {
+    
+    
+    
+    
+    
+    existingFront.form(packet);
+
+    
+    createChildFronts(existingFront, packet);
+
     return existingFront;
   }
 
