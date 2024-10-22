@@ -241,7 +241,8 @@ bool NetAddr::IsIPAddrV4Mapped() const {
 
 static bool isLocalIPv4(uint32_t networkEndianIP) {
   uint32_t addr32 = ntohl(networkEndianIP);
-  return addr32 >> 24 == 0x0A ||    
+  return addr32 >> 24 == 0x00 ||    
+         addr32 >> 24 == 0x0A ||    
          addr32 >> 20 == 0xAC1 ||   
          addr32 >> 16 == 0xC0A8 ||  
          addr32 >> 16 == 0xA9FE;    
@@ -249,6 +250,11 @@ static bool isLocalIPv4(uint32_t networkEndianIP) {
 
 bool NetAddr::IsIPAddrLocal() const {
   const NetAddr* addr = this;
+
+  
+  if (IsIPAddrAny()) {
+    return true;
+  }
 
   
   if (addr->raw.family == AF_INET) {

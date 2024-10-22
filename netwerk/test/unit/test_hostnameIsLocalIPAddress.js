@@ -5,6 +5,11 @@ function run_test() {
     ["http://example.com", false],
     ["about:robots", false],
     
+    ["http://0.0.0.0", true],
+    ["http://0.1.2.3", true],
+    ["http://0.255.255.255", true],
+    ["http://1.0.0.0", false],
+    
     ["http://9.255.255.255", false],
     ["http://10.0.0.0", true],
     ["http://10.0.23.31", true],
@@ -28,6 +33,9 @@ function run_test() {
     ["http://192.168.127.10", true],
     ["http://192.168.255.255", true],
     ["http://192.169.0.0", false],
+    
+    ["http://[::]", true],
+    ["http://[::ffff:0:0]", true],
   ];
 
   for (let [uri, isLocal] of testURIs) {
