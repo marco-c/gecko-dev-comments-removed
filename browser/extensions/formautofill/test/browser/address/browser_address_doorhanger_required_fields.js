@@ -3,10 +3,6 @@
 
 
 
-const { Region } = ChromeUtils.importESModule(
-  "resource://gre/modules/Region.sys.mjs"
-);
-
 
 add_task(
   async function test_doorhanger_shown_when_contain_all_required_fields() {

@@ -33,6 +33,10 @@ const { FormAutofillUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
 );
 
+const { Region } = ChromeUtils.importESModule(
+  "resource://gre/modules/Region.sys.mjs"
+);
+
 let { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -1477,6 +1481,8 @@ async function triggerCapture(browser, submitButtonSelector, fillSelectors) {
 
 
 
+
+
 async function add_heuristic_tests(
   patterns,
   fixturePathPrefix = "",
@@ -1491,6 +1497,15 @@ async function add_heuristic_tests(
       : `${BASE_URL}../${fixturePathPrefix}${testPattern.fixturePath}`;
 
     info(`Test "${testPattern.description}"`);
+
+    let regionInfo = null;
+    if (testPattern.region) {
+      regionInfo = { home: Region._home, current: Region._current };
+
+      const region = testPattern.region;
+      Region._setCurrentRegion(region);
+      Region._setHomeRegion(region);
+    }
 
     if (testPattern.prefs) {
       await SpecialPowers.pushPrefEnv({
@@ -1595,6 +1610,11 @@ async function add_heuristic_tests(
 
     if (testPattern.prefs) {
       await SpecialPowers.popPrefEnv();
+    }
+
+    if (regionInfo) {
+      Region._setCurrentRegion(regionInfo.home);
+      Region._setHomeRegion(regionInfo.current);
     }
   }
 
