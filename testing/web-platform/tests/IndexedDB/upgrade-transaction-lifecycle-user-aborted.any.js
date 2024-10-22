@@ -1,17 +1,12 @@
-<!doctype html>
-<meta charset="utf8">
-<title>IndexedDB: user-abort()ed versionchange transaction lifecycle</title>
-<link rel="help"
-      href="https://w3c.github.io/IndexedDB/#upgrade-transaction-steps">
-<link rel="help"
-      href="https://w3c.github.io/IndexedDB/#dom-idbdatabase-createobjectstore">
-<link rel="help"
-      href="https://w3c.github.io/IndexedDB/#dom-idbdatabase-deleteobjectstore">
-<link rel="author" href="pwnall@chromium.org" title="Victor Costan">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/support-promises.js"></script>
-<script>
+
+
+
+
+
+
+
+
+
 'use strict';
 
 promise_test(t => {
@@ -139,5 +134,3 @@ promise_test(t => {
   }));
 }, 'in a setTimeout(0) callback after the abort event is fired for a ' +
    'transaction aborted due to an abort() call');
-
-</script>
