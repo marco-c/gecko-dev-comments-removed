@@ -132,6 +132,7 @@ background_tasks_metrics = [
 
 test_metrics = [
     "toolkit/components/glean/tests/test_metrics.yaml",
+    "toolkit/components/telemetry/tests/test_metrics.yaml",
 ]
 
 
