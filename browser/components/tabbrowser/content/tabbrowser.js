@@ -2969,7 +2969,19 @@
       return group;
     },
 
-    addTabGroup(color = "", label = "", tabs) {
+    
+
+
+
+
+
+
+
+
+
+
+
+    addTabGroup(tabs, { color = null, label = "" } = {}) {
       if (!tabs?.length) {
         throw new Error("Cannot create tab group with zero tabs");
       }
@@ -3013,7 +3025,7 @@
         newTabs.push(this.adoptTab(tab, index));
       }
 
-      this.addTabGroup(group.color, group.label, newTabs);
+      this.addTabGroup(newTabs, { label: group.label, color: group.color });
     },
 
     getAllTabGroups() {
@@ -8326,8 +8338,6 @@ var TabContextMenu = {
 
   moveTabsToNewGroup() {
     gBrowser.addTabGroup(
-      null,
-      "",
       gBrowser.selectedTabs.includes(this.contextTab)
         ? gBrowser.selectedTabs
         : [this.contextTab]
