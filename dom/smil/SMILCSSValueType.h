@@ -96,7 +96,8 @@ class SMILCSSValueType : public SMILType {
 
 
 
-  static bool SetPropertyValues(const SMILValue&, mozilla::DeclarationBlock&);
+  static bool SetPropertyValues(nsCSSPropertyID, const SMILValue&,
+                                mozilla::DeclarationBlock&);
 
   
 
