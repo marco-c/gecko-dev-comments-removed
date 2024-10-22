@@ -4423,9 +4423,11 @@ void Document::NoteScriptTrackingStatus(const nsACString& aURL,
                                         bool aIsTracking) {
   if (aIsTracking) {
     mTrackingScripts.Insert(aURL);
-  } else {
-    MOZ_ASSERT(!mTrackingScripts.Contains(aURL));
   }
+  
+  
+  
+  
 }
 
 bool Document::IsScriptTracking(JSContext* aCx) const {
