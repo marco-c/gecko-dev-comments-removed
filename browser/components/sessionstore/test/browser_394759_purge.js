@@ -196,7 +196,7 @@ add_task(async function () {
 
   
   let clearHistoryPromise = promiseClearHistory();
-  await ForgetAboutSite.removeDataFromDomain("mozilla.org");
+  await ForgetAboutSite.removeDataFromBaseDomain("mozilla.org");
   await clearHistoryPromise;
 
   let closedWindowData = ss.getClosedWindowData();

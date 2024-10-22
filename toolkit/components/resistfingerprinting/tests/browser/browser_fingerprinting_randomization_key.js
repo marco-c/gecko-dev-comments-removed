@@ -454,7 +454,7 @@ add_task(async function test_reset_random_key_when_clear_site_data() {
   BrowserTestUtils.removeTab(anotherTab);
 
   
-  await ForgetAboutSite.removeDataFromDomain("example.com");
+  await ForgetAboutSite.removeDataFromBaseDomain("example.com");
 
   
   tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);

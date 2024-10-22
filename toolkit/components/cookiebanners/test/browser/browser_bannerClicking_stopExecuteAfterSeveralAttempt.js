@@ -231,7 +231,7 @@ add_task(async function testForgetAboutSiteWithStopExecuteAfterOneAttempt() {
   });
 
   
-  await ForgetAboutSite.removeDataFromDomain(TEST_DOMAIN_A);
+  await ForgetAboutSite.removeDataFromBaseDomain(TEST_DOMAIN_A);
 
   
   

@@ -219,7 +219,7 @@ add_task(async function test_domain_preference_forgetAboutSite() {
   });
 
   
-  await ForgetAboutSite.removeDataFromDomain(TEST_DOMAIN_B);
+  await ForgetAboutSite.removeDataFromBaseDomain(TEST_DOMAIN_B);
 
   info("Ensure the domain preference is cleared.");
   await openPageAndVerify({

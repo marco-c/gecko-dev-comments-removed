@@ -141,7 +141,7 @@ async function test_cookie_cleared() {
   }
 
   
-  await ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  await ForgetAboutSite.removeDataFromBaseDomain(TEST_HOST);
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -191,7 +191,7 @@ async function test_cache_cleared() {
   }
 
   
-  await ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  await ForgetAboutSite.removeDataFromBaseDomain(TEST_HOST);
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -243,7 +243,7 @@ async function test_image_cache_cleared() {
   gHits = 0;
 
   
-  await ForgetAboutSite.removeDataFromDomain("localhost");
+  await ForgetAboutSite.removeDataFromBaseDomain("localhost");
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -329,7 +329,7 @@ async function test_storage_cleared() {
   }
 
   
-  await ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  await ForgetAboutSite.removeDataFromBaseDomain(TEST_HOST);
 
   
   

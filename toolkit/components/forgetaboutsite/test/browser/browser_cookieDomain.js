@@ -29,7 +29,7 @@ add_task(async function test_singleDomain() {
   SiteDataTestUtils.addToCookies({ origin: "https://example.com" });
 
   
-  await ForgetAboutSite.removeDataFromDomain("example.com");
+  await ForgetAboutSite.removeDataFromBaseDomain("example.com");
 
   
   ok(!checkCookie("example.com", {}), "No cookies");
@@ -52,7 +52,7 @@ add_task(async function test_subDomain() {
   SiteDataTestUtils.addToCookies({ origin: "https://example.org" });
 
   
-  await ForgetAboutSite.removeDataFromDomain("sub.example.com");
+  await ForgetAboutSite.removeDataFromBaseDomain("sub.example.com");
 
   
   ok(!checkCookie("example.com", {}), "No cookies for example.com");
