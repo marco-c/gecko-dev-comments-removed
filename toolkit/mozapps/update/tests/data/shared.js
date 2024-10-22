@@ -195,6 +195,15 @@ async function initUpdateServiceStub() {
 }
 
 
+async function reInitUpdateService() {
+  return gAUS.internal.init( true);
+}
+
+async function initUpdateService() {
+  return gAUS.init();
+}
+
+
 
 
 
@@ -946,4 +955,82 @@ async function waitForUpdatePing(archiveChecker, expectedProperties) {
     100
   );
   return updatePing;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function parameterizedTest(testFn, parameters, { skipFn } = {}) {
+  logTestInfo(`parameterizedTest - Testing ${testFn.name}`);
+
+  const maybeRunTest = async params => {
+    const invocationDesc = `${testFn.name}(${JSON.stringify(params)})`;
+    if (skipFn && (await skipFn(params))) {
+      logTestInfo("parameterizedTest - SKIPPING " + invocationDesc);
+      return;
+    }
+    logTestInfo("parameterizedTest - START " + invocationDesc);
+    await testFn(params);
+    logTestInfo("parameterizedTest - COMPLETE " + invocationDesc);
+  };
+
+  if (Array.isArray(parameters)) {
+    for (const params of parameters) {
+      await maybeRunTest(params);
+    }
+  } else {
+    const recurse = async (chosenParams, remainingPossibleParams) => {
+      if (!remainingPossibleParams.length) {
+        await maybeRunTest(chosenParams);
+        return;
+      }
+      const [param, argValues] = remainingPossibleParams.shift();
+      for (const argValue of argValues) {
+        chosenParams[param] = argValue;
+        
+        await recurse(Object.assign({}, chosenParams), [
+          ...remainingPossibleParams,
+        ]);
+      }
+    };
+    await recurse({}, Object.entries(parameters));
+  }
+
+  logTestInfo(`parameterizedTest - Finished testing ${testFn.name}`);
+}
+
+async function startBitsMarDownload(url) {
+  return gAUS.wrappedJSObject.makeBitsRequest({ url });
+}
+
+async function connectToBitsMarDownload(bitsId) {
+  return gAUS.wrappedJSObject.makeBitsRequest({ bitsId });
 }
