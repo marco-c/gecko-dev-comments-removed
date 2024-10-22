@@ -3123,8 +3123,10 @@ void nsPresContext::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
   
   
   
+  
   if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
     mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
+    mPresShell->MarkStickyFramesForReflow();
     mPresShell->AddResizeEventFlushObserverIfNeeded();
   }
 

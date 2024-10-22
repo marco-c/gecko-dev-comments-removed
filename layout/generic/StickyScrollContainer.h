@@ -91,6 +91,11 @@ class StickyScrollContainer final : public nsIScrollPositionListener {
 
   bool IsStuckInYDirection(nsIFrame* aFrame) const;
 
+  
+
+
+  void MarkFramesForReflow();
+
  private:
   explicit StickyScrollContainer(ScrollContainerFrame* aScrollContainerFrame);
 
