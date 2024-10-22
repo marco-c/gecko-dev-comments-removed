@@ -1490,38 +1490,11 @@ Result<Ok, LaunchError> MacProcessLauncher::DoFinishLaunch() {
   MOZ_ASSERT(mParentRecvPort, "should have been configured during DoSetup()");
 
   
+  
   const int kTimeoutMs = 10000;
-
-  mozilla::UniqueMachSendRight child_task;
-  audit_token_t audit_token{};
-  kern_return_t kr = MachReceivePortSendRight(
-      mParentRecvPort, mozilla::Some(kTimeoutMs), &child_task, &audit_token);
-  if (kr != KERN_SUCCESS) {
-    std::string errString = StringPrintf("0x%x %s", kr, mach_error_string(kr));
-    CHROMIUM_LOG(ERROR) << "parent MachReceivePortSendRight failed: "
-                        << errString;
-    return Err(LaunchError("MachReceivePortSendRight", kr));
-  }
-
-  
-  if (audit_token_to_pid(audit_token) != base::GetProcId(mResults.mHandle)) {
-    CHROMIUM_LOG(ERROR) << "task_t was not sent by child process";
-    return Err(LaunchError("audit_token_to_pid"));
-  }
-
-  
-  pid_t task_pid = -1;
-  kr = pid_for_task(child_task.get(), &task_pid);
-  if (kr != KERN_SUCCESS) {
-    CHROMIUM_LOG(ERROR) << "pid_for_task failed: " << mach_error_string(kr);
-    return Err(LaunchError("pid_for_task", kr));
-  }
-  if (task_pid != base::GetProcId(mResults.mHandle)) {
-    CHROMIUM_LOG(ERROR) << "task_t is not for child process";
-    return Err(LaunchError("task_pid"));
-  }
-
-  mResults.mChildTask = child_task.release();
+  MOZ_TRY(MachHandleProcessCheckIn(
+      mParentRecvPort.get(), base::GetProcId(mResults.mHandle), kTimeoutMs,
+      mChildArgs.mSendRights, &mResults.mChildTask));
 
   return Ok();
 }

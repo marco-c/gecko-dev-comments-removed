@@ -14,6 +14,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/ipc/LaunchError.h"
 
 
 
@@ -35,5 +36,24 @@ kern_return_t MachReceivePortSendRight(
     mozilla::Maybe<mach_msg_timeout_t> opt_timeout,
     mozilla::UniqueMachSendRight* attachment,
     audit_token_t* audit_token = nullptr);
+
+#ifdef XP_MACOSX
+
+
+
+
+bool MachChildProcessCheckIn(
+    const char* bootstrap_service_name, mach_msg_timeout_t timeout,
+    std::vector<mozilla::UniqueMachSendRight>& send_rights);
+
+
+
+
+mozilla::Result<mozilla::Ok, mozilla::ipc::LaunchError>
+MachHandleProcessCheckIn(
+    mach_port_t endpoint, pid_t child_pid, mach_msg_timeout_t timeout,
+    const std::vector<mozilla::UniqueMachSendRight>& send_rights,
+    task_t* child_task);
+#endif
 
 #endif  

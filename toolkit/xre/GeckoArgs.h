@@ -23,6 +23,9 @@ namespace geckoargs {
 struct ChildProcessArgs {
   std::vector<std::string> mArgs;
   std::vector<UniqueFileHandle> mFiles;
+#ifdef XP_DARWIN
+  std::vector<UniqueMachSendRight> mSendRights;
+#endif
 };
 
 #ifdef XP_UNIX
@@ -34,6 +37,16 @@ void SetPassedFileHandles(std::vector<UniqueFileHandle>&& aFiles);
 
 void AddToFdsToRemap(const ChildProcessArgs& aArgs,
                      std::vector<std::pair<int, int>>& aFdsToRemap);
+#endif
+
+#ifdef XP_DARWIN
+
+
+constexpr size_t kMaxPassedMachSendRights = 10;
+
+
+
+void SetPassedMachSendRights(std::vector<UniqueMachSendRight>&& aSendRights);
 #endif
 
 template <typename T>
@@ -106,6 +119,12 @@ template <>
 Maybe<UniqueFileHandle> CommandLineArg<UniqueFileHandle>::GetCommon(
     const char* aMatch, int& aArgc, char** aArgv, const CheckArgFlag aFlags);
 
+#ifdef XP_DARWIN
+template <>
+Maybe<UniqueMachSendRight> CommandLineArg<UniqueMachSendRight>::GetCommon(
+    const char* aMatch, int& aArgc, char** aArgv, const CheckArgFlag aFlags);
+#endif
+
 
 
 template <>
@@ -143,6 +162,13 @@ template <>
 void CommandLineArg<UniqueFileHandle>::PutCommon(const char* aName,
                                                  UniqueFileHandle aValue,
                                                  ChildProcessArgs& aArgs);
+
+#ifdef XP_DARWIN
+template <>
+void CommandLineArg<UniqueMachSendRight>::PutCommon(const char* aName,
+                                                    UniqueMachSendRight aValue,
+                                                    ChildProcessArgs& aArgs);
+#endif
 
 #if defined(__GNUC__)
 #  pragma GCC diagnostic push
