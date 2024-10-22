@@ -1,0 +1,7 @@
+
+
+wasmEvalText(
+  `(module (import "wasm:unknown" "unknown" (func)))`,
+  { "wasm:unknown": { unknown: () => {} } },
+  { builtins: ["unknown"] }
+);
