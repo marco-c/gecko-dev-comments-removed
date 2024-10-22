@@ -346,10 +346,8 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
 
   
   
-  
-  
   if (key == JSProto_GeneratorFunction &&
-      !global->hasBuiltinProto(ProtoKind::IteratorProto)) {
+      !global->hasPrototype(JSProto_Iterator)) {
     if (!getOrCreateIteratorPrototype(cx, global)) {
       return false;
     }
@@ -1024,7 +1022,6 @@ JSObject* GlobalObject::createIteratorPrototype(JSContext* cx,
     return nullptr;
   }
   JSObject* proto = &global->getPrototype(JSProto_Iterator);
-  global->initBuiltinProto(ProtoKind::IteratorProto, proto);
   return proto;
 }
 

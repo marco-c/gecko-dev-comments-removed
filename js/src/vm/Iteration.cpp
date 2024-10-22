@@ -1929,14 +1929,6 @@ void js::AssertDenseElementsNotIterated(NativeObject* obj) {
 }
 #endif
 
-static const JSFunctionSpec iterator_methods[] = {
-    JS_SELF_HOSTED_SYM_FN(iterator, "IteratorIdentity", 0, 0),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    JS_SELF_HOSTED_SYM_FN(dispose, "IteratorDispose", 0, 0),
-#endif
-    JS_FS_END,
-};
-
 static const JSFunctionSpec iterator_static_methods[] = {
     JS_SELF_HOSTED_FN("from", "IteratorFrom", 1, 0),
 #ifdef NIGHTLY_BUILD
@@ -2076,34 +2068,6 @@ static const JSPropertySpec iterator_properties[] = {
     JS_SYM_GETSET(toStringTag, toStringTagGetter, toStringTagSetter, 0),
     JS_PS_END,
 };
-
-
-bool GlobalObject::initIteratorProto(JSContext* cx,
-                                     Handle<GlobalObject*> global) {
-  if (global->hasBuiltinProto(ProtoKind::IteratorProto)) {
-    return true;
-  }
-
-  RootedObject proto(
-      cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
-  if (!proto) {
-    return false;
-  }
-
-  
-  
-  
-  global->initBuiltinProto(ProtoKind::IteratorProto, proto);
-
-  if (!DefinePropertiesAndFunctions(cx, proto, nullptr, iterator_methods)) {
-    
-    
-    
-    return false;
-  }
-
-  return true;
-}
 
 
 template <GlobalObject::ProtoKind Kind, const JSClass* ProtoClass,
