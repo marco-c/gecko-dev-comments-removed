@@ -14,7 +14,6 @@ const ModuleOverrides = {
   "ContentDOMReference.sys.mjs": "Helpers.ios.mjs",
   "FormAutofill.sys.mjs": "FormAutofill.ios.sys.mjs",
   "EntryFile.sys.mjs": "FormAutofillChild.ios.sys.mjs",
-  "LoginHelper.sys.mjs": "LoginManager.shared.sys.mjs",
 };
 
 
