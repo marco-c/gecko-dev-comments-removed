@@ -403,10 +403,6 @@ nsresult HTMLSelectEventListener::MouseDown(dom::Event* aMouseEvent) {
     return NS_OK;
   }
 
-  if (!IsInActiveTab(mElement->OwnerDoc())) {
-    return NS_OK;
-  }
-
   
   
   
