@@ -1550,6 +1550,9 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 debug_assert!(children.len() >= 2, "Should still have multiple kids!");
 
                 
+                children.sort_unstable_by_key(|c| c.sort_key());
+
+                
                 
                 children.dedup_by(|right, left| left.try_product_in_place(right));
 
