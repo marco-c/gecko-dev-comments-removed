@@ -16,9 +16,7 @@ function TestArrayIteratorWrappers() {
     assertDeepEq(iter.next.call(newGlobal().eval('[5][Symbol.iterator]()')),
 		 { value: 5, done: false })
 }
-if (typeof newGlobal === "function") {
-    TestArrayIteratorWrappers();
-}
+TestArrayIteratorWrappers();
 
 
 

@@ -9,34 +9,6 @@ class DetachedInt32Array extends Int32Array {
     }
 }
 
-function throwsTypeError(fn) {
-    try {
-        fn();
-    } catch (e) {
-        assertEq(e instanceof TypeError, true);
-        return true;
-    }
-    return false;
-}
-
-
-
-const ACCESS_ON_DETACHED_ARRAY_BUFFER_THROWS = (() => {
-    let ta = new DetachedInt32Array(10);
-    let throws = throwsTypeError(() => ta[0]);
-    
-    assertEq(throwsTypeError(() => Object.getOwnPropertyDescriptor(ta, 0)), throws);
-    return throws;
-})();
-
-function maybeThrowOnDetached(fn, returnValue) {
-    if (ACCESS_ON_DETACHED_ARRAY_BUFFER_THROWS) {
-        assertThrowsInstanceOf(fn, TypeError);
-        return returnValue;
-    }
-    return fn();
-}
-
 
 {
     let ta = new DetachedInt32Array(EMPTY);
@@ -54,8 +26,8 @@ for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     Object.seal(ta);
 
     assertEq(Object.isExtensible(ta), false);
-    assertEq(maybeThrowOnDetached(() => Object.isSealed(ta), true), true);
-    assertEq(maybeThrowOnDetached(() => Object.isFrozen(ta), true), true);
+    assertEq(Object.isSealed(ta), true);
+    assertEq(Object.isFrozen(ta), true);
 }
 
 
@@ -71,11 +43,11 @@ for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
 
 for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     let ta = new DetachedInt32Array(length);
-    maybeThrowOnDetached(() => Object.freeze(ta));
+    Object.freeze(ta);
 
     assertEq(Object.isExtensible(ta), false);
-    assertEq(maybeThrowOnDetached(() => Object.isSealed(ta), true), true);
-    assertEq(maybeThrowOnDetached(() => Object.isFrozen(ta), true), true);
+    assertEq(Object.isSealed(ta), true);
+    assertEq(Object.isFrozen(ta), true);
 }
 
 
@@ -95,8 +67,8 @@ for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     Object.preventExtensions(ta);
 
     assertEq(Object.isExtensible(ta), false);
-    assertEq(maybeThrowOnDetached(() => Object.isSealed(ta), true), true);
-    assertEq(maybeThrowOnDetached(() => Object.isFrozen(ta), true), true);
+    assertEq(Object.isSealed(ta), true);
+    assertEq(Object.isFrozen(ta), true);
 }
 
 

@@ -32,6 +32,14 @@ var myRegExp = {
     if (unicode) flags += "u";
     return flags;
   },
+  get global() {
+    
+    log += "get:global,"
+  },
+  get unicode() {
+    
+    log += "get:unicode,"
+  },
   get lastIndex() {
     log += "get:lastIndex,";
     return lastIndexResult[n];
