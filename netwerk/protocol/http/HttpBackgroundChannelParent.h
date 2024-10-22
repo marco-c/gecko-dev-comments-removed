@@ -40,7 +40,7 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   void OnChannelClosed();
 
   
-  bool OnStartRequest(const nsHttpResponseHead& aResponseHead,
+  bool OnStartRequest(nsHttpResponseHead&& aResponseHead,
                       const bool& aUseResponseHead,
                       const nsHttpHeaderArray& aRequestHeaders,
                       const HttpChannelOnStartRequestArgs& aArgs,
