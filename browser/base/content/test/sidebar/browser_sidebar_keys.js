@@ -1,6 +1,10 @@
 
 
 
+add_setup(() =>
+  SidebarController.setUIState({ expanded: false, hidden: false })
+);
+
 async function testSidebarKeyToggle(key, options, expectedSidebarId) {
   EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {});
   let promiseShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
