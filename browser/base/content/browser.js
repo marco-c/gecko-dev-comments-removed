@@ -637,6 +637,13 @@ customElements.setElementCreationCallback("screenshots-buttons", () => {
   );
 });
 
+customElements.setElementCreationCallback("fxa-menu-message", () => {
+  ChromeUtils.importESModule(
+    "chrome://browser/content/asrouter/components/fxa-menu-message.mjs",
+    { global: "current" }
+  );
+});
+
 var gBrowser;
 var gContextMenu = null; 
 var gMultiProcessBrowser = window.docShell.QueryInterface(

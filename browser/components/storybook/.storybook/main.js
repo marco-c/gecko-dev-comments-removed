@@ -24,6 +24,8 @@ module.exports = {
     
     `${projectRoot}/browser/components/aboutlogins/content/components/**/*.stories.mjs`,
     
+    `${projectRoot}/browser/components/asrouter/content/**/*.stories.mjs`,
+    
     `${projectRoot}/browser/components/backup/content/**/*.stories.mjs`,
     
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
