@@ -338,9 +338,11 @@ void ImageDecoder::CheckOutstandingDecodes() {
   const uint32_t decodedFrameCount = track->DecodedFrameCount();
   const uint32_t frameCount = track->FrameCount();
   const bool frameCountComplete = track->FrameCountComplete();
+  const bool decodedFramesComplete = track->DecodedFramesComplete();
 
   AutoTArray<OutstandingDecode, 4> resolved;
-  AutoTArray<OutstandingDecode, 4> rejected;
+  AutoTArray<OutstandingDecode, 4> rejectedRange;
+  AutoTArray<OutstandingDecode, 4> rejectedState;
   uint32_t minFrameIndex = UINT32_MAX;
 
   
@@ -360,9 +362,20 @@ void ImageDecoder::CheckOutstandingDecodes() {
               ("ImageDecoder %p CheckOutstandingDecodes -- rejected index %u "
                "out-of-bounds",
                this, frameIndex));
-      rejected.AppendElement(std::move(decode));
+      rejectedRange.AppendElement(std::move(decode));
       mOutstandingDecodes.RemoveElementAt(i);
-    } else {
+    } else if (frameCountComplete && decodedFramesComplete) {
+      
+      
+      
+      
+      MOZ_LOG(gWebCodecsLog, LogLevel::Warning,
+              ("ImageDecoder %p CheckOutstandingDecodes -- rejected index %u "
+               "decode error",
+               this, frameIndex));
+      rejectedState.AppendElement(std::move(decode));
+      mOutstandingDecodes.RemoveElementAt(i);
+    } else if (!decodedFramesComplete) {
       
       
       MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
@@ -372,6 +385,12 @@ void ImageDecoder::CheckOutstandingDecodes() {
         minFrameIndex = std::min(minFrameIndex, frameIndex);
       }
       ++i;
+    } else {
+      
+      
+      
+      
+      MOZ_ASSERT(!frameCountComplete);
     }
   }
 
@@ -388,8 +407,12 @@ void ImageDecoder::CheckOutstandingDecodes() {
     i.mPromise->MaybeResolve(result);
   }
 
-  for (const auto& i : rejected) {
+  for (const auto& i : rejectedRange) {
     i.mPromise->MaybeRejectWithRangeError("No more frames available"_ns);
+  }
+
+  for (const auto& i : rejectedState) {
+    i.mPromise->MaybeRejectWithInvalidStateError("Error decoding frame"_ns);
   }
 }
 
