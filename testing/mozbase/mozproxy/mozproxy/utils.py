@@ -58,7 +58,9 @@ if "MOZ_UPLOAD_DIR" in os.environ:
     )
 
 
-def transform_platform(str_to_transform, config_platform, config_processor=None):
+def transform_platform(
+    str_to_transform, config_platform, config_processor=None, mitmproxy_version=None
+):
     """Transform platform name i.e. 'mitmproxy-rel-bin-{platform}.manifest'
 
     transforms to 'mitmproxy-rel-bin-osx.manifest'.
@@ -70,7 +72,14 @@ def transform_platform(str_to_transform, config_platform, config_processor=None)
     if "win" in config_platform:
         platform_id = "win"
     elif config_platform == "mac":
-        platform_id = "osx"
+        
+        
+        
+        
+        if config_processor == "arm" and mitmproxy_version == "11.0.0":
+            platform_id = "osx-arm64"
+        else:
+            platform_id = "osx"
     else:
         platform_id = "linux64"
 
