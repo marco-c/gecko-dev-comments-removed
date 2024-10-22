@@ -13112,6 +13112,7 @@ nsresult Maintenance::OpenDirectory() {
   
   
   
+  
 
   OpenStorageDirectory(PersistenceScope::CreateFromNull(),
                         true)
@@ -13280,7 +13281,7 @@ nsresult Maintenance::DirectoryWork() {
     
     QM_TRY(CollectEachFile(
         *persistenceDir,
-        [this, &quotaManager, persistent, persistenceType, &idbDirName](
+        [this, &quotaManager, persistenceType, &idbDirName](
             const nsCOMPtr<nsIFile>& originDir) -> Result<Ok, nsresult> {
           if (NS_WARN_IF(QuotaClient::IsShuttingDownOnNonBackgroundThread()) ||
               IsAborted()) {
@@ -13308,27 +13309,6 @@ nsresult Maintenance::DirectoryWork() {
               
               if (metadata.mIsPrivate) {
                 return Ok{};
-              }
-
-              if (persistent) {
-                
-                
-                
-                
-                
-
-                QM_TRY_UNWRAP(
-                    const DebugOnly<bool> created,
-                    quotaManager
-                        ->EnsurePersistentOriginIsInitializedInternal(metadata)
-                        .map([](const auto& res) { return res.second; }),
-                    
-                    Ok{});
-
-                
-                
-                
-                MOZ_ASSERT(!created);
               }
 
               QM_TRY_INSPECT(const auto& idbDir,
