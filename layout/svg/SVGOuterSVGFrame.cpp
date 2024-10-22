@@ -787,9 +787,6 @@ void SVGOuterSVGAnonChildFrame::BuildDisplayList(
 }
 
 bool SVGOuterSVGFrame::HasChildrenOnlyTransform(Matrix* aTransform) const {
-  
-  
-  
   auto* content = static_cast<SVGSVGElement*>(GetContent());
   if (!content->HasChildrenOnlyTransform()) {
     return false;
@@ -798,22 +795,6 @@ bool SVGOuterSVGFrame::HasChildrenOnlyTransform(Matrix* aTransform) const {
     
     
     *aTransform = gfx::ToMatrix(content->ChildToUserSpaceTransform());
-    if (aTransform->HasNonTranslation()) {
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(aTransform->IsRectilinear(),
-                 "Non-rectilinear transform will break the following logic");
-      CSSPoint pos =
-          CSSPixel::FromAppUnits(GetContentRectRelativeToSelf().TopLeft());
-      CSSPoint scaledPos =
-          CSSPoint(aTransform->_11 * pos.x, aTransform->_22 * pos.y);
-      CSSPoint deltaPos = scaledPos - pos;
-      *aTransform *= Matrix::Translation(-deltaPos.x, -deltaPos.y);
-    }
   }
   return true;
 }
