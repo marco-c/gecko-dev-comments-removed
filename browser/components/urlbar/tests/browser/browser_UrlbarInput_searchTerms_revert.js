@@ -21,8 +21,8 @@ add_setup(async function () {
 
 function synthesizeRevert() {
   gURLBar.focus();
-  info("Escape to revert Urlbar.");
-  EventUtils.synthesizeKey("KEY_Escape");
+  info("Double escape and revert Urlbar.");
+  EventUtils.synthesizeKey("KEY_Escape", { repeat: 2 });
 }
 
 
