@@ -20,7 +20,6 @@ async function run_test() {
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
-  await waitForUpdateXMLFiles();
   if (gIsServiceTest) {
     
     
@@ -29,8 +28,10 @@ async function run_test() {
     
     
     
-    await checkUpdateManager(STATE_NONE, false, STATE_PENDING_SVC, 0, 1);
+    await waitForUpdateXMLFiles(true, false);
+    await checkUpdateManager(STATE_PENDING_SVC, true, STATE_PENDING_SVC, 0, 0);
   } else {
+    await waitForUpdateXMLFiles();
     await checkUpdateManager(
       STATE_NONE,
       false,
