@@ -1634,10 +1634,7 @@ bool DrawTargetWebgl::RemoveAllClips() {
   return true;
 }
 
-void DrawTargetWebgl::CopyToFallback(DrawTarget* aDT) {
-  if (RefPtr<SourceSurface> snapshot = Snapshot()) {
-    aDT->CopySurface(snapshot, snapshot->GetRect(), gfx::IntPoint(0, 0));
-  }
+bool DrawTargetWebgl::CopyToFallback(DrawTarget* aDT) {
   aDT->RemoveAllClips();
   for (auto& clipStack : mClipStack) {
     aDT->SetTransform(clipStack.mTransform);
@@ -1648,6 +1645,17 @@ void DrawTargetWebgl::CopyToFallback(DrawTarget* aDT) {
     }
   }
   aDT->SetTransform(GetTransform());
+
+  
+  
+  
+  if (HasDataSnapshot()) {
+    if (RefPtr<SourceSurface> snapshot = Snapshot()) {
+      aDT->CopySurface(snapshot, snapshot->GetRect(), gfx::IntPoint(0, 0));
+      return true;
+    }
+  }
+  return false;
 }
 
 
