@@ -165,7 +165,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
     if (![NSApp windowsMenu]) {
       
       
-      NSMenu* windowsMenu = [[NSMenu alloc] initWithTitle:@"Window"];
+      NSMenu* windowsMenu = [[GeckoNSMenu alloc] initWithTitle:@"Window"];
       [NSApp setWindowsMenu:windowsMenu];
       [windowsMenu release];
     }
@@ -209,7 +209,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
-  NSMenu* menu = [[[NSMenu alloc] initWithTitle:@""] autorelease];
+  NSMenu* menu = [[[GeckoNSMenu alloc] initWithTitle:@""] autorelease];
   [menu setAutoenablesItems:NO];
 
   
