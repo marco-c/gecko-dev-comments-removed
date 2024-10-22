@@ -997,7 +997,13 @@ void HyperTextAccessible::DeleteText(int32_t aStartPos, int32_t aEndPos) {
 void HyperTextAccessible::PasteText(int32_t aPosition) {
   RefPtr<EditorBase> editorBase = GetEditor();
   if (editorBase) {
-    SetSelectionRange(aPosition, aPosition);
+    
+    
+    
+    
+    if (aPosition != nsIAccessibleText::TEXT_OFFSET_CARET) {
+      SetSelectionRange(aPosition, aPosition);
+    }
     editorBase->PasteAsAction(nsIClipboard::kGlobalClipboard,
                               EditorBase::DispatchPasteEvent::Yes);
   }
