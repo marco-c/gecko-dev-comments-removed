@@ -116,10 +116,6 @@ MALLOC_DECL(jemalloc_free_excess_dirty_pages, void)
 
 
 
-MALLOC_DECL(jemalloc_reset_small_alloc_randomization, void, bool)
-
-
-
 MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
 
 

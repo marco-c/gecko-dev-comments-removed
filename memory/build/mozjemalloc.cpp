@@ -1204,10 +1204,6 @@ struct arena_t {
   explicit arena_t(arena_params_t* aParams, bool aIsPrivate);
   ~arena_t();
 
-  void ResetSmallAllocRandomization();
-
-  void InitPRNG() MOZ_REQUIRES(mLock);
-
  private:
   void InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages);
 
@@ -3395,40 +3391,6 @@ void arena_bin_t::Init(SizeClass aSizeClass) {
   mSizeDivisor = FastDivisor<uint16_t>(aSizeClass.Size(), try_run_size);
 }
 
-void arena_t::ResetSmallAllocRandomization() {
-  if (MOZ_UNLIKELY(opt_randomize_small)) {
-    MaybeMutexAutoLock lock(mLock);
-    InitPRNG();
-  }
-  mRandomizeSmallAllocations = opt_randomize_small;
-}
-
-void arena_t::InitPRNG() {
-  
-  
-  
-  
-  mIsPRNGInitializing = true;
-  {
-    mLock.Unlock();
-    mozilla::Maybe<uint64_t> prngState1 = mozilla::RandomUint64();
-    mozilla::Maybe<uint64_t> prngState2 = mozilla::RandomUint64();
-    mLock.Lock();
-
-    mozilla::non_crypto::XorShift128PlusRNG prng(prngState1.valueOr(0),
-                                                 prngState2.valueOr(0));
-    if (mPRNG) {
-      *mPRNG = prng;
-    } else {
-      void* backing =
-          base_alloc(sizeof(mozilla::non_crypto::XorShift128PlusRNG));
-      mPRNG = new (backing)
-          mozilla::non_crypto::XorShift128PlusRNG(std::move(prng));
-    }
-  }
-  mIsPRNGInitializing = false;
-}
-
 void* arena_t::MallocSmall(size_t aSize, bool aZero) {
   void* ret;
   arena_bin_t* bin;
@@ -3467,7 +3429,25 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
 
     if (MOZ_UNLIKELY(mRandomizeSmallAllocations && mPRNG == nullptr &&
                      !mIsPRNGInitializing)) {
-      InitPRNG();
+      
+      
+      
+      
+      mIsPRNGInitializing = true;
+      mozilla::non_crypto::XorShift128PlusRNG* prng;
+      {
+        
+        mLock.Unlock();
+        mozilla::Maybe<uint64_t> prngState1 = mozilla::RandomUint64();
+        mozilla::Maybe<uint64_t> prngState2 = mozilla::RandomUint64();
+        void* backing =
+            base_alloc(sizeof(mozilla::non_crypto::XorShift128PlusRNG));
+        prng = new (backing) mozilla::non_crypto::XorShift128PlusRNG(
+            prngState1.valueOr(0), prngState2.valueOr(0));
+        mLock.Lock();
+      }
+      mPRNG = prng;
+      mIsPRNGInitializing = false;
     }
     MOZ_ASSERT(!mRandomizeSmallAllocations || mPRNG);
 
@@ -4898,7 +4878,6 @@ inline void MozJemalloc::jemalloc_stats_internal(
 
   
   aStats->opt_junk = opt_junk;
-  aStats->opt_randomize_small = opt_randomize_small;
   aStats->opt_zero = opt_zero;
   aStats->quantum = kQuantum;
   aStats->quantum_max = kMaxQuantumClass;
@@ -5186,40 +5165,6 @@ inline void MozJemalloc::moz_dispose_arena(arena_id_t aArenaId) {
 
 inline void MozJemalloc::moz_set_max_dirty_page_modifier(int32_t aModifier) {
   gArenas.SetDefaultMaxDirtyPageModifier(aModifier);
-}
-
-inline void MozJemalloc::jemalloc_reset_small_alloc_randomization(
-    bool aRandomizeSmall) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  {
-    AutoLock<StaticMutex> lock(gInitLock);
-    opt_randomize_small = aRandomizeSmall;
-  }
-
-  MutexAutoLock lock(gArenas.mLock);
-  for (auto* arena : gArenas.iter()) {
-    arena->ResetSmallAllocRandomization();
-  }
 }
 
 #define MALLOC_DECL(name, return_type, ...)                          \
