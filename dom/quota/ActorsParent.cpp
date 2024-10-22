@@ -5168,17 +5168,34 @@ RefPtr<UniversalDirectoryLockPromise> QuotaManager::OpenStorageDirectory(
           mStorageInitialized, IsDirectoryLockBlockedByUninitStorageOperation,
           MakeBackInserter(promises));
 
+  RefPtr<UniversalDirectoryLock> persistentStorageDirectoryLock;
+
   RefPtr<UniversalDirectoryLock> temporaryStorageDirectoryLock;
 
-  if (aInitializeOrigins &&
-      MatchesBestEffortPersistenceScope(aPersistenceScope)) {
-    temporaryStorageDirectoryLock = CreateDirectoryLockForInitialization(
-        *this,
-        PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
-                                        PERSISTENCE_TYPE_DEFAULT),
-        OriginScope::FromNull(), mTemporaryStorageInitialized,
-        IsDirectoryLockBlockedByUninitStorageOperation,
-        MakeBackInserter(promises));
+  if (aInitializeOrigins) {
+    if (MatchesPersistentPersistenceScope(aPersistenceScope)) {
+      persistentStorageDirectoryLock = CreateDirectoryLockForInitialization(
+          *this, PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
+          OriginScope::FromNull(), mPersistentStorageInitialized,
+          IsDirectoryLockBlockedByUninitStorageOperation,
+          MakeBackInserter(promises));
+    }
+
+    
+    
+    
+    
+    
+    
+    if (MatchesBestEffortPersistenceScope(aPersistenceScope)) {
+      temporaryStorageDirectoryLock = CreateDirectoryLockForInitialization(
+          *this,
+          PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
+                                          PERSISTENCE_TYPE_DEFAULT),
+          OriginScope::FromNull(), mTemporaryStorageInitialized,
+          IsDirectoryLockBlockedByUninitStorageOperation,
+          MakeBackInserter(promises));
+    }
   }
 
   RefPtr<UniversalDirectoryLock> universalDirectoryLock =
@@ -5204,6 +5221,9 @@ RefPtr<UniversalDirectoryLockPromise> QuotaManager::OpenStorageDirectory(
       ->Then(GetCurrentSerialEventTarget(), __func__,
              MaybeInitialize(std::move(storageDirectoryLock), this,
                              &QuotaManager::InitializeStorage))
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             MaybeInitialize(std::move(persistentStorageDirectoryLock), this,
+                             &QuotaManager::InitializePersistentStorage))
       ->Then(GetCurrentSerialEventTarget(), __func__,
              MaybeInitialize(std::move(temporaryStorageDirectoryLock), this,
                              &QuotaManager::InitializeTemporaryStorage))

@@ -5065,7 +5065,7 @@ class Maintenance final : public Runnable {
   nsTHashMap<nsStringHashKey, DatabaseMaintenance*> mDatabaseMaintenances;
   nsresult mResultCode;
   Atomic<bool> mAborted;
-  bool mInitializeOriginsFailed;
+  bool mOpenStorageForAllRepositoriesFailed;
   State mState;
 
  public:
@@ -5075,7 +5075,7 @@ class Maintenance final : public Runnable {
         mStartTime(PR_Now()),
         mResultCode(NS_OK),
         mAborted(false),
-        mInitializeOriginsFailed(false),
+        mOpenStorageForAllRepositoriesFailed(false),
         mState(State::Initial) {
     AssertIsOnBackgroundThread();
     MOZ_ASSERT(aQuotaClient);
@@ -5144,7 +5144,7 @@ class Maintenance final : public Runnable {
   nsresult CreateIndexedDatabaseManager();
 
   RefPtr<UniversalDirectoryLockPromise> OpenStorageDirectory(
-      bool aInitializeOrigins);
+      const PersistenceScope& aPersistenceScope, bool aInitializeOrigins);
 
   
   
@@ -13077,7 +13077,7 @@ nsresult Maintenance::CreateIndexedDatabaseManager() {
 }
 
 RefPtr<UniversalDirectoryLockPromise> Maintenance::OpenStorageDirectory(
-    bool aInitializeOrigins) {
+    const PersistenceScope& aPersistenceScope, bool aInitializeOrigins) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
   MOZ_ASSERT(!mDirectoryLock);
@@ -13089,7 +13089,7 @@ RefPtr<UniversalDirectoryLockPromise> Maintenance::OpenStorageDirectory(
 
   
   return quotaManager->OpenStorageDirectory(
-      PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
+      aPersistenceScope, OriginScope::FromNull(),
       Nullable<Client::Type>(Client::IDB),
        false, aInitializeOrigins, DirectoryLockCategory::None,
       SomeRef(mPendingDirectoryLock));
@@ -13113,7 +13113,8 @@ nsresult Maintenance::OpenDirectory() {
   
   
 
-  OpenStorageDirectory( true)
+  OpenStorageDirectory(PersistenceScope::CreateFromNull(),
+                        true)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr(this)](
@@ -13128,7 +13129,7 @@ nsresult Maintenance::OpenDirectory() {
             
 
             self->mPendingDirectoryLock = nullptr;
-            self->mInitializeOriginsFailed = true;
+            self->mOpenStorageForAllRepositoriesFailed = true;
 
             if (NS_WARN_IF(QuotaClient::IsShuttingDownOnBackgroundThread()) ||
                 self->IsAborted()) {
@@ -13136,7 +13137,9 @@ nsresult Maintenance::OpenDirectory() {
               return;
             }
 
-            self->OpenStorageDirectory( false)
+            self->OpenStorageDirectory(PersistenceScope::CreateFromValue(
+                                           PERSISTENCE_TYPE_PERSISTENT),
+                                        true)
                 ->Then(GetCurrentSerialEventTarget(), __func__,
                        [self](const UniversalDirectoryLockPromise::
                                   ResolveOrRejectValue& aValue) {
@@ -13241,7 +13244,7 @@ nsresult Maintenance::DirectoryWork() {
 
     const bool persistent = persistenceType == PERSISTENCE_TYPE_PERSISTENT;
 
-    if (!persistent && mInitializeOriginsFailed) {
+    if (!persistent && mOpenStorageForAllRepositoriesFailed) {
       
       
       continue;
