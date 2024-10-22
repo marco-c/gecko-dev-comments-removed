@@ -11320,18 +11320,12 @@ static bool IsFrameRectScrolledOutOfView(const nsIFrame* aTarget,
   nsRect transformedRect = nsLayoutUtils::TransformFrameRectToAncestor(
       aTarget, aTargetRect, clipParent);
 
-  if (transformedRect.IsEmpty()) {
-    
-    
-    if (transformedRect.x > clipRect.XMost() ||
-        transformedRect.y > clipRect.YMost() ||
-        clipRect.x > transformedRect.XMost() ||
-        clipRect.y > transformedRect.YMost()) {
-      return true;
-    }
-  } else if (!transformedRect.Intersects(clipRect)) {
+  Maybe<nsRect> intersection =
+      transformedRect.EdgeInclusiveIntersection(clipRect);
+  if (intersection.isNothing()) {
     return true;
   }
+  transformedRect = *intersection;
 
   nsIFrame* parent = clipParent->GetParent();
   if (!parent) {
