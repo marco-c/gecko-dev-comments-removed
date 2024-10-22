@@ -7,6 +7,7 @@
 
 #include <algorithm>
 
+#include "LineBreakCache.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Services.h"
@@ -20,107 +21,7 @@
 #include "nsThreadUtils.h"
 
 using namespace mozilla;
-
-using CacheMap = nsTHashMap<nsString, nsTArray<uint8_t>>;
-
-static StaticAutoPtr<CacheMap> sBreakCache;
-
-
-
-
-
-
-static const int kCacheLimit = 3072;
-
-static StaticAutoPtr<CacheMap> sOldBreakCache;
-
-
-class CacheDeleter final : public Runnable {
- public:
-  explicit CacheDeleter(CacheMap* aCacheToDelete)
-      : Runnable("ComplexBreaker CacheDeleter"),
-        mCacheToDelete(aCacheToDelete) {}
-
-  NS_IMETHOD Run() override {
-    MOZ_ASSERT(!NS_IsMainThread());
-    mCacheToDelete = nullptr;
-    return NS_OK;
-  }
-
- private:
-  UniquePtr<CacheMap> mCacheToDelete;
-};
-
-class ComplexBreakObserver final : public nsIObserver {
-  ~ComplexBreakObserver() = default;
-
- public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
-};
-
-NS_IMPL_ISUPPORTS(ComplexBreakObserver, nsIObserver)
-
-NS_IMETHODIMP ComplexBreakObserver::Observe(nsISupports* aSubject,
-                                            const char* aTopic,
-                                            const char16_t* aData) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (strcmp(aTopic, "memory-pressure") == 0) {
-    if (sOldBreakCache) {
-      
-      NS_DispatchBackgroundTask(
-          MakeAndAddRef<CacheDeleter>(sOldBreakCache.forget()));
-    } else if (sBreakCache) {
-      NS_DispatchBackgroundTask(
-          MakeAndAddRef<CacheDeleter>(sBreakCache.forget()));
-    }
-  }
-
-  return NS_OK;
-}
-
-void ComplexBreaker::Initialize() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-  if (obs) {
-    obs->AddObserver(new ComplexBreakObserver(), "memory-pressure", false);
-  }
-}
-
-void ComplexBreaker::Shutdown() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  sBreakCache = nullptr;
-  sOldBreakCache = nullptr;
-}
-
-static void AddToCache(const char16_t* aText, uint32_t aLength,
-                       nsTArray<uint8_t> aBreakBefore) {
-  if (NS_WARN_IF(!sBreakCache->InsertOrUpdate(
-          nsString(aText, aLength), std::move(aBreakBefore), fallible))) {
-    return;
-  }
-
-  if (sBreakCache->Count() <= kCacheLimit) {
-    return;
-  }
-
-  if (sOldBreakCache) {
-    NS_DispatchBackgroundTask(
-        MakeAndAddRef<CacheDeleter>(sOldBreakCache.forget()));
-  }
-
-  sOldBreakCache = sBreakCache.forget();
-}
-
-static void CopyAndFill(const nsTArray<uint8_t>& aCachedBreakBefore,
-                        uint8_t* aBreakBefore, uint8_t* aEndBreakBefore) {
-  auto* startFill = std::copy(aCachedBreakBefore.begin(),
-                              aCachedBreakBefore.end(), aBreakBefore);
-  std::fill(startFill, aEndBreakBefore, false);
-}
+using namespace mozilla::intl;
 
 void ComplexBreaker::GetBreaks(const char16_t* aText, uint32_t aLength,
                                uint8_t* aBreakBefore) {
@@ -134,28 +35,13 @@ void ComplexBreaker::GetBreaks(const char16_t* aText, uint32_t aLength,
   MOZ_ASSERT(aBreakBefore, "aBreakBefore shouldn't be null");
 
   
-  if (sBreakCache) {
-    if (auto entry =
-            sBreakCache->Lookup(nsDependentSubstring(aText, aLength))) {
-      auto& breakBefore = entry.Data();
-      CopyAndFill(breakBefore, aBreakBefore, aBreakBefore + aLength);
-      return;
-    }
-  } else {
-    sBreakCache = new CacheMap();
-  }
-
-  
-  
-  if (sOldBreakCache) {
-    auto breakBefore =
-        sOldBreakCache->Extract(nsDependentSubstring(aText, aLength));
-    if (breakBefore) {
-      CopyAndFill(*breakBefore, aBreakBefore, aBreakBefore + aLength);
-      
-      AddToCache(aText, aLength, std::move(*breakBefore));
-      return;
-    }
+  LineBreakCache::Key key{aText, aLength};
+  auto entry = LineBreakCache::Cache()->Lookup(key);
+  if (entry) {
+    auto& breakBefore = entry.Data().mBreaks;
+    LineBreakCache::CopyAndFill(breakBefore, aBreakBefore,
+                                aBreakBefore + aLength);
+    return;
   }
 
   NS_GetComplexLineBreaks(aText, aLength, aBreakBefore);
@@ -169,6 +55,7 @@ void ComplexBreaker::GetBreaks(const char16_t* aText, uint32_t aLength,
     }
   }
 
-  AddToCache(aText, aLength,
-             nsTArray<uint8_t>(aBreakBefore, afterLastTrue - aBreakBefore));
+  entry.Set(LineBreakCache::Entry{
+      nsString(aText, aLength),
+      nsTArray<uint8_t>(aBreakBefore, afterLastTrue - aBreakBefore)});
 }
