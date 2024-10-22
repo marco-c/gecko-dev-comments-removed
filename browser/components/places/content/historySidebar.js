@@ -86,11 +86,7 @@ function updateTelemetry(urlsOpened = []) {
   filterCountHistogram.add(gCumulativeFilterCount);
   clearCumulativeCounters();
 
-  Services.telemetry.keyedScalarAdd(
-    "sidebar.link",
-    "history",
-    urlsOpened.length
-  );
+  Glean.sidebar.link.history.add(urlsOpened.length);
 }
 
 function searchHistory(aInput) {
@@ -149,7 +145,7 @@ function searchHistory(aInput) {
   
   
   if (aInput) {
-    Services.telemetry.keyedScalarAdd("sidebar.search", "history", 1);
+    Glean.sidebar.search.history.add(1);
     gCumulativeSearches++;
   }
 
