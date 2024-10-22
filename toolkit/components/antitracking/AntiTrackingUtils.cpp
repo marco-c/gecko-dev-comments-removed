@@ -536,14 +536,7 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
       return nsILoadInfo::NoStoragePermission;
     }
 
-    
-    
     if (PartitioningExceptionList::Check(targetOrigin, trackingOrigin)) {
-      return nsILoadInfo::StoragePermissionAllowListed;
-    }
-
-    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-    if (httpChannel && ContentBlockingAllowList::Check(httpChannel)) {
       return nsILoadInfo::StoragePermissionAllowListed;
     }
   }
