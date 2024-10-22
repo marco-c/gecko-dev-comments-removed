@@ -527,12 +527,12 @@ void IProtocol::UnlinkManager() {
   mManager = nullptr;
 }
 
-bool IProtocol::ChannelSend(UniquePtr<IPC::Message> aMsg) {
+bool IProtocol::ChannelSend(UniquePtr<IPC::Message> aMsg, int32_t* aSeqno) {
   if (CanSend()) {
     
     
     
-    GetIPCChannel()->Send(std::move(aMsg));
+    GetIPCChannel()->Send(std::move(aMsg), aSeqno);
     return true;
   }
 
@@ -625,7 +625,7 @@ void IProtocol::ActorDisconnected(ActorDestroyReason aWhy) {
       }
     }
 
-    ipcChannel->RejectPendingResponsesForActor(id);
+    actor->RejectPendingResponses();
     actor->ActorDestroy(why);
   };
 
@@ -892,6 +892,52 @@ IPDLResolverInner::~IPDLResolverInner() {
       ResponseRejectReason reason = ResponseRejectReason::ResolverDestroyed;
       WriteIPDLParam(&writer, aActor, reason);
     });
+  }
+}
+
+namespace {
+template <typename Entry>
+struct PairFirstComparator {
+  bool Equals(const Entry& aA, const Entry& aB) const {
+    return aA.first == aB.first;
+  }
+  bool LessThan(const Entry& aA, const Entry& aB) const {
+    return aA.first < aB.first;
+  }
+};
+}  
+
+void IPDLAsyncReturnsCallbacks::AddCallback(int32_t aSeqno,
+                                            Callback aCallback) {
+  mMap.InsertElementSorted(std::pair{aSeqno, std::move(aCallback)},
+                           PairFirstComparator<Entry>());
+}
+
+auto IPDLAsyncReturnsCallbacks::GotReply(
+    IProtocol* aActor, const IPC::Message& aMessage) -> Result {
+  
+  
+  
+  
+  size_t index = mMap.BinaryIndexOf(std::pair{aMessage.seqno(), nullptr},
+                                    PairFirstComparator<Entry>());
+  if (index == nsTArray<Entry>::NoIndex) {
+    return MsgProcessingError;
+  }
+
+  MOZ_ASSERT(mMap[index].first == aMessage.seqno());
+
+  Callback callback = std::move(mMap[index].second);
+  mMap.RemoveElementAt(index);
+  return callback(aActor, &aMessage);
+}
+
+void IPDLAsyncReturnsCallbacks::RejectPendingResponses() {
+  nsTArray<Entry> pending = std::move(mMap);
+  for (auto& entry : pending) {
+    
+    
+    (entry.second)(nullptr, nullptr);
   }
 }
 
