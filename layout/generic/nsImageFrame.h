@@ -295,7 +295,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   void OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage);
   void OnFrameUpdate(imgIRequest* aRequest, const nsIntRect* aRect);
-  void OnLoadComplete(imgIRequest* aRequest, nsresult aStatus);
+  void OnLoadComplete(imgIRequest* aRequest);
   mozilla::IntrinsicSize ComputeIntrinsicSize(
       bool aIgnoreContainment = false) const;
   
@@ -305,7 +305,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   
 
 
-  void NotifyNewCurrentRequest(imgIRequest* aRequest, nsresult aStatus);
+  void NotifyNewCurrentRequest(imgIRequest* aRequest);
 
   
   void SetForceSyncDecoding(bool aForce) { mForceSyncDecoding = aForce; }
