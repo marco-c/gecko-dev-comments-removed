@@ -1021,7 +1021,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRect mLastLoggedBoundSize;
   int mLastLoggedScale = -1;
 #endif
-  mozilla::Sides mResizableEdges;
+  mozilla::Sides mResizableEdges{mozilla::SideBits::eAll};
   
   
   mozilla::Maybe<int> mKioskMonitor;
