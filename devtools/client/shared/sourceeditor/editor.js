@@ -1732,6 +1732,9 @@ class Editor extends EventEmitter {
 
 
   getLocationsInViewport() {
+    if (this.isDestroyed()) {
+      return null;
+    }
     const cm = editors.get(this);
     if (this.config.cm6) {
       const { from, to } = cm.viewport;
@@ -2094,15 +2097,10 @@ class Editor extends EventEmitter {
 
 
 
-  lineInfo(lineOrOffset) {
-    let line = this.toLineIfWasmOffset(lineOrOffset);
-    if (line == undefined) {
-      return null;
-    }
+  lineInfo(line) {
     const cm = editors.get(this);
     if (this.config.cm6) {
       
-      line = line + 1;
       const el = this.getElementAtLine(line);
       
       
@@ -2111,7 +2109,7 @@ class Editor extends EventEmitter {
       );
 
       return {
-        text: cm.state.doc.lineAt(line)?.text,
+        text: el.innerText,
         
         line: null,
         handle: {

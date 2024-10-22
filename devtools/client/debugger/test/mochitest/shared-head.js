@@ -1618,11 +1618,7 @@ async function selectEditorLinesAndOpenContextMenu(
   elementName = "line"
 ) {
   const { startLine, endLine } = lines;
-  if (!endLine) {
-    await clickElement(dbg, elementName, startLine);
-  } else {
-    setSelection(dbg, startLine, endLine);
-  }
+  setSelection(dbg, startLine, endLine ?? startLine);
   return openContextMenuInDebugger(dbg, elementName, startLine);
 }
 
@@ -2248,6 +2244,15 @@ function waitForSearchState(dbg) {
 
 
 
+function waitForDocumentLoadComplete(dbg) {
+  return waitFor(() =>
+    isCm6Enabled ? getCMEditor(dbg).codeMirror.isDocumentLoadComplete : true
+  );
+}
+
+
+
+
 
 function getEditorContent(dbg) {
   return getCMEditor(dbg).getEditorContent();
@@ -2591,7 +2596,9 @@ async function tryHovering(dbg, line, column, elementName) {
 async function tryHoverTokenAtLine(dbg, expression, line, column, elementName) {
   info("Scroll codeMirror to make the token visible");
   await scrollEditorIntoView(dbg, line, 0);
-
+  
+  
+  await waitForDocumentLoadComplete(dbg);
   
   const tokenEl = await getTokenElAtLine(dbg, expression, line, column);
   if (!tokenEl) {

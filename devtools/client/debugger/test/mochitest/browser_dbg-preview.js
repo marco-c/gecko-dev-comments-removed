@@ -207,7 +207,7 @@ async function testHoveringInvalidTargetTokens(dbg) {
   
   
   EventUtils.synthesizeMouse(
-    findElementWithSelector(dbg, ".CodeMirror-lines"),
+    findElement(dbg, "CodeMirrorLines"),
     0,
     0,
     {
@@ -218,7 +218,7 @@ async function testHoveringInvalidTargetTokens(dbg) {
   is(
     await racePromiseLines,
     "TIMEOUT_LINES",
-    "No popup was displayed over the .CodeMirror-lines element"
+    "No popup was displayed over the content container element"
   );
 
   
