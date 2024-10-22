@@ -111,6 +111,8 @@ const MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED =
   MOZILLA_PKIX_ERROR_BASE + 13;
 const MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT = MOZILLA_PKIX_ERROR_BASE + 14;
 const MOZILLA_PKIX_ERROR_MITM_DETECTED = MOZILLA_PKIX_ERROR_BASE + 15;
+const MOZILLA_PKIX_ERROR_INSUFFICIENT_CERTIFICATE_TRANSPARENCY =
+  MOZILLA_PKIX_ERROR_BASE + 16;
 const MOZILLA_PKIX_ERROR_ISSUER_NO_LONGER_TRUSTED =
   MOZILLA_PKIX_ERROR_BASE + 17;
 
@@ -1249,6 +1251,10 @@ function append_line_to_data_storage_file(
 }
 
 
+const CT_MODE_COLLECT_TELEMETRY = 1;
+const CT_MODE_ENFORCE = 2;
+
+
 
 
 function expectCT(expectedCTValue, expectedResumed) {
@@ -1271,18 +1277,23 @@ function expectCT(expectedCTValue, expectedResumed) {
 
 
 
-function add_ct_test(host, expectedCTValue) {
+function add_ct_test(host, expectedCTValue, expectConnectionSuccess) {
   add_connection_test(
     host,
-    PRErrorCodeSuccess,
+    expectConnectionSuccess
+      ? PRErrorCodeSuccess
+      : MOZILLA_PKIX_ERROR_INSUFFICIENT_CERTIFICATE_TRANSPARENCY,
     null,
     expectCT(expectedCTValue, false)
   );
   
-  add_connection_test(
-    host,
-    PRErrorCodeSuccess,
-    null,
-    expectCT(expectedCTValue, true)
-  );
+  
+  if (expectConnectionSuccess) {
+    add_connection_test(
+      host,
+      PRErrorCodeSuccess,
+      null,
+      expectCT(expectedCTValue, true)
+    );
+  }
 }
