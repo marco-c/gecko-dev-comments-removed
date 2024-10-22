@@ -121,8 +121,9 @@ def before_runs(env):
             platform_name = platform.system().lower()
             app_name = "firefox"
 
+        
         name = [
-            "mitm8",
+            "mitm8" if platform_name == "linux" else "mitm11",
             platform_name,
             "gve" if app_name == "geckoview_example" else app_name,
             test_site["name"],
