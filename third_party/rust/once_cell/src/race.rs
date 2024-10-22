@@ -19,10 +19,10 @@
 
 
 
-#[cfg(feature = "critical-section")]
-use portable_atomic as atomic;
-#[cfg(not(feature = "critical-section"))]
+#[cfg(not(feature = "portable-atomic"))]
 use core::sync::atomic;
+#[cfg(feature = "portable-atomic")]
+use portable_atomic as atomic;
 
 use atomic::{AtomicPtr, AtomicUsize, Ordering};
 use core::cell::UnsafeCell;
