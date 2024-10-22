@@ -7,13 +7,17 @@ use super::{
     selection::Selection,
     Block, BlockContext, Error, IdGenerator, Instruction, Word,
 };
-use crate::{arena::Handle, proc::BoundsCheckPolicy};
+use crate::{
+    arena::Handle,
+    proc::{index::GuardedIndex, BoundsCheckPolicy},
+};
 
 
 
 
 
 
+#[derive(Debug)]
 pub(super) enum BoundsCheckResult {
     
     KnownInBounds(u32),
@@ -36,10 +40,17 @@ pub(super) enum BoundsCheckResult {
     
     
     
-    Conditional(Word),
+    Conditional {
+        
+        condition_id: Word,
+
+        
+        index_id: Word,
+    },
 }
 
 
+#[derive(Copy, Clone)]
 pub(super) enum MaybeKnown<T> {
     
     Known(T),
@@ -215,7 +226,7 @@ impl<'w> BlockContext<'w> {
                 let element_type_id = match self.ir_module.types[global.ty].inner {
                     crate::TypeInner::BindingArray { base, size: _ } => {
                         let class = map_storage_class(global.space);
-                        self.get_pointer_id(base, class)?
+                        self.get_pointer_id(base, class)
                     }
                     _ => return Err(Error::Validation("array length expression case-5")),
                 };
@@ -329,33 +340,26 @@ impl<'w> BlockContext<'w> {
     pub(super) fn write_restricted_index(
         &mut self,
         sequence: Handle<crate::Expression>,
-        index: Handle<crate::Expression>,
+        index: GuardedIndex,
         block: &mut Block,
     ) -> Result<BoundsCheckResult, Error> {
-        let index_id = self.cached[index];
+        let max_index = self.write_sequence_max_index(sequence, block)?;
 
         
         
-        let max_index_id = match self.write_sequence_max_index(sequence, block)? {
-            MaybeKnown::Known(known_max_index) => {
-                if let Ok(known_index) = self
-                    .ir_module
-                    .to_ctx()
-                    .eval_expr_to_u32_from(index, &self.ir_function.expressions)
-                {
-                    
-                    
-                    
-                    
-                    
-                    
-                    let restricted = std::cmp::min(known_index, known_max_index);
-                    return Ok(BoundsCheckResult::KnownInBounds(restricted));
-                }
+        if let (GuardedIndex::Known(index), MaybeKnown::Known(max_index)) = (index, max_index) {
+            let restricted = std::cmp::min(index, max_index);
+            return Ok(BoundsCheckResult::KnownInBounds(restricted));
+        }
 
-                self.get_index_constant(known_max_index)
-            }
-            MaybeKnown::Computed(max_index_id) => max_index_id,
+        let index_id = match index {
+            GuardedIndex::Known(value) => self.get_index_constant(value),
+            GuardedIndex::Expression(expr) => self.cached[expr],
+        };
+
+        let max_index_id = match max_index {
+            MaybeKnown::Known(value) => self.get_index_constant(value),
+            MaybeKnown::Computed(id) => id,
         };
 
         
@@ -393,48 +397,33 @@ impl<'w> BlockContext<'w> {
     fn write_index_comparison(
         &mut self,
         sequence: Handle<crate::Expression>,
-        index: Handle<crate::Expression>,
+        index: GuardedIndex,
         block: &mut Block,
     ) -> Result<BoundsCheckResult, Error> {
-        let index_id = self.cached[index];
+        let length = self.write_sequence_length(sequence, block)?;
 
         
         
-        let length_id = match self.write_sequence_length(sequence, block)? {
-            MaybeKnown::Known(known_length) => {
-                if let Ok(known_index) = self
-                    .ir_module
-                    .to_ctx()
-                    .eval_expr_to_u32_from(index, &self.ir_function.expressions)
-                {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    if known_index < known_length {
-                        return Ok(BoundsCheckResult::KnownInBounds(known_index));
-                    }
-                }
-
-                self.get_index_constant(known_length)
+        if let (GuardedIndex::Known(index), MaybeKnown::Known(length)) = (index, length) {
+            if index < length {
+                return Ok(BoundsCheckResult::KnownInBounds(index));
             }
-            MaybeKnown::Computed(length_id) => length_id,
+
+            
+            
+            
+            
+            
+        }
+
+        let index_id = match index {
+            GuardedIndex::Known(value) => self.get_index_constant(value),
+            GuardedIndex::Expression(expr) => self.cached[expr],
+        };
+
+        let length_id = match length {
+            MaybeKnown::Known(value) => self.get_index_constant(value),
+            MaybeKnown::Computed(id) => id,
         };
 
         
@@ -448,7 +437,10 @@ impl<'w> BlockContext<'w> {
         ));
 
         
-        Ok(BoundsCheckResult::Conditional(condition_id))
+        Ok(BoundsCheckResult::Conditional {
+            condition_id,
+            index_id,
+        })
     }
 
     
@@ -516,9 +508,12 @@ impl<'w> BlockContext<'w> {
     pub(super) fn write_bounds_check(
         &mut self,
         base: Handle<crate::Expression>,
-        index: Handle<crate::Expression>,
+        mut index: GuardedIndex,
         block: &mut Block,
     ) -> Result<BoundsCheckResult, Error> {
+        
+        index.try_resolve_to_constant(self.ir_function, self.ir_module);
+
         let policy = self.writer.bounds_check_policies.choose_policy(
             base,
             &self.ir_module.types,
@@ -530,7 +525,10 @@ impl<'w> BlockContext<'w> {
             BoundsCheckPolicy::ReadZeroSkipWrite => {
                 self.write_index_comparison(base, index, block)?
             }
-            BoundsCheckPolicy::Unchecked => BoundsCheckResult::Computed(self.cached[index]),
+            BoundsCheckPolicy::Unchecked => match index {
+                GuardedIndex::Known(value) => BoundsCheckResult::KnownInBounds(value),
+                GuardedIndex::Expression(expr) => BoundsCheckResult::Computed(self.cached[expr]),
+            },
         })
     }
 
@@ -547,7 +545,7 @@ impl<'w> BlockContext<'w> {
         let result_type_id = self.get_expression_type_id(&self.fun_info[expr_handle].ty);
 
         let base_id = self.cached[base];
-        let index_id = self.cached[index];
+        let index = GuardedIndex::Expression(index);
 
         let result_id = match self.write_bounds_check(base, index, block)? {
             BoundsCheckResult::KnownInBounds(known_index) => {
@@ -570,12 +568,15 @@ impl<'w> BlockContext<'w> {
                 ));
                 result_id
             }
-            BoundsCheckResult::Conditional(comparison_id) => {
+            BoundsCheckResult::Conditional {
+                condition_id,
+                index_id,
+            } => {
                 
                 
                 self.write_conditional_indexed_load(
                     result_type_id,
-                    comparison_id,
+                    condition_id,
                     block,
                     |id_gen, block| {
                         

@@ -400,6 +400,7 @@ pub enum BuiltIn {
     InstanceIndex,
     PointSize,
     VertexIndex,
+    DrawID,
     
     FragDepth,
     PointCoord,

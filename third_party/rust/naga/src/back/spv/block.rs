@@ -3,8 +3,8 @@
 
 
 use super::{
-    helpers, index::BoundsCheckResult, make_local, selection::Selection, Block, BlockContext,
-    Dimension, Error, Instruction, LocalType, LookupType, ResultMember, Writer, WriterFlags,
+    helpers, index::BoundsCheckResult, selection::Selection, Block, BlockContext, Dimension, Error,
+    Instruction, LocalType, LookupType, NumericType, ResultMember, Writer, WriterFlags,
 };
 use crate::{arena::Handle, proc::TypeResolution, Statement};
 use spirv::Word;
@@ -105,10 +105,9 @@ impl Writer {
         position_id: Word,
         body: &mut Vec<Instruction>,
     ) -> Result<(), Error> {
-        let float_ptr_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-            vector_size: None,
-            scalar: crate::Scalar::F32,
-            pointer_space: Some(spirv::StorageClass::Output),
+        let float_ptr_type_id = self.get_type_id(LookupType::Local(LocalType::LocalPointer {
+            base: NumericType::Scalar(crate::Scalar::F32),
+            class: spirv::StorageClass::Output,
         }));
         let index_y_id = self.get_index_constant(1);
         let access_id = self.id_gen.next();
@@ -119,11 +118,9 @@ impl Writer {
             &[index_y_id],
         ));
 
-        let float_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-            vector_size: None,
-            scalar: crate::Scalar::F32,
-            pointer_space: None,
-        }));
+        let float_type_id = self.get_type_id(LookupType::Local(LocalType::Numeric(
+            NumericType::Scalar(crate::Scalar::F32),
+        )));
         let load_id = self.id_gen.next();
         body.push(Instruction::load(float_type_id, load_id, access_id, None));
 
@@ -145,11 +142,9 @@ impl Writer {
         frag_depth_id: Word,
         body: &mut Vec<Instruction>,
     ) -> Result<(), Error> {
-        let float_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-            vector_size: None,
-            scalar: crate::Scalar::F32,
-            pointer_space: None,
-        }));
+        let float_type_id = self.get_type_id(LookupType::Local(LocalType::Numeric(
+            NumericType::Scalar(crate::Scalar::F32),
+        )));
         let zero_scalar_id = self.get_constant_scalar(crate::Literal::F32(0.0));
         let one_scalar_id = self.get_constant_scalar(crate::Literal::F32(1.0));
 
@@ -217,32 +212,6 @@ impl Writer {
 }
 
 impl<'w> BlockContext<'w> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn is_intermediate(&self, expr_handle: Handle<crate::Expression>) -> bool {
-        match self.ir_function.expressions[expr_handle] {
-            crate::Expression::GlobalVariable(handle) => {
-                self.ir_module.global_variables[handle].space != crate::AddressSpace::Handle
-            }
-            crate::Expression::LocalVariable(_) => true,
-            crate::Expression::FunctionArgument(index) => {
-                let arg = &self.ir_function.arguments[index as usize];
-                self.ir_module.types[arg.ty].inner.pointer_space().is_some()
-            }
-
-            
-            
-            _ => self.cached.ids[expr_handle] == 0,
-        }
-    }
-
     
     pub(super) fn cache_expression_value(
         &mut self,
@@ -313,17 +282,21 @@ impl<'w> BlockContext<'w> {
                     id
                 }
             }
-            crate::Expression::Access { base, index: _ } if self.is_intermediate(base) => {
-                
-                
-                0
-            }
             crate::Expression::Access { base, index } => {
                 let base_ty_inner = self.fun_info[base].ty.inner_with(&self.ir_module.types);
                 match *base_ty_inner {
+                    crate::TypeInner::Pointer { .. } | crate::TypeInner::ValuePointer { .. } => {
+                        
+                        
+                        
+                        
+                        
+                        0
+                    }
                     crate::TypeInner::Vector { .. } => {
                         self.write_vector_access(expr_handle, base, index, block)?
                     }
+                    
                     
                     crate::TypeInner::BindingArray {
                         base: binding_type, ..
@@ -386,7 +359,6 @@ impl<'w> BlockContext<'w> {
                             }
                         };
                         let (id, variable) = self.writer.promote_access_expression_to_variable(
-                            &self.ir_module.types,
                             result_type_id,
                             base_id,
                             base_ty,
@@ -410,13 +382,16 @@ impl<'w> BlockContext<'w> {
                     }
                 }
             }
-            crate::Expression::AccessIndex { base, index: _ } if self.is_intermediate(base) => {
-                
-                
-                0
-            }
             crate::Expression::AccessIndex { base, index } => {
                 match *self.fun_info[base].ty.inner_with(&self.ir_module.types) {
+                    crate::TypeInner::Pointer { .. } | crate::TypeInner::ValuePointer { .. } => {
+                        
+                        
+                        
+                        
+                        
+                        0
+                    }
                     crate::TypeInner::Vector { .. }
                     | crate::TypeInner::Matrix { .. }
                     | crate::TypeInner::Array { .. }
@@ -830,12 +805,8 @@ impl<'w> BlockContext<'w> {
                         let mut arg2_id = self.writer.get_constant_scalar_with(1, scalar)?;
 
                         if let Some(size) = maybe_size {
-                            let ty = LocalType::Value {
-                                vector_size: Some(size),
-                                scalar,
-                                pointer_space: None,
-                            }
-                            .into();
+                            let ty =
+                                LocalType::Numeric(NumericType::Vector { size, scalar }).into();
 
                             self.temp_list.clear();
                             self.temp_list.resize(size as _, arg1_id);
@@ -950,12 +921,9 @@ impl<'w> BlockContext<'w> {
                                 &crate::TypeInner::Vector { size, .. },
                                 &crate::TypeInner::Scalar(scalar),
                             ) => {
-                                let selector_type_id =
-                                    self.get_type_id(LookupType::Local(LocalType::Value {
-                                        vector_size: Some(size),
-                                        scalar,
-                                        pointer_space: None,
-                                    }));
+                                let selector_type_id = self.get_type_id(LookupType::Local(
+                                    LocalType::Numeric(NumericType::Vector { size, scalar }),
+                                ));
                                 self.temp_list.clear();
                                 self.temp_list.resize(size as usize, arg2_id);
 
@@ -998,12 +966,8 @@ impl<'w> BlockContext<'w> {
                     Mf::CountTrailingZeros => {
                         let uint_id = match *arg_ty {
                             crate::TypeInner::Vector { size, scalar } => {
-                                let ty = LocalType::Value {
-                                    vector_size: Some(size),
-                                    scalar,
-                                    pointer_space: None,
-                                }
-                                .into();
+                                let ty =
+                                    LocalType::Numeric(NumericType::Vector { size, scalar }).into();
 
                                 self.temp_list.clear();
                                 self.temp_list.resize(
@@ -1040,12 +1004,8 @@ impl<'w> BlockContext<'w> {
                     Mf::CountLeadingZeros => {
                         let (int_type_id, int_id, width) = match *arg_ty {
                             crate::TypeInner::Vector { size, scalar } => {
-                                let ty = LocalType::Value {
-                                    vector_size: Some(size),
-                                    scalar,
-                                    pointer_space: None,
-                                }
-                                .into();
+                                let ty =
+                                    LocalType::Numeric(NumericType::Vector { size, scalar }).into();
 
                                 self.temp_list.clear();
                                 self.temp_list.resize(
@@ -1061,11 +1021,9 @@ impl<'w> BlockContext<'w> {
                                 )
                             }
                             crate::TypeInner::Scalar(scalar) => (
-                                self.get_type_id(LookupType::Local(LocalType::Value {
-                                    vector_size: None,
-                                    scalar,
-                                    pointer_space: None,
-                                })),
+                                self.get_type_id(LookupType::Local(LocalType::Numeric(
+                                    NumericType::Scalar(scalar),
+                                ))),
                                 self.writer
                                     .get_constant_scalar_with(scalar.width * 8 - 1, scalar)?,
                                 scalar.width,
@@ -1130,14 +1088,9 @@ impl<'w> BlockContext<'w> {
                             .writer
                             .get_constant_scalar(crate::Literal::U32(bit_width as u32));
 
-                        let u32_type = self.get_type_id(LookupType::Local(LocalType::Value {
-                            vector_size: None,
-                            scalar: crate::Scalar {
-                                kind: crate::ScalarKind::Uint,
-                                width: 4,
-                            },
-                            pointer_space: None,
-                        }));
+                        let u32_type = self.get_type_id(LookupType::Local(LocalType::Numeric(
+                            NumericType::Scalar(crate::Scalar::U32),
+                        )));
 
                         
                         let offset_id = self.gen_id();
@@ -1186,14 +1139,9 @@ impl<'w> BlockContext<'w> {
                             .writer
                             .get_constant_scalar(crate::Literal::U32(bit_width as u32));
 
-                        let u32_type = self.get_type_id(LookupType::Local(LocalType::Value {
-                            vector_size: None,
-                            scalar: crate::Scalar {
-                                kind: crate::ScalarKind::Uint,
-                                width: 4,
-                            },
-                            pointer_space: None,
-                        }));
+                        let u32_type = self.get_type_id(LookupType::Local(LocalType::Numeric(
+                            NumericType::Scalar(crate::Scalar::U32),
+                        )));
 
                         
                         let offset_id = self.gen_id();
@@ -1259,23 +1207,16 @@ impl<'w> BlockContext<'w> {
                             Mf::Pack4xU8 => (crate::ScalarKind::Uint, false),
                             _ => unreachable!(),
                         };
-                        let uint_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-                            vector_size: None,
-                            scalar: crate::Scalar {
-                                kind: crate::ScalarKind::Uint,
-                                width: 4,
-                            },
-                            pointer_space: None,
-                        }));
+                        let uint_type_id = self.get_type_id(LookupType::Local(LocalType::Numeric(
+                            NumericType::Scalar(crate::Scalar::U32),
+                        )));
 
-                        let int_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-                            vector_size: None,
-                            scalar: crate::Scalar {
+                        let int_type_id = self.get_type_id(LookupType::Local(LocalType::Numeric(
+                            NumericType::Scalar(crate::Scalar {
                                 kind: int_type,
                                 width: 4,
-                            },
-                            pointer_space: None,
-                        }));
+                            }),
+                        )));
 
                         let mut last_instruction = Instruction::new(spirv::Op::Nop);
 
@@ -1352,24 +1293,17 @@ impl<'w> BlockContext<'w> {
                             _ => unreachable!(),
                         };
 
-                        let sint_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-                            vector_size: None,
-                            scalar: crate::Scalar {
-                                kind: crate::ScalarKind::Sint,
-                                width: 4,
-                            },
-                            pointer_space: None,
-                        }));
+                        let sint_type_id = self.get_type_id(LookupType::Local(LocalType::Numeric(
+                            NumericType::Scalar(crate::Scalar::I32),
+                        )));
 
                         let eight = self.writer.get_constant_scalar(crate::Literal::U32(8));
-                        let int_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-                            vector_size: None,
-                            scalar: crate::Scalar {
+                        let int_type_id = self.get_type_id(LookupType::Local(LocalType::Numeric(
+                            NumericType::Scalar(crate::Scalar {
                                 kind: int_type,
                                 width: 4,
-                            },
-                            pointer_space: None,
-                        }));
+                            }),
+                        )));
                         block
                             .body
                             .reserve(usize::from(VEC_LENGTH) * 2 + usize::from(is_signed));
@@ -1533,11 +1467,10 @@ impl<'w> BlockContext<'w> {
                                 self.writer.get_constant_scalar_with(0, src_scalar)?;
                             let zero_id = match src_size {
                                 Some(size) => {
-                                    let ty = LocalType::Value {
-                                        vector_size: Some(size),
+                                    let ty = LocalType::Numeric(NumericType::Vector {
+                                        size,
                                         scalar: src_scalar,
-                                        pointer_space: None,
-                                    }
+                                    })
                                     .into();
 
                                     self.temp_list.clear();
@@ -1562,11 +1495,10 @@ impl<'w> BlockContext<'w> {
                                 self.writer.get_constant_scalar_with(1, dst_scalar)?;
                             let (accept_id, reject_id) = match src_size {
                                 Some(size) => {
-                                    let ty = LocalType::Value {
-                                        vector_size: Some(size),
+                                    let ty = LocalType::Numeric(NumericType::Vector {
+                                        size,
                                         scalar: dst_scalar,
-                                        pointer_space: None,
-                                    }
+                                    })
                                     .into();
 
                                     self.temp_list.clear();
@@ -1704,12 +1636,12 @@ impl<'w> BlockContext<'w> {
                     self.temp_list.clear();
                     self.temp_list.resize(size as usize, condition_id);
 
-                    let bool_vector_type_id =
-                        self.get_type_id(LookupType::Local(LocalType::Value {
-                            vector_size: Some(size),
+                    let bool_vector_type_id = self.get_type_id(LookupType::Local(
+                        LocalType::Numeric(NumericType::Vector {
+                            size,
                             scalar: condition_scalar,
-                            pointer_space: None,
-                        }));
+                        }),
+                    ));
 
                     let id = self.gen_id();
                     block.body.push(Instruction::composite_construct(
@@ -1809,18 +1741,17 @@ impl<'w> BlockContext<'w> {
                 Some(ty) => ty,
                 None => LookupType::Handle(ty_handle),
             },
-            TypeResolution::Value(ref inner) => LookupType::Local(make_local(inner).unwrap()),
+            TypeResolution::Value(ref inner) => {
+                LookupType::Local(LocalType::from_inner(inner).unwrap())
+            }
         };
         let result_type_id = self.get_type_id(result_lookup_ty);
 
         
         
         
-        
-        
-        
-        
         let mut accumulated_checks = None;
+
         
         let mut is_non_uniform_binding_array = false;
 
@@ -1828,57 +1759,41 @@ impl<'w> BlockContext<'w> {
         let root_id = loop {
             expr_handle = match self.ir_function.expressions[expr_handle] {
                 crate::Expression::Access { base, index } => {
-                    if let crate::Expression::GlobalVariable(var_handle) =
-                        self.ir_function.expressions[base]
-                    {
-                        
-                        
-                        let gvar = &self.ir_module.global_variables[var_handle];
-                        if let crate::TypeInner::BindingArray { .. } =
-                            self.ir_module.types[gvar.ty].inner
-                        {
-                            is_non_uniform_binding_array =
-                                self.fun_info[index].uniformity.non_uniform_result.is_some();
-                        }
-                    }
+                    is_non_uniform_binding_array |=
+                        self.is_nonuniform_binding_array_access(base, index);
 
-                    let index_id = match self.write_bounds_check(base, index, block)? {
-                        BoundsCheckResult::KnownInBounds(known_index) => {
-                            
-                            
-                            let scalar = crate::Literal::U32(known_index);
-                            self.writer.get_constant_scalar(scalar)
-                        }
-                        BoundsCheckResult::Computed(computed_index_id) => computed_index_id,
-                        BoundsCheckResult::Conditional(comparison_id) => {
-                            match accumulated_checks {
-                                Some(prior_checks) => {
-                                    let combined = self.gen_id();
-                                    block.body.push(Instruction::binary(
-                                        spirv::Op::LogicalAnd,
-                                        self.writer.get_bool_type_id(),
-                                        combined,
-                                        prior_checks,
-                                        comparison_id,
-                                    ));
-                                    accumulated_checks = Some(combined);
-                                }
-                                None => {
-                                    
-                                    accumulated_checks = Some(comparison_id);
-                                }
-                            }
-
-                            
-                            self.cached[index]
-                        }
-                    };
+                    let index = crate::proc::index::GuardedIndex::Expression(index);
+                    let index_id =
+                        self.write_access_chain_index(base, index, &mut accumulated_checks, block)?;
                     self.temp_list.push(index_id);
+
                     base
                 }
                 crate::Expression::AccessIndex { base, index } => {
-                    let const_id = self.get_index_constant(index);
-                    self.temp_list.push(const_id);
+                    
+                    
+                    let mut base_ty = self.fun_info[base].ty.inner_with(&self.ir_module.types);
+                    if let crate::TypeInner::Pointer { base, .. } = *base_ty {
+                        base_ty = &self.ir_module.types[base].inner;
+                    }
+                    let index_id = if let crate::TypeInner::Struct { .. } = *base_ty {
+                        self.get_index_constant(index)
+                    } else {
+                        
+                        
+
+                        
+                        
+                        
+                        self.write_access_chain_index(
+                            base,
+                            crate::proc::index::GuardedIndex::Known(index),
+                            &mut accumulated_checks,
+                            block,
+                        )?
+                    };
+
+                    self.temp_list.push(index_id);
                     base
                 }
                 crate::Expression::GlobalVariable(handle) => {
@@ -1933,6 +1848,105 @@ impl<'w> BlockContext<'w> {
         Ok(expr_pointer)
     }
 
+    fn is_nonuniform_binding_array_access(
+        &mut self,
+        base: Handle<crate::Expression>,
+        index: Handle<crate::Expression>,
+    ) -> bool {
+        let crate::Expression::GlobalVariable(var_handle) = self.ir_function.expressions[base]
+        else {
+            return false;
+        };
+
+        
+        
+        let gvar = &self.ir_module.global_variables[var_handle];
+        let crate::TypeInner::BindingArray { .. } = self.ir_module.types[gvar.ty].inner else {
+            return false;
+        };
+
+        self.fun_info[index].uniformity.non_uniform_result.is_some()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_access_chain_index(
+        &mut self,
+        base: Handle<crate::Expression>,
+        index: crate::proc::index::GuardedIndex,
+        accumulated_checks: &mut Option<Word>,
+        block: &mut Block,
+    ) -> Result<Word, Error> {
+        match self.write_bounds_check(base, index, block)? {
+            BoundsCheckResult::KnownInBounds(known_index) => {
+                
+                
+                let scalar = crate::Literal::U32(known_index);
+                Ok(self.writer.get_constant_scalar(scalar))
+            }
+            BoundsCheckResult::Computed(computed_index_id) => Ok(computed_index_id),
+            BoundsCheckResult::Conditional {
+                condition_id: condition,
+                index_id: index,
+            } => {
+                self.extend_bounds_check_condition_chain(accumulated_checks, condition, block);
+
+                
+                Ok(index)
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn extend_bounds_check_condition_chain(
+        &mut self,
+        chain: &mut Option<Word>,
+        comparison_id: Word,
+        block: &mut Block,
+    ) {
+        match *chain {
+            Some(ref mut prior_checks) => {
+                let combined = self.gen_id();
+                block.body.push(Instruction::binary(
+                    spirv::Op::LogicalAnd,
+                    self.writer.get_bool_type_id(),
+                    combined,
+                    *prior_checks,
+                    comparison_id,
+                ));
+                *prior_checks = combined;
+            }
+            None => {
+                
+                *chain = Some(comparison_id);
+            }
+        }
+    }
+
     
     #[allow(clippy::too_many_arguments)]
     fn write_matrix_matrix_column_op(
@@ -1949,11 +1963,11 @@ impl<'w> BlockContext<'w> {
     ) {
         self.temp_list.clear();
 
-        let vector_type_id = self.get_type_id(LookupType::Local(LocalType::Value {
-            vector_size: Some(rows),
-            scalar: crate::Scalar::float(width),
-            pointer_space: None,
-        }));
+        let vector_type_id =
+            self.get_type_id(LookupType::Local(LocalType::Numeric(NumericType::Vector {
+                size: rows,
+                scalar: crate::Scalar::float(width),
+            })));
 
         for index in 0..columns as u32 {
             let column_id_left = self.gen_id();
@@ -2655,20 +2669,15 @@ impl<'w> BlockContext<'w> {
                         crate::AtomicFunction::Exchange { compare: Some(cmp) } => {
                             let scalar_type_id = match *value_inner {
                                 crate::TypeInner::Scalar(scalar) => {
-                                    self.get_type_id(LookupType::Local(LocalType::Value {
-                                        vector_size: None,
-                                        scalar,
-                                        pointer_space: None,
-                                    }))
+                                    self.get_type_id(LookupType::Local(LocalType::Numeric(
+                                        NumericType::Scalar(scalar),
+                                    )))
                                 }
                                 _ => unimplemented!(),
                             };
-                            let bool_type_id =
-                                self.get_type_id(LookupType::Local(LocalType::Value {
-                                    vector_size: None,
-                                    scalar: crate::Scalar::BOOL,
-                                    pointer_space: None,
-                                }));
+                            let bool_type_id = self.get_type_id(LookupType::Local(
+                                LocalType::Numeric(NumericType::Scalar(crate::Scalar::BOOL)),
+                            ));
 
                             let cas_result_id = self.gen_id();
                             let equality_result_id = self.gen_id();

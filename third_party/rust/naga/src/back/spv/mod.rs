@@ -232,6 +232,21 @@ impl LocalImageType {
 }
 
 
+#[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
+enum NumericType {
+    Scalar(crate::Scalar),
+    Vector {
+        size: crate::VectorSize,
+        scalar: crate::Scalar,
+    },
+    Matrix {
+        columns: crate::VectorSize,
+        rows: crate::VectorSize,
+        scalar: crate::Scalar,
+    },
+}
+
+
 
 
 
@@ -277,18 +292,10 @@ impl LocalImageType {
 #[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
 enum LocalType {
     
-    Value {
-        
-        
-        vector_size: Option<crate::VectorSize>,
-        scalar: crate::Scalar,
-        pointer_space: Option<spirv::StorageClass>,
-    },
-    
-    Matrix {
-        columns: crate::VectorSize,
-        rows: crate::VectorSize,
-        width: crate::Bytes,
+    Numeric(NumericType),
+    LocalPointer {
+        base: NumericType,
+        class: spirv::StorageClass,
     },
     Pointer {
         base: Handle<crate::Type>,
@@ -357,52 +364,57 @@ struct LookupFunctionType {
     return_type_id: Word,
 }
 
-fn make_local(inner: &crate::TypeInner) -> Option<LocalType> {
-    Some(match *inner {
-        crate::TypeInner::Scalar(scalar) | crate::TypeInner::Atomic(scalar) => LocalType::Value {
-            vector_size: None,
-            scalar,
-            pointer_space: None,
-        },
-        crate::TypeInner::Vector { size, scalar } => LocalType::Value {
-            vector_size: Some(size),
-            scalar,
-            pointer_space: None,
-        },
-        crate::TypeInner::Matrix {
-            columns,
-            rows,
-            scalar,
-        } => LocalType::Matrix {
-            columns,
-            rows,
-            width: scalar.width,
-        },
-        crate::TypeInner::Pointer { base, space } => LocalType::Pointer {
-            base,
-            class: helpers::map_storage_class(space),
-        },
-        crate::TypeInner::ValuePointer {
-            size,
-            scalar,
-            space,
-        } => LocalType::Value {
-            vector_size: size,
-            scalar,
-            pointer_space: Some(helpers::map_storage_class(space)),
-        },
-        crate::TypeInner::Image {
-            dim,
-            arrayed,
-            class,
-        } => LocalType::Image(LocalImageType::from_inner(dim, arrayed, class)),
-        crate::TypeInner::Sampler { comparison: _ } => LocalType::Sampler,
-        crate::TypeInner::AccelerationStructure => LocalType::AccelerationStructure,
-        crate::TypeInner::RayQuery => LocalType::RayQuery,
-        crate::TypeInner::Array { .. }
-        | crate::TypeInner::Struct { .. }
-        | crate::TypeInner::BindingArray { .. } => return None,
-    })
+impl LocalType {
+    fn from_inner(inner: &crate::TypeInner) -> Option<Self> {
+        Some(match *inner {
+            crate::TypeInner::Scalar(scalar) | crate::TypeInner::Atomic(scalar) => {
+                LocalType::Numeric(NumericType::Scalar(scalar))
+            }
+            crate::TypeInner::Vector { size, scalar } => {
+                LocalType::Numeric(NumericType::Vector { size, scalar })
+            }
+            crate::TypeInner::Matrix {
+                columns,
+                rows,
+                scalar,
+            } => LocalType::Numeric(NumericType::Matrix {
+                columns,
+                rows,
+                scalar,
+            }),
+            crate::TypeInner::Pointer { base, space } => LocalType::Pointer {
+                base,
+                class: helpers::map_storage_class(space),
+            },
+            crate::TypeInner::ValuePointer {
+                size: Some(size),
+                scalar,
+                space,
+            } => LocalType::LocalPointer {
+                base: NumericType::Vector { size, scalar },
+                class: helpers::map_storage_class(space),
+            },
+            crate::TypeInner::ValuePointer {
+                size: None,
+                scalar,
+                space,
+            } => LocalType::LocalPointer {
+                base: NumericType::Scalar(scalar),
+                class: helpers::map_storage_class(space),
+            },
+            crate::TypeInner::Image {
+                dim,
+                arrayed,
+                class,
+            } => LocalType::Image(LocalImageType::from_inner(dim, arrayed, class)),
+            crate::TypeInner::Sampler { comparison: _ } => LocalType::Sampler,
+            crate::TypeInner::AccelerationStructure => LocalType::AccelerationStructure,
+            crate::TypeInner::RayQuery => LocalType::RayQuery,
+            crate::TypeInner::Array { .. }
+            | crate::TypeInner::Struct { .. }
+            | crate::TypeInner::BindingArray { .. } => return None,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -655,13 +667,8 @@ impl BlockContext<'_> {
             .get_constant_scalar(crate::Literal::I32(scope as _))
     }
 
-    fn get_pointer_id(
-        &mut self,
-        handle: Handle<crate::Type>,
-        class: spirv::StorageClass,
-    ) -> Result<Word, Error> {
-        self.writer
-            .get_pointer_id(&self.ir_module.types, handle, class)
+    fn get_pointer_id(&mut self, handle: Handle<crate::Type>, class: spirv::StorageClass) -> Word {
+        self.writer.get_pointer_id(handle, class)
     }
 }
 
