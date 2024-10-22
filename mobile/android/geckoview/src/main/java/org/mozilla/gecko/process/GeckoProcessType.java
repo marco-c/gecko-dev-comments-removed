@@ -10,7 +10,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 public enum GeckoProcessType {
   
   PARENT("default"),
-  PLUGIN("plugin"),
+  OBSOLETE1("plugin"),
   CONTENT("tab"),
   IPDLUNITTEST("ipdlunittest"),
   GMPLUGIN("gmplugin"),
@@ -18,7 +18,7 @@ public enum GeckoProcessType {
   VR("vr"),
   RDD("rdd"),
   SOCKET("socket"),
-  REMOTESANDBOXBROKER("sandboxbroker"),
+  OBSOLETE2("sandboxbroker"),
   FORKSERVER("forkserver"),
   UTILITY("utility");
 

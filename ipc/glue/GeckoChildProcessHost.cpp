@@ -75,9 +75,6 @@
 #    include "WinUtils.h"
 #    include "mozilla/Preferences.h"
 #    include "mozilla/sandboxing/sandboxLogging.h"
-#    if defined(_ARM64_)
-#      include "mozilla/remoteSandboxBroker.h"
-#    endif
 #  endif
 
 #  include "mozilla/NativeNt.h"
@@ -1550,19 +1547,7 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
 #  if defined(MOZ_SANDBOX) || defined(_ARM64_)
   const bool isGMP = mProcessType == GeckoProcessType_GMPlugin;
   const bool isWidevine = isGMP && Contains(mChildArgs, "gmp-widevinecdm");
-#    if defined(_ARM64_)
-  bool useRemoteSandboxBroker = false;
-  if (mLaunchArch & (base::PROCESS_ARCH_I386 | base::PROCESS_ARCH_X86_64)) {
-    
-    
-    
-    
-    exePath = exePath.DirName().AppendASCII("i686").Append(exePath.BaseName());
-    useRemoteSandboxBroker =
-        mProcessType != GeckoProcessType_RemoteSandboxBroker;
-  }
-#    endif  
-#  endif    
+#  endif  
 
   mCmdLine.emplace(exePath.ToWStringHack());
 
@@ -1585,12 +1570,7 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   }
 
 #  if defined(MOZ_SANDBOX)
-#    if defined(_ARM64_)
-  if (useRemoteSandboxBroker)
-    mResults.mSandboxBroker = new RemoteSandboxBroker(mLaunchArch);
-  else
-#    endif  
-    mResults.mSandboxBroker = new SandboxBroker();
+  mResults.mSandboxBroker = new SandboxBroker();
 
   
   
@@ -1665,9 +1645,6 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
         }
         mUseSandbox = true;
       }
-      break;
-    case GeckoProcessType_RemoteSandboxBroker:
-      
       break;
     case GeckoProcessType_Default:
     default:
