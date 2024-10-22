@@ -12,7 +12,6 @@
 
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/Matrix.h"
-#include "mozilla/RangedPtr.h"
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
@@ -86,7 +85,7 @@ class SVGContentUtils {
         mDashPattern = mSmallArray;
         return mSmallArray;
       }
-      Float* nonConstArray = new (mozilla::fallible) Float[aDashCount];
+      Float* nonConstArray = new (fallible) Float[aDashCount];
       mDashPattern = nonConstArray;
       return nonConstArray;
     }
@@ -136,7 +135,7 @@ class SVGContentUtils {
 
 
 
-  static float GetFontSize(const mozilla::dom::Element* aElement);
+  static float GetFontSize(const dom::Element* aElement);
   static float GetFontSize(const nsIFrame* aFrame);
   static float GetFontSize(const ComputedStyle*, nsPresContext*);
   
@@ -146,7 +145,7 @@ class SVGContentUtils {
 
 
 
-  static float GetFontXHeight(const mozilla::dom::Element* aElement);
+  static float GetFontXHeight(const dom::Element* aElement);
   static float GetFontXHeight(const nsIFrame* aFrame);
   static float GetFontXHeight(const ComputedStyle*, nsPresContext*);
 
@@ -157,7 +156,7 @@ class SVGContentUtils {
 
 
 
-  static float GetLineHeight(const mozilla::dom::Element* aElement);
+  static float GetLineHeight(const dom::Element* aElement);
 
   
 
@@ -192,7 +191,7 @@ class SVGContentUtils {
 
   static bool EstablishesViewport(const nsIContent* aContent);
 
-  static mozilla::dom::SVGViewportElement* GetNearestViewportElement(
+  static dom::SVGViewportElement* GetNearestViewportElement(
       const nsIContent* aContent);
 
   
@@ -218,12 +217,6 @@ class SVGContentUtils {
       float aViewboxY, float aViewboxWidth, float aViewboxHeight,
       const SVGPreserveAspectRatio& aPreserveAspectRatio);
 
-  static mozilla::RangedPtr<const char16_t> GetStartRangedPtr(
-      const nsAString& aString);
-
-  static mozilla::RangedPtr<const char16_t> GetEndRangedPtr(
-      const nsAString& aString);
-
   
 
 
@@ -231,16 +224,15 @@ class SVGContentUtils {
 
 
 
-  static inline bool ParseOptionalSign(
-      mozilla::RangedPtr<const char16_t>& aIter,
-      const mozilla::RangedPtr<const char16_t>& aEnd,
-      int32_t& aSignMultiplier) {
+  static inline bool ParseOptionalSign(nsAString::const_iterator& aIter,
+                                       const nsAString::const_iterator& aEnd,
+                                       int32_t& aSignMultiplier) {
     if (aIter == aEnd) {
       return false;
     }
     aSignMultiplier = *aIter == '-' ? -1 : 1;
 
-    mozilla::RangedPtr<const char16_t> iter(aIter);
+    nsAString::const_iterator iter(aIter);
 
     if (*iter == '-' || *iter == '+') {
       ++iter;
@@ -260,8 +252,8 @@ class SVGContentUtils {
 
 
   template <class floatType>
-  static bool ParseNumber(mozilla::RangedPtr<const char16_t>& aIter,
-                          const mozilla::RangedPtr<const char16_t>& aEnd,
+  static bool ParseNumber(nsAString::const_iterator& aIter,
+                          const nsAString::const_iterator& aEnd,
                           floatType& aValue);
 
   
@@ -280,8 +272,8 @@ class SVGContentUtils {
 
 
 
-  static bool ParseInteger(mozilla::RangedPtr<const char16_t>& aIter,
-                           const mozilla::RangedPtr<const char16_t>& aEnd,
+  static bool ParseInteger(nsAString::const_iterator& aIter,
+                           const nsAString::const_iterator& aEnd,
                            int32_t& aValue);
 
   
@@ -310,8 +302,7 @@ class SVGContentUtils {
 
 
 
-  static already_AddRefed<mozilla::gfx::Path> GetPath(
-      const nsACString& aPathString);
+  static already_AddRefed<gfx::Path> GetPath(const nsACString& aPathString);
 
   
 
