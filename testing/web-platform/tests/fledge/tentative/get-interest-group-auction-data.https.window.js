@@ -376,13 +376,14 @@ subsetTest(promise_test, async test => {
 
   
   
-  assert_true(typeof ig.browserSignals.recency === 'number');
+  assert_true(typeof ig.browserSignals.recencyMs === 'number');
   assert_between_inclusive(
-      ig.browserSignals.recency, 0, 60, 'Recency is between 0 and 60 seconds');
+      ig.browserSignals.recencyMs, 0, 60000,
+      'RecencyMs is between 0 and 60 seconds');
   
   assert_equals(
-      ig.browserSignals.recency, Math.round(ig.browserSignals.recency),
-      'Recency is an integer');
+      ig.browserSignals.recencyMs, Math.round(ig.browserSignals.recencyMs),
+      'RecencyMs is an integer');
 
   
   
@@ -435,13 +436,14 @@ subsetTest(promise_test, async test => {
 
   
   
-  assert_true(typeof ig.browserSignals.recency === 'number');
+  assert_true(typeof ig.browserSignals.recencyMs === 'number');
   assert_between_inclusive(
-      ig.browserSignals.recency, 0, 60, 'Recency is between 0 and 60 seconds');
+      ig.browserSignals.recencyMs, 0, 60000,
+      'RecencyMs is between 0 and 60 seconds');
   
   assert_equals(
-      ig.browserSignals.recency, Math.round(ig.browserSignals.recency),
-      'Recency is an integer');
+      ig.browserSignals.recencyMs, Math.round(ig.browserSignals.recencyMs),
+      'RecencyMs is an integer');
 
   
   
