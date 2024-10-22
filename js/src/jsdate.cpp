@@ -528,6 +528,9 @@ static double MakeDay(double year, double month, double date) {
   double ym = y + floor(m / 12);
 
   
+  if (!std::isfinite(ym)) {
+    return GenericNaN();
+  }
 
   
   int mn = int(PositiveModulo(m, 12));
