@@ -78,7 +78,8 @@ class NS_NO_VTABLE DirectoryLock {
 };
 
 
-class NS_NO_VTABLE OriginDirectoryLock : public DirectoryLock {
+
+class NS_NO_VTABLE ClientDirectoryLock : public DirectoryLock {
  public:
   
   virtual PersistenceType GetPersistenceType() const = 0;
@@ -86,12 +87,7 @@ class NS_NO_VTABLE OriginDirectoryLock : public DirectoryLock {
   virtual quota::OriginMetadata OriginMetadata() const = 0;
 
   virtual const nsACString& Origin() const = 0;
-};
 
-
-
-class NS_NO_VTABLE ClientDirectoryLock : public OriginDirectoryLock {
- public:
   virtual Client::Type ClientType() const = 0;
 };
 
