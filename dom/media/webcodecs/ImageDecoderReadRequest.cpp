@@ -41,6 +41,20 @@ ImageDecoderReadRequest::~ImageDecoderReadRequest() {
 bool ImageDecoderReadRequest::Initialize(const GlobalObject& aGlobal,
                                          ImageDecoder* aDecoder,
                                          ReadableStream& aStream) {
+  if (WorkerPrivate* wp = GetCurrentThreadWorkerPrivate()) {
+    mWorkerRef = WeakWorkerRef::Create(wp, [self = RefPtr{this}]() {
+      self->Destroy( false);
+    });
+    if (NS_WARN_IF(!mWorkerRef)) {
+      MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+              ("ImageDecoderReadRequest %p Initialize -- cannot get worker ref",
+               this));
+      mSourceBuffer->Complete(NS_ERROR_FAILURE);
+      Destroy( false);
+      return false;
+    }
+  }
+
   IgnoredErrorResult rv;
   mReader = aStream.GetReader(rv);
   if (NS_WARN_IF(rv.Failed())) {
@@ -58,11 +72,11 @@ bool ImageDecoderReadRequest::Initialize(const GlobalObject& aGlobal,
   return true;
 }
 
-void ImageDecoderReadRequest::Destroy(bool aCancel) {
+void ImageDecoderReadRequest::Destroy(bool aCycleCollect ) {
   MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
           ("ImageDecoderReadRequest %p Destroy", this));
 
-  if (aCancel) {
+  if (!aCycleCollect) {
     
     Cancel();
   }
