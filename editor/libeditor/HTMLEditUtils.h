@@ -1980,25 +1980,16 @@ class HTMLEditUtils final {
     return nullptr;
   }
 
-  enum class ScanLineBreak {
+  
+
+
+
+  enum ScanLineBreak {
     AtEndOfBlock,
     BeforeBlock,
   };
-  
-
-
-
   static nsIContent* GetUnnecessaryLineBreakContent(
       const Element& aBlockElement, ScanLineBreak aScanLineBreak);
-
-  
-
-
-
-
-  template <typename EditorDOMPointType>
-  [[nodiscard]] static nsIContent* GetFollowingUnnecessaryLineBreakContent(
-      const EditorDOMPointType& aPoint, const Element& aEditingHost);
 
   
 
