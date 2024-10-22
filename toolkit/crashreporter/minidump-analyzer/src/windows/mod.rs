@@ -17,7 +17,7 @@ use windows_sys::Win32::{
 };
 
 
-#[link(name = "wintrust", kind = "static")]
+#[link(name = "wintrust")]
 extern "C" {}
 
 type DWORD = u32;

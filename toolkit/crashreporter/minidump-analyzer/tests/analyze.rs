@@ -2,6 +2,7 @@
 
 
 
+use minidump_analyzer::MinidumpAnalyzer;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -119,10 +120,6 @@ fn analyze_basic_minidump() {
     let minidump_file = dir.path().join("mini.dump");
     let extra_file = dir.path().join("mini.extra");
 
-    let Some(analyzer) = std::env::var_os("MINIDUMP_ANALYZER") else {
-        panic!("Specify the path to the minidump analyzer binary as the MINIDUMP_ANALYZER environment variable.");
-    };
-
     
     write_minidump(&minidump_file, FailureType::RaiseAbort);
 
@@ -132,19 +129,7 @@ fn analyze_basic_minidump() {
         write!(&mut extra, "{{}}").expect("failed to write to extra json file");
     }
 
-    
-    {
-        let output = Command::new(analyzer)
-            .env("RUST_BACKTRACE", "1")
-            .arg(&minidump_file)
-            .output()
-            .expect("failed to run minidump-analyzer");
-        assert!(
-            output.status.success(),
-            "stderr:\n{}",
-            std::str::from_utf8(&output.stderr).unwrap()
-        );
-    }
+    MinidumpAnalyzer::new(&minidump_file).analyze().unwrap();
 
     
     

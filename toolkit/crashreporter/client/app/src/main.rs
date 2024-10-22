@@ -33,7 +33,6 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 use crate::std::sync::Arc;
-use anyhow::Context;
 use config::Config;
 
 
@@ -58,6 +57,7 @@ macro_rules! ekey {
     };
 }
 
+mod analyze;
 mod async_task;
 mod config;
 mod data;
@@ -75,8 +75,22 @@ mod ui;
 #[cfg(test)]
 mod test;
 
-#[cfg(not(mock))]
 fn main() {
+    
+    
+    if std::env::args_os()
+        .nth(1)
+        .map(|s| s == "--analyze")
+        .unwrap_or(false)
+    {
+        analyze::main()
+    } else {
+        report_main()
+    }
+}
+
+#[cfg(not(mock))]
+fn report_main() {
     let log_target = logging::init();
 
     let mut config = Config::new();
@@ -106,7 +120,7 @@ fn main() {
 }
 
 #[cfg(mock)]
-fn main() {
+fn report_main() {
     
     
 
@@ -151,10 +165,6 @@ fn main() {
     
     let mut mock = mock::builder();
     mock.set(
-        Command::mock("work_dir/minidump-analyzer"),
-        Box::new(|_| Ok(crate::std::process::success_output())),
-    )
-    .set(
         Command::mock("work_dir/pingsender"),
         Box::new(|_| Ok(crate::std::process::success_output())),
     )
@@ -213,23 +223,15 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         }
     } else {
         
+        #[cfg(not(mock))]
         {
-            let analyzer_path = config.sibling_program_path("minidump-analyzer");
-            let mut cmd = crate::process::background_command(&analyzer_path);
-            if config.dump_all_threads {
-                cmd.arg("--full");
-            }
-            cmd.arg(config.dump_file());
-            let output = cmd
-                .output()
-                .with_context(|| config.string("crashreporter-error-minidump-analyzer"))?;
-            if !output.status.success() {
-                log::warn!(
-                    "minidump-analyzer failed to run ({});\n\nstderr: {}\n\nstdout: {}",
-                    output.status,
-                    String::from_utf8_lossy(&output.stderr),
-                    String::from_utf8_lossy(&output.stdout),
-                );
+            if let Err(e) = minidump_analyzer::MinidumpAnalyzer::new(config.dump_file())
+                .all_threads(config.dump_all_threads)
+                .analyze()
+            {
+                
+                
+                log::warn!("minidump analyzer failed: {e}");
             }
         }
 
