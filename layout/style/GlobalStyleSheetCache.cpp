@@ -9,6 +9,7 @@
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsExceptionHandler.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/NeverDestroyed.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleSheet.h"
@@ -104,6 +105,11 @@ namespace mozilla {
 using namespace mozilla;
 using namespace css;
 
+mozilla::ipc::SharedMemoryHandle& sSharedMemoryHandle() {
+  static NeverDestroyed<mozilla::ipc::SharedMemoryHandle> handle;
+  return *handle;
+}
+
 #define PREF_LEGACY_STYLESHEET_CUSTOMIZATION \
   "toolkit.legacyUserProfileCustomizations.stylesheets"
 
@@ -173,7 +179,7 @@ GlobalStyleSheetCache::CollectReports(nsIHandleReportCallback* aHandleReport,
   if (XRE_IsParentProcess()) {
     MOZ_COLLECT_REPORT(
         "explicit/layout/style-sheet-cache/shared", KIND_NONHEAP, UNITS_BYTES,
-        sSharedMemory ? sUsedSharedMemory : 0,
+        sSharedMemory.IsEmpty() ? 0 : sUsedSharedMemory,
         "Memory used for built-in style sheets that are shared to "
         "child processes.");
   }
@@ -236,10 +242,10 @@ GlobalStyleSheetCache::GlobalStyleSheetCache() {
     if (XRE_IsParentProcess()) {
       
       InitSharedSheetsInParent();
-    } else if (sSharedMemory) {
+    } else if (!sSharedMemory.IsEmpty()) {
       
       
-      MOZ_ASSERT(sSharedMemory->memory(),
+      MOZ_ASSERT(sSharedMemory.data(),
                  "GlobalStyleSheetCache::SetSharedMemory should have mapped "
                  "the shared memory");
     }
@@ -258,8 +264,8 @@ GlobalStyleSheetCache::GlobalStyleSheetCache() {
   
   
   
-  if (sSharedMemory) {
-    if (auto* header = static_cast<Header*>(sSharedMemory->memory())) {
+  if (!sSharedMemory.IsEmpty()) {
+    if (auto* header = reinterpret_cast<Header*>(sSharedMemory.data())) {
       MOZ_RELEASE_ASSERT(header->mMagic == Header::kMagic);
 
 #define STYLE_SHEET(identifier_, url_, shared_)                    \
@@ -299,10 +305,10 @@ void GlobalStyleSheetCache::LoadSheetFromSharedMemory(
 
 void GlobalStyleSheetCache::InitSharedSheetsInParent() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_RELEASE_ASSERT(!sSharedMemory);
+  MOZ_RELEASE_ASSERT(sSharedMemory.IsEmpty());
 
-  auto shm = MakeUnique<base::SharedMemory>();
-  if (NS_WARN_IF(!shm->CreateFreezeable(kSharedMemorySize))) {
+  auto shm = MakeRefPtr<ipc::SharedMemory>();
+  if (NS_WARN_IF(!shm->CreateFreezable(kSharedMemorySize))) {
     return;
   }
 
@@ -334,7 +340,7 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
 #endif
 
   void* address = nullptr;
-  if (void* p = base::SharedMemory::FindFreeAddressSpace(2 * kOffset)) {
+  if (void* p = ipc::SharedMemory::FindFreeAddressSpace(2 * kOffset)) {
     address = reinterpret_cast<void*>(uintptr_t(p) + kOffset);
   }
 
@@ -346,7 +352,7 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
       return;
     }
   }
-  address = shm->memory();
+  address = shm->Memory();
 
   auto* header = static_cast<Header*>(address);
   header->mMagic = Header::kMagic;
@@ -405,7 +411,8 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
       (Servo_SharedMemoryBuilder_GetLength(builder.get()) + pageSize - 1) &
       ~(pageSize - 1);
 
-  sSharedMemory = shm.release();
+  sSharedMemory = shm->TakeMapping();
+  sSharedMemoryHandle() = shm->TakeHandle();
 }
 
 GlobalStyleSheetCache::~GlobalStyleSheetCache() {
@@ -528,25 +535,26 @@ RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheet(
 }
 
  void GlobalStyleSheetCache::SetSharedMemory(
-    base::SharedMemoryHandle aHandle, uintptr_t aAddress) {
+    ipc::SharedMemory::Handle aHandle, uintptr_t aAddress) {
   MOZ_ASSERT(!XRE_IsParentProcess());
   MOZ_ASSERT(!gStyleCache, "Too late, GlobalStyleSheetCache already created!");
-  MOZ_ASSERT(!sSharedMemory, "Shouldn't call this more than once");
+  MOZ_ASSERT(sSharedMemory.IsEmpty(), "Shouldn't call this more than once");
 
-  auto shm = MakeUnique<base::SharedMemory>();
-  if (!shm->SetHandle(std::move(aHandle),  true)) {
+  auto shm = MakeRefPtr<ipc::SharedMemory>();
+  if (!shm->SetHandle(std::move(aHandle), ipc::SharedMemory::RightsReadOnly)) {
     return;
   }
 
   if (shm->Map(kSharedMemorySize, reinterpret_cast<void*>(aAddress))) {
-    sSharedMemory = shm.release();
+    sSharedMemory = shm->TakeMapping();
+    sSharedMemoryHandle() = shm->TakeHandle();
   }
 }
 
-base::SharedMemoryHandle GlobalStyleSheetCache::CloneHandle() {
+ipc::SharedMemoryHandle GlobalStyleSheetCache::CloneHandle() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  if (sSharedMemory) {
-    return sSharedMemory->CloneHandle();
+  if (ipc::SharedMemory::IsHandleValid(sSharedMemoryHandle())) {
+    return ipc::SharedMemory::CloneHandle(sSharedMemoryHandle());
   }
   return nullptr;
 }
@@ -555,7 +563,7 @@ StaticRefPtr<GlobalStyleSheetCache> GlobalStyleSheetCache::gStyleCache;
 StaticRefPtr<css::Loader> GlobalStyleSheetCache::gCSSLoader;
 StaticRefPtr<nsIURI> GlobalStyleSheetCache::gUserContentSheetURL;
 
-StaticAutoPtr<base::SharedMemory> GlobalStyleSheetCache::sSharedMemory;
+Span<uint8_t> GlobalStyleSheetCache::sSharedMemory;
 size_t GlobalStyleSheetCache::sUsedSharedMemory;
 
 }  

@@ -11,8 +11,9 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ipc/PIdleSchedulerParent.h"
-#include "base/shared_memory.h"
+#include "mozilla/ipc/SharedMemory.h"
 #include <bitset>
 
 #define NS_IDLE_SCHEDULER_COUNTER_ARRAY_LENGHT 1024
@@ -88,7 +89,7 @@ class IdleSchedulerParent final
   
   
   
-  static base::SharedMemory* sActiveChildCounter;
+  static RefPtr<SharedMemory> sActiveChildCounter;
   
   
   
