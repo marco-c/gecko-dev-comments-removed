@@ -591,6 +591,7 @@ nsresult Http3Session::ProcessEvents() {
         if (!mAuthenticationStarted) {
           mAuthenticationStarted = true;
           LOG(("Http3Session::ProcessEvents - AuthenticationNeeded called"));
+          OnTransportStatus(nullptr, NS_NET_STATUS_TLS_HANDSHAKE_STARTING, 0);
           CallCertVerification(Nothing());
         }
         break;
@@ -631,10 +632,9 @@ nsresult Http3Session::ProcessEvents() {
 #endif
         }
 
-        OnTransportStatus(mSocketTransport, NS_NET_STATUS_CONNECTED_TO, 0);
+        OnTransportStatus(nullptr, NS_NET_STATUS_CONNECTED_TO, 0);
         
-        OnTransportStatus(mSocketTransport, NS_NET_STATUS_TLS_HANDSHAKE_ENDED,
-                          0);
+        OnTransportStatus(nullptr, NS_NET_STATUS_TLS_HANDSHAKE_ENDED, 0);
 
         ReportHttp3Connection();
         
@@ -1479,13 +1479,6 @@ void Http3Session::GetSecurityCallbacks(nsIInterfaceRequestor** aOut) {
 void Http3Session::OnTransportStatus(nsITransport* aTransport, nsresult aStatus,
                                      int64_t aProgress) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-
-  if ((aStatus == NS_NET_STATUS_CONNECTED_TO) && !IsConnected()) {
-    
-    
-    
-    aStatus = NS_NET_STATUS_TLS_HANDSHAKE_STARTING;
-  }
 
   switch (aStatus) {
       

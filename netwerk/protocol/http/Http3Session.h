@@ -320,9 +320,6 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
 
   RefPtr<HttpConnectionUDP> mUdpConn;
 
-  
-  RefPtr<nsISocketTransport> mSocketTransport;
-
   nsCOMPtr<nsITimer> mTimer;
 
   nsTHashMap<nsCStringHashKey, bool> mJoinConnectionCache;
