@@ -1827,9 +1827,8 @@ bool TextInputHandler::HandleKeyDownEvent(NSEvent* aNativeEvent,
   
   
   
-  if (!([aNativeEvent modifierFlags] & NSEventModifierFlagCommand) &&
-      !([[aNativeEvent charactersIgnoringModifiers] isEqualToString:@" "] &&
-        !IsEditableContent())) {
+  if (IsEditableContent() &&
+      !([aNativeEvent modifierFlags] & NSEventModifierFlagCommand)) {
     [NSCursor setHiddenUntilMouseMoves:YES];
   }
 
