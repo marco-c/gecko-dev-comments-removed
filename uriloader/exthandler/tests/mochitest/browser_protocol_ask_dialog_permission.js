@@ -641,7 +641,7 @@ add_task(async function test_permission_system_principal() {
 
 
 
-add_task(async function test_permission_system_principal() {
+add_task(async function test_permission_system_principal_have_default() {
   let scheme = getSystemProtocol();
   if (!scheme) {
     return;
@@ -1277,7 +1277,7 @@ add_task(async function test_redirect_principal() {
 
 
 
-add_task(async function test_redirect_principal() {
+add_task(async function test_redirect_principal_refresh_header() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     await testOpenProto(browser, scheme, {
@@ -1295,7 +1295,7 @@ add_task(async function test_redirect_principal() {
 
 
 
-add_task(async function test_redirect_principal() {
+add_task(async function test_redirect_principal_meta() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     await testOpenProto(browser, scheme, {
