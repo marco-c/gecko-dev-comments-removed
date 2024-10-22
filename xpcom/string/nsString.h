@@ -58,10 +58,6 @@ class NS_LossyConvertUTF16toASCII : public nsAutoCString {
   NS_LossyConvertUTF16toASCII(char) = delete;
 };
 
-template <>
-struct fmt::formatter<NS_LossyConvertUTF16toASCII, char>
-    : fmt::formatter<nsAutoCString, char> {};
-
 class NS_ConvertASCIItoUTF16 : public nsAutoString {
  public:
   explicit NS_ConvertASCIItoUTF16(const char* aCString) {
@@ -84,10 +80,6 @@ class NS_ConvertASCIItoUTF16 : public nsAutoString {
   
   NS_ConvertASCIItoUTF16(char16_t) = delete;
 };
-
-template <>
-struct fmt::formatter<NS_ConvertASCIItoUTF16, char16_t>
-    : fmt::formatter<nsAutoString, char16_t> {};
 
 
 
@@ -116,10 +108,6 @@ class NS_ConvertUTF16toUTF8 : public nsAutoCString {
   NS_ConvertUTF16toUTF8(char) = delete;
 };
 
-template <>
-struct fmt::formatter<NS_ConvertUTF16toUTF8, char>
-    : fmt::formatter<nsAutoCString, char> {};
-
 class NS_ConvertUTF8toUTF16 : public nsAutoString {
  public:
   explicit NS_ConvertUTF8toUTF16(const char* aCString) {
@@ -142,10 +130,6 @@ class NS_ConvertUTF8toUTF16 : public nsAutoString {
   
   NS_ConvertUTF8toUTF16(char16_t) = delete;
 };
-
-template <>
-struct fmt::formatter<NS_ConvertUTF8toUTF16, char16_t>
-    : fmt::formatter<nsAutoString, char16_t> {};
 
 
 

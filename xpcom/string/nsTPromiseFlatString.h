@@ -115,10 +115,6 @@ class MOZ_STACK_CLASS nsTPromiseFlatString : public nsTString<T> {
 extern template class nsTPromiseFlatString<char>;
 extern template class nsTPromiseFlatString<char16_t>;
 
-template <typename Char>
-struct fmt::formatter<nsTPromiseFlatString<Char>, Char>
-    : fmt::formatter<nsTString<Char>, Char> {};
-
 
 
 template <class T>
