@@ -1153,7 +1153,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             
             
             
-            let numPinned = gBrowser._numPinnedTabs;
+            let numPinned = gBrowser.pinnedTabCount;
             let ok = nativeTab.pinned
               ? insertionPoint <= numPinned
               : insertionPoint >= numPinned;

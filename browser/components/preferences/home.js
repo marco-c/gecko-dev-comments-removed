@@ -370,7 +370,7 @@ var gHomePane = {
       win.document.documentElement.getAttribute("windowtype") ===
         "navigator:browser"
     ) {
-      tabs = win.gBrowser.visibleTabs.slice(win.gBrowser._numPinnedTabs);
+      tabs = win.gBrowser.visibleTabs.slice(win.gBrowser.pinnedTabCount);
       tabs = tabs.filter(tab => !this._isTabAboutPreferencesOrSettings(tab));
       
       tabs = tabs.filter(tab => !tab.closing);
