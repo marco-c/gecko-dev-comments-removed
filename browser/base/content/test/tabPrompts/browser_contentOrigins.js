@@ -16,10 +16,13 @@ const TEST_ROOT = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 
+const DEFAULT_FAVICON = "chrome://global/skin/icons/defaultFavicon.svg";
+const BROKEN_FAVICON = "chrome://global/skin/icons/security-broken.svg";
+
 async function checkAlert(
   pageToLoad,
   expectedTitle,
-  expectedIcon = "chrome://global/skin/icons/defaultFavicon.svg"
+  expectedIcon = DEFAULT_FAVICON
 ) {
   function openFn(browser) {
     return SpecialPowers.spawn(browser, [], () => {
@@ -38,7 +41,7 @@ async function checkAlert(
 async function checkBeforeunload(
   pageToLoad,
   expectedTitle,
-  expectedIcon = "chrome://global/skin/icons/defaultFavicon.svg"
+  expectedIcon = DEFAULT_FAVICON
 ) {
   async function openFn(browser) {
     let tab = gBrowser.getTabForBrowser(browser);
@@ -178,20 +181,30 @@ add_task(async function test_check_auth() {
   const HOST = `localhost:${server.identity.primaryPort}`;
   
   const AUTH_URI = `http://${HOST}/forbidden`;
+  const HTTPS_AUTH_URI = TEST_ROOT + "auth-route.sjs";
 
+  
   
   await checkDialog(
     "https://example.com/",
     browser => BrowserTestUtils.startLoadingURIString(browser, AUTH_URI),
     HOST,
-    "chrome://global/skin/icons/defaultFavicon.svg",
+    BROKEN_FAVICON,
     Ci.nsIPrompt.MODAL_TYPE_TAB
   );
 
-  let subframeLoad = function (browser) {
-    return SpecialPowers.spawn(browser, [AUTH_URI], uri => {
+  await checkDialog(
+    "https://example.com/",
+    browser => BrowserTestUtils.startLoadingURIString(browser, HTTPS_AUTH_URI),
+    HOST,
+    DEFAULT_FAVICON,
+    Ci.nsIPrompt.MODAL_TYPE_TAB
+  );
+
+  let subframeLoad = function (browser, uri) {
+    return SpecialPowers.spawn(browser, [uri], frameUri => {
       let f = content.document.createElement("iframe");
-      f.src = uri;
+      f.src = frameUri;
       content.document.body.appendChild(f);
     });
   };
@@ -200,10 +213,18 @@ add_task(async function test_check_auth() {
   await checkDialog(
     
     "http://example.org/1",
-    subframeLoad,
+    browser => subframeLoad(browser, AUTH_URI),
     HOST,
+    BROKEN_FAVICON,
+    Ci.nsIPrompt.MODAL_TYPE_TAB
+  );
+
+  await checkDialog(
     
-    "chrome://global/skin/icons/security-broken.svg",
+    "http://example.org/1",
+    browser => subframeLoad(browser, HTTPS_AUTH_URI),
+    HOST,
+    DEFAULT_FAVICON,
     Ci.nsIPrompt.MODAL_TYPE_TAB
   );
 });
