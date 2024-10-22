@@ -700,12 +700,18 @@ class JS::Realm : public JS::shadow::Realm {
   bool isTracingExecution() { return isTracingExecution_; }
 
   void enableExecutionTracing() {
+    MOZ_ASSERT(!debuggerObservesCoverage());
+
     isTracingExecution_ = true;
     setIsDebuggee();
     updateDebuggerObservesAllExecution();
   }
 
   void disableExecutionTracing() {
+    if (!isTracingExecution_) {
+      return;
+    }
+
     isTracingExecution_ = false;
     
     
