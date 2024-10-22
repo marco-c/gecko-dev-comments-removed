@@ -364,11 +364,8 @@ void Geolocation::ReallowWithSystemPermissionOrCancel(
       geolocation::SystemGeolocationPermissionBehavior::GeckoWillPromptUser;
   
   
-  const auto kSpinnerNoButtonFlags = nsIPromptService::BUTTON_TITLE_IS_STRING *
-                                         nsIPromptService::BUTTON_POS_0 +
-                                     nsIPromptService::BUTTON_TITLE_IS_STRING *
-                                         nsIPromptService::BUTTON_POS_1 +
-                                     nsIPromptService::SHOW_SPINNER;
+  const auto kSpinnerNoButtonFlags =
+      nsIPromptService::BUTTON_NONE | nsIPromptService::SHOW_SPINNER;
   
   
   const auto kCancelButtonFlags =
