@@ -87,7 +87,6 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   nsresult GetTreeBody(mozilla::dom::Element** aElement);
   int32_t RowHeight() const;
   int32_t RowWidth();
-  int32_t GetHorizontalPosition() const;
   mozilla::Maybe<mozilla::CSSIntRegion> GetSelectionRegion();
   int32_t FirstVisibleRow() const { return mTopRowIndex; }
   int32_t LastVisibleRow() const { return mTopRowIndex + mPageLength; }
@@ -146,7 +145,7 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   void VisibilityChanged(bool aVisible) override { Invalidate(); }
   nsScrollbarFrame* GetScrollbarBox(bool aVertical) override {
     ScrollParts parts = GetScrollParts();
-    return aVertical ? parts.mVScrollbar : parts.mHScrollbar;
+    return aVertical ? parts.mVScrollbar : nullptr;
   }
   void ScrollbarActivityStarted() const override;
   void ScrollbarActivityStopped() const override;
@@ -175,12 +174,8 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   friend class nsTreeColumn;
 
   struct ScrollParts {
-    nsScrollbarFrame* mVScrollbar;
+    nsScrollbarFrame* mVScrollbar = nullptr;
     RefPtr<mozilla::dom::Element> mVScrollbarContent;
-    nsScrollbarFrame* mHScrollbar;
-    RefPtr<mozilla::dom::Element> mHScrollbarContent;
-    nsIFrame* mColumnsFrame;
-    mozilla::ScrollContainerFrame* mColumnsScrollFrame;
   };
 
   ImgDrawResult PaintTreeBody(gfxContext& aRenderingContext,
@@ -191,7 +186,6 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   mozilla::dom::XULTreeElement* GetBaseElement();
 
   bool GetVerticalOverflow() const { return mVerticalOverflow; }
-  bool GetHorizontalOverflow() const { return mHorizontalOverflow; }
 
   
   
@@ -345,8 +339,7 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   void UpdateScrollbars(const ScrollParts& aParts);
 
   
-  void InvalidateScrollbars(const ScrollParts& aParts,
-                            AutoWeakFrame& aWeakColumnsFrame);
+  void InvalidateScrollbars(const ScrollParts& aParts);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CheckOverflow(const ScrollParts& aParts);
@@ -363,7 +356,6 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   
   nsresult ScrollInternal(const ScrollParts& aParts, int32_t aRow);
   nsresult ScrollToRowInternal(const ScrollParts& aParts, int32_t aRow);
-  nsresult ScrollHorzInternal(const ScrollParts& aParts, int32_t aPosition);
   nsresult EnsureRowIsVisibleInternal(const ScrollParts& aParts, int32_t aRow);
 
   
@@ -564,9 +556,6 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   
   
   nscoord mHorzWidth;
-  
-  
-  nscoord mAdjustWidth;
 
   
   Maybe<nsRect> mLastReflowRect;
@@ -591,7 +580,6 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   bool mHasFixedRowCount;
 
   bool mVerticalOverflow;
-  bool mHorizontalOverflow;
 
   bool mReflowCallbackPosted;
 
