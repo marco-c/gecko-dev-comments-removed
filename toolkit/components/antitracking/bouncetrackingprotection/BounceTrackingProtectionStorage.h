@@ -86,6 +86,8 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   [[nodiscard]] nsresult Clear();
 
  private:
+  [[nodiscard]] nsresult InitInternal();
+
   ~BounceTrackingProtectionStorage() = default;
 
   
