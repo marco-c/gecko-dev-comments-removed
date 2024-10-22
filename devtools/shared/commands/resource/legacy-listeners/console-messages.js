@@ -44,7 +44,12 @@ module.exports = async function ({
   
   const { messages } = await webConsoleFront.getCachedMessages(["ConsoleAPI"]);
 
-  onAvailableArray([[ResourceCommand.TYPES.CONSOLE_MESSAGE, messages]]);
+  onAvailableArray([
+    [
+      ResourceCommand.TYPES.CONSOLE_MESSAGE,
+      messages.map(({ message }) => message),
+    ],
+  ]);
 
   
   webConsoleFront.on("consoleAPICall", ({ message }) => {

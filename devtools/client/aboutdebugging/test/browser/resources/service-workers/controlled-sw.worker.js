@@ -31,4 +31,6 @@ self.addEventListener("message", function (event) {
 
 self.addEventListener("install", function (event) {
   event.waitUntil(waitUntil(() => canInstall));
+  
+  console.log("service worker installed");
 });
