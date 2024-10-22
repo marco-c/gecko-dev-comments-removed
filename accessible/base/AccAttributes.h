@@ -316,6 +316,10 @@ class AccAttributes {
                                      const AttrValueType& aValue,
                                      nsAString& aValueString);
 
+  
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const AccAttributes& aAttributes);
+
   AtomVariantMap mData;
 
   friend struct IPC::ParamTraits<AccAttributes*>;
