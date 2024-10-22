@@ -183,6 +183,10 @@ def main():
             continue
 
         
+        if "third_party_fmt" in filename:
+            continue
+
+        
         if "Fuzzer" in filename:
             continue
 
