@@ -19,7 +19,12 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TrustedTypePolicyFactory, mGlobalObject)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TrustedTypePolicyFactory, mGlobalObject,
+                                      mDefaultPolicy)
+
+TrustedTypePolicyFactory::TrustedTypePolicyFactory(
+    nsIGlobalObject* aGlobalObject)
+    : mGlobalObject{aGlobalObject} {}
 
 JSObject* TrustedTypePolicyFactory::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
@@ -46,6 +51,10 @@ static CSPViolationData CreateCSPViolationData(JSContext* aJSContext,
            nullptr,
           sample};
 }
+
+
+
+TrustedTypePolicyFactory::~TrustedTypePolicyFactory() = default;
 
 auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
     JSContext* aJSContext,
@@ -94,6 +103,8 @@ auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
   return result;
 }
 
+constexpr nsLiteralString kDefaultPolicyName = u"default"_ns;
+
 already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
     JSContext* aJSContext, const nsAString& aPolicyName,
     const TrustedTypePolicyOptions& aPolicyOptions, ErrorResult& aRv) {
@@ -109,9 +120,10 @@ already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
     return nullptr;
   }
 
-  
-  
-  
+  if (aPolicyName.Equals(kDefaultPolicyName) && mDefaultPolicy) {
+    aRv.ThrowTypeError("Tried to create a second default policy"_ns);
+    return nullptr;
+  }
 
   TrustedTypePolicy::Options options;
 
@@ -129,6 +141,10 @@ already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
 
   RefPtr<TrustedTypePolicy> policy =
       MakeRefPtr<TrustedTypePolicy>(this, aPolicyName, std::move(options));
+
+  if (aPolicyName.Equals(kDefaultPolicyName)) {
+    mDefaultPolicy = policy;
+  }
 
   mCreatedPolicyNames.AppendElement(aPolicyName);
 
