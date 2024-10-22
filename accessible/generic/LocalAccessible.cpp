@@ -3819,8 +3819,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       
       gfx::Matrix4x4 mtx = nsDisplayTransform::GetResultingTransformMatrix(
           frame, nsPoint(0, 0), AppUnitsPerCSSPixel(),
-          nsDisplayTransform::INCLUDE_PERSPECTIVE |
-              nsDisplayTransform::OFFSET_BY_ORIGIN);
+          nsDisplayTransform::INCLUDE_PERSPECTIVE);
       
       
       
