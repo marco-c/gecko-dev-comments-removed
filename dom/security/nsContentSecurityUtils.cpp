@@ -868,62 +868,21 @@ void nsContentSecurityUtils::DetectJsHacks() {
     return;
   }
 
-  
-  
-  
-  if (XRE_IsParentProcess()) {
-    
-    
-    
-    
-    nsAutoString jsConfigPref;
-    rv = Preferences::GetString("general.config.filename", jsConfigPref,
-                                PrefValueKind::Default);
-    if (!NS_FAILED(rv) && !jsConfigPref.IsEmpty()) {
-      sJSHacksPresent = true;
-      return;
-    }
-    rv = Preferences::GetString("general.config.filename", jsConfigPref,
-                                PrefValueKind::User);
-    if (!NS_FAILED(rv) && !jsConfigPref.IsEmpty()) {
-      sJSHacksPresent = true;
-      return;
-    }
-
-    
-    
-    
-    nsAutoString configUrlPref;
-    rv = Preferences::GetString("autoadmin.global_config_url", configUrlPref,
-                                PrefValueKind::Default);
-    if (!NS_FAILED(rv) && !configUrlPref.IsEmpty()) {
-      sJSHacksPresent = true;
-      return;
-    }
-    rv = Preferences::GetString("autoadmin.global_config_url", configUrlPref,
-                                PrefValueKind::User);
-    if (!NS_FAILED(rv) && !configUrlPref.IsEmpty()) {
-      sJSHacksPresent = true;
-      return;
-    }
-
-  } else {
-    if (Preferences::HasDefaultValue("general.config.filename")) {
-      sJSHacksPresent = true;
-      return;
-    }
-    if (Preferences::HasUserValue("general.config.filename")) {
-      sJSHacksPresent = true;
-      return;
-    }
-    if (Preferences::HasDefaultValue("autoadmin.global_config_url")) {
-      sJSHacksPresent = true;
-      return;
-    }
-    if (Preferences::HasUserValue("autoadmin.global_config_url")) {
-      sJSHacksPresent = true;
-      return;
-    }
+  if (Preferences::HasDefaultValue("general.config.filename")) {
+    sJSHacksPresent = true;
+    return;
+  }
+  if (Preferences::HasUserValue("general.config.filename")) {
+    sJSHacksPresent = true;
+    return;
+  }
+  if (Preferences::HasDefaultValue("autoadmin.global_config_url")) {
+    sJSHacksPresent = true;
+    return;
+  }
+  if (Preferences::HasUserValue("autoadmin.global_config_url")) {
+    sJSHacksPresent = true;
+    return;
   }
 
   bool failOverToCache;
