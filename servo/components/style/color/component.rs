@@ -16,7 +16,7 @@ use crate::{
     },
 };
 use cssparser::{Parser, Token};
-use style_traits::{ParseError, StyleParseErrorKind};
+use style_traits::ParseError;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
@@ -25,6 +25,8 @@ pub enum ColorComponent<ValueType> {
     None,
     
     Value(ValueType),
+    
+    Calc(Box<SpecifiedCalcNode>),
 }
 
 impl<ValueType> ColorComponent<ValueType> {
@@ -33,37 +35,11 @@ impl<ValueType> ColorComponent<ValueType> {
     pub fn is_none(&self) -> bool {
         matches!(self, Self::None)
     }
-
-    
-    pub fn map_value<OutType>(
-        self,
-        f: impl FnOnce(ValueType) -> OutType,
-    ) -> ColorComponent<OutType> {
-        match self {
-            Self::None => ColorComponent::None,
-            Self::Value(value) => ColorComponent::Value(f(value)),
-        }
-    }
-    
-    pub fn into_value(self) -> ValueType {
-        match self {
-            Self::None => panic!("value not available when component is None"),
-            Self::Value(value) => value,
-        }
-    }
-
-    
-    pub fn into_value_or(self, default: ValueType) -> ValueType {
-        match self {
-            Self::None => default,
-            Self::Value(value) => value,
-        }
-    }
 }
 
 
 
-pub trait ColorComponentType: Sized {
+pub trait ColorComponentType: Sized + Clone {
     
     
     
@@ -116,10 +92,28 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 } else {
                     ValueType::units()
                 };
-                let node = SpecifiedCalcNode::parse(context, input, function, units)?;
+                let mut node = SpecifiedCalcNode::parse(context, input, function, units)?;
+                
+                
+                
+                
+                node.simplify_and_sort();
 
+                Ok(Self::Calc(Box::new(node)))
+            },
+            ref t => ValueType::try_from_token(t)
+                .map(Self::Value)
+                .map_err(|_| location.new_unexpected_token_error(t.clone())),
+        }
+    }
+
+    
+    pub fn resolve(&self, origin_color: Option<AbsoluteColor>) -> Result<Option<ValueType>, ()> {
+        Ok(match self {
+            ColorComponent::None => None,
+            ColorComponent::Value(value) => Some(value.clone()),
+            ColorComponent::Calc(node) => {
                 let Ok(resolved_leaf) = node.resolve_map(|leaf| {
-                    
                     Ok(match leaf {
                         SpecifiedLeaf::ColorComponent(channel_keyword) => {
                             if let Some(origin_color) = origin_color {
@@ -137,16 +131,11 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                         l => l.clone(),
                     })
                 }) else {
-                    return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                    return Err(());
                 };
 
-                ValueType::try_from_leaf(&resolved_leaf)
-                    .map(Self::Value)
-                    .map_err(|_| location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+                Some(ValueType::try_from_leaf(&resolved_leaf)?)
             },
-            ref t => ValueType::try_from_token(t)
-                .map(Self::Value)
-                .map_err(|_| location.new_unexpected_token_error(t.clone())),
-        }
+        })
     }
 }
