@@ -51,6 +51,24 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
   return true;
 }
 
+bool EventQueue::PushNameOrDescriptionChangeToRelations(
+    LocalAccessible* aAccessible, RelationType aType) {
+  MOZ_ASSERT(aType == RelationType::LABEL_FOR ||
+             aType == RelationType::DESCRIPTION_FOR);
+
+  bool pushed = false;
+  uint32_t eventType = aType == RelationType::LABEL_FOR
+                           ? nsIAccessibleEvent::EVENT_NAME_CHANGE
+                           : nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE;
+  Relation rel = aAccessible->RelationByType(aType);
+  while (LocalAccessible* relTarget = rel.LocalNext()) {
+    RefPtr<AccEvent> nameChangeEvent = new AccEvent(eventType, relTarget);
+    pushed |= PushEvent(nameChangeEvent);
+  }
+
+  return pushed;
+}
+
 bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
   
   
@@ -60,12 +78,16 @@ bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
   
   
   
+  
   const bool maybeTargetNameChanged =
       (aOrigEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
-       aOrigEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED) &&
+       aOrigEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED ||
+       aOrigEvent->mEventType == nsIAccessibleEvent::EVENT_REORDER ||
+       aOrigEvent->mEventType == nsIAccessibleEvent::EVENT_INNER_REORDER) &&
       nsTextEquivUtils::HasNameRule(target, eNameFromSubtreeRule);
   const bool doName = target->HasNameDependent() || maybeTargetNameChanged;
   const bool doDesc = target->HasDescriptionDependent();
+
   if (!doName && !doDesc) {
     return false;
   }
@@ -80,12 +102,34 @@ bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
     if (doName) {
       if (nameCheckAncestor && (maybeTargetNameChanged || parent != target) &&
           nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeRule)) {
-        nsAutoString name;
-        ENameValueFlag nameFlag = parent->Name(name);
         
         
-        
-        if (nameFlag == eNameFromSubtree || parent->IsHTMLFileInput()) {
+        bool fireNameChange = parent->IsHTMLFileInput();
+        if (!fireNameChange) {
+          nsAutoString name;
+          ENameValueFlag nameFlag = parent->Name(name);
+          switch (nameFlag) {
+            case eNameOK:
+              
+              
+              fireNameChange = name.IsVoid();
+              break;
+            case eNameFromSubtree:
+              
+              fireNameChange = true;
+              break;
+            case eNameFromTooltip:
+              
+              
+              
+              fireNameChange = true;
+              break;
+            default:
+              MOZ_ASSERT_UNREACHABLE("All name flags not covered!");
+          }
+        }
+
+        if (fireNameChange) {
           RefPtr<AccEvent> nameChangeEvent =
               new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
           pushed |= PushEvent(nameChangeEvent);
@@ -93,21 +137,13 @@ bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
         nameCheckAncestor = false;
       }
 
-      Relation rel = parent->RelationByType(RelationType::LABEL_FOR);
-      while (LocalAccessible* relTarget = rel.LocalNext()) {
-        RefPtr<AccEvent> nameChangeEvent =
-            new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, relTarget);
-        pushed |= PushEvent(nameChangeEvent);
-      }
+      pushed |= PushNameOrDescriptionChangeToRelations(parent,
+                                                       RelationType::LABEL_FOR);
     }
 
     if (doDesc) {
-      Relation rel = parent->RelationByType(RelationType::DESCRIPTION_FOR);
-      while (LocalAccessible* relTarget = rel.LocalNext()) {
-        RefPtr<AccEvent> descChangeEvent = new AccEvent(
-            nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE, relTarget);
-        pushed |= PushEvent(descChangeEvent);
-      }
+      pushed |= PushNameOrDescriptionChangeToRelations(
+          parent, RelationType::DESCRIPTION_FOR);
     }
 
     if (parent->IsDoc()) {
