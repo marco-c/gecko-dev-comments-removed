@@ -1,14 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 #ifndef _include_gfx_ipc_CanvasShutdownManager_h__
 #define _include_gfx_ipc_CanvasShutdownManager_h__
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/ThreadLocal.h"
+#include "mozilla/layers/LayersTypes.h"
 #include <set>
 
 namespace mozilla {
@@ -16,7 +17,7 @@ namespace dom {
 class CanvasRenderingContext2D;
 class StrongWorkerRef;
 class ThreadSafeWorkerRef;
-}  // namespace dom
+}  
 
 namespace gfx {
 
@@ -34,6 +35,8 @@ class CanvasShutdownManager final {
 
   void OnRemoteCanvasLost();
   void OnRemoteCanvasRestored();
+  void OnRemoteCanvasReset(
+      const nsTArray<layers::RemoteTextureOwnerId>& aOwnerIds);
 
  private:
   explicit CanvasShutdownManager(dom::StrongWorkerRef* aWorkerRef);
@@ -51,7 +54,7 @@ class CanvasShutdownManager final {
   static std::set<CanvasShutdownManager*> sManagers;
 };
 
-}  // namespace gfx
-}  // namespace mozilla
+}  
+}  
 
-#endif  // _include_gfx_ipc_CanvasShutdownManager_h__
+#endif  

@@ -150,6 +150,11 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   
 
 
+  void DeviceResetAcknowledged();
+
+  
+
+
 
 
 
