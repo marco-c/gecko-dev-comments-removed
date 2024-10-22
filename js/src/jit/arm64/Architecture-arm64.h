@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_arm64_Architecture_arm64_h
 #define jit_arm64_Architecture_arm64_h
@@ -24,38 +24,38 @@ static const uint32_t HiddenSPEncoding = vixl::kSPRegInternalCode;
 namespace js {
 namespace jit {
 
+// AArch64 has 32 64-bit integer registers, x0 though x31.
+//
+//  x31 (or, more accurately, the integer register with encoding 31, since
+//  there is no x31 per se) is special and functions as both the stack pointer
+//  and a zero register.
+//
+//  The bottom 32 bits of each of the X registers is accessible as w0 through
+//  w31. The program counter is not accessible as a register.
+//
+// SIMD and scalar floating-point registers share a register bank.
+//  32 bit float registers are s0 through s31.
+//  64 bit double registers are d0 through d31.
+//  128 bit SIMD registers are v0 through v31.
+//  e.g., s0 is the bottom 32 bits of d0, which is the bottom 64 bits of v0.
 
+// AArch64 Calling Convention:
+//  x0 - x7: arguments and return value
+//  x8: indirect result (struct) location
+//  x9 - x15: temporary registers
+//  x16 - x17: intra-call-use registers (PLT, linker)
+//  x18: platform specific use (TLS)
+//  x19 - x28: callee-saved registers
+//  x29: frame pointer
+//  x30: link register
 
+// AArch64 Calling Convention for Floats:
+//  d0 - d7: arguments and return value
+//  d8 - d15: callee-saved registers
+//   Bits 64:128 are not saved for v8-v15.
+//  d16 - d31: temporary registers
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// AArch64 does not have soft float.
 
 class Registers {
  public:
@@ -94,13 +94,13 @@ class Registers {
     x15 = 15,
     w16 = 16,
     x16 = 16,
-    ip0 = 16,  
+    ip0 = 16,  // MacroAssembler scratch register 1.
     w17 = 17,
     x17 = 17,
-    ip1 = 17,  
+    ip1 = 17,  // MacroAssembler scratch register 2.
     w18 = 18,
     x18 = 18,
-    tls = 18,  
+    tls = 18,  // Platform-specific use (TLS).
     w19 = 19,
     x19 = 19,
     w20 = 20,
@@ -131,7 +131,7 @@ class Registers {
     x31 = 31,
     wzr = 31,
     xzr = 31,
-    sp = 31,  
+    sp = 31,  // Special: both stack pointer and a zero register.
   };
   using Code = uint8_t;
   using Encoding = uint32_t;
@@ -172,7 +172,7 @@ class Registers {
   static const uint32_t Total = 32;
   static const uint32_t TotalPhys = 32;
   static const uint32_t Allocatable =
-      27;  
+      27;  // No named special-function registers.
 
   static const SetType AllMask = 0xFFFFFFFF;
   static const SetType NoneMask = 0x0;
@@ -198,33 +198,33 @@ class Registers {
       (1 << Registers::x28) | (1 << Registers::x29) | (1 << Registers::x30);
 
   static const SetType NonAllocatableMask =
-      (1 << Registers::x28) |  
-      (1 << Registers::ip0) |  
-      (1 << Registers::ip1) |  
+      (1 << Registers::x28) |  // PseudoStackPointer.
+      (1 << Registers::ip0) |  // First scratch register.
+      (1 << Registers::ip1) |  // Second scratch register.
       (1 << Registers::tls) | (1 << Registers::lr) | (1 << Registers::sp) |
       (1 << Registers::fp);
 
   static const SetType WrapperMask = VolatileMask;
 
-  
+  // Registers returned from a JS -> JS call.
   static const SetType JSCallMask = (1 << Registers::x2);
 
-  
+  // Registers returned from a JS -> C call.
   static const SetType CallMask = (1 << Registers::x0);
 
   static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 };
 
-
+// Smallest integer type that can hold a register bitmask.
 using PackedRegisterMask = uint32_t;
 
 template <typename T>
 class TypedRegisterSet;
 
-
+// 128-bit bitset for FloatRegisters::SetType.
 
 class Bitset128 {
-  
+  // The order (hi, lo) looks best in the debugger.
   uint64_t hi, lo;
 
  public:
@@ -252,8 +252,8 @@ class Bitset128 {
 
   constexpr Bitset128 operator~() const { return Bitset128(~hi, ~lo); }
 
-  
-  
+  // We must avoid shifting by the word width, which is complex.  Inlining plus
+  // shift-by-constant will remove a lot of code in the normal case.
 
   constexpr Bitset128 operator<<(size_t shift) const {
     if (shift == 0) {
@@ -420,10 +420,10 @@ class FloatRegisters {
     v30 = 30,
     s31 = 31,
     d31 = 31,
-    v31 = 31,  
+    v31 = 31,  // Scratch register.
   };
 
-  
+  // Eight bits: (invalid << 7) | (kind << 5) | encoding
   using Code = uint8_t;
   using Encoding = FPRegisterID;
   using SetType = Bitset128;
@@ -433,7 +433,7 @@ class FloatRegisters {
   static constexpr Code Invalid = 0x80;
 
   static const char* GetName(uint32_t code) {
-    
+    // clang-format off
     static const char* const Names[] = {
         "s0",  "s1",  "s2",  "s3",  "s4",  "s5",  "s6",  "s7",  "s8",  "s9",
         "s10", "s11", "s12", "s13", "s14", "s15", "s16", "s17", "s18", "s19",
@@ -450,7 +450,7 @@ class FloatRegisters {
         "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29",
         "v30", "v31",
     };
-    
+    // clang-format on
     static_assert(Total == std::size(Names), "Table is the correct size");
     if (code >= Total) {
       return "invalid";
@@ -462,7 +462,7 @@ class FloatRegisters {
 
   static const uint32_t TotalPhys = 32;
   static const uint32_t Total = TotalPhys * NumTypes;
-  static const uint32_t Allocatable = 31;  
+  static const uint32_t Allocatable = 31;  // Without d31, the scratch register.
 
   static_assert(sizeof(SetType) * 8 >= Total,
                 "SetType should be large enough to enumerate all registers.");
@@ -491,10 +491,10 @@ class FloatRegisters {
               (1 << FloatRegisters::s12) | (1 << FloatRegisters::s13) |
               (1 << FloatRegisters::s14) | (1 << FloatRegisters::s15));
 
+  // Note: only the bottom 64 bits of v8-v15 will be preserved.
   static constexpr SetType NonVolatileMask =
       (NonVolatileSingleMask << ShiftSingle) |
-      (NonVolatileSingleMask << ShiftDouble) |
-      (NonVolatileSingleMask << ShiftSimd128);
+      (NonVolatileSingleMask << ShiftDouble);
 
   static constexpr SetType VolatileMask = AllMask & ~NonVolatileMask;
 
@@ -503,7 +503,7 @@ class FloatRegisters {
   static_assert(ShiftSingle == 0,
                 "Or the NonAllocatableMask must be computed differently");
 
-  
+  // d31 is the ScratchFloatReg.
   static constexpr SetType NonAllocatableSingleMask =
       (SetType(1) << FloatRegisters::s31);
 
@@ -513,7 +513,7 @@ class FloatRegisters {
 
   static constexpr SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 
-  
+  // Content spilled during bailouts.
   union RegisterContent {
     float s;
     double d;
@@ -521,14 +521,14 @@ class FloatRegisters {
   };
 
   static constexpr Encoding encoding(Code c) {
-    
-    
+    // assert() not available in constexpr function.
+    // assert(c < Total);
     return Encoding(c & 31);
   }
 
   static constexpr Kind kind(Code c) {
-    
-    
+    // assert() not available in constexpr function.
+    // assert(c < Total && ((c >> 5) & 3) < NumTypes);
     return Kind((c >> 5) & 3);
   }
 
@@ -544,19 +544,19 @@ static const uint32_t SpillSlotSize =
 
 static constexpr uint32_t ShadowStackSpace = 0;
 
-
-
-
-
-
+// When our only strategy for far jumps is to encode the offset directly, and
+// not insert any jump islands during assembly for even further jumps, then the
+// architecture restricts us to -2^27 .. 2^27-4, to fit into a signed 28-bit
+// value.  We further reduce this range to allow the far-jump inserting code to
+// have some breathing room.
 static const uint32_t JumpImmediateRange = ((1 << 27) - (20 * 1024 * 1024));
 
 static const uint32_t ABIStackAlignment = 16;
 static const uint32_t CodeAlignment = 16;
 static const bool StackKeptAligned = false;
 
-
-
+// Although sp is only usable if 16-byte alignment is kept,
+// the Pseudo-StackPointer enables use of 8-byte alignment.
 static const uint32_t StackAlignment = 8;
 static const uint32_t NativeFrameSize = 8;
 
@@ -588,10 +588,10 @@ struct FloatRegister {
   static constexpr size_t SizeOfSimd128 = 16;
 
  private:
-  
-  
-  uint8_t encoding_;  
-  uint8_t kind_;      
+  // These fields only hold valid values: an invalid register is always
+  // represented as a valid encoding and kind with the invalid_ bit set.
+  uint8_t encoding_;  // 32 encodings
+  uint8_t kind_;      // Double, Single, Simd128
   bool invalid_;
 
   using Kind = Codes::Kind;
@@ -599,7 +599,7 @@ struct FloatRegister {
  public:
   constexpr FloatRegister(Encoding encoding, Kind kind)
       : encoding_(encoding), kind_(kind), invalid_(false) {
-    
+    // assert(uint32_t(encoding) < Codes::TotalPhys);
   }
 
   constexpr FloatRegister()
@@ -650,7 +650,7 @@ struct FloatRegister {
   }
 
   constexpr Code code() const {
-    
+    // assert(!invalid_);
     return Codes::fromParts(encoding_, kind_, invalid_);
   }
 
@@ -674,11 +674,11 @@ struct FloatRegister {
   bool aliases(FloatRegister other) const {
     return other.encoding_ == encoding_;
   }
-  
-  
-  
-  
-  
+  // This function mostly exists for the ARM backend.  It is to ensure that two
+  // floating point registers' types are equivalent.  e.g. S0 is not equivalent
+  // to D16, since S0 holds a float32, and D16 holds a Double.
+  // Since all floating point registers on x86 and x64 are equivalent, it is
+  // reasonable for this function to do the same.
   bool equiv(FloatRegister other) const {
     MOZ_ASSERT(!invalid_);
     return kind_ == other.kind_;
@@ -716,8 +716,8 @@ struct FloatRegister {
   static uint32_t GetPushSizeInBytes(const TypedRegisterSet<FloatRegister>& s);
   uint32_t getRegisterDumpOffsetInBytes();
 
-  
-  
+  // For N in 0..31, if any of sN, dN or qN is a member of `s`, the
+  // returned set will contain all of sN, dN and qN.
   static TypedRegisterSet<FloatRegister> BroadcastToAllSizes(
       const TypedRegisterSet<FloatRegister>& s);
 };
@@ -746,19 +746,19 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
   return set;
 }
 
-
-
+// ARM/D32 has double registers that cannot be treated as float32.
+// Luckily, ARMv8 doesn't have the same misfortune.
 inline bool hasUnaliasedDouble() { return false; }
 
-
-
+// ARM prior to ARMv8 also has doubles that alias multiple floats.
+// Again, ARMv8 is in the clear.
 inline bool hasMultiAlias() { return false; }
 
 uint32_t GetARM64Flags();
 
 bool CanFlushICacheFromBackgroundThreads();
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif  
+#endif  // jit_arm64_Architecture_arm64_h
