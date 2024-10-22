@@ -38,6 +38,8 @@
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/BoundFunctionObject.h"
+#include "vm/DateObject.h"
+#include "vm/DateTime.h"
 #include "vm/Float16.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/Iteration.h"
@@ -3424,6 +3426,40 @@ void MacroAssembler::loadResizableTypedArrayByteOffsetMaybeOutOfBoundsIntPtr(
 
   
   movePtr(ImmWord(0), output);
+
+  bind(&done);
+}
+
+void MacroAssembler::dateFillLocalTimeSlots(
+    Register obj, Register scratch, const LiveRegisterSet& volatileRegs) {
+  
+  
+
+  Label callVM, done;
+
+  
+  branchTestUndefined(Assembler::Equal,
+                      Address(obj, DateObject::offsetOfLocalTimeSlot()),
+                      &callVM);
+
+  unboxInt32(Address(obj, DateObject::offsetOfUTCTimeZoneOffsetSlot()),
+             scratch);
+
+  branch32(Assembler::Equal,
+           AbsoluteAddress(DateTimeInfo::addressOfUTCToLocalOffsetSeconds()),
+           scratch, &done);
+
+  bind(&callVM);
+  {
+    PushRegsInMask(volatileRegs);
+
+    using Fn = void (*)(DateObject*);
+    setupUnalignedABICall(scratch);
+    passABIArg(obj);
+    callWithABI<Fn, jit::DateFillLocalTimeSlots>();
+
+    PopRegsInMask(volatileRegs);
+  }
 
   bind(&done);
 }

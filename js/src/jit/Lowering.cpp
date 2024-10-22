@@ -7708,6 +7708,13 @@ void LIRGenerator::visitMapObjectSize(MMapObjectSize* ins) {
   define(lir, ins);
 }
 
+void LIRGenerator::visitDateFillLocalTimeSlots(MDateFillLocalTimeSlots* ins) {
+  auto* lir =
+      new (alloc()) LDateFillLocalTimeSlots(useRegister(ins->date()), temp());
+  add(lir, ins);
+  assignSafepoint(lir, ins);
+}
+
 void LIRGenerator::visitPostIntPtrConversion(MPostIntPtrConversion* ins) {
   
   redefine(ins, ins->input());

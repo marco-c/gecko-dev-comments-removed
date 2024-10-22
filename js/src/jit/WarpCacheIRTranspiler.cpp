@@ -5480,6 +5480,18 @@ bool WarpCacheIRTranspiler::emitMapSizeResult(ObjOperandId mapId) {
   return true;
 }
 
+bool WarpCacheIRTranspiler::emitDateFillLocalTimeSlots(ObjOperandId dateId) {
+  MDefinition* date = getOperand(dateId);
+
+  
+  
+  
+  auto* ins = MDateFillLocalTimeSlots::New(alloc(), date);
+  addEffectfulUnsafe(ins);
+
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitTruthyResult(OperandId inputId) {
   MDefinition* input = getOperand(inputId);
 

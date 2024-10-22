@@ -244,6 +244,12 @@ class DateTimeInfo {
   }
 #endif 
 
+  
+  static const void* addressOfUTCToLocalOffsetSeconds() {
+    static_assert(sizeof(decltype(utcToLocalOffsetSeconds)) == sizeof(int32_t));
+    return &DateTimeInfo::utcToLocalOffsetSeconds;
+  }
+
  private:
   
   friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
