@@ -184,7 +184,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool mUseDevEditionProfile;
   
   const bool mUseDedicatedProfile;
-  nsString mStartupReason;
+  nsCString mStartupReason;
   
   
   nsCString mStartupFileVersion;
