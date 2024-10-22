@@ -86,9 +86,7 @@ struct WinErrorState {
   bool operator!=(WinErrorState const& that) const { return !operator==(that); }
 };
 
-
-
-#if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && defined(_M_X64)
+#if defined(_M_AMD64)
 
 using OnSingleStepCallback = std::function<bool(void*, CONTEXT*)>;
 
@@ -107,9 +105,6 @@ class MOZ_RAII AutoOnSingleStepCallback {
 MFBT_API MOZ_NEVER_INLINE __attribute__((naked)) void EnableTrapFlag();
 MFBT_API MOZ_NEVER_INLINE __attribute__((naked)) void DisableTrapFlag();
 MFBT_API LONG SingleStepExceptionHandler(_EXCEPTION_POINTERS* aExceptionInfo);
-
-
-#  if !defined(IMPL_MFBT)
 
 
 
@@ -139,6 +134,9 @@ CollectSingleStepData(CallbackToRun aCallbackToRun,
 
   return WindowsDiagnosticsError::None;
 }
+
+
+#  if !defined(IMPL_MFBT)
 
 template <int NMaxSteps, int NMaxErrorStates>
 struct ModuleSingleStepData {
