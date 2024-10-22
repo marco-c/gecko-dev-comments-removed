@@ -701,7 +701,8 @@ NSEvent* nsCocoaUtils::MakeNewCococaEventFromWidgetEvent(
       {MODIFIER_ALTGRAPH, NSEventModifierFlagOption},
       {MODIFIER_META, NSEventModifierFlagCommand},
       {MODIFIER_CAPSLOCK, NSEventModifierFlagCapsLock},
-      {MODIFIER_NUMLOCK, NSEventModifierFlagNumericPad}};
+      {MODIFIER_NUMLOCK, NSEventModifierFlagNumericPad},
+      {MODIFIER_FN, NSEventModifierFlagFunction}};
 
   NSUInteger modifierFlags = 0;
   for (uint32_t i = 0; i < ArrayLength(sModifierFlagMap); ++i) {
@@ -789,6 +790,15 @@ Modifiers nsCocoaUtils::ModifiersForEvent(NSEvent* aNativeEvent) {
   
   
   
+  
+  
+  if (!!(modifiers & NSEventModifierFlagFunction) &&
+      (aNativeEvent.type == NSKeyDown || aNativeEvent.type == NSKeyUp ||
+       aNativeEvent.type == NSFlagsChanged) &&
+      !(NSUpArrowFunctionKey <= aNativeEvent.keyCode &&
+        aNativeEvent.keyCode <= NSModeSwitchFunctionKey)) {
+    result |= MODIFIER_FN;
+  }
 
   return result;
 }
