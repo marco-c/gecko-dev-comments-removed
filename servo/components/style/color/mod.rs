@@ -5,11 +5,9 @@
 
 
 /// cbindgen:ignore
-mod color_function;
-
-/// cbindgen:ignore
 pub mod convert;
 
+mod color_function;
 pub mod component;
 pub mod mix;
 pub mod parsing;

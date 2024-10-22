@@ -4,8 +4,7 @@
 
 
 
-use crate::color::mix::ColorInterpolationMethod;
-use crate::color::AbsoluteColor;
+use crate::color::{mix::ColorInterpolationMethod, AbsoluteColor, ColorFunction};
 use crate::values::specified::percentage::ToPercentage;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
@@ -17,6 +16,8 @@ use style_traits::{CssWriter, ToCss};
 pub enum GenericColor<Percentage> {
     
     Absolute(AbsoluteColor),
+    
+    ColorFunction(Box<ColorFunction<Self>>),
     
     CurrentColor,
     
