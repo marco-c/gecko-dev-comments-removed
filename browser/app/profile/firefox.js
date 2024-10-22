@@ -1431,10 +1431,6 @@ pref("places.frecency.unvisitedTypedBonus", 200);
 pref("places.frecency.origins.alternative.featureGate", false);
 
 
-
-pref("places.forgetThisSite.clearByBaseDomain", true);
-
-
 pref("browser.places.speculativeConnect.enabled", true);
 
 
