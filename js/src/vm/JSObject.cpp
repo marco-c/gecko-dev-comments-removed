@@ -2318,16 +2318,17 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   
   
   
-  if (key == JSProto_Function && !JS::Prefs::experimental_joint_iteration() &&
-      id == NameToId(cx->names().zip)) {
+  if (key == JSProto_Function && !JS::Prefs::experimental_iterator_range() &&
+      (id == NameToId(cx->names().range))) {
     return true;
   }
 
   
   
   
-  if (key == JSProto_Function && !JS::Prefs::experimental_iterator_range() &&
-      (id == NameToId(cx->names().range))) {
+  if (key == JSProto_Function && !JS::Prefs::experimental_joint_iteration() &&
+      (id == NameToId(cx->names().zip) ||
+       id == NameToId(cx->names().zipKeyed))) {
     return true;
   }
 #endif

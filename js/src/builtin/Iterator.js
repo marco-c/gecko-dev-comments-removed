@@ -984,4 +984,13 @@ function IteratorFind(predicate) {
 function IteratorZip(predicate) {
   return false;
 }
+
+
+
+
+
+
+function IteratorZipKeyed(predicate) {
+  return false;
+}
 #endif
