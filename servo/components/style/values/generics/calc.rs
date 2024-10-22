@@ -665,7 +665,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
     }
 
     
-    fn try_sum_in_place(&mut self, other: &Self) -> Result<(), ()> {
+    pub fn try_sum_in_place(&mut self, other: &Self) -> Result<(), ()> {
         match (self, other) {
             (&mut CalcNode::Leaf(ref mut one), &CalcNode::Leaf(ref other)) => {
                 one.try_sum_in_place(other)
