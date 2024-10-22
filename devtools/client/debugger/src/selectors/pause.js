@@ -5,6 +5,7 @@
 import { getThreadPauseState } from "../reducers/pause";
 import { getSelectedSource, getSelectedLocation } from "./sources";
 import { getBlackBoxRanges } from "./source-blackbox";
+import { getSelectedTraceSource } from "./tracer";
 
 
 import { getSelectedLocation as _getSelectedLocation } from "../utils/selected-location";
@@ -276,18 +277,56 @@ export function isMapScopesEnabled(state) {
   return state.pause.mapScopes;
 }
 
-export function getInlinePreviews(state) {
-  if (state.tracerFrames?.previews) {
-    return state.tracerFrames?.previews;
-  }
+
+
+
+
+export function getSelectedFrameInlinePreviews(state) {
   const thread = getCurrentThread(state);
-  const frameId = getSelectedFrameId(state, thread);
-  if (frameId) {
-    return getThreadPauseState(state.pause, thread).inlinePreview[
-      getGeneratedFrameId(frameId)
-    ];
+  const frame = getSelectedFrame(state, thread);
+  if (!frame) {
+    return null;
   }
-  return null;
+  return getThreadPauseState(state.pause, thread).inlinePreview[
+    getGeneratedFrameId(frame.id)
+  ];
+}
+
+
+
+
+
+
+export function getInlinePreviews(state) {
+  const selectedSource = getSelectedSource(state);
+  if (!selectedSource) {
+    return null;
+  }
+
+  
+  if (state.tracerFrames?.previews) {
+    const selectedTraceSource = getSelectedTraceSource(state);
+    if (selectedTraceSource) {
+      if (selectedTraceSource.id == selectedSource.id) {
+        return state.tracerFrames?.previews;
+      }
+    }
+  }
+
+  
+  const thread = getCurrentThread(state);
+  const frame = getSelectedFrame(state, thread);
+  
+  if (
+    !frame ||
+    (frame.location.source.id != selectedSource.id &&
+      frame.generatedLocation.source.id != selectedSource.id)
+  ) {
+    return null;
+  }
+  return getThreadPauseState(state.pause, thread).inlinePreview[
+    getGeneratedFrameId(frame.id)
+  ];
 }
 
 export function getLastExpandedScopes(state, thread) {

@@ -5,7 +5,7 @@
 import {
   getOriginalFrameScope,
   getGeneratedFrameScope,
-  getInlinePreviews,
+  getSelectedFrameInlinePreviews,
   getSelectedLocation,
   getSelectedFrame,
   getCurrentThread,
@@ -36,7 +36,7 @@ export function generateInlinePreview() {
     }
 
     
-    if (getInlinePreviews(getState())) {
+    if (getSelectedFrameInlinePreviews(getState())) {
       return null;
     }
 
