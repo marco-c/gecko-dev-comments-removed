@@ -1113,3 +1113,24 @@ pub enum ForcedColorAdjust {
     
     None,
 }
+
+
+
+#[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, ToCss)]
+#[repr(u8)]
+pub enum ForcedColors {
+    
+    None,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    Requested,
+    
+    Active,
+}
+
+impl ForcedColors {
+    
+    pub fn is_active(self) -> bool {
+        matches!(self, Self::Active)
+    }
+}

@@ -4,6 +4,7 @@
 
 
 
+use crate::color::AbsoluteColor;
 use crate::context::QuirksMode;
 use crate::custom_properties::CssEnvironment;
 use crate::media_queries::media_feature::{AllowsRanges, ParsingRequirements};
@@ -12,6 +13,7 @@ use crate::media_queries::media_feature_expression::RangeOrOperator;
 use crate::media_queries::MediaType;
 use crate::properties::ComputedValues;
 use crate::values::computed::CSSPixelLength;
+use crate::values::specified::color::{ColorSchemeFlags, ForcedColors};
 use crate::values::specified::font::FONT_MEDIUM_PX;
 use crate::values::KeyframesName;
 use app_units::Au;
@@ -113,7 +115,7 @@ impl Device {
     
     
     
-    pub fn set_body_text_color(&self, _color: RGBA) {
+    pub fn set_body_text_color(&self, _color: AbsoluteColor) {
         
     }
 
@@ -160,18 +162,22 @@ impl Device {
     }
 
     
-    pub fn use_document_colors(&self) -> bool {
-        true
+    pub fn forced_colors(&self) -> ForcedColors {
+        ForcedColors::None
     }
 
     
-    pub fn default_background_color(&self) -> RGBA {
-        RGBA::new(255, 255, 255, 255)
+    pub fn default_background_color(&self) -> AbsoluteColor {
+        AbsoluteColor::WHITE
     }
 
     
-    pub fn default_color(&self) -> RGBA {
-        RGBA::new(0, 0, 0, 255)
+    pub fn default_color(&self) -> AbsoluteColor {
+        AbsoluteColor::BLACK
+    }
+
+    pub(crate) fn is_dark_color_scheme(&self, _: ColorSchemeFlags) -> bool {
+        false
     }
 
     

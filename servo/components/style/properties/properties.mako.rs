@@ -1378,6 +1378,7 @@ pub mod style_structs {
     use crate::logical_geometry::WritingMode;
     use crate::media_queries::Device;
     use crate::values::computed::NonNegativeLength;
+    use crate::values::specified::color::ColorSchemeFlags;
 
     % for style_struct in data.active_style_structs():
         % if style_struct.name == "Font":
@@ -1534,6 +1535,12 @@ pub mod style_structs {
                 pub fn apply_unconstrained_font_size(&mut self, _: NonNegativeLength) {
                 }
 
+            % elif style_struct.name == "InheritedUI":
+                
+                #[inline]
+                pub fn color_scheme_bits(&self) -> ColorSchemeFlags {
+                    self.color_scheme.bits
+                }
             % elif style_struct.name == "Outline":
                 
                 #[inline]
