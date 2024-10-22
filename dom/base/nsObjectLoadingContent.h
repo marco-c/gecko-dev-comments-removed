@@ -27,6 +27,7 @@ class nsFrameLoader;
 
 namespace mozilla::dom {
 struct BindContext;
+class FeaturePolicy;
 template <typename T>
 class Sequence;
 class HTMLIFrameElement;
@@ -213,6 +214,14 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
   bool BlockEmbedOrObjectContentLoading();
 
+  
+
+
+
+
+
+  void RefreshFeaturePolicy();
+
  private:
   
   enum ParameterUpdateFlags {
@@ -394,6 +403,14 @@ class nsObjectLoadingContent : public nsIStreamListener,
   void MaybeStoreCrossOriginFeaturePolicy();
 
   
+
+
+
+
+  static already_AddRefed<nsIPrincipal> GetFeaturePolicyDefaultOrigin(
+      nsINode* aNode);
+
+  
   nsCOMPtr<nsIStreamListener> mFinalListener;
 
   
@@ -464,6 +481,14 @@ class nsObjectLoadingContent : public nsIStreamListener,
   
   mozilla::Maybe<mozilla::IntrinsicSize> mSubdocumentIntrinsicSize;
   mozilla::Maybe<mozilla::AspectRatio> mSubdocumentIntrinsicRatio;
+
+  
+  
+  
+  
+  
+  
+  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 };
 
 #endif

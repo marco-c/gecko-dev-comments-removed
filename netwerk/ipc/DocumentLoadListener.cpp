@@ -2048,6 +2048,15 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
           return;
         }
 
+        
+        
+        
+        nsCOMPtr<nsILoadInfo> loadInfo = self->mChannel->LoadInfo();
+        if (aBrowsingContext->GetContainerFeaturePolicy()) {
+          loadInfo->SetContainerFeaturePolicyInfo(
+              *aBrowsingContext->GetContainerFeaturePolicy());
+        }
+
         MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
                 ("Process Switch: Upgraded Object to Document Load"));
         self->TriggerProcessSwitch(aBrowsingContext, options);
