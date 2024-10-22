@@ -52,7 +52,7 @@ class VideoFrameConverter {
             GetMediaThreadPool(MediaThreadType::WEBRTC_WORKER),
             "VideoFrameConverter")),
         mPacer(MakeAndAddRef<Pacer<FrameToProcess>>(
-            mTaskQueue, TimeDuration::FromSeconds(1))),
+            mTaskQueue, mIdleFrameDuplicationInterval)),
         mBufferPool(false, CONVERTER_BUFFER_POOL_SIZE) {
     MOZ_COUNT_CTOR(VideoFrameConverter);
   }
@@ -153,6 +153,14 @@ class VideoFrameConverter {
                    id = std::move(aTrackingId)]() mutable {
           mTrackingId = Some(std::move(id));
         })));
+  }
+
+  void SetIdleFrameDuplicationInterval(TimeDuration aInterval) {
+    MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        __func__, [self = RefPtr(this), this, aInterval] {
+          mIdleFrameDuplicationInterval = aInterval;
+        })));
+    mPacer->SetDuplicationInterval(aInterval);
   }
 
   void Shutdown() {
@@ -260,24 +268,28 @@ class VideoFrameConverter {
       
       
       
-      if (int32_t diffSec = static_cast<int32_t>(
-              (frame.mTime - mLastFrameQueuedForProcessing.mTime).ToSeconds());
-          diffSec != 0) {
+      if (auto diff = frame.mTime - mLastFrameQueuedForProcessing.mTime;
+          diff >= mIdleFrameDuplicationInterval) {
+        auto diff_us = static_cast<int64_t>(diff.ToMicroseconds());
+        auto idle_interval_us = static_cast<int64_t>(
+            mIdleFrameDuplicationInterval.ToMicroseconds());
+        auto multiples = diff_us / idle_interval_us;
+        MOZ_ASSERT(multiples > 0);
         MOZ_LOG(
             gVideoFrameConverterLog, LogLevel::Verbose,
             ("VideoFrameConverter %p: Rewrote time interval for a duplicate "
              "frame from %.3fs to %.3fs",
              this,
              (frame.mTime - mLastFrameQueuedForProcessing.mTime).ToSeconds(),
-             static_cast<float>(diffSec)));
+             (mIdleFrameDuplicationInterval * multiples).ToSeconds()));
         frame.mTime = mLastFrameQueuedForProcessing.mTime +
-                      TimeDuration::FromSeconds(diffSec);
+                      (mIdleFrameDuplicationInterval * multiples);
       } else {
         MOZ_LOG(
             gVideoFrameConverterLog, LogLevel::Verbose,
-            ("VideoFrameConverter %p: Dropping a duplicate frame because a "
-             "second hasn't passed (%.3fs)",
-             this,
+            ("VideoFrameConverter %p: Dropping a duplicate frame because the "
+             "duplication interval (%.3fs) hasn't passed (%.3fs)",
+             this, mIdleFrameDuplicationInterval.ToSeconds(),
              (frame.mTime - mLastFrameQueuedForProcessing.mTime).ToSeconds()));
         return;
       }
@@ -429,6 +441,8 @@ class VideoFrameConverter {
   const RefPtr<TaskQueue> mTaskQueue;
 
  protected:
+  TimeDuration mIdleFrameDuplicationInterval = TimeDuration::Forever();
+
   
   const RefPtr<Pacer<FrameToProcess>> mPacer;
 
