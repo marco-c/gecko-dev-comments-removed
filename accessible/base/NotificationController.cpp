@@ -203,20 +203,6 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
     }
   }
 
-  if (aEvent->GetEventType() == nsIAccessibleEvent::EVENT_HIDE ||
-      aEvent->GetEventType() == nsIAccessibleEvent::EVENT_SHOW) {
-    LocalAccessible* target = aEvent->GetAccessible();
-    
-    
-    
-    if (PushNameOrDescriptionChangeToRelations(target,
-                                               RelationType::LABEL_FOR) ||
-        PushNameOrDescriptionChangeToRelations(target,
-                                               RelationType::DESCRIPTION_FOR)) {
-      ScheduleProcessing();
-    }
-  }
-
   
   
   
@@ -227,6 +213,12 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
     reorder = new AccReorderEvent(container);
     container->SetReorderEventTarget(true);
     mMutationMap.PutEvent(reorder);
+
+    
+    
+    if (PushNameOrDescriptionChange(aEvent)) {
+      ScheduleProcessing();
+    }
   } else {
     AccReorderEvent* event = downcast_accEvent(
         mMutationMap.GetEvent(container, EventMap::ReorderEvent));
@@ -657,13 +649,6 @@ void NotificationController::ProcessMutationEvents() {
       nsEventShell::FireEvent(event);
       if (!mDocument) {
         return;
-      }
-
-      
-      
-      
-      if (PushNameOrDescriptionChange(event)) {
-        ScheduleProcessing();
       }
 
       LocalAccessible* target = event->GetAccessible();
