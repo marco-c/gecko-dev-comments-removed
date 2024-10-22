@@ -91,8 +91,8 @@ class nsTLiteralString : public mozilla::detail::nsTStringRepr<T> {
 
 #if defined(__clang__)
  private:
-  friend constexpr auto operator"" _ns(const char* aStr, std::size_t aLen);
-  friend constexpr auto operator"" _ns(const char16_t* aStr, std::size_t aLen);
+  friend constexpr auto operator""_ns(const char* aStr, std::size_t aLen);
+  friend constexpr auto operator""_ns(const char16_t* aStr, std::size_t aLen);
 #else
  public:
 #endif
