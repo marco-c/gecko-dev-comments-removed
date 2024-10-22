@@ -95,23 +95,6 @@ class NS_NO_VTABLE ClientDirectoryLock : public OriginDirectoryLock {
   virtual Client::Type ClientType() const = 0;
 };
 
-
-
-
-
-
-
-
-
-
-
-class UniversalDirectoryLock : public DirectoryLock {
- public:
-  virtual RefPtr<ClientDirectoryLock> SpecializeForClient(
-      PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
-      Client::Type aClientType) const = 0;
-};
-
 template <typename T>
 constexpr void SafeDropDirectoryLock(RefPtr<T>& aDirectoryLock);
 
