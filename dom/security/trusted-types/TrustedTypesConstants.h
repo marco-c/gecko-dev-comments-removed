@@ -13,6 +13,11 @@ namespace mozilla::dom {
 
 static constexpr nsLiteralString kValidRequireTrustedTypesForDirectiveValue =
     u"'script'"_ns;
+
+
+constexpr nsLiteralString kTrustedTypesOnlySinkGroup =
+    kValidRequireTrustedTypesForDirectiveValue;
+
 }  
 
 #endif  

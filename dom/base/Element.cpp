@@ -4161,9 +4161,55 @@ void Element::GetInnerHTML(nsAString& aInnerHTML, OOMReporter& aError) {
   GetMarkup(false, aInnerHTML);
 }
 
-void Element::SetInnerHTML(const nsAString& aInnerHTML,
+void Element::GetInnerHTML(OwningTrustedHTMLOrNullIsEmptyString& aInnerHTML,
+                           OOMReporter& aError) {
+  GetInnerHTML(aInnerHTML.SetAsNullIsEmptyString(), aError);
+}
+
+
+
+
+
+static nsIContentSecurityPolicy* GetCspFromScopeObjectsInnerWindow(
+    const Document& aOwnerDoc, ErrorResult& aError) {
+  nsIGlobalObject* globalObject = aOwnerDoc.GetScopeObject();
+  if (!globalObject) {
+    aError.ThrowTypeError("No global object");
+    return nullptr;
+  }
+
+  nsPIDOMWindowInner* piDOMWindowInner = globalObject->GetAsInnerWindow();
+  if (!piDOMWindowInner) {
+    aError.ThrowTypeError("No inner window");
+    return nullptr;
+  }
+
+  return piDOMWindowInner->GetCsp();
+}
+
+void Element::SetInnerHTML(const TrustedHTMLOrNullIsEmptyString& aInnerHTML,
                            nsIPrincipal* aSubjectPrincipal,
                            ErrorResult& aError) {
+  constexpr nsLiteralString sink = u"Element innerHTML"_ns;
+
+  nsIContentSecurityPolicy* csp =
+      GetCspFromScopeObjectsInnerWindow(*OwnerDoc(), aError);
+  Maybe<nsAutoString> compliantStringHolder;
+  const nsAString* compliantString =
+      TrustedTypeUtils::GetTrustedTypesCompliantString(
+          aInnerHTML, csp, sink, kTrustedTypesOnlySinkGroup,
+          compliantStringHolder, aError);
+
+  if (aError.Failed()) {
+    return;
+  }
+
+  SetInnerHTMLTrusted(*compliantString, aSubjectPrincipal, aError);
+}
+
+void Element::SetInnerHTMLTrusted(const nsAString& aInnerHTML,
+                                  nsIPrincipal* aSubjectPrincipal,
+                                  ErrorResult& aError) {
   SetInnerHTMLInternal(aInnerHTML, aError);
 }
 
@@ -4227,49 +4273,22 @@ void Element::SetOuterHTML(const nsAString& aOuterHTML, ErrorResult& aError) {
 
 enum nsAdjacentPosition { eBeforeBegin, eAfterBegin, eBeforeEnd, eAfterEnd };
 
-
-struct InsertAdjacentHTMLConstants {
-  
-  static constexpr nsLiteralString kSinkGroup =
-      kValidRequireTrustedTypesForDirectiveValue;
-
-  static constexpr nsLiteralString kSink = u"Element insertAdjacentHTML"_ns;
-};
-
-
-
-
-
-static nsIContentSecurityPolicy* GetCspFromScopeObjectsInnerWindow(
-    const Document& aOwnerDoc, ErrorResult& aError) {
-  nsIGlobalObject* globalObject = aOwnerDoc.GetScopeObject();
-  if (!globalObject) {
-    aError.ThrowTypeError("No global object");
-    return nullptr;
-  }
-
-  nsPIDOMWindowInner* piDOMWindowInner = globalObject->GetAsInnerWindow();
-  if (!piDOMWindowInner) {
-    aError.ThrowTypeError("No inner window");
-    return nullptr;
-  }
-
-  return piDOMWindowInner->GetCsp();
-}
-
 void Element::InsertAdjacentHTML(
     const nsAString& aPosition, const TrustedHTMLOrString& aTrustedHTMLOrString,
     ErrorResult& aError) {
+  constexpr nsLiteralString kSink = u"Element insertAdjacentHTML"_ns;
+
   nsIContentSecurityPolicy* csp =
       GetCspFromScopeObjectsInnerWindow(*OwnerDoc(), aError);
   if (aError.Failed()) {
     return;
   }
 
-  nsAutoString compliantString;
-  TrustedTypeUtils::GetTrustedTypesCompliantString(
-      aTrustedHTMLOrString, csp, InsertAdjacentHTMLConstants::kSink,
-      InsertAdjacentHTMLConstants::kSinkGroup, compliantString, aError);
+  Maybe<nsAutoString> compliantStringHolder;
+  const nsAString* compliantString =
+      TrustedTypeUtils::GetTrustedTypesCompliantString(
+          aTrustedHTMLOrString, csp, kSink, kTrustedTypesOnlySinkGroup,
+          compliantStringHolder, aError);
 
   if (aError.Failed()) {
     return;
@@ -4325,7 +4344,7 @@ void Element::InsertAdjacentHTML(
       contextLocal = nsGkAtoms::body;
     }
     aError = nsContentUtils::ParseFragmentHTML(
-        compliantString, destination, contextLocal, contextNs,
+        *compliantString, destination, contextLocal, contextNs,
         doc->GetCompatibilityMode() == eCompatibility_NavQuirks, true);
     
     nsContentUtils::FireMutationEventsForDirectParsing(doc, destination,
@@ -4335,7 +4354,7 @@ void Element::InsertAdjacentHTML(
 
   
   RefPtr<DocumentFragment> fragment = nsContentUtils::CreateContextualFragment(
-      destination, compliantString, true, aError);
+      destination, *compliantString, true, aError);
   if (aError.Failed()) {
     return;
   }
