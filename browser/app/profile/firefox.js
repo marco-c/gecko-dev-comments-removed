@@ -412,6 +412,10 @@ pref("browser.urlbar.filter.javascript", true);
 
 
 
+pref("browser.urlbar.focusContentDocumentOnEsc", true);
+
+
+
 pref("browser.urlbar.loglevel", "Error");
 
 
