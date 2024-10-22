@@ -9,8 +9,8 @@
 
 #include "mozilla/dom/MozSharedMapBinding.h"
 
+#include "mozilla/AutoMemMap.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
-#include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
@@ -53,13 +53,12 @@ namespace ipc {
 
 
 class SharedMap : public DOMEventTargetHelper {
-  using SharedMemory = mozilla::ipc::SharedMemory;
-  using SharedMemoryHandle = mozilla::ipc::SharedMemoryHandle;
+  using FileDescriptor = mozilla::ipc::FileDescriptor;
 
  public:
   SharedMap();
 
-  SharedMap(nsIGlobalObject* aGlobal, SharedMemoryHandle&&, size_t,
+  SharedMap(nsIGlobalObject* aGlobal, const FileDescriptor&, size_t,
             nsTArray<RefPtr<BlobImpl>>&& aBlobs);
 
   
@@ -97,7 +96,7 @@ class SharedMap : public DOMEventTargetHelper {
 
 
 
-  SharedMemoryHandle CloneHandle() const;
+  FileDescriptor CloneMapFile() const;
 
   
 
@@ -105,14 +104,14 @@ class SharedMap : public DOMEventTargetHelper {
 
 
 
-  size_t MapSize() const { return mMap->Size(); }
+  size_t MapSize() const { return mMap.size(); }
 
   
 
 
 
 
-  void Update(SharedMemoryHandle&& aMapHandle, size_t aMapSize,
+  void Update(const FileDescriptor& aMapFile, size_t aMapSize,
               nsTArray<RefPtr<BlobImpl>>&& aBlobs,
               nsTArray<nsCString>&& aChangedKeys);
 
@@ -263,7 +262,11 @@ class SharedMap : public DOMEventTargetHelper {
   Result<Ok, nsresult> MaybeRebuild();
   void MaybeRebuild() const;
 
-  SharedMemoryHandle mMapHandle;
+  
+  
+  
+  
+  UniquePtr<FileDescriptor> mMapFile;
   
   size_t mMapSize = 0;
 
@@ -273,14 +276,14 @@ class SharedMap : public DOMEventTargetHelper {
   
   
   
-  RefPtr<SharedMemory> mMap = MakeRefPtr<SharedMemory>();
+  loader::AutoMemMap mMap;
 
   bool mWritable = false;
 
   
   
   
-  char* Data() { return static_cast<char*>(mMap->Memory()); }
+  char* Data() { return mMap.get<char>().get(); }
 };
 
 class WritableSharedMap final : public SharedMap {

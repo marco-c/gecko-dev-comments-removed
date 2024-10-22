@@ -7,9 +7,9 @@
 #ifndef dom_ipc_SharedStringMap_h
 #define dom_ipc_SharedStringMap_h
 
+#include "mozilla/AutoMemMap.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/ipc/StringTable.h"
-#include "mozilla/ipc/SharedMemory.h"
 #include "nsTHashMap.h"
 
 namespace mozilla::dom::ipc {
@@ -30,6 +30,8 @@ class SharedStringMapBuilder;
 
 
 class SharedStringMap {
+  using FileDescriptor = mozilla::ipc::FileDescriptor;
+
  public:
   
 
@@ -88,7 +90,7 @@ class SharedStringMap {
   
   
   
-  explicit SharedStringMap(const mozilla::ipc::SharedMemoryHandle&, size_t);
+  explicit SharedStringMap(const FileDescriptor&, size_t);
   explicit SharedStringMap(SharedStringMapBuilder&&);
 
   
@@ -151,18 +153,16 @@ class SharedStringMap {
 
 
 
-  mozilla::ipc::SharedMemoryHandle CloneHandle() const;
+  FileDescriptor CloneFileDescriptor() const;
 
-  size_t MapSize() const { return mMappedMemory.size(); }
+  size_t MapSize() const { return mMap.size(); }
 
  protected:
   ~SharedStringMap() = default;
 
  private:
   
-  const Header& GetHeader() const {
-    return *reinterpret_cast<const Header*>(mMappedMemory.data());
-  }
+  const Header& GetHeader() const { return mMap.get<Header>()[0]; }
 
   RangedPtr<const Entry> Entries() const {
     return {reinterpret_cast<const Entry*>(&GetHeader() + 1), EntryCount()};
@@ -171,22 +171,18 @@ class SharedStringMap {
   uint32_t EntryCount() const { return GetHeader().mEntryCount; }
 
   StringTable<nsCString> KeyTable() const {
-    const auto& header = GetHeader();
-    return {{&mMappedMemory.data()[header.mKeyStringsOffset],
+    auto& header = GetHeader();
+    return {{&mMap.get<uint8_t>()[header.mKeyStringsOffset],
              header.mKeyStringsSize}};
   }
 
   StringTable<nsString> ValueTable() const {
-    const auto& header = GetHeader();
-    return {{&mMappedMemory.data()[header.mValueStringsOffset],
+    auto& header = GetHeader();
+    return {{&mMap.get<uint8_t>()[header.mValueStringsOffset],
              header.mValueStringsSize}};
   }
 
-  mozilla::ipc::SharedMemoryHandle mHandle;
-  
-  
-  
-  Span<uint8_t> mMappedMemory;
+  loader::AutoMemMap mMap;
 };
 
 
@@ -208,7 +204,7 @@ class MOZ_RAII SharedStringMapBuilder {
 
 
 
-  Result<Ok, nsresult> Finalize(RefPtr<mozilla::ipc::SharedMemory>& aMap);
+  Result<Ok, nsresult> Finalize(loader::AutoMemMap& aMap);
 
  private:
   using Entry = SharedStringMap::Entry;
