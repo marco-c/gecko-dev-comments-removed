@@ -96,18 +96,19 @@ typedef struct arena_params_s {
 
 typedef struct {
   
-  bool opt_junk;            
-  bool opt_zero;            
-  size_t narenas;           
-  size_t quantum;           
-  size_t quantum_max;       
-  size_t quantum_wide;      
-  size_t quantum_wide_max;  
-  size_t subpage_max;       
-  size_t large_max;         
-  size_t chunksize;         
-  size_t page_size;         
-  size_t dirty_max;         
+  bool opt_junk;             
+  bool opt_randomize_small;  
+  bool opt_zero;             
+  size_t narenas;            
+  size_t quantum;            
+  size_t quantum_max;        
+  size_t quantum_wide;       
+  size_t quantum_wide_max;   
+  size_t subpage_max;        
+  size_t large_max;          
+  size_t chunksize;          
+  size_t page_size;          
+  size_t dirty_max;          
 
   
   size_t mapped;          
