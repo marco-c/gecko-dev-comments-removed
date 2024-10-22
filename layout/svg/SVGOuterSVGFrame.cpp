@@ -456,15 +456,6 @@ void SVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
                   aDesiredSize.Width(), aDesiredSize.Height()));
 }
 
-void SVGOuterSVGFrame::DidReflow(nsPresContext* aPresContext,
-                                 const ReflowInput* aReflowInput) {
-  SVGDisplayContainerFrame::DidReflow(aPresContext, aReflowInput);
-
-  
-  
-  PresShell()->SynthesizeMouseMove(false);
-}
-
 
 void SVGOuterSVGFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
                                           bool aAsIfScrolled) {
