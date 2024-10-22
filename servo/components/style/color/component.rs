@@ -17,7 +17,7 @@ use crate::{
         specified::calc::{CalcNode as SpecifiedCalcNode, Leaf as SpecifiedLeaf},
     },
 };
-use cssparser::{Parser, Token};
+use cssparser::{color::OPAQUE, Parser, Token};
 use style_traits::{ParseError, StyleParseErrorKind, ToCss};
 
 
@@ -29,6 +29,8 @@ pub enum ColorComponent<ValueType> {
     Value(ValueType),
     
     Calc(Box<SpecifiedCalcNode>),
+    
+    AlphaOmitted,
 }
 
 impl<ValueType> ColorComponent<ValueType> {
@@ -65,6 +67,7 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_none: bool,
+        allowed_channel_keywords: &[ChannelKeyword],
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
 
@@ -73,13 +76,16 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 Ok(ColorComponent::None)
             },
             ref t @ Token::Ident(ref ident) => {
-                if let Ok(channel_keyword) = ChannelKeyword::from_ident(ident) {
-                    Ok(ColorComponent::Calc(Box::new(SpecifiedCalcNode::Leaf(
-                        SpecifiedLeaf::ColorComponent(channel_keyword),
-                    ))))
-                } else {
-                    Err(location.new_unexpected_token_error(t.clone()))
+                let Ok(channel_keyword) = ChannelKeyword::from_ident(ident) else {
+                    return Err(location.new_unexpected_token_error(t.clone()));
+                };
+
+                if !allowed_channel_keywords.contains(&channel_keyword) {
+                    return Err(location.new_unexpected_token_error(t.clone()));
                 }
+
+                let node = SpecifiedCalcNode::Leaf(SpecifiedLeaf::ColorComponent(channel_keyword));
+                Ok(ColorComponent::Calc(Box::new(node)))
             },
             Token::Function(ref name) => {
                 let function = SpecifiedCalcNode::math_function(context, name, location)?;
@@ -89,6 +95,31 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                     ValueType::units()
                 };
                 let mut node = SpecifiedCalcNode::parse(context, input, function, units)?;
+
+                if rcs_enabled() {
+                    
+                    
+                    
+                    let mut is_valid = true;
+                    node.visit_depth_first(|node| {
+                        let SpecifiedCalcNode::Leaf(leaf) = node else {
+                            return;
+                        };
+
+                        let SpecifiedLeaf::ColorComponent(channel_keyword) = leaf else {
+                            return;
+                        };
+
+                        if !allowed_channel_keywords.contains(channel_keyword) {
+                            is_valid = false;
+                        }
+                    });
+                    if !is_valid {
+                        return Err(
+                            location.new_custom_error(StyleParseErrorKind::UnspecifiedError)
+                        );
+                    }
+                }
 
                 
                 
@@ -133,6 +164,17 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
 
                 Some(ValueType::try_from_leaf(&resolved_leaf)?)
             },
+            ColorComponent::AlphaOmitted => {
+                if let Some(origin_color) = origin_color {
+                    
+                    
+                    
+                    
+                    origin_color.alpha().map(ValueType::from_value)
+                } else {
+                    Some(ValueType::from_value(OPAQUE))
+                }
+            },
         })
     }
 }
@@ -158,6 +200,9 @@ impl<ValueType: ToCss> ToCss for ColorComponent<ValueType> {
                 } else {
                     node.to_css(dest)?;
                 }
+            },
+            ColorComponent::AlphaOmitted => {
+                debug_assert!(false, "can't serialize an omitted alpha component");
             },
         }
 
