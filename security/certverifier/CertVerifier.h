@@ -244,6 +244,7 @@ class CertVerifier {
   ~CertVerifier();
 
   void ClearOCSPCache() { mOCSPCache.Clear(); }
+  void ClearTrustCache() { trust_cache_clear(mTrustCache.get()); }
 
   const OcspDownloadConfig mOCSPDownloadConfig;
   const bool mOCSPStrict;
@@ -274,6 +275,9 @@ class CertVerifier {
   
   
   UniquePtr<SignatureCache, decltype(&signature_cache_free)> mSignatureCache;
+  
+  
+  UniquePtr<TrustCache, decltype(&trust_cache_free)> mTrustCache;
 
   void LoadKnownCTLogs();
   mozilla::pkix::Result VerifyCertificateTransparencyPolicy(

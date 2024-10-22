@@ -190,11 +190,25 @@ SECStatus ChangeCertTrustWithPossibleAuthentication(
     PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
     return SECFailure;
   }
+
+  RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
+  if (!certVerifier) {
+    PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
+    return SECFailure;
+  }
+
   
   SECStatus srv = CERT_ChangeCertTrust(nullptr, cert.get(), &trust);
-  if (srv == SECSuccess || PR_GetError() != SEC_ERROR_TOKEN_NOT_LOGGED_IN) {
-    return srv;
+  if (srv != SECSuccess && PR_GetError() != SEC_ERROR_TOKEN_NOT_LOGGED_IN) {
+    return SECFailure;
   }
+  if (srv == SECSuccess) {
+    certVerifier->ClearTrustCache();
+    return SECSuccess;
+  }
+
+  
+  
   if (cert->slot) {
     
     
@@ -207,7 +221,13 @@ SECStatus ChangeCertTrustWithPossibleAuthentication(
   if (srv != SECSuccess) {
     return srv;
   }
-  return CERT_ChangeCertTrust(nullptr, cert.get(), &trust);
+  srv = CERT_ChangeCertTrust(nullptr, cert.get(), &trust);
+  if (srv != SECSuccess) {
+    return srv;
+  }
+
+  certVerifier->ClearTrustCache();
+  return SECSuccess;
 }
 
 static nsresult ImportCertsIntoPermanentStorage(
