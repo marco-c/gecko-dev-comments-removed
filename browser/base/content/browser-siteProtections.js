@@ -1406,11 +1406,6 @@ var gProtectionsHandler = {
       notBlockingWhy.addEventListener("blur", closeTooltip);
 
       document
-        .getElementById("protections-popup-mainView-panel-header")
-        .addEventListener("click", event =>
-          gProtectionsHandler.onHeaderClicked(event)
-        );
-      document
         .getElementById(
           "protections-popup-trackers-blocked-counter-description"
         )
@@ -1779,17 +1774,6 @@ var gProtectionsHandler = {
     }
   },
 
-  onHeaderClicked(event) {
-    
-    if (this._protectionsPopup.hasAttribute("toast")) {
-      
-      PanelMultiView.hidePopup(this._protectionsPopup);
-
-      
-      this.showProtectionsPopup({ event });
-    }
-  },
-
   async onTrackingProtectionIconHoveredOrFocused() {
     
     
@@ -2117,6 +2101,14 @@ var gProtectionsHandler = {
       case "protections-popup-cookieBannerView-enable-button":
       case "protections-popup-cookieBannerView-disable-button":
         gProtectionsHandler.onCookieBannerToggleCommand();
+        break;
+      case "protections-popup-toast-panel-tp-on-desc":
+      case "protections-popup-toast-panel-tp-off-desc":
+        
+        PanelMultiView.hidePopup(this._protectionsPopup);
+
+        
+        this.showProtectionsPopup({ event });
         break;
     }
   },

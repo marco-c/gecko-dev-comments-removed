@@ -314,10 +314,10 @@ add_task(async function testMiniPanelClick() {
   );
 
   
-  let headerEl = document.getElementById(
-    "protections-popup-mainView-panel-header-section"
+  let buttonEl = document.getElementById(
+    "protections-popup-toast-panel-tp-on-desc"
   );
-  await EventUtils.synthesizeMouseAtCenter(headerEl, {});
+  await EventUtils.synthesizeMouseAtCenter(buttonEl, {});
 
   info("Waiting for mini panel to close");
   await popuphiddenPromise;
@@ -388,14 +388,12 @@ add_task(async function testToggleSwitchFlow() {
     gProtectionsHandler._protectionsPopup,
     "popuphidden"
   );
+
   
-  
-  
-  AccessibilityUtils.setEnv({
-    mustHaveAccessibleRule: false,
-  });
-  document.getElementById("protections-popup-mainView-panel-header").click();
-  AccessibilityUtils.resetEnv();
+  let buttonEl = document.getElementById(
+    "protections-popup-toast-panel-tp-off-desc"
+  );
+  await EventUtils.synthesizeMouseAtCenter(buttonEl, {});
   await popuphiddenPromise;
   await popupShownPromise;
 
