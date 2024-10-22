@@ -1723,22 +1723,6 @@ class MWasmStackResult : public MUnaryInstruction, public NoTypePolicy::Data {
 };
 
 
-struct MWasmCallTryDesc {
-  bool inTry;
-  uint32_t relativeTryDepth;
-  size_t tryNoteIndex;
-  MBasicBlock* fallthroughBlock;
-  MBasicBlock* prePadBlock;
-
-  MWasmCallTryDesc()
-      : inTry(false),
-        relativeTryDepth(0),
-        tryNoteIndex(0),
-        fallthroughBlock(nullptr),
-        prePadBlock(nullptr) {}
-};
-
-
 class MWasmCallBase {
  public:
   struct Arg {
@@ -1846,19 +1830,19 @@ class MWasmCallCatchable final : public MVariadicControlInstruction<2>,
  public:
   INSTRUCTION_HEADER(WasmCallCatchable)
 
-  static MWasmCallCatchable* New(TempAllocator& alloc,
-                                 const wasm::CallSiteDesc& desc,
-                                 const wasm::CalleeDesc& callee,
-                                 const Args& args,
-                                 uint32_t stackArgAreaSizeUnaligned,
-                                 const MWasmCallTryDesc& tryDesc,
-                                 MDefinition* tableIndexOrRef = nullptr);
+  static MWasmCallCatchable* New(
+      TempAllocator& alloc, const wasm::CallSiteDesc& desc,
+      const wasm::CalleeDesc& callee, const Args& args,
+      uint32_t stackArgAreaSizeUnaligned, uint32_t tryNoteIndex,
+      MBasicBlock* fallthroughBlock, MBasicBlock* prePadBlock,
+      MDefinition* tableIndexOrRef = nullptr);
 
   static MWasmCallCatchable* NewBuiltinInstanceMethodCall(
       TempAllocator& alloc, const wasm::CallSiteDesc& desc,
       const wasm::SymbolicAddress builtin, wasm::FailureMode failureMode,
       const ABIArg& instanceArg, const Args& args,
-      uint32_t stackArgAreaSizeUnaligned, const MWasmCallTryDesc& tryDesc);
+      uint32_t stackArgAreaSizeUnaligned, uint32_t tryNoteIndex,
+      MBasicBlock* fallthroughBlock, MBasicBlock* prePadBlock);
 
   bool possiblyCalls() const override { return true; }
   AliasSet getAliasSet() const override { return wasmCallAliasSet(); }
