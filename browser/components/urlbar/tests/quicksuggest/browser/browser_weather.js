@@ -7,12 +7,6 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  UrlbarProviderWeather: "resource:///modules/UrlbarProviderWeather.sys.mjs",
-});
-
-
-
 
 requestLongerTimeout(5);
 
@@ -24,12 +18,13 @@ add_setup(async function () {
         weather: MerinoTestUtils.WEATHER_RS_DATA,
       },
     ],
+    prefs: [["weather.featureGate", true]],
   });
   await MerinoTestUtils.initWeather();
 });
 
 
-add_tasks_with_rust(async function dom() {
+add_task(async function dom() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: MerinoTestUtils.WEATHER_KEYWORD,
@@ -52,7 +47,7 @@ add_tasks_with_rust(async function dom() {
 
 
 
-add_tasks_with_rust(async function test_weather_result_selection() {
+add_task(async function test_weather_result_selection() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(
     tab.linkedBrowser,
@@ -84,7 +79,7 @@ add_tasks_with_rust(async function test_weather_result_selection() {
 
 
 
-add_tasks_with_rust(async function showLessFrequentlyCapReached_manySearches() {
+add_task(async function showLessFrequentlyCapReached_manySearches() {
   
   await QuickSuggestTestUtils.setRemoteSettingsRecords([
     {
@@ -180,7 +175,7 @@ add_tasks_with_rust(async function showLessFrequentlyCapReached_manySearches() {
 
 
 
-add_tasks_with_rust(async function showLessFrequentlyCapReached_oneSearch() {
+add_task(async function showLessFrequentlyCapReached_oneSearch() {
   
   await QuickSuggestTestUtils.setRemoteSettingsRecords([
     {
@@ -254,7 +249,7 @@ add_tasks_with_rust(async function showLessFrequentlyCapReached_oneSearch() {
 });
 
 
-add_tasks_with_rust(async function notInterested() {
+add_task(async function notInterested() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: MerinoTestUtils.WEATHER_KEYWORD,
@@ -263,7 +258,7 @@ add_tasks_with_rust(async function notInterested() {
 });
 
 
-add_tasks_with_rust(async function notRelevant() {
+add_task(async function notRelevant() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: MerinoTestUtils.WEATHER_KEYWORD,
@@ -355,14 +350,14 @@ async function doDismissTest(command) {
 
 
 
-add_tasks_with_rust(async function inaccurateLocationAndDismissal() {
+add_task(async function inaccurateLocationAndDismissal() {
   await doSessionOngoingCommandTest("inaccurate_location");
 });
 
 
 
 
-add_tasks_with_rust(async function showLessFrequentlyAndDismissal() {
+add_task(async function showLessFrequentlyAndDismissal() {
   await doSessionOngoingCommandTest("show_less_frequently");
   UrlbarPrefs.clear("weather.minKeywordLength");
 });
@@ -398,7 +393,7 @@ async function doSessionOngoingCommandTest(command) {
 }
 
 
-add_tasks_with_rust(async function manage() {
+add_task(async function manage() {
   await BrowserTestUtils.withNewTab({ gBrowser }, async browser => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -434,7 +429,7 @@ add_tasks_with_rust(async function manage() {
 });
 
 
-add_tasks_with_rust(async function simpleUI() {
+add_task(async function simpleUI() {
   const testData = [
     {
       weatherSimpleUI: true,
@@ -486,14 +481,11 @@ add_tasks_with_rust(async function simpleUI() {
 });
 
 function assertIsWeatherResult(result, isWeatherResult) {
-  let provider = UrlbarPrefs.get("quickSuggestRustEnabled")
-    ? UrlbarProviderQuickSuggest
-    : UrlbarProviderWeather;
   if (isWeatherResult) {
     Assert.equal(
       result.providerName,
-      provider.name,
-      "Result should be from a weather provider"
+      UrlbarProviderQuickSuggest.name,
+      "Result should be from UrlbarProviderQuickSuggest"
     );
     Assert.equal(
       UrlbarUtils.searchEngagementTelemetryType(result),
@@ -503,8 +495,8 @@ function assertIsWeatherResult(result, isWeatherResult) {
   } else {
     Assert.notEqual(
       result.providerName,
-      provider.name,
-      "Result should not be from a weather provider"
+      UrlbarProviderQuickSuggest.name,
+      "Result should not be from UrlbarProviderQuickSuggest"
     );
     Assert.notEqual(
       UrlbarUtils.searchEngagementTelemetryType(result),

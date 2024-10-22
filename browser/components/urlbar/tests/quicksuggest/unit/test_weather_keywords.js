@@ -6,10 +6,6 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  UrlbarProviderWeather: "resource:///modules/UrlbarProviderWeather.sys.mjs",
-});
-
 const { WEATHER_RS_DATA } = MerinoTestUtils;
 
 add_setup(async () => {
@@ -29,7 +25,7 @@ add_setup(async () => {
 
 
 
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
     desc: "No data",
     tests: {
@@ -41,14 +37,6 @@ add_tasks_with_rust(async function () {
       weath: false,
       weathe: false,
       weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: false,
     },
   });
 });
@@ -57,7 +45,7 @@ add_tasks_with_rust(async function () {
 
 
 
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
     desc: "Empty settings",
     settingsData: {},
@@ -70,14 +58,6 @@ add_tasks_with_rust(async function () {
       weath: false,
       weathe: false,
       weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: false,
     },
   });
 });
@@ -86,90 +66,11 @@ add_tasks_with_rust(async function () {
 
 
 
-
-
-
-add_tasks_with_rust(
-  {
-    skip_if_rust_enabled: true,
-  },
-  async function () {
-    await doKeywordsTest({
-      desc: "Settings only, keywords only",
-      settingsData: {
-        keywords: ["weather", "forecast"],
-      },
-      tests: {
-        "": false,
-        w: false,
-        we: false,
-        wea: false,
-        weat: false,
-        weath: false,
-        weathe: false,
-        weather: true,
-        f: false,
-        fo: false,
-        for: false,
-        fore: false,
-        forec: false,
-        foreca: false,
-        forecas: false,
-        forecast: true,
-      },
-    });
-  }
-);
-
-
-
-
-
-
-
-
-add_tasks_with_rust(
-  {
-    skip_if_rust_enabled: true,
-  },
-  async function () {
-    await doKeywordsTest({
-      desc: "Settings only, min keyword length = 0",
-      settingsData: {
-        keywords: ["weather", "forecast"],
-        min_keyword_length: 0,
-      },
-      tests: {
-        "": false,
-        w: false,
-        we: false,
-        wea: false,
-        weat: false,
-        weath: false,
-        weathe: false,
-        weather: true,
-        f: false,
-        fo: false,
-        for: false,
-        fore: false,
-        forec: false,
-        foreca: false,
-        forecas: false,
-        forecast: true,
-      },
-    });
-  }
-);
-
-
-
-
-
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
     desc: "Settings only, min keyword length > 0",
     settingsData: {
-      keywords: ["weather", "forecast"],
+      keywords: ["weather"],
       min_keyword_length: 3,
     },
     tests: {
@@ -181,14 +82,6 @@ add_tasks_with_rust(async function () {
       weath: true,
       weathe: true,
       weather: true,
-      f: false,
-      fo: false,
-      for: true,
-      fore: true,
-      forec: true,
-      foreca: true,
-      forecas: true,
-      forecast: true,
     },
   });
 });
@@ -197,11 +90,11 @@ add_tasks_with_rust(async function () {
 
 
 
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
     desc: "Settings only, min keyword length = 0, pref exists",
     settingsData: {
-      keywords: ["weather", "forecast"],
+      keywords: ["weather"],
       min_keyword_length: 0,
     },
     minKeywordLength: 6,
@@ -214,14 +107,6 @@ add_tasks_with_rust(async function () {
       weath: false,
       weathe: true,
       weather: true,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: true,
-      forecas: true,
-      forecast: true,
     },
   });
 });
@@ -230,11 +115,11 @@ add_tasks_with_rust(async function () {
 
 
 
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
     desc: "Settings only, min keyword length > 0, pref exists",
     settingsData: {
-      keywords: ["weather", "forecast"],
+      keywords: ["weather"],
       min_keyword_length: 3,
     },
     minKeywordLength: 6,
@@ -247,14 +132,6 @@ add_tasks_with_rust(async function () {
       weath: false,
       weathe: true,
       weather: true,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: true,
-      forecas: true,
-      forecast: true,
     },
   });
 });
@@ -263,7 +140,7 @@ add_tasks_with_rust(async function () {
 
 
 
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
     desc: "Settings: empty; Nimbus: empty",
     settingsData: {},
@@ -277,14 +154,6 @@ add_tasks_with_rust(async function () {
       weath: false,
       weathe: false,
       weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: false,
     },
   });
 });
@@ -293,378 +162,16 @@ add_tasks_with_rust(async function () {
 
 
 
-
-
-
-add_tasks_with_rust(
-  {
-    skip_if_rust_enabled: true,
-  },
-  async function () {
-    await doKeywordsTest({
-      desc: "Settings: keywords; Nimbus: keywords",
-      settingsData: {
-        keywords: ["weather"],
-      },
-      nimbusValues: {
-        weatherKeywords: ["forecast"],
-      },
-      tests: {
-        "": false,
-        w: false,
-        we: false,
-        wea: false,
-        weat: false,
-        weath: false,
-        weathe: false,
-        weather: false,
-        f: false,
-        fo: false,
-        for: false,
-        fore: false,
-        forec: false,
-        foreca: false,
-        forecas: false,
-        forecast: true,
-      },
-    });
-  }
-);
-
-
-
-
-
-
-
-
-add_tasks_with_rust(
-  {
-    skip_if_rust_enabled: true,
-  },
-  async function () {
-    await doKeywordsTest({
-      desc: "Settings: keywords, min keyword length = 0; Nimbus: keywords",
-      settingsData: {
-        keywords: ["weather"],
-        min_keyword_length: 0,
-      },
-      nimbusValues: {
-        weatherKeywords: ["forecast"],
-      },
-      tests: {
-        "": false,
-        w: false,
-        we: false,
-        wea: false,
-        weat: false,
-        weath: false,
-        weathe: false,
-        weather: false,
-        f: false,
-        fo: false,
-        for: false,
-        fore: false,
-        forec: false,
-        foreca: false,
-        forecas: false,
-        forecast: true,
-      },
-    });
-  }
-);
-
-
-
-
-
-
-
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
-    desc: "Settings: keywords, min keyword length > 0; Nimbus: keywords",
+    desc: "Settings: keywords, min keyword length > 0; Nimbus: min keyword length = 0",
     settingsData: {
       keywords: ["weather"],
       min_keyword_length: 3,
     },
     nimbusValues: {
-      weatherKeywords: ["forecast"],
-    },
-    alwaysExpectMerinoResult: true,
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: true,
-      fore: true,
-      forec: true,
-      foreca: true,
-      forecas: true,
-      forecast: true,
-    },
-  });
-});
-
-
-
-
-
-
-
-add_tasks_with_rust(async function () {
-  await doKeywordsTest({
-    desc: "Settings: keywords, min keyword length > 0; Nimbus: keywords, min keyword length = 0",
-    settingsData: {
-      keywords: ["weather"],
-      min_keyword_length: 3,
-    },
-    nimbusValues: {
-      weatherKeywords: ["forecast"],
       weatherKeywordsMinimumLength: 0,
     },
-    alwaysExpectMerinoResult: true,
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: true,
-      fore: true,
-      forec: true,
-      foreca: true,
-      forecas: true,
-      forecast: true,
-    },
-  });
-});
-
-
-
-
-
-
-
-add_tasks_with_rust(async function () {
-  await doKeywordsTest({
-    desc: "Settings: keywords, min keyword length > 0; Nimbus: keywords, min keyword length > 0",
-    settingsData: {
-      keywords: ["weather"],
-      min_keyword_length: 3,
-    },
-    nimbusValues: {
-      weatherKeywords: ["forecast"],
-      weatherKeywordsMinimumLength: 4,
-    },
-    alwaysExpectMerinoResult: true,
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: true,
-      forec: true,
-      foreca: true,
-      forecas: true,
-      forecast: true,
-    },
-  });
-});
-
-
-
-
-
-
-
-add_tasks_with_rust(async function () {
-  await doKeywordsTest({
-    desc: "Settings: keywords, min keyword length > 0; Nimbus: keywords, min keyword length = 0; pref exists",
-    settingsData: {
-      keywords: ["weather"],
-      min_keyword_length: 3,
-    },
-    nimbusValues: {
-      weatherKeywords: ["forecast"],
-      weatherKeywordsMinimumLength: 0,
-    },
-    minKeywordLength: 6,
-    alwaysExpectMerinoResult: true,
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: true,
-      forecas: true,
-      forecast: true,
-    },
-  });
-});
-
-
-
-
-
-
-
-add_tasks_with_rust(async function () {
-  await doKeywordsTest({
-    desc: "Settings: keywords, min keyword length > 0; Nimbus: keywords, min keyword length > 0; pref exists",
-    settingsData: {
-      keywords: ["weather", "forecast"],
-      min_keyword_length: 3,
-    },
-    nimbusValues: {
-      weatherKeywords: ["forecast"],
-      weatherKeywordsMinimumLength: 4,
-    },
-    minKeywordLength: 6,
-    alwaysExpectMerinoResult: true,
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: true,
-      forecas: true,
-      forecast: true,
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-add_tasks_with_rust(
-  {
-    skip_if_rust_enabled: true,
-  },
-  async function () {
-    await doKeywordsTest({
-      desc: "Settings: none; Nimbus: keywords",
-      nimbusValues: {
-        weatherKeywords: ["weather", "forecast"],
-      },
-      tests: {
-        "": false,
-        w: false,
-        we: false,
-        wea: false,
-        weat: false,
-        weath: false,
-        weathe: false,
-        weather: true,
-        f: false,
-        fo: false,
-        for: false,
-        fore: false,
-        forec: false,
-        foreca: false,
-        forecas: false,
-        forecast: true,
-      },
-    });
-  }
-);
-
-
-
-
-
-
-
-
-
-add_tasks_with_rust(
-  {
-    skip_if_rust_enabled: true,
-  },
-  async function () {
-    await doKeywordsTest({
-      desc: "Settings: none; Nimbus: keywords, min keyword length = 0",
-      nimbusValues: {
-        weatherKeywords: ["weather", "forecast"],
-        weatherKeywordsMinimumLength: 0,
-      },
-      tests: {
-        "": false,
-        w: false,
-        we: false,
-        wea: false,
-        weat: false,
-        weath: false,
-        weathe: false,
-        weather: true,
-        f: false,
-        fo: false,
-        for: false,
-        fore: false,
-        forec: false,
-        foreca: false,
-        forecas: false,
-        forecast: true,
-      },
-    });
-  }
-);
-
-
-
-
-
-
-
-add_tasks_with_rust(async function () {
-  await doKeywordsTest({
-    desc: "Settings: none; Nimbus: keywords, min keyword length > 0",
-    nimbusValues: {
-      weatherKeywords: ["weather", "forecast"],
-      weatherKeywordsMinimumLength: 3,
-    },
-    alwaysExpectMerinoResult: true,
     tests: {
       "": false,
       w: false,
@@ -674,14 +181,6 @@ add_tasks_with_rust(async function () {
       weath: true,
       weathe: true,
       weather: true,
-      f: false,
-      fo: false,
-      for: true,
-      fore: true,
-      forec: true,
-      foreca: true,
-      forecas: true,
-      forecast: true,
     },
   });
 });
@@ -690,17 +189,44 @@ add_tasks_with_rust(async function () {
 
 
 
-
-
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doKeywordsTest({
-    desc: "Settings: none; Nimbus: keywords, min keyword length > 0; pref exists",
+    desc: "Settings: keywords, min keyword length > 0; Nimbus: min keyword length > 0",
+    settingsData: {
+      keywords: ["weather"],
+      min_keyword_length: 3,
+    },
     nimbusValues: {
-      weatherKeywords: ["weather", "forecast"],
-      weatherKeywordsMinimumLength: 3,
+      weatherKeywordsMinimumLength: 4,
+    },
+    tests: {
+      "": false,
+      w: false,
+      we: false,
+      wea: false,
+      weat: true,
+      weath: true,
+      weathe: true,
+      weather: true,
+    },
+  });
+});
+
+
+
+
+
+add_task(async function () {
+  await doKeywordsTest({
+    desc: "Settings: keywords, min keyword length > 0; Nimbus: min keyword length = 0; pref exists",
+    settingsData: {
+      keywords: ["weather"],
+      min_keyword_length: 3,
+    },
+    nimbusValues: {
+      weatherKeywordsMinimumLength: 0,
     },
     minKeywordLength: 6,
-    alwaysExpectMerinoResult: true,
     tests: {
       "": false,
       w: false,
@@ -710,14 +236,6 @@ add_tasks_with_rust(async function () {
       weath: false,
       weathe: true,
       weather: true,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: true,
-      forecas: true,
-      forecast: true,
     },
   });
 });
@@ -726,15 +244,17 @@ add_tasks_with_rust(async function () {
 
 
 
-
-add_tasks_with_rust(async function minLength_large() {
+add_task(async function () {
   await doKeywordsTest({
-    desc: "Large min length",
-    nimbusValues: {
-      weatherKeywords: ["weather", "forecast"],
-      weatherKeywordsMinimumLength: 999,
+    desc: "Settings: keywords, min keyword length > 0; Nimbus: min keyword length > 0; pref exists",
+    settingsData: {
+      keywords: ["weather"],
+      min_keyword_length: 3,
     },
-    alwaysExpectMerinoResult: true,
+    nimbusValues: {
+      weatherKeywordsMinimumLength: 4,
+    },
+    minKeywordLength: 6,
     tests: {
       "": false,
       w: false,
@@ -742,22 +262,14 @@ add_tasks_with_rust(async function minLength_large() {
       wea: false,
       weat: false,
       weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: false,
+      weathe: true,
+      weather: true,
     },
   });
 });
 
 
-add_tasks_with_rust(async function leadingAndTrailingSpaces() {
+add_task(async function leadingAndTrailingSpaces() {
   await doKeywordsTest({
     settingsData: {
       keywords: ["weather"],
@@ -778,7 +290,7 @@ add_tasks_with_rust(async function leadingAndTrailingSpaces() {
   });
 });
 
-add_tasks_with_rust(async function caseInsensitive() {
+add_task(async function caseInsensitive() {
   await doKeywordsTest({
     desc: "Case insensitive",
     settingsData: {
@@ -803,7 +315,6 @@ async function doKeywordsTest({
   nimbusValues = null,
   settingsData = null,
   minKeywordLength = undefined,
-  alwaysExpectMerinoResult = false,
 }) {
   info("Doing keywords test: " + desc);
   info(JSON.stringify({ nimbusValues, settingsData, minKeywordLength }));
@@ -824,11 +335,7 @@ async function doKeywordsTest({
     UrlbarPrefs.set("weather.minKeywordLength", minKeywordLength);
   }
 
-  let expectedResult = QuickSuggestTestUtils.weatherResult(
-    !alwaysExpectMerinoResult
-      ? undefined
-      : { source: "merino", provider: "accuweather", telemetryType: null }
-  );
+  let expectedResult = QuickSuggestTestUtils.weatherResult();
 
   for (let [searchString, expected] of Object.entries(tests)) {
     info(
@@ -841,10 +348,7 @@ async function doKeywordsTest({
 
     await check_results({
       context: createContext(searchString, {
-        providers: [
-          UrlbarProviderQuickSuggest.name,
-          UrlbarProviderWeather.name,
-        ],
+        providers: [UrlbarProviderQuickSuggest.name],
         isPrivate: false,
       }),
       matches: expected ? [expectedResult] : [],
@@ -863,91 +367,12 @@ async function doKeywordsTest({
   UrlbarPrefs.clear("weather.minKeywordLength");
 }
 
-
-
-
-add_tasks_with_rust(async function matchingQuickSuggest_sponsored() {
-  await doMatchingQuickSuggestTest("suggest.quicksuggest.sponsored", true);
-});
-
-
-
-
-add_tasks_with_rust(async function matchingQuickSuggest_nonsponsored() {
-  await doMatchingQuickSuggestTest("suggest.quicksuggest.nonsponsored", false);
-});
-
-async function doMatchingQuickSuggestTest(pref, isSponsored) {
-  let keyword = "test";
-
-  let attachment = isSponsored
-    ? QuickSuggestTestUtils.ampRemoteSettings({ keywords: [keyword] })
-    : QuickSuggestTestUtils.wikipediaRemoteSettings({ keywords: [keyword] });
-
-  
-  let oldPrefValue = UrlbarPrefs.get(pref);
-  UrlbarPrefs.set(pref, true);
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    {
-      type: "data",
-      attachment: [attachment],
-    },
-    {
-      type: "weather",
-      weather: MerinoTestUtils.WEATHER_RS_DATA,
-    },
-  ]);
-
-  
-  info("Doing first search for quick suggest result");
-  await check_results({
-    context: createContext(keyword, {
-      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    matches: [
-      isSponsored
-        ? QuickSuggestTestUtils.ampResult({ keyword })
-        : QuickSuggestTestUtils.wikipediaResult({ keyword }),
-    ],
-  });
-
-  
-  
-  info("Doing second search for weather suggestion");
-  let cleanup = await UrlbarTestUtils.initNimbusFeature({
-    weatherKeywords: [keyword],
-    weatherKeywordsMinimumLength: 1,
-  });
-  await check_results({
-    context: createContext(keyword, {
-      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    
-    matches: [
-      QuickSuggestTestUtils.weatherResult({
-        source: "merino",
-        provider: "accuweather",
-        telemetryType: null,
-      }),
-    ],
-  });
-  await cleanup();
-
-  UrlbarPrefs.set(pref, oldPrefValue);
-}
-
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doIncrementTest({
     desc: "Settings only without cap",
-    setup: {
-      settingsData: {
-        weather: {
-          keywords: ["forecast", "wind"],
-          min_keyword_length: 3,
-        },
-      },
+    weather: {
+      keywords: ["forecast", "wind"],
+      min_keyword_length: 3,
     },
     tests: [
       {
@@ -993,19 +418,15 @@ add_tasks_with_rust(async function () {
   });
 });
 
-add_tasks_with_rust(async function () {
+add_task(async function () {
   await doIncrementTest({
     desc: "Settings only with cap",
-    setup: {
-      settingsData: {
-        weather: {
-          keywords: ["forecast", "wind"],
-          min_keyword_length: 3,
-        },
-        configuration: {
-          show_less_frequently_cap: 3,
-        },
-      },
+    weather: {
+      keywords: ["forecast", "wind"],
+      min_keyword_length: 3,
+    },
+    configuration: {
+      show_less_frequently_cap: 3,
     },
     tests: [
       {
@@ -1080,81 +501,6 @@ add_tasks_with_rust(async function () {
           forec: false,
           foreca: true,
           forecas: true,
-          wi: false,
-          win: false,
-          wind: false,
-          windy: false,
-        },
-      },
-    ],
-  });
-});
-
-add_tasks_with_rust(async function () {
-  await doIncrementTest({
-    desc: "Settings and Nimbus without cap",
-    setup: {
-      settingsData: {
-        weather: {
-          keywords: ["weather"],
-          min_keyword_length: 5,
-        },
-      },
-      nimbusValues: {
-        weatherKeywords: ["forecast", "wind"],
-        weatherKeywordsMinimumLength: 3,
-      },
-    },
-    
-    
-    alwaysExpectMerinoResult: true,
-    tests: [
-      {
-        minKeywordLength: 3,
-        canIncrement: true,
-        searches: {
-          we: false,
-          wea: false,
-          weat: false,
-          weath: false,
-          fo: false,
-          for: true,
-          fore: true,
-          forec: true,
-          wi: false,
-          win: true,
-          wind: true,
-        },
-      },
-      {
-        minKeywordLength: 4,
-        canIncrement: true,
-        searches: {
-          we: false,
-          wea: false,
-          weat: false,
-          weath: false,
-          fo: false,
-          for: false,
-          fore: true,
-          forec: true,
-          wi: false,
-          win: false,
-          wind: true,
-        },
-      },
-      {
-        minKeywordLength: 5,
-        canIncrement: true,
-        searches: {
-          we: false,
-          wea: false,
-          weat: false,
-          weath: false,
-          fo: false,
-          for: false,
-          fore: false,
-          forec: true,
           wi: false,
           win: false,
           wind: false,
@@ -1167,41 +513,23 @@ add_tasks_with_rust(async function () {
 
 add_task(async function () {
   await doIncrementTest({
-    desc: "Settings and Nimbus with cap in Nimbus",
-    setup: {
-      settingsData: {
-        weather: {
-          keywords: ["weather"],
-          min_keyword_length: 5,
-        },
-      },
-      nimbusValues: {
-        weatherKeywords: ["forecast", "wind"],
-        weatherKeywordsMinimumLength: 3,
-        weatherKeywordsMinimumLengthCap: 6,
-      },
+    desc: "Settings and Nimbus without cap",
+    weather: {
+      keywords: ["weather"],
+      min_keyword_length: 5,
     },
-    
-    
-    alwaysExpectMerinoResult: true,
+    nimbusValues: {
+      weatherKeywordsMinimumLength: 3,
+    },
     tests: [
       {
         minKeywordLength: 3,
         canIncrement: true,
         searches: {
           we: false,
-          wea: false,
-          weat: false,
-          weath: false,
-          fo: false,
-          for: true,
-          fore: true,
-          forec: true,
-          foreca: true,
-          forecas: true,
-          wi: false,
-          win: true,
-          wind: true,
+          wea: true,
+          weat: true,
+          weath: true,
         },
       },
       {
@@ -1210,17 +538,8 @@ add_task(async function () {
         searches: {
           we: false,
           wea: false,
-          weat: false,
-          weath: false,
-          fo: false,
-          for: false,
-          fore: true,
-          forec: true,
-          foreca: true,
-          forecas: true,
-          wi: false,
-          win: false,
-          wind: true,
+          weat: true,
+          weath: true,
         },
       },
       {
@@ -1230,17 +549,53 @@ add_task(async function () {
           we: false,
           wea: false,
           weat: false,
-          weath: false,
-          fo: false,
-          for: false,
-          fore: false,
-          forec: true,
-          foreca: true,
-          forecas: true,
-          wi: false,
-          win: false,
-          wind: false,
-          windy: false,
+          weath: true,
+        },
+      },
+    ],
+  });
+});
+
+add_task(async function () {
+  await doIncrementTest({
+    desc: "Settings and Nimbus with cap in Nimbus",
+    weather: {
+      keywords: ["weather"],
+      min_keyword_length: 5,
+    },
+    nimbusValues: {
+      weatherKeywordsMinimumLength: 3,
+      weatherKeywordsMinimumLengthCap: 6,
+    },
+    tests: [
+      {
+        minKeywordLength: 3,
+        canIncrement: true,
+        searches: {
+          we: false,
+          wea: true,
+          weat: true,
+          weath: true,
+        },
+      },
+      {
+        minKeywordLength: 4,
+        canIncrement: true,
+        searches: {
+          we: false,
+          wea: false,
+          weat: true,
+          weath: true,
+        },
+      },
+      {
+        minKeywordLength: 5,
+        canIncrement: true,
+        searches: {
+          we: false,
+          wea: false,
+          weat: false,
+          weath: true,
         },
       },
       {
@@ -1251,16 +606,7 @@ add_task(async function () {
           wea: false,
           weat: false,
           weath: false,
-          fo: false,
-          for: false,
-          fore: false,
-          forec: false,
-          foreca: true,
-          forecas: true,
-          wi: false,
-          win: false,
-          wind: false,
-          windy: false,
+          weathe: true,
         },
       },
       {
@@ -1271,16 +617,7 @@ add_task(async function () {
           wea: false,
           weat: false,
           weath: false,
-          fo: false,
-          for: false,
-          fore: false,
-          forec: false,
-          foreca: true,
-          forecas: true,
-          wi: false,
-          win: false,
-          wind: false,
-          windy: false,
+          weathe: true,
         },
       },
     ],
@@ -1289,14 +626,13 @@ add_task(async function () {
 
 async function doIncrementTest({
   desc,
-  setup,
   tests,
-  alwaysExpectMerinoResult = false,
+  weather,
+  configuration = null,
+  nimbusValues = null,
 }) {
   info("Doing increment test: " + desc);
-  info(JSON.stringify({ setup }));
-
-  let { nimbusValues, settingsData } = setup;
+  info(JSON.stringify({ weather, configuration, nimbusValues }));
 
   let nimbusCleanup;
   if (nimbusValues) {
@@ -1306,19 +642,15 @@ async function doIncrementTest({
   await QuickSuggestTestUtils.setRemoteSettingsRecords([
     {
       type: "weather",
-      weather: settingsData?.weather,
+      weather,
     },
     {
       type: "configuration",
-      configuration: settingsData?.configuration,
+      configuration,
     },
   ]);
 
-  let expectedResult = QuickSuggestTestUtils.weatherResult(
-    !alwaysExpectMerinoResult
-      ? undefined
-      : { source: "merino", provider: "accuweather", telemetryType: null }
-  );
+  let expectedResult = QuickSuggestTestUtils.weatherResult();
 
   for (let { minKeywordLength, canIncrement, searches } of tests) {
     info(
@@ -1343,10 +675,7 @@ async function doIncrementTest({
     for (let [searchString, expected] of Object.entries(searches)) {
       await check_results({
         context: createContext(searchString, {
-          providers: [
-            UrlbarProviderQuickSuggest.name,
-            UrlbarProviderWeather.name,
-          ],
+          providers: [UrlbarProviderQuickSuggest.name],
           isPrivate: false,
         }),
         matches: expected ? [expectedResult] : [],
