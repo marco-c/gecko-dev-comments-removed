@@ -1,11 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* eslint-env node */
 
-
-
-
-
-const stylelint = require("stylelint");
-const { namespace } = require("../helpers");
+import stylelint from "stylelint";
+import { namespace } from "../helpers.mjs";
 
 const {
   utils: { report, ruleMessages, validateOptions },
@@ -58,4 +58,4 @@ let ruleFunction = primaryOption => {
 ruleFunction.ruleName = ruleName;
 ruleFunction.messages = messages;
 ruleFunction.meta = meta;
-module.exports = ruleFunction;
+export default ruleFunction;
