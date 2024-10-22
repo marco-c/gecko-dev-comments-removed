@@ -1661,6 +1661,8 @@ QuotaManager::QuotaManager(const nsAString& aBasePath,
       mPersistentStorageInitializedInternal(false),
       mTemporaryStorageInitialized(false),
       mTemporaryStorageInitializedInternal(false),
+      mInitializingAllTemporaryOrigins(false),
+      mAllTemporaryOriginsInitialized(false),
       mCacheUsable(false) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!gInstance);
@@ -6208,12 +6210,25 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryStorage(
 
   return initializeTemporaryStorageOp->OnResults()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr(this)](const BoolPromise::ResolveOrRejectValue& aValue) {
+      [self = RefPtr(this)](
+          MaybePrincipalMetadataArrayPromise::ResolveOrRejectValue&& aValue) {
         if (aValue.IsReject()) {
           return BoolPromise::CreateAndReject(aValue.RejectValue(), __func__);
         }
 
         self->mTemporaryStorageInitialized = true;
+
+        if (aValue.ResolveValue() &&
+            StaticPrefs::
+                dom_quotaManager_temporaryStorage_lazyOriginInitialization()) {
+          self->mBackgroundThreadAccessible.Access()->mUninitializedGroups =
+              aValue.ResolveValue().extract();
+
+          if (StaticPrefs::
+                  dom_quotaManager_temporaryStorage_triggerOriginInitializationInBackground()) {
+            self->InitializeAllTemporaryOrigins();
+          }
+        }
 
         return BoolPromise::CreateAndResolve(true, __func__);
       });
@@ -6270,6 +6285,75 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitializedInternal() {
   return ExecuteInitialization(
       Initialization::TemporaryStorage,
       "dom::quota::FirstInitializationAttempt::TemporaryStorage"_ns, innerFunc);
+}
+
+RefPtr<BoolPromise> QuotaManager::InitializeAllTemporaryOrigins() {
+  AssertIsOnOwningThread();
+
+  if (mAllTemporaryOriginsInitialized) {
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
+
+  if (!mInitializingAllTemporaryOrigins) {
+    
+
+    mInitializingAllTemporaryOrigins = true;
+
+    auto processNextGroup = [self = RefPtr(this)](
+                                auto&& processNextGroupCallback) {
+      
+
+      auto backgroundThreadData = self->mBackgroundThreadAccessible.Access();
+
+      if (backgroundThreadData->mUninitializedGroups.IsEmpty()) {
+        self->mInitializingAllTemporaryOrigins = false;
+        self->mAllTemporaryOriginsInitialized = true;
+
+        self->mInitializeAllTemporaryOriginsPromiseHolder.ResolveIfExists(
+            true, __func__);
+
+        return;
+      }
+
+      auto principalMetadata =
+          backgroundThreadData->mUninitializedGroups.PopLastElement();
+
+      
+
+      QM_WARNONLY_TRY_UNWRAP(
+          auto maybePrincipalInfo,
+          PrincipalMetadataToPrincipalInfo(principalMetadata));
+
+      if (!maybePrincipalInfo) {
+        
+        
+        
+
+        InvokeAsync(GetCurrentSerialEventTarget(), __func__,
+                    [processNextGroupCallback]() {
+                      processNextGroupCallback(processNextGroupCallback);
+
+                      return BoolPromise::CreateAndResolve(true, __func__);
+                    });
+
+        return;
+      }
+
+      self->InitializeTemporaryGroup(*maybePrincipalInfo)
+          ->Then(GetCurrentSerialEventTarget(), __func__,
+                 [processNextGroupCallback](
+                     const BoolPromise::ResolveOrRejectValue& aValue) {
+                   
+                   
+
+                   processNextGroupCallback(processNextGroupCallback);
+                 });
+    };
+
+    processNextGroup( processNextGroup);
+  }
+
+  return mInitializeAllTemporaryOriginsPromiseHolder.Ensure(__func__);
 }
 
 RefPtr<OriginUsageMetadataArrayPromise> QuotaManager::GetUsage(
@@ -6463,6 +6547,7 @@ RefPtr<BoolPromise> QuotaManager::ClearStorage() {
 
         self->mInitializedOrigins.Clear();
         self->mBackgroundThreadAccessible.Access()->mInitializedGroups.Clear();
+        self->mAllTemporaryOriginsInitialized = false;
         self->mTemporaryStorageInitialized = false;
         self->mStorageInitialized = false;
 
@@ -6533,6 +6618,7 @@ RefPtr<BoolPromise> QuotaManager::ShutdownStorage(
 
         self->mInitializedOrigins.Clear();
         self->mBackgroundThreadAccessible.Access()->mInitializedGroups.Clear();
+        self->mAllTemporaryOriginsInitialized = false;
         self->mTemporaryStorageInitialized = false;
         self->mStorageInitialized = false;
 
@@ -7381,6 +7467,27 @@ void QuotaManager::RemoveTemporaryOrigins() {
   AssertIsOnIOThread();
 
   mIOThreadAccessible.Access()->mAllTemporaryOrigins.Clear();
+}
+
+PrincipalMetadataArray QuotaManager::GetAllTemporaryGroups() const {
+  AssertIsOnIOThread();
+
+  auto ioThreadData = mIOThreadAccessible.Access();
+
+  PrincipalMetadataArray principalMetadataArray;
+
+  std::transform(ioThreadData->mAllTemporaryOrigins.Values().cbegin(),
+                 ioThreadData->mAllTemporaryOrigins.Values().cend(),
+                 MakeBackInserter(principalMetadataArray),
+                 [](const auto& array) {
+                   MOZ_ASSERT(!array.IsEmpty());
+
+                   
+                   
+                   return array[0];
+                 });
+
+  return principalMetadataArray;
 }
 
 void QuotaManager::NoteInitializedOrigin(PersistenceType aPersistenceType,
