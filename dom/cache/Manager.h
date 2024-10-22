@@ -29,7 +29,7 @@ namespace dom {
 
 namespace quota {
 
-class DirectoryLock;
+class ClientDirectoryLock;
 
 }  
 
@@ -75,7 +75,7 @@ class StreamList;
 
 class Manager final : public SafeRefCounted<Manager>, public Stringifyable {
   using Client = quota::Client;
-  using DirectoryLock = quota::DirectoryLock;
+  using ClientDirectoryLock = quota::ClientDirectoryLock;
 
  public:
   
@@ -174,7 +174,7 @@ class Manager final : public SafeRefCounted<Manager>, public Stringifyable {
 
   const ManagerId& GetManagerId() const;
 
-  Maybe<DirectoryLock&> MaybeDirectoryLockRef() const;
+  Maybe<ClientDirectoryLock&> MaybeDirectoryLockRef() const;
 
   
   
