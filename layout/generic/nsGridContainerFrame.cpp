@@ -5924,19 +5924,33 @@ void nsGridContainerFrame::Tracks::CalculateSizes(
     GridReflowInput& aState, nsTArray<GridItemInfo>& aGridItems,
     const TrackSizingFunctions& aFunctions, nscoord aContentBoxSize,
     LineRange GridArea::*aRange, SizingConstraint aConstraint) {
+  
+  
   nscoord percentageBasis = aContentBoxSize;
   if (percentageBasis == NS_UNCONSTRAINEDSIZE) {
     percentageBasis = 0;
   }
+  
+  
+  
   InitializeItemBaselines(aState, aGridItems);
+
+  
   ResolveIntrinsicSize(aState, aGridItems, aFunctions, aRange, percentageBasis,
                        aConstraint);
+
+  
   if (aConstraint != SizingConstraint::MinContent) {
     nscoord freeSpace = aContentBoxSize;
     if (freeSpace != NS_UNCONSTRAINEDSIZE) {
       freeSpace -= SumOfGridGaps();
     }
+    
+    
     DistributeFreeSpace(freeSpace);
+
+    
+    
     StretchFlexibleTracks(aState, aGridItems, aFunctions, freeSpace);
   }
 }
@@ -6639,6 +6653,9 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
     nscoord aPercentageBasis, SizingConstraint aConstraint) {
   
   
+  
+  
+  
 
   gfxContext* rc = &aState.mRenderingContext;
   WritingMode wm = aState.mWM;
@@ -6718,12 +6735,15 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
 
     if (span == 1) {
       
+      
       if (ResolveIntrinsicSizeForNonSpanningItems(aState, aFunctions,
                                                   aPercentageBasis, aConstraint,
                                                   lineRange, gridItem)) {
         gridItem.mState[mAxis] |= ItemState::eIsFlexing;
       }
     } else {
+      
+      
       TrackSize::StateBits state = StateBitsForRange(lineRange);
 
       
@@ -6734,6 +6754,8 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       }
 
       if (state & TrackSize::eFlexMaxSizing) {
+        
+        
         gridItem.mState[mAxis] |= ItemState::eIsFlexing;
       } else if (state & (TrackSize::eIntrinsicMinSizing |
                           TrackSize::eIntrinsicMaxSizing)) {
@@ -6805,6 +6827,8 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       return false;
     };
 
+    
+    
     
     
     
