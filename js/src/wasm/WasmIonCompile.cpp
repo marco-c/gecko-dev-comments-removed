@@ -260,7 +260,7 @@ class FunctionCompiler {
 
     
     
-    TryControl* tryControl = nullptr;
+    ControlInstructionVector* tryLandingPadPatches = nullptr;
 
     
     uint32_t tryNoteIndex = UINT32_MAX;
@@ -271,7 +271,7 @@ class FunctionCompiler {
     
     MBasicBlock* prePadBlock = nullptr;
 
-    bool isCatchable() const { return tryControl != nullptr; }
+    bool isCatchable() const { return tryLandingPadPatches != nullptr; }
   };
 
   
@@ -356,10 +356,18 @@ class FunctionCompiler {
   
   
   
-  ControlInstructionVector bodyDelegatePadPatches_;
+  
+  
+  
+  
+  
+  ControlInstructionVector bodyRethrowPadPatches_;
   
   
   PendingInlineReturnVector pendingInlineReturns_;
+  
+  
+  MBasicBlock* pendingInlineCatchBlock_;
 
   
   MWasmParameter* instancePointer_;
@@ -403,6 +411,7 @@ class FunctionCompiler {
         maxStackArgBytes_(0),
         loopDepth_(0),
         blockDepth_(0),
+        pendingInlineCatchBlock_(nullptr),
         instancePointer_(nullptr),
         stackResultPointer_(nullptr),
         tryNotes_(tryNotes),
@@ -434,6 +443,7 @@ class FunctionCompiler {
         maxStackArgBytes_(0),
         loopDepth_(callerCompiler_->loopDepth_),
         blockDepth_(0),
+        pendingInlineCatchBlock_(nullptr),
         instancePointer_(callerCompiler_->instancePointer_),
         stackResultPointer_(nullptr),
         tryNotes_(callerCompiler_->tryNotes_),
@@ -641,6 +651,9 @@ class FunctionCompiler {
     MOZ_ASSERT_IF(
         compilerEnv().mode() == CompileMode::LazyTiering,
         codeMeta_.getFuncDefCallRefs(funcIndex()).length == numCallRefs_);
+    MOZ_ASSERT_IF(!isInlined(),
+                  pendingInlineReturns_.empty() && !pendingInlineCatchBlock_);
+    MOZ_ASSERT(bodyRethrowPadPatches_.empty());
   }
 
   
@@ -2550,12 +2563,6 @@ class FunctionCompiler {
     }
 
     
-    
-    if (inTryCode()) {
-      return false;
-    }
-
-    
     FeatureUsage funcFeatureUsage = codeMeta().funcDefFeatureUsage(funcIndex);
     if (funcFeatureUsage & FeatureUsage::ReturnCall) {
       return false;
@@ -2573,10 +2580,54 @@ class FunctionCompiler {
                                DefVector* results) {
     const PendingInlineReturnVector& calleeReturns =
         calleeCompiler.pendingInlineReturns_;
+    MBasicBlock* calleeCatchBlock = calleeCompiler.pendingInlineCatchBlock_;
     const FuncType& calleeFuncType = calleeCompiler.funcType();
+    MBasicBlock* lastBlockBeforeCall = curBlock_;
 
     
     iter_.addFeatureUsage(calleeCompiler.featureUsage());
+
+    
+    if (calleeCatchBlock) {
+      ControlInstructionVector* tryLandingPadPatches;
+      bool inTryCode = inTryBlock(&tryLandingPadPatches);
+
+      
+      
+      MOZ_RELEASE_ASSERT(inTryCode);
+
+      
+      
+      
+      
+      
+      
+      MBasicBlock* callerCatchBlock = nullptr;
+      if (!newBlock(nullptr, &callerCatchBlock)) {
+        return false;
+      }
+
+      
+      
+      callerCatchBlock->inheritSlots(lastBlockBeforeCall);
+
+      
+      calleeCatchBlock->end(MGoto::New(alloc(), callerCatchBlock));
+
+      
+      
+      if (!callerCatchBlock->addPredecessorWithoutPhis(calleeCatchBlock)) {
+        return false;
+      }
+
+      
+      MBasicBlock* prevBlock = curBlock_;
+      curBlock_ = callerCatchBlock;
+      if (!endWithPadPatch(tryLandingPadPatches)) {
+        return false;
+      }
+      curBlock_ = prevBlock;
+    }
 
     
     if (calleeReturns.empty()) {
@@ -2585,7 +2636,6 @@ class FunctionCompiler {
     }
 
     
-    MBasicBlock* lastBlockBeforeCall = curBlock_;
     MBasicBlock* joinAfterCall = nullptr;
     if (!newBlock(nullptr, &joinAfterCall)) {
       return false;
@@ -2879,7 +2929,8 @@ class FunctionCompiler {
     }
 
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
-    if (!beginCatchableCall(callState)) {
+    if (builtin.failureMode != FailureMode::Infallible &&
+        !beginCatchableCall(callState)) {
       return false;
     }
 
@@ -3531,7 +3582,7 @@ class FunctionCompiler {
         }
       }
     }
-    for (MControlInstruction* patch : bodyDelegatePadPatches_) {
+    for (MControlInstruction* patch : bodyRethrowPadPatches_) {
       MBasicBlock* block = patch->block();
       if (block->loopDepth() >= loopEntry->loopDepth()) {
         fixupRedundantPhis(block);
@@ -3756,29 +3807,50 @@ class FunctionCompiler {
 
   
 
-  bool inTryBlockFrom(uint32_t fromRelativeDepth, TryControl** tryControl) {
+  bool inTryBlockFrom(uint32_t fromRelativeDepth,
+                      uint32_t* tryRelativeDepth) const {
     uint32_t relativeDepth;
-    if (iter().controlFindInnermostFrom(
+    if (iter_.controlFindInnermostFrom(
             [](LabelKind kind, const Control& control) {
               return control.tryControl != nullptr &&
                      control.tryControl->inBody;
             },
             fromRelativeDepth, &relativeDepth)) {
-      *tryControl = iter().controlItem(relativeDepth).tryControl.get();
+      *tryRelativeDepth = relativeDepth;
       return true;
     }
 
-    *tryControl = nullptr;
+    if (callerCompiler_ && callerCompiler_->inTryCode()) {
+      *tryRelativeDepth = iter_.controlStackDepth() - 1;
+      return true;
+    }
+
     return false;
   }
 
-  bool inTryBlock(TryControl** tryControl) {
-    return inTryBlockFrom(0, tryControl);
+  bool inTryBlockFrom(uint32_t fromRelativeDepth,
+                      ControlInstructionVector** landingPadPatches) {
+    uint32_t tryRelativeDepth;
+    if (!inTryBlockFrom(fromRelativeDepth, &tryRelativeDepth)) {
+      return false;
+    }
+
+    if (tryRelativeDepth == iter().controlStackDepth() - 1) {
+      *landingPadPatches = &bodyRethrowPadPatches_;
+    } else {
+      *landingPadPatches =
+          &iter().controlItem(tryRelativeDepth).tryControl->landingPadPatches;
+    }
+    return true;
   }
 
-  bool inTryCode() {
-    TryControl* tryControl;
-    return inTryBlock(&tryControl);
+  bool inTryBlock(ControlInstructionVector** landingPadPatches) {
+    return inTryBlockFrom(0, landingPadPatches);
+  }
+
+  bool inTryCode() const {
+    uint32_t tryRelativeDepth;
+    return inTryBlockFrom(0, &tryRelativeDepth);
   }
 
   MDefinition* loadTag(uint32_t tagIndex) {
@@ -3830,10 +3902,11 @@ class FunctionCompiler {
     return postBarrierPrecise(0, exceptionTagAddr, tag);
   }
 
-  [[nodiscard]] bool endWithPadPatch(TryControl* tryControl) {
+  [[nodiscard]] bool endWithPadPatch(
+      ControlInstructionVector* tryLandingPadPatches) {
     MGoto* jumpToLandingPad = MGoto::New(alloc());
     curBlock_->end(jumpToLandingPad);
-    return tryControl->landingPadPatches.emplaceBack(jumpToLandingPad);
+    return tryLandingPadPatches->emplaceBack(jumpToLandingPad);
   }
 
   [[nodiscard]] bool delegatePadPatches(const ControlInstructionVector& patches,
@@ -3844,12 +3917,9 @@ class FunctionCompiler {
 
     
     ControlInstructionVector* targetPatches;
-    TryControl* targetTryControl;
-    if (inTryBlockFrom(relativeDepth, &targetTryControl)) {
-      targetPatches = &targetTryControl->landingPadPatches;
-    } else {
+    if (!inTryBlockFrom(relativeDepth, &targetPatches)) {
       MOZ_ASSERT(relativeDepth <= blockDepth_ - 1);
-      targetPatches = &bodyDelegatePadPatches_;
+      targetPatches = &bodyRethrowPadPatches_;
     }
 
     
@@ -3863,7 +3933,7 @@ class FunctionCompiler {
 
   [[nodiscard]]
   bool beginCatchableCall(CallCompileState* callState) {
-    if (!inTryBlock(&callState->tryControl)) {
+    if (!inTryBlock(&callState->tryLandingPadPatches)) {
       MOZ_ASSERT(!callState->isCatchable());
       return true;
     }
@@ -3882,7 +3952,7 @@ class FunctionCompiler {
 
   [[nodiscard]]
   bool finishCatchableCall(CallCompileState* callState) {
-    if (!callState->tryControl) {
+    if (!callState->tryLandingPadPatches) {
       return true;
     }
 
@@ -3895,7 +3965,7 @@ class FunctionCompiler {
                                                callState->tryNoteIndex));
 
     
-    if (!endWithPadPatch(callState->tryControl)) {
+    if (!endWithPadPatch(callState->tryLandingPadPatches)) {
       return false;
     }
 
@@ -3919,14 +3989,14 @@ class FunctionCompiler {
     if (!newBlock(pred, landingPad)) {
       return false;
     }
-    ins->replaceSuccessor(0, *landingPad);
+    ins->replaceSuccessor(MGoto::TargetIndex, *landingPad);
     for (size_t i = 1; i < landingPadPatches.length(); i++) {
       ins = landingPadPatches[i];
       pred = ins->block();
       if (!(*landingPad)->addPredecessor(alloc(), pred)) {
         return false;
       }
-      ins->replaceSuccessor(0, *landingPad);
+      ins->replaceSuccessor(MGoto::TargetIndex, *landingPad);
     }
 
     
@@ -4306,19 +4376,28 @@ class FunctionCompiler {
     return finishBlock(defs);
   }
 
-  [[nodiscard]] bool emitBodyDelegateThrowPad(Control& control) {
+  [[nodiscard]] bool emitBodyRethrowPad(Control& control) {
     
     
-    if (bodyDelegatePadPatches_.empty()) {
+    if (bodyRethrowPadPatches_.empty()) {
       return true;
     }
 
     
     MBasicBlock* padBlock;
-    if (!createTryLandingPad(bodyDelegatePadPatches_, &padBlock)) {
+    if (!createTryLandingPad(bodyRethrowPadPatches_, &padBlock)) {
       return false;
     }
 
+    
+    
+    
+    if (callerCompiler_ && callerCompiler_->inTryCode()) {
+      pendingInlineCatchBlock_ = padBlock;
+      return true;
+    }
+
+    
     MDefinition* pendingException;
     MDefinition* pendingExceptionTag;
     if (!consumePendingException(&padBlock, &pendingException,
@@ -4333,6 +4412,8 @@ class FunctionCompiler {
       return false;
     }
     curBlock_ = prevBlock;
+
+    MOZ_ASSERT(bodyRethrowPadPatches_.empty());
     return true;
   }
 
@@ -4437,15 +4518,15 @@ class FunctionCompiler {
 
     
     
-    TryControl* tryControl;
-    if (inTryBlock(&tryControl)) {
+    ControlInstructionVector* tryLandingPadPatches;
+    if (inTryBlock(&tryLandingPadPatches)) {
       
       if (!setPendingExceptionState(exn, tag)) {
         return false;
       }
 
       
-      if (!endWithPadPatch(tryControl)) {
+      if (!endWithPadPatch(tryLandingPadPatches)) {
         return false;
       }
       curBlock_ = nullptr;
@@ -5625,7 +5706,7 @@ static bool EmitEnd(FunctionCompiler& f) {
   switch (kind) {
     case LabelKind::Body: {
       MOZ_ASSERT(!control.tryControl);
-      if (!f.emitBodyDelegateThrowPad(control)) {
+      if (!f.emitBodyRethrowPad(control)) {
         return false;
       }
       if (!f.finishBlock(&postJoinDefs)) {
