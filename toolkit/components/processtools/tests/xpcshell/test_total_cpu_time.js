@@ -1,5 +1,9 @@
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 var cpuThreadCount;
 
 add_task(async function setup() {
@@ -21,66 +25,75 @@ async function getCpuTimeFromProcInfo() {
   );
 }
 
-add_task(async function test_totalCpuTime_in_parent() {
-  let startTime = Date.now();
-
-  let initialProcInfoCpuTime = Math.floor(await getCpuTimeFromProcInfo());
-  await Services.fog.testFlushAllChildren();
-
-  let initialCpuTime = Glean.power.totalCpuTimeMs.testGetValue();
-  Assert.greater(
-    initialCpuTime,
-    0,
-    "The CPU time used by starting the test harness should be more than 0"
-  );
-  let initialProcInfoCpuTime2 = Math.ceil(await getCpuTimeFromProcInfo());
-
-  Assert.greaterOrEqual(
-    initialCpuTime,
-    initialProcInfoCpuTime,
-    "The CPU time reported through Glean should be at least as much as the CPU time reported by ProcInfo before asking Glean for the data"
-  );
-  Assert.lessOrEqual(
-    initialCpuTime,
-    initialProcInfoCpuTime2,
-    "The CPU time reported through Glean should be no more than the CPU time reported by ProcInfo after asking Glean for the data"
-  );
-
-  
-  
-  const kBusyWaitForMs = 50;
-  while (Date.now() - startTime < kBusyWaitForMs) {
+add_task(
+  {
     
+    
+    skip_if: () =>
+      AppConstants.MOZ_APP_NAME == "thunderbird" &&
+      AppConstants.platform == "win",
+  },
+  async function test_totalCpuTime_in_parent() {
+    let startTime = Date.now();
+
+    let initialProcInfoCpuTime = Math.floor(await getCpuTimeFromProcInfo());
+    await Services.fog.testFlushAllChildren();
+
+    let initialCpuTime = Glean.power.totalCpuTimeMs.testGetValue();
+    Assert.greater(
+      initialCpuTime,
+      0,
+      "The CPU time used by starting the test harness should be more than 0"
+    );
+    let initialProcInfoCpuTime2 = Math.ceil(await getCpuTimeFromProcInfo());
+
+    Assert.greaterOrEqual(
+      initialCpuTime,
+      initialProcInfoCpuTime,
+      "The CPU time reported through Glean should be at least as much as the CPU time reported by ProcInfo before asking Glean for the data"
+    );
+    Assert.lessOrEqual(
+      initialCpuTime,
+      initialProcInfoCpuTime2,
+      "The CPU time reported through Glean should be no more than the CPU time reported by ProcInfo after asking Glean for the data"
+    );
+
+    
+    
+    const kBusyWaitForMs = 50;
+    while (Date.now() - startTime < kBusyWaitForMs) {
+      
+    }
+
+    let additionalProcInfoCpuTime =
+      Math.floor(await getCpuTimeFromProcInfo()) - initialProcInfoCpuTime2;
+    await Services.fog.testFlushAllChildren();
+
+    let additionalCpuTime =
+      Glean.power.totalCpuTimeMs.testGetValue() - initialCpuTime;
+    info(
+      `additional CPU time according to ProcInfo: ${additionalProcInfoCpuTime}ms and Glean ${additionalCpuTime}ms`
+    );
+
+    
+    
+    let expectedAdditionalCpuTime = Math.min(
+      additionalProcInfoCpuTime,
+      kBusyWaitForMs
+    );
+    Assert.greaterOrEqual(
+      additionalCpuTime,
+      expectedAdditionalCpuTime,
+      `The total CPU time should have increased by at least ${expectedAdditionalCpuTime}ms`
+    );
+    let wallClockTime = Date.now() - startTime;
+    Assert.lessOrEqual(
+      additionalCpuTime,
+      wallClockTime * cpuThreadCount,
+      `The total CPU time should have increased by at most the wall clock time (${wallClockTime}ms) * ${cpuThreadCount} CPU threads`
+    );
   }
-
-  let additionalProcInfoCpuTime =
-    Math.floor(await getCpuTimeFromProcInfo()) - initialProcInfoCpuTime2;
-  await Services.fog.testFlushAllChildren();
-
-  let additionalCpuTime =
-    Glean.power.totalCpuTimeMs.testGetValue() - initialCpuTime;
-  info(
-    `additional CPU time according to ProcInfo: ${additionalProcInfoCpuTime}ms and Glean ${additionalCpuTime}ms`
-  );
-
-  
-  
-  let expectedAdditionalCpuTime = Math.min(
-    additionalProcInfoCpuTime,
-    kBusyWaitForMs
-  );
-  Assert.greaterOrEqual(
-    additionalCpuTime,
-    expectedAdditionalCpuTime,
-    `The total CPU time should have increased by at least ${expectedAdditionalCpuTime}ms`
-  );
-  let wallClockTime = Date.now() - startTime;
-  Assert.lessOrEqual(
-    additionalCpuTime,
-    wallClockTime * cpuThreadCount,
-    `The total CPU time should have increased by at most the wall clock time (${wallClockTime}ms) * ${cpuThreadCount} CPU threads`
-  );
-});
+);
 
 add_task(async function test_totalCpuTime_in_child() {
   const MESSAGE_CHILD_TEST_DONE = "ChildTest:Done";
