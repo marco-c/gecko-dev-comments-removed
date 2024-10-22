@@ -14,6 +14,10 @@ ChromeUtils.defineESModuleGetters(
 );
 
 const { Actor } = require("resource://devtools/shared/protocol.js");
+const { createValueGrip } = require("devtools/server/actors/object/utils");
+const {
+  ObjectActorPool,
+} = require("resource://devtools/server/actors/object/ObjectActorPool.js");
 const {
   tracerSpec,
   TRACER_LOG_METHODS,
@@ -81,6 +85,14 @@ class TracerActor extends Actor {
   
   
   #stopResult = null;
+
+  
+  
+  
+  
+  
+  
+  #tracerPool = null;
 
   destroy() {
     this.stopTracing();
@@ -150,6 +162,14 @@ class TracerActor extends Actor {
       !this.targetActor.window.windowGlobalChild?.isProcessRoot
     ) {
       return;
+    }
+
+    
+    
+    
+    if (this.#tracerPool) {
+      this.#tracerPool.destroy();
+      this.#tracerPool = null;
     }
 
     this.logMethod = options.logMethod || TRACER_LOG_METHODS.STDOUT;
@@ -239,6 +259,18 @@ class TracerActor extends Actor {
       return profile;
     }
     return null;
+  }
+
+  createValueGrip(value) {
+    if (!this.#tracerPool) {
+      this.#tracerPool = new ObjectActorPool(
+        this.targetActor.threadActor,
+        "tracer",
+        true
+      );
+      this.manage(this.#tracerPool);
+    }
+    return createValueGrip(this, value, this.#tracerPool);
   }
 }
 exports.TracerActor = TracerActor;
