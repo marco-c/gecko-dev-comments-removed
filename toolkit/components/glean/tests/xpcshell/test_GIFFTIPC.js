@@ -128,6 +128,10 @@ add_task({ skip_if: () => runningInParent }, async function run_child_stuff() {
   Glean.testOnly.whereHasTheTimeGone["long time passing"].stopAndAccumulate(l2); 
   Glean.testOnly.whereHasTheTimeGone["long time passing"].stopAndAccumulate(l3); 
 
+  Glean.testOnlyIpc.anUnorderedBool.set(true);
+
+  Glean.testOnlyIpc.anUnorderedLabeledBoolean.aLabel.set(true);
+
   Telemetry.canRecordBase = oldCanRecordBase;
 });
 
@@ -147,12 +151,18 @@ add_task(
       let snapshot = Telemetry.getSnapshotForKeyedScalars();
       return (
         "content" in snapshot &&
-        "telemetry.test.mirror_for_rate" in snapshot.content
+        
+        
+        "telemetry.test.mirror_for_unordered_labeled_bool" in snapshot.content
       );
     }, "failed to find content telemetry in parent");
 
     
-    
+    Assert.ok(Glean.testOnlyIpc.anUnorderedBool.testGetValue());
+    Assert.ok(
+      scalarValue("telemetry.test.mirror_for_unordered_bool", "content"),
+      "content-process Scalar has expected bool value"
+    );
 
     
     Assert.equal(Glean.testOnlyIpc.aCounter.testGetValue(), COUNT);
@@ -212,7 +222,14 @@ add_task(
     );
 
     
-    
+    Assert.ok(
+      Glean.testOnlyIpc.anUnorderedLabeledBoolean.aLabel.testGetValue()
+    );
+    let value = keyedScalarValue(
+      "telemetry.test.mirror_for_unordered_labeled_bool",
+      "content"
+    );
+    Assert.deepEqual({ aLabel: true }, value);
 
     
     const counters = Glean.testOnlyIpc.aLabeledCounter;
@@ -225,7 +242,7 @@ add_task(
       "Invalid labels record errors, which throw"
     );
 
-    let value = keyedScalarValue(
+    value = keyedScalarValue(
       "telemetry.test.another_mirror_for_labeled_counter",
       "content"
     );

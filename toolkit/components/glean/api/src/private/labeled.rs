@@ -24,7 +24,8 @@ mod private {
     };
     use crate::private::labeled_timing_distribution::LabeledTimingDistributionMetricKind;
     use crate::private::{
-        CounterMetric, CustomDistributionMetric, MemoryDistributionMetric, TimingDistributionMetric,
+        BooleanMetric, CounterMetric, CustomDistributionMetric, MemoryDistributionMetric,
+        TimingDistributionMetric,
     };
     use std::sync::Arc;
 
@@ -34,7 +35,12 @@ mod private {
     
     pub trait Sealed {
         type GleanMetric: glean::private::AllowLabeled + Clone;
-        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, label: &str) -> Self;
+        fn from_glean_metric(
+            id: MetricId,
+            metric: Arc<Self::GleanMetric>,
+            label: &str,
+            permit_unordered_ipc: bool,
+        ) -> Self;
     }
 
     
@@ -42,12 +48,24 @@ mod private {
     
     impl Sealed for LabeledBooleanMetric {
         type GleanMetric = glean::private::BooleanMetric;
-        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
+        fn from_glean_metric(
+            id: MetricId,
+            metric: Arc<Self::GleanMetric>,
+            label: &str,
+            permit_unordered_ipc: bool,
+        ) -> Self {
             if need_ipc() {
-                
-                LabeledBooleanMetric::Child(crate::private::boolean::BooleanMetricIpc)
+                if permit_unordered_ipc {
+                    LabeledBooleanMetric::UnorderedChild {
+                        id,
+                        label: label.to_string(),
+                    }
+                } else {
+                    
+                    LabeledBooleanMetric::Child
+                }
             } else {
-                LabeledBooleanMetric::Parent { id, inner: metric }
+                LabeledBooleanMetric::Parent(BooleanMetric::Parent { id, inner: metric })
             }
         }
     }
@@ -57,7 +75,12 @@ mod private {
     
     impl Sealed for LabeledStringMetric {
         type GleanMetric = glean::private::StringMetric;
-        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
+        fn from_glean_metric(
+            id: MetricId,
+            metric: Arc<Self::GleanMetric>,
+            _label: &str,
+            _permit_unordered_ipc: bool,
+        ) -> Self {
             if need_ipc() {
                 
                 LabeledStringMetric::Child(crate::private::string::StringMetricIpc)
@@ -72,7 +95,12 @@ mod private {
     
     impl Sealed for LabeledCounterMetric {
         type GleanMetric = glean::private::CounterMetric;
-        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, label: &str) -> Self {
+        fn from_glean_metric(
+            id: MetricId,
+            metric: Arc<Self::GleanMetric>,
+            label: &str,
+            _permit_unordered_ipc: bool,
+        ) -> Self {
             if need_ipc() {
                 LabeledCounterMetric::Child {
                     id,
@@ -89,7 +117,12 @@ mod private {
     
     impl Sealed for LabeledCustomDistributionMetric {
         type GleanMetric = glean::private::CustomDistributionMetric;
-        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, label: &str) -> Self {
+        fn from_glean_metric(
+            id: MetricId,
+            metric: Arc<Self::GleanMetric>,
+            label: &str,
+            _permit_unordered_ipc: bool,
+        ) -> Self {
             if need_ipc() {
                 LabeledCustomDistributionMetric::Child {
                     id,
@@ -109,7 +142,12 @@ mod private {
     
     impl Sealed for LabeledMemoryDistributionMetric {
         type GleanMetric = glean::private::MemoryDistributionMetric;
-        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, label: &str) -> Self {
+        fn from_glean_metric(
+            id: MetricId,
+            metric: Arc<Self::GleanMetric>,
+            label: &str,
+            _permit_unordered_ipc: bool,
+        ) -> Self {
             if need_ipc() {
                 LabeledMemoryDistributionMetric::Child {
                     id,
@@ -129,7 +167,12 @@ mod private {
     
     impl Sealed for LabeledTimingDistributionMetric {
         type GleanMetric = glean::private::TimingDistributionMetric;
-        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, label: &str) -> Self {
+        fn from_glean_metric(
+            id: MetricId,
+            metric: Arc<Self::GleanMetric>,
+            label: &str,
+            _permit_unordered_ipc: bool,
+        ) -> Self {
             if need_ipc() {
                 LabeledTimingDistributionMetric {
                     inner: Arc::new(TimingDistributionMetric::new_child(id)),
@@ -196,6 +239,10 @@ pub struct LabeledMetric<T: AllowLabeled, E> {
     core: glean::private::LabeledMetric<T::GleanMetric>,
 
     label_enum: PhantomData<E>,
+
+    
+    
+    permit_unordered_ipc: bool,
 }
 
 impl<T, E> LabeledMetric<T, E>
@@ -215,6 +262,21 @@ where
             id,
             core,
             label_enum: PhantomData,
+            permit_unordered_ipc: false,
+        }
+    }
+
+    pub fn with_unordered_ipc(
+        id: MetricId,
+        meta: LabeledMetricData,
+        labels: Option<Vec<Cow<'static, str>>>,
+    ) -> LabeledMetric<T, E> {
+        let core = glean::private::LabeledMetric::new(meta, labels);
+        LabeledMetric {
+            id,
+            core,
+            label_enum: PhantomData,
+            permit_unordered_ipc: true,
         }
     }
 }
@@ -237,7 +299,7 @@ where
     
     pub fn get(&self, label: &str) -> U {
         let metric = self.core.get(label);
-        U::from_glean_metric(self.id, metric, label)
+        U::from_glean_metric(self.id, metric, label, self.permit_unordered_ipc)
     }
 
     
