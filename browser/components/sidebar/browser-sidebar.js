@@ -347,27 +347,19 @@ var SidebarController = {
         this._mainResizeObserverAdded = true;
       }
       if (!this._browserResizeObserver) {
-        let debounceTimeout = null;
         this._browserResizeObserver = () => {
           
-          if (!this._browserResizeObserverEnabled) {
-            return;
-          }
-          clearTimeout(debounceTimeout);
-          debounceTimeout = setTimeout(() => {
-            const current = this.browser.getBoundingClientRect().width;
-            const previous = this._browserWidth;
-            const percentage = (current / window.innerWidth) * 100;
-            this._browserWidth = current;
-            Glean.sidebar.resize.record({
-              current,
-              previous,
-              percentage,
-            });
-            Glean.sidebar.width.set(current);
-          }, 1000);
+          const current = this.browser.getBoundingClientRect().width;
+          const previous = this._browserWidth;
+          const percentage = (current / window.innerWidth) * 100;
+          Glean.sidebar.resize.record({
+            current: Math.round(current),
+            previous: Math.round(previous),
+            percentage: Math.round(percentage),
+          });
+          this._recordBrowserSize();
         };
-        this.browser.addEventListener("resize", this._browserResizeObserver);
+        this._splitter.addEventListener("command", this._browserResizeObserver);
       }
       
       this.recordVisibilitySetting();
@@ -443,7 +435,7 @@ var SidebarController = {
       
       this.sidebarMain.remove();
     }
-    this.browser.removeEventListener("resize", this._browserResizeObserver);
+    this._splitter.removeEventListener("command", this._browserResizeObserver);
   },
 
   
@@ -786,8 +778,7 @@ var SidebarController = {
   
 
 
-  _enableBrowserResizeObserver() {
-    this._browserResizeObserverEnabled = true;
+  _recordBrowserSize() {
     this._browserWidth = this.browser.getBoundingClientRect().width;
     Glean.sidebar.width.set(this._browserWidth);
   },
@@ -1362,6 +1353,11 @@ var SidebarController = {
 
 
   async show(commandID, triggerNode) {
+    if (this.currentID) {
+      
+      
+      this._recordPanelToggle(this.currentID, false);
+    }
     this._recordPanelToggle(commandID, true);
 
     
@@ -1484,7 +1480,7 @@ var SidebarController = {
 
               
               this._fireShowEvent();
-              this._enableBrowserResizeObserver();
+              this._recordBrowserSize();
             }, 0);
           },
           { capture: true, once: true }
@@ -1494,7 +1490,7 @@ var SidebarController = {
 
         
         this._fireShowEvent();
-        this._enableBrowserResizeObserver();
+        this._recordBrowserSize();
       }
     });
   },
@@ -1511,7 +1507,6 @@ var SidebarController = {
     }
 
     this.hideSwitcherPanel();
-    this._browserResizeObserverEnabled = false;
     this._recordPanelToggle(this.currentID, false);
     if (this.sidebarRevampEnabled) {
       this._box.dispatchEvent(new CustomEvent("sidebar-hide"));
