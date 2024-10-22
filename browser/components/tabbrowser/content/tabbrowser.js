@@ -2981,7 +2981,11 @@
 
 
 
-    addTabGroup(tabs, { color = null, label = "" } = {}) {
+
+
+
+
+    addTabGroup(tabs, { color = null, label = "", insertBefore = null } = {}) {
       if (!tabs?.length) {
         throw new Error("Cannot create tab group with zero tabs");
       }
@@ -2992,8 +2996,9 @@
 
       let id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
       let group = this._createTabGroup(id, color, false, label);
-      this.tabContainer.appendChild(group);
+      this.tabContainer.insertBefore(group, insertBefore);
       group.addTabs(tabs);
+
       group.dispatchEvent(new CustomEvent("TabGroupCreate", { bubbles: true }));
       return group;
     },
@@ -8373,7 +8378,8 @@ var TabContextMenu = {
 
   moveTabsToNewGroup() {
     gBrowser.addTabGroup(
-      this.contextTab.multiselected ? gBrowser.selectedTabs : [this.contextTab]
+      this.contextTab.multiselected ? gBrowser.selectedTabs : [this.contextTab],
+      { insertBefore: this.contextTab }
     );
   },
 
