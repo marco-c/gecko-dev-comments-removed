@@ -349,7 +349,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
 
   
   JS::AutoFilename filename;
-  if (!JS::DescribeScriptedCaller(cx, &filename)) {
+  if (!JS::DescribeScriptedCaller(&filename, cx)) {
     
     return NS_ERROR_FAILURE;
   }

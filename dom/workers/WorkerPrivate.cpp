@@ -3152,7 +3152,7 @@ nsresult WorkerPrivate::GetLoadInfo(
       
       
       JS::AutoFilename fileName;
-      if (JS::DescribeScriptedCaller(aCx, &fileName)) {
+      if (JS::DescribeScriptedCaller(&fileName, aCx)) {
         
         
         

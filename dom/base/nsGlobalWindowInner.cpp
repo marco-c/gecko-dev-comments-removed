@@ -5008,7 +5008,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
   
   
   uint32_t* linenop = XRE_IsParentProcess() ? &lineno : nullptr;
-  bool hasFrame = JS::DescribeScriptedCaller(aCx, &filename, linenop);
+  bool hasFrame = JS::DescribeScriptedCaller(&filename, aCx, linenop);
 
   
   

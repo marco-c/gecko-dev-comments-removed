@@ -599,7 +599,7 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     JS::AutoFilename scriptFilename;
     
     
-    if (JS::DescribeScriptedCaller(cx, &scriptFilename)) {
+    if (JS::DescribeScriptedCaller(&scriptFilename, cx)) {
       if (const char* file = scriptFilename.get()) {
         filename.Assign(file, strlen(file));
       }

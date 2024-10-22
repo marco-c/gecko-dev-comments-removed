@@ -7241,7 +7241,7 @@ static bool EvalReturningScope(JSContext* cx, unsigned argc, Value* vp) {
   JS::AutoFilename filename;
   uint32_t lineno;
 
-  JS::DescribeScriptedCaller(cx, &filename, &lineno);
+  JS::DescribeScriptedCaller(&filename, cx, &lineno);
 
   
   RootedObject global(cx);
