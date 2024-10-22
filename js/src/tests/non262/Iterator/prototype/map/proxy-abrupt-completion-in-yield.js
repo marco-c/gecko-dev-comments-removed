@@ -6,8 +6,6 @@
 
 
 
-
-
 class TestError extends Error {}
 
 class TestIterator extends Iterator {

@@ -5,10 +5,6 @@
 
 
 
-
-
-
-
 Symbol = undefined;
 assertThrowsInstanceOf(() => Symbol.iterator, TypeError);
 

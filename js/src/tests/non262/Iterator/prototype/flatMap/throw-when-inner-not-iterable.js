@@ -11,9 +11,6 @@
 
 
 
-
-
-
 class InvalidIterable {
   [Symbol.iterator]() {
     return {};

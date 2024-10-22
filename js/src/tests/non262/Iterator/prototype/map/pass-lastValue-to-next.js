@@ -7,8 +7,6 @@
 
 
 
-
-
 const iteratorWhereNextTakesValue = Object.setPrototypeOf({
   next: function(value) {
     assertEq(arguments.length, 0);
