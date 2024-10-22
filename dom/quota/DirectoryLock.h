@@ -35,6 +35,8 @@ class PersistenceScope;
 
 
 
+
+
 class NS_NO_VTABLE DirectoryLock {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
