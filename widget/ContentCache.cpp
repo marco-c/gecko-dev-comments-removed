@@ -1448,9 +1448,37 @@ void ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
   
   
 
+  const bool isCompositionEvent = [&]() {
+    switch (aMessage) {
+      case eCompositionStart:
+      case eCompositionEnd:
+      case eCompositionChange:
+      case eCompositionCommitAsIs:
+      case eCompositionCommit:
+      case eCompositionCommitRequestHandled:
+        return true;
+      case eSetSelection:
+      case eContentCommandCut:
+      case eContentCommandCopy:
+      case eContentCommandPaste:
+      case eContentCommandDelete:
+      case eContentCommandUndo:
+      case eContentCommandRedo:
+      case eContentCommandInsertText:
+      case eContentCommandReplaceText:
+        return false;
+      default:
+        NS_ASSERTION(
+            false, nsPrintfCString(
+                       "%s message is NOT expected in OnEventNeedingAckHandled",
+                       ToChar(aMessage))
+                       .get());
+        return false;
+    }
+  }();
+
   HandlingCompositionData* handlingCompositionData =
-      aMessage != eSetSelection ? GetHandlingCompositionData(aCompositionId)
-                                : nullptr;
+      isCompositionEvent ? GetHandlingCompositionData(aCompositionId) : nullptr;
 
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
           ("0x%p OnEventNeedingAckHandled(aWidget=0x%p, aMessage=%s, "
@@ -1466,7 +1494,7 @@ void ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
 
   
   
-  if (NS_WARN_IF(aMessage != eSetSelection && !handlingCompositionData)) {
+  if (NS_WARN_IF(isCompositionEvent && !handlingCompositionData)) {
     return;
   }
 
