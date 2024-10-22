@@ -34,6 +34,12 @@ async function runTests() {
   newWin.focus();
   await focused;
 
+  
+  
+  
+  
+  EventUtils.synthesizeKey("KEY_Escape", {}, newWin);
+  EventUtils.synthesizeKey("KEY_Escape", {}, newWin);
   let caretMoved = waitForEvent(
     EVENT_TEXT_CARET_MOVED,
     event => event.accessible.role == ROLE_ENTRY
