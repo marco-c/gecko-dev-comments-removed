@@ -290,10 +290,10 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   uint32_t GetNumberOfRows();
 
   
-  int32_t mStartSelectionIndex;
-  int32_t mEndSelectionIndex;
+  int32_t mStartSelectionIndex = 0;
+  int32_t mEndSelectionIndex = 0;
 
-  uint32_t mNumDisplayRows;
+  uint32_t mNumDisplayRows = 0;
   bool mChangesSinceDragStart : 1;
 
   
@@ -311,9 +311,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
 
   
   bool mReflowWasInterrupted : 1;
-
-  
-  bool mForceSelection : 1;
 
   RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 

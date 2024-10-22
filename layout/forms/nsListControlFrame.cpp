@@ -52,16 +52,14 @@ NS_IMPL_FRAMEARENA_HELPERS(nsListControlFrame)
 nsListControlFrame::nsListControlFrame(ComputedStyle* aStyle,
                                        nsPresContext* aPresContext)
     : ScrollContainerFrame(aStyle, aPresContext, kClassID, false),
-      mReflowWasInterrupted(false),
-      mForceSelection(false) {
-  mChangesSinceDragStart = false;
-
-  mIsAllContentHere = false;
-  mIsAllFramesHere = false;
-  mHasBeenInitialized = false;
-  mNeedToReset = true;
-  mPostChildrenLoadedReset = false;
-}
+      mChangesSinceDragStart(false),
+      mIsAllContentHere(false),
+      mIsAllFramesHere(false),
+      mHasBeenInitialized(false),
+      mNeedToReset(true),
+      mPostChildrenLoadedReset(false),
+      mMightNeedSecondPass(false),
+      mReflowWasInterrupted(false) {}
 
 nsListControlFrame::~nsListControlFrame() = default;
 
@@ -508,62 +506,61 @@ uint32_t nsListControlFrame::GetNumberOfRows() {
 
 bool nsListControlFrame::PerformSelection(int32_t aClickedIndex, bool aIsShift,
                                           bool aIsControl) {
-  bool wasChanged = false;
-
-  if (aClickedIndex == kNothingSelected && !mForceSelection) {
+  if (aClickedIndex == kNothingSelected) {
     
-  } else if (GetMultiple()) {
-    if (aIsShift) {
-      
-      
-      if (mStartSelectionIndex == kNothingSelected) {
-        InitSelectionRange(aClickedIndex);
-      }
-
-      
-      
-      int32_t startIndex;
-      int32_t endIndex;
-      if (mStartSelectionIndex == kNothingSelected) {
-        startIndex = aClickedIndex;
-        endIndex = aClickedIndex;
-      } else if (mStartSelectionIndex <= aClickedIndex) {
-        startIndex = mStartSelectionIndex;
-        endIndex = aClickedIndex;
-      } else {
-        startIndex = aClickedIndex;
-        endIndex = mStartSelectionIndex;
-      }
-
-      
-      wasChanged = ExtendedSelection(startIndex, endIndex, !aIsControl);
-      AutoWeakFrame weakFrame(this);
-      ScrollToIndex(aClickedIndex);
-      if (!weakFrame.IsAlive()) {
-        return wasChanged;
-      }
-
-      if (mStartSelectionIndex == kNothingSelected) {
-        mStartSelectionIndex = aClickedIndex;
-      }
-#ifdef ACCESSIBILITY
-      nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
-#endif
-      mEndSelectionIndex = aClickedIndex;
-      InvalidateFocus();
-
-#ifdef ACCESSIBILITY
-      FireMenuItemActiveEvent(prevOption);
-#endif
-    } else if (aIsControl) {
-      wasChanged = SingleSelection(aClickedIndex, true);  
-    } else {
-      wasChanged = SingleSelection(aClickedIndex, false);  
+    return false;
+  }
+  if (!GetMultiple()) {
+    return SingleSelection(aClickedIndex, false);
+  }
+  bool wasChanged = false;
+  if (aIsShift) {
+    
+    
+    if (mStartSelectionIndex == kNothingSelected) {
+      InitSelectionRange(aClickedIndex);
     }
+
+    
+    
+    int32_t startIndex;
+    int32_t endIndex;
+    if (mStartSelectionIndex == kNothingSelected) {
+      startIndex = aClickedIndex;
+      endIndex = aClickedIndex;
+    } else if (mStartSelectionIndex <= aClickedIndex) {
+      startIndex = mStartSelectionIndex;
+      endIndex = aClickedIndex;
+    } else {
+      startIndex = aClickedIndex;
+      endIndex = mStartSelectionIndex;
+    }
+
+    
+    wasChanged = ExtendedSelection(startIndex, endIndex, !aIsControl);
+    AutoWeakFrame weakFrame(this);
+    ScrollToIndex(aClickedIndex);
+    if (!weakFrame.IsAlive()) {
+      return wasChanged;
+    }
+
+    if (mStartSelectionIndex == kNothingSelected) {
+      mStartSelectionIndex = aClickedIndex;
+    }
+#ifdef ACCESSIBILITY
+    nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+    mEndSelectionIndex = aClickedIndex;
+    InvalidateFocus();
+
+#ifdef ACCESSIBILITY
+    FireMenuItemActiveEvent(prevOption);
+#endif
+  } else if (aIsControl) {
+    wasChanged = SingleSelection(aClickedIndex, true);  
   } else {
     wasChanged = SingleSelection(aClickedIndex, false);  
   }
-
   return wasChanged;
 }
 
@@ -853,9 +850,6 @@ bool nsListControlFrame::SetOptionsSelectedFromFrame(int32_t aStartIndex,
       HTMLSelectElement::FromNode(mContent);
 
   HTMLSelectElement::OptionFlags mask = OptionFlag::Notify;
-  if (mForceSelection) {
-    mask += OptionFlag::SetDisabled;
-  }
   if (aValue) {
     mask += OptionFlag::IsSelected;
   }
