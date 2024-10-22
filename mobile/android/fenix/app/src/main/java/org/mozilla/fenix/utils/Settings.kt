@@ -355,7 +355,16 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     var isOverrideTPPopupsForPerformanceTest = false
 
-    var showSecretDebugMenuThisSession = false
+    // We do not use `booleanPreference` because we only want the "read" part of this setting to be
+    // controlled by a shared pref (if any). In the secret settings, there is a toggle switch to enable
+    // and disable this pref. Other than that, the `SecretDebugMenuTrigger` should be able to change
+    // this setting for the duration of the session only, i.e. `SecretDebugMenuTrigger` should never
+    // be able to (indirectly) change the value of the shared pref.
+    var showSecretDebugMenuThisSession: Boolean = false
+        get() = field || preferences.getBoolean(
+            appContext.getPreferenceKey(R.string.pref_key_persistent_debug_menu),
+            false,
+        )
 
     val shouldShowSecurityPinWarningSync: Boolean
         get() = loginsSecureWarningSyncCount.underMaxCount()
@@ -2093,9 +2102,10 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Indicates if the Set as default browser prompt for existing users feature is enabled.
      */
-    var setAsDefaultBrowserPromptForExistingUsersEnabled by booleanPreference(
+    var setAsDefaultBrowserPromptForExistingUsersEnabled by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_set_as_default_browser_prompt_enabled),
-        default = FxNimbus.features.setAsDefaultPrompt.value().enabled,
+        default = { FxNimbus.features.setAsDefaultPrompt.value().enabled },
+        featureFlag = true,
     )
 
     /**
@@ -2125,19 +2135,20 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Number of days between Set as default Browser prompts.
      */
-    private val daysBetweenDefaultBrowserPrompts = FxNimbus.features.setAsDefaultPrompt.value().daysBetweenPrompts
+    private val daysBetweenDefaultBrowserPrompts: Int
+        get() = FxNimbus.features.setAsDefaultPrompt.value().daysBetweenPrompts
 
     /**
      * Maximum number of times the Set as default Browser prompt can be displayed to the user.
      */
-    private val maxNumberOfDefaultBrowserPrompts =
-        FxNimbus.features.setAsDefaultPrompt.value().maxNumberOfTimesToDisplay
+    private val maxNumberOfDefaultBrowserPrompts: Int
+        get() = FxNimbus.features.setAsDefaultPrompt.value().maxNumberOfTimesToDisplay
 
     /**
      * Number of app cold starts before displaying the Set as default Browser prompt.
      */
-    private val appColdStartsToShowDefaultPrompt =
-        FxNimbus.features.setAsDefaultPrompt.value().appColdStartsBetweenPrompts
+    private val appColdStartsToShowDefaultPrompt: Int
+        get() = FxNimbus.features.setAsDefaultPrompt.value().appColdStartsBetweenPrompts
 
     /**
      * Indicates if the Set as default Browser prompt should be displayed to the user.
