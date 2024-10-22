@@ -44,6 +44,20 @@ nsLiteralCString StringGenerator::GetString(
 
 
 nsLiteralCString StringGenerator::GetString(
+    const GroupInitialization aGroupInitialization) {
+  switch (aGroupInitialization) {
+    case GroupInitialization::PersistentGroup:
+      return "PersistentGroup"_ns;
+    case GroupInitialization::TemporaryGroup:
+      return "TemporaryGroup"_ns;
+
+    default:
+      MOZ_CRASH("Bad group initialization value!");
+  }
+}
+
+
+nsLiteralCString StringGenerator::GetString(
     const OriginInitialization aOriginInitialization) {
   switch (aOriginInitialization) {
     case OriginInitialization::PersistentOrigin:
