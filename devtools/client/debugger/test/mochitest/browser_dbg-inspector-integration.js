@@ -119,6 +119,10 @@ add_task(async function () {
   await waitForSelectedSource(dbg, "doc-event-handler.html");
 
   
+  
+  await waitForDocumentLoadComplete(dbg);
+
+  
   await tryHovering(dbg, 5, 8, "popup");
 
   info("Wait for top level node to expand and child nodes to load");
