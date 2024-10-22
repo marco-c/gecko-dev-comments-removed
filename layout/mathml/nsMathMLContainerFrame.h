@@ -364,9 +364,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-
-
-  static void DidReflowChildren(nsIFrame* aFirst, nsIFrame* aStop = nullptr);
+  static void DidReflowChildren(nsIFrame* aFirst);
 
   
 
