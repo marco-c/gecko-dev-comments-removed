@@ -128,7 +128,9 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   
   
   
-  if ((IsHttpsFirstModeEnabled(isPrivateWin) ||
+  
+  if (!mozilla::StaticPrefs::dom_security_https_first_for_custom_ports() &&
+      (IsHttpsFirstModeEnabled(isPrivateWin) ||
        (loadInfo->GetWasSchemelessInput() &&
         mozilla::StaticPrefs::dom_security_https_first_schemeless()))) {
     int32_t port = 0;
@@ -382,20 +384,22 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   }
 
   
-  
   MOZ_ASSERT(aURI->SchemeIs("http"), "how come the request is not 'http'?");
-  int defaultPortforScheme = NS_GetDefaultPort("http");
-  
-  
-  int32_t port = 0;
-  nsresult rv = aURI->GetPort(&port);
-  NS_ENSURE_SUCCESS(rv, false);
-  if (port != defaultPortforScheme && port != -1) {
-    return false;
+
+  if (!mozilla::StaticPrefs::dom_security_https_first_for_custom_ports()) {
+    int defaultPortforScheme = NS_GetDefaultPort("http");
+    
+    
+    int32_t port = 0;
+    nsresult rv = aURI->GetPort(&port);
+    NS_ENSURE_SUCCESS(rv, false);
+    if (port != defaultPortforScheme && port != -1) {
+      return false;
+    }
   }
+
   
-  
-  if (aLoadInfo->GetIsFormSubmission()) {
+  if (!aLoadInfo->GetIsGETRequest()) {
     return false;
   }
 
