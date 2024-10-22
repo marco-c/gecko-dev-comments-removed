@@ -182,7 +182,8 @@ function waitForEvent(topic, status = null) {
 
 
 async function testPostUpdateProcessing() {
-  await gAUS.internal.postUpdateProcessing();
+  
+  await gAUS.internal.init( true);
 }
 
 
