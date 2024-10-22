@@ -2614,6 +2614,8 @@ void QuotaManager::RemoveQuota() {
   MOZ_ASSERT(mTemporaryStorageUsage == 0, "Should be zero!");
 }
 
+
+
 nsresult QuotaManager::LoadQuota() {
   AssertIsOnIOThread();
   MOZ_ASSERT(mStorageConnection);
@@ -3840,7 +3842,7 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
                                         const OriginMetadata& aOriginMetadata,
                                         int64_t aAccessTime, bool aPersisted,
-                                        nsIFile* aDirectory) {
+                                        nsIFile* aDirectory, bool aForGroup) {
   AssertIsOnIOThread();
 
   
@@ -3848,6 +3850,12 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
   
 
   const bool trackQuota = aPersistenceType != PERSISTENCE_TYPE_PERSISTENT;
+
+  if (trackQuota && !aForGroup &&
+      StaticPrefs::
+          dom_quotaManager_temporaryStorage_lazyOriginInitialization()) {
+    return NS_OK;
+  }
 
   
   
@@ -5689,8 +5697,11 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryGroupIsInitializedInternal(
       
       QM_TRY(MOZ_TO_RESULT(InitializeOrigin(metadata.mPersistenceType, metadata,
                                             metadata.mLastAccessTime,
-                                            metadata.mPersisted, directory)));
+                                            metadata.mPersisted, directory,
+                                             true)));
     }
+
+    
 
     return Ok{};
   };
@@ -6224,7 +6235,15 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitializedInternal() {
 
     mTemporaryStorageInitializedInternal = true;
 
-    CleanupTemporaryStorage();
+    
+    
+    
+    
+    
+    if (!StaticPrefs::
+            dom_quotaManager_temporaryStorage_lazyOriginInitialization()) {
+      CleanupTemporaryStorage();
+    }
 
     if (mCacheUsable) {
       QM_TRY(InvalidateCache(*mStorageConnection));
