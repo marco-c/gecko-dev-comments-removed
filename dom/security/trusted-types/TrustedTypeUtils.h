@@ -8,6 +8,7 @@
 #define DOM_SECURITY_TRUSTED_TYPES_TRUSTEDTYPEUTILS_H_
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/SessionStoreUtils.h"
 #include "mozilla/dom/TrustedTypesBinding.h"
@@ -37,15 +38,22 @@ namespace TrustedTypeUtils {
 
 
 
-const nsAString* GetTrustedTypesCompliantString(
-    const TrustedHTMLOrString& aInput, nsIContentSecurityPolicy* aCSP,
-    const nsAString& aSink, const nsAString& aSinkGroup,
+
+
+MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantString(
+    const TrustedHTMLOrString& aInput, const nsAString& aSink,
+    const nsAString& aSinkGroup, const nsINode& aNode,
     Maybe<nsAutoString>& aResultHolder, ErrorResult& aError);
-const nsAString* GetTrustedTypesCompliantString(
-    const TrustedHTMLOrNullIsEmptyString& aInput,
-    nsIContentSecurityPolicy* aCSP, const nsAString& aSink,
-    const nsAString& aSinkGroup, Maybe<nsAutoString>& aResultHolder,
-    ErrorResult& aError);
+MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantString(
+    const TrustedHTMLOrNullIsEmptyString& aInput, const nsAString& aSink,
+    const nsAString& aSinkGroup, const nsINode& aNode,
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError);
+
+
+
+MOZ_CAN_RUN_SCRIPT void ProcessValueWithADefaultPolicy(
+    const Document& aDocument, const nsAString& aInput, const nsAString& aSink,
+    TrustedHTML** aResult, ErrorResult& aError);
 
 }  
 
@@ -79,6 +87,10 @@ const nsAString* GetTrustedTypesCompliantString(
    private:                                                            \
     friend mozilla::dom::TrustedTypePolicy;                            \
     friend mozilla::dom::TrustedTypePolicyFactory;                     \
+    friend void                                                        \
+    mozilla::dom::TrustedTypeUtils::ProcessValueWithADefaultPolicy(    \
+        const Document& aDocument, const nsAString&, const nsAString&, \
+        TrustedHTML**, ErrorResult&);                                  \
                                                                        \
     explicit _class(const nsAString& aData) : mData{aData} {           \
       MOZ_ASSERT(!aData.IsVoid());                                     \

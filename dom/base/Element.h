@@ -233,6 +233,7 @@ class DOMRectList;
 class Flex;
 class Grid;
 class OwningTrustedHTMLOrNullIsEmptyString;
+class TrustedHTML;
 class TrustedHTMLOrNullIsEmptyString;
 
 
@@ -1629,8 +1630,12 @@ class Element : public FragmentOrElement {
                     OOMReporter& aError);
 
   
-  void SetInnerHTML(const TrustedHTMLOrNullIsEmptyString& aInnerHTML,
-                    nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT void SetInnerHTML(
+      const TrustedHTMLOrNullIsEmptyString& aInnerHTML,
+      nsIPrincipal* aSubjectPrincipal, ErrorResult& aError);
 
   
   virtual void SetInnerHTMLTrusted(const nsAString& aInnerHTML,
@@ -1639,9 +1644,9 @@ class Element : public FragmentOrElement {
 
   void GetOuterHTML(nsAString& aOuterHTML);
   void SetOuterHTML(const nsAString& aOuterHTML, ErrorResult& aError);
-  void InsertAdjacentHTML(const nsAString& aPosition,
-                          const TrustedHTMLOrString& aTrustedHTMLOrString,
-                          ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT void InsertAdjacentHTML(
+      const nsAString& aPosition,
+      const TrustedHTMLOrString& aTrustedHTMLOrString, ErrorResult& aError);
 
   void SetHTML(const nsAString& aInnerHTML, const SetHTMLOptions& aOptions,
                ErrorResult& aError);
