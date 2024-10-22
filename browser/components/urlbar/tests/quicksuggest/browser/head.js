@@ -162,10 +162,6 @@ async function setUpTelemetryTest({
 
 
 
-
-
-
-
 async function doTelemetryTest({
   index,
   suggestion,
@@ -185,8 +181,6 @@ async function doTelemetryTest({
       fireInputEvent: true,
     }),
 }) {
-  Services.telemetry.clearScalars();
-
   await doImpressionOnlyTest({
     index,
     suggestion,
@@ -220,8 +214,6 @@ async function doTelemetryTest({
     }
   }
 }
-
-
 
 
 
@@ -314,10 +306,6 @@ async function doImpressionOnlyTest({
   info("Waiting for page to load after clicking different row");
   await loadPromise;
 
-  
-  info("Checking scalars. Expected: " + JSON.stringify(expected.scalars));
-  QuickSuggestTestUtils.assertScalars(expected.scalars);
-
   Assert.equal(
     expectedPings.length,
     gleanPingCount.value,
@@ -330,8 +318,6 @@ async function doImpressionOnlyTest({
 
   info("Finished impression-only test");
 }
-
-
 
 
 
@@ -386,9 +372,6 @@ async function doClickTest({
   await loadPromise;
   await TestUtils.waitForTick();
 
-  info("Checking scalars. Expected: " + JSON.stringify(expected.scalars));
-  QuickSuggestTestUtils.assertScalars(expected.scalars);
-
   Assert.equal(
     expectedPings.length,
     gleanPingCount.value,
@@ -399,8 +382,6 @@ async function doClickTest({
 
   info("Finished click test");
 }
-
-
 
 
 
@@ -476,9 +457,6 @@ async function doCommandTest({
       BrowserTestUtils.removeTab(gBrowser.selectedTab);
     }
   }
-
-  info("Checking scalars. Expected: " + JSON.stringify(expected.scalars));
-  QuickSuggestTestUtils.assertScalars(expected.scalars);
 
   Assert.equal(
     expectedPings.length,
