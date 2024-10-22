@@ -12,7 +12,7 @@ function assertSyntaxError(str) {
 }
 
 
-function f() { }
+function f() { "use strict"; }
 function* g() { yield 1; }
 var GeneratorFunctionPrototype = Object.getPrototypeOf(g);
 var GeneratorFunction = GeneratorFunctionPrototype.constructor;
