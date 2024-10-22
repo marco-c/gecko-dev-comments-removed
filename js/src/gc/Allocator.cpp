@@ -524,10 +524,9 @@ void ArenaChunk::commitOnePage(GCRuntime* gc) {
   decommittedPages[pageIndex] = false;
 
   for (size_t i = 0; i < ArenasPerPage; i++) {
-    size_t arenaIndex = pageIndex * ArenasPerPage + i;
+    size_t arenaIndex = pageToArenaIndex(pageIndex) + i;
     MOZ_ASSERT(!freeCommittedArenas[arenaIndex]);
     freeCommittedArenas[arenaIndex] = true;
-    arenas[arenaIndex].setAsNotAllocated();
     ++info.numArenasFreeCommitted;
   }
 
@@ -550,9 +549,16 @@ Arena* ArenaChunk::fetchNextFreeArena(GCRuntime* gc) {
 
 
 
+ArenaChunk* GCRuntime::takeOrAllocChunk(AutoLockGCBgAlloc& lock) {
+  ArenaChunk* chunk = getOrAllocChunk(lock);
+  emptyChunks(lock).remove(chunk);
+  return chunk;
+}
+
 ArenaChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
-  ArenaChunk* chunk = emptyChunks(lock).pop();
-  if (chunk) {
+  ArenaChunk* chunk;
+  if (!emptyChunks(lock).empty()) {
+    chunk = emptyChunks(lock).head();
     
     
     SetMemCheckKind(chunk, sizeof(ChunkBase), MemCheckKind::MakeUndefined);
@@ -565,7 +571,8 @@ ArenaChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
     }
 
     chunk = ArenaChunk::emplace(ptr, this,  true);
-    MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
+    MOZ_ASSERT(chunk->unused());
+    emptyChunks(lock).push(chunk);
   }
 
   if (wantBackgroundAllocation(lock)) {
@@ -601,11 +608,8 @@ ArenaChunk* GCRuntime::pickChunk(AutoLockGCBgAlloc& lock) {
 #ifdef DEBUG
   chunk->verify();
   MOZ_ASSERT(chunk->unused());
-  MOZ_ASSERT(!fullChunks(lock).contains(chunk));
-  MOZ_ASSERT(!availableChunks(lock).contains(chunk));
+  MOZ_ASSERT(emptyChunks(lock).contains(chunk));
 #endif
-
-  availableChunks(lock).push(chunk);
 
   return chunk;
 }
@@ -673,11 +677,10 @@ ArenaChunk* ArenaChunk::emplace(void* ptr, GCRuntime* gc,
     
     chunk->decommitAllArenas();
   } else {
-    
-    
-    chunk->initAsDecommitted();
+    chunk->initAsCommitted();
   }
 
+  MOZ_ASSERT(chunk->unused());
   chunk->verify();
 
   return chunk;
@@ -697,4 +700,14 @@ void ArenaChunkBase::initAsDecommitted() {
   freeCommittedArenas.ResetAll();
   info.numArenasFree = ArenasPerChunk;
   info.numArenasFreeCommitted = 0;
+}
+
+void ArenaChunkBase::initAsCommitted() {
+  
+  
+  
+  decommittedPages.ResetAll();
+  freeCommittedArenas.SetAll();
+  info.numArenasFree = ArenasPerChunk;
+  info.numArenasFreeCommitted = ArenasPerChunk;
 }

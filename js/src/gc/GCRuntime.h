@@ -570,7 +570,13 @@ class GCRuntime {
   void verifyAllChunks();
 #endif
 
+  
+  
   ArenaChunk* getOrAllocChunk(AutoLockGCBgAlloc& lock);
+
+  
+  ArenaChunk* takeOrAllocChunk(AutoLockGCBgAlloc& lock);
+
   void recycleChunk(ArenaChunk* chunk, const AutoLockGC& lock);
 
 #ifdef JS_GC_ZEAL
