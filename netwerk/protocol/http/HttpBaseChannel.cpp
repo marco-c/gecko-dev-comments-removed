@@ -32,6 +32,7 @@
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/browser/NimbusFeatures.h"
@@ -905,7 +906,7 @@ HttpBaseChannel::SetUploadStream(nsIInputStream* stream,
   
   
   StoreUploadStreamHasHeaders(false);
-  mRequestHead.SetMethod("GET"_ns);  
+  SetRequestMethod("GET"_ns);  
   mUploadStream = nullptr;
   return NS_OK;
 }
@@ -1859,6 +1860,8 @@ HttpBaseChannel::GetRequestMethod(nsACString& aMethod) {
 NS_IMETHODIMP
 HttpBaseChannel::SetRequestMethod(const nsACString& aMethod) {
   ENSURE_CALLED_BEFORE_CONNECT();
+
+  mLoadInfo->SetIsGETRequest(aMethod.Equals("GET"));
 
   const nsCString& flatMethod = PromiseFlatCString(aMethod);
 
@@ -3371,10 +3374,7 @@ HttpBaseChannel::PerformOpaqueResponseSafelistCheckBeforeSniff() {
     mListener = new OpaqueResponseFilter(mListener);
   }
 
-  Telemetry::ScalarAdd(
-      Telemetry::ScalarID::
-          OPAQUE_RESPONSE_BLOCKING_CROSS_ORIGIN_OPAQUE_RESPONSE_COUNT,
-      1);
+  glean::opaque_response_blocking::cross_origin_opaque_response_count.Add(1);
 
   PROFILER_MARKER_TEXT("ORB safelist check", NETWORK, {}, "Before sniff"_ns);
 
