@@ -7,11 +7,11 @@
 #ifndef dom_ipc_SharedPrefMap_h
 #define dom_ipc_SharedPrefMap_h
 
-#include "mozilla/AutoMemMap.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/ipc/StringTable.h"
+#include "mozilla/ipc/SharedMemory.h"
 #include "nsTHashMap.h"
 
 namespace mozilla {
@@ -52,8 +52,6 @@ class SharedPrefMapBuilder;
 
 
 class SharedPrefMap {
-  using FileDescriptor = mozilla::ipc::FileDescriptor;
-
   friend class SharedPrefMapBuilder;
 
   
@@ -421,7 +419,7 @@ class SharedPrefMap {
 
   
   
-  SharedPrefMap(const FileDescriptor&, size_t);
+  SharedPrefMap(const mozilla::ipc::SharedMemoryHandle&, size_t);
   explicit SharedPrefMap(SharedPrefMapBuilder&&);
 
   
@@ -504,11 +502,11 @@ class SharedPrefMap {
   
   
   
-  FileDescriptor CloneFileDescriptor() const;
+  mozilla::ipc::SharedMemoryHandle CloneHandle() const;
 
   
   
-  size_t MapSize() const { return mMap.size(); }
+  size_t MapSize() const { return mMappedMemory.size(); }
 
  protected:
   ~SharedPrefMap() = default;
@@ -518,7 +516,9 @@ class SharedPrefMap {
   using StringTable = mozilla::dom::ipc::StringTable<T>;
 
   
-  const Header& GetHeader() const { return mMap.get<Header>()[0]; }
+  const Header& GetHeader() const {
+    return *reinterpret_cast<const Header*>(mMappedMemory.data());
+  }
 
   RangedPtr<const Entry> Entries() const {
     return {reinterpret_cast<const Entry*>(&GetHeader() + 1), EntryCount()};
@@ -528,7 +528,7 @@ class SharedPrefMap {
 
   template <typename T>
   RangedPtr<const T> GetBlock(const DataBlock& aBlock) const {
-    return RangedPtr<uint8_t>(&mMap.get<uint8_t>()[aBlock.mOffset],
+    return RangedPtr<uint8_t>(&mMappedMemory.data()[aBlock.mOffset],
                               aBlock.mSize)
         .ReinterpretCast<const T>();
   }
@@ -549,15 +549,19 @@ class SharedPrefMap {
 
   StringTable<nsCString> KeyTable() const {
     auto& block = GetHeader().mKeyStrings;
-    return {{&mMap.get<uint8_t>()[block.mOffset], block.mSize}};
+    return {{&mMappedMemory.data()[block.mOffset], block.mSize}};
   }
 
   StringTable<nsCString> ValueTable() const {
     auto& block = GetHeader().mValueStrings;
-    return {{&mMap.get<uint8_t>()[block.mOffset], block.mSize}};
+    return {{&mMappedMemory.data()[block.mOffset], block.mSize}};
   }
 
-  loader::AutoMemMap mMap;
+  mozilla::ipc::SharedMemoryHandle mHandle;
+  
+  
+  
+  Span<uint8_t> mMappedMemory;
 };
 
 
@@ -593,7 +597,7 @@ class MOZ_RAII SharedPrefMapBuilder {
   
   
   
-  Result<Ok, nsresult> Finalize(loader::AutoMemMap& aMap);
+  Result<Ok, nsresult> Finalize(RefPtr<mozilla::ipc::SharedMemory>& aMap);
 
  private:
   using StringTableEntry = mozilla::dom::ipc::StringTableEntry;

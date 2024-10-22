@@ -330,11 +330,11 @@ void nsHyphenationManager::LoadAliases() {
 }
 
 void nsHyphenationManager::ShareHyphDictToProcess(
-    nsIURI* aURI, base::ProcessId aPid, base::SharedMemoryHandle* aOutHandle,
-    uint32_t* aOutSize) {
+    nsIURI* aURI, base::ProcessId aPid,
+    mozilla::ipc::SharedMemory::Handle* aOutHandle, uint32_t* aOutSize) {
   MOZ_ASSERT(XRE_IsParentProcess());
   
-  *aOutHandle = base::SharedMemory::NULLHandle();
+  *aOutHandle = mozilla::ipc::SharedMemory::NULLHandle();
   *aOutSize = 0;
 
   
