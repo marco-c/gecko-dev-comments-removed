@@ -81,6 +81,7 @@ add_setup(async function () {
     set: [
       
       ["browser.urlbar.autoFill", false],
+      ["browser.urlbar.scotchBonnet.enableOverride", false],
     ],
   });
   registerCleanupFunction(async () => {

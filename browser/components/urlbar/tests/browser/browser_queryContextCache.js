@@ -35,7 +35,7 @@ add_setup(async function () {
   await TestUtils.waitForTick();
 
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.quickactions", false]],
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
 
   

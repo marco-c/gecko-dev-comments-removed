@@ -9,6 +9,9 @@ const ALIAS = "@enginealias";
 let aliasEngine;
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+  });
   
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
