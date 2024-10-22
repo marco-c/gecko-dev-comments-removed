@@ -56,7 +56,9 @@ export function paused(pauseInfo) {
       validateSelectedFrame(getState(), selectedFrame);
 
       
-      await dispatch(fetchScopes(selectedFrame));
+      await dispatch(fetchScopes());
+      
+      
       validateSelectedFrame(getState(), selectedFrame);
 
       

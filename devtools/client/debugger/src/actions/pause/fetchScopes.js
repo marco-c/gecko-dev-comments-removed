@@ -5,13 +5,24 @@
 import {
   getGeneratedFrameScope,
   getOriginalFrameScope,
+  getSelectedFrame,
+  getCurrentThread,
 } from "../../selectors/index";
 import { mapScopes } from "./mapScopes";
 import { generateInlinePreview } from "./inlinePreview";
 import { PROMISE } from "../utils/middleware/promise";
+import { validateSelectedFrame } from "../../utils/context";
 
-export function fetchScopes(selectedFrame) {
+
+
+
+
+export function fetchScopes() {
   return async function ({ dispatch, getState, client }) {
+    const selectedFrame = getSelectedFrame(
+      getState(),
+      getCurrentThread(getState())
+    );
     
     
     
@@ -26,7 +37,10 @@ export function fetchScopes(selectedFrame) {
       });
 
       scopes.then(() => {
-        dispatch(generateInlinePreview(selectedFrame));
+        
+        validateSelectedFrame(getState(), selectedFrame);
+
+        dispatch(generateInlinePreview());
       });
     }
 
