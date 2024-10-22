@@ -2506,7 +2506,9 @@ bool nsIFrame::CanBeDynamicReflowRoot() const {
 
   
   
-  if (IsBlockFrameOrSubclass() && !HasAnyStateBits(NS_BLOCK_BFC)) {
+  
+  
+  if (!HasAnyStateBits(NS_BLOCK_BFC) && IsBlockFrameOrSubclass()) {
     return false;
   }
 
