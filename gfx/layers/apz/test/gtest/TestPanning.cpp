@@ -80,6 +80,27 @@ class APZCPanningTester : public APZCBasicTester {
 
     apzc->AssertStateIsReset();
   }
+
+  void PanWithFling() {
+    
+    
+    
+    PanGesture(PanGestureInput::PANGESTURE_START, apzc, ScreenIntPoint(50, 80),
+               ScreenPoint(0, 2), mcc->Time());
+    mcc->AdvanceByMillis(5);
+    apzc->AdvanceAnimations(mcc->GetSampleTime());
+    PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
+               ScreenPoint(0, 10), mcc->Time());
+    mcc->AdvanceByMillis(5);
+    apzc->AdvanceAnimations(mcc->GetSampleTime());
+    PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
+               ScreenPoint(0, 10), mcc->Time());
+    mcc->AdvanceByMillis(5);
+    apzc->AdvanceAnimations(mcc->GetSampleTime());
+    PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
+               ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
+               true);
+  }
 };
 
 
@@ -220,23 +241,7 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
 
 TEST_F(APZCPanningTester, DuplicatePanEndEvents_Bug1833950) {
   
-  
-  
-  PanGesture(PanGestureInput::PANGESTURE_START, apzc, ScreenIntPoint(50, 80),
-             ScreenPoint(0, 2), mcc->Time());
-  mcc->AdvanceByMillis(5);
-  apzc->AdvanceAnimations(mcc->GetSampleTime());
-  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
-             ScreenPoint(0, 10), mcc->Time());
-  mcc->AdvanceByMillis(5);
-  apzc->AdvanceAnimations(mcc->GetSampleTime());
-  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
-             ScreenPoint(0, 10), mcc->Time());
-  mcc->AdvanceByMillis(5);
-  apzc->AdvanceAnimations(mcc->GetSampleTime());
-  PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
-             ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
-             true);
+  PanWithFling();
 
   
   SampleAnimationOnce();
@@ -249,3 +254,71 @@ TEST_F(APZCPanningTester, DuplicatePanEndEvents_Bug1833950) {
              ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
              true);
 }
+
+#ifdef MOZ_WIDGET_GTK  
+TEST_F(APZCPanningTester, HoldGesture_HoldAndRelease) {
+  
+  PanWithFling();
+
+  
+  SampleAnimationOnce();
+  apzc->AssertStateIsFling();
+
+  
+  
+  PanGesture(PanGestureInput::PANGESTURE_MAYSTART, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  apzc->AssertStateIsReset();
+
+  
+  
+  
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_CANCELLED, apzc,
+             ScreenIntPoint(50, 80), ScreenPoint(0, 0), mcc->Time());
+  apzc->AssertStateIsReset();
+}
+
+TEST_F(APZCPanningTester, HoldGesture_HoldAndScroll) {
+  
+  PanWithFling();
+
+  
+  SampleAnimationOnce();
+  apzc->AssertStateIsFling();
+
+  
+  float scrollYBefore = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
+  EXPECT_GT(scrollYBefore, 0);
+
+  
+  
+  PanGesture(PanGestureInput::PANGESTURE_MAYSTART, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  apzc->AssertStateIsReset();
+
+  
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_START, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 2), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 10), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
+             true);
+
+  
+  float scrollYAfter = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
+  EXPECT_GT(scrollYAfter, scrollYBefore);
+}
+#endif
