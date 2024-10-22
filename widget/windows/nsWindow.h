@@ -815,7 +815,7 @@ class nsWindow final : public nsBaseWidget {
   
   LayoutDeviceIntMargin mNonClientOffset;
   
-  LayoutDeviceIntMargin mNonClientMargins;
+  LayoutDeviceIntMargin mNonClientMargins{-1, -1, -1, -1};
   
   LayoutDeviceIntMargin mFutureMarginsOnceChromeShows;
   

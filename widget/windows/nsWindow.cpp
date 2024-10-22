@@ -953,6 +953,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       
       
       SetNonClientMargins(LayoutDeviceIntMargin(0, 2, 2, 2));
+      
+      
+      mNeedsNCAreaClear = false;
 
       
       
@@ -1588,6 +1591,13 @@ nsWindow* nsWindow::GetParentWindowBase(bool aIncludeOwner) {
 
 void nsWindow::Show(bool aState) {
   if (aState && mIsShowingPreXULSkeletonUI) {
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2738,6 +2748,8 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   }
 
   UpdateOpaqueRegionInternal();
+  
+  
   mNeedsNCAreaClear = true;
 
   if (aReflowWindow) {
@@ -2750,8 +2762,14 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
 }
 
 nsresult nsWindow::SetNonClientMargins(const LayoutDeviceIntMargin& margins) {
-  if (!mIsTopWidgetWindow || mBorderStyle == BorderStyle::None) {
+  if (!mIsTopWidgetWindow || mBorderStyle == BorderStyle::None ||
+      margins.top < -1 || margins.bottom < -1 || margins.left < -1 ||
+      margins.right < -1) {
     return NS_ERROR_INVALID_ARG;
+  }
+
+  if (mNonClientMargins == margins) {
+    return NS_OK;
   }
 
   if (mHideChrome) {
@@ -2759,29 +2777,18 @@ nsresult nsWindow::SetNonClientMargins(const LayoutDeviceIntMargin& margins) {
     mFutureMarginsToUse = true;
     return NS_OK;
   }
+
   mFutureMarginsToUse = false;
 
   
-  if (margins.top == -1 && margins.left == -1 && margins.right == -1 &&
-      margins.bottom == -1) {
-    mCustomNonClient = false;
-    mNonClientMargins = margins;
-    
-    
-    ResetLayout();
-    return NS_OK;
-  }
-
-  if (margins.top < -1 || margins.bottom < -1 || margins.left < -1 ||
-      margins.right < -1) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
+  mCustomNonClient = margins != LayoutDeviceIntMargin(-1, -1, -1, -1);
   mNonClientMargins = margins;
-  mCustomNonClient = true;
-  if (!UpdateNonClientMargins()) {
-    NS_WARNING("UpdateNonClientMargins failed!");
-    return NS_OK;
+
+  
+  if (mCustomNonClient) {
+    UpdateNonClientMargins();
+  } else {
+    ResetLayout();
   }
 
   return NS_OK;
@@ -5094,7 +5101,8 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
 
       gfxDWriteFont::UpdateSystemTextVars();
-      if (mCustomNonClient) {
+      if (mCustomNonClient &&
+          mTransparencyMode == TransparencyMode::Transparent) {
         
         
         
