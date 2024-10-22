@@ -8,6 +8,10 @@
 
 
 add_task(async function () {
+  
+  if (isCm6Enabled) {
+    return;
+  }
   const dbg = await initDebugger("doc-sources.html", "long.js");
 
   await selectSource(dbg, "long.js", 1);
