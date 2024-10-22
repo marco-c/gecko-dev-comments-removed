@@ -41,13 +41,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ElementInternals)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTarget, mSubmissionValue, mState,
                                     mValidity, mValidationAnchor,
                                     mCustomStateSet);
-
-  for (auto& tableEntry : tmp->mAttrElementsMap) {
-    auto& [explicitlySetElements, cachedAttrElements] =
-        *tableEntry.GetModifiableData();
-    ImplCycleCollectionTraverse(cb, cachedAttrElements,
-                                "cached attribute elements entry", 0);
-  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ElementInternals)
@@ -435,7 +428,6 @@ void ElementInternals::Unlink() {
     mFieldSet->RemoveElement(mTarget);
     mFieldSet = nullptr;
   }
-  mAttrElementsMap.Clear();
 }
 
 void ElementInternals::GetAttr(const nsAtom* aName, nsAString& aResult) const {
@@ -475,23 +467,6 @@ nsresult ElementInternals::SetAttr(nsAtom* aName, const nsAString& aValue) {
   MutationObservers::NotifyARIAAttributeDefaultChanged(mTarget, aName, modType);
 
   return rs;
-}
-
-nsresult ElementInternals::SetAttrInternal(nsAtom* aName,
-                                           const nsAString& aValue) {
-  bool attrHadValue;
-  nsAttrValue attrValue(aValue);
-  return mAttrs.SetAndSwapAttr(aName, attrValue, &attrHadValue);
-}
-
-nsresult ElementInternals::UnsetAttrInternal(nsAtom* aName) {
-  nsAttrValue attrValue;
-  auto attrPos = mAttrs.IndexOfAttr(aName);
-  if (attrPos >= 0) {
-    return mAttrs.RemoveAttrAt(attrPos, attrValue);
-  }
-
-  return NS_OK;
 }
 
 DocGroup* ElementInternals::GetDocGroup() {
@@ -541,11 +516,9 @@ void ElementInternals::SetAttrElement(nsAtom* aAttr, Element* aElement) {
 #endif
 
   if (aElement) {
-    mAttrElementMap.InsertOrUpdate(aAttr, do_GetWeakReference(aElement));
-    SetAttrInternal(aAttr, EmptyString());
+    mAttrElements.InsertOrUpdate(aAttr, do_GetWeakReference(aElement));
   } else {
-    mAttrElementMap.Remove(aAttr);
-    UnsetAttrInternal(aAttr);
+    mAttrElements.Remove(aAttr);
   }
 
 #ifdef ACCESSIBILITY
@@ -556,121 +529,9 @@ void ElementInternals::SetAttrElement(nsAtom* aAttr, Element* aElement) {
 }
 
 Element* ElementInternals::GetAttrElement(nsAtom* aAttr) const {
-  nsWeakPtr weakAttrEl = mAttrElementMap.Get(aAttr);
+  nsWeakPtr weakAttrEl = mAttrElements.Get(aAttr);
   nsCOMPtr<Element> attrEl = do_QueryReferent(weakAttrEl);
   return attrEl;
-}
-
-void ElementInternals::SetAttrElements(
-    nsAtom* aAttr,
-    const Nullable<Sequence<OwningNonNull<Element>>>& aElements) {
-#ifdef ACCESSIBILITY
-  nsAccessibilityService* accService = GetAccService();
-#endif
-  
-  
-  
-  
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
-#ifdef ACCESSIBILITY
-  if (accService) {
-    accService->NotifyAttrElementWillChange(mTarget, aAttr);
-  }
-#endif
-
-  nsAttrValue emptyAttr;
-  if (aElements.IsNull()) {
-    mAttrElementsMap.Remove(aAttr);
-    UnsetAttrInternal(aAttr);
-  } else {
-    auto& [attrElements, cachedAttrElements] =
-        mAttrElementsMap.LookupOrInsert(aAttr);
-    attrElements.Clear();
-    for (Element* el : aElements.Value()) {
-      attrElements.AppendElement(do_GetWeakReference(el));
-    }
-    SetAttrInternal(aAttr, EmptyString());
-  }
-
-#ifdef ACCESSIBILITY
-  if (accService) {
-    accService->NotifyAttrElementChanged(mTarget, aAttr);
-  }
-#endif
-}
-
-void ElementInternals::GetAttrElements(
-    nsAtom* aAttr, bool* aUseCachedValue,
-    Nullable<nsTArray<RefPtr<Element>>>& aElements) {
-  MOZ_ASSERT(aElements.IsNull());
-
-  auto attrElementsMaybeEntry = mAttrElementsMap.Lookup(aAttr);
-  if (!attrElementsMaybeEntry) {
-    return;
-  }
-
-  aElements.SetValue(nsTArray<RefPtr<Element>>());
-  auto& [attrElements, cachedAttrElements] = attrElementsMaybeEntry.Data();
-
-  auto getAttrAssociatedElements = [&, &attrElements = attrElements]() {
-    CopyableTArray<RefPtr<Element>> elements;
-
-    for (const nsWeakPtr& weakEl : attrElements) {
-      
-      if (nsCOMPtr<Element> attrEl = do_QueryReferent(weakEl)) {
-        
-        elements.AppendElement(attrEl);
-      }
-    }
-
-    return elements;
-  };
-
-  
-  
-  
-  
-  auto elements = getAttrAssociatedElements();
-
-  if (elements == cachedAttrElements) {
-    
-    
-    
-    MOZ_ASSERT(!*aUseCachedValue);
-    *aUseCachedValue = true;
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  aElements.SetValue(elements.Clone());
-
-  
-  cachedAttrElements = std::move(elements);
-}
-
-bool ElementInternals::GetAttrElements(nsAtom* aAttr,
-                                       nsTArray<Element*>& aElements) {
-  aElements.Clear();
-  auto attrElementsMaybeEntry = mAttrElementsMap.Lookup(aAttr);
-  if (!attrElementsMaybeEntry) {
-    return false;
-  }
-
-  auto& [attrElements, cachedAttrElements] = attrElementsMaybeEntry.Data();
-  for (const nsWeakPtr& weakEl : attrElements) {
-    if (nsCOMPtr<Element> attrEl = do_QueryReferent(weakEl)) {
-      aElements.AppendElement(attrEl);
-    }
-  }
-
-  return true;
 }
 
 }  
