@@ -93,10 +93,6 @@ class Classifier {
   nsresult ReadNoiseEntries(const Prefix& aPrefix, const nsACString& aTableName,
                             uint32_t aCount, PrefixArray& aNoiseEntries);
 
-#ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
-  nsresult DumpRawTableUpdates(const nsACString& aRawUpdates);
-#endif
-
   static void SplitTables(const nsACString& str, nsTArray<nsCString>& tables);
 
   
@@ -148,11 +144,6 @@ class Classifier {
   
   
   void RemoveUpdateIntermediaries();
-
-#ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
-  already_AddRefed<nsIFile> GetFailedUpdateDirectroy();
-  nsresult DumpFailedUpdate();
-#endif
 
   nsresult ScanStoreDir(nsIFile* aDirectory,
                         const nsTArray<nsCString>& aExtensions,
