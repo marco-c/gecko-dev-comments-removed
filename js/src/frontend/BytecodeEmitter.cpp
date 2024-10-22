@@ -12272,6 +12272,7 @@ bool BytecodeEmitter::emitClass(
   }
   if (!emitUnpickN(2)) {
     
+    return false;
   }
 #endif
 
