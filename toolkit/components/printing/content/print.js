@@ -830,6 +830,10 @@ var PrintEventHandler = {
       
       let { sourceVersion } = this.viewSettings;
       let sourceURI = this.activeURI;
+      
+      
+      settings.title =
+        this.viewSettings.sourceVersion == "selection" ? this.activeTitle : "";
       this._lastPrintPreviewSettings = settings;
       ({
         totalPageCount,
