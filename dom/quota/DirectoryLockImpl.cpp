@@ -311,6 +311,7 @@ void DirectoryLockImpl::AcquireInternal() {
   mQuotaManager->AddPendingDirectoryLock(*this);
 
   
+  
   bool blocked = false;
 
   
@@ -323,8 +324,11 @@ void DirectoryLockImpl::AcquireInternal() {
     }
   }
 
+  
+  
   mQuotaManager->RegisterDirectoryLock(*this);
 
+  
   
   if (!blocked) {
     NotifyOpenListener();
