@@ -27,14 +27,15 @@
 
 
 
-module.exports = {
-  env: {
-    browser: true,
-    es2022: true,
-    "mozilla/privileged": true,
-    "mozilla/specific": true,
-  },
 
+
+
+
+
+
+
+
+module.exports = {
   
   
   extends: ["eslint:recommended"],
@@ -45,7 +46,8 @@ module.exports = {
       
       
       env: {
-        browser: false,
+        "mozilla/privileged": true,
+        "mozilla/specific": true,
         "mozilla/sysmjs": true,
       },
       files: ["**/*.sys.mjs"],
@@ -101,10 +103,7 @@ module.exports = {
     },
     {
       env: {
-        browser: false,
-        "mozilla/privileged": false,
         "mozilla/sjs": true,
-        "mozilla/specific": false,
       },
       files: ["**/*.sjs"],
       rules: {
@@ -115,7 +114,6 @@ module.exports = {
     },
     {
       env: {
-        browser: false,
         worker: true,
       },
       files: [

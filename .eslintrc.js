@@ -54,6 +54,9 @@ module.exports = {
   ignorePatterns,
   
   root: true,
+  env: {
+    es2024: true,
+  },
   
   
   
@@ -64,6 +67,27 @@ module.exports = {
   ],
   plugins: ["mozilla", "html", "import", "json"],
   overrides: [
+    {
+      files: ["*.*"],
+      
+      
+      excludedFiles: [
+        "*.sys.mjs",
+        "*.sjs",
+        "**/?(*.)worker.?(m)js",
+        ...testPaths.xpcshell.map(filePath => `${filePath}**`),
+      ],
+      env: {
+        browser: true,
+      },
+    },
+    {
+      files: ["*.*"],
+      env: {
+        "mozilla/privileged": true,
+        "mozilla/specific": true,
+      },
+    },
     {
       files: [
         
