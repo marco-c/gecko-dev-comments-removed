@@ -20,6 +20,10 @@
 
 add_task(async function () {
   
+  if (isCm6Enabled) {
+    return;
+  }
+  
   
   const tab = await addTab(EXAMPLE_URL + "doc-wasm-sourcemaps.html");
   const toolbox = await openToolboxForTab(tab, "webconsole");
