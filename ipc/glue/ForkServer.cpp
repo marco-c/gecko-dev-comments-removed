@@ -205,13 +205,6 @@ bool ForkServer::OnMessageReceived(UniquePtr<IPC::Message> message) {
     return false;
   }
 
-#if defined(MOZ_MEMORY) && defined(DEBUG)
-  jemalloc_stats_t stats;
-  jemalloc_stats(&stats);
-  MOZ_ASSERT(stats.narenas == 1,
-             "ForkServer before fork()/clone() should have a single arena.");
-#endif
-
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   mozilla::SandboxLaunch launcher;
   if (!launcher.Prepare(&options)) {
@@ -324,17 +317,6 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
   SetGeckoChildID((*aArgv)[--*aArgc]);
   MOZ_ASSERT(!XRE_IsForkServerProcess(),
              "fork server created another fork server?");
-
-  
-  
-  
-  
-  
-  
-#if defined(MOZ_MEMORY)
-  jemalloc_reset_small_alloc_randomization(
-       !XRE_IsContentProcess());
-#endif
 
   
   nsTraceRefcnt::ReopenLogFilesAfterFork(XRE_GetProcessTypeString());
