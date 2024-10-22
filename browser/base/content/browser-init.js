@@ -952,8 +952,8 @@ var gBrowserInit = {
       gGfxUtils.init();
     });
 
-    scheduleIdleTask(async () => {
-      await gProfiles.init();
+    scheduleIdleTask(() => {
+      gProfiles.init();
     });
 
     
