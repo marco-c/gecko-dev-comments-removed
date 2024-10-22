@@ -408,6 +408,14 @@ var SidebarController = {
       this._tabstripOrientationObserverAdded = true;
     }
 
+    requestIdleCallback(() => {
+      if (!this._uiState) {
+        
+        const backupState = this.SidebarManager.getBackupState();
+        this.setUIState(backupState);
+      }
+    });
+
     this._initDeferred.resolve();
   },
 
@@ -420,8 +428,10 @@ var SidebarController = {
     let enumerator = Services.wm.getEnumerator("navigator:browser");
     if (!enumerator.hasMoreElements()) {
       let xulStore = Services.xulStore;
-
       xulStore.persist(this._title, "value");
+
+      const currentState = this.getUIState();
+      this.SidebarManager.setBackupState(currentState);
     }
 
     Services.obs.removeObserver(this, "intl:app-locales-changed");
@@ -444,6 +454,50 @@ var SidebarController = {
       this.sidebarMain.remove();
     }
     this.browser.removeEventListener("resize", this._browserResizeObserver);
+  },
+
+  getUIState() {
+    const state = { width: this._box.style.width, command: this.currentID };
+    if (this.sidebarRevampEnabled) {
+      state.expanded = this.sidebarMain.expanded;
+      state.hidden = this.sidebarContainer.hidden;
+    }
+    return state;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async setUIState(state) {
+    if (!state) {
+      return;
+    }
+    this._uiState = state;
+    if (state.width) {
+      this._box.style.width = state.width;
+    }
+    if (state.command && this.currentID != state.command && !this.isOpen) {
+      await this.showInitially(state.command);
+    }
+    if (this.sidebarRevampEnabled) {
+      
+      
+      
+      await this.promiseInitialized;
+      this.toggleExpanded(state.expanded);
+      this.sidebarContainer.hidden = state.hidden;
+      this.updateToolbarButton();
+    }
   },
 
   
@@ -692,29 +746,8 @@ var SidebarController = {
       this._box.setAttribute("sidebarcommand", commandID);
     }
 
-    
-    
-    if (this.sidebarRevampEnabled && sourceController.revampComponentsLoaded) {
-      this.promiseInitialized.then(() => {
-        this.sidebarContainer.hidden = sourceController.sidebarContainer.hidden;
-        this.toggleExpanded(sourceController.sidebarMain.expanded);
-      });
-    }
-
-    if (sourceController._box.hidden) {
-      
-      return true;
-    }
-
-    
-    
-    if (!this.sidebars.has(commandID)) {
-      return true;
-    }
-
-    this._box.style.width = sourceController._box.style.width;
-    this.showInitially(commandID);
-
+    const sourceControllerState = sourceController.getUIState();
+    this.setUIState(sourceControllerState);
     return true;
   },
 
