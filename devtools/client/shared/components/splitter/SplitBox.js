@@ -67,6 +67,32 @@ class SplitBox extends Component {
     };
   }
 
+  static getDerivedStateFromProps(props, state) {
+    if (
+      props.endPanelControl === state.prevEndPanelControl &&
+      props.splitterSize === state.prevSplitterSize &&
+      props.vert === state.prevVert
+    ) {
+      return null;
+    }
+
+    const newState = {};
+    if (props.endPanelControl !== state.prevEndPanelControl) {
+      newState.endPanelControl = props.endPanelControl;
+      newState.prevEndPanelControl = props.endPanelControl;
+    }
+    if (props.splitterSize !== state.prevSplitterSize) {
+      newState.splitterSize = props.splitterSize;
+      newState.prevSplitterSize = props.splitterSize;
+    }
+    if (props.vert !== state.prevVert) {
+      newState.vert = props.vert;
+      newState.prevVert = props.vert;
+    }
+
+    return newState;
+  }
+
   constructor(props) {
     super(props);
 
@@ -83,6 +109,13 @@ class SplitBox extends Component {
       
       splitterSize: props.splitterSize,
       
+      
+      
+      
+      prevEndPanelControl: props.endPanelControl,
+      prevVert: props.vert,
+      prevSplitterSize: props.splitterSize,
+      
       width: props.initialWidth || props.initialSize,
       
       height: props.initialHeight || props.initialSize,
@@ -91,23 +124,6 @@ class SplitBox extends Component {
     this.onStartMove = this.onStartMove.bind(this);
     this.onStopMove = this.onStopMove.bind(this);
     this.onMove = this.onMove.bind(this);
-  }
-
-  
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    const { endPanelControl, splitterSize, vert } = nextProps;
-
-    if (endPanelControl != this.props.endPanelControl) {
-      this.setState({ endPanelControl });
-    }
-
-    if (splitterSize != this.props.splitterSize) {
-      this.setState({ splitterSize });
-    }
-
-    if (vert !== this.props.vert) {
-      this.setState({ vert });
-    }
   }
 
   shouldComponentUpdate(nextProps, nextState) {
