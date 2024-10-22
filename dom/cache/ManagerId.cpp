@@ -8,7 +8,7 @@
 
 #include "CacheCommon.h"
 
-#include "mozilla/dom/quota/QuotaManager.h"
+#include "mozilla/dom/quota/PrincipalUtils.h"
 #include "nsIPrincipal.h"
 #include "nsProxyRelease.h"
 #include "mozilla/RefPtr.h"
@@ -27,7 +27,7 @@ Result<SafeRefPtr<ManagerId>, nsresult> ManagerId::Create(
   
   
   QM_TRY_INSPECT(const auto& quotaOrigin,
-                 QuotaManager::GetOriginFromPrincipal(aPrincipal));
+                 quota::GetOriginFromPrincipal(aPrincipal));
 
   return MakeSafeRefPtr<ManagerId>(aPrincipal, quotaOrigin, ConstructorGuard{});
 }

@@ -1,16 +1,16 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "LocalStorageManager2.h"
 
-
+// Local includes
 #include "ActorsChild.h"
 #include "LSObject.h"
 
-
+// Global includes
 #include <utility>
 #include "MainThreadUtils.h"
 #include "jsapi.h"
@@ -25,8 +25,8 @@
 #include "mozilla/dom/PBackgroundLSSharedTypes.h"
 #include "mozilla/dom/PBackgroundLSSimpleRequest.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/quota/PrincipalUtils.h"
 #include "mozilla/dom/quota/PromiseUtils.h"
-#include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -51,40 +51,40 @@ namespace {
 class AsyncRequestHelper final : public Runnable,
                                  public LSRequestChildCallback {
   enum class State {
-    
-
-
-
+    /**
+     * The AsyncRequestHelper has been created and dispatched to the
+     * RemoteLazyInputStream Thread.
+     */
     Initial,
-    
-
-
-
-
-
+    /**
+     * Start() has been invoked on the RemoteLazyInputStream Thread and
+     * LocalStorageManager2::StartRequest has been invoked from there, sending
+     * an IPC message to PBackground to service the request.  We stay in this
+     * state until a response is received.
+     */
     ResponsePending,
-    
-
-
-
+    /**
+     * A response has been received and AsyncRequestHelper has been dispatched
+     * back to the owning event target to call Finish().
+     */
     Finishing,
-    
-
-
-
+    /**
+     * Finish() has been called on the main thread. The promise will be resolved
+     * according to the received response.
+     */
     Complete
   };
 
-  
-  
-  
+  // The object we are issuing a request on behalf of.  Present because of the
+  // need to invoke LocalStorageManager2::StartRequest off the main thread.
+  // Dropped on return to the main-thread in Finish().
   RefPtr<LocalStorageManager2> mManager;
-  
-  
+  // The thread the AsyncRequestHelper was created on.  This should be the main
+  // thread.
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
-  
-  
-  
+  // The IPC actor handling the request with standard IPC allocation rules.
+  // Our reference is nulled in OnResponse which corresponds to the actor's
+  // __destroy__ method.
   LSRequestChild* mActor;
   RefPtr<Promise> mPromise;
   const LSRequestParams mParams;
@@ -130,7 +130,7 @@ class AsyncRequestHelper final : public Runnable,
 
   NS_DECL_NSIRUNNABLE
 
-  
+  // LSRequestChildCallback
   void OnResponse(LSRequestResponse&& aResponse) override;
 };
 
@@ -151,7 +151,7 @@ class SimpleRequestResolver final : public LSSimpleRequestChildCallback {
 
   void HandleResponse(const nsTArray<LSItemInfo>& aResponse);
 
-  
+  // LSRequestChildCallback
   void OnResponse(const LSSimpleRequestResponse& aResponse) override;
 };
 
@@ -165,7 +165,7 @@ nsresult CheckedPrincipalToPrincipalInfo(
     return rv;
   }
 
-  if (NS_WARN_IF(!quota::QuotaManager::IsPrincipalInfoValid(aPrincipalInfo))) {
+  if (NS_WARN_IF(!quota::IsPrincipalInfoValid(aPrincipalInfo))) {
     return NS_ERROR_FAILURE;
   }
 
@@ -179,7 +179,7 @@ nsresult CheckedPrincipalToPrincipalInfo(
   return NS_OK;
 }
 
-}  
+}  // namespace
 
 LocalStorageManager2::LocalStorageManager2() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -200,11 +200,11 @@ LocalStorageManager2::PrecacheStorage(nsIPrincipal* aPrincipal,
   MOZ_ASSERT(aStoragePrincipal);
   MOZ_ASSERT(_retval);
 
-  
-  
-  
-  
-  
+  // This method was created as part of the e10s-ification of the old LS
+  // implementation to perform a preload in the content/current process.  That's
+  // not how things work in LSNG.  Instead everything happens in the parent
+  // process, triggered by the official preloading spot,
+  // ContentParent::AboutToLoadHttpDocumentForChild.
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -251,8 +251,8 @@ LocalStorageManager2::CloneStorage(Storage* aStorageToCloneFrom) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aStorageToCloneFrom);
 
-  
-  
+  // Cloning is specific to sessionStorage; state is forked when a new tab is
+  // opened from an existing tab.
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -264,7 +264,7 @@ LocalStorageManager2::CheckStorage(nsIPrincipal* aPrincipal, Storage* aStorage,
   MOZ_ASSERT(aStorage);
   MOZ_ASSERT(_retval);
 
-  
+  // Only used by sessionStorage.
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -317,17 +317,17 @@ LocalStorageManager2::Preload(nsIPrincipal* aPrincipal, JSContext* aContext,
   RefPtr<AsyncRequestHelper> helper =
       new AsyncRequestHelper(this, promise, params);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // This will start and finish the async request on the RemoteLazyInputStream
+  // thread.
+  // This must be done on RemoteLazyInputStream Thread because it's very likely
+  // that a content process will issue a prepare datastore request for the same
+  // principal while blocking the content process on the main thread.
+  // There would be a potential for deadlock if the preloading was initialized
+  // from the main thread of the parent process and a11y issued a synchronous
+  // message from the parent process to the content process (approximately at
+  // the same time) because the preload request wouldn't be able to respond
+  // to the Ready message by sending the Finish message which is needed to
+  // finish the preload request and unblock the prepare datastore request.
   rv = helper->Dispatch();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -415,9 +415,9 @@ LSRequestChild* LocalStorageManager2::StartRequest(
     return nullptr;
   }
 
-  
-  
-  
+  // Must set callback after calling SendPBackgroundLSRequestConstructor since
+  // it can be called synchronously when SendPBackgroundLSRequestConstructor
+  // fails.
   actor->SetCallback(aCallback);
 
   return actor;
@@ -443,9 +443,9 @@ nsresult LocalStorageManager2::StartSimpleRequest(
 
   RefPtr<SimpleRequestResolver> resolver = new SimpleRequestResolver(aPromise);
 
-  
-  
-  
+  // Must set callback after calling SendPBackgroundLSRequestConstructor since
+  // it can be called synchronously when SendPBackgroundLSRequestConstructor
+  // fails.
   actor->SetCallback(resolver);
 
   return NS_OK;
@@ -649,4 +649,4 @@ void SimpleRequestResolver::OnResponse(
   }
 }
 
-}  
+}  // namespace mozilla::dom
