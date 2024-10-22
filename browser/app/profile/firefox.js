@@ -2417,9 +2417,6 @@ pref("browser.tabs.crashReporting.sendReport", true);
 pref("browser.tabs.crashReporting.includeURL", false);
 
 
-pref("browser.tabs.unloadTabInContextMenu", false);
-
-
 
 pref("extensions.experiments.enabled", false);
 
