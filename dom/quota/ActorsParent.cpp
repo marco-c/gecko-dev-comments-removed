@@ -1925,7 +1925,8 @@ uint64_t QuotaManager::CollectOriginsForEviction(
           continue;
         }
 
-        const auto originScope = OriginScope::FromOrigin(originInfo->mOrigin);
+        const auto originScope =
+            OriginScope::FromOrigin(originInfo->FlattenToOriginMetadata());
 
         const bool match =
             std::any_of(aLocks.begin(), aLocks.end(),
@@ -5294,7 +5295,7 @@ RefPtr<ClientDirectoryLockPromise> QuotaManager::OpenClientDirectory(
   RefPtr<UniversalDirectoryLock> originDirectoryLock =
       CreateDirectoryLockForInitialization(
           *this, PersistenceScope::CreateFromValue(persistenceType),
-          OriginScope::FromOrigin(aClientMetadata.mOrigin), originInitialized,
+          OriginScope::FromOrigin(aClientMetadata), originInitialized,
           IsDirectoryLockBlockedByUninitStorageOrUninitOriginsOperation,
           MakeBackInserter(promises));
 
@@ -5504,8 +5505,8 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentOrigin(
 
   RefPtr<UniversalDirectoryLock> directoryLock = CreateDirectoryLockInternal(
       PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
-      OriginScope::FromOrigin(principalMetadata.mOrigin),
-      Nullable<Client::Type>(),  false);
+      OriginScope::FromOrigin(principalMetadata), Nullable<Client::Type>(),
+       false);
 
   
   
@@ -5675,8 +5676,8 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryOrigin(
 
   RefPtr<UniversalDirectoryLock> directoryLock = CreateDirectoryLockInternal(
       PersistenceScope::CreateFromValue(aPersistenceType),
-      OriginScope::FromOrigin(principalMetadata.mOrigin),
-      Nullable<Client::Type>(),  false);
+      OriginScope::FromOrigin(principalMetadata), Nullable<Client::Type>(),
+       false);
 
   
   
