@@ -52,7 +52,7 @@ export function autocomplete(input, cursor) {
       return;
     }
     const thread = getCurrentThread(getState());
-    const selectedFrame = getSelectedFrame(getState(), thread);
+    const selectedFrame = getSelectedFrame(getState());
     const result = await client.autocomplete(input, cursor, selectedFrame?.id);
     
     dispatch({ type: "AUTOCOMPLETE", selectedFrame, thread, input, result });
@@ -93,8 +93,7 @@ export function deleteExpression(expression) {
 
 export function evaluateExpressionsForCurrentContext() {
   return async ({ getState, dispatch }) => {
-    const thread = getCurrentThread(getState());
-    const selectedFrame = getSelectedFrame(getState(), thread);
+    const selectedFrame = getSelectedFrame(getState());
     await dispatch(evaluateExpressions(selectedFrame));
   };
 }
@@ -142,7 +141,7 @@ function evaluateExpression(expression) {
 
     const { dispatch, getState, client } = thunkArgs;
     const thread = getCurrentThread(getState());
-    const selectedFrame = getSelectedFrame(getState(), thread);
+    const selectedFrame = getSelectedFrame(getState());
 
     const selectedSource = getSelectedSource(getState());
     

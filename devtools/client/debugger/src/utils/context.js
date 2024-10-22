@@ -77,7 +77,7 @@ export function validateSelectedFrame(state, selectedFrame) {
     throw new ContextError("Selected thread has changed");
   }
 
-  const newSelectedFrame = getSelectedFrame(state, newThread);
+  const newSelectedFrame = getSelectedFrame(state);
   
   if (selectedFrame.id != newSelectedFrame?.id) {
     throw new ContextError("Selected frame changed");
