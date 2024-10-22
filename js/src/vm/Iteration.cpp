@@ -1940,7 +1940,7 @@ static const JSFunctionSpec iterator_static_methods[] = {
 
 
 
-static const JSFunctionSpec iterator_methods_with_helpers[] = {
+static const JSFunctionSpec iterator_methods[] = {
     JS_SELF_HOSTED_FN("map", "IteratorMap", 1, 0),
     JS_SELF_HOSTED_FN("filter", "IteratorFilter", 1, 0),
     JS_SELF_HOSTED_FN("take", "IteratorTake", 1, 0),
@@ -2173,7 +2173,7 @@ static const ClassSpec IteratorObjectClassSpec = {
     GenericCreatePrototype<IteratorObject>,
     iterator_static_methods,
     nullptr,
-    iterator_methods_with_helpers,
+    iterator_methods,
     iterator_properties,
     IteratorObject::finishInit,
 };
