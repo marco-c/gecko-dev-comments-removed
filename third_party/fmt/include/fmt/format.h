@@ -33,6 +33,8 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#include "double-conversion/double-to-string.h"
+
 #ifndef _LIBCPP_REMOVE_TRANSITIVE_INCLUDES
 #  define _LIBCPP_REMOVE_TRANSITIVE_INCLUDES
 #  define FMT_REMOVE_TRANSITIVE_INCLUDES
@@ -3147,6 +3149,13 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
                                   const format_specs& specs, bool binary32,
                                   buffer<char>& buf) -> int {
   
+  #ifdef __clang__
+  #if __clang_major__ > 8
+    static_assert(false,
+      "This method is not to be used in Gecko, use format_float_gecko");
+  #endif
+  #endif
+  
   static_assert(!std::is_same<Float, float>::value, "");
   auto converted_value = convert_float(value);
 
@@ -3441,6 +3450,43 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
   return exp;
 }
 
+
+
+
+template <typename Float>
+FMT_CONSTEXPR20 auto format_float_gecko(Float value, int precision, format_specs specs,
+                                  buffer<char>& buf) -> int {
+  FMT_ASSERT(detail::isfinite(value),
+    "Non-finite values are to be handled ahead of calling this");
+  using double_conversion::DoubleToStringConverter;
+  using DTSC = DoubleToStringConverter;
+  
+  
+  char e = specs.upper() ? 'E' : 'e';
+  DTSC converter(DTSC::NO_TRAILING_ZERO |
+                 DTSC::EMIT_POSITIVE_EXPONENT_SIGN,
+                 "inf", "nan", e, 0, 0, 4, 0, 2);
+  buf.try_resize(64);
+  double_conversion::StringBuilder builder(buf.data(), buf.size());
+  
+  if (precision == -1) { precision = 6; }
+  bool success = false;
+  if (specs.type() == presentation_type::exp) {
+      success = converter.ToExponential(value, precision, &builder);
+  } else if (specs.type() == presentation_type::fixed) {
+      success = converter.ToFixed(value, precision, &builder);
+  } else if (specs.type() == presentation_type::general ||
+      specs.type() == presentation_type::none) {
+      
+      success = converter.ToPrecision(value, precision ? precision : 1, &builder);
+  } else {
+    FMT_ASSERT(false, "Unhandled");
+  }
+  FMT_ASSERT(success, "");
+  buf.try_resize(builder.position());
+  return builder.position();
+}
+
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
                                  locale_ref loc) -> OutputIt {
@@ -3457,17 +3503,6 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
   }
 
   int precision = specs.precision;
-  if (precision < 0) {
-    if (specs.type() != presentation_type::none) {
-      precision = 6;
-    } else if (is_fast_float<T>::value && !is_constant_evaluated()) {
-      
-      using floaty = conditional_t<sizeof(T) >= sizeof(double), double, float>;
-      auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-      return write_float<Char>(out, dec, specs, s, loc);
-    }
-  }
-
   memory_buffer buffer;
   if (specs.type() == presentation_type::hexfloat) {
     if (s != sign::none) buffer.push_back(detail::getsign<char>(s));
@@ -3477,22 +3512,37 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
   }
 
   if (specs.type() == presentation_type::exp) {
-    if (precision == max_value<int>())
-      report_error("number is too big");
-    else
-      ++precision;
     if (specs.precision != 0) specs.set_alt();
   } else if (specs.type() == presentation_type::fixed) {
     if (specs.precision != 0) specs.set_alt();
   } else if (precision == 0) {
     precision = 1;
   }
-  int exp = format_float(convert_float(value), precision, specs,
-                         std::is_same<T, float>(), buffer);
 
   specs.precision = precision;
-  auto f = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
-  return write_float<Char>(out, f, specs, s, loc);
+  value = abs(value);
+  format_float_gecko(convert_float(value), precision, specs, buffer);
+  size_t size = buffer.size();
+  if (s != sign::none) {
+    
+    size++;
+    
+    if (*specs.fill<Char>() == '0') {
+      *out++ = detail::getsign<Char>(s);
+    }
+  }
+  return write_padded<Char, align::right>(
+      out, specs, size, size, [s, &buffer, specs](reserve_iterator<OutputIt> it) {
+        
+        
+        if (s != sign::none) {
+          if (*specs.fill<Char>() != '0') {
+            *it++ = detail::getsign<Char>(s);
+          }
+        }
+        const char* data = buffer.data();
+        return copy<Char>(data, data + buffer.size(), it);
+      });
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -3518,8 +3568,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if ((bit_cast<floaty_uint>(value) & mask) == mask)
     return write_nonfinite<Char>(out, std::isnan(value), specs, s);
 
-  auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-  return write_float<Char>(out, dec, specs, s, {});
+  return write_float<Char>(out, value, specs, {});
 }
 
 template <typename Char, typename OutputIt, typename T,
