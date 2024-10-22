@@ -2467,7 +2467,6 @@ class WebKitGTKMiniBrowser(WebKit):
         if minibrowser_path:
             return minibrowser_path
 
-        libexecpaths = ["/usr/libexec/webkit2gtk-4.0"]  
         triplet = "x86_64-linux-gnu"
         
         gcc = which("gcc")
@@ -2476,8 +2475,16 @@ class WebKitGTKMiniBrowser(WebKit):
                 triplet = call(gcc, "-dumpmachine").strip()
             except subprocess.CalledProcessError:
                 pass
-        
-        libexecpaths.append("/usr/lib/%s/webkit2gtk-4.0" % triplet)
+
+        versions = ["4.0", "4.1"]
+        libexecpaths = []
+
+        for version in versions:
+            
+            libexecpaths.append(f"/usr/libexec/webkit2gtk-{version}")
+            
+            libexecpaths.append(f"/usr/lib/{triplet}/webkit2gtk-{version}")
+
         return which("MiniBrowser", path=os.pathsep.join(libexecpaths))
 
     def find_webdriver(self, venv_path=None, channel=None):
