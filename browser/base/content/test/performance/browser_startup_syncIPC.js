@@ -15,6 +15,11 @@ const SKELETONUI = Services.prefs.getBoolPref(
   false
 );
 
+const GPUPROCESS =
+  ((WIN || LINUX) &&
+    Services.prefs.getBoolPref("layers.gpu-process.enabled")) ||
+  Services.prefs.getBoolPref("layers.gpu-process.force-enabled");
+
 
 
 
@@ -52,19 +57,21 @@ const startupPhases = {
     {
       
       name: "PCompositorBridge::Msg_NotifyChildCreated",
-      condition: !WIN,
+      condition: !GPUPROCESS,
+      ignoreIfUnused: true,
       maxCount: 1,
     },
     {
+      
       name: "PCompositorBridge::Msg_NotifyChildCreated",
-      condition: WIN,
-      ignoreIfUnused: true, 
+      condition: GPUPROCESS,
+      ignoreIfUnused: true,
       maxCount: 2,
     },
     {
       name: "PCompositorBridge::Msg_MapAndNotifyChildCreated",
-      condition: WIN,
-      ignoreIfUnused: true, 
+      condition: GPUPROCESS,
+      ignoreIfUnused: true,
       maxCount: 2,
     },
     {
@@ -80,8 +87,8 @@ const startupPhases = {
     },
     {
       name: "PCompositorBridge::Msg_Initialize",
-      condition: WIN,
-      ignoreIfUnused: true, 
+      condition: GPUPROCESS,
+      ignoreIfUnused: true,
       maxCount: 3,
     },
     {
@@ -92,8 +99,8 @@ const startupPhases = {
     },
     {
       name: "PGPU::Msg_AddLayerTreeIdMapping",
-      condition: WIN,
-      ignoreIfUnused: true, 
+      condition: GPUPROCESS,
+      ignoreIfUnused: true,
       maxCount: 5,
     },
     {
@@ -321,7 +328,7 @@ const startupPhases = {
     
     {
       name: "PGPU::Msg_AddLayerTreeIdMapping",
-      condition: WIN,
+      condition: GPUPROCESS,
       ignoreIfUnused: true,
       maxCount: 1,
     },
