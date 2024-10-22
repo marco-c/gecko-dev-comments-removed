@@ -2318,6 +2318,14 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   
   
   
+  if (key == JSProto_Function && !JS::Prefs::experimental_error_iserror() &&
+      id == NameToId(cx->names().isError)) {
+    return true;
+  }
+
+  
+  
+  
   if (key == JSProto_Function && !JS::Prefs::experimental_iterator_range() &&
       (id == NameToId(cx->names().range))) {
     return true;
