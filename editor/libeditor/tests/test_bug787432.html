@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=787432
+-->
 <title>Test for Bug 787432</title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 <link rel="stylesheet" href="/tests/SimpleTest/test.css">
@@ -12,6 +12,6 @@ var div = document.getElementById("test");
 getSelection().collapse(div.firstChild, 0);
 getSelection().extend(div.firstChild, 1);
 document.execCommand("inserttext", false, "x");
-is(div.innerHTML, '<span class="insert">x</span><br>',
+is(div.innerHTML, '<span class="insert">x</span>',
    "Empty <span> needs to not be removed");
 </script>

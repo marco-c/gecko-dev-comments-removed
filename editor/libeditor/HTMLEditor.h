@@ -3276,6 +3276,24 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  EnsureNoFollowingUnnecessaryLineBreak(
+      const EditorDOMPoint& aNextOrAfterModifiedPoint,
+      const Element& aEditingHost);
+
+  
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   IndentAsSubAction(const Element& aEditingHost);
 
