@@ -87,7 +87,6 @@ add_setup(async function () {
       
       
       ["browser.urlbar.tabToSearch.onboard.interactionsLeft", 0],
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
     ],
   });
 

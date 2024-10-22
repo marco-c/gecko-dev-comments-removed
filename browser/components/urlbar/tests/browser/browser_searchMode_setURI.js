@@ -13,9 +13,6 @@
 
 
 add_task(async function setURI() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
   for (let test of [
     
 

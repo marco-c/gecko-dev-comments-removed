@@ -10,9 +10,6 @@
 const BOOKMARK_URL = "http://www.example.com/browser_searchMode_pickResult.js";
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
   
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.bookmarks.insert({

@@ -10,7 +10,7 @@
 
 add_task(async function switchTabs() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+    set: [["browser.urlbar.suggest.quickactions", false]],
   });
 
   

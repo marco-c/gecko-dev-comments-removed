@@ -16,9 +16,6 @@ const LINK_PAGE_URL =
 
 
 add_task(async function clickLink() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
   for (let test of [
     
     [LINK_PAGE_URL, LINK_PAGE_URL],

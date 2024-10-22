@@ -84,10 +84,6 @@ class TipTestProvider extends UrlbarProvider {
 
 
 async function runTests() {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
   registerCleanupFunction(async function () {
     await UrlbarTestUtils.promisePopupClose(window);
     await PlacesUtils.history.clear();

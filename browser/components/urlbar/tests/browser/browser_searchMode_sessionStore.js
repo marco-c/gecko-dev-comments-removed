@@ -27,11 +27,6 @@ const URL = "http://example.com/";
 const INITIAL_URL = "about:newtab";
 
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
-});
 
 add_task(async function initialPageOnRestore() {
   await doTest({

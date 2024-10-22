@@ -10,9 +10,6 @@
 
 
 add_task(async function activeTab() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
   let extension = await SearchTestUtils.installSearchExtension(
     {},
     { skipUnload: true }

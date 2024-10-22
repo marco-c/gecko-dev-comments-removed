@@ -17,9 +17,6 @@ registerCleanupFunction(async function resetToolbar() {
 });
 
 add_task(async function setupHomeButton() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
-  });
   
   CustomizableUI.addWidgetToArea(
     "home-button",
