@@ -4194,8 +4194,6 @@ class format_int {
 
 #define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
 
-FMT_API auto vsystem_error(int error_code, string_view fmt, format_args args)
-    -> std::system_error;
 
 
 
@@ -4212,11 +4210,6 @@ FMT_API auto vsystem_error(int error_code, string_view fmt, format_args args)
 
 
 
-template <typename... T>
-auto system_error(int error_code, format_string<T...> fmt, T&&... args)
-    -> std::system_error {
-  return vsystem_error(error_code, fmt.str, vargs<T...>{{args...}});
-}
 
 
 
@@ -4231,8 +4224,15 @@ auto system_error(int error_code, format_string<T...> fmt, T&&... args)
 
 
 
-FMT_API void format_system_error(detail::buffer<char>& out, int error_code,
-                                 const char* message) noexcept;
+
+
+
+
+
+
+
+
+
 
 
 
