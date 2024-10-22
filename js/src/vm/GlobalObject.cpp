@@ -440,6 +440,19 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (proto && !JSObject::setFlag(cx, proto, ObjectFlag::IsUsedAsPrototype)) {
+    return false;
+  }
+
   if (!isObjectOrFunction) {
     
     
