@@ -620,6 +620,12 @@ JSString* js::SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt,
   if (str->isRope()) {
     JSRope* rope = &str->asRope();
 
+    if (rope->length() == len) {
+      
+      MOZ_ASSERT(begin == 0);
+      return rope;
+    }
+
     
     if (begin + len <= rope->leftChild()->length()) {
       return NewDependentString(cx, rope->leftChild(), begin, len);
