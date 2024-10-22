@@ -27,11 +27,11 @@ for (let op of ops) {
 
     
     eval(op[0]);
-    assertEq(obj.prop, op[1]);
+    assertEq(obj.prop, op[1], `value for ${op[0]}`);
 
     
     testHits++;
-    assertEq(hits, testHits);
+    assertEq(hits, testHits, `toString calls for ${op[0]}`);
 }
 
 if (typeof reportCompare === 'function')
