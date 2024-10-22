@@ -1367,9 +1367,6 @@
       var topadj = parseInt(style.borderTopWidth) + parseInt(style.paddingTop);
       input.style.top = `${textRect.y - topadj}px`;
 
-      
-      
-      let left = style.direction == "rtl" ? cellRect.x : textRect.x;
       let scrollbarWidth = window.windowUtils.getBoundsWithoutFlushing(
         this.#verticalScrollbar
       ).width;
@@ -1377,16 +1374,51 @@
       
       
       
-      let widthdiff = Math.abs(textRect.x - cellRect.x) - scrollbarWidth;
 
+      let textPadding = Math.max(0, textRect.x - cellRect.x);
+
+      
+      
+      
+      
+      
+      let left = Math.max(0, cellRect.x) + textPadding;
+      let width = cellRect.width;
+
+      
+      
+      
+      
+      
+      
+      const isFinalColumn = column.index == column.columns.count - 1;
+      const isRTL = style.direction == "rtl";
+      if (isFinalColumn && !isRTL) {
+        
+        
+        width -= scrollbarWidth;
+      }
+      if (isRTL) {
+        
+        
+        left += scrollbarWidth;
+        if (!isFinalColumn) {
+          
+          
+          
+          
+          left += scrollbarWidth;
+        }
+      }
       input.style.left = `${left}px`;
+      input.style.width = `${width}px`;
+
       input.style.height = `${
         textRect.height +
         topadj +
         parseInt(style.borderBottomWidth) +
         parseInt(style.paddingBottom)
       }px`;
-      input.style.width = `${cellRect.width - widthdiff}px`;
       input.hidden = false;
 
       input.value = this.view.getCellText(row, column);
