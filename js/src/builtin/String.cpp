@@ -626,70 +626,45 @@ JSString* js::SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt,
       return rope;
     }
 
-    
     if (begin + len <= rope->leftChild()->length()) {
+      
       return NewDependentString(cx, rope->leftChild(), begin, len);
     }
 
-    
     if (begin >= rope->leftChild()->length()) {
+      
       begin -= rope->leftChild()->length();
       return NewDependentString(cx, rope->rightChild(), begin, len);
     }
 
     
-
-
+    
+    
+    
+    
+    
 
     MOZ_ASSERT(begin < rope->leftChild()->length() &&
                begin + len > rope->leftChild()->length());
 
-    size_t lhsLength = rope->leftChild()->length() - begin;
-    size_t rhsLength = begin + len - rope->leftChild()->length();
+    bool fitsInline = rope->hasLatin1Chars()
+                          ? JSInlineString::lengthFits<Latin1Char>(len)
+                          : JSInlineString::lengthFits<char16_t>(len);
+    if (fitsInline && rope->leftChild()->isLinear() &&
+        rope->rightChild()->isLinear()) {
+      Rooted<JSLinearString*> left(cx, &rope->leftChild()->asLinear());
+      Rooted<JSLinearString*> right(cx, &rope->rightChild()->asLinear());
 
-    Rooted<JSLinearString*> left(cx, rope->leftChild()->ensureLinear(cx));
-    if (!left) {
-      return nullptr;
-    }
+      size_t lhsLength = left->length() - begin;
+      size_t rhsLength = len - lhsLength;
 
-    Rooted<JSLinearString*> right(cx, rope->rightChild()->ensureLinear(cx));
-    if (!right) {
-      return nullptr;
-    }
-
-    if (rope->hasLatin1Chars()) {
-      if (JSInlineString::lengthFits<Latin1Char>(len)) {
+      if (rope->hasLatin1Chars()) {
         return SubstringInlineString<Latin1Char>(cx, left, right, begin,
                                                  lhsLength, rhsLength);
       }
-    } else {
-      if (JSInlineString::lengthFits<char16_t>(len)) {
-        return SubstringInlineString<char16_t>(cx, left, right, begin,
-                                               lhsLength, rhsLength);
-      }
+      return SubstringInlineString<char16_t>(cx, left, right, begin, lhsLength,
+                                             rhsLength);
     }
-
-    left = NewDependentString(cx, left, begin, lhsLength);
-    if (!left) {
-      return nullptr;
-    }
-
-    right = NewDependentString(cx, right, 0, rhsLength);
-    if (!right) {
-      return nullptr;
-    }
-
-    
-    
-    if (left->hasLatin1Chars() && right->hasLatin1Chars()) {
-      if (JSInlineString::lengthFits<Latin1Char>(len)) {
-        MOZ_ASSERT(str->hasTwoByteChars(), "Latin-1 ropes are handled above");
-        return SubstringInlineString<Latin1Char>(cx, left, right, 0, lhsLength,
-                                                 rhsLength);
-      }
-    }
-
-    return JSRope::new_<CanGC>(cx, left, right, len);
   }
 
   return NewDependentString(cx, str, begin, len);
