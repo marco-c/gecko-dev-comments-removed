@@ -26,6 +26,8 @@ def test_try_again(monkeypatch):
             ["foo", "bar"],
             {"try_task_config": {"use-artifact-builds": True}},
         ),
+        
+        push_to_vcs=True,
     )
 
     assert os.path.isfile(push.history_path)
