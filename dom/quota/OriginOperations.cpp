@@ -3416,12 +3416,11 @@ nsresult EstimateOp::DoInit(QuotaManager& aQuotaManager) {
 RefPtr<BoolPromise> EstimateOp::OpenDirectory() {
   AssertIsOnOwningThread();
 
-  
   return OpenStorageDirectory(
       PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
                                       PERSISTENCE_TYPE_DEFAULT,
                                       PERSISTENCE_TYPE_PRIVATE),
-      OriginScope::FromOrigin(mOriginMetadata), Nullable<Client::Type>(),
+      OriginScope::FromGroup(mOriginMetadata.mGroup), Nullable<Client::Type>(),
        false,
        true);
 }
