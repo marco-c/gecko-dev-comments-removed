@@ -236,16 +236,18 @@ class nsBlockFrame : public nsContainerFrame {
   bool MarkerIsEmpty() const;
 
   
-  bool HasMarker() const { return HasOutsideMarker() || HasInsideMarker(); }
+  bool HasMarker() const { return HasAnyStateBits(NS_BLOCK_HAS_MARKER); }
 
   
   bool HasInsideMarker() const {
-    return HasAnyStateBits(NS_BLOCK_HAS_INSIDE_MARKER);
+    return HasMarker() && StyleList()->mListStylePosition ==
+                              mozilla::StyleListStylePosition::Inside;
   }
 
   
   bool HasOutsideMarker() const {
-    return HasAnyStateBits(NS_BLOCK_HAS_OUTSIDE_MARKER);
+    return HasMarker() && StyleList()->mListStylePosition ==
+                              mozilla::StyleListStylePosition::Outside;
   }
 
   
