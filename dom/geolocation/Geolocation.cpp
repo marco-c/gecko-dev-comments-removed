@@ -356,37 +356,20 @@ void Geolocation::ReallowWithSystemPermissionOrCancel(
       do_GetService("@mozilla.org/prompter;1", &rv);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  
-  
-  
-  bool geckoWillPrompt =
-      GetLocationOSPermission() ==
-      geolocation::SystemGeolocationPermissionBehavior::GeckoWillPromptUser;
-  
-  
-  const auto kSpinnerNoButtonFlags = nsIPromptService::BUTTON_TITLE_IS_STRING *
-                                         nsIPromptService::BUTTON_POS_0 +
-                                     nsIPromptService::BUTTON_TITLE_IS_STRING *
-                                         nsIPromptService::BUTTON_POS_1 +
-                                     nsIPromptService::SHOW_SPINNER;
-  
-  
-  const auto kCancelButtonFlags =
-      nsIPromptService::BUTTON_TITLE_CANCEL * nsIPromptService::BUTTON_POS_0;
-  RefPtr<mozilla::dom::Promise> tabBlockingDialogPromise;
+  RefPtr<mozilla::dom::Promise> cancelDialogPromise;
   rv = promptSvc->AsyncConfirmEx(
       aBrowsingContext, nsIPromptService::MODAL_TYPE_TAB, title.get(),
       message.get(),
-      geckoWillPrompt ? kCancelButtonFlags : kSpinnerNoButtonFlags, nullptr,
-      nullptr, nullptr, nullptr, false, JS::UndefinedHandleValue,
-      getter_AddRefs(tabBlockingDialogPromise));
+      nsIPromptService::BUTTON_TITLE_CANCEL * nsIPromptService::BUTTON_POS_0,
+      nullptr, nullptr, nullptr, nullptr, false, JS::UndefinedHandleValue,
+      getter_AddRefs(cancelDialogPromise));
   NS_ENSURE_SUCCESS_VOID(rv);
-  MOZ_ASSERT(tabBlockingDialogPromise);
+  MOZ_ASSERT(cancelDialogPromise);
 
   
   
   
-  tabBlockingDialogPromise->AppendNativeHandler(
+  cancelDialogPromise->AppendNativeHandler(
       new CancelSystemGeolocationPermissionRequest(permissionRequest));
 
   cancelRequestOnError.release();
