@@ -71,9 +71,16 @@ struct TryControl {
   
   TryTableCatchVector catches;
   
+  MDefinition* pendingException;
+  
+  MDefinition* pendingExceptionTag;
+  
   bool inBody;
 
-  TryControl() : inBody(false) {}
+  TryControl()
+      : pendingException(nullptr),
+        pendingExceptionTag(nullptr),
+        inBody(false) {}
 
   
   void reset() {
@@ -3782,17 +3789,20 @@ class FunctionCompiler {
     return tag;
   }
 
-  void loadPendingExceptionState(MInstruction** exception, MInstruction** tag) {
-    *exception = MWasmLoadInstance::New(
+  void loadPendingExceptionState(MDefinition** pendingException,
+                                 MDefinition** pendingExceptionTag) {
+    auto* exception = MWasmLoadInstance::New(
         alloc(), instancePointer_, wasm::Instance::offsetOfPendingException(),
         MIRType::WasmAnyRef, AliasSet::Load(AliasSet::WasmPendingException));
-    curBlock_->add(*exception);
+    curBlock_->add(exception);
+    *pendingException = exception;
 
-    *tag = MWasmLoadInstance::New(
+    auto* tag = MWasmLoadInstance::New(
         alloc(), instancePointer_,
         wasm::Instance::offsetOfPendingExceptionTag(), MIRType::WasmAnyRef,
         AliasSet::Load(AliasSet::WasmPendingException));
-    curBlock_->add(*tag);
+    curBlock_->add(tag);
+    *pendingExceptionTag = tag;
   }
 
   [[nodiscard]] bool setPendingExceptionState(MDefinition* exception,
@@ -3897,18 +3907,11 @@ class FunctionCompiler {
   
   
   
-  [[nodiscard]] bool createTryLandingPadIfNeeded(
-      ControlInstructionVector& landingPadPatches, MBasicBlock** landingPad) {
-    
-    
-    
-    
-    if (landingPadPatches.empty()) {
-      *landingPad = nullptr;
-      return true;
-    }
+  [[nodiscard]]
+  bool createTryLandingPad(ControlInstructionVector& landingPadPatches,
+                           MBasicBlock** landingPad) {
+    MOZ_ASSERT(!landingPadPatches.empty());
 
-    
     
     
     MControlInstruction* ins = landingPadPatches[0];
@@ -3927,26 +3930,30 @@ class FunctionCompiler {
     }
 
     
-    if (!setupLandingPadSlots(landingPad)) {
-      return false;
-    }
-
-    
     landingPadPatches.clear();
     return true;
   }
 
-  [[nodiscard]] bool createTryTableLandingPad(TryControl* tryControl) {
+  [[nodiscard]]
+  bool createTryTableLandingPad(TryControl* tryControl) {
+    
+    
+    if (tryControl->landingPadPatches.empty()) {
+      return true;
+    }
+
+    
     MBasicBlock* landingPad;
-    if (!createTryLandingPadIfNeeded(tryControl->landingPadPatches,
-                                     &landingPad)) {
+    if (!createTryLandingPad(tryControl->landingPadPatches, &landingPad)) {
       return false;
     }
 
     
-    
-    if (!landingPad) {
-      return true;
+    MDefinition* pendingException;
+    MDefinition* pendingExceptionTag;
+    if (!consumePendingException(&landingPad, &pendingException,
+                                 &pendingExceptionTag)) {
+      return false;
     }
 
     MBasicBlock* originalBlock = curBlock_;
@@ -3954,18 +3961,11 @@ class FunctionCompiler {
 
     bool hadCatchAll = false;
     for (const TryTableCatch& tryTableCatch : tryControl->catches) {
-      MOZ_ASSERT(numPushed(curBlock_) == 2);
-
       
       if (tryTableCatch.tagIndex == CatchAllIndex) {
         
-        
-        curBlock_->pop();
-        MDefinition* exception = curBlock_->pop();
-
-        
         DefVector values;
-        if (tryTableCatch.captureExnRef && !values.append(exception)) {
+        if (tryTableCatch.captureExnRef && !values.append(pendingException)) {
           return false;
         }
 
@@ -3992,14 +3992,10 @@ class FunctionCompiler {
 
       
       
-      MDefinition* exceptionTag = curBlock_->pop();
-      curBlock_->pop();
-
-      
-      
       MDefinition* catchTag = loadTag(tryTableCatch.tagIndex);
-      MDefinition* matchesCatchTag = compare(exceptionTag, catchTag, JSOp::Eq,
-                                             MCompare::Compare_WasmAnyRef);
+      MDefinition* matchesCatchTag =
+          compare(pendingExceptionTag, catchTag, JSOp::Eq,
+                  MCompare::Compare_WasmAnyRef);
       curBlock_->end(
           MTest::New(alloc(), matchesCatchTag, catchBlock, fallthroughBlock));
 
@@ -4008,17 +4004,12 @@ class FunctionCompiler {
       curBlock_ = catchBlock;
 
       
-      
-      curBlock_->pop();
-      MDefinition* exception = curBlock_->pop();
-      MOZ_ASSERT(numPushed(curBlock_) == 0);
-
-      
       DefVector values;
-      if (!loadExceptionValues(exception, tryTableCatch.tagIndex, &values)) {
+      if (!loadExceptionValues(pendingException, tryTableCatch.tagIndex,
+                               &values)) {
         return false;
       }
-      if (tryTableCatch.captureExnRef && !values.append(exception)) {
+      if (tryTableCatch.captureExnRef && !values.append(pendingException)) {
         return false;
       }
 
@@ -4031,12 +4022,7 @@ class FunctionCompiler {
 
     
     if (!hadCatchAll) {
-      MOZ_ASSERT(numPushed(curBlock_) == 2);
-      MDefinition* tag = curBlock_->pop();
-      MDefinition* exception = curBlock_->pop();
-      MOZ_ASSERT(numPushed(curBlock_) == 0);
-
-      if (!throwFrom(exception, tag)) {
+      if (!throwFrom(pendingException, pendingExceptionTag)) {
         return false;
       }
     }
@@ -4047,14 +4033,15 @@ class FunctionCompiler {
 
   
   
-  [[nodiscard]] bool setupLandingPadSlots(MBasicBlock** landingPad) {
+  [[nodiscard]]
+  bool consumePendingException(MBasicBlock** landingPad,
+                               MDefinition** pendingException,
+                               MDefinition** pendingExceptionTag) {
     MBasicBlock* prevBlock = curBlock_;
     curBlock_ = *landingPad;
 
     
-    MInstruction* exception;
-    MInstruction* tag;
-    loadPendingExceptionState(&exception, &tag);
+    loadPendingExceptionState(pendingException, pendingExceptionTag);
 
     
     auto* null = constantNullRef();
@@ -4064,11 +4051,6 @@ class FunctionCompiler {
 
     
     
-    if (!curBlock_->ensureHasSlots(2)) {
-      return false;
-    }
-    curBlock_->push(exception);
-    curBlock_->push(tag);
     *landingPad = curBlock_;
 
     curBlock_ = prevBlock;
@@ -4143,13 +4125,27 @@ class FunctionCompiler {
     
     
     if (fromKind == LabelKind::Try) {
-      MBasicBlock* padBlock = nullptr;
-      if (!createTryLandingPadIfNeeded(control.tryControl->landingPadPatches,
-                                       &padBlock)) {
-        return false;
+      if (!control.tryControl->landingPadPatches.empty()) {
+        
+        MBasicBlock* padBlock = nullptr;
+        if (!createTryLandingPad(control.tryControl->landingPadPatches,
+                                 &padBlock)) {
+          return false;
+        }
+
+        
+        
+        if (!consumePendingException(
+                &padBlock, &control.tryControl->pendingException,
+                &control.tryControl->pendingExceptionTag)) {
+          return false;
+        }
+
+        
+        control.block = padBlock;
+      } else {
+        control.block = nullptr;
       }
-      
-      control.block = padBlock;
     }
 
     
@@ -4164,6 +4160,11 @@ class FunctionCompiler {
 
     
     
+    MOZ_ASSERT(control.tryControl->pendingException);
+    MOZ_ASSERT(control.tryControl->pendingExceptionTag);
+
+    
+    
     
     
     
@@ -4174,10 +4175,6 @@ class FunctionCompiler {
       }
       
       curBlock_ = catchAllBlock;
-      
-      
-      curBlock_->pop();
-      curBlock_->pop();
       return true;
     }
 
@@ -4193,14 +4190,10 @@ class FunctionCompiler {
 
     
     
-    MDefinition* exceptionTag = curBlock_->pop();
-    MDefinition* exception = curBlock_->pop();
-
-    
-    
     MDefinition* catchTag = loadTag(tagIndex);
     MDefinition* matchesCatchTag =
-        compare(exceptionTag, catchTag, JSOp::Eq, MCompare::Compare_WasmAnyRef);
+        compare(control.tryControl->pendingExceptionTag, catchTag, JSOp::Eq,
+                MCompare::Compare_WasmAnyRef);
     curBlock_->end(
         MTest::New(alloc(), matchesCatchTag, catchBlock, fallthroughBlock));
 
@@ -4212,13 +4205,9 @@ class FunctionCompiler {
     curBlock_ = catchBlock;
 
     
-    
-    curBlock_->pop();
-    exception = curBlock_->pop();
-
-    
     DefVector values;
-    if (!loadExceptionValues(exception, tagIndex, &values)) {
+    if (!loadExceptionValues(control.tryControl->pendingException, tagIndex,
+                             &values)) {
       return false;
     }
     iter().setResults(values.length(), values);
@@ -4285,9 +4274,8 @@ class FunctionCompiler {
         if (padBlock) {
           MBasicBlock* prevBlock = curBlock_;
           curBlock_ = padBlock;
-          MDefinition* tag = curBlock_->pop();
-          MDefinition* exception = curBlock_->pop();
-          if (!throwFrom(exception, tag)) {
+          if (!throwFrom(control.tryControl->pendingException,
+                         control.tryControl->pendingExceptionTag)) {
             return false;
           }
           curBlock_ = prevBlock;
@@ -4320,22 +4308,28 @@ class FunctionCompiler {
 
   [[nodiscard]] bool emitBodyDelegateThrowPad(Control& control) {
     
-    MBasicBlock* padBlock;
-    if (!createTryLandingPadIfNeeded(bodyDelegatePadPatches_, &padBlock)) {
-      return false;
+    
+    if (bodyDelegatePadPatches_.empty()) {
+      return true;
     }
 
     
-    if (!padBlock) {
-      return true;
+    MBasicBlock* padBlock;
+    if (!createTryLandingPad(bodyDelegatePadPatches_, &padBlock)) {
+      return false;
+    }
+
+    MDefinition* pendingException;
+    MDefinition* pendingExceptionTag;
+    if (!consumePendingException(&padBlock, &pendingException,
+                                 &pendingExceptionTag)) {
+      return false;
     }
 
     
     MBasicBlock* prevBlock = curBlock_;
     curBlock_ = padBlock;
-    MDefinition* tag = curBlock_->pop();
-    MDefinition* exception = curBlock_->pop();
-    if (!throwFrom(exception, tag)) {
+    if (!throwFrom(pendingException, pendingExceptionTag)) {
       return false;
     }
     curBlock_ = prevBlock;
@@ -4475,19 +4469,10 @@ class FunctionCompiler {
     }
 
     Control& control = iter().controlItem(relativeDepth);
-    MBasicBlock* pad = control.block;
-    MOZ_ASSERT(pad);
-    MOZ_ASSERT(pad->nslots() > 1);
     MOZ_ASSERT(iter().controlKind(relativeDepth) == LabelKind::Catch ||
                iter().controlKind(relativeDepth) == LabelKind::CatchAll);
-
-    
-    size_t exnSlotPosition = pad->nslots() - 2;
-    MDefinition* tag = pad->getSlot(exnSlotPosition + 1);
-    MDefinition* exception = pad->getSlot(exnSlotPosition);
-    MOZ_ASSERT(exception->type() == MIRType::WasmAnyRef &&
-               tag->type() == MIRType::WasmAnyRef);
-    return throwFrom(exception, tag);
+    return throwFrom(control.tryControl->pendingException,
+                     control.tryControl->pendingExceptionTag);
   }
 
   
