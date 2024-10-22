@@ -273,7 +273,7 @@ function generateErrors() {
   }
   if (!flag) {
     let errors_tab = document.getElementById("category-errors");
-    errors_tab.style.display = "none";
+    errors_tab.hidden = true;
   }
 }
 
@@ -366,15 +366,8 @@ window.onload = function () {
   generateDocumentation();
 
   
-  let menu = document.getElementById("categories");
-  for (let category of menu.children) {
-    category.addEventListener("click", () => show(category));
-    category.addEventListener("keypress", function (event) {
-      if (event.keyCode == KeyEvent.DOM_VK_RETURN) {
-        show(category);
-      }
-    });
-  }
+  let menu = document.getElementById("categories-nav");
+  menu.addEventListener("change-view", e => show(e.target));
 
   if (location.hash) {
     let sectionButton = document.getElementById(
@@ -407,10 +400,6 @@ function show(button) {
   current_tab.hidden = true;
   content.classList.add("active");
   content.hidden = false;
-
-  let current_button = document.querySelector("[selected=true]");
-  current_button.removeAttribute("selected");
-  button.setAttribute("selected", "true");
 
   let title = document.getElementById("sectionTitle");
   title.textContent = button.textContent;
