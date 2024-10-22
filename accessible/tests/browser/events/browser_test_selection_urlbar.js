@@ -1,17 +1,17 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
+/* import-globals-from ../../mochitest/role.js */
 loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 ChromeUtils.defineESModuleGetters(this, {
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
-
-
+// Check that the URL bar manages accessibility
+// selection notifications appropriately on startup (new window).
 async function runTests() {
   let focused = waitForEvent(
     EVENT_FOCUS,
@@ -22,7 +22,7 @@ async function runTests() {
   let bookmark = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     title: "addons",
-    
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
     url: Services.io.newURI("http://www.addons.mozilla.org/"),
   });
 
@@ -34,12 +34,6 @@ async function runTests() {
   newWin.focus();
   await focused;
 
-  
-  
-  
-  
-  EventUtils.synthesizeKey("KEY_Escape", {}, newWin);
-  EventUtils.synthesizeKey("KEY_Escape", {}, newWin);
   let caretMoved = waitForEvent(
     EVENT_TEXT_CARET_MOVED,
     event => event.accessible.role == ROLE_ENTRY
