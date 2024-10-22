@@ -171,13 +171,12 @@ struct EventKey {
 struct DynamicEventInfo {
   DynamicEventInfo(const nsACString& category, const nsACString& method,
                    const nsACString& object, nsTArray<nsCString>& extra_keys,
-                   bool recordOnRelease, bool builtin)
+                   bool recordOnRelease)
       : category(category),
         method(method),
         object(object),
         extra_keys(extra_keys.Clone()),
-        recordOnRelease(recordOnRelease),
-        builtin(builtin) {}
+        recordOnRelease(recordOnRelease) {}
 
   DynamicEventInfo(const DynamicEventInfo&) = default;
   DynamicEventInfo& operator=(const DynamicEventInfo&) = delete;
@@ -187,7 +186,6 @@ struct DynamicEventInfo {
   const nsCString object;
   const CopyableTArray<nsCString> extra_keys;
   const bool recordOnRelease;
-  const bool builtin;
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t n = 0;
@@ -462,14 +460,6 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
   }
 
   
-  
-  auto dynamicNonBuiltin =
-      eventKey.dynamic && !(*gDynamicEventInfo)[eventKey.id].builtin;
-  if (dynamicNonBuiltin) {
-    processType = ProcessID::Dynamic;
-  }
-
-  
   if (!CheckExtraKeysValid(eventKey, extra)) {
     mozilla::Telemetry::AccumulateCategorical(
         LABELS_TELEMETRY_EVENT_RECORDING_ERROR::ExtraKey);
@@ -483,7 +473,7 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
 
   
   TelemetryScalar::SummarizeEvent(UniqueEventName(category, method, object),
-                                  processType, dynamicNonBuiltin);
+                                  processType);
 
   EventRecordArray* eventRecords = GetEventRecordsForProcess(lock, processType);
   eventRecords->AppendElement(EventRecord(timestamp, eventKey, value, extra));
@@ -520,9 +510,10 @@ RecordEventResult ShouldRecordChildEvent(const StaticMutexAutoLock& lock,
   return RecordEventResult::Ok;
 }
 
-void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
-                    const nsTArray<DynamicEventInfo>& eventInfos,
-                    const nsTArray<bool>& eventExpired, bool aBuiltin) {
+void RegisterBuiltinEvents(const StaticMutexAutoLock& lock,
+                           const nsACString& category,
+                           const nsTArray<DynamicEventInfo>& eventInfos,
+                           const nsTArray<bool>& eventExpired) {
   MOZ_ASSERT(eventInfos.Length() == eventExpired.Length(),
              "Event data array sizes should match.");
 
@@ -533,23 +524,6 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
 
   for (uint32_t i = 0, len = eventInfos.Length(); i < len; ++i) {
     const nsCString& eventName = UniqueEventName(eventInfos[i]);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    EventKey existing;
-    if (!aBuiltin && gEventNameIDMap.Get(eventName, &existing)) {
-      if (eventExpired[i]) {
-        existing.id = kExpiredEventId;
-      }
-      continue;
-    }
-
     gDynamicEventInfo->AppendElement(eventInfos[i]);
     uint32_t eventId =
         eventExpired[i] ? kExpiredEventId : gDynamicEventInfo->Length() - 1;
@@ -557,9 +531,7 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
   }
 
   
-  if (aBuiltin) {
-    gCategoryNames.Insert(category);
-  }
+  gCategoryNames.Insert(category);
 }
 
 }  
@@ -774,180 +746,6 @@ nsresult TelemetryEvent::RecordChildEvents(
   return NS_OK;
 }
 
-nsresult TelemetryEvent::RecordEvent(const nsACString& aCategory,
-                                     const nsACString& aMethod,
-                                     const nsACString& aObject,
-                                     JS::Handle<JS::Value> aValue,
-                                     JS::Handle<JS::Value> aExtra,
-                                     JSContext* cx, uint8_t optional_argc) {
-  
-  if ((optional_argc > 0) && !aValue.isNull() && !aValue.isString()) {
-    LogToBrowserConsole(nsIScriptError::warningFlag,
-                        u"Invalid type for value parameter."_ns);
-    mozilla::Telemetry::AccumulateCategorical(
-        LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Value);
-    return NS_OK;
-  }
-
-  
-  Maybe<nsCString> value;
-  if (aValue.isString()) {
-    nsAutoJSString jsStr;
-    if (!jsStr.init(cx, aValue)) {
-      LogToBrowserConsole(nsIScriptError::warningFlag,
-                          u"Invalid string value for value parameter."_ns);
-      mozilla::Telemetry::AccumulateCategorical(
-          LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Value);
-      return NS_OK;
-    }
-
-    nsCString str = NS_ConvertUTF16toUTF8(jsStr);
-    if (str.Length() > kMaxValueByteLength) {
-      LogToBrowserConsole(
-          nsIScriptError::warningFlag,
-          nsLiteralString(
-              u"Value parameter exceeds maximum string length, truncating."));
-      TruncateToByteLength(str, kMaxValueByteLength);
-    }
-    value = mozilla::Some(str);
-  }
-
-  
-  if ((optional_argc > 1) && !aExtra.isNull() && !aExtra.isObject()) {
-    LogToBrowserConsole(nsIScriptError::warningFlag,
-                        u"Invalid type for extra parameter."_ns);
-    mozilla::Telemetry::AccumulateCategorical(
-        LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Extra);
-    return NS_OK;
-  }
-
-  PROFILER_MARKER("Event", TELEMETRY, {}, EventMarker,
-                  PromiseFlatCString(aCategory), PromiseFlatCString(aMethod),
-                  PromiseFlatCString(aObject), value);
-
-  
-  ExtraArray extra;
-  if (aExtra.isObject()) {
-    JS::Rooted<JSObject*> obj(cx, &aExtra.toObject());
-    JS::Rooted<JS::IdVector> ids(cx, JS::IdVector(cx));
-    if (!JS_Enumerate(cx, obj, &ids)) {
-      LogToBrowserConsole(nsIScriptError::warningFlag,
-                          u"Failed to enumerate object."_ns);
-      mozilla::Telemetry::AccumulateCategorical(
-          LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Extra);
-      return NS_OK;
-    }
-
-    for (size_t i = 0, n = ids.length(); i < n; i++) {
-      nsAutoJSString key;
-      if (!key.init(cx, ids[i])) {
-        LogToBrowserConsole(
-            nsIScriptError::warningFlag,
-            nsLiteralString(
-                u"Extra dictionary should only contain string keys."));
-        mozilla::Telemetry::AccumulateCategorical(
-            LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Extra);
-        return NS_OK;
-      }
-
-      JS::Rooted<JS::Value> value(cx);
-      if (!JS_GetPropertyById(cx, obj, ids[i], &value)) {
-        LogToBrowserConsole(nsIScriptError::warningFlag,
-                            u"Failed to get extra property."_ns);
-        mozilla::Telemetry::AccumulateCategorical(
-            LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Extra);
-        return NS_OK;
-      }
-
-      nsAutoJSString jsStr;
-      if (!value.isString() || !jsStr.init(cx, value)) {
-        LogToBrowserConsole(nsIScriptError::warningFlag,
-                            u"Extra properties should have string values."_ns);
-        mozilla::Telemetry::AccumulateCategorical(
-            LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Extra);
-        return NS_OK;
-      }
-
-      nsCString str = NS_ConvertUTF16toUTF8(jsStr);
-      if (str.Length() > kMaxExtraValueByteLength) {
-        LogToBrowserConsole(
-            nsIScriptError::warningFlag,
-            nsLiteralString(
-                u"Extra value exceeds maximum string length, truncating."));
-        TruncateToByteLength(str, kMaxExtraValueByteLength);
-      }
-
-      extra.AppendElement(EventExtraEntry{NS_ConvertUTF16toUTF8(key), str});
-    }
-  }
-
-  
-  
-  
-  RecordEventResult res;
-  if (!XRE_IsParentProcess()) {
-    {
-      StaticMutexAutoLock lock(gTelemetryEventsMutex);
-      res = ::ShouldRecordChildEvent(lock, aCategory, aMethod, aObject);
-    }
-
-    if (res == RecordEventResult::Ok) {
-      TelemetryIPCAccumulator::RecordChildEvent(
-          TimeStamp::NowLoRes(), aCategory, aMethod, aObject, value, extra);
-    }
-  } else {
-    StaticMutexAutoLock lock(gTelemetryEventsMutex);
-
-    if (!gInitDone) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    double timestamp = -1;
-    if (NS_WARN_IF(NS_FAILED(MsSinceProcessStart(&timestamp)))) {
-      return NS_ERROR_FAILURE;
-    }
-
-    res = ::RecordEvent(lock, ProcessID::Parent, timestamp, aCategory, aMethod,
-                        aObject, value, extra);
-  }
-
-  
-  switch (res) {
-    case RecordEventResult::UnknownEvent: {
-      nsPrintfCString msg(R"(Unknown event: ["%s", "%s", "%s"])",
-                          PromiseFlatCString(aCategory).get(),
-                          PromiseFlatCString(aMethod).get(),
-                          PromiseFlatCString(aObject).get());
-      LogToBrowserConsole(nsIScriptError::errorFlag,
-                          NS_ConvertUTF8toUTF16(msg));
-      return NS_OK;
-    }
-    case RecordEventResult::InvalidExtraKey: {
-      nsPrintfCString msg(R"(Invalid extra key for event ["%s", "%s", "%s"].)",
-                          PromiseFlatCString(aCategory).get(),
-                          PromiseFlatCString(aMethod).get(),
-                          PromiseFlatCString(aObject).get());
-      LogToBrowserConsole(nsIScriptError::warningFlag,
-                          NS_ConvertUTF8toUTF16(msg));
-      return NS_OK;
-    }
-    case RecordEventResult::StorageLimitReached: {
-      LogToBrowserConsole(nsIScriptError::warningFlag,
-                          u"Event storage limit reached."_ns);
-      nsCOMPtr<nsIObserverService> serv =
-          mozilla::services::GetObserverService();
-      if (serv) {
-        serv->NotifyObservers(nullptr, "event-telemetry-storage-limit-reached",
-                              nullptr);
-      }
-      return NS_OK;
-    }
-    default:
-      return NS_OK;
-  }
-}
-
 void TelemetryEvent::RecordEventNative(
     mozilla::Telemetry::EventID aId, const mozilla::Maybe<nsCString>& aValue,
     const mozilla::Maybe<ExtraArray>& aExtra) {
@@ -1091,9 +889,9 @@ static bool GetArrayPropertyValues(JSContext* cx, JS::Handle<JSObject*> obj,
   return true;
 }
 
-nsresult TelemetryEvent::RegisterEvents(const nsACString& aCategory,
-                                        JS::Handle<JS::Value> aEventData,
-                                        bool aBuiltin, JSContext* cx) {
+nsresult TelemetryEvent::RegisterBuiltinEvents(const nsACString& aCategory,
+                                               JS::Handle<JS::Value> aEventData,
+                                               JSContext* cx) {
   MOZ_ASSERT(XRE_IsParentProcess(),
              "Events can only be registered in the parent process");
 
@@ -1258,8 +1056,8 @@ nsresult TelemetryEvent::RegisterEvents(const nsACString& aCategory,
         
         
         
-        DynamicEventInfo info{aCategory,  method,          object,
-                              extra_keys, recordOnRelease, aBuiltin};
+        DynamicEventInfo info{aCategory, method, object, extra_keys,
+                              recordOnRelease};
         newEventInfos.AppendElement(info);
         newEventExpired.AppendElement(expired);
       }
@@ -1268,7 +1066,7 @@ nsresult TelemetryEvent::RegisterEvents(const nsACString& aCategory,
 
   {
     StaticMutexAutoLock locker(gTelemetryEventsMutex);
-    RegisterEvents(locker, aCategory, newEventInfos, newEventExpired, aBuiltin);
+    RegisterBuiltinEvents(locker, aCategory, newEventInfos, newEventExpired);
   }
 
   return NS_OK;

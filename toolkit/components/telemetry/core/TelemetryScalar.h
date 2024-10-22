@@ -80,7 +80,7 @@ nsresult RegisterScalars(const nsACString& aCategoryName,
 
 
 void SummarizeEvent(const nsCString& aUniqueEventName,
-                    mozilla::Telemetry::ProcessID aProcessType, bool aDynamic);
+                    mozilla::Telemetry::ProcessID aProcessType);
 
 
 void ClearScalars();

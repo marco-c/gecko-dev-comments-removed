@@ -326,8 +326,7 @@ TEST_F(TelemetryTestFixture, ScalarEventSummary) {
   const char* kLongestEvent =
       "oohwowlookthiscategoryissolong#thismethodislongtooo#"
       "thisobjectisnoslouch";
-  TelemetryScalar::SummarizeEvent(nsCString(kLongestEvent), ProcessID::Parent,
-                                  false );
+  TelemetryScalar::SummarizeEvent(nsCString(kLongestEvent), ProcessID::Parent);
 
   
   JS::Rooted<JS::Value> scalarsSnapshot(cx.GetJSContext());
@@ -341,8 +340,7 @@ TEST_F(TelemetryTestFixture, ScalarEventSummary) {
   const char* kTooLongEvent =
       "oohwowlookthiscategoryissolong#thismethodislongtooo#"
       "thisobjectisnoslouch2";
-  TelemetryScalar::SummarizeEvent(nsCString(kTooLongEvent), ProcessID::Parent,
-                                  false );
+  TelemetryScalar::SummarizeEvent(nsCString(kTooLongEvent), ProcessID::Parent);
 
   GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
   CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 1);
@@ -353,7 +351,7 @@ TEST_F(TelemetryTestFixture, ScalarEventSummary) {
     std::ostringstream eventName;
     eventName << "category#method#object" << i;
     TelemetryScalar::SummarizeEvent(nsCString(eventName.str().c_str()),
-                                    ProcessID::Parent, false );
+                                    ProcessID::Parent);
   }
 
   GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
@@ -362,37 +360,11 @@ TEST_F(TelemetryTestFixture, ScalarEventSummary) {
 
 #ifndef DEBUG
   TelemetryScalar::SummarizeEvent(nsCString("whoops#too#many"),
-                                  ProcessID::Parent, false );
+                                  ProcessID::Parent);
 
   GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
   CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 500);
 #endif  
-}
-
-TEST_F(TelemetryTestFixture, ScalarEventSummary_Dynamic) {
-  AutoJSContextWithGlobal cx(mCleanGlobal);
-
-  
-  Unused << mTelemetry->ClearScalars();
-
-  const char* kScalarName = "telemetry.dynamic_event_counts";
-  const char* kLongestEvent =
-      "oohwowlookthiscategoryissolong#thismethodislongtooo#"
-      "thisobjectisnoslouch";
-  TelemetryScalar::SummarizeEvent(nsCString(kLongestEvent), ProcessID::Parent,
-                                  true );
-  TelemetryScalar::SummarizeEvent(nsCString(kLongestEvent), ProcessID::Content,
-                                  true );
-
-  
-  JS::Rooted<JS::Value> scalarsSnapshot(cx.GetJSContext());
-  GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot,
-                     ProcessID::Dynamic);
-
-  
-  
-  CheckKeyedUintScalar(kScalarName, kLongestEvent, cx.GetJSContext(),
-                       scalarsSnapshot, 2);
 }
 
 TEST_F(TelemetryTestFixture, TestKeyedScalarAllowedKeys) {

@@ -3352,9 +3352,8 @@ nsresult TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
 
 
 
-
 void TelemetryScalar::SummarizeEvent(const nsCString& aUniqueEventName,
-                                     ProcessID aProcessType, bool aDynamic) {
+                                     ProcessID aProcessType) {
   MOZ_ASSERT(XRE_IsParentProcess(),
              "Only summarize events in the parent process");
   if (!XRE_IsParentProcess()) {
@@ -3363,18 +3362,7 @@ void TelemetryScalar::SummarizeEvent(const nsCString& aUniqueEventName,
 
   StaticMutexAutoLock lock(gTelemetryScalarsMutex);
 
-  ScalarKey scalarKey{static_cast<uint32_t>(ScalarID::TELEMETRY_EVENT_COUNTS),
-                      aDynamic};
-  if (aDynamic) {
-    nsresult rv = internal_GetEnumByScalarName(
-        lock, nsAutoCString("telemetry.dynamic_event_counts"), &scalarKey);
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "NS_FAILED getting ScalarKey for telemetry.dynamic_event_counts");
-      return;
-    }
-  }
-
+  ScalarKey scalarKey{static_cast<uint32_t>(ScalarID::TELEMETRY_EVENT_COUNTS)};
   KeyedScalar* scalar = nullptr;
   nsresult rv =
       internal_GetKeyedScalarByEnum(lock, scalarKey, aProcessType, &scalar);

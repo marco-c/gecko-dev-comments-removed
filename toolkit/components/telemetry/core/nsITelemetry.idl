@@ -516,21 +516,6 @@ interface nsITelemetry : nsISupports
 
 
 
-  [implicit_jscontext, optional_argc]
-  void recordEvent(in ACString aCategory, in ACString aMethod, in ACString aObject, [optional] in jsval aValue, [optional] in jsval extra);
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -557,15 +542,6 @@ interface nsITelemetry : nsISupports
 
 
 
-
-
-
-
-
-  [implicit_jscontext]
-  void registerEvents(in ACString aCategory, in jsval aEventData);
-
-  
 
 
 
