@@ -400,14 +400,6 @@ var SidebarController = {
       this._tabstripOrientationObserverAdded = true;
     }
 
-    requestIdleCallback(() => {
-      if (!this.uiStateInitialized) {
-        
-        const backupState = this.SidebarManager.getBackupState();
-        this.setUIState(backupState);
-      }
-    });
-
     this._initDeferred.resolve();
   },
 
@@ -420,10 +412,8 @@ var SidebarController = {
     let enumerator = Services.wm.getEnumerator("navigator:browser");
     if (!enumerator.hasMoreElements()) {
       let xulStore = Services.xulStore;
-      xulStore.persist(this._title, "value");
 
-      const currentState = this.getUIState();
-      this.SidebarManager.setBackupState(currentState);
+      xulStore.persist(this._title, "value");
     }
 
     Services.obs.removeObserver(this, "intl:app-locales-changed");
@@ -446,50 +436,6 @@ var SidebarController = {
       this.sidebarMain.remove();
     }
     this._splitter.removeEventListener("command", this._browserResizeObserver);
-  },
-
-  getUIState() {
-    const state = { width: this._box.style.width, command: this.currentID };
-    if (this.sidebarRevampEnabled) {
-      state.expanded = this.sidebarMain.expanded;
-      state.hidden = this.sidebarContainer.hidden;
-    }
-    return state;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async setUIState(state) {
-    if (!state) {
-      return;
-    }
-    if (state.width) {
-      this._box.style.width = state.width;
-    }
-    if (state.command && this.currentID != state.command && !this.isOpen) {
-      await this.showInitially(state.command);
-    }
-    if (this.sidebarRevampEnabled) {
-      
-      
-      
-      await this.promiseInitialized;
-      this.toggleExpanded(state.expanded);
-      this.sidebarContainer.hidden = state.hidden;
-      this.updateToolbarButton();
-    }
-    this.uiStateInitialized = true;
   },
 
   
@@ -789,7 +735,6 @@ var SidebarController = {
       }
       
       if (this.adoptFromWindow(sourceWindow)) {
-        this.uiStateInitialized = true;
         return;
       }
     }
@@ -819,7 +764,6 @@ var SidebarController = {
       
       this.lastOpenedId = commandID;
     }
-    this.uiStateInitialized = true;
   },
 
   
