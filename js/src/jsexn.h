@@ -121,6 +121,8 @@ class AutoClearPendingException {
   ~AutoClearPendingException() { JS_ClearPendingException(cx); }
 };
 
+
+
 extern const char* ValueToSourceForError(JSContext* cx, HandleValue val,
                                          JS::UniqueChars& bytes);
 
