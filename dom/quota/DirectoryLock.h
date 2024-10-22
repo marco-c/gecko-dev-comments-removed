@@ -44,6 +44,14 @@ class NS_NO_VTABLE DirectoryLock {
 
   virtual int64_t Id() const = 0;
 
+  virtual const PersistenceScope& PersistenceScopeRef() const = 0;
+
+  
+  virtual const OriginScope& GetOriginScope() const = 0;
+
+  
+  virtual const Nullable<Client::Type>& NullableClientType() const = 0;
+
   virtual DirectoryLockCategory Category() const = 0;
 
   virtual bool Acquired() const = 0;
@@ -99,14 +107,6 @@ class NS_NO_VTABLE ClientDirectoryLock : public OriginDirectoryLock {
 
 class UniversalDirectoryLock : public DirectoryLock {
  public:
-  virtual const PersistenceScope& PersistenceScopeRef() const = 0;
-
-  
-  virtual const OriginScope& GetOriginScope() const = 0;
-
-  
-  virtual const Nullable<Client::Type>& NullableClientType() const = 0;
-
   virtual RefPtr<ClientDirectoryLock> SpecializeForClient(
       PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
       Client::Type aClientType) const = 0;
