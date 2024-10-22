@@ -298,7 +298,11 @@ nsTArray<T> DirectoryLockImpl::LocksMustWaitForInternal() const {
   for (DirectoryLockImpl* const existingLock :
        Reversed(mQuotaManager->mDirectoryLocks)) {
     if (MustWaitFor(*existingLock)) {
-      locks.AppendElement(existingLock);
+      if constexpr (std::is_same_v<T, NotNull<DirectoryLockImpl*>>) {
+        locks.AppendElement(WrapNotNull(existingLock));
+      } else {
+        locks.AppendElement(existingLock);
+      }
     }
   }
 
@@ -312,17 +316,7 @@ void DirectoryLockImpl::AcquireInternal() {
 
   
   
-  bool blocked = false;
-
-  
-  for (DirectoryLockImpl* const existingLock :
-       Reversed(mQuotaManager->mDirectoryLocks)) {
-    if (MustWaitFor(*existingLock)) {
-      existingLock->AddBlockingLock(*this);
-      AddBlockedOnLock(*existingLock);
-      blocked = true;
-    }
-  }
+  mBlockedOn = LocksMustWaitForInternal<NotNull<DirectoryLockImpl*>>();
 
   
   
@@ -330,9 +324,16 @@ void DirectoryLockImpl::AcquireInternal() {
 
   
   
-  if (!blocked) {
+  if (mBlockedOn.IsEmpty()) {
     NotifyOpenListener();
     return;
+  }
+
+  
+  
+  
+  for (auto& blockedOnLock : mBlockedOn) {
+    blockedOnLock->AddBlockingLock(*this);
   }
 
   mAcquireTimer = NS_NewTimer();
