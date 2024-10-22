@@ -5188,9 +5188,11 @@ inline void MozJemalloc::moz_set_max_dirty_page_modifier(int32_t aModifier) {
   gArenas.SetDefaultMaxDirtyPageModifier(aModifier);
 }
 
-#if defined(MOZ_ENABLE_FORKSERVER)
 inline void MozJemalloc::jemalloc_reset_small_alloc_randomization(
     bool aRandomizeSmall) {
+  
+  
+  
   
   
   
@@ -5219,7 +5221,6 @@ inline void MozJemalloc::jemalloc_reset_small_alloc_randomization(
     arena->ResetSmallAllocRandomization();
   }
 }
-#endif
 
 #define MALLOC_DECL(name, return_type, ...)                          \
   inline return_type MozJemalloc::moz_arena_##name(                  \
