@@ -75,6 +75,12 @@
         }
       });
       this._tabsChangedObserver.observe(this, { childList: true });
+
+      this.#labelElement.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        gBrowser.tabGroupMenu.openEditModal(this);
+        return false;
+      });
     }
 
     disconnectedCallback() {
@@ -150,10 +156,8 @@
 
 
     ungroupTabs() {
-      let adjacentTab = gBrowser.tabContainer.findNextTab(this.tabs.at(-1));
-
       for (let tab of this.tabs) {
-        gBrowser.tabContainer.insertBefore(tab, adjacentTab);
+        gBrowser.ungroupTab(tab);
       }
     }
 
