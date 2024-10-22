@@ -319,6 +319,17 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
              "fork server created another fork server?");
 
   
+  
+  
+  
+  
+  
+#if defined(MOZ_MEMORY)
+  jemalloc_reset_small_alloc_randomization(
+       !XRE_IsContentProcess());
+#endif
+
+  
   nsTraceRefcnt::ReopenLogFilesAfterFork(XRE_GetProcessTypeString());
 
   return false;
