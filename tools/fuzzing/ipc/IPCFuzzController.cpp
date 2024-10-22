@@ -79,6 +79,7 @@ IPCFuzzController::IPCFuzzController()
   portNameToIndex["PCanvasManager"] = 8;
   portNameToIndex["PRemoteLazyInputStream"] = 9;
   portNameToIndex["PRemoteWorkerService"] = 10;
+  portNameToIndex["PBackgroundLSDatabase"] = 11;
 
   
   
