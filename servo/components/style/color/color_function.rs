@@ -137,7 +137,10 @@ impl ColorFunction {
                     ))
                 }
 
-                let origin_color = resolved_origin_color!(origin_color, ColorSpace::Srgb);
+                
+                
+                let origin_color = resolved_origin_color!(origin_color, ColorSpace::Srgb)
+                    .map(|origin| origin.into_srgb_legacy());
 
                 AbsoluteColor::srgb_legacy(
                     resolve(r, origin_color.as_ref())?,
