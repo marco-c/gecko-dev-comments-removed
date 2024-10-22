@@ -5642,11 +5642,34 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryGroupIsInitializedInternal(
   MOZ_DIAGNOSTIC_ASSERT(mStorageConnection);
   MOZ_DIAGNOSTIC_ASSERT(mTemporaryStorageInitializedInternal);
 
-  const auto innerFunc = [](const auto&) -> mozilla::Result<Ok, nsresult> {
+  const auto innerFunc = [&aPrincipalMetadata,
+                          this](const auto&) -> mozilla::Result<Ok, nsresult> {
+    const auto& array =
+        mIOThreadAccessible.Access()->mAllTemporaryOrigins.Lookup(
+            aPrincipalMetadata.mGroup);
+    if (!array) {
+      return Ok{};
+    }
+
     
     
     
     
+    for (const auto& originMetadata : *array) {
+      if (IsTemporaryOriginInitializedInternal(originMetadata)) {
+        continue;
+      }
+
+      QM_TRY_UNWRAP(auto directory, GetOriginDirectory(originMetadata));
+
+      QM_TRY_INSPECT(const auto& metadata,
+                     LoadFullOriginMetadataWithRestore(directory));
+
+      
+      QM_TRY(MOZ_TO_RESULT(InitializeOrigin(metadata.mPersistenceType, metadata,
+                                            metadata.mLastAccessTime,
+                                            metadata.mPersisted, directory)));
+    }
 
     return Ok{};
   };
