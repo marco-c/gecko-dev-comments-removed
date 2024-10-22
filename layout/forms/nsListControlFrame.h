@@ -62,8 +62,7 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) final;
 
-  void DidReflow(nsPresContext* aPresContext,
-                 const ReflowInput* aReflowInput) final;
+  bool ReflowFinished() final;
   void Destroy(DestroyContext&) override;
 
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -311,10 +310,7 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   bool mMightNeedSecondPass : 1;
 
   
-
-
-
-  bool mHasPendingInterruptAtStartOfReflow : 1;
+  bool mReflowWasInterrupted : 1;
 
   
   bool mForceSelection : 1;

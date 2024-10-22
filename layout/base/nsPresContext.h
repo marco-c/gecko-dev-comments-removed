@@ -1009,7 +1009,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
 
-  bool HasPendingInterrupt() { return mHasPendingInterrupt; }
+  bool HasPendingInterrupt() const { return mHasPendingInterrupt; }
   
 
 
