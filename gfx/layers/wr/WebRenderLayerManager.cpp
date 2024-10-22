@@ -707,19 +707,11 @@ void WebRenderLayerManager::FlushRendering(wr::RenderReasons aReasons) {
     aReasons = aReasons | wr::RenderReasons::RESIZE;
   }
 
-  bool synchronouslyRepaintOnResize = mWidget->SynchronouslyRepaintOnResize();
-#if defined(XP_WIN)
-  
-  
-  
-  synchronouslyRepaintOnResize |= !WrBridge()->GetCompositorUseDComp();
-#endif
-
   
   
   
   if (!mHasFlushedThisChild ||
-      (resizing && (synchronouslyRepaintOnResize ||
+      (resizing && (mWidget->SynchronouslyRepaintOnResize() ||
                     StaticPrefs::layers_force_synchronous_resize()))) {
     cBridge->SendFlushRendering(aReasons);
   } else {
