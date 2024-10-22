@@ -37,6 +37,13 @@ class AutoMemMap {
                             PRFileMapProtect prot = PR_PROT_READONLY,
                             size_t maybeSize = 0);
 
+  
+  
+  
+  
+  Result<Ok, nsresult> initWithHandle(const FileDescriptor& file, size_t size,
+                                      PRFileMapProtect prot = PR_PROT_READONLY);
+
   void reset();
 
   bool initialized() const { return addr; }
@@ -70,6 +77,13 @@ class AutoMemMap {
 
   AutoFDClose fd;
   PRFileMap* fileMap = nullptr;
+
+#ifdef XP_WIN
+  
+  
+  
+  void* handle_ = nullptr;
+#endif
 
   uint32_t size_ = 0;
   void* addr = nullptr;

@@ -13,6 +13,8 @@
 #include "mozilla/Try.h"
 #include "mozilla/ipc/FileDescriptor.h"
 
+using namespace mozilla::loader;
+
 namespace mozilla {
 
 using namespace ipc;
@@ -22,38 +24,24 @@ static inline size_t GetAlignmentOffset(size_t aOffset, size_t aAlign) {
   return mod ? aAlign - mod : 0;
 }
 
-SharedPrefMap::SharedPrefMap(const SharedMemoryHandle& aMapHandle,
-                             size_t aMapSize) {
-  auto map = MakeRefPtr<SharedMemory>();
-  {
-    auto result = map->SetHandle(SharedMemory::CloneHandle(aMapHandle),
-                                 SharedMemory::OpenRights::RightsReadOnly);
-    MOZ_RELEASE_ASSERT(result);
-  }
-  {
-    auto result = map->Map(aMapSize);
-    MOZ_RELEASE_ASSERT(result);
-  }
-
+SharedPrefMap::SharedPrefMap(const FileDescriptor& aMapFile, size_t aMapSize) {
+  auto result = mMap.initWithHandle(aMapFile, aMapSize);
+  MOZ_RELEASE_ASSERT(result.isOk());
   
   
   
   
-  mMappedMemory = map->TakeMapping();
-  mHandle = map->TakeHandle();
+  mMap.setPersistent();
 }
 
 SharedPrefMap::SharedPrefMap(SharedPrefMapBuilder&& aBuilder) {
-  RefPtr<SharedMemory> map;
-  auto result = aBuilder.Finalize(map);
-  MOZ_RELEASE_ASSERT(result.isOk() && map);
-
-  mMappedMemory = map->TakeMapping();
-  mHandle = map->TakeHandle();
+  auto result = aBuilder.Finalize(mMap);
+  MOZ_RELEASE_ASSERT(result.isOk());
+  mMap.setPersistent();
 }
 
-mozilla::ipc::SharedMemoryHandle SharedPrefMap::CloneHandle() const {
-  return SharedMemory::CloneHandle(mHandle);
+mozilla::ipc::FileDescriptor SharedPrefMap::CloneFileDescriptor() const {
+  return mMap.cloneHandle();
 }
 
 bool SharedPrefMap::Has(const char* aKey) const {
@@ -148,8 +136,7 @@ void SharedPrefMapBuilder::Add(const nsCString& aKey, const Flags& aFlags,
   });
 }
 
-Result<Ok, nsresult> SharedPrefMapBuilder::Finalize(
-    RefPtr<SharedMemory>& aMap) {
+Result<Ok, nsresult> SharedPrefMapBuilder::Finalize(loader::AutoMemMap& aMap) {
   using Header = SharedPrefMap::Header;
 
   
