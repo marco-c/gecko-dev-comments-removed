@@ -53,6 +53,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 do_get_profile(); 
 
@@ -108,6 +126,12 @@ function getFilenameForFilter(filter) {
   }
   if (filter.id == "0001") {
     return "20201017-1-filter.stash";
+  }
+  if (filter.id == "1000") {
+    return "20201017-1-filter.delta";
+  }
+  if (filter.id == "2000") {
+    return "20201201-3-filter.delta";
   }
   
   
@@ -668,7 +692,7 @@ async function test_crlite_filters_and_check_revocation(filter_type) {
       {
         timestamp: "2020-10-17T03:00:00Z",
         type: "diff",
-        id: "0001",
+        id: filter_type == "clubcard" ? "1000" : "0001",
         parent: "0000",
       },
     ],
@@ -712,8 +736,8 @@ async function test_crlite_filters_and_check_revocation(filter_type) {
       {
         timestamp: "2020-10-17T06:00:00Z",
         type: "diff",
-        id: "0002",
-        parent: "0001",
+        id: filter_type == "clubcard" ? "2000" : "0002",
+        parent: filter_type == "clubcard" ? "1000" : "0001",
       },
     ],
     false
