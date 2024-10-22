@@ -1301,8 +1301,8 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
                 return CKR_TEMPLATE_INCOMPLETE;
             }
             
-            derive = (key_type == CKK_EC_EDWARDS) ? CK_FALSE : CK_TRUE;    
-            sign = (key_type == CKK_EC_MONTGOMERY) ? CK_FALSE : CK_TRUE;   
+            derive = (key_type == CKK_EC_EDWARDS) ? CK_FALSE : CK_TRUE;  
+            sign = (key_type == CKK_EC_MONTGOMERY) ? CK_FALSE : CK_TRUE; 
             encrypt = CK_FALSE;
             recover = CK_FALSE;
             wrap = CK_FALSE;

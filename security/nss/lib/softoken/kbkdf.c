@@ -264,6 +264,29 @@ failure:
     return CKR_MECHANISM_PARAM_INVALID;
 }
 
+static PRBool
+kbkdf_ValidPRF(CK_SP800_108_PRF_TYPE prf)
+{
+    
+    switch (prf) {
+        case CKM_AES_CMAC:
+            
+            return PR_TRUE;
+        case CKM_SHA_1_HMAC:
+        case CKM_SHA224_HMAC:
+        case CKM_SHA256_HMAC:
+        case CKM_SHA384_HMAC:
+        case CKM_SHA512_HMAC:
+        case CKM_SHA3_224_HMAC:
+        case CKM_SHA3_256_HMAC:
+        case CKM_SHA3_384_HMAC:
+        case CKM_SHA3_512_HMAC:
+            
+            return sftk_HMACMechanismToHash(prf) != HASH_AlgNULL;
+    }
+    return PR_FALSE;
+}
+
 static CK_RV
 kbkdf_ValidateParameters(CK_MECHANISM_TYPE mech, const CK_SP800_108_KDF_PARAMS *params, CK_ULONG keySize)
 {
@@ -273,14 +296,7 @@ kbkdf_ValidateParameters(CK_MECHANISM_TYPE mech, const CK_SP800_108_KDF_PARAMS *
 
     
 
-    if (!(
-          
-          params->prfType == CKM_AES_CMAC || 
-          
-          params->prfType != CKM_MD2_HMAC ||                        
-          params->prfType != CKM_MD5_HMAC ||                        
-          sftk_HMACMechanismToHash(params->prfType) != HASH_AlgNULL 
-          )) {
+    if (!kbkdf_ValidPRF(params->prfType)) {
         return CKR_MECHANISM_PARAM_INVALID;
     }
 
