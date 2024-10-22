@@ -14,6 +14,32 @@
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 
+class nsIContentSecurityPolicy;
+
+namespace mozilla {
+
+class ErrorResult;
+
+namespace dom {
+
+class TrustedHTMLOrString;
+
+namespace TrustedTypeUtils {
+
+
+
+
+void GetTrustedTypesCompliantString(const TrustedHTMLOrString& aInput,
+                                    nsIContentSecurityPolicy* aCSP,
+                                    const nsAString& aSink,
+                                    const nsAString& aSinkGroup,
+                                    nsAString& aResult, ErrorResult& aError);
+}  
+
+}  
+
+}  
+
 #define DECL_TRUSTED_TYPE_CLASS(_class)                                \
   class _class {                                                       \
    public:                                                             \
