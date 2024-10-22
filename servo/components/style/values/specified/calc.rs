@@ -72,6 +72,7 @@ pub enum MathFunction {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[repr(u8)]
 pub enum Leaf {
     
     Length(NoCalcLength),
