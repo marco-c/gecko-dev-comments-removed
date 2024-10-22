@@ -11,7 +11,6 @@
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/ResultVariant.h"
 #include "mozilla/SpinEventLoopUntil.h"
 
 namespace mozilla {
@@ -27,11 +26,12 @@ namespace mozilla {
 
 
 
-template <typename T>
-T WaitFor(MediaEventSource<T>& aEvent) {
+template <ListenerPolicy Lp, typename T>
+inline auto WaitFor(MediaEventSourceImpl<Lp, T>& aEvent) {
   Maybe<T> value;
   MediaEventListener listener = aEvent.Connect(
-      AbstractThread::GetCurrent(), [&](T aValue) { value = Some(aValue); });
+      AbstractThread::GetCurrent(),
+      [&](T&& aValue) { value = Some(std::forward<T>(aValue)); });
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
       "WaitFor(MediaEventSource<T>& aEvent)"_ns,
       [&] { return value.isSome(); });
@@ -42,14 +42,22 @@ T WaitFor(MediaEventSource<T>& aEvent) {
 
 
 
-void WaitFor(MediaEventSource<void>& aEvent);
+template <ListenerPolicy Lp>
+inline void WaitFor(MediaEventSourceImpl<Lp, void>& aEvent) {
+  bool done = false;
+  MediaEventListener listener =
+      aEvent.Connect(AbstractThread::GetCurrent(), [&] { done = true; });
+  SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
+      "WaitFor(MediaEventSource<void>& aEvent)"_ns, [&] { return done; });
+  listener.Disconnect();
+}
 
 
 
 
 
 template <typename R, typename E, bool Exc>
-Result<R, E> WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
+inline Result<R, E> WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
   Maybe<R> success;
   Maybe<E> error;
   aPromise->Then(
@@ -69,8 +77,9 @@ Result<R, E> WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
 
 
 
-template <typename... Args, typename CallbackFunction>
-void WaitUntil(MediaEventSource<Args...>& aEvent, CallbackFunction&& aF) {
+template <ListenerPolicy Lp, typename... Args, typename CallbackFunction>
+inline void WaitUntil(MediaEventSourceImpl<Lp, Args...>& aEvent,
+                      CallbackFunction&& aF) {
   bool done = false;
   MediaEventListener listener =
       aEvent.Connect(AbstractThread::GetCurrent(), [&](Args... aValue) {
@@ -88,8 +97,8 @@ template <typename... Args>
 using TakeNPromise = MozPromise<std::vector<std::tuple<Args...>>, bool, true>;
 
 template <ListenerPolicy Lp, typename... Args>
-auto TakeN(MediaEventSourceImpl<Lp, Args...>& aEvent,
-           size_t aN) -> RefPtr<TakeNPromise<Args...>> {
+inline auto TakeN(MediaEventSourceImpl<Lp, Args...>& aEvent,
+                  size_t aN) -> RefPtr<TakeNPromise<Args...>> {
   using Storage = std::vector<std::tuple<Args...>>;
   using Promise = TakeNPromise<Args...>;
   using Values = media::Refcountable<Storage>;
