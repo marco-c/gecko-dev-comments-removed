@@ -2,7 +2,7 @@
 
 
 
-use crate::query::{CRLiteCoverage, CRLiteQuery};
+use crate::query::{CRLiteCoverage, CRLiteKey, CRLiteQuery};
 use clubcard::{AsQuery, Equation, Filterable};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -101,19 +101,11 @@ impl CRLiteBuilderItem {
     }
 }
 
-impl<'a> From<&'a CRLiteBuilderItem> for CRLiteQuery<'a> {
-    fn from(item: &'a CRLiteBuilderItem) -> Self {
-        Self {
-            issuer: &item.issuer,
-            serial: &item.serial,
-            log_timestamp: None,
-        }
-    }
-}
-
 impl AsQuery<4> for CRLiteBuilderItem {
     fn as_query(&self, m: usize) -> Equation<4> {
-        CRLiteQuery::from(self).as_query(m)
+        let crlite_key = CRLiteKey::new(&self.issuer, &self.serial);
+        let crlite_query = CRLiteQuery::new(&crlite_key, None);
+        crlite_query.as_query(m)
     }
 
     fn block(&self) -> &[u8] {
@@ -216,12 +208,8 @@ mod tests {
             let issuer = [i as u8; 32];
             for j in 0..universe_size {
                 let serial = j.to_le_bytes();
-                let item = CRLiteQuery {
-                    issuer: &issuer,
-                    serial: &serial,
-                    log_timestamp: None,
-                };
-                if clubcard.unchecked_contains(&item) {
+                let key = CRLiteKey::new(&issuer, &serial);
+                if clubcard.unchecked_contains(&CRLiteQuery::new(&key, None)) {
                     included += 1;
                 } else {
                     excluded += 1;
@@ -235,12 +223,8 @@ mod tests {
         
         let issuer = [subset_sizes.len() as u8; 32];
         let serial = 0usize.to_le_bytes();
-        let item = CRLiteQuery {
-            issuer: &issuer,
-            serial: &serial,
-            log_timestamp: None,
-        };
-        assert!(!clubcard.unchecked_contains(&item));
+        let key = CRLiteKey::new(&issuer, &serial);
+        assert!(!clubcard.unchecked_contains(&CRLiteQuery::new(&key, None)));
 
         assert!(subset_sizes.len() > 0 && subset_sizes[0] > 0 && subset_sizes[0] < universe_size);
         let issuer = [0u8; 32];
@@ -248,13 +232,10 @@ mod tests {
         let nonrevoked_serial = (universe_size - 1).to_le_bytes();
 
         
-        let item = CRLiteQuery {
-            issuer: &issuer,
-            serial: &revoked_serial,
-            log_timestamp: None,
-        };
+        let revoked_serial_key = CRLiteKey::new(&issuer, &revoked_serial);
+        let query = CRLiteQuery::new(&revoked_serial_key, None);
         assert!(matches!(
-            clubcard.contains(&item),
+            clubcard.contains(&query),
             Membership::NotInUniverse
         ));
 
@@ -262,34 +243,23 @@ mod tests {
         
         let log_id = [0u8; 32];
         let timestamp = (&log_id, 100);
-        let item = CRLiteQuery {
-            issuer: &issuer,
-            serial: &revoked_serial,
-            log_timestamp: Some(timestamp),
-        };
-        assert!(matches!(clubcard.contains(&item), Membership::Member));
+        let query = CRLiteQuery::new(&revoked_serial_key, Some(timestamp));
+        assert!(matches!(clubcard.contains(&query), Membership::Member));
 
         
         
         let timestamp = (&log_id, 100);
-        let item = CRLiteQuery {
-            issuer: &issuer,
-            serial: &nonrevoked_serial,
-            log_timestamp: Some(timestamp),
-        };
-        assert!(matches!(clubcard.contains(&item), Membership::Nonmember));
+        let nonrevoked_serial_key = CRLiteKey::new(&issuer, &nonrevoked_serial);
+        let query = CRLiteQuery::new(&nonrevoked_serial_key, Some(timestamp));
+        assert!(matches!(clubcard.contains(&query), Membership::Nonmember));
 
         
         
         let log_id = [1u8; 32];
         let timestamp = (&log_id, 100);
-        let item = CRLiteQuery {
-            issuer: &issuer,
-            serial: &revoked_serial,
-            log_timestamp: Some(timestamp),
-        };
+        let query = CRLiteQuery::new(&revoked_serial_key, Some(timestamp));
         assert!(matches!(
-            clubcard.contains(&item),
+            clubcard.contains(&query),
             Membership::NotInUniverse
         ));
     }

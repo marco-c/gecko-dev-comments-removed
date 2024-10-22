@@ -388,13 +388,21 @@ impl<const W: usize, T: Filterable<W>, ApproxOrExact> From<Vec<Ribbon<W, T, Appr
         
         
         let mut solution = vec![];
-        for i in 0..blocks.first().map_or(0, |first| first.rank) {
+        let max_rank = blocks.first().map_or(0, |first| first.rank);
+        for i in 0..max_rank {
             
             let mut tail = vec![];
+            if max_rank > 1 {
+                
+                tail.push(thread_rng().gen::<u64>());
+            }
             for j in (0..blocks.len()).rev() {
                 if blocks[j].rank > i {
                     tail = blocks[j].solve(&tail);
                 }
+            }
+            while let Some(0) = tail.last() {
+                tail.pop();
             }
             solution.push(tail);
         }
