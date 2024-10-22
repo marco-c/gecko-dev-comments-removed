@@ -14,20 +14,6 @@
 #include "mozilla/UniquePtr.h"
 #include "nsIFile.h"
 #include "nsProfileLock.h"
-#include "mozilla/MozPromise.h"
-
-class nsStartupLock final {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsStartupLock)
-
-  nsStartupLock(nsIFile* aDir, nsProfileLock& aLock);
-
- private:
-  ~nsStartupLock();
-
-  nsCOMPtr<nsIFile> mDir;
-  nsProfileLock mLock;
-};
 
 class nsRemoteService final : public nsIObserver, public nsIRemoteService {
  public:
@@ -36,62 +22,27 @@ class nsRemoteService final : public nsIObserver, public nsIRemoteService {
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIREMOTESERVICE
 
-  nsRemoteService();
-  void SetProgram(const char* aProgram);
+  explicit nsRemoteService(const char* aProgram);
   void SetProfile(nsACString& aProfile);
 #ifdef MOZ_WIDGET_GTK
   void SetStartupToken(nsACString& aStartupToken);
 #endif
 
-  using StartupLockPromise =
-      mozilla::MozPromise<RefPtr<nsStartupLock>, nsresult, false>;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  RefPtr<StartupLockPromise> AsyncLockStartup(double aTimeout);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<nsStartupLock> LockStartup();
+  void LockStartup();
+  void UnlockStartup();
 
   nsresult StartClient();
   void StartupServer();
   void ShutdownServer();
 
  private:
-  friend nsStartupLock;
-
-  
-  
-  static nsStartupLock* gStartupLock;
-  static mozilla::StaticRefPtr<nsRemoteService::StartupLockPromise>
-      gStartupLockPromise;
-
   ~nsRemoteService();
   nsresult SendCommandLine(const nsACString& aProfile, size_t aArgc,
                            const char** aArgv, bool aRaise);
 
   mozilla::UniquePtr<nsRemoteServer> mRemoteServer;
+  nsProfileLock mRemoteLock;
+  nsCOMPtr<nsIFile> mRemoteLockDir;
   nsCString mProgram;
   nsCString mProfile;
 #ifdef MOZ_WIDGET_GTK
