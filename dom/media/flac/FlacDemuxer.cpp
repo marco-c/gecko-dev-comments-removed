@@ -618,12 +618,10 @@ bool FlacTrackDemuxer::Init() {
   do {
     uint32_t read = 0;
     nsresult ret = mSource.ReadAt(offset, buffer, BUFFER_SIZE, &read);
-    if (NS_FAILED(ret) || read < BUFFER_SIZE) {
-      
-      
+    if (NS_FAILED(ret)) {
       return false;
     }
-    if (!mParser->IsHeaderBlock(ubuffer, BUFFER_SIZE)) {
+    if (!mParser->IsHeaderBlock(ubuffer, read)) {
       
       
       break;
