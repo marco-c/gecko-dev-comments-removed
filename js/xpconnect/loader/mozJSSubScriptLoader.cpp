@@ -21,6 +21,7 @@
 #include "xpcprivate.h"                   
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"  
+#include "js/EnvironmentChain.h"  
 #include "js/friend/JSMEnvironment.h"  
 #include "js/SourceText.h"             
 #include "js/Wrapper.h"
@@ -146,7 +147,7 @@ static bool EvalStencil(JSContext* cx, HandleObject targetObj,
     }
     retval.setUndefined();
   } else {
-    JS::RootedObjectVector envChain(cx);
+    JS::EnvironmentChain envChain(cx, JS::SupportUnscopables::No);
     if (!envChain.append(targetObj)) {
       return false;
     }
