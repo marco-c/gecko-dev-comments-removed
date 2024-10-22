@@ -13,7 +13,6 @@ const estraverse = require("estraverse");
 const path = require("path");
 const fs = require("fs");
 const toml = require("toml-eslint-parser");
-const recommendedConfig = require("./configs/recommended");
 
 var gRootDir = null;
 var directoryManifests = new Map();
@@ -301,8 +300,9 @@ module.exports = {
 
 
 
+
   getECMAVersion() {
-    return recommendedConfig.parserOptions.ecmaVersion;
+    return "latest";
   },
 
   

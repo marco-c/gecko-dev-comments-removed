@@ -8,19 +8,15 @@
 
 "use strict";
 
+const path = require("path");
+const globals = require("globals");
 
+const { name, version } = require(path.join(__dirname, "..", "package.json"));
 
-
-module.exports = {
+const plugin = {
+  meta: { name, version },
   configs: {
-    "browser-test": require("./configs/browser-test"),
-    "chrome-test": require("./configs/chrome-test"),
-    "general-test": require("./configs/general-test"),
-    "mochitest-test": require("./configs/mochitest-test"),
-    recommended: require("./configs/recommended"),
-    "require-jsdoc": require("./configs/require-jsdoc"),
-    "valid-jsdoc": require("./configs/valid-jsdoc"),
-    "xpcshell-test": require("./configs/xpcshell-test"),
+    
   },
   environments: {
     "browser-window": require("./environments/browser-window.js"),
@@ -102,3 +98,115 @@ module.exports = {
     "var-only-at-top-level": require("./rules/var-only-at-top-level"),
   },
 };
+
+const configurations = [
+  "browser-test",
+  "chrome-test",
+  "general-test",
+  "mochitest-test",
+  "recommended",
+  "require-jsdoc",
+  "valid-jsdoc",
+  "xpcshell-test",
+];
+
+
+
+
+
+
+
+
+
+
+function cloneLegacySection(section) {
+  let config = structuredClone(section);
+
+  if (config.overrides) {
+    for (let overridesSection of config.overrides) {
+      
+      delete overridesSection.name;
+      
+      if (overridesSection.ignores) {
+        overridesSection.excludedFiles = overridesSection.ignores;
+        delete overridesSection.ignores;
+      }
+    }
+  }
+
+  return config;
+}
+
+
+
+
+
+
+
+
+
+
+function cloneFlatSection(section) {
+  let config = structuredClone(section);
+
+  
+  
+  
+  config.plugins = {
+    mozilla: plugin,
+    "no-unsanitized": require("eslint-plugin-no-unsanitized"),
+    "@microsoft/sdl": require("@microsoft/eslint-plugin-sdl"),
+  };
+  if (!config.languageOptions) {
+    config.languageOptions = {};
+  }
+
+  
+  if (config.parserOptions?.sourceType) {
+    config.languageOptions.sourceType = config.parserOptions.sourceType;
+    delete config.parserOptions;
+  }
+
+  
+  for (let [key, value] of Object.entries(config.env ?? {})) {
+    if (!value) {
+      throw new Error(
+        "Removing environments is not supported by eslint-plugin-mozilla"
+      );
+    }
+    if (!config.languageOptions.globals) {
+      config.languageOptions.globals = {};
+    }
+    if (key.startsWith("mozilla/")) {
+      config.languageOptions.globals = {
+        ...config.languageOptions.globals,
+        ...plugin.environments[key.substring("mozilla/".length)].globals,
+      };
+    } else {
+      config.languageOptions.globals = {
+        ...config.languageOptions.globals,
+        ...globals[key],
+      };
+    }
+  }
+  delete config.env;
+
+  return config;
+}
+
+for (let configName of configurations) {
+  let config = require(`./configs/${configName}`);
+
+  if (configName == "recommended") {
+    plugin.configs[configName] = cloneLegacySection(config.getConfig("legacy"));
+    plugin.configs[`flat/${configName}`] = config
+      .getConfig("flat")
+      .map(section => cloneFlatSection(section));
+    continue;
+  }
+
+  plugin.configs[configName] = cloneLegacySection(config);
+  plugin.configs[`flat/${configName}`] = cloneFlatSection(config);
+}
+
+module.exports = plugin;
