@@ -169,7 +169,16 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   
   mWindow.delegate = nil;
+
+  
+  
+  [[mWindow retain] autorelease];
+
+  
+  
+  MOZ_ASSERT(mWindow.releasedWhenClosed);
   [mWindow close];
+
   mWindow = nil;
   [mDelegate autorelease];
 
