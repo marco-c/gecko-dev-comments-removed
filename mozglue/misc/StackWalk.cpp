@@ -6,7 +6,6 @@
 
 
 
-#include "mozilla/Array.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
@@ -139,53 +138,6 @@ CRITICAL_SECTION gDbgHelpCS;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static Atomic<bool> sStackWalkLocksInitialized;
-static Array<SRWLOCK*, 2> sStackWalkLocks;
-
-MFBT_API
-void InitializeStackWalkLocks(const Array<void*, 2>& aStackWalkLocks) {
-  sStackWalkLocks[0] = reinterpret_cast<SRWLOCK*>(aStackWalkLocks[0]);
-  sStackWalkLocks[1] = reinterpret_cast<SRWLOCK*>(aStackWalkLocks[1]);
-  sStackWalkLocksInitialized = true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 static Atomic<size_t> sStackWalkSuppressions;
 
 void SuppressStackWalking() { ++sStackWalkSuppressions; }
@@ -203,24 +155,6 @@ AutoSuppressStackWalking::AutoSuppressStackWalking() { SuppressStackWalking(); }
 MFBT_API
 AutoSuppressStackWalking::~AutoSuppressStackWalking() {
   DesuppressStackWalking();
-}
-
-bool IsStackWalkingSafe() {
-  
-  if (sStackWalkLocksInitialized) {
-    bool isSafe = false;
-    if (::TryAcquireSRWLockShared(sStackWalkLocks[0])) {
-      if (::TryAcquireSRWLockShared(sStackWalkLocks[1])) {
-        isSafe = true;
-        ::ReleaseSRWLockShared(sStackWalkLocks[1]);
-      }
-      ::ReleaseSRWLockShared(sStackWalkLocks[0]);
-    }
-    return isSafe;
-  }
-
-  
-  return sStackWalkSuppressions == 0;
 }
 
 static uint8_t* sJitCodeRegionStart;
@@ -451,8 +385,7 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
   
   
   
-  
-  if (!IsStackWalkingSafe()) {
+  if (sStackWalkSuppressions) {
     return;
   }
 
