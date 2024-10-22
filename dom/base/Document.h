@@ -3567,8 +3567,6 @@ class Document : public nsINode,
   }
   void SetDevToolsWatchingDOMMutations(bool aValue);
 
-  void MaybeWarnAboutZoom();
-
   
   void EvaluateMediaQueriesAndReportChanges(bool aRecurse);
 
@@ -4888,12 +4886,6 @@ class Document : public nsINode,
   
   
   bool mHasBeenEditable : 1;
-
-  
-  
-  
-  
-  bool mHasWarnedAboutZoom : 1;
 
   
   
