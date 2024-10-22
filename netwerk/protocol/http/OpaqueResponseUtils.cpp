@@ -662,7 +662,7 @@ void OpaqueResponseBlocker::ResolveAndProcessData(
   
   
   
-  Unused << OnDataAvailable(aChannel, input, 0, mem.Size<char>());
+  OnDataAvailable(aChannel, input, 0, mem.Size<char>());
 
   MaybeRunOnStopRequest(aChannel);
 }
