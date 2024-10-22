@@ -18,6 +18,12 @@ ChromeUtils.defineLazyGetter(this, "oneOffSearchButtons", () => {
 let originalEngine;
 let newEngine;
 
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+  });
+});
+
 
 add_task(async function contextMenu_not_shown() {
   

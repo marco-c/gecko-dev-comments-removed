@@ -18,6 +18,9 @@ ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
 });
 
 add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+  });
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,

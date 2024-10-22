@@ -9,6 +9,9 @@
 
 
 add_task(async function slowHeuristicSelected() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+  });
   
   
   
