@@ -24,9 +24,10 @@
 #  undef DrawText
 #endif
 
-class nsTextPaintStyle;
 struct SelectionDetails;
+class nsBlockFrame;
 class nsTextFragment;
+class nsTextPaintStyle;
 
 namespace mozilla {
 class SVGContextPaint;
@@ -1081,6 +1082,24 @@ class nsTextFrame : public nsIFrame {
 
   void MaybeSplitFramesForFirstLetter();
   void SetFirstLetterLength(int32_t aLength);
+
+  struct AppendRenderedTextState {
+    
+    const uint32_t mStartOffset;
+    const uint32_t mEndOffset;
+    const TextOffsetType mOffsetType;
+    const TrailingWhitespace mTrimTrailingWhitespace;
+    const nsTextFragment* const mTextFrag;
+    
+    nsBlockFrame* mLineContainer = nullptr;
+    uint32_t mOffsetInRenderedString = 0;
+    bool mHaveOffsets = false;
+  };
+  
+  
+  
+  bool AppendRenderedText(AppendRenderedTextState& aState,
+                          RenderedText& aResult);
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrame::TrimmedOffsetFlags)
