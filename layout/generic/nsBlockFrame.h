@@ -674,7 +674,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  bool IsInLineClampContext() const { return !!GetLineClampRoot(); }
+  bool IsInLineClampContext() const;
 
   
 
@@ -683,9 +683,6 @@ class nsBlockFrame : public nsContainerFrame {
   bool MaybeHasFloats() const;
 
  protected:
-  nsBlockFrame* GetLineClampRoot() const;
-  nscoord ApplyLineClamp(nscoord aContentBlockEndEdge);
-
   
 
 
