@@ -45,8 +45,6 @@
 
 namespace JS {
 
-class JS_PUBLIC_API EnvironmentChain;
-
 
 
 
@@ -70,7 +68,7 @@ extern JS_PUBLIC_API bool ExecuteInJSMEnvironment(JSContext* cx,
 
 extern JS_PUBLIC_API bool ExecuteInJSMEnvironment(
     JSContext* cx, Handle<JSScript*> script, Handle<JSObject*> jsmEnv,
-    const EnvironmentChain& targetObj);
+    Handle<StackGCVector<JSObject*>> targetObj);
 
 
 

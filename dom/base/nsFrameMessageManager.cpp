@@ -21,7 +21,6 @@
 #include "js/CallAndConstruct.h"  
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"
-#include "js/EnvironmentChain.h"  
 #include "js/experimental/JSStencil.h"
 #include "js/GCVector.h"
 #include "js/JSON.h"
@@ -1213,7 +1212,7 @@ void nsMessageManagerScriptExecutor::LoadScriptInternal(
         }
       } else {
         JS::Rooted<JS::Value> rval(cx);
-        JS::EnvironmentChain envChain(cx, JS::SupportUnscopables::No);
+        JS::RootedVector<JSObject*> envChain(cx);
         if (!envChain.append(aMessageManager)) {
           return;
         }

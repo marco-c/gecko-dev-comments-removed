@@ -7,8 +7,7 @@
 
 #undef CreateEvent
 
-#include "js/ColumnNumber.h"      
-#include "js/EnvironmentChain.h"  
+#include "js/ColumnNumber.h"  
 #include "js/loader/LoadedScript.h"
 #include "js/loader/ScriptFetchOptions.h"
 #include "mozilla/Assertions.h"
@@ -1224,8 +1223,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   
   
   
-  JS::EnvironmentChain envChain(cx, JS::SupportUnscopables::Yes);
-  if (!nsJSUtils::GetEnvironmentChainForElement(cx, element, envChain)) {
+  JS::RootedVector<JSObject*> scopeChain(cx);
+  if (!nsJSUtils::GetScopeChainForElement(cx, element, &scopeChain)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -1258,7 +1257,7 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
       .setDeferDebugMetadata(true);
 
   JS::Rooted<JSObject*> handler(cx);
-  result = nsJSUtils::CompileFunction(jsapi, envChain, options,
+  result = nsJSUtils::CompileFunction(jsapi, scopeChain, options,
                                       nsAtomCString(aTypeAtom), argCount,
                                       argNames, *body, handler.address());
   NS_ENSURE_SUCCESS(result, result);

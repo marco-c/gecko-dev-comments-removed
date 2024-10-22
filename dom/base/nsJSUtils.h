@@ -29,10 +29,6 @@ class nsIScriptElement;
 class nsIScriptGlobalObject;
 class nsXBLPrototypeBinding;
 
-namespace JS {
-class JS_PUBLIC_API EnvironmentChain;
-};
-
 namespace mozilla {
 union Utf8Unit;
 
@@ -55,7 +51,7 @@ class nsJSUtils {
   static uint64_t GetCurrentlyRunningCodeInnerWindowID(JSContext* aContext);
 
   static nsresult CompileFunction(mozilla::dom::AutoJSAPI& jsapi,
-                                  const JS::EnvironmentChain& aEnvChain,
+                                  JS::HandleVector<JSObject*> aScopeChain,
                                   JS::CompileOptions& aOptions,
                                   const nsACString& aName, uint32_t aArgCount,
                                   const char** aArgArray,
@@ -71,9 +67,9 @@ class nsJSUtils {
 
   
   
-  static bool GetEnvironmentChainForElement(JSContext* aCx,
-                                            mozilla::dom::Element* aElement,
-                                            JS::EnvironmentChain& aEnvChain);
+  static bool GetScopeChainForElement(
+      JSContext* aCx, mozilla::dom::Element* aElement,
+      JS::MutableHandleVector<JSObject*> aScopeChain);
 
   static void ResetTimeZone();
 

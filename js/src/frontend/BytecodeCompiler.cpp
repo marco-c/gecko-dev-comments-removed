@@ -28,7 +28,6 @@
 #include "js/AllocPolicy.h"        
 #include "js/CharacterEncoding.h"  
 #include "js/ColumnNumber.h"       
-#include "js/EnvironmentChain.h"   
 #include "js/ErrorReport.h"        
 #include "js/experimental/JSStencil.h"
 #include "js/GCVector.h"    
@@ -613,8 +612,8 @@ static WithEnvironmentObject* CreateExtraBindingsEnvironment(
   }
 
   JS::Rooted<JSObject*> globalLexical(cx, &cx->global()->lexicalEnvironment());
-  return WithEnvironmentObject::createNonSyntactic(
-      cx, extraBindingsObj, globalLexical, JS::SupportUnscopables::No);
+  return WithEnvironmentObject::createNonSyntactic(cx, extraBindingsObj,
+                                                   globalLexical);
 }
 
 JSScript* frontend::CompileGlobalScriptWithExtraBindings(

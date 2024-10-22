@@ -5,7 +5,6 @@
 #include "mozilla/Utf8.h"  
 
 #include "js/CompilationAndEvaluation.h"  
-#include "js/EnvironmentChain.h"          
 #include "js/GlobalObject.h"              
 #include "js/MemoryFunctions.h"
 #include "js/SourceText.h"  
@@ -42,13 +41,13 @@ BEGIN_TEST(testBug795104) {
   CHECK(JS::Evaluate(cx, opts, srcBuf, &unused));
 
   JS::RootedFunction fun(cx);
-  JS::EnvironmentChain emptyEnvChain(cx, JS::SupportUnscopables::No);
+  JS::RootedObjectVector emptyScopeChain(cx);
 
   
   
   opts.setNoScriptRval(false);
 
-  fun = JS::CompileFunction(cx, emptyEnvChain, opts, "f", 0, nullptr, srcBuf);
+  fun = JS::CompileFunction(cx, emptyScopeChain, opts, "f", 0, nullptr, srcBuf);
   CHECK(fun);
 
   JS_free(cx, s);
