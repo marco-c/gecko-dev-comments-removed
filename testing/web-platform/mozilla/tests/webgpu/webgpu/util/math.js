@@ -961,6 +961,17 @@ counts =
   counts.neg_norm = counts.neg_norm === undefined ? counts.pos_norm : counts.neg_norm;
   counts.neg_sub = counts.neg_sub === undefined ? counts.pos_sub : counts.neg_sub;
 
+  let special_pos = [];
+  
+  
+  if (counts.pos_norm >= 4) {
+    special_pos = [
+    
+    0x4effffff,
+    
+    0x4f7fffff];
+
+  }
   
   
   
@@ -980,7 +991,14 @@ counts =
     kBit.f32.positive.subnormal.max,
     counts.pos_sub
   ),
-  ...linearRange(kBit.f32.positive.min, kBit.f32.positive.max, counts.pos_norm)].
+  ...[
+  ...linearRange(
+    kBit.f32.positive.min,
+    kBit.f32.positive.max,
+    counts.pos_norm - special_pos.length
+  ),
+  ...special_pos].
+  sort((n1, n2) => n1 - n2)].
   map(Math.trunc);
   return bit_fields.map(reinterpretU32AsF32);
 }
