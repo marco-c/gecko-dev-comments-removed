@@ -104,9 +104,7 @@ class RuntimePage extends PureComponent {
     };
   }
 
-  
-  
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     const { dispatch, runtimeId } = this.props;
     dispatch(Actions.selectPage(PAGE_TYPES.RUNTIME, runtimeId));
   }
