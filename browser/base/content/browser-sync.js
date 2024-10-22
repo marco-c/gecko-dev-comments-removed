@@ -495,7 +495,6 @@ var gSync = {
         "browser/appmenu.ftl",
         "browser/sync.ftl",
         "browser/syncedTabs.ftl",
-        "browser/newtab/asrouter.ftl",
       ],
       true
     ));
@@ -586,7 +585,6 @@ var gSync = {
     }
 
     MozXULElement.insertFTLIfNeeded("browser/sync.ftl");
-    MozXULElement.insertFTLIfNeeded("browser/newtab/asrouter.ftl");
 
     
     const appMenuLabel = PanelMultiView.getViewNode(
@@ -659,8 +657,6 @@ var gSync = {
       "PanelUI-fxa-menu-sendtab-connect-device-button"
     ).addEventListener("command", this);
 
-    PanelUI.mainView.addEventListener("ViewShowing", this);
-
     
     
     if (this.FXA_CTA_MENU_ENABLED) {
@@ -693,35 +689,12 @@ var gSync = {
         break;
       }
       case "ViewShowing": {
-        if (event.target == PanelUI.mainView) {
-          this.onAppMenuShowing();
-        } else {
-          this.onFxAPanelViewShowing(event.target);
-        }
+        this.onFxAPanelViewShowing(event.target);
         break;
       }
       case "ViewHiding": {
         this.onFxAPanelViewHiding(event.target);
       }
-    }
-  },
-
-  onAppMenuShowing() {
-    const appMenuHeaderText = PanelMultiView.getViewNode(
-      document,
-      "appMenu-fxa-text"
-    );
-
-    const ctaDefaultStringID = "appmenu-fxa-sync-and-save-data2";
-    const ctaStringID = this.getMenuCtaCopy(NimbusFeatures.fxaAppMenuItem);
-
-    document.l10n.setAttributes(
-      appMenuHeaderText,
-      ctaStringID || ctaDefaultStringID
-    );
-
-    if (NimbusFeatures.fxaAppMenuItem.getVariable("ctaCopyVariant")) {
-      NimbusFeatures.fxaAppMenuItem.recordExposureEvent();
     }
   },
 
@@ -769,14 +742,6 @@ var gSync = {
       PanelMultiView.getViewNode(document, "PanelUI-fxa-remotetabs-tabslist"),
       PanelMultiView.getViewNode(document, "PanelUI-remote-tabs-separator")
     );
-
-    
-    
-    const ctaCopyVariant =
-      NimbusFeatures.fxaAvatarMenuItem.getVariable("ctaCopyVariant");
-    if (ctaCopyVariant) {
-      NimbusFeatures.fxaAvatarMenuItem.recordExposureEvent();
-    }
   },
 
   onFxAPanelViewHiding(panelview) {
@@ -1155,14 +1120,6 @@ var gSync = {
         ? "fxa-menu-sync-description"
         : "appmenu-fxa-signed-in-label";
       headerDescription = this.fluentStrings.formatValueSync(headerDescString);
-
-      if (this.FXA_CTA_MENU_ENABLED) {
-        const ctaCopy = this.getMenuCtaCopy(NimbusFeatures.fxaAvatarMenuItem);
-        if (ctaCopy) {
-          headerTitleL10nId = ctaCopy.headerTitleL10nId;
-          headerDescription = ctaCopy.headerDescription;
-        }
-      }
     } else if (state.status === UIState.STATUS_LOGIN_FAILED) {
       stateValue = "login-failed";
       headerTitleL10nId = "account-disconnected2";
@@ -2391,91 +2348,6 @@ var gSync = {
 
     this.openLink(url);
     PanelUI.hide();
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getMenuCtaCopy(feature) {
-    const ctaCopyVariant = feature.getVariable("ctaCopyVariant");
-    let headerTitleL10nId;
-    let headerDescription;
-    switch (ctaCopyVariant) {
-      case "sync-devices": {
-        if (feature === NimbusFeatures.fxaAppMenuItem) {
-          return "fxa-menu-message-sync-devices-collapsed-text";
-        }
-        headerTitleL10nId = "fxa-menu-message-sync-devices-primary-text";
-        headerDescription = this.fluentStrings.formatValueSync(
-          "fxa-menu-message-sync-devices-secondary-text"
-        );
-        break;
-      }
-      case "backup-data": {
-        if (feature === NimbusFeatures.fxaAppMenuItem) {
-          return "fxa-menu-message-backup-data-collapsed-text";
-        }
-        headerTitleL10nId = "fxa-menu-message-backup-data-primary-text";
-        headerDescription = this.fluentStrings.formatValueSync(
-          "fxa-menu-message-backup-data-secondary-text"
-        );
-        break;
-      }
-      case "backup-sync": {
-        if (feature === NimbusFeatures.fxaAppMenuItem) {
-          return "fxa-menu-message-backup-sync-collapsed-text";
-        }
-        headerTitleL10nId = "fxa-menu-message-backup-sync-primary-text";
-        headerDescription = this.fluentStrings.formatValueSync(
-          "fxa-menu-message-backup-sync-secondary-text"
-        );
-        break;
-      }
-      case "mobile": {
-        if (feature === NimbusFeatures.fxaAppMenuItem) {
-          return "fxa-menu-message-mobile-collapsed-text";
-        }
-        headerTitleL10nId = "fxa-menu-message-mobile-primary-text";
-        headerDescription = this.fluentStrings.formatValueSync(
-          "fxa-menu-message-mobile-secondary-text"
-        );
-        break;
-      }
-      default: {
-        return null;
-      }
-    }
-
-    return { headerTitleL10nId, headerDescription };
   },
 
   openLink(url) {
