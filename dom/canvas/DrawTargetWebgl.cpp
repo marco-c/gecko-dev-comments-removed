@@ -1447,8 +1447,9 @@ inline Maybe<Rect> DrawTargetWebgl::RectClippedToViewport(
 
 
 
-static inline bool RectInsidePrecisionLimits(const RectDouble& aRect) {
-  return RectDouble(-(1 << 20), -(1 << 20), 2 << 20, 2 << 20).Contains(aRect);
+template <typename R>
+static inline bool RectInsidePrecisionLimits(const R& aRect) {
+  return R(-(1 << 20), -(1 << 20), 2 << 20, 2 << 20).Contains(aRect);
 }
 
 void DrawTargetWebgl::ClearRect(const Rect& aRect) {
@@ -3319,6 +3320,10 @@ bool SharedContextWebgl::DrawPathAccel(
   
   if (bounds.IsEmpty()) {
     return true;
+  }
+  
+  if (!RectInsidePrecisionLimits(bounds)) {
+    return false;
   }
   IntRect viewport(IntPoint(), mViewportSize);
   if (aShadow) {
