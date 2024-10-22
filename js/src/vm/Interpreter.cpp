@@ -1688,25 +1688,16 @@ void js::ReportInNotObjectError(JSContext* cx, HandleValue lref,
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 
-enum SyncDisposalClosureSlots {
-  SyncDisposalClosureSlot_MethodSlot = 0,
-};
 
 
 
-
-
-
-
-
-
-static bool SyncDisposalClosure(JSContext* cx, unsigned argc, JS::Value* vp) {
+bool js::SyncDisposalClosure(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
 
   JS::Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
 
   JS::Rooted<JS::Value> method(
-      cx, callee->getExtendedSlot(SyncDisposalClosureSlot_MethodSlot));
+      cx, callee->getExtendedSlot(uint8_t(SyncDisposalClosureSlots::Method)));
 
   
   JS::Rooted<JS::Value> O(cx, args.thisv());
@@ -1737,154 +1728,6 @@ static bool SyncDisposalClosure(JSContext* cx, unsigned argc, JS::Value* vp) {
 
   
   args.rval().set(JS::ObjectValue(*promiseCapability));
-  return true;
-}
-
-
-
-
-bool js::GetDisposeMethod(JSContext* cx, JS::Handle<JS::Value> objVal,
-                          UsingHint hint,
-                          JS::MutableHandle<JS::Value> disposeMethod) {
-  switch (hint) {
-    case UsingHint::Async: {
-      
-      
-      
-      
-      JS::Rooted<JS::PropertyKey> idAsync(
-          cx, PropertyKey::Symbol(cx->wellKnownSymbols().asyncDispose));
-      JS::Rooted<JSObject*> obj(cx, &objVal.toObject());
-
-      if (!GetProperty(cx, obj, obj, idAsync, disposeMethod)) {
-        return false;
-      }
-
-      
-      
-      
-      
-      if (disposeMethod.isNullOrUndefined()) {
-        
-        JS::Rooted<JS::PropertyKey> idSync(
-            cx, PropertyKey::Symbol(cx->wellKnownSymbols().dispose));
-        JS::Rooted<JS::Value> syncDisposeMethod(cx);
-        if (!GetProperty(cx, obj, obj, idSync, &syncDisposeMethod)) {
-          return false;
-        }
-
-        if (!syncDisposeMethod.isNullOrUndefined()) {
-          
-          if (!IsCallable(syncDisposeMethod)) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                      JSMSG_DISPOSE_NOT_CALLABLE);
-            return false;
-          }
-
-          
-          
-          
-          
-          
-          JS::Handle<PropertyName*> funName = cx->names().empty_;
-          JSFunction* asyncWrapper = NewNativeFunction(
-              cx, SyncDisposalClosure, 0, funName,
-              gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
-          if (!asyncWrapper) {
-            return false;
-          }
-          asyncWrapper->initExtendedSlot(SyncDisposalClosureSlot_MethodSlot,
-                                         syncDisposeMethod);
-          disposeMethod.set(JS::ObjectValue(*asyncWrapper));
-        }
-      }
-
-      break;
-    }
-
-    case UsingHint::Sync: {
-      
-      
-      JS::Rooted<JS::PropertyKey> id(
-          cx, PropertyKey::Symbol(cx->wellKnownSymbols().dispose));
-      JS::Rooted<JSObject*> obj(cx, &objVal.toObject());
-
-      if (!GetProperty(cx, obj, obj, id, disposeMethod)) {
-        return false;
-      }
-
-      break;
-    }
-    default:
-      MOZ_CRASH("Invalid UsingHint");
-  }
-
-  
-  
-  
-  
-  if (disposeMethod.isNullOrUndefined() || !IsCallable(disposeMethod)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_DISPOSE_NOT_CALLABLE);
-    return false;
-  }
-
-  return true;
-}
-
-
-
-
-bool js::CreateDisposableResource(
-    JSContext* cx, JS::Handle<JS::Value> obj, UsingHint hint,
-    JS::Handle<mozilla::Maybe<JS::Value>> methodVal,
-    JS::MutableHandle<JS::Value> result) {
-  
-  JS::Rooted<JS::Value> method(cx);
-  JS::Rooted<JS::Value> object(cx);
-  if (!methodVal.isSome()) {
-    
-    if (obj.isNullOrUndefined()) {
-      
-      
-      object.setUndefined();
-      method.setUndefined();
-    } else {
-      
-      
-      if (!obj.isObject()) {
-        return ThrowCheckIsObject(cx, CheckIsObjectKind::Disposable);
-      }
-
-      
-      
-      object.set(obj);
-      if (!GetDisposeMethod(cx, object, hint, &method)) {
-        return false;
-      }
-    }
-  } else {
-    
-    
-    if (!IsCallable(*methodVal)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DISPOSE_NOT_CALLABLE);
-      return false;
-    }
-    object.set(obj);
-    method.set(*methodVal);
-  }
-
-  
-  
-  
-  DisposableRecordObject* disposableRecord =
-      DisposableRecordObject::create(cx, object, method, hint);
-  if (!disposableRecord) {
-    return false;
-  }
-  result.set(ObjectValue(*disposableRecord));
-
   return true;
 }
 
@@ -1932,45 +1775,6 @@ ErrorObject* js::CreateSuppressedError(JSContext* cx,
 
 
 
-
-bool js::AddDisposableResource(
-    JSContext* cx, JS::Handle<ArrayObject*> disposeCapability,
-    JS::Handle<JS::Value> val, UsingHint hint,
-    JS::Handle<mozilla::Maybe<JS::Value>> methodVal) {
-  JS::Rooted<JS::Value> resource(cx);
-
-  
-  if (!methodVal.isSome()) {
-    
-    
-    if (val.isNullOrUndefined() && hint == UsingHint::Sync) {
-      return true;
-    }
-
-    
-    if (!CreateDisposableResource(cx, val, hint, methodVal, &resource)) {
-      return false;
-    }
-  } else {
-    
-    
-    MOZ_ASSERT(val.isUndefined());
-
-    
-    
-    if (!CreateDisposableResource(cx, val, hint, methodVal, &resource)) {
-      return false;
-    }
-  }
-
-  
-  return NewbornArrayPush(cx, disposeCapability, resource);
-}
-
-
-
-
-
 bool js::AddDisposableResourceToCapability(JSContext* cx,
                                            JS::Handle<JSObject*> env,
                                            JS::Handle<JS::Value> val,
@@ -1994,7 +1798,8 @@ bool js::AddDisposableResourceToCapability(JSContext* cx,
     if (!asyncWrapper) {
       return false;
     }
-    asyncWrapper->initExtendedSlot(SyncDisposalClosureSlot_MethodSlot, method);
+    asyncWrapper->initExtendedSlot(uint8_t(SyncDisposalClosureSlots::Method),
+                                   method);
     disposeMethod.set(JS::ObjectValue(*asyncWrapper));
   } else {
     disposeMethod.set(method);
