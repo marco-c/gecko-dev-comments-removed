@@ -1722,6 +1722,14 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
 
     
     
+    mozilla::CheckedUint32 newNumTypes(codeMeta->types->length());
+    newNumTypes += recGroupLength;
+    if (!newNumTypes.isValid() || newNumTypes.value() > MaxTypes) {
+      return d.fail("too many types");
+    }
+
+    
+    
     MutableRecGroup recGroup = codeMeta->types->startRecGroup(recGroupLength);
     if (!recGroup) {
       return false;
@@ -1735,10 +1743,7 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
           codeMeta->types->length() - recGroupLength + recGroupTypeIndex;
 
       
-      
-      if (typeIndex >= MaxTypes) {
-        return d.fail("too many types");
-      }
+      MOZ_ASSERT(typeIndex < MaxTypes);
 
       uint8_t form;
       const TypeDef* superTypeDef = nullptr;

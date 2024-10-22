@@ -916,6 +916,10 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
   
   
   static constexpr size_t sizeOfRecGroup(uint32_t numTypes) {
+    
+    static_assert(offsetof(RecGroup, types_) + sizeof(TypeDef) * MaxTypes <=
+                  UINT32_MAX);
+    
     static_assert(MaxTypes <= SIZE_MAX / sizeof(TypeDef));
     return sizeof(RecGroup) + sizeof(TypeDef) * numTypes;
   }
@@ -925,6 +929,9 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
   
   
   static RefPtr<RecGroup> allocate(uint32_t numTypes) {
+    
+    MOZ_RELEASE_ASSERT(numTypes <= MaxTypes);
+
     
     RecGroup* recGroup = (RecGroup*)js_malloc(sizeOfRecGroup(numTypes));
     if (!recGroup) {
