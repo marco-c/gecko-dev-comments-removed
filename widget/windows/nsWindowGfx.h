@@ -13,25 +13,11 @@
 #include "nsWindow.h"
 #include <imgIContainer.h>
 
-class nsISVGPaintContext;
-
 class nsWindowGfx {
  public:
   enum IconSizeType { kSmallIcon, kRegularIcon };
   static mozilla::LayoutDeviceIntSize GetIconMetrics(IconSizeType aSizeType);
-
-  
-
-
-
-
-
-
-
-
-
-  static nsresult CreateIcon(imgIContainer* aContainer,
-                             nsISVGPaintContext* aSVGContext, bool aIsCursor,
+  static nsresult CreateIcon(imgIContainer* aContainer, bool aIsCursor,
                              mozilla::LayoutDeviceIntPoint aHotspot,
                              mozilla::LayoutDeviceIntSize aScaledSize,
                              HICON* aIcon);
