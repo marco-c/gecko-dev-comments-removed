@@ -7,16 +7,19 @@
 #ifndef debugger_ExecutionTracer_h
 #define debugger_ExecutionTracer_h
 
-#include "mozilla/Assertions.h"      
-#include "mozilla/MathAlgorithms.h"  
+#include "mozilla/Assertions.h"         
+#include "mozilla/BaseProfilerUtils.h"  
+#include "mozilla/MathAlgorithms.h"     
 #include "mozilla/Maybe.h"  
 #include "mozilla/Span.h"
+#include "mozilla/TimeStamp.h"
 
 #include <limits>    
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "js/CharacterEncoding.h"  
+#include "js/Debug.h"              
 #include "js/RootingAPI.h"         
 #include "js/Utility.h"            
 #include "js/Value.h"              
@@ -30,6 +33,8 @@ enum class TracerStringEncoding {
   TwoByte,
   UTF8,
 };
+
+using TracingScratchBuffer = mozilla::Vector<char, 512>;
 
 
 
@@ -71,6 +76,15 @@ class TracingBuffer {
 
   
   uint64_t uncommittedReadHead_ = 0;
+
+  bool ensureScratchBufferSize(TracingScratchBuffer& scratchBuffer,
+                               size_t requiredSize) {
+    if (scratchBuffer.length() >= requiredSize) {
+      return true;
+    }
+    return scratchBuffer.growByUninitialized(requiredSize -
+                                             scratchBuffer.length());
+  }
 
  public:
   ~TracingBuffer() {
@@ -280,6 +294,91 @@ class TracingBuffer {
 
     return true;
   }
+
+  
+  
+  bool readStringNative(TracingScratchBuffer& scratchBuffer,
+                        mozilla::Vector<char>& stringBuffer, size_t* index) {
+    uint8_t encodingByte;
+    read(&encodingByte);
+    TracerStringEncoding encoding = TracerStringEncoding(encodingByte);
+
+    uint32_t length;
+    read(&length);
+
+    *index = stringBuffer.length();
+
+    if (length == 0) {
+      if (!stringBuffer.append('\0')) {
+        return false;
+      }
+      return true;
+    }
+
+    if (encoding == TracerStringEncoding::UTF8) {
+      size_t reserveLength = length + 1;
+      if (!stringBuffer.growByUninitialized(reserveLength)) {
+        return false;
+      }
+      char* writePtr = stringBuffer.end() - reserveLength;
+      readBytes(reinterpret_cast<uint8_t*>(writePtr), length);
+      writePtr[length] = '\0';
+    } else if (encoding == TracerStringEncoding::Latin1) {
+      if (!ensureScratchBufferSize(scratchBuffer, length)) {
+        return false;
+      }
+      readBytes(reinterpret_cast<uint8_t*>(scratchBuffer.begin()), length);
+
+      
+      
+      size_t reserveLength = length * 2 + 1;
+      if (!stringBuffer.reserve(stringBuffer.length() + reserveLength)) {
+        return false;
+      }
+      char* writePtr = stringBuffer.end();
+
+      size_t convertedLength = mozilla::ConvertLatin1toUtf8(
+          mozilla::Span<const char>(scratchBuffer.begin(), length),
+          mozilla::Span<char>(writePtr, reserveLength));
+      writePtr[convertedLength] = 0;
+
+      
+      
+      if (!stringBuffer.growByUninitialized(convertedLength + 1)) {
+        return false;
+      }
+    } else {
+      MOZ_ASSERT(encoding == TracerStringEncoding::TwoByte);
+      if (!ensureScratchBufferSize(scratchBuffer, length * sizeof(char16_t))) {
+        return false;
+      }
+      readBytes(reinterpret_cast<uint8_t*>(scratchBuffer.begin()),
+                length * sizeof(char16_t));
+
+      
+      
+      
+      size_t reserveLength = length * 3 + 1;
+      if (!stringBuffer.reserve(stringBuffer.length() + reserveLength)) {
+        return false;
+      }
+      char* writePtr = stringBuffer.end();
+
+      size_t convertedLength = mozilla::ConvertUtf16toUtf8(
+          mozilla::Span<const char16_t>(
+              reinterpret_cast<char16_t*>(scratchBuffer.begin()), length),
+          mozilla::Span<char>(writePtr, reserveLength));
+      writePtr[convertedLength] = 0;
+
+      
+      
+      if (!stringBuffer.growByUninitialized(convertedLength + 1)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 };
 
 
@@ -298,22 +397,14 @@ using OutOfLineDataBuffer = TracingBuffer<1 << 22>;
 
 
 class ExecutionTracer {
- public:
-  enum class EventKind {
-    FunctionEnter = 0,
-    FunctionLeave = 1,
-    LabelEnter = 2,
-    LabelLeave = 3,
-  };
-
-  enum class ImplementationType : uint8_t {
-    Interpreter = 0,
-    Baseline = 1,
-    Ion = 2,
-    Wasm = 3,
-  };
-
  private:
+  
+  static Mutex globalInstanceLock MOZ_UNANNOTATED;
+  static mozilla::Vector<ExecutionTracer*> globalInstances;
+
+  
+  Mutex bufferLock_ MOZ_UNANNOTATED;
+
   
   InlineDataBuffer inlineData_;
 
@@ -325,6 +416,13 @@ class ExecutionTracer {
   
   OutOfLineDataBuffer outOfLineData_;
 
+  
+  
+  
+  
+  
+  mozilla::baseprofiler::BaseProfilerThreadId threadId_;
+
   void writeScriptUrl(ScriptSource* scriptSource);
 
   
@@ -333,13 +431,15 @@ class ExecutionTracer {
   
   bool writeAtom(JSContext* cx, JS::Handle<JSAtom*> atom, uint32_t id);
   bool writeFunctionFrame(JSContext* cx, AbstractFramePtr frame);
+
   bool readFunctionFrame(JSContext* cx, JS::Handle<JSObject*> result,
-                         EventKind kind);
+                         JS::ExecutionTrace::EventKind kind);
   bool readStackFunctionEnter(JSContext* cx, JS::Handle<JSObject*> events);
   bool readStackFunctionLeave(JSContext* cx, JS::Handle<JSObject*> events);
   bool readScriptURLEntry(JSContext* cx, JS::Handle<JSObject*> scriptUrls);
   bool readAtomEntry(JSContext* cx, JS::Handle<JSObject*> atoms);
-  bool readLabel(JSContext* cx, JS::Handle<JSObject*> events, EventKind kind);
+  bool readLabel(JSContext* cx, JS::Handle<JSObject*> events,
+                 JS::ExecutionTrace::EventKind kind);
   bool readInlineEntry(JSContext* cx, JS::Handle<JSObject*> events);
   bool readOutOfLineEntry(JSContext* cx, JS::Handle<JSObject*> scriptUrls,
                           JS::Handle<JSObject*> atoms);
@@ -347,14 +447,60 @@ class ExecutionTracer {
   bool readOutOfLineEntries(JSContext* cx, JS::Handle<JSObject*> scriptUrls,
                             JS::Handle<JSObject*> atoms);
 
+  
+  
+  
+  bool readFunctionFrameNative(JS::ExecutionTrace::EventKind kind,
+                               JS::ExecutionTrace::TracedEvent& event);
+  bool readLabelNative(JS::ExecutionTrace::EventKind kind,
+                       JS::ExecutionTrace::TracedEvent& event,
+                       TracingScratchBuffer& scratchBuffer,
+                       mozilla::Vector<char>& stringBuffer);
+  bool readInlineEntryNative(
+      mozilla::Vector<JS::ExecutionTrace::TracedEvent>& events,
+      TracingScratchBuffer& scratchBuffer, mozilla::Vector<char>& stringBuffer);
+  bool readOutOfLineEntryNative(mozilla::HashMap<uint32_t, size_t>& scriptUrls,
+                                mozilla::HashMap<uint32_t, size_t>& atoms,
+                                TracingScratchBuffer& scratchBuffer,
+                                mozilla::Vector<char>& stringBuffer);
+  bool readInlineEntriesNative(
+      mozilla::Vector<JS::ExecutionTrace::TracedEvent>& events,
+      TracingScratchBuffer& scratchBuffer, mozilla::Vector<char>& stringBuffer);
+  bool readOutOfLineEntriesNative(
+      mozilla::HashMap<uint32_t, size_t>& scriptUrls,
+      mozilla::HashMap<uint32_t, size_t>& atoms,
+      TracingScratchBuffer& scratchBuffer, mozilla::Vector<char>& stringBuffer);
+
  public:
+  ExecutionTracer() : bufferLock_(mutexid::ExecutionTracerInstanceLock) {}
+
+  ~ExecutionTracer() {
+    LockGuard<Mutex> guard(globalInstanceLock);
+
+    globalInstances.eraseIfEqual(this);
+  }
+
+  mozilla::baseprofiler::BaseProfilerThreadId threadId() const {
+    return threadId_;
+  }
+
   bool init() {
+    LockGuard<Mutex> guard(globalInstanceLock);
+    LockGuard<Mutex> guard2(bufferLock_);
+
+    threadId_ = mozilla::baseprofiler::profiler_current_thread_id();
+
     if (!inlineData_.init()) {
       return false;
     }
     if (!outOfLineData_.init()) {
       return false;
     }
+
+    if (!globalInstances.append(this)) {
+      return false;
+    }
+
     return true;
   }
 
@@ -370,6 +516,17 @@ class ExecutionTracer {
   
   
   bool getTrace(JSContext* cx, JS::Handle<JSObject*> result);
+
+  
+  
+  
+  bool getNativeTrace(JS::ExecutionTrace::TracedJSContext& context,
+                      TracingScratchBuffer& scratchBuffer,
+                      mozilla::Vector<char>& stringBuffer);
+
+  
+  
+  static bool getNativeTraceForAllContexts(JS::ExecutionTrace& trace);
 };
 
 }  
