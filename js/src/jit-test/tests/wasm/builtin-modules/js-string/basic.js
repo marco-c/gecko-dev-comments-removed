@@ -279,10 +279,12 @@ let polyFillImports = {
     startIndex >>>= 0;
     endIndex >>>= 0;
     throwIfNotString(string);
-    if (startIndex > string.length,
-        endIndex > string.length,
+    if (startIndex > string.length ||
         endIndex < startIndex) {
       return "";
+    }
+    if (endIndex > string.length) {
+      endIndex = string.length;
     }
     return string.substring(startIndex, endIndex);
   },
@@ -406,7 +408,10 @@ for (let a of testStrings) {
   );
 
   for (let i = 0; i < length; i++) {
-    for (let j = 0; j < length; j++) {
+    
+    
+    
+    for (let j = -1; j <= length + 1; j++) {
       assertSameBehavior(
         builtinExports['substring'],
         polyfillExports['substring'],
