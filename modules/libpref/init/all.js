@@ -3775,6 +3775,17 @@ pref("browser.ml.modelCacheMaxSizeBytes", 1073741824);
 
 pref("browser.ml.modelCacheTimeout", 120000);
 
+pref("browser.ml.minimumPhysicalMemory", 4);
+
+pref("browser.ml.checkForMemory", false);
+
+pref("browser.ml.maximumMemoryPressure", 80);
+
+pref("browser.ml.queueWaitTimeout", 60);
+
+pref("browser.ml.queueWaitInterval", 1);
+
+
 
 
 
