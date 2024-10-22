@@ -24,19 +24,6 @@ loader.lazyRequireGetter(
   true
 );
 
-loader.lazyRequireGetter(
-  this,
-  "ObjectActor",
-  "resource://devtools/server/actors/object.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "PauseScopedObjectActor",
-  "resource://devtools/server/actors/pause-scoped.js",
-  true
-);
-
 
 loader.lazyRequireGetter(
   this,
@@ -189,10 +176,8 @@ function createValueGrip(threadActor, value, pool, depth = 0, objectActorAttribu
           missingArguments: value.missingArguments,
         };
       }
-      return createObjectGrip(
-        threadActor,
+      return pool.createObjectGrip(
         value,
-        pool,
         depth,
         objectActorAttributes,
       );
@@ -528,69 +513,7 @@ function createValueGripForTarget(
   depth = 0,
   objectActorAttributes = {}
 ) {
-  return createValueGrip(targetActor.threadActor, value, targetActor, depth, objectActorAttributes);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createObjectGrip(
-  threadActor,
-  object,
-  pool,
-  depth,
-  objectActorAttributes = {},
-) {
-  const isGripForThreadActor = pool == threadActor.threadLifetimePool || pool == threadActor.pauseLifetimePool;
-
-  
-  
-  if (isGripForThreadActor) {
-    if (!pool.objectActors) {
-      pool.objectActors = new WeakMap();
-    }
-
-    if (pool.objectActors.has(object)) {
-      return pool.objectActors.get(object).form({ depth });
-    }
-
-    
-    
-    
-    if (threadActor.threadLifetimePool.objectActors.has(object)) {
-      return threadActor.threadLifetimePool.objectActors.get(object).form({ depth });
-    }
-  }
-
-  const ActorClass = isGripForThreadActor ? PauseScopedObjectActor : ObjectActor;
-
-  const actor = new ActorClass(threadActor, object, {
-    
-    ...objectActorAttributes,
-  });
-  pool.manage(actor);
-
-  if (isGripForThreadActor) {
-    pool.objectActors.set(object, actor);
-  }
-
-  
-  
-  return actor.form({ depth });
+  return createValueGrip(targetActor.threadActor, value, targetActor.objectsPool, depth, objectActorAttributes);
 }
 
 module.exports = {

@@ -704,9 +704,11 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   
   
-  const actor =
-    webConsole.getActorByID(options.selectedObjectActor) ||
-    webConsole.targetActor.getActorByID(options.selectedObjectActor);
+  
+  
+  const actor = webConsole.targetActor.objectsPool.getActorByID(
+    options.selectedObjectActor
+  );
 
   if (!actor) {
     return { bindSelf: null, dbgGlobal };
