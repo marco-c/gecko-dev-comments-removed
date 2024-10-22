@@ -7,13 +7,14 @@
 
 #include "SharedFontList.h"
 
-#include "base/shared_memory.h"
-
+#include "base/process.h"
 #include "gfxFontUtils.h"
 #include "nsClassHashtable.h"
 #include "nsTHashMap.h"
 #include "nsXULAppAPI.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/SharedMemory.h"
 
 
 
@@ -242,11 +243,11 @@ class FontList {
 
 
   void ShareShmBlockToProcess(uint32_t aIndex, base::ProcessId aPid,
-                              base::SharedMemoryHandle* aOut) {
+                              ipc::SharedMemory::Handle* aOut) {
     MOZ_RELEASE_ASSERT(mReadOnlyShmems.Length() == mBlocks.Length());
     if (aIndex >= mReadOnlyShmems.Length()) {
       
-      *aOut = base::SharedMemory::NULLHandle();
+      *aOut = ipc::SharedMemory::NULLHandle();
       return;
     }
     *aOut = mReadOnlyShmems[aIndex]->CloneHandle();
@@ -260,14 +261,14 @@ class FontList {
 
 
 
-  void ShareBlocksToProcess(nsTArray<base::SharedMemoryHandle>* aBlocks,
+  void ShareBlocksToProcess(nsTArray<ipc::SharedMemory::Handle>* aBlocks,
                             base::ProcessId aPid);
 
-  base::SharedMemoryHandle ShareBlockToProcess(uint32_t aIndex,
-                                               base::ProcessId aPid);
+  ipc::SharedMemory::Handle ShareBlockToProcess(uint32_t aIndex,
+                                                base::ProcessId aPid);
 
   void ShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
-                     base::SharedMemoryHandle aHandle);
+                     ipc::SharedMemory::Handle aHandle);
   
 
 
@@ -299,11 +300,11 @@ class FontList {
   struct ShmBlock {
     
     
-    explicit ShmBlock(mozilla::UniquePtr<base::SharedMemory>&& aShmem)
+    explicit ShmBlock(RefPtr<ipc::SharedMemory>&& aShmem)
         : mShmem(std::move(aShmem)) {}
 
     
-    void* Memory() const { return mShmem->memory(); }
+    void* Memory() const { return mShmem->Memory(); }
 
     
     
@@ -325,7 +326,7 @@ class FontList {
       return static_cast<BlockHeader*>(Memory())->mBlockSize;
     }
 
-    mozilla::UniquePtr<base::SharedMemory> mShmem;
+    RefPtr<ipc::SharedMemory> mShmem;
   };
 
   Header& GetHeader() const;
@@ -371,7 +372,7 @@ class FontList {
 
 
 
-  nsTArray<mozilla::UniquePtr<base::SharedMemory>> mReadOnlyShmems;
+  nsTArray<RefPtr<ipc::SharedMemory>> mReadOnlyShmems;
 
 #ifdef XP_WIN
   

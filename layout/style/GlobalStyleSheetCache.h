@@ -9,7 +9,6 @@
 
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
-#include "base/shared_memory.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PreferenceSheet.h"
@@ -17,6 +16,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UserAgentStyleSheetID.h"
 #include "mozilla/css/Loader.h"
+#include "mozilla/ipc/SharedMemory.h"
 
 class nsIFile;
 class nsIURI;
@@ -60,18 +60,18 @@ class GlobalStyleSheetCache final : public nsIObserver,
   
   
   
-  static void SetSharedMemory(base::SharedMemoryHandle aHandle,
+  static void SetSharedMemory(mozilla::ipc::SharedMemory::Handle aHandle,
                               uintptr_t aAddress);
 
   
   
   
-  base::SharedMemoryHandle CloneHandle();
+  mozilla::ipc::SharedMemoryHandle CloneHandle();
 
   
   
   uintptr_t GetSharedMemoryAddress() {
-    return sSharedMemory ? uintptr_t(sSharedMemory->memory()) : 0;
+    return sSharedMemory.IsEmpty() ? 0 : uintptr_t(sSharedMemory.data());
   }
 
   
@@ -120,7 +120,7 @@ class GlobalStyleSheetCache final : public nsIObserver,
   RefPtr<StyleSheet> mUserContentSheet;
 
   
-  static StaticAutoPtr<base::SharedMemory> sSharedMemory;
+  static Span<uint8_t> sSharedMemory;
 
   
   

@@ -7,11 +7,12 @@
 #ifndef xpcselfhostedshmem_h___
 #define xpcselfhostedshmem_h___
 
-#include "base/shared_memory.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ipc/SharedMemory.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsIThread.h"
@@ -47,14 +48,14 @@ class SelfHostedShmem final : public nsIMemoryReporter {
   
   
   
-  [[nodiscard]] bool InitFromChild(base::SharedMemoryHandle aHandle,
+  [[nodiscard]] bool InitFromChild(mozilla::ipc::SharedMemoryHandle aHandle,
                                    size_t aLen);
 
   
   ContentType Content() const;
 
   
-  const mozilla::UniqueFileHandle& Handle() const;
+  const mozilla::ipc::SharedMemoryHandle& Handle() const;
 
   
   void InitMemoryReporter();
@@ -75,10 +76,10 @@ class SelfHostedShmem final : public nsIMemoryReporter {
 
   
   
-  mozilla::UniqueFileHandle mHandle;
+  mozilla::ipc::SharedMemoryHandle mHandle;
 
   
-  mozilla::UniquePtr<base::SharedMemory> mMem;
+  RefPtr<mozilla::ipc::SharedMemory> mMem;
 
   
   size_t mLen = 0;

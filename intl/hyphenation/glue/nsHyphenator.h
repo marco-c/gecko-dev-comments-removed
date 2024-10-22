@@ -6,7 +6,8 @@
 #ifndef nsHyphenator_h__
 #define nsHyphenator_h__
 
-#include "base/shared_memory.h"
+#include "mozilla/ipc/SharedMemory.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "nsCOMPtr.h"
@@ -41,7 +42,8 @@ class nsHyphenator {
 
   nsresult Hyphenate(const nsAString& aText, nsTArray<bool>& aHyphens);
 
-  void CloneHandle(base::SharedMemoryHandle* aOutHandle, uint32_t* aOutSize);
+  void CloneHandle(mozilla::ipc::SharedMemory::Handle* aOutHandle,
+                   uint32_t* aOutSize);
 
  private:
   ~nsHyphenator() = default;
@@ -50,8 +52,8 @@ class nsHyphenator {
                      nsTArray<bool>& aHyphens);
 
   mozilla::Variant<const void*,  
-                   mozilla::UniquePtr<base::SharedMemory>,  
-                   mozilla::UniquePtr<const HyphDic>  
+                   RefPtr<mozilla::ipc::SharedMemory>,  
+                   mozilla::UniquePtr<const HyphDic>    
                    >
       mDict;
   uint32_t mDictSize;  
