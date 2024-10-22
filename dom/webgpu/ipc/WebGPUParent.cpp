@@ -268,6 +268,8 @@ WebGPUParent::WebGPUParent() : mContext(ffi::wgpu_server_new(this)) {
 WebGPUParent::~WebGPUParent() {
   
   
+  MOZ_ASSERT(mDeviceLostRequests.empty(),
+             "All device lost callbacks should have been called by now.");
   mDeviceLostRequests.clear();
 }
 
@@ -284,11 +286,13 @@ void WebGPUParent::LoseDevice(const RawId aDeviceId, Maybe<uint8_t> aReason,
 
   
   
-  if (CanSend()) {
-    if (!SendDeviceLost(aDeviceId, aReason, aMessage)) {
-      NS_ERROR("SendDeviceLost failed");
-      return;
-    }
+  if (!CanSend()) {
+    return;
+  }
+
+  if (!SendDeviceLost(aDeviceId, aReason, aMessage)) {
+    NS_ERROR("SendDeviceLost failed");
+    return;
   }
 
   mLostDeviceIds.Insert(aDeviceId);
@@ -395,13 +399,16 @@ ipc::IPCResult WebGPUParent::RecvInstanceRequestAdapter(
   
   
   
-  Maybe<uint8_t> reason;
-  if (aReason > 0) {
-    uint8_t mappedReasonValue = (aReason - 1u);
-    reason = Some(mappedReasonValue);
+  
+  
+  if (aReason <= 1) {
+    Maybe<uint8_t> reason;  
+    if (aReason == 1) {
+      reason = Some(uint8_t(0));  
+    }
+    nsAutoCString message(aMessage);
+    req->mParent->LoseDevice(deviceId, reason, message);
   }
-  nsAutoCString message(aMessage);
-  req->mParent->LoseDevice(deviceId, reason, message);
 
   auto it = req->mParent->mDeviceFenceHandles.find(deviceId);
   if (it != req->mParent->mDeviceFenceHandles.end()) {
