@@ -23,6 +23,7 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/InputType.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/MouseEvent.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -3353,6 +3354,18 @@ void HTMLInputElement::LegacyPreActivationBehavior(
     
     
     mForm->OnSubmitClickBegin(this);
+
+    if (aVisitor.mDOMEvent) {
+      if (auto* mouseEvent = aVisitor.mDOMEvent->AsMouseEvent()) {
+        CSSIntPoint pt = mouseEvent->OffsetPoint();
+        if (auto* imageClickedPoint = static_cast<CSSIntPoint*>(
+                GetProperty(nsGkAtoms::imageClickedPoint))) {
+          
+          
+          *imageClickedPoint = pt;
+        }
+      }
+    }
   }
 }
 
