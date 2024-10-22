@@ -128,6 +128,15 @@ function fieldCallCannotGC(csu, fullfield)
         return true;
     if (fullfield in ignoreCallees)
         return true;
+
+    
+    if (/^fmt\b.*::buffer/.test(fullfield))
+        return true;
+    
+    
+    if (/^fmt\b.*::custom_value<.*>/.test(fullfield))
+       return true;
+
     return false;
 }
 
