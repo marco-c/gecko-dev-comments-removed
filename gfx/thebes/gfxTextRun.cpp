@@ -2642,7 +2642,8 @@ void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
 
       
       
-      gfxScriptItemizer scriptRuns(textPtr, aLength);
+      gfxScriptItemizer scriptRuns;
+      scriptRuns.SetText(textPtr, aLength);
 
       while (gfxScriptItemizer::Run run = scriptRuns.Next()) {
         if (MOZ_UNLIKELY(MOZ_LOG_TEST(log, LogLevel::Warning))) {
