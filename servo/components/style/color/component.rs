@@ -19,7 +19,7 @@ use crate::{
     },
 };
 use cssparser::{color::OPAQUE, Parser, Token};
-use style_traits::{ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{ParseError, ToCss};
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
@@ -69,7 +69,6 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_none: bool,
-        allowed_channel_keywords: &[ChannelKeyword],
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
 
@@ -81,11 +80,6 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 let Ok(channel_keyword) = ChannelKeyword::from_ident(ident) else {
                     return Err(location.new_unexpected_token_error(t.clone()));
                 };
-
-                if !allowed_channel_keywords.contains(&channel_keyword) {
-                    return Err(location.new_unexpected_token_error(t.clone()));
-                }
-
                 let node = GenericCalcNode::Leaf(Leaf::ColorComponent(channel_keyword));
                 Ok(ColorComponent::Calc(Box::new(node)))
             },
@@ -97,31 +91,6 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                     ValueType::units()
                 };
                 let mut node = GenericCalcNode::parse(context, input, function, units)?;
-
-                if rcs_enabled() {
-                    
-                    
-                    
-                    let mut is_valid = true;
-                    node.visit_depth_first(|node| {
-                        let GenericCalcNode::Leaf(leaf) = node else {
-                            return;
-                        };
-
-                        let Leaf::ColorComponent(channel_keyword) = leaf else {
-                            return;
-                        };
-
-                        if !allowed_channel_keywords.contains(channel_keyword) {
-                            is_valid = false;
-                        }
-                    });
-                    if !is_valid {
-                        return Err(
-                            location.new_custom_error(StyleParseErrorKind::UnspecifiedError)
-                        );
-                    }
-                }
 
                 
                 
