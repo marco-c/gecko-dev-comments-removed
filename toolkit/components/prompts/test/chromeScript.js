@@ -204,12 +204,13 @@ function dismissPrompt(ui, action) {
     case 2:
       ui.button2.click();
       break;
-    case "ESC":
+    case "ESC": {
       
       let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
       EventUtils.synthesizeKey("KEY_Escape", {}, browserWin);
       break;
-    case "pollOK":
+    }
+    case "pollOK": {
       
       
       
@@ -221,6 +222,15 @@ function dismissPrompt(ui, action) {
         clearInterval(interval);
       }, 100);
       break;
+    }
+    case "abort_dialogs": {
+      let abortDialogEvent = new ui.prompt.CustomEvent("dialogclosing", {
+        bubbles: true,
+        detail: { abort: true },
+      });
+      ui.prompt.close(abortDialogEvent);
+      break;
+    }
     case "none":
       break;
 
