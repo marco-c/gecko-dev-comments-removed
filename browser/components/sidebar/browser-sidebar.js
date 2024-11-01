@@ -405,12 +405,14 @@ var SidebarController = {
     }
 
     requestIdleCallback(() => {
-      const shouldLoadBackupState =
+      const isPopup = !window.toolbar.visible;
+      const windowPrivacyMatches =
         !window.opener || this.windowPrivacyMatches(window.opener, window);
       
       
       
-      if (!this.uiStateInitialized && shouldLoadBackupState) {
+      
+      if (!this.uiStateInitialized && !isPopup && windowPrivacyMatches) {
         const backupState = this.SidebarManager.getBackupState();
         this.setUIState(backupState);
       }
