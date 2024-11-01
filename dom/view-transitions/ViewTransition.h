@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_ViewTransition_h
 #define mozilla_dom_ViewTransition_h
 
+#include "nsRect.h"
 #include "nsWrapperCache.h"
 #include "nsTHashMap.h"
 
@@ -27,6 +28,7 @@ enum class SkipTransitionReason : uint8_t {
   ClobberedActiveTransition,
   Timeout,
   UpdateCallbackRejected,
+  DuplicateTransitionName,
 };
 
 
@@ -67,9 +69,13 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   void ClearActiveTransition();
   void Timeout();
   void Setup();
+  [[nodiscard]] Maybe<SkipTransitionReason> CaptureOldState();
+  void ClearNamedElements();
   void HandleFrame();
   void SkipTransition(SkipTransitionReason, JS::Handle<JS::Value>);
   void ClearTimeoutTimer();
+
+  nsRect SnapshotContainingBlockRect() const;
 
   ~ViewTransition();
 
@@ -80,6 +86,9 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   
   using NamedElements = nsTHashMap<RefPtr<nsAtom>, UniquePtr<CapturedElement>>;
   NamedElements mNamedElements;
+
+  
+  nsSize mInitialSnapshotContainingBlockSize;
 
   
   RefPtr<Promise> mUpdateCallbackDonePromise;

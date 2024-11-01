@@ -3,8 +3,8 @@
 
 
 #include "ViewTransition.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/Promise.h"
+#include "nsPresContext.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
 #include "mozilla/ServoStyleConsts.h"
@@ -20,23 +20,65 @@ static inline void ImplCycleCollectionTraverse(
 
 namespace mozilla::dom {
 
+
+
+
+
+
+
+
+
+static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
+  CSSToCSSMatrix4x4Flagged matrix;
+  if (aFrame->GetSize().IsEmpty() || aFrame->Style()->IsRootElementStyle()) {
+    return matrix;
+  }
+
+  CSSSize untransformedSize = CSSSize::FromAppUnits(aFrame->GetSize());
+  CSSRect boundingRect = CSSRect::FromAppUnits(aFrame->GetBoundingClientRect());
+  if (boundingRect.Size() != untransformedSize) {
+    float sx = boundingRect.width / untransformedSize.width;
+    float sy = boundingRect.height / untransformedSize.height;
+    matrix = CSSToCSSMatrix4x4Flagged::Scaling(sx, sy, 0.0f);
+  }
+  if (boundingRect.TopLeft() != CSSPoint()) {
+    matrix.PostTranslate(boundingRect.x, boundingRect.y, 0.0f);
+  }
+  return matrix;
+}
+
 struct CapturedElementOldState {
   
 
   
-  CSSSize mSize;
-  StyleTransform mTransform;
+  nsSize mSize;
+  CSSToCSSMatrix4x4Flagged mTransform;
   
   WritingMode mWritingMode;
   StyleBlend mMixBlendMode = StyleBlend::Normal;
   StyleOwnedSlice<StyleFilter> mBackdropFilters;
   StyleColorSchemeFlags mColorScheme{0};
+
+  CapturedElementOldState(nsIFrame* aFrame,
+                          const nsSize& aSnapshotContainingBlockSize)
+      : mSize(aFrame->Style()->IsRootElementStyle()
+                  ? aSnapshotContainingBlockSize
+                  : aFrame->GetRect().Size()),
+        mTransform(EffectiveTransform(aFrame)),
+        mWritingMode(aFrame->GetWritingMode()),
+        mMixBlendMode(aFrame->StyleEffects()->mMixBlendMode),
+        mBackdropFilters(aFrame->StyleEffects()->mBackdropFilters),
+        mColorScheme(aFrame->StyleUI()->mColorScheme.bits) {}
 };
 
 
 struct ViewTransition::CapturedElement {
   CapturedElementOldState mOldState;
   RefPtr<Element> mNewElement;
+
+  CapturedElement(nsIFrame* aFrame, const nsSize& aSnapshotContainingBlockSize)
+      : mOldState(aFrame, aSnapshotContainingBlockSize) {}
+
   
   
 };
@@ -244,9 +286,134 @@ void ViewTransition::PerformPendingOperations() {
 }
 
 
+nsRect ViewTransition::SnapshotContainingBlockRect() const {
+  nsPresContext* pc = mDocument->GetPresContext();
+  
+  
+  return pc ? pc->GetVisibleArea() : nsRect();
+}
+
+
+template <typename Callback>
+static bool ForEachChildFrame(nsIFrame* aFrame, const Callback& aCb) {
+  if (!aCb(aFrame)) {
+    return false;
+  }
+  for (auto& [list, id] : aFrame->ChildLists()) {
+    for (nsIFrame* f : list) {
+      if (!ForEachChildFrame(f, aCb)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+template <typename Callback>
+static void ForEachFrame(Document* aDoc, const Callback& aCb) {
+  PresShell* ps = aDoc->GetPresShell();
+  if (!ps) {
+    return;
+  }
+  nsIFrame* root = ps->GetRootFrame();
+  if (!root) {
+    return;
+  }
+  ForEachChildFrame(root, aCb);
+}
+
+
+static nsAtom* DocumentScopedTransitionNameFor(nsIFrame* aFrame) {
+  auto* name = aFrame->StyleUIReset()->mViewTransitionName._0.AsAtom();
+  if (name->IsEmpty()) {
+    return nullptr;
+  }
+  
+  
+  
+  
+  return name;
+}
+
+
+Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
+  MOZ_ASSERT(mNamedElements.IsEmpty());
+  
+  
+  nsTHashSet<nsAtom*> usedTransitionNames;
+  
+  AutoTArray<std::pair<nsIFrame*, nsAtom*>, 32> captureElements;
+
+  
+  
+  
+  
+  
+  
+  mInitialSnapshotContainingBlockSize = SnapshotContainingBlockRect().Size();
+
+  
+  
+  Maybe<SkipTransitionReason> result;
+  ForEachFrame(mDocument, [&](nsIFrame* aFrame) {
+    auto* name = DocumentScopedTransitionNameFor(aFrame);
+    if (!name) {
+      
+      
+      return true;
+    }
+    if (aFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+      
+      
+      return true;
+    }
+    if (aFrame->GetPrevContinuation() || aFrame->GetNextContinuation()) {
+      
+      return true;
+    }
+    if (!usedTransitionNames.EnsureInserted(name)) {
+      
+      result.emplace(SkipTransitionReason::DuplicateTransitionName);
+      return false;
+    }
+    
+    
+    captureElements.AppendElement(std::make_pair(aFrame, name));
+    return true;
+  });
+
+  if (result) {
+    return result;
+  }
+
+  
+  for (auto& [f, name] : captureElements) {
+    MOZ_ASSERT(f);
+    MOZ_ASSERT(f->GetContent()->IsElement());
+    auto capture =
+        MakeUnique<CapturedElement>(f, mInitialSnapshotContainingBlockSize);
+    mNamedElements.InsertOrUpdate(name, std::move(capture));
+  }
+
+  
+  
+
+  return result;
+}
+
+
 void ViewTransition::Setup() {
   
+  if (auto skipReason = CaptureOldState()) {
+    
+    
+    
+    return SkipTransition(*skipReason);
+  }
+
   
+  
+
   
   
   
@@ -276,6 +443,11 @@ void ViewTransition::HandleFrame() {
   
 }
 
+void ViewTransition::ClearNamedElements() {
+  
+  mNamedElements.Clear();
+}
+
 
 void ViewTransition::ClearActiveTransition() {
   
@@ -283,6 +455,8 @@ void ViewTransition::ClearActiveTransition() {
   MOZ_ASSERT(mDocument->GetActiveViewTransition() == this);
 
   
+  ClearNamedElements();
+
   
   mDocument->ClearActiveViewTransition();
 }
@@ -343,6 +517,10 @@ void ViewTransition::SkipTransition(
       case SkipTransitionReason::Timeout:
         readyPromise->MaybeRejectWithAbortError(
             "Skipped ViewTransition due to timeout");
+        break;
+      case SkipTransitionReason::DuplicateTransitionName:
+        readyPromise->MaybeRejectWithInvalidStateError(
+            "Duplicate view-transition-name value while capturing old state");
         break;
       case SkipTransitionReason::UpdateCallbackRejected:
         readyPromise->MaybeReject(aUpdateCallbackRejectReason);
