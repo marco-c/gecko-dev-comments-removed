@@ -1938,6 +1938,9 @@ class nsINode : public mozilla::dom::EventTarget {
     ElementMayHaveContentEditableAttr,
     
     
+    ElementHasContentEditableAttrTrueOrPlainTextOnly,
+    
+    
     NodeIsClosestCommonInclusiveAncestorForRangeInSelection,
     
     NodeIsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection,
@@ -2032,6 +2035,14 @@ class nsINode : public mozilla::dom::EventTarget {
   bool HasPartAttribute() const { return GetBoolFlag(ElementHasPart); }
   bool MayHaveContentEditableAttr() const {
     return GetBoolFlag(ElementMayHaveContentEditableAttr);
+  }
+  
+
+
+
+
+  bool HasContentEditableAttrTrueOrPlainTextOnly() const {
+    return GetBoolFlag(ElementHasContentEditableAttrTrueOrPlainTextOnly);
   }
   
 
@@ -2162,6 +2173,15 @@ class nsINode : public mozilla::dom::EventTarget {
   void SetHasPartAttribute(bool aPart) { SetBoolFlag(ElementHasPart, aPart); }
   void SetMayHaveContentEditableAttr() {
     SetBoolFlag(ElementMayHaveContentEditableAttr);
+  }
+  void ClearMayHaveContentEditableAttr() {
+    ClearBoolFlag(ElementMayHaveContentEditableAttr);
+  }
+  void SetHasContentEditableAttrTrueOrPlainTextOnly() {
+    SetBoolFlag(ElementHasContentEditableAttrTrueOrPlainTextOnly);
+  }
+  void ClearHasContentEditableAttrTrueOrPlainTextOnly() {
+    ClearBoolFlag(ElementHasContentEditableAttrTrueOrPlainTextOnly);
   }
   void SetHasLockedStyleStates() { SetBoolFlag(ElementHasLockedStyleStates); }
   void ClearHasLockedStyleStates() {
