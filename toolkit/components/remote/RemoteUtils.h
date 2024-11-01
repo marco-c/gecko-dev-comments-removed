@@ -6,6 +6,8 @@
 #ifndef TOOLKIT_COMPONENTS_REMOTE_REMOTEUTILS_H_
 #define TOOLKIT_COMPONENTS_REMOTE_REMOTEUTILS_H_
 
+#include "mozilla/HashFunctions.h"
+
 #include "nsString.h"
 #if defined XP_WIN
 #  include "WinUtils.h"
@@ -14,6 +16,24 @@
 #if defined XP_WIN || defined XP_MACOSX
 static void BuildClassName(const char* aProgram, const char* aProfile,
                            nsString& aClassName) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+#  if defined XP_WIN
+  constexpr size_t ClassNameMaxLength = 256;
+#  else
+  constexpr size_t ClassNameMaxLength = 128;
+#  endif
+
   aClassName.AppendPrintf("Mozilla_%s", aProgram);
 #  if defined XP_WIN
   nsString pfn = mozilla::widget::WinUtils::GetPackageFamilyName();
@@ -22,6 +42,12 @@ static void BuildClassName(const char* aProgram, const char* aProfile,
   }
 #  endif
   aClassName.AppendPrintf("_%s_RemoteWindow", aProfile);
+
+  if (aClassName.Length() > ClassNameMaxLength) {
+    mozilla::HashNumber hash = mozilla::HashString(aClassName.get());
+    aClassName.Truncate();
+    aClassName.AppendPrintf("Mozilla_%08x_RemoteWindow", hash);
+  }
 }
 #endif
 
