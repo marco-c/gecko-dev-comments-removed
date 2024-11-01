@@ -419,17 +419,21 @@ class Editor extends PureComponent {
 
   getCurrentPosition() {
     const { editor } = this.state;
-    const { selectedSource } = this.props;
-    if (!selectedSource) {
+    const { selectedLocation } = this.props;
+    if (!selectedLocation) {
       return null;
     }
-
-    const selectionCursor = editor.getSelectionCursor();
-    return {
-      line: toSourceLine(selectedSource.id, selectionCursor.from.line),
-      
-      column: selectionCursor.from.ch + 1,
-    };
+    let { line, column } = selectedLocation;
+    
+    if (line == 0) {
+      const selectionCursor = editor.getSelectionCursor();
+      line = toSourceLine(
+        selectedLocation.source.id,
+        selectionCursor.from.line
+      );
+      column = selectionCursor.from.ch + 1;
+    }
+    return { line, column };
   }
 
   onToggleBreakpoint = e => {
