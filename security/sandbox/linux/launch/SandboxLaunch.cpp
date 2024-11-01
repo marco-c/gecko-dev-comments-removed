@@ -305,8 +305,6 @@ bool SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
 
   
   
-  
-  aOptions->env_map["MOZ_SANDBOXED"] = "1";
   PreloadSandboxLib(&aOptions->env_map);
   if (!AttachSandboxReporter(aExtraOpts)) {
     return false;
