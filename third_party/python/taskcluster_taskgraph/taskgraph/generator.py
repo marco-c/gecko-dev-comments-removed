@@ -269,9 +269,9 @@ class TaskGraphGenerator:
         logger.debug(f"Dumping parameters:\n{repr(parameters)}")
 
         filters = parameters.get("filters", [])
-        
-        if "target_tasks_method" not in filters:
-            filters.insert(0, "target_tasks_method")
+        if not filters:
+            
+            filters.append("target_tasks_method")
         filters = [filter_tasks.filter_task_functions[f] for f in filters]
 
         yield self.verify("parameters", parameters)
