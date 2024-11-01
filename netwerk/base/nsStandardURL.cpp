@@ -79,7 +79,8 @@ static NS_DEFINE_CID(kThisImplCID, NS_THIS_STANDARDURL_IMPL_CID);
 
 StaticRefPtr<nsIIDNService> nsStandardURL::gIDN;
 
-Atomic<bool, Relaxed> nsStandardURL::gInitialized{false};
+
+static Atomic<bool, Relaxed> gInitialized{false};
 
 const char nsStandardURL::gHostLimitDigits[] = {'/', '\\', '?', '#', 0};
 

@@ -338,9 +338,6 @@ class nsStandardURL : public nsIFileURL,
   bool IsValid();
 
   
-  static Atomic<bool, Relaxed> gInitialized;
-
-  
   nsCString mSpec;
   int32_t mDefaultPort{-1};
   int32_t mPort{-1};
