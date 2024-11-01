@@ -232,8 +232,7 @@ class ServoStyleSet {
   
   
   already_AddRefed<ComputedStyle> ResolveStyleLazily(
-      const dom::Element&, PseudoStyleType = PseudoStyleType::NotPseudo,
-      nsAtom* aFunctionalPseudoParameter = nullptr,
+      const dom::Element&, const PseudoStyleRequest& aPseudoRequest = {},
       StyleRuleInclusion = StyleRuleInclusion::All);
 
   

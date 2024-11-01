@@ -1844,6 +1844,12 @@ class Element : public FragmentOrElement {
 
   void GetImplementedPseudoElement(nsAString&) const;
 
+  
+
+
+
+  const Element* GetPseudoElement(const PseudoStyleRequest&) const;
+
   ReferrerPolicy GetReferrerPolicyAsEnum() const;
   ReferrerPolicy ReferrerPolicyFromAttr(const nsAttrValue* aValue) const;
 
