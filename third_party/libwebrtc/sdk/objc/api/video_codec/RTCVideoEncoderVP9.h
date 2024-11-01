@@ -20,7 +20,12 @@ RTC_OBJC_EXPORT
 
 
 
-+ (id<RTC_OBJC_TYPE(RTCVideoEncoder)>)vp9Encoder;
++ (nullable id<RTC_OBJC_TYPE(RTCVideoEncoder)>)vp9Encoder;
+
+
+
+
++ (nonnull NSArray<NSString*>*)supportedScalabilityModes;
 
 + (bool)isSupported;
 
