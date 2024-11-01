@@ -874,15 +874,11 @@ int OpenSSLStreamAdapter::BeginSSL() {
   SSL_set_app_data(ssl_, this);
 
   SSL_set_bio(ssl_, bio, bio);  
-  if (ssl_mode_ == SSL_MODE_DTLS) {
 #ifdef OPENSSL_IS_BORINGSSL
+  if (ssl_mode_ == SSL_MODE_DTLS) {
     DTLSv1_set_initial_timeout_duration(ssl_, dtls_handshake_timeout_ms_);
-#else
-    
-    
-    SSL_set_read_ahead(ssl_, 1);
-#endif
   }
+#endif
 
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
                          SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
