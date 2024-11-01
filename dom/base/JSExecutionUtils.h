@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_BASE_JSEXECUTIONCONTEXT_H_
-#define DOM_BASE_JSEXECUTIONCONTEXT_H_
+#ifndef DOM_BASE_JSEXECUTIONUTILS_H_
+#define DOM_BASE_JSEXECUTIONUTILS_H_
 
 #include "js/TypeDecls.h"               
 #include "js/Value.h"                   
@@ -15,9 +15,7 @@
 #include "mozilla/ErrorResult.h"        
 #include "nsStringFwd.h"                
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 
 nsresult EvaluationExceptionToNSResult(ErrorResult& aRv);
 
@@ -43,7 +41,6 @@ void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
                         ErrorResult& aRv, bool aEncodeBytecode = false,
                         JS::InstantiationStorage* aStorage = nullptr);
 
-}  
 }  
 
 #endif 

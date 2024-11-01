@@ -11,7 +11,7 @@
 
 
 
-#include "mozilla/dom/JSExecutionContext.h"
+#include "mozilla/dom/JSExecutionUtils.h"
 
 #include <utility>      
 #include "ErrorList.h"  

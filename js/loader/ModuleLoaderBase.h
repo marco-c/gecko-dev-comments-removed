@@ -23,7 +23,6 @@
 #include "nsURIHashKey.h"
 #include "mozilla/Attributes.h"  
 #include "mozilla/CORSMode.h"
-#include "mozilla/dom/JSExecutionContext.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/UniquePtr.h"
 #include "ResolveResult.h"
@@ -216,6 +215,14 @@ class ModuleMapKey : public PLDHashEntryHdr {
 
 
 class ModuleLoaderBase : public nsISupports {
+ public:
+  
+  using LoadedScript = JS::loader::LoadedScript;
+  using ScriptFetchOptions = JS::loader::ScriptFetchOptions;
+  using ScriptLoadRequest = JS::loader::ScriptLoadRequest;
+  using ModuleLoadRequest = JS::loader::ModuleLoadRequest;
+
+ private:
   
 
 
@@ -281,11 +288,6 @@ class ModuleLoaderBase : public nsISupports {
   void Shutdown();
 
   virtual nsIURI* GetBaseURI() const { return mLoader->GetBaseURI(); };
-
-  using LoadedScript = JS::loader::LoadedScript;
-  using ScriptFetchOptions = JS::loader::ScriptFetchOptions;
-  using ScriptLoadRequest = JS::loader::ScriptLoadRequest;
-  using ModuleLoadRequest = JS::loader::ModuleLoadRequest;
 
   using MaybeSourceText =
       mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
