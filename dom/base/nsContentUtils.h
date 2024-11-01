@@ -228,6 +228,7 @@ enum EventNameType {
   EventNameType_SVGSVG = 0x0008,      
   EventNameType_SMIL = 0x0010,        
   EventNameType_HTMLBodyOrFramesetOnly = 0x0020,
+  EventNameType_HTMLMedia = 0x0040,
 
   EventNameType_HTMLXUL = 0x0003,
   EventNameType_All = 0xFFFF
