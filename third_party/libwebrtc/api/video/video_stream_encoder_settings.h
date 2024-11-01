@@ -53,6 +53,10 @@ struct VideoStreamEncoderSettings {
   
   
   VideoEncoder::Capabilities capabilities;
+
+  
+  
+  bool enable_frame_instrumentation_generator = false;
 };
 
 }  
