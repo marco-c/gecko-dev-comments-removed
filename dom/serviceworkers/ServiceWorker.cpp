@@ -252,9 +252,24 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     return;
   }
 
-  mActor->SendPostMessage(
-      clonedData,
-      ClientInfoAndState(clientInfo.ref().ToIPC(), clientState.ref().ToIPC()));
+  
+  
+  
+  
+  PostMessageSource source;
+  if (WorkerPrivate* wp = GetCurrentThreadWorkerPrivate()) {
+    if (wp->IsServiceWorker()) {
+      source = wp->GetServiceWorkerDescriptor().ToIPC();
+    } else {
+      source = ClientInfoAndState(clientInfo.ref().ToIPC(),
+                                  clientState.ref().ToIPC());
+    }
+  } else {
+    source =
+        ClientInfoAndState(clientInfo.ref().ToIPC(), clientState.ref().ToIPC());
+  }
+
+  mActor->SendPostMessage(clonedData, source);
 }
 
 void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
