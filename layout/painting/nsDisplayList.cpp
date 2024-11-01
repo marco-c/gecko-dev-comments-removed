@@ -6350,6 +6350,13 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
     nsRect* aDirtyRect) -> PrerenderInfo {
   PrerenderInfo result;
+
+  
+  
+  if (!aBuilder->IsPaintingToWindow()) {
+    return result;
+  }
+
   
   
   if ((aFrame->Extend3DContext() ||
