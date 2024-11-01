@@ -405,8 +405,12 @@ var SidebarController = {
     }
 
     requestIdleCallback(() => {
-      if (!this.uiStateInitialized) {
-        
+      const shouldLoadBackupState =
+        !window.opener || this.windowPrivacyMatches(window.opener, window);
+      
+      
+      
+      if (!this.uiStateInitialized && shouldLoadBackupState) {
         const backupState = this.SidebarManager.getBackupState();
         this.setUIState(backupState);
       }
@@ -489,8 +493,12 @@ var SidebarController = {
       
       
       await this.promiseInitialized;
-      this.toggleExpanded(state.expanded);
-      this.sidebarContainer.hidden = state.hidden;
+      if (typeof state.expanded === "boolean") {
+        this.toggleExpanded(state.expanded);
+      }
+      if (typeof state.hidden === "boolean") {
+        this.sidebarContainer.hidden = state.hidden;
+      }
       this.updateToolbarButton();
     }
     this.uiStateInitialized = true;

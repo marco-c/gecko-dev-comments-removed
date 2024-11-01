@@ -5,10 +5,6 @@
 
 const kDevPanelID = "PanelUI-developer-tools";
 
-add_setup(() =>
-  SidebarController.setUIState({ expanded: false, hidden: false })
-);
-
 
 
 
