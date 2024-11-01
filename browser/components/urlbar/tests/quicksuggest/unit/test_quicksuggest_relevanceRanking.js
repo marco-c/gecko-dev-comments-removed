@@ -32,6 +32,16 @@ function makeTestSuggestions() {
   ];
 }
 
+function makeTestSuggestionsWithInvalidCategories() {
+  return [
+    {
+      title: "suggestion",
+      categories: [-1], 
+      score: 0.2,
+    },
+  ];
+}
+
 const MERINO_SUGGESTIONS = [
   {
     provider: "adm",
@@ -75,6 +85,12 @@ const EXPECTED_WIKIPEDIA_RESULT =
 let gSandbox;
 
 add_setup(async () => {
+  
+  do_get_profile();
+
+  
+  Services.fog.initializeFOG();
+
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     merinoSuggestions: MERINO_SUGGESTIONS,
     prefs: [
@@ -139,7 +155,7 @@ add_task(async function test_interest_mode() {
   Assert.less(
     suggestions[1].score,
     0.2,
-    "The score should not be lowered for irrelevant suggestion"
+    "The score should be lowered for irrelevant suggestion"
   );
 
   Services.prefs.clearUserPref(PREF_RANKING_MODE);
@@ -206,6 +222,51 @@ add_task(async function test_interest_mode_end2end() {
     context,
     matches: [EXPECTED_WIKIPEDIA_RESULT],
   });
+
+  Services.prefs.clearUserPref(PREF_RANKING_MODE);
+});
+
+add_task(async function test_telemetry_interest_mode() {
+  Services.prefs.setStringPref(PREF_RANKING_MODE, "interest");
+
+  Services.fog.testResetFOG();
+
+  Assert.equal(null, Glean.suggestRelevance.status.success.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.status.failure.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.outcome.boosted.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.outcome.decreased.testGetValue());
+
+  const suggestions = makeTestSuggestions();
+  await UrlbarProviderQuickSuggest._test_applyRanking(suggestions);
+
+  
+  
+  Assert.equal(2, Glean.suggestRelevance.status.success.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.status.failure.testGetValue());
+  Assert.equal(1, Glean.suggestRelevance.outcome.boosted.testGetValue());
+  Assert.equal(1, Glean.suggestRelevance.outcome.decreased.testGetValue());
+
+  Services.prefs.clearUserPref(PREF_RANKING_MODE);
+});
+
+add_task(async function test_telemetry_interest_mode_with_failures() {
+  Services.prefs.setStringPref(PREF_RANKING_MODE, "interest");
+
+  Services.fog.testResetFOG();
+
+  Assert.equal(null, Glean.suggestRelevance.status.success.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.status.failure.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.outcome.boosted.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.outcome.decreased.testGetValue());
+
+  const suggestions = makeTestSuggestionsWithInvalidCategories();
+  await UrlbarProviderQuickSuggest._test_applyRanking(suggestions);
+
+  
+  Assert.equal(null, Glean.suggestRelevance.status.success.testGetValue());
+  Assert.equal(1, Glean.suggestRelevance.status.failure.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.outcome.boosted.testGetValue());
+  Assert.equal(null, Glean.suggestRelevance.outcome.decreased.testGetValue());
 
   Services.prefs.clearUserPref(PREF_RANKING_MODE);
 });
