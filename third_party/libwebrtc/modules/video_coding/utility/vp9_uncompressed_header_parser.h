@@ -106,6 +106,9 @@ struct Vp9UncompressedHeader {
   size_t tile_cols_log2 = 0;  
   size_t tile_rows_log2 = 0;  
   absl::optional<size_t> render_size_offset_bits;
+  
+  
+  absl::optional<size_t> loop_filter_params_offset_bits;
   Vp9InterpolationFilter interpolation_filter =
       Vp9InterpolationFilter::kEightTap;
   bool allow_high_precision_mv = false;
