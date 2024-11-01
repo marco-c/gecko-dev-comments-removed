@@ -47,13 +47,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   bool mSkip;
 
- private:
-  
-  template <typename Unit>
-  void InternalCompile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-                       JS::SourceText<Unit>& aSrcBuf,
-                       RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
-
  public:
   
   
@@ -86,24 +79,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
                      JS::InstantiationStorage& aStorage, ErrorResult& aRv);
 
   
-  void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-               JS::SourceText<char16_t>& aSrcBuf, RefPtr<JS::Stencil>& aStencil,
-               ErrorResult& aRv);
-  void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-               JS::SourceText<mozilla::Utf8Unit>& aSrcBuf,
-               RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
-
-  
-  void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-               const nsAString& aScript, RefPtr<JS::Stencil>& aStencil,
-               ErrorResult& aRv);
-
-  
-  void Decode(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-              const JS::TranscodeRange& aBytecodeBuf,
-              RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
-
-  
   
   void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
                           RefPtr<JS::Stencil>&& aStencil,
@@ -112,6 +87,24 @@ class MOZ_STACK_CLASS JSExecutionContext final {
                           ErrorResult& aRv, bool aEncodeBytecode = false,
                           JS::InstantiationStorage* aStorage = nullptr);
 };
+
+
+void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+             JS::SourceText<char16_t>& aSrcBuf, RefPtr<JS::Stencil>& aStencil,
+             ErrorResult& aRv);
+void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+             JS::SourceText<mozilla::Utf8Unit>& aSrcBuf,
+             RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
+
+
+void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+             const nsAString& aScript, RefPtr<JS::Stencil>& aStencil,
+             ErrorResult& aRv);
+
+
+void Decode(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+            const JS::TranscodeRange& aBytecodeBuf,
+            RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
 
 
 void ExecScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
