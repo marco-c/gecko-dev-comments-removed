@@ -403,6 +403,9 @@ pref("browser.urlbar.autoFill.adaptiveHistory.enabled", false);
 pref("browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0);
 
 
+pref("browser.urlbar.nerThreshold", "0.5");
+
+
 pref("browser.urlbar.speculativeConnect.enabled", true);
 
 

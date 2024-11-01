@@ -123,6 +123,9 @@ if (AppConstants.MOZ_BACKGROUNDTASKS) {
 
 var allowlist = [
   
+  { file: "resource://app/modules/urlbar/private/MLSuggest.sys.mjs" },
+
+  
   { file: "chrome://pippki/content/load_device.xhtml" },
 
   
