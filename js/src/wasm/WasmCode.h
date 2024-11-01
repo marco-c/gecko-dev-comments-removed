@@ -232,20 +232,64 @@ class CodeSegment : public ShareableBase<CodeSegment> {
   
   
   
-  static RefPtr<CodeSegment> createFromMasmWithBumpAlloc(
-      jit::MacroAssembler& masm, const LinkData& linkData, const Code* code,
-      bool allowLastDitchGC, uint8_t** codeStartOut, uint32_t* codeLengthOut,
-      uint32_t* metadataBiasOut);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<CodeSegment> claimSpaceFromPool(
+      uint32_t codeLength,
+      Vector<RefPtr<CodeSegment>, 0, SystemAllocPolicy>* segmentPool,
+      bool allowLastDitchGC, uint8_t** allocationStartOut,
+      uint8_t** codeStartOut, uint32_t* allocationLengthOut);
 
-  
-  
-  
   
   
   bool linkAndMakeExecutableSubRange(
       jit::AutoMarkJitCodeWritableForThread& writable, const LinkData& linkData,
-      const Code* maybeCode, uint8_t* pageStart, uint8_t* codeStart,
-      uint32_t codeLength);
+      const Code* maybeCode, uint8_t* allocationStart, uint8_t* codeStart,
+      uint32_t allocationLength);
+  
+  
+  bool linkAndMakeExecutableSubRange(
+      jit::AutoMarkJitCodeWritableForThread& writable,
+      jit::MacroAssembler& masm, uint8_t* allocationStart, uint8_t* codeStart,
+      uint32_t allocationLength);
 
   
   
@@ -897,26 +941,6 @@ using MetadataAnalysisHashMap =
     HashMap<const char*, uint32_t, mozilla::CStringHasher, SystemAllocPolicy>;
 
 class Code : public ShareableBase<Code> {
-  
-  
-  
-  
-  
-  
-  
-  class SimplePRNG {
-    uint32_t state_;
-
-   public:
-    SimplePRNG() : state_(999) {}
-    
-    uint32_t get11RandomBits() {
-      state_ = state_ * 1103515245 + 12345;
-      
-      
-      return (state_ >> 4) & 0x7FF;
-    }
-  };
   struct ProtectedData {
     
     
@@ -933,9 +957,6 @@ class Code : public ShareableBase<Code> {
 
     
     SharedCodeSegmentVector lazyFuncSegments;
-
-    
-    SimplePRNG simplePRNG;
   };
   using ReadGuard = RWExclusiveData<ProtectedData>::ReadGuard;
   using WriteGuard = RWExclusiveData<ProtectedData>::WriteGuard;
@@ -950,8 +971,6 @@ class Code : public ShareableBase<Code> {
   
   mutable ThreadSafeCodeBlockMap blockMap_;
 
-  
-  
   
   
   SharedCodeMetadata codeMeta_;
@@ -1054,7 +1073,10 @@ class Code : public ShareableBase<Code> {
                                             const FuncExport** funcExport,
                                             void** interpEntry) const;
 
-  const RWExclusiveData<ProtectedData>& data() const { return data_; }
+  SharedCodeSegment createFuncCodeSegmentFromPool(
+      jit::MacroAssembler& masm, const LinkData& linkData,
+      bool allowLastDitchGC, uint8_t** codeStartOut,
+      uint32_t* codeLengthOut) const;
 
   bool requestTierUp(uint32_t funcIndex) const;
 
@@ -1218,16 +1240,6 @@ class Code : public ShareableBase<Code> {
 };
 
 void PatchDebugSymbolicAccesses(uint8_t* codeBase, jit::MacroAssembler& masm);
-
-
-
-
-
-SharedCodeSegment AllocateCodePagesFrom(SharedCodeSegmentVector& lazySegments,
-                                        uint32_t bytesNeeded,
-                                        bool allowLastDitchGC,
-                                        size_t* offsetInSegment,
-                                        size_t* roundedUpAllocationSize);
 
 }  
 }  

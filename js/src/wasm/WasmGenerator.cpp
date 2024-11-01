@@ -977,10 +977,9 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
     
     uint8_t* codeStart = nullptr;
     uint32_t codeLength = 0;
-    uint32_t metadataBias = 0;
-    codeBlock_->segment = CodeSegment::createFromMasmWithBumpAlloc(
-        *masm_, *linkData_, partialTieringCode_,  false,
-        &codeStart, &codeLength, &metadataBias);
+    codeBlock_->segment = partialTieringCode_->createFuncCodeSegmentFromPool(
+        *masm_, *linkData_,  false, &codeStart,
+        &codeLength);
     if (!codeBlock_->segment) {
       warnf("failed to allocate executable memory for module");
       return nullptr;
@@ -991,8 +990,8 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
     
     
     
-    
-    codeBlock_->offsetMetadataBy(metadataBias);
+    uint32_t codeBlockOffset = codeStart - codeBlock_->segment->base();
+    codeBlock_->offsetMetadataBy(codeBlockOffset);
   } else {
     
     codeBlock_->segment = CodeSegment::createFromMasm(
