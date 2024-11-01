@@ -420,6 +420,10 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
         topPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE ||
         topPolicy == nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_ALLOW_POPUPS ||
         aOptions.isForPrinting);
+    if (aOptions.isForPrinting) {
+      
+      fields.Get<IDX_OpenerPolicy>() = topPolicy;
+    }
   } else if (!aParent && group->IsPotentiallyCrossOriginIsolated()) {
     
     
