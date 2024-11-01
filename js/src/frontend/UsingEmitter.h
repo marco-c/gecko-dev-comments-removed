@@ -83,8 +83,6 @@ class MOZ_STACK_CLASS UsingEmitter {
 
   bool hasAwaitUsing_ = false;
 
-  [[nodiscard]] bool emitThrowIfException();
-
   [[nodiscard]] bool emitGetDisposeMethod(UsingHint hint);
 
   [[nodiscard]] bool emitCreateDisposableResource(UsingHint hint);
@@ -93,6 +91,8 @@ class MOZ_STACK_CLASS UsingEmitter {
 
  protected:
   BytecodeEmitter* bce_;
+
+  [[nodiscard]] bool emitThrowIfException();
 
   [[nodiscard]] bool emitDisposeResourcesForEnvironment(
       EmitterScope& es,
@@ -109,11 +109,58 @@ class MOZ_STACK_CLASS UsingEmitter {
 
   [[nodiscard]] bool prepareForAssignment(UsingHint hint);
 
-  [[nodiscard]] bool prepareForForOfLoopIteration();
-
-  [[nodiscard]] bool prepareForForOfIteratorCloseOnThrow();
-
   [[nodiscard]] bool emitNonLocalJump(EmitterScope* present);
+
+  [[nodiscard]] bool emitEnd();
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS ForOfDisposalEmitter : protected UsingEmitter {
+ private:
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
+
+    
+    Iteration,
+
+    
+    End
+  };
+  State state_ = State::Start;
+#endif
+ public:
+  explicit ForOfDisposalEmitter(BytecodeEmitter* bce, bool hasAwaitUsing)
+      : UsingEmitter(bce) {
+    setHasAwaitUsing(hasAwaitUsing);
+  }
+
+  [[nodiscard]] bool prepareForForOfLoopIteration();
 
   [[nodiscard]] bool emitEnd();
 };
