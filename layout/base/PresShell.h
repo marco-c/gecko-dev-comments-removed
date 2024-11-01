@@ -3049,7 +3049,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
-  WhereToScroll mLastAnchorVerticalScrollViewPosition;
+  enum class AnchorScrollType : bool { Anchor, TextDirective };
+  AnchorScrollType mLastAnchorScrollType = AnchorScrollType::Anchor;
 
   
   
