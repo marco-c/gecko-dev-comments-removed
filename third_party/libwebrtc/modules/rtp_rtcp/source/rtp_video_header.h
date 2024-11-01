@@ -25,6 +25,7 @@
 #include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
+#include "common_video/frame_instrumentation_data.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
@@ -94,6 +95,11 @@ struct RTPVideoHeader {
   
   
   std::optional<AbsoluteCaptureTime> absolute_capture_time;
+
+  
+  std::optional<
+      absl::variant<FrameInstrumentationSyncData, FrameInstrumentationData>>
+      frame_instrumentation_data;
 };
 
 }  
