@@ -166,6 +166,8 @@ class VideoEncoderConfig {
   ~VideoEncoderConfig();
   std::string ToString() const;
 
+  bool HasRequestedResolution() const;
+
   
   VideoCodecType codec_type;
   SdpVideoFormat video_format;

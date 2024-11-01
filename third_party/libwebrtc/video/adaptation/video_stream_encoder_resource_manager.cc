@@ -161,9 +161,12 @@ class VideoStreamEncoderResourceManager::InitialFrameDropper {
 
   void OnEncoderSettingsUpdated(
       const VideoCodec& codec,
-      const VideoAdaptationCounters& adaptation_counters) {
+      const VideoAdaptationCounters& adaptation_counters,
+      bool has_requested_resolution) {
     last_stream_configuration_changed_ = false;
     std::vector<bool> active_flags = GetActiveLayersFlags(codec);
+    
+    
     
     
     const bool source_resolution_changed =
@@ -172,7 +175,7 @@ class VideoStreamEncoderResourceManager::InitialFrameDropper {
         adaptation_counters.resolution_adaptations ==
             last_adaptation_counters_.resolution_adaptations;
     if (!EqualFlags(active_flags, last_active_flags_) ||
-        source_resolution_changed) {
+        (!has_requested_resolution && source_resolution_changed)) {
       
       last_stream_configuration_changed_ = true;
       
@@ -414,7 +417,8 @@ void VideoStreamEncoderResourceManager::SetEncoderSettings(
   encoder_settings_ = std::move(encoder_settings);
   bitrate_constraint_->OnEncoderSettingsUpdated(encoder_settings_);
   initial_frame_dropper_->OnEncoderSettingsUpdated(
-      encoder_settings_->video_codec(), current_adaptation_counters_);
+      encoder_settings_->video_codec(), current_adaptation_counters_,
+      encoder_settings.encoder_config().HasRequestedResolution());
   MaybeUpdateTargetFrameRate();
 }
 

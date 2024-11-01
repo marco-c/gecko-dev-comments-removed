@@ -37,6 +37,7 @@
 #include "api/stats/rtcstats_objects.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
+#include "api/video/resolution.h"
 #include "pc/sdp_utils.h"
 #include "pc/session_description.h"
 #include "pc/simulcast_description.h"
@@ -302,6 +303,23 @@ class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
     }
     RTC_CHECK(false) << "Rid not found: " << rid;
     return false;
+  }
+
+  Resolution GetEncodingResolution(
+      rtc::scoped_refptr<PeerConnectionTestWrapper> pc_wrapper,
+      std::string_view rid = "") {
+    rtc::scoped_refptr<const RTCStatsReport> report = GetStats(pc_wrapper);
+    std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
+        report->GetStatsOfType<RTCOutboundRtpStreamStats>();
+    for (const auto* outbound_rtp : outbound_rtps) {
+      if (outbound_rtp->rid.value_or("") == rid) {
+        return {
+            .width = static_cast<int>(outbound_rtp->frame_width.value_or(0)),
+            .height = static_cast<int>(outbound_rtp->frame_height.value_or(0))};
+      }
+    }
+    RTC_CHECK(false) << "Rid not found: " << rid;
+    return {};
   }
 
   bool HasOutboundRtpWithRidAndScalabilityMode(
@@ -2300,6 +2318,61 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest,
   ASSERT_TRUE_WAIT(EncodedFrames(local_pc_wrapper, "h") > encoded_frames_h + 10,
                    kDefaultTimeout.ms());
   EXPECT_LE(EncodedFrames(local_pc_wrapper, "f") - encoded_frames_f, 2);
+}
+
+TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest,
+       RequestedResolutionDownscaleAndThenUpscale) {
+  rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
+  if (SkipTestDueToAv1Missing(local_pc_wrapper)) {
+    return;
+  }
+  rtc::scoped_refptr<PeerConnectionTestWrapper> remote_pc_wrapper = CreatePc();
+  ExchangeIceCandidates(local_pc_wrapper, remote_pc_wrapper);
+
+  std::vector<cricket::SimulcastLayer> layers =
+      CreateLayers({"f"}, true);
+
+  
+  rtc::scoped_refptr<RtpTransceiverInterface> transceiver =
+      AddTransceiverWithSimulcastLayers(local_pc_wrapper, remote_pc_wrapper,
+                                        layers);
+  std::vector<RtpCodecCapability> codecs =
+      GetCapabilitiesAndRestrictToCodec(remote_pc_wrapper, codec_name_);
+  transceiver->SetCodecPreferences(codecs);
+
+  NegotiateWithSimulcastTweaks(local_pc_wrapper, remote_pc_wrapper);
+  local_pc_wrapper->WaitForConnection();
+  remote_pc_wrapper->WaitForConnection();
+
+  
+  rtc::scoped_refptr<RtpSenderInterface> sender = transceiver->sender();
+  RtpParameters parameters = sender->GetParameters();
+  ASSERT_THAT(parameters.encodings, SizeIs(1));
+  parameters.encodings[0].scalability_mode = "L1T3";
+  parameters.encodings[0].requested_resolution = {.width = 640, .height = 360};
+  sender->SetParameters(parameters);
+  
+  ASSERT_TRUE_WAIT(GetEncodingResolution(local_pc_wrapper) ==
+                       (Resolution{.width = 640, .height = 360}),
+                   kLongTimeoutForRampingUp.ms());
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  parameters = sender->GetParameters();
+  parameters.encodings[0].requested_resolution = {.width = 1280, .height = 720};
+  sender->SetParameters(parameters);
+  
+  ASSERT_TRUE_WAIT(GetEncodingResolution(local_pc_wrapper) ==
+                       (Resolution{.width = 1280, .height = 720}),
+                   kLongTimeoutForRampingUp.ms());
 }
 
 INSTANTIATE_TEST_SUITE_P(StandardPath,

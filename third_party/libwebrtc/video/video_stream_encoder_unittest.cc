@@ -6302,6 +6302,74 @@ TEST_F(VideoStreamEncoderTest, InitialFrameDropIsNotReactivatedWhenAdaptingUp) {
   video_stream_encoder_->Stop();
 }
 
+
+
+
+TEST_F(VideoStreamEncoderTest,
+       InitialFrameDropIsNotReactivatedWhenAdaptingUp_RequestedResolution) {
+  const int kWidth = 640;
+  const int kHeight = 360;
+  
+  fake_encoder_.SetQp(kQpHigh);
+
+  AdaptingFrameForwarder source(&time_controller_);
+  source.set_adaptation_enabled(true);
+  video_stream_encoder_->SetSource(
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+
+  int timestamp = 1;
+
+  
+  
+  ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+  video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+      Resolution({.width = kWidth, .height = kHeight}));
+  video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                          kMaxPayloadLength);
+
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kTargetBitrate, kTargetBitrate, kTargetBitrate, 0, 0, 0);
+  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
+  WaitForEncodedFrame(timestamp);
+  timestamp += 9000;
+  
+  AdvanceTime(TimeDelta::Millis(1000));
+
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kLowTargetBitrate, kLowTargetBitrate, kLowTargetBitrate, 0, 0, 0);
+  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
+  
+  WaitForEncodedFrame(timestamp);
+  timestamp += 9000;
+  AdvanceTime(TimeDelta::Millis(100));
+
+  
+  video_stream_encoder_->TriggerQualityLow();
+
+  
+  EXPECT_TRUE_WAIT(source.sink_wants().max_pixel_count < kWidth * kHeight,
+                   5000);
+
+  
+  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
+  WaitForEncodedFrame(timestamp);
+  timestamp += 9000;
+  AdvanceTime(TimeDelta::Millis(100));
+
+  
+  video_stream_encoder_->TriggerQualityHigh();
+
+  
+  EXPECT_TRUE_WAIT(source.sink_wants().max_pixel_count > kWidth * kHeight,
+                   5000);
+
+  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
+  
+  WaitForEncodedFrame(timestamp);
+
+  video_stream_encoder_->Stop();
+}
+
 TEST_F(VideoStreamEncoderTest,
        FrameDroppedWhenResolutionIncreasesAndLinkAllocationIsLow) {
   const int kMinStartBps360p = 222000;
