@@ -149,11 +149,12 @@ var gBrowserInit = {
       false
     );
     let nonRemovables;
-    let isPopup = !window.toolbar.visible;
 
     
     
-    if (isVerticalTabs && !isPopup) {
+    
+    
+    if (isVerticalTabs) {
       nonRemovables = [gBrowser.tabContainer];
       for (let elem of nonRemovables) {
         elem.setAttribute("removable", "true");
@@ -168,7 +169,7 @@ var gBrowserInit = {
         CustomizableUI.registerToolbarNode(node);
       }
     }
-    if (isVerticalTabs && !isPopup) {
+    if (isVerticalTabs) {
       
       setToolbarVisibility(
         document.getElementById(CustomizableUI.AREA_VERTICAL_TABSTRIP),
