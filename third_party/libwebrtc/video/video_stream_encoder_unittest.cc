@@ -6218,25 +6218,87 @@ TEST_F(VideoStreamEncoderTest,
   video_stream_encoder_->Stop();
 }
 
-TEST_F(VideoStreamEncoderTest,
+enum class FrameResolutionChangeMethod {
+  MODIFY_SOURCE,
+  MODIFY_REQUESTED_RESOLUTION,
+};
+class VideoStreamEncoderInitialFrameDropperTest
+    : public VideoStreamEncoderTest,
+      public ::testing::WithParamInterface<FrameResolutionChangeMethod> {
+ public:
+  VideoStreamEncoderInitialFrameDropperTest()
+      : VideoStreamEncoderTest(), frame_resolution_change_method_(GetParam()) {}
+
+  void SetUp() override {
+    VideoStreamEncoderTest::SetUp();
+    if (frame_resolution_change_method_ ==
+        FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+      video_encoder_config_.video_stream_factory = nullptr;
+    }
+  }
+
+ protected:
+  const FrameResolutionChangeMethod frame_resolution_change_method_;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    VideoStreamEncoderInitialFrameDropperTest,
+    VideoStreamEncoderInitialFrameDropperTest,
+    ::testing::Values(
+        FrameResolutionChangeMethod::MODIFY_SOURCE,
+        FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION));
+
+TEST_P(VideoStreamEncoderInitialFrameDropperTest,
        InitialFrameDropActivatesWhenResolutionIncreases) {
   const int kWidth = 640;
   const int kHeight = 360;
 
+  const int kSmallWidth = 640 / 2;
+  const int kSmallHeight = 360 / 2;
+
+  int captureWidth;
+  int captureHeight;
+  if (frame_resolution_change_method_ ==
+      FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+    captureWidth = kWidth;
+    captureHeight = kHeight;
+    ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+    video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+        Resolution({.width = kSmallWidth, .height = kSmallHeight}));
+    video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                            kMaxPayloadLength);
+  } else {
+    captureWidth = kSmallWidth;
+    captureHeight = kSmallHeight;
+  }
+
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
       kTargetBitrate, kTargetBitrate, kTargetBitrate, 0, 0, 0);
-  video_source_.IncomingCapturedFrame(CreateFrame(1, kWidth / 2, kHeight / 2));
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, captureWidth, captureHeight));
   
   WaitForEncodedFrame(1);
 
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
       kLowTargetBitrate, kLowTargetBitrate, kLowTargetBitrate, 0, 0, 0);
-  video_source_.IncomingCapturedFrame(CreateFrame(2, kWidth / 2, kHeight / 2));
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(2, captureWidth, captureHeight));
   
   WaitForEncodedFrame(2);
 
   
-  video_source_.IncomingCapturedFrame(CreateFrame(3, kWidth, kHeight));
+  if (frame_resolution_change_method_ ==
+      FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+    video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+        Resolution({.width = kWidth, .height = kHeight}));
+    video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                            kMaxPayloadLength);
+  } else {
+    captureWidth = kWidth;
+    captureHeight = kHeight;
+  }
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(3, captureWidth, captureHeight));
   
   ExpectDroppedFrame();
 
@@ -6246,7 +6308,8 @@ TEST_F(VideoStreamEncoderTest,
   video_stream_encoder_->Stop();
 }
 
-TEST_F(VideoStreamEncoderTest, InitialFrameDropIsNotReactivatedWhenAdaptingUp) {
+TEST_P(VideoStreamEncoderInitialFrameDropperTest,
+       InitialFrameDropIsNotReactivatedWhenAdaptingUp) {
   const int kWidth = 640;
   const int kHeight = 360;
   
@@ -6258,6 +6321,17 @@ TEST_F(VideoStreamEncoderTest, InitialFrameDropIsNotReactivatedWhenAdaptingUp) {
       &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   int timestamp = 1;
+
+  
+  
+  if (frame_resolution_change_method_ ==
+      FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+    ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+    video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+        Resolution({.width = kWidth, .height = kHeight}));
+    video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                            kMaxPayloadLength);
+  }
 
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
       kTargetBitrate, kTargetBitrate, kTargetBitrate, 0, 0, 0);
@@ -6302,75 +6376,7 @@ TEST_F(VideoStreamEncoderTest, InitialFrameDropIsNotReactivatedWhenAdaptingUp) {
   video_stream_encoder_->Stop();
 }
 
-
-
-
-TEST_F(VideoStreamEncoderTest,
-       InitialFrameDropIsNotReactivatedWhenAdaptingUp_RequestedResolution) {
-  const int kWidth = 640;
-  const int kHeight = 360;
-  
-  fake_encoder_.SetQp(kQpHigh);
-
-  AdaptingFrameForwarder source(&time_controller_);
-  source.set_adaptation_enabled(true);
-  video_stream_encoder_->SetSource(
-      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
-
-  int timestamp = 1;
-
-  
-  
-  ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
-  video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
-      Resolution({.width = kWidth, .height = kHeight}));
-  video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
-                                          kMaxPayloadLength);
-
-  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
-      kTargetBitrate, kTargetBitrate, kTargetBitrate, 0, 0, 0);
-  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
-  WaitForEncodedFrame(timestamp);
-  timestamp += 9000;
-  
-  AdvanceTime(TimeDelta::Millis(1000));
-
-  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
-      kLowTargetBitrate, kLowTargetBitrate, kLowTargetBitrate, 0, 0, 0);
-  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
-  
-  WaitForEncodedFrame(timestamp);
-  timestamp += 9000;
-  AdvanceTime(TimeDelta::Millis(100));
-
-  
-  video_stream_encoder_->TriggerQualityLow();
-
-  
-  EXPECT_TRUE_WAIT(source.sink_wants().max_pixel_count < kWidth * kHeight,
-                   5000);
-
-  
-  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
-  WaitForEncodedFrame(timestamp);
-  timestamp += 9000;
-  AdvanceTime(TimeDelta::Millis(100));
-
-  
-  video_stream_encoder_->TriggerQualityHigh();
-
-  
-  EXPECT_TRUE_WAIT(source.sink_wants().max_pixel_count > kWidth * kHeight,
-                   5000);
-
-  source.IncomingCapturedFrame(CreateFrame(timestamp, kWidth, kHeight));
-  
-  WaitForEncodedFrame(timestamp);
-
-  video_stream_encoder_->Stop();
-}
-
-TEST_F(VideoStreamEncoderTest,
+TEST_P(VideoStreamEncoderInitialFrameDropperTest,
        FrameDroppedWhenResolutionIncreasesAndLinkAllocationIsLow) {
   const int kMinStartBps360p = 222000;
   fake_encoder_.SetResolutionBitrateLimits(
@@ -6383,12 +6389,48 @@ TEST_F(VideoStreamEncoderTest,
       DataRate::BitsPerSec(kMinStartBps360p - 1),  
       DataRate::BitsPerSec(kMinStartBps360p - 1),  
       0, 0, 0);
+
+  const int kWidth = 640;
+  const int kHeight = 360;
+
+  const int kSmallWidth = 640 / 2;
+  const int kSmallHeight = 360 / 2;
+
+  int captureWidth;
+  int captureHeight;
+  if (frame_resolution_change_method_ ==
+      FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+    captureWidth = kWidth;
+    captureHeight = kHeight;
+    ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+    video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+        Resolution({.width = kSmallWidth, .height = kSmallHeight}));
+    video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                            kMaxPayloadLength);
+  } else {
+    captureWidth = kSmallWidth;
+    captureHeight = kSmallHeight;
+  }
+
   
-  video_source_.IncomingCapturedFrame(CreateFrame(1, 320, 180));
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, captureWidth, captureHeight));
   WaitForEncodedFrame(1);
 
   
   
+  if (frame_resolution_change_method_ ==
+      FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+    ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+    video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+        Resolution({.width = kWidth, .height = kHeight}));
+    video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                            kMaxPayloadLength);
+  } else {
+    captureWidth = kWidth;
+    captureHeight = kHeight;
+  }
+
   video_source_.IncomingCapturedFrame(CreateFrame(2, 640, 360));
   ExpectDroppedFrame();
 
@@ -6398,7 +6440,7 @@ TEST_F(VideoStreamEncoderTest,
   video_stream_encoder_->Stop();
 }
 
-TEST_F(VideoStreamEncoderTest,
+TEST_P(VideoStreamEncoderInitialFrameDropperTest,
        FrameNotDroppedWhenResolutionIncreasesAndLinkAllocationIsHigh) {
   const int kMinStartBps360p = 222000;
   fake_encoder_.SetResolutionBitrateLimits(
@@ -6411,13 +6453,51 @@ TEST_F(VideoStreamEncoderTest,
       DataRate::BitsPerSec(kMinStartBps360p - 1),  
       DataRate::BitsPerSec(kMinStartBps360p),      
       0, 0, 0);
+
+  const int kWidth = 640;
+  const int kHeight = 360;
+
+  const int kSmallWidth = 640 / 2;
+  const int kSmallHeight = 360 / 2;
+
+  int captureWidth;
+  int captureHeight;
+
+  if (frame_resolution_change_method_ ==
+      FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+    captureWidth = kWidth;
+    captureHeight = kHeight;
+    ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+    video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+        Resolution({.width = kSmallWidth, .height = kSmallHeight}));
+    video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                            kMaxPayloadLength);
+  } else {
+    captureWidth = kSmallWidth;
+    captureHeight = kSmallHeight;
+  }
+
   
-  video_source_.IncomingCapturedFrame(CreateFrame(1, 320, 180));
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, captureWidth, captureHeight));
   WaitForEncodedFrame(1);
 
   
+  if (frame_resolution_change_method_ ==
+      FrameResolutionChangeMethod::MODIFY_REQUESTED_RESOLUTION) {
+    ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+    video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
+        Resolution({.width = kWidth, .height = kHeight}));
+    video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                            kMaxPayloadLength);
+  } else {
+    captureWidth = kWidth;
+    captureHeight = kHeight;
+  }
+
   
-  video_source_.IncomingCapturedFrame(CreateFrame(2, 640, 360));
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(2, captureWidth, captureHeight));
   WaitForEncodedFrame(2);
 
   video_stream_encoder_->Stop();
