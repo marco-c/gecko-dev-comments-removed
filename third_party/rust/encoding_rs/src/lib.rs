@@ -7,6 +7,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(doc_markdown, inline_always, new_ret_no_self)
@@ -730,6 +761,7 @@ mod big5;
 mod euc_jp;
 mod euc_kr;
 mod gb18030;
+mod gb18030_2022;
 mod iso_2022_jp;
 mod replacement;
 mod shift_jis;
@@ -909,6 +941,7 @@ pub static GBK_INIT: Encoding = Encoding {
     name: "GBK",
     variant: VariantEncoding::Gbk,
 };
+
 
 
 
@@ -1655,6 +1688,7 @@ pub static GB18030_INIT: Encoding = Encoding {
     name: "gb18030",
     variant: VariantEncoding::Gb18030,
 };
+
 
 
 

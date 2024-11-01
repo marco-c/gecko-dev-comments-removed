@@ -9,6 +9,7 @@
 
 use super::*;
 use crate::data::*;
+use crate::gb18030_2022::*;
 use crate::handles::*;
 use crate::variant::*;
 
@@ -347,7 +348,14 @@ fn gbk_encode_non_unified(bmp: u16) -> Option<(usize, usize)> {
         }
         return None;
     }
-    if bmp >= 0xE794 {
+
+    if in_inclusive_range16(bmp, 0xE78D, 0xE864) {
+        
+        if let Some(pos) = position(&GB18030_2022_OVERRIDE_PUA[..], bmp) {
+            let pair = &GB18030_2022_OVERRIDE_BYTES[pos];
+            return Some((pair[0].into(), pair[1].into()));
+        }
+    } else if bmp >= 0xFE17 {
         
         if let Some(pos) = position(&GB2312_SYMBOLS_AFTER_GREEK[..], bmp) {
             return Some((0xA6, pos + (0x9F - 0x60 + 0xA1)));
@@ -381,7 +389,10 @@ fn gbk_encode_non_unified(bmp: u16) -> Option<(usize, usize)> {
         return Some((other_lead + (0x81 + 0x20), other_trail + offset));
     }
     
-    if in_inclusive_range16(bmp, 0x2E81, 0x2ECA) || in_inclusive_range16(bmp, 0xE816, 0xE864) {
+    if in_inclusive_range16(bmp, 0x2E81, 0x2ECA)
+        || in_inclusive_range16(bmp, 0x9FB4, 0x9FBB)
+        || in_inclusive_range16(bmp, 0xE816, 0xE855)
+    {
         if let Some(pos) = position(&GBK_BOTTOM[21..], bmp) {
             let trail = pos + 16;
             let offset = if trail < 0x3F { 0x40 } else { 0x41 };
@@ -607,10 +618,17 @@ mod tests {
         decode_gb18030(b"\x81\x80", "\u{4E90}");
         decode_gb18030(b"\x81\xFE", "\u{4FA2}");
         decode_gb18030(b"\xFE\x40", "\u{FA0C}");
-        decode_gb18030(b"\xFE\x7E", "\u{E843}");
         decode_gb18030(b"\xFE\x7F", "\u{FFFD}\u{007F}");
         decode_gb18030(b"\xFE\x80", "\u{4723}");
         decode_gb18030(b"\xFE\xFE", "\u{E4C5}");
+
+        
+        decode_gb18030(b"\xFE\x7E", "\u{9FB9}");
+        decode_gb18030(b"\xA6\xDD", "\u{FE14}");
+
+        
+        decode_gb18030(b"\x82\x35\x91\x32", "\u{9FB9}");
+        decode_gb18030(b"\x84\x31\x83\x30", "\u{FE14}");
 
         
         decode_gb18030(b"\xA3\xA0", "\u{3000}");
@@ -679,6 +697,15 @@ mod tests {
 
         
         encode_gb18030("\u{00F7}", b"\xA1\xC2");
+
+        
+        encode_gb18030("\u{9FB9}", b"\xFE\x7E");
+        encode_gb18030("\u{FE14}", b"\xA6\xDD");
+        encode_gb18030("\u{E843}", b"\xFE\x7E");
+        encode_gb18030("\u{E791}", b"\xA6\xDD");
+
+        
+        encode_gb18030("\u{E817}", b"\xFE\x52");
     }
 
     #[test]
@@ -721,6 +748,15 @@ mod tests {
 
         
         encode_gbk("\u{00F7}", b"\xA1\xC2");
+
+        
+        encode_gb18030("\u{9FB9}", b"\xFE\x7E");
+        encode_gb18030("\u{FE14}", b"\xA6\xDD");
+        encode_gb18030("\u{E843}", b"\xFE\x7E");
+        encode_gb18030("\u{E791}", b"\xA6\xDD");
+
+        
+        encode_gb18030("\u{E817}", b"\xFE\x52");
     }
 
     #[test]
