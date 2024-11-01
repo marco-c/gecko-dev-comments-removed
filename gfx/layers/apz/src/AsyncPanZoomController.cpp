@@ -849,7 +849,8 @@ AsyncPanZoomController::GetAxisLockMode() {
 }
 
 bool AsyncPanZoomController::UsingStatefulAxisLock() const {
-  return (GetAxisLockMode() == STANDARD || GetAxisLockMode() == STICKY);
+  return (GetAxisLockMode() == STANDARD || GetAxisLockMode() == STICKY ||
+          GetAxisLockMode() == BREAKABLE);
 }
 
  AsyncPanZoomController::PinchLockMode
@@ -3499,7 +3500,8 @@ void AsyncPanZoomController::HandlePanning(double aAngle) {
 void AsyncPanZoomController::HandlePanningUpdate(
     const ScreenPoint& aPanDistance) {
   
-  if (GetAxisLockMode() == STICKY && !mPanDirRestricted) {
+  if ((GetAxisLockMode() == STICKY || GetAxisLockMode() == BREAKABLE) &&
+      !mPanDirRestricted) {
     ParentLayerPoint vector =
         ToParentLayerCoordinates(aPanDistance, mStartTouch);
 
@@ -3519,7 +3521,8 @@ void AsyncPanZoomController::HandlePanningUpdate(
             
             
             if (apz::IsCloseToVertical(
-                    angle, StaticPrefs::apz_axis_lock_lock_angle())) {
+                    angle, StaticPrefs::apz_axis_lock_lock_angle()) &&
+                GetAxisLockMode() != BREAKABLE) {
               mX.SetAxisLocked(true);
               SetState(PANNING_LOCKED_Y);
             } else {
@@ -3535,7 +3538,8 @@ void AsyncPanZoomController::HandlePanningUpdate(
             
             
             if (apz::IsCloseToHorizontal(
-                    angle, StaticPrefs::apz_axis_lock_lock_angle())) {
+                    angle, StaticPrefs::apz_axis_lock_lock_angle()) &&
+                GetAxisLockMode() != BREAKABLE) {
               mY.SetAxisLocked(true);
               SetState(PANNING_LOCKED_X);
             } else {
@@ -3545,7 +3549,11 @@ void AsyncPanZoomController::HandlePanningUpdate(
           break;
 
         case PANNING:
-          HandlePanning(angle);
+          
+          
+          if (GetAxisLockMode() != BREAKABLE) {
+            HandlePanning(angle);
+          }
           break;
 
         default:

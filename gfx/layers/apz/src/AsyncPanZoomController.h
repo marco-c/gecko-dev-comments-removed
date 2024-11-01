@@ -982,6 +982,7 @@ class AsyncPanZoomController {
     STANDARD, 
     STICKY,   
     DOMINANT_AXIS, 
+    BREAKABLE,     
   };
 
   static AxisLockMode GetAxisLockMode();
