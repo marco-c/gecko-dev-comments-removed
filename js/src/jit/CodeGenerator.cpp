@@ -10114,6 +10114,14 @@ void CodeGenerator::visitWasmStackSwitchToMain(LWasmStackSwitchToMain* lir) {
   const Register ScratchReg2 = DataReg;
 
   
+  masm.computeEffectiveAddress(
+      Address(masm.getStackPointer(), -int32_t(sizeof(wasm::Frame))),
+      ScratchReg2);
+  masm.storePtr(ScratchReg2,
+                Address(SuspenderDataReg,
+                        wasm::SuspenderObjectData::offsetOfMainExitFP()));
+
+  
   masm.loadPtr(Address(SuspenderDataReg,
                        wasm::SuspenderObjectData::offsetOfSuspendableExitFP()),
                ScratchReg2);

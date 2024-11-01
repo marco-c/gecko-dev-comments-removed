@@ -212,7 +212,9 @@ class SuspenderObject : public NativeObject {
  public:
   static const JSClass class_;
 
-  enum { DataSlot, PromisingPromiseSlot, SlotCount };
+  enum { DataSlot, PromisingPromiseSlot, SuspendingReturnTypeSlot, SlotCount };
+
+  enum class ReturnType : int32_t { Unknown, Promise, Value, Exception };
 
   static SuspenderObject* create(JSContext* cx) {
     for (;;) {
@@ -254,6 +256,8 @@ class SuspenderObject : public NativeObject {
 
     suspender->initReservedSlot(DataSlot, PrivateValue(data));
     suspender->initReservedSlot(PromisingPromiseSlot, NullValue());
+    suspender->initReservedSlot(SuspendingReturnTypeSlot,
+                                Int32Value(int32_t(ReturnType::Unknown)));
     return suspender;
   }
 
@@ -265,6 +269,20 @@ class SuspenderObject : public NativeObject {
 
   void setPromisingPromise(Handle<PromiseObject*> promise) {
     setReservedSlot(PromisingPromiseSlot, ObjectOrNullValue(promise));
+  }
+
+  ReturnType suspendingReturnType() const {
+    return ReturnType(getReservedSlot(SuspendingReturnTypeSlot).toInt32());
+  }
+
+  void setSuspendingReturnType(ReturnType type) {
+    
+    
+    
+    MOZ_ASSERT((type == ReturnType::Unknown) !=
+               (suspendingReturnType() == ReturnType::Unknown));
+
+    setReservedSlot(SuspendingReturnTypeSlot, Int32Value(int32_t(type)));
   }
 
   JS::NativeStackLimit getStackMemoryLimit() {
@@ -288,6 +306,9 @@ class SuspenderObject : public NativeObject {
   void suspend(JSContext* cx);
   void resume(JSContext* cx);
   void leave(JSContext* cx);
+
+  
+  void forwardToSuspendable();
 
  private:
   static const JSClassOps classOps_;
@@ -461,6 +482,16 @@ void SuspenderObject::leave(JSContext* cx) {
     case SuspenderState::Moribund:
       MOZ_CRASH();
   }
+}
+
+void SuspenderObject::forwardToSuspendable() {
+  
+  SuspenderObjectData* data = this->data();
+  uint8_t* mainExitFP = (uint8_t*)data->mainExitFP();
+  *reinterpret_cast<void**>(mainExitFP + Frame::callerFPOffset()) =
+      data->suspendableFP();
+  *reinterpret_cast<void**>(mainExitFP + Frame::returnAddressOffset()) =
+      data->suspendedReturnAddress();
 }
 
 bool CallOnMainStack(JSContext* cx, CallOnMainStackFn fn, void* data) {
@@ -877,6 +908,14 @@ class SuspendingFunctionModuleFactory {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   bool encodeTrampolineFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
                                 Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
@@ -885,6 +924,24 @@ class SuspendingFunctionModuleFactory {
     }
     const uint32_t SuspenderIndex = 0;
     const uint32_t ParamsIndex = 1;
+
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(SuspenderIndex)) {
+      return false;
+    }
+
+    if (!encoder.writeOp(Op::Block) ||
+        !encoder.writeFixedU8(uint8_t(TypeCode::ExnRef))) {
+      return false;
+    }
+
+    if (!encoder.writeOp(Op::TryTable) ||
+        !encoder.writeFixedU8(uint8_t(TypeCode::BlockVoid)) ||
+        !encoder.writeVarU32(1) ||
+        !encoder.writeFixedU8( 0x03) ||
+        !encoder.writeVarU32(0)) {
+      return false;
+    }
 
     
     if (!encoder.writeOp(Op::LocalGet) ||
@@ -912,6 +969,17 @@ class SuspendingFunctionModuleFactory {
     if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
         !encoder.writeVarU32(
             (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
+      return false;
+    }
+
+    if (!encoder.writeOp(Op::Return) || !encoder.writeOp(Op::End) ||
+        !encoder.writeOp(Op::Unreachable) || !encoder.writeOp(Op::End)) {
+      return false;
+    }
+
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32(
+            (uint32_t)BuiltinModuleFuncId::ForwardExceptionToSuspended)) {
       return false;
     }
 
@@ -967,7 +1035,7 @@ class SuspendingFunctionModuleFactory {
     FeatureOptions options;
     options.isBuiltinModule = true;
     options.requireGC = true;
-    options.requireTailCalls = true;
+    options.requireExnref = true;
 
     ScriptedCaller scriptedCaller;
     SharedCompileArgs compileArgs =
@@ -1048,7 +1116,8 @@ class SuspendingFunctionModuleFactory {
     ValTypeVector paramsTrampoline, resultsTrampoline;
     if (!paramsTrampoline.emplaceBack(suspenderType) ||
         !paramsTrampoline.emplaceBack(RefType::fromTypeDef(
-            &(*codeMeta->types)[ParamsTypeIndex], false))) {
+            &(*codeMeta->types)[ParamsTypeIndex], false)) ||
+        !resultsTrampoline.emplaceBack(RefType::any())) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -1161,6 +1230,20 @@ static bool WasmPISuspendTaskContinue(JSContext* cx, unsigned argc, Value* vp) {
   return RejectPromiseWithPendingError(cx, promise);
 }
 
+static bool IsPromiseValue(JSContext* aCx, JS::Handle<JS::Value> aValue) {
+  if (!aValue.isObject()) {
+    return false;
+  }
+
+  
+  JS::Rooted<JSObject*> obj(aCx, js::CheckedUnwrapStatic(&aValue.toObject()));
+  if (!obj) {
+    return false;
+  }
+
+  return JS::IsPromiseObject(obj);
+}
+
 
 
 
@@ -1176,28 +1259,13 @@ static bool WasmPIWrapSuspendingImport(JSContext* cx, unsigned argc,
   RootedValue rval(cx);
   if (Call(cx, UndefinedHandleValue, originalImportFunc, args, &rval)) {
     
-    RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
-    RootedObject promiseObj(cx, PromiseResolve(cx, promiseConstructor, rval));
-    if (!promiseObj) {
-      return false;
-    }
-    args.rval().setObject(*promiseObj);
+    args.rval().set(rval);
     return true;
   }
 
-  if (cx->isThrowingOutOfMemory()) {
-    return false;
-  }
-
   
-  RootedObject promiseObject(cx, NewPromiseObject(cx, nullptr));
-  if (!promiseObject) {
-    return false;
-  }
-  args.rval().setObject(*promiseObject);
-
-  Rooted<PromiseObject*> promise(cx, &promiseObject->as<PromiseObject>());
-  return RejectPromiseWithPendingError(cx, promise);
+  
+  return false;
 }
 
 JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
@@ -1419,7 +1487,6 @@ class PromisingFunctionModuleFactory {
     FeatureOptions options;
     options.isBuiltinModule = true;
     options.requireGC = true;
-    options.requireTailCalls = true;
 
     ScriptedCaller scriptedCaller;
     SharedCompileArgs compileArgs =
@@ -1672,16 +1739,35 @@ PromiseObject* CreatePromisingPromise(Instance* instance,
 
 
 
-JSObject* GetSuspendingPromiseResult(Instance* instance, PromiseObject* promise,
+JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
                                      SuspenderObject* suspender) {
   MOZ_ASSERT(SASigGetSuspendingPromiseResult.failureMode ==
              FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
   Rooted<SuspenderObject*> suspenderObject(cx, suspender);
+  RootedAnyRef resultRef(cx, AnyRef::fromCompiledCode(result));
 
-  if (promise->state() == JS::PromiseState::Rejected) {
-    RootedValue reason(cx, promise->reason());
+  SuspenderObject::ReturnType returnType =
+      suspenderObject->suspendingReturnType();
+  MOZ_ASSERT(returnType != SuspenderObject::ReturnType::Unknown);
+  Rooted<PromiseObject*> promise(
+      cx, returnType == SuspenderObject::ReturnType::Promise
+              ? &resultRef.toJSObject().as<PromiseObject>()
+              : nullptr);
+
+#  ifdef DEBUG
+  auto resetReturnType = mozilla::MakeScopeExit([&suspenderObject]() {
+    suspenderObject->setSuspendingReturnType(
+        SuspenderObject::ReturnType::Unknown);
+  });
+#  endif
+
+  if (promise ? promise->state() == JS::PromiseState::Rejected
+              : returnType == SuspenderObject::ReturnType::Exception) {
     
+    
+    RootedValue reason(
+        cx, promise ? promise->reason() : resultRef.get().toJSValue());
     cx->setPendingException(reason, ShouldCaptureStack::Maybe);
     return nullptr;
   }
@@ -1693,7 +1779,13 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, PromiseObject* promise,
   const FieldTypeVector& fields = results->typeDef().structType().fields_;
 
   if (fields.length() > 0) {
-    RootedValue jsValue(cx, promise->value());
+    MOZ_ASSERT_IF(promise, promise->state() == JS::PromiseState::Fulfilled);
+    RootedValue jsValue(cx);
+    if (promise) {
+      jsValue.set(promise->value());
+    } else {
+      jsValue.set(resultRef.get().toJSValue());
+    }
 
     
     
@@ -1744,16 +1836,35 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, PromiseObject* promise,
 
 
 
-int32_t AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
-                            PromiseObject* promise,
-                            JSFunction* continueOnSuspendable) {
-  MOZ_ASSERT(SASigSetPromisingPromiseResults.failureMode ==
-             FailureMode::FailOnNegI32);
+void* AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
+                          void* result, JSFunction* continueOnSuspendable) {
+  MOZ_ASSERT(SASigAddPromiseReactions.failureMode ==
+             FailureMode::FailOnInvalidRef);
   JSContext* cx = instance->cx();
 
+  RootedAnyRef resultRef(cx, AnyRef::fromCompiledCode(result));
+  RootedValue resultValue(cx, resultRef.get().toJSValue());
   Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  Rooted<PromiseObject*> promiseObject(cx, promise);
   RootedFunction fn(cx, continueOnSuspendable);
+
+  if (!IsPromiseValue(cx, resultValue)) {
+    suspenderObject->forwardToSuspendable();
+    suspenderObject->setSuspendingReturnType(
+        SuspenderObject::ReturnType::Value);
+    return resultRef.get().forCompiledCode();
+  }
+
+  
+  RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
+  RootedObject promiseObj(cx,
+                          PromiseResolve(cx, promiseConstructor, resultValue));
+  if (!promiseObj) {
+    return AnyRef::invalid().forCompiledCode();
+  }
+  Rooted<PromiseObject*> promiseObject(cx, &promiseObj->as<PromiseObject>());
+
+  suspenderObject->setSuspendingReturnType(
+      SuspenderObject::ReturnType::Promise);
 
   
   RootedFunction then_(
@@ -1762,7 +1873,22 @@ int32_t AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
   then_->initExtendedSlot(SUSPENDER_SLOT, ObjectValue(*suspenderObject));
   then_->initExtendedSlot(CONTINUE_ON_SUSPENDABLE_SLOT, ObjectValue(*fn));
   then_->initExtendedSlot(PROMISE_SLOT, ObjectValue(*promiseObject));
-  return JS::AddPromiseReactions(cx, promiseObject, then_, then_) ? 0 : -1;
+  if (!JS::AddPromiseReactions(cx, promiseObject, then_, then_)) {
+    return AnyRef::invalid().forCompiledCode();
+  }
+  return AnyRef::fromJSObject(*promiseObject).forCompiledCode();
+}
+
+
+
+void* ForwardExceptionToSuspended(Instance* instance,
+                                  SuspenderObject* suspender, void* exception) {
+  MOZ_ASSERT(SASigForwardExceptionToSuspended.failureMode ==
+             FailureMode::Infallible);
+
+  suspender->forwardToSuspendable();
+  suspender->setSuspendingReturnType(SuspenderObject::ReturnType::Exception);
+  return exception;
 }
 
 
