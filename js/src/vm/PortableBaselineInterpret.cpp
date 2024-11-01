@@ -2282,6 +2282,10 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
           ignoresRv = cacheIRReader.readBool();
         }
 
+        TRACE_PRINTF("isConstructing = %d needsUninitializedThis = %d\n",
+                     int(flags.isConstructing()),
+                     int(flags.needsUninitializedThis()));
+
         JSFunction* callee =
             reinterpret_cast<JSFunction*>(READ_REG(calleeId.id()));
         uint32_t argc = uint32_t(READ_REG(argcId.id()));
@@ -2296,10 +2300,6 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         }
 
         
-        if (flags.isConstructing()) {
-          TRACE_PRINTF("failing: constructing\n");
-          FAIL_IC();
-        }
         if (!flags.isSameRealm()) {
           TRACE_PRINTF("failing: not same realm\n");
           FAIL_IC();
@@ -2311,15 +2311,19 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         }
 
         
-        if (argc < callee->nargs()) {
-          TRACE_PRINTF("failing: too few args\n");
+        if (flags.isConstructing() && !callee->isConstructor()) {
+          TRACE_PRINTF("failing: constructing a non-constructor\n");
           FAIL_IC();
         }
 
+        
+        uint32_t undefArgs = (!isNative && (argc < callee->nargs()))
+                                 ? (callee->nargs() - argc)
+                                 : 0;
+
         uint32_t extra = 1 + flags.isConstructing() + isNative;
-        uint32_t totalArgs = argc + extra;
-        StackVal* sp = ctx.sp();
-        StackVal* origArgs = sp;
+        uint32_t totalArgs = argc + undefArgs + extra;
+        StackVal* origArgs = ctx.sp();
 
         {
           PUSH_IC_FRAME();
@@ -2332,19 +2336,68 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 
           
           
+          Value thisVal;
+          
+          
+          
+          
+          
+          
+          AutoKeepJitScripts keepJitScripts(cx);
+          if (flags.isConstructing() && !isNative) {
+            if (flags.needsUninitializedThis()) {
+              thisVal = MagicValue(JS_UNINITIALIZED_LEXICAL);
+            } else {
+              ReservedRooted<JSObject*> calleeObj(&ctx.state.obj0, callee);
+              ReservedRooted<JSObject*> newTargetRooted(
+                  &ctx.state.obj1, &origArgs[0].asValue().toObject());
+              ReservedRooted<Value> result(&ctx.state.value0);
+              if (!CreateThisFromIC(cx, calleeObj, newTargetRooted, &result)) {
+                ctx.error = PBIResult::Error;
+                return IC_ERROR_SENTINEL();
+              }
+              thisVal = result;
+              
+              callee = &calleeObj->as<JSFunction>();
+            }
+          }
+          
+          
           POPNNATIVE(1);
           PUSHNATIVE(StackValNative(cstub));
 
           
-          for (uint32_t i = 0; i < totalArgs; i++) {
+          
+          
+          
+          
+          
+          
+          
+          
+
+          
+          
+          
+          if (flags.isConstructing()) {
+            PUSH(origArgs[0]);
+            origArgs++;
+          }
+          for (uint32_t i = 0; i < undefArgs; i++) {
+            PUSH(StackVal(UndefinedValue()));
+          }
+          for (uint32_t i = 0; i < argc + 1 + isNative; i++) {
             PUSH(origArgs[i]);
+          }
+          if (flags.isConstructing() && !isNative) {
+            sp[0] = StackVal(thisVal);
           }
           Value* args = reinterpret_cast<Value*>(sp);
 
           if (isNative) {
             PUSHNATIVE(StackValNative(argc));
-            PUSHNATIVE(StackValNative(
-                MakeFrameDescriptorForJitCall(FrameType::BaselineStub, 0)));
+            PUSHNATIVE(
+                StackValNative(MakeFrameDescriptor(FrameType::BaselineStub)));
 
             
             
@@ -2352,7 +2405,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             PUSHNATIVE(StackValNative(nullptr));  
             PUSHNATIVE(StackValNative(ctx.stack.fp));
             ctx.stack.fp = sp;
-            PUSHNATIVE(StackValNative(uint32_t(ExitFrameType::CallNative)));
+            PUSHNATIVE(StackValNative(
+                uint32_t(flags.isConstructing() ? ExitFrameType::ConstructNative
+                                                : ExitFrameType::CallNative)));
             cx.getCx()->activation()->asJit()->setJSExitFP(
                 reinterpret_cast<uint8_t*>(ctx.stack.fp));
             cx.getCx()->portableBaselineStack().top =
@@ -2373,8 +2428,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             retValue = args[0].asRawBits();
           } else {
             TRACE_PRINTF("pushing callee: %p\n", callee);
-            PUSHNATIVE(StackValNative(
-                CalleeToToken(callee,  false)));
+            PUSHNATIVE(
+                StackValNative(CalleeToToken(callee, flags.isConstructing())));
 
             PUSHNATIVE(StackValNative(
                 MakeFrameDescriptorForJitCall(FrameType::BaselineStub, argc)));
@@ -2385,12 +2440,15 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             PBIResult result;
             Value ret;
             result = PortableBaselineInterpret<false>(
-                cx, ctx.state, ctx.stack, ctx.sp(),
+                cx, ctx.state, ctx.stack, sp,
                  nullptr, &ret, pc, isd, nullptr, nullptr,
                 PBIResult::Ok);
             if (result != PBIResult::Ok) {
               ctx.error = result;
               return IC_ERROR_SENTINEL();
+            }
+            if (flags.isConstructing() && !ret.isObject()) {
+              ret = args[0];
             }
             retValue = ret.asRawBits();
           }
