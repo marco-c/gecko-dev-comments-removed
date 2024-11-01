@@ -2276,7 +2276,6 @@ class PrepareDatastoreOp
   uint64_t mDatastoreId;
   NestedState mNestedState;
   const bool mForPreload;
-  const bool mEnableMigration;
   bool mDatabaseNotAvailable;
   
   
@@ -6564,9 +6563,6 @@ PrepareDatastoreOp::PrepareDatastoreOp(
       mNestedState(NestedState::BeforeNesting),
       mForPreload(aParams.type() ==
                   LSRequestParams::TLSRequestPreloadDatastoreParams),
-      mEnableMigration(
-          StaticPrefs::
-              dom_storage_enable_migration_from_unsupported_legacy_implementation()),
       mDatabaseNotAvailable(false),
       mInvalidated(false)
 #ifdef DEBUG
@@ -6802,10 +6798,10 @@ nsresult PrepareDatastoreOp::OpenDirectory() {
   mNestedState = NestedState::DirectoryOpenPending;
 
   quotaManager
-      ->OpenClientDirectory(
-          {mOriginMetadata, mozilla::dom::quota::Client::LS},
-           !mForPreload || mEnableMigration,
-           false, SomeRef(mPendingDirectoryLock))
+      ->OpenClientDirectory({mOriginMetadata, mozilla::dom::quota::Client::LS},
+                             true,
+                             false,
+                            SomeRef(mPendingDirectoryLock))
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr(this)](
@@ -7001,7 +6997,9 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     }
 
     bool hasDataForMigration =
-        mEnableMigration && mArchivedOriginScope->HasMatches(gArchivedOrigins);
+        StaticPrefs::
+            dom_storage_enable_migration_from_unsupported_legacy_implementation() &&
+        mArchivedOriginScope->HasMatches(gArchivedOrigins);
 
     
     
