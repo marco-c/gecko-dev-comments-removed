@@ -1281,6 +1281,31 @@ TEST_P(VideoAdapterTest, UseRequestedResolutionInsteadOfOnOutputFormatRequest) {
   }
 }
 
+TEST_P(VideoAdapterTest, RequestedResolutionIsOrientationAgnostic) {
+  
+  {
+    adapter_.OnSinkWants(
+        BuildSinkWants(Resolution{.width = 1280, .height = 720},
+                        false));
+
+    EXPECT_THAT(
+        AdaptFrameResolution( {.width = 720, .height = 1280})
+            .first,
+        Eq(Resolution{.width = 720, .height = 1280}));
+  }
+  
+  {
+    adapter_.OnSinkWants(
+        BuildSinkWants(Resolution{.width = 720, .height = 1280},
+                        false));
+
+    EXPECT_THAT(
+        AdaptFrameResolution( {.width = 1280, .height = 720})
+            .first,
+        Eq(Resolution{.width = 1280, .height = 720}));
+  }
+}
+
 class VideoAdapterWithSourceAlignmentTest : public VideoAdapterTest {
  protected:
   static constexpr int kSourceResolutionAlignment = 7;
