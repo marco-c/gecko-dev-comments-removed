@@ -63,12 +63,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   bool mSkip;
 
-  
-  bool mCoerceToString;
-
-  
-  bool mEncodeBytecode;
-
   bool mKeepStencil = false;
 
 #ifdef DEBUG
@@ -82,7 +76,8 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   template <typename Unit>
   void InternalCompile(JS::CompileOptions& aCompileOptions,
-                       JS::SourceText<Unit>& aSrcBuf, ErrorResult& aRv);
+                       JS::SourceText<Unit>& aSrcBuf, bool aEncodeBytecode,
+                       ErrorResult& aRv);
 
  public:
   
@@ -113,35 +108,22 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
   
   
-  JSExecutionContext& SetCoerceToString(bool aCoerceToString) {
-    mCoerceToString = aCoerceToString;
-    return *this;
-  }
-
-  
-  
-  
-  
-  JSExecutionContext& SetEncodeBytecode(bool aEncodeBytecode) {
-    mEncodeBytecode = aEncodeBytecode;
-    return *this;
-  }
-
-  
-  
   
   void JoinOffThread(JS::CompileOptions& aCompileOptions,
-                     ScriptLoadContext* aContext, ErrorResult& aRv);
+                     ScriptLoadContext* aContext, ErrorResult& aRv,
+                     bool aEncodeBytecode = false);
 
   
   void Compile(JS::CompileOptions& aCompileOptions,
-               JS::SourceText<char16_t>& aSrcBuf, ErrorResult& aRv);
+               JS::SourceText<char16_t>& aSrcBuf, ErrorResult& aRv,
+               bool aEncodeBytecode = false);
   void Compile(JS::CompileOptions& aCompileOptions,
-               JS::SourceText<mozilla::Utf8Unit>& aSrcBuf, ErrorResult& aRv);
+               JS::SourceText<mozilla::Utf8Unit>& aSrcBuf, ErrorResult& aRv,
+               bool aEncodeBytecode = false);
 
   
   void Compile(JS::CompileOptions& aCompileOptions, const nsAString& aScript,
-               ErrorResult& aRv);
+               ErrorResult& aRv, bool aEncodeBytecode = false);
 
   
   void Decode(JS::CompileOptions& aCompileOptions,
@@ -152,7 +134,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   void InstantiateStencil(JS::CompileOptions& aCompileOptions,
                           RefPtr<JS::Stencil>&& aStencil,
                           bool& incrementalEncodingAlreadyStarted,
-                          ErrorResult& aRv,
+                          ErrorResult& aRv, bool aEncodeBytecode = false,
                           JS::InstantiationStorage* aStorage = nullptr);
 
   
@@ -174,7 +156,11 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  void ExecScript(JS::MutableHandle<JS::Value> aRetValue, ErrorResult& aRv);
+  
+  
+  
+  void ExecScript(JS::MutableHandle<JS::Value> aRetValue, ErrorResult& aRv,
+                  bool aCoerceToString = false);
 };
 }  
 }  
