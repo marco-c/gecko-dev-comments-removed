@@ -4782,11 +4782,22 @@ void GCRuntime::debugGCSlice(const SliceBudget& budget) {
   collect(false, budget, JS::GCReason::DEBUG_GC);
 }
 
-
 void js::PrepareForDebugGC(JSRuntime* rt) {
-  if (!ZonesSelected(&rt->gc)) {
-    JS::PrepareForFullGC(rt->mainContextFromOwnThread());
+  
+  if (ZonesSelected(&rt->gc)) {
+    return;
   }
+
+  
+  
+  JSContext* cx = rt->mainContextFromOwnThread();
+  if (JS::IsIncrementalGCInProgress(cx)) {
+    JS::PrepareForIncrementalGC(cx);
+    return;
+  }
+
+  
+  JS::PrepareForFullGC(rt->mainContextFromOwnThread());
 }
 
 void GCRuntime::onOutOfMallocMemory() {
