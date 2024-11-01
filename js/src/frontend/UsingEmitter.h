@@ -74,14 +74,60 @@ class MOZ_STACK_CLASS DisposalEmitter {
   [[nodiscard]] bool emitEnd(EmitterScope& es);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS UsingEmitter {
  private:
   mozilla::Maybe<TryEmitter> tryEmitter_;
 
-  
-  
-
   bool hasAwaitUsing_ = false;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
+
+    
+    DisposableScopeBody,
+
+    
+    End
+  };
+  State state_ = State::Start;
+#endif
 
   [[nodiscard]] bool emitGetDisposeMethod(UsingHint hint);
 
