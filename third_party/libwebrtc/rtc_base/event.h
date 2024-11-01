@@ -58,6 +58,8 @@ class Event {
   
   static constexpr webrtc::TimeDelta kForever =
       webrtc::TimeDelta::PlusInfinity();
+  static constexpr webrtc::TimeDelta kDefaultWarnDuration =
+      webrtc::TimeDelta::Seconds(3);
 
   Event();
   Event(bool manual_reset, bool initially_signaled);
@@ -83,7 +85,7 @@ class Event {
   
   bool Wait(webrtc::TimeDelta give_up_after) {
     return Wait(give_up_after, give_up_after.IsPlusInfinity()
-                                   ? webrtc::TimeDelta::Seconds(3)
+                                   ? kDefaultWarnDuration
                                    : kForever);
   }
 
