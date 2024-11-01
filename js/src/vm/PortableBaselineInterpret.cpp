@@ -311,8 +311,18 @@ struct Stack {
 
 struct ICRegs {
   static const int kMaxICVals = 16;
+  
+  
+  
+  
+  
+  
+  
+  
+  
   uint64_t icVals[kMaxICVals];
   uint64_t icResult;
+  uint64_t icTags[kMaxICVals];  
   int extraArgs;
   bool spreadCall;
 };
@@ -497,10 +507,18 @@ ICInterpretOpResult MOZ_ALWAYS_INLINE ICInterpretOps(ICCtx& ctx) {
 #define FAIL_IC() return ICInterpretOpResult::NextIC;
 
 #define READ_REG(index) ctx.icregs.icVals[(index)]
-#define READ_VALUE_REG(index) Value::fromRawBits(READ_REG(index))
-#define WRITE_REG(index, value, _tag) ctx.icregs.icVals[(index)] = (value)
-#define WRITE_VALUE_REG(index, value) \
-  ctx.icregs.icVals[(index)] = (value).asRawBits()
+#define READ_VALUE_REG(index) \
+  Value::fromRawBits(ctx.icregs.icVals[(index)] | ctx.icregs.icTags[(index)])
+#define WRITE_REG(index, value, tag)                                           \
+  do {                                                                         \
+    ctx.icregs.icVals[(index)] = (value);                                      \
+    ctx.icregs.icTags[(index)] = uint64_t(JSVAL_TAG_##tag) << JSVAL_TAG_SHIFT; \
+  } while (0)
+#define WRITE_VALUE_REG(index, value)                 \
+  do {                                                \
+    ctx.icregs.icVals[(index)] = (value).asRawBits(); \
+    ctx.icregs.icTags[(index)] = 0;                   \
+  } while (0)
 
     DECLARE_CACHEOP_CASE(ReturnFromIC);
     DECLARE_CACHEOP_CASE(GuardToObject);
