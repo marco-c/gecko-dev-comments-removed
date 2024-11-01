@@ -1027,11 +1027,12 @@ add_task(async function test_bug1875119() {
   
   
   uri2 = uri2.mutate().setSpec("file:///path2").finalize();
-  Assert.throws(
-    () => uri1.equals(uri2),
-    /(NS_NOINTERFACE)|(NS_ERROR_FILE_UNRECOGNIZED_PATH)/,
-    "uri2 is in an invalid state and should throw"
-  );
+  
+  
+  
+  
+  
+  Assert.ok(!uri1.equals(uri2), "Expect uri1.equals(uri2) to be false");
 });
 
 add_task(async function test_bug1843717() {
