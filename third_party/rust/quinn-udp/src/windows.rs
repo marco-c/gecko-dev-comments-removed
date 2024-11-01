@@ -9,15 +9,12 @@ use std::{
 };
 
 use libc::{c_int, c_uint};
-#[cfg(all(feature = "direct-log", not(feature = "tracing")))]
-use log::{debug, error};
 use once_cell::sync::Lazy;
-#[cfg(feature = "tracing")]
-use tracing::{debug, error};
 use windows_sys::Win32::Networking::WinSock;
 
 use crate::{
     cmsg::{self, CMsgHdr},
+    log::{debug, error},
     log_sendmsg_error, EcnCodepoint, RecvMeta, Transmit, UdpSockRef, IO_ERROR_LOG_INTERVAL,
 };
 
@@ -64,7 +61,6 @@ impl UdpSocketState {
 
         
         if WSARECVMSG_PTR.is_none() {
-            #[cfg(any(feature = "tracing", feature = "direct-log"))]
             error!("network stack does not support WSARecvMsg function");
 
             return Err(io::Error::from(io::ErrorKind::Unsupported));
@@ -127,109 +123,32 @@ impl UdpSocketState {
         })
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn send(&self, socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
-        
-        
-        let mut ctrl_buf = cmsg::Aligned([0; CMSG_LEN]);
-        let daddr = socket2::SockAddr::from(transmit.destination);
+        match send(socket, transmit) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => Err(e),
+            Err(e) => {
+                log_sendmsg_error(&self.last_send_error, e, transmit);
 
-        let mut data = WinSock::WSABUF {
-            buf: transmit.contents.as_ptr() as *mut _,
-            len: transmit.contents.len() as _,
-        };
-
-        let ctrl = WinSock::WSABUF {
-            buf: ctrl_buf.0.as_mut_ptr(),
-            len: ctrl_buf.0.len() as _,
-        };
-
-        let mut wsa_msg = WinSock::WSAMSG {
-            name: daddr.as_ptr() as *mut _,
-            namelen: daddr.len(),
-            lpBuffers: &mut data,
-            Control: ctrl,
-            dwBufferCount: 1,
-            dwFlags: 0,
-        };
-
-        
-        let mut encoder = unsafe { cmsg::Encoder::new(&mut wsa_msg) };
-
-        if let Some(ip) = transmit.src_ip {
-            let ip = std::net::SocketAddr::new(ip, 0);
-            let ip = socket2::SockAddr::from(ip);
-            match ip.family() {
-                WinSock::AF_INET => {
-                    let src_ip = unsafe { ptr::read(ip.as_ptr() as *const WinSock::SOCKADDR_IN) };
-                    let pktinfo = WinSock::IN_PKTINFO {
-                        ipi_addr: src_ip.sin_addr,
-                        ipi_ifindex: 0,
-                    };
-                    encoder.push(WinSock::IPPROTO_IP, WinSock::IP_PKTINFO, pktinfo);
-                }
-                WinSock::AF_INET6 => {
-                    let src_ip = unsafe { ptr::read(ip.as_ptr() as *const WinSock::SOCKADDR_IN6) };
-                    let pktinfo = WinSock::IN6_PKTINFO {
-                        ipi6_addr: src_ip.sin6_addr,
-                        ipi6_ifindex: unsafe { src_ip.Anonymous.sin6_scope_id },
-                    };
-                    encoder.push(WinSock::IPPROTO_IPV6, WinSock::IPV6_PKTINFO, pktinfo);
-                }
-                _ => {
-                    return Err(io::Error::from(io::ErrorKind::InvalidInput));
-                }
+                Ok(())
             }
         }
+    }
 
-        
-        let ecn = transmit.ecn.map_or(0, |x| x as c_int);
-        
-        let is_ipv4 = transmit.destination.is_ipv4()
-            || matches!(transmit.destination.ip(), IpAddr::V6(addr) if addr.to_ipv4_mapped().is_some());
-        if is_ipv4 {
-            encoder.push(WinSock::IPPROTO_IP, WinSock::IP_ECN, ecn);
-        } else {
-            encoder.push(WinSock::IPPROTO_IPV6, WinSock::IPV6_ECN, ecn);
-        }
-
-        
-        if let Some(segment_size) = transmit.segment_size {
-            encoder.push(
-                WinSock::IPPROTO_UDP,
-                WinSock::UDP_SEND_MSG_SIZE,
-                segment_size as u32,
-            );
-        }
-
-        encoder.finish();
-
-        let mut len = 0;
-        let rc = unsafe {
-            WinSock::WSASendMsg(
-                socket.0.as_raw_socket() as usize,
-                &wsa_msg,
-                0,
-                &mut len,
-                ptr::null_mut(),
-                None,
-            )
-        };
-
-        if rc != 0 {
-            let e = io::Error::last_os_error();
-            if e.kind() == io::ErrorKind::WouldBlock {
-                return Err(e);
-            }
-
-            
-            
-            
-            
-            
-            
-            log_sendmsg_error(&self.last_send_error, e, transmit);
-        }
-        Ok(())
+    
+    pub fn try_send(&self, socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
+        send(socket, transmit)
     }
 
     pub fn recv(
@@ -361,6 +280,100 @@ impl UdpSocketState {
     }
 }
 
+fn send(socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
+    
+    
+    let mut ctrl_buf = cmsg::Aligned([0; CMSG_LEN]);
+    let daddr = socket2::SockAddr::from(transmit.destination);
+
+    let mut data = WinSock::WSABUF {
+        buf: transmit.contents.as_ptr() as *mut _,
+        len: transmit.contents.len() as _,
+    };
+
+    let ctrl = WinSock::WSABUF {
+        buf: ctrl_buf.0.as_mut_ptr(),
+        len: ctrl_buf.0.len() as _,
+    };
+
+    let mut wsa_msg = WinSock::WSAMSG {
+        name: daddr.as_ptr() as *mut _,
+        namelen: daddr.len(),
+        lpBuffers: &mut data,
+        Control: ctrl,
+        dwBufferCount: 1,
+        dwFlags: 0,
+    };
+
+    
+    let mut encoder = unsafe { cmsg::Encoder::new(&mut wsa_msg) };
+
+    if let Some(ip) = transmit.src_ip {
+        let ip = std::net::SocketAddr::new(ip, 0);
+        let ip = socket2::SockAddr::from(ip);
+        match ip.family() {
+            WinSock::AF_INET => {
+                let src_ip = unsafe { ptr::read(ip.as_ptr() as *const WinSock::SOCKADDR_IN) };
+                let pktinfo = WinSock::IN_PKTINFO {
+                    ipi_addr: src_ip.sin_addr,
+                    ipi_ifindex: 0,
+                };
+                encoder.push(WinSock::IPPROTO_IP, WinSock::IP_PKTINFO, pktinfo);
+            }
+            WinSock::AF_INET6 => {
+                let src_ip = unsafe { ptr::read(ip.as_ptr() as *const WinSock::SOCKADDR_IN6) };
+                let pktinfo = WinSock::IN6_PKTINFO {
+                    ipi6_addr: src_ip.sin6_addr,
+                    ipi6_ifindex: unsafe { src_ip.Anonymous.sin6_scope_id },
+                };
+                encoder.push(WinSock::IPPROTO_IPV6, WinSock::IPV6_PKTINFO, pktinfo);
+            }
+            _ => {
+                return Err(io::Error::from(io::ErrorKind::InvalidInput));
+            }
+        }
+    }
+
+    
+    let ecn = transmit.ecn.map_or(0, |x| x as c_int);
+    
+    let is_ipv4 = transmit.destination.is_ipv4()
+        || matches!(transmit.destination.ip(), IpAddr::V6(addr) if addr.to_ipv4_mapped().is_some());
+    if is_ipv4 {
+        encoder.push(WinSock::IPPROTO_IP, WinSock::IP_ECN, ecn);
+    } else {
+        encoder.push(WinSock::IPPROTO_IPV6, WinSock::IPV6_ECN, ecn);
+    }
+
+    
+    if let Some(segment_size) = transmit.segment_size {
+        encoder.push(
+            WinSock::IPPROTO_UDP,
+            WinSock::UDP_SEND_MSG_SIZE,
+            segment_size as u32,
+        );
+    }
+
+    encoder.finish();
+
+    let mut len = 0;
+    let rc = unsafe {
+        WinSock::WSASendMsg(
+            socket.0.as_raw_socket() as usize,
+            &wsa_msg,
+            0,
+            &mut len,
+            ptr::null_mut(),
+            None,
+        )
+    };
+
+    match rc {
+        0 => Ok(()),
+        _ => Err(io::Error::last_os_error()),
+    }
+}
+
 fn set_socket_option(
     socket: &impl AsRawSocket,
     level: i32,
@@ -392,7 +405,6 @@ const OPTION_ON: u32 = 1;
 static WSARECVMSG_PTR: Lazy<WinSock::LPFN_WSARECVMSG> = Lazy::new(|| {
     let s = unsafe { WinSock::socket(WinSock::AF_INET as _, WinSock::SOCK_DGRAM as _, 0) };
     if s == WinSock::INVALID_SOCKET {
-        #[cfg(any(feature = "tracing", feature = "direct-log"))]
         debug!(
             "ignoring WSARecvMsg function pointer due to socket creation error: {}",
             io::Error::last_os_error()
@@ -422,13 +434,11 @@ static WSARECVMSG_PTR: Lazy<WinSock::LPFN_WSARECVMSG> = Lazy::new(|| {
     };
 
     if rc == -1 {
-        #[cfg(any(feature = "tracing", feature = "direct-log"))]
         debug!(
             "ignoring WSARecvMsg function pointer due to ioctl error: {}",
             io::Error::last_os_error()
         );
     } else if len as usize != mem::size_of::<WinSock::LPFN_WSARECVMSG>() {
-        #[cfg(any(feature = "tracing", feature = "direct-log"))]
         debug!("ignoring WSARecvMsg function pointer due to pointer size mismatch");
         wsa_recvmsg_ptr = None;
     }
@@ -442,7 +452,7 @@ static WSARECVMSG_PTR: Lazy<WinSock::LPFN_WSARECVMSG> = Lazy::new(|| {
 
 static MAX_GSO_SEGMENTS: Lazy<usize> = Lazy::new(|| {
     let socket = match std::net::UdpSocket::bind("[::]:0")
-        .or_else(|_| std::net::UdpSocket::bind("127.0.0.1:0"))
+        .or_else(|_| std::net::UdpSocket::bind((Ipv4Addr::LOCALHOST, 0)))
     {
         Ok(socket) => socket,
         Err(_) => return 1,

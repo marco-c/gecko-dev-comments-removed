@@ -24,25 +24,32 @@ impl UdpSocketState {
         })
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn send(&self, socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
-        let Err(e) = socket.0.send_to(
-            transmit.contents,
-            &socket2::SockAddr::from(transmit.destination),
-        ) else {
-            return Ok(());
-        };
-        if e.kind() == io::ErrorKind::WouldBlock {
-            return Err(e);
-        }
+        match send(socket, transmit) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => Err(e),
+            Err(e) => {
+                log_sendmsg_error(&self.last_send_error, e, transmit);
 
-        
-        
-        
-        
-        
-        
-        log_sendmsg_error(&self.last_send_error, e, transmit);
-        Ok(())
+                Ok(())
+            }
+        }
+    }
+
+    
+    pub fn try_send(&self, socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
+        send(socket, transmit)
     }
 
     pub fn recv(
@@ -83,6 +90,13 @@ impl UdpSocketState {
     pub fn may_fragment(&self) -> bool {
         true
     }
+}
+
+fn send(socket: UdpSockRef<'_>, transmit: &Transmit<'_>) -> io::Result<()> {
+    socket.0.send_to(
+        transmit.contents,
+        &socket2::SockAddr::from(transmit.destination),
+    )
 }
 
 pub(crate) const BATCH_SIZE: usize = 1;
