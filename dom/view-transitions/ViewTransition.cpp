@@ -7,14 +7,51 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/WritingModes.h"
 #include "nsITimer.h"
+#include "Units.h"
+
+static inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback&, const nsRefPtrHashKey<nsAtom>&,
+    const char* aName, uint32_t aFlags = 0) {
+  
+}
 
 namespace mozilla::dom {
+
+struct CapturedElementOldState {
+  
+
+  
+  CSSSize mSize;
+  StyleTransform mTransform;
+  
+  WritingMode mWritingMode;
+  StyleBlend mMixBlendMode = StyleBlend::Normal;
+  StyleOwnedSlice<StyleFilter> mBackdropFilters;
+  StyleColorSchemeFlags mColorScheme{0};
+};
+
+
+struct ViewTransition::CapturedElement {
+  CapturedElementOldState mOldState;
+  RefPtr<Element> mNewElement;
+  
+  
+};
+
+static inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCb,
+    const UniquePtr<ViewTransition::CapturedElement>& aField, const char* aName,
+    uint32_t aFlags = 0) {
+  ImplCycleCollectionTraverse(aCb, aField->mNewElement, aName, aFlags);
+}
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ViewTransition, mDocument,
                                       mUpdateCallback,
                                       mUpdateCallbackDonePromise, mReadyPromise,
-                                      mFinishedPromise)
+                                      mFinishedPromise, mNamedElements)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ViewTransition)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY

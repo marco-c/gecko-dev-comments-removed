@@ -6,6 +6,7 @@
 #define mozilla_dom_ViewTransition_h
 
 #include "nsWrapperCache.h"
+#include "nsTHashMap.h"
 
 class nsIGlobalObject;
 class nsITimer;
@@ -55,6 +56,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   nsIGlobalObject* GetParentObject() const;
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
+  struct CapturedElement;
+
  private:
   enum class CallIfDone : bool { No, Yes };
   MOZ_CAN_RUN_SCRIPT void CallUpdateCallbackIgnoringErrors(CallIfDone);
@@ -73,6 +76,10 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   
   RefPtr<Document> mDocument;
   RefPtr<ViewTransitionUpdateCallback> mUpdateCallback;
+
+  
+  using NamedElements = nsTHashMap<RefPtr<nsAtom>, UniquePtr<CapturedElement>>;
+  NamedElements mNamedElements;
 
   
   RefPtr<Promise> mUpdateCallbackDonePromise;
