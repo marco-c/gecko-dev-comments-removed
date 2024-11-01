@@ -929,16 +929,6 @@ class nsFrameSelection final {
 
 
 
-  mozilla::Result<mozilla::PeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
-      nsDirection aDirection, ExtendSelection aExtendSelection,
-      const nsSelectionAmount aAmount, CaretMovementStyle aMovementStyle,
-      const nsPoint& aDesiredCaretPos) const;
-
-  
-
-
-
-
   template <typename RangeType>
   MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
   CreateRangeExtendedToSomewhere(nsDirection aDirection,
