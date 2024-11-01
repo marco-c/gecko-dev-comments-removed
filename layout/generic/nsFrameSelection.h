@@ -904,6 +904,31 @@ class nsFrameSelection final {
 
 
 
+
+
+
+  mozilla::Result<mozilla::PeekOffsetOptions, nsresult>
+  CreatePeekOffsetOptionsForCaretMove(mozilla::dom::Selection* aSelection,
+                                      ExtendSelection aContinueSelection,
+                                      CaretMovementStyle aMovementStyle) const;
+
+  
+
+
+
+
+
+
+
+
+  mozilla::Result<mozilla::dom::Element*, nsresult>
+  GetAncestorLimiterForCaretMove(mozilla::dom::Selection* aSelection) const;
+
+  
+
+
+
+
   mozilla::Result<mozilla::PeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
       nsDirection aDirection, ExtendSelection aContinueSelection,
       const nsSelectionAmount aAmount, CaretMovementStyle aMovementStyle,
