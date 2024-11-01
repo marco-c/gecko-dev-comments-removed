@@ -199,11 +199,11 @@ class RTC_EXPORT EncodedImage {
 
   
   
-  bool IsAtTargetQuality() const { return at_target_quality_; }
+  [[deprecated]] bool IsAtTargetQuality() const { return at_target_quality_; }
 
   
   
-  void SetAtTargetQuality(bool at_target_quality) {
+  [[deprecated]] void SetAtTargetQuality(bool at_target_quality) {
     at_target_quality_ = at_target_quality;
   }
 
