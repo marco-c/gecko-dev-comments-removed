@@ -169,9 +169,9 @@ function promisePanelOpened() {
 
   return new Promise(resolve => {
     
-    let originalOnPopupShown = DownloadsPanel.onPopupShown;
-    DownloadsPanel.onPopupShown = function () {
-      DownloadsPanel.onPopupShown = originalOnPopupShown;
+    let originalOnPopupShown = DownloadsPanel._onPopupShown;
+    DownloadsPanel._onPopupShown = function () {
+      DownloadsPanel._onPopupShown = originalOnPopupShown;
       originalOnPopupShown.apply(this, arguments);
 
       
