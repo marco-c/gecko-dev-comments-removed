@@ -12,10 +12,6 @@ const RESIST_FINGERPRINTING_ENABLED = Services.prefs.getBoolPref(
 );
 const MIDI_ENABLED = Services.prefs.getBoolPref("dom.webmidi.enabled");
 
-const EXT_PROTOCOL_ENABLED = Services.prefs.getBoolPref(
-  "security.external_protocol_requires_permission"
-);
-
 const SPEAKER_SELECTION_ENABLED = Services.prefs.getBoolPref(
   "media.setsinkid.enabled"
 );
@@ -38,6 +34,7 @@ add_task(async function testPermissionsListing() {
     "xr",
     "3rdPartyStorage",
     "3rdPartyFrameStorage",
+    "open-protocol-handler",
   ];
   if (RESIST_FINGERPRINTING_ENABLED) {
     
@@ -48,9 +45,6 @@ add_task(async function testPermissionsListing() {
     
     expectedPermissions.push("midi");
     expectedPermissions.push("midi-sysex");
-  }
-  if (EXT_PROTOCOL_ENABLED) {
-    expectedPermissions.push("open-protocol-handler");
   }
   if (SPEAKER_SELECTION_ENABLED) {
     expectedPermissions.push("speaker");
@@ -206,6 +200,7 @@ add_task(async function testExactHostMatch() {
     "geo",
     "xr",
     "persistent-storage",
+    "open-protocol-handler",
   ];
   if (RESIST_FINGERPRINTING_ENABLED) {
     
@@ -217,9 +212,6 @@ add_task(async function testExactHostMatch() {
     
     exactHostMatched.push("midi");
     exactHostMatched.push("midi-sysex");
-  }
-  if (EXT_PROTOCOL_ENABLED) {
-    exactHostMatched.push("open-protocol-handler");
   }
   if (SPEAKER_SELECTION_ENABLED) {
     exactHostMatched.push("speaker");

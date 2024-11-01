@@ -6,14 +6,21 @@
 
 
 
+const { PermissionTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PermissionTestUtils.sys.mjs"
+);
+
 const TEST_URL =
   "https://example.com/browser/" +
   "uriloader/exthandler/tests/mochitest/FTPprotocolHandler.html";
 
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["security.external_protocol_requires_permission", false]],
-  });
+  
+  PermissionTestUtils.add(
+    "https://example.com",
+    "open-protocol-handler^ftp",
+    Services.perms.ALLOW_ACTION
+  );
 
   
   let browser = gBrowser.selectedBrowser;
@@ -64,4 +71,6 @@ add_task(async function () {
 
   
   gBrowser.getTabDialogBox = _getTabDialogBox;
+  
+  Services.perms.removeAll();
 });

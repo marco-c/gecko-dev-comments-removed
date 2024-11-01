@@ -367,16 +367,6 @@ async function testCheckbox(
 
 
 
-function getDialogElementFromSubDialog(subDialog) {
-  let dialogEl = subDialog._frame.contentDocument.querySelector("dialog");
-  ok(dialogEl, "SubDialog should have dialog element");
-  return dialogEl;
-}
-
-
-
-
-
 
 function waitForHandlerURL(browser, scheme) {
   return BrowserTestUtils.browserLoaded(
@@ -475,9 +465,6 @@ registerCleanupFunction(function () {
 });
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["security.external_protocol_requires_permission", true]],
-  });
   initTestHandlers();
 });
 
@@ -659,26 +646,6 @@ add_task(async function test_permission_system_principal_have_default() {
       ),
     });
   });
-});
-
-
-
-
-
-add_task(async function test_permission_disabled() {
-  let scheme = TEST_PROTOS[0];
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["security.external_protocol_requires_permission", false]],
-  });
-
-  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
-    await testOpenProto(browser, scheme, {
-      chooserDialogOptions: { hasCheckbox: true, actionConfirm: true },
-    });
-  });
-
-  await SpecialPowers.popPrefEnv();
 });
 
 
