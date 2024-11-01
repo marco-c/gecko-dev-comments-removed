@@ -173,7 +173,7 @@ namespace streams_abstract {
 
 void ReadableStreamBYOBReaderRead(JSContext* aCx,
                                   ReadableStreamBYOBReader* aReader,
-                                  JS::Handle<JSObject*> aView, uint64_t aMin,
+                                  JS::Handle<JSObject*> aView,
                                   ReadIntoRequest* aReadIntoRequest,
                                   ErrorResult& aRv) {
   
@@ -200,15 +200,14 @@ void ReadableStreamBYOBReaderRead(JSContext* aCx,
   MOZ_ASSERT(stream->Controller()->IsByte());
   RefPtr<ReadableByteStreamController> controller(
       stream->Controller()->AsByte());
-  ReadableByteStreamControllerPullInto(aCx, controller, aView, aMin,
-                                       aReadIntoRequest, aRv);
+  ReadableByteStreamControllerPullInto(aCx, controller, aView, aReadIntoRequest,
+                                       aRv);
 }
 }  
 
 
 already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
-    const ArrayBufferView& aArray,
-    const ReadableStreamBYOBReaderReadOptions& aOptions, ErrorResult& aRv) {
+    const ArrayBufferView& aArray, ErrorResult& aRv) {
   AutoJSAPI jsapi;
   if (!jsapi.Init(GetParentObject())) {
     aRv.ThrowUnknownError("Internal error");
@@ -250,37 +249,6 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
 
   
   
-  if (aOptions.mMin == 0) {
-    aRv.ThrowTypeError(
-        "Zero is not a valid value for 'min' member of "
-        "ReadableStreamBYOBReaderReadOptions.");
-    return nullptr;
-  }
-
-  
-  if (JS_IsTypedArrayObject(view)) {
-    
-    
-    if (aOptions.mMin > JS_GetTypedArrayLength(view)) {
-      aRv.ThrowRangeError(
-          "Array length exceeded by 'min' member of "
-          "ReadableStreamBYOBReaderReadOptions.");
-      return nullptr;
-    }
-  } else {
-    
-    
-    
-    if (aOptions.mMin > JS_GetArrayBufferViewByteLength(view)) {
-      aRv.ThrowRangeError(
-          "byteLength exceeded by 'min' member of "
-          "ReadableStreamBYOBReaderReadOptions.");
-      return nullptr;
-    }
-  }
-
-  
-  
   if (!GetStream()) {
     aRv.ThrowTypeError("Reader has undefined stream");
     return nullptr;
@@ -295,8 +263,7 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
 
   
   
-  ReadableStreamBYOBReaderRead(cx, this, view, aOptions.mMin, readIntoRequest,
-                               aRv);
+  ReadableStreamBYOBReaderRead(cx, this, view, readIntoRequest, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
