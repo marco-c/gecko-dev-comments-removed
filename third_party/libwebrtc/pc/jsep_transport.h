@@ -34,6 +34,7 @@
 #include "p2p/base/transport_info.h"
 #include "pc/dtls_srtp_transport.h"
 #include "pc/dtls_transport.h"
+#include "pc/payload_type_picker.h"
 #include "pc/rtcp_mux_filter.h"
 #include "pc/rtp_transport.h"
 #include "pc/rtp_transport_internal.h"
@@ -97,7 +98,8 @@ class JsepTransport {
       std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
       std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
       std::unique_ptr<SctpTransportInternal> sctp_transport,
-      std::function<void()> rtcp_mux_active_callback);
+      std::function<void()> rtcp_mux_active_callback,
+      webrtc::PayloadTypePicker& suggester);
 
   ~JsepTransport();
 
@@ -234,6 +236,12 @@ class JsepTransport {
 
   void SetActiveResetSrtpParams(bool active_reset_srtp_params);
 
+  
+  
+  webrtc::RTCError RecordPayloadTypes(bool local,
+                                      webrtc::SdpType type,
+                                      const ContentInfo& content);
+
  private:
   bool SetRtcpMux(bool enable, webrtc::SdpType type, ContentSource source);
 
@@ -313,6 +321,13 @@ class JsepTransport {
   
   
   std::function<void()> rtcp_mux_active_callback_;
+
+  
+  webrtc::PayloadTypeRecorder remote_payload_types_
+      RTC_GUARDED_BY(network_thread_);
+  
+  webrtc::PayloadTypeRecorder local_payload_types_
+      RTC_GUARDED_BY(network_thread_);
 };
 
 }  

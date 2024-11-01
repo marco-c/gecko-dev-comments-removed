@@ -127,6 +127,9 @@ class PeerConnectionSdpMethods {
   virtual const FieldTrialsView& trials() const = 0;
 
   virtual void ClearStatsCache() = 0;
+  
+  
+  virtual PayloadTypePicker& payload_type_picker() = 0;
 };
 
 

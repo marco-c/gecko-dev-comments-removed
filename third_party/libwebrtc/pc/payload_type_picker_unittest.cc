@@ -46,6 +46,23 @@ TEST(PayloadTypePicker, StoreAndRecall) {
   EXPECT_FALSE(recorder.LookupCodec(not_a_payload_type).ok());
 }
 
+TEST(PayloadTypePicker, ModifyingPtIsIgnored) {
+  
+  
+  
+  PayloadTypePicker picker;
+  PayloadTypeRecorder recorder(picker);
+  const PayloadType a_payload_type(123);
+  cricket::Codec a_codec = cricket::CreateVideoCodec(0, "vp8");
+  cricket::Codec b_codec = cricket::CreateVideoCodec(0, "vp9");
+  recorder.AddMapping(a_payload_type, a_codec);
+  auto error = recorder.AddMapping(a_payload_type, b_codec);
+  EXPECT_TRUE(error.ok());
+  auto result = recorder.LookupCodec(a_payload_type);
+  
+  EXPECT_EQ(result.value(), b_codec);
+}
+
 TEST(PayloadTypePicker, RollbackAndCommit) {
   PayloadTypePicker picker;
   PayloadTypeRecorder recorder(picker);

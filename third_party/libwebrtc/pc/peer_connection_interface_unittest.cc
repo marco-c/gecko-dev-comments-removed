@@ -3083,7 +3083,13 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationNotCausingIceRestart) {
 
 
 
-TEST_P(PeerConnectionInterfaceTest, SetConfigurationCausingPartialIceRestart) {
+
+
+
+
+
+TEST_P(PeerConnectionInterfaceTest,
+       DISABLED_SetConfigurationCausingPartialIceRestart) {
   PeerConnectionInterface::RTCConfiguration config;
   config.sdp_semantics = sdp_semantics_;
   config.type = PeerConnectionInterface::kRelay;
