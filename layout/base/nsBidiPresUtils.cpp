@@ -1971,6 +1971,12 @@ void nsBidiPresUtils::RemoveBidiContinuation(BidiParagraphData* aBpd,
                                              nsIFrame* aFrame,
                                              int32_t aFirstIndex,
                                              int32_t aLastIndex) {
+  
+  
+  if (aLastIndex == aFirstIndex + 1 &&
+      aFrame->GetNextInFlow() == aFrame->GetNextContinuation()) {
+    return;
+  }
   FrameBidiData bidiData = aFrame->GetBidiData();
   bidiData.precedingControl = kBidiLevelNone;
   for (int32_t index = aFirstIndex + 1; index <= aLastIndex; index++) {
