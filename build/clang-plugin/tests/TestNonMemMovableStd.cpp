@@ -1,4 +1,5 @@
 #define MOZ_NEEDS_MEMMOVABLE_TYPE __attribute__((annotate("moz_needs_memmovable_type")))
+#define MOZ_RUNINIT  __attribute__((annotate("moz_global_var")))
 
 template<class T>
 class MOZ_NEEDS_MEMMOVABLE_TYPE Mover { T mForceInst; }; 
@@ -50,19 +51,19 @@ struct has_trivial_move {
 
 class HasString { std::string m; }; 
 
-static Mover<std::string> bad; 
-static Mover<HasString> bad_mem; 
+MOZ_RUNINIT  static Mover<std::string> bad; 
+MOZ_RUNINIT  static Mover<HasString> bad_mem; 
 static Mover<std::pair<bool, int>> good;
-static Mover<std::pair<bool, std::string>> not_good; 
+MOZ_RUNINIT  static Mover<std::pair<bool, std::string>> not_good; 
 
-static Mover<std::has_nontrivial_dtor> nontrivial_dtor; 
+MOZ_RUNINIT  static Mover<std::has_nontrivial_dtor> nontrivial_dtor; 
 static Mover<std::has_nontrivial_copy> nontrivial_copy; 
 static Mover<std::has_nontrivial_move> nontrivial_move; 
 static Mover<std::has_trivial_dtor> trivial_dtor;
 static Mover<std::has_trivial_copy> trivial_copy;
 static Mover<std::has_trivial_move> trivial_move;
 
-static Mover<std::pair<bool, std::has_nontrivial_dtor>> pair_nontrivial_dtor; 
+MOZ_RUNINIT  static Mover<std::pair<bool, std::has_nontrivial_dtor>> pair_nontrivial_dtor; 
 static Mover<std::pair<bool, std::has_nontrivial_copy>> pair_nontrivial_copy; 
 static Mover<std::pair<bool, std::has_nontrivial_move>> pair_nontrivial_move; 
 static Mover<std::pair<bool, std::has_trivial_dtor>> pair_trivial_dtor;

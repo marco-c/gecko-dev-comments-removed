@@ -18,6 +18,31 @@ namespace ast_matchers {
 
 
 
+AST_MATCHER(VarDecl, hasMozGlobalType) {
+  if(auto * TD = Node.getType().getTypePtr()->getAsTagDecl()) {
+    if(hasCustomAttribute<moz_global_class>(TD))
+      return true;
+  }
+  return false;
+}
+
+
+AST_MATCHER(VarDecl, isMozGlobal) {
+  return hasCustomAttribute<moz_global_var>(&Node);
+}
+
+
+AST_MATCHER(VarDecl, isMozGenerated) {
+  return hasCustomAttribute<moz_generated>(&Node);
+}
+
+
+AST_MATCHER(VarDecl, hasConstInitAttr) {
+  return Node.hasAttr<ConstInitAttr>();
+}
+
+
+
 AST_MATCHER(FunctionDecl, heapAllocator) {
   return hasCustomAttribute<moz_heap_allocator>(&Node);
 }
@@ -69,6 +94,17 @@ AST_MATCHER(DeclaratorDecl, isNotSpiderMonkey) {
   return Path.find("js") == std::string::npos &&
          Path.find("xpc") == std::string::npos &&
          Path.find("XPC") == std::string::npos;
+}
+
+
+
+AST_MATCHER(VarDecl, hasConstantInitializer) {
+  if(Node.hasInit())
+    return Node.getInit()->isConstantInitializer(
+                  Finder->getASTContext(),
+                  Node.getType()->isReferenceType());
+  else
+    return Node.getType().isTrivialType(Finder->getASTContext());
 }
 
 
