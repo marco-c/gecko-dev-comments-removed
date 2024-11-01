@@ -2144,12 +2144,8 @@ nsresult nsStandardURL::EqualsInternal(
 
     rv = EnsureFile();
     nsresult rv2 = other->EnsureFile();
-
     
-    
-    
-    
-    if (rv == NS_ERROR_NO_INTERFACE || rv2 == NS_ERROR_NO_INTERFACE) {
+    if (rv == NS_ERROR_NO_INTERFACE && rv == rv2) {
       return NS_OK;
     }
 
@@ -2159,7 +2155,6 @@ nsresult nsStandardURL::EqualsInternal(
       return rv;
     }
     NS_ASSERTION(mFile, "EnsureFile() lied!");
-
     rv = rv2;
     if (NS_FAILED(rv)) {
       LOG(
