@@ -146,7 +146,7 @@ class OptimizationInfo {
     eliminateRedundantChecks_ = false;
     eliminateRedundantShapeGuards_ = false;
     eliminateRedundantGCBarriers_ = false;
-    scalarReplacement_ = false;  
+    scalarReplacement_ = true;
     sink_ = false;
   }
 

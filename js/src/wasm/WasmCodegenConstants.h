@@ -30,6 +30,11 @@ static const unsigned MaxResultsForJitExit = 1;
 static const unsigned MaxResultsForJitInlineCall = MaxResultsForJitEntry;
 
 
+
+static const unsigned MaxFieldsScalarReplacementStructs = 10;
+
+
+
 static const unsigned MaxRegisterResults = 1;
 
 
