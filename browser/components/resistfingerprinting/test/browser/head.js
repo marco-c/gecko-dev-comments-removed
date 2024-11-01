@@ -309,16 +309,25 @@ async function calcMaximumAvailSize(aChromeWidth, aChromeHeight) {
   
   
   
-  let availContentWidth = Math.min(1000, availWidth - chromeUIWidth);
+  
+  let maxInnerWidth = Services.prefs.getIntPref("privacy.window.maxInnerWidth");
+  let maxInnerHeight = Services.prefs.getIntPref(
+    "privacy.window.maxInnerHeight"
+  );
+
+  let availContentWidth = Math.min(maxInnerWidth, availWidth - chromeUIWidth);
   let availContentHeight;
 
   
   
   
   if (AppConstants.MOZ_WIDGET_GTK) {
-    availContentHeight = Math.min(1000, -40 + availHeight - chromeUIHeight);
+    availContentHeight = Math.min(
+      maxInnerHeight,
+      -40 + availHeight - chromeUIHeight
+    );
   } else {
-    availContentHeight = Math.min(1000, availHeight - chromeUIHeight);
+    availContentHeight = Math.min(maxInnerHeight, availHeight - chromeUIHeight);
   }
 
   

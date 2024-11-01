@@ -53,7 +53,7 @@ function checkForDefaultSetting(
   aRealHeight
 ) {
   
-  let targetWidth = aRealWidth - 2 * RFPHelper.steppedRange(aRealWidth);
+  let targetWidth = aRealWidth - 2 * RFPHelper.steppedRange(aRealWidth, true);
   let targetHeight = aRealHeight - 2 * RFPHelper.steppedRange(aRealHeight);
 
   
