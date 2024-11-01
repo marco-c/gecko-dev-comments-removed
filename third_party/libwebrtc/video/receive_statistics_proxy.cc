@@ -312,6 +312,17 @@ void ReceiveStatisticsProxy::UpdateHistograms(
                  << " " << *height << '\n';
     }
 
+    absl::optional<double> corruption_score = stats.corruption_score.GetMean();
+    if (corruption_score) {
+      
+      RTC_HISTOGRAM_COUNTS_SPARSE(uma_prefix + ".CorruptionLikelihoodPermille",
+                                  static_cast<int>(*corruption_score * 1000),
+                                  0, 1000,
+                                  500);
+      log_stream << uma_prefix << ".CorruptionLikelihoodPermille" << " "
+                 << static_cast<int>(*corruption_score * 1000) << '\n';
+    }
+
     if (content_type != VideoContentType::UNSPECIFIED) {
       
       
@@ -844,6 +855,25 @@ void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms) {
   avg_rtt_ms_ = avg_rtt_ms;
 }
 
+void ReceiveStatisticsProxy::OnCorruptionScore(double corruption_score,
+                                               VideoContentType content_type) {
+  RTC_DCHECK_RUN_ON(&main_thread_);
+
+  if (!stats_.corruption_score_sum.has_value()) {
+    RTC_DCHECK(!stats_.corruption_score_squared_sum.has_value());
+    RTC_DCHECK_EQ(stats_.corruption_score_count, 0);
+    stats_.corruption_score_sum = 0;
+    stats_.corruption_score_squared_sum = 0;
+  }
+  *stats_.corruption_score_sum += corruption_score;
+  *stats_.corruption_score_squared_sum += corruption_score * corruption_score;
+  ++stats_.corruption_score_count;
+
+  ContentSpecificStats* content_specific_stats =
+      &content_specific_stats_[content_type];
+  content_specific_stats->corruption_score.AddSample(corruption_score);
+}
+
 void ReceiveStatisticsProxy::DecoderThreadStarting() {
   RTC_DCHECK_RUN_ON(&main_thread_);
 }
@@ -870,6 +900,7 @@ void ReceiveStatisticsProxy::ContentSpecificStats::Add(
   frame_counts.key_frames += other.frame_counts.key_frames;
   frame_counts.delta_frames += other.frame_counts.delta_frames;
   interframe_delay_percentiles.Add(other.interframe_delay_percentiles);
+  corruption_score.MergeStatistics(other.corruption_score);
 }
 
 }  

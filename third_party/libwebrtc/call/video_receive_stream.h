@@ -132,6 +132,19 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     int64_t first_frame_received_to_decoded_ms = -1;
     absl::optional<uint64_t> qp_sum;
 
+    
+    
+    
+    
+    
+    
+    
+    absl::optional<double> corruption_score_sum;
+    absl::optional<double> corruption_score_squared_sum;
+    
+    
+    uint32_t corruption_score_count = 0;
+
     int current_payload_type = -1;
 
     int total_bitrate_bps = 0;
