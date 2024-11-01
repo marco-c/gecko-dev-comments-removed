@@ -597,11 +597,14 @@ void nsAccessibilityService::NotifyOfPossibleBoundsChange(
   if (IPCAccessibilityActive()) {
     DocAccessible* document = aPresShell->GetDocAccessible();
     if (document) {
-      
-      
-      LocalAccessible* accessible = aContent == document->GetContent()
-                                        ? document
-                                        : document->GetAccessible(aContent);
+      LocalAccessible* accessible = document->GetAccessible(aContent);
+      if (!accessible && aContent == document->GetContent()) {
+        
+        
+        
+        accessible = document;
+      }
+
       if (accessible) {
         document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
       }
@@ -616,11 +619,14 @@ void nsAccessibilityService::NotifyOfComputedStyleChange(
     return;
   }
 
-  
-  
-  LocalAccessible* accessible = aContent == document->GetContent()
-                                    ? document
-                                    : document->GetAccessible(aContent);
+  LocalAccessible* accessible = document->GetAccessible(aContent);
+  if (!accessible && aContent == document->GetContent()) {
+    
+    
+    
+    accessible = document;
+  }
+
   if (!accessible && aContent && aContent->HasChildren() &&
       !aContent->IsInNativeAnonymousSubtree()) {
     
