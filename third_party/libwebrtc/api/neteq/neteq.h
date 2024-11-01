@@ -298,8 +298,11 @@ class NetEq {
 
   
   
-  virtual absl::optional<DecoderFormat> GetDecoderFormat(
-      int payload_type) const = 0;
+  [[deprecated(
+      "Use GetCurrentDecoderFormat")]] virtual absl::optional<DecoderFormat>
+  GetDecoderFormat(int payload_type) const {
+    return absl::nullopt;
+  }
 
   
   virtual absl::optional<DecoderFormat> GetCurrentDecoderFormat() const {
