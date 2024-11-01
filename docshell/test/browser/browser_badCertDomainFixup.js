@@ -7,39 +7,70 @@
 
 
 
-async function verifyErrorPage(errorPageURL) {
+async function verifyErrorPage(errorPageURL, feltPrivacy = false) {
   let certErrorLoaded = BrowserTestUtils.waitForErrorPage(
     gBrowser.selectedBrowser
   );
   BrowserTestUtils.startLoadingURIString(gBrowser, errorPageURL);
   await certErrorLoaded;
 
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
-    let ec;
-    await ContentTaskUtils.waitForCondition(() => {
-      ec = content.document.getElementById("errorCode");
-      return ec.textContent;
-    }, "Error code has been set inside the advanced button panel");
-    is(
-      ec.textContent,
-      "SSL_ERROR_BAD_CERT_DOMAIN",
-      "Correct error code is shown"
-    );
-  });
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [feltPrivacy],
+    async isFeltPrivacy => {
+      let ec;
+      if (isFeltPrivacy) {
+        let netErrorCard =
+          content.document.querySelector("net-error-card").wrappedJSObject;
+        await netErrorCard.getUpdateComplete();
+        netErrorCard.advancedButton.click();
+        await ContentTaskUtils.waitForCondition(() => {
+          return (ec = netErrorCard.errorCode);
+        }, "Error code has been set inside the net-error-card advanced panel");
+
+        is(
+          ec.textContent.split(" ").at(-1),
+          "SSL_ERROR_BAD_CERT_DOMAIN",
+          "Correct error code is shown"
+        );
+      } else {
+        await ContentTaskUtils.waitForCondition(() => {
+          ec = content.document.getElementById("errorCode");
+          return ec.textContent;
+        }, "Error code has been set inside the advanced button panel");
+        is(
+          ec.textContent,
+          "SSL_ERROR_BAD_CERT_DOMAIN",
+          "Correct error code is shown"
+        );
+      }
+    }
+  );
 }
 
 
 add_task(async function testNoFixupDisabledByPref() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["security.bad_cert_domain_error.url_fix_enabled", false]],
-  });
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
+  for (let feltPrivacyEnabled of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["security.bad_cert_domain_error.url_fix_enabled", false],
+        ["security.certerrors.felt-privacy-v1", feltPrivacyEnabled],
+      ],
+    });
+    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
-  await verifyErrorPage("https://badcertdomain.example.com");
-  await verifyErrorPage("https://www.badcertdomain2.example.com");
+    await verifyErrorPage(
+      "https://badcertdomain.example.com",
+      feltPrivacyEnabled
+    );
+    await verifyErrorPage(
+      "https://www.badcertdomain2.example.com",
+      feltPrivacyEnabled
+    );
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await SpecialPowers.popPrefEnv();
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 
@@ -63,22 +94,35 @@ add_task(async function testAddPrefixForBadCertDomain() {
 
 
 add_task(async function testNoFixupCases() {
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
+  for (let feltPrivacyEnabled of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["security.certerrors.felt-privacy-v1", feltPrivacyEnabled]],
+    });
+    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
-  
-  await verifyErrorPage("https://mismatch.badcertdomain.example.com");
+    
+    await verifyErrorPage(
+      "https://mismatch.badcertdomain.example.com",
+      feltPrivacyEnabled
+    );
 
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["network.proxy.allow_hijacking_localhost", true]],
-  });
-  await verifyErrorPage("https://127.0.0.3:433");
-  await SpecialPowers.popPrefEnv();
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [["network.proxy.allow_hijacking_localhost", true]],
+    });
+    await verifyErrorPage("https://127.0.0.3:433", feltPrivacyEnabled);
+    await SpecialPowers.popPrefEnv();
 
-  
-  await verifyErrorPage("https://badcertdomain.example.com:82");
+    
+    await verifyErrorPage(
+      "https://badcertdomain.example.com:82",
+      feltPrivacyEnabled
+    );
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 
