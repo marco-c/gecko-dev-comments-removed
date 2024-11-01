@@ -448,6 +448,12 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
 
+  bool IsKeyboardHiddenOrResizesContentMode() const;
+
+  
+
+
+
   nscoord GetBimodalDynamicToolbarHeightInAppUnits() const;
 
   
