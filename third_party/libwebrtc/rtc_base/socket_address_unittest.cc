@@ -8,14 +8,14 @@
 
 
 
-#if defined(WEBRTC_POSIX)
-#include <netinet/in.h>  
-#endif
+#include "rtc_base/socket_address.h"
 
 #include <string.h>
 
+#include <string>
+
 #include "rtc_base/ip_address.h"
-#include "rtc_base/socket_address.h"
+#include "rtc_base/net_helpers.h"
 #include "test/gtest.h"
 
 namespace rtc {

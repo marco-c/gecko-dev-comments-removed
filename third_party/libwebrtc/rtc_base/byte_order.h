@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <winsock2.h>
 #else
-#include <netinet/in.h>
+#include <netinet/in.h>  
 #endif  
 
 #if defined(WEBRTC_ARCH_LITTLE_ENDIAN)
