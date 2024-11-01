@@ -322,6 +322,13 @@ class LookAndFeel {
     FullKeyboardAccess,
 
     
+    
+    
+    
+    
+    PointingDeviceKinds,
+
+    
 
 
     End,
@@ -388,6 +395,13 @@ class LookAndFeel {
   };
 
   using FontID = mozilla::StyleSystemFont;
+
+  enum class PointingDeviceKinds : uint8_t {
+    None = 0,
+    Mouse = 1 << 0,
+    Touch = 1 << 1,
+    Pen = 1 << 2,
+  };
 
   static ColorScheme SystemColorScheme() {
     return GetInt(IntID::SystemUsesDarkTheme) ? ColorScheme::Dark
@@ -573,6 +587,8 @@ class LookAndFeel {
   
   static bool sGlobalThemeChanged;
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LookAndFeel::PointingDeviceKinds);
 
 }  
 

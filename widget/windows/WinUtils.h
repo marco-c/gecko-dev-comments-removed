@@ -463,9 +463,11 @@ class WinUtils {
   static PointerCapabilities GetPrimaryPointerCapabilities();
   
   static PointerCapabilities GetAllPointerCapabilities();
+
   
-  
-  static void GetPointerExplanation(nsAString* aExplanation);
+  static bool SystemHasMouse();
+  static bool SystemHasTouch();
+  static bool SystemHasPen();
 
   
 
