@@ -79,6 +79,8 @@ struct RTC_EXPORT Codec {
     kFlexfec,
     kRtx,
   };
+  
+  static const int kIdNotSet = -1;
 
   Type type;
   int id;
