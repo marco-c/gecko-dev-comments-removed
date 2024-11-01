@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/sequence_checker.h"
@@ -69,6 +70,25 @@ ModuleRtpRtcpImpl2::RtpSenderContext::RtpSenderContext(
           &packet_history,
           config.paced_sender ? config.paced_sender : &non_paced_sender) {}
 
+
+
+
+ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Environment& env,
+                                       const Configuration& configuration)
+    : ModuleRtpRtcpImpl2([&] {
+        
+        
+        RTC_DCHECK(configuration.field_trials == nullptr);
+        RTC_DCHECK(configuration.clock == nullptr);
+        RTC_DCHECK(configuration.event_log == nullptr);
+
+        Configuration config = configuration;
+        config.field_trials = &env.field_trials();
+        config.clock = &env.clock();
+        config.event_log = &env.event_log();
+        return config;
+      }()) {}
+
 ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
     : worker_queue_(TaskQueueBase::Current()),
       rtcp_sender_(AddRtcpSendEvaluationCallback(
@@ -118,7 +138,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> ModuleRtpRtcpImpl2::Create(
     const Configuration& configuration) {
   RTC_DCHECK(configuration.clock);
   RTC_DCHECK(TaskQueueBase::Current());
-  return std::make_unique<ModuleRtpRtcpImpl2>(configuration);
+  
+  return absl::WrapUnique(new ModuleRtpRtcpImpl2(configuration));
 }
 
 void ModuleRtpRtcpImpl2::SetRtxSendStatus(int mode) {
