@@ -733,7 +733,7 @@ nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
 
   uint32_t reason = nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
 
-  SanitizeFileName(fileName, VALIDATE_SANITIZE_ONLY);
+  SanitizeFileName(fileName, 0);
 
   RefPtr<nsExternalAppHandler> handler =
       new nsExternalAppHandler(nullptr, u""_ns, aContentContext, aWindowContext,
@@ -3335,12 +3335,14 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
                       aMimeType.EqualsLiteral(BINARY_OCTET_STREAM) ||
                       aMimeType.EqualsLiteral("application/x-msdownload");
 
-  bool urlIsFile = !!aURI && aURI->SchemeIs("file");
+  
+  
+  
+  
+  
+  fileName.Trim(".");
 
-  
-  
-  
-  fileName.Trim(".", true, false);
+  bool urlIsFile = !!aURI && aURI->SchemeIs("file");
 
   
   
@@ -3535,14 +3537,6 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   nsAutoString fileName(aFileName);
 
   
-  
-  if (aFlags & VALIDATE_SANITIZE_ONLY) {
-    fileName.Trim(".", true, false);
-  }
-
-  MOZ_ASSERT(fileName.IsEmpty() || fileName.CharAt(0) != '.');
-
-  
   fileName.ReplaceChar(u"" KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS "%",
                        u'_');
   fileName.StripChar(char16_t(0));
@@ -3624,21 +3618,25 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
       }
     } else {
       lastWasWhitespace = false;
-
-      
-      
       if (nextChar == '.' || nextChar == u'\u180e') {
+        
+        
+        
+        
         if (outFileName.IsEmpty()) {
+          continue;
+        }
+      } else {
+        if (unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_FORMAT) {
+          
           nextChar = '_';
         }
-      } else if (unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_FORMAT) {
-        
-        nextChar = '_';
-      }
 
-      
-      lastNonTrimmable = int32_t(outFileName.Length()) +
-                         (NS_IS_HIGH_SURROGATE(H_SURROGATE(nextChar)) ? 2 : 1);
+        
+        lastNonTrimmable =
+            int32_t(outFileName.Length()) +
+            (NS_IS_HIGH_SURROGATE(H_SURROGATE(nextChar)) ? 2 : 1);
+      }
     }
 
     if (maxBytes) {
@@ -3720,14 +3718,6 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
     
     
     outFileName.Truncate(lastNonTrimmable);
-  }
-
-  
-  
-  for (int32_t pos = outFileName.Length() - 1;
-       pos >= 0 && (outFileName[pos] == u'.' || outFileName[pos] == u'\u180e');
-       pos--) {
-    outFileName.Replace(pos, 1, '_');
   }
 
   if (!(aFlags & VALIDATE_ALLOW_DIRECTORY_NAMES)) {
