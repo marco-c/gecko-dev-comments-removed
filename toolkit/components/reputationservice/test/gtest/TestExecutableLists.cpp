@@ -121,6 +121,7 @@ static const char* const kTestFileExtensions[] = {
     ".js",                 
     ".jse",                
     ".ksh",                
+    ".library-ms",         
     ".lnk",                
     ".local",              
     ".mad",                

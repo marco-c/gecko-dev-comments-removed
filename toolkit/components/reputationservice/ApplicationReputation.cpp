@@ -291,6 +291,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".ksh",  
     
     
+    
     ".local",  
     
     

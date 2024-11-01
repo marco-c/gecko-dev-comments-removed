@@ -72,6 +72,7 @@ const char* const sExecutableExts[] = {
 #endif
   ".js",
   ".jse",
+  ".library-ms",  
   ".lnk",
   ".mad",         
   ".maf",         
