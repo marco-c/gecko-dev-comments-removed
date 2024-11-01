@@ -6799,6 +6799,7 @@ nsresult PrepareDatastoreOp::OpenDirectory() {
 
   quotaManager
       ->OpenClientDirectory({mOriginMetadata, mozilla::dom::quota::Client::LS},
+                             true,
                              false,
                             SomeRef(mPendingDirectoryLock))
       ->Then(
