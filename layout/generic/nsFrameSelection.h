@@ -895,7 +895,7 @@ class nsFrameSelection final {
   enum CaretMovementStyle { eLogical, eVisual, eUsePrefStyle };
   enum class ExtendSelection : bool { No, Yes };
   MOZ_CAN_RUN_SCRIPT nsresult MoveCaret(nsDirection aDirection,
-                                        ExtendSelection aContinueSelection,
+                                        ExtendSelection aExtendSelection,
                                         nsSelectionAmount aAmount,
                                         CaretMovementStyle aMovementStyle);
 
@@ -909,7 +909,7 @@ class nsFrameSelection final {
 
   mozilla::Result<mozilla::PeekOffsetOptions, nsresult>
   CreatePeekOffsetOptionsForCaretMove(mozilla::dom::Selection* aSelection,
-                                      ExtendSelection aContinueSelection,
+                                      ExtendSelection aExtendSelection,
                                       CaretMovementStyle aMovementStyle) const;
 
   
@@ -930,7 +930,7 @@ class nsFrameSelection final {
 
 
   mozilla::Result<mozilla::PeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
-      nsDirection aDirection, ExtendSelection aContinueSelection,
+      nsDirection aDirection, ExtendSelection aExtendSelection,
       const nsSelectionAmount aAmount, CaretMovementStyle aMovementStyle,
       const nsPoint& aDesiredCaretPos) const;
 
@@ -1109,7 +1109,7 @@ class nsFrameSelection final {
     CaretAssociationHint mHint = CaretAssociationHint::Before;
     mozilla::intl::BidiEmbeddingLevel mBidiLevel = BIDI_LEVEL_UNDEFINED;
 
-    bool IsVisualMovement(ExtendSelection aContinueSelection,
+    bool IsVisualMovement(ExtendSelection aExtendSelection,
                           CaretMovementStyle aMovementStyle) const;
   };
 
