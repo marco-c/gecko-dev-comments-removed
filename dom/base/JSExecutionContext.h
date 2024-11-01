@@ -89,9 +89,8 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   void JoinOffThread(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-                     ScriptLoadContext* aContext,
-                     JS::MutableHandle<JSScript*> aScript, ErrorResult& aRv,
-                     bool aEncodeBytecode = false);
+                     ScriptLoadContext* aContext, RefPtr<JS::Stencil>& aStencil,
+                     JS::InstantiationStorage& aStorage, ErrorResult& aRv);
 
   
   void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
