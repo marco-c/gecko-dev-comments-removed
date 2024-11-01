@@ -35,13 +35,7 @@ class ScriptLoadContext;
 nsresult EvaluationExceptionToNSResult(ErrorResult& aRv);
 
 class MOZ_STACK_CLASS JSExecutionContext final {
-  
-  mozilla::AutoProfilerLabel mAutoProfilerLabel;
-
   JSContext* mCx;
-
-  
-  JSAutoRealm mRealm;
 
   
   JS::Rooted<JS::Value> mRetValue;
