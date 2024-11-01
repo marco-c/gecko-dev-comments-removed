@@ -530,6 +530,11 @@ void ServiceWorkerRegistration::MaybeScheduleUpdateFound(
                        ? aInstallingDescriptor.ref().Id()
                        : kInvalidUpdateFoundId;
 
+  
+  
+  
+  
+  
   if (mScheduledUpdateFoundId != kInvalidUpdateFoundId) {
     if (mScheduledUpdateFoundId == newId) {
       return;
@@ -546,22 +551,6 @@ void ServiceWorkerRegistration::MaybeScheduleUpdateFound(
   }
 
   mScheduledUpdateFoundId = newId;
-}
-
-void ServiceWorkerRegistration::MaybeDispatchUpdateFoundRunnable() {
-  if (mScheduledUpdateFoundId == kInvalidUpdateFoundId) {
-    return;
-  }
-
-  nsIGlobalObject* global = GetParentObject();
-  NS_ENSURE_TRUE_VOID(global);
-
-  nsCOMPtr<nsIRunnable> r = NewCancelableRunnableMethod(
-      "ServiceWorkerRegistration::MaybeDispatchUpdateFound", this,
-      &ServiceWorkerRegistration::MaybeDispatchUpdateFound);
-
-  Unused << global->SerialEventTarget()->Dispatch(r.forget(),
-                                                  NS_DISPATCH_NORMAL);
 }
 
 void ServiceWorkerRegistration::MaybeDispatchUpdateFound() {
