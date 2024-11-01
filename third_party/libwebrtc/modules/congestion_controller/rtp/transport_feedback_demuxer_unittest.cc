@@ -57,8 +57,9 @@ TEST(TransportFeedbackDemuxerTest, ObserverSanity) {
   demuxer.AddPacket(CreatePacket(kSsrc, kRtpStartSeq + 1,
                                  kTransportStartSeq + 1,
                                  false));
-  demuxer.AddPacket(CreatePacket(
-      kSsrc, kRtpStartSeq + 2, kTransportStartSeq + 2, true));
+  demuxer.AddPacket(CreatePacket(kSsrc, kRtpStartSeq + 2,
+                                 kTransportStartSeq + 2,
+                                 true));
 
   rtcp::TransportFeedback feedback;
   feedback.SetBase(kTransportStartSeq, Timestamp::Millis(1));
