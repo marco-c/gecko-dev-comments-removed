@@ -6,6 +6,7 @@
 
 
 
+
 #include "logging/rtc_event_log/events/rtc_event_field_encoding.h"
 
 #include <cstddef>
@@ -592,21 +593,21 @@ TEST_F(RtcEventFieldTest, Increasing) {
   ParseEventHeader(s);
   ParseAndVerifyTimestamps();
   ParseAndVerifyField(RtcTestEvent::bool_params, bool_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::signed32_params, signed32_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::unsigned32_params, unsigned32_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::signed64_params, signed64_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::unsigned64_params, unsigned64_values,
-                       1);
+                      1);
   ParseAndVerifyOptionalField(RtcTestEvent::optional32_params,
-                              optional32_values,  1);
+                              optional32_values, 1);
   ParseAndVerifyOptionalField(RtcTestEvent::optional64_params,
-                              optional64_values,  1);
+                              optional64_values, 1);
   ParseAndVerifyField(RtcTestEvent::wrapping21_params, wrapping21_values,
-                       1);
+                      1);
   ParseAndVerifyStringField(RtcTestEvent::string_params, string_values);
   EXPECT_EQ(parser_.RemainingBytes(), 0u);
 }
@@ -663,21 +664,21 @@ TEST_F(RtcEventFieldTest, Decreasing) {
   ParseEventHeader(s);
   ParseAndVerifyTimestamps();
   ParseAndVerifyField(RtcTestEvent::bool_params, bool_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::signed32_params, signed32_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::unsigned32_params, unsigned32_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::signed64_params, signed64_values,
-                       1);
+                      1);
   ParseAndVerifyField(RtcTestEvent::unsigned64_params, unsigned64_values,
-                       1);
+                      1);
   ParseAndVerifyOptionalField(RtcTestEvent::optional32_params,
-                              optional32_values,  1);
+                              optional32_values, 1);
   ParseAndVerifyOptionalField(RtcTestEvent::optional64_params,
-                              optional64_values,  1);
+                              optional64_values, 1);
   ParseAndVerifyField(RtcTestEvent::wrapping21_params, wrapping21_values,
-                       1);
+                      1);
   ParseAndVerifyStringField(RtcTestEvent::string_params, string_values);
   EXPECT_EQ(parser_.RemainingBytes(), 0u);
 }
@@ -752,9 +753,9 @@ TEST_F(RtcEventFieldTest, SkipsDeprecatedFields) {
                       63, signed64_encoding_size);
   
   
-  ParseAndVerifyOptionalField(RtcTestEvent::optional64_params,
-                              optional64_values,
-                              63, optional32_encoding_size);
+  ParseAndVerifyOptionalField(
+      RtcTestEvent::optional64_params, optional64_values,
+      63, optional32_encoding_size);
   ParseAndVerifyField(RtcTestEvent::wrapping21_params, wrapping21_values,
                       20);
   ParseAndVerifyStringField(RtcTestEvent::string_params, string_values);
@@ -812,7 +813,8 @@ TEST_F(RtcEventFieldTest, SkipsMissingFields) {
                       63);
   ParseAndVerifyMissingField(RtcTestEvent::unsigned64_params);
   ParseAndVerifyOptionalField(RtcTestEvent::optional32_params,
-                              optional32_values, 31);
+                              optional32_values,
+                              31);
   ParseAndVerifyMissingOptionalField(RtcTestEvent::optional64_params);
   ParseAndVerifyField(RtcTestEvent::wrapping21_params, wrapping21_values,
                       20);
@@ -851,11 +853,11 @@ TEST_F(RtcEventFieldTest, OptionalFields) {
   ParseEventHeader(s);
   ParseAndVerifyTimestamps();
   ParseAndVerifyOptionalField(RtcTestEvent::optional32_params,
-                              optional32_values,  2);
+                              optional32_values, 2);
   ParseAndVerifyOptionalField(RtcTestEvent::optional64_params,
-                              optional64_values,  1);
+                              optional64_values, 1);
   ParseAndVerifyField(RtcTestEvent::wrapping21_params, wrapping21_values,
-                       2);
+                      2);
   EXPECT_EQ(parser_.RemainingBytes(), 0u);
 }
 

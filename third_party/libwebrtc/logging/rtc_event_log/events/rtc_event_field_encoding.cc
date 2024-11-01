@@ -185,7 +185,7 @@ void EventEncoder::EncodeField(const FieldParameters& params,
     RTC_DCHECK_EQ(values.size(), batch_size_);
   }
 
-  if (values.size() == 0) {
+  if (values.empty()) {
     
     
     return;
@@ -240,7 +240,7 @@ void EventEncoder::EncodeField(const FieldParameters& params,
                                const std::vector<absl::string_view>& values) {
   RTC_DCHECK_EQ(values.size(), batch_size_);
 
-  if (values.size() == 0) {
+  if (values.empty()) {
     
     
     return;

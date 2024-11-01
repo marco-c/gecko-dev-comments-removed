@@ -390,7 +390,7 @@ class ParsedRtcEventLog {
   void Clear();
 
   
-  ParseStatus ParseFile(absl::string_view file_name);
+  ParseStatus ParseFile(absl::string_view filename);
 
   
   ParseStatus ParseString(absl::string_view s);
@@ -783,7 +783,7 @@ class ParsedRtcEventLog {
   ParseStatus StoreOutgoingRtcpPackets(
       const rtclog2::OutgoingRtcpPackets& proto);
   ParseStatus StoreOutgoingRtpPackets(const rtclog2::OutgoingRtpPackets& proto);
-  ParseStatus StoreParsedNewFormatEvent(const rtclog2::EventStream& event);
+  ParseStatus StoreParsedNewFormatEvent(const rtclog2::EventStream& stream);
   ParseStatus StoreRouteChangeEvent(const rtclog2::RouteChange& proto);
   ParseStatus StoreRemoteEstimateEvent(const rtclog2::RemoteEstimates& proto);
   ParseStatus StoreStartEvent(const rtclog2::BeginLogEvent& proto);
@@ -942,7 +942,8 @@ struct MatchedSendArrivalTimes {
   int64_t arrival_time_ms;  
   int64_t payload_size;
 };
-const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
+
+std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
     const ParsedRtcEventLog& parsed_log);
 
 }  

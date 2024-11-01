@@ -161,7 +161,7 @@ class RtcEventLogSession
   
   
   
-  void WriteLog(EventCounts count, size_t num_events_before_log_start);
+  void WriteLog(EventCounts count, size_t num_events_before_start);
   void ReadAndVerifyLog();
 
   bool IsNewFormat() {
