@@ -1273,7 +1273,7 @@ int LibvpxVp9Encoder::UpdateCodecFrameSize(
   
   
   vpx_codec_destroy(encoder_); 
-  int result = InitAndSetControlSettings(&codec_);
+  int result = InitAndSetControlSettings();
   if (result == WEBRTC_VIDEO_CODEC_OK) {
     
     
