@@ -71,9 +71,7 @@ class TrustedTypePolicyFactory : public nsWrapperCache {
   
   void GetAttributeType(const nsAString& aTagName, const nsAString& aAttribute,
                         const nsAString& aElementNs, const nsAString& aAttrNs,
-                        DOMString& aResult) {
-    
-  }
+                        DOMString& aResult);
 
   
   void GetPropertyType(const nsAString& aTagName, const nsAString& aProperty,
