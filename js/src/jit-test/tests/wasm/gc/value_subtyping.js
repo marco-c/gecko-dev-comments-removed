@@ -1,5 +1,3 @@
-
-
 function simpleTypeSection(types) {
   return types.map((x, i) => `(type \$${i} ${x})`).join('\n');
 }

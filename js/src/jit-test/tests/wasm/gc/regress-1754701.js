@@ -1,5 +1,3 @@
-
-
 let { testArray, testStructInline, testStructOutline } = wasmEvalText(`
   (module
   (type $array (array i32))

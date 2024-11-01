@@ -1,6 +1,4 @@
 
-
-
 let { refCast, refTest, brOnCast, brOnCastFail } = wasmEvalText(`
   (module
     (; give this struct a unique identity to avoid conflict with

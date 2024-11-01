@@ -1,6 +1,4 @@
 
-
-
 wasmValidateText(`(module
   (func
     ref.null extern

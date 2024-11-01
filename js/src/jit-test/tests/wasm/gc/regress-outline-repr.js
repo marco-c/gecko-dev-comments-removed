@@ -3,8 +3,6 @@
 
 
 
-
-
 const wat = `
 (module
   (type $S2 (sub (struct)))

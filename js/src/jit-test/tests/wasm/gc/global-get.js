@@ -1,7 +1,5 @@
 
 
-
-
 assertErrorMessage(() => wasmEvalText(`(module
 	(global i32 global.get 0)
 )`), WebAssembly.CompileError, /global/);

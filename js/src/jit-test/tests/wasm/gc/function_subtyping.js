@@ -2,8 +2,6 @@
 
 
 
-
-
 wasmValidateText(
 `(module
     (type $A (sub (struct (field i32))))

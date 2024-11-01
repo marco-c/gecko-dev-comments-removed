@@ -1,6 +1,4 @@
 
-
-
 const t01 = new WebAssembly.Table({element: 'funcref', initial: 3});
 const t02 = new WebAssembly.Table({element: 'externref', initial: 8});
 const g01 = new WebAssembly.Global({value: 'funcref', mutable: true}, null);

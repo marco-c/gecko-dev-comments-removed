@@ -1,7 +1,5 @@
 
 
-
-
 var ins = wasmEvalText(`(module
     (import "" "d" (global $g0 i32))
     (global $g i32 (i32.const 1))

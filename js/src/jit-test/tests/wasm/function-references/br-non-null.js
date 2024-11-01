@@ -1,6 +1,4 @@
 
-
-
 wasmValidateText(`(module
   (func
     block (result (ref extern))

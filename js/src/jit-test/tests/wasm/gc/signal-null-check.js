@@ -1,7 +1,5 @@
 
 
-
-
 for (let [fieldType, signedness, defaultValue] of [
   ['i8', '_u', 'i32.const 42'],
   ['i8', '_s', 'i32.const -42'],

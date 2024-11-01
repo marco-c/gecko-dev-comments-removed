@@ -2,8 +2,6 @@
 
 
 
-
-
 const { structNew, structNewDefault, structLarge } = wasmEvalText(`(module
     (type $r (struct (field i32) (field f32)))
     (type $xxl (struct

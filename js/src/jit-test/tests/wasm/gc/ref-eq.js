@@ -1,7 +1,5 @@
 
 
-
-
 let { exports: { make, ref_eq, ref_eq_for_control } } = wasmEvalText(`(module
     (type $s (struct))
 

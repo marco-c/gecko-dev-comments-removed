@@ -1,8 +1,6 @@
 
 
 
-
-
 var code =`
 (module
   (type $point (struct

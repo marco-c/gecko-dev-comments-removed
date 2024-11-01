@@ -1,6 +1,4 @@
 
-
-
 const typeError = /incompatible super type/;
 
 var code =`

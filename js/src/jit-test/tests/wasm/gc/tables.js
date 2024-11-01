@@ -1,6 +1,4 @@
 
-
-
 {
   const { t, get } = wasmEvalText(`(module
     (table (export "t") 3 funcref)

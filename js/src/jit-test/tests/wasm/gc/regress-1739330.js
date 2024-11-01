@@ -1,5 +1,3 @@
-
-
 try {
   gczeal(4);
   function a(b) {

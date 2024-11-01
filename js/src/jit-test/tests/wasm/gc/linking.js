@@ -1,5 +1,3 @@
-
-
 function linkGlobals(typeSection, exportInit, linkType) {
     let {global} = wasmEvalText(`(module
         ${typeSection}

@@ -1,5 +1,3 @@
-
-
 load(libdir + "wasm-binary.js");
 
 function checkInvalid(body, errorMessage) {

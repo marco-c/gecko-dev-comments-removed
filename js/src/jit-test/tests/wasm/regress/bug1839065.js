@@ -1,4 +1,3 @@
-
 function wasmEvalText(str, imports) {
     let binary = wasmTextToBinary(str);
     m = new WebAssembly.Module(binary);

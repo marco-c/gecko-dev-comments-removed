@@ -24,8 +24,6 @@
 
 
 
-
-
 const TYPES = {
   'A1': { super: null },
   'A2': { super: null },

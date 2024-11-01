@@ -1,6 +1,4 @@
 
-
-
 wasmValidateText(`(module
 	(func (param externref) (result anyref)
 		local.get 0

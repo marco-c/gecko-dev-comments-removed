@@ -1,5 +1,3 @@
-
-
 let { table, func } = wasmEvalText(`(module
   (type (func))
   (func (type 0))

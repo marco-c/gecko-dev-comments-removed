@@ -1,5 +1,3 @@
-
-
 const INSTRUCTIONS = [
   "struct.new $s",
   "struct.new_default $s",

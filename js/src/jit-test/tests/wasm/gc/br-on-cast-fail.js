@@ -1,5 +1,3 @@
-
-
 function typingModule(types, from, to, brParams, branchResults, fallthroughResults) {
   return `(module
     ${types}

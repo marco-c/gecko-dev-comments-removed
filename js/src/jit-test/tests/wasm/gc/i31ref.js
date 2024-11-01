@@ -1,5 +1,3 @@
-
-
 let InvalidI31Values = [
   null,
   Number.EPSILON,

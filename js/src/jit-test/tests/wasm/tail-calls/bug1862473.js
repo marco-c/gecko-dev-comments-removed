@@ -1,5 +1,3 @@
-
-
 var ins = wasmEvalText(`(module
   (func $func1)
   (func $func2 (param i32 arrayref arrayref i32 i32 i32 i32)

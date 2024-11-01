@@ -1,6 +1,4 @@
 
-
-
 wasmValidateText(`(module
   (func (param $a (ref extern))
     local.get $a

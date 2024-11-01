@@ -1,6 +1,4 @@
 
-
-
 {
   const { g, same } = wasmEvalText(`(module
     (type (struct))

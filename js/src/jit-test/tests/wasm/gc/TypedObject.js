@@ -1,6 +1,4 @@
 
-
-
 {
     let ins = wasmEvalText(`(module
                              (type $p (struct (field f64) (field (mut i32))))

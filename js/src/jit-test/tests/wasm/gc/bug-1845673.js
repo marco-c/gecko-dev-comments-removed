@@ -1,5 +1,3 @@
-
-
 let {f} = wasmEvalText(`(module
 	(type (struct))
 	(func (export "f") (result anyref)

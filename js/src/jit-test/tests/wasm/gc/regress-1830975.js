@@ -1,5 +1,3 @@
-
-
 const { test } = wasmEvalText(`
   (module
     (type $f (func (result i32)))

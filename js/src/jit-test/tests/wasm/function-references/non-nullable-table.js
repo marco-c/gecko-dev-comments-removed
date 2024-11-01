@@ -1,6 +1,4 @@
 
-
-
 var { get1, get2, get3, get4 } = wasmEvalText(`(module
   (type $dummy (func))
   (func $dummy)

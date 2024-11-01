@@ -10,8 +10,6 @@
 
 
 
-
-
 var refmod = new WebAssembly.Module(wasmTextToBinary(
     `(module
       (import "" "tbl" (table $tbl 4 funcref))

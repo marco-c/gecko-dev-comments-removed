@@ -1,5 +1,3 @@
-
-
 let { plusOne } = wasmEvalText(`(module
   (; forward declaration so that ref.func works ;)
   (elem declare func $plusOneRef)
