@@ -80,6 +80,7 @@ using namespace mozilla;
 #define PROFILE_DB_VERSION "2"
 #define INSTALL_PREFIX "Install"
 #define INSTALL_PREFIX_LENGTH 7
+#define STORE_ID_PREF "toolkit.profiles.storeID"
 
 struct KeyValue {
   KeyValue(const char* aKey, const char* aValue) : key(aKey), value(aValue) {}
@@ -357,32 +358,35 @@ nsToolkitProfile::SetStoreID(const nsACString& aStoreID) {
         mSection.get(), "StoreID", PromiseFlatCString(aStoreID).get());
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = prefs->SetCharPref("toolkit.profiles.storeID", aStoreID);
+    rv = nsToolkitProfileService::gService->mProfileDB.SetString(
+        mSection.get(), "ShowSelector", mShowProfileSelector ? "1" : "0");
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsToolkitProfileService::gService->mGroupProfile = this;
-  } else {
-    rv = nsToolkitProfileService::gService->mProfileDB.DeleteString(
-        mSection.get(), "StoreID");
+    if (nsToolkitProfileService::gService->mCurrent == this) {
+      rv = prefs->SetCharPref(STORE_ID_PREF, aStoreID);
+      NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    if (rv == NS_ERROR_FAILURE) {
-      rv = NS_OK;
+      nsToolkitProfileService::gService->mGroupProfile = this;
     }
+  } else {
+    
+    nsToolkitProfileService::gService->mProfileDB.DeleteString(mSection.get(),
+                                                               "StoreID");
 
     
     
     mShowProfileSelector = false;
-    rv = nsToolkitProfileService::gService->mProfileDB.DeleteString(
-        mSection.get(), "ShowSelector");
-    if (rv == NS_ERROR_FAILURE) {
-      rv = NS_OK;
+
+    
+    nsToolkitProfileService::gService->mProfileDB.DeleteString(mSection.get(),
+                                                               "ShowSelector");
+
+    if (nsToolkitProfileService::gService->mCurrent == this) {
+      rv = prefs->ClearUserPref(STORE_ID_PREF);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      nsToolkitProfileService::gService->mGroupProfile = nullptr;
     }
-
-    rv = prefs->ClearUserPref("toolkit.profiles.storeID");
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsToolkitProfileService::gService->mGroupProfile = nullptr;
   }
   mStoreID = aStoreID;
 
@@ -670,13 +674,15 @@ void nsToolkitProfileService::CompleteStartup() {
   glean::startup::profile_database_version.Set(mStartupFileVersion);
   glean::startup::profile_count.Set(static_cast<uint32_t>(mProfiles.length()));
 
-  
-  
   nsresult rv;
+  bool needsFlush = false;
+
+  
+  
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
   if (!mCurrent) {
     nsCString storeID;
-    rv = prefs->GetCharPref("toolkit.profiles.storeID", storeID);
+    rv = prefs->GetCharPref(STORE_ID_PREF, storeID);
     if (NS_SUCCEEDED(rv) && !storeID.IsEmpty()) {
       mGroupProfile = GetProfileByStoreID(storeID);
     }
@@ -685,32 +691,44 @@ void nsToolkitProfileService::CompleteStartup() {
     
     if (!mCurrent->mStoreID.IsVoid()) {
       mGroupProfile = mCurrent;
-      rv = prefs->SetCharPref("toolkit.profiles.storeID", mCurrent->mStoreID);
+      rv = prefs->SetCharPref(STORE_ID_PREF, mCurrent->mStoreID);
       NS_ENSURE_SUCCESS_VOID(rv);
+    } else {
+      
+      
+      
+      nsCString storeID;
+      rv = prefs->GetCharPref(STORE_ID_PREF, storeID);
+      if (NS_SUCCEEDED(rv) && !storeID.IsEmpty()) {
+        rv = mCurrent->SetStoreID(storeID);
+        if (NS_SUCCEEDED(rv)) {
+          needsFlush = true;
+        }
+      }
     }
   }
 
   if (mMaybeLockProfile) {
     nsCOMPtr<nsIToolkitShellService> shell =
         do_GetService(NS_TOOLKITSHELLSERVICE_CONTRACTID);
-    if (!shell) {
-      return;
+    if (shell) {
+      bool isDefaultApp;
+      rv = shell->IsDefaultApplication(&isDefaultApp);
+      if (NS_SUCCEEDED(rv) && isDefaultApp) {
+        mProfileDB.SetString(mInstallSection.get(), "Locked", "1");
+
+        needsFlush = true;
+      }
     }
+  }
 
-    bool isDefaultApp;
-    nsresult rv = shell->IsDefaultApplication(&isDefaultApp);
-    NS_ENSURE_SUCCESS_VOID(rv);
-
-    if (isDefaultApp) {
-      mProfileDB.SetString(mInstallSection.get(), "Locked", "1");
-
-      
-      
-      
-      
-      
-      NS_ENSURE_SUCCESS_VOID(Flush());
-    }
+  if (needsFlush) {
+    
+    
+    
+    
+    
+    NS_ENSURE_SUCCESS_VOID(Flush());
   }
 }
 
@@ -2075,6 +2093,16 @@ void nsToolkitProfileService::GetProfileByDir(nsIFile* aRootDir,
       }
     }
   }
+}
+
+NS_IMETHODIMP
+nsToolkitProfileService::GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
+                                         nsIToolkitProfile** aResult) {
+  RefPtr<nsToolkitProfile> result;
+  GetProfileByDir(aRootDir, aLocalDir, getter_AddRefs(result));
+  result.forget(aResult);
+
+  return NS_OK;
 }
 
 nsresult NS_LockProfilePath(nsIFile* aPath, nsIFile* aTempPath,
