@@ -106,27 +106,6 @@ void Decode(JSContext* aCx, JS::CompileOptions& aCompileOptions,
             const JS::TranscodeRange& aBytecodeBuf,
             RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
 
-
-void ExecScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
-                ErrorResult& aRv);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void ExecScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
-                JS::MutableHandle<JS::Value> aRetValue, ErrorResult& aRv,
-                bool aCoerceToString = false);
 }  
 }  
 
