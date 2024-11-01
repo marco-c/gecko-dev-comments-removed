@@ -40,7 +40,7 @@
 
 
 
-const uint32_t kInitialModuleCount = 256;
+const uint32_t kInitialModuleCount = 1024;
 
 
 
