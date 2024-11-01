@@ -5,7 +5,9 @@
 
 #include "ContentAnalysis.h"
 #include "mozilla/ClipboardContentAnalysisParent.h"
+#include "mozilla/ClipboardReadRequestParent.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
@@ -23,7 +25,7 @@ using ClipboardResultPromise =
 static RefPtr<ClipboardResultPromise> GetClipboardImpl(
     const nsTArray<nsCString>& aTypes,
     nsIClipboard::ClipboardType aWhichClipboard,
-    uint64_t aRequestingWindowContextId,
+    uint64_t aRequestingWindowContextId, bool aCheckAllContent,
     dom::ThreadsafeContentParentHandle* aRequestingContentParent) {
   AssertIsOnMainThread();
 
@@ -65,20 +67,55 @@ static RefPtr<ClipboardResultPromise> GetClipboardImpl(
     return ClipboardResultPromise::CreateAndReject(
         transferableToCheck.unwrapErr(), __func__);
   }
+  nsCOMPtr<nsITransferable> transferable = transferableToCheck.unwrap();
+  if (aCheckAllContent) {
+    for (const auto& type : aTypes) {
+      AutoTArray<nsCString, 1> singleTypeArray{type};
+      auto singleTransferableToCheck =
+          dom::ContentParent::CreateClipboardTransferable(singleTypeArray);
+      if (singleTransferableToCheck.isErr()) {
+        return ClipboardResultPromise::CreateAndReject(
+            singleTransferableToCheck.unwrapErr(), __func__);
+      }
 
-  
-  
-  
-  nsCOMPtr transferable = transferableToCheck.unwrap();
-  
-  
-  
-  
-  nsresult rv = clipboard->GetData(transferable, aWhichClipboard, nullptr);
-  if (NS_FAILED(rv)) {
-    return ClipboardResultPromise::CreateAndReject(rv, __func__);
+      
+      
+      
+      nsCOMPtr singleTransferable = singleTransferableToCheck.unwrap();
+      
+      
+      
+      
+      nsresult rv =
+          clipboard->GetData(singleTransferable, aWhichClipboard, nullptr);
+      if (NS_FAILED(rv)) {
+        return ClipboardResultPromise::CreateAndReject(rv, __func__);
+      }
+      nsCOMPtr<nsISupports> data;
+      rv =
+          singleTransferable->GetTransferData(type.get(), getter_AddRefs(data));
+      
+      if (NS_SUCCEEDED(rv)) {
+        rv = transferable->SetTransferData(type.get(), data);
+        if (NS_FAILED(rv)) {
+          return ClipboardResultPromise::CreateAndReject(rv, __func__);
+        }
+      }
+    }
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    nsresult rv = clipboard->GetData(transferable, aWhichClipboard, nullptr);
+    if (NS_FAILED(rv)) {
+      return ClipboardResultPromise::CreateAndReject(rv, __func__);
+    }
   }
-
   auto resultPromise = MakeRefPtr<ClipboardResultPromise::Private>(__func__);
 
   auto contentAnalysisCallback =
@@ -106,41 +143,51 @@ static RefPtr<ClipboardResultPromise> GetClipboardImpl(
 
   contentanalysis::ContentAnalysis::CheckClipboardContentAnalysis(
       static_cast<nsBaseClipboard*>(clipboard.get()), window, transferable,
-      aWhichClipboard, contentAnalysisCallback);
+      aWhichClipboard, contentAnalysisCallback, aCheckAllContent);
   return resultPromise;
 }
 }  
 
-ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
+ipc::IPCResult ClipboardContentAnalysisParent::GetSomeClipboardData(
     nsTArray<nsCString>&& aTypes,
     const nsIClipboard::ClipboardType& aWhichClipboard,
-    const uint64_t& aRequestingWindowContextId,
+    const uint64_t& aRequestingWindowContextId, bool aCheckAllContent,
     IPCTransferableDataOrError* aTransferableDataOrError) {
-  
-  
-  
-  MOZ_ASSERT(!NS_IsMainThread());
-
-  Monitor mon("ClipboardContentAnalysisParent::RecvGetClipboard");
+  Monitor mon("ClipboardContentAnalysisParent::GetSomeClipboardData");
   InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
               [&]() {
-                return GetClipboardImpl(aTypes, aWhichClipboard,
-                                        aRequestingWindowContextId,
-                                        mThreadsafeContentParentHandle);
+                return GetClipboardImpl(
+                    aTypes, aWhichClipboard, aRequestingWindowContextId,
+                    aCheckAllContent, mThreadsafeContentParentHandle);
               })
       ->Then(GetMainThreadSerialEventTarget(), __func__,
              [&](ClipboardResultPromise::ResolveOrRejectValue&& aResult) {
-               AssertIsOnMainThread();
                
                
                
                MonitorAutoLock lock(mon);
-               if (aResult.IsResolve()) {
-                 *aTransferableDataOrError = std::move(aResult.ResolveValue());
-               } else {
+               auto monitor = MakeScopeExit([&]() { mon.Notify(); });
+               if (aResult.IsReject()) {
                  *aTransferableDataOrError = aResult.RejectValue();
+                 return;
                }
-               mon.Notify();
+
+               if (aCheckAllContent) {
+                 
+                 
+                 IPCTransferableData analyzedData =
+                     std::move(aResult.ResolveValue());
+                 nsTArray<IPCTransferableDataItem> dataItems;
+                 for (auto& item : analyzedData.items()) {
+                   if (aTypes.Contains(item.flavor())) {
+                     dataItems.AppendElement(std::move(item));
+                   }
+                 }
+                 IPCTransferableData data(std::move(dataItems));
+                 *aTransferableDataOrError = std::move(data);
+               } else {
+                 *aTransferableDataOrError = std::move(aResult.ResolveValue());
+               }
              });
 
   {
@@ -155,11 +202,38 @@ ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
       IPCTransferableDataOrError::Tnsresult) {
     NS_WARNING(nsPrintfCString(
                    "ClipboardContentAnalysisParent::"
-                   "RecvGetClipboard got error %x",
+                   "GetSomeClipboardData got error %x",
                    static_cast<int>(aTransferableDataOrError->get_nsresult()))
                    .get());
   }
 
   return IPC_OK();
+}
+
+ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
+    nsTArray<nsCString>&& aTypes,
+    const nsIClipboard::ClipboardType& aWhichClipboard,
+    const uint64_t& aRequestingWindowContextId,
+    IPCTransferableDataOrError* aTransferableDataOrError) {
+  
+  
+  
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  return GetSomeClipboardData(
+      std::move(aTypes), aWhichClipboard, aRequestingWindowContextId,
+       false, aTransferableDataOrError);
+}
+
+ipc::IPCResult ClipboardContentAnalysisParent::RecvGetAllClipboardDataSync(
+    nsTArray<nsCString>&& aTypes,
+    const nsIClipboard::ClipboardType& aWhichClipboard,
+    const uint64_t& aRequestingWindowContextId,
+    IPCTransferableDataOrError* aTransferableDataOrError) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  return GetSomeClipboardData(
+      std::move(aTypes), aWhichClipboard, aRequestingWindowContextId,
+       true, aTransferableDataOrError);
 }
 }  
