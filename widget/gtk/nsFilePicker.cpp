@@ -421,11 +421,6 @@ nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
     return NS_OK;
   }
 
-  
-  if (gfxPlatform::IsHeadless()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   NS_ConvertUTF16toUTF8 title(mTitle);
 
   GtkWindow* parent_widget =
