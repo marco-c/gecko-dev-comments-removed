@@ -291,6 +291,13 @@ add_task(async function context_after_customize() {
     gCustomizeMode.exit();
     await promise;
 
+    
+    
+    
+    await TestUtils.waitForCondition(() => {
+      return window.gURLBar.textbox.hasAttribute("breakout");
+    });
+
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine item should be present.");
       let elt = popup.parentNode.getMenuItem("add-engine-separator");
