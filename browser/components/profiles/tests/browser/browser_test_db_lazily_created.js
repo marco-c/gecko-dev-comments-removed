@@ -11,21 +11,9 @@ add_task(async function test_dbLazilyCreated() {
     return;
   }
 
-  ok(
-    SelectableProfileService.initialized,
-    `Selectable Profile Service should be initialized because the store id is ${storeID}`
-  );
-
-  const toolkitProfileObject = { storeID: null, rootDir: "/some/path" };
-  SelectableProfileService.groupToolkitProfile = toolkitProfileObject;
-
-  
-  await SelectableProfileService.uninit();
-  await SelectableProfileService.init();
-
-  ok(
+  Assert.ok(
     !SelectableProfileService.initialized,
-    `Selectable Profile Service should not be initialized because the store id is null`
+    `Selectable Profile Service should not be initialized because the default profile has no storeID`
   );
 
   
