@@ -3150,7 +3150,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
                                   buffer<char>& buf) -> int {
   
   #ifdef __clang__
-  #if __clang_major__ > 8
+  #if __clang_major__ >= 17
     static_assert(false,
       "This method is not to be used in Gecko, use format_float_gecko");
   #endif
