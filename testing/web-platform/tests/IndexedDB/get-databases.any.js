@@ -85,20 +85,32 @@ promise_test(async testCase => {
 }, "Make sure an empty list is returned for the case of no databases.");
 
 promise_test(async testCase => {
+  function sleep_sync(msec) {
+    const start = new Date().getTime();
+    while (new Date().getTime() - start < msec) {}
+  }
+
   
   
   await deleteAllDatabases(testCase);
 
   const db1 = await createNamedDatabase(testCase, "DB1", ()=>{});
+  let databases_promise1;
   const db2 = await createNamedDatabase(testCase, "DB2", async () => {
-    const databases_result1 = await indexedDB.databases();
-    assert_equals(
-        databases_result1.length,
-        1,
-        "The result of databases() should be only those databases which have "
-        + "been created at the time of calling, regardless of versionchange "
-        + "transactions currently running.");
+    databases_promise1 = indexedDB.databases();
+
+    
+    
+    
+    sleep_sync(1000);
   });
+  const databases_result1 = await databases_promise1;
+  assert_equals(
+      databases_result1.length,
+      1,
+      "The result of databases() should be only those databases which have "
+      + "been created at the time of calling, regardless of versionchange "
+      + "transactions currently running.");
   db1.close();
   db2.close();
   const databases_result2 = await indexedDB.databases();
@@ -107,13 +119,20 @@ promise_test(async testCase => {
       2,
       "The result of databases() should include all databases which have "
       + "been created at the time of calling.");
+  let databases_promise3;
   await migrateNamedDatabase(testCase, "DB2", 2, async () => {
-    const databases_result3 = await indexedDB.databases();
-    assert_true(
-        databases_result3[0].version === 1
-        && databases_result3[1].version === 1,
-        "The result of databases() should contain the versions of databases "
-        + "at the time of calling, regardless of versionchange transactions "
-        + "currently running.");
+    databases_promise3 = indexedDB.databases();
+
+    
+    
+    
+    sleep_sync(1000);
   });
+  const databases_result3 = await databases_promise3;
+  assert_true(
+      databases_result3[0].version === 1
+      && databases_result3[1].version === 1,
+      "The result of databases() should contain the versions of databases "
+      + "at the time of calling, regardless of versionchange transactions "
+      + "currently running.");
 }, "Ensure that databases() doesn't pick up changes that haven't commited.");
