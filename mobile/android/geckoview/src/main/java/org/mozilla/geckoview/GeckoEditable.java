@@ -106,6 +106,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   private String mIMEModeHint = ""; 
   private String mIMEActionHint = ""; 
   private String mIMEAutocapitalize = ""; 
+  private boolean mIMEAutocorrect = false; 
   @IMEContextFlags private int mIMEFlags; 
 
   private boolean mIgnoreSelectionChange; 
@@ -1646,6 +1647,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       final String modeHint,
       final String actionHint,
       final String autocapitalize,
+      final boolean autocorrect,
       @IMEContextFlags final int flags) {
     
     if (DEBUG) {
@@ -1657,6 +1659,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           .append(modeHint)
           .append("\", autocapitalize=\"")
           .append(autocapitalize)
+          .append("\", autocorrect=\"")
+          .append(autocorrect)
           .append("\", flags=0x")
           .append(Integer.toHexString(flags))
           .append(")");
@@ -1675,7 +1679,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         new Runnable() {
           @Override
           public void run() {
-            icNotifyIMEContext(state, typeHint, modeHint, actionHint, autocapitalize, flags);
+            icNotifyIMEContext(
+                state, typeHint, modeHint, actionHint, autocapitalize, autocorrect, flags);
           }
         });
   }
@@ -1686,6 +1691,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       final String modeHint,
       final String actionHint,
       final String autocapitalize,
+      final boolean autocorrect,
       @IMEContextFlags final int flags) {
     if (DEBUG) {
       assertOnIcThread();
@@ -1713,6 +1719,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     mIMEModeHint = (modeHint == null) ? "" : modeHint;
     mIMEActionHint = (actionHint == null) ? "" : actionHint;
     mIMEAutocapitalize = (autocapitalize == null) ? "" : autocapitalize;
+    mIMEAutocorrect = autocorrect;
     mIMEFlags = flags;
 
     if (mListener != null) {
@@ -1815,6 +1822,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     final String modeHint = mIMEModeHint;
     final String actionHint = mIMEActionHint;
     final String autocapitalize = mIMEAutocapitalize;
+    final boolean autocorrect = mIMEAutocorrect;
     final int flags = mIMEFlags;
 
     
@@ -1866,9 +1874,13 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         outAttrs.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
       } else {
         
-        outAttrs.inputType |=
-            InputType.TYPE_TEXT_FLAG_AUTO_CORRECT | InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
+        outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
       }
+    }
+
+    if (autocorrect
+        && ((outAttrs.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT)) {
+      outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
     }
 
     if (autocapitalize.equals("characters")) {
