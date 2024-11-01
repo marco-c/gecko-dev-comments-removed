@@ -554,6 +554,9 @@ pref("browser.urlbar.quicksuggest.ampTopPickCharThreshold", 0);
 pref("browser.urlbar.quicksuggest.exposureSuggestionTypes", "");
 
 
+pref("browser.urlbar.quicksuggest.mlEnabled", false);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else
@@ -676,6 +679,10 @@ pref("browser.urlbar.yelp.minKeywordLength", 4);
 
 
 pref("browser.urlbar.yelp.priority", false);
+
+
+
+pref("browser.urlbar.yelp.mlEnabled", false);
 
 
 
