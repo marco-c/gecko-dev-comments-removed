@@ -228,7 +228,24 @@ if (params.timeoutAsPass) {
 }
 
 if (params.conditionedProfile) {
-  TestRunner.conditionedProfile = true;
+  TestRunner.conditionedProfile = {
+    knownServiceWorkers: null,
+  };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SpecialPowers.registeredServiceWorkers( true).then(workers => {
+    TestRunner.conditionedProfile.knownServiceWorkers = workers;
+  });
 }
 
 if (params.comparePrefs) {

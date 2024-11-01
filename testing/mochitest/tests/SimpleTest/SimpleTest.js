@@ -1494,16 +1494,14 @@ SimpleTest.finish = function () {
         );
       }
     } else if (workers.length) {
-      let FULL_PROFILE_WORKERS_TO_IGNORE = [];
+      let FULL_PROFILE_WORKERS_TO_IGNORE = new Set();
       if (parentRunner.conditionedProfile) {
         
         
-        
-        
-        FULL_PROFILE_WORKERS_TO_IGNORE = [
-          "https://www.youtube.com/sw.js",
-          "https://s.0cf.io/sw.js",
-        ];
+        for (const knownWorker of parentRunner.conditionedProfile
+          .knownServiceWorkers) {
+          FULL_PROFILE_WORKERS_TO_IGNORE.add(knownWorker.scriptSpec);
+        }
       } else {
         SimpleTest.ok(
           false,
@@ -1512,11 +1510,7 @@ SimpleTest.finish = function () {
       }
 
       for (let worker of workers) {
-        if (
-          FULL_PROFILE_WORKERS_TO_IGNORE.some(ignoreBase =>
-            worker.scriptSpec.startsWith(ignoreBase)
-          )
-        ) {
+        if (FULL_PROFILE_WORKERS_TO_IGNORE.has(worker.scriptSpec)) {
           continue;
         }
         SimpleTest.ok(
