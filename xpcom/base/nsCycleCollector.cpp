@@ -1621,7 +1621,7 @@ class nsCycleCollectorLogSinkToFile final : public nsICycleCollectorLogSink {
     
     nsIFile* logFile = nullptr;
     if (char* env = PR_GetEnv("MOZ_CC_LOG_DIRECTORY")) {
-      NS_NewNativeLocalFile(nsCString(env),  true, &logFile);
+      NS_NewNativeLocalFile(nsCString(env), &logFile);
     }
 
     

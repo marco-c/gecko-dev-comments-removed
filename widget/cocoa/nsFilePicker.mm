@@ -346,7 +346,7 @@ nsIFilePicker::ResultCode nsFilePicker::GetLocalFiles(
   }
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
-  if (result == NSFileHandlingPanelCancelButton) return retVal;
+  if (result == NSModalResponseCancel) return retVal;
 
   
   
@@ -359,7 +359,7 @@ nsIFilePicker::ResultCode nsFilePicker::GetLocalFiles(
     }
 
     nsCOMPtr<nsIFile> localFile;
-    NS_NewLocalFile(u""_ns, true, getter_AddRefs(localFile));
+    NS_NewLocalFile(u""_ns, getter_AddRefs(localFile));
     nsCOMPtr<nsILocalFileMac> macLocalFile = do_QueryInterface(localFile);
     if (macLocalFile &&
         NS_SUCCEEDED(macLocalFile->InitWithCFURL((CFURLRef)url))) {
@@ -408,13 +408,13 @@ nsIFilePicker::ResultCode nsFilePicker::GetLocalFolder(nsIFile** outFile) {
   int result = [thePanel runModal];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
-  if (result == NSFileHandlingPanelCancelButton) return retVal;
+  if (result == NSModalResponseCancel) return retVal;
 
   
   NSURL* theURL = [[thePanel URLs] objectAtIndex:0];
   if (theURL) {
     nsCOMPtr<nsIFile> localFile;
-    NS_NewLocalFile(u""_ns, true, getter_AddRefs(localFile));
+    NS_NewLocalFile(u""_ns, getter_AddRefs(localFile));
     nsCOMPtr<nsILocalFileMac> macLocalFile = do_QueryInterface(localFile);
     if (macLocalFile &&
         NS_SUCCEEDED(macLocalFile->InitWithCFURL((CFURLRef)theURL))) {
@@ -494,7 +494,7 @@ nsIFilePicker::ResultCode nsFilePicker::PutLocalFile(nsIFile** outFile) {
   [thePanel setNameFieldStringValue:defaultFilename];
   int result = [thePanel runModal];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
-  if (result == NSFileHandlingPanelCancelButton) return retVal;
+  if (result == NSModalResponseCancel) return retVal;
 
   
   NSPopUpButton* popupButton = [accessoryView viewWithTag:kSaveTypeControlTag];
@@ -505,7 +505,7 @@ nsIFilePicker::ResultCode nsFilePicker::PutLocalFile(nsIFile** outFile) {
   NSURL* fileURL = [thePanel URL];
   if (fileURL) {
     nsCOMPtr<nsIFile> localFile;
-    NS_NewLocalFile(u""_ns, true, getter_AddRefs(localFile));
+    NS_NewLocalFile(u""_ns, getter_AddRefs(localFile));
     nsCOMPtr<nsILocalFileMac> macLocalFile = do_QueryInterface(localFile);
     if (macLocalFile &&
         NS_SUCCEEDED(macLocalFile->InitWithCFURL((CFURLRef)fileURL))) {

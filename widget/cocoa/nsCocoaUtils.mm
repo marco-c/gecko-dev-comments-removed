@@ -1726,7 +1726,7 @@ void nsCocoaUtils::SetTransferDataForTypeFromPasteboardItem(
     clipboardDataPtr[stringLength] = 0;  
 
     nsCOMPtr<nsIFile> file;
-    nsresult rv = NS_NewLocalFile(nsDependentString(clipboardDataPtr), true,
+    nsresult rv = NS_NewLocalFile(nsDependentString(clipboardDataPtr),
                                   getter_AddRefs(file));
     free(clipboardDataPtr);
     if (NS_FAILED(rv)) {

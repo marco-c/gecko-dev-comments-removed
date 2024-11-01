@@ -147,26 +147,20 @@ XPCOM_API(nsresult) NS_GetComponentRegistrar(nsIComponentRegistrar** aResult);
 
 
 
-
-
-
-
-
 #ifdef __cplusplus
 
 XPCOM_API(nsresult)
-NS_NewLocalFile(const nsAString& aPath, bool aFollowLinks, nsIFile** aResult);
+NS_NewLocalFile(const nsAString& aPath, nsIFile** aResult);
 
 XPCOM_API(nsresult)
-NS_NewNativeLocalFile(const nsACString& aPath, bool aFollowLinks,
-                      nsIFile** aResult);
+NS_NewNativeLocalFile(const nsACString& aPath, nsIFile** aResult);
 
 
 
 
 class NS_ConvertUTF16toUTF8;
 nsresult NS_NewNativeLocalFile(const NS_ConvertUTF16toUTF8& aPath,
-                               bool aFollowLinks, nsIFile** aResult) = delete;
+                               nsIFile** aResult) = delete;
 
 #endif
 

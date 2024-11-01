@@ -556,7 +556,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
       
       nsCOMPtr<nsIFile> confDirOrXDGConfigHomeDir;
       if (!xdgConfigHome.IsEmpty()) {
-        rv = NS_NewNativeLocalFile(xdgConfigHome, true,
+        rv = NS_NewNativeLocalFile(xdgConfigHome,
                                    getter_AddRefs(confDirOrXDGConfigHomeDir));
         
       } else {
