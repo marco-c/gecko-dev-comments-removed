@@ -714,6 +714,10 @@ function areMessagesParametersSimilar(message1, message2) {
       if (message1Parameter.text !== message2Parameter.text) {
         return false;
       }
+      
+      if (message1Parameter.name !== message2Parameter.name) {
+        return false;
+      }
     } else if (message1Parameter !== message2Parameter) {
       return false;
     }
