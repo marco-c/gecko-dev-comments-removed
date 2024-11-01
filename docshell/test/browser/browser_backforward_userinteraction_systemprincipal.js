@@ -31,17 +31,6 @@ async function runTest(privilegedLoad) {
       gBrowser,
       TEST_PAGE + "?entry=0"
     );
-    let browser = tab.linkedBrowser;
-
-    
-    await BrowserTestUtils.synthesizeMouse(
-      "body",
-      0,
-      0,
-      {},
-      browser.browsingContext,
-      true
-    );
 
     assertBackForwardState(false, false);
 

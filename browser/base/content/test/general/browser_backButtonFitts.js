@@ -10,9 +10,6 @@ add_task(async function () {
 
   await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function () {
     
-    content.document.notifyUserGestureActivation();
-
-    
     content.history.pushState("page2", "page2", "page2");
   });
 

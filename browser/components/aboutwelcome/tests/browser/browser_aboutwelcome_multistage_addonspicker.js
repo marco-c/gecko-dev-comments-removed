@@ -255,11 +255,6 @@ add_task(async function test_aboutwelcome_addonspicker() {
   );
 
   
-  SpecialPowers.spawn(browser, [], () => {
-    content.document.notifyUserGestureActivation();
-  });
-
-  
   await clickVisibleButton(browser, "button[value='secondary_button']");
   
   messageStub
