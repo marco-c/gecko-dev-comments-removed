@@ -708,19 +708,24 @@ struct DOMInterfaceInfo {
 
   ProtoHandleGetter mGetParentProto;
 
-  const prototypes::ID mPrototypeID;  
   const uint32_t mDepth;
+
+  const prototypes::ID mPrototypeID;  
 
   
   
   
   bool wantsInterfaceIsInstance;
+
+  uint8_t mConstructorArgs;
+
+  const char* mConstructorName;
 };
 
 struct LegacyFactoryFunction {
   const char* mName;
   const JSNativeHolder mHolder;
-  unsigned mNargs;
+  uint8_t mNargs;
 };
 
 namespace binding_detail {
@@ -2375,12 +2380,17 @@ inline bool IsLegacyFactoryFunction(JSObject* obj) {
   return JS_IsNativeFunction(obj, LegacyFactoryFunctionJSNative);
 }
 
-inline const JSNativeHolder* NativeHolderFromLegacyFactoryFunction(
+inline const LegacyFactoryFunction* LegacyFactoryFunctionFromObject(
     JSObject* obj) {
   MOZ_ASSERT(IsLegacyFactoryFunction(obj));
-  const JS::Value& v = js::GetFunctionNativeReserved(
-      obj, LEGACY_FACTORY_FUNCTION_NATIVE_HOLDER_RESERVED_SLOT);
-  return static_cast<const JSNativeHolder*>(v.toPrivate());
+  const JS::Value& v =
+      js::GetFunctionNativeReserved(obj, LEGACY_FACTORY_FUNCTION_RESERVED_SLOT);
+  return static_cast<const LegacyFactoryFunction*>(v.toPrivate());
+}
+
+inline const JSNativeHolder* NativeHolderFromLegacyFactoryFunction(
+    JSObject* obj) {
+  return &LegacyFactoryFunctionFromObject(obj)->mHolder;
 }
 
 inline const JSNativeHolder* NativeHolderFromObject(JSObject* obj) {
