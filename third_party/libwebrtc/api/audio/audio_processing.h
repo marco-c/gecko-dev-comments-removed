@@ -49,8 +49,6 @@ class StreamConfig;
 class ProcessingConfig;
 
 class EchoDetector;
-class CustomAudioAnalyzer;
-class CustomProcessing;
 
 
 
@@ -735,6 +733,35 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
   static int GetFrameSize(int sample_rate_hz) { return sample_rate_hz / 100; }
 };
 
+
+class CustomAudioAnalyzer {
+ public:
+  
+  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
+  
+  virtual void Analyze(const AudioBuffer* audio) = 0;
+  
+  virtual std::string ToString() const = 0;
+
+  virtual ~CustomAudioAnalyzer() {}
+};
+
+
+class CustomProcessing {
+ public:
+  
+  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
+  
+  virtual void Process(AudioBuffer* audio) = 0;
+  
+  virtual std::string ToString() const = 0;
+  
+  
+  virtual void SetRuntimeSetting(AudioProcessing::RuntimeSetting setting);
+
+  virtual ~CustomProcessing() {}
+};
+
 class RTC_EXPORT AudioProcessingBuilder {
  public:
   AudioProcessingBuilder();
@@ -885,35 +912,6 @@ class ProcessingConfig {
   }
 
   StreamConfig streams[StreamName::kNumStreamNames];
-};
-
-
-class CustomAudioAnalyzer {
- public:
-  
-  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
-  
-  virtual void Analyze(const AudioBuffer* audio) = 0;
-  
-  virtual std::string ToString() const = 0;
-
-  virtual ~CustomAudioAnalyzer() {}
-};
-
-
-class CustomProcessing {
- public:
-  
-  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
-  
-  virtual void Process(AudioBuffer* audio) = 0;
-  
-  virtual std::string ToString() const = 0;
-  
-  
-  virtual void SetRuntimeSetting(AudioProcessing::RuntimeSetting setting);
-
-  virtual ~CustomProcessing() {}
 };
 
 
