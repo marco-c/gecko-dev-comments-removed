@@ -535,4 +535,12 @@ TEST(SourceTrackerTest, TimedOutSourcesAreRemoved) {
                                     kRtpTimestamp1, extensions1)));
 }
 
+TEST(SourceTrackerTest, AvoidNegativeTimestamp) {
+  SimulatedClock clock(Timestamp::Zero());
+  SourceTracker tracker(&clock);
+  tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(111, {}, 0,
+                     Timestamp::Zero())}));
+}
+
 }  
