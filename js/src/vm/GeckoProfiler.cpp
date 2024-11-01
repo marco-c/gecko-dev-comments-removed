@@ -6,6 +6,7 @@
 
 #include "vm/GeckoProfiler-inl.h"
 
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Sprintf.h"
 
 #include "gc/GC.h"
@@ -264,18 +265,12 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
   
 
   
-  bool hasName = false;
+  JSAtom* name = nullptr;
   size_t nameLength = 0;
-  UniqueChars nameStr;
   JSFunction* func = script->function();
   if (func && func->fullDisplayAtom()) {
-    nameStr = StringToNewUTF8CharsZ(cx, *func->fullDisplayAtom());
-    if (!nameStr) {
-      return nullptr;
-    }
-
-    nameLength = strlen(nameStr.get());
-    hasName = true;
+    name = func->fullDisplayAtom();
+    nameLength = JS::GetDeflatedUTF8StringLength(name);
   }
 
   
@@ -288,7 +283,7 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
   bool hasLineAndColumn = false;
   size_t lineAndColumnLength = 0;
   char lineAndColumnStr[30];
-  if (hasName || script->isFunction() || script->isForEval()) {
+  if (name || script->isFunction() || script->isForEval()) {
     lineAndColumnLength =
         SprintfLiteral(lineAndColumnStr, "%u:%u", script->lineno(),
                        script->column().oneOriginValue());
@@ -304,7 +299,7 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
 
   
   size_t fullLength = 0;
-  if (hasName) {
+  if (name) {
     MOZ_ASSERT(hasLineAndColumn);
     fullLength = nameLength + 2 + filenameLength + 1 + lineAndColumnLength + 1;
   } else if (hasLineAndColumn) {
@@ -322,8 +317,10 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
   size_t cur = 0;
 
   
-  if (hasName) {
-    memcpy(str.get() + cur, nameStr.get(), nameLength);
+  if (name) {
+    mozilla::DebugOnly<size_t> written = JS::DeflateStringToUTF8Buffer(
+        name, mozilla::Span(str.get() + cur, nameLength));
+    MOZ_ASSERT(written == nameLength);
     cur += nameLength;
     str[cur++] = ' ';
     str[cur++] = '(';
@@ -341,7 +338,7 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
   }
 
   
-  if (hasName) {
+  if (name) {
     str[cur++] = ')';
   }
 
