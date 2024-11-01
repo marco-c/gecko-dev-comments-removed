@@ -393,6 +393,35 @@ void RectParamInfo(nsCString& str, uint64_t value, const char* name,
 
 #define VALANDNAME_ENTRY(_msg) {_msg, #_msg}
 
+nsAutoString GetNameFromAtom(LPCWSTR atomOrName) {
+  
+  if (atomOrName == nullptr) {
+    return nsAutoString(L"<null>");
+  }
+  
+  if (uintptr_t(atomOrName) > 0xFFFF) {
+    return nsAutoString(atomOrName);
+  }
+
+  UINT const atom = (UINT)(uintptr_t)atomOrName;
+
+  nsAutoString out;
+  out.AppendASCII("atom 0x"_ns);
+  out.AppendInt(atom, 16);
+  out.AppendASCII(": "_ns);
+
+  WCHAR buf[256] = {0};
+  
+  BOOL const ok = ::GetClipboardFormatNameW(atom, buf, 255);
+  if (!ok) {
+    out.AppendASCII("unknown atom"_ns);
+  } else {
+    out.Append(buf);
+  }
+
+  return out;
+}
+
 void CreateStructParamInfo(nsCString& str, uint64_t value, const char* name,
                            bool ) {
   CREATESTRUCT* createStruct = reinterpret_cast<CREATESTRUCT*>(value);
@@ -403,9 +432,10 @@ void CreateStructParamInfo(nsCString& str, uint64_t value, const char* name,
   str.AppendPrintf(
       "%s: hInstance=%p hMenu=%p hwndParent=%p lpszName=%S lpszClass=%S x=%d "
       "y=%d cx=%d cy=%d",
-      name, createStruct->hInstance, createStruct->hMenu,
-      createStruct->hwndParent, createStruct->lpszName, createStruct->lpszClass,
-      createStruct->x, createStruct->y, createStruct->cx, createStruct->cy);
+      name ? name : "<no name>", createStruct->hInstance, createStruct->hMenu,
+      createStruct->hwndParent, createStruct->lpszName,
+      GetNameFromAtom(createStruct->lpszClass).getW(), createStruct->x,
+      createStruct->y, createStruct->cx, createStruct->cy);
   str.AppendASCII(" ");
   const static nsTArray<EnumValueAndName> windowStyles = {
       
