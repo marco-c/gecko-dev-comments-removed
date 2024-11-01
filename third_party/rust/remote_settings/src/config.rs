@@ -17,6 +17,21 @@ use crate::{ApiResult, Error, Result};
 
 
 
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct RemoteSettingsConfig2 {
+    
+    #[uniffi(default = None)]
+    pub server: Option<RemoteSettingsServer>,
+    
+    #[uniffi(default = None)]
+    pub bucket_name: Option<String>,
+}
+
+
+
+
+
+
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct RemoteSettingsConfig {
@@ -51,10 +66,21 @@ impl RemoteSettingsServer {
     
     pub(crate) fn get_url(&self) -> Result<Url> {
         Ok(match self {
-            Self::Prod => Url::parse("https://firefox.settings.services.mozilla.com").unwrap(),
-            Self::Stage => Url::parse("https://firefox.settings.services.allizom.org").unwrap(),
-            Self::Dev => Url::parse("https://remote-settings-dev.allizom.org").unwrap(),
-            Self::Custom { url } => Url::parse(url)?,
+            Self::Prod => Url::parse("https://firefox.settings.services.mozilla.com/v1")?,
+            Self::Stage => Url::parse("https://firefox.settings.services.allizom.org/v1")?,
+            Self::Dev => Url::parse("https://remote-settings-dev.allizom.org/v1")?,
+            Self::Custom { url } => {
+                let mut url = Url::parse(url)?;
+                
+                
+                
+                
+                
+                if url.scheme() != "file" {
+                    url = url.join("v1")?
+                }
+                url
+            }
         })
     }
 }

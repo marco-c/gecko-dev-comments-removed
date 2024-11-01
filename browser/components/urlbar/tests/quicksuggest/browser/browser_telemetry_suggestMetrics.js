@@ -47,7 +47,8 @@ async function getQueryMetricsLabels() {
 }
 
 
-add_task(async function ingest() {
+
+add_task(async function ingest_unchanged() {
   const oldIngestTimeValues = Object.fromEntries(
     EXPECTED_INGEST_LABELS.map(label => [
       label,
@@ -74,19 +75,90 @@ add_task(async function ingest() {
     ])
   );
   for (let label of EXPECTED_INGEST_LABELS) {
-    checkLabeledTimingDistributionMetricIncreased(
+    checkLabeledTimingDistributionMetricUnchanged(
       "suggest.ingestTime",
       label,
       oldIngestTimeValues,
       newIngestTimeValues
     );
-    checkLabeledTimingDistributionMetricIncreased(
+    checkLabeledTimingDistributionMetricUnchanged(
       "suggest.ingestDownloadTime",
       label,
       oldIngestDownloadTimeValues,
       newIngestDownloadTimeValues
     );
   }
+});
+
+
+
+add_task(async function ingest_changed() {
+  const oldIngestTimeValues = Object.fromEntries(
+    EXPECTED_INGEST_LABELS.map(label => [
+      label,
+      Glean.suggest.ingestTime[label].testGetValue(),
+    ])
+  );
+  const oldIngestDownloadTimeValues = Object.fromEntries(
+    EXPECTED_INGEST_LABELS.map(label => [
+      label,
+      Glean.suggest.ingestDownloadTime[label].testGetValue(),
+    ])
+  );
+
+  await QuickSuggestTestUtils.setRemoteSettingsRecords([
+    {
+      type: "data",
+      attachment: [
+        QuickSuggestTestUtils.ampRemoteSettings({
+          keywords: ["a new keyword"],
+        }),
+      ],
+    },
+  ]);
+
+  const newIngestTimeValues = Object.fromEntries(
+    EXPECTED_INGEST_LABELS.map(label => [
+      label,
+      Glean.suggest.ingestTime[label].testGetValue(),
+    ])
+  );
+  const newIngestDownloadTimeValues = Object.fromEntries(
+    EXPECTED_INGEST_LABELS.map(label => [
+      label,
+      Glean.suggest.ingestDownloadTime[label].testGetValue(),
+    ])
+  );
+  checkLabeledTimingDistributionMetricIncreased(
+    "suggest.ingestTime",
+    "data",
+    oldIngestTimeValues,
+    newIngestTimeValues
+  );
+  checkLabeledTimingDistributionMetricIncreased(
+    "suggest.ingestDownloadTime",
+    "data",
+    oldIngestDownloadTimeValues,
+    newIngestDownloadTimeValues
+  );
+
+  for (let label of EXPECTED_INGEST_LABELS.filter(l => l != "data")) {
+    checkLabeledTimingDistributionMetricUnchanged(
+      "suggest.ingestTime",
+      label,
+      oldIngestTimeValues,
+      newIngestTimeValues
+    );
+    checkLabeledTimingDistributionMetricUnchanged(
+      "suggest.ingestDownloadTime",
+      label,
+      oldIngestDownloadTimeValues,
+      newIngestDownloadTimeValues
+    );
+  }
+
+  
+  await QuickSuggestTestUtils.setRemoteSettingsRecords(REMOTE_SETTINGS_RECORDS);
 });
 
 
@@ -122,6 +194,19 @@ add_task(async function query() {
     );
   }
 });
+
+function checkLabeledTimingDistributionMetricUnchanged(
+  name,
+  label,
+  oldValues,
+  newValues
+) {
+  Assert.deepEqual(
+    oldValues[label],
+    newValues[label],
+    `The new value for ${name}[${label}] should be the same as the old value`
+  );
+}
 
 function checkLabeledTimingDistributionMetricIncreased(
   name,

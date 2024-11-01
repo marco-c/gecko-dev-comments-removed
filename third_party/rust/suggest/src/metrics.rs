@@ -33,45 +33,63 @@ impl SuggestIngestionMetrics {
     
     
     
-    
     pub fn measure_ingest<F, T>(&mut self, record_type: impl Into<String>, operation: F) -> T
     where
-        F: FnOnce(&mut DownloadTimer) -> T,
+        F: FnOnce(&mut MetricsContext) -> T,
     {
         let timer = Instant::now();
         let record_type = record_type.into();
-        let mut download_metrics = DownloadTimer::default();
-        let result = operation(&mut download_metrics);
+        let mut context = MetricsContext::default();
+        let result = operation(&mut context);
         let elapsed = timer.elapsed().as_micros() as u64;
-        self.ingestion_times.push(LabeledTimingSample::new(
-            record_type.clone(),
-            elapsed - download_metrics.total_time,
-        ));
-        self.download_times.push(LabeledTimingSample::new(
-            record_type,
-            download_metrics.total_time,
-        ));
+        match context {
+            MetricsContext::Uninstrumented => (),
+            MetricsContext::Instrumented { download_time } => {
+                self.ingestion_times.push(LabeledTimingSample::new(
+                    record_type.clone(),
+                    elapsed - download_time,
+                ));
+                self.download_times
+                    .push(LabeledTimingSample::new(record_type, download_time));
+            }
+        }
         result
     }
 }
 
 
-
-
-
 #[derive(Default)]
-pub struct DownloadTimer {
-    total_time: u64,
+pub enum MetricsContext {
+    
+    
+    #[default]
+    Uninstrumented,
+    
+    
+    
+    Instrumented { download_time: u64 },
 }
 
-impl DownloadTimer {
+impl MetricsContext {
+    
+    
+    
+    
     pub fn measure_download<F, T>(&mut self, operation: F) -> T
     where
         F: FnOnce() -> T,
     {
         let timer = Instant::now();
         let result = operation();
-        self.total_time += timer.elapsed().as_micros() as u64;
+        let elasped = timer.elapsed().as_micros() as u64;
+        match self {
+            Self::Uninstrumented => {
+                *self = Self::Instrumented {
+                    download_time: elasped,
+                }
+            }
+            Self::Instrumented { download_time } => *download_time += elasped,
+        }
         result
     }
 }
