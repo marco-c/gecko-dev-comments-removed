@@ -68,6 +68,7 @@ clipboardTypes.forEach(function (type) {
     await asyncClipboardRequestGetData(request, "text/plain", true).catch(
       () => {}
     );
+    syncClipboardRequestGetData(request, "text/plain", true);
   });
 
   add_task(async function test_clipboard_getDataSnapshot_after_write() {
@@ -82,10 +83,18 @@ clipboardTypes.forEach(function (type) {
       "Check data"
     );
     ok(request.valid, "request should still be valid");
+    is(
+      syncClipboardRequestGetData(request, "text/plain"),
+      str,
+      "Check data (sync)"
+    );
+    ok(request.valid, "request should still be valid");
     
     await asyncClipboardRequestGetData(request, "text/html", true).catch(
       () => {}
     );
+    ok(request.valid, "request should still be valid");
+    syncClipboardRequestGetData(request, "text/html", true);
     ok(request.valid, "request should still be valid");
 
     
@@ -99,6 +108,8 @@ clipboardTypes.forEach(function (type) {
       }
     );
     ok(!request.valid, "request should no longer be valid");
+    syncClipboardRequestGetData(request, "text/plain", true);
+    ok(!request.valid, "request should no longer be valid");
 
     info(`check clipboard data again`);
     request = await getClipboardDataSnapshot(type);
@@ -107,6 +118,11 @@ clipboardTypes.forEach(function (type) {
       await asyncClipboardRequestGetData(request, "text/plain"),
       str,
       "Check data"
+    );
+    is(
+      syncClipboardRequestGetData(request, "text/plain"),
+      str,
+      "Check data (sync)"
     );
 
     cleanupAllClipboard();
@@ -122,6 +138,12 @@ clipboardTypes.forEach(function (type) {
       await asyncClipboardRequestGetData(request, "text/plain"),
       str,
       "Check data"
+    );
+    ok(request.valid, "request should still be valid");
+    is(
+      syncClipboardRequestGetData(request, "text/plain"),
+      str,
+      "Check data (sync)"
     );
     ok(request.valid, "request should still be valid");
 
@@ -155,16 +177,25 @@ add_task(async function test_html_data() {
 
   let request = await getClipboardDataSnapshot(clipboard.kGlobalClipboard);
   isDeeply(request.flavorList, ["text/html"], "Check flavorList");
+  
+  let expectedData = navigator.platform.includes("Win")
+    ? `<html><body>\n<!--StartFragment-->${html_str}<!--EndFragment-->\n</body>\n</html>`
+    : html_str;
   is(
     await asyncClipboardRequestGetData(request, "text/html"),
-    
-    navigator.platform.includes("Win")
-      ? `<html><body>\n<!--StartFragment-->${html_str}<!--EndFragment-->\n</body>\n</html>`
-      : html_str,
+    expectedData,
     "Check data"
   );
   
   await asyncClipboardRequestGetData(request, "text/plain", true).catch(
     () => {}
   );
+
+  is(
+    syncClipboardRequestGetData(request, "text/html"),
+    expectedData,
+    "Check data (sync)"
+  );
+  
+  syncClipboardRequestGetData(request, "text/plain", true);
 });
