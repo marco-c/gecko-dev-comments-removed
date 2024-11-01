@@ -141,10 +141,15 @@ def install_certificates():
 
 
 def start_dbus():
+    
     run(["sudo", "service", "dbus", "start"])
     
-    
-    os.environ["DBUS_SESSION_BUS_ADDRESS"] = "autolaunch:"
+    dbus_env = run(["dbus-launch"], return_stdout=True)
+    for dbus_env_line in dbus_env.splitlines():
+        dbus_env_name, dbus_env_value = dbus_env_line.split("=", 1)
+        assert (dbus_env_name.startswith("DBUS_SESSION"))
+        os.environ[dbus_env_name] = dbus_env_value
+    assert ("DBUS_SESSION_BUS_ADDRESS" in os.environ)
 
 
 def install_chrome(channel):
@@ -267,7 +272,9 @@ def setup_environment(args):
     if "chrome" in args.browser:
         assert args.channel is not None
         install_chrome(args.channel)
-        
+
+    
+    if any(b in args.browser for b in ["chrome", "webkitgtk_minibrowser"]):
         start_dbus()
 
     if args.xvfb:
