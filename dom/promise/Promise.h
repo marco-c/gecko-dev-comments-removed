@@ -409,6 +409,10 @@ class Promise : public SupportsWeakPtr {
   
   
   
+  
+  
+  
+  
   void CreateWrapper(ErrorResult& aRv,
                      PropagateUserInteraction aPropagateUserInteraction =
                          eDontPropagateUserInteraction);
