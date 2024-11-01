@@ -79,7 +79,7 @@ function nonBrowserWindowStartup() {
     
     var hiddenWindowDisabledItems = [
       "cmd_close",
-      "minimizeWindow",
+      "cmd_minimizeWindow",
       "zoomWindow",
     ];
     for (let hiddenWindowDisabledItem of hiddenWindowDisabledItems) {
