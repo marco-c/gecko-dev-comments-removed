@@ -664,6 +664,11 @@ function uuid() {
 
 add_task(async function test_setup() {
   await promiseStartupManager();
+
+  
+  do_get_profile();
+  
+  Services.fog.initializeFOG();
 });
 
 add_task(async function test_single_initialization() {
@@ -2305,5 +2310,11 @@ add_task(function test_storage_sync_with_bytes_in_use() {
 add_task(function test_storage_onChanged_event_page() {
   return runWithPrefs([[STORAGE_SYNC_PREF, true]], () =>
     test_storage_change_event_page("sync")
+  );
+});
+
+add_task(async function test_storage_sync_telemetry() {
+  return runWithPrefs([[STORAGE_SYNC_PREF, true]], () =>
+    test_storage_sync_telemetry_quota("kinto", false)
   );
 });
