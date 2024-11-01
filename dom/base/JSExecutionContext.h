@@ -37,14 +37,6 @@ nsresult EvaluationExceptionToNSResult(ErrorResult& aRv);
 class MOZ_STACK_CLASS JSExecutionContext final {
   
   
-  
-  
-  
-  JS::Rooted<JS::Value> mDebuggerPrivateValue;
-  JS::Rooted<JSScript*> mDebuggerIntroductionScript;
-
-  
-  
   bool mSkip;
 
  public:
@@ -81,9 +73,18 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+                          RefPtr<JS::Stencil>& aStencil,
+                          JS::MutableHandle<JSScript*> aScript,
+                          ErrorResult& aRv);
+
+  
+  
+  void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
                           RefPtr<JS::Stencil>&& aStencil,
                           JS::MutableHandle<JSScript*> aScript,
                           bool& incrementalEncodingAlreadyStarted,
+                          JS::Handle<JS::Value> aDebuggerPrivateValue,
+                          JS::Handle<JSScript*> aDebuggerIntroductionScript,
                           ErrorResult& aRv, bool aEncodeBytecode = false,
                           JS::InstantiationStorage* aStorage = nullptr);
 };
