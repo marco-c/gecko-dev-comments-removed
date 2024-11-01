@@ -282,13 +282,13 @@ void ModuleScript::UnlinkModuleRecord() {
   
   
   
-  
-  
-  
-  
   if (mModuleRecord) {
-    if (JS::IsCyclicModule(mModuleRecord)) {
-      JSObject* module = mModuleRecord.unbarrieredGet();
+    
+    
+    
+    
+    JSObject* module = mModuleRecord.unbarrieredGet();
+    if (JS::IsCyclicModule(module)) {
       MOZ_ASSERT(JS::GetModulePrivate(module).toPrivate() == this);
       JS::ClearModulePrivate(module);
     }
