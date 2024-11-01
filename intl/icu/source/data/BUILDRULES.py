@@ -16,6 +16,23 @@ import sys
 def generate(config, io, common_vars):
     requests = []
 
+    
+    
+    
+    
+    if config.strategy == "subtractive":
+        filters = config.filters_json_data.setdefault("resourceFilters", [])
+        omit_charset_collations = {
+            "categories": [
+                "coll_tree"
+            ],
+            "rules": [
+                "-/collations/big5han",
+                "-/collations/gb2312han"
+            ]
+        }
+        filters.insert(0, omit_charset_collations)
+
     if len(io.glob("misc/*")) == 0:
         print("Error: Cannot find data directory; please specify --src_dir", file=sys.stderr)
         exit(1)
