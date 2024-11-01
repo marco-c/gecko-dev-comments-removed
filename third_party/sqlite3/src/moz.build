@@ -6,7 +6,7 @@
 NoVisibilityFlags()
 
 EXPORTS += [
-    'sqlite3.h',
+    "sqlite3.h",
 ]
 
 
@@ -24,10 +24,19 @@ DIRS += [
 ]
 
 SOURCES += [
-    'sqlite3.c',
+    "../ext/misc/carray.c",
+    "sqlite3.c",
+]
+
+LOCAL_INCLUDES += [
+    "../ext",
 ]
 
 OS_LIBS += CONFIG["DL_LIBS"]
+
+
+
+DEFINES["SQLITE_CORE"] = 1
 
 
 
