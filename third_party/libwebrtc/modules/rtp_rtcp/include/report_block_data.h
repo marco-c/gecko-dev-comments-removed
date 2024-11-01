@@ -38,7 +38,9 @@ class ReportBlockData {
   
   
   
-  float fraction_lost() const { return fraction_lost_raw() / 256.0; }
+  float fraction_lost() const {
+    return static_cast<float>(fraction_lost_raw()) / 256.0f;
+  }
 
   
   
