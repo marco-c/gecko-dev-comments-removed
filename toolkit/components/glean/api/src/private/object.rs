@@ -62,7 +62,7 @@ pub enum ObjectMetric<K> {
     Child,
 }
 
-impl<K: ObjectSerialize> ObjectMetric<K> {
+impl<K: ObjectSerialize + Clone> ObjectMetric<K> {
     
     pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
@@ -77,38 +77,33 @@ impl<K: ObjectSerialize> ObjectMetric<K> {
         match self {
             #[allow(unused)]
             ObjectMetric::Parent { id, inner } => {
-                
-                
-                
                 #[cfg(feature = "with_gecko")]
-                gecko_profiler::add_marker(
-                    "Object::set",
-                    gecko_profiler_category!(Telemetry),
-                    Default::default(),
-                    ObjectMetricMarker {
-                        id: *id,
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        value: "[]".to_string(),
-                    },
-                );
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "Object::set",
+                        gecko_profiler_category!(Telemetry),
+                        Default::default(),
+                        ObjectMetricMarker {
+                            id: *id,
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            value: truncate_string_for_marker(
+                                value.clone().into_serialized_object().map_or_else(
+                                    |e| glean::traits::ObjectError::to_string(&e),
+                                    |v| serde_json::Value::to_string(&v),
+                                ),
+                            ),
+                        },
+                    );
+                }
                 inner.set(value);
             }
             ObjectMetric::Child => {
@@ -123,15 +118,17 @@ impl<K: ObjectSerialize> ObjectMetric<K> {
             #[allow(unused)]
             ObjectMetric::Parent { id, inner } => {
                 #[cfg(feature = "with_gecko")]
-                gecko_profiler::add_marker(
-                    "Object::set",
-                    gecko_profiler_category!(Telemetry),
-                    Default::default(),
-                    ObjectMetricMarker {
-                        id: *id,
-                        value: truncate_string_for_marker(value.clone()),
-                    },
-                );
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "Object::set",
+                        gecko_profiler_category!(Telemetry),
+                        Default::default(),
+                        ObjectMetricMarker {
+                            id: *id,
+                            value: truncate_string_for_marker(value.clone()),
+                        },
+                    );
+                }
                 inner.set_string(value);
             }
             ObjectMetric::Child => {
