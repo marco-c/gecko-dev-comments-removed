@@ -148,8 +148,8 @@ enum class ScrollFlags {
   TriggeredByScript = 1 << 5,
   
   
-  
-  AnchorScrollFlags = (1 << 1) | (1 << 2) | (1 << 5),
+  AnchorScrollFlags =
+      ScrollOverflowHidden | ScrollNoParentFrames | TriggeredByScript,
   ALL_BITS = (1 << 6) - 1,
 };
 
