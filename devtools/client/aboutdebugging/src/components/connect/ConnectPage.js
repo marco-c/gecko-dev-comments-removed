@@ -68,9 +68,7 @@ class ConnectPage extends PureComponent {
     };
   }
 
-  
-  
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     this.props.dispatch(Actions.selectPage(PAGE_TYPES.CONNECT));
   }
 
