@@ -62,37 +62,36 @@ class MOZ_STACK_CLASS JSExecutionContext final {
     
     
   }
-
-  
-  
-  
-  void JoinOffThread(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-                     ScriptLoadContext* aContext, RefPtr<JS::Stencil>& aStencil,
-                     JS::InstantiationStorage& aStorage, ErrorResult& aRv);
-
-  
-  
-  void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-                          RefPtr<JS::Stencil>& aStencil,
-                          JS::MutableHandle<JSScript*> aScript,
-                          ErrorResult& aRv);
-
-  
-  
-  void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-                          RefPtr<JS::Stencil>&& aStencil,
-                          JS::MutableHandle<JSScript*> aScript,
-                          bool& incrementalEncodingAlreadyStarted,
-                          JS::Handle<JS::Value> aDebuggerPrivateValue,
-                          JS::Handle<JSScript*> aDebuggerIntroductionScript,
-                          ErrorResult& aRv, bool aEncodeBytecode = false,
-                          JS::InstantiationStorage* aStorage = nullptr);
 };
+
+
+
+
+void JoinOffThread(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+                   ScriptLoadContext* aContext, RefPtr<JS::Stencil>& aStencil,
+                   JS::InstantiationStorage& aStorage, ErrorResult& aRv);
 
 
 void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
              const nsAString& aScript, RefPtr<JS::Stencil>& aStencil,
              ErrorResult& aRv);
+
+
+
+void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+                        RefPtr<JS::Stencil>& aStencil,
+                        JS::MutableHandle<JSScript*> aScript, ErrorResult& aRv);
+
+
+
+void InstantiateStencil(JSContext* aCx, JS::CompileOptions& aCompileOptions,
+                        RefPtr<JS::Stencil>&& aStencil,
+                        JS::MutableHandle<JSScript*> aScript,
+                        bool& incrementalEncodingAlreadyStarted,
+                        JS::Handle<JS::Value> aDebuggerPrivateValue,
+                        JS::Handle<JSScript*> aDebuggerIntroductionScript,
+                        ErrorResult& aRv, bool aEncodeBytecode = false,
+                        JS::InstantiationStorage* aStorage = nullptr);
 
 }  
 }  
