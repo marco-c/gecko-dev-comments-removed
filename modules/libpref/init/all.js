@@ -3608,6 +3608,10 @@ pref("reader.parse-node-limit", 3000);
 
 
 
+pref("reader.debug", false);
+
+
+
 pref("reader.errors.includeURLs", false);
 
 
