@@ -176,6 +176,7 @@ class NetEq {
 
   
   struct DecoderFormat {
+    int payload_type;
     int sample_rate_hz;
     int num_channels;
     SdpAudioFormat sdp_format;
@@ -299,6 +300,11 @@ class NetEq {
   
   virtual absl::optional<DecoderFormat> GetDecoderFormat(
       int payload_type) const = 0;
+
+  
+  virtual absl::optional<DecoderFormat> GetCurrentDecoderFormat() const {
+    return absl::nullopt;
+  }
 
   
   virtual void FlushBuffers() = 0;
