@@ -1,0 +1,70 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+const {
+  checkInputAndSerializationMatch,
+  checkSerializationMissingSecondColon,
+} = ChromeUtils.importESModule(
+  "resource://testing-common/simple_unknown_uri_helpers.sys.mjs"
+);
+
+function inChildProcess() {
+  return Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
+}
+
+function run_test() {
+  
+  if (!inChildProcess()) {
+    
+    Services.prefs.setBoolPref("network.url.useDefaultURI", true);
+    Services.prefs.setBoolPref(
+      "network.url.simple_uri_unknown_schemes_enabled",
+      true
+    );
+    Services.prefs.setCharPref(
+      "network.url.simple_uri_unknown_schemes",
+      "simpleprotocol,otherproto"
+    );
+  }
+
+  
+  checkInputAndSerializationMatch("https://example.com/");
+
+  
+  checkSerializationMissingSecondColon("https://https://example.com/");
+
+  
+  checkSerializationMissingSecondColon(
+    "nonsimpleprotocol://https://example.com"
+  );
+
+  
+  checkInputAndSerializationMatch("simpleprotocol://https://example.com");
+
+  
+  if (!inChildProcess()) {
+    
+    Services.prefs.setCharPref(
+      "network.url.simple_uri_unknown_schemes",
+      "otherproto"
+    );
+    checkSerializationMissingSecondColon(
+      "simpleprotocol://https://example.com"
+    );
+
+    
+    Services.prefs.setCharPref(
+      "network.url.simple_uri_unknown_schemes",
+      " simpleprotocol , otherproto "
+    );
+    checkInputAndSerializationMatch("simpleprotocol://https://example.com");
+    checkInputAndSerializationMatch("otherproto://https://example.com");
+  }
+}

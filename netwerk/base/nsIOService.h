@@ -27,6 +27,7 @@
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
 #include "nsNetCID.h"
+#include "SimpleURIUnknownSchemes.h"
 
 
 
@@ -266,6 +267,8 @@ class nsIOService final : public nsIIOService,
   nsTHashSet<nsCString> mIOServiceTopicList;
 
   nsCOMPtr<nsIObserverService> mObserverService;
+
+  SimpleURIUnknownSchemes mSimpleURIUnknownSchemes;
 
  public:
   
