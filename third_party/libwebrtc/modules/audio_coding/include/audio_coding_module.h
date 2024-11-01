@@ -80,6 +80,10 @@ class AudioCodingModule {
 
   
   
+  virtual void Reset() = 0;
+
+  
+  
   
   
   

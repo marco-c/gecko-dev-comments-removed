@@ -140,6 +140,7 @@ TEST_F(ChannelSendTest, StopSendShouldResetEncoder) {
   ProcessNextFrame();
   
   channel_->StopSend();
+
   channel_->StartSend();
   
   
