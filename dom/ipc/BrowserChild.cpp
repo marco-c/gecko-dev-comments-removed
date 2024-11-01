@@ -3029,18 +3029,21 @@ void BrowserChild::UpdateVisibility() {
       return false;
     }
     
-    
-    
-    
-    
-    
-    
-    if (!mIsTopLevel && !mEffectsInfo.IsVisible()) {
-      return false;
-    }
-    
     if (!mRenderLayers) {
       return false;
+    }
+    if (!mIsTopLevel) {
+      
+      if (!mEffectsInfo.IsVisible()) {
+        return false;
+      }
+      
+      
+      
+      if (!mIsPreservingLayers && mBrowsingContext &&
+          !mBrowsingContext->IsActive()) {
+        return false;
+      }
     }
     return true;
   }();
@@ -3091,6 +3094,7 @@ void BrowserChild::MakeHidden() {
 IPCResult BrowserChild::RecvPreserveLayers(bool aPreserve) {
   mIsPreservingLayers = aPreserve;
 
+  UpdateVisibility();
   PresShellActivenessMaybeChanged();
 
   return IPC_OK();
