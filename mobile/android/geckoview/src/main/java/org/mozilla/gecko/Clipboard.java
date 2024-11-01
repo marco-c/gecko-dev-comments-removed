@@ -11,6 +11,7 @@ import android.content.ClipboardManager.OnPrimaryClipChangedListener;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.os.Build;
+import android.os.PersistableBundle;
 import android.text.TextUtils;
 import android.util.Log;
 import java.io.ByteArrayOutputStream;
@@ -133,8 +134,9 @@ public final class Clipboard {
 
 
   @WrapForJNI(calledFrom = "gecko")
-  public static boolean setText(final Context context, final CharSequence text) {
-    return setData(context, ClipData.newPlainText("text", text));
+  public static boolean setText(
+      final Context context, final CharSequence text, final boolean isPrivateData) {
+    return setData(context, ClipData.newPlainText("text", text), isPrivateData);
   }
 
   
@@ -147,8 +149,11 @@ public final class Clipboard {
 
   @WrapForJNI(calledFrom = "gecko")
   private static boolean setHTML(
-      final Context context, final CharSequence text, final String htmlText) {
-    return setData(context, ClipData.newHtmlText("html", text, htmlText));
+      final Context context,
+      final CharSequence text,
+      final String htmlText,
+      final boolean isPrivateData) {
+    return setData(context, ClipData.newHtmlText("html", text, htmlText), isPrivateData);
   }
 
   
@@ -158,11 +163,17 @@ public final class Clipboard {
 
 
 
-  private static boolean setData(final Context context, final ClipData clipData) {
+  private static boolean setData(
+      final Context context, final ClipData clipData, final boolean isPrivateData) {
     
     
     final ClipboardManager cm =
         (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    if (isPrivateData && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      final PersistableBundle extras = new PersistableBundle();
+      extras.putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true);
+      clipData.getDescription().setExtras(extras);
+    }
     try {
       cm.setPrimaryClip(clipData);
     } catch (final NullPointerException e) {
@@ -228,7 +239,7 @@ public final class Clipboard {
   @WrapForJNI(calledFrom = "gecko")
   private static void clear(final Context context) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-      setText(context, null);
+      setText(context, null, false);
       return;
     }
     
