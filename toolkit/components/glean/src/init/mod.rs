@@ -3,7 +3,7 @@
 
 
 use std::env;
-use std::ffi::CString;
+use std::ffi::{c_char, CStr, CString};
 use std::ops::DerefMut;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -285,6 +285,14 @@ fn get_app_info() -> Result<(String, String, String, String), nsresult> {
         }
     }
 
+    extern "C" {
+        fn FOG_MozAppVersionDisplay() -> *const c_char;
+    }
+    
+    let version = unsafe { CStr::from_ptr(FOG_MozAppVersionDisplay()) }
+        .to_str()
+        .map_err(|_| NS_ERROR_FAILURE)?;
+
     let app_info = match xul.query_interface::<nsIXULAppInfo>() {
         Some(ai) => ai,
         
@@ -292,7 +300,7 @@ fn get_app_info() -> Result<(String, String, String, String), nsresult> {
         _ => {
             return Ok((
                 "unknown".to_owned(),
-                "unknown".to_owned(),
+                version.to_string(),
                 channel.to_string(),
                 "unknown".to_owned(),
             ))
@@ -302,11 +310,6 @@ fn get_app_info() -> Result<(String, String, String, String), nsresult> {
     let mut build_id = nsCString::new();
     unsafe {
         app_info.GetAppBuildID(&mut *build_id).to_result()?;
-    }
-
-    let mut version = nsCString::new();
-    unsafe {
-        app_info.GetVersion(&mut *version).to_result()?;
     }
 
     let mut locale = nsCString::new();
