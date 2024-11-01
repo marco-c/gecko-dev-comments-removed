@@ -444,7 +444,11 @@ pref("browser.urlbar.suggest.quickactions",         true);
 pref("browser.urlbar.deduplication.enabled", false);
 pref("browser.urlbar.deduplication.thresholdDays", 7);
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.scotchBonnet.enableOverride", true);
+#else
 pref("browser.urlbar.scotchBonnet.enableOverride", false);
+#endif
 
 
 pref("browser.urlbar.trending.featureGate", true);
