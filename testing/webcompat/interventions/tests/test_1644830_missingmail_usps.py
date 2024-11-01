@@ -12,6 +12,7 @@ PASSWORD_CSS = "#password"
 SIGN_IN_CSS = "#btn-submit"
 TERMS_CHECKBOX_CSS = "#tc-checkbox"
 TERMS_FAUX_CHECKBOX_CSS = "#tc-checkbox + .mrc-custom-checkbox"
+LOADING_CSS = ".blockUI.blockMsg.blockPage"
 
 
 
@@ -33,6 +34,13 @@ async def are_checkboxes_clickable(client, credentials):
     username.send_keys(credentials["username"])
     password.send_keys(credentials["password"])
     sign_in.click()
+
+    
+    client.await_css(LOADING_CSS, is_displayed=True)
+    client.await_element_hidden(client.css(LOADING_CSS))
+    if client.is_displayed(username):
+        pytest.skip("Login on the page seem to be broken right now. Try again later.")
+        return False
 
     tc = client.await_css(TERMS_CHECKBOX_CSS, timeout=TIMEOUT)
     if tc is None:

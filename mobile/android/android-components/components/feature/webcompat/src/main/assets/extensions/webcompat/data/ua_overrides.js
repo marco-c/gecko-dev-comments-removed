@@ -965,23 +965,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1836112",
-    platform: "all",
-    domain: "www.capcut.cn",
-    bug: "1836112",
-    config: {
-      matches: ["*://www.capcut.cn/editor*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
     id: "bug1836135",
     platform: "all",
     domain: "gts-pro.sdimedia.com",
@@ -1024,25 +1007,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://atracker.pro/*"],
       uaTransformer: originalUA => {
         return originalUA + " Chrome/113.0.0.0";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1849018",
-    platform: "all",
-    domain: "carefirst.com",
-    bug: "1849018",
-    config: {
-      matches: ["*://*.carefirst.com/myaccount*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },

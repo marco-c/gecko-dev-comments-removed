@@ -158,20 +158,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1651917",
-    platform: "android",
-    domain: "teletrader.com",
-    bug: "1651917",
-    contentScripts: {
-      matches: ["*://*.teletrader.com/*"],
-      css: [
-        {
-          file: "injections/css/bug1651917-teletrader.com.body-transform-origin.css",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1653075",
     platform: "desktop",
     domain: "livescience.com",
@@ -181,20 +167,6 @@ const AVAILABLE_INJECTIONS = [
       css: [
         {
           file: "injections/css/bug1653075-livescience.com-scrollbar-width.css",
-        },
-      ],
-    },
-  },
-  {
-    id: "bug1654907",
-    platform: "android",
-    domain: "reactine.ca",
-    bug: "1654907",
-    contentScripts: {
-      matches: ["*://*.reactine.ca/*"],
-      css: [
-        {
-          file: "injections/css/bug1654907-reactine.ca-hide-unsupported.css",
         },
       ],
     },
@@ -344,20 +316,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1774490",
-    platform: "all",
-    domain: "rainews.it",
-    bug: "1774490",
-    contentScripts: {
-      matches: ["*://www.rainews.it/*"],
-      css: [
-        {
-          file: "injections/css/bug1774490-rainews.it-gallery-fix.css",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1774005",
     platform: "all",
     domain: "Sites relying on window.InstallTrigger",
@@ -365,12 +323,10 @@ const AVAILABLE_INJECTIONS = [
     contentScripts: {
       matches: [
         "*://*.crunchyroll.com/*", 
-        "*://*.ersthelfer.tv/*", 
         "*://*.webex.com/*", 
         "*://ifcinema.institutfrancais.com/*", 
         "*://islamionline.islamicbank.ps/*", 
         "*://*.itv.com/*", 
-        "*://mobilevikings.be/*/registration/*", 
         "*://www.schoolnutritionandfitness.com/*", 
       ],
       js: [
@@ -399,92 +355,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1784141",
-    platform: "android",
-    domain: "aveeno.com and acuvue.com",
-    bug: "1784141",
-    contentScripts: {
-      matches: [
-        "*://*.aveeno.com/*",
-        "*://*.aveeno.ca/*",
-        "*://*.aveeno.com.au/*",
-        "*://*.aveeno.co.kr/*",
-        "*://*.aveeno.co.uk/*",
-        "*://*.aveeno.ie/*",
-        "*://*.acuvue.com/*", 
-        "*://*.acuvue.com.ar/*",
-        "*://*.acuvue.com.br/*",
-        "*://*.acuvue.ca/*",
-        "*://*.acuvue-fr.ca/*",
-        "*://*.acuvue.cl/*",
-        "*://*.acuvue.co.cr/*",
-        "*://*.acuvue.com.co/*",
-        "*://*.acuvue.com.do/*",
-        "*://*.acuvue.com.pe/*",
-        "*://*.acuvue.com.sv/*",
-        "*://*.acuvue.com.gt/*",
-        "*://*.acuvue.hn/*",
-        "*://*.acuvue.com.mx/*",
-        "*://*.acuvue.com.pa/*",
-        "*://*.acuvue.com.py/*",
-        "*://*.acuvue.com.pr/*",
-        "*://*.acuvue.com.uy/*",
-        "*://*.acuvue.com.au/*",
-        "*://*.acuvue.com.cn/*",
-        "*://*.acuvue.com.hk/*",
-        "*://*.acuvue.co.in/*",
-        "*://*.acuvue.co.id/*",
-        "*://acuvuevision.jp/*",
-        "*://*.acuvue.co.kr/*",
-        "*://*.acuvue.com.my/*",
-        "*://*.acuvue.co.nz/*",
-        "*://*.acuvue.com.sg/*",
-        "*://*.acuvue.com.tw/*",
-        "*://*.acuvue.co.th/*",
-        "*://*.acuvue.com.vn/*",
-        "*://*.acuvue.at/*",
-        "*://*.acuvue.be/*",
-        "*://*.fr.acuvue.be/*",
-        "*://*.acuvue-croatia.com/*",
-        "*://*.acuvue.cz/*",
-        "*://*.acuvue.dk/*",
-        "*://*.acuvue.fi/*",
-        "*://*.acuvue.fr/*",
-        "*://*.acuvue.de/*",
-        "*://*.acuvue.gr/*",
-        "*://*.acuvue.hu/*",
-        "*://*.acuvue.ie/*",
-        "*://*.acuvue.co.il/*",
-        "*://*.acuvue.it/*",
-        "*://*.acuvuekz.com/*",
-        "*://*.acuvue.lu/*",
-        "*://*.en.acuvuearabia.com/*",
-        "*://*.acuvuearabia.com/*",
-        "*://*.acuvue.nl/*",
-        "*://*.acuvue.no/*",
-        "*://*.acuvue.pl/*",
-        "*://*.acuvue.pt/*",
-        "*://*.acuvue.ro/*",
-        "*://*.acuvue.ru/*",
-        "*://*.acuvue.sk/*",
-        "*://*.acuvue.si/*",
-        "*://*.acuvue.co.za/*",
-        "*://*.jnjvision.com.tr/*",
-        "*://*.acuvue.co.uk/*",
-        "*://*.acuvue.ua/*",
-        "*://*.acuvue.com.pe/*",
-        "*://*.acuvue.es/*",
-        "*://*.acuvue.se/*",
-        "*://*.acuvue.ch/*",
-      ],
-      css: [
-        {
-          file: "injections/css/bug1784141-aveeno.com-acuvue.com-unsupported.css",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1784199",
     platform: "all",
     domain: "Sites based on Entrata Platform",
@@ -492,21 +362,22 @@ const AVAILABLE_INJECTIONS = [
     contentScripts: {
       matches: [
         "*://*.7streetbrownstones.com/*", 
-        "*://*.aptsovation.com/*",
+        "*://*.aptsovation.com/*", 
         "*://*.avanabayview.com/*", 
         "*://*.breakpointeandcoronado.com/*", 
         "*://*.courtsatspringmill.com/*", 
         "*://*.fieldstoneamherst.com/*", 
+        "*://*.flatsatshadowglen.com/*", 
         "*://*.gslbriarcreek.com/*", 
         "*://*.hpixeniatrails.com/*", 
         "*://*.liveobserverpark.com/*", 
         "*://*.liveupark.com/*", 
         "*://*.midwayurban.com/*", 
-        "*://*.nhcalaska.com/*",
+        "*://*.nhcalaska.com/*", 
         "*://*.prospectportal.com/*", 
-        "*://*.securityproperties.com/*",
+        "*://*.securityproperties.com/*", 
         "*://*.thefoundryat41st.com/*", 
-        "*://*.theloftsorlando.com/*",
+        "*://*.theloftsorlando.com/*", 
         "*://*.vanallenapartments.com/*", 
       ],
       css: [
@@ -570,18 +441,15 @@ const AVAILABLE_INJECTIONS = [
         "*://*.franmar.com/*", 
         "*://*.themusiclab.org/*", 
         "*://*.oregonfoodbank.org/*", 
-        "*://*.fourbarrelcoffee.com/*", 
         "*://bluetokaicoffee.com/*", 
         "*://bathpublishing.com/*", 
         "*://dylantalkstone.com/*", 
         "*://renewd.com.au/*", 
         "*://*.lamudi.co.id/*", 
-        "*://*.thehawksmoor.com/*", 
         "*://weaversofireland.com/*", 
         "*://*.iledefrance-mobilites.fr/*", 
         "*://*.lawnmowerpartsworld.com/*", 
         "*://*.discountcoffee.co.uk/*", 
-        "*://torguard.net/*", 
         "*://*.arcsivr.com/*", 
         "*://drafthouse.com/*", 
         "*://*.lafoodbank.org/*", 
@@ -670,20 +538,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1830776",
-    platform: "all",
-    domain: "blueshieldca.com",
-    bug: "1830776",
-    contentScripts: {
-      matches: ["*://*.blueshieldca.com/*"],
-      js: [
-        {
-          file: "injections/js/bug1830776-blueshieldca.com-unsupported.js",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1829949",
     platform: "desktop",
     domain: "tomshardware.com",
@@ -738,20 +592,6 @@ const AVAILABLE_INJECTIONS = [
         },
       ],
       allFrames: true,
-    },
-  },
-  {
-    id: "bug1830810",
-    platform: "all",
-    domain: "interceramic.com",
-    bug: "1830810",
-    contentScripts: {
-      matches: ["*://interceramic.com/*"],
-      css: [
-        {
-          file: "injections/css/bug1830810-interceramic.com-hide-unsupported.css",
-        },
-      ],
     },
   },
   {
@@ -954,20 +794,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1855071",
-    platform: "android",
-    domain: "www.meteoam.it",
-    bug: "1855071",
-    contentScripts: {
-      matches: ["*://www.meteoam.it/*"],
-      js: [
-        {
-          file: "injections/js/bug1855071-www.meteoam.it.js",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1864564",
     platform: "all",
     domain: "Esri breakage",
@@ -1031,34 +857,6 @@ const AVAILABLE_INJECTIONS = [
         },
       ],
       allFrames: true,
-    },
-  },
-  {
-    id: "1896383",
-    platform: "all",
-    domain: "unimarc.cl",
-    bug: "1896383",
-    contentScripts: {
-      matches: ["*://*.unimarc.cl/*"],
-      js: [
-        {
-          file: "injections/js/bug1896383-error-capturestacktrace-shim.js",
-        },
-      ],
-    },
-  },
-  {
-    id: "1922175",
-    platform: "all",
-    domain: "app.livingsecurity.com",
-    bug: "1922175",
-    contentScripts: {
-      matches: ["*://app.livingsecurity.com/*"],
-      js: [
-        {
-          file: "injections/js/bug1896383-error-capturestacktrace-shim.js",
-        },
-      ],
     },
   },
   {
@@ -1183,6 +981,11 @@ const AVAILABLE_INJECTIONS = [
     bug: "1899937",
     contentScripts: {
       matches: ["*://plus.nhk.jp/*"],
+      css: [
+        {
+          file: "injections/css/bug1899937-plus.nhk.jp-hide-unsupported.css",
+        },
+      ],
       js: [
         {
           file: "injections/js/bug1899937-plus.nhk.jp-request-picture-in-picture.js",

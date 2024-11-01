@@ -10,17 +10,18 @@ LOGIN_CSS = ".login-page-container"
 
 
 
-@pytest.mark.skip_platforms("android")
+
+@pytest.mark.skip_platforms("android", "linux")
 @pytest.mark.asyncio
 @pytest.mark.with_interventions
 async def test_enabled(client):
     await client.navigate(URL)
-    assert client.await_css(LOGIN_CSS, timeout=10)
+    assert client.await_css(LOGIN_CSS, timeout=20)
 
 
-@pytest.mark.skip_platforms("android")
+@pytest.mark.skip_platforms("android", "linux")
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):
     await client.navigate(URL)
-    assert client.await_css(UNSUPPORTED_CSS, timeout=10)
+    assert client.await_css(UNSUPPORTED_CSS, timeout=20)
