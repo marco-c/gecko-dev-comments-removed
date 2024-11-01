@@ -665,7 +665,6 @@ public class ContentBlocking {
 
 
 
-    @SuppressLint("WrongConstant") 
     public @NonNull Settings setSafeBrowsing(final @CBSafeBrowsing int cat) {
       mSbMalware.commit(ContentBlocking.catToSbMalware(cat));
       mSbPhishing.commit(ContentBlocking.catToSbPhishing(cat));
@@ -1743,11 +1742,11 @@ public class ContentBlocking {
     return enabled ? SafeBrowsing.PHISHING : SafeBrowsing.NONE;
   }
 
-   static boolean catToSbMalware(@CBAntiTracking final int cat) {
+   static boolean catToSbMalware(@CBSafeBrowsing final int cat) {
     return (cat & (SafeBrowsing.MALWARE | SafeBrowsing.UNWANTED | SafeBrowsing.HARMFUL)) != 0;
   }
 
-   static boolean catToSbPhishing(@CBAntiTracking final int cat) {
+   static boolean catToSbPhishing(@CBSafeBrowsing final int cat) {
     return (cat & SafeBrowsing.PHISHING) != 0;
   }
 
