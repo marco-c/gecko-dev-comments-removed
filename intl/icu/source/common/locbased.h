@@ -99,7 +99,7 @@ inline LocaleBased::LocaleBased(char* validAlias, char* actualAlias) :
 inline LocaleBased::LocaleBased(const char* validAlias,
                                 const char* actualAlias) :
     
-    valid((char*)validAlias), actual((char*)actualAlias) {
+    valid(const_cast<char*>(validAlias)), actual(const_cast<char*>(actualAlias)) {
 }
 
 U_NAMESPACE_END

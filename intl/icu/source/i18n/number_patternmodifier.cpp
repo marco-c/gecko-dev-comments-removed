@@ -85,7 +85,7 @@ ImmutablePatternModifier* MutablePatternModifier::createImmutable(UErrorCode& st
             StandardPlural::Form::MANY,
             StandardPlural::Form::OTHER};
 
-    auto pm = new AdoptingModifierStore();
+    auto* pm = new AdoptingModifierStore();
     if (pm == nullptr) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return nullptr;
@@ -176,7 +176,7 @@ void MutablePatternModifier::processQuantity(DecimalQuantity& fq, MicroProps& mi
     }
     
     
-    auto nonConstThis = const_cast<MutablePatternModifier*>(this);
+    auto* nonConstThis = const_cast<MutablePatternModifier*>(this);
     if (needsPlurals()) {
         StandardPlural::Form pluralForm = utils::getPluralSafe(micros.rounder, fRules, fq, status);
         nonConstThis->setNumberProperties(fq.signum(), pluralForm);
@@ -190,7 +190,7 @@ int32_t MutablePatternModifier::apply(FormattedStringBuilder& output, int32_t le
                                       UErrorCode& status) const {
     
     
-    auto nonConstThis = const_cast<MutablePatternModifier*>(this);
+    auto* nonConstThis = const_cast<MutablePatternModifier*>(this);
     int32_t prefixLen = nonConstThis->insertPrefix(output, leftIndex, status);
     int32_t suffixLen = nonConstThis->insertSuffix(output, rightIndex + prefixLen, status);
     
@@ -219,7 +219,7 @@ int32_t MutablePatternModifier::apply(FormattedStringBuilder& output, int32_t le
 int32_t MutablePatternModifier::getPrefixLength() const {
     
     
-    auto nonConstThis = const_cast<MutablePatternModifier*>(this);
+    auto* nonConstThis = const_cast<MutablePatternModifier*>(this);
 
     
     UErrorCode status = U_ZERO_ERROR; 
@@ -231,7 +231,7 @@ int32_t MutablePatternModifier::getPrefixLength() const {
 int32_t MutablePatternModifier::getCodePointCount() const {
     
     
-    auto nonConstThis = const_cast<MutablePatternModifier*>(this);
+    auto* nonConstThis = const_cast<MutablePatternModifier*>(this);
 
     
     UErrorCode status = U_ZERO_ERROR; 
@@ -258,7 +258,7 @@ void MutablePatternModifier::getParameters(Parameters& output) const {
     UPRV_UNREACHABLE_EXIT;
 }
 
-bool MutablePatternModifier::semanticallyEquivalent(const Modifier& other) const {
+bool MutablePatternModifier::strictEquals(const Modifier& other) const {
     (void)other;
     
     UPRV_UNREACHABLE_EXIT;
@@ -334,7 +334,7 @@ UnicodeString MutablePatternModifier::getCurrencySymbolForUnitWidth(UErrorCode& 
     case UNumberUnitWidth::UNUM_UNIT_WIDTH_VARIANT:
         return fCurrencySymbols.getVariantCurrencySymbol(status);
     case UNumberUnitWidth::UNUM_UNIT_WIDTH_HIDDEN:
-        return UnicodeString();
+        return {};
     default:
         return fCurrencySymbols.getCurrencySymbol(status);
     }

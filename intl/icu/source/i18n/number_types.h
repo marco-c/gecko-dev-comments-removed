@@ -20,8 +20,7 @@
 #include "formatted_string_builder.h"
 
 U_NAMESPACE_BEGIN
-namespace number {
-namespace impl {
+namespace number::impl {
 
 
 typedef FormattedStringBuilder::Field Field;
@@ -227,8 +226,13 @@ class U_I18N_API Modifier {
     
 
 
+    virtual bool strictEquals(const Modifier& other) const = 0;
 
-    virtual bool semanticallyEquivalent(const Modifier& other) const = 0;
+    
+
+
+
+    bool semanticallyEquivalent(const Modifier& other) const;
 };
 
 
@@ -364,8 +368,6 @@ class U_I18N_API NullableValue {
     T fValue;
 };
 
-
-} 
 } 
 U_NAMESPACE_END
 

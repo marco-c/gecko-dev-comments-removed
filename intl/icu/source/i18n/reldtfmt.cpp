@@ -57,7 +57,7 @@ RelativeDateFormat::RelativeDateFormat(const RelativeDateFormat& other) :
         fCombinedFormat = new SimpleFormatter(*other.fCombinedFormat);
     }
     if (fDatesLen > 0) {
-        fDates = (URelativeString*) uprv_malloc(sizeof(fDates[0])*(size_t)fDatesLen);
+        fDates = static_cast<URelativeString*>(uprv_malloc(sizeof(fDates[0]) * static_cast<size_t>(fDatesLen)));
         uprv_memcpy(fDates, other.fDates, sizeof(fDates[0])*(size_t)fDatesLen);
     }
 #if !UCONFIG_NO_BREAK_ITERATION
@@ -78,18 +78,26 @@ RelativeDateFormat::RelativeDateFormat( UDateFormatStyle timeStyle, UDateFormatS
     if(U_FAILURE(status) ) {
         return;
     }
+    if (dateStyle != UDAT_FULL_RELATIVE &&
+        dateStyle != UDAT_LONG_RELATIVE &&
+        dateStyle != UDAT_MEDIUM_RELATIVE &&
+        dateStyle != UDAT_SHORT_RELATIVE &&
+        dateStyle != UDAT_RELATIVE) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return;
+    }
 
     if (timeStyle < UDAT_NONE || timeStyle > UDAT_SHORT) {
         
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return;
     }
-    UDateFormatStyle baseDateStyle = (dateStyle > UDAT_SHORT)? (UDateFormatStyle)(dateStyle & ~UDAT_RELATIVE): dateStyle;
+    UDateFormatStyle baseDateStyle = (dateStyle > UDAT_SHORT) ? static_cast<UDateFormatStyle>(dateStyle & ~UDAT_RELATIVE) : dateStyle;
     DateFormat * df;
     
     
     if (baseDateStyle != UDAT_NONE) {
-        df = createDateInstance((EStyle)baseDateStyle, locale);
+        df = createDateInstance(static_cast<EStyle>(baseDateStyle), locale);
         fDateTimeFormatter=dynamic_cast<SimpleDateFormat *>(df);
         if (fDateTimeFormatter == nullptr) {
             status = U_UNSUPPORTED_ERROR;
@@ -97,7 +105,7 @@ RelativeDateFormat::RelativeDateFormat( UDateFormatStyle timeStyle, UDateFormatS
         }
         fDateTimeFormatter->toPattern(fDatePattern);
         if (timeStyle != UDAT_NONE) {
-            df = createTimeInstance((EStyle)timeStyle, locale);
+            df = createTimeInstance(static_cast<EStyle>(timeStyle), locale);
             SimpleDateFormat *sdf = dynamic_cast<SimpleDateFormat *>(df);
             if (sdf != nullptr) {
                 sdf->toPattern(fTimePattern);
@@ -106,7 +114,7 @@ RelativeDateFormat::RelativeDateFormat( UDateFormatStyle timeStyle, UDateFormatS
         }
     } else {
         
-        df = createTimeInstance((EStyle)timeStyle, locale);
+        df = createTimeInstance(static_cast<EStyle>(timeStyle), locale);
         fDateTimeFormatter=dynamic_cast<SimpleDateFormat *>(df);
         if (fDateTimeFormatter == nullptr) {
             status = U_UNSUPPORTED_ERROR;
@@ -149,7 +157,7 @@ bool RelativeDateFormat::operator==(const Format& other) const {
     return false;
 }
 
-static const char16_t APOSTROPHE = (char16_t)0x0027;
+static const char16_t APOSTROPHE = static_cast<char16_t>(0x0027);
 
 UnicodeString& RelativeDateFormat::format(  Calendar& cal,
                                 UnicodeString& appendTo,
@@ -495,7 +503,7 @@ struct RelDateFmtDataSink : public ResourceSink {
 
         
         n = offset + UDAT_DIRECTION_THIS; 
-        if (n < fDatesLen && fDatesPtr[n].string == nullptr) {
+        if (0 <= n && n < fDatesLen && fDatesPtr[n].string == nullptr) {
           
           fDatesPtr[n].offset = offset;
           fDatesPtr[n].string = value.getString(len, errorCode);
@@ -528,8 +536,8 @@ void RelativeDateFormat::loadDates(UErrorCode &status) {
             int32_t glueIndex = kDateTime;
             if (patternsSize >= (kDateTimeOffset + kShort + 1)) {
                 int32_t offsetIncrement = (fDateStyle & ~kRelative); 
-                if (offsetIncrement >= (int32_t)kFull &&
-                    offsetIncrement <= (int32_t)kShortRelative) {
+                if (offsetIncrement >= static_cast<int32_t>(kFull) &&
+                    offsetIncrement <= static_cast<int32_t>(kShortRelative)) {
                     glueIndex = kDateTimeOffset + offsetIncrement;
                 }
             }
@@ -544,7 +552,7 @@ void RelativeDateFormat::loadDates(UErrorCode &status) {
 
     
     fDatesLen = UDAT_DIRECTION_COUNT; 
-    fDates = (URelativeString*) uprv_malloc(sizeof(fDates[0])*fDatesLen);
+    fDates = static_cast<URelativeString*>(uprv_malloc(sizeof(fDates[0]) * fDatesLen));
 
     RelDateFmtDataSink sink(fDates, fDatesLen);
     ures_getAllItemsWithFallback(rb, "fields/day/relative", sink, status);

@@ -38,7 +38,7 @@ public:
 
 
 
-    BreakTransliterator(UnicodeFilter* adoptedFilter = 0);
+    BreakTransliterator(UnicodeFilter* adoptedFilter = nullptr);
 
     
 

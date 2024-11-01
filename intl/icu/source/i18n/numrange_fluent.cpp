@@ -212,6 +212,14 @@ UnlocalizedNumberRangeFormatter::UnlocalizedNumberRangeFormatter(NFS<UNF>&& src)
     
 }
 
+UnlocalizedNumberRangeFormatter::UnlocalizedNumberRangeFormatter(const impl::RangeMacroProps &macros) {
+    fMacros = macros;
+}
+
+UnlocalizedNumberRangeFormatter::UnlocalizedNumberRangeFormatter(impl::RangeMacroProps &&macros) {
+    fMacros = macros;
+}
+
 UnlocalizedNumberRangeFormatter& UnlocalizedNumberRangeFormatter::operator=(const UNF& other) {
     NFS<UNF>::operator=(static_cast<const NFS<UNF>&>(other));
     
@@ -306,15 +314,27 @@ LocalizedNumberRangeFormatter UnlocalizedNumberRangeFormatter::locale(const Loca
 }
 
 
+UnlocalizedNumberRangeFormatter LocalizedNumberRangeFormatter::withoutLocale() const & {
+    RangeMacroProps macros(fMacros);
+    macros.locale = Locale();
+    return UnlocalizedNumberRangeFormatter(macros);
+}
+
+UnlocalizedNumberRangeFormatter LocalizedNumberRangeFormatter::withoutLocale() && {
+    RangeMacroProps macros(std::move(fMacros));
+    macros.locale = Locale();
+    return UnlocalizedNumberRangeFormatter(std::move(macros));
+}
+
+
 FormattedNumberRange LocalizedNumberRangeFormatter::formatFormattableRange(
         const Formattable& first, const Formattable& second, UErrorCode& status) const {
     if (U_FAILURE(status)) {
         return FormattedNumberRange(U_ILLEGAL_ARGUMENT_ERROR);
     }
 
-    auto results = new UFormattedNumberRangeData();
-    if (results == nullptr) {
-        status = U_MEMORY_ALLOCATION_ERROR;
+    LocalPointer<UFormattedNumberRangeData> results(new UFormattedNumberRangeData(), status);
+    if (U_FAILURE(status)) {
         return FormattedNumberRange(status);
     }
 
@@ -332,16 +352,15 @@ FormattedNumberRange LocalizedNumberRangeFormatter::formatFormattableRange(
 
     
     if (U_SUCCESS(status)) {
-        return FormattedNumberRange(results);
+        return FormattedNumberRange(results.orphan());
     } else {
-        delete results;
         return FormattedNumberRange(status);
     }
 }
 
 void LocalizedNumberRangeFormatter::formatImpl(
         UFormattedNumberRangeData& results, bool equalBeforeRounding, UErrorCode& status) const {
-    auto* impl = getFormatter(status);
+    const auto* impl = getFormatter(status);
     if (U_FAILURE(status)) {
         return;
     }
@@ -376,13 +395,8 @@ LocalizedNumberRangeFormatter::getFormatter(UErrorCode& status) const {
     }
 
     
-    auto* temp = new NumberRangeFormatterImpl(fMacros, status);
+    LocalPointer<NumberRangeFormatterImpl> temp(new NumberRangeFormatterImpl(fMacros, status), status);
     if (U_FAILURE(status)) {
-        delete temp;
-        return nullptr;
-    }
-    if (temp == nullptr) {
-        status = U_MEMORY_ALLOCATION_ERROR;
         return nullptr;
     }
 
@@ -391,17 +405,16 @@ LocalizedNumberRangeFormatter::getFormatter(UErrorCode& status) const {
     
     auto* nonConstThis = const_cast<LocalizedNumberRangeFormatter*>(this);
 #ifndef __wasi__
-    if (!nonConstThis->fAtomicFormatter.compare_exchange_strong(ptr, temp)) {
+    if (!nonConstThis->fAtomicFormatter.compare_exchange_strong(ptr, temp.getAlias())) {
         
-        delete temp;
         return ptr;
     } else {
         
-        return temp;
+        return temp.orphan();
     }
 #else
-    nonConstThis->fAtomicFormatter = temp;
-    return temp;
+    nonConstThis->fAtomicFormatter = temp.getAlias();
+    return temp.orphan();
 #endif
 
 }

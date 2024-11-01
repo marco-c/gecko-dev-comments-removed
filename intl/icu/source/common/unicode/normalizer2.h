@@ -157,8 +157,28 @@ public:
 
 
 
+
+
+
     static const Normalizer2 *
     getNFKCCasefoldInstance(UErrorCode &errorCode);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static const Normalizer2 *
+    getNFKCSimpleCasefoldInstance(UErrorCode &errorCode);
 
     
 

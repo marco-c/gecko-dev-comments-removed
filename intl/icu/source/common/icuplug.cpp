@@ -747,7 +747,7 @@ uplug_init(UErrorCode *status) {
     FILE *f;
         
     CharString pluginFile;
-#ifdef OS390BATCH
+#ifdef ICU_PLUGINS_DD
 
 
 

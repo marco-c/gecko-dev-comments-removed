@@ -44,9 +44,7 @@
 
 U_NAMESPACE_BEGIN
 
-namespace double_conversion {
-
-namespace PowersOfTenCache {
+namespace double_conversion::PowersOfTenCache {
 
   
   
@@ -71,9 +69,7 @@ namespace PowersOfTenCache {
                                         DiyFp* power,
                                         int* found_exponent);
 
-}  
-
-}  
+} 
 
 
 U_NAMESPACE_END

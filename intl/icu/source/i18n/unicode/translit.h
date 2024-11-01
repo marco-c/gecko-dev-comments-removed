@@ -938,7 +938,7 @@ public:
 
 
 
-    int32_t getMaximumContextLength(void) const;
+    int32_t getMaximumContextLength() const;
 
 protected:
 
@@ -962,7 +962,7 @@ public:
 
 
 
-    virtual const UnicodeString& getID(void) const;
+    virtual const UnicodeString& getID() const;
 
     
 
@@ -1008,7 +1008,7 @@ public:
 
 
 
-    const UnicodeFilter* getFilter(void) const;
+    const UnicodeFilter* getFilter() const;
 
     
 
@@ -1019,7 +1019,7 @@ public:
 
 
 
-    UnicodeFilter* orphanFilter(void);
+    UnicodeFilter* orphanFilter();
 
     
 
@@ -1374,7 +1374,7 @@ public:
 
 
 
-    static int32_t U_EXPORT2 countAvailableSources(void);
+    static int32_t U_EXPORT2 countAvailableSources();
 
     
 
@@ -1448,7 +1448,7 @@ protected:
 
 
 
-    static int32_t _countAvailableSources(void);
+    static int32_t _countAvailableSources();
 
     
 
@@ -1510,7 +1510,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -1527,7 +1527,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override = 0;
+    virtual UClassID getDynamicClassID() const override = 0;
 
 private:
     static UBool initializeRegistry(UErrorCode &status);
@@ -1541,7 +1541,7 @@ public:
 
 
 
-    static int32_t U_EXPORT2 countAvailableIDs(void);
+    static int32_t U_EXPORT2 countAvailableIDs();
 
     
 
@@ -1559,14 +1559,14 @@ public:
 #endif  
 };
 
-inline int32_t Transliterator::getMaximumContextLength(void) const {
+inline int32_t Transliterator::getMaximumContextLength() const {
     return maximumContextLength;
 }
 
 inline void Transliterator::setID(const UnicodeString& id) {
     ID = id;
     
-    ID.append((char16_t)0);
+    ID.append(static_cast<char16_t>(0));
     ID.truncate(ID.length()-1);
 }
 

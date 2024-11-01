@@ -42,7 +42,7 @@ DictionaryBreakEngine::~DictionaryBreakEngine() {
 }
 
 UBool
-DictionaryBreakEngine::handles(UChar32 c) const {
+DictionaryBreakEngine::handles(UChar32 c, const char*) const {
     return fSet.contains(c);
 }
 
@@ -54,19 +54,19 @@ DictionaryBreakEngine::findBreaks( UText *text,
                                  UBool isPhraseBreaking,
                                  UErrorCode& status) const {
     if (U_FAILURE(status)) return 0;
-    (void)startPos;            
     int32_t result = 0;
 
     
     
     
 
-    int32_t start = (int32_t)utext_getNativeIndex(text);
+    utext_setNativeIndex(text, startPos);
+    int32_t start = static_cast<int32_t>(utext_getNativeIndex(text));
     int32_t current;
     int32_t rangeStart;
     int32_t rangeEnd;
     UChar32 c = utext_current32(text);
-    while((current = (int32_t)utext_getNativeIndex(text)) < endPos && fSet.contains(c)) {
+    while ((current = static_cast<int32_t>(utext_getNativeIndex(text))) < endPos && fSet.contains(c)) {
         utext_next32(text);         
         c = utext_current32(text);
     }
@@ -137,7 +137,7 @@ public:
 
 int32_t PossibleWord::candidates( UText *text, DictionaryMatcher *dict, int32_t rangeEnd ) {
     
-    int32_t start = (int32_t)utext_getNativeIndex(text);
+    int32_t start = static_cast<int32_t>(utext_getNativeIndex(text));
     if (start != offset) {
         offset = start;
         count = dict->matches(text, rangeEnd-start, UPRV_LENGTHOF(cuLengths), cuLengths, cpLengths, nullptr, &prefix);
@@ -253,7 +253,7 @@ ThaiBreakEngine::divideUpDictionaryRange( UText *text,
     
     utext_setNativeIndex(text, rangeStart);
     
-    while (U_SUCCESS(status) && (current = (int32_t)utext_getNativeIndex(text)) < rangeEnd) {
+    while (U_SUCCESS(status) && (current = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd) {
         cpWordLength = 0;
         cuWordLength = 0;
 
@@ -269,7 +269,7 @@ ThaiBreakEngine::divideUpDictionaryRange( UText *text,
         
         else if (candidates > 1) {
             
-            if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
+            if (static_cast<int32_t>(utext_getNativeIndex(text)) >= rangeEnd) {
                 goto foundBest;
             }
             do {
@@ -278,7 +278,7 @@ ThaiBreakEngine::divideUpDictionaryRange( UText *text,
                     words[wordsFound%THAI_LOOKAHEAD].markCurrent();
                     
                     
-                    if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
+                    if (static_cast<int32_t>(utext_getNativeIndex(text)) >= rangeEnd) {
                         goto foundBest;
                     }
                     
@@ -308,7 +308,7 @@ foundBest:
         
         
         UChar32 uc = 0;
-        if ((int32_t)utext_getNativeIndex(text) < rangeEnd &&  cpWordLength < THAI_ROOT_COMBINE_THRESHOLD) {
+        if (static_cast<int32_t>(utext_getNativeIndex(text)) < rangeEnd && cpWordLength < THAI_ROOT_COMBINE_THRESHOLD) {
             
             
             
@@ -320,9 +320,9 @@ foundBest:
                 UChar32 pc;
                 int32_t chars = 0;
                 for (;;) {
-                    int32_t pcIndex = (int32_t)utext_getNativeIndex(text);
+                    int32_t pcIndex = static_cast<int32_t>(utext_getNativeIndex(text));
                     pc = utext_next32(text);
-                    int32_t pcSize = (int32_t)utext_getNativeIndex(text) - pcIndex;
+                    int32_t pcSize = static_cast<int32_t>(utext_getNativeIndex(text)) - pcIndex;
                     chars += pcSize;
                     remaining -= pcSize;
                     if (remaining <= 0) {
@@ -356,28 +356,28 @@ foundBest:
                 utext_setNativeIndex(text, current+cuWordLength);
             }
         }
-        
+
         
         int32_t currPos;
-        while ((currPos = (int32_t)utext_getNativeIndex(text)) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
+        while ((currPos = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
             utext_next32(text);
-            cuWordLength += (int32_t)utext_getNativeIndex(text) - currPos;
+            cuWordLength += static_cast<int32_t>(utext_getNativeIndex(text)) - currPos;
         }
+
         
         
         
         
-        
-        if ((int32_t)utext_getNativeIndex(text) < rangeEnd && cuWordLength > 0) {
+        if (static_cast<int32_t>(utext_getNativeIndex(text)) < rangeEnd && cuWordLength > 0) {
             if (words[wordsFound%THAI_LOOKAHEAD].candidates(text, fDictionary, rangeEnd) <= 0
                 && fSuffixSet.contains(uc = utext_current32(text))) {
                 if (uc == THAI_PAIYANNOI) {
                     if (!fSuffixSet.contains(utext_previous32(text))) {
                         
                         utext_next32(text);
-                        int32_t paiyannoiIndex = (int32_t)utext_getNativeIndex(text);
+                        int32_t paiyannoiIndex = static_cast<int32_t>(utext_getNativeIndex(text));
                         utext_next32(text);
-                        cuWordLength += (int32_t)utext_getNativeIndex(text) - paiyannoiIndex;    
+                        cuWordLength += static_cast<int32_t>(utext_getNativeIndex(text)) - paiyannoiIndex; 
                         uc = utext_current32(text);     
                     }
                     else {
@@ -389,9 +389,9 @@ foundBest:
                     if (utext_previous32(text) != THAI_MAIYAMOK) {
                         
                         utext_next32(text);
-                        int32_t maiyamokIndex = (int32_t)utext_getNativeIndex(text);
+                        int32_t maiyamokIndex = static_cast<int32_t>(utext_getNativeIndex(text));
                         utext_next32(text);
-                        cuWordLength += (int32_t)utext_getNativeIndex(text) - maiyamokIndex;    
+                        cuWordLength += static_cast<int32_t>(utext_getNativeIndex(text)) - maiyamokIndex; 
                     }
                     else {
                         
@@ -489,7 +489,7 @@ LaoBreakEngine::divideUpDictionaryRange( UText *text,
 
     utext_setNativeIndex(text, rangeStart);
 
-    while (U_SUCCESS(status) && (current = (int32_t)utext_getNativeIndex(text)) < rangeEnd) {
+    while (U_SUCCESS(status) && (current = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd) {
         cuWordLength = 0;
         cpWordLength = 0;
 
@@ -514,7 +514,7 @@ LaoBreakEngine::divideUpDictionaryRange( UText *text,
                     words[wordsFound%LAO_LOOKAHEAD].markCurrent();
                     
                     
-                    if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
+                    if (static_cast<int32_t>(utext_getNativeIndex(text)) >= rangeEnd) {
                         goto foundBest;
                     }
                     
@@ -541,7 +541,7 @@ foundBest:
         
         
         
-        if ((int32_t)utext_getNativeIndex(text) < rangeEnd && cpWordLength < LAO_ROOT_COMBINE_THRESHOLD) {
+        if (static_cast<int32_t>(utext_getNativeIndex(text)) < rangeEnd && cpWordLength < LAO_ROOT_COMBINE_THRESHOLD) {
             
             
             
@@ -554,9 +554,9 @@ foundBest:
                 UChar32 uc;
                 int32_t chars = 0;
                 for (;;) {
-                    int32_t pcIndex = (int32_t)utext_getNativeIndex(text);
+                    int32_t pcIndex = static_cast<int32_t>(utext_getNativeIndex(text));
                     pc = utext_next32(text);
-                    int32_t pcSize = (int32_t)utext_getNativeIndex(text) - pcIndex;
+                    int32_t pcSize = static_cast<int32_t>(utext_getNativeIndex(text)) - pcIndex;
                     chars += pcSize;
                     remaining -= pcSize;
                     if (remaining <= 0) {
@@ -590,9 +590,9 @@ foundBest:
         
         
         int32_t currPos;
-        while ((currPos = (int32_t)utext_getNativeIndex(text)) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
+        while ((currPos = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
             utext_next32(text);
-            cuWordLength += (int32_t)utext_getNativeIndex(text) - currPos;
+            cuWordLength += static_cast<int32_t>(utext_getNativeIndex(text)) - currPos;
         }
         
         
@@ -682,7 +682,7 @@ BurmeseBreakEngine::divideUpDictionaryRange( UText *text,
 
     utext_setNativeIndex(text, rangeStart);
 
-    while (U_SUCCESS(status) && (current = (int32_t)utext_getNativeIndex(text)) < rangeEnd) {
+    while (U_SUCCESS(status) && (current = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd) {
         cuWordLength = 0;
         cpWordLength = 0;
 
@@ -707,7 +707,7 @@ BurmeseBreakEngine::divideUpDictionaryRange( UText *text,
                     words[wordsFound%BURMESE_LOOKAHEAD].markCurrent();
                     
                     
-                    if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
+                    if (static_cast<int32_t>(utext_getNativeIndex(text)) >= rangeEnd) {
                         goto foundBest;
                     }
                     
@@ -734,7 +734,7 @@ foundBest:
         
         
         
-        if ((int32_t)utext_getNativeIndex(text) < rangeEnd && cpWordLength < BURMESE_ROOT_COMBINE_THRESHOLD) {
+        if (static_cast<int32_t>(utext_getNativeIndex(text)) < rangeEnd && cpWordLength < BURMESE_ROOT_COMBINE_THRESHOLD) {
             
             
             
@@ -747,9 +747,9 @@ foundBest:
                 UChar32 uc;
                 int32_t chars = 0;
                 for (;;) {
-                    int32_t pcIndex = (int32_t)utext_getNativeIndex(text);
+                    int32_t pcIndex = static_cast<int32_t>(utext_getNativeIndex(text));
                     pc = utext_next32(text);
-                    int32_t pcSize = (int32_t)utext_getNativeIndex(text) - pcIndex;
+                    int32_t pcSize = static_cast<int32_t>(utext_getNativeIndex(text)) - pcIndex;
                     chars += pcSize;
                     remaining -= pcSize;
                     if (remaining <= 0) {
@@ -783,9 +783,9 @@ foundBest:
         
         
         int32_t currPos;
-        while ((currPos = (int32_t)utext_getNativeIndex(text)) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
+        while ((currPos = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
             utext_next32(text);
-            cuWordLength += (int32_t)utext_getNativeIndex(text) - currPos;
+            cuWordLength += static_cast<int32_t>(utext_getNativeIndex(text)) - currPos;
         }
         
         
@@ -888,7 +888,7 @@ KhmerBreakEngine::divideUpDictionaryRange( UText *text,
 
     utext_setNativeIndex(text, rangeStart);
 
-    while (U_SUCCESS(status) && (current = (int32_t)utext_getNativeIndex(text)) < rangeEnd) {
+    while (U_SUCCESS(status) && (current = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd) {
         cuWordLength = 0;
         cpWordLength = 0;
 
@@ -905,7 +905,7 @@ KhmerBreakEngine::divideUpDictionaryRange( UText *text,
         
         else if (candidates > 1) {
             
-            if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
+            if (static_cast<int32_t>(utext_getNativeIndex(text)) >= rangeEnd) {
                 goto foundBest;
             }
             do {
@@ -914,7 +914,7 @@ KhmerBreakEngine::divideUpDictionaryRange( UText *text,
                     words[wordsFound % KHMER_LOOKAHEAD].markCurrent();
 
                     
-                    if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
+                    if (static_cast<int32_t>(utext_getNativeIndex(text)) >= rangeEnd) {
                         goto foundBest;
                     }
 
@@ -941,7 +941,7 @@ foundBest:
         
         
         
-        if ((int32_t)utext_getNativeIndex(text) < rangeEnd && cpWordLength < KHMER_ROOT_COMBINE_THRESHOLD) {
+        if (static_cast<int32_t>(utext_getNativeIndex(text)) < rangeEnd && cpWordLength < KHMER_ROOT_COMBINE_THRESHOLD) {
             
             
             
@@ -954,9 +954,9 @@ foundBest:
                 UChar32 uc;
                 int32_t chars = 0;
                 for (;;) {
-                    int32_t pcIndex = (int32_t)utext_getNativeIndex(text);
+                    int32_t pcIndex = static_cast<int32_t>(utext_getNativeIndex(text));
                     pc = utext_next32(text);
-                    int32_t pcSize = (int32_t)utext_getNativeIndex(text) - pcIndex;
+                    int32_t pcSize = static_cast<int32_t>(utext_getNativeIndex(text)) - pcIndex;
                     chars += pcSize;
                     remaining -= pcSize;
                     if (remaining <= 0) {
@@ -989,9 +989,9 @@ foundBest:
 
         
         int32_t currPos;
-        while ((currPos = (int32_t)utext_getNativeIndex(text)) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
+        while ((currPos = static_cast<int32_t>(utext_getNativeIndex(text))) < rangeEnd && fMarkSet.contains(utext_current32(text))) {
             utext_next32(text);
-            cuWordLength += (int32_t)utext_getNativeIndex(text) - currPos;
+            cuWordLength += static_cast<int32_t>(utext_getNativeIndex(text)) - currPos;
         }
 
         
@@ -1120,7 +1120,7 @@ static inline bool isKatakana(UChar32 value) {
 
 
 static inline int32_t utext_i32_flag(int32_t bitIndex) {
-    return (int32_t)1 << bitIndex;
+    return static_cast<int32_t>(1) << bitIndex;
 }
        
 
@@ -1167,14 +1167,14 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
         int32_t limit = rangeEnd;
         U_ASSERT(limit <= utext_nativeLength(inText));
         if (limit > utext_nativeLength(inText)) {
-            limit = (int32_t)utext_nativeLength(inText);
+            limit = static_cast<int32_t>(utext_nativeLength(inText));
         }
         inputMap.adoptInsteadAndCheckErrorCode(new UVector32(status), status);
         if (U_FAILURE(status)) {
             return 0;
         }
         while (utext_getNativeIndex(inText) < limit) {
-            int32_t nativePosition = (int32_t)utext_getNativeIndex(inText);
+            int32_t nativePosition = static_cast<int32_t>(utext_getNativeIndex(inText));
             UChar32 c = utext_next32(inText);
             U_ASSERT(c != U_SENTINEL);
             inString.append(c);
@@ -1304,7 +1304,7 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
     int32_t ix = 0;
     bool is_prev_katakana = false;
     for (int32_t i = 0;  i < numCodePts;  ++i, ix = inString.moveIndex32(ix, 1)) {
-        if ((uint32_t)bestSnlp.elementAti(i) == kuint32max) {
+        if (static_cast<uint32_t>(bestSnlp.elementAti(i)) == kuint32max) {
             continue;
         }
 
@@ -1327,9 +1327,9 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
         }
 
         for (int32_t j = 0; j < count; j++) {
-            uint32_t newSnlp = (uint32_t)bestSnlp.elementAti(i) + (uint32_t)values.elementAti(j);
+            uint32_t newSnlp = static_cast<uint32_t>(bestSnlp.elementAti(i)) + static_cast<uint32_t>(values.elementAti(j));
             int32_t ln_j_i = lengths.elementAti(j) + i;
-            if (newSnlp < (uint32_t)bestSnlp.elementAti(ln_j_i)) {
+            if (newSnlp < static_cast<uint32_t>(bestSnlp.elementAti(ln_j_i))) {
                 bestSnlp.setElementAt(newSnlp, ln_j_i);
                 prev.setElementAt(i, ln_j_i);
             }
@@ -1353,7 +1353,7 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
             }
             if (katakanaRunLength < kMaxKatakanaGroupLength) {
                 uint32_t newSnlp = bestSnlp.elementAti(i) + getKatakanaCost(katakanaRunLength);
-                if (newSnlp < (uint32_t)bestSnlp.elementAti(i+katakanaRunLength)) {
+                if (newSnlp < static_cast<uint32_t>(bestSnlp.elementAti(i + katakanaRunLength))) {
                     bestSnlp.setElementAt(newSnlp, i+katakanaRunLength);
                     prev.setElementAt(i, i+katakanaRunLength);  
                 }
@@ -1371,7 +1371,7 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
 
     int32_t numBreaks = 0;
     
-    if ((uint32_t)bestSnlp.elementAti(numCodePts) == kuint32max) {
+    if (static_cast<uint32_t>(bestSnlp.elementAti(numCodePts)) == kuint32max) {
         t_boundary.addElement(numCodePts, status);
         numBreaks++;
     } else if (isPhraseBreaking) {

@@ -442,7 +442,6 @@ enum UCalendarDateFields {
 
   UCAL_IS_LEAP_MONTH,
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -467,7 +466,6 @@ enum UCalendarDateFields {
 
 
   UCAL_ORDINAL_MONTH,
-#endif 
 
     
 
@@ -476,12 +474,7 @@ enum UCalendarDateFields {
 
 
 
-#ifdef U_HIDE_DRAFT_API
-    
-    UCAL_FIELD_COUNT = UCAL_IS_LEAP_MONTH + 2,
-#else  
     UCAL_FIELD_COUNT = UCAL_ORDINAL_MONTH + 1,
-#endif  
 
 #endif  
 
@@ -1393,6 +1386,36 @@ ucal_getTZDataVersion(UErrorCode* status);
 U_CAPI int32_t U_EXPORT2
 ucal_getCanonicalTimeZoneID(const UChar* id, int32_t len,
                             UChar* result, int32_t resultCapacity, UBool *isSystemID, UErrorCode* status);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+ucal_getIanaTimeZoneID(const UChar* id, int32_t len,
+                        UChar* result, int32_t resultCapacity, UErrorCode* status);
+
 
 
 

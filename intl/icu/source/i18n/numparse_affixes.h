@@ -16,8 +16,8 @@
 #include "number_currencysymbols.h"
 
 U_NAMESPACE_BEGIN
-namespace numparse {
-namespace impl {
+
+namespace numparse::impl {
 
 
 class AffixPatternMatcherBuilder;
@@ -45,7 +45,6 @@ class U_I18N_API CodePointMatcher : public NumberParseMatcher, public UMemory {
 };
 
 } 
-} 
 
 
 
@@ -58,8 +57,7 @@ template class U_I18N_API MemoryPool<numparse::impl::CodePointMatcher, 8>;
 template class U_I18N_API numparse::impl::CompactUnicodeString<4>;
 #endif
 
-namespace numparse {
-namespace impl {
+namespace numparse::impl {
 
 struct AffixTokenMatcherSetupData {
     const CurrencySymbols& currencySymbols;
@@ -221,9 +219,8 @@ class AffixMatcherWarehouse {
                               parse_flags_t parseFlags, UErrorCode& status);
 };
 
+} 
 
-} 
-} 
 U_NAMESPACE_END
 
 #endif 

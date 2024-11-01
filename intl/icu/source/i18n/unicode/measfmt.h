@@ -273,7 +273,7 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -286,7 +286,7 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
  protected:
     

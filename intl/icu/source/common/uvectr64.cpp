@@ -36,7 +36,7 @@ UVector64::UVector64(int32_t initialCapacity, UErrorCode &status) :
     count(0),
     capacity(0),
     maxCapacity(0),
-    elements(0)
+    elements(nullptr)
 {
     _init(initialCapacity, status);
 }
@@ -51,11 +51,11 @@ void UVector64::_init(int32_t initialCapacity, UErrorCode &status) {
     if (maxCapacity>0 && maxCapacity<initialCapacity) {
         initialCapacity = maxCapacity;
     }
-    if (initialCapacity > (int32_t)(INT32_MAX / sizeof(int64_t))) {
+    if (initialCapacity > static_cast<int32_t>(INT32_MAX / sizeof(int64_t))) {
         initialCapacity = uprv_min(DEFAULT_CAPACITY, maxCapacity);
     }
-    elements = (int64_t *)uprv_malloc(sizeof(int64_t)*initialCapacity);
-    if (elements == 0) {
+    elements = static_cast<int64_t*>(uprv_malloc(sizeof(int64_t) * initialCapacity));
+    if (elements == nullptr) {
         status = U_MEMORY_ALLOCATION_ERROR;
     } else {
         capacity = initialCapacity;
@@ -64,7 +64,7 @@ void UVector64::_init(int32_t initialCapacity, UErrorCode &status) {
 
 UVector64::~UVector64() {
     uprv_free(elements);
-    elements = 0;
+    elements = nullptr;
 }
 
 
@@ -141,12 +141,12 @@ UBool UVector64::expandCapacity(int32_t minimumCapacity, UErrorCode &status) {
     if (maxCapacity > 0 && newCap > maxCapacity) {
         newCap = maxCapacity;
     }
-    if (newCap > (int32_t)(INT32_MAX / sizeof(int64_t))) {  
+    if (newCap > static_cast<int32_t>(INT32_MAX / sizeof(int64_t))) { 
         
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return false;
     }
-    int64_t* newElems = (int64_t *)uprv_realloc(elements, sizeof(int64_t)*newCap);
+    int64_t* newElems = static_cast<int64_t*>(uprv_realloc(elements, sizeof(int64_t) * newCap));
     if (newElems == nullptr) {
         
         status = U_MEMORY_ALLOCATION_ERROR;
@@ -162,7 +162,7 @@ void UVector64::setMaxCapacity(int32_t limit) {
     if (limit < 0) {
         limit = 0;
     }
-    if (limit > (int32_t)(INT32_MAX / sizeof(int64_t))) {  
+    if (limit > static_cast<int32_t>(INT32_MAX / sizeof(int64_t))) { 
         
         return;
     }
@@ -174,7 +174,7 @@ void UVector64::setMaxCapacity(int32_t limit) {
     
     
     
-    int64_t* newElems = (int64_t *)uprv_realloc(elements, sizeof(int64_t)*maxCapacity);
+    int64_t* newElems = static_cast<int64_t*>(uprv_realloc(elements, sizeof(int64_t) * maxCapacity));
     if (newElems == nullptr) {
         
         

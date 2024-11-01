@@ -67,7 +67,7 @@ public:
 
 
 
-    FieldPositionIterator(void);
+    FieldPositionIterator();
 
     
 

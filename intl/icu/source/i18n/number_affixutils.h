@@ -14,8 +14,8 @@
 #include "formatted_string_builder.h"
 #include "unicode/uniset.h"
 
-U_NAMESPACE_BEGIN namespace number {
-namespace impl {
+U_NAMESPACE_BEGIN
+namespace number::impl {
 
 enum AffixPatternState {
     STATE_BASE = 0,
@@ -234,7 +234,6 @@ class U_I18N_API AffixUtils {
     }
 };
 
-} 
 } 
 U_NAMESPACE_END
 

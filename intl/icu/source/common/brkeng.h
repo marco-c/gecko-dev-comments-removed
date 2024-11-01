@@ -10,6 +10,7 @@
 #ifndef BRKENG_H
 #define BRKENG_H
 
+#include "unicode/umisc.h"
 #include "unicode/utypes.h"
 #include "unicode/uobject.h"
 #include "unicode/utext.h"
@@ -21,6 +22,7 @@ class UnicodeSet;
 class UStack;
 class UVector32;
 class DictionaryMatcher;
+class ExternalBreakEngine;
 
 
 
@@ -35,7 +37,7 @@ class DictionaryMatcher;
 
 
 
-class LanguageBreakEngine : public UMemory {
+class LanguageBreakEngine : public UObject {
  public:
 
   
@@ -57,7 +59,8 @@ class LanguageBreakEngine : public UMemory {
 
 
 
-  virtual UBool handles(UChar32 c) const = 0;
+
+  virtual UBool handles(UChar32 c, const char* locale) const = 0;
 
  
 
@@ -78,6 +81,35 @@ class LanguageBreakEngine : public UMemory {
                               UBool isPhraseBreaking,
                               UErrorCode &status) const = 0;
 
+};
+
+
+
+
+
+
+
+
+
+
+class BreakEngineWrapper : public  LanguageBreakEngine {
+ public:
+
+  BreakEngineWrapper(ExternalBreakEngine* engine, UErrorCode &status);
+
+  virtual ~BreakEngineWrapper();
+
+  virtual UBool handles(UChar32 c, const char* locale) const override;
+
+  virtual int32_t findBreaks( UText *text,
+                              int32_t startPos,
+                              int32_t endPos,
+                              UVector32 &foundBreaks,
+                              UBool isPhraseBreaking,
+                              UErrorCode &status) const override;
+
+ private:
+  LocalPointer<ExternalBreakEngine> delegate;
 };
 
 
@@ -127,7 +159,8 @@ class LanguageBreakFactory : public UMemory {
 
 
 
-  virtual const LanguageBreakEngine *getEngineFor(UChar32 c) = 0;
+
+  virtual const LanguageBreakEngine *getEngineFor(UChar32 c, const char* locale) = 0;
 
 };
 
@@ -177,7 +210,8 @@ class UnhandledEngine : public LanguageBreakEngine {
 
 
 
-  virtual UBool handles(UChar32 c) const override;
+
+  virtual UBool handles(UChar32 c, const char* locale) const override;
 
  
 
@@ -249,7 +283,16 @@ class ICULanguageBreakFactory : public LanguageBreakFactory {
 
 
 
-  virtual const LanguageBreakEngine *getEngineFor(UChar32 c) override;
+
+  virtual const LanguageBreakEngine *getEngineFor(UChar32 c, const char* locale) override;
+
+  
+
+
+
+
+
+  virtual void addExternalEngine(ExternalBreakEngine* engine, UErrorCode& status);
 
 protected:
  
@@ -260,7 +303,8 @@ protected:
 
 
 
-  virtual const LanguageBreakEngine *loadEngineFor(UChar32 c);
+
+  virtual const LanguageBreakEngine *loadEngineFor(UChar32 c, const char* locale);
 
   
 
@@ -269,6 +313,9 @@ protected:
 
 
   virtual DictionaryMatcher *loadDictionaryMatcherFor(UScriptCode script);
+
+ private:
+  void ensureEngines(UErrorCode& status);
 };
 
 U_NAMESPACE_END

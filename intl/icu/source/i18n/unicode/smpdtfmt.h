@@ -382,348 +382,6 @@ class SimpleNumberFormatter;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class U_I18N_API SimpleDateFormat: public DateFormat {
 public:
     
@@ -1057,7 +715,7 @@ public:
 
 
 
-    virtual const DateFormatSymbols* getDateFormatSymbols(void) const;
+    virtual const DateFormatSymbols* getDateFormatSymbols() const;
 
     
 
@@ -1085,7 +743,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -1098,7 +756,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -1133,7 +791,7 @@ public:
 
 
 
-    virtual const TimeZoneFormat* getTimeZoneFormat(void) const;
+    virtual const TimeZoneFormat* getTimeZoneFormat() const;
 
     
 
@@ -1216,16 +874,16 @@ public:
 
 
 
-    const Locale& getSmpFmtLocale(void) const;
+    const Locale& getSmpFmtLocale() const;
 #endif  
 
 private:
     friend class DateFormat;
     friend class DateIntervalFormat;
 
-    void initializeDefaultCentury(void);
+    void initializeDefaultCentury();
 
-    void initializeBooleanAttributes(void);
+    void initializeBooleanAttributes();
 
     SimpleDateFormat() = delete; 
 

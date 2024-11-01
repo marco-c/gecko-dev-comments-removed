@@ -58,12 +58,18 @@
 
 #if !UCONFIG_NO_COLLATION
 
+#include <functional>
+#include <string_view>
+#include <type_traits>
+
+#include "unicode/char16ptr.h"
 #include "unicode/uobject.h"
 #include "unicode/ucol.h"
 #include "unicode/unorm.h"
 #include "unicode/locid.h"
 #include "unicode/uniset.h"
 #include "unicode/umisc.h"
+#include "unicode/unistr.h"
 #include "unicode/uiter.h"
 #include "unicode/stringpiece.h"
 
@@ -535,7 +541,7 @@ public:
 
 
 
-    virtual int32_t hashCode(void) const = 0;
+    virtual int32_t hashCode() const = 0;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -588,6 +594,52 @@ public:
 
     UBool equals(const UnicodeString& source, const UnicodeString& target) const;
 
+#ifndef U_HIDE_DRAFT_API
+
+    
+
+
+
+
+    inline auto equal_to() const { return Predicate<std::equal_to, UCOL_EQUAL>(*this); }
+
+    
+
+
+
+
+    inline auto greater() const { return Predicate<std::equal_to, UCOL_GREATER>(*this); }
+
+    
+
+
+
+
+    inline auto less() const { return Predicate<std::equal_to, UCOL_LESS>(*this); }
+
+    
+
+
+
+
+    inline auto not_equal_to() const { return Predicate<std::not_equal_to, UCOL_EQUAL>(*this); }
+
+    
+
+
+
+
+    inline auto greater_equal() const { return Predicate<std::not_equal_to, UCOL_LESS>(*this); }
+
+    
+
+
+
+
+    inline auto less_equal() const { return Predicate<std::not_equal_to, UCOL_GREATER>(*this); }
+
+#endif  
+
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
@@ -599,7 +651,7 @@ public:
 
 
 
-    virtual ECollationStrength getStrength(void) const;
+    virtual ECollationStrength getStrength() const;
 
     
 
@@ -730,7 +782,7 @@ public:
 
 
 
-    static StringEnumeration* U_EXPORT2 getAvailableLocales(void);
+    static StringEnumeration* U_EXPORT2 getAvailableLocales();
 
     
 
@@ -864,7 +916,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override = 0;
+    virtual UClassID getDynamicClassID() const override = 0;
 
     
 
@@ -1210,6 +1262,47 @@ private:
     friend class ICUCollatorService;
     static Collator* makeInstance(const Locale& desiredLocale,
                                   UErrorCode& status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+    template <template <typename...> typename Compare, UCollationResult result>
+    class Predicate {
+      public:
+        explicit Predicate(const Collator& parent) : collator(parent) {}
+
+        template <
+            typename T, typename U,
+            typename = std::enable_if_t<ConvertibleToU16StringView<T> && ConvertibleToU16StringView<U>>>
+        bool operator()(const T& lhs, const U& rhs) const {
+            UErrorCode status = U_ZERO_ERROR;
+            return compare(
+                collator.compare(
+                    UnicodeString::readOnlyAlias(lhs),
+                    UnicodeString::readOnlyAlias(rhs),
+                    status),
+                result);
+        }
+
+        bool operator()(std::string_view lhs, std::string_view rhs) const {
+            UErrorCode status = U_ZERO_ERROR;
+            return compare(collator.compareUTF8(lhs, rhs, status), result);
+        }
+
+#if defined(__cpp_char8_t)
+        bool operator()(std::u8string_view lhs, std::u8string_view rhs) const {
+            UErrorCode status = U_ZERO_ERROR;
+            return compare(collator.compareUTF8(lhs, rhs, status), result);
+        }
+#endif
+
+      private:
+        const Collator& collator;
+        static constexpr Compare<UCollationResult> compare{};
+    };
+#endif  
 };
 
 #if !UCONFIG_NO_SERVICE
@@ -1245,7 +1338,7 @@ public:
 
 
 
-    virtual UBool visible(void) const;
+    virtual UBool visible() const;
 
     
 

@@ -18,16 +18,17 @@
 
 #if !UCONFIG_NO_IDNA
 
+#include "unicode/bytestream.h"
 #include "unicode/idna.h"
 #include "unicode/normalizer2.h"
 #include "unicode/uscript.h"
 #include "unicode/ustring.h"
 #include "unicode/utf16.h"
+#include "bytesinkutil.h"
 #include "cmemory.h"
 #include "cstring.h"
 #include "punycode.h"
 #include "ubidi_props.h"
-#include "ustr_imp.h"
 
 
 
@@ -450,10 +451,10 @@ UTS46::processUTF8(StringPiece src,
                 return;
             }
             char c=srcArray[i];
-            if((int8_t)c<0) {  
+            if (static_cast<int8_t>(c) < 0) { 
                 break;
             }
-            int cData=asciiData[(int)c];  
+            int cData = asciiData[static_cast<int>(c)]; 
             if(cData>0) {
                 destArray[i]=c+0x20;  
             } else if(cData<0 && disallowNonLDHDot) {
@@ -672,14 +673,6 @@ UTS46::mapDevChars(UnicodeString &dest, int32_t labelStart, int32_t mappingStart
 
 
 
-static inline UBool
-isNonASCIIDisallowedSTD3Valid(UChar32 c) {
-    return c==0x2260 || c==0x226E || c==0x226F;
-}
-
-
-
-
 
 
 static int32_t
@@ -763,7 +756,12 @@ UTS46::processLabel(UnicodeString &dest,
         if(U_FAILURE(errorCode)) {
             return labelLength;
         }
-        if(!isValid) {
+        
+        
+        
+        
+        
+        if(!isValid || fromPunycode.startsWith(UnicodeString::readOnlyAlias(u"xn--"))) {
             info.labelErrors|=UIDNA_ERROR_INVALID_ACE_LABEL;
             return markBadACELabel(dest, labelStart, labelLength, toASCII, info, errorCode);
         }
@@ -803,7 +801,7 @@ UTS46::processLabel(UnicodeString &dest,
     
     
     
-    char16_t *s=(char16_t *)label;
+    char16_t* s = const_cast<char16_t*>(label);
     const char16_t *limit=label+labelLength;
     char16_t oredChars=0;
     
@@ -820,10 +818,7 @@ UTS46::processLabel(UnicodeString &dest,
             }
         } else {
             oredChars|=c;
-            if(disallowNonLDHDot && isNonASCIIDisallowedSTD3Valid(c)) {
-                info.labelErrors|=UIDNA_ERROR_DISALLOWED;
-                *s=0xfffd;
-            } else if(c==0xfffd) {
+            if(c==0xfffd) {
                 info.labelErrors|=UIDNA_ERROR_DISALLOWED;
             }
         }
@@ -837,7 +832,7 @@ UTS46::processLabel(UnicodeString &dest,
     U16_NEXT_UNSAFE(label, cpLength, c);
     if((U_GET_GC_MASK(c)&U_GC_M_MASK)!=0) {
         info.labelErrors|=UIDNA_ERROR_LEADING_COMBINING_MARK;
-        labelString->replace(labelStart, cpLength, (char16_t)0xfffd);
+        labelString->replace(labelStart, cpLength, static_cast<char16_t>(0xfffd));
         label=labelString->getBuffer()+labelStart;
         labelLength+=1-cpLength;
         if(labelString==&dest) {
@@ -957,7 +952,7 @@ UTS46::markBadACELabel(UnicodeString &dest,
         }
     }
     if(onlyLDH) {
-        dest.insert(labelStart+labelLength, (char16_t)0xfffd);
+        dest.insert(labelStart + labelLength, static_cast<char16_t>(0xfffd));
         if(dest.isBogus()) {
             errorCode=U_MEMORY_ALLOCATION_ERROR;
             return 0;
@@ -1371,7 +1366,7 @@ uidna_labelToASCII(const UIDNA *idna,
     if(!checkArgs(label, length, dest, capacity, pInfo, pErrorCode)) {
         return 0;
     }
-    UnicodeString src((UBool)(length<0), label, length);
+    UnicodeString src(length < 0, label, length);
     UnicodeString destString(dest, 0, capacity);
     IDNAInfo info;
     reinterpret_cast<const IDNA *>(idna)->labelToASCII(src, destString, info, *pErrorCode);
@@ -1387,7 +1382,7 @@ uidna_labelToUnicode(const UIDNA *idna,
     if(!checkArgs(label, length, dest, capacity, pInfo, pErrorCode)) {
         return 0;
     }
-    UnicodeString src((UBool)(length<0), label, length);
+    UnicodeString src(length < 0, label, length);
     UnicodeString destString(dest, 0, capacity);
     IDNAInfo info;
     reinterpret_cast<const IDNA *>(idna)->labelToUnicode(src, destString, info, *pErrorCode);
@@ -1403,7 +1398,7 @@ uidna_nameToASCII(const UIDNA *idna,
     if(!checkArgs(name, length, dest, capacity, pInfo, pErrorCode)) {
         return 0;
     }
-    UnicodeString src((UBool)(length<0), name, length);
+    UnicodeString src(length < 0, name, length);
     UnicodeString destString(dest, 0, capacity);
     IDNAInfo info;
     reinterpret_cast<const IDNA *>(idna)->nameToASCII(src, destString, info, *pErrorCode);
@@ -1419,7 +1414,7 @@ uidna_nameToUnicode(const UIDNA *idna,
     if(!checkArgs(name, length, dest, capacity, pInfo, pErrorCode)) {
         return 0;
     }
-    UnicodeString src((UBool)(length<0), name, length);
+    UnicodeString src(length < 0, name, length);
     UnicodeString destString(dest, 0, capacity);
     IDNAInfo info;
     reinterpret_cast<const IDNA *>(idna)->nameToUnicode(src, destString, info, *pErrorCode);
@@ -1436,11 +1431,14 @@ uidna_labelToASCII_UTF8(const UIDNA *idna,
         return 0;
     }
     StringPiece src(label, length<0 ? static_cast<int32_t>(uprv_strlen(label)) : length);
-    CheckedArrayByteSink sink(dest, capacity);
-    IDNAInfo info;
-    reinterpret_cast<const IDNA *>(idna)->labelToASCII_UTF8(src, sink, info, *pErrorCode);
-    idnaInfoToStruct(info, pInfo);
-    return u_terminateChars(dest, capacity, sink.NumberOfBytesAppended(), pErrorCode);
+    return ByteSinkUtil::viaByteSinkToTerminatedChars(
+        dest, capacity,
+        [&](ByteSink& sink, UErrorCode& status) {
+            IDNAInfo info;
+            reinterpret_cast<const IDNA *>(idna)->labelToASCII_UTF8(src, sink, info, status);
+            idnaInfoToStruct(info, pInfo);
+        },
+        *pErrorCode);
 }
 
 U_CAPI int32_t U_EXPORT2
@@ -1452,11 +1450,14 @@ uidna_labelToUnicodeUTF8(const UIDNA *idna,
         return 0;
     }
     StringPiece src(label, length<0 ? static_cast<int32_t>(uprv_strlen(label)) : length);
-    CheckedArrayByteSink sink(dest, capacity);
-    IDNAInfo info;
-    reinterpret_cast<const IDNA *>(idna)->labelToUnicodeUTF8(src, sink, info, *pErrorCode);
-    idnaInfoToStruct(info, pInfo);
-    return u_terminateChars(dest, capacity, sink.NumberOfBytesAppended(), pErrorCode);
+    return ByteSinkUtil::viaByteSinkToTerminatedChars(
+        dest, capacity,
+        [&](ByteSink& sink, UErrorCode& status) {
+            IDNAInfo info;
+            reinterpret_cast<const IDNA *>(idna)->labelToUnicodeUTF8(src, sink, info, status);
+            idnaInfoToStruct(info, pInfo);
+        },
+        *pErrorCode);
 }
 
 U_CAPI int32_t U_EXPORT2
@@ -1468,11 +1469,14 @@ uidna_nameToASCII_UTF8(const UIDNA *idna,
         return 0;
     }
     StringPiece src(name, length<0 ? static_cast<int32_t>(uprv_strlen(name)) : length);
-    CheckedArrayByteSink sink(dest, capacity);
-    IDNAInfo info;
-    reinterpret_cast<const IDNA *>(idna)->nameToASCII_UTF8(src, sink, info, *pErrorCode);
-    idnaInfoToStruct(info, pInfo);
-    return u_terminateChars(dest, capacity, sink.NumberOfBytesAppended(), pErrorCode);
+    return ByteSinkUtil::viaByteSinkToTerminatedChars(
+        dest, capacity,
+        [&](ByteSink& sink, UErrorCode& status) {
+            IDNAInfo info;
+            reinterpret_cast<const IDNA *>(idna)->nameToASCII_UTF8(src, sink, info, status);
+            idnaInfoToStruct(info, pInfo);
+        },
+        *pErrorCode);
 }
 
 U_CAPI int32_t U_EXPORT2
@@ -1484,11 +1488,14 @@ uidna_nameToUnicodeUTF8(const UIDNA *idna,
         return 0;
     }
     StringPiece src(name, length<0 ? static_cast<int32_t>(uprv_strlen(name)) : length);
-    CheckedArrayByteSink sink(dest, capacity);
-    IDNAInfo info;
-    reinterpret_cast<const IDNA *>(idna)->nameToUnicodeUTF8(src, sink, info, *pErrorCode);
-    idnaInfoToStruct(info, pInfo);
-    return u_terminateChars(dest, capacity, sink.NumberOfBytesAppended(), pErrorCode);
+    return ByteSinkUtil::viaByteSinkToTerminatedChars(
+        dest, capacity,
+        [&](ByteSink& sink, UErrorCode& status) {
+            IDNAInfo info;
+            reinterpret_cast<const IDNA *>(idna)->nameToUnicodeUTF8(src, sink, info, status);
+            idnaInfoToStruct(info, pInfo);
+        },
+        *pErrorCode);
 }
 
 #endif  

@@ -431,7 +431,7 @@ public:
 
 
 
-    uint32_t getDefaultParseOptions(void) const;
+    uint32_t getDefaultParseOptions() const;
 
     
 
@@ -656,7 +656,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 

@@ -44,6 +44,69 @@ class  UnhandledEngine;
 class  UStack;
 
 
+#ifndef U_HIDE_INTERNAL_API
+
+
+
+
+
+
+
+
+
+
+
+
+class ExternalBreakEngine : public UObject {
+  public:
+    
+
+
+
+    virtual ~ExternalBreakEngine() {}
+
+    
+
+
+
+
+
+
+
+
+    virtual bool isFor(UChar32 c, const char* locale) const = 0;
+
+    
+
+
+
+
+
+
+
+    virtual bool handles(UChar32 c) const = 0;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+     virtual int32_t fillBreaks(UText* text,  int32_t start, int32_t end,
+                               int32_t* foundBreaks, int32_t foundBreaksCapacity,
+                               UErrorCode& status) const = 0;
+};
+#endif  
+
+
+
 
 
 
@@ -325,14 +388,14 @@ public:
 
 
 
-    virtual int32_t hashCode(void) const;
+    virtual int32_t hashCode() const;
 
     
 
 
 
 
-    virtual const UnicodeString& getRules(void) const;
+    virtual const UnicodeString& getRules() const;
 
     
     
@@ -362,8 +425,7 @@ public:
 
 
 
-    virtual  CharacterIterator& getText(void) const override;
-
+    virtual CharacterIterator& getText() const override;
 
     
 
@@ -423,14 +485,14 @@ public:
 
 
 
-    virtual int32_t first(void) override;
+    virtual int32_t first() override;
 
     
 
 
 
 
-    virtual int32_t last(void) override;
+    virtual int32_t last() override;
 
     
 
@@ -449,14 +511,14 @@ public:
 
 
 
-    virtual int32_t next(void) override;
+    virtual int32_t next() override;
 
     
 
 
 
 
-    virtual int32_t previous(void) override;
+    virtual int32_t previous() override;
 
     
 
@@ -494,8 +556,7 @@ public:
 
 
 
-    virtual int32_t current(void) const override;
-
+    virtual int32_t current() const override;
 
     
 
@@ -566,7 +627,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -579,7 +640,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -718,7 +779,8 @@ private:
 
 
 
-    const LanguageBreakEngine *getLanguageBreakEngine(UChar32 c);
+
+    const LanguageBreakEngine *getLanguageBreakEngine(UChar32 c, const char* locale);
 
   public:
 #ifndef U_HIDE_INTERNAL_API
@@ -734,7 +796,23 @@ private:
 
     void dumpTables();
 #endif  
+
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+    static void U_EXPORT2 registerExternalBreakEngine(
+                  ExternalBreakEngine* toAdopt, UErrorCode& status);
+#endif  
+
 };
+
 
 U_NAMESPACE_END
 

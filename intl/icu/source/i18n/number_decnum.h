@@ -22,8 +22,7 @@ U_NAMESPACE_BEGIN
 template class U_I18N_API MaybeStackHeaderAndArray<decNumber, char, DECNUM_INITIAL_CAPACITY>;
 #endif
 
-namespace number {
-namespace impl {
+namespace number::impl {
 
 
 
@@ -84,7 +83,6 @@ class U_I18N_API DecNum : public UMemory {
     void _setTo(const char* str, int32_t maxDigits, UErrorCode& status);
 };
 
-} 
 } 
 
 U_NAMESPACE_END

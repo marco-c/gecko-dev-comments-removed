@@ -27,38 +27,38 @@ Collation::incTwoBytePrimaryByOffset(uint32_t basePrimary, UBool isCompressible,
     
     uint32_t primary;
     if(isCompressible) {
-        offset += ((int32_t)(basePrimary >> 16) & 0xff) - 4;
-        primary = (uint32_t)((offset % 251) + 4) << 16;
+        offset += (static_cast<int32_t>(basePrimary >> 16) & 0xff) - 4;
+        primary = static_cast<uint32_t>((offset % 251) + 4) << 16;
         offset /= 251;
     } else {
-        offset += ((int32_t)(basePrimary >> 16) & 0xff) - 2;
-        primary = (uint32_t)((offset % 254) + 2) << 16;
+        offset += (static_cast<int32_t>(basePrimary >> 16) & 0xff) - 2;
+        primary = static_cast<uint32_t>((offset % 254) + 2) << 16;
         offset /= 254;
     }
     
-    return primary | ((basePrimary & 0xff000000) + (uint32_t)(offset << 24));
+    return primary | ((basePrimary & 0xff000000) + static_cast<uint32_t>(offset << 24));
 }
 
 uint32_t
 Collation::incThreeBytePrimaryByOffset(uint32_t basePrimary, UBool isCompressible, int32_t offset) {
     
     
-    offset += ((int32_t)(basePrimary >> 8) & 0xff) - 2;
-    uint32_t primary = (uint32_t)((offset % 254) + 2) << 8;
+    offset += (static_cast<int32_t>(basePrimary >> 8) & 0xff) - 2;
+    uint32_t primary = static_cast<uint32_t>((offset % 254) + 2) << 8;
     offset /= 254;
     
     
     if(isCompressible) {
-        offset += ((int32_t)(basePrimary >> 16) & 0xff) - 4;
-        primary |= (uint32_t)((offset % 251) + 4) << 16;
+        offset += (static_cast<int32_t>(basePrimary >> 16) & 0xff) - 4;
+        primary |= static_cast<uint32_t>((offset % 251) + 4) << 16;
         offset /= 251;
     } else {
-        offset += ((int32_t)(basePrimary >> 16) & 0xff) - 2;
-        primary |= (uint32_t)((offset % 254) + 2) << 16;
+        offset += (static_cast<int32_t>(basePrimary >> 16) & 0xff) - 2;
+        primary |= static_cast<uint32_t>((offset % 254) + 2) << 16;
         offset /= 254;
     }
     
-    return primary | ((basePrimary & 0xff000000) + (uint32_t)(offset << 24));
+    return primary | ((basePrimary & 0xff000000) + static_cast<uint32_t>(offset << 24));
 }
 
 uint32_t
@@ -68,7 +68,7 @@ Collation::decTwoBytePrimaryByOneStep(uint32_t basePrimary, UBool isCompressible
     
     
     U_ASSERT(0 < step && step <= 0x7f);
-    int32_t byte2 = ((int32_t)(basePrimary >> 16) & 0xff) - step;
+    int32_t byte2 = (static_cast<int32_t>(basePrimary >> 16) & 0xff) - step;
     if(isCompressible) {
         if(byte2 < 4) {
             byte2 += 251;
@@ -80,7 +80,7 @@ Collation::decTwoBytePrimaryByOneStep(uint32_t basePrimary, UBool isCompressible
             basePrimary -= 0x1000000;
         }
     }
-    return (basePrimary & 0xff000000) | ((uint32_t)byte2 << 16);
+    return (basePrimary & 0xff000000) | (static_cast<uint32_t>(byte2) << 16);
 }
 
 uint32_t
@@ -88,14 +88,14 @@ Collation::decThreeBytePrimaryByOneStep(uint32_t basePrimary, UBool isCompressib
     
     
     U_ASSERT(0 < step && step <= 0x7f);
-    int32_t byte3 = ((int32_t)(basePrimary >> 8) & 0xff) - step;
+    int32_t byte3 = (static_cast<int32_t>(basePrimary >> 8) & 0xff) - step;
     if(byte3 >= 2) {
-        return (basePrimary & 0xffff0000) | ((uint32_t)byte3 << 8);
+        return (basePrimary & 0xffff0000) | (static_cast<uint32_t>(byte3) << 8);
     }
     byte3 += 254;
     
     
-    int32_t byte2 = ((int32_t)(basePrimary >> 16) & 0xff) - 1;
+    int32_t byte2 = (static_cast<int32_t>(basePrimary >> 16) & 0xff) - 1;
     if(isCompressible) {
         if(byte2 < 4) {
             byte2 = 0xfe;
@@ -108,13 +108,13 @@ Collation::decThreeBytePrimaryByOneStep(uint32_t basePrimary, UBool isCompressib
         }
     }
     
-    return (basePrimary & 0xff000000) | ((uint32_t)byte2 << 16) | ((uint32_t)byte3 << 8);
+    return (basePrimary & 0xff000000) | (static_cast<uint32_t>(byte2) << 16) | (static_cast<uint32_t>(byte3) << 8);
 }
 
 uint32_t
 Collation::getThreeBytePrimaryForOffsetData(UChar32 c, int64_t dataCE) {
-    uint32_t p = (uint32_t)(dataCE >> 32);  
-    int32_t lower32 = (int32_t)dataCE;  
+    uint32_t p = static_cast<uint32_t>(dataCE >> 32); 
+    int32_t lower32 = static_cast<int32_t>(dataCE); 
     int32_t offset = (c - (lower32 >> 8)) * (lower32 & 0x7f);  
     UBool isCompressible = (lower32 & 0x80) != 0;
     return Collation::incThreeBytePrimaryByOffset(p, isCompressible, offset);

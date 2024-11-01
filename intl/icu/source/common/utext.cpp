@@ -738,7 +738,7 @@ pinIndex(int64_t &index, int64_t limit) {
     } else if (index > limit) {
         index = limit;
     }
-    return (int32_t)index;
+    return static_cast<int32_t>(index);
 }
 
 
@@ -1937,7 +1937,7 @@ repTextReplace(UText *ut,
     }
 
     
-    UnicodeString replStr((UBool)(length<0), src, length); 
+    UnicodeString replStr(length < 0, src, length); 
     rep->handleReplaceBetween(start32, limit32, replStr);
     int32_t newLength = rep->length();
     int32_t lengthDelta = newLength - oldLength;

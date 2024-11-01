@@ -418,4 +418,4 @@ class FiltrationTest(unittest.TestCase):
             self.assertEqual(is_match, expected_match, file_stem)
 
 
-suite = unittest.makeSuite(FiltrationTest)
+suite = unittest.defaultTestLoader.loadTestsFromTestCase(FiltrationTest)

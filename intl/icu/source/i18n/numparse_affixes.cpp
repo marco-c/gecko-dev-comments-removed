@@ -29,7 +29,7 @@ namespace {
 
 
 
-static bool matched(const AffixPatternMatcher* affix, const UnicodeString& patternString) {
+bool matched(const AffixPatternMatcher* affix, const UnicodeString& patternString) {
     return (affix == nullptr && patternString.isBogus()) ||
            (affix != nullptr && affix->getPattern() == patternString);
 }
@@ -37,7 +37,7 @@ static bool matched(const AffixPatternMatcher* affix, const UnicodeString& patte
 
 
 
-static int32_t length(const AffixPatternMatcher* matcher) {
+int32_t length(const AffixPatternMatcher* matcher) {
     return matcher == nullptr ? 0 : matcher->getPattern().length();
 }
 
@@ -45,7 +45,7 @@ static int32_t length(const AffixPatternMatcher* matcher) {
 
 
 
-static bool equals(const AffixPatternMatcher* lhs, const AffixPatternMatcher* rhs) {
+bool equals(const AffixPatternMatcher* lhs, const AffixPatternMatcher* rhs) {
     if (lhs == nullptr && rhs == nullptr) {
         return true;
     }

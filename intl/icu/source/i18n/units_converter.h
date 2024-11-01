@@ -33,6 +33,10 @@ enum Constants {
     CONSTANT_METERS_PER_AU,
     CONSTANT_SEC_PER_JULIAN_YEAR,
     CONSTANT_SPEED_OF_LIGHT_METERS_PER_SECOND,
+    CONSTANT_SHO_TO_M3,   
+    CONSTANT_TSUBO_TO_M2, 
+    CONSTANT_SHAKU_TO_M,  
+    CONSTANT_AMU,         
 
     
     CONSTANTS_COUNT
@@ -55,6 +59,10 @@ static const double constantsValues[CONSTANTS_COUNT] = {
     149597870700,              
     31557600,                  
     299792458,                 
+    2401.0 / (1331.0 * 1000.0),
+    400.0 / 121.0,
+    4.0 / 121.0,
+    1.66053878283E-27,         
 };
 
 typedef enum Signum {
@@ -103,9 +111,13 @@ void U_I18N_API addSingleFactorConstant(StringPiece baseStr, int32_t power, Sign
 
 
 
+
+
 struct U_I18N_API ConversionRate : public UMemory {
     const MeasureUnitImpl source;
     const MeasureUnitImpl target;
+    CharString specialSource;
+    CharString specialTarget;
     double factorNum = 1;
     double factorDen = 1;
     double sourceOffset = 0;
@@ -113,7 +125,7 @@ struct U_I18N_API ConversionRate : public UMemory {
     bool reciprocal = false;
 
     ConversionRate(MeasureUnitImpl &&source, MeasureUnitImpl &&target)
-        : source(std::move(source)), target(std::move(target)) {}
+        : source(std::move(source)), target(std::move(target)), specialSource(), specialTarget() {}
 };
 
 enum Convertibility {
@@ -214,8 +226,23 @@ class U_I18N_API UnitsConverter : public UMemory {
 
     
 
- 
+
     void init(const ConversionRates &ratesInfo, UErrorCode &status);
+
+    
+
+
+
+
+    double scaleToBase(double scaleValue, double minBaseForScaleValues[], int scaleMax) const;
+
+    
+
+
+
+
+    double baseToScale(double baseValue, double minBaseForScaleValues[], int scaleMax) const;
+
 };
 
 } 

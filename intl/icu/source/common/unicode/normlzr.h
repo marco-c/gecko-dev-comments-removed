@@ -466,7 +466,7 @@ public:
 
 
 
-  UChar32              current(void);
+  UChar32 current();
 
   
 
@@ -476,7 +476,7 @@ public:
 
 
 
-  UChar32              first(void);
+  UChar32 first();
 
   
 
@@ -486,23 +486,7 @@ public:
 
 
 
-  UChar32              last(void);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  UChar32              next(void);
+  UChar32 last();
 
   
 
@@ -518,7 +502,23 @@ public:
 
 
 
-  UChar32              previous(void);
+  UChar32 next();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  UChar32 previous();
 
   
 
@@ -536,7 +536,7 @@ public:
 
 
 
-  void                reset(void);
+  void reset();
 
   
 
@@ -552,7 +552,7 @@ public:
 
 
 
-  int32_t            getIndex(void) const;
+  int32_t getIndex() const;
 
   
 
@@ -562,7 +562,7 @@ public:
 
 
 
-  int32_t            startIndex(void) const;
+  int32_t startIndex() const;
 
   
 
@@ -574,7 +574,7 @@ public:
 
 
 
-  int32_t            endIndex(void) const;
+  int32_t endIndex() const;
 
   
 
@@ -610,7 +610,7 @@ public:
 
 
 
-  int32_t                hashCode(void) const;
+  int32_t hashCode() const;
 
   
   
@@ -643,7 +643,7 @@ public:
 
 
 
-  UNormalizationMode getUMode(void) const;
+  UNormalizationMode getUMode() const;
 
   
 
@@ -749,7 +749,7 @@ private:
   UBool previousNormalize();
 
   void    init();
-  void    clearBuffer(void);
+  void clearBuffer();
 
   
   

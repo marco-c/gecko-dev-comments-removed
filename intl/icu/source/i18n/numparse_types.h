@@ -12,8 +12,7 @@
 #include "string_segment.h"
 
 U_NAMESPACE_BEGIN
-namespace numparse {
-namespace impl {
+namespace numparse::impl {
 
 
 class ParsedNumber;
@@ -263,8 +262,6 @@ class U_I18N_API MutableMatcherCollection {
     virtual void addMatcher(NumberParseMatcher& matcher) = 0;
 };
 
-
-} 
 } 
 U_NAMESPACE_END
 

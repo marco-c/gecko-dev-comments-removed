@@ -500,6 +500,24 @@ typedef enum UScriptCode {
       
       USCRIPT_NAG_MUNDARI                   = 199,
 
+      
+      USCRIPT_ARABIC_NASTALIQ               = 200, 
+
+      
+      USCRIPT_GARAY                         = 201, 
+      
+      USCRIPT_GURUNG_KHEMA                  = 202, 
+      
+      USCRIPT_KIRAT_RAI                     = 203, 
+      
+      USCRIPT_OL_ONAL                       = 204, 
+      
+      USCRIPT_SUNUWAR                       = 205, 
+      
+      USCRIPT_TODHRI                        = 206, 
+      
+      USCRIPT_TULU_TIGALARI                 = 207, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -507,7 +525,7 @@ typedef enum UScriptCode {
 
 
 
-    USCRIPT_CODE_LIMIT    = 200
+    USCRIPT_CODE_LIMIT    = 208
 #endif  
 } UScriptCode;
 

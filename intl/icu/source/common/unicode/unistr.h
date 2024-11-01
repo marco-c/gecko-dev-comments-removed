@@ -33,6 +33,7 @@
 #if U_SHOW_CPLUSPLUS_API
 
 #include <cstddef>
+#include <string_view>
 #include "unicode/char16ptr.h"
 #include "unicode/rep.h"
 #include "unicode/std_string.h"
@@ -113,15 +114,14 @@ class UnicodeStringAppendable;
 
 
 
+
+
+
 #if !U_CHAR16_IS_TYPEDEF
 # define UNICODE_STRING(cs, _length) icu::UnicodeString(true, u ## cs, _length)
 #else
 # define UNICODE_STRING(cs, _length) icu::UnicodeString(true, (const char16_t*)u ## cs, _length)
 #endif
-
-
-
-
 
 
 
@@ -327,6 +327,30 @@ public:
 
   inline bool operator== (const UnicodeString& text) const;
 
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+  inline bool operator==(const S &text) const {
+    std::u16string_view sv(internal::toU16StringView(text));
+    uint32_t len;  
+    return !isBogus() && (len = length()) == sv.length() && doEquals(sv.data(), len);
+  }
+#endif  
+
   
 
 
@@ -335,6 +359,30 @@ public:
 
 
   inline bool operator!= (const UnicodeString& text) const;
+
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+  inline bool operator!=(const S &text) const {
+    return !operator==(text);
+  }
+#endif  
 
   
 
@@ -1611,9 +1659,9 @@ public:
 
 
   inline int32_t extract(int32_t start,
-                 int32_t startLength,
-                 char *target,
-                 const char *codepage = 0) const;
+                         int32_t startLength,
+                         char* target,
+                         const char* codepage = nullptr) const;
 
   
 
@@ -1759,7 +1807,7 @@ public:
 
 
 
-  inline int32_t length(void) const;
+  inline int32_t length() const;
 
   
 
@@ -1808,7 +1856,7 @@ public:
 
 
 
-  inline UBool isEmpty(void) const;
+  inline UBool isEmpty() const;
 
   
 
@@ -1819,7 +1867,7 @@ public:
 
 
 
-  inline int32_t getCapacity(void) const;
+  inline int32_t getCapacity() const;
 
   
 
@@ -1828,7 +1876,7 @@ public:
 
 
 
-  inline int32_t hashCode(void) const;
+  inline int32_t hashCode() const;
 
   
 
@@ -1842,8 +1890,7 @@ public:
 
 
 
-  inline UBool isBogus(void) const;
-
+  inline UBool isBogus() const;
 
   
   
@@ -1897,6 +1944,24 @@ public:
 
 
   UnicodeString &fastCopyFrom(const UnicodeString &src);
+
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+  template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+  inline UnicodeString &operator=(const S &src) {
+    unBogus();
+    return doReplace(0, length(), internal::toU16StringView(src));
+  }
+#endif  
 
   
 
@@ -2147,6 +2212,23 @@ public:
 
   inline UnicodeString& operator+= (const UnicodeString& srcText);
 
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+  template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+  inline UnicodeString& operator+=(const S &src) {
+    return doAppend(internal::toU16StringView(src));
+  }
+#endif  
+
   
 
 
@@ -2202,6 +2284,23 @@ public:
 
   inline UnicodeString& append(ConstChar16Ptr srcChars,
             int32_t srcLength);
+
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+  template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+  inline UnicodeString& append(const S &src) {
+    return doAppend(internal::toU16StringView(src));
+  }
+#endif  
 
   
 
@@ -2557,7 +2656,7 @@ public:
 
 
   inline UnicodeString& remove(int32_t start,
-                               int32_t length = (int32_t)INT32_MAX);
+                               int32_t length = static_cast<int32_t>(INT32_MAX));
 
   
 
@@ -2568,7 +2667,7 @@ public:
 
 
   inline UnicodeString& removeBetween(int32_t start,
-                                      int32_t limit = (int32_t)INT32_MAX);
+                                      int32_t limit = static_cast<int32_t>(INT32_MAX));
 
   
 
@@ -2624,17 +2723,16 @@ public:
 
 
 
-  UnicodeString& trim(void);
-
-
-  
+  UnicodeString& trim();
 
   
 
+  
 
 
 
-  inline UnicodeString& reverse(void);
+
+  inline UnicodeString& reverse();
 
   
 
@@ -2653,7 +2751,7 @@ public:
 
 
 
-  UnicodeString& toUpper(void);
+  UnicodeString& toUpper();
 
   
 
@@ -2670,7 +2768,7 @@ public:
 
 
 
-  UnicodeString& toLower(void);
+  UnicodeString& toLower();
 
   
 
@@ -2927,6 +3025,37 @@ public:
 
   const char16_t *getTerminatedBuffer();
 
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+  inline operator std::u16string_view() const {
+    return {getBuffer(), static_cast<std::u16string_view::size_type>(length())};
+  }
+
+#if U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN)
+  
+
+
+
+
+
+
+
+
+  inline operator std::wstring_view() const {
+    const char16_t *p = getBuffer();
+#ifdef U_ALIASING_BARRIER
+    U_ALIASING_BARRIER(p);
+#endif
+    return { reinterpret_cast<const wchar_t *>(p), (std::wstring_view::size_type)length() };
+  }
+#endif  
+#endif  
+
   
   
   
@@ -2971,6 +3100,7 @@ public:
 
   UNISTR_FROM_CHAR_EXPLICIT UnicodeString(UChar32 ch);
 
+#ifdef U_HIDE_DRAFT_API
   
 
 
@@ -2981,10 +3111,31 @@ public:
 
 
 
-  UNISTR_FROM_STRING_EXPLICIT UnicodeString(const char16_t *text);
 
-#if !U_CHAR16_IS_TYPEDEF
+
+
+
+
+
+
+
+
+  UNISTR_FROM_STRING_EXPLICIT UnicodeString(const char16_t *text) :
+      UnicodeString(text, -1) {}
+#endif  
+
+#if !U_CHAR16_IS_TYPEDEF && \
+    (defined(U_HIDE_DRAFT_API) || (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 180000))
   
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2995,11 +3146,20 @@ public:
 
 
   UNISTR_FROM_STRING_EXPLICIT UnicodeString(const uint16_t *text) :
-      UnicodeString(ConstChar16Ptr(text)) {}
+      UnicodeString(ConstChar16Ptr(text), -1) {}
 #endif
 
-#if U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN)
+#if defined(U_HIDE_DRAFT_API) && (U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN))
   
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3011,7 +3171,7 @@ public:
 
 
   UNISTR_FROM_STRING_EXPLICIT UnicodeString(const wchar_t *text) :
-      UnicodeString(ConstChar16Ptr(text)) {}
+      UnicodeString(ConstChar16Ptr(text), -1) {}
 #endif
 
   
@@ -3033,11 +3193,29 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
   UnicodeString(const char16_t *text,
         int32_t textLength);
 
 #if !U_CHAR16_IS_TYPEDEF
   
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3050,6 +3228,15 @@ public:
 
 #if U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN)
   
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3070,7 +3257,35 @@ public:
 
   inline UnicodeString(const std::nullptr_t text, int32_t textLength);
 
+#ifndef U_HIDE_DRAFT_API
   
+
+
+
+
+
+
+
+
+
+
+
+  template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+  UNISTR_FROM_STRING_EXPLICIT UnicodeString(const S &text) {
+    fUnion.fFields.fLengthAndFlags = kShortString;
+    doAppend(internal::toU16StringViewNullable(text));
+  }
+#endif  
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -3156,6 +3371,10 @@ public:
 #if U_CHARSET_IS_UTF8 || !UCONFIG_NO_CONVERSION
 
   
+
+
+
+
 
 
 
@@ -3279,6 +3498,15 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
   UnicodeString(const char *src, int32_t textLength, enum EInvariant inv);
 
 
@@ -3344,6 +3572,58 @@ public:
 
 
   virtual ~UnicodeString();
+
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+  static inline UnicodeString readOnlyAlias(const S &text) {
+    return readOnlyAliasFromU16StringView(internal::toU16StringView(text));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static inline UnicodeString readOnlyAlias(const UnicodeString &text) {
+    return readOnlyAliasFromUnicodeString(text);
+  }
+#endif  
 
   
 
@@ -3472,6 +3752,9 @@ protected:
   virtual UChar32 getChar32At(int32_t offset) const override;
 
 private:
+  static UnicodeString readOnlyAliasFromU16StringView(std::u16string_view text);
+  static UnicodeString readOnlyAliasFromUnicodeString(const UnicodeString &text);
+
   
   UnicodeString &setToUTF8(StringPiece utf8);
   
@@ -3487,7 +3770,10 @@ private:
 
 
 
-  UBool doEquals(const UnicodeString &text, int32_t len) const;
+  inline UBool doEquals(const UnicodeString &text, int32_t len) const {
+    return doEquals(text.getArrayStart(), len);
+  }
+  UBool doEquals(const char16_t *text, int32_t len) const;
 
   inline UBool
   doEqualsSubstring(int32_t start,
@@ -3582,20 +3868,22 @@ private:
                const char16_t *srcChars,
                int32_t srcStart,
                int32_t srcLength);
+  UnicodeString& doReplace(int32_t start, int32_t length, std::u16string_view src);
 
   UnicodeString& doAppend(const UnicodeString& src, int32_t srcStart, int32_t srcLength);
   UnicodeString& doAppend(const char16_t *srcChars, int32_t srcStart, int32_t srcLength);
+  UnicodeString& doAppend(std::u16string_view src);
 
   UnicodeString& doReverse(int32_t start,
                int32_t length);
 
   
-  int32_t doHashCode(void) const;
+  int32_t doHashCode() const;
 
   
   
-  inline char16_t* getArrayStart(void);
-  inline const char16_t* getArrayStart(void) const;
+  inline char16_t* getArrayStart();
+  inline const char16_t* getArrayStart() const;
 
   inline UBool hasShortLength() const;
   inline int32_t getShortLength() const;
@@ -3622,7 +3910,7 @@ private:
   UBool allocate(int32_t capacity);
 
   
-  void releaseArray(void);
+  void releaseArray();
 
   
   void unBogus();
@@ -3684,10 +3972,10 @@ private:
 
 
   UBool cloneArrayIfNeeded(int32_t newCapacity = -1,
-                            int32_t growCapacity = -1,
-                            UBool doCopyArray = true,
-                            int32_t **pBufferToDelete = 0,
-                            UBool forceClone = false);
+                           int32_t growCapacity = -1,
+                           UBool doCopyArray = true,
+                           int32_t** pBufferToDelete = nullptr,
+                           UBool forceClone = false);
 
   
 
@@ -3702,9 +3990,9 @@ private:
           UStringCaseMapper *stringCaseMapper);
 
   
-  void addRef(void);
-  int32_t removeRef(void);
-  int32_t refCount(void) const;
+  void addRef();
+  int32_t removeRef();
+  int32_t refCount() const;
 
   
   enum {
@@ -3713,7 +4001,7 @@ private:
 
 
 
-    US_STACKBUF_SIZE=(int32_t)(UNISTR_OBJECT_SIZE-sizeof(void *)-2)/U_SIZEOF_UCHAR,
+    US_STACKBUF_SIZE = static_cast<int32_t>(UNISTR_OBJECT_SIZE - sizeof(void*) - 2) / U_SIZEOF_UCHAR,
     kInvalidUChar=0xffff, 
     kInvalidHashCode=0, 
     kEmptyHashCode=1, 
@@ -3813,6 +4101,29 @@ private:
 
 U_COMMON_API UnicodeString U_EXPORT2
 operator+ (const UnicodeString &s1, const UnicodeString &s2);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
+inline UnicodeString operator+(const UnicodeString &s1, const S &s2) {
+  return unistr_internalConcat(s1, internal::toU16StringView(s2));
+}
+#endif  
+
+#ifndef U_FORCE_HIDE_INTERNAL_API
+
+U_COMMON_API UnicodeString U_EXPORT2
+unistr_internalConcat(const UnicodeString &s1, std::u16string_view s2);
+#endif
 
 
 
@@ -3916,18 +4227,18 @@ UnicodeString::hashCode() const
 
 inline UBool
 UnicodeString::isBogus() const
-{ return (UBool)(fUnion.fFields.fLengthAndFlags & kIsBogus); }
+{ return fUnion.fFields.fLengthAndFlags & kIsBogus; }
 
 inline UBool
 UnicodeString::isWritable() const
-{ return (UBool)!(fUnion.fFields.fLengthAndFlags&(kOpenGetBuffer|kIsBogus)); }
+{ return !(fUnion.fFields.fLengthAndFlags & (kOpenGetBuffer | kIsBogus)); }
 
 inline UBool
 UnicodeString::isBufferWritable() const
 {
-  return (UBool)(
+  return
       !(fUnion.fFields.fLengthAndFlags&(kOpenGetBuffer|kIsBogus|kBufferIsReadonly)) &&
-      (!(fUnion.fFields.fLengthAndFlags&kRefCounted) || refCount()==1));
+      (!(fUnion.fFields.fLengthAndFlags&kRefCounted) || refCount()==1);
 }
 
 inline const char16_t *
@@ -3952,7 +4263,7 @@ UnicodeString::doCompare(int32_t start,
               int32_t srcLength) const
 {
   if(srcText.isBogus()) {
-    return (int8_t)!isBogus(); 
+    return static_cast<int8_t>(!isBogus()); 
   } else {
     srcText.pinIndices(srcStart, srcLength);
     return doCompare(start, thisLength, srcText.getArrayStart(), srcStart, srcLength);
@@ -4059,7 +4370,7 @@ UnicodeString::doCompareCodePointOrder(int32_t start,
                                        int32_t srcLength) const
 {
   if(srcText.isBogus()) {
-    return (int8_t)!isBogus(); 
+    return static_cast<int8_t>(!isBogus()); 
   } else {
     srcText.pinIndices(srcStart, srcLength);
     return doCompareCodePointOrder(start, thisLength, srcText.getArrayStart(), srcStart, srcLength);
@@ -4121,7 +4432,7 @@ UnicodeString::doCaseCompare(int32_t start,
                              uint32_t options) const
 {
   if(srcText.isBogus()) {
-    return (int8_t)!isBogus(); 
+    return static_cast<int8_t>(!isBogus()); 
   } else {
     srcText.pinIndices(srcStart, srcLength);
     return doCaseCompare(start, thisLength, srcText.getArrayStart(), srcStart, srcLength, options);
@@ -4510,7 +4821,7 @@ UnicodeString::extract(int32_t start,
 
 {
   
-  return extract(start, _length, dst, dst!=0 ? 0xffffffff : 0, codepage);
+  return extract(start, _length, dst, dst != nullptr ? 0xffffffff : 0, codepage);
 }
 
 #endif
@@ -4533,7 +4844,7 @@ UnicodeString::tempSubStringBetween(int32_t start, int32_t limit) const {
 inline char16_t
 UnicodeString::doCharAt(int32_t offset) const
 {
-  if((uint32_t)offset < (uint32_t)length()) {
+  if (static_cast<uint32_t>(offset) < static_cast<uint32_t>(length())) {
     return getArrayStart()[offset];
   } else {
     return kInvalidUChar;
@@ -4566,7 +4877,7 @@ inline void
 UnicodeString::setShortLength(int32_t len) {
   
   fUnion.fFields.fLengthAndFlags =
-    (int16_t)((fUnion.fFields.fLengthAndFlags & kAllStorageFlags) | (len << kLengthShift));
+    static_cast<int16_t>((fUnion.fFields.fLengthAndFlags & kAllStorageFlags) | (len << kLengthShift));
 }
 
 inline void
@@ -4760,7 +5071,7 @@ UnicodeString::truncate(int32_t targetLength)
     
     unBogus();
     return false;
-  } else if((uint32_t)targetLength < (uint32_t)length()) {
+  } else if (static_cast<uint32_t>(targetLength) < static_cast<uint32_t>(length())) {
     setLength(targetLength);
     return true;
   } else {

@@ -163,7 +163,7 @@ public:
 
 
 
-    static const TimeZone* U_EXPORT2 getGMT(void);
+    static const TimeZone* U_EXPORT2 getGMT();
 
     
 
@@ -364,7 +364,7 @@ public:
 
 
 
-    static TimeZone* U_EXPORT2 createDefault(void);
+    static TimeZone* U_EXPORT2 createDefault();
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -443,6 +443,35 @@ public:
 
     static UnicodeString& U_EXPORT2 getCanonicalID(const UnicodeString& id,
         UnicodeString& canonicalID, UBool& isSystemID, UErrorCode& status);
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static UnicodeString& U_EXPORT2 getIanaID(const UnicodeString&id, UnicodeString& ianaID,
+        UErrorCode& status);
 
     
 
@@ -613,7 +642,7 @@ public:
 
 
 
-    virtual int32_t getRawOffset(void) const = 0;
+    virtual int32_t getRawOffset() const = 0;
 
     
 
@@ -782,7 +811,7 @@ public:
 
 
 
-    virtual UBool useDaylightTime(void) const = 0;
+    virtual UBool useDaylightTime() const = 0;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -826,7 +855,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -839,8 +868,8 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override = 0;
-    
+    virtual UClassID getDynamicClassID() const override = 0;
+
     
 
 

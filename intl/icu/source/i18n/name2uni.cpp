@@ -66,7 +66,7 @@ NameUnicodeTransliterator::NameUnicodeTransliterator(UnicodeFilter* adoptedFilte
     UnicodeSet *legalPtr = &legal;
     
     USetAdder sa = {
-        (USet *)legalPtr, 
+        reinterpret_cast<USet*>(legalPtr), 
         _set_add,
         nullptr, 
         nullptr, 
@@ -121,7 +121,7 @@ void NameUnicodeTransliterator::handleTransliterate(Replaceable& text, UTransPos
 
     
     ++maxLen; 
-    char* cbuf = (char*) uprv_malloc(maxLen);
+    char* cbuf = static_cast<char*>(uprv_malloc(maxLen));
     if (cbuf == nullptr) {
         offsets.start = offsets.limit;
         return;

@@ -90,6 +90,8 @@ typedef size_t uintptr_t;
 #   define U_NL_LANGINFO_CODESET -1
 #elif U_PLATFORM == U_PF_OS400
    
+#elif U_PLATFORM == U_PF_HAIKU
+   
 #else
 #   define U_NL_LANGINFO_CODESET CODESET
 #endif
@@ -102,6 +104,8 @@ typedef size_t uintptr_t;
 #   define U_TZSET _tzset
 #endif
 #elif U_PLATFORM == U_PF_OS400
+   
+#elif U_PLATFORM == U_PF_HAIKU
    
 #elif defined(__wasi__)
    
@@ -145,6 +149,8 @@ typedef size_t uintptr_t;
 #endif
 #elif U_PLATFORM == U_PF_OS400
    
+#elif U_PLATFORM == U_PF_HAIKU
+    
 #elif defined(__wasi__)
    
 #else
@@ -559,7 +565,7 @@ inline int32_t pinCapacity(T *dest, int32_t capacity) {
     if (maxInt < destInt) {
         
         
-        maxInt = (uintptr_t)-1;
+        maxInt = static_cast<uintptr_t>(-1);
     }
 #  endif
 

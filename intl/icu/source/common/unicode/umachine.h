@@ -370,22 +370,14 @@ typedef int8_t UBool;
 #if 1
     
     
-    
-    
-#elif !defined(UCHAR_TYPE)
+#else
 #   define UCHAR_TYPE uint16_t
 #endif
 
-#if defined(U_COMBINED_IMPLEMENTATION) || defined(U_COMMON_IMPLEMENTATION) || \
-        defined(U_I18N_IMPLEMENTATION) || defined(U_IO_IMPLEMENTATION)
-    
+#if defined(U_ALL_IMPLEMENTATION) || !defined(UCHAR_TYPE)
     typedef char16_t UChar;
-#elif defined(UCHAR_TYPE)
-    typedef UCHAR_TYPE UChar;
-#elif U_CPLUSPLUS_VERSION != 0
-    typedef char16_t UChar;  
 #else
-    typedef uint16_t UChar;  
+    typedef UCHAR_TYPE UChar;
 #endif
 
 
