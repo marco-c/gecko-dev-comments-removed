@@ -331,6 +331,29 @@ interface nsIIOService : nsISupports
 
 
     void unregisterProtocolHandler(in ACString aScheme);
+
+    
+
+
+
+
+
+    void setSimpleURIUnknownRemoteSchemes(in Array<ACString> aRemoteSchemes);
+
+    
+
+
+
+
+
+
+    [noscript] boolean isSimpleURIUnknownScheme(in ACString aScheme);
+
+    
+
+
+
+    [noscript] Array<ACString> getSimpleURIUnknownRemoteSchemes();
 };
 
 %{C++
