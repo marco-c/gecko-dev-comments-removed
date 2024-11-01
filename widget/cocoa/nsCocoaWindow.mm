@@ -3650,14 +3650,9 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
     default:
       break;
   }
-  
-  
-  
-  
-  
-  
-  
-  return !ScreenHasNotch(aWindow);
+  return !ScreenHasNotch(aWindow) &&
+         ![NSUserDefaults.standardUserDefaults
+             integerForKey:@"AppleMenuBarVisibleInFullscreen"];
 }
 
 - (void)updateTitlebarShownAmount:(CGFloat)aShownAmount {
