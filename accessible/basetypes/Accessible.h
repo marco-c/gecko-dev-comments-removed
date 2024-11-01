@@ -729,7 +729,8 @@ class Accessible {
   
 
 
-  static void TranslateString(const nsString& aKey, nsAString& aStringOut);
+  static void TranslateString(const nsString& aKey, nsAString& aStringOut,
+                              const nsTArray<nsString>& aParams = {});
 
  protected:
   
