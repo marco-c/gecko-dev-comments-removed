@@ -361,14 +361,39 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     
     
     
-    static const size_t LockReleasePeriod = 32;
-
+    
+    
+    
+    
+    static constexpr size_t BatchSize = 32;
     while (emptyArenas) {
+      Arena* arenasToRelease[BatchSize];
+      size_t count = 0;
+
+      {
+        mozilla::Maybe<AutoLockGC> maybeLock;
+        if (zone->isAtomsZone()) {
+          
+          maybeLock.emplace(this);
+        }
+
+        
+        for (size_t i = 0; emptyArenas && i < BatchSize; i++) {
+          Arena* arena = emptyArenas;
+          emptyArenas = arena->next;
+
+          arena->release(this, maybeLock.ptrOr(nullptr));
+          arenasToRelease[i] = arena;
+          count++;
+        }
+      }
+
+      zone->gcHeapSize.removeBytes(ArenaSize * count, true, heapSize);
+
       AutoLockGC lock(this);
-      for (size_t i = 0; i < LockReleasePeriod && emptyArenas; i++) {
-        Arena* arena = emptyArenas;
-        emptyArenas = emptyArenas->next;
-        releaseArena(arena, lock);
+      for (size_t i = 0; i < count; i++) {
+        Arena* arena = arenasToRelease[i];
+        arena->chunk()->releaseArena(this, arena, lock);
       }
     }
 
@@ -387,8 +412,7 @@ void GCRuntime::assertBackgroundSweepingFinished() {
 
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
     for (auto kind : AllAllocKinds()) {
-      MOZ_ASSERT_IF(state() != State::Prepare && state() != State::Mark &&
-                        state() != State::Sweep,
+      MOZ_ASSERT_IF(!(state() >= State::Prepare && state() <= State::Sweep),
                     zone->arenas.collectingArenaList(kind).isEmpty());
       MOZ_ASSERT(zone->arenas.doneBackgroundFinalize(kind));
     }

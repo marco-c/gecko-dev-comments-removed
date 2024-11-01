@@ -228,6 +228,7 @@ class alignas(ArenaSize) Arena {
 
   uint8_t data[ArenaSize - ArenaHeaderSize];
 
+  
   void init(GCRuntime* gc, JS::Zone* zoneArg, AllocKind kind,
             const AutoLockGC& lock);
 
@@ -245,25 +246,7 @@ class alignas(ArenaSize) Arena {
 
   
   
-  void setAsNotAllocated() {
-    firstFreeSpan.initAsEmpty();
-
-    
-    AlwaysPoison(&zone_, JS_FREED_ARENA_PATTERN, sizeof(zone_),
-                 MemCheckKind::MakeNoAccess);
-
-    allocKind = AllocKind::LIMIT;
-    onDelayedMarkingList_ = 0;
-    hasDelayedBlackMarking_ = 0;
-    hasDelayedGrayMarking_ = 0;
-    nextDelayedMarkingArena_ = 0;
-    bufferedCells_ = nullptr;
-
-    MOZ_ASSERT(!allocated());
-  }
-
-  
-  inline void release(GCRuntime* gc, const AutoLockGC& lock);
+  inline void release(GCRuntime* gc, const AutoLockGC* maybeLock);
 
   uintptr_t address() const {
     checkAddress();
@@ -274,13 +257,13 @@ class alignas(ArenaSize) Arena {
 
   inline ArenaChunk* chunk() const;
 
-  bool allocated() const {
-    MOZ_ASSERT(IsAllocKind(AllocKind(allocKind)));
-    return IsValidAllocKind(AllocKind(allocKind));
-  }
+  
+  
+  
+  bool allocated() const;
 
   AllocKind getAllocKind() const {
-    MOZ_ASSERT(allocated());
+    MOZ_ASSERT(IsValidAllocKind(allocKind));
     return allocKind;
   }
 
@@ -509,6 +492,20 @@ class ArenaChunk : public ArenaChunkBase {
     return (offset - offsetof(ArenaChunk, arenas)) >> ArenaShift;
   }
 
+  static size_t pageIndex(const Arena* arena) {
+    return arenaToPageIndex(arenaIndex(arena));
+  }
+
+  static size_t arenaToPageIndex(size_t arenaIndex) {
+    static_assert((offsetof(ArenaChunk, arenas) % PageSize) == 0,
+                  "First arena should be on a page boundary");
+    return arenaIndex / ArenasPerPage;
+  }
+
+  static size_t pageToArenaIndex(size_t pageIndex) {
+    return pageIndex * ArenasPerPage;
+  }
+
   explicit ArenaChunk(JSRuntime* runtime) : ArenaChunkBase(runtime) {}
 
   uintptr_t address() const {
@@ -567,16 +564,8 @@ class ArenaChunk : public ArenaChunkBase {
   
   bool isPageFree(const Arena* arena) const;
 
-  
-  size_t pageIndex(const Arena* arena) const {
-    return pageIndex(arenaIndex(arena));
-  }
-  size_t pageIndex(size_t arenaIndex) const {
-    return arenaIndex / ArenasPerPage;
-  }
-
-  Arena* pageAddress(size_t pageIndex) {
-    return &arenas[pageIndex * ArenasPerPage];
+  void* pageAddress(size_t pageIndex) {
+    return &arenas[pageToArenaIndex(pageIndex)];
   }
 };
 

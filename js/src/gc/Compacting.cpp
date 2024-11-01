@@ -884,7 +884,7 @@ void GCRuntime::clearRelocatedArenasWithoutUnlocking(Arena* arenaList,
                                           heapSize);
 
     
-    arena->release(this, lock);
+    arena->release(this, &lock);
   }
 }
 
