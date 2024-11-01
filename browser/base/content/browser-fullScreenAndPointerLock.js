@@ -411,8 +411,6 @@ var FullScreen = {
     }
   },
 
-  _currentToolbarShift: 0,
-
   
 
 
@@ -429,35 +427,18 @@ var FullScreen = {
     
     shiftSize = shiftSize.toFixed(2);
     gNavToolbox.classList.toggle("fullscreen-with-menubar", shiftSize > 0);
-
-    let transform = shiftSize > 0 ? `translateY(${shiftSize}px)` : "";
-    gNavToolbox.style.transform = transform;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    gURLBar.shiftTextboxBy(shiftSize - this._currentToolbarShift);
     if (shiftSize > 0) {
+      gNavToolbox.style.setProperty("transform", `translateY(${shiftSize}px)`);
+
       
       
       
       if (!this.fullScreenToggler.hidden) {
         this.showNavToolbox();
       }
+    } else {
+      gNavToolbox.style.removeProperty("transform");
     }
-
-    this._currentToolbarShift = shiftSize;
   },
 
   handleEvent(event) {
