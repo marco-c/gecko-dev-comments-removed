@@ -28,6 +28,11 @@ sys.path.pop()
 del pyatspiFile
 
 
+def setup():
+    
+    pass
+
+
 def getDoc():
     """Get the Accessible for the document being tested."""
     

@@ -7,6 +7,7 @@
 
 import ctypes
 import os
+import threading
 from ctypes import POINTER, byref
 from ctypes.wintypes import BOOL, HWND, LPARAM, POINT  
 from dataclasses import dataclass
@@ -61,6 +62,18 @@ uiaClient = comtypes.CoCreateInstance(
     interface=uiaMod.IUIAutomation,
     clsctx=comtypes.CLSCTX_INPROC_SERVER,
 )
+
+_threadLocal = threading.local()
+
+
+def setup():
+    if getattr(_threadLocal, "isSetup", False):
+        return
+    
+    
+    
+    comtypes.CoInitialize()
+    _threadLocal.isSetup = True
 
 
 def AccessibleObjectFromWindow(hwnd, objectID=OBJID_CLIENT):
