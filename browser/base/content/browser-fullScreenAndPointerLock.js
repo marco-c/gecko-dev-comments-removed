@@ -305,6 +305,11 @@ var FullScreen = {
       "permissions.fullscreen.allowed"
     );
 
+    let notificationExitButton = document.getElementById(
+      "fullscreen-exit-button"
+    );
+    notificationExitButton.addEventListener("click", this.exitDomFullScreen);
+
     
     addEventListener("fullscreen", this, true);
 
@@ -400,6 +405,7 @@ var FullScreen = {
   },
 
   exitDomFullScreen() {
+    
     if (document.fullscreen) {
       document.exitFullscreen();
     }
