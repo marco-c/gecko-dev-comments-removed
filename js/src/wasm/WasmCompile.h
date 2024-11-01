@@ -62,7 +62,8 @@ bool CompileCompleteTier2(const Bytes& bytecode, const Module& module,
 
 
 bool CompilePartialTier2(const Code& code, uint32_t funcIndex,
-                         UniqueChars* error);
+                         UniqueChars* error, UniqueCharsVector* warnings,
+                         mozilla::Atomic<bool>* cancelled);
 
 
 
