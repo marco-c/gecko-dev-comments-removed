@@ -88,6 +88,7 @@ enum RTPExtensionType : int {
       kRtpExtensionDependencyDescriptor,
   kRtpExtensionColorSpace,
   kRtpExtensionVideoFrameTrackingId,
+  kRtpExtensionCorruptionDetection,
   kRtpExtensionNumberOfExtensions  
 };
 
