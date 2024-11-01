@@ -545,6 +545,38 @@ bool CookieCommons::ShouldIncludeCrossSiteCookie(int32_t aSameSiteAttr,
   return aSameSiteAttr == nsICookie::SAMESITE_NONE;
 }
 
+
+bool CookieCommons::IsFirstPartyPartitionedCookieWithoutCHIPS(
+    Cookie* aCookie, const nsACString& aBaseDomain,
+    const OriginAttributes& aOriginAttributes) {
+  MOZ_ASSERT(aCookie);
+
+  
+  if (aCookie->RawIsPartitioned()) {
+    return false;
+  }
+
+  
+  if (aOriginAttributes.mPartitionKey.IsEmpty()) {
+    return false;
+  }
+
+  nsAutoString scheme;
+  nsAutoString baseDomain;
+  int32_t port;
+  bool foreignByAncestorContext;
+  
+  if (!OriginAttributes::ParsePartitionKey(aOriginAttributes.mPartitionKey,
+                                           scheme, baseDomain, port,
+                                           foreignByAncestorContext)) {
+    return false;
+  }
+
+  
+  
+  return aBaseDomain.Equals(NS_ConvertUTF16toUTF8(baseDomain));
+}
+
 bool CookieCommons::IsSafeTopLevelNav(nsIChannel* aChannel) {
   if (!aChannel) {
     return false;
