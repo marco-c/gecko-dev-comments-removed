@@ -5856,14 +5856,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   MOZ_DIAGNOSTIC_ASSERT(!aInitData ||
                         aInitData->mWindowType != WindowType::Invisible);
 
-  
-  
-  nsIWidget* baseParent =
-      aInitData && (aInitData->mWindowType == WindowType::Dialog ||
-                    aInitData->mWindowType == WindowType::TopLevel)
-          ? nullptr
-          : aParent;
-
 #ifdef ACCESSIBILITY
   
   a11y::PreInit();
@@ -5881,7 +5873,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   nsGTKToolkit::GetToolkit();
 
   
-  BaseCreate(baseParent, aInitData);
+  BaseCreate(aParent, aInitData);
 
   
   mParent = aParent;
@@ -5898,11 +5890,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       aInitData->mTransparencyMode == TransparencyMode::Transparent;
 
   
-  nsWindow* parentnsWindow = nullptr;
-  if (aParent) {
-    parentnsWindow = static_cast<nsWindow*>(aParent);
-  }
-
+  auto* parentnsWindow = static_cast<nsWindow*>(aParent);
   if (mWindowType == WindowType::Child) {
     
     
