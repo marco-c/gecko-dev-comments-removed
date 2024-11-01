@@ -912,9 +912,10 @@ void PullWithBYOBReader(JSContext* aCx, TeeState* aTeeState,
       new PullWithBYOBReader_ReadIntoRequest(aTeeState, aForBranch);
 
   
+  
   RefPtr<ReadableStreamBYOBReader> byobReader =
       aTeeState->GetReader()->AsBYOB();
-  ReadableStreamBYOBReaderRead(aCx, byobReader, aView, readIntoRequest, aRv);
+  ReadableStreamBYOBReaderRead(aCx, byobReader, aView, 1, readIntoRequest, aRv);
 }
 
 
