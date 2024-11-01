@@ -2,6 +2,19 @@
 
 
 
+add_setup(async function () {
+  SpecialPowers.registerConsoleListener(function onConsoleMessage(msg) {
+    if (msg.isWarning || !msg.errorMessage) {
+      
+      return;
+    }
+    ok(false, msg.message || msg.errorMessage);
+  });
+  registerCleanupFunction(() => {
+    SpecialPowers.postConsoleSentinel();
+  });
+});
+
 function waitForAboutNewTabReady(browser, url) {
   
   return SpecialPowers.spawn(browser, [url], async url => {
