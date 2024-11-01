@@ -4472,7 +4472,7 @@ class FunctionCompiler {
 
       
       auto* store = MWasmStoreFieldRefKA::New(
-          alloc(), instancePointer_, exception, data, offset, argValues[i],
+          alloc(), instancePointer_, exception, data, offset, i, argValues[i],
           AliasSet::Store(AliasSet::Any), Nothing(), WasmPreBarrierKind::None);
       if (!store) {
         return false;
@@ -4670,7 +4670,7 @@ class FunctionCompiler {
 
     
     auto* store = MWasmStoreFieldRefKA::New(
-        alloc(), instancePointer_, keepAlive, base, offset, value,
+        alloc(), instancePointer_, keepAlive, base, offset, fieldIndex, value,
         AliasSet::Store(aliasBitset), mozilla::Some(getTrapSiteInfo()),
         preBarrierKind);
     if (!store) {

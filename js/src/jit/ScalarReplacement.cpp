@@ -3054,6 +3054,7 @@ class WasmStructMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitResumePoint(MResumePoint* rp);
   void visitPhi(MPhi* ins);
   void visitWasmStoreFieldKA(MWasmStoreFieldKA* ins);
+  void visitWasmStoreFieldRefKA(MWasmStoreFieldRefKA* ins);
   void visitWasmLoadFieldKA(MWasmLoadFieldKA* ins);
   void visitWasmPostWriteBarrierImmediate(MWasmPostWriteBarrierImmediate* ins);
 };
@@ -3120,6 +3121,27 @@ void WasmStructMemoryView::visitPhi(MPhi* ins) {
 void WasmStructMemoryView::visitResumePoint(MResumePoint* rp) {}
 
 void WasmStructMemoryView::visitWasmStoreFieldKA(MWasmStoreFieldKA* ins) {
+  
+  MDefinition* obj = ins->obj();
+  if (obj != struct_) {
+    return;
+  }
+
+  
+  state_ = BlockState::Copy(alloc_, state_);
+  if (!state_) {
+    oom_ = true;
+    return;
+  }
+
+  
+  state_->setField(ins->fieldIndex(), ins->value());
+
+  
+  ins->block()->discard(ins);
+}
+
+void WasmStructMemoryView::visitWasmStoreFieldRefKA(MWasmStoreFieldRefKA* ins) {
   
   MDefinition* obj = ins->obj();
   if (obj != struct_) {
@@ -3295,6 +3317,14 @@ static bool IsWasmStructEscaped(MDefinition* ins, MInstruction* newStruct) {
       
       
       case MDefinition::Opcode::WasmStoreFieldKA: {
+        break;
+      }
+      case MDefinition::Opcode::WasmStoreFieldRefKA: {
+        
+        if (def->indexOf(*i) == 3) {
+          JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
+          return true;
+        }
         break;
       }
       
