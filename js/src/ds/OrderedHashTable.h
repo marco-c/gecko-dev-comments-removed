@@ -114,6 +114,24 @@ class OrderedHashTable {
   
   mozilla::HashCodeScrambler hcs;
 
+  
+  static constexpr uint32_t InitialBucketsLog2 = 1;
+  static constexpr uint32_t InitialBuckets = 1 << InitialBucketsLog2;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr double FillFactor = 8.0 / 3.0;
+
+  
+  
+  static constexpr double MinDataFill = 0.25;
+
   template <typename F>
   void forEachRange(F&& f) {
     Range* next;
@@ -134,7 +152,7 @@ class OrderedHashTable {
   [[nodiscard]] bool init() {
     MOZ_ASSERT(!hashTable, "init must be called at most once");
 
-    uint32_t buckets = initialBuckets();
+    constexpr uint32_t buckets = InitialBuckets;
     Data** tableAlloc = alloc.template pod_malloc<Data*>(buckets);
     if (!tableAlloc) {
       return false;
@@ -143,7 +161,7 @@ class OrderedHashTable {
       tableAlloc[i] = nullptr;
     }
 
-    uint32_t capacity = uint32_t(buckets * fillFactor());
+    constexpr uint32_t capacity = uint32_t(buckets * FillFactor);
     Data* dataAlloc = alloc.template pod_malloc<Data>(capacity);
     if (!dataAlloc) {
       alloc.free_(tableAlloc, buckets);
@@ -157,7 +175,7 @@ class OrderedHashTable {
     dataLength = 0;
     dataCapacity = capacity;
     liveCount = 0;
-    hashShift = js::kHashNumberBits - initialBucketsLog2();
+    hashShift = js::kHashNumberBits - InitialBucketsLog2;
     MOZ_ASSERT(hashBuckets() == buckets);
     return true;
   }
@@ -280,8 +298,8 @@ class OrderedHashTable {
     forEachRange([pos](Range* range) { range->onRemove(pos); });
 
     
-    if (hashBuckets() > initialBuckets() &&
-        liveCount < dataLength * minDataFill()) {
+    if (hashBuckets() > InitialBuckets &&
+        liveCount < dataLength * MinDataFill) {
       if (!rehash(hashShift + 1)) {
         return false;
       }
@@ -675,30 +693,6 @@ class OrderedHashTable {
            mozilla::HashCodeScrambler::offsetOfMK1();
   }
 
- private:
-  
-  static uint32_t initialBucketsLog2() { return 1; }
-  static uint32_t initialBuckets() { return 1 << initialBucketsLog2(); }
-
-  
-
-
-
-
-
-
-
-
-
-  static constexpr double fillFactor() { return 8.0 / 3.0; }
-
-  
-
-
-
-  static double minDataFill() { return 0.25; }
-
- public:
   HashNumber prepareHash(const Lookup& l) const {
     return mozilla::ScrambleHashCode(Ops::hash(l, hcs));
   }
@@ -804,7 +798,7 @@ class OrderedHashTable {
 
     
     constexpr size_t maxCapacityLog2 =
-        mozilla::tl::FloorLog2<size_t(INT32_MAX / fillFactor())>::value;
+        mozilla::tl::FloorLog2<size_t(INT32_MAX / FillFactor)>::value;
     static_assert(maxCapacityLog2 < kHashNumberBits);
 
     
@@ -824,7 +818,7 @@ class OrderedHashTable {
       newHashTable[i] = nullptr;
     }
 
-    uint32_t newCapacity = uint32_t(newHashBuckets * fillFactor());
+    uint32_t newCapacity = uint32_t(newHashBuckets * FillFactor);
     Data* newData = alloc.template pod_malloc<Data>(newCapacity);
     if (!newData) {
       alloc.free_(newHashTable, newHashBuckets);
