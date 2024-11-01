@@ -276,6 +276,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "MessagePort", insecureContext: true },
   
+  "NavigationPreloadManager",
+  
   { name: "NetworkInformation", insecureContext: true, disabled: true },
   
   { name: "Notification", insecureContext: true },
@@ -310,6 +312,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "PromiseRejectionEvent", insecureContext: true },
   
+  "PushManager",
+  
+  "PushSubscription",
+  
+  "PushSubscriptionOptions",
   
   { name: "ReadableByteStreamController", insecureContext: true },
   
@@ -336,6 +343,10 @@ let interfaceNamesInGlobalScope = [
   { name: "RTCTransformEvent", insecureContext: true },
   
   { name: "Scheduler", insecureContext: true, nightly: true },
+  
+  "ServiceWorker",
+  
+  "ServiceWorkerRegistration",
   
   { name: "StorageManager", fennec: false },
   

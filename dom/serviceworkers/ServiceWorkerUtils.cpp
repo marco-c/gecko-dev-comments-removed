@@ -23,7 +23,7 @@
 
 namespace mozilla::dom {
 
-static bool IsServiceWorkersTestingEnabledInWindow(JSObject* const aGlobal) {
+static bool IsServiceWorkersTestingEnabledInGlobal(JSObject* const aGlobal) {
   if (const nsCOMPtr<nsPIDOMWindowInner> innerWindow =
           Navigator::GetWindowFromGlobal(aGlobal)) {
     if (auto* bc = innerWindow->GetBrowsingContext()) {
@@ -33,60 +33,38 @@ static bool IsServiceWorkersTestingEnabledInWindow(JSObject* const aGlobal) {
   return false;
 }
 
-static bool IsInPrivateBrowsing(JSContext* const aCx) {
-  if (const nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx)) {
-    if (const nsCOMPtr<nsIPrincipal> principal = global->PrincipalOrNull()) {
-      return principal->GetIsInPrivateBrowsing();
-    }
-  }
-  return false;
-}
-
 bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aGlobal) {
-  MOZ_ASSERT(NS_IsMainThread());
-
   if (!StaticPrefs::dom_serviceWorkers_enabled()) {
     return false;
   }
 
   
-  JS::Rooted<JSObject*> global(aCx, aGlobal);
+  JS::Rooted<JSObject*> jsGlobal(aCx, aGlobal);
+  nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
 
-  if (IsInPrivateBrowsing(aCx)) {
-    return false;
-  }
-
-  
-  
-  
-  if (!StaticPrefs::extensions_serviceWorkerRegister_allowed()) {
-    nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(aCx);
-    if (principal && BasePrincipal::Cast(principal)->AddonPolicy()) {
+  if (const nsCOMPtr<nsIPrincipal> principal = global->PrincipalOrNull()) {
+    
+    
+    if (principal->GetIsInPrivateBrowsing()) {
       return false;
+    }
+
+    
+    
+    
+    if (!StaticPrefs::extensions_serviceWorkerRegister_allowed()) {
+      if (principal->GetIsAddonOrExpandedAddonPrincipal()) {
+        return false;
+      }
     }
   }
 
-  if (IsSecureContextOrObjectIsFromSecureContext(aCx, global)) {
+  if (IsSecureContextOrObjectIsFromSecureContext(aCx, jsGlobal)) {
     return true;
   }
 
   return StaticPrefs::dom_serviceWorkers_testing_enabled() ||
-         IsServiceWorkersTestingEnabledInWindow(global);
-}
-
-bool ServiceWorkerVisible(JSContext* aCx, JSObject* aGlobal) {
-  if (NS_IsMainThread()) {
-    
-    
-    
-    
-    return ServiceWorkersEnabled(aCx, aGlobal);
-  }
-
-  
-  
-  
-  return IS_INSTANCE_OF(ServiceWorkerGlobalScope, aGlobal);
+         IsServiceWorkersTestingEnabledInGlobal(jsGlobal);
 }
 
 bool ServiceWorkerRegistrationDataIsValid(

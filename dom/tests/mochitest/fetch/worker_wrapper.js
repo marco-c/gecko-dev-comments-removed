@@ -54,7 +54,7 @@ addEventListener("message", function workerWrapperOnMessage(e) {
     }
   }
 
-  if ("ServiceWorker" in self) {
+  if ("ServiceWorkerGlobalScope" in self) {
     
     self.isSWPresent = false;
 

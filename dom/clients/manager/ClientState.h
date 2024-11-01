@@ -7,15 +7,26 @@
 #ifndef _mozilla_dom_ClientState_h
 #define _mozilla_dom_ClientState_h
 
-#include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/StorageAccess.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "nsContentUtils.h"
 
+namespace mozilla {
+
+
+
+enum class StorageAccess;
+}  
+
 namespace mozilla::dom {
+
+
+
+
+
+enum class VisibilityState : uint8_t;
 
 class IPCClientState;
 class IPCClientWindowState;

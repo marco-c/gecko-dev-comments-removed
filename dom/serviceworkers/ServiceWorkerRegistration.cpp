@@ -638,11 +638,8 @@ void ServiceWorkerRegistration::UpdateStateInternal(
   });
 
   
-  
-  
-  
   nsCOMPtr<nsIGlobalObject> global = GetParentObject();
-  if (!global || !NS_IsMainThread()) {
+  if (!global) {
     return;
   }
 
