@@ -232,7 +232,7 @@ int Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
     OF.flush();  
     
     TPC.ResetMaps();
-    if (ExecuteCallback(U.data(), U.size()) > 0) {
+    if (ExecuteCallback(U.data(), U.size())) {
       continue;
     }
     
