@@ -152,12 +152,7 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
     conn = new TCPConnection(NewWeakPtr(), address, socket);
   } else {
     
-    
     conn = new TCPConnection(NewWeakPtr(), address);
-    if (conn->socket()) {
-      conn->socket()->SignalReadyToSend.connect(this, &TCPPort::OnReadyToSend);
-      conn->socket()->SignalSentPacket.connect(this, &TCPPort::OnSentPacket);
-    }
   }
   AddOrReplaceConnection(conn);
   return conn;
@@ -415,6 +410,14 @@ int TCPConnection::GetError() {
   return error_;
 }
 
+void TCPConnection::OnSentPacket(rtc::AsyncPacketSocket* socket,
+                                 const rtc::SentPacket& sent_packet) {
+  RTC_DCHECK_RUN_ON(network_thread());
+  if (port()) {
+    port()->SignalSentPacket(sent_packet);
+  }
+}
+
 void TCPConnection::OnConnectionRequestResponse(StunRequest* req,
                                                 StunMessage* response) {
   
@@ -606,14 +609,20 @@ void TCPConnection::CreateOutgoingTcpSocket() {
 }
 
 void TCPConnection::ConnectSocketSignals(rtc::AsyncPacketSocket* socket) {
+  
+  
   if (outgoing_) {
     socket->SignalConnect.connect(this, &TCPConnection::OnConnect);
+    socket->SignalSentPacket.connect(this, &TCPConnection::OnSentPacket);
+    socket->SignalReadyToSend.connect(this, &TCPConnection::OnReadyToSend);
   }
+
+  
+  
   socket->RegisterReceivedPacketCallback(
       [&](rtc::AsyncPacketSocket* socket, const rtc::ReceivedPacket& packet) {
         OnReadPacket(socket, packet);
       });
-  socket->SignalReadyToSend.connect(this, &TCPConnection::OnReadyToSend);
   socket->SubscribeCloseEvent(this, [this, safety = network_safety_.flag()](
                                         rtc::AsyncPacketSocket* s, int err) {
     if (safety->alive())
@@ -623,10 +632,12 @@ void TCPConnection::ConnectSocketSignals(rtc::AsyncPacketSocket* socket) {
 
 void TCPConnection::DisconnectSocketSignals(rtc::AsyncPacketSocket* socket) {
   if (outgoing_) {
+    
     socket->SignalConnect.disconnect(this);
+    socket->SignalReadyToSend.disconnect(this);
+    socket->SignalSentPacket.disconnect(this);
   }
   socket->DeregisterReceivedPacketCallback();
-  socket->SignalReadyToSend.disconnect(this);
   socket->UnsubscribeCloseEvent(this);
 }
 
