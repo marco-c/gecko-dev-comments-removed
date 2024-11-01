@@ -20,12 +20,6 @@ NS_QUERYFRAME_HEAD(nsSplittableFrame)
   NS_QUERYFRAME_ENTRY(nsSplittableFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsIFrame)
 
-
-
-
-NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(FirstContinuationProperty, nsIFrame);
-NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(FirstInFlowProperty, nsIFrame);
-
 void nsSplittableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                              nsIFrame* aPrevInFlow) {
   if (aPrevInFlow) {
@@ -75,23 +69,9 @@ void nsSplittableFrame::SetNextContinuation(nsIFrame* aFrame) {
   }
 }
 
-nsIFrame* nsSplittableFrame::GetFirstContinuationIfCached() const {
-  if (!GetPrevContinuation()) {
-    MOZ_ASSERT(
-        !HasProperty(FirstContinuationProperty()),
-        "The property shouldn't be present on first-continuation itself!");
-    return const_cast<nsSplittableFrame*>(this);
-  }
-
-  nsIFrame* firstContinuation = GetProperty(FirstContinuationProperty());
-  MOZ_ASSERT(!firstContinuation || !firstContinuation->GetPrevContinuation(),
-             "First continuation shouldn't have a prev continuation!");
-  return firstContinuation;
-}
-
 nsIFrame* nsSplittableFrame::FirstContinuation() const {
-  if (nsIFrame* firstContinuation = GetFirstContinuationIfCached()) {
-    return firstContinuation;
+  if (mFirstContinuation) {
+    return mFirstContinuation;
   }
 
   
@@ -173,22 +153,9 @@ void nsSplittableFrame::SetNextInFlow(nsIFrame* aFrame) {
   }
 }
 
-nsIFrame* nsSplittableFrame::GetFirstInFlowIfCached() const {
-  if (!GetPrevInFlow()) {
-    MOZ_ASSERT(!HasProperty(FirstInFlowProperty()),
-               "The property shouldn't be present on first-in-flow itself!");
-    return const_cast<nsSplittableFrame*>(this);
-  }
-
-  nsIFrame* firstInFlow = GetProperty(FirstInFlowProperty());
-  MOZ_ASSERT(!firstInFlow || !firstInFlow->GetPrevInFlow(),
-             "First-in-flow shouldn't have a prev-in-flow!");
-  return firstInFlow;
-}
-
 nsIFrame* nsSplittableFrame::FirstInFlow() const {
-  if (nsIFrame* firstInFlow = GetFirstInFlowIfCached()) {
-    return firstInFlow;
+  if (mFirstInFlow) {
+    return mFirstInFlow;
   }
 
   
@@ -241,14 +208,14 @@ void nsSplittableFrame::RemoveFromFlow(nsIFrame* aFrame) {
 }
 
 void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
-  nsIFrame* oldCachedFirstContinuation =
-      GetProperty(FirstContinuationProperty());
+  nsIFrame* oldCachedFirstContinuation = mFirstContinuation;
   if (nsIFrame* prevContinuation = GetPrevContinuation()) {
     nsIFrame* newFirstContinuation = prevContinuation->FirstContinuation();
     if (oldCachedFirstContinuation != newFirstContinuation) {
       
-      for (nsIFrame* f = this; f; f = f->GetNextContinuation()) {
-        f->SetProperty(FirstContinuationProperty(), newFirstContinuation);
+      for (nsSplittableFrame* f = this; f;
+           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
+        f->mFirstContinuation = newFirstContinuation;
       }
     }
   } else {
@@ -259,19 +226,21 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
       
       
       
-      for (nsIFrame* f = this; f; f = f->GetNextContinuation()) {
-        f->RemoveProperty(FirstContinuationProperty());
+      for (nsSplittableFrame* f = this; f;
+           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
+        f->mFirstContinuation = nullptr;
       }
     }
   }
 
-  nsIFrame* oldCachedFirstInFlow = GetProperty(FirstInFlowProperty());
+  nsIFrame* oldCachedFirstInFlow = mFirstInFlow;
   if (nsIFrame* prevInFlow = GetPrevInFlow()) {
     nsIFrame* newFirstInFlow = prevInFlow->FirstInFlow();
     if (oldCachedFirstInFlow != newFirstInFlow) {
       
-      for (nsIFrame* f = this; f; f = f->GetNextInFlow()) {
-        f->SetProperty(FirstInFlowProperty(), newFirstInFlow);
+      for (nsSplittableFrame* f = this; f;
+           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+        f->mFirstInFlow = newFirstInFlow;
       }
     }
   } else {
@@ -281,8 +250,9 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
       
       
       
-      for (nsIFrame* f = this; f; f = f->GetNextInFlow()) {
-        f->RemoveProperty(FirstInFlowProperty());
+      for (nsSplittableFrame* f = this; f;
+           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+        f->mFirstInFlow = nullptr;
       }
     }
   }

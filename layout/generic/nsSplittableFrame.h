@@ -96,16 +96,6 @@ class nsSplittableFrame : public nsIFrame {
   
   
   
-  nsIFrame* GetFirstContinuationIfCached() const;
-
-  
-  
-  
-  nsIFrame* GetFirstInFlowIfCached() const;
-
-  
-  
-  
   
   
   
@@ -171,6 +161,14 @@ class nsSplittableFrame : public nsIFrame {
 
   nsIFrame* mPrevContinuation = nullptr;
   nsIFrame* mNextContinuation = nullptr;
+
+  
+
+
+
+
+  nsIFrame* mFirstContinuation = nullptr;
+  nsIFrame* mFirstInFlow = nullptr;
 };
 
 #endif 
