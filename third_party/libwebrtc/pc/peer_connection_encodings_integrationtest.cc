@@ -2042,6 +2042,7 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
 
 
 
+
 class PeerConnectionEncodingsIntegrationParameterizedTest
     : public PeerConnectionEncodingsIntegrationTest,
       public ::testing::WithParamInterface<std::string> {
@@ -2111,6 +2112,7 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest, AllLayersInactive) {
   EXPECT_EQ(*outbound_rtps[2]->bytes_sent, 0u);
 }
 
+
 TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest, Simulcast) {
   rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
   if (SkipTestDueToAv1Missing(local_pc_wrapper)) {
@@ -2120,7 +2122,7 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest, Simulcast) {
   ExchangeIceCandidates(local_pc_wrapper, remote_pc_wrapper);
 
   std::vector<cricket::SimulcastLayer> layers =
-      CreateLayers({"f", "h", "q"}, true);
+      CreateLayers({"q", "h", "f"}, true);
   rtc::scoped_refptr<RtpTransceiverInterface> transceiver =
       AddTransceiverWithSimulcastLayers(local_pc_wrapper, remote_pc_wrapper,
                                         layers);
@@ -2158,7 +2160,73 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest, Simulcast) {
   ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
                    kLongTimeoutForRampingUp.ms());
   EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
-      local_pc_wrapper, {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}}));
+      local_pc_wrapper, {{"q", 320, 180}, {"h", 640, 360}, {"f", 1280, 720}}));
+  
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
+  std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
+      report->GetStatsOfType<RTCOutboundRtpStreamStats>();
+  ASSERT_THAT(outbound_rtps, SizeIs(3u));
+  EXPECT_THAT(GetCurrentCodecMimeType(report, *outbound_rtps[0]),
+              StrCaseEq(mime_type_));
+  EXPECT_THAT(GetCurrentCodecMimeType(report, *outbound_rtps[1]),
+              StrCaseEq(mime_type_));
+  EXPECT_THAT(GetCurrentCodecMimeType(report, *outbound_rtps[2]),
+              StrCaseEq(mime_type_));
+  EXPECT_THAT(*outbound_rtps[0]->scalability_mode, StrEq("L1T3"));
+  EXPECT_THAT(*outbound_rtps[1]->scalability_mode, StrEq("L1T3"));
+  EXPECT_THAT(*outbound_rtps[2]->scalability_mode, StrEq("L1T3"));
+}
+
+
+TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest,
+       SimulcastWithRequestedResolution) {
+  rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
+  if (SkipTestDueToAv1Missing(local_pc_wrapper)) {
+    return;
+  }
+  rtc::scoped_refptr<PeerConnectionTestWrapper> remote_pc_wrapper = CreatePc();
+  ExchangeIceCandidates(local_pc_wrapper, remote_pc_wrapper);
+
+  std::vector<cricket::SimulcastLayer> layers =
+      CreateLayers({"q", "h", "f"}, true);
+  rtc::scoped_refptr<RtpTransceiverInterface> transceiver =
+      AddTransceiverWithSimulcastLayers(local_pc_wrapper, remote_pc_wrapper,
+                                        layers);
+  std::vector<RtpCodecCapability> codecs =
+      GetCapabilitiesAndRestrictToCodec(remote_pc_wrapper, codec_name_);
+  transceiver->SetCodecPreferences(codecs);
+
+  rtc::scoped_refptr<RtpSenderInterface> sender = transceiver->sender();
+  RtpParameters parameters = sender->GetParameters();
+  ASSERT_THAT(parameters.encodings, SizeIs(3));
+  parameters.encodings[0].scalability_mode = "L1T3";
+  parameters.encodings[0].requested_resolution = {.width = 320, .height = 180};
+  parameters.encodings[1].scalability_mode = "L1T3";
+  parameters.encodings[1].requested_resolution = {.width = 640, .height = 360};
+  parameters.encodings[2].scalability_mode = "L1T3";
+  parameters.encodings[2].requested_resolution = {.width = 1280, .height = 720};
+  sender->SetParameters(parameters);
+
+  NegotiateWithSimulcastTweaks(local_pc_wrapper, remote_pc_wrapper);
+  local_pc_wrapper->WaitForConnection();
+  remote_pc_wrapper->WaitForConnection();
+
+  
+  parameters = sender->GetParameters();
+  ASSERT_THAT(parameters.encodings, SizeIs(3));
+  EXPECT_THAT(parameters.encodings[0].scalability_mode,
+              Optional(std::string("L1T3")));
+  EXPECT_THAT(parameters.encodings[1].scalability_mode,
+              Optional(std::string("L1T3")));
+  EXPECT_THAT(parameters.encodings[2].scalability_mode,
+              Optional(std::string("L1T3")));
+
+  
+  
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
+                   kLongTimeoutForRampingUp.ms());
+  EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
+      local_pc_wrapper, {{"q", 320, 180}, {"h", 640, 360}, {"f", 1280, 720}}));
   
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
