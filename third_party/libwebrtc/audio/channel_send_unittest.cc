@@ -362,6 +362,25 @@ TEST_F(ChannelSendTest, UsedRateIsLargerofLastTwoFrames) {
   EXPECT_EQ(used_rate_3, used_rate_2);
 }
 
+
+
+
+TEST_F(ChannelSendTest, EnqueuePacketsGracefullyHandlesNonInitializedPacer) {
+  EXPECT_CALL(transport_, SendRtp).Times(1);
+  channel_->StartSend();
+  channel_->ResetSenderCongestionControlObjects();
+  
+  
+  ProcessNextFrame();
+  ProcessNextFrame();
+
+  channel_->RegisterSenderCongestionControlObjects(&transport_controller_);
+  
+  
+  ProcessNextFrame();
+  ProcessNextFrame();
+}
+
 }  
 }  
 }  
