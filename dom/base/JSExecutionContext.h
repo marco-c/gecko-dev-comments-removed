@@ -123,28 +123,29 @@ class MOZ_STACK_CLASS JSExecutionContext final {
                           bool& incrementalEncodingAlreadyStarted,
                           ErrorResult& aRv, bool aEncodeBytecode = false,
                           JS::InstantiationStorage* aStorage = nullptr);
-
-  
-  void ExecScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
-                  ErrorResult& aRv);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void ExecScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
-                  JS::MutableHandle<JS::Value> aRetValue, ErrorResult& aRv,
-                  bool aCoerceToString = false);
 };
+
+
+void ExecScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
+                ErrorResult& aRv);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ExecScript(JSContext* aCx, JS::Handle<JSScript*> aScript,
+                JS::MutableHandle<JS::Value> aRetValue, ErrorResult& aRv,
+                bool aCoerceToString = false);
 }  
 }  
 
