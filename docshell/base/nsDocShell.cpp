@@ -8983,6 +8983,11 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
   
   
+  const bool hasTextDirectives =
+      doc->FragmentDirective()->HasUninvokedDirectives();
+
+  
+  
   
   
   
@@ -9015,9 +9020,11 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   if (win) {
     
+    
     bool doHashchange = aState.mSameExceptHashes &&
-                        (aState.mCurrentURIHasRef != aState.mNewURIHasRef ||
-                         !aState.mCurrentHash.Equals(aState.mNewHash));
+                        (!aState.mCurrentHash.Equals(aState.mNewHash) ||
+                         (hasTextDirectives &&
+                          aState.mCurrentURIHasRef != aState.mNewURIHasRef));
 
     if (aState.mHistoryNavBetweenSameDoc || doHashchange) {
       win->DispatchSyncPopState();
