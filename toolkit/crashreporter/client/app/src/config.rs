@@ -39,6 +39,8 @@ pub struct Config {
     
     pub ping_dir: Option<PathBuf>,
     
+    pub profile_dir: Option<PathBuf>,
+    
     
     
     pub dump_file: Option<PathBuf>,
@@ -97,7 +99,7 @@ impl Config {
 
         if self.restart_command.is_none() {
             self.restart_command = Some(
-                self.sibling_program_path(mozbuild::config::MOZ_APP_NAME)
+                self.installation_program_path(mozbuild::config::MOZ_APP_NAME)
                     .into(),
             )
         }
@@ -188,7 +190,40 @@ impl Config {
             self.restart_command = None;
         }
 
+        self.load_profile_directory_from_extra(&extra);
+
         Ok(extra)
+    }
+
+    
+    
+    
+    
+    fn load_profile_directory_from_extra(&mut self, extra: &serde_json::Value) {
+        let Some(profile_dir) = extra
+            .get("ProfileDirectory")
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from)
+        else {
+            return;
+        };
+        if !profile_dir.exists() {
+            return;
+        }
+
+        self.profile_dir = Some(profile_dir);
+
+        
+        match lang::load_langpack(
+            self.profile_dir.as_deref().unwrap(),
+            extra.get("useragent_locale").and_then(|v| v.as_str()),
+        ) {
+            Ok(Some(strings)) => self.strings = Some(strings),
+            Ok(None) => (),
+            Err(e) => {
+                log::warn!("failed to read localization information from profile: {e:#}")
+            }
+        }
     }
 
     
@@ -372,21 +407,15 @@ impl Config {
     
     
     
-    
-    
-    
-    
-    pub fn sibling_program_path<N: AsRef<OsStr>>(&self, program: N) -> PathBuf {
+    pub fn installation_program_path<N: AsRef<OsStr>>(&self, program: N) -> PathBuf {
         let self_path = self_path();
         let exe_extension = self_path.extension().unwrap_or_default();
+        let mut p = program.as_ref().to_os_string();
         if !exe_extension.is_empty() {
-            let mut p = program.as_ref().to_os_string();
             p.push(".");
             p.push(exe_extension);
-            sibling_path(p)
-        } else {
-            sibling_path(program)
         }
+        installation_path().join(p)
     }
 
     cfg_if::cfg_if! {
@@ -492,35 +521,42 @@ impl Config {
 }
 
 
-
-
-
-
-
-
-pub fn sibling_path<N: AsRef<OsStr>>(file: N) -> PathBuf {
-    
-    let dir_path = self_path().parent().expect("program invoked based on PATH");
-
-    let mut path = dir_path.join(file.as_ref());
-
-    if !path.exists() && cfg!(all(not(mock), target_os = "macos")) {
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        if let Some(ancestor) = dir_path.ancestors().nth(3) {
-            path = ancestor.join(file.as_ref());
+pub fn installation_resource_path() -> &'static Path {
+    static PATH: Lazy<PathBuf> = Lazy::new(|| {
+        if cfg!(all(not(mock), target_os = "macos")) {
+            installation_path().parent().unwrap().join("Resources")
+        } else {
+            installation_path().to_owned()
         }
-    }
+    });
+    &*PATH
+}
 
-    path
+
+
+
+
+pub fn installation_path() -> &'static Path {
+    static PATH: Lazy<&'static Path> = Lazy::new(|| {
+        
+        let dir_path = self_path().parent().expect("program invoked based on PATH");
+
+        if cfg!(all(not(mock), target_os = "macos")) {
+            
+            
+            
+            
+
+            
+            
+            if let Some(ancestor) = dir_path.ancestors().nth(3) {
+                return ancestor;
+            }
+        }
+
+        dir_path
+    });
+    &*PATH
 }
 
 fn self_path() -> &'static Path {

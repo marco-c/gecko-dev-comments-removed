@@ -2,8 +2,10 @@
 
 
 
+mod langpack;
 mod language_info;
 mod omnijar;
+mod zip;
 
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
@@ -14,11 +16,21 @@ use std::collections::BTreeMap;
 
 
 pub fn load() -> anyhow::Result<LangStrings> {
-    
     omnijar::read().unwrap_or_else(|e| {
         log::warn!("failed to read localization data from the omnijar ({e:#}), falling back to bundled content");
         Default::default()
     }).load_strings()
+}
+
+
+pub fn load_langpack(
+    profile_dir: &crate::std::path::Path,
+    locale: Option<&str>,
+) -> anyhow::Result<Option<LangStrings>> {
+    langpack::read(profile_dir, locale).and_then(|r| match r {
+        Some(language_info) => language_info.load_strings().map(Some),
+        None => Ok(None),
+    })
 }
 
 

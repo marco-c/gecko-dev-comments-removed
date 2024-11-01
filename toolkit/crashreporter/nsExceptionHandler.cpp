@@ -2852,6 +2852,13 @@ static void SetCrashEventsDir(nsIFile* aDir) {
 }
 
 void SetProfileDirectory(nsIFile* aDir) {
+  
+  {
+    nsAutoString path;
+    aDir->GetPath(path);
+    RecordAnnotationNSString(Annotation::ProfileDirectory, path);
+  }
+
   nsCOMPtr<nsIFile> dir;
   aDir->Clone(getter_AddRefs(dir));
 
