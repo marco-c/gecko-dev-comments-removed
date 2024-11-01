@@ -733,7 +733,11 @@ public class WebExtensionController {
 
   
   @Retention(RetentionPolicy.SOURCE)
-  @StringDef({INSTALLATION_METHOD_MANAGER, INSTALLATION_METHOD_FROM_FILE})
+  @StringDef({
+    INSTALLATION_METHOD_MANAGER,
+    INSTALLATION_METHOD_FROM_FILE,
+    INSTALLATION_METHOD_ONBOARDING
+  })
   public @interface InstallationMethod {};
 
   
@@ -741,6 +745,9 @@ public class WebExtensionController {
 
   
   public static final String INSTALLATION_METHOD_FROM_FILE = "install-from-file";
+
+  
+  public static final String INSTALLATION_METHOD_ONBOARDING = "onboarding";
 
   
 
