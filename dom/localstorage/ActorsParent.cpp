@@ -6802,10 +6802,10 @@ nsresult PrepareDatastoreOp::OpenDirectory() {
   mNestedState = NestedState::DirectoryOpenPending;
 
   quotaManager
-      ->OpenClientDirectory({mOriginMetadata, mozilla::dom::quota::Client::LS},
-                             true,
-                             false,
-                            SomeRef(mPendingDirectoryLock))
+      ->OpenClientDirectory(
+          {mOriginMetadata, mozilla::dom::quota::Client::LS},
+           !mForPreload || mEnableMigration,
+           false, SomeRef(mPendingDirectoryLock))
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr(this)](
