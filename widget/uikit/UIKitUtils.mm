@@ -86,4 +86,11 @@ UITextAutocapitalizationType UIKitUtils::GetUITextAutocapitalizationType(
   return UITextAutocapitalizationTypeNone;
 }
 
+
+UITextAutocorrectionType UIKitUtils::GetUITextAutocorrectionType(
+    const InputContext& aContext) {
+  return aContext.mAutocorrect ? UITextAutocorrectionTypeYes
+                               : UITextAutocorrectionTypeNo;
+}
+
 }  

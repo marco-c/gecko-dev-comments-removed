@@ -3,6 +3,9 @@
 
 
 
+#ifndef mozilla_widget_UIKitUtils_h__
+#define mozilla_widget_UIKitUtils_h__
+
 #import <UIKit/UIKit.h>
 
 #include "IMEData.h"
@@ -18,6 +21,10 @@ class UIKitUtils final {
   static UIReturnKeyType GetUIReturnKeyType(const InputContext& aContext);
   static UITextAutocapitalizationType GetUITextAutocapitalizationType(
       const InputContext& aContext);
+  static UITextAutocorrectionType GetUITextAutocorrectionType(
+      const InputContext& aContext);
 };
 
 }  
+
+#endif
