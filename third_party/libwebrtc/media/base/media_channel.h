@@ -824,6 +824,10 @@ struct RtcpParameters {
 
 struct MediaChannelParameters {
   virtual ~MediaChannelParameters() = default;
+  
+  
+  
+  std::string mid;
 
   std::vector<Codec> codecs;
   std::vector<webrtc::RtpExtension> extensions;
@@ -858,9 +862,6 @@ struct MediaChannelParameters {
 
 struct SenderParameters : MediaChannelParameters {
   int max_bandwidth_bps = -1;
-  
-  
-  std::string mid;
   bool extmap_allow_mixed = false;
 
  protected:
