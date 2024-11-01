@@ -75,8 +75,30 @@ function startup() {
     window.close();
     throw e;
   }
-  document.addEventListener("dialogaccept", acceptDialog);
-  document.addEventListener("dialogcancel", exitDialog);
+
+  document.addEventListener("dialogaccept", dialogClosing);
+  document.addEventListener("dialogcancel", dialogClosing);
+}
+
+function dialogClosing(event) {
+  
+  
+  
+  event.preventDefault();
+
+  let promise = event.type == "dialogaccept" ? acceptDialog() : exitDialog();
+  promise
+    .then(shouldClose => {
+      if (shouldClose === false) {
+        return;
+      }
+
+      window.close();
+    })
+    .catch(e => {
+      console.error(e);
+      window.close();
+    });
 }
 
 async function flush(cancelled) {
@@ -140,7 +162,7 @@ async function flush(cancelled) {
   );
 }
 
-function acceptDialog(event) {
+async function acceptDialog() {
   var appName = gBrandBundle.getString("brandShortName");
 
   var profilesElement = document.getElementById("profiles");
@@ -153,8 +175,8 @@ function acceptDialog(event) {
       [appName]
     );
     Services.prompt.alert(window, pleaseSelectTitle, pleaseSelect);
-    event.preventDefault();
-    return;
+
+    return false;
   }
 
   gDialogParams.objects.insertElementAt(selectedProfile.profile.rootDir, 0);
@@ -169,11 +191,13 @@ function acceptDialog(event) {
       
     }
   }
-  flush(false);
+
+  await flush(false);
+  return true;
 }
 
-function exitDialog() {
-  flush(true);
+async function exitDialog() {
+  await flush(true);
 }
 
 function updateStartupPrefs() {
