@@ -261,6 +261,23 @@ void ViewTransition::Activate() {
   }
 
   
+  
+
+  
+  
+  
+  if (mInitialSnapshotContainingBlockSize !=
+      SnapshotContainingBlockRect().Size()) {
+    return SkipTransition(SkipTransitionReason::Resize);
+  }
+
+  
+  if (auto skipReason = CaptureNewState()) {
+    
+    return SkipTransition(*skipReason);
+  }
+
+  
 
   
   mPhase = Phase::Animating;
@@ -373,7 +390,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     }
     if (!usedTransitionNames.EnsureInserted(name)) {
       
-      result.emplace(SkipTransitionReason::DuplicateTransitionName);
+      result.emplace(
+          SkipTransitionReason::DuplicateTransitionNameCapturingOldState);
       return false;
     }
     
@@ -398,6 +416,42 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   
   
 
+  return result;
+}
+
+
+Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
+  nsTHashSet<nsAtom*> usedTransitionNames;
+  Maybe<SkipTransitionReason> result;
+  ForEachFrame(mDocument, [&](nsIFrame* aFrame) {
+    
+    auto* name = DocumentScopedTransitionNameFor(aFrame);
+    if (!name) {
+      return true;
+    }
+    if (aFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+      
+      
+      return true;
+    }
+    if (aFrame->GetPrevContinuation() || aFrame->GetNextContinuation()) {
+      
+      return true;
+    }
+    if (!usedTransitionNames.EnsureInserted(name)) {
+      result.emplace(
+          SkipTransitionReason::DuplicateTransitionNameCapturingNewState);
+      return false;
+    }
+    auto& capturedElement = mNamedElements.LookupOrInsertWith(name, [&] {
+      
+      
+      return MakeUnique<CapturedElement>(aFrame,
+                                         mInitialSnapshotContainingBlockSize);
+    });
+    capturedElement->mNewElement = aFrame->GetContent()->AsElement();
+    return true;
+  });
   return result;
 }
 
@@ -518,9 +572,17 @@ void ViewTransition::SkipTransition(
         readyPromise->MaybeRejectWithAbortError(
             "Skipped ViewTransition due to timeout");
         break;
-      case SkipTransitionReason::DuplicateTransitionName:
+      case SkipTransitionReason::DuplicateTransitionNameCapturingOldState:
         readyPromise->MaybeRejectWithInvalidStateError(
             "Duplicate view-transition-name value while capturing old state");
+        break;
+      case SkipTransitionReason::DuplicateTransitionNameCapturingNewState:
+        readyPromise->MaybeRejectWithInvalidStateError(
+            "Duplicate view-transition-name value while capturing new state");
+        break;
+      case SkipTransitionReason::Resize:
+        readyPromise->MaybeRejectWithInvalidStateError(
+            "Skipped view transition due to viewport resize");
         break;
       case SkipTransitionReason::UpdateCallbackRejected:
         readyPromise->MaybeReject(aUpdateCallbackRejectReason);
