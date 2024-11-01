@@ -176,8 +176,8 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static nsresult AddHTTPSFirstExceptionForSession(
-      nsCOMPtr<nsIURI> aURI, nsILoadInfo* const aLoadInfo);
+  static nsresult AddHTTPSFirstException(nsCOMPtr<nsIURI> aURI,
+                                         nsILoadInfo* const aLoadInfo);
 
   
 
