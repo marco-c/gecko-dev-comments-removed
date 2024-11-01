@@ -6996,6 +6996,8 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     }
 
     bool hasDataForMigration =
+        StaticPrefs::
+            dom_storage_enable_migration_from_unsupported_legacy_implementation() &&
         mArchivedOriginScope->HasMatches(gArchivedOrigins);
 
     
