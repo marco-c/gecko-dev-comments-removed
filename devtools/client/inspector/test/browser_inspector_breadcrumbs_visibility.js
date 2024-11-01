@@ -70,7 +70,7 @@ async function testBreadcrumbTransitions(hostWindow, inspector) {
 
   
   await breadcrumbsUpdated;
-  const initialCrumb = container.querySelector(`button[aria-pressed="true"]`);
+  const initialCrumb = container.querySelector("button[checked]");
   is(
     isElementInViewport(hostWindow, initialCrumb),
     true,
