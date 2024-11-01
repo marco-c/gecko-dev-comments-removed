@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "api/audio/audio_frame.h"
 #include "common_audio/resampler/include/push_resampler.h"
 
 namespace webrtc {
@@ -34,6 +35,22 @@ class ACMResampler {
 
  private:
   PushResampler<int16_t> resampler_;
+};
+
+
+
+
+class ResamplerHelper {
+ public:
+  ResamplerHelper();
+
+  
+  bool MaybeResample(int desired_sample_rate_hz, AudioFrame* audio_frame);
+
+ private:
+  ACMResampler resampler_;
+  bool resampled_last_output_frame_ = true;
+  std::array<int16_t, AudioFrame::kMaxDataSizeSamples> last_audio_buffer_;
 };
 
 }  

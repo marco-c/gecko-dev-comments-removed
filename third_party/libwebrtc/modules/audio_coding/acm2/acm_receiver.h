@@ -44,6 +44,7 @@ struct RTPHeader;
 
 namespace acm2 {
 
+
 class AcmReceiver {
  public:
   struct Config {
@@ -224,12 +225,9 @@ class AcmReceiver {
 
   const Environment env_;
   mutable Mutex mutex_;
-  ACMResampler resampler_ RTC_GUARDED_BY(mutex_);
   CallStatistics call_stats_ RTC_GUARDED_BY(mutex_);
   const std::unique_ptr<NetEq> neteq_;  
-  bool resampled_last_output_frame_ RTC_GUARDED_BY(mutex_);
-  std::array<int16_t, AudioFrame::kMaxDataSizeSamples> last_audio_buffer_
-      RTC_GUARDED_BY(mutex_);
+  ResamplerHelper resampler_helper_ RTC_GUARDED_BY(mutex_);
 };
 
 }  
