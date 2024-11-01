@@ -238,6 +238,13 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   
   
+  
+  RTCErrorOr<PayloadType> SuggestPayloadType(const std::string& mid,
+                                             cricket::Codec codec);
+
+  
+  
+  
   bool GetStats(const std::string& mid, cricket::TransportStats* stats);
 
   bool initial_offerer() const { return initial_offerer_ && *initial_offerer_; }

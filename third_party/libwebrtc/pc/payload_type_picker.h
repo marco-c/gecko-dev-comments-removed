@@ -42,7 +42,7 @@ class PayloadTypePicker {
   
   
   RTCErrorOr<PayloadType> SuggestMapping(cricket::Codec codec,
-                                         PayloadTypeRecorder* excluder);
+                                         const PayloadTypeRecorder* excluder);
   RTCError AddMapping(PayloadType payload_type, cricket::Codec codec);
 
  private:
@@ -67,12 +67,12 @@ class PayloadTypeRecorder {
       : suggester_(suggester) {}
 
   RTCError AddMapping(PayloadType payload_type, cricket::Codec codec);
-  std::vector<std::pair<PayloadType, cricket::Codec>> GetMappings();
-  RTCErrorOr<PayloadType> LookupPayloadType(cricket::Codec codec);
-  RTCErrorOr<cricket::Codec> LookupCodec(PayloadType payload_type);
+  std::vector<std::pair<PayloadType, cricket::Codec>> GetMappings() const;
+  RTCErrorOr<PayloadType> LookupPayloadType(cricket::Codec codec) const;
+  RTCErrorOr<cricket::Codec> LookupCodec(PayloadType payload_type) const;
   
   
-  void Checkpoint();
+  void Commit();
   
   void Rollback();
 
