@@ -462,7 +462,8 @@ WindowsDiagnosticsError CollectUser32SingleStepData(
 
 
 
-[[clang::optnone]] MOZ_NEVER_INLINE nsresult nsAppShell::InitHiddenWindow() {
+ [[clang::optnone]] MOZ_NEVER_INLINE HWND
+nsAppShell::StaticCreateEventWindow() {
   
   auto _initialErr [[maybe_unused]] = WinErrorState::Get();
   
@@ -483,8 +484,6 @@ WindowsDiagnosticsError CollectUser32SingleStepData(
   if (!_msgId) _atomTableInfo = DiagnoseUserAtomTable();
   NS_ASSERTION(sAppShellGeckoMsgId,
                "Could not register hidden window event message!");
-
-  mLastNativeEventScheduled = TimeStamp::NowLoRes();
 
   WNDCLASSW wc;
   HINSTANCE const module = GetModuleHandle(nullptr);
@@ -536,19 +535,19 @@ WindowsDiagnosticsError CollectUser32SingleStepData(
     }
 #endif  
 
-    MOZ_DIAGNOSTIC_ASSERT(_windowClassAtom,
-                          "RegisterClassW for EventWindowClass failed");
+    MOZ_RELEASE_ASSERT(_windowClassAtom,
+                       "RegisterClassW for EventWindowClass failed");
     WinErrorState::Clear();
   }
 
-  mEventWnd = CreateWindowW(kWindowClass, L"nsAppShell:EventWindow", 0, 0, 0,
-                            10, 10, HWND_MESSAGE, nullptr, module, nullptr);
+  HWND eventWnd =
+      CreateWindowW(kWindowClass, L"nsAppShell:EventWindow", 0, 0, 0, 10, 10,
+                    HWND_MESSAGE, nullptr, module, nullptr);
   auto const _cwErr [[maybe_unused]] = WinErrorState::Get();
 
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && defined(_M_X64)
-  if (!mEventWnd) {
+  if (!eventWnd) {
     
-    HWND eventWnd{};
     WindowsDiagnosticsError rv = CollectUser32SingleStepData(
         [module, &eventWnd]() {
           eventWnd =
@@ -566,11 +565,36 @@ WindowsDiagnosticsError CollectUser32SingleStepData(
         "Failed to collect single step data for CreateWindowW");
     
     
-    mEventWnd = eventWnd;
   }
 #endif  
 
-  MOZ_DIAGNOSTIC_ASSERT(mEventWnd, "CreateWindowW for EventWindow failed");
+  MOZ_RELEASE_ASSERT(eventWnd, "CreateWindowW for EventWindow failed");
+
+  return eventWnd;
+}
+
+HWND nsAppShell::sPrecachedEventWnd{};
+
+ bool nsAppShell::PrecacheEventWindow() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(!sPrecachedEventWnd);
+
+  sPrecachedEventWnd = StaticCreateEventWindow();
+  return static_cast<bool>(sPrecachedEventWnd);
+}
+
+nsresult nsAppShell::InitEventWindow() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (sPrecachedEventWnd) {
+    mEventWnd = sPrecachedEventWnd;
+    sPrecachedEventWnd = nullptr;
+  } else {
+    mEventWnd = StaticCreateEventWindow();
+  }
+
+  mLastNativeEventScheduled = TimeStamp::NowLoRes();
+
   NS_ENSURE_STATE(mEventWnd);
 
   return NS_OK;
@@ -592,7 +616,7 @@ nsresult nsAppShell::Init() {
   
   
   if (XRE_UseNativeEventProcessing()) {
-    if (nsresult rv = this->InitHiddenWindow(); NS_FAILED(rv)) {
+    if (nsresult rv = this->InitEventWindow(); NS_FAILED(rv)) {
       return rv;
     }
   } else if (XRE_IsContentProcess() && !IsWin32kLockedDown()) {
