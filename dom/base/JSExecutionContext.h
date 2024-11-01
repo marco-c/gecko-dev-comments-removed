@@ -14,6 +14,7 @@
 #include "jsapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/Vector.h"
 #include "nsStringFwd.h"
@@ -30,6 +31,8 @@ union Utf8Unit;
 namespace dom {
 
 class ScriptLoadContext;
+
+nsresult EvaluationExceptionToNSResult(ErrorResult& aRv);
 
 class MOZ_STACK_CLASS JSExecutionContext final {
   
@@ -61,10 +64,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
   
   
-  nsresult mRv;
-
-  
-  
   bool mSkip;
 
   
@@ -85,7 +84,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
  private:
   
   template <typename Unit>
-  nsresult InternalCompile(JS::SourceText<Unit>& aSrcBuf);
+  void InternalCompile(JS::SourceText<Unit>& aSrcBuf, ErrorResult& aRv);
 
  public:
   
@@ -95,7 +94,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   JSExecutionContext(
       JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-      JS::CompileOptions& aCompileOptions,
+      JS::CompileOptions& aCompileOptions, ErrorResult& aRv,
       JS::Handle<JS::Value> aDebuggerPrivateValue = JS::UndefinedHandleValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript = nullptr);
 
@@ -108,7 +107,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
     
     
-    MOZ_ASSERT_IF(mEncodeBytecode && mScript && mRv == NS_OK, mScriptUsed);
+    
   }
 
   void SetKeepStencil() { mKeepStencil = true; }
@@ -133,23 +132,24 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  [[nodiscard]] nsresult JoinOffThread(ScriptLoadContext* aContext);
+  void JoinOffThread(ScriptLoadContext* aContext, ErrorResult& aRv);
 
   
-  nsresult Compile(JS::SourceText<char16_t>& aSrcBuf);
-  nsresult Compile(JS::SourceText<mozilla::Utf8Unit>& aSrcBuf);
+  void Compile(JS::SourceText<char16_t>& aSrcBuf, ErrorResult& aRv);
+  void Compile(JS::SourceText<mozilla::Utf8Unit>& aSrcBuf, ErrorResult& aRv);
 
   
-  nsresult Compile(const nsAString& aScript);
+  void Compile(const nsAString& aScript, ErrorResult& aRv);
 
   
-  nsresult Decode(const JS::TranscodeRange& aBytecodeBuf);
+  void Decode(const JS::TranscodeRange& aBytecodeBuf, ErrorResult& aRv);
 
   
   
-  nsresult InstantiateStencil(RefPtr<JS::Stencil>&& aStencil,
-                              bool& incrementalEncodingAlreadyStarted,
-                              JS::InstantiationStorage* aStorage = nullptr);
+  void InstantiateStencil(RefPtr<JS::Stencil>&& aStencil,
+                          bool& incrementalEncodingAlreadyStarted,
+                          ErrorResult& aRv,
+                          JS::InstantiationStorage* aStorage = nullptr);
 
   
   JSScript* GetScript();
@@ -158,7 +158,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JSScript* MaybeGetScript();
 
   
-  [[nodiscard]] nsresult ExecScript();
+  void ExecScript(ErrorResult& aRv);
 
   
   
@@ -170,8 +170,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  
-  [[nodiscard]] nsresult ExecScript(JS::MutableHandle<JS::Value> aRetValue);
+  void ExecScript(JS::MutableHandle<JS::Value> aRetValue, ErrorResult& aRv);
 };
 }  
 }  
