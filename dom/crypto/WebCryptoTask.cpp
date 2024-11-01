@@ -2504,9 +2504,8 @@ class DeriveX25519BitsTask : public ReturnArrayBufferViewTask {
     }
 
     
-    
     if (!mLength.IsNull()) {
-      if (mLength.Value() == 0 || mLength.Value() % 8) {
+      if (mLength.Value() % 8) {
         mEarlyRv = NS_ERROR_DOM_DATA_ERR;
         return;
       }
@@ -3134,15 +3133,6 @@ class DeriveEcdhBitsTask : public ReturnArrayBufferViewTask {
     if (!mPrivKey) {
       mEarlyRv = NS_ERROR_DOM_INVALID_ACCESS_ERR;
       return;
-    }
-
-    
-    
-    if (!mLengthInBits.IsNull()) {
-      if (mLengthInBits.Value() == 0) {
-        mEarlyRv = NS_ERROR_DOM_DATA_ERR;
-        return;
-      }
     }
 
     
