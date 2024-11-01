@@ -174,14 +174,22 @@ exports.isNodeValid = isNodeValid;
 
 
 
+
+
+
 function CanvasFrameAnonymousContentHelper(
   highlighterEnv,
   nodeBuilder,
-  { waitForDocumentToLoad = true } = {}
+  {
+    waitForDocumentToLoad = true,
+    avoidForcedSynchronousLayoutUpdate = false,
+  } = {}
 ) {
   this.highlighterEnv = highlighterEnv;
   this.nodeBuilder = nodeBuilder;
   this.waitForDocumentToLoad = !!waitForDocumentToLoad;
+  this.avoidForcedSynchronousLayoutUpdate =
+    !!avoidForcedSynchronousLayoutUpdate;
 
   this._onWindowReady = this._onWindowReady.bind(this);
   this.highlighterEnv.on("window-ready", this._onWindowReady);
@@ -246,7 +254,9 @@ CanvasFrameAnonymousContentHelper.prototype = {
     try {
       
       
-      const forceSynchronousLayoutUpdate = !this.waitForDocumentToLoad;
+      
+      const forceSynchronousLayoutUpdate =
+        !this.waitForDocumentToLoad && !this.avoidForcedSynchronousLayoutUpdate;
       this._content = this.anonymousContentDocument.insertAnonymousContent(
         forceSynchronousLayoutUpdate
       );
