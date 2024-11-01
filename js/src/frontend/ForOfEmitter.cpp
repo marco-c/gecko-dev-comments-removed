@@ -23,24 +23,30 @@ ForOfEmitter::ForOfEmitter(BytecodeEmitter* bce,
                            SelfHostedIter selfHostedIter, IteratorKind iterKind
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
                            ,
-                           HasUsingDeclarationInHead hasUsingDeclarationInHead
+                           HeadUsingDeclarationKind usingDeclarationInHead
 #endif
                            )
     : bce_(bce),
       selfHostedIter_(selfHostedIter),
       iterKind_(iterKind),
-      headLexicalEmitterScope_(headLexicalEmitterScope) {
+      headLexicalEmitterScope_(headLexicalEmitterScope)
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  MOZ_ASSERT_IF(hasUsingDeclarationInHead == HasUsingDeclarationInHead::Yes,
-                headLexicalEmitterScope->hasEnvironment());
-  if (hasUsingDeclarationInHead == HasUsingDeclarationInHead::Yes) {
-    
-    
-    
-    
-    MOZ_ASSERT(headLexicalEmitterScope == bce_->innermostEmitterScope());
-    MOZ_ASSERT(headLexicalEmitterScope->hasDisposables());
-  }
+      ,
+      usingDeclarationInHead_(usingDeclarationInHead)
+#endif
+{
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  
+  
+  
+  
+  MOZ_ASSERT_IF(usingDeclarationInHead != HeadUsingDeclarationKind::None,
+                headLexicalEmitterScope->hasEnvironment() &&
+                    headLexicalEmitterScope == bce_->innermostEmitterScope() &&
+                    headLexicalEmitterScope->hasDisposables());
+  MOZ_ASSERT_IF(
+      headLexicalEmitterScope && headLexicalEmitterScope->hasDisposables(),
+      usingDeclarationInHead != HeadUsingDeclarationKind::None);
 #endif
 }
 
@@ -117,7 +123,9 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
       
       
       
-      if (!bce_->innermostEmitterScope()->prepareForForOfLoopIteration(bce_)) {
+      if (!bce_->innermostEmitterScope()->prepareForForOfLoopIteration(
+              bce_,
+              usingDeclarationInHead_ == HeadUsingDeclarationKind::Async)) {
         return false;
       }
 #endif
