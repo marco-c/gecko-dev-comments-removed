@@ -22,13 +22,13 @@ add_task(async function () {
   
   
   const onWhyPausedDisplayed = waitUntil(() =>
-    dbg.win.document.querySelector(".why-paused")
+    dbg.win.document.querySelector(".why-paused:not(.hidden)")
   );
   await addExpression(dbg, "window.document.querySelector('button')");
   
   await onWhyPausedDisplayed;
   
-  await waitUntil(() => !dbg.win.document.querySelector(".why-paused"));
+  await waitUntil(() => dbg.win.document.querySelector(".why-paused.hidden"));
 
   info(
     "Check that hovering over DOM element highlights the node in content panel"
