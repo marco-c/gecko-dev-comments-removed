@@ -8643,11 +8643,6 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
               0));
         }
       }
-
-      metadata.SetIsSoftwareKeyboardVisible(presContext->GetKeyboardHeight() >
-                                            0);
-      metadata.SetInteractiveWidget(
-          presContext->Document()->InteractiveWidget());
     }
 
     metrics.SetScrollGeneration(
@@ -9828,14 +9823,6 @@ template <typename SizeType>
  SizeType ExpandHeightForDynamicToolbarImpl(
     const nsPresContext* aPresContext, const SizeType& aSize) {
   MOZ_ASSERT(aPresContext);
-
-  
-  
-  
-  
-  if (!aPresContext->IsKeyboardHiddenOrResizesContentMode()) {
-    return aSize;
-  }
 
   LayoutDeviceIntSize displaySize;
   if (RefPtr<MobileViewportManager> MVM =
