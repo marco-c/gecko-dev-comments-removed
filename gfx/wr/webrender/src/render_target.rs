@@ -166,12 +166,7 @@ pub struct RenderTarget {
     pub svg_nodes: FrameVec<(BatchTextures, FrameVec<SVGFEFilterInstance>)>,
     pub blits: FrameVec<BlitJob>,
     alpha_tasks: FrameVec<RenderTaskId>,
-    
-    
-    
-    pub used_rect: Option<DeviceIntRect>,
     pub resolve_ops: FrameVec<ResolveOp>,
-    pub clear_color: Option<ColorF>,
 
     pub prim_instances: [FastHashMap<TextureSource, FrameVec<PrimitiveInstanceData>>; NUM_PATTERNS],
     pub prim_instances_with_scissor: FastHashMap<(DeviceIntRect, PatternKind), FastHashMap<TextureSource, FrameVec<PrimitiveInstanceData>>>,
@@ -187,6 +182,7 @@ pub struct RenderTarget {
     pub conic_gradients: FrameVec<ConicGradientInstance>,
 
     pub clip_batcher: ClipBatcher,
+
     
     
     
@@ -195,12 +191,27 @@ pub struct RenderTarget {
     
     
     
+    
+    
+    
+
     
     
     
     pub clears: FrameVec<DeviceIntRect>,
     pub zero_clears: FrameVec<RenderTaskId>,
     pub one_clears: FrameVec<RenderTaskId>,
+
+    
+    
+    
+    
+    
+    pub used_rect: Option<DeviceIntRect>,
+    
+    
+    
+    pub clear_color: Option<ColorF>,
 }
 
 impl RenderTarget {
