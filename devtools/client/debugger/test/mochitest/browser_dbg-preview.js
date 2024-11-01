@@ -171,6 +171,10 @@ async function testHoveringInvalidTargetTokens(dbg) {
   
   resetCursorPositionToTopLeftCorner(dbg);
 
+  
+  
+  await waitForDocumentLoadComplete(dbg);
+
   const inlinePreviewEl = findElement(dbg, "inlinePreview");
   is(inlinePreviewEl.innerText, `myVar:"foo"`, "got expected inline preview");
 
@@ -229,6 +233,10 @@ async function testHoveringInvalidTargetTokens(dbg) {
 async function assertNoPreviews(dbg, expression, line, column) {
   
   resetCursorPositionToTopLeftCorner(dbg);
+
+  
+  
+  await waitForDocumentLoadComplete(dbg);
 
   
   const result = await Promise.race([
