@@ -3511,8 +3511,7 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
   
   
   MOZ_KnownLive(mSelection)
-      ->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
-                       ScrollAxis(), ScrollAxis(), 0);
+      ->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION);
   aEvent->mSucceeded = true;
   return NS_OK;
 }
