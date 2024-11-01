@@ -19,16 +19,12 @@
 
 #ifdef __cplusplus
 #  include <algorithm>
+#  include <array>
 #  include <type_traits>
 
 #  include "mozilla/Alignment.h"
 
 namespace mozilla {
-
-template <typename T, size_t Length>
-class Array;
-template <typename IndexType, typename ValueType, size_t Size>
-class EnumeratedArray;
 
 
 
@@ -46,47 +42,6 @@ template <class T>
 MOZ_ALWAYS_INLINE size_t PointerRangeSize(T* aBegin, T* aEnd) {
   MOZ_ASSERT(aEnd >= aBegin);
   return (size_t(aEnd) - size_t(aBegin)) / sizeof(T);
-}
-
-
-
-
-
-
-
-template <typename T, size_t N>
-constexpr size_t ArrayLength(T (&aArr)[N]) {
-  return N;
-}
-
-template <typename T, size_t N>
-constexpr size_t ArrayLength(const Array<T, N>& aArr) {
-  return N;
-}
-
-template <typename E, typename T, size_t N>
-constexpr size_t ArrayLength(const EnumeratedArray<E, T, N>& aArr) {
-  return N;
-}
-
-
-
-
-
-
-template <typename T, size_t N>
-constexpr T* ArrayEnd(T (&aArr)[N]) {
-  return aArr + ArrayLength(aArr);
-}
-
-template <typename T, size_t N>
-constexpr T* ArrayEnd(Array<T, N>& aArr) {
-  return &aArr[0] + ArrayLength(aArr);
-}
-
-template <typename T, size_t N>
-constexpr const T* ArrayEnd(const Array<T, N>& aArr) {
-  return &aArr[0] + ArrayLength(aArr);
 }
 
 
@@ -158,31 +113,8 @@ inline bool IsInRange(const T* aPtr, uintptr_t aBegin, uintptr_t aEnd) {
                    reinterpret_cast<const T*>(aEnd));
 }
 
-namespace detail {
-
-
-
-
-
-template <typename T, size_t N>
-char (&ArrayLengthHelper(T (&array)[N]))[N];
-
-} 
-
 } 
 
 #endif 
-
-
-
-
-
-
-#ifdef __cplusplus
-#  define MOZ_ARRAY_LENGTH(array) \
-    sizeof(mozilla::detail::ArrayLengthHelper(array))
-#else
-#  define MOZ_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-#endif
 
 #endif 

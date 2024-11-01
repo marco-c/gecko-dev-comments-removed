@@ -136,7 +136,7 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
       
       const uint32_t phaseLookup[] = {14, 0, 10, 4};
       stagePhase = WEBAUDIO_BLOCK_SIZE *
-                   phaseLookup[m_stages.Length() % ArrayLength(phaseLookup)];
+                   phaseLookup[m_stages.Length() % std::size(phaseLookup)];
     } else if (fftSize > maxFFTSize) {
       fftSize = maxFFTSize;
       

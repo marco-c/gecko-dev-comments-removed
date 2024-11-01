@@ -3136,7 +3136,7 @@ bool nsGlobalWindowInner::ResolveComponentsShim(
 
   
   
-  for (uint32_t i = 0; i < ArrayLength(kInterfaceShimMap); ++i) {
+  for (uint32_t i = 0; i < std::size(kInterfaceShimMap); ++i) {
     
     const char* geckoName = kInterfaceShimMap[i].geckoName;
     const char* domName = kInterfaceShimMap[i].domName;

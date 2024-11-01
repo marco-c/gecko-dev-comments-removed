@@ -413,11 +413,11 @@ OSStatus GatherEnterpriseCertsMacOS(nsTArray<EnterpriseCert>& certs,
   
   const CFStringRef keys[] = {kSecClass, kSecMatchLimit};
   const void* values[] = {kSecClassCertificate, kSecMatchLimitAll};
-  static_assert(ArrayLength(keys) == ArrayLength(values),
+  static_assert(std::size(keys) == std::size(values),
                 "mismatched SecItemCopyMatching key/value array sizes");
   
   ScopedCFType<CFDictionaryRef> searchDictionary(CFDictionaryCreate(
-      nullptr, (const void**)&keys, (const void**)&values, ArrayLength(keys),
+      nullptr, (const void**)&keys, (const void**)&values, std::size(keys),
       &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks));
   CFTypeRef items;
   

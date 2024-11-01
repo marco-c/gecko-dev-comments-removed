@@ -452,11 +452,11 @@ static int8_t GetClass(uint32_t u, LineBreakRule aLevel,
        CLASS_CHARACTER,
        CLASS_CHARACTER};
 
-  static_assert(U_LB_COUNT == mozilla::ArrayLength(sUnicodeLineBreakToClass),
+  static_assert(U_LB_COUNT == std::size(sUnicodeLineBreakToClass),
                 "Gecko vs ICU LineBreak class mismatch");
 
   auto cls = GetLineBreakClass(u);
-  MOZ_ASSERT(cls < mozilla::ArrayLength(sUnicodeLineBreakToClass));
+  MOZ_ASSERT(cls < std::size(sUnicodeLineBreakToClass));
 
   
   
