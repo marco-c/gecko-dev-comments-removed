@@ -1041,7 +1041,7 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
   
   
   FlexfecReceiveStreamImpl* receive_stream = new FlexfecReceiveStreamImpl(
-      &env_.clock(), std::move(config), &video_receiver_controller_,
+      env_, std::move(config), &video_receiver_controller_,
       call_stats_->AsRtcpRttStats());
 
   
