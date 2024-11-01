@@ -828,9 +828,9 @@ void nsTextControlFrame::ScrollSelectionIntoViewAsync(
     return;
   }
 
-  int16_t flags = aScrollAncestors == ScrollAncestors::Yes
-                      ? 0
-                      : nsISelectionController::SCROLL_FIRST_ANCESTOR_ONLY;
+  const auto flags = aScrollAncestors == ScrollAncestors::Yes
+                         ? nsISelectionController::ControllerScrollFlags(0)
+                         : nsISelectionController::SCROLL_FIRST_ANCESTOR_ONLY;
 
   
   selCon->ScrollSelectionIntoView(
