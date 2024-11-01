@@ -714,6 +714,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
   sToolbarForegroundColor = currentTheme.toolbarForegroundColor;
 
   bool menubarShown = flags.contains(SkeletonUIFlag::MenubarShown);
+  bool verticalTabs = flags.contains(SkeletonUIFlag::VerticalTabs);
   bool bookmarksToolbarShown =
       flags.contains(SkeletonUIFlag::BookmarksToolbarShown);
   bool rtlEnabled = flags.contains(SkeletonUIFlag::RtlEnabled);
@@ -724,7 +725,8 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
       sHorizontalResizeMargin - (sMaximized ? 0 : chromeHorMargin);
 
   
-  int tabBarHeight = CSSToDevPixels(44, sCSSToDevPixelScaling);
+  int tabBarHeight =
+      verticalTabs ? 0 : CSSToDevPixels(44, sCSSToDevPixelScaling);
   int selectedTabBorderWidth = CSSToDevPixels(2, sCSSToDevPixelScaling);
   
   int titlebarSpacerWidth = horizontalOffset +
@@ -794,7 +796,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
   Vector<ColorRect> rects;
 
   ColorRect menubar = {};
-  menubar.color = currentTheme.tabBarColor;
+  menubar.color = currentTheme.titlebarColor;
   menubar.x = 0;
   menubar.y = verticalOffset;
   menubar.width = sWindowWidth;
@@ -810,7 +812,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
 
   
   ColorRect tabBar = {};
-  tabBar.color = currentTheme.tabBarColor;
+  tabBar.color = currentTheme.titlebarColor;
   tabBar.x = 0;
   tabBar.y = menubar.y + menubar.height;
   tabBar.width = sWindowWidth;
@@ -820,38 +822,47 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
     return Err(PreXULSkeletonUIError::OOM);
   }
 
-  
-  ColorRect selectedTab = {};
-  selectedTab.color = currentTheme.tabColor;
-  selectedTab.x = titlebarSpacerWidth;
-  selectedTab.y = menubar.y + menubar.height + selectedTabMarginTop;
-  selectedTab.width = selectedTabWidth;
-  selectedTab.height =
-      tabBar.y + tabBar.height - selectedTab.y - selectedTabMarginBottom;
-  selectedTab.borderColor = currentTheme.tabOutlineColor;
-  selectedTab.borderWidth = selectedTabBorderWidth;
-  selectedTab.borderRadius = selectedTabBorderRadius;
-  selectedTab.flipIfRTL = true;
-  if (!rects.append(selectedTab)) {
-    return Err(PreXULSkeletonUIError::OOM);
-  }
+  if (!verticalTabs) {
+    
+    ColorRect selectedTab = {};
+    selectedTab.color = currentTheme.tabColor;
+    selectedTab.x = titlebarSpacerWidth;
+    selectedTab.y = menubar.y + menubar.height + selectedTabMarginTop;
+    selectedTab.width = selectedTabWidth;
+    selectedTab.height =
+        tabBar.y + tabBar.height - selectedTab.y - selectedTabMarginBottom;
+    selectedTab.borderColor = currentTheme.tabOutlineColor;
+    selectedTab.borderWidth = selectedTabBorderWidth;
+    selectedTab.borderRadius = selectedTabBorderRadius;
+    selectedTab.flipIfRTL = true;
+    if (!rects.append(selectedTab)) {
+      return Err(PreXULSkeletonUIError::OOM);
+    }
 
-  
-  ColorRect tabTextPlaceholder = {};
-  tabTextPlaceholder.color = currentTheme.toolbarForegroundColor;
-  tabTextPlaceholder.x = selectedTab.x + tabPlaceholderBarMarginLeft;
-  tabTextPlaceholder.y = selectedTab.y + tabPlaceholderBarMarginTop;
-  tabTextPlaceholder.width = tabPlaceholderBarWidth;
-  tabTextPlaceholder.height = tabPlaceholderBarHeight;
-  tabTextPlaceholder.borderRadius = placeholderBorderRadius;
-  tabTextPlaceholder.flipIfRTL = true;
-  if (!rects.append(tabTextPlaceholder)) {
-    return Err(PreXULSkeletonUIError::OOM);
+    
+    
+    ColorRect tabTextPlaceholder = {};
+    tabTextPlaceholder.color = currentTheme.toolbarForegroundColor;
+    tabTextPlaceholder.x = selectedTab.x + tabPlaceholderBarMarginLeft;
+    tabTextPlaceholder.y = selectedTab.y + tabPlaceholderBarMarginTop;
+    tabTextPlaceholder.width = tabPlaceholderBarWidth;
+    tabTextPlaceholder.height = tabPlaceholderBarHeight;
+    tabTextPlaceholder.borderRadius = placeholderBorderRadius;
+    tabTextPlaceholder.flipIfRTL = true;
+    if (!rects.append(tabTextPlaceholder)) {
+      return Err(PreXULSkeletonUIError::OOM);
+    }
+
+    if (!sAnimatedRects->append(tabTextPlaceholder)) {
+      return Err(PreXULSkeletonUIError::OOM);
+    }
   }
 
   
   ColorRect toolbar = {};
-  toolbar.color = currentTheme.backgroundColor;
+  
+  toolbar.color =
+      verticalTabs ? currentTheme.titlebarColor : currentTheme.backgroundColor;
   toolbar.x = 0;
   toolbar.y = tabBar.y + tabBarHeight;
   toolbar.width = sWindowWidth;
@@ -1042,8 +1053,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
     return Err(PreXULSkeletonUIError::BadWindowDimensions);
   }
 
-  if (!sAnimatedRects->append(tabTextPlaceholder) ||
-      !sAnimatedRects->append(urlbarTextPlaceholder)) {
+  if (!sAnimatedRects->append(urlbarTextPlaceholder)) {
     return Err(PreXULSkeletonUIError::OOM);
   }
 
@@ -1339,7 +1349,7 @@ ThemeColors GetTheme(ThemeMode themeId) {
       theme.toolbarForegroundColor = 0x6a6a6d;
       theme.tabOutlineColor = 0x1c1b22;
       
-      theme.tabBarColor = 0x1c1b22;
+      theme.titlebarColor = 0x1c1b22;
       
       theme.chromeContentDividerColor = 0x0c0c0d;
       
@@ -1357,7 +1367,7 @@ ThemeColors GetTheme(ThemeMode themeId) {
       theme.tabOutlineColor = 0xdddde1;
       
       
-      theme.tabBarColor = 0xf0f0f4;
+      theme.titlebarColor = 0xf0f0f4;
       
       theme.chromeContentDividerColor = 0xe1e1e2;
       
@@ -2134,6 +2144,9 @@ Result<Ok, PreXULSkeletonUIError> PersistPreXULSkeletonUIValues(
   }
   if (settings.uiDensity == SkeletonUIDensity::Compact) {
     flags += SkeletonUIFlag::CompactDensity;
+  }
+  if (settings.verticalTabs) {
+    flags += SkeletonUIFlag::VerticalTabs;
   }
 
   uint32_t flagsUint = flags.serialize();
