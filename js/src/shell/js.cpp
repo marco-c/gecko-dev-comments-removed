@@ -9532,6 +9532,12 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::Rooted<JS::PropertyKey> scriptId(cx, NameToId(cx->names().script));
   JS::Rooted<JS::PropertyKey> nameId(cx, NameToId(cx->names().name));
   JS::Rooted<JS::PropertyKey> labelId(cx, NameToId(cx->names().label));
+  JS::Rooted<JSString*> realmIDStr(cx, JS_AtomizeString(cx, "realmID"));
+  if (!realmIDStr) {
+    return false;
+  }
+  JS::Rooted<JS::PropertyKey> realmIDId(
+      cx, JS::PropertyKey::NonIntAtom(realmIDStr));
 
   JS::Rooted<JSObject*> contextObj(cx);
   JS::Rooted<ArrayObject*> eventsArray(cx);
@@ -9637,6 +9643,16 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
                                      JSPROP_ENUMERATE)) {
             return false;
           }
+        }
+
+        if (!JS_DefinePropertyById(
+                cx, eventObj, realmIDId,
+                
+                
+                
+                
+                double(event.functionEvent.realmID), JSPROP_ENUMERATE)) {
+          return false;
         }
 
         if (auto p = context.atoms.lookup(event.functionEvent.functionNameId)) {

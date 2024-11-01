@@ -119,6 +119,10 @@ struct ExecutionTrace {
 
         
         
+        uint64_t realmID;
+
+        
+        
         uint32_t functionNameId;
       } functionEvent;
 
