@@ -546,10 +546,8 @@ bool TISInputSourceWrapper::IsDeadKey(NSEvent* aNativeKeyEvent) {
   }
 
   
-  
   NSUInteger cocoaState = [aNativeKeyEvent modifierFlags];
-  if (cocoaState & (NSEventModifierFlagControl | NSEventModifierFlagCommand |
-                    NSEventModifierFlagFunction)) {
+  if (cocoaState & (NSEventModifierFlagControl | NSEventModifierFlagCommand)) {
     return false;
   }
 
@@ -1849,14 +1847,6 @@ bool TextInputHandler::HandleKeyDownEvent(NSEvent* aNativeEvent,
                         "something and canceling the composition",
                         this));
     return false;
-  }
-
-  
-  
-  if (nsCocoaUtils::ModifiersForEvent(aNativeEvent) & MODIFIER_FN) {
-    if (mWidget->SendEventToNativeMenuSystem(aNativeEvent)) {
-      return true;
-    }
   }
 
   
