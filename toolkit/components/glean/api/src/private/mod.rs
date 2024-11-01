@@ -90,6 +90,8 @@ impl From<u32> for MetricId {
 
 #[cfg(feature = "with_gecko")]
 pub(crate) mod profiler_utils {
+    pub(crate) use super::truncate_string_for_marker;
+
     #[derive(Debug)]
     pub(crate) enum LookupError {
         NullPointer,
@@ -141,5 +143,152 @@ pub(crate) mod profiler_utils {
                 }
             }
         }
+    }
+
+}
+
+
+
+
+#[cfg(any(feature = "with_gecko", test))]
+pub(crate) fn truncate_string_for_marker(input: String) -> String {
+    const MAX_STRING_BYTE_LENGTH: usize = 1024;
+    truncate_string_for_marker_to_length(input, MAX_STRING_BYTE_LENGTH)
+}
+
+#[cfg(any(feature = "with_gecko", test))]
+#[inline]
+fn truncate_string_for_marker_to_length(mut input: String, byte_length: usize) -> String {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    #[inline]
+    const fn is_utf8_char_boundary(b: u8) -> bool {
+        
+        (b as i8) >= -0x40
+    }
+
+    
+    
+    
+    
+    
+    
+    if byte_length < input.len() {
+        let lower_bound = byte_length.saturating_sub(3);
+
+        let new_byte_length = input.as_bytes()[lower_bound..=byte_length]
+            .iter()
+            .rposition(|b| is_utf8_char_boundary(*b));
+
+        
+        let truncation_point = unsafe { lower_bound + new_byte_length.unwrap_unchecked() };
+        input.truncate(truncation_point)
+    }
+    input
+}
+
+#[cfg(test)]
+mod truncation_tests {
+    use crate::private::truncate_string_for_marker;
+    use crate::private::truncate_string_for_marker_to_length;
+
+    
+    
+    
+
+    
+    
+    fn check_many(s: &str, arg: impl IntoIterator<Item = usize>, truncated: &str) {
+        for len in arg {
+            assert_eq!(
+                truncate_string_for_marker_to_length(s.to_string(), len),
+                truncated,
+                "truncate_string_for_marker_to_length({:?}, {:?}) != {:?}",
+                len,
+                s,
+                truncated
+            );
+        }
+    }
+
+    #[test]
+    fn truncate_1byte_chars() {
+        check_many("jp", [0], "");
+        check_many("jp", [1], "j");
+        check_many("jp", 2..4, "jp");
+    }
+
+    #[test]
+    fn truncate_2byte_chars() {
+        check_many("ĵƥ", 0..2, "");
+        check_many("ĵƥ", 2..4, "ĵ");
+        check_many("ĵƥ", 4..6, "ĵƥ");
+    }
+
+    #[test]
+    fn truncate_3byte_chars() {
+        check_many("日本", 0..3, "");
+        check_many("日本", 3..6, "日");
+        check_many("日本", 6..8, "日本");
+    }
+
+    #[test]
+    fn truncate_4byte_chars() {
+        check_many("🇯🇵", 0..4, "");
+        check_many("🇯🇵", 4..8, "🇯");
+        check_many("🇯🇵", 8..10, "🇯🇵");
+    }
+
+    
+    fn check_one(s: String, truncated: String) {
+        assert_eq!(
+            truncate_string_for_marker(s.clone()),
+            truncated,
+            "truncate_string_for_marker({:?}) != {:?}",
+            s,
+            truncated
+        );
+    }
+
+    #[test]
+    fn full_truncation() {
+        
+
+        
+        
+        
+        
+        let pad = |reps: usize| -> String { "-".repeat(reps) };
+
+        
+        check_one(pad(1020) + "jpjpj", pad(1020) + "jpjp");
+
+        
+        check_one(pad(1020) + "ĵƥ", pad(1020) + "ĵƥ");
+        check_one(pad(1021) + "ĵƥ", pad(1021) + "ĵ");
+
+        
+        check_one(pad(1018) + "日本", pad(1018) + "日本");
+        check_one(pad(1020) + "日本", pad(1020) + "日");
+        check_one(pad(1022) + "日本", pad(1022));
+
+        
+        check_one(pad(1016) + "🇯🇵", pad(1016) + "🇯🇵");
+        check_one(pad(1017) + "🇯🇵", pad(1017) + "🇯");
+        check_one(pad(1021) + "🇯🇵", pad(1021) + "");
     }
 }

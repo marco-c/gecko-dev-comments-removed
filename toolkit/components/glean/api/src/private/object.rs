@@ -8,6 +8,51 @@ use crate::ipc::need_ipc;
 
 use glean::traits::ObjectSerialize;
 
+#[cfg(feature = "with_gecko")]
+use super::profiler_utils::{
+    lookup_canonical_metric_name, truncate_string_for_marker, LookupError,
+};
+
+#[cfg(feature = "with_gecko")]
+use gecko_profiler::gecko_profiler_category;
+
+#[cfg(feature = "with_gecko")]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct ObjectMetricMarker {
+    id: MetricId,
+    value: String,
+}
+
+#[cfg(feature = "with_gecko")]
+impl gecko_profiler::ProfilerMarker for ObjectMetricMarker {
+    fn marker_type_name() -> &'static str {
+        "ObjectMetric"
+    }
+
+    fn marker_type_display() -> gecko_profiler::MarkerSchema {
+        use gecko_profiler::schema::*;
+        let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
+        schema.set_tooltip_label("{marker.data.id}");
+        schema.set_table_label("{marker.name} - {marker.data.id}: {marker.data.value}");
+        schema.add_key_label_format_searchable(
+            "id",
+            "Metric",
+            Format::UniqueString,
+            Searchable::Searchable,
+        );
+        schema.add_key_label_format("value", "Value", Format::String);
+        schema
+    }
+
+    fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
+        json_writer.unique_string_property(
+            "id",
+            lookup_canonical_metric_name(&self.id).unwrap_or_else(LookupError::as_str),
+        );
+        json_writer.string_property("value", self.value.as_str());
+    }
+}
+
 
 pub enum ObjectMetric<K> {
     Parent {
@@ -30,7 +75,40 @@ impl<K: ObjectSerialize> ObjectMetric<K> {
 
     pub fn set(&self, value: K) {
         match self {
-            ObjectMetric::Parent { inner, .. } => {
+            #[allow(unused)]
+            ObjectMetric::Parent { id, inner } => {
+                
+                
+                
+                #[cfg(feature = "with_gecko")]
+                gecko_profiler::add_marker(
+                    "Object::set",
+                    gecko_profiler_category!(Telemetry),
+                    Default::default(),
+                    ObjectMetricMarker {
+                        id: *id,
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        value: "[]".to_string(),
+                    },
+                );
                 inner.set(value);
             }
             ObjectMetric::Child => {
@@ -42,7 +120,18 @@ impl<K: ObjectSerialize> ObjectMetric<K> {
 
     pub fn set_string(&self, value: String) {
         match self {
-            ObjectMetric::Parent { inner, .. } => {
+            #[allow(unused)]
+            ObjectMetric::Parent { id, inner } => {
+                #[cfg(feature = "with_gecko")]
+                gecko_profiler::add_marker(
+                    "Object::set",
+                    gecko_profiler_category!(Telemetry),
+                    Default::default(),
+                    ObjectMetricMarker {
+                        id: *id,
+                        value: truncate_string_for_marker(value.clone()),
+                    },
+                );
                 inner.set_string(value);
             }
             ObjectMetric::Child => {
