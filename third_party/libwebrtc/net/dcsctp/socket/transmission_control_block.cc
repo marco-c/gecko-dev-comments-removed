@@ -169,7 +169,6 @@ void TransmissionControlBlock::MaybeSendForwardTsn(SctpPacket::Builder& builder,
     } else {
       builder.Add(retransmission_queue_.CreateForwardTsn());
     }
-    Send(builder);
     
     
     
