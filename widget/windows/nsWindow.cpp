@@ -874,8 +874,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   MOZ_DIAGNOSTIC_ASSERT(aInitData->mWindowType != WindowType::Invisible);
 
-  mIsTopWidgetWindow = aInitData->mWindowType == WindowType::Dialog ||
-                       aInitData->mWindowType == WindowType::TopLevel;
   mBounds = aRect;
 
   
@@ -1529,7 +1527,7 @@ nsWindow* nsWindow::GetParentWindow(bool aIncludeOwner) {
 }
 
 nsWindow* nsWindow::GetParentWindowBase(bool aIncludeOwner) {
-  if (mIsTopWidgetWindow) {
+  if (IsTopLevelWidget()) {
     
     
     
@@ -1960,7 +1958,7 @@ void nsWindow::Move(double aX, double aY) {
 #ifdef DEBUG
     
     
-    if (mIsTopWidgetWindow) {  
+    if (IsTopLevelWidget()) {  
       
       
       HDC dc = ::GetDC(mWnd);
@@ -2267,8 +2265,10 @@ void nsWindow::SuppressAnimation(bool aSuppress) {
 
 
 void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
-  if (!mIsTopWidgetWindow)  
+  if (!IsTopLevelWidget()) {
+    
     return;
+  }
 
   double dpiScale = GetDesktopToDeviceScale().scale;
 
@@ -2748,9 +2748,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
 }
 
 nsresult nsWindow::SetNonClientMargins(const LayoutDeviceIntMargin& margins) {
-  if (!mIsTopWidgetWindow || mBorderStyle == BorderStyle::None ||
-      margins.top < -1 || margins.bottom < -1 || margins.left < -1 ||
-      margins.right < -1) {
+  if (!IsTopLevelWidget() || mBorderStyle == BorderStyle::None) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -5642,7 +5640,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
           } else {
             sJustGotDeactivate = true;
           }
-          if (mIsTopWidgetWindow) {
+          if (IsTopLevelWidget()) {
             mLastKeyboardLayout = KeyboardLayout::GetLayout();
           }
         } else {
