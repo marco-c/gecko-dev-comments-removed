@@ -10,6 +10,7 @@
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/RangeBoundary.h"
 #include "mozilla/Result.h"
 #include "nsIFrame.h"
 
@@ -47,6 +48,34 @@ enum class ForceEditableRegion : bool { No, Yes };
 class SelectionMovementUtils final {
  public:
   using PeekOffsetOptions = EnumSet<PeekOffsetOption>;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename ParentType, typename RefType>
+  static Result<RangeBoundaryBase<ParentType, RefType>, nsresult>
+  MoveRangeBoundaryToSomewhere(
+      const RangeBoundaryBase<ParentType, RefType>& aRangeBoundary,
+      nsDirection aDirection, CaretAssociationHint aHint,
+      intl::BidiEmbeddingLevel aCaretBidiLevel, nsSelectionAmount aAmount,
+      PeekOffsetOptions aOptions,
+      const dom::Element* aAncestorLimiter = nullptr);
 
   
 
