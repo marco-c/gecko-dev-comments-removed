@@ -47,14 +47,14 @@ add_task(async function test_create_profile_name() {
 
           nameInput.value = newProfileName;
           nameInput.dispatchEvent(new content.Event("input"));
+
+          await ContentTaskUtils.waitForCondition(() => {
+            let savedMessage =
+              newProfileCard.shadowRoot.querySelector("#saved-message");
+            return ContentTaskUtils.isVisible(savedMessage);
+          });
         }
       );
-
-      
-      
-      
-      
-      await new Promise(r => setTimeout(r, 2500));
 
       let curProfile = await SelectableProfileService.getProfile(profile.id);
 

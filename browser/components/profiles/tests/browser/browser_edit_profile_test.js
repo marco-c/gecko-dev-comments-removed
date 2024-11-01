@@ -41,20 +41,14 @@ add_task(async function test_edit_profile_name() {
           let nameInput = editProfileCard.nameInput;
           nameInput.value = newProfileName;
           nameInput.dispatchEvent(new content.Event("input"));
+
           await ContentTaskUtils.waitForCondition(() => {
-            let editCard = content.document.querySelector("edit-profile-card");
             let savedMessage =
-              editCard.shadowRoot.querySelector("#saved-message");
+              editProfileCard.shadowRoot.querySelector("#saved-message");
             return ContentTaskUtils.isVisible(savedMessage);
           });
         }
       );
-
-      
-      
-      
-      
-      await new Promise(r => setTimeout(r, 2500));
 
       let curProfile = await SelectableProfileService.getProfile(profile.id);
 
