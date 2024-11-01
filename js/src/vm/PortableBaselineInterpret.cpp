@@ -7927,7 +7927,6 @@ PBIResult PortableBaselineInterpret(
 
             
             PUSHNATIVE(StackValNative(nullptr));
-            isd = frame->script()->immutableScriptData();
             BaselineFrame* newFrame =
                 ctx.stack.pushFrame(sp, ctx.frameMgr.cxForLocalUseOnly(),
                                      func->environment());
