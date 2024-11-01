@@ -14,7 +14,7 @@
 
 namespace mozilla::uniffi {
 
-class UniffiHandlerBase {
+class UniffiSyncCallHandler {
  protected:
   
 
@@ -62,20 +62,22 @@ class UniffiHandlerBase {
       ErrorResult& aError);
 
  public:
-  virtual ~UniffiHandlerBase() = default;
+  virtual ~UniffiSyncCallHandler() = default;
 
   
 
   
   static void CallSync(
-      UniquePtr<UniffiHandlerBase> aHandler, const dom::GlobalObject& aGlobal,
+      UniquePtr<UniffiSyncCallHandler> aHandler,
+      const dom::GlobalObject& aGlobal,
       const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
       dom::RootedDictionary<dom::UniFFIScaffoldingCallResult>& aReturnValue,
       ErrorResult& aError);
 
   
-  static already_AddRefed<dom::Promise> CallAsync(
-      UniquePtr<UniffiHandlerBase> aHandler, const dom::GlobalObject& aGlobal,
+  static already_AddRefed<dom::Promise> CallAsyncWrapper(
+      UniquePtr<UniffiSyncCallHandler> aHandler,
+      const dom::GlobalObject& aGlobal,
       const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError);
 };
