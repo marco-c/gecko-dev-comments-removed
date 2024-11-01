@@ -675,10 +675,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<Boolean>("fission.disableSessionHistoryInParent");
    final Pref<Boolean> mFetchPriorityEnabled =
       new Pref<Boolean>("network.fetchpriority.enabled", false);
-   final Pref<Boolean> mCookieBehaviorOptInPartitioning =
-      new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning", false);
-   final Pref<Boolean> mCookieBehaviorOptInPartitioningPBM =
-      new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning.pbmode", false);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -899,47 +895,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getFdlibmMathEnabled() {
     return mFdlibmMathEnabled.get();
-  }
-
-  
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setCookieBehaviorOptInPartitioning(final boolean enabled) {
-    mCookieBehaviorOptInPartitioning.commit(enabled);
-    return this;
-  }
-
-  
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setCookieBehaviorOptInPartitioningPBM(
-      final boolean enabled) {
-    mCookieBehaviorOptInPartitioningPBM.commit(enabled);
-    return this;
-  }
-
-  
-
-
-
-
-  public boolean getCookieBehaviorOptInPartitioning() {
-    return mCookieBehaviorOptInPartitioning.get();
-  }
-
-  
-
-
-
-
-  public boolean getCookieBehaviorOptInPartitioningPBM() {
-    return mCookieBehaviorOptInPartitioningPBM.get();
   }
 
   
