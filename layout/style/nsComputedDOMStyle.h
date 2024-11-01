@@ -255,6 +255,9 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetPaddingRight();
 
   
+  already_AddRefed<CSSValue> DoGetBorderSpacing();
+
+  
   already_AddRefed<CSSValue> DoGetBorderTopWidth();
   already_AddRefed<CSSValue> DoGetBorderBottomWidth();
   already_AddRefed<CSSValue> DoGetBorderLeftWidth();
