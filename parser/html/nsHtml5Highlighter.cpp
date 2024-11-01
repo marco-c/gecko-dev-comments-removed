@@ -52,12 +52,12 @@ void nsHtml5Highlighter::Rewind() {
   mCurrentRun = nullptr;
   mAmpersand = nullptr;
   mSlash = nullptr;
+  mSeenBase = false;
+
   
-  
-  while (mStack.Length() > 3) {
+  while (mStack.Length() > 2) {
     Pop();
   }
-  mSeenBase = false;
 }
 
 void nsHtml5Highlighter::Start(const nsAutoString& aTitle) {
@@ -103,14 +103,8 @@ void nsHtml5Highlighter::Start(const nsAutoString& aTitle) {
   Push(nsGkAtoms::body, nsHtml5ViewSourceUtils::NewBodyAttributes(),
        NS_NewHTMLBodyElement);
 
-  nsHtml5HtmlAttributes* preAttrs = new nsHtml5HtmlAttributes(0);
-  nsHtml5String preId = nsHtml5Portability::newStringFromLiteral("line1");
-  preAttrs->addAttribute(nsHtml5AttributeName::ATTR_ID, preId, -1);
-  Push(nsGkAtoms::pre, preAttrs, NS_NewHTMLPreElement);
-
   
   
-
   mOpQueue.AppendElement()->Init(mozilla::AsVariant(opStartLayout()));
 }
 
@@ -504,6 +498,12 @@ void nsHtml5Highlighter::EndSpanOrA() {
   --mInlinesOpen;
 }
 
+void nsHtml5Highlighter::StartBodyContents() {
+  MOZ_ASSERT(mLineNumber == 1);
+  PushCurrentLinePre();
+  StartCharacters();
+}
+
 void nsHtml5Highlighter::StartCharacters() {
   MOZ_ASSERT(!mInCharacters, "Already in characters!");
   FlushChars();
@@ -577,6 +577,12 @@ void nsHtml5Highlighter::FlushChars() {
   }
 }
 
+void nsHtml5Highlighter::PushCurrentLinePre() {
+  Push(nsGkAtoms::pre, nullptr, NS_NewHTMLPreElement);
+  mOpQueue.AppendElement()->Init(
+      mozilla::AsVariant(opAddLineNumberId(CurrentNode(), mLineNumber)));
+}
+
 
 
 void nsHtml5Highlighter::NewLine() {
@@ -593,9 +599,7 @@ void nsHtml5Highlighter::NewLine() {
     mInlinesOpen--;
   }
   Pop();  
-  Push(nsGkAtoms::pre, nullptr, NS_NewHTMLPreElement);
-  mOpQueue.AppendElement()->Init(
-      mozilla::AsVariant(opAddLineNumberId(CurrentNode(), mLineNumber)));
+  PushCurrentLinePre();
   for (nsIContent** handle : Reversed(handleStack)) {
     nsIContent** dest = AllocateContentHandle();
     mOpQueue.AppendElement()->Init(mozilla::AsVariant(opShallowCloneInto(

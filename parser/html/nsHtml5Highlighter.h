@@ -174,11 +174,14 @@ class nsHtml5Highlighter {
   void AddBase(nsHtml5String aValue);
 
   
+  void StartBodyContents();
+
+ private:
+  
 
 
   void StartCharacters();
 
- private:
   
 
 
@@ -273,6 +276,9 @@ class nsHtml5Highlighter {
 
   void Push(nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,
             mozilla::dom::HTMLContentCreatorFunction aCreator);
+
+  
+  void PushCurrentLinePre();
 
   
 
