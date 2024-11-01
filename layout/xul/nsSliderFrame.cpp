@@ -82,7 +82,6 @@ nsSliderFrame::nsSliderFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       mThumbStart(0),
       mCurPos(0),
       mRepeatDirection(0),
-      mDragFinished(true),
       mUserChanged(false),
       mScrollingWithAPZ(false),
       mSuppressionActive(false),
@@ -370,7 +369,7 @@ void nsDisplaySliderMarks::Paint(nsDisplayListBuilder* aBuilder,
 
 void nsSliderFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                      const nsDisplayListSet& aLists) {
-  if (aBuilder->IsForEventDelivery() && isDraggingThumb()) {
+  if (aBuilder->IsForEventDelivery() && IsDraggingThumb()) {
     
     
     aLists.Outlines()->AppendNewToTop<nsDisplayEventReceiver>(aBuilder, this);
@@ -669,7 +668,7 @@ nsresult nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
     return NS_OK;
   }
 
-  if (!mDragFinished && !isDraggingThumb()) {
+  if (mDragInProgress && !IsDraggingThumb()) {
     StopDrag();
     return NS_OK;
   }
@@ -678,7 +677,7 @@ nsresult nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
   nsCOMPtr<nsIContent> scrollbar = scrollbarBox->GetContent();
   bool isHorizontal = scrollbarBox->IsHorizontal();
 
-  if (isDraggingThumb()) {
+  if (IsDraggingThumb()) {
     switch (aEvent->mMessage) {
       case eTouchMove:
       case eMouseMove: {
@@ -1041,8 +1040,9 @@ void nsSliderFrame::SetInitialChildList(ChildListID aListID,
 
 nsresult nsSliderMediator::HandleEvent(dom::Event* aEvent) {
   
-  if (mSlider && !mSlider->isDraggingThumb()) return mSlider->StartDrag(aEvent);
-
+  if (mSlider && !mSlider->IsDraggingThumb()) {
+    return mSlider->StartDrag(aEvent);
+  }
   return NS_OK;
 }
 
@@ -1228,7 +1228,10 @@ nsresult nsSliderFrame::StopDrag() {
 }
 
 void nsSliderFrame::DragThumb(bool aGrabMouseEvents) {
-  mDragFinished = !aGrabMouseEvents;
+  if (mDragInProgress != aGrabMouseEvents) {
+    Scrollbar()->ActivityChanged(aGrabMouseEvents);
+  }
+  mDragInProgress = aGrabMouseEvents;
 
   if (aGrabMouseEvents) {
     PresShell::SetCapturingContent(
@@ -1239,7 +1242,7 @@ void nsSliderFrame::DragThumb(bool aGrabMouseEvents) {
   }
 }
 
-bool nsSliderFrame::isDraggingThumb() const {
+bool nsSliderFrame::IsDraggingThumb() const {
   return PresShell::GetCapturingContent() == GetContent();
 }
 
@@ -1595,7 +1598,7 @@ void nsSliderFrame::AsyncScrollbarDragRejected() {
   mScrollingWithAPZ = false;
   
   
-  if (isDraggingThumb()) {
+  if (IsDraggingThumb()) {
     SuppressDisplayport();
   }
 }
@@ -1619,7 +1622,7 @@ bool nsSliderFrame::OnlySystemGroupDispatch(EventMessage aMessage) const {
   
   
   return (aMessage == eMouseMove || aMessage == ePointerMove) &&
-         isDraggingThumb() && GetContent()->IsInNativeAnonymousSubtree();
+         IsDraggingThumb() && GetContent()->IsInNativeAnonymousSubtree();
 }
 
 bool nsSliderFrame::GetEventPoint(WidgetGUIEvent* aEvent, nsPoint& aPoint) {

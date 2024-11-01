@@ -176,7 +176,7 @@ class nsSliderFrame final : public nsContainerFrame {
   void DragThumb(bool aGrabMouseEvents);
   void AddListener();
   void RemoveListener();
-  bool isDraggingThumb() const;
+  bool IsDraggingThumb() const;
 
   void SuppressDisplayport();
   void UnsuppressDisplayport();
@@ -214,7 +214,7 @@ class nsSliderFrame final : public nsContainerFrame {
 
   nscoord mRepeatDirection;
 
-  bool mDragFinished;
+  bool mDragInProgress = false;
 
   
   

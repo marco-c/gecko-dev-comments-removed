@@ -118,8 +118,11 @@ class nsScrollbarFrame final : public nsContainerFrame,
 
   
   nsScrollbarFrame* GetOppositeScrollbar() const;
+  void ActivityChanged(bool aIsNowActive);
 
  protected:
+  void InvalidateForHoverChange(bool aIsNowHovered);
+
   
   int32_t mDirection = 0;
   
