@@ -287,42 +287,42 @@ nsIFrame* SVGUtils::GetOuterSVGFrameAndCoveredRegion(nsIFrame* aFrame,
   }
 
   if (aFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-    *aRect = nsRect(0, 0, 0, 0);
-  } else {
-    uint32_t flags = SVGUtils::eForGetClientRects | SVGUtils::eBBoxIncludeFill |
-                     SVGUtils::eBBoxIncludeStroke |
-                     SVGUtils::eBBoxIncludeMarkers |
-                     SVGUtils::eUseUserSpaceOfUseElement;
-
-    auto ctm = nsLayoutUtils::GetTransformToAncestor(RelativeTo{aFrame},
-                                                     RelativeTo{outer});
-
-    float initPositionX = NSAppUnitsToFloatPixels(aFrame->GetPosition().x,
-                                                  AppUnitsPerCSSPixel()),
-          initPositionY = NSAppUnitsToFloatPixels(aFrame->GetPosition().y,
-                                                  AppUnitsPerCSSPixel());
-
-    Matrix mm;
-    ctm.ProjectTo2D();
-    ctm.CanDraw2D(&mm);
-    gfxMatrix m = ThebesMatrix(mm);
-
-    float appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
-    float devPixelPerCSSPixel =
-        float(AppUnitsPerCSSPixel()) / appUnitsPerDevPixel;
-
-    
-    
-    m = m.PreScale(devPixelPerCSSPixel, devPixelPerCSSPixel);
-
-    
-    
-    
-    m = m.PreTranslate(-initPositionX, -initPositionY);
-
-    gfxRect bbox = SVGUtils::GetBBox(aFrame, flags, &m);
-    *aRect = nsLayoutUtils::RoundGfxRectToAppRect(bbox, appUnitsPerDevPixel);
+    *aRect = nsRect();
+    return outer;
   }
+
+  auto ctm = nsLayoutUtils::GetTransformToAncestor(RelativeTo{aFrame},
+                                                   RelativeTo{outer});
+
+  Matrix mm;
+  ctm.ProjectTo2D();
+  ctm.CanDraw2D(&mm);
+  gfxMatrix m = ThebesMatrix(mm);
+
+  float appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
+  float devPixelPerCSSPixel =
+      float(AppUnitsPerCSSPixel()) / appUnitsPerDevPixel;
+
+  
+  
+  m.PreScale(devPixelPerCSSPixel, devPixelPerCSSPixel);
+
+  auto initPosition = gfxPoint(
+      NSAppUnitsToFloatPixels(aFrame->GetPosition().x, AppUnitsPerCSSPixel()),
+      NSAppUnitsToFloatPixels(aFrame->GetPosition().y, AppUnitsPerCSSPixel()));
+
+  
+  
+  
+  m.PreTranslate(-initPosition);
+
+  uint32_t flags = SVGUtils::eForGetClientRects | SVGUtils::eBBoxIncludeFill |
+                   SVGUtils::eBBoxIncludeStroke |
+                   SVGUtils::eBBoxIncludeMarkers |
+                   SVGUtils::eUseUserSpaceOfUseElement;
+
+  gfxRect bbox = SVGUtils::GetBBox(aFrame, flags, &m);
+  *aRect = nsLayoutUtils::RoundGfxRectToAppRect(bbox, appUnitsPerDevPixel);
 
   return outer;
 }
