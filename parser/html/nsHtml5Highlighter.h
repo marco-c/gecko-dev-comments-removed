@@ -198,8 +198,6 @@ class nsHtml5Highlighter {
   void EndSpanOrA();
 
   
-
-
   void EndCharactersAndStartMarkupRun();
 
   
@@ -275,6 +273,12 @@ class nsHtml5Highlighter {
 
   void Push(nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,
             mozilla::dom::HTMLContentCreatorFunction aCreator);
+
+  
+
+
+
+  void NewLine();
 
   
 
