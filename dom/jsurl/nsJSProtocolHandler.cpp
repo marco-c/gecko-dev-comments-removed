@@ -394,8 +394,13 @@ nsresult nsJSThunk::EvaluateScript(
       mozilla::dom::Compile(cx, options, NS_ConvertUTF8toUTF16(script), stencil,
                             erv);
       if (stencil) {
-        mozilla::dom::InstantiateStencil(aes.cx(), options, stencil,
-                                         &compiledScript, erv);
+        JS::InstantiateOptions instantiateOptions(options);
+        MOZ_ASSERT(!instantiateOptions.deferDebugMetadata);
+        compiledScript.set(JS::InstantiateGlobalStencil(
+            aes.cx(), instantiateOptions, stencil,  nullptr));
+        if (!compiledScript) {
+          erv.NoteJSContextException(aes.cx());
+        }
       }
 
       if (!erv.Failed()) {
