@@ -36,8 +36,6 @@ class MouseScrollHandler {
   static bool ProcessMessage(nsWindow* aWidget, UINT msg, WPARAM wParam,
                              LPARAM lParam, MSGResult& aResult);
 
-  static bool SkipScrollWheelHack();
-
   
 
 
@@ -132,8 +130,7 @@ class MouseScrollHandler {
 
 
 
-
-  bool HandleMouseWheelMessage(nsWindow* aWidget, UINT aMessage, WPARAM aWParam,
+  void HandleMouseWheelMessage(nsWindow* aWidget, UINT aMessage, WPARAM aWParam,
                                LPARAM aLParam);
 
   
@@ -147,8 +144,7 @@ class MouseScrollHandler {
 
 
 
-
-  bool HandleScrollMessageAsMouseWheelMessage(nsWindow* aWidget, UINT aMessage,
+  void HandleScrollMessageAsMouseWheelMessage(nsWindow* aWidget, UINT aMessage,
                                               WPARAM aWParam, LPARAM aLParam);
 
   
@@ -163,19 +159,6 @@ class MouseScrollHandler {
 
 
   POINT ComputeMessagePos(UINT aMessage, WPARAM aWParam, LPARAM aLParam);
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsWindow* FindTargetWindow(UINT aMessage, WPARAM aWParam, LPARAM aLParam);
 
   class EventInfo {
    public:
@@ -374,10 +357,67 @@ class MouseScrollHandler {
 
   UserPrefs mUserPrefs;
 
-  
-  class SynthesizingEvent;
-  UniquePtr<SynthesizingEvent> mSynthesizingEvent;
-  static SynthesizingEvent* GetActiveSynthEvent();
+  class SynthesizingEvent {
+   public:
+    SynthesizingEvent()
+        : mWnd(nullptr),
+          mMessage(0),
+          mWParam(0),
+          mLParam(0),
+          mStatus(NOT_SYNTHESIZING) {}
+
+    ~SynthesizingEvent() {}
+
+    static bool IsSynthesizing();
+
+    nsresult Synthesize(const POINTS& aCursorPoint, HWND aWnd, UINT aMessage,
+                        WPARAM aWParam, LPARAM aLParam,
+                        const BYTE (&aKeyStates)[256]);
+
+    void NativeMessageReceived(nsWindow* aWidget, UINT aMessage, WPARAM aWParam,
+                               LPARAM aLParam);
+
+    void NotifyNativeMessageHandlingFinished();
+    void NotifyInternalMessageHandlingFinished();
+
+    const POINTS& GetCursorPoint() const { return mCursorPoint; }
+
+   private:
+    POINTS mCursorPoint;
+    HWND mWnd;
+    UINT mMessage;
+    WPARAM mWParam;
+    LPARAM mLParam;
+    BYTE mKeyState[256];
+    BYTE mOriginalKeyState[256];
+
+    enum Status {
+      NOT_SYNTHESIZING,
+      SENDING_MESSAGE,
+      NATIVE_MESSAGE_RECEIVED,
+      INTERNAL_MESSAGE_POSTED,
+    };
+    Status mStatus;
+
+    const char* GetStatusName() {
+      switch (mStatus) {
+        case NOT_SYNTHESIZING:
+          return "NOT_SYNTHESIZING";
+        case SENDING_MESSAGE:
+          return "SENDING_MESSAGE";
+        case NATIVE_MESSAGE_RECEIVED:
+          return "NATIVE_MESSAGE_RECEIVED";
+        case INTERNAL_MESSAGE_POSTED:
+          return "INTERNAL_MESSAGE_POSTED";
+        default:
+          return "Unknown";
+      }
+    }
+
+    void Finish();
+  };  
+
+  SynthesizingEvent* mSynthesizingEvent;
 
  public:
   class Device {
