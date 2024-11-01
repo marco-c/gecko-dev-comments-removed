@@ -100,13 +100,19 @@ struct BuiltinModuleIds {
 
 struct FeatureOptions {
   FeatureOptions()
-      : isBuiltinModule(false),
+      : disableOptimizingCompiler(false),
+        isBuiltinModule(false),
         jsStringBuiltins(false),
         jsStringConstants(false),
         requireExnref(false) {}
 
   
+  
+  bool disableOptimizingCompiler;
+
+  
   bool isBuiltinModule;
+
   
   
   bool jsStringBuiltins;

@@ -98,7 +98,7 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE)
 bool SimdAvailable(JSContext* cx);
 
 
-bool IsSimdPrivilegedContext(JSContext* cx);
+bool IsPrivilegedContext(JSContext* cx);
 
 #if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
 

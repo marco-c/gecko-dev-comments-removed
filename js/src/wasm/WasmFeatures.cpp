@@ -227,7 +227,7 @@ bool wasm::AnyCompilerAvailable(JSContext* cx) {
 JS_FOR_WASM_FEATURES(WASM_FEATURE)
 #undef WASM_FEATURE
 
-bool wasm::IsSimdPrivilegedContext(JSContext* cx) {
+bool wasm::IsPrivilegedContext(JSContext* cx) {
   
   
   return cx->realm() && cx->realm()->principals() &&
