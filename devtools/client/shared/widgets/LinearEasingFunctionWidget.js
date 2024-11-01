@@ -559,28 +559,16 @@ class TimingFunctionPreviewWidget {
     
     
     
-    const grayscaleFilter = "grayscale(100%)";
-
     this.#dotEl.animate(
       [
-        { translate: "0%", filter: grayscaleFilter, offset: 0 },
-        { translate: "0%", filter: grayscaleFilter, offset: 0.19 },
-        {
-          translate: "0%",
-          filter: "none",
-          offset: 0.2,
-          easing: timingFunction,
-        },
-        { translate: "100%", filter: "none", offset: 0.5 },
-        { translate: "100%", filter: grayscaleFilter, offset: 0.51 },
-        { translate: "100%", filter: grayscaleFilter, offset: 0.7 },
-        {
-          translate: "100%",
-          filter: "none",
-          offset: 0.71,
-          easing: timingFunction,
-        },
-        { translate: "0%", filter: "none", offset: 1 },
+        { translate: "0%", opacity: 0.5, offset: 0 },
+        { translate: "0%", opacity: 0.5, offset: 0.19 },
+        { translate: "0%", opacity: 1, offset: 0.2, easing: timingFunction },
+        { translate: "100%", opacity: 1, offset: 0.5 },
+        { translate: "100%", opacity: 0.5, offset: 0.51 },
+        { translate: "100%", opacity: 0.5, offset: 0.7 },
+        { translate: "100%", opacity: 1, offset: 0.71, easing: timingFunction },
+        { translate: "0%", opacity: 1, offset: 1 },
       ],
       {
         duration: this.#PREVIEW_DURATION * 2,
