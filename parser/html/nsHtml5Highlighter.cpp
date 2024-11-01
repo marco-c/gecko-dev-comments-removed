@@ -11,14 +11,7 @@
 #include "nsString.h"
 #include "nsThreadUtils.h"
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Preferences.h"
-
 using namespace mozilla;
-
-
-
-#define NS_HTML5_HIGHLIGHTER_PRE_BREAK_THRESHOLD 1300
 
 nsHtml5Highlighter::nsHtml5Highlighter(nsAHtml5TreeOpSink* aOpSink)
     : mState(nsHtml5Tokenizer::DATA),
