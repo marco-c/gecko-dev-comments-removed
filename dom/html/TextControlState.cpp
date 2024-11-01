@@ -382,6 +382,7 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   NS_IMETHOD ScrollCharacter(bool aRight) override;
   void SelectionWillTakeFocus() override;
   void SelectionWillLoseFocus() override;
+  using nsISelectionController::ScrollSelectionIntoView;
 
  private:
   RefPtr<nsFrameSelection> mFrameSelection;
@@ -669,9 +670,9 @@ TextInputSelectionController::PageMove(bool aForward, bool aExtend) {
   
   
   
-  return ScrollSelectionIntoView(nsISelectionController::SELECTION_NORMAL,
+  return ScrollSelectionIntoView(SelectionType::eNormal,
                                  nsISelectionController::SELECTION_FOCUS_REGION,
-                                 nsISelectionController::SCROLL_SYNCHRONOUS);
+                                 SelectionScrollMode::SyncFlush);
 }
 
 NS_IMETHODIMP

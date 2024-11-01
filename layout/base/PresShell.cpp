@@ -2473,9 +2473,9 @@ PresShell::CompleteMove(bool aForward, bool aExtend) {
 
   
   
-  return ScrollSelectionIntoView(nsISelectionController::SELECTION_NORMAL,
+  return ScrollSelectionIntoView(SelectionType::eNormal,
                                  nsISelectionController::SELECTION_FOCUS_REGION,
-                                 nsISelectionController::SCROLL_SYNCHRONOUS);
+                                 SelectionScrollMode::SyncFlush);
 }
 
 
@@ -9363,15 +9363,15 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
   
   
   nsCOMPtr<nsISelectionController> selCon;
-  if (frame)
+  if (frame) {
     frame->GetSelectionController(GetPresContext(), getter_AddRefs(selCon));
-  else
+  } else {
     selCon = static_cast<nsISelectionController*>(mPresShell);
+  }
   if (selCon) {
     rv = selCon->ScrollSelectionIntoView(
-        nsISelectionController::SELECTION_NORMAL,
-        nsISelectionController::SELECTION_FOCUS_REGION,
-        nsISelectionController::SCROLL_SYNCHRONOUS);
+        SelectionType::eNormal, nsISelectionController::SELECTION_FOCUS_REGION,
+        SelectionScrollMode::SyncFlush);
     NS_ENSURE_SUCCESS(rv, false);
   }
 

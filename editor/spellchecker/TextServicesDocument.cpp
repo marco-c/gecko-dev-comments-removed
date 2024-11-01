@@ -855,12 +855,11 @@ nsresult TextServicesDocument::ScrollSelectionIntoView() {
 
   
   
-  nsresult rv = mSelCon->ScrollSelectionIntoView(
-      nsISelectionController::SELECTION_NORMAL,
-      nsISelectionController::SELECTION_FOCUS_REGION,
-      nsISelectionController::SCROLL_SYNCHRONOUS);
-
-  return rv;
+  const nsCOMPtr selCon = mSelCon;
+  return selCon->ScrollSelectionIntoView(
+      SelectionType::eNormal, nsISelectionController::SELECTION_FOCUS_REGION,
+      ScrollAxis(), ScrollAxis(), ScrollFlags::None,
+      SelectionScrollMode::SyncFlush);
 }
 
 nsresult TextServicesDocument::OffsetEntryArray::WillDeleteSelection() {
