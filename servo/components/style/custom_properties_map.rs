@@ -26,23 +26,6 @@ impl Default for CustomPropertiesMap {
 type OwnMap =
     IndexMap<Name, Option<ComputedRegisteredValue>, BuildHasherDefault<PrecomputedHasher>>;
 
-
-
-
-
-
-fn maps_equal(l: &OwnMap, r: &OwnMap) -> bool {
-    if std::ptr::eq(l, r) {
-        return true;
-    }
-    if l.len() != r.len() {
-        return false;
-    }
-    l.iter()
-        .zip(r.iter())
-        .all(|((k1, v1), (k2, v2))| k1 == k2 && v1 == v2)
-}
-
 lazy_static! {
     static ref EMPTY: Arc<Inner> = {
         Arc::new_leaked(Inner {
@@ -106,27 +89,26 @@ impl PartialEq for Inner {
         if self.len != other.len {
             return false;
         }
-        if self.parent_ptr_eq(other) {
-            return maps_equal(&self.own_properties, &other.own_properties);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if self.own_properties.as_slice() != other.own_properties.as_slice() {
+            return false;
         }
-        for (name, value) in self.iter() {
-            if other.get(name) != value.as_ref() {
-                return false;
-            }
-        }
-        return true;
+        self.parent == other.parent
     }
 }
 
 impl Inner {
-    fn parent_ptr_eq(&self, other: &Self) -> bool {
-        match (&self.parent, &other.parent) {
-            (Some(p1), Some(p2)) => Arc::ptr_eq(p1, p2),
-            (None, None) => true,
-            _ => false,
-        }
-    }
-
     fn iter(&self) -> Iter {
         Iter {
             current: self,
