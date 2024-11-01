@@ -5264,9 +5264,9 @@ Point SVGTextFrame::TransformFramePointToTextChild(
       
       
       pointInRun.x =
-          clamped(pointInRunUserSpace.x.value, runRect.X(), runRect.XMost());
+          std::clamp(pointInRunUserSpace.x.value, runRect.X(), runRect.XMost());
       pointInRun.y =
-          clamped(pointInRunUserSpace.y.value, runRect.Y(), runRect.YMost());
+          std::clamp(pointInRunUserSpace.y.value, runRect.Y(), runRect.YMost());
       hit = run;
     }
   }
