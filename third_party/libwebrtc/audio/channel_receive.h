@@ -149,9 +149,7 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
 
   virtual int PreferredSampleRate() const = 0;
 
-  
-  
-  virtual void SetSourceTracker(SourceTracker* source_tracker) = 0;
+  virtual std::vector<RtpSource> GetSources() const = 0;
 
   
   

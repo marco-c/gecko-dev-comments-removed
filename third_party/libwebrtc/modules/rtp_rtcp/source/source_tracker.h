@@ -19,8 +19,6 @@
 #include <vector>
 
 #include "api/rtp_packet_infos.h"
-#include "api/task_queue/pending_task_safety_flag.h"
-#include "api/task_queue/task_queue_base.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -28,6 +26,7 @@
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
+
 
 
 
@@ -49,7 +48,8 @@ class SourceTracker {
 
   
   
-  void OnFrameDelivered(RtpPacketInfos packet_infos);
+  void OnFrameDelivered(const RtpPacketInfos& packet_infos,
+                        Timestamp delivery_time = Timestamp::MinusInfinity());
 
   
   
@@ -116,27 +116,21 @@ class SourceTracker {
                                        SourceKeyHasher,
                                        SourceKeyComparator>;
 
-  void OnFrameDeliveredInternal(Timestamp now,
-                                const RtpPacketInfos& packet_infos)
-      RTC_RUN_ON(worker_thread_);
+  
+  
+  SourceEntry& UpdateEntry(const SourceKey& key);
 
   
   
-  SourceEntry& UpdateEntry(const SourceKey& key) RTC_RUN_ON(worker_thread_);
+  void PruneEntries(Timestamp now) const;
 
-  
-  
-  void PruneEntries(Timestamp now) const RTC_RUN_ON(worker_thread_);
-
-  TaskQueueBase* const worker_thread_;
   Clock* const clock_;
 
   
   
   
-  mutable SourceList list_ RTC_GUARDED_BY(worker_thread_);
-  mutable SourceMap map_ RTC_GUARDED_BY(worker_thread_);
-  ScopedTaskSafety worker_safety_;
+  mutable SourceList list_;
+  mutable SourceMap map_;
 };
 
 }  
