@@ -2107,9 +2107,8 @@ add_task(async function test_remove_invalid_url() {
     );
   });
 
-  let guids = [folderGuid, guid];
-  await PT.Remove(guids).transact();
-  await ensureNonExistent(...guids, folderedGuid);
+  await PT.Remove([folderGuid, guid]).transact();
+  await ensureNonExistent(folderGuid, guid, folderedGuid);
   
   await PT.undo();
   await ensureNonExistent(guid, folderedGuid);
@@ -2118,7 +2117,7 @@ add_task(async function test_remove_invalid_url() {
     "The folder should have been re-created"
   );
   await PT.redo();
-  await ensureNonExistent(guids, folderedGuid);
+  await ensureNonExistent(folderGuid, guid, folderedGuid);
   
   await PT.clearTransactionsHistory();
   observer.reset();

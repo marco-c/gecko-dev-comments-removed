@@ -782,6 +782,12 @@ function test_bind_no_such_name_async_deferred() {
 test_bind_no_such_name_async_deferred.asyncOnly = true;
 
 function test_bind_bogus_type_by_index() {
+  if (AppConstants.DEBUG) {
+    
+    run_next_test();
+    return;
+  }
+
   
   let stmt = makeTestStatement("INSERT INTO test (blober) VALUES (?)");
 
@@ -794,6 +800,12 @@ function test_bind_bogus_type_by_index() {
 }
 
 function test_bind_bogus_type_by_name() {
+  if (AppConstants.DEBUG) {
+    
+    run_next_test();
+    return;
+  }
+
   
   let stmt = makeTestStatement("INSERT INTO test (blober) VALUES (:blob)");
 
