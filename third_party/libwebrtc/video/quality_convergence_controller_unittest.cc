@@ -10,56 +10,124 @@
 
 #include "video/quality_convergence_controller.h"
 
+#include <optional>
+
 #include "test/gtest.h"
 #include "test/scoped_key_value_config.h"
 
 namespace webrtc {
 namespace {
-constexpr int kStaticQpThreshold = 15;
+constexpr int kVp8DefaultStaticQpThreshold = 15;
 
 TEST(QualityConvergenceController, Singlecast) {
   test::ScopedKeyValueConfig field_trials;
   QualityConvergenceController controller;
-  controller.Initialize(1, kStaticQpThreshold, kVideoCodecVP8, field_trials);
+  controller.Initialize(1, std::nullopt, kVideoCodecVP8,
+                        field_trials);
 
   EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
-      0, kStaticQpThreshold + 1, false));
+      0, kVp8DefaultStaticQpThreshold + 1,
+      false));
   EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
-      0, kStaticQpThreshold, false));
+      0, kVp8DefaultStaticQpThreshold,
+      false));
 }
 
 TEST(QualityConvergenceController, Simulcast) {
   test::ScopedKeyValueConfig field_trials;
   QualityConvergenceController controller;
-  controller.Initialize(2, kStaticQpThreshold, kVideoCodecVP8, field_trials);
+  controller.Initialize(2, std::nullopt, kVideoCodecVP8,
+                        field_trials);
 
   EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
-      0, kStaticQpThreshold + 1, false));
+      0, kVp8DefaultStaticQpThreshold + 1,
+      false));
   EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
-      1, kStaticQpThreshold + 1, false));
-
-  
-  EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
-      0, kStaticQpThreshold, false));
-  EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
-      1, kStaticQpThreshold + 1, false));
+      1, kVp8DefaultStaticQpThreshold + 1,
+      false));
 
   
   EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
-      0, kStaticQpThreshold, true));
+      0, kVp8DefaultStaticQpThreshold,
+      false));
   EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
-      1, kStaticQpThreshold + 1, true));
+      1, kVp8DefaultStaticQpThreshold + 1,
+      false));
+
+  
+  EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
+      0, kVp8DefaultStaticQpThreshold,
+      true));
+  EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
+      1, kVp8DefaultStaticQpThreshold + 1,
+      true));
 }
 
 TEST(QualityConvergenceController, InvalidLayerIndex) {
   test::ScopedKeyValueConfig field_trials;
   QualityConvergenceController controller;
-  controller.Initialize(2, kStaticQpThreshold, kVideoCodecVP8, field_trials);
+  controller.Initialize(2, std::nullopt, kVideoCodecVP8,
+                        field_trials);
 
   EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
-      -1, kStaticQpThreshold, false));
+      -1, kVp8DefaultStaticQpThreshold,
+      false));
   EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
-      3, kStaticQpThreshold, false));
+      3, kVp8DefaultStaticQpThreshold,
+      false));
+}
+
+TEST(QualityConvergenceController, UseMaxOfEncoderMinAndDefaultQpThresholds) {
+  test::ScopedKeyValueConfig field_trials;
+  QualityConvergenceController controller;
+  controller.Initialize(1, kVp8DefaultStaticQpThreshold + 1, kVideoCodecVP8,
+                        field_trials);
+
+  EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
+      0, kVp8DefaultStaticQpThreshold + 2,
+      false));
+  EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
+      0, kVp8DefaultStaticQpThreshold + 1,
+      false));
+}
+
+TEST(QualityConvergenceController, OverrideVp8StaticThreshold) {
+  test::ScopedKeyValueConfig field_trials(
+      "WebRTC-QCM-Static-VP8/static_qp_threshold:22/");
+  QualityConvergenceController controller;
+  controller.Initialize(1, std::nullopt, kVideoCodecVP8,
+                        field_trials);
+
+  EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
+      0, 23, false));
+  EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
+      0, 22, false));
+}
+
+TEST(QualityConvergenceMonitorSetup, OverrideVp9StaticThreshold) {
+  test::ScopedKeyValueConfig field_trials(
+      "WebRTC-QCM-Static-VP9/static_qp_threshold:44/");
+  QualityConvergenceController controller;
+  controller.Initialize(1, std::nullopt, kVideoCodecVP9,
+                        field_trials);
+
+  EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
+      0, 45, false));
+  EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
+      0, 44, false));
+}
+
+TEST(QualityConvergenceMonitorSetup, OverrideAv1StaticThreshold) {
+  test::ScopedKeyValueConfig field_trials(
+      "WebRTC-QCM-Static-AV1/static_qp_threshold:46/");
+  QualityConvergenceController controller;
+  controller.Initialize(1, std::nullopt, kVideoCodecAV1,
+                        field_trials);
+
+  EXPECT_FALSE(controller.AddSampleAndCheckTargetQuality(
+      0, 47, false));
+  EXPECT_TRUE(controller.AddSampleAndCheckTargetQuality(
+      0, 46, false));
 }
 
 }  
