@@ -121,6 +121,7 @@ static void RollUpPopups(nsIRollupListener::AllowAnimations aAllowAnimations =
 
 nsCocoaWindow::nsCocoaWindow()
     : mWindow(nil),
+      mClosedRetainedWindow(nil),
       mDelegate(nil),
       mPopupContentView(nil),
       mFullscreenTransitionAnimation(nil),
@@ -171,10 +172,10 @@ void nsCocoaWindow::DestroyNativeWindow() {
 
   
   
-  [[mWindow retain] autorelease];
-
   
   
+  [mClosedRetainedWindow autorelease];
+  mClosedRetainedWindow = [mWindow retain];
   MOZ_ASSERT(mWindow.releasedWhenClosed);
   [mWindow close];
 
@@ -192,6 +193,8 @@ nsCocoaWindow::~nsCocoaWindow() {
     CancelAllTransitions();
     DestroyNativeWindow();
   }
+
+  [mClosedRetainedWindow release];
 
   NS_IF_RELEASE(mPopupContentView);
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -1252,10 +1255,11 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
 
   
   NSRect frameRect = mWindow.frame;
+  BOOL restorable = mWindow.restorable;
   DestroyNativeWindow();
   nsresult rv = CreateNativeWindow(
       frameRect, aShouldHide ? BorderStyle::None : mBorderStyle, true,
-      mWindow.restorable);
+      restorable);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   

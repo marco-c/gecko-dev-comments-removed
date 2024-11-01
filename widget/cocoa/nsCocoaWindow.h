@@ -378,7 +378,12 @@ class nsCocoaWindow final : public nsBaseWidget {
     return nsIWidget::CreateTopLevelWindow();
   }
 
-  BaseWindow* mWindow;  
+  BaseWindow* mWindow;                
+  BaseWindow* mClosedRetainedWindow;  
+  
+  
+  
+  
   WindowDelegate*
       mDelegate;  
   RefPtr<nsMenuBarX> mMenuBar;
