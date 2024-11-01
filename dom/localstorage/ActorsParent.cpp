@@ -2276,6 +2276,7 @@ class PrepareDatastoreOp
   uint64_t mDatastoreId;
   NestedState mNestedState;
   const bool mForPreload;
+  const bool mEnableMigration;
   bool mDatabaseNotAvailable;
   
   
@@ -6563,6 +6564,9 @@ PrepareDatastoreOp::PrepareDatastoreOp(
       mNestedState(NestedState::BeforeNesting),
       mForPreload(aParams.type() ==
                   LSRequestParams::TLSRequestPreloadDatastoreParams),
+      mEnableMigration(
+          StaticPrefs::
+              dom_storage_enable_migration_from_unsupported_legacy_implementation()),
       mDatabaseNotAvailable(false),
       mInvalidated(false)
 #ifdef DEBUG
@@ -6997,9 +7001,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     }
 
     bool hasDataForMigration =
-        StaticPrefs::
-            dom_storage_enable_migration_from_unsupported_legacy_implementation() &&
-        mArchivedOriginScope->HasMatches(gArchivedOrigins);
+        mEnableMigration && mArchivedOriginScope->HasMatches(gArchivedOrigins);
 
     
     
