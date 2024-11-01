@@ -277,7 +277,7 @@ class Thread {
 static NS_tchar gPatchDirPath[MAXPATHLEN];
 static NS_tchar gInstallDirPath[MAXPATHLEN];
 static NS_tchar gWorkingDirPath[MAXPATHLEN];
-static ArchiveReader gArchiveReader;
+MOZ_RUNINIT static ArchiveReader gArchiveReader;
 static bool gSucceeded = false;
 static bool sStagedUpdate = false;
 static bool sReplaceRequest = false;
@@ -289,7 +289,7 @@ static bool gIsElevated = false;
 
 
 
-static MARChannelStringTable gMARStrings;
+MOZ_RUNINIT static MARChannelStringTable gMARStrings;
 
 
 

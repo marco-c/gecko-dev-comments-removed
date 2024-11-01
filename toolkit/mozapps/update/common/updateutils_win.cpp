@@ -9,6 +9,11 @@
 #include <shlwapi.h>
 #include <string.h>
 
+#ifdef MOZ_CLANG_PLUGIN
+#  define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
+#else
+#  define MOZ_RUNINIT
+#endif
 
 
 
@@ -19,7 +24,8 @@
 
 
 
-static dirent gDirEnt;
+
+MOZ_RUNINIT static dirent gDirEnt;
 
 DIR::DIR(const WCHAR* path) : findHandle(INVALID_HANDLE_VALUE) {
   memset(name, 0, sizeof(name));

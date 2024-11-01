@@ -182,7 +182,8 @@ std::pair<TestCaseState, WideTestCase> kStrMatches16[] = {
 
 constexpr const char* kRequiredArgs[] = {"aleph", "beth"};
 
-std::pair<TestCaseState, std::vector<const char*>> const kCommandLines[] = {
+MOZ_RUNINIT std::pair<TestCaseState,
+                      std::vector<const char*>> const kCommandLines[] = {
     
     {PASS, {"-osint", "-aleph", "http://www.example.com/"}},
     {PASS, {"-osint", "-beth", "http://www.example.com/"}},
@@ -254,29 +255,35 @@ constexpr static char const* const kOptionalArgs[] = {"mozilla", "allizom"};
 
 
 
-std::pair<TestCaseState, std::vector<const char*>> kCommandLinesOpt[] = {
-    
-    {PASS, {"-osint", "-mozilla", "-aleph", "http://www.example.com/"}},
-    {PASS, {"-osint", "-allizom", "-aleph", "http://www.example.com/"}},
+MOZ_RUNINIT std::pair<TestCaseState, std::vector<const char*>>
+    kCommandLinesOpt[] = {
+        
+        {PASS, {"-osint", "-mozilla", "-aleph", "http://www.example.com/"}},
+        {PASS, {"-osint", "-allizom", "-aleph", "http://www.example.com/"}},
 
-    
-    {PASS,
-     {"-osint", "-mozilla", "-allizom", "-aleph", "http://www.example.com/"}},
-    {PASS,
-     {"-osint", "-allizom", "-mozilla", "-aleph", "http://www.example.com/"}},
+        
+        {PASS,
+         {"-osint", "-mozilla", "-allizom", "-aleph",
+          "http://www.example.com/"}},
+        {PASS,
+         {"-osint", "-allizom", "-mozilla", "-aleph",
+          "http://www.example.com/"}},
 
-    
-    {FAIL, {"-mozilla", "-osint", "-aleph", "http://www.example.com/"}},
-    {FAIL, {"-osint", "-aleph", "-mozilla", "http://www.example.com/"}},
-    {FAIL, {"-osint", "-aleph", "http://www.example.com/", "-mozilla"}},
+        
+        {FAIL, {"-mozilla", "-osint", "-aleph", "http://www.example.com/"}},
+        {FAIL, {"-osint", "-aleph", "-mozilla", "http://www.example.com/"}},
+        {FAIL, {"-osint", "-aleph", "http://www.example.com/", "-mozilla"}},
 
-    
-    {FAIL,
-     {"-mozilla", "-osint", "-allizom", "-aleph", "http://www.example.com/"}},
-    {FAIL,
-     {"-osint", "-allizom", "-aleph", "-mozilla", "http://www.example.com/"}},
-    {FAIL,
-     {"-osint", "-allizom", "-aleph", "http://www.example.com/", "-mozilla"}},
+        
+        {FAIL,
+         {"-mozilla", "-osint", "-allizom", "-aleph",
+          "http://www.example.com/"}},
+        {FAIL,
+         {"-osint", "-allizom", "-aleph", "-mozilla",
+          "http://www.example.com/"}},
+        {FAIL,
+         {"-osint", "-allizom", "-aleph", "http://www.example.com/",
+          "-mozilla"}},
 };
 
 enum WithOptionalState : bool {

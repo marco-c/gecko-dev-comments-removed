@@ -120,8 +120,8 @@ void test_wait_checkpoint() {
 
 
 namespace test_unvisited_does_not_notify {
-nsCOMPtr<nsIURI> testURI;
-RefPtr<mock_Link> testLink;
+MOZ_RUNINIT nsCOMPtr<nsIURI> testURI;
+MOZ_RUNINIT RefPtr<mock_Link> testLink;
 }  
 void test_unvisited_does_not_notify_part1() {
   using namespace test_unvisited_does_not_notify;

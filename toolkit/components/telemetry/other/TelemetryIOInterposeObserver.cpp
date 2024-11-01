@@ -29,7 +29,7 @@ void TelemetryIOInterposeObserver::AddPath(const nsAString& aPath,
 }
 
 
-const TimeDuration kTelemetryReportThreshold =
+MOZ_RUNINIT const TimeDuration kTelemetryReportThreshold =
     TimeDuration::FromMilliseconds(50);
 
 void TelemetryIOInterposeObserver::Observe(Observation& aOb) {

@@ -27,39 +27,41 @@ struct Test {
   const char* mResult;
 };
 
-static Chunk kTest1Chunks[] = {Chunk(9, "Hello sir"), Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest1Chunks[] = {Chunk(9, "Hello sir"),
+                                           Chunk(0, nullptr)};
 
-static Chunk kTest2Chunks[] = {Chunk(3, "Hel"), Chunk(3, "lo "),
-                               Chunk(3, "sir"), Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest2Chunks[] = {Chunk(3, "Hel"), Chunk(3, "lo "),
+                                           Chunk(3, "sir"), Chunk(0, nullptr)};
 
-static Chunk kTest3Chunks[] = {Chunk(1, "I"), Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest3Chunks[] = {Chunk(1, "I"), Chunk(0, nullptr)};
 
-static Chunk kTest4Chunks[] = {Chunk(2, "Hi"), Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest4Chunks[] = {Chunk(2, "Hi"), Chunk(0, nullptr)};
 
-static Chunk kTest5Chunks[] = {Chunk(1, "B"), Chunk(2, "ob"),
-                               Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest5Chunks[] = {Chunk(1, "B"), Chunk(2, "ob"),
+                                           Chunk(0, nullptr)};
 
-static Chunk kTest6Chunks[] = {Chunk(2, "Bo"), Chunk(1, "b"),
-                               Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest6Chunks[] = {Chunk(2, "Bo"), Chunk(1, "b"),
+                                           Chunk(0, nullptr)};
 
-static Chunk kTest7Chunks[] = {Chunk(1, "F"),     
-                               Chunk(4, "iref"),  
-                               Chunk(2, "ox"),    
-                               Chunk(4, " is "),  
-                               Chunk(2, "aw"),    
-                               Chunk(4, "esom"),  
-                               Chunk(2, "e!"),   Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest7Chunks[] = {Chunk(1, "F"),     
+                                           Chunk(4, "iref"),  
+                                           Chunk(2, "ox"),    
+                                           Chunk(4, " is "),  
+                                           Chunk(2, "aw"),    
+                                           Chunk(4, "esom"),  
+                                           Chunk(2, "e!"),   Chunk(0, nullptr)};
 
-static Chunk kTest8Chunks[] = {Chunk(5, "ALL T"),
-                               Chunk(1, "H"),
-                               Chunk(4, "ESE "),
-                               Chunk(2, "WO"),
-                               Chunk(21, "RLDS ARE YOURS EXCEPT"),
-                               Chunk(9, " EUROPA. "),
-                               Chunk(25, "ATTEMPT NO LANDING THERE."),
-                               Chunk(0, nullptr)};
+MOZ_RUNINIT static Chunk kTest8Chunks[] = {
+    Chunk(5, "ALL T"),
+    Chunk(1, "H"),
+    Chunk(4, "ESE "),
+    Chunk(2, "WO"),
+    Chunk(21, "RLDS ARE YOURS EXCEPT"),
+    Chunk(9, " EUROPA. "),
+    Chunk(25, "ATTEMPT NO LANDING THERE."),
+    Chunk(0, nullptr)};
 
-static Test kTests[] = {
+MOZ_RUNINIT static Test kTests[] = {
     
     Test(kTest1Chunks, "SGVsbG8gc2ly"),
     

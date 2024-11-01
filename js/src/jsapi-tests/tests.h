@@ -447,7 +447,7 @@ class JSAPIFrontendTest : public JSAPITest {
 #define END_TEST(testname) \
   }                        \
   ;                        \
-  static cls_##testname cls_##testname##_instance;
+  MOZ_RUNINIT static cls_##testname cls_##testname##_instance;
 
 
 
@@ -466,7 +466,7 @@ class JSAPIFrontendTest : public JSAPITest {
 #define END_FIXTURE_TEST(fixture, testname) \
   }                                         \
   ;                                         \
-  static cls_##testname cls_##testname##_instance;
+  MOZ_RUNINIT static cls_##testname cls_##testname##_instance;
 
 
 

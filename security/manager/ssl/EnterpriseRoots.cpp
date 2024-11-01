@@ -75,7 +75,7 @@ struct CertStoreLocation {
 
 
 
-const CertStoreLocation kCertStoreLocations[] = {
+MOZ_RUNINIT const CertStoreLocation kCertStoreLocations[] = {
     CertStoreLocation(L"ROOT", true), CertStoreLocation(L"CA", false)};
 
 

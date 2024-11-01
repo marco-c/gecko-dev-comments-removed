@@ -138,7 +138,7 @@ using namespace mozilla;
 namespace mozilla::phc {
 
 
-mozilla::phc::AddrInfo gAddrInfo;
+MOZ_GLOBINIT mozilla::phc::AddrInfo gAddrInfo;
 
 }  
 
@@ -201,20 +201,20 @@ static const XP_CHAR dumpFileExtension[] = XP_TEXT(".dmp");
 
 static const XP_CHAR extraFileExtension[] = XP_TEXT(".extra");
 static const XP_CHAR memoryReportExtension[] = XP_TEXT(".memory.json.gz");
-static std::optional<xpstring> defaultMemoryReportPath = {};
+MOZ_RUNINIT static std::optional<xpstring> defaultMemoryReportPath = {};
 
 static const char kCrashMainID[] = "crash.main.3\n";
 
 static google_breakpad::ExceptionHandler* gExceptionHandler = nullptr;
 static mozilla::Atomic<bool> gEncounteredChildException(false);
-static nsCString gServerURL;
+MOZ_RUNINIT static nsCString gServerURL;
 
-static xpstring pendingDirectory;
-static xpstring crashReporterPath;
-static xpstring memoryReportPath;
+MOZ_RUNINIT static xpstring pendingDirectory;
+MOZ_RUNINIT static xpstring crashReporterPath;
+MOZ_RUNINIT static xpstring memoryReportPath;
 
 
-static xpstring eventsDirectory;
+MOZ_RUNINIT static xpstring eventsDirectory;
 
 
 static bool doReport = true;
@@ -324,7 +324,7 @@ typedef LPTOP_LEVEL_EXCEPTION_FILTER(WINAPI* SetUnhandledExceptionFilter_func)(
 static WindowsDllInterceptor::FuncHookType<SetUnhandledExceptionFilter_func>
     stub_SetUnhandledExceptionFilter;
 static LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = nullptr;
-static WindowsDllInterceptor gKernel32Intercept;
+MOZ_RUNINIT static WindowsDllInterceptor gKernel32Intercept;
 static bool gBlockUnhandledExceptionFilter = true;
 
 static LPTOP_LEVEL_EXCEPTION_FILTER GetUnhandledExceptionFilter() {
@@ -369,7 +369,7 @@ static void SetJitExceptionHandler() {
 #  endif
 #endif  
 
-static struct ReservedResources {
+MOZ_RUNINIT static struct ReservedResources {
 #if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
   
   

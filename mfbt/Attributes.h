@@ -790,6 +790,11 @@
 
 
 
+
+
+
+
+
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -858,12 +863,17 @@
 #    define MOZ_MAY_CALL_AFTER_MUST_RETURN \
       __attribute__((annotate("moz_may_call_after_must_return")))
 #    define MOZ_KNOWN_LIVE __attribute__((annotate("moz_known_live")))
-#    ifndef XGILL_PLUGIN
+#    ifdef MOZ_CLANG_PLUGIN
 #      define MOZ_UNANNOTATED __attribute__((annotate("moz_unannotated")))
 #      define MOZ_ANNOTATED __attribute__((annotate("moz_annotated")))
+#      define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
+#      define MOZ_GLOBINIT \
+        MOZ_RUNINIT __attribute__((annotate("moz_generated")))
 #    else
 #      define MOZ_UNANNOTATED
 #      define MOZ_ANNOTATED
+#      define MOZ_RUNINIT
+#      define MOZ_GLOBINIT
 #    endif
 
 
@@ -885,6 +895,8 @@
 #    define MOZ_CAN_RUN_SCRIPT_BOUNDARY
 #    define MOZ_MUST_OVERRIDE
 #    define MOZ_STATIC_CLASS
+#    define MOZ_RUNINIT
+#    define MOZ_GLOBINIT
 #    define MOZ_STATIC_LOCAL_CLASS
 #    define MOZ_STACK_CLASS
 #    define MOZ_NONHEAP_CLASS

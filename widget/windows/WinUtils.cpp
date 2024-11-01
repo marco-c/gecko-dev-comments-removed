@@ -525,7 +525,7 @@ HWND WinUtils::GetTopLevelHWND(HWND aWnd, bool aStopIfNotChild,
 
 
 
-static nsTHashMap<HWND, nsWindow*> sExtantNSWindows;
+MOZ_RUNINIT static nsTHashMap<HWND, nsWindow*> sExtantNSWindows;
 
 
 void WinUtils::SetNSWindowPtr(HWND aWnd, nsWindow* aWindow) {

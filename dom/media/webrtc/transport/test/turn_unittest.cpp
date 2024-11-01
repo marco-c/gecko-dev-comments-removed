@@ -66,7 +66,7 @@ extern "C" {
 
 using namespace mozilla;
 
-static std::string kDummyTurnServer("192.0.2.1");  
+MOZ_RUNINIT static std::string kDummyTurnServer("192.0.2.1");  
 
 class TurnClient : public MtransportTest {
  public:

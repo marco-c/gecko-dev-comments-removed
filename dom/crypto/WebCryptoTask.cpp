@@ -26,7 +26,7 @@
 
 
 
-const SEC_ASN1Template SGN_DigestInfoTemplate[] = {
+MOZ_GLOBINIT const SEC_ASN1Template SGN_DigestInfoTemplate[] = {
     {SEC_ASN1_SEQUENCE, 0, NULL, sizeof(SGNDigestInfo)},
     {SEC_ASN1_INLINE, offsetof(SGNDigestInfo, digestAlgorithm),
      SEC_ASN1_GET(SECOID_AlgorithmIDTemplate)},

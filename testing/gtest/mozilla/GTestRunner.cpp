@@ -176,7 +176,7 @@ int RunGTestFunc(int* argc, char** argv) {
 
 
 
-class _InitRunGTest {
+MOZ_RUNINIT class _InitRunGTest {
  public:
   _InitRunGTest() { RunGTest = RunGTestFunc; }
 } InitRunGTest;

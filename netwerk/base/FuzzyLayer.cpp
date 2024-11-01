@@ -40,11 +40,11 @@ typedef struct {
 } NetworkFuzzingBuffer;
 
 
-static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
+MOZ_RUNINIT static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
     gConnectedNetworkFuzzingBuffers;
 
 
-static nsDeque<NetworkFuzzingBuffer> gNetworkFuzzingBuffers;
+MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer> gNetworkFuzzingBuffers;
 
 
 

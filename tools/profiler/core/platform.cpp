@@ -462,9 +462,9 @@ Json::String ToCompactString(const Json::Value& aJsonValue) {
   return Json::writeString(builder, aJsonValue);
 }
 
- mozilla::baseprofiler::detail::BaseProfilerMutex
+MOZ_RUNINIT  mozilla::baseprofiler::detail::BaseProfilerMutex
     ProfilingLog::gMutex;
- mozilla::UniquePtr<Json::Value> ProfilingLog::gLog;
+MOZ_RUNINIT  mozilla::UniquePtr<Json::Value> ProfilingLog::gLog;
 
  void ProfilingLog::Init() {
   mozilla::baseprofiler::detail::BaseProfilerAutoLock lock{gMutex};
@@ -516,7 +516,7 @@ class MOZ_RAII PSAutoLock {
   mozilla::baseprofiler::detail::BaseProfilerAutoLock mLock;
 };
 
- mozilla::baseprofiler::detail::BaseProfilerMutex
+MOZ_RUNINIT  mozilla::baseprofiler::detail::BaseProfilerMutex
     PSAutoLock::gPSMutex{"Gecko Profiler mutex"};
 
 
@@ -1887,7 +1887,7 @@ using ProfilerStateChangeMutex =
     mozilla::baseprofiler::detail::BaseProfilerMutex;
 using ProfilerStateChangeLock =
     mozilla::baseprofiler::detail::BaseProfilerAutoLock;
-static ProfilerStateChangeMutex gProfilerStateChangeMutex;
+MOZ_RUNINIT static ProfilerStateChangeMutex gProfilerStateChangeMutex;
 
 struct IdentifiedProfilingStateChangeCallback {
   ProfilingStateSet mProfilingStateSet;
@@ -1905,7 +1905,7 @@ struct IdentifiedProfilingStateChangeCallback {
 using IdentifiedProfilingStateChangeCallbackUPtr =
     UniquePtr<IdentifiedProfilingStateChangeCallback>;
 
-static Vector<IdentifiedProfilingStateChangeCallbackUPtr>
+MOZ_RUNINIT static Vector<IdentifiedProfilingStateChangeCallbackUPtr>
     mIdentifiedProfilingStateChangeCallbacks;
 
 void profiler_add_state_change_callback(

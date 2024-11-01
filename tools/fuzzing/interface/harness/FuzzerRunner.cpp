@@ -17,7 +17,7 @@ namespace mozilla {
 
 
 
-class _InitFuzzer {
+MOZ_RUNINIT class _InitFuzzer {
  public:
   _InitFuzzer() { fuzzerRunner = new FuzzerRunner(); }
   void InitXPCOM() { mScopedXPCOM = new ScopedXPCOM("Fuzzer"); }

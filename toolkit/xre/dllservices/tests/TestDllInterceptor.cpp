@@ -806,7 +806,7 @@ bool TestShortDetour() {
 
 constexpr uintptr_t NoStubAddressCheck = 0;
 constexpr uintptr_t ExpectedFail = 1;
-struct TestCase {
+MOZ_GLOBINIT struct TestCase {
   const char* mFunctionName;
   uintptr_t mExpectedStub;
   bool mPatchedOnce;
@@ -964,7 +964,7 @@ struct DetouredCallChunk {
 
 
 
-decltype(&DetouredCallCode) gDetouredCall =
+MOZ_RUNINIT decltype(&DetouredCallCode) gDetouredCall =
     []() -> decltype(&DetouredCallCode) {
   
   

@@ -82,7 +82,8 @@ static mozilla::LazyLogModule sTaskbarConcealerLog("TaskbarConcealer");
 
 
 
-nsTHashMap<HWND, HMONITOR> nsWindow::TaskbarConcealer::sKnownWindows;
+MOZ_RUNINIT nsTHashMap<HWND, HMONITOR>
+    nsWindow::TaskbarConcealer::sKnownWindows;
 
 
 

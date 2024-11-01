@@ -181,7 +181,7 @@ BEGIN_TEST(test_PersistentRootedAssign) {
 }
 END_TEST(test_PersistentRootedAssign)
 
-static PersistentRootedObject gGlobalRoot;
+MOZ_RUNINIT static PersistentRootedObject gGlobalRoot;
 
 
 

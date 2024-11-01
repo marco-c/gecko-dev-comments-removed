@@ -13,7 +13,7 @@
 
 using namespace std::filesystem;
 
-static path processDllPath = {};
+MOZ_RUNINIT static path processDllPath = {};
 
 
 bool PopulateDllPath(HINSTANCE dllInstance) {

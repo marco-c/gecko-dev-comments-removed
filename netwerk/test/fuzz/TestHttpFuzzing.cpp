@@ -30,8 +30,8 @@ namespace net {
 
 
 
-static nsAutoCString httpSpec;
-static nsAutoCString proxyType;
+MOZ_RUNINIT static nsAutoCString httpSpec;
+MOZ_RUNINIT static nsAutoCString proxyType;
 static size_t minSize;
 
 static int FuzzingInitNetworkHttp(int* argc, char*** argv) {

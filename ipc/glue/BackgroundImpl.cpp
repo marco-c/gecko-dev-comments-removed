@@ -73,6 +73,11 @@ using namespace mozilla::net;
 
 namespace {
 
+
+
+
+static MOZ_THREAD_LOCAL(bool) sTLSIsOnBackgroundThread;
+
 class ChildImpl;
 
 
@@ -124,10 +129,6 @@ class ParentImpl final : public BackgroundParentImpl {
 
   
   
-  static Atomic<PRThread*> sBackgroundPRThread;
-
-  
-  
   
   
   static Atomic<uint64_t> sLiveActorCount;
@@ -164,7 +165,8 @@ class ParentImpl final : public BackgroundParentImpl {
   }
 
   static bool IsOnBackgroundThread() {
-    return PR_GetCurrentThread() == sBackgroundPRThread;
+    MOZ_ASSERT(sTLSIsOnBackgroundThread.initialized());
+    return sTLSIsOnBackgroundThread.get();
   }
 
   static void AssertIsOnBackgroundThread() {
@@ -734,8 +736,6 @@ nsTArray<IToplevelProtocol*>* ParentImpl::sLiveActorsForBackgroundThread;
 
 StaticRefPtr<nsITimer> ParentImpl::sShutdownTimer;
 
-Atomic<PRThread*> ParentImpl::sBackgroundPRThread;
-
 Atomic<uint64_t> ParentImpl::sLiveActorCount;
 
 bool ParentImpl::sShutdownObserverRegistered = false;
@@ -746,7 +746,8 @@ bool ParentImpl::sShutdownHasStarted = false;
 
 
 
-ChildImpl::ThreadInfoWrapper ChildImpl::sParentAndContentProcessThreadInfo;
+MOZ_RUNINIT ChildImpl::ThreadInfoWrapper
+    ChildImpl::sParentAndContentProcessThreadInfo;
 
 bool ChildImpl::sShutdownHasStarted = false;
 
@@ -898,11 +899,8 @@ bool ParentImpl::CreateBackgroundThread() {
           "IPDL Background", getter_AddRefs(thread),
           NS_NewRunnableFunction(
               "Background::ParentImpl::CreateBackgroundThreadRunnable", []() {
-                DebugOnly<PRThread*> oldBackgroundThread =
-                    sBackgroundPRThread.exchange(PR_GetCurrentThread());
-
-                MOZ_ASSERT_IF(oldBackgroundThread,
-                              PR_GetCurrentThread() != oldBackgroundThread);
+                MOZ_ASSERT(sTLSIsOnBackgroundThread.initialized());
+                sTLSIsOnBackgroundThread.set(true);
               })))) {
     NS_WARNING("NS_NewNamedThread failed!");
     return false;
@@ -959,15 +957,6 @@ void ParentImpl::ShutdownBackgroundThread() {
     }
 
     
-    MOZ_ALWAYS_SUCCEEDS(thread->Dispatch(NS_NewRunnableFunction(
-        "Background::ParentImpl::ShutdownBackgroundThreadRunnable", []() {
-          
-          
-          
-          
-          sBackgroundPRThread.compareExchange(PR_GetCurrentThread(), nullptr);
-        })));
-
     MOZ_ALWAYS_SUCCEEDS(thread->Shutdown());
   }
 }
@@ -1151,6 +1140,8 @@ void ChildImpl::Startup() {
   
 
   sParentAndContentProcessThreadInfo.Startup();
+
+  sTLSIsOnBackgroundThread.infallibleInit();
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   MOZ_RELEASE_ASSERT(observerService);

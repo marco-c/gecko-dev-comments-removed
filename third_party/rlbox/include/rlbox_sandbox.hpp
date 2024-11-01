@@ -104,7 +104,7 @@ private:
   
   
   
-  static inline std::vector<void*> sandbox_list;
+  static inline MOZ_RUNINIT std::vector<void*> sandbox_list;
 
   RLBOX_SHARED_LOCK(func_ptr_cache_lock);
   std::map<std::string, void*> func_ptr_map;

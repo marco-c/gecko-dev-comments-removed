@@ -49,7 +49,8 @@ enum {
 };
 #undef HTTP_ATOM
 
-static StaticDataMutex<nsTHashtable<nsCStringASCIICaseInsensitiveHashKey>>
+MOZ_RUNINIT static StaticDataMutex<
+    nsTHashtable<nsCStringASCIICaseInsensitiveHashKey>>
     sAtomTable("nsHttp::sAtomTable");
 
 

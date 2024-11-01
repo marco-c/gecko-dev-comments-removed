@@ -17,7 +17,7 @@
 static float sProgressVal;  
 static BOOL sQuit = NO;
 static BOOL sIndeterminate = NO;
-static StringTable sLabels;
+MOZ_RUNINIT static StringTable sLabels;
 static const char* sUpdatePath;
 
 @interface UpdaterUI : NSObject {

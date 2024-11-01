@@ -19,7 +19,7 @@ using namespace mozilla::pkix;
 
 
 
-const Duration ONE_HUNDRED_AND_EIGHTY_DAYS =
+MOZ_RUNINIT const Duration ONE_HUNDRED_AND_EIGHTY_DAYS =
     Duration(180 * Time::ONE_DAY_IN_SECONDS);
 size_t GetRequiredEmbeddedSctsCount(Duration certLifetime) {
   

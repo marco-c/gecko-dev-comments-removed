@@ -53,7 +53,8 @@ class MOZ_RAII AutoProfilerLabelData {
   static uint32_t sGeneration;
 };
 
- AutoProfilerLabelData::Mutex AutoProfilerLabelData::sAPLMutex;
+MOZ_RUNINIT  AutoProfilerLabelData::Mutex
+    AutoProfilerLabelData::sAPLMutex;
  ProfilerLabelEnter AutoProfilerLabelData::sEnter = nullptr;
  ProfilerLabelExit AutoProfilerLabelData::sExit = nullptr;
  uint32_t AutoProfilerLabelData::sGeneration = 0;

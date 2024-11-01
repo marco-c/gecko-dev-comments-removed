@@ -129,7 +129,7 @@ static mozilla::LazyLogModule sGVSupportLog("GeckoViewSupport");
 
 
 
-static nsTArray<nsWindow*> gTopLevelWindows;
+MOZ_RUNINIT static nsTArray<nsWindow*> gTopLevelWindows;
 
 static bool sFailedToCreateGLContext = false;
 

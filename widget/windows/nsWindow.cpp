@@ -255,7 +255,7 @@ static const wchar_t kUser32LibName[] = L"user32.dll";
 
 uint32_t nsWindow::sInstanceCount = 0;
 bool nsWindow::sIsOleInitialized = false;
-nsIWidget::Cursor nsWindow::sCurrentCursor = {};
+MOZ_RUNINIT nsIWidget::Cursor nsWindow::sCurrentCursor = {};
 nsWindow* nsWindow::sCurrentWindow = nullptr;
 bool nsWindow::sJustGotDeactivate = false;
 bool nsWindow::sJustGotActivate = false;
@@ -418,7 +418,7 @@ extern mozilla::LazyLogModule gWindowsLog;
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 
 
-static WindowsDllInterceptor sUser32Intercept;
+MOZ_RUNINIT static WindowsDllInterceptor sUser32Intercept;
 
 
 

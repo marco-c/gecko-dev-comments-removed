@@ -19,7 +19,7 @@ namespace layers {
 
 
 
-static const TimeDuration kAssumePointerMoveStoppedTime =
+MOZ_RUNINIT static const TimeDuration kAssumePointerMoveStoppedTime =
     TimeDuration::FromMilliseconds(40);
 
 

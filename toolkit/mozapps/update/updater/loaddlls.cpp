@@ -5,10 +5,16 @@
 
 #include <windows.h>
 
+#ifdef MOZ_CLANG_PLUGIN
+#  define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
+#else
+#  define MOZ_RUNINIT
+#endif
 
 
 
-struct AutoLoadSystemDependencies {
+
+MOZ_RUNINIT struct AutoLoadSystemDependencies {
   AutoLoadSystemDependencies() {
     
     

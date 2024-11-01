@@ -116,7 +116,8 @@ typedef NTSTATUS(NTAPI* NtQueryFullAttributesFileFn)(
 
 
 using HandleToFilenameCache = mozilla::SmallArrayLRUCache<HANDLE, nsString, 32>;
-static mozilla::UniquePtr<HandleToFilenameCache> sHandleToFilenameCache;
+MOZ_RUNINIT static mozilla::UniquePtr<HandleToFilenameCache>
+    sHandleToFilenameCache;
 
 
 
@@ -427,7 +428,7 @@ static NTSTATUS NTAPI InterposedNtQueryFullAttributesFile(
 
 
 
-static mozilla::WindowsDllInterceptor sNtDllInterceptor;
+MOZ_RUNINIT static mozilla::WindowsDllInterceptor sNtDllInterceptor;
 
 namespace mozilla {
 

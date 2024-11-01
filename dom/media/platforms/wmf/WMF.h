@@ -139,7 +139,7 @@ class MediaFoundationInitializer final {
   
   HRESULT MFShutdown();
 
-  static inline UniquePtr<MediaFoundationInitializer> sInitializer;
+  MOZ_RUNINIT static inline UniquePtr<MediaFoundationInitializer> sInitializer;
   static inline StaticMutex sCreateMutex;
   static inline Atomic<bool> sIsShutdown{false};
   const bool mHasInitialized;

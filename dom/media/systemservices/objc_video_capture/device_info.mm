@@ -27,7 +27,7 @@ using namespace mozilla;
 using namespace webrtc;
 using namespace videocapturemodule;
 
-static NSArray* camera_presets = @[
+MOZ_RUNINIT static NSArray* camera_presets = @[
   AVCaptureSessionPreset352x288, AVCaptureSessionPreset640x480,
   AVCaptureSessionPreset1280x720
 ];
@@ -91,7 +91,8 @@ uint32_t DeviceInfoIos::NumberOfDevices() {
 int32_t DeviceInfoIos::GetDeviceName(
     uint32_t deviceNumber, char* deviceNameUTF8, uint32_t deviceNameUTF8Length,
     char* deviceUniqueIdUTF8, uint32_t deviceUniqueIdUTF8Length,
-    char* productUniqueIdUTF8, uint32_t productUniqueIdUTF8Length, pid_t* pid) {
+    char* productUniqueIdUTF8, uint32_t productUniqueIdUTF8Length, pid_t* pid,
+    bool* deviceIsPlaceholder) {
   if (deviceNumber >= NumberOfDevices()) {
     return -1;
   }

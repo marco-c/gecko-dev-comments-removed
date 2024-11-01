@@ -158,7 +158,7 @@ static bool IsArg(const char* arg, const char* s) {
   return false;
 }
 
-Bootstrap::UniquePtr gBootstrap;
+MOZ_RUNINIT Bootstrap::UniquePtr gBootstrap;
 
 static int do_main(int argc, char* argv[], char* envp[]) {
   
