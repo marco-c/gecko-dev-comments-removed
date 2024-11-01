@@ -67,6 +67,10 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   
+  void OnBrowsingContextDiscarded();
+
+  
+  
   
   [[nodiscard]] nsresult OnDocumentStartRequest(nsIChannel* aChannel);
 

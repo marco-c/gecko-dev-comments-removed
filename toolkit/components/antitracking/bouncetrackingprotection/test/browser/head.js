@@ -286,6 +286,9 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
@@ -301,6 +304,7 @@ async function runTestBounce(options = {}) {
     originAttributes = {},
     postBounceCallback = () => {},
     skipSiteDataCleanup = false,
+    closeTabAfterBounce = false,
   } = options;
   info(`runTestBounce ${JSON.stringify(options)}`);
 
@@ -378,16 +382,33 @@ async function runTestBounce(options = {}) {
   
   
   
-  let finalTargetURL = new URL(getBaseUrl(ORIGIN_C) + "file_start.html");
-  let finalLoadPromise = BrowserTestUtils.browserLoaded(
-    browser,
-    true,
-    initialURL.href
-  );
-  await navigateLinkClick(browser, finalTargetURL);
-  await finalLoadPromise;
+  
+  if (closeTabAfterBounce) {
+    
+    
+    BrowserTestUtils.removeTab(tab);
+
+    
+    tab = null;
+    browser = null;
+  } else {
+    
+    
+    
+    
+    
+    let finalTargetURL = new URL(getBaseUrl(ORIGIN_C) + "file_start.html");
+    let finalLoadPromise = BrowserTestUtils.browserLoaded(
+      browser,
+      true,
+      initialURL.href
+    );
+    await navigateLinkClick(browser, finalTargetURL);
+    await finalLoadPromise;
+  }
 
   if (expectRecordBounces) {
+    info("Waiting for record-bounces to complete.");
     await promiseRecordBounces;
   } else {
     
@@ -406,12 +427,20 @@ async function runTestBounce(options = {}) {
       expectCandidate ? "" : "not "
     }have identified ${SITE_TRACKER} as a bounce tracker.`
   );
+
+  let expectedUserActivationHosts = [SITE_A];
+  if (!closeTabAfterBounce) {
+    
+    
+    expectedUserActivationHosts.push(SITE_B);
+  }
+
   Assert.deepEqual(
     bounceTrackingProtection
       .testGetUserActivationHosts(originAttributes)
       .map(entry => entry.siteHost)
       .sort(),
-    [SITE_A, SITE_B].sort(),
+    expectedUserActivationHosts.sort(),
     "Should only have user activation for sites where we clicked links."
   );
 
@@ -439,7 +468,10 @@ async function runTestBounce(options = {}) {
   }
 
   
-  BrowserTestUtils.removeTab(tab);
+  
+  if (tab) {
+    BrowserTestUtils.removeTab(tab);
+  }
   if (usePrivateWindow) {
     await BrowserTestUtils.closeWindow(win);
 
