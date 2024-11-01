@@ -59,7 +59,7 @@ const tests = {
     ],
   },
   
-  "ar": {
+  "ar-EG": {
     options: {},
     ranges: [
       {

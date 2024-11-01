@@ -8,7 +8,10 @@
 
 
 
-assertEq(new Intl.RelativeTimeFormat("ak").format(1, "second"),
+
+
+
+assertEq(new Intl.RelativeTimeFormat("haw").format(1, "second"),
          "+1 s");
 
 if (typeof reportCompare === "function")
