@@ -138,6 +138,14 @@ RTCErrorOr<PayloadType> PayloadTypePicker::SuggestMapping(
     const PayloadTypeRecorder* excluder) {
   
   
+  
+  if (codec.id >= 0 && codec.id <= kLastDynamicPayloadTypeUpperRange &&
+      seen_payload_types_.count(PayloadType(codec.id)) == 0) {
+    AddMapping(PayloadType(codec.id), codec);
+    return PayloadType(codec.id);
+  }
+  
+  
   for (auto entry : entries_) {
     if (MatchesForSdp(entry.codec(), codec)) {
       if (excluder) {
@@ -149,6 +157,7 @@ RTCErrorOr<PayloadType> PayloadTypePicker::SuggestMapping(
       return entry.payload_type();
     }
   }
+  
   RTCErrorOr<PayloadType> found_pt = FindFreePayloadType(seen_payload_types_);
   if (found_pt.ok()) {
     AddMapping(found_pt.value(), codec);
