@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <utility>
 
 #include "modules/rtp_rtcp/source/leb128.h"
@@ -367,7 +368,7 @@ VideoRtpDepacketizerAv1::Parse(rtc::CopyOnWriteBuffer rtp_payload) {
     
     return std::nullopt;
   }
-  std::optional<ParsedRtpPayload> parsed(absl::in_place);
+  std::optional<ParsedRtpPayload> parsed(std::in_place);
 
   
   
