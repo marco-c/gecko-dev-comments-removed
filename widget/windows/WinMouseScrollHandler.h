@@ -160,6 +160,19 @@ class MouseScrollHandler {
 
   POINT ComputeMessagePos(UINT aMessage, WPARAM aWParam, LPARAM aLParam);
 
+  
+
+
+
+
+
+
+
+
+
+
+  nsWindow* FindTargetWindow(UINT aMessage, WPARAM aWParam, LPARAM aLParam);
+
   class EventInfo {
    public:
     
