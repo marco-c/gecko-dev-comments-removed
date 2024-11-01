@@ -11,8 +11,9 @@
 #include "charstr.h"
 #include "number_decimfmtprops.h"
 
-U_NAMESPACE_BEGIN
-namespace number::impl {
+U_NAMESPACE_BEGIN namespace number {
+namespace impl {
+
 
 
 class U_I18N_API CurrencySymbols : public UMemory {
@@ -61,6 +62,8 @@ class U_I18N_API CurrencySymbols : public UMemory {
 CurrencyUnit
 resolveCurrency(const DecimalFormatProperties& properties, const Locale& locale, UErrorCode& status);
 
+
+} 
 } 
 U_NAMESPACE_END
 

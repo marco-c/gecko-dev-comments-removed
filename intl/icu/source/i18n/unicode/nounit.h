@@ -43,7 +43,7 @@ namespace NoUnit {
 
 
     static inline MeasureUnit U_EXPORT2 base() {
-        return {};
+        return MeasureUnit();
     }
 
     

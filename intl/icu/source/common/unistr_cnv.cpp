@@ -62,8 +62,8 @@ UnicodeString::UnicodeString(const char *codepageData,
 UnicodeString::UnicodeString(const char *codepageData,
                              const char *codepage) {
     fUnion.fFields.fLengthAndFlags = kShortString;
-    if (codepageData != nullptr) {
-        doCodepageCreate(codepageData, static_cast<int32_t>(uprv_strlen(codepageData)), codepage);
+    if(codepageData != 0) {
+        doCodepageCreate(codepageData, (int32_t)uprv_strlen(codepageData), codepage);
     }
 }
 
@@ -71,7 +71,7 @@ UnicodeString::UnicodeString(const char *codepageData,
                              int32_t dataLength,
                              const char *codepage) {
     fUnion.fFields.fLengthAndFlags = kShortString;
-    if (codepageData != nullptr) {
+    if(codepageData != 0) {
         doCodepageCreate(codepageData, dataLength, codepage);
     }
 }
@@ -89,10 +89,10 @@ UnicodeString::UnicodeString(const char *src, int32_t srcLength,
         } else {
             
             if(srcLength==-1) {
-                srcLength = static_cast<int32_t>(uprv_strlen(src));
+                srcLength=(int32_t)uprv_strlen(src);
             }
             if(srcLength>0) {
-                if (cnv != nullptr) {
+                if(cnv!=0) {
                     
                     ucnv_resetToUnicode(cnv);
                     doCodepageCreate(src, srcLength, cnv, errorCode);
@@ -136,7 +136,7 @@ UnicodeString::extract(int32_t start,
                        const char *codepage) const
 {
     
-    if ((dstSize > 0 && target == nullptr)) {
+    if((dstSize > 0 && target == 0)) {
         return 0;
     }
 
@@ -151,13 +151,13 @@ UnicodeString::extract(int32_t start,
     int32_t capacity;
     if(dstSize < 0x7fffffff) {
         
-        capacity = static_cast<int32_t>(dstSize);
+        capacity = (int32_t)dstSize;
     } else {
         
-        char* targetLimit = static_cast<char*>(U_MAX_PTR(target));
+        char *targetLimit = (char *)U_MAX_PTR(target);
         
         
-        capacity = static_cast<int32_t>(targetLimit - target);
+        capacity = (int32_t)(targetLimit - target);
     }
 
     
@@ -171,7 +171,7 @@ UnicodeString::extract(int32_t start,
 
     
     
-    if (codepage == nullptr) {
+    if (codepage == 0) {
         const char *defaultName = ucnv_getDefaultName();
         if(UCNV_FAST_IS_UTF8(defaultName)) {
             return toUTF8(start, length, target, capacity);
@@ -194,7 +194,7 @@ UnicodeString::extract(int32_t start,
     length = doExtract(start, length, target, capacity, converter, status);
 
     
-    if (codepage == nullptr) {
+    if (codepage == 0) {
         u_releaseDefaultConverter(converter);
     } else {
         ucnv_close(converter);
@@ -212,7 +212,7 @@ UnicodeString::extract(char *dest, int32_t destCapacity,
         return 0;
     }
 
-    if (isBogus() || destCapacity < 0 || (destCapacity > 0 && dest == nullptr)) {
+    if(isBogus() || destCapacity<0 || (destCapacity>0 && dest==0)) {
         errorCode=U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
     }
@@ -224,7 +224,7 @@ UnicodeString::extract(char *dest, int32_t destCapacity,
 
     
     UBool isDefaultConverter;
-    if (cnv == nullptr) {
+    if(cnv==0) {
         isDefaultConverter=true;
         cnv=u_getDefaultConverter(&errorCode);
         if(U_FAILURE(errorCode)) {
@@ -264,10 +264,10 @@ UnicodeString::doExtract(int32_t start, int32_t length,
     const char *destLimit;
 
     if(destCapacity==0) {
-        destLimit=dest=nullptr;
+        destLimit=dest=0;
     } else if(destCapacity==-1) {
         
-        destLimit = static_cast<char*>(U_MAX_PTR(dest));
+        destLimit=(char*)U_MAX_PTR(dest);
         
         destCapacity=0x7fffffff;
     } else {
@@ -275,8 +275,8 @@ UnicodeString::doExtract(int32_t start, int32_t length,
     }
 
     
-    ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, nullptr, true, &errorCode);
-    length = static_cast<int32_t>(dest - originalDest);
+    ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, true, &errorCode);
+    length=(int32_t)(dest-originalDest);
 
     
     if(errorCode==U_BUFFER_OVERFLOW_ERROR) {
@@ -286,8 +286,8 @@ UnicodeString::doExtract(int32_t start, int32_t length,
         do {
             dest=buffer;
             errorCode=U_ZERO_ERROR;
-            ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, nullptr, true, &errorCode);
-            length += static_cast<int32_t>(dest - buffer);
+            ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, true, &errorCode);
+            length+=(int32_t)(dest-buffer);
         } while(errorCode==U_BUFFER_OVERFLOW_ERROR);
     }
 
@@ -300,11 +300,11 @@ UnicodeString::doCodepageCreate(const char *codepageData,
                                 const char *codepage)
 {
     
-    if (codepageData == nullptr || dataLength == 0 || dataLength < -1) {
+    if(codepageData == 0 || dataLength == 0 || dataLength < -1) {
         return;
     }
     if(dataLength == -1) {
-        dataLength = static_cast<int32_t>(uprv_strlen(codepageData));
+        dataLength = (int32_t)uprv_strlen(codepageData);
     }
 
     UErrorCode status = U_ZERO_ERROR;
@@ -313,14 +313,14 @@ UnicodeString::doCodepageCreate(const char *codepageData,
     
     
     UConverter *converter;
-    if (codepage == nullptr) {
+    if (codepage == 0) {
         const char *defaultName = ucnv_getDefaultName();
         if(UCNV_FAST_IS_UTF8(defaultName)) {
             setToUTF8(StringPiece(codepageData, dataLength));
             return;
         }
         converter = u_getDefaultConverter(&status);
-    } else if (*codepage == 0) {
+    } else if(*codepage == 0) {
         
         if(cloneArrayIfNeeded(dataLength, dataLength, false)) {
             u_charsToUChars(codepageData, getArrayStart(), dataLength);
@@ -346,7 +346,7 @@ UnicodeString::doCodepageCreate(const char *codepageData,
     }
 
     
-    if (codepage == nullptr) {
+    if(codepage == 0) {
         u_releaseDefaultConverter(converter);
     } else {
         ucnv_close(converter);
@@ -390,10 +390,10 @@ UnicodeString::doCodepageCreate(const char *codepageData,
         array = getArrayStart();
         myTarget = array + length();
         ucnv_toUnicode(converter, &myTarget,  array + getCapacity(),
-            &mySource, mySourceEnd, nullptr, true, &status);
+            &mySource, mySourceEnd, 0, true, &status);
 
         
-        setLength(static_cast<int32_t>(myTarget - array));
+        setLength((int32_t)(myTarget - array));
 
         
         if(status == U_BUFFER_OVERFLOW_ERROR) {
@@ -405,7 +405,7 @@ UnicodeString::doCodepageCreate(const char *codepageData,
 
             
             
-            arraySize = static_cast<int32_t>(length() + 2 * (mySourceEnd - mySource));
+            arraySize = (int32_t)(length() + 2 * (mySourceEnd - mySource));
         } else {
             break;
         }

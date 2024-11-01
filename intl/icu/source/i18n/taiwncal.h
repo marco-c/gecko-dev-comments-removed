@@ -139,7 +139,7 @@ private:
 
 
 
-    virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
+    virtual int32_t handleGetExtendedYear() override;
     
 
 
@@ -155,7 +155,24 @@ private:
 
     virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
-    DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
+    
+
+
+
+    virtual UBool haveDefaultCentury() const override;
+
+    
+
+
+
+
+    virtual UDate defaultCenturyStart() const override;
+
+    
+
+
+
+    virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

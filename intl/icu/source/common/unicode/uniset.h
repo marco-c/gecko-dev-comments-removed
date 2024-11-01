@@ -313,7 +313,7 @@ private:
     char16_t *pat = nullptr;
     int32_t patLen = 0;
 
-    UVector* strings_ = nullptr; 
+    UVector* strings = nullptr; 
     UnicodeSetStringSpan *stringSpan = nullptr;
 
     
@@ -333,7 +333,7 @@ public:
 
 
 
-    inline UBool isBogus() const;
+    inline UBool isBogus(void) const;
 
     
 
@@ -522,7 +522,7 @@ public:
 
 
 
-    virtual int32_t hashCode() const;
+    virtual int32_t hashCode(void) const;
 
     
 
@@ -792,7 +792,7 @@ public:
 
 
 
-    virtual int32_t size() const;
+    virtual int32_t size(void) const;
 
     
 
@@ -800,7 +800,7 @@ public:
 
 
 
-    virtual UBool isEmpty() const;
+    virtual UBool isEmpty(void) const;
 
     
 
@@ -1102,118 +1102,6 @@ public:
 
     UChar32 charAt(int32_t index) const;
 
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    inline U_HEADER_NESTED_NAMESPACE::USetCodePoints codePoints() const {
-        return U_HEADER_NESTED_NAMESPACE::USetCodePoints(toUSet());
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    inline U_HEADER_NESTED_NAMESPACE::USetRanges ranges() const {
-        return U_HEADER_NESTED_NAMESPACE::USetRanges(toUSet());
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    inline U_HEADER_NESTED_NAMESPACE::USetStrings strings() const {
-        return U_HEADER_NESTED_NAMESPACE::USetStrings(toUSet());
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    inline U_HEADER_NESTED_NAMESPACE::USetElementIterator begin() const {
-        return U_HEADER_NESTED_NAMESPACE::USetElements(toUSet()).begin();
-    }
-
-    
-
-
-
-
-
-
-
-    inline U_HEADER_NESTED_NAMESPACE::USetElementIterator end() const {
-        return U_HEADER_NESTED_NAMESPACE::USetElements(toUSet()).end();
-    }
-#endif  
-
     
 
 
@@ -1506,7 +1394,7 @@ public:
 
 
 
-    virtual UnicodeSet& clear();
+    virtual UnicodeSet& clear(void);
 
     
 
@@ -1552,7 +1440,7 @@ public:
 
 
 
-    virtual int32_t getRangeCount() const;
+    virtual int32_t getRangeCount(void) const;
 
     
 
@@ -1641,7 +1529,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -1651,9 +1539,9 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 
-  private:
+private:
 
     
 
@@ -1714,7 +1602,7 @@ private:
 
     bool ensureBufferCapacity(int32_t newLen);
 
-    void swapBuffers();
+    void swapBuffers(void);
 
     UBool allocateStrings(UErrorCode &status);
     int32_t stringsSize() const;
@@ -1843,7 +1731,7 @@ inline bool UnicodeSet::operator!=(const UnicodeSet& o) const {
 }
 
 inline UBool UnicodeSet::isFrozen() const {
-    return bmpSet != nullptr || stringSpan != nullptr;
+    return (UBool)(bmpSet!=nullptr || stringSpan!=nullptr);
 }
 
 inline UBool UnicodeSet::containsSome(UChar32 start, UChar32 end) const {
@@ -1859,7 +1747,7 @@ inline UBool UnicodeSet::containsSome(const UnicodeString& s) const {
 }
 
 inline UBool UnicodeSet::isBogus() const {
-    return fFlags & kIsBogus;
+    return (UBool)(fFlags & kIsBogus);
 }
 
 inline UnicodeSet *UnicodeSet::fromUSet(USet *uset) {

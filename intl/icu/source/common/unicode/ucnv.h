@@ -362,6 +362,8 @@ ucnv_compareNames(const char *name1, const char *name2);
 
 
 
+
+
 U_CAPI UConverter* U_EXPORT2
 ucnv_open(const char *converterName, UErrorCode *err);
 
@@ -1966,6 +1968,7 @@ ucnv_setFallback(UConverter *cnv, UBool usesFallback);
 
 U_CAPI UBool U_EXPORT2
 ucnv_usesFallback(const UConverter *cnv);
+
 
 
 

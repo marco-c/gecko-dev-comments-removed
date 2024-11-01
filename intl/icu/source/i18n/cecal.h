@@ -98,13 +98,19 @@ protected:
 
 
 
-    virtual int64_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth, UErrorCode& status) const override;
+    virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
 
     
 
 
 
     virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
+
+    
+
+
+
+    virtual UBool haveDefaultCentury() const override;
 
 protected:
     
@@ -125,8 +131,21 @@ protected:
 
 
 
+    static int32_t ceToJD(int32_t year, int32_t month, int32_t date,
+        int32_t jdEpochOffset);
+
+    
+
+
+
+
+
+
+
+
+
     static void jdToCE(int32_t julianDay, int32_t jdEpochOffset,
-        int32_t& year, int32_t& month, int32_t& day, UErrorCode& status);
+        int32_t& year, int32_t& month, int32_t& day);
 };
 
 U_NAMESPACE_END

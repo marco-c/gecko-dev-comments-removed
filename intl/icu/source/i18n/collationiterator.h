@@ -142,7 +142,7 @@ public:
             
             
             return ceBuffer.set(cesIndex++,
-                    (static_cast<int64_t>(ce32 & 0xffff0000) << 32) | ((ce32 & 0xff00) << 16) | (t << 8));
+                    ((int64_t)(ce32 & 0xffff0000) << 32) | ((ce32 & 0xff00) << 16) | (t << 8));
         }
         const CollationData *d;
         
@@ -157,7 +157,7 @@ public:
             if(t < Collation::SPECIAL_CE32_LOW_BYTE) {
                 
                 return ceBuffer.set(cesIndex++,
-                        (static_cast<int64_t>(ce32 & 0xffff0000) << 32) | ((ce32 & 0xff00) << 16) | (t << 8));
+                        ((int64_t)(ce32 & 0xffff0000) << 32) | ((ce32 & 0xff00) << 16) | (t << 8));
             }
         } else {
             d = data;
@@ -165,7 +165,7 @@ public:
         if(t == Collation::LONG_PRIMARY_CE32_LOW_BYTE) {
             
             return ceBuffer.set(cesIndex++,
-                    (static_cast<int64_t>(ce32 - t) << 32) | Collation::COMMON_SEC_AND_TER_CE);
+                    ((int64_t)(ce32 - t) << 32) | Collation::COMMON_SEC_AND_TER_CE);
         }
         return nextCEFromCE32(d, c, ce32, errorCode);
     }

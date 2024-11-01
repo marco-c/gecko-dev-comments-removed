@@ -130,8 +130,7 @@ public:
 
 
 
-
-    static void U_EXPORT2 permute(UnicodeString &source, UBool skipZeros, Hashtable *result, UErrorCode &status, int32_t depth=0);
+    static void U_EXPORT2 permute(UnicodeString &source, UBool skipZeros, Hashtable *result, UErrorCode &status);
 #endif  
 
     
@@ -183,8 +182,8 @@ private:
     
     UnicodeString buffer;
 
-    const Normalizer2 *nfd;
-    const Normalizer2Impl *nfcImpl;
+    const Normalizer2 &nfd;
+    const Normalizer2Impl &nfcImpl;
 
     
     UnicodeString *getEquivalents(const UnicodeString &segment, int32_t &result_len, UErrorCode &status); 

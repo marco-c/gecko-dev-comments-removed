@@ -408,17 +408,11 @@ uloc_setDefault(const char* localeID,
 
 
 
-
-
-
 U_CAPI int32_t U_EXPORT2
 uloc_getLanguage(const char*    localeID,
          char* language,
          int32_t languageCapacity,
          UErrorCode* err);
-
-
-
 
 
 
@@ -450,9 +444,6 @@ uloc_getScript(const char*    localeID,
 
 
 
-
-
-
 U_CAPI int32_t U_EXPORT2
 uloc_getCountry(const char*    localeID,
         char* country,
@@ -471,18 +462,11 @@ uloc_getCountry(const char*    localeID,
 
 
 
-
-
-
 U_CAPI int32_t U_EXPORT2
 uloc_getVariant(const char*    localeID,
         char* variant,
         int32_t variantCapacity,
         UErrorCode* err);
-
-
-
-
 
 
 
@@ -1164,7 +1148,6 @@ uloc_acceptLanguage(char *result, int32_t resultAvailable,
 U_CAPI int32_t U_EXPORT2
 uloc_getLocaleForLCID(uint32_t hostID, char *locale, int32_t localeCapacity,
                     UErrorCode *status);
-
 
 
 

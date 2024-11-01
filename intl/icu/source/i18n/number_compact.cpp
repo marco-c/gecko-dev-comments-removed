@@ -143,7 +143,7 @@ void CompactData::getUniquePatterns(UVector &output, UErrorCode &status) const {
     U_ASSERT(output.isEmpty());
     
     
-    for (const auto* pattern : patterns) {
+    for (auto pattern : patterns) {
         if (pattern == nullptr || pattern == USE_FALLBACK) {
             continue;
         }
@@ -279,7 +279,7 @@ void CompactHandler::precomputeAllModifiers(MutablePatternModifier &buildReferen
     }
 
     for (int32_t i = 0; i < precomputedModsLength; i++) {
-        const auto* patternString = static_cast<const char16_t*>(allPatterns[i]);
+        auto patternString = static_cast<const char16_t *>(allPatterns[i]);
         UnicodeString hello(patternString);
         CompactModInfo &info = precomputedMods[i];
         ParsedPatternInfo patternInfo;

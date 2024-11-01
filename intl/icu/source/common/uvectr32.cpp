@@ -39,7 +39,7 @@ UVector32::UVector32(int32_t initialCapacity, UErrorCode &status) :
     count(0),
     capacity(0),
     maxCapacity(0),
-    elements(nullptr)
+    elements(0)
 {
     _init(initialCapacity, status);
 }
@@ -54,11 +54,11 @@ void UVector32::_init(int32_t initialCapacity, UErrorCode &status) {
     if (maxCapacity>0 && maxCapacity<initialCapacity) {
         initialCapacity = maxCapacity;
     }
-    if (initialCapacity > static_cast<int32_t>(INT32_MAX / sizeof(int32_t))) {
+    if (initialCapacity > (int32_t)(INT32_MAX / sizeof(int32_t))) {
         initialCapacity = uprv_min(DEFAULT_CAPACITY, maxCapacity);
     }
-    elements = static_cast<int32_t*>(uprv_malloc(sizeof(int32_t) * initialCapacity));
-    if (elements == nullptr) {
+    elements = (int32_t *)uprv_malloc(sizeof(int32_t)*initialCapacity);
+    if (elements == 0) {
         status = U_MEMORY_ALLOCATION_ERROR;
     } else {
         capacity = initialCapacity;
@@ -67,7 +67,7 @@ void UVector32::_init(int32_t initialCapacity, UErrorCode &status) {
 
 UVector32::~UVector32() {
     uprv_free(elements);
-    elements = nullptr;
+    elements = 0;
 }
 
 
@@ -223,12 +223,12 @@ UBool UVector32::expandCapacity(int32_t minimumCapacity, UErrorCode &status) {
     if (maxCapacity > 0 && newCap > maxCapacity) {
         newCap = maxCapacity;
     }
-    if (newCap > static_cast<int32_t>(INT32_MAX / sizeof(int32_t))) { 
+    if (newCap > (int32_t)(INT32_MAX / sizeof(int32_t))) {  
         
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return false;
     }
-    int32_t* newElems = static_cast<int32_t*>(uprv_realloc(elements, sizeof(int32_t) * newCap));
+    int32_t* newElems = (int32_t *)uprv_realloc(elements, sizeof(int32_t)*newCap);
     if (newElems == nullptr) {
         
         status = U_MEMORY_ALLOCATION_ERROR;
@@ -244,7 +244,7 @@ void UVector32::setMaxCapacity(int32_t limit) {
     if (limit < 0) {
         limit = 0;
     }
-    if (limit > static_cast<int32_t>(INT32_MAX / sizeof(int32_t))) { 
+    if (limit > (int32_t)(INT32_MAX / sizeof(int32_t))) {  
         
         return;
     }
@@ -256,7 +256,7 @@ void UVector32::setMaxCapacity(int32_t limit) {
     
     
     
-    int32_t* newElems = static_cast<int32_t*>(uprv_realloc(elements, sizeof(int32_t) * maxCapacity));
+    int32_t* newElems = (int32_t *)uprv_realloc(elements, sizeof(int32_t)*maxCapacity);
     if (newElems == nullptr) {
         
         

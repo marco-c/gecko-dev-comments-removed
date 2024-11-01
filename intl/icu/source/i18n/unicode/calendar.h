@@ -413,7 +413,7 @@ public:
 
 
 
-    static UDate U_EXPORT2 getNow();
+    static UDate U_EXPORT2 getNow(void);
 
     
 
@@ -850,7 +850,7 @@ public:
 
 
 
-    const TimeZone& getTimeZone() const;
+    const TimeZone& getTimeZone(void) const;
 
     
 
@@ -860,7 +860,7 @@ public:
 
 
 
-    TimeZone* orphanTimeZone();
+    TimeZone* orphanTimeZone(void);
 
     
 
@@ -892,7 +892,7 @@ public:
 
 
 
-    UBool isLenient() const;
+    UBool isLenient(void) const;
 
     
 
@@ -925,7 +925,7 @@ public:
 
 
 
-    UCalendarWallTimeOption getRepeatedWallTimeOption() const;
+    UCalendarWallTimeOption getRepeatedWallTimeOption(void) const;
 
     
 
@@ -960,7 +960,7 @@ public:
 
 
 
-    UCalendarWallTimeOption getSkippedWallTimeOption() const;
+    UCalendarWallTimeOption getSkippedWallTimeOption(void) const;
 
     
 
@@ -977,7 +977,7 @@ public:
 
 
 
-    EDaysOfWeek getFirstDayOfWeek() const;
+    EDaysOfWeek getFirstDayOfWeek(void) const;
 #endif  
 
     
@@ -1009,7 +1009,7 @@ public:
 
 
 
-    uint8_t getMinimalDaysInFirstWeek() const;
+    uint8_t getMinimalDaysInFirstWeek(void) const;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -1232,10 +1232,9 @@ public:
 
 
 
-    void clear();
+    void clear(void);
 
     
-
 
 
 
@@ -1260,7 +1259,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
 
     
 
@@ -1348,8 +1347,9 @@ public:
 
 
 
-    virtual UBool isWeekend() const;
+    virtual UBool isWeekend(void) const;
 
+#ifndef U_FORCE_HIDE_DRAFT_API
     
 
 
@@ -1406,6 +1406,8 @@ public:
 
 
     virtual void setTemporalMonthCode(const char* temporalMonth, UErrorCode& status);
+
+#endif  
 
 protected:
 
@@ -1547,13 +1549,6 @@ protected:
 
 
     inline int32_t internalGet(UCalendarDateFields field) const {return fFields[field];}
-
-    
-
-
-
-
-    virtual bool isEra0CountingBackward() const { return false; }
 #endif  
 
     
@@ -1565,7 +1560,7 @@ protected:
 
 
 
-    virtual int32_t internalGetMonth(UErrorCode& status) const;
+    virtual int32_t internalGetMonth() const;
 
     
 
@@ -1578,9 +1573,7 @@ protected:
 
 
 
-
-
-    virtual int32_t internalGetMonth(int32_t defaultValue, UErrorCode& status) const;
+    virtual int32_t internalGetMonth(int32_t defaultValue) const;
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -1673,10 +1666,8 @@ protected:
 
 
 
-
-
-    virtual int64_t handleComputeMonthStart(int32_t eyear, int32_t month,
-                                            UBool useMonth, UErrorCode& status) const  = 0;
+    virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month,
+                                                   UBool useMonth) const  = 0;
 
     
 
@@ -1685,7 +1676,7 @@ protected:
 
 
 
-    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const ;
+    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const ;
 
     
 
@@ -1705,19 +1696,7 @@ protected:
 
 
 
-
-    virtual int32_t handleGetExtendedYear(UErrorCode& status) = 0;
-
-    
-
-
-
-
-
-
-
-
-    virtual int32_t handleComputeJulianDay(UCalendarDateFields bestField, UErrorCode &status);
+    virtual int32_t handleGetExtendedYear() = 0;
 
     
 
@@ -1727,7 +1706,17 @@ protected:
 
 
 
-    virtual int32_t handleGetExtendedYearFromWeekFields(int32_t yearWoy, int32_t woy, UErrorCode& status);
+    virtual int32_t handleComputeJulianDay(UCalendarDateFields bestField);
+
+    
+
+
+
+
+
+
+
+    virtual int32_t handleGetExtendedYearFromWeekFields(int32_t yearWoy, int32_t woy);
 
     
 
@@ -1744,8 +1733,7 @@ protected:
 
 
 
-
-    int32_t computeJulianDay(UErrorCode &status);
+    int32_t computeJulianDay();
 
     
 
@@ -1923,7 +1911,7 @@ protected:
 
 
 
-    UDate internalGetTime() const { return fTime; }
+    UDate        internalGetTime(void) const     { return fTime; }
 
     
 
@@ -2035,9 +2023,7 @@ protected:
 
 
 
-
-
-    virtual int32_t getDefaultMonthInYear(int32_t eyear, UErrorCode& status);
+    virtual int32_t getDefaultMonthInYear(int32_t eyear) ;
 
 
     
@@ -2047,9 +2033,7 @@ protected:
 
 
 
-
-
-    virtual int32_t getDefaultDayInMonth(int32_t eyear, int32_t month, UErrorCode& status);
+    virtual int32_t getDefaultDayInMonth(int32_t eyear, int32_t month);
 
     
     
@@ -2170,7 +2154,7 @@ protected:
 
 
 
-    int32_t getLocalDOW(UErrorCode& status);
+    int32_t getLocalDOW();
 #endif  
 
 private:
@@ -2355,7 +2339,7 @@ private:
 
 
 
-    static uint8_t julianDayToDayOfWeek(int32_t julian);
+    static uint8_t julianDayToDayOfWeek(double julian);
 #endif  
 
  private:
@@ -2375,7 +2359,7 @@ private:
 
 
 
-    static StringEnumeration* getAvailableLocales();
+    static StringEnumeration* getAvailableLocales(void);
 
     
 
@@ -2539,14 +2523,14 @@ Calendar::createInstance(TimeZone* zone, UErrorCode& errorCode)
 inline void
 Calendar::roll(UCalendarDateFields field, UBool up, UErrorCode& status)
 {
-    roll(field, static_cast<int32_t>(up ? +1 : -1), status);
+    roll(field, (int32_t)(up ? +1 : -1), status);
 }
 
 #ifndef U_HIDE_DEPRECATED_API
 inline void
 Calendar::roll(EDateFields field, UBool up, UErrorCode& status)
 {
-    roll(static_cast<UCalendarDateFields>(field), up, status);
+    roll((UCalendarDateFields) field, up, status);
 }
 #endif  
 
@@ -2566,16 +2550,6 @@ Calendar::internalSet(UCalendarDateFields field, int32_t value)
     fIsSet[field]     = true; 
 }
 
-
-
-
-
-
-
-#define DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY \
-    virtual UBool haveDefaultCentury() const override; \
-    virtual UDate defaultCenturyStart() const override; \
-    virtual int32_t defaultCenturyStartYear() const override;
 
 #ifndef U_HIDE_INTERNAL_API
 inline int32_t  Calendar::weekNumber(int32_t dayOfPeriod, int32_t dayOfWeek)

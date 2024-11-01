@@ -233,7 +233,7 @@ updateSrc(UBiDiTransform *pTransform, const char16_t *newSrc, uint32_t newLength
             uprv_free(pTransform->src);
             pTransform->src = nullptr;
         }
-        pTransform->src = static_cast<char16_t*>(uprv_malloc(newSize * sizeof(char16_t)));
+        pTransform->src = (char16_t *)uprv_malloc(newSize * sizeof(char16_t));
         if (pTransform->src == nullptr) {
             *pErrorCode = U_MEMORY_ALLOCATION_ERROR;
             
@@ -499,7 +499,7 @@ ubiditransform_transform(UBiDiTransform *pBiDiTransform,
     
     for (action = pBiDiTransform->pActiveScheme->actions; *action && U_SUCCESS(*pErrorCode); action++) {
         if ((*action)(pBiDiTransform, pErrorCode)) {
-            if (action[1] != nullptr) {
+            if (action + 1) {
                 updateSrc(pBiDiTransform, pBiDiTransform->dest, *pBiDiTransform->pDestLength,
                         *pBiDiTransform->pDestLength, pErrorCode);
             }

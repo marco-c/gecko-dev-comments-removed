@@ -123,66 +123,19 @@ RBBINode::~RBBINode() {
         break;
 
     default:
-        
-        
-        
-        NRDeleteNode(fLeftChild);
+        delete        fLeftChild;
         fLeftChild =   nullptr;
-        
-        NRDeleteNode(fRightChild);
+        delete        fRightChild;
         fRightChild = nullptr;
     }
+
 
     delete fFirstPosSet;
     delete fLastPosSet;
     delete fFollowPos;
+
 }
 
-
-
-
-
-
-void RBBINode::NRDeleteNode(RBBINode *node) {
-    if (node == nullptr) {
-        return;
-    }
-
-    RBBINode *stopNode = node->fParent;
-    RBBINode *nextNode = node;
-    while (nextNode != stopNode && nextNode != nullptr) {
-        RBBINode *currentNode = nextNode;
-
-        if ((currentNode->fLeftChild == nullptr && currentNode->fRightChild == nullptr) ||
-                currentNode->fType == varRef ||      
-                currentNode->fType == setRef) {      
-            
-            nextNode = currentNode->fParent;
-            if (nextNode) {
-                if (nextNode->fLeftChild == currentNode) {
-                    nextNode->fLeftChild = nullptr;
-                } else if (nextNode->fRightChild == currentNode) {
-                    nextNode->fRightChild = nullptr;
-                }
-            }
-            delete currentNode;
-        } else if (currentNode->fLeftChild) {
-            nextNode = currentNode->fLeftChild;
-            if (nextNode->fParent == nullptr) {
-                nextNode->fParent = currentNode;
-                
-            }
-            U_ASSERT(nextNode->fParent == currentNode);
-        } else if (currentNode->fRightChild) {
-            nextNode = currentNode->fRightChild;
-            if (nextNode->fParent == nullptr) {
-                nextNode->fParent = currentNode;
-                
-            }
-            U_ASSERT(nextNode->fParent == currentNode);
-        }
-    }
-}
 
 
 
@@ -239,17 +192,7 @@ RBBINode *RBBINode::cloneTree() {
 
 
 
-constexpr int kRecursiveDepthLimit = 3500;
-RBBINode *RBBINode::flattenVariables(UErrorCode& status, int depth) {
-    if (U_FAILURE(status)) {
-        return this;
-    }
-    
-    
-    if (depth > kRecursiveDepthLimit) {
-        status = U_INPUT_TOO_LONG_ERROR;
-        return this;
-    }
+RBBINode *RBBINode::flattenVariables() {
     if (fType == varRef) {
         RBBINode *retNode  = fLeftChild->cloneTree();
         if (retNode != nullptr) {
@@ -261,11 +204,11 @@ RBBINode *RBBINode::flattenVariables(UErrorCode& status, int depth) {
     }
 
     if (fLeftChild != nullptr) {
-        fLeftChild = fLeftChild->flattenVariables(status, depth+1);
+        fLeftChild = fLeftChild->flattenVariables();
         fLeftChild->fParent  = this;
     }
     if (fRightChild != nullptr) {
-        fRightChild = fRightChild->flattenVariables(status, depth+1);
+        fRightChild = fRightChild->flattenVariables();
         fRightChild->fParent = this;
     }
     return this;

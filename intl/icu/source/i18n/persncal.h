@@ -176,7 +176,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  int32_t yearStart(int32_t year, UErrorCode& status);
+  int32_t yearStart(int32_t year);
 
   
 
@@ -185,7 +185,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  int32_t monthStart(int32_t year, int32_t month, UErrorCode& status) const;
+  int32_t monthStart(int32_t year, int32_t month) const;
     
   
   
@@ -203,7 +203,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const override;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
   
   
 
@@ -219,7 +219,7 @@ class PersianCalendar : public Calendar {
   
 
 
-  virtual int64_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth, UErrorCode& status) const override;
+  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
 
   
   
@@ -228,7 +228,7 @@ class PersianCalendar : public Calendar {
   
 
 
-  virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
+  virtual int32_t handleGetExtendedYear() override;
 
   
 
@@ -296,7 +296,24 @@ class PersianCalendar : public Calendar {
   PersianCalendar(); 
 
  protected:
-  DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
+  
+
+
+
+  virtual UBool haveDefaultCentury() const override;
+
+  
+
+
+
+
+  virtual UDate defaultCenturyStart() const override;
+
+  
+
+
+
+  virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

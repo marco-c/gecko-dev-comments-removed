@@ -9,8 +9,6 @@
 
 #include "unicode/simpleformatter.h"
 #include "unicode/ures.h"
-#include "unicode/plurrule.h"
-#include "unicode/strenum.h"
 #include "ureslocs.h"
 #include "charstr.h"
 #include "uresimp.h"
@@ -20,7 +18,6 @@
 #include <algorithm>
 #include "cstring.h"
 #include "util.h"
-#include "sharedpluralrules.h"
 
 using namespace icu;
 using namespace icu::number;
@@ -92,7 +89,7 @@ const char *getGenderString(UnicodeString uGender, UErrorCode status) {
 }
 
 
-int32_t getIndex(const char* pluralKeyword, UErrorCode& status) {
+static int32_t getIndex(const char* pluralKeyword, UErrorCode& status) {
     
     switch (*pluralKeyword) {
     case 'd':
@@ -122,7 +119,7 @@ int32_t getIndex(const char* pluralKeyword, UErrorCode& status) {
 
 
 
-UnicodeString getWithPlural(
+static UnicodeString getWithPlural(
         const UnicodeString* strings,
         StandardPlural::Form plural,
         UErrorCode& status) {
@@ -522,35 +519,10 @@ void getCurrencyLongNameData(const Locale &locale, const CurrencyUnit &currency,
     
     
     PluralTableSink sink(outArray);
-    
     LocalUResourceBundlePointer unitsBundle(ures_open(U_ICUDATA_CURR, locale.getName(), &status));
     if (U_FAILURE(status)) { return; }
     ures_getAllChildrenWithFallback(unitsBundle.getAlias(), "CurrencyUnitPatterns", sink, status);
     if (U_FAILURE(status)) { return; }
-    
-    
-    
-    
-    
-    
-    
-    UErrorCode localStatus = U_ZERO_ERROR;
-    const SharedPluralRules *pr = PluralRules::createSharedInstance(
-            locale, UPLURAL_TYPE_CARDINAL, localStatus);
-    if (U_SUCCESS(localStatus)) {
-        LocalPointer<StringEnumeration> keywords((*pr)->getKeywords(localStatus), localStatus);
-        if (U_SUCCESS(localStatus)) {
-            const char* keyword;
-            while (((keyword = keywords->next(nullptr, localStatus)) != nullptr) && U_SUCCESS(localStatus)) {
-                int32_t index = StandardPlural::indexOrOtherIndexFromString(keyword);
-                if (index != StandardPlural::Form::OTHER && outArray[index].isBogus()) {
-                    outArray[index].setTo(outArray[StandardPlural::Form::OTHER]);
-                }
-            }
-        }
-        pr->removeRef();
-    }
-
     for (int32_t i = 0; i < StandardPlural::Form::COUNT; i++) {
         UnicodeString &pattern = outArray[i];
         if (pattern.isBogus()) {
@@ -1509,8 +1481,9 @@ LongNameHandler* LongNameHandler::forCurrencyLongNames(const Locale &loc, const 
                                                       const PluralRules *rules,
                                                       const MicroPropsGenerator *parent,
                                                       UErrorCode &status) {
-    LocalPointer<LongNameHandler> result(new LongNameHandler(rules, parent), status);
-    if (U_FAILURE(status)) {
+    auto* result = new LongNameHandler(rules, parent);
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
         return nullptr;
     }
     UnicodeString simpleFormats[ARRAY_LENGTH];
@@ -1518,7 +1491,7 @@ LongNameHandler* LongNameHandler::forCurrencyLongNames(const Locale &loc, const 
     if (U_FAILURE(status)) { return nullptr; }
     result->simpleFormatsToModifiers(simpleFormats, {UFIELD_CATEGORY_NUMBER, UNUM_CURRENCY_FIELD}, status);
     
-    return result.orphan();
+    return result;
 }
 
 void LongNameHandler::simpleFormatsToModifiers(const UnicodeString *simpleFormats, Field field,

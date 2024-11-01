@@ -35,9 +35,10 @@
 U_NAMESPACE_BEGIN
 
 class CharString;
-
-namespace number::impl {
+namespace number {
+namespace impl {
 class DecimalQuantity;
+}
 }
 
 
@@ -273,7 +274,7 @@ public:
 
 
 
-    Type getType() const;
+    Type            getType(void) const;
 
     
 
@@ -289,7 +290,7 @@ public:
 
 
 
-    double getDouble() const { return fValue.fDouble; }
+    double          getDouble(void) const { return fValue.fDouble; }
 
     
 
@@ -311,7 +312,7 @@ public:
 
 
 
-    int32_t getLong() const { return static_cast<int32_t>(fValue.fInt64); }
+    int32_t         getLong(void) const { return (int32_t)fValue.fInt64; }
 
     
 
@@ -337,7 +338,7 @@ public:
 
 
 
-    int64_t getInt64() const { return fValue.fInt64; }
+    int64_t         getInt64(void) const { return fValue.fInt64; }
 
     
 
@@ -402,7 +403,7 @@ public:
 
 
 
-    inline const UnicodeString& getString() const;
+    inline const UnicodeString& getString(void) const;
 
     
 
@@ -420,7 +421,7 @@ public:
 
 
 
-    inline UnicodeString& getString();
+    inline UnicodeString& getString(void);
 
     
 
@@ -679,7 +680,7 @@ private:
 
 
 
-    void dispose();
+    void            dispose(void);
 
     
 
@@ -718,11 +719,11 @@ inline UDate Formattable::getDate(UErrorCode& status) const {
     return fValue.fDate;
 }
 
-inline const UnicodeString& Formattable::getString() const {
+inline const UnicodeString& Formattable::getString(void) const {
     return *fValue.fString;
 }
 
-inline UnicodeString& Formattable::getString() {
+inline UnicodeString& Formattable::getString(void) {
     return *fValue.fString;
 }
 

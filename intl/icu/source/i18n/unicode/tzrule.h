@@ -80,7 +80,7 @@ public:
 
 
 
-    int32_t getRawOffset() const;
+    int32_t getRawOffset(void) const;
 
     
 
@@ -88,7 +88,7 @@ public:
 
 
 
-    int32_t getDSTSavings() const;
+    int32_t getDSTSavings(void) const;
 
     
 
@@ -340,7 +340,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -353,7 +353,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 
@@ -461,7 +461,7 @@ public:
 
 
 
-    const DateTimeRule* getRule() const;
+    const DateTimeRule* getRule(void) const;
 
     
 
@@ -469,7 +469,7 @@ public:
 
 
 
-    int32_t getStartYear() const;
+    int32_t getStartYear(void) const;
 
     
 
@@ -477,7 +477,7 @@ public:
 
 
 
-    int32_t getEndYear() const;
+    int32_t getEndYear(void) const;
 
     
 
@@ -581,7 +581,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -594,7 +594,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 
@@ -679,7 +679,7 @@ public:
 
 
 
-    DateTimeRule::TimeRuleType getTimeType() const;
+    DateTimeRule::TimeRuleType getTimeType(void) const;
 
     
 
@@ -697,7 +697,7 @@ public:
 
 
 
-    int32_t countStartTimes() const;
+    int32_t countStartTimes(void) const;
 
     
 
@@ -792,7 +792,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -805,16 +805,16 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 
 U_NAMESPACE_END
 
-#endif
+#endif 
 
-#endif
+#endif 
 
-#endif
+#endif 
 
 

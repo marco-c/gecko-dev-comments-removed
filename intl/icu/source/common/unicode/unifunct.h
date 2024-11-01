@@ -83,7 +83,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -100,7 +100,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
 
     
 

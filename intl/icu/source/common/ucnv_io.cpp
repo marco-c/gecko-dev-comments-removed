@@ -205,7 +205,7 @@ static UBool U_CALLCONV
 isAcceptable(void * ,
              const char * , const char * ,
              const UDataInfo *pInfo) {
-    return
+    return (UBool)(
         pInfo->size>=20 &&
         pInfo->isBigEndian==U_IS_BIG_ENDIAN &&
         pInfo->charsetFamily==U_CHARSET_FAMILY &&
@@ -213,7 +213,7 @@ isAcceptable(void * ,
         pInfo->dataFormat[1]==0x76 &&
         pInfo->dataFormat[2]==0x41 &&
         pInfo->dataFormat[3]==0x6c &&
-        pInfo->formatVersion[0]==3;
+        pInfo->formatVersion[0]==3);
 }
 
 static UBool U_CALLCONV ucnv_io_cleanup()
@@ -244,8 +244,8 @@ static void U_CALLCONV initAliasData(UErrorCode &errCode) {
         return;
     }
 
-    sectionSizes = static_cast<const uint32_t*>(udata_getMemory(data));
-    table = reinterpret_cast<const uint16_t*>(sectionSizes);
+    sectionSizes = (const uint32_t *)udata_getMemory(data);
+    table = (const uint16_t *)sectionSizes;
 
     tableStart      = sectionSizes[0];
     if (tableStart < minTocLength) {
@@ -289,10 +289,10 @@ static void U_CALLCONV initAliasData(UErrorCode &errCode) {
 
     currOffset += gMainTable.taggedAliasListsSize;
     if (gMainTable.optionTableSize > 0
-        && reinterpret_cast<const UConverterAliasOptions*>(table + currOffset)->stringNormalizationType < UCNV_IO_NORM_TYPE_COUNT)
+        && ((const UConverterAliasOptions *)(table + currOffset))->stringNormalizationType < UCNV_IO_NORM_TYPE_COUNT)
     {
         
-        gMainTable.optionTable = reinterpret_cast<const UConverterAliasOptions*>(table + currOffset);
+        gMainTable.optionTable = (const UConverterAliasOptions *)(table + currOffset);
     }
     else {
         
@@ -321,7 +321,7 @@ isAlias(const char *alias, UErrorCode *pErrorCode) {
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
         return false;
     }
-    return *alias != 0;
+    return (UBool)(*alias!=0);
 }
 
 static uint32_t getTagNumber(const char *tagname) {
@@ -574,7 +574,7 @@ findConverter(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) 
     lastMid = UINT32_MAX;
 
     for (;;) {
-        mid = (start + limit) / 2;
+        mid = (uint32_t)((start + limit) / 2);
         if (lastMid == mid) {   
             break;  
         }
@@ -601,8 +601,8 @@ findConverter(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) 
             
 
             if (containsOption) {
-                UBool containsCnvOptionInfo = static_cast<UBool>(gMainTable.optionTable->containsCnvOptionInfo);
-                *containsOption = static_cast<UBool>((containsCnvOptionInfo
+                UBool containsCnvOptionInfo = (UBool)gMainTable.optionTable->containsCnvOptionInfo;
+                *containsOption = (UBool)((containsCnvOptionInfo
                     && ((gMainTable.untaggedConvArray[mid] & UCNV_CONTAINS_OPTION_BIT) != 0))
                     || !containsCnvOptionInfo);
             }
@@ -939,7 +939,7 @@ static uint16_t
 ucnv_io_countStandards(UErrorCode *pErrorCode) {
     if (haveAliasData(pErrorCode)) {
         
-        return static_cast<uint16_t>(gMainTable.tagListSize - UCNV_NUM_HIDDEN_TAGS);
+        return (uint16_t)(gMainTable.tagListSize - UCNV_NUM_HIDDEN_TAGS);
     }
 
     return 0;
@@ -1130,9 +1130,8 @@ io_compareRows(const void *context, const void *left, const void *right) {
     TempAliasTable *tempTable=(TempAliasTable *)context;
     const char *chars=tempTable->chars;
 
-    return static_cast<int32_t>(uprv_strcmp(
-        tempTable->stripForCompare(strippedLeft, chars + 2 * static_cast<const TempRow*>(left)->strIndex),
-        tempTable->stripForCompare(strippedRight, chars + 2 * static_cast<const TempRow*>(right)->strIndex)));
+    return (int32_t)uprv_strcmp(tempTable->stripForCompare(strippedLeft, chars+2*((const TempRow *)left)->strIndex),
+                                tempTable->stripForCompare(strippedRight, chars+2*((const TempRow *)right)->strIndex));
 }
 
 U_CAPI int32_t U_EXPORT2

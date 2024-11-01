@@ -128,7 +128,7 @@ public:
 
 
 
-        NULLORDER = static_cast<int32_t>(0xffffffff)
+        NULLORDER = (int32_t)0xffffffff
     };
 
     
@@ -171,7 +171,7 @@ public:
 
 
 
-    void reset();
+    void reset(void);
 
     
 
@@ -263,7 +263,7 @@ public:
 
 
 
-    int32_t getOffset() const;
+    int32_t getOffset(void) const;
 
     
 

@@ -3795,6 +3795,7 @@ static void decToString(const decNumber *dn, char *string, Flag eng) {
       } 
     }
   *c='\0';          
+  return;
   } 
 
 
@@ -3876,7 +3877,7 @@ static decNumber * decAddOp(decNumber *res, const decNumber *lhs,
     
 
     
-    diffsign = static_cast<Flag>((lhs->bits ^ rhs->bits ^ negate) & DECNEG);
+    diffsign=(Flag)((lhs->bits^rhs->bits^negate)&DECNEG);
 
     
     if (SPECIALARGS) {                  
@@ -3982,9 +3983,9 @@ static decNumber * decAddOp(decNumber *res, const decNumber *lhs,
         partial+=*rhs->lsu;
         if ((partial<=DECDPUNMAX)       
          && (lhs->digits>=DECDPUN ||    
-             partial < static_cast<Int>(powers[lhs->digits]))) { 
+             partial<(Int)powers[lhs->digits])) { 
           if (res!=lhs) uprv_decNumberCopy(res, lhs);  
-          *res->lsu = static_cast<Unit>(partial); 
+          *res->lsu=(Unit)partial;      
           break;
           }
         
@@ -3993,7 +3994,7 @@ static decNumber * decAddOp(decNumber *res, const decNumber *lhs,
         partial-=*rhs->lsu;
         if (partial>0) { 
           if (res!=lhs) uprv_decNumberCopy(res, lhs);  
-          *res->lsu = static_cast<Unit>(partial);
+          *res->lsu=(Unit)partial;
           
           res->digits=decGetDigits(res->lsu, D2U(res->digits));
           break;
@@ -4022,7 +4023,7 @@ static decNumber * decAddOp(decNumber *res, const decNumber *lhs,
       if (padding<0) {                  
         const decNumber *t;
         padding=-padding;               
-        bits = static_cast<uByte>(rhs->bits ^ negate); 
+        bits=(uByte)(rhs->bits^negate); 
         t=lhs; lhs=rhs; rhs=t;
         swapped=1;
         }
@@ -4073,7 +4074,7 @@ static decNumber * decAddOp(decNumber *res, const decNumber *lhs,
       acc=accbuff;                      
       if (need*sizeof(Unit)>sizeof(accbuff)) {
         
-        allocacc = static_cast<Unit*>(malloc(need * sizeof(Unit)));
+        allocacc=(Unit *)malloc(need*sizeof(Unit));
         if (allocacc==nullptr) {           
           *status|=DEC_Insufficient_storage;
           break;}
@@ -4081,7 +4082,7 @@ static decNumber * decAddOp(decNumber *res, const decNumber *lhs,
         }
       }
 
-    res->bits = static_cast<uByte>(bits & DECNEG); 
+    res->bits=(uByte)(bits&DECNEG);     
     res->exponent=lhs->exponent;        
 
     #if DECTRACE
@@ -4438,7 +4439,7 @@ static decNumber * decDivideOp(decNumber *res,
     acclength=D2U(reqdigits+DECDPUN);   
     if (acclength*sizeof(Unit)>sizeof(accbuff)) {
       
-      allocacc = static_cast<Unit*>(malloc(acclength * sizeof(Unit)));
+      allocacc=(Unit *)malloc(acclength*sizeof(Unit));
       if (allocacc==nullptr) {             
         *status|=DEC_Insufficient_storage;
         break;}
@@ -4463,7 +4464,7 @@ static decNumber * decDivideOp(decNumber *res,
     if (!(op&DIVIDE)) var1units++;
     if ((var1units+1)*sizeof(Unit)>sizeof(varbuff)) {
       
-      varalloc = static_cast<Unit*>(malloc((var1units + 1) * sizeof(Unit)));
+      varalloc=(Unit *)malloc((var1units+1)*sizeof(Unit));
       if (varalloc==nullptr) {             
         *status|=DEC_Insufficient_storage;
         break;}
@@ -4491,7 +4492,7 @@ static decNumber * decDivideOp(decNumber *res,
     
     msu2plus=*msu2;                     
     if (var2units>1) msu2plus++;        
-    msu2pair = static_cast<eInt>(*msu2) * (DECDPUNMAX + 1); 
+    msu2pair=(eInt)*msu2*(DECDPUNMAX+1);
     if (var2units>1) {                  
       msu2pair+=*(msu2-1);              
       if (var2units>2) msu2pair++;      
@@ -4573,16 +4574,16 @@ static decNumber * decDivideOp(decNumber *res,
           
           
           
-            mult = static_cast<Int>((static_cast<eInt>(*msu1) * (DECDPUNMAX + 1) + *(msu1 - 1)) / msu2pair);
+          mult=(Int)(((eInt)*msu1*(DECDPUNMAX+1)+*(msu1-1))/msu2pair);
           } 
          else { 
           
           
-          mult = static_cast<Int>((static_cast<eInt>(*msu1) * (DECDPUNMAX + 1) + *(msu1 - 1)) / msu2plus);
+          mult=(Int)(((eInt)*msu1*(DECDPUNMAX+1)+*(msu1-1))/msu2plus);
           }
         if (mult==0) mult=1;                 
         
-        thisunit = static_cast<Unit>(thisunit + mult); 
+        thisunit=(Unit)(thisunit+mult);      
         
         
         shift=var2ulen-var2units;
@@ -4706,7 +4707,7 @@ static decNumber * decDivideOp(decNumber *res,
           if (set->extended)
           #endif
           res->exponent=exp;                 
-          res->bits = static_cast<uByte>(bits & DECNEG); 
+          res->bits=(uByte)(bits&DECNEG);          
           decFinish(res, set, &residue, status);   
           break;
           }
@@ -4797,7 +4798,7 @@ static decNumber * decDivideOp(decNumber *res,
             
             accunits=-decUnitAddSub(accnext, accunits,
                                     rhs->lsu, D2U(rhs->digits),
-                                    expunits, accnext, -static_cast<Int>(powers[exprem]));
+                                    expunits, accnext, -(Int)powers[exprem]);
             accdigits=decGetDigits(accnext, accunits); 
             accunits=D2U(accdigits);    
             
@@ -4809,7 +4810,7 @@ static decNumber * decDivideOp(decNumber *res,
 
     
     res->exponent=exponent;
-    res->bits = static_cast<uByte>(bits & DECNEG); 
+    res->bits=(uByte)(bits&DECNEG);          
 
     
     decSetCoeff(res, set, accnext, accdigits, &residue, status);
@@ -4934,7 +4935,7 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
   #endif
 
   
-  bits = static_cast<uByte>((lhs->bits ^ rhs->bits) & DECNEG);
+  bits=(uByte)((lhs->bits^rhs->bits)&DECNEG);
 
   
   if (SPECIALARGS) {               
@@ -4990,12 +4991,12 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
 
       
       needbytes=ilhs*sizeof(uInt);
-      if (needbytes > static_cast<Int>(sizeof(zlhibuff))) {
-        alloclhi = static_cast<uInt*>(malloc(needbytes));
+      if (needbytes>(Int)sizeof(zlhibuff)) {
+        alloclhi=(uInt *)malloc(needbytes);
         zlhi=alloclhi;}
       needbytes=irhs*sizeof(uInt);
-      if (needbytes > static_cast<Int>(sizeof(zrhibuff))) {
-        allocrhi = static_cast<uInt*>(malloc(needbytes));
+      if (needbytes>(Int)sizeof(zrhibuff)) {
+        allocrhi=(uInt *)malloc(needbytes);
         zrhi=allocrhi;}
 
       
@@ -5014,14 +5015,14 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
       zoff=(iacc+7)/8;        
       needbytes+=zoff*8;
       #endif
-      if (needbytes > static_cast<Int>(sizeof(zaccbuff))) {
-        allocacc = static_cast<uLong*>(malloc(needbytes));
-        zacc = static_cast<uLong*>(allocacc);}
+      if (needbytes>(Int)sizeof(zaccbuff)) {
+        allocacc=(uLong *)malloc(needbytes);
+        zacc=(uLong *)allocacc;}
       if (zlhi==nullptr||zrhi==nullptr||zacc==nullptr) {
         *status|=DEC_Insufficient_storage;
         break;}
 
-      acc = reinterpret_cast<Unit*>(zacc); 
+      acc=(Unit *)zacc;       
       #if DECDPUN==1
       zacc+=zoff;             
       #endif
@@ -5062,7 +5063,7 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
       for (rip=zrhi; rip<=rmsi; rip++) {     
         lp=zacc+(rip-zrhi);                  
         for (lip=zlhi; lip<=lmsi; lip++, lp++) { 
-          *lp += static_cast<uLong>(*lip) * (*rip); 
+          *lp+=(uLong)(*lip)*(*rip);         
           } 
         lazy--;
         if (lazy>0 && rip!=rmsi) continue;
@@ -5075,15 +5076,15 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
           
           
           
-          if (lcarry<FASTBASE) carry = static_cast<uInt>(lcarry); 
+          if (lcarry<FASTBASE) carry=(uInt)lcarry;  
            else { 
-            uInt carry2 = static_cast<uInt>(lcarry / FASTBASE);        
+            uInt carry2=(uInt)(lcarry/FASTBASE);    
             *(lp+2)+=carry2;                        
-            *lp -= (static_cast<uLong>(FASTBASE) * FASTBASE * carry2); 
-            carry = static_cast<uInt>(lcarry - (static_cast<uLong>(FASTBASE) * carry2)); 
+            *lp-=((uLong)FASTBASE*FASTBASE*carry2); 
+            carry=(uInt)(lcarry-((uLong)FASTBASE*carry2)); 
             }
           *(lp+1)+=carry;                    
-          *lp -= (static_cast<uLong>(FASTBASE) * carry); 
+          *lp-=((uLong)FASTBASE*carry);      
           } 
         } 
 
@@ -5094,13 +5095,13 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
       
       
       for (lp=zacc, up=acc; lp<zacc+iacc; lp++) {
-        uInt item = static_cast<uInt>(*lp); 
+        uInt item=(uInt)*lp;                 
         for (p=0; p<FASTDIGS-DECDPUN; p+=DECDPUN, up++) {
           uInt part=item/(DECDPUNMAX+1);
-          *up = static_cast<Unit>(item - (part * (DECDPUNMAX + 1)));
+          *up=(Unit)(item-(part*(DECDPUNMAX+1)));
           item=part;
           } 
-        *up = static_cast<Unit>(item); up++; 
+        *up=(Unit)item; up++;                
         } 
       accunits = static_cast<int32_t>(up-acc);                       
       }
@@ -5110,10 +5111,10 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
 
       acc=accbuff;                 /* -> assume buffer for accumulator  */
       needbytes=(D2U(lhs->digits)+D2U(rhs->digits))*sizeof(Unit);
-      if (needbytes > static_cast<Int>(sizeof(accbuff))) {
-        allocacc = static_cast<Unit*>(malloc(needbytes));
+      if (needbytes>(Int)sizeof(accbuff)) {
+        allocacc=(Unit *)malloc(needbytes);
         if (allocacc==nullptr) {*status|=DEC_Insufficient_storage; break;}
-        acc = static_cast<Unit*>(allocacc); 
+        acc=(Unit *)allocacc;                
         }
 
       
@@ -5398,7 +5399,7 @@ decNumber * decExpOp(decNumber *res, const decNumber *rhs,
         decNumber *newrhs=bufr;         
         needbytes=sizeof(decNumber)+(D2U(rhs->digits)-1)*sizeof(Unit);
         if (needbytes>sizeof(bufr)) {   
-          allocrhs = static_cast<decNumber*>(malloc(needbytes));
+          allocrhs=(decNumber *)malloc(needbytes);
           if (allocrhs==nullptr) {         
             *status|=DEC_Insufficient_storage;
             break;}
@@ -5430,7 +5431,7 @@ decNumber * decExpOp(decNumber *res, const decNumber *rhs,
       
       needbytes=sizeof(decNumber)+(D2U(p*2)-1)*sizeof(Unit);
       if (needbytes>sizeof(bufa)) {     
-        allocbufa = static_cast<decNumber*>(malloc(needbytes));
+        allocbufa=(decNumber *)malloc(needbytes);
         if (allocbufa==nullptr) {          
           *status|=DEC_Insufficient_storage;
           break;}
@@ -5442,7 +5443,7 @@ decNumber * decExpOp(decNumber *res, const decNumber *rhs,
       
       needbytes=sizeof(decNumber)+(D2U(p+2)-1)*sizeof(Unit);
       if (needbytes>sizeof(buft)) {     
-        allocbuft = static_cast<decNumber*>(malloc(needbytes));
+        allocbuft=(decNumber *)malloc(needbytes);
         if (allocbuft==nullptr) {          
           *status|=DEC_Insufficient_storage;
           break;}
@@ -5711,7 +5712,7 @@ decNumber * decLnOp(decNumber *res, const decNumber *rhs,
     
     needbytes=sizeof(decNumber)+(D2U(MAXI(p,16))-1)*sizeof(Unit);
     if (needbytes>sizeof(bufa)) {     
-      allocbufa = static_cast<decNumber*>(malloc(needbytes));
+      allocbufa=(decNumber *)malloc(needbytes);
       if (allocbufa==nullptr) {          
         *status|=DEC_Insufficient_storage;
         break;}
@@ -5720,7 +5721,7 @@ decNumber * decLnOp(decNumber *res, const decNumber *rhs,
     pp=p+rhs->digits;
     needbytes=sizeof(decNumber)+(D2U(MAXI(pp,16))-1)*sizeof(Unit);
     if (needbytes>sizeof(bufb)) {     
-      allocbufb = static_cast<decNumber*>(malloc(needbytes));
+      allocbufb=(decNumber *)malloc(needbytes);
       if (allocbufb==nullptr) {          
         *status|=DEC_Insufficient_storage;
         break;}
@@ -6299,8 +6300,8 @@ static Int decUnitCompare(const Unit *a, Int alength,
 
   
   
-  if (alength > blength + static_cast<Int>(D2U(exp))) return 1;
-  if (alength + 1 < blength + static_cast<Int>(D2U(exp))) return -1;
+  if (alength>blength+(Int)D2U(exp)) return 1;
+  if (alength+1<blength+(Int)D2U(exp)) return -1;
 
   
   
@@ -6310,7 +6311,7 @@ static Int decUnitCompare(const Unit *a, Int alength,
   need+=2;
   acc=accbuff;                          
   if (need*sizeof(Unit)>sizeof(accbuff)) {
-    allocacc = static_cast<Unit*>(malloc(need * sizeof(Unit)));
+    allocacc=(Unit *)malloc(need*sizeof(Unit));
     if (allocacc==nullptr) return BADINT;  
     acc=allocacc;
     }
@@ -6319,7 +6320,7 @@ static Int decUnitCompare(const Unit *a, Int alength,
   exprem=exp%DECDPUN;
   
   accunits=decUnitAddSub(a, alength, b, blength, expunits, acc,
-                         -static_cast<Int>(powers[exprem]));
+                         -(Int)powers[exprem]);
   
   if (accunits<0) result=-1;            
    else {                               
@@ -6424,11 +6425,11 @@ static Int decUnitAddSub(const Unit *a, Int alength,
   for (; c<minC; c++) {
     carry+=*a;
     a++;
-    carry += (static_cast<eInt>(*b)) * m; 
+    carry+=((eInt)*b)*m;                
     b++;                                
     
-    if (static_cast<ueInt>(carry) <= DECDPUNMAX) { 
-      *c = static_cast<Unit>(carry);
+    if ((ueInt)carry<=DECDPUNMAX) {     
+      *c=(Unit)carry;
       carry=0;
       continue;
       }
@@ -6472,14 +6473,14 @@ static Int decUnitAddSub(const Unit *a, Int alength,
       
       if (carry>=0) {
         est=QUOT10(carry, DECDPUN);
-        *c = static_cast<Unit>(carry - est * (DECDPUNMAX + 1)); 
+        *c=(Unit)(carry-est*(DECDPUNMAX+1)); 
         carry=est;                           
         continue;
         }
       
-      carry = carry + static_cast<eInt>(DECDPUNMAX + 1) * (DECDPUNMAX + 1); 
+      carry=carry+(eInt)(DECDPUNMAX+1)*(DECDPUNMAX+1); 
       est=QUOT10(carry, DECDPUN);
-      *c = static_cast<Unit>(carry - est * (DECDPUNMAX + 1));
+      *c=(Unit)(carry-est*(DECDPUNMAX+1));
       carry=est-(DECDPUNMAX+1);              
     #else
       
@@ -6508,13 +6509,13 @@ static Int decUnitAddSub(const Unit *a, Int alength,
       a++;
       }
      else {                             
-      carry += static_cast<eInt>(*b) * m;
+      carry+=((eInt)*b)*m;
       b++;
       }
     
     
-    if (static_cast<ueInt>(carry) <= DECDPUNMAX) { 
-      *c = static_cast<Unit>(carry);
+    if ((ueInt)carry<=DECDPUNMAX) {     
+      *c=(Unit)carry;
       carry=0;
       continue;
       }
@@ -6558,14 +6559,14 @@ static Int decUnitAddSub(const Unit *a, Int alength,
     #elif DECDPUN<=2
       if (carry>=0) {
         est=QUOT10(carry, DECDPUN);
-        *c = static_cast<Unit>(carry - est * (DECDPUNMAX + 1)); 
+        *c=(Unit)(carry-est*(DECDPUNMAX+1)); 
         carry=est;                           
         continue;
         }
       
-      carry = carry + static_cast<eInt>(DECDPUNMAX + 1) * (DECDPUNMAX + 1); 
+      carry=carry+(eInt)(DECDPUNMAX+1)*(DECDPUNMAX+1); 
       est=QUOT10(carry, DECDPUN);
-      *c = static_cast<Unit>(carry - est * (DECDPUNMAX + 1));
+      *c=(Unit)(carry-est*(DECDPUNMAX+1));
       carry=est-(DECDPUNMAX+1);              
     #else
       if ((ueInt)carry<(DECDPUNMAX+1)*2){    
@@ -6590,7 +6591,7 @@ static Int decUnitAddSub(const Unit *a, Int alength,
   
   if (carry==0) return static_cast<int32_t>(c-clsu);     
   if (carry>0) {                   
-    *c = static_cast<Unit>(carry); 
+    *c=(Unit)carry;                
     c++;                           
     return static_cast<int32_t>(c-clsu);
     }
@@ -6599,7 +6600,7 @@ static Int decUnitAddSub(const Unit *a, Int alength,
   for (c=clsu; c<maxC; c++) {
     add=DECDPUNMAX+add-*c;
     if (add<=DECDPUNMAX) {
-      *c = static_cast<Unit>(add);
+      *c=(Unit)add;
       add=0;
       }
      else {
@@ -6612,7 +6613,7 @@ static Int decUnitAddSub(const Unit *a, Int alength,
     printf("UAS borrow: add %ld, carry %ld\n", add, carry);
   #endif
   if ((add-carry-1)!=0) {
-    *c = static_cast<Unit>(add - carry - 1);
+    *c=(Unit)(add-carry-1);
     c++;                      
     }
   return static_cast<int32_t>(clsu-c);              
@@ -6711,6 +6712,7 @@ static void decReverse(Unit *ulo, Unit *uhi) {
     *ulo=*uhi;
     *uhi=temp;
     }
+  return;
   } 
 
 
@@ -6733,7 +6735,7 @@ static Int decShiftToMost(Unit *uar, Int digits, Int shift) {
 
   if (shift==0) return digits;     
   if ((digits+shift)<=DECDPUN) {   
-    *uar = static_cast<Unit>(*uar * powers[shift]);
+    *uar=(Unit)(*uar*powers[shift]);
     return digits+shift;
     }
 
@@ -6756,14 +6758,14 @@ static Int decShiftToMost(Unit *uar, Int digits, Int shift) {
         uInt rem=*source%powers[cut];
         next+=*source/powers[cut];
       #endif
-      if (target <= first) *target = static_cast<Unit>(next); 
+      if (target<=first) *target=(Unit)next;   
       next=rem*powers[DECDPUN-cut];            
       }
     } 
 
   
   for (; target>=uar; target--) {
-    *target = static_cast<Unit>(next);
+    *target=(Unit)next;
     next=0;
     }
   return digits+shift;
@@ -6810,7 +6812,7 @@ static Int decShiftToLeast(Unit *uar, Int units, Int shift) {
     quot=*up/powers[cut];
   #endif
   for (; ; target++) {
-    *target = static_cast<Unit>(quot);
+    *target=(Unit)quot;
     count-=(DECDPUN-cut);
     if (count<=0) break;
     up++;
@@ -6822,7 +6824,7 @@ static Int decShiftToLeast(Unit *uar, Int units, Int shift) {
       rem=quot%powers[cut];
       quot=quot/powers[cut];
     #endif
-    *target = static_cast<Unit>(*target + rem * powers[DECDPUN - cut]);
+    *target=(Unit)(*target+rem*powers[DECDPUN-cut]);
     count-=cut;
     if (count<=0) break;
     }
@@ -6993,7 +6995,7 @@ static void decSetCoeff(decNumber *dn, decContext *set, const Unit *lsu,
   
   cut=discard-(count-DECDPUN)-1;
   if (cut==DECDPUN-1) {       
-    Unit half = static_cast<Unit>(powers[DECDPUN]) >> 1;
+    Unit half=(Unit)powers[DECDPUN]>>1;
     
     if (*up>=half) {
       if (*up>half) *residue=7;
@@ -7057,7 +7059,7 @@ static void decSetCoeff(decNumber *dn, decContext *set, const Unit *lsu,
       dn->digits=count;            
       
       for (target=dn->lsu; ; target++) {
-        *target = static_cast<Unit>(quot);
+        *target=(Unit)quot;
         count-=(DECDPUN-cut);
         if (count<=0) break;
         up++;
@@ -7069,7 +7071,7 @@ static void decSetCoeff(decNumber *dn, decContext *set, const Unit *lsu,
           rem=quot%powers[cut];
           quot=quot/powers[cut];
         #endif
-        *target = static_cast<Unit>(*target + rem * powers[DECDPUN - cut]);
+        *target=(Unit)(*target+rem*powers[DECDPUN-cut]);
         count-=cut;
         if (count<=0) break;
         } 
@@ -7077,6 +7079,7 @@ static void decSetCoeff(decNumber *dn, decContext *set, const Unit *lsu,
     } 
 
   if (*residue!=0) *status|=DEC_Inexact; 
+  return;
   } 
 
 
@@ -7205,7 +7208,7 @@ static void decApplyRound(decNumber *dn, decContext *set, Int residue,
         
         if (*up!=powers[count]-1) break;     
         
-        *up = static_cast<Unit>(powers[count - 1]); 
+        *up=(Unit)powers[count-1];           
         for (up=up-1; up>=dn->lsu; up--) *up=0; 
         dn->exponent++;                      
         
@@ -7230,9 +7233,9 @@ static void decApplyRound(decNumber *dn, decContext *set, Int residue,
         if (*up!=powers[count-1]) break;     
         
         sup=up;                              
-        *up = static_cast<Unit>(powers[count]) - 1; 
+        *up=(Unit)powers[count]-1;           
         
-        for (up=up-1; up>=dn->lsu; up--) *up = static_cast<Unit>(powers[DECDPUN]) - 1;
+        for (up=up-1; up>=dn->lsu; up--) *up=(Unit)powers[DECDPUN]-1;
         dn->exponent--;                      
 
         
@@ -7243,7 +7246,7 @@ static void decApplyRound(decNumber *dn, decContext *set, Int residue,
         if (dn->exponent+1==set->emin-set->digits+1) {
           if (count==1 && dn->digits==1) *sup=0;  
            else {
-            *sup = static_cast<Unit>(powers[count - 1]) - 1; 
+            *sup=(Unit)powers[count-1]-1;    
             dn->digits--;
             }
           dn->exponent++;
@@ -7375,6 +7378,7 @@ static void decFinalize(decNumber *dn, decContext *set, Int *residue,
     }
   dn->exponent-=shift;   
   *status|=DEC_Clamped;  
+  return;
   } 
 
 
@@ -7442,7 +7446,7 @@ static void decSetMaxValue(decNumber *dn, decContext *set) {
   for (up=dn->lsu; ; up++) {
     if (count>DECDPUN) *up=DECDPUNMAX;  
      else {                             
-      *up = static_cast<Unit>(powers[count] - 1);
+      *up=(Unit)(powers[count]-1);
       break;
       }
     count-=DECDPUN;                
@@ -7642,7 +7646,7 @@ static Int decGetInt(const decNumber *dn) {
       got+=DECDPUN;
       }
     if (ilength==10) {                  
-      if (theInt / static_cast<Int>(powers[got - DECDPUN]) != static_cast<Int>(*(up - 1))) ilength = 11;
+      if (theInt/(Int)powers[got-DECDPUN]!=(Int)*(up-1)) ilength=11;
          
        else if (neg && theInt>1999999997) ilength=11;
        else if (!neg && theInt>999999999) ilength=11;
@@ -7791,6 +7795,7 @@ static void decStatus(decNumber *dn, uInt status, decContext *set) {
       }
     }
   uprv_decContextSetStatus(set, status);     
+  return;
   } 
 
 

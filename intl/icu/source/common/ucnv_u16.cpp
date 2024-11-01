@@ -236,10 +236,10 @@ _UTF16BEFromUnicodeWithOffsets(UConverterFromUnicodeArgs *pArgs,
         
         ucnv_fromUWriteBytes(cnv,
                              overflow, length,
-                             &target, pArgs->targetLimit,
+                             (char **)&target, pArgs->targetLimit,
                              &offsets, sourceIndex,
                              pErrorCode);
-        targetCapacity = static_cast<uint32_t>(pArgs->targetLimit - target);
+        targetCapacity=(uint32_t)(pArgs->targetLimit-(char *)target);
     }
 
     if(U_SUCCESS(*pErrorCode) && source<pArgs->sourceLimit && targetCapacity==0) {
@@ -248,7 +248,7 @@ _UTF16BEFromUnicodeWithOffsets(UConverterFromUnicodeArgs *pArgs,
 
     
     pArgs->source=source;
-    pArgs->target = target;
+    pArgs->target=(char *)target;
     pArgs->offsets=offsets;
 }
 
@@ -840,7 +840,7 @@ _UTF16LEFromUnicodeWithOffsets(UConverterFromUnicodeArgs *pArgs,
                              &target, pArgs->targetLimit,
                              &offsets, sourceIndex,
                              pErrorCode);
-        targetCapacity = static_cast<uint32_t>(pArgs->targetLimit - target);
+        targetCapacity=(uint32_t)(pArgs->targetLimit-(char *)target);
     }
 
     if(U_SUCCESS(*pErrorCode) && source<pArgs->sourceLimit && targetCapacity==0) {

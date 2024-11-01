@@ -462,10 +462,9 @@ class DisplayNames final {
     
     
     
-    
-    char16_t currency[] = {AsciiAlphaToUpperCase(aCurrency[0]),
-                           AsciiAlphaToUpperCase(aCurrency[1]),
-                           AsciiAlphaToUpperCase(aCurrency[2]), u'\0'};
+    char16_t currency[] = {static_cast<char16_t>(aCurrency[0]),
+                           static_cast<char16_t>(aCurrency[1]),
+                           static_cast<char16_t>(aCurrency[2]), u'\0'};
 
     UCurrNameStyle style;
     switch (mOptions.style) {
@@ -489,15 +488,19 @@ class DisplayNames final {
       return Err(DisplayNamesError::InternalError);
     }
 
-    
-    
-    
-    
-    
-    if (aFallback == DisplayNames::Fallback::None &&
-        status == U_USING_DEFAULT_WARNING && length == 3 &&
-        std::u16string_view{name, 3} == std::u16string_view{currency, 3}) {
-      if (aBuffer.length() != 0) {
+    if (status == U_USING_DEFAULT_WARNING) {
+      
+      if (aFallback == DisplayNames::Fallback::Code) {
+        
+        
+        if (!aBuffer.reserve(3)) {
+          return Err(DisplayNamesError::OutOfMemory);
+        }
+        aBuffer.data()[0] = AsciiAlphaToUpperCase(currency[0]);
+        aBuffer.data()[1] = AsciiAlphaToUpperCase(currency[1]);
+        aBuffer.data()[2] = AsciiAlphaToUpperCase(currency[2]);
+        aBuffer.written(3);
+      } else if (aBuffer.length() != 0) {
         
         aBuffer.written(0);
       }

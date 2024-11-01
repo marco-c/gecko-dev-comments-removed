@@ -94,7 +94,7 @@ CollationFastLatin::getOptions(const CollationData *data, const CollationSetting
         } else {
             p = 0;
         }
-        primaries[c] = static_cast<uint16_t>(p);
+        primaries[c] = (uint16_t)p;
     }
     if(digitsAreReordered || (settings.options & CollationSettings::NUMERIC) != 0) {
         
@@ -102,7 +102,7 @@ CollationFastLatin::getOptions(const CollationData *data, const CollationSetting
     }
 
     
-    return (static_cast<int32_t>(miniVarTop) << 16) | settings.options;
+    return ((int32_t)miniVarTop << 16) | settings.options;
 }
 
 int32_t
@@ -116,7 +116,7 @@ CollationFastLatin::compareUTF16(const uint16_t *table, const uint16_t *primarie
 
     U_ASSERT((table[0] >> 8) == VERSION);
     table += (table[0] & 0xff);  
-    uint32_t variableTop = static_cast<uint32_t>(options) >> 16; 
+    uint32_t variableTop = (uint32_t)options >> 16;  
     options &= 0xffff;  
 
     
@@ -452,7 +452,7 @@ CollationFastLatin::compareUTF8(const uint16_t *table, const uint16_t *primaries
 
     U_ASSERT((table[0] >> 8) == VERSION);
     table += (table[0] & 0xff);  
-    uint32_t variableTop = static_cast<uint32_t>(options) >> 16; 
+    uint32_t variableTop = (uint32_t)options >> 16;  
     options &= 0xffff;  
 
     
@@ -859,7 +859,7 @@ CollationFastLatin::nextPair(const uint16_t *table, UChar32 c, uint32_t ce,
         return ce;  
     } else if(ce >= EXPANSION) {
         int32_t index = NUM_FAST_CHARS + (ce & INDEX_MASK);
-        return (static_cast<uint32_t>(table[index + 1]) << 16) | table[index];
+        return ((uint32_t)table[index + 1] << 16) | table[index];
     } else  {
         if(c == 0 && sLength < 0) {
             sLength = sIndex - 1;
@@ -938,7 +938,7 @@ CollationFastLatin::nextPair(const uint16_t *table, UChar32 c, uint32_t ce,
         if(length == 2) {
             return ce;
         } else {
-            return (static_cast<uint32_t>(table[index + 2]) << 16) | ce;
+            return ((uint32_t)table[index + 2] << 16) | ce;
         }
     }
 }

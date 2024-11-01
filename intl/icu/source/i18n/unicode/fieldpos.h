@@ -192,14 +192,14 @@ public:
 
 
 
-    int32_t getField() const { return fField; }
+    int32_t getField(void) const { return fField; }
 
     
 
 
 
 
-    int32_t getBeginIndex() const { return fBeginIndex; }
+    int32_t getBeginIndex(void) const { return fBeginIndex; }
 
     
 
@@ -208,8 +208,8 @@ public:
 
 
 
-    int32_t getEndIndex() const { return fEndIndex; }
-
+    int32_t getEndIndex(void) const { return fEndIndex; }
+ 
     
 
 

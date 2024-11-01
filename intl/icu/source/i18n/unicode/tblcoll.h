@@ -449,7 +449,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -462,7 +462,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -843,14 +843,14 @@ private:
     const CollationSettings &getDefaultSettings() const;
 
     void setAttributeDefault(int32_t attribute) {
-        explicitlySetAttributes &= ~(static_cast<uint32_t>(1) << attribute);
+        explicitlySetAttributes &= ~((uint32_t)1 << attribute);
     }
     void setAttributeExplicitly(int32_t attribute) {
-        explicitlySetAttributes |= static_cast<uint32_t>(1) << attribute;
+        explicitlySetAttributes |= (uint32_t)1 << attribute;
     }
     UBool attributeHasBeenSetExplicitly(int32_t attribute) const {
         
-        return (explicitlySetAttributes & (static_cast<uint32_t>(1) << attribute)) != 0;
+        return (UBool)((explicitlySetAttributes & ((uint32_t)1 << attribute)) != 0);
     }
 
     

@@ -217,7 +217,7 @@ public:
 
 
 
-    virtual int32_t getRawOffset() const override;
+    virtual int32_t getRawOffset(void) const override;
 
     
 
@@ -225,7 +225,7 @@ public:
 
 
 
-    virtual UBool useDaylightTime() const override;
+    virtual UBool useDaylightTime(void) const override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -313,8 +313,8 @@ public:
         int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const override;
 
 private:
-    void deleteRules();
-    void deleteTransitions();
+    void deleteRules(void);
+    void deleteTransitions(void);
     UVector* copyRules(UVector* source);
     TimeZoneRule* findRuleInFinal(UDate date, UBool local,
         int32_t NonExistingTimeOpt, int32_t DuplicatedTimeOpt) const;
@@ -346,7 +346,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -359,7 +359,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 U_NAMESPACE_END

@@ -27,7 +27,10 @@
 
 U_NAMESPACE_BEGIN
 
-class CalendarCache;
+
+
+
+
 
 
 
@@ -153,6 +156,23 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
   virtual void setTemporalMonthCode(const char* code, UErrorCode& status) override;
 
+ protected:
+ 
+   
+
+
+
+
+
+
+
+
+
+
+
+
+  ChineseCalendar(const Locale& aLocale, int32_t epochYear, const TimeZone* zoneAstroCalc, UErrorCode &success);
+
  public:
   
 
@@ -181,6 +201,9 @@ class U_I18N_API ChineseCalendar : public Calendar {
   
   
   UBool hasLeapMonthBetweenWinterSolstices;
+  int32_t fEpochYear;   
+  const TimeZone* fZoneAstroCalc;   
+                                    
 
   
   
@@ -188,9 +211,9 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
  protected:
   virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const override;
-  virtual int64_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth, UErrorCode& status) const override;
-  virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
+  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
+  virtual int32_t handleGetExtendedYear() override;
   virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
   virtual const UFieldResolutionTable* getFieldResolutionTable() const override;
 
@@ -222,7 +245,19 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
   static const UFieldResolutionTable CHINESE_DATE_PRECEDENCE[];
 
-  virtual void offsetMonth(int32_t newMoon, int32_t dom, int32_t delta, UErrorCode& status);
+  double daysToMillis(double days) const;
+  double millisToDays(double millis) const;
+  virtual int32_t winterSolstice(int32_t gyear) const;
+  virtual int32_t newMoonNear(double days, UBool after) const;
+  virtual int32_t synodicMonthsBetween(int32_t day1, int32_t day2) const;
+  virtual int32_t majorSolarTerm(int32_t days) const;
+  virtual UBool hasNoMajorSolarTerm(int32_t newMoon) const;
+  virtual UBool isLeapMonthBetween(int32_t newMoon1, int32_t newMoon2) const;
+  virtual void computeChineseFields(int32_t days, int32_t gyear,
+                 int32_t gmonth, UBool setAllFields);
+  virtual int32_t newYear(int32_t gyear) const;
+  virtual void offsetMonth(int32_t newMoon, int32_t dom, int32_t delta);
+  const TimeZone* getChineseCalZoneAstroCalc() const;
 
   
  public: 
@@ -254,29 +289,46 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
   virtual const char * getType() const override;
 
-  struct Setting {
-      int32_t epochYear;
-      const TimeZone* zoneAstroCalc;
-      CalendarCache** winterSolsticeCache;
-      CalendarCache** newYearCache;
-  };
  protected:
-  virtual Setting getSetting(UErrorCode& status) const;
-  virtual int32_t internalGetMonth(int32_t defaultValue, UErrorCode& status) const override;
+  virtual int32_t internalGetMonth(int32_t defaultValue) const override;
 
-  virtual int32_t internalGetMonth(UErrorCode& status) const override;
+  virtual int32_t internalGetMonth() const override;
 
  protected:
+  
 
-  DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
+
+
+  virtual UBool haveDefaultCentury() const override;
+
+  
+
+
+
+
+  virtual UDate defaultCenturyStart() const override;
+
+  
+
+
+
+  virtual int32_t defaultCenturyStartYear() const override;
 
  private: 
 
-  ChineseCalendar() = delete; 
+  
 
-#ifdef __CalendarTest__
-  friend void CalendarTest::TestChineseCalendarComputeMonthStart();
-#endif
+
+
+  UDate         internalGetDefaultCenturyStart() const;
+
+  
+
+
+
+  int32_t          internalGetDefaultCenturyStartYear() const;
+
+  ChineseCalendar() = delete; 
 };
 
 U_NAMESPACE_END

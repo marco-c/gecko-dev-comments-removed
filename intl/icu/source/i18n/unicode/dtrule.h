@@ -160,7 +160,7 @@ public:
 
 
 
-    DateRuleType getDateRuleType() const;
+    DateRuleType getDateRuleType(void) const;
 
     
 
@@ -168,22 +168,14 @@ public:
 
 
 
-    TimeRuleType getTimeRuleType() const;
+    TimeRuleType getTimeRuleType(void) const;
 
     
 
 
 
 
-    int32_t getRuleMonth() const;
-
-    
-
-
-
-
-
-    int32_t getRuleDayOfMonth() const;
+    int32_t getRuleMonth(void) const;
 
     
 
@@ -191,7 +183,15 @@ public:
 
 
 
-    int32_t getRuleDayOfWeek() const;
+    int32_t getRuleDayOfMonth(void) const;
+
+    
+
+
+
+
+
+    int32_t getRuleDayOfWeek(void) const;
 
     
 
@@ -200,16 +200,16 @@ public:
 
 
 
-    int32_t getRuleWeekInMonth() const;
+    int32_t getRuleWeekInMonth(void) const;
 
     
 
 
 
 
-    int32_t getRuleMillisInDay() const;
+    int32_t getRuleMillisInDay(void) const;
 
-  private:
+private:
     int32_t fMonth;
     int32_t fDayOfMonth;
     int32_t fDayOfWeek;
@@ -230,7 +230,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -243,7 +243,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 U_NAMESPACE_END

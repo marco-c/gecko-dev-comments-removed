@@ -50,6 +50,9 @@
 
 
 
+#ifndef U_HIDE_DRAFT_API
+
+
 
 
 
@@ -133,9 +136,10 @@ usnum_multiplyByPowerOfTen(USimpleNumber* unumber, int32_t power, UErrorCode* ec
 
 
 
-
 U_CAPI void U_EXPORT2
 usnum_roundTo(USimpleNumber* unumber, int32_t power, UNumberFormatRoundingMode roundingMode, UErrorCode* ec);
+
+
 
 
 
@@ -152,19 +156,21 @@ usnum_setMinimumIntegerDigits(USimpleNumber* unumber, int32_t minimumIntegerDigi
 
 
 
+
+
 U_CAPI void U_EXPORT2
 usnum_setMinimumFractionDigits(USimpleNumber* unumber, int32_t minimumFractionDigits, UErrorCode* ec);
 
 
-#ifndef U_HIDE_DRAFT_API
+
+
 
 
 
 
 
 U_CAPI void U_EXPORT2
-usnum_setMaximumIntegerDigits(USimpleNumber* unumber, int32_t maximumIntegerDigits, UErrorCode* ec);
-#endif 
+usnum_truncateStart(USimpleNumber* unumber, int32_t maximumIntegerDigits, UErrorCode* ec);
 
 
 
@@ -291,6 +297,8 @@ U_DEFINE_LOCAL_OPEN_POINTER(LocalUSimpleNumberPointer, USimpleNumber, usnum_clos
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUSimpleNumberFormatterPointer, USimpleNumberFormatter, usnumf_close);
 
 U_NAMESPACE_END
+#endif 
+
 #endif 
 
 #endif 

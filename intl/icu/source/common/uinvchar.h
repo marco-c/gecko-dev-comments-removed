@@ -120,7 +120,7 @@ U_NAMESPACE_END
 
 
 
-U_CAPI UBool
+U_CFUNC UBool
 uprv_isEbcdicAtSign(char c);
 
 

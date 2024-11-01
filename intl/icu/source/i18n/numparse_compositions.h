@@ -18,7 +18,8 @@ U_NAMESPACE_BEGIN
 template class U_I18N_API MaybeStackArray<const numparse::impl::NumberParseMatcher*, 3>;
 #endif
 
-namespace numparse::impl {
+namespace numparse {
+namespace impl {
 
 
 
@@ -114,8 +115,9 @@ class U_I18N_API ArraySeriesMatcher : public SeriesMatcher {
     int32_t fMatchersLen;
 };
 
-} 
 
+} 
+} 
 U_NAMESPACE_END
 
 #endif 

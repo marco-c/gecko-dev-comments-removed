@@ -100,7 +100,7 @@ void cmd_version(UBool , UErrorCode &errorCode)
       
     } else {
         fprintf(stderr, "  error: U_SIZEOF_WCHAR_T=%d != %d=sizeof(wchar_t)\n",
-                U_SIZEOF_WCHAR_T, static_cast<int>(sizeof(wchar_t)));
+                U_SIZEOF_WCHAR_T, (int)sizeof(wchar_t));
         errorCode=U_INTERNAL_PROGRAM_ERROR;
     }
 

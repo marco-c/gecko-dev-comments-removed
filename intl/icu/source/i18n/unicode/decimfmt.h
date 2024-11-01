@@ -60,8 +60,10 @@ class UFormattedNumberData;
 }
 }
 
-namespace numparse::impl {
+namespace numparse {
+namespace impl {
 class NumberParserImpl;
+}
 }
 
 
@@ -1161,7 +1163,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual const DecimalFormatSymbols* getDecimalFormatSymbols() const;
+    virtual const DecimalFormatSymbols* getDecimalFormatSymbols(void) const;
 
     
 
@@ -1186,7 +1188,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual const CurrencyPluralInfo* getCurrencyPluralInfo() const;
+    virtual const CurrencyPluralInfo* getCurrencyPluralInfo(void) const;
 
     
 
@@ -1313,7 +1315,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    int32_t getMultiplier() const;
+    int32_t getMultiplier(void) const;
 
     
 
@@ -1342,7 +1344,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    int32_t getMultiplierScale() const;
+    int32_t getMultiplierScale(void) const;
 
     
 
@@ -1374,7 +1376,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual double getRoundingIncrement() const;
+    virtual double getRoundingIncrement(void) const;
 
     
 
@@ -1397,7 +1399,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual ERoundingMode getRoundingMode() const override;
+    virtual ERoundingMode getRoundingMode(void) const override;
 
     
 
@@ -1420,7 +1422,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual int32_t getFormatWidth() const;
+    virtual int32_t getFormatWidth(void) const;
 
     
 
@@ -1483,7 +1485,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual EPadPosition getPadPosition() const;
+    virtual EPadPosition getPadPosition(void) const;
 
     
 
@@ -1513,7 +1515,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual UBool isScientificNotation() const;
+    virtual UBool isScientificNotation(void) const;
 
     
 
@@ -1542,7 +1544,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual int8_t getMinimumExponentDigits() const;
+    virtual int8_t getMinimumExponentDigits(void) const;
 
     
 
@@ -1570,7 +1572,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual UBool isExponentSignAlwaysShown() const;
+    virtual UBool isExponentSignAlwaysShown(void) const;
 
     
 
@@ -1598,7 +1600,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    int32_t getGroupingSize() const;
+    int32_t getGroupingSize(void) const;
 
     
 
@@ -1631,7 +1633,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    int32_t getSecondaryGroupingSize() const;
+    int32_t getSecondaryGroupingSize(void) const;
 
     
 
@@ -1698,7 +1700,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UBool isDecimalSeparatorAlwaysShown() const;
+    UBool isDecimalSeparatorAlwaysShown(void) const;
 
     
 
@@ -1716,7 +1718,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UBool isDecimalPatternMatchRequired() const;
+    UBool isDecimalPatternMatchRequired(void) const;
 
     
 
@@ -2122,7 +2124,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -2135,7 +2137,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UClassID getDynamicClassID() const override;
+    UClassID getDynamicClassID(void) const override;
 
   private:
 

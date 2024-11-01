@@ -26,7 +26,6 @@
 #ifdef __cplusplus
 
 #include "unicode/errorcode.h"
-#include "unicode/umutablecptrie.h"
 
 U_NAMESPACE_BEGIN
 
@@ -46,30 +45,6 @@ protected:
 private:
     const char *location;
 };
-
-namespace toolutil {
-
-
-
-
-
-U_TOOLUTIL_API void
-setCPTrieBit(UMutableCPTrie *mutableCPTrie,
-             UChar32 start, UChar32 end, int32_t shift, bool on, UErrorCode &errorCode);
-
-
-
-
-
-
-U_TOOLUTIL_API void
-setCPTrieBits(UMutableCPTrie *mutableCPTrie,
-              UChar32 start, UChar32 end, uint32_t mask, uint32_t value, UErrorCode &errorCode);
-
-U_TOOLUTIL_API int32_t
-getCPTrieSize(UMutableCPTrie *mt, UCPTrieType type, UCPTrieValueWidth valueWidth);
-
-}  
 
 U_NAMESPACE_END
 
@@ -124,7 +99,7 @@ findDirname(const char *path, char *buffer, int32_t bufLen, UErrorCode* status);
 
 
 U_CAPI int32_t U_EXPORT2
-getCurrentYear(void);
+getCurrentYear();
 
 
 

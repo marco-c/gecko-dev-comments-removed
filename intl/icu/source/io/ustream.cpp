@@ -53,7 +53,7 @@ operator<<(STD_OSTREAM& stream, const UnicodeString& str)
             do {
                 errorCode = U_ZERO_ERROR;
                 s = buffer;
-                ucnv_fromUnicode(converter, &s, sLimit, &us, uLimit, nullptr, false, &errorCode);
+                ucnv_fromUnicode(converter, &s, sLimit, &us, uLimit, 0, false, &errorCode);
                 *s = 0;
 
                 
@@ -105,7 +105,7 @@ operator>>(STD_ISTREAM& stream, UnicodeString& str)
                 }
                 continueReading = false;
             }
-            sLimit = &ch + static_cast<int>(continueReading);
+            sLimit = &ch + (int)continueReading;
             us = uBuffer;
             s = &ch;
             errorCode = U_ZERO_ERROR;
@@ -114,7 +114,7 @@ operator>>(STD_ISTREAM& stream, UnicodeString& str)
 
 
 
-            ucnv_toUnicode(converter, &us, uLimit, &s, sLimit, nullptr, !continueReading, &errorCode);
+            ucnv_toUnicode(converter, &us, uLimit, &s, sLimit, 0, !continueReading, &errorCode);
             if(U_FAILURE(errorCode)) {
                 
                 stream.clear(stream.failbit);

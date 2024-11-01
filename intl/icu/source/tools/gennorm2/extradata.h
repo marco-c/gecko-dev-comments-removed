@@ -32,8 +32,6 @@ public:
 
     void rangeHandler(UChar32 start, UChar32 end, Norm &norm) override;
 
-    UnicodeString maybeNoMappingsOnly;
-    UnicodeString maybeNoMappingsAndCompositions;
     UnicodeString maybeYesCompositions;
     UnicodeString yesYesCompositions;
     UnicodeString yesNoMappingsAndCompositions;
@@ -50,9 +48,7 @@ private:
 
 
 
-
     int32_t writeMapping(UChar32 c, const Norm &norm, UnicodeString &dataString);
-    
     int32_t writeNoNoMapping(UChar32 c, const Norm &norm,
                              UnicodeString &dataString, Hashtable &previousMappings);
     UBool setNoNoDelta(UChar32 c, Norm &norm) const;

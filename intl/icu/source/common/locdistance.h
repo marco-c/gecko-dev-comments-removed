@@ -62,7 +62,7 @@ public:
                                     ULocMatchFavorSubtag favorSubtag,
                                     ULocMatchDirection direction) const;
 
-    bool isParadigmLSR(const LSR &lsr) const;
+    UBool isParadigmLSR(const LSR &lsr) const;
 
     int32_t getDefaultScriptDistance() const {
         return defaultScriptDistance;
@@ -83,14 +83,14 @@ private:
     
     static constexpr int32_t INDEX_NEG_1 = 0xfffffc00;
 
-    LocaleDistance(const LocaleDistanceData &data, const LikelySubtags &likely);
+    LocaleDistance(const LocaleDistanceData &data, const XLikelySubtags &likely);
     LocaleDistance(const LocaleDistance &other) = delete;
     LocaleDistance &operator=(const LocaleDistance &other) = delete;
 
     static void initLocaleDistance(UErrorCode &errorCode);
 
-    bool isMatch(const LSR &desired, const LSR &supported,
-                 int32_t shiftedThreshold, ULocMatchFavorSubtag favorSubtag) const {
+    UBool isMatch(const LSR &desired, const LSR &supported,
+                  int32_t shiftedThreshold, ULocMatchFavorSubtag favorSubtag) const {
         const LSR *pSupp = &supported;
         return getBestIndexAndDistance(
             desired, &pSupp, 1,
@@ -119,7 +119,7 @@ private:
         return defaultRegionDistance;
     }
 
-    const LikelySubtags &likelySubtags;
+    const XLikelySubtags &likelySubtags;
 
     
     

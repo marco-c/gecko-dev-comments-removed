@@ -47,7 +47,9 @@
 
 U_NAMESPACE_BEGIN
 
-namespace double_conversion::PowersOfTenCache {
+namespace double_conversion {
+
+namespace PowersOfTenCache {
 
 struct CachedPower {
   uint64_t significand;
@@ -182,7 +184,9 @@ void GetCachedPowerForDecimalExponent(int requested_exponent,
   DOUBLE_CONVERSION_ASSERT(requested_exponent < *found_exponent + kDecimalExponentDistance);
 }
 
-} 
+}  
+
+}  
 
 
 U_NAMESPACE_END

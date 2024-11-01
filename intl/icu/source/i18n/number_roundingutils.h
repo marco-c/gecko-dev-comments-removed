@@ -11,7 +11,8 @@
 #include "string_segment.h"
 
 U_NAMESPACE_BEGIN
-namespace number::impl {
+namespace number {
+namespace impl {
 namespace roundingutils {
 
 enum Section {
@@ -237,6 +238,7 @@ class RoundingImpl {
 
 void parseIncrementOption(const StringSegment &segment, Precision &outPrecision, UErrorCode &status);
 
+} 
 } 
 U_NAMESPACE_END
 

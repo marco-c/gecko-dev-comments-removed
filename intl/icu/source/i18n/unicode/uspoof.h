@@ -19,7 +19,6 @@
 #ifndef USPOOF_H
 #define USPOOF_H
 
-#include "unicode/ubidi.h"
 #include "unicode/utypes.h"
 #include "unicode/uset.h"
 #include "unicode/parseerr.h"
@@ -32,70 +31,6 @@
 #include "unicode/unistr.h"
 #include "unicode/uniset.h"
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1251,55 +1186,6 @@ uspoof_areConfusable(const USpoofChecker *sc,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI uint32_t U_EXPORT2 uspoof_areBidiConfusable(const USpoofChecker *sc, UBiDiDirection direction,
-                                                  const UChar *id1, int32_t length1,
-                                                  const UChar *id2, int32_t length2,
-                                                  UErrorCode *status);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 U_CAPI int32_t U_EXPORT2
 uspoof_areConfusableUTF8(const USpoofChecker *sc,
                          const char *id1, int32_t length1,
@@ -1308,35 +1194,6 @@ uspoof_areConfusableUTF8(const USpoofChecker *sc,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI uint32_t U_EXPORT2 uspoof_areBidiConfusableUTF8(const USpoofChecker *sc, UBiDiDirection direction,
-                                                      const char *id1, int32_t length1,
-                                                      const char *id2, int32_t length2,
-                                                      UErrorCode *status);
 
 
 
@@ -1408,43 +1265,6 @@ uspoof_getSkeleton(const USpoofChecker *sc,
 
 
 
-U_CAPI int32_t U_EXPORT2 uspoof_getBidiSkeleton(const USpoofChecker *sc,
-                                                UBiDiDirection direction,
-                                                const UChar *id, int32_t length,
-                                                UChar *dest, int32_t destCapacity, UErrorCode *status);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 U_CAPI int32_t U_EXPORT2
 uspoof_getSkeletonUTF8(const USpoofChecker *sc,
@@ -1452,44 +1272,6 @@ uspoof_getSkeletonUTF8(const USpoofChecker *sc,
                        const char *id,  int32_t length,
                        char *dest, int32_t destCapacity,
                        UErrorCode *status);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2 uspoof_getBidiSkeletonUTF8(const USpoofChecker *sc, UBiDiDirection direction,
-                                                    const char *id, int32_t length, char *dest,
-                                                    int32_t destCapacity, UErrorCode *status);
 
 
 
@@ -1751,69 +1533,12 @@ uspoof_areConfusableUnicodeString(const USpoofChecker *sc,
 
 
 
-U_CAPI uint32_t U_EXPORT2 uspoof_areBidiConfusableUnicodeString(const USpoofChecker *sc,
-                                                               UBiDiDirection direction,
-                                                               const icu::UnicodeString &s1,
-                                                               const icu::UnicodeString &s2,
-                                                               UErrorCode *status);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 U_I18N_API icu::UnicodeString & U_EXPORT2
 uspoof_getSkeletonUnicodeString(const USpoofChecker *sc,
                                 uint32_t type,
                                 const icu::UnicodeString &id,
                                 icu::UnicodeString &dest,
                                 UErrorCode *status);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_I18N_API icu::UnicodeString &U_EXPORT2 uspoof_getBidiSkeletonUnicodeString(
-    const USpoofChecker *sc, UBiDiDirection direction, const icu::UnicodeString &id,
-    icu::UnicodeString &dest, UErrorCode *status);
 
 
 

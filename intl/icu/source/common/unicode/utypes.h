@@ -59,31 +59,16 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __cplusplus
 #   ifndef U_SHOW_CPLUSPLUS_API
 #       define U_SHOW_CPLUSPLUS_API 1
 #   endif
-#   ifndef U_SHOW_CPLUSPLUS_HEADER_API
-#       define U_SHOW_CPLUSPLUS_HEADER_API 1
-#   endif
 #else
 #   undef U_SHOW_CPLUSPLUS_API
 #   define U_SHOW_CPLUSPLUS_API 0
-#   undef U_SHOW_CPLUSPLUS_HEADER_API
-#   define U_SHOW_CPLUSPLUS_HEADER_API 0
 #endif
+
+
 
 
 
@@ -453,7 +438,6 @@ typedef enum UErrorCode {
     
     U_PLUGIN_CHANGED_LEVEL_WARNING = -120, 
 
-
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -584,26 +568,12 @@ typedef enum UErrorCode {
     U_FORMAT_INEXACT_ERROR,           
     U_NUMBER_ARG_OUTOFBOUNDS_ERROR,   
     U_NUMBER_SKELETON_SYNTAX_ERROR,   
-
-    
-    U_MF_UNRESOLVED_VARIABLE_ERROR,    
-    U_MF_SYNTAX_ERROR,                 
-    U_MF_UNKNOWN_FUNCTION_ERROR,       
-    U_MF_VARIANT_KEY_MISMATCH_ERROR,   
-    U_MF_FORMATTING_ERROR,             
-    U_MF_NONEXHAUSTIVE_PATTERN_ERROR,  
-    U_MF_DUPLICATE_OPTION_NAME_ERROR,  
-    U_MF_SELECTOR_ERROR,               
-    U_MF_MISSING_SELECTOR_ANNOTATION_ERROR,  
-    U_MF_DUPLICATE_DECLARATION_ERROR, 
-    U_MF_OPERAND_MISMATCH_ERROR,     
-    U_MF_DUPLICATE_VARIANT_ERROR, 
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    U_FMT_PARSE_ERROR_LIMIT = 0x10120,
+    U_FMT_PARSE_ERROR_LIMIT = 0x10114,
 #endif  
 
     
@@ -727,13 +697,13 @@ typedef enum UErrorCode {
 
 
     static
-    inline UBool U_SUCCESS(UErrorCode code) { return code <= U_ZERO_ERROR; }
+    inline UBool U_SUCCESS(UErrorCode code) { return (UBool)(code<=U_ZERO_ERROR); }
     
 
 
 
     static
-    inline UBool U_FAILURE(UErrorCode code) { return code > U_ZERO_ERROR; }
+    inline UBool U_FAILURE(UErrorCode code) { return (UBool)(code>U_ZERO_ERROR); }
 #else
     
 

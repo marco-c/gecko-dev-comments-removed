@@ -13,8 +13,9 @@
 #include "formatted_string_builder.h"
 #include "formattedval_impl.h"
 
-U_NAMESPACE_BEGIN
-namespace number::impl {
+U_NAMESPACE_BEGIN namespace number {
+namespace impl {
+
 
 
 const DecimalQuantity* validateUFormattedNumberToDecimalQuantity(
@@ -49,6 +50,8 @@ public:
     const char *gender = "";
 };
 
+
+} 
 } 
 U_NAMESPACE_END
 

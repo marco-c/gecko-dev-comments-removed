@@ -65,8 +65,7 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
 
 
 
-
-  virtual UBool handles(UChar32 c, const char* locale) const override;
+  virtual UBool handles(UChar32 c) const override;
 
   
 

@@ -23,7 +23,8 @@ U_NAMESPACE_BEGIN
 using ::icu::units::ComplexUnitsConverter;
 using ::icu::units::UnitsRouter;
 
-namespace number::impl {
+namespace number {
+namespace impl {
 
 
 
@@ -62,6 +63,7 @@ class U_I18N_API UsagePrefsHandler : public MicroPropsGenerator, public UMemory 
 };
 
 } 
+} 
 
 
 
@@ -70,11 +72,20 @@ class U_I18N_API UsagePrefsHandler : public MicroPropsGenerator, public UMemory 
 
 
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+#if defined(_MSC_VER)
+
+#pragma warning(push)
+#pragma warning(disable: 4661)
+#endif
 template class U_I18N_API LocalPointerBase<ComplexUnitsConverter>;
 template class U_I18N_API LocalPointer<ComplexUnitsConverter>;
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #endif
 
-namespace number::impl {
+namespace number {
+namespace impl {
 
 
 
@@ -108,7 +119,7 @@ class U_I18N_API UnitConversionHandler : public MicroPropsGenerator, public UMem
 };
 
 } 
-
+} 
 U_NAMESPACE_END
 
 #endif 

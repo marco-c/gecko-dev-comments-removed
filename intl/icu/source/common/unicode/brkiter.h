@@ -146,13 +146,14 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
 
     
 
 
 
-    virtual CharacterIterator& getText() const = 0;
+    virtual CharacterIterator& getText(void) const = 0;
+
 
     
 
@@ -219,7 +220,7 @@ public:
 
 
 
-        DONE = static_cast<int32_t>(-1)
+        DONE = (int32_t)-1
     };
 
     
@@ -227,22 +228,14 @@ public:
 
 
 
-    virtual int32_t first() = 0;
+    virtual int32_t first(void) = 0;
 
     
 
 
 
 
-    virtual int32_t last() = 0;
-
-    
-
-
-
-
-
-    virtual int32_t previous() = 0;
+    virtual int32_t last(void) = 0;
 
     
 
@@ -250,14 +243,22 @@ public:
 
 
 
-    virtual int32_t next() = 0;
+    virtual int32_t previous(void) = 0;
 
     
 
 
 
 
-    virtual int32_t current() const = 0;
+
+    virtual int32_t next(void) = 0;
+
+    
+
+
+
+
+    virtual int32_t current(void) const = 0;
 
     
 
@@ -529,7 +530,7 @@ public:
 
 
 
-    inline UBool isBufferClone();
+    inline UBool isBufferClone(void);
 
 #endif 
 
@@ -574,7 +575,7 @@ public:
 
 
 
-    static StringEnumeration* U_EXPORT2 getAvailableLocales();
+    static StringEnumeration* U_EXPORT2 getAvailableLocales(void);
 #endif
 
     
@@ -648,7 +649,6 @@ private:
     
     char actualLocale[ULOC_FULLNAME_CAPACITY];
     char validLocale[ULOC_FULLNAME_CAPACITY];
-    char requestLocale[ULOC_FULLNAME_CAPACITY];
 };
 
 #ifndef U_HIDE_DEPRECATED_API

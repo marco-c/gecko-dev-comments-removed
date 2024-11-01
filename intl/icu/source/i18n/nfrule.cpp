@@ -19,7 +19,6 @@
 
 #if U_HAVE_RBNF
 
-#include <limits>
 #include "unicode/localpointer.h"
 #include "unicode/rbnf.h"
 #include "unicode/tblcoll.h"
@@ -36,7 +35,7 @@
 U_NAMESPACE_BEGIN
 
 NFRule::NFRule(const RuleBasedNumberFormat* _rbnf, const UnicodeString &_ruleText, UErrorCode &status)
-  : baseValue(static_cast<int32_t>(0))
+  : baseValue((int32_t)0)
   , radix(10)
   , exponent(0)
   , decimalPoint(0)
@@ -117,9 +116,9 @@ NFRule::makeRules(UnicodeString& description,
     
     
     
-    LocalPointer<NFRule> rule1(new NFRule(rbnf, description, status));
+    NFRule* rule1 = new NFRule(rbnf, description, status);
     
-    if (rule1.isNull()) {
+    if (rule1 == 0) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return;
     }
@@ -145,7 +144,7 @@ NFRule::makeRules(UnicodeString& description,
     else {
         
         
-        LocalPointer<NFRule> rule2;
+        NFRule* rule2 = nullptr;
         UnicodeString sbuf;
 
         
@@ -161,9 +160,9 @@ NFRule::makeRules(UnicodeString& description,
             
             
             
-            rule2.adoptInstead(new NFRule(rbnf, UnicodeString(), status));
+            rule2 = new NFRule(rbnf, UnicodeString(), status);
             
-            if (rule2.isNull()) {
+            if (rule2 == 0) {
                 status = U_MEMORY_ALLOCATION_ERROR;
                 return;
             }
@@ -218,20 +217,20 @@ NFRule::makeRules(UnicodeString& description,
         
         
         
-        if (!rule2.isNull()) {
+        if (rule2 != nullptr) {
             if (rule2->baseValue >= kNoBase) {
-                rules.add(rule2.orphan());
+                rules.add(rule2);
             }
             else {
-                owner->setNonNumericalRule(rule2.orphan());
+                owner->setNonNumericalRule(rule2);
             }
         }
     }
     if (rule1->baseValue >= kNoBase) {
-        rules.add(rule1.orphan());
+        rules.add(rule1);
     }
     else {
-        owner->setNonNumericalRule(rule1.orphan());
+        owner->setNonNumericalRule(rule1);
     }
 }
 
@@ -290,14 +289,7 @@ NFRule::parseRuleDescriptor(UnicodeString& description, UErrorCode& status)
             while (p < descriptorLength) {
                 c = descriptor.charAt(p);
                 if (c >= gZero && c <= gNine) {
-                    int32_t single_digit = static_cast<int32_t>(c - gZero);
-                    if ((val > 0 && val > (std::numeric_limits<int64_t>::max() - single_digit) / 10) ||
-                        (val < 0 && val < (std::numeric_limits<int64_t>::min() - single_digit) / 10)) {
-                        
-                        status = U_PARSE_ERROR;
-                        return;
-                    }
-                    val = val * ll_10 + single_digit;
+                    val = val * ll_10 + (int32_t)(c - gZero);
                 }
                 else if (c == gSlash || c == gGreaterThan) {
                     break;
@@ -326,7 +318,7 @@ NFRule::parseRuleDescriptor(UnicodeString& description, UErrorCode& status)
                 while (p < descriptorLength) {
                     c = descriptor.charAt(p);
                     if (c >= gZero && c <= gNine) {
-                        val = val * ll_10 + static_cast<int32_t>(c - gZero);
+                        val = val * ll_10 + (int32_t)(c - gZero);
                     }
                     else if (c == gGreaterThan) {
                         break;
@@ -343,7 +335,7 @@ NFRule::parseRuleDescriptor(UnicodeString& description, UErrorCode& status)
 
                 
                 
-                radix = static_cast<int32_t>(val);
+                radix = (int32_t)val;
                 if (radix == 0) {
                     
                     status = U_PARSE_ERROR;
@@ -589,8 +581,7 @@ NFRule::expectedExponent() const
     
     
     
-    int16_t tempResult = static_cast<int16_t>(uprv_log(static_cast<double>(baseValue)) /
-                                              uprv_log(static_cast<double>(radix)));
+    int16_t tempResult = (int16_t)(uprv_log((double)baseValue) / uprv_log((double)radix));
     int64_t temp = util64_pow(radix, tempResult + 1);
     if (temp <= baseValue) {
         tempResult += 1;
@@ -733,14 +724,6 @@ int64_t NFRule::getDivisor() const
 
 
 
-bool NFRule::hasModulusSubstitution() const
-{
-    return (sub1 != nullptr && sub1->isModulusSubstitution()) || (sub2 != nullptr && sub2->isModulusSubstitution());
-}
-
-
-
-
 
 
 
@@ -773,7 +756,7 @@ NFRule::doFormat(int64_t number, UnicodeString& toInsertInto, int32_t pos, int32
             toInsertInto.insert(pos, fRuleText.tempSubString(pluralRuleEnd + 2));
         }
         toInsertInto.insert(pos,
-            rulePatternFormat->format(static_cast<int32_t>(number / util64_pow(radix, exponent)), status));
+            rulePatternFormat->format((int32_t)(number/util64_pow(radix, exponent)), status));
         if (pluralRuleStart > 0) {
             toInsertInto.insert(pos, fRuleText.tempSubString(0, pluralRuleStart));
         }
@@ -827,7 +810,7 @@ NFRule::doFormat(double number, UnicodeString& toInsertInto, int32_t pos, int32_
         else {
             pluralVal = pluralVal / util64_pow(radix, exponent);
         }
-        toInsertInto.insert(pos, rulePatternFormat->format(static_cast<int32_t>(pluralVal), status));
+        toInsertInto.insert(pos, rulePatternFormat->format((int32_t)(pluralVal), status));
         if (pluralRuleStart > 0) {
             toInsertInto.insert(pos, fRuleText.tempSubString(0, pluralRuleStart));
         }
@@ -918,7 +901,6 @@ NFRule::doParse(const UnicodeString& text,
                 UBool isFractionRule,
                 double upperBound,
                 uint32_t nonNumericalExecutedRuleMask,
-                int32_t recursionCount,
                 Formattable& resVal) const
 {
     
@@ -1008,7 +990,7 @@ NFRule::doParse(const UnicodeString& text,
     int highWaterMark = 0;
     double result = 0;
     int start = 0;
-    double tempBaseValue = static_cast<double>(baseValue <= 0 ? 0 : baseValue);
+    double tempBaseValue = (double)(baseValue <= 0 ? 0 : baseValue);
 
     UnicodeString temp;
     do {
@@ -1022,7 +1004,6 @@ NFRule::doParse(const UnicodeString& text,
         double partialResult = matchToDelimiter(workText, start, tempBaseValue,
             temp, pp, sub1,
             nonNumericalExecutedRuleMask,
-            recursionCount,
             upperBound);
 
         
@@ -1044,7 +1025,6 @@ NFRule::doParse(const UnicodeString& text,
             partialResult = matchToDelimiter(workText2, 0, partialResult,
                 temp, pp2, sub2,
                 nonNumericalExecutedRuleMask,
-                recursionCount,
                 upperBound);
 
             
@@ -1182,7 +1162,6 @@ NFRule::matchToDelimiter(const UnicodeString& text,
                          ParsePosition& pp,
                          const NFSubstitution* sub,
                          uint32_t nonNumericalExecutedRuleMask,
-                         int32_t recursionCount,
                          double upperBound) const
 {
 	UErrorCode status = U_ZERO_ERROR;
@@ -1217,7 +1196,6 @@ NFRule::matchToDelimiter(const UnicodeString& text,
                     formatter->isLenient(),
 #endif
                     nonNumericalExecutedRuleMask,
-                    recursionCount,
                     result);
 
                 
@@ -1272,7 +1250,6 @@ NFRule::matchToDelimiter(const UnicodeString& text,
             formatter->isLenient(),
 #endif
             nonNumericalExecutedRuleMask,
-            recursionCount,
             result);
         if (success && (tempPP.getIndex() != 0)) {
             

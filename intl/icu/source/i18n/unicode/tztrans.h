@@ -102,7 +102,7 @@ public:
 
 
 
-    UDate getTime() const;
+    UDate getTime(void) const;
 
     
 
@@ -116,7 +116,7 @@ public:
 
 
 
-    const TimeZoneRule* getFrom() const;
+    const TimeZoneRule* getFrom(void) const;
 
     
 
@@ -155,7 +155,7 @@ public:
 
 
 
-    const TimeZoneRule* getTo() const;
+    const TimeZoneRule* getTo(void) const;
 
 private:
     UDate   fTime;
@@ -174,7 +174,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -187,7 +187,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 U_NAMESPACE_END

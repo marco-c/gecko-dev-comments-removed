@@ -25,7 +25,6 @@
 #ifndef UCHAR_H
 #define UCHAR_H
 
-#include <stdbool.h>
 #include "unicode/utypes.h"
 #include "unicode/stringoptions.h"
 #include "unicode/ucpmap.h"
@@ -61,7 +60,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "16.0"
+#define U_UNICODE_VERSION "15.0"
 
 
 
@@ -533,39 +532,12 @@ typedef enum UProperty {
 
 
     UCHAR_RGI_EMOJI=71,
-    
-
-
-
-
-
-    UCHAR_IDS_UNARY_OPERATOR=72,
-    
-
-
-
-
-    UCHAR_ID_COMPAT_MATH_START=73,
-    
-
-
-
-
-    UCHAR_ID_COMPAT_MATH_CONTINUE=74,
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-    UCHAR_MODIFIER_COMBINING_MARK=75,
-#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UCHAR_BINARY_LIMIT=76,
+    UCHAR_BINARY_LIMIT=72,
 #endif  
 
     
@@ -675,27 +647,12 @@ typedef enum UProperty {
 
 
     UCHAR_VERTICAL_ORIENTATION=0x1018,
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-    UCHAR_IDENTIFIER_STATUS=0x1019,
-    
-
-
-
-
-    UCHAR_INDIC_CONJUNCT_BREAK=0x101A,
-#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UCHAR_INT_LIMIT=0x101B,
+    UCHAR_INT_LIMIT=0x1019,
 #endif  
 
     
@@ -796,28 +753,12 @@ typedef enum UProperty {
     UCHAR_SCRIPT_EXTENSIONS=0x7000,
     
     UCHAR_OTHER_PROPERTY_START=UCHAR_SCRIPT_EXTENSIONS,
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    UCHAR_IDENTIFIER_TYPE=0x7001,
-#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UCHAR_OTHER_PROPERTY_LIMIT=0x7002,
+    UCHAR_OTHER_PROPERTY_LIMIT=0x7001,
 #endif  
 
     
@@ -1959,34 +1900,6 @@ enum UBlockCode {
     
     UBLOCK_NAG_MUNDARI = 327, 
 
-    
-
-    
-    UBLOCK_CJK_UNIFIED_IDEOGRAPHS_EXTENSION_I = 328, 
-
-    
-
-    
-    UBLOCK_EGYPTIAN_HIEROGLYPHS_EXTENDED_A = 329, 
-    
-    UBLOCK_GARAY = 330, 
-    
-    UBLOCK_GURUNG_KHEMA = 331, 
-    
-    UBLOCK_KIRAT_RAI = 332, 
-    
-    UBLOCK_MYANMAR_EXTENDED_C = 333, 
-    
-    UBLOCK_OL_ONAL = 334, 
-    
-    UBLOCK_SUNUWAR = 335, 
-    
-    UBLOCK_SYMBOLS_FOR_LEGACY_COMPUTING_SUPPLEMENT = 336, 
-    
-    UBLOCK_TODHRI = 337, 
-    
-    UBLOCK_TULU_TIGALARI = 338, 
-
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1994,7 +1907,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 339,
+    UBLOCK_COUNT = 328,
 #endif  
 
     
@@ -2289,8 +2202,6 @@ typedef enum UJoiningGroup {
     U_JG_THIN_YEH,  
     U_JG_VERTICAL_TAIL,  
 
-    U_JG_KASHMIRI_YEH,  
-
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2528,16 +2439,6 @@ typedef enum ULineBreak {
     U_LB_E_MODIFIER = 41,        
     
     U_LB_ZWJ = 42,               
-    
-    U_LB_AKSARA = 43,            
-    
-    U_LB_AKSARA_PREBASE = 44,    
-    
-    U_LB_AKSARA_START = 45,      
-    
-    U_LB_VIRAMA_FINAL = 46,      
-    
-    U_LB_VIRAMA = 47,            
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2545,7 +2446,7 @@ typedef enum ULineBreak {
 
 
 
-    U_LB_COUNT = 48
+    U_LB_COUNT = 43
 #endif  
 } ULineBreak;
 
@@ -2739,34 +2640,7 @@ typedef enum UIndicSyllabicCategory {
     U_INSC_VOWEL_DEPENDENT,
     
     U_INSC_VOWEL_INDEPENDENT,
-    
-    U_INSC_REORDERING_KILLER,
 } UIndicSyllabicCategory;
-
-#ifndef U_HIDE_DRAFT_API
-
-
-
-
-
-
-typedef enum UIndicConjunctBreak {
-    
-
-
-
-
-
-    
-    U_INCB_NONE,
-    
-    U_INCB_CONSONANT,
-    
-    U_INCB_EXTEND,
-    
-    U_INCB_LINKER,
-} UIndicConjunctBreak;
-#endif  
 
 
 
@@ -2790,68 +2664,6 @@ typedef enum UVerticalOrientation {
     
     U_VO_UPRIGHT,
 } UVerticalOrientation;
-
-#ifndef U_HIDE_DRAFT_API
-
-
-
-
-
-
-
-typedef enum UIdentifierStatus {
-    
-
-
-
-
-
-    
-    U_ID_STATUS_RESTRICTED,
-    
-    U_ID_STATUS_ALLOWED,
-} UIdentifierStatus;
-
-
-
-
-
-
-
-
-typedef enum UIdentifierType {
-    
-
-
-
-
-
-    
-    U_ID_TYPE_NOT_CHARACTER,
-    
-    U_ID_TYPE_DEPRECATED,
-    
-    U_ID_TYPE_DEFAULT_IGNORABLE,
-    
-    U_ID_TYPE_NOT_NFKC,
-    
-    U_ID_TYPE_NOT_XID,
-    
-    U_ID_TYPE_EXCLUSION,
-    
-    U_ID_TYPE_OBSOLETE,
-    
-    U_ID_TYPE_TECHNICAL,
-    
-    U_ID_TYPE_UNCOMMON_USE,
-    
-    U_ID_TYPE_LIMITED_USE,
-    
-    U_ID_TYPE_INCLUSION,
-    
-    U_ID_TYPE_RECOMMENDED,
-} UIdentifierType;
-#endif  
 
 
 
@@ -4056,59 +3868,6 @@ u_isIDStart(UChar32 c);
 
 U_CAPI UBool U_EXPORT2
 u_isIDPart(UChar32 c);
-
-#ifndef U_HIDE_DRAFT_API
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI bool U_EXPORT2
-u_hasIDType(UChar32 c, UIdentifierType type);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2
-u_getIDTypes(UChar32 c, UIdentifierType *types, int32_t capacity, UErrorCode *pErrorCode);
-#endif  
 
 
 

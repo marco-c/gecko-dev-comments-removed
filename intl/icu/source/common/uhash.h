@@ -700,15 +700,6 @@ uhash_hashIChars(const UHashTok key);
 
 
 
-U_CAPI int32_t U_EXPORT2
-uhash_hashIStringView(const UHashTok key);
-
-
-
-
-
-
-
 
 U_CAPI UBool U_EXPORT2
 uhash_compareUChars(const UHashTok key1, const UHashTok key2);
@@ -732,16 +723,6 @@ uhash_compareChars(const UHashTok key1, const UHashTok key2);
 
 U_CAPI UBool U_EXPORT2
 uhash_compareIChars(const UHashTok key1, const UHashTok key2);
-
-
-
-
-
-
-
-
-U_CAPI UBool U_EXPORT2
-uhash_compareIStringView(const UHashTok key1, const UHashTok key2);
 
 
 

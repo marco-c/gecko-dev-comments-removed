@@ -76,27 +76,10 @@ CECalendar::operator=(const CECalendar& right)
 
 
 
-int64_t
-CECalendar::handleComputeMonthStart(int32_t eyear,int32_t emonth, UBool , UErrorCode& ) const
+int32_t
+CECalendar::handleComputeMonthStart(int32_t eyear,int32_t emonth, UBool ) const
 {
-    int64_t year64 = eyear;
-    
-    if ( emonth >= 0 ) {
-        year64 += emonth/13;
-        emonth %= 13;
-    } else {
-        ++emonth;
-        year64 += emonth/13 - 1;
-        emonth = emonth%13 + 12;
-    }
-
-    return (
-        getJDEpochOffset()                    
-        + 365LL * year64                      
-        + ClockMath::floorDivideInt64(year64, 4LL) 
-        + 30 * emonth                         
-        - 1                                   
-        );
+    return ceToJD(eyear, emonth, 0, getJDEpochOffset());
 }
 
 int32_t
@@ -105,21 +88,43 @@ CECalendar::handleGetLimit(UCalendarDateFields field, ELimitType limitType) cons
     return LIMITS[field][limitType];
 }
 
+UBool
+CECalendar::haveDefaultCentury() const
+{
+    return true;
+}
 
 
 
+
+int32_t
+CECalendar::ceToJD(int32_t year, int32_t month, int32_t date, int32_t jdEpochOffset)
+{
+    
+    if ( month >= 0 ) {
+        year += month/13;
+        month %= 13;
+    } else {
+        ++month;
+        year += month/13 - 1;
+        month = month%13 + 12;
+    }
+    return (int32_t) (
+        jdEpochOffset                   
+        + 365 * year                    
+        + ClockMath::floorDivide(year, 4)    
+        + 30 * month                    
+        + date - 1                      
+        );
+}
 
 void
-CECalendar::jdToCE(int32_t julianDay, int32_t jdEpochOffset, int32_t& year, int32_t& month, int32_t& day, UErrorCode& status)
+CECalendar::jdToCE(int32_t julianDay, int32_t jdEpochOffset, int32_t& year, int32_t& month, int32_t& day)
 {
     int32_t c4; 
     int32_t r4; 
 
-    if (uprv_add32_overflow(julianDay, -jdEpochOffset, &julianDay)) {
-        status = U_ILLEGAL_ARGUMENT_ERROR;
-        return;
-    }
-    c4 = ClockMath::floorDivide(julianDay, 1461, &r4);
+    c4 = ClockMath::floorDivide(julianDay - jdEpochOffset, 1461, &r4);
 
     year = 4 * c4 + (r4/365 - r4/1460); 
 
@@ -132,17 +137,13 @@ CECalendar::jdToCE(int32_t julianDay, int32_t jdEpochOffset, int32_t& year, int3
 static const char* kMonthCode13 = "M13";
 
 const char* CECalendar::getTemporalMonthCode(UErrorCode& status) const {
-    if (get(UCAL_MONTH, status) == 12) {
-        return kMonthCode13;
-    }
+    if (get(UCAL_MONTH, status) == 12) return kMonthCode13;
     return Calendar::getTemporalMonthCode(status);
 }
 
 void
 CECalendar::setTemporalMonthCode(const char* code, UErrorCode& status) {
-    if (U_FAILURE(status)) {
-        return;
-    }
+    if (U_FAILURE(status)) return;
     if (uprv_strcmp(code, kMonthCode13) == 0) {
         set(UCAL_MONTH, 12);
         set(UCAL_IS_LEAP_MONTH, 0);

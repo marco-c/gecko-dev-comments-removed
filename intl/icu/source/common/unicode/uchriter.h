@@ -126,7 +126,7 @@ public:
 
 
 
-  virtual int32_t hashCode() const override;
+  virtual int32_t         hashCode(void) const override;
 
   
 
@@ -144,7 +144,7 @@ public:
 
 
 
-  virtual char16_t first() override;
+  virtual char16_t         first(void) override;
 
   
 
@@ -154,7 +154,7 @@ public:
 
 
 
-  virtual char16_t firstPostInc() override;
+  virtual char16_t         firstPostInc(void) override;
 
   
 
@@ -165,7 +165,7 @@ public:
 
 
 
-  virtual UChar32 first32() override;
+  virtual UChar32       first32(void) override;
 
   
 
@@ -175,7 +175,7 @@ public:
 
 
 
-  virtual UChar32 first32PostInc() override;
+  virtual UChar32       first32PostInc(void) override;
 
   
 
@@ -184,7 +184,7 @@ public:
 
 
 
-  virtual char16_t last() override;
+  virtual char16_t         last(void) override;
 
   
 
@@ -193,7 +193,7 @@ public:
 
 
 
-  virtual UChar32 last32() override;
+  virtual UChar32       last32(void) override;
 
   
 
@@ -223,23 +223,14 @@ public:
 
 
 
-  virtual char16_t current() const override;
+  virtual char16_t         current(void) const override;
 
   
 
 
 
 
-  virtual UChar32 current32() const override;
-
-  
-
-
-
-
-
-
-  virtual char16_t next() override;
+  virtual UChar32       current32(void) const override;
 
   
 
@@ -248,8 +239,7 @@ public:
 
 
 
-
-  virtual char16_t nextPostInc() override;
+  virtual char16_t         next(void) override;
 
   
 
@@ -259,9 +249,7 @@ public:
 
 
 
-
-
-  virtual UChar32 next32() override;
+  virtual char16_t         nextPostInc(void) override;
 
   
 
@@ -271,7 +259,19 @@ public:
 
 
 
-  virtual UChar32 next32PostInc() override;
+
+
+  virtual UChar32       next32(void) override;
+
+  
+
+
+
+
+
+
+
+  virtual UChar32       next32PostInc(void) override;
 
   
 
@@ -291,7 +291,7 @@ public:
 
 
 
-  virtual char16_t previous() override;
+  virtual char16_t         previous(void) override;
 
   
 
@@ -300,7 +300,7 @@ public:
 
 
 
-  virtual UChar32 previous32() override;
+  virtual UChar32       previous32(void) override;
 
   
 
@@ -363,14 +363,14 @@ public:
 
 
 
-  static UClassID U_EXPORT2 getStaticClassID();
+  static UClassID         U_EXPORT2 getStaticClassID(void);
 
   
 
 
 
 
-  virtual UClassID getDynamicClassID() const override;
+  virtual UClassID        getDynamicClassID(void) const override;
 
 protected:
   

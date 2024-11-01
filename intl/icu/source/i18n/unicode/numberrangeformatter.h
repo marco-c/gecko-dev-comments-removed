@@ -467,18 +467,11 @@ class U_I18N_API UnlocalizedNumberRangeFormatter
     explicit UnlocalizedNumberRangeFormatter(
             NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>&& src) noexcept;
 
-    explicit UnlocalizedNumberRangeFormatter(const impl::RangeMacroProps &macros);
-
-    explicit UnlocalizedNumberRangeFormatter(impl::RangeMacroProps &&macros);
-
     
     friend class NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>;
 
     
     friend class NumberRangeFormatter;
-
-    
-    friend class LocalizedNumberRangeFormatter;
 };
 
 
@@ -507,25 +500,6 @@ class U_I18N_API LocalizedNumberRangeFormatter
 
     FormattedNumberRange formatFormattableRange(
         const Formattable& first, const Formattable& second, UErrorCode& status) const;
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-    UnlocalizedNumberRangeFormatter withoutLocale() const &;
-
-    
-
-
-
-
-
-
-    UnlocalizedNumberRangeFormatter withoutLocale() &&;
-#endif 
 
     
 
@@ -575,9 +549,9 @@ class U_I18N_API LocalizedNumberRangeFormatter
     void formatImpl(impl::UFormattedNumberRangeData& results, bool equalBeforeRounding,
                     UErrorCode& status) const;
 
-#endif
+#endif  
 
-
+    
 
 
 

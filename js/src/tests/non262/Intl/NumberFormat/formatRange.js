@@ -226,7 +226,7 @@ const tests = {
     ],
   },
   
-  "ar-EG": {
+  "ar": {
     options: {},
     ranges: [
       {start: -2, end: -1, result: "؜-٢–١"},

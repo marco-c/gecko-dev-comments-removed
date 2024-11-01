@@ -43,16 +43,11 @@ TEST(IntlLocaleCanonicalizer, CanonicalizeICULevel1)
   CheckLocaleResult(ascii, "ar-MA.utf8", "ar_MA");
 
   
-  ASSERT_EQ(
-      LocaleCanonicalizer::CanonicalizeICULevel1(
-          "abcdefghijlkmnopqrstuvwxyzABCDEFGHIJLKMNOPQRSTUVWXYZ-_.0123456789",
-          ascii)
-          .unwrapErr(),
-      ICUError::InternalError);
-  ASSERT_EQ(
-      LocaleCanonicalizer::CanonicalizeICULevel1("exotic ascii:", ascii)
-          .unwrapErr(),
-      ICUError::InternalError);
+  CheckLocaleResult(
+      ascii,
+      "abcdefghijlkmnopqrstuvwxyzABCDEFGHIJLKMNOPQRSTUVWXYZ-_.0123456789",
+      "abcdefghijlkmnopqrstuvwxyzabcdefghijlkmnopqrstuvwxyz__");
+  CheckLocaleResult(ascii, "exotic ascii:", "exotic ascii:");
 
   
   ASSERT_EQ(LocaleCanonicalizer::CanonicalizeICULevel1("👍", ascii).unwrapErr(),

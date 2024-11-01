@@ -154,11 +154,11 @@ DecimalFormatSymbols&
 DecimalFormatSymbols::operator=(const DecimalFormatSymbols& rhs)
 {
     if (this != &rhs) {
-        for (int32_t i = 0; i < static_cast<int32_t>(kFormatSymbolCount); ++i) {
+        for(int32_t i = 0; i < (int32_t)kFormatSymbolCount; ++i) {
             
-            fSymbols[static_cast<ENumberFormatSymbol>(i)].fastCopyFrom(rhs.fSymbols[static_cast<ENumberFormatSymbol>(i)]);
+            fSymbols[(ENumberFormatSymbol)i].fastCopyFrom(rhs.fSymbols[(ENumberFormatSymbol)i]);
         }
-        for (int32_t i = 0; i < static_cast<int32_t>(UNUM_CURRENCY_SPACING_COUNT); ++i) {
+        for(int32_t i = 0; i < (int32_t)UNUM_CURRENCY_SPACING_COUNT; ++i) {
             currencySpcBeforeSym[i].fastCopyFrom(rhs.currencySpcBeforeSym[i]);
             currencySpcAfterSym[i].fastCopyFrom(rhs.currencySpcAfterSym[i]);
         }
@@ -188,12 +188,12 @@ DecimalFormatSymbols::operator==(const DecimalFormatSymbols& that) const
     if (fIsCustomIntlCurrencySymbol != that.fIsCustomIntlCurrencySymbol) { 
         return false;
     } 
-    for (int32_t i = 0; i < static_cast<int32_t>(kFormatSymbolCount); ++i) {
-        if (fSymbols[static_cast<ENumberFormatSymbol>(i)] != that.fSymbols[static_cast<ENumberFormatSymbol>(i)]) {
+    for(int32_t i = 0; i < (int32_t)kFormatSymbolCount; ++i) {
+        if(fSymbols[(ENumberFormatSymbol)i] != that.fSymbols[(ENumberFormatSymbol)i]) {
             return false;
         }
     }
-    for (int32_t i = 0; i < static_cast<int32_t>(UNUM_CURRENCY_SPACING_COUNT); ++i) {
+    for(int32_t i = 0; i < (int32_t)UNUM_CURRENCY_SPACING_COUNT; ++i) {
         if(currencySpcBeforeSym[i] != that.currencySpcBeforeSym[i]) {
             return false;
         }
@@ -242,7 +242,7 @@ struct DecFmtSymDataSink : public ResourceSink {
                     if (!seenSymbol[i]) {
                         seenSymbol[i] = true;
                         dfs.setSymbol(
-                            static_cast<DecimalFormatSymbols::ENumberFormatSymbol>(i),
+                            (DecimalFormatSymbols::ENumberFormatSymbol) i,
                             value.getUnicodeString(errorCode));
                         if (U_FAILURE(errorCode)) { return; }
                     }
@@ -331,11 +331,11 @@ struct CurrencySpacingSink : public ResourceSink {
         static const char* defaults[] = { "[:letter:]", "[:digit:]", " " };
         if (!hasBeforeCurrency || !hasAfterCurrency) {
             for (int32_t pattern = 0; pattern < UNUM_CURRENCY_SPACING_COUNT; pattern++) {
-                dfs.setPatternForCurrencySpacing(static_cast<UCurrencySpacing>(pattern),
+                dfs.setPatternForCurrencySpacing((UCurrencySpacing)pattern,
                     false, UnicodeString(defaults[pattern], -1, US_INV));
             }
             for (int32_t pattern = 0; pattern < UNUM_CURRENCY_SPACING_COUNT; pattern++) {
-                dfs.setPatternForCurrencySpacing(static_cast<UCurrencySpacing>(pattern),
+                dfs.setPatternForCurrencySpacing((UCurrencySpacing)pattern,
                     true, UnicodeString(defaults[pattern], -1, US_INV));
             }
         }
@@ -485,34 +485,34 @@ DecimalFormatSymbols::initialize() {
 
 
 
-    fSymbols[kDecimalSeparatorSymbol] = static_cast<char16_t>(0x2e); 
+    fSymbols[kDecimalSeparatorSymbol] = (char16_t)0x2e;    
     fSymbols[kGroupingSeparatorSymbol].remove();        
-    fSymbols[kPatternSeparatorSymbol] = static_cast<char16_t>(0x3b); 
-    fSymbols[kPercentSymbol] = static_cast<char16_t>(0x25);          
-    fSymbols[kZeroDigitSymbol] = static_cast<char16_t>(0x30);        
-    fSymbols[kOneDigitSymbol] = static_cast<char16_t>(0x31);         
-    fSymbols[kTwoDigitSymbol] = static_cast<char16_t>(0x32);         
-    fSymbols[kThreeDigitSymbol] = static_cast<char16_t>(0x33);       
-    fSymbols[kFourDigitSymbol] = static_cast<char16_t>(0x34);        
-    fSymbols[kFiveDigitSymbol] = static_cast<char16_t>(0x35);        
-    fSymbols[kSixDigitSymbol] = static_cast<char16_t>(0x36);         
-    fSymbols[kSevenDigitSymbol] = static_cast<char16_t>(0x37);       
-    fSymbols[kEightDigitSymbol] = static_cast<char16_t>(0x38);       
-    fSymbols[kNineDigitSymbol] = static_cast<char16_t>(0x39);        
-    fSymbols[kDigitSymbol] = static_cast<char16_t>(0x23);            
-    fSymbols[kPlusSignSymbol] = static_cast<char16_t>(0x002b);       
-    fSymbols[kMinusSignSymbol] = static_cast<char16_t>(0x2d);        
-    fSymbols[kCurrencySymbol] = static_cast<char16_t>(0xa4);         
+    fSymbols[kPatternSeparatorSymbol] = (char16_t)0x3b;    
+    fSymbols[kPercentSymbol] = (char16_t)0x25;             
+    fSymbols[kZeroDigitSymbol] = (char16_t)0x30;           
+    fSymbols[kOneDigitSymbol] = (char16_t)0x31;            
+    fSymbols[kTwoDigitSymbol] = (char16_t)0x32;            
+    fSymbols[kThreeDigitSymbol] = (char16_t)0x33;          
+    fSymbols[kFourDigitSymbol] = (char16_t)0x34;           
+    fSymbols[kFiveDigitSymbol] = (char16_t)0x35;           
+    fSymbols[kSixDigitSymbol] = (char16_t)0x36;            
+    fSymbols[kSevenDigitSymbol] = (char16_t)0x37;          
+    fSymbols[kEightDigitSymbol] = (char16_t)0x38;          
+    fSymbols[kNineDigitSymbol] = (char16_t)0x39;           
+    fSymbols[kDigitSymbol] = (char16_t)0x23;               
+    fSymbols[kPlusSignSymbol] = (char16_t)0x002b;          
+    fSymbols[kMinusSignSymbol] = (char16_t)0x2d;           
+    fSymbols[kCurrencySymbol] = (char16_t)0xa4;            
     fSymbols[kIntlCurrencySymbol].setTo(true, INTL_CURRENCY_SYMBOL_STR, 2);
-    fSymbols[kMonetarySeparatorSymbol] = static_cast<char16_t>(0x2e);  
-    fSymbols[kExponentialSymbol] = static_cast<char16_t>(0x45);        
-    fSymbols[kPerMillSymbol] = static_cast<char16_t>(0x2030);          
-    fSymbols[kPadEscapeSymbol] = static_cast<char16_t>(0x2a);          
-    fSymbols[kInfinitySymbol] = static_cast<char16_t>(0x221e);         
-    fSymbols[kNaNSymbol] = static_cast<char16_t>(0xfffd);              
-    fSymbols[kSignificantDigitSymbol] = static_cast<char16_t>(0x0040); 
+    fSymbols[kMonetarySeparatorSymbol] = (char16_t)0x2e;   
+    fSymbols[kExponentialSymbol] = (char16_t)0x45;         
+    fSymbols[kPerMillSymbol] = (char16_t)0x2030;           
+    fSymbols[kPadEscapeSymbol] = (char16_t)0x2a;           
+    fSymbols[kInfinitySymbol] = (char16_t)0x221e;          
+    fSymbols[kNaNSymbol] = (char16_t)0xfffd;               
+    fSymbols[kSignificantDigitSymbol] = (char16_t)0x0040;  
     fSymbols[kMonetaryGroupingSeparatorSymbol].remove(); 
-    fSymbols[kExponentMultiplicationSymbol] = static_cast<char16_t>(0xd7); 
+    fSymbols[kExponentMultiplicationSymbol] = (char16_t)0xd7; 
     fSymbols[kApproximatelySignSymbol] = u'~';          
     fIsCustomCurrencySymbol = false; 
     fIsCustomIntlCurrencySymbol = false;
@@ -551,11 +551,11 @@ void DecimalFormatSymbols::setCurrency(const char16_t* currency, UErrorCode& sta
         ures_getByIndex(rb.getAlias(), 2, rb.getAlias(), &localStatus);
         int32_t currPatternLen = 0;
         currPattern =
-            ures_getStringByIndex(rb.getAlias(), static_cast<int32_t>(0), &currPatternLen, &localStatus);
+            ures_getStringByIndex(rb.getAlias(), (int32_t)0, &currPatternLen, &localStatus);
         UnicodeString decimalSep =
-            ures_getUnicodeStringByIndex(rb.getAlias(), static_cast<int32_t>(1), &localStatus);
+            ures_getUnicodeStringByIndex(rb.getAlias(), (int32_t)1, &localStatus);
         UnicodeString groupingSep =
-            ures_getUnicodeStringByIndex(rb.getAlias(), static_cast<int32_t>(2), &localStatus);
+            ures_getUnicodeStringByIndex(rb.getAlias(), (int32_t)2, &localStatus);
         if(U_SUCCESS(localStatus)){
             fSymbols[kMonetaryGroupingSeparatorSymbol] = groupingSep;
             fSymbols[kMonetarySeparatorSymbol] = decimalSep;
@@ -580,9 +580,9 @@ DecimalFormatSymbols::getPatternForCurrencySpacing(UCurrencySpacing type,
       return fNoSymbol;  
     }
     if (beforeCurrency) {
-      return currencySpcBeforeSym[static_cast<int32_t>(type)];
+      return currencySpcBeforeSym[(int32_t)type];
     } else {
-      return currencySpcAfterSym[static_cast<int32_t>(type)];
+      return currencySpcAfterSym[(int32_t)type];
     }
 }
 
@@ -591,9 +591,9 @@ DecimalFormatSymbols::setPatternForCurrencySpacing(UCurrencySpacing type,
                                                    UBool beforeCurrency,
                                              const UnicodeString& pattern) {
   if (beforeCurrency) {
-    currencySpcBeforeSym[static_cast<int32_t>(type)] = pattern;
+    currencySpcBeforeSym[(int32_t)type] = pattern;
   } else {
-    currencySpcAfterSym[static_cast<int32_t>(type)] = pattern;
+    currencySpcAfterSym[(int32_t)type] =  pattern;
   }
 }
 U_NAMESPACE_END

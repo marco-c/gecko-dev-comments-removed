@@ -33,7 +33,7 @@ public:
 
 
 
-    NameUnicodeTransliterator(UnicodeFilter* adoptedFilter = nullptr);
+    NameUnicodeTransliterator(UnicodeFilter* adoptedFilter = 0);
 
     
 

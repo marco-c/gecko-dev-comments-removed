@@ -26,7 +26,6 @@
 #include "uhash.h"
 #include "uvector.h"
 #include "umutex.h"
-#include "charstr.h"
 
 
 #define ZONE_NAME_U16_MAX 128
@@ -99,21 +98,21 @@ struct CharacterNode {
 };
 
 inline UBool CharacterNode::hasValues() const {
-    return fValues != nullptr;
+    return (UBool)(fValues != nullptr);
 }
 
 inline int32_t CharacterNode::countValues() const {
     return
         fValues == nullptr ? 0 :
         !fHasValuesVector ? 1 :
-        static_cast<const UVector*>(fValues)->size();
+        ((const UVector *)fValues)->size();
 }
 
 inline const void *CharacterNode::getValue(int32_t index) const {
     if (!fHasValuesVector) {
         return fValues;  
     } else {
-        return static_cast<const UVector*>(fValues)->elementAt(index);
+        return ((const UVector *)fValues)->elementAt(index);
     }
 }
 
@@ -256,7 +255,7 @@ public:
 
 private:
     Locale fLocale;
-    CharString fRegion;
+    char fRegion[ULOC_COUNTRY_CAPACITY];
 };
 
 U_NAMESPACE_END

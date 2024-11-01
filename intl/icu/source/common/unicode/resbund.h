@@ -209,7 +209,8 @@ public:
 
 
 
-    int32_t getSize() const;
+    int32_t
+      getSize(void) const;
 
     
 
@@ -288,23 +289,16 @@ public:
 
 
 
-    UBool hasNext() const;
+    UBool
+      hasNext(void) const;
 
     
 
 
 
 
-    void resetIterator();
-
-    
-
-
-
-
-
-
-    const char* getKey() const;
+    void
+      resetIterator(void);
 
     
 
@@ -313,7 +307,8 @@ public:
 
 
 
-    const char* getName() const;
+    const char*
+      getKey(void) const;
 
     
 
@@ -321,7 +316,19 @@ public:
 
 
 
-    UResType getType() const;
+
+    const char*
+      getName(void) const;
+
+
+    
+
+
+
+
+
+    UResType
+      getType(void) const;
 
     
 
@@ -417,7 +424,8 @@ public:
 
 
 
-    const char* getVersionNumber() const;
+    const char*
+      getVersionNumber(void) const;
 #endif  
 
     
@@ -437,7 +445,8 @@ public:
 
 
 
-    const Locale& getLocale() const;
+    const Locale&
+      getLocale(void) const;
 #endif  
 
     

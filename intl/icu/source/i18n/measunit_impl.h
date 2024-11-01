@@ -14,9 +14,11 @@
 
 U_NAMESPACE_BEGIN
 
-namespace number::impl {
+namespace number {
+namespace impl {
 class LongNameHandler;
 }
+} 
 
 static const char16_t kDefaultCurrency[] = u"XXX";
 static const char kDefaultCurrency8[] = "XXX";
@@ -356,8 +358,16 @@ template class U_I18N_API MaybeStackVector<MeasureUnitImplWithIndex, 8>;
 
 
 
+#if defined(_MSC_VER)
+
+#pragma warning(push)
+#pragma warning(disable : 4661)
+#endif
 template class U_I18N_API LocalPointerBase<MeasureUnitImpl>;
 template class U_I18N_API LocalPointer<MeasureUnitImpl>;
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #endif
 
 U_NAMESPACE_END

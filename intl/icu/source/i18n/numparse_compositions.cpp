@@ -24,7 +24,7 @@ bool SeriesMatcher::match(StringSegment& segment, ParsedNumber& result, UErrorCo
 
     int32_t initialOffset = segment.getOffset();
     bool maybeMore = true;
-    for (const auto* it = begin(); it < end();) {
+    for (auto* it = begin(); it < end();) {
         const NumberParseMatcher* matcher = *it;
         int matcherOffset = segment.getOffset();
         if (segment.length() != 0) {
@@ -64,7 +64,7 @@ bool SeriesMatcher::match(StringSegment& segment, ParsedNumber& result, UErrorCo
 bool SeriesMatcher::smokeTest(const StringSegment& segment) const {
     
     
-    for (const auto& matcher : *this) {
+    for (auto& matcher : *this) {
         
         U_ASSERT(!matcher->isFlexible());
         return matcher->smokeTest(segment);
@@ -74,7 +74,7 @@ bool SeriesMatcher::smokeTest(const StringSegment& segment) const {
 
 void SeriesMatcher::postProcess(ParsedNumber& result) const {
     
-    for (const auto* matcher : *this) {
+    for (auto* matcher : *this) {
         matcher->postProcess(result);
     }
 }

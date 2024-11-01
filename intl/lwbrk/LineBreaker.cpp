@@ -450,13 +450,7 @@ static int8_t GetClass(uint32_t u, LineBreakRule aLevel,
        CLASS_CHARACTER,
        CLASS_BREAKABLE,
        CLASS_CHARACTER,
-       CLASS_CHARACTER,
-       CLASS_CHARACTER,
-       CLASS_CHARACTER,
-       CLASS_CHARACTER,
-       CLASS_CHARACTER,
-       CLASS_CHARACTER,
-  };
+       CLASS_CHARACTER};
 
   static_assert(U_LB_COUNT == std::size(sUnicodeLineBreakToClass),
                 "Gecko vs ICU LineBreak class mismatch");

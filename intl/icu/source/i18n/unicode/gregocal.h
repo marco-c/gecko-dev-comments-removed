@@ -324,7 +324,7 @@ public:
 
 
 
-    UDate getGregorianChange() const;
+    UDate getGregorianChange(void) const;
 
     
 
@@ -435,7 +435,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -448,7 +448,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -487,20 +487,8 @@ public:
 
 
 
-
-    virtual int64_t handleComputeMonthStart(int32_t eyear, int32_t month,
-                                            UBool useMonth, UErrorCode& status) const override;
-
-    
-
-
-
-
-
-
-
-
-    virtual int32_t handleComputeJulianDay(UCalendarDateFields bestField, UErrorCode& status) override;
+    virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month,
+                                                   UBool useMonth) const override;
 
     
 
@@ -509,7 +497,17 @@ public:
 
 
 
-    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const override;
+
+    virtual int32_t handleComputeJulianDay(UCalendarDateFields bestField) override;
+
+    
+
+
+
+
+
+
+    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
 
     
 
@@ -526,8 +524,7 @@ public:
 
 
 
-
-    virtual int32_t monthLength(int32_t month, UErrorCode& status) const;
+    virtual int32_t monthLength(int32_t month) const;
 
     
 
@@ -544,8 +541,24 @@ public:
 
 
 
-  int32_t yearLength() const;
 
+    int32_t yearLength(int32_t year) const;
+    
+    
+
+
+
+
+    int32_t yearLength(void) const;
+
+    
+
+
+
+
+
+
+    void pinDayOfMonth(void);
 #endif  
 
     
@@ -588,8 +601,7 @@ public:
 
 
 
-
-    virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
+    virtual int32_t handleGetExtendedYear() override;
 
     
 
@@ -599,7 +611,7 @@ public:
 
 
 
-    virtual int32_t handleGetExtendedYearFromWeekFields(int32_t yearWoy, int32_t woy, UErrorCode& status) override;
+    virtual int32_t handleGetExtendedYearFromWeekFields(int32_t yearWoy, int32_t woy) override;
 
 
     
@@ -619,15 +631,6 @@ public:
 
     virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
-#ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-
-    virtual bool isEra0CountingBackward() const override { return true; }
-#endif  
-
  private:
     
 
@@ -643,7 +646,7 @@ public:
 
 
 
-    UBool validateFields() const;
+    UBool validateFields(void) const;
 
     
 
@@ -722,8 +725,23 @@ public:
 
  public: 
 
-    DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
+    
 
+
+
+    virtual UBool haveDefaultCentury() const override;
+
+    
+
+
+
+    virtual UDate defaultCenturyStart() const override;
+
+    
+
+
+
+    virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

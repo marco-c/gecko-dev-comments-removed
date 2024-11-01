@@ -124,49 +124,6 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
 #   if U_USING_ICU_NAMESPACE
         U_NAMESPACE_USE
 #   endif
-
-#ifndef U_HIDE_DRAFT_API
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(_MSC_VER) || (UPRV_HAS_DECLSPEC_ATTRIBUTE(__dllexport__) && \
-                          UPRV_HAS_DECLSPEC_ATTRIBUTE(__dllimport__))
-#   define U_HEADER_NESTED_NAMESPACE header
-#elif defined(U_COMBINED_IMPLEMENTATION) || defined(U_COMMON_IMPLEMENTATION) || \
-        defined(U_I18N_IMPLEMENTATION) || defined(U_IO_IMPLEMENTATION) || \
-        defined(U_LAYOUTEX_IMPLEMENTATION) || defined(U_TOOLUTIL_IMPLEMENTATION)
-#   define U_HEADER_NESTED_NAMESPACE internal
-#else
-#   define U_HEADER_NESTED_NAMESPACE header
-#endif
-
-#define U_HEADER_ONLY_NAMESPACE U_ICU_NAMESPACE::U_HEADER_NESTED_NAMESPACE
-
-namespace U_HEADER_ONLY_NAMESPACE {}
-#endif  
-
 #endif 
 
 

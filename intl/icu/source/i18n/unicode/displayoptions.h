@@ -22,6 +22,8 @@
 
 U_NAMESPACE_BEGIN
 
+#ifndef U_HIDE_DRAFT_API
+
 
 
 
@@ -260,6 +262,8 @@ private:
     UDisplayOptionsDisplayLength displayLength;
     UDisplayOptionsSubstituteHandling substituteHandling;
 };
+
+#endif 
 
 U_NAMESPACE_END
 

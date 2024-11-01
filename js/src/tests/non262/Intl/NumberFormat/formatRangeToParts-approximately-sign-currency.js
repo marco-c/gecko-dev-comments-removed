@@ -15,7 +15,7 @@ const options = {style: "currency", currency: "EUR"};
 
 
 const approximatelySigns = [
-  "-", "~", "∼", "≈", "≃", "ca.", "約", "dáàṣì", "dáàshì",
+  "~", "∼", "≈", "≃", "ca.", "約", "dáàṣì", "dáàshì",
 ];
 
 

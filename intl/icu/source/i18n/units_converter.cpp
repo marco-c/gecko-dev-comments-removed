@@ -78,8 +78,7 @@ void U_I18N_API Factor::applyPrefix(UMeasurePrefix unitPrefix) {
     }
 
     int32_t prefixPower = umeas_getPrefixPower(unitPrefix);
-    double prefixFactor = std::pow(static_cast<double>(umeas_getPrefixBase(unitPrefix)),
-                                   static_cast<double>(std::abs(prefixPower)));
+    double prefixFactor = std::pow((double)umeas_getPrefixBase(unitPrefix), (double)std::abs(prefixPower));
     if (prefixPower >= 0) {
         factorNum *= prefixFactor;
     } else {
@@ -189,7 +188,7 @@ void addFactorElement(Factor &factor, StringPiece elementStr, Signum signum, UEr
 Factor extractFactorConversions(StringPiece stringFactor, UErrorCode &status) {
     Factor result;
     Signum signum = Signum::POSITIVE;
-    const auto* factorData = stringFactor.data();
+    auto factorData = stringFactor.data();
     for (int32_t i = 0, start = 0, n = stringFactor.length(); i < n; i++) {
         if (factorData[i] == '*' || factorData[i] == '/') {
             StringPiece factorElement = stringFactor.substr(start, i - start);
@@ -211,11 +210,11 @@ Factor extractFactorConversions(StringPiece stringFactor, UErrorCode &status) {
 
 
 Factor loadSingleFactor(StringPiece source, const ConversionRates &ratesInfo, UErrorCode &status) {
-    const auto* const conversionUnit = ratesInfo.extractConversionInfo(source, status);
-    if (U_FAILURE(status)) return {};
+    const auto conversionUnit = ratesInfo.extractConversionInfo(source, status);
+    if (U_FAILURE(status)) return Factor();
     if (conversionUnit == nullptr) {
         status = U_INTERNAL_PROGRAM_ERROR;
-        return {};
+        return Factor();
     }
 
     Factor result = extractFactorConversions(conversionUnit->factor.toStringPiece(), status);
@@ -283,93 +282,45 @@ UBool checkSimpleUnit(const MeasureUnitImpl &unit, UErrorCode &status) {
 
 
 
-CharString getSpecialMappingName(const MeasureUnitImpl &simpleUnit, const ConversionRates &ratesInfo,
-                          UErrorCode &status) {
-    if (!checkSimpleUnit(simpleUnit, status)) {
-        return {};
-    }
-    SingleUnitImpl singleUnit = *simpleUnit.singleUnits[0];
-    const auto* const conversionUnit =
-        ratesInfo.extractConversionInfo(singleUnit.getSimpleUnitID(), status);
-    if (U_FAILURE(status)) {
-        return {};
-    }
-    if (conversionUnit == nullptr) {
-        status = U_INTERNAL_PROGRAM_ERROR;
-        return {};
-    }
-    CharString result;
-    result.copyFrom(conversionUnit->specialMappingName, status);
-    return result;
-}
-
-
-
-
-
-
 void loadConversionRate(ConversionRate &conversionRate, const MeasureUnitImpl &source,
                         const MeasureUnitImpl &target, Convertibility unitsState,
                         const ConversionRates &ratesInfo, UErrorCode &status) {
-
-    conversionRate.specialSource = getSpecialMappingName(source, ratesInfo, status);
-    conversionRate.specialTarget = getSpecialMappingName(target, ratesInfo, status);
     
-    if (conversionRate.specialSource.isEmpty() && conversionRate.specialTarget.isEmpty()) {
-        
-        Factor finalFactor;
+    Factor finalFactor;
 
-        
-        
-        Factor sourceToBase = loadCompoundFactor(source, ratesInfo, status);
-        Factor targetToBase = loadCompoundFactor(target, ratesInfo, status);
+    
+    
+    Factor sourceToBase = loadCompoundFactor(source, ratesInfo, status);
+    Factor targetToBase = loadCompoundFactor(target, ratesInfo, status);
 
-        
-        finalFactor.multiplyBy(sourceToBase);
-        if (unitsState == Convertibility::CONVERTIBLE) {
-            finalFactor.divideBy(targetToBase);
-        } else if (unitsState == Convertibility::RECIPROCAL) {
-            finalFactor.multiplyBy(targetToBase);
-        } else {
-            status = UErrorCode::U_ARGUMENT_TYPE_MISMATCH;
-            return;
-        }
-
-        finalFactor.substituteConstants();
-
-        conversionRate.factorNum = finalFactor.factorNum;
-        conversionRate.factorDen = finalFactor.factorDen;
-
-        
-        
-        if (checkSimpleUnit(source, status) && checkSimpleUnit(target, status)) {
-            conversionRate.sourceOffset =
-                sourceToBase.offset * sourceToBase.factorDen / sourceToBase.factorNum;
-            conversionRate.targetOffset =
-                targetToBase.offset * targetToBase.factorDen / targetToBase.factorNum;
-        }
-        
-        
-
-        conversionRate.reciprocal = unitsState == Convertibility::RECIPROCAL;
-    } else if (conversionRate.specialSource.isEmpty() || conversionRate.specialTarget.isEmpty()) {
-        
-        if (unitsState != Convertibility::CONVERTIBLE) {
-            status = UErrorCode::U_ARGUMENT_TYPE_MISMATCH;
-            return;
-        }
-        Factor finalFactor;
-        if (conversionRate.specialSource.isEmpty()) {
-            
-            finalFactor = loadCompoundFactor(source, ratesInfo, status);
-        } else {
-            
-            finalFactor = loadCompoundFactor(target, ratesInfo, status);
-        }
-        finalFactor.substituteConstants();
-        conversionRate.factorNum = finalFactor.factorNum;
-        conversionRate.factorDen = finalFactor.factorDen;
+    
+    finalFactor.multiplyBy(sourceToBase);
+    if (unitsState == Convertibility::CONVERTIBLE) {
+        finalFactor.divideBy(targetToBase);
+    } else if (unitsState == Convertibility::RECIPROCAL) {
+        finalFactor.multiplyBy(targetToBase);
+    } else {
+        status = UErrorCode::U_ARGUMENT_TYPE_MISMATCH;
+        return;
     }
+
+    finalFactor.substituteConstants();
+
+    conversionRate.factorNum = finalFactor.factorNum;
+    conversionRate.factorDen = finalFactor.factorDen;
+
+    
+    
+    if (checkSimpleUnit(source, status) && checkSimpleUnit(target, status)) {
+        conversionRate.sourceOffset =
+            sourceToBase.offset * sourceToBase.factorDen / sourceToBase.factorNum;
+        conversionRate.targetOffset =
+            targetToBase.offset * targetToBase.factorDen / targetToBase.factorNum;
+    }
+    
+    
+
+    conversionRate.reciprocal = unitsState == Convertibility::RECIPROCAL;
 }
 
 struct UnitIndexAndDimension : UMemory {
@@ -429,11 +380,11 @@ void U_I18N_API addSingleFactorConstant(StringPiece baseStr, int32_t power, Sign
         factor.constantExponents[CONSTANT_FT2M] += 3 * power * signum;
     } else if (baseStr == "in3_to_m3") {
         factor.constantExponents[CONSTANT_FT2M] += 3 * power * signum;
-        factor.factorDen *= std::pow(12 * 12 * 12, power * signum);
+        factor.factorDen *= 12 * 12 * 12;
     } else if (baseStr == "gal_to_m3") {
+        factor.factorNum *= 231;
         factor.constantExponents[CONSTANT_FT2M] += 3 * power * signum;
-        factor.factorNum *= std::pow(231, power * signum);
-        factor.factorDen *= std::pow(12 * 12 * 12, power * signum);
+        factor.factorDen *= 12 * 12 * 12;
     } else if (baseStr == "gal_imp_to_m3") {
         factor.constantExponents[CONSTANT_GAL_IMP2M3] += power * signum;
     } else if (baseStr == "G") {
@@ -454,14 +405,6 @@ void U_I18N_API addSingleFactorConstant(StringPiece baseStr, int32_t power, Sign
         factor.constantExponents[CONSTANT_SEC_PER_JULIAN_YEAR] += power * signum;
     } else if (baseStr == "speed_of_light_meters_per_second") {
         factor.constantExponents[CONSTANT_SPEED_OF_LIGHT_METERS_PER_SECOND] += power * signum;
-    } else if (baseStr == "sho_to_m3") {
-        factor.constantExponents[CONSTANT_SHO_TO_M3] += power * signum;
-    } else if (baseStr == "tsubo_to_m2") {
-        factor.constantExponents[CONSTANT_TSUBO_TO_M2] += power * signum;
-    } else if (baseStr == "shaku_to_m") {
-        factor.constantExponents[CONSTANT_SHAKU_TO_M] += power * signum;
-    } else if (baseStr == "AMU") {
-        factor.constantExponents[CONSTANT_AMU] += power * signum;
     } else {
         if (signum == Signum::NEGATIVE) {
             factor.factorDen *= std::pow(strToDouble(baseStr, status), power);
@@ -487,7 +430,7 @@ MeasureUnitImpl U_I18N_API extractCompoundBaseUnit(const MeasureUnitImpl &source
         const auto &singleUnit = *singleUnits[i];
         
         
-        const auto* const rateInfo =
+        const auto rateInfo =
             conversionRates.extractConversionInfo(singleUnit.getSimpleUnitID(), status);
         if (U_FAILURE(status)) {
             return result;
@@ -600,7 +543,7 @@ void UnitsConverter::init(const ConversionRates &ratesInfo, UErrorCode &status) 
 
     loadConversionRate(conversionRate_, conversionRate_.source, conversionRate_.target, unitsState,
                        ratesInfo, status);
-
+                          
 }
 
 int32_t UnitsConverter::compareTwoUnits(const MeasureUnitImpl &firstUnit,
@@ -624,23 +567,6 @@ int32_t UnitsConverter::compareTwoUnits(const MeasureUnitImpl &firstUnit,
     if (unitsState == Convertibility::UNCONVERTIBLE || unitsState == Convertibility::RECIPROCAL) {
         status = U_ARGUMENT_TYPE_MISMATCH;
         return 0;
-    }
-
-    CharString firstSpecial = getSpecialMappingName(firstUnit, ratesInfo, status);
-    CharString secondSpecial = getSpecialMappingName(secondUnit, ratesInfo, status);
-    if (!firstSpecial.isEmpty() || !secondSpecial.isEmpty()) {
-        if (firstSpecial.isEmpty()) {
-            
-            return -1;
-        }
-        if (secondSpecial.isEmpty()) {
-            
-            return 1;
-        }
-        
-        StringPiece firstSpecialPiece = firstSpecial.toStringPiece();
-        StringPiece secondSpecialPiece = secondSpecial.toStringPiece();
-        return firstSpecialPiece.compare(secondSpecialPiece);
     }
 
     
@@ -667,115 +593,8 @@ int32_t UnitsConverter::compareTwoUnits(const MeasureUnitImpl &firstUnit,
     return 0;
 }
 
-
-static double minMetersPerSecForBeaufort[] = {
-    
-    
-    
-    
-    0.0, 
-    0.3, 
-    1.6, 
-    3.4, 
-    5.5, 
-    8.0, 
-    10.8, 
-    13.9, 
-    17.2, 
-    20.8, 
-    24.5, 
-    28.5, 
-    32.7, 
-    36.9, 
-    41.4, 
-    46.1, 
-    51.1, 
-    55.8, 
-    61.4, 
-};
-
-static int maxBeaufort = UPRV_LENGTHOF(minMetersPerSecForBeaufort) - 2;
-
-
-
-
-
-
-double UnitsConverter::scaleToBase(double scaleValue, double minBaseForScaleValues[], int scaleMax) const {
-    if (scaleValue < 0) {
-        scaleValue = -scaleValue;
-    }
-    scaleValue += 0.5; 
-    if (scaleValue > static_cast<double>(scaleMax)) {
-        scaleValue = static_cast<double>(scaleMax);
-    }
-    int scaleInt = static_cast<int>(scaleValue);
-    return (minBaseForScaleValues[scaleInt] + minBaseForScaleValues[scaleInt+1])/2.0;
-}
-
-
-
-
-
-
-
-static int bsearchRanges(double rangeStarts[], int max, double key) {
-    if (key >= rangeStarts[max]) {
-        return max;
-    }
-    int beg = 0, mid = 0, end = max + 1;
-    while (beg < end) {
-        mid = (beg + end) / 2;
-        if (key < rangeStarts[mid]) {
-            end = mid;
-        } else if (key > rangeStarts[mid+1]) {
-            beg = mid+1;
-        } else {
-            break;
-        }
-    }
-    return mid;
-}
-
-
-
-
-
-double UnitsConverter::baseToScale(double baseValue, double minBaseForScaleValues[], int scaleMax) const {
-    if (baseValue < 0) {
-        baseValue = -baseValue;
-    }
-    int scaleIndex = bsearchRanges(minBaseForScaleValues, scaleMax, baseValue);
-    return static_cast<double>(scaleIndex);
-}
-
 double UnitsConverter::convert(double inputValue) const {
-    double result = inputValue;
-    if (!conversionRate_.specialSource.isEmpty() || !conversionRate_.specialTarget.isEmpty()) {
-        double base = inputValue;
-        
-        if (!conversionRate_.specialSource.isEmpty()) {
-            
-            
-            base = (conversionRate_.specialSource == StringPiece("beaufort"))?
-                scaleToBase(inputValue, minMetersPerSecForBeaufort, maxBeaufort): inputValue;
-        } else {
-            
-            base = inputValue * conversionRate_.factorNum / conversionRate_.factorDen;
-        }
-        
-        if (!conversionRate_.specialTarget.isEmpty()) {
-            
-            
-            result = (conversionRate_.specialTarget == StringPiece("beaufort"))?
-                baseToScale(base, minMetersPerSecForBeaufort, maxBeaufort): base;
-        } else {
-            
-            result = base * conversionRate_.factorDen / conversionRate_.factorNum;
-        }
-        return result;
-    }
-    result =
+    double result =
         inputValue + conversionRate_.sourceOffset; 
     
     result *= conversionRate_.factorNum / conversionRate_.factorDen;
@@ -794,30 +613,6 @@ double UnitsConverter::convert(double inputValue) const {
 
 double UnitsConverter::convertInverse(double inputValue) const {
     double result = inputValue;
-    if (!conversionRate_.specialSource.isEmpty() || !conversionRate_.specialTarget.isEmpty()) {
-        double base = inputValue;
-        
-        if (!conversionRate_.specialTarget.isEmpty()) {
-            
-            
-            base = (conversionRate_.specialTarget == StringPiece("beaufort"))?
-                scaleToBase(inputValue, minMetersPerSecForBeaufort, maxBeaufort): inputValue;
-        } else {
-            
-            base = inputValue * conversionRate_.factorNum / conversionRate_.factorDen;
-        }
-        
-        if (!conversionRate_.specialSource.isEmpty()) {
-            
-            
-            result = (conversionRate_.specialSource == StringPiece("beaufort"))?
-                baseToScale(base, minMetersPerSecForBeaufort, maxBeaufort): base;
-        } else {
-            
-            result = base * conversionRate_.factorDen / conversionRate_.factorNum;
-        }
-        return result;
-    }
     if (conversionRate_.reciprocal) {
         if (result == 0) {
             return uprv_getInfinity();

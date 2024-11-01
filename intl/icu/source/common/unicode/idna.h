@@ -90,9 +90,6 @@ public:
 
 
 
-
-
-
     static IDNA *
     createUTS46Instance(uint32_t options, UErrorCode &errorCode);
 

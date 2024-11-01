@@ -567,7 +567,7 @@ public:
 
 
 
-    static const char16_t* U_EXPORT2 getPatternUChars();
+    static const char16_t * U_EXPORT2 getPatternUChars(void);
 
     
 
@@ -971,7 +971,7 @@ private:
     
 
 
-    void dispose();
+    void dispose(void);
 
     
 
@@ -982,12 +982,12 @@ private:
     
 
 
-    void initZoneStringsArray();
+    void initZoneStringsArray(void);
 
     
 
 
-    void disposeZoneStrings();
+    void disposeZoneStrings(void);
 
     
 

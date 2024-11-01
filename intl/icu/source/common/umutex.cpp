@@ -209,6 +209,7 @@ u_setMutexFunctions(const void * , UMtxInitFn *, UMtxFn *,
     if (U_SUCCESS(*status)) {
         *status = U_UNSUPPORTED_ERROR;
     }
+    return;
 }
 
 
@@ -219,4 +220,5 @@ u_setAtomicIncDecFunctions(const void * , UMtxAtomicFn *, UMtxAtomicFn *,
     if (U_SUCCESS(*status)) {
         *status = U_UNSUPPORTED_ERROR;
     }
+    return;
 }

@@ -59,7 +59,7 @@ UBool U_CALLCONV cleanup() {
 void U_CALLCONV LocaleDistance::initLocaleDistance(UErrorCode &errorCode) {
     
     U_ASSERT(gLocaleDistance == nullptr);
-    const LikelySubtags &likely = *LikelySubtags::getSingleton(errorCode);
+    const XLikelySubtags &likely = *XLikelySubtags::getSingleton(errorCode);
     if (U_FAILURE(errorCode)) { return; }
     const LocaleDistanceData &data = likely.getDistanceData();
     if (data.distanceTrieBytes == nullptr ||
@@ -83,7 +83,7 @@ const LocaleDistance *LocaleDistance::getSingleton(UErrorCode &errorCode) {
     return gLocaleDistance;
 }
 
-LocaleDistance::LocaleDistance(const LocaleDistanceData &data, const LikelySubtags &likely) :
+LocaleDistance::LocaleDistance(const LocaleDistanceData &data, const XLikelySubtags &likely) :
         likelySubtags(likely),
         trie(data.distanceTrieBytes),
         regionToPartitionsIndex(data.regionToPartitions), partitionArrays(data.partitions),
@@ -399,7 +399,7 @@ int32_t LocaleDistance::trieNext(BytesTrie &iter, const char *s, bool wantValue)
     }
 }
 
-bool LocaleDistance::isParadigmLSR(const LSR &lsr) const {
+UBool LocaleDistance::isParadigmLSR(const LSR &lsr) const {
     
     
     

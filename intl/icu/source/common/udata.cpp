@@ -274,7 +274,7 @@ typedef struct DataCacheElement {
 
 
 static void U_CALLCONV DataCacheElement_deleter(void *pDCEl) {
-    DataCacheElement* p = static_cast<DataCacheElement*>(pDCEl);
+    DataCacheElement *p = (DataCacheElement *)pDCEl;
     udata_close(p->item);              
     uprv_free(p->name);                
     uprv_free(pDCEl);                  
@@ -316,7 +316,7 @@ static UDataMemory *udata_findCachedData(const char *path, UErrorCode &err)
 
     baseName = findBasename(path);   
     umtx_lock(nullptr);
-    el = static_cast<DataCacheElement*>(uhash_get(htable, baseName));
+    el = (DataCacheElement *)uhash_get(htable, baseName);
     umtx_unlock(nullptr);
     if (el != nullptr) {
         retVal = el->item;
@@ -344,7 +344,7 @@ static UDataMemory *udata_cacheDataItem(const char *path, UDataMemory *item, UEr
     
 
 
-    newElement = static_cast<DataCacheElement*>(uprv_malloc(sizeof(DataCacheElement)));
+    newElement = (DataCacheElement *)uprv_malloc(sizeof(DataCacheElement));
     if (newElement == nullptr) {
         *pErr = U_MEMORY_ALLOCATION_ERROR;
         return nullptr;
@@ -357,8 +357,8 @@ static UDataMemory *udata_cacheDataItem(const char *path, UDataMemory *item, UEr
     UDatamemory_assign(newElement->item, item);
 
     baseName = findBasename(path);
-    nameLen = static_cast<int32_t>(uprv_strlen(baseName));
-    newElement->name = static_cast<char*>(uprv_malloc(nameLen + 1));
+    nameLen = (int32_t)uprv_strlen(baseName);
+    newElement->name = (char *)uprv_malloc(nameLen+1);
     if (newElement->name == nullptr) {
         *pErr = U_MEMORY_ALLOCATION_ERROR;
         uprv_free(newElement->item);
@@ -370,7 +370,7 @@ static UDataMemory *udata_cacheDataItem(const char *path, UDataMemory *item, UEr
     
 
     umtx_lock(nullptr);
-    oldValue = static_cast<DataCacheElement*>(uhash_get(htable, path));
+    oldValue = (DataCacheElement *)uhash_get(htable, path);
     if (oldValue != nullptr) {
         subErr = U_USING_DEFAULT_WARNING;
     }
@@ -469,13 +469,13 @@ UDataPathIterator::UDataPathIterator(const char *inPath, const char *pkg,
 
     
     basename = findBasename(item);
-    basenameLen = static_cast<int32_t>(uprv_strlen(basename));
+    basenameLen = (int32_t)uprv_strlen(basename);
 
     
     if(basename == item) {
         nextPath = path;
     } else {
-        itemPath.append(item, static_cast<int32_t>(basename - item), *pErrorCode);
+        itemPath.append(item, (int32_t)(basename-item), *pErrorCode);
         nextPath = itemPath.data();
     }
 #ifdef UDATA_DEBUG
@@ -531,16 +531,16 @@ const char *UDataPathIterator::next(UErrorCode *pErrorCode)
 
         if(nextPath == itemPath.data()) { 
             nextPath = path; 
-            pathLen = static_cast<int32_t>(uprv_strlen(currentPath));
+            pathLen = (int32_t)uprv_strlen(currentPath);
         } else {
             
             nextPath = uprv_strchr(currentPath, U_PATH_SEP_CHAR);
             if(nextPath == nullptr) {
                 
-                pathLen = static_cast<int32_t>(uprv_strlen(currentPath));
+                pathLen = (int32_t)uprv_strlen(currentPath); 
             } else {
                 
-                pathLen = static_cast<int32_t>(nextPath - currentPath);
+                pathLen = (int32_t)(nextPath - currentPath);
                 
                 nextPath ++;
             }
@@ -777,6 +777,17 @@ openCommonData(const char *path,
         return nullptr;
     }
 
+#if defined(OS390_STUBDATA) && defined(OS390BATCH)
+    if (!UDataMemory_isLoaded(&tData)) {
+        char ourPathBuffer[1024];
+        
+        uprv_strncpy(ourPathBuffer, path, 1019);
+        ourPathBuffer[1019]=0;
+        uprv_strcat(ourPathBuffer, ".dat");
+        uprv_mapFile(&tData, ourPathBuffer, pErrorCode);
+    }
+#endif
+
     if (U_FAILURE(*pErrorCode)) {
         return nullptr;
     }
@@ -839,12 +850,12 @@ static UBool extendICUData(UErrorCode *pErr)
        UDataMemory_init(&copyPData);
        if(pData != nullptr) {
           UDatamemory_assign(&copyPData, pData);
-          copyPData.map = nullptr;     
-          copyPData.mapAddr = nullptr; 
-                                       
-                                       
-                                       
-                                       
+          copyPData.map = 0;              
+          copyPData.mapAddr = 0;          
+                                          
+                                          
+                                          
+                                          
 
           didUpdate = 
               setCommonICUData(&copyPData,
@@ -1185,7 +1196,7 @@ doOpenChoice(const char *path, const char *type, const char *name,
                 *p = U_FILE_SEP_CHAR;
             }
 #if defined (UDATA_DEBUG)
-            fprintf(stderr, "Changed path from [%s] to [%s]\n", path, altSepPath.data());
+            fprintf(stderr, "Changed path from [%s] to [%s]\n", path, altSepPath.s);
 #endif
             path = altSepPath.data();
         }
@@ -1220,7 +1231,7 @@ doOpenChoice(const char *path, const char *type, const char *name,
                 if(isICUData) {
                     pkgName.append(U_ICUDATA_NAME, *pErrorCode);
                 } else {
-                    pkgName.append(path, static_cast<int32_t>(treeChar - path), *pErrorCode);
+                    pkgName.append(path, (int32_t)(treeChar-path), *pErrorCode);
                     if (first == nullptr) {
                         
 

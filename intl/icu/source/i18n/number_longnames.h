@@ -13,8 +13,8 @@
 #include "number_utils.h"
 #include "number_modifiers.h"
 
-U_NAMESPACE_BEGIN
-namespace number::impl {
+U_NAMESPACE_BEGIN namespace number {
+namespace impl {
 
 
 
@@ -263,7 +263,8 @@ class LongNameMultiplexer : public MicroPropsGenerator, public UMemory {
     }
 };
 
-} 
+}  
+}  
 U_NAMESPACE_END
 
 #endif 

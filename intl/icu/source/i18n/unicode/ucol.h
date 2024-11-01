@@ -260,10 +260,7 @@ typedef enum {
 
 
 
-
-
-
-     UCOL_ALTERNATE_HANDLING,
+     UCOL_ALTERNATE_HANDLING, 
      
 
 
@@ -272,12 +269,8 @@ typedef enum {
 
 
 
-
-
-
-     UCOL_CASE_FIRST,
+     UCOL_CASE_FIRST, 
      
-
 
 
 
@@ -288,9 +281,6 @@ typedef enum {
 
      UCOL_CASE_LEVEL,
      
-
-
-
 
 
 
@@ -1519,130 +1509,6 @@ ucol_openBinary(const uint8_t *bin, int32_t length,
                 const UCollator *base, 
                 UErrorCode *status);
 
-#if U_SHOW_CPLUSPLUS_API || U_SHOW_CPLUSPLUS_HEADER_API
-
-#include <functional>
-#include <string_view>
-#include <type_traits>
-
-#include "unicode/char16ptr.h"
-#include "unicode/stringpiece.h"
-#include "unicode/unistr.h"
-
-namespace U_HEADER_ONLY_NAMESPACE {
-
-#ifndef U_HIDE_DRAFT_API
-
-namespace collator {
-
-namespace internal {
-
-
-
-
-
-template <template <typename...> typename Compare, UCollationResult result>
-class Predicate {
-  public:
-    
-    explicit Predicate(const UCollator* ucol) : collator(ucol) {}
-
-    
-    template <
-        typename T, typename U,
-        typename = std::enable_if_t<ConvertibleToU16StringView<T> && ConvertibleToU16StringView<U>>>
-    bool operator()(const T& lhs, const U& rhs) const {
-        return match(UnicodeString::readOnlyAlias(lhs), UnicodeString::readOnlyAlias(rhs));
-    }
-
-    
-    bool operator()(std::string_view lhs, std::string_view rhs) const {
-        return match(lhs, rhs);
-    }
-
-#if defined(__cpp_char8_t)
-    
-    bool operator()(std::u8string_view lhs, std::u8string_view rhs) const {
-        return match(lhs, rhs);
-    }
-#endif
-
-  private:
-    bool match(UnicodeString lhs, UnicodeString rhs) const {
-        return compare(
-            ucol_strcoll(
-                collator,
-                toUCharPtr(lhs.getBuffer()), lhs.length(),
-                toUCharPtr(rhs.getBuffer()), rhs.length()),
-            result);
-    }
-
-    bool match(StringPiece lhs, StringPiece rhs) const {
-        UErrorCode status = U_ZERO_ERROR;
-        return compare(
-            ucol_strcollUTF8(
-                collator,
-                lhs.data(), lhs.length(),
-                rhs.data(), rhs.length(),
-                &status),
-            result);
-    }
-
-    const UCollator* const collator;
-    static constexpr Compare<UCollationResult> compare{};
-};
-
-}  
-
-
-
-
-
-
-using equal_to = internal::Predicate<std::equal_to, UCOL_EQUAL>;
-
-
-
-
-
-
-using greater = internal::Predicate<std::equal_to, UCOL_GREATER>;
-
-
-
-
-
-
-using less = internal::Predicate<std::equal_to, UCOL_LESS>;
-
-
-
-
-
-
-using not_equal_to = internal::Predicate<std::not_equal_to, UCOL_EQUAL>;
-
-
-
-
-
-
-using greater_equal = internal::Predicate<std::not_equal_to, UCOL_LESS>;
-
-
-
-
-
-
-using less_equal = internal::Predicate<std::not_equal_to, UCOL_GREATER>;
-
-}  
-
-#endif  
-
-}  
-
-#endif  
 
 #endif 
 

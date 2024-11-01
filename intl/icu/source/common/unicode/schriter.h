@@ -156,14 +156,14 @@ public:
 
 
 
-  virtual UClassID getDynamicClassID() const override;
+  virtual UClassID         getDynamicClassID(void) const override;
 
   
 
 
 
 
-  static UClassID U_EXPORT2 getStaticClassID();
+  static UClassID   U_EXPORT2 getStaticClassID(void);
 
 protected:
   

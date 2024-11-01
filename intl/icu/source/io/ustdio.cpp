@@ -162,11 +162,11 @@ static const char16_t * u_file_translit(UFILE *f, const char16_t *src, int32_t *
     {
         if(f->fTranslit->buffer == nullptr)
         {
-            f->fTranslit->buffer = static_cast<char16_t*>(uprv_malloc(newlen * sizeof(char16_t)));
+            f->fTranslit->buffer = (char16_t*)uprv_malloc(newlen * sizeof(char16_t));
         }
         else
         {
-            f->fTranslit->buffer = static_cast<char16_t*>(uprv_realloc(f->fTranslit->buffer, newlen * sizeof(char16_t)));
+            f->fTranslit->buffer = (char16_t*)uprv_realloc(f->fTranslit->buffer, newlen * sizeof(char16_t));
         }
         
         if (f->fTranslit->buffer == nullptr) {
@@ -422,7 +422,7 @@ ufile_fill_uchar_buffer(UFILE *f)
     }
 
     str = &f->str;
-    dataSize = static_cast<int32_t>(str->fLimit - str->fPos);
+    dataSize = (int32_t)(str->fLimit - str->fPos);
     if (f->fFileno == 0 && dataSize > 0) {
         
         return;
@@ -445,14 +445,14 @@ ufile_fill_uchar_buffer(UFILE *f)
     if (f->fFileno == 0) {
         
         char *retStr = fgets(charBuffer, ufmt_min(maxCPBytes, UFILE_CHARBUFFER_SIZE), f->fFile);
-        bytesRead = static_cast<int32_t>(retStr ? uprv_strlen(charBuffer) : 0);
+        bytesRead = (int32_t)(retStr ? uprv_strlen(charBuffer) : 0);
     }
     else {
         
-        bytesRead = static_cast<int32_t>(fread(charBuffer,
+        bytesRead = (int32_t)fread(charBuffer,
             sizeof(char),
             ufmt_min(maxCPBytes, UFILE_CHARBUFFER_SIZE),
-            f->fFile));
+            f->fFile);
     }
 
     
@@ -470,7 +470,7 @@ ufile_fill_uchar_buffer(UFILE *f)
             &mySource,
             mySourceEnd,
             nullptr,
-            static_cast<UBool>(feof(f->fFile) != 0),
+            (UBool)(feof(f->fFile) != 0),
             &status);
 
     } else { 

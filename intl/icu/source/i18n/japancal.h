@@ -123,7 +123,7 @@ public:
 
 
 
-    virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
+    virtual int32_t handleGetExtendedYear() override;
 
     
 
@@ -166,7 +166,22 @@ public:
 
     virtual const char * getType() const override;
 
-    DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
+    
+
+
+
+    virtual UBool haveDefaultCentury() const override;
+
+    
+
+
+
+    virtual UDate defaultCenturyStart() const override;
+    
+
+
+
+    virtual int32_t defaultCenturyStartYear() const override;
 
 private:
     JapaneseCalendar(); 
@@ -197,8 +212,7 @@ protected:
 
 
 
-
-    virtual int32_t getDefaultMonthInYear(int32_t eyear, UErrorCode& status) override;
+    virtual int32_t getDefaultMonthInYear(int32_t eyear) override;
 
     
 
@@ -208,10 +222,7 @@ protected:
 
 
 
-
-    virtual int32_t getDefaultDayInMonth(int32_t eyear, int32_t month, UErrorCode& status) override;
-
-    virtual bool isEra0CountingBackward() const override { return false; }
+    virtual int32_t getDefaultDayInMonth(int32_t eyear, int32_t month) override;
 };
 
 U_NAMESPACE_END

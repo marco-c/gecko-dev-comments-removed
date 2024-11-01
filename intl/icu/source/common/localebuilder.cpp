@@ -1,8 +1,6 @@
 
 
 
-#include <optional>
-#include <string_view>
 #include <utility>
 
 #include "bytesinkutil.h"  
@@ -12,14 +10,14 @@
 #include "unicode/localebuilder.h"
 #include "unicode/locid.h"
 
-namespace {
+U_NAMESPACE_BEGIN
 
-inline bool UPRV_ISDIGIT(char c) { return c >= '0' && c <= '9'; }
-inline bool UPRV_ISALPHANUM(char c) { return uprv_isASCIILetter(c) || UPRV_ISDIGIT(c); }
+#define UPRV_ISDIGIT(c) (((c) >= '0') && ((c) <= '9'))
+#define UPRV_ISALPHANUM(c) (uprv_isASCIILetter(c) || UPRV_ISDIGIT(c) )
 
 constexpr const char* kAttributeKey = "attribute";
 
-bool _isExtensionSubtags(char key, const char* s, int32_t len) {
+static bool _isExtensionSubtags(char key, const char* s, int32_t len) {
     switch (uprv_tolower(key)) {
         case 'u':
             return ultag_isUnicodeExtensionSubtags(s, len);
@@ -31,10 +29,6 @@ bool _isExtensionSubtags(char key, const char* s, int32_t len) {
             return ultag_isExtensionSubtags(s, len);
     }
 }
-
-}  
-
-U_NAMESPACE_BEGIN
 
 LocaleBuilder::LocaleBuilder() : UObject(), status_(U_ZERO_ERROR), language_(),
     script_(), region_(), variant_(nullptr), extensions_(nullptr)
@@ -74,10 +68,8 @@ LocaleBuilder& LocaleBuilder::setLanguageTag(StringPiece tag)
     return *this;
 }
 
-namespace {
-
-void setField(StringPiece input, char* dest, UErrorCode& errorCode,
-              bool (*test)(const char*, int32_t)) {
+static void setField(StringPiece input, char* dest, UErrorCode& errorCode,
+                     UBool (*test)(const char*, int32_t)) {
     if (U_FAILURE(errorCode)) { return; }
     if (input.empty()) {
         dest[0] = '\0';
@@ -88,8 +80,6 @@ void setField(StringPiece input, char* dest, UErrorCode& errorCode,
         errorCode = U_ILLEGAL_ARGUMENT_ERROR;
     }
 }
-
-}  
 
 LocaleBuilder& LocaleBuilder::setLanguage(StringPiece language)
 {
@@ -109,9 +99,7 @@ LocaleBuilder& LocaleBuilder::setRegion(StringPiece region)
     return *this;
 }
 
-namespace {
-
-void transform(char* data, int32_t len) {
+static void transform(char* data, int32_t len) {
     for (int32_t i = 0; i < len; i++, data++) {
         if (*data == '_') {
             *data = '-';
@@ -120,8 +108,6 @@ void transform(char* data, int32_t len) {
         }
     }
 }
-
-}  
 
 LocaleBuilder& LocaleBuilder::setVariant(StringPiece variant)
 {
@@ -148,9 +134,7 @@ LocaleBuilder& LocaleBuilder::setVariant(StringPiece variant)
     return *this;
 }
 
-namespace {
-
-bool
+static bool
 _isKeywordValue(const char* key, const char* value, int32_t value_len)
 {
     if (key[1] == '\0') {
@@ -164,18 +148,15 @@ _isKeywordValue(const char* key, const char* value, int32_t value_len)
     
     
     
-    std::optional<std::string_view> unicode_locale_key = ulocimp_toBcpKeyWithFallback(key);
-    std::optional<std::string_view> unicode_locale_type = ulocimp_toBcpTypeWithFallback(key, value);
+    const char* unicode_locale_key = uloc_toUnicodeLocaleKey(key);
+    const char* unicode_locale_type = uloc_toUnicodeLocaleType(key, value);
 
-    return unicode_locale_key.has_value() &&
-           unicode_locale_type.has_value() &&
-           ultag_isUnicodeLocaleKey(unicode_locale_key->data(),
-                                    static_cast<int32_t>(unicode_locale_key->size())) &&
-           ultag_isUnicodeLocaleType(unicode_locale_type->data(),
-                                     static_cast<int32_t>(unicode_locale_type->size()));
+    return unicode_locale_key && unicode_locale_type &&
+           ultag_isUnicodeLocaleKey(unicode_locale_key, -1) &&
+           ultag_isUnicodeLocaleType(unicode_locale_type, -1);
 }
 
-void
+static void
 _copyExtensions(const Locale& from, icu::StringEnumeration *keywords,
                 Locale& to, bool validate, UErrorCode& errorCode)
 {
@@ -188,7 +169,9 @@ _copyExtensions(const Locale& from, icu::StringEnumeration *keywords,
     }
     const char* key;
     while ((key = keywords->next(nullptr, errorCode)) != nullptr) {
-        auto value = from.getKeywordValue<CharString>(key, errorCode);
+        CharString value;
+        CharStringByteSink sink(&value);
+        from.getKeywordValue(key, sink, errorCode);
         if (U_FAILURE(errorCode)) { return; }
         if (uprv_strcmp(key, kAttributeKey) == 0) {
             transform(value.data(), value.length());
@@ -203,10 +186,9 @@ _copyExtensions(const Locale& from, icu::StringEnumeration *keywords,
     }
 }
 
-void
+void static
 _clearUAttributesAndKeyType(Locale& locale, UErrorCode& errorCode)
 {
-    if (U_FAILURE(errorCode)) { return; }
     
     locale.setKeywordValue(kAttributeKey, "", errorCode);
 
@@ -219,10 +201,9 @@ _clearUAttributesAndKeyType(Locale& locale, UErrorCode& errorCode)
     }
 }
 
-void
+static void
 _setUnicodeExtensions(Locale& locale, const CharString& value, UErrorCode& errorCode)
 {
-    if (U_FAILURE(errorCode)) { return; }
     
     CharString locale_str("und-u-", errorCode);
     locale_str.append(value, errorCode);
@@ -230,8 +211,6 @@ _setUnicodeExtensions(Locale& locale, const CharString& value, UErrorCode& error
         Locale::forLanguageTag(locale_str.data(), errorCode), nullptr,
         locale, false, errorCode);
 }
-
-}  
 
 LocaleBuilder& LocaleBuilder::setExtension(char key, StringPiece value)
 {
@@ -310,8 +289,10 @@ LocaleBuilder& LocaleBuilder::addUnicodeLocaleAttribute(
         return *this;
     }
 
+    CharString attributes;
+    CharStringByteSink sink(&attributes);
     UErrorCode localErrorCode = U_ZERO_ERROR;
-    auto attributes = extensions_->getKeywordValue<CharString>(kAttributeKey, localErrorCode);
+    extensions_->getKeywordValue(kAttributeKey, sink, localErrorCode);
     if (U_FAILURE(localErrorCode)) {
         CharString new_attributes(value_str.data(), status_);
         
@@ -363,7 +344,9 @@ LocaleBuilder& LocaleBuilder::removeUnicodeLocaleAttribute(
     }
     if (extensions_ == nullptr) { return *this; }
     UErrorCode localErrorCode = U_ZERO_ERROR;
-    auto attributes = extensions_->getKeywordValue<CharString>(kAttributeKey, localErrorCode);
+    CharString attributes;
+    CharStringByteSink sink(&attributes);
+    extensions_->getKeywordValue(kAttributeKey, sink, localErrorCode);
     
     if (U_FAILURE(localErrorCode)) { return *this; }
     

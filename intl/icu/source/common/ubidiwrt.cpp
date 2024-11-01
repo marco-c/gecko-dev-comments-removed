@@ -501,10 +501,7 @@ ubidi_writeReordered(UBiDi *pBiDi,
                     destSize-=runLength;
 
                     if((pBiDi->isInverse) &&
-                           (
-                            runLength > 0 && 
-                                             
-                            dirProps[logicalStart+runLength-1]!=L)) {
+                       ( dirProps[logicalStart+runLength-1]!=L)) {
                         markFlag |= LRM_AFTER;
                     }
                     if (markFlag & LRM_AFTER) {
@@ -635,10 +632,7 @@ ubidi_writeReordered(UBiDi *pBiDi,
                     }
                     destSize-=runLength;
 
-                    if(
-                            runLength > 0 && 
-                                             
-                            !(MASK_R_AL&DIRPROP_FLAG(dirProps[logicalStart+runLength-1]))) {
+                    if( !(MASK_R_AL&DIRPROP_FLAG(dirProps[logicalStart+runLength-1]))) {
                         if(destSize>0) {
                             *dest++=RLM_CHAR;
                         }

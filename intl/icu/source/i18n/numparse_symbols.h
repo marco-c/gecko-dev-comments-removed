@@ -11,8 +11,9 @@
 #include "unicode/uniset.h"
 #include "static_unicode_sets.h"
 
-U_NAMESPACE_BEGIN
-namespace numparse::impl {
+U_NAMESPACE_BEGIN namespace numparse {
+namespace impl {
+
 
 
 
@@ -163,6 +164,8 @@ class U_I18N_API PlusSignMatcher : public SymbolMatcher {
     bool fAllowTrailing;
 };
 
+
+} 
 } 
 U_NAMESPACE_END
 

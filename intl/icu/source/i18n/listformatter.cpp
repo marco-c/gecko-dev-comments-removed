@@ -121,16 +121,16 @@ private:
 ContextualHandler::~ContextualHandler() {
 }
 
-const char16_t* spanishY = u"{0} y {1}";
-const char16_t* spanishE = u"{0} e {1}";
-const char16_t* spanishO = u"{0} o {1}";
-const char16_t* spanishU = u"{0} u {1}";
-const char16_t* hebrewVav = u"{0} \u05D5{1}";
-const char16_t* hebrewVavDash = u"{0} \u05D5-{1}";
+static const char16_t *spanishY = u"{0} y {1}";
+static const char16_t *spanishE = u"{0} e {1}";
+static const char16_t *spanishO = u"{0} o {1}";
+static const char16_t *spanishU = u"{0} u {1}";
+static const char16_t *hebrewVav = u"{0} \u05D5{1}";
+static const char16_t *hebrewVavDash = u"{0} \u05D5-{1}";
 
 
 
-bool shouldChangeToE(const UnicodeString& text) {
+static bool shouldChangeToE(const UnicodeString& text) {
     int32_t len = text.length();
     if (len == 0) { return false; }
     
@@ -147,7 +147,7 @@ bool shouldChangeToE(const UnicodeString& text) {
 
 
 
-bool shouldChangeToU(const UnicodeString& text) {
+static bool shouldChangeToU(const UnicodeString& text) {
     int32_t len = text.length();
     if (len == 0) { return false; }
     
@@ -164,7 +164,7 @@ bool shouldChangeToU(const UnicodeString& text) {
 
 
 
-bool shouldChangeToVavDash(const UnicodeString& text) {
+static bool shouldChangeToVavDash(const UnicodeString& text) {
     if (text.isEmpty()) { return false; }
     UErrorCode status = U_ZERO_ERROR;
     return uscript_getScript(text.char32At(0), &status) != USCRIPT_HEBREW;

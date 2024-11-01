@@ -25,8 +25,10 @@
 U_NAMESPACE_BEGIN
 
 
-namespace number::impl {
+namespace number {
+namespace impl {
 class SimpleModifier;
+}
 }
 
 
@@ -63,7 +65,7 @@ public:
 
 
 
-    SimpleFormatter() : compiledPattern(static_cast<char16_t>(0)) {}
+    SimpleFormatter() : compiledPattern((char16_t)0) {}
 
     
 

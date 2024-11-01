@@ -159,6 +159,9 @@ public:
     UBool                         fChainRules;       
                                                      
 
+    UBool                         fLBCMNoChain;      
+                                                     
+
     UBool                         fLookAheadHardBreak;  
                                                      
                                                      

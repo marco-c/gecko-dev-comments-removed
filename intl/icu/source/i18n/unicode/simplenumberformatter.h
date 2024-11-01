@@ -31,8 +31,6 @@
 U_NAMESPACE_BEGIN
 
 
-class SimpleDateFormat;
-
 namespace number {  
 
 
@@ -41,6 +39,9 @@ class UFormattedNumberData;
 struct SimpleMicroProps;
 class AdoptingSignumModifierStore;
 }  
+
+
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -75,19 +76,20 @@ class U_I18N_API SimpleNumber : public UMemory {
 
 
 
-
     void roundTo(int32_t power, UNumberFormatRoundingMode roundingMode, UErrorCode& status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
 
-    void setMaximumIntegerDigits(uint32_t maximumIntegerDigits, UErrorCode& status);
-#endif 
+
+
+    void truncateStart(uint32_t maximumIntegerDigits, UErrorCode& status);
 
     
+
+
 
 
 
@@ -95,6 +97,8 @@ class U_I18N_API SimpleNumber : public UMemory {
     void setMinimumIntegerDigits(uint32_t minimumIntegerDigits, UErrorCode& status);
 
     
+
+
 
 
 
@@ -165,9 +169,6 @@ class U_I18N_API SimpleNumber : public UMemory {
     USimpleNumberSign fSign = UNUM_SIMPLE_NUMBER_NO_SIGN;
 
     friend class SimpleNumberFormatter;
-
-    
-    friend class icu::SimpleDateFormat;
 };
 
 
@@ -314,6 +315,8 @@ class U_I18N_API SimpleNumberFormatter : public UMemory {
     impl::AdoptingSignumModifierStore* fPatternModifier = nullptr;
 };
 
+
+#endif 
 
 }  
 U_NAMESPACE_END

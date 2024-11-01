@@ -18,8 +18,8 @@
 #include "number_microprops.h"
 #include "number_utypes.h"
 
-U_NAMESPACE_BEGIN
-namespace number::impl {
+U_NAMESPACE_BEGIN namespace number {
+namespace impl {
 
 
 
@@ -170,7 +170,8 @@ class NumberFormatterImpl : public UMemory {
         UErrorCode &status);
 };
 
-} 
+}  
+}  
 U_NAMESPACE_END
 
 

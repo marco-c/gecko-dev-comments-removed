@@ -264,7 +264,7 @@ public:
 
 
 
-    virtual ~StringSearch();
+    virtual ~StringSearch(void);
 
     
 
@@ -324,7 +324,7 @@ public:
 
 
 
-    virtual int32_t getOffset() const override;
+    virtual int32_t getOffset(void) const override;
 
     
 

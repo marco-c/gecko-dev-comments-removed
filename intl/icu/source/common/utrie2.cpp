@@ -137,33 +137,33 @@ utrie2_openFromSerialized(UTrie2ValueBits valueBits,
     UTrie2 *trie;
 
     if(U_FAILURE(*pErrorCode)) {
-        return nullptr;
+        return 0;
     }
 
     if( length<=0 || (U_POINTER_MASK_LSB(data, 3)!=0) ||
         valueBits<0 || UTRIE2_COUNT_VALUE_BITS<=valueBits
     ) {
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
-        return nullptr;
+        return 0;
     }
 
     
     if(length<(int32_t)sizeof(UTrie2Header)) {
         *pErrorCode=U_INVALID_FORMAT_ERROR;
-        return nullptr;
+        return 0;
     }
 
     
     header=(const UTrie2Header *)data;
     if(header->signature!=UTRIE2_SIG) {
         *pErrorCode=U_INVALID_FORMAT_ERROR;
-        return nullptr;
+        return 0;
     }
 
     
     if(valueBits!=(UTrie2ValueBits)(header->options&UTRIE2_OPTIONS_VALUE_BITS_MASK)) {
         *pErrorCode=U_INVALID_FORMAT_ERROR;
-        return nullptr;
+        return 0;
     }
 
     
@@ -188,14 +188,14 @@ utrie2_openFromSerialized(UTrie2ValueBits valueBits,
     }
     if(length<actualLength) {
         *pErrorCode=U_INVALID_FORMAT_ERROR;  
-        return nullptr;
+        return 0;
     }
 
     
     trie=(UTrie2 *)uprv_malloc(sizeof(UTrie2));
     if(trie==nullptr) {
         *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
-        return nullptr;
+        return 0;
     }
     uprv_memcpy(trie, &tempTrie, sizeof(tempTrie));
     trie->memory=(uint32_t *)data;
@@ -226,7 +226,7 @@ utrie2_openFromSerialized(UTrie2ValueBits valueBits,
         break;
     default:
         *pErrorCode=U_INVALID_FORMAT_ERROR;
-        return nullptr;
+        return 0;
     }
 
     if(pActualLength!=nullptr) {
@@ -247,12 +247,12 @@ utrie2_openDummy(UTrie2ValueBits valueBits,
     int32_t dataMove;  
 
     if(U_FAILURE(*pErrorCode)) {
-        return nullptr;
+        return 0;
     }
 
     if(valueBits<0 || UTRIE2_COUNT_VALUE_BITS<=valueBits) {
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
-        return nullptr;
+        return 0;
     }
 
     
@@ -269,14 +269,14 @@ utrie2_openDummy(UTrie2ValueBits valueBits,
     trie=(UTrie2 *)uprv_malloc(sizeof(UTrie2));
     if(trie==nullptr) {
         *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
-        return nullptr;
+        return 0;
     }
     uprv_memset(trie, 0, sizeof(UTrie2));
     trie->memory=uprv_malloc(length);
     if(trie->memory==nullptr) {
         uprv_free(trie);
         *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
-        return nullptr;
+        return 0;
     }
     trie->length=length;
     trie->isMemoryOwned=true;
@@ -364,7 +364,7 @@ utrie2_openDummy(UTrie2ValueBits valueBits,
         break;
     default:
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
-        return nullptr;
+        return 0;
     }
 
     return trie;
@@ -389,7 +389,7 @@ utrie2_close(UTrie2 *trie) {
 
 U_CAPI UBool U_EXPORT2
 utrie2_isFrozen(const UTrie2 *trie) {
-    return trie->newTrie==nullptr;
+    return (UBool)(trie->newTrie==nullptr);
 }
 
 U_CAPI int32_t U_EXPORT2
@@ -552,7 +552,7 @@ enumEitherTrie(const UTrie2 *trie,
             }
             for(; i2<i2Limit; ++i2) {
                 if(idx!=nullptr) {
-                    block = static_cast<int32_t>(idx[i2Block + i2]) << UTRIE2_INDEX_SHIFT;
+                    block=(int32_t)idx[i2Block+i2]<<UTRIE2_INDEX_SHIFT;
                 } else {
                     block=trie->newTrie->index2[i2Block+i2];
                 }

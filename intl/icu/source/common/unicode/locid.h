@@ -195,50 +195,51 @@ class UnicodeString;
 class U_COMMON_API Locale : public UObject {
 public:
     
-    static const Locale& U_EXPORT2 getRoot();
+    static const Locale &U_EXPORT2 getRoot(void);
     
-    static const Locale& U_EXPORT2 getEnglish();
+    static const Locale &U_EXPORT2 getEnglish(void);
     
-    static const Locale& U_EXPORT2 getFrench();
+    static const Locale &U_EXPORT2 getFrench(void);
     
-    static const Locale& U_EXPORT2 getGerman();
+    static const Locale &U_EXPORT2 getGerman(void);
     
-    static const Locale& U_EXPORT2 getItalian();
+    static const Locale &U_EXPORT2 getItalian(void);
     
-    static const Locale& U_EXPORT2 getJapanese();
+    static const Locale &U_EXPORT2 getJapanese(void);
     
-    static const Locale& U_EXPORT2 getKorean();
+    static const Locale &U_EXPORT2 getKorean(void);
     
-    static const Locale& U_EXPORT2 getChinese();
+    static const Locale &U_EXPORT2 getChinese(void);
     
-    static const Locale& U_EXPORT2 getSimplifiedChinese();
+    static const Locale &U_EXPORT2 getSimplifiedChinese(void);
     
-    static const Locale& U_EXPORT2 getTraditionalChinese();
+    static const Locale &U_EXPORT2 getTraditionalChinese(void);
 
     
-    static const Locale& U_EXPORT2 getFrance();
+    static const Locale &U_EXPORT2 getFrance(void);
     
-    static const Locale& U_EXPORT2 getGermany();
+    static const Locale &U_EXPORT2 getGermany(void);
     
-    static const Locale& U_EXPORT2 getItaly();
+    static const Locale &U_EXPORT2 getItaly(void);
     
-    static const Locale& U_EXPORT2 getJapan();
+    static const Locale &U_EXPORT2 getJapan(void);
     
-    static const Locale& U_EXPORT2 getKorea();
+    static const Locale &U_EXPORT2 getKorea(void);
     
-    static const Locale& U_EXPORT2 getChina();
+    static const Locale &U_EXPORT2 getChina(void);
     
-    static const Locale& U_EXPORT2 getPRC();
+    static const Locale &U_EXPORT2 getPRC(void);
     
-    static const Locale& U_EXPORT2 getTaiwan();
+    static const Locale &U_EXPORT2 getTaiwan(void);
     
-    static const Locale& U_EXPORT2 getUK();
+    static const Locale &U_EXPORT2 getUK(void);
     
-    static const Locale& U_EXPORT2 getUS();
+    static const Locale &U_EXPORT2 getUS(void);
     
-    static const Locale& U_EXPORT2 getCanada();
+    static const Locale &U_EXPORT2 getCanada(void);
     
-    static const Locale& U_EXPORT2 getCanadaFrench();
+    static const Locale &U_EXPORT2 getCanadaFrench(void);
+
 
     
 
@@ -273,10 +274,10 @@ public:
 
 
 
-    Locale(const char* language,
-           const char* country = nullptr,
-           const char* variant = nullptr,
-           const char* keywordsAndValues = nullptr);
+    Locale( const   char * language,
+            const   char * country  = 0,
+            const   char * variant  = 0,
+            const   char * keywordsAndValues = 0);
 
     
 
@@ -369,7 +370,7 @@ public:
 
 
 
-    static const Locale& U_EXPORT2 getDefault();
+    static const Locale& U_EXPORT2 getDefault(void);
 
     
 
@@ -727,9 +728,7 @@ public:
 
 
 
-    void setKeywordValue(const char* keywordName, const char* keywordValue, UErrorCode &status) {
-        setKeywordValue(StringPiece{keywordName}, StringPiece{keywordValue}, status);
-    }
+    void setKeywordValue(const char* keywordName, const char* keywordValue, UErrorCode &status);
 
     
 
@@ -793,7 +792,7 @@ public:
 
 
 
-    uint32_t getLCID() const;
+    uint32_t        getLCID(void) const;
 
     
 
@@ -945,7 +944,7 @@ public:
 
 
 
-    int32_t hashCode() const;
+    int32_t         hashCode(void) const;
 
     
 
@@ -962,7 +961,7 @@ public:
 
 
 
-    inline UBool isBogus() const;
+    inline UBool isBogus(void) const;
 
     
 
@@ -985,9 +984,6 @@ public:
     static const char* const* U_EXPORT2 getISOCountries();
 
     
-
-
-
 
 
 
@@ -1114,15 +1110,6 @@ protected:
 
 
     void setFromPOSIXID(const char *posixID);
-    
-
-
-
-
-
-
-
-    void minimizeSubtags(bool favorScript, UErrorCode& status);
 #endif  
 
 private:
@@ -1148,7 +1135,7 @@ private:
     
 
 
-    static Locale* getLocaleCache();
+    static Locale *getLocaleCache(void);
 
     char language[ULOC_LANG_CAPACITY];
     char script[ULOC_SCRIPT_CAPACITY];
@@ -1185,7 +1172,6 @@ Locale::operator!=(const    Locale&     other) const
 template<typename StringClass> inline StringClass
 Locale::toLanguageTag(UErrorCode& status) const
 {
-    if (U_FAILURE(status)) { return {}; }
     StringClass result;
     StringByteSink<StringClass> sink(&result);
     toLanguageTag(sink, status);
@@ -1213,7 +1199,7 @@ Locale::getScript() const
 inline const char *
 Locale::getVariant() const
 {
-    return fIsBogus ? "" : &baseName[variantBegin];
+    return &baseName[variantBegin];
 }
 
 inline const char *
@@ -1225,7 +1211,6 @@ Locale::getName() const
 template<typename StringClass, typename OutputIterator> inline void
 Locale::getKeywords(OutputIterator iterator, UErrorCode& status) const
 {
-    if (U_FAILURE(status)) { return; }
     LocalPointer<StringEnumeration> keys(createKeywords(status));
     if (U_FAILURE(status) || keys.isNull()) {
         return;
@@ -1243,7 +1228,6 @@ Locale::getKeywords(OutputIterator iterator, UErrorCode& status) const
 template<typename StringClass, typename OutputIterator> inline void
 Locale::getUnicodeKeywords(OutputIterator iterator, UErrorCode& status) const
 {
-    if (U_FAILURE(status)) { return; }
     LocalPointer<StringEnumeration> keys(createUnicodeKeywords(status));
     if (U_FAILURE(status) || keys.isNull()) {
         return;
@@ -1261,7 +1245,6 @@ Locale::getUnicodeKeywords(OutputIterator iterator, UErrorCode& status) const
 template<typename StringClass> inline StringClass
 Locale::getKeywordValue(StringPiece keywordName, UErrorCode& status) const
 {
-    if (U_FAILURE(status)) { return {}; }
     StringClass result;
     StringByteSink<StringClass> sink(&result);
     getKeywordValue(keywordName, sink, status);
@@ -1271,7 +1254,6 @@ Locale::getKeywordValue(StringPiece keywordName, UErrorCode& status) const
 template<typename StringClass> inline StringClass
 Locale::getUnicodeKeywordValue(StringPiece keywordName, UErrorCode& status) const
 {
-    if (U_FAILURE(status)) { return {}; }
     StringClass result;
     StringByteSink<StringClass> sink(&result);
     getUnicodeKeywordValue(keywordName, sink, status);
@@ -1279,7 +1261,7 @@ Locale::getUnicodeKeywordValue(StringPiece keywordName, UErrorCode& status) cons
 }
 
 inline UBool
-Locale::isBogus() const {
+Locale::isBogus(void) const {
     return fIsBogus;
 }
 

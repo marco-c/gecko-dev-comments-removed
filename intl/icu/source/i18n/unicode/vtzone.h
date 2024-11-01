@@ -289,7 +289,7 @@ public:
 
 
 
-    virtual int32_t getRawOffset() const override;
+    virtual int32_t getRawOffset(void) const override;
 
     
 
@@ -297,7 +297,7 @@ public:
 
 
 
-    virtual UBool useDaylightTime() const override;
+    virtual UBool useDaylightTime(void) const override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -445,7 +445,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
+    static UClassID U_EXPORT2 getStaticClassID(void);
 
     
 
@@ -458,7 +458,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const override;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 U_NAMESPACE_END

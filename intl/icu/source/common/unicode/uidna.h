@@ -53,15 +53,7 @@ enum {
 
 
 
-
-
-
-
-
-
-
-
-    UIDNA_DEFAULT=0x30,
+    UIDNA_DEFAULT=0,
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -104,16 +96,8 @@ enum {
 
 
 
-
-
-
-
     UIDNA_NONTRANSITIONAL_TO_ASCII=0x10,
     
-
-
-
-
 
 
 
@@ -140,8 +124,6 @@ enum {
 
 struct UIDNA;
 typedef struct UIDNA UIDNA;  
-
-
 
 
 

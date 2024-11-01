@@ -27,6 +27,7 @@
 
 
 
+
 #include "unicode/utypes.h"
 #include "unicode/ucnv.h"
 #include "unicode/unistr.h"
@@ -62,9 +63,7 @@ static UOption options[]={
 
 void usageAndDie(int retCode) {
         printf("Usage: %s [-v] [-options] -r rule-file -o output-file\n", progName);
-        printf("\tRead in break iteration rules text and write out the binary data.\n"
-            "\tIf the rule file does not have a Unicode signature byte sequence, it is assumed\n"
-            "\tto be UTF-8.\n"
+        printf("\tRead in break iteration rules text and write out the binary data\n"
             "options:\n"
             "\t-h or -? or --help  this usage text\n"
             "\t-V or --version     show a version message\n"
@@ -208,7 +207,7 @@ int  main(int argc, char **argv) {
     char        *ruleBufferC;
 
     file = fopen(ruleFileName, "rb");
-    if (file == nullptr) {
+    if( file == 0 ) {
         fprintf(stderr, "Could not open file \"%s\"\n", ruleFileName);
         exit(-1);
     }
@@ -217,7 +216,7 @@ int  main(int argc, char **argv) {
     fseek(file, 0, SEEK_SET);
     ruleBufferC = new char[ruleFileSize+10];
 
-    result = static_cast<long>(fread(ruleBufferC, 1, ruleFileSize, file));
+    result = (long)fread(ruleBufferC, 1, ruleFileSize, file);
     if (result != ruleFileSize)  {
         fprintf(stderr, "Error reading file \"%s\"\n", ruleFileName);
         exit (-1);
@@ -235,10 +234,7 @@ int  main(int argc, char **argv) {
     if (U_FAILURE(status)) {
         exit(status);
     }
-    if (encoding == nullptr) {
-        
-        encoding = "UTF-8";
-    } else {
+    if(encoding!=nullptr ){
         ruleSourceC  += signatureLength;
         ruleFileSize -= signatureLength;
     }
@@ -298,7 +294,7 @@ int  main(int argc, char **argv) {
     RuleBasedBreakIterator *bi = new RuleBasedBreakIterator(ruleSourceS, parseError, status);
     if (U_FAILURE(status)) {
         fprintf(stderr, "createRuleBasedBreakIterator: ICU Error \"%s\"  at line %d, column %d\n",
-                u_errorName(status), static_cast<int>(parseError.line), static_cast<int>(parseError.offset));
+                u_errorName(status), (int)parseError.line, (int)parseError.offset);
         exit(status);
     }
 

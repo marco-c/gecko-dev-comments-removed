@@ -13,8 +13,8 @@
 #include "plurrule_impl.h"
 #include "number_types.h"
 
-U_NAMESPACE_BEGIN
-namespace number::impl {
+U_NAMESPACE_BEGIN namespace number {
+namespace impl {
 
 
 class DecNum;
@@ -58,15 +58,7 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
 
-    void decreaseMinIntegerTo(int32_t minInt);
-
-    
-
-
-
-
-
-    void increaseMinIntegerTo(int32_t minInt);
+    void setMinInteger(int32_t minInt);
 
     
 
@@ -557,6 +549,7 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     void switchStorage();
 };
 
+} 
 } 
 U_NAMESPACE_END
 

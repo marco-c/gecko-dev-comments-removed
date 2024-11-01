@@ -20,8 +20,8 @@
 #include "charstr.h"
 #include "util.h"
 
-U_NAMESPACE_BEGIN
-namespace number::impl {
+U_NAMESPACE_BEGIN namespace number {
+namespace impl {
 
 
 
@@ -188,6 +188,7 @@ struct MicroProps : public MicroPropsGenerator {
     bool exhausted = false;
 };
 
+} 
 } 
 U_NAMESPACE_END
 
