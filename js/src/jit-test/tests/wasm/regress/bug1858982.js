@@ -1,7 +1,5 @@
 
 
-
-
 var t = wasmEvalText(`(module
     (type $t1 (func))
     (func $f0 (param funcref i32 i32 i32 i32 i32 i32 i32 i32 i32)

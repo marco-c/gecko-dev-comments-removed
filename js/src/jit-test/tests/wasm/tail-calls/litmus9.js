@@ -10,8 +10,6 @@
 
 
 
-
-
 var ins = wasmEvalText(`
 (module
   (table 2 2 funcref)

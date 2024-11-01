@@ -1,5 +1,3 @@
-
-
 wasmValidateText(
     `(module
        (func $arity-1-vs-0

@@ -16,7 +16,6 @@
 
 
 
-
 let $0 = instantiate(`(module
   ;; Auxiliary definitions
   (type $$proc (func))

@@ -1,5 +1,3 @@
-
-
 wasmValidateText(
     `(module
        (type (func))

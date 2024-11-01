@@ -2,8 +2,6 @@
 
 
 
-
-
 var ins = wasmEvalText(`
 (module
   (type $ty0 (func (result i32)))

@@ -5,8 +5,6 @@
 
 
 
-
-
 let ins1 = wasmEvalText(`
 (module
   (memory (export "mem") 1 1)

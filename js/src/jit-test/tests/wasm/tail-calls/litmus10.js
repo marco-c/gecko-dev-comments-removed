@@ -11,8 +11,6 @@
 
 
 
-
-
 var table = new WebAssembly.Table({initial:2, maximum:2, element:"funcref"})
 
 var odd_cookie = 24680246;

@@ -9,8 +9,6 @@
 
 
 
-
-
 function ntimes(n, v) {
     if (typeof v == "function")
         return iota(n).map(v).join(' ');

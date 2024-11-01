@@ -1,5 +1,3 @@
-
-
 function assertInvalidSyntax(module) {
     assertErrorMessage(() => wasmTextToBinary(module), SyntaxError,
                        /wasm text error/);

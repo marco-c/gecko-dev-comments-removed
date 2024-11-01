@@ -4,8 +4,6 @@
 
 
 
-
-
 var ins = wasmEvalText(`
 (module
   (func $odd (export "odd") (param $n i32) (param $dummy i32) (result i32 i32 i32)

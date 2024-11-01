@@ -1,11 +1,11 @@
+// |jit-test| test-also=--wasm-compiler=optimizing; skip-if: !wasmDebuggingEnabled()
 
-
-
-
+// Tests that wasm module scripts raises onEnterFrame and onLeaveFrame events in
+// wasm return calls.
 
 load(libdir + "wasm.js");
 
-
+// Checking if enter/leave frame at return_call.
 var onEnterFrameCalled, onLeaveFrameCalled, onStepCalled;
 wasmRunWithDebugger(
     '(module (func) (func (return_call 0)) (func (call 1)) (export "test" (func 2)))',
@@ -34,7 +34,7 @@ wasmRunWithDebugger(
   }
 );
 
-
+// Checking if enter/leave frame at return_call_indirect.
 wasmRunWithDebugger(
     '(module (func) (func (return_call_indirect (i32.const 0))) (func (call 1)) (table 1 1 funcref) (elem (i32.const 0) 0) (export "test" (func 2)))',
     undefined,
@@ -62,7 +62,7 @@ wasmRunWithDebugger(
   }
 );
 
-
+// Checking if enter/leave frame at return_call_ref.
 wasmRunWithDebugger(
     '(module (type $t (func)) (elem declare func 0) (func) (func (return_call_ref $t (ref.func 0))) (func (call 1)) (export "test" (func 2)))',
     undefined,
