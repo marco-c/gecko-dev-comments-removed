@@ -890,26 +890,32 @@ TimingFunctionPreviewWidget.prototype = {
     
     const translateStart = "calc(var(--bezier-curve-width) / -2)";
     const translateEnd = "calc(var(--bezier-curve-width) / 2)";
+    const grayscaleFilter = "grayscale(100%)";
+
     this.dot.animate(
       [
-        { translate: translateStart, opacity: 0.5, offset: 0 },
-        { translate: translateStart, opacity: 0.5, offset: 0.19 },
+        { translate: translateStart, filter: grayscaleFilter, offset: 0 },
         {
           translate: translateStart,
-          opacity: 1,
+          filter: grayscaleFilter,
+          offset: 0.19,
+        },
+        {
+          translate: translateStart,
+          filter: "none",
           offset: 0.2,
           easing: timingFunction,
         },
-        { translate: translateEnd, opacity: 1, offset: 0.5 },
-        { translate: translateEnd, opacity: 0.5, offset: 0.51 },
-        { translate: translateEnd, opacity: 0.5, offset: 0.7 },
+        { translate: translateEnd, filter: "none", offset: 0.5 },
+        { translate: translateEnd, filter: grayscaleFilter, offset: 0.51 },
+        { translate: translateEnd, filter: grayscaleFilter, offset: 0.7 },
         {
           translate: translateEnd,
-          opacity: 1,
+          filter: "none",
           offset: 0.71,
           easing: timingFunction,
         },
-        { translate: translateStart, opacity: 1, offset: 1 },
+        { translate: translateStart, filter: "none", offset: 1 },
       ],
       {
         duration: this.PREVIEW_DURATION * 2,
