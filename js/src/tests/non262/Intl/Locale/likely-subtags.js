@@ -2,7 +2,7 @@
 
 var testDataMaximal = {
     
-    "und-AQ": "und-Latn-AQ",
+    "und-AQ": "en-Latn-AQ",
 
     
     "und-Cyrl-RO": "bg-Cyrl-RO",
@@ -13,7 +13,7 @@ var testDataMinimal = {
     "und": "en",
     "und-Thai": "th",
     "und-419": "es-419",
-    "und-150": "ru",
+    "und-150": "en-150",
     "und-AT": "de-AT",
 
     
