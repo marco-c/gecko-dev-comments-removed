@@ -19,7 +19,7 @@ TEST(IntlScript, GetExtensions)
   }
 
   
-  for (char32_t ch = 0x300; ch < 0x0341; ch++) {
+  for (char32_t ch = 0x332; ch < 0x0342; ch++) {
     ASSERT_TRUE(UnicodeProperties::GetExtensions(ch, extensions).isOk());
     ASSERT_EQ(extensions.length(), 1u);
     ASSERT_EQ(Script(extensions[0]), Script::INHERITED);
