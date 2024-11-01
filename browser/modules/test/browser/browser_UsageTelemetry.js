@@ -113,10 +113,17 @@ let checkScalars = (countsObject, skipGleanCheck = false) => {
   }
 };
 
-add_task(async function test_tabsAndWindows() {
-  
+function resetTelemetry() {
   Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
+  BrowserUsageTelemetry.maxTabCount = 0;
+  BrowserUsageTelemetry.maxTabPinnedCount = 0;
+  BrowserUsageTelemetry.maxWindowCount = 0;
+}
+
+add_task(async function test_tabsAndWindows() {
+  
+  resetTelemetry();
 
   let openedTabs = [];
   let expectedTabOpenCount = 0;
@@ -240,7 +247,7 @@ add_task(async function test_tabsAndWindows() {
 
 add_task(async function test_subsessionSplit() {
   
-  Services.telemetry.clearScalars();
+  resetTelemetry();
 
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
@@ -631,7 +638,7 @@ add_task(async function test_loadedTabsHistogram() {
 add_task(async function test_restored_max_pinned_count() {
   
   
-  Services.telemetry.clearScalars();
+  resetTelemetry();
   const { E10SUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/E10SUtils.sys.mjs"
   );

@@ -29,10 +29,17 @@ function promiseBrowserStateRestored() {
   });
 }
 
-add_task(async function test_privateMode() {
-  
+function resetTelemetry() {
   Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
+  BrowserUsageTelemetry.maxTabCount = 0;
+  BrowserUsageTelemetry.maxTabPinnedCount = 0;
+  BrowserUsageTelemetry.maxWindowCount = 0;
+}
+
+add_task(async function test_privateMode() {
+  
+  resetTelemetry();
 
   
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({
@@ -107,7 +114,7 @@ add_task(async function test_sessionRestore() {
   });
 
   
-  Services.telemetry.clearScalars();
+  resetTelemetry();
 
   
   
