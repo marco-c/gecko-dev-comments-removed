@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import io
 import json
 import os
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import esprima
 
-
+# list of metadata, each item is the name and if the field is mandatory
 METADATA = [
     ("setUp", False),
     ("tearDown", False),
@@ -116,7 +116,7 @@ class ScriptInfo(defaultdict):
         except Exception as e:
             raise ParseError(path, e)
 
-        
+        # If the fields found, don't match our known ones, then an error is raised
         for field, required in METADATA:
             if not required or self.script_type == ScriptType.alert:
                 continue
@@ -137,13 +137,17 @@ class ScriptInfo(defaultdict):
         self._set_script_content()
         self._parse_script_content()
 
+        if self.get("options", {}).get("default", {}).get("manifest_flavor"):
+            # Only mochitest tests have a manifest flavor
+            self.script_type = ScriptType.mochitest
+
     def _parse_script_content(self):
         self.parsed = esprima.parseScript(self.script_content)
 
-        
+        # looking for the exports statement
         found_perfmetadata = False
         for stmt in self.parsed.body:
-            
+            #  detecting if the script has add_task()
             if (
                 stmt.type == "ExpressionStatement"
                 and stmt.expression is not None
@@ -155,13 +159,13 @@ class ScriptInfo(defaultdict):
                 self.script_type = ScriptType.xpcshell
                 continue
 
-            
+            # plain xpcshell tests functions markers
             if stmt.type == "FunctionDeclaration" and stmt.id.name in XPCSHELL_FUNCS:
                 self["test"] = "xpcshell"
                 self.script_type = ScriptType.xpcshell
                 continue
 
-            
+            # is this the perfMetdatata plain var ?
             if stmt.type == "VariableDeclaration":
                 for decl in stmt.declarations:
                     if (
@@ -175,7 +179,7 @@ class ScriptInfo(defaultdict):
                     self.scan_properties(decl.init.properties)
                     continue
 
-            
+            # or the module.exports map ?
             if (
                 stmt.type != "ExpressionStatement"
                 or stmt.expression.left is None
@@ -186,7 +190,7 @@ class ScriptInfo(defaultdict):
             ):
                 continue
 
-            
+            # now scanning the properties
             found_perfmetadata = True
             self.scan_properties(stmt.expression.right.properties)
 
@@ -203,10 +207,10 @@ class ScriptInfo(defaultdict):
         if not html_parser.script_content:
             raise MissingPerfMetadataError(self.script)
 
-        
-        
-        
-        
+        # Pass through all the scripts and gather up the data such as
+        # the test itself, and the perfMetadata. These can be in separate
+        # scripts, but later scripts override earlier ones if there
+        # are redefinitions.
         found_perfmetadata = False
         for script_content in html_parser.script_content:
             self.script_content = script_content
@@ -218,8 +222,8 @@ class ScriptInfo(defaultdict):
         if not found_perfmetadata:
             raise MissingPerfMetadataError()
 
-        
-        
+        # Mochitest gets detected as xpcshell during parsing
+        # since they use similar methods to run tests
         self.script_type = ScriptType.mochitest
 
     def _parse_shell_script(self):
@@ -256,7 +260,7 @@ class ScriptInfo(defaultdict):
             return value.value
 
         if value.type == "TemplateLiteral":
-            
+            # ugly
             value = value.quasis[0].value.cooked.replace("\n", " ")
             return re.sub(r"\s+", " ", value).strip()
 
@@ -287,10 +291,10 @@ class ScriptInfo(defaultdict):
             if not isinstance(value, (list, tuple, dict)):
                 if not isinstance(value, str):
                     value = str(value)
-                
+                # line wrapping
                 return "\n".join(textwrap.wrap(value, break_on_hyphens=False))
 
-            
+            # options
             if isinstance(value, dict):
                 if level > 0:
                     return ",".join([f"{k}:{v}" for k, v in value.items()])
@@ -300,12 +304,12 @@ class ScriptInfo(defaultdict):
                     if isinstance(val, bool):
                         res.append(f" --{key.replace('_', '-')}")
                     else:
-                        val = _render(val, level + 1)  
+                        val = _render(val, level + 1)  # noqa
                         res.append(f" --{key.replace('_', '-')} {val}")
 
                 return "\n".join(res)
 
-            
+            # simple flat list
             return ", ".join([_render(v, level + 1) for v in value])
 
         options = ""
@@ -346,14 +350,14 @@ class ScriptInfo(defaultdict):
         """Updates arguments with options from the script."""
         from mozperftest.utils import simple_platform
 
-        
-        
+        # Order of precedence:
+        #   cli options > platform options > default options
         options = self.get("options", {})
         result = options.get("default", {})
         result.update(options.get(simple_platform(), {}))
         result.update(args)
 
-        
+        # XXX this is going away, see https://bugzilla.mozilla.org/show_bug.cgi?id=1675102
         for opt, val in result.items():
             if opt.startswith("visualmetrics") or "metrics" not in opt:
                 continue
