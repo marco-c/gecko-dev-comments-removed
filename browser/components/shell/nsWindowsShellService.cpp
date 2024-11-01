@@ -1169,7 +1169,7 @@ static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
     static_assert(MAXPATHLEN == MAX_PATH);
     wchar_t storedExePath[MAX_PATH] = {};
     
-    hr = link->GetPath(storedExePath, ArrayLength(storedExePath), nullptr, 0);
+    hr = link->GetPath(storedExePath, std::size(storedExePath), nullptr, 0);
     if (FAILED(hr) || hr == S_FALSE) {
       continue;
     }
@@ -1394,7 +1394,7 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
     static_assert(MAXPATHLEN == MAX_PATH);
     wchar_t storedExePath[MAX_PATH] = {};
     
-    hr = link->GetPath(storedExePath, ArrayLength(storedExePath), nullptr, 0);
+    hr = link->GetPath(storedExePath, std::size(storedExePath), nullptr, 0);
     if (FAILED(hr) || hr == S_FALSE) {
       continue;
     }
@@ -2579,7 +2579,7 @@ nsWindowsShellService::ClassifyShortcut(const nsAString& aPath,
                  {FOLDERID_UserPinned, u"\\TaskBar\\", u"Taskbar"},
                  {FOLDERID_UserPinned, u"\\StartMenu\\", u"StartMenu"}};
 
-  for (size_t i = 0; i < ArrayLength(folders); ++i) {
+  for (size_t i = 0; i < std::size(folders); ++i) {
     nsAutoString knownPath;
 
     

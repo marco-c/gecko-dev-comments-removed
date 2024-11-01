@@ -92,8 +92,7 @@ __attribute__((constructor)) static void SSE2Check() {
   
   
   
-  MOZ_UNUSED(
-      write(STDERR_FILENO, sSSE2Message, MOZ_ARRAY_LENGTH(sSSE2Message) - 1));
+  MOZ_UNUSED(write(STDERR_FILENO, sSSE2Message, std::size(sSSE2Message) - 1));
   
   _exit(255);
 }

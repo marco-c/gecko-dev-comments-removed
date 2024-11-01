@@ -387,7 +387,7 @@ static nsresult T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
     }
 
     
-    if (tempBufferPos >= mozilla::ArrayLength(tempBuffer) - ENCODE_MAX_LEN) {
+    if (tempBufferPos >= std::size(tempBuffer) - ENCODE_MAX_LEN) {
       NS_ASSERTION(writing, "should be writing");
       if (!aResult.Append(tempBuffer, tempBufferPos, mozilla::fallible)) {
         return NS_ERROR_OUT_OF_MEMORY;

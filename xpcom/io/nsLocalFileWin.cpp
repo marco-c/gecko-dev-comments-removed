@@ -139,7 +139,7 @@ nsresult nsLocalFile::RevealFile(const nsString& aResolvedPath) {
     }
 
     LPCITEMIDLIST selection[] = {dir};
-    UINT count = ArrayLength(selection);
+    UINT count = std::size(selection);
 
     
     hr = SHOpenFolderAndSelectItems(dir, count, selection, 0);
@@ -169,7 +169,7 @@ nsresult nsLocalFile::RevealFile(const nsString& aResolvedPath) {
     }
 
     LPCITEMIDLIST selection[] = {item};
-    UINT count = ArrayLength(selection);
+    UINT count = std::size(selection);
 
     
     hr = SHOpenFolderAndSelectItems(dir, count, selection, 0);
@@ -3018,7 +3018,7 @@ nsresult nsLocalFile::LookupExtensionIn(const char* const* aExtensionsArray,
 
 NS_IMETHODIMP
 nsLocalFile::IsExecutable(bool* aResult) {
-  return LookupExtensionIn(sExecutableExts, ArrayLength(sExecutableExts),
+  return LookupExtensionIn(sExecutableExts, std::size(sExecutableExts),
                            aResult);
 }
 
@@ -3415,7 +3415,7 @@ nsLocalFile::Launch() {
   static const char* const onlyExeExt[] = {".exe"};
   bool isExecutable;
   nsresult rv =
-      LookupExtensionIn(onlyExeExt, ArrayLength(onlyExeExt), &isExecutable);
+      LookupExtensionIn(onlyExeExt, std::size(onlyExeExt), &isExecutable);
   if (NS_FAILED(rv)) {
     isExecutable = false;
   }
@@ -3637,12 +3637,12 @@ void nsLocalFile::EnsureShortPath() {
   }
 
   WCHAR shortPath[MAX_PATH + 1];
-  DWORD lengthNeeded = ::GetShortPathNameW(mWorkingPath.get(), shortPath,
-                                           ArrayLength(shortPath));
+  DWORD lengthNeeded =
+      ::GetShortPathNameW(mWorkingPath.get(), shortPath, std::size(shortPath));
   
   
   
-  if (lengthNeeded != 0 && lengthNeeded < ArrayLength(shortPath)) {
+  if (lengthNeeded != 0 && lengthNeeded < std::size(shortPath)) {
     mShortWorkingPath.Assign(shortPath);
   } else {
     mShortWorkingPath.Assign(mWorkingPath);

@@ -5746,7 +5746,7 @@ void profiler_start_from_signal() {
       
       profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
                      PROFILER_DEFAULT_INTERVAL, features, filters,
-                     MOZ_ARRAY_LENGTH(filters), 0);
+                     std::size(filters), 0);
     } else {
       
       
@@ -5754,16 +5754,15 @@ void profiler_start_from_signal() {
       
       profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
                      PROFILER_DEFAULT_INTERVAL, features, filters,
-                     MOZ_ARRAY_LENGTH(filters), 0);
+                     std::size(filters), 0);
       
       
       NS_DispatchToMainThread(
           NS_NewRunnableFunction("StartProfilerInChildProcesses", [=] {
-            Unused << NotifyProfilerStarted(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
-                                            Nothing(),
-                                            PROFILER_DEFAULT_INTERVAL, features,
-                                            const_cast<const char**>(filters),
-                                            MOZ_ARRAY_LENGTH(filters), 0);
+            Unused << NotifyProfilerStarted(
+                PROFILER_DEFAULT_SIGHANDLE_ENTRIES, Nothing(),
+                PROFILER_DEFAULT_INTERVAL, features,
+                const_cast<const char**>(filters), std::size(filters), 0);
           }));
     }
   }
