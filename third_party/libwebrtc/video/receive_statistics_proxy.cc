@@ -235,18 +235,7 @@ void ReceiveStatisticsProxy::UpdateHistograms(
   if (delay_ms)
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", *delay_ms);
 
-  
-  
-  std::map<VideoContentType, ContentSpecificStats> aggregated_stats;
   for (const auto& it : content_specific_stats_) {
-    
-    VideoContentType content_type = it.first;
-    
-    content_type = it.first;
-    aggregated_stats[content_type].Add(it.second);
-  }
-
-  for (const auto& it : aggregated_stats) {
     
     
     
