@@ -825,7 +825,6 @@ MarkupContainer.prototype = {
 
 
 
-
   focus({ fromMouseEvent = false } = {}) {
     
     const focusable = this.editor.elt.querySelector("[tabindex='0']");
@@ -833,7 +832,12 @@ MarkupContainer.prototype = {
       if (fromMouseEvent) {
         
         
-        Services.focus.setFocus(focusable, Services.focus.FLAG_NOSHOWRING);
+        
+        
+        Services.focus.setFocus(
+          focusable,
+          Services.focus.FLAG_NOSHOWRING | Services.focus.FLAG_NOSCROLL
+        );
       } else {
         focusable.focus();
       }
