@@ -560,8 +560,7 @@ nsresult HyperTextAccessible::SetSelectionRange(int32_t aStartPos,
   
   domSel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
                          ScrollAxis(), ScrollAxis(),
-                         dom::Selection::SCROLL_FOR_CARET_MOVE |
-                             dom::Selection::SCROLL_OVERFLOW_HIDDEN);
+                         dom::Selection::SCROLL_OVERFLOW_HIDDEN);
 
   
   

@@ -229,7 +229,6 @@ class Selection final : public nsSupportsWeakReference,
     SCROLL_DO_FLUSH =
         1 << 3,  
     SCROLL_OVERFLOW_HIDDEN = 1 << 5,
-    SCROLL_FOR_CARET_MOVE = 1 << 6
   };
   
   

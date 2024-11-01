@@ -669,12 +669,9 @@ TextInputSelectionController::PageMove(bool aForward, bool aExtend) {
   
   
   
-  return ScrollSelectionIntoView(
-      nsISelectionController::SELECTION_NORMAL,
-      nsISelectionController::SELECTION_FOCUS_REGION,
-      nsISelectionController::ControllerScrollFlags(
-          nsISelectionController::SCROLL_SYNCHRONOUS |
-          nsISelectionController::SCROLL_FOR_CARET_MOVE));
+  return ScrollSelectionIntoView(nsISelectionController::SELECTION_NORMAL,
+                                 nsISelectionController::SELECTION_FOCUS_REGION,
+                                 nsISelectionController::SCROLL_SYNCHRONOUS);
 }
 
 NS_IMETHODIMP
