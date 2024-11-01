@@ -336,7 +336,7 @@ void TextTrackManager::HonorUserPreferencesForTrackSelection() {
 
   
   
-  PerformTrackSelection(ttKinds, std::size(ttKinds));
+  PerformTrackSelection(ttKinds, ArrayLength(ttKinds));
   PerformTrackSelection(TextTrackKind::Descriptions);
   PerformTrackSelection(TextTrackKind::Chapters);
 
@@ -363,7 +363,7 @@ bool TextTrackManager::TrackIsDefault(TextTrack* aTextTrack) {
 
 void TextTrackManager::PerformTrackSelection(TextTrackKind aTextTrackKind) {
   TextTrackKind ttKinds[] = {aTextTrackKind};
-  PerformTrackSelection(ttKinds, std::size(ttKinds));
+  PerformTrackSelection(ttKinds, ArrayLength(ttKinds));
 }
 
 void TextTrackManager::PerformTrackSelection(TextTrackKind aTextTrackKinds[],

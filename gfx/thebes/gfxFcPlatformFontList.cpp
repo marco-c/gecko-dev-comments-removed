@@ -2058,29 +2058,29 @@ gfxFcPlatformFontList::GetFilteredPlatformFontLists() {
     case Device::Linux_Ubuntu_any:
     case Device::Linux_Ubuntu_22:
       fontLists.AppendElement(std::make_pair(
-          kBaseFonts_Ubuntu_22_04, std::size(kBaseFonts_Ubuntu_22_04)));
+          kBaseFonts_Ubuntu_22_04, ArrayLength(kBaseFonts_Ubuntu_22_04)));
       fontLists.AppendElement(std::make_pair(
-          kLangFonts_Ubuntu_22_04, std::size(kLangFonts_Ubuntu_22_04)));
+          kLangFonts_Ubuntu_22_04, ArrayLength(kLangFonts_Ubuntu_22_04)));
       
       [[fallthrough]];
 
     case Device::Linux_Ubuntu_20:
       fontLists.AppendElement(std::make_pair(
-          kBaseFonts_Ubuntu_20_04, std::size(kBaseFonts_Ubuntu_20_04)));
+          kBaseFonts_Ubuntu_20_04, ArrayLength(kBaseFonts_Ubuntu_20_04)));
       fontLists.AppendElement(std::make_pair(
-          kLangFonts_Ubuntu_20_04, std::size(kLangFonts_Ubuntu_20_04)));
+          kLangFonts_Ubuntu_20_04, ArrayLength(kLangFonts_Ubuntu_20_04)));
       break;
 
     case Device::Linux_Fedora_any:
     case Device::Linux_Fedora_39:
-      fontLists.AppendElement(std::make_pair(kBaseFonts_Fedora_39,
-                                             std::size(kBaseFonts_Fedora_39)));
+      fontLists.AppendElement(std::make_pair(
+          kBaseFonts_Fedora_39, ArrayLength(kBaseFonts_Fedora_39)));
       
       [[fallthrough]];
 
     case Device::Linux_Fedora_38:
-      fontLists.AppendElement(std::make_pair(kBaseFonts_Fedora_38,
-                                             std::size(kBaseFonts_Fedora_38)));
+      fontLists.AppendElement(std::make_pair(
+          kBaseFonts_Fedora_38, ArrayLength(kBaseFonts_Fedora_38)));
       break;
 
     default:
@@ -2794,7 +2794,7 @@ void gfxFcPlatformFontList::GetSampleLangForGroup(
   const MozLangGroupData* mozLangGroup = nullptr;
 
   
-  for (unsigned int i = 0; i < std::size(MozLangGroups); ++i) {
+  for (unsigned int i = 0; i < ArrayLength(MozLangGroups); ++i) {
     if (aLanguage == MozLangGroups[i].mozLangGroup) {
       mozLangGroup = &MozLangGroups[i];
       break;

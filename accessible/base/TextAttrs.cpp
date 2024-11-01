@@ -127,14 +127,14 @@ void TextAttrsMgr::GetAttributes(AccAttributes* aAttributes,
 
   
   if (aAttributes) {
-    for (uint32_t idx = 0; idx < std::size(attrArray); idx++) {
+    for (uint32_t idx = 0; idx < ArrayLength(attrArray); idx++) {
       attrArray[idx]->Expose(aAttributes, mIncludeDefAttrs);
     }
   }
 
   
   if (aStartOffset) {
-    GetRange(attrArray, std::size(attrArray), aStartOffset, aEndOffset);
+    GetRange(attrArray, ArrayLength(attrArray), aStartOffset, aEndOffset);
   }
 }
 

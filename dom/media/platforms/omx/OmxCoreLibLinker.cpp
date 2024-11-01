@@ -74,7 +74,7 @@ bool OmxCoreLibLinker::Link() {
   }
 
   
-  for (size_t i = 0; i < std::size(sLibNames); i++) {
+  for (size_t i = 0; i < ArrayLength(sLibNames); i++) {
     if (TryLinkingLibrary(sLibNames[i])) {
       sLinkStatus = LinkStatus_SUCCEEDED;
       return true;

@@ -144,8 +144,9 @@ long BuildRegGuidPath(REFGUID aGuid, const GuidType aGuidType, wchar_t* aBuf,
   
   
   
-  constexpr size_t kSubkeyBaseLen = std::size(kSubkeyBase) - 1;
-  constexpr size_t kSubkeyLen = kSubkeyBaseLen + std::size(kClsid) - 1;
+  constexpr size_t kSubkeyBaseLen = mozilla::ArrayLength(kSubkeyBase) - 1;
+  constexpr size_t kSubkeyLen =
+      kSubkeyBaseLen + mozilla::ArrayLength(kClsid) - 1;
   
   
   constexpr size_t kGuidLen = kGuidRegFormatCharLenInclNul - 1;
@@ -312,7 +313,8 @@ void DiagnosticNameForIID(REFIID aIid, nsACString& aOutString) {
 
 void GUIDToString(REFGUID aGuid,
                   wchar_t (&aOutBuf)[kGuidRegFormatCharLenInclNul]) {
-  DebugOnly<int> result = ::StringFromGUID2(aGuid, aOutBuf, std::size(aOutBuf));
+  DebugOnly<int> result =
+      ::StringFromGUID2(aGuid, aOutBuf, ArrayLength(aOutBuf));
   MOZ_ASSERT(result);
 }
 

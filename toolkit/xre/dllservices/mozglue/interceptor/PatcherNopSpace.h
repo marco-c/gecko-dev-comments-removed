@@ -65,7 +65,7 @@ class WindowsDllNopSpacePatcher final : public WindowsDllPatcherBase<VMPolicy> {
     const wchar_t* kIncompatibleDLLs[] = {L"detoured.dll", L"_etoured.dll",
                                           L"nvd3d9wrap.dll", L"nvdxgiwrap.dll"};
     
-    for (unsigned int i = 0; i < std::size(kIncompatibleDLLs); ++i) {
+    for (unsigned int i = 0; i < mozilla::ArrayLength(kIncompatibleDLLs); ++i) {
       if (GetModuleHandleW(kIncompatibleDLLs[i])) {
         return false;
       }
@@ -104,11 +104,12 @@ class WindowsDllNopSpacePatcher final : public WindowsDllPatcherBase<VMPolicy> {
         while (token) {
           wchar_t fname[_MAX_FNAME] = {0};
           if (!_wsplitpath_s(token, nullptr, 0, nullptr, 0, fname,
-                             std::size(fname), nullptr, 0)) {
+                             mozilla::ArrayLength(fname), nullptr, 0)) {
             
             
             const wchar_t kNvInitName[] = L"nvinit";
-            if (!_wcsnicmp(fname, kNvInitName, std::size(kNvInitName))) {
+            if (!_wcsnicmp(fname, kNvInitName,
+                           mozilla::ArrayLength(kNvInitName))) {
               return false;
             }
           }

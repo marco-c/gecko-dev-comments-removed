@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsPluginArray.h"
 
@@ -17,13 +17,13 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-// These plugin and mime types are hard-coded by the HTML spec.
-// The "main" plugin name is used with the only plugin that is
-// referenced by MIME types (via nsMimeType::GetEnabledPlugin).
-// The "extra" of the plugin names are associated with MIME types that
-// reference the main plugin.
-// This is all defined in the HTML spec, section 8.9.1.6
-// "PDF Viewing Support".
+
+
+
+
+
+
+
 static const nsLiteralString kMainPluginName = u"PDF Viewer"_ns;
 static const nsLiteralString kExtraPluginNames[] = {
     u"Chrome PDF Viewer"_ns, u"Chromium PDF Viewer"_ns,
@@ -32,16 +32,16 @@ static const nsLiteralString kMimeTypeNames[] = {u"application/pdf"_ns,
                                                  u"text/pdf"_ns};
 
 nsPluginArray::nsPluginArray(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {
-  // Create the hard-coded PDF plugin types that share MIME type arrays.
+  
   mPlugins[0] = MakeRefPtr<nsPluginElement>(this, aWindow, kMainPluginName);
 
   mozilla::Array<RefPtr<nsMimeType>, 2> mimeTypes;
-  for (uint32_t i = 0; i < std::size(kMimeTypeNames); ++i) {
+  for (uint32_t i = 0; i < ArrayLength(kMimeTypeNames); ++i) {
     mimeTypes[i] = MakeRefPtr<nsMimeType>(mPlugins[0], kMimeTypeNames[i]);
   }
   mMimeTypeArray = MakeRefPtr<nsMimeTypeArray>(aWindow, mimeTypes);
 
-  for (uint32_t i = 0; i < std::size(kExtraPluginNames); ++i) {
+  for (uint32_t i = 0; i < ArrayLength(kExtraPluginNames); ++i) {
     mPlugins[i + 1] =
         MakeRefPtr<nsPluginElement>(this, aWindow, kExtraPluginNames[i]);
   }
@@ -60,7 +60,7 @@ JSObject* nsPluginArray::WrapObject(JSContext* aCx,
 }
 
 nsPluginElement* nsPluginArray::IndexedGetter(uint32_t aIndex, bool& aFound) {
-  if (!ForceNoPlugins() && aIndex < std::size(mPlugins)) {
+  if (!ForceNoPlugins() && aIndex < ArrayLength(mPlugins)) {
     aFound = true;
     return mPlugins[aIndex];
   }
@@ -112,7 +112,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK(nsPluginArray, mPlugins[0],
                                            mPlugins[3], mPlugins[4],
                                            mMimeTypeArray, mWindow)
 
-// nsPluginElement implementation.
+
 
 nsPluginElement::nsPluginElement(nsPluginArray* aPluginArray,
                                  nsPIDOMWindowInner* aWindow,
