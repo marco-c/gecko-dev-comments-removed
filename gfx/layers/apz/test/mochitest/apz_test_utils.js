@@ -591,12 +591,11 @@ async function waitUntilApzStable() {
           
           sendAsyncMessage("apz-flush-done", null);
         };
-        var flushRepaint = function () {
-          if (topUtils.isMozAfterPaintPending) {
-            topWin.addEventListener("MozAfterPaint", flushRepaint, {
-              once: true,
-            });
-            return;
+        var flushRepaint = async function () {
+          
+          
+          while (topUtils.isMozAfterPaintPending) {
+            await new Promise(resolve => topWin.requestAnimationFrame(resolve));
           }
 
           Services.obs.addObserver(repaintDone, "apz-repaints-flushed");
