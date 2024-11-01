@@ -2386,8 +2386,8 @@ void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
   
   if (encoder_ && max_pixels_updated &&
       encoder_config_.HasRequestedResolution()) {
+    
     pending_encoder_reconfiguration_ = true;
-    ReconfigureEncoder();
   }
 
   worker_queue_->PostTask(SafeTask(
