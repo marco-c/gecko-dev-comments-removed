@@ -29,6 +29,10 @@ add_task(async function () {
   const dbg = createDebuggerContext(toolbox);
   await selectSource(dbg, "test-location-debugger-link-logpoint-1.js");
 
+  
+  
+  await waitForDocumentLoadComplete(dbg);
+
   info("Add a logpoint with an invalid expression");
   await setLogPoint(dbg, 7, "undefinedVariable");
 
