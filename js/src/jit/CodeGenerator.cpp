@@ -9597,7 +9597,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   CodeOffset secondRetOffset;
   switch (callee.which()) {
     case wasm::CalleeDesc::Func:
-#ifdef ENABLE_WASM_TAIL_CALLS
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
@@ -9605,14 +9604,12 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
         
         return;
       }
-#endif
       MOZ_ASSERT(!isReturnCall);
       retOffset = masm.call(desc, callee.funcIndex());
       reloadRegs = false;
       switchRealm = false;
       break;
     case wasm::CalleeDesc::Import:
-#ifdef ENABLE_WASM_TAIL_CALLS
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
@@ -9620,7 +9617,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
         
         return;
       }
-#endif
       MOZ_ASSERT(!isReturnCall);
       retOffset = masm.wasmCallImport(desc, callee);
       break;
@@ -9637,11 +9633,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
         if (lir->isCatchable()) {
           addOutOfLineCode(ool, lir->mirCatchable());
         } else if (isReturnCall) {
-#ifdef ENABLE_WASM_TAIL_CALLS
           addOutOfLineCode(ool, lir->mirReturnCall());
-#else
-          MOZ_CRASH("Return calls are disabled.");
-#endif
         } else {
           addOutOfLineCode(ool, lir->mirUncatchable());
         }
@@ -9657,18 +9649,13 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
         if (lir->isCatchable()) {
           addOutOfLineCode(ool, lir->mirCatchable());
         } else if (isReturnCall) {
-#  ifdef ENABLE_WASM_TAIL_CALLS
           addOutOfLineCode(ool, lir->mirReturnCall());
-#  else
-          MOZ_CRASH("Return calls are disabled.");
-#  endif
         } else {
           addOutOfLineCode(ool, lir->mirUncatchable());
         }
         nullCheckFailed = ool->entry();
       }
 #endif
-#ifdef ENABLE_WASM_TAIL_CALLS
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
@@ -9678,7 +9665,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
         
         return;
       }
-#endif
       MOZ_ASSERT(!isReturnCall);
       masm.wasmCallIndirect(desc, callee, boundsCheckFailed, nullCheckFailed,
                             lir->tableSize(), &retOffset, &secondRetOffset);
@@ -9701,7 +9687,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       switchRealm = false;
       break;
     case wasm::CalleeDesc::FuncRef:
-#ifdef ENABLE_WASM_TAIL_CALLS
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
@@ -9709,7 +9694,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
         
         return;
       }
-#endif
       MOZ_ASSERT(!isReturnCall);
       
       
@@ -9753,7 +9737,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     MOZ_ASSERT(!switchRealm);
   }
 
-#ifdef ENABLE_WASM_TAIL_CALLS
   switch (callee.which()) {
     case wasm::CalleeDesc::Func:
     case wasm::CalleeDesc::Import:
@@ -9766,7 +9749,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     default:
       break;
   }
-#endif  
 
   if (inTry) {
     

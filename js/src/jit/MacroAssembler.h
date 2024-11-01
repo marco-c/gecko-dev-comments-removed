@@ -295,7 +295,6 @@ struct AllocSiteInput
   explicit AllocSiteInput(Register reg) : Base(reg) {}
 };
 
-#ifdef ENABLE_WASM_TAIL_CALLS
 
 
 
@@ -308,7 +307,6 @@ struct ReturnCallAdjustmentInfo {
       : newSlotsAndStackArgBytes(newSlotsAndStackArgBytes),
         oldSlotsAndStackArgBytes(oldSlotsAndStackArgBytes) {}
 };
-#endif  
 
 struct BranchWasmRefIsSubtypeRegisters {
   bool needSuperSTV;
@@ -3959,7 +3957,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   CodeOffset wasmCallImport(const wasm::CallSiteDesc& desc,
                             const wasm::CalleeDesc& callee);
 
-#ifdef ENABLE_WASM_TAIL_CALLS
   CodeOffset wasmReturnCallImport(const wasm::CallSiteDesc& desc,
                                   const wasm::CalleeDesc& callee,
                                   const ReturnCallAdjustmentInfo& retCallInfo);
@@ -3985,7 +3982,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   CodeOffset wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
                                 const Register reg)
       DEFINED_ON(x86_shared, arm, arm64, loong64, mips64, riscv64);
-#endif
 
 #ifdef ENABLE_WASM_MEMORY64
   void wasmClampTable64Index(Register64 index, Register out);
@@ -4010,7 +4006,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                         mozilla::Maybe<uint32_t> tableSize,
                         CodeOffset* fastCallOffset, CodeOffset* slowCallOffset);
 
-#ifdef ENABLE_WASM_TAIL_CALLS
   
   
   
@@ -4023,7 +4018,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                               Label* nullCheckFailedLabel,
                               mozilla::Maybe<uint32_t> tableSize,
                               const ReturnCallAdjustmentInfo& retCallInfo);
-#endif  
 
   
   
@@ -4031,11 +4025,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
                    const wasm::CalleeDesc& callee, CodeOffset* fastCallOffset,
                    CodeOffset* slowCallOffset);
 
-#ifdef ENABLE_WASM_TAIL_CALLS
   void wasmReturnCallRef(const wasm::CallSiteDesc& desc,
                          const wasm::CalleeDesc& callee,
                          const ReturnCallAdjustmentInfo& retCallInfo);
-#endif  
 
   
   

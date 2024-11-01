@@ -103,13 +103,7 @@ struct FeatureOptions {
       : isBuiltinModule(false),
         jsStringBuiltins(false),
         jsStringConstants(false),
-        requireExnref(false)
-#ifdef ENABLE_WASM_TAIL_CALLS
-        ,
-        requireTailCalls(false)
-#endif
-  {
-  }
+        requireExnref(false) {}
 
   
   bool isBuiltinModule;
@@ -123,10 +117,6 @@ struct FeatureOptions {
 
   
   bool requireExnref;
-#ifdef ENABLE_WASM_TAIL_CALLS
-  
-  bool requireTailCalls;
-#endif
 
   
   [[nodiscard]] bool init(JSContext* cx, HandleValue val);

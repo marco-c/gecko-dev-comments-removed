@@ -100,7 +100,6 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
       
       MOZ_ASSERT(graph->argumentSlotCount() == 0);
 
-#ifdef ENABLE_WASM_TAIL_CALLS
       
       
       
@@ -115,15 +114,6 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
 
       
       frameDepth_ += calleeFramePadding + stackArgsWithPadding;
-#else
-      frameDepth_ += gen->wasmMaxStackArgBytes();
-
-      
-      
-      
-      frameDepth_ += ComputeByteAlignment(sizeof(wasm::Frame) + frameDepth_,
-                                          WasmStackAlignment);
-#endif
     }
 
 #ifdef JS_CODEGEN_ARM64
