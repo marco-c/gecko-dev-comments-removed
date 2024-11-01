@@ -14,6 +14,7 @@
 #include "mozilla/ProfilerState.h"
 #include "mozilla/ProfilerThreadState.h"
 
+#include "js/Debug.h"
 #include "js/ProfilingCategory.h"
 #include "js/ProfilingStack.h"
 #include "js/RootingAPI.h"
@@ -289,6 +290,11 @@ class MOZ_RAII AutoProfilerLabelHot {
     if (mProfilingStack) {
       mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
                                       aCategoryPair, aFlags);
+
+#  ifdef MOZ_EXECUTION_TRACING
+      
+      mCx = nullptr;
+#  endif
     }
   }
 
@@ -303,6 +309,14 @@ class MOZ_RAII AutoProfilerLabelHot {
     if (MOZ_UNLIKELY(mProfilingStack)) {
       mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
                                       aCategoryPair, aFlags);
+#  ifdef MOZ_EXECUTION_TRACING
+      if (MOZ_UNLIKELY(JS_TracerIsTracing(aJSContext))) {
+        mCx = aJSContext;
+        TraceLabel(aLabel, aDynamicString);
+      } else {
+        mCx = nullptr;
+      }
+#  endif
     }
   }
 
@@ -310,13 +324,34 @@ class MOZ_RAII AutoProfilerLabelHot {
     
     if (MOZ_UNLIKELY(mProfilingStack)) {
       mProfilingStack->pop();
+#  ifdef MOZ_EXECUTION_TRACING
+      if (MOZ_UNLIKELY(mCx)) {
+        
+        
+        
+        JS_TracerLeaveLabelLatin1(mCx, "");
+      }
+#  endif
     }
   }
 
  private:
+#  ifdef MOZ_EXECUTION_TRACING
+  MOZ_NEVER_INLINE void TraceLabel(const char* aLabel,
+                                   const char* aDynamicString) {
+    char buffer[1024];
+    SprintfLiteral(buffer, "(DOM) %s.%s", aLabel, aDynamicString);
+    JS_TracerEnterLabelLatin1(mCx, buffer);
+  }
+#  endif
+
   
   
   ProfilingStack* mProfilingStack;
+
+#  ifdef MOZ_EXECUTION_TRACING
+  JSContext* mCx;
+#  endif
 };
 
 #endif  
