@@ -3278,20 +3278,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
 
 #ifdef ACCESSIBILITY
     if (nsAccessibilityService* accService = GetAccService()) {
-      nsIContent* a11yTarget = target;
-      if (thereIsATextFragment) {
-        
-        
-        
-        
-        
-        a11yTarget = nsIContent::FromNodeOrNull(
-            aFirstTextDirective->GetStartContainer());
-        if (!a11yTarget) {
-          a11yTarget = target;
-        }
-      }
-      accService->NotifyOfAnchorJumpTo(a11yTarget);
+      accService->NotifyOfAnchorJumpTo(target);
     }
 #endif
   } else if (nsContentUtils::EqualsIgnoreASCIICase(aAnchorName, u"top"_ns)) {
