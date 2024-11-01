@@ -378,6 +378,10 @@ struct RTC_EXPORT RtpExtension {
       "urn:ietf:params:rtp-hdrext:csrc-audio-level";
 
   
+  static constexpr char kCorruptionDetectionUri[] =
+      "http://www.webrtc.org/experiments/rtp-hdrext/corruption-detection";
+
+  
   
   static constexpr int kMinId = 1;
   static constexpr int kMaxId = 255;
