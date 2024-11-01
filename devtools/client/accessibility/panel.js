@@ -73,10 +73,16 @@ AccessibilityPanel.prototype = {
       return this._opening;
     }
 
+    
     let resolver;
     this._opening = new Promise(resolve => {
       resolver = resolve;
     });
+
+    
+    
+    const { promise, resolve } = Promise.withResolvers();
+    this.initializedPromise = promise;
 
     this._telemetry = this._toolbox.telemetry;
     this.panelWin.gTelemetry = this._telemetry;
@@ -94,31 +100,26 @@ AccessibilityPanel.prototype = {
       this.onAccessibilityInspectorUpdated
     );
 
-    this.accessibilityProxy = new AccessibilityProxy(this._commands, this);
-    await this.accessibilityProxy.initialize();
-
-    
-    if (
-      this.accessibilityProxy.canBeEnabled &&
-      !this.accessibilityProxy.enabled
-    ) {
-      await this.accessibilityProxy.enableAccessibility();
-    }
-
     this.picker = new Picker(this);
     this.fluentBundles = await this.createFluentBundles();
 
-    this.updateA11YServiceDurationTimer();
+    this.accessibilityProxy = new AccessibilityProxy(this._commands, this);
+
+    await this.accessibilityProxy.initialize();
+
     this.accessibilityProxy.startListeningForLifecycleEvents({
       init: this.onLifecycleEvent,
       shutdown: this.onLifecycleEvent,
     });
 
     
-    const onInitialized = this.panelWin.once(EVENTS.INITIALIZED);
-    this.shouldRefresh = true;
-    this.refresh();
-    await onInitialized;
+    this.updateA11YServiceDurationTimer();
+
+    
+    resolve();
+
+    
+    await this.forceRefresh();
 
     resolver(this);
     return this._opening;
@@ -164,9 +165,9 @@ AccessibilityPanel.prototype = {
 
   async forceRefresh() {
     this.shouldRefresh = true;
-    await this._opening;
 
-    await this.accessibilityProxy.accessibilityFrontGetPromise;
+    
+    await this.initializedPromise;
     const onUpdated = this.panelWin.once(EVENTS.INITIALIZED);
     this.refresh();
     await onUpdated;
@@ -320,6 +321,7 @@ AccessibilityPanel.prototype = {
       });
       this.accessibilityProxy.destroy();
       this.accessibilityProxy = null;
+      this.initializedPromise = null;
     }
 
     this._toolbox.off("select", this.onPanelVisibilityChange);

@@ -24,14 +24,15 @@ const {
 
 class AccessibilityProxy {
   #panel;
+  #initialized;
   constructor(commands, panel) {
     this.commands = commands;
     this.#panel = panel;
 
+    this.#initialized = false;
     this._accessibilityWalkerFronts = new Set();
     this.lifecycleEvents = new Map();
     this.accessibilityEvents = new Map();
-    this.supports = {};
 
     this.audit = this.audit.bind(this);
     this.enableAccessibility = this.enableAccessibility.bind(this);
@@ -54,7 +55,6 @@ class AccessibilityProxy {
     this.onTargetAvailable = this.onTargetAvailable.bind(this);
     this.onTargetDestroyed = this.onTargetDestroyed.bind(this);
     this.onTargetSelected = this.onTargetSelected.bind(this);
-    this.onResourceAvailable = this.onResourceAvailable.bind(this);
     this.onAccessibilityFrontAvailable =
       this.onAccessibilityFrontAvailable.bind(this);
     this.onAccessibilityFrontDestroyed =
@@ -403,22 +403,30 @@ class AccessibilityProxy {
   }
 
   async initialize() {
+    
+    this.parentAccessibilityFront =
+      await this.commands.targetCommand.rootFront.getFront(
+        "parentaccessibility"
+      );
+
     await this.commands.targetCommand.watchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
       onAvailable: this.onTargetAvailable,
       onSelected: this.onTargetSelected,
       onDestroyed: this.onTargetDestroyed,
     });
-    await this.commands.resourceCommand.watchResources(
-      [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
-      {
-        onAvailable: this.onResourceAvailable,
-      }
-    );
-    this.parentAccessibilityFront =
-      await this.commands.targetCommand.rootFront.getFront(
-        "parentaccessibility"
-      );
+
+    
+    if (this.canBeEnabled && !this.enabled) {
+      await this.enableAccessibility();
+    }
+    this.#initialized = true;
+  }
+
+  get supports() {
+    
+    
+    return this.accessibilityFront.traits;
   }
 
   destroy() {
@@ -428,16 +436,11 @@ class AccessibilityProxy {
       onSelected: this.onTargetSelected,
       onDestroyed: this.onTargetDestroyed,
     });
-    this.commands.resourceCommand.unwatchResources(
-      [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
-      { onAvailable: this.onResourceAvailable }
-    );
 
     this.lifecycleEvents.clear();
     this.accessibilityEvents.clear();
 
     this.accessibilityFront = null;
-    this.accessibilityFrontGetPromise = null;
     this.parentAccessibilityFront = null;
     this.simulatorFront = null;
     this.simulate = null;
@@ -529,29 +532,8 @@ class AccessibilityProxy {
       return;
     }
 
+    
     this._accessibilityWalkerFronts.clear();
-
-    this.accessibilityFrontGetPromise = targetFront.getFront("accessibility");
-    this.accessibilityFront = await this.accessibilityFrontGetPromise;
-
-    
-    
-    this.supports = { ...this.accessibilityFront.traits };
-
-    this.simulatorFront = this.accessibilityFront.simulatorFront;
-    if (this.simulatorFront) {
-      this.simulate = types => this.simulatorFront.simulate({ types });
-    } else {
-      this.simulate = null;
-    }
-
-    
-    
-    for (const [type, listeners] of this.lifecycleEvents.entries()) {
-      for (const listener of listeners.values()) {
-        this.accessibilityFront.on(type, listener);
-      }
-    }
   }
 
   async onTargetDestroyed({ targetFront }) {
@@ -563,7 +545,6 @@ class AccessibilityProxy {
   }
 
   async onTargetSelected({ targetFront }) {
-    await this.toggleDisplayTabbingOrder(false);
     this.accessibilityFront = await targetFront.getFront("accessibility");
 
     this.simulatorFront = this.accessibilityFront.simulatorFront;
@@ -573,21 +554,21 @@ class AccessibilityProxy {
       this.simulate = null;
     }
 
-    this.#panel.shouldRefresh = true;
-    this.#panel.refresh();
-  }
+    await this.toggleDisplayTabbingOrder(false);
 
-  onResourceAvailable(resources) {
-    for (const resource of resources) {
-      
-      if (
-        resource.resourceType ===
-          this.commands.resourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name === "dom-complete" &&
-        resource.targetFront.isTopLevel
-      ) {
-        this.#panel.forceRefresh();
+    
+    
+    for (const [type, listeners] of this.lifecycleEvents.entries()) {
+      for (const listener of listeners.values()) {
+        this.accessibilityFront.on(type, listener);
       }
+    }
+
+    
+    
+    
+    if (this.#initialized) {
+      await this.#panel.forceRefresh();
     }
   }
 }
