@@ -135,11 +135,7 @@ const AVAILABLE_BREAKPOINTS = [
   {
     name: "Control",
     items: [
-      
-      generalEvent("control", "beforetoggle", () =>
-        
-        Services.prefs?.getBoolPref("dom.element.popover.enabled")
-      ),
+      generalEvent("control", "beforetoggle"),
       generalEvent("control", "blur"),
       generalEvent("control", "change"),
       generalEvent("control", "focus"),
