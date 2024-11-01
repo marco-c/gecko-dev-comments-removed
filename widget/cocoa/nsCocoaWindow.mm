@@ -120,8 +120,7 @@ static void RollUpPopups(nsIRollupListener::AllowAnimations aAllowAnimations =
 }
 
 nsCocoaWindow::nsCocoaWindow()
-    : mParent(nullptr),
-      mWindow(nil),
+    : mWindow(nil),
       mDelegate(nil),
       mPopupContentView(nil),
       mFullscreenTransitionAnimation(nil),
@@ -188,25 +187,7 @@ void nsCocoaWindow::DestroyNativeWindow() {
 nsCocoaWindow::~nsCocoaWindow() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  
-  
-  
-  
-  
-  for (nsIWidget* kid = mLastChild; kid;) {
-    const WindowType kidType = kid->GetWindowType();
-    if (kidType == WindowType::Child) {
-      RefPtr<nsChildView> childView = static_cast<nsChildView*>(kid);
-      kid = kid->GetPrevSibling();
-      childView->ResetParent();
-    } else {
-      RefPtr<nsCocoaWindow> childWindow = static_cast<nsCocoaWindow*>(kid);
-      kid = kid->GetPrevSibling();
-      RemoveChild(childWindow);
-      childWindow->mParent = nullptr;
-    }
-  }
-
+  RemoveAllChildren();
   if (mWindow && mWindowMadeHere) {
     CancelAllTransitions();
     DestroyNativeWindow();
@@ -275,7 +256,6 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, const DesktopIntRect& aRect,
 
   Inherited::BaseCreate(aParent, aInitData);
 
-  mParent = aParent;
   mAlwaysOnTop = aInitData->mAlwaysOnTop;
   mIsAlert = aInitData->mIsAlert;
 
@@ -590,7 +570,6 @@ void nsCocoaWindow::Destroy() {
 
   nsBaseWidget::OnDestroy();
   nsBaseWidget::Destroy();
-  mParent = nullptr;
 }
 
 void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
@@ -686,7 +665,7 @@ void nsCocoaWindow::SetModal(bool aModal) {
   
   
   
-  for (auto* ancestorWidget = mParent.get(); ancestorWidget;
+  for (auto* ancestorWidget = mParent; ancestorWidget;
        ancestorWidget = ancestorWidget->GetParent()) {
     if (ancestorWidget->GetWindowType() == WindowType::Child) {
       continue;
@@ -877,20 +856,6 @@ bool nsCocoaWindow::NeedsRecreateToReshow() {
   
   return mWindowType == WindowType::Popup && mWasShown &&
          NSScreen.screens.count > 1;
-}
-
-void nsCocoaWindow::SetParent(nsIWidget* aNewParent) {
-  
-
-  if (mParent) {
-    mParent->RemoveChild(this);
-  }
-
-  mParent = aNewParent;
-
-  if (mParent) {
-    mParent->AddChild(this);
-  }
 }
 
 WindowRenderer* nsCocoaWindow::GetWindowRenderer() {
