@@ -130,7 +130,13 @@ function handleMessages(engine) {
 
       switch (data.type) {
         case "translation-request": {
-          const { sourceText, messageId, isHTML, innerWindowId } = data;
+          const {
+            sourceText,
+            messageId,
+            translationId,
+            isHTML,
+            innerWindowId,
+          } = data;
           if (discardPromise) {
             
             await discardPromise;
@@ -146,7 +152,8 @@ function handleMessages(engine) {
             let targetText = await engine.translate(
               cleanedSourceText,
               isHTML,
-              innerWindowId
+              innerWindowId,
+              translationId
             );
 
             
@@ -165,6 +172,7 @@ function handleMessages(engine) {
             postMessage({
               type: "translation-response",
               targetText,
+              translationId,
               messageId,
             });
           } catch (error) {
@@ -201,6 +209,13 @@ function handleMessages(engine) {
           postMessage({
             type: "translations-discarded",
           });
+          break;
+        }
+        case "cancel-single-translation": {
+          engine.discardSingleTranslation(
+            data.innerWindowId,
+            data.translationsId
+          );
           break;
         }
         default:
@@ -269,8 +284,9 @@ class Engine {
 
 
 
-  translate(sourceText, isHTML, innerWindowId) {
-    return this.#getWorkQueue(innerWindowId).runTask(() =>
+
+  translate(sourceText, isHTML, innerWindowId, translationId) {
+    return this.#getWorkQueue(innerWindowId).runTask(translationId, () =>
       this.#syncTranslate(sourceText, isHTML, innerWindowId)
     );
   }
@@ -309,6 +325,20 @@ class Engine {
     if (workQueue) {
       workQueue.cancelWork();
       this.#workQueues.delete(innerWindowId);
+    }
+  }
+
+  
+
+
+
+
+
+  discardSingleTranslation(innerWindowId, translationsId) {
+    const workQueue = this.#workQueues.get(innerWindowId);
+    if (workQueue) {
+      trace("Discarding translation with translationsId", translationsId);
+      workQueue.cancelTask(translationsId);
     }
   }
 
@@ -627,7 +657,12 @@ class WorkQueue {
   #RUN_IMMEDIATELY_COUNT = 20;
 
   
-  #tasks = [];
+
+
+
+
+
+  #tasksByTranslationId = new Map();
   #isRunning = false;
   #isWorkCancelled = false;
   #runImmediately = this.#RUN_IMMEDIATELY_COUNT;
@@ -646,7 +681,8 @@ class WorkQueue {
 
 
 
-  runTask(task) {
+
+  runTask(translationId, task) {
     if (this.#runImmediately > 0) {
       
       
@@ -655,9 +691,16 @@ class WorkQueue {
       return Promise.resolve(task());
     }
     return new Promise((resolve, reject) => {
-      this.#tasks.push({ task, resolve, reject });
+      this.#tasksByTranslationId.set(translationId, { task, resolve, reject });
       this.#run().catch(error => console.error(error));
     });
+  }
+
+  
+
+
+  cancelTask(translationId) {
+    this.#tasksByTranslationId.delete(translationId);
   }
 
   
@@ -683,7 +726,7 @@ class WorkQueue {
       );
     };
 
-    while (this.#tasks.length !== 0) {
+    while (this.#tasksByTranslationId.size) {
       if (this.#isWorkCancelled) {
         
         break;
@@ -703,12 +746,20 @@ class WorkQueue {
       }
 
       
-      if (this.#isWorkCancelled || !this.#tasks.length) {
+      if (this.#isWorkCancelled || !this.#tasksByTranslationId.size) {
         break;
       }
 
       tasksInBatch++;
-      const { task, resolve, reject } = this.#tasks.shift();
+
+      
+      
+      const [translationId, taskAndResolvers] = this.#tasksByTranslationId
+        .entries()
+        .next().value;
+      const { task, resolve, reject } = taskAndResolvers;
+      this.#tasksByTranslationId.delete(translationId);
+
       try {
         const result = await task();
 
@@ -728,7 +779,7 @@ class WorkQueue {
 
   async cancelWork() {
     this.#isWorkCancelled = true;
-    this.#tasks = [];
+    this.#tasksByTranslationId = new Map();
     await new Promise(resolve => setTimeout(resolve, 0));
     this.#isWorkCancelled = false;
   }
