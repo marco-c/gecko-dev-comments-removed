@@ -99,19 +99,16 @@ class OrderedHashTable {
   AllocPolicy alloc;
   mozilla::HashCodeScrambler hcs;  
 
-  
-  
-  
-  template <void (*f)(Range* range, uint32_t arg)>
-  void forEachRange(uint32_t arg = 0) {
+  template <typename F>
+  void forEachRange(F&& f) {
     Range* next;
     for (Range* r = ranges; r; r = next) {
       next = r->next;
-      f(r, arg);
+      f(r);
     }
     for (Range* r = nurseryRanges; r; r = next) {
       next = r->next;
-      f(r, arg);
+      f(r);
     }
   }
 
@@ -160,7 +157,7 @@ class OrderedHashTable {
   }
 
   ~OrderedHashTable() {
-    forEachRange<Range::onTableDestroyed>();
+    forEachRange([](Range* range) { range->onTableDestroyed(); });
     if (hashTable) {
       
       alloc.free_(hashTable, hashBuckets());
@@ -274,7 +271,7 @@ class OrderedHashTable {
 
     
     uint32_t pos = e - data;
-    forEachRange<&Range::onRemove>(pos);
+    forEachRange([pos](Range* range) { range->onRemove(pos); });
 
     
     if (hashBuckets() > initialBuckets() &&
@@ -314,7 +311,7 @@ class OrderedHashTable {
 
       alloc.free_(oldHashTable, oldHashBuckets);
       freeData(oldData, oldDataLength, oldDataCapacity);
-      forEachRange<&Range::onClear>();
+      forEachRange([](Range* range) { range->onClear(); });
     }
 
     MOZ_ASSERT(hashTable);
@@ -521,13 +518,6 @@ class OrderedHashTable {
     static size_t offsetOfCount() { return offsetof(Range, count); }
     static size_t offsetOfPrevP() { return offsetof(Range, prevp); }
     static size_t offsetOfNext() { return offsetof(Range, next); }
-
-    static void onTableDestroyed(Range* range, uint32_t arg) {
-      range->onTableDestroyed();
-    }
-    static void onRemove(Range* range, uint32_t arg) { range->onRemove(arg); }
-    static void onClear(Range* range, uint32_t arg) { range->onClear(); }
-    static void onCompact(Range* range, uint32_t arg) { range->onCompact(); }
   };
 
   class MutableRange : public Range {
@@ -751,7 +741,7 @@ class OrderedHashTable {
   void compacted() {
     
     
-    forEachRange<&Range::onCompact>();
+    forEachRange([](Range* range) { range->onCompact(); });
   }
 
   
