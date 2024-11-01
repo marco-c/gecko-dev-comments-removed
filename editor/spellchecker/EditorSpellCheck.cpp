@@ -298,7 +298,6 @@ NS_IMPL_CYCLE_COLLECTION(EditorSpellCheck, mEditor, mSpellChecker)
 EditorSpellCheck::EditorSpellCheck()
     : mTxtSrvFilterType(0),
       mSuggestedWordIndex(0),
-      mDictionaryIndex(0),
       mDictionaryFetcherGroup(0),
       mUpdateDictionaryRunning(false) {}
 
@@ -534,30 +533,6 @@ EditorSpellCheck::IgnoreWordAllOccurrences(const nsAString& aWord) {
 }
 
 NS_IMETHODIMP
-EditorSpellCheck::GetPersonalDictionary() {
-  NS_ENSURE_TRUE(mSpellChecker, NS_ERROR_NOT_INITIALIZED);
-
-  
-  mDictionaryList.Clear();
-  mDictionaryIndex = 0;
-  return mSpellChecker->GetPersonalDictionary(&mDictionaryList);
-}
-
-NS_IMETHODIMP
-EditorSpellCheck::GetPersonalDictionaryWord(nsAString& aDictionaryWord) {
-  
-  if (mDictionaryIndex < static_cast<int32_t>(mDictionaryList.Length())) {
-    aDictionaryWord = mDictionaryList[mDictionaryIndex];
-    mDictionaryIndex++;
-  } else {
-    
-    aDictionaryWord.Truncate();
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 EditorSpellCheck::AddWordToDictionary(const nsAString& aWord) {
   NS_ENSURE_TRUE(mSpellChecker, NS_ERROR_NOT_INITIALIZED);
 
@@ -706,8 +681,6 @@ EditorSpellCheck::UninitSpellChecker() {
 
   
   DeleteSuggestedWordList();
-  mDictionaryList.Clear();
-  mDictionaryIndex = 0;
   mDictionaryFetcherGroup++;
   mSpellChecker = nullptr;
   return NS_OK;

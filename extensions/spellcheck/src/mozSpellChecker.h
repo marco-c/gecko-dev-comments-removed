@@ -117,13 +117,6 @@ class mozSpellChecker final {
 
 
 
-  nsresult GetPersonalDictionary(nsTArray<nsString>* aWordList);
-
-  
-
-
-
-
 
 
 

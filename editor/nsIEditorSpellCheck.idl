@@ -85,22 +85,6 @@ interface nsIEditorSpellCheck : nsISupports
 
 
 
-
-
-  void          GetPersonalDictionary();
-
-  
-
-
-
-
-  AString       GetPersonalDictionaryWord();
-
-  
-
-
-
-
   void          AddWordToDictionary(in AString word);
 
   
