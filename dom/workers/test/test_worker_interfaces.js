@@ -260,11 +260,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ImageData", insecureContext: true },
   
-  { name: "ImageDecoder", nightly: true },
+  { name: "ImageDecoder" },
   
-  { name: "ImageTrack", nightly: true },
+  { name: "ImageTrack" },
   
-  { name: "ImageTrackList", nightly: true },
+  { name: "ImageTrackList" },
   
   "Lock",
   
@@ -374,13 +374,13 @@ let interfaceNamesInGlobalScope = [
   
   { name: "URLSearchParams", insecureContext: true },
   
-  { name: "VideoColorSpace", insecureContext: true, nightlyAndroid: true },
+  { name: "VideoColorSpace", insecureContext: true },
   
   { name: "VideoDecoder", nightlyAndroid: true },
   
   { name: "VideoEncoder", nightlyAndroid: true },
   
-  { name: "VideoFrame", insecureContext: true, nightlyAndroid: true },
+  { name: "VideoFrame", insecureContext: true },
   
   { name: "WebGL2RenderingContext", insecureContext: true },
   

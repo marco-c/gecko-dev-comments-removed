@@ -779,11 +779,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ImageData", insecureContext: true },
   
-  { name: "ImageDecoder", nightly: true },
+  { name: "ImageDecoder" },
   
-  { name: "ImageTrack", nightly: true },
+  { name: "ImageTrack" },
   
-  { name: "ImageTrackList", nightly: true },
+  { name: "ImageTrackList" },
   
   { name: "InputEvent", insecureContext: true },
   
@@ -1466,13 +1466,13 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ValidityState", insecureContext: true },
   
-  { name: "VideoColorSpace", insecureContext: true, nightlyAndroid: true },
+  { name: "VideoColorSpace", insecureContext: true },
   
   { name: "VideoDecoder", nightlyAndroid: true },
   
   { name: "VideoEncoder", nightlyAndroid: true },
   
-  { name: "VideoFrame", insecureContext: true, nightlyAndroid: true },
+  { name: "VideoFrame", insecureContext: true },
   
   { name: "VideoPlaybackQuality", insecureContext: true },
   
