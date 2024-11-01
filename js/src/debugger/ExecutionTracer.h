@@ -376,6 +376,16 @@ class ExecutionTracer {
   
   mozilla::baseprofiler::BaseProfilerThreadId threadId_;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  void handleError(JSContext* cx);
+
   void writeScriptUrl(ScriptSource* scriptSource);
 
   
@@ -442,8 +452,8 @@ class ExecutionTracer {
     return true;
   }
 
-  bool onEnterFrame(JSContext* cx, AbstractFramePtr frame);
-  bool onLeaveFrame(JSContext* cx, AbstractFramePtr frame);
+  void onEnterFrame(JSContext* cx, AbstractFramePtr frame);
+  void onLeaveFrame(JSContext* cx, AbstractFramePtr frame);
 
   template <typename CharType, TracerStringEncoding Encoding>
   void onEnterLabel(const CharType* eventType);

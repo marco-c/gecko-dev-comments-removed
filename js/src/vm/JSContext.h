@@ -955,11 +955,20 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ContextData<js::Debugger*> insideExclusiveDebuggerOnEval;
 
 #ifdef MOZ_EXECUTION_TRACING
+ private:
   
   
   
   js::UniquePtr<js::ExecutionTracer> executionTracer_;
 
+  
+  bool executionTracerSuspended_ = false;
+
+  
+  
+  void cleanUpExecutionTracingState();
+
+ public:
   js::ExecutionTracer& getExecutionTracer() {
     MOZ_ASSERT(hasExecutionTracer());
     return *executionTracer_;
@@ -971,7 +980,15 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   
   
-  bool hasExecutionTracer() { return !!executionTracer_; }
+  
+  
+  void suspendExecutionTracing();
+
+  
+  
+  bool hasExecutionTracer() {
+    return !!executionTracer_ && !executionTracerSuspended_;
+  }
 #else
   bool hasExecutionTracer() { return false; }
 #endif

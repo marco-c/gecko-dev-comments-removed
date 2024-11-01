@@ -85,6 +85,10 @@ struct ExecutionTrace {
     FunctionLeave = 1,
     LabelEnter = 2,
     LabelLeave = 3,
+
+    
+    
+    Error = 4,
   };
 
   enum class ImplementationType : uint8_t {
