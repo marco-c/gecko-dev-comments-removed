@@ -3231,6 +3231,7 @@ pref("browser.backup.template.fallback-download.esr", "https://www.mozilla.org/f
 
 
 pref("browser.profiles.enabled", false);
+pref("browser.profiles.profile-name.updated", false);
 
 pref("startup.homepage_override_url_nimbus", "");
 
