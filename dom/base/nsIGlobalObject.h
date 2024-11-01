@@ -31,6 +31,7 @@
   }
 
 class nsCycleCollectionTraversalCallback;
+class nsICookieJarSettings;
 class nsIPrincipal;
 class nsPIDOMWindowInner;
 
@@ -231,6 +232,10 @@ class nsIGlobalObject : public nsISupports {
 
 
   virtual mozilla::StorageAccess GetStorageAccess();
+
+  
+  
+  virtual nsICookieJarSettings* GetCookieJarSettings();
 
   
   virtual mozilla::OriginTrials Trials() const = 0;
