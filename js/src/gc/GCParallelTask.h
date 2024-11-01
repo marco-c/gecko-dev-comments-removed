@@ -127,7 +127,7 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
 
  protected:
   
-  mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire> cancel_;
+  mozilla::Atomic<bool, mozilla::Relaxed> cancel_;
 
  public:
   explicit GCParallelTask(gc::GCRuntime* gc, gcstats::PhaseKind phaseKind,

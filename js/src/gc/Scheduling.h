@@ -590,7 +590,7 @@ class GCSchedulingState {
 
 
 
-  mozilla::Atomic<bool, mozilla::ReleaseAcquire> inHighFrequencyGCMode_;
+  mozilla::Atomic<bool, mozilla::Relaxed> inHighFrequencyGCMode_;
 
  public:
   GCSchedulingState() : inHighFrequencyGCMode_(false) {}
@@ -611,7 +611,7 @@ struct TriggerResult {
   size_t thresholdBytes;
 };
 
-using AtomicByteCount = mozilla::Atomic<size_t, mozilla::ReleaseAcquire>;
+using AtomicByteCount = mozilla::Atomic<size_t, mozilla::Relaxed>;
 
 
 
