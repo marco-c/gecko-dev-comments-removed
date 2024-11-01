@@ -115,13 +115,15 @@ struct PullIntoDescriptor final
 
   PullIntoDescriptor(JS::Handle<JSObject*> aBuffer, uint64_t aBufferByteLength,
                      uint64_t aByteOffset, uint64_t aByteLength,
-                     uint64_t aBytesFilled, uint64_t aElementSize,
-                     Constructor aViewConstructor, ReaderType aReaderType)
+                     uint64_t aBytesFilled, uint64_t aMinimumFill,
+                     uint64_t aElementSize, Constructor aViewConstructor,
+                     ReaderType aReaderType)
       : mBuffer(aBuffer),
         mBufferByteLength(aBufferByteLength),
         mByteOffset(aByteOffset),
         mByteLength(aByteLength),
         mBytesFilled(aBytesFilled),
+        mMinimumFill(aMinimumFill),
         mElementSize(aElementSize),
         mViewConstructor(aViewConstructor),
         mReaderType(aReaderType) {
@@ -147,6 +149,8 @@ struct PullIntoDescriptor final
     mBytesFilled = aBytesFilled;
   }
 
+  uint64_t MinimumFill() const { return mMinimumFill; }
+
   uint64_t ElementSize() const { return mElementSize; }
   void SetElementSize(const uint64_t aElementSize) {
     mElementSize = aElementSize;
@@ -166,6 +170,7 @@ struct PullIntoDescriptor final
   uint64_t mByteOffset = 0;
   uint64_t mByteLength = 0;
   uint64_t mBytesFilled = 0;
+  uint64_t mMinimumFill = 0;
   uint64_t mElementSize = 0;
   Constructor mViewConstructor;
   ReaderType mReaderType;
@@ -397,8 +402,11 @@ void ReadableByteStreamControllerClose(
     
     PullIntoDescriptor* firstPendingPullInto =
         aController->PendingPullIntos().getFirst();
+
     
-    if (firstPendingPullInto->BytesFilled() > 0) {
+    
+    if ((firstPendingPullInto->BytesFilled() %
+         firstPendingPullInto->ElementSize()) != 0) {
       
       ErrorResult rv;
       rv.ThrowTypeError("Leftover Bytes");
@@ -704,7 +712,9 @@ void ReadableByteStreamControllerCommitPullIntoDescriptor(
   
   if (aStream->State() == ReadableStream::ReaderState::Closed) {
     
-    MOZ_ASSERT(pullIntoDescriptor->BytesFilled() == 0);
+    
+    MOZ_ASSERT((pullIntoDescriptor->BytesFilled() %
+                pullIntoDescriptor->ElementSize()) == 0);
 
     
     done = true;
@@ -1170,9 +1180,11 @@ void ReadableByteStreamController::PullSteps(JSContext* aCx,
   
   if (autoAllocateChunkSize) {
     
+    
     aRv.MightThrowJSException();
     JS::Rooted<JSObject*> buffer(
         aCx, JS::NewArrayBuffer(aCx, *autoAllocateChunkSize));
+
     
     if (!buffer) {
       
@@ -1194,8 +1206,19 @@ void ReadableByteStreamController::PullSteps(JSContext* aCx,
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     RefPtr<PullIntoDescriptor> pullIntoDescriptor = new PullIntoDescriptor(
-        buffer, *autoAllocateChunkSize, 0, *autoAllocateChunkSize, 0, 1,
+        buffer,  *autoAllocateChunkSize,
+         0,  *autoAllocateChunkSize,
+         0,  1,  1,
         PullIntoDescriptor::Constructor::Uint8, ReaderType::Default);
 
     
@@ -1281,6 +1304,7 @@ JSObject* ReadableByteStreamControllerConvertPullIntoDescriptor(
   MOZ_ASSERT(bytesFilled <= pullIntoDescriptor->ByteLength());
 
   
+  
   MOZ_ASSERT(bytesFilled % elementSize == 0);
 
   
@@ -1311,7 +1335,9 @@ static void ReadableByteStreamControllerRespondInClosedState(
     JSContext* aCx, ReadableByteStreamController* aController,
     RefPtr<PullIntoDescriptor>& aFirstDescriptor, ErrorResult& aRv) {
   
-  MOZ_ASSERT(aFirstDescriptor->BytesFilled() == 0);
+  
+  MOZ_ASSERT(
+      (aFirstDescriptor->BytesFilled() % aFirstDescriptor->ElementSize()) == 0);
 
   
   
@@ -1398,7 +1424,7 @@ static void ReadableByteStreamControllerRespondInReadableState(
 
   
   
-  if (aPullIntoDescriptor->BytesFilled() < aPullIntoDescriptor->ElementSize()) {
+  if (aPullIntoDescriptor->BytesFilled() < aPullIntoDescriptor->MinimumFill()) {
     return;
   }
 
@@ -1648,15 +1674,6 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
     JSContext* aCx, ReadableByteStreamController* aController,
     PullIntoDescriptor* aPullIntoDescriptor, ErrorResult& aRv) {
   
-  size_t elementSize = aPullIntoDescriptor->ElementSize();
-
-  
-  
-  size_t currentAlignedBytes =
-      aPullIntoDescriptor->BytesFilled() -
-      (aPullIntoDescriptor->BytesFilled() % elementSize);
-
-  
   
   size_t maxBytesToCopy =
       std::min(static_cast<size_t>(aController->QueueTotalSize()),
@@ -1668,17 +1685,25 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
   size_t maxBytesFilled = aPullIntoDescriptor->BytesFilled() + maxBytesToCopy;
 
   
-  
-  size_t maxAlignedBytes = maxBytesFilled - (maxBytesFilled % elementSize);
-
-  
   size_t totalBytesToCopyRemaining = maxBytesToCopy;
 
   
   bool ready = false;
 
   
-  if (maxAlignedBytes > currentAlignedBytes) {
+  
+  MOZ_ASSERT(aPullIntoDescriptor->BytesFilled() <
+             aPullIntoDescriptor->MinimumFill());
+
+  
+  
+  size_t remainderBytes = maxBytesFilled % aPullIntoDescriptor->ElementSize();
+
+  
+  size_t maxAlignedBytes = maxBytesFilled - remainderBytes;
+
+  
+  if (maxAlignedBytes >= aPullIntoDescriptor->MinimumFill()) {
     
     
     totalBytesToCopyRemaining =
@@ -1759,9 +1784,8 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
 
     
     
-    
     MOZ_ASSERT(aPullIntoDescriptor->BytesFilled() <
-               aPullIntoDescriptor->ElementSize());
+               aPullIntoDescriptor->MinimumFill());
   }
 
   
@@ -1771,8 +1795,8 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
 
 void ReadableByteStreamControllerPullInto(
     JSContext* aCx, ReadableByteStreamController* aController,
-    JS::Handle<JSObject*> aView, ReadIntoRequest* aReadIntoRequest,
-    ErrorResult& aRv) {
+    JS::Handle<JSObject*> aView, uint64_t aMin,
+    ReadIntoRequest* aReadIntoRequest, ErrorResult& aRv) {
   aRv.MightThrowJSException();
 
   
@@ -1797,6 +1821,17 @@ void ReadableByteStreamControllerPullInto(
     
     ctor = PullIntoDescriptor::constructorFromScalar(type);
   }
+
+  
+  uint64_t minimumFill = aMin * elementSize;
+
+  
+  MOZ_ASSERT(minimumFill >= 0 &&
+             minimumFill <= JS_GetArrayBufferViewByteLength(aView));
+
+  
+  
+  MOZ_ASSERT((minimumFill % elementSize) == 0);
 
   
   size_t byteOffset = JS_GetArrayBufferViewByteOffset(aView);
@@ -1851,9 +1886,10 @@ void ReadableByteStreamControllerPullInto(
   
   
   
+  
   RefPtr<PullIntoDescriptor> pullIntoDescriptor = new PullIntoDescriptor(
       buffer, JS::GetArrayBufferByteLength(buffer), byteOffset, byteLength, 0,
-      elementSize, ctor, ReaderType::BYOB);
+      minimumFill, elementSize, ctor, ReaderType::BYOB);
 
   
   if (!aController->PendingPullIntos().isEmpty()) {
@@ -1952,7 +1988,6 @@ void ReadableByteStreamControllerPullInto(
   
   ReadableStreamAddReadIntoRequest(stream, aReadIntoRequest);
 
-  
   
   ReadableByteStreamControllerCallPullIfNeeded(aCx, aController, aRv);
 }
