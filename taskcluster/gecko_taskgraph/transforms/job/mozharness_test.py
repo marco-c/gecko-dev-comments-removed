@@ -157,10 +157,6 @@ def mozharness_test_on_docker(config, job, taskdesc):
     env["PYTHON"] = "python3"
 
     
-    if test.get("docker-image", {}).get("in-tree") == "desktop1604-test":
-        env.update({"NEED_COMPIZ": "true"})
-
-    
     
     if test.get("docker-image", {}).get("in-tree") == "ubuntu1804-test":
         if "wdspec" in job["run"]["test"]["suite"] or (
