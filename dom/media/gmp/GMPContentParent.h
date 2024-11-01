@@ -7,7 +7,6 @@
 #define GMPContentParent_h_
 
 #include "mozilla/gmp/PGMPContentParent.h"
-#include "GMPSharedMemManager.h"
 #include "GMPNativeTypes.h"
 #include "nsISupportsImpl.h"
 
@@ -23,7 +22,7 @@ class ChromiumCDMParent;
 
 
 
-class GMPContentParent final : public PGMPContentParent, public GMPSharedMem {
+class GMPContentParent final : public PGMPContentParent {
   friend class PGMPContentParent;
 
  public:
@@ -44,9 +43,6 @@ class GMPContentParent final : public PGMPContentParent, public GMPSharedMem {
   void ChromiumCDMDestroyed(ChromiumCDMParent* aCDM);
 
   nsCOMPtr<nsISerialEventTarget> GMPEventTarget();
-
-  
-  void CheckThread() override;
 
   void SetDisplayName(const nsCString& aDisplayName) {
     mDisplayName = aDisplayName;
