@@ -554,8 +554,7 @@ const float CallSimulator::kRenderInputFloatLevel = 0.5f;
 const float CallSimulator::kCaptureInputFloatLevel = 0.03125f;
 }  
 
-
-TEST_P(CallSimulator, DISABLED_ApiCallDurationTest) {
+TEST_P(CallSimulator, ApiCallDurationTest) {
   
   EXPECT_TRUE(Run());
 }
