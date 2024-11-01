@@ -39,8 +39,21 @@ class Element;
 
 
 
+@interface GeckoNSMenu : NSMenu {
+}
+- (BOOL)performSuperKeyEquivalent:(NSEvent*)aEvent;
+@end
 
-@interface GeckoNSMenuItem : NSMenuItem {
+
+@interface NativeMenuItemTarget : NSObject {
+}
+- (IBAction)menuItemHit:(id)aSender;
+@end
+
+
+
+
+@interface GeckoServicesNSMenuItem : NSMenuItem {
 }
 - (id)target;
 - (SEL)action;
@@ -50,9 +63,8 @@ class Element;
 
 
 
-@interface GeckoNSMenu : NSMenu {
+@interface GeckoServicesNSMenu : NSMenu {
 }
-- (BOOL)performSuperKeyEquivalent:(NSEvent*)aEvent;
 - (void)addItem:(NSMenuItem*)aNewItem;
 - (NSMenuItem*)addItemWithTitle:(NSString*)aString
                          action:(SEL)aSelector
@@ -63,12 +75,6 @@ class Element;
                      keyEquivalent:(NSString*)aKeyEquiv
                            atIndex:(NSInteger)aIndex;
 - (void)_overrideClassOfMenuItem:(NSMenuItem*)aMenuItem;
-@end
-
-
-@interface NativeMenuItemTarget : NSObject {
-}
-- (IBAction)menuItemHit:(id)aSender;
 @end
 
 

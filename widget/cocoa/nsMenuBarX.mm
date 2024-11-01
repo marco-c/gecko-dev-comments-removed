@@ -38,11 +38,6 @@ BOOL sApplicationMenuIsFallback = NO;
 BOOL gSomeMenuBarPainted = NO;
 
 
-
-
-static BOOL gMenuItemsExecuteCommands = YES;
-
-
 extern BOOL sTouchBarIsInitialized;
 
 
@@ -196,9 +191,9 @@ void nsMenuBarX::ConstructFallbackNativeMenus() {
   }
   sApplicationMenu.delegate = mApplicationMenuDelegate;
   NSMenuItem* quitMenuItem =
-      [[[GeckoNSMenuItem alloc] initWithTitle:labelStr
-                                       action:@selector(menuItemHit:)
-                                keyEquivalent:keyStr] autorelease];
+      [[[NSMenuItem alloc] initWithTitle:labelStr
+                                  action:@selector(menuItemHit:)
+                           keyEquivalent:keyStr] autorelease];
   quitMenuItem.target = nsMenuBarX::sNativeEventTarget;
   quitMenuItem.tag = eCommand_ID_Quit;
   [sApplicationMenu addItem:quitMenuItem];
@@ -686,9 +681,9 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* aMenu,
   }
 
   
-  NSMenuItem* newMenuItem = [[GeckoNSMenuItem alloc] initWithTitle:labelString
-                                                            action:aAction
-                                                     keyEquivalent:keyEquiv];
+  NSMenuItem* newMenuItem = [[NSMenuItem alloc] initWithTitle:labelString
+                                                       action:aAction
+                                                keyEquivalent:keyEquiv];
 
   newMenuItem.tag = aTag;
   newMenuItem.target = aTarget;
@@ -811,7 +806,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
       [sApplicationMenu addItem:itemBeingAdded];
 
       
-      NSMenu* servicesMenu = [[GeckoNSMenu alloc] initWithTitle:@""];
+      NSMenu* servicesMenu = [[GeckoServicesNSMenu alloc] initWithTitle:@""];
       itemBeingAdded.submenu = servicesMenu;
       NSApp.servicesMenu = servicesMenu;
 
@@ -901,9 +896,9 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
       
       
       NSMenuItem* defaultQuitItem =
-          [[[GeckoNSMenuItem alloc] initWithTitle:@"Quit"
-                                           action:@selector(menuItemHit:)
-                                    keyEquivalent:@"q"] autorelease];
+          [[[NSMenuItem alloc] initWithTitle:@"Quit"
+                                      action:@selector(menuItemHit:)
+                               keyEquivalent:@"q"] autorelease];
       defaultQuitItem.target = nsMenuBarX::sNativeEventTarget;
       defaultQuitItem.tag = eCommand_ID_Quit;
       [sApplicationMenu addItem:defaultQuitItem];
@@ -917,33 +912,10 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 
-@implementation GeckoNSMenuItem
-
-- (id)target {
-  id realTarget = super.target;
-  if (gMenuItemsExecuteCommands) {
-    return realTarget;
-  }
-  return realTarget ? self : nil;
-}
-
-- (SEL)action {
-  SEL realAction = super.action;
-  if (gMenuItemsExecuteCommands) {
-    return realAction;
-  }
-  return realAction ? @selector(_doNothing:) : nullptr;
-}
-
-- (void)_doNothing:(id)aSender {
-}
-
-@end
 
 
 
-
-
+static BOOL gMenuItemsExecuteCommands = YES;
 
 @implementation GeckoNSMenu
 
@@ -974,11 +946,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
   NSResponder* firstResponder = keyWindow.firstResponder;
 
   gMenuItemsExecuteCommands = NO;
-
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
   [super performKeyEquivalent:aEvent];
-  NS_OBJC_END_TRY_IGNORE_BLOCK
-
   gMenuItemsExecuteCommands = YES;  
 
   
@@ -996,46 +964,6 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
   return [super performKeyEquivalent:aEvent];
 }
 
-- (void)addItem:(NSMenuItem*)aNewItem {
-  [self _overrideClassOfMenuItem:aNewItem];
-  [super addItem:aNewItem];
-}
-
-- (NSMenuItem*)addItemWithTitle:(NSString*)aString
-                         action:(SEL)aSelector
-                  keyEquivalent:(NSString*)aKeyEquiv {
-  NSMenuItem* newItem = [super addItemWithTitle:aString
-                                         action:aSelector
-                                  keyEquivalent:aKeyEquiv];
-  [self _overrideClassOfMenuItem:newItem];
-  return newItem;
-}
-
-- (void)insertItem:(NSMenuItem*)aNewItem atIndex:(NSInteger)aIndex {
-  [self _overrideClassOfMenuItem:aNewItem];
-  [super insertItem:aNewItem atIndex:aIndex];
-}
-
-- (NSMenuItem*)insertItemWithTitle:(NSString*)aString
-                            action:(SEL)aSelector
-                     keyEquivalent:(NSString*)aKeyEquiv
-                           atIndex:(NSInteger)aIndex {
-  NSMenuItem* newItem = [super insertItemWithTitle:aString
-                                            action:aSelector
-                                     keyEquivalent:aKeyEquiv
-                                           atIndex:aIndex];
-  [self _overrideClassOfMenuItem:newItem];
-  return newItem;
-}
-
-- (void)_overrideClassOfMenuItem:(NSMenuItem*)aMenuItem {
-  if ([aMenuItem class] == [NSMenuItem class]) {
-    
-    
-    object_setClass(aMenuItem, [GeckoNSMenuItem class]);
-  }
-}
-
 @end
 
 
@@ -1046,9 +974,9 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 - (IBAction)menuItemHit:(id)aSender {
-  
-  
-  MOZ_RELEASE_ASSERT(gMenuItemsExecuteCommands);
+  if (!gMenuItemsExecuteCommands) {
+    return;
+  }
 
   if (![aSender isKindOfClass:[NSMenuItem class]]) {
     return;
@@ -1161,6 +1089,80 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
                                        button);
       }
     }
+  }
+}
+
+@end
+
+
+
+
+
+
+@implementation GeckoServicesNSMenuItem
+
+- (id)target {
+  id realTarget = super.target;
+  if (gMenuItemsExecuteCommands) {
+    return realTarget;
+  }
+  return realTarget ? self : nil;
+}
+
+- (SEL)action {
+  SEL realAction = super.action;
+  if (gMenuItemsExecuteCommands) {
+    return realAction;
+  }
+  return realAction ? @selector(_doNothing:) : nullptr;
+}
+
+- (void)_doNothing:(id)aSender {
+}
+
+@end
+
+
+
+
+
+@implementation GeckoServicesNSMenu
+
+- (void)addItem:(NSMenuItem*)aNewItem {
+  [self _overrideClassOfMenuItem:aNewItem];
+  [super addItem:aNewItem];
+}
+
+- (NSMenuItem*)addItemWithTitle:(NSString*)aString
+                         action:(SEL)aSelector
+                  keyEquivalent:(NSString*)aKeyEquiv {
+  NSMenuItem* newItem = [super addItemWithTitle:aString
+                                         action:aSelector
+                                  keyEquivalent:aKeyEquiv];
+  [self _overrideClassOfMenuItem:newItem];
+  return newItem;
+}
+
+- (void)insertItem:(NSMenuItem*)aNewItem atIndex:(NSInteger)aIndex {
+  [self _overrideClassOfMenuItem:aNewItem];
+  [super insertItem:aNewItem atIndex:aIndex];
+}
+
+- (NSMenuItem*)insertItemWithTitle:(NSString*)aString
+                            action:(SEL)aSelector
+                     keyEquivalent:(NSString*)aKeyEquiv
+                           atIndex:(NSInteger)aIndex {
+  NSMenuItem* newItem = [super insertItemWithTitle:aString
+                                            action:aSelector
+                                     keyEquivalent:aKeyEquiv
+                                           atIndex:aIndex];
+  [self _overrideClassOfMenuItem:newItem];
+  return newItem;
+}
+
+- (void)_overrideClassOfMenuItem:(NSMenuItem*)aMenuItem {
+  if ([aMenuItem class] == [NSMenuItem class]) {
+    object_setClass(aMenuItem, [GeckoServicesNSMenuItem class]);
   }
 }
 
