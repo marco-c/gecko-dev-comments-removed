@@ -8,7 +8,7 @@ const { PromptTestUtils } = ChromeUtils.importESModule(
 let mockCA = makeMockContentAnalysis();
 
 add_setup(async function test_setup() {
-  mockCA = mockContentAnalysisService(mockCA);
+  mockCA = await mockContentAnalysisService(mockCA);
 });
 
 
