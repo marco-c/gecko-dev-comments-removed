@@ -868,7 +868,7 @@ class GTEST_API_ ExpectationBase {
   Clause last_clause_;
   mutable bool action_count_checked_;  
   mutable Mutex mutex_;                
-};                                     
+};  
 
 template <typename F>
 class TypedExpectation;
@@ -1838,9 +1838,8 @@ R FunctionMocker<R(Args...)>::InvokeWith(ArgumentTuple&& args)
     
     
     
-    const UninterestingCallCleanupHandler report_uninteresting_call = {
-        reaction, ss
-    };
+    const UninterestingCallCleanupHandler report_uninteresting_call = {reaction,
+                                                                       ss};
 
     return PerformActionAndPrintResult(nullptr, std::move(args), ss.str(), ss);
   }
@@ -1890,8 +1889,7 @@ R FunctionMocker<R(Args...)>::InvokeWith(ArgumentTuple&& args)
   
   
   const FailureCleanupHandler handle_failures = {
-      ss, why, loc, untyped_expectation, found, is_excessive
-  };
+      ss, why, loc, untyped_expectation, found, is_excessive};
 
   return PerformActionAndPrintResult(untyped_action, std::move(args), ss.str(),
                                      ss);

@@ -1302,32 +1302,46 @@ class AllOfMatcherImpl : public MatcherInterface<const T&> {
                        MatchResultListener* listener) const override {
     
     
+    
     std::string all_match_result;
-
-    for (size_t i = 0; i < matchers_.size(); ++i) {
+    for (const Matcher<T>& matcher : matchers_) {
       StringMatchResultListener slistener;
-      if (matchers_[i].MatchAndExplain(x, &slistener)) {
-        if (all_match_result.empty()) {
-          all_match_result = slistener.str();
+      
+      if (!matcher.MatchAndExplain(x, &slistener)) {
+        const std::string explanation = slistener.str();
+        if (!explanation.empty()) {
+          *listener << explanation;
         } else {
-          std::string result = slistener.str();
-          if (!result.empty()) {
-            all_match_result += ", and ";
-            all_match_result += result;
-          }
+          *listener << "which doesn't match (" << Describe(matcher) << ")";
         }
-      } else {
-        *listener << slistener.str();
         return false;
+      }
+      
+      std::string explanation = slistener.str();
+      if (explanation.empty()) {
+        explanation = Describe(matcher);
+      }
+      if (all_match_result.empty()) {
+        all_match_result = explanation;
+      } else {
+        if (!explanation.empty()) {
+          all_match_result += ", and ";
+          all_match_result += explanation;
+        }
       }
     }
 
-    
     *listener << all_match_result;
     return true;
   }
 
  private:
+  
+  std::string Describe(const Matcher<T>& matcher) const {
+    StringMatchResultListener listener;
+    matcher.DescribeTo(listener.stream());
+    return listener.str();
+  }
   const std::vector<Matcher<T>> matchers_;
 };
 

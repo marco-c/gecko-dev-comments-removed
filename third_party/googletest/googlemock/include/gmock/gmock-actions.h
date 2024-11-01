@@ -1493,6 +1493,7 @@ class DoAllAction<FinalAction> {
   
   
 
+  
   template <typename R, typename... Args,
             typename std::enable_if<
                 std::is_convertible<FinalAction, OnceAction<R(Args...)>>::value,
@@ -1501,6 +1502,21 @@ class DoAllAction<FinalAction> {
     return std::move(final_action_);
   }
 
+  
+  
+  template <
+      typename R, typename... Args,
+      typename std::enable_if<
+          conjunction<
+              negation<
+                  std::is_convertible<FinalAction, OnceAction<R(Args...)>>>,
+              std::is_convertible<FinalAction, Action<R(Args...)>>>::value,
+          int>::type = 0>
+  operator OnceAction<R(Args...)>() && {  
+    return Action<R(Args...)>(std::move(final_action_));
+  }
+
+  
   template <
       typename R, typename... Args,
       typename std::enable_if<
@@ -1580,16 +1596,16 @@ class DoAllAction<InitialAction, OtherActions...>
       : Base({}, std::forward<U>(other_actions)...),
         initial_action_(std::forward<T>(initial_action)) {}
 
-  template <typename R, typename... Args,
-            typename std::enable_if<
-                conjunction<
-                    
-                    
-                    std::is_convertible<
-                        InitialAction,
-                        OnceAction<void(InitialActionArgType<Args>...)>>,
-                    std::is_convertible<Base, OnceAction<R(Args...)>>>::value,
-                int>::type = 0>
+  
+  
+  template <
+      typename R, typename... Args,
+      typename std::enable_if<
+          conjunction<std::is_convertible<
+                          InitialAction,
+                          OnceAction<void(InitialActionArgType<Args>...)>>,
+                      std::is_convertible<Base, OnceAction<R(Args...)>>>::value,
+          int>::type = 0>
   operator OnceAction<R(Args...)>() && {  
     
     
@@ -1612,12 +1628,34 @@ class DoAllAction<InitialAction, OtherActions...>
     };
   }
 
+  
+  
+  
+  
+  
   template <
       typename R, typename... Args,
       typename std::enable_if<
           conjunction<
-              
-              
+              negation<std::is_convertible<
+                  InitialAction,
+                  OnceAction<void(InitialActionArgType<Args>...)>>>,
+              std::is_convertible<InitialAction,
+                                  Action<void(InitialActionArgType<Args>...)>>,
+              std::is_convertible<Base, OnceAction<R(Args...)>>>::value,
+          int>::type = 0>
+  operator OnceAction<R(Args...)>() && {  
+    return DoAll(
+        Action<void(InitialActionArgType<Args>...)>(std::move(initial_action_)),
+        std::move(static_cast<Base&>(*this)));
+  }
+
+  
+  
+  template <
+      typename R, typename... Args,
+      typename std::enable_if<
+          conjunction<
               std::is_convertible<const InitialAction&,
                                   Action<void(InitialActionArgType<Args>...)>>,
               std::is_convertible<const Base&, Action<R(Args...)>>>::value,
@@ -1665,8 +1703,9 @@ template <size_t k>
 struct ReturnArgAction {
   template <typename... Args,
             typename = typename std::enable_if<(k < sizeof...(Args))>::type>
-  auto operator()(Args&&... args) const -> decltype(std::get<k>(
-      std::forward_as_tuple(std::forward<Args>(args)...))) {
+  auto operator()(Args&&... args) const
+      -> decltype(std::get<k>(
+          std::forward_as_tuple(std::forward<Args>(args)...))) {
     return std::get<k>(std::forward_as_tuple(std::forward<Args>(args)...));
   }
 };

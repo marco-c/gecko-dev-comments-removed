@@ -71,7 +71,7 @@ inline std::string CanonicalizeForStdLibVersioning(std::string s) {
   
   
   static const char to_search[] = ", ";
-  static const char replace_str[] = ",";
+  const char replace_char = ',';
   size_t pos = 0;
   while (true) {
     
@@ -80,8 +80,8 @@ inline std::string CanonicalizeForStdLibVersioning(std::string s) {
       break;
     }
     
-    s.replace(pos, strlen(to_search), replace_str);
-    pos += strlen(replace_str);
+    s.replace(pos, strlen(to_search), 1, replace_char);
+    ++pos;
   }
   return s;
 }
