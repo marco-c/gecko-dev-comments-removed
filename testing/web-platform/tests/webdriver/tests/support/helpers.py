@@ -209,7 +209,7 @@ def is_fullscreen(session):
         """)
 
 
-def is_maximized(session):
+def _get_maximized_state(session):
     dimensions = session.execute_script("""
         return {
             availWidth: screen.availWidth,
@@ -219,14 +219,40 @@ def is_maximized(session):
         }
         """)
 
-    return (
-        
-        
-        dimensions["windowWidth"] >= dimensions["availWidth"] and
+    
+    
+    return (dimensions["windowWidth"] >= dimensions["availWidth"] and
         dimensions["windowHeight"] >= dimensions["availHeight"] and
         
         not is_fullscreen(session)
     )
+
+
+def is_maximized(session, original_rect):
+    if _get_maximized_state(session):
+        return True
+
+    
+    
+    elif is_wayland():
+        dimensions = session.execute_script("""
+            return {
+                windowWidth: window.outerWidth,
+                windowHeight: window.outerHeight,
+            }
+            """)
+        return (
+            dimensions["windowWidth"] > original_rect["width"] and
+            dimensions["windowHeight"] > original_rect["height"] and
+            
+            not is_fullscreen(session)
+        )
+    else:
+        return False
+
+
+def is_not_maximized(session):
+    return not _get_maximized_state(session)
 
 
 def is_wayland():
