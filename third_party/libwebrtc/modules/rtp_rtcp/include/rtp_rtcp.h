@@ -13,21 +13,22 @@
 
 #include <memory>
 
-#include "absl/base/attributes.h"
+#include "api/environment/environment.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 
 namespace webrtc {
 
-class ABSL_DEPRECATED("") RtpRtcp : public RtpRtcpInterface {
- public:
-  
-  static std::unique_ptr<RtpRtcp> ABSL_DEPRECATED("")
-      Create(const Configuration& configuration) {
-    return DEPRECATED_Create(configuration);
-  }
 
-  static std::unique_ptr<RtpRtcp> DEPRECATED_Create(
-      const Configuration& configuration);
+class [[deprecated("bugs.webrtc.org/42224904")]] RtpRtcp
+    : public RtpRtcpInterface {
+ public:
+  [[deprecated("bugs.webrtc.org/362762208")]]  
+  static std::unique_ptr<RtpRtcp>
+  Create(const Configuration& configuration);
+
+  [[deprecated("bugs.webrtc.org/42224904")]]  
+  static std::unique_ptr<RtpRtcp>
+  Create(const Environment& env, const Configuration& configuration);
 
   
   virtual void Process() = 0;
