@@ -65,7 +65,8 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 
 - (instancetype)initWithDelegate:(__weak id<RTC_OBJC_TYPE(RTCVideoCapturerDelegate)>)delegate
                   captureSession:(AVCaptureSession *)captureSession {
-  if (self = [super initWithDelegate:delegate]) {
+  self = [super initWithDelegate:delegate];
+  if (self) {
     
     
     

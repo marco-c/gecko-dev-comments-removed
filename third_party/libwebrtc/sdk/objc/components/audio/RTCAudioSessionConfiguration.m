@@ -53,7 +53,8 @@ static RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *gWebRTCConfiguration = nil;
 @synthesize outputNumberOfChannels = _outputNumberOfChannels;
 
 - (instancetype)init {
-  if (self = [super init]) {
+  self = [super init];
+  if (self) {
     
     
     

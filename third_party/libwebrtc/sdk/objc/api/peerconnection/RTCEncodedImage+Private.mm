@@ -73,7 +73,8 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
 }
 
 - (instancetype)initWithNativeEncodedImage:(const webrtc::EncodedImage &)encodedImage {
-  if (self = [super init]) {
+  self = [super init];
+  if (self) {
     
     
     self.encodedData = encodedImage.GetEncodedData();
