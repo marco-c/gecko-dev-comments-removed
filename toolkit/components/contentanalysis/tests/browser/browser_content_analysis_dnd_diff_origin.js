@@ -49,7 +49,15 @@ let mockCA = {
 };
 
 add_setup(async function () {
-  mockCA = await mockContentAnalysisService(mockCA);
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.contentanalysis.enabled", true]],
+  });
+  registerCleanupFunction(async function () {
+    SpecialPowers.popPrefEnv();
+  });
+
+  mockCA = mockContentAnalysisService(mockCA);
 
   await setup();
 });

@@ -533,6 +533,7 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   
   
+  
   nsCOMPtr<nsIClipboardDataSnapshot> mClipboardDataSnapshot;
 
   

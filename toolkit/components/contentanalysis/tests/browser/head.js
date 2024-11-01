@@ -58,16 +58,7 @@ function mockService(serviceNames, contractId, interfaceObj, mockService) {
 
 
 
-async function mockContentAnalysisService(mockCAServiceTemplate) {
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.contentanalysis.enabled", true]],
-  });
-  registerCleanupFunction(async function () {
-    SpecialPowers.popPrefEnv();
-  });
+function mockContentAnalysisService(mockCAServiceTemplate) {
   let realCAService = SpecialPowers.Cc[
     "@mozilla.org/contentanalysis;1"
   ].getService(SpecialPowers.Ci.nsIContentAnalysis);
@@ -225,31 +216,6 @@ function makeMockContentAnalysis() {
     getURIForBrowsingContext(aBrowsingContext) {
       this.browsingContextsForURIs.push(aBrowsingContext);
       return this.realCAService.getURIForBrowsingContext(aBrowsingContext);
-    },
-
-    setCachedResponse(aURI, aClipboardSequenceNumber, aFlavors, aAction) {
-      return this.realCAService.setCachedResponse(
-        aURI,
-        aClipboardSequenceNumber,
-        aFlavors,
-        aAction
-      );
-    },
-
-    getCachedResponse(
-      aURI,
-      aClipboardSequenceNumber,
-      aFlavors,
-      aAction,
-      aIsValid
-    ) {
-      return this.realCAService.getCachedResponse(
-        aURI,
-        aClipboardSequenceNumber,
-        aFlavors,
-        aAction,
-        aIsValid
-      );
     },
   };
 }
