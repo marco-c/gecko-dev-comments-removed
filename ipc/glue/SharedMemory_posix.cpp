@@ -171,14 +171,29 @@ static int DupReadOnly(int fd) {
 #endif    
 
 
-static bool HaveMemfd() {
+
+
+static Maybe<unsigned> HaveMemfd() {
 #ifdef USE_MEMFD_CREATE
-  static const bool kHave = [] {
+  static const Maybe<unsigned> kHave = []() -> Maybe<unsigned> {
+    unsigned flags = MFD_CLOEXEC | MFD_ALLOW_SEALING;
+#ifdef MFD_NOEXEC_SEAL
+    flags |= MFD_NOEXEC_SEAL;
+#endif
+
     mozilla::UniqueFileHandle fd(
-        memfd_create("mozilla-ipc-test", MFD_CLOEXEC | MFD_ALLOW_SEALING));
+        memfd_create("mozilla-ipc-test", flags));
+
+#ifdef MFD_NOEXEC_SEAL
+    if (!fd && errno == EINVAL) {
+      flags &= ~MFD_NOEXEC_SEAL;
+      fd.reset(memfd_create("mozilla-ipc-test", flags));
+    }
+#endif
+
     if (!fd) {
       DCHECK_EQ(errno, ENOSYS);
-      return false;
+      return Nothing();
     }
 
     
@@ -203,14 +218,14 @@ static bool HaveMemfd() {
       if (!rofd) {
         CHROMIUM_LOG(WARNING) << "read-only dup failed (" << strerror(errno)
                               << "); not using memfd";
-        return false;
+        return Nothing();
       }
     }
-    return true;
+    return Some(flags);
   }();
   return kHave;
 #else
-  return false;
+  return Nothing();
 #endif  
 }
 
@@ -249,9 +264,8 @@ bool SharedMemory::CreateImpl(size_t size, bool freezable) {
   bool is_memfd = false;
 
 #ifdef USE_MEMFD_CREATE
-  if (HaveMemfd()) {
-    const unsigned flags = MFD_CLOEXEC | (freezable ? MFD_ALLOW_SEALING : 0);
-    fd.reset(memfd_create("mozilla-ipc", flags));
+  if (auto flags = HaveMemfd()) {
+    fd.reset(memfd_create("mozilla-ipc", *flags));
     if (!fd) {
       
       
