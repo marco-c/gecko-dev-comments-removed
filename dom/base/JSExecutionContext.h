@@ -50,9 +50,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JS::Rooted<JSScript*> mScript;
 
   
-  JS::CompileOptions& mCompileOptions;
-
-  
   
   
   
@@ -84,7 +81,8 @@ class MOZ_STACK_CLASS JSExecutionContext final {
  private:
   
   template <typename Unit>
-  void InternalCompile(JS::SourceText<Unit>& aSrcBuf, ErrorResult& aRv);
+  void InternalCompile(JS::CompileOptions& aCompileOptions,
+                       JS::SourceText<Unit>& aSrcBuf, ErrorResult& aRv);
 
  public:
   
@@ -132,21 +130,27 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  void JoinOffThread(ScriptLoadContext* aContext, ErrorResult& aRv);
+  void JoinOffThread(JS::CompileOptions& aCompileOptions,
+                     ScriptLoadContext* aContext, ErrorResult& aRv);
 
   
-  void Compile(JS::SourceText<char16_t>& aSrcBuf, ErrorResult& aRv);
-  void Compile(JS::SourceText<mozilla::Utf8Unit>& aSrcBuf, ErrorResult& aRv);
+  void Compile(JS::CompileOptions& aCompileOptions,
+               JS::SourceText<char16_t>& aSrcBuf, ErrorResult& aRv);
+  void Compile(JS::CompileOptions& aCompileOptions,
+               JS::SourceText<mozilla::Utf8Unit>& aSrcBuf, ErrorResult& aRv);
 
   
-  void Compile(const nsAString& aScript, ErrorResult& aRv);
+  void Compile(JS::CompileOptions& aCompileOptions, const nsAString& aScript,
+               ErrorResult& aRv);
 
   
-  void Decode(const JS::TranscodeRange& aBytecodeBuf, ErrorResult& aRv);
+  void Decode(JS::CompileOptions& aCompileOptions,
+              const JS::TranscodeRange& aBytecodeBuf, ErrorResult& aRv);
 
   
   
-  void InstantiateStencil(RefPtr<JS::Stencil>&& aStencil,
+  void InstantiateStencil(JS::CompileOptions& aCompileOptions,
+                          RefPtr<JS::Stencil>&& aStencil,
                           bool& incrementalEncodingAlreadyStarted,
                           ErrorResult& aRv,
                           JS::InstantiationStorage* aStorage = nullptr);
