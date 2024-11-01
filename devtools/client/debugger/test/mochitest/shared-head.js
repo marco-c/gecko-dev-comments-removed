@@ -1082,6 +1082,12 @@ async function addBreakpoint(dbg, source, line, column, options) {
 }
 
 
+function setConditionalBreakpointWithKeyboardShortcut(dbg, condition) {
+  pressKey(dbg, "toggleCondPanel");
+  return typeInPanel(dbg, condition);
+}
+
+
 
 
 
@@ -1415,6 +1421,7 @@ const keyMappings = {
     code: "VK_RETURN",
     modifiers: { altKey: true },
   },
+  Space: { code: "VK_SPACE" },
   Up: { code: "VK_UP" },
   Down: { code: "VK_DOWN" },
   Right: { code: "VK_RIGHT" },

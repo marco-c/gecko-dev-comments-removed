@@ -147,13 +147,6 @@ async function enableSecondBreakpoint(dbg) {
   await waitForAllElements(dbg, "breakpointItems", 2);
 }
 
-
-
-function setConditionalBreakpointWithKeyboardShortcut(dbg, condition) {
-  pressKey(dbg, "toggleCondPanel");
-  return typeInPanel(dbg, condition);
-}
-
 function setLogBreakpointWithKeyboardShortcut(dbg, condition) {
   pressKey(dbg, "toggleLogPanel");
   return typeInPanel(dbg, condition, true);
