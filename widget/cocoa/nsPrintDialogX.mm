@@ -150,7 +150,7 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent,
   [NSPrintOperation setCurrentOperation:nil];
   [tmpView release];
 
-  if (button != NSFileHandlingPanelOKButton) {
+  if (button != NSModalResponseOK) {
     return NS_ERROR_ABORT;
   }
 
@@ -204,7 +204,7 @@ nsPrintDialogServiceX::ShowPageSetupDialog(mozIDOMWindowProxy* aParent,
   int button = [pageLayout runModalWithPrintInfo:printInfo];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
-  if (button == NSFileHandlingPanelOKButton) {
+  if (button == NSModalResponseOK) {
     
     
     
@@ -290,10 +290,13 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
 - (void)exportSettings {
   mSettings->SetPrintSelectionOnly([mPrintSelectionOnlyCheckbox state] ==
-                                   NSOnState);
-  mSettings->SetShrinkToFit([mShrinkToFitCheckbox state] == NSOnState);
-  mSettings->SetPrintBGColors([mPrintBGColorsCheckbox state] == NSOnState);
-  mSettings->SetPrintBGImages([mPrintBGImagesCheckbox state] == NSOnState);
+                                   NSControlStateValueOn);
+  mSettings->SetShrinkToFit([mShrinkToFitCheckbox state] ==
+                            NSControlStateValueOn);
+  mSettings->SetPrintBGColors([mPrintBGColorsCheckbox state] ==
+                              NSControlStateValueOn);
+  mSettings->SetPrintBGImages([mPrintBGImagesCheckbox state] ==
+                              NSControlStateValueOn);
 
   [self exportHeaderFooterSettings];
 }
@@ -363,7 +366,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 - (NSButton*)checkboxWithLabel:(const char*)aLabel andFrame:(NSRect)aRect {
   aRect.origin.y += 4.0f;
   NSButton* checkbox = [[[NSButton alloc] initWithFrame:aRect] autorelease];
-  [checkbox setButtonType:NSSwitchButton];
+  [checkbox setButtonType:NSButtonTypeSwitch];
   [checkbox setTitle:[self localizedString:aLabel]];
   [checkbox setFont:[NSFont systemFontOfSize:[NSFont systemFontSize]]];
   [checkbox sizeToFit];
@@ -387,7 +390,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   [list addItemsWithTitles:items];
 
   NS_ConvertUTF16toUTF8 currentStringUTF8(aCurrentString);
-  for (unsigned int i = 0; i < ArrayLength(sHeaderFooterTags); i++) {
+  for (unsigned int i = 0; i < std::size(sHeaderFooterTags); i++) {
     if (!strcmp(currentStringUTF8.get(), sHeaderFooterTags[i])) {
       [list selectItemAtIndex:i];
       break;
@@ -410,7 +413,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   [mPrintSelectionOnlyCheckbox setEnabled:aHaveSelection];
 
   if (mSettings->GetPrintSelectionOnly()) {
-    [mPrintSelectionOnlyCheckbox setState:NSOnState];
+    [mPrintSelectionOnlyCheckbox setState:NSControlStateValueOn];
   }
 
   [self addSubview:mPrintSelectionOnlyCheckbox];
@@ -421,7 +424,8 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
   bool shrinkToFit;
   mSettings->GetShrinkToFit(&shrinkToFit);
-  [mShrinkToFitCheckbox setState:(shrinkToFit ? NSOnState : NSOffState)];
+  [mShrinkToFitCheckbox
+      setState:(shrinkToFit ? NSControlStateValueOn : NSControlStateValueOff)];
 
   [self addSubview:mShrinkToFitCheckbox];
 }
@@ -435,7 +439,8 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
                                           andFrame:NSMakeRect(156, 103, 0, 0)];
 
   bool geckoBool = mSettings->GetPrintBGColors();
-  [mPrintBGColorsCheckbox setState:(geckoBool ? NSOnState : NSOffState)];
+  [mPrintBGColorsCheckbox
+      setState:(geckoBool ? NSControlStateValueOn : NSControlStateValueOff)];
 
   [self addSubview:mPrintBGColorsCheckbox];
 
@@ -444,7 +449,8 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
                                           andFrame:NSMakeRect(156, 81, 0, 0)];
 
   geckoBool = mSettings->GetPrintBGImages();
-  [mPrintBGImagesCheckbox setState:(geckoBool ? NSOnState : NSOffState)];
+  [mPrintBGImagesCheckbox
+      setState:(geckoBool ? NSControlStateValueOn : NSControlStateValueOff)];
 
   [self addSubview:mPrintBGImagesCheckbox];
 }
@@ -501,7 +507,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
 - (const char*)headerFooterStringForList:(NSPopUpButton*)aList {
   NSInteger index = [aList indexOfSelectedItem];
-  NS_ASSERTION(index < NSInteger(ArrayLength(sHeaderFooterTags)),
+  NS_ASSERTION(index < NSInteger(std::size(sHeaderFooterTags)),
                "Index of dropdown is higher than expected!");
   return sHeaderFooterTags[index];
 }
@@ -532,7 +538,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 - (NSString*)summaryValueForCheckbox:(NSButton*)aCheckbox {
   if (![aCheckbox isEnabled]) return [self localizedString:"summaryNAValue"];
 
-  return [aCheckbox state] == NSOnState
+  return [aCheckbox state] == NSControlStateValueOn
              ? [self localizedString:"summaryOnValue"]
              : [self localizedString:"summaryOffValue"];
 }

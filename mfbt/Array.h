@@ -76,6 +76,9 @@ class Array {
   constexpr const_iterator cend() const { return end(); }
 
   
+  constexpr size_t size() const { return Length; }
+
+  
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const {
     return const_reverse_iterator(end());

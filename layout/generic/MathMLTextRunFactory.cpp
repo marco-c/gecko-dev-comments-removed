@@ -366,23 +366,23 @@ static uint32_t MathvarMappingSearch(uint32_t aKey,
 
       case StyleMathVariant::Initial:
         mapTable = gArabicInitialMapTable;
-        tableLength = ArrayLength(gArabicInitialMapTable);
+        tableLength = std::size(gArabicInitialMapTable);
         break;
       case StyleMathVariant::Tailed:
         mapTable = gArabicTailedMapTable;
-        tableLength = ArrayLength(gArabicTailedMapTable);
+        tableLength = std::size(gArabicTailedMapTable);
         break;
       case StyleMathVariant::Stretched:
         mapTable = gArabicStretchedMapTable;
-        tableLength = ArrayLength(gArabicStretchedMapTable);
+        tableLength = std::size(gArabicStretchedMapTable);
         break;
       case StyleMathVariant::Looped:
         mapTable = gArabicLoopedMapTable;
-        tableLength = ArrayLength(gArabicLoopedMapTable);
+        tableLength = std::size(gArabicLoopedMapTable);
         break;
       case StyleMathVariant::DoubleStruck:
         mapTable = gArabicDoubleMapTable;
-        tableLength = ArrayLength(gArabicDoubleMapTable);
+        tableLength = std::size(gArabicDoubleMapTable);
         break;
       default:
         
@@ -407,7 +407,7 @@ static uint32_t MathvarMappingSearch(uint32_t aKey,
     
     
     newChar = MathvarMappingSearch(tempChar, gLatinExceptionMapTable,
-                                   ArrayLength(gLatinExceptionMapTable));
+                                   std::size(gLatinExceptionMapTable));
   }
 
   if (newChar) {

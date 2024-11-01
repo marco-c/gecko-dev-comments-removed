@@ -117,7 +117,7 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
     &mDefaultSystemUiFont,
   };
   
-  static_assert(MOZ_ARRAY_LENGTH(fontTypes) == size_t(DefaultFont::COUNT),
+  static_assert(std::size(fontTypes) == size_t(DefaultFont::COUNT),
                 "FontTypes array count is not correct");
 
   

@@ -81,7 +81,7 @@ class SVGContentUtils {
 
 
     Float* InitDashPattern(size_t aDashCount) {
-      if (aDashCount <= MOZ_ARRAY_LENGTH(mSmallArray)) {
+      if (aDashCount <= std::size(mSmallArray)) {
         mDashPattern = mSmallArray;
         return mSmallArray;
       }

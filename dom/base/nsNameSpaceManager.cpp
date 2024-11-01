@@ -1,13 +1,13 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/*
+ * A class for managing namespace IDs and mapping back and forth
+ * between namespace IDs and namespace URIs.
+ */
 
 #include "nsNameSpaceManager.h"
 
@@ -33,7 +33,7 @@ static constexpr const char* kObservedNSPrefs[] = {kPrefMathMLDisabled,
 
 StaticRefPtr<nsNameSpaceManager> nsNameSpaceManager::sInstance;
 
-
+/* static */
 nsNameSpaceManager* nsNameSpaceManager::GetInstance() {
   if (!sInstance) {
     sInstance = new nsNameSpaceManager();
@@ -63,7 +63,7 @@ bool nsNameSpaceManager::Init() {
 
   PrefChanged(nullptr);
 
-  
+  // Need to be ordered according to ID.
   MOZ_ASSERT(mURIArray.IsEmpty());
   REGISTER_NAMESPACE(nsGkAtoms::_empty, kNameSpaceID_None);
   REGISTER_NAMESPACE(nsGkAtoms::nsuri_xmlns, kNameSpaceID_XMLNS);
@@ -96,7 +96,7 @@ nsresult nsNameSpaceManager::RegisterNameSpace(already_AddRefed<nsAtom> aURI,
   RefPtr<nsAtom> atom = aURI;
   nsresult rv = NS_OK;
   if (atom == nsGkAtoms::_empty) {
-    aNameSpaceID = kNameSpaceID_None;  
+    aNameSpaceID = kNameSpaceID_None;  // xmlns="", see bug 75700 for details
     return NS_OK;
   }
 
@@ -118,8 +118,8 @@ nsresult nsNameSpaceManager::GetNameSpaceURI(int32_t aNameSpaceID,
                                              nsAString& aURI) {
   MOZ_ASSERT(aNameSpaceID >= 0, "Bogus namespace ID");
 
-  
-  
+  // We have historically treated GetNameSpaceURI calls for kNameSpaceID_None
+  // as erroneous.
   if (aNameSpaceID <= 0 || aNameSpaceID >= int32_t(mURIArray.Length())) {
     aURI.Truncate();
 
@@ -134,7 +134,7 @@ nsresult nsNameSpaceManager::GetNameSpaceURI(int32_t aNameSpaceID,
 int32_t nsNameSpaceManager::GetNameSpaceID(const nsAString& aURI,
                                            bool aInChromeDoc) {
   if (aURI.IsEmpty()) {
-    return kNameSpaceID_None;  
+    return kNameSpaceID_None;  // xmlns="", see bug 75700 for details
   }
 
   RefPtr<nsAtom> atom = NS_Atomize(aURI);
@@ -143,7 +143,7 @@ int32_t nsNameSpaceManager::GetNameSpaceID(const nsAString& aURI,
 
 int32_t nsNameSpaceManager::GetNameSpaceID(nsAtom* aURI, bool aInChromeDoc) {
   if (aURI == nsGkAtoms::_empty) {
-    return kNameSpaceID_None;  
+    return kNameSpaceID_None;  // xmlns="", see bug 75700 for details
   }
 
   int32_t nameSpaceID;
@@ -162,12 +162,12 @@ int32_t nsNameSpaceManager::GetNameSpaceID(nsAtom* aURI, bool aInChromeDoc) {
   return kNameSpaceID_Unknown;
 }
 
-
+// static
 const char* nsNameSpaceManager::GetNameSpaceDisplayName(uint32_t aNameSpaceID) {
   static const char* kNSURIs[] = {"([none])", "(xmlns)", "(xml)",    "(xhtml)",
                                   "(XLink)",  "(XSLT)",  "(MathML)", "(RDF)",
                                   "(XUL)",    "(SVG)"};
-  if (aNameSpaceID < ArrayLength(kNSURIs)) {
+  if (aNameSpaceID < std::size(kNSURIs)) {
     return kNSURIs[aNameSpaceID];
   }
   return "";
@@ -195,8 +195,8 @@ nsresult NS_NewElement(Element** aResult,
                             aDefinition);
   }
   if (ns == kNameSpaceID_MathML) {
-    
-    
+    // If the mathml.disabled pref. is true, convert all MathML nodes into
+    // disabled MathML nodes by swapping the namespace.
     if (ni->NodeInfoManager()->MathMLEnabled()) {
       return NS_NewMathMLElement(aResult, ni.forget());
     }
@@ -208,8 +208,8 @@ nsresult NS_NewElement(Element** aResult,
     return NS_NewXMLElement(aResult, genericXMLNI.forget());
   }
   if (ns == kNameSpaceID_SVG) {
-    
-    
+    // If the svg.disabled pref. is true, convert all SVG nodes into
+    // disabled SVG nodes by swapping the namespace.
     if (ni->NodeInfoManager()->SVGEnabled()) {
       return NS_NewSVGElement(aResult, ni.forget(), aFromParser);
     }
@@ -234,7 +234,7 @@ nsresult nsNameSpaceManager::AddNameSpace(already_AddRefed<nsAtom> aURI,
                                           const int32_t aNameSpaceID) {
   RefPtr<nsAtom> uri = aURI;
   if (aNameSpaceID < 0) {
-    
+    // We've wrapped...  Can't do anything else here; just bail.
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -249,7 +249,7 @@ nsresult nsNameSpaceManager::AddDisabledNameSpace(already_AddRefed<nsAtom> aURI,
                                                   const int32_t aNameSpaceID) {
   RefPtr<nsAtom> uri = aURI;
   if (aNameSpaceID < 0) {
-    
+    // We've wrapped...  Can't do anything else here; just bail.
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -260,7 +260,7 @@ nsresult nsNameSpaceManager::AddDisabledNameSpace(already_AddRefed<nsAtom> aURI,
   return NS_OK;
 }
 
-
+// static
 void nsNameSpaceManager::PrefChanged(const char* aPref, void* aSelf) {
   static_cast<nsNameSpaceManager*>(aSelf)->PrefChanged(aPref);
 }
