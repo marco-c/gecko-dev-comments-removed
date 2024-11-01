@@ -3,82 +3,136 @@
 
 "use strict";
 
-add_task(async function () {
-  
-  let focusBrowserPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.selectedBrowser,
-    "focus"
-  );
-  gURLBar.focus();
-  EventUtils.synthesizeKey("KEY_Escape");
-  await focusBrowserPromise;
-  Assert.equal(
-    document.activeElement,
-    gBrowser.selectedBrowser,
-    "Content document should be focused"
-  );
-});
+add_task(async function oneEscapeFocusContentNonEmptyUrlbar() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "https://example.com" },
+    async function () {
+      is(gURLBar.value, "example.com", "URL bar value should have an address");
 
-add_task(async function () {
-  
-  
-  
-  
-  
-  await UrlbarTestUtils.promisePopupOpen(window, () =>
-    UrlbarTestUtils.inputIntoURLBar(window, "hello")
-  );
-  is(gURLBar.value, "hello", "URL bar value should match after sending a key");
-  
-  Assert.equal(
-    UrlbarTestUtils.isPopupOpen(window),
-    true,
-    "Popup should be open"
-  );
+      let focusBrowserPromise = BrowserTestUtils.waitForEvent(
+        gBrowser.selectedBrowser,
+        "focus"
+      );
+      gURLBar.focus();
+      EventUtils.synthesizeKey("KEY_Escape");
+      info("waiting for content document focus");
+      await focusBrowserPromise;
 
-  
-  EventUtils.synthesizeKey("KEY_Escape");
-
-  
-  Assert.equal(
-    UrlbarTestUtils.isPopupOpen(window),
-    false,
-    "Popup shouldn't be open"
-  );
-
-  
-  Assert.equal(
-    document.activeElement,
-    gURLBar.inputField,
-    "URL Bar should be focused"
-  );
-
-  
-  EventUtils.synthesizeKey("KEY_Escape");
-
-  is(gURLBar.value, "", "URL bar value should be reset after escape");
-  Assert.equal(
-    document.activeElement,
-    gURLBar.inputField,
-    "URL Bar should still be focused"
-  );
-
-  let focusBrowserPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.selectedBrowser,
-    "focus"
-  );
-  
-  EventUtils.synthesizeKey("KEY_Escape");
-  await focusBrowserPromise;
-
-  Assert.equal(
-    document.activeElement,
-    gBrowser.selectedBrowser,
-    "Content document should be focused"
+      Assert.equal(
+        document.activeElement,
+        gBrowser.selectedBrowser,
+        "Content document should be focused"
+      );
+    }
   );
 });
 
-add_task(async function () {
+add_task(async function oneEscapeFocusContentBlankPage() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:home" },
+    async function () {
+      
+      
+
+      is(gURLBar.value, "", "URL bar value should be empty");
+
+      let focusBrowserPromise = BrowserTestUtils.waitForEvent(
+        gBrowser.selectedBrowser,
+        "focus"
+      );
+      gURLBar.focus();
+      EventUtils.synthesizeKey("KEY_Escape");
+      info("waiting for content document focus");
+      await focusBrowserPromise;
+      Assert.equal(
+        document.activeElement,
+        gBrowser.selectedBrowser,
+        "Content document should be focused"
+      );
+    }
+  );
+});
+
+add_task(async function threeEscapeFocusContentDocumentNonEmptyUrlbar() {
+  registerCleanupFunction(PlacesUtils.history.clear);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "https://example.com",
+    },
+    async function () {
+      let originalValue = gURLBar.value;
+
+      
+      
+      
+      
+      
+      await UrlbarTestUtils.promisePopupOpen(window, () =>
+        UrlbarTestUtils.inputIntoURLBar(window, "hello")
+      );
+      is(
+        gURLBar.value,
+        "hello",
+        "URL bar value should match after sending a key"
+      );
+      
+      Assert.equal(
+        UrlbarTestUtils.isPopupOpen(window),
+        true,
+        "Popup should be open"
+      );
+
+      
+      EventUtils.synthesizeKey("KEY_Escape");
+
+      
+      Assert.equal(
+        UrlbarTestUtils.isPopupOpen(window),
+        false,
+        "Popup shouldn't be open"
+      );
+
+      
+      Assert.equal(
+        document.activeElement,
+        gURLBar.inputField,
+        "URL Bar should be focused"
+      );
+
+      
+      EventUtils.synthesizeKey("KEY_Escape");
+
+      is(
+        gURLBar.value,
+        originalValue,
+        "URL bar value should be reset after escape"
+      );
+      Assert.equal(
+        document.activeElement,
+        gURLBar.inputField,
+        "URL Bar should still be focused"
+      );
+
+      let focusBrowserPromise = BrowserTestUtils.waitForEvent(
+        gBrowser.selectedBrowser,
+        "focus"
+      );
+      
+      EventUtils.synthesizeKey("KEY_Escape");
+      info("waiting for content document focus");
+      await focusBrowserPromise;
+
+      Assert.equal(
+        document.activeElement,
+        gBrowser.selectedBrowser,
+        "Content document should be focused"
+      );
+    }
+  );
+});
+
+add_task(async function testDisabledFocusContentDocumentOnEsc() {
   
   
   Preferences.set("browser.urlbar.focusContentDocumentOnEsc", false);
