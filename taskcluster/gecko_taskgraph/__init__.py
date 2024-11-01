@@ -56,7 +56,8 @@ def register(graph_config):
     del registry["skip-unless-changed"]
 
     from gecko_taskgraph import (  
-        morph,  
+        morph,
+        filter_tasks,
         target_tasks,
     )
 
