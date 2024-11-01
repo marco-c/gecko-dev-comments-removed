@@ -298,19 +298,37 @@ document.addEventListener(
       }
     });
     contextMenuPopup.addEventListener("popupshowing", event => {
-      if (event.target != contextMenuPopup) {
-        return;
-      }
+      switch (event.target.id) {
+        case "contentAreaContextMenu": {
+          
+          gContextMenu = new nsContextMenu(contextMenuPopup, event.shiftKey);
+          if (!gContextMenu.shouldDisplay) {
+            event.preventDefault();
+            return;
+          }
 
-      
-      gContextMenu = new nsContextMenu(contextMenuPopup, event.shiftKey);
-      if (!gContextMenu.shouldDisplay) {
-        event.preventDefault();
-        return;
-      }
-
-      if (!IS_WEBEXT_PANELS) {
-        updateEditUIVisibility();
+          if (!IS_WEBEXT_PANELS) {
+            updateEditUIVisibility();
+          }
+          break;
+        }
+        case "context-openlinkinusercontext-popup":
+          gContextMenu.createContainerMenu(event);
+          break;
+        case "context-sendlinktodevice-popup":
+          gSync.populateSendTabToDevicesMenu(
+            event.target,
+            gContextMenu.linkURI,
+            gContextMenu.linkTextStr
+          );
+          break;
+        case "context-sendpagetodevice-popup":
+          gSync.populateSendTabToDevicesMenu(
+            event.target,
+            gBrowser.currentURI,
+            gBrowser.contentTitle
+          );
+          break;
       }
     });
     contextMenuPopup.addEventListener("popuphiding", event => {
@@ -325,6 +343,14 @@ document.addEventListener(
         updateEditUIVisibility();
       }
     });
+
+    
+    let userContextPopup = document.getElementById(
+      "context-openlinkinusercontext-popup"
+    );
+    userContextPopup.addEventListener("command", event =>
+      gContextMenu.openLinkInTab(event)
+    );
   },
   { once: true }
 );
