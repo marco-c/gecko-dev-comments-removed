@@ -1,0 +1,43 @@
+"use strict";
+
+
+
+
+requestLongerTimeout(5);
+
+SimpleTest.expectChildProcessCrash();
+
+async function execTest(expectedValueAfter) {
+  setBuildidMismatchEnv();
+  setBuildidMatchDontSendEnv();
+  await forceCleanProcesses();
+  let eventPromise = getEventPromise(
+    "oop-browser-buildid-mismatch",
+    "real-mismatch"
+  );
+  let tab = await openNewTab(false);
+  await eventPromise;
+  unsetBuildidMatchDontSendEnv();
+  unsetBuildidMismatchEnv();
+
+  is(
+    await getTrueMismatchTelemetry(),
+    expectedValueAfter,
+    `Build ID true mismatch count should be ${expectedValueAfter}`
+  );
+
+  await closeTab(tab);
+}
+
+add_task(async function test_telemetry_restartrequired_real_mismatch() {
+  
+  
+  
+
+  info("Waiting for oop-browser-buildid-mismatch event.");
+
+  
+  await execTest(1);
+  
+  await execTest(1);
+});
