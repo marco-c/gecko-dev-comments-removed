@@ -6,7 +6,7 @@ function f1(a2, a3, a4, a5) {
 function f2() {
     
     
-    if (depth++ > 75) {
+    if (depth++ > 40) {
         return;
     }
     f1(1, 2);
