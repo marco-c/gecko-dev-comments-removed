@@ -449,7 +449,9 @@ TrackSize::StateBits nsGridContainerFrame::TrackSize::Initialize(
   if (aSize.IsFitContent()) {
     
     
-    mState = eFitContent;
+    if (!::IsPercentOfIndefiniteSize(aSize.AsFitContent(), aPercentageBasis)) {
+      mState = eFitContent;
+    }
     minSizeTag = Tag::Auto;
     maxSizeTag = Tag::MaxContent;
   }
