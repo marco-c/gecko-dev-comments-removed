@@ -1308,14 +1308,14 @@ static nsresult GetNSSProfilePath(nsAutoCString& aProfilePath) {
 
 static nsresult AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath) {
   nsCOMPtr<nsIFile> profileDir;
-#ifdef XP_WIN
+#  ifdef XP_WIN
   
   
   MOZ_TRY(NS_NewLocalFile(u""_ns, getter_AddRefs(profileDir)));
   MOZ_TRY(profileDir->InitWithPath(NS_ConvertUTF8toUTF16(profilePath)));
-#else
+#  else
   MOZ_TRY(NS_NewNativeLocalFile(profilePath, getter_AddRefs(profileDir)));
-#endif
+#  endif
   const char* moduleDBFilename = "pkcs11.txt";
   nsAutoCString destModuleDBFilename(moduleDBFilename);
   destModuleDBFilename.Append(".fips");
