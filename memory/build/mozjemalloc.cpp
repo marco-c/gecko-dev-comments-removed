@@ -1665,14 +1665,24 @@ static inline StallSpecs GetStallSpecs() {
 #  endif
 }
 
+}  
+
+namespace mozilla {
+
+StallSpecs GetAllocatorStallSpecs() {
+  return ::MozAllocRetries::GetStallSpecs();
+}
 
 
 
 
 
 
-[[nodiscard]] void* MozVirtualAlloc(LPVOID lpAddress, SIZE_T dwSize,
-                                    DWORD flAllocationType, DWORD flProtect) {
+
+void* MozVirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType,
+                      DWORD flProtect) {
+  using namespace MozAllocRetries;
+
   DWORD const lastError = ::GetLastError();
 
   constexpr auto IsOOMError = [] {
@@ -1727,14 +1737,7 @@ static inline StallSpecs GetStallSpecs() {
 
   return ret.value_or(nullptr);
 }
-}  
 
-using MozAllocRetries::MozVirtualAlloc;
-
-namespace mozilla {
-MOZ_JEMALLOC_API StallSpecs GetAllocatorStallSpecs() {
-  return ::MozAllocRetries::GetStallSpecs();
-}
 }  
 
 #endif  
