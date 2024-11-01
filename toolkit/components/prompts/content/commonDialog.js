@@ -18,6 +18,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIContentAnalysis
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "_contentAnalysisClipboardEnabled",
+  "browser.contentanalysis.interception_point.clipboard.enabled",
+  true
+);
+
 
 
 
@@ -137,7 +144,7 @@ function commonDialogOnLoad() {
   if (lazy.gContentAnalysis.isActive && args.owningBrowsingContext?.isContent) {
     ui.loginTextbox?.addEventListener("paste", async event => {
       let data = event.clipboardData.getData("text/plain");
-      if (data?.length > 0) {
+      if (data?.length > 0 && lazy._contentAnalysisClipboardEnabled) {
         
         event.preventDefault();
         

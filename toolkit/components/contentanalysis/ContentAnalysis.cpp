@@ -1883,6 +1883,11 @@ RefPtr<ContentAnalysis::PrintAllowedPromise>
 ContentAnalysis::PrintToPDFToDetermineIfPrintAllowed(
     dom::CanonicalBrowsingContext* aBrowsingContext,
     nsIPrintSettings* aPrintSettings) {
+  if (!mozilla::StaticPrefs::
+          browser_contentanalysis_interception_point_print_enabled()) {
+    return PrintAllowedPromise::CreateAndResolve(PrintAllowedResult(true),
+                                                 __func__);
+  }
   
   
   
@@ -2409,7 +2414,9 @@ void ContentAnalysis::CheckClipboardContentAnalysis(
   
   
   if (!aWindow || aWindow->GetBrowsingContext()->IsChrome() ||
-      aWindow->IsInProcess()) {
+      aWindow->IsInProcess() ||
+      !mozilla::StaticPrefs::
+          browser_contentanalysis_interception_point_clipboard_enabled()) {
     aResolver->Callback(ContentAnalysisResult::FromNoResult(
         NoContentAnalysisResult::
             ALLOW_DUE_TO_CONTEXT_EXEMPT_FROM_CONTENT_ANALYSIS));
