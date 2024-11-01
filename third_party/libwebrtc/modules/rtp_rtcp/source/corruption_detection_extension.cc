@@ -30,42 +30,6 @@ constexpr double kMaxValueForStdDev = 40.0;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool CorruptionDetectionExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                          CorruptionDetectionMessage* message) {
   if (message == nullptr) {
