@@ -4106,7 +4106,9 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     return;
   }
 
-  if (mCheckedIsToggled) {
+  
+  
+  if (mCheckedIsToggled && IsInComposedDoc()) {
     SetUserInteracted(true);
 
     
