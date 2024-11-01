@@ -43,13 +43,9 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JS::Rooted<JS::Value> mDebuggerPrivateValue;
   JS::Rooted<JSScript*> mDebuggerIntroductionScript;
 
-  RefPtr<JS::Stencil> mStencil;
-
   
   
   bool mSkip;
-
-  bool mKeepStencil = false;
 
  private:
   
@@ -81,9 +77,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
     
     
   }
-
-  void SetKeepStencil() { mKeepStencil = true; }
-  already_AddRefed<JS::Stencil> StealStencil() { return mStencil.forget(); }
 
   
   

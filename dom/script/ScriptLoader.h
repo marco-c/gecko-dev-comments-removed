@@ -648,10 +648,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
+  
+  
+  
   void InstantiateClassicScriptFromMaybeEncodedSource(
       JSContext* aCx, JSExecutionContext& aExec,
       JS::CompileOptions& aCompileOptions, ScriptLoadRequest* aRequest,
-      JS::MutableHandle<JSScript*> aScript, ErrorResult& aRv);
+      JS::MutableHandle<JSScript*> aScript, bool keepStencil,
+      RefPtr<JS::Stencil>& aStencilDup, ErrorResult& aRv);
 
   
   
