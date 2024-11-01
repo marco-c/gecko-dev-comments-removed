@@ -43,6 +43,9 @@ class EncodedImageBufferInterface : public RefCountInterface {
   
   virtual uint8_t* data() = 0;
   virtual size_t size() const = 0;
+
+  const uint8_t* begin() const { return data(); }
+  const uint8_t* end() const { return data() + size(); }
 };
 
 
@@ -190,6 +193,9 @@ class RTC_EXPORT EncodedImage {
   const uint8_t* data() const {
     return encoded_data_ ? encoded_data_->data() : nullptr;
   }
+
+  const uint8_t* begin() const { return data(); }
+  const uint8_t* end() const { return data() + size(); }
 
   
   
