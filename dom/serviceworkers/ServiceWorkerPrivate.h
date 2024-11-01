@@ -11,13 +11,16 @@
 #include <type_traits>
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/FetchService.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RemoteWorkerController.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
+#include "mozilla/dom/ServiceWorkerLifetimeExtension.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
@@ -82,15 +85,23 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
  public:
   explicit ServiceWorkerPrivate(ServiceWorkerInfo* aInfo);
 
-  nsresult SendMessageEvent(RefPtr<ServiceWorkerCloneData>&& aData,
-                            const PostMessageSource& aSource);
+  Maybe<ClientInfo> GetClientInfo() { return mClientInfo; }
+
+  nsresult SendMessageEvent(
+      RefPtr<ServiceWorkerCloneData>&& aData,
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension,
+      const PostMessageSource& aSource);
 
   
   
-  nsresult CheckScriptEvaluation(RefPtr<LifeCycleEventCallback> aCallback);
+  nsresult CheckScriptEvaluation(
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension,
+      RefPtr<LifeCycleEventCallback> aCallback);
 
-  nsresult SendLifeCycleEvent(const nsAString& aEventType,
-                              RefPtr<LifeCycleEventCallback> aCallback);
+  nsresult SendLifeCycleEvent(
+      const nsAString& aEventType,
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension,
+      const RefPtr<LifeCycleEventCallback>& aCallback);
 
   nsresult SendPushEvent(const nsAString& aMessageId,
                          const Maybe<nsTArray<uint8_t>>& aData,
@@ -119,7 +130,10 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   
   
   
-  void TerminateWorker();
+  
+  
+  
+  void TerminateWorker(Maybe<RefPtr<Promise>> aMaybePromise = Nothing());
 
   void NoteDeadServiceWorkerInfo();
 
@@ -132,6 +146,16 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   nsresult AttachDebugger();
 
   nsresult DetachDebugger();
+
+  
+  
+  
+  
+  
+  
+  TimeStamp GetLifetimeDeadline() { return mIdleDeadline; }
+
+  uint32_t GetLaunchCount() { return mLaunchCount; }
 
   bool IsIdle() const;
 
@@ -169,9 +193,11 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
 
   void TerminateWorkerCallback(nsITimer* aTimer);
 
-  void RenewKeepAliveToken();
+  void RenewKeepAliveToken(
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
-  void ResetIdleTimeout();
+  void ResetIdleTimeout(
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
   void AddToken();
 
@@ -179,7 +205,8 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
 
   already_AddRefed<KeepAliveToken> CreateEventKeepAliveToken();
 
-  nsresult SpawnWorkerIfNeeded();
+  nsresult SpawnWorkerIfNeeded(
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
   ~ServiceWorkerPrivate();
 
@@ -224,13 +251,14 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
       nsCOMPtr<nsIInterceptedChannel>&& aChannel,
       RefPtr<FetchServicePromises>&& aPreloadResponseReadyPromises);
 
-  void Shutdown();
+  void Shutdown(Maybe<RefPtr<Promise>>&& aMaybePromise = Nothing());
 
   RefPtr<GenericNonExclusivePromise> ShutdownInternal(
       uint32_t aShutdownStateId);
 
   nsresult ExecServiceWorkerOp(
       ServiceWorkerOpArgs&& aArgs,
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension,
       std::function<void(ServiceWorkerOpResult&&)>&& aSuccessCallback,
       std::function<void()>&& aFailureCallback = [] {});
 
@@ -335,6 +363,7 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   RefPtr<RAIIActorPtrHolder> mControllerChild;
 
   RemoteWorkerData mRemoteWorkerData;
+  Maybe<ClientInfo> mClientInfo;
 
   TimeStamp mServiceWorkerLaunchTimeStart;
 
@@ -357,6 +386,14 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
 
   nsCOMPtr<nsITimer> mIdleWorkerTimer;
 
+  ServiceWorkerLifetimeExtension mPendingSpawnLifetime;
+
+  
+  
+  
+  
+  TimeStamp mIdleDeadline;
+
   
   
   RefPtr<KeepAliveToken> mIdleKeepAliveToken;
@@ -364,6 +401,8 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   uint64_t mDebuggerCount;
 
   uint64_t mTokenCount;
+
+  uint32_t mLaunchCount;
 
   
   

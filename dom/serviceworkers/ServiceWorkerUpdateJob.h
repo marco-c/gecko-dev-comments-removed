@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_serviceworkerupdatejob_h
 #define mozilla_dom_serviceworkerupdatejob_h
 
+#include "mozilla/dom/ServiceWorkerLifetimeExtension.h"
 #include "ServiceWorkerJob.h"
 #include "ServiceWorkerRegistration.h"
 
@@ -29,17 +30,19 @@ class ServiceWorkerRegistrationInfo;
 class ServiceWorkerUpdateJob : public ServiceWorkerJob {
  public:
   
-  ServiceWorkerUpdateJob(nsIPrincipal* aPrincipal, const nsACString& aScope,
-                         nsCString aScriptSpec,
-                         ServiceWorkerUpdateViaCache aUpdateViaCache);
+  ServiceWorkerUpdateJob(
+      nsIPrincipal* aPrincipal, const nsACString& aScope, nsCString aScriptSpec,
+      ServiceWorkerUpdateViaCache aUpdateViaCache,
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
   already_AddRefed<ServiceWorkerRegistrationInfo> GetRegistration() const;
 
  protected:
   
-  ServiceWorkerUpdateJob(Type aType, nsIPrincipal* aPrincipal,
-                         const nsACString& aScope, nsCString aScriptSpec,
-                         ServiceWorkerUpdateViaCache aUpdateViaCache);
+  ServiceWorkerUpdateJob(
+      Type aType, nsIPrincipal* aPrincipal, const nsACString& aScope,
+      nsCString aScriptSpec, ServiceWorkerUpdateViaCache aUpdateViaCache,
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
   virtual ~ServiceWorkerUpdateJob();
 
@@ -89,6 +92,13 @@ class ServiceWorkerUpdateJob : public ServiceWorkerJob {
 
   RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
   ServiceWorkerUpdateViaCache mUpdateViaCache;
+  
+  
+  
+  
+  
+  
+  ServiceWorkerLifetimeExtension mLifetimeExtension;
   serviceWorkerScriptCache::OnFailure mOnFailure;
 };
 

@@ -16,9 +16,11 @@ namespace mozilla::dom {
 
 class ServiceWorkerRegisterJob final : public ServiceWorkerUpdateJob {
  public:
-  ServiceWorkerRegisterJob(nsIPrincipal* aPrincipal, const nsACString& aScope,
-                           const nsACString& aScriptSpec,
-                           ServiceWorkerUpdateViaCache aUpdateViaCache);
+  ServiceWorkerRegisterJob(
+      nsIPrincipal* aPrincipal, const nsACString& aScope,
+      const nsACString& aScriptSpec,
+      ServiceWorkerUpdateViaCache aUpdateViaCache,
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
  private:
   

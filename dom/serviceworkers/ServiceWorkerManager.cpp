@@ -872,9 +872,11 @@ RefPtr<ServiceWorkerRegistrationPromise> ServiceWorkerManager::Register(
   RefPtr<ServiceWorkerResolveWindowPromiseOnRegisterCallback> cb =
       new ServiceWorkerResolveWindowPromiseOnRegisterCallback();
 
+  auto lifetime = DetermineLifetimeForClient(aClientInfo);
+
   RefPtr<ServiceWorkerRegisterJob> job = new ServiceWorkerRegisterJob(
       principal, aScopeURL, aScriptURL,
-      static_cast<ServiceWorkerUpdateViaCache>(aUpdateViaCache));
+      static_cast<ServiceWorkerUpdateViaCache>(aUpdateViaCache), lifetime);
 
   job->AppendResultCallback(cb);
   queue->ScheduleJob(job);
@@ -1282,6 +1284,63 @@ ServiceWorkerInfo* ServiceWorkerManager::GetActiveWorkerInfoForScope(
   return registration->GetActive();
 }
 
+ServiceWorkerInfo* ServiceWorkerManager::GetServiceWorkerByClientInfo(
+    const ClientInfo& aClientInfo) const {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  auto principalOrErr = aClientInfo.GetPrincipal();
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  nsAutoCString scopeKey;
+  nsresult rv = PrincipalToScopeKey(principal, scopeKey);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  RegistrationDataPerPrincipal* data;
+  if (!mRegistrationInfos.Get(scopeKey, &data)) {
+    return nullptr;
+  }
+
+  
+  
+  ClientInfo normalized = ClientInfo(
+      aClientInfo.Id(), aClientInfo.AgentClusterId(), aClientInfo.Type(),
+      aClientInfo.PrincipalInfo(), aClientInfo.CreationTime(),
+      aClientInfo.URL(), aClientInfo.FrameType());
+
+  for (const auto& registration : data->mInfos.Values()) {
+    ServiceWorkerInfo* info = registration->GetByClientInfo(normalized);
+    if (info) {
+      return info;
+    }
+  }
+
+  return nullptr;
+}
+
+ServiceWorkerInfo* ServiceWorkerManager::GetServiceWorkerByDescriptor(
+    const ServiceWorkerDescriptor& aServiceWorker) const {
+  auto principalOrErr = aServiceWorker.GetPrincipal();
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  RefPtr<ServiceWorkerRegistrationInfo> registration =
+      GetRegistration(principal, aServiceWorker.Scope());
+  if (NS_WARN_IF(!registration)) {
+    return nullptr;
+  }
+
+  return registration->GetByDescriptor(aServiceWorker);
+}
+
 namespace {
 
 class UnregisterJobCallback final : public ServiceWorkerJob::Callback {
@@ -1380,11 +1439,20 @@ void ServiceWorkerManager::WorkerIsIdle(ServiceWorkerInfo* aWorker) {
     return;
   }
 
+  
+  
   if (reg->GetActive() != aWorker) {
     return;
   }
 
-  reg->TryToActivateAsync();
+  
+  
+  
+  
+  
+  
+  reg->TryToActivateAsync(
+      ServiceWorkerLifetimeExtension(NoLifetimeExtension{}));
 }
 
 already_AddRefed<ServiceWorkerJobQueue>
@@ -1923,7 +1991,8 @@ void ServiceWorkerManager::StopControllingRegistration(
   
   
   
-  aRegistration->TryToActivateAsync();
+  aRegistration->TryToActivateAsync(
+      ServiceWorkerLifetimeExtension(NoLifetimeExtension{}));
 }
 
 NS_IMETHODIMP
@@ -2218,6 +2287,43 @@ void ServiceWorkerManager::DispatchFetchEvent(nsIInterceptedChannel* aChannel,
   }
 }
 
+ServiceWorkerLifetimeExtension ServiceWorkerManager::DetermineLifetimeForClient(
+    const ClientInfo& aClientInfo) {
+  
+  
+  if (aClientInfo.Type() == ClientType::Serviceworker) {
+    
+    
+    ServiceWorkerInfo* source = GetServiceWorkerByClientInfo(aClientInfo);
+    if (source) {
+      return ServiceWorkerLifetimeExtension(PropagatedLifetimeExtension{
+          .mDeadline = source->LifetimeDeadline(),
+      });
+    }
+
+    
+    
+    return ServiceWorkerLifetimeExtension(NoLifetimeExtension{});
+  }
+
+  return ServiceWorkerLifetimeExtension(FullLifetimeExtension{});
+}
+
+ServiceWorkerLifetimeExtension
+ServiceWorkerManager::DetermineLifetimeForServiceWorker(
+    const ServiceWorkerDescriptor& aServiceWorker) {
+  ServiceWorkerInfo* source = GetServiceWorkerByDescriptor(aServiceWorker);
+  if (source) {
+    return ServiceWorkerLifetimeExtension(PropagatedLifetimeExtension{
+        .mDeadline = source->LifetimeDeadline(),
+    });
+  }
+
+  
+  
+  return ServiceWorkerLifetimeExtension(NoLifetimeExtension{});
+}
+
 bool ServiceWorkerManager::IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI,
                                        nsIChannel* aChannel) {
   MOZ_ASSERT(aPrincipal);
@@ -2469,9 +2575,19 @@ void ServiceWorkerManager::SoftUpdateInternal(
   
   RefPtr<ServiceWorkerJobQueue> queue = GetOrCreateJobQueue(scopeKey, aScope);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  auto lifetime = ServiceWorkerLifetimeExtension(FullLifetimeExtension{});
+
   RefPtr<ServiceWorkerUpdateJob> job = new ServiceWorkerUpdateJob(
       principal, registration->Scope(), newest->ScriptSpec(),
-      registration->GetUpdateViaCache());
+      registration->GetUpdateViaCache(), lifetime);
 
   if (aCallback) {
     RefPtr<UpdateJobCallback> cb = new UpdateJobCallback(aCallback);
@@ -2520,12 +2636,14 @@ void ServiceWorkerManager::UpdateInternal(
 
   RefPtr<ServiceWorkerJobQueue> queue = GetOrCreateJobQueue(scopeKey, aScope);
 
+  auto lifetime = DetermineLifetimeForClient(aClientInfo);
+
   
   
   
   RefPtr<ServiceWorkerUpdateJob> job = new ServiceWorkerUpdateJob(
       aPrincipal, registration->Scope(), std::move(aNewestWorkerScriptUrl),
-      registration->GetUpdateViaCache());
+      registration->GetUpdateViaCache(), lifetime);
 
   RefPtr<UpdateJobCallback> cb = new UpdateJobCallback(aCallback);
   job->AppendResultCallback(cb);

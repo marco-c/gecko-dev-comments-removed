@@ -112,13 +112,17 @@ UniquePtr<ClientSource> ClientManager::CreateSourceInternal(
     
     
     id.Clear();
-    ClientSourceConstructorArgs args(id, aType, aPrincipal, TimeStamp::Now());
+    ClientSourceConstructorArgs args(id, Nothing(), aType, aPrincipal,
+                                     TimeStamp::Now(), VoidCString(),
+                                     FrameType::None);
     UniquePtr<ClientSource> source(new ClientSource(this, aEventTarget, args));
     source->Shutdown();
     return source;
   }
 
-  ClientSourceConstructorArgs args(id, aType, aPrincipal, TimeStamp::Now());
+  ClientSourceConstructorArgs args(id, Nothing(), aType, aPrincipal,
+                                   TimeStamp::Now(), VoidCString(),
+                                   FrameType::None);
   UniquePtr<ClientSource> source(new ClientSource(this, aEventTarget, args));
 
   if (IsShutdown()) {
@@ -135,9 +139,10 @@ UniquePtr<ClientSource> ClientManager::CreateSourceInternal(
     const ClientInfo& aClientInfo, nsISerialEventTarget* aEventTarget) {
   NS_ASSERT_OWNINGTHREAD(ClientManager);
 
-  ClientSourceConstructorArgs args(aClientInfo.Id(), aClientInfo.Type(),
-                                   aClientInfo.PrincipalInfo(),
-                                   aClientInfo.CreationTime());
+  ClientSourceConstructorArgs args(
+      aClientInfo.Id(), aClientInfo.AgentClusterId(), aClientInfo.Type(),
+      aClientInfo.PrincipalInfo(), aClientInfo.CreationTime(),
+      aClientInfo.URL(), aClientInfo.FrameType());
   UniquePtr<ClientSource> source(new ClientSource(this, aEventTarget, args));
 
   if (IsShutdown()) {
@@ -344,7 +349,8 @@ Maybe<ClientInfo> ClientManager::CreateInfo(ClientType aType,
     return Nothing();
   }
 
-  return Some(ClientInfo(id, aType, principalInfo, TimeStamp::Now()));
+  return Some(ClientInfo(id, Nothing(), aType, principalInfo, TimeStamp::Now(),
+                         ""_ns, FrameType::None));
 }
 
 

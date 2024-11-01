@@ -32,6 +32,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ClientIPCTypes.h"
+#include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/FetchEventOpChild.h"
 #include "mozilla/dom/InternalHeaders.h"
@@ -41,6 +42,7 @@
 #include "mozilla/dom/RemoteWorkerControllerChild.h"
 #include "mozilla/dom/RemoteWorkerManager.h"  
 #include "mozilla/dom/ServiceWorkerBinding.h"
+#include "mozilla/dom/ServiceWorkerLifetimeExtension.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"  
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
@@ -463,7 +465,12 @@ nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
 
 
 ServiceWorkerPrivate::ServiceWorkerPrivate(ServiceWorkerInfo* aInfo)
-    : mInfo(aInfo), mDebuggerCount(0), mTokenCount(0) {
+    : mInfo(aInfo),
+      mPendingSpawnLifetime(
+          ServiceWorkerLifetimeExtension(NoLifetimeExtension{})),
+      mDebuggerCount(0),
+      mTokenCount(0),
+      mLaunchCount(0) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aInfo);
   MOZ_ASSERT(!mControllerChild);
@@ -687,6 +694,19 @@ nsresult ServiceWorkerPrivate::Initialize() {
   bool isThirdPartyContextToTopWindow =
       !principal->OriginAttributesRef().mPartitionKey.IsEmpty();
 
+  mClientInfo = ClientManager::CreateInfo(
+      ClientType::Serviceworker,
+      
+      
+      isThirdPartyContextToTopWindow ? partitionedPrincipal : principal);
+  if (NS_WARN_IF(!mClientInfo.isSome())) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  mClientInfo->SetAgentClusterId(regInfo->AgentClusterId());
+  mClientInfo->SetURL(mInfo->ScriptSpec());
+  mClientInfo->SetFrameType(FrameType::None);
+
   mRemoteWorkerData = RemoteWorkerData(
       NS_ConvertUTF8toUTF16(mInfo->ScriptSpec()), baseScriptURL, baseScriptURL,
       WorkerOptions(),
@@ -699,7 +719,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
       cjsData, domain,
        true,
-       Nothing(),
+       Some(mClientInfo.ref().ToIPC()),
 
       
       
@@ -721,6 +741,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 }
 
 nsresult ServiceWorkerPrivate::CheckScriptEvaluation(
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension,
     RefPtr<LifeCycleEventCallback> aCallback) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
@@ -731,7 +752,7 @@ nsresult ServiceWorkerPrivate::CheckScriptEvaluation(
 
 
 
-  nsresult rv = SpawnWorkerIfNeeded();
+  nsresult rv = SpawnWorkerIfNeeded(aLifetimeExtension);
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aCallback->SetResult(false);
@@ -745,7 +766,7 @@ nsresult ServiceWorkerPrivate::CheckScriptEvaluation(
   RefPtr<RAIIActorPtrHolder> holder = mControllerChild;
 
   return ExecServiceWorkerOp(
-      ServiceWorkerCheckScriptEvaluationOpArgs(),
+      ServiceWorkerCheckScriptEvaluationOpArgs(), aLifetimeExtension,
       [self = std::move(self), holder = std::move(holder),
        callback = aCallback](ServiceWorkerOpResult&& aResult) mutable {
         if (aResult.type() == ServiceWorkerOpResult::
@@ -816,7 +837,9 @@ nsresult ServiceWorkerPrivate::CheckScriptEvaluation(
 }
 
 nsresult ServiceWorkerPrivate::SendMessageEvent(
-    RefPtr<ServiceWorkerCloneData>&& aData, const PostMessageSource& aSource) {
+    RefPtr<ServiceWorkerCloneData>&& aData,
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension,
+    const PostMessageSource& aSource) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aData);
 
@@ -837,18 +860,21 @@ nsresult ServiceWorkerPrivate::SendMessageEvent(
   scopeExit.release();
 
   return ExecServiceWorkerOp(
-      std::move(args), [](ServiceWorkerOpResult&& aResult) {
+      std::move(args), aLifetimeExtension, [](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
       });
 }
 
 nsresult ServiceWorkerPrivate::SendLifeCycleEvent(
-    const nsAString& aEventType, RefPtr<LifeCycleEventCallback> aCallback) {
+    const nsAString& aEventType,
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension,
+    const RefPtr<LifeCycleEventCallback>& aCallback) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aCallback);
 
   return ExecServiceWorkerOp(
       ServiceWorkerLifeCycleEventOpArgs(nsString(aEventType)),
+      aLifetimeExtension,
       [callback = aCallback](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
 
@@ -895,11 +921,10 @@ nsresult ServiceWorkerPrivate::SendPushEvent(
 nsresult ServiceWorkerPrivate::SendPushEventInternal(
     RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
     ServiceWorkerPushEventOpArgs&& aArgs) {
-  AssertIsOnMainThread();
   MOZ_ASSERT(aRegistration);
 
   return ExecServiceWorkerOp(
-      std::move(aArgs),
+      std::move(aArgs), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
       [registration = aRegistration](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
 
@@ -915,6 +940,7 @@ nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent() {
 
   return ExecServiceWorkerOp(
       ServiceWorkerPushSubscriptionChangeEventOpArgs(),
+      ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
       [](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
       });
@@ -950,7 +976,8 @@ nsresult ServiceWorkerPrivate::SendNotificationEvent(
   args.disableOpenClickDelay() = gDOMDisableOpenClickDelay;
 
   return ExecServiceWorkerOp(
-      std::move(args), [](ServiceWorkerOpResult&& aResult) {
+      std::move(args), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
+      [](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
       });
 }
@@ -1070,7 +1097,8 @@ nsresult ServiceWorkerPrivate::SendFetchEventInternal(
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  MOZ_TRY(SpawnWorkerIfNeeded());
+  MOZ_TRY(SpawnWorkerIfNeeded(
+      ServiceWorkerLifetimeExtension(FullLifetimeExtension{})));
   MOZ_TRY(MaybeStoreStreamForBackgroundThread(
       aChannel, aArgs.common().internalRequest()));
 
@@ -1108,7 +1136,7 @@ ServiceWorkerPrivate::WakeForExtensionAPIEvent(
       MakeRefPtr<PromiseExtensionWorkerHasListener::Private>(__func__);
 
   nsresult rv = ExecServiceWorkerOp(
-      std::move(args),
+      std::move(args), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),
       [promise](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(
             aResult.type() ==
@@ -1126,16 +1154,27 @@ ServiceWorkerPrivate::WakeForExtensionAPIEvent(
   return outPromise;
 }
 
-nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded() {
+nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension) {
   AssertIsOnMainThread();
 
+  
   if (mControllerChild) {
-    RenewKeepAliveToken();
+    
+    
+    if (aLifetimeExtension.LifetimeExtendsIntoTheFuture()) {
+      RenewKeepAliveToken(aLifetimeExtension);
+    }
     return NS_OK;
   }
 
   if (!mInfo) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  
+  if (NS_WARN_IF(!aLifetimeExtension.LifetimeExtendsIntoTheFuture())) {
+    return NS_ERROR_DOM_TIMEOUT_ERR;
   }
 
   mServiceWorkerLaunchTimeStart = TimeStamp::Now();
@@ -1174,6 +1213,8 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded() {
 
   RefreshRemoteWorkerData(regInfo);
 
+  mLaunchCount++;
+
   RefPtr<RemoteWorkerControllerChild> controllerChild =
       new RemoteWorkerControllerChild(this);
 
@@ -1181,6 +1222,8 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded() {
           controllerChild, mRemoteWorkerData))) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
+
+  mPendingSpawnLifetime = aLifetimeExtension;
 
   mControllerChild = new RAIIActorPtrHolder(controllerChild.forget());
 
@@ -1192,11 +1235,31 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded() {
   return NS_OK;
 }
 
-void ServiceWorkerPrivate::TerminateWorker() {
+void ServiceWorkerPrivate::TerminateWorker(
+    Maybe<RefPtr<Promise>> aMaybePromise) {
   MOZ_ASSERT(NS_IsMainThread());
   mIdleWorkerTimer->Cancel();
+  mIdleDeadline = TimeStamp();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Shutdown(std::move(aMaybePromise));
+  
   mIdleKeepAliveToken = nullptr;
-  Shutdown();
 }
 
 void ServiceWorkerPrivate::NoteDeadServiceWorkerInfo() {
@@ -1215,6 +1278,10 @@ void ServiceWorkerPrivate::UpdateState(ServiceWorkerState aState) {
 
   nsresult rv = ExecServiceWorkerOp(
       ServiceWorkerUpdateStateOpArgs(aState),
+      
+      
+      
+      ServiceWorkerLifetimeExtension(NoLifetimeExtension{}),
       [](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
       });
@@ -1249,7 +1316,8 @@ nsresult ServiceWorkerPrivate::AttachDebugger() {
   
   
   if (!mDebuggerCount) {
-    nsresult rv = SpawnWorkerIfNeeded();
+    nsresult rv = SpawnWorkerIfNeeded(
+        ServiceWorkerLifetimeExtension(FullLifetimeExtension{}));
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -1265,7 +1333,8 @@ nsresult ServiceWorkerPrivate::AttachDebugger() {
 
 
 
-    RenewKeepAliveToken();
+    RenewKeepAliveToken(
+        ServiceWorkerLifetimeExtension(FullLifetimeExtension{}));
     mIdleWorkerTimer->Cancel();
   }
 
@@ -1287,7 +1356,7 @@ nsresult ServiceWorkerPrivate::DetachDebugger() {
   
   if (!mDebuggerCount) {
     if (mTokenCount) {
-      ResetIdleTimeout();
+      ResetIdleTimeout(ServiceWorkerLifetimeExtension(FullLifetimeExtension{}));
     } else {
       TerminateWorker();
     }
@@ -1357,6 +1426,8 @@ void ServiceWorkerPrivate::NoteIdleWorkerCallback(nsITimer* aTimer) {
 
   
   mIdleKeepAliveToken = nullptr;
+  
+  mIdleDeadline = TimeStamp();
 
   if (mControllerChild) {
     
@@ -1387,7 +1458,8 @@ void ServiceWorkerPrivate::TerminateWorkerCallback(nsITimer* aTimer) {
   TerminateWorker();
 }
 
-void ServiceWorkerPrivate::RenewKeepAliveToken() {
+void ServiceWorkerPrivate::RenewKeepAliveToken(
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension) {
   
   MOZ_ASSERT(mControllerChild);
 
@@ -1395,7 +1467,7 @@ void ServiceWorkerPrivate::RenewKeepAliveToken() {
   
   
   if (!mDebuggerCount) {
-    ResetIdleTimeout();
+    ResetIdleTimeout(aLifetimeExtension);
   }
 
   if (!mIdleKeepAliveToken) {
@@ -1403,12 +1475,55 @@ void ServiceWorkerPrivate::RenewKeepAliveToken() {
   }
 }
 
-void ServiceWorkerPrivate::ResetIdleTimeout() {
-  uint32_t timeout = Preferences::GetInt("dom.serviceWorkers.idle_timeout");
+void ServiceWorkerPrivate::ResetIdleTimeout(
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension) {
+  TimeStamp now = TimeStamp::NowLoRes();
+  TimeStamp existing = mIdleDeadline;
+  
+  
+  TimeStamp normalizedExtension = aLifetimeExtension.match(
+      
+      [](const NoLifetimeExtension& nle) { return TimeStamp(); },
+      [&existing, &now](const PropagatedLifetimeExtension& ple) {
+        
+        if (ple.mDeadline.IsNull() || ple.mDeadline < now) {
+          return TimeStamp();
+        }
+        
+        
+        if (existing.IsNull() || ple.mDeadline > existing) {
+          return ple.mDeadline;
+        }
+        
+        
+        return TimeStamp();
+      },
+      [&now](const FullLifetimeExtension& fle) {
+        return now + TimeDuration::FromMilliseconds(Preferences::GetInt(
+                         "dom.serviceWorkers.idle_timeout"));
+      });
+
+  if (normalizedExtension.IsNull()) {
+    
+    
+    
+    
+    MOZ_ASSERT(!existing.IsNull());
+    if (NS_WARN_IF(existing.IsNull())) {
+      normalizedExtension = now;
+    } else {
+      
+      return;
+    }
+  }
+
+  mIdleDeadline = normalizedExtension;
+
   nsCOMPtr<nsITimerCallback> cb = new ServiceWorkerPrivateTimerCallback(
       this, &ServiceWorkerPrivate::NoteIdleWorkerCallback);
-  DebugOnly<nsresult> rv =
-      mIdleWorkerTimer->InitWithCallback(cb, timeout, nsITimer::TYPE_ONE_SHOT);
+  
+  DebugOnly<nsresult> rv = mIdleWorkerTimer->InitHighResolutionWithCallback(
+      cb, mIdleDeadline - now, nsITimer::TYPE_ONE_SHOT);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
@@ -1486,7 +1601,13 @@ RefPtr<GenericPromise> ServiceWorkerPrivate::SetSkipWaitingFlag() {
   RefPtr<GenericPromise::Private> promise =
       new GenericPromise::Private(__func__);
 
-  regInfo->TryToActivateAsync([promise] { promise->Resolve(true, __func__); });
+  
+  
+  
+  auto lifetime = ServiceWorkerLifetimeExtension(NoLifetimeExtension{});
+
+  regInfo->TryToActivateAsync(lifetime,
+                              [promise] { promise->Resolve(true, __func__); });
 
   return promise;
 }
@@ -1527,6 +1648,7 @@ void ServiceWorkerPrivate::CreationFailed() {
                                    mServiceWorkerLaunchTimeStart);
   }
 
+  mPendingSpawnLifetime = ServiceWorkerLifetimeExtension(NoLifetimeExtension{});
   Shutdown();
 }
 
@@ -1534,7 +1656,15 @@ void ServiceWorkerPrivate::CreationSucceeded() {
   AssertIsOnMainThread();
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mInfo);
-  MOZ_ASSERT(mControllerChild);
+
+  
+  
+  
+  if (NS_WARN_IF(!mControllerChild)) {
+    mPendingSpawnLifetime =
+        ServiceWorkerLifetimeExtension(NoLifetimeExtension{});
+    return;
+  }
 
   if (mRemoteWorkerData.remoteType().Find(SERVICEWORKER_REMOTE_TYPE) !=
       kNotFound) {
@@ -1546,7 +1676,8 @@ void ServiceWorkerPrivate::CreationSucceeded() {
                                    mServiceWorkerLaunchTimeStart);
   }
 
-  RenewKeepAliveToken();
+  RenewKeepAliveToken(mPendingSpawnLifetime);
+  mPendingSpawnLifetime = ServiceWorkerLifetimeExtension(NoLifetimeExtension{});
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   nsCOMPtr<nsIPrincipal> principal = mInfo->Principal();
@@ -1662,7 +1793,7 @@ RefPtr<FetchServicePromises> ServiceWorkerPrivate::SetupNavigationPreload(
   return FetchService::NetworkErrorResponse(NS_ERROR_UNEXPECTED);
 }
 
-void ServiceWorkerPrivate::Shutdown() {
+void ServiceWorkerPrivate::Shutdown(Maybe<RefPtr<Promise>>&& aMaybePromise) {
   AssertIsOnMainThread();
 
   if (mControllerChild) {
@@ -1677,6 +1808,18 @@ void ServiceWorkerPrivate::Shutdown() {
     RefPtr<GenericNonExclusivePromise> promise =
         ShutdownInternal(shutdownStateId);
     swm->BlockShutdownOn(promise, shutdownStateId);
+    if (aMaybePromise.isSome() && aMaybePromise.ref()) {
+      promise->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [listener = aMaybePromise.ref()] {
+            listener->MaybeResolveWithUndefined();
+          },
+          [listener = aMaybePromise.ref()] {
+            listener->MaybeResolveWithUndefined();
+          });
+    }
+  } else if (aMaybePromise.isSome() && aMaybePromise.ref()) {
+    aMaybePromise.ref()->MaybeResolveWithUndefined();
   }
 
   MOZ_ASSERT(!mControllerChild);
@@ -1703,6 +1846,11 @@ RefPtr<GenericNonExclusivePromise> ServiceWorkerPrivate::ShutdownInternal(
 
   Unused << ExecServiceWorkerOp(
       ServiceWorkerTerminateWorkerOpArgs(aShutdownStateId),
+      
+      
+      
+      
+      ServiceWorkerLifetimeExtension(NoLifetimeExtension{}),
       [promise](ServiceWorkerOpResult&& aResult) {
         MOZ_ASSERT(aResult.type() == ServiceWorkerOpResult::Tnsresult);
         promise->Resolve(true, __func__);
@@ -1723,6 +1871,7 @@ RefPtr<GenericNonExclusivePromise> ServiceWorkerPrivate::ShutdownInternal(
 
 nsresult ServiceWorkerPrivate::ExecServiceWorkerOp(
     ServiceWorkerOpArgs&& aArgs,
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension,
     std::function<void(ServiceWorkerOpResult&&)>&& aSuccessCallback,
     std::function<void()>&& aFailureCallback) {
   AssertIsOnMainThread();
@@ -1733,7 +1882,7 @@ nsresult ServiceWorkerPrivate::ExecServiceWorkerOp(
       "actors!");
   MOZ_ASSERT(aSuccessCallback);
 
-  nsresult rv = SpawnWorkerIfNeeded();
+  nsresult rv = SpawnWorkerIfNeeded(aLifetimeExtension);
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aFailureCallback();

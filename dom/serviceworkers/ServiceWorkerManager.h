@@ -19,6 +19,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ClientHandle.h"
 #include "mozilla/dom/ClientOpPromise.h"
+#include "mozilla/dom/ServiceWorkerLifetimeExtension.h"
 #include "mozilla/dom/ServiceWorkerRegistrationBinding.h"
 #include "mozilla/dom/ServiceWorkerRegistrationInfo.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
@@ -101,6 +102,7 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
                                    public nsIObserver {
   friend class GetRegistrationsRunnable;
   friend class GetRegistrationRunnable;
+  friend class ServiceWorkerInfo;
   friend class ServiceWorkerJob;
   friend class ServiceWorkerRegistrationInfo;
   friend class ServiceWorkerShutdownBlocker;
@@ -112,6 +114,18 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   NS_DECL_ISUPPORTS
   NS_DECL_NSISERVICEWORKERMANAGER
   NS_DECL_NSIOBSERVER
+
+  
+  
+  
+  ServiceWorkerLifetimeExtension DetermineLifetimeForClient(
+      const ClientInfo& aClientInfo);
+
+  
+  
+  
+  ServiceWorkerLifetimeExtension DetermineLifetimeForServiceWorker(
+      const ServiceWorkerDescriptor& aServiceWorker);
 
   
   
@@ -316,22 +330,43 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   ServiceWorkerInfo* GetActiveWorkerInfoForScope(
       const OriginAttributes& aOriginAttributes, const nsACString& aScope);
 
+  
+  
+  
+  
+  ServiceWorkerInfo* GetServiceWorkerByClientInfo(
+      const ClientInfo& aClientInfo) const;
+
+  
+  
+  ServiceWorkerInfo* GetServiceWorkerByDescriptor(
+      const ServiceWorkerDescriptor& aServiceWorker) const;
+
   void StopControllingRegistration(
       ServiceWorkerRegistrationInfo* aRegistration);
 
+  
+  
+  
   already_AddRefed<ServiceWorkerRegistrationInfo>
   GetServiceWorkerRegistrationInfo(const ClientInfo& aClientInfo) const;
 
+  
+  
+  
+  
+  
   already_AddRefed<ServiceWorkerRegistrationInfo>
   GetServiceWorkerRegistrationInfo(nsIPrincipal* aPrincipal,
                                    nsIURI* aURI) const;
 
+  
+  
+  
   already_AddRefed<ServiceWorkerRegistrationInfo>
   GetServiceWorkerRegistrationInfo(const nsACString& aScopeKey,
                                    nsIURI* aURI) const;
 
-  
-  
   static nsresult PrincipalToScopeKey(nsIPrincipal* aPrincipal,
                                       nsACString& aKey);
 

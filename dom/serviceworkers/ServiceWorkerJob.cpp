@@ -166,8 +166,6 @@ void ServiceWorkerJob::Finish(ErrorResult& aRv) {
 
   
   
-  
-  MOZ_DIAGNOSTIC_ASSERT(mState == State::Started);
   if (mState != State::Started) {
     return;
   }
