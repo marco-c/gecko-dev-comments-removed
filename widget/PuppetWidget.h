@@ -303,6 +303,8 @@ class PuppetWidget final : public nsBaseWidget,
  private:
   void Paint();
 
+  void SetChild(PuppetWidget* aChild);
+
   nsresult RequestIMEToCommitComposition(bool aCancel);
   nsresult NotifyIMEOfFocusChange(const IMENotification& aIMENotification);
   nsresult NotifyIMEOfSelectionChange(const IMENotification& aIMENotification);
@@ -345,8 +347,14 @@ class PuppetWidget final : public nsBaseWidget,
   
   
   BrowserChild* mBrowserChild;
+  
+  
+  RefPtr<PuppetWidget> mChild;
   nsRevocableEventPtr<WidgetPaintTask> mWidgetPaintTask;
   RefPtr<layers::MemoryPressureObserver> mMemoryPressureObserver;
+  
+  
+  RefPtr<DrawTarget> mDrawTarget;
   
   IMENotificationRequests mIMENotificationRequestsOfParent;
   InputContext mInputContext;

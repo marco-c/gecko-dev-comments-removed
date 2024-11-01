@@ -662,13 +662,21 @@ void nsViewManager::DispatchEvent(WidgetGUIEvent* aEvent, nsView* aView,
 void nsViewManager::ReparentChildWidgets(nsView* aView, nsIWidget* aNewWidget) {
   MOZ_ASSERT(aNewWidget, "null widget");
 
-  if (nsIWidget* widget = aView->GetWidget()) {
+  if (aView->HasWidget()) {
     
     
     
     
-    if (widget->GetParent() != aNewWidget) {
-      widget->SetParent(aNewWidget);
+    nsIWidget* widget = aView->GetWidget();
+    nsIWidget* parentWidget = widget->GetParent();
+    if (parentWidget) {
+      
+      if (parentWidget != aNewWidget) {
+        widget->SetParent(aNewWidget);
+      }
+    } else {
+      
+      widget->ReparentNativeWidget(aNewWidget);
     }
     return;
   }

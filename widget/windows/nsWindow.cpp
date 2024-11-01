@@ -874,15 +874,24 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   MOZ_DIAGNOSTIC_ASSERT(aInitData->mWindowType != WindowType::Invisible);
 
+  nsIWidget* baseParent = aInitData->mWindowType == WindowType::Dialog ||
+                                  aInitData->mWindowType == WindowType::TopLevel
+                              ? nullptr
+                              : aParent;
+
+  mIsTopWidgetWindow = (nullptr == baseParent);
   mBounds = aRect;
 
   
   nsToolkit::GetToolkit();
 
-  BaseCreate(aParent, aInitData);
+  BaseCreate(baseParent, aInitData);
 
-  HWND parent =
-      aParent ? (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW) : nullptr;
+  HWND parent = nullptr;
+  if (aParent) {  
+    parent = (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW);
+    mParent = aParent;
+  }
 
   mIsRTL = aInitData->mRTL;
   mOpeningAnimationSuppressed = aInitData->mIsAnimationSuppressed;
@@ -1447,14 +1456,60 @@ void nsWindow::DissociateFromNativeWindow() {
   mPrevWndProc.reset();
 }
 
-void nsWindow::DidChangeParent(nsIWidget*) {
-  if (mWindowType == WindowType::Popup || !mWnd) {
+
+
+
+
+
+
+
+
+
+
+void nsWindow::SetParent(nsIWidget* aNewParent) {
+  nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
+  nsIWidget* parent = GetParent();
+  if (parent) {
+    parent->RemoveChild(this);
+  }
+
+  mParent = aNewParent;
+
+  if (aNewParent) {
+    ReparentNativeWidget(aNewParent);
+    aNewParent->AddChild(this);
     return;
   }
-  HWND newParent =
-      mParent ? (HWND)mParent->GetNativeData(NS_NATIVE_WINDOW) : nullptr;
-  ::SetParent(mWnd, newParent);
-  RecreateDirectManipulationIfNeeded();
+  if (mWnd) {
+    
+    VERIFY(::SetParent(mWnd, nullptr));
+    RecreateDirectManipulationIfNeeded();
+  }
+}
+
+void nsWindow::ReparentNativeWidget(nsIWidget* aNewParent) {
+  MOZ_ASSERT(aNewParent, "null widget");
+
+  mParent = aNewParent;
+  if (mWindowType == WindowType::Popup) {
+    return;
+  }
+  HWND newParent = (HWND)aNewParent->GetNativeData(NS_NATIVE_WINDOW);
+  NS_ASSERTION(newParent, "Parent widget has a null native window handle");
+  if (newParent && mWnd) {
+    ::SetParent(mWnd, newParent);
+    RecreateDirectManipulationIfNeeded();
+  }
+}
+
+nsIWidget* nsWindow::GetParent(void) {
+  if (mIsTopWidgetWindow) {
+    return nullptr;
+  }
+  if (mInDtor || mOnDestroyCalled) {
+    return nullptr;
+  }
+  return mParent;
 }
 
 static int32_t RoundDown(double aDouble) {
@@ -1488,7 +1543,7 @@ nsWindow* nsWindow::GetParentWindow(bool aIncludeOwner) {
 }
 
 nsWindow* nsWindow::GetParentWindowBase(bool aIncludeOwner) {
-  if (IsTopLevelWidget()) {
+  if (mIsTopWidgetWindow) {
     
     
     
@@ -1919,7 +1974,7 @@ void nsWindow::Move(double aX, double aY) {
 #ifdef DEBUG
     
     
-    if (IsTopLevelWidget()) {  
+    if (mIsTopWidgetWindow) {  
       
       
       HDC dc = ::GetDC(mWnd);
@@ -2226,10 +2281,8 @@ void nsWindow::SuppressAnimation(bool aSuppress) {
 
 
 void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
-  if (!IsTopLevelWidget()) {
-    
+  if (!mIsTopWidgetWindow)  
     return;
-  }
 
   double dpiScale = GetDesktopToDeviceScale().scale;
 
@@ -2709,7 +2762,9 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
 }
 
 nsresult nsWindow::SetNonClientMargins(const LayoutDeviceIntMargin& margins) {
-  if (!IsTopLevelWidget() || mBorderStyle == BorderStyle::None) {
+  if (!mIsTopWidgetWindow || mBorderStyle == BorderStyle::None ||
+      margins.top < -1 || margins.bottom < -1 || margins.left < -1 ||
+      margins.right < -1) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -5601,7 +5656,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
           } else {
             sJustGotDeactivate = true;
           }
-          if (IsTopLevelWidget()) {
+          if (mIsTopWidgetWindow) {
             mLastKeyboardLayout = KeyboardLayout::GetLayout();
           }
         } else {
@@ -6860,6 +6915,13 @@ void nsWindow::OnDestroy() {
 
   
   nsBaseWidget::OnDestroy();
+
+  
+  
+  
+  
+  
+  mParent = nullptr;
 
   
   
