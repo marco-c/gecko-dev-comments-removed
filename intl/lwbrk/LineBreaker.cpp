@@ -1105,14 +1105,28 @@ void LineBreaker::ComputeBreakPositions(
     }
 
     
-    LineBreakCache::Key key{aChars, aLength, aWordBreak, aLevel,
-                            aIsChineseOrJapanese};
-    auto entry = LineBreakCache::Cache()->Lookup(key);
-    if (entry) {
-      auto& breakBefore = entry.Data().mBreaks;
-      LineBreakCache::CopyAndFill(breakBefore, aBreakBefore,
-                                  aBreakBefore + aLength);
-      return;
+    
+    
+    bool useCache = [=]() {
+      const uint32_t kStride = 8;
+      for (uint32_t i = 0; i < aLength; i += kStride) {
+        if (intl::UnicodeProperties::IsScriptioContinua(aChars[i])) {
+          return true;
+        }
+      }
+      return false;
+    }();
+    Maybe<LineBreakCache::Entry> entry;
+    if (useCache) {
+      LineBreakCache::KeyType key{aChars, aLength, aWordBreak, aLevel,
+                                  aIsChineseOrJapanese};
+      entry.emplace(LineBreakCache::Cache()->Lookup(key));
+      if (*entry) {
+        auto& breakBefore = entry->Data().mBreaks;
+        LineBreakCache::CopyAndFill(breakBefore, aBreakBefore,
+                                    aBreakBefore + aLength);
+        return;
+      }
     }
 
     memset(aBreakBefore, 0, aLength);
@@ -1140,19 +1154,21 @@ void LineBreaker::ComputeBreakPositions(
       }
     }
 
-    
-    
-    auto* afterLastTrue = aBreakBefore + aLength;
-    while (!*(afterLastTrue - 1)) {
-      if (--afterLastTrue == aBreakBefore) {
-        break;
+    if (useCache) {
+      
+      
+      auto* afterLastTrue = aBreakBefore + aLength;
+      while (!*(afterLastTrue - 1)) {
+        if (--afterLastTrue == aBreakBefore) {
+          break;
+        }
       }
-    }
 
-    entry.Set(LineBreakCache::Entry{
-        nsString(aChars, aLength),
-        nsTArray<uint8_t>(aBreakBefore, afterLastTrue - aBreakBefore),
-        aWordBreak, aLevel, aIsChineseOrJapanese});
+      entry->Set(LineBreakCache::EntryType{
+          nsString(aChars, aLength),
+          nsTArray<uint8_t>(aBreakBefore, afterLastTrue - aBreakBefore),
+          aWordBreak, aLevel, aIsChineseOrJapanese});
+    }
 
     return;
   }

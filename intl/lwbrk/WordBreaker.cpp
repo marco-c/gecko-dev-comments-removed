@@ -42,21 +42,6 @@ using mozilla::unicode::GetGenCategory;
 #define IS_HALFWIDTHKATAKANA(c) ((0xFF60 <= (c)) && ((c) <= 0xFF9F))
 
 
-
-
-
-
-
-
-
-static bool IsScriptioContinua(char16_t aChar) {
-  Script sc = UnicodeProperties::GetScriptCode(aChar);
-  return sc == Script::THAI || sc == Script::MYANMAR || sc == Script::KHMER ||
-         sc == Script::JAVANESE || sc == Script::BALINESE ||
-         sc == Script::SUNDANESE || sc == Script::LAO;
-}
-
-
 WordBreaker::WordBreakClass WordBreaker::GetClass(char16_t c) {
   
 
@@ -77,7 +62,7 @@ WordBreaker::WordBreakClass WordBreaker::GetClass(char16_t c) {
     if (GetGenCategory(c) == nsUGenCategory::kPunctuation) {
       return kWbClassPunct;
     }
-    if (IsScriptioContinua(c)) {
+    if (UnicodeProperties::IsScriptioContinua(c)) {
       return kWbClassScriptioContinua;
     }
     return kWbClassAlphaLetter;
@@ -97,7 +82,7 @@ WordBreaker::WordBreakClass WordBreaker::GetClass(char16_t c) {
   if (GetGenCategory(c) == nsUGenCategory::kPunctuation) {
     return kWbClassPunct;
   }
-  if (IsScriptioContinua(c)) {
+  if (UnicodeProperties::IsScriptioContinua(c)) {
     return kWbClassScriptioContinua;
   }
   return kWbClassAlphaLetter;

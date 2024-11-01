@@ -255,6 +255,16 @@ class UnicodeProperties final {
   
   
   
+  static bool IsScriptioContinua(char16_t aChar) {
+    Script sc = GetScriptCode(aChar);
+    return sc == Script::THAI || sc == Script::MYANMAR || sc == Script::KHMER ||
+           sc == Script::JAVANESE || sc == Script::BALINESE ||
+           sc == Script::SUNDANESE || sc == Script::LAO;
+  }
+
+  
+  
+  
   static constexpr size_t kMaxScripts = 32;
 
   using ScriptExtensionVector = Vector<Script, kMaxScripts>;
