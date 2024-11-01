@@ -38,9 +38,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JSContext* mCx;
 
   
-  JS::Rooted<JS::Value> mRetValue;
-
-  
   JS::Rooted<JSScript*> mScript;
 
   
@@ -60,9 +57,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   bool mKeepStencil = false;
 
 #ifdef DEBUG
-  
-  bool mWantsReturnValue;
-
   bool mScriptUsed;
 #endif
 
@@ -90,7 +84,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
   ~JSExecutionContext() {
     
-    MOZ_ASSERT_IF(!mSkip, !mWantsReturnValue);
+    
 
     
     
