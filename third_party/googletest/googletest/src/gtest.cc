@@ -1661,9 +1661,24 @@ std::string GetBoolAssertionFailureMessage(
 }
 
 
+
+
+
 AssertionResult DoubleNearPredFormat(const char* expr1, const char* expr2,
                                      const char* abs_error_expr, double val1,
                                      double val2, double abs_error) {
+  
+  
+  
+  
+  
+  
+  if (std::isinf(val1) && std::isinf(val2) &&
+      (std::signbit(val1) == std::signbit(val2) ||
+       (abs_error > 0.0 && std::isinf(abs_error)))) {
+    return AssertionSuccess();
+  }
+
   const double diff = fabs(val1 - val2);
   if (diff <= abs_error) return AssertionSuccess();
 

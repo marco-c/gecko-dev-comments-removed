@@ -562,6 +562,11 @@ Matcher<T> A();
 namespace internal {
 
 
+struct Rank0 {};
+struct Rank1 : Rank0 {};
+using HighestRank = Rank1;
+
+
 inline void PrintIfNotEmpty(const std::string& explanation,
                             ::std::ostream* os) {
   if (!explanation.empty() && os != nullptr) {
@@ -1419,34 +1424,55 @@ class AnyOfMatcherImpl : public MatcherInterface<const T&> {
 
   bool MatchAndExplain(const T& x,
                        MatchResultListener* listener) const override {
+    
+    
+    
     std::string no_match_result;
-
-    
-    
-    for (size_t i = 0; i < matchers_.size(); ++i) {
+    for (const Matcher<T>& matcher : matchers_) {
       StringMatchResultListener slistener;
-      if (matchers_[i].MatchAndExplain(x, &slistener)) {
-        *listener << slistener.str();
-        return true;
-      } else {
-        if (no_match_result.empty()) {
-          no_match_result = slistener.str();
+      
+      if (matcher.MatchAndExplain(x, &slistener)) {
+        const std::string explanation = slistener.str();
+        if (!explanation.empty()) {
+          *listener << explanation;
         } else {
-          std::string result = slistener.str();
-          if (!result.empty()) {
-            no_match_result += ", and ";
-            no_match_result += result;
-          }
+          *listener << "which matches (" << Describe(matcher) << ")";
+        }
+        return true;
+      }
+      
+      std::string explanation = slistener.str();
+      if (explanation.empty()) {
+        explanation = DescribeNegation(matcher);
+      }
+      if (no_match_result.empty()) {
+        no_match_result = explanation;
+      } else {
+        if (!explanation.empty()) {
+          no_match_result += ", and ";
+          no_match_result += explanation;
         }
       }
     }
 
-    
     *listener << no_match_result;
     return false;
   }
 
  private:
+  
+  std::string Describe(const Matcher<T>& matcher) const {
+    StringMatchResultListener listener;
+    matcher.DescribeTo(listener.stream());
+    return listener.str();
+  }
+
+  std::string DescribeNegation(const Matcher<T>& matcher) const {
+    StringMatchResultListener listener;
+    matcher.DescribeNegationTo(listener.stream());
+    return listener.str();
+  }
+
   const std::vector<Matcher<T>> matchers_;
 };
 
@@ -1497,7 +1523,7 @@ class SomeOfArrayMatcher {
   }
 
  private:
-  const ::std::vector<T> matchers_;
+  const std::vector<std::remove_const_t<T>> matchers_;
 };
 
 template <typename T>
@@ -2934,10 +2960,6 @@ class EachMatcher {
   const M inner_matcher_;
 };
 
-
-struct Rank0 {};
-struct Rank1 : Rank0 {};
-
 namespace pair_getters {
 using std::get;
 template <typename T>
@@ -3783,7 +3805,7 @@ class UnorderedElementsAreArrayMatcher {
 
  private:
   UnorderedMatcherRequire::Flags match_flags_;
-  ::std::vector<T> matchers_;
+  std::vector<std::remove_const_t<T>> matchers_;
 };
 
 
@@ -3804,7 +3826,7 @@ class ElementsAreArrayMatcher {
   }
 
  private:
-  const ::std::vector<T> matchers_;
+  const std::vector<std::remove_const_t<T>> matchers_;
 };
 
 
@@ -3892,6 +3914,21 @@ GTEST_API_ std::string FormatMatcherDescription(
     const std::vector<const char*>& param_names, const Strings& param_values);
 
 
+
+template <typename Optional>
+auto IsOptionalEngaged(const Optional& optional,
+                       Rank1) -> decltype(!!optional) {
+  
+  
+  return !static_cast<bool>(!optional);
+}
+template <typename Optional>
+auto IsOptionalEngaged(const Optional& optional,
+                       Rank0) -> decltype(!optional.has_value()) {
+  return optional.has_value();
+}
+
+
 template <typename ValueMatcher>
 class OptionalMatcher {
  public:
@@ -3923,7 +3960,7 @@ class OptionalMatcher {
 
     bool MatchAndExplain(Optional optional,
                          MatchResultListener* listener) const override {
-      if (!optional) {
+      if (!IsOptionalEngaged(optional, HighestRank())) {
         *listener << "which is not engaged";
         return false;
       }
@@ -4756,9 +4793,10 @@ Pointwise(const TupleMatcher& tuple_matcher, const Container& rhs) {
 
 
 template <typename TupleMatcher, typename T>
-inline internal::PointwiseMatcher<TupleMatcher, std::vector<T>> Pointwise(
-    const TupleMatcher& tuple_matcher, std::initializer_list<T> rhs) {
-  return Pointwise(tuple_matcher, std::vector<T>(rhs));
+inline internal::PointwiseMatcher<TupleMatcher,
+                                  std::vector<std::remove_const_t<T>>>
+Pointwise(const TupleMatcher& tuple_matcher, std::initializer_list<T> rhs) {
+  return Pointwise(tuple_matcher, std::vector<std::remove_const_t<T>>(rhs));
 }
 
 
@@ -5243,6 +5281,7 @@ template <typename InnerMatcher>
 inline InnerMatcher AllArgs(const InnerMatcher& matcher) {
   return matcher;
 }
+
 
 
 
