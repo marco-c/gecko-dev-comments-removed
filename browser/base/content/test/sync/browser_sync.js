@@ -3,9 +3,12 @@
 
 "use strict";
 
-const { CustomizableUITestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/CustomizableUITestUtils.sys.mjs"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  CustomizableUITestUtils:
+    "resource://testing-common/CustomizableUITestUtils.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
+});
 
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
@@ -718,6 +721,105 @@ add_task(async function test_experiment_ui_state_signedin() {
     false
   );
   await closeTabAndMainPanel();
+});
+
+add_task(async function test_new_sync_setup_ui_exp_enabled() {
+  
+  await ExperimentAPI.ready();
+  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+    featureId: NimbusFeatures.syncDecouplingUpdates.featureId,
+    value: {
+      syncSetup: true,
+    },
+  });
+
+  let state = {
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: false,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+  };
+
+  gSync.updateAllUI(state);
+
+  await openFxaPanel();
+
+  checkMenuBarItem("sync-enable");
+  checkPanelHeader();
+
+  checkFxaToolbarButtonPanel({
+    headerTitle: "Manage account",
+    headerDescription: "Foo Bar",
+    enabledItems: [
+      "PanelUI-fxa-menu-sendtab-button",
+      "PanelUI-fxa-menu-setup-sync-container", 
+      "PanelUI-fxa-menu-account-signout-button",
+    ],
+    disabledItems: [],
+    hiddenItems: [
+      "PanelUI-fxa-menu-syncnow-button",
+      "PanelUI-fxa-menu-sync-prefs-button",
+      "PanelUI-fxa-menu-connect-device-button", 
+      "PanelUI-fxa-menu-setup-sync-button", 
+    ],
+  });
+
+  await closeFxaPanel();
+  await doCleanup();
+
+  
+  
+  let newSyncSetup = document.getElementById(
+    "PanelUI-fxa-menu-setup-sync-container"
+  );
+  newSyncSetup.setAttribute("hidden", true);
+});
+
+add_task(async function test_new_sync_setup_ui_no_exp() {
+  
+  await ExperimentAPI.ready();
+  let doCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+    featureId: NimbusFeatures.syncDecouplingUpdates.featureId,
+    value: {
+      syncSetup: false,
+    },
+  });
+
+  let state = {
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: false,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+  };
+
+  gSync.updateAllUI(state);
+
+  await openFxaPanel();
+
+  checkMenuBarItem("sync-enable");
+  checkPanelHeader();
+
+  checkFxaToolbarButtonPanel({
+    headerTitle: "Manage account",
+    headerDescription: "Foo Bar",
+    enabledItems: [
+      "PanelUI-fxa-menu-sendtab-button",
+      "PanelUI-fxa-menu-connect-device-button",
+      "PanelUI-fxa-menu-setup-sync-button", 
+      "PanelUI-fxa-menu-account-signout-button",
+    ],
+    disabledItems: [],
+    hiddenItems: [
+      "PanelUI-fxa-menu-syncnow-button",
+      "PanelUI-fxa-menu-sync-prefs-button",
+      "PanelUI-fxa-menu-setup-sync-container", 
+    ],
+  });
+
+  await doCleanup();
+  await closeFxaPanel();
 });
 
 function checkPanelUIStatusBar({
