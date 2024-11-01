@@ -33,10 +33,8 @@ U_NAMESPACE_BEGIN
 class StringEnumeration;
 class MeasureUnitImpl;
 
-namespace number {
-namespace impl {
+namespace number::impl {
 class LongNameHandler;
-}
 } 
 
 
@@ -107,13 +105,34 @@ typedef enum UMeasurePrefix {
 
     UMEASURE_PREFIX_YOTTA = UMEASURE_PREFIX_ONE + 24,
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    UMEASURE_PREFIX_RONNA = UMEASURE_PREFIX_ONE + 27,
+
+    
+
+
+
+
+    UMEASURE_PREFIX_QUETTA = UMEASURE_PREFIX_ONE + 30,
+#endif  
+
 #ifndef U_HIDE_INTERNAL_API
     
 
 
 
 
+#ifndef U_HIDE_DRAFT_API
+    UMEASURE_PREFIX_INTERNAL_MAX_SI = UMEASURE_PREFIX_QUETTA,
+#else  
     UMEASURE_PREFIX_INTERNAL_MAX_SI = UMEASURE_PREFIX_YOTTA,
+#endif  
+
 #endif  
 
     
@@ -249,13 +268,34 @@ typedef enum UMeasurePrefix {
 
     UMEASURE_PREFIX_YOCTO = UMEASURE_PREFIX_ONE + -24,
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    UMEASURE_PREFIX_RONTO = UMEASURE_PREFIX_ONE + -27,
+
+    
+
+
+
+
+    UMEASURE_PREFIX_QUECTO = UMEASURE_PREFIX_ONE + -30,
+#endif  
+
 #ifndef U_HIDE_INTERNAL_API
     
 
 
 
 
+#ifndef U_HIDE_DRAFT_API
+    UMEASURE_PREFIX_INTERNAL_MIN_SI = UMEASURE_PREFIX_QUECTO,
+#else  
     UMEASURE_PREFIX_INTERNAL_MIN_SI = UMEASURE_PREFIX_YOCTO,
+#endif  
+
 #endif  
 
     
@@ -370,6 +410,7 @@ class U_I18N_API MeasureUnit: public UObject {
  public:
 
     
+
 
 
 
@@ -647,7 +688,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -660,7 +701,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -1535,6 +1576,23 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+    static MeasureUnit *createNight(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getNight();
+#endif 
+
+    
+
+
+
+
+
+
     static MeasureUnit *createQuarter(UErrorCode &status);
 
     
@@ -1543,7 +1601,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getQuarter();
-#endif 
 
     
 
@@ -2592,30 +2649,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
-
-
-
-    static MeasureUnit *createMetricTon(UErrorCode &status);
-
-    
-
-
-
-
-
-
-
-
-    static MeasureUnit getMetricTon();
-
-    
-
-
-
-
-
-
     static MeasureUnit *createMicrogram(UErrorCode &status);
 
     
@@ -2737,7 +2770,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getTon();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2753,7 +2785,30 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getTonne();
-#endif 
+
+    
+
+
+
+
+
+
+
+
+
+
+    static MeasureUnit *createMetricTon(UErrorCode &status);
+
+    
+
+
+
+
+
+
+
+
+    static MeasureUnit getMetricTon();
 
     
 
@@ -2890,6 +2945,22 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+    static MeasureUnit *createGasolineEnergyDensity(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getGasolineEnergyDensity();
+
+    
+
+
+
+
+
+
     static MeasureUnit *createHectopascal(UErrorCode &status);
 
     
@@ -3011,7 +3082,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getPoundPerSquareInch();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3027,7 +3097,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getBeaufort();
-#endif 
 
     
 
@@ -3060,6 +3129,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getKnot();
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createLightSpeed(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getLightSpeed();
+#endif 
 
     
 
@@ -3800,6 +3887,6 @@ U_NAMESPACE_END
 
 #endif 
 
-#endif
+#endif 
 
 #endif

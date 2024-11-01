@@ -102,29 +102,29 @@ _findRow(UPropsVectors *pv, UChar32 rangeStart) {
 
     
     row=pv->v+prevRow*columns;
-    if(rangeStart>=(UChar32)row[0]) {
-        if(rangeStart<(UChar32)row[1]) {
+    if (rangeStart >= static_cast<UChar32>(row[0])) {
+        if (rangeStart < static_cast<UChar32>(row[1])) {
             
             return row;
-        } else if(rangeStart<(UChar32)(row+=columns)[1]) {
+        } else if (rangeStart < static_cast<UChar32>((row += columns)[1])) {
             
             pv->prevRow=prevRow+1;
             return row;
-        } else if(rangeStart<(UChar32)(row+=columns)[1]) {
+        } else if (rangeStart < static_cast<UChar32>((row += columns)[1])) {
             
             pv->prevRow=prevRow+2;
             return row;
-        } else if((rangeStart-(UChar32)row[1])<10) {
+        } else if ((rangeStart - static_cast<UChar32>(row[1])) < 10) {
             
             prevRow+=2;
             do {
                 ++prevRow;
                 row+=columns;
-            } while(rangeStart>=(UChar32)row[1]);
+            } while (rangeStart >= static_cast<UChar32>(row[1]));
             pv->prevRow=prevRow;
             return row;
         }
-    } else if(rangeStart<(UChar32)pv->v[1]) {
+    } else if (rangeStart < static_cast<UChar32>(pv->v[1])) {
         
         pv->prevRow=0;
         return pv->v;
@@ -135,9 +135,9 @@ _findRow(UPropsVectors *pv, UChar32 rangeStart) {
     while(start<limit-1) {
         i=(start+limit)/2;
         row=pv->v+i*columns;
-        if(rangeStart<(UChar32)row[0]) {
+        if (rangeStart < static_cast<UChar32>(row[0])) {
             limit=i;
-        } else if(rangeStart<(UChar32)row[1]) {
+        } else if (rangeStart < static_cast<UChar32>(row[1])) {
             pv->prevRow=i;
             return row;
         } else {
@@ -194,8 +194,8 @@ upvec_setValue(UPropsVectors *pv,
 
 
 
-    splitFirstRow= (UBool)(start!=(UChar32)firstRow[0] && value!=(firstRow[column]&mask));
-    splitLastRow= (UBool)(limit!=(UChar32)lastRow[1] && value!=(lastRow[column]&mask));
+    splitFirstRow = start != static_cast<UChar32>(firstRow[0]) && value != (firstRow[column] & mask);
+    splitLastRow = limit != static_cast<UChar32>(lastRow[1]) && value != (lastRow[column] & mask);
 
     
     if(splitFirstRow || splitLastRow) {
@@ -312,8 +312,8 @@ upvec_getRow(const UPropsVectors *pv, int32_t rowIndex,
 
 static int32_t U_CALLCONV
 upvec_compareRows(const void *context, const void *l, const void *r) {
-    const uint32_t *left=(const uint32_t *)l, *right=(const uint32_t *)r;
-    const UPropsVectors *pv=(const UPropsVectors *)context;
+    const uint32_t* left = static_cast<const uint32_t*>(l), *right = static_cast<const uint32_t*>(r);
+    const UPropsVectors* pv = static_cast<const UPropsVectors*>(context);
     int32_t i, count, columns;
 
     count=columns=pv->columns; 

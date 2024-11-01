@@ -111,7 +111,7 @@ upname_swap(const UDataSwapper *ds,
         
         if(length<32) {
             udata_printError(ds, "upname_swap(): too few bytes (%d after header) for pnames.icu\n",
-                             (int)length);
+                             static_cast<int>(length));
             *pErrorCode=U_INDEX_OUTOFBOUNDS_ERROR;
             return 0;
         }
@@ -123,7 +123,7 @@ upname_swap(const UDataSwapper *ds,
         if(length<totalSize) {
             udata_printError(ds, "upname_swap(): too few bytes (%d after header, should be %d) "
                              "for pnames.icu\n",
-                             (int)length, (int)totalSize);
+                             static_cast<int>(length), static_cast<int>(totalSize));
             *pErrorCode=U_INDEX_OUTOFBOUNDS_ERROR;
             return 0;
         }
@@ -176,13 +176,13 @@ uprops_swap(const UDataSwapper *ds,
     }
 
     
-    pInfo=(const UDataInfo *)((const char *)inData+4);
+    pInfo = reinterpret_cast<const UDataInfo*>(static_cast<const char*>(inData) + 4);
     if(!(
         pInfo->dataFormat[0]==0x55 &&   
         pInfo->dataFormat[1]==0x50 &&
         pInfo->dataFormat[2]==0x72 &&
         pInfo->dataFormat[3]==0x6f &&
-        (3<=pInfo->formatVersion[0] && pInfo->formatVersion[0]<=7) &&
+        (3<=pInfo->formatVersion[0] && pInfo->formatVersion[0]<=9) &&
         (pInfo->formatVersion[0]>=7 ||
             (pInfo->formatVersion[2]==UTRIE_SHIFT &&
              pInfo->formatVersion[3]==UTRIE_INDEX_SHIFT))
@@ -196,7 +196,7 @@ uprops_swap(const UDataSwapper *ds,
     }
 
     
-    if(length>=0 && (length-headerSize)<(int32_t)sizeof(dataIndexes)) {
+    if (length >= 0 && (length - headerSize) < static_cast<int32_t>(sizeof(dataIndexes))) {
         udata_printError(ds, "uprops_swap(): too few bytes (%d after header) for a Unicode properties file\n",
                          length-headerSize);
         *pErrorCode=U_INDEX_OUTOFBOUNDS_ERROR;
@@ -204,7 +204,7 @@ uprops_swap(const UDataSwapper *ds,
     }
 
     
-    inData32=(const int32_t *)((const char *)inData+headerSize);
+    inData32 = reinterpret_cast<const int32_t*>(static_cast<const char*>(inData) + headerSize);
     for(i=0; i<UPROPS_INDEX_COUNT; ++i) {
         dataIndexes[i]=udata_readInt32(ds, inData32[i]);
     }
@@ -231,7 +231,7 @@ uprops_swap(const UDataSwapper *ds,
             return 0;
         }
 
-        outData32=(int32_t *)((char *)outData+headerSize);
+        outData32 = reinterpret_cast<int32_t*>(static_cast<char*>(outData) + headerSize);
 
         
         if(inData32!=outData32) {
@@ -296,13 +296,21 @@ uprops_swap(const UDataSwapper *ds,
         
         ds->swapArray16(ds,
             inData32+dataIndexes[UPROPS_SCRIPT_EXTENSIONS_INDEX],
-            4*(dataIndexes[UPROPS_RESERVED_INDEX_7]-dataIndexes[UPROPS_SCRIPT_EXTENSIONS_INDEX]),
+            4*(dataIndexes[UPROPS_BLOCK_TRIE_INDEX]-dataIndexes[UPROPS_SCRIPT_EXTENSIONS_INDEX]),
             outData32+dataIndexes[UPROPS_SCRIPT_EXTENSIONS_INDEX],
             pErrorCode);
+
+        
+        int32_t partOffset = dataIndexes[UPROPS_BLOCK_TRIE_INDEX];
+        int32_t nextOffset = dataIndexes[UPROPS_RESERVED_INDEX_8];
+        int32_t partLength = 4 * (nextOffset - partOffset);
+        if (partLength >= 0) {
+            utrie_swapAnyVersion(ds, inData32 + partOffset, partLength,
+                                 outData32 + partOffset, pErrorCode);
+        }
     }
 
-    
-    return headerSize+4*dataIndexes[UPROPS_RESERVED_INDEX_7];
+    return headerSize+4*dataIndexes[UPROPS_RESERVED_INDEX_8];
 }
 
 
@@ -329,7 +337,7 @@ ucase_swap(const UDataSwapper *ds,
     }
 
     
-    pInfo=(const UDataInfo *)((const char *)inData+4);
+    pInfo = reinterpret_cast<const UDataInfo*>(static_cast<const char*>(inData) + 4);
     if(!(
         pInfo->dataFormat[0]==UCASE_FMT_0 &&    
         pInfo->dataFormat[1]==UCASE_FMT_1 &&
@@ -348,10 +356,10 @@ ucase_swap(const UDataSwapper *ds,
         return 0;
     }
 
-    inBytes=(const uint8_t *)inData+headerSize;
-    outBytes=(uint8_t *)outData+headerSize;
+    inBytes = static_cast<const uint8_t*>(inData) + headerSize;
+    outBytes = static_cast<uint8_t*>(outData) + headerSize;
 
-    inIndexes=(const int32_t *)inBytes;
+    inIndexes = reinterpret_cast<const int32_t*>(inBytes);
 
     if(length>=0) {
         length-=headerSize;
@@ -431,7 +439,7 @@ ubidi_swap(const UDataSwapper *ds,
     }
 
     
-    pInfo=(const UDataInfo *)((const char *)inData+4);
+    pInfo = reinterpret_cast<const UDataInfo*>(static_cast<const char*>(inData) + 4);
     if(!(
         pInfo->dataFormat[0]==UBIDI_FMT_0 &&    
         pInfo->dataFormat[1]==UBIDI_FMT_1 &&
@@ -450,10 +458,10 @@ ubidi_swap(const UDataSwapper *ds,
         return 0;
     }
 
-    inBytes=(const uint8_t *)inData+headerSize;
-    outBytes=(uint8_t *)outData+headerSize;
+    inBytes = static_cast<const uint8_t*>(inData) + headerSize;
+    outBytes = static_cast<uint8_t*>(outData) + headerSize;
 
-    inIndexes=(const int32_t *)inBytes;
+    inIndexes = reinterpret_cast<const int32_t*>(inBytes);
 
     if(length>=0) {
         length-=headerSize;
@@ -541,7 +549,7 @@ unorm_swap(const UDataSwapper *ds,
     }
 
     
-    pInfo=(const UDataInfo *)((const char *)inData+4);
+    pInfo = reinterpret_cast<const UDataInfo*>(static_cast<const char*>(inData) + 4);
     if(!(
         pInfo->dataFormat[0]==0x4e &&   
         pInfo->dataFormat[1]==0x6f &&
@@ -557,10 +565,10 @@ unorm_swap(const UDataSwapper *ds,
         return 0;
     }
 
-    inBytes=(const uint8_t *)inData+headerSize;
-    outBytes=(uint8_t *)outData+headerSize;
+    inBytes = static_cast<const uint8_t*>(inData) + headerSize;
+    outBytes = static_cast<uint8_t*>(outData) + headerSize;
 
-    inIndexes=(const int32_t *)inBytes;
+    inIndexes = reinterpret_cast<const int32_t*>(inBytes);
 
     if(length>=0) {
         length-=headerSize;
@@ -655,7 +663,7 @@ ulayout_swap(const UDataSwapper *ds,
     }
 
     
-    const UDataInfo *pInfo = (const UDataInfo *)((const char *)inData + 4);
+    const UDataInfo* pInfo = reinterpret_cast<const UDataInfo*>(static_cast<const char*>(inData) + 4);
     if (!(
             pInfo->dataFormat[0] == ULAYOUT_FMT_0 &&    
             pInfo->dataFormat[1] == ULAYOUT_FMT_1 &&
@@ -672,10 +680,10 @@ ulayout_swap(const UDataSwapper *ds,
         return 0;
     }
 
-    const uint8_t *inBytes = (const uint8_t *)inData + headerSize;
-    uint8_t *outBytes = (uint8_t *)outData + headerSize;
+    const uint8_t* inBytes = static_cast<const uint8_t*>(inData) + headerSize;
+    uint8_t* outBytes = static_cast<uint8_t*>(outData) + headerSize;
 
-    const int32_t *inIndexes = (const int32_t *)inBytes;
+    const int32_t* inIndexes = reinterpret_cast<const int32_t*>(inBytes);
 
     if (length >= 0) {
         length -= headerSize;
@@ -755,7 +763,7 @@ uemoji_swap(const UDataSwapper *ds,
     }
 
     
-    const UDataInfo *pInfo = (const UDataInfo *)((const char *)inData + 4);
+    const UDataInfo* pInfo = reinterpret_cast<const UDataInfo*>(static_cast<const char*>(inData) + 4);
     if (!(
             pInfo->dataFormat[0] == u'E' &&
             pInfo->dataFormat[1] == u'm' &&
@@ -772,10 +780,10 @@ uemoji_swap(const UDataSwapper *ds,
         return 0;
     }
 
-    const uint8_t *inBytes = (const uint8_t *)inData + headerSize;
-    uint8_t *outBytes = (uint8_t *)outData + headerSize;
+    const uint8_t* inBytes = static_cast<const uint8_t*>(inData) + headerSize;
+    uint8_t* outBytes = static_cast<uint8_t*>(outData) + headerSize;
 
-    const int32_t *inIndexes = (const int32_t *)inBytes;
+    const int32_t* inIndexes = reinterpret_cast<const int32_t*>(inBytes);
 
     if (length >= 0) {
         length -= headerSize;
@@ -872,7 +880,7 @@ test_swap(const UDataSwapper *ds,
     }
 
     
-    pInfo=(const UDataInfo *)((const char *)inData+4);
+    pInfo = reinterpret_cast<const UDataInfo*>(static_cast<const char*>(inData) + 4);
     if(!(
         pInfo->dataFormat[0]==0x54 &&   
         pInfo->dataFormat[1]==0x65 &&
@@ -888,8 +896,8 @@ test_swap(const UDataSwapper *ds,
         return 0;
     }
 
-    inBytes=(const uint8_t *)inData+headerSize;
-    outBytes=(uint8_t *)outData+headerSize;
+    inBytes = static_cast<const uint8_t*>(inData) + headerSize;
+    outBytes = static_cast<uint8_t*>(outData) + headerSize;
 
     int32_t size16 = 2; 
     int32_t sizeStr = 5; 

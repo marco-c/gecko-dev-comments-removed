@@ -133,6 +133,8 @@
 
 #define U_PF_ANDROID 4050
 
+#define U_PF_HAIKU 4080
+
 #define U_PF_FUCHSIA 4100
 
 
@@ -154,6 +156,8 @@
 #   define U_PLATFORM U_PF_MINGW
 #elif defined(__CYGWIN__)
 #   define U_PLATFORM U_PF_CYGWIN
+    
+#   include <cygwin/version.h>
 #elif defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #   define U_PLATFORM U_PF_WINDOWS
 #elif defined(__ANDROID__)
@@ -200,10 +204,23 @@
 #   define U_PLATFORM U_PF_OS390
 #elif defined(__OS400__) || defined(__TOS_OS400__)
 #   define U_PLATFORM U_PF_OS400
+#elif defined(__HAIKU__)
+#   define U_PLATFORM U_PF_HAIKU
 #elif defined(__EMSCRIPTEN__)
 #   define U_PLATFORM U_PF_EMSCRIPTEN
 #else
 #   define U_PLATFORM U_PF_UNKNOWN
+#endif
+
+
+
+
+
+
+
+
+#if (defined(_MSC_VER) && !(defined(__clang__) && __clang__)) || defined(U_IN_DOXYGEN)
+#   define U_REAL_MSVC
 #endif
 
 
@@ -300,51 +317,6 @@
 #   define U_PLATFORM_IS_DARWIN_BASED 1
 #else
 #   define U_PLATFORM_IS_DARWIN_BASED 0
-#endif
-
-
-
-
-
-
-
-
-#ifdef U_HAVE_STDINT_H
-    
-#elif U_PLATFORM_USES_ONLY_WIN32_API
-#   if defined(__BORLANDC__) || U_PLATFORM == U_PF_MINGW || (defined(_MSC_VER) && _MSC_VER>=1600)
-        
-#       define U_HAVE_STDINT_H 1
-#   else
-#       define U_HAVE_STDINT_H 0
-#   endif
-#elif U_PLATFORM == U_PF_SOLARIS
-    
-#   define U_HAVE_STDINT_H 0
-#elif U_PLATFORM == U_PF_AIX && !defined(_AIX51) && defined(_POWER)
-    
-#   define U_HAVE_STDINT_H 0
-#else
-#   define U_HAVE_STDINT_H 1
-#endif
-
-
-
-
-
-
-
-#ifdef U_HAVE_INTTYPES_H
-    
-#elif U_PLATFORM == U_PF_SOLARIS
-    
-#   define U_HAVE_INTTYPES_H 1
-#elif U_PLATFORM == U_PF_AIX && !defined(_AIX51) && defined(_POWER)
-    
-#   define U_HAVE_INTTYPES_H 1
-#else
-    
-#   define U_HAVE_INTTYPES_H U_HAVE_STDINT_H
 #endif
 
 
@@ -507,6 +479,8 @@
     
 #elif !defined(__cplusplus)
 #   define U_CPLUSPLUS_VERSION 0
+#elif __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#   define U_CPLUSPLUS_VERSION 17
 #elif __cplusplus >= 201402L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
 #   define U_CPLUSPLUS_VERSION 14
 #elif __cplusplus >= 201103L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201103L)
@@ -756,12 +730,18 @@
 
 
 
-#   if U_CPLUSPLUS_VERSION >= 11 || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+
+#   if defined(__cplusplus)
 #       define U_HAVE_CHAR16_T 1
-#   else
+#   elif U_PLATFORM_IS_DARWIN_BASED || (U_PLATFORM == U_PF_CYGWIN && CYGWIN_VERSION_DLL_MAJOR < 3005)
 #       define U_HAVE_CHAR16_T 0
+#   else
+        
+#       define U_HAVE_CHAR16_T 1
 #   endif
 #endif
+
+
 
 
 
@@ -798,7 +778,7 @@
 #elif defined(_MSC_VER) || (UPRV_HAS_DECLSPEC_ATTRIBUTE(__dllexport__) && \
                             UPRV_HAS_DECLSPEC_ATTRIBUTE(__dllimport__))
 #   define U_EXPORT __declspec(dllexport)
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__open_xl__)
 #   define U_EXPORT __attribute__((visibility("default")))
 #elif (defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x550) \
    || (defined(__SUNPRO_C) && __SUNPRO_C >= 0x550) 
@@ -837,7 +817,7 @@
 
 #ifdef U_HIDDEN
     
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__open_xl__)
 #   define U_HIDDEN __attribute__((visibility("hidden")))
 #else
 #   define U_HIDDEN 

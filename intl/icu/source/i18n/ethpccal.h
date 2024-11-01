@@ -89,7 +89,7 @@ public:
         
 
 
-        NEHASSA,
+        NEHASSE,
 
         
 
@@ -169,7 +169,7 @@ protected:
 
 
 
-    virtual int32_t handleGetExtendedYear() override;
+    virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
 
     
 
@@ -177,18 +177,7 @@ protected:
 
     virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
-    
-
-
-
-
-    virtual UDate defaultCenturyStart() const override;
-
-    
-
-
-
-    virtual int32_t defaultCenturyStartYear() const override;
+    DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
 
     
 
@@ -341,7 +330,7 @@ protected:
 
 
 
-    virtual int32_t handleGetExtendedYear() override;
+    virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
 
     
 

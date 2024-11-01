@@ -37,7 +37,7 @@ public:
     UBool isEmpty() const { return fLength==0; }
     int32_t lastStarterIndex() const { return fLastStarterIndex; }
     UChar32 charAt(int32_t i) const { return fArray[i]>>8; }
-    uint8_t ccAt(int32_t i) const { return (uint8_t)fArray[i]; }
+    uint8_t ccAt(int32_t i) const { return static_cast<uint8_t>(fArray[i]); }
     UBool didReorder() const { return fDidReorder; }
 
     void append(UChar32 c, uint8_t cc);
@@ -70,6 +70,7 @@ struct Norm {
         }
     }
 
+    bool combinesFwd() const { return compositions!=nullptr; }
     const CompositionPair *getCompositionPairs(int32_t &length) const {
         if(compositions==nullptr) {
             length=0;
@@ -124,9 +125,13 @@ struct Norm {
         
         NO_NO_DELTA,
         
+        MAYBE_NO_MAPPING_ONLY,
+        
 
 
 
+        MAYBE_NO_COMBINES_FWD,
+        
         MAYBE_YES_COMBINES_FWD,
         
         MAYBE_YES_SIMPLE,

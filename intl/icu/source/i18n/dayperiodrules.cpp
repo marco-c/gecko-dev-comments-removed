@@ -18,6 +18,7 @@
 #include "cstring.h"
 #include "ucln_in.h"
 #include "uhash.h"
+#include "ulocimp.h"
 #include "umutex.h"
 #include "uresimp.h"
 
@@ -342,7 +343,6 @@ const DayPeriodRules *DayPeriodRules::getInstance(const Locale &locale, UErrorCo
 
     const char *localeCode = locale.getBaseName();
     char name[ULOC_FULLNAME_CAPACITY];
-    char parentName[ULOC_FULLNAME_CAPACITY];
 
     if (uprv_strlen(localeCode) < ULOC_FULLNAME_CAPACITY) {
         uprv_strcpy(name, localeCode);
@@ -360,13 +360,12 @@ const DayPeriodRules *DayPeriodRules::getInstance(const Locale &locale, UErrorCo
     while (*name != '\0') {
         ruleSetNum = uhash_geti(data->localeToRuleSetNumMap, name);
         if (ruleSetNum == 0) {
-            
-            uloc_getParent(name, parentName, ULOC_FULLNAME_CAPACITY, &errorCode);
-            if (*parentName == '\0') {
+            CharString parent = ulocimp_getParent(name, errorCode);
+            if (parent.isEmpty()) {
                 
                 break;
             }
-            uprv_strcpy(name, parentName);
+            parent.extract(name, UPRV_LENGTHOF(name), errorCode);
         } else {
             break;
         }

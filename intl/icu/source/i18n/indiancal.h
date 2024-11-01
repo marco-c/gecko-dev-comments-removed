@@ -209,7 +209,7 @@ public:
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const override;
   
   
 
@@ -225,7 +225,7 @@ public:
   
 
 
-  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
+  virtual int64_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth, UErrorCode& status) const override;
 
   
   
@@ -234,7 +234,7 @@ public:
   
 
 
-  virtual int32_t handleGetExtendedYear() override;
+  virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
 
   
 
@@ -304,24 +304,8 @@ private:
 
   
 protected:
-  
 
-
-
-  virtual UBool haveDefaultCentury() const override;
-
-  
-
-
-
-
-  virtual UDate defaultCenturyStart() const override;
-
-  
-
-
-
-  virtual int32_t defaultCenturyStartYear() const override;
+  DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
 };
 
 U_NAMESPACE_END

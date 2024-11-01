@@ -346,7 +346,7 @@ protected:
         virtual void write(StringTrieBuilder &builder) override;
         
         void add(int32_t c, int32_t value) {
-            units[length]=(char16_t)c;
+            units[length] = static_cast<char16_t>(c);
             equal[length]=nullptr;
             values[length]=value;
             ++length;
@@ -354,7 +354,7 @@ protected:
         }
         
         void add(int32_t c, Node *node) {
-            units[length]=(char16_t)c;
+            units[length] = static_cast<char16_t>(c);
             equal[length]=node;
             values[length]=0;
             ++length;

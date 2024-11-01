@@ -62,7 +62,7 @@ UnicodeString StringSegment::toUnicodeString() const {
     return UnicodeString(fStr.getBuffer() + fStart, fEnd - fStart);
 }
 
-const UnicodeString StringSegment::toTempUnicodeString() const {
+UnicodeString StringSegment::toTempUnicodeString() const {
     
     return UnicodeString(false, fStr.getBuffer() + fStart, fEnd - fStart);
 }

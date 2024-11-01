@@ -65,7 +65,7 @@ public:
             
             c >= 0x300 &&
             (i = lcccIndex[c >> 5]) != 0 &&
-            (lcccBits[i] & ((uint32_t)1 << (c & 0x1f))) != 0;
+            (lcccBits[i] & (static_cast<uint32_t>(1) << (c & 0x1f))) != 0;
     }
 
     static inline UBool hasTccc(UChar32 c) {
@@ -77,7 +77,7 @@ public:
             
             c >= 0xc0 &&
             (i = tcccIndex[c >> 5]) != 0 &&
-            (tcccBits[i] & ((uint32_t)1 << (c & 0x1f))) != 0;
+            (tcccBits[i] & (static_cast<uint32_t>(1) << (c & 0x1f))) != 0;
     }
 
     static inline UBool mayHaveLccc(UChar32 c) {
@@ -89,7 +89,7 @@ public:
         int32_t i;
         return
             (i = lcccIndex[c >> 5]) != 0 &&
-            (lcccBits[i] & ((uint32_t)1 << (c & 0x1f))) != 0;
+            (lcccBits[i] & (static_cast<uint32_t>(1) << (c & 0x1f))) != 0;
     }
 
     

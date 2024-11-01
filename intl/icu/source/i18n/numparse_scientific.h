@@ -14,9 +14,8 @@
 
 using icu::number::impl::Grouper;
 
-U_NAMESPACE_BEGIN namespace numparse {
-namespace impl {
-
+U_NAMESPACE_BEGIN
+namespace numparse::impl {
 
 class ScientificMatcher : public NumberParseMatcher, public UMemory {
   public:
@@ -38,8 +37,6 @@ class ScientificMatcher : public NumberParseMatcher, public UMemory {
     UnicodeString fCustomPlusSign;
 };
 
-
-} 
 } 
 U_NAMESPACE_END
 

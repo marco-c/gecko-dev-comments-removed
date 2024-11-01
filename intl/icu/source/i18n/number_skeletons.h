@@ -13,8 +13,7 @@
 #include "string_segment.h"
 
 U_NAMESPACE_BEGIN
-namespace number {
-namespace impl {
+namespace number::impl {
 
 
 struct SeenMacroProps;
@@ -385,7 +384,6 @@ UPRV_BLOCK_MACRO_BEGIN { \
 
 } 
 
-} 
 } 
 U_NAMESPACE_END
 

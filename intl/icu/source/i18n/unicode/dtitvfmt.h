@@ -346,11 +346,6 @@ public:
 
 
 
-
-
-
-
-
     static DateIntervalFormat* U_EXPORT2 createInstance(
                                                const UnicodeString& skeleton,
                                                const Locale& locale,
@@ -377,11 +372,6 @@ public:
                                               UErrorCode& status);
 
     
-
-
-
-
-
 
 
 
@@ -604,8 +594,7 @@ public:
 
 
 
-    const DateIntervalInfo* getDateIntervalInfo(void) const;
-
+    const DateIntervalInfo* getDateIntervalInfo() const;
 
     
 
@@ -628,14 +617,14 @@ public:
 
 
 
-    const DateFormat* getDateFormat(void) const;
+    const DateFormat* getDateFormat() const;
 
     
 
 
 
 
-    virtual const TimeZone& getTimeZone(void) const;
+    virtual const TimeZone& getTimeZone() const;
 
     
 
@@ -689,7 +678,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -702,7 +691,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
 protected:
 

@@ -10,9 +10,8 @@
 #include "numparse_types.h"
 #include "number_decimfmtprops.h"
 
-U_NAMESPACE_BEGIN namespace number {
-namespace impl {
-
+U_NAMESPACE_BEGIN
+namespace number::impl {
 
 
 
@@ -48,8 +47,6 @@ static inline Scale scaleFromProperties(const DecimalFormatProperties& propertie
     }
 }
 
-
-} 
 } 
 U_NAMESPACE_END
 

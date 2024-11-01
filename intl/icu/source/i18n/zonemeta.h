@@ -62,6 +62,17 @@ public:
 
 
 
+
+    static UnicodeString& U_EXPORT2 getIanaID(const UnicodeString& tzid, UnicodeString& ianaID, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
     static UnicodeString& U_EXPORT2 getCanonicalCountry(const UnicodeString &tzid, UnicodeString &country, UBool *isPrimary = nullptr);
 
     

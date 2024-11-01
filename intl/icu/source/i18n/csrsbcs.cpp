@@ -127,7 +127,7 @@ int32_t NGramParser::parse(InputText *det)
     
     addByte(0x20);
 
-    double rawPercent = (double) hitCount / (double) ngramCount;
+    double rawPercent = static_cast<double>(hitCount) / static_cast<double>(ngramCount);
 
     
     
@@ -139,7 +139,7 @@ int32_t NGramParser::parse(InputText *det)
         return 98;
     }
 
-    return (int32_t) (rawPercent * 300.0);
+    return static_cast<int32_t>(rawPercent * 300.0);
 }
 
 #if !UCONFIG_ONLY_HTML_CONVERSION

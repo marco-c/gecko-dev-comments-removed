@@ -289,6 +289,9 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
 
             
             fixOpStack(RBBINode::precStart);
+            if (U_FAILURE(*fRB->fStatus)) {
+                break;
+            }
 
             RBBINode *startExprNode  = fNodeStack[fNodeStackPtr-2];
             RBBINode *varRefNode     = fNodeStack[fNodeStackPtr-1];
@@ -312,6 +315,11 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
                 UErrorCode t = *fRB->fStatus;
                 *fRB->fStatus = U_ZERO_ERROR;
                 error(t);
+                
+                
+                
+                delete RHSExprNode;
+                delete varRefNode;
             }
 
             
@@ -522,7 +530,13 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
             n = fNodeStack[fNodeStackPtr];
             uint32_t v = u_charDigitValue(fC.fChar);
             U_ASSERT(v < 10);
-            n->fVal = n->fVal*10 + v;
+            int64_t updated = static_cast<int64_t>(n->fVal)*10 + v;
+            
+            if (updated > INT32_MAX) {
+                error(U_BRK_RULE_SYNTAX);
+                break;
+            }
+            n->fVal = static_cast<int32_t>(updated);
             break;
         }
 
@@ -547,8 +561,6 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
             UnicodeString opt(fRB->fRules, fOptionStart, fScanIndex-fOptionStart);
             if (opt == UNICODE_STRING("chain", 5)) {
                 fRB->fChainRules = true;
-            } else if (opt == UNICODE_STRING("LBCMNoChain", 11)) {
-                fRB->fLBCMNoChain = true;
             } else if (opt == UNICODE_STRING("forward", 7)) {
                 fRB->fDefaultTree   = &fRB->fForwardTree;
             } else if (opt == UNICODE_STRING("reverse", 7)) {
@@ -736,7 +748,7 @@ void RBBIRuleScanner::findSetFor(const UnicodeString &s, RBBINode *node, Unicode
     
     
     
-    el = (RBBISetTableEl *)uhash_get(fSetTable, &s);
+    el = static_cast<RBBISetTableEl*>(uhash_get(fSetTable, &s));
     if (el != nullptr) {
         delete setToAdopt;
         node->fLeftChild = el->val;
@@ -764,6 +776,7 @@ void RBBIRuleScanner::findSetFor(const UnicodeString &s, RBBINode *node, Unicode
     RBBINode *usetNode    = new RBBINode(RBBINode::uset);
     if (usetNode == nullptr) {
         error(U_MEMORY_ALLOCATION_ERROR);
+        delete setToAdopt;
         return;
     }
     usetNode->fInputSet   = setToAdopt;
@@ -781,7 +794,7 @@ void RBBIRuleScanner::findSetFor(const UnicodeString &s, RBBINode *node, Unicode
     
     
     
-    el      = (RBBISetTableEl *)uprv_malloc(sizeof(RBBISetTableEl));
+    el = static_cast<RBBISetTableEl*>(uprv_malloc(sizeof(RBBISetTableEl)));
     UnicodeString *tkey = new UnicodeString(s);
     if (tkey == nullptr || el == nullptr || setToAdopt == nullptr) {
         
@@ -798,8 +811,6 @@ void RBBIRuleScanner::findSetFor(const UnicodeString &s, RBBINode *node, Unicode
     el->key = tkey;
     el->val = usetNode;
     uhash_put(fSetTable, el->key, el, fRB->fStatus);
-
-    return;
 }
 
 
@@ -853,7 +864,7 @@ UChar32  RBBIRuleScanner::nextCharLL() {
     UChar32  ch;
 
     if (fNextIndex >= fRB->fRules.length()) {
-        return (UChar32)-1;
+        return static_cast<UChar32>(-1);
     }
     ch         = fRB->fRules.char32At(fNextIndex);
     if (U_IS_SURROGATE(ch)) {
@@ -928,6 +939,9 @@ void RBBIRuleScanner::nextChar(RBBIRuleChar &c) {
         }
     }
 
+    if (c.fChar == static_cast<UChar32>(-1)) {
+        return;
+    }
     if (fQuoteMode) {
         c.fEscaped = true;
     }
@@ -944,7 +958,7 @@ void RBBIRuleScanner::nextChar(RBBIRuleChar &c) {
             int32_t commentStart = fScanIndex;
             for (;;) {
                 c.fChar = nextCharLL();
-                if (c.fChar == (UChar32)-1 ||  
+                if (c.fChar == static_cast<UChar32>(-1) || 
                     c.fChar == chCR     ||
                     c.fChar == chLF     ||
                     c.fChar == chNEL    ||
@@ -954,7 +968,7 @@ void RBBIRuleScanner::nextChar(RBBIRuleChar &c) {
                 fRB->fStrippedRules.setCharAt(i, u' ');
             }
         }
-        if (c.fChar == (UChar32)-1) {
+        if (c.fChar == static_cast<UChar32>(-1)) {
             return;
         }
 
@@ -1051,14 +1065,14 @@ void RBBIRuleScanner::parse() {
                 
                 break;
             }
-            if (tableEl->fCharClass == 252 && fC.fChar == (UChar32)-1)  {
+            if (tableEl->fCharClass == 252 && fC.fChar == static_cast<UChar32>(-1)) {
                 
                 break;
             }
 
             if (tableEl->fCharClass >= 128 && tableEl->fCharClass < 240 &&   
                 fC.fEscaped == false &&                                      
-                fC.fChar != (UChar32)-1) {                                   
+                fC.fChar != static_cast<UChar32>(-1)) {                      
                 U_ASSERT((tableEl->fCharClass-128) < UPRV_LENGTHOF(fRuleSets));
                 if (fRuleSets[tableEl->fCharClass-128].contains(fC.fChar)) {
                     
@@ -1076,7 +1090,7 @@ void RBBIRuleScanner::parse() {
         
         
         
-        if (doParseActions((int32_t)tableEl->fAction) == false) {
+        if (doParseActions(static_cast<int32_t>(tableEl->fAction)) == false) {
             
             
             
@@ -1201,7 +1215,6 @@ RBBINode  *RBBIRuleScanner::pushNewNode(RBBINode::NodeType  t) {
 
 
 void RBBIRuleScanner::scanSet() {
-    UnicodeSet    *uset;
     ParsePosition  pos;
     int            startPos;
     int            i;
@@ -1213,12 +1226,12 @@ void RBBIRuleScanner::scanSet() {
     pos.setIndex(fScanIndex);
     startPos = fScanIndex;
     UErrorCode localStatus = U_ZERO_ERROR;
-    uset = new UnicodeSet();
-    if (uset == nullptr) {
-        localStatus = U_MEMORY_ALLOCATION_ERROR;
-    } else {
-        uset->applyPatternIgnoreSpace(fRB->fRules, pos, fSymbolTable, localStatus);
+    LocalPointer<UnicodeSet> uset(new UnicodeSet(), localStatus);
+    if (U_FAILURE(localStatus)) {
+        error(localStatus);
+        return;
     }
+    uset->applyPatternIgnoreSpace(fRB->fRules, pos, fSymbolTable, localStatus);
     if (U_FAILURE(localStatus)) {
         
         
@@ -1226,20 +1239,22 @@ void RBBIRuleScanner::scanSet() {
             RBBIDebugPrintf("UnicodeSet parse position.ErrorIndex = %d\n", pos.getIndex());
         #endif
         error(localStatus);
-        delete uset;
         return;
     }
 
     
     
-    U_ASSERT(uset!=nullptr);
-    if (uset->isEmpty()) {
+    U_ASSERT(uset.isValid());
+    UnicodeSet tempSet(*uset);
+    
+    
+    tempSet.removeAllStrings();
+    if (tempSet.isEmpty()) {
         
         
         
         
         error(U_BRK_RULE_EMPTY_SET);
-        delete uset;
         return;
     }
 
@@ -1248,7 +1263,7 @@ void RBBIRuleScanner::scanSet() {
     
     
     i = pos.getIndex();
-    for (;;) {
+    for (;U_SUCCESS(*fRB->fStatus);) {
         if (fNextIndex >= i) {
             break;
         }
@@ -1271,7 +1286,7 @@ void RBBIRuleScanner::scanSet() {
         
         
         
-        findSetFor(n->fText, n, uset);
+        findSetFor(n->fText, n, uset.orphan());
     }
 
 }

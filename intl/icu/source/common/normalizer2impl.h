@@ -81,10 +81,10 @@ public:
         return 0<=c && c<HANGUL_COUNT && c%JAMO_T_COUNT==0;
     }
     static inline UBool isJamoL(UChar32 c) {
-        return (uint32_t)(c-JAMO_L_BASE)<JAMO_L_COUNT;
+        return static_cast<uint32_t>(c - JAMO_L_BASE) < JAMO_L_COUNT;
     }
     static inline UBool isJamoV(UChar32 c) {
-        return (uint32_t)(c-JAMO_V_BASE)<JAMO_V_COUNT;
+        return static_cast<uint32_t>(c - JAMO_V_BASE) < JAMO_V_COUNT;
     }
     static inline UBool isJamoT(UChar32 c) {
         int32_t t=c-JAMO_T_BASE;
@@ -103,12 +103,12 @@ public:
         c-=HANGUL_BASE;
         UChar32 c2=c%JAMO_T_COUNT;
         c/=JAMO_T_COUNT;
-        buffer[0]=(char16_t)(JAMO_L_BASE+c/JAMO_V_COUNT);
-        buffer[1]=(char16_t)(JAMO_V_BASE+c%JAMO_V_COUNT);
+        buffer[0] = static_cast<char16_t>(JAMO_L_BASE + c / JAMO_V_COUNT);
+        buffer[1] = static_cast<char16_t>(JAMO_V_BASE + c % JAMO_V_COUNT);
         if(c2==0) {
             return 2;
         } else {
-            buffer[2]=(char16_t)(JAMO_T_BASE+c2);
+            buffer[2] = static_cast<char16_t>(JAMO_T_BASE + c2);
             return 3;
         }
     }
@@ -123,11 +123,11 @@ public:
         UChar32 c2=c%JAMO_T_COUNT;
         if(c2==0) {
             c/=JAMO_T_COUNT;
-            buffer[0]=(char16_t)(JAMO_L_BASE+c/JAMO_V_COUNT);
-            buffer[1]=(char16_t)(JAMO_V_BASE+c%JAMO_V_COUNT);
+            buffer[0] = static_cast<char16_t>(JAMO_L_BASE + c / JAMO_V_COUNT);
+            buffer[1] = static_cast<char16_t>(JAMO_V_BASE + c % JAMO_V_COUNT);
         } else {
-            buffer[0]=(char16_t)(orig-c2);  
-            buffer[1]=(char16_t)(JAMO_T_BASE+c2);
+            buffer[0] = static_cast<char16_t>(orig - c2); 
+            buffer[1] = static_cast<char16_t>(JAMO_T_BASE + c2);
         }
     }
 private:
@@ -141,19 +141,19 @@ public:
     
     ReorderingBuffer(const Normalizer2Impl &ni, UnicodeString &dest) :
         impl(ni), str(dest),
-        start(NULL), reorderStart(NULL), limit(NULL),
+        start(nullptr), reorderStart(nullptr), limit(nullptr),
         remainingCapacity(0), lastCC(0) {}
     
     ReorderingBuffer(const Normalizer2Impl &ni, UnicodeString &dest, UErrorCode &errorCode);
     ~ReorderingBuffer() {
-        if(start!=NULL) {
-            str.releaseBuffer((int32_t)(limit-start));
+        if (start != nullptr) {
+            str.releaseBuffer(static_cast<int32_t>(limit - start));
         }
     }
     UBool init(int32_t destCapacity, UErrorCode &errorCode);
 
     UBool isEmpty() const { return start==limit; }
-    int32_t length() const { return (int32_t)(limit-start); }
+    int32_t length() const { return static_cast<int32_t>(limit - start); }
     char16_t *getStart() { return start; }
     char16_t *getLimit() { return limit; }
     uint8_t getLastCC() const { return lastCC; }
@@ -163,7 +163,7 @@ public:
 
     UBool append(UChar32 c, uint8_t cc, UErrorCode &errorCode) {
         return (c<=0xffff) ?
-            appendBMP((char16_t)c, cc, errorCode) :
+            appendBMP(static_cast<char16_t>(c), cc, errorCode) :
             appendSupplementary(c, cc, errorCode);
     }
     UBool append(const char16_t *s, int32_t length, UBool isNFD,
@@ -190,12 +190,12 @@ public:
     void remove();
     void removeSuffix(int32_t suffixLength);
     void setReorderingLimit(char16_t *newLimit) {
-        remainingCapacity+=(int32_t)(limit-newLimit);
+        remainingCapacity += static_cast<int32_t>(limit - newLimit);
         reorderStart=limit=newLimit;
         lastCC=0;
     }
     void copyReorderableSuffixTo(UnicodeString &s) const {
-        s.setTo(ConstChar16Ptr(reorderStart), (int32_t)(limit-reorderStart));
+        s.setTo(ConstChar16Ptr(reorderStart), static_cast<int32_t>(limit - reorderStart));
     }
 private:
     
@@ -215,7 +215,7 @@ private:
     void insert(UChar32 c, uint8_t cc);
     static void writeCodePoint(char16_t *p, UChar32 c) {
         if(c<=0xffff) {
-            *p=(char16_t)c;
+            *p = static_cast<char16_t>(c);
         } else {
             p[0]=U16_LEAD(c);
             p[1]=U16_TRAIL(c);
@@ -245,7 +245,7 @@ private:
 
 class U_COMMON_API Normalizer2Impl : public UObject {
 public:
-    Normalizer2Impl() : normTrie(NULL), fCanonIterData(NULL) { }
+    Normalizer2Impl() : normTrie(nullptr), fCanonIterData(nullptr) {}
     virtual ~Normalizer2Impl();
 
     void init(const int32_t *inIndexes, const UCPTrie *inTrie,
@@ -271,14 +271,14 @@ public:
     UNormalizationCheckResult getCompQuickCheck(uint16_t norm16) const {
         if(norm16<minNoNo || MIN_YES_YES_WITH_CC<=norm16) {
             return UNORM_YES;
-        } else if(minMaybeYes<=norm16) {
+        } else if(minMaybeNo<=norm16) {
             return UNORM_MAYBE;
         } else {
             return UNORM_NO;
         }
     }
-    UBool isAlgorithmicNoNo(uint16_t norm16) const { return limitNoNo<=norm16 && norm16<minMaybeYes; }
-    UBool isCompNo(uint16_t norm16) const { return minNoNo<=norm16 && norm16<minMaybeYes; }
+    UBool isAlgorithmicNoNo(uint16_t norm16) const { return limitNoNo<=norm16 && norm16<minMaybeNo; }
+    UBool isCompNo(uint16_t norm16) const { return minNoNo<=norm16 && norm16<minMaybeNo; }
     UBool isDecompYes(uint16_t norm16) const { return norm16<minYesNo || minMaybeYes<=norm16; }
 
     uint8_t getCC(uint16_t norm16) const {
@@ -291,14 +291,14 @@ public:
         return getCCFromNoNo(norm16);
     }
     static uint8_t getCCFromNormalYesOrMaybe(uint16_t norm16) {
-        return (uint8_t)(norm16 >> OFFSET_SHIFT);
+        return static_cast<uint8_t>(norm16 >> OFFSET_SHIFT);
     }
-    static uint8_t getCCFromYesOrMaybe(uint16_t norm16) {
+    static uint8_t getCCFromYesOrMaybeYes(uint16_t norm16) {
         return norm16>=MIN_NORMAL_MAYBE_YES ? getCCFromNormalYesOrMaybe(norm16) : 0;
     }
-    uint8_t getCCFromYesOrMaybeCP(UChar32 c) const {
+    uint8_t getCCFromYesOrMaybeYesCP(UChar32 c) const {
         if (c < minCompNoMaybeCP) { return 0; }
-        return getCCFromYesOrMaybe(getNorm16(c));
+        return getCCFromYesOrMaybeYes(getNorm16(c));
     }
 
     
@@ -364,10 +364,12 @@ public:
         
         uint8_t bits=smallFCD[lead>>8];
         if(bits==0) { return false; }
-        return (UBool)((bits>>((lead>>5)&7))&1);
+        return (bits >> ((lead >> 5) & 7)) & 1;
     }
     
     uint16_t getFCD16FromNormData(UChar32 c) const;
+
+    uint16_t getFCD16FromMaybeOrNonZeroCC(uint16_t norm16) const;
 
     
 
@@ -450,7 +452,13 @@ public:
 
         IX_MIN_LCCC_CP,
         IX_RESERVED19,
-        IX_COUNT
+
+        
+        IX_MIN_MAYBE_NO,  
+        
+        IX_MIN_MAYBE_NO_COMBINES_FWD,
+
+        IX_COUNT  
     };
 
     enum {
@@ -541,7 +549,8 @@ public:
         uint16_t norm16=getNorm16(c);
         return isCompYesAndZeroCC(norm16) &&
             (norm16 & HAS_COMP_BOUNDARY_AFTER) != 0 &&
-            (!onlyContiguous || isInert(norm16) || *getMapping(norm16) <= 0x1ff);
+            (!onlyContiguous || isInert(norm16) || *getDataForYesOrNo(norm16) <= 0x1ff);
+            
     }
 
     UBool hasFCDBoundaryBefore(UChar32 c) const { return hasDecompBoundaryBefore(c); }
@@ -551,8 +560,8 @@ private:
     friend class InitCanonIterData;
     friend class LcccContext;
 
-    UBool isMaybe(uint16_t norm16) const { return minMaybeYes<=norm16 && norm16<=JAMO_VT; }
-    UBool isMaybeOrNonZeroCC(uint16_t norm16) const { return norm16>=minMaybeYes; }
+    UBool isMaybe(uint16_t norm16) const { return minMaybeNo<=norm16 && norm16<=JAMO_VT; }
+    UBool isMaybeYesOrNonZeroCC(uint16_t norm16) const { return norm16>=minMaybeYes; }
     static UBool isInert(uint16_t norm16) { return norm16==INERT; }
     static UBool isJamoL(uint16_t norm16) { return norm16==JAMO_L; }
     static UBool isJamoVT(uint16_t norm16) { return norm16==JAMO_VT; }
@@ -580,11 +589,11 @@ private:
 
 
 
-
     UBool isMostDecompYesAndZeroCC(uint16_t norm16) const {
         return norm16<minYesNo || norm16==MIN_NORMAL_MAYBE_YES || norm16==JAMO_VT;
     }
-    UBool isDecompNoAlgorithmic(uint16_t norm16) const { return norm16>=limitNoNo; }
+    
+    UBool isDecompNoAlgorithmic(uint16_t norm16) const { return limitNoNo<=norm16 && norm16<minMaybeNo; }
 
     
     
@@ -592,9 +601,9 @@ private:
     
     
     uint8_t getCCFromNoNo(uint16_t norm16) const {
-        const uint16_t *mapping=getMapping(norm16);
+        const uint16_t *mapping=getDataForYesOrNo(norm16);
         if(*mapping&MAPPING_HAS_CCC_LCCC_WORD) {
-            return (uint8_t)*(mapping-1);
+            return static_cast<uint8_t>(*(mapping - 1));
         } else {
             return 0;
         }
@@ -605,7 +614,7 @@ private:
             return 0;  
         } else {
             
-            return (uint8_t)(*getMapping(norm16)>>8);  
+            return static_cast<uint8_t>(*getDataForYesOrNo(norm16) >> 8); 
         }
     }
     uint8_t getPreviousTrailCC(const char16_t *start, const char16_t *p) const;
@@ -619,27 +628,32 @@ private:
         return (norm16>>DELTA_SHIFT)-centerNoNoDelta;
     }
 
-    
-    const uint16_t *getMapping(uint16_t norm16) const { return extraData+(norm16>>OFFSET_SHIFT); }
+    const uint16_t *getDataForYesOrNo(uint16_t norm16) const {
+        return extraData+(norm16>>OFFSET_SHIFT);
+    }
+    const uint16_t *getDataForMaybe(uint16_t norm16) const {
+        return extraData+((norm16-minMaybeNo+limitNoNo)>>OFFSET_SHIFT);
+    }
+    const uint16_t *getData(uint16_t norm16) const {
+        if(norm16>=minMaybeNo) {
+            norm16=norm16-minMaybeNo+limitNoNo;
+        }
+        return extraData+(norm16>>OFFSET_SHIFT);
+    }
     const uint16_t *getCompositionsListForDecompYes(uint16_t norm16) const {
         if(norm16<JAMO_L || MIN_NORMAL_MAYBE_YES<=norm16) {
-            return NULL;
-        } else if(norm16<minMaybeYes) {
-            return getMapping(norm16);  
+            return nullptr;
         } else {
-            return maybeYesCompositions+norm16-minMaybeYes;
+            
+            return getData(norm16);
         }
     }
     const uint16_t *getCompositionsListForComposite(uint16_t norm16) const {
         
-        const uint16_t *list=getMapping(norm16);
+        const uint16_t *list=getData(norm16);
         return list+  
             1+  
             (*list&MAPPING_LENGTH_MASK);  
-    }
-    const uint16_t *getCompositionsListForMaybe(uint16_t norm16) const {
-        
-        return maybeYesCompositions+((norm16-minMaybeYes)>>OFFSET_SHIFT);
     }
     
 
@@ -692,11 +706,13 @@ private:
     
     UBool isTrailCC01ForCompBoundaryAfter(uint16_t norm16) const {
         return isInert(norm16) || (isDecompNoAlgorithmic(norm16) ?
-            (norm16 & DELTA_TCCC_MASK) <= DELTA_TCCC_1 : *getMapping(norm16) <= 0x1ff);
+            (norm16 & DELTA_TCCC_MASK) <= DELTA_TCCC_1 : *getDataForYesOrNo(norm16) <= 0x1ff);
     }
 
-    const char16_t *findPreviousCompBoundary(const char16_t *start, const char16_t *p, UBool onlyContiguous) const;
-    const char16_t *findNextCompBoundary(const char16_t *p, const char16_t *limit, UBool onlyContiguous) const;
+    const char16_t *findPreviousCompBoundary(const char16_t *start, const char16_t *p,
+                                             UBool onlyContiguous) const;
+    const char16_t *findNextCompBoundary(const char16_t *p, const char16_t *limit,
+                                         UBool onlyContiguous) const;
 
     const char16_t *findPreviousFCDBoundary(const char16_t *start, const char16_t *p) const;
     const char16_t *findNextFCDBoundary(const char16_t *p, const char16_t *limit) const;
@@ -723,10 +739,11 @@ private:
     uint16_t minNoNoEmpty;
     uint16_t limitNoNo;
     uint16_t centerNoNoDelta;
+    uint16_t minMaybeNo;
+    uint16_t minMaybeNoCombinesFwd;
     uint16_t minMaybeYes;
 
     const UCPTrie *normTrie;
-    const uint16_t *maybeYesCompositions;
     const uint16_t *extraData;  
     const uint8_t *smallFCD;  
 
@@ -782,6 +799,34 @@ unorm_getQuickCheck(UChar32 c, UNormalizationMode mode);
 
 U_CFUNC uint16_t
 unorm_getFCD16(UChar32 c);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

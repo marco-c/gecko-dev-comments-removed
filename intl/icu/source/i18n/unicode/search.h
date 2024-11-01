@@ -124,7 +124,7 @@ public:
 
 
 
-    virtual int32_t getOffset(void) const = 0;
+    virtual int32_t getOffset() const = 0;
 
     
 
@@ -163,7 +163,7 @@ public:
 
 
 
-    int32_t getMatchedStart(void) const;
+    int32_t getMatchedStart() const;
 
     
 
@@ -179,8 +179,8 @@ public:
 
 
 
-    int32_t getMatchedLength(void) const;
-    
+    int32_t getMatchedLength() const;
+
     
 
 
@@ -224,7 +224,7 @@ public:
 
 
 
-    const BreakIterator * getBreakIterator(void) const;
+    const BreakIterator* getBreakIterator() const;
 
     
 
@@ -260,7 +260,7 @@ public:
 
 
 
-    const UnicodeString & getText(void) const;
+    const UnicodeString& getText() const;
 
     
 
@@ -291,7 +291,7 @@ public:
 
 
 
-    virtual SearchIterator* safeClone(void) const = 0;
+    virtual SearchIterator* safeClone() const = 0;
 
     
 

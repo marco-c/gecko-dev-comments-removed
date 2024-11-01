@@ -83,6 +83,9 @@
 
 
 
+
+
+
 U_NAMESPACE_BEGIN
 
 
@@ -90,15 +93,13 @@ class IFixedDecimal;
 class FieldPositionIteratorHandler;
 class FormattedStringBuilder;
 
-namespace numparse {
-namespace impl {
+namespace numparse::impl {
 
 
 class NumberParserImpl;
 class MultiplierParseHandler;
 
-}
-}
+} 
 
 namespace units {
 
@@ -2257,7 +2258,6 @@ class U_I18N_API NumberFormatterSettings {
 
     Derived usage(StringPiece usage) &&;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2276,7 +2276,6 @@ class U_I18N_API NumberFormatterSettings {
 
 
     Derived displayOptions(const DisplayOptions &displayOptions) &&;
-#endif 
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -2496,11 +2495,18 @@ class U_I18N_API UnlocalizedNumberFormatter
     explicit UnlocalizedNumberFormatter(
             NumberFormatterSettings<UnlocalizedNumberFormatter>&& src) noexcept;
 
+    explicit UnlocalizedNumberFormatter(const impl::MacroProps &macros);
+
+    explicit UnlocalizedNumberFormatter(impl::MacroProps &&macros);
+
     
     friend class NumberFormatterSettings<UnlocalizedNumberFormatter>;
 
     
     friend class NumberFormatter;
+
+    
+    friend class LocalizedNumberFormatter;
 };
 
 
@@ -2602,6 +2608,25 @@ class U_I18N_API LocalizedNumberFormatter
 
 
     Format* toFormat(UErrorCode& status) const;
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    UnlocalizedNumberFormatter withoutLocale() const &;
+
+    
+
+
+
+
+
+
+    UnlocalizedNumberFormatter withoutLocale() &&;
+#endif 
 
     
 

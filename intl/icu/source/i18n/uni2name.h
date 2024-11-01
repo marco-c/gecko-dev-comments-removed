@@ -33,7 +33,7 @@ class UnicodeNameTransliterator : public Transliterator {
 
 
 
-    UnicodeNameTransliterator(UnicodeFilter* adoptedFilter = 0);
+    UnicodeNameTransliterator(UnicodeFilter* adoptedFilter = nullptr);
 
     
 

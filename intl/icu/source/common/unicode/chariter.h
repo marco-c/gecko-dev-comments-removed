@@ -133,17 +133,8 @@ public:
 
 
 
-    virtual int32_t hashCode(void) const = 0;
-    
-    
+    virtual int32_t hashCode() const = 0;
 
-
-
-
-
-
-    virtual UClassID getDynamicClassID(void) const override = 0;
-    
     
 
 
@@ -151,9 +142,8 @@ public:
 
 
 
+    virtual UClassID getDynamicClassID() const override = 0;
 
-    virtual char16_t         nextPostInc(void) = 0;
-    
     
 
 
@@ -162,8 +152,18 @@ public:
 
 
 
-    virtual UChar32       next32PostInc(void) = 0;
+    virtual char16_t nextPostInc() = 0;
+
     
+
+
+
+
+
+
+
+    virtual UChar32 next32PostInc() = 0;
+
     
 
 
@@ -389,7 +389,7 @@ public:
 
 
 
-    virtual char16_t         first(void) = 0;
+    virtual char16_t first() = 0;
 
     
 
@@ -399,7 +399,7 @@ public:
 
 
 
-    virtual char16_t         firstPostInc(void);
+    virtual char16_t firstPostInc();
 
     
 
@@ -410,7 +410,7 @@ public:
 
 
 
-    virtual UChar32       first32(void) = 0;
+    virtual UChar32 first32() = 0;
 
     
 
@@ -420,7 +420,7 @@ public:
 
 
 
-    virtual UChar32       first32PostInc(void);
+    virtual UChar32 first32PostInc();
 
     
 
@@ -438,8 +438,8 @@ public:
 
 
 
-    virtual char16_t         last(void) = 0;
-        
+    virtual char16_t last() = 0;
+
     
 
 
@@ -447,7 +447,7 @@ public:
 
 
 
-    virtual UChar32       last32(void) = 0;
+    virtual UChar32 last32() = 0;
 
     
 
@@ -486,44 +486,14 @@ public:
 
 
 
-    virtual char16_t         current(void) const = 0;
-        
+    virtual char16_t current() const = 0;
+
     
 
 
 
 
-    virtual UChar32       current32(void) const = 0;
-        
-    
-
-
-
-
-
-
-    virtual char16_t         next(void) = 0;
-        
-    
-
-
-
-
-
-
-
-
-
-    virtual UChar32       next32(void) = 0;
-        
-    
-
-
-
-
-
-
-    virtual char16_t         previous(void) = 0;
+    virtual UChar32 current32() const = 0;
 
     
 
@@ -532,7 +502,37 @@ public:
 
 
 
-    virtual UChar32       previous32(void) = 0;
+    virtual char16_t next() = 0;
+
+    
+
+
+
+
+
+
+
+
+
+    virtual UChar32 next32() = 0;
+
+    
+
+
+
+
+
+
+    virtual char16_t previous() = 0;
+
+    
+
+
+
+
+
+
+    virtual UChar32 previous32() = 0;
 
     
 
@@ -555,8 +555,8 @@ public:
 
 
 
-    inline int32_t       startIndex(void) const;
-        
+    inline int32_t startIndex() const;
+
     
 
 
@@ -566,8 +566,8 @@ public:
 
 
 
-    inline int32_t       endIndex(void) const;
-        
+    inline int32_t endIndex() const;
+
     
 
 
@@ -576,7 +576,7 @@ public:
 
 
 
-    inline int32_t       getIndex(void) const;
+    inline int32_t getIndex() const;
 
     
 
@@ -708,22 +708,22 @@ CharacterIterator::setToEnd() {
 }
 
 inline int32_t
-CharacterIterator::startIndex(void) const {
+CharacterIterator::startIndex() const {
     return begin;
 }
 
 inline int32_t
-CharacterIterator::endIndex(void) const {
+CharacterIterator::endIndex() const {
     return end;
 }
 
 inline int32_t
-CharacterIterator::getIndex(void) const {
+CharacterIterator::getIndex() const {
     return pos;
 }
 
 inline int32_t
-CharacterIterator::getLength(void) const {
+CharacterIterator::getLength() const {
     return textLength;
 }
 

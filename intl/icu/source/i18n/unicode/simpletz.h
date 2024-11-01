@@ -636,7 +636,7 @@ public:
 
 
 
-    virtual int32_t getRawOffset(void) const override;
+    virtual int32_t getRawOffset() const override;
 
     
 
@@ -666,7 +666,7 @@ public:
 
 
 
-    virtual int32_t getDSTSavings(void) const override;
+    virtual int32_t getDSTSavings() const override;
 
     
 
@@ -674,7 +674,7 @@ public:
 
 
 
-    virtual UBool useDaylightTime(void) const override;
+    virtual UBool useDaylightTime() const override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -773,7 +773,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -786,7 +786,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
 private:
     
@@ -882,8 +882,8 @@ private:
     
     void checkTransitionRules(UErrorCode& status) const;
     void initTransitionRules(UErrorCode& status);
-    void clearTransitionRules(void);
-    void deleteTransitionRules(void);
+    void clearTransitionRules();
+    void deleteTransitionRules();
     UBool   transitionRulesInitialized;
     InitialTimeZoneRule*    initialRule;
     TimeZoneTransition*     firstTransition;

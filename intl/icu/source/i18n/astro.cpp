@@ -242,40 +242,17 @@ inline static  double normPI(double angle)  {
 
 
 CalendarAstronomer::CalendarAstronomer():
-  fTime(Calendar::getNow()), fLongitude(0.0), fLatitude(0.0), fGmtOffset(0.0), moonPosition(0,0), moonPositionSet(false) {
-  clearCache();
-}
-
-
-
-
-
-
-
-CalendarAstronomer::CalendarAstronomer(UDate d): fTime(d), fLongitude(0.0), fLatitude(0.0), fGmtOffset(0.0), moonPosition(0,0), moonPositionSet(false) {
-  clearCache();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CalendarAstronomer::CalendarAstronomer(double longitude, double latitude) :
   fTime(Calendar::getNow()), moonPosition(0,0), moonPositionSet(false) {
-  fLongitude = normPI(longitude * (double)DEG_RAD);
-  fLatitude  = normPI(latitude  * (double)DEG_RAD);
-  fGmtOffset = (double)(fLongitude * 24. * (double)HOUR_MS / (double)CalendarAstronomer_PI2);
+  clearCache();
+}
+
+
+
+
+
+
+
+CalendarAstronomer::CalendarAstronomer(UDate d): fTime(d), moonPosition(0,0), moonPositionSet(false) {
   clearCache();
 }
 
@@ -301,29 +278,7 @@ CalendarAstronomer::~CalendarAstronomer()
 
 void CalendarAstronomer::setTime(UDate aTime) {
     fTime = aTime;
-    U_DEBUG_ASTRO_MSG(("setTime(%.1lf, %sL)\n", aTime, debug_astro_date(aTime+fGmtOffset)));
     clearCache();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void CalendarAstronomer::setJulianDay(double jdn) {
-    fTime = (double)(jdn * DAY_MS) + JULIAN_EPOCH_MS;
-    clearCache();
-    julianDay = jdn;
 }
 
 
@@ -352,7 +307,7 @@ UDate CalendarAstronomer::getTime() {
 
 double CalendarAstronomer::getJulianDay() {
     if (isINVALID(julianDay)) {
-        julianDay = (fTime - (double)JULIAN_EPOCH_MS) / (double)DAY_MS;
+        julianDay = (fTime - JULIAN_EPOCH_MS) / static_cast<double>(DAY_MS);
     }
     return julianDay;
 }
@@ -360,93 +315,6 @@ double CalendarAstronomer::getJulianDay() {
 
 
 
-
-
-
-
-
-double CalendarAstronomer::getJulianCentury() {
-    if (isINVALID(julianCentury)) {
-        julianCentury = (getJulianDay() - 2415020.0) / 36525.0;
-    }
-    return julianCentury;
-}
-
-
-
-
-
-
-double CalendarAstronomer::getGreenwichSidereal() {
-    if (isINVALID(siderealTime)) {
-        
-        
-
-        double UT = normalize(fTime/(double)HOUR_MS, 24.);
-
-        siderealTime = normalize(getSiderealOffset() + UT*1.002737909, 24.);
-    }
-    return siderealTime;
-}
-
-double CalendarAstronomer::getSiderealOffset() {
-    if (isINVALID(siderealT0)) {
-        double JD  = uprv_floor(getJulianDay() - 0.5) + 0.5;
-        double S   = JD - 2451545.0;
-        double T   = S / 36525.0;
-        siderealT0 = normalize(6.697374558 + 2400.051336*T + 0.000025862*T*T, 24);
-    }
-    return siderealT0;
-}
-
-
-
-
-
-
-double CalendarAstronomer::getLocalSidereal() {
-    return normalize(getGreenwichSidereal() + (fGmtOffset/(double)HOUR_MS), 24.);
-}
-
-
-
-
-
-
-
-
-
-
-double CalendarAstronomer::lstToUT(double lst) {
-    
-    double lt = normalize((lst - getSiderealOffset()) * 0.9972695663, 24);
-
-    
-    double base = (DAY_MS * ClockMath::floorDivide(fTime + fGmtOffset,(double)DAY_MS)) - fGmtOffset;
-
-    
-    
-
-    return base + (long)(lt * HOUR_MS);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CalendarAstronomer::Equatorial& CalendarAstronomer::eclipticToEquatorial(CalendarAstronomer::Equatorial& result, const CalendarAstronomer::Ecliptic& ecliptic)
-{
-    return eclipticToEquatorial(result, ecliptic.longitude, ecliptic.latitude);
-}
 
 
 
@@ -478,46 +346,6 @@ CalendarAstronomer::Equatorial& CalendarAstronomer::eclipticToEquatorial(Calenda
         asin(sinB*cosE + cosB*sinE*sinL) );
     return result;
 }
-
-
-
-
-
-
-
-
-
-
-CalendarAstronomer::Equatorial& CalendarAstronomer::eclipticToEquatorial(CalendarAstronomer::Equatorial& result, double eclipLong)
-{
-    return eclipticToEquatorial(result, eclipLong, 0);  
-}
-
-
-
-
-
-CalendarAstronomer::Horizon& CalendarAstronomer::eclipticToHorizon(CalendarAstronomer::Horizon& result, double eclipLong)
-{
-    Equatorial equatorial;
-    eclipticToEquatorial(equatorial, eclipLong);
-
-    double H = getLocalSidereal()*CalendarAstronomer::PI/12 - equatorial.ascension;     
-
-    double sinH = ::sin(H);
-    double cosH = cos(H);
-    double sinD = ::sin(equatorial.declination);
-    double cosD = cos(equatorial.declination);
-    double sinL = ::sin(fLatitude);
-    double cosL = cos(fLatitude);
-
-    double altitude = asin(sinD*sinL + cosD*cosL*cosH);
-    double azimuth  = atan2(-cosD*cosL*sinH, sinD - sinL * ::sin(altitude));
-
-    result.set(azimuth, altitude);
-    return result;
-}
-
 
 
 
@@ -663,50 +491,6 @@ double CalendarAstronomer::getSunLongitude()
 
 
 
-CalendarAstronomer::Equatorial& CalendarAstronomer::getSunPosition(CalendarAstronomer::Equatorial& result) {
-    return eclipticToEquatorial(result, getSunLongitude(), 0);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-double CalendarAstronomer::SUMMER_SOLSTICE() {
-    return  (CalendarAstronomer::PI/2);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 double CalendarAstronomer::WINTER_SOLSTICE() {
     return  ((CalendarAstronomer::PI*3)/2);
@@ -737,310 +521,6 @@ UDate CalendarAstronomer::getSunTime(double desired, UBool next)
                         MINUTE_MS,
                         next);
 }
-
-CalendarAstronomer::CoordFunc::~CoordFunc() {}
-
-class RiseSetCoordFunc : public CalendarAstronomer::CoordFunc {
-public:
-    virtual ~RiseSetCoordFunc();
-    virtual void eval(CalendarAstronomer::Equatorial& result, CalendarAstronomer& a) override { a.getSunPosition(result); }
-};
-
-RiseSetCoordFunc::~RiseSetCoordFunc() {}
-
-UDate CalendarAstronomer::getSunRiseSet(UBool rise)
-{
-    UDate t0 = fTime;
-
-    
-    double noon = ClockMath::floorDivide(fTime + fGmtOffset, (double)DAY_MS)*DAY_MS - fGmtOffset + (12*HOUR_MS);
-
-    U_DEBUG_ASTRO_MSG(("Noon=%.2lf, %sL, gmtoff %.2lf\n", noon, debug_astro_date(noon+fGmtOffset), fGmtOffset));
-    setTime(noon +  ((rise ? -6 : 6) * HOUR_MS));
-    U_DEBUG_ASTRO_MSG(("added %.2lf ms as a guess,\n", ((rise ? -6. : 6.) * HOUR_MS)));
-
-    RiseSetCoordFunc func;
-    double t = riseOrSet(func,
-                         rise,
-                         .533 * DEG_RAD,        
-                         34. /60.0 * DEG_RAD,    
-                         MINUTE_MS / 12.);       
-
-    setTime(t0);
-    return t;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1083,7 +563,7 @@ const CalendarAstronomer::Equatorial& CalendarAstronomer::getMoonPosition()
         
         
         double meanLongitude = norm2PI(13.1763966*PI/180*day + moonL0);
-        meanAnomalyMoon = norm2PI(meanLongitude - 0.1114041*PI/180 * day - moonP0);
+        double meanAnomalyMoon = norm2PI(meanLongitude - 0.1114041*PI/180 * day - moonP0);
 
         
         
@@ -1109,7 +589,7 @@ const CalendarAstronomer::Equatorial& CalendarAstronomer::getMoonPosition()
         double a4 =     0.2140*PI/180 * ::sin(2 * meanAnomalyMoon);
 
         
-        moonLongitude = meanLongitude + evection + center - annual + a4;
+        double moonLongitude = meanLongitude + evection + center - annual + a4;
 
         
         
@@ -1152,7 +632,6 @@ const CalendarAstronomer::Equatorial& CalendarAstronomer::getMoonPosition()
 
 
 
-
 double CalendarAstronomer::getMoonAge() {
     
     
@@ -1171,50 +650,10 @@ double CalendarAstronomer::getMoonAge() {
 
 
 
-
-
-
-
-
-
-
-
-
-double CalendarAstronomer::getMoonPhase() {
-    
-    
-    return 0.5 * (1 - cos(getMoonAge()));
-}
-
-
-
-
-
-
-
-const CalendarAstronomer::MoonAge CalendarAstronomer::NEW_MOON() {
+CalendarAstronomer::MoonAge CalendarAstronomer::NEW_MOON() {
     return  CalendarAstronomer::MoonAge(0);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const CalendarAstronomer::MoonAge CalendarAstronomer::FULL_MOON() {
-    return   CalendarAstronomer::MoonAge(CalendarAstronomer::PI);
-}
 
 
 
@@ -1244,52 +683,13 @@ MoonTimeAngleFunc::~MoonTimeAngleFunc() {}
 
 
 
-UDate CalendarAstronomer::getMoonTime(double desired, UBool next)
-{
+UDate CalendarAstronomer::getMoonTime(const CalendarAstronomer::MoonAge& desired, UBool next) {
     MoonTimeAngleFunc func;
     return timeOfAngle( func,
-                        desired,
+                        desired.value,
                         SYNODIC_MONTH,
                         MINUTE_MS,
                         next);
-}
-
-
-
-
-
-
-
-
-
-
-
-UDate CalendarAstronomer::getMoonTime(const CalendarAstronomer::MoonAge& desired, UBool next) {
-    return getMoonTime(desired.value, next);
-}
-
-class MoonRiseSetCoordFunc : public CalendarAstronomer::CoordFunc {
-public:
-    virtual ~MoonRiseSetCoordFunc();
-    virtual void eval(CalendarAstronomer::Equatorial& result, CalendarAstronomer& a) override { result = a.getMoonPosition(); }
-};
-
-MoonRiseSetCoordFunc::~MoonRiseSetCoordFunc() {}
-
-
-
-
-
-
-
-UDate CalendarAstronomer::getMoonRiseSet(UBool rise)
-{
-    MoonRiseSetCoordFunc func;
-    return riseOrSet(func,
-                     rise,
-                     .533 * DEG_RAD,        
-                     34 /60.0 * DEG_RAD,    
-                     MINUTE_MS);            
 }
 
 
@@ -1364,48 +764,7 @@ UDate CalendarAstronomer::timeOfAngle(AngleFunc& func, double desired,
     return fTime;
 }
 
-UDate CalendarAstronomer::riseOrSet(CoordFunc& func, UBool rise,
-                                    double diameter, double refraction,
-                                    double epsilon)
-{
-    Equatorial pos;
-    double      tanL   = ::tan(fLatitude);
-    double     deltaT = 0;
-    int32_t         count = 0;
 
-    
-    
-    
-    
-    
-    U_DEBUG_ASTRO_MSG(("setup rise=%s, dia=%.3lf, ref=%.3lf, eps=%.3lf\n",
-        rise?"T":"F", diameter, refraction, epsilon));
-    do {
-        
-        func.eval(pos, *this);
-        double angle = ::acos(-tanL * ::tan(pos.declination));
-        double lst = ((rise ? CalendarAstronomer_PI2-angle : angle) + pos.ascension ) * 24 / CalendarAstronomer_PI2;
-
-        
-        UDate newTime = lstToUT( lst );
-
-        deltaT = newTime - fTime;
-        setTime(newTime);
-        U_DEBUG_ASTRO_MSG(("%d] dT=%.3lf, angle=%.3lf, lst=%.3lf,   A=%.3lf/D=%.3lf\n",
-            count, deltaT, angle, lst, pos.ascension, pos.declination));
-    }
-    while (++ count < 5 && uprv_fabs(deltaT) > epsilon);
-
-    
-    double cosD  = ::cos(pos.declination);
-    double psi   = ::acos(sin(fLatitude) / cosD);
-    double x     = diameter / 2 + refraction;
-    double y     = ::asin(sin(x) / ::sin(psi));
-    long  delta  = (long)((240 * y * RAD_DEG / cosD)*SECOND_MS);
-
-    return fTime + (rise ? -delta : delta);
-}
-											   
 
 
 
@@ -1414,19 +773,16 @@ UDate CalendarAstronomer::riseOrSet(CoordFunc& func, UBool rise,
 
 
 double CalendarAstronomer::eclipticObliquity() {
-    if (isINVALID(eclipObliquity)) {
-        const double epoch = 2451545.0;     
+    const double epoch = 2451545.0;     
 
-        double T = (getJulianDay() - epoch) / 36525;
+    double T = (getJulianDay() - epoch) / 36525;
 
-        eclipObliquity = 23.439292
-            - 46.815/3600 * T
-            - 0.0006/3600 * T*T
-            + 0.00181/3600 * T*T*T;
+    double eclipObliquity = 23.439292
+        - 46.815/3600 * T
+        - 0.0006/3600 * T*T
+        + 0.00181/3600 * T*T*T;
 
-        eclipObliquity *= DEG_RAD;
-    }
-    return eclipObliquity;
+    return eclipObliquity * DEG_RAD;
 }
 
 
@@ -1437,44 +793,12 @@ void CalendarAstronomer::clearCache() {
     const double INVALID = uprv_getNaN();
 
     julianDay       = INVALID;
-    julianCentury   = INVALID;
     sunLongitude    = INVALID;
     meanAnomalySun  = INVALID;
-    moonLongitude   = INVALID;
     moonEclipLong   = INVALID;
-    meanAnomalyMoon = INVALID;
-    eclipObliquity  = INVALID;
-    siderealTime    = INVALID;
-    siderealT0      = INVALID;
+
     moonPositionSet = false;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 UnicodeString CalendarAstronomer::Ecliptic::toString() const
@@ -1484,7 +808,7 @@ UnicodeString CalendarAstronomer::Ecliptic::toString() const
     snprintf(tmp, sizeof(tmp), "[%.5f,%.5f]", longitude*RAD_DEG, latitude*RAD_DEG);
     return UnicodeString(tmp, "");
 #else
-    return UnicodeString();
+    return {};
 #endif
 }
 
@@ -1496,36 +820,9 @@ UnicodeString CalendarAstronomer::Equatorial::toString() const
         (ascension*RAD_DEG), (declination*RAD_DEG));
     return UnicodeString(tmp, "");
 #else
-    return UnicodeString();
+    return {};
 #endif
 }
-
-UnicodeString CalendarAstronomer::Horizon::toString() const
-{
-#ifdef U_DEBUG_ASTRO
-    char tmp[800];
-    snprintf(tmp, sizeof(tmp), "[%.5f,%.5f]", altitude*RAD_DEG, azimuth*RAD_DEG);
-    return UnicodeString(tmp, "");
-#else
-    return UnicodeString();
-#endif
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

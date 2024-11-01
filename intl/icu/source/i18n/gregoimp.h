@@ -14,6 +14,7 @@
 #ifndef GREGOIMP_H
 #define GREGOIMP_H
 #include "unicode/utypes.h"
+#include "unicode/calendar.h"
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/ures.h"
@@ -49,7 +50,7 @@ class ClockMath {
 
 
 
-    static int64_t floorDivide(int64_t numerator, int64_t denominator);
+    static int64_t floorDivideInt64(int64_t numerator, int64_t denominator);
 
     
 
@@ -77,7 +78,25 @@ class ClockMath {
 
 
 
-    static int32_t floorDivide(double numerator, int32_t denominator,
+    static int32_t floorDivide(int32_t numerator, int32_t denominator,
+                               int32_t* remainder);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static double floorDivide(double numerator, int32_t denominator,
                                int32_t* remainder);
 
     
@@ -178,7 +197,7 @@ class Grego {
 
 
 
-    static double fieldsToDay(int32_t year, int32_t month, int32_t dom);
+    static int64_t fieldsToDay(int32_t year, int32_t month, int32_t dom);
     
     
 
@@ -190,8 +209,9 @@ class Grego {
 
 
 
-    static void dayToFields(double day, int32_t& year, int32_t& month,
-                            int32_t& dom, int32_t& dow, int32_t& doy);
+
+    static void dayToFields(int32_t day, int32_t& year, int32_t& month,
+                            int32_t& dom, int32_t& dow, int32_t& doy, UErrorCode& status);
 
     
 
@@ -202,10 +222,12 @@ class Grego {
 
 
 
-    static inline void dayToFields(double day, int32_t& year, int32_t& month,
-                                   int32_t& dom, int32_t& dow);
+
+    static inline void dayToFields(int32_t day, int32_t& year, int32_t& month,
+                                   int32_t& dom, int32_t& dow, UErrorCode& status);
 
     
+
 
 
 
@@ -217,14 +239,14 @@ class Grego {
 
 
     static void timeToFields(UDate time, int32_t& year, int32_t& month,
-                            int32_t& dom, int32_t& dow, int32_t& doy, int32_t& mid);
+                            int32_t& dom, int32_t& dow, int32_t& doy, int32_t& mid, UErrorCode& status);
 
     
 
 
 
 
-    static int32_t dayOfWeek(double day);
+    static int32_t dayOfWeek(int32_t day);
 
     
 
@@ -283,26 +305,66 @@ Grego::previousMonthLength(int y, int m) {
   return (m > 0) ? monthLength(y, m-1) : 31;
 }
 
-inline void Grego::dayToFields(double day, int32_t& year, int32_t& month,
-                               int32_t& dom, int32_t& dow) {
+inline void Grego::dayToFields(int32_t day, int32_t& year, int32_t& month,
+                               int32_t& dom, int32_t& dow, UErrorCode& status) {
   int32_t doy_unused;
-  dayToFields(day,year,month,dom,dow,doy_unused);
+  dayToFields(day,year,month,dom,dow,doy_unused, status);
 }
 
 inline double Grego::julianDayToMillis(int32_t julian)
 {
-  return (julian - kEpochStartAsJulianDay) * kOneDay;
+  return (static_cast<double>(julian) - kEpochStartAsJulianDay) * kOneDay;
 }
 
 inline int32_t Grego::millisToJulianDay(double millis) {
-  return (int32_t) (kEpochStartAsJulianDay + ClockMath::floorDivide(millis, (double)kOneDay));
+  return static_cast<int32_t>(kEpochStartAsJulianDay + ClockMath::floorDivide(millis, kOneDay));
 }
 
 inline int32_t Grego::gregorianShift(int32_t eyear) {
-  int64_t y = (int64_t)eyear-1;
-  int32_t gregShift = static_cast<int32_t>(ClockMath::floorDivide(y, (int64_t)400) - ClockMath::floorDivide(y, (int64_t)100) + 2);
-  return gregShift;
+  int64_t y = static_cast<int64_t>(eyear) - 1;
+  int64_t gregShift = ClockMath::floorDivideInt64(y, 400LL) - ClockMath::floorDivideInt64(y, 100LL) + 2;
+  return static_cast<int32_t>(gregShift);
 }
+
+#define IMPL_SYSTEM_DEFAULT_CENTURY(T, U)
+
+
+
+
+ \
+  namespace { \
+  static UDate           gSystemDefaultCenturyStart       = DBL_MIN; \
+  static int32_t         gSystemDefaultCenturyStartYear   = -1; \
+  static icu::UInitOnce  gSystemDefaultCenturyInit        {}; \
+  static void U_CALLCONV \
+  initializeSystemDefaultCentury() { \
+      UErrorCode status = U_ZERO_ERROR; \
+      T calendar(U, status); \
+      /* initialize systemDefaultCentury and systemDefaultCenturyYear based */ \
+      /* on the current time.  They'll be set to 80 years before */ \
+      /* the current time. */ \
+      if (U_FAILURE(status)) { \
+          return; \
+      } \
+      calendar.setTime(Calendar::getNow(), status); \
+      calendar.add(UCAL_YEAR, -80, status); \
+      gSystemDefaultCenturyStart = calendar.getTime(status); \
+      gSystemDefaultCenturyStartYear = calendar.get(UCAL_YEAR, status); \
+      /* We have no recourse upon failure unless we want to propagate the */ \
+      /* failure out. */ \
+  } \
+  }  /* namespace */ \
+  UDate T::defaultCenturyStart() const { \
+      /* lazy-evaluate systemDefaultCenturyStart */ \
+      umtx_initOnce(gSystemDefaultCenturyInit, &initializeSystemDefaultCentury); \
+      return gSystemDefaultCenturyStart; \
+  }   \
+  int32_t T::defaultCenturyStartYear() const { \
+      /* lazy-evaluate systemDefaultCenturyStart */ \
+      umtx_initOnce(gSystemDefaultCenturyInit, &initializeSystemDefaultCentury); \
+      return gSystemDefaultCenturyStartYear; \
+  } \
+  UBool T::haveDefaultCentury() const { return true; }
 
 U_NAMESPACE_END
 

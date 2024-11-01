@@ -64,18 +64,20 @@ enum URBNFRuleSetTag {
 
 
     URBNF_ORDINAL,
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     URBNF_DURATION,
+#endif 
     
 
 
 
 
 
-    URBNF_NUMBERING_SYSTEM,
+    URBNF_NUMBERING_SYSTEM = 3,
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -84,6 +86,15 @@ enum URBNFRuleSetTag {
     URBNF_COUNT
 #endif  
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -762,7 +773,7 @@ public:
 
 
 
-  virtual int32_t getNumberOfRuleSetDisplayNameLocales(void) const;
+  virtual int32_t getNumberOfRuleSetDisplayNameLocales() const;
 
   
 
@@ -976,7 +987,7 @@ public:
 
 
 
-  virtual inline UBool isLenient(void) const override;
+  virtual inline UBool isLenient() const override;
 
 #endif
 
@@ -1015,7 +1026,7 @@ public:
 
 
 
-    virtual ERoundingMode getRoundingMode(void) const override;
+    virtual ERoundingMode getRoundingMode() const override;
 
     
 
@@ -1030,14 +1041,14 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -1120,7 +1131,7 @@ private:
 #if !UCONFIG_NO_COLLATION
 
 inline UBool
-RuleBasedNumberFormat::isLenient(void) const {
+RuleBasedNumberFormat::isLenient() const {
     return lenient;
 }
 

@@ -95,6 +95,14 @@ class U_I18N_API Measure: public UObject {
 
 
 
+    inline bool operator!=(const UObject& other) const { return !operator==(other); }
+
+    
+
+
+
+
+
     inline const Formattable& getNumber() const;
 
     
@@ -114,7 +122,7 @@ class U_I18N_API Measure: public UObject {
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -127,7 +135,7 @@ class U_I18N_API Measure: public UObject {
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
  protected:
     

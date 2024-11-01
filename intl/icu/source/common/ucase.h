@@ -357,7 +357,7 @@ enum {
 
 
 U_CFUNC const UTrie2 * U_EXPORT2
-ucase_getTrie();
+ucase_getTrie(void);
 
 
 #define UCASE_TYPE_MASK     3

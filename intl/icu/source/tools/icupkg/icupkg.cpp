@@ -252,8 +252,8 @@ static UBool
 isPackageName(const char *filename) {
     int32_t len;
 
-    len=(int32_t)strlen(filename)-4; 
-    return (UBool)(len>0 && 0==strcmp(filename+len, ".dat"));
+    len = static_cast<int32_t>(strlen(filename)) - 4; 
+    return len > 0 && 0 == strcmp(filename + len, ".dat");
 }
 
 
@@ -350,7 +350,7 @@ main(int argc, char *argv[]) {
         outFilename=nullptr;
     } else  {
         outFilename=inFilename;
-        isModified=(UBool)(sourcePath!=destPath);
+        isModified = static_cast<UBool>(sourcePath != destPath);
     }
 
     
@@ -378,7 +378,7 @@ main(int argc, char *argv[]) {
 
 
 
-        isModified|=(UBool)(!isPackage || outType!=pkg->getInType());
+        isModified |= static_cast<UBool>(!isPackage || outType != pkg->getInType());
     } else if(isPackage) {
         outType=pkg->getInType(); 
     } else  {

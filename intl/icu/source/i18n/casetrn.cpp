@@ -91,7 +91,7 @@ UOBJECT_DEFINE_ABSTRACT_RTTI_IMPLEMENTATION(CaseMapTransliterator)
 
 
 CaseMapTransliterator::CaseMapTransliterator(const UnicodeString &id, UCaseMapFull *map) : 
-    Transliterator(id, 0),
+    Transliterator(id, nullptr),
     fMap(map)
 {
     

@@ -7,6 +7,10 @@
 
 
 
+#include <optional>
+#include <string_view>
+#include <utility>
+
 #include "unicode/bytestream.h"
 #include "unicode/utypes.h"
 #include "unicode/ures.h"
@@ -14,7 +18,6 @@
 #include "unicode/putil.h"
 #include "unicode/uenum.h"
 #include "unicode/uloc.h"
-#include "ustr_imp.h"
 #include "bytesinkutil.h"
 #include "charstr.h"
 #include "cmemory.h"
@@ -24,9 +27,10 @@
 #include "ulocimp.h"
 #include "uassert.h"
 
+namespace {
 
 
-typedef struct VariantListEntry {
+typedef struct VariantListEntry : public icu::UMemory {
     const char              *variant;
     struct VariantListEntry *next;
 } VariantListEntry;
@@ -67,18 +71,18 @@ typedef struct ULanguageTag {
 #define LOCALE_KEYWORD_SEP ';'
 #define LOCALE_KEY_TYPE_SEP '='
 
-#define ISALPHA(c) uprv_isASCIILetter(c)
-#define ISNUMERIC(c) ((c)>='0' && (c)<='9')
+constexpr auto ISALPHA = uprv_isASCIILetter;
+inline bool ISNUMERIC(char c) { return c >= '0' && c <= '9'; }
 
-static const char EMPTY[] = "";
-static const char LANG_UND[] = "und";
-static const char PRIVATEUSE_KEY[] = "x";
-static const char _POSIX[] = "_POSIX";
-static const char POSIX_KEY[] = "va";
-static const char POSIX_VALUE[] = "posix";
-static const char LOCALE_ATTRIBUTE_KEY[] = "attribute";
-static const char PRIVUSE_VARIANT_PREFIX[] = "lvariant";
-static const char LOCALE_TYPE_YES[] = "yes";
+constexpr char EMPTY[] = "";
+constexpr char LANG_UND[] = "und";
+constexpr char PRIVATEUSE_KEY[] = "x";
+constexpr char _POSIX[] = "_POSIX";
+constexpr char POSIX_KEY[] = "va";
+constexpr char POSIX_VALUE[] = "posix";
+constexpr char LOCALE_ATTRIBUTE_KEY[] = "attribute";
+constexpr char PRIVUSE_VARIANT_PREFIX[] = "lvariant";
+constexpr char LOCALE_TYPE_YES[] = "yes";
 
 #define LANG_UND_LEN 3
 
@@ -102,7 +106,7 @@ static const char LOCALE_TYPE_YES[] = "yes";
 
 
 
-static const char* const LEGACY[] = {
+constexpr const char* LEGACY[] = {
 
     "art-lojban",   "jbo",
     "en-gb-oed",    "en-gb-oxendict",
@@ -151,7 +155,7 @@ static const char* const LEGACY[] = {
 
 
 
-static const char* const REDUNDANT[] = {
+constexpr const char* REDUNDANT[] = {
 
     "sgn-br",       "bzs",
     "sgn-co",       "csn",
@@ -193,7 +197,7 @@ static const char* const REDUNDANT[] = {
 
 
 
-static const char DEPRECATEDLANGS[][4] = {
+constexpr char DEPRECATEDLANGS[][4] = {
 
     "in",       "id",
     "iw",       "he",
@@ -283,7 +287,7 @@ static const char DEPRECATEDLANGS[][4] = {
 
 
 
-static const char DEPRECATEDREGIONS[][3] = {
+constexpr char DEPRECATEDREGIONS[][3] = {
 
     "BU",       "MM",
     "DD",       "DE",
@@ -301,54 +305,56 @@ static const char DEPRECATEDREGIONS[][3] = {
 
 
 
-static ULanguageTag*
-ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* status);
+ULanguageTag*
+ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode& status);
 
-static void
+void
 ultag_close(ULanguageTag* langtag);
 
-static const char*
+const char*
 ultag_getLanguage(const ULanguageTag* langtag);
 
 #if 0
-static const char*
+const char*
 ultag_getJDKLanguage(const ULanguageTag* langtag);
 #endif
 
-static const char*
+const char*
 ultag_getExtlang(const ULanguageTag* langtag, int32_t idx);
 
-static int32_t
+int32_t
 ultag_getExtlangSize(const ULanguageTag* langtag);
 
-static const char*
+const char*
 ultag_getScript(const ULanguageTag* langtag);
 
-static const char*
+const char*
 ultag_getRegion(const ULanguageTag* langtag);
 
-static const char*
+const char*
 ultag_getVariant(const ULanguageTag* langtag, int32_t idx);
 
-static int32_t
+int32_t
 ultag_getVariantsSize(const ULanguageTag* langtag);
 
-static const char*
+const char*
 ultag_getExtensionKey(const ULanguageTag* langtag, int32_t idx);
 
-static const char*
+const char*
 ultag_getExtensionValue(const ULanguageTag* langtag, int32_t idx);
 
-static int32_t
+int32_t
 ultag_getExtensionsSize(const ULanguageTag* langtag);
 
-static const char*
+const char*
 ultag_getPrivateUse(const ULanguageTag* langtag);
 
 #if 0
-static const char*
+const char*
 ultag_getLegacy(const ULanguageTag* langtag);
 #endif
+
+}  
 
 U_NAMESPACE_BEGIN
 
@@ -373,7 +379,9 @@ U_NAMESPACE_END
 
 
 
-static UBool
+namespace {
+
+bool
 _isAlphaString(const char* s, int32_t len) {
     int32_t i;
     for (i = 0; i < len; i++) {
@@ -384,7 +392,7 @@ _isAlphaString(const char* s, int32_t len) {
     return true;
 }
 
-static UBool
+bool
 _isNumericString(const char* s, int32_t len) {
     int32_t i;
     for (i = 0; i < len; i++) {
@@ -395,7 +403,7 @@ _isNumericString(const char* s, int32_t len) {
     return true;
 }
 
-static UBool
+bool
 _isAlphaNumericString(const char* s, int32_t len) {
     int32_t i;
     for (i = 0; i < len; i++) {
@@ -406,10 +414,10 @@ _isAlphaNumericString(const char* s, int32_t len) {
     return true;
 }
 
-static UBool
+bool
 _isAlphaNumericStringLimitedLength(const char* s, int32_t len, int32_t min, int32_t max) {
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len >= min && len <= max && _isAlphaNumericString(s, len)) {
         return true;
@@ -417,7 +425,9 @@ _isAlphaNumericStringLimitedLength(const char* s, int32_t len, int32_t min, int3
     return false;
 }
 
-U_CFUNC UBool
+}  
+
+bool
 ultag_isLanguageSubtag(const char* s, int32_t len) {
     
 
@@ -425,7 +435,7 @@ ultag_isLanguageSubtag(const char* s, int32_t len) {
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len >= 2 && len <= 8 && _isAlphaString(s, len)) {
         return true;
@@ -433,14 +443,16 @@ ultag_isLanguageSubtag(const char* s, int32_t len) {
     return false;
 }
 
-static UBool
+namespace {
+
+bool
 _isExtlangSubtag(const char* s, int32_t len) {
     
 
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len == 3 && _isAlphaString(s, len)) {
         return true;
@@ -448,13 +460,15 @@ _isExtlangSubtag(const char* s, int32_t len) {
     return false;
 }
 
-U_CFUNC UBool
+}  
+
+bool
 ultag_isScriptSubtag(const char* s, int32_t len) {
     
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len == 4 && _isAlphaString(s, len)) {
         return true;
@@ -462,14 +476,14 @@ ultag_isScriptSubtag(const char* s, int32_t len) {
     return false;
 }
 
-U_CFUNC UBool
+bool
 ultag_isRegionSubtag(const char* s, int32_t len) {
     
 
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len == 2 && _isAlphaString(s, len)) {
         return true;
@@ -480,14 +494,16 @@ ultag_isRegionSubtag(const char* s, int32_t len) {
     return false;
 }
 
-static UBool
+namespace {
+
+bool
 _isVariantSubtag(const char* s, int32_t len) {
     
 
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (_isAlphaNumericStringLimitedLength(s, len, 5, 8)) {
         return true;
@@ -498,13 +514,13 @@ _isVariantSubtag(const char* s, int32_t len) {
     return false;
 }
 
-static UBool
-_isSepListOf(UBool (*test)(const char*, int32_t), const char* s, int32_t len) {
+bool
+_isSepListOf(bool (*test)(const char*, int32_t), const char* s, int32_t len) {
     const char *p = s;
     const char *pSubtag = nullptr;
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
 
     while ((p - s) < len) {
@@ -512,7 +528,7 @@ _isSepListOf(UBool (*test)(const char*, int32_t), const char* s, int32_t len) {
             if (pSubtag == nullptr) {
                 return false;
             }
-            if (!test(pSubtag, (int32_t)(p - pSubtag))) {
+            if (!test(pSubtag, static_cast<int32_t>(p - pSubtag))) {
                 return false;
             }
             pSubtag = nullptr;
@@ -524,16 +540,20 @@ _isSepListOf(UBool (*test)(const char*, int32_t), const char* s, int32_t len) {
     if (pSubtag == nullptr) {
         return false;
     }
-    return test(pSubtag, (int32_t)(p - pSubtag));
+    return test(pSubtag, static_cast<int32_t>(p - pSubtag));
 }
 
-U_CFUNC UBool
+}  
+
+bool
 ultag_isVariantSubtags(const char* s, int32_t len) {
     return _isSepListOf(&_isVariantSubtag, s, len);
 }
 
+namespace {
 
-static UBool
+
+bool
 _isPrivateuseVariantSubtag(const char* s, int32_t len) {
     
 
@@ -542,7 +562,7 @@ _isPrivateuseVariantSubtag(const char* s, int32_t len) {
     return _isAlphaNumericStringLimitedLength(s, len , 1, 8);
 }
 
-static UBool
+bool
 _isExtensionSingleton(const char* s, int32_t len) {
     
 
@@ -554,7 +574,7 @@ _isExtensionSingleton(const char* s, int32_t len) {
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len == 1 && (ISALPHA(*s) || ISNUMERIC(*s)) && (uprv_tolower(*s) != PRIVATEUSE)) {
         return true;
@@ -562,7 +582,7 @@ _isExtensionSingleton(const char* s, int32_t len) {
     return false;
 }
 
-static UBool
+bool
 _isExtensionSubtag(const char* s, int32_t len) {
     
 
@@ -570,12 +590,16 @@ _isExtensionSubtag(const char* s, int32_t len) {
     return _isAlphaNumericStringLimitedLength(s, len, 2, 8);
 }
 
-U_CFUNC UBool
+}  
+
+bool
 ultag_isExtensionSubtags(const char* s, int32_t len) {
     return _isSepListOf(&_isExtensionSubtag, s, len);
 }
 
-static UBool
+namespace {
+
+bool
 _isPrivateuseValueSubtag(const char* s, int32_t len) {
     
 
@@ -583,12 +607,14 @@ _isPrivateuseValueSubtag(const char* s, int32_t len) {
     return _isAlphaNumericStringLimitedLength(s, len, 1, 8);
 }
 
-U_CFUNC UBool
+}  
+
+bool
 ultag_isPrivateuseValueSubtags(const char* s, int32_t len) {
     return _isSepListOf(&_isPrivateuseValueSubtag, s, len);
 }
 
-U_CFUNC UBool
+bool
 ultag_isUnicodeLocaleAttribute(const char* s, int32_t len) {
     
 
@@ -596,18 +622,18 @@ ultag_isUnicodeLocaleAttribute(const char* s, int32_t len) {
     return _isAlphaNumericStringLimitedLength(s, len , 3, 8);
 }
 
-U_CFUNC UBool
+bool
 ultag_isUnicodeLocaleAttributes(const char* s, int32_t len) {
     return _isSepListOf(&ultag_isUnicodeLocaleAttribute, s, len);
 }
 
-U_CFUNC UBool
+bool
 ultag_isUnicodeLocaleKey(const char* s, int32_t len) {
     
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len == 2 && (ISALPHA(*s) || ISNUMERIC(*s)) && ISALPHA(s[1])) {
         return true;
@@ -615,7 +641,7 @@ ultag_isUnicodeLocaleKey(const char* s, int32_t len) {
     return false;
 }
 
-U_CFUNC UBool
+bool
 _isUnicodeLocaleTypeSubtag(const char*s, int32_t len) {
     
 
@@ -623,7 +649,7 @@ _isUnicodeLocaleTypeSubtag(const char*s, int32_t len) {
     return _isAlphaNumericStringLimitedLength(s, len , 3, 8);
 }
 
-U_CFUNC UBool
+bool
 ultag_isUnicodeLocaleType(const char*s, int32_t len) {
     
 
@@ -631,14 +657,16 @@ ultag_isUnicodeLocaleType(const char*s, int32_t len) {
     return _isSepListOf(&_isUnicodeLocaleTypeSubtag, s, len);
 }
 
-static UBool
+namespace {
+
+bool
 _isTKey(const char* s, int32_t len)
 {
     
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     if (len == 2 && ISALPHA(*s) && ISNUMERIC(*(s + 1))) {
         return true;
@@ -646,7 +674,9 @@ _isTKey(const char* s, int32_t len)
     return false;
 }
 
-U_CAPI const char * U_EXPORT2
+}  
+
+const char*
 ultag_getTKeyStart(const char *localeID) {
     const char *result = localeID;
     const char *sep;
@@ -662,7 +692,9 @@ ultag_getTKeyStart(const char *localeID) {
     return nullptr;
 }
 
-static UBool
+namespace {
+
+bool
 _isTValue(const char* s, int32_t len)
 {
     
@@ -671,7 +703,7 @@ _isTValue(const char* s, int32_t len)
     return _isAlphaNumericStringLimitedLength(s, len , 3, 8);
 }
 
-static UBool
+bool
 _isTransformedExtensionSubtag(int32_t& state, const char* s, int32_t len)
 {
     const int32_t kStart = 0;       
@@ -688,7 +720,7 @@ _isTransformedExtensionSubtag(int32_t& state, const char* s, int32_t len)
 
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
     switch (state) {
         case kStart:
@@ -744,7 +776,7 @@ _isTransformedExtensionSubtag(int32_t& state, const char* s, int32_t len)
     return false;
 }
 
-static UBool
+bool
 _isUnicodeExtensionSubtag(int32_t& state, const char* s, int32_t len)
 {
     const int32_t kStart = 0;         
@@ -783,8 +815,8 @@ _isUnicodeExtensionSubtag(int32_t& state, const char* s, int32_t len)
     return false;
 }
 
-static UBool
-_isStatefulSepListOf(UBool (*test)(int32_t&, const char*, int32_t), const char* s, int32_t len)
+bool
+_isStatefulSepListOf(bool (*test)(int32_t&, const char*, int32_t), const char* s, int32_t len)
 {
     int32_t state = 0;
     const char* p;
@@ -792,7 +824,7 @@ _isStatefulSepListOf(UBool (*test)(int32_t&, const char*, int32_t), const char* 
     int32_t subtagLen = 0;
 
     if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
+        len = static_cast<int32_t>(uprv_strlen(s));
     }
 
     for (p = s; len > 0; p++, len--) {
@@ -813,17 +845,20 @@ _isStatefulSepListOf(UBool (*test)(int32_t&, const char*, int32_t), const char* 
     return false;
 }
 
-U_CFUNC UBool
+}  
+
+bool
 ultag_isTransformedExtensionSubtags(const char* s, int32_t len)
 {
     return _isStatefulSepListOf(&_isTransformedExtensionSubtag, s, len);
 }
 
-U_CFUNC UBool
+bool
 ultag_isUnicodeExtensionSubtags(const char* s, int32_t len) {
     return _isStatefulSepListOf(&_isUnicodeExtensionSubtag, s, len);
 }
 
+namespace {
 
 
 
@@ -833,13 +868,11 @@ ultag_isUnicodeExtensionSubtags(const char* s, int32_t len) {
 
 
 
-static UBool
-_addVariantToList(VariantListEntry **first, VariantListEntry *var) {
-    UBool bAdded = true;
-
+bool
+_addVariantToList(VariantListEntry **first, icu::LocalPointer<VariantListEntry> var) {
     if (*first == nullptr) {
         var->next = nullptr;
-        *first = var;
+        *first = var.orphan();
     } else {
         VariantListEntry *prev, *cur;
         int32_t cmp;
@@ -849,8 +882,8 @@ _addVariantToList(VariantListEntry **first, VariantListEntry *var) {
         cur = *first;
         while (true) {
             if (cur == nullptr) {
-                prev->next = var;
                 var->next = nullptr;
+                prev->next = var.orphan();
                 break;
             }
 
@@ -858,20 +891,19 @@ _addVariantToList(VariantListEntry **first, VariantListEntry *var) {
             cmp = uprv_compareInvCharsAsAscii(var->variant, cur->variant);
             if (cmp == 0) {
                 
-                bAdded = false;
-                break;
+                return false;
             }
             prev = cur;
             cur = cur->next;
         }
     }
 
-    return bAdded;
+    return true;
 }
 
-static UBool
+bool
 _addAttributeToList(AttributeListEntry **first, AttributeListEntry *attr) {
-    UBool bAdded = true;
+    bool bAdded = true;
 
     if (*first == nullptr) {
         attr->next = nullptr;
@@ -912,10 +944,9 @@ _addAttributeToList(AttributeListEntry **first, AttributeListEntry *attr) {
     return bAdded;
 }
 
-
-static UBool
-_addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, UBool localeToBCP) {
-    UBool bAdded = true;
+bool
+_addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, bool localeToBCP) {
+    bool bAdded = true;
 
     if (*first == nullptr) {
         ext->next = nullptr;
@@ -937,8 +968,8 @@ _addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, UBool l
                 
                 int32_t len, curlen;
 
-                len = (int32_t)uprv_strlen(ext->key);
-                curlen = (int32_t)uprv_strlen(cur->key);
+                len = static_cast<int32_t>(uprv_strlen(ext->key));
+                curlen = static_cast<int32_t>(uprv_strlen(cur->key));
 
                 if (len == 1 && curlen == 1) {
                     if (*(ext->key) == *(cur->key)) {
@@ -990,7 +1021,7 @@ _addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, UBool l
     return bAdded;
 }
 
-static void
+void
 _initializeULanguageTag(ULanguageTag* langtag) {
     int32_t i;
 
@@ -1011,127 +1042,120 @@ _initializeULanguageTag(ULanguageTag* langtag) {
     langtag->privateuse = EMPTY;
 }
 
-static void
-_appendLanguageToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool strict, UErrorCode* status) {
-    char buf[ULOC_LANG_CAPACITY];
+void
+_appendLanguageToLanguageTag(const char* localeID, icu::ByteSink& sink, bool strict, UErrorCode& status) {
     UErrorCode tmpStatus = U_ZERO_ERROR;
-    int32_t len, i;
 
-    if (U_FAILURE(*status)) {
+    if (U_FAILURE(status)) {
         return;
     }
 
-    len = uloc_getLanguage(localeID, buf, sizeof(buf), &tmpStatus);
-    if (U_FAILURE(tmpStatus) || tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
+    icu::CharString buf = ulocimp_getLanguage(localeID, tmpStatus);
+    if (U_FAILURE(tmpStatus)) {
         if (strict) {
-            *status = U_ILLEGAL_ARGUMENT_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
             return;
         }
-        len = 0;
     }
 
     
 
-    if (len == 0) {
+    if (buf.isEmpty()) {
         sink.Append(LANG_UND, LANG_UND_LEN);
-    } else if (!ultag_isLanguageSubtag(buf, len)) {
+    } else if (!ultag_isLanguageSubtag(buf.data(), buf.length())) {
             
         if (strict) {
-            *status = U_ILLEGAL_ARGUMENT_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
             return;
         }
         sink.Append(LANG_UND, LANG_UND_LEN);
     } else {
         
-        for (i = 0; i < UPRV_LENGTHOF(DEPRECATEDLANGS); i += 2) {
+        for (int32_t i = 0; i < UPRV_LENGTHOF(DEPRECATEDLANGS); i += 2) {
             
             
             
             
-            if (uprv_strlen(buf) < uprv_strlen(DEPRECATEDLANGS[i])) break;
-            if (uprv_compareInvCharsAsAscii(buf, DEPRECATEDLANGS[i]) == 0) {
-                uprv_strcpy(buf, DEPRECATEDLANGS[i + 1]);
-                len = (int32_t)uprv_strlen(buf);
-                break;
+            if (buf.length() < static_cast<int32_t>(uprv_strlen(DEPRECATEDLANGS[i]))) break;
+            if (uprv_compareInvCharsAsAscii(buf.data(), DEPRECATEDLANGS[i]) == 0) {
+                const char* const resolved = DEPRECATEDLANGS[i + 1];
+                sink.Append(resolved, static_cast<int32_t>(uprv_strlen(resolved)));
+                return;
             }
         }
-        sink.Append(buf, len);
+        sink.Append(buf.data(), buf.length());
     }
 }
 
-static void
-_appendScriptToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool strict, UErrorCode* status) {
-    char buf[ULOC_SCRIPT_CAPACITY];
+void
+_appendScriptToLanguageTag(const char* localeID, icu::ByteSink& sink, bool strict, UErrorCode& status) {
     UErrorCode tmpStatus = U_ZERO_ERROR;
-    int32_t len;
 
-    if (U_FAILURE(*status)) {
+    if (U_FAILURE(status)) {
         return;
     }
 
-    len = uloc_getScript(localeID, buf, sizeof(buf), &tmpStatus);
-    if (U_FAILURE(tmpStatus) || tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
+    icu::CharString buf = ulocimp_getScript(localeID, tmpStatus);
+    if (U_FAILURE(tmpStatus)) {
         if (strict) {
-            *status = U_ILLEGAL_ARGUMENT_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
         }
         return;
     }
 
-    if (len > 0) {
-        if (!ultag_isScriptSubtag(buf, len)) {
+    if (!buf.isEmpty()) {
+        if (!ultag_isScriptSubtag(buf.data(), buf.length())) {
             
             if (strict) {
-                *status = U_ILLEGAL_ARGUMENT_ERROR;
+                status = U_ILLEGAL_ARGUMENT_ERROR;
             }
             return;
         } else {
             sink.Append("-", 1);
-            sink.Append(buf, len);
+            sink.Append(buf.data(), buf.length());
         }
     }
 }
 
-static void
-_appendRegionToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool strict, UErrorCode* status) {
-    char buf[ULOC_COUNTRY_CAPACITY];
+void
+_appendRegionToLanguageTag(const char* localeID, icu::ByteSink& sink, bool strict, UErrorCode& status) {
     UErrorCode tmpStatus = U_ZERO_ERROR;
-    int32_t len;
 
-    if (U_FAILURE(*status)) {
+    if (U_FAILURE(status)) {
         return;
     }
 
-    len = uloc_getCountry(localeID, buf, sizeof(buf), &tmpStatus);
-    if (U_FAILURE(tmpStatus) || tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
+    icu::CharString buf = ulocimp_getRegion(localeID, tmpStatus);
+    if (U_FAILURE(tmpStatus)) {
         if (strict) {
-            *status = U_ILLEGAL_ARGUMENT_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
         }
         return;
     }
 
-    if (len > 0) {
-        if (!ultag_isRegionSubtag(buf, len)) {
+    if (!buf.isEmpty()) {
+        if (!ultag_isRegionSubtag(buf.data(), buf.length())) {
             
             if (strict) {
-                *status = U_ILLEGAL_ARGUMENT_ERROR;
+                status = U_ILLEGAL_ARGUMENT_ERROR;
             }
             return;
         } else {
             sink.Append("-", 1);
             
-            for (int i = 0; i < UPRV_LENGTHOF(DEPRECATEDREGIONS); i += 2) {
-                if (uprv_compareInvCharsAsAscii(buf, DEPRECATEDREGIONS[i]) == 0) {
-                    uprv_strcpy(buf, DEPRECATEDREGIONS[i + 1]);
-                    len = (int32_t)uprv_strlen(buf);
-                    break;
+            for (int32_t i = 0; i < UPRV_LENGTHOF(DEPRECATEDREGIONS); i += 2) {
+                if (uprv_compareInvCharsAsAscii(buf.data(), DEPRECATEDREGIONS[i]) == 0) {
+                    const char* const resolved = DEPRECATEDREGIONS[i + 1];
+                    sink.Append(resolved, static_cast<int32_t>(uprv_strlen(resolved)));
+                    return;
                 }
             }
-            sink.Append(buf, len);
+            sink.Append(buf.data(), buf.length());
         }
     }
 }
 
-static void _sortVariants(VariantListEntry* first) {
+void _sortVariants(VariantListEntry* first) {
     for (VariantListEntry* var1 = first; var1 != nullptr; var1 = var1->next) {
         for (VariantListEntry* var2 = var1->next; var2 != nullptr; var2 = var2->next) {
             
@@ -1144,32 +1168,26 @@ static void _sortVariants(VariantListEntry* first) {
     }
 }
 
-static void
-_appendVariantsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool strict, UBool *hadPosix, UErrorCode* status) {
-    char buf[ULOC_FULLNAME_CAPACITY];
+void
+_appendVariantsToLanguageTag(const char* localeID, icu::ByteSink& sink, bool strict, bool& hadPosix, UErrorCode& status) {
+    if (U_FAILURE(status)) { return; }
+
     UErrorCode tmpStatus = U_ZERO_ERROR;
-    int32_t len, i;
-
-    if (U_FAILURE(*status)) {
-        return;
-    }
-
-    len = uloc_getVariant(localeID, buf, sizeof(buf), &tmpStatus);
+    icu::CharString buf = ulocimp_getVariant(localeID, tmpStatus);
     if (U_FAILURE(tmpStatus) || tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
         if (strict) {
-            *status = U_ILLEGAL_ARGUMENT_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
         }
         return;
     }
 
-    if (len > 0) {
+    if (!buf.isEmpty()) {
         char *p, *pVar;
-        UBool bNext = true;
-        VariantListEntry *var;
+        bool bNext = true;
         VariantListEntry *varFirst = nullptr;
 
         pVar = nullptr;
-        p = buf;
+        p = buf.data();
         while (bNext) {
             if (*p == SEP || *p == LOCALE_SEP || *p == 0) {
                 if (*p == 0) {
@@ -1179,42 +1197,40 @@ _appendVariantsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                 }
                 if (pVar == nullptr) {
                     if (strict) {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
+                        status = U_ILLEGAL_ARGUMENT_ERROR;
                         break;
                     }
                     
                 } else {
                     
 
-                    for (i = 0; *(pVar + i) != 0; i++) {
+                    for (int32_t i = 0; *(pVar + i) != 0; i++) {
                         *(pVar + i) = uprv_tolower(*(pVar + i));
                     }
 
                     
                     if (_isVariantSubtag(pVar, -1)) {
-                        if (uprv_strcmp(pVar,POSIX_VALUE) || len != (int32_t)uprv_strlen(POSIX_VALUE)) {
+                        if (uprv_strcmp(pVar, POSIX_VALUE) || buf.length() != static_cast<int32_t>(uprv_strlen(POSIX_VALUE))) {
                             
-                            var = (VariantListEntry*)uprv_malloc(sizeof(VariantListEntry));
-                            if (var == nullptr) {
-                                *status = U_MEMORY_ALLOCATION_ERROR;
+                            icu::LocalPointer<VariantListEntry> var(new VariantListEntry, status);
+                            if (U_FAILURE(status)) {
                                 break;
                             }
                             var->variant = pVar;
-                            if (!_addVariantToList(&varFirst, var)) {
+                            if (!_addVariantToList(&varFirst, std::move(var))) {
                                 
-                                uprv_free(var);
                                 if (strict) {
-                                    *status = U_ILLEGAL_ARGUMENT_ERROR;
+                                    status = U_ILLEGAL_ARGUMENT_ERROR;
                                     break;
                                 }
                             }
                         } else {
                             
                             
-                            *hadPosix = true;
+                            hadPosix = true;
                         }
                     } else if (strict) {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
+                        status = U_ILLEGAL_ARGUMENT_ERROR;
                         break;
                     } else if (_isPrivateuseValueSubtag(pVar, -1)) {
                         
@@ -1229,7 +1245,7 @@ _appendVariantsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
             p++;
         }
 
-        if (U_SUCCESS(*status)) {
+        if (U_SUCCESS(status)) {
             if (varFirst != nullptr) {
                 int32_t varLen;
 
@@ -1237,10 +1253,10 @@ _appendVariantsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                 _sortVariants(varFirst);
 
                 
-                var = varFirst;
+                VariantListEntry* var = varFirst;
                 while (var != nullptr) {
                     sink.Append("-", 1);
-                    varLen = (int32_t)uprv_strlen(var->variant);
+                    varLen = static_cast<int32_t>(uprv_strlen(var->variant));
                     sink.Append(var->variant, varLen);
                     var = var->next;
                 }
@@ -1248,30 +1264,28 @@ _appendVariantsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
         }
 
         
-        var = varFirst;
-        while (var != nullptr) {
+        for (VariantListEntry* var = varFirst; var != nullptr; ) {
             VariantListEntry *tmpVar = var->next;
-            uprv_free(var);
+            delete var;
             var = tmpVar;
         }
 
-        if (U_FAILURE(*status)) {
+        if (U_FAILURE(status)) {
             return;
         }
     }
 }
 
-static void
-_appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool strict, UBool hadPosix, UErrorCode* status) {
-    char attrBuf[ULOC_KEYWORD_AND_VALUES_CAPACITY] = { 0 };
-    int32_t attrBufLength = 0;
+void
+_appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, bool strict, bool hadPosix, UErrorCode& status) {
+    if (U_FAILURE(status)) { return; }
 
     icu::MemoryPool<AttributeListEntry> attrPool;
     icu::MemoryPool<ExtensionListEntry> extPool;
     icu::MemoryPool<icu::CharString> strPool;
 
-    icu::LocalUEnumerationPointer keywordEnum(uloc_openKeywords(localeID, status));
-    if (U_FAILURE(*status) && !hadPosix) {
+    icu::LocalUEnumerationPointer keywordEnum(uloc_openKeywords(localeID, &status));
+    if (U_FAILURE(status) && !hadPosix) {
         return;
     }
     if (keywordEnum.isValid() || hadPosix) {
@@ -1286,28 +1300,24 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
         const char *bcpKey=nullptr, *bcpValue=nullptr;
         UErrorCode tmpStatus = U_ZERO_ERROR;
         int32_t keylen;
-        UBool isBcpUExt;
+        bool isBcpUExt;
 
         while (true) {
-            key = uenum_next(keywordEnum.getAlias(), nullptr, status);
+            key = uenum_next(keywordEnum.getAlias(), nullptr, &status);
             if (key == nullptr) {
                 break;
             }
 
-            icu::CharString buf;
-            {
-                icu::CharStringByteSink sink(&buf);
-                ulocimp_getKeywordValue(localeID, key, sink, &tmpStatus);
-            }
+            icu::CharString buf = ulocimp_getKeywordValue(localeID, key, tmpStatus);
             len = buf.length();
 
             if (U_FAILURE(tmpStatus)) {
                 if (tmpStatus == U_MEMORY_ALLOCATION_ERROR) {
-                    *status = U_MEMORY_ALLOCATION_ERROR;
+                    status = U_MEMORY_ALLOCATION_ERROR;
                     break;
                 }
                 if (strict) {
-                    *status = U_ILLEGAL_ARGUMENT_ERROR;
+                    status = U_ILLEGAL_ARGUMENT_ERROR;
                     break;
                 }
                 
@@ -1315,7 +1325,7 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                 continue;
             }
 
-            keylen = (int32_t)uprv_strlen(key);
+            keylen = static_cast<int32_t>(uprv_strlen(key));
             isBcpUExt = (keylen > 1);
 
             
@@ -1323,42 +1333,40 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                 if (len > 0) {
                     int32_t i = 0;
                     while (true) {
-                        attrBufLength = 0;
+                        icu::CharString attrBuf;
                         for (; i < len; i++) {
                             if (buf[i] != '-') {
-                                attrBuf[attrBufLength++] = buf[i];
+                                attrBuf.append(buf[i], status);
                             } else {
                                 i++;
                                 break;
                             }
                         }
-                        if (attrBufLength > 0) {
-                            attrBuf[attrBufLength] = 0;
-
-                        } else if (i >= len){
+                        if (U_FAILURE(status)) {
+                            return;
+                        }
+                        if (attrBuf.isEmpty() && i >= len) {
                             break;
                         }
 
                         
                         attr = attrPool.create();
                         if (attr == nullptr) {
-                            *status = U_MEMORY_ALLOCATION_ERROR;
+                            status = U_MEMORY_ALLOCATION_ERROR;
                             break;
                         }
-                        icu::CharString* attrValue =
-                                strPool.create(attrBuf, attrBufLength, *status);
-                        if (attrValue == nullptr) {
-                            *status = U_MEMORY_ALLOCATION_ERROR;
+                        if (icu::CharString* str =
+                                strPool.create(std::move(attrBuf), status)) {
+                            if (U_FAILURE(status)) { break; }
+                            attr->attribute = str->data();
+                        } else {
+                            status = U_MEMORY_ALLOCATION_ERROR;
                             break;
                         }
-                        if (U_FAILURE(*status)) {
-                            break;
-                        }
-                        attr->attribute = attrValue->data();
 
                         if (!_addAttributeToList(&firstAttr, attr)) {
                             if (strict) {
-                                *status = U_ILLEGAL_ARGUMENT_ERROR;
+                                status = U_ILLEGAL_ARGUMENT_ERROR;
                                 break;
                             }
                         }
@@ -1368,25 +1376,26 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                     bcpValue = nullptr;
                 }
             } else if (isBcpUExt) {
-                bcpKey = uloc_toUnicodeLocaleKey(key);
-                if (bcpKey == nullptr) {
+                std::optional<std::string_view> optBcpKey = ulocimp_toBcpKeyWithFallback(key);
+                if (!optBcpKey.has_value()) {
                     if (strict) {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
+                        status = U_ILLEGAL_ARGUMENT_ERROR;
                         break;
                     }
                     continue;
                 }
+                bcpKey = optBcpKey->data();
 
-                
-                bcpValue = uloc_toUnicodeLocaleType(key, buf.data());
-                if (bcpValue == nullptr) {
+                std::optional<std::string_view> optBcpValue =
+                    ulocimp_toBcpTypeWithFallback(key, buf.toStringPiece());
+                if (!optBcpValue.has_value()) {
                     if (strict) {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
+                        status = U_ILLEGAL_ARGUMENT_ERROR;
                         break;
                     }
                     continue;
                 }
-                if (bcpValue == buf.data()) {
+                if (optBcpValue->data() == buf.data()) {
                     
 
 
@@ -1396,22 +1405,24 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                     icu::CharString* extBuf = extBufPool.create(buf, tmpStatus);
 
                     if (extBuf == nullptr) {
-                        *status = U_MEMORY_ALLOCATION_ERROR;
+                        status = U_MEMORY_ALLOCATION_ERROR;
                         break;
                     }
                     if (U_FAILURE(tmpStatus)) {
-                        *status = tmpStatus;
+                        status = tmpStatus;
                         break;
                     }
 
                     T_CString_toLowerCase(extBuf->data());
                     bcpValue = extBuf->data();
+                } else {
+                    bcpValue = optBcpValue->data();
                 }
             } else {
                 if (*key == PRIVATEUSE) {
                     if (!ultag_isPrivateuseValueSubtags(buf.data(), len)) {
                         if (strict) {
-                            *status = U_ILLEGAL_ARGUMENT_ERROR;
+                            status = U_ILLEGAL_ARGUMENT_ERROR;
                             break;
                         }
                         continue;
@@ -1419,7 +1430,7 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                 } else {
                     if (!_isExtensionSingleton(key, keylen) || !ultag_isExtensionSubtags(buf.data(), len)) {
                         if (strict) {
-                            *status = U_ILLEGAL_ARGUMENT_ERROR;
+                            status = U_ILLEGAL_ARGUMENT_ERROR;
                             break;
                         }
                         continue;
@@ -1429,11 +1440,11 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                 icu::CharString* extBuf =
                     extBufPool.create(buf.data(), len, tmpStatus);
                 if (extBuf == nullptr) {
-                    *status = U_MEMORY_ALLOCATION_ERROR;
+                    status = U_MEMORY_ALLOCATION_ERROR;
                     break;
                 }
                 if (U_FAILURE(tmpStatus)) {
-                    *status = tmpStatus;
+                    status = tmpStatus;
                     break;
                 }
                 bcpValue = extBuf->data();
@@ -1442,7 +1453,7 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
             
             ext = extPool.create();
             if (ext == nullptr) {
-                *status = U_MEMORY_ALLOCATION_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
                 break;
             }
             ext->key = bcpKey;
@@ -1450,7 +1461,7 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
 
             if (!_addExtensionToList(&firstExt, ext, true)) {
                 if (strict) {
-                    *status = U_ILLEGAL_ARGUMENT_ERROR;
+                    status = U_ILLEGAL_ARGUMENT_ERROR;
                     break;
                 }
             }
@@ -1461,7 +1472,7 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
             
             ext = extPool.create();
             if (ext == nullptr) {
-                *status = U_MEMORY_ALLOCATION_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
                 return;
             }
             ext->key = POSIX_KEY;
@@ -1472,8 +1483,8 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
             }
         }
 
-        if (U_SUCCESS(*status) && (firstExt != nullptr || firstAttr != nullptr)) {
-            UBool startLDMLExtension = false;
+        if (U_SUCCESS(status) && (firstExt != nullptr || firstAttr != nullptr)) {
+            bool startLDMLExtension = false;
             for (ext = firstExt; ext; ext = ext->next) {
                 if (!startLDMLExtension && uprv_strlen(ext->key) > 1) {
                     
@@ -1508,11 +1519,13 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
 
 
 
-static void
-_appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendTo, icu::MemoryPool<ExtensionListEntry>& extPool, icu::MemoryPool<icu::CharString>& kwdBuf, UBool *posixVariant, UErrorCode *status) {
+void
+_appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendTo, icu::MemoryPool<ExtensionListEntry>& extPool, icu::MemoryPool<icu::CharString>& kwdBuf, bool& posixVariant, UErrorCode& status) {
+    if (U_FAILURE(status)) { return; }
+
     const char *pTag;   
     const char *pKwds;  
-    UBool variantExists = *posixVariant;
+    bool variantExists = posixVariant;
 
     ExtensionListEntry *kwdFirst = nullptr;    
     ExtensionListEntry *kwd, *nextKwd;
@@ -1520,7 +1533,7 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
     int32_t len;
 
     
-    *posixVariant = false;
+    posixVariant = false;
 
     pTag = ldmlext;
     pKwds = nullptr;
@@ -1529,9 +1542,7 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
         AttributeListEntry *attrFirst = nullptr;   
         AttributeListEntry *attr, *nextAttr;
 
-        char attrBuf[ULOC_KEYWORD_AND_VALUES_CAPACITY];
-        int32_t attrBufIdx = 0;
-
+        icu::MemoryPool<icu::CharString> strPool;
         icu::MemoryPool<AttributeListEntry> attrPool;
 
         
@@ -1547,17 +1558,15 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
             
             attr = attrPool.create();
             if (attr == nullptr) {
-                *status = U_MEMORY_ALLOCATION_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
                 return;
             }
 
-            if (len < (int32_t)sizeof(attrBuf) - attrBufIdx) {
-                uprv_memcpy(&attrBuf[attrBufIdx], pTag, len);
-                attrBuf[attrBufIdx + len] = 0;
-                attr->attribute = &attrBuf[attrBufIdx];
-                attrBufIdx += (len + 1);
+            if (icu::CharString* str = strPool.create(pTag, len, status)) {
+                if (U_FAILURE(status)) { return; }
+                attr->attribute = str->data();
             } else {
-                *status = U_ILLEGAL_ARGUMENT_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
                 return;
             }
 
@@ -1577,13 +1586,13 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
 
             kwd = extPool.create();
             if (kwd == nullptr) {
-                *status = U_MEMORY_ALLOCATION_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
                 return;
             }
 
             icu::CharString* value = kwdBuf.create();
             if (value == nullptr) {
-                *status = U_MEMORY_ALLOCATION_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
                 return;
             }
 
@@ -1592,12 +1601,12 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
             while (attr != nullptr) {
                 nextAttr = attr->next;
                 if (attr != attrFirst) {
-                    value->append('-', *status);
+                    value->append('-', status);
                 }
-                value->append(attr->attribute, *status);
+                value->append(attr->attribute, status);
                 attr = nextAttr;
             }
-            if (U_FAILURE(*status)) {
+            if (U_FAILURE(status)) {
                 return;
             }
 
@@ -1605,7 +1614,7 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
             kwd->value = value->data();
 
             if (!_addExtensionToList(&kwdFirst, kwd, false)) {
-                *status = U_ILLEGAL_ARGUMENT_ERROR;
+                status = U_ILLEGAL_ARGUMENT_ERROR;
                 return;
             }
         }
@@ -1616,14 +1625,14 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
         const char *pBcpType = nullptr;    
         int32_t bcpKeyLen = 0;
         int32_t bcpTypeLen = 0;
-        UBool isDone = false;
+        bool isDone = false;
 
         pTag = pKwds;
         
         while (!isDone) {
             const char *pNextBcpKey = nullptr;
             int32_t nextBcpKeyLen = 0;
-            UBool emitKeyword = false;
+            bool emitKeyword = false;
 
             if (*pTag) {
                 
@@ -1665,76 +1674,66 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
                 const char *pKey = nullptr;    
                 const char *pType = nullptr;   
 
-                char bcpKeyBuf[3];          
-
                 U_ASSERT(pBcpKey != nullptr);
 
-                if (bcpKeyLen >= (int32_t)sizeof(bcpKeyBuf)) {
+                
+                if (bcpKeyLen != 2) {
                     
-                    *status = U_ILLEGAL_ARGUMENT_ERROR;
+                    status = U_ILLEGAL_ARGUMENT_ERROR;
                     return;
                 }
-                U_ASSERT(bcpKeyLen <= 2);
-
-                uprv_strncpy(bcpKeyBuf, pBcpKey, bcpKeyLen);
-                bcpKeyBuf[bcpKeyLen] = 0;
 
                 
-                pKey = uloc_toLegacyKey(bcpKeyBuf);
-                if (pKey == nullptr) {
-                    *status = U_ILLEGAL_ARGUMENT_ERROR;
+                std::optional<std::string_view> legacyKey = ulocimp_toLegacyKeyWithFallback(
+                    {pBcpKey, static_cast<std::string_view::size_type>(bcpKeyLen)});
+                if (!legacyKey.has_value()) {
+                    status = U_ILLEGAL_ARGUMENT_ERROR;
                     return;
                 }
-                if (pKey == bcpKeyBuf) {
+                if (legacyKey->data() == pBcpKey) {
                     
 
 
 
-                    T_CString_toLowerCase(bcpKeyBuf);
-                    icu::CharString* key = kwdBuf.create(bcpKeyBuf, bcpKeyLen, *status);
+                    icu::CharString* key = kwdBuf.create(pBcpKey, bcpKeyLen, status);
                     if (key == nullptr) {
-                        *status = U_MEMORY_ALLOCATION_ERROR;
+                        status = U_MEMORY_ALLOCATION_ERROR;
                         return;
                     }
-                    if (U_FAILURE(*status)) {
+                    if (U_FAILURE(status)) {
                         return;
                     }
+                    T_CString_toLowerCase(key->data());
                     pKey = key->data();
+                } else {
+                    pKey = legacyKey->data();
                 }
 
                 if (pBcpType) {
-                    char bcpTypeBuf[128];       
-                    if (bcpTypeLen >= (int32_t)sizeof(bcpTypeBuf)) {
-                        
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
-                        return;
-                    }
-
-                    uprv_strncpy(bcpTypeBuf, pBcpType, bcpTypeLen);
-                    bcpTypeBuf[bcpTypeLen] = 0;
-
                     
-                    pType = uloc_toLegacyType(pKey, bcpTypeBuf);
-                    if (pType == nullptr) {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
+                    std::optional<std::string_view> legacyType = ulocimp_toLegacyTypeWithFallback(
+                        pKey, {pBcpType, static_cast<std::string_view::size_type>(bcpTypeLen)});
+                    if (!legacyType.has_value()) {
+                        status = U_ILLEGAL_ARGUMENT_ERROR;
                         return;
                     }
-                    if (pType == bcpTypeBuf) {
+                    if (legacyType->data() == pBcpType) {
                         
 
 
 
-                        
-                        T_CString_toLowerCase(bcpTypeBuf);
-                        icu::CharString* type = kwdBuf.create(bcpTypeBuf, bcpTypeLen, *status);
+                        icu::CharString* type = kwdBuf.create(pBcpType, bcpTypeLen, status);
                         if (type == nullptr) {
-                            *status = U_MEMORY_ALLOCATION_ERROR;
+                            status = U_MEMORY_ALLOCATION_ERROR;
                             return;
                         }
-                        if (U_FAILURE(*status)) {
+                        if (U_FAILURE(status)) {
                             return;
                         }
+                        T_CString_toLowerCase(type->data());
                         pType = type->data();
+                    } else {
+                        pType = legacyType->data();
                     }
                 } else {
                     
@@ -1744,12 +1743,12 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
                 
 
                 if (!variantExists && !uprv_strcmp(pKey, POSIX_KEY) && !uprv_strcmp(pType, POSIX_VALUE) ) {
-                    *posixVariant = true;
+                    posixVariant = true;
                 } else {
                     
                     kwd = extPool.create();
                     if (kwd == nullptr) {
-                        *status = U_MEMORY_ALLOCATION_ERROR;
+                        status = U_MEMORY_ALLOCATION_ERROR;
                         return;
                     }
 
@@ -1778,9 +1777,10 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
     }
 }
 
+void
+_appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode& status) {
+    if (U_FAILURE(status)) { return; }
 
-static void
-_appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) {
     int32_t i, n;
     int32_t len;
     ExtensionListEntry *kwdFirst = nullptr;
@@ -1788,11 +1788,7 @@ _appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) 
     const char *key, *type;
     icu::MemoryPool<ExtensionListEntry> extPool;
     icu::MemoryPool<icu::CharString> kwdBuf;
-    UBool posixVariant = false;
-
-    if (U_FAILURE(*status)) {
-        return;
-    }
+    bool posixVariant = false;
 
     n = ultag_getExtensionsSize(langtag);
 
@@ -1806,37 +1802,37 @@ _appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) 
                 posixVariant = true;
             }
 
-            _appendLDMLExtensionAsKeywords(type, &kwdFirst, extPool, kwdBuf, &posixVariant, status);
-            if (U_FAILURE(*status)) {
+            _appendLDMLExtensionAsKeywords(type, &kwdFirst, extPool, kwdBuf, posixVariant, status);
+            if (U_FAILURE(status)) {
                 break;
             }
         } else {
             kwd = extPool.create();
             if (kwd == nullptr) {
-                *status = U_MEMORY_ALLOCATION_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
                 break;
             }
             kwd->key = key;
             kwd->value = type;
             if (!_addExtensionToList(&kwdFirst, kwd, false)) {
-                *status = U_ILLEGAL_ARGUMENT_ERROR;
+                status = U_ILLEGAL_ARGUMENT_ERROR;
                 break;
             }
         }
     }
 
-    if (U_SUCCESS(*status)) {
+    if (U_SUCCESS(status)) {
         type = ultag_getPrivateUse(langtag);
-        if ((int32_t)uprv_strlen(type) > 0) {
+        if (static_cast<int32_t>(uprv_strlen(type)) > 0) {
             
             kwd = extPool.create();
             if (kwd == nullptr) {
-                *status = U_MEMORY_ALLOCATION_ERROR;
+                status = U_MEMORY_ALLOCATION_ERROR;
             } else {
                 kwd->key = PRIVATEUSE_KEY;
                 kwd->value = type;
                 if (!_addExtensionToList(&kwdFirst, kwd, false)) {
-                    *status = U_ILLEGAL_ARGUMENT_ERROR;
+                    status = U_ILLEGAL_ARGUMENT_ERROR;
                 }
             }
         }
@@ -1844,14 +1840,14 @@ _appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) 
 
     
 
-    if (U_SUCCESS(*status) && posixVariant) {
-        len = (int32_t) uprv_strlen(_POSIX);
+    if (U_SUCCESS(status) && posixVariant) {
+        len = static_cast<int32_t>(uprv_strlen(_POSIX));
         sink.Append(_POSIX, len);
     }
 
-    if (U_SUCCESS(*status) && kwdFirst != nullptr) {
+    if (U_SUCCESS(status) && kwdFirst != nullptr) {
         
-        UBool firstValue = true;
+        bool firstValue = true;
         kwd = kwdFirst;
         do {
             if (firstValue) {
@@ -1862,12 +1858,12 @@ _appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) 
             }
 
             
-            len = (int32_t)uprv_strlen(kwd->key);
+            len = static_cast<int32_t>(uprv_strlen(kwd->key));
             sink.Append(kwd->key, len);
             sink.Append("=", 1);
 
             
-            len = (int32_t)uprv_strlen(kwd->value);
+            len = static_cast<int32_t>(uprv_strlen(kwd->value));
             sink.Append(kwd->value, len);
 
             kwd = kwd->next;
@@ -1875,36 +1871,27 @@ _appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) 
     }
 }
 
-static void
-_appendPrivateuseToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool strict, UBool hadPosix, UErrorCode* status) {
-    (void)hadPosix;
-    char buf[ULOC_FULLNAME_CAPACITY];
-    char tmpAppend[ULOC_FULLNAME_CAPACITY];
+void
+_appendPrivateuseToLanguageTag(const char* localeID, icu::ByteSink& sink, bool strict, bool , UErrorCode& status) {
+    if (U_FAILURE(status)) { return; }
+
     UErrorCode tmpStatus = U_ZERO_ERROR;
-    int32_t len, i;
-    int32_t reslen = 0;
-    int32_t capacity = sizeof tmpAppend;
-
-    if (U_FAILURE(*status)) {
-        return;
-    }
-
-    len = uloc_getVariant(localeID, buf, sizeof(buf), &tmpStatus);
-    if (U_FAILURE(tmpStatus) || tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
+    icu::CharString buf = ulocimp_getVariant(localeID, tmpStatus);
+    if (U_FAILURE(tmpStatus)) {
         if (strict) {
-            *status = U_ILLEGAL_ARGUMENT_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
         }
         return;
     }
 
-    if (len > 0) {
+    if (!buf.isEmpty()) {
         char *p, *pPriv;
-        UBool bNext = true;
-        UBool firstValue = true;
-        UBool writeValue;
+        bool bNext = true;
+        bool firstValue = true;
+        bool writeValue;
 
         pPriv = nullptr;
-        p = buf;
+        p = buf.data();
         while (bNext) {
             writeValue = false;
             if (*p == SEP || *p == LOCALE_SEP || *p == 0) {
@@ -1915,7 +1902,7 @@ _appendPrivateuseToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool 
                 }
                 if (pPriv != nullptr) {
                     
-                    for (i = 0; *(pPriv + i) != 0; i++) {
+                    for (int32_t i = 0; *(pPriv + i) != 0; i++) {
                         *(pPriv + i) = uprv_tolower(*(pPriv + i));
                     }
 
@@ -1929,44 +1916,25 @@ _appendPrivateuseToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool 
                             writeValue = true;
                         }
                     } else if (strict) {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
+                        status = U_ILLEGAL_ARGUMENT_ERROR;
                         break;
                     } else {
                         break;
                     }
 
                     if (writeValue) {
-                        if (reslen < capacity) {
-                            tmpAppend[reslen++] = SEP;
-                        }
+                        sink.Append("-", 1);
 
                         if (firstValue) {
-                            if (reslen < capacity) {
-                                tmpAppend[reslen++] = *PRIVATEUSE_KEY;
-                            }
-
-                            if (reslen < capacity) {
-                                tmpAppend[reslen++] = SEP;
-                            }
-
-                            len = (int32_t)uprv_strlen(PRIVUSE_VARIANT_PREFIX);
-                            if (reslen < capacity) {
-                                uprv_memcpy(tmpAppend + reslen, PRIVUSE_VARIANT_PREFIX, uprv_min(len, capacity - reslen));
-                            }
-                            reslen += len;
-
-                            if (reslen < capacity) {
-                                tmpAppend[reslen++] = SEP;
-                            }
-
+                            sink.Append(PRIVATEUSE_KEY, UPRV_LENGTHOF(PRIVATEUSE_KEY) - 1);
+                            sink.Append("-", 1);
+                            sink.Append(PRIVUSE_VARIANT_PREFIX, UPRV_LENGTHOF(PRIVUSE_VARIANT_PREFIX) - 1);
+                            sink.Append("-", 1);
                             firstValue = false;
                         }
 
-                        len = (int32_t)uprv_strlen(pPriv);
-                        if (reslen < capacity) {
-                            uprv_memcpy(tmpAppend + reslen, pPriv, uprv_min(len, capacity - reslen));
-                        }
-                        reslen += len;
+                        int32_t len = static_cast<int32_t>(uprv_strlen(pPriv));
+                        sink.Append(pPriv, len);
                     }
                 }
                 
@@ -1976,15 +1944,6 @@ _appendPrivateuseToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool 
             }
             p++;
         }
-
-        if (U_FAILURE(*status)) {
-            return;
-        }
-    }
-
-    if (U_SUCCESS(*status)) {
-        len = reslen;
-        sink.Append(tmpAppend, len);
     }
 }
 
@@ -2016,35 +1975,33 @@ _appendPrivateuseToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool 
 #pragma optimize( "", off )
 #endif
 
-static ULanguageTag*
-ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* status) {
+ULanguageTag*
+ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode& status) {
+    if (U_FAILURE(status)) { return nullptr; }
+
     char *tagBuf;
     int16_t next;
     char *pSubtag, *pNext, *pLastGoodPosition;
     int32_t subtagLen;
     int32_t extlangIdx;
-    ExtensionListEntry *pExtension;
+    icu::LocalPointer<ExtensionListEntry> pExtension;
     char *pExtValueSubtag, *pExtValueSubtagEnd;
     int32_t i;
-    UBool privateuseVar = false;
+    bool privateuseVar = false;
     int32_t legacyLen = 0;
 
     if (parsedLen != nullptr) {
         *parsedLen = 0;
     }
 
-    if (U_FAILURE(*status)) {
-        return nullptr;
-    }
-
     if (tagLen < 0) {
-        tagLen = (int32_t)uprv_strlen(tag);
+        tagLen = static_cast<int32_t>(uprv_strlen(tag));
     }
 
     
-    tagBuf = (char*)uprv_malloc(tagLen + 1);
+    tagBuf = static_cast<char*>(uprv_malloc(tagLen + 1));
     if (tagBuf == nullptr) {
-        *status = U_MEMORY_ALLOCATION_ERROR;
+        status = U_MEMORY_ALLOCATION_ERROR;
         return nullptr;
     }
     
@@ -2055,10 +2012,10 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
 
     
     icu::LocalULanguageTagPointer t(
-            (ULanguageTag*)uprv_malloc(sizeof(ULanguageTag)));
+            static_cast<ULanguageTag*>(uprv_malloc(sizeof(ULanguageTag))));
     if (t.isNull()) {
         uprv_free(tagBuf);
-        *status = U_MEMORY_ALLOCATION_ERROR;
+        status = U_MEMORY_ALLOCATION_ERROR;
         return nullptr;
     }
     _initializeULanguageTag(t.getAlias());
@@ -2092,12 +2049,13 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
             int32_t oldTagLength = tagLen;
             if (tagLen < newTagLength) {
                 uprv_free(tagBuf);
-                tagBuf = (char*)uprv_malloc(newTagLength + 1);
+                
+                
+                t->buf = tagBuf = static_cast<char*>(uprv_malloc(newTagLength + 1));
                 if (tagBuf == nullptr) {
-                    *status = U_MEMORY_ALLOCATION_ERROR;
+                    status = U_MEMORY_ALLOCATION_ERROR;
                     return nullptr;
                 }
-                t->buf = tagBuf;
                 tagLen = newTagLength;
             }
             parsedLenDelta = checkLegacyLen - replacementLen;
@@ -2154,7 +2112,6 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
     next = LANG | PRIV;
     pNext = pLastGoodPosition = tagBuf;
     extlangIdx = 0;
-    pExtension = nullptr;
     pExtValueSubtag = nullptr;
     pExtValueSubtagEnd = nullptr;
 
@@ -2177,7 +2134,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         } else {
             pNext = pSep + 1;
         }
-        subtagLen = (int32_t)(pSep - pSubtag);
+        subtagLen = static_cast<int32_t>(pSep - pSubtag);
 
         if (next & LANG) {
             if (ultag_isLanguageSubtag(pSubtag, subtagLen)) {
@@ -2240,20 +2197,14 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         if (next & VART) {
             if (_isVariantSubtag(pSubtag, subtagLen) ||
                (privateuseVar && _isPrivateuseVariantSubtag(pSubtag, subtagLen))) {
-                VariantListEntry *var;
-                UBool isAdded;
-
-                var = (VariantListEntry*)uprv_malloc(sizeof(VariantListEntry));
-                if (var == nullptr) {
-                    *status = U_MEMORY_ALLOCATION_ERROR;
+                icu::LocalPointer<VariantListEntry> var(new VariantListEntry, status);
+                if (U_FAILURE(status)) {
                     return nullptr;
                 }
                 *pSep = 0;
                 var->variant = T_CString_toUpperCase(pSubtag);
-                isAdded = _addVariantToList(&(t->variants), var);
-                if (!isAdded) {
+                if (!_addVariantToList(&(t->variants), std::move(var))) {
                     
-                    uprv_free(var);
                     break;
                 }
                 pLastGoodPosition = pSep;
@@ -2263,11 +2214,10 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         }
         if (next & EXTS) {
             if (_isExtensionSingleton(pSubtag, subtagLen)) {
-                if (pExtension != nullptr) {
+                if (pExtension.isValid()) {
                     if (pExtValueSubtag == nullptr || pExtValueSubtagEnd == nullptr) {
                         
-                        uprv_free(pExtension);
-                        pExtension = nullptr;
+                        delete pExtension.orphan();
                         break;
                     }
 
@@ -2276,20 +2226,19 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                     pExtension->value = T_CString_toLowerCase(pExtValueSubtag);
 
                     
-                    if (_addExtensionToList(&(t->extensions), pExtension, false)) {
+                    if (_addExtensionToList(&(t->extensions), pExtension.getAlias(), false)) {
+                        pExtension.orphan();
                         pLastGoodPosition = pExtValueSubtagEnd;
                     } else {
                         
-                        uprv_free(pExtension);
-                        pExtension = nullptr;
+                        delete pExtension.orphan();
                         break;
                     }
                 }
 
                 
-                pExtension = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
-                if (pExtension == nullptr) {
-                    *status = U_MEMORY_ALLOCATION_ERROR;
+                pExtension.adoptInsteadAndCheckErrorCode(new ExtensionListEntry, status);
+                if (U_FAILURE(status)) {
                     return nullptr;
                 }
                 *pSep = 0;
@@ -2326,12 +2275,11 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
             if (uprv_tolower(*pSubtag) == PRIVATEUSE && subtagLen == 1) {
                 char *pPrivuseVal;
 
-                if (pExtension != nullptr) {
+                if (pExtension.isValid()) {
                     
                     if (pExtValueSubtag == nullptr || pExtValueSubtagEnd == nullptr) {
                         
-                        uprv_free(pExtension);
-                        pExtension = nullptr;
+                        delete pExtension.orphan();
                         break;
                     } else {
                         
@@ -2339,13 +2287,12 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                         pExtension->value = T_CString_toLowerCase(pExtValueSubtag);
 
                         
-                        if (_addExtensionToList(&(t->extensions), pExtension, false)) {
+                        if (_addExtensionToList(&(t->extensions), pExtension.getAlias(), false)) {
+                            pExtension.orphan();
                             pLastGoodPosition = pExtValueSubtagEnd;
-                            pExtension = nullptr;
                         } else {
                         
-                            uprv_free(pExtension);
-                            pExtension = nullptr;
+                            delete pExtension.orphan();
                             break;
                         }
                     }
@@ -2375,7 +2322,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                     } else {
                         pNext = pSep + 1;
                     }
-                    subtagLen = (int32_t)(pSep - pSubtag);
+                    subtagLen = static_cast<int32_t>(pSep - pSubtag);
 
                     if (uprv_strncmp(pSubtag, PRIVUSE_VARIANT_PREFIX, uprv_strlen(PRIVUSE_VARIANT_PREFIX)) == 0) {
                         *pSep = 0;
@@ -2407,26 +2354,27 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         break;
     }
 
-    if (pExtension != nullptr) {
+    if (pExtension.isValid()) {
         
         if (pExtValueSubtag == nullptr || pExtValueSubtagEnd == nullptr) {
             
-            uprv_free(pExtension);
+            delete pExtension.orphan();
         } else {
             
             *pExtValueSubtagEnd = 0;
             pExtension->value = T_CString_toLowerCase(pExtValueSubtag);
             
-            if (_addExtensionToList(&(t->extensions), pExtension, false)) {
+            if (_addExtensionToList(&(t->extensions), pExtension.getAlias(), false)) {
+                pExtension.orphan();
                 pLastGoodPosition = pExtValueSubtagEnd;
             } else {
-                uprv_free(pExtension);
+                delete pExtension.orphan();
             }
         }
     }
 
     if (parsedLen != nullptr) {
-        *parsedLen = (int32_t)(pLastGoodPosition - t->buf + parsedLenDelta);
+        *parsedLen = static_cast<int32_t>(pLastGoodPosition - t->buf + parsedLenDelta);
     }
 
     return t.orphan();
@@ -2437,7 +2385,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
 #pragma optimize( "", on )
 #endif
 
-static void
+void
 ultag_close(ULanguageTag* langtag) {
 
     if (langtag == nullptr) {
@@ -2450,7 +2398,7 @@ ultag_close(ULanguageTag* langtag) {
         VariantListEntry *curVar = langtag->variants;
         while (curVar) {
             VariantListEntry *nextVar = curVar->next;
-            uprv_free(curVar);
+            delete curVar;
             curVar = nextVar;
         }
     }
@@ -2459,7 +2407,7 @@ ultag_close(ULanguageTag* langtag) {
         ExtensionListEntry *curExt = langtag->extensions;
         while (curExt) {
             ExtensionListEntry *nextExt = curExt->next;
-            uprv_free(curExt);
+            delete curExt;
             curExt = nextExt;
         }
     }
@@ -2467,13 +2415,13 @@ ultag_close(ULanguageTag* langtag) {
     uprv_free(langtag);
 }
 
-static const char*
+const char*
 ultag_getLanguage(const ULanguageTag* langtag) {
     return langtag->language;
 }
 
 #if 0
-static const char*
+const char*
 ultag_getJDKLanguage(const ULanguageTag* langtag) {
     int32_t i;
     for (i = 0; DEPRECATEDLANGS[i] != nullptr; i += 2) {
@@ -2485,7 +2433,7 @@ ultag_getJDKLanguage(const ULanguageTag* langtag) {
 }
 #endif
 
-static const char*
+const char*
 ultag_getExtlang(const ULanguageTag* langtag, int32_t idx) {
     if (idx >= 0 && idx < MAXEXTLANG) {
         return langtag->extlang[idx];
@@ -2493,7 +2441,7 @@ ultag_getExtlang(const ULanguageTag* langtag, int32_t idx) {
     return nullptr;
 }
 
-static int32_t
+int32_t
 ultag_getExtlangSize(const ULanguageTag* langtag) {
     int32_t size = 0;
     int32_t i;
@@ -2505,17 +2453,17 @@ ultag_getExtlangSize(const ULanguageTag* langtag) {
     return size;
 }
 
-static const char*
+const char*
 ultag_getScript(const ULanguageTag* langtag) {
     return langtag->script;
 }
 
-static const char*
+const char*
 ultag_getRegion(const ULanguageTag* langtag) {
     return langtag->region;
 }
 
-static const char*
+const char*
 ultag_getVariant(const ULanguageTag* langtag, int32_t idx) {
     const char *var = nullptr;
     VariantListEntry *cur = langtag->variants;
@@ -2531,7 +2479,7 @@ ultag_getVariant(const ULanguageTag* langtag, int32_t idx) {
     return var;
 }
 
-static int32_t
+int32_t
 ultag_getVariantsSize(const ULanguageTag* langtag) {
     int32_t size = 0;
     VariantListEntry *cur = langtag->variants;
@@ -2545,7 +2493,7 @@ ultag_getVariantsSize(const ULanguageTag* langtag) {
     return size;
 }
 
-static const char*
+const char*
 ultag_getExtensionKey(const ULanguageTag* langtag, int32_t idx) {
     const char *key = nullptr;
     ExtensionListEntry *cur = langtag->extensions;
@@ -2561,7 +2509,7 @@ ultag_getExtensionKey(const ULanguageTag* langtag, int32_t idx) {
     return key;
 }
 
-static const char*
+const char*
 ultag_getExtensionValue(const ULanguageTag* langtag, int32_t idx) {
     const char *val = nullptr;
     ExtensionListEntry *cur = langtag->extensions;
@@ -2577,7 +2525,7 @@ ultag_getExtensionValue(const ULanguageTag* langtag, int32_t idx) {
     return val;
 }
 
-static int32_t
+int32_t
 ultag_getExtensionsSize(const ULanguageTag* langtag) {
     int32_t size = 0;
     ExtensionListEntry *cur = langtag->extensions;
@@ -2591,18 +2539,19 @@ ultag_getExtensionsSize(const ULanguageTag* langtag) {
     return size;
 }
 
-static const char*
+const char*
 ultag_getPrivateUse(const ULanguageTag* langtag) {
     return langtag->privateuse;
 }
 
 #if 0
-static const char*
+const char*
 ultag_getLegacy(const ULanguageTag* langtag) {
     return langtag->legacy;
 }
 #endif
 
+}  
 
 
 
@@ -2617,89 +2566,48 @@ uloc_toLanguageTag(const char* localeID,
                    int32_t langtagCapacity,
                    UBool strict,
                    UErrorCode* status) {
-    if (U_FAILURE(*status)) {
-        return 0;
-    }
-
-    icu::CheckedArrayByteSink sink(langtag, langtagCapacity);
-    ulocimp_toLanguageTag(localeID, sink, strict, status);
-
-    int32_t reslen = sink.NumberOfBytesAppended();
-
-    if (U_FAILURE(*status)) {
-        return reslen;
-    }
-
-    if (sink.Overflowed()) {
-        *status = U_BUFFER_OVERFLOW_ERROR;
-    } else {
-        u_terminateChars(langtag, langtagCapacity, reslen, status);
-    }
-
-    return reslen;
+    return icu::ByteSinkUtil::viaByteSinkToTerminatedChars(
+        langtag, langtagCapacity,
+        [&](icu::ByteSink& sink, UErrorCode& status) {
+            ulocimp_toLanguageTag(localeID, sink, strict, status);
+        },
+        *status);
 }
 
+U_EXPORT icu::CharString
+ulocimp_toLanguageTag(const char* localeID,
+                      bool strict,
+                      UErrorCode& status) {
+    return icu::ByteSinkUtil::viaByteSinkToCharString(
+        [&](icu::ByteSink& sink, UErrorCode& status) {
+            ulocimp_toLanguageTag(localeID, sink, strict, status);
+        },
+        status);
+}
 
-U_CAPI void U_EXPORT2
+U_EXPORT void
 ulocimp_toLanguageTag(const char* localeID,
                       icu::ByteSink& sink,
-                      UBool strict,
-                      UErrorCode* status) {
-    icu::CharString canonical;
-    int32_t reslen;
+                      bool strict,
+                      UErrorCode& status) {
+    if (U_FAILURE(status)) { return; }
+
     UErrorCode tmpStatus = U_ZERO_ERROR;
-    UBool hadPosix = false;
+    bool hadPosix = false;
     const char* pKeywordStart;
 
     
-    int32_t resultCapacity = static_cast<int32_t>(uprv_strlen(localeID));
-    if (resultCapacity > 0) {
-        char* buffer;
-
-        for (;;) {
-            buffer = canonical.getAppendBuffer(
-                    resultCapacity,
-                    resultCapacity,
-                    resultCapacity,
-                    tmpStatus);
-
-            if (U_FAILURE(tmpStatus)) {
-                *status = tmpStatus;
-                return;
-            }
-
-            reslen =
-                uloc_canonicalize(localeID, buffer, resultCapacity, &tmpStatus);
-
-            if (tmpStatus != U_BUFFER_OVERFLOW_ERROR) {
-                break;
-            }
-
-            resultCapacity = reslen;
-            tmpStatus = U_ZERO_ERROR;
-        }
-
-        if (U_FAILURE(tmpStatus)) {
-            *status = U_ILLEGAL_ARGUMENT_ERROR;
-            return;
-        }
-
-        canonical.append(buffer, reslen, tmpStatus);
-        if (tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
-            tmpStatus = U_ZERO_ERROR;  
-        }
-
-        if (U_FAILURE(tmpStatus)) {
-            *status = tmpStatus;
-            return;
-        }
+    icu::CharString canonical = ulocimp_canonicalize(localeID, tmpStatus);
+    if (U_FAILURE(tmpStatus)) {
+        status = tmpStatus;
+        return;
     }
 
     
     pKeywordStart = locale_getKeywordsStart(canonical.data());
     if (pKeywordStart == canonical.data()) {
         int kwdCnt = 0;
-        UBool done = false;
+        bool done = false;
 
         icu::LocalUEnumerationPointer kwdEnum(uloc_openKeywords(canonical.data(), &tmpStatus));
         if (U_SUCCESS(tmpStatus)) {
@@ -2710,11 +2618,7 @@ ulocimp_toLanguageTag(const char* localeID,
 
                 key = uenum_next(kwdEnum.getAlias(), &len, &tmpStatus);
                 if (len == 1 && *key == PRIVATEUSE) {
-                    icu::CharString buf;
-                    {
-                        icu::CharStringByteSink sink(&buf);
-                        ulocimp_getKeywordValue(localeID, key, sink, &tmpStatus);
-                    }
+                    icu::CharString buf = ulocimp_getKeywordValue(localeID, key, tmpStatus);
                     if (U_SUCCESS(tmpStatus)) {
                         if (ultag_isPrivateuseValueSubtags(buf.data(), buf.length())) {
                             
@@ -2722,12 +2626,12 @@ ulocimp_toLanguageTag(const char* localeID,
                             sink.Append(buf.data(), buf.length());
                             done = true;
                         } else if (strict) {
-                            *status = U_ILLEGAL_ARGUMENT_ERROR;
+                            status = U_ILLEGAL_ARGUMENT_ERROR;
                             done = true;
                         }
                         
                     } else {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
+                        status = U_ILLEGAL_ARGUMENT_ERROR;
                         done = true;
                     }
                 }
@@ -2741,7 +2645,7 @@ ulocimp_toLanguageTag(const char* localeID,
     _appendLanguageToLanguageTag(canonical.data(), sink, strict, status);
     _appendScriptToLanguageTag(canonical.data(), sink, strict, status);
     _appendRegionToLanguageTag(canonical.data(), sink, strict, status);
-    _appendVariantsToLanguageTag(canonical.data(), sink, strict, &hadPosix, status);
+    _appendVariantsToLanguageTag(canonical.data(), sink, strict, hadPosix, status);
     _appendKeywordsToLanguageTag(canonical.data(), sink, strict, hadPosix, status);
     _appendPrivateuseToLanguageTag(canonical.data(), sink, strict, hadPosix, status);
 }
@@ -2753,50 +2657,49 @@ uloc_forLanguageTag(const char* langtag,
                     int32_t localeIDCapacity,
                     int32_t* parsedLength,
                     UErrorCode* status) {
-    if (U_FAILURE(*status)) {
-        return 0;
-    }
-
-    icu::CheckedArrayByteSink sink(localeID, localeIDCapacity);
-    ulocimp_forLanguageTag(langtag, -1, sink, parsedLength, status);
-
-    int32_t reslen = sink.NumberOfBytesAppended();
-
-    if (U_FAILURE(*status)) {
-        return reslen;
-    }
-
-    if (sink.Overflowed()) {
-        *status = U_BUFFER_OVERFLOW_ERROR;
-    } else {
-        u_terminateChars(localeID, localeIDCapacity, reslen, status);
-    }
-
-    return reslen;
+    return icu::ByteSinkUtil::viaByteSinkToTerminatedChars(
+        localeID, localeIDCapacity,
+        [&](icu::ByteSink& sink, UErrorCode& status) {
+            ulocimp_forLanguageTag(langtag, -1, sink, parsedLength, status);
+        },
+        *status);
 }
 
+U_EXPORT icu::CharString
+ulocimp_forLanguageTag(const char* langtag,
+                       int32_t tagLen,
+                       int32_t* parsedLength,
+                       UErrorCode& status) {
+    return icu::ByteSinkUtil::viaByteSinkToCharString(
+        [&](icu::ByteSink& sink, UErrorCode& status) {
+            ulocimp_forLanguageTag(langtag, tagLen, sink, parsedLength, status);
+        },
+        status);
+}
 
-U_CAPI void U_EXPORT2
+U_EXPORT void
 ulocimp_forLanguageTag(const char* langtag,
                        int32_t tagLen,
                        icu::ByteSink& sink,
                        int32_t* parsedLength,
-                       UErrorCode* status) {
-    UBool isEmpty = true;
+                       UErrorCode& status) {
+    if (U_FAILURE(status)) { return; }
+
+    bool isEmpty = true;
     const char *subtag, *p;
     int32_t len;
     int32_t i, n;
-    UBool noRegion = true;
+    bool noRegion = true;
 
     icu::LocalULanguageTagPointer lt(ultag_parse(langtag, tagLen, parsedLength, status));
-    if (U_FAILURE(*status)) {
+    if (U_FAILURE(status)) {
         return;
     }
 
     
     subtag = ultag_getExtlangSize(lt.getAlias()) > 0 ? ultag_getExtlang(lt.getAlias(), 0) : ultag_getLanguage(lt.getAlias());
     if (uprv_compareInvCharsAsAscii(subtag, LANG_UND) != 0) {
-        len = (int32_t)uprv_strlen(subtag);
+        len = static_cast<int32_t>(uprv_strlen(subtag));
         if (len > 0) {
             sink.Append(subtag, len);
             isEmpty = false;
@@ -2805,7 +2708,7 @@ ulocimp_forLanguageTag(const char* langtag,
 
     
     subtag = ultag_getScript(lt.getAlias());
-    len = (int32_t)uprv_strlen(subtag);
+    len = static_cast<int32_t>(uprv_strlen(subtag));
     if (len > 0) {
         sink.Append("_", 1);
         isEmpty = false;
@@ -2818,7 +2721,7 @@ ulocimp_forLanguageTag(const char* langtag,
 
     
     subtag = ultag_getRegion(lt.getAlias());
-    len = (int32_t)uprv_strlen(subtag);
+    len = static_cast<int32_t>(uprv_strlen(subtag));
     if (len > 0) {
         sink.Append("_", 1);
         isEmpty = false;

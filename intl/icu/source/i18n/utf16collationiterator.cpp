@@ -53,7 +53,7 @@ UTF16CollationIterator::resetToOffset(int32_t newOffset) {
 
 int32_t
 UTF16CollationIterator::getOffset() const {
-    return (int32_t)(pos - start);
+    return static_cast<int32_t>(pos - start);
 }
 
 uint32_t
@@ -198,11 +198,11 @@ FCDUTF16CollationIterator::resetToOffset(int32_t newOffset) {
 int32_t
 FCDUTF16CollationIterator::getOffset() const {
     if(checkDir != 0 || start == segmentStart) {
-        return (int32_t)(pos - rawStart);
+        return static_cast<int32_t>(pos - rawStart);
     } else if(pos == start) {
-        return (int32_t)(segmentStart - rawStart);
+        return static_cast<int32_t>(segmentStart - rawStart);
     } else {
-        return (int32_t)(segmentLimit - rawStart);
+        return static_cast<int32_t>(segmentLimit - rawStart);
     }
 }
 
@@ -381,7 +381,7 @@ FCDUTF16CollationIterator::nextSegment(UErrorCode &errorCode) {
         
         const char16_t *q = p;
         uint16_t fcd16 = nfcImpl.nextFCD16(p, rawLimit);
-        uint8_t leadCC = (uint8_t)(fcd16 >> 8);
+        uint8_t leadCC = static_cast<uint8_t>(fcd16 >> 8);
         if(leadCC == 0 && q != pos) {
             
             limit = segmentLimit = q;
@@ -396,7 +396,7 @@ FCDUTF16CollationIterator::nextSegment(UErrorCode &errorCode) {
             pos = start;
             break;
         }
-        prevCC = (uint8_t)fcd16;
+        prevCC = static_cast<uint8_t>(fcd16);
         if(p == rawLimit || prevCC == 0) {
             
             limit = segmentLimit = p;
@@ -445,7 +445,7 @@ FCDUTF16CollationIterator::previousSegment(UErrorCode &errorCode) {
         
         const char16_t *q = p;
         uint16_t fcd16 = nfcImpl.previousFCD16(rawStart, p);
-        uint8_t trailCC = (uint8_t)fcd16;
+        uint8_t trailCC = static_cast<uint8_t>(fcd16);
         if(trailCC == 0 && q != pos) {
             
             start = segmentStart = q;
@@ -462,7 +462,7 @@ FCDUTF16CollationIterator::previousSegment(UErrorCode &errorCode) {
             pos = limit;
             break;
         }
-        nextCC = (uint8_t)(fcd16 >> 8);
+        nextCC = static_cast<uint8_t>(fcd16 >> 8);
         if(p == rawStart || nextCC == 0) {
             
             start = segmentStart = p;
@@ -478,7 +478,7 @@ UBool
 FCDUTF16CollationIterator::normalize(const char16_t *from, const char16_t *to, UErrorCode &errorCode) {
     
     U_ASSERT(U_SUCCESS(errorCode));
-    nfcImpl.decompose(from, to, normalized, (int32_t)(to - from), errorCode);
+    nfcImpl.decompose(from, to, normalized, static_cast<int32_t>(to - from), errorCode);
     if(U_FAILURE(errorCode)) { return false; }
     
     

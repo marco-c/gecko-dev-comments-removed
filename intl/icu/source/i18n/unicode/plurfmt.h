@@ -191,11 +191,6 @@ public:
 
 
 
-
-
-
-
-
     PluralFormat(const Locale& locale, const PluralRules& rules, UErrorCode& status);
 
     
@@ -513,7 +508,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 

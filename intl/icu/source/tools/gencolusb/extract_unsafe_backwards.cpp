@@ -14,6 +14,10 @@
 #include "collationroot.h"
 #include "collationtailoring.h"
 
+using icu::CollationCacheEntry;
+using icu::CollationRoot;
+using icu::UnicodeSet;
+
 
 
 

@@ -74,7 +74,6 @@ public:
 
 
 
-
   class U_I18N_API Ecliptic : public UMemory {
   public:
     
@@ -129,7 +128,6 @@ public:
   };
 
   
-
 
 
 
@@ -201,66 +199,6 @@ public:
     double declination;
   };
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  class U_I18N_API Horizon : public UMemory {
-  public:
-    
-
-
-
-
-
-
-    Horizon(double alt=0, double azim=0)
-      : altitude(alt), azimuth(azim) { }
-
-    
-
-
-
-
-
-    void set(double alt, double azim) {
-      altitude = alt;
-      azimuth = azim;
-    }
-
-    
-
-
-
-
-    UnicodeString toString() const;
-
-    
-
-
-
-    double altitude;
-
-    
-
-
-
-    double azimuth;
-  };
-
 public:
   
   
@@ -304,22 +242,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-  CalendarAstronomer(double longitude, double latitude);
-
-  
-
-
-
   ~CalendarAstronomer();
 
   
@@ -336,40 +258,9 @@ public:
 
 
 
-
   void setTime(UDate aTime);
 
-
   
-
-
-
-
-
-
-
-
-
-  void setDate(UDate aDate) { setTime(aDate); }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void setJulianDay(double jdn);
-
-  
-
 
 
 
@@ -387,55 +278,9 @@ public:
 
 
 
-
   double getJulianDay();
 
-  
-
-
-
-
-
-
-  double getJulianCentury();
-
-  
-
-
-
-  double getGreenwichSidereal();
-
-private:
-  double getSiderealOffset();
 public:
-  
-
-
-
-  double getLocalSidereal();
-
-  
-
-
-
-
-
-
-
-
-  
-  double lstToUT(double lst);
-
-  
-
-
-
-
-
-
-
-  Equatorial& eclipticToEquatorial(Equatorial& result, const Ecliptic& ecliptic);
-
   
 
 
@@ -446,21 +291,6 @@ public:
 
 
   Equatorial& eclipticToEquatorial(Equatorial& result, double eclipLong, double eclipLat);
-
-  
-
-
-
-
-
-
-
-  Equatorial& eclipticToEquatorial(Equatorial& result, double eclipLong) ;
-
-  
-
-
-  Horizon& eclipticToHorizon(Horizon& result, double eclipLong) ;
 
   
   
@@ -484,39 +314,7 @@ public:
 
    void getSunLongitude(double julianDay, double &longitude, double &meanAnomaly);
 
-  
-
-
-
-
-
-  Equatorial& getSunPosition(Equatorial& result);
-
 public:
-  
-
-
-
-
-
-
-
-  
-
-
-
-
-
-  static double SUMMER_SOLSTICE();
-
-  
-
-
-
-
-
-
-
   
 
 
@@ -531,20 +329,6 @@ public:
 
 
   UDate getSunTime(double desired, UBool next);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  UDate getSunRiseSet(UBool rise);
 
   
   
@@ -569,22 +353,6 @@ public:
 
   double getMoonAge();
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  double getMoonPhase();
-
   class U_I18N_API MoonAge : public UMemory {
   public:
     MoonAge(double l)
@@ -598,28 +366,7 @@ public:
 
 
 
-  static const MoonAge NEW_MOON();
-
-  
-
-
-
-
-
-
-  
-
-
-
-
-  static const MoonAge FULL_MOON();
-
-  
-
-
-
-
-
+  static MoonAge NEW_MOON();
 
   
 
@@ -630,21 +377,13 @@ public:
 
 
 
-  UDate getMoonTime(double desired, UBool next);
   UDate getMoonTime(const MoonAge& desired, UBool next);
 
   
-
-
-
-
-  UDate getMoonRiseSet(UBool rise);
-
-  
   
   
 
-  
+public:
   class AngleFunc : public UMemory {
   public:
     virtual double eval(CalendarAstronomer&) = 0;
@@ -652,19 +391,9 @@ public:
   };
   friend class AngleFunc;
 
+private:
   UDate timeOfAngle(AngleFunc& func, double desired,
                     double periodDays, double epsilon, UBool next);
-
-  class CoordFunc : public UMemory {
-  public:
-    virtual void eval(Equatorial& result, CalendarAstronomer&) = 0;
-    virtual ~CoordFunc();
-  };
-  friend class CoordFunc;
-
-  double riseOrSet(CoordFunc& func, UBool rise,
-                   double diameter, double refraction,
-                   double epsilon);
 
   
   
@@ -692,28 +421,12 @@ private:
   UDate fTime;
 
   
-
-
-  double fLongitude;
-  double fLatitude;
-  double fGmtOffset;
-
   
   
-  
-  
-  
-
   double    julianDay;
-  double    julianCentury;
   double    sunLongitude;
   double    meanAnomalySun;
-  double    moonLongitude;
   double    moonEclipLong;
-  double    meanAnomalyMoon;
-  double    eclipObliquity;
-  double    siderealT0;
-  double    siderealTime;
 
   void clearCache();
 

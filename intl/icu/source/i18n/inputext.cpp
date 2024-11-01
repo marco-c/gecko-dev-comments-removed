@@ -30,8 +30,8 @@ InputText::InputText(UErrorCode &status)
                                                  
       fByteStats(NEW_ARRAY(int16_t, 256)),       
                                                  
-      fDeclaredEncoding(0),
-      fRawInput(0),
+      fDeclaredEncoding(nullptr),
+      fRawInput(nullptr),
       fRawLength(0)
 {
     if (fInputBytes == nullptr || fByteStats == nullptr) {
@@ -50,15 +50,15 @@ void InputText::setText(const char *in, int32_t len)
 {
     fInputLen  = 0;
     fC1Bytes   = false;
-    fRawInput  = (const uint8_t *) in;
-    fRawLength = len == -1? (int32_t)uprv_strlen(in) : len;
+    fRawInput = reinterpret_cast<const uint8_t*>(in);
+    fRawLength = len == -1 ? static_cast<int32_t>(uprv_strlen(in)) : len;
 }
 
 void InputText::setDeclaredEncoding(const char* encoding, int32_t len)
 {
     if(encoding) {
         if (len == -1) {
-            len = (int32_t)uprv_strlen(encoding);
+            len = static_cast<int32_t>(uprv_strlen(encoding));
         }
 
         len += 1;     
@@ -98,7 +98,7 @@ void InputText::MungeInput(UBool fStripTags) {
         for (srci = 0; srci < fRawLength && dsti < BUFFER_SIZE; srci += 1) {
             b = fRawInput[srci];
 
-            if (b == (uint8_t)0x3C) { 
+            if (b == static_cast<uint8_t>(0x3C)) { 
                 if (inMarkup) {
                     badTags += 1;
                 }
@@ -111,7 +111,7 @@ void InputText::MungeInput(UBool fStripTags) {
                 fInputBytes[dsti++] = b;
             }
 
-            if (b == (uint8_t)0x3E) { 
+            if (b == static_cast<uint8_t>(0x3E)) { 
                 inMarkup = false;
             }
         }

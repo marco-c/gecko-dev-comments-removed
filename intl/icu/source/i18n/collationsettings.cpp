@@ -158,9 +158,9 @@ CollationSettings::setReordering(const CollationData &data,
     int32_t firstSplitByteRangeIndex = -1;
     for(int32_t i = 0; i < rangesLength; ++i) {
         uint32_t pair = ranges[i];
-        int32_t limit1 = (int32_t)(pair >> 24);
+        int32_t limit1 = static_cast<int32_t>(pair >> 24);
         while(b < limit1) {
-            table[b] = (uint8_t)(b + pair);
+            table[b] = static_cast<uint8_t>(b + pair);
             ++b;
         }
         
@@ -173,7 +173,7 @@ CollationSettings::setReordering(const CollationData &data,
         }
     }
     while(b <= 0xff) {
-        table[b] = (uint8_t)b;
+        table[b] = static_cast<uint8_t>(b);
         ++b;
     }
     if(firstSplitByteRangeIndex < 0) {
@@ -200,7 +200,7 @@ CollationSettings::setReorderArrays(const int32_t *codes, int32_t codesLength,
     } else {
         
         int32_t capacity = (totalLength + 3) & ~3;  
-        ownedCodes = (int32_t *)uprv_malloc(capacity * 4 + 256);
+        ownedCodes = static_cast<int32_t*>(uprv_malloc(capacity * 4 + 256));
         if(ownedCodes == nullptr) {
             resetReordering();
             errorCode = U_MEMORY_ALLOCATION_ERROR;

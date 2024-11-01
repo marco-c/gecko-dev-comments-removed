@@ -532,7 +532,7 @@ public:
 
 
 
-    static DateFormat* U_EXPORT2 createInstance(void);
+    static DateFormat* U_EXPORT2 createInstance();
 
     
 
@@ -673,7 +673,7 @@ public:
 
 
 
-    virtual UBool isLenient(void) const;
+    virtual UBool isLenient() const;
 
     
 
@@ -702,8 +702,7 @@ public:
 
 
 
-    virtual UBool isCalendarLenient(void) const;
-
+    virtual UBool isCalendarLenient() const;
 
     
 
@@ -725,7 +724,7 @@ public:
 
 
 
-    virtual const Calendar* getCalendar(void) const;
+    virtual const Calendar* getCalendar() const;
 
     
 
@@ -754,7 +753,7 @@ public:
 
 
 
-    virtual const NumberFormat* getNumberFormat(void) const;
+    virtual const NumberFormat* getNumberFormat() const;
 
     
 
@@ -776,7 +775,7 @@ public:
 
 
 
-    virtual const TimeZone& getTimeZone(void) const;
+    virtual const TimeZone& getTimeZone() const;
 
     
 

@@ -381,7 +381,7 @@ ucnv_Latin1FromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
             b=*source++;
             if(U8_IS_SINGLE(b)) {
                 
-                *target++=(uint8_t)b;
+                *target++ = b;
                 --targetCapacity;
             } else if( 
                        b>=0xc2 && b<=0xc3 &&

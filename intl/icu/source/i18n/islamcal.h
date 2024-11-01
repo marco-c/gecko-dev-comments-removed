@@ -200,44 +200,18 @@ class U_I18N_API IslamicCalendar : public Calendar {
   
 
 
-  static UBool civilLeapYear(int32_t year);
+
+  virtual int64_t yearStart(int32_t year, UErrorCode& status) const;
 
   
 
 
 
-  virtual int32_t yearStart(int32_t year) const;
-
-  
 
 
 
+  virtual int64_t monthStart(int32_t year, int32_t month, UErrorCode& status) const;
 
-
-
-  virtual int32_t monthStart(int32_t year, int32_t month) const;
-    
-  
-
-
-
-
-
-
-
-  int32_t trueMonthStart(int32_t month) const;
-
- private:
-  
-
-
-
-
-
-
-
-
-  static double moonAge(UDate time, UErrorCode &status);
 
   
   
@@ -255,7 +229,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const override;
   
   
 
@@ -271,7 +245,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
   
 
 
-  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
+  virtual int64_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth, UErrorCode& status) const override;
 
   
   
@@ -280,7 +254,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
   
 
 
-  virtual int32_t handleGetExtendedYear() override;
+  virtual int32_t handleGetExtendedYear(UErrorCode& status) override;
 
   
 
@@ -364,32 +338,8 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
   
  protected:
-  
 
-
-
-  virtual UBool haveDefaultCentury() const override;
-
-  
-
-
-
-
-  virtual UDate defaultCenturyStart() const override;
-
-  
-
-
-
-  virtual int32_t defaultCenturyStartYear() const override;
-
- private:
-  
-
-
-
-
-  static void U_CALLCONV initializeSystemDefaultCentury();
+  DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
 };
 
 
@@ -463,7 +413,7 @@ class U_I18N_API IslamicCivilCalendar : public IslamicCalendar {
 
 
 
-  virtual int32_t yearStart(int32_t year) const override;
+  virtual int64_t yearStart(int32_t year, UErrorCode& status) const override;
 
   
 
@@ -473,7 +423,7 @@ class U_I18N_API IslamicCivilCalendar : public IslamicCalendar {
 
 
 
-  virtual int32_t monthStart(int32_t year, int32_t month) const override;
+  virtual int64_t monthStart(int32_t year, int32_t month, UErrorCode& status) const override;
 
   
 
@@ -482,7 +432,7 @@ class U_I18N_API IslamicCivilCalendar : public IslamicCalendar {
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const override;
 
   
 
@@ -584,7 +534,7 @@ class U_I18N_API IslamicTBLACalendar : public IslamicCivilCalendar {
 
 
 
-class U_I18N_API IslamicUmalquraCalendar : public IslamicCalendar {
+class U_I18N_API IslamicUmalquraCalendar : public IslamicCivilCalendar {
  public:
   
 
@@ -646,7 +596,7 @@ class U_I18N_API IslamicUmalquraCalendar : public IslamicCalendar {
 
 
 
-  virtual int32_t yearStart(int32_t year) const override;
+  virtual int64_t yearStart(int32_t year, UErrorCode& status) const override;
 
   
 
@@ -656,7 +606,7 @@ class U_I18N_API IslamicUmalquraCalendar : public IslamicCalendar {
 
 
 
-  virtual int32_t monthStart(int32_t year, int32_t month) const override;
+  virtual int64_t monthStart(int32_t year, int32_t month, UErrorCode& status) const override;
 
   
 
@@ -665,7 +615,7 @@ class U_I18N_API IslamicUmalquraCalendar : public IslamicCalendar {
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month, UErrorCode& status) const override;
 
   
 
@@ -690,6 +640,9 @@ class U_I18N_API IslamicUmalquraCalendar : public IslamicCalendar {
 
 
   virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
+
+ private:
+  virtual int32_t yearLength(int32_t extendedYear, UErrorCode& status) const;
 };
 
 

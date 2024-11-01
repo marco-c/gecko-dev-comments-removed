@@ -93,9 +93,34 @@ class DoubleToStringConverter {
     EMIT_TRAILING_DECIMAL_POINT = 2,
     EMIT_TRAILING_ZERO_AFTER_POINT = 4,
     UNIQUE_ZERO = 8,
-    NO_TRAILING_ZERO = 16
+    NO_TRAILING_ZERO = 16,
+    EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL = 32,
+    EMIT_TRAILING_ZERO_AFTER_POINT_IN_EXPONENTIAL = 64
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   

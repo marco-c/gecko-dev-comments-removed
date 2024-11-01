@@ -138,7 +138,7 @@ static void outputHexBytes(int64_t val, int32_t charsToOutput,
 static void outputPtrBytes(void *val, char *outBuf, int32_t *outIx, int32_t capacity) {
     uint32_t  i;
     int32_t  incVal = 1;              
-    char     *p     = (char *)&val;   
+    char* p = reinterpret_cast<char*>(&val); 
 
 #if !U_IS_BIG_ENDIAN
     
@@ -233,7 +233,7 @@ utrace_vformat(char *outBuf, int32_t capacity, int32_t indent, const char *fmt, 
         case 'S':
             
             ptrArg = va_arg(args, char *);             
-            intArg =(int32_t)va_arg(args, int32_t);    
+            intArg = va_arg(args, int32_t);            
             outputUString((const char16_t *)ptrArg, intArg, outBuf, &outIx, capacity, indent);
             break;
 
@@ -298,7 +298,7 @@ utrace_vformat(char *outBuf, int32_t capacity, int32_t indent, const char *fmt, 
                 i32Ptr = (int32_t *)i8Ptr;
                 i64Ptr = (int64_t *)i8Ptr;
                 ptrPtr = (void **)i8Ptr;
-                vectorLen =(int32_t)va_arg(args, int32_t);
+                vectorLen = va_arg(args, int32_t);
                 if (ptrPtr == nullptr) {
                     outputString("*NULL* ", outBuf, &outIx, capacity, indent);
                 } else {

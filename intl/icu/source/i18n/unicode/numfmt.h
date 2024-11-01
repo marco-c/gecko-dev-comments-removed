@@ -199,7 +199,6 @@ public:
 
 
         kRoundUnnecessary,
-#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -215,7 +214,6 @@ public:
 
 
         kRoundHalfFloor,
-#endif 
     };
 
     
@@ -707,7 +705,7 @@ public:
 
 
 
-    UBool isParseIntegerOnly(void) const;
+    UBool isParseIntegerOnly() const;
 
     
 
@@ -735,7 +733,7 @@ public:
 
 
 
-    virtual UBool isLenient(void) const;
+    virtual UBool isLenient() const;
 
     
 
@@ -898,7 +896,7 @@ public:
 
 
 
-    static StringEnumeration* U_EXPORT2 getAvailableLocales(void);
+    static StringEnumeration* U_EXPORT2 getAvailableLocales();
 #endif 
 
     
@@ -910,7 +908,7 @@ public:
 
 
 
-    UBool isGroupingUsed(void) const;
+    UBool isGroupingUsed() const;
 
     
 
@@ -928,7 +926,7 @@ public:
 
 
 
-    int32_t getMaximumIntegerDigits(void) const;
+    int32_t getMaximumIntegerDigits() const;
 
     
 
@@ -952,7 +950,7 @@ public:
 
 
 
-    int32_t getMinimumIntegerDigits(void) const;
+    int32_t getMinimumIntegerDigits() const;
 
     
 
@@ -974,7 +972,7 @@ public:
 
 
 
-    int32_t getMaximumFractionDigits(void) const;
+    int32_t getMaximumFractionDigits() const;
 
     
 
@@ -996,7 +994,7 @@ public:
 
 
 
-    int32_t getMinimumFractionDigits(void) const;
+    int32_t getMinimumFractionDigits() const;
 
     
 
@@ -1062,7 +1060,7 @@ public:
 
 
 
-    virtual ERoundingMode getRoundingMode(void) const;
+    virtual ERoundingMode getRoundingMode() const;
 
     
 
@@ -1081,7 +1079,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -1094,7 +1092,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override = 0;
+    virtual UClassID getDynamicClassID() const override = 0;
 
 protected:
 
@@ -1204,7 +1202,7 @@ public:
 
 
 
-    virtual UBool visible(void) const = 0;
+    virtual UBool visible() const = 0;
 
     
 
@@ -1255,7 +1253,7 @@ public:
     
 
 
-    virtual UBool visible(void) const override;
+    virtual UBool visible() const override;
 
     
 
