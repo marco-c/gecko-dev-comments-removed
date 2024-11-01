@@ -638,21 +638,25 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
-  nsresult InstantiateClassicScriptFromAny(JSContext* aCx,
-                                           JSExecutionContext& aExec,
-                                           ScriptLoadRequest* aRequest);
+  void InstantiateClassicScriptFromAny(JSContext* aCx,
+                                       JSExecutionContext& aExec,
+                                       ScriptLoadRequest* aRequest,
+                                       ErrorResult& aRv);
 
   
   
   
-  nsresult InstantiateClassicScriptFromMaybeEncodedSource(
-      JSContext* aCx, JSExecutionContext& aExec, ScriptLoadRequest* aRequest);
-
-  
-  
-  nsresult InstantiateClassicScriptFromCachedStencil(
+  void InstantiateClassicScriptFromMaybeEncodedSource(
       JSContext* aCx, JSExecutionContext& aExec, ScriptLoadRequest* aRequest,
-      JS::Stencil* aStencil);
+      ErrorResult& aRv);
+
+  
+  
+  void InstantiateClassicScriptFromCachedStencil(JSContext* aCx,
+                                                 JSExecutionContext& aExec,
+                                                 ScriptLoadRequest* aRequest,
+                                                 JS::Stencil* aStencil,
+                                                 ErrorResult& aRv);
 
   static nsCString& BytecodeMimeTypeFor(ScriptLoadRequest* aRequest);
 
