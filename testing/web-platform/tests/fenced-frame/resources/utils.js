@@ -520,9 +520,11 @@ async function stringToStashKey(string) {
 
 
 function attachFencedFrame(target) {
-  assert_implements(
-      window.HTMLFencedFrameElement,
-      'The HTMLFencedFrameElement should be exposed on the window object');
+  if (window.test_driver) {
+    assert_implements(
+        window.HTMLFencedFrameElement,
+        'The HTMLFencedFrameElement should be exposed on the window object');
+  }
 
   const fenced_frame = document.createElement('fencedframe');
 
@@ -626,15 +628,6 @@ async function writeValueToServer(key, value, origin = '') {
 
   const serverURL = `${origin}${STORE_URL}?key=${key}&value=${value}`;
   await fetch(serverURL, {"mode": "no-cors"});
-}
-
-
-async function simulateGesture() {
-  
-  while (window.innerWidth == 0) {
-    await new Promise(resolve => requestAnimationFrame(resolve));
-  }
-  await test_driver.bless('simulate gesture');
 }
 
 
