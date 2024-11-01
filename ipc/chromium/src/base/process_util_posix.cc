@@ -242,7 +242,7 @@ static bool IsZombieProcess(pid_t pid) {
     return true;
   }
   if (rparen[2] == 'Z') {
-    CHROMIUM_LOG(ERROR) << "process " << pid << " is a zombie";
+    DLOG(ERROR) << "process " << pid << " is a zombie";
     return true;
   }
   return false;
