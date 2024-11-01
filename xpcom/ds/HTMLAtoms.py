@@ -127,6 +127,8 @@ HTML_PARSER_ATOMS = [
     
     Atom("xlink_actuate", "xlink:actuate"),
     
+    Atom("autocorrect", "autocorrect"),
+    
     Atom("color_rendering", "color-rendering"),
     
     Atom("numoctaves", "numoctaves"),
