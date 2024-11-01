@@ -89,6 +89,7 @@ included_inclnames_to_ignore = set(
         "ICU4XWeekRelativeUnit.h",  
         "ICU4XWordSegmenter.h",  
         "mozmemory.h",  
+        "mozmemory_utils.h",  
         "pratom.h",  
         "prcvar.h",  
         "prerror.h",  

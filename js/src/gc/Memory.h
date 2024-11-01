@@ -34,7 +34,15 @@ bool UsingScattershotAllocator();
 
 
 
-void* MapAlignedPages(size_t length, size_t alignment);
+enum class StallAndRetry : bool {
+  No = false,
+  Yes = true,
+};
+
+
+
+void* MapAlignedPages(size_t length, size_t alignment,
+                      StallAndRetry stallAndRetry = StallAndRetry::No);
 void UnmapPages(void* region, size_t length);
 
 

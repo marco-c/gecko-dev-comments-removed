@@ -14,6 +14,11 @@
 #include "jit/JitOptions.h"
 #include "js/HeapAPI.h"
 #include "js/Utility.h"
+
+#ifdef MOZ_MEMORY
+#  include "mozmemory_utils.h"
+#endif
+
 #include "util/Memory.h"
 
 #ifdef XP_WIN
@@ -34,6 +39,19 @@
 #    include <sys/types.h>
 #  endif  
 
+#endif  
+
+#if defined(XP_WIN) && !defined(MOZ_MEMORY)
+namespace mozilla {
+
+
+
+MOZ_ALWAYS_INLINE void* MozVirtualAlloc(LPVOID lpAddress, SIZE_T dwSize,
+                                        DWORD flAllocationType,
+                                        DWORD flProtect) {
+  return VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
+}
+}  
 #endif  
 
 namespace js::gc {
@@ -170,14 +188,15 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
 #ifndef __wasi__
 static void* MapAlignedPagesSlow(size_t length, size_t alignment);
 #endif  
-static void* MapAlignedPagesLastDitch(size_t length, size_t alignment);
+static void* MapAlignedPagesLastDitch(size_t length, size_t alignment,
+                                      StallAndRetry stallAndRetry);
 
 #ifdef JS_64BIT
 static void* MapAlignedPagesRandom(size_t length, size_t alignment);
 #endif
 
 void* TestMapAlignedPagesLastDitch(size_t length, size_t alignment) {
-  return MapAlignedPagesLastDitch(length, alignment);
+  return MapAlignedPagesLastDitch(length, alignment, StallAndRetry::No);
 }
 
 bool DecommitEnabled() { return SystemPageSize() == PageSize; }
@@ -187,13 +206,18 @@ static inline size_t OffsetFromAligned(void* region, size_t alignment) {
   return uintptr_t(region) % alignment;
 }
 
-template <Commit commit>
+template <Commit commit, StallAndRetry retry = StallAndRetry::No>
 static inline void* MapInternal(void* desired, size_t length) {
   void* region = nullptr;
 #ifdef XP_WIN
   DWORD flags =
       (commit == Commit::Yes ? MEM_RESERVE | MEM_COMMIT : MEM_RESERVE);
-  region = VirtualAlloc(desired, length, flags, DWORD(PageAccess::ReadWrite));
+  if constexpr (retry == StallAndRetry::Yes) {
+    region = mozilla::MozVirtualAlloc(desired, length, flags,
+                                      DWORD(PageAccess::ReadWrite));
+  } else {
+    region = VirtualAlloc(desired, length, flags, DWORD(PageAccess::ReadWrite));
+  }
 #elif defined(__wasi__)
   if (int err = posix_memalign(&region, gc::SystemPageSize(), length)) {
     MOZ_RELEASE_ASSERT(err == ENOMEM);
@@ -228,11 +252,11 @@ static inline void UnmapInternal(void* region, size_t length) {
 #endif
 }
 
-template <Commit commit = Commit::Yes>
+template <Commit commit = Commit::Yes, StallAndRetry retry = StallAndRetry::No>
 static inline void* MapMemory(size_t length) {
   MOZ_ASSERT(length > 0);
 
-  return MapInternal<commit>(nullptr, length);
+  return MapInternal<commit, retry>(nullptr, length);
 }
 
 
@@ -421,7 +445,8 @@ static inline bool IsInvalidRegion(void* region, size_t length) {
 }
 #endif
 
-void* MapAlignedPages(size_t length, size_t alignment) {
+void* MapAlignedPages(size_t length, size_t alignment,
+                      StallAndRetry stallAndRetry) {
   MOZ_RELEASE_ASSERT(length > 0 && alignment > 0);
   MOZ_RELEASE_ASSERT(length % pageSize == 0);
   MOZ_RELEASE_ASSERT(std::max(alignment, allocGranularity) %
@@ -492,7 +517,7 @@ void* MapAlignedPages(size_t length, size_t alignment) {
   if (!region) {
     
     
-    region = MapAlignedPagesLastDitch(length, alignment);
+    region = MapAlignedPagesLastDitch(length, alignment, stallAndRetry);
   }
 
   
@@ -634,10 +659,18 @@ static void* MapAlignedPagesSlow(size_t length, size_t alignment) {
 
 
 
-static void* MapAlignedPagesLastDitch(size_t length, size_t alignment) {
+static void* MapAlignedPagesLastDitch(size_t length, size_t alignment,
+                                      StallAndRetry stallAndRetry) {
   void* tempMaps[MaxLastDitchAttempts];
   int attempt = 0;
-  void* region = MapMemory(length);
+  void* region;
+
+  if (stallAndRetry == StallAndRetry::Yes) {
+    region = MapMemory<Commit::Yes, StallAndRetry::Yes>(length);
+  } else {
+    region = MapMemory<Commit::Yes, StallAndRetry::No>(length);
+  }
+
   if (OffsetFromAligned(region, alignment) == 0) {
     return region;
   }
