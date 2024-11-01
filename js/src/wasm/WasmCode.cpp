@@ -457,6 +457,12 @@ static uint32_t RandomPaddingForCodeLength(uint32_t codeLength) {
   const size_t systemPageSize = gc::SystemPageSize();
 
   
+  if (!JitOptions.writeProtectCode) {
+    MOZ_ASSERT(CodeSegment::AllocationAlignment() != gc::SystemPageSize());
+    return 0;
+  }
+
+  
   size_t maxPadBytes = ((systemPageSize * 3) / 4);
   size_t maxPadLines = maxPadBytes / cacheLineSize;
 
@@ -467,6 +473,11 @@ static uint32_t RandomPaddingForCodeLength(uint32_t codeLength) {
 
   
   size_t padLinesAvailable = std::min(maxPadLines, remainingLinesInPage);
+
+  
+  if (padLinesAvailable == 0) {
+    return 0;
+  }
 
   uint32_t random = counter++;
   uint32_t padding = (random % padLinesAvailable) * cacheLineSize;
