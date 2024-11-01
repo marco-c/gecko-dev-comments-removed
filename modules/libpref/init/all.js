@@ -3705,11 +3705,7 @@ pref("webextensions.storage.sync.serverURL", "https://webextensions.settings.ser
 pref("dom.input.fallbackUploadDir", "");
 
 
-#if defined(EARLY_BETA_OR_EARLIER)
-  pref("plugins.rewrite_youtube_embeds", false);
-#else
-  pref("plugins.rewrite_youtube_embeds", true);
-#endif
+pref("plugins.rewrite_youtube_embeds", true);
 
 
 pref("media.default_volume", "1.0");
