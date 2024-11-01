@@ -15,6 +15,7 @@
 #include "mozilla/DefineEnum.h"     
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/InteractiveWidget.h"
 #include "mozilla/gfx/BasePoint.h"               
 #include "mozilla/gfx/Rect.h"                    
 #include "mozilla/gfx/ScaleFactor.h"             
@@ -749,6 +750,8 @@ struct ScrollMetadata {
       : mScrollParentId(ScrollableLayerGuid::NULL_SCROLL_ID),
         mLineScrollAmount(0, 0),
         mPageScrollAmount(0, 0),
+        mInteractiveWidget(
+            dom::InteractiveWidgetUtils::DefaultInteractiveWidgetMode()),
         mHasScrollgrab(false),
         mIsLayersIdRoot(false),
         mIsAutoDirRootContentRTL(false),
@@ -758,7 +761,8 @@ struct ScrollMetadata {
         mDidContentGetPainted(true),
         mForceMousewheelAutodir(false),
         mForceMousewheelAutodirHonourRoot(false),
-        mIsPaginatedPresentation(false) {}
+        mIsPaginatedPresentation(false),
+        mIsSoftwareKeyboardVisible(false) {}
 
   bool operator==(const ScrollMetadata& aOther) const {
     return mMetrics == aOther.mMetrics && mSnapInfo == aOther.mSnapInfo &&
@@ -766,6 +770,7 @@ struct ScrollMetadata {
            
            mLineScrollAmount == aOther.mLineScrollAmount &&
            mPageScrollAmount == aOther.mPageScrollAmount &&
+           mInteractiveWidget == aOther.mInteractiveWidget &&
            mHasScrollgrab == aOther.mHasScrollgrab &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
            mIsAutoDirRootContentRTL == aOther.mIsAutoDirRootContentRTL &&
@@ -777,6 +782,7 @@ struct ScrollMetadata {
            mForceMousewheelAutodirHonourRoot ==
                aOther.mForceMousewheelAutodirHonourRoot &&
            mIsPaginatedPresentation == aOther.mIsPaginatedPresentation &&
+           mIsSoftwareKeyboardVisible == aOther.mIsSoftwareKeyboardVisible &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mOverflow == aOther.mOverflow &&
@@ -862,6 +868,18 @@ struct ScrollMetadata {
   }
   bool IsPaginatedPresentation() const { return mIsPaginatedPresentation; }
 
+  void SetIsSoftwareKeyboardVisible(bool aValue) {
+    mIsSoftwareKeyboardVisible = aValue;
+  }
+  bool IsSoftwareKeyboardVisible() const { return mIsSoftwareKeyboardVisible; }
+
+  void SetInteractiveWidget(dom::InteractiveWidget aInteractiveWidget) {
+    mInteractiveWidget = aInteractiveWidget;
+  }
+  dom::InteractiveWidget GetInteractiveWidget() const {
+    return mInteractiveWidget;
+  }
+
   bool DidContentGetPainted() const { return mDidContentGetPainted; }
 
  private:
@@ -934,6 +952,12 @@ struct ScrollMetadata {
   LayoutDeviceIntSize mPageScrollAmount;
 
   
+  
+  
+  
+  dom::InteractiveWidget mInteractiveWidget;
+
+  
   bool mHasScrollgrab : 1;
 
   
@@ -984,6 +1008,12 @@ struct ScrollMetadata {
   
   
   bool mIsPaginatedPresentation : 1;
+
+  
+  
+  
+  
+  bool mIsSoftwareKeyboardVisible : 1;
 
   
   
