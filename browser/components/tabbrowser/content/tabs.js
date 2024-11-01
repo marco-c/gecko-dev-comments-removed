@@ -552,11 +552,20 @@
         }
         this.#maxTabsPerRow = tabsPerRow;
       }
-      let selectedTabs = gBrowser.selectedTabs;
-      let otherSelectedTabs = selectedTabs.filter(
-        selectedTab => selectedTab != tab
-      );
-      let dataTransferOrderedTabs = [tab].concat(otherSelectedTabs);
+
+      let dataTransferOrderedTabs;
+      if (!fromTabList) {
+        let selectedTabs = gBrowser.selectedTabs;
+        let otherSelectedTabs = selectedTabs.filter(
+          selectedTab => selectedTab != tab
+        );
+        dataTransferOrderedTabs = [tab].concat(otherSelectedTabs);
+      } else {
+        
+        
+        
+        dataTransferOrderedTabs = [tab];
+      }
 
       let dt = event.dataTransfer;
       for (let i = 0; i < dataTransferOrderedTabs.length; i++) {
