@@ -16,6 +16,22 @@ add_setup(async function test_setup() {
   mockCA = await mockContentAnalysisService(mockCA);
 });
 
+function setClipboardHTMLData(htmlString) {
+  const trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+    Ci.nsITransferable
+  );
+  trans.init(null);
+  trans.addDataFlavor("text/html");
+  const str = Cc["@mozilla.org/supports-string;1"].createInstance(
+    Ci.nsISupportsString
+  );
+  str.data = htmlString;
+  trans.setTransferData("text/html", str);
+
+  
+  Services.clipboard.setData(trans, null, Ci.nsIClipboard.kGlobalClipboard);
+}
+
 async function testClipboardWithContentAnalysis(allowPaste) {
   mockCA.setupForTest(allowPaste);
   let tab = BrowserTestUtils.addTab(gBrowser);
@@ -265,22 +281,9 @@ async function testClipboardWithContentAnalysis(allowPaste) {
   });
 
   
-
-  
-  
-  let contextMenu = document.getElementById("contentAreaContextMenu");
-  let contextMenuShown = promisePopupShown(contextMenu);
-  BrowserTestUtils.synthesizeMouseAtCenter(
-    "#img",
-    { type: "contextmenu", button: 2 },
-    gBrowser.selectedBrowser
+  setClipboardHTMLData(
+    '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">'
   );
-  await contextMenuShown;
-
-  document.getElementById("context-copyimage-contents").doCommand();
-
-  contextMenu.hidePopup();
-  await promisePopupHidden(contextMenu);
 
   
   await SimpleTest.promiseFocus(browser);
