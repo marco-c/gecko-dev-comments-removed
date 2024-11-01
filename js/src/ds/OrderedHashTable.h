@@ -79,25 +79,40 @@ class OrderedHashTable {
   friend class Range;
 
  private:
-  Data** hashTable;       
-  Data* data;             
-                          
-  uint32_t dataLength;    
-  uint32_t dataCapacity;  
-  uint32_t liveCount;     
-  uint32_t hashShift;     
+  
+  Data** hashTable = nullptr;
 
   
   
-  Range* ranges;
+  Data* data = nullptr;
+
+  
+  uint32_t dataLength = 0;
+
+  
+  uint32_t dataCapacity = 0;
+
+  
+  
+  uint32_t liveCount = 0;
+
+  
+  uint32_t hashShift = 0;
+
+  
+  
+  Range* ranges = nullptr;
 
   
   
   
-  Range* nurseryRanges;
+  Range* nurseryRanges = nullptr;
 
+  
   AllocPolicy alloc;
-  mozilla::HashCodeScrambler hcs;  
+
+  
+  mozilla::HashCodeScrambler hcs;
 
   template <typename F>
   void forEachRange(F&& f) {
@@ -114,16 +129,7 @@ class OrderedHashTable {
 
  public:
   OrderedHashTable(AllocPolicy ap, mozilla::HashCodeScrambler hcs)
-      : hashTable(nullptr),
-        data(nullptr),
-        dataLength(0),
-        dataCapacity(0),
-        liveCount(0),
-        hashShift(0),
-        ranges(nullptr),
-        nurseryRanges(nullptr),
-        alloc(std::move(ap)),
-        hcs(hcs) {}
+      : alloc(std::move(ap)), hcs(hcs) {}
 
   [[nodiscard]] bool init() {
     MOZ_ASSERT(!hashTable, "init must be called at most once");
@@ -362,13 +368,13 @@ class OrderedHashTable {
     OrderedHashTable* ht;
 
     
-    uint32_t i;
+    uint32_t i = 0;
 
     
 
 
 
-    uint32_t count;
+    uint32_t count = 0;
 
     
 
@@ -388,7 +394,7 @@ class OrderedHashTable {
 
 
     Range(OrderedHashTable* ht, Range** listp)
-        : ht(ht), i(0), count(0), prevp(listp), next(*listp) {
+        : ht(ht), prevp(listp), next(*listp) {
       *prevp = this;
       if (next) {
         next->prevp = &next;
@@ -910,14 +916,14 @@ class OrderedHashMap {
     }
 
    public:
-    Entry() : key(), value() {}
-    explicit Entry(const Key& k) : key(k), value() {}
+    Entry() = default;
+    explicit Entry(const Key& k) : key(k) {}
     template <typename V>
     Entry(const Key& k, V&& v) : key(k), value(std::forward<V>(v)) {}
     Entry(Entry&& rhs) : key(std::move(rhs.key)), value(std::move(rhs.value)) {}
 
-    const Key key;
-    Value value;
+    const Key key{};
+    Value value{};
 
     static size_t offsetOfKey() { return offsetof(Entry, key); }
     static size_t offsetOfValue() { return offsetof(Entry, value); }
