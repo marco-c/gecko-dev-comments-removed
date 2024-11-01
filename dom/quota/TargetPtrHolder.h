@@ -4,15 +4,15 @@
 
 
 
-#ifndef DOM_FS_SHARED_TARGETPTRHOLDER_H_
-#define DOM_FS_SHARED_TARGETPTRHOLDER_H_
+#ifndef DOM_QUOTA_TARGETPTRHOLDER_H_
+#define DOM_QUOTA_TARGETPTRHOLDER_H_
 
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 
-namespace mozilla::dom::fs {
+namespace mozilla::dom::quota {
 
 
 template <typename T>
