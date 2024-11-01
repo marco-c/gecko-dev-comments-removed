@@ -187,20 +187,6 @@ enum class CodeBlockKind {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class CodeSegment : public ShareableBase<CodeSegment> {
  private:
   const UniqueCodeBytes bytes_;
@@ -278,23 +264,24 @@ class CodeSegment : public ShareableBase<CodeSegment> {
     return capacityBytes_;
   }
 
-  static size_t PageSize() { return gc::SystemPageSize(); }
-  static size_t PageRoundup(uintptr_t bytes) {
-    
-    return AlignBytes(bytes, gc::SystemPageSize());
-  }
-  static bool IsPageAligned(uintptr_t bytes) {
-    return bytes == PageRoundup(bytes);
-  }
-  bool hasSpace(size_t bytes) const {
-    MOZ_ASSERT(IsPageAligned(bytes));
-    return bytes <= capacityBytes() && lengthBytes_ <= capacityBytes() - bytes;
-  }
-  void claimSpace(size_t bytes, uint8_t** claimedBase) {
-    MOZ_RELEASE_ASSERT(hasSpace(bytes));
-    *claimedBase = base() + lengthBytes_;
-    lengthBytes_ += bytes;
-  }
+  
+  
+  
+  
+  
+  static size_t AllocationAlignment();
+  
+  static size_t AlignAllocationBytes(uintptr_t bytes);
+  
+  static bool IsAligned(uintptr_t bytes);
+
+  
+  
+  bool hasSpace(size_t bytes) const;
+
+  
+  
+  void claimSpace(size_t bytes, uint8_t** claimedBase);
 
   const Code& code() const { return *code_; }
 
