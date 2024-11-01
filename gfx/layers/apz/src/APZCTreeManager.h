@@ -38,6 +38,10 @@
 namespace mozilla {
 class MultiTouchInput;
 
+namespace dom {
+enum class InteractiveWidget : uint8_t;
+}  
+
 namespace wr {
 class TransactionWrapper;
 class WebRenderAPI;
@@ -1077,6 +1081,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   ScrollGenerationCounter mScrollGenerationCounter;
   mozilla::Mutex mScrollGenerationLock;
+
+  
+  
+  dom::InteractiveWidget mInteractiveWidget;
+
+  
+  bool mIsSoftwareKeyboardVisible;
 
 #if defined(MOZ_WIDGET_ANDROID)
  private:
