@@ -2481,67 +2481,35 @@ INSTANTIATE_TEST_SUITE_P(
     TestVp9ImplSvcFrameDropConfig,
     ::testing::Values(
         
-        
         SvcFrameDropConfigTestParameters{
             .flexible_mode = false,
             .scalability_mode = ScalabilityMode::kL3T3_KEY,
-            .field_trial = "WebRTC-LibvpxVp9Encoder-SvcFrameDropConfig/"
-                           "Enabled,layer_drop_mode:1,max_consec_drop:7/",
             .expected_framedrop_mode = FULL_SUPERFRAME_DROP,
-            .expected_max_consec_drop = 7},
-        
+            .expected_max_consec_drop = 2},
         
         SvcFrameDropConfigTestParameters{
             .flexible_mode = true,
             .scalability_mode = ScalabilityMode::kL3T3_KEY,
-            .field_trial = "",
-            .expected_framedrop_mode = FULL_SUPERFRAME_DROP,
-            .expected_max_consec_drop = std::numeric_limits<int>::max()},
-        
-        
-        SvcFrameDropConfigTestParameters{
-            .flexible_mode = true,
-            .scalability_mode = ScalabilityMode::kL3T3_KEY,
-            .field_trial = "WebRTC-LibvpxVp9Encoder-SvcFrameDropConfig/"
-                           "Disabled,layer_drop_mode:1,max_consec_drop:7/",
-            .expected_framedrop_mode = FULL_SUPERFRAME_DROP,
-            .expected_max_consec_drop = std::numeric_limits<int>::max()},
-        
-        
-        SvcFrameDropConfigTestParameters{
-            .flexible_mode = true,
-            .scalability_mode = ScalabilityMode::kL3T3_KEY,
-            .field_trial = "WebRTC-LibvpxVp9Encoder-SvcFrameDropConfig/"
-                           "Enabled,layer_drop_mode:1,max_consec_drop:7/",
             .expected_framedrop_mode = LAYER_DROP,
-            .expected_max_consec_drop = 7},
-        
+            .expected_max_consec_drop = 2},
         
         SvcFrameDropConfigTestParameters{
             .flexible_mode = true,
             .scalability_mode = ScalabilityMode::kS3T3,
-            .field_trial = "WebRTC-LibvpxVp9Encoder-SvcFrameDropConfig/"
-                           "Enabled,layer_drop_mode:1,max_consec_drop:7/",
             .expected_framedrop_mode = LAYER_DROP,
-            .expected_max_consec_drop = 7},
-        
+            .expected_max_consec_drop = 2},
         
         SvcFrameDropConfigTestParameters{
             .flexible_mode = false,
             .scalability_mode = ScalabilityMode::kL3T3,
-            .field_trial = "WebRTC-LibvpxVp9Encoder-SvcFrameDropConfig/"
-                           "Enabled,layer_drop_mode:1,max_consec_drop:7/",
             .expected_framedrop_mode = FULL_SUPERFRAME_DROP,
-            .expected_max_consec_drop = 7},
-        
+            .expected_max_consec_drop = 2},
         
         
         SvcFrameDropConfigTestParameters{
             .flexible_mode = true,
             .scalability_mode = absl::nullopt,
-            .field_trial = "WebRTC-LibvpxVp9Encoder-SvcFrameDropConfig/"
-                           "Enabled,layer_drop_mode:1,max_consec_drop:7/",
             .expected_framedrop_mode = FULL_SUPERFRAME_DROP,
-            .expected_max_consec_drop = 7}));
+            .expected_max_consec_drop = 2}));
 
 }  
