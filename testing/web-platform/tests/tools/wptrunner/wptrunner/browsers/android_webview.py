@@ -6,16 +6,16 @@ from .base import get_timeout_multiplier
 from .chrome import executor_kwargs as chrome_executor_kwargs
 from .chrome_android import ChromeAndroidBrowserBase
 from ..executors.base import WdspecExecutor  
-from ..executors.executorchrome import ChromeDriverPrintRefTestExecutor  
+from ..executors.executorchrome import (ChromeDriverPrintRefTestExecutor,  
+                                        ChromeDriverTestharnessExecutor)  
 from ..executors.executorwebdriver import (WebDriverCrashtestExecutor,  
-                                           WebDriverTestharnessExecutor,  
                                            WebDriverRefTestExecutor)  
 
 
 __wptrunner__ = {"product": "android_webview",
                  "check_args": "check_args",
                  "browser": "SystemWebViewShell",
-                 "executor": {"testharness": "WebDriverTestharnessExecutor",
+                 "executor": {"testharness": "ChromeDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
                               "print-reftest": "ChromeDriverPrintRefTestExecutor",
                               "wdspec": "WdspecExecutor",
