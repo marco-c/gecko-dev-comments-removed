@@ -425,6 +425,7 @@ struct InputContext final {
     mHTMLInputMode.Truncate();
     mActionHint.Truncate();
     mAutocapitalize.Truncate();
+    mAutocorrect = true;
   }
 
   bool IsPasswordEditor() const {
@@ -467,6 +468,11 @@ struct InputContext final {
            
            mActionHint != aOldContext.mActionHint ||
 #endif
+#if defined(ANDROID) || defined(XP_DARWIN)
+           
+           
+           mAutocorrect != aOldContext.mAutocorrect ||
+#endif
            false;
   }
 
@@ -486,6 +492,9 @@ struct InputContext final {
 
   
   nsString mAutocapitalize;
+
+  
+  bool mAutocorrect = true;  
 
   
 
