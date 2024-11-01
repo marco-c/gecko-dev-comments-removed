@@ -36,6 +36,8 @@ class MouseScrollHandler {
   static bool ProcessMessage(nsWindow* aWidget, UINT msg, WPARAM wParam,
                              LPARAM lParam, MSGResult& aResult);
 
+  static bool SkipScrollWheelHack();
+
   
 
 
@@ -130,7 +132,8 @@ class MouseScrollHandler {
 
 
 
-  void HandleMouseWheelMessage(nsWindow* aWidget, UINT aMessage, WPARAM aWParam,
+
+  bool HandleMouseWheelMessage(nsWindow* aWidget, UINT aMessage, WPARAM aWParam,
                                LPARAM aLParam);
 
   
@@ -144,7 +147,8 @@ class MouseScrollHandler {
 
 
 
-  void HandleScrollMessageAsMouseWheelMessage(nsWindow* aWidget, UINT aMessage,
+
+  bool HandleScrollMessageAsMouseWheelMessage(nsWindow* aWidget, UINT aMessage,
                                               WPARAM aWParam, LPARAM aLParam);
 
   
