@@ -2,14 +2,7 @@
 
 
 
-
-
-
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-
-    
-    let _ = nss_build_common::link_nss();
-
     uniffi::generate_scaffolding("./src/webext-storage.udl").unwrap();
 }

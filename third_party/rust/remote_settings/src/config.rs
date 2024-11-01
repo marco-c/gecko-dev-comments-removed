@@ -10,7 +10,7 @@
 
 use url::Url;
 
-use crate::Result;
+use crate::{ApiResult, Error, Result};
 
 
 
@@ -18,16 +18,19 @@ use crate::Result;
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, uniffi::Record)]
 pub struct RemoteSettingsConfig {
-    pub server: Option<RemoteSettingsServer>,
-    pub server_url: Option<String>,
-    pub bucket_name: Option<String>,
     pub collection_name: String,
+    #[uniffi(default = None)]
+    pub bucket_name: Option<String>,
+    #[uniffi(default = None)]
+    pub server_url: Option<String>,
+    #[uniffi(default = None)]
+    pub server: Option<RemoteSettingsServer>,
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, uniffi::Enum)]
 pub enum RemoteSettingsServer {
     Prod,
     Stage,
@@ -36,7 +39,17 @@ pub enum RemoteSettingsServer {
 }
 
 impl RemoteSettingsServer {
-    pub fn url(&self) -> Result<Url> {
+    
+    #[error_support::handle_error(Error)]
+    pub fn url(&self) -> ApiResult<Url> {
+        self.get_url()
+    }
+
+    
+    
+    
+    
+    pub(crate) fn get_url(&self) -> Result<Url> {
         Ok(match self {
             Self::Prod => Url::parse("https://firefox.settings.services.mozilla.com").unwrap(),
             Self::Stage => Url::parse("https://firefox.settings.services.allizom.org").unwrap(),

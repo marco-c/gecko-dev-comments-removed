@@ -519,6 +519,10 @@ impl VisitMut for PythonCodeOracle {
         
         function.rename(self.fn_name(function.name()));
     }
+
+    fn visit_error_name(&self, name: &mut String) {
+        *name = self.class_name(name);
+    }
 }
 
 trait AsCodeType {

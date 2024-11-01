@@ -64,13 +64,11 @@ pub mod deps {
     pub use static_assertions;
 }
 
-mod panichook;
-
 const PACKAGE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 
 
-static_assertions::const_assert!(PACKAGE_VERSION.as_bytes().len() < 10);
+static_assertions::const_assert!(PACKAGE_VERSION.len() < 10);
 
 
 

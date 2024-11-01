@@ -212,6 +212,11 @@ pub trait VisitMut {
 
     
     
+    
+    fn visit_error_name(&self, name: &mut String);
+
+    
+    
     fn visit_method(&self, method: &mut Method);
 
     

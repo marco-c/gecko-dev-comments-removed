@@ -2,8 +2,29 @@
 
 
 
-#[derive(Debug, thiserror::Error)]
+use error_support::{ErrorHandling, GetErrorHandling};
+
+pub type ApiResult<T> = std::result::Result<T, RemoteSettingsError>;
+pub type Result<T> = std::result::Result<T, Error>;
+
+
+#[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum RemoteSettingsError {
+    
+    #[error("Remote settings unexpected error: {reason}")]
+    Network { reason: String },
+
+    
+    #[error("Server asked the client to back off ({seconds} seconds remaining)")]
+    Backoff { seconds: u64 },
+
+    #[error("Remote settings error: {reason}")]
+    Other { reason: String },
+}
+
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
     #[error("JSON Error: {0}")]
     JSONError(#[from] serde_json::Error),
     #[error("Error writing downloaded attachment: {0}")]
@@ -26,4 +47,31 @@ pub enum RemoteSettingsError {
     ConfigError(String),
 }
 
-pub type Result<T, E = RemoteSettingsError> = std::result::Result<T, E>;
+
+
+impl GetErrorHandling for Error {
+    type ExternalError = RemoteSettingsError;
+
+    fn get_error_handling(&self) -> ErrorHandling<Self::ExternalError> {
+        match self {
+            
+            Self::RequestError(viaduct::Error::NetworkError(e)) => {
+                ErrorHandling::convert(RemoteSettingsError::Network {
+                    reason: e.to_string(),
+                })
+                .log_warning()
+            }
+            
+            
+            
+            Self::BackoffError(seconds) => {
+                ErrorHandling::convert(RemoteSettingsError::Backoff { seconds: *seconds })
+                    .report_error("suggest-backoff")
+            }
+            _ => ErrorHandling::convert(RemoteSettingsError::Other {
+                reason: self.to_string(),
+            })
+            .report_error("logins-unexpected"),
+        }
+    }
+}

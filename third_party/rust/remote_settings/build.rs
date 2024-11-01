@@ -1,8 +1,0 @@
-
-
-
-
-
-fn main() {
-    uniffi::generate_scaffolding("./src/remote_settings.udl").unwrap();
-}

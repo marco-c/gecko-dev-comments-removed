@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::rs::{DownloadedGlobalConfig, DownloadedWeatherData};
+use crate::rs::DownloadedGlobalConfig;
 
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq, uniffi::Record)]
@@ -22,15 +22,17 @@ impl From<&DownloadedGlobalConfig> for SuggestGlobalConfig {
 }
 
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, uniffi::Enum)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, uniffi::Enum)]
 pub enum SuggestProviderConfig {
-    Weather { min_keyword_length: i32 },
-}
-
-impl From<&DownloadedWeatherData> for SuggestProviderConfig {
-    fn from(data: &DownloadedWeatherData) -> Self {
-        Self::Weather {
-            min_keyword_length: data.weather.min_keyword_length,
-        }
-    }
+    Weather {
+        
+        score: f64,
+        
+        
+        
+        
+        
+        
+        min_keyword_length: i32,
+    },
 }

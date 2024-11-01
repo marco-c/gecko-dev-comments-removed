@@ -104,16 +104,16 @@ impl GetErrorHandling for Error {
             
             Self::Interrupted(_) => ErrorHandling::convert(SuggestApiError::Interrupted),
             
-            Self::RemoteSettings(RemoteSettingsError::RequestError(
-                viaduct::Error::NetworkError(e),
-            )) => ErrorHandling::convert(SuggestApiError::Network {
-                reason: e.to_string(),
-            })
-            .log_warning(),
+            Self::RemoteSettings(RemoteSettingsError::Network { reason }) => {
+                ErrorHandling::convert(SuggestApiError::Network {
+                    reason: reason.clone(),
+                })
+                .log_warning()
+            }
             
             
             
-            Self::RemoteSettings(RemoteSettingsError::BackoffError(seconds)) => {
+            Self::RemoteSettings(RemoteSettingsError::Backoff { seconds }) => {
                 ErrorHandling::convert(SuggestApiError::Backoff { seconds: *seconds })
                     .report_error("suggest-backoff")
             }
