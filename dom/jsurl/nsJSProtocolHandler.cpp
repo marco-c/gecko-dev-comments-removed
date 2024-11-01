@@ -59,7 +59,6 @@
 
 using mozilla::IsAscii;
 using mozilla::dom::AutoEntryScript;
-using mozilla::dom::JSExecutionContext;
 
 static NS_DEFINE_CID(kJSURICID, NS_JSURI_CID);
 
@@ -183,7 +182,6 @@ static bool IsPromiseValue(JSContext* aCx, JS::Handle<JS::Value> aValue) {
 
   return JS::IsPromiseObject(obj);
 }
-
 
 
 
@@ -386,8 +384,7 @@ nsresult nsJSThunk::EvaluateScript(
   options.setIntroductionType("javascriptURL");
   {
     mozilla::ErrorResult erv;
-    JSExecutionContext exec(cx, globalJSObject, options, erv);
-    if (!erv.Failed()) {
+    if (MOZ_LIKELY(xpc::Scriptability::Get(globalJSObject).Allowed())) {
       mozilla::AutoProfilerLabel autoProfilerLabel(
           "JSExecutionContext",
            nullptr, JS::ProfilingCategoryPair::JS);

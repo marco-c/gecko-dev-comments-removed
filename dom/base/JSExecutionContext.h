@@ -7,62 +7,19 @@
 #ifndef DOM_BASE_JSEXECUTIONCONTEXT_H_
 #define DOM_BASE_JSEXECUTIONCONTEXT_H_
 
-#include "js/GCVector.h"
-#include "js/TypeDecls.h"
-#include "js/Value.h"
-#include "js/experimental/JSStencil.h"
-#include "jsapi.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/Vector.h"
-#include "nsStringFwd.h"
-#include "nscore.h"
-
-class nsIScriptContext;
-class nsIScriptElement;
-class nsIScriptGlobalObject;
-class nsXBLPrototypeBinding;
+#include "js/TypeDecls.h"               
+#include "js/Value.h"                   
+#include "js/experimental/JSStencil.h"  
+#include "js/CompileOptions.h"          
+#include "js/RootingAPI.h"              
+#include "mozilla/ErrorResult.h"        
+#include "nsStringFwd.h"                
 
 namespace mozilla {
-union Utf8Unit;
 
 namespace dom {
 
-class ScriptLoadContext;
-
 nsresult EvaluationExceptionToNSResult(ErrorResult& aRv);
-
-class MOZ_STACK_CLASS JSExecutionContext final {
-  
-  
-  bool mSkip;
-
- public:
-  
-  
-  
-  
-  
-  JSExecutionContext(
-      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-      JS::CompileOptions& aCompileOptions, ErrorResult& aRv,
-      JS::Handle<JS::Value> aDebuggerPrivateValue = JS::UndefinedHandleValue,
-      JS::Handle<JSScript*> aDebuggerIntroductionScript = nullptr);
-
-  JSExecutionContext(const JSExecutionContext&) = delete;
-  JSExecutionContext(JSExecutionContext&&) = delete;
-
-  ~JSExecutionContext() {
-    
-    
-
-    
-    
-    
-  }
-};
 
 
 void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,

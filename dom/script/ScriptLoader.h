@@ -639,9 +639,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   void InstantiateClassicScriptFromAny(
-      JSContext* aCx, JSExecutionContext& aExec,
-      JS::CompileOptions& aCompileOptions, ScriptLoadRequest* aRequest,
-      JS::MutableHandle<JSScript*> aScript,
+      JSContext* aCx, JS::CompileOptions& aCompileOptions,
+      ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
       JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
@@ -652,19 +651,18 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   void InstantiateClassicScriptFromMaybeEncodedSource(
-      JSContext* aCx, JSExecutionContext& aExec,
-      JS::CompileOptions& aCompileOptions, ScriptLoadRequest* aRequest,
-      JS::MutableHandle<JSScript*> aScript, bool keepStencil,
-      RefPtr<JS::Stencil>& aStencilDup,
+      JSContext* aCx, JS::CompileOptions& aCompileOptions,
+      ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
+      bool keepStencil, RefPtr<JS::Stencil>& aStencilDup,
       JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
   
   
   void InstantiateClassicScriptFromCachedStencil(
-      JSContext* aCx, JSExecutionContext& aExec,
-      JS::CompileOptions& aCompileOptions, ScriptLoadRequest* aRequest,
-      JS::Stencil* aStencil, JS::MutableHandle<JSScript*> aScript,
+      JSContext* aCx, JS::CompileOptions& aCompileOptions,
+      ScriptLoadRequest* aRequest, JS::Stencil* aStencil,
+      JS::MutableHandle<JSScript*> aScript,
       JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
