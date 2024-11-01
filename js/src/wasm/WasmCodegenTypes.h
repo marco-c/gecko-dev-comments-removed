@@ -414,17 +414,18 @@ using FuncOffsetsVector = Vector<FuncOffsets, 0, SystemAllocPolicy>;
 class CodeRange {
  public:
   enum Kind {
-    Function,           
-    InterpEntry,        
-    JitEntry,           
-    ImportInterpExit,   
-    ImportJitExit,      
-    BuiltinThunk,       
-    TrapExit,           
-    DebugStub,          
-    RequestTierUpStub,  
-    FarJumpIsland,      
-    Throw               
+    Function,                  
+    InterpEntry,               
+    JitEntry,                  
+    ImportInterpExit,          
+    ImportJitExit,             
+    BuiltinThunk,              
+    TrapExit,                  
+    DebugStub,                 
+    RequestTierUpStub,         
+    UpdateCallRefMetricsStub,  
+    FarJumpIsland,  
+    Throw           
   };
 
  private:
@@ -489,6 +490,9 @@ class CodeRange {
   bool isTrapExit() const { return kind() == TrapExit; }
   bool isDebugStub() const { return kind() == DebugStub; }
   bool isRequestTierUpStub() const { return kind() == RequestTierUpStub; }
+  bool isUpdateCallRefMetricsStub() const {
+    return kind() == UpdateCallRefMetricsStub;
+  }
   bool isThunk() const { return kind() == FarJumpIsland; }
 
   
@@ -497,7 +501,8 @@ class CodeRange {
 
   bool hasReturn() const {
     return isFunction() || isImportExit() || isDebugStub() ||
-           isRequestTierUpStub() || isJitEntry();
+           isRequestTierUpStub() || isUpdateCallRefMetricsStub() ||
+           isJitEntry();
   }
   uint32_t ret() const {
     MOZ_ASSERT(hasReturn());

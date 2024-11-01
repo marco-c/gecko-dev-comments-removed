@@ -1015,6 +1015,10 @@ class Code : public ShareableBase<Code> {
 
   
   
+  uint32_t updateCallRefMetricsStubOffset_;
+
+  
+  
   Tiers completeTiers() const;
 
   [[nodiscard]] bool addCodeBlock(const WriteGuard& guard,
@@ -1087,6 +1091,13 @@ class Code : public ShareableBase<Code> {
   uint32_t requestTierUpStubOffset() const { return requestTierUpStubOffset_; }
   void setRequestTierUpStubOffset(uint32_t offs) {
     requestTierUpStubOffset_ = offs;
+  }
+
+  uint32_t updateCallRefMetricsStubOffset() const {
+    return updateCallRefMetricsStubOffset_;
+  }
+  void setUpdateCallRefMetricsStubOffset(uint32_t offs) {
+    updateCallRefMetricsStubOffset_ = offs;
   }
 
   const Bytes& bytecode() const {

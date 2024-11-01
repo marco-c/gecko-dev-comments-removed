@@ -4037,9 +4037,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                          const ReturnCallAdjustmentInfo& retCallInfo);
 #endif  
 
-  void updateCallRefMetrics(size_t callRefIndex, const Register funcRef,
-                            const Register scratch1, const Register scratch2);
-
   
   
   CodeOffset asmCallIndirect(const wasm::CallSiteDesc& desc,

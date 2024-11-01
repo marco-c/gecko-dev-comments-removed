@@ -128,6 +128,16 @@ class InliningHeuristics {
   static bool rawCallRefAllowed() {
     return JS::Prefs::wasm_call_ref_inlining();
   }
+  
+  
+  
+  static uint32_t rawCallRefPercent() {
+    uint32_t percent = JS::Prefs::wasm_call_ref_inlining_percent();
+    
+    percent = std::max<uint32_t>(10, percent);
+    percent = std::min<uint32_t>(100, percent);
+    return percent;
+  }
 
   
   

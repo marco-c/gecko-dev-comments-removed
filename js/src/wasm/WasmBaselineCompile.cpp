@@ -1934,7 +1934,101 @@ bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
 }
 
 #ifdef ENABLE_WASM_GC
-void BaseCompiler::callRef(const Stk& calleeRef, const FunctionCall& call,
+class OutOfLineUpdateCallRefMetrics : public OutOfLineCode {
+ public:
+  virtual void generate(MacroAssembler* masm) override {
+    
+    
+    
+    
+    
+    
+    
+    masm->call(
+        Address(InstanceReg, Instance::offsetOfUpdateCallRefMetricsStub()));
+    masm->jump(rejoin());
+  }
+};
+
+
+
+
+bool BaseCompiler::updateCallRefMetrics(size_t callRefIndex) {
+  AutoCreatedBy acb(masm, "BC::updateCallRefMetrics");
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  const Register regMetrics = WasmCallRefCallScratchReg0;  
+  const Register regFuncRef = WasmCallRefCallScratchReg1;  
+  const Register regScratch = WasmCallRefCallScratchReg2;  
+
+  OutOfLineCode* ool =
+      addOutOfLineCode(new (alloc_) OutOfLineUpdateCallRefMetrics());
+  if (!ool) {
+    return false;
+  }
+
+  
+
+  
+  masm.branchWasmAnyRefIsNull(true, WasmCallRefReg, ool->rejoin());
+
+  
+  masm.mov(WasmCallRefReg, regFuncRef);
+
+  
+  
+  
+  
+  const CodeOffset offsetOfCallRefOffset = masm.move32WithPatch(regScratch);
+  masm.callRefMetricsPatches()[callRefIndex].setOffset(
+      offsetOfCallRefOffset.offset());
+  
+  masm.loadPtr(Address(InstanceReg, wasm::Instance::offsetOfCallRefMetrics()),
+               regMetrics);
+  masm.addPtr(regScratch, regMetrics);
+
+  
+  
+  
+  
+  const size_t instanceSlotOffset = FunctionExtended::offsetOfExtendedSlot(
+      FunctionExtended::WASM_INSTANCE_SLOT);
+  masm.loadPtr(Address(regFuncRef, instanceSlotOffset), regScratch);
+  masm.branchPtr(Assembler::NotEqual, InstanceReg, regScratch, ool->entry());
+
+  
+  
+  
+  
+  
+  const size_t offsetOfTarget0 = CallRefMetrics::offsetOfTarget(0);
+  masm.loadPtr(Address(regMetrics, offsetOfTarget0), regScratch);
+  masm.branchPtr(Assembler::NotEqual, regScratch, regFuncRef, ool->entry());
+
+  
+  
+  
+  
+  
+  const size_t offsetOfCount0 = CallRefMetrics::offsetOfCount(0);
+  masm.load32(Address(regMetrics, offsetOfCount0), regScratch);
+  masm.add32(Imm32(1), regScratch);
+  masm.store32(regScratch, Address(regMetrics, offsetOfCount0));
+
+  masm.bind(ool->rejoin());
+  return true;
+}
+
+bool BaseCompiler::callRef(const Stk& calleeRef, const FunctionCall& call,
                            mozilla::Maybe<size_t> callRefIndex,
                            CodeOffset* fastCallOffset,
                            CodeOffset* slowCallOffset) {
@@ -1943,13 +2037,15 @@ void BaseCompiler::callRef(const Stk& calleeRef, const FunctionCall& call,
 
   loadRef(calleeRef, RegRef(WasmCallRefReg));
   if (compilerEnv_.mode() == CompileMode::LazyTiering) {
-    masm.updateCallRefMetrics(*callRefIndex, WasmCallRefReg,
-                              WasmCallRefCallScratchReg0,
-                              WasmCallRefCallScratchReg1);
+    if (!updateCallRefMetrics(*callRefIndex)) {
+      return false;
+    }
   } else {
     MOZ_ASSERT(callRefIndex.isNothing());
   }
+
   masm.wasmCallRef(desc, callee, fastCallOffset, slowCallOffset);
+  return true;
 }
 
 #  ifdef ENABLE_WASM_TAIL_CALLS
@@ -5593,7 +5689,10 @@ bool BaseCompiler::emitCallRef() {
   const Stk& callee = peek(results.count());
   CodeOffset fastCallOffset;
   CodeOffset slowCallOffset;
-  callRef(callee, baselineCall, callRefIndex, &fastCallOffset, &slowCallOffset);
+  if (!callRef(callee, baselineCall, callRefIndex, &fastCallOffset,
+               &slowCallOffset)) {
+    return false;
+  }
   if (!createStackMap("emitCallRef", fastCallOffset)) {
     return false;
   }

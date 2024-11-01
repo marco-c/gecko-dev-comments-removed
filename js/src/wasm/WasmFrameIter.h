@@ -241,6 +241,11 @@ void GenerateExitPrologue(jit::MacroAssembler& masm, unsigned framePushed,
 void GenerateExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
                           ExitReason reason, CallableOffsets* offsets);
 
+
+
+void GenerateMinimalPrologue(jit::MacroAssembler& masm, uint32_t* entry);
+void GenerateMinimalEpilogue(jit::MacroAssembler& masm, uint32_t* ret);
+
 void GenerateJitExitPrologue(jit::MacroAssembler& masm, unsigned framePushed,
                              uint32_t fallbackOffset, ImportOffsets* offsets);
 void GenerateJitExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
