@@ -151,6 +151,9 @@ class AndroidVoipClient : public webrtc::Transport {
   void ReadRTCPPacket(const std::vector<uint8_t>& packet_copy);
 
   
+  void LogChannelStatistics(JNIEnv* env);
+
+  
   std::unique_ptr<rtc::Thread> voip_thread_;
   
   
