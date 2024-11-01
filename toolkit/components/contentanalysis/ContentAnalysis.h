@@ -240,7 +240,7 @@ class ContentAnalysis final : public nsIContentAnalysis {
   static constexpr uint32_t kDefaultCachedDataTimeoutInMs = 5000;
   
   static constexpr const char* kKnownClipboardTypes[] = {
-      kTextMime, kHTMLMime, kNativeHTMLMime, kCustomTypesMime, kFileMime};
+      kTextMime, kHTMLMime, kCustomTypesMime, kFileMime};
 
  private:
   ~ContentAnalysis();

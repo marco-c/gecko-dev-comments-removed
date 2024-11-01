@@ -146,17 +146,12 @@ async function testClipboardWithContentAnalysis(allowPaste) {
   await sendKey("v");
   await pastePromise;
   
-  is(mockCA.calls.length, 3, "Correct number of calls to Content Analysis");
+  
+  is(mockCA.calls.length, 2, "Correct number of calls to Content Analysis");
   assertContentAnalysisRequest(mockCA.calls[0], "t Bold");
   assertContentAnalysisRequest(
     mockCA.calls[1],
     htmlPrefix + "t <b>Bold</b>" + htmlPostfix
-  );
-  assertContentAnalysisRequest(mockCA.calls[2], null);
-  
-  ok(
-    mockCA.calls[2].textContent.includes("t <b>Bold</b>"),
-    "request textContent should contain HTML"
   );
   mockCA.clearCalls();
 
@@ -255,17 +250,11 @@ async function testClipboardWithContentAnalysis(allowPaste) {
   await sendKey("v");
   await pastePromise;
   
-  is(mockCA.calls.length, 3, "Correct number of calls to Content Analysis");
+  is(mockCA.calls.length, 2, "Correct number of calls to Content Analysis");
   assertContentAnalysisRequest(mockCA.calls[0], "Some text");
   assertContentAnalysisRequest(
     mockCA.calls[1],
     htmlPrefix + "<i>Italic</i> " + htmlPostfix
-  );
-  assertContentAnalysisRequest(mockCA.calls[2], null);
-  
-  ok(
-    mockCA.calls[2].textContent.includes("<i>Italic</i>"),
-    "request textContent should contain HTML"
   );
   mockCA.clearCalls();
 
@@ -331,21 +320,12 @@ async function testClipboardWithContentAnalysis(allowPaste) {
   await SpecialPowers.spawn(browser, [], () => {});
   await sendKey("v");
   await pastePromise;
-  is(mockCA.calls.length, 2, "Correct number of calls to Content Analysis");
+  is(mockCA.calls.length, 1, "Correct number of calls to Content Analysis");
   assertContentAnalysisRequest(
     mockCA.calls[0],
     htmlPrefix +
       '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
       htmlPostfix
-  );
-  
-  assertContentAnalysisRequest(mockCA.calls[1], null);
-  
-  ok(
-    mockCA.calls[1].textContent.includes(
-      '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">'
-    ),
-    "request textContent should contain HTML"
   );
   mockCA.clearCalls();
 

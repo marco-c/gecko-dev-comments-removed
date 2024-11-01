@@ -2159,10 +2159,7 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
       return;
     }
 
-    
-    
-    
-    auto textFormats = {kTextMime, kHTMLMime, kNativeHTMLMime};
+    auto textFormats = {kTextMime, kHTMLMime};
     for (const auto& textFormat : textFormats) {
       auto textResult = CheckClipboardCAAsText(aInnerWindowId, contentAnalysis,
                                                aTransferable, textFormat);
