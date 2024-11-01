@@ -11,22 +11,27 @@
 #ifndef MEDIA_BASE_MEDIA_ENGINE_H_
 #define MEDIA_BASE_MEDIA_ENGINE_H_
 
+#include <cstdint>
 #include <memory>
-#include <string>
+#include <optional>
 #include <vector>
 
-#include "api/audio_codecs/audio_decoder_factory.h"
-#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/array_view.h"
+#include "api/audio/audio_device.h"
+#include "api/audio_codecs/audio_codec_pair_id.h"
+#include "api/audio_options.h"
 #include "api/crypto/crypto_options.h"
 #include "api/field_trials_view.h"
+#include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "call/audio_state.h"
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
-#include "media/base/media_channel_impl.h"
 #include "media/base/media_config.h"
-#include "media/base/video_common.h"
+#include "media/base/stream_params.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
@@ -121,6 +126,10 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
     return nullptr;
   }
 
+  
+  
+  
+  
   virtual const std::vector<Codec>& send_codecs() const = 0;
   virtual const std::vector<Codec>& recv_codecs() const = 0;
 
@@ -166,6 +175,9 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
     return nullptr;
   }
 
+  
+  
+  
   
   virtual std::vector<Codec> send_codecs() const = 0;
   virtual std::vector<Codec> recv_codecs() const = 0;

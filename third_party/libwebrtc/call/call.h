@@ -29,9 +29,11 @@
 #include "call/call_config.h"
 #include "call/flexfec_receive_stream.h"
 #include "call/packet_receiver.h"
+#include "call/payload_type.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/network/sent_packet.h"
 #include "video/config/video_encoder_config.h"
 
@@ -101,6 +103,18 @@ class Call {
   
   
   virtual RtpTransportControllerSendInterface* GetTransportControllerSend() = 0;
+
+  
+  
+  virtual PayloadTypeSuggester* GetPayloadTypeSuggester() {
+    
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+  virtual void SetPayloadTypeSuggester(PayloadTypeSuggester* suggester) {
+    
+    RTC_CHECK_NOTREACHED();
+  }
 
   
   

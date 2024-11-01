@@ -8,8 +8,8 @@
 
 
 
-#ifndef PC_PAYLOAD_TYPE_PICKER_H_
-#define PC_PAYLOAD_TYPE_PICKER_H_
+#ifndef CALL_PAYLOAD_TYPE_PICKER_H_
+#define CALL_PAYLOAD_TYPE_PICKER_H_
 
 #include <map>
 #include <set>
@@ -18,17 +18,9 @@
 
 #include "api/rtc_error.h"
 #include "media/base/codec.h"
-#include "rtc_base/strong_alias.h"
+#include "call/payload_type.h"
 
 namespace webrtc {
-
-class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {
- public:
-  
-  
-  PayloadType(uint8_t pt) { value_ = pt; }                
-  constexpr operator uint8_t() const& { return value_; }  
-};
 
 class PayloadTypeRecorder;
 
