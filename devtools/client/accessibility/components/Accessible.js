@@ -147,8 +147,7 @@ class Accessible extends Component {
     this.update = this.update.bind(this);
   }
 
-  
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     window.on(
       EVENTS.NEW_ACCESSIBLE_FRONT_INSPECTED,
       this.onAccessibleInspected
