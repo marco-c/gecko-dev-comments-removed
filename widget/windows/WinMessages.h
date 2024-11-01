@@ -11,9 +11,6 @@
 
 
 
-
-#define MOZ_WM_APP_QUIT (WM_APP + 0x0300)
-
 #define MOZ_WM_STARTA11Y (WM_APP + 0x0302)
 
 

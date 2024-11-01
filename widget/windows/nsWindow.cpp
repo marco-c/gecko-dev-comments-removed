@@ -4793,6 +4793,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         result = true;
         break;
       }
+
       
       
       
@@ -4810,14 +4811,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
                               "Received WM_ENDSESSION with unknown flags.");
         shutdownReason = AppShutdownReason::OSForceClose;
       }
-    }
-      [[fallthrough]];
-    case MOZ_WM_APP_QUIT: {
-      if (shutdownReason == AppShutdownReason::Unknown) {
-        
-        
-        shutdownReason = AppShutdownReason::WinUnexpectedMozQuit;
-      }
+
       
       
       

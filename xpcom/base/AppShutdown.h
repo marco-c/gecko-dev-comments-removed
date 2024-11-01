@@ -32,8 +32,6 @@ enum class AppShutdownReason {
   OSSessionEnd,
   
   OSShutdown,
-  
-  WinUnexpectedMozQuit,
 };
 
 class AppShutdown {
