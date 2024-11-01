@@ -56,8 +56,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   template <typename Unit>
   void InternalCompile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
                        JS::SourceText<Unit>& aSrcBuf,
-                       JS::MutableHandle<JSScript*> aScript,
-                       bool aEncodeBytecode, ErrorResult& aRv);
+                       RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
 
  public:
   
@@ -96,24 +95,21 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
   
   void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-               JS::SourceText<char16_t>& aSrcBuf,
-               JS::MutableHandle<JSScript*> aScript, ErrorResult& aRv,
-               bool aEncodeBytecode = false);
+               JS::SourceText<char16_t>& aSrcBuf, RefPtr<JS::Stencil>& aStencil,
+               ErrorResult& aRv);
   void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
                JS::SourceText<mozilla::Utf8Unit>& aSrcBuf,
-               JS::MutableHandle<JSScript*> aScript, ErrorResult& aRv,
-               bool aEncodeBytecode = false);
+               RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
 
   
   void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-               const nsAString& aScript,
-               JS::MutableHandle<JSScript*> aScriptOut, ErrorResult& aRv,
-               bool aEncodeBytecode = false);
+               const nsAString& aScript, RefPtr<JS::Stencil>& aStencil,
+               ErrorResult& aRv);
 
   
   void Decode(JSContext* aCx, JS::CompileOptions& aCompileOptions,
               const JS::TranscodeRange& aBytecodeBuf,
-              JS::MutableHandle<JSScript*> aScript, ErrorResult& aRv);
+              RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
 
   
   
