@@ -20,7 +20,6 @@ interface mozIStorageBindingParams : nsISupports {
 
 
 
-
    void bindByName(in AUTF8String aName,
                    in nsIVariant aValue);
    [noscript] void bindUTF8StringByName(in AUTF8String aName,
@@ -58,18 +57,6 @@ interface mozIStorageBindingParams : nsISupports {
                               in unsigned long aValueSize);
 
    
-   
-   void bindArrayOfIntegersByName(in AUTF8String aName,
-                                  in Array<int64_t> aValue);
-   void bindArrayOfDoublesByName(in AUTF8String aName,
-                                 in Array<double> aValue);
-   void bindArrayOfStringsByName(in AUTF8String aName,
-                                 in Array<AString> aValue);
-   void bindArrayOfUTF8StringsByName(in AUTF8String aName,
-                                     in Array<AUTF8String> aValue);
-
-   
-
 
 
 
@@ -113,15 +100,4 @@ interface mozIStorageBindingParams : nsISupports {
    void bindAdoptedBlobByIndex(in unsigned long aIndex,
                                in octetPtr aValue,
                                in unsigned long aValueSize);
-
-   
-   
-   void bindArrayOfIntegersByIndex(in unsigned long aIndex,
-                                   in Array<int64_t> aValue);
-   void bindArrayOfDoublesByIndex(in unsigned long aIndex,
-                                  in Array<double> aValue);
-   void bindArrayOfStringsByIndex(in unsigned long aIndex,
-                                  in Array<AString> aValue);
-   void bindArrayOfUTF8StringsByIndex(in unsigned long aIndex,
-                                      in Array<AUTF8String> aValue);
 };

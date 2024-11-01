@@ -87,31 +87,20 @@ int variantToSQLiteT(T aObj, nsIVariant* aValue) {
       void* data;
       nsresult rv = aValue->GetAsArray(&arrayType, &iid, &count, &data);
       NS_ENSURE_SUCCESS(rv, SQLITE_MISMATCH);
-      if (arrayType == nsIDataType::VTYPE_UINT8) {
-        
-        return sqlite3_T_blob(aObj, data, count);
-      }
+
       
-      if (count == 0) {
-        return sqlite3_T_null(aObj);
-      }
-      if (arrayType == nsIDataType::VTYPE_INT32 ||
-          arrayType == nsIDataType::VTYPE_INT64) {
-        return sqlite3_T_array(aObj, data, count, CARRAY_INT64);
-      }
-      if (arrayType == nsIDataType::VTYPE_FLOAT ||
-          arrayType == nsIDataType::VTYPE_DOUBLE) {
-        return sqlite3_T_array(aObj, data, count, CARRAY_DOUBLE);
-      }
-      if (arrayType == nsIDataType::VTYPE_UTF8STRING) {
-        return sqlite3_T_array(aObj, data, count, CARRAY_TEXT);
+      NS_ASSERTION(arrayType == nsIDataType::VTYPE_UINT8,
+                   "Invalid type passed!  You may leak!");
+      if (arrayType != nsIDataType::VTYPE_UINT8) {
+        
+        
+        free(data);
+        return SQLITE_MISMATCH;
       }
 
-      MOZ_DIAGNOSTIC_ASSERT(false, "Unsupported type in Storage bound array");
       
-      
-      free(data);
-      return SQLITE_MISMATCH;
+      int rc = sqlite3_T_blob(aObj, data, count);
+      return rc;
     }
     
     
