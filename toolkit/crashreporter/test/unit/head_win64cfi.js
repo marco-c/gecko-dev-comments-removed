@@ -189,13 +189,12 @@ function assertStack(stack, expected) {
 
 
 
-
-async function do_x64CFITest(how, expectedStack, minidumpAnalyzerArgs) {
+async function do_x64CFITest(how, expectedStack) {
   
   let setupFn = "crashType = CrashTestUtils." + how + ";";
 
   let callbackFn = async function (minidumpFile, extra, extraFile) {
-    runMinidumpAnalyzer(minidumpFile, minidumpAnalyzerArgs);
+    runMinidumpAnalyzer(minidumpFile);
 
     
     extra = await IOUtils.readJSON(extraFile.path);
