@@ -1771,6 +1771,7 @@ class Database final
   
   
   nsCString mOrigin;
+  mozilla::glean::TimerId mRequestAllowToCloseTimerId;
   uint32_t mPrivateBrowsingId;
   bool mAllowedToClose;
   bool mActorDestroyed;
@@ -5335,6 +5336,7 @@ Database::Database(const PrincipalInfo& aPrincipalInfo,
       mPrincipalInfo(aPrincipalInfo),
       mContentParentId(aContentParentId),
       mOrigin(aOrigin),
+      mRequestAllowToCloseTimerId(0),
       mPrivateBrowsingId(aPrivateBrowsingId),
       mAllowedToClose(false),
       mActorDestroyed(false),
@@ -5423,12 +5425,18 @@ void Database::RequestAllowToClose() {
     return;
   }
 
-  if (NS_WARN_IF(!SendRequestAllowToClose()) && !mSnapshot) {
-    
-    
-    
-    
-    AllowToClose();
+  if (NS_WARN_IF(!SendRequestAllowToClose())) {
+    if (!mSnapshot) {
+      
+      
+      
+      
+      AllowToClose();
+    }
+  } else {
+    mRequestAllowToCloseTimerId =
+        glean::localstorage_database::request_allow_to_close_response_time
+            .Start();
   }
 }
 
@@ -5514,6 +5522,9 @@ mozilla::ipc::IPCResult Database::RecvAllowToClose() {
   if (NS_WARN_IF(mAllowedToClose)) {
     return IPC_FAIL(this, "mAllowedToClose already set!");
   }
+
+  glean::localstorage_database::request_allow_to_close_response_time
+      .StopAndAccumulate(std::move(mRequestAllowToCloseTimerId));
 
   AllowToClose();
 
