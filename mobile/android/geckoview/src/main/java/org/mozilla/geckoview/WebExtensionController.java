@@ -258,24 +258,6 @@ public class WebExtensionController {
 
 
 
-    @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-required-permissions", version = 133)
-    default GeckoResult<AllowOrDeny> onInstallPrompt(@NonNull final WebExtension extension) {
-      return null;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
 
 
 
