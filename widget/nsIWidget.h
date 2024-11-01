@@ -333,6 +333,7 @@ struct AutoObserverNotifier {
 
 class nsIWidget : public nsISupports {
  protected:
+  friend class nsBaseWidget;
   typedef mozilla::dom::BrowserChild BrowserChild;
 
  public:
@@ -398,13 +399,7 @@ class nsIWidget : public nsISupports {
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IWIDGET_IID)
 
-  nsIWidget()
-      : mLastChild(nullptr),
-        mPrevSibling(nullptr),
-        mOnDestroyCalled(false),
-        mWindowType(WindowType::Child) {
-    ClearNativeTouchSequence(nullptr);
-  }
+  nsIWidget() = default;
 
   
 
@@ -529,7 +524,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetParent(nsIWidget* aNewParent) = 0;
+  void SetParent(nsIWidget* aNewParent);
 
   
 
@@ -538,24 +533,17 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual nsIWidget* GetParent(void) = 0;
+  nsIWidget* GetParent() const { return mParent; }
+
+  
+  virtual void DidChangeParent(nsIWidget* aOldParent) {}
 
   
 
 
 
 
-  virtual nsIWidget* GetTopLevelWidget() = 0;
-
-  
-
-
-
-
-
-
-
-  virtual nsIWidget* GetSheetWindowParent(void) = 0;
+  nsIWidget* GetTopLevelWidget();
 
   
 
@@ -1209,15 +1197,15 @@ class nsIWidget : public nsISupports {
   
 
 
-
-  
-  virtual void AddChild(nsIWidget* aChild) = 0;
-  virtual void RemoveChild(nsIWidget* aChild) = 0;
   virtual void* GetNativeData(uint32_t aDataType) = 0;
   virtual void FreeNativeData(void* data, uint32_t aDataType) = 0;  
 
-  
+ protected:
+  void AddToChildList(nsIWidget* aChild);
+  void RemoveFromChildList(nsIWidget* aChild);
+  void RemoveAllChildren();
 
+ public:
   
 
 
@@ -1853,13 +1841,6 @@ class nsIWidget : public nsISupports {
   
 
 
-
-
-  virtual void ReparentNativeWidget(nsIWidget* aNewParent) = 0;
-
-  
-
-
   virtual bool HasGLContext() { return false; }
 
   
@@ -2090,12 +2071,14 @@ class nsIWidget : public nsISupports {
   
   
   nsCOMPtr<nsIWidget> mFirstChild;
-  nsIWidget* MOZ_NON_OWNING_REF mLastChild;
+  nsIWidget* MOZ_NON_OWNING_REF mLastChild = nullptr;
   nsCOMPtr<nsIWidget> mNextSibling;
-  nsIWidget* MOZ_NON_OWNING_REF mPrevSibling;
+  nsIWidget* MOZ_NON_OWNING_REF mPrevSibling = nullptr;
   
-  bool mOnDestroyCalled;
-  WindowType mWindowType;
+  nsIWidget* MOZ_NON_OWNING_REF mParent = nullptr;
+  
+  bool mOnDestroyCalled = false;
+  WindowType mWindowType = WindowType::Child;
   WidgetType mWidgetType = WidgetType::Native;
 };
 
