@@ -38,6 +38,7 @@ constexpr wchar_t kCoreMessagingDll[] = L"CoreMessaging.dll";
 constexpr wchar_t kWgcSessionType[] =
     L"Windows.Graphics.Capture.GraphicsCaptureSession";
 constexpr wchar_t kApiContract[] = L"Windows.Foundation.UniversalApiContract";
+constexpr wchar_t kDirtyRegionMode[] = L"DirtyRegionMode";
 constexpr UINT16 kRequiredApiContractVersion = 8;
 
 enum class WgcCapturerResult {
@@ -56,6 +57,44 @@ void RecordWgcCapturerResult(WgcCapturerResult error) {
   RTC_HISTOGRAM_ENUMERATION("WebRTC.DesktopCapture.Win.WgcCapturerResult",
                             static_cast<int>(error),
                             static_cast<int>(WgcCapturerResult::kMaxValue));
+}
+
+
+
+
+
+
+void LogDirtyRegionSupport() {
+  ComPtr<ABI::Windows::Foundation::Metadata::IApiInformationStatics>
+      api_info_statics;
+  HRESULT hr = GetActivationFactory<
+      ABI::Windows::Foundation::Metadata::IApiInformationStatics,
+      RuntimeClass_Windows_Foundation_Metadata_ApiInformation>(
+      &api_info_statics);
+  if (FAILED(hr)) {
+    return;
+  }
+
+  HSTRING dirty_region_mode;
+  hr = webrtc::CreateHstring(kDirtyRegionMode, wcslen(kDirtyRegionMode),
+                             &dirty_region_mode);
+  if (FAILED(hr)) {
+    webrtc::DeleteHstring(dirty_region_mode);
+    return;
+  }
+
+  HSTRING wgc_session_type;
+  hr = webrtc::CreateHstring(kWgcSessionType, wcslen(kWgcSessionType),
+                             &wgc_session_type);
+  if (SUCCEEDED(hr)) {
+    boolean is_dirty_region_mode_supported =
+        api_info_statics->IsPropertyPresent(wgc_session_type, dirty_region_mode,
+                                            &is_dirty_region_mode_supported);
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.DesktopCapture.Win.WgcDirtyRegionSupport",
+                          !!is_dirty_region_mode_supported);
+  }
+  webrtc::DeleteHstring(dirty_region_mode);
+  webrtc::DeleteHstring(wgc_session_type);
 }
 
 }  
@@ -156,6 +195,7 @@ WgcCapturerWin::WgcCapturerWin(
         reinterpret_cast<CreateDispatcherQueueControllerFunc>(GetProcAddress(
             core_messaging_library_, "CreateDispatcherQueueController"));
   }
+  LogDirtyRegionSupport();
 }
 
 WgcCapturerWin::~WgcCapturerWin() {
