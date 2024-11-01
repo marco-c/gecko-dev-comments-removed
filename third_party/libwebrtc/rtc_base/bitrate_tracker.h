@@ -14,7 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -50,7 +51,7 @@ class RTC_EXPORT BitrateTracker {
 
   
   
-  absl::optional<DataRate> Rate(Timestamp now) const;
+  std::optional<DataRate> Rate(Timestamp now) const;
 
   
   

@@ -14,9 +14,9 @@
 #include <deque>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/rtp_headers.h"
 #include "api/transport/network_control.h"
@@ -96,7 +96,7 @@ class TransportSequenceNumberFeedbackGenenerator
 
   
   
-  absl::optional<int64_t> periodic_window_start_seq_ RTC_GUARDED_BY(&lock_);
+  std::optional<int64_t> periodic_window_start_seq_ RTC_GUARDED_BY(&lock_);
 
   
   PacketArrivalTimeMap packet_arrival_times_ RTC_GUARDED_BY(&lock_);

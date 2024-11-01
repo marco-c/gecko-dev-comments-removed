@@ -15,10 +15,10 @@
 #include <stdint.h>
 
 #include <functional>
+#include <optional>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "api/units/data_rate.h"
 
 namespace webrtc {
@@ -116,7 +116,7 @@ class NetworkBehaviorInterface {
   
   
   
-  virtual absl::optional<int64_t> NextDeliveryTimeUs() const = 0;
+  virtual std::optional<int64_t> NextDeliveryTimeUs() const = 0;
   
   
   

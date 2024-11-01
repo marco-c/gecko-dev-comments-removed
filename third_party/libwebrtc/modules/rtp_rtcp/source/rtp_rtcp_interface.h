@@ -12,11 +12,11 @@
 #define MODULES_RTP_RTCP_SOURCE_RTP_RTCP_INTERFACE_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/frame_transformer_interface.h"
 #include "api/rtp_packet_sender.h"
@@ -130,7 +130,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     
     uint32_t local_media_ssrc = 0;
-    absl::optional<uint32_t> rtx_send_ssrc;
+    std::optional<uint32_t> rtx_send_ssrc;
 
     bool need_rtp_packet_infos = false;
 
@@ -174,7 +174,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   struct NonSenderRttStats {
     
-    absl::optional<TimeDelta> round_trip_time;
+    std::optional<TimeDelta> round_trip_time;
     
     TimeDelta total_round_trip_time = TimeDelta::Zero();
     
@@ -266,7 +266,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual int RtxSendStatus() const = 0;
 
   
-  virtual absl::optional<uint32_t> RtxSsrc() const = 0;
+  virtual std::optional<uint32_t> RtxSsrc() const = 0;
 
   
   
@@ -274,7 +274,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
                                      int associated_payload_type) = 0;
 
   
-  virtual absl::optional<uint32_t> FlexfecSsrc() const = 0;
+  virtual std::optional<uint32_t> FlexfecSsrc() const = 0;
 
   
   
@@ -389,7 +389,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual int32_t SetCNAME(absl::string_view cname) = 0;
 
   
-  virtual absl::optional<TimeDelta> LastRtt() const = 0;
+  virtual std::optional<TimeDelta> LastRtt() const = 0;
 
   
   virtual TimeDelta ExpectedRetransmissionTime() const = 0;
@@ -416,9 +416,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   virtual std::vector<ReportBlockData> GetLatestReportBlockData() const = 0;
   
-  virtual absl::optional<SenderReportStats> GetSenderReportStats() const = 0;
+  virtual std::optional<SenderReportStats> GetSenderReportStats() const = 0;
   
-  virtual absl::optional<NonSenderRttStats> GetNonSenderRttStats() const = 0;
+  virtual std::optional<NonSenderRttStats> GetNonSenderRttStats() const = 0;
 
   
   

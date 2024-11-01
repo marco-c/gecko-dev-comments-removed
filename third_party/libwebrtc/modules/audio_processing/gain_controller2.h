@@ -69,7 +69,7 @@ class GainController2 {
   
   
   
-  void Process(absl::optional<float> speech_probability,
+  void Process(std::optional<float> speech_probability,
                bool input_volume_changed,
                AudioBuffer* audio);
 
@@ -77,7 +77,7 @@ class GainController2 {
 
   AvailableCpuFeatures GetCpuFeatures() const { return cpu_features_; }
 
-  absl::optional<int> recommended_input_volume() const {
+  std::optional<int> recommended_input_volume() const {
     return recommended_input_volume_;
   }
 
@@ -103,7 +103,7 @@ class GainController2 {
   
   
   
-  absl::optional<int> recommended_input_volume_;
+  std::optional<int> recommended_input_volume_;
 };
 
 }  

@@ -113,7 +113,7 @@ class ChannelSendInterface {
           frame_transformer) = 0;
 
   
-  virtual absl::optional<DataRate> GetUsedRate() const = 0;
+  virtual std::optional<DataRate> GetUsedRate() const = 0;
 
   
   virtual void RegisterPacketOverhead(int packet_byte_overhead) = 0;

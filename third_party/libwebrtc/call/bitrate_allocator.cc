@@ -319,13 +319,13 @@ std::map<BitrateAllocatorObserver*, int> ZeroRateAllocation(
 }
 
 
-absl::optional<std::map<BitrateAllocatorObserver*, int>> MaybeApplySurplus(
+std::optional<std::map<BitrateAllocatorObserver*, int>> MaybeApplySurplus(
     const std::map<BitrateAllocatorObserver*, int>& allocation,
     const std::vector<AllocatableTrack>& allocatable_tracks,
     DataRate bitrate,
     DataRate upper_elastic_limit) {
   if (upper_elastic_limit.IsZero())
-    return absl::nullopt;
+    return std::nullopt;
 
   
   
@@ -345,12 +345,12 @@ absl::optional<std::map<BitrateAllocatorObserver*, int>> MaybeApplySurplus(
     }
     const DataRate allocated = DataRate::BitsPerSec(it->second);
     sum_allocated += allocated;
-    if (const absl::optional<TrackRateElasticity> elasticity =
+    if (const std::optional<TrackRateElasticity> elasticity =
             observer_config.config.rate_elasticity) {
       bool inactive_can_contribute_and_consume = false;
       if (elasticity == TrackRateElasticity::kCanContributeUnusedRate ||
           elasticity == TrackRateElasticity::kCanContributeAndConsume) {
-        if (const absl::optional<DataRate> used =
+        if (const std::optional<DataRate> used =
                 observer_config.observer->GetUsedRate()) {
           if (*used < allocated) {
             surplus += allocated - *used;
@@ -375,7 +375,7 @@ absl::optional<std::map<BitrateAllocatorObserver*, int>> MaybeApplySurplus(
       (sum_allocated >= bitrate) ? (sum_allocated - bitrate) : DataRate::Zero();
   if (sum_demand < 0.0001 || overshoot > surplus) {
     
-    return absl::nullopt;
+    return std::nullopt;
   }
   surplus -= overshoot;
 
@@ -388,7 +388,7 @@ absl::optional<std::map<BitrateAllocatorObserver*, int>> MaybeApplySurplus(
       
       continue;
     }
-    absl::optional<TrackRateElasticity> elasticity =
+    std::optional<TrackRateElasticity> elasticity =
         observer_config.config.rate_elasticity;
     if (elasticity == TrackRateElasticity::kCanConsumeExtraRate ||
         elasticity == TrackRateElasticity::kCanContributeAndConsume) {

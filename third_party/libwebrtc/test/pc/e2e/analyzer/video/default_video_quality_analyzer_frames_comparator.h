@@ -101,16 +101,16 @@ class DefaultVideoQualityAnalyzerFramesComparator {
   
   
   void AddComparison(InternalStatsKey stats_key,
-                     absl::optional<VideoFrame> captured,
-                     absl::optional<VideoFrame> rendered,
+                     std::optional<VideoFrame> captured,
+                     std::optional<VideoFrame> rendered,
                      FrameComparisonType type,
                      FrameStats frame_stats);
   
   
   void AddComparison(InternalStatsKey stats_key,
                      int skipped_between_rendered,
-                     absl::optional<VideoFrame> captured,
-                     absl::optional<VideoFrame> rendered,
+                     std::optional<VideoFrame> captured,
+                     std::optional<VideoFrame> rendered,
                      FrameComparisonType type,
                      FrameStats frame_stats);
 
@@ -127,8 +127,8 @@ class DefaultVideoQualityAnalyzerFramesComparator {
   enum State { kNew, kActive, kStopped };
 
   void AddComparisonInternal(InternalStatsKey stats_key,
-                             absl::optional<VideoFrame> captured,
-                             absl::optional<VideoFrame> rendered,
+                             std::optional<VideoFrame> captured,
+                             std::optional<VideoFrame> rendered,
                              FrameComparisonType type,
                              FrameStats frame_stats)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);

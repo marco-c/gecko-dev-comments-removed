@@ -13,9 +13,9 @@
 #include <stdio.h>
 
 #include <cstdint>
+#include <optional>
 
 #include "absl/algorithm/container.h"
-#include "absl/types/optional.h"
 #include "api/audio/audio_processing_statistics.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/candidate.h"
@@ -223,18 +223,18 @@ const StatsReport* FindNthReportByType(const StatsReports& reports,
 
 
 
-absl::optional<std::string> GetValueInNthReportByType(
+std::optional<std::string> GetValueInNthReportByType(
     const StatsReports& reports,
     StatsReport::StatsType type,
     StatsReport::StatsValueName name,
     int n) {
   const StatsReport* report = FindNthReportByType(reports, type, n);
   if (!report) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   std::string value;
   if (!GetValue(report, name, &value)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return value;
 }
@@ -1889,7 +1889,7 @@ TEST_P(StatsCollectorTrackTest, TwoLocalSendersWithSameTrack) {
 
   
   
-  std::vector<absl::optional<std::string>> ssrcs = {
+  std::vector<std::optional<std::string>> ssrcs = {
       GetValueInNthReportByType(reports, StatsReport::kStatsReportTypeSsrc,
                                 StatsReport::kStatsValueNameSsrc, 1),
       GetValueInNthReportByType(reports, StatsReport::kStatsReportTypeSsrc,

@@ -11,11 +11,11 @@
 #ifndef P2P_BASE_ICE_CONTROLLER_INTERFACE_H_
 #define P2P_BASE_ICE_CONTROLLER_INTERFACE_H_
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
@@ -64,10 +64,10 @@ class IceControllerInterface {
   
   struct SwitchResult {
     
-    absl::optional<const Connection*> connection;
+    std::optional<const Connection*> connection;
 
     
-    absl::optional<IceRecheckEvent> recheck_event;
+    std::optional<IceRecheckEvent> recheck_event;
 
     
     std::vector<const Connection*> connections_to_forget_state_on;
@@ -76,12 +76,12 @@ class IceControllerInterface {
   
   struct PingResult {
     PingResult(const Connection* conn, int _recheck_delay_ms)
-        : connection(conn ? absl::optional<const Connection*>(conn)
-                          : absl::nullopt),
+        : connection(conn ? std::optional<const Connection*>(conn)
+                          : std::nullopt),
           recheck_delay_ms(_recheck_delay_ms) {}
 
     
-    const absl::optional<const Connection*> connection;
+    const std::optional<const Connection*> connection;
 
     
     

@@ -13,10 +13,9 @@
 
 #include <stdint.h>
 
+#include <optional>
 #include <valarray>
 #include <vector>
-
-#include "absl/types/optional.h"
 
 namespace webrtc {
 namespace test {
@@ -45,9 +44,9 @@ class IncrementalLinearLeastSquares {
 
  private:
   
-  absl::optional<std::valarray<std::valarray<uint64_t>>> sum_xx;
+  std::optional<std::valarray<std::valarray<uint64_t>>> sum_xx;
   
-  absl::optional<std::valarray<std::valarray<uint64_t>>> sum_xy;
+  std::optional<std::valarray<std::valarray<uint64_t>>> sum_xy;
 };
 
 }  

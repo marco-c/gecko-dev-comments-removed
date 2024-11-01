@@ -51,7 +51,7 @@ class FlexfecSender : public VideoFecGenerator {
   FecType GetFecType() const override {
     return VideoFecGenerator::FecType::kFlexFec;
   }
-  absl::optional<uint32_t> FecSsrc() override { return ssrc_; }
+  std::optional<uint32_t> FecSsrc() override { return ssrc_; }
 
   
   
@@ -72,7 +72,7 @@ class FlexfecSender : public VideoFecGenerator {
   DataRate CurrentFecRate() const override;
 
   
-  absl::optional<RtpState> GetRtpState() override;
+  std::optional<RtpState> GetRtpState() override;
 
  private:
   

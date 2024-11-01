@@ -16,15 +16,15 @@
 #ifndef API_VIDEO_TRACK_SOURCE_CONSTRAINTS_H_
 #define API_VIDEO_TRACK_SOURCE_CONSTRAINTS_H_
 
-#include "absl/types/optional.h"
+#include <optional>
 
 namespace webrtc {
 
 
 
 struct VideoTrackSourceConstraints {
-  absl::optional<double> min_fps;
-  absl::optional<double> max_fps;
+  std::optional<double> min_fps;
+  std::optional<double> max_fps;
 };
 
 }  

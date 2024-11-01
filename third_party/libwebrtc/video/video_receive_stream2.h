@@ -13,10 +13,10 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
@@ -178,7 +178,7 @@ class VideoReceiveStream2
 
   
   uint32_t id() const override;
-  absl::optional<Syncable::Info> GetInfo() const override;
+  std::optional<Syncable::Info> GetInfo() const override;
   bool GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
                               int64_t* time_ms) const override;
   void SetEstimatedPlayoutNtpTimestampMs(int64_t ntp_timestamp_ms,
@@ -213,7 +213,7 @@ class VideoReceiveStream2
 
     
     
-    absl::optional<int64_t> decoded_frame_picture_id;
+    std::optional<int64_t> decoded_frame_picture_id;
 
     
     
@@ -288,7 +288,7 @@ class VideoReceiveStream2
       RTC_GUARDED_BY(packet_sequence_checker_);
   std::unique_ptr<RtxReceiveStream> rtx_receive_stream_
       RTC_GUARDED_BY(packet_sequence_checker_);
-  absl::optional<uint32_t> updated_rtx_ssrc_
+  std::optional<uint32_t> updated_rtx_ssrc_
       RTC_GUARDED_BY(packet_sequence_checker_);
   std::unique_ptr<RtpStreamReceiverInterface> rtx_receiver_
       RTC_GUARDED_BY(packet_sequence_checker_);
@@ -300,7 +300,7 @@ class VideoReceiveStream2
   
   bool frame_decoded_ RTC_GUARDED_BY(decode_sequence_checker_) = false;
 
-  absl::optional<Timestamp> last_keyframe_request_
+  std::optional<Timestamp> last_keyframe_request_
       RTC_GUARDED_BY(packet_sequence_checker_);
 
   
@@ -312,17 +312,17 @@ class VideoReceiveStream2
   
   
   
-  absl::optional<TimeDelta> frame_minimum_playout_delay_
+  std::optional<TimeDelta> frame_minimum_playout_delay_
       RTC_GUARDED_BY(worker_sequence_checker_);
   
-  absl::optional<TimeDelta> base_minimum_playout_delay_
+  std::optional<TimeDelta> base_minimum_playout_delay_
       RTC_GUARDED_BY(worker_sequence_checker_);
   
-  absl::optional<TimeDelta> syncable_minimum_playout_delay_
+  std::optional<TimeDelta> syncable_minimum_playout_delay_
       RTC_GUARDED_BY(worker_sequence_checker_);
 
   
-  absl::optional<TimeDelta> frame_maximum_playout_delay_
+  std::optional<TimeDelta> frame_maximum_playout_delay_
       RTC_GUARDED_BY(worker_sequence_checker_);
 
   
@@ -336,7 +336,7 @@ class VideoReceiveStream2
   
   
   
-  absl::optional<RecordableEncodedFrame::EncodedResolution> pending_resolution_
+  std::optional<RecordableEncodedFrame::EncodedResolution> pending_resolution_
       RTC_GUARDED_BY(pending_resolution_mutex_);
   
   std::vector<std::unique_ptr<EncodedFrame>> buffered_encoded_frames_
@@ -351,7 +351,7 @@ class VideoReceiveStream2
   
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> decode_queue_;
 
-  absl::optional<uint32_t> last_decoded_rtp_timestamp_;
+  std::optional<uint32_t> last_decoded_rtp_timestamp_;
 };
 
 }  

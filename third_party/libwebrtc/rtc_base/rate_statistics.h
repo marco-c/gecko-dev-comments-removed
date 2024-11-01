@@ -16,8 +16,8 @@
 
 #include <deque>
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -62,7 +62,7 @@ class RTC_EXPORT RateStatistics {
   
   
   
-  absl::optional<int64_t> Rate(int64_t now_ms) const;
+  std::optional<int64_t> Rate(int64_t now_ms) const;
 
   
   

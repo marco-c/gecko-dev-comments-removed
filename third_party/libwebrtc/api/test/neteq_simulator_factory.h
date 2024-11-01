@@ -13,10 +13,10 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/neteq/neteq_factory.h"
 #include "api/test/neteq_simulator.h"
 
@@ -44,15 +44,15 @@ class NetEqSimulatorFactory {
     
     std::string field_trial_string;
     
-    absl::optional<std::string> output_audio_filename;
+    std::optional<std::string> output_audio_filename;
     
-    absl::optional<std::string> python_plot_filename;
+    std::optional<std::string> python_plot_filename;
     
-    absl::optional<std::string> text_log_filename;
+    std::optional<std::string> text_log_filename;
     
     NetEqFactory* neteq_factory = nullptr;
     
-    absl::optional<uint32_t> ssrc_filter;
+    std::optional<uint32_t> ssrc_filter;
   };
   std::unique_ptr<NetEqSimulator> CreateSimulatorFromFile(
       absl::string_view event_log_filename,

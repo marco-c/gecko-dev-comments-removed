@@ -15,9 +15,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/fec_controller_override.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
@@ -82,16 +82,16 @@ struct Vp8EncoderConfig {
     std::array<uint32_t, kMaxPeriodicity> ts_layer_id;
   };
 
-  absl::optional<TemporalLayerConfig> temporal_layer_config;
+  std::optional<TemporalLayerConfig> temporal_layer_config;
 
   
-  absl::optional<uint32_t> rc_target_bitrate;
+  std::optional<uint32_t> rc_target_bitrate;
 
   
-  absl::optional<uint32_t> rc_max_quantizer;
+  std::optional<uint32_t> rc_max_quantizer;
 
   
-  absl::optional<uint32_t> g_error_resilient;
+  std::optional<uint32_t> g_error_resilient;
 
   
   bool reset_previous_configuration_overrides = false;

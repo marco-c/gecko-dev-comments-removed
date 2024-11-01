@@ -12,9 +12,9 @@
 #define CALL_RTP_PAYLOAD_PARAMS_H_
 
 #include <array>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/rtp_config.h"
@@ -38,11 +38,11 @@ class RtpPayloadParams final {
 
   RTPVideoHeader GetRtpVideoHeader(const EncodedImage& image,
                                    const CodecSpecificInfo* codec_specific_info,
-                                   absl::optional<int64_t> shared_frame_id);
+                                   std::optional<int64_t> shared_frame_id);
 
   
   
-  absl::optional<FrameDependencyStructure> GenericStructure(
+  std::optional<FrameDependencyStructure> GenericStructure(
       const CodecSpecificInfo* codec_specific_info);
 
   uint32_t ssrc() const;
@@ -122,7 +122,7 @@ class RtpPayloadParams final {
   
   
   
-  absl::optional<bool> new_version_used_;
+  std::optional<bool> new_version_used_;
 
   const uint32_t ssrc_;
   RtpPayloadState state_;

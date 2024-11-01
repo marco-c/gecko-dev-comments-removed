@@ -13,11 +13,11 @@
 
 #include <stddef.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -26,12 +26,12 @@ namespace webrtc {
 
 
 std::string EncodeOptionalBlobs(
-    const std::vector<absl::optional<std::string>>& blobs);
+    const std::vector<std::optional<std::string>>& blobs);
 
 
 
 
-std::vector<absl::optional<std::string>> DecodeOptionalBlobs(
+std::vector<std::optional<std::string>> DecodeOptionalBlobs(
     absl::string_view encoded_blobs,
     size_t num_of_blobs);
 

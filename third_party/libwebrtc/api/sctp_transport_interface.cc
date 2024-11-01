@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/sctp_transport_interface.h"
+
+#include <utility>
+
+namespace webrtc {
+
+SctpTransportInformation::SctpTransportInformation(SctpTransportState state)
+    : state_(state) {}
+
+SctpTransportInformation::SctpTransportInformation(
+    SctpTransportState state,
+    rtc::scoped_refptr<DtlsTransportInterface> dtls_transport,
+    std::optional<double> max_message_size,
+    std::optional<int> max_channels)
+    : state_(state),
+      dtls_transport_(std::move(dtls_transport)),
+      max_message_size_(max_message_size),
+      max_channels_(max_channels) {}
+
+SctpTransportInformation::~SctpTransportInformation() {}
+
+}  

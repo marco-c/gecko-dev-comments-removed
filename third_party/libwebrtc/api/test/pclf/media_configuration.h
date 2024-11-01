@@ -16,11 +16,11 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio_options.h"
 #include "api/media_stream_interface.h"
@@ -79,7 +79,7 @@ struct ScreenShareConfig {
   bool generate_slides = false;
   
   
-  absl::optional<ScrollingParams> scrolling_params;
+  std::optional<ScrollingParams> scrolling_params;
   
   
   
@@ -130,8 +130,8 @@ struct VideoSimulcastConfig {
 struct EmulatedSFUConfig {
   EmulatedSFUConfig() = default;
   explicit EmulatedSFUConfig(int target_layer_index);
-  EmulatedSFUConfig(absl::optional<int> target_layer_index,
-                    absl::optional<int> target_temporal_index);
+  EmulatedSFUConfig(std::optional<int> target_layer_index,
+                    std::optional<int> target_temporal_index);
 
   
   
@@ -146,12 +146,12 @@ struct EmulatedSFUConfig {
   
   
   
-  absl::optional<int> target_layer_index;
+  std::optional<int> target_layer_index;
   
   
   
   
-  absl::optional<int> target_temporal_index;
+  std::optional<int> target_temporal_index;
 };
 
 class VideoResolution {
@@ -253,7 +253,7 @@ class VideoDumpOptions {
                                    const VideoResolution& resolution) const;
   
   
-  absl::optional<std::string> GetInputFrameIdsDumpFileName(
+  std::optional<std::string> GetInputFrameIdsDumpFileName(
       absl::string_view stream_label,
       const VideoResolution& resolution) const;
   std::string GetOutputDumpFileName(absl::string_view stream_label,
@@ -261,7 +261,7 @@ class VideoDumpOptions {
                                     const VideoResolution& resolution) const;
   
   
-  absl::optional<std::string> GetOutputFrameIdsDumpFileName(
+  std::optional<std::string> GetOutputFrameIdsDumpFileName(
       absl::string_view stream_label,
       absl::string_view receiver,
       const VideoResolution& resolution) const;
@@ -295,21 +295,21 @@ struct VideoConfig {
 
   
   
-  absl::optional<std::string> stream_label;
+  std::optional<std::string> stream_label;
   
   
-  absl::optional<VideoTrackInterface::ContentHint> content_hint;
-  
-  
-  
+  std::optional<VideoTrackInterface::ContentHint> content_hint;
   
   
   
   
   
-  absl::optional<VideoSimulcastConfig> simulcast_config;
   
-  absl::optional<EmulatedSFUConfig> emulated_sfu_config;
+  
+  
+  std::optional<VideoSimulcastConfig> simulcast_config;
+  
+  std::optional<EmulatedSFUConfig> emulated_sfu_config;
   
   
   
@@ -321,16 +321,16 @@ struct VideoConfig {
   
   
   
-  absl::optional<int> temporal_layers_count;
+  std::optional<int> temporal_layers_count;
   
   
   
   
-  absl::optional<VideoDumpOptions> input_dump_options;
+  std::optional<VideoDumpOptions> input_dump_options;
   
   
   
-  absl::optional<VideoDumpOptions> output_dump_options;
+  std::optional<VideoDumpOptions> output_dump_options;
   
   
   bool output_dump_use_fixed_framerate = false;
@@ -339,11 +339,11 @@ struct VideoConfig {
   
   
   
-  absl::optional<std::string> sync_group;
+  std::optional<std::string> sync_group;
   
   
   
-  absl::optional<DegradationPreference> degradation_preference;
+  std::optional<DegradationPreference> degradation_preference;
 };
 
 
@@ -353,13 +353,13 @@ struct AudioConfig {
 
   
   
-  absl::optional<std::string> stream_label;
+  std::optional<std::string> stream_label;
   
-  absl::optional<std::string> input_file_name;
+  std::optional<std::string> input_file_name;
   
-  absl::optional<std::string> input_dump_file_name;
+  std::optional<std::string> input_dump_file_name;
   
-  absl::optional<std::string> output_dump_file_name;
+  std::optional<std::string> output_dump_file_name;
 
   
   cricket::AudioOptions audio_options;
@@ -368,7 +368,7 @@ struct AudioConfig {
   
   
   
-  absl::optional<std::string> sync_group;
+  std::optional<std::string> sync_group;
 };
 
 struct VideoCodecConfig {
@@ -396,9 +396,9 @@ class VideoSubscription {
  public:
   
   
-  static absl::optional<VideoResolution> GetMaxResolution(
+  static std::optional<VideoResolution> GetMaxResolution(
       rtc::ArrayView<const VideoConfig> video_configs);
-  static absl::optional<VideoResolution> GetMaxResolution(
+  static std::optional<VideoResolution> GetMaxResolution(
       rtc::ArrayView<const VideoResolution> resolutions);
 
   bool operator==(const VideoSubscription& other) const;
@@ -424,7 +424,7 @@ class VideoSubscription {
   
   
   
-  absl::optional<VideoResolution> GetResolutionForPeer(
+  std::optional<VideoResolution> GetResolutionForPeer(
       absl::string_view peer_name) const;
 
   
@@ -434,7 +434,7 @@ class VideoSubscription {
   std::string ToString() const;
 
  private:
-  absl::optional<VideoResolution> default_resolution_ = absl::nullopt;
+  std::optional<VideoResolution> default_resolution_ = std::nullopt;
   std::map<std::string, VideoResolution> peers_resolution_;
 };
 

@@ -59,7 +59,7 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
 
   
   if (!is_first_packet_in_frame()) {
-    video_header.playout_delay = absl::nullopt;
+    video_header.playout_delay = std::nullopt;
   }
 }
 

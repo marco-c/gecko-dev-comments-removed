@@ -14,9 +14,9 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/numerics/samples_stats_counter.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
@@ -268,7 +268,7 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   
   
   
-  virtual absl::optional<uint16_t> BindReceiver(
+  virtual std::optional<uint16_t> BindReceiver(
       uint16_t desired_port,
       EmulatedNetworkReceiverInterface* receiver) = 0;
   

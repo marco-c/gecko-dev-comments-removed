@@ -16,12 +16,12 @@
 #include <atomic>
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/audio_processing.h"
 #include "api/audio/audio_processing_statistics.h"
@@ -440,12 +440,12 @@ class AudioProcessingImpl : public AudioProcessing {
     AudioProcessingStats stats;
     
     
-    absl::optional<int> applied_input_volume;
+    std::optional<int> applied_input_volume;
     bool applied_input_volume_changed;
     
     
     
-    absl::optional<int> recommended_input_volume;
+    std::optional<int> recommended_input_volume;
   } capture_ RTC_GUARDED_BY(mutex_capture_);
 
   struct ApmCaptureNonLockedState {

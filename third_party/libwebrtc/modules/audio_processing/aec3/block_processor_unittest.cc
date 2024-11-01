@@ -315,19 +315,18 @@ TEST(BlockProcessor, ExternalDelayAppliedCorrectlyWithInitialCaptureCalls) {
   }
 
   EXPECT_CALL(*echo_remover_mock_pointer, ProcessCapture)
-      .WillRepeatedly(
-          [](EchoPathVariability ,
-             bool ,
-             const absl::optional<DelayEstimate>& ,
-             RenderBuffer* render_buffer, Block* ,
-             Block* capture) {
-            const auto& render = render_buffer->GetBlock(0);
-            const auto render_view = render.View(0, 0);
-            const auto capture_view = capture->View(0, 0);
-            for (size_t i = 0; i < kBlockSize; ++i) {
-              EXPECT_FLOAT_EQ(render_view[i], capture_view[i]);
-            }
-          });
+      .WillRepeatedly([](EchoPathVariability ,
+                         bool ,
+                         const std::optional<DelayEstimate>& ,
+                         RenderBuffer* render_buffer, Block* ,
+                         Block* capture) {
+        const auto& render = render_buffer->GetBlock(0);
+        const auto render_view = render.View(0, 0);
+        const auto capture_view = capture->View(0, 0);
+        for (size_t i = 0; i < kBlockSize; ++i) {
+          EXPECT_FLOAT_EQ(render_view[i], capture_view[i]);
+        }
+      });
 
   FillSampleVector(++capture_call_counter, kDelayInBlocks,
                    capture_block.View(0, 0));

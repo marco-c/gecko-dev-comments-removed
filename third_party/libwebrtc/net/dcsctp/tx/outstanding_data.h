@@ -12,11 +12,11 @@
 
 #include <deque>
 #include <map>
+#include <optional>
 #include <set>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/units/timestamp.h"
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/common/sequence_numbers.h"
@@ -133,7 +133,7 @@ class OutstandingData {
   
   
   
-  absl::optional<UnwrappedTSN> Insert(
+  std::optional<UnwrappedTSN> Insert(
       OutgoingMessageId message_id,
       const Data& data,
       webrtc::Timestamp time_sent,

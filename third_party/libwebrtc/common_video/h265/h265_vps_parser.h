@@ -11,7 +11,8 @@
 #ifndef COMMON_VIDEO_H265_H265_VPS_PARSER_H_
 #define COMMON_VIDEO_H265_H265_VPS_PARSER_H_
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/array_view.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -29,17 +30,17 @@ class RTC_EXPORT H265VpsParser {
   };
 
   
-  static absl::optional<VpsState> ParseVps(rtc::ArrayView<const uint8_t> data);
+  static std::optional<VpsState> ParseVps(rtc::ArrayView<const uint8_t> data);
   
-  static inline absl::optional<VpsState> ParseVps(const uint8_t* data,
-                                                  size_t length) {
+  static inline std::optional<VpsState> ParseVps(const uint8_t* data,
+                                                 size_t length) {
     return ParseVps(rtc::MakeArrayView(data, length));
   }
 
  protected:
   
   
-  static absl::optional<VpsState> ParseInternal(
+  static std::optional<VpsState> ParseInternal(
       rtc::ArrayView<const uint8_t> buffer);
 };
 

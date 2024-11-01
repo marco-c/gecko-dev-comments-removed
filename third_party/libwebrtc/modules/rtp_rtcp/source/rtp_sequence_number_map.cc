@@ -94,7 +94,7 @@ void RtpSequenceNumberMap::InsertFrame(uint16_t first_sequence_number,
   }
 }
 
-absl::optional<RtpSequenceNumberMap::Info> RtpSequenceNumberMap::Get(
+std::optional<RtpSequenceNumberMap::Info> RtpSequenceNumberMap::Get(
     uint16_t sequence_number) const {
   
   
@@ -105,7 +105,7 @@ absl::optional<RtpSequenceNumberMap::Info> RtpSequenceNumberMap::Get(
   
 
   if (associations_.empty()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   const uint16_t offset =
@@ -118,8 +118,8 @@ absl::optional<RtpSequenceNumberMap::Info> RtpSequenceNumberMap::Get(
   const auto elem = absl::c_lower_bound(associations_, sequence_number, cmp);
 
   return elem != associations_.end() && elem->sequence_number == sequence_number
-             ? absl::optional<Info>(elem->info)
-             : absl::nullopt;
+             ? std::optional<Info>(elem->info)
+             : std::nullopt;
 }
 
 size_t RtpSequenceNumberMap::AssociationCountForTesting() const {

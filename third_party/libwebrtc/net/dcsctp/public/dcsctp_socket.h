@@ -12,11 +12,11 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
@@ -51,11 +51,11 @@ struct SendOptions {
   
   
   
-  absl::optional<DurationMs> lifetime = absl::nullopt;
+  std::optional<DurationMs> lifetime = std::nullopt;
 
   
   
-  absl::optional<size_t> max_retransmissions = absl::nullopt;
+  std::optional<size_t> max_retransmissions = std::nullopt;
 
   
   
@@ -624,7 +624,7 @@ class DcSctpSocketInterface {
   
   
   
-  virtual absl::optional<Metrics> GetMetrics() const = 0;
+  virtual std::optional<Metrics> GetMetrics() const = 0;
 
   
   
@@ -637,7 +637,7 @@ class DcSctpSocketInterface {
   
   
   
-  virtual absl::optional<DcSctpSocketHandoverState>
+  virtual std::optional<DcSctpSocketHandoverState>
   GetHandoverStateAndClose() = 0;
 
   

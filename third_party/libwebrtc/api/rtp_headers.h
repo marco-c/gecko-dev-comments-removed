@@ -14,9 +14,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "api/units/timestamp.h"
 #include "api/video/color_space.h"
 #include "api/video/video_content_type.h"
@@ -75,7 +75,7 @@ struct AbsoluteCaptureTime {
   
   
   
-  absl::optional<int64_t> estimated_capture_clock_offset;
+  std::optional<int64_t> estimated_capture_clock_offset;
 };
 
 
@@ -144,16 +144,16 @@ struct RTPHeaderExtension {
   int32_t transmissionTimeOffset;
   bool hasAbsoluteSendTime;
   uint32_t absoluteSendTime;
-  absl::optional<AbsoluteCaptureTime> absolute_capture_time;
+  std::optional<AbsoluteCaptureTime> absolute_capture_time;
   bool hasTransportSequenceNumber;
   uint16_t transportSequenceNumber;
-  absl::optional<FeedbackRequest> feedback_request;
+  std::optional<FeedbackRequest> feedback_request;
 
   
   
-  absl::optional<AudioLevel> audio_level() const { return audio_level_; }
+  std::optional<AudioLevel> audio_level() const { return audio_level_; }
 
-  void set_audio_level(absl::optional<AudioLevel> audio_level) {
+  void set_audio_level(std::optional<AudioLevel> audio_level) {
     audio_level_ = audio_level;
   }
 
@@ -182,12 +182,12 @@ struct RTPHeaderExtension {
   
   std::string mid;
 
-  absl::optional<ColorSpace> color_space;
+  std::optional<ColorSpace> color_space;
 
   CsrcAudioLevelList csrcAudioLevels;
 
  private:
-  absl::optional<AudioLevel> audio_level_;
+  std::optional<AudioLevel> audio_level_;
 };
 
 struct RTC_EXPORT RTPHeader {

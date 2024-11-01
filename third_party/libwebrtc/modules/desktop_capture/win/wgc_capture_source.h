@@ -16,8 +16,8 @@
 #include <wrl/client.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 
@@ -138,7 +138,7 @@ class WgcScreenSource final : public WgcCaptureSource {
   
   
   
-  absl::optional<HMONITOR> hmonitor_;
+  std::optional<HMONITOR> hmonitor_;
 };
 
 }  

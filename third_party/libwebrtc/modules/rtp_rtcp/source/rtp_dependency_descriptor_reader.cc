@@ -199,7 +199,7 @@ void RtpDependencyDescriptorReader::ReadFrameDependencyDefinition() {
     ReadFrameChains();
 
   if (structure_->resolutions.empty()) {
-    descriptor_->resolution = absl::nullopt;
+    descriptor_->resolution = std::nullopt;
   } else {
     
     

@@ -13,11 +13,11 @@
 
 #include <cstdint>
 #include <list>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/rtp_packet_infos.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
@@ -91,19 +91,19 @@ class SourceTracker {
     
     
     
-    absl::optional<uint8_t> audio_level;
+    std::optional<uint8_t> audio_level;
 
     
     
     
-    absl::optional<AbsoluteCaptureTime> absolute_capture_time;
+    std::optional<AbsoluteCaptureTime> absolute_capture_time;
 
     
     
     
     
     
-    absl::optional<TimeDelta> local_capture_clock_offset;
+    std::optional<TimeDelta> local_capture_clock_offset;
 
     
     

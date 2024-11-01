@@ -28,7 +28,7 @@ class VideoFecGenerator {
   enum class FecType { kFlexFec, kUlpFec };
   virtual FecType GetFecType() const = 0;
   
-  virtual absl::optional<uint32_t> FecSsrc() = 0;
+  virtual std::optional<uint32_t> FecSsrc() = 0;
   
   virtual size_t MaxPacketOverhead() const = 0;
   
@@ -47,7 +47,7 @@ class VideoFecGenerator {
   virtual std::vector<std::unique_ptr<RtpPacketToSend>> GetFecPackets() = 0;
   
   
-  virtual absl::optional<RtpState> GetRtpState() = 0;
+  virtual std::optional<RtpState> GetRtpState() = 0;
 };
 
 }  

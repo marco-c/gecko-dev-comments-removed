@@ -165,7 +165,7 @@ class AndroidVoipClient : public webrtc::Transport {
   
   std::unique_ptr<webrtc::VoipEngine> voip_engine_ RTC_GUARDED_BY(voip_thread_);
   
-  absl::optional<webrtc::ChannelId> channel_ RTC_GUARDED_BY(voip_thread_);
+  std::optional<webrtc::ChannelId> channel_ RTC_GUARDED_BY(voip_thread_);
   
   std::unique_ptr<rtc::AsyncUDPSocket> rtp_socket_ RTC_GUARDED_BY(voip_thread_);
   std::unique_ptr<rtc::AsyncUDPSocket> rtcp_socket_

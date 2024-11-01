@@ -89,8 +89,8 @@ class SctpPacket {
   };
 
   
-  static absl::optional<SctpPacket> Parse(rtc::ArrayView<const uint8_t> data,
-                                          const DcSctpOptions& options);
+  static std::optional<SctpPacket> Parse(rtc::ArrayView<const uint8_t> data,
+                                         const DcSctpOptions& options);
 
   
   const CommonHeader& common_header() const { return common_header_; }

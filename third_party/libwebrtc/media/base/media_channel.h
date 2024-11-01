@@ -13,12 +13,12 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/audio/audio_processing_statistics.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_options.h"
@@ -81,8 +81,7 @@ class VoiceMediaReceiveChannelInterface;
 const int kScreencastDefaultFps = 5;
 
 template <class T>
-static std::string ToStringIfSet(const char* key,
-                                 const absl::optional<T>& val) {
+static std::string ToStringIfSet(const char* key, const std::optional<T>& val) {
   std::string str;
   if (val) {
     str = key;
@@ -142,23 +141,23 @@ struct VideoOptions {
   
   
   
-  absl::optional<bool> video_noise_reduction;
+  std::optional<bool> video_noise_reduction;
   
   
   
   
   
-  absl::optional<int> screencast_min_bitrate_kbps;
+  std::optional<int> screencast_min_bitrate_kbps;
   
   
   
   
-  absl::optional<bool> is_screencast;
+  std::optional<bool> is_screencast;
   webrtc::VideoTrackInterface::ContentHint content_hint;
 
  private:
   template <typename T>
-  static void SetFrom(absl::optional<T>* s, const absl::optional<T>& o) {
+  static void SetFrom(std::optional<T>* s, const std::optional<T>& o) {
     if (o) {
       *s = o;
     }
@@ -188,7 +187,7 @@ class MediaSendChannelInterface {
   virtual cricket::MediaType media_type() const = 0;
 
   
-  virtual absl::optional<Codec> GetSendCodec() const = 0;
+  virtual std::optional<Codec> GetSendCodec() const = 0;
 
   
   
@@ -278,7 +277,7 @@ class MediaReceiveChannelInterface {
   
   virtual void OnPacketReceived(const webrtc::RtpPacketReceived& packet) = 0;
   
-  virtual absl::optional<uint32_t> GetUnsignaledSsrc() const = 0;
+  virtual std::optional<uint32_t> GetUnsignaledSsrc() const = 0;
   
   virtual void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) = 0;
   
@@ -314,7 +313,7 @@ class MediaReceiveChannelInterface {
   virtual bool SetBaseMinimumPlayoutDelayMs(uint32_t ssrc, int delay_ms) = 0;
 
   
-  virtual absl::optional<int> GetBaseMinimumPlayoutDelayMs(
+  virtual std::optional<int> GetBaseMinimumPlayoutDelayMs(
       uint32_t ssrc) const = 0;
 };
 
@@ -381,12 +380,12 @@ struct MediaSenderInfo {
   
   uint32_t nacks_received = 0;
   
-  absl::optional<double> target_bitrate;
+  std::optional<double> target_bitrate;
   int packets_lost = 0;
   float fraction_lost = 0.0f;
   int64_t rtt_ms = 0;
   std::string codec_name;
-  absl::optional<int> codec_payload_type;
+  std::optional<int> codec_payload_type;
   std::vector<SsrcSenderInfo> local_stats;
   std::vector<SsrcReceiverInfo> remote_stats;
   
@@ -394,7 +393,7 @@ struct MediaSenderInfo {
   
   
   std::vector<webrtc::ReportBlockData> report_block_datas;
-  absl::optional<bool> active;
+  std::optional<bool> active;
   
   webrtc::TimeDelta total_packet_send_delay = webrtc::TimeDelta::Zero();
 };
@@ -441,9 +440,9 @@ struct MediaReceiverInfo {
   int packets_received = 0;
   int packets_lost = 0;
 
-  absl::optional<uint64_t> retransmitted_bytes_received;
-  absl::optional<uint64_t> retransmitted_packets_received;
-  absl::optional<uint32_t> nacks_sent;
+  std::optional<uint64_t> retransmitted_bytes_received;
+  std::optional<uint64_t> retransmitted_packets_received;
+  std::optional<uint32_t> nacks_sent;
   
   
   double jitter_buffer_delay_seconds = 0.0;
@@ -459,32 +458,32 @@ struct MediaReceiverInfo {
   
   
   
-  absl::optional<webrtc::Timestamp> last_packet_received;
+  std::optional<webrtc::Timestamp> last_packet_received;
   
-  absl::optional<int64_t> estimated_playout_ntp_timestamp_ms;
+  std::optional<int64_t> estimated_playout_ntp_timestamp_ms;
   std::string codec_name;
-  absl::optional<int> codec_payload_type;
+  std::optional<int> codec_payload_type;
   std::vector<SsrcReceiverInfo> local_stats;
   std::vector<SsrcSenderInfo> remote_stats;
   
-  absl::optional<uint64_t> fec_packets_received;
+  std::optional<uint64_t> fec_packets_received;
   
-  absl::optional<uint64_t> fec_packets_discarded;
+  std::optional<uint64_t> fec_packets_discarded;
   
-  absl::optional<uint64_t> fec_bytes_received;
+  std::optional<uint64_t> fec_bytes_received;
   
   double total_processing_delay_seconds = 0.0;
 
   
   
-  absl::optional<int64_t> last_sender_report_timestamp_ms;
-  absl::optional<int64_t> last_sender_report_remote_timestamp_ms;
+  std::optional<int64_t> last_sender_report_timestamp_ms;
+  std::optional<int64_t> last_sender_report_remote_timestamp_ms;
   uint64_t sender_reports_packets_sent = 0;
   uint64_t sender_reports_bytes_sent = 0;
   uint64_t sender_reports_reports_count = 0;
   
   
-  absl::optional<webrtc::TimeDelta> round_trip_time;
+  std::optional<webrtc::TimeDelta> round_trip_time;
   webrtc::TimeDelta total_round_trip_time = webrtc::TimeDelta::Zero();
   int round_trip_time_measurements = 0;
 };
@@ -568,7 +567,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   VideoSenderInfo();
   ~VideoSenderInfo();
   std::vector<SsrcGroup> ssrc_groups;
-  absl::optional<std::string> encoder_implementation_name;
+  std::optional<std::string> encoder_implementation_name;
   int firs_received = 0;
   int plis_received = 0;
   int send_frame_width = 0;
@@ -597,23 +596,23 @@ struct VideoSenderInfo : public MediaSenderInfo {
   
   uint64_t total_encoded_bytes_target = 0;
   bool has_entered_low_resolution = false;
-  absl::optional<uint64_t> qp_sum;
+  std::optional<uint64_t> qp_sum;
   webrtc::VideoContentType content_type = webrtc::VideoContentType::UNSPECIFIED;
   uint32_t frames_sent = 0;
   
   uint32_t huge_frames_sent = 0;
   uint32_t aggregated_huge_frames_sent = 0;
-  absl::optional<std::string> rid;
-  absl::optional<bool> power_efficient_encoder;
-  absl::optional<webrtc::ScalabilityMode> scalability_mode;
+  std::optional<std::string> rid;
+  std::optional<bool> power_efficient_encoder;
+  std::optional<webrtc::ScalabilityMode> scalability_mode;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {
   VideoReceiverInfo();
   ~VideoReceiverInfo();
   std::vector<SsrcGroup> ssrc_groups;
-  absl::optional<std::string> decoder_implementation_name;
-  absl::optional<bool> power_efficient_decoder;
+  std::optional<std::string> decoder_implementation_name;
+  std::optional<bool> power_efficient_decoder;
   int packets_concealed = 0;
   int firs_sent = 0;
   int plis_sent = 0;
@@ -631,7 +630,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   uint32_t frames_decoded = 0;
   uint32_t key_frames_decoded = 0;
   uint32_t frames_rendered = 0;
-  absl::optional<uint64_t> qp_sum;
+  std::optional<uint64_t> qp_sum;
   
   webrtc::TimeDelta total_decode_time = webrtc::TimeDelta::Zero();
   
@@ -677,7 +676,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
 
   
   
-  absl::optional<webrtc::TimingFrameInfo> timing_frame_info;
+  std::optional<webrtc::TimingFrameInfo> timing_frame_info;
 };
 
 struct BandwidthEstimationInfo {
@@ -967,7 +966,7 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   
   virtual webrtc::RtcpMode SendCodecRtcpMode() const = 0;
   virtual bool SendCodecHasLntf() const = 0;
-  virtual absl::optional<int> SendCodecRtxTime() const = 0;
+  virtual std::optional<int> SendCodecRtxTime() const = 0;
 };
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -1002,7 +1001,7 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   virtual void SetReceiverFeedbackParameters(bool lntf_enabled,
                                              bool nack_enabled,
                                              webrtc::RtcpMode rtcp_mode,
-                                             absl::optional<int> rtx_time) = 0;
+                                             std::optional<int> rtx_time) = 0;
   virtual bool AddDefaultRecvStreamForTesting(const StreamParams& sp) = 0;
 };
 

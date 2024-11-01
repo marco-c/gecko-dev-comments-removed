@@ -12,8 +12,8 @@
 #define API_VOIP_VOIP_STATISTICS_H_
 
 #include <cstdint>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "api/neteq/neteq.h"
 #include "api/voip/voip_base.h"
 
@@ -42,7 +42,7 @@ struct RemoteRtcpStatistics {
   double fraction_lost = 0.0;
 
   
-  absl::optional<double> round_trip_time;
+  std::optional<double> round_trip_time;
 
   
   int64_t last_report_received_timestamp_ms;
@@ -69,9 +69,9 @@ struct ChannelStatistics {
 
   
   
-  absl::optional<uint32_t> remote_ssrc;
+  std::optional<uint32_t> remote_ssrc;
 
-  absl::optional<RemoteRtcpStatistics> remote_rtcp;
+  std::optional<RemoteRtcpStatistics> remote_rtcp;
 };
 
 

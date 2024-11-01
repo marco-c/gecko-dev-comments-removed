@@ -13,9 +13,9 @@
 #include <stdint.h>
 
 #include <cmath>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -47,17 +47,17 @@ struct RTC_EXPORT StreamsConfig {
   StreamsConfig(const StreamsConfig&);
   ~StreamsConfig();
   Timestamp at_time = Timestamp::PlusInfinity();
-  absl::optional<bool> requests_alr_probing;
+  std::optional<bool> requests_alr_probing;
   
   
   
-  absl::optional<bool> enable_repeated_initial_probing;
-  absl::optional<double> pacing_factor;
+  std::optional<bool> enable_repeated_initial_probing;
+  std::optional<double> pacing_factor;
 
   
-  absl::optional<DataRate> min_total_allocated_bitrate;
-  absl::optional<DataRate> max_padding_rate;
-  absl::optional<DataRate> max_total_allocated_bitrate;
+  std::optional<DataRate> min_total_allocated_bitrate;
+  std::optional<DataRate> max_padding_rate;
+  std::optional<DataRate> max_total_allocated_bitrate;
 };
 
 struct RTC_EXPORT TargetRateConstraints {
@@ -65,11 +65,11 @@ struct RTC_EXPORT TargetRateConstraints {
   TargetRateConstraints(const TargetRateConstraints&);
   ~TargetRateConstraints();
   Timestamp at_time = Timestamp::PlusInfinity();
-  absl::optional<DataRate> min_data_rate;
-  absl::optional<DataRate> max_data_rate;
+  std::optional<DataRate> min_data_rate;
+  std::optional<DataRate> max_data_rate;
   
   
-  absl::optional<DataRate> starting_rate;
+  std::optional<DataRate> starting_rate;
 };
 
 
@@ -246,16 +246,16 @@ struct RTC_EXPORT NetworkControlUpdate {
            !probe_cluster_configs.empty() || target_rate.has_value();
   }
 
-  absl::optional<DataSize> congestion_window;
-  absl::optional<PacerConfig> pacer_config;
+  std::optional<DataSize> congestion_window;
+  std::optional<PacerConfig> pacer_config;
   std::vector<ProbeClusterConfig> probe_cluster_configs;
-  absl::optional<TargetTransferRate> target_rate;
+  std::optional<TargetTransferRate> target_rate;
 };
 
 
 struct RTC_EXPORT ProcessInterval {
   Timestamp at_time = Timestamp::PlusInfinity();
-  absl::optional<DataSize> pacer_queue;
+  std::optional<DataSize> pacer_queue;
 };
 
 

@@ -350,21 +350,21 @@ IceGatheringState P2PTransportChannel::gathering_state() const {
   return gathering_state_;
 }
 
-absl::optional<int> P2PTransportChannel::GetRttEstimate() {
+std::optional<int> P2PTransportChannel::GetRttEstimate() {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (selected_connection_ != nullptr &&
       selected_connection_->rtt_samples() > 0) {
     return selected_connection_->rtt();
   } else {
-    return absl::nullopt;
+    return std::nullopt;
   }
 }
 
-absl::optional<const CandidatePair>
+std::optional<const CandidatePair>
 P2PTransportChannel::GetSelectedCandidatePair() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (selected_connection_ == nullptr) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   CandidatePair pair;
@@ -1631,7 +1631,7 @@ bool P2PTransportChannel::GetStats(IceTransportStats* ice_transport_stats) {
   return true;
 }
 
-absl::optional<rtc::NetworkRoute> P2PTransportChannel::network_route() const {
+std::optional<rtc::NetworkRoute> P2PTransportChannel::network_route() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return network_route_;
 }

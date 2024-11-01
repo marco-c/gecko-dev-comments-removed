@@ -12,12 +12,12 @@
 #define MEDIA_BASE_CODEC_H_
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/rtp_parameters.h"
 #include "api/video_codecs/scalability_mode.h"
@@ -92,12 +92,12 @@ struct RTC_EXPORT Codec {
   size_t channels;
 
   
-  absl::optional<std::string> packetization;
+  std::optional<std::string> packetization;
   absl::InlinedVector<webrtc::ScalabilityMode, webrtc::kScalabilityModeCount>
       scalability_modes;
 
   
-  absl::optional<std::string> tx_mode;
+  std::optional<std::string> tx_mode;
 
   
   

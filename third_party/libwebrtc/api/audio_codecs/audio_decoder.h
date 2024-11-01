@@ -15,9 +15,9 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "rtc_base/buffer.h"
 
@@ -61,7 +61,7 @@ class AudioDecoder {
     
     
     
-    virtual absl::optional<DecodeResult> Decode(
+    virtual std::optional<DecodeResult> Decode(
         rtc::ArrayView<int16_t> decoded) const = 0;
   };
 

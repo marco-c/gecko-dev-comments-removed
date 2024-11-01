@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -23,7 +24,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
@@ -452,7 +452,7 @@ void NegotiatePacketization(const Codec& local_codec,
   negotiated_codec->packetization =
       (local_codec.packetization == remote_codec.packetization)
           ? local_codec.packetization
-          : absl::nullopt;
+          : std::nullopt;
 }
 
 #ifdef RTC_ENABLE_H265
@@ -461,16 +461,16 @@ void NegotiateTxMode(const Codec& local_codec,
                      Codec* negotiated_codec) {
   negotiated_codec->tx_mode = (local_codec.tx_mode == remote_codec.tx_mode)
                                   ? local_codec.tx_mode
-                                  : absl::nullopt;
+                                  : std::nullopt;
 }
 #endif
 
 
 
 
-absl::optional<Codec> FindMatchingCodec(const std::vector<Codec>& codecs1,
-                                        const std::vector<Codec>& codecs2,
-                                        const Codec& codec_to_match) {
+std::optional<Codec> FindMatchingCodec(const std::vector<Codec>& codecs1,
+                                       const std::vector<Codec>& codecs2,
+                                       const Codec& codec_to_match) {
   
   
   
@@ -546,7 +546,7 @@ absl::optional<Codec> FindMatchingCodec(const std::vector<Codec>& codecs1,
       return potential_match;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void NegotiateCodecs(const std::vector<Codec>& local_codecs,
@@ -554,7 +554,7 @@ void NegotiateCodecs(const std::vector<Codec>& local_codecs,
                      std::vector<Codec>* negotiated_codecs,
                      bool keep_offer_order) {
   for (const Codec& ours : local_codecs) {
-    absl::optional<Codec> theirs =
+    std::optional<Codec> theirs =
         FindMatchingCodec(local_codecs, offered_codecs, ours);
     
     
@@ -715,7 +715,7 @@ void MergeCodecs(const std::vector<Codec>& reference_codecs,
       }
       
       
-      absl::optional<Codec> matching_codec = FindMatchingCodec(
+      std::optional<Codec> matching_codec = FindMatchingCodec(
           reference_codecs, *offered_codecs, *associated_codec);
       if (!matching_codec) {
         RTC_LOG(LS_WARNING)
@@ -735,7 +735,7 @@ void MergeCodecs(const std::vector<Codec>& reference_codecs,
       const Codec* associated_codec =
           GetAssociatedCodecForRed(reference_codecs, red_codec);
       if (associated_codec) {
-        absl::optional<Codec> matching_codec = FindMatchingCodec(
+        std::optional<Codec> matching_codec = FindMatchingCodec(
             reference_codecs, *offered_codecs, *associated_codec);
         if (!matching_codec) {
           RTC_LOG(LS_WARNING) << "Couldn't find matching "
@@ -787,7 +787,7 @@ std::vector<Codec> MatchCodecPreference(
         });
 
     if (found_codec != supported_codecs.end()) {
-      absl::optional<Codec> found_codec_with_correct_pt =
+      std::optional<Codec> found_codec_with_correct_pt =
           FindMatchingCodec(supported_codecs, codecs, *found_codec);
       if (found_codec_with_correct_pt) {
         
@@ -1198,7 +1198,7 @@ webrtc::RTCErrorOr<Codecs> GetNegotiatedCodecsForOffer(
     }
     
     for (const Codec& codec : supported_codecs) {
-      absl::optional<Codec> found_codec =
+      std::optional<Codec> found_codec =
           FindMatchingCodec(supported_codecs, codecs, codec);
       if (found_codec &&
           !FindMatchingCodec(supported_codecs, filtered_codecs, codec)) {
@@ -1214,7 +1214,7 @@ webrtc::RTCErrorOr<Codecs> GetNegotiatedCodecsForOffer(
           RTC_DCHECK(referenced_codec);
 
           
-          absl::optional<Codec> changed_referenced_codec = FindMatchingCodec(
+          std::optional<Codec> changed_referenced_codec = FindMatchingCodec(
               supported_codecs, filtered_codecs, *referenced_codec);
           if (changed_referenced_codec) {
             found_codec->SetParam(kCodecParamAssociatedPayloadType,
@@ -1617,7 +1617,7 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
         IsMediaContentOfType(offer_content, media_description_options.type));
     RTC_DCHECK(media_description_options.mid == offer_content->name);
     
-    absl::optional<size_t> bundle_index;
+    std::optional<size_t> bundle_index;
     for (size_t i = 0; i < offer_bundles.size(); ++i) {
       if (offer_bundles[i]->HasContentName(media_description_options.mid)) {
         bundle_index = i;

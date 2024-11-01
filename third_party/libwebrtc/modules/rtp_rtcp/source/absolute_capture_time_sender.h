@@ -65,22 +65,22 @@ class AbsoluteCaptureTimeSender {
   
   
   
-  absl::optional<AbsoluteCaptureTime> OnSendPacket(
+  std::optional<AbsoluteCaptureTime> OnSendPacket(
       uint32_t source,
       uint32_t rtp_timestamp,
       int rtp_clock_frequency_hz,
       NtpTime absolute_capture_time,
-      absl::optional<int64_t> estimated_capture_clock_offset,
+      std::optional<int64_t> estimated_capture_clock_offset,
       bool force = false);
 
   
   
-  [[deprecated]] absl::optional<AbsoluteCaptureTime> OnSendPacket(
+  [[deprecated]] std::optional<AbsoluteCaptureTime> OnSendPacket(
       uint32_t source,
       uint32_t rtp_timestamp,
       uint32_t rtp_clock_frequency,
       uint64_t absolute_capture_timestamp,
-      absl::optional<int64_t> estimated_capture_clock_offset);
+      std::optional<int64_t> estimated_capture_clock_offset);
 
  private:
   bool ShouldSendExtension(
@@ -89,7 +89,7 @@ class AbsoluteCaptureTimeSender {
       uint32_t rtp_timestamp,
       int rtp_clock_frequency_hz,
       NtpTime absolute_capture_time,
-      absl::optional<int64_t> estimated_capture_clock_offset) const;
+      std::optional<int64_t> estimated_capture_clock_offset) const;
 
   Clock* const clock_;
 
@@ -99,7 +99,7 @@ class AbsoluteCaptureTimeSender {
   uint32_t last_rtp_timestamp_;
   int last_rtp_clock_frequency_hz_;
   NtpTime last_absolute_capture_time_;
-  absl::optional<int64_t> last_estimated_capture_clock_offset_;
+  std::optional<int64_t> last_estimated_capture_clock_offset_;
 };
 
 }  

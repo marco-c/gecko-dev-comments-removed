@@ -55,12 +55,12 @@ class RTPSenderAudio {
     uint32_t rtp_timestamp = 0;
 
     
-    absl::optional<Timestamp> capture_time;
+    std::optional<Timestamp> capture_time;
 
     
     
     
-    absl::optional<int> audio_level_dbov;
+    std::optional<int> audio_level_dbov;
 
     
     rtc::ArrayView<const uint32_t> csrcs;
@@ -107,7 +107,7 @@ class RTPSenderAudio {
 
   OneTimeEvent first_packet_sent_;
 
-  absl::optional<int> encoder_rtp_timestamp_frequency_
+  std::optional<int> encoder_rtp_timestamp_frequency_
       RTC_GUARDED_BY(send_audio_mutex_);
 
   AbsoluteCaptureTimeSender absolute_capture_time_sender_

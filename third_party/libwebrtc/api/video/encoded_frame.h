@@ -14,7 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/units/timestamp.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_codec_type.h"
@@ -38,7 +39,7 @@ class EncodedFrame : public EncodedImage {
   virtual int64_t ReceivedTime() const { return -1; }
   
   
-  absl::optional<webrtc::Timestamp> ReceivedTimestamp() const;
+  std::optional<webrtc::Timestamp> ReceivedTimestamp() const;
 
   
   
@@ -47,7 +48,7 @@ class EncodedFrame : public EncodedImage {
   int64_t RenderTimeMs() const { return _renderTimeMs; }
   
   
-  absl::optional<webrtc::Timestamp> RenderTimestamp() const;
+  std::optional<webrtc::Timestamp> RenderTimestamp() const;
 
   
   

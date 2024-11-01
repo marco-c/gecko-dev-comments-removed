@@ -14,9 +14,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/scalability_mode.h"
@@ -127,13 +127,13 @@ class RTC_EXPORT VideoCodec {
 
   
   
-  absl::optional<ScalabilityMode> GetScalabilityMode() const {
+  std::optional<ScalabilityMode> GetScalabilityMode() const {
     return scalability_mode_;
   }
   void SetScalabilityMode(ScalabilityMode scalability_mode) {
     scalability_mode_ = scalability_mode;
   }
-  void UnsetScalabilityMode() { scalability_mode_ = absl::nullopt; }
+  void UnsetScalabilityMode() { scalability_mode_ = std::nullopt; }
 
   VideoCodecComplexity GetVideoEncoderComplexity() const;
   void SetVideoEncoderComplexity(VideoCodecComplexity complexity_setting);
@@ -215,7 +215,7 @@ class RTC_EXPORT VideoCodec {
   
   
   VideoCodecUnion codec_specific_;
-  absl::optional<ScalabilityMode> scalability_mode_;
+  std::optional<ScalabilityMode> scalability_mode_;
   
   
   VideoCodecComplexity complexity_;

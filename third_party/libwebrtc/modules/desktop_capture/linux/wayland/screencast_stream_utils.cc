@@ -34,9 +34,9 @@ PipeWireVersion PipeWireVersion::Parse(const absl::string_view& version) {
     return {};
   }
 
-  absl::optional<int> major = rtc::StringToNumber<int>(parsed_version.at(0));
-  absl::optional<int> minor = rtc::StringToNumber<int>(parsed_version.at(1));
-  absl::optional<int> micro = rtc::StringToNumber<int>(parsed_version.at(2));
+  std::optional<int> major = rtc::StringToNumber<int>(parsed_version.at(0));
+  std::optional<int> minor = rtc::StringToNumber<int>(parsed_version.at(1));
+  std::optional<int> micro = rtc::StringToNumber<int>(parsed_version.at(2));
 
   
   if (!major || !minor || !micro) {

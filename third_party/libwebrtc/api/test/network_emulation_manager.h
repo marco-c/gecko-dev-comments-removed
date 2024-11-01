@@ -14,12 +14,12 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/field_trials_view.h"
 #include "api/packet_socket_factory.h"
@@ -69,11 +69,11 @@ struct EmulatedEndpointConfig {
   enum class IpAddressFamily { kIpv4, kIpv6 };
 
   
-  absl::optional<std::string> name = absl::nullopt;
+  std::optional<std::string> name = std::nullopt;
   IpAddressFamily generated_ip_family = IpAddressFamily::kIpv4;
   
   
-  absl::optional<rtc::IPAddress> ip;
+  std::optional<rtc::IPAddress> ip;
   
   
   bool start_as_enabled = true;

@@ -62,8 +62,8 @@ class FrameLengthControllerV2Test : public testing::Test {
       std::make_unique<FrameLengthControllerV2>(kANASupportedFrameLengths,
                                                 kMinPayloadBitrateBps,
                                                 false);
-  absl::optional<int> target_audio_bitrate_bps_;
-  absl::optional<int> overhead_bytes_per_packet_;
+  std::optional<int> target_audio_bitrate_bps_;
+  std::optional<int> overhead_bytes_per_packet_;
 };
 
 

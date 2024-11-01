@@ -15,10 +15,10 @@
 #include <stdint.h>
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_format.h"
@@ -136,7 +136,7 @@ class NetEq {
     bool enable_fast_accelerate = false;
     bool enable_muted_state = false;
     bool enable_rtx_handling = false;
-    absl::optional<AudioCodecPairId> codec_pair_id;
+    std::optional<AudioCodecPairId> codec_pair_id;
     bool for_test_no_time_stretching = false;  
   };
 
@@ -223,7 +223,7 @@ class NetEq {
       AudioFrame* audio_frame,
       bool* muted = nullptr,
       int* current_sample_rate_hz = nullptr,
-      absl::optional<Operation> action_override = absl::nullopt) = 0;
+      std::optional<Operation> action_override = std::nullopt) = 0;
 
   
   virtual void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) = 0;
@@ -289,7 +289,7 @@ class NetEq {
 
   
   
-  virtual absl::optional<uint32_t> GetPlayoutTimestamp() const = 0;
+  virtual std::optional<uint32_t> GetPlayoutTimestamp() const = 0;
 
   
   
@@ -299,14 +299,14 @@ class NetEq {
   
   
   [[deprecated(
-      "Use GetCurrentDecoderFormat")]] virtual absl::optional<DecoderFormat>
+      "Use GetCurrentDecoderFormat")]] virtual std::optional<DecoderFormat>
   GetDecoderFormat(int payload_type) const {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   
-  virtual absl::optional<DecoderFormat> GetCurrentDecoderFormat() const {
-    return absl::nullopt;
+  virtual std::optional<DecoderFormat> GetCurrentDecoderFormat() const {
+    return std::nullopt;
   }
 
   

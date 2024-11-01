@@ -14,13 +14,13 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/numerics/samples_stats_counter.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -240,7 +240,7 @@ class VideoStreamsInfo {
 
   
   
-  absl::optional<std::string> GetSender(absl::string_view stream_label) const;
+  std::optional<std::string> GetSender(absl::string_view stream_label) const;
 
   
   

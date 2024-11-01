@@ -13,10 +13,10 @@
 
 #include <stddef.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/scoped_refptr.h"
 #include "api/video/resolution.h"
@@ -62,13 +62,13 @@ struct VideoStream {
   
   
   
-  absl::optional<size_t> num_temporal_layers;
+  std::optional<size_t> num_temporal_layers;
 
   
   
-  absl::optional<double> bitrate_priority;
+  std::optional<double> bitrate_priority;
 
-  absl::optional<ScalabilityMode> scalability_mode;
+  std::optional<ScalabilityMode> scalability_mode;
 
   
   bool active;
@@ -82,7 +82,7 @@ struct VideoStream {
   
   
   
-  absl::optional<Resolution> requested_resolution;
+  std::optional<Resolution> requested_resolution;
 };
 
 class VideoEncoderConfig {

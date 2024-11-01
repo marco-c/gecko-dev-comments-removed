@@ -47,7 +47,7 @@ class TestVideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
   }
   void OnOutputFormatRequest(int width,
                              int height,
-                             const absl::optional<int>& max_fps);
+                             const std::optional<int>& max_fps);
 
   
   

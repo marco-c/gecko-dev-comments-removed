@@ -35,7 +35,7 @@ class ObjCVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   
   
   
-  absl::optional<bool> needs_denoising() const override;
+  std::optional<bool> needs_denoising() const override;
 
   SourceState state() const override;
 

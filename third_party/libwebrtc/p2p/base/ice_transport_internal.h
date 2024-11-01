@@ -13,12 +13,12 @@
 
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/candidate.h"
 #include "api/rtc_error.h"
 #include "api/transport/enums.h"
@@ -109,10 +109,10 @@ webrtc::RTCError VerifyCandidates(const Candidates& candidates);
 
 struct RTC_EXPORT IceConfig {
   
-  absl::optional<int> receiving_timeout;
+  std::optional<int> receiving_timeout;
   
   
-  absl::optional<int> backup_connection_ping_interval;
+  std::optional<int> backup_connection_ping_interval;
 
   ContinualGatheringPolicy continual_gathering_policy = GATHER_ONCE;
 
@@ -125,7 +125,7 @@ struct RTC_EXPORT IceConfig {
   bool prioritize_most_likely_candidate_pairs = false;
 
   
-  absl::optional<int> stable_writable_connection_ping_interval;
+  std::optional<int> stable_writable_connection_ping_interval;
 
   
   
@@ -140,12 +140,12 @@ struct RTC_EXPORT IceConfig {
 
   
   
-  absl::optional<int> regather_on_failed_networks_interval;
+  std::optional<int> regather_on_failed_networks_interval;
 
   
   
   
-  absl::optional<int> receiving_switching_delay;
+  std::optional<int> receiving_switching_delay;
 
   
   
@@ -155,12 +155,12 @@ struct RTC_EXPORT IceConfig {
   
   
   
-  absl::optional<int> ice_check_interval_strong_connectivity;
+  std::optional<int> ice_check_interval_strong_connectivity;
   
   
   
   
-  absl::optional<int> ice_check_interval_weak_connectivity;
+  std::optional<int> ice_check_interval_weak_connectivity;
   
   
   
@@ -168,30 +168,30 @@ struct RTC_EXPORT IceConfig {
   
   
   
-  absl::optional<int> ice_check_min_interval;
+  std::optional<int> ice_check_min_interval;
   
   
   
   
-  absl::optional<int> ice_unwritable_timeout;
+  std::optional<int> ice_unwritable_timeout;
 
   
   
   
   
-  absl::optional<int> ice_unwritable_min_checks;
+  std::optional<int> ice_unwritable_min_checks;
 
   
   
   
   
-  absl::optional<int> ice_inactive_timeout;
+  std::optional<int> ice_inactive_timeout;
 
   
   
-  absl::optional<int> stun_keepalive_interval;
+  std::optional<int> stun_keepalive_interval;
 
-  absl::optional<rtc::AdapterType> network_preference;
+  std::optional<rtc::AdapterType> network_preference;
 
   webrtc::VpnPreference vpn_preference = webrtc::VpnPreference::kDefault;
 
@@ -292,19 +292,19 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
 
   
   
-  virtual absl::optional<int> GetRttEstimate() = 0;
+  virtual std::optional<int> GetRttEstimate() = 0;
 
   
   virtual const Connection* selected_connection() const = 0;
 
   
   
-  virtual absl::optional<const CandidatePair> GetSelectedCandidatePair()
+  virtual std::optional<const CandidatePair> GetSelectedCandidatePair()
       const = 0;
 
-  virtual absl::optional<std::reference_wrapper<StunDictionaryWriter>>
+  virtual std::optional<std::reference_wrapper<StunDictionaryWriter>>
   GetDictionaryWriter() {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   void AddGatheringStateCallback(

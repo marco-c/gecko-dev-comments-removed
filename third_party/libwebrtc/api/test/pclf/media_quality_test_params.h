@@ -13,10 +13,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/async_dns_resolver.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio/audio_processing.h"
@@ -125,18 +125,18 @@ struct InjectableComponents {
 
 struct Params {
   
-  absl::optional<std::string> name;
+  std::optional<std::string> name;
   
-  absl::optional<AudioConfig> audio_config;
+  std::optional<AudioConfig> audio_config;
   
   
   uint32_t port_allocator_extra_flags = cricket::kDefaultPortAllocatorFlags;
   
   
-  absl::optional<std::string> rtc_event_log_path;
+  std::optional<std::string> rtc_event_log_path;
   
   
-  absl::optional<std::string> aec_dump_path;
+  std::optional<std::string> aec_dump_path;
 
   bool use_ulp_fec = false;
   bool use_flex_fec = false;
@@ -190,7 +190,7 @@ struct RunParams {
   
   
   
-  absl::optional<EchoEmulationConfig> echo_emulation_config;
+  std::optional<EchoEmulationConfig> echo_emulation_config;
 };
 
 }  

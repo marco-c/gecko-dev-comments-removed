@@ -50,7 +50,7 @@ std::unique_ptr<RtpFrameObject> CreateRtpFrameObject(
       5, 6, 7,
       VideoSendTiming(), 8, video_header.codec,
       kVideoRotation_0, VideoContentType::UNSPECIFIED, video_header,
-      absl::nullopt, RtpPacketInfos({packet_info}),
+      std::nullopt, RtpPacketInfos({packet_info}),
       EncodedImageBuffer::Create(0));
 }
 
@@ -222,8 +222,8 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
   
   EXPECT_CALL(receiver, ManageFrame)
       .WillOnce([&](std::unique_ptr<RtpFrameObject> frame) {
-        const absl::optional<RTPVideoHeader::GenericDescriptorInfo>&
-            descriptor = frame->GetRtpVideoHeader().generic;
+        const std::optional<RTPVideoHeader::GenericDescriptorInfo>& descriptor =
+            frame->GetRtpVideoHeader().generic;
         if (!descriptor.has_value()) {
           ADD_FAILURE() << "GenericDescriptorInfo in RTPVideoHeader doesn't "
                            "have a value.";

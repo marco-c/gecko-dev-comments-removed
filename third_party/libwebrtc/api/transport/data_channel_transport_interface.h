@@ -13,8 +13,8 @@
 #define API_TRANSPORT_DATA_CHANNEL_TRANSPORT_INTERFACE_H_
 
 #include <cstddef>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "api/priority.h"
 #include "api/rtc_error.h"
 #include "rtc_base/copy_on_write_buffer.h"
@@ -49,14 +49,14 @@ struct SendDataParams {
   
   
   
-  absl::optional<int> max_rtx_count;
+  std::optional<int> max_rtx_count;
 
   
   
   
   
   
-  absl::optional<int> max_rtx_ms;
+  std::optional<int> max_rtx_ms;
 };
 
 

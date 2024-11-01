@@ -11,9 +11,9 @@
 #ifndef API_VIDEO_CODECS_H264_PROFILE_LEVEL_ID_H_
 #define API_VIDEO_CODECS_H264_PROFILE_LEVEL_ID_H_
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -60,26 +60,26 @@ struct H264ProfileLevelId {
 
 
 
-absl::optional<H264ProfileLevelId> ParseH264ProfileLevelId(const char* str);
+std::optional<H264ProfileLevelId> ParseH264ProfileLevelId(const char* str);
 
 
 
 
 
-RTC_EXPORT absl::optional<H264ProfileLevelId> ParseSdpForH264ProfileLevelId(
+RTC_EXPORT std::optional<H264ProfileLevelId> ParseSdpForH264ProfileLevelId(
     const CodecParameterMap& params);
 
 
 
 
 
-RTC_EXPORT absl::optional<H264Level> H264SupportedLevel(
+RTC_EXPORT std::optional<H264Level> H264SupportedLevel(
     int max_frame_pixel_count,
     float max_fps);
 
 
 
-RTC_EXPORT absl::optional<std::string> H264ProfileLevelIdToString(
+RTC_EXPORT std::optional<std::string> H264ProfileLevelIdToString(
     const H264ProfileLevelId& profile_level_id);
 
 

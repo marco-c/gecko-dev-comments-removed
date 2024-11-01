@@ -13,10 +13,10 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/environment/environment.h"
 #include "api/sequence_checker.h"
@@ -114,7 +114,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   void StopReceive();
 
   
-  absl::optional<Syncable::Info> GetSyncInfo() const;
+  std::optional<Syncable::Info> GetSyncInfo() const;
 
   bool DeliverRtcp(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
 
@@ -206,11 +206,11 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   int red_payload_type() const;
   void SetProtectionPayloadTypes(int red_payload_type, int ulpfec_payload_type);
 
-  absl::optional<int64_t> LastReceivedPacketMs() const;
-  absl::optional<uint32_t> LastReceivedFrameRtpTimestamp() const;
-  absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
+  std::optional<int64_t> LastReceivedPacketMs() const;
+  std::optional<uint32_t> LastReceivedFrameRtpTimestamp() const;
+  std::optional<int64_t> LastReceivedKeyframePacketMs() const;
 
-  absl::optional<RtpRtcpInterface::SenderReportStats> GetSenderReportStats()
+  std::optional<RtpRtcpInterface::SenderReportStats> GetSenderReportStats()
       const;
 
   
@@ -288,7 +288,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
     std::vector<uint16_t> nack_sequence_numbers_
         RTC_GUARDED_BY(packet_sequence_checker_);
 
-    absl::optional<LossNotificationState> lntf_state_
+    std::optional<LossNotificationState> lntf_state_
         RTC_GUARDED_BY(packet_sequence_checker_);
   };
   enum ParseGenericDependenciesResult {
@@ -388,14 +388,14 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       RTC_GUARDED_BY(packet_sequence_checker_);
   
   
-  absl::optional<int64_t> video_structure_frame_id_
+  std::optional<int64_t> video_structure_frame_id_
       RTC_GUARDED_BY(packet_sequence_checker_);
   Timestamp last_logged_failed_to_parse_dd_
       RTC_GUARDED_BY(packet_sequence_checker_) = Timestamp::MinusInfinity();
 
   std::unique_ptr<RtpFrameReferenceFinder> reference_finder_
       RTC_GUARDED_BY(packet_sequence_checker_);
-  absl::optional<VideoCodecType> current_codec_
+  std::optional<VideoCodecType> current_codec_
       RTC_GUARDED_BY(packet_sequence_checker_);
   uint32_t last_assembled_frame_rtp_timestamp_
       RTC_GUARDED_BY(packet_sequence_checker_);
@@ -418,13 +418,13 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   bool has_received_frame_ RTC_GUARDED_BY(packet_sequence_checker_);
 
-  absl::optional<uint32_t> last_received_rtp_timestamp_
+  std::optional<uint32_t> last_received_rtp_timestamp_
       RTC_GUARDED_BY(packet_sequence_checker_);
-  absl::optional<uint32_t> last_received_keyframe_rtp_timestamp_
+  std::optional<uint32_t> last_received_keyframe_rtp_timestamp_
       RTC_GUARDED_BY(packet_sequence_checker_);
-  absl::optional<Timestamp> last_received_rtp_system_time_
+  std::optional<Timestamp> last_received_rtp_system_time_
       RTC_GUARDED_BY(packet_sequence_checker_);
-  absl::optional<Timestamp> last_received_keyframe_rtp_system_time_
+  std::optional<Timestamp> last_received_keyframe_rtp_system_time_
       RTC_GUARDED_BY(packet_sequence_checker_);
 
   
@@ -432,7 +432,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   std::unique_ptr<BufferedFrameDecryptor> buffered_frame_decryptor_
       RTC_PT_GUARDED_BY(packet_sequence_checker_);
   bool frames_decryptable_ RTC_GUARDED_BY(worker_task_checker_);
-  absl::optional<ColorSpace> last_color_space_;
+  std::optional<ColorSpace> last_color_space_;
 
   AbsoluteCaptureTimeInterpolator absolute_capture_time_interpolator_
       RTC_GUARDED_BY(packet_sequence_checker_);

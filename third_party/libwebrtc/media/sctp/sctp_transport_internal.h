@@ -138,9 +138,9 @@ class SctpTransportInternal {
   virtual int max_message_size() const = 0;
   
   
-  virtual absl::optional<int> max_outbound_streams() const = 0;
+  virtual std::optional<int> max_outbound_streams() const = 0;
   
-  virtual absl::optional<int> max_inbound_streams() const = 0;
+  virtual std::optional<int> max_inbound_streams() const = 0;
   
   virtual size_t buffered_amount(int sid) const = 0;
   virtual size_t buffered_amount_low_threshold(int sid) const = 0;

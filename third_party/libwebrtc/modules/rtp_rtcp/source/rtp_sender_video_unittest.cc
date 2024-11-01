@@ -1268,7 +1268,7 @@ TEST_F(RtpSenderVideoTest, AbsoluteCaptureTime) {
       kPayload, kType, kTimestamp, kAbsoluteCaptureTimestamp, kFrame,
       sizeof(kFrame), hdr, kDefaultExpectedRetransmissionTime, {});
 
-  absl::optional<AbsoluteCaptureTime> absolute_capture_time;
+  std::optional<AbsoluteCaptureTime> absolute_capture_time;
 
   
   
@@ -1293,7 +1293,7 @@ TEST_F(RtpSenderVideoTest, AbsoluteCaptureTime) {
 TEST_F(RtpSenderVideoTest, AbsoluteCaptureTimeWithExtensionProvided) {
   constexpr AbsoluteCaptureTime kAbsoluteCaptureTime = {
       123,
-      absl::optional<int64_t>(456),
+      std::optional<int64_t>(456),
   };
   uint8_t kFrame[kMaxPacketLength];
   rtp_module_.RegisterRtpHeaderExtension(AbsoluteCaptureTimeExtension::Uri(),
@@ -1307,7 +1307,7 @@ TEST_F(RtpSenderVideoTest, AbsoluteCaptureTimeWithExtensionProvided) {
                                sizeof(kFrame), hdr,
                                kDefaultExpectedRetransmissionTime, {});
 
-  absl::optional<AbsoluteCaptureTime> absolute_capture_time;
+  std::optional<AbsoluteCaptureTime> absolute_capture_time;
 
   
   
@@ -1360,7 +1360,7 @@ TEST_F(RtpSenderVideoTest, PopulatesPlayoutDelay) {
 
   
   
-  hdr.playout_delay = absl::nullopt;  
+  hdr.playout_delay = std::nullopt;  
   vp8_header.temporalIdx = 0;
   rtp_sender_video_->SendVideo(
       kPayload, kType, kTimestamp, fake_clock_.CurrentTime(), kFrame,
@@ -1428,7 +1428,7 @@ TEST_F(RtpSenderVideoTest, SendRawVideo) {
   RTPVideoHeader video_header;
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   ASSERT_TRUE(rtp_sender_video_->SendVideo(
-      kPayloadType, absl::nullopt, 1234, fake_clock_.CurrentTime(), kPayload,
+      kPayloadType, std::nullopt, 1234, fake_clock_.CurrentTime(), kPayload,
       sizeof(kPayload), video_header, TimeDelta::PlusInfinity(), {}));
 
   rtc::ArrayView<const uint8_t> sent_payload =

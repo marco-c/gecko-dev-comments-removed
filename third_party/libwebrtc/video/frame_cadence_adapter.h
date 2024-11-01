@@ -93,11 +93,11 @@ class FrameCadenceAdapterInterface
   
   
   virtual void SetZeroHertzModeEnabled(
-      absl::optional<ZeroHertzModeParams> params) = 0;
+      std::optional<ZeroHertzModeParams> params) = 0;
 
   
   
-  virtual absl::optional<uint32_t> GetInputFrameRateFps() = 0;
+  virtual std::optional<uint32_t> GetInputFrameRateFps() = 0;
 
   
   
@@ -112,7 +112,7 @@ class FrameCadenceAdapterInterface
   
   
   virtual void UpdateVideoSourceRestrictions(
-      absl::optional<double> max_frame_rate) = 0;
+      std::optional<double> max_frame_rate) = 0;
 
   
   

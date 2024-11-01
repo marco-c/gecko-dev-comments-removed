@@ -11,10 +11,9 @@
 #ifndef CALL_ADAPTATION_VIDEO_SOURCE_RESTRICTIONS_H_
 #define CALL_ADAPTATION_VIDEO_SOURCE_RESTRICTIONS_H_
 
+#include <optional>
 #include <string>
 #include <utility>
-
-#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -26,9 +25,9 @@ class VideoSourceRestrictions {
   VideoSourceRestrictions();
   
   
-  VideoSourceRestrictions(absl::optional<size_t> max_pixels_per_frame,
-                          absl::optional<size_t> target_pixels_per_frame,
-                          absl::optional<double> max_frame_rate);
+  VideoSourceRestrictions(std::optional<size_t> max_pixels_per_frame,
+                          std::optional<size_t> target_pixels_per_frame,
+                          std::optional<double> max_frame_rate);
 
   bool operator==(const VideoSourceRestrictions& rhs) const {
     return max_pixels_per_frame_ == rhs.max_pixels_per_frame_ &&
@@ -43,7 +42,7 @@ class VideoSourceRestrictions {
 
   
   
-  const absl::optional<size_t>& max_pixels_per_frame() const;
+  const std::optional<size_t>& max_pixels_per_frame() const;
   
   
   
@@ -52,13 +51,13 @@ class VideoSourceRestrictions {
   
   
   
-  const absl::optional<size_t>& target_pixels_per_frame() const;
-  const absl::optional<double>& max_frame_rate() const;
+  const std::optional<size_t>& target_pixels_per_frame() const;
+  const std::optional<double>& max_frame_rate() const;
 
-  void set_max_pixels_per_frame(absl::optional<size_t> max_pixels_per_frame);
+  void set_max_pixels_per_frame(std::optional<size_t> max_pixels_per_frame);
   void set_target_pixels_per_frame(
-      absl::optional<size_t> target_pixels_per_frame);
-  void set_max_frame_rate(absl::optional<double> max_frame_rate);
+      std::optional<size_t> target_pixels_per_frame);
+  void set_max_frame_rate(std::optional<double> max_frame_rate);
 
   
   void UpdateMin(const VideoSourceRestrictions& other);
@@ -66,9 +65,9 @@ class VideoSourceRestrictions {
  private:
   
   
-  absl::optional<size_t> max_pixels_per_frame_;
-  absl::optional<size_t> target_pixels_per_frame_;
-  absl::optional<double> max_frame_rate_;
+  std::optional<size_t> max_pixels_per_frame_;
+  std::optional<size_t> target_pixels_per_frame_;
+  std::optional<double> max_frame_rate_;
 };
 
 bool DidRestrictionsIncrease(VideoSourceRestrictions before,

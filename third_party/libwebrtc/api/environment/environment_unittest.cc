@@ -11,13 +11,13 @@
 #include "api/environment/environment.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/environment/environment_factory.h"
 #include "api/field_trials_view.h"
 #include "api/rtc_event_log/rtc_event.h"
@@ -168,10 +168,10 @@ TEST(EnvironmentTest, KeepsUtilityAliveWhileEnvironmentIsAlive) {
       [&] { utility_destroyed = true; });
 
   
-  absl::optional<Environment> env = CreateEnvironment(std::move(field_trials));
+  std::optional<Environment> env = CreateEnvironment(std::move(field_trials));
 
   EXPECT_FALSE(utility_destroyed);
-  env = absl::nullopt;
+  env = std::nullopt;
   EXPECT_TRUE(utility_destroyed);
 }
 
@@ -180,13 +180,13 @@ TEST(EnvironmentTest, KeepsUtilityAliveWhileCopyOfEnvironmentIsAlive) {
   auto field_trials = std::make_unique<FakeFieldTrials>(
       [&] { utility_destroyed = true; });
 
-  absl::optional<Environment> env1 = CreateEnvironment(std::move(field_trials));
-  absl::optional<Environment> env2 = env1;
+  std::optional<Environment> env1 = CreateEnvironment(std::move(field_trials));
+  std::optional<Environment> env2 = env1;
 
   EXPECT_FALSE(utility_destroyed);
-  env1 = absl::nullopt;
+  env1 = std::nullopt;
   EXPECT_FALSE(utility_destroyed);
-  env2 = absl::nullopt;
+  env2 = std::nullopt;
   EXPECT_TRUE(utility_destroyed);
 }
 
@@ -234,27 +234,27 @@ TEST(EnvironmentTest, FactoryCanCreateNewEnvironmentFromExistingOne) {
 TEST(EnvironmentTest, KeepsOwnershipsWhenCreateNewEnvironmentFromExistingOne) {
   bool utility1_destroyed = false;
   bool utility2_destroyed = false;
-  absl::optional<Environment> env1 =
+  std::optional<Environment> env1 =
       CreateEnvironment(std::make_unique<FakeTaskQueueFactory>(
           [&] { utility1_destroyed = true; }));
 
-  absl::optional<EnvironmentFactory> factory = EnvironmentFactory(*env1);
+  std::optional<EnvironmentFactory> factory = EnvironmentFactory(*env1);
 
   
-  env1 = absl::nullopt;
+  env1 = std::nullopt;
   EXPECT_FALSE(utility1_destroyed);
 
   factory->Set(std::make_unique<FakeFieldTrials>(
       [&] { utility2_destroyed = true; }));
-  absl::optional<Environment> env2 = factory->Create();
+  std::optional<Environment> env2 = factory->Create();
 
   
-  factory = absl::nullopt;
+  factory = std::nullopt;
   EXPECT_FALSE(utility1_destroyed);
   EXPECT_FALSE(utility2_destroyed);
 
   
-  env2 = absl::nullopt;
+  env2 = std::nullopt;
   EXPECT_TRUE(utility1_destroyed);
   EXPECT_TRUE(utility2_destroyed);
 }
@@ -266,11 +266,11 @@ TEST(EnvironmentTest, DestroysUtilitiesInReverseProvidedOrder) {
   auto task_queue_factory = std::make_unique<FakeTaskQueueFactory>(
       [&] { destroyed.push_back("task_queue_factory"); });
 
-  absl::optional<Environment> env =
+  std::optional<Environment> env =
       CreateEnvironment(std::move(field_trials), std::move(task_queue_factory));
 
   ASSERT_THAT(destroyed, IsEmpty());
-  env = absl::nullopt;
+  env = std::nullopt;
   EXPECT_THAT(destroyed, ElementsAre("task_queue_factory", "field_trials"));
 }
 

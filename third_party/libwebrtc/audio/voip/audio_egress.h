@@ -74,7 +74,7 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
 
   
   
-  absl::optional<SdpAudioFormat> GetEncoderFormat() const {
+  std::optional<SdpAudioFormat> GetEncoderFormat() const {
     MutexLock lock(&lock_);
     return encoder_format_;
   }
@@ -119,7 +119,7 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
   mutable Mutex lock_;
 
   
-  absl::optional<SdpAudioFormat> encoder_format_ RTC_GUARDED_BY(lock_);
+  std::optional<SdpAudioFormat> encoder_format_ RTC_GUARDED_BY(lock_);
 
   
   RtpRtcpInterface* const rtp_rtcp_;

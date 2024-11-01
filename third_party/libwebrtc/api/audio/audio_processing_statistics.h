@@ -13,7 +13,8 @@
 
 #include <stdint.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -30,36 +31,36 @@ struct RTC_EXPORT AudioProcessingStats {
   
   
   
-  absl::optional<bool> voice_detected;
+  std::optional<bool> voice_detected;
 
   
   
-  absl::optional<double> echo_return_loss;
+  std::optional<double> echo_return_loss;
   
-  absl::optional<double> echo_return_loss_enhancement;
-  
-  
-  absl::optional<double> divergent_filter_fraction;
-
+  std::optional<double> echo_return_loss_enhancement;
   
   
-  
-  
-  
-  
-  
-  absl::optional<int32_t> delay_median_ms;
-  absl::optional<int32_t> delay_standard_deviation_ms;
-
-  
-  absl::optional<double> residual_echo_likelihood;
-  
-  absl::optional<double> residual_echo_likelihood_recent_max;
+  std::optional<double> divergent_filter_fraction;
 
   
   
   
-  absl::optional<int32_t> delay_ms;
+  
+  
+  
+  
+  std::optional<int32_t> delay_median_ms;
+  std::optional<int32_t> delay_standard_deviation_ms;
+
+  
+  std::optional<double> residual_echo_likelihood;
+  
+  std::optional<double> residual_echo_likelihood_recent_max;
+
+  
+  
+  
+  std::optional<int32_t> delay_ms;
 };
 
 }  

@@ -37,10 +37,10 @@ class NetworkPacket {
   NetworkPacket(rtc::CopyOnWriteBuffer packet,
                 int64_t send_time,
                 int64_t arrival_time,
-                absl::optional<PacketOptions> packet_options,
+                std::optional<PacketOptions> packet_options,
                 bool is_rtcp,
                 MediaType media_type,
-                absl::optional<int64_t> packet_time_us,
+                std::optional<int64_t> packet_time_us,
                 Transport* transport);
 
   NetworkPacket(RtpPacketReceived packet,
@@ -69,11 +69,11 @@ class NetworkPacket {
   }
   bool is_rtcp() const { return is_rtcp_; }
   MediaType media_type() const { return media_type_; }
-  absl::optional<int64_t> packet_time_us() const { return packet_time_us_; }
+  std::optional<int64_t> packet_time_us() const { return packet_time_us_; }
   RtpPacketReceived* packet_received() {
     return packet_received_ ? &packet_received_.value() : nullptr;
   }
-  absl::optional<RtpPacketReceived> packet_received() const {
+  std::optional<RtpPacketReceived> packet_received() const {
     return packet_received_;
   }
   Transport* transport() const { return transport_; }
@@ -86,15 +86,15 @@ class NetworkPacket {
   int64_t arrival_time_;
   
   
-  absl::optional<PacketOptions> packet_options_;
+  std::optional<PacketOptions> packet_options_;
   bool is_rtcp_;
   
   
   
   
   MediaType media_type_;
-  absl::optional<int64_t> packet_time_us_;
-  absl::optional<RtpPacketReceived> packet_received_;
+  std::optional<int64_t> packet_time_us_;
+  std::optional<RtpPacketReceived> packet_received_;
   Transport* transport_;
 };
 
@@ -150,7 +150,7 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   
   
   void Process() override;
-  absl::optional<int64_t> TimeUntilNextProcess() override;
+  std::optional<int64_t> TimeUntilNextProcess() override;
 
   
   float PercentageLoss();
@@ -179,15 +179,15 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   
   
   bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
-                     absl::optional<PacketOptions> options,
+                     std::optional<PacketOptions> options,
                      bool is_rtcp,
                      MediaType media_type,
-                     absl::optional<int64_t> packet_time_us);
+                     std::optional<int64_t> packet_time_us);
 
   
   
   bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
-                     absl::optional<PacketOptions> options,
+                     std::optional<PacketOptions> options,
                      bool is_rtcp,
                      Transport* transport);
 

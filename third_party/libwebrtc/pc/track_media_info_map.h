@@ -15,10 +15,10 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/media_stream_interface.h"
 #include "api/scoped_refptr.h"
@@ -41,16 +41,16 @@ class TrackMediaInfoMap {
   
   
   void Initialize(
-      absl::optional<cricket::VoiceMediaInfo> voice_media_info,
-      absl::optional<cricket::VideoMediaInfo> video_media_info,
+      std::optional<cricket::VoiceMediaInfo> voice_media_info,
+      std::optional<cricket::VideoMediaInfo> video_media_info,
       rtc::ArrayView<rtc::scoped_refptr<RtpSenderInternal>> rtp_senders,
       rtc::ArrayView<rtc::scoped_refptr<RtpReceiverInternal>> rtp_receivers);
 
-  const absl::optional<cricket::VoiceMediaInfo>& voice_media_info() const {
+  const std::optional<cricket::VoiceMediaInfo>& voice_media_info() const {
     RTC_DCHECK(is_initialized_);
     return voice_media_info_;
   }
-  const absl::optional<cricket::VideoMediaInfo>& video_media_info() const {
+  const std::optional<cricket::VideoMediaInfo>& video_media_info() const {
     RTC_DCHECK(is_initialized_);
     return video_media_info_;
   }
@@ -75,13 +75,13 @@ class TrackMediaInfoMap {
   
   
   
-  absl::optional<int> GetAttachmentIdByTrack(
+  std::optional<int> GetAttachmentIdByTrack(
       const MediaStreamTrackInterface* track) const;
 
  private:
   bool is_initialized_ = false;
-  absl::optional<cricket::VoiceMediaInfo> voice_media_info_;
-  absl::optional<cricket::VideoMediaInfo> video_media_info_;
+  std::optional<cricket::VoiceMediaInfo> voice_media_info_;
+  std::optional<cricket::VideoMediaInfo> video_media_info_;
   
   
   

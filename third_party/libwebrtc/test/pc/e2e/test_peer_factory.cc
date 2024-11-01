@@ -80,7 +80,7 @@ EmulatedSFUConfigMap CalculateRequiredSpatialIndexPerStream(
 }
 
 std::unique_ptr<TestAudioDeviceModule::Renderer> CreateAudioRenderer(
-    const absl::optional<RemotePeerAudioConfig>& config) {
+    const std::optional<RemotePeerAudioConfig>& config) {
   if (!config) {
     
     return TestAudioDeviceModule::CreateDiscardRenderer(
@@ -95,7 +95,7 @@ std::unique_ptr<TestAudioDeviceModule::Renderer> CreateAudioRenderer(
 }
 
 std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
-    const absl::optional<AudioConfig>& audio_config) {
+    const std::optional<AudioConfig>& audio_config) {
   if (!audio_config) {
     
     
@@ -113,9 +113,9 @@ std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
 }
 
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
-    absl::optional<AudioConfig> audio_config,
-    absl::optional<RemotePeerAudioConfig> remote_audio_config,
-    absl::optional<EchoEmulationConfig> echo_emulation_config,
+    std::optional<AudioConfig> audio_config,
+    std::optional<RemotePeerAudioConfig> remote_audio_config,
+    std::optional<EchoEmulationConfig> echo_emulation_config,
     TaskQueueFactory* task_queue_factory) {
   std::unique_ptr<TestAudioDeviceModule::Renderer> renderer =
       CreateAudioRenderer(remote_audio_config);
@@ -259,10 +259,10 @@ PeerConnectionDependencies CreatePCDependencies(
 
 }  
 
-absl::optional<RemotePeerAudioConfig> RemotePeerAudioConfig::Create(
-    absl::optional<AudioConfig> config) {
+std::optional<RemotePeerAudioConfig> RemotePeerAudioConfig::Create(
+    std::optional<AudioConfig> config) {
   if (!config) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return RemotePeerAudioConfig(config.value());
 }
@@ -270,8 +270,8 @@ absl::optional<RemotePeerAudioConfig> RemotePeerAudioConfig::Create(
 std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
     std::unique_ptr<PeerConfigurer> configurer,
     std::unique_ptr<MockPeerConnectionObserver> observer,
-    absl::optional<RemotePeerAudioConfig> remote_audio_config,
-    absl::optional<EchoEmulationConfig> echo_emulation_config) {
+    std::optional<RemotePeerAudioConfig> remote_audio_config,
+    std::optional<EchoEmulationConfig> echo_emulation_config) {
   std::unique_ptr<InjectableComponents> components =
       configurer->ReleaseComponents();
   std::unique_ptr<Params> params = configurer->ReleaseParams();

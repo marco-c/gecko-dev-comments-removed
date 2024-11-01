@@ -128,7 +128,7 @@ class Frame {
         kVideoRotation_0,
         VideoContentType::UNSPECIFIED,
         video_header,
-        absl::nullopt,
+        std::nullopt,
         RtpPacketInfos(),
         EncodedImageBuffer::Create(0));
     
@@ -138,10 +138,10 @@ class Frame {
   uint16_t seq_num_start = 0;
   uint16_t seq_num_end = 0;
   bool keyframe = false;
-  absl::optional<int> picture_id;
-  absl::optional<int> spatial_id;
-  absl::optional<int> temporal_id;
-  absl::optional<int> tl0_idx;
+  std::optional<int> picture_id;
+  std::optional<int> spatial_id;
+  std::optional<int> temporal_id;
+  std::optional<int> tl0_idx;
   bool up_switch = false;
   bool inter_layer = false;
   bool inter_pic = true;

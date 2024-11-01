@@ -13,10 +13,10 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/call/audio_sink.h"
@@ -63,17 +63,17 @@ struct CallReceiveStatistics {
   
   
   
-  absl::optional<Timestamp> last_packet_received;
+  std::optional<Timestamp> last_packet_received;
   
   
   
   
-  absl::optional<int64_t> last_sender_report_timestamp_ms;
-  absl::optional<int64_t> last_sender_report_remote_timestamp_ms;
+  std::optional<int64_t> last_sender_report_timestamp_ms;
+  std::optional<int64_t> last_sender_report_remote_timestamp_ms;
   uint64_t sender_reports_packets_sent = 0;
   uint64_t sender_reports_bytes_sent = 0;
   uint64_t sender_reports_reports_count = 0;
-  absl::optional<TimeDelta> round_trip_time;
+  std::optional<TimeDelta> round_trip_time;
   TimeDelta total_round_trip_time = TimeDelta::Zero();
   int round_trip_time_measurements;
 };
@@ -98,7 +98,7 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
   virtual void StopPlayout() = 0;
 
   
-  virtual absl::optional<std::pair<int, SdpAudioFormat>> GetReceiveCodec()
+  virtual std::optional<std::pair<int, SdpAudioFormat>> GetReceiveCodec()
       const = 0;
 
   virtual void ReceivedRTCPPacket(const uint8_t* data, size_t length) = 0;
@@ -122,7 +122,7 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
                                       int64_t* time_ms) const = 0;
   virtual void SetEstimatedPlayoutNtpTimestampMs(int64_t ntp_timestamp_ms,
                                                  int64_t time_ms) = 0;
-  virtual absl::optional<int64_t> GetCurrentEstimatedPlayoutNtpTimestampMs(
+  virtual std::optional<int64_t> GetCurrentEstimatedPlayoutNtpTimestampMs(
       int64_t now_ms) const = 0;
 
   
@@ -132,7 +132,7 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
   virtual int GetBaseMinimumPlayoutDelayMs() const = 0;
 
   
-  virtual absl::optional<Syncable::Info> GetSyncInfo() const = 0;
+  virtual std::optional<Syncable::Info> GetSyncInfo() const = 0;
 
   virtual void RegisterReceiverCongestionControlObjects(
       PacketRouter* packet_router) = 0;
@@ -183,7 +183,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     int jitter_buffer_min_delay_ms,
     bool enable_non_sender_rtt,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-    absl::optional<AudioCodecPairId> codec_pair_id,
+    std::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const webrtc::CryptoOptions& crypto_options,
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,

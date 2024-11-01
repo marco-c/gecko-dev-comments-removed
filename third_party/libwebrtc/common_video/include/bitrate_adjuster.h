@@ -14,7 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/rtc_export.h"
@@ -48,7 +49,7 @@ class RTC_EXPORT BitrateAdjuster {
   uint32_t GetAdjustedBitrateBps() const;
 
   
-  absl::optional<uint32_t> GetEstimatedBitrateBps();
+  std::optional<uint32_t> GetEstimatedBitrateBps();
 
   
   

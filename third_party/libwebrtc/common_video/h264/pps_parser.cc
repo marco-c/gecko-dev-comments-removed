@@ -29,7 +29,7 @@ constexpr int kMinPicInitQpDeltaValue = -26;
 
 
 
-absl::optional<PpsParser::PpsState> PpsParser::ParsePps(
+std::optional<PpsParser::PpsState> PpsParser::ParsePps(
     rtc::ArrayView<const uint8_t> data) {
   
   
@@ -52,7 +52,7 @@ bool PpsParser::ParsePpsIds(rtc::ArrayView<const uint8_t> data,
   return reader.Ok();
 }
 
-absl::optional<PpsParser::SliceHeader> PpsParser::ParseSliceHeader(
+std::optional<PpsParser::SliceHeader> PpsParser::ParseSliceHeader(
     rtc::ArrayView<const uint8_t> data) {
   std::vector<uint8_t> unpacked_buffer = H264::ParseRbsp(data);
   BitstreamReader slice_reader(unpacked_buffer);
@@ -68,12 +68,12 @@ absl::optional<PpsParser::SliceHeader> PpsParser::ParseSliceHeader(
   
 
   if (!slice_reader.Ok()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return slice_header;
 }
 
-absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
+std::optional<PpsParser::PpsState> PpsParser::ParseInternal(
     rtc::ArrayView<const uint8_t> buffer) {
   BitstreamReader reader(buffer);
   PpsState pps;
@@ -123,7 +123,7 @@ absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
       int64_t bits_to_consume =
           int64_t{slice_group_id_bits} * pic_size_in_map_units;
       if (!reader.Ok() || bits_to_consume > std::numeric_limits<int>::max()) {
-        return absl::nullopt;
+        return std::nullopt;
       }
       reader.ConsumeBits(bits_to_consume);
     }
@@ -134,7 +134,7 @@ absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
   pps.num_ref_idx_l1_default_active_minus1 = reader.ReadExponentialGolomb();
   if (pps.num_ref_idx_l0_default_active_minus1 > H264::kMaxReferenceIndex ||
       pps.num_ref_idx_l1_default_active_minus1 > H264::kMaxReferenceIndex) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   
   pps.weighted_pred_flag = reader.Read<bool>();
@@ -146,7 +146,7 @@ absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
   
   if (!reader.Ok() || pps.pic_init_qp_minus26 > kMaxPicInitQpDeltaValue ||
       pps.pic_init_qp_minus26 < kMinPicInitQpDeltaValue) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   
   reader.ReadExponentialGolomb();
@@ -158,7 +158,7 @@ absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
   
   pps.redundant_pic_cnt_present_flag = reader.ReadBit();
   if (!reader.Ok()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return pps;

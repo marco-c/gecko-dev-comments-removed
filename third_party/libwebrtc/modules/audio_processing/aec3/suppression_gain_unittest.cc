@@ -81,7 +81,7 @@ TEST(SuppressionGain, BasicGainComputation) {
                         &data_dumper, DetectOptimization());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, kSampleRateHz, kNumRenderChannels));
-  absl::optional<DelayEstimate> delay_estimate;
+  std::optional<DelayEstimate> delay_estimate;
 
   
   for (size_t ch = 0; ch < kNumCaptureChannels; ++ch) {

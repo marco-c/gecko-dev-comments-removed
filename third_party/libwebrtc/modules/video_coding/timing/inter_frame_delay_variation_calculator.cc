@@ -10,7 +10,8 @@
 
 #include "modules/video_coding/timing/inter_frame_delay_variation_calculator.h"
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "modules/include/module_common_types_public.h"
@@ -26,11 +27,11 @@ InterFrameDelayVariationCalculator::InterFrameDelayVariationCalculator() {
 }
 
 void InterFrameDelayVariationCalculator::Reset() {
-  prev_wall_clock_ = absl::nullopt;
+  prev_wall_clock_ = std::nullopt;
   prev_rtp_timestamp_unwrapped_ = 0;
 }
 
-absl::optional<TimeDelta> InterFrameDelayVariationCalculator::Calculate(
+std::optional<TimeDelta> InterFrameDelayVariationCalculator::Calculate(
     uint32_t rtp_timestamp,
     Timestamp now) {
   int64_t rtp_timestamp_unwrapped = unwrapper_.Unwrap(rtp_timestamp);
@@ -49,7 +50,7 @@ absl::optional<TimeDelta> InterFrameDelayVariationCalculator::Calculate(
   uint32_t cropped_prev = static_cast<uint32_t>(prev_rtp_timestamp_unwrapped_);
   if (rtp_timestamp_unwrapped < prev_rtp_timestamp_unwrapped_ ||
       !IsNewerTimestamp(rtp_timestamp, cropped_prev)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   

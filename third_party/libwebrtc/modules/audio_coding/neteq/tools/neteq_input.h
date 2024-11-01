@@ -13,9 +13,9 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/packet_source.h"
 #include "rtc_base/buffer.h"
@@ -47,21 +47,21 @@ class NetEqInput {
 
   
   
-  virtual absl::optional<int64_t> NextPacketTime() const = 0;
+  virtual std::optional<int64_t> NextPacketTime() const = 0;
 
   
   
-  virtual absl::optional<int64_t> NextOutputEventTime() const = 0;
+  virtual std::optional<int64_t> NextOutputEventTime() const = 0;
 
   
   
-  virtual absl::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo()
+  virtual std::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo()
       const = 0;
 
   
   
-  absl::optional<int64_t> NextEventTime() const {
-    absl::optional<int64_t> next_event_time = NextPacketTime();
+  std::optional<int64_t> NextEventTime() const {
+    std::optional<int64_t> next_event_time = NextPacketTime();
     const auto next_output_time = NextOutputEventTime();
     
     if (next_output_time) {
@@ -102,7 +102,7 @@ class NetEqInput {
 
   
   
-  virtual absl::optional<RTPHeader> NextHeader() const = 0;
+  virtual std::optional<RTPHeader> NextHeader() const = 0;
 };
 
 
@@ -112,20 +112,20 @@ class TimeLimitedNetEqInput : public NetEqInput {
  public:
   TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input, int64_t duration_ms);
   ~TimeLimitedNetEqInput() override;
-  absl::optional<int64_t> NextPacketTime() const override;
-  absl::optional<int64_t> NextOutputEventTime() const override;
-  absl::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo() const override;
+  std::optional<int64_t> NextPacketTime() const override;
+  std::optional<int64_t> NextOutputEventTime() const override;
+  std::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo() const override;
   std::unique_ptr<PacketData> PopPacket() override;
   void AdvanceOutputEvent() override;
   void AdvanceSetMinimumDelay() override;
   bool ended() const override;
-  absl::optional<RTPHeader> NextHeader() const override;
+  std::optional<RTPHeader> NextHeader() const override;
 
  private:
   void MaybeSetEnded();
 
   std::unique_ptr<NetEqInput> input_;
-  const absl::optional<int64_t> start_time_ms_;
+  const std::optional<int64_t> start_time_ms_;
   const int64_t duration_ms_;
   bool ended_ = false;
 };

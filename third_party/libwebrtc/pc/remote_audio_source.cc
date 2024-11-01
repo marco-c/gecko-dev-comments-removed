@@ -72,7 +72,7 @@ RemoteAudioSource::~RemoteAudioSource() {
 
 void RemoteAudioSource::Start(
     cricket::VoiceMediaReceiveChannelInterface* media_channel,
-    absl::optional<uint32_t> ssrc) {
+    std::optional<uint32_t> ssrc) {
   RTC_DCHECK_RUN_ON(worker_thread_);
 
   
@@ -87,7 +87,7 @@ void RemoteAudioSource::Start(
 
 void RemoteAudioSource::Stop(
     cricket::VoiceMediaReceiveChannelInterface* media_channel,
-    absl::optional<uint32_t> ssrc) {
+    std::optional<uint32_t> ssrc) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   RTC_DCHECK(media_channel);
   ssrc ? media_channel->SetRawAudioSink(*ssrc, nullptr)
@@ -159,7 +159,7 @@ void RemoteAudioSource::OnData(const AudioSinkInterface::Data& audio) {
     
     sink->OnData(audio.data, 16, audio.sample_rate, audio.channels,
                  audio.samples_per_channel,
-                 absl::nullopt);
+                 std::nullopt);
   }
 }
 

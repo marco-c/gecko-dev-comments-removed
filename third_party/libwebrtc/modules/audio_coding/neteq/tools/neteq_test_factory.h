@@ -12,10 +12,10 @@
 #define MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_TEST_FACTORY_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 
 namespace webrtc {
@@ -98,7 +98,7 @@ class NetEqTestFactory {
     
     std::string replacement_audio_file;
     
-    absl::optional<uint32_t> ssrc_filter;
+    std::optional<uint32_t> ssrc_filter;
     
     static constexpr int default_audio_level() { return 1; }
     int audio_level = default_audio_level();
@@ -136,11 +136,11 @@ class NetEqTestFactory {
     bool textlog = false;
     
     
-    absl::optional<std::string> textlog_filename;
+    std::optional<std::string> textlog_filename;
     
-    absl::optional<std::string> plot_scripts_basename;
+    std::optional<std::string> plot_scripts_basename;
     
-    absl::optional<std::string> output_audio_filename;
+    std::optional<std::string> output_audio_filename;
     
     std::string field_trial_string;
   };

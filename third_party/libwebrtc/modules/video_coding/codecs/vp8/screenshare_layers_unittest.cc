@@ -161,12 +161,10 @@ class ScreenshareLayerTest : public ::testing::Test {
   
   
   
-  int SkipUntilTl(int layer) {
-    return SkipUntilTlAndSync(layer, absl::nullopt);
-  }
+  int SkipUntilTl(int layer) { return SkipUntilTlAndSync(layer, std::nullopt); }
 
   
-  int SkipUntilTlAndSync(int layer, absl::optional<bool> sync) {
+  int SkipUntilTlAndSync(int layer, std::optional<bool> sync) {
     int flags = 0;
     const int kMaxFramesToSkip =
         1 + (sync.value_or(false) ? kMaxSyncPeriodSeconds : 1) * kFrameRate;

@@ -328,7 +328,7 @@ bool H264DecoderImpl::Configure(const Settings& settings) {
 
   av_frame_.reset(av_frame_alloc());
 
-  if (absl::optional<int> buffer_pool_size = settings.buffer_pool_size()) {
+  if (std::optional<int> buffer_pool_size = settings.buffer_pool_size()) {
     if (!ffmpeg_buffer_pool_.Resize(*buffer_pool_size)) {
       return false;
     }
@@ -399,7 +399,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
 
   
   h264_bitstream_parser_.ParseBitstream(input_image);
-  absl::optional<int> qp = h264_bitstream_parser_.GetLastSliceQp();
+  std::optional<int> qp = h264_bitstream_parser_.GetLastSliceQp();
 
   
   VideoFrame* input_frame =
@@ -617,7 +617,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   
   
   
-  decoded_image_callback_->Decoded(decoded_frame, absl::nullopt, qp);
+  decoded_image_callback_->Decoded(decoded_frame, std::nullopt, qp);
 
   
   av_frame_unref(av_frame_.get());

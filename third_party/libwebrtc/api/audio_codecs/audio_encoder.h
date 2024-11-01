@@ -15,12 +15,12 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/bitrate_allocation.h"
 #include "api/units/data_rate.h"
@@ -39,30 +39,30 @@ struct ANAStats {
   
   
   
-  absl::optional<uint32_t> bitrate_action_counter;
+  std::optional<uint32_t> bitrate_action_counter;
   
   
   
-  absl::optional<uint32_t> channel_action_counter;
+  std::optional<uint32_t> channel_action_counter;
   
   
   
-  absl::optional<uint32_t> dtx_action_counter;
+  std::optional<uint32_t> dtx_action_counter;
   
   
   
-  absl::optional<uint32_t> fec_action_counter;
+  std::optional<uint32_t> fec_action_counter;
   
   
   
-  absl::optional<uint32_t> frame_length_increase_counter;
+  std::optional<uint32_t> frame_length_increase_counter;
   
   
   
-  absl::optional<uint32_t> frame_length_decrease_counter;
+  std::optional<uint32_t> frame_length_decrease_counter;
   
   
-  absl::optional<float> uplink_packet_loss_fraction;
+  std::optional<float> uplink_packet_loss_fraction;
 };
 
 
@@ -223,7 +223,7 @@ class AudioEncoder {
   
   
   virtual void OnReceivedUplinkBandwidth(int target_audio_bitrate_bps,
-                                         absl::optional<int64_t> bwe_period_ms);
+                                         std::optional<int64_t> bwe_period_ms);
 
   
   
@@ -247,15 +247,14 @@ class AudioEncoder {
   
   
   
-  virtual absl::optional<std::pair<TimeDelta, TimeDelta>> GetFrameLengthRange()
+  virtual std::optional<std::pair<TimeDelta, TimeDelta>> GetFrameLengthRange()
       const = 0;
 
   
   
   
-  virtual absl::optional<std::pair<DataRate, DataRate>> GetBitrateRange()
-      const {
-    return absl::nullopt;
+  virtual std::optional<std::pair<DataRate, DataRate>> GetBitrateRange() const {
+    return std::nullopt;
   }
 
   

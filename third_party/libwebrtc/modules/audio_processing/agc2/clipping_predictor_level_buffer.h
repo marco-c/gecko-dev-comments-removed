@@ -12,9 +12,8 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_CLIPPING_PREDICTOR_LEVEL_BUFFER_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
-
-#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -58,7 +57,7 @@ class ClippingPredictorLevelBuffer {
   
   
   
-  absl::optional<Level> ComputePartialMetrics(int delay, int num_items) const;
+  std::optional<Level> ComputePartialMetrics(int delay, int num_items) const;
 
  private:
   int tail_;

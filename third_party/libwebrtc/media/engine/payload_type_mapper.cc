@@ -93,7 +93,7 @@ PayloadTypeMapper::PayloadTypeMapper()
 
 PayloadTypeMapper::~PayloadTypeMapper() = default;
 
-absl::optional<int> PayloadTypeMapper::GetMappingFor(
+std::optional<int> PayloadTypeMapper::GetMappingFor(
     const webrtc::SdpAudioFormat& format) {
   auto iter = mappings_.find(format);
   if (iter != mappings_.end())
@@ -110,19 +110,19 @@ absl::optional<int> PayloadTypeMapper::GetMappingFor(
     }
   }
 
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<int> PayloadTypeMapper::FindMappingFor(
+std::optional<int> PayloadTypeMapper::FindMappingFor(
     const webrtc::SdpAudioFormat& format) const {
   auto iter = mappings_.find(format);
   if (iter != mappings_.end())
     return iter->second;
 
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<Codec> PayloadTypeMapper::ToAudioCodec(
+std::optional<Codec> PayloadTypeMapper::ToAudioCodec(
     const webrtc::SdpAudioFormat& format) {
   
   
@@ -138,7 +138,7 @@ absl::optional<Codec> PayloadTypeMapper::ToAudioCodec(
     return std::move(codec);
   }
 
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool PayloadTypeMapper::SdpAudioFormatOrdering::operator()(

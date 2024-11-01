@@ -92,7 +92,7 @@ class Frame {
         kVideoRotation_0,
         VideoContentType::UNSPECIFIED,
         video_header,
-        absl::nullopt,
+        std::nullopt,
         RtpPacketInfos(),
         EncodedImageBuffer::Create(0));
     
@@ -100,9 +100,9 @@ class Frame {
 
  private:
   bool is_keyframe_ = false;
-  absl::optional<int> picture_id_;
-  absl::optional<int> temporal_id_;
-  absl::optional<int> tl0_idx_;
+  std::optional<int> picture_id_;
+  std::optional<int> temporal_id_;
+  std::optional<int> tl0_idx_;
   bool sync = false;
 };
 

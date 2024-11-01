@@ -16,12 +16,12 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 #include <atomic>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder.h"
@@ -148,7 +148,7 @@ class AcmReceiver {
   
   
   
-  absl::optional<int> last_packet_sample_rate_hz() const;
+  std::optional<int> last_packet_sample_rate_hz() const;
 
   
   int last_output_sample_rate_hz() const;
@@ -169,7 +169,7 @@ class AcmReceiver {
 
   
   
-  absl::optional<uint32_t> GetPlayoutTimestamp();
+  std::optional<uint32_t> GetPlayoutTimestamp();
 
   
   
@@ -186,7 +186,7 @@ class AcmReceiver {
   
   
   
-  absl::optional<std::pair<int, SdpAudioFormat>> LastDecoder() const;
+  std::optional<std::pair<int, SdpAudioFormat>> LastDecoder() const;
 
   
   

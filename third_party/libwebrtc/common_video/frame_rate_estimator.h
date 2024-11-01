@@ -12,8 +12,8 @@
 #define COMMON_VIDEO_FRAME_RATE_ESTIMATOR_H_
 
 #include <deque>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 
@@ -41,10 +41,10 @@ class FrameRateEstimator {
   void OnFrame(Timestamp time);
 
   
-  absl::optional<double> GetAverageFps() const;
+  std::optional<double> GetAverageFps() const;
 
   
-  absl::optional<double> GetAverageFps(Timestamp now);
+  std::optional<double> GetAverageFps(Timestamp now);
 
   
   void Reset();

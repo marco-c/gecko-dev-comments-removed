@@ -12,8 +12,8 @@
 
 #include <algorithm>  
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/environment/environment.h"
@@ -67,7 +67,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
                             const SdpAudioFormat& format,
                             const std::map<int, int> cng_payload_types = {}) {
     
-    absl::optional<AudioCodecInfo> info =
+    std::optional<AudioCodecInfo> info =
         encoder_factory_->QueryAudioEncoder(format);
     RTC_CHECK(info.has_value());
     std::unique_ptr<AudioEncoder> enc =
@@ -264,7 +264,7 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
   }
 
   
-  EXPECT_EQ(absl::nullopt, receiver_->LastDecoder());
+  EXPECT_EQ(std::nullopt, receiver_->LastDecoder());
 
   
   packet_sent_ = false;
@@ -275,8 +275,8 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
   EXPECT_EQ(AudioFrameType::kAudioFrameCN, last_frame_type_);
 
   
-  EXPECT_EQ(absl::nullopt, receiver_->LastDecoder());
-  EXPECT_EQ(absl::nullopt, receiver_->last_packet_sample_rate_hz());
+  EXPECT_EQ(std::nullopt, receiver_->LastDecoder());
+  EXPECT_EQ(std::nullopt, receiver_->last_packet_sample_rate_hz());
 
   for (size_t i = 0; i < codecs.size(); ++i) {
     

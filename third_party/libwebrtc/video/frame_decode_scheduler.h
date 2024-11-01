@@ -13,8 +13,9 @@
 
 #include <stdint.h>
 
+#include <optional>
+
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "api/units/timestamp.h"
 #include "video/frame_decode_timing.h"
 
@@ -31,7 +32,7 @@ class FrameDecodeScheduler {
 
   
   
-  virtual absl::optional<uint32_t> ScheduledRtpTimestamp() = 0;
+  virtual std::optional<uint32_t> ScheduledRtpTimestamp() = 0;
 
   
   

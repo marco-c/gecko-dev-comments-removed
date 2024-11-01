@@ -103,7 +103,7 @@ AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
     }
     
     
-    absl::optional<std::pair<int, SdpAudioFormat>> decoder =
+    std::optional<std::pair<int, SdpAudioFormat>> decoder =
         acm_receiver_.LastDecoder();
     int clock_rate = decoder ? decoder->second.clockrate_hz
                              : acm_receiver_.last_output_sample_rate_hz();
@@ -215,13 +215,13 @@ void AudioIngress::ReceivedRTCPPacket(
   
   rtp_rtcp_->IncomingRtcpPacket(rtcp_packet);
 
-  absl::optional<TimeDelta> rtt = rtp_rtcp_->LastRtt();
+  std::optional<TimeDelta> rtt = rtp_rtcp_->LastRtt();
   if (!rtt.has_value()) {
     
     return;
   }
 
-  absl::optional<RtpRtcpInterface::SenderReportStats> last_sr =
+  std::optional<RtpRtcpInterface::SenderReportStats> last_sr =
       rtp_rtcp_->GetSenderReportStats();
   if (!last_sr.has_value()) {
     
@@ -240,7 +240,7 @@ ChannelStatistics AudioIngress::GetChannelStatistics() {
 
   
   uint32_t clockrate_hz = 0;
-  absl::optional<std::pair<int, SdpAudioFormat>> decoder =
+  std::optional<std::pair<int, SdpAudioFormat>> decoder =
       acm_receiver_.LastDecoder();
   if (decoder) {
     clockrate_hz = decoder->second.clockrate_hz;

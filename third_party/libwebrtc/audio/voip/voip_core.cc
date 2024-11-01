@@ -122,7 +122,7 @@ bool VoipCore::InitializeIfNeeded() {
 }
 
 ChannelId VoipCore::CreateChannel(Transport* transport,
-                                  absl::optional<uint32_t> local_ssrc) {
+                                  std::optional<uint32_t> local_ssrc) {
   ChannelId channel_id;
 
   

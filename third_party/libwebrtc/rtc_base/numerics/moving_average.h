@@ -14,9 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <vector>
-
-#include "absl/types/optional.h"
 
 namespace rtc {
 
@@ -38,13 +37,13 @@ class MovingAverage {
   
   
   
-  absl::optional<int> GetAverageRoundedDown() const;
+  std::optional<int> GetAverageRoundedDown() const;
 
   
-  absl::optional<int> GetAverageRoundedToClosest() const;
+  std::optional<int> GetAverageRoundedToClosest() const;
 
   
-  absl::optional<double> GetUnroundedAverage() const;
+  std::optional<double> GetUnroundedAverage() const;
 
   
   void Reset();

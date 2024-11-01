@@ -14,7 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/array_view.h"
 
 namespace webrtc {
@@ -29,7 +30,7 @@ class BitstreamParser {
 
   
   
-  virtual absl::optional<int> GetLastSliceQp() const = 0;
+  virtual std::optional<int> GetLastSliceQp() const = 0;
 };
 
 }  

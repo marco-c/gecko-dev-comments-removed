@@ -67,7 +67,7 @@ class ChannelReceiveTest : public Test {
          false,
          0,
          false, audio_decoder_factory_,
-         absl::nullopt,
+         std::nullopt,
          nullptr, crypto_options,
          nullptr);
     channel->SetReceiveCodecs(

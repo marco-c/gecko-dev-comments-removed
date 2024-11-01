@@ -32,14 +32,14 @@ SpsParser::SpsState::~SpsState() = default;
 
 
 
-absl::optional<SpsParser::SpsState> SpsParser::ParseSps(
+std::optional<SpsParser::SpsState> SpsParser::ParseSps(
     rtc::ArrayView<const uint8_t> data) {
   std::vector<uint8_t> unpacked_buffer = H264::ParseRbsp(data);
   BitstreamReader reader(unpacked_buffer);
   return ParseSpsUpToVui(reader);
 }
 
-absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
+std::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
     BitstreamReader& reader) {
   
   
@@ -102,7 +102,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
               int delta_scale = reader.ReadSignedExponentialGolomb();
               if (!reader.Ok() || delta_scale < kScalingDeltaMin ||
                   delta_scale > kScaldingDeltaMax) {
-                return absl::nullopt;
+                return std::nullopt;
               }
               next_scale = (last_scale + delta_scale + 256) % 256;
             }
@@ -122,7 +122,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   
   uint32_t log2_max_frame_num_minus4 = reader.ReadExponentialGolomb();
   if (!reader.Ok() || log2_max_frame_num_minus4 > kMaxLog2Minus4) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   sps.log2_max_frame_num = log2_max_frame_num_minus4 + 4;
 
@@ -132,7 +132,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
     
     uint32_t log2_max_pic_order_cnt_lsb_minus4 = reader.ReadExponentialGolomb();
     if (!reader.Ok() || log2_max_pic_order_cnt_lsb_minus4 > kMaxLog2Minus4) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     sps.log2_max_pic_order_cnt_lsb = log2_max_pic_order_cnt_lsb_minus4 + 4;
   } else if (sps.pic_order_cnt_type == 1) {
@@ -149,7 +149,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
       
       reader.ReadExponentialGolomb();
       if (!reader.Ok()) {
-        return absl::nullopt;
+        return std::nullopt;
       }
     }
   }
@@ -197,7 +197,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
 
   
   if (!reader.Ok()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   

@@ -34,7 +34,7 @@ class SimulatedPacketReceiverInterface : public PacketReceiver {
   
   
   
-  virtual absl::optional<int64_t> TimeUntilNextProcess() = 0;
+  virtual std::optional<int64_t> TimeUntilNextProcess() = 0;
 };
 
 }  

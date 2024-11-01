@@ -55,7 +55,7 @@ struct RtpGeneratorOptions {
 
 
 
-absl::optional<RtpGeneratorOptions> ParseRtpGeneratorOptionsFromFile(
+std::optional<RtpGeneratorOptions> ParseRtpGeneratorOptionsFromFile(
     const std::string& options_file);
 
 

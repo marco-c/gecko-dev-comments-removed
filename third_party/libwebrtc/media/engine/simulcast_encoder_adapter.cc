@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -24,7 +25,6 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/base/nullability.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/environment/environment.h"
 #include "api/fec_controller_override.h"
@@ -809,7 +809,7 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
   
   
   
-  absl::optional<ScalabilityMode> scalability_mode =
+  std::optional<ScalabilityMode> scalability_mode =
       stream_params.GetScalabilityMode();
   
   
@@ -907,7 +907,7 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
   encoder_info.requested_resolution_alignment = 1;
   encoder_info.apply_alignment_to_all_simulcast_layers = false;
   encoder_info.supports_native_handle = true;
-  encoder_info.scaling_settings.thresholds = absl::nullopt;
+  encoder_info.scaling_settings.thresholds = std::nullopt;
 
   if (stream_contexts_.empty()) {
     

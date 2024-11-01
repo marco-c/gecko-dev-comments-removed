@@ -11,9 +11,9 @@
 #ifndef API_VIDEO_CODECS_VP9_PROFILE_H_
 #define API_VIDEO_CODECS_VP9_PROFILE_H_
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -35,13 +35,13 @@ RTC_EXPORT std::string VP9ProfileToString(VP9Profile profile);
 
 
 
-absl::optional<VP9Profile> StringToVP9Profile(const std::string& str);
+std::optional<VP9Profile> StringToVP9Profile(const std::string& str);
 
 
 
 
 
-RTC_EXPORT absl::optional<VP9Profile> ParseSdpForVP9Profile(
+RTC_EXPORT std::optional<VP9Profile> ParseSdpForVP9Profile(
     const CodecParameterMap& params);
 
 

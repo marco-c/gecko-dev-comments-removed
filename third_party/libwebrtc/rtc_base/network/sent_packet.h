@@ -14,7 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -46,7 +47,7 @@ struct RTC_EXPORT PacketInfo {
   PacketType packet_type = PacketType::kUnknown;
   PacketInfoProtocolType protocol = PacketInfoProtocolType::kUnknown;
   
-  absl::optional<uint16_t> network_id;
+  std::optional<uint16_t> network_id;
   size_t packet_size_bytes = 0;
   size_t turn_overhead_bytes = 0;
   size_t ip_overhead_bytes = 0;

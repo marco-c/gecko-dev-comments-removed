@@ -12,10 +12,10 @@
 #define API_TEST_METRICS_METRIC_H_
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/units/timestamp.h"
 
 namespace webrtc {
@@ -66,12 +66,12 @@ struct Metric {
   struct Stats {
     
     
-    absl::optional<double> mean;
+    std::optional<double> mean;
     
     
-    absl::optional<double> stddev;
-    absl::optional<double> min;
-    absl::optional<double> max;
+    std::optional<double> stddev;
+    std::optional<double> min;
+    std::optional<double> max;
   };
 
   

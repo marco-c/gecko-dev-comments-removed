@@ -41,14 +41,14 @@ namespace cricket {
 webrtc::RTCError CheckScalabilityModeValues(
     const webrtc::RtpParameters& new_parameters,
     rtc::ArrayView<cricket::Codec> send_codecs,
-    absl::optional<cricket::Codec> send_codec);
+    std::optional<cricket::Codec> send_codec);
 
 
 
 webrtc::RTCError CheckRtpParametersValues(
     const webrtc::RtpParameters& new_parameters,
     rtc::ArrayView<cricket::Codec> send_codecs,
-    absl::optional<cricket::Codec> send_codec);
+    std::optional<cricket::Codec> send_codec);
 
 
 
@@ -56,7 +56,7 @@ webrtc::RTCError CheckRtpParametersInvalidModificationAndValues(
     const webrtc::RtpParameters& old_parameters,
     const webrtc::RtpParameters& new_parameters,
     rtc::ArrayView<cricket::Codec> send_codecs,
-    absl::optional<cricket::Codec> send_codec);
+    std::optional<cricket::Codec> send_codec);
 
 
 
@@ -130,7 +130,7 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   virtual void StopAecDump() = 0;
 
-  virtual absl::optional<webrtc::AudioDeviceModule::Stats>
+  virtual std::optional<webrtc::AudioDeviceModule::Stats>
   GetAudioDeviceStats() = 0;
 };
 

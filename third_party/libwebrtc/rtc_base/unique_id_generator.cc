@@ -59,7 +59,7 @@ std::string UniqueStringGenerator::GenerateString() {
 bool UniqueStringGenerator::AddKnownId(absl::string_view value) {
   
   
-  absl::optional<uint32_t> int_value =
+  std::optional<uint32_t> int_value =
       StringToNumber<uint32_t>(std::string(value));
   
   

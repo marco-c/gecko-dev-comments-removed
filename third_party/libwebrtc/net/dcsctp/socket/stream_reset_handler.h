@@ -12,13 +12,13 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/bind_front.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/units/time_delta.h"
 #include "net/dcsctp/common/internal_types.h"
@@ -106,7 +106,7 @@ class StreamResetHandler {
   
   
   
-  absl::optional<ReConfigChunk> MakeStreamResetRequest();
+  std::optional<ReConfigChunk> MakeStreamResetRequest();
 
   
   void HandleReConfig(ReConfigChunk chunk);
@@ -124,7 +124,7 @@ class StreamResetHandler {
   class CurrentRequest {
    public:
     CurrentRequest(TSN sender_last_assigned_tsn, std::vector<StreamID> streams)
-        : req_seq_nbr_(absl::nullopt),
+        : req_seq_nbr_(std::nullopt),
           sender_last_assigned_tsn_(sender_last_assigned_tsn),
           streams_(std::move(streams)) {}
 
@@ -152,7 +152,7 @@ class StreamResetHandler {
     
     
     
-    void PrepareRetransmission() { req_seq_nbr_ = absl::nullopt; }
+    void PrepareRetransmission() { req_seq_nbr_ = std::nullopt; }
 
     
     void PrepareToSend(ReconfigRequestSN new_req_seq_nbr) {
@@ -164,7 +164,7 @@ class StreamResetHandler {
     
     
     
-    absl::optional<ReconfigRequestSN> req_seq_nbr_;
+    std::optional<ReconfigRequestSN> req_seq_nbr_;
     
     
     TSN sender_last_assigned_tsn_;
@@ -178,7 +178,7 @@ class StreamResetHandler {
   
   
   
-  absl::optional<std::vector<ReconfigurationResponseParameter>> Process(
+  std::optional<std::vector<ReconfigurationResponseParameter>> Process(
       const ReConfigChunk& chunk);
 
   
@@ -226,7 +226,7 @@ class StreamResetHandler {
   ReconfigRequestSN next_outgoing_req_seq_nbr_;
 
   
-  absl::optional<CurrentRequest> current_request_;
+  std::optional<CurrentRequest> current_request_;
 
   
   UnwrappedReconfigRequestSn last_processed_req_seq_nbr_;

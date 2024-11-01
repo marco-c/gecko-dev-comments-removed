@@ -12,12 +12,12 @@
 #define TEST_PC_E2E_ANALYZER_VIDEO_NAMES_COLLECTION_H_
 
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 
 namespace webrtc {
@@ -72,7 +72,7 @@ class NamesCollection {
   
   
   
-  absl::optional<size_t> RemoveIfPresent(absl::string_view name);
+  std::optional<size_t> RemoveIfPresent(absl::string_view name);
 
   
   

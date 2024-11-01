@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -33,7 +34,6 @@
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/async_dns_resolver.h"
 #include "api/candidate.h"
@@ -158,9 +158,9 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   bool GetOption(rtc::Socket::Option opt, int* value) override;
   int GetError() override;
   bool GetStats(IceTransportStats* ice_transport_stats) override;
-  absl::optional<int> GetRttEstimate() override;
+  std::optional<int> GetRttEstimate() override;
   const Connection* selected_connection() const override;
-  absl::optional<const CandidatePair> GetSelectedCandidatePair() const override;
+  std::optional<const CandidatePair> GetSelectedCandidatePair() const override;
 
   
   void OnStartedPinging() override;
@@ -205,7 +205,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   void PruneAllPorts();
   int check_receiving_interval() const;
-  absl::optional<rtc::NetworkRoute> network_route() const override;
+  std::optional<rtc::NetworkRoute> network_route() const override;
 
   void RemoveConnection(Connection* connection);
 
@@ -245,7 +245,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
     return ss.Release();
   }
 
-  absl::optional<std::reference_wrapper<StunDictionaryWriter>>
+  std::optional<std::reference_wrapper<StunDictionaryWriter>>
   GetDictionaryWriter() override {
     return stun_dict_writer_;
   }
@@ -460,7 +460,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   bool has_been_writable_ RTC_GUARDED_BY(network_thread_) =
       false;  
 
-  absl::optional<rtc::NetworkRoute> network_route_
+  std::optional<rtc::NetworkRoute> network_route_
       RTC_GUARDED_BY(network_thread_);
   webrtc::IceEventLog ice_event_log_ RTC_GUARDED_BY(network_thread_);
 

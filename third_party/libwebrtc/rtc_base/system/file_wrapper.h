@@ -15,10 +15,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 
 
@@ -90,7 +90,7 @@ class FileWrapper final {
   
   
   
-  absl::optional<size_t> FileSize();
+  std::optional<size_t> FileSize();
 
   
   size_t Read(void* buf, size_t length);

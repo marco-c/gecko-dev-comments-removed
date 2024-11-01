@@ -54,7 +54,7 @@ void RmsLevel::Reset() {
   sum_square_ = 0.f;
   sample_count_ = 0;
   max_sum_square_ = 0.f;
-  block_size_ = absl::nullopt;
+  block_size_ = std::nullopt;
 }
 
 void RmsLevel::Analyze(rtc::ArrayView<const int16_t> data) {

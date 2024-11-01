@@ -12,9 +12,9 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_CLIPPING_PREDICTOR_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/audio/audio_processing.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 
@@ -40,7 +40,7 @@ class ClippingPredictor {
   
   
   
-  virtual absl::optional<int> EstimateClippedLevelStep(
+  virtual std::optional<int> EstimateClippedLevelStep(
       int channel,
       int level,
       int default_step,

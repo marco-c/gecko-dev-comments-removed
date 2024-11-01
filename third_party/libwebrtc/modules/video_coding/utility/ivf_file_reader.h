@@ -12,9 +12,9 @@
 #define MODULES_VIDEO_CODING_UTILITY_IVF_FILE_READER_H_
 
 #include <memory>
+#include <optional>
 #include <utility>
 
-#include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/system/file_wrapper.h"
@@ -41,7 +41,7 @@ class IvfFileReader {
 
   
   
-  absl::optional<EncodedImage> NextFrame();
+  std::optional<EncodedImage> NextFrame();
   bool HasMoreFrames() const { return num_read_frames_ < num_frames_; }
   bool HasError() const { return has_error_; }
 
@@ -61,9 +61,9 @@ class IvfFileReader {
   
   
   
-  absl::optional<VideoCodecType> ParseCodecType(uint8_t* buffer,
-                                                size_t start_pos);
-  absl::optional<FrameHeader> ReadNextFrameHeader();
+  std::optional<VideoCodecType> ParseCodecType(uint8_t* buffer,
+                                               size_t start_pos);
+  std::optional<FrameHeader> ReadNextFrameHeader();
 
   VideoCodecType codec_type_;
   size_t num_frames_;
@@ -73,7 +73,7 @@ class IvfFileReader {
   uint32_t time_scale_;
   FileWrapper file_;
 
-  absl::optional<FrameHeader> next_frame_header_;
+  std::optional<FrameHeader> next_frame_header_;
   bool has_error_;
 };
 

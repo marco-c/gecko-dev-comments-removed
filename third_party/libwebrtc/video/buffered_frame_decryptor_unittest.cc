@@ -74,7 +74,7 @@ class BufferedFrameDecryptorTest : public ::testing::Test,
         kVideoRotation_0,
         VideoContentType::UNSPECIFIED,
         rtp_video_header,
-        absl::nullopt,
+        std::nullopt,
         RtpPacketInfos(),
         EncodedImageBuffer::Create(0));
     

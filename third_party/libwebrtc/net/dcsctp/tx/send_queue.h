@@ -12,10 +12,10 @@
 
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/units/timestamp.h"
 #include "net/dcsctp/common/internal_types.h"
@@ -56,8 +56,8 @@ class SendQueue {
   
   
   
-  virtual absl::optional<DataToSend> Produce(webrtc::Timestamp now,
-                                             size_t max_size) = 0;
+  virtual std::optional<DataToSend> Produce(webrtc::Timestamp now,
+                                            size_t max_size) = 0;
 
   
   

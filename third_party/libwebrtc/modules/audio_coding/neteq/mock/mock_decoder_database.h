@@ -24,7 +24,7 @@ class MockDecoderDatabase : public DecoderDatabase {
   MockDecoderDatabase()
       : DecoderDatabase(CreateEnvironment(),
                         nullptr,
-                        absl::nullopt) {}
+                        std::nullopt) {}
   ~MockDecoderDatabase() override { Die(); }
   MOCK_METHOD(void, Die, ());
   MOCK_METHOD(bool, Empty, (), (const, override));

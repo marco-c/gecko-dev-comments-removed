@@ -131,11 +131,11 @@ class ClippingEventPredictor : public ClippingPredictor {
   
   
   
-  absl::optional<int> EstimateClippedLevelStep(int channel,
-                                               int level,
-                                               int default_step,
-                                               int min_mic_level,
-                                               int max_mic_level) const {
+  std::optional<int> EstimateClippedLevelStep(int channel,
+                                              int level,
+                                              int default_step,
+                                              int min_mic_level,
+                                              int max_mic_level) const {
     RTC_CHECK_GE(channel, 0);
     RTC_CHECK_LT(channel, ch_buffers_.size());
     RTC_DCHECK_GE(level, 0);
@@ -147,7 +147,7 @@ class ClippingEventPredictor : public ClippingPredictor {
     RTC_DCHECK_GE(max_mic_level, 0);
     RTC_DCHECK_LE(max_mic_level, 255);
     if (level <= min_mic_level) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     if (PredictClippingEvent(channel)) {
       const int new_level =
@@ -157,7 +157,7 @@ class ClippingEventPredictor : public ClippingPredictor {
         return step;
       }
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
  private:
@@ -271,11 +271,11 @@ class ClippingPeakPredictor : public ClippingPredictor {
   
   
   
-  absl::optional<int> EstimateClippedLevelStep(int channel,
-                                               int level,
-                                               int default_step,
-                                               int min_mic_level,
-                                               int max_mic_level) const {
+  std::optional<int> EstimateClippedLevelStep(int channel,
+                                              int level,
+                                              int default_step,
+                                              int min_mic_level,
+                                              int max_mic_level) const {
     RTC_DCHECK_GE(channel, 0);
     RTC_DCHECK_LT(channel, ch_buffers_.size());
     RTC_DCHECK_GE(level, 0);
@@ -287,9 +287,9 @@ class ClippingPeakPredictor : public ClippingPredictor {
     RTC_DCHECK_GE(max_mic_level, 0);
     RTC_DCHECK_LE(max_mic_level, 255);
     if (level <= min_mic_level) {
-      return absl::nullopt;
+      return std::nullopt;
     }
-    absl::optional<float> estimate_db = EstimatePeakValue(channel);
+    std::optional<float> estimate_db = EstimatePeakValue(channel);
     if (estimate_db.has_value() && estimate_db.value() > clipping_threshold_) {
       int step = 0;
       if (!adaptive_step_estimation_) {
@@ -309,7 +309,7 @@ class ClippingPeakPredictor : public ClippingPredictor {
         return level - new_level;
       }
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
  private:
@@ -320,17 +320,17 @@ class ClippingPeakPredictor : public ClippingPredictor {
   
   
   
-  absl::optional<float> EstimatePeakValue(int channel) const {
+  std::optional<float> EstimatePeakValue(int channel) const {
     const auto reference_metrics = ch_buffers_[channel]->ComputePartialMetrics(
         reference_window_delay_, reference_window_length_);
     if (!reference_metrics.has_value()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     const auto metrics =
         ch_buffers_[channel]->ComputePartialMetrics(0, window_length_);
     if (!metrics.has_value() ||
         !(FloatS16ToDbfs(metrics.value().max) > clipping_threshold_)) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     const float reference_crest_factor =
         ComputeCrestFactor(reference_metrics.value());

@@ -12,9 +12,9 @@
 #define API_AUDIO_CODECS_AUDIO_ENCODER_FACTORY_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/audio_format.h"
@@ -44,7 +44,7 @@ class AudioEncoderFactory : public RefCountInterface {
     
     
     
-    absl::optional<AudioCodecPairId> codec_pair_id;
+    std::optional<AudioCodecPairId> codec_pair_id;
   };
 
   
@@ -53,7 +53,7 @@ class AudioEncoderFactory : public RefCountInterface {
   
   
   
-  virtual absl::optional<AudioCodecInfo> QueryAudioEncoder(
+  virtual std::optional<AudioCodecInfo> QueryAudioEncoder(
       const SdpAudioFormat& format) = 0;
 
   

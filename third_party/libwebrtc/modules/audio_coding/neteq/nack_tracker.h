@@ -15,9 +15,9 @@
 #include <stdint.h>
 
 #include <map>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/gtest_prod_util.h"
@@ -151,7 +151,7 @@ class NackTracker {
 
   
   
-  absl::optional<int> GetSamplesPerPacket(
+  std::optional<int> GetSamplesPerPacket(
       uint16_t sequence_number_current_received_rtp,
       uint32_t timestamp_current_received_rtp) const;
 

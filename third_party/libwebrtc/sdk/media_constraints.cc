@@ -10,7 +10,8 @@
 
 #include "sdk/media_constraints.h"
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/peer_connection_interface.h"
 
 namespace webrtc {
@@ -78,7 +79,7 @@ bool FindConstraint(const MediaConstraints* constraints,
 template <typename T>
 void ConstraintToOptional(const MediaConstraints* constraints,
                           const std::string& key,
-                          absl::optional<T>* value_out) {
+                          std::optional<T>* value_out) {
   T value;
   bool present = FindConstraint<T>(constraints, key, &value, nullptr);
   if (present) {

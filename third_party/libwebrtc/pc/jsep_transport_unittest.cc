@@ -802,7 +802,7 @@ TEST_F(JsepTransport2Test, RemoteOfferWithCurrentNegotiatedDtlsRole) {
           .ok());
 
   
-  absl::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
+  std::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
   ASSERT_TRUE(role);
   EXPECT_EQ(rtc::SSL_CLIENT, *role);
 
@@ -847,7 +847,7 @@ TEST_F(JsepTransport2Test, RemoteOfferThatChangesNegotiatedDtlsRole) {
           .ok());
 
   
-  absl::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
+  std::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
   ASSERT_TRUE(role);
   EXPECT_EQ(rtc::SSL_CLIENT, *role);
 
@@ -898,7 +898,7 @@ TEST_F(JsepTransport2Test, RemoteOfferThatChangesFingerprintAndDtlsRole) {
           .ok());
 
   
-  absl::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
+  std::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
   ASSERT_TRUE(role);
   EXPECT_EQ(rtc::SSL_CLIENT, *role);
 
@@ -947,7 +947,7 @@ TEST_F(JsepTransport2Test, DtlsSetupWithLegacyAsAnswerer) {
           ->SetRemoteJsepTransportDescription(remote_desc, SdpType::kAnswer)
           .ok());
 
-  absl::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
+  std::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
   ASSERT_TRUE(role);
   
   

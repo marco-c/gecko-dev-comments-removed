@@ -72,7 +72,7 @@ class BitrateProber {
   Timestamp NextProbeTime(Timestamp now) const;
 
   
-  absl::optional<PacedPacketInfo> CurrentCluster(Timestamp now);
+  std::optional<PacedPacketInfo> CurrentCluster(Timestamp now);
 
   
   

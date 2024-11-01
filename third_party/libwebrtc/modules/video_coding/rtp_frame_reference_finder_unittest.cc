@@ -54,7 +54,7 @@ std::unique_ptr<RtpFrameObject> CreateFrame(
       kVideoRotation_0,
       VideoContentType::UNSPECIFIED,
       video_header,
-      absl::nullopt,
+      std::nullopt,
       RtpPacketInfos(),
       EncodedImageBuffer::Create(0));
   

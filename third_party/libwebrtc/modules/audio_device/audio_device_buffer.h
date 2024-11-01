@@ -110,7 +110,7 @@ class AudioDeviceBuffer {
   virtual int32_t SetRecordedBuffer(
       const void* audio_buffer,
       size_t samples_per_channel,
-      absl::optional<int64_t> capture_timestamp_ns);
+      std::optional<int64_t> capture_timestamp_ns);
   virtual void SetVQEData(int play_delay_ms, int rec_delay_ms);
   virtual int32_t DeliverRecordedData();
   uint32_t NewMicLevel() const;
@@ -200,11 +200,11 @@ class AudioDeviceBuffer {
   int rec_delay_ms_;
 
   
-  absl::optional<int64_t> capture_timestamp_ns_;
+  std::optional<int64_t> capture_timestamp_ns_;
   
   
   
-  absl::optional<int64_t> align_offsync_estimation_time_;
+  std::optional<int64_t> align_offsync_estimation_time_;
 
   
   size_t num_stat_reports_ RTC_GUARDED_BY(task_queue_);

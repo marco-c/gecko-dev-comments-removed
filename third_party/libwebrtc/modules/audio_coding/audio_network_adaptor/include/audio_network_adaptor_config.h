@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 
-#include "absl/types/optional.h"
+#include <optional>
 
 namespace webrtc {
 
@@ -23,18 +23,18 @@ struct AudioEncoderRuntimeConfig {
   ~AudioEncoderRuntimeConfig();
   AudioEncoderRuntimeConfig& operator=(const AudioEncoderRuntimeConfig& other);
   bool operator==(const AudioEncoderRuntimeConfig& other) const;
-  absl::optional<int> bitrate_bps;
-  absl::optional<int> frame_length_ms;
+  std::optional<int> bitrate_bps;
+  std::optional<int> frame_length_ms;
   
   
-  absl::optional<float> uplink_packet_loss_fraction;
-  absl::optional<bool> enable_fec;
-  absl::optional<bool> enable_dtx;
+  std::optional<float> uplink_packet_loss_fraction;
+  std::optional<bool> enable_fec;
+  std::optional<bool> enable_dtx;
 
   
   
   
-  absl::optional<size_t> num_channels;
+  std::optional<size_t> num_channels;
 
   
   

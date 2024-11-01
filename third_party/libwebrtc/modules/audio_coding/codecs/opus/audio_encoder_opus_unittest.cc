@@ -208,24 +208,24 @@ TEST_P(AudioEncoderOpusTest,
                            rtc::CheckedDivExact(48000, kDefaultOpusPacSize);
   
   states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps + kOverheadBps - 1,
-                                             absl::nullopt);
+                                             std::nullopt);
   EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
   
   states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + kOverheadBps + 1,
-                                             absl::nullopt);
+                                             std::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
   
   states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps + kOverheadBps,
-                                             absl::nullopt);
+                                             std::nullopt);
   EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
   
   states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + kOverheadBps,
-                                             absl::nullopt);
+                                             std::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
   
   for (int rate = kMinBitrateBps + kOverheadBps; rate <= 32000 + kOverheadBps;
        rate += 1000) {
-    states->encoder->OnReceivedUplinkBandwidth(rate, absl::nullopt);
+    states->encoder->OnReceivedUplinkBandwidth(rate, std::nullopt);
     EXPECT_EQ(rate - kOverheadBps, states->encoder->GetTargetBitrate());
   }
 }
@@ -379,7 +379,7 @@ TEST_P(AudioEncoderOpusTest, DoNotInvokeSetTargetBitrateIfOverheadUnknown) {
   auto states = CreateCodec(sample_rate_hz_, 2);
 
   states->encoder->OnReceivedUplinkBandwidth(kDefaultOpusRate * 2,
-                                             absl::nullopt);
+                                             std::nullopt);
 
   
   
@@ -394,7 +394,7 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
 
   
   config.bitrate_bps = 12500;
-  EXPECT_EQ(absl::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
+  EXPECT_EQ(std::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
 
   
   config.bitrate_bps = 10999;
@@ -402,7 +402,7 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
 
   
   config.bitrate_bps = 12500;
-  EXPECT_EQ(absl::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
+  EXPECT_EQ(std::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
 
   
   config.bitrate_bps = 14001;
@@ -428,9 +428,9 @@ TEST_P(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
                    sample_rate_hz_));
 
   
-  config.bitrate_bps = absl::optional<int>(7999);
+  config.bitrate_bps = std::optional<int>(7999);
   auto bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(absl::optional<int>(OPUS_BANDWIDTH_NARROWBAND), bandwidth);
+  EXPECT_EQ(std::optional<int>(OPUS_BANDWIDTH_NARROWBAND), bandwidth);
   WebRtcOpus_SetBandwidth(inst, *bandwidth);
   
   
@@ -439,14 +439,14 @@ TEST_P(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
                     kMaxBytes, bitstream);
 
   
-  config.bitrate_bps = absl::optional<int>(9000);
+  config.bitrate_bps = std::optional<int>(9000);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(absl::optional<int>(), bandwidth);
+  EXPECT_EQ(std::optional<int>(), bandwidth);
 
   
-  config.bitrate_bps = absl::optional<int>(9001);
+  config.bitrate_bps = std::optional<int>(9001);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(absl::optional<int>(OPUS_BANDWIDTH_WIDEBAND), bandwidth);
+  EXPECT_EQ(std::optional<int>(OPUS_BANDWIDTH_WIDEBAND), bandwidth);
   WebRtcOpus_SetBandwidth(inst, *bandwidth);
   
   
@@ -455,14 +455,14 @@ TEST_P(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
                     kMaxBytes, bitstream);
 
   
-  config.bitrate_bps = absl::optional<int>(8000);
+  config.bitrate_bps = std::optional<int>(8000);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(absl::optional<int>(), bandwidth);
+  EXPECT_EQ(std::optional<int>(), bandwidth);
 
   
-  config.bitrate_bps = absl::optional<int>(12001);
+  config.bitrate_bps = std::optional<int>(12001);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(absl::optional<int>(OPUS_AUTO), bandwidth);
+  EXPECT_EQ(std::optional<int>(OPUS_AUTO), bandwidth);
 
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(inst));
 }
@@ -528,7 +528,7 @@ TEST_P(AudioEncoderOpusTest, EncodeAtMinBitrate) {
   rtc::Buffer encoded;
   uint32_t rtp_timestamp = 12345;  
 
-  states->encoder->OnReceivedUplinkBandwidth(0, absl::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(0, std::nullopt);
   for (int packet_index = 0; packet_index < kNumPacketsToEncode;
        packet_index++) {
     
@@ -676,7 +676,7 @@ TEST(AudioEncoderOpusTest, GetFrameLenghtRange) {
   std::unique_ptr<AudioEncoder> encoder = AudioEncoderOpus::MakeAudioEncoder(
       CreateEnvironment(), config, {.payload_type = kDefaultOpusPayloadType});
   auto ptime = webrtc::TimeDelta::Millis(10);
-  absl::optional<std::pair<webrtc::TimeDelta, webrtc::TimeDelta>> range = {
+  std::optional<std::pair<webrtc::TimeDelta, webrtc::TimeDelta>> range = {
       {ptime, ptime}};
   EXPECT_EQ(encoder->GetFrameLengthRange(), range);
 }

@@ -22,7 +22,7 @@ EncodedImageFileWriter::EncodedImageFileWriter(
       CodecTypeToPayloadString(video_codec_setting.codecType);
 
   
-  absl::optional<ScalabilityMode> scalability_mode =
+  std::optional<ScalabilityMode> scalability_mode =
       video_codec_setting.GetScalabilityMode();
   RTC_CHECK(scalability_mode);
   spatial_layers_ = ScalabilityModeToNumSpatialLayers(*scalability_mode);

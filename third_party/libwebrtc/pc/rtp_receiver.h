@@ -17,10 +17,10 @@
 
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/dtls_transport_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/rtp_receiver_interface.h"
@@ -59,7 +59,7 @@ class RtpReceiverInternal : public RtpReceiverInterface {
       rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
   
   
-  virtual absl::optional<uint32_t> ssrc() const = 0;
+  virtual std::optional<uint32_t> ssrc() const = 0;
 
   
   

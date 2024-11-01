@@ -15,10 +15,10 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/fec_controller.h"
 #include "api/media_types.h"
 #include "api/network_state_predictor.h"
@@ -74,7 +74,7 @@ class VideoQualityTestFixtureInterface {
       bool sync_video = false;
       bool dtx = false;
       bool use_real_adm = false;
-      absl::optional<std::string> ana_config;
+      std::optional<std::string> ana_config;
     } audio;
     struct Screenshare {
       bool enabled = false;
@@ -95,7 +95,7 @@ class VideoQualityTestFixtureInterface {
     
     
     
-    absl::optional<BuiltInNetworkBehaviorConfig> config;
+    std::optional<BuiltInNetworkBehaviorConfig> config;
     struct SS {                          
       std::vector<VideoStream> streams;  
       size_t selected_stream = 0;

@@ -12,9 +12,9 @@
 #define API_VOIP_VOIP_BASE_H_
 
 #include <cstdint>
+#include <optional>
 
 #include "absl/base/attributes.h"
-#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -67,7 +67,7 @@ class VoipBase {
   
   
   virtual ChannelId CreateChannel(Transport* transport,
-                                  absl::optional<uint32_t> local_ssrc) = 0;
+                                  std::optional<uint32_t> local_ssrc) = 0;
 
   
   

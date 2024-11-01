@@ -81,7 +81,7 @@ struct CallConfig {
   Metronome* encode_metronome = nullptr;
 
   
-  absl::optional<TimeDelta> pacer_burst_interval;
+  std::optional<TimeDelta> pacer_burst_interval;
 
   
   bool enable_send_packet_batching = false;

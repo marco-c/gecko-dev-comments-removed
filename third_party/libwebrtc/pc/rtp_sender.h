@@ -19,10 +19,10 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/dtls_transport_interface.h"
 #include "api/dtmf_sender_interface.h"
@@ -276,7 +276,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  mutable absl::optional<std::string> last_transaction_id_;
+  mutable std::optional<std::string> last_transaction_id_;
   std::vector<std::string> disabled_rids_;
 
   SetStreamsObserver* set_streams_observer_ = nullptr;
@@ -303,7 +303,7 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
               int sample_rate,
               size_t number_of_channels,
               size_t number_of_frames,
-              absl::optional<int64_t> absolute_capture_timestamp_ms) override;
+              std::optional<int64_t> absolute_capture_timestamp_ms) override;
 
   
   void OnData(const void* audio_data,
@@ -313,7 +313,7 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
               size_t number_of_frames) override {
     OnData(audio_data, bits_per_sample, sample_rate, number_of_channels,
            number_of_frames,
-           absl::nullopt);
+           std::nullopt);
   }
 
   

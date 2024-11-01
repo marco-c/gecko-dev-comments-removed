@@ -15,8 +15,8 @@
 #include <stdint.h>
 
 #include <array>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/audio_view.h"
 #include "api/audio/channel_layout.h"
@@ -164,7 +164,7 @@ class AudioFrame {
     absolute_capture_timestamp_ms_ = absolute_capture_time_stamp_ms;
   }
 
-  absl::optional<int64_t> absolute_capture_timestamp_ms() const {
+  std::optional<int64_t> absolute_capture_timestamp_ms() const {
     return absolute_capture_timestamp_ms_;
   }
 
@@ -222,7 +222,7 @@ class AudioFrame {
   
   
   
-  absl::optional<int64_t> absolute_capture_timestamp_ms_;
+  std::optional<int64_t> absolute_capture_timestamp_ms_;
 };
 
 }  

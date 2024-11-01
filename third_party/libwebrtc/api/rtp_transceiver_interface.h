@@ -11,11 +11,11 @@
 #ifndef API_RTP_TRANSCEIVER_INTERFACE_H_
 #define API_RTP_TRANSCEIVER_INTERFACE_H_
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/media_types.h"
 #include "api/ref_count.h"
@@ -69,7 +69,7 @@ class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual absl::optional<std::string> mid() const = 0;
+  virtual std::optional<std::string> mid() const = 0;
 
   
   
@@ -119,14 +119,14 @@ class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual absl::optional<RtpTransceiverDirection> current_direction() const = 0;
+  virtual std::optional<RtpTransceiverDirection> current_direction() const = 0;
 
   
   
   
   
   
-  virtual absl::optional<RtpTransceiverDirection> fired_direction() const;
+  virtual std::optional<RtpTransceiverDirection> fired_direction() const;
 
   
   

@@ -29,7 +29,7 @@ enum : int {
   kAbsSendTimeExtensionId
 };
 
-absl::optional<std::string> CreateAdaptationString(
+std::optional<std::string> CreateAdaptationString(
     AudioStreamConfig::NetworkAdaptation config) {
 #if WEBRTC_ENABLE_PROTOBUF
 
@@ -61,7 +61,7 @@ absl::optional<std::string> CreateAdaptationString(
   RTC_LOG(LS_ERROR) << "audio_network_adaptation is enabled"
                        " but WEBRTC_ENABLE_PROTOBUF is false.\n"
                        "Ignoring settings.";
-  return absl::nullopt;
+  return std::nullopt;
 #endif  
 }
 }  

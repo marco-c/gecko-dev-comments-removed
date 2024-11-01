@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -23,7 +24,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/candidate.h"
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
@@ -121,11 +121,11 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   int rtt() const;
 
   int unwritable_timeout() const;
-  void set_unwritable_timeout(const absl::optional<int>& value_ms);
+  void set_unwritable_timeout(const std::optional<int>& value_ms);
   int unwritable_min_checks() const;
-  void set_unwritable_min_checks(const absl::optional<int>& value);
+  void set_unwritable_min_checks(const std::optional<int>& value);
   int inactive_timeout() const;
-  void set_inactive_timeout(const absl::optional<int>& value);
+  void set_inactive_timeout(const std::optional<int>& value);
 
   
   
@@ -186,7 +186,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   bool nominated() const;
 
   int receiving_timeout() const;
-  void set_receiving_timeout(absl::optional<int> receiving_timeout_ms);
+  void set_receiving_timeout(std::optional<int> receiving_timeout_ms);
 
   
   
@@ -219,13 +219,13 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   void ReceivedPingResponse(
       int rtt,
       absl::string_view request_id,
-      const absl::optional<uint32_t>& nomination = absl::nullopt);
+      const std::optional<uint32_t>& nomination = std::nullopt);
   std::unique_ptr<IceMessage> BuildPingRequest(
       std::unique_ptr<StunByteStringAttribute> delta)
       RTC_RUN_ON(network_thread_);
 
   int64_t last_ping_response_received() const;
-  const absl::optional<std::string>& last_ping_id_received() const;
+  const std::optional<std::string>& last_ping_id_received() const;
 
   
   int rtt_samples() const;
@@ -235,7 +235,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   int64_t last_ping_received() const;
 
   void ReceivedPing(
-      const absl::optional<std::string>& request_id = absl::nullopt);
+      const std::optional<std::string>& request_id = std::nullopt);
   
   void HandleStunBindingOrGoogPingRequest(IceMessage* msg);
   
@@ -297,7 +297,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   bool stable(int64_t now) const;
 
   
-  bool TooManyOutstandingPings(const absl::optional<int>& val) const;
+  bool TooManyOutstandingPings(const std::optional<int>& val) const;
 
   
   void SetLocalCandidateNetworkCost(uint16_t cost);
@@ -355,8 +355,8 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   }
 
   void ClearStunDictConsumer() {
-    goog_delta_consumer_ = absl::nullopt;
-    goog_delta_ack_consumer_ = absl::nullopt;
+    goog_delta_consumer_ = std::nullopt;
+    goog_delta_ack_consumer_ = std::nullopt;
   }
 
  protected:
@@ -459,7 +459,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   uint64_t total_round_trip_time_ms_ RTC_GUARDED_BY(network_thread_) = 0;
   
-  absl::optional<uint32_t> current_round_trip_time_ms_
+  std::optional<uint32_t> current_round_trip_time_ms_
       RTC_GUARDED_BY(network_thread_);
   int64_t last_ping_sent_ RTC_GUARDED_BY(
       network_thread_);  
@@ -473,21 +473,21 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
       RTC_GUARDED_BY(network_thread_);
   
   
-  absl::optional<std::string> last_ping_id_received_
+  std::optional<std::string> last_ping_id_received_
       RTC_GUARDED_BY(network_thread_);
 
-  absl::optional<int> unwritable_timeout_ RTC_GUARDED_BY(network_thread_);
-  absl::optional<int> unwritable_min_checks_ RTC_GUARDED_BY(network_thread_);
-  absl::optional<int> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
+  std::optional<int> unwritable_timeout_ RTC_GUARDED_BY(network_thread_);
+  std::optional<int> unwritable_min_checks_ RTC_GUARDED_BY(network_thread_);
+  std::optional<int> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
 
   IceCandidatePairState state_ RTC_GUARDED_BY(network_thread_);
   
-  absl::optional<int> receiving_timeout_ RTC_GUARDED_BY(network_thread_);
+  std::optional<int> receiving_timeout_ RTC_GUARDED_BY(network_thread_);
   const int64_t time_created_ms_ RTC_GUARDED_BY(network_thread_);
   const int64_t delta_internal_unix_epoch_ms_ RTC_GUARDED_BY(network_thread_);
   int num_pings_sent_ RTC_GUARDED_BY(network_thread_) = 0;
 
-  absl::optional<webrtc::IceCandidatePairDescription> log_description_
+  std::optional<webrtc::IceCandidatePairDescription> log_description_
       RTC_GUARDED_BY(network_thread_);
   webrtc::IceEventLog* ice_event_log_ RTC_GUARDED_BY(network_thread_) = nullptr;
 
@@ -495,8 +495,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   
   
-  absl::optional<bool> remote_support_goog_ping_
-      RTC_GUARDED_BY(network_thread_);
+  std::optional<bool> remote_support_goog_ping_ RTC_GUARDED_BY(network_thread_);
   std::unique_ptr<StunMessage> cached_stun_binding_
       RTC_GUARDED_BY(network_thread_);
 
@@ -504,10 +503,10 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   rtc::EventBasedExponentialMovingAverage rtt_estimate_
       RTC_GUARDED_BY(network_thread_);
 
-  absl::optional<std::function<std::unique_ptr<StunAttribute>(
+  std::optional<std::function<std::unique_ptr<StunAttribute>(
       const StunByteStringAttribute*)>>
       goog_delta_consumer_;
-  absl::optional<
+  std::optional<
       std::function<void(webrtc::RTCErrorOr<const StunUInt64Attribute*>)>>
       goog_delta_ack_consumer_;
   absl::AnyInvocable<void(Connection*, const rtc::ReceivedPacket&)>

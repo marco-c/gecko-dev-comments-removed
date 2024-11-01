@@ -16,11 +16,11 @@
 #include <iterator>
 #include <map>
 #include <numeric>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "net/dcsctp/common/sequence_numbers.h"
 #include "net/dcsctp/packet/chunk/forward_tsn_common.h"
@@ -35,7 +35,7 @@ namespace {
 
 
 
-absl::optional<std::map<UnwrappedTSN, Data>::iterator> FindBeginning(
+std::optional<std::map<UnwrappedTSN, Data>::iterator> FindBeginning(
     const std::map<UnwrappedTSN, Data>& chunks,
     std::map<UnwrappedTSN, Data>::iterator iter) {
   UnwrappedTSN prev_tsn = iter->first;
@@ -44,11 +44,11 @@ absl::optional<std::map<UnwrappedTSN, Data>::iterator> FindBeginning(
       return iter;
     }
     if (iter == chunks.begin()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     --iter;
     if (iter->first.next_value() != prev_tsn) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     prev_tsn = iter->first;
   }
@@ -58,7 +58,7 @@ absl::optional<std::map<UnwrappedTSN, Data>::iterator> FindBeginning(
 
 
 
-absl::optional<std::map<UnwrappedTSN, Data>::iterator> FindEnd(
+std::optional<std::map<UnwrappedTSN, Data>::iterator> FindEnd(
     std::map<UnwrappedTSN, Data>& chunks,
     std::map<UnwrappedTSN, Data>::iterator iter) {
   UnwrappedTSN prev_tsn = iter->first;
@@ -68,10 +68,10 @@ absl::optional<std::map<UnwrappedTSN, Data>::iterator> FindEnd(
     }
     ++iter;
     if (iter == chunks.end()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     if (iter->first != prev_tsn.next_value()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     prev_tsn = iter->first;
   }
@@ -108,11 +108,11 @@ size_t TraditionalReassemblyStreams::UnorderedStream::TryToAssembleMessage(
   
   
   
-  absl::optional<ChunkMap::iterator> start = FindBeginning(chunks_, iter);
+  std::optional<ChunkMap::iterator> start = FindBeginning(chunks_, iter);
   if (!start.has_value()) {
     return 0;
   }
-  absl::optional<ChunkMap::iterator> end = FindEnd(chunks_, iter);
+  std::optional<ChunkMap::iterator> end = FindEnd(chunks_, iter);
   if (!end.has_value()) {
     return 0;
   }

@@ -12,10 +12,10 @@
 #define API_TEST_VIDEOCODEC_TEST_FIXTURE_H_
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/test/videocodec_test_stats.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_codec_type.h"
@@ -95,15 +95,15 @@ class VideoCodecTestFixture {
     std::string filename;
     
     
-    absl::optional<int> clip_width;
-    absl::optional<int> clip_height;
+    std::optional<int> clip_width;
+    std::optional<int> clip_height;
     
-    absl::optional<int> clip_fps;
+    std::optional<int> clip_fps;
 
     
     
-    absl::optional<int> reference_width;
-    absl::optional<int> reference_height;
+    std::optional<int> reference_width;
+    std::optional<int> reference_height;
 
     
     std::string filepath;
@@ -138,8 +138,8 @@ class VideoCodecTestFixture {
     
     
     
-    absl::optional<SdpVideoFormat> encoder_format;
-    absl::optional<SdpVideoFormat> decoder_format;
+    std::optional<SdpVideoFormat> encoder_format;
+    std::optional<SdpVideoFormat> decoder_format;
 
     
     struct H264CodecSettings {

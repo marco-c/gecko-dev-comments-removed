@@ -204,7 +204,7 @@ bool JsepTransportController::NeedsIceRestart(
   return transport->needs_ice_restart();
 }
 
-absl::optional<rtc::SSLRole> JsepTransportController::GetDtlsRole(
+std::optional<rtc::SSLRole> JsepTransportController::GetDtlsRole(
     const std::string& mid) const {
   
   
@@ -217,7 +217,7 @@ absl::optional<rtc::SSLRole> JsepTransportController::GetDtlsRole(
 
   const cricket::JsepTransport* t = GetJsepTransportForMid(mid);
   if (!t) {
-    return absl::optional<rtc::SSLRole>();
+    return std::optional<rtc::SSLRole>();
   }
   return t->GetDtlsRole();
 }

@@ -15,6 +15,7 @@
 #include <deque>
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
@@ -23,7 +24,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "net/dcsctp/packet/chunk/idata_chunk.h"
 #include "net/dcsctp/packet/sctp_packet.h"
@@ -87,8 +87,8 @@ class StreamScheduler {
     
     
     
-    virtual absl::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
-                                                          size_t max_size) = 0;
+    virtual std::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
+                                                         size_t max_size) = 0;
 
     
     
@@ -132,8 +132,8 @@ class StreamScheduler {
 
     
     
-    absl::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
-                                                  size_t max_size);
+    std::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
+                                                 size_t max_size);
 
     void MakeActive(size_t bytes_to_send_next);
     void ForceMarkInactive();
@@ -181,8 +181,8 @@ class StreamScheduler {
   
   
   
-  absl::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
-                                                size_t max_size);
+  std::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
+                                               size_t max_size);
 
   std::set<StreamID> ActiveStreamsForTesting() const;
 

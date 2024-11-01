@@ -120,7 +120,7 @@ class TransmissionControlBlock : public Context {
 
   
   
-  void ClearCookieEchoChunk() { cookie_echo_chunk_ = absl::nullopt; }
+  void ClearCookieEchoChunk() { cookie_echo_chunk_ = std::nullopt; }
 
   bool has_cookie_echo_chunk() const { return cookie_echo_chunk_.has_value(); }
 
@@ -187,7 +187,7 @@ class TransmissionControlBlock : public Context {
   
   
   
-  absl::optional<CookieEchoChunk> cookie_echo_chunk_ = absl::nullopt;
+  std::optional<CookieEchoChunk> cookie_echo_chunk_ = std::nullopt;
 };
 }  
 

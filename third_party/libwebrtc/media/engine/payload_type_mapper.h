@@ -12,9 +12,9 @@
 #define MEDIA_ENGINE_PAYLOAD_TYPE_MAPPER_H_
 
 #include <map>
+#include <optional>
 #include <set>
 
-#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_format.h"
 #include "media/base/codec.h"
 
@@ -30,16 +30,15 @@ class PayloadTypeMapper {
   
   
   
-  absl::optional<int> GetMappingFor(const webrtc::SdpAudioFormat& format);
+  std::optional<int> GetMappingFor(const webrtc::SdpAudioFormat& format);
 
   
   
-  absl::optional<int> FindMappingFor(
-      const webrtc::SdpAudioFormat& format) const;
+  std::optional<int> FindMappingFor(const webrtc::SdpAudioFormat& format) const;
 
   
   
-  absl::optional<Codec> ToAudioCodec(const webrtc::SdpAudioFormat& format);
+  std::optional<Codec> ToAudioCodec(const webrtc::SdpAudioFormat& format);
 
  private:
   struct SdpAudioFormatOrdering {

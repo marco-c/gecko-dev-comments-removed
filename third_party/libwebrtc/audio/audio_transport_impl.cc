@@ -118,7 +118,7 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
   return RecordedDataIsAvailable(
       audio_data, number_of_frames, bytes_per_sample, number_of_channels,
       sample_rate, audio_delay_milliseconds, clock_drift, volume, key_pressed,
-      new_mic_volume, absl::nullopt);
+      new_mic_volume, std::nullopt);
 }
 
 
@@ -134,7 +134,7 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
     uint32_t ,
     bool key_pressed,
     uint32_t& ,
-    absl::optional<int64_t>
+    std::optional<int64_t>
         estimated_capture_time_ns) {  
   RTC_DCHECK(audio_data);
   RTC_DCHECK_GE(number_of_channels, 1);

@@ -14,8 +14,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/math_utils.h"
 
@@ -108,50 +108,50 @@ class RunningStatistics {
 
   
   
-  absl::optional<T> GetMin() const {
+  std::optional<T> GetMin() const {
     if (size_ == 0) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return min_;
   }
 
   
   
-  absl::optional<T> GetMax() const {
+  std::optional<T> GetMax() const {
     if (size_ == 0) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return max_;
   }
 
   
-  absl::optional<double> GetSum() const {
+  std::optional<double> GetSum() const {
     if (size_ == 0) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return sum_;
   }
 
   
-  absl::optional<double> GetMean() const {
+  std::optional<double> GetMean() const {
     if (size_ == 0) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return mean_;
   }
 
   
-  absl::optional<double> GetVariance() const {
+  std::optional<double> GetVariance() const {
     if (size_ == 0) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return cumul_ / size_;
   }
 
   
-  absl::optional<double> GetStandardDeviation() const {
+  std::optional<double> GetStandardDeviation() const {
     if (size_ == 0) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return std::sqrt(*GetVariance());
   }

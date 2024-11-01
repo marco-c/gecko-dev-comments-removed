@@ -14,12 +14,12 @@
 #include <stdint.h>
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/media_types.h"
 #include "api/priority.h"
 #include "api/rtp_transceiver_direction.h"
@@ -109,7 +109,7 @@ struct RTC_EXPORT RtcpFeedback {
   
   
   
-  absl::optional<RtcpFeedbackMessageType> message_type;
+  std::optional<RtcpFeedbackMessageType> message_type;
 
   
   RtcpFeedback();
@@ -139,14 +139,14 @@ struct RTC_EXPORT RtpCodec {
   cricket::MediaType kind = cricket::MEDIA_TYPE_AUDIO;
 
   
-  absl::optional<int> clock_rate;
+  std::optional<int> clock_rate;
 
   
   
   
   
   
-  absl::optional<int> num_channels;
+  std::optional<int> num_channels;
 
   
   
@@ -180,7 +180,7 @@ struct RTC_EXPORT RtpCodecCapability : public RtpCodec {
 
   
   
-  absl::optional<int> preferred_payload_type;
+  std::optional<int> preferred_payload_type;
 
   
   absl::InlinedVector<ScalabilityMode, kScalabilityModeCount> scalability_modes;
@@ -209,7 +209,7 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
   std::string uri;
 
   
-  absl::optional<int> preferred_id;
+  std::optional<int> preferred_id;
 
   
   
@@ -397,7 +397,7 @@ struct RTC_EXPORT RtpExtension {
 struct RTC_EXPORT RtpFecParameters {
   
   
-  absl::optional<uint32_t> ssrc;
+  std::optional<uint32_t> ssrc;
 
   FecMechanism mechanism = FecMechanism::RED;
 
@@ -417,7 +417,7 @@ struct RTC_EXPORT RtpFecParameters {
 struct RTC_EXPORT RtpRtxParameters {
   
   
-  absl::optional<uint32_t> ssrc;
+  std::optional<uint32_t> ssrc;
 
   
   RtpRtxParameters();
@@ -440,7 +440,7 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
-  absl::optional<uint32_t> ssrc;
+  std::optional<uint32_t> ssrc;
 
   
   
@@ -475,28 +475,25 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
-  absl::optional<int> max_bitrate_bps;
+  std::optional<int> max_bitrate_bps;
 
   
-  absl::optional<int> min_bitrate_bps;
+  std::optional<int> min_bitrate_bps;
 
   
-  absl::optional<double> max_framerate;
-
-  
-  
-  
-  absl::optional<int> num_temporal_layers;
-
-  
-  absl::optional<double> scale_resolution_down_by;
-
-  
-  absl::optional<std::string> scalability_mode;
+  std::optional<double> max_framerate;
 
   
   
   
+  std::optional<int> num_temporal_layers;
+
+  
+  std::optional<double> scale_resolution_down_by;
+
+  
+  std::optional<std::string> scalability_mode;
+
   
   
   
@@ -510,7 +507,10 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
-  absl::optional<Resolution> requested_resolution;
+  
+  
+  
+  std::optional<Resolution> requested_resolution;
 
   
   
@@ -530,7 +530,7 @@ struct RTC_EXPORT RtpEncodingParameters {
   bool adaptive_ptime = false;
 
   
-  absl::optional<RtpCodec> codec;
+  std::optional<RtpCodec> codec;
 
   bool operator==(const RtpEncodingParameters& o) const {
     return ssrc == o.ssrc && bitrate_priority == o.bitrate_priority &&
@@ -597,7 +597,7 @@ struct RtcpParameters final {
   
   
   
-  absl::optional<uint32_t> ssrc;
+  std::optional<uint32_t> ssrc;
 
   
   
@@ -653,7 +653,7 @@ struct RTC_EXPORT RtpParameters {
   
   
   
-  absl::optional<DegradationPreference> degradation_preference;
+  std::optional<DegradationPreference> degradation_preference;
 
   bool operator==(const RtpParameters& o) const {
     return mid == o.mid && codecs == o.codecs &&

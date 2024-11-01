@@ -14,11 +14,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/types/optional.h"
 #include "api/fec_controller_override.h"
 #include "api/units/data_rate.h"
 #include "api/video/encoded_image.h"
@@ -113,7 +113,7 @@ class RTC_EXPORT VideoEncoder {
     ScalingSettings(KOff);  
     ~ScalingSettings();
 
-    absl::optional<QpThresholds> thresholds;
+    std::optional<QpThresholds> thresholds;
 
     
     
@@ -242,8 +242,8 @@ class RTC_EXPORT VideoEncoder {
 
     
     
-    absl::optional<ResolutionBitrateLimits>
-    GetEncoderBitrateLimitsForResolution(int frame_size_pixels) const;
+    std::optional<ResolutionBitrateLimits> GetEncoderBitrateLimitsForResolution(
+        int frame_size_pixels) const;
 
     
     
@@ -260,12 +260,12 @@ class RTC_EXPORT VideoEncoder {
 
     
     
-    absl::optional<bool> is_qp_trusted;
+    std::optional<bool> is_qp_trusted;
 
     
     
     
-    absl::optional<int> min_qp;
+    std::optional<int> min_qp;
   };
 
   struct RTC_EXPORT RateControlParameters {
@@ -307,7 +307,7 @@ class RTC_EXPORT VideoEncoder {
     
     
     
-    absl::optional<bool> dependencies_of_last_received_decodable;
+    std::optional<bool> dependencies_of_last_received_decodable;
     
     
     
@@ -315,7 +315,7 @@ class RTC_EXPORT VideoEncoder {
     
     
     
-    absl::optional<bool> last_received_decodable;
+    std::optional<bool> last_received_decodable;
   };
 
   
@@ -339,7 +339,7 @@ class RTC_EXPORT VideoEncoder {
     size_t max_payload_size;
     
     
-    absl::optional<int> encoder_thread_limit;
+    std::optional<int> encoder_thread_limit;
   };
 
   static VideoCodecVP8 GetDefaultVp8Settings();

@@ -151,7 +151,7 @@ class ReassemblyQueue {
   std::vector<DcSctpMessage> reassembled_messages_;
 
   
-  absl::optional<DeferredResetStreams> deferred_reset_streams_;
+  std::optional<DeferredResetStreams> deferred_reset_streams_;
 
   
   size_t queued_bytes_ = 0;

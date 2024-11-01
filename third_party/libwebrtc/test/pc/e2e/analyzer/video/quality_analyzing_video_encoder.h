@@ -52,7 +52,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
                                      public EncodedImageCallback {
  public:
   using EmulatedSFUConfigMap =
-      std::map<std::string, absl::optional<EmulatedSFUConfig>>;
+      std::map<std::string, std::optional<EmulatedSFUConfig>>;
 
   QualityAnalyzingVideoEncoder(absl::string_view peer_name,
                                std::unique_ptr<VideoEncoder> delegate,
@@ -176,7 +176,7 @@ class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   VideoEncoderFactory::CodecSupport QueryCodecSupport(
       const SdpVideoFormat& format,
-      absl::optional<std::string> scalability_mode) const override;
+      std::optional<std::string> scalability_mode) const override;
   std::unique_ptr<VideoEncoder> Create(const Environment& env,
                                        const SdpVideoFormat& format) override;
 

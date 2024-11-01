@@ -73,12 +73,12 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/adaptation/resource.h"
 #include "api/async_dns_resolver.h"
 #include "api/audio/audio_device.h"
@@ -457,7 +457,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    absl::optional<int> screencast_min_bitrate;
+    std::optional<int> screencast_min_bitrate;
 
     
     
@@ -581,28 +581,28 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    absl::optional<int> ice_check_interval_strong_connectivity;
-    absl::optional<int> ice_check_interval_weak_connectivity;
-    absl::optional<int> ice_check_min_interval;
+    std::optional<int> ice_check_interval_strong_connectivity;
+    std::optional<int> ice_check_interval_weak_connectivity;
+    std::optional<int> ice_check_min_interval;
 
     
     
     
-    absl::optional<int> ice_unwritable_timeout;
+    std::optional<int> ice_unwritable_timeout;
 
     
     
     
-    absl::optional<int> ice_unwritable_min_checks;
+    std::optional<int> ice_unwritable_min_checks;
 
     
     
     
-    absl::optional<int> ice_inactive_timeout;
+    std::optional<int> ice_inactive_timeout;
 
     
     
-    absl::optional<int> stun_candidate_keepalive_interval;
+    std::optional<int> stun_candidate_keepalive_interval;
 
     
     
@@ -614,7 +614,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    absl::optional<rtc::AdapterType> network_preference;
+    std::optional<rtc::AdapterType> network_preference;
 
     
     
@@ -648,7 +648,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    absl::optional<CryptoOptions> crypto_options;
+    std::optional<CryptoOptions> crypto_options;
 
     
     
@@ -665,11 +665,11 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
 
     
     
-    absl::optional<int> report_usage_pattern_delay_ms;
+    std::optional<int> report_usage_pattern_delay_ms;
 
     
     
-    absl::optional<int> stable_writable_connection_ping_interval_ms;
+    std::optional<int> stable_writable_connection_ping_interval_ms;
 
     
     
@@ -685,7 +685,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     PortAllocatorConfig port_allocator_config;
 
     
-    absl::optional<TimeDelta> pacer_burst_interval;
+    std::optional<TimeDelta> pacer_burst_interval;
 
     
     
@@ -1187,7 +1187,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
 
   
   
-  virtual absl::optional<bool> can_trickle_ice_candidates() = 0;
+  virtual std::optional<bool> can_trickle_ice_candidates() = 0;
 
   
   

@@ -10,9 +10,9 @@
 
 #include "modules/rtp_rtcp/source/active_decode_targets_helper.h"
 
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -29,7 +29,7 @@ TEST(ActiveDecodeTargetsHelperTest,
                  0b11,
                  true, 1, chain_diffs);
 
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 }
 
 TEST(ActiveDecodeTargetsHelperTest,
@@ -50,7 +50,7 @@ TEST(ActiveDecodeTargetsHelperTest,
                  0b11,
                  true, 3, chain_diffs_key);
 
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 }
 
 TEST(ActiveDecodeTargetsHelperTest,
@@ -78,7 +78,7 @@ TEST(ActiveDecodeTargetsHelperTest,
                  0b01,
                  false, 2, chain_diffs_delta);
 
-  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  0b01,
                  true, 3, chain_diffs_key);
@@ -94,12 +94,12 @@ TEST(ActiveDecodeTargetsHelperTest,
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  kAll,
                  true, 1, chain_diffs);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  kAll,
                  false, 2, chain_diffs);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 }
 
 TEST(ActiveDecodeTargetsHelperTest,
@@ -115,7 +115,7 @@ TEST(ActiveDecodeTargetsHelperTest,
                  0b01,
                  false, 2, chain_diffs_delta);
 
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 }
 
 TEST(ActiveDecodeTargetsHelperTest, ReturnsNewBitmaskOnDeltaFrame) {
@@ -125,7 +125,7 @@ TEST(ActiveDecodeTargetsHelperTest, ReturnsNewBitmaskOnDeltaFrame) {
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  0b11,
                  true, 1, chain_diffs_key);
-  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
   int chain_diffs_delta[] = {1};
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  0b01,
@@ -142,12 +142,12 @@ TEST(ActiveDecodeTargetsHelperTest,
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  0b01,
                  true, 1, chain_diffs_key);
-  ASSERT_NE(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  ASSERT_NE(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
   int chain_diffs_delta[] = {1};
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  0b01,
                  false, 2, chain_diffs_delta);
-  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 
   
   helper.OnFrame(kDecodeTargetProtectedByChain,
@@ -167,7 +167,7 @@ TEST(ActiveDecodeTargetsHelperTest, ReturnsNulloptAfterSentOnAllActiveChains) {
                  0b111,
                  true,
                  0, chain_diffs_key);
-  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  ASSERT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 
   int chain_diffs_delta1[] = {1, 1, 1};
   helper.OnFrame(kDecodeTargetProtectedByChain,
@@ -190,7 +190,7 @@ TEST(ActiveDecodeTargetsHelperTest, ReturnsNulloptAfterSentOnAllActiveChains) {
                  kSome,
                  false,
                  3, chain_diffs_delta3);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 }
 
 TEST(ActiveDecodeTargetsHelperTest, ReturnsBitmaskWhenChanged) {
@@ -232,13 +232,13 @@ TEST(ActiveDecodeTargetsHelperTest, ReturnsNulloptWhenChainsAreNotUsed) {
   helper.OnFrame(kDecodeTargetProtectedByChain, kAll,
                  true,
                  0, kNoChainDiffs);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 
   helper.OnFrame(kDecodeTargetProtectedByChain,
                  0b101,
                  false,
                  1, kNoChainDiffs);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
 }
 
 TEST(ActiveDecodeTargetsHelperTest, Supports32DecodeTargets) {
@@ -261,7 +261,7 @@ TEST(ActiveDecodeTargetsHelperTest, Supports32DecodeTargets) {
                  some,
                  false,
                  2, chain_diffs_delta);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
+  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), std::nullopt);
   helper.OnFrame(decode_target_protected_by_chain,
                  kAll,
                  false,

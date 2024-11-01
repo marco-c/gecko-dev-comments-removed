@@ -19,10 +19,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/audio/audio_processing_statistics.h"
 #include "api/audio_options.h"
 #include "api/ref_count.h"
@@ -131,7 +131,7 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
   
   
   
-  virtual absl::optional<bool> needs_denoising() const = 0;
+  virtual std::optional<bool> needs_denoising() const = 0;
 
   
   
@@ -217,7 +217,7 @@ class AudioTrackSinkInterface {
                       int sample_rate,
                       size_t number_of_channels,
                       size_t number_of_frames,
-                      absl::optional<int64_t> absolute_capture_timestamp_ms) {
+                      std::optional<int64_t> absolute_capture_timestamp_ms) {
     
     
     return OnData(audio_data, bits_per_sample, sample_rate, number_of_channels,

@@ -113,7 +113,7 @@ TEST(FrameCadenceAdapterTest, FrameRateFollowsRateStatisticsByDefault) {
 
   for (int frame = 0; frame != 10; ++frame) {
     time_controller.AdvanceTime(TimeDelta::Millis(10));
-    absl::optional<int64_t> expected_fps =
+    std::optional<int64_t> expected_fps =
         rate.Rate(time_controller.GetClock()->TimeInMilliseconds());
     rate.Update(1, time_controller.GetClock()->TimeInMilliseconds());
     
@@ -186,7 +186,7 @@ TEST(FrameCadenceAdapterTest,
   }
   
   
-  adapter->SetZeroHertzModeEnabled(absl::nullopt);
+  adapter->SetZeroHertzModeEnabled(std::nullopt);
   
   time_controller.AdvanceTime(TimeDelta::Millis(10));
   adapter->OnFrame(CreateFrameWithTimestamps(&time_controller));
@@ -926,7 +926,7 @@ TEST_F(ZeroHertzLayerQualityConvergenceTest,
     adapter_->UpdateVideoSourceRestrictions(kRestrictedMaxFps);
   });
   ScheduleDelayed(5.5 * kMinFrameDelay, [&] {
-    adapter_->UpdateVideoSourceRestrictions(absl::nullopt);
+    adapter_->UpdateVideoSourceRestrictions(std::nullopt);
   });
   ExpectFrameEntriesAtDelaysFromNow({
       1 * kMinFrameDelay,  
@@ -1122,7 +1122,7 @@ TEST(FrameCadenceAdapterRealTimeTest,
   std::unique_ptr<FrameCadenceAdapterInterface> adapter;
   int frame_counter = 0;
   rtc::Event event;
-  absl::optional<Timestamp> start_time;
+  std::optional<Timestamp> start_time;
   test::ScopedKeyValueConfig no_field_trials;
   queue->PostTask([&] {
     adapter = CreateAdapter(no_field_trials, clock);

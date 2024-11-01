@@ -16,11 +16,11 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/stats/attribute.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
@@ -73,13 +73,12 @@ class RTC_EXPORT RTCStats {
   
   std::vector<Attribute> Attributes() const;
   template <typename T>
-  Attribute GetAttribute(const absl::optional<T>& stat) const {
+  Attribute GetAttribute(const std::optional<T>& stat) const {
     for (const auto& attribute : Attributes()) {
       if (!attribute.holds_alternative<T>()) {
         continue;
       }
-      if (absl::get<const absl::optional<T>*>(attribute.as_variant()) ==
-          &stat) {
+      if (absl::get<const std::optional<T>*>(attribute.as_variant()) == &stat) {
         return attribute;
       }
     }

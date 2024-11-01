@@ -11,9 +11,9 @@
 #ifndef API_VIDEO_CODECS_AV1_PROFILE_H_
 #define API_VIDEO_CODECS_AV1_PROFILE_H_
 
+#include <optional>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -34,13 +34,13 @@ RTC_EXPORT absl::string_view AV1ProfileToString(AV1Profile profile);
 
 
 
-absl::optional<AV1Profile> StringToAV1Profile(absl::string_view profile);
+std::optional<AV1Profile> StringToAV1Profile(absl::string_view profile);
 
 
 
 
 
-RTC_EXPORT absl::optional<AV1Profile> ParseSdpForAV1Profile(
+RTC_EXPORT std::optional<AV1Profile> ParseSdpForAV1Profile(
     const CodecParameterMap& params);
 
 

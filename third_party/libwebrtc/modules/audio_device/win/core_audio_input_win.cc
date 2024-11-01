@@ -317,7 +317,7 @@ bool CoreAudioInput::OnDataCallback(uint64_t device_frequency) {
     
     
     if (num_data_callbacks_ % 100 == 0) {
-      absl::optional<int> opt_record_delay_ms;
+      std::optional<int> opt_record_delay_ms;
       
       opt_record_delay_ms = EstimateLatencyMillis(capture_time_100ns);
       if (opt_record_delay_ms) {
@@ -392,10 +392,10 @@ bool CoreAudioInput::OnErrorCallback(ErrorType error) {
   return true;
 }
 
-absl::optional<int> CoreAudioInput::EstimateLatencyMillis(
+std::optional<int> CoreAudioInput::EstimateLatencyMillis(
     uint64_t capture_time_100ns) {
   if (!qpc_to_100ns_) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   
   
@@ -406,7 +406,7 @@ absl::optional<int> CoreAudioInput::EstimateLatencyMillis(
   
   LARGE_INTEGER perf_counter_now = {};
   if (!::QueryPerformanceCounter(&perf_counter_now)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   uint64_t qpc_now_raw = perf_counter_now.QuadPart;
   uint64_t now_time_100ns = qpc_now_raw * (*qpc_to_100ns_);

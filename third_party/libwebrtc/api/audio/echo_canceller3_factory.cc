@@ -10,8 +10,8 @@
 #include "api/audio/echo_canceller3_factory.h"
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"
 #include "modules/audio_processing/aec3/echo_canceller3.h"
@@ -28,7 +28,7 @@ std::unique_ptr<EchoControl> EchoCanceller3Factory::Create(
     int num_render_channels,
     int num_capture_channels) {
   return std::make_unique<EchoCanceller3>(
-      config_, absl::nullopt, sample_rate_hz,
+      config_, std::nullopt, sample_rate_hz,
       num_render_channels, num_capture_channels);
 }
 

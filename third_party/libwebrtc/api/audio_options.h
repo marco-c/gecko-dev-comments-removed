@@ -11,9 +11,9 @@
 #ifndef API_AUDIO_OPTIONS_H_
 #define API_AUDIO_OPTIONS_H_
 
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
@@ -34,38 +34,38 @@ struct RTC_EXPORT AudioOptions {
 
   
   
-  absl::optional<bool> echo_cancellation;
+  std::optional<bool> echo_cancellation;
 #if defined(WEBRTC_IOS)
   
   
   
   
-  absl::optional<bool> ios_force_software_aec_HACK;
+  std::optional<bool> ios_force_software_aec_HACK;
 #endif
   
-  absl::optional<bool> auto_gain_control;
+  std::optional<bool> auto_gain_control;
   
-  absl::optional<bool> noise_suppression;
+  std::optional<bool> noise_suppression;
   
-  absl::optional<bool> highpass_filter;
+  std::optional<bool> highpass_filter;
   
-  absl::optional<bool> stereo_swapping;
+  std::optional<bool> stereo_swapping;
   
-  absl::optional<int> audio_jitter_buffer_max_packets;
+  std::optional<int> audio_jitter_buffer_max_packets;
   
-  absl::optional<bool> audio_jitter_buffer_fast_accelerate;
+  std::optional<bool> audio_jitter_buffer_fast_accelerate;
   
-  absl::optional<int> audio_jitter_buffer_min_delay_ms;
-  
-  
-  
-  absl::optional<bool> audio_network_adaptor;
-  
-  absl::optional<std::string> audio_network_adaptor_config;
+  std::optional<int> audio_jitter_buffer_min_delay_ms;
   
   
   
-  absl::optional<bool> init_recording_on_send;
+  std::optional<bool> audio_network_adaptor;
+  
+  std::optional<std::string> audio_network_adaptor_config;
+  
+  
+  
+  std::optional<bool> init_recording_on_send;
 };
 
 }  

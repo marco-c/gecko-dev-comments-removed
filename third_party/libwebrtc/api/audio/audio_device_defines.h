@@ -14,9 +14,9 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
@@ -57,7 +57,7 @@ class AudioTransport {
       uint32_t currentMicLevel,
       bool keyPressed,
       uint32_t& newMicLevel,
-      absl::optional<int64_t> estimatedCaptureTimeNS) {  
+      std::optional<int64_t> estimatedCaptureTimeNS) {  
     
     
     

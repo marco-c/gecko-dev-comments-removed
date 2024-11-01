@@ -12,10 +12,10 @@
 #define API_VIDEO_CODECS_VIDEO_ENCODER_FACTORY_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/environment/environment.h"
 #include "api/units/data_rate.h"
 #include "api/video/render_resolution.h"
@@ -48,19 +48,19 @@ class VideoEncoderFactory {
 
     
     
-    virtual absl::optional<SdpVideoFormat> OnAvailableBitrate(
+    virtual std::optional<SdpVideoFormat> OnAvailableBitrate(
         const DataRate& rate) = 0;
 
     
     
-    virtual absl::optional<SdpVideoFormat> OnResolutionChange(
+    virtual std::optional<SdpVideoFormat> OnResolutionChange(
         const RenderResolution& resolution) {
-      return absl::nullopt;
+      return std::nullopt;
     }
 
     
     
-    virtual absl::optional<SdpVideoFormat> OnEncoderBroken() = 0;
+    virtual std::optional<SdpVideoFormat> OnEncoderBroken() = 0;
   };
 
   
@@ -84,7 +84,7 @@ class VideoEncoderFactory {
   
   virtual CodecSupport QueryCodecSupport(
       const SdpVideoFormat& format,
-      absl::optional<std::string> scalability_mode) const {
+      std::optional<std::string> scalability_mode) const {
     
     
     

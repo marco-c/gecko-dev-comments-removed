@@ -11,7 +11,7 @@
 #ifndef P2P_BASE_P2P_TRANSPORT_CHANNEL_ICE_FIELD_TRIALS_H_
 #define P2P_BASE_P2P_TRANSPORT_CHANNEL_ICE_FIELD_TRIALS_H_
 
-#include "absl/types/optional.h"
+#include <optional>
 
 namespace cricket {
 
@@ -23,17 +23,17 @@ struct IceFieldTrials {
   
 
   bool skip_relay_to_non_relay_connections = false;
-  absl::optional<int> max_outstanding_pings;
+  std::optional<int> max_outstanding_pings;
 
   
   
   
-  absl::optional<int> initial_select_dampening;
+  std::optional<int> initial_select_dampening;
 
   
   
   
-  absl::optional<int> initial_select_dampening_ping_received;
+  std::optional<int> initial_select_dampening_ping_received;
 
   
   
@@ -66,7 +66,7 @@ struct IceFieldTrials {
   bool stop_gather_on_strongly_connected = true;
 
   
-  absl::optional<int> override_dscp;
+  std::optional<int> override_dscp;
 
   bool piggyback_ice_check_acknowledgement = false;
   bool extra_ice_ping = false;

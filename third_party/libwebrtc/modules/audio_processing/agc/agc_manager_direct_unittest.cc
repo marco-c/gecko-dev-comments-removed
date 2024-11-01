@@ -160,7 +160,7 @@ std::string GetAgcMinMicLevelExperimentFieldTrialEnabled(
 }
 
 std::string GetAgcMinMicLevelExperimentFieldTrial(
-    absl::optional<int> min_mic_level) {
+    std::optional<int> min_mic_level) {
   if (min_mic_level.has_value()) {
     return GetAgcMinMicLevelExperimentFieldTrialEnabled(*min_mic_level);
   }
@@ -196,8 +196,8 @@ void WriteAudioBufferSamples(float samples_value,
 
 void CallPreProcessAndProcess(int num_calls,
                               const AudioBuffer& audio_buffer,
-                              absl::optional<float> speech_probability_override,
-                              absl::optional<float> speech_level_override,
+                              std::optional<float> speech_probability_override,
+                              std::optional<float> speech_level_override,
                               AgcManagerDirect& manager) {
   for (int n = 0; n < num_calls; ++n) {
     manager.AnalyzePreProcess(audio_buffer);
@@ -266,8 +266,8 @@ class SpeechSamplesReader {
   
   void Feed(int num_frames,
             int gain_db,
-            absl::optional<float> speech_probability_override,
-            absl::optional<float> speech_level_override,
+            std::optional<float> speech_probability_override,
+            std::optional<float> speech_level_override,
             AgcManagerDirect& agc) {
     float gain = std::pow(10.0f, gain_db / 20.0f);  
     is_.seekg(0, is_.beg);  
@@ -353,13 +353,13 @@ class AgcManagerDirectTestHelper {
   
   
   int CallAgcSequence(int applied_input_volume,
-                      absl::optional<float> speech_probability_override,
-                      absl::optional<float> speech_level_override) {
+                      std::optional<float> speech_probability_override,
+                      std::optional<float> speech_level_override) {
     manager.set_stream_analog_level(applied_input_volume);
     manager.AnalyzePreProcess(audio_buffer);
     manager.Process(audio_buffer, speech_probability_override,
                     speech_level_override);
-    absl::optional<int> digital_gain = manager.GetDigitalComressionGain();
+    std::optional<int> digital_gain = manager.GetDigitalComressionGain();
     if (digital_gain) {
       mock_gain_control.set_compression_gain_db(*digital_gain);
     }
@@ -372,13 +372,13 @@ class AgcManagerDirectTestHelper {
   
   
   void CallProcess(int num_calls,
-                   absl::optional<float> speech_probability_override,
-                   absl::optional<float> speech_level_override) {
+                   std::optional<float> speech_probability_override,
+                   std::optional<float> speech_level_override) {
     for (int i = 0; i < num_calls; ++i) {
       EXPECT_CALL(*mock_agc, Process(_)).WillOnce(Return());
       manager.Process(audio_buffer, speech_probability_override,
                       speech_level_override);
-      absl::optional<int> new_digital_gain = manager.GetDigitalComressionGain();
+      std::optional<int> new_digital_gain = manager.GetDigitalComressionGain();
       if (new_digital_gain) {
         mock_gain_control.set_compression_gain_db(*new_digital_gain);
       }
@@ -435,7 +435,7 @@ class AgcManagerDirectTestHelper {
 };
 
 class AgcManagerDirectParametrizedTest
-    : public ::testing::TestWithParam<std::tuple<absl::optional<int>, bool>> {
+    : public ::testing::TestWithParam<std::tuple<std::optional<int>, bool>> {
  protected:
   AgcManagerDirectParametrizedTest()
       : field_trials_(
@@ -449,9 +449,8 @@ class AgcManagerDirectParametrizedTest
   }
 
   bool IsRmsErrorOverridden() const { return std::get<1>(GetParam()); }
-  absl::optional<float> GetOverrideOrEmpty(float value) const {
-    return IsRmsErrorOverridden() ? absl::optional<float>(value)
-                                  : absl::nullopt;
+  std::optional<float> GetOverrideOrEmpty(float value) const {
+    return IsRmsErrorOverridden() ? std::optional<float>(value) : std::nullopt;
   }
 
  private:
@@ -461,8 +460,7 @@ class AgcManagerDirectParametrizedTest
 INSTANTIATE_TEST_SUITE_P(
     ,
     AgcManagerDirectParametrizedTest,
-    ::testing::Combine(testing::Values(absl::nullopt, 12, 20),
-                       testing::Bool()));
+    ::testing::Combine(testing::Values(std::nullopt, 12, 20), testing::Bool()));
 
 
 
@@ -706,7 +704,7 @@ TEST_P(AgcManagerDirectParametrizedTest, MicVolumeIsLimited) {
 }
 
 TEST_P(AgcManagerDirectParametrizedTest, CompressorStepsTowardsTarget) {
-  constexpr absl::optional<float> kNoOverride = absl::nullopt;
+  constexpr std::optional<float> kNoOverride = std::nullopt;
   const auto speech_probability_override =
       GetOverrideOrEmpty(kHighSpeechProbability);
 
@@ -778,7 +776,7 @@ TEST_P(AgcManagerDirectParametrizedTest, CompressorStepsTowardsTarget) {
 }
 
 TEST_P(AgcManagerDirectParametrizedTest, CompressorErrorIsDeemphasized) {
-  constexpr absl::optional<float> kNoOverride = absl::nullopt;
+  constexpr std::optional<float> kNoOverride = std::nullopt;
   const auto speech_probability_override =
       GetOverrideOrEmpty(kHighSpeechProbability);
 
@@ -823,7 +821,7 @@ TEST_P(AgcManagerDirectParametrizedTest, CompressorErrorIsDeemphasized) {
 }
 
 TEST_P(AgcManagerDirectParametrizedTest, CompressorReachesMaximum) {
-  constexpr absl::optional<float> kNoOverride = absl::nullopt;
+  constexpr std::optional<float> kNoOverride = std::nullopt;
   const auto speech_probability_override =
       GetOverrideOrEmpty(kHighSpeechProbability);
 
@@ -860,7 +858,7 @@ TEST_P(AgcManagerDirectParametrizedTest, CompressorReachesMaximum) {
 }
 
 TEST_P(AgcManagerDirectParametrizedTest, CompressorReachesMinimum) {
-  constexpr absl::optional<float> kNoOverride = absl::nullopt;
+  constexpr std::optional<float> kNoOverride = std::nullopt;
   const auto speech_probability_override =
       GetOverrideOrEmpty(kHighSpeechProbability);
 
@@ -907,7 +905,7 @@ TEST_P(AgcManagerDirectParametrizedTest, NoActionWhileMuted) {
                          GetOverrideOrEmpty(kHighSpeechProbability),
                          GetOverrideOrEmpty(kSpeechLevelDbfs));
 
-  absl::optional<int> new_digital_gain =
+  std::optional<int> new_digital_gain =
       helper.manager.GetDigitalComressionGain();
   if (new_digital_gain) {
     helper.mock_gain_control.set_compression_gain_db(*new_digital_gain);
@@ -1225,7 +1223,7 @@ TEST_P(AgcManagerDirectParametrizedTest,
 
 TEST_P(AgcManagerDirectParametrizedTest,
        MaxCompressionIsIncreasedAfterClipping) {
-  constexpr absl::optional<float> kNoOverride = absl::nullopt;
+  constexpr std::optional<float> kNoOverride = std::nullopt;
   const auto speech_probability_override =
       GetOverrideOrEmpty(kHighSpeechProbability);
 
@@ -1529,11 +1527,11 @@ TEST(AgcManagerDirectTest, AgcMinMicLevelExperimentCheckMinLevelWithClipping) {
   
   
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt, *manager);
+                           std::nullopt,
+                           std::nullopt, *manager);
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt,
+                           std::nullopt,
+                           std::nullopt,
                            *manager_with_override);
 
   
@@ -1591,8 +1589,8 @@ TEST(AgcManagerDirectTest,
       -18.0f, *manager);
   CallPreProcessAndProcess(
       400, audio_buffer,
-      absl::optional<float>(0.7f),
-      absl::optional<float>(-18.0f),
+      std::optional<float>(0.7f),
+      std::optional<float>(-18.0f),
       *manager_with_override);
 
   
@@ -1652,11 +1650,11 @@ TEST(AgcManagerDirectTest,
   
   
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt, *manager);
+                           std::nullopt,
+                           std::nullopt, *manager);
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt,
+                           std::nullopt,
+                           std::nullopt,
                            *manager_with_override);
 
   
@@ -1718,12 +1716,12 @@ TEST(AgcManagerDirectTest,
 
   CallPreProcessAndProcess(
       400, audio_buffer,
-      absl::optional<float>(0.7f),
-      absl::optional<float>(-18.0f), *manager);
+      std::optional<float>(0.7f),
+      std::optional<float>(-18.0f), *manager);
   CallPreProcessAndProcess(
       400, audio_buffer,
-      absl::optional<float>(0.7f),
-      absl::optional<float>(-18.0f),
+      std::optional<float>(0.7f),
+      std::optional<float>(-18.0f),
       *manager_with_override);
 
   
@@ -2059,7 +2057,7 @@ TEST_P(AgcManagerDirectParametrizedTest, EmptyRmsErrorOverrideHasNoEffect) {
   ASSERT_EQ(manager_1.recommended_analog_level(), kAnalogLevel);
   ASSERT_EQ(manager_2.recommended_analog_level(), kAnalogLevel);
 
-  reader.Feed(kNumFrames, kGainDb, absl::nullopt, absl::nullopt, manager_1);
+  reader.Feed(kNumFrames, kGainDb, std::nullopt, std::nullopt, manager_1);
   reader.Feed(kNumFrames, kGainDb, manager_2);
 
   

@@ -11,7 +11,8 @@
 #ifndef COMMON_VIDEO_H264_SPS_PARSER_H_
 #define COMMON_VIDEO_H264_SPS_PARSER_H_
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "rtc_base/bitstream_reader.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -42,17 +43,17 @@ class RTC_EXPORT SpsParser {
   };
 
   
-  static absl::optional<SpsState> ParseSps(rtc::ArrayView<const uint8_t> data);
+  static std::optional<SpsState> ParseSps(rtc::ArrayView<const uint8_t> data);
   
-  static inline absl::optional<SpsState> ParseSps(const uint8_t* data,
-                                                  size_t length) {
+  static inline std::optional<SpsState> ParseSps(const uint8_t* data,
+                                                 size_t length) {
     return ParseSps(rtc::MakeArrayView(data, length));
   }
 
  protected:
   
   
-  static absl::optional<SpsState> ParseSpsUpToVui(BitstreamReader& reader);
+  static std::optional<SpsState> ParseSpsUpToVui(BitstreamReader& reader);
 };
 
 }  

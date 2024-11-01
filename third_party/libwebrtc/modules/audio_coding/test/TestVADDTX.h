@@ -64,7 +64,7 @@ class TestVadDtx {
  protected:
   
   bool RegisterCodec(const SdpAudioFormat& codec_format,
-                     absl::optional<Vad::Aggressiveness> vad_mode);
+                     std::optional<Vad::Aggressiveness> vad_mode);
 
   
   

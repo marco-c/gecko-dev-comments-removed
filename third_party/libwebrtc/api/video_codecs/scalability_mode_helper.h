@@ -11,25 +11,26 @@
 #ifndef API_VIDEO_CODECS_SCALABILITY_MODE_HELPER_H_
 #define API_VIDEO_CODECS_SCALABILITY_MODE_HELPER_H_
 
+#include <optional>
+
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/video_codecs/scalability_mode.h"
 
 namespace webrtc {
 
 
 
-absl::optional<int> ScalabilityModeStringToNumSpatialLayers(
+std::optional<int> ScalabilityModeStringToNumSpatialLayers(
     absl::string_view scalability_mode_string);
 
 
 
-absl::optional<int> ScalabilityModeStringToNumTemporalLayers(
+std::optional<int> ScalabilityModeStringToNumTemporalLayers(
     absl::string_view scalability_mode_string);
 
 
 
-absl::optional<ScalabilityMode> ScalabilityModeStringToEnum(
+std::optional<ScalabilityMode> ScalabilityModeStringToEnum(
     absl::string_view scalability_mode_string);
 
 }  

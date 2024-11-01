@@ -11,7 +11,8 @@
 #ifndef API_VIDEO_RECORDABLE_ENCODED_FRAME_H_
 #define API_VIDEO_RECORDABLE_ENCODED_FRAME_H_
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/scoped_refptr.h"
 #include "api/units/timestamp.h"
 #include "api/video/color_space.h"
@@ -40,7 +41,7 @@ class RecordableEncodedFrame {
 
   
   
-  virtual absl::optional<webrtc::ColorSpace> color_space() const = 0;
+  virtual std::optional<webrtc::ColorSpace> color_space() const = 0;
 
   
   virtual VideoCodecType codec() const = 0;

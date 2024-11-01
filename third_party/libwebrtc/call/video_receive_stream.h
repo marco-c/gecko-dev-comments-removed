@@ -56,7 +56,7 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     std::function<void(const RecordableEncodedFrame&)> callback;
     
     
-    absl::optional<int64_t> last_keyframe_request_ms;
+    std::optional<int64_t> last_keyframe_request_ms;
   };
 
   
@@ -89,8 +89,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     uint32_t frames_rendered = 0;
 
     
-    absl::optional<std::string> decoder_implementation_name;
-    absl::optional<bool> power_efficient_decoder;
+    std::optional<std::string> decoder_implementation_name;
+    std::optional<bool> power_efficient_decoder;
     FrameCounts frame_counts;
     int decode_ms = 0;
     int max_decode_ms = 0;
@@ -130,7 +130,7 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     double total_squared_inter_frame_delay = 0;
     int64_t first_frame_received_to_decoded_ms = -1;
-    absl::optional<uint64_t> qp_sum;
+    std::optional<uint64_t> qp_sum;
 
     
     
@@ -139,8 +139,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     
     
-    absl::optional<double> corruption_score_sum;
-    absl::optional<double> corruption_score_squared_sum;
+    std::optional<double> corruption_score_sum;
+    std::optional<double> corruption_score_squared_sum;
     
     
     uint32_t corruption_score_count = 0;
@@ -160,14 +160,14 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     VideoContentType content_type = VideoContentType::UNSPECIFIED;
 
     
-    absl::optional<int64_t> estimated_playout_ntp_timestamp_ms;
+    std::optional<int64_t> estimated_playout_ntp_timestamp_ms;
     int sync_offset_ms = std::numeric_limits<int>::max();
 
     uint32_t ssrc = 0;
     std::string c_name;
     RtpReceiveStats rtp_stats;
     RtcpPacketTypeCounter rtcp_packet_type_counts;
-    absl::optional<RtpReceiveStats> rtx_rtp_stats;
+    std::optional<RtpReceiveStats> rtx_rtp_stats;
 
     
     uint32_t rtcp_sender_packets_sent = 0;
@@ -177,12 +177,12 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
 
     
     
-    absl::optional<webrtc::TimingFrameInfo> timing_frame_info;
+    std::optional<webrtc::TimingFrameInfo> timing_frame_info;
 
     
     
-    absl::optional<int64_t> last_sender_report_timestamp_ms;
-    absl::optional<int64_t> last_sender_report_remote_timestamp_ms;
+    std::optional<int64_t> last_sender_report_timestamp_ms;
+    std::optional<int64_t> last_sender_report_remote_timestamp_ms;
     uint32_t sender_reports_packets_sent = 0;
     uint64_t sender_reports_bytes_sent = 0;
     uint64_t sender_reports_reports_count = 0;

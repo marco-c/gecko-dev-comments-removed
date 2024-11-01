@@ -12,9 +12,9 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_INPUT_VOLUME_CONTROLLER_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/audio_processing.h"
 #include "modules/audio_processing/agc2/clipping_predictor.h"
@@ -95,9 +95,9 @@ class InputVolumeController final {
   
   
   
-  absl::optional<int> RecommendInputVolume(
+  std::optional<int> RecommendInputVolume(
       float speech_probability,
-      absl::optional<float> speech_level_dbfs);
+      std::optional<float> speech_level_dbfs);
 
   
   
@@ -155,7 +155,7 @@ class InputVolumeController final {
   int recommended_input_volume_ = 0;
   
   
-  absl::optional<int> applied_input_volume_;
+  std::optional<int> applied_input_volume_;
 
   bool capture_output_used_;
 
@@ -213,7 +213,7 @@ class MonoInputVolumeController {
   
   
   
-  void Process(absl::optional<int> rms_error_dbfs, float speech_probability);
+  void Process(std::optional<int> rms_error_dbfs, float speech_probability);
 
   
   int recommended_analog_level() const { return recommended_input_volume_; }

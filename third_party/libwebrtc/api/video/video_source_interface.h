@@ -12,9 +12,9 @@
 #define API_VIDEO_VIDEO_SOURCE_INTERFACE_H_
 
 #include <limits>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/video/video_sink_interface.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -50,7 +50,7 @@ struct RTC_EXPORT VideoSinkWants {
   
   
   
-  absl::optional<int> target_pixel_count;
+  std::optional<int> target_pixel_count;
   
   int max_framerate_fps = std::numeric_limits<int>::max();
 
@@ -83,7 +83,7 @@ struct RTC_EXPORT VideoSinkWants {
   std::vector<FrameSize> resolutions;
 
   
-  absl::optional<FrameSize> requested_resolution;
+  std::optional<FrameSize> requested_resolution;
 
   
   
@@ -102,7 +102,7 @@ struct RTC_EXPORT VideoSinkWants {
     
     bool any_active_without_requested_resolution = false;
   };
-  absl::optional<Aggregates> aggregates;
+  std::optional<Aggregates> aggregates;
 };
 
 inline bool operator==(const VideoSinkWants::FrameSize& a,

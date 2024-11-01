@@ -14,9 +14,9 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 
@@ -36,7 +36,7 @@ class RtpPacketizer {
 
   
   static std::unique_ptr<RtpPacketizer> Create(
-      absl::optional<VideoCodecType> type,
+      std::optional<VideoCodecType> type,
       rtc::ArrayView<const uint8_t> payload,
       PayloadSizeLimits limits,
       

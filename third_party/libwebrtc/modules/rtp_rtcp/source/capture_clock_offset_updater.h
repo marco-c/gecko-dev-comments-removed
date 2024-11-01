@@ -13,7 +13,8 @@
 
 #include <stdint.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/units/time_delta.h"
 
 namespace webrtc {
@@ -32,8 +33,8 @@ class CaptureClockOffsetUpdater {
   
   
   
-  absl::optional<int64_t> AdjustEstimatedCaptureClockOffset(
-      absl::optional<int64_t> remote_capture_clock_offset) const;
+  std::optional<int64_t> AdjustEstimatedCaptureClockOffset(
+      std::optional<int64_t> remote_capture_clock_offset) const;
 
   
   
@@ -41,14 +42,14 @@ class CaptureClockOffsetUpdater {
   
   
   
-  void SetRemoteToLocalClockOffset(absl::optional<int64_t> offset_q32x32);
+  void SetRemoteToLocalClockOffset(std::optional<int64_t> offset_q32x32);
 
   
-  static absl::optional<TimeDelta> ConvertsToTimeDela(
-      absl::optional<int64_t> q32x32);
+  static std::optional<TimeDelta> ConvertsToTimeDela(
+      std::optional<int64_t> q32x32);
 
  private:
-  absl::optional<int64_t> remote_to_local_clock_offset_;
+  std::optional<int64_t> remote_to_local_clock_offset_;
 };
 
 }  

@@ -45,11 +45,11 @@ class AbsoluteCaptureTimeInterpolator {
 
   
   
-  absl::optional<AbsoluteCaptureTime> OnReceivePacket(
+  std::optional<AbsoluteCaptureTime> OnReceivePacket(
       uint32_t source,
       uint32_t rtp_timestamp,
       int rtp_clock_frequency_hz,
-      const absl::optional<AbsoluteCaptureTime>& received_extension);
+      const std::optional<AbsoluteCaptureTime>& received_extension);
 
  private:
   friend class AbsoluteCaptureTimeSender;

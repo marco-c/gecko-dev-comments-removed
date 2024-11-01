@@ -15,10 +15,10 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
@@ -41,21 +41,21 @@ class TransceiverStableState {
  public:
   TransceiverStableState() {}
   void set_newly_created();
-  void SetMSectionIfUnset(absl::optional<std::string> mid,
-                          absl::optional<size_t> mline_index);
+  void SetMSectionIfUnset(std::optional<std::string> mid,
+                          std::optional<size_t> mline_index);
   void SetRemoteStreamIds(const std::vector<std::string>& ids);
   void SetInitSendEncodings(
       const std::vector<RtpEncodingParameters>& encodings);
   void SetFiredDirection(
-      absl::optional<RtpTransceiverDirection> fired_direction) {
+      std::optional<RtpTransceiverDirection> fired_direction) {
     fired_direction_ = fired_direction;
   }
-  absl::optional<std::string> mid() const { return mid_; }
-  absl::optional<size_t> mline_index() const { return mline_index_; }
-  absl::optional<std::vector<std::string>> remote_stream_ids() const {
+  std::optional<std::string> mid() const { return mid_; }
+  std::optional<size_t> mline_index() const { return mline_index_; }
+  std::optional<std::vector<std::string>> remote_stream_ids() const {
     return remote_stream_ids_;
   }
-  absl::optional<std::vector<RtpEncodingParameters>> init_send_encodings()
+  std::optional<std::vector<RtpEncodingParameters>> init_send_encodings()
       const {
     return init_send_encodings_;
   }
@@ -64,16 +64,16 @@ class TransceiverStableState {
   bool did_set_fired_direction() const { return fired_direction_.has_value(); }
   
   
-  absl::optional<RtpTransceiverDirection> fired_direction() const {
+  std::optional<RtpTransceiverDirection> fired_direction() const {
     RTC_DCHECK(did_set_fired_direction());
     return fired_direction_.value();
   }
 
  private:
-  absl::optional<std::string> mid_;
-  absl::optional<size_t> mline_index_;
-  absl::optional<std::vector<std::string>> remote_stream_ids_;
-  absl::optional<std::vector<RtpEncodingParameters>> init_send_encodings_;
+  std::optional<std::string> mid_;
+  std::optional<size_t> mline_index_;
+  std::optional<std::vector<std::string>> remote_stream_ids_;
+  std::optional<std::vector<RtpEncodingParameters>> init_send_encodings_;
   
   
   
@@ -84,7 +84,7 @@ class TransceiverStableState {
   bool newly_created_ = false;
   
   
-  absl::optional<absl::optional<RtpTransceiverDirection>> fired_direction_;
+  std::optional<std::optional<RtpTransceiverDirection>> fired_direction_;
 };
 
 

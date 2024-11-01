@@ -13,8 +13,9 @@
 
 #include <stdint.h>
 
+#include <optional>
+
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/ssl_identity.h"
@@ -40,7 +41,7 @@ class RTCCertificateGeneratorInterface {
   
   virtual void GenerateCertificateAsync(
       const KeyParams& key_params,
-      const absl::optional<uint64_t>& expires_ms,
+      const std::optional<uint64_t>& expires_ms,
       Callback callback) = 0;
 };
 
@@ -58,7 +59,7 @@ class RTC_EXPORT RTCCertificateGenerator
   
   static scoped_refptr<RTCCertificate> GenerateCertificate(
       const KeyParams& key_params,
-      const absl::optional<uint64_t>& expires_ms);
+      const std::optional<uint64_t>& expires_ms);
 
   RTCCertificateGenerator(Thread* signaling_thread, Thread* worker_thread);
   ~RTCCertificateGenerator() override {}
@@ -69,7 +70,7 @@ class RTC_EXPORT RTCCertificateGenerator
   
   
   void GenerateCertificateAsync(const KeyParams& key_params,
-                                const absl::optional<uint64_t>& expires_ms,
+                                const std::optional<uint64_t>& expires_ms,
                                 Callback callback) override;
 
  private:

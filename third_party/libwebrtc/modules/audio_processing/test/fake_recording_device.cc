@@ -12,8 +12,8 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "modules/audio_processing/agc2/gain_map_internal.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -45,7 +45,7 @@ class FakeRecordingDeviceWorker {
   
   int mic_level_;
   
-  absl::optional<int> undo_mic_level_;
+  std::optional<int> undo_mic_level_;
 };
 
 namespace {
@@ -94,7 +94,7 @@ class FakeRecordingDeviceLinear final : public FakeRecordingDeviceWorker {
   }
 };
 
-float ComputeAgcLinearFactor(const absl::optional<int>& undo_mic_level,
+float ComputeAgcLinearFactor(const std::optional<int>& undo_mic_level,
                              int mic_level) {
   
   

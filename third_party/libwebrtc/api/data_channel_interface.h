@@ -17,10 +17,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "api/priority.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
@@ -46,13 +46,13 @@ struct DataChannelInit {
   
   
   
-  absl::optional<int> maxRetransmitTime;
+  std::optional<int> maxRetransmitTime;
 
   
   
   
   
-  absl::optional<int> maxRetransmits;
+  std::optional<int> maxRetransmits;
 
   
   std::string protocol;
@@ -67,7 +67,7 @@ struct DataChannelInit {
   int id = -1;
 
   
-  absl::optional<PriorityValue> priority;
+  std::optional<PriorityValue> priority;
 };
 
 
@@ -163,8 +163,8 @@ class RTC_EXPORT DataChannelInterface : public RefCountInterface {
   
   virtual uint16_t maxRetransmitTime() const;
   virtual uint16_t maxRetransmits() const;
-  virtual absl::optional<int> maxRetransmitsOpt() const;
-  virtual absl::optional<int> maxPacketLifeTime() const;
+  virtual std::optional<int> maxRetransmitsOpt() const;
+  virtual std::optional<int> maxPacketLifeTime() const;
   virtual std::string protocol() const;
   virtual bool negotiated() const;
 

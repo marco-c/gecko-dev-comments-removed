@@ -12,9 +12,9 @@
 #define TEST_PC_E2E_ANALYZER_VIDEO_ENCODED_IMAGE_DATA_INJECTOR_H_
 
 #include <cstdint>
+#include <optional>
 #include <utility>
 
-#include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 
 namespace webrtc {
@@ -35,7 +35,7 @@ class EncodedImageDataInjector {
 };
 
 struct EncodedImageExtractionResult {
-  absl::optional<uint16_t> id;
+  std::optional<uint16_t> id;
   EncodedImage image;
   
   

@@ -11,7 +11,8 @@
 #ifndef MEDIA_BASE_SDP_VIDEO_FORMAT_UTILS_H_
 #define MEDIA_BASE_SDP_VIDEO_FORMAT_UTILS_H_
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "api/video_codecs/sdp_video_format.h"
 
 namespace webrtc {
@@ -50,12 +51,12 @@ void H265GenerateProfileTierLevelForAnswer(
 
 
 
-absl::optional<int> ParseSdpForVPxMaxFrameRate(const CodecParameterMap& params);
+std::optional<int> ParseSdpForVPxMaxFrameRate(const CodecParameterMap& params);
 
 
 
 
-absl::optional<int> ParseSdpForVPxMaxFrameSize(const CodecParameterMap& params);
+std::optional<int> ParseSdpForVPxMaxFrameSize(const CodecParameterMap& params);
 
 
 
