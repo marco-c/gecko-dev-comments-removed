@@ -2907,7 +2907,10 @@
 
 
 
-    addTabGroup(tabs, { color = null, label = "", insertBefore = null } = {}) {
+    addTabGroup(
+      tabs,
+      { id = null, color = null, label = "", insertBefore = null } = {}
+    ) {
       if (!tabs?.length) {
         throw new Error("Cannot create tab group with zero tabs");
       }
@@ -2916,7 +2919,9 @@
         color = this.tabGroupMenu.nextUnusedColor;
       }
 
-      let id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
+      if (!id) {
+        id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
+      }
       let group = this._createTabGroup(id, color, false, label);
       this.tabContainer.insertBefore(
         group,
@@ -5422,6 +5427,48 @@
         { once: true }
       );
       return win;
+    },
+
+    
+
+
+
+
+
+    replaceGroupWithWindow(group) {
+      
+      
+      let selectedIndex = group.tabs.indexOf(gBrowser.selectedTab);
+      if (selectedIndex < 0) {
+        
+        selectedIndex = 0;
+      }
+      let firstTab = group.tabs[selectedIndex];
+      let newWindow = this.replaceTabWithWindow(firstTab);
+
+      newWindow.addEventListener(
+        "before-initial-tab-adopted",
+        () => {
+          let tabsToGroup = group.tabs.map((tab, i) => {
+            
+            
+            
+            if (i == selectedIndex) {
+              return newWindow.gBrowser.visibleTabs[0];
+            }
+            return tab;
+          });
+          
+          
+          newWindow.gBrowser.addTabGroup(tabsToGroup, {
+            color: group.color,
+            label: group.label,
+            id: group.id,
+          });
+        },
+        { once: true }
+      );
+      return newWindow;
     },
 
     _updateTabsAfterInsert() {
