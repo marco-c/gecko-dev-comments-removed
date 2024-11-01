@@ -198,9 +198,7 @@ pub struct RenderTarget {
     
     
     
-    pub clears: FrameVec<DeviceIntRect>,
-    pub zero_clears: FrameVec<RenderTaskId>,
-    pub one_clears: FrameVec<RenderTaskId>,
+    pub clears: FrameVec<(DeviceIntRect, ColorF)>,
 
     
     
@@ -244,8 +242,6 @@ impl RenderTarget {
             prim_instances_with_scissor: FastHashMap::default(),
             clip_masks: ClipMaskInstanceList::new(memory),
             clip_batcher: ClipBatcher::new(gpu_supports_fast_clears, memory),
-            zero_clears: memory.new_vec(),
-            one_clears: memory.new_vec(),
             border_segments_complex: memory.new_vec(),
             border_segments_solid: memory.new_vec(),
             clears: memory.new_vec(),
@@ -399,7 +395,7 @@ impl RenderTarget {
             }
             RenderTaskKind::VerticalBlur(ref info) => {
                 if self.target_kind == RenderTargetKind::Alpha {
-                    self.zero_clears.push(task_id);
+                    self.clears.push((target_rect, ColorF::TRANSPARENT));
                 }
                 add_blur_instances(
                     &mut self.vertical_blurs,
@@ -414,7 +410,7 @@ impl RenderTarget {
             }
             RenderTaskKind::HorizontalBlur(ref info) => {
                 if self.target_kind == RenderTargetKind::Alpha {
-                    self.zero_clears.push(task_id);
+                    self.clears.push((target_rect, ColorF::TRANSPARENT));
                 }
                 add_blur_instances(
                     &mut self.horizontal_blurs,
@@ -461,7 +457,7 @@ impl RenderTarget {
                 
                 
                 
-                self.one_clears.push(task_id);
+                self.clears.push((target_rect, ColorF::WHITE));
             }
             RenderTaskKind::CacheMask(ref task_info) => {
                 let clear_to_one = self.clip_batcher.add(
@@ -478,12 +474,12 @@ impl RenderTarget {
                     ctx,
                 );
                 if task_info.clear_to_one || clear_to_one {
-                    self.one_clears.push(task_id);
+                    self.clears.push((target_rect, ColorF::WHITE));
                 }
             }
             RenderTaskKind::ClipRegion(ref region_task) => {
                 if region_task.clear_to_one {
-                    self.one_clears.push(task_id);
+                    self.clears.push((target_rect, ColorF::WHITE));
                 }
                 let device_rect = DeviceRect::from_size(
                     target_rect.size().to_f32(),
@@ -515,7 +511,7 @@ impl RenderTarget {
                 });
             }
             RenderTaskKind::LineDecoration(ref info) => {
-                self.clears.push(target_rect);
+                self.clears.push((target_rect, ColorF::TRANSPARENT));
 
                 self.line_decorations.push(LineDecorationJob {
                     task_rect: target_rect.to_f32(),
@@ -529,7 +525,7 @@ impl RenderTarget {
                 });
             }
             RenderTaskKind::Border(ref task_info) => {
-                self.clears.push(target_rect);
+                self.clears.push((target_rect, ColorF::TRANSPARENT));
 
                 let task_origin = target_rect.min.to_f32();
                 
