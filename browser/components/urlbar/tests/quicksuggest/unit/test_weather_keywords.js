@@ -6,17 +6,13 @@
 
 "use strict";
 
-const { WEATHER_RS_DATA } = MerinoTestUtils;
-
 add_setup(async () => {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsRecords: [
-      {
-        type: "weather",
-        weather: WEATHER_RS_DATA,
-      },
+    remoteSettingsRecords: [QuickSuggestTestUtils.weatherRecord()],
+    prefs: [
+      ["suggest.quicksuggest.nonsponsored", true],
+      ["weather.featureGate", true],
     ],
-    prefs: [["suggest.quicksuggest.nonsponsored", true]],
   });
   await MerinoTestUtils.initWeather();
 });
@@ -28,27 +24,6 @@ add_setup(async () => {
 add_task(async function () {
   await doKeywordsTest({
     desc: "No data",
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-    },
-  });
-});
-
-
-
-
-
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Empty settings",
-    settingsData: {},
     tests: {
       "": false,
       w: false,
@@ -90,6 +65,7 @@ add_task(async function () {
 
 
 
+
 add_task(async function () {
   await doKeywordsTest({
     desc: "Settings only, min keyword length = 0, pref exists",
@@ -105,7 +81,7 @@ add_task(async function () {
       wea: false,
       weat: false,
       weath: false,
-      weathe: true,
+      weathe: false,
       weather: true,
     },
   });
@@ -132,28 +108,6 @@ add_task(async function () {
       weath: false,
       weathe: true,
       weather: true,
-    },
-  });
-});
-
-
-
-
-
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Settings: empty; Nimbus: empty",
-    settingsData: {},
-    nimbusValues: {},
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
     },
   });
 });
@@ -324,12 +278,11 @@ async function doKeywordsTest({
     nimbusCleanup = await UrlbarTestUtils.initNimbusFeature(nimbusValues);
   }
 
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    {
-      type: "weather",
-      weather: settingsData,
-    },
-  ]);
+  let records = [];
+  if (settingsData) {
+    records.push(QuickSuggestTestUtils.weatherRecord(settingsData));
+  }
+  await QuickSuggestTestUtils.setRemoteSettingsRecords(records);
 
   if (minKeywordLength) {
     UrlbarPrefs.set("weather.minKeywordLength", minKeywordLength);
@@ -358,10 +311,7 @@ async function doKeywordsTest({
   await nimbusCleanup?.();
 
   await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    {
-      type: "weather",
-      weather: MerinoTestUtils.WEATHER_RS_DATA,
-    },
+    QuickSuggestTestUtils.weatherRecord(),
   ]);
 
   UrlbarPrefs.clear("weather.minKeywordLength");
@@ -521,15 +471,18 @@ add_task(async function () {
     nimbusValues: {
       weatherKeywordsMinimumLength: 3,
     },
+    
+    
     tests: [
       {
         minKeywordLength: 3,
         canIncrement: true,
         searches: {
           we: false,
-          wea: true,
-          weat: true,
+          wea: false,
+          weat: false,
           weath: true,
+          weathe: true,
         },
       },
       {
@@ -538,8 +491,9 @@ add_task(async function () {
         searches: {
           we: false,
           wea: false,
-          weat: true,
+          weat: false,
           weath: true,
+          weathe: true,
         },
       },
       {
@@ -550,6 +504,18 @@ add_task(async function () {
           wea: false,
           weat: false,
           weath: true,
+          weathe: true,
+        },
+      },
+      {
+        minKeywordLength: 6,
+        canIncrement: true,
+        searches: {
+          we: false,
+          wea: false,
+          weat: false,
+          weath: false,
+          weathe: true,
         },
       },
     ],
@@ -567,15 +533,18 @@ add_task(async function () {
       weatherKeywordsMinimumLength: 3,
       weatherKeywordsMinimumLengthCap: 6,
     },
+    
+    
     tests: [
       {
         minKeywordLength: 3,
         canIncrement: true,
         searches: {
           we: false,
-          wea: true,
-          weat: true,
+          wea: false,
+          weat: false,
           weath: true,
+          weathe: true,
         },
       },
       {
@@ -584,8 +553,9 @@ add_task(async function () {
         searches: {
           we: false,
           wea: false,
-          weat: true,
+          weat: false,
           weath: true,
+          weathe: true,
         },
       },
       {
@@ -596,6 +566,7 @@ add_task(async function () {
           wea: false,
           weat: false,
           weath: true,
+          weathe: true,
         },
       },
       {
@@ -639,16 +610,14 @@ async function doIncrementTest({
     nimbusCleanup = await UrlbarTestUtils.initNimbusFeature(nimbusValues);
   }
 
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    {
-      type: "weather",
-      weather,
-    },
-    {
+  let records = [QuickSuggestTestUtils.weatherRecord(weather)];
+  if (configuration) {
+    records.push({
       type: "configuration",
       configuration,
-    },
-  ]);
+    });
+  }
+  await QuickSuggestTestUtils.setRemoteSettingsRecords(records);
 
   let expectedResult = QuickSuggestTestUtils.weatherResult();
 
@@ -692,10 +661,7 @@ async function doIncrementTest({
   await nimbusCleanup?.();
 
   await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    {
-      type: "weather",
-      weather: MerinoTestUtils.WEATHER_RS_DATA,
-    },
+    QuickSuggestTestUtils.weatherRecord(),
   ]);
   UrlbarPrefs.clear("weather.minKeywordLength");
 }
