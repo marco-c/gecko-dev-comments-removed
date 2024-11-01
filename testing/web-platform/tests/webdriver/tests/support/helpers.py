@@ -1,6 +1,7 @@
 import collections
 import math
 import sys
+import os
 from urllib.parse import urlparse
 
 import webdriver
@@ -226,6 +227,12 @@ def is_maximized(session):
         
         not is_fullscreen(session)
     )
+
+
+def is_wayland():
+    
+    
+    return os.environ.get("WAYLAND_DISPLAY", "") != ""
 
 
 def filter_dict(source, d):
