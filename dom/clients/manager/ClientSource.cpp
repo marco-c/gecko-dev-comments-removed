@@ -576,11 +576,11 @@ RefPtr<ClientOpPromise> ClientSource::PostMessage(
   NS_ASSERT_OWNINGTHREAD(ClientSource);
 
   
-  
-  
-  if (nsPIDOMWindowInner* const window = GetInnerWindow()) {
+  nsIGlobalObject* global = GetGlobal();
+  if (global) {
     const RefPtr<ServiceWorkerContainer> container =
-        window->Navigator()->ServiceWorker();
+        global->GetServiceWorkerContainer();
+    MOZ_ASSERT_DEBUG_OR_FUZZING(container);
 
     
     
@@ -590,8 +590,7 @@ RefPtr<ClientOpPromise> ClientSource::PostMessage(
   }
 
   CopyableErrorResult rv;
-  rv.ThrowNotSupportedError(
-      "postMessage to non-Window clients is not supported yet");
+  rv.ThrowInvalidStateError("Global discarded");
   return ClientOpPromise::CreateAndReject(rv, __func__);
 }
 

@@ -346,6 +346,8 @@ let interfaceNamesInGlobalScope = [
   
   "ServiceWorker",
   
+  "ServiceWorkerContainer",
+  
   "ServiceWorkerRegistration",
   
   { name: "StorageManager", fennec: false },

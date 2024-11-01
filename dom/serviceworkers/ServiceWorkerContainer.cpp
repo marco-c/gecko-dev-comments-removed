@@ -6,10 +6,8 @@
 
 #include "ServiceWorkerContainer.h"
 
-#include "nsContentPolicyUtils.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
-#include "mozilla/dom/Document.h"
 #include "nsIServiceWorkerManager.h"
 #include "nsIScriptError.h"
 #include "nsThreadUtils.h"
@@ -20,7 +18,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsGlobalWindowInner.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/LoadInfo.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -167,36 +165,6 @@ JSObject* ServiceWorkerContainer::WrapObject(
   return ServiceWorkerContainer_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-namespace {
-
-already_AddRefed<nsIURI> GetBaseURIFromGlobal(nsIGlobalObject* aGlobal,
-                                              ErrorResult& aRv) {
-  
-  
-  
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
-  if (!window) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
-
-  Document* doc = window->GetExtantDoc();
-  if (!doc) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIURI> baseURI = doc->GetDocBaseURI();
-  if (!baseURI) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
-
-  return baseURI.forget();
-}
-
-}  
-
 already_AddRefed<Promise> ServiceWorkerContainer::Register(
     const nsAString& aScriptURL, const RegistrationOptions& aOptions,
     const CallerType aCallerType, ErrorResult& aRv) {
@@ -217,8 +185,9 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  nsCOMPtr<nsIURI> baseURI = GetBaseURIFromGlobal(global, aRv);
-  if (aRv.Failed()) {
+  nsCOMPtr<nsIURI> baseURI = global->GetBaseURI();
+  if (!baseURI) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
@@ -288,45 +257,8 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
   scopeURI = std::move(cloneWithoutRef);
 
   ServiceWorkerScopeAndScriptAreValid(clientInfo.ref(), scopeURI, scriptURI,
-                                      aRv);
+                                      aRv, global);
   if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(global);
-  if (!window) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
-
-  Document* doc = window->GetExtantDoc();
-  if (!doc) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
-      doc->NodePrincipal(),  
-      doc->NodePrincipal(),  
-      doc,                   
-      nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-      nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
-
-  
-  int16_t decision = nsIContentPolicy::ACCEPT;
-  rv = NS_CheckContentLoadPolicy(scriptURI, secCheckLoadInfo, &decision);
-  if (NS_FAILED(rv)) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return nullptr;
-  }
-  if (NS_WARN_IF(decision != nsIContentPolicy::ACCEPT)) {
-    aRv.Throw(NS_ERROR_CONTENT_BLOCKED);
     return nullptr;
   }
 
@@ -347,16 +279,21 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
   
   
   
-  Unused << GetGlobalIfValid(aRv, [&](Document* aDoc) {
+  Unused << GetGlobalIfValid(aRv, [&](nsIGlobalObject* aGlobal) {
     AutoTArray<nsString, 1> param;
     CopyUTF8toUTF16(cleanedScopeURL, *param.AppendElement());
-    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                    "Service Workers"_ns, aDoc,
-                                    nsContentUtils::eDOM_PROPERTIES,
-                                    "ServiceWorkerRegisterStorageError", param);
+    aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
+                             nsContentUtils::eDOM_PROPERTIES,
+                             "ServiceWorkerRegisterStorageError"_ns, param);
   });
 
-  window->NoteCalledRegisterForServiceWorkerScope(cleanedScopeURL);
+  
+  
+  
+  
+  if (auto* window = global->GetAsInnerWindow()) {
+    window->NoteCalledRegisterForServiceWorkerScope(cleanedScopeURL);
+  }
 
   RefPtr<Promise> outer =
       Promise::Create(global, aRv, Promise::ePropagateUserInteraction);
@@ -419,11 +356,10 @@ already_AddRefed<ServiceWorker> ServiceWorkerContainer::GetController() {
 
 already_AddRefed<Promise> ServiceWorkerContainer::GetRegistrations(
     ErrorResult& aRv) {
-  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](Document* aDoc) {
-    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                    "Service Workers"_ns, aDoc,
-                                    nsContentUtils::eDOM_PROPERTIES,
-                                    "ServiceWorkerGetRegistrationStorageError");
+  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIGlobalObject* aGlobal) {
+    aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
+                             nsContentUtils::eDOM_PROPERTIES,
+                             "ServiceWorkerGetRegistrationStorageError"_ns);
   });
   if (aRv.Failed()) {
     return nullptr;
@@ -505,11 +441,10 @@ void ServiceWorkerContainer::StartMessages() {
 
 already_AddRefed<Promise> ServiceWorkerContainer::GetRegistration(
     const nsAString& aURL, ErrorResult& aRv) {
-  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](Document* aDoc) {
-    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                    "Service Workers"_ns, aDoc,
-                                    nsContentUtils::eDOM_PROPERTIES,
-                                    "ServiceWorkerGetRegistrationStorageError");
+  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIGlobalObject* aGlobal) {
+    aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
+                             nsContentUtils::eDOM_PROPERTIES,
+                             "ServiceWorkerGetRegistrationStorageError"_ns);
   });
   if (aRv.Failed()) {
     return nullptr;
@@ -521,8 +456,8 @@ already_AddRefed<Promise> ServiceWorkerContainer::GetRegistration(
     return nullptr;
   }
 
-  nsCOMPtr<nsIURI> baseURI = GetBaseURIFromGlobal(global, aRv);
-  if (aRv.Failed()) {
+  nsCOMPtr<nsIURI> baseURI = global->GetBaseURI();
+  if (!baseURI) {
     return nullptr;
   }
 
@@ -706,19 +641,14 @@ void ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
 
 nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
     ErrorResult& aRv,
-    const std::function<void(Document*)>&& aStorageFailureCB) const {
-  
-  
-  
-  
-  nsGlobalWindowInner* window = GetOwnerWindow();
-  if (NS_WARN_IF(!window)) {
+    const std::function<void(nsIGlobalObject*)>&& aStorageFailureCB) const {
+  nsIGlobalObject* global = GetOwnerGlobal();
+  if (NS_WARN_IF(!global)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
-  nsCOMPtr<Document> doc = window->GetExtantDoc();
-  if (NS_WARN_IF(!doc)) {
+  if (NS_FAILED(CheckCurrentGlobalCorrectness())) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
@@ -727,25 +657,26 @@ nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
   
   
   
-  auto storageAllowed = StorageAllowedForWindow(window);
+  auto storageAllowed = global->GetStorageAccess();
   if (NS_WARN_IF(storageAllowed != StorageAccess::eAllow &&
                  (!StaticPrefs::privacy_partition_serviceWorkers() ||
-                  !StoragePartitioningEnabled(storageAllowed,
-                                              doc->CookieJarSettings())))) {
+                  !StoragePartitioningEnabled(
+                      storageAllowed, global->GetCookieJarSettings())))) {
     if (aStorageFailureCB) {
-      aStorageFailureCB(doc);
+      aStorageFailureCB(global);
     }
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
   
-  if (NS_WARN_IF(doc->NodePrincipal()->IsSystemPrincipal())) {
+  nsIPrincipal* principal = global->PrincipalOrNull();
+  if (NS_WARN_IF(!principal || principal->IsSystemPrincipal())) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
-  return window->AsGlobal();
+  return global;
 }
 
 void ServiceWorkerContainer::EnqueueReceivedMessageDispatch(
@@ -770,7 +701,10 @@ void ServiceWorkerContainer::RunWithJSContext(F&& aCallable) {
 }
 
 void ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage) {
-  MOZ_ASSERT(NS_IsMainThread());
+  nsresult rv = CheckCurrentGlobalCorrectness();
+  if (NS_FAILED(rv)) {
+    return;
+  }
 
   
   

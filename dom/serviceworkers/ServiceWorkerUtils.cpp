@@ -6,17 +6,25 @@
 
 #include "ServiceWorkerUtils.h"
 
+#include "nsContentPolicyUtils.h"
+
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/LoadInfo.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/ServiceWorkerGlobalScopeBinding.h"
 #include "mozilla/dom/ServiceWorkerRegistrarTypes.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRunnable.h"
 #include "nsCOMPtr.h"
+#include "nsIContentSecurityPolicy.h"
+#include "nsIGlobalObject.h"
 #include "nsIPrincipal.h"
 #include "nsIURL.h"
 #include "nsPrintfCString.h"
@@ -73,6 +81,28 @@ bool ServiceWorkerRegistrationDataIsValid(
          !aData.cacheName().IsEmpty();
 }
 
+class WorkerCheckMayLoadSyncRunnable final : public WorkerMainThreadRunnable {
+ public:
+  WorkerCheckMayLoadSyncRunnable(std::function<void(ErrorResult&)>&& aCheckFunc,
+                                 ErrorResult& aRv)
+      : WorkerMainThreadRunnable(GetCurrentThreadWorkerPrivate(),
+                                 "WorkerCheckMayLoadSyncRunnable"_ns),
+        mCheckFunc(aCheckFunc),
+        mRv(aRv) {}
+
+  bool MainThreadRun() override {
+    mCheckFunc(mRv);
+    return true;
+  }
+
+ private:
+  std::function<void(ErrorResult&)> mCheckFunc;
+  
+  
+  
+  ErrorResult& mRv;
+};
+
 namespace {
 
 void CheckForSlashEscapedCharsInPath(nsIURI* aURI, const char* aURLDescription,
@@ -104,11 +134,32 @@ void CheckForSlashEscapedCharsInPath(nsIURI* aURI, const char* aURLDescription,
   }
 }
 
+
+
+
+
+
+
+
+
+void CheckMayLoadOnMainThread(ErrorResult& aRv,
+                              std::function<void(ErrorResult&)>&& aCheckFunc) {
+  if (NS_IsMainThread()) {
+    aCheckFunc(aRv);
+    return;
+  }
+
+  RefPtr<WorkerCheckMayLoadSyncRunnable> runnable =
+      new WorkerCheckMayLoadSyncRunnable(std::move(aCheckFunc), aRv);
+  runnable->Dispatch(GetCurrentThreadWorkerPrivate(), Canceling, aRv);
+}
+
 }  
 
 void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
                                          nsIURI* aScopeURI, nsIURI* aScriptURI,
-                                         ErrorResult& aRv) {
+                                         ErrorResult& aRv,
+                                         nsIGlobalObject* aGlobalForReporting) {
   MOZ_DIAGNOSTIC_ASSERT(aScopeURI);
   MOZ_DIAGNOSTIC_ASSERT(aScriptURI);
 
@@ -127,7 +178,7 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
 
   nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
 
-  auto isExtension = !!BasePrincipal::Cast(principal)->AddonPolicy();
+  auto isExtension = principal->GetIsAddonOrExpandedAddonPrincipal();
   auto hasValidURISchemes = !isExtension ? hasHTTPScheme : hasMozExtScheme;
 
   
@@ -176,20 +227,90 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
   }
 
   
+  Document* maybeDoc = nullptr;
   
-  nsresult rv = principal->CheckMayLoadWithReporting(
-      aScopeURI, false , 0 );
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aRv.ThrowSecurityError("Scope URL is not same-origin with Client");
-    return;
+  nsCOMPtr<nsICSPEventListener> cspListener;
+  if (aGlobalForReporting) {
+    if (auto* win = aGlobalForReporting->GetAsInnerWindow()) {
+      maybeDoc = win->GetExtantDoc();
+      if (!maybeDoc) {
+        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+        return;
+      }
+      
+      
+      
+      principal = maybeDoc->NodePrincipal();
+    } else if (auto* wp = GetCurrentThreadWorkerPrivate()) {
+      cspListener = wp->CSPEventListener();
+    }
   }
 
-  rv = principal->CheckMayLoadWithReporting(
-      aScriptURI, false , 0 );
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aRv.ThrowSecurityError("Script URL is not same-origin with Client");
-    return;
-  }
+  
+  
+  
+  
+  
+  
+  
+  CheckMayLoadOnMainThread(aRv, [&](ErrorResult& aResult) {
+    nsresult rv = principal->CheckMayLoadWithReporting(
+        aScopeURI, false , 0 );
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aResult.ThrowSecurityError("Scope URL is not same-origin with Client");
+      return;
+    }
+
+    rv = principal->CheckMayLoadWithReporting(
+        aScriptURI, false ,
+        0 );
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aResult.ThrowSecurityError("Script URL is not same-origin with Client");
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
+        principal,  
+        principal,  
+        maybeDoc,   
+        nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+        nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER, Some(aClientInfo));
+
+    if (cspListener) {
+      rv = secCheckLoadInfo->SetCspEventListener(cspListener);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+        return;
+      }
+    }
+
+    
+    int16_t decision = nsIContentPolicy::ACCEPT;
+    rv = NS_CheckContentLoadPolicy(aScriptURI, secCheckLoadInfo, &decision);
+    if (NS_FAILED(rv) || NS_WARN_IF(decision != nsIContentPolicy::ACCEPT)) {
+      aResult.ThrowSecurityError("Script URL is not allowed by policy.");
+      return;
+    }
+  });
 }
 
 }  

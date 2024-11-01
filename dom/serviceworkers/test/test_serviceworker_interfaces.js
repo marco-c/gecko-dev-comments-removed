@@ -330,6 +330,8 @@ let interfaceNamesInGlobalScope = [
   
   "ServiceWorker",
   
+  "ServiceWorkerContainer",
+  
   "ServiceWorkerGlobalScope",
   
   "ServiceWorkerRegistration",

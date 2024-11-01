@@ -238,6 +238,8 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
   void NoteShuttingDown();
 
   
+  already_AddRefed<ServiceWorkerContainer> GetServiceWorkerContainer() final;
+
   RefPtr<ServiceWorker> GetOrCreateServiceWorker(
       const ServiceWorkerDescriptor& aDescriptor) final;
 

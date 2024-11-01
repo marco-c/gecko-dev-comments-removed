@@ -11,6 +11,7 @@
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 #include "nsTArray.h"
 
+class nsIGlobalObject;
 class nsIURI;
 
 namespace mozilla {
@@ -51,9 +52,25 @@ using NavigationPreloadGetStateCallback =
 bool ServiceWorkerRegistrationDataIsValid(
     const ServiceWorkerRegistrationData& aData);
 
-void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
-                                         nsIURI* aScopeURI, nsIURI* aScriptURI,
-                                         ErrorResult& aRv);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ServiceWorkerScopeAndScriptAreValid(
+    const ClientInfo& aClientInfo, nsIURI* aScopeURI, nsIURI* aScriptURI,
+    ErrorResult& aRv, nsIGlobalObject* aGlobalForReporting = nullptr);
 
 bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aGlobal);
 
