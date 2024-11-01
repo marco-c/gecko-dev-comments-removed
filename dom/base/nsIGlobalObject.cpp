@@ -494,3 +494,15 @@ bool nsIGlobalObject::ShouldResistFingerprinting(CallerType aCallerType,
   return aCallerType != CallerType::System &&
          ShouldResistFingerprinting(aTarget);
 }
+
+void nsIGlobalObject::ReportToConsole(
+    uint32_t aErrorFlags, const nsCString& aCategory,
+    nsContentUtils::PropertiesFile aFile, const nsCString& aMessageName,
+    const nsTArray<nsString>& aParams,
+    const mozilla::SourceLocation& aLocation) {
+  
+  
+  
+  nsContentUtils::ReportToConsole(aErrorFlags, aCategory, nullptr, aFile,
+                                  aMessageName.get(), aParams, aLocation);
+}

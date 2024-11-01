@@ -1685,6 +1685,15 @@ mozilla::dom::StorageManager* nsGlobalWindowInner::GetStorageManager() {
 
 bool nsGlobalWindowInner::IsEligibleForMessaging() { return IsFullyActive(); }
 
+void nsGlobalWindowInner::ReportToConsole(
+    uint32_t aErrorFlags, const nsCString& aCategory,
+    nsContentUtils::PropertiesFile aFile, const nsCString& aMessageName,
+    const nsTArray<nsString>& aParams,
+    const mozilla::SourceLocation& aLocation) {
+  nsContentUtils::ReportToConsole(aErrorFlags, aCategory, mDoc, aFile,
+                                  aMessageName.get(), aParams, aLocation);
+}
+
 nsresult nsGlobalWindowInner::EnsureScriptEnvironment() {
   
   
