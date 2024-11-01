@@ -104,10 +104,6 @@ struct FeatureOptions {
         jsStringBuiltins(false),
         jsStringConstants(false),
         requireExnref(false)
-#ifdef ENABLE_WASM_GC
-        ,
-        requireGC(false)
-#endif
 #ifdef ENABLE_WASM_TAIL_CALLS
         ,
         requireTailCalls(false)
@@ -127,10 +123,6 @@ struct FeatureOptions {
 
   
   bool requireExnref;
-#ifdef ENABLE_WASM_GC
-  
-  bool requireGC;
-#endif
 #ifdef ENABLE_WASM_TAIL_CALLS
   
   bool requireTailCalls;

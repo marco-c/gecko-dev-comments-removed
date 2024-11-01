@@ -220,8 +220,7 @@ static ImmediateType EncodeImmediateFuncType(const FuncType& funcType) {
 
 
 
-void FuncType::initImmediateTypeId(bool gcEnabled, bool isFinal,
-                                   const TypeDef* superTypeDef,
+void FuncType::initImmediateTypeId(bool isFinal, const TypeDef* superTypeDef,
                                    uint32_t recGroupLength) {
   
   
@@ -237,7 +236,7 @@ void FuncType::initImmediateTypeId(bool gcEnabled, bool isFinal,
   
   
   
-  if (gcEnabled && (!isFinal || superTypeDef || recGroupLength != 1)) {
+  if (!isFinal || superTypeDef || recGroupLength != 1) {
     immediateTypeId_ = NO_IMMEDIATE_TYPE_ID;
     return;
   }
