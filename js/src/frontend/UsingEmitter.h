@@ -20,6 +20,18 @@ class EmitterScope;
 
 
 
+enum class BlockKind : uint8_t {
+  Switch,
+  ForOf,
+
+  
+  
+  Other
+};
+
+
+
+
 
 
 
@@ -151,7 +163,7 @@ class MOZ_STACK_CLASS UsingEmitter {
 
   void setHasAwaitUsing(bool hasAwaitUsing) { hasAwaitUsing_ = hasAwaitUsing; }
 
-  [[nodiscard]] bool prepareForDisposableScopeBody();
+  [[nodiscard]] bool prepareForDisposableScopeBody(BlockKind blockKind);
 
   [[nodiscard]] bool prepareForAssignment(UsingHint hint);
 

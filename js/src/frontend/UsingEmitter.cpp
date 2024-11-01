@@ -748,12 +748,18 @@ bool UsingEmitter::emitDisposeResourcesForEnvironment(
   return true;
 }
 
-bool UsingEmitter::prepareForDisposableScopeBody() {
+bool UsingEmitter::prepareForDisposableScopeBody(BlockKind blockKind) {
   MOZ_ASSERT(state_ == State::Start);
-  tryEmitter_.emplace(bce_, TryEmitter::Kind::TryFinally,
-                      TryEmitter::ControlKind::NonSyntactic);
-  if (!tryEmitter_->emitTry()) {
-    return false;
+
+  
+  
+  
+  if (blockKind != BlockKind::ForOf) {
+    tryEmitter_.emplace(bce_, TryEmitter::Kind::TryFinally,
+                        TryEmitter::ControlKind::NonSyntactic);
+    if (!tryEmitter_->emitTry()) {
+      return false;
+    }
   }
 
 #ifdef DEBUG
