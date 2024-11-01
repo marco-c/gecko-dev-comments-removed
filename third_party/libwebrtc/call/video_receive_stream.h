@@ -138,7 +138,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     
     
-    
     std::optional<double> corruption_score_sum;
     std::optional<double> corruption_score_squared_sum;
     

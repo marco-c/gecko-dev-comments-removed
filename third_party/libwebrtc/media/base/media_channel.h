@@ -632,6 +632,17 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   uint32_t frames_rendered = 0;
   std::optional<uint64_t> qp_sum;
   
+  
+  
+  
+  
+  
+  std::optional<double> corruption_score_sum;
+  std::optional<double> corruption_score_squared_sum;
+  
+  
+  uint32_t corruption_score_count = 0;
+  
   webrtc::TimeDelta total_decode_time = webrtc::TimeDelta::Zero();
   
   webrtc::TimeDelta total_processing_delay = webrtc::TimeDelta::Zero();
