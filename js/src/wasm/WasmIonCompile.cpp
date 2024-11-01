@@ -3489,6 +3489,9 @@ class FunctionCompiler {
     if (!iter().getResults(paramCount, &loopParams)) {
       return false;
     }
+
+    
+    
     for (size_t i = 0; i < paramCount; i++) {
       MPhi* phi = MPhi::New(alloc(), loopParams[i]->type());
       if (!phi) {
@@ -3528,6 +3531,15 @@ class FunctionCompiler {
       return false;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     for (MPhiIterator phi = loopEntry->phisBegin(); phi != loopEntry->phisEnd();
          phi++) {
@@ -3576,6 +3588,19 @@ class FunctionCompiler {
       MBasicBlock* block = patch->block();
       if (block->loopDepth() >= loopEntry->loopDepth()) {
         fixupRedundantPhis(block);
+      }
+    }
+
+    
+    
+    
+    for (PendingInlineReturn& pendingReturn : pendingInlineReturns_) {
+      for (uint32_t resultIndex = 0;
+           resultIndex < pendingReturn.results.length(); resultIndex++) {
+        MDefinition** pendingResult = &pendingReturn.results[resultIndex];
+        if ((*pendingResult)->isUnused()) {
+          *pendingResult = (*pendingResult)->toPhi()->getOperand(0);
+        }
       }
     }
 
