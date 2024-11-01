@@ -11,7 +11,6 @@
 
 #include <utility>
 #include "mozilla/Maybe.h"
-#include "nsContentDLF.h"
 #include "nsStringFwd.h"
 
 struct JSContext;
@@ -66,12 +65,6 @@ class nsContentSecurityUtils {
   
   
   static bool CheckCSPFrameAncestorAndXFO(nsIChannel* aChannel);
-
-  
-  
-  
-  static bool CheckCSPMediaDocumentLoad(nsIChannel* aChannel,
-                                        nsContentDLF::DocumentKind aKind);
 
   
   

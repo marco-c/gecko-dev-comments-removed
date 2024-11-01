@@ -14,13 +14,11 @@
 #include "nsIDocShell.h"
 #include "nsCharsetSource.h"  
 #include "nsNodeInfoManager.h"
-#include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
 #include "nsDocElementCreatedNotificationRunner.h"
-#include "mozilla/Components.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/NullPrincipal.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/Components.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIPrincipal.h"
 #include "nsIMultiPartChannel.h"
@@ -144,22 +142,6 @@ nsresult MediaDocument::StartDocumentLoad(
                                             aContainer, aDocListener, aReset);
   if (NS_FAILED(rv)) {
     return rv;
-  }
-
-  
-  
-  
-  nsContentDLF::DocumentKind kind =
-      MediaDocumentKind() == MediaDocumentKind::Image
-          ? nsContentDLF::DocumentKind::Image
-          : nsContentDLF::DocumentKind::Video;
-  if (!nsContentSecurityUtils::CheckCSPMediaDocumentLoad(aChannel, kind)) {
-    aChannel->Cancel(NS_ERROR_CSP_BLOCKED_MEDIA_DOCUMENT);
-    
-    
-    RefPtr<NullPrincipal> nullPrincipal =
-        NullPrincipal::CreateWithInheritedAttributes(NodePrincipal());
-    SetPrincipals(nullPrincipal, nullPrincipal);
   }
 
   
