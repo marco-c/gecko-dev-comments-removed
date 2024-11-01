@@ -593,11 +593,18 @@ bool LinuxDumper::EnumerateMappings() {
         bool exec = (*(i2 + 3) == 'x');
         const char* i3 = my_read_hex_ptr(&offset, i2 + 6 );
         if (*i3 == ' ') {
-          const char* name = NULL;
+          const char* name = my_strchr(line, '/');
+          const char* label = my_strchr(line, '[');
+
           
           
-          if (((name = my_strchr(line, '/')) == NULL) &&
-              linux_gate_loc &&
+          if ((name != NULL) && (label != NULL)) {
+            name = NULL;
+          }
+
+          
+          
+          if ((name == NULL) && linux_gate_loc &&
               reinterpret_cast<void*>(start_addr) == linux_gate_loc) {
             name = kLinuxGateLibraryName;
             offset = 0;
