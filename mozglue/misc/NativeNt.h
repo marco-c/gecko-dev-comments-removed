@@ -1030,8 +1030,8 @@ class MOZ_RAII PEHeaders final {
 
     const wchar_t kVersionInfoKey[] = L"VS_VERSION_INFO";
     if (::RtlCompareMemory(aVerInfo->szKey, kVersionInfoKey,
-                           std::size(kVersionInfoKey)) !=
-        std::size(kVersionInfoKey)) {
+                           ArrayLength(kVersionInfoKey)) !=
+        ArrayLength(kVersionInfoKey)) {
       return nullptr;
     }
 

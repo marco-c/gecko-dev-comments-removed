@@ -498,7 +498,7 @@ static void PaintMarginGuides(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                        JoinStyle::MITER_OR_BEVEL, CapStyle::BUTT,
                         10.0f,
                        
-                       std::size(dashes), dashes,
+                       ArrayLength(dashes), dashes,
                         0.0f);
   DrawOptions options;
 

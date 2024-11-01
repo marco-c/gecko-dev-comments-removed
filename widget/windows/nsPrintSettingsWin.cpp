@@ -166,7 +166,7 @@ nsPrintSettingsWin::nsPrintSettingsWin(const nsPrintSettingsWin& aPS)
 
 void nsPrintSettingsWin::PaperSizeUnitFromDmPaperSize(short aPaperSize,
                                                       int16_t& aPaperSizeUnit) {
-  if (aPaperSize > 0 && aPaperSize < int32_t(std::size(kPaperSizeUnits))) {
+  if (aPaperSize > 0 && aPaperSize < int32_t(ArrayLength(kPaperSizeUnits))) {
     aPaperSizeUnit = kPaperSizeUnits[aPaperSize];
   }
 }

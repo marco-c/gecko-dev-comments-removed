@@ -24,7 +24,7 @@ class ProcessImagePath final {
   
   explicit ProcessImagePath(const nsAutoHandle& aProcess)
       : mType(PathType::eNtPath), mLastError(Ok()) {
-    DWORD len = std::size(mPathBuffer);
+    DWORD len = mozilla::ArrayLength(mPathBuffer);
     if (!::QueryFullProcessImageNameW(aProcess.get(), PROCESS_NAME_NATIVE,
                                       mPathBuffer, &len)) {
       mLastError = LAUNCHER_ERROR_FROM_LAST();
@@ -35,9 +35,9 @@ class ProcessImagePath final {
   
   explicit ProcessImagePath(HMODULE aImageBase)
       : mType(PathType::eDosPath), mLastError(Ok()) {
-    DWORD len =
-        ::GetModuleFileNameW(aImageBase, mPathBuffer, std::size(mPathBuffer));
-    if (!len || len == std::size(mPathBuffer)) {
+    DWORD len = ::GetModuleFileNameW(aImageBase, mPathBuffer,
+                                     mozilla::ArrayLength(mPathBuffer));
+    if (!len || len == mozilla::ArrayLength(mPathBuffer)) {
       mLastError = LAUNCHER_ERROR_FROM_LAST();
       return;
     }

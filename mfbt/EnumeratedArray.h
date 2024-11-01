@@ -83,9 +83,6 @@ class EnumeratedArray {
   const_iterator cend() const { return mArray.cend(); }
 
   
-  constexpr size_t size() const { return mArray.size(); }
-
-  
   reverse_iterator rbegin() { return mArray.rbegin(); }
   const_reverse_iterator rbegin() const { return mArray.rbegin(); }
   const_reverse_iterator crbegin() const { return mArray.crbegin(); }

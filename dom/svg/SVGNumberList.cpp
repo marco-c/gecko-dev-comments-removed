@@ -29,7 +29,8 @@ void SVGNumberList::GetValueAsString(nsAString& aValue) const {
   for (uint32_t i = 0; i < mNumbers.Length(); ++i) {
     
     
-    nsTextFormatter::snprintf(buf, std::size(buf), u"%g", double(mNumbers[i]));
+    nsTextFormatter::snprintf(buf, ArrayLength(buf), u"%g",
+                              double(mNumbers[i]));
     
     aValue.Append(buf);
     if (i != last) {

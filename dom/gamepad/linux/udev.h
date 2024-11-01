@@ -33,7 +33,7 @@ class udev_lib {
     const char* lib_names[] = {"libudev.so.0", "libudev.so.1"};
     
     
-    for (unsigned i = 0; i < std::size(lib_names); i++) {
+    for (unsigned i = 0; i < ArrayLength(lib_names); i++) {
       lib = dlopen(lib_names[i], RTLD_NOLOAD | RTLD_LAZY | RTLD_GLOBAL);
       if (lib) {
         break;
@@ -42,7 +42,7 @@ class udev_lib {
     
     
     if (!lib) {
-      for (unsigned i = 0; i < std::size(lib_names); i++) {
+      for (unsigned i = 0; i < ArrayLength(lib_names); i++) {
         lib = dlopen(lib_names[i], RTLD_LAZY | RTLD_GLOBAL);
         if (lib) {
           break;

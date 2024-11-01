@@ -110,10 +110,11 @@ void gfxMathTable::UpdateMathVariantCache(uint32_t aGlyphID,
   
 
   hb_ot_math_glyph_part_t parts[5];
-  count = std::size(parts);
+  count = MOZ_ARRAY_LENGTH(parts);
   unsigned int offset = 0;
   if (hb_ot_math_get_glyph_assembly(mHBFont, aGlyphID, direction, offset,
-                                    &count, parts, NULL) > std::size(parts))
+                                    &count, parts,
+                                    NULL) > MOZ_ARRAY_LENGTH(parts))
     return;                
   if (count <= 0) return;  
 

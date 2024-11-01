@@ -1120,11 +1120,18 @@ nsresult NS_FASTCALL NS_TableDrivenQI(void* aThis, REFNSIID aIID,
                static_cast<_implClass*>((_class*)0x1000))) -               \
            reinterpret_cast<char*>((_class*)0x1000))},
 
-#define NS_INTERFACE_TABLE_END_WITH_PTR(_ptr)                       \
-  { nullptr, 0 }                                                    \
-  }                                                                 \
-  ;                                                                 \
-  static_assert(std::size(table) > 1, "need at least 1 interface"); \
+
+
+
+
+
+
+#define NS_INTERFACE_TABLE_END_WITH_PTR(_ptr)           \
+  { nullptr, 0 }                                        \
+  }                                                     \
+  ;                                                     \
+  static_assert((sizeof(table) / sizeof(table[0])) > 1, \
+                "need at least 1 interface");           \
   rv = NS_TableDrivenQI(static_cast<void*>(_ptr), aIID, aInstancePtr, table);
 
 #define NS_INTERFACE_TABLE_END    \

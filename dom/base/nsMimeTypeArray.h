@@ -35,7 +35,7 @@ class nsMimeTypeArray final : public nsISupports, public nsWrapperCache {
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  uint32_t Length() { return ForceNoPlugins() ? 0 : std::size(mMimeTypes); }
+  uint32_t Length() { return ForceNoPlugins() ? 0 : ArrayLength(mMimeTypes); }
 
   nsMimeType* Item(uint32_t aIndex) {
     bool unused;
