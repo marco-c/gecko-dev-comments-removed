@@ -1,6 +1,8 @@
 var testCases = {
     "HKDF": [
         {length: 256, expected: algorithms["HKDF"].derivation},
+        {length: 384, expected: algorithms["HKDF"].derivation384},
+        {length: 230, expected: undefined}, 
         {length: 0, expected: undefined}, 
         {length: null, expected: undefined }, 
         {length: undefined, expected: undefined }, 
@@ -8,6 +10,8 @@ var testCases = {
     ],
     "PBKDF2": [
         {length: 256, expected: algorithms["PBKDF2"].derivation},
+        {length: 384, expected: algorithms["PBKDF2"].derivation384},
+        {length: 230, expected: undefined}, 
         {length: 0, expected: undefined}, 
         {length: null, expected: undefined }, 
         {length: undefined, expected: undefined }, 
@@ -15,6 +19,8 @@ var testCases = {
     ],
     "ECDH": [
         {length: 256, expected: algorithms["ECDH"].derivation},
+        {length: 384, expected: undefined}, 
+        {length: 230, expected: algorithms["ECDH"].derivation230},
         {length: 0, expected: emptyArray},
         {length: null, expected: algorithms["ECDH"].derivation},
         {length: undefined, expected: algorithms["ECDH"].derivation},
@@ -22,6 +28,8 @@ var testCases = {
     ],
     "X25519": [
         {length: 256, expected: algorithms["X25519"].derivation},
+        {length: 384, expected: undefined}, 
+        {length: 230, expected: algorithms["X25519"].derivation230},
         {length: 0, expected: emptyArray},
         {length: null, expected: algorithms["X25519"].derivation},
         {length: undefined, expected: algorithms["X25519"].derivation},
