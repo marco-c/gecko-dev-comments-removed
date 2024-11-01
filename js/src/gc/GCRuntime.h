@@ -19,6 +19,7 @@
 #include "gc/GCMarker.h"
 #include "gc/GCParallelTask.h"
 #include "gc/IteratorUtils.h"
+#include "gc/Memory.h"
 #include "gc/Nursery.h"
 #include "gc/Scheduling.h"
 #include "gc/Statistics.h"
@@ -572,10 +573,12 @@ class GCRuntime {
 
   
   
-  ArenaChunk* getOrAllocChunk(AutoLockGCBgAlloc& lock);
+  ArenaChunk* getOrAllocChunk(StallAndRetry stallAndRetry,
+                              AutoLockGCBgAlloc& lock);
 
   
-  ArenaChunk* takeOrAllocChunk(AutoLockGCBgAlloc& lock);
+  ArenaChunk* takeOrAllocChunk(StallAndRetry stallAndRetry,
+                               AutoLockGCBgAlloc& lock);
 
   void recycleChunk(ArenaChunk* chunk, const AutoLockGC& lock);
 
@@ -701,7 +704,7 @@ class GCRuntime {
 
   
   friend class ArenaLists;
-  ArenaChunk* pickChunk(AutoLockGCBgAlloc& lock);
+  ArenaChunk* pickChunk(StallAndRetry stallAndRetry, AutoLockGCBgAlloc& lock);
   Arena* allocateArena(ArenaChunk* chunk, Zone* zone, AllocKind kind,
                        ShouldCheckThresholds checkThresholds,
                        const AutoLockGC& lock);
