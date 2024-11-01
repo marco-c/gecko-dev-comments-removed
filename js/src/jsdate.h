@@ -51,6 +51,8 @@ bool date_now(JSContext* cx, unsigned argc, JS::Value* vp);
 
 bool date_valueOf(JSContext* cx, unsigned argc, JS::Value* vp);
 
+bool date_toPrimitive(JSContext* cx, unsigned argc, JS::Value* vp);
+
 struct YearMonthDay {
   
   int32_t year;

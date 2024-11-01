@@ -4384,7 +4384,7 @@ bool js::date_valueOf(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool date_toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
+bool js::date_toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
