@@ -140,6 +140,7 @@ var SidebarController = {
       {
         elementId: "sidebar-switcher-genai-chat",
         url: "chrome://browser/content/genai/chat.html",
+        keyId: "viewGenaiChatSidebarKb",
         menuId: "menu_genaiChatSidebar",
         menuL10nId: "menu-view-genai-chat",
         
