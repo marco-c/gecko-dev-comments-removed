@@ -90,14 +90,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
 
 void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-             JS::SourceText<char16_t>& aSrcBuf, RefPtr<JS::Stencil>& aStencil,
-             ErrorResult& aRv);
-void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
-             JS::SourceText<mozilla::Utf8Unit>& aSrcBuf,
-             RefPtr<JS::Stencil>& aStencil, ErrorResult& aRv);
-
-
-void Compile(JSContext* aCx, JS::CompileOptions& aCompileOptions,
              const nsAString& aScript, RefPtr<JS::Stencil>& aStencil,
              ErrorResult& aRv);
 
