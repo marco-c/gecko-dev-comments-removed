@@ -285,6 +285,9 @@ impl RenderTarget {
                     if !pic_task.can_use_shared_surface {
                         self.clear_color = pic_task.clear_color;
                     }
+                    if let Some(clear_color) = pic_task.clear_color {
+                        self.clears.push((target_rect, clear_color));
+                    }
 
                     
                     
