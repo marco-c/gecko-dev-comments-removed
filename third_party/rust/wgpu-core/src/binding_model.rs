@@ -17,7 +17,6 @@ use crate::{
 
 use arrayvec::ArrayVec;
 
-use once_cell::sync::OnceCell;
 #[cfg(feature = "serde")]
 use serde::Deserialize;
 #[cfg(feature = "serde")]
@@ -27,7 +26,7 @@ use std::{
     borrow::Cow,
     mem::ManuallyDrop,
     ops::Range,
-    sync::{Arc, Weak},
+    sync::{Arc, OnceLock, Weak},
 };
 
 use thiserror::Error;
@@ -498,7 +497,7 @@ pub struct BindGroupLayout {
     
     
     pub(crate) origin: bgl::Origin,
-    pub(crate) exclusive_pipeline: OnceCell<ExclusivePipeline>,
+    pub(crate) exclusive_pipeline: OnceLock<ExclusivePipeline>,
     #[allow(unused)]
     pub(crate) binding_count_validator: BindingTypeMaxCountValidator,
     

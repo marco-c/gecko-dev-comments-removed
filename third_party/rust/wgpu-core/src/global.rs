@@ -24,9 +24,10 @@ impl GlobalReport {
 }
 
 pub struct Global {
-    pub instance: Instance,
     pub(crate) surfaces: Registry<Arc<Surface>>,
     pub(crate) hub: Hub,
+    
+    pub instance: Instance,
 }
 
 impl Global {
@@ -61,13 +62,7 @@ impl Global {
     
     
     pub unsafe fn instance_as_hal<A: HalApi>(&self) -> Option<&A::Instance> {
-        self.instance.raw(A::VARIANT).map(|instance| {
-            instance
-                .as_any()
-                .downcast_ref()
-                
-                .expect("Stored instance is not of the correct type")
-        })
+        unsafe { self.instance.as_hal::<A>() }
     }
 
     
@@ -94,12 +89,10 @@ impl Drop for Global {
     fn drop(&mut self) {
         profiling::scope!("Global::drop");
         resource_log!("Global::drop");
-        let mut surfaces_locked = self.surfaces.write();
 
-        
-        self.hub.clear(&surfaces_locked);
-
-        surfaces_locked.map.clear();
+        for (_, device) in self.hub.devices.read().iter() {
+            device.prepare_to_die();
+        }
     }
 }
 

@@ -3,10 +3,10 @@
 
 
 use super::{
-    helpers, index::BoundsCheckResult, selection::Selection, Block, BlockContext, Dimension, Error,
+    index::BoundsCheckResult, selection::Selection, Block, BlockContext, Dimension, Error,
     Instruction, LocalType, LookupType, NumericType, ResultMember, Writer, WriterFlags,
 };
-use crate::{arena::Handle, proc::TypeResolution, Statement};
+use crate::{arena::Handle, proc::index::GuardedIndex, Statement};
 use spirv::Word;
 
 fn get_dimension(type_inner: &crate::TypeInner) -> Dimension {
@@ -16,6 +16,54 @@ fn get_dimension(type_inner: &crate::TypeInner) -> Dimension {
         crate::TypeInner::Matrix { .. } => Dimension::Matrix,
         _ => unreachable!(),
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+enum AccessTypeAdjustment {
+    
+    
+    
+    
+    
+    
+    
+    
+    None,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    IntroducePointer(spirv::StorageClass),
 }
 
 
@@ -293,29 +341,78 @@ impl<'w> BlockContext<'w> {
                         
                         0
                     }
+                    _ if self.function.spilled_accesses.contains(base) => {
+                        
+                        
+                        
+                        
+
+                        
+                        
+                        self.function.spilled_accesses.insert(expr_handle);
+                        self.maybe_access_spilled_composite(expr_handle, block, result_type_id)?
+                    }
                     crate::TypeInner::Vector { .. } => {
                         self.write_vector_access(expr_handle, base, index, block)?
                     }
-                    
-                    
+                    crate::TypeInner::Array { .. } | crate::TypeInner::Matrix { .. } => {
+                        
+                        match GuardedIndex::from_expression(
+                            index,
+                            &self.ir_function.expressions,
+                            self.ir_module,
+                        ) {
+                            GuardedIndex::Known(value) => {
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                let id = self.gen_id();
+                                let base_id = self.cached[base];
+                                block.body.push(Instruction::composite_extract(
+                                    result_type_id,
+                                    id,
+                                    base_id,
+                                    &[value],
+                                ));
+                                id
+                            }
+                            GuardedIndex::Expression(_) => {
+                                
+                                
+                                
+                                
+                                
+                                
+                                self.spill_to_internal_variable(base, block);
+
+                                
+                                
+                                self.function.spilled_accesses.insert(expr_handle);
+                                self.maybe_access_spilled_composite(
+                                    expr_handle,
+                                    block,
+                                    result_type_id,
+                                )?
+                            }
+                        }
+                    }
                     crate::TypeInner::BindingArray {
                         base: binding_type, ..
                     } => {
-                        let space = match self.ir_function.expressions[base] {
-                            crate::Expression::GlobalVariable(gvar) => {
-                                self.ir_module.global_variables[gvar].space
-                            }
-                            _ => unreachable!(),
-                        };
-                        let binding_array_false_pointer = LookupType::Local(LocalType::Pointer {
-                            base: binding_type,
-                            class: helpers::map_storage_class(space),
-                        });
-
+                        
+                        
                         let result_id = match self.write_expression_pointer(
                             expr_handle,
                             block,
-                            Some(binding_array_false_pointer),
+                            AccessTypeAdjustment::IntroducePointer(
+                                spirv::StorageClass::UniformConstant,
+                            ),
                         )? {
                             ExpressionPointer::Ready { pointer_id } => pointer_id,
                             ExpressionPointer::Conditional { .. } => {
@@ -345,31 +442,6 @@ impl<'w> BlockContext<'w> {
 
                         load_id
                     }
-                    crate::TypeInner::Array {
-                        base: ty_element, ..
-                    } => {
-                        let index_id = self.cached[index];
-                        let base_id = self.cached[base];
-                        let base_ty = match self.fun_info[base].ty {
-                            TypeResolution::Handle(handle) => handle,
-                            TypeResolution::Value(_) => {
-                                return Err(Error::Validation(
-                                    "Array types should always be in the arena",
-                                ))
-                            }
-                        };
-                        let (id, variable) = self.writer.promote_access_expression_to_variable(
-                            result_type_id,
-                            base_id,
-                            base_ty,
-                            index_id,
-                            ty_element,
-                            block,
-                        )?;
-                        self.function.internal_variables.push(variable);
-                        id
-                    }
-                    
                     ref other => {
                         log::error!(
                             "Unable to access base {:?} of type {:?}",
@@ -392,6 +464,17 @@ impl<'w> BlockContext<'w> {
                         
                         0
                     }
+                    _ if self.function.spilled_accesses.contains(base) => {
+                        
+                        
+                        
+                        
+
+                        
+                        
+                        self.function.spilled_accesses.insert(expr_handle);
+                        self.maybe_access_spilled_composite(expr_handle, block, result_type_id)?
+                    }
                     crate::TypeInner::Vector { .. }
                     | crate::TypeInner::Matrix { .. }
                     | crate::TypeInner::Array { .. }
@@ -410,25 +493,17 @@ impl<'w> BlockContext<'w> {
                         ));
                         id
                     }
-                    
                     crate::TypeInner::BindingArray {
                         base: binding_type, ..
                     } => {
-                        let space = match self.ir_function.expressions[base] {
-                            crate::Expression::GlobalVariable(gvar) => {
-                                self.ir_module.global_variables[gvar].space
-                            }
-                            _ => unreachable!(),
-                        };
-                        let binding_array_false_pointer = LookupType::Local(LocalType::Pointer {
-                            base: binding_type,
-                            class: helpers::map_storage_class(space),
-                        });
-
+                        
+                        
                         let result_id = match self.write_expression_pointer(
                             expr_handle,
                             block,
-                            Some(binding_array_false_pointer),
+                            AccessTypeAdjustment::IntroducePointer(
+                                spirv::StorageClass::UniformConstant,
+                            ),
                         )? {
                             ExpressionPointer::Ready { pointer_id } => pointer_id,
                             ExpressionPointer::Conditional { .. } => {
@@ -1355,58 +1430,7 @@ impl<'w> BlockContext<'w> {
             }
             crate::Expression::LocalVariable(variable) => self.function.variables[&variable].id,
             crate::Expression::Load { pointer } => {
-                match self.write_expression_pointer(pointer, block, None)? {
-                    ExpressionPointer::Ready { pointer_id } => {
-                        let id = self.gen_id();
-                        let atomic_space =
-                            match *self.fun_info[pointer].ty.inner_with(&self.ir_module.types) {
-                                crate::TypeInner::Pointer { base, space } => {
-                                    match self.ir_module.types[base].inner {
-                                        crate::TypeInner::Atomic { .. } => Some(space),
-                                        _ => None,
-                                    }
-                                }
-                                _ => None,
-                            };
-                        let instruction = if let Some(space) = atomic_space {
-                            let (semantics, scope) = space.to_spirv_semantics_and_scope();
-                            let scope_constant_id = self.get_scope_constant(scope as u32);
-                            let semantics_id = self.get_index_constant(semantics.bits());
-                            Instruction::atomic_load(
-                                result_type_id,
-                                id,
-                                pointer_id,
-                                scope_constant_id,
-                                semantics_id,
-                            )
-                        } else {
-                            Instruction::load(result_type_id, id, pointer_id, None)
-                        };
-                        block.body.push(instruction);
-                        id
-                    }
-                    ExpressionPointer::Conditional { condition, access } => {
-                        
-                        self.write_conditional_indexed_load(
-                            result_type_id,
-                            condition,
-                            block,
-                            move |id_gen, block| {
-                                
-                                let pointer_id = access.result_id.unwrap();
-                                let value_id = id_gen.next();
-                                block.body.push(access);
-                                block.body.push(Instruction::load(
-                                    result_type_id,
-                                    value_id,
-                                    pointer_id,
-                                    None,
-                                ));
-                                value_id
-                            },
-                        )
-                    }
-                }
+                self.write_checked_load(pointer, block, AccessTypeAdjustment::None, result_type_id)?
             }
             crate::Expression::FunctionArgument(index) => self.function.parameter_id(index),
             crate::Expression::CallResult(_)
@@ -1731,21 +1755,17 @@ impl<'w> BlockContext<'w> {
         &mut self,
         mut expr_handle: Handle<crate::Expression>,
         block: &mut Block,
-        return_type_override: Option<LookupType>,
+        type_adjustment: AccessTypeAdjustment,
     ) -> Result<ExpressionPointer, Error> {
-        let result_lookup_ty = match self.fun_info[expr_handle].ty {
-            TypeResolution::Handle(ty_handle) => match return_type_override {
-                
-                
-                
-                Some(ty) => ty,
-                None => LookupType::Handle(ty_handle),
-            },
-            TypeResolution::Value(ref inner) => {
-                LookupType::Local(LocalType::from_inner(inner).unwrap())
+        let result_type_id = {
+            let resolution = &self.fun_info[expr_handle].ty;
+            match type_adjustment {
+                AccessTypeAdjustment::None => self.writer.get_expression_type_id(resolution),
+                AccessTypeAdjustment::IntroducePointer(class) => {
+                    self.writer.get_resolution_pointer_id(resolution, class)
+                }
             }
         };
-        let result_type_id = self.get_type_id(result_lookup_ty);
 
         
         
@@ -1757,12 +1777,20 @@ impl<'w> BlockContext<'w> {
 
         self.temp_list.clear();
         let root_id = loop {
+            
+            
+            if let Some(spilled) = self.function.spilled_composites.get(&expr_handle) {
+                
+                
+                break spilled.id;
+            }
+
             expr_handle = match self.ir_function.expressions[expr_handle] {
                 crate::Expression::Access { base, index } => {
                     is_non_uniform_binding_array |=
                         self.is_nonuniform_binding_array_access(base, index);
 
-                    let index = crate::proc::index::GuardedIndex::Expression(index);
+                    let index = GuardedIndex::Expression(index);
                     let index_id =
                         self.write_access_chain_index(base, index, &mut accumulated_checks, block)?;
                     self.temp_list.push(index_id);
@@ -1787,7 +1815,7 @@ impl<'w> BlockContext<'w> {
                         
                         self.write_access_chain_index(
                             base,
-                            crate::proc::index::GuardedIndex::Known(index),
+                            GuardedIndex::Known(index),
                             &mut accumulated_checks,
                             block,
                         )?
@@ -1880,7 +1908,7 @@ impl<'w> BlockContext<'w> {
     fn write_access_chain_index(
         &mut self,
         base: Handle<crate::Expression>,
-        index: crate::proc::index::GuardedIndex,
+        index: GuardedIndex,
         accumulated_checks: &mut Option<Word>,
         block: &mut Block,
     ) -> Result<Word, Error> {
@@ -1944,6 +1972,133 @@ impl<'w> BlockContext<'w> {
                 
                 *chain = Some(comparison_id);
             }
+        }
+    }
+
+    fn write_checked_load(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        block: &mut Block,
+        access_type_adjustment: AccessTypeAdjustment,
+        result_type_id: Word,
+    ) -> Result<Word, Error> {
+        match self.write_expression_pointer(pointer, block, access_type_adjustment)? {
+            ExpressionPointer::Ready { pointer_id } => {
+                let id = self.gen_id();
+                let atomic_space =
+                    match *self.fun_info[pointer].ty.inner_with(&self.ir_module.types) {
+                        crate::TypeInner::Pointer { base, space } => {
+                            match self.ir_module.types[base].inner {
+                                crate::TypeInner::Atomic { .. } => Some(space),
+                                _ => None,
+                            }
+                        }
+                        _ => None,
+                    };
+                let instruction = if let Some(space) = atomic_space {
+                    let (semantics, scope) = space.to_spirv_semantics_and_scope();
+                    let scope_constant_id = self.get_scope_constant(scope as u32);
+                    let semantics_id = self.get_index_constant(semantics.bits());
+                    Instruction::atomic_load(
+                        result_type_id,
+                        id,
+                        pointer_id,
+                        scope_constant_id,
+                        semantics_id,
+                    )
+                } else {
+                    Instruction::load(result_type_id, id, pointer_id, None)
+                };
+                block.body.push(instruction);
+                Ok(id)
+            }
+            ExpressionPointer::Conditional { condition, access } => {
+                
+                let value = self.write_conditional_indexed_load(
+                    result_type_id,
+                    condition,
+                    block,
+                    move |id_gen, block| {
+                        
+                        let pointer_id = access.result_id.unwrap();
+                        let value_id = id_gen.next();
+                        block.body.push(access);
+                        block.body.push(Instruction::load(
+                            result_type_id,
+                            value_id,
+                            pointer_id,
+                            None,
+                        ));
+                        value_id
+                    },
+                );
+                Ok(value)
+            }
+        }
+    }
+
+    fn spill_to_internal_variable(&mut self, base: Handle<crate::Expression>, block: &mut Block) {
+        
+        let variable_id = self.writer.id_gen.next();
+        let pointer_type_id = self
+            .writer
+            .get_resolution_pointer_id(&self.fun_info[base].ty, spirv::StorageClass::Function);
+        let variable = super::LocalVariable {
+            id: variable_id,
+            instruction: Instruction::variable(
+                pointer_type_id,
+                variable_id,
+                spirv::StorageClass::Function,
+                None,
+            ),
+        };
+
+        let base_id = self.cached[base];
+        block
+            .body
+            .push(Instruction::store(variable.id, base_id, None));
+        self.function.spilled_composites.insert(base, variable);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn maybe_access_spilled_composite(
+        &mut self,
+        access: Handle<crate::Expression>,
+        block: &mut Block,
+        result_type_id: Word,
+    ) -> Result<Word, Error> {
+        let access_uses = self.function.access_uses.get(&access).map_or(0, |r| *r);
+        if access_uses == self.fun_info[access].ref_count {
+            
+            
+            
+            Ok(0)
+        } else {
+            
+            
+            
+            
+            self.write_checked_load(
+                access,
+                block,
+                AccessTypeAdjustment::IntroducePointer(spirv::StorageClass::Function),
+                result_type_id,
+            )
         }
     }
 
@@ -2448,7 +2603,11 @@ impl<'w> BlockContext<'w> {
                 }
                 Statement::Store { pointer, value } => {
                     let value_id = self.cached[value];
-                    match self.write_expression_pointer(pointer, &mut block, None)? {
+                    match self.write_expression_pointer(
+                        pointer,
+                        &mut block,
+                        AccessTypeAdjustment::None,
+                    )? {
                         ExpressionPointer::Ready { pointer_id } => {
                             let atomic_space = match *self.fun_info[pointer]
                                 .ty
@@ -2544,15 +2703,18 @@ impl<'w> BlockContext<'w> {
                         self.cached[result] = id;
                     }
 
-                    let pointer_id =
-                        match self.write_expression_pointer(pointer, &mut block, None)? {
-                            ExpressionPointer::Ready { pointer_id } => pointer_id,
-                            ExpressionPointer::Conditional { .. } => {
-                                return Err(Error::FeatureNotImplemented(
-                                    "Atomics out-of-bounds handling",
-                                ));
-                            }
-                        };
+                    let pointer_id = match self.write_expression_pointer(
+                        pointer,
+                        &mut block,
+                        AccessTypeAdjustment::None,
+                    )? {
+                        ExpressionPointer::Ready { pointer_id } => pointer_id,
+                        ExpressionPointer::Conditional { .. } => {
+                            return Err(Error::FeatureNotImplemented(
+                                "Atomics out-of-bounds handling",
+                            ));
+                        }
+                    };
 
                     let space = self.fun_info[pointer]
                         .ty
@@ -2713,7 +2875,11 @@ impl<'w> BlockContext<'w> {
                         .write_barrier(crate::Barrier::WORK_GROUP, &mut block);
                     let result_type_id = self.get_expression_type_id(&self.fun_info[result].ty);
                     
-                    match self.write_expression_pointer(pointer, &mut block, None)? {
+                    match self.write_expression_pointer(
+                        pointer,
+                        &mut block,
+                        AccessTypeAdjustment::None,
+                    )? {
                         ExpressionPointer::Ready { pointer_id } => {
                             let id = self.gen_id();
                             block.body.push(Instruction::load(
@@ -2815,7 +2981,7 @@ impl<'w> BlockContext<'w> {
         let _ = self.write_block(
             entry_id,
             &self.ir_function.body,
-            super::block::BlockExit::Return,
+            BlockExit::Return,
             LoopContext::default(),
             debug_info,
         )?;

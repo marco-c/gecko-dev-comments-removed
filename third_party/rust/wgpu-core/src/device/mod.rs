@@ -36,7 +36,7 @@ pub(crate) const ZERO_BUFFER_SIZE: BufferAddress = 512 << 10;
 
 const CLEANUP_WAIT_MS: u32 = 60000;
 
-const ENTRYPOINT_FAILURE_ERROR: &str = "The given EntryPoint is Invalid";
+pub(crate) const ENTRYPOINT_FAILURE_ERROR: &str = "The given EntryPoint is Invalid";
 
 pub type DeviceDescriptor<'a> = wgt::DeviceDescriptor<Label<'a>>;
 

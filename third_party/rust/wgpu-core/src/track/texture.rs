@@ -18,7 +18,7 @@
 
 
 
-use super::{range::RangedStates, PendingTransition, PendingTransitionList, TrackerIndex};
+use super::{range::RangedStates, PendingTransition, PendingTransitionList};
 use crate::{
     resource::{Texture, TextureInner, TextureView, Trackable},
     snatch::SnatchGuard,
@@ -825,32 +825,6 @@ impl DeviceTextureTracker {
             let tex = tex.try_raw(snatch_guard).unwrap();
             pending.into_hal(tex)
         })
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn remove(&mut self, index: TrackerIndex) -> bool {
-        let index = index.as_usize();
-
-        if index >= self.metadata.size() {
-            return false;
-        }
-
-        self.tracker_assert_in_bounds(index);
-
-        unsafe {
-            if self.metadata.contains_unchecked(index) {
-                self.current_state_set.complex.remove(&index);
-                self.metadata.remove(index);
-                return true;
-            }
-        }
-
-        false
     }
 }
 

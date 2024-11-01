@@ -6986,7 +6986,7 @@ pub struct ImageCopyTextureTagged<T> {
     pub premultiplied_alpha: bool,
 }
 
-impl<T: Copy> ImageCopyTextureTagged<T> {
+impl<T> ImageCopyTextureTagged<T> {
     
     pub fn to_untagged(self) -> ImageCopyTexture<T> {
         ImageCopyTexture {
