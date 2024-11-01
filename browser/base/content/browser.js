@@ -2526,8 +2526,6 @@ function FillHistoryMenu(event) {
         entry.hasUserInteraction === false &&
         
         j != end - 1 &&
-        j != start &&
-        
         j != index
       ) {
         continue;

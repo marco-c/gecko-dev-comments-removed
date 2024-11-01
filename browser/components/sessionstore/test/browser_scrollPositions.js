@@ -187,6 +187,11 @@ async function test_scroll_background_tabs(aURL) {
   await BrowserTestUtils.browserLoaded(browser);
 
   
+  await SpecialPowers.spawn(browser, [], () => {
+    content.document.notifyUserGestureActivation();
+  });
+
+  
   await setScrollPosition(browser, SCROLL_X, SCROLL_Y);
   await checkScroll(
     tab,
