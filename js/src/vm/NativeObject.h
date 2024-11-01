@@ -289,9 +289,6 @@ class ObjectElements {
   
   uint32_t length;
 
-  bool hasNonwritableArrayLength() const {
-    return flags & NONWRITABLE_ARRAY_LENGTH;
-  }
   void setNonwritableArrayLength() {
     
     MOZ_ASSERT(capacity == initializedLength);
@@ -335,13 +332,11 @@ class ObjectElements {
   void markNonPacked() { flags |= NON_PACKED; }
 
   void markMaybeInIteration() { flags |= MAYBE_IN_ITERATION; }
-  bool maybeInIteration() { return flags & MAYBE_IN_ITERATION; }
 
   void setNotExtensible() {
     MOZ_ASSERT(!isNotExtensible());
     flags |= NOT_EXTENSIBLE;
   }
-  bool isNotExtensible() { return flags & NOT_EXTENSIBLE; }
 
   void seal() {
     MOZ_ASSERT(isNotExtensible());
@@ -434,6 +429,14 @@ class ObjectElements {
   uint32_t numAllocatedElements() const {
     return VALUES_PER_HEADER + capacity + numShiftedElements();
   }
+
+  bool hasNonwritableArrayLength() const {
+    return flags & NONWRITABLE_ARRAY_LENGTH;
+  }
+
+  bool maybeInIteration() { return flags & MAYBE_IN_ITERATION; }
+
+  bool isNotExtensible() { return flags & NOT_EXTENSIBLE; }
 
   
   
