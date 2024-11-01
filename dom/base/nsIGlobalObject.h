@@ -33,6 +33,7 @@
 class nsCycleCollectionTraversalCallback;
 class nsICookieJarSettings;
 class nsIPrincipal;
+class nsIURI;
 class nsPIDOMWindowInner;
 
 namespace mozilla {
@@ -194,6 +195,10 @@ class nsIGlobalObject : public nsISupports {
   GetExistingDebuggerNotificationManager() {
     return nullptr;
   }
+
+  
+  
+  virtual nsIURI* GetBaseURI() const;
 
   virtual mozilla::Maybe<mozilla::dom::ClientInfo> GetClientInfo() const;
   virtual mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;

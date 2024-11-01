@@ -276,6 +276,8 @@ void nsIGlobalObject::NotifyGlobalThawed() {
       });
 }
 
+nsIURI* nsIGlobalObject::GetBaseURI() const { return nullptr; }
+
 Maybe<ClientInfo> nsIGlobalObject::GetClientInfo() const {
   
   
