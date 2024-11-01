@@ -14,8 +14,13 @@
 
 
 
+
+
 async_test(t => {
   const id = String(Math.random());
+  document.cookie = "FirstPartyStrict=" + id + "; SameSite=Strict; Secure";
+  document.cookie = "FirstPartyLax=" + id + "; SameSite=Lax; Secure";
+  document.cookie = "FirstPartyNone=" + id + "; SameSite=None; Secure";
   
   window.addEventListener("message", t.step_func(e => {
     switch (e.data.type) {
@@ -29,13 +34,13 @@ async_test(t => {
       case 'iframe-set':
         
         assert_equals(e.data.message, "Set third-party data");
-        window.open("https://{{hosts[alt][]}}:{{ports[https][0]}}/partitioned-popins/resources/partitioned-popins.cookies-popin.py?id="+id, '_blank', 'popin');
+        window.open("https://{{hosts[alt][]}}:{{ports[https][0]}}/partitioned-popins/resources/partitioned-popins.cookies-popin.sub.py?id="+id, '_blank', 'popin');
         break;
       case 'popin-read':
         
         
         
-        assert_equals(e.data.message, "ReadOnLoad:ThirdPartyNone-,ReadOnFetch:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnDocument:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnFetchAfterRSA:ThirdPartyNone-ThirdPartyNonePopin-ThirdPartyNonePopinAfterRSA-,ReadOnDocumentAfterRSA:ThirdPartyNone-ThirdPartyNonePopin-ThirdPartyNonePopinAfterRSA-");
+        assert_equals(e.data.message, "ReadOnLoad:ThirdPartyNone-,ReadOnFetch:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnDocument:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnFetchAfterRSA:ThirdPartyNone-ThirdPartyNonePopin-ThirdPartyNonePopinAfterRSA-,ReadOnDocumentAfterRSA:ThirdPartyNone-ThirdPartyNonePopin-ThirdPartyNonePopinAfterRSA-,ReadInPopinIframe:ThirdPartyNone-,ReadInPopinIframeAfterRSA:FirstPartyNone-ThirdPartyNone-FirstPartyNoneAfterRSA-ThirdPartyNoneAfterRSA-");
         t.done();
         break;
     }

@@ -14,8 +14,13 @@
 
 
 
+
+
 async_test(t => {
   const id = String(Math.random());
+  document.cookie = "FirstPartyStrict=" + id + "; SameSite=Strict; Secure";
+  document.cookie = "FirstPartyLax=" + id + "; SameSite=Lax; Secure";
+  document.cookie = "FirstPartyNone=" + id + "; SameSite=None; Secure";
   
   window.addEventListener("message", t.step_func(e => {
     switch (e.data.type) {
@@ -29,12 +34,12 @@ async_test(t => {
       case 'iframe-set':
         
         assert_equals(e.data.message, "Set third-party data");
-        window.open("https://{{hosts[alt][]}}:{{ports[https][0]}}/partitioned-popins/resources/partitioned-popins.cookies-popin.py?id="+id, '_blank', 'popin');
+        window.open("https://{{hosts[alt][]}}:{{ports[https][0]}}/partitioned-popins/resources/partitioned-popins.cookies-popin.sub.py?id="+id, '_blank', 'popin');
         break;
       case 'popin-read':
         
         
-        assert_equals(e.data.message, "ReadOnLoad:FirstPartyNone-ThirdPartyNone-,ReadOnFetch:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-,ReadOnDocument:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-,ReadOnFetchAfterRSA:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-FirstPartyNonePopinAfterRSA-ThirdPartyNonePopinAfterRSA-,ReadOnDocumentAfterRSA:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-FirstPartyNonePopinAfterRSA-ThirdPartyNonePopinAfterRSA-");
+        assert_equals(e.data.message, "ReadOnLoad:FirstPartyNone-ThirdPartyNone-,ReadOnFetch:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-,ReadOnDocument:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-,ReadOnFetchAfterRSA:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-FirstPartyNonePopinAfterRSA-ThirdPartyNonePopinAfterRSA-,ReadOnDocumentAfterRSA:FirstPartyNone-ThirdPartyNone-FirstPartyNonePopin-ThirdPartyNonePopin-FirstPartyNonePopinAfterRSA-ThirdPartyNonePopinAfterRSA-,ReadInPopinIframe:FirstPartyNone-ThirdPartyNone-,ReadInPopinIframeAfterRSA:FirstPartyNone-ThirdPartyNone-FirstPartyNoneAfterRSA-ThirdPartyNoneAfterRSA-");
         t.done();
         break;
     }
