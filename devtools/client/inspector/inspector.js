@@ -230,15 +230,28 @@ Inspector.prototype = {
       onDestroyed: this._onTargetDestroyed,
     });
 
-    await this.toolbox.resourceCommand.watchResources(
-      [
-        this.toolbox.resourceCommand.TYPES.ROOT_NODE,
-        
-        this.toolbox.resourceCommand.TYPES.CSS_CHANGE,
-        this.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT,
-      ],
-      { onAvailable: this.onResourceAvailable }
-    );
+    const { TYPES } = this.toolbox.resourceCommand;
+    this._watchedResources = [
+      
+      TYPES.CSS_CHANGE,
+      TYPES.DOCUMENT_EVENT,
+    ];
+    
+    
+    
+    
+    
+    const isBrowserToolbox =
+      this.commands.descriptorFront.isBrowserProcessDescriptor;
+    const isWebExtension =
+      this.commands.descriptorFront.isWebExtensionDescriptor;
+    if (isBrowserToolbox || isWebExtension) {
+      this._watchedResources.push(TYPES.ROOT_NODE);
+    }
+
+    await this.toolbox.resourceCommand.watchResources(this._watchedResources, {
+      onAvailable: this.onResourceAvailable,
+    });
 
     
     
@@ -274,20 +287,16 @@ Inspector.prototype = {
     return this;
   },
 
+  
+  
+  
   async _onTargetAvailable({ targetFront }) {
-    
     if (!targetFront.isTopLevel) {
       return;
     }
 
-    await this.initInspectorFront(targetFront);
-
     
     
-    if (targetFront.isDestroyed()) {
-      return;
-    }
-
     await Promise.all([
       this._getCssProperties(targetFront),
       this._getAccessibilityFront(targetFront),
@@ -314,9 +323,6 @@ Inspector.prototype = {
 
     const { walker } = await targetFront.getFront("inspector");
     const rootNodeFront = await walker.getRootNode();
-    
-    this.selectionCssSelectors = [];
-    this._defaultNode = null;
 
     
     await this.onRootNodeAvailable(rootNodeFront);
@@ -339,6 +345,7 @@ Inspector.prototype = {
     for (const resource of resources) {
       const isTopLevelTarget = !!resource.targetFront?.isTopLevel;
       const isTopLevelDocument = !!resource.isTopLevelDocument;
+
       if (
         resource.resourceType ===
           this.toolbox.resourceCommand.TYPES.ROOT_NODE &&
@@ -643,7 +650,7 @@ Inspector.prototype = {
 
 
   get currentTarget() {
-    return this.commands.targetCommand.targetFront;
+    return this.commands.targetCommand.selectedTargetFront;
   },
 
   
@@ -1219,16 +1226,10 @@ Inspector.prototype = {
       title: INSPECTOR_L10N.getStr("inspector.sidebar.changesViewTitle"),
     });
 
-    if (
-      Services.prefs.getBoolPref("devtools.inspector.compatibility.enabled")
-    ) {
-      sidebarPanels.push({
-        id: "compatibilityview",
-        title: INSPECTOR_L10N.getStr(
-          "inspector.sidebar.compatibilityViewTitle"
-        ),
-      });
-    }
+    sidebarPanels.push({
+      id: "compatibilityview",
+      title: INSPECTOR_L10N.getStr("inspector.sidebar.compatibilityViewTitle"),
+    });
 
     sidebarPanels.push({
       id: "fontinspector",
@@ -1754,14 +1755,9 @@ Inspector.prototype = {
       onDestroyed: this._onTargetDestroyed,
     });
     const { resourceCommand } = this.toolbox;
-    resourceCommand.unwatchResources(
-      [
-        resourceCommand.TYPES.ROOT_NODE,
-        resourceCommand.TYPES.CSS_CHANGE,
-        resourceCommand.TYPES.DOCUMENT_EVENT,
-      ],
-      { onAvailable: this.onResourceAvailable }
-    );
+    resourceCommand.unwatchResources(this._watchedResources, {
+      onAvailable: this.onResourceAvailable,
+    });
     this.untrackReflowsInSelection();
 
     this._InspectorTabPanel = null;
