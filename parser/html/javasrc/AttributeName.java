@@ -351,7 +351,6 @@ public final class AttributeName
         this.prefix = prefix;
         
         this.local = new String[4];
-        this.qName = COMPUTE_QNAME(local, prefix);
         this.flags = flags;
         
         this.local[HTML] = html;
@@ -359,6 +358,7 @@ public final class AttributeName
         this.local[SVG] = svg;
         
         this.local[HTML_LANG] = htmlLang;
+        this.qName = COMPUTE_QNAME(local, prefix);
         
         
     }
