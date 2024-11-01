@@ -80,39 +80,39 @@ class OrderedHashTable {
 
  private:
   
-  Data** hashTable = nullptr;
+  Data** hashTable_ = nullptr;
 
   
   
-  Data* data = nullptr;
+  Data* data_ = nullptr;
 
   
-  uint32_t dataLength = 0;
+  uint32_t dataLength_ = 0;
 
   
-  uint32_t dataCapacity = 0;
-
-  
-  
-  uint32_t liveCount = 0;
-
-  
-  uint32_t hashShift = 0;
+  uint32_t dataCapacity_ = 0;
 
   
   
-  Range* ranges = nullptr;
+  uint32_t liveCount_ = 0;
+
+  
+  uint32_t hashShift_ = 0;
+
+  
+  
+  Range* ranges_ = nullptr;
 
   
   
   
-  Range* nurseryRanges = nullptr;
+  Range* nurseryRanges_ = nullptr;
 
   
-  AllocPolicy alloc;
+  AllocPolicy alloc_;
 
   
-  mozilla::HashCodeScrambler hcs;
+  mozilla::HashCodeScrambler hcs_;
 
   
   static constexpr uint32_t InitialBucketsLog2 = 1;
@@ -135,11 +135,11 @@ class OrderedHashTable {
   template <typename F>
   void forEachRange(F&& f) {
     Range* next;
-    for (Range* r = ranges; r; r = next) {
+    for (Range* r = ranges_; r; r = next) {
       next = r->next;
       f(r);
     }
-    for (Range* r = nurseryRanges; r; r = next) {
+    for (Range* r = nurseryRanges_; r; r = next) {
       next = r->next;
       f(r);
     }
@@ -147,13 +147,13 @@ class OrderedHashTable {
 
  public:
   OrderedHashTable(AllocPolicy ap, mozilla::HashCodeScrambler hcs)
-      : alloc(std::move(ap)), hcs(hcs) {}
+      : alloc_(std::move(ap)), hcs_(hcs) {}
 
   [[nodiscard]] bool init() {
-    MOZ_ASSERT(!hashTable, "init must be called at most once");
+    MOZ_ASSERT(!hashTable_, "init must be called at most once");
 
     constexpr uint32_t buckets = InitialBuckets;
-    Data** tableAlloc = alloc.template pod_malloc<Data*>(buckets);
+    Data** tableAlloc = alloc_.template pod_malloc<Data*>(buckets);
     if (!tableAlloc) {
       return false;
     }
@@ -162,46 +162,46 @@ class OrderedHashTable {
     }
 
     constexpr uint32_t capacity = uint32_t(buckets * FillFactor);
-    Data* dataAlloc = alloc.template pod_malloc<Data>(capacity);
+    Data* dataAlloc = alloc_.template pod_malloc<Data>(capacity);
     if (!dataAlloc) {
-      alloc.free_(tableAlloc, buckets);
+      alloc_.free_(tableAlloc, buckets);
       return false;
     }
 
     
     
-    hashTable = tableAlloc;
-    data = dataAlloc;
-    dataLength = 0;
-    dataCapacity = capacity;
-    liveCount = 0;
-    hashShift = js::kHashNumberBits - InitialBucketsLog2;
+    hashTable_ = tableAlloc;
+    data_ = dataAlloc;
+    dataLength_ = 0;
+    dataCapacity_ = capacity;
+    liveCount_ = 0;
+    hashShift_ = js::kHashNumberBits - InitialBucketsLog2;
     MOZ_ASSERT(hashBuckets() == buckets);
     return true;
   }
 
   ~OrderedHashTable() {
     forEachRange([](Range* range) { range->onTableDestroyed(); });
-    if (hashTable) {
+    if (hashTable_) {
       
-      alloc.free_(hashTable, hashBuckets());
+      alloc_.free_(hashTable_, hashBuckets());
     }
-    freeData(data, dataLength, dataCapacity);
+    freeData(data_, dataLength_, dataCapacity_);
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     size_t size = 0;
-    if (hashTable) {
-      size += mallocSizeOf(hashTable);
+    if (hashTable_) {
+      size += mallocSizeOf(hashTable_);
     }
-    if (data) {
-      size += mallocSizeOf(data);
+    if (data_) {
+      size += mallocSizeOf(data_);
     }
     return size;
   }
 
   
-  uint32_t count() const { return liveCount; }
+  uint32_t count() const { return liveCount_; }
 
   
   bool has(const Lookup& l) const { return lookup(l) != nullptr; }
@@ -233,7 +233,7 @@ class OrderedHashTable {
       return true;
     }
 
-    if (dataLength == dataCapacity && !rehashOnFull()) {
+    if (dataLength_ == dataCapacity_ && !rehashOnFull()) {
       return false;
     }
 
@@ -253,7 +253,7 @@ class OrderedHashTable {
       return &e->element;
     }
 
-    if (dataLength == dataCapacity && !rehashOnFull()) {
+    if (dataLength_ == dataCapacity_ && !rehashOnFull()) {
       return nullptr;
     }
 
@@ -288,19 +288,19 @@ class OrderedHashTable {
   }
 
   bool remove(Data* e) {
-    MOZ_ASSERT(uint32_t(e - data) < dataCapacity);
+    MOZ_ASSERT(uint32_t(e - data_) < dataCapacity_);
 
-    liveCount--;
+    liveCount_--;
     Ops::makeEmpty(&e->element);
 
     
-    uint32_t pos = e - data;
+    uint32_t pos = e - data_;
     forEachRange([pos](Range* range) { range->onRemove(pos); });
 
     
     if (hashBuckets() > InitialBuckets &&
-        liveCount < dataLength * MinDataFill) {
-      if (!rehash(hashShift + 1)) {
+        liveCount_ < dataLength_ * MinDataFill) {
+      if (!rehash(hashShift_ + 1)) {
         return false;
       }
     }
@@ -319,29 +319,29 @@ class OrderedHashTable {
 
 
   [[nodiscard]] bool clear() {
-    if (dataLength != 0) {
-      Data** oldHashTable = hashTable;
-      Data* oldData = data;
+    if (dataLength_ != 0) {
+      Data** oldHashTable = hashTable_;
+      Data* oldData = data_;
       uint32_t oldHashBuckets = hashBuckets();
-      uint32_t oldDataLength = dataLength;
-      uint32_t oldDataCapacity = dataCapacity;
+      uint32_t oldDataLength = dataLength_;
+      uint32_t oldDataCapacity = dataCapacity_;
 
-      hashTable = nullptr;
+      hashTable_ = nullptr;
       if (!init()) {
         
-        hashTable = oldHashTable;
+        hashTable_ = oldHashTable;
         return false;
       }
 
-      alloc.free_(oldHashTable, oldHashBuckets);
+      alloc_.free_(oldHashTable, oldHashBuckets);
       freeData(oldData, oldDataLength, oldDataCapacity);
       forEachRange([](Range* range) { range->onClear(); });
     }
 
-    MOZ_ASSERT(hashTable);
-    MOZ_ASSERT(data);
-    MOZ_ASSERT(dataLength == 0);
-    MOZ_ASSERT(liveCount == 0);
+    MOZ_ASSERT(hashTable_);
+    MOZ_ASSERT(data_);
+    MOZ_ASSERT(dataLength_ == 0);
+    MOZ_ASSERT(liveCount_ == 0);
     return true;
   }
 
@@ -426,7 +426,7 @@ class OrderedHashTable {
         : ht(other.ht),
           i(other.i),
           count(other.count),
-          prevp(inNursery ? &ht->nurseryRanges : &ht->ranges),
+          prevp(inNursery ? &ht->nurseryRanges_ : &ht->ranges_),
           next(*prevp) {
       *prevp = this;
       if (next) {
@@ -451,8 +451,8 @@ class OrderedHashTable {
     Range& operator=(const Range& other) = delete;
 
     void seek() {
-      while (i < ht->dataLength &&
-             Ops::isEmpty(Ops::getKey(ht->data[i].element))) {
+      while (i < ht->dataLength_ &&
+             Ops::isEmpty(Ops::getKey(ht->data_[i].element))) {
         i++;
       }
     }
@@ -502,7 +502,7 @@ class OrderedHashTable {
    public:
     bool empty() const {
       MOZ_ASSERT(valid());
-      return i >= ht->dataLength;
+      return i >= ht->dataLength_;
     }
 
     
@@ -516,7 +516,7 @@ class OrderedHashTable {
     const T& front() const {
       MOZ_ASSERT(valid());
       MOZ_ASSERT(!empty());
-      return ht->data[i].element;
+      return ht->data_[i].element;
     }
 
     
@@ -531,7 +531,7 @@ class OrderedHashTable {
     void popFront() {
       MOZ_ASSERT(valid());
       MOZ_ASSERT(!empty());
-      MOZ_ASSERT(!Ops::isEmpty(Ops::getKey(ht->data[i].element)));
+      MOZ_ASSERT(!Ops::isEmpty(Ops::getKey(ht->data_[i].element)));
       count++;
       i++;
       seek();
@@ -552,12 +552,12 @@ class OrderedHashTable {
     T& front() {
       MOZ_ASSERT(this->valid());
       MOZ_ASSERT(!this->empty());
-      return this->ht->data[this->i].element;
+      return this->ht->data_[this->i].element;
     }
 
     void rekeyFront(const Key& k) {
       MOZ_ASSERT(this->valid());
-      this->ht->rekey(&this->ht->data[this->i], k);
+      this->ht->rekey(&this->ht->data_[this->i], k);
     }
   };
 
@@ -565,14 +565,14 @@ class OrderedHashTable {
     
     
     auto* self = const_cast<OrderedHashTable*>(this);
-    return Range(self, &self->ranges);
+    return Range(self, &self->ranges_);
   }
-  MutableRange mutableAll() { return MutableRange(this, &ranges); }
+  MutableRange mutableAll() { return MutableRange(this, &ranges_); }
 
   void trace(JSTracer* trc) {
-    for (uint32_t i = 0; i < dataLength; i++) {
-      if (!Ops::isEmpty(Ops::getKey(data[i].element))) {
-        Ops::trace(trc, this, i, data[i].element);
+    for (uint32_t i = 0; i < dataLength_; i++) {
+      if (!Ops::isEmpty(Ops::getKey(data_[i].element))) {
+        Ops::trace(trc, this, i, data_[i].element);
       }
     }
   }
@@ -580,13 +580,13 @@ class OrderedHashTable {
   
   template <typename Key>
   void traceKey(JSTracer* trc, uint32_t index, Key& key) {
-    MOZ_ASSERT(index < dataLength);
+    MOZ_ASSERT(index < dataLength_);
     using MutableKey = std::remove_const_t<Key>;
     using UnbarrieredKey = typename RemoveBarrier<MutableKey>::Type;
     UnbarrieredKey newKey = key;
     JS::GCPolicy<UnbarrieredKey>::trace(trc, &newKey, "OrderedHashMap key");
     if (newKey != key) {
-      rekey(&data[index], newKey);
+      rekey(&data_[index], newKey);
     }
   }
   template <typename Value>
@@ -600,20 +600,20 @@ class OrderedHashTable {
 
   Range* createRange(void* buffer, bool inNursery) const {
     auto* self = const_cast<OrderedHashTable*>(this);
-    Range** listp = inNursery ? &self->nurseryRanges : &self->ranges;
+    Range** listp = inNursery ? &self->nurseryRanges_ : &self->ranges_;
     new (buffer) Range(self, listp);
     return static_cast<Range*>(buffer);
   }
 
   void destroyNurseryRanges() {
-    if (nurseryRanges) {
-      nurseryRanges->prevp = nullptr;
+    if (nurseryRanges_) {
+      nurseryRanges_->prevp = nullptr;
     }
-    nurseryRanges = nullptr;
+    nurseryRanges_ = nullptr;
   }
 
 #ifdef DEBUG
-  bool hasNurseryRanges() const { return nurseryRanges; }
+  bool hasNurseryRanges() const { return nurseryRanges_; }
 #endif
 
   
@@ -632,8 +632,8 @@ class OrderedHashTable {
     Data* entry = lookup(current, currentHash);
     MOZ_ASSERT(entry);
 
-    HashNumber oldHash = currentHash >> hashShift;
-    HashNumber newHash = prepareHash(newKey) >> hashShift;
+    HashNumber oldHash = currentHash >> hashShift_;
+    HashNumber newHash = prepareHash(newKey) >> hashShift_;
 
     entry->element = element;
 
@@ -642,7 +642,7 @@ class OrderedHashTable {
     
     
     
-    Data** ep = &hashTable[oldHash];
+    Data** ep = &hashTable_[oldHash];
     while (*ep != entry) {
       ep = &(*ep)->chain;
     }
@@ -654,7 +654,7 @@ class OrderedHashTable {
     
     
     
-    ep = &hashTable[newHash];
+    ep = &hashTable_[newHash];
     while (*ep && *ep > entry) {
       ep = &(*ep)->chain;
     }
@@ -663,17 +663,17 @@ class OrderedHashTable {
   }
 
   static size_t offsetOfDataLength() {
-    return offsetof(OrderedHashTable, dataLength);
+    return offsetof(OrderedHashTable, dataLength_);
   }
-  static size_t offsetOfData() { return offsetof(OrderedHashTable, data); }
+  static size_t offsetOfData() { return offsetof(OrderedHashTable, data_); }
   static constexpr size_t offsetOfHashTable() {
-    return offsetof(OrderedHashTable, hashTable);
+    return offsetof(OrderedHashTable, hashTable_);
   }
   static constexpr size_t offsetOfHashShift() {
-    return offsetof(OrderedHashTable, hashShift);
+    return offsetof(OrderedHashTable, hashShift_);
   }
   static constexpr size_t offsetOfLiveCount() {
-    return offsetof(OrderedHashTable, liveCount);
+    return offsetof(OrderedHashTable, liveCount_);
   }
   static constexpr size_t offsetOfDataElement() {
     static_assert(offsetof(Data, element) == 0,
@@ -685,22 +685,22 @@ class OrderedHashTable {
   static constexpr size_t sizeofData() { return sizeof(Data); }
 
   static constexpr size_t offsetOfHcsK0() {
-    return offsetof(OrderedHashTable, hcs) +
+    return offsetof(OrderedHashTable, hcs_) +
            mozilla::HashCodeScrambler::offsetOfMK0();
   }
   static constexpr size_t offsetOfHcsK1() {
-    return offsetof(OrderedHashTable, hcs) +
+    return offsetof(OrderedHashTable, hcs_) +
            mozilla::HashCodeScrambler::offsetOfMK1();
   }
 
   HashNumber prepareHash(const Lookup& l) const {
-    return mozilla::ScrambleHashCode(Ops::hash(l, hcs));
+    return mozilla::ScrambleHashCode(Ops::hash(l, hcs_));
   }
 
  private:
   
   uint32_t hashBuckets() const {
-    return 1 << (js::kHashNumberBits - hashShift);
+    return 1 << (js::kHashNumberBits - hashShift_);
   }
 
   static void destroyData(Data* data, uint32_t length) {
@@ -711,11 +711,11 @@ class OrderedHashTable {
 
   void freeData(Data* data, uint32_t length, uint32_t capacity) {
     destroyData(data, length);
-    alloc.free_(data, capacity);
+    alloc_.free_(data, capacity);
   }
 
   Data* lookup(const Lookup& l, HashNumber h) {
-    for (Data* e = hashTable[h >> hashShift]; e; e = e->chain) {
+    for (Data* e = hashTable_[h >> hashShift_]; e; e = e->chain) {
       if (Ops::match(Ops::getKey(e->element), l)) {
         return e;
       }
@@ -728,12 +728,12 @@ class OrderedHashTable {
   }
 
   std::tuple<Data*, Data*> addEntry(HashNumber hash) {
-    MOZ_ASSERT(dataLength < dataCapacity);
-    hash >>= hashShift;
-    liveCount++;
-    Data* entry = &data[dataLength++];
-    Data* chain = hashTable[hash];
-    hashTable[hash] = entry;
+    MOZ_ASSERT(dataLength_ < dataCapacity_);
+    hash >>= hashShift_;
+    liveCount_++;
+    Data* entry = &data_[dataLength_++];
+    Data* chain = hashTable_[hash];
+    hashTable_[hash] = entry;
     return std::make_tuple(entry, chain);
   }
 
@@ -747,37 +747,37 @@ class OrderedHashTable {
   
   void rehashInPlace() {
     for (uint32_t i = 0, N = hashBuckets(); i < N; i++) {
-      hashTable[i] = nullptr;
+      hashTable_[i] = nullptr;
     }
-    Data* wp = data;
-    Data* end = data + dataLength;
-    for (Data* rp = data; rp != end; rp++) {
+    Data* wp = data_;
+    Data* end = data_ + dataLength_;
+    for (Data* rp = data_; rp != end; rp++) {
       if (!Ops::isEmpty(Ops::getKey(rp->element))) {
-        HashNumber h = prepareHash(Ops::getKey(rp->element)) >> hashShift;
+        HashNumber h = prepareHash(Ops::getKey(rp->element)) >> hashShift_;
         if (rp != wp) {
           wp->element = std::move(rp->element);
         }
-        wp->chain = hashTable[h];
-        hashTable[h] = wp;
+        wp->chain = hashTable_[h];
+        hashTable_[h] = wp;
         wp++;
       }
     }
-    MOZ_ASSERT(wp == data + liveCount);
+    MOZ_ASSERT(wp == data_ + liveCount_);
 
     while (wp != end) {
       (--end)->~Data();
     }
-    dataLength = liveCount;
+    dataLength_ = liveCount_;
     compacted();
   }
 
   [[nodiscard]] bool rehashOnFull() {
-    MOZ_ASSERT(dataLength == dataCapacity);
+    MOZ_ASSERT(dataLength_ == dataCapacity_);
 
     
     
     uint32_t newHashShift =
-        liveCount >= dataCapacity * 0.75 ? hashShift - 1 : hashShift;
+        liveCount_ >= dataCapacity_ * 0.75 ? hashShift_ - 1 : hashShift_;
     return rehash(newHashShift);
   }
 
@@ -791,7 +791,7 @@ class OrderedHashTable {
   [[nodiscard]] bool rehash(uint32_t newHashShift) {
     
     
-    if (newHashShift == hashShift) {
+    if (newHashShift == hashShift_) {
       rehashInPlace();
       return true;
     }
@@ -805,12 +805,12 @@ class OrderedHashTable {
     
     
     if (MOZ_UNLIKELY(newHashShift < (js::kHashNumberBits - maxCapacityLog2))) {
-      alloc.reportAllocOverflow();
+      alloc_.reportAllocOverflow();
       return false;
     }
 
     size_t newHashBuckets = size_t(1) << (js::kHashNumberBits - newHashShift);
-    Data** newHashTable = alloc.template pod_malloc<Data*>(newHashBuckets);
+    Data** newHashTable = alloc_.template pod_malloc<Data*>(newHashBuckets);
     if (!newHashTable) {
       return false;
     }
@@ -819,15 +819,15 @@ class OrderedHashTable {
     }
 
     uint32_t newCapacity = uint32_t(newHashBuckets * FillFactor);
-    Data* newData = alloc.template pod_malloc<Data>(newCapacity);
+    Data* newData = alloc_.template pod_malloc<Data>(newCapacity);
     if (!newData) {
-      alloc.free_(newHashTable, newHashBuckets);
+      alloc_.free_(newHashTable, newHashBuckets);
       return false;
     }
 
     Data* wp = newData;
-    Data* end = data + dataLength;
-    for (Data* p = data; p != end; p++) {
+    Data* end = data_ + dataLength_;
+    for (Data* p = data_; p != end; p++) {
       if (!Ops::isEmpty(Ops::getKey(p->element))) {
         HashNumber h = prepareHash(Ops::getKey(p->element)) >> newHashShift;
         new (wp) Data(std::move(p->element), newHashTable[h]);
@@ -835,16 +835,16 @@ class OrderedHashTable {
         wp++;
       }
     }
-    MOZ_ASSERT(wp == newData + liveCount);
+    MOZ_ASSERT(wp == newData + liveCount_);
 
-    alloc.free_(hashTable, hashBuckets());
-    freeData(data, dataLength, dataCapacity);
+    alloc_.free_(hashTable_, hashBuckets());
+    freeData(data_, dataLength_, dataCapacity_);
 
-    hashTable = newHashTable;
-    data = newData;
-    dataLength = liveCount;
-    dataCapacity = newCapacity;
-    hashShift = newHashShift;
+    hashTable_ = newHashTable;
+    data_ = newData;
+    dataLength_ = liveCount_;
+    dataCapacity_ = newCapacity;
+    hashShift_ = newHashShift;
     MOZ_ASSERT(hashBuckets() == newHashBuckets);
 
     compacted();
@@ -857,15 +857,15 @@ class OrderedHashTable {
   
   
   void rekey(Data* entry, const Key& k) {
-    HashNumber oldHash = prepareHash(Ops::getKey(entry->element)) >> hashShift;
-    HashNumber newHash = prepareHash(k) >> hashShift;
+    HashNumber oldHash = prepareHash(Ops::getKey(entry->element)) >> hashShift_;
+    HashNumber newHash = prepareHash(k) >> hashShift_;
     Ops::setKey(entry->element, k);
     if (newHash != oldHash) {
       
       
       
       
-      Data** ep = &hashTable[oldHash];
+      Data** ep = &hashTable_[oldHash];
       while (*ep != entry) {
         ep = &(*ep)->chain;
       }
@@ -876,7 +876,7 @@ class OrderedHashTable {
       
       
       
-      ep = &hashTable[newHash];
+      ep = &hashTable_[newHash];
       while (*ep && *ep > entry) {
         ep = &(*ep)->chain;
       }
