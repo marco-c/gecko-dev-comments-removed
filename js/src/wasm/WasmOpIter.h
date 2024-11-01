@@ -4304,7 +4304,6 @@ inline bool OpIter<Policy>::readStackSwitch(StackSwitchKind* kind,
   }
 #  if DEBUG
   
-  
   MOZ_ASSERT((*kind == StackSwitchKind::ContinueOnSuspendable) ==
              stackType.isNullableAsOperand());
   if (!stackType.isNullableAsOperand()) {
@@ -4318,6 +4317,10 @@ inline bool OpIter<Policy>::readStackSwitch(StackSwitchKind* kind,
 #  endif
   if (!popWithType(ValType(RefType::extern_()), suspender)) {
     return false;
+  }
+  
+  if (*kind == StackSwitchKind::SwitchToMain) {
+    return push(RefType::extern_());
   }
   return true;
 }
