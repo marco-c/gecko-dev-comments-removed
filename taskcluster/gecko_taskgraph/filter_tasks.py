@@ -60,26 +60,38 @@ def target_tasks_try_select(full_task_graph, parameters, graph_config):
 def target_tasks_try_select_uncommon(full_task_graph, parameters, graph_config):
     from gecko_taskgraph.decision import PER_PROJECT_PARAMETERS
 
-    
-    
-    
-    projects = ("autoland", "mozilla-central")
-    if parameters["project"] not in projects:
-        projects = (parameters["project"],)
-
-    tasks = set()
-    for project in projects:
-        params = dict(parameters)
-        params["project"] = project
-        parameters = Parameters(**params)
-
-        try:
-            target_tasks_method = PER_PROJECT_PARAMETERS[project]["target_tasks_method"]
-        except KeyError:
-            target_tasks_method = "default"
-
-        tasks.update(
-            get_method(target_tasks_method)(full_task_graph, parameters, graph_config)
+    if parameters["target_tasks_method"] != "default":
+        
+        
+        
+        tasks = get_method(parameters["target_tasks_method"])(
+            full_task_graph, parameters, graph_config
         )
+    else:
+        
+        
+        
+        projects = ("autoland", "mozilla-central")
+        if parameters["project"] not in projects:
+            projects = (parameters["project"],)
+
+        tasks = set()
+        for project in projects:
+            params = dict(parameters)
+            params["project"] = project
+            parameters = Parameters(**params)
+
+            try:
+                target_tasks_method = PER_PROJECT_PARAMETERS[project][
+                    "target_tasks_method"
+                ]
+            except KeyError:
+                target_tasks_method = "default"
+
+            tasks.update(
+                get_method(target_tasks_method)(
+                    full_task_graph, parameters, graph_config
+                )
+            )
 
     return sorted(tasks)
