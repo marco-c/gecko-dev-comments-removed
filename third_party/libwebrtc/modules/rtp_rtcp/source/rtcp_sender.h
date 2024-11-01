@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/call/transport.h"
+#include "api/environment/environment.h"
 #include "api/rtp_headers.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
@@ -46,7 +47,6 @@
 namespace webrtc {
 
 class RTCPReceiver;
-class RtcEventLog;
 
 class RTCPSender final {
  public:
@@ -62,8 +62,7 @@ class RTCPSender final {
     
     
     uint32_t local_media_ssrc = 0;
-    
-    Clock* clock = nullptr;
+
     
     
     Transport* outgoing_transport = nullptr;
@@ -82,7 +81,6 @@ class RTCPSender final {
     
     std::function<void(TimeDelta)> schedule_next_rtcp_send_evaluation_function;
 
-    RtcEventLog* event_log = nullptr;
     std::optional<TimeDelta> rtcp_report_interval;
     ReceiveStatisticsProvider* receive_statistics = nullptr;
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer = nullptr;
@@ -107,13 +105,13 @@ class RTCPSender final {
     RTCPReceiver* receiver;
   };
 
-  explicit RTCPSender(Configuration config);
+  RTCPSender(const Environment& env, Configuration config);
 
   RTCPSender() = delete;
   RTCPSender(const RTCPSender&) = delete;
   RTCPSender& operator=(const RTCPSender&) = delete;
 
-  virtual ~RTCPSender();
+  ~RTCPSender();
 
   RtcpMode Status() const RTC_LOCKS_EXCLUDED(mutex_rtcp_sender_);
   void SetRTCPStatus(RtcpMode method) RTC_LOCKS_EXCLUDED(mutex_rtcp_sender_);
@@ -238,17 +236,16 @@ class RTCPSender final {
   void SetNextRtcpSendEvaluationDuration(TimeDelta duration)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_rtcp_sender_);
 
+  const Environment env_;
   const bool audio_;
   
   
   
   
   uint32_t ssrc_ RTC_GUARDED_BY(mutex_rtcp_sender_);
-  Clock* const clock_;
   Random random_ RTC_GUARDED_BY(mutex_rtcp_sender_);
   RtcpMode method_ RTC_GUARDED_BY(mutex_rtcp_sender_);
 
-  RtcEventLog* const event_log_;
   Transport* const transport_;
 
   const TimeDelta report_interval_;
