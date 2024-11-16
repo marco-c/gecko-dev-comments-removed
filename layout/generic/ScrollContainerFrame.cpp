@@ -6104,21 +6104,10 @@ void ScrollContainerFrame::UpdateMinimumScaleSize(
     return;
   }
 
-  WritingMode writingMode = GetWritingMode();
-  LogicalRect logicalOverflow(writingMode, aScrollableOverflow, aICBSize);
-  
-  
-  LogicalSize scrollableOverflowSize(
-      writingMode,
-      logicalOverflow.IStart(writingMode) + logicalOverflow.ISize(writingMode),
-      logicalOverflow.BEnd(writingMode) + logicalOverflow.BSize(writingMode));
-
   
   
   CSSToScreenScale intrinsicMinScale(
-      float(displaySize.width) /
-      CSSRect::FromAppUnits(
-          scrollableOverflowSize.GetPhysicalSize(writingMode).width));
+      displaySize.width / CSSRect::FromAppUnits(aScrollableOverflow).XMost());
 
   
   
