@@ -1158,6 +1158,9 @@ impl<'a> SuggestDao<'a> {
     pub fn drop_suggestions(&mut self, record_id: &SuggestRecordId) -> Result<()> {
         
         
+        
+        
+        
 
         self.scope.err_if_interrupted()?;
         self.conn.execute_cached(
