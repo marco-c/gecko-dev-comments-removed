@@ -2,12 +2,11 @@
 
 
 
-use std::{hash};
-use crate::gpu_cache::{GpuCacheHandle};
-use crate::frame_builder::FrameBuildingState;
+use std::hash;
+use crate::gpu_cache::{GpuCache, GpuCacheHandle};
 use crate::gpu_cache::GpuDataRequest;
 use crate::intern;
-use api::{ComponentTransferFuncType};
+use api::ComponentTransferFuncType;
 
 
 pub type FilterDataHandle = intern::Handle<FilterDataIntern>;
@@ -146,9 +145,9 @@ impl SFilterDataTemplate {
     
     pub fn update(
         &mut self,
-        frame_state: &mut FrameBuildingState,
+        gpu_cache: &mut GpuCache,
     ) {
-        if let Some(request) = frame_state.gpu_cache.request(&mut self.gpu_cache_handle) {
+        if let Some(request) = gpu_cache.request(&mut self.gpu_cache_handle) {
             self.data.update(request);
         }
     }
