@@ -31,6 +31,9 @@ nsMenuGroupOwnerX::nsMenuGroupOwnerX(mozilla::dom::Element* aElement,
     : mContent(aElement), mMenuBar(aMenuBarIfMenuBar) {
   mRepresentedObject =
       [[MOZMenuItemRepresentedObject alloc] initWithMenuGroupOwner:this];
+  if (mContent) {
+    mContent->AddMutationObserver(this);
+  }
 }
 
 nsMenuGroupOwnerX::~nsMenuGroupOwnerX() {
@@ -38,6 +41,9 @@ nsMenuGroupOwnerX::~nsMenuGroupOwnerX() {
              "have outstanding mutation observers!\n");
   [mRepresentedObject setMenuGroupOwner:nullptr];
   [mRepresentedObject release];
+  if (mContent) {
+    mContent->RemoveMutationObserver(this);
+  }
 }
 
 
@@ -139,17 +145,24 @@ void nsMenuGroupOwnerX::ARIAAttributeDefaultChanged(
 
 void nsMenuGroupOwnerX::RegisterForContentChanges(
     nsIContent* aContent, nsChangeObserver* aMenuObject) {
-  if (!mContentToObserverTable.Contains(aContent)) {
+  mContentToObserverTable.InsertOrUpdate(aContent, aMenuObject);
+
+  if (!mContent || !aContent->IsInclusiveDescendantOf(mContent)) {
+    
+    
+    
+    
     aContent->AddMutationObserver(this);
   }
-  mContentToObserverTable.InsertOrUpdate(aContent, aMenuObject);
 }
 
 void nsMenuGroupOwnerX::UnregisterForContentChanges(nsIContent* aContent) {
-  if (mContentToObserverTable.Contains(aContent)) {
+  mContentToObserverTable.Remove(aContent);
+
+  if (!mContent || !aContent->IsInclusiveDescendantOf(mContent)) {
+    
     aContent->RemoveMutationObserver(this);
   }
-  mContentToObserverTable.Remove(aContent);
 }
 
 void nsMenuGroupOwnerX::RegisterForLocaleChanges() {

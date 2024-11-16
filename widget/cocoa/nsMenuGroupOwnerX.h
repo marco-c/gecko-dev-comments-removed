@@ -77,7 +77,7 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
 
   nsChangeObserver* LookupContentChangeObserver(nsIContent* aContent);
 
-  RefPtr<nsIContent> mContent;
+  const RefPtr<nsIContent> mContent;
 
   
   uint32_t mCurrentCommandID = eCommand_ID_Last;
