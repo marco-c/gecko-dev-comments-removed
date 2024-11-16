@@ -41,6 +41,8 @@
 
     #maxTabsPerRow;
     #dragOverCreateGroupTimer;
+    #mustUpdateTabMinHeight = false;
+    #tabMinHeight = 36;
 
     constructor() {
       super();
@@ -91,6 +93,18 @@
       this.arrowScrollbox._canScrollToElement = tab => {
         return (!tab.pinned || !arePositioningPinnedTabs()) && tab.visible;
       };
+
+      
+      
+      
+      
+      
+      
+      
+      Object.defineProperty(this.arrowScrollbox, "lineScrollAmount", {
+        get: () =>
+          this.verticalMode ? this.#tabMinHeight : this._tabMinWidthPref,
+      });
 
       this.baseConnect();
 
@@ -163,6 +177,7 @@
         }
       );
       this.#updateTabMinWidth(this._tabMinWidthPref);
+      this.#updateTabMinHeight();
 
       CustomizableUI.addListener(this);
       this._updateNewTabVisibility();
@@ -202,6 +217,7 @@
       this._positionPinnedTabs();
 
       this.#updateTabMinWidth();
+      this.#updateTabMinHeight();
 
       let indicatorTabs = gBrowser.visibleTabs.filter(tab => {
         return (
@@ -1529,7 +1545,11 @@
         node = this.arrowScrollbox.lastChild;
       }
 
-      return node.before(tab);
+      node.before(tab);
+
+      if (this.#mustUpdateTabMinHeight) {
+        this.#updateTabMinHeight();
+      }
     }
 
     #updateTabMinWidth(val) {
@@ -1542,6 +1562,53 @@
           (val ?? this._tabMinWidthPref) + "px"
         );
       }
+    }
+
+    #updateTabMinHeight() {
+      if (!this.verticalMode || !window.toolbar.visible) {
+        this.#mustUpdateTabMinHeight = false;
+        return;
+      }
+
+      
+      let firstScrollableTab = this.visibleTabs.find(
+        this.arrowScrollbox._canScrollToElement
+      );
+
+      if (!firstScrollableTab) {
+        
+        
+        
+        
+        this.#mustUpdateTabMinHeight = true;
+        return;
+      }
+
+      let { height } =
+        window.windowUtils.getBoundsWithoutFlushing(firstScrollableTab);
+
+      
+      this.#tabMinHeight = height || 36;
+
+      
+      
+      window
+        .promiseDocumentFlushed(() => {})
+        .then(
+          () => {
+            height =
+              window.windowUtils.getBoundsWithoutFlushing(
+                firstScrollableTab
+              ).height;
+
+            if (height) {
+              this.#tabMinHeight = height;
+            }
+          },
+          () => {
+            
+          }
+        );
     }
 
     get _isCustomizing() {
@@ -1791,6 +1858,7 @@
     uiDensityChanged() {
       this._positionPinnedTabs();
       this._updateCloseButtons();
+      this.#updateTabMinHeight();
       this._handleTabSelect(true);
     }
 
