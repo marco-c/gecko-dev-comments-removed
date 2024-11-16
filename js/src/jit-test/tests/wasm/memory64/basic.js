@@ -114,33 +114,33 @@ assertErrorMessage(() => new WebAssembly.Table(tableTypeDescriptor('funcref', 0n
 assertErrorMessage(() => new WebAssembly.Table(tableTypeDescriptor('funcref', 0n, 2n**64n)), TypeError, /bad Table maximum size/);
 
 
-function testLinkMemory(importedIndexType, importIndexType) {
+function testLinkMemory(importedAddressType, importAddressType) {
   let imported = new WebAssembly.Memory({
-    index: importedIndexType,
-    initial: importedIndexType === 'i64' ? 0n : 0,
+    index: importedAddressType,
+    initial: importedAddressType === 'i64' ? 0n : 0,
   });
   let testModule =
       `(module
-         (memory (import "" "imported") ${importIndexType} 0))`;
-  if (importedIndexType === importIndexType) {
+         (memory (import "" "imported") ${importAddressType} 0))`;
+  if (importedAddressType === importAddressType) {
     wasmEvalText(testModule, {"": {imported}});
   } else {
-    assertErrorMessage(() => wasmEvalText(testModule, {"": {imported}}), WebAssembly.LinkError, /index type/);
+    assertErrorMessage(() => wasmEvalText(testModule, {"": {imported}}), WebAssembly.LinkError, /address type/);
   }
 }
-function testLinkTable(importedIndexType, importIndexType) {
+function testLinkTable(importedAddressType, importAddressType) {
   const imported = new WebAssembly.Table({
     element: 'funcref',
-    index: importedIndexType,
-    initial: importedIndexType === 'i64' ? 0n : 0,
+    index: importedAddressType,
+    initial: importedAddressType === 'i64' ? 0n : 0,
   });
   const testModule =
       `(module
-         (table (import "" "imported") ${importIndexType} 0 funcref))`;
-  if (importedIndexType === importIndexType) {
+         (table (import "" "imported") ${importAddressType} 0 funcref))`;
+  if (importedAddressType === importAddressType) {
     wasmEvalText(testModule, {"": {imported}});
   } else {
-    assertErrorMessage(() => wasmEvalText(testModule, {"": {imported}}), WebAssembly.LinkError, /index type/);
+    assertErrorMessage(() => wasmEvalText(testModule, {"": {imported}}), WebAssembly.LinkError, /address type/);
   }
 }
 
@@ -1864,15 +1864,15 @@ for (const test of table64Tests) {
       assertErrorMessage(() => getInternal(index), WebAssembly.RuntimeError, /index out of bounds/);
       assertErrorMessage(() => setInternal(index, null), WebAssembly.RuntimeError, /index out of bounds/);
     }
-    assertErrorMessage(() => internalTable.get(index), jsError, /bad Table get index/);
-    assertErrorMessage(() => internalTable.set(index, null), jsError, /bad Table set index/);
+    assertErrorMessage(() => internalTable.get(index), jsError, /bad Table get address/);
+    assertErrorMessage(() => internalTable.set(index, null), jsError, /bad Table set address/);
 
     if (!jsOnly) {
       assertErrorMessage(() => getExternal(index), WebAssembly.RuntimeError, /index out of bounds/);
       assertErrorMessage(() => setExternal(index, null), WebAssembly.RuntimeError, /index out of bounds/);
     }
-    assertErrorMessage(() => externalTable.get(index), jsError, /bad Table get index/);
-    assertErrorMessage(() => externalTable.set(index, null), jsError, /bad Table set index/);
+    assertErrorMessage(() => externalTable.get(index), jsError, /bad Table get address/);
+    assertErrorMessage(() => externalTable.set(index, null), jsError, /bad Table set address/);
   }
 }
 
@@ -2140,8 +2140,8 @@ for (const [idxType1, idxType2] of types) {
   if (idxType1 === "i64") {
     
     assertErrorMessage(() => f1.grow(1), TypeError, /Table grow delta/);
-    assertErrorMessage(() => f1.get(0), TypeError, /Table get index/);
-    assertErrorMessage(() => f1.set(0, null), TypeError, /Table set index/);
+    assertErrorMessage(() => f1.get(0), TypeError, /Table get address/);
+    assertErrorMessage(() => f1.set(0, null), TypeError, /Table set address/);
     assertEq(typeof f1.length, "bigint");
   }
 

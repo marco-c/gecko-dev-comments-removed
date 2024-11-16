@@ -125,7 +125,7 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
  private:
   Mutex growLock_ MOZ_UNANNOTATED;
   
-  wasm::IndexType indexType_;
+  wasm::AddressType addressType_;
   
   wasm::Pages clampedMaxPages_;
   wasm::Pages sourceMaxPages_;
@@ -139,12 +139,12 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
 
  protected:
   WasmSharedArrayRawBuffer(uint8_t* buffer, size_t length,
-                           wasm::IndexType indexType,
+                           wasm::AddressType addressType,
                            wasm::Pages clampedMaxPages,
                            wasm::Pages sourceMaxPages, size_t mappedSize)
       : SharedArrayRawBuffer(WasmBuffer{}, buffer, length),
         growLock_(mutexid::SharedArrayGrow),
-        indexType_(indexType),
+        addressType_(addressType),
         clampedMaxPages_(clampedMaxPages),
         sourceMaxPages_(sourceMaxPages),
         mappedSize_(mappedSize) {}
@@ -166,7 +166,7 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
   };
 
   static WasmSharedArrayRawBuffer* AllocateWasm(
-      wasm::IndexType indexType, wasm::Pages initialPages,
+      wasm::AddressType addressType, wasm::Pages initialPages,
       wasm::Pages clampedMaxPages,
       const mozilla::Maybe<wasm::Pages>& sourceMaxPages,
       const mozilla::Maybe<size_t>& mappedSize);
@@ -181,7 +181,7 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
         dataPtr - sizeof(WasmSharedArrayRawBuffer));
   }
 
-  wasm::IndexType wasmIndexType() const { return indexType_; }
+  wasm::AddressType wasmAddressType() const { return addressType_; }
 
   wasm::Pages volatileWasmPages() const {
     return wasm::Pages::fromByteLengthExact(length_);
@@ -194,7 +194,7 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
 
   void tryGrowMaxPagesInPlace(wasm::Pages deltaMaxPages);
 
-  bool wasmGrowToPagesInPlace(const Lock&, wasm::IndexType t,
+  bool wasmGrowToPagesInPlace(const Lock&, wasm::AddressType t,
                               wasm::Pages newPages);
 
   

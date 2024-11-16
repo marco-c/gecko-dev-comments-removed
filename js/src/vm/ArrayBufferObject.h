@@ -38,7 +38,7 @@ struct MemoryDesc;
 
 
 
-void* MapBufferMemory(wasm::IndexType, size_t mappedSize,
+void* MapBufferMemory(wasm::AddressType, size_t mappedSize,
                       size_t initialCommittedSize);
 
 
@@ -57,7 +57,7 @@ bool ExtendBufferMapping(void* dataStart, size_t mappedSize,
 
 
 
-void UnmapBufferMemory(wasm::IndexType t, void* dataStart, size_t mappedSize);
+void UnmapBufferMemory(wasm::AddressType t, void* dataStart, size_t mappedSize);
 
 
 uint64_t WasmReservedBytes();
@@ -130,7 +130,7 @@ uint64_t WasmReservedBytes();
 
 class ArrayBufferObjectMaybeShared;
 
-wasm::IndexType WasmArrayBufferIndexType(
+wasm::AddressType WasmArrayBufferAddressType(
     const ArrayBufferObjectMaybeShared* buf);
 wasm::Pages WasmArrayBufferPages(const ArrayBufferObjectMaybeShared* buf);
 wasm::Pages WasmArrayBufferClampedMaxPages(
@@ -152,8 +152,8 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
   
   
 
-  wasm::IndexType wasmIndexType() const {
-    return WasmArrayBufferIndexType(this);
+  wasm::AddressType wasmAddressType() const {
+    return WasmArrayBufferAddressType(this);
   }
   wasm::Pages wasmPages() const { return WasmArrayBufferPages(this); }
   wasm::Pages wasmClampedMaxPages() const {
@@ -584,16 +584,16 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   size_t wasmMappedSize() const;
 
-  wasm::IndexType wasmIndexType() const;
+  wasm::AddressType wasmAddressType() const;
   wasm::Pages wasmPages() const;
   wasm::Pages wasmClampedMaxPages() const;
   mozilla::Maybe<wasm::Pages> wasmSourceMaxPages() const;
 
   [[nodiscard]] static ArrayBufferObject* wasmGrowToPagesInPlace(
-      wasm::IndexType t, wasm::Pages newPages,
+      wasm::AddressType t, wasm::Pages newPages,
       Handle<ArrayBufferObject*> oldBuf, JSContext* cx);
   [[nodiscard]] static ArrayBufferObject* wasmMovingGrowToPages(
-      wasm::IndexType t, wasm::Pages newPages,
+      wasm::AddressType t, wasm::Pages newPages,
       Handle<ArrayBufferObject*> oldBuf, JSContext* cx);
   static void wasmDiscard(Handle<ArrayBufferObject*> buf, uint64_t byteOffset,
                           uint64_t byteLength);
@@ -857,18 +857,18 @@ class MutableWrappedPtrOperations<InnerViewTable, Wrapper>
 };
 
 class WasmArrayRawBuffer {
-  wasm::IndexType indexType_;
+  wasm::AddressType addressType_;
   wasm::Pages clampedMaxPages_;
   mozilla::Maybe<wasm::Pages> sourceMaxPages_;
   size_t mappedSize_;  
   size_t length_;
 
  protected:
-  WasmArrayRawBuffer(wasm::IndexType indexType, uint8_t* buffer,
+  WasmArrayRawBuffer(wasm::AddressType addressType, uint8_t* buffer,
                      wasm::Pages clampedMaxPages,
                      const mozilla::Maybe<wasm::Pages>& sourceMaxPages,
                      size_t mappedSize, size_t length)
-      : indexType_(indexType),
+      : addressType_(addressType),
         clampedMaxPages_(clampedMaxPages),
         sourceMaxPages_(sourceMaxPages),
         mappedSize_(mappedSize),
@@ -878,7 +878,7 @@ class WasmArrayRawBuffer {
 
  public:
   static WasmArrayRawBuffer* AllocateWasm(
-      wasm::IndexType indexType, wasm::Pages initialPages,
+      wasm::AddressType addressType, wasm::Pages initialPages,
       wasm::Pages clampedMaxPages,
       const mozilla::Maybe<wasm::Pages>& sourceMaxPages,
       const mozilla::Maybe<size_t>& mappedSize);
@@ -899,7 +899,7 @@ class WasmArrayRawBuffer {
                                                  sizeof(WasmArrayRawBuffer));
   }
 
-  wasm::IndexType indexType() const { return indexType_; }
+  wasm::AddressType addressType() const { return addressType_; }
 
   uint8_t* basePointer() { return dataPointer() - gc::SystemPageSize(); }
 

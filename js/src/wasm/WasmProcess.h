@@ -63,7 +63,7 @@ void UnregisterCodeBlock(const CodeBlock* cs);
 
 
 
-bool IsHugeMemoryEnabled(IndexType t);
+bool IsHugeMemoryEnabled(AddressType t);
 
 
 
