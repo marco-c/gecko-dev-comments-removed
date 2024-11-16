@@ -15,10 +15,19 @@ namespace mozilla::dom::notification {
 
 using IPCResult = mozilla::ipc::IPCResult;
 
+NS_IMPL_ISUPPORTS(NotificationChild, nsISupports);
+
 NotificationChild::NotificationChild(Notification* aNonPersistentNotification,
                                      WindowGlobalChild* aWindow)
-    : mNonPersistentNotification(aNonPersistentNotification),
-      mWindow(aWindow) {}
+    : mNonPersistentNotification(aNonPersistentNotification), mWindow(aWindow) {
+  if (mWindow) {
+    BindToOwner(mWindow->GetWindowGlobal()->AsGlobal());
+    return;
+  }
+}
+
+
+
 
 
 
@@ -62,6 +71,16 @@ void NotificationChild::ActorDestroy(ActorDestroyReason aWhy) {
     
     notification->MaybeNotifyClose();
   }
+}
+
+void NotificationChild::FrozenCallback(nsIGlobalObject* aOwner) {
+  
+  
+  mNonPersistentNotification = nullptr;
+  
+  
+  Close();
+  DisconnectFreezeObserver();
 }
 
 }  
