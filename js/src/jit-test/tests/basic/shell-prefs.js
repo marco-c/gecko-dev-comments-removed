@@ -1,5 +1,7 @@
 
 
+load(libdir + "asserts.js");
+
 let names = getAllPrefNames();
 assertEq(names.length > 0, true, "Expected at least one pref!");
 assertEq(new Set(names).size, names.length, "Unexpected duplicate pref name");
@@ -13,6 +15,15 @@ for (let name of names) {
 
 assertEq(getPrefValue("site_based_pretenuring"), false);
 assertEq(getPrefValue("tests.uint32-pref"), 123450);
+
+
+setPrefValue("tests.uint32-pref", 54321);
+assertEq(getPrefValue("tests.uint32-pref"), 54321);
+
+
+assertErrorMessage(() => setPrefValue("site_based_pretenuring", true),
+    Error, /startup pref/);
+assertEq(getPrefValue("site_based_pretenuring"), false);
 
 
 let ex;
