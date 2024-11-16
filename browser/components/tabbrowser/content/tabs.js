@@ -62,18 +62,6 @@
         return (!tab.pinned || !arePositioningPinnedTabs()) && tab.visible;
       };
 
-      
-      
-      
-      
-      
-      
-      
-      Object.defineProperty(this.arrowScrollbox, "lineScrollAmount", {
-        get: () =>
-          this.verticalMode ? this._tabMinHeight : this._tabMinWidthPref,
-      });
-
       this.baseConnect();
 
       this._blockDblClick = false;
@@ -145,7 +133,6 @@
         }
       );
       this.#updateTabMinWidth(this._tabMinWidthPref);
-      this.#updateTabMinHeight();
 
       CustomizableUI.addListener(this);
       this._updateNewTabVisibility();
@@ -185,7 +172,6 @@
       this._positionPinnedTabs();
 
       this.#updateTabMinWidth();
-      this.#updateTabMinHeight();
 
       let indicatorTabs = gBrowser.visibleTabs.filter(tab => {
         return (
@@ -1408,16 +1394,6 @@
       }
     }
 
-    #updateTabMinHeight() {
-      const minHeightVariable = "--tab-min-height";
-      const marginVariable = "--tab-block-margin";
-      let cstyle = window.getComputedStyle(document.documentElement);
-      let height = cstyle.getPropertyValue(minHeightVariable);
-      let margin = cstyle.getPropertyValue(marginVariable);
-      
-      this._tabMinHeight = parseInt(height, 10) + 2 * parseInt(margin, 10);
-    }
-
     get _isCustomizing() {
       return document.documentElement.hasAttribute("customizing");
     }
@@ -1665,7 +1641,6 @@
     uiDensityChanged() {
       this._positionPinnedTabs();
       this._updateCloseButtons();
-      this.#updateTabMinHeight();
       this._handleTabSelect(true);
     }
 
