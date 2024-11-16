@@ -184,6 +184,8 @@ class AttrArray {
   bool GrowBy(uint32_t aGrowSize);
   bool GrowTo(uint32_t aCapacity);
 
+  void Clear() { mImpl = nullptr; }
+
  private:
   
   
