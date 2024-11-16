@@ -241,7 +241,6 @@ class ExternalEngineStateMachine final
   void PlaybackRateChanged();
 
   
-  void SetIsLiveStream(bool aIsLiveStream) override {}
   void SetCanPlayThrough(bool aCanPlayThrough) override {}
   void SetFragmentEndTime(const media::TimeUnit& aFragmentEndTime) override {}
 

@@ -3231,7 +3231,7 @@ void MediaDecoderStateMachine::SeekingState::SeekCompleted() {
   if ((newCurrentTime == mMaster->Duration() ||
        newCurrentTime.EqualsAtLowestResolution(
            mMaster->Duration().ToBase(USECS_PER_S))) &&
-      !mMaster->mIsLiveStream) {
+      !mMaster->IsLiveStream()) {
     SLOG("Seek completed, seeked to end: %s", newCurrentTime.ToString().get());
     
     
