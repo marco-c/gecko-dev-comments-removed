@@ -19,6 +19,7 @@ class Shmem;
 namespace webgpu {
 
 class ExternalTextureDMABuf;
+class ExternalTextureMacIOSurface;
 
 
 
@@ -44,6 +45,10 @@ class ExternalTexture {
                            const gfx::IntSize& aSize) {}
 
   virtual ExternalTextureDMABuf* AsExternalTextureDMABuf() { return nullptr; }
+
+  virtual ExternalTextureMacIOSurface* AsExternalTextureMacIOSurface() {
+    return nullptr;
+  }
 
   gfx::IntSize GetSize() { return gfx::IntSize(mWidth, mHeight); }
 
