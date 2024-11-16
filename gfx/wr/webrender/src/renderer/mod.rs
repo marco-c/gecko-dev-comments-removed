@@ -3329,30 +3329,16 @@ impl Renderer {
 
     
     
-    
-    
-    fn composite_simple(
+    fn composite_pass(
         &mut self,
         composite_state: &CompositeState,
         draw_target: DrawTarget,
         projection: &default::Transform3D<f32>,
         results: &mut RenderResults,
         partial_present_mode: Option<PartialPresentMode>,
+        occlusion: &occlusion::FrontToBackBuilder<usize>,
+        clear_tiles: &[occlusion::Item<usize>],
     ) {
-        let _gm = self.gpu_profiler.start_marker("framebuffer");
-        let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
-
-        
-        
-        
-        if let Some(ref mut compositor) = self.compositor2 {
-            let input = CompositorInputConfig {
-                framebuffer_size: draw_target.dimensions(),
-            };
-
-            compositor.begin_frame(&input);
-        }
-
         self.device.bind_draw_target(draw_target);
         self.device.disable_depth_write();
         self.device.disable_depth();
@@ -3368,7 +3354,96 @@ impl Renderer {
             }
         }
 
+        
+        let clear_color = Some(self.clear_color.to_array());
+
+        match partial_present_mode {
+            Some(PartialPresentMode::Single { dirty_rect }) => {
+                
+                
+                
+                
+                if !dirty_rect.is_empty() && occlusion.test(&dirty_rect) {
+                    
+                    self.device.clear_target(clear_color,
+                                             None,
+                                             Some(draw_target.to_framebuffer_rect(dirty_rect.to_i32())));
+                }
+            }
+            None => {
+                
+                self.device.clear_target(clear_color,
+                                         None,
+                                         None);
+            }
+        }
+
+        if !occlusion.opaque_items().is_empty() {
+            let opaque_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_OPAQUE);
+            self.set_blend(false, FramebufferKind::Main);
+            self.draw_tile_list(
+                occlusion.opaque_items().iter(),
+                &composite_state,
+                &composite_state.external_surfaces,
+                projection,
+                &mut results.stats,
+            );
+            self.gpu_profiler.finish_sampler(opaque_sampler);
+        }
+
+        if !clear_tiles.is_empty() {
+            let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
+            self.set_blend(true, FramebufferKind::Main);
+            self.device.set_blend_mode_premultiplied_dest_out();
+            self.draw_tile_list(
+                clear_tiles.iter(),
+                &composite_state,
+                &composite_state.external_surfaces,
+                projection,
+                &mut results.stats,
+            );
+            self.gpu_profiler.finish_sampler(transparent_sampler);
+        }
+
+        
+        if !occlusion.alpha_items().is_empty() {
+            let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
+            self.set_blend(true, FramebufferKind::Main);
+            self.set_blend_mode_premultiplied_alpha(FramebufferKind::Main);
+            self.draw_tile_list(
+                occlusion.alpha_items().iter().rev(),
+                &composite_state,
+                &composite_state.external_surfaces,
+                projection,
+                &mut results.stats,
+            );
+            self.gpu_profiler.finish_sampler(transparent_sampler);
+        }
+    }
+
+    
+    
+    
+    
+    fn composite_simple(
+        &mut self,
+        composite_state: &CompositeState,
+        draw_target: DrawTarget,
+        projection: &default::Transform3D<f32>,
+        results: &mut RenderResults,
+        partial_present_mode: Option<PartialPresentMode>,
+    ) {
+        let _gm = self.gpu_profiler.start_marker("framebuffer");
+        let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
+
         let cap = composite_state.tiles.len();
+
+        
+        
+        let num_tiles = composite_state.tiles
+            .iter()
+            .filter(|tile| tile.kind != TileKind::Clear).count();
+        self.profile.set(profiler::PICTURE_TILES, num_tiles);
 
         let mut occlusion = occlusion::FrontToBackBuilder::with_capacity(cap, cap);
         let mut clear_tiles = Vec::new();
@@ -3415,77 +3490,26 @@ impl Renderer {
         }
 
         
-        let clear_color = Some(self.clear_color.to_array());
+        
+        
+        if let Some(ref mut compositor) = self.compositor2 {
+            let input = CompositorInputConfig {
+                framebuffer_size: draw_target.dimensions(),
+            };
 
-        match partial_present_mode {
-            Some(PartialPresentMode::Single { dirty_rect }) => {
-                
-                
-                
-                
-                if !dirty_rect.is_empty() && occlusion.test(&dirty_rect) {
-                    
-                    self.device.clear_target(clear_color,
-                                             None,
-                                             Some(draw_target.to_framebuffer_rect(dirty_rect.to_i32())));
-                }
-            }
-            None => {
-                
-                self.device.clear_target(clear_color,
-                                         None,
-                                         None);
-            }
+            compositor.begin_frame(&input);
         }
 
         
-        
-        let num_tiles = composite_state.tiles
-            .iter()
-            .filter(|tile| tile.kind != TileKind::Clear).count();
-        self.profile.set(profiler::PICTURE_TILES, num_tiles);
-
-        if !occlusion.opaque_items().is_empty() {
-            let opaque_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_OPAQUE);
-            self.set_blend(false, FramebufferKind::Main);
-            self.draw_tile_list(
-                occlusion.opaque_items().iter(),
-                &composite_state,
-                &composite_state.external_surfaces,
-                projection,
-                &mut results.stats,
-            );
-            self.gpu_profiler.finish_sampler(opaque_sampler);
-        }
-
-        if !clear_tiles.is_empty() {
-            let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
-            self.set_blend(true, FramebufferKind::Main);
-            self.device.set_blend_mode_premultiplied_dest_out();
-            self.draw_tile_list(
-                clear_tiles.iter(),
-                &composite_state,
-                &composite_state.external_surfaces,
-                projection,
-                &mut results.stats,
-            );
-            self.gpu_profiler.finish_sampler(transparent_sampler);
-        }
-
-        
-        if !occlusion.alpha_items().is_empty() {
-            let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
-            self.set_blend(true, FramebufferKind::Main);
-            self.set_blend_mode_premultiplied_alpha(FramebufferKind::Main);
-            self.draw_tile_list(
-                occlusion.alpha_items().iter().rev(),
-                &composite_state,
-                &composite_state.external_surfaces,
-                projection,
-                &mut results.stats,
-            );
-            self.gpu_profiler.finish_sampler(transparent_sampler);
-        }
+        self.composite_pass(
+            composite_state,
+            draw_target,
+            projection,
+            results,
+            partial_present_mode,
+            &occlusion,
+            &clear_tiles,
+        );
 
         
         if let Some(ref mut compositor) = self.compositor2 {
