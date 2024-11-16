@@ -169,6 +169,12 @@ impl<'a> ParserContext<'a> {
     pub fn chrome_rules_enabled(&self) -> bool {
         self.url_data.chrome_rules_enabled() || self.stylesheet_origin != Origin::Author
     }
+
+    
+    #[inline]
+    pub fn allows_computational_dependence(&self) -> bool {
+        self.parsing_mode.allows_computational_dependence()
+    }
 }
 
 
