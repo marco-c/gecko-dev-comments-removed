@@ -740,6 +740,16 @@ nsresult ServiceWorkerPrivate::Initialize() {
   return NS_OK;
 }
 
+void ServiceWorkerPrivate::RegenerateClientInfo() {
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mClientInfo.isSome());
+
+  mClientInfo = ClientManager::CreateInfo(
+      ClientType::Serviceworker, mClientInfo->GetPrincipal().unwrap().get());
+  mRemoteWorkerData.clientInfo().ref() = mClientInfo.ref().ToIPC();
+}
+
 nsresult ServiceWorkerPrivate::CheckScriptEvaluation(
     const ServiceWorkerLifetimeExtension& aLifetimeExtension,
     RefPtr<LifeCycleEventCallback> aCallback) {
@@ -1861,7 +1871,14 @@ RefPtr<GenericNonExclusivePromise> ServiceWorkerPrivate::ShutdownInternal(
 
 
 
+
+
   mControllerChild = nullptr;
+  
+  
+  
+  
+  RegenerateClientInfo();
 
   
   UpdateRunning(-1, mHandlesFetch == Enabled ? -1 : 0);
