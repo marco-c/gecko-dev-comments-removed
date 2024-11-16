@@ -942,7 +942,7 @@ class ResourceCommand {
     
     
     if (browsingContextID == -1) {
-      return null;
+      return this.targetCommand.targetFront;
     }
 
     if (innerWindowId && this.targetCommand.isServerTargetSwitchingEnabled()) {
