@@ -449,7 +449,7 @@ nsresult nsHttpHandler::Init() {
 
   mRequestContextService = RequestContextService::GetOrCreate();
 
-#if defined(ANDROID)
+#if defined(ANDROID) || defined(XP_IOS)
   mProductSub.AssignLiteral(MOZILLA_UAVERSION);
 #else
   mProductSub.AssignLiteral(LEGACY_UA_GECKO_TRAIL);
@@ -965,6 +965,8 @@ void nsHttpHandler::InitUserAgentComponents() {
       "Windows"
 #elif defined(XP_MACOSX)
       "Macintosh"
+#elif defined(XP_IOS)
+      "iPhone"
 #elif defined(XP_UNIX)
       
       
@@ -1024,6 +1026,12 @@ void nsHttpHandler::InitUserAgentComponents() {
   }
 #endif  
 
+#if defined(XP_IOS)
+  
+  
+  mCompatDevice.AssignLiteral("CPU iPhone OS 18_0 like Mac OS X");
+#endif
+
   
 #if defined(XP_WIN)
 
@@ -1053,6 +1061,8 @@ void nsHttpHandler::InitUserAgentComponents() {
   mOscpu.AssignLiteral("Intel Mac OS X 10.15");
 #elif defined(ANDROID)
   mOscpu.AssignLiteral("Linux armv81");
+#elif defined(XP_IOS)
+  mOscpu.AssignLiteral("iPhone");
 #else
   mOscpu.AssignLiteral("Linux x86_64");
 #endif
