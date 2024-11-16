@@ -77,7 +77,9 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
 
   nsChangeObserver* LookupContentChangeObserver(nsIContent* aContent);
 
-  RefPtr<nsIContent> mContent;
+  void InstallOrUninstallRootMutationObserver();
+
+  const RefPtr<nsIContent> mContent;
 
   
   uint32_t mCurrentCommandID = eCommand_ID_Last;
@@ -91,6 +93,8 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
 
   MOZMenuItemRepresentedObject* mRepresentedObject = nil;  
   mozilla::WeakPtr<nsMenuBarX> mMenuBar;
+
+  bool mObservingMutationsOnRoot = false;
 };
 
 @interface MOZMenuItemRepresentedObject : NSObject

@@ -40,6 +40,24 @@ nsMenuGroupOwnerX::~nsMenuGroupOwnerX() {
   [mRepresentedObject release];
 }
 
+void nsMenuGroupOwnerX::InstallOrUninstallRootMutationObserver() {
+  if (!mContent) {
+    return;
+  }
+
+  
+  
+  
+  bool shouldObserveMutationsOnRoot = !mContentToObserverTable.IsEmpty();
+  if (!mObservingMutationsOnRoot && shouldObserveMutationsOnRoot) {
+    mContent->AddMutationObserver(this);
+    mObservingMutationsOnRoot = true;
+  } else if (mObservingMutationsOnRoot && !shouldObserveMutationsOnRoot) {
+    mContent->RemoveMutationObserver(this);
+    mObservingMutationsOnRoot = false;
+  }
+}
+
 
 
 
@@ -139,17 +157,36 @@ void nsMenuGroupOwnerX::ARIAAttributeDefaultChanged(
 
 void nsMenuGroupOwnerX::RegisterForContentChanges(
     nsIContent* aContent, nsChangeObserver* aMenuObject) {
-  if (!mContentToObserverTable.Contains(aContent)) {
+  if (mContentToObserverTable.Contains(aContent)) {
+    return;
+  }
+
+  mContentToObserverTable.InsertOrUpdate(aContent, aMenuObject);
+
+  if (!mContent || !aContent->IsInclusiveDescendantOf(mContent)) {
+    
+    
+    
+    
     aContent->AddMutationObserver(this);
   }
-  mContentToObserverTable.InsertOrUpdate(aContent, aMenuObject);
+
+  InstallOrUninstallRootMutationObserver();
 }
 
 void nsMenuGroupOwnerX::UnregisterForContentChanges(nsIContent* aContent) {
-  if (mContentToObserverTable.Contains(aContent)) {
+  if (!mContentToObserverTable.Contains(aContent)) {
+    return;
+  }
+
+  mContentToObserverTable.Remove(aContent);
+
+  if (!mContent || !aContent->IsInclusiveDescendantOf(mContent)) {
+    
     aContent->RemoveMutationObserver(this);
   }
-  mContentToObserverTable.Remove(aContent);
+
+  InstallOrUninstallRootMutationObserver();
 }
 
 void nsMenuGroupOwnerX::RegisterForLocaleChanges() {
