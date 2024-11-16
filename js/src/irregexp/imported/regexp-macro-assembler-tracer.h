@@ -1,6 +1,6 @@
-
-
-
+// Copyright 2008 the V8 project authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef V8_REGEXP_REGEXP_MACRO_ASSEMBLER_TRACER_H_
 #define V8_REGEXP_REGEXP_MACRO_ASSEMBLER_TRACER_H_
@@ -10,18 +10,20 @@
 namespace v8 {
 namespace internal {
 
-
+// Decorator on a RegExpMacroAssembler that write all calls.
 class RegExpMacroAssemblerTracer: public RegExpMacroAssembler {
  public:
   RegExpMacroAssemblerTracer(Isolate* isolate, RegExpMacroAssembler* assembler);
   ~RegExpMacroAssemblerTracer() override;
   void AbortedCodeGeneration() override;
-  int stack_limit_slack() override { return assembler_->stack_limit_slack(); }
+  int stack_limit_slack_slot_count() override {
+    return assembler_->stack_limit_slack_slot_count();
+  }
   bool CanReadUnaligned() const override {
     return assembler_->CanReadUnaligned();
   }
-  void AdvanceCurrentPosition(int by) override;    
-  void AdvanceRegister(int reg, int by) override;  
+  void AdvanceCurrentPosition(int by) override;    // Signed cp change.
+  void AdvanceRegister(int reg, int by) override;  // r[reg] += by.
   void Backtrack() override;
   void Bind(Label* label) override;
   void CheckCharacter(unsigned c, Label* on_equal) override;
@@ -52,11 +54,17 @@ class RegExpMacroAssemblerTracer: public RegExpMacroAssembler {
   bool CheckCharacterNotInRangeArray(const ZoneList<CharacterRange>* ranges,
                                      Label* on_not_in_range) override;
   void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set) override;
+  bool SkipUntilBitInTableUseSimd(int advance_by) override {
+    return assembler_->SkipUntilBitInTableUseSimd(advance_by);
+  }
+  void SkipUntilBitInTable(int cp_offset, Handle<ByteArray> table,
+                           Handle<ByteArray> nibble_table,
+                           int advance_by) override;
   void CheckPosition(int cp_offset, Label* on_outside_input) override;
   bool CheckSpecialClassRanges(StandardCharacterSet type,
                                Label* on_no_match) override;
   void Fail() override;
-  Handle<HeapObject> GetCode(Handle<String> source) override;
+  Handle<HeapObject> GetCode(Handle<String> source, RegExpFlags flags) override;
   void GoTo(Label* label) override;
   void IfRegisterGE(int reg, int comparand, Label* if_ge) override;
   void IfRegisterLT(int reg, int comparand, Label* if_lt) override;
@@ -84,7 +92,7 @@ class RegExpMacroAssemblerTracer: public RegExpMacroAssembler {
   RegExpMacroAssembler* assembler_;
 };
 
-}  
-}  
+}  // namespace internal
+}  // namespace v8
 
-#endif  
+#endif  // V8_REGEXP_REGEXP_MACRO_ASSEMBLER_TRACER_H_

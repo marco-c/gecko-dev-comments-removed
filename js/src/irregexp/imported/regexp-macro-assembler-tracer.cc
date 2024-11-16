@@ -1,6 +1,6 @@
-
-
-
+// Copyright 2012 the V8 project authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "irregexp/imported/regexp-macro-assembler-tracer.h"
 
@@ -23,8 +23,8 @@ void RegExpMacroAssemblerTracer::AbortedCodeGeneration() {
 }
 
 
-
-
+// This is used for printing out debugging information.  It makes an integer
+// that is closely related to the address of an object.
 static int LabelToInt(Label* label) {
   return static_cast<int>(reinterpret_cast<intptr_t>(label));
 }
@@ -193,7 +193,7 @@ class PrintablePrinter {
   char buffer_[4];
 };
 
-}  
+}  // namespace
 
 void RegExpMacroAssemblerTracer::CheckCharacterLT(base::uc16 limit,
                                                   Label* on_less) {
@@ -330,7 +330,7 @@ void PrintRangeArray(const ZoneList<CharacterRange>* ranges) {
   }
 }
 
-}  
+}  // namespace
 
 bool RegExpMacroAssemblerTracer::CheckCharacterInRangeArray(
     const ZoneList<CharacterRange>* ranges, Label* on_in_range) {
@@ -369,6 +369,39 @@ void RegExpMacroAssemblerTracer::CheckBitInTable(
   assembler_->CheckBitInTable(table, on_bit_set);
 }
 
+void RegExpMacroAssemblerTracer::SkipUntilBitInTable(
+    int cp_offset, Handle<ByteArray> table, Handle<ByteArray> nibble_table,
+    int advance_by) {
+  PrintF("SkipUntilBitInTable(cp_offset=%d, advance_by=%d\n  ", cp_offset,
+         advance_by);
+  for (int i = 0; i < kTableSize; i++) {
+    PrintF("%c", table->get(i) != 0 ? 'X' : '.');
+    if (i % 32 == 31 && i != kTableMask) {
+      PrintF("\n  ");
+    }
+  }
+  static_assert(kTableSize == 128);
+  static constexpr int kRows = 16;
+  static_assert(kRows * kBitsPerByte == kTableSize);
+  if (!nibble_table.is_null()) {
+    PrintF("\n");
+    PrintF("  +----------------\n");
+    PrintF("  |");
+    for (int j = 0; j < kBitsPerByte; j++) {
+      PrintF(" %x", j);
+    }
+    PrintF("\n--+----------------");
+    for (int i = 0; i < kRows; i++) {
+      int r = nibble_table->get(i);
+      PrintF("\n%x |", i);
+      for (int j = 0; j < kBitsPerByte; j++) {
+        PrintF(" %c", (r & (1 << j)) == 0 ? '.' : 'X');
+      }
+    }
+  }
+  PrintF(");\n");
+  assembler_->SkipUntilBitInTable(cp_offset, table, nibble_table, advance_by);
+}
 
 void RegExpMacroAssemblerTracer::CheckNotBackReference(int start_reg,
                                                        bool read_backward,
@@ -432,11 +465,14 @@ RegExpMacroAssembler::IrregexpImplementation
   return assembler_->Implementation();
 }
 
-
-Handle<HeapObject> RegExpMacroAssemblerTracer::GetCode(Handle<String> source) {
-  PrintF(" GetCode(%s);\n", source->ToCString().get());
-  return assembler_->GetCode(source);
+Handle<HeapObject> RegExpMacroAssemblerTracer::GetCode(Handle<String> source,
+                                                       RegExpFlags flags) {
+  Handle<String> flags_str =
+      JSRegExp::StringFromFlags(isolate(), JSRegExp::AsJSRegExpFlags(flags));
+  PrintF(" GetCode('%s', '%s');\n", source->ToCString().get(),
+         flags_str->ToCString().get());
+  return assembler_->GetCode(source, flags);
 }
 
-}  
-}  
+}  // namespace internal
+}  // namespace v8
