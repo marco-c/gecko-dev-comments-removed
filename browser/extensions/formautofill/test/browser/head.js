@@ -1542,8 +1542,14 @@ async function add_heuristic_tests(
       info(`Focus on each field in the test document`);
       const contexts =
         browser.browsingContext.getAllBrowsingContextsInSubtree();
+
+      
+      
+      
+      const sleepAfterFocus = contexts.length > 1;
+
       for (const context of contexts) {
-        await SpecialPowers.spawn(context, [], async function () {
+        await SpecialPowers.spawn(context, [sleepAfterFocus], async function (sleepAfterFocus) {
           const elements = Array.from(
             content.document.querySelectorAll("input, select")
           );
@@ -1556,16 +1562,12 @@ async function add_heuristic_tests(
 
         try {
           await BrowserTestUtils.synthesizeKey("VK_ESCAPE", {}, context);
+          if (sleepAfterFocus) {
+            await sleep();
+          }
         } catch (e) {
           
         }
-      }
-
-      
-      
-      
-      if (contexts.length > 1) {
-        await sleep();
       }
 
       info(`Waiting for expected section count`);
