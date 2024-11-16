@@ -1,0 +1,23 @@
+
+
+
+
+#include "RemoteWorkerOp.h"
+
+namespace mozilla::dom::remoteworker {
+
+WorkerPrivateAccessibleState::~WorkerPrivateAccessibleState() {
+  
+  
+  MOZ_ASSERT(!mWorkerPrivate || NS_IsMainThread());
+  
+  if (!mWorkerPrivate || NS_IsMainThread()) {
+    return;
+  }
+  
+  NS_ReleaseOnMainThread(
+      "RemoteWorkerChild::WorkerPrivateAccessibleState::mWorkerPrivate",
+      mWorkerPrivate.forget());
+}
+
+}  
