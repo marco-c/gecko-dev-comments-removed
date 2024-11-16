@@ -6126,8 +6126,17 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
       
       InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
                           0);
+    } else {
+      QM_TRY_INSPECT(const auto& metadata,
+                     LoadFullOriginMetadataWithRestore(directory));
+
+      QM_TRY(MOZ_TO_RESULT(InitializeOrigin(metadata.mPersistenceType, metadata,
+                                            metadata.mLastAccessTime,
+                                            metadata.mPersisted, directory)));
     }
 
+    
+    
     
     
     
