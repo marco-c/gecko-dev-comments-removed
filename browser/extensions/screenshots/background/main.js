@@ -9,8 +9,6 @@
 this.main = (function () {
   const exports = {};
 
-  const { incrementCount } = analytics;
-
   const manifest = browser.runtime.getManifest();
   let backend;
 
@@ -35,19 +33,16 @@ this.main = (function () {
   }
 
   function toggleSelector(tab) {
-    return analytics
-      .refreshTelemetryPref()
-      .then(() => selectorLoader.toggle(tab.id))
-      .catch(error => {
-        if (
-          error.message &&
-          /Missing host permission for the tab/.test(error.message)
-        ) {
-          error.noReport = true;
-        }
-        error.popupMessage = "UNSHOOTABLE_PAGE";
-        throw error;
-      });
+    return selectorLoader.toggle(tab.id).catch(error => {
+      if (
+        error.message &&
+        /Missing host permission for the tab/.test(error.message)
+      ) {
+        error.noReport = true;
+      }
+      error.popupMessage = "UNSHOOTABLE_PAGE";
+      throw error;
+    });
   }
 
   
@@ -133,10 +128,6 @@ this.main = (function () {
     return getStrings(ids.map(id => ({ id })));
   });
 
-  communication.register("captureTelemetry", (sender, ...args) => {
-    catcher.watchPromise(incrementCount(...args));
-  });
-
   communication.register("openShot", async (sender, { copied }) => {
     if (copied) {
       const id = crypto.randomUUID();
@@ -163,7 +154,6 @@ this.main = (function () {
       { id: "screenshots-notification-image-copied-details" },
     ]);
 
-    catcher.watchPromise(incrementCount("copy"));
     return browser.notifications.create({
       type: "basic",
       iconUrl: "chrome://browser/content/screenshots/copied-notification.svg",
@@ -188,7 +178,6 @@ this.main = (function () {
       }
     });
     browser.downloads.onChanged.addListener(onChangedCallback);
-    catcher.watchPromise(incrementCount("download"));
     return browser.windows.getLastFocused().then(windowInfo => {
       return browser.downloads
         .download({
