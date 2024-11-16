@@ -48,20 +48,21 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
   if (!strcmp("alertfinished", aTopic)) {
+    
     (void)NS_WARN_IF(NS_FAILED(
         AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
+    (void)NS_WARN_IF(NS_FAILED(UnpersistNotification(mPrincipal, mId)));
+
     if (mResolver) {
       
       
       
       
+      
       mResolver.take().value()(CopyableErrorResult(NS_ERROR_FAILURE));
-      return NS_OK;
+    } else {
+      (void)NS_WARN_IF(NS_FAILED(FireCloseEvent()));
     }
-
-    
-    (void)NS_WARN_IF(NS_FAILED(UnpersistNotification(mPrincipal, mId)));
-    (void)NS_WARN_IF(NS_FAILED(FireCloseEvent()));
 
     
     mDangling = true;
