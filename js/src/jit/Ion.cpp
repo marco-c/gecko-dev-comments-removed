@@ -680,7 +680,18 @@ void JitCode::finalize(JS::GCContext* gcx) {
   }
   setHeaderPtr(nullptr);
 
+#ifdef JS_ION_PERF
+  
+  
+  
+  
+  if (!PerfEnabled()) {
+    pool_->release(headerSize_ + bufferSize_, CodeKind(kind_));
+  }
+#else
   pool_->release(headerSize_ + bufferSize_, CodeKind(kind_));
+#endif
+
   zone()->decJitMemory(headerSize_ + bufferSize_);
 
   pool_ = nullptr;
