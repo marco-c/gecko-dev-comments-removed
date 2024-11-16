@@ -358,6 +358,65 @@ hb_coretext_face_create (CGFontRef cg_font)
 
 
 
+
+
+
+
+
+hb_face_t *
+hb_coretext_face_create_from_file_or_fail (const char   *file_name,
+					   unsigned int  index)
+{
+  auto url = CFURLCreateFromFileSystemRepresentation (nullptr,
+						      (const UInt8 *) file_name,
+						      strlen (file_name),
+						      false);
+  if (unlikely (!url))
+    return nullptr;
+
+  auto ct_font_desc_array = CTFontManagerCreateFontDescriptorsFromURL (url);
+  if (unlikely (!ct_font_desc_array))
+  {
+    CFRelease (url);
+    return nullptr;
+  }
+  auto ct_font_desc = (CFArrayGetCount (ct_font_desc_array) > index) ?
+		      (CTFontDescriptorRef) CFArrayGetValueAtIndex (ct_font_desc_array, index) : nullptr;
+  if (unlikely (!ct_font_desc))
+  {
+	  CFRelease (ct_font_desc_array);
+	  CFRelease (url);
+	  return nullptr;
+  }
+  CFRelease (url);
+  auto ct_font = ct_font_desc ? CTFontCreateWithFontDescriptor (ct_font_desc, 0, nullptr) : nullptr;
+  CFRelease (ct_font_desc_array);
+  if (unlikely (!ct_font))
+    return nullptr;
+
+  auto cg_font = ct_font ? CTFontCopyGraphicsFont (ct_font, nullptr) : nullptr;
+  CFRelease (ct_font);
+  if (unlikely (!cg_font))
+    return nullptr;
+
+  hb_face_t *face = hb_coretext_face_create (cg_font);
+  if (unlikely (hb_face_is_immutable (face)))
+    return nullptr;
+
+  return face;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 CGFontRef
 hb_coretext_face_get_cg_font (hb_face_t *face)
 {
@@ -443,6 +502,11 @@ _hb_coretext_shaper_font_data_destroy (hb_coretext_font_data_t *data)
 
 
 
+
+
+
+
+
 hb_font_t *
 hb_coretext_font_create (CTFontRef ct_font)
 {
@@ -459,6 +523,9 @@ hb_coretext_font_create (CTFontRef ct_font)
 
   
   font->data.coretext.cmpexch (nullptr, (hb_coretext_font_data_t *) CFRetain (ct_font));
+
+  
+  
 
   return font;
 }

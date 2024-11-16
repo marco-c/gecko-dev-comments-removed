@@ -631,7 +631,6 @@ hb_blob_create_from_file (const char *file_name)
 
 
 
-
 hb_blob_t *
 hb_blob_create_from_file_or_fail (const char *file_name)
 {

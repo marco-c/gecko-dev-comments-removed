@@ -59,6 +59,14 @@ HB_EXTERN hb_face_t *
 hb_face_create (hb_blob_t    *blob,
 		unsigned int  index);
 
+HB_EXTERN hb_face_t *
+hb_face_create_or_fail (hb_blob_t    *blob,
+			unsigned int  index);
+
+HB_EXTERN hb_face_t *
+hb_face_create_from_file_or_fail (const char   *file_name,
+				  unsigned int  index);
+
 
 
 

@@ -31,6 +31,11 @@
 
 #ifdef HAVE_ICU
 
+#pragma GCC diagnostic push
+
+
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include "hb-icu.h"
 
 #include "hb-machinery.hh"
@@ -44,7 +49,6 @@
 
 #if U_ICU_VERSION_MAJOR_NUM < 65 && (defined(__GNUC__) || defined(__clang__))
 #define HB_ICU_EXTRA_SEMI_IGNORED
-#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wextra-semi-stmt"
 #endif
 
@@ -284,8 +288,6 @@ hb_icu_get_unicode_funcs ()
   return static_icu_funcs.get_unconst ();
 }
 
-#ifdef HB_ICU_EXTRA_SEMI_IGNORED
 #pragma GCC diagnostic pop
-#endif
 
 #endif

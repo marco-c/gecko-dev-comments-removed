@@ -70,7 +70,7 @@ typedef struct hb_draw_state_t {
 
 
 
-#define HB_DRAW_STATE_DEFAULT {0, 0.f, 0.f, 0.f, 0.f, {0.}, {0.}, {0.}}
+#define HB_DRAW_STATE_DEFAULT {0, 0.f, 0.f, 0.f, 0.f, {0.}, {0.}, {0.}, {0.}, {0.}, {0.}, {0.}}
 
 
 

@@ -80,6 +80,10 @@ HB_BEGIN_DECLS
 HB_EXTERN hb_face_t *
 hb_coretext_face_create (CGFontRef cg_font);
 
+HB_EXTERN hb_face_t *
+hb_coretext_face_create_from_file_or_fail (const char   *file_name,
+					   unsigned int  index);
+
 HB_EXTERN hb_font_t *
 hb_coretext_font_create (CTFontRef ct_font);
 
@@ -89,6 +93,9 @@ hb_coretext_face_get_cg_font (hb_face_t *face);
 
 HB_EXTERN CTFontRef
 hb_coretext_font_get_ct_font (hb_font_t *font);
+
+HB_EXTERN void
+hb_coretext_font_set_funcs (hb_font_t *font);
 
 
 HB_END_DECLS

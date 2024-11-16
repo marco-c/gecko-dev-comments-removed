@@ -188,6 +188,11 @@ _hb_next_syllable (hb_buffer_t *buffer, unsigned int start)
 
 
 
+
+
+
+
+
 enum hb_unicode_props_flags_t {
   UPROPS_MASK_GEN_CAT	= 0x001Fu,
   UPROPS_MASK_IGNORABLE	= 0x0020u,
@@ -196,7 +201,8 @@ enum hb_unicode_props_flags_t {
 
   
   UPROPS_MASK_Cf_ZWJ	= 0x0100u,
-  UPROPS_MASK_Cf_ZWNJ	= 0x0200u
+  UPROPS_MASK_Cf_ZWNJ	= 0x0200u,
+  UPROPS_MASK_Cf_VS	= 0x0400u
 };
 HB_MARK_AS_FLAG_T (hb_unicode_props_flags_t);
 
@@ -301,6 +307,27 @@ _hb_glyph_info_get_unicode_space_fallback_type (const hb_glyph_info_t *info)
   return _hb_glyph_info_is_unicode_space (info) ?
 	 (hb_unicode_funcs_t::space_t) (info->unicode_props()>>8) :
 	 hb_unicode_funcs_t::NOT_SPACE;
+}
+static inline bool
+_hb_glyph_info_is_variation_selector (const hb_glyph_info_t *info)
+{
+  return _hb_glyph_info_get_general_category (info) ==
+	 HB_UNICODE_GENERAL_CATEGORY_FORMAT &&
+	 (info->unicode_props() & UPROPS_MASK_Cf_VS);
+}
+static inline void
+_hb_glyph_info_set_variation_selector (hb_glyph_info_t *info, bool customize)
+{
+  if (customize)
+  {
+    _hb_glyph_info_set_general_category (info, HB_UNICODE_GENERAL_CATEGORY_FORMAT);
+    info->unicode_props() |= UPROPS_MASK_Cf_VS;
+  }
+  else
+  {
+    
+    _hb_glyph_info_set_general_category (info, HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK);
+  }
 }
 
 static inline bool _hb_glyph_info_substituted (const hb_glyph_info_t *info);
