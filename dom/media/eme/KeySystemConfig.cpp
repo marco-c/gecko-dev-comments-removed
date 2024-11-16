@@ -315,6 +315,8 @@ void KeySystemConfig::GetGMPKeySystemConfigs(dom::Promise* aPromise) {
             info->mClearlead = DoesKeySystemSupportClearLead(config.mKeySystem);
             
             info->mIsHDCP22Compatible = false;
+            
+            info->mIsHardwareDecryption = false;
           }
           promise->MaybeResolve(cdmInfo);
         } else {
