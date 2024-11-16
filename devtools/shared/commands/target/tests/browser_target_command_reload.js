@@ -78,30 +78,33 @@ add_task(async function () {
   
   await targetCommand.startListening();
 
-  const { onResource: onReloaded } =
-    await commands.resourceCommand.waitForNextResource(
-      commands.resourceCommand.TYPES.DOCUMENT_EVENT,
-      {
-        ignoreExistingResources: true,
-        predicate(resource) {
-          return resource.name == "dom-loading";
-        },
-      }
-    );
+  
+  let reloadedTargets = [];
+  await commands.resourceCommand.watchResources(
+    [commands.resourceCommand.TYPES.DOCUMENT_EVENT],
+    {
+      onAvailable(resources) {
+        for (const resource of resources) {
+          if (resource.name == "dom-complete") {
+            reloadedTargets.push(resource.targetFront.isFallbackExtensionDocument);
+          }
+        }
+      },
+      ignoreExistingResources: true
+    }
+  );
 
-  const backgroundPageURL = targetCommand.targetFront.url;
-  ok(backgroundPageURL, "Got the background page URL");
   await targetCommand.reloadTopLevelTarget();
 
   info("Wait for next dom-loading DOCUMENT_EVENT");
-  const event = await onReloaded;
+  await waitFor(()=>reloadedTargets.length == 1);
 
   
   
-  is(
-    event.url,
-    backgroundPageURL,
-    "We received the DOCUMENT_EVENT's for the expected document: the new background page."
+  Assert.deepEqual(
+    reloadedTargets,
+    [false],
+    "All the targets got reloaded"
   );
 
   await commands.destroy();

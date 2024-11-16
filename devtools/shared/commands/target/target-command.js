@@ -206,7 +206,12 @@ class TargetCommand extends EventEmitter {
       
       this.targetFront = targetFront;
       this.descriptorFront.setTarget(targetFront);
-      this.#selectedTargetFront = null;
+
+      
+      
+      if (!this.descriptorFront.isWebExtensionDescriptor) {
+        this.#selectedTargetFront = null;
+      }
 
       if (isFirstTarget && this.isServerTargetSwitchingEnabled()) {
         this._gotFirstTopLevelTarget = true;
@@ -255,9 +260,18 @@ class TargetCommand extends EventEmitter {
 
     if (isTargetSwitching) {
       this.emit("switched-target", targetFront);
+    }
 
+    const autoSelectTarget =
       
       
+      isTargetSwitching ||
+      
+      
+      (this.descriptorFront.isWebExtensionDescriptor &&
+      this.#selectedTargetFront?.isFallbackExtensionDocument);
+
+    if (autoSelectTarget) {
       await this.selectTarget(targetFront);
     }
   }
@@ -357,7 +371,18 @@ class TargetCommand extends EventEmitter {
         this.#selectedTargetFront = null;
       } else {
         
-        this.selectTarget(this.targetFront);
+        let fallbackTarget = this.targetFront;
+
+        
+        
+        if (this.descriptorFront.isWebExtensionDescriptor) {
+          const backgroundPageTargetFront = [...this._targets].find(target => !target.isFallbackExtensionDocument);
+          if (backgroundPageTargetFront) {
+            fallbackTarget = backgroundPageTargetFront;
+          }
+        }
+
+        this.selectTarget(fallbackTarget);
       }
     }
 

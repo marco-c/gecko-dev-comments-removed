@@ -31,17 +31,38 @@ var {
 } = require("resource://devtools/server/actors/utils/sources-manager.js");
 var makeDebugger = require("resource://devtools/server/actors/utils/make-debugger.js");
 const Targets = require("resource://devtools/server/actors/targets/index.js");
-const { TargetActorRegistry } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs",
-  { global: "shared" }
-);
-const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  { global: "contextual" }
-);
 
 const EXTENSION_CONTENT_SYS_MJS =
   "resource://gre/modules/ExtensionContent.sys.mjs";
+
+const lazy = {};
+
+
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+    WEBEXTENSION_FALLBACK_DOC_URL:
+      "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
+  },
+  { global: "contextual" }
+);
+
+
+
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    TargetActorRegistry:
+      "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs",
+    
+    
+    
+    
+    ExtensionContent: EXTENSION_CONTENT_SYS_MJS,
+  },
+  { global: "shared" }
+);
 
 const { Pool } = require("resource://devtools/shared/protocol.js");
 const {
@@ -74,16 +95,6 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/utils/stylesheets-manager.js",
   true
 );
-const lazy = {};
-loader.lazyGetter(lazy, "ExtensionContent", () => {
-  return ChromeUtils.importESModule(EXTENSION_CONTENT_SYS_MJS, {
-    
-    
-    
-    
-    global: "shared",
-  }).ExtensionContent;
-});
 
 loader.lazyRequireGetter(
   this,
@@ -338,12 +349,18 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     this._progressListener = new DebuggerProgressListener(this);
 
-    TargetActorRegistry.registerTargetActor(this);
+    lazy.TargetActorRegistry.registerTargetActor(this);
 
     if (docShell) {
       this.setDocShell(docShell);
     }
   }
+
+  
+  
+  
+  
+  #isFallbackExtensionDocument = false;
 
   
 
@@ -366,7 +383,9 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     this._originalWindow = this.window;
 
     
-    this.isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(this.window);
+    this.isPrivate = lazy.PrivateBrowsingUtils.isContentWindowPrivate(
+      this.window
+    );
 
     
     
@@ -389,6 +408,14 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     if (!this.browsingContext.parent) {
       this.browsingContext.watchedByDevTools = true;
+    }
+
+    if (this.sessionContext.type == "webextension") {
+      if (
+        this.window.location.href.startsWith(lazy.WEBEXTENSION_FALLBACK_DOC_URL)
+      ) {
+        this.#isFallbackExtensionDocument = true;
+      }
     }
   }
 
@@ -687,6 +714,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       ignoreSubFrames: this.ignoreSubFrames,
       isPopup,
       isPrivate: this.isPrivate,
+
+      
+      isFallbackExtensionDocument: this.#isFallbackExtensionDocument,
+
       traits: {
         
         
@@ -840,7 +871,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       "console-api-profiler"
     );
 
-    TargetActorRegistry.unregisterTargetActor(this);
+    lazy.TargetActorRegistry.unregisterTargetActor(this);
     Resources.unwatchAllResources(this);
   }
 

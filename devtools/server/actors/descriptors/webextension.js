@@ -170,8 +170,35 @@ class WebExtensionDescriptorActor extends Actor {
 
     
     
+    
+    
+    
     this._browser =
       await lazy.ExtensionParent.DebugUtils.getExtensionProcessBrowser(this);
+
+    
+    
+    
+    
+    
+    
+    const onLocationChanged = new Promise(resolve => {
+      const listener = {
+        onLocationChange: () => {
+          this._browser.webProgress.removeProgressListener(listener);
+          resolve();
+        },
+        QueryInterface: ChromeUtils.generateQI([
+          "nsIWebProgressListener",
+          "nsISupportsWeakReference",
+        ]),
+      };
+
+      this._browser.webProgress.addProgressListener(
+        listener,
+        Ci.nsIWebProgress.NOTIFY_LOCATION
+      );
+    });
 
     
     
@@ -181,6 +208,7 @@ class WebExtensionDescriptorActor extends Actor {
       "src",
       `${WEBEXTENSION_FALLBACK_DOC_URL}#${this.addonId}`
     );
+    await onLocationChanged;
   }
 
   async getTarget() {

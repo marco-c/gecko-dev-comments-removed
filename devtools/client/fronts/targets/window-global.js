@@ -45,6 +45,7 @@ class WindowGlobalTargetFront extends TargetMixin(
     this.browsingContextID = json.browsingContextID;
     this.innerWindowId = json.innerWindowId;
     this.processID = json.processID;
+    this.isFallbackExtensionDocument = json.isFallbackExtensionDocument;
 
     
     
