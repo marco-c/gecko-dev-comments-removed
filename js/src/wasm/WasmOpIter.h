@@ -2286,8 +2286,8 @@ inline bool OpIter<Policy>::readGetGlobal(uint32_t* id) {
   
   if (kind_ == OpIter::InitExpr && codeMeta_.globals[*id].isMutable()) {
     return fail(
-        "global.get in initializer expression must reference a global "
-        "immutable import");
+        "global.get in initializer expression must reference a "
+        "previously-defined immutable global");
   }
 
   return push(codeMeta_.globals[*id].type());
