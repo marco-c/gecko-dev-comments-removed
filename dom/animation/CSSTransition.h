@@ -51,6 +51,12 @@ class CSSTransition final : public Animation {
   }
 
   void CancelFromStyle(PostRestyleMode aPostRestyle) {
+    Animation::Cancel(aPostRestyle);
+
+    
+    
+    
+    
     
     
     
@@ -59,8 +65,6 @@ class CSSTransition final : public Animation {
     
     mAnimationIndex = sNextAnimationIndex++;
     mNeedsNewAnimationIndexWhenRun = true;
-
-    Animation::Cancel(aPostRestyle);
 
     
     

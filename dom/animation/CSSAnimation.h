@@ -84,6 +84,12 @@ class CSSAnimation final : public Animation {
   void PlayFromStyle();
   void PauseFromStyle();
   void CancelFromStyle(PostRestyleMode aPostRestyle) {
+    Animation::Cancel(aPostRestyle);
+
+    
+    
+    
+    
     
     
     
@@ -96,8 +102,6 @@ class CSSAnimation final : public Animation {
     
     mAnimationIndex = sNextAnimationIndex++;
     mNeedsNewAnimationIndexWhenRun = true;
-
-    Animation::Cancel(aPostRestyle);
 
     
     
