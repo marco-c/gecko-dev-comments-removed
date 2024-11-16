@@ -149,6 +149,7 @@ class nsIncrementalDownload final : public nsIIncrementalDownload,
   nsCOMPtr<nsIChannel> mNewRedirectChannel;
   nsCString mPartialValidator;
   bool mCacheBust{false};
+  nsCString mExtraHeaders;
 
   
   
@@ -247,6 +248,11 @@ nsresult nsIncrementalDownload::ProcessTimeout() {
 
   rv = ClearRequestHeader(http);
   if (NS_FAILED(rv)) return rv;
+
+  if (!mExtraHeaders.IsEmpty()) {
+    rv = AddExtraHeaders(http, mExtraHeaders);
+    if (NS_FAILED(rv)) return rv;
+  }
 
   
   
@@ -416,7 +422,7 @@ nsIncrementalDownload::SetLoadGroup(nsILoadGroup* loadGroup) {
 
 NS_IMETHODIMP
 nsIncrementalDownload::Init(nsIURI* uri, nsIFile* dest, int32_t chunkSize,
-                            int32_t interval) {
+                            int32_t interval, const nsACString& extraHeaders) {
   
   NS_ENSURE_FALSE(mURI, NS_ERROR_ALREADY_INITIALIZED);
 
@@ -428,6 +434,9 @@ nsIncrementalDownload::Init(nsIURI* uri, nsIFile* dest, int32_t chunkSize,
 
   if (chunkSize > 0) mChunkSize = chunkSize;
   if (interval >= 0) mInterval = interval;
+
+  mExtraHeaders = extraHeaders;
+
   return NS_OK;
 }
 
@@ -842,6 +851,11 @@ nsIncrementalDownload::AsyncOnChannelRedirect(
 
   nsresult rv = ClearRequestHeader(newHttpChannel);
   if (NS_FAILED(rv)) return rv;
+
+  if (!mExtraHeaders.IsEmpty()) {
+    rv = AddExtraHeaders(http, mExtraHeaders);
+    if (NS_FAILED(rv)) return rv;
+  }
 
   
   nsAutoCString rangeVal;
