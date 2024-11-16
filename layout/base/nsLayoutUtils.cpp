@@ -5545,8 +5545,8 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
         *aResult = kidPosition + aFrame->GetLogicalUsedBorder(aWM).BStart(aWM);
         
         
-        aResult->mBaseline = std::clamp(aResult->mBaseline, 0,
-                                        aFrame->GetLogicalSize(aWM).BSize(aWM));
+        aResult->mBaseline = CSSMinMax(aResult->mBaseline, 0,
+                                       aFrame->GetLogicalSize(aWM).BSize(aWM));
         return true;
       }
       return false;
