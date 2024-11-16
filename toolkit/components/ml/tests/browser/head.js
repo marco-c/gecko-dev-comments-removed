@@ -105,9 +105,22 @@ const reportMetrics = journal => {
   info(`perfMetrics | ${JSON.stringify(metrics)}`);
 };
 
+
+
+
+
+
+
+
+
+
 const fetchMLMetric = (metrics, name, key) => {
-  const metric = metrics.find(metric => metric.name === name);
-  return metric[key];
+  const matchingMetrics = metrics.filter(metric => metric.name === name);
+  if (matchingMetrics.length === 0) {
+    return undefined;
+  } 
+  const latestMetric = matchingMetrics[matchingMetrics.length - 1];
+  return latestMetric[key];
 };
 
 const fetchLatencyMetrics = metrics => {
@@ -178,7 +191,7 @@ function startHttpServer(directoryPath) {
   return { server, baseUrl };
 }
 
-const runInference = async (pipelineOptions, args) => {
+const initializeEngine = async pipelineOptions => {
   const modelDirectory = normalizePathForOS(
     `${Services.env.get("MOZ_FETCHES_DIR")}/onnx-models`
   );
@@ -193,16 +206,46 @@ const runInference = async (pipelineOptions, args) => {
 
   info("Get Pipeline Options");
   info("Run the inference");
-  const engineInstance = await mlEngineParent.getEngine(pipelineOptions);
+  return {
+    cleanup,
+    engine: await mlEngineParent.getEngine(pipelineOptions),
+  };
+};
+
+const runEngineWithMetrics = async (
+  engineInstance,
+  engineConfig,
+  iterations = 1
+) => {
+  const journal = {}; 
+  const engine = engineInstance.engine;
+  
+  for (let i = 0; i < iterations; i++) {
+    const res = await engine.run(engineConfig.request);
+    let metrics = fetchMetrics(res.metrics);
+
+    
+    for (const [metricName, metricVal] of Object.entries(metrics)) {
+      const prefixedMetricName = `${engineConfig.engineId}-${metricName}`;
+      if (!journal[prefixedMetricName]) {
+        journal[prefixedMetricName] = [];
+      }
+      journal[prefixedMetricName].push(metricVal);
+    }
+  }
+  return journal;
+};
+
+const runInference = async (pipelineOptions, args) => {
+  const { cleanup, engine } = await initializeEngine(pipelineOptions);
 
   const request = {
     args,
     options: { pooling: "mean", normalize: true },
   };
 
-  const res = await engineInstance.run(request);
+  const res = await engine.run(request);
   let metrics = fetchMetrics(res.metrics);
-  info(metrics);
   await EngineProcess.destroyMLEngine();
   await cleanup();
   return metrics;
