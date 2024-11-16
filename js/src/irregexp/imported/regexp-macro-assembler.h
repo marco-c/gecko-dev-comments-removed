@@ -42,8 +42,7 @@ class RegExpMacroAssembler {
   RegExpMacroAssembler(Isolate* isolate, Zone* zone);
   virtual ~RegExpMacroAssembler() = default;
 
-  virtual Handle<HeapObject> GetCode(Handle<String> source,
-                                     RegExpFlags flags) = 0;
+  virtual Handle<HeapObject> GetCode(Handle<String> source) = 0;
 
   
   
@@ -51,7 +50,7 @@ class RegExpMacroAssembler {
   
   
   
-  virtual int stack_limit_slack_slot_count() = 0;
+  virtual int stack_limit_slack() = 0;
   virtual bool CanReadUnaligned() const = 0;
 
   virtual void AdvanceCurrentPosition(int by) = 0;  
@@ -106,11 +105,6 @@ class RegExpMacroAssembler {
   
   
   virtual void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set) = 0;
-
-  virtual void SkipUntilBitInTable(int cp_offset, Handle<ByteArray> table,
-                                   Handle<ByteArray> nibble_table,
-                                   int advance_by) = 0;
-  virtual bool SkipUntilBitInTableUseSimd(int advance_by) { return false; }
 
   
   
@@ -357,8 +351,7 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
                      int* output, int output_size, Isolate* isolate,
                      Tagged<IrRegExpData> regexp_data);
 
-  ZoneUnorderedMap<uint32_t, IndirectHandle<FixedUInt16Array>>
-      range_array_cache_;
+  ZoneUnorderedMap<uint32_t, Handle<FixedUInt16Array>> range_array_cache_;
 };
 
 }  

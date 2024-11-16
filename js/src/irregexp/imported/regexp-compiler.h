@@ -40,10 +40,10 @@ constexpr int kLineTerminatorRanges[] = {0x000A, 0x000B, 0x000D,         0x000E,
 constexpr int kLineTerminatorRangeCount = arraysize(kLineTerminatorRanges);
 
 
-constexpr uint32_t kMaxLookaheadForBoyerMoore = 8;
+constexpr int kMaxLookaheadForBoyerMoore = 8;
 
 
-constexpr uint32_t kPatternTooShortForBoyerMoore = 2;
+constexpr int kPatternTooShortForBoyerMoore = 2;
 
 }  
 
@@ -205,10 +205,8 @@ class BoyerMooreLookahead : public ZoneObject {
   int max_char_;
   ZoneList<BoyerMoorePositionInfo*>* bitmaps_;
 
-  int GetSkipTable(
-      int min_lookahead, int max_lookahead,
-      DirectHandle<ByteArray> boolean_skip_table,
-      DirectHandle<ByteArray> nibble_table = DirectHandle<ByteArray>{});
+  int GetSkipTable(int min_lookahead, int max_lookahead,
+                   DirectHandle<ByteArray> boolean_skip_table);
   bool FindWorthwhileInterval(int* from, int* to);
   int FindBestInterval(int max_number_of_chars, int old_biggest_points,
                        int* from, int* to);
