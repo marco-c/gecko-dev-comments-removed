@@ -2566,7 +2566,8 @@ bool GeneralParser<ParseHandler, Unit>::matchOrInsertSemicolon(
     }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    if (!this->pc_->isUsingSyntaxAllowed() &&
+    if (options().explicitResourceManagement() &&
+        !this->pc_->isUsingSyntaxAllowed() &&
         anyChars.currentToken().type == TokenKind::Using) {
       error(JSMSG_USING_OUTSIDE_BLOCK_OR_MODULE);
       return false;
@@ -6534,7 +6535,7 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
     tokenStream.consumeKnownToken(tt, TokenStream::SlashIsRegExp);
   }
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  else if (tt == TokenKind::Await) {
+  else if (tt == TokenKind::Await && options().explicitResourceManagement()) {
     if (!pc_->isAsync()) {
       if (pc_->atModuleTopLevel()) {
         if (!options().topLevelAwait) {
@@ -6576,7 +6577,7 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
         anyChars.ungetToken();  
       }
     }
-  } else if (tt == TokenKind::Using) {
+  } else if (tt == TokenKind::Using && options().explicitResourceManagement()) {
     tokenStream.consumeKnownToken(tt, TokenStream::SlashIsRegExp);
 
     
@@ -9659,34 +9660,38 @@ GeneralParser<ParseHandler, Unit>::statementListItem(
 
       if (tt == TokenKind::Await && pc_->isAsync()) {
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-        
-        
-        
-        
-
-        TokenKind nextTokUsing = TokenKind::Eof;
-        
-        
-        if (!tokenStream.peekTokenSameLine(&nextTokUsing,
-                                           TokenStream::SlashIsRegExp)) {
-          return errorResult();
-        }
-
-        if (nextTokUsing == TokenKind::Using &&
-            this->pc_->isUsingSyntaxAllowed()) {
-          tokenStream.consumeKnownToken(nextTokUsing,
-                                        TokenStream::SlashIsRegExp);
-          TokenKind nextTokIdentifier = TokenKind::Eof;
+        if (options().explicitResourceManagement()) {
           
           
-          if (!tokenStream.peekTokenSameLine(&nextTokIdentifier)) {
+          
+          
+          
+
+          TokenKind nextTokUsing = TokenKind::Eof;
+          
+          
+          if (!tokenStream.peekTokenSameLine(&nextTokUsing,
+                                             TokenStream::SlashIsRegExp)) {
             return errorResult();
           }
-          if (TokenKindIsPossibleIdentifier(nextTokIdentifier)) {
-            return lexicalDeclaration(yieldHandling,
-                                      DeclarationKind::AwaitUsing);
+
+          if (nextTokUsing == TokenKind::Using &&
+              this->pc_->isUsingSyntaxAllowed()) {
+            tokenStream.consumeKnownToken(nextTokUsing,
+                                          TokenStream::SlashIsRegExp);
+            TokenKind nextTokIdentifier = TokenKind::Eof;
+            
+            
+            
+            if (!tokenStream.peekTokenSameLine(&nextTokIdentifier)) {
+              return errorResult();
+            }
+            if (TokenKindIsPossibleIdentifier(nextTokIdentifier)) {
+              return lexicalDeclaration(yieldHandling,
+                                        DeclarationKind::AwaitUsing);
+            }
+            anyChars.ungetToken();  
           }
-          anyChars.ungetToken();  
         }
 #endif
         return expressionStatement(yieldHandling);
@@ -9815,7 +9820,8 @@ GeneralParser<ParseHandler, Unit>::statementListItem(
       if (!tokenStream.peekTokenSameLine(&nextTok)) {
         return errorResult();
       }
-      if (!TokenKindIsPossibleIdentifier(nextTok) ||
+      if (!options().explicitResourceManagement() ||
+          !TokenKindIsPossibleIdentifier(nextTok) ||
           !this->pc_->isUsingSyntaxAllowed()) {
         if (!tokenStream.peekToken(&nextTok)) {
           return errorResult();

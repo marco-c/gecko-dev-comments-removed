@@ -62,7 +62,10 @@
 
 #include "js/CharacterEncoding.h"  
 #include "js/ColumnNumber.h"       
-#include "js/TypeDecls.h"          
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+#  include "js/Prefs.h"  
+#endif
+#include "js/TypeDecls.h"  
 
 namespace js {
 class FrontendContext;
@@ -125,13 +128,28 @@ class JS_PUBLIC_API PrefableCompileOptions {
   PrefableCompileOptions()
       : importAttributes_(false),
         sourcePragmas_(true),
-        throwOnAsmJSValidationFailure_(false) {}
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+        explicitResourceManagement_(
+            JS::Prefs::experimental_explicit_resource_management()),
+#endif
+        throwOnAsmJSValidationFailure_(false) {
+  }
 
   bool importAttributes() const { return importAttributes_; }
   PrefableCompileOptions& setImportAttributes(bool enabled) {
     importAttributes_ = enabled;
     return *this;
   }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  bool explicitResourceManagement() const {
+    return explicitResourceManagement_;
+  }
+  PrefableCompileOptions& setExplicitResourceManagement(bool enabled) {
+    explicitResourceManagement_ = enabled;
+    return *this;
+  }
+#endif
 
   
   bool sourcePragmas() const { return sourcePragmas_; }
@@ -170,6 +188,9 @@ class JS_PUBLIC_API PrefableCompileOptions {
     PrintFields_(importAttributes_);
     PrintFields_(sourcePragmas_);
     PrintFields_(throwOnAsmJSValidationFailure_);
+#  ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    PrintFields_(explicitResourceManagement_);
+#  endif
 #  undef PrintFields_
 
     switch (asmJSOption_) {
@@ -198,6 +219,12 @@ class JS_PUBLIC_API PrefableCompileOptions {
 
   
   bool sourcePragmas_ : 1;
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  
+  
+  bool explicitResourceManagement_ : 1;
+#endif
 
   
   bool throwOnAsmJSValidationFailure_ : 1;
@@ -381,6 +408,11 @@ class JS_PUBLIC_API TransitiveCompileOptions {
 
   bool importAttributes() const { return prefableOptions_.importAttributes(); }
   bool sourcePragmas() const { return prefableOptions_.sourcePragmas(); }
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  bool explicitResourceManagement() const {
+    return prefableOptions_.explicitResourceManagement();
+  }
+#endif
   bool throwOnAsmJSValidationFailure() const {
     return prefableOptions_.throwOnAsmJSValidationFailure();
   }
