@@ -1738,6 +1738,8 @@ class Element : public FragmentOrElement {
 
   nsINode* GetScopeChainParent() const override;
 
+  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
+
   
 
 
