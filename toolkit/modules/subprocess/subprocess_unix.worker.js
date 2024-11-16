@@ -410,22 +410,6 @@ class Process extends BaseProcess {
 
 
 
-
-
-  connectRunning(options) {
-    this.pid = 0;
-    this.pipes = [];
-    this.pipes.push(new OutputPipe(this, unix.Fd(options.fds[0])));
-    this.pipes.push(new InputPipe(this, unix.Fd(options.fds[1])));
-    this.pipes.push(new InputPipe(this, unix.Fd(options.fds[2])));
-    
-  }
-
-  
-
-
-
-
   onReady() {
     
     
@@ -473,9 +457,7 @@ class Process extends BaseProcess {
       this.exitCode = unix.WEXITSTATUS(status.value);
     }
 
-    if (this.fd !== undefined) {
-      this.fd.dispose();
-    }
+    this.fd.dispose();
     io.updatePollFds();
     this.resolveExit(this.exitCode);
     return this.exitCode;
@@ -539,9 +521,7 @@ io = {
     let handlers = [
       this.signal,
       ...this.pipes.values(),
-      
-      
-      ...Array.from(this.processes.values()).filter(p => p.fd !== undefined),
+      ...this.processes.values(),
     ];
 
     handlers = handlers.filter(handler => handler.pollEvents);
