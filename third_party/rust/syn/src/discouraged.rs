@@ -175,8 +175,8 @@ impl<'a> Speculative for ParseBuffer<'a> {
         if !Rc::ptr_eq(&self_unexp, &fork_unexp) {
             match (fork_sp, self_sp) {
                 
-                (Some(span), None) => {
-                    self_unexp.set(Unexpected::Some(span));
+                (Some((span, delimiter)), None) => {
+                    self_unexp.set(Unexpected::Some(span, delimiter));
                 }
                 
                 (None, None) => {

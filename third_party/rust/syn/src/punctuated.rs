@@ -93,6 +93,29 @@ impl<T, P> Punctuated<T, P> {
     }
 
     
+    pub fn get(&self, index: usize) -> Option<&T> {
+        if let Some((value, _punct)) = self.inner.get(index) {
+            Some(value)
+        } else if index == self.inner.len() {
+            self.last.as_deref()
+        } else {
+            None
+        }
+    }
+
+    
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        let inner_len = self.inner.len();
+        if let Some((value, _punct)) = self.inner.get_mut(index) {
+            Some(value)
+        } else if index == inner_len {
+            self.last.as_deref_mut()
+        } else {
+            None
+        }
+    }
+
+    
     pub fn iter(&self) -> Iter<T> {
         Iter {
             inner: Box::new(NoDrop::new(PrivateIter {
