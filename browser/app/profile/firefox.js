@@ -2441,7 +2441,11 @@ pref("browser.tabs.crashReporting.sendReport", true);
 pref("browser.tabs.crashReporting.includeURL", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.unloadTabInContextMenu", true);
+#else
 pref("browser.tabs.unloadTabInContextMenu", false);
+#endif
 
 
 
