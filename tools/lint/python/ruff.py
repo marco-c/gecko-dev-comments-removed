@@ -138,6 +138,7 @@ def lint(paths, config, log, **lintargs):
 
         
         fix_args.append(f"--extend-ignore={','.join(warning_rules)}")
+        log.debug(f"Running --fix: {fix_args}")
         output = run_process(config, fix_args, **process_kwargs)
         matches = re.match(r"Fixed (\d+) errors?.", output)
         if matches:
