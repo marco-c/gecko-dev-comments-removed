@@ -9733,6 +9733,25 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsIsLockFree() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsPause() {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  writer.atomicsPauseResult();
+  writer.returnFromIC();
+
+  trackAttached("AtomicsPause");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachBoolean() {
   
   if (argc_ > 1) {
@@ -12241,6 +12260,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachAtomicsStore();
     case InlinableNative::AtomicsIsLockFree:
       return tryAttachAtomicsIsLockFree();
+    case InlinableNative::AtomicsPause:
+      return tryAttachAtomicsPause();
 
     
     case InlinableNative::BigInt:
