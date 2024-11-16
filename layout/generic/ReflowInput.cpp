@@ -1837,28 +1837,6 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   } else if (!mFrame->HasIntrinsicKeywordForBSize() ||
              !wm.IsOrthogonalTo(cbwm)) {
     
-    if (wm.IsOrthogonalTo(cbwm)) {
-      
-      
-      
-      nscoord autoISize = cbSize.ISize(cbwm) - margin.IStartEnd(cbwm) -
-                          borderPadding.IStartEnd(cbwm) -
-                          offsets.IStartEnd(cbwm);
-      autoISize = std::max(autoISize, 0);
-      
-      
-      
-      
-      NS_WARNING_ASSERTION(autoISize != NS_UNCONSTRAINEDSIZE,
-                           "Unexpected size from inline-start and inline-end");
-
-      nscoord autoBSizeInWM = autoISize;
-      LogicalSize computedSizeInWM =
-          CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-              autoBSizeInWM, computedSize.ConvertTo(wm, cbwm));
-      computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
-    }
-
     
     
     
@@ -1910,17 +1888,6 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
                          "Unexpected size from block-start and block-end");
 
     
-    
-    
-    if (!wm.IsOrthogonalTo(cbwm)) {
-      
-      
-      LogicalSize computedSizeInWM =
-          CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-              autoBSize, computedSize.ConvertTo(wm, cbwm));
-      computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
-    }
-
     
     
     
