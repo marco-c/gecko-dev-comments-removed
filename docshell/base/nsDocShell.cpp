@@ -5067,13 +5067,15 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
     loadState->SetLoadType(LOAD_REFRESH);
   }
 
+  const bool sendReferrer = StaticPrefs::network_http_referer_sendFromRefresh();
   
 
 
+  const nsCOMPtr<nsIReferrerInfo> referrerInfo =
+      new ReferrerInfo(*doc, sendReferrer);
+  
 
 
-
-  const nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo(*doc, false);
   loadState->SetReferrerInfo(referrerInfo);
 
   loadState->SetLoadFlags(
