@@ -1214,7 +1214,12 @@ struct arena_t {
   
   
   
-  [[nodiscard]] arena_chunk_t* DeallocChunk(arena_chunk_t* aChunk);
+  void RemoveChunk(arena_chunk_t* aChunk);
+
+  
+  
+  
+  [[nodiscard]] arena_chunk_t* DemoteChunkToSpare(arena_chunk_t* aChunk);
 
   arena_run_t* AllocRun(size_t aSize, bool aLarge, bool aZero);
 
@@ -2847,44 +2852,47 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
 #endif
 }
 
-arena_chunk_t* arena_t::DeallocChunk(arena_chunk_t* aChunk) {
-  if (mSpare) {
-    if (mSpare->ndirty > 0) {
-      aChunk->arena->mChunksDirty.Remove(mSpare);
-      mNumDirty -= mSpare->ndirty;
-      mStats.committed -= mSpare->ndirty;
-    }
-
-    
-    size_t madvised = 0;
-    size_t fresh = 0;
-    for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - 1; i++) {
-      
-      
-      MOZ_ASSERT(mSpare->map[i].bits &
-                 (CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED | CHUNK_MAP_DIRTY));
-
-      if (mSpare->map[i].bits & CHUNK_MAP_MADVISED) {
-        madvised++;
-      } else if (mSpare->map[i].bits & CHUNK_MAP_FRESH) {
-        fresh++;
-      }
-    }
-
-    mNumMAdvised -= madvised;
-    mNumFresh -= fresh;
-
-#ifdef MALLOC_DOUBLE_PURGE
-    if (mChunksMAdvised.ElementProbablyInList(mSpare)) {
-      mChunksMAdvised.remove(mSpare);
-    }
-#endif
-
-    mStats.mapped -= kChunkSize;
-    mStats.committed -= gChunkHeaderNumPages - 1;
+void arena_t::RemoveChunk(arena_chunk_t* aChunk) {
+  if (aChunk->ndirty > 0) {
+    aChunk->arena->mChunksDirty.Remove(aChunk);
+    mNumDirty -= aChunk->ndirty;
+    mStats.committed -= aChunk->ndirty;
   }
 
   
+  size_t madvised = 0;
+  size_t fresh = 0;
+  for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - 1; i++) {
+    
+    
+    MOZ_ASSERT(aChunk->map[i].bits &
+               (CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED | CHUNK_MAP_DIRTY));
+
+    if (aChunk->map[i].bits & CHUNK_MAP_MADVISED) {
+      madvised++;
+    } else if (aChunk->map[i].bits & CHUNK_MAP_FRESH) {
+      fresh++;
+    }
+  }
+
+  mNumMAdvised -= madvised;
+  mNumFresh -= fresh;
+
+#ifdef MALLOC_DOUBLE_PURGE
+  if (mChunksMAdvised.ElementProbablyInList(aChunk)) {
+    mChunksMAdvised.remove(aChunk);
+  }
+#endif
+
+  mStats.mapped -= kChunkSize;
+  mStats.committed -= gChunkHeaderNumPages - 1;
+}
+
+arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
+  if (mSpare) {
+    RemoveChunk(mSpare);
+  }
+
   
   
   mRunsAvail.Remove(&aChunk->map[gChunkHeaderNumPages]);
@@ -3228,7 +3236,7 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
   arena_chunk_t* chunk_dealloc = nullptr;
   if ((chunk->map[gChunkHeaderNumPages].bits &
        (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass) {
-    chunk_dealloc = DeallocChunk(chunk);
+    chunk_dealloc = DemoteChunkToSpare(chunk);
   }
 
   return chunk_dealloc;
