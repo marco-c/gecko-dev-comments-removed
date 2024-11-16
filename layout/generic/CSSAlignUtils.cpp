@@ -54,11 +54,7 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
 
   
   WritingMode wm = aRI.GetWritingMode();
-  
-  
-  const LogicalMargin margin = aFlags & AlignJustifyFlags::AligningMarginBox
-                                   ? LogicalMargin{wm}
-                                   : aRI.ComputedLogicalMargin(wm);
+  const LogicalMargin margin = aRI.ComputedLogicalMargin(wm);
   const auto startSide = MakeLogicalSide(
       aAxis, MOZ_LIKELY(isSameSide) ? LogicalEdge::Start : LogicalEdge::End);
   const nscoord marginStart = margin.Side(startSide, wm);
@@ -67,8 +63,7 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
 
   bool hasAutoMarginStart;
   bool hasAutoMarginEnd;
-  if (aFlags & (AlignJustifyFlags::IgnoreAutoMargins |
-                AlignJustifyFlags::AligningMarginBox)) {
+  if (aFlags & AlignJustifyFlags::IgnoreAutoMargins) {
     
     
     hasAutoMarginStart = hasAutoMarginEnd = false;

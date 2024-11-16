@@ -2962,28 +2962,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
-  mozilla::LogicalSize ComputeAbsolutePosAutoSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
-      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
-      const mozilla::LogicalSize& aMargin,
-      const mozilla::LogicalSize& aBorderPadding,
-      const mozilla::StyleSizeOverrides& aSizeOverrides,
-      const mozilla::ComputeSizeFlags& aFlags);
-
-  
-
-
-
-  bool IsAbsolutelyPositionedWithDefiniteContainingBlock() const;
-
-  
-
-
-
   nscoord ShrinkISizeToFit(const mozilla::IntrinsicSizeInput& aInput,
                            nscoord aISizeInCB,
                            mozilla::ComputeSizeFlags aFlags);
