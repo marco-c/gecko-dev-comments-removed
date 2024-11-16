@@ -91,10 +91,10 @@ const AVAILABLE_UA_OVERRIDES = [
 
     id: "bug1582582",
     platform: "desktop",
-    domain: "sling.com",
+    domain: "watch.sling.com",
     bug: "1582582",
     config: {
-      matches: ["https://watch.sling.com/*", "https://www.sling.com/*"],
+      matches: ["https://watch.sling.com/*"],
       uaTransformer: originalUA => {
         return (
           UAHelpers.getPrefix(originalUA) +
