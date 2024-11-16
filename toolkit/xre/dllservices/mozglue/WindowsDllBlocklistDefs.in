@@ -375,6 +375,9 @@ CHILD_PROCESSES += [
     
     DllBlocklistEntry("T_Prevent64.dll", ALL_VERSIONS),
     DllBlocklistEntry("TDCommonLib64.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
 ]
 
 GPU_PROCESSES += [
@@ -409,7 +412,6 @@ UTILITY_PROCESSES += [
     
     DllBlocklistEntry("ipseng64.dll", ALL_VERSIONS),
     DllBlocklistEntry("ipseng32.dll", ALL_VERSIONS),
-    DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
     DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
 ]
 
@@ -422,7 +424,6 @@ GMPLUGIN_PROCESSES += [
     
     DllBlocklistEntry("ipseng64.dll", ALL_VERSIONS),
     DllBlocklistEntry("ipseng32.dll", ALL_VERSIONS),
-    DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
     DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
 
     
