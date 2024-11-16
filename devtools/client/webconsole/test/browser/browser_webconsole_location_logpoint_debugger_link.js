@@ -6,6 +6,9 @@
 
 "use strict";
 
+
+requestLongerTimeout(2);
+
 const TEST_URI =
   "https://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-location-debugger-link-logpoint.html";
