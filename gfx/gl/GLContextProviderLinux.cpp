@@ -35,10 +35,7 @@ already_AddRefed<GLContext> GLContextProviderLinux::CreateForCompositorWidget(
 
 already_AddRefed<GLContext> GLContextProviderLinux::CreateHeadless(
     const GLContextCreateDesc& desc, nsACString* const out_failureId) {
-  if (gfxVars::UseEGL() ||
-      bool(desc.flags & CreateContextFlags::FORBID_HARDWARE)) {
-    
-    
+  if (gfxVars::UseEGL()) {
     return sGLContextProviderEGL.CreateHeadless(desc, out_failureId);
 #ifdef MOZ_X11
   } else {
