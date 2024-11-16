@@ -31,11 +31,13 @@
 #include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/Localization.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "WindowsDefaultBrowser.h"
 #include "WindowsUserChoice.h"
 #include "nsLocalFile.h"
@@ -1695,6 +1697,89 @@ static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
   return ManageShortcutTaskbarPins(aCheckOnly, pinType, aShortcutPath);
 }
 
+
+
+
+
+
+static bool PollAppsFolderForShortcut(const nsAString& aAppUserModelId,
+                                      const TimeDuration aTimeout) {
+  MOZ_DIAGNOSTIC_ASSERT(!NS_IsMainThread(),
+                        "PollAppsFolderForShortcut blocks and should be called "
+                        "off main thread only");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  TimeStamp start = TimeStamp::Now();
+
+  ComPtr<IShellItem> appsFolder;
+  HRESULT hr = SHGetKnownFolderItem(FOLDERID_AppsFolder, KF_FLAG_DEFAULT,
+                                    nullptr, IID_PPV_ARGS(&appsFolder));
+  if (FAILED(hr)) {
+    return false;
+  }
+
+  do {
+    
+    
+    
+    ComPtr<IEnumShellItems> shortcutIter;
+    hr = appsFolder->BindToHandler(nullptr, BHID_EnumItems,
+                                   IID_PPV_ARGS(&shortcutIter));
+    if (FAILED(hr)) {
+      return false;
+    }
+
+    ComPtr<IShellItem> shortcut;
+    while (shortcutIter->Next(1, &shortcut, nullptr) == S_OK) {
+      ComPtr<IShellItem2> shortcut2;
+      hr = shortcut.As(&shortcut2);
+      if (FAILED(hr)) {
+        return false;
+      }
+
+      mozilla::UniquePtr<WCHAR, mozilla::CoTaskMemFreeDeleter> shortcutAumid;
+      hr = shortcut2->GetString(PKEY_AppUserModel_ID,
+                                getter_Transfers(shortcutAumid));
+      if (FAILED(hr)) {
+        
+        
+        return false;
+      }
+
+      if (aAppUserModelId == nsDependentString(shortcutAumid.get())) {
+        return true;
+      }
+    }
+
+    
+    ::Sleep(250);
+  } while ((TimeStamp::Now() - start) < aTimeout);
+
+  return false;
+}
+
 static nsresult PinCurrentAppToTaskbarImpl(
     bool aCheckOnly, bool aPrivateBrowsing, const nsAString& aAppUserModelId,
     const nsAString& aShortcutName, const nsAString& aShortcutSubstring,
@@ -1752,6 +1837,16 @@ static nsresult PinCurrentAppToTaskbarImpl(
     if (!NS_SUCCEEDED(rv)) {
       return NS_ERROR_FILE_NOT_FOUND;
     }
+  }
+
+  
+  
+  
+  
+  
+  if (!aCheckOnly && !PollAppsFolderForShortcut(
+                         aAppUserModelId, TimeDuration::FromSeconds(15))) {
+    return NS_ERROR_FILE_NOT_FOUND;
   }
 
   auto pinWithWin11TaskbarAPIResults =
