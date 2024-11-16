@@ -9,8 +9,7 @@
 
 #include "Units.h"                  
 #include "mozilla/EventForwards.h"  
-#include "mozilla/layers/APZPublicUtils.h"       
-#include "mozilla/layers/APZUtils.h"             
+#include "mozilla/layers/APZPublicUtils.h"  
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 
