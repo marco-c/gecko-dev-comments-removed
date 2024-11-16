@@ -5024,13 +5024,6 @@ void ScrollContainerFrame::ScrollSnap(const nsPoint& aDestination,
   
   if (auto snapDestination = GetSnapPointForDestination(
           ScrollUnit::DEVICE_PIXELS, snapFlags, pos, destination)) {
-    
-    
-    
-    
-    if (snapDestination->mPosition == destination) {
-      return;
-    }
     destination = snapDestination->mPosition;
     ScrollToWithOrigin(
         destination, nullptr ,
