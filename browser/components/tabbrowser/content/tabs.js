@@ -2244,6 +2244,7 @@
         ) {
           dragData.groupDropIndex = groupDropIndex;
           this.toggleAttribute("movingtab-createGroup", true);
+          this.removeAttribute("movingtab-ungroup");
           this.allTabs[groupDropIndex].toggleAttribute(
             "dragover-createGroup",
             true
@@ -2255,9 +2256,11 @@
       }
 
       if (gBrowser._tabGroupsEnabled && !("groupDropIndex" in dragData)) {
-        this.#setDragOverGroupColor(
-          this.allTabs[dragData.animDropIndex]?.group?.color
-        );
+        
+        
+        let colorCode = this.allTabs[dragData.animDropIndex]?.group?.color;
+        this.#setDragOverGroupColor(colorCode);
+        this.toggleAttribute("movingtab-ungroup", !colorCode);
       }
 
       if (newIndex == oldIndex) {
@@ -2308,6 +2311,7 @@
 
       this.removeAttribute("movingtab");
       this.removeAttribute("movingtab-createGroup");
+      this.removeAttribute("movingtab-ungroup");
       this.#setDragOverGroupColor(null);
       gNavToolbox.removeAttribute("movingtab");
 
