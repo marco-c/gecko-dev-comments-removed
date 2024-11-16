@@ -64,6 +64,20 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(ShowResolver&& aResolver) {
   
   
   
+  NotificationPermission permission = GetNotificationPermission(
+      mPrincipal, mEffectiveStoragePrincipal, mIsSecureContext,
+      PermissionCheckPurpose::NotificationShow);
+  if (permission != NotificationPermission::Granted) {
+    CopyableErrorResult rv;
+    rv.ThrowTypeError("Permission to show Notification denied.");
+    mResolver.take().value()(rv);
+    mDangling = true;
+    return IPC_OK();
+  }
+
+  
+  
+  
   nsresult rv = Show();
   if (NS_FAILED(rv)) {
     mResolver.take().value()(CopyableErrorResult(rv));
@@ -165,6 +179,11 @@ nsresult NotificationParent::BindToMainThread(
 }
 
 void NotificationParent::ActorDestroy(ActorDestroyReason aWhy) {
+  if (mDangling) {
+    
+    return;
+  }
+
   nsAutoString alertName;
   GetAlertName(alertName);
   UnregisterNotification(mPrincipal, mId, alertName, CloseMode::InactiveGlobal);
