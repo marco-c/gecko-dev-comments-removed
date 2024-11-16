@@ -1435,6 +1435,23 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+    id: "1912923",
+    platform: "all",
+    domain: "livelesson.class.com",
+    bug: "1912923",
+    config: {
+      matches: ["*://livelesson.class.com/class/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
