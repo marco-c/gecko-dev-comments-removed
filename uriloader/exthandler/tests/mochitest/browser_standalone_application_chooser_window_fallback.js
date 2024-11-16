@@ -44,7 +44,7 @@ add_task(async function () {
   
   
   let _getTabDialogBox = gBrowser.getTabDialogBox;
-  delete gBrowser.getTabDialogBox;
+  gBrowser.getTabDialogBox = null;
 
   let appChooserDialogOpenPromise = BrowserTestUtils.domWindowOpened(
     null,
