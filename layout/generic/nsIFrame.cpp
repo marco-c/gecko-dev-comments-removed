@@ -3050,14 +3050,6 @@ static Maybe<nsRect> ComputeClipForMaskItem(
     }
   }
   if (combinedClip) {
-    if (combinedClip->IsEmpty()) {
-      
-      
-      
-      
-      return Nothing();
-    }
-
     
     *combinedClip += devPixelOffsetToUserSpace;
 
