@@ -4,6 +4,7 @@
 
 
 #include "IEnumFE.h"
+#include "nsAlgorithm.h"
 #include <algorithm>
 
 CEnumFormatEtc::CEnumFormatEtc() : mRefCnt(0), mCurrentIdx(0) {}
