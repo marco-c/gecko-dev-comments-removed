@@ -3943,34 +3943,11 @@ nsPresContext* nsContentUtils::GetContextForContent(
 }
 
 
-bool nsContentUtils::IsInPrivateBrowsing(const Document* aDoc) {
-  if (!aDoc) {
-    return false;
-  }
-
-  nsCOMPtr<nsILoadGroup> loadGroup = aDoc->GetDocumentLoadGroup();
-  
-  
-  if (loadGroup) {
-    nsCOMPtr<nsIInterfaceRequestor> callbacks;
-    loadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
-    if (callbacks) {
-      nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(callbacks);
-      if (loadContext) {
-        return loadContext->UsePrivateBrowsing();
-      }
-    }
-  }
-
-  nsCOMPtr<nsIChannel> channel = aDoc->GetChannel();
-  return channel && NS_UsePrivateBrowsing(channel);
-}
-
-
 bool nsContentUtils::IsInPrivateBrowsing(nsILoadGroup* aLoadGroup) {
   if (!aLoadGroup) {
     return false;
   }
+  
   bool isPrivate = false;
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   aLoadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
@@ -4002,7 +3979,7 @@ imgLoader* nsContentUtils::GetImgLoaderForDocument(Document* aDoc) {
   if (!aDoc) {
     return imgLoader::NormalLoader();
   }
-  bool isPrivate = IsInPrivateBrowsing(aDoc);
+  const bool isPrivate = aDoc->IsInPrivateBrowsing();
   return isPrivate ? imgLoader::PrivateBrowsingLoader()
                    : imgLoader::NormalLoader();
 }
