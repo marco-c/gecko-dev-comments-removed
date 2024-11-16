@@ -260,8 +260,11 @@ void ExternalEngineStateMachine::OnEngineInitFailure() {
   state->mEngineInitRequest.Complete();
   state->mInitPromise = nullptr;
   
-  ReportTelemetry(NS_ERROR_DOM_MEDIA_FATAL_ERR);
-  DecodeError(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__));
+  
+  
+  ReportTelemetry(NS_ERROR_DOM_MEDIA_MEDIA_ENGINE_INITIALIZATION_ERR);
+  DecodeError(MediaResult(NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR,
+                          __func__));
 }
 
 void ExternalEngineStateMachine::ReadMetadata() {
