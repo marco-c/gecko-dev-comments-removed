@@ -68,12 +68,6 @@ static Maybe<VideoFacingModeEnum> GetFacingMode(const nsString& aDeviceName) {
     return Some(VideoFacingModeEnum::User);
   }
 #endif  
-#ifdef XP_MACOSX
-  
-  if (aDeviceName.Find(u"Face"_ns) != -1) {
-    return Some(VideoFacingModeEnum::User);
-  }
-#endif
 #ifdef XP_WIN
   
   
