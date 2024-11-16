@@ -103,10 +103,16 @@ function getBrowser(panel) {
     },
     true
   );
-  browser.addEventListener("DOMWindowClose", () => {
+  browser.addEventListener("DOMWindowClose", event => {
     if (panel.viewType == "sidebar") {
       windowRoot.ownerGlobal.SidebarController.hide();
     }
+    
+    
+    
+    
+    
+    event.stopPropagation();
   });
 
   const initBrowser = () => {
