@@ -58,12 +58,17 @@ async function runTest() {
       let [newtab] = await Promise.all([promiseNewTab, promiseFsEvents]);
       await BrowserTestUtils.removeTab(newtab);
 
-      
-      await Promise.race([
-        BrowserTestUtils.waitForCondition(() => getSizeMode() == "normal"),
+      if (document.fullscreen) {
+        info(
+          "The chrome document is still in fullscreen, waiting for it to exit."
+        );
         
-        new Promise(resolve => setTimeout(resolve, 2000)),
-      ]);
+        await Promise.race([
+          BrowserTestUtils.waitForEvent(document, "fullscreenchange"),
+          
+          new Promise(resolve => setTimeout(resolve, 5000)),
+        ]);
+      }
 
       ok(!window.fullScreen, "The chrome window should not be in fullscreen");
       ok(
