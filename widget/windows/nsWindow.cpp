@@ -1679,7 +1679,7 @@ void nsWindow::Show(bool aState) {
           
           ClearWindow(mWnd);
           CloakWindow(mWnd, FALSE);
-          mHasBeenShown = false;
+          mHasBeenShown = true;
         }
 
       } else {
