@@ -2893,10 +2893,6 @@ arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
     RemoveChunk(mSpare);
   }
 
-  
-  
-  mRunsAvail.Remove(&aChunk->map[gChunkHeaderNumPages]);
-
   arena_chunk_t* chunk_dealloc = mSpare;
   mSpare = aChunk;
   return chunk_dealloc;
@@ -3230,13 +3226,13 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
   }
 
   
-  mRunsAvail.Insert(&chunk->map[run_ind]);
-
-  
   arena_chunk_t* chunk_dealloc = nullptr;
   if ((chunk->map[gChunkHeaderNumPages].bits &
        (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass) {
     chunk_dealloc = DemoteChunkToSpare(chunk);
+  } else {
+    
+    mRunsAvail.Insert(&chunk->map[run_ind]);
   }
 
   return chunk_dealloc;
