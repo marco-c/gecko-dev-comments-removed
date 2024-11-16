@@ -1,6 +1,7 @@
 #![allow(clippy::iter_cloned_collect, clippy::uninlined_format_args)]
 
 use core::fmt::Display;
+use std::path::PathBuf;
 use thiserror::Error;
 
 
@@ -50,6 +51,7 @@ pub enum RustupError {
     },
 }
 
+#[track_caller]
 fn assert<T: Display>(expected: &str, value: T) {
     assert_eq!(expected, value.to_string());
 }
@@ -83,6 +85,32 @@ fn test_rustup() {
             name: "nightly".to_owned(),
             component: "clipy".to_owned(),
             suggestion: Some("clippy".to_owned()),
+        },
+    );
+}
+
+
+#[test]
+#[allow(non_snake_case)]
+fn test_assoc_type_equality_constraint() {
+    pub trait Trait<T>: Display {
+        type A;
+    }
+
+    impl<T> Trait<T> for i32 {
+        type A = i32;
+    }
+
+    #[derive(Error, Debug)]
+    #[error("{A} {b}", b = &0 as &dyn Trait<i32, A = i32>)]
+    pub struct Error {
+        pub A: PathBuf,
+    }
+
+    assert(
+        "... 0",
+        Error {
+            A: PathBuf::from("..."),
         },
     );
 }
