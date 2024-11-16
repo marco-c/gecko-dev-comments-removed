@@ -81,9 +81,6 @@ const TOOLTIP_INACTIVE_CSS = "inactive-css";
 const TOOLTIP_VARIABLE_TYPE = "variable";
 
 
-const TOOLTIP_SHOWN_SCALAR = "devtools.tooltip.shown";
-
-
 
 
 
@@ -467,7 +464,7 @@ TooltipsOverlay.prototype = {
 
 
   sendOpenScalarToTelemetry(type) {
-    this.view.inspector.telemetry.keyedScalarAdd(TOOLTIP_SHOWN_SCALAR, type, 1);
+    Glean.devtoolsTooltip.shown[type].add(1);
   },
 
   
