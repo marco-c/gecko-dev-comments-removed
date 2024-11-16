@@ -746,7 +746,20 @@ const AVAILABLE_INJECTIONS = [
     domain: "nicochannel.jp",
     bug: "1849058",
     contentScripts: {
-      matches: ["*://nicochannel.jp/*", "*://gs-ch.com/*"],
+      matches: [
+        "*://ado-dokidokihimitsukichi-daigakuimo.com/*",
+        "*://canan8181.com/*",
+        "*://gs-ch.com/*", 
+        "*://keisuke-ueda.jp/*",
+        "*://kemomimirefle.net/*",
+        "*://nicochannel.jp/*", 
+        "*://p-jinriki-fc.com/*",
+        "*://pizzaradio.jp/*",
+        "*://rnqq.jp/*",
+        "*://ryogomatsumaru.com/*",
+        "*://takahashifumiya.com/*",
+        "*://yamingfc.net/*",
+      ],
       js: [
         {
           file: "injections/js/bug1849058-nicochannel.jp-picture-in-picture-shim.js",

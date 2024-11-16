@@ -1402,6 +1402,39 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+
+    id: "1844503",
+    platform: "all",
+    domain: "nicochannel.jp",
+    bug: "1844503",
+    config: {
+      matches: [
+        "*://api.ado-dokidokihimitsukichi-daigakuimo.com/fc/video_pages/*",
+        "*://api.canan8181.com/fc/video_pages/*",
+        "*://api.gs-ch.com/fc/video_pages/*", 
+        "*://api.keisuke-ueda.jp/fc/video_pages/*",
+        "*://api.kemomimirefle.net/fc/video_pages/*",
+        "*://api.nicochannel.jp/fc/video_pages/*", 
+        "*://api.p-jinriki-fc.com/fc/video_pages/*",
+        "*://api.pizzaradio.jp/fc/video_pages/*",
+        "*://api.rnqq.jp/fc/video_pages/*",
+        "*://api.ryogomatsumaru.com/fc/video_pages/*",
+        "*://api.takahashifumiya.com/fc/video_pages/*",
+        "*://api.yamingfc.net/fc/video_pages/*",
+      ],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
