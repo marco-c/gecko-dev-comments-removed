@@ -3771,7 +3771,7 @@ pref("browser.ml.modelHubRootUrl", "https://model-hub.mozilla.org/");
 
 pref("browser.ml.modelHubUrlTemplate", "{model}/{revision}");
 
-pref("browser.ml.modelCacheMaxSizeBytes", 1073741824);
+pref("browser.ml.modelCacheMaxSize", 4);
 
 pref("browser.ml.modelCacheTimeout", 120000);
 
