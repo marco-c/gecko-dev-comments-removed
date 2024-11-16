@@ -13115,6 +13115,14 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     }
   }
 #endif
+#ifndef __wasi__
+  if (op.getBoolOption("disable-wasm-huge-memory")) {
+    JS::Prefs::setAtStartup_wasm_disable_huge_memory(true);
+    if (!sCompilerProcessFlags.append("--disable-wasm-huge-memory")) {
+      return false;
+    }
+  }
+#endif
 
   return true;
 }
@@ -13330,20 +13338,6 @@ bool SetContextWasmOptions(JSContext* cx, const OptionParser& op) {
       .setTestWasmAwaitTier2(enableTestWasmAwaitTier2);
 
 #ifndef __wasi__
-  
-  
-  bool disabledHugeMemory = false;
-  if (op.getBoolOption("disable-wasm-huge-memory")) {
-    disabledHugeMemory = JS::DisableWasmHugeMemory();
-    MOZ_RELEASE_ASSERT(disabledHugeMemory);
-  }
-
-  
-  if (disabledHugeMemory &&
-      !sCompilerProcessFlags.append("--disable-wasm-huge-memory")) {
-    return false;
-  }
-
   
   const char* to_propagate[] = {
       

@@ -107,32 +107,6 @@ bool wasm::InCompiledCode(void* pc) {
   return LookupBuiltinThunk(pc, &codeRange, &codeBase);
 }
 
-
-
-
-
-class ReadLockFlag {
- private:
-  bool enabled_;
-  bool read_;
-
- public:
-  ReadLockFlag() : enabled_(false), read_(false) {}
-
-  bool get() {
-    read_ = true;
-    return enabled_;
-  }
-
-  bool set(bool enabled) {
-    if (read_) {
-      return false;
-    }
-    enabled_ = enabled;
-    return true;
-  }
-};
-
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
 
 
@@ -154,51 +128,22 @@ static const size_t MinVirtualMemoryLimitForHugeMemory =
     size_t(1) << MinAddressBitsForHugeMemory;
 #endif
 
-MOZ_RUNINIT ExclusiveData<ReadLockFlag> sHugeMemoryEnabled32(
-    mutexid::WasmHugeMemoryEnabled);
-MOZ_RUNINIT ExclusiveData<ReadLockFlag> sHugeMemoryEnabled64(
-    mutexid::WasmHugeMemoryEnabled);
-
-static MOZ_NEVER_INLINE bool IsHugeMemoryEnabledHelper32() {
-  auto state = sHugeMemoryEnabled32.lock();
-  return state->get();
-}
-
-static MOZ_NEVER_INLINE bool IsHugeMemoryEnabledHelper64() {
-  auto state = sHugeMemoryEnabled64.lock();
-  return state->get();
-}
+static bool sHugeMemoryEnabled32 = false;
 
 bool wasm::IsHugeMemoryEnabled(wasm::IndexType t) {
-  if (t == IndexType::I32) {
-    static bool enabled32 = IsHugeMemoryEnabledHelper32();
-    return enabled32;
+  if (t == IndexType::I64) {
+    
+    return false;
   }
-  static bool enabled64 = IsHugeMemoryEnabledHelper64();
-  return enabled64;
-}
-
-bool wasm::DisableHugeMemory() {
-  bool ok = true;
-  {
-    auto state = sHugeMemoryEnabled64.lock();
-    ok = ok && state->set(false);
-  }
-  {
-    auto state = sHugeMemoryEnabled32.lock();
-    ok = ok && state->set(false);
-  }
-  return ok;
+  return sHugeMemoryEnabled32;
 }
 
 void ConfigureHugeMemory() {
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
-  bool ok = true;
+  MOZ_ASSERT(!sHugeMemoryEnabled32);
 
-  {
-    
-    auto state = sHugeMemoryEnabled64.lock();
-    ok = ok && state->set(false);
+  if (JS::Prefs::wasm_disable_huge_memory()) {
+    return;
   }
 
   if (gc::SystemAddressBits() < MinAddressBitsForHugeMemory) {
@@ -210,12 +155,7 @@ void ConfigureHugeMemory() {
     return;
   }
 
-  {
-    auto state = sHugeMemoryEnabled32.lock();
-    ok = ok && state->set(true);
-  }
-
-  MOZ_RELEASE_ASSERT(ok);
+  sHugeMemoryEnabled32 = true;
 #endif
 }
 
