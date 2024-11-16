@@ -4292,7 +4292,8 @@ bool arena_t::RallocGrowLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
   
   MOZ_ASSERT(aSize > aOldSize);
   if (pageind + npages < gChunkNumPages - 1 &&
-      (aChunk->map[pageind + npages].bits & CHUNK_MAP_ALLOCATED) == 0 &&
+      (aChunk->map[pageind + npages].bits &
+       (CHUNK_MAP_ALLOCATED | CHUNK_MAP_BUSY)) == 0 &&
       (aChunk->map[pageind + npages].bits & ~gPageSizeMask) >=
           aSize - aOldSize) {
     
@@ -4341,6 +4342,7 @@ void* arena_t::RallocSmallOrLarge(void* aPtr, size_t aSize, size_t aOldSize) {
     }
   }
 
+  
   
   
   
