@@ -268,21 +268,39 @@ async function removeBreakpoint(location) {
   });
 }
 
-async function evaluateExpressions(scripts, options) {
-  return Promise.all(scripts.map(script => evaluate(script, options)));
+async function evaluateExpressions(expressions, options) {
+  return Promise.all(
+    expressions.map(expression => evaluate(expression, options))
+  );
 }
 
-async function evaluate(script, { frameId, threadId } = {}) {
-  if (!currentTarget() || !script) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function evaluate(expression, { frameId, threadId, evalInTracer } = {}) {
+  if (!currentTarget() || !expression) {
     return { result: null };
   }
 
   const selectedTargetFront = threadId ? lookupTarget(threadId) : null;
 
-  return commands.scriptCommand.execute(script, {
+  return commands.scriptCommand.execute(expression, {
     frameActor: frameId,
     selectedTargetFront,
     disableBreaks: true,
+    evalInTracer,
   });
 }
 
