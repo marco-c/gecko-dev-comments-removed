@@ -500,7 +500,7 @@ void nsHtml5Highlighter::EndSpanOrA() {
 
 void nsHtml5Highlighter::StartBodyContents() {
   MOZ_ASSERT(mLineNumber == 1);
-  PushCurrentLinePre();
+  PushCurrentLineContainer();
   StartCharacters();
 }
 
@@ -577,8 +577,8 @@ void nsHtml5Highlighter::FlushChars() {
   }
 }
 
-void nsHtml5Highlighter::PushCurrentLinePre() {
-  Push(nsGkAtoms::pre, nullptr, NS_NewHTMLPreElement);
+void nsHtml5Highlighter::PushCurrentLineContainer() {
+  Push(nsGkAtoms::span, nullptr, NS_NewHTMLSpanElement);
   mOpQueue.AppendElement()->Init(
       mozilla::AsVariant(opAddLineNumberId(CurrentNode(), mLineNumber)));
 }
@@ -599,7 +599,7 @@ void nsHtml5Highlighter::NewLine() {
     mInlinesOpen--;
   }
   Pop();  
-  PushCurrentLinePre();
+  PushCurrentLineContainer();
   for (nsIContent** handle : Reversed(handleStack)) {
     nsIContent** dest = AllocateContentHandle();
     mOpQueue.AppendElement()->Init(mozilla::AsVariant(opShallowCloneInto(

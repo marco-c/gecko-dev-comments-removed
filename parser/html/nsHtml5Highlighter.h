@@ -278,7 +278,7 @@ class nsHtml5Highlighter {
             mozilla::dom::HTMLContentCreatorFunction aCreator);
 
   
-  void PushCurrentLinePre();
+  void PushCurrentLineContainer();
 
   
 
