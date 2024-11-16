@@ -639,6 +639,9 @@ subsetTest(promise_test, async test => {
 
 
 
+
+
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid, null, 'url');
@@ -648,10 +651,8 @@ subsetTest(promise_test, async test => {
       maxTrustedScoringSignalsURLLength: 0,
       decisionLogicURL:
         createDecisionScriptURL(uuid, {
-            
             scoreAd:
-              `if (trustedScoringSignals.renderURL["${renderURL}"].length < 280 ||
-                  trustedScoringSignals.renderURL["${renderURL}"].length > 300)
+              `if (!trustedScoringSignals.renderURL["${renderURL}"].includes(encodeURIComponent("${renderURL}")))
                 throw "error";`
         })
   };
@@ -667,6 +668,7 @@ subsetTest(promise_test, async test => {
 
 
 
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid, null, 'url');
@@ -676,10 +678,8 @@ subsetTest(promise_test, async test => {
       maxTrustedScoringSignalsURLLength: 1,
       decisionLogicURL:
         createDecisionScriptURL(uuid, {
-            
             scoreAd:
-              `if (trustedScoringSignals.renderURL["${renderURL}"].length < 280 ||
-                  trustedScoringSignals.renderURL["${renderURL}"].length > 300)
+              `if (!trustedScoringSignals.renderURL["${renderURL}"].includes(encodeURIComponent("${renderURL}")))
                 throw "error";`
         })
   };
@@ -695,6 +695,7 @@ subsetTest(promise_test, async test => {
 
 
 
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid, null, 'url');
@@ -704,7 +705,9 @@ subsetTest(promise_test, async test => {
       maxTrustedScoringSignalsURLLength: 1000,
       decisionLogicURL:
         createDecisionScriptURL(uuid, {
-            scoreAd: `if (trustedScoringSignals.renderURL["${renderURL}"].length > 300) throw "error";`
+            scoreAd:
+              `if (!trustedScoringSignals.renderURL["${renderURL}"].includes(encodeURIComponent("${renderURL}")))
+                throw "error";`
         })
   };
 
@@ -733,11 +736,11 @@ subsetTest(promise_test, async test => {
         createDecisionScriptURL(uuid, {
             
             
-            
             scoreAd:
-              `if (!trustedScoringSignals.renderURL.has("${renderURL1}") ||
-                  trustedScoringSignals.renderURL.has("${renderURL2}") ||
-                  trustedScoringSignals.renderURL["${renderURL1}"].length > 300) {
+              `if (!trustedScoringSignals.renderURL.hasOwnProperty("${renderURL1}") ||
+                  trustedScoringSignals.renderURL.hasOwnProperty("${renderURL2}") ||
+                  trustedScoringSignals.renderURL["${renderURL1}"].includes('group2') ||
+                  !trustedScoringSignals.renderURL["${renderURL1}"].includes('group1')) {
                 throw "error";
               }`
         })
@@ -748,8 +751,9 @@ subsetTest(promise_test, async test => {
         joinInterestGroup(test, uuid, { name: 'group 2', ads: [{ renderURL: renderURL2 }] }) ]
   );
 
-  runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverrides);
+  await runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverrides);
 }, 'Trusted scoring signals splits the request if the combined URL length exceeds the limit of regular value.');
+
 
 
 
@@ -763,10 +767,13 @@ subsetTest(promise_test, async test => {
       maxTrustedScoringSignalsURLLength: 1,
       decisionLogicURL:
         createDecisionScriptURL(uuid, {
+            
+            
             scoreAd:
-              `if (!trustedScoringSignals.renderURL.has("${renderURL1}") ||
-                  trustedScoringSignals.renderURL.has("${renderURL2}") ||
-                  trustedScoringSignals.renderURL["${renderURL1}"].length > 300) {
+              `if (!trustedScoringSignals.renderURL.hasOwnProperty("${renderURL1}") ||
+                  trustedScoringSignals.renderURL.hasOwnProperty("${renderURL2}") ||
+                  trustedScoringSignals.renderURL["${renderURL1}"].includes('group2') ||
+                  !trustedScoringSignals.renderURL["${renderURL1}"].includes('group1')) {
                 throw "error";
               }`
         })
@@ -777,5 +784,5 @@ subsetTest(promise_test, async test => {
         joinInterestGroup(test, uuid, { name: 'group 2', ads: [{ renderURL: renderURL2 }] }) ]
   );
 
-  runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverrides);
+  await runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverrides);
 }, 'Trusted scoring signals splits the request if the combined URL length exceeds the limit of small value.');

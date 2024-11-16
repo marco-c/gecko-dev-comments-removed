@@ -825,14 +825,15 @@ subsetTest(promise_test, async test => {
 
 
 
+
 subsetTest(promise_test, async test => {
   const name = 'group';
+  const expect_queries = 'keys=interest-group-names,url&interestGroupNames=group';
   await runTrustedBiddingSignalsTest(
       test,
       
       ` trustedBiddingSignals["interest-group-names"] === '["${name}"]' &&
-        trustedBiddingSignals["url"].length > 150 &&
-        trustedBiddingSignals["url"].length < 180 `,
+        trustedBiddingSignals["url"].includes("${expect_queries}") `,
       {
         name: name,
         trustedBiddingSignalsKeys: ['interest-group-names', 'url'],
@@ -847,11 +848,12 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   const name = 'group';
+  const expect_queries = 'keys=interest-group-names,url&interestGroupNames=group';
   await runTrustedBiddingSignalsTest(
       test,
+      
       ` trustedBiddingSignals["interest-group-names"] === '["${name}"]' &&
-        trustedBiddingSignals["url"].length > 150 &&
-        trustedBiddingSignals["url"].length < 180 `,
+        trustedBiddingSignals["url"].includes("${expect_queries}") `,
       {
         name: name,
         trustedBiddingSignalsKeys: ['interest-group-names', 'url'],
@@ -864,10 +866,12 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   const name = 'group';
+  const expect_queries = 'keys=interest-group-names,url&interestGroupNames=group';
   await runTrustedBiddingSignalsTest(
       test,
+      
       ` trustedBiddingSignals["interest-group-names"] === '["${name}"]' &&
-        trustedBiddingSignals["url"].length < 180 `,
+        trustedBiddingSignals["url"].includes("${expect_queries}") `,
       {
         name: name,
         trustedBiddingSignalsKeys: ['interest-group-names', 'url'],
@@ -875,9 +879,6 @@ subsetTest(promise_test, async test => {
         maxTrustedBiddingSignalsURLLength: 1000
       });
 }, 'Trusted bidding signals request works with a URL length limit larger than the URL length.');
-
-
-
 
 
 
@@ -917,14 +918,14 @@ subsetTest(promise_test, async test => {
                 {
                   generateBid:
                     `if (trustedBiddingSignals["interest-group-names"] !== '["${name2}"]' ||
-                        trustedBiddingSignals["url"].length > 200) {
+                        trustedBiddingSignals["url"].includes("${name1}")) {
                       throw "unexpected trustedBiddingSignals";
                     }
                     return { bid: 10, render: interestGroup.ads[0].renderURL };`})
           })
       ]
   );
-  runBasicFledgeTestExpectingWinner(test, uuid);
+  await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'Trusted bidding signals splits the request if the combined URL length exceeds the limit of regular value.');
 
 
@@ -960,14 +961,14 @@ subsetTest(promise_test, async test => {
                 {
                   generateBid:
                     `if (trustedBiddingSignals["interest-group-names"] !== '["${name2}"]' ||
-                        trustedBiddingSignals["url"].length > 200) {
+                        trustedBiddingSignals["url"].includes("${name1}")) {
                       throw "unexpected trustedBiddingSignals";
                     }
                     return { bid: 10, render: interestGroup.ads[0].renderURL };`})
           })
       ]
   );
-  runBasicFledgeTestExpectingWinner(test, uuid);
+  await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'Trusted bidding signals splits the request if the combined URL length exceeds the limit of small value.');
 
 
