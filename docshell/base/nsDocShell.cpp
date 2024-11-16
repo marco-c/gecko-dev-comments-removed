@@ -5028,26 +5028,29 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   loadState->SetKeepResultPrincipalURIIfSet(true);
   loadState->SetIsMetaRefresh(true);
 
-  RefPtr<Document> doc = GetDocument();
-  NS_ENSURE_STATE(doc);
-
   
   
   nsCOMPtr<nsIPrincipal> principal = aPrincipal;
+  RefPtr<Document> doc = GetDocument();
   if (!principal) {
+    if (!doc) {
+      return NS_ERROR_FAILURE;
+    }
     principal = doc->NodePrincipal();
   }
   loadState->SetTriggeringPrincipal(principal);
-  loadState->SetCsp(doc->GetCsp());
-  loadState->SetHasValidUserGestureActivation(
-      doc->HasValidTransientUserGestureActivation());
+  if (doc) {
+    loadState->SetCsp(doc->GetCsp());
+    loadState->SetHasValidUserGestureActivation(
+        doc->HasValidTransientUserGestureActivation());
 
-  loadState->SetTextDirectiveUserActivation(
-      doc->ConsumeTextDirectiveUserActivation() ||
-      loadState->HasValidUserGestureActivation());
-  loadState->SetTriggeringSandboxFlags(doc->GetSandboxFlags());
-  loadState->SetTriggeringWindowId(doc->InnerWindowID());
-  loadState->SetTriggeringStorageAccess(doc->UsingStorageAccess());
+    loadState->SetTextDirectiveUserActivation(
+        doc->ConsumeTextDirectiveUserActivation() ||
+        loadState->HasValidUserGestureActivation());
+    loadState->SetTriggeringSandboxFlags(doc->GetSandboxFlags());
+    loadState->SetTriggeringWindowId(doc->InnerWindowID());
+    loadState->SetTriggeringStorageAccess(doc->UsingStorageAccess());
+  }
 
   loadState->SetPrincipalIsExplicit(true);
 
@@ -5057,27 +5060,33 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   bool equalUri = false;
   nsresult rv = aURI->Equals(mCurrentURI, &equalUri);
 
+  nsCOMPtr<nsIReferrerInfo> referrerInfo;
   if (NS_SUCCEEDED(rv) && !equalUri && aDelay <= REFRESH_REDIRECT_TIMER) {
     
 
 
 
     loadState->SetLoadType(LOAD_REFRESH_REPLACE);
+
+    
+
+
+
+    if (mReferrerInfo) {
+      referrerInfo = static_cast<ReferrerInfo*>(mReferrerInfo.get())
+                         ->CloneWithNewSendReferrer(false);
+    }
   } else {
     loadState->SetLoadType(LOAD_REFRESH);
+    
+
+
+
+
+    referrerInfo = new ReferrerInfo(mCurrentURI, ReferrerPolicy::_empty, false);
   }
 
-  const bool sendReferrer = StaticPrefs::network_http_referer_sendFromRefresh();
-  
-
-
-  const nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      new ReferrerInfo(*doc, sendReferrer);
-  
-
-
   loadState->SetReferrerInfo(referrerInfo);
-
   loadState->SetLoadFlags(
       nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL);
   loadState->SetFirstParty(true);

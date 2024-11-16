@@ -69,7 +69,7 @@ class ReferrerInfo : public nsIReferrerInfo {
 
   
   explicit ReferrerInfo(const Element&);
-  explicit ReferrerInfo(const Document&, const bool = true);
+  explicit ReferrerInfo(const Document&);
 
   
   
@@ -81,6 +81,10 @@ class ReferrerInfo : public nsIReferrerInfo {
   
   already_AddRefed<ReferrerInfo> CloneWithNewPolicy(
       ReferrerPolicyEnum aPolicy) const;
+
+  
+  already_AddRefed<ReferrerInfo> CloneWithNewSendReferrer(
+      bool aSendReferrer) const;
 
   
   already_AddRefed<ReferrerInfo> CloneWithNewOriginalReferrer(
