@@ -694,6 +694,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.handleWeatherUpdate = this.handleWeatherUpdate.bind(this);
     this.refreshTopicSelectionCache = this.refreshTopicSelectionCache.bind(this);
     this.toggleTBRFeed = this.toggleTBRFeed.bind(this);
+    this.handleSectionsToggle = this.handleSectionsToggle.bind(this);
     this.state = {
       toggledStories: {},
       weatherQuery: ""
@@ -762,6 +763,13 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       weatherQuery
     } = this.state;
     this.props.dispatch(actionCreators.SetPref("weather.query", weatherQuery));
+  }
+  handleSectionsToggle(e) {
+    const {
+      pressed
+    } = e.target;
+    this.props.dispatch(actionCreators.SetPref("discoverystream.sections.enabled", pressed));
+    this.props.dispatch(actionCreators.SetPref("discoverystream.sections.cards.enabled", pressed));
   }
   renderComponent(width, component) {
     return external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, external_React_default().createElement(Row, null, external_React_default().createElement("td", {
@@ -892,6 +900,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     } = this.props.state.DiscoveryStream;
     const personalized = this.props.otherPrefs["discoverystream.personalization.enabled"];
     const selectedFeed = this.props.otherPrefs["discoverystream.contextualContent.selectedFeed"];
+    const sectionsEnabled = this.props.otherPrefs["discoverystream.sections.enabled"];
     const TBRFeeds = this.props.otherPrefs["discoverystream.contextualContent.feeds"].split(",").map(s => s.trim()).filter(item => item);
     return external_React_default().createElement("div", null, external_React_default().createElement("button", {
       className: "button",
@@ -924,7 +933,14 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     }, TBRFeeds.map(feed => external_React_default().createElement("option", {
       key: feed,
       value: feed
-    }, feed))), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, prefToggles.map(pref => external_React_default().createElement(Row, {
+    }, feed))), external_React_default().createElement("div", {
+      className: "toggle-wrapper"
+    }, external_React_default().createElement("moz-toggle", {
+      id: "sections-toggle",
+      pressed: sectionsEnabled || null,
+      onToggle: this.handleSectionsToggle,
+      label: "Toggle DS Sections"
+    })), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, prefToggles.map(pref => external_React_default().createElement(Row, {
       key: pref
     }, external_React_default().createElement("td", null, external_React_default().createElement(TogglePrefCheckbox, {
       checked: config[pref],
@@ -4776,7 +4792,8 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       title,
       subTitle,
       mayHaveSponsoredStories,
-      mayHaveTopicsSelection
+      mayHaveTopicsSelection,
+      sectionsEnabled
     } = this.props;
     const active = menuButtonHover || showContextMenu;
     let bodyStyle;
@@ -4804,7 +4821,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       
       ,
       "data-section-id": id
-    }, external_React_default().createElement("div", {
+    }, !sectionsEnabled && external_React_default().createElement("div", {
       className: "section-top-bar"
     }, external_React_default().createElement("h2", {
       className: `section-title-container ${hasSubtitleClassName}`,
@@ -9399,6 +9416,107 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
 
 
+function CardSections({
+  data,
+  feed,
+  dispatch,
+  type,
+  firstVisibleTimestamp
+}) {
+  const {
+    recommendations,
+    sections
+  } = data;
+  const isEmpty = recommendations?.length === 0 || !sections;
+  const sortedSections = sections?.sort((a, b) => a.receivedRank - b.receivedRank);
+
+  
+  const sortedRecs = (0,external_React_namespaceObject.useMemo)(() => {
+    return data.recommendations.reduce((acc, recommendation) => {
+      const {
+        section
+      } = recommendation;
+      acc[section] = acc[section] || [];
+      acc[section].push(recommendation);
+      return acc;
+    }, {});
+  }, [data]);
+  
+  if (!data) {
+    return null;
+  }
+  return isEmpty ? external_React_default().createElement("div", {
+    className: "ds-card-grid empty"
+  }, external_React_default().createElement(DSEmptyState, {
+    status: data.status,
+    dispatch: dispatch,
+    feed: feed
+  })) : external_React_default().createElement("div", {
+    className: "ds-section-wrapper"
+  }, sortedSections.map(section => {
+    const {
+      sectionKey,
+      title,
+      subtitle
+    } = section;
+    return external_React_default().createElement("section", {
+      key: sectionKey,
+      className: "ds-section"
+    }, external_React_default().createElement("div", {
+      className: "section-heading"
+    }, external_React_default().createElement("h2", {
+      className: "section-title"
+    }, title), subtitle && external_React_default().createElement("p", {
+      className: "section-subtitle"
+    }, subtitle)), external_React_default().createElement("div", {
+      className: "ds-section-grid ds-card-grid"
+    }, sortedRecs[sectionKey].slice(0, 4).map(rec => {
+      return external_React_default().createElement(DSCard, {
+        key: `dscard-${rec.id}`,
+        pos: rec.pos,
+        flightId: rec.flight_id,
+        image_src: rec.image_src,
+        raw_image_src: rec.raw_image_src,
+        word_count: rec.word_count,
+        time_to_read: rec.time_to_read,
+        title: rec.title,
+        topic: rec.topic,
+        excerpt: rec.excerpt,
+        url: rec.url,
+        id: rec.id,
+        shim: rec.shim,
+        fetchTimestamp: rec.fetchTimestamp,
+        type: type,
+        context: rec.context,
+        sponsor: rec.sponsor,
+        sponsored_by_override: rec.sponsored_by_override,
+        dispatch: dispatch,
+        source: rec.domain,
+        publisher: rec.publisher,
+        pocket_id: rec.pocket_id,
+        context_type: rec.context_type,
+        bookmarkGuid: rec.bookmarkGuid,
+        recommendation_id: rec.recommendation_id,
+        firstVisibleTimestamp: firstVisibleTimestamp,
+        scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
+        recommended_at: rec.recommended_at,
+        received_rank: rec.received_rank,
+        format: rec.format,
+        alt_text: rec.alt_text
+      });
+    })));
+  }));
+}
+
+;
+
+
+
+
+
+
+
+
 
 
 
@@ -9548,28 +9666,40 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           });
         }
       case "CardGrid":
-        return external_React_default().createElement(CardGrid, {
-          title: component.header && component.header.title,
-          data: component.data,
-          feed: component.feed,
-          widgets: component.widgets,
-          type: component.type,
-          dispatch: this.props.dispatch,
-          items: component.properties.items,
-          hybridLayout: component.properties.hybridLayout,
-          hideCardBackground: component.properties.hideCardBackground,
-          fourCardLayout: component.properties.fourCardLayout,
-          compactGrid: component.properties.compactGrid,
-          essentialReadsHeader: component.properties.essentialReadsHeader,
-          onboardingExperience: component.properties.onboardingExperience,
-          ctaButtonSponsors: component.properties.ctaButtonSponsors,
-          ctaButtonVariant: component.properties.ctaButtonVariant,
-          spocMessageVariant: component.properties.spocMessageVariant,
-          editorsPicksHeader: component.properties.editorsPicksHeader,
-          recentSavesEnabled: this.props.DiscoveryStream.recentSavesEnabled,
-          hideDescriptions: this.props.DiscoveryStream.hideDescriptions,
-          firstVisibleTimestamp: this.props.firstVisibleTimestamp
-        });
+        {
+          const sectionsEnabled = this.props.Prefs.values["discoverystream.sections.enabled"];
+          if (sectionsEnabled) {
+            return external_React_default().createElement(CardSections, {
+              feed: component.feed,
+              data: component.data,
+              dispatch: this.props.dispatch,
+              type: component.type,
+              firstVisibleTimestamp: this.props.firstVisibleTimestamp
+            });
+          }
+          return external_React_default().createElement(CardGrid, {
+            title: component.header && component.header.title,
+            data: component.data,
+            feed: component.feed,
+            widgets: component.widgets,
+            type: component.type,
+            dispatch: this.props.dispatch,
+            items: component.properties.items,
+            hybridLayout: component.properties.hybridLayout,
+            hideCardBackground: component.properties.hideCardBackground,
+            fourCardLayout: component.properties.fourCardLayout,
+            compactGrid: component.properties.compactGrid,
+            essentialReadsHeader: component.properties.essentialReadsHeader,
+            onboardingExperience: component.properties.onboardingExperience,
+            ctaButtonSponsors: component.properties.ctaButtonSponsors,
+            ctaButtonVariant: component.properties.ctaButtonVariant,
+            spocMessageVariant: component.properties.spocMessageVariant,
+            editorsPicksHeader: component.properties.editorsPicksHeader,
+            recentSavesEnabled: this.props.DiscoveryStream.recentSavesEnabled,
+            hideDescriptions: this.props.DiscoveryStream.hideDescriptions,
+            firstVisibleTimestamp: this.props.firstVisibleTimestamp
+          });
+        }
       case "HorizontalRule":
         return external_React_default().createElement(HorizontalRule, null);
       case "PrivacyLink":
@@ -9603,6 +9733,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       prefs: this.props.Prefs.values,
       locale
     });
+    const sectionsEnabled = this.props.Prefs.values["discoverystream.sections.enabled"];
     const {
       config
     } = this.props.DiscoveryStream;
@@ -9691,6 +9822,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       subTitle: subTitle,
       mayHaveSponsoredStories: mayHaveSponsoredStories,
       mayHaveTopicsSelection: topicSelectionEnabled,
+      sectionsEnabled: sectionsEnabled,
       spocMessageVariant: message?.properties?.spocMessageVariant,
       eventSource: "CARDGRID"
     }, this.renderLayout(layoutRender)), this.renderLayout([{
@@ -11854,13 +11986,14 @@ class BaseContent extends (external_React_default()).PureComponent {
     const supportUrl = prefs["support.url"];
     const hasThumbsUpDownLayout = prefs["discoverystream.thumbsUpDown.searchTopsitesCompact"];
     const hasThumbsUpDown = prefs["discoverystream.thumbsUpDown.enabled"];
+    const sectionsEnabled = prefs["discoverystream.sections.enabled"];
     const featureClassName = [weatherEnabled && mayHaveWeather && "has-weather",
     
     prefs.showSearch ? "has-search" : "no-search", layoutsVariantAEnabled ? "layout-variant-a" : "",
     
     layoutsVariantBEnabled ? "layout-variant-b" : "",
     
-    pocketEnabled ? "has-recommended-stories" : "no-recommended-stories"].filter(v => v).join(" ");
+    pocketEnabled ? "has-recommended-stories" : "no-recommended-stories", sectionsEnabled ? "has-sections-grid" : ""].filter(v => v).join(" ");
     const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["feeds.topsites"] && !pocketEnabled && !prefs.showSearch && "only-topsites", noSectionsEnabled && "no-sections", prefs["logowordmark.alwaysVisible"] && "visible-logo", hasThumbsUpDownLayout && hasThumbsUpDown && "thumbs-ui-compact"].filter(v => v).join(" ");
     if (wallpapersEnabled || wallpapersV2Enabled) {
       this.updateWallpaper();
