@@ -289,7 +289,12 @@ async function evaluateExpressions(expressions, options) {
 
 
 
-async function evaluate(expression, { frameId, threadId, evalInTracer } = {}) {
+
+
+async function evaluate(
+  expression,
+  { frameId, threadId, selectedNodeActor, evalInTracer } = {}
+) {
   if (!currentTarget() || !expression) {
     return { result: null };
   }
@@ -300,6 +305,7 @@ async function evaluate(expression, { frameId, threadId, evalInTracer } = {}) {
     frameActor: frameId,
     selectedTargetFront,
     disableBreaks: true,
+    selectedNodeActor,
     evalInTracer,
   });
 }

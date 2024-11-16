@@ -8,6 +8,8 @@ import {
   getIsCurrentlyTracing,
   getCurrentThread,
 } from "../selectors/index";
+import { NO_SEARCH_VALUE } from "../reducers/tracer-frames";
+
 import { selectSourceBySourceActorID } from "./sources/select.js";
 const {
   TRACER_FIELDS_INDEXES,
@@ -16,11 +18,12 @@ const {
 
 
 
-export function tracingToggled(thread, enabled) {
+export function tracingToggled(thread, enabled, traceValues) {
   return {
     type: "TRACING_TOGGLED",
     thread,
     enabled,
+    traceValues,
   };
 }
 
@@ -81,5 +84,88 @@ export function setLocalAndRemoteRuntimeVersion(
     type: "SET_RUNTIME_VERSIONS",
     localPlatformVersion,
     remotePlatformVersion,
+  };
+}
+
+export function searchTraceArguments(searchString) {
+  return async function ({ dispatch, client, panel }) {
+    
+    searchString = searchString.trim();
+
+    
+    if (!searchString) {
+      dispatch({
+        type: "SET_TRACE_SEARCH_STRING",
+        searchValueOrGrip: NO_SEARCH_VALUE,
+      });
+      return;
+    }
+
+    
+    
+    if (searchString === "undefined") {
+      dispatch({
+        type: "SET_TRACE_SEARCH_STRING",
+        searchValueOrGrip: undefined,
+      });
+      return;
+    }
+
+    
+    
+    try {
+      const value = JSON.parse(searchString);
+      
+      
+      if (typeof value == "object" && value !== null) {
+        dispatch({
+          type: "SET_TRACE_SEARCH_EXCEPTION",
+          errorMessage:
+            "Invalid search. Can only search for existing page JS objects",
+        });
+        return;
+      }
+      dispatch({
+        type: "SET_TRACE_SEARCH_STRING",
+        searchValueOrGrip: value,
+      });
+      return;
+    } catch (e) {}
+
+    
+    
+    const inspector = panel.toolbox.getPanel("inspector");
+    const selectedNodeActor = inspector?.selection?.nodeFront?.actorID;
+
+    let { result, exception } = await client.evaluate(`(${searchString})`, {
+      selectedNodeActor,
+      evalInTracer: true,
+    });
+
+    if (result.type == "null") {
+      result = null;
+    } else if (result.type == "undefined") {
+      result = undefined;
+    }
+
+    if (exception) {
+      const { preview } = exception.getGrip();
+      const errorMessage = `${preview.name}: ${preview.message}`;
+      dispatch({
+        type: "SET_TRACE_SEARCH_EXCEPTION",
+        errorMessage,
+      });
+    } else {
+      
+      
+      
+      const searchValueOrGrip =
+        result && result.getGrip ? result.getGrip() : result;
+
+      dispatch({
+        type: "SET_TRACE_SEARCH_STRING",
+        searchValueOrGrip,
+      });
+    }
   };
 }
