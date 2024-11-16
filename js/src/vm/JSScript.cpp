@@ -1095,9 +1095,15 @@ template <typename Unit>
 void ScriptSource::PinnedUnitsBase::removeReader() {
   
   
+  
+  
+  
+  
+  
+  
   auto guard = source_->readers_.lock();
   MOZ_ASSERT(guard->count > 0);
-  if (--guard->count) {
+  if (--guard->count == 0) {
     source_->performDelayedConvertToCompressedSource<Unit>(guard);
   }
 }
