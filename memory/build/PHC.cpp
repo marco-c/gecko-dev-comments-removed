@@ -364,8 +364,7 @@ static Delay CheckProbability(int64_t aProb) {
   
   
   
-  return RoundUpPow2(
-      std::min(std::max(aProb, int64_t(2)), int64_t(0x80000000)));
+  return RoundUpPow2(std::clamp(aProb, int64_t(2), int64_t(0x80000000)));
 }
 
 
