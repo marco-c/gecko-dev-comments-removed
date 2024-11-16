@@ -135,6 +135,8 @@ class DMABufSurface {
   void FenceWait();
   void FenceDelete();
 
+  void MaybeSemaphoreWait(GLuint aGlTexture);
+
   
   
   
@@ -217,6 +219,7 @@ class DMABufSurface {
 
   RefPtr<mozilla::gfx::FileHandleWrapper> mSyncFd;
   EGLSyncKHR mSync;
+  RefPtr<mozilla::gfx::FileHandleWrapper> mSemaphoreFd;
   RefPtr<mozilla::gl::GLContext> mGL;
 
   int mGlobalRefCountFd;
