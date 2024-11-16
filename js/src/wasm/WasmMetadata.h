@@ -176,14 +176,18 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     size_t partialCodeBytesMapped = 0;
     
     size_t partialCodeBytesUsed = 0;
-
+    
+    
+    
+    int64_t inliningBudget = 0;
     WASM_CHECK_CACHEABLE_POD(completeNumFuncs, completeBCSize, partialNumFuncs,
                              partialBCSize, partialNumFuncsInlinedDirect,
                              partialNumFuncsInlinedCallRef,
                              partialBCInlinedSizeDirect,
                              partialBCInlinedSizeCallRef,
                              partialInlineBudgetOverruns,
-                             partialCodeBytesMapped, partialCodeBytesUsed);
+                             partialCodeBytesMapped, partialCodeBytesUsed,
+                             inliningBudget);
   };
   using ReadGuard = RWExclusiveData<ProtectedOptimizationStats>::ReadGuard;
   using WriteGuard = RWExclusiveData<ProtectedOptimizationStats>::WriteGuard;

@@ -331,7 +331,12 @@ class FunctionCompiler {
               inlinedCallRefFunctions) == 0;
     }
   };
-  InliningStats stats;
+  InliningStats stats_;
+
+  
+  
+  
+  int64_t inliningBudget_ = 0;
 
   const CompilerEnvironment& compilerEnv_;
   const CodeMetadata& codeMeta_;
@@ -394,7 +399,7 @@ class FunctionCompiler {
       : toplevelCompiler_(nullptr),
         callerCompiler_(nullptr),
         inliningDepth_(0),
-        stats(),
+        stats_(),
         compilerEnv_(compilerEnv),
         codeMeta_(codeMeta),
         iter_(codeMeta, decoder),
@@ -416,7 +421,7 @@ class FunctionCompiler {
         stackResultPointer_(nullptr),
         tryNotes_(tryNotes),
         compileInfos_(compileInfos) {
-    stats.topLevelBytecodeSize = func.end - func.begin;
+    stats_.topLevelBytecodeSize = func.end - func.begin;
   }
 
   
@@ -451,26 +456,6 @@ class FunctionCompiler {
     MOZ_ASSERT(toplevelCompiler && callerCompiler);
   }
 
-  ~FunctionCompiler() {
-    MOZ_ASSERT((toplevelCompiler_ == nullptr) == (callerCompiler_ == nullptr));
-    if (toplevelCompiler_) {
-      
-      MOZ_ASSERT(stats.allZero());
-    } else {
-      
-      
-      
-      MOZ_ASSERT(stats.topLevelBytecodeSize > 0);
-      auto guard = codeMeta().stats.writeLock();
-      guard->partialNumFuncs += 1;
-      guard->partialBCSize += stats.topLevelBytecodeSize;
-      guard->partialNumFuncsInlinedDirect += stats.inlinedDirectFunctions;
-      guard->partialBCInlinedSizeDirect += stats.inlinedDirectBytecodeSize;
-      guard->partialNumFuncsInlinedCallRef += stats.inlinedCallRefFunctions;
-      guard->partialBCInlinedSizeCallRef += stats.inlinedCallRefBytecodeSize;
-    }
-  }
-
   const CodeMetadata& codeMeta() const { return codeMeta_; }
 
   IonOpIter& iter() { return iter_; }
@@ -491,14 +476,26 @@ class FunctionCompiler {
   void updateInliningStats(size_t inlineeBytecodeSize,
                            InliningHeuristics::CallKind callKind) {
     MOZ_ASSERT(!toplevelCompiler_ && !callerCompiler_);
-    MOZ_ASSERT(stats.topLevelBytecodeSize > 0);
+    MOZ_ASSERT(stats_.topLevelBytecodeSize > 0);
     if (callKind == InliningHeuristics::CallKind::Direct) {
-      stats.inlinedDirectBytecodeSize += inlineeBytecodeSize;
-      stats.inlinedDirectFunctions += 1;
+      stats_.inlinedDirectBytecodeSize += inlineeBytecodeSize;
+      stats_.inlinedDirectFunctions += 1;
     } else {
       MOZ_ASSERT(callKind == InliningHeuristics::CallKind::CallRef);
-      stats.inlinedCallRefBytecodeSize += inlineeBytecodeSize;
-      stats.inlinedCallRefFunctions += 1;
+      stats_.inlinedCallRefBytecodeSize += inlineeBytecodeSize;
+      stats_.inlinedCallRefFunctions += 1;
+    }
+    
+    
+    
+    if (inliningBudget_ >= 0) {
+      inliningBudget_ -= int64_t(inlineeBytecodeSize);
+      if (inliningBudget_ <= 0) {
+        JS_LOG(wasmPerf, mozilla::LogLevel::Info,
+               "CM=..%06lx  FC::updateILStats     "
+               "Inlining budget for fI=%u exceeded",
+               0xFFFFFF & (unsigned long)uintptr_t(&codeMeta_), funcIndex());
+      }
     }
   }
   FunctionCompiler* toplevelCompiler() { return toplevelCompiler_; }
@@ -529,6 +526,9 @@ class FunctionCompiler {
   }
 
   [[nodiscard]] bool initTopLevel() {
+    
+    MOZ_ASSERT(!toplevelCompiler_);
+
     
 
     const ArgTypeVector args(funcType());
@@ -578,10 +578,28 @@ class FunctionCompiler {
       }
     }
 
+    
+    
+    
+    MOZ_ASSERT(inliningBudget_ == 0);
+    auto guard = codeMeta_.stats.readLock();
+    if (guard->inliningBudget > 0) {
+      inliningBudget_ =
+          int64_t(stats_.topLevelBytecodeSize) * PerFunctionMaxInliningRatio;
+      inliningBudget_ =
+          std::min<int64_t>(inliningBudget_, guard->inliningBudget);
+    } else {
+      inliningBudget_ = 0;
+    }
+    MOZ_ASSERT(inliningBudget_ >= 0);
+
     return true;
   }
 
   [[nodiscard]] bool initInline(const DefVector& argValues) {
+    
+    MOZ_ASSERT(toplevelCompiler_);
+
     
     if (!mirGen_.ensureBallast()) {
       return false;
@@ -654,6 +672,44 @@ class FunctionCompiler {
     MOZ_ASSERT_IF(!isInlined(),
                   pendingInlineReturns_.empty() && !pendingInlineCatchBlock_);
     MOZ_ASSERT(bodyRethrowPadPatches_.empty());
+
+    
+    MOZ_ASSERT((toplevelCompiler_ == nullptr) == (callerCompiler_ == nullptr));
+    if (toplevelCompiler_) {
+      
+      MOZ_ASSERT(stats_.allZero());
+      MOZ_ASSERT(inliningBudget_ == 0);
+    } else {
+      
+      
+      
+      MOZ_ASSERT(stats_.topLevelBytecodeSize > 0);
+      auto guard = codeMeta().stats.writeLock();
+      guard->partialNumFuncs += 1;
+      guard->partialBCSize += stats_.topLevelBytecodeSize;
+      guard->partialNumFuncsInlinedDirect += stats_.inlinedDirectFunctions;
+      guard->partialBCInlinedSizeDirect += stats_.inlinedDirectBytecodeSize;
+      guard->partialNumFuncsInlinedCallRef += stats_.inlinedCallRefFunctions;
+      guard->partialBCInlinedSizeCallRef += stats_.inlinedCallRefBytecodeSize;
+      
+      
+      
+      if (guard->inliningBudget >= 0) {
+        guard->inliningBudget -= int64_t(stats_.inlinedDirectBytecodeSize);
+        guard->inliningBudget -= int64_t(stats_.inlinedCallRefBytecodeSize);
+        if (guard->inliningBudget <= 0) {
+          JS_LOG(wasmPerf, mozilla::LogLevel::Info,
+                 "CM=..%06lx  FC::finish            "
+                 "Inlining budget for entire module exceeded",
+                 0xFFFFFF & (unsigned long)uintptr_t(&codeMeta_));
+        }
+      }
+      
+      
+      if (inliningBudget_ <= 0) {
+        guard->partialInlineBudgetOverruns++;
+      }
+    }
   }
 
   
@@ -2560,6 +2616,22 @@ class FunctionCompiler {
     
     FeatureUsage funcFeatureUsage = codeMeta().funcDefFeatureUsage(funcIndex);
     if (funcFeatureUsage & FeatureUsage::ReturnCall) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const int64_t availableBudget = toplevelCompiler_
+                                        ? toplevelCompiler_->inliningBudget_
+                                        : inliningBudget_;
+    if (availableBudget <= 0) {
       return false;
     }
 
