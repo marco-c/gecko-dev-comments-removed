@@ -1,8 +1,6 @@
 
 
-function startWorker(worker, buffer) {
-  setSharedObject(buffer);
-
+function startWorker(worker) {
   evalInWorker(`
     (${worker})(getSharedObject());
   `);
@@ -15,11 +13,13 @@ function startWorker(worker, buffer) {
 let sab = new SharedArrayBuffer(4 * Int32Array.BYTES_PER_ELEMENT)
 let i32 = new Int32Array(sab);
 
+setSharedObject(sab);
+
 
 const N = 4;
 
 
-const K = 10_000;
+const K = N * 1000;
 
 for (let i = 0; i < N; ++i) {
   startWorker(function(sab) {
@@ -27,7 +27,7 @@ for (let i = 0; i < N; ++i) {
     const N = 4;
 
     
-    const K = 10_000;
+    const K = N * 1000;
 
     let i32 = new Int32Array(sab);
 
@@ -40,13 +40,16 @@ for (let i = 0; i < N; ++i) {
     for (let i = 0; i < K / N; ++i) {
       
       while (true) {
-        while (Atomics.load(i32, 1) !== 0) {
+        while (Atomics.load(i32, 0) !== 0) {
           Atomics.pause();
         }
-        if (Atomics.exchange(i32, 1, 1) === 0) {
+        if (Atomics.exchange(i32, 0, 1) === 0) {
           break;
         }
       }
+
+      
+      i32[1] += 1;
 
       
       Atomics.store(i32, 0, 0);
@@ -54,7 +57,7 @@ for (let i = 0; i < N; ++i) {
 
     
     Atomics.sub(i32, 3, 1);
-  }, sab);
+  });
 }
 
 
@@ -63,24 +66,13 @@ while (Atomics.load(i32, 3) !== N) {
 }
 
 
-Atomics.notify(i32, 2, N);
-
-for (let i = 0; i < K; ++i) {
-  
-  while (true) {
-    while (Atomics.load(i32, 0) !== 0) {
-      Atomics.pause();
-    }
-    if (Atomics.exchange(i32, 0, 1) === 0) {
-      break;
-    }
-  }
-
-  
-  Atomics.store(i32, 1, 0);
+let woken = 0;
+while ((woken += Atomics.notify(i32, 2, N)) !== N) {
 }
 
 
 while (Atomics.load(i32, 3) !== 0) {
   Atomics.pause();
 }
+
+assertEq(i32[1], K);
