@@ -68,7 +68,7 @@ pub(crate) enum ExtendedConnectType {
 impl ExtendedConnectType {
     #[must_use]
     #[allow(clippy::unused_self)] 
-    pub const fn string(&self) -> &str {
+    pub const fn string(self) -> &'static str {
         "webtransport"
     }
 
