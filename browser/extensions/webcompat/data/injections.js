@@ -340,7 +340,6 @@ const AVAILABLE_INJECTIONS = [
     bug: "1774005",
     contentScripts: {
       matches: [
-        "*://*.crunchyroll.com/*", 
         "*://*.webex.com/*", 
         "*://ifcinema.institutfrancais.com/*", 
         "*://islamionline.islamicbank.ps/*", 
