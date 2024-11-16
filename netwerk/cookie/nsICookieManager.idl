@@ -119,6 +119,8 @@ interface nsICookieManager : nsISupports
 
 
 
+
+
   [implicit_jscontext]
   void add(in AUTF8String aHost,
            in AUTF8String aPath,
@@ -130,7 +132,8 @@ interface nsICookieManager : nsISupports
            in int64_t     aExpiry,
            in jsval aOriginAttributes,
            in int32_t aSameSite,
-           in nsICookie_schemeType aSchemeMap);
+           in nsICookie_schemeType aSchemeMap,
+           [optional] in boolean aIsPartitioned);
 
   [notxpcom]
   nsresult addNative(in AUTF8String aHost,
