@@ -19,28 +19,28 @@ namespace mozilla {
 class RemoteLazyInputStreamChild;
 
 
-class RemoteLazyInputStreamThread final : public nsISerialEventTarget,
+class RemoteLazyInputStreamThread final : public nsIObserver,
+                                          public nsISerialEventTarget,
                                           public nsIDirectTaskDispatcher {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIEVENTTARGET_FULL
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIEVENTTARGET
   NS_DECL_NSISERIALEVENTTARGET
   NS_DECL_NSIDIRECTTASKDISPATCHER
 
-  explicit RemoteLazyInputStreamThread(
-      MovingNotNull<nsCOMPtr<nsIThread>> aThread)
-      : mThread(std::move(aThread)) {}
+  static RemoteLazyInputStreamThread* Get();
 
-  static already_AddRefed<RemoteLazyInputStreamThread> Get();
+  static RemoteLazyInputStreamThread* GetOrCreate();
 
-  static already_AddRefed<RemoteLazyInputStreamThread> GetOrCreate();
+  bool Initialize();
+
+  bool InitializeOnMainThread();
 
  private:
   ~RemoteLazyInputStreamThread() = default;
 
-  
-  
-  const NotNull<nsCOMPtr<nsIThread>> mThread;
+  nsCOMPtr<nsIThread> mThread;
 };
 
 bool IsOnDOMFileThread();
