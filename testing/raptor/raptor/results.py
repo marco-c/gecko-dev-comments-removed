@@ -679,7 +679,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
             
             
 
-            if type(mname) != list:
+            if type(mname) is not list:
                 if mname in mdict:
                     return mdict[mname]
                 return retval

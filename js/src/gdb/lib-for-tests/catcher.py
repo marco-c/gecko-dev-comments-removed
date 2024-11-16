@@ -29,7 +29,7 @@ try:
     
     
     execfile(os.path.join(testlibdir, "prologue.py"), globals(), locals())
-except Exception as err:
+except Exception:
     sys.stderr.write("Error running GDB prologue:\n")
     traceback.print_exc()
     sys.exit(1)

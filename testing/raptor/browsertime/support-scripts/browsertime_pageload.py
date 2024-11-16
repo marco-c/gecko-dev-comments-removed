@@ -35,7 +35,7 @@ def _get_raptor_val(mdict, mname, retval=False):
     
     
 
-    if type(mname) != list:
+    if type(mname) is not list:
         if mname in mdict:
             return mdict[mname]
         return retval

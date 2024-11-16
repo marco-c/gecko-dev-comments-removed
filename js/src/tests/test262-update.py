@@ -311,7 +311,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     
     
     isNegative = "negative" in testRec
-    assert not isNegative or type(testRec["negative"]) == dict
+    assert not isNegative or type(testRec["negative"]) is dict
     errorType = testRec["negative"]["type"] if isNegative else None
 
     

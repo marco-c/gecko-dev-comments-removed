@@ -287,6 +287,7 @@ def create_tasks(
     If you wish to create the tasks in a new group, leave out decision_task_id.
 
     Returns an updated label_to_taskid containing the new tasks"""
+    
     import gecko_taskgraph.optimize  
 
     if suffix != "":

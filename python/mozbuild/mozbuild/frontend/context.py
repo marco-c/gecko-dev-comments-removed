@@ -2604,7 +2604,7 @@ VARIABLES = {
 
 
 for name, (storage_type, input_types, docs) in VARIABLES.items():
-    if storage_type == list:
+    if storage_type is list:
         raise RuntimeError('%s has a "list" storage type. Use "List" instead.' % name)
 
 

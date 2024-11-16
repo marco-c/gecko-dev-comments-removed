@@ -14,7 +14,6 @@ from mach.decorators import Command, CommandArgument
 
 
 
-
 @Command("settings", category="devenv", description="Show available config settings.")
 @CommandArgument(
     "-l",

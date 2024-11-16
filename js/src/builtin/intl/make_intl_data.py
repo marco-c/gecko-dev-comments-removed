@@ -172,7 +172,7 @@ def writeMappingsBinarySearchBody(
     
     
     
-    mappings_keys = mappings.keys() if type(mappings) == dict else mappings
+    mappings_keys = mappings.keys() if type(mappings) is dict else mappings
     for length, subtags in groupby(sorted(mappings_keys, key=len), len):
         
         if length != tag_maxlength:
@@ -203,7 +203,7 @@ def writeMappingsBinarySearchBody(
 
         
         if len(subtags) == 1:
-            if type(mappings) == dict:
+            if type(mappings) is dict:
                 println(
                     """
     if ({}) {{
@@ -228,7 +228,7 @@ def writeMappingsBinarySearchBody(
                     )
                 )
         elif len(subtags) <= 4:
-            if type(mappings) == dict:
+            if type(mappings) is dict:
                 for subtag in subtags:
                     println(
                         """
@@ -265,7 +265,7 @@ def writeMappingsBinarySearchBody(
         else:
             write_array(subtags, source_name + "s", length, True)
 
-            if type(mappings) == dict:
+            if type(mappings) is dict:
                 write_array([mappings[k] for k in subtags], "aliases", length, False)
 
                 println(

@@ -250,7 +250,7 @@ class TestInfoReport(TestInfo):
             
             
             new_value = item.get(label, 0) + value
-            if type(new_value) == int:
+            if type(new_value) is int:
                 item[label] = new_value
             else:
                 item[label] = float(round(new_value, 2))  
