@@ -196,6 +196,16 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   }
 
   ManualNACPtr newNativeAnonymousContent(newElement.forget());
+
+  
+  
+  ServoStyleSet* styleSet = presShell->StyleSet();
+  
+  
+  if (ServoStyleSet::MayTraverseFrom(newNativeAnonymousContent)) {
+    styleSet->StyleNewSubtree(newNativeAnonymousContent);
+  }
+
   auto* observer = new ElementDeletionObserver(newNativeAnonymousContent,
                                                aParentContent.AsElement());
   NS_ADDREF(observer);  
@@ -210,7 +220,7 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
 #endif  
 
   
-  presShell->ContentAppended(newNativeAnonymousContent);
+  presShell->PostRecreateFramesFor(newNativeAnonymousContent);
 
   return newNativeAnonymousContent;
 }

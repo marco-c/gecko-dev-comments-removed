@@ -4621,6 +4621,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentRemoved(
   nsIContent* oldNextSibling = nullptr;
 
   
+  
   if (MOZ_LIKELY(!aChild->IsRootOfNativeAnonymousSubtree())) {
     oldNextSibling = aPreviousSibling ? aPreviousSibling->GetNextSibling()
                                       : container->GetFirstChild();

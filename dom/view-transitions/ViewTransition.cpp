@@ -4,7 +4,6 @@
 
 #include "ViewTransition.h"
 #include "nsPresContext.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
@@ -50,7 +49,6 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
 
 struct CapturedElementOldState {
   
-  bool mHasImage = false;
 
   
   nsSize mSize;
@@ -63,8 +61,7 @@ struct CapturedElementOldState {
 
   CapturedElementOldState(nsIFrame* aFrame,
                           const nsSize& aSnapshotContainingBlockSize)
-      : mHasImage(true),
-        mSize(aFrame->Style()->IsRootElementStyle()
+      : mSize(aFrame->Style()->IsRootElementStyle()
                   ? aSnapshotContainingBlockSize
                   : aFrame->GetRect().Size()),
         mTransform(EffectiveTransform(aFrame)),
@@ -72,16 +69,12 @@ struct CapturedElementOldState {
         mMixBlendMode(aFrame->StyleEffects()->mMixBlendMode),
         mBackdropFilters(aFrame->StyleEffects()->mBackdropFilters),
         mColorScheme(aFrame->StyleUI()->mColorScheme.bits) {}
-
-  CapturedElementOldState() = default;
 };
 
 
 struct ViewTransition::CapturedElement {
   CapturedElementOldState mOldState;
   RefPtr<Element> mNewElement;
-
-  CapturedElement() = default;
 
   CapturedElement(nsIFrame* aFrame, const nsSize& aSnapshotContainingBlockSize)
       : mOldState(aFrame, aSnapshotContainingBlockSize) {}
@@ -100,8 +93,7 @@ static inline void ImplCycleCollectionTraverse(
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ViewTransition, mDocument,
                                       mUpdateCallback,
                                       mUpdateCallbackDonePromise, mReadyPromise,
-                                      mFinishedPromise, mNamedElements,
-                                      mViewTransitionRoot)
+                                      mFinishedPromise, mNamedElements)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ViewTransition)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -261,102 +253,6 @@ void ViewTransition::Timeout() {
   }
 }
 
-static already_AddRefed<Element> MakePseudo(Document& aDoc,
-                                            PseudoStyleType aType,
-                                            nsAtom* aName) {
-  RefPtr<Element> el = aDoc.CreateHTMLElement(nsGkAtoms::div);
-  if (!aName) {
-    MOZ_ASSERT(aType == PseudoStyleType::viewTransition);
-    el->SetIsNativeAnonymousRoot();
-  }
-  el->SetPseudoElementType(aType);
-  if (aName) {
-    el->SetAttr(nsGkAtoms::name, nsDependentAtomString(aName), IgnoreErrors());
-  }
-  
-  el->SetAttr(nsGkAtoms::type,
-              nsDependentAtomString(nsCSSPseudoElements::GetPseudoAtom(aType)),
-              IgnoreErrors());
-  return el.forget();
-}
-
-
-void ViewTransition::SetupTransitionPseudoElements() {
-  MOZ_ASSERT(!mViewTransitionRoot);
-
-  nsAutoScriptBlocker scriptBlocker;
-
-  RefPtr docElement = mDocument->GetRootElement();
-  if (!docElement) {
-    return;
-  }
-
-  
-
-  
-  
-  
-  mViewTransitionRoot =
-      MakePseudo(*mDocument, PseudoStyleType::viewTransition, nullptr);
-#ifdef DEBUG
-  
-  
-  mViewTransitionRoot->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                                   reinterpret_cast<void*>(true));
-#endif
-  
-  
-  for (auto& entry : mNamedElements) {
-    
-    constexpr bool kNotify = false;
-
-    nsAtom* transitionName = entry.GetKey();
-    const CapturedElement& capturedElement = *entry.GetData();
-    
-    
-    RefPtr<Element> group = MakePseudo(
-        *mDocument, PseudoStyleType::viewTransitionGroup, transitionName);
-    
-    mViewTransitionRoot->AppendChildTo(group, kNotify, IgnoreErrors());
-    
-    
-    RefPtr<Element> imagePair = MakePseudo(
-        *mDocument, PseudoStyleType::viewTransitionImagePair, transitionName);
-    
-    group->AppendChildTo(imagePair, kNotify, IgnoreErrors());
-    
-    if (capturedElement.mOldState.mHasImage) {
-      
-      
-      
-      RefPtr<Element> old = MakePseudo(
-          *mDocument, PseudoStyleType::viewTransitionOld, transitionName);
-      
-      imagePair->AppendChildTo(old, kNotify, IgnoreErrors());
-    }
-    
-    if (capturedElement.mNewElement) {
-      
-      
-      RefPtr<Element> new_ = MakePseudo(
-          *mDocument, PseudoStyleType::viewTransitionOld, transitionName);
-      
-      imagePair->AppendChildTo(new_, kNotify, IgnoreErrors());
-    }
-    
-    
-  }
-  BindContext context(*docElement, BindContext::ForNativeAnonymous);
-  if (NS_FAILED(mViewTransitionRoot->BindToTree(context, *docElement))) {
-    mViewTransitionRoot->UnbindFromTree();
-    mViewTransitionRoot = nullptr;
-    return;
-  }
-  if (PresShell* ps = mDocument->GetPresShell()) {
-    ps->ContentAppended(mViewTransitionRoot);
-  }
-}
-
 
 void ViewTransition::Activate() {
   
@@ -380,11 +276,6 @@ void ViewTransition::Activate() {
     
     return SkipTransition(*skipReason);
   }
-
-  
-
-  
-  SetupTransitionPseudoElements();
 
   
 
@@ -552,8 +443,12 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
           SkipTransitionReason::DuplicateTransitionNameCapturingNewState);
       return false;
     }
-    auto& capturedElement = mNamedElements.LookupOrInsertWith(
-        name, [&] { return MakeUnique<CapturedElement>(); });
+    auto& capturedElement = mNamedElements.LookupOrInsertWith(name, [&] {
+      
+      
+      return MakeUnique<CapturedElement>(aFrame,
+                                         mInitialSnapshotContainingBlockSize);
+    });
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
     return true;
   });
@@ -617,15 +512,6 @@ void ViewTransition::ClearActiveTransition() {
   ClearNamedElements();
 
   
-  
-  if (mViewTransitionRoot) {
-    nsAutoScriptBlocker scriptBlocker;
-    if (PresShell* ps = mDocument->GetPresShell()) {
-      ps->ContentRemoved(mViewTransitionRoot, nullptr);
-    }
-    mViewTransitionRoot->UnbindFromTree();
-    mViewTransitionRoot = nullptr;
-  }
   mDocument->ClearActiveViewTransition();
 }
 
