@@ -15,29 +15,37 @@ async function run_test() {
   testFile.remove(false);
   Assert.ok(!testFile.exists(), MSG_SHOULD_NOT_EXIST);
 
+  
+  
   if (AppConstants.platform == "win") {
-    
-    debugDump("attempting to create mutex");
-    let handle = createMutex(getPerInstallationMutexName());
-    Assert.ok(!!handle, "the update mutex should have been created");
-
-    
-    
-    Assert.ok(
-      !gAUS.canCheckForUpdates,
-      "should not be able to check for " +
-        "updates when there is an update mutex"
+    let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
+      Ci.nsIUpdateMutex
     );
 
-    
-    
+    debugDump("attempting to acquire the update mutex");
     Assert.ok(
-      !gAUS.canApplyUpdates,
-      "should not be able to apply updates when there is an update mutex"
+      updateMutex.tryLock(),
+      "should be able to acquire the update mutex"
     );
 
-    debugDump("destroying mutex");
-    closeHandle(handle);
+    try {
+      
+      
+      Assert.ok(
+        !gAUS.canCheckForUpdates,
+        "should not be able to check for updates when the update mutex is acquired by another instance"
+      );
+
+      
+      
+      Assert.ok(
+        !gAUS.canApplyUpdates,
+        "should not be able to apply updates when the update mutex is acquired by another instance"
+      );
+    } finally {
+      debugDump("releasing the update mutex");
+      updateMutex.unlock();
+    }
   }
 
   
@@ -45,16 +53,22 @@ async function run_test() {
   
   Assert.ok(gAUS.canApplyUpdates, "should be able to apply updates");
 
+  
+  
   if (AppConstants.platform == "win") {
-    
-    
-    debugDump("attempting to create mutex");
-    let handle = createMutex(getPerInstallationMutexName());
+    let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
+      Ci.nsIUpdateMutex
+    );
+
+    debugDump("attempting to acquire the update mutex");
+    let isAcquired = updateMutex.tryLock();
+    if (isAcquired) {
+      updateMutex.unlock();
+    }
 
     Assert.ok(
-      !handle,
-      "should not be able to create the update mutex when " +
-        "the application has created the update mutex"
+      !isAcquired,
+      "should not be able to acquire the update mutex when the current instance has already acquired it"
     );
   }
 

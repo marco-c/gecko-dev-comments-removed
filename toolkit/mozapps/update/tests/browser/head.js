@@ -203,14 +203,24 @@ function lockWriteTestFile() {
 
 
 
+
 function setOtherInstanceHandlingUpdates() {
   if (AppConstants.platform != "win") {
     throw new Error("Windows only test function called");
   }
-  gAUS.observe(null, "test-close-handle-update-mutex", "");
-  let handle = createMutex(getPerInstallationMutexName());
+
+  gAUS.observe(null, "test-unlock-update-mutex", "");
+
+  let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
+    Ci.nsIUpdateMutex
+  );
+  if (!updateMutex.tryLock()) {
+    throw new Error(
+      "Failed to simulate another instance acquiring the update mutex"
+    );
+  }
   registerCleanupFunction(() => {
-    closeHandle(handle);
+    updateMutex.unlock();
   });
 }
 
