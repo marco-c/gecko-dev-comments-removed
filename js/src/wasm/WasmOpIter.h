@@ -935,23 +935,7 @@ inline bool OpIter<Policy>::checkIsSubtypeOf(StorageType subType,
 template <typename Policy>
 inline bool OpIter<Policy>::checkIsSubtypeOf(ResultType params,
                                              ResultType results) {
-  if (params.length() != results.length()) {
-    UniqueChars error(
-        JS_smprintf("type mismatch: expected %zu values, got %zu values",
-                    results.length(), params.length()));
-    if (!error) {
-      return false;
-    }
-    return fail(error.get());
-  }
-  for (uint32_t i = 0; i < params.length(); i++) {
-    ValType param = params[i];
-    ValType result = results[i];
-    if (!checkIsSubtypeOf(param, result)) {
-      return false;
-    }
-  }
-  return true;
+  return CheckIsSubtypeOf(d_, codeMeta_, lastOpcodeOffset(), params, results);
 }
 
 template <typename Policy>
@@ -1468,8 +1452,10 @@ inline bool OpIter<Policy>::readEnd(LabelKind* kind, ResultType* type,
     
     
     
-    if (params != block.type().results()) {
-      return fail("if without else with a result value");
+    if (!checkIsSubtypeOf(params, block.type().results())) {
+      return fail(
+          "the parameters to an if without an else must be compatible with the "
+          "if's result type");
     }
 
     size_t nparams = params.length();

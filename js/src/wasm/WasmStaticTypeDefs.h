@@ -30,6 +30,7 @@ class TypeDef;
 
 struct StaticTypeDefs {
   static const TypeDef* arrayMutI16;
+  static const TypeDef* jsTag;
 
   [[nodiscard]] static bool init();
   static void destroy();
