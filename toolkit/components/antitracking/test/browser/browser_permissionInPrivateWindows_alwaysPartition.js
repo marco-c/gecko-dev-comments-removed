@@ -40,7 +40,10 @@ AntiTracking.runTest(
       );
     });
   },
-  [["privacy.partition.always_partition_third_party_non_cookie_storage", true]], 
+  [
+    ["privacy.partition.always_partition_third_party_non_cookie_storage", true],
+    ["privacy.restrict3rdpartystorage.heuristic.window_open", true],
+  ], 
   true, 
   true, 
   [
