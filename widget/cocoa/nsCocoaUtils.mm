@@ -339,7 +339,7 @@ void nsCocoaUtils::PrepareForNativeAppModalDialog() {
       "Main menu does not have any items, something is terribly wrong!");
 
   
-  NSMenu* newMenuBar = [[GeckoNSMenu alloc] initWithTitle:@""];
+  NSMenu* newMenuBar = [[NSMenu alloc] initWithTitle:@""];
 
   
   
@@ -701,8 +701,7 @@ NSEvent* nsCocoaUtils::MakeNewCococaEventFromWidgetEvent(
       {MODIFIER_ALTGRAPH, NSEventModifierFlagOption},
       {MODIFIER_META, NSEventModifierFlagCommand},
       {MODIFIER_CAPSLOCK, NSEventModifierFlagCapsLock},
-      {MODIFIER_NUMLOCK, NSEventModifierFlagNumericPad},
-      {MODIFIER_FN, NSEventModifierFlagFunction}};
+      {MODIFIER_NUMLOCK, NSEventModifierFlagNumericPad}};
 
   NSUInteger modifierFlags = 0;
   for (uint32_t i = 0; i < std::size(sModifierFlagMap); ++i) {
@@ -790,15 +789,6 @@ Modifiers nsCocoaUtils::ModifiersForEvent(NSEvent* aNativeEvent) {
   
   
   
-  
-  
-  if (!!(modifiers & NSEventModifierFlagFunction) &&
-      (aNativeEvent.type == NSKeyDown || aNativeEvent.type == NSKeyUp ||
-       aNativeEvent.type == NSFlagsChanged) &&
-      !(kVK_Return <= aNativeEvent.keyCode &&
-        aNativeEvent.keyCode <= NSModeSwitchFunctionKey)) {
-    result |= MODIFIER_FN;
-  }
 
   return result;
 }
