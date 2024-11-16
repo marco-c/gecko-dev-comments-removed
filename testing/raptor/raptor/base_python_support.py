@@ -237,36 +237,45 @@ class BasePythonSupport:
             return [round(v * (1 * 10**-6), 2) for v in vals]
 
         
-        power_vals = raw_result.get("android").get("power", {})
-        if power_vals:
-            power_usage_measurements.setdefault(
-                "powerUsagePageload", {"unit": "uWh"}
-            ).setdefault("replicates", []).extend(
-                __convert_from_pico_to_micro(
-                    [vals["powerUsage"] for vals in power_vals]
-                )
-            )
-
-        
         
         for res in raw_result["extras"]:
+            power_usage_search_name = "powerUsagePageload"
+            if any("powerUsageSupport" in metric for metric in res):
+                power_usage_search_name = "powerUsageSupport"
+
             for metric, vals in res.items():
-                if "powerUsage" not in metric:
+                if power_usage_search_name not in metric:
                     continue
                 if any(isinstance(val, dict) for val in vals):
                     flat_power_data = flatten(vals, (), sep="_")
                     for powerMetric, powerVals in flat_power_data.items():
                         power_usage_measurements.setdefault(
-                            powerMetric, {"unit": "uWh"}
+                            powerMetric.replace(power_usage_search_name, "powerUsage"),
+                            {"unit": "uWh"},
                         ).setdefault("replicates", []).extend(
                             __convert_from_pico_to_micro(powerVals)
                         )
                 else:
                     power_usage_measurements.setdefault(
-                        metric, {"unit": "uWh"}
+                        metric.replace(power_usage_search_name, "powerUsage"),
+                        {"unit": "uWh"},
                     ).setdefault("replicates", []).extend(
                         __convert_from_pico_to_micro(vals)
                     )
+
+        
+        
+        
+        if not power_usage_measurements:
+            power_vals = raw_result.get("android").get("power", {})
+            if power_vals:
+                power_usage_measurements.setdefault(
+                    "powerUsage", {"unit": "uWh"}
+                ).setdefault("replicates", []).extend(
+                    __convert_from_pico_to_micro(
+                        [vals["powerUsage"] for vals in power_vals]
+                    )
+                )
 
         return power_usage_measurements
 
