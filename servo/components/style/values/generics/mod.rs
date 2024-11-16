@@ -254,6 +254,15 @@ impl<T> Optional<T> {
             Self::None => None,
         }
     }
+
+    
+    
+    pub fn as_mut(&mut self) -> Option<&mut T> {
+        match *self {
+            Self::Some(ref mut v) => Some(v),
+            Self::None => None,
+        }
+    }
 }
 
 impl<T> From<Option<T>> for Optional<T> {
