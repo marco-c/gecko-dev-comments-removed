@@ -329,7 +329,6 @@ const AVAILABLE_INJECTIONS = [
         "*://*.webex.com/*", 
         "*://ifcinema.institutfrancais.com/*", 
         "*://islamionline.islamicbank.ps/*", 
-        "*://*.itv.com/*", 
         "*://www.schoolnutritionandfitness.com/*", 
       ],
       js: [
