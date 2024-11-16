@@ -56,7 +56,7 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
   init.mTrackingId.emplace(TrackingId::Source::MSEDecoder, sTrackingIdCounter++,
                            TrackingId::TrackAcrossProcesses::Yes);
   mReader = new MediaFormatReader(init, mDemuxer);
-#ifdef MOZ_WMF_MEDIA_ENGINE
+#ifdef MOZ_WMF_CDM
   
   
   
@@ -64,7 +64,25 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
   
   
   
-  if (StaticPrefs::media_wmf_media_engine_enabled() &&
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isCDMNotSupported =
+      !!mOwner->GetCDMProxy() && !mOwner->GetCDMProxy()->AsWMFCDMProxy();
+  if (StaticPrefs::media_wmf_media_engine_enabled() && !isCDMNotSupported &&
       !aDisableExternalEngine) {
     return new ExternalEngineStateMachine(this, mReader);
   }

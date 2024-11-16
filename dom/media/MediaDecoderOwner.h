@@ -15,6 +15,7 @@
 
 namespace mozilla {
 
+class CDMProxy;
 class GMPCrashHelper;
 class VideoFrameContainer;
 class MediaInfo;
@@ -182,6 +183,11 @@ class MediaDecoderOwner {
 
   
   virtual bool ShouldResistFingerprinting(RFPTarget aTarget) const = 0;
+
+#ifdef MOZ_WMF_CDM
+  
+  virtual CDMProxy* GetCDMProxy() const { return nullptr; }
+#endif
 
   
 
