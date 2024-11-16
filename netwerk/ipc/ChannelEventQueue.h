@@ -131,6 +131,8 @@ class ChannelEventQueue final {
 
   
   inline void PrependEvent(UniquePtr<ChannelEvent>&& aEvent);
+  inline void PrependEventInternal(UniquePtr<ChannelEvent>&& aEvent)
+      MOZ_REQUIRES(mMutex);
   inline void PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents);
 
   
@@ -165,13 +167,13 @@ class ChannelEventQueue final {
   
   ~ChannelEventQueue() = default;
 
-  void SuspendInternal();
-  void ResumeInternal();
+  void SuspendInternal() MOZ_REQUIRES(mMutex);
+  void ResumeInternal() MOZ_REQUIRES(mMutex);
 
   bool MaybeSuspendIfEventsAreSuppressed() MOZ_REQUIRES(mMutex);
 
-  inline void MaybeFlushQueue();
-  void FlushQueue();
+  inline void MaybeFlushQueue() MOZ_REQUIRES(mMutex);
+  void FlushQueue() MOZ_REQUIRES(mMutex);
   inline void CompleteResume();
 
   ChannelEvent* TakeEvent();
@@ -271,22 +273,21 @@ inline void ChannelEventQueue::StartForcedQueueing() {
 }
 
 inline void ChannelEventQueue::EndForcedQueueing() {
-  bool tryFlush = false;
-  {
-    MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(mForcedCount > 0);
-    if (!--mForcedCount) {
-      tryFlush = true;
-    }
-  }
-
-  if (tryFlush) {
+  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(mForcedCount > 0);
+  if (!--mForcedCount) {
     MaybeFlushQueue();
   }
 }
 
 inline void ChannelEventQueue::PrependEvent(UniquePtr<ChannelEvent>&& aEvent) {
   MutexAutoLock lock(mMutex);
+  PrependEventInternal(std::move(aEvent));
+}
+
+inline void ChannelEventQueue::PrependEventInternal(
+    UniquePtr<ChannelEvent>&& aEvent) {
+  mMutex.AssertCurrentThreadOwns();
 
   
   
@@ -315,43 +316,30 @@ inline void ChannelEventQueue::PrependEvents(
 }
 
 inline void ChannelEventQueue::CompleteResume() {
-  bool tryFlush = false;
-  {
-    MutexAutoLock lock(mMutex);
+  MutexAutoLock lock(mMutex);
 
+  
+  
+  if (!mSuspendCount) {
     
     
-    if (!mSuspendCount) {
-      
-      
-      
-      mSuspended = false;
-      tryFlush = true;
-    }
-  }
-
-  if (tryFlush) {
+    
+    mSuspended = false;
     MaybeFlushQueue();
   }
 }
 
 inline void ChannelEventQueue::MaybeFlushQueue() {
+  mMutex.AssertCurrentThreadOwns();
   
   
-  bool flushQueue = false;
+  bool flushQueue = !mForcedCount && !mFlushing && !mSuspended &&
+                    !mEventQueue.IsEmpty() &&
+                    !MaybeSuspendIfEventsAreSuppressed();
 
-  {
-    MutexAutoLock lock(mMutex);
-    flushQueue = !mForcedCount && !mFlushing && !mSuspended &&
-                 !mEventQueue.IsEmpty() && !MaybeSuspendIfEventsAreSuppressed();
-
-    
-    if (flushQueue) {
-      mFlushing = true;
-    }
-  }
-
+  
   if (flushQueue) {
+    mFlushing = true;
     FlushQueue();
   }
 }

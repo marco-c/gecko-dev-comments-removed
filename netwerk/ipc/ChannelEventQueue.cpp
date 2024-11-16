@@ -31,36 +31,26 @@ ChannelEvent* ChannelEventQueue::TakeEvent() {
 }
 
 void ChannelEventQueue::FlushQueue() {
+  mMutex.AssertCurrentThreadOwns();
   
   
   
   nsCOMPtr<nsISupports> kungFuDeathGrip;
-  {
-    MutexAutoLock lock(mMutex);
-    kungFuDeathGrip = mOwner;
-  }
+  kungFuDeathGrip = mOwner;
   mozilla::Unused << kungFuDeathGrip;  
 
-#ifdef DEBUG
-  {
-    MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(mFlushing);
-  }
-#endif  
+  MOZ_ASSERT(mFlushing);
 
   bool needResumeOnOtherThread = false;
 
   while (true) {
     UniquePtr<ChannelEvent> event;
-    {
-      MutexAutoLock lock(mMutex);
-      event.reset(TakeEvent());
-      if (!event) {
-        MOZ_ASSERT(mFlushing);
-        mFlushing = false;
-        MOZ_ASSERT(mEventQueue.IsEmpty() || (mSuspended || !!mForcedCount));
-        break;
-      }
+    event.reset(TakeEvent());
+    if (!event) {
+      MOZ_ASSERT(mFlushing);
+      mFlushing = false;
+      MOZ_ASSERT(mEventQueue.IsEmpty() || (mSuspended || !!mForcedCount));
+      break;
     }
 
     nsCOMPtr<nsIEventTarget> target = event->GetEventTarget();
@@ -78,20 +68,19 @@ void ChannelEventQueue::FlushQueue() {
     if (!isCurrentThread) {
       
       
-      Suspend();
-      PrependEvent(std::move(event));
+      SuspendInternal();
+      PrependEventInternal(std::move(event));
 
       needResumeOnOtherThread = true;
-      {
-        MutexAutoLock lock(mMutex);
-        MOZ_ASSERT(mFlushing);
-        mFlushing = false;
-        MOZ_ASSERT(!mEventQueue.IsEmpty());
-      }
+      MOZ_ASSERT(mFlushing);
+      mFlushing = false;
+      MOZ_ASSERT(!mEventQueue.IsEmpty());
       break;
     }
-
-    event->Run();
+    {
+      MutexAutoUnlock unlock(mMutex);
+      event->Run();
+    }
   }  
 
   
@@ -100,7 +89,7 @@ void ChannelEventQueue::FlushQueue() {
   
   
   if (needResumeOnOtherThread) {
-    Resume();
+    ResumeInternal();
   }
 }
 
