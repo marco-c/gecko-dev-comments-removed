@@ -21,11 +21,7 @@ async function cleanupDirectory(dir, ignoreRejections) {
           dir.removeEntry(entry.name, {recursive: entry.kind === 'directory'}));
 
   
-  if (ignoreRejections) {
-    await Promise.allSettled(remove_entry_promises);
-  } else {
-    await Promise.all(remove_entry_promises);
-  }
+  await Promise.allSettled(remove_entry_promises);
 }
 
 function directory_test(func, description) {
@@ -33,13 +29,13 @@ function directory_test(func, description) {
     const dir = await navigator.storage.getDirectory();
 
     
-    await cleanupDirectory(dir,  false);
+    await cleanupDirectory(dir);
 
     
     t.add_cleanup(async () => {
       
       
-      await cleanupDirectory(dir,  true);
+      await cleanupDirectory(dir);
     });
 
 
