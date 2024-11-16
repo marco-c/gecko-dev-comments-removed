@@ -422,7 +422,11 @@ void js::ReportAccessDenied(JSContext* cx) {
 const char Wrapper::family = 0;
 const Wrapper Wrapper::singleton((unsigned)0);
 const Wrapper Wrapper::singletonWithPrototype((unsigned)0, true);
-MOZ_RUNINIT JSObject* const Wrapper::defaultProto = TaggedProto::LazyProto;
+
+
+
+
+MOZ_GLOBINIT JSObject* const Wrapper::defaultProto = TaggedProto::LazyProto;
 
 
 
