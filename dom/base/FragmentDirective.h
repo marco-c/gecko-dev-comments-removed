@@ -9,7 +9,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
-
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsStringFwd.h"
@@ -21,6 +21,8 @@ class nsRange;
 namespace mozilla::dom {
 class Document;
 class Text;
+class TextDirectiveFinder;
+
 
 
 
@@ -44,13 +46,9 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
  public:
   explicit FragmentDirective(Document* aDocument);
-  FragmentDirective(Document* aDocument,
-                    nsTArray<TextDirective>&& aTextDirectives)
-      : mDocument(aDocument),
-        mUninvokedTextDirectives(std::move(aTextDirectives)) {}
 
  protected:
-  ~FragmentDirective() = default;
+  ~FragmentDirective();
 
  public:
   Document* GetParentObject() const { return mDocument; };
@@ -61,19 +59,15 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   
 
 
-  void SetTextDirectives(nsTArray<TextDirective>&& aTextDirectives) {
-    mUninvokedTextDirectives = std::move(aTextDirectives);
-  }
+  void SetTextDirectives(nsTArray<TextDirective>&& aTextDirectives);
 
   
 
 
-  bool HasUninvokedDirectives() const {
-    return !mUninvokedTextDirectives.IsEmpty();
-  };
+  bool HasUninvokedDirectives() const;
 
   
-  void ClearUninvokedDirectives() { mUninvokedTextDirectives.Clear(); }
+  void ClearUninvokedDirectives();
 
   
   MOZ_CAN_RUN_SCRIPT
@@ -81,7 +75,6 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
       const nsTArray<RefPtr<nsRange>>& aTextDirectiveRanges);
 
   
-
 
 
 
@@ -145,11 +138,8 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT void RemoveAllTextDirectives(ErrorResult& aRv);
 
  private:
-  RefPtr<nsRange> FindRangeForTextDirective(
-      const TextDirective& aTextDirective);
-
   RefPtr<Document> mDocument;
-  nsTArray<TextDirective> mUninvokedTextDirectives;
+  UniquePtr<TextDirectiveFinder> mFinder;
 };
 
 }  
