@@ -22,7 +22,7 @@ class JS_PUBLIC_API JSObject;
 
 
 
-#define FOR_EACH_JS_METRIC(_)                   \
+#define FOR_EACH_JS_LEGACY_METRIC(_)            \
   _(GC_REASON_2, Enumeration)                   \
   _(GC_IS_COMPARTMENTAL, Boolean)               \
   _(GC_ZONE_COUNT, QuantityDistribution)        \
@@ -69,6 +69,17 @@ class JS_PUBLIC_API JSObject;
   _(GC_PARALLEL_MARK_UTILIZATION, Percentage)   \
   _(GC_PARALLEL_MARK_INTERRUPTIONS, Integer)    \
   _(GC_TASK_START_DELAY_US, TimeDuration_US)
+
+
+
+
+
+
+#define FOR_EACH_JS_GLEAN_METRIC(_)
+
+#define FOR_EACH_JS_METRIC(_)  \
+  FOR_EACH_JS_LEGACY_METRIC(_) \
+  FOR_EACH_JS_GLEAN_METRIC(_)
 
 
 #define ENUM_DEF(NAME, _) NAME,
