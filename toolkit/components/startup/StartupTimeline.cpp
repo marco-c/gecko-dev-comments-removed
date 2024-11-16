@@ -3,7 +3,7 @@
 
 
 #include "StartupTimeline.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "nsXULAppAPI.h"
 
@@ -51,9 +51,10 @@ void StartupTimeline::RecordOnce(Event ev, const TimeStamp& aWhen) {
   if (ev == FIRST_PAINT || ev == FIRST_PAINT2) {
     uint32_t firstPaintTime =
         (uint32_t)(aWhen - TimeStamp::ProcessCreation()).ToMilliseconds();
-    Telemetry::ScalarSet(ev == FIRST_PAINT
-                             ? Telemetry::ScalarID::TIMESTAMPS_FIRST_PAINT
-                             : Telemetry::ScalarID::TIMESTAMPS_FIRST_PAINT_TWO,
-                         firstPaintTime);
+    if (ev == FIRST_PAINT) {
+      glean::timestamps::first_paint.Set(firstPaintTime);
+    } else {
+      glean::timestamps::first_paint_two.Set(firstPaintTime);
+    }
   }
 }
