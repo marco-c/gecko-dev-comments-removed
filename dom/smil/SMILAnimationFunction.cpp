@@ -258,7 +258,10 @@ int8_t SMILAnimationFunction::CompareTo(
     const SMILAnimationFunction* aOther) const {
   NS_ENSURE_TRUE(aOther, 0);
 
-  NS_ASSERTION(aOther != this, "Trying to compare to self");
+  if (aOther == this) {
+    
+    return 0;
+  }
 
   
   if (!IsActiveOrFrozen() && aOther->IsActiveOrFrozen()) return -1;
@@ -279,7 +282,7 @@ int8_t SMILAnimationFunction::CompareTo(
 
   
   
-  MOZ_ASSERT(mAnimationElement != aOther->mAnimationElement,
+  MOZ_ASSERT(!HasSameAnimationElement(aOther),
              "Two animations cannot have the same animation content element!");
 
   return (nsContentUtils::PositionIsBefore(mAnimationElement,

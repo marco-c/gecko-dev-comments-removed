@@ -40,6 +40,17 @@ void SMILCompositor::Traverse(nsCycleCollectionTraversalCallback* aCallback) {
 
 void SMILCompositor::AddAnimationFunction(SMILAnimationFunction* aFunc) {
   if (aFunc) {
+#ifdef DEBUG
+    
+    
+    
+    
+    for (const SMILAnimationFunction* func : mAnimationFunctions) {
+      MOZ_ASSERT(
+          !aFunc->HasSameAnimationElement(func),
+          "Two animations cannot have the same animation content element!");
+    }
+#endif
     mAnimationFunctions.AppendElement(aFunc);
   }
 }
