@@ -129,10 +129,13 @@ void CSSAnimation::Tick(TickState& aState) {
 }
 
 bool CSSAnimation::HasLowerCompositeOrderThan(
-    const CSSAnimation& aOther) const {
-  MOZ_ASSERT(IsTiedToMarkup() && aOther.IsTiedToMarkup(),
+    const Maybe<EventContext>& aContext, const CSSAnimation& aOther,
+    const Maybe<EventContext>& aOtherContext) const {
+  MOZ_ASSERT((IsTiedToMarkup() || aContext) &&
+                 (aOther.IsTiedToMarkup() || aOtherContext),
              "Should only be called for CSS animations that are sorted "
-             "as CSS animations (i.e. tied to CSS markup)");
+             "as CSS animations (i.e. tied to CSS markup) or with overridden "
+             "target and animation index");
 
   
   if (&aOther == this) {
@@ -140,13 +143,31 @@ bool CSSAnimation::HasLowerCompositeOrderThan(
   }
 
   
-  if (!mOwningElement.Equals(aOther.mOwningElement)) {
-    return mOwningElement.LessThan(
-        const_cast<CSSAnimation*>(this)->CachedChildIndexRef(),
-        aOther.mOwningElement,
+  const OwningElementRef& owningElement1 =
+      aContext ? OwningElementRef(aContext->mTarget) : mOwningElement;
+  const OwningElementRef& owningElement2 =
+      aOtherContext ? OwningElementRef(aOtherContext->mTarget)
+                    : aOther.mOwningElement;
+  if (!owningElement1.Equals(owningElement2)) {
+    return owningElement1.LessThan(
+        const_cast<CSSAnimation*>(this)->CachedChildIndexRef(), owningElement2,
         const_cast<CSSAnimation*>(&aOther)->CachedChildIndexRef());
   }
 
+  
+  
+  
+  
+  
+  if (aContext && aOtherContext) {
+    return aContext->mIndex < aOtherContext->mIndex;
+  }
+  
+  
+  if (aContext.isSome() != aOtherContext.isSome()) {
+    return aContext.isSome();
+  }
+  
   
   return mAnimationIndex < aOther.mAnimationIndex;
 }
