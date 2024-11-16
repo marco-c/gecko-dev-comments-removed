@@ -2185,9 +2185,9 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
       codeSectionSize += func.bytes().length();
     }
 
-    codeMeta_->codeSectionRange.emplace();
-    codeMeta_->codeSectionRange->start = 0;
-    codeMeta_->codeSectionRange->size = codeSectionSize;
+    codeMeta_->codeSection.emplace();
+    codeMeta_->codeSection->start = 0;
+    codeMeta_->codeSection->size = codeSectionSize;
 
     
     
