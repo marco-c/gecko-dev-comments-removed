@@ -382,10 +382,9 @@ void TimeoutManager::UpdateBudget(const TimeStamp& aNow,
     double factor = GetRegenerationFactor(isBackground);
     TimeDuration regenerated = (aNow - mLastBudgetUpdate).MultDouble(factor);
     
-    mExecutionBudget = TimeDuration::Max(
-        GetMinBudget(isBackground),
-        TimeDuration::Min(GetMaxBudget(isBackground),
-                          mExecutionBudget - aDuration + regenerated));
+    mExecutionBudget =
+        std::clamp(mExecutionBudget - aDuration + regenerated,
+                   GetMinBudget(isBackground), GetMaxBudget(isBackground));
   } else {
     
     
@@ -664,8 +663,8 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
   uint32_t totalTimeLimitMS =
       std::max(1u, StaticPrefs::dom_timeout_max_consecutive_callbacks_ms());
   const TimeDuration totalTimeLimit =
-      TimeDuration::Min(TimeDuration::FromMilliseconds(totalTimeLimitMS),
-                        TimeDuration::Max(TimeDuration(), mExecutionBudget));
+      std::clamp(mExecutionBudget, TimeDuration(),
+                 TimeDuration::FromMilliseconds(totalTimeLimitMS));
 
   
   

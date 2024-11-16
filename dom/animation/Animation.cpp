@@ -1956,10 +1956,8 @@ StickyTimeDuration Animation::IntervalStartTime(
   MOZ_ASSERT(AsCSSTransition() || AsCSSAnimation(),
              "Should be called for CSS animations or transitions");
   static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
-  return std::max(
-      std::min(StickyTimeDuration(-mEffect->NormalizedTiming().Delay()),
-               aActiveDuration),
-      zeroDuration);
+  return std::clamp(aActiveDuration, zeroDuration,
+                    StickyTimeDuration(-mEffect->NormalizedTiming().Delay()));
 }
 
 
@@ -1988,9 +1986,8 @@ StickyTimeDuration Animation::IntervalEndTime(
     return zeroDuration;
   }
 
-  return std::max(std::min(effectEnd - mEffect->NormalizedTiming().Delay(),
-                           aActiveDuration),
-                  zeroDuration);
+  return std::clamp(aActiveDuration, zeroDuration,
+                    effectEnd - mEffect->NormalizedTiming().Delay());
 }
 
 }  
