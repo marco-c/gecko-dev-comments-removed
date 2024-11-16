@@ -204,8 +204,8 @@ class PuppetWidget final : public nsBaseWidget,
   }
 
   
-  ScreenIntMargin GetSafeAreaInsets() const override;
-  void UpdateSafeAreaInsets(const ScreenIntMargin& aSafeAreaInsets);
+  LayoutDeviceIntMargin GetSafeAreaInsets() const override;
+  void UpdateSafeAreaInsets(const LayoutDeviceIntMargin& aSafeAreaInsets);
 
   
   
@@ -363,8 +363,7 @@ class PuppetWidget final : public nsBaseWidget,
   int32_t mRounding = 1;
   double mDefaultScale = GetFallbackDefaultScale().scale;
 
-  ScreenIntMargin mSafeAreaInsets;
-
+  LayoutDeviceIntMargin mSafeAreaInsets;
   RefPtr<TextEventDispatcherListener> mNativeTextEventDispatcherListener;
 
  protected:

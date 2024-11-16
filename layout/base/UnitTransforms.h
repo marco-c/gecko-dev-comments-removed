@@ -46,9 +46,6 @@ enum class PixelCastJustification : uint8_t {
   LayoutDeviceIsScreenForUntransformedEvent,
   
   
-  LayoutDeviceIsScreenForTabDims,
-  
-  
   LayoutDeviceIsParentLayerForRCDRSF,
   
   

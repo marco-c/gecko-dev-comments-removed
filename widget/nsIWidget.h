@@ -1667,8 +1667,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual mozilla::ScreenIntMargin GetSafeAreaInsets() const {
-    return mozilla::ScreenIntMargin();
+  virtual mozilla::LayoutDeviceIntMargin GetSafeAreaInsets() const {
+    return mozilla::LayoutDeviceIntMargin();
   }
 
  private:

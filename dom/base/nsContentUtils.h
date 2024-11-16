@@ -3423,8 +3423,8 @@ class nsContentUtils {
 
 
 
-  static mozilla::ScreenIntMargin GetWindowSafeAreaInsets(
-      nsIScreen* aScreen, const mozilla::ScreenIntMargin& aSafeareaInsets,
+  static mozilla::LayoutDeviceIntMargin GetWindowSafeAreaInsets(
+      nsIScreen* aScreen, const mozilla::LayoutDeviceIntMargin& aSafeareaInsets,
       const mozilla::LayoutDeviceIntRect& aWindowRect);
 
   struct SubresourceCacheValidationInfo {

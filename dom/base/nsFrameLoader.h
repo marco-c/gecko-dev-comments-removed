@@ -390,7 +390,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
               nsIContentSecurityPolicy** aCsp);
 
   
-  nsresult GetWindowDimensions(nsIntRect& aRect);
+  nsresult GetWindowDimensions(mozilla::LayoutDeviceIntRect& aRect);
 
   virtual mozilla::dom::ProcessMessageManager* GetProcessMessageManager()
       const override;
@@ -523,7 +523,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   RefPtr<nsDocShell> mDocShell;
 
   
-  mozilla::ScreenIntSize mLazySize;
+  mozilla::LayoutDeviceIntSize mLazySize;
 
   
   

@@ -11295,8 +11295,8 @@ bool nsContentUtils::IsURIInList(nsIURI* aURI, const nsCString& aList) {
 }
 
 
-ScreenIntMargin nsContentUtils::GetWindowSafeAreaInsets(
-    nsIScreen* aScreen, const ScreenIntMargin& aSafeAreaInsets,
+LayoutDeviceIntMargin nsContentUtils::GetWindowSafeAreaInsets(
+    nsIScreen* aScreen, const LayoutDeviceIntMargin& aSafeAreaInsets,
     const LayoutDeviceIntRect& aWindowRect) {
   
   
@@ -11312,36 +11312,23 @@ ScreenIntMargin nsContentUtils::GetWindowSafeAreaInsets(
   
   
   
-  ScreenIntMargin windowSafeAreaInsets;
-
+  LayoutDeviceIntMargin windowSafeAreaInsets;
   if (windowSafeAreaInsets == aSafeAreaInsets) {
     
     return windowSafeAreaInsets;
   }
 
-  int32_t screenLeft, screenTop, screenWidth, screenHeight;
-  nsresult rv =
-      aScreen->GetRect(&screenLeft, &screenTop, &screenWidth, &screenHeight);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return windowSafeAreaInsets;
-  }
-
-  const ScreenIntRect screenRect(screenLeft, screenTop, screenWidth,
-                                 screenHeight);
-
-  ScreenIntRect safeAreaRect = screenRect;
+  const LayoutDeviceIntRect screenRect = aScreen->GetRect();
+  LayoutDeviceIntRect safeAreaRect = screenRect;
   safeAreaRect.Deflate(aSafeAreaInsets);
 
-  ScreenIntRect windowRect = ViewAs<ScreenPixel>(
-      aWindowRect, PixelCastJustification::LayoutDeviceIsScreenForTabDims);
-
   
   
   
   
 
   
-  safeAreaRect = safeAreaRect.Intersect(windowRect);
+  safeAreaRect = safeAreaRect.Intersect(aWindowRect);
 
   windowSafeAreaInsets.top = safeAreaRect.y - aWindowRect.y;
   windowSafeAreaInsets.left = safeAreaRect.x - aWindowRect.x;
@@ -11350,7 +11337,7 @@ ScreenIntMargin nsContentUtils::GetWindowSafeAreaInsets(
   windowSafeAreaInsets.bottom = aWindowRect.y + aWindowRect.height -
                                 (safeAreaRect.y + safeAreaRect.height);
 
-  windowSafeAreaInsets.EnsureAtLeast(ScreenIntMargin());
+  windowSafeAreaInsets.EnsureAtLeast(LayoutDeviceIntMargin());
   
   
   windowSafeAreaInsets.EnsureAtMost(aSafeAreaInsets);
