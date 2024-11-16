@@ -104,6 +104,9 @@ class TargetConfigurationActor extends Actor {
     this._browsingContext = this.watcherActor.browserElement?.browsingContext;
   }
 
+  
+  #consolePrefValue;
+
   form() {
     return {
       actor: this.actorID,
@@ -234,6 +237,11 @@ class TargetConfigurationActor extends Actor {
 
 
   _updateParentProcessConfiguration(configuration) {
+    
+    if ("tracerOptions" in configuration) {
+      this._setTracerOptions(configuration.tracerOptions);
+    }
+
     if (!this._shouldHandleConfigurationInParentProcess()) {
       return;
     }
@@ -290,6 +298,11 @@ class TargetConfigurationActor extends Actor {
   }
 
   _restoreParentProcessConfiguration() {
+    
+    if (this.#consolePrefValue !== undefined) {
+      this._setTracerOptions();
+    }
+
     if (!this._shouldHandleConfigurationInParentProcess()) {
       return;
     }
@@ -494,6 +507,37 @@ class TargetConfigurationActor extends Actor {
       this._restoreParentProcessConfiguration();
     }
     super.destroy();
+  }
+
+  
+
+
+
+
+
+
+  _setTracerOptions(options) {
+    if (!options) {
+      if (this.#consolePrefValue === -1) {
+        Services.prefs.clearUserPref("logging.console");
+      } else {
+        Services.prefs.setIntPref("logging.console", this.#consolePrefValue);
+      }
+      this.#consolePrefValue = undefined;
+      return;
+    }
+    
+    
+    
+    
+    
+    const LOG_DISABLED = -1;
+    const LOG_VERBOSE = 5;
+    this.#consolePrefValue = Services.prefs.getIntPref(
+      "logging.console",
+      LOG_DISABLED
+    );
+    Services.prefs.setIntPref("logging.console", LOG_VERBOSE);
   }
 }
 
