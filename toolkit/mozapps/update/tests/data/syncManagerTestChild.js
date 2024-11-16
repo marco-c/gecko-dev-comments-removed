@@ -11,43 +11,11 @@
 
 
 
+
 print("child process is running");
 
-
-
-
-
-
-
-function adjustGeneralPaths() {
-  let dirProvider = {
-    getFile: function AGP_DP_getFile(aProp, aPersistent) {
-      
-      
-      aPersistent.value = false;
-      
-      if (aProp == "XREExeF") {
-        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-        file.initWithPath(customExePath);
-        return file;
-      }
-      return null;
-    },
-    QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
-  };
-  let ds = Services.dirsvc.QueryInterface(Ci.nsIDirectoryService);
-  ds.QueryInterface(Ci.nsIProperties).undefine("XREExeF");
-  ds.registerProvider(dirProvider);
-
-  
-  
-  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
-    Ci.nsIUpdateSyncManager
-  );
-  syncManager.resetLock();
-}
-
-adjustGeneralPaths();
+registerCustomDirProvider();
+resetSyncManagerLock();
 
 
 print("child process should now have the lock; will exit in 5 seconds");
