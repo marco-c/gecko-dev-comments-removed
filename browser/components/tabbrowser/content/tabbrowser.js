@@ -2581,6 +2581,7 @@
             this.selectedTab = this.addTrustedTab(BROWSER_NEW_TAB_URL, {
               index: tab._tPos + 1,
               userContextId: tab.userContextId,
+              tabGroup: tab.group,
             });
             resolve(this.selectedBrowser);
           }),
@@ -2593,13 +2594,23 @@
 
 
 
-    addTrustedTab(aURI, params = {}) {
-      params.triggeringPrincipal =
+
+
+
+
+    addTrustedTab(aURI, options = {}) {
+      options.triggeringPrincipal =
         Services.scriptSecurityManager.getSystemPrincipal();
-      return this.addTab(aURI, params);
+      return this.addTab(aURI, options);
     },
 
     
+
+
+
+
+
+
 
 
 
@@ -2637,6 +2648,7 @@
         initialBrowsingContextGroupId,
         skipAnimation,
         skipBackgroundNotify,
+        tabGroup,
         triggeringPrincipal,
         userContextId,
         csp,
@@ -2734,6 +2746,7 @@
             openerTab,
             pinned,
             bulkOrderedOpen,
+            tabGroup: tabGroup ?? openerTab?.group,
           });
         }
 
@@ -3044,6 +3057,10 @@
       let uriIsAboutBlank = uriString == "about:blank";
       return { uri: aURIObject, uriIsAboutBlank, lazyBrowserURI, uriString };
     },
+
+    
+
+
 
     _createTab({
       uriString,
@@ -3678,9 +3695,15 @@
     
 
 
+
+
+
+
+
+
     _insertTabAtIndex(
       tab,
-      { index, ownerTab, openerTab, pinned, bulkOrderedOpen } = {}
+      { index, ownerTab, openerTab, pinned, bulkOrderedOpen, tabGroup } = {}
     ) {
       
       if (ownerTab) {
@@ -3719,8 +3742,13 @@
           }
         }
       }
+
       
-      if (pinned) {
+      
+      tab.initialize();
+
+      
+      if (tab.pinned) {
         index = Math.max(index, 0);
         index = Math.min(index, this.pinnedTabCount);
       } else {
@@ -3728,17 +3756,30 @@
         index = Math.min(index, this.tabs.length);
       }
 
-      let tabAfter = this.tabs[index] || null;
+      
+      let tabAfter = this.tabs.at(index);
       this.tabContainer._invalidateCachedTabs();
-      
-      
-      tab.initialize();
-      this.tabContainer.insertBefore(tab, tabAfter);
-      if (tabAfter) {
-        this._updateTabsAfterInsert();
+
+      if (tabGroup) {
+        if (tabAfter && tabAfter.group == tabGroup) {
+          
+          this.tabContainer.insertBefore(tab, tabAfter);
+        } else {
+          
+          
+          
+          this.moveTabToGroup(tab, tabGroup);
+        }
       } else {
-        tab._tPos = index;
+        
+        
+        
+        
+        
+        this.tabContainer.insertBefore(tab, tabAfter?.group ?? tabAfter);
       }
+
+      this._updateTabsAfterInsert();
 
       if (pinned) {
         this._updateTabBarForPinnedTabs();
