@@ -133,6 +133,10 @@ class MapObject : public OrderedHashMapObject {
     SlotCount
   };
 
+  
+  
+  static constexpr gc::AllocKind allocKind = gc::AllocKind::OBJECT12_BACKGROUND;
+
   enum IteratorKind { Keys, Values, Entries };
   static_assert(
       Keys == ITEM_KIND_KEY,
@@ -151,6 +155,8 @@ class MapObject : public OrderedHashMapObject {
   [[nodiscard]] static bool getKeysAndValuesInterleaved(
       HandleObject obj, JS::MutableHandle<GCVector<JS::Value>> entries);
   [[nodiscard]] static bool entries(JSContext* cx, unsigned argc, Value* vp);
+  static MapObject* createWithProto(JSContext* cx, HandleObject proto,
+                                    NewObjectKind newKind);
   static MapObject* create(JSContext* cx, HandleObject proto = nullptr);
 
   
@@ -292,6 +298,10 @@ class SetObject : public OrderedHashSetObject {
     SlotCount
   };
 
+  
+  
+  static constexpr gc::AllocKind allocKind = gc::AllocKind::OBJECT12_BACKGROUND;
+
   enum IteratorKind { Keys, Values, Entries };
 
   static_assert(
@@ -316,6 +326,8 @@ class SetObject : public OrderedHashSetObject {
 
   
   
+  static SetObject* createWithProto(JSContext* cx, HandleObject proto,
+                                    NewObjectKind newKind);
   static SetObject* create(JSContext* cx, HandleObject proto = nullptr);
   static uint32_t size(JSContext* cx, HandleObject obj);
   [[nodiscard]] static bool size(JSContext* cx, unsigned argc, Value* vp);
