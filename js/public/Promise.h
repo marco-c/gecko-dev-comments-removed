@@ -42,26 +42,9 @@ class JS_PUBLIC_API JobQueue {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  virtual bool getHostDefinedData(JSContext* cx,
-                                  JS::MutableHandle<JSObject*> data) const = 0;
+  virtual JSObject* getIncumbentGlobal(JSContext* cx) = 0;
 
   
-
-
-
-
-
 
 
 
@@ -73,7 +56,7 @@ class JS_PUBLIC_API JobQueue {
   virtual bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
                                  JS::HandleObject job,
                                  JS::HandleObject allocationSite,
-                                 JS::HandleObject hostDefinedData) = 0;
+                                 JS::HandleObject incumbentGlobal) = 0;
 
   
 

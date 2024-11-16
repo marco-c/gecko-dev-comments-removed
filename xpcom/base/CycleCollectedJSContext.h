@@ -108,11 +108,11 @@ class FinalizationRegistryCleanup {
   explicit FinalizationRegistryCleanup(CycleCollectedJSContext* aContext);
   void Init();
   void Destroy();
-  void QueueCallback(JSFunction* aDoCleanup, JSObject* aHostDefinedData);
+  void QueueCallback(JSFunction* aDoCleanup, JSObject* aIncumbentGlobal);
   MOZ_CAN_RUN_SCRIPT void DoCleanup();
 
  private:
-  static void QueueCallback(JSFunction* aDoCleanup, JSObject* aHostDefinedData,
+  static void QueueCallback(JSFunction* aDoCleanup, JSObject* aIncumbentGlobal,
                             void* aData);
 
   class CleanupRunnable;
@@ -298,13 +298,11 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, private JS::JobQueue {
   
   
   
-  bool getHostDefinedData(JSContext* cx,
-                          JS::MutableHandle<JSObject*> aData) const override;
-
+  JSObject* getIncumbentGlobal(JSContext* cx) override;
   bool enqueuePromiseJob(JSContext* cx, JS::Handle<JSObject*> promise,
                          JS::Handle<JSObject*> job,
                          JS::Handle<JSObject*> allocationSite,
-                         JS::Handle<JSObject*> hostDefinedData) override;
+                         JS::Handle<JSObject*> incumbentGlobal) override;
   
   
   

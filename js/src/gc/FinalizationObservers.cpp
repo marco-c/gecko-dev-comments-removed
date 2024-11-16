@@ -300,14 +300,14 @@ void GCRuntime::queueFinalizationRegistryForCleanup(
     return;
   }
 
-  JSObject* unwrappedHostDefineData = nullptr;
-
-  if (JSObject* wrapped = queue->getHostDefinedData()) {
-    unwrappedHostDefineData = UncheckedUnwrapWithoutExpose(wrapped);
-  }
+  
+  
+  JSObject* object = UncheckedUnwrapWithoutExpose(queue->incumbentObject());
+  MOZ_ASSERT(object);
+  GlobalObject* incumbentGlobal = &object->nonCCWGlobal();
 
   callHostCleanupFinalizationRegistryCallback(queue->doCleanupFunction(),
-                                              unwrappedHostDefineData);
+                                              incumbentGlobal);
 
   
   AutoTouchingGrayThings atgt;
