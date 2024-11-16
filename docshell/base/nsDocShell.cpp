@@ -7940,7 +7940,7 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
     viewer->Destroy();
     mDocumentViewer = nullptr;
     SetCurrentURIInternal(nullptr);
-    NS_WARNING("ContentViewer Initialization failed");
+    NS_WARNING("DocumentViewer Initialization failed");
     return NS_ERROR_FAILURE;
   }
 
