@@ -18,7 +18,7 @@ use std::time::Instant;
 use webrender::api::*;
 use webrender::render_api::*;
 use webrender::api::units::*;
-use webrender::{DebugFlags, RenderResults, ShaderPrecacheFlags};
+use webrender::{DebugFlags, RenderResults, ShaderPrecacheFlags, Compositor2};
 use crate::{WindowWrapper, NotifierEvent};
 
 
@@ -229,6 +229,7 @@ impl Wrench {
         precache_shaders: bool,
         dump_shader_source: Option<String>,
         notifier: Option<Box<dyn RenderNotifier>>,
+        compositor2: Option<Box<dyn Compositor2>>,
     ) -> Self {
         println!("Shader override path: {:?}", shader_override_path);
 
@@ -258,6 +259,7 @@ impl Wrench {
             
             
             clear_caches_with_quads: !window.is_software(),
+            compositor2,
             ..Default::default()
         };
 

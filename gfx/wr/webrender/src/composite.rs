@@ -1296,6 +1296,32 @@ pub trait Compositor {
 }
 
 
+
+pub struct CompositorInputConfig {
+    pub framebuffer_size: DeviceIntSize,
+}
+
+
+
+
+pub struct CompositorOutputConfig {
+
+}
+
+
+
+
+
+pub trait Compositor2 {
+    fn begin_frame(
+        &mut self,
+        input: &CompositorInputConfig,
+    ) -> CompositorOutputConfig;
+
+    fn end_frame(&mut self);
+}
+
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct MappedTileInfo {

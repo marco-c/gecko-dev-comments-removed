@@ -58,7 +58,7 @@ use crate::composite::{CompositeState, CompositeTileSurface, ResolvedExternalSur
 use crate::composite::{CompositorKind, Compositor, NativeTileId, CompositeFeatures, CompositeSurfaceFormat, ResolvedExternalSurfaceColorData};
 use crate::composite::{CompositorConfig, NativeSurfaceOperationDetails, NativeSurfaceId, NativeSurfaceOperation};
 use crate::composite::{TileKind};
-use crate::debug_colors;
+use crate::{debug_colors, Compositor2, CompositorInputConfig};
 use crate::device::{DepthFunction, Device, DrawTarget, ExternalTexture, GpuFrameId, UploadPBOPool};
 use crate::device::{ReadTarget, ShaderError, Texture, TextureFilter, TextureFlags, TextureSlot, Texel};
 use crate::device::query::{GpuSampler, GpuTimer};
@@ -863,8 +863,8 @@ pub struct Renderer {
 
     
     compositor_config: CompositorConfig,
-
     current_compositor_kind: CompositorKind,
+    compositor2: Option<Box<dyn Compositor2>>,
 
     
     
@@ -3342,6 +3342,17 @@ impl Renderer {
         let _gm = self.gpu_profiler.start_marker("framebuffer");
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
 
+        
+        
+        
+        if let Some(ref mut compositor) = self.compositor2 {
+            let input = CompositorInputConfig {
+                framebuffer_size: draw_target.dimensions(),
+            };
+
+            compositor.begin_frame(&input);
+        }
+
         self.device.bind_draw_target(draw_target);
         self.device.disable_depth_write();
         self.device.disable_depth();
@@ -3474,6 +3485,11 @@ impl Renderer {
                 &mut results.stats,
             );
             self.gpu_profiler.finish_sampler(transparent_sampler);
+        }
+
+        
+        if let Some(ref mut compositor) = self.compositor2 {
+            compositor.end_frame();
         }
     }
 

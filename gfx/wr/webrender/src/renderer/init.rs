@@ -20,7 +20,7 @@ use crate::glyph_cache::GlyphCache;
 use glyph_rasterizer::{GlyphRasterThread, GlyphRasterizer, SharedFontResources};
 use crate::gpu_types::PrimitiveInstanceData;
 use crate::internal_types::{FastHashMap, FastHashSet, FrameId};
-use crate::picture;
+use crate::{picture, Compositor2};
 use crate::profiler::{self, Profiler, TransactionProfile};
 use crate::device::query::{GpuProfiler, GpuDebugMethod};
 use crate::render_backend::RenderBackend;
@@ -202,6 +202,10 @@ pub struct WebRenderOptions {
     
     pub low_quality_pinch_zoom: bool,
     pub max_shared_surface_size: i32,
+    
+    
+    
+    pub compositor2: Option<Box<dyn Compositor2>>,
 }
 
 impl WebRenderOptions {
@@ -274,6 +278,7 @@ impl Default for WebRenderOptions {
             reject_software_rasterizer: false,
             low_quality_pinch_zoom: false,
             max_shared_surface_size: 2048,
+            compositor2: None,
         }
     }
 }
@@ -316,6 +321,10 @@ pub fn create_webrender_instance(
     }
 
     HAS_BEEN_INITIALIZED.store(true, Ordering::SeqCst);
+
+    
+    
+    options.surface_origin_is_top_left |= options.compositor2.is_some();
 
     let (api_tx, api_rx) = unbounded_channel();
     let (result_tx, result_rx) = unbounded_channel();
@@ -801,6 +810,7 @@ pub fn create_webrender_instance(
         consecutive_oom_frames: 0,
         target_frame_publish_id: None,
         pending_result_msg: None,
+        compositor2: options.compositor2,
     };
 
     
