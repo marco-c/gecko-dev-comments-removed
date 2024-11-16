@@ -34,7 +34,7 @@ from slack_notifier import (
 
 
 SUCCESS_CHANNEL_ID = "C07HUFVU2UD"  
-ERROR_CHANNEL_ID = "G016BC5FUHJ"  
+ERROR_CHANNEL_ID = "C0134KJ4JHL"  
 
 
 def main():
