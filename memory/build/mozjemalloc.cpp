@@ -1361,13 +1361,23 @@ struct arena_t {
     
     
     
-
-    void FindDirtyPages(arena_chunk_t* aChunk);
+    
+    
+    
+    bool FindDirtyPages(bool aPurgedOnce);
 
     
-    arena_chunk_t* UpdatePagesAndCounts();
+    
+    
+    std::pair<bool, arena_chunk_t*> UpdatePagesAndCounts();
 
-    explicit PurgeInfo(arena_t& arena) : mArena(arena) {}
+    
+    
+    
+    void FinishPurgingInChunk(bool aAddToMAdvised);
+
+    explicit PurgeInfo(arena_t& arena, arena_chunk_t* chunk)
+        : mArena(arena), mChunk(chunk) {}
   };
 
   void HardPurge();
@@ -3140,10 +3150,6 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 #endif
 
 bool arena_t::Purge(bool aForce) {
-  
-  
-  PurgeInfo purge_info(*this);
-
   arena_chunk_t* chunk;
 
   
@@ -3174,45 +3180,99 @@ bool arena_t::Purge(bool aForce) {
       return false;
     }
     MOZ_ASSERT(chunk->ndirty > 0);
-    mChunksDirty.Remove(chunk);
 
-    purge_info.FindDirtyPages(chunk);
+    
+    
+    MOZ_ASSERT(!chunk->mIsPurging);
+    mChunksDirty.Remove(chunk);
+    chunk->mIsPurging = true;
   }  
 
+  
+  bool continue_purge_arena = true;
+
+  
+  bool continue_purge_chunk = true;
+
+  
+  
+  bool purged_once = false;
+
+  while (continue_purge_chunk && continue_purge_arena) {
+    
+    
+    PurgeInfo purge_info(*this, chunk);
+
+    {
+      
+      MaybeMutexAutoLock lock(mLock);
+      MOZ_ASSERT(chunk->mIsPurging);
+
+      continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
+      continue_purge_arena =
+          mNumDirty > (aForce ? 0 : EffectiveMaxDirty() >> 1);
+    }
+    if (!continue_purge_chunk) {
+      if (chunk->mDying) {
+        
+        
+        chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
+      }
+      
+      
+      return continue_purge_arena;
+    }
+
 #ifdef MALLOC_DECOMMIT
-  pages_decommit(purge_info.DirtyPtr(), purge_info.DirtyLenBytes());
+    pages_decommit(purge_info.DirtyPtr(), purge_info.DirtyLenBytes());
 #else
 #  ifdef XP_SOLARIS
-  posix_madvise(purge_info.DirtyPtr(), purge_info.DirtyLenBytes(), MADV_FREE);
+    posix_madvise(purge_info.DirtyPtr(), purge_info.DirtyLenBytes(), MADV_FREE);
 #  else
-  madvise(purge_info.DirtyPtr(), purge_info.DirtyLenBytes(), MADV_FREE);
+    madvise(purge_info.DirtyPtr(), purge_info.DirtyLenBytes(), MADV_FREE);
 #  endif
 #endif
 
-  
-  bool continue_purge;
+    arena_chunk_t* chunk_to_release = nullptr;
 
-  arena_chunk_t* chunk_to_release = nullptr;
+    {
+      
+      
+      MaybeMutexAutoLock lock(mLock);
+      MOZ_ASSERT(chunk->mIsPurging);
 
-  
-  
-  {
-    MaybeMutexAutoLock lock(mLock);
+      auto [cpc, ctr] = purge_info.UpdatePagesAndCounts();
+      continue_purge_chunk = cpc;
+      chunk_to_release = ctr;
+      continue_purge_arena =
+          mNumDirty > (aForce ? 0 : EffectiveMaxDirty() >> 1);
 
-    chunk_to_release = purge_info.UpdatePagesAndCounts();
+      if (!continue_purge_chunk || !continue_purge_arena) {
+        
+        purge_info.FinishPurgingInChunk(true);
+      }
+    }  
 
-    continue_purge = mNumDirty > (aForce ? 0 : EffectiveMaxDirty() >> 1);
-  }  
-
-  if (chunk_to_release) {
-    chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
+    
+    
+    if (chunk_to_release) {
+      chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
+    }
+    purged_once = true;
   }
 
-  return continue_purge;
+  return continue_purge_arena;
 }
 
-void arena_t::PurgeInfo::FindDirtyPages(arena_chunk_t* aChunk) {
-  mChunk = aChunk;
+bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
+  
+  
+  if (mChunk->ndirty == 0 || mChunk->mDying) {
+    
+    
+    FinishPurgingInChunk(aPurgedOnce);
+    return false;
+  }
 
   
   
@@ -3281,16 +3341,10 @@ void arena_t::PurgeInfo::FindDirtyPages(arena_chunk_t* aChunk) {
   if (mArena.mSpare != mChunk) {
     mArena.mRunsAvail.Remove(&mChunk->map[mFreeRunInd]);
   }
-
-  
-  MOZ_ASSERT(!mChunk->mIsPurging);
-  mChunk->mIsPurging = true;
+  return true;
 }
 
-arena_chunk_t* arena_t::PurgeInfo::UpdatePagesAndCounts() {
-  MOZ_ASSERT(mChunk->mIsPurging);
-  mChunk->mIsPurging = false;
-
+std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
   for (size_t i = 0; i < mDirtyNPages; i++) {
     
     
@@ -3319,14 +3373,40 @@ arena_chunk_t* arena_t::PurgeInfo::UpdatePagesAndCounts() {
 
   mArena.mStats.committed -= mDirtyNPages;
 
-  arena_chunk_t* chunk_to_release = nullptr;
-
   if (mChunk->mDying) {
     
     
     MOZ_ASSERT(mFreeRunInd == gChunkHeaderNumPages &&
                mFreeRunLen == gChunkNumPages - gChunkHeaderNumPages - 1);
 
+    return std::make_pair(false, mChunk);
+  }
+
+  bool was_empty = mChunk->IsEmpty();
+  mFreeRunInd =
+      mArena.TryCoalesce(mChunk, mFreeRunInd, mFreeRunLen, FreeRunLenBytes());
+
+  arena_chunk_t* chunk_to_release = nullptr;
+  if (!was_empty && mChunk->IsEmpty()) {
+    
+    
+    chunk_to_release = mArena.DemoteChunkToSpare(mChunk);
+  }
+
+  if (mChunk != mArena.mSpare) {
+    mArena.mRunsAvail.Insert(&mChunk->map[mFreeRunInd]);
+  }
+
+  return std::make_pair(mChunk->ndirty != 0, chunk_to_release);
+}
+
+void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised) {
+  
+  
+  MOZ_ASSERT(mChunk->mIsPurging);
+  mChunk->mIsPurging = false;
+
+  if (mChunk->mDying) {
     
     
     
@@ -3339,37 +3419,23 @@ arena_chunk_t* arena_t::PurgeInfo::UpdatePagesAndCounts() {
     
     
     MOZ_ASSERT(release_chunk);
-    chunk_to_release = mChunk;
-  } else {
-    bool was_empty = mChunk->IsEmpty();
-    mFreeRunInd =
-        mArena.TryCoalesce(mChunk, mFreeRunInd, mFreeRunLen, FreeRunLenBytes());
-    
+    return;
+  }
 
-    if (!was_empty && mChunk->IsEmpty()) {
-      
-      
-      chunk_to_release = mArena.DemoteChunkToSpare(mChunk);
-    }
+  if (mChunk->ndirty != 0) {
+    mArena.mChunksDirty.Insert(mChunk);
+  }
 
-    if (mChunk != mArena.mSpare) {
-      mArena.mRunsAvail.Insert(&mChunk->map[mFreeRunInd]);
-    }
-
-    if (mChunk->ndirty != 0) {
-      mArena.mChunksDirty.Insert(mChunk);
-    }
 #ifdef MALLOC_DOUBLE_PURGE
+  if (aAddToMAdvised) {
     
     
     if (mArena.mChunksMAdvised.ElementProbablyInList(mChunk)) {
       mArena.mChunksMAdvised.remove(mChunk);
     }
     mArena.mChunksMAdvised.pushFront(mChunk);
-#endif
   }
-
-  return chunk_to_release;
+#endif
 }
 
 
