@@ -26,6 +26,8 @@
 
 #include "mozilla/DebugOnly.h"
 
+#include <cstring>
+
 #include "jit/arm64/vixl/Debugger-vixl.h"
 #include "jit/arm64/vixl/MozCachingDecoder.h"
 #include "jit/arm64/vixl/Simulator-vixl.h"
@@ -520,6 +522,13 @@ Simulator::VisitCallRedirection(const Instruction* instr)
   DebugOnly<int64_t> x29 = xreg(29);
   DebugOnly<int64_t> savedSP = get_sp();
 
+#ifdef DEBUG
+  qreg_t qregs[kNumberOfCalleeSavedFPRegisters] = {};
+  for (unsigned i = 0; i < kNumberOfCalleeSavedFPRegisters; i++) {
+    qregs[i] = qreg(kFirstCalleeSavedFPRegisterIndex + i);
+  }
+#endif
+
   
   int64_t* sp = reinterpret_cast<int64_t*>(get_sp());
   
@@ -586,6 +595,37 @@ Simulator::VisitCallRedirection(const Instruction* instr)
 
   
   VIXL_ASSERT(savedSP == get_sp());
+
+  constexpr qreg_t code_feed_1bad_data = {
+      0xc0, 0xde, 0xfe, 0xed, 0x1b, 0xad, 0xda, 0x7a,
+      0xc0, 0xde, 0xfe, 0xed, 0x1b, 0xad, 0xda, 0x7a,
+  };
+
+  
+  
+  for (unsigned i = 1; i < kFirstCalleeSavedFPRegisterIndex; i++) {
+    set_qreg(i, code_feed_1bad_data);
+  }
+
+  
+  for (unsigned i = 0; i < kNumberOfCalleeSavedFPRegisters; i++) {
+    qreg_t r = qreg(kFirstCalleeSavedFPRegisterIndex + i);
+
+    
+    VIXL_ASSERT(std::memcmp(&r.val, &qregs[i].val, sizeof(int64_t)) == 0);
+
+    
+    std::memcpy(&r.val[sizeof(int64_t)], &code_feed_1bad_data.val,
+                sizeof(int64_t));
+    set_qreg(kFirstCalleeSavedFPRegisterIndex + i, r);
+  }
+
+  
+  constexpr unsigned kFirstTempFPRegisterIndex =
+      kFirstCalleeSavedFPRegisterIndex + kNumberOfCalleeSavedFPRegisters;
+  for (unsigned i = kFirstTempFPRegisterIndex; i < kNumberOfVRegisters; i++) {
+    set_qreg(i, code_feed_1bad_data);
+  }
 
   
   set_lr(savedLR);
