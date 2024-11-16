@@ -27,20 +27,6 @@ let $2 = instantiate(`(module (memory i64 1 256))`);
 
 let $3 = instantiate(`(module (memory i64 0 65536))`);
 
-if (!wasmMultiMemoryEnabled()) {
-  
-  assert_invalid(
-    () => instantiate(`(module (memory i64 0) (memory i64 0))`),
-    `multiple memories`,
-  );
-
-  
-  assert_invalid(
-    () => instantiate(`(module (memory (import "spectest" "memory") i64 0) (memory i64 0))`),
-    `multiple memories`,
-  );
-}
-
 
 let $4 = instantiate(`(module (memory i64 (data)) (func (export "memsize") (result i64) (memory.size)))`);
 

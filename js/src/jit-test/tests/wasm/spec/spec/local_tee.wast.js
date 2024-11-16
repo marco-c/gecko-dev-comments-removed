@@ -771,6 +771,21 @@ assert_invalid(
 
 
 assert_invalid(
+  () => instantiate(`(module
+    (type $$t (func))
+    (func $$f (param (ref null $$t)))
+    (func
+      (local $$x funcref)
+      (ref.null $$t)
+      (local.tee $$x)  ;; leaves only a funcref on the stack
+      (call $$f)
+    )
+  )`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
   () => instantiate(`(module (func $$unbound-local (local i32 i64) (local.tee 3 (i32.const 0)) drop))`),
   `unknown local`,
 );

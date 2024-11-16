@@ -194,6 +194,44 @@ assert_return(() => invoke($4, `grow`, [10]), [value("i32", 10)]);
 assert_return(() => invoke($4, `check-table-null`, [0, 19]), [value('anyfunc', null)]);
 
 
+let $5 = instantiate(`(module $$Tgt
+  (table (export "table") 1 funcref) ;; initial size is 1
+  (func (export "grow") (result i32) (table.grow (ref.null func) (i32.const 1)))
+)`);
+let $Tgt = $5;
+
+
+register($Tgt, `grown-table`);
+
+
+assert_return(() => invoke($Tgt, `grow`, []), [value("i32", 1)]);
+
+
+let $6 = instantiate(`(module $$Tgit1
+  ;; imported table limits should match, because external table size is 2 now
+  (table (export "table") (import "grown-table" "table") 2 funcref)
+  (func (export "grow") (result i32) (table.grow (ref.null func) (i32.const 1)))
+)`);
+let $Tgit1 = $6;
+
+
+register($Tgit1, `grown-imported-table`);
+
+
+assert_return(() => invoke($Tgit1, `grow`, []), [value("i32", 2)]);
+
+
+let $7 = instantiate(`(module $$Tgit2
+  ;; imported table limits should match, because external table size is 3 now
+  (import "grown-imported-table" "table" (table 3 funcref))
+  (func (export "size") (result i32) (table.size))
+)`);
+let $Tgit2 = $7;
+
+
+assert_return(() => invoke($Tgit2, `size`, []), [value("i32", 3)]);
+
+
 assert_invalid(
   () => instantiate(`(module
     (table $$t 0 externref)

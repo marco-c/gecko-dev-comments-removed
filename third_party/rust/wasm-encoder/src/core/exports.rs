@@ -4,7 +4,7 @@ use super::{
 use crate::{encode_section, Encode, Section, SectionId};
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(u8)]
 pub enum ExportKind {
     

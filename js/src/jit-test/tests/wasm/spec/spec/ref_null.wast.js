@@ -17,15 +17,147 @@
 
 
 let $0 = instantiate(`(module
-  (func (export "externref") (result externref) (ref.null extern))
+  (type $$t (func))
+  (func (export "anyref") (result anyref) (ref.null any))
   (func (export "funcref") (result funcref) (ref.null func))
+  (func (export "exnref") (result exnref) (ref.null exn))
+  (func (export "externref") (result externref) (ref.null extern))
+  (func (export "ref") (result (ref null $$t)) (ref.null $$t))
 
-  (global externref (ref.null extern))
+  (global anyref (ref.null any))
   (global funcref (ref.null func))
+  (global exnref (ref.null exn))
+  (global externref (ref.null extern))
+  (global (ref null $$t) (ref.null $$t))
 )`);
+
+
+assert_return(() => invoke($0, `anyref`, []), [value('anyref', null)]);
+
+
+assert_return(() => invoke($0, `funcref`, []), [value('anyfunc', null)]);
+
+
+
+
 
 
 assert_return(() => invoke($0, `externref`, []), [value('externref', null)]);
 
 
-assert_return(() => invoke($0, `funcref`, []), [value('anyfunc', null)]);
+assert_return(() => invoke($0, `ref`, []), [null]);
+
+
+let $1 = instantiate(`(module
+  (type $$t (func))
+  (global $$null nullref (ref.null none))
+  (global $$nullfunc nullfuncref (ref.null nofunc))
+  (global $$nullexn nullexnref (ref.null noexn))
+  (global $$nullextern nullexternref (ref.null noextern))
+  (func (export "anyref") (result anyref) (global.get $$null))
+  (func (export "nullref") (result nullref) (global.get $$null))
+  (func (export "funcref") (result funcref) (global.get $$nullfunc))
+  (func (export "nullfuncref") (result nullfuncref) (global.get $$nullfunc))
+  (func (export "exnref") (result exnref) (global.get $$nullexn))
+  (func (export "nullexnref") (result nullexnref) (global.get $$nullexn))
+  (func (export "externref") (result externref) (global.get $$nullextern))
+  (func (export "nullexternref") (result nullexternref) (global.get $$nullextern))
+  (func (export "ref") (result (ref null $$t)) (global.get $$nullfunc))
+
+  (global anyref (ref.null any))
+  (global anyref (ref.null none))
+  (global funcref (ref.null func))
+  (global funcref (ref.null nofunc))
+  (global exnref (ref.null exn))
+  (global exnref (ref.null noexn))
+  (global externref (ref.null extern))
+  (global externref (ref.null noextern))
+  (global nullref (ref.null none))
+  (global nullfuncref (ref.null nofunc))
+  (global nullexnref (ref.null noexn))
+  (global nullexternref (ref.null noextern))
+  (global (ref null $$t) (ref.null $$t))
+  (global (ref null $$t) (ref.null nofunc))
+)`);
+
+
+assert_return(() => invoke($1, `anyref`, []), [value('anyref', null)]);
+
+
+assert_return(() => invoke($1, `anyref`, []), [value('nullref', null)]);
+
+
+assert_return(() => invoke($1, `anyref`, []), [null]);
+
+
+assert_return(() => invoke($1, `nullref`, []), [value('anyref', null)]);
+
+
+assert_return(() => invoke($1, `nullref`, []), [value('nullref', null)]);
+
+
+assert_return(() => invoke($1, `nullref`, []), [null]);
+
+
+assert_return(() => invoke($1, `funcref`, []), [value('anyfunc', null)]);
+
+
+assert_return(() => invoke($1, `funcref`, []), [value('nullfuncref', null)]);
+
+
+assert_return(() => invoke($1, `funcref`, []), [null]);
+
+
+assert_return(() => invoke($1, `nullfuncref`, []), [value('anyfunc', null)]);
+
+
+assert_return(() => invoke($1, `nullfuncref`, []), [value('nullfuncref', null)]);
+
+
+assert_return(() => invoke($1, `nullfuncref`, []), [null]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert_return(() => invoke($1, `externref`, []), [value('externref', null)]);
+
+
+assert_return(() => invoke($1, `externref`, []), [value('nullexternref', null)]);
+
+
+assert_return(() => invoke($1, `externref`, []), [null]);
+
+
+assert_return(() => invoke($1, `nullexternref`, []), [value('externref', null)]);
+
+
+assert_return(() => invoke($1, `nullexternref`, []), [value('nullexternref', null)]);
+
+
+assert_return(() => invoke($1, `nullexternref`, []), [null]);
+
+
+assert_return(() => invoke($1, `ref`, []), [value('anyfunc', null)]);
+
+
+assert_return(() => invoke($1, `ref`, []), [value('nullfuncref', null)]);
+
+
+assert_return(() => invoke($1, `ref`, []), [null]);

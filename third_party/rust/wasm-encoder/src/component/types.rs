@@ -1,7 +1,7 @@
 use super::CORE_TYPE_SORT;
 use crate::{
     encode_section, Alias, ComponentExportKind, ComponentOuterAliasKind, ComponentSection,
-    ComponentSectionId, ComponentTypeRef, Encode, EntityType, ValType,
+    ComponentSectionId, ComponentTypeRef, CoreTypeEncoder, Encode, EntityType, ValType,
 };
 
 
@@ -20,7 +20,7 @@ impl ModuleType {
 
     
     pub fn import(&mut self, module: &str, name: &str, ty: EntityType) -> &mut Self {
-        crate::component::imports::push_extern_name_byte(&mut self.bytes, name);
+        self.bytes.push(0x00);
         module.encode(&mut self.bytes);
         name.encode(&mut self.bytes);
         ty.encode(&mut self.bytes);
@@ -36,7 +36,10 @@ impl ModuleType {
         self.bytes.push(0x01);
         self.num_added += 1;
         self.types_added += 1;
-        CoreTypeEncoder(&mut self.bytes)
+        CoreTypeEncoder {
+            push_prefix_if_component_core_type: false,
+            bytes: &mut self.bytes,
+        }
     }
 
     
@@ -76,30 +79,21 @@ impl Encode for ModuleType {
 
 
 #[derive(Debug)]
-pub struct CoreTypeEncoder<'a>(pub(crate) &'a mut Vec<u8>);
+pub struct ComponentCoreTypeEncoder<'a>(pub(crate) &'a mut Vec<u8>);
 
-impl<'a> CoreTypeEncoder<'a> {
-    
-    pub fn function<P, R>(self, params: P, results: R)
-    where
-        P: IntoIterator<Item = ValType>,
-        P::IntoIter: ExactSizeIterator,
-        R: IntoIterator<Item = ValType>,
-        R::IntoIter: ExactSizeIterator,
-    {
-        let params = params.into_iter();
-        let results = results.into_iter();
-
-        self.0.push(0x60);
-        params.len().encode(self.0);
-        params.for_each(|p| p.encode(self.0));
-        results.len().encode(self.0);
-        results.for_each(|p| p.encode(self.0));
-    }
-
+impl<'a> ComponentCoreTypeEncoder<'a> {
     
     pub fn module(self, ty: &ModuleType) {
         ty.encode(self.0);
+    }
+
+    
+    #[must_use = "the encoder must be used to encode the type"]
+    pub fn core(self) -> CoreTypeEncoder<'a> {
+        CoreTypeEncoder {
+            bytes: self.0,
+            push_prefix_if_component_core_type: true,
+        }
     }
 }
 
@@ -145,29 +139,9 @@ impl CoreTypeSection {
     
     
     #[must_use = "the encoder must be used to encode the type"]
-    pub fn ty(&mut self) -> CoreTypeEncoder<'_> {
+    pub fn ty(&mut self) -> ComponentCoreTypeEncoder<'_> {
         self.num_added += 1;
-        CoreTypeEncoder(&mut self.bytes)
-    }
-
-    
-    pub fn function<P, R>(&mut self, params: P, results: R) -> &mut Self
-    where
-        P: IntoIterator<Item = ValType>,
-        P::IntoIter: ExactSizeIterator,
-        R: IntoIterator<Item = ValType>,
-        R::IntoIter: ExactSizeIterator,
-    {
-        self.ty().function(params, results);
-        self
-    }
-
-    
-    
-    
-    pub fn module(&mut self, ty: &ModuleType) -> &mut Self {
-        self.ty().module(ty);
-        self
+        ComponentCoreTypeEncoder(&mut self.bytes)
     }
 }
 
@@ -203,11 +177,11 @@ impl ComponentType {
     
     
     #[must_use = "the encoder must be used to encode the type"]
-    pub fn core_type(&mut self) -> CoreTypeEncoder {
+    pub fn core_type(&mut self) -> ComponentCoreTypeEncoder {
         self.bytes.push(0x00);
         self.num_added += 1;
         self.core_types_added += 1;
-        CoreTypeEncoder(&mut self.bytes)
+        ComponentCoreTypeEncoder(&mut self.bytes)
     }
 
     
@@ -252,8 +226,7 @@ impl ComponentType {
     
     pub fn import(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
         self.bytes.push(0x03);
-        crate::component::imports::push_extern_name_byte(&mut self.bytes, name);
-        name.encode(&mut self.bytes);
+        crate::encode_component_import_name(&mut self.bytes, name);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
         match ty {
@@ -267,8 +240,7 @@ impl ComponentType {
     
     pub fn export(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
         self.bytes.push(0x04);
-        crate::component::imports::push_extern_name_byte(&mut self.bytes, name);
-        name.encode(&mut self.bytes);
+        crate::encode_component_export_name(&mut self.bytes, name);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
         match ty {
@@ -318,7 +290,7 @@ impl InstanceType {
     
     
     #[must_use = "the encoder must be used to encode the type"]
-    pub fn core_type(&mut self) -> CoreTypeEncoder {
+    pub fn core_type(&mut self) -> ComponentCoreTypeEncoder {
         self.0.core_type()
     }
 
@@ -379,14 +351,27 @@ impl Encode for InstanceType {
 
 
 #[derive(Debug)]
-pub struct ComponentFuncTypeEncoder<'a>(&'a mut Vec<u8>);
+pub struct ComponentFuncTypeEncoder<'a> {
+    params_encoded: bool,
+    results_encoded: bool,
+    sink: &'a mut Vec<u8>,
+}
 
 impl<'a> ComponentFuncTypeEncoder<'a> {
     fn new(sink: &'a mut Vec<u8>) -> Self {
         sink.push(0x40);
-        Self(sink)
+        Self {
+            params_encoded: false,
+            results_encoded: false,
+            sink,
+        }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -396,11 +381,13 @@ impl<'a> ComponentFuncTypeEncoder<'a> {
         P::IntoIter: ExactSizeIterator,
         T: Into<ComponentValType>,
     {
+        assert!(!self.params_encoded);
+        self.params_encoded = true;
         let params = params.into_iter();
-        params.len().encode(self.0);
+        params.len().encode(self.sink);
         for (name, ty) in params {
-            name.encode(self.0);
-            ty.into().encode(self.0);
+            name.encode(self.sink);
+            ty.into().encode(self.sink);
         }
         self
     }
@@ -408,12 +395,25 @@ impl<'a> ComponentFuncTypeEncoder<'a> {
     
     
     
+    
+    
+    
+    
+    
     pub fn result(&mut self, ty: impl Into<ComponentValType>) -> &mut Self {
-        self.0.push(0x00);
-        ty.into().encode(self.0);
+        assert!(self.params_encoded);
+        assert!(!self.results_encoded);
+        self.results_encoded = true;
+        self.sink.push(0x00);
+        ty.into().encode(self.sink);
         self
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -423,12 +423,15 @@ impl<'a> ComponentFuncTypeEncoder<'a> {
         R::IntoIter: ExactSizeIterator,
         T: Into<ComponentValType>,
     {
-        self.0.push(0x01);
+        assert!(self.params_encoded);
+        assert!(!self.results_encoded);
+        self.results_encoded = true;
+        self.sink.push(0x01);
         let results = results.into_iter();
-        results.len().encode(self.0);
+        results.len().encode(self.sink);
         for (name, ty) in results {
-            name.encode(self.0);
-            ty.into().encode(self.0);
+            name.encode(self.sink);
+            ty.into().encode(self.sink);
         }
         self
     }

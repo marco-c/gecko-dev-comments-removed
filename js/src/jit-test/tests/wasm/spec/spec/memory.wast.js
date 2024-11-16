@@ -33,17 +33,6 @@ let $4 = instantiate(`(module (memory 1 256))`);
 
 let $5 = instantiate(`(module (memory 0 65536))`);
 
-if (!wasmMultiMemoryEnabled()) {
-  
-  assert_invalid(() => instantiate(`(module (memory 0) (memory 0))`), `multiple memories`);
-
-  
-  assert_invalid(
-    () => instantiate(`(module (memory (import "spectest" "memory") 0) (memory 0))`),
-    `multiple memories`,
-  );
-}
-
 
 let $6 = instantiate(`(module (memory (data)) (func (export "memsize") (result i32) (memory.size)))`);
 
@@ -215,44 +204,44 @@ let $9 = instantiate(`(module
 
   ;; Sign and zero extending memory loads
   (func (export "i32_load8_s") (param $$i i32) (result i32)
-	(i32.store8 (i32.const 8) (local.get $$i))
-	(i32.load8_s (i32.const 8))
+    (i32.store8 (i32.const 8) (local.get $$i))
+    (i32.load8_s (i32.const 8))
   )
   (func (export "i32_load8_u") (param $$i i32) (result i32)
-	(i32.store8 (i32.const 8) (local.get $$i))
-	(i32.load8_u (i32.const 8))
+    (i32.store8 (i32.const 8) (local.get $$i))
+    (i32.load8_u (i32.const 8))
   )
   (func (export "i32_load16_s") (param $$i i32) (result i32)
-	(i32.store16 (i32.const 8) (local.get $$i))
-	(i32.load16_s (i32.const 8))
+    (i32.store16 (i32.const 8) (local.get $$i))
+    (i32.load16_s (i32.const 8))
   )
   (func (export "i32_load16_u") (param $$i i32) (result i32)
-	(i32.store16 (i32.const 8) (local.get $$i))
-	(i32.load16_u (i32.const 8))
+    (i32.store16 (i32.const 8) (local.get $$i))
+    (i32.load16_u (i32.const 8))
   )
   (func (export "i64_load8_s") (param $$i i64) (result i64)
-	(i64.store8 (i32.const 8) (local.get $$i))
-	(i64.load8_s (i32.const 8))
+    (i64.store8 (i32.const 8) (local.get $$i))
+    (i64.load8_s (i32.const 8))
   )
   (func (export "i64_load8_u") (param $$i i64) (result i64)
-	(i64.store8 (i32.const 8) (local.get $$i))
-	(i64.load8_u (i32.const 8))
+    (i64.store8 (i32.const 8) (local.get $$i))
+    (i64.load8_u (i32.const 8))
   )
   (func (export "i64_load16_s") (param $$i i64) (result i64)
-	(i64.store16 (i32.const 8) (local.get $$i))
-	(i64.load16_s (i32.const 8))
+    (i64.store16 (i32.const 8) (local.get $$i))
+    (i64.load16_s (i32.const 8))
   )
   (func (export "i64_load16_u") (param $$i i64) (result i64)
-	(i64.store16 (i32.const 8) (local.get $$i))
-	(i64.load16_u (i32.const 8))
+    (i64.store16 (i32.const 8) (local.get $$i))
+    (i64.load16_u (i32.const 8))
   )
   (func (export "i64_load32_s") (param $$i i64) (result i64)
-	(i64.store32 (i32.const 8) (local.get $$i))
-	(i64.load32_s (i32.const 8))
+    (i64.store32 (i32.const 8) (local.get $$i))
+    (i64.load32_s (i32.const 8))
   )
   (func (export "i64_load32_u") (param $$i i64) (result i64)
-	(i64.store32 (i32.const 8) (local.get $$i))
-	(i64.load32_u (i32.const 8))
+    (i64.store32 (i32.const 8) (local.get $$i))
+    (i64.load32_u (i32.const 8))
   )
 )`);
 
@@ -399,3 +388,41 @@ assert_malformed(
   () => instantiate(`(import "" "" (memory $$foo 1)) (import "" "" (memory $$foo 1)) `),
   `duplicate memory`,
 );
+
+
+let $10 = instantiate(`(module
+  (memory (export "memory") 1 1)
+
+  ;; These should not change the behavior of memory accesses.
+  (global (export "__data_end") i32 (i32.const 10000))
+  (global (export "__stack_top") i32 (i32.const 10000))
+  (global (export "__heap_base") i32 (i32.const 10000))
+
+  (func (export "load") (param i32) (result i32)
+    (i32.load8_u (local.get 0))
+  )
+)`);
+
+
+assert_return(() => invoke($10, `load`, [0]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($10, `load`, [10000]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($10, `load`, [20000]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($10, `load`, [30000]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($10, `load`, [40000]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($10, `load`, [50000]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($10, `load`, [60000]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($10, `load`, [65535]), [value("i32", 0)]);

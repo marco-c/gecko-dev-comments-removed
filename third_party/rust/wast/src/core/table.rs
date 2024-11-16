@@ -149,7 +149,7 @@ pub enum ElemKind<'a> {
     
     Active {
         
-        table: Index<'a>,
+        table: Option<Index<'a>>,
         
         offset: Expression<'a>,
     },
@@ -197,15 +197,15 @@ impl<'a> Parse<'a> for Elem<'a> {
                 
                 
                 table_omitted = true;
-                Index::Num(parser.parse()?, span)
+                Some(Index::Num(parser.parse()?, span))
             } else if parser.peek2::<kw::table>()? {
-                parser.parens(|p| {
+                Some(parser.parens(|p| {
                     p.parse::<kw::table>()?;
                     p.parse()
-                })?
+                })?)
             } else {
                 table_omitted = true;
-                Index::Num(0, span)
+                None
             };
 
             let offset = parse_expr_or_single_instr::<kw::offset>(parser)?;

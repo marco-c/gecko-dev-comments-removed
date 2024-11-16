@@ -84,6 +84,8 @@ pub enum ModuleTypeDecl<'a> {
     
     Type(core::Type<'a>),
     
+    Rec(core::Rec<'a>),
+    
     Alias(Alias<'a>),
     
     Import(core::Import<'a>),
@@ -96,6 +98,8 @@ impl<'a> Parse<'a> for ModuleTypeDecl<'a> {
         let mut l = parser.lookahead1();
         if l.peek::<kw::r#type>()? {
             Ok(Self::Type(parser.parse()?))
+        } else if l.peek::<kw::rec>()? {
+            Ok(Self::Rec(parser.parse()?))
         } else if l.peek::<kw::alias>()? {
             Ok(Self::Alias(Alias::parse_outer_core_type_alias(parser)?))
         } else if l.peek::<kw::import>()? {

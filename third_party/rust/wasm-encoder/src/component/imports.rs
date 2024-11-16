@@ -131,8 +131,7 @@ impl ComponentImportSection {
 
     
     pub fn import(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
-        push_extern_name_byte(&mut self.bytes, name);
-        name.encode(&mut self.bytes);
+        encode_component_import_name(&mut self.bytes, name);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
         self
@@ -164,12 +163,7 @@ impl ComponentSection for ComponentImportSection {
 
 
 
-
-
-pub(crate) fn push_extern_name_byte(bytes: &mut Vec<u8>, name: &str) {
-    if name.contains(':') {
-        bytes.push(0x01);
-    } else {
-        bytes.push(0x00);
-    }
+pub(crate) fn encode_component_import_name(bytes: &mut Vec<u8>, name: &str) {
+    bytes.push(0x00);
+    name.encode(bytes);
 }

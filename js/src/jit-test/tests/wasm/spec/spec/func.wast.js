@@ -198,9 +198,9 @@ let $0 = instantiate(`(module
   (func (export "break-br_table-num") (param i32) (result i32)
     (br_table 0 0 (i32.const 50) (local.get 0)) (i32.const 51)
   )
-  (func (export "break-br_table-num-num") (param i32) (result i32 i64)
-    (br_table 0 0 (i32.const 50) (i64.const 51) (local.get 0))
-    (i32.const 51) (i64.const 52)
+  (func (export "break-br_table-num-num") (param i32) (result f32 i64)
+    (br_table 0 0 (f32.const 50) (i64.const 51) (local.get 0))
+    (f32.const 51) (i64.const 52)
   )
   (func (export "break-br_table-nested-empty") (param i32)
     (block (br_table 0 1 0 (local.get 0)))
@@ -483,16 +483,16 @@ assert_return(() => invoke($0, `break-br_table-num`, [10]), [value("i32", 50)]);
 assert_return(() => invoke($0, `break-br_table-num`, [-100]), [value("i32", 50)]);
 
 
-assert_return(() => invoke($0, `break-br_table-num-num`, [0]), [value("i32", 50), value("i64", 51n)]);
+assert_return(() => invoke($0, `break-br_table-num-num`, [0]), [value("f32", 50), value("i64", 51n)]);
 
 
-assert_return(() => invoke($0, `break-br_table-num-num`, [1]), [value("i32", 50), value("i64", 51n)]);
+assert_return(() => invoke($0, `break-br_table-num-num`, [1]), [value("f32", 50), value("i64", 51n)]);
 
 
-assert_return(() => invoke($0, `break-br_table-num-num`, [10]), [value("i32", 50), value("i64", 51n)]);
+assert_return(() => invoke($0, `break-br_table-num-num`, [10]), [value("f32", 50), value("i64", 51n)]);
 
 
-assert_return(() => invoke($0, `break-br_table-num-num`, [-100]), [value("i32", 50), value("i64", 51n)]);
+assert_return(() => invoke($0, `break-br_table-num-num`, [-100]), [value("f32", 50), value("i64", 51n)]);
 
 
 assert_return(() => invoke($0, `break-br_table-nested-empty`, [0]), []);
@@ -799,6 +799,19 @@ assert_malformed(
 );
 
 
+assert_invalid(() => instantiate(`(module (func $$g (type 4)))`), `unknown type`);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (func $$f (drop (ref.func $$g)))
+    (func $$g (type 4))
+    (elem declare func $$g)
+  )`),
+  `unknown type`,
+);
+
+
 assert_invalid(
   () => instantiate(`(module (func $$type-local-num-vs-num (result i64) (local i32) (local.get 0)))`),
   `type mismatch`,
@@ -814,6 +827,15 @@ assert_invalid(
 assert_invalid(
   () => instantiate(`(module (func $$type-local-num-vs-num (local f64 i64) (f64.neg (local.get 1))))`),
   `type mismatch`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (type $$t (func))
+    (func $$type-local-uninitialized (local $$x (ref $$t)) (drop (local.get $$x)))
+  )`),
+  `uninitialized local`,
 );
 
 

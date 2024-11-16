@@ -1,4 +1,6 @@
 use crate::{encode_section, ConstExpr, Encode, RefType, Section, SectionId};
+use std::borrow::Cow;
+
 
 
 
@@ -43,12 +45,12 @@ pub struct ElementSection {
 }
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Elements<'a> {
     
-    Functions(&'a [u32]),
+    Functions(Cow<'a, [u32]>),
     
-    Expressions(RefType, &'a [ConstExpr]),
+    Expressions(RefType, Cow<'a, [ConstExpr]>),
 }
 
 
@@ -151,7 +153,7 @@ impl ElementSection {
                     ty.encode(&mut self.bytes);
                 }
                 e.len().encode(&mut self.bytes);
-                for expr in e {
+                for expr in e.iter() {
                     expr.encode(&mut self.bytes);
                 }
             }

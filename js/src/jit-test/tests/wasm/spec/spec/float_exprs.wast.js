@@ -2595,6 +2595,8 @@ assert_return(
 let $38 = instantiate(`(module
   (func (export "no_demote_mixed_sub") (param $$x f64) (param $$y f32) (result f32)
     (f32.demote_f64 (f64.sub (local.get $$x) (f64.promote_f32 (local.get $$y)))))
+  (func (export "no_demote_mixed_sub_commuted") (param $$y f32) (param $$x f64) (result f32)
+    (f32.demote_f64 (f64.sub (f64.promote_f32 (local.get $$y)) (local.get $$x))))
 )`);
 
 
@@ -2643,7 +2645,248 @@ assert_return(
 );
 
 
+assert_return(
+  () => invoke($38, `no_demote_mixed_sub_commuted`, [
+    value("f32", 4086347000000000000),
+    value("f64", 7869935327202668000000000),
+  ]),
+  [value("f32", -7869931000000000000000000)],
+);
+
+
+assert_return(
+  () => invoke($38, `no_demote_mixed_sub_commuted`, [
+    value("f32", 239897.28),
+    value("f64", -1535841968.9056544),
+  ]),
+  [value("f32", 1536081900)],
+);
+
+
+assert_return(
+  () => invoke($38, `no_demote_mixed_sub_commuted`, [
+    value("f32", 0.00039426138),
+    value("f64", -102.19459272722602),
+  ]),
+  [value("f32", 102.194984)],
+);
+
+
+assert_return(
+  () => invoke($38, `no_demote_mixed_sub_commuted`, [
+    value("f32", 0.0000000000000000000005851077),
+    value("f64", 0.00000000000000005645470375565188),
+  ]),
+  [value("f32", -0.00000000000000005645412)],
+);
+
+
+assert_return(
+  () => invoke($38, `no_demote_mixed_sub_commuted`, [
+    value("f32", 63120.89),
+    value("f64", 27090.388466832894),
+  ]),
+  [value("f32", 36030.504)],
+);
+
+
 let $39 = instantiate(`(module
+  (func (export "no_demote_mixed_mul") (param $$x f64) (param $$y f32) (result f32)
+    (f32.demote_f64 (f64.mul (local.get $$x) (f64.promote_f32 (local.get $$y)))))
+  (func (export "no_demote_mixed_mul_commuted") (param $$y f32) (param $$x f64) (result f32)
+    (f32.demote_f64 (f64.mul (f64.promote_f32 (local.get $$y)) (local.get $$x))))
+)`);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul`, [
+    value("f64", 0.00000000000000000000000000000000000000000000000000000000000025377744840344215),
+    value("f32", 15802016000000000000000000000000000),
+  ]),
+  [value("f32", 0.0000000000000000000000000040101952)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul`, [
+    value("f64", 2172669212942878800000000000000000000000000),
+    value("f32", 0.000000000000000000000000000000007293721),
+  ]),
+  [value("f32", 15846843000)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul`, [
+    value("f64", 185661354759469570000000000000000000000000000000000000),
+    value("f32", 0.000000000000000011523599),
+  ]),
+  [value("f32", 2139487000000000000000000000000000000)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul`, [
+    value("f64", 5434641042224456000000000000000000000000000000000000000000000000000),
+    value("f32", 0.00000000000000000000000000000000000023453286),
+  ]),
+  [value("f32", 1274601900000000000000000000000)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul`, [
+    value("f64", 0.0000000000000000000000000000000000000000000000000011834791522838056),
+    value("f32", 310965330000000),
+  ]),
+  [value("f32", 0.00000000000000000000000000000000000036802098)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul_commuted`, [
+    value("f32", 15802016000000000000000000000000000),
+    value("f64", 0.00000000000000000000000000000000000000000000000000000000000025377744840344215),
+  ]),
+  [value("f32", 0.0000000000000000000000000040101952)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul_commuted`, [
+    value("f32", 0.000000000000000000000000000000007293721),
+    value("f64", 2172669212942878800000000000000000000000000),
+  ]),
+  [value("f32", 15846843000)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul_commuted`, [
+    value("f32", 0.000000000000000011523599),
+    value("f64", 185661354759469570000000000000000000000000000000000000),
+  ]),
+  [value("f32", 2139487000000000000000000000000000000)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul_commuted`, [
+    value("f32", 0.00000000000000000000000000000000000023453286),
+    value("f64", 5434641042224456000000000000000000000000000000000000000000000000000),
+  ]),
+  [value("f32", 1274601900000000000000000000000)],
+);
+
+
+assert_return(
+  () => invoke($39, `no_demote_mixed_mul_commuted`, [
+    value("f32", 310965330000000),
+    value("f64", 0.0000000000000000000000000000000000000000000000000011834791522838056),
+  ]),
+  [value("f32", 0.00000000000000000000000000000000000036802098)],
+);
+
+
+let $40 = instantiate(`(module
+  (func (export "no_demote_mixed_div") (param $$x f64) (param $$y f32) (result f32)
+    (f32.demote_f64 (f64.div (local.get $$x) (f64.promote_f32 (local.get $$y)))))
+  (func (export "no_demote_mixed_div_commuted") (param $$y f32) (param $$x f64) (result f32)
+    (f32.demote_f64 (f64.div (f64.promote_f32 (local.get $$y)) (local.get $$x))))
+)`);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div`, [
+    value("f64", 1788604883532416200000000000000000000000000000),
+    value("f32", 14437566000000000000000000000000),
+  ]),
+  [value("f32", 123885480000000)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div`, [
+    value("f64", 0.00000000000000000000000000000000000000000000010952898401798359),
+    value("f32", 0.00000000000000000000000025665392),
+  ]),
+  [value("f32", 0.0000000000000000000004267575)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div`, [
+    value("f64", 0.000000000009080603501514862),
+    value("f32", 0.000000000000000000000000000000000000004837378),
+  ]),
+  [value("f32", 1877174900000000000000000000)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div`, [
+    value("f64", 0.000000000000000000000000000000000000000003782857642810886),
+    value("f32", 0.000000000000000000000000003438024),
+  ]),
+  [value("f32", 0.0000000000000011002999)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div`, [
+    value("f64", 34505644707116606000000),
+    value("f32", 600334200000000000000000000),
+  ]),
+  [value("f32", 0.000057477395)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div_commuted`, [
+    value("f32", 0.00000000000000000000009751511),
+    value("f64", 0.00000000000026675841907359984),
+  ]),
+  [value("f32", 0.0000000003655559)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div_commuted`, [
+    value("f32", 100059280),
+    value("f64", 811135195112395900000000000000000000000000000000),
+  ]),
+  [value("f32", 0.000000000000000000000000000000000000000123358)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div_commuted`, [
+    value("f32", 0.000000000001732505),
+    value("f64", 0.000000000000000000000000000000000000000011227001577189032),
+  ]),
+  [value("f32", 154315910000000000000000000000)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div_commuted`, [
+    value("f32", 1752210100000000000000000),
+    value("f64", 2520073054793086300000000000000000000000000000000000000000000000),
+  ]),
+  [value("f32", 0.000000000000000000000000000000000000000695302)],
+);
+
+
+assert_return(
+  () => invoke($40, `no_demote_mixed_div_commuted`, [
+    value("f32", 0.00000000000000000000015513188),
+    value("f64", 0.0000000000000000000000000000000000000000000000000000000000035774408529541256),
+  ]),
+  [value("f32", 43363930000000000000000000000000000000)],
+);
+
+
+let $41 = instantiate(`(module
   (func (export "f32.i32.no_fold_trunc_s_convert_s") (param $$x f32) (result f32)
     (f32.convert_i32_s (i32.trunc_f32_s (local.get $$x))))
   (func (export "f32.i32.no_fold_trunc_u_convert_s") (param $$x f32) (result f32)
@@ -2680,198 +2923,198 @@ let $39 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_s_convert_s`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_s_convert_s`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_s_convert_s`, [value("f32", -1.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_s_convert_s`, [value("f32", -1.5)]),
   [value("f32", -1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_u_convert_s`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_u_convert_s`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_u_convert_s`, [value("f32", -0.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_u_convert_s`, [value("f32", -0.5)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_s_convert_u`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_s_convert_u`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_s_convert_u`, [value("f32", -1.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_s_convert_u`, [value("f32", -1.5)]),
   [value("f32", 4294967300)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_u_convert_u`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_u_convert_u`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i32.no_fold_trunc_u_convert_u`, [value("f32", -0.5)]),
+  () => invoke($41, `f32.i32.no_fold_trunc_u_convert_u`, [value("f32", -0.5)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_s_convert_s`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_s_convert_s`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_s_convert_s`, [value("f64", -1.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_s_convert_s`, [value("f64", -1.5)]),
   [value("f64", -1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_u_convert_s`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_u_convert_s`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_u_convert_s`, [value("f64", -0.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_u_convert_s`, [value("f64", -0.5)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_s_convert_u`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_s_convert_u`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_s_convert_u`, [value("f64", -1.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_s_convert_u`, [value("f64", -1.5)]),
   [value("f64", 4294967295)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_u_convert_u`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_u_convert_u`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i32.no_fold_trunc_u_convert_u`, [value("f64", -0.5)]),
+  () => invoke($41, `f64.i32.no_fold_trunc_u_convert_u`, [value("f64", -0.5)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_s_convert_s`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_s_convert_s`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_s_convert_s`, [value("f32", -1.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_s_convert_s`, [value("f32", -1.5)]),
   [value("f32", -1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_u_convert_s`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_u_convert_s`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_u_convert_s`, [value("f32", -0.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_u_convert_s`, [value("f32", -0.5)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_s_convert_u`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_s_convert_u`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_s_convert_u`, [value("f32", -1.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_s_convert_u`, [value("f32", -1.5)]),
   [value("f32", 18446744000000000000)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_u_convert_u`, [value("f32", 1.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_u_convert_u`, [value("f32", 1.5)]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f32.i64.no_fold_trunc_u_convert_u`, [value("f32", -0.5)]),
+  () => invoke($41, `f32.i64.no_fold_trunc_u_convert_u`, [value("f32", -0.5)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_s_convert_s`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_s_convert_s`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_s_convert_s`, [value("f64", -1.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_s_convert_s`, [value("f64", -1.5)]),
   [value("f64", -1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_u_convert_s`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_u_convert_s`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_u_convert_s`, [value("f64", -0.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_u_convert_s`, [value("f64", -0.5)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_s_convert_u`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_s_convert_u`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_s_convert_u`, [value("f64", -1.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_s_convert_u`, [value("f64", -1.5)]),
   [value("f64", 18446744073709552000)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_u_convert_u`, [value("f64", 1.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_u_convert_u`, [value("f64", 1.5)]),
   [value("f64", 1)],
 );
 
 
 assert_return(
-  () => invoke($39, `f64.i64.no_fold_trunc_u_convert_u`, [value("f64", -0.5)]),
+  () => invoke($41, `f64.i64.no_fold_trunc_u_convert_u`, [value("f64", -0.5)]),
   [value("f64", 0)],
 );
 
 
-let $40 = instantiate(`(module
+let $42 = instantiate(`(module
   (memory 1 1)
   (func (export "init") (param $$i i32) (param $$x f32) (f32.store (local.get $$i) (local.get $$x)))
 
@@ -2893,46 +3136,46 @@ let $40 = instantiate(`(module
 )`);
 
 
-invoke($40, `init`, [0, value("f32", 15.1)]);
+invoke($42, `init`, [0, value("f32", 15.1)]);
 
 
-invoke($40, `init`, [4, value("f32", 15.2)]);
+invoke($42, `init`, [4, value("f32", 15.2)]);
 
 
-invoke($40, `init`, [8, value("f32", 15.3)]);
+invoke($42, `init`, [8, value("f32", 15.3)]);
 
 
-invoke($40, `init`, [12, value("f32", 15.4)]);
+invoke($42, `init`, [12, value("f32", 15.4)]);
 
 
-assert_return(() => invoke($40, `check`, [0]), [value("f32", 15.1)]);
+assert_return(() => invoke($42, `check`, [0]), [value("f32", 15.1)]);
 
 
-assert_return(() => invoke($40, `check`, [4]), [value("f32", 15.2)]);
+assert_return(() => invoke($42, `check`, [4]), [value("f32", 15.2)]);
 
 
-assert_return(() => invoke($40, `check`, [8]), [value("f32", 15.3)]);
+assert_return(() => invoke($42, `check`, [8]), [value("f32", 15.3)]);
 
 
-assert_return(() => invoke($40, `check`, [12]), [value("f32", 15.4)]);
+assert_return(() => invoke($42, `check`, [12]), [value("f32", 15.4)]);
 
 
-invoke($40, `run`, [16, value("f32", 3)]);
+invoke($42, `run`, [16, value("f32", 3)]);
 
 
-assert_return(() => invoke($40, `check`, [0]), [value("f32", 5.0333333)]);
+assert_return(() => invoke($42, `check`, [0]), [value("f32", 5.0333333)]);
 
 
-assert_return(() => invoke($40, `check`, [4]), [value("f32", 5.0666666)]);
+assert_return(() => invoke($42, `check`, [4]), [value("f32", 5.0666666)]);
 
 
-assert_return(() => invoke($40, `check`, [8]), [value("f32", 5.1)]);
+assert_return(() => invoke($42, `check`, [8]), [value("f32", 5.1)]);
 
 
-assert_return(() => invoke($40, `check`, [12]), [value("f32", 5.133333)]);
+assert_return(() => invoke($42, `check`, [12]), [value("f32", 5.133333)]);
 
 
-let $41 = instantiate(`(module
+let $43 = instantiate(`(module
   (memory 1 1)
   (func (export "init") (param $$i i32) (param $$x f64) (f64.store (local.get $$i) (local.get $$x)))
 
@@ -2954,46 +3197,46 @@ let $41 = instantiate(`(module
 )`);
 
 
-invoke($41, `init`, [0, value("f64", 15.1)]);
+invoke($43, `init`, [0, value("f64", 15.1)]);
 
 
-invoke($41, `init`, [8, value("f64", 15.2)]);
+invoke($43, `init`, [8, value("f64", 15.2)]);
 
 
-invoke($41, `init`, [16, value("f64", 15.3)]);
+invoke($43, `init`, [16, value("f64", 15.3)]);
 
 
-invoke($41, `init`, [24, value("f64", 15.4)]);
+invoke($43, `init`, [24, value("f64", 15.4)]);
 
 
-assert_return(() => invoke($41, `check`, [0]), [value("f64", 15.1)]);
+assert_return(() => invoke($43, `check`, [0]), [value("f64", 15.1)]);
 
 
-assert_return(() => invoke($41, `check`, [8]), [value("f64", 15.2)]);
+assert_return(() => invoke($43, `check`, [8]), [value("f64", 15.2)]);
 
 
-assert_return(() => invoke($41, `check`, [16]), [value("f64", 15.3)]);
+assert_return(() => invoke($43, `check`, [16]), [value("f64", 15.3)]);
 
 
-assert_return(() => invoke($41, `check`, [24]), [value("f64", 15.4)]);
+assert_return(() => invoke($43, `check`, [24]), [value("f64", 15.4)]);
 
 
-invoke($41, `run`, [32, value("f64", 3)]);
+invoke($43, `run`, [32, value("f64", 3)]);
 
 
-assert_return(() => invoke($41, `check`, [0]), [value("f64", 5.033333333333333)]);
+assert_return(() => invoke($43, `check`, [0]), [value("f64", 5.033333333333333)]);
 
 
-assert_return(() => invoke($41, `check`, [8]), [value("f64", 5.066666666666666)]);
+assert_return(() => invoke($43, `check`, [8]), [value("f64", 5.066666666666666)]);
 
 
-assert_return(() => invoke($41, `check`, [16]), [value("f64", 5.1000000000000005)]);
+assert_return(() => invoke($43, `check`, [16]), [value("f64", 5.1000000000000005)]);
 
 
-assert_return(() => invoke($41, `check`, [24]), [value("f64", 5.133333333333334)]);
+assert_return(() => invoke($43, `check`, [24]), [value("f64", 5.133333333333334)]);
 
 
-let $42 = instantiate(`(module
+let $44 = instantiate(`(module
   (func (export "f32.ult") (param $$x f32) (param $$y f32) (result i32) (i32.eqz (f32.ge (local.get $$x) (local.get $$y))))
   (func (export "f32.ule") (param $$x f32) (param $$y f32) (result i32) (i32.eqz (f32.gt (local.get $$x) (local.get $$y))))
   (func (export "f32.ugt") (param $$x f32) (param $$y f32) (result i32) (i32.eqz (f32.le (local.get $$x) (local.get $$y))))
@@ -3006,77 +3249,77 @@ let $42 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($42, `f32.ult`, [value("f32", 3), value("f32", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f32.ult`, [value("f32", 3), value("f32", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f32.ult`, [value("f32", 2), value("f32", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f32.ult`, [value("f32", 2), value("f32", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f32.ult`, [value("f32", 2), value("f32", 3)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f32.ult`, [value("f32", 2), value("f32", 3)]), [value("i32", 1)]);
 
 
 assert_return(
-  () => invoke($42, `f32.ult`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
+  () => invoke($44, `f32.ult`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
   [value("i32", 1)],
 );
 
 
-assert_return(() => invoke($42, `f32.ule`, [value("f32", 3), value("f32", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f32.ule`, [value("f32", 3), value("f32", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f32.ule`, [value("f32", 2), value("f32", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f32.ule`, [value("f32", 2), value("f32", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f32.ule`, [value("f32", 2), value("f32", 3)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f32.ule`, [value("f32", 2), value("f32", 3)]), [value("i32", 1)]);
 
 
 assert_return(
-  () => invoke($42, `f32.ule`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
+  () => invoke($44, `f32.ule`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
   [value("i32", 1)],
 );
 
 
-assert_return(() => invoke($42, `f32.ugt`, [value("f32", 3), value("f32", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f32.ugt`, [value("f32", 3), value("f32", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f32.ugt`, [value("f32", 2), value("f32", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f32.ugt`, [value("f32", 2), value("f32", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f32.ugt`, [value("f32", 2), value("f32", 3)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f32.ugt`, [value("f32", 2), value("f32", 3)]), [value("i32", 0)]);
 
 
 assert_return(
-  () => invoke($42, `f32.ugt`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
+  () => invoke($44, `f32.ugt`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
   [value("i32", 1)],
 );
 
 
-assert_return(() => invoke($42, `f32.uge`, [value("f32", 3), value("f32", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f32.uge`, [value("f32", 3), value("f32", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f32.uge`, [value("f32", 2), value("f32", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f32.uge`, [value("f32", 2), value("f32", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f32.uge`, [value("f32", 2), value("f32", 3)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f32.uge`, [value("f32", 2), value("f32", 3)]), [value("i32", 0)]);
 
 
 assert_return(
-  () => invoke($42, `f32.uge`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
+  () => invoke($44, `f32.uge`, [value("f32", 2), bytes("f32", [0x0, 0x0, 0xc0, 0x7f])]),
   [value("i32", 1)],
 );
 
 
-assert_return(() => invoke($42, `f64.ult`, [value("f64", 3), value("f64", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f64.ult`, [value("f64", 3), value("f64", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f64.ult`, [value("f64", 2), value("f64", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f64.ult`, [value("f64", 2), value("f64", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f64.ult`, [value("f64", 2), value("f64", 3)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f64.ult`, [value("f64", 2), value("f64", 3)]), [value("i32", 1)]);
 
 
 assert_return(
-  () => invoke($42, `f64.ult`, [
+  () => invoke($44, `f64.ult`, [
     value("f64", 2),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3084,17 +3327,17 @@ assert_return(
 );
 
 
-assert_return(() => invoke($42, `f64.ule`, [value("f64", 3), value("f64", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f64.ule`, [value("f64", 3), value("f64", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f64.ule`, [value("f64", 2), value("f64", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f64.ule`, [value("f64", 2), value("f64", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f64.ule`, [value("f64", 2), value("f64", 3)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f64.ule`, [value("f64", 2), value("f64", 3)]), [value("i32", 1)]);
 
 
 assert_return(
-  () => invoke($42, `f64.ule`, [
+  () => invoke($44, `f64.ule`, [
     value("f64", 2),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3102,17 +3345,17 @@ assert_return(
 );
 
 
-assert_return(() => invoke($42, `f64.ugt`, [value("f64", 3), value("f64", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f64.ugt`, [value("f64", 3), value("f64", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f64.ugt`, [value("f64", 2), value("f64", 2)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f64.ugt`, [value("f64", 2), value("f64", 2)]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($42, `f64.ugt`, [value("f64", 2), value("f64", 3)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f64.ugt`, [value("f64", 2), value("f64", 3)]), [value("i32", 0)]);
 
 
 assert_return(
-  () => invoke($42, `f64.ugt`, [
+  () => invoke($44, `f64.ugt`, [
     value("f64", 2),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3120,17 +3363,17 @@ assert_return(
 );
 
 
-assert_return(() => invoke($42, `f64.uge`, [value("f64", 3), value("f64", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f64.uge`, [value("f64", 3), value("f64", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f64.uge`, [value("f64", 2), value("f64", 2)]), [value("i32", 1)]);
+assert_return(() => invoke($44, `f64.uge`, [value("f64", 2), value("f64", 2)]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($42, `f64.uge`, [value("f64", 2), value("f64", 3)]), [value("i32", 0)]);
+assert_return(() => invoke($44, `f64.uge`, [value("f64", 2), value("f64", 3)]), [value("i32", 0)]);
 
 
 assert_return(
-  () => invoke($42, `f64.uge`, [
+  () => invoke($44, `f64.uge`, [
     value("f64", 2),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3138,7 +3381,7 @@ assert_return(
 );
 
 
-let $43 = instantiate(`(module
+let $45 = instantiate(`(module
   (func (export "f32.no_fold_lt_select") (param $$x f32) (param $$y f32) (result f32) (select (local.get $$x) (local.get $$y) (f32.lt (local.get $$x) (local.get $$y))))
   (func (export "f32.no_fold_le_select") (param $$x f32) (param $$y f32) (result f32) (select (local.get $$x) (local.get $$y) (f32.le (local.get $$x) (local.get $$y))))
   (func (export "f32.no_fold_gt_select") (param $$x f32) (param $$y f32) (result f32) (select (local.get $$x) (local.get $$y) (f32.gt (local.get $$x) (local.get $$y))))
@@ -3152,7 +3395,7 @@ let $43 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_lt_select`, [
+  () => invoke($45, `f32.no_fold_lt_select`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3161,7 +3404,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_lt_select`, [
+  () => invoke($45, `f32.no_fold_lt_select`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3170,19 +3413,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_lt_select`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($45, `f32.no_fold_lt_select`, [value("f32", 0), value("f32", -0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_lt_select`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($45, `f32.no_fold_lt_select`, [value("f32", -0), value("f32", 0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_le_select`, [
+  () => invoke($45, `f32.no_fold_le_select`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3191,7 +3434,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_le_select`, [
+  () => invoke($45, `f32.no_fold_le_select`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3200,19 +3443,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_le_select`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($45, `f32.no_fold_le_select`, [value("f32", 0), value("f32", -0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_le_select`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($45, `f32.no_fold_le_select`, [value("f32", -0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_gt_select`, [
+  () => invoke($45, `f32.no_fold_gt_select`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3221,7 +3464,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_gt_select`, [
+  () => invoke($45, `f32.no_fold_gt_select`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3230,19 +3473,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_gt_select`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($45, `f32.no_fold_gt_select`, [value("f32", 0), value("f32", -0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_gt_select`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($45, `f32.no_fold_gt_select`, [value("f32", -0), value("f32", 0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_ge_select`, [
+  () => invoke($45, `f32.no_fold_ge_select`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3251,7 +3494,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_ge_select`, [
+  () => invoke($45, `f32.no_fold_ge_select`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3260,19 +3503,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_ge_select`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($45, `f32.no_fold_ge_select`, [value("f32", 0), value("f32", -0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f32.no_fold_ge_select`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($45, `f32.no_fold_ge_select`, [value("f32", -0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_lt_select`, [
+  () => invoke($45, `f64.no_fold_lt_select`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3281,7 +3524,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_lt_select`, [
+  () => invoke($45, `f64.no_fold_lt_select`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3290,19 +3533,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_lt_select`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($45, `f64.no_fold_lt_select`, [value("f64", 0), value("f64", -0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_lt_select`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($45, `f64.no_fold_lt_select`, [value("f64", -0), value("f64", 0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_le_select`, [
+  () => invoke($45, `f64.no_fold_le_select`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3311,7 +3554,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_le_select`, [
+  () => invoke($45, `f64.no_fold_le_select`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3320,19 +3563,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_le_select`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($45, `f64.no_fold_le_select`, [value("f64", 0), value("f64", -0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_le_select`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($45, `f64.no_fold_le_select`, [value("f64", -0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_gt_select`, [
+  () => invoke($45, `f64.no_fold_gt_select`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3341,7 +3584,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_gt_select`, [
+  () => invoke($45, `f64.no_fold_gt_select`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3350,19 +3593,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_gt_select`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($45, `f64.no_fold_gt_select`, [value("f64", 0), value("f64", -0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_gt_select`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($45, `f64.no_fold_gt_select`, [value("f64", -0), value("f64", 0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_ge_select`, [
+  () => invoke($45, `f64.no_fold_ge_select`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3371,7 +3614,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_ge_select`, [
+  () => invoke($45, `f64.no_fold_ge_select`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3380,18 +3623,18 @@ assert_return(
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_ge_select`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($45, `f64.no_fold_ge_select`, [value("f64", 0), value("f64", -0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($43, `f64.no_fold_ge_select`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($45, `f64.no_fold_ge_select`, [value("f64", -0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
-let $44 = instantiate(`(module
+let $46 = instantiate(`(module
   (func (export "f32.no_fold_lt_if") (param $$x f32) (param $$y f32) (result f32)
     (if (result f32) (f32.lt (local.get $$x) (local.get $$y))
       (then (local.get $$x)) (else (local.get $$y))
@@ -3437,7 +3680,7 @@ let $44 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_lt_if`, [
+  () => invoke($46, `f32.no_fold_lt_if`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3446,7 +3689,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_lt_if`, [
+  () => invoke($46, `f32.no_fold_lt_if`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3455,19 +3698,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_lt_if`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($46, `f32.no_fold_lt_if`, [value("f32", 0), value("f32", -0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_lt_if`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($46, `f32.no_fold_lt_if`, [value("f32", -0), value("f32", 0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_le_if`, [
+  () => invoke($46, `f32.no_fold_le_if`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3476,7 +3719,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_le_if`, [
+  () => invoke($46, `f32.no_fold_le_if`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3485,19 +3728,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_le_if`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($46, `f32.no_fold_le_if`, [value("f32", 0), value("f32", -0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_le_if`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($46, `f32.no_fold_le_if`, [value("f32", -0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_gt_if`, [
+  () => invoke($46, `f32.no_fold_gt_if`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3506,7 +3749,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_gt_if`, [
+  () => invoke($46, `f32.no_fold_gt_if`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3515,19 +3758,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_gt_if`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($46, `f32.no_fold_gt_if`, [value("f32", 0), value("f32", -0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_gt_if`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($46, `f32.no_fold_gt_if`, [value("f32", -0), value("f32", 0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_ge_if`, [
+  () => invoke($46, `f32.no_fold_ge_if`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -3536,7 +3779,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_ge_if`, [
+  () => invoke($46, `f32.no_fold_ge_if`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -3545,19 +3788,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_ge_if`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($46, `f32.no_fold_ge_if`, [value("f32", 0), value("f32", -0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f32.no_fold_ge_if`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($46, `f32.no_fold_ge_if`, [value("f32", -0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_lt_if`, [
+  () => invoke($46, `f64.no_fold_lt_if`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3566,7 +3809,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_lt_if`, [
+  () => invoke($46, `f64.no_fold_lt_if`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3575,19 +3818,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_lt_if`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($46, `f64.no_fold_lt_if`, [value("f64", 0), value("f64", -0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_lt_if`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($46, `f64.no_fold_lt_if`, [value("f64", -0), value("f64", 0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_le_if`, [
+  () => invoke($46, `f64.no_fold_le_if`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3596,7 +3839,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_le_if`, [
+  () => invoke($46, `f64.no_fold_le_if`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3605,19 +3848,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_le_if`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($46, `f64.no_fold_le_if`, [value("f64", 0), value("f64", -0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_le_if`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($46, `f64.no_fold_le_if`, [value("f64", -0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_gt_if`, [
+  () => invoke($46, `f64.no_fold_gt_if`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3626,7 +3869,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_gt_if`, [
+  () => invoke($46, `f64.no_fold_gt_if`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3635,19 +3878,19 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_gt_if`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($46, `f64.no_fold_gt_if`, [value("f64", 0), value("f64", -0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_gt_if`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($46, `f64.no_fold_gt_if`, [value("f64", -0), value("f64", 0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_ge_if`, [
+  () => invoke($46, `f64.no_fold_ge_if`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -3656,7 +3899,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_ge_if`, [
+  () => invoke($46, `f64.no_fold_ge_if`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -3665,18 +3908,18 @@ assert_return(
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_ge_if`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($46, `f64.no_fold_ge_if`, [value("f64", 0), value("f64", -0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($44, `f64.no_fold_ge_if`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($46, `f64.no_fold_ge_if`, [value("f64", -0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
-let $45 = instantiate(`(module
+let $47 = instantiate(`(module
   (func (export "f32.no_fold_lt_select_to_abs") (param $$x f32) (result f32) (select (f32.neg (local.get $$x)) (local.get $$x) (f32.lt (local.get $$x) (f32.const 0.0))))
   (func (export "f32.no_fold_le_select_to_abs") (param $$x f32) (result f32) (select (f32.neg (local.get $$x)) (local.get $$x) (f32.le (local.get $$x) (f32.const -0.0))))
   (func (export "f32.no_fold_gt_select_to_abs") (param $$x f32) (result f32) (select (local.get $$x) (f32.neg (local.get $$x)) (f32.gt (local.get $$x) (f32.const -0.0))))
@@ -3690,7 +3933,7 @@ let $45 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_lt_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_lt_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])],
@@ -3698,21 +3941,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_lt_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_lt_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0xff]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0xff])],
 );
 
 
-assert_return(() => invoke($45, `f32.no_fold_lt_select_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
+assert_return(() => invoke($47, `f32.no_fold_lt_select_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($45, `f32.no_fold_lt_select_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
+assert_return(() => invoke($47, `f32.no_fold_lt_select_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_le_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_le_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])],
@@ -3720,21 +3963,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_le_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_le_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0xff]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0xff])],
 );
 
 
-assert_return(() => invoke($45, `f32.no_fold_le_select_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
+assert_return(() => invoke($47, `f32.no_fold_le_select_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
 
 
-assert_return(() => invoke($45, `f32.no_fold_le_select_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
+assert_return(() => invoke($47, `f32.no_fold_le_select_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_gt_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_gt_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0xff])],
@@ -3742,21 +3985,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_gt_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_gt_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0xff]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0x7f])],
 );
 
 
-assert_return(() => invoke($45, `f32.no_fold_gt_select_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
+assert_return(() => invoke($47, `f32.no_fold_gt_select_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
 
 
-assert_return(() => invoke($45, `f32.no_fold_gt_select_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
+assert_return(() => invoke($47, `f32.no_fold_gt_select_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_ge_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_ge_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0xff])],
@@ -3764,21 +4007,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f32.no_fold_ge_select_to_abs`, [
+  () => invoke($47, `f32.no_fold_ge_select_to_abs`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0xff]),
   ]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0x7f])],
 );
 
 
-assert_return(() => invoke($45, `f32.no_fold_ge_select_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
+assert_return(() => invoke($47, `f32.no_fold_ge_select_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($45, `f32.no_fold_ge_select_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
+assert_return(() => invoke($47, `f32.no_fold_ge_select_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_lt_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_lt_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
@@ -3786,21 +4029,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_lt_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_lt_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff])],
 );
 
 
-assert_return(() => invoke($45, `f64.no_fold_lt_select_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
+assert_return(() => invoke($47, `f64.no_fold_lt_select_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
 
 
-assert_return(() => invoke($45, `f64.no_fold_lt_select_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
+assert_return(() => invoke($47, `f64.no_fold_lt_select_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_le_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_le_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
@@ -3808,21 +4051,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_le_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_le_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff])],
 );
 
 
-assert_return(() => invoke($45, `f64.no_fold_le_select_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
+assert_return(() => invoke($47, `f64.no_fold_le_select_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
 
 
-assert_return(() => invoke($45, `f64.no_fold_le_select_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
+assert_return(() => invoke($47, `f64.no_fold_le_select_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_gt_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_gt_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0xff])],
@@ -3830,21 +4073,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_gt_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_gt_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f])],
 );
 
 
-assert_return(() => invoke($45, `f64.no_fold_gt_select_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
+assert_return(() => invoke($47, `f64.no_fold_gt_select_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
 
 
-assert_return(() => invoke($45, `f64.no_fold_gt_select_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
+assert_return(() => invoke($47, `f64.no_fold_gt_select_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_ge_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_ge_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0xff])],
@@ -3852,20 +4095,20 @@ assert_return(
 
 
 assert_return(
-  () => invoke($45, `f64.no_fold_ge_select_to_abs`, [
+  () => invoke($47, `f64.no_fold_ge_select_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f])],
 );
 
 
-assert_return(() => invoke($45, `f64.no_fold_ge_select_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
+assert_return(() => invoke($47, `f64.no_fold_ge_select_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
 
 
-assert_return(() => invoke($45, `f64.no_fold_ge_select_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
+assert_return(() => invoke($47, `f64.no_fold_ge_select_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
 
 
-let $46 = instantiate(`(module
+let $48 = instantiate(`(module
   (func (export "f32.no_fold_lt_if_to_abs") (param $$x f32) (result f32)
     (if (result f32) (f32.lt (local.get $$x) (f32.const 0.0))
       (then (f32.neg (local.get $$x))) (else (local.get $$x))
@@ -3911,79 +4154,79 @@ let $46 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_lt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
+  () => invoke($48, `f32.no_fold_lt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])],
 );
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_lt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
+  () => invoke($48, `f32.no_fold_lt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0xff])],
 );
 
 
-assert_return(() => invoke($46, `f32.no_fold_lt_if_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
+assert_return(() => invoke($48, `f32.no_fold_lt_if_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($46, `f32.no_fold_lt_if_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
+assert_return(() => invoke($48, `f32.no_fold_lt_if_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_le_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
+  () => invoke($48, `f32.no_fold_le_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])],
 );
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_le_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
+  () => invoke($48, `f32.no_fold_le_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0xff])],
 );
 
 
-assert_return(() => invoke($46, `f32.no_fold_le_if_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
+assert_return(() => invoke($48, `f32.no_fold_le_if_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
 
 
-assert_return(() => invoke($46, `f32.no_fold_le_if_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
+assert_return(() => invoke($48, `f32.no_fold_le_if_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_gt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
+  () => invoke($48, `f32.no_fold_gt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0xff])],
 );
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_gt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
+  () => invoke($48, `f32.no_fold_gt_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0x7f])],
 );
 
 
-assert_return(() => invoke($46, `f32.no_fold_gt_if_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
+assert_return(() => invoke($48, `f32.no_fold_gt_if_to_abs`, [value("f32", 0)]), [value("f32", -0)]);
 
 
-assert_return(() => invoke($46, `f32.no_fold_gt_if_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
+assert_return(() => invoke($48, `f32.no_fold_gt_if_to_abs`, [value("f32", -0)]), [value("f32", 0)]);
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_ge_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
+  () => invoke($48, `f32.no_fold_ge_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]),
   [bytes("f32", [0x0, 0x0, 0xa0, 0xff])],
 );
 
 
 assert_return(
-  () => invoke($46, `f32.no_fold_ge_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
+  () => invoke($48, `f32.no_fold_ge_if_to_abs`, [bytes("f32", [0x0, 0x0, 0xc0, 0xff])]),
   [bytes("f32", [0x0, 0x0, 0xc0, 0x7f])],
 );
 
 
-assert_return(() => invoke($46, `f32.no_fold_ge_if_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
+assert_return(() => invoke($48, `f32.no_fold_ge_if_to_abs`, [value("f32", 0)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($46, `f32.no_fold_ge_if_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
+assert_return(() => invoke($48, `f32.no_fold_ge_if_to_abs`, [value("f32", -0)]), [value("f32", -0)]);
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_lt_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_lt_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
@@ -3991,21 +4234,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_lt_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_lt_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff])],
 );
 
 
-assert_return(() => invoke($46, `f64.no_fold_lt_if_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
+assert_return(() => invoke($48, `f64.no_fold_lt_if_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
 
 
-assert_return(() => invoke($46, `f64.no_fold_lt_if_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
+assert_return(() => invoke($48, `f64.no_fold_lt_if_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_le_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_le_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
@@ -4013,21 +4256,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_le_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_le_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff])],
 );
 
 
-assert_return(() => invoke($46, `f64.no_fold_le_if_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
+assert_return(() => invoke($48, `f64.no_fold_le_if_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
 
 
-assert_return(() => invoke($46, `f64.no_fold_le_if_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
+assert_return(() => invoke($48, `f64.no_fold_le_if_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_gt_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_gt_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0xff])],
@@ -4035,21 +4278,21 @@ assert_return(
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_gt_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_gt_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f])],
 );
 
 
-assert_return(() => invoke($46, `f64.no_fold_gt_if_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
+assert_return(() => invoke($48, `f64.no_fold_gt_if_to_abs`, [value("f64", 0)]), [value("f64", -0)]);
 
 
-assert_return(() => invoke($46, `f64.no_fold_gt_if_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
+assert_return(() => invoke($48, `f64.no_fold_gt_if_to_abs`, [value("f64", -0)]), [value("f64", 0)]);
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_ge_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_ge_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0xff])],
@@ -4057,20 +4300,20 @@ assert_return(
 
 
 assert_return(
-  () => invoke($46, `f64.no_fold_ge_if_to_abs`, [
+  () => invoke($48, `f64.no_fold_ge_if_to_abs`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0xff]),
   ]),
   [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f])],
 );
 
 
-assert_return(() => invoke($46, `f64.no_fold_ge_if_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
+assert_return(() => invoke($48, `f64.no_fold_ge_if_to_abs`, [value("f64", 0)]), [value("f64", 0)]);
 
 
-assert_return(() => invoke($46, `f64.no_fold_ge_if_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
+assert_return(() => invoke($48, `f64.no_fold_ge_if_to_abs`, [value("f64", -0)]), [value("f64", -0)]);
 
 
-let $47 = instantiate(`(module
+let $49 = instantiate(`(module
   (func (export "f32.incorrect_correction") (result f32)
     (f32.sub (f32.sub (f32.add (f32.const 1.333) (f32.const 1.225)) (f32.const 1.333)) (f32.const 1.225))
   )
@@ -4080,16 +4323,16 @@ let $47 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($47, `f32.incorrect_correction`, []), [value("f32", 0.00000011920929)]);
+assert_return(() => invoke($49, `f32.incorrect_correction`, []), [value("f32", 0.00000011920929)]);
 
 
 assert_return(
-  () => invoke($47, `f64.incorrect_correction`, []),
+  () => invoke($49, `f64.incorrect_correction`, []),
   [value("f64", -0.0000000000000002220446049250313)],
 );
 
 
-let $48 = instantiate(`(module
+let $50 = instantiate(`(module
   (func (export "calculate") (result f32)
     (local $$x f32)
     (local $$r f32)
@@ -4107,10 +4350,10 @@ let $48 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($48, `calculate`, []), [value("f32", -466.92685)]);
+assert_return(() => invoke($50, `calculate`, []), [value("f32", -466.92685)]);
 
 
-let $49 = instantiate(`(module
+let $51 = instantiate(`(module
   (func (export "calculate") (result f64)
     (local $$x f64)
     (local $$r f64)
@@ -4128,30 +4371,30 @@ let $49 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($49, `calculate`, []), [value("f64", -466.926956301738)]);
+assert_return(() => invoke($51, `calculate`, []), [value("f64", -466.926956301738)]);
 
 
-let $50 = instantiate(`(module
+let $52 = instantiate(`(module
   (func (export "llvm_pr26746") (param $$x f32) (result f32)
     (f32.sub (f32.const 0.0) (f32.sub (f32.const -0.0) (local.get $$x)))
   )
 )`);
 
 
-assert_return(() => invoke($50, `llvm_pr26746`, [value("f32", -0)]), [value("f32", 0)]);
+assert_return(() => invoke($52, `llvm_pr26746`, [value("f32", -0)]), [value("f32", 0)]);
 
 
-let $51 = instantiate(`(module
+let $53 = instantiate(`(module
   (func (export "llvm_pr27153") (param $$x i32) (result f32)
     (f32.add (f32.convert_i32_s (i32.and (local.get $$x) (i32.const 268435455))) (f32.const -8388608.0))
   )
 )`);
 
 
-assert_return(() => invoke($51, `llvm_pr27153`, [33554434]), [value("f32", 25165824)]);
+assert_return(() => invoke($53, `llvm_pr27153`, [33554434]), [value("f32", 25165824)]);
 
 
-let $52 = instantiate(`(module
+let $54 = instantiate(`(module
   (func (export "llvm_pr27036") (param $$x i32) (param $$y i32) (result f32)
     (f32.add (f32.convert_i32_s (i32.or (local.get $$x) (i32.const -25034805)))
              (f32.convert_i32_s (i32.and (local.get $$y) (i32.const 14942208))))
@@ -4159,10 +4402,10 @@ let $52 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($52, `llvm_pr27036`, [-25034805, 14942208]), [value("f32", -10092596)]);
+assert_return(() => invoke($54, `llvm_pr27036`, [-25034805, 14942208]), [value("f32", -10092596)]);
 
 
-let $53 = instantiate(`(module
+let $55 = instantiate(`(module
   (func (export "thepast0") (param $$a f64) (param $$b f64) (param $$c f64) (param $$d f64) (result f64)
     (f64.div (f64.mul (local.get $$a) (local.get $$b)) (f64.mul (local.get $$c) (local.get $$d)))
   )
@@ -4178,7 +4421,7 @@ let $53 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($53, `thepast0`, [
+  () => invoke($55, `thepast0`, [
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004450147717014403),
     value("f64", 0.9999999999999999),
     value("f64", 2),
@@ -4191,7 +4434,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($53, `thepast1`, [
+  () => invoke($55, `thepast1`, [
     value("f64", 0.00000000000000005551115123125783),
     value("f64", 0.9999999999999999),
     value("f64", 0.00000000000000005551115123125783),
@@ -4201,7 +4444,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($53, `thepast2`, [
+  () => invoke($55, `thepast2`, [
     value("f32", 0.000000000000000000000000000000000000023509887),
     value("f32", 0.5),
     value("f32", 1),
@@ -4210,17 +4453,17 @@ assert_return(
 );
 
 
-let $54 = instantiate(`(module
+let $56 = instantiate(`(module
   (func (export "inverse") (param $$x f32) (result f32)
     (f32.div (f32.const 1.0) (local.get $$x))
   )
 )`);
 
 
-assert_return(() => invoke($54, `inverse`, [value("f32", 96)]), [value("f32", 0.010416667)]);
+assert_return(() => invoke($56, `inverse`, [value("f32", 96)]), [value("f32", 0.010416667)]);
 
 
-let $55 = instantiate(`(module
+let $57 = instantiate(`(module
   (func (export "f32_sqrt_minus_2") (param $$x f32) (result f32)
     (f32.sub (f32.sqrt (local.get $$x)) (f32.const 2.0))
   )
@@ -4231,13 +4474,13 @@ let $55 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($55, `f32_sqrt_minus_2`, [value("f32", 4)]), [value("f32", 0)]);
+assert_return(() => invoke($57, `f32_sqrt_minus_2`, [value("f32", 4)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($55, `f64_sqrt_minus_2`, [value("f64", 4)]), [value("f64", 0)]);
+assert_return(() => invoke($57, `f64_sqrt_minus_2`, [value("f64", 4)]), [value("f64", 0)]);
 
 
-let $56 = instantiate(`(module
+let $58 = instantiate(`(module
   (func (export "f32.no_fold_recip_recip") (param $$x f32) (result f32)
     (f32.div (f32.const 1.0) (f32.div (f32.const 1.0) (local.get $$x))))
 
@@ -4247,13 +4490,13 @@ let $56 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($56, `f32.no_fold_recip_recip`, [value("f32", -70435790000000000000)]),
+  () => invoke($58, `f32.no_fold_recip_recip`, [value("f32", -70435790000000000000)]),
   [value("f32", -70435784000000000000)],
 );
 
 
 assert_return(
-  () => invoke($56, `f32.no_fold_recip_recip`, [
+  () => invoke($58, `f32.no_fold_recip_recip`, [
     value("f32", 0.000000000000000000000012466101),
   ]),
   [value("f32", 0.0000000000000000000000124661)],
@@ -4261,7 +4504,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($56, `f32.no_fold_recip_recip`, [
+  () => invoke($58, `f32.no_fold_recip_recip`, [
     value("f32", 0.000000000000000000097184545),
   ]),
   [value("f32", 0.00000000000000000009718455)],
@@ -4269,37 +4512,37 @@ assert_return(
 
 
 assert_return(
-  () => invoke($56, `f32.no_fold_recip_recip`, [value("f32", -30.400759)]),
+  () => invoke($58, `f32.no_fold_recip_recip`, [value("f32", -30.400759)]),
   [value("f32", -30.40076)],
 );
 
 
 assert_return(
-  () => invoke($56, `f32.no_fold_recip_recip`, [value("f32", 2331659200000000000000)]),
+  () => invoke($58, `f32.no_fold_recip_recip`, [value("f32", 2331659200000000000000)]),
   [value("f32", 2331659000000000000000)],
 );
 
 
-assert_return(() => invoke($56, `f32.no_fold_recip_recip`, [value("f32", -0)]), [value("f32", -0)]);
+assert_return(() => invoke($58, `f32.no_fold_recip_recip`, [value("f32", -0)]), [value("f32", -0)]);
 
 
-assert_return(() => invoke($56, `f32.no_fold_recip_recip`, [value("f32", 0)]), [value("f32", 0)]);
+assert_return(() => invoke($58, `f32.no_fold_recip_recip`, [value("f32", 0)]), [value("f32", 0)]);
 
 
 assert_return(
-  () => invoke($56, `f32.no_fold_recip_recip`, [value("f32", -Infinity)]),
+  () => invoke($58, `f32.no_fold_recip_recip`, [value("f32", -Infinity)]),
   [value("f32", -Infinity)],
 );
 
 
 assert_return(
-  () => invoke($56, `f32.no_fold_recip_recip`, [value("f32", Infinity)]),
+  () => invoke($58, `f32.no_fold_recip_recip`, [value("f32", Infinity)]),
   [value("f32", Infinity)],
 );
 
 
 assert_return(
-  () => invoke($56, `f64.no_fold_recip_recip`, [
+  () => invoke($58, `f64.no_fold_recip_recip`, [
     value("f64", -657971534362886860000000000000000000000000000),
   ]),
   [value("f64", -657971534362886900000000000000000000000000000)],
@@ -4307,13 +4550,13 @@ assert_return(
 
 
 assert_return(
-  () => invoke($56, `f64.no_fold_recip_recip`, [value("f64", -144246931868576430000)]),
+  () => invoke($58, `f64.no_fold_recip_recip`, [value("f64", -144246931868576430000)]),
   [value("f64", -144246931868576420000)],
 );
 
 
 assert_return(
-  () => invoke($56, `f64.no_fold_recip_recip`, [
+  () => invoke($58, `f64.no_fold_recip_recip`, [
     value("f64", 184994689206231350000000000000000000000000000000000),
   ]),
   [value("f64", 184994689206231330000000000000000000000000000000000)],
@@ -4321,7 +4564,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($56, `f64.no_fold_recip_recip`, [
+  () => invoke($58, `f64.no_fold_recip_recip`, [
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005779584288006583),
   ]),
   [
@@ -4331,7 +4574,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($56, `f64.no_fold_recip_recip`, [
+  () => invoke($58, `f64.no_fold_recip_recip`, [
     value("f64", 51501178696141640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
   [
@@ -4340,25 +4583,25 @@ assert_return(
 );
 
 
-assert_return(() => invoke($56, `f64.no_fold_recip_recip`, [value("f64", -0)]), [value("f64", -0)]);
+assert_return(() => invoke($58, `f64.no_fold_recip_recip`, [value("f64", -0)]), [value("f64", -0)]);
 
 
-assert_return(() => invoke($56, `f64.no_fold_recip_recip`, [value("f64", 0)]), [value("f64", 0)]);
+assert_return(() => invoke($58, `f64.no_fold_recip_recip`, [value("f64", 0)]), [value("f64", 0)]);
 
 
 assert_return(
-  () => invoke($56, `f64.no_fold_recip_recip`, [value("f64", -Infinity)]),
+  () => invoke($58, `f64.no_fold_recip_recip`, [value("f64", -Infinity)]),
   [value("f64", -Infinity)],
 );
 
 
 assert_return(
-  () => invoke($56, `f64.no_fold_recip_recip`, [value("f64", Infinity)]),
+  () => invoke($58, `f64.no_fold_recip_recip`, [value("f64", Infinity)]),
   [value("f64", Infinity)],
 );
 
 
-let $57 = instantiate(`(module
+let $59 = instantiate(`(module
   (func (export "f32.no_algebraic_factoring") (param $$x f32) (param $$y f32) (result f32)
     (f32.mul (f32.add (local.get $$x) (local.get $$y))
              (f32.sub (local.get $$x) (local.get $$y))))
@@ -4370,7 +4613,7 @@ let $57 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($57, `f32.no_algebraic_factoring`, [
+  () => invoke($59, `f32.no_algebraic_factoring`, [
     value("f32", -0.000000000000000053711865),
     value("f32", 0.00000000000000009744328),
   ]),
@@ -4379,7 +4622,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f32.no_algebraic_factoring`, [
+  () => invoke($59, `f32.no_algebraic_factoring`, [
     value("f32", -19756732),
     value("f32", 32770204),
   ]),
@@ -4388,7 +4631,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f32.no_algebraic_factoring`, [
+  () => invoke($59, `f32.no_algebraic_factoring`, [
     value("f32", 52314150000000),
     value("f32", -145309980000000),
   ]),
@@ -4397,7 +4640,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f32.no_algebraic_factoring`, [
+  () => invoke($59, `f32.no_algebraic_factoring`, [
     value("f32", 195260.38),
     value("f32", -227.75723),
   ]),
@@ -4406,7 +4649,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f32.no_algebraic_factoring`, [
+  () => invoke($59, `f32.no_algebraic_factoring`, [
     value("f32", -237.48706),
     value("f32", -972341.5),
   ]),
@@ -4415,7 +4658,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f64.no_algebraic_factoring`, [
+  () => invoke($59, `f64.no_algebraic_factoring`, [
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009639720335949767),
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008019175443606207),
   ]),
@@ -4426,7 +4669,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f64.no_algebraic_factoring`, [
+  () => invoke($59, `f64.no_algebraic_factoring`, [
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005166066590392027),
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001494333315888213),
   ]),
@@ -4437,7 +4680,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f64.no_algebraic_factoring`, [
+  () => invoke($59, `f64.no_algebraic_factoring`, [
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002866135870517635),
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012114355254268516),
   ]),
@@ -4448,7 +4691,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f64.no_algebraic_factoring`, [
+  () => invoke($59, `f64.no_algebraic_factoring`, [
     value("f64", -1292099281007814900000000000000000000000000000000000000),
     value("f64", 662717187728034000000000000000000000000000000000000000000),
   ]),
@@ -4459,7 +4702,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($57, `f64.no_algebraic_factoring`, [
+  () => invoke($59, `f64.no_algebraic_factoring`, [
     value("f64", 26242795689010570000000000000000000),
     value("f64", -1625023398605080200000000000),
   ]),
@@ -4469,7 +4712,7 @@ assert_return(
 );
 
 
-let $58 = instantiate(`(module
+let $60 = instantiate(`(module
   (func (export "f32.no_algebraic_factoring") (param $$x f32) (param $$y f32) (result f32)
     (f32.sub (f32.mul (local.get $$x) (local.get $$x))
              (f32.mul (local.get $$y) (local.get $$y))))
@@ -4481,7 +4724,7 @@ let $58 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($58, `f32.no_algebraic_factoring`, [
+  () => invoke($60, `f32.no_algebraic_factoring`, [
     value("f32", 0.000000000000022102996),
     value("f32", 0.0000000000031465275),
   ]),
@@ -4490,7 +4733,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f32.no_algebraic_factoring`, [
+  () => invoke($60, `f32.no_algebraic_factoring`, [
     value("f32", -3289460800000),
     value("f32", -15941539000),
   ]),
@@ -4499,7 +4742,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f32.no_algebraic_factoring`, [
+  () => invoke($60, `f32.no_algebraic_factoring`, [
     value("f32", 0.00036497542),
     value("f32", -0.00016153714),
   ]),
@@ -4508,7 +4751,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f32.no_algebraic_factoring`, [
+  () => invoke($60, `f32.no_algebraic_factoring`, [
     value("f32", 0.000000000000065383266),
     value("f32", -0.000000000000027412773),
   ]),
@@ -4517,7 +4760,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f32.no_algebraic_factoring`, [
+  () => invoke($60, `f32.no_algebraic_factoring`, [
     value("f32", 3609682000000000),
     value("f32", -5260104400000000),
   ]),
@@ -4526,7 +4769,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f64.no_algebraic_factoring`, [
+  () => invoke($60, `f64.no_algebraic_factoring`, [
     value("f64", 213640454349895100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", -292858755839442800000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -4537,7 +4780,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f64.no_algebraic_factoring`, [
+  () => invoke($60, `f64.no_algebraic_factoring`, [
     value("f64", -1229017115924435800000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", -8222158919016600000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -4548,7 +4791,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f64.no_algebraic_factoring`, [
+  () => invoke($60, `f64.no_algebraic_factoring`, [
     value("f64", 5477733829752.252),
     value("f64", -970738900948.5906),
   ]),
@@ -4557,7 +4800,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f64.no_algebraic_factoring`, [
+  () => invoke($60, `f64.no_algebraic_factoring`, [
     value("f64", -10689141744923551000000000000000000000000000000000000000),
     value("f64", -173378393593738040000000000000000000000000000000000),
   ]),
@@ -4568,7 +4811,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($58, `f64.no_algebraic_factoring`, [
+  () => invoke($60, `f64.no_algebraic_factoring`, [
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000010295699877022106),
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000008952274637805908),
   ]),
@@ -4578,7 +4821,7 @@ assert_return(
 );
 
 
-let $59 = instantiate(`(module
+let $61 = instantiate(`(module
   (memory (data
     "\\01\\00\\00\\00\\01\\00\\00\\80\\01\\00\\00\\00\\01\\00\\00\\80"
     "\\01\\00\\00\\00\\01\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00"
@@ -4612,31 +4855,31 @@ let $59 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($59, `f32.simple_x4_sum`, [0, 16, 32]), []);
+assert_return(() => invoke($61, `f32.simple_x4_sum`, [0, 16, 32]), []);
 
 
 assert_return(
-  () => invoke($59, `f32.load`, [32]),
+  () => invoke($61, `f32.load`, [32]),
   [value("f32", 0.000000000000000000000000000000000000000000003)],
 );
 
 
-assert_return(() => invoke($59, `f32.load`, [36]), [value("f32", 0)]);
+assert_return(() => invoke($61, `f32.load`, [36]), [value("f32", 0)]);
 
 
 assert_return(
-  () => invoke($59, `f32.load`, [40]),
+  () => invoke($61, `f32.load`, [40]),
   [value("f32", 0.000000000000000000000000000000000000000000001)],
 );
 
 
 assert_return(
-  () => invoke($59, `f32.load`, [44]),
+  () => invoke($61, `f32.load`, [44]),
   [value("f32", -0.000000000000000000000000000000000000000000001)],
 );
 
 
-let $60 = instantiate(`(module
+let $62 = instantiate(`(module
   (memory (data
     "\\01\\00\\00\\00\\00\\00\\00\\00\\01\\00\\00\\00\\00\\00\\00\\80\\01\\00\\00\\00\\00\\00\\00\\00\\01\\00\\00\\00\\00\\00\\00\\80"
     "\\01\\00\\00\\00\\00\\00\\00\\00\\01\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00\\00"
@@ -4670,22 +4913,22 @@ let $60 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($60, `f64.simple_x4_sum`, [0, 32, 64]), []);
+assert_return(() => invoke($62, `f64.simple_x4_sum`, [0, 32, 64]), []);
 
 
 assert_return(
-  () => invoke($60, `f64.load`, [64]),
+  () => invoke($62, `f64.load`, [64]),
   [
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001),
   ],
 );
 
 
-assert_return(() => invoke($60, `f64.load`, [72]), [value("f64", 0)]);
+assert_return(() => invoke($62, `f64.load`, [72]), [value("f64", 0)]);
 
 
 assert_return(
-  () => invoke($60, `f64.load`, [80]),
+  () => invoke($62, `f64.load`, [80]),
   [
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005),
   ],
@@ -4693,14 +4936,14 @@ assert_return(
 
 
 assert_return(
-  () => invoke($60, `f64.load`, [88]),
+  () => invoke($62, `f64.load`, [88]),
   [
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005),
   ],
 );
 
 
-let $61 = instantiate(`(module
+let $63 = instantiate(`(module
   (memory (data
     "\\c4\\c5\\57\\24\\a5\\84\\c8\\0b\\6d\\b8\\4b\\2e\\f2\\76\\17\\1c\\ca\\4a\\56\\1e\\1b\\6e\\71\\22"
     "\\5d\\17\\1e\\6e\\bf\\cd\\14\\5c\\c7\\21\\55\\51\\39\\9c\\1f\\b2\\51\\f0\\a3\\93\\d7\\c1\\2c\\ae"
@@ -4793,18 +5036,18 @@ let $61 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($61, `f32.kahan_sum`, [0, 256]),
+  () => invoke($63, `f32.kahan_sum`, [0, 256]),
   [value("f32", -21558138000000000000000000000000)],
 );
 
 
 assert_return(
-  () => invoke($61, `f32.plain_sum`, [0, 256]),
+  () => invoke($63, `f32.plain_sum`, [0, 256]),
   [value("f32", -16487540000000000000000000000000)],
 );
 
 
-let $62 = instantiate(`(module
+let $64 = instantiate(`(module
   (memory (data "\\13\\05\\84\\42\\5d\\a2\\2c\\c6\\43\\db\\55\\a9\\cd\\da\\55\\e3\\73\\fc\\58\\d6\\ba\\d5\\00\\fd\\83\\35\\42\\88\\8b\\13\\5d\\38\\4a\\47\\0d\\72\\73\\a1\\1a\\ef\\c4\\45\\17\\57\\d8\\c9\\46\\e0\\8d\\6c\\e1\\37\\70\\c8\\83\\5b\\55\\5e\\5a\\2d\\73\\1e\\56\\c8\\e1\\6d\\69\\14\\78\\0a\\8a\\5a\\64\\3a\\09\\c7\\a8\\87\\c5\\f0\\d3\\5d\\e6\\03\\fc\\93\\be\\26\\ca\\d6\\a9\\91\\60\\bd\\b0\\ed\\ae\\f7\\30\\7e\\92\\3a\\6f\\a7\\59\\8e\\aa\\7d\\bf\\67\\58\\2a\\54\\f8\\4e\\fe\\ed\\35\\58\\a6\\51\\bf\\42\\e5\\4b\\66\\27\\24\\6d\\7f\\42\\2d\\28\\92\\18\\ec\\08\\ae\\e7\\55\\da\\b1\\a6\\65\\a5\\72\\50\\47\\1b\\b8\\a9\\54\\d7\\a6\\06\\5b\\0f\\42\\58\\83\\8a\\17\\82\\c6\\10\\43\\a0\\c0\\2e\\6d\\bc\\5a\\85\\53\\72\\7f\\ad\\44\\bc\\30\\3c\\55\\b2\\24\\9a\\74\\3a\\9e\\e1\\d8\\0f\\70\\fc\\a9\\3a\\cd\\93\\4b\\ec\\e3\\7e\\dd\\5d\\27\\cd\\f8\\a0\\9d\\1c\\11\\c0\\57\\2e\\fd\\c8\\13\\32\\cc\\3a\\1a\\7d\\a3\\41\\55\\ed\\c3\\82\\49\\2a\\04\\1e\\ef\\73\\b9\\2e\\2e\\e3\\5f\\f4\\df\\e6\\b2\\33\\0c\\39\\3f\\6f\\44\\6a\\03\\c1\\42\\b9\\fa\\b1\\c8\\ed\\a5\\58\\99\\7f\\ed\\b4\\72\\9e\\79\\eb\\fb\\43\\82\\45\\aa\\bb\\95\\d2\\ff\\28\\9e\\f6\\a1\\ad\\95\\d6\\55\\95\\0d\\6f\\60\\11\\c7\\78\\3e\\49\\f2\\7e\\48\\f4\\a2\\71\\d0\\13\\8e\\b3\\de\\99\\52\\e3\\45\\74\\ea\\76\\0e\\1b\\2a\\c8\\ee\\14\\01\\c4\\50\\5b\\36\\3c\\ef\\ba\\72\\a2\\a6\\08\\f8\\7b\\36\\9d\\f9\\ef\\0b\\c7\\56\\2d\\5c\\f0\\9d\\5d\\de\\fc\\b8\\ad\\0f\\64\\0e\\97\\15\\32\\26\\c2\\31\\e6\\05\\1e\\ef\\cb\\17\\1b\\6d\\15\\0b\\74\\5d\\d3\\2e\\f8\\6b\\86\\b4\\ba\\73\\52\\53\\99\\a9\\76\\20\\45\\c9\\40\\80\\6b\\14\\ed\\a1\\fa\\80\\46\\e6\\26\\d2\\e6\\98\\c4\\57\\bf\\c4\\1c\\a4\\90\\7a\\36\\94\\14\\ba\\15\\89\\6e\\e6\\9c\\37\\8c\\f4\\de\\12\\22\\5d\\a1\\79\\50\\67\\0d\\3d\\7a\\e9\\d4\\aa\\2e\\7f\\2a\\7a\\30\\3d\\ea\\5d\\12\\48\\fe\\e1\\18\\cd\\a4\\57\\a2\\87\\3e\\b6\\9a\\8b\\db\\da\\9d\\78\\9c\\cf\\8d\\b1\\4f\\90\\b4\\34\\e0\\9d\\f6\\ca\\fe\\4c\\3b\\78\\6d\\0a\\5c\\18\\9f\\61\\b9\\dd\\b4\\e0\\0f\\76\\e0\\1b\\69\\0d\\5e\\58\\73\\70\\5e\\0e\\2d\\a1\\7d\\ff\\20\\eb\\91\\34\\92\\ac\\38\\72\\2a\\1f\\8e\\71\\2e\\6a\\f1\\af\\c7\\27\\70\\d9\\c4\\57\\f7\\d2\\3c\\1d\\b8\\f0\\f0\\64\\cf\\dc\\ae\\be\\a3\\cc\\3e\\22\\7d\\4e\\69\\21\\63\\17\\ed\\03\\02\\54\\9a\\0f\\50\\4e\\13\\5a\\35\\a1\\22\\a4\\df\\86\\c2\\74\\79\\16\\b8\\69\\69\\a0\\52\\5d\\11\\64\\bd\\5b\\93\\fc\\69\\a0\\f4\\13\\d0\\81\\51\\dd\\fa\\0c\\15\\c3\\7a\\c9\\62\\7a\\a9\\1d\\c9\\e6\\5a\\b3\\5b\\97\\02\\3c\\64\\22\\12\\3c\\22\\90\\64\\2d\\30\\54\\4c\\b4\\a1\\22\\09\\57\\22\\5e\\8e\\38\\2b\\02\\a8\\ae\\f6\\be\\0d\\2b\\f2\\03\\ad\\fa\\10\\01\\71\\77\\2a\\30\\02\\95\\f6\\00\\3e\\d0\\c4\\8d\\34\\19\\50\\21\\0a\\bc\\50\\da\\3c\\30\\d6\\3a\\31\\94\\8d\\3a\\fe\\ef\\14\\57\\9d\\4b\\93\\00\\96\\24\\0c\\6f\\fd\\bc\\23\\76\\02\\6c\\eb\\52\\72\\80\\11\\7e\\80\\3a\\13\\12\\38\\1d\\38\\49\\95\\40\\27\\8a\\44\\7b\\e8\\dc\\6d\\8c\\8c\\8e\\3c\\b5\\b3\\18\\0e\\f6\\08\\1a\\84\\41\\35\\ff\\8b\\b8\\93\\40\\ea\\e1\\51\\1d\\89\\a5\\8d\\42\\68\\29\\ea\\2f\\c1\\7a\\52\\eb\\90\\5d\\4d\\d6\\80\\e3\\d7\\75\\48\\ce\\ed\\d3\\01\\1c\\8d\\5b\\a5\\94\\0d\\78\\cf\\f1\\06\\13\\2f\\98\\02\\a4\\6d\\2e\\6c\\f2\\d5\\74\\29\\89\\4c\\f9\\03\\f5\\c7\\18\\ad\\7a\\f0\\68\\f8\\5c\\d6\\59\\87\\6e\\d6\\3f\\06\\be\\86\\20\\e3\\41\\91\\22\\f3\\6e\\8b\\f0\\68\\1c\\57\\a7\\fc\\b0\\7c\\9e\\99\\0b\\96\\1a\\89\\5f\\e6\\0d\\7c\\08\\51\\a0\\a2\\67\\9a\\47\\00\\93\\6b\\f9\\28\\f0\\68\\db\\62\\f1\\e0\\65\\2c\\53\\33\\e0\\a7\\ca\\11\\42\\30\\f6\\af\\01\\c1\\65\\3d\\32\\01\\6f\\ab\\2e\\be\\d3\\8b\\be\\14\\c3\\ff\\ec\\fb\\f0\\f9\\c5\\0c\\05\\6f\\01\\09\\6b\\e3\\34\\31\\0c\\1f\\66\\a6\\42\\bc\\1a\\87\\49\\16\\16\\8c\\b0\\90\\0d\\34\\8c\\0a\\e1\\09\\5e\\10\\a4\\6b\\56\\cc\\f0\\c9\\bb\\dc\\b8\\5c\\ce\\f6\\cc\\8d\\75\\7e\\b3\\07\\88\\04\\2f\\b4\\5e\\c9\\e3\\4a\\23\\73\\19\\62\\6c\\9a\\03\\76\\44\\86\\9c\\60\\fc\\db\\72\\8f\\27\\a0\\dd\\b3\\c5\\da\\ff\\f9\\ec\\6a\\b1\\7b\\d3\\cf\\50\\37\\c9\\7a\\78\\0c\\e4\\3a\\b6\\f5\\e6\\f4\\98\\6e\\42\\7d\\35\\73\\8b\\45\\c0\\56\\97\\cd\\6d\\ce\\cf\\ad\\31\\b3\\c3\\54\\fa\\ef\\d5\\c0\\f4\\6a\\5f\\54\\e7\\49\\3e\\33\\0a\\30\\38\\fd\\d9\\05\\ff\\a5\\3f\\57\\46\\14\\b5\\91\\17\\ca\\6b\\98\\23\\7a\\65\\b3\\6c\\02\\b4\\cc\\79\\5d\\58\\d8\\b3\\d5\\94\\ae\\f4\\6d\\75\\65\\f7\\92\\bf\\7e\\47\\4c\\3c\\ee\\db\\ac\\f1\\32\\5d\\fb\\6f\\41\\1c\\34\\c8\\83\\4f\\c2\\58\\01\\be\\05\\3e\\66\\16\\a6\\04\\6d\\5d\\4f\\86\\09\\27\\82\\25\\12\\cd\\3a\\cd\\ce\\6b\\bc\\ca\\ac\\28\\9b\\ee\\6a\\25\\86\\9e\\45\\70\\c6\\d2\\bd\\3b\\7d\\42\\e5\\27\\af\\c7\\1d\\f4\\81\\c8\\b3\\76\\8a\\a8\\36\\a3\\ae\\2a\\e6\\18\\e1\\36\\22\\ad\\f6\\25\\72\\b0\\39\\8b\\01\\9a\\22\\7b\\84\\c3\\2d\\5f\\72\\a4\\98\\ac\\15\\70\\e7\\d4\\18\\e2\\7d\\d2\\30\\7c\\33\\08\\cd\\ca\\c4\\22\\85\\88\\75\\81\\c6\\4a\\74\\58\\8d\\e0\\e8\\ac\\c5\\ab\\75\\5a\\f4\\28\\12\\f0\\18\\45\\52\\f2\\97\\b2\\93\\41\\6f\\8d\\7f\\db\\70\\fb\\a3\\5d\\1f\\a7\\8d\\98\\20\\2b\\22\\9f\\3a\\01\\b5\\8b\\1b\\d2\\cb\\14\\03\\0e\\14\\14\\d2\\19\\5a\\1f\\ce\\5e\\cd\\81\\79\\15\\01\\ca\\de\\73\\74\\8c\\56\\20\\9f\\77\\2d\\25\\16\\f6\\61\\51\\1d\\a4\\8e\\9b\\98\\a5\\c6\\ec\\a8\\45\\57\\82\\59\\78\\0d\\90\\b4\\df\\51\\b0\\c3\\82\\94\\cc\\b3\\53\\09\\15\\6d\\96\\6c\\3a\\40\\47\\b7\\4a\\7a\\05\\2f\\a1\\1e\\8c\\9d\\a0\\20\\88\\fb\\52\\b7\\9f\\f3\\f3\\bb\\5f\\e7\\8a\\61\\a7\\21\\b1\\ac\\fa\\09\\aa\\a4\\6c\\bc\\24\\80\\ba\\2a\\e9\\65\\ff\\70\\ff\\cc\\fa\\65\\87\\76\\f3\\c5\\15\\ce\\cb\\e8\\42\\31\\00\\0c\\91\\57\\d9\\e0\\9d\\35\\54\\24\\ad\\a4\\d8\\f9\\08\\67\\63\\c8\\cf\\81\\dd\\90\\a2\\d7\\c4\\07\\4a\\e6\\10\\6f\\67\\e7\\27\\d4\\23\\59\\18\\f2\\a8\\9d\\5f\\d8\\94\\30\\aa\\54\\86\\4f\\87\\9d\\82\\b5\\26\\ca\\a6\\96\\bf\\cf\\55\\f9\\9d\\37\\01\\19\\48\\43\\c5\\94\\6c\\f3\\74\\97\\58\\4c\\3c\\9d\\08\\e8\\04\\c2\\58\\30\\76\\e1\\a0\\f8\\ea\\e9\\c5\\ae\\cf\\78\\9e\\a9\\0c\\ac\\b3\\44\\42\\e0\\bc\\5d\\1b\\9c\\49\\58\\4a\\1c\\19\\49\\c1\\3a\\ea\\f5\\eb\\3b\\81\\a9\\4b\\70\\0c\\cc\\9e\\1a\\d3\\2f\\b7\\52\\2f\\20\\3b\\eb\\64\\51\\1d\\a0\\2d\\b2\\3e\\be\\13\\85\\48\\92\\32\\2e\\db\\5c\\a1\\e7\\8c\\45\\91\\35\\01\\0a\\93\\c2\\eb\\09\\ce\\f3\\d2\\22\\24\\d0\\8c\\cc\\1d\\9d\\38\\c8\\4d\\e3\\82\\cc\\64\\15\\06\\2d\\e7\\01\\2f\\ab\\bb\\b5\\04\\4c\\92\\1c\\7a\\d6\\3f\\e8\\5f\\31\\15\\0c\\dc\\e4\\31\\b4\\c4\\25\\3e\\2a\\aa\\00\\9e\\c8\\e5\\21\\7a\\7f\\29\\f1\\c0\\af\\1d\\5e\\e8\\63\\39\\ad\\f8\\7e\\6c\\c8\\c5\\7f\\c2\\a8\\97\\27\\0a\\d9\\f4\\21\\6a\\ea\\03\\09\\fb\\f7\\96\\3b\\83\\79\\5f\\7c\\4b\\30\\9f\\56\\35\\de\\b4\\73\\d4\\95\\f0\\14\\c3\\74\\2f\\0d\\a3\\1d\\4e\\8d\\31\\24\\b3\\1a\\84\\85\\62\\5a\\7b\\3c\\14\\39\\17\\e6\\6d\\eb\\37\\c2\\00\\58\\5b\\0b\\e3\\3c\\8a\\62\\e1\\f8\\35\\4b\\56\\e2\\87\\60\\8b\\be\\a7\\38\\91\\77\\54\\a9\\5a\\24\\25\\90\\9f\\a5\\42\\77\\f3\\5c\\39\\df\\ff\\74\\07\\76\\a1\\cd\\1f\\62\\0b\\81\\81\\68\\af\\05\\c1\\c0\\7f\\26\\ee\\c0\\91\\a3\\6a\\7d\\29\\61\\45\\27\\e5\\57\\88\\dc\\0d\\97\\04\\1a\\33\\a9\\44\\8a\\da\\02\\10\\45\\3f\\8e\\55\\a6\\76\\8c\\4d\\e3\\f1\\89\\83\\c8\\d0\\f8\\9b\\50\\77\\9f\\47\\df\\4c\\9c\\66\\0d\\aa\\18\\b8\\5f\\4f\\c4\\01\\ce\\dc\\84\\ac\\46\\9e\\69\\e1\\76\\45\\6b\\61\\89\\e4\\5d\\94\\bb\\11\\83\\9f\\78\\d8\\0a\\d2\\f5\\7e\\5d\\43\\ea\\bc\\10\\f1\\3a\\c9\\e2\\64\\fb\\53\\65\\d0\\c7\\b4\\a7\\fb\\d4\\05\\53\\25\\d0\\cd\\29\\88\\00\\56\\25\\24\\7d\\5d\\b4\\f3\\41\\9f\\e9\\b5\\f7\\ae\\64\\2c\\e3\\c9\\6d\\d5\\84\\3a\\72\\12\\b8\\7a\\d9\\1b\\09\\e8\\38\\da\\26\\4f\\04\\ce\\03\\71\\6e\\8a\\44\\7b\\5c\\81\\59\\9c\\d2\\e4\\c3\\ba\\59\\a6\\e5\\28\\a7\\8f\\9a\\e4\\d5\\4e\\b9\\ca\\7f\\cb\\75\\b8\\2b\\43\\3e\\b3\\15\\46\\b1\\a5\\bc\\9d\\9e\\38\\15\\f1\\bd\\1b\\21\\aa\\f1\\82\\00\\95\\fc\\a7\\77\\47\\39\\a7\\33\\43\\92\\d7\\52\\40\\4b\\06\\81\\8a\\a0\\bd\\f1\\6b\\99\\84\\42\\5b\\e2\\3b\\c5\\5e\\12\\5c\\28\\4d\\b6\\0e\\4e\\c8\\5c\\e8\\01\\8a\\c5\\e7\\e4\\9d\\42\\ee\\5d\\9c\\c4\\eb\\eb\\68\\09\\27\\92\\95\\9a\\11\\54\\73\\c4\\12\\80\\fb\\7d\\fe\\c5\\08\\60\\7f\\36\\41\\e0\\10\\ba\\d6\\2b\\6c\\f1\\b4\\17\\fe\\26\\34\\e3\\4b\\f8\\a8\\e3\\91\\be\\4f\\2a\\fc\\da\\81\\b8\\e7\\fe\\d5\\26\\50\\47\\f3\\1a\\65\\32\\81\\e0\\05\\b8\\4f\\32\\31\\26\\00\\4a\\53\\97\\c2\\c3\\0e\\2e\\a1\\26\\54\\ab\\05\\8e\\56\\2f\\7d\\af\\22\\84\\68\\a5\\8b\\97\\f6\\a4\\fd\\a8\\cc\\75\\41\\96\\86\\fd\\27\\3d\\29\\86\\8d\\7f\\4c\\d4\\8e\\73\\41\\f4\\1e\\e2\\dd\\58\\27\\97\\ce\\9c\\94\\cf\\7a\\04\\2f\\dc\\ed"
   ))
 
@@ -4854,7 +5097,7 @@ let $62 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($62, `f64.kahan_sum`, [0, 256]),
+  () => invoke($64, `f64.kahan_sum`, [0, 256]),
   [
     value("f64", 4996401743142033000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ],
@@ -4862,14 +5105,14 @@ assert_return(
 
 
 assert_return(
-  () => invoke($62, `f64.plain_sum`, [0, 256]),
+  () => invoke($64, `f64.plain_sum`, [0, 256]),
   [
     value("f64", 4996401743297957600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ],
 );
 
 
-let $63 = instantiate(`(module
+let $65 = instantiate(`(module
   (func (export "f32.no_fold_neg_sub") (param $$x f32) (param $$y f32) (result f32)
     (f32.neg (f32.sub (local.get $$x) (local.get $$y))))
 
@@ -4879,54 +5122,54 @@ let $63 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($63, `f32.no_fold_neg_sub`, [value("f32", -0), value("f32", -0)]),
+  () => invoke($65, `f32.no_fold_neg_sub`, [value("f32", -0), value("f32", -0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($63, `f32.no_fold_neg_sub`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($65, `f32.no_fold_neg_sub`, [value("f32", 0), value("f32", -0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($63, `f32.no_fold_neg_sub`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($65, `f32.no_fold_neg_sub`, [value("f32", -0), value("f32", 0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($63, `f32.no_fold_neg_sub`, [value("f32", 0), value("f32", 0)]),
+  () => invoke($65, `f32.no_fold_neg_sub`, [value("f32", 0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($63, `f64.no_fold_neg_sub`, [value("f64", -0), value("f64", -0)]),
+  () => invoke($65, `f64.no_fold_neg_sub`, [value("f64", -0), value("f64", -0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($63, `f64.no_fold_neg_sub`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($65, `f64.no_fold_neg_sub`, [value("f64", 0), value("f64", -0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($63, `f64.no_fold_neg_sub`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($65, `f64.no_fold_neg_sub`, [value("f64", -0), value("f64", 0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($63, `f64.no_fold_neg_sub`, [value("f64", 0), value("f64", 0)]),
+  () => invoke($65, `f64.no_fold_neg_sub`, [value("f64", 0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
-let $64 = instantiate(`(module
+let $66 = instantiate(`(module
   (func (export "f32.no_fold_neg_add") (param $$x f32) (param $$y f32) (result f32)
     (f32.neg (f32.add (local.get $$x) (local.get $$y))))
 
@@ -4936,54 +5179,54 @@ let $64 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($64, `f32.no_fold_neg_add`, [value("f32", -0), value("f32", -0)]),
+  () => invoke($66, `f32.no_fold_neg_add`, [value("f32", -0), value("f32", -0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($64, `f32.no_fold_neg_add`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($66, `f32.no_fold_neg_add`, [value("f32", 0), value("f32", -0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($64, `f32.no_fold_neg_add`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($66, `f32.no_fold_neg_add`, [value("f32", -0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($64, `f32.no_fold_neg_add`, [value("f32", 0), value("f32", 0)]),
+  () => invoke($66, `f32.no_fold_neg_add`, [value("f32", 0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($64, `f64.no_fold_neg_add`, [value("f64", -0), value("f64", -0)]),
+  () => invoke($66, `f64.no_fold_neg_add`, [value("f64", -0), value("f64", -0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($64, `f64.no_fold_neg_add`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($66, `f64.no_fold_neg_add`, [value("f64", 0), value("f64", -0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($64, `f64.no_fold_neg_add`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($66, `f64.no_fold_neg_add`, [value("f64", -0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
 assert_return(
-  () => invoke($64, `f64.no_fold_neg_add`, [value("f64", 0), value("f64", 0)]),
+  () => invoke($66, `f64.no_fold_neg_add`, [value("f64", 0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
-let $65 = instantiate(`(module
+let $67 = instantiate(`(module
   (func (export "f32.no_fold_add_neg_neg") (param $$x f32) (param $$y f32) (result f32)
     (f32.add (f32.neg (local.get $$x)) (f32.neg (local.get $$y))))
 
@@ -4993,54 +5236,54 @@ let $65 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($65, `f32.no_fold_add_neg_neg`, [value("f32", -0), value("f32", -0)]),
+  () => invoke($67, `f32.no_fold_add_neg_neg`, [value("f32", -0), value("f32", -0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($65, `f32.no_fold_add_neg_neg`, [value("f32", 0), value("f32", -0)]),
+  () => invoke($67, `f32.no_fold_add_neg_neg`, [value("f32", 0), value("f32", -0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($65, `f32.no_fold_add_neg_neg`, [value("f32", -0), value("f32", 0)]),
+  () => invoke($67, `f32.no_fold_add_neg_neg`, [value("f32", -0), value("f32", 0)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($65, `f32.no_fold_add_neg_neg`, [value("f32", 0), value("f32", 0)]),
+  () => invoke($67, `f32.no_fold_add_neg_neg`, [value("f32", 0), value("f32", 0)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($65, `f64.no_fold_add_neg_neg`, [value("f64", -0), value("f64", -0)]),
+  () => invoke($67, `f64.no_fold_add_neg_neg`, [value("f64", -0), value("f64", -0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($65, `f64.no_fold_add_neg_neg`, [value("f64", 0), value("f64", -0)]),
+  () => invoke($67, `f64.no_fold_add_neg_neg`, [value("f64", 0), value("f64", -0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($65, `f64.no_fold_add_neg_neg`, [value("f64", -0), value("f64", 0)]),
+  () => invoke($67, `f64.no_fold_add_neg_neg`, [value("f64", -0), value("f64", 0)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($65, `f64.no_fold_add_neg_neg`, [value("f64", 0), value("f64", 0)]),
+  () => invoke($67, `f64.no_fold_add_neg_neg`, [value("f64", 0), value("f64", 0)]),
   [value("f64", -0)],
 );
 
 
-let $66 = instantiate(`(module
+let $68 = instantiate(`(module
   (func (export "f32.no_fold_add_neg") (param $$x f32) (result f32)
     (f32.add (f32.neg (local.get $$x)) (local.get $$x)))
 
@@ -5049,31 +5292,31 @@ let $66 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($66, `f32.no_fold_add_neg`, [value("f32", 0)]), [value("f32", 0)]);
+assert_return(() => invoke($68, `f32.no_fold_add_neg`, [value("f32", 0)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($66, `f32.no_fold_add_neg`, [value("f32", -0)]), [value("f32", 0)]);
+assert_return(() => invoke($68, `f32.no_fold_add_neg`, [value("f32", -0)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($66, `f32.no_fold_add_neg`, [value("f32", Infinity)]), [`canonical_nan`]);
+assert_return(() => invoke($68, `f32.no_fold_add_neg`, [value("f32", Infinity)]), [`canonical_nan`]);
 
 
-assert_return(() => invoke($66, `f32.no_fold_add_neg`, [value("f32", -Infinity)]), [`canonical_nan`]);
+assert_return(() => invoke($68, `f32.no_fold_add_neg`, [value("f32", -Infinity)]), [`canonical_nan`]);
 
 
-assert_return(() => invoke($66, `f64.no_fold_add_neg`, [value("f64", 0)]), [value("f64", 0)]);
+assert_return(() => invoke($68, `f64.no_fold_add_neg`, [value("f64", 0)]), [value("f64", 0)]);
 
 
-assert_return(() => invoke($66, `f64.no_fold_add_neg`, [value("f64", -0)]), [value("f64", 0)]);
+assert_return(() => invoke($68, `f64.no_fold_add_neg`, [value("f64", -0)]), [value("f64", 0)]);
 
 
-assert_return(() => invoke($66, `f64.no_fold_add_neg`, [value("f64", Infinity)]), [`canonical_nan`]);
+assert_return(() => invoke($68, `f64.no_fold_add_neg`, [value("f64", Infinity)]), [`canonical_nan`]);
 
 
-assert_return(() => invoke($66, `f64.no_fold_add_neg`, [value("f64", -Infinity)]), [`canonical_nan`]);
+assert_return(() => invoke($68, `f64.no_fold_add_neg`, [value("f64", -Infinity)]), [`canonical_nan`]);
 
 
-let $67 = instantiate(`(module
+let $69 = instantiate(`(module
   (func (export "f32.no_fold_6x_via_add") (param $$x f32) (result f32)
     (f32.add (f32.add (f32.add (f32.add (f32.add
     (local.get $$x)
@@ -5089,7 +5332,7 @@ let $67 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($67, `f32.no_fold_6x_via_add`, [
+  () => invoke($69, `f32.no_fold_6x_via_add`, [
     value("f32", -855513700000000000000000000000),
   ]),
   [value("f32", -5133083000000000000000000000000)],
@@ -5097,7 +5340,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($67, `f32.no_fold_6x_via_add`, [
+  () => invoke($69, `f32.no_fold_6x_via_add`, [
     value("f32", -0.00000000000000000000001209506),
   ]),
   [value("f32", -0.00000000000000000000007257036)],
@@ -5105,7 +5348,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($67, `f32.no_fold_6x_via_add`, [
+  () => invoke($69, `f32.no_fold_6x_via_add`, [
     value("f32", 0.000000000000000000000006642689),
   ]),
   [value("f32", 0.000000000000000000000039856134)],
@@ -5113,13 +5356,13 @@ assert_return(
 
 
 assert_return(
-  () => invoke($67, `f32.no_fold_6x_via_add`, [value("f32", -0.0000000006147346)]),
+  () => invoke($69, `f32.no_fold_6x_via_add`, [value("f32", -0.0000000006147346)]),
   [value("f32", -0.0000000036884074)],
 );
 
 
 assert_return(
-  () => invoke($67, `f32.no_fold_6x_via_add`, [
+  () => invoke($69, `f32.no_fold_6x_via_add`, [
     value("f32", -1209858100000000000000000),
   ]),
   [value("f32", -7259148300000000000000000)],
@@ -5127,13 +5370,13 @@ assert_return(
 
 
 assert_return(
-  () => invoke($67, `f64.no_fold_6x_via_add`, [value("f64", -351704490602771400000)]),
+  () => invoke($69, `f64.no_fold_6x_via_add`, [value("f64", -351704490602771400000)]),
   [value("f64", -2110226943616628600000)],
 );
 
 
 assert_return(
-  () => invoke($67, `f64.no_fold_6x_via_add`, [
+  () => invoke($69, `f64.no_fold_6x_via_add`, [
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000014824294109868734),
   ]),
   [
@@ -5143,7 +5386,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($67, `f64.no_fold_6x_via_add`, [
+  () => invoke($69, `f64.no_fold_6x_via_add`, [
     value("f64", -7484567838781003000000000000000000000000000000000000000000000000000000000000000000),
   ]),
   [
@@ -5153,7 +5396,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($67, `f64.no_fold_6x_via_add`, [
+  () => invoke($69, `f64.no_fold_6x_via_add`, [
     value("f64", 17277868192936067000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
   [
@@ -5163,7 +5406,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($67, `f64.no_fold_6x_via_add`, [
+  () => invoke($69, `f64.no_fold_6x_via_add`, [
     value("f64", -43116397525195610000000000000000000000000000000000000000000000000000000),
   ]),
   [
@@ -5172,7 +5415,7 @@ assert_return(
 );
 
 
-let $68 = instantiate(`(module
+let $70 = instantiate(`(module
   (func (export "f32.no_fold_div_div") (param $$x f32) (param $$y f32) (param $$z f32) (result f32)
     (f32.div (f32.div (local.get $$x) (local.get $$y)) (local.get $$z)))
 
@@ -5182,7 +5425,7 @@ let $68 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($68, `f32.no_fold_div_div`, [
+  () => invoke($70, `f32.no_fold_div_div`, [
     value("f32", -593847530000000000000000),
     value("f32", -0.000030265672),
     value("f32", -1584.8682),
@@ -5192,7 +5435,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f32.no_fold_div_div`, [
+  () => invoke($70, `f32.no_fold_div_div`, [
     value("f32", 0.0000000000000000000015438962),
     value("f32", 2533429300000000000000000000000000),
     value("f32", -0.00000000000000000000000000000000026844783),
@@ -5202,7 +5445,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f32.no_fold_div_div`, [
+  () => invoke($70, `f32.no_fold_div_div`, [
     value("f32", 13417423000000),
     value("f32", 0.000000000000000000000000000000029339205),
     value("f32", 76386374000000000000000000000000),
@@ -5212,7 +5455,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f32.no_fold_div_div`, [
+  () => invoke($70, `f32.no_fold_div_div`, [
     value("f32", -0.00010776529),
     value("f32", -34220943000000000000000000000000000000),
     value("f32", -0.00000000000016562324),
@@ -5222,7 +5465,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f32.no_fold_div_div`, [
+  () => invoke($70, `f32.no_fold_div_div`, [
     value("f32", 130582500000000),
     value("f32", 96245350000000000),
     value("f32", -41461545000000000000000000000000000000),
@@ -5232,7 +5475,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f64.no_fold_div_div`, [
+  () => invoke($70, `f64.no_fold_div_div`, [
     value("f64", 477762874671014340000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 102786720420404010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000718999894988884),
@@ -5244,7 +5487,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f64.no_fold_div_div`, [
+  () => invoke($70, `f64.no_fold_div_div`, [
     value("f64", -21790236783875714000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 0.0000000028324436844616576),
     value("f64", 186110768259868700000000000000000000000000000000000000000000000000000000000000000000000000000000),
@@ -5256,7 +5499,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f64.no_fold_div_div`, [
+  () => invoke($70, `f64.no_fold_div_div`, [
     value("f64", -7.287619347826683),
     value("f64", -13467607316739855000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 2462719007013688000000000000000000000000000000000000),
@@ -5268,7 +5511,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f64.no_fold_div_div`, [
+  () => invoke($70, `f64.no_fold_div_div`, [
     value("f64", -286552397862963300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010211980370639414),
     value("f64", 28764586483324010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
@@ -5278,7 +5521,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($68, `f64.no_fold_div_div`, [
+  () => invoke($70, `f64.no_fold_div_div`, [
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009525735602663874),
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000050233948816631796),
     value("f64", -0.0000000000000000000000000000000000000000028304570228221077),
@@ -5289,7 +5532,7 @@ assert_return(
 );
 
 
-let $69 = instantiate(`(module
+let $71 = instantiate(`(module
   (func (export "f32.no_fold_mul_divs") (param $$x f32) (param $$y f32) (param $$z f32) (param $$w f32) (result f32)
     (f32.mul (f32.div (local.get $$x) (local.get $$y)) (f32.div (local.get $$z) (local.get $$w))))
 
@@ -5299,7 +5542,7 @@ let $69 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($69, `f32.no_fold_mul_divs`, [
+  () => invoke($71, `f32.no_fold_mul_divs`, [
     value("f32", -0.0000000000000000000000000000000027234733),
     value("f32", 0.0000000000000000000000000003897843),
     value("f32", 0.000000000000000000000000004847123),
@@ -5310,7 +5553,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f32.no_fold_mul_divs`, [
+  () => invoke($71, `f32.no_fold_mul_divs`, [
     value("f32", -5372844000000000000000000000000),
     value("f32", 38340910),
     value("f32", 0.000014973162),
@@ -5321,7 +5564,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f32.no_fold_mul_divs`, [
+  () => invoke($71, `f32.no_fold_mul_divs`, [
     value("f32", -16085042000),
     value("f32", -1092920200000),
     value("f32", -869606000),
@@ -5332,7 +5575,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f32.no_fold_mul_divs`, [
+  () => invoke($71, `f32.no_fold_mul_divs`, [
     value("f32", -1271223140000000000000000000000000),
     value("f32", 0.00000000010768114),
     value("f32", 0.000018576271),
@@ -5343,7 +5586,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f32.no_fold_mul_divs`, [
+  () => invoke($71, `f32.no_fold_mul_divs`, [
     value("f32", 0.00000000000000013783864),
     value("f32", -0.000000000000000000065046285),
     value("f32", 0.00000000000000000000000000068167684),
@@ -5354,7 +5597,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f64.no_fold_mul_divs`, [
+  () => invoke($71, `f64.no_fold_mul_divs`, [
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003466499805233369),
     value("f64", -0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004045567512248635),
     value("f64", -646234107060759200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
@@ -5365,7 +5608,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f64.no_fold_mul_divs`, [
+  () => invoke($71, `f64.no_fold_mul_divs`, [
     value("f64", -50548839076363250000000000000000000),
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022223781649976275),
     value("f64", -15029790371100852000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
@@ -5376,7 +5619,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f64.no_fold_mul_divs`, [
+  () => invoke($71, `f64.no_fold_mul_divs`, [
     value("f64", -836111653634494700000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", -10029528876067567000000000000000000000000000000000000000000),
     value("f64", -0.0000000000000000000000000000000000000000012867801766038772),
@@ -5389,7 +5632,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f64.no_fold_mul_divs`, [
+  () => invoke($71, `f64.no_fold_mul_divs`, [
     value("f64", -1202003211641119300000000000000000000000),
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004667409771338769),
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010888652376540085),
@@ -5400,7 +5643,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($69, `f64.no_fold_mul_divs`, [
+  () => invoke($71, `f64.no_fold_mul_divs`, [
     value("f64", 0.000006331839568840419),
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000005544474241905778),
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000027822472480359097),
@@ -5412,7 +5655,7 @@ assert_return(
 );
 
 
-let $70 = instantiate(`(module
+let $72 = instantiate(`(module
   (func (export "f32.no_fold_add_divs") (param $$x f32) (param $$y f32) (param $$z f32) (result f32)
     (f32.add (f32.div (local.get $$x) (local.get $$z)) (f32.div (local.get $$y) (local.get $$z))))
 
@@ -5422,7 +5665,7 @@ let $70 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($70, `f32.no_fold_add_divs`, [
+  () => invoke($72, `f32.no_fold_add_divs`, [
     value("f32", 377.3689),
     value("f32", -0.040118184),
     value("f32", -136292990000000000000000000000000000000),
@@ -5432,7 +5675,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f32.no_fold_add_divs`, [
+  () => invoke($72, `f32.no_fold_add_divs`, [
     value("f32", -0.00000000000000000018234023),
     value("f32", -0.0000000000000033970288),
     value("f32", -170996700000000),
@@ -5442,7 +5685,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f32.no_fold_add_divs`, [
+  () => invoke($72, `f32.no_fold_add_divs`, [
     value("f32", -0.000000000000019672638),
     value("f32", 0.00000000000000000006414099),
     value("f32", -541989070000000),
@@ -5452,7 +5695,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f32.no_fold_add_divs`, [
+  () => invoke($72, `f32.no_fold_add_divs`, [
     value("f32", -0.0000000000000000000000000000004038506),
     value("f32", 0.000000000000000000000000000003848228),
     value("f32", -345237200000000000000000000),
@@ -5462,7 +5705,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f32.no_fold_add_divs`, [
+  () => invoke($72, `f32.no_fold_add_divs`, [
     value("f32", 0.0010934415),
     value("f32", 0.20703124),
     value("f32", 0.00000000000000000000000000000000000013509784),
@@ -5472,7 +5715,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f64.no_fold_add_divs`, [
+  () => invoke($72, `f64.no_fold_add_divs`, [
     value("f64", -4917019432143760000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 68132156322019020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 26125410100237784000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
@@ -5484,7 +5727,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f64.no_fold_add_divs`, [
+  () => invoke($72, `f64.no_fold_add_divs`, [
     value("f64", -10206467953224550),
     value("f64", 63.422616671746226),
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016024747869814892),
@@ -5496,7 +5739,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f64.no_fold_add_divs`, [
+  () => invoke($72, `f64.no_fold_add_divs`, [
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000015270569633109837),
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000025755503329232514),
     value("f64", 58826939164214920000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
@@ -5506,7 +5749,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f64.no_fold_add_divs`, [
+  () => invoke($72, `f64.no_fold_add_divs`, [
     value("f64", 26667964874394640000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", -2131569252493657800000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 0.000000000000000000000000000000000000012377004518680012),
@@ -5518,7 +5761,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($70, `f64.no_fold_add_divs`, [
+  () => invoke($72, `f64.no_fold_add_divs`, [
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012952888377288216),
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005808769259900048),
     value("f64", 0.0000000000000000000016745741699443756),
@@ -5529,7 +5772,7 @@ assert_return(
 );
 
 
-let $71 = instantiate(`(module
+let $73 = instantiate(`(module
   (func (export "f32.no_fold_sqrt_square") (param $$x f32) (result f32)
     (f32.sqrt (f32.mul (local.get $$x) (local.get $$x))))
 
@@ -5539,7 +5782,7 @@ let $71 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($71, `f32.no_fold_sqrt_square`, [
+  () => invoke($73, `f32.no_fold_sqrt_square`, [
     value("f32", -0.00000000000000000001846),
   ]),
   [value("f32", 0.00000000000000000001846001)],
@@ -5547,7 +5790,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f32.no_fold_sqrt_square`, [
+  () => invoke($73, `f32.no_fold_sqrt_square`, [
     value("f32", -0.00000000000000000000017907473),
   ]),
   [value("f32", 0.00000000000000000000017952678)],
@@ -5555,7 +5798,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f32.no_fold_sqrt_square`, [
+  () => invoke($73, `f32.no_fold_sqrt_square`, [
     value("f32", -0.00000000000000000000079120785),
   ]),
   [value("f32", 0.000000000000000000000791442)],
@@ -5563,7 +5806,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f32.no_fold_sqrt_square`, [
+  () => invoke($73, `f32.no_fold_sqrt_square`, [
     value("f32", 0.000000000000000000000000018012938),
   ]),
   [value("f32", 0)],
@@ -5571,7 +5814,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f32.no_fold_sqrt_square`, [
+  () => invoke($73, `f32.no_fold_sqrt_square`, [
     value("f32", 610501970000000000000000000000000),
   ]),
   [value("f32", Infinity)],
@@ -5579,7 +5822,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f64.no_fold_sqrt_square`, [
+  () => invoke($73, `f64.no_fold_sqrt_square`, [
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006209297167747496),
   ]),
   [
@@ -5589,7 +5832,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f64.no_fold_sqrt_square`, [
+  () => invoke($73, `f64.no_fold_sqrt_square`, [
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024211175303738945),
   ]),
   [
@@ -5599,7 +5842,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f64.no_fold_sqrt_square`, [
+  () => invoke($73, `f64.no_fold_sqrt_square`, [
     value("f64", -0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016460687611875645),
   ]),
   [
@@ -5609,7 +5852,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f64.no_fold_sqrt_square`, [
+  () => invoke($73, `f64.no_fold_sqrt_square`, [
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003797811613378828),
   ]),
   [value("f64", 0)],
@@ -5617,14 +5860,14 @@ assert_return(
 
 
 assert_return(
-  () => invoke($71, `f64.no_fold_sqrt_square`, [
+  () => invoke($73, `f64.no_fold_sqrt_square`, [
     value("f64", 815808428460559200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
   [value("f64", Infinity)],
 );
 
 
-let $72 = instantiate(`(module
+let $74 = instantiate(`(module
   (func (export "f32.no_fold_mul_sqrts") (param $$x f32) (param $$y f32) (result f32)
     (f32.mul (f32.sqrt (local.get $$x)) (f32.sqrt (local.get $$y))))
 
@@ -5634,7 +5877,7 @@ let $72 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($72, `f32.no_fold_mul_sqrts`, [
+  () => invoke($74, `f32.no_fold_mul_sqrts`, [
     value("f32", 0.000000000000000000000000000000000000043885047),
     value("f32", -0.00000000000000000000000011867334),
   ]),
@@ -5643,7 +5886,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f32.no_fold_mul_sqrts`, [
+  () => invoke($74, `f32.no_fold_mul_sqrts`, [
     value("f32", 0.00000000000000000000000000025365908),
     value("f32", 0.00000000041320675),
   ]),
@@ -5652,7 +5895,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f32.no_fold_mul_sqrts`, [
+  () => invoke($74, `f32.no_fold_mul_sqrts`, [
     value("f32", 0.0000000000000000000000000042144832),
     value("f32", 97.249115),
   ]),
@@ -5661,7 +5904,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f32.no_fold_mul_sqrts`, [
+  () => invoke($74, `f32.no_fold_mul_sqrts`, [
     value("f32", 3724076300000000000000000000000),
     value("f32", 0.002944908),
   ]),
@@ -5670,7 +5913,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f32.no_fold_mul_sqrts`, [
+  () => invoke($74, `f32.no_fold_mul_sqrts`, [
     value("f32", 0.00000000000000001866056),
     value("f32", 0.002111261),
   ]),
@@ -5679,7 +5922,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f64.no_fold_mul_sqrts`, [
+  () => invoke($74, `f64.no_fold_mul_sqrts`, [
     value("f64", -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012742064369772862),
     value("f64", -0.006829962938197246),
   ]),
@@ -5688,7 +5931,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f64.no_fold_mul_sqrts`, [
+  () => invoke($74, `f64.no_fold_mul_sqrts`, [
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037082569269527534),
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000047183002857015043),
   ]),
@@ -5699,7 +5942,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f64.no_fold_mul_sqrts`, [
+  () => invoke($74, `f64.no_fold_mul_sqrts`, [
     value("f64", 0.000000000000000000000000002329359505918655),
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020743399642806364),
   ]),
@@ -5710,7 +5953,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f64.no_fold_mul_sqrts`, [
+  () => invoke($74, `f64.no_fold_mul_sqrts`, [
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010541899336289437),
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000598123819872803),
   ]),
@@ -5721,7 +5964,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($72, `f64.no_fold_mul_sqrts`, [
+  () => invoke($74, `f64.no_fold_mul_sqrts`, [
     value("f64", 25589482.717358638),
     value("f64", 39138912071199020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -5731,7 +5974,7 @@ assert_return(
 );
 
 
-let $73 = instantiate(`(module
+let $75 = instantiate(`(module
   (func (export "f32.no_fold_div_sqrts") (param $$x f32) (param $$y f32) (result f32)
     (f32.div (f32.sqrt (local.get $$x)) (f32.sqrt (local.get $$y))))
 
@@ -5741,7 +5984,7 @@ let $73 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($73, `f32.no_fold_div_sqrts`, [
+  () => invoke($75, `f32.no_fold_div_sqrts`, [
     value("f32", -58545012),
     value("f32", -0.000000000000000006443773),
   ]),
@@ -5750,7 +5993,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f32.no_fold_div_sqrts`, [
+  () => invoke($75, `f32.no_fold_div_sqrts`, [
     value("f32", 7407384000),
     value("f32", 209778930),
   ]),
@@ -5759,7 +6002,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f32.no_fold_div_sqrts`, [
+  () => invoke($75, `f32.no_fold_div_sqrts`, [
     value("f32", 0.0000000000000000000000000000000000013764126),
     value("f32", 54692.9),
   ]),
@@ -5768,7 +6011,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f32.no_fold_div_sqrts`, [
+  () => invoke($75, `f32.no_fold_div_sqrts`, [
     value("f32", 979288960000000000),
     value("f32", 0.0000000012643552),
   ]),
@@ -5777,7 +6020,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f32.no_fold_div_sqrts`, [
+  () => invoke($75, `f32.no_fold_div_sqrts`, [
     value("f32", 0.00000000000000000000000000000000029141283),
     value("f32", 0.00000000000000000000000000000017928174),
   ]),
@@ -5786,7 +6029,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f64.no_fold_div_sqrts`, [
+  () => invoke($75, `f64.no_fold_div_sqrts`, [
     value("f64", -0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012206137319883022),
     value("f64", -0.000000000000000000000000000000000000000000000000000000008209583449676083),
   ]),
@@ -5795,7 +6038,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f64.no_fold_div_sqrts`, [
+  () => invoke($75, `f64.no_fold_div_sqrts`, [
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033818852462305824),
     value("f64", 7655783976315048000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -5806,7 +6049,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f64.no_fold_div_sqrts`, [
+  () => invoke($75, `f64.no_fold_div_sqrts`, [
     value("f64", 45963335670647510000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 0.0000000000000000000000000000000023932467846883046),
   ]),
@@ -5817,7 +6060,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f64.no_fold_div_sqrts`, [
+  () => invoke($75, `f64.no_fold_div_sqrts`, [
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000025327340978668086),
     value("f64", 4475305129961258000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -5828,7 +6071,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($73, `f64.no_fold_div_sqrts`, [
+  () => invoke($75, `f64.no_fold_div_sqrts`, [
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005103070160197939),
     value("f64", 460157669098082500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -5838,7 +6081,7 @@ assert_return(
 );
 
 
-let $74 = instantiate(`(module
+let $76 = instantiate(`(module
   (func (export "f32.no_fold_mul_sqrt_div") (param $$x f32) (param $$y f32) (result f32)
     (f32.div (f32.mul (local.get $$x) (f32.sqrt (local.get $$y))) (local.get $$y)))
 
@@ -5848,7 +6091,7 @@ let $74 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($74, `f32.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f32.no_fold_mul_sqrt_div`, [
     value("f32", -4728556800000000000000000),
     value("f32", 8677282000000000000000000000),
   ]),
@@ -5857,7 +6100,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f32.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f32.no_fold_mul_sqrt_div`, [
     value("f32", -0.0000000000000000000000000000000000011776882),
     value("f32", 0.000000000000000000000000000009805153),
   ]),
@@ -5866,7 +6109,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f32.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f32.no_fold_mul_sqrt_div`, [
     value("f32", 816717060),
     value("f32", 0.000000000000000000000000000000000000003323171),
   ]),
@@ -5875,7 +6118,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f32.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f32.no_fold_mul_sqrt_div`, [
     value("f32", -11932267000000),
     value("f32", 8637067000000000000000000000000000),
   ]),
@@ -5884,7 +6127,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f32.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f32.no_fold_mul_sqrt_div`, [
     value("f32", -401.0235),
     value("f32", 134.33022),
   ]),
@@ -5893,7 +6136,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f64.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f64.no_fold_mul_sqrt_div`, [
     value("f64", 1468134622910490500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 2466074582285183000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -5902,7 +6145,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f64.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f64.no_fold_mul_sqrt_div`, [
     value("f64", -0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000017254022016758028),
     value("f64", 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000055835540747130025),
   ]),
@@ -5911,7 +6154,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f64.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f64.no_fold_mul_sqrt_div`, [
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016812810256029166),
     value("f64", 7362783602442129000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -5922,7 +6165,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f64.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f64.no_fold_mul_sqrt_div`, [
     value("f64", -10605483729939836000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
     value("f64", 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000622591783694072),
   ]),
@@ -5933,7 +6176,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($74, `f64.no_fold_mul_sqrt_div`, [
+  () => invoke($76, `f64.no_fold_mul_sqrt_div`, [
     value("f64", 26336349695373093000000000000000),
     value("f64", 30791413285853300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000),
   ]),
@@ -5943,7 +6186,7 @@ assert_return(
 );
 
 
-let $75 = instantiate(`(module
+let $77 = instantiate(`(module
   (func (export "f32.no_flush_intermediate_subnormal") (param $$x f32) (param $$y f32) (param $$z f32) (result f32)
     (f32.mul (f32.mul (local.get $$x) (local.get $$y)) (local.get $$z)))
 
@@ -5953,7 +6196,7 @@ let $75 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($75, `f32.no_flush_intermediate_subnormal`, [
+  () => invoke($77, `f32.no_flush_intermediate_subnormal`, [
     value("f32", 0.000000000000000000000000000000000000011754944),
     value("f32", 0.00000011920929),
     value("f32", 8388608),
@@ -5963,7 +6206,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($75, `f64.no_flush_intermediate_subnormal`, [
+  () => invoke($77, `f64.no_flush_intermediate_subnormal`, [
     value("f64", 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022250738585072014),
     value("f64", 0.0000000000000002220446049250313),
     value("f64", 4503599627370496),
@@ -5974,7 +6217,7 @@ assert_return(
 );
 
 
-let $76 = instantiate(`(module
+let $78 = instantiate(`(module
   (func (export "f32.recoding_eq") (param $$x f32) (param $$y f32) (result i32)
     (f32.eq (f32.mul (local.get $$x) (local.get $$y)) (local.get $$x)))
 
@@ -5999,79 +6242,79 @@ let $76 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($76, `f32.recoding_eq`, [value("f32", -Infinity), value("f32", 3)]),
+  () => invoke($78, `f32.recoding_eq`, [value("f32", -Infinity), value("f32", 3)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f32.recoding_le`, [value("f32", -Infinity), value("f32", 3)]),
+  () => invoke($78, `f32.recoding_le`, [value("f32", -Infinity), value("f32", 3)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f32.recoding_lt`, [value("f32", -Infinity), value("f32", 3)]),
+  () => invoke($78, `f32.recoding_lt`, [value("f32", -Infinity), value("f32", 3)]),
   [value("i32", 0)],
 );
 
 
 assert_return(
-  () => invoke($76, `f32.recoding_eq`, [value("f32", 0), value("f32", 1)]),
+  () => invoke($78, `f32.recoding_eq`, [value("f32", 0), value("f32", 1)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f32.recoding_le`, [value("f32", 0), value("f32", 1)]),
+  () => invoke($78, `f32.recoding_le`, [value("f32", 0), value("f32", 1)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f32.recoding_lt`, [value("f32", 0), value("f32", 1)]),
+  () => invoke($78, `f32.recoding_lt`, [value("f32", 0), value("f32", 1)]),
   [value("i32", 0)],
 );
 
 
 assert_return(
-  () => invoke($76, `f64.recoding_eq`, [value("f64", -Infinity), value("f64", 3)]),
+  () => invoke($78, `f64.recoding_eq`, [value("f64", -Infinity), value("f64", 3)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f64.recoding_le`, [value("f64", -Infinity), value("f64", 3)]),
+  () => invoke($78, `f64.recoding_le`, [value("f64", -Infinity), value("f64", 3)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f64.recoding_lt`, [value("f64", -Infinity), value("f64", 3)]),
+  () => invoke($78, `f64.recoding_lt`, [value("f64", -Infinity), value("f64", 3)]),
   [value("i32", 0)],
 );
 
 
 assert_return(
-  () => invoke($76, `f64.recoding_eq`, [value("f64", 0), value("f64", 1)]),
+  () => invoke($78, `f64.recoding_eq`, [value("f64", 0), value("f64", 1)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f64.recoding_le`, [value("f64", 0), value("f64", 1)]),
+  () => invoke($78, `f64.recoding_le`, [value("f64", 0), value("f64", 1)]),
   [value("i32", 1)],
 );
 
 
 assert_return(
-  () => invoke($76, `f64.recoding_lt`, [value("f64", 0), value("f64", 1)]),
+  () => invoke($78, `f64.recoding_lt`, [value("f64", 0), value("f64", 1)]),
   [value("i32", 0)],
 );
 
 
 assert_return(
-  () => invoke($76, `recoding_demote`, [
+  () => invoke($78, `recoding_demote`, [
     value("f64", 0.00000000000000000000000000000000000000023860049081905093),
     value("f32", 1221),
   ]),
@@ -6079,7 +6322,7 @@ assert_return(
 );
 
 
-let $77 = instantiate(`(module
+let $79 = instantiate(`(module
   (func (export "f32.no_extended_precision_div") (param $$x f32) (param $$y f32) (param $$z f32) (result i32)
     (f32.eq (f32.div (local.get $$x) (local.get $$y)) (local.get $$z)))
 
@@ -6089,7 +6332,7 @@ let $77 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($77, `f32.no_extended_precision_div`, [
+  () => invoke($79, `f32.no_extended_precision_div`, [
     value("f32", 3),
     value("f32", 7),
     value("f32", 0.42857143),
@@ -6099,7 +6342,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($77, `f64.no_extended_precision_div`, [
+  () => invoke($79, `f64.no_extended_precision_div`, [
     value("f64", 3),
     value("f64", 7),
     value("f64", 0.42857142857142855),
@@ -6108,7 +6351,7 @@ assert_return(
 );
 
 
-let $78 = instantiate(`(module
+let $80 = instantiate(`(module
   (func (export "f32.no_distribute_exact") (param $$x f32) (result f32)
     (f32.add (f32.mul (f32.const -8.0) (local.get $$x)) (f32.mul (f32.const 8.0) (local.get $$x))))
 
@@ -6117,13 +6360,13 @@ let $78 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($78, `f32.no_distribute_exact`, [value("f32", -0)]), [value("f32", 0)]);
+assert_return(() => invoke($80, `f32.no_distribute_exact`, [value("f32", -0)]), [value("f32", 0)]);
 
 
-assert_return(() => invoke($78, `f64.no_distribute_exact`, [value("f64", -0)]), [value("f64", 0)]);
+assert_return(() => invoke($80, `f64.no_distribute_exact`, [value("f64", -0)]), [value("f64", 0)]);
 
 
-let $79 = instantiate(`(module
+let $81 = instantiate(`(module
   (func (export "f32.sqrt") (param f32) (result f32)
     (f32.sqrt (local.get 0)))
 
@@ -6156,11 +6399,11 @@ let $79 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($79, `f32.sqrt`, [value("f32", 2)]), [value("f32", 1.4142135)]);
+assert_return(() => invoke($81, `f32.sqrt`, [value("f32", 2)]), [value("f32", 1.4142135)]);
 
 
 assert_return(
-  () => invoke($79, `f32.xkcd_sqrt_2`, [
+  () => invoke($81, `f32.xkcd_sqrt_2`, [
     value("f32", 3),
     value("f32", 5),
     value("f32", 3.1415927),
@@ -6170,11 +6413,11 @@ assert_return(
 );
 
 
-assert_return(() => invoke($79, `f32.sqrt`, [value("f32", 3)]), [value("f32", 1.7320508)]);
+assert_return(() => invoke($81, `f32.sqrt`, [value("f32", 3)]), [value("f32", 1.7320508)]);
 
 
 assert_return(
-  () => invoke($79, `f32.xkcd_sqrt_3`, [
+  () => invoke($81, `f32.xkcd_sqrt_3`, [
     value("f32", 2),
     value("f32", 2.7182817),
     value("f32", 3.1415927),
@@ -6183,11 +6426,11 @@ assert_return(
 );
 
 
-assert_return(() => invoke($79, `f32.sqrt`, [value("f32", 5)]), [value("f32", 2.236068)]);
+assert_return(() => invoke($81, `f32.sqrt`, [value("f32", 5)]), [value("f32", 2.236068)]);
 
 
 assert_return(
-  () => invoke($79, `f32.xkcd_sqrt_5`, [
+  () => invoke($81, `f32.xkcd_sqrt_5`, [
     value("f32", 2),
     value("f32", 2.7182817),
     value("f32", 3),
@@ -6197,7 +6440,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($79, `f32.xkcd_better_sqrt_5`, [
+  () => invoke($81, `f32.xkcd_better_sqrt_5`, [
     value("f32", 13),
     value("f32", 4),
     value("f32", 3.1415927),
@@ -6207,11 +6450,11 @@ assert_return(
 );
 
 
-assert_return(() => invoke($79, `f64.sqrt`, [value("f64", 2)]), [value("f64", 1.4142135623730951)]);
+assert_return(() => invoke($81, `f64.sqrt`, [value("f64", 2)]), [value("f64", 1.4142135623730951)]);
 
 
 assert_return(
-  () => invoke($79, `f64.xkcd_sqrt_2`, [
+  () => invoke($81, `f64.xkcd_sqrt_2`, [
     value("f64", 3),
     value("f64", 5),
     value("f64", 3.141592653589793),
@@ -6221,11 +6464,11 @@ assert_return(
 );
 
 
-assert_return(() => invoke($79, `f64.sqrt`, [value("f64", 3)]), [value("f64", 1.7320508075688772)]);
+assert_return(() => invoke($81, `f64.sqrt`, [value("f64", 3)]), [value("f64", 1.7320508075688772)]);
 
 
 assert_return(
-  () => invoke($79, `f64.xkcd_sqrt_3`, [
+  () => invoke($81, `f64.xkcd_sqrt_3`, [
     value("f64", 2),
     value("f64", 2.718281828459045),
     value("f64", 3.141592653589793),
@@ -6234,11 +6477,11 @@ assert_return(
 );
 
 
-assert_return(() => invoke($79, `f64.sqrt`, [value("f64", 5)]), [value("f64", 2.23606797749979)]);
+assert_return(() => invoke($81, `f64.sqrt`, [value("f64", 5)]), [value("f64", 2.23606797749979)]);
 
 
 assert_return(
-  () => invoke($79, `f64.xkcd_sqrt_5`, [
+  () => invoke($81, `f64.xkcd_sqrt_5`, [
     value("f64", 2),
     value("f64", 2.718281828459045),
     value("f64", 3),
@@ -6248,7 +6491,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($79, `f64.xkcd_better_sqrt_5`, [
+  () => invoke($81, `f64.xkcd_better_sqrt_5`, [
     value("f64", 13),
     value("f64", 4),
     value("f64", 3.141592653589793),
@@ -6258,7 +6501,7 @@ assert_return(
 );
 
 
-let $80 = instantiate(`(module
+let $82 = instantiate(`(module
   (func (export "f32.compute_radix") (param $$0 f32) (param $$1 f32) (result f32)
     (loop $$label$$0
       (br_if $$label$$0
@@ -6338,18 +6581,18 @@ let $80 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($80, `f32.compute_radix`, [value("f32", 1), value("f32", 1)]),
+  () => invoke($82, `f32.compute_radix`, [value("f32", 1), value("f32", 1)]),
   [value("f32", 2)],
 );
 
 
 assert_return(
-  () => invoke($80, `f64.compute_radix`, [value("f64", 1), value("f64", 1)]),
+  () => invoke($82, `f64.compute_radix`, [value("f64", 1), value("f64", 1)]),
   [value("f64", 2)],
 );
 
 
-let $81 = instantiate(`(module
+let $83 = instantiate(`(module
   (func (export "f32.no_fold_sub1_mul_add") (param $$x f32) (param $$y f32) (result f32)
     (f32.add (f32.mul (f32.sub (local.get $$x) (f32.const 1.0)) (local.get $$y)) (local.get $$y)))
 
@@ -6359,7 +6602,7 @@ let $81 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($81, `f32.no_fold_sub1_mul_add`, [
+  () => invoke($83, `f32.no_fold_sub1_mul_add`, [
     value("f32", 0.00000000023283064),
     value("f32", 1),
   ]),
@@ -6368,7 +6611,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($81, `f64.no_fold_sub1_mul_add`, [
+  () => invoke($83, `f64.no_fold_sub1_mul_add`, [
     value("f64", 0.00000000000000000005421010862427522),
     value("f64", 1),
   ]),
@@ -6376,7 +6619,7 @@ assert_return(
 );
 
 
-let $82 = instantiate(`(module
+let $84 = instantiate(`(module
   (func (export "f32.no_fold_add_le_monotonicity") (param $$x f32) (param $$y f32) (param $$z f32) (result i32)
     (f32.le (f32.add (local.get $$x) (local.get $$z)) (f32.add (local.get $$y) (local.get $$z))))
 
@@ -6392,7 +6635,7 @@ let $82 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($82, `f32.no_fold_add_le_monotonicity`, [
+  () => invoke($84, `f32.no_fold_add_le_monotonicity`, [
     value("f32", 0),
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
@@ -6402,7 +6645,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($82, `f32.no_fold_add_le_monotonicity`, [
+  () => invoke($84, `f32.no_fold_add_le_monotonicity`, [
     value("f32", Infinity),
     value("f32", -Infinity),
     value("f32", Infinity),
@@ -6412,7 +6655,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($82, `f64.no_fold_add_le_monotonicity`, [
+  () => invoke($84, `f64.no_fold_add_le_monotonicity`, [
     value("f64", 0),
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
@@ -6422,7 +6665,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($82, `f64.no_fold_add_le_monotonicity`, [
+  () => invoke($84, `f64.no_fold_add_le_monotonicity`, [
     value("f64", Infinity),
     value("f64", -Infinity),
     value("f64", Infinity),
@@ -6431,7 +6674,7 @@ assert_return(
 );
 
 
-let $83 = instantiate(`(module
+let $85 = instantiate(`(module
   (func (export "f32.not_lt") (param $$x f32) (param $$y f32) (result i32)
     (i32.eqz (f32.lt (local.get $$x) (local.get $$y))))
 
@@ -6459,7 +6702,7 @@ let $83 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($83, `f32.not_lt`, [
+  () => invoke($85, `f32.not_lt`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -6468,7 +6711,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($83, `f32.not_le`, [
+  () => invoke($85, `f32.not_le`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -6477,7 +6720,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($83, `f32.not_gt`, [
+  () => invoke($85, `f32.not_gt`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -6486,7 +6729,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($83, `f32.not_ge`, [
+  () => invoke($85, `f32.not_ge`, [
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
     value("f32", 0),
   ]),
@@ -6495,7 +6738,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($83, `f64.not_lt`, [
+  () => invoke($85, `f64.not_lt`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -6504,7 +6747,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($83, `f64.not_le`, [
+  () => invoke($85, `f64.not_le`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -6513,7 +6756,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($83, `f64.not_gt`, [
+  () => invoke($85, `f64.not_gt`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -6522,7 +6765,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($83, `f64.not_ge`, [
+  () => invoke($85, `f64.not_ge`, [
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
     value("f64", 0),
   ]),
@@ -6530,7 +6773,7 @@ assert_return(
 );
 
 
-let $84 = instantiate(`(module
+let $86 = instantiate(`(module
   (func (export "f32.epsilon") (result f32)
     (f32.sub (f32.const 1.0) (f32.mul (f32.const 3.0) (f32.sub (f32.div (f32.const 4.0) (f32.const 3.0)) (f32.const 1.0)))))
 
@@ -6539,13 +6782,13 @@ let $84 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($84, `f32.epsilon`, []), [value("f32", -0.00000011920929)]);
+assert_return(() => invoke($86, `f32.epsilon`, []), [value("f32", -0.00000011920929)]);
 
 
-assert_return(() => invoke($84, `f64.epsilon`, []), [value("f64", 0.0000000000000002220446049250313)]);
+assert_return(() => invoke($86, `f64.epsilon`, []), [value("f64", 0.0000000000000002220446049250313)]);
 
 
-let $85 = instantiate(`(module
+let $87 = instantiate(`(module
   (func (export "f32.epsilon") (result f32)
     (local $$x f32)
     (local $$result f32)
@@ -6594,13 +6837,13 @@ let $85 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($85, `f32.epsilon`, []), [value("f32", 0.00000011920929)]);
+assert_return(() => invoke($87, `f32.epsilon`, []), [value("f32", 0.00000011920929)]);
 
 
-assert_return(() => invoke($85, `f64.epsilon`, []), [value("f64", 0.0000000000000002220446049250313)]);
+assert_return(() => invoke($87, `f64.epsilon`, []), [value("f64", 0.0000000000000002220446049250313)]);
 
 
-let $86 = instantiate(`(module
+let $88 = instantiate(`(module
   (func (export "f32.no_trichotomy_lt") (param $$x f32) (param $$y f32) (result i32)
     (i32.or (f32.lt (local.get $$x) (local.get $$y)) (f32.ge (local.get $$x) (local.get $$y))))
   (func (export "f32.no_trichotomy_le") (param $$x f32) (param $$y f32) (result i32)
@@ -6622,7 +6865,7 @@ let $86 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($86, `f32.no_trichotomy_lt`, [
+  () => invoke($88, `f32.no_trichotomy_lt`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -6631,7 +6874,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($86, `f32.no_trichotomy_le`, [
+  () => invoke($88, `f32.no_trichotomy_le`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -6640,7 +6883,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($86, `f32.no_trichotomy_gt`, [
+  () => invoke($88, `f32.no_trichotomy_gt`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -6649,7 +6892,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($86, `f32.no_trichotomy_ge`, [
+  () => invoke($88, `f32.no_trichotomy_ge`, [
     value("f32", 0),
     bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
   ]),
@@ -6658,7 +6901,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($86, `f64.no_trichotomy_lt`, [
+  () => invoke($88, `f64.no_trichotomy_lt`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -6667,7 +6910,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($86, `f64.no_trichotomy_le`, [
+  () => invoke($88, `f64.no_trichotomy_le`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -6676,7 +6919,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($86, `f64.no_trichotomy_gt`, [
+  () => invoke($88, `f64.no_trichotomy_gt`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -6685,7 +6928,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($86, `f64.no_trichotomy_ge`, [
+  () => invoke($88, `f64.no_trichotomy_ge`, [
     value("f64", 0),
     bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
   ]),
@@ -6693,7 +6936,7 @@ assert_return(
 );
 
 
-let $87 = instantiate(`(module
+let $89 = instantiate(`(module
   (func (export "f32.arithmetic_nan_bitpattern")
         (param $$x i32) (param $$y i32) (result i32)
     (i32.and (i32.reinterpret_f32
@@ -6774,64 +7017,64 @@ let $87 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($87, `f32.arithmetic_nan_bitpattern`, [2139107856, 2139107856]),
+  () => invoke($89, `f32.arithmetic_nan_bitpattern`, [2139107856, 2139107856]),
   [value("i32", 2143289344)],
 );
 
 
-assert_return(() => invoke($87, `f32.canonical_nan_bitpattern`, [0, 0]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `f32.canonical_nan_bitpattern`, [0, 0]), [value("i32", 2143289344)]);
 
 
 assert_return(
-  () => invoke($87, `f32.canonical_nan_bitpattern`, [2143289344, 2143289344]),
-  [value("i32", 2143289344)],
-);
-
-
-assert_return(
-  () => invoke($87, `f32.canonical_nan_bitpattern`, [-4194304, 2143289344]),
+  () => invoke($89, `f32.canonical_nan_bitpattern`, [2143289344, 2143289344]),
   [value("i32", 2143289344)],
 );
 
 
 assert_return(
-  () => invoke($87, `f32.canonical_nan_bitpattern`, [2143289344, -4194304]),
+  () => invoke($89, `f32.canonical_nan_bitpattern`, [-4194304, 2143289344]),
   [value("i32", 2143289344)],
 );
 
 
 assert_return(
-  () => invoke($87, `f32.canonical_nan_bitpattern`, [-4194304, -4194304]),
+  () => invoke($89, `f32.canonical_nan_bitpattern`, [2143289344, -4194304]),
   [value("i32", 2143289344)],
 );
 
 
 assert_return(
-  () => invoke($87, `f32.nonarithmetic_nan_bitpattern`, [2143302160]),
+  () => invoke($89, `f32.canonical_nan_bitpattern`, [-4194304, -4194304]),
+  [value("i32", 2143289344)],
+);
+
+
+assert_return(
+  () => invoke($89, `f32.nonarithmetic_nan_bitpattern`, [2143302160]),
   [value("i32", -4181488)],
 );
 
 
 assert_return(
-  () => invoke($87, `f32.nonarithmetic_nan_bitpattern`, [-4181488]),
+  () => invoke($89, `f32.nonarithmetic_nan_bitpattern`, [-4181488]),
   [value("i32", 2143302160)],
 );
 
 
 assert_return(
-  () => invoke($87, `f32.nonarithmetic_nan_bitpattern`, [2139107856]),
+  () => invoke($89, `f32.nonarithmetic_nan_bitpattern`, [2139107856]),
   [value("i32", -8375792)],
 );
 
 
 assert_return(
-  () => invoke($87, `f32.nonarithmetic_nan_bitpattern`, [-8375792]),
+  () => invoke($89, `f32.nonarithmetic_nan_bitpattern`, [-8375792]),
   [value("i32", 2139107856)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.arithmetic_nan_bitpattern`, [
+  () => invoke($89, `f64.arithmetic_nan_bitpattern`, [
     9218868437227418128n,
     9218868437227418128n,
   ]),
@@ -6840,13 +7083,13 @@ assert_return(
 
 
 assert_return(
-  () => invoke($87, `f64.canonical_nan_bitpattern`, [0n, 0n]),
+  () => invoke($89, `f64.canonical_nan_bitpattern`, [0n, 0n]),
   [value("i64", 9221120237041090560n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.canonical_nan_bitpattern`, [
+  () => invoke($89, `f64.canonical_nan_bitpattern`, [
     9221120237041090560n,
     9221120237041090560n,
   ]),
@@ -6855,7 +7098,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($87, `f64.canonical_nan_bitpattern`, [
+  () => invoke($89, `f64.canonical_nan_bitpattern`, [
     -2251799813685248n,
     9221120237041090560n,
   ]),
@@ -6864,7 +7107,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($87, `f64.canonical_nan_bitpattern`, [
+  () => invoke($89, `f64.canonical_nan_bitpattern`, [
     9221120237041090560n,
     -2251799813685248n,
   ]),
@@ -6873,7 +7116,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($87, `f64.canonical_nan_bitpattern`, [
+  () => invoke($89, `f64.canonical_nan_bitpattern`, [
     -2251799813685248n,
     -2251799813685248n,
   ]),
@@ -6882,87 +7125,87 @@ assert_return(
 
 
 assert_return(
-  () => invoke($87, `f64.nonarithmetic_nan_bitpattern`, [9221120237041103376n]),
+  () => invoke($89, `f64.nonarithmetic_nan_bitpattern`, [9221120237041103376n]),
   [value("i64", -2251799813672432n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.nonarithmetic_nan_bitpattern`, [-2251799813672432n]),
+  () => invoke($89, `f64.nonarithmetic_nan_bitpattern`, [-2251799813672432n]),
   [value("i64", 9221120237041103376n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.nonarithmetic_nan_bitpattern`, [9218868437227418128n]),
+  () => invoke($89, `f64.nonarithmetic_nan_bitpattern`, [9218868437227418128n]),
   [value("i64", -4503599627357680n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.nonarithmetic_nan_bitpattern`, [-4503599627357680n]),
+  () => invoke($89, `f64.nonarithmetic_nan_bitpattern`, [-4503599627357680n]),
   [value("i64", 9218868437227418128n)],
 );
 
 
-assert_return(() => invoke($87, `f32.no_fold_sub_zero`, [2141192192]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `f32.no_fold_sub_zero`, [2141192192]), [value("i32", 2143289344)]);
 
 
-assert_return(() => invoke($87, `f32.no_fold_neg0_sub`, [2141192192]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `f32.no_fold_neg0_sub`, [2141192192]), [value("i32", 2143289344)]);
 
 
-assert_return(() => invoke($87, `f32.no_fold_mul_one`, [2141192192]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `f32.no_fold_mul_one`, [2141192192]), [value("i32", 2143289344)]);
 
 
-assert_return(() => invoke($87, `f32.no_fold_neg1_mul`, [2141192192]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `f32.no_fold_neg1_mul`, [2141192192]), [value("i32", 2143289344)]);
 
 
-assert_return(() => invoke($87, `f32.no_fold_div_one`, [2141192192]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `f32.no_fold_div_one`, [2141192192]), [value("i32", 2143289344)]);
 
 
-assert_return(() => invoke($87, `f32.no_fold_div_neg1`, [2141192192]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `f32.no_fold_div_neg1`, [2141192192]), [value("i32", 2143289344)]);
 
 
 assert_return(
-  () => invoke($87, `f64.no_fold_sub_zero`, [9219994337134247936n]),
+  () => invoke($89, `f64.no_fold_sub_zero`, [9219994337134247936n]),
   [value("i64", 9221120237041090560n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.no_fold_neg0_sub`, [9219994337134247936n]),
+  () => invoke($89, `f64.no_fold_neg0_sub`, [9219994337134247936n]),
   [value("i64", 9221120237041090560n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.no_fold_mul_one`, [9219994337134247936n]),
+  () => invoke($89, `f64.no_fold_mul_one`, [9219994337134247936n]),
   [value("i64", 9221120237041090560n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.no_fold_neg1_mul`, [9219994337134247936n]),
+  () => invoke($89, `f64.no_fold_neg1_mul`, [9219994337134247936n]),
   [value("i64", 9221120237041090560n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.no_fold_div_one`, [9219994337134247936n]),
+  () => invoke($89, `f64.no_fold_div_one`, [9219994337134247936n]),
   [value("i64", 9221120237041090560n)],
 );
 
 
 assert_return(
-  () => invoke($87, `f64.no_fold_div_neg1`, [9219994337134247936n]),
+  () => invoke($89, `f64.no_fold_div_neg1`, [9219994337134247936n]),
   [value("i64", 9221120237041090560n)],
 );
 
 
-assert_return(() => invoke($87, `no_fold_promote_demote`, [2141192192]), [value("i32", 2143289344)]);
+assert_return(() => invoke($89, `no_fold_promote_demote`, [2141192192]), [value("i32", 2143289344)]);
 
 
-let $88 = instantiate(`(module
+let $90 = instantiate(`(module
   (func (export "dot_product_example")
         (param $$x0 f64) (param $$x1 f64) (param $$x2 f64) (param $$x3 f64)
         (param $$y0 f64) (param $$y1 f64) (param $$y2 f64) (param $$y3 f64)
@@ -6987,7 +7230,7 @@ let $88 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($88, `dot_product_example`, [
+  () => invoke($90, `dot_product_example`, [
     value("f64", 32000000),
     value("f64", 1),
     value("f64", -1),
@@ -7002,7 +7245,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($88, `with_binary_sum_collapse`, [
+  () => invoke($90, `with_binary_sum_collapse`, [
     value("f64", 32000000),
     value("f64", 1),
     value("f64", -1),
@@ -7016,7 +7259,7 @@ assert_return(
 );
 
 
-let $89 = instantiate(`(module
+let $91 = instantiate(`(module
   (func (export "f32.contract2fma")
         (param $$x f32) (param $$y f32) (result f32)
     (f32.sqrt (f32.sub (f32.mul (local.get $$x) (local.get $$x))
@@ -7029,19 +7272,19 @@ let $89 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($89, `f32.contract2fma`, [value("f32", 1), value("f32", 1)]),
+  () => invoke($91, `f32.contract2fma`, [value("f32", 1), value("f32", 1)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($89, `f32.contract2fma`, [value("f32", 1.1), value("f32", 1.1)]),
+  () => invoke($91, `f32.contract2fma`, [value("f32", 1.1), value("f32", 1.1)]),
   [value("f32", 0)],
 );
 
 
 assert_return(
-  () => invoke($89, `f32.contract2fma`, [
+  () => invoke($91, `f32.contract2fma`, [
     value("f32", 1.1999999),
     value("f32", 1.1999999),
   ]),
@@ -7050,24 +7293,24 @@ assert_return(
 
 
 assert_return(
-  () => invoke($89, `f64.contract2fma`, [value("f64", 1), value("f64", 1)]),
+  () => invoke($91, `f64.contract2fma`, [value("f64", 1), value("f64", 1)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($89, `f64.contract2fma`, [value("f64", 1.1), value("f64", 1.1)]),
+  () => invoke($91, `f64.contract2fma`, [value("f64", 1.1), value("f64", 1.1)]),
   [value("f64", 0)],
 );
 
 
 assert_return(
-  () => invoke($89, `f64.contract2fma`, [value("f64", 1.2), value("f64", 1.2)]),
+  () => invoke($91, `f64.contract2fma`, [value("f64", 1.2), value("f64", 1.2)]),
   [value("f64", 0)],
 );
 
 
-let $90 = instantiate(`(module
+let $92 = instantiate(`(module
   (func (export "f32.division_by_small_number")
         (param $$a f32) (param $$b f32) (param $$c f32) (result f32)
     (f32.sub (local.get $$a) (f32.div (local.get $$b) (local.get $$c))))
@@ -7078,7 +7321,7 @@ let $90 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($90, `f32.division_by_small_number`, [
+  () => invoke($92, `f32.division_by_small_number`, [
     value("f32", 112000000),
     value("f32", 100000),
     value("f32", 0.0009),
@@ -7088,7 +7331,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($90, `f64.division_by_small_number`, [
+  () => invoke($92, `f64.division_by_small_number`, [
     value("f64", 112000000),
     value("f64", 100000),
     value("f64", 0.0009),
@@ -7097,7 +7340,7 @@ assert_return(
 );
 
 
-let $91 = instantiate(`(module
+let $93 = instantiate(`(module
   (func (export "f32.golden_ratio") (param $$a f32) (param $$b f32) (param $$c f32) (result f32)
     (f32.mul (local.get 0) (f32.add (local.get 1) (f32.sqrt (local.get 2)))))
   (func (export "f64.golden_ratio") (param $$a f64) (param $$b f64) (param $$c f64) (result f64)
@@ -7106,7 +7349,7 @@ let $91 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($91, `f32.golden_ratio`, [
+  () => invoke($93, `f32.golden_ratio`, [
     value("f32", 0.5),
     value("f32", 1),
     value("f32", 5),
@@ -7116,7 +7359,7 @@ assert_return(
 
 
 assert_return(
-  () => invoke($91, `f64.golden_ratio`, [
+  () => invoke($93, `f64.golden_ratio`, [
     value("f64", 0.5),
     value("f64", 1),
     value("f64", 5),
@@ -7125,7 +7368,7 @@ assert_return(
 );
 
 
-let $92 = instantiate(`(module
+let $94 = instantiate(`(module
   (func (export "f32.silver_means") (param $$n f32) (result f32)
     (f32.mul (f32.const 0.5)
              (f32.add (local.get $$n)
@@ -7139,67 +7382,67 @@ let $92 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($92, `f32.silver_means`, [value("f32", 0)]), [value("f32", 1)]);
+assert_return(() => invoke($94, `f32.silver_means`, [value("f32", 0)]), [value("f32", 1)]);
 
 
-assert_return(() => invoke($92, `f32.silver_means`, [value("f32", 1)]), [value("f32", 1.618034)]);
+assert_return(() => invoke($94, `f32.silver_means`, [value("f32", 1)]), [value("f32", 1.618034)]);
 
 
-assert_return(() => invoke($92, `f32.silver_means`, [value("f32", 2)]), [value("f32", 2.4142137)]);
+assert_return(() => invoke($94, `f32.silver_means`, [value("f32", 2)]), [value("f32", 2.4142137)]);
 
 
-assert_return(() => invoke($92, `f32.silver_means`, [value("f32", 3)]), [value("f32", 3.3027756)]);
+assert_return(() => invoke($94, `f32.silver_means`, [value("f32", 3)]), [value("f32", 3.3027756)]);
 
 
-assert_return(() => invoke($92, `f32.silver_means`, [value("f32", 4)]), [value("f32", 4.236068)]);
+assert_return(() => invoke($94, `f32.silver_means`, [value("f32", 4)]), [value("f32", 4.236068)]);
 
 
-assert_return(() => invoke($92, `f32.silver_means`, [value("f32", 5)]), [value("f32", 5.192582)]);
+assert_return(() => invoke($94, `f32.silver_means`, [value("f32", 5)]), [value("f32", 5.192582)]);
 
 
-assert_return(() => invoke($92, `f64.silver_means`, [value("f64", 0)]), [value("f64", 1)]);
+assert_return(() => invoke($94, `f64.silver_means`, [value("f64", 0)]), [value("f64", 1)]);
 
 
 assert_return(
-  () => invoke($92, `f64.silver_means`, [value("f64", 1)]),
+  () => invoke($94, `f64.silver_means`, [value("f64", 1)]),
   [value("f64", 1.618033988749895)],
 );
 
 
 assert_return(
-  () => invoke($92, `f64.silver_means`, [value("f64", 2)]),
+  () => invoke($94, `f64.silver_means`, [value("f64", 2)]),
   [value("f64", 2.414213562373095)],
 );
 
 
 assert_return(
-  () => invoke($92, `f64.silver_means`, [value("f64", 3)]),
+  () => invoke($94, `f64.silver_means`, [value("f64", 3)]),
   [value("f64", 3.302775637731995)],
 );
 
 
 assert_return(
-  () => invoke($92, `f64.silver_means`, [value("f64", 4)]),
+  () => invoke($94, `f64.silver_means`, [value("f64", 4)]),
   [value("f64", 4.23606797749979)],
 );
 
 
 assert_return(
-  () => invoke($92, `f64.silver_means`, [value("f64", 5)]),
+  () => invoke($94, `f64.silver_means`, [value("f64", 5)]),
   [value("f64", 5.192582403567252)],
 );
 
 
-let $93 = instantiate(`(module
+let $95 = instantiate(`(module
   (func (export "point_four") (param $$four f64) (param $$ten f64) (result i32)
     (f64.lt (f64.div (local.get $$four) (local.get $$ten)) (f64.const 0.4)))
 )`);
 
 
-assert_return(() => invoke($93, `point_four`, [value("f64", 4), value("f64", 10)]), [value("i32", 0)]);
+assert_return(() => invoke($95, `point_four`, [value("f64", 4), value("f64", 10)]), [value("i32", 0)]);
 
 
-let $94 = instantiate(`(module
+let $96 = instantiate(`(module
   (func (export "tau") (param i32) (result f64)
     (local f64 f64 f64 f64)
     f64.const 0x0p+0
@@ -7265,13 +7508,13 @@ let $94 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($94, `tau`, [10]), [value("f64", 6.283185307179583)]);
+assert_return(() => invoke($96, `tau`, [10]), [value("f64", 6.283185307179583)]);
 
 
-assert_return(() => invoke($94, `tau`, [11]), [value("f64", 6.283185307179586)]);
+assert_return(() => invoke($96, `tau`, [11]), [value("f64", 6.283185307179586)]);
 
 
-let $95 = instantiate(`(module
+let $97 = instantiate(`(module
   (func (export "f32.no_fold_conditional_inc") (param $$x f32) (param $$y f32) (result f32)
     (select (local.get $$x)
             (f32.add (local.get $$x) (f32.const 1.0))
@@ -7284,12 +7527,12 @@ let $95 = instantiate(`(module
 
 
 assert_return(
-  () => invoke($95, `f32.no_fold_conditional_inc`, [value("f32", -0), value("f32", -1)]),
+  () => invoke($97, `f32.no_fold_conditional_inc`, [value("f32", -0), value("f32", -1)]),
   [value("f32", -0)],
 );
 
 
 assert_return(
-  () => invoke($95, `f64.no_fold_conditional_inc`, [value("f64", -0), value("f64", -1)]),
+  () => invoke($97, `f64.no_fold_conditional_inc`, [value("f64", -0), value("f64", -1)]),
   [value("f64", -0)],
 );

@@ -144,6 +144,23 @@ impl CanonicalFunctionSection {
         self.num_added += 1;
         self
     }
+
+    
+    
+    pub fn thread_spawn(&mut self, ty_index: u32) -> &mut Self {
+        self.bytes.push(0x05);
+        ty_index.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_hw_concurrency(&mut self) -> &mut Self {
+        self.bytes.push(0x06);
+        self.num_added += 1;
+        self
+    }
 }
 
 impl Encode for CanonicalFunctionSection {

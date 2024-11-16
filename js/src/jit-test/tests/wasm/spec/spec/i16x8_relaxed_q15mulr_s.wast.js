@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let $0 = instantiate(`(module
+    (func (export "i16x8.relaxed_q15mulr_s") (param v128 v128) (result v128) (i16x8.relaxed_q15mulr_s (local.get 0) (local.get 1)))
+
+    (func (export "i16x8.relaxed_q15mulr_s_cmp") (param v128 v128) (result v128)
+          (i16x8.eq
+            (i16x8.relaxed_q15mulr_s (local.get 0) (local.get 1))
+            (i16x8.relaxed_q15mulr_s (local.get 0) (local.get 1))))
+)`);
+
+
+assert_return(
+  () => invoke($0, `i16x8.relaxed_q15mulr_s`, [
+    i16x8([0x8000, 0x8001, 0x7fff, 0x0, 0x0, 0x0, 0x0, 0x0]),
+    i16x8([0x8000, 0x8000, 0x7fff, 0x0, 0x0, 0x0, 0x0, 0x0]),
+  ]),
+  [
+    either(
+      i16x8([0x8000, 0x7fff, 0x7ffe, 0x0, 0x0, 0x0, 0x0, 0x0]),
+      i16x8([0x7fff, 0x7fff, 0x7ffe, 0x0, 0x0, 0x0, 0x0, 0x0]),
+    ),
+  ],
+);
+
+
+assert_return(
+  () => invoke($0, `i16x8.relaxed_q15mulr_s_cmp`, [
+    i16x8([0x8000, 0x8001, 0x7fff, 0x0, 0x0, 0x0, 0x0, 0x0]),
+    i16x8([0x8000, 0x8000, 0x7fff, 0x0, 0x0, 0x0, 0x0, 0x0]),
+  ]),
+  [i16x8([0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff])],
+);

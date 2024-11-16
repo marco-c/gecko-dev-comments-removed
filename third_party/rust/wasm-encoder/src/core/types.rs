@@ -6,21 +6,10 @@ pub struct SubType {
     
     pub is_final: bool,
     
+    
     pub supertype_idx: Option<u32>,
     
     pub composite_type: CompositeType,
-}
-
-impl Encode for SubType {
-    fn encode(&self, sink: &mut Vec<u8>) {
-        
-        
-        if self.supertype_idx.is_some() || !self.is_final {
-            sink.push(if self.is_final { 0x4f } else { 0x50 });
-            self.supertype_idx.encode(sink);
-        }
-        self.composite_type.encode(sink);
-    }
 }
 
 
@@ -33,27 +22,6 @@ pub struct CompositeType {
     pub shared: bool,
 }
 
-impl Encode for CompositeType {
-    fn encode(&self, sink: &mut Vec<u8>) {
-        if self.shared {
-            sink.push(0x65);
-        }
-        match &self.inner {
-            CompositeInnerType::Func(ty) => TypeSection::encode_function(
-                sink,
-                ty.params().iter().copied(),
-                ty.results().iter().copied(),
-            ),
-            CompositeInnerType::Array(ArrayType(ty)) => {
-                TypeSection::encode_array(sink, &ty.element_type, ty.mutable)
-            }
-            CompositeInnerType::Struct(ty) => {
-                TypeSection::encode_struct(sink, ty.fields.iter().cloned())
-            }
-        }
-    }
-}
-
 
 #[derive(Debug, Clone)]
 pub enum CompositeInnerType {
@@ -63,6 +31,8 @@ pub enum CompositeInnerType {
     Array(ArrayType),
     
     Struct(StructType),
+    
+    Cont(ContType),
 }
 
 
@@ -119,6 +89,10 @@ impl StorageType {
         }
     }
 }
+
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub struct ContType(pub u32);
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -328,29 +302,34 @@ impl RefType {
 
 impl Encode for RefType {
     fn encode(&self, sink: &mut Vec<u8>) {
-        if self.nullable {
+        match self {
             
             
-            use AbstractHeapType::*;
-            match self.heap_type {
-                HeapType::Abstract {
-                    shared: false,
-                    ty: Func,
-                } => return sink.push(0x70),
-                HeapType::Abstract {
-                    shared: false,
-                    ty: Extern,
-                } => return sink.push(0x6f),
-                _ => {}
+            RefType {
+                nullable: true,
+                heap_type: heap @ HeapType::Abstract { .. },
+            } => {
+                heap.encode(sink);
+            }
+
+            
+            RefType {
+                nullable: true,
+                heap_type,
+            } => {
+                sink.push(0x63);
+                heap_type.encode(sink);
+            }
+
+            
+            RefType {
+                nullable: false,
+                heap_type,
+            } => {
+                sink.push(0x64);
+                heap_type.encode(sink);
             }
         }
-
-        if self.nullable {
-            sink.push(0x63);
-        } else {
-            sink.push(0x64);
-        }
-        self.heap_type.encode(sink);
     }
 }
 
@@ -470,6 +449,12 @@ pub enum AbstractHeapType {
 
     
     NoExn,
+
+    
+    Cont,
+
+    
+    NoCont,
 }
 
 impl Encode for AbstractHeapType {
@@ -488,6 +473,8 @@ impl Encode for AbstractHeapType {
             I31 => sink.push(0x6C),
             Exn => sink.push(0x69),
             NoExn => sink.push(0x74),
+            Cont => sink.push(0x68),
+            NoCont => sink.push(0x75),
         }
     }
 }
@@ -531,106 +518,13 @@ impl TypeSection {
     }
 
     
-    pub fn function<P, R>(&mut self, params: P, results: R) -> &mut Self
-    where
-        P: IntoIterator<Item = ValType>,
-        P::IntoIter: ExactSizeIterator,
-        R: IntoIterator<Item = ValType>,
-        R::IntoIter: ExactSizeIterator,
-    {
-        Self::encode_function(&mut self.bytes, params, results);
+    #[must_use = "the encoder must be used to encode the type"]
+    pub fn ty(&mut self) -> CoreTypeEncoder {
         self.num_added += 1;
-        self
-    }
-
-    
-    pub fn func_type(&mut self, ty: &FuncType) -> &mut Self {
-        Self::encode_function(
-            &mut self.bytes,
-            ty.params().iter().cloned(),
-            ty.results().iter().cloned(),
-        );
-        self.num_added += 1;
-        self
-    }
-
-    fn encode_function<P, R>(sink: &mut Vec<u8>, params: P, results: R)
-    where
-        P: IntoIterator<Item = ValType>,
-        P::IntoIter: ExactSizeIterator,
-        R: IntoIterator<Item = ValType>,
-        R::IntoIter: ExactSizeIterator,
-    {
-        let params = params.into_iter();
-        let results = results.into_iter();
-
-        sink.push(0x60);
-        params.len().encode(sink);
-        params.for_each(|p| p.encode(sink));
-        results.len().encode(sink);
-        results.for_each(|p| p.encode(sink));
-    }
-
-    
-    pub fn array(&mut self, ty: &StorageType, mutable: bool) -> &mut Self {
-        Self::encode_array(&mut self.bytes, ty, mutable);
-        self.num_added += 1;
-        self
-    }
-
-    fn encode_array(sink: &mut Vec<u8>, ty: &StorageType, mutable: bool) {
-        sink.push(0x5e);
-        Self::encode_field(sink, ty, mutable);
-    }
-
-    fn encode_field(sink: &mut Vec<u8>, ty: &StorageType, mutable: bool) {
-        ty.encode(sink);
-        sink.push(mutable as u8);
-    }
-
-    
-    pub fn struct_<F>(&mut self, fields: F) -> &mut Self
-    where
-        F: IntoIterator<Item = FieldType>,
-        F::IntoIter: ExactSizeIterator,
-    {
-        Self::encode_struct(&mut self.bytes, fields);
-        self.num_added += 1;
-        self
-    }
-
-    fn encode_struct<F>(sink: &mut Vec<u8>, fields: F)
-    where
-        F: IntoIterator<Item = FieldType>,
-        F::IntoIter: ExactSizeIterator,
-    {
-        let fields = fields.into_iter();
-        sink.push(0x5f);
-        fields.len().encode(sink);
-        for f in fields {
-            Self::encode_field(sink, &f.element_type, f.mutable);
+        CoreTypeEncoder {
+            bytes: &mut self.bytes,
+            push_prefix_if_component_core_type: false,
         }
-    }
-
-    
-    pub fn subtype(&mut self, ty: &SubType) -> &mut Self {
-        ty.encode(&mut self.bytes);
-        self.num_added += 1;
-        self
-    }
-
-    
-    pub fn rec<T>(&mut self, types: T) -> &mut Self
-    where
-        T: IntoIterator<Item = SubType>,
-        T::IntoIter: ExactSizeIterator,
-    {
-        let types = types.into_iter();
-        self.bytes.push(0x4e);
-        types.len().encode(&mut self.bytes);
-        types.for_each(|t| t.encode(&mut self.bytes));
-        self.num_added += 1;
-        self
     }
 }
 
@@ -646,6 +540,151 @@ impl Section for TypeSection {
     }
 }
 
+
+
+#[derive(Debug)]
+pub struct CoreTypeEncoder<'a> {
+    pub(crate) bytes: &'a mut Vec<u8>,
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) push_prefix_if_component_core_type: bool,
+}
+impl<'a> CoreTypeEncoder<'a> {
+    
+    pub fn function<P, R>(mut self, params: P, results: R)
+    where
+        P: IntoIterator<Item = ValType>,
+        P::IntoIter: ExactSizeIterator,
+        R: IntoIterator<Item = ValType>,
+        R::IntoIter: ExactSizeIterator,
+    {
+        self.encode_function(params, results);
+    }
+
+    
+    pub fn func_type(mut self, ty: &FuncType) {
+        self.encode_function(ty.params().iter().cloned(), ty.results().iter().cloned());
+    }
+
+    fn encode_function<P, R>(&mut self, params: P, results: R)
+    where
+        P: IntoIterator<Item = ValType>,
+        P::IntoIter: ExactSizeIterator,
+        R: IntoIterator<Item = ValType>,
+        R::IntoIter: ExactSizeIterator,
+    {
+        let params = params.into_iter();
+        let results = results.into_iter();
+
+        self.bytes.push(0x60);
+        params.len().encode(self.bytes);
+        params.for_each(|p| p.encode(self.bytes));
+        results.len().encode(self.bytes);
+        results.for_each(|p| p.encode(self.bytes));
+    }
+
+    
+    pub fn array(mut self, ty: &StorageType, mutable: bool) {
+        self.encode_array(ty, mutable);
+    }
+
+    fn encode_array(&mut self, ty: &StorageType, mutable: bool) {
+        self.bytes.push(0x5e);
+        self.encode_field(ty, mutable);
+    }
+
+    fn encode_field(&mut self, ty: &StorageType, mutable: bool) {
+        ty.encode(self.bytes);
+        self.bytes.push(mutable as u8);
+    }
+
+    
+    pub fn struct_<F>(mut self, fields: F)
+    where
+        F: IntoIterator<Item = FieldType>,
+        F::IntoIter: ExactSizeIterator,
+    {
+        self.encode_struct(fields);
+    }
+
+    fn encode_struct<F>(&mut self, fields: F)
+    where
+        F: IntoIterator<Item = FieldType>,
+        F::IntoIter: ExactSizeIterator,
+    {
+        let fields = fields.into_iter();
+        self.bytes.push(0x5f);
+        fields.len().encode(self.bytes);
+        for f in fields {
+            self.encode_field(&f.element_type, f.mutable);
+        }
+    }
+
+    fn encode_cont(&mut self, ty: &ContType) {
+        self.bytes.push(0x5d);
+        i64::from(ty.0).encode(self.bytes);
+    }
+
+    
+    pub fn subtype(mut self, ty: &SubType) {
+        self.encode_subtype(ty)
+    }
+
+    
+    fn encode_subtype(&mut self, ty: &SubType) {
+        
+        
+        
+        if ty.supertype_idx.is_some() || !ty.is_final {
+            if ty.is_final {
+                self.bytes.push(0x4f);
+            } else {
+                if self.push_prefix_if_component_core_type {
+                    self.bytes.push(0x00);
+                }
+                self.bytes.push(0x50);
+            }
+            ty.supertype_idx.encode(self.bytes);
+        }
+        if ty.composite_type.shared {
+            self.bytes.push(0x65);
+        }
+        match &ty.composite_type.inner {
+            CompositeInnerType::Func(ty) => {
+                self.encode_function(ty.params().iter().copied(), ty.results().iter().copied())
+            }
+            CompositeInnerType::Array(ArrayType(ty)) => {
+                self.encode_array(&ty.element_type, ty.mutable)
+            }
+            CompositeInnerType::Struct(ty) => self.encode_struct(ty.fields.iter().cloned()),
+            CompositeInnerType::Cont(ty) => self.encode_cont(ty),
+        }
+    }
+
+    
+    pub fn rec<T>(mut self, types: T)
+    where
+        T: IntoIterator<Item = SubType>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        
+        
+        
+        self.push_prefix_if_component_core_type = false;
+        let types = types.into_iter();
+        self.bytes.push(0x4e);
+        types.len().encode(self.bytes);
+        types.for_each(|t| {
+            self.encode_subtype(&t);
+        });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -655,7 +694,7 @@ mod tests {
     #[test]
     fn func_types_dont_require_wasm_gc() {
         let mut types = TypeSection::new();
-        types.subtype(&SubType {
+        types.ty().subtype(&SubType {
             is_final: true,
             supertype_idx: None,
             composite_type: CompositeType {

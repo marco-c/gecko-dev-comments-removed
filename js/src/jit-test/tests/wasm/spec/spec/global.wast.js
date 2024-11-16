@@ -32,6 +32,10 @@ let $0 = instantiate(`(module
 
   (global $$z1 i32 (global.get 0))
   (global $$z2 i64 (global.get 1))
+  (global $$z3 i32 (i32.add (i32.sub (i32.mul (i32.const 20) (i32.const 2)) (i32.const 2)) (i32.const 4)))
+  (global $$z4 i64 (i64.add (i64.sub (i64.mul (i64.const 20) (i64.const 2)) (i64.const 2)) (i64.const 5)))
+  (global $$z5 i32 (i32.add (global.get 0) (i32.const 42)))
+  (global $$z6 i64 (i64.add (global.get 1) (i64.const 42)))
 
   (global $$r externref (ref.null extern))
   (global $$mr (mut externref) (ref.null extern))
@@ -45,6 +49,10 @@ let $0 = instantiate(`(module
   (func (export "get-y") (result i64) (global.get $$y))
   (func (export "get-z1") (result i32) (global.get $$z1))
   (func (export "get-z2") (result i64) (global.get $$z2))
+  (func (export "get-z3") (result i32) (global.get $$z3))
+  (func (export "get-z4") (result i64) (global.get $$z4))
+  (func (export "get-z5") (result i32) (global.get $$z5))
+  (func (export "get-z6") (result i64) (global.get $$z6))
   (func (export "set-x") (param i32) (global.set $$x (local.get 0)))
   (func (export "set-y") (param i64) (global.set $$y (local.get 0)))
   (func (export "set-mr") (param externref) (global.set $$mr (local.get 0)))
@@ -234,6 +242,18 @@ assert_return(() => invoke($0, `get-z1`, []), [value("i32", 666)]);
 assert_return(() => invoke($0, `get-z2`, []), [value("i64", 666n)]);
 
 
+assert_return(() => invoke($0, `get-z3`, []), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `get-z4`, []), [value("i64", 43n)]);
+
+
+assert_return(() => invoke($0, `get-z5`, []), [value("i32", 708)]);
+
+
+assert_return(() => invoke($0, `get-z6`, []), [value("i64", 708n)]);
+
+
 assert_return(() => invoke($0, `get-3`, []), [value("f32", -3)]);
 
 
@@ -386,13 +406,13 @@ assert_return(() => invoke($0, `as-compare-operand`, []), [value("i32", 1)]);
 
 assert_invalid(
   () => instantiate(`(module (global f32 (f32.const 0)) (func (global.set 0 (f32.const 1))))`),
-  `global is immutable`,
+  `immutable global`,
 );
 
 
 assert_invalid(
   () => instantiate(`(module (import "spectest" "global_i32" (global i32)) (func (global.set 0 (i32.const 1))))`),
-  `global is immutable`,
+  `immutable global`,
 );
 
 
@@ -477,22 +497,6 @@ assert_invalid(
 );
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 assert_invalid(
   () => instantiate(`(module (global i32 (global.get 1)) (global i32 (i32.const 0)))`),
   `unknown global`,
@@ -505,13 +509,19 @@ assert_invalid(
 );
 
 
+let $3 = instantiate(`(module (global i32 (i32.const 0)) (global i32 (global.get 0)))`);
+
+
+let $4 = instantiate(`(module (global $$g i32 (i32.const 0)) (global i32 (global.get $$g)))`);
+
+
 assert_invalid(
   () => instantiate(`(module (global (import "test" "global-mut-i32") (mut i32)) (global i32 (global.get 0)))`),
   `constant expression required`,
 );
 
 
-let $3 = instantiate(`(module
+let $5 = instantiate(`(module
   (import "spectest" "global_i32" (global i32))
 )`);
 
@@ -546,7 +556,7 @@ assert_malformed(
 );
 
 
-let $4 = instantiate(`(module
+let $6 = instantiate(`(module
   (global i32 (i32.const 0))
 )`);
 
@@ -791,6 +801,73 @@ assert_invalid(
     )
   )`),
   `type mismatch`,
+);
+
+
+let $7 = instantiate(`(module
+  (global (export "g") i32 (i32.const 4))
+)`);
+
+
+register($7, `G`);
+
+
+let $8 = instantiate(`(module
+  (global $$g0 (import "G" "g") i32)
+  (global $$g1 i32 (i32.const 8))
+  (global $$g2 i32 (global.get $$g0))
+  (global $$g3 i32 (global.get $$g1))
+
+  (global $$gf funcref (ref.func $$f))
+  (func $$f)
+
+  (table $$t 10 funcref (ref.null func))
+  (elem (table $$t) (global.get $$g2) funcref (ref.func $$f))
+  (elem (table $$t) (global.get $$g3) funcref (global.get $$gf))
+
+  (memory $$m 1)
+  (data (global.get $$g2) "\\44\\44\\44\\44")
+  (data (global.get $$g3) "\\88\\88\\88\\88")
+
+  (func (export "get-elem") (param $$i i32) (result funcref)
+    (table.get $$t (local.get $$i))
+  )
+  (func (export "get-data") (param $$i i32) (result i32)
+    (i32.load (local.get $$i))
+  )
+)`);
+
+
+assert_return(() => invoke($8, `get-elem`, [0]), [null]);
+
+
+assert_return(() => invoke($8, `get-elem`, [4]), [new RefWithType('funcref')]);
+
+
+assert_return(() => invoke($8, `get-elem`, [8]), [new RefWithType('funcref')]);
+
+
+assert_return(() => invoke($8, `get-data`, [4]), [value("i32", 1145324612)]);
+
+
+assert_return(() => invoke($8, `get-data`, [8]), [value("i32", -2004318072)]);
+
+
+assert_invalid(
+  () => instantiate(`(module 
+    (global $$g1 i32 (global.get $$g2))
+    (global $$g2 i32 (i32.const 0))
+  )`),
+  `unknown global`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (global $$g funcref (ref.null func))
+    (table $$t 10 funcref (global.get $$g))
+  )`),
+  `unknown global`,
 );
 
 

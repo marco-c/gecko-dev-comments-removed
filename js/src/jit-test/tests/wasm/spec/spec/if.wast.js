@@ -540,6 +540,14 @@ let $0 = instantiate(`(module
     )
     (drop) (drop) (drop)
   )
+
+  ;; Atypical folded condition syntax
+
+  (func (export "atypical-condition")
+    i32.const 0
+    (if (then) (else))
+    (if (i32.const 1) (i32.eqz) (then) (else))
+  )
 )`);
 
 
@@ -935,6 +943,9 @@ assert_return(
 
 
 assert_return(() => invoke($0, `type-use`, []), []);
+
+
+assert_return(() => invoke($0, `atypical-condition`, []), []);
 
 
 assert_malformed(
@@ -1908,4 +1919,10 @@ assert_malformed(
 assert_malformed(
   () => instantiate(`(func i32.const 0 if $$a else $$l end $$l) `),
   `mismatching label`,
+);
+
+
+assert_malformed(
+  () => instantiate(`(func (if i32.const 0 (then) (else))) `),
+  `unexpected token`,
 );
