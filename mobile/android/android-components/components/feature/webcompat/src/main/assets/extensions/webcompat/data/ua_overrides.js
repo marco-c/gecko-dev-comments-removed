@@ -1569,6 +1569,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1898938",
+    platform: "all",
+    domain: "conference.amwell.com",
+    bug: "1898938",
+    config: {
+      matches: ["*://conference.amwell.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA({ noFxQuantum: true });
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
