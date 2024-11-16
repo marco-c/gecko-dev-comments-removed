@@ -9,10 +9,7 @@
 #include "nsICookieBannerListService.h"
 #include "nsCOMPtr.h"
 #include "nsTHashMap.h"
-#include "nsTHashSet.h"
 #include "nsIObserver.h"
-#include "nsIWebProgressListener.h"
-#include "nsWeakReference.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 
@@ -20,17 +17,10 @@ namespace mozilla {
 
 class CookieBannerDomainPrefService;
 
-namespace dom {
-class BrowsingContext;
-}  
-
 class nsCookieBannerService final : public nsIObserver,
-                                    public nsICookieBannerService,
-                                    public nsIWebProgressListener,
-                                    public nsSupportsWeakReference {
+                                    public nsICookieBannerService {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
-  NS_DECL_NSIWEBPROGRESSLISTENER
 
   NS_DECL_NSICOOKIEBANNERSERVICE
 
@@ -55,12 +45,6 @@ class nsCookieBannerService final : public nsIObserver,
 
   
   
-  
-  
-  nsTHashMap<uint64_t, std::tuple<bool, bool>> mReloadTelemetryData;
-
-  
-  
   static void OnPrefChange(const char* aPref, void* aData);
 
   
@@ -76,20 +60,22 @@ class nsCookieBannerService final : public nsIObserver,
 
   nsresult GetClickRulesForDomainInternal(
       const nsACString& aDomain, const bool aIsTopLevel,
-      const bool aReportTelemetry, nsTArray<RefPtr<nsIClickRule>>& aRules);
+      nsTArray<RefPtr<nsIClickRule>>& aRules);
 
   nsresult GetCookieRulesForDomainInternal(
       const nsACString& aBaseDomain, const nsICookieBannerService::Modes aMode,
-      const bool aIsTopLevel, const bool aReportTelemetry,
-      nsTArray<RefPtr<nsICookieRule>>& aCookies);
+      const bool aIsTopLevel, nsTArray<RefPtr<nsICookieRule>>& aCookies);
 
   nsresult HasRuleForBrowsingContextInternal(
       mozilla::dom::BrowsingContext* aBrowsingContext, bool aIgnoreDomainPref,
       bool& aHasClickRule, bool& aHasCookieRule);
 
-  nsresult GetRuleForDomain(const nsACString& aDomain, bool aIsTopLevel,
-                            nsICookieBannerRule** aRule,
-                            bool aReportTelemetry = false);
+  nsresult GetRuleForDomain(const nsACString& aDomain,
+                            nsICookieBannerRule** aRule);
+
+  nsresult GetServiceModeForBrowsingContext(
+      dom::BrowsingContext* aBrowsingContext, bool aIgnoreDomainPref,
+      nsICookieBannerService::Modes* aMode);
 
   
 
@@ -103,38 +89,7 @@ class nsCookieBannerService final : public nsIObserver,
                                  const bool aIsPrivate,
                                  const bool aPersistInPrivateBrowsing);
 
-  
-
-
-
-
-
-
-
-
-
-
-  nsresult GetRuleForURI(nsIURI* aURI, bool aIsTopLevel,
-                         nsICookieBannerRule** aRule, nsACString& aDomain,
-                         bool aReportTelemetry = false);
-
-  nsresult GetServiceModeForBrowsingContext(
-      dom::BrowsingContext* aBrowsingContext, bool aIgnoreDomainPref,
-      nsICookieBannerService::Modes* aMode);
-
-  nsresult RegisterWebProgressListener(nsISupports* aSubject);
-  nsresult RemoveWebProgressListener(nsISupports* aSubject);
-
   void DailyReportTelemetry();
-
-  
-  
-  nsTHashSet<nsCStringHashKey> mTelemetryReportedTopDomains;
-  nsTHashSet<nsCStringHashKey> mTelemetryReportedIFrameDomains;
-
-  void ReportRuleLookupTelemetry(const nsACString& aDomain,
-                                 nsICookieBannerRule* aRule, bool aIsTopLevel);
-
   
   
   typedef struct ExecutedData {

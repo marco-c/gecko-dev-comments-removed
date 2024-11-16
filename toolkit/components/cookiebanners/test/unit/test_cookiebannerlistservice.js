@@ -177,9 +177,7 @@ add_setup(async () => {
     insertRule,
     removeRule,
     resetRules() {},
-    resetDomainTelemetryRecord() {},
   };
-
   
   registerCleanupFunction(() => {
     Services.cookieBanners = oldCookieBanners;
