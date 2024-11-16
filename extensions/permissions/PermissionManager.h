@@ -10,7 +10,6 @@
 #include "nsIPermissionManager.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
-#include "nsIRemotePermissionService.h"
 #include "nsWeakReference.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
@@ -621,34 +620,28 @@ class PermissionManager final : public nsIPermissionManager,
 
   
   struct DefaultEntry {
-    nsCString mOrigin;
+    DefaultEntry() : mOp(eImportMatchTypeHost), mPermission(0) {}
+
+    enum Op {
+      eImportMatchTypeHost,
+      eImportMatchTypeOrigin,
+    };
+
+    Op mOp;
+
+    nsCString mHostOrOrigin;
     nsCString mType;
-    uint32_t mPermission = 0;
+    uint32_t mPermission;
   };
 
   
   
-  nsTArray<DefaultEntry> mDefaultEntriesForImport;
-  
-  
-  void AddDefaultEntryForImport(const nsACString& aOrigin,
-                                const nsCString& aType, uint32_t aPermission,
-                                const MonitorAutoLock& aProofOfLock);
-  
-  
-  
-  
-  
-  nsresult ImportDefaultEntry(const DefaultEntry& aDefaultEntry);
+  nsTArray<DefaultEntry> mDefaultEntries;
 
   nsresult Read(const MonitorAutoLock& aProofOfLock);
   void CompleteRead();
 
   void CompleteMigrations();
-
-  
-  
-  void InitRemotePermissionService();
 
   bool mMemoryOnlyDB;
 
