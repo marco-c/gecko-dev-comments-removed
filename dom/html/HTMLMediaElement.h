@@ -1248,7 +1248,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
   void Error(uint16_t aErrorCode,
-             const nsACString& aErrorDetails = nsCString());
+             const Maybe<MediaResult>& aResult = Nothing());
 
   
 
