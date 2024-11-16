@@ -3671,6 +3671,16 @@ class Document : public nsINode,
   void SetFireMutationEvents(bool aFire) { mFireMutationEvents = aFire; }
 
   
+  bool HasPolicyWithRequireTrustedTypesForDirective() const {
+    return mHasPolicyWithRequireTrustedTypesForDirective;
+  }
+  void SetHasPolicyWithRequireTrustedTypesForDirective(
+      bool aHasPolicyWithRequireTrustedTypesForDirective) {
+    mHasPolicyWithRequireTrustedTypesForDirective =
+        aHasPolicyWithRequireTrustedTypesForDirective;
+  }
+
+  
   
   bool MutationEventsEnabled();
 
@@ -4948,6 +4958,9 @@ class Document : public nsINode,
   bool mForceLoadAtTop : 1;
 
   bool mFireMutationEvents : 1;
+
+  
+  bool mHasPolicyWithRequireTrustedTypesForDirective : 1;
 
   Maybe<bool> mMutationEventsEnabled;
 
