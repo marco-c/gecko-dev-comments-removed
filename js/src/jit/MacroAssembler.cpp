@@ -9505,9 +9505,14 @@ void MacroAssembler::prepareHashObject(Register setObj, ValueOperand value,
   
 
   
+  
+  
+  Label done;
   static_assert(MapObject::offsetOfHashCodeScrambler() ==
                 SetObject::offsetOfHashCodeScrambler());
   loadPrivate(Address(setObj, SetObject::offsetOfHashCodeScrambler()), temp1);
+  move32(Imm32(0), result);
+  branchTestPtr(Assembler::Zero, temp1, temp1, &done);
 
   
   auto k0 = Register64(temp1);
@@ -9614,6 +9619,8 @@ void MacroAssembler::prepareHashObject(Register setObj, ValueOperand value,
   move64To32(v0, result);
 
   scrambleHashCode(result);
+
+  bind(&done);
 #else
   MOZ_CRASH("Not implemented");
 #endif
@@ -9690,6 +9697,13 @@ void MacroAssembler::orderedHashTableLookup(Register setOrMapObj,
   }
   bind(&ok);
 #endif
+
+  
+  
+  
+  Label notFound;
+  unboxInt32(Address(setOrMapObj, TableObject::offsetOfLiveCount()), temp1);
+  branchTest32(Assembler::Zero, temp1, temp1, &notFound);
 
 #ifdef DEBUG
   PushRegsInMask(LiveRegisterSet(RegisterSet::Volatile()));
@@ -9774,6 +9788,8 @@ void MacroAssembler::orderedHashTableLookup(Register setOrMapObj,
           entryTemp);
   bind(&start);
   branchTestPtr(Assembler::NonZero, entryTemp, entryTemp, &loop);
+
+  bind(&notFound);
 }
 
 void MacroAssembler::setObjectHas(Register setObj, ValueOperand value,
