@@ -1975,6 +1975,20 @@ nsresult PermissionManager::AddInternal(
         mPermissionTable.RemoveEntry(entry);
       }
 
+      
+      
+      if (oldPermissionEntry.mID != cIDPermissionIsDefault) {
+        for (const DefaultEntry& defaultEntry : mDefaultEntriesForImport) {
+          if (defaultEntry.mType == aType && defaultEntry.mOrigin == origin &&
+              defaultEntry.mPermission !=
+                  nsIPermissionManager::UNKNOWN_ACTION) {
+            rv = ImportDefaultEntry(defaultEntry);
+            NS_ENSURE_SUCCESS(rv, rv);
+            break;
+          }
+        }
+      }
+
       break;
     }
 
@@ -2205,9 +2219,6 @@ nsresult PermissionManager::RemovePermissionEntries(T aCondition) {
         PermissionManager::eWriteToDB, false, &std::get<2>(i));
   }
 
-  
-  
-  ImportLatestDefaults();
   return NS_OK;
 }
 
