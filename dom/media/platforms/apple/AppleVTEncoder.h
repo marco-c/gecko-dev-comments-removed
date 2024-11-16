@@ -29,8 +29,7 @@ class AppleVTEncoder final : public MediaDataEncoder {
         mHardwareNotAllowed(aConfig.mHardwarePreference ==
                             HardwarePreference::RequireSoftware),
         mError(NS_OK),
-        mSession(nullptr),
-        mTimer(nullptr) {
+        mSession(nullptr) {
     MOZ_ASSERT(mConfig.mSize.width > 0 && mConfig.mSize.height > 0);
     MOZ_ASSERT(mTaskQueue);
   }
@@ -50,20 +49,15 @@ class AppleVTEncoder final : public MediaDataEncoder {
                                   : "apple software VT encoder"_ns;
   }
 
-  void OutputFrame(OSStatus aStatus, VTEncodeInfoFlags aFlags,
-                   CMSampleBufferRef aBuffer);
+  void OutputFrame(CMSampleBufferRef aBuffer);
 
  private:
-  enum class EncodeResult { Success, EncodeError, FrameDropped, EmptyBuffer };
-
   virtual ~AppleVTEncoder() { MOZ_ASSERT(!mSession); }
-  void ProcessEncode(const RefPtr<const VideoData>& aSample);
+  RefPtr<EncodePromise> ProcessEncode(const RefPtr<const VideoData>& aSample);
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
       const RefPtr<const EncoderConfigurationChangeList>&
           aConfigurationChanges);
-  void ProcessOutput(RefPtr<MediaRawData>&& aOutput, EncodeResult aResult);
-  void ForceOutputIfNeeded();
-  void MaybeResolveOrRejectEncodePromise();
+  void ProcessOutput(RefPtr<MediaRawData>&& aOutput);
   RefPtr<EncodePromise> ProcessDrain();
   RefPtr<ShutdownPromise> ProcessShutdown();
 
@@ -78,8 +72,6 @@ class AppleVTEncoder final : public MediaDataEncoder {
   const bool mHardwareNotAllowed;
   
   EncodedData mEncodedData;
-  
-  MozPromiseHolder<EncodePromise> mEncodePromise;
   RefPtr<MediaByteBuffer> mAvcc;  
   MediaResult mError;
 
@@ -89,8 +81,6 @@ class AppleVTEncoder final : public MediaDataEncoder {
   Atomic<bool> mIsHardwareAccelerated;
   
   Atomic<bool> mInited;
-  
-  nsCOMPtr<nsITimer> mTimer;
 };
 
 }  
