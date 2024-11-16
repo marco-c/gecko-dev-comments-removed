@@ -4,8 +4,20 @@ export type TestConfig = {
 
   enableDebugLogs: boolean;
 
+  
+
+
+
   maxSubcasesInFlight: number;
+
+  
+
+
+
+  subcasesBetweenAttemptingGC: number;
+
   testHeartbeatCallback: () => void;
+
   noRaceWithRejectOnTimeout: boolean;
 
   
@@ -40,7 +52,8 @@ export type TestConfig = {
 
 export const globalTestConfig: TestConfig = {
   enableDebugLogs: false,
-  maxSubcasesInFlight: 500,
+  maxSubcasesInFlight: 100,
+  subcasesBetweenAttemptingGC: 5000,
   testHeartbeatCallback: () => {},
   noRaceWithRejectOnTimeout: false,
   unrollConstEvalLoops: false,

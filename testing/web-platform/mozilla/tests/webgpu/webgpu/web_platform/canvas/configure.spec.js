@@ -5,7 +5,7 @@ Tests for GPUCanvasContext.configure.
 
 TODO:
 - Test colorSpace
-- Test viewFormats
+- Test toneMapping
 `;import { makeTestGroup } from '../../../common/framework/test_group.js';
 import { assert } from '../../../common/util/util.js';
 import { kCanvasTextureFormats, kTextureUsages } from '../../capability_info.js';
@@ -42,6 +42,16 @@ fn((t) => {
     format: 'rgba8unorm'
   });
 
+  const configuration = ctx.getConfiguration();
+  assert(configuration !== null);
+  t.expect(configuration.device === t.device);
+  t.expect(configuration.format === 'rgba8unorm');
+  t.expect(configuration.usage === GPUTextureUsage.RENDER_ATTACHMENT);
+  t.expect(configuration.viewFormats.length === 0);
+  t.expect(configuration.colorSpace === 'srgb');
+  t.expect(configuration.toneMapping.mode === 'standard');
+  t.expect(configuration.alphaMode === 'opaque');
+
   const currentTexture = ctx.getCurrentTexture();
   t.expect(currentTexture.format === 'rgba8unorm');
   t.expect(currentTexture.usage === GPUTextureUsage.RENDER_ATTACHMENT);
@@ -70,6 +80,9 @@ fn((t) => {
   assert(ctx instanceof GPUCanvasContext, 'Failed to get WebGPU context from canvas');
 
   
+  t.expect(ctx.getConfiguration() === null);
+
+  
   t.shouldThrow('TypeError', () => {
     ctx.configure({
       format: 'rgba8unorm'
@@ -84,8 +97,20 @@ fn((t) => {
   
   ctx.configure({
     device: t.device,
-    format: 'rgba8unorm'
+    format: 'rgba8unorm',
+    alphaMode: 'opaque'
   });
+
+  
+  const configuration = ctx.getConfiguration();
+  assert(configuration !== null);
+  t.expect(configuration.device === t.device);
+  t.expect(configuration.format === 'rgba8unorm');
+  t.expect(configuration.usage === GPUTextureUsage.RENDER_ATTACHMENT);
+  t.expect(configuration.viewFormats.length === 0);
+  t.expect(configuration.colorSpace === 'srgb');
+  t.expect(configuration.toneMapping.mode === 'standard');
+  t.expect(configuration.alphaMode === 'opaque');
 
   
   ctx.getCurrentTexture();
@@ -97,11 +122,26 @@ fn((t) => {
   });
 
   
+  t.expect(ctx.getConfiguration() === null);
+
+  
   ctx.configure({
     device: t.device,
-    format: 'rgba8unorm'
+    format: 'rgba8unorm',
+    alphaMode: 'premultiplied'
   });
   ctx.getCurrentTexture();
+
+  
+  const newConfiguration = ctx.getConfiguration();
+  assert(newConfiguration !== null);
+  t.expect(newConfiguration.device === t.device);
+  t.expect(newConfiguration.format === 'rgba8unorm');
+  t.expect(newConfiguration.usage === GPUTextureUsage.RENDER_ATTACHMENT);
+  t.expect(newConfiguration.viewFormats.length === 0);
+  t.expect(newConfiguration.colorSpace === 'srgb');
+  t.expect(newConfiguration.toneMapping.mode === 'standard');
+  t.expect(newConfiguration.alphaMode === 'premultiplied');
 });
 
 g.test('format').
@@ -133,18 +173,21 @@ fn((t) => {
     }
   }
 
-  t.expectValidationError(() => {
+  if (validFormat) {
     ctx.configure({
       device: t.device,
       format
     });
-  }, !validFormat);
-
-  t.expectValidationError(() => {
-    
-    const currentTexture = ctx.getCurrentTexture();
-    t.expect(currentTexture instanceof GPUTexture);
-  }, !validFormat);
+    const configuration = ctx.getConfiguration();
+    t.expect(configuration.format === format);
+  } else {
+    t.shouldThrow('TypeError', () => {
+      ctx.configure({
+        device: t.device,
+        format
+      });
+    });
+  }
 });
 
 g.test('usage').
@@ -178,6 +221,9 @@ fn((t) => {
     format: 'rgba8unorm',
     usage
   });
+
+  const configuration = ctx.getConfiguration();
+  t.expect(configuration.usage === usage);
 
   const currentTexture = ctx.getCurrentTexture();
   t.expect(currentTexture instanceof GPUTexture);
@@ -288,6 +334,9 @@ fn((t) => {
     format: 'rgba8unorm',
     alphaMode
   });
+
+  const configuration = ctx.getConfiguration();
+  t.expect(configuration.alphaMode === alphaMode);
 
   const currentTexture = ctx.getCurrentTexture();
   t.expect(currentTexture instanceof GPUTexture);
@@ -411,6 +460,9 @@ fn((t) => {
       viewFormats: [viewFormat]
     });
   }, !compatible);
+
+  const viewFormats = ctx.getConfiguration().viewFormats;
+  t.expect(viewFormats[0] === viewFormat);
 
   
   let currentTexture;

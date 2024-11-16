@@ -1,6 +1,6 @@
 
 
-import { assert } from '../../../common/util/util.js';import { takeScreenshotDelayed } from '../../../common/util/wpt_reftest_wait.js';
+import { assert } from '../../../common/util/util.js';import { takeScreenshot, takeScreenshotDelayed } from '../../../common/util/wpt_reftest_wait.js';
 
 
 
@@ -22,5 +22,8 @@ export function runRefTest(fn) {
     await fn({ device, queue });
 
     takeScreenshotDelayed(50);
-  })();
+  })().catch(() => {
+    
+    takeScreenshot();
+  });
 }
