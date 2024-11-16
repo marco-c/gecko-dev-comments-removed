@@ -977,7 +977,7 @@ class AsyncPanZoomController {
 
   Maybe<LayoutDevicePoint> ConvertToGecko(const ScreenIntPoint& aPoint);
 
-  enum AxisLockMode {
+  enum class AxisLockMode {
     FREE,     
     STANDARD, 
     STICKY,   
