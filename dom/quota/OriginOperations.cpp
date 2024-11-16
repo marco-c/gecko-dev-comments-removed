@@ -677,6 +677,27 @@ class GetCachedOriginUsageOp
   void CloseDirectory() override;
 };
 
+class ListCachedOriginsOp final
+    : public OpenStorageDirectoryHelper<
+          ResolvableNormalOriginOp<CStringArray,  true>> {
+  nsTArray<nsCString> mOrigins;
+
+ public:
+  explicit ListCachedOriginsOp(
+      MovingNotNull<RefPtr<QuotaManager>> aQuotaManager);
+
+ private:
+  ~ListCachedOriginsOp() = default;
+
+  RefPtr<BoolPromise> OpenDirectory() override;
+
+  nsresult DoDirectoryWork(QuotaManager& aQuotaManager) override;
+
+  CStringArray UnwrapResolveValue() override;
+
+  void CloseDirectory() override;
+};
+
 class ClearStorageOp final
     : public OpenStorageDirectoryHelper<ResolvableNormalOriginOp<bool>> {
  public:
@@ -1139,6 +1160,11 @@ RefPtr<ResolvableNormalOriginOp<uint64_t>> CreateGetCachedOriginUsageOp(
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
   return MakeRefPtr<GetCachedOriginUsageOp>(std::move(aQuotaManager),
                                             aPrincipalInfo);
+}
+
+RefPtr<ResolvableNormalOriginOp<CStringArray, true>> CreateListCachedOriginsOp(
+    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager) {
+  return MakeRefPtr<ListCachedOriginsOp>(std::move(aQuotaManager));
 }
 
 RefPtr<ResolvableNormalOriginOp<bool>> CreateClearStorageOp(
@@ -2552,6 +2578,58 @@ uint64_t GetCachedOriginUsageOp::UnwrapResolveValue() {
 }
 
 void GetCachedOriginUsageOp::CloseDirectory() {
+  AssertIsOnOwningThread();
+
+  SafeDropDirectoryLock(mDirectoryLock);
+}
+
+ListCachedOriginsOp::ListCachedOriginsOp(
+    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager)
+    : OpenStorageDirectoryHelper(std::move(aQuotaManager),
+                                 "dom::quota::ListCachedOriginsOp") {
+  AssertIsOnOwningThread();
+}
+
+RefPtr<BoolPromise> ListCachedOriginsOp::OpenDirectory() {
+  AssertIsOnOwningThread();
+
+  return OpenStorageDirectory(PersistenceScope::CreateFromNull(),
+                              OriginScope::FromNull(), Nullable<Client::Type>(),
+                               false);
+}
+
+nsresult ListCachedOriginsOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(mOrigins.Length() == 0);
+
+  AUTO_PROFILER_LABEL("ListCachedOriginsOp::DoDirectoryWork", OTHER);
+
+  
+  
+  if (!aQuotaManager.IsTemporaryStorageInitializedInternal()) {
+    return NS_OK;
+  }
+
+  
+  OriginMetadataArray originMetadataArray =
+      aQuotaManager.GetAllTemporaryOrigins();
+
+  std::transform(originMetadataArray.cbegin(), originMetadataArray.cend(),
+                 MakeBackInserter(mOrigins), [](const auto& originMetadata) {
+                   return originMetadata.mOrigin;
+                 });
+
+  return NS_OK;
+}
+
+CStringArray ListCachedOriginsOp::UnwrapResolveValue() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(!ResolveValueConsumed());
+
+  return std::move(mOrigins);
+}
+
+void ListCachedOriginsOp::CloseDirectory() {
   AssertIsOnOwningThread();
 
   SafeDropDirectoryLock(mDirectoryLock);
