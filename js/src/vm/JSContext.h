@@ -877,6 +877,8 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   void* addressOfInlinedICScript() { return &inlinedICScript_; }
 
+  const void* addressOfJitActivation() const { return &jitActivation; }
+
   
   
   js::FutexThread fx;

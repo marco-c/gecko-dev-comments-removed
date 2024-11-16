@@ -282,17 +282,19 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
   return true;
 }
 
-JitCode* JitRuntime::debugTrapHandler(JSContext* cx,
-                                      DebugTrapHandlerKind kind) {
-  if (!debugTrapHandlers_[kind]) {
-    
-    
-    mozilla::Maybe<AutoAllocInAtomsZone> az;
-    if (!cx->zone()->isAtomsZone()) {
-      az.emplace(cx);
-    }
-    debugTrapHandlers_[kind] = generateDebugTrapHandler(cx, kind);
+bool JitRuntime::ensureDebugTrapHandler(JSContext* cx,
+                                        DebugTrapHandlerKind kind) {
+  if (debugTrapHandlers_[kind]) {
+    return true;
   }
+
+  
+  
+  mozilla::Maybe<AutoAllocInAtomsZone> az;
+  if (!cx->zone()->isAtomsZone()) {
+    az.emplace(cx);
+  }
+  debugTrapHandlers_[kind] = generateDebugTrapHandler(cx, kind);
   return debugTrapHandlers_[kind];
 }
 

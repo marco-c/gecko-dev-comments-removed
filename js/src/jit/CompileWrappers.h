@@ -65,8 +65,7 @@ class CompileRuntime {
 
   const JitRuntime* jitRuntime();
 
-  
-  GeckoProfilerRuntime& geckoProfiler();
+  const GeckoProfilerRuntime& geckoProfiler();
 
   bool hadOutOfMemory();
   bool profilingScripts();
@@ -78,8 +77,11 @@ class CompileRuntime {
   const JSClass* maybeWindowProxyClass();
 
   const void* mainContextPtr();
+  const void* addressOfJitActivation();
   const void* addressOfJitStackLimit();
   const void* addressOfInterruptBits();
+  const void* addressOfInlinedICScript();
+  const void* addressOfRealm();
   const void* addressOfZone();
   const void* addressOfMegamorphicCache();
   const void* addressOfMegamorphicSetPropCache();
