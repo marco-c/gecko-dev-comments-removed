@@ -87,7 +87,8 @@ class TracerCommand extends EventEmitter {
       logMethod,
       
       traceDOMMutations:
-        logMethod == TRACER_LOG_METHODS.DEBUGGER_SIDEBAR
+        logMethod == TRACER_LOG_METHODS.DEBUGGER_SIDEBAR ||
+        logMethod == TRACER_LOG_METHODS.PROFILER
           ? ["add", "attributes", "remove"]
           : null,
       traceValues: Services.prefs.getBoolPref(

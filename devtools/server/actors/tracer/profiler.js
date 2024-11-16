@@ -108,8 +108,20 @@ class ProfilerTracingListener {
 
 
   onTracingDOMMutation({ depth, prefix, type, caller, element }) {
+    let elementDescription = element.tagName?.toLowerCase();
+    if (element.id) {
+      elementDescription += `#${element.id}`;
+    }
+    if (element.className) {
+      elementDescription += `.${element.className.trim().replace(/ +/g, ".")}`;
+    }
+
+    const description = `${type} on ${elementDescription}`;
+
     
     
+    ChromeUtils.addProfilerMarker("DOM-Mutation", undefined, description);
+
     return false;
   }
 }
