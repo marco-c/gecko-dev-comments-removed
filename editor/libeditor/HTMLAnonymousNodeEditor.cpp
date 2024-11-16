@@ -180,19 +180,32 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
     }
   }
 
-  nsAutoScriptBlocker scriptBlocker;
+  {
+    nsAutoScriptBlocker scriptBlocker;
 
-  
-  newElement->SetIsNativeAnonymousRoot();
-  BindContext context(*aParentContent.AsElement(),
-                      BindContext::ForNativeAnonymous);
-  if (NS_FAILED(newElement->BindToTree(context, aParentContent))) {
-    NS_WARNING("Element::BindToTree(BindContext::ForNativeAnonymous) failed");
-    newElement->UnbindFromTree();
-    return nullptr;
+    
+    newElement->SetIsNativeAnonymousRoot();
+    BindContext context(*aParentContent.AsElement(),
+                        BindContext::ForNativeAnonymous);
+    nsresult rv = newElement->BindToTree(context, aParentContent);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Element::BindToTree(BindContext::ForNativeAnonymous) failed");
+      newElement->UnbindFromTree();
+      return nullptr;
+    }
   }
 
   ManualNACPtr newNativeAnonymousContent(newElement.forget());
+
+  
+  
+  ServoStyleSet* styleSet = presShell->StyleSet();
+  
+  
+  if (ServoStyleSet::MayTraverseFrom(newNativeAnonymousContent)) {
+    styleSet->StyleNewSubtree(newNativeAnonymousContent);
+  }
+
   auto* observer = new ElementDeletionObserver(newNativeAnonymousContent,
                                                aParentContent.AsElement());
   NS_ADDREF(observer);  
@@ -207,7 +220,7 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
 #endif  
 
   
-  presShell->ContentAppended(newNativeAnonymousContent);
+  presShell->PostRecreateFramesFor(newNativeAnonymousContent);
 
   return newNativeAnonymousContent;
 }

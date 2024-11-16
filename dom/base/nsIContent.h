@@ -515,8 +515,6 @@ class nsIContent : public nsINode {
     return (IsInUncomposedDoc() || IsInShadowTree()) ? mPrimaryFrame : nullptr;
   }
 
-  bool IsRootElement() const { return !GetParent() && IsInUncomposedDoc(); }
-
   
 
 
