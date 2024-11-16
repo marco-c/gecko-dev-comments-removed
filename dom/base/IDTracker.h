@@ -75,9 +75,10 @@ class IDTracker {
 
 
 
-  void ResetToURIFragmentID(nsIContent* aFrom, nsIURI* aURI,
-                            nsIReferrerInfo* aReferrerInfo, bool aWatch = true,
-                            bool aReferenceImage = false);
+  void ResetToURIWithFragmentID(nsIContent* aFrom, nsIURI* aURI,
+                                nsIReferrerInfo* aReferrerInfo,
+                                bool aWatch = true,
+                                bool aReferenceImage = false);
 
   
 
@@ -91,8 +92,8 @@ class IDTracker {
 
 
 
-  void ResetWithLocalRef(Element& aFrom, const nsAString& aLocalRef,
-                         bool aWatch = true);
+  void ResetToLocalFragmentID(Element& aFrom, const nsAString& aLocalRef,
+                              bool aWatch = true);
 
   
 
@@ -104,7 +105,8 @@ class IDTracker {
 
 
 
-  void ResetWithID(Element& aFrom, nsAtom* aID, bool aWatch = true);
+
+  void ResetToID(Element& aFrom, nsAtom* aID, bool aWatch = true);
 
   
 
