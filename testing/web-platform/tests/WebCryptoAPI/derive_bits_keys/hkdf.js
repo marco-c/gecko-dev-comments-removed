@@ -51,7 +51,7 @@ function define_tests() {
                             .then(function(derivation) {
                                 assert_equals(derivation.byteLength, 0, "Derived correctly empty key");
                             }, function(err) {
-                                assert_equals(err.name, "OperationError", "deriveBits with 0 length correctly threw OperationError: " + err.message);
+                                assert_unreached("deriveBits failed with error " + err.name + ": " + err.message);
                             });
                         }, testName + " with 0 length");
 

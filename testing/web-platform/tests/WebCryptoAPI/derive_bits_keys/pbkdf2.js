@@ -43,6 +43,16 @@ function define_tests() {
                         }, testName);
 
                         
+                        subsetTest(promise_test, function(test) {
+                            return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], 0)
+                            .then(function(derivation) {
+                                assert_true(equalBuffers(derivation.byteLength, 0, "Derived correctly empty key"));
+                            }, function(err) {
+                                assert_unreached("deriveBits failed with error " + err.name + ": " + err.message);
+                            });
+                        }, testName + " with 0 length");
+
+                        
                         
                         derivedKeyTypes.forEach(function(derivedKeyType) {
                             var testName = "Derived key of type ";
@@ -102,16 +112,6 @@ function define_tests() {
                             }, testName + " with wrong (ECDH) key");
 
                         });
-
-                        
-                        subsetTest(promise_test, function(test) {
-                            return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], 0)
-                            .then(function(derivation) {
-                                assert_unreached("0 length should have thrown an OperationError");
-                            }, function(err) {
-                                assert_equals(err.name, "OperationError", "deriveBits with 0 length correctly threw OperationError: " + err.message);
-                            });
-                        }, testName + " with 0 length");
 
                         
                         subsetTest(promise_test, function(test) {
