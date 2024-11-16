@@ -75,7 +75,7 @@ class JS_PUBLIC_API JSObject;
 
 
 
-#define FOR_EACH_JS_GLEAN_METRIC(_)
+#define FOR_EACH_JS_GLEAN_METRIC(_) _(ION_COMPILE_TIME, TimeDuration_US)
 
 #define FOR_EACH_JS_METRIC(_)  \
   FOR_EACH_JS_LEGACY_METRIC(_) \
