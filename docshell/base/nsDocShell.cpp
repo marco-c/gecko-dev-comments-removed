@@ -5057,33 +5057,25 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   bool equalUri = false;
   nsresult rv = aURI->Equals(mCurrentURI, &equalUri);
 
-  nsCOMPtr<nsIReferrerInfo> referrerInfo;
   if (NS_SUCCEEDED(rv) && !equalUri && aDelay <= REFRESH_REDIRECT_TIMER) {
     
 
 
 
     loadState->SetLoadType(LOAD_REFRESH_REPLACE);
-
-    
-
-
-
-    if (mReferrerInfo) {
-      referrerInfo = static_cast<ReferrerInfo*>(mReferrerInfo.get())
-                         ->CloneWithNewSendReferrer(false);
-    }
   } else {
     loadState->SetLoadType(LOAD_REFRESH);
-    
-
-
-
-
-    referrerInfo = new ReferrerInfo(mCurrentURI, ReferrerPolicy::_empty, false);
   }
 
+  
+
+
+
+
+
+  const nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo(*doc, false);
   loadState->SetReferrerInfo(referrerInfo);
+
   loadState->SetLoadFlags(
       nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL);
   loadState->SetFirstParty(true);
