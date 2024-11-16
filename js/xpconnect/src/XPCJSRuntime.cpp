@@ -138,6 +138,10 @@ const char* const XPCJSRuntime::mStrings[] = {
     "indexedDB",        
     "structuredClone",  
     "locks",            
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    "suppressed",  
+    "error",       
+#endif
 };
 
 
