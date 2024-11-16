@@ -1470,7 +1470,16 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   
-  bool needFloatManager = nsBlockFrame::BlockNeedsFloatManager(this);
+  
+  
+  
+  
+  
+  
+  
+  
+  bool needFloatManager =
+      !aReflowInput.mFloatManager || nsBlockFrame::BlockNeedsFloatManager(this);
   if (needFloatManager) {
     autoFloatManager.CreateFloatManager(aPresContext);
   }
