@@ -53,9 +53,6 @@ const coreRules = {
     "consistent-return": "error",
 
     
-    curly: ["error", "all"],
-
-    
     "dot-notation": "error",
 
     

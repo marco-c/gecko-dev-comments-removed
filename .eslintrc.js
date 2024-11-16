@@ -87,6 +87,14 @@ module.exports = {
         "mozilla/privileged": true,
         "mozilla/specific": true,
       },
+      rules: {
+        
+        
+        
+        
+        
+        curly: ["error", "all"],
+      },
     },
     {
       files: [
