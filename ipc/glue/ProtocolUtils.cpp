@@ -625,7 +625,7 @@ void IProtocol::ActorDisconnected(ActorDestroyReason aWhy) {
       }
     }
 
-    actor->RejectPendingResponses();
+    actor->RejectPendingResponses(ResponseRejectReason::ActorDestroyed);
     actor->ActorDestroy(why);
   };
 
@@ -895,49 +895,73 @@ IPDLResolverInner::~IPDLResolverInner() {
   }
 }
 
-namespace {
-template <typename Entry>
-struct PairFirstComparator {
-  bool Equals(const Entry& aA, const Entry& aB) const {
-    return aA.first == aB.first;
-  }
-  bool LessThan(const Entry& aA, const Entry& aB) const {
-    return aA.first < aB.first;
-  }
-};
-}  
+bool IPDLAsyncReturnsCallbacks::EntryKey::operator==(
+    const EntryKey& aOther) const {
+  return mSeqno == aOther.mSeqno && mType == aOther.mType;
+}
 
-void IPDLAsyncReturnsCallbacks::AddCallback(int32_t aSeqno,
-                                            Callback aCallback) {
-  mMap.InsertElementSorted(std::pair{aSeqno, std::move(aCallback)},
-                           PairFirstComparator<Entry>());
+bool IPDLAsyncReturnsCallbacks::EntryKey::operator<(
+    const EntryKey& aOther) const {
+  return mSeqno < aOther.mSeqno ||
+         (mSeqno == aOther.mSeqno && mType < aOther.mType);
+}
+
+void IPDLAsyncReturnsCallbacks::AddCallback(int32_t aSeqno, msgid_t aType,
+                                            Callback aResolve,
+                                            RejectCallback aReject) {
+  Entry entry{{aSeqno, aType}, std::move(aResolve), std::move(aReject)};
+  MOZ_ASSERT(!mMap.ContainsSorted(entry));
+  mMap.InsertElementSorted(std::move(entry));
 }
 
 auto IPDLAsyncReturnsCallbacks::GotReply(
     IProtocol* aActor, const IPC::Message& aMessage) -> Result {
   
-  
-  
-  
-  size_t index = mMap.BinaryIndexOf(std::pair{aMessage.seqno(), nullptr},
-                                    PairFirstComparator<Entry>());
+  EntryKey key{aMessage.seqno(), aMessage.type()};
+  size_t index = mMap.BinaryIndexOf(key);
   if (index == nsTArray<Entry>::NoIndex) {
     return MsgProcessingError;
   }
 
-  MOZ_ASSERT(mMap[index].first == aMessage.seqno());
-
-  Callback callback = std::move(mMap[index].second);
+  
+  Entry entry = std::move(mMap[index]);
   mMap.RemoveElementAt(index);
-  return callback(aActor, &aMessage);
+  MOZ_ASSERT(entry == key);
+
+  
+  IPC::MessageReader reader{aMessage, aActor};
+  bool resolve = false;
+  if (!IPC::ReadParam(&reader, &resolve)) {
+    entry.mReject(ResponseRejectReason::HandlerRejected);
+    return MsgValueError;
+  }
+
+  if (resolve) {
+    
+    Result rv = entry.mResolve(&reader);
+    if (rv != MsgProcessed) {
+      
+      entry.mReject(ResponseRejectReason::HandlerRejected);
+    }
+    return rv;
+  }
+
+  ResponseRejectReason reason;
+  if (!IPC::ReadParam(&reader, &reason)) {
+    entry.mReject(ResponseRejectReason::HandlerRejected);
+    return MsgValueError;
+  }
+  reader.EndRead();
+
+  entry.mReject(reason);
+  return MsgProcessed;
 }
 
-void IPDLAsyncReturnsCallbacks::RejectPendingResponses() {
+void IPDLAsyncReturnsCallbacks::RejectPendingResponses(
+    ResponseRejectReason aReason) {
   nsTArray<Entry> pending = std::move(mMap);
   for (auto& entry : pending) {
-    
-    
-    (entry.second)(nullptr, nullptr);
+    entry.mReject(aReason);
   }
 }
 

@@ -297,7 +297,7 @@ class IProtocol : public HasResultCodes {
 
   
   
-  virtual void RejectPendingResponses() {}
+  virtual void RejectPendingResponses(ResponseRejectReason aReason) {}
 
   
   
@@ -763,17 +763,30 @@ class IPDLAsyncReturnsCallbacks : public HasResultCodes {
   
   
   using Callback =
-      mozilla::MoveOnlyFunction<Result(IProtocol*, const IPC::Message*)>;
+      mozilla::MoveOnlyFunction<Result(IPC::MessageReader* IProtocol)>;
+  using msgid_t = IPC::Message::msgid_t;
 
-  void AddCallback(int32_t aSeqno, Callback aCallback);
+  void AddCallback(int32_t aSeqno, msgid_t aType, Callback aResolve,
+                   RejectCallback aReject);
   Result GotReply(IProtocol* aActor, const IPC::Message& aMessage);
-  void RejectPendingResponses();
+  void RejectPendingResponses(ResponseRejectReason aReason);
 
  private:
+  struct EntryKey {
+    int32_t mSeqno;
+    msgid_t mType;
+
+    bool operator==(const EntryKey& aOther) const;
+    bool operator<(const EntryKey& aOther) const;
+  };
+  struct Entry : EntryKey {
+    Callback mResolve;
+    RejectCallback mReject;
+  };
+
   
   
   
-  using Entry = std::pair<int32_t, Callback>;
   nsTArray<Entry> mMap;
 };
 
