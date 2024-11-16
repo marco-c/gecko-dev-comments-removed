@@ -65,6 +65,11 @@ class NotificationParent final : public PNotificationParent,
   IPCNotificationOptions mOptions;
 
   nsString mAlertName;
+
+  
+  
+  
+  bool mDangling = false;
 };
 
 }  
