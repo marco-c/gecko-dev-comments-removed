@@ -136,7 +136,27 @@ void CSSTransition::QueueEvents(const StickyTimeDuration& aActiveTime) {
     case TransitionPhase::Idle:
       if (currentPhase == TransitionPhase::Pending ||
           currentPhase == TransitionPhase::Before) {
-        appendTransitionEvent(eTransitionRun, intervalStartTime, zeroTimeStamp);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        appendTransitionEvent(eTransitionRun, intervalStartTime,
+                              zeroTimeStamp.IsNull()
+                                  ? GetTimelineCurrentTimeAsTimeStamp()
+                                  : zeroTimeStamp);
       } else if (currentPhase == TransitionPhase::Active) {
         appendTransitionEvent(eTransitionRun, intervalStartTime, zeroTimeStamp);
         appendTransitionEvent(eTransitionStart, intervalStartTime,
