@@ -402,8 +402,8 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
 
   
   
-  MOZ_ASSERT(result.tag != ffi::WGPUTextureFormat_Sentinel,
-             "unexpected texture format enum");
+  MOZ_RELEASE_ASSERT(result.tag != ffi::WGPUTextureFormat_Sentinel,
+                     "unexpected texture format enum");
 
   return result;
 }
@@ -505,8 +505,8 @@ ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat) {
 
   
   
-  MOZ_ASSERT(result != ffi::WGPUVertexFormat_Sentinel,
-             "unexpected texture format enum");
+  MOZ_RELEASE_ASSERT(result != ffi::WGPUVertexFormat_Sentinel,
+                     "unexpected texture format enum");
 
   return result;
 }
