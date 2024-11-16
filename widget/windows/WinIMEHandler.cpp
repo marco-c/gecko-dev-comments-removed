@@ -727,7 +727,7 @@ bool IMEHandler::IsOnScreenKeyboardSupported() {
   if (!IsWin11OrLater()) {
     
     
-    if (!IsInWin10TabletMode() && !AutoInvokeOnScreenKeyboardInDesktopMode()) {
+    if (!IsInTabletMode() && !AutoInvokeOnScreenKeyboardInDesktopMode()) {
       return false;
     }
   }
@@ -918,8 +918,8 @@ bool IMEHandler::IsKeyboardPresentOnSlate() {
 }
 
 
-bool IMEHandler::IsInWin10TabletMode() {
-  bool isInTabletMode = WindowsUIUtils::GetInWin10TabletMode();
+bool IMEHandler::IsInTabletMode() {
+  bool isInTabletMode = WindowsUIUtils::GetInTabletMode();
   if (isInTabletMode) {
     Preferences::SetString(kOskDebugReason, L"IITM: GetInTabletMode=true.");
   } else {

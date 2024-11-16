@@ -29,21 +29,8 @@ class WindowsUIUtils final : public nsIWindowsUIUtils {
   static RefPtr<SharePromise> Share(nsAutoString aTitle, nsAutoString aText,
                                     nsAutoString aUrl);
 
-  static void UpdateInWin10TabletMode();
-  static void UpdateInWin11TabletMode();
-
-  
-  
-  
-  
-  
-  static bool GetInWin10TabletMode();
-  
-  
-  
-  
-  
-  static bool GetInWin11TabletMode();
+  static void UpdateInTabletMode();
+  static bool GetInTabletMode();
 
   
   
