@@ -675,6 +675,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<Boolean>("fission.disableSessionHistoryInParent");
    final Pref<Boolean> mFetchPriorityEnabled =
       new Pref<Boolean>("network.fetchpriority.enabled", false);
+   final Pref<Boolean> mParallelMarkingEnabled =
+      new Pref<Boolean>("javascript.options.mem.gc_parallel_marking", false);
    final Pref<Boolean> mCookieBehaviorOptInPartitioning =
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning", false);
    final Pref<Boolean> mCookieBehaviorOptInPartitioningPBM =
@@ -1024,6 +1026,27 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getFetchPriorityEnabled() {
     return mFetchPriorityEnabled.get();
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setParallelMarkingEnabled(final boolean enabled) {
+    mParallelMarkingEnabled.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getParallelMarkingEnabled() {
+    return mParallelMarkingEnabled.get();
   }
 
   
