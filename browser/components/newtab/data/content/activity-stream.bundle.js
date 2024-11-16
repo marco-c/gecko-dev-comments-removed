@@ -5974,40 +5974,6 @@ const PocketLoggedInCta = (0,external_ReactRedux_namespaceObject.connect)(state 
 
 
 
-class Topic extends (external_React_default()).PureComponent {
-  render() {
-    const {
-      url,
-      name: topicName
-    } = this.props;
-    return external_React_default().createElement("li", null, external_React_default().createElement("a", {
-      key: topicName,
-      href: url
-    }, topicName));
-  }
-}
-class Topics extends (external_React_default()).PureComponent {
-  render() {
-    const {
-      topics
-    } = this.props;
-    return external_React_default().createElement("span", {
-      className: "topics"
-    }, external_React_default().createElement("span", {
-      "data-l10n-id": "newtab-pocket-read-more"
-    }), external_React_default().createElement("ul", null, topics && topics.map(t => external_React_default().createElement(Topic, {
-      key: t.name,
-      url: t.url,
-      name: t.name
-    }))));
-  }
-}
-;
-
-
-
-
-
 
 
 class SelectableSearchShortcut extends (external_React_default()).PureComponent {
@@ -8677,7 +8643,6 @@ function Sections_extends() { Sections_extends = Object.assign ? Object.assign.b
 
 
 
-
 const Sections_VISIBLE = "visible";
 const Sections_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const CARDS_PER_ROW_DEFAULT = 3;
@@ -8810,7 +8775,6 @@ class Section extends (external_React_default()).PureComponent {
       title,
       rows,
       Pocket,
-      topics,
       emptyState,
       dispatch,
       compactCards,
@@ -8837,19 +8801,8 @@ class Section extends (external_React_default()).PureComponent {
     const {
       useCta
     } = pocketCta || {};
-
-    
-    
-    const isPocketLoggedInDefined = isUserLoggedIn === true || isUserLoggedIn === false;
-    const hasTopics = topics && !!topics.length;
     const shouldShowPocketCta = id === "topstories" && useCta && isUserLoggedIn === false;
-
-    
-    
-    const shouldShowTopics = id === "topstories" && hasTopics && (useCta && isUserLoggedIn === true || !useCta && isPocketLoggedInDefined);
-
-    
-    const shouldShowReadMore = read_more_endpoint && hasTopics;
+    const shouldShowReadMore = read_more_endpoint;
     const realRows = rows.slice(0, maxCards);
 
     
@@ -8918,11 +8871,7 @@ class Section extends (external_React_default()).PureComponent {
       className: "empty-state-message"
     })))), id === "topstories" && external_React_default().createElement("div", {
       className: "top-stories-bottom-container"
-    }, shouldShowTopics && external_React_default().createElement("div", {
-      className: "wrapper-topics"
-    }, external_React_default().createElement(Topics, {
-      topics: this.props.topics
-    })), shouldShowPocketCta && external_React_default().createElement("div", {
+    }, shouldShowPocketCta && external_React_default().createElement("div", {
       className: "wrapper-cta"
     }, external_React_default().createElement(PocketLoggedInCta, null)), external_React_default().createElement("div", {
       className: "wrapper-more-recommendations"
@@ -9026,7 +8975,7 @@ class HorizontalRule extends (external_React_default()).PureComponent {
 
 
 
-class Navigation_Topic extends (external_React_default()).PureComponent {
+class Topic extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.onLinkClick = this.onLinkClick.bind(this);
@@ -9085,7 +9034,7 @@ class Navigation extends (external_React_default()).PureComponent {
       className: "ds-navigation-header"
     })) : null, english ? external_React_default().createElement("ul", null, links && links.map(t => external_React_default().createElement("li", {
       key: t.name
-    }, external_React_default().createElement(Navigation_Topic, {
+    }, external_React_default().createElement(Topic, {
       url: t.url,
       name: t.name,
       dispatch: this.props.dispatch
