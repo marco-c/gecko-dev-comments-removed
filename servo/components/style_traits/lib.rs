@@ -136,6 +136,10 @@ pub enum StyleParseErrorKind<'i> {
     
     PropertySyntaxField(PropertySyntaxParseError),
     
+    
+    
+    PropertyInheritsField(PropertyInheritsParseError),
+    
     UnexpectedNamespaceRule,
     
     UnexpectedImportRule,
@@ -241,6 +245,19 @@ pub enum PropertySyntaxParseError {
     
     
     UnknownDataTypeName,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PropertyInheritsParseError {
+    
+    
+    
+    
+    NoInherits,
+
+    
+    InvalidInherits,
 }
 
 bitflags! {
