@@ -15,37 +15,35 @@ async function run_test() {
   testFile.remove(false);
   Assert.ok(!testFile.exists(), MSG_SHOULD_NOT_EXIST);
 
-  
-  
-  if (AppConstants.platform == "win") {
-    let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
-      Ci.nsIUpdateMutex
-    );
+  let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
+    Ci.nsIUpdateMutex
+  );
 
-    debugDump("attempting to acquire the update mutex");
+  
+  
+  debugDump("attempting to acquire the update mutex");
+  Assert.ok(
+    updateMutex.tryLock(),
+    "should be able to acquire the update mutex"
+  );
+
+  try {
+    
+    
     Assert.ok(
-      updateMutex.tryLock(),
-      "should be able to acquire the update mutex"
+      !gAUS.canCheckForUpdates,
+      "should not be able to check for updates when the update mutex is acquired by another instance"
     );
 
-    try {
-      
-      
-      Assert.ok(
-        !gAUS.canCheckForUpdates,
-        "should not be able to check for updates when the update mutex is acquired by another instance"
-      );
-
-      
-      
-      Assert.ok(
-        !gAUS.canApplyUpdates,
-        "should not be able to apply updates when the update mutex is acquired by another instance"
-      );
-    } finally {
-      debugDump("releasing the update mutex");
-      updateMutex.unlock();
-    }
+    
+    
+    Assert.ok(
+      !gAUS.canApplyUpdates,
+      "should not be able to apply updates when the update mutex is acquired by another instance"
+    );
+  } finally {
+    debugDump("releasing the update mutex");
+    updateMutex.unlock();
   }
 
   
@@ -55,22 +53,16 @@ async function run_test() {
 
   
   
-  if (AppConstants.platform == "win") {
-    let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
-      Ci.nsIUpdateMutex
-    );
-
-    debugDump("attempting to acquire the update mutex");
-    let isAcquired = updateMutex.tryLock();
-    if (isAcquired) {
-      updateMutex.unlock();
-    }
-
-    Assert.ok(
-      !isAcquired,
-      "should not be able to acquire the update mutex when the current instance has already acquired it"
-    );
+  debugDump("attempting to acquire the update mutex");
+  let isAcquired = updateMutex.tryLock();
+  if (isAcquired) {
+    updateMutex.unlock();
   }
+
+  Assert.ok(
+    !isAcquired,
+    "should not be able to acquire the update mutex when the current instance has already acquired it"
+  );
 
   await doTestFinish();
 }

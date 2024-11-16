@@ -203,12 +203,7 @@ function lockWriteTestFile() {
 
 
 
-
 function setOtherInstanceHandlingUpdates() {
-  if (AppConstants.platform != "win") {
-    throw new Error("Windows only test function called");
-  }
-
   gAUS.observe(null, "test-unlock-update-mutex", "");
 
   let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
