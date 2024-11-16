@@ -21,6 +21,15 @@ struct ParamTraits;
 
 namespace mozilla::dom {
 
+
+
+
+
+
+
+
+
+
 class UserActivation final : public nsISupports, public nsWrapperCache {
  public:
   
