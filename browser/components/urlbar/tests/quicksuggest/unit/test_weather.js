@@ -11,6 +11,10 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  UrlbarProviderPlaces: "resource:///modules/UrlbarProviderPlaces.sys.mjs",
+});
+
 const HISTOGRAM_LATENCY = "FX_URLBAR_MERINO_LATENCY_WEATHER_MS";
 const HISTOGRAM_RESPONSE = "FX_URLBAR_MERINO_RESPONSE_WEATHER";
 
@@ -118,6 +122,59 @@ add_task(async function noSuggestion() {
   });
 
   MerinoTestUtils.server.response.body.suggestions = suggestions;
+});
+
+
+
+
+add_task(async function urlAlreadyInHistory() {
+  
+  let suggestionVisit = {
+    uri: MerinoTestUtils.WEATHER_SUGGESTION.url,
+    title: MerinoTestUtils.WEATHER_SUGGESTION.title,
+  };
+
+  
+  
+  let otherVisit = {
+    uri: "https://example.com/some-other-weather-page",
+    title: "Some other weather page",
+  };
+
+  await PlacesTestUtils.addVisits([suggestionVisit, otherVisit]);
+
+  
+  
+  info("Doing first search");
+  let context = createContext("weather", {
+    providers: [UrlbarProviderPlaces.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, otherVisit),
+      makeVisitResult(context, suggestionVisit),
+    ],
+  });
+
+  
+  info("Doing second search");
+  context = createContext("weather", {
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderPlaces.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [
+      
+      
+      makeVisitResult(context, otherVisit),
+      QuickSuggestTestUtils.weatherResult(),
+    ],
+  });
+
+  await PlacesUtils.history.clear();
 });
 
 
