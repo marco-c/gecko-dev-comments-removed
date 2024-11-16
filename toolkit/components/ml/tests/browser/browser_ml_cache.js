@@ -13,6 +13,7 @@ const { ProgressStatusText, ProgressType } = ChromeUtils.importESModule(
 
 const FAKE_HUB =
   "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data";
+const FAKE_URL_TEMPLATE = "{model}/resolve/{revision}";
 
 const FAKE_MODEL_ARGS = {
   model: "acme/bert",
@@ -113,7 +114,10 @@ const badInputs = [
 
 
 add_task(async function test_bad_inputs() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
 
   for (const badInput of badInputs) {
     const params = badInput[0];
@@ -131,7 +135,10 @@ add_task(async function test_bad_inputs() {
 
 
 add_task(async function test_getting_file() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
 
   let [array, headers] = await hub.getModelFileAsArrayBuffer(FAKE_MODEL_ARGS);
 
@@ -149,7 +156,10 @@ add_task(async function test_getting_file() {
 
 
 add_task(async function test_getting_released_file() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
   let spy = sinon.spy(hub, "getETag");
   let [array, headers] = await hub.getModelFileAsArrayBuffer(
     FAKE_RELEASED_MODEL_ARGS
@@ -173,7 +183,10 @@ add_task(async function test_getting_released_file() {
 
 
 add_task(async function test_getting_file_in_subdir() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
 
   let [array, metadata] = await hub.getModelFileAsArrayBuffer(
     FAKE_ONNX_MODEL_ARGS
@@ -219,7 +232,10 @@ add_task(async function test_getting_file_custom_path_rogue() {
 
 
 add_task(async function test_getting_file_as_response() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
 
   let response = await hub.getModelFileAsResponse(FAKE_MODEL_ARGS);
 
@@ -233,7 +249,10 @@ add_task(async function test_getting_file_as_response() {
 
 
 add_task(async function test_getting_file_from_cache() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
   let array = await hub.getModelFileAsArrayBuffer(FAKE_MODEL_ARGS);
 
   
@@ -258,7 +277,10 @@ add_task(async function test_getting_file_from_cache() {
 
 
 add_task(async function test_getting_file_from_url_cache_with_callback() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
 
   hub.cache = await initializeCache();
 
@@ -483,7 +505,10 @@ add_task(async function testWellFormedRelativeUrl() {
 
 
 add_task(async function testInvalidDomain() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
   const url = "https://example.com/org1/model1/resolve/v1/file/path";
   Assert.throws(
     () => hub.parseUrl(url),
@@ -496,7 +521,10 @@ add_task(async function testInvalidDomain() {
 
 
 add_task(async function testTooFewParts() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
   const url = "/org1/model1/resolve";
   Assert.throws(
     () => hub.parseUrl(url),
@@ -875,7 +903,10 @@ add_task(async function test_DeleteModelsUsingNonExistingTaskName() {
 
 
 add_task(async function test_deleteNonMatchingModelRevisions() {
-  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
 
   const cache = await initializeCache();
 
