@@ -33,10 +33,6 @@ namespace JS {
 class CallArgs;
 class JS_PUBLIC_API Compartment;
 
-namespace dbg {
-class JS_PUBLIC_API AutoEntryMonitor;
-}  
-
 }  
 
 namespace js {
@@ -46,32 +42,6 @@ class InterpreterActivation;
 namespace jit {
 class JitActivation;
 }  
-
-
-
-
-class MOZ_RAII ActivationEntryMonitor {
-  JSContext* cx_;
-
-  
-  
-  JS::dbg::AutoEntryMonitor* entryMonitor_;
-
-  explicit inline ActivationEntryMonitor(JSContext* cx);
-
-  ActivationEntryMonitor(const ActivationEntryMonitor& other) = delete;
-  void operator=(const ActivationEntryMonitor& other) = delete;
-
-  void init(JSContext* cx, jit::CalleeToken entryToken);
-  void init(JSContext* cx, InterpreterFrame* entryFrame);
-
-  JS::Value asyncStack(JSContext* cx);
-
- public:
-  inline ActivationEntryMonitor(JSContext* cx, InterpreterFrame* entryFrame);
-  inline ActivationEntryMonitor(JSContext* cx, jit::CalleeToken entryToken);
-  inline ~ActivationEntryMonitor();
-};
 
 
 

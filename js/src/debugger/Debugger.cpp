@@ -155,7 +155,6 @@ using namespace js;
 
 using JS::AutoStableStringChars;
 using JS::CompileOptions;
-using JS::dbg::AutoEntryMonitor;
 using JS::dbg::Builder;
 using mozilla::AsVariant;
 using mozilla::DebugOnly;
@@ -7314,15 +7313,6 @@ Builder::Object Builder::newObject(JSContext* cx) {
   
   return Object(cx, *this, obj);
 }
-
-
-
-AutoEntryMonitor::AutoEntryMonitor(JSContext* cx)
-    : cx_(cx), savedMonitor_(cx->entryMonitor) {
-  cx->entryMonitor = this;
-}
-
-AutoEntryMonitor::~AutoEntryMonitor() { cx_->entryMonitor = savedMonitor_; }
 
 
 

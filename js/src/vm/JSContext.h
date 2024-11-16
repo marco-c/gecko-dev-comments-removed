@@ -419,9 +419,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
  public:
   
-  js::ContextData<JS::dbg::AutoEntryMonitor*> entryMonitor;
-
-  
   
   
   
