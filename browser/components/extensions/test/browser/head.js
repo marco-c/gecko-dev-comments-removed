@@ -282,6 +282,11 @@ function promisePossiblyInaccurateContentDimensions(browser) {
         "scrollWidth",
         "scrollHeight",
       ]),
+      visualViewport: copyProps(content.visualViewport, [
+        "width",
+        "height",
+        "scale",
+      ]),
       isStandards: content.document.compatMode !== "BackCompat",
     };
   });
@@ -310,23 +315,46 @@ async function promiseContentDimensions(browser, tolleratedWidthSizeDiff = 1) {
   
   
   
-
-  let dims = await promisePossiblyInaccurateContentDimensions(browser);
-  while (
-    Math.abs(browser.clientWidth - dims.window.innerWidth) >
-      tolleratedWidthSizeDiff ||
-    browser.clientHeight !== Math.round(dims.window.innerHeight)
-  ) {
+  for (;;) {
+    let dims = await promisePossiblyInaccurateContentDimensions(browser);
+    info(`Got dimensions: ${JSON.stringify(dims)}`);
+    if (
+      Math.abs(browser.clientWidth - dims.window.innerWidth) <=
+        tolleratedWidthSizeDiff &&
+      browser.clientHeight === Math.round(dims.window.innerHeight)
+    ) {
+      
+      
+      
+      
+      is(
+        dims.visualViewport.scale,
+        1,
+        "We expect no pinch zoom on these tests"
+      );
+      if (!dims.window.scrollMaxY && !dims.window.scrollMaxX) {
+        isfuzzy(
+          dims.window.innerHeight,
+          dims.visualViewport.height,
+          1,
+          "VisualViewport and window height are consistent"
+        );
+        isfuzzy(
+          dims.window.innerWidth,
+          dims.visualViewport.width,
+          1,
+          "VisualViewport and window width are consistent"
+        );
+      }
+      return dims;
+    }
     const diffWidth = Math.abs(browser.clientWidth - dims.window.innerWidth);
     const diffHeight = Math.abs(browser.clientHeight - dims.window.innerHeight);
     info(
       `Content dimension did not reached the expected size yet (diff: ${diffWidth}x${diffHeight}). Wait further.`
     );
     await delay(50);
-    dims = await promisePossiblyInaccurateContentDimensions(browser);
   }
-
-  return dims;
 }
 
 async function awaitPopupResize(browser) {

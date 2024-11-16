@@ -2637,6 +2637,15 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocumentViewer::GetContentSize(
                  NS_ERROR_FAILURE);
 
   
+  {
+    auto newBounds = LayoutDeviceIntRect::FromAppUnitsToOutside(
+                         shellArea, presContext->AppUnitsPerDevPixel())
+                         .ToUnknownRect();
+    newBounds.MoveTo(mBounds.TopLeft());
+    SetBounds(newBounds);
+  }
+
+  
   
   *aWidth = std::ceil(CSSPixel::FromAppUnits(shellArea.width));
   *aHeight = std::ceil(CSSPixel::FromAppUnits(shellArea.height));
