@@ -1583,9 +1583,8 @@ static bool IsTabletDevice() {
   
   
   
-  
 
-  if (WindowsUIUtils::GetInTabletMode()) {
+  if (WindowsUIUtils::GetInWin10TabletMode()) {
     return true;
   }
 

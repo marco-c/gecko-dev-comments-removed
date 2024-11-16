@@ -23,6 +23,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsLookAndFeel.h"
 #include "nsStringFwd.h"
 #include "nsWindowDbg.h"
@@ -214,11 +215,30 @@ static void OnSettingsChange(WPARAM wParam, LPARAM lParam) {
 
   
   
-  if (lParamString == u"UserInteractionMode"_ns ||
-      lParamString == u"ConvertibleSlateMode"_ns ||
-      lParamString == u"SystemDockMode"_ns) {
+  
+  
+  
+
+  if (lParamString == u"UserInteractionMode"_ns) {
+    
+    
+    Unused << NS_WARN_IF(mozilla::IsWin11OrLater());
+    WindowsUIUtils::UpdateInWin10TabletMode();
     NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
-    WindowsUIUtils::UpdateInTabletMode();
+    return;
+  }
+
+  if (lParamString == u"ConvertibleSlateMode"_ns) {
+    
+    Unused << NS_WARN_IF(!mozilla::IsWin11OrLater());
+    WindowsUIUtils::UpdateInWin11TabletMode();
+    NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
+    return;
+  }
+
+  if (lParamString == u"SystemDockMode"_ns) {
+    NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
+    return;
   }
 }
 
