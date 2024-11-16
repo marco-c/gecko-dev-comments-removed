@@ -460,7 +460,7 @@ TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1240202b) {
   
   
   MultiTouchInput secondFingerDown(MultiTouchInput::MULTITOUCH_START, 0,
-                                   TimeStamp(), 0);
+                                   mcc->Time(), 0);
   
   
   secondFingerDown.mTouches.AppendElement(
