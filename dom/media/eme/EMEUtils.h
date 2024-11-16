@@ -113,6 +113,11 @@ void DeprecationWarningLog(const dom::Document* aDocument,
 
 Maybe<nsCString> GetOrigin(const dom::Document* aDocument);
 
+#ifdef MOZ_WMF
+
+bool IsHEVCAllowedByOrigin(const Maybe<nsCString>& aOrigin);
+#endif
+
 }  
 
 #endif  

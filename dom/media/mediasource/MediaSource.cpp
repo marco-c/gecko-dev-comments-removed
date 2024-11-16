@@ -40,6 +40,11 @@
 #  include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 #endif
 
+
+#ifdef MOZ_WMF
+#  include "mozilla/EMEUtils.h"
+#endif
+
 struct JSContext;
 class JSObject;
 
@@ -133,7 +138,8 @@ static void RecordTypeForTelemetry(const nsAString& aType,
 void MediaSource::IsTypeSupported(const nsAString& aType,
                                   DecoderDoctorDiagnostics* aDiagnostics,
                                   ErrorResult& aRv,
-                                  Maybe<bool> aShouldResistFingerprinting) {
+                                  Maybe<bool> aShouldResistFingerprinting,
+                                  Maybe<nsCString> aOrigin) {
   if (aType.IsEmpty()) {
     return aRv.ThrowTypeError("Empty type");
   }
@@ -156,6 +162,17 @@ void MediaSource::IsTypeSupported(const nsAString& aType,
       break;
     }
   }
+
+#ifdef MOZ_WMF
+  
+  
+  const auto& codecString = containerType->ExtendedType().Codecs().AsString();
+  const bool isHEVC = StringBeginsWith(codecString, u"hev1"_ns) ||
+                      StringBeginsWith(codecString, u"hvc1"_ns);
+  if (isHEVC && !IsHEVCAllowedByOrigin(aOrigin)) {
+    return aRv.ThrowNotSupportedError("Can't play type");
+  }
+#endif
 
   
   
@@ -452,7 +469,8 @@ bool MediaSource::IsTypeSupported(const GlobalObject& aOwner,
   IsTypeSupported(
       aType, &diagnostics, rv,
       doc ? Some(doc->ShouldResistFingerprinting(RFPTarget::MediaCapabilities))
-          : Nothing());
+          : Nothing(),
+      doc ? GetOrigin(doc) : Nothing());
   bool supported = !rv.Failed();
   RecordTypeForTelemetry(aType, window);
   diagnostics.StoreFormatDiagnostics(doc, aType, supported, __func__);
