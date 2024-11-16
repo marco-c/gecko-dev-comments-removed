@@ -4364,13 +4364,17 @@ bool nsContentUtils::SpoofLocaleEnglish() {
   return StaticPrefs::privacy_spoof_english() == 2;
 }
 
+
+bool nsContentUtils::SpoofLocaleEnglish(const Document* aDocument) {
+  return SpoofLocaleEnglish() && (!aDocument || !aDocument->AllowsL10n());
+}
+
 static nsContentUtils::PropertiesFile GetMaybeSpoofedPropertiesFile(
     nsContentUtils::PropertiesFile aFile, const char* aKey,
     Document* aDocument) {
   
   
-  bool spoofLocale = nsContentUtils::SpoofLocaleEnglish() &&
-                     (!aDocument || !aDocument->AllowsL10n());
+  bool spoofLocale = nsContentUtils::SpoofLocaleEnglish(aDocument);
   if (spoofLocale) {
     switch (aFile) {
       case nsContentUtils::eFORMS_PROPERTIES:
