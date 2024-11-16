@@ -12,6 +12,10 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
 );
 PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
 
+const { AppTestDelegate } = ChromeUtils.importESModule(
+  "resource://specialpowers/AppTestDelegate.sys.mjs"
+);
+
 const ADDON_ID = "test-devtools-webextension@mozilla.org";
 const ADDON_NAME = "test-devtools-webextension";
 
@@ -28,7 +32,7 @@ add_task(async function testNodePickerInExtensionPopup() {
   
   
   
-  await installTemporaryExtensionFromXPI(
+  const { extension } = await installTemporaryExtensionFromXPI(
     {
       extraProperties: {
         browser_action: {
@@ -68,29 +72,61 @@ add_task(async function testNodePickerInExtensionPopup() {
   await toolbox.nodePicker.start();
 
   info("Open the webextension popup");
-  
-  
-  
-  
-  const nodePickerRestarted = toolbox.nodePicker.once(
-    "node-picker-webextension-target-restarted"
-  );
-  const reloaded = inspector.once("reloaded");
+  const { promise: onNewTarget, resolve: resolveNewTarget } =
+    Promise.withResolvers();
+  const onAvailable = async ({ targetFront }) => {
+    if (targetFront.url.endsWith("/popup.html")) {
+      resolveNewTarget(targetFront);
+    }
+  };
+  const { promise: onTargetSelected, resolve: resolveTargetSelected } =
+    Promise.withResolvers();
+  const { targetCommand } = toolbox.commands;
+  const onSelected = async ({ targetFront }) => {
+    resolveTargetSelected(targetFront);
+  };
+  await targetCommand.watchTargets({
+    types: [targetCommand.TYPES.FRAME],
+    onAvailable,
+    onSelected,
+  });
+  const onPanelOpened = AppTestDelegate.awaitExtensionPanel(window, extension);
   clickOnAddonWidget(ADDON_ID);
-  await reloaded;
-  await nodePickerRestarted;
+  await onPanelOpened;
+  info("Wait for the target front related to the popup");
+  await onNewTarget;
 
-  const popup = await waitFor(() =>
-    gBrowser.ownerDocument.querySelector(".webextension-popup-browser")
+  const popup = gBrowser.ownerDocument.querySelector(
+    ".webextension-popup-browser"
   );
 
   info("Pick an element inside the webextension popup");
+  
+  const onReloaded = inspector.once("reloaded");
+  BrowserTestUtils.synthesizeMouseAtCenter(
+    "#pick-me",
+    { type: "mousemove" },
+    popup.browsingContext
+  );
+  info("Wait fot the popup's target to be selected");
+  await onTargetSelected;
+  targetCommand.unwatchTargets({
+    types: [targetCommand.TYPES.FRAME],
+    onAvailable,
+  });
+  info("Wait for the inspector to be reloaded against the popup's document");
+  await onReloaded;
+
+  
   const onNewNodeFront = inspector.selection.once("new-node-front");
   BrowserTestUtils.synthesizeMouseAtCenter(
     "#pick-me",
     {},
     popup.browsingContext
   );
+  
+  info("Wait for the popup's target to become the selected one");
+
   const nodeFront = await onNewNodeFront;
   is(nodeFront.id, "pick-me", "The expected node front was selected");
 
