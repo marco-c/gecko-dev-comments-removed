@@ -69,11 +69,6 @@ const {
 
 const JSON_URL_PREFIX = "data:application/json;charset=UTF-8,";
 
-const TELEMETRY_ACCESSIBLE_CONTEXT_MENU_OPENED =
-  "devtools.accessibility.accessible_context_menu_opened";
-const TELEMETRY_ACCESSIBLE_CONTEXT_MENU_ITEM_ACTIVATED =
-  "devtools.accessibility.accessible_context_menu_item_activated";
-
 class HighlightableTreeRowClass extends TreeRow {
   shouldComponentUpdate(nextProps) {
     const shouldTreeRowUpdate = super.shouldComponentUpdate(nextProps);
@@ -256,13 +251,9 @@ class AccessibilityRow extends Component {
   }
 
   async printToJSON() {
-    if (gTelemetry) {
-      gTelemetry.keyedScalarAdd(
-        TELEMETRY_ACCESSIBLE_CONTEXT_MENU_ITEM_ACTIVATED,
-        "print-to-json",
-        1
-      );
-    }
+    Glean.devtoolsAccessibility.accessibleContextMenuItemActivated[
+      "print-to-json"
+    ].add(1);
 
     const snapshot = await this.props.member.object.snapshot();
     openDocLink(
@@ -289,9 +280,7 @@ class AccessibilityRow extends Component {
 
     menu.popup(e.screenX, e.screenY, this.props.toolboxDoc);
 
-    if (gTelemetry) {
-      gTelemetry.scalarAdd(TELEMETRY_ACCESSIBLE_CONTEXT_MENU_OPENED, 1);
-    }
+    Glean.devtoolsAccessibility.accessibleContextMenuOpened.add(1);
   }
 
   

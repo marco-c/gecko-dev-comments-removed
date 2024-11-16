@@ -4,8 +4,6 @@
 "use strict";
 
 
-
-
 const {
   createFactory,
   Component,
@@ -45,7 +43,6 @@ const {
   FILTERS,
 } = require("resource://devtools/client/accessibility/constants.js");
 
-const TELEMETRY_AUDIT_ACTIVATED = "devtools.accessibility.audit_activated";
 const FILTER_LABELS = {
   [FILTERS.NONE]: "accessibility.filter.none",
   [FILTERS.ALL]: "accessibility.filter.all2",
@@ -70,9 +67,7 @@ class AccessibilityTreeFilter extends Component {
     const { audit: auditFunc, dispatch, filters } = this.props;
 
     if (filterKey !== FILTERS.NONE && !filters[filterKey]) {
-      if (gTelemetry) {
-        gTelemetry.keyedScalarAdd(TELEMETRY_AUDIT_ACTIVATED, filterKey, 1);
-      }
+      Glean.devtoolsAccessibility.auditActivated[filterKey].add(1);
 
       dispatch(actions.auditing(filterKey));
       await dispatch(actions.audit(auditFunc, filterKey));

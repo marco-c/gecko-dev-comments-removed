@@ -64,9 +64,6 @@ loader.lazyRequireGetter(
   true
 );
 
-const TELEMETRY_NODE_INSPECTED_COUNT =
-  "devtools.accessibility.node_inspected_count";
-
 const TREE_DEPTH_PADDING_INCREMENT = 20;
 
 class AccessiblePropertyClass extends Component {
@@ -254,9 +251,7 @@ class Accessible extends Component {
   }
 
   async selectNode(nodeFront, reason = "accessibility") {
-    if (gTelemetry) {
-      gTelemetry.scalarAdd(TELEMETRY_NODE_INSPECTED_COUNT, 1);
-    }
+    Glean.devtoolsAccessibility.nodeInspectedCount.add(1);
 
     if (!this.props.toolbox) {
       return;
