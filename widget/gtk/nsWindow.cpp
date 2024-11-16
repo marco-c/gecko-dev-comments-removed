@@ -7266,19 +7266,16 @@ void nsWindow::SetWindowDecoration(BorderStyle aStyle) {
   gint wmd = ConvertBorderStyles(aStyle);
   if (wmd != -1) gdk_window_set_decorations(window, (GdkWMDecoration)wmd);
 
-  if (wasVisible) {
-    gdk_window_show(window);
-  }
+  if (wasVisible) gdk_window_show(window);
 
-  
-  
-  
-  
-  
+    
+    
+    
+    
+    
 #ifdef MOZ_X11
-  GdkDisplay* display = gdk_window_get_display(window);
-  if (GdkIsX11Display(display)) {
-    XSync(GDK_DISPLAY_XDISPLAY(display), X11False);
+  if (GdkIsX11Display()) {
+    XSync(GDK_DISPLAY_XDISPLAY(gdk_display_get_default()), X11False);
   } else
 #endif 
   {
