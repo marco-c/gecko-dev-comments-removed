@@ -56,4 +56,12 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY IPCResult NotificationChild::RecvNotifyClick() {
   return IPC_OK();
 }
 
+void NotificationChild::ActorDestroy(ActorDestroyReason aWhy) {
+  if (RefPtr<Notification> notification = mNonPersistentNotification.get()) {
+    
+    
+    notification->MaybeNotifyClose();
+  }
+}
+
 }  
