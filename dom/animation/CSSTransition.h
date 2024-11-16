@@ -51,12 +51,6 @@ class CSSTransition final : public Animation {
   }
 
   void CancelFromStyle(PostRestyleMode aPostRestyle) {
-    Animation::Cancel(aPostRestyle);
-
-    
-    
-    
-    
     
     
     
@@ -65,6 +59,8 @@ class CSSTransition final : public Animation {
     
     mAnimationIndex = sNextAnimationIndex++;
     mNeedsNewAnimationIndexWhenRun = true;
+
+    Animation::Cancel(aPostRestyle);
 
     
     
@@ -81,9 +77,7 @@ class CSSTransition final : public Animation {
   const AnimatedPropertyID& TransitionProperty() const;
   AnimationValue ToValue() const;
 
-  bool HasLowerCompositeOrderThan(
-      const Maybe<EventContext>& aContext, const CSSTransition& aOther,
-      const Maybe<EventContext>& aOtherContext) const;
+  bool HasLowerCompositeOrderThan(const CSSTransition& aOther) const;
   EffectCompositor::CascadeLevel CascadeLevel() const override {
     return IsTiedToMarkup() ? EffectCompositor::CascadeLevel::Transitions
                             : EffectCompositor::CascadeLevel::Animations;

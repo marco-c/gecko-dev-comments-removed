@@ -120,7 +120,7 @@ void CSSTransition::QueueEvents(const StickyTimeDuration& aActiveTime) {
     }
     events.AppendElement(AnimationEventInfo(
         TransitionProperty(), mOwningElement.Target(), aMessage, elapsedTime,
-        mAnimationIndex, aScheduledEventTimeStamp, this));
+        aScheduledEventTimeStamp, this));
   };
 
   
@@ -136,27 +136,7 @@ void CSSTransition::QueueEvents(const StickyTimeDuration& aActiveTime) {
     case TransitionPhase::Idle:
       if (currentPhase == TransitionPhase::Pending ||
           currentPhase == TransitionPhase::Before) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        appendTransitionEvent(eTransitionRun, intervalStartTime,
-                              zeroTimeStamp.IsNull()
-                                  ? GetTimelineCurrentTimeAsTimeStamp()
-                                  : zeroTimeStamp);
+        appendTransitionEvent(eTransitionRun, intervalStartTime, zeroTimeStamp);
       } else if (currentPhase == TransitionPhase::Active) {
         appendTransitionEvent(eTransitionRun, intervalStartTime, zeroTimeStamp);
         appendTransitionEvent(eTransitionStart, intervalStartTime,
@@ -226,13 +206,10 @@ AnimationValue CSSTransition::ToValue() const {
 }
 
 bool CSSTransition::HasLowerCompositeOrderThan(
-    const Maybe<EventContext>& aContext, const CSSTransition& aOther,
-    const Maybe<EventContext>& aOtherContext) const {
-  MOZ_ASSERT((IsTiedToMarkup() || aContext) &&
-                 (aOther.IsTiedToMarkup() || aOtherContext),
+    const CSSTransition& aOther) const {
+  MOZ_ASSERT(IsTiedToMarkup() && aOther.IsTiedToMarkup(),
              "Should only be called for CSS transitions that are sorted "
-             "as CSS transitions (i.e. tied to CSS markup) or with overridden "
-             "target and animation index");
+             "as CSS transitions (i.e. tied to CSS markup)");
 
   
   if (&aOther == this) {
@@ -240,23 +217,16 @@ bool CSSTransition::HasLowerCompositeOrderThan(
   }
 
   
-  const OwningElementRef& owningElement1 =
-      aContext ? OwningElementRef(aContext->mTarget) : mOwningElement;
-  const OwningElementRef& owningElement2 =
-      aOtherContext ? OwningElementRef(aOtherContext->mTarget)
-                    : aOther.mOwningElement;
-  if (!owningElement1.Equals(owningElement2)) {
-    return owningElement1.LessThan(
-        const_cast<CSSTransition*>(this)->CachedChildIndexRef(), owningElement2,
+  if (!mOwningElement.Equals(aOther.mOwningElement)) {
+    return mOwningElement.LessThan(
+        const_cast<CSSTransition*>(this)->CachedChildIndexRef(),
+        aOther.mOwningElement,
         const_cast<CSSTransition*>(&aOther)->CachedChildIndexRef());
   }
 
   
-  const uint64_t& index1 = aContext ? aContext->mIndex : mAnimationIndex;
-  const uint64_t& index2 =
-      aOtherContext ? aOtherContext->mIndex : aOther.mAnimationIndex;
-  if (index1 != index2) {
-    return index1 < index2;
+  if (mAnimationIndex != aOther.mAnimationIndex) {
+    return mAnimationIndex < aOther.mAnimationIndex;
   }
 
   

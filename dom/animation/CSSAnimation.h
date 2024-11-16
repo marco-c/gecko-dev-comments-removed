@@ -84,12 +84,6 @@ class CSSAnimation final : public Animation {
   void PlayFromStyle();
   void PauseFromStyle();
   void CancelFromStyle(PostRestyleMode aPostRestyle) {
-    Animation::Cancel(aPostRestyle);
-
-    
-    
-    
-    
     
     
     
@@ -103,6 +97,8 @@ class CSSAnimation final : public Animation {
     mAnimationIndex = sNextAnimationIndex++;
     mNeedsNewAnimationIndexWhenRun = true;
 
+    Animation::Cancel(aPostRestyle);
+
     
     
     
@@ -113,9 +109,7 @@ class CSSAnimation final : public Animation {
   void QueueEvents(
       const StickyTimeDuration& aActiveTime = StickyTimeDuration());
 
-  bool HasLowerCompositeOrderThan(
-      const Maybe<EventContext>& aContext, const CSSAnimation& aOther,
-      const Maybe<EventContext>& aOtherContext) const;
+  bool HasLowerCompositeOrderThan(const CSSAnimation& aOther) const;
 
   void SetAnimationIndex(uint64_t aIndex) {
     MOZ_ASSERT(IsTiedToMarkup());

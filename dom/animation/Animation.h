@@ -300,18 +300,7 @@ class Animation : public DOMEventTargetHelper,
   
 
 
-  struct EventContext {
-    NonOwningAnimationTarget mTarget;
-    uint64_t mIndex;
-  };
-  
-  
-  bool HasLowerCompositeOrderThan(
-      const Maybe<EventContext>& aContext, const Animation& aOther,
-      const Maybe<EventContext>& aOtherContext) const;
-  bool HasLowerCompositeOrderThan(const Animation& aOther) const {
-    return HasLowerCompositeOrderThan(Nothing(), aOther, Nothing());
-  }
+  bool HasLowerCompositeOrderThan(const Animation& aOther) const;
 
   
 

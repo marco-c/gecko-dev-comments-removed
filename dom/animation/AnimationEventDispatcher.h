@@ -32,12 +32,6 @@ struct AnimationEventInfo {
     
     
     
-    
-    
-    const uint64_t mAnimationIndex;
-    
-    
-    
     const TimeStamp mEventEnqueueTimeStamp{TimeStamp::Now()};
   };
 
@@ -73,44 +67,19 @@ struct AnimationEventInfo {
     return nullptr;
   }
 
-  
-  
-  Maybe<dom::Animation::EventContext> GetEventContext() const {
-    if (mData.is<CssAnimationData>()) {
-      const auto& data = mData.as<CssAnimationData>();
-      return data.mMessage == eAnimationCancel
-                 ? Some(dom::Animation::EventContext{
-                       NonOwningAnimationTarget(data.mTarget),
-                       data.mAnimationIndex})
-                 : Nothing();
-    }
-
-    if (mData.is<CssTransitionData>()) {
-      const auto& data = mData.as<CssTransitionData>();
-      return data.mMessage == eTransitionCancel
-                 ? Some(dom::Animation::EventContext{
-                       NonOwningAnimationTarget(data.mTarget),
-                       data.mAnimationIndex})
-                 : Nothing();
-    }
-
-    return Nothing();
-  }
-
   void MaybeAddMarker() const;
 
   
   AnimationEventInfo(RefPtr<nsAtom> aAnimationName,
                      const NonOwningAnimationTarget& aTarget,
                      EventMessage aMessage, double aElapsedTime,
-                     uint64_t aAnimationIndex,
                      const TimeStamp& aScheduledEventTimeStamp,
                      dom::Animation* aAnimation)
       : mAnimation(aAnimation),
         mScheduledEventTimeStamp(aScheduledEventTimeStamp),
         mData(CssAnimationData{
             {OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoType),
-             aMessage, aElapsedTime, aAnimationIndex},
+             aMessage, aElapsedTime},
             std::move(aAnimationName)}) {
     if (profiler_thread_is_being_profiled_for_markers()) {
       MaybeAddMarker();
@@ -121,14 +90,13 @@ struct AnimationEventInfo {
   AnimationEventInfo(const AnimatedPropertyID& aProperty,
                      const NonOwningAnimationTarget& aTarget,
                      EventMessage aMessage, double aElapsedTime,
-                     uint64_t aTransitionGeneration,
                      const TimeStamp& aScheduledEventTimeStamp,
                      dom::Animation* aAnimation)
       : mAnimation(aAnimation),
         mScheduledEventTimeStamp(aScheduledEventTimeStamp),
         mData(CssTransitionData{
             {OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoType),
-             aMessage, aElapsedTime, aTransitionGeneration},
+             aMessage, aElapsedTime},
             aProperty}) {
     if (profiler_thread_is_being_profiled_for_markers()) {
       MaybeAddMarker();
@@ -167,8 +135,8 @@ struct AnimationEventInfo {
       return this->IsWebAnimationEvent();
     }
 
-    return mAnimation->HasLowerCompositeOrderThan(
-        GetEventContext(), *aOther.mAnimation, aOther.GetEventContext());
+    AnimationPtrComparator<RefPtr<dom::Animation>> comparator;
+    return comparator.LessThan(this->mAnimation, aOther.mAnimation);
   }
 
   bool IsWebAnimationEvent() const { return mData.is<WebAnimationData>(); }
