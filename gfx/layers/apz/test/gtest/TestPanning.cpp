@@ -266,7 +266,6 @@ class APZCPanningTesterMock : public APZCTreeManagerTester {
   APZCPanningTesterMock() { CreateMockHitTester(); }
 };
 
-#ifdef MOZ_WIDGET_GTK  
 TEST_F(APZCPanningTester, HoldGesture_HoldAndRelease) {
   
   PanWithFling();
@@ -360,14 +359,14 @@ TEST_F(APZCPanningTesterMock, HoldGesture_ActiveWheelListener) {
   PanGesture(PanGestureInput::PANGESTURE_MAYSTART, manager, panPoint,
              ScreenPoint(0, 0), mcc->Time());
 
-  
-  
+#ifdef MOZ_WIDGET_GTK
   
   
   mcc->AdvanceByMillis(5);
   QueueMockHitResult(scrollId, dispatchToContent);
   PanGesture(PanGestureInput::PANGESTURE_CANCELLED, manager, panPoint,
              ScreenPoint(0, 0), mcc->Time());
+#endif
 
   
   
@@ -433,13 +432,13 @@ TEST_F(APZCPanningTesterMock, HoldGesture_PreventDefaultAfterLongHold) {
   
   mcc->AdvanceByMillis(30);
 
-  
-  
+#ifdef MOZ_WIDGET_GTK
   
   
   QueueMockHitResult(scrollId, dispatchToContent);
   PanGesture(PanGestureInput::PANGESTURE_CANCELLED, manager, panPoint,
              ScreenPoint(0, 0), mcc->Time());
+#endif
 
   
   
@@ -516,8 +515,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
   PanGesture(PanGestureInput::PANGESTURE_MAYSTART, manager, panPoint,
              ScreenPoint(0, 0), mcc->Time());
 
-  
-  
+#ifdef MOZ_WIDGET_GTK
   
   
   mcc->AdvanceByMillis(5);
@@ -525,6 +523,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
                      CompositorHitTestFlags::eVisibleToHitTest);
   PanGesture(PanGestureInput::PANGESTURE_CANCELLED, manager, panPoint,
              ScreenPoint(0, 0), mcc->Time());
+#endif
 
   
   
@@ -544,4 +543,3 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
   PanGesture(PanGestureInput::PANGESTURE_END, manager, panPoint,
              ScreenPoint(0, 0), mcc->Time());
 }
-#endif

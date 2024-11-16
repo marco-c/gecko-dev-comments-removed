@@ -2246,7 +2246,7 @@ TEST_F(APZCOverscrollTester, ProgrammaticScroll) {
 
 
 
-#ifdef MOZ_WIDGET_GTK  
+#ifndef MOZ_WIDGET_ANDROID  
 TEST_F(APZCOverscrollTester, HoldGestureDuringOverscroll) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
