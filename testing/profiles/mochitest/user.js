@@ -24,11 +24,6 @@ user_pref("general.smoothScroll", true);
 user_pref("dom.storage_access.dont_grant_insecure_contexts", false);
 
 
-
-
-user_pref("privacy.restrict3rdpartystorage.heuristic.window_open", true);
-
-
 user_pref("app.update.disabledForTesting", true);
 
 
