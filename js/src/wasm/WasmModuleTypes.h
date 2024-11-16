@@ -716,6 +716,8 @@ enum class LimitsKind {
   Table,
 };
 
+extern const char* ToString(LimitsKind kind);
+
 
 
 struct Limits {

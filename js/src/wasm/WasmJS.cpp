@@ -676,12 +676,11 @@ static bool GetLimits(JSContext* cx, HandleObject obj, LimitsKind kind,
   
 #ifdef ENABLE_WASM_MEMORY64
   
-  JSAtom* addressTypeAtom = Atomize(cx, "index", strlen("index"));
+  JSAtom* addressTypeAtom = Atomize(cx, "address", strlen("address"));
   if (!addressTypeAtom) {
     return false;
   }
   RootedId addressTypeId(cx, AtomToId(addressTypeAtom));
-
   RootedValue addressTypeVal(cx);
   if (!GetProperty(cx, obj, obj, addressTypeId, &addressTypeVal)) {
     return false;
@@ -701,7 +700,7 @@ static bool GetLimits(JSContext* cx, HandleObject obj, LimitsKind kind,
   }
 #endif
 
-  const char* noun = (kind == LimitsKind::Memory ? "Memory" : "Table");
+  const char* noun = ToString(kind);
   uint64_t limit = 0;
 
   bool haveInitial = false;
@@ -788,7 +787,7 @@ static bool GetLimits(JSContext* cx, HandleObject obj, LimitsKind kind,
 
 static bool CheckLimits(JSContext* cx, uint64_t validationMax, LimitsKind kind,
                         Limits* limits) {
-  const char* noun = (kind == LimitsKind::Memory ? "Memory" : "Table");
+  const char* noun = ToString(kind);
 
   
   
@@ -975,7 +974,7 @@ static JSObject* TableTypeToObject(JSContext* cx, AddressType addressType,
     return nullptr;
   }
   if (!props.append(
-          IdValuePair(NameToId(cx->names().index), StringValue(at)))) {
+          IdValuePair(NameToId(cx->names().address), StringValue(at)))) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -1020,7 +1019,7 @@ static JSObject* MemoryTypeToObject(JSContext* cx, bool shared,
     return nullptr;
   }
   if (!props.append(
-          IdValuePair(NameToId(cx->names().index), StringValue(at)))) {
+          IdValuePair(NameToId(cx->names().address), StringValue(at)))) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
