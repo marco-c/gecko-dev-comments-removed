@@ -571,8 +571,10 @@ class ArenasToUpdate {
 #endif
 
  public:
-  explicit ArenasToUpdate(Zone* zone);
-  ArenasToUpdate(Zone* zone, const AllocKinds& kinds);
+  ArenasToUpdate(Zone* zone, const AllocKinds& kinds)
+      : kinds(kinds), zone(zone) {
+    settle();
+  }
 
   bool done() const { return !segmentBegin; }
 
@@ -584,7 +586,7 @@ class ArenasToUpdate {
   void next();
 
  private:
-  Maybe<AllocKinds> kinds;            
+  AllocKinds kinds;                   
   Zone* zone;                         
   AllocKind kind = AllocKind::FIRST;  
   Arena* segmentBegin = nullptr;
@@ -598,13 +600,6 @@ class ArenasToUpdate {
   void findSegmentEnd();
 };
 
-ArenasToUpdate::ArenasToUpdate(Zone* zone) : zone(zone) { settle(); }
-
-ArenasToUpdate::ArenasToUpdate(Zone* zone, const AllocKinds& kinds)
-    : kinds(Some(kinds)), zone(zone) {
-  settle();
-}
-
 void ArenasToUpdate::settle() {
   
   
@@ -612,7 +607,7 @@ void ArenasToUpdate::settle() {
   MOZ_ASSERT(!segmentBegin);
 
   for (; kind < AllocKind::LIMIT; kind = nextAllocKind(kind)) {
-    if (kinds && !kinds.ref().contains(kind)) {
+    if (!kinds.contains(kind)) {
       continue;
     }
 
