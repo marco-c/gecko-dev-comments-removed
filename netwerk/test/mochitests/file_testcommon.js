@@ -34,12 +34,6 @@ function setupTest(uri, cookies, loads) {
   gExpectedLoads = loads;
 
   
-  
-  if (isXOrigin) {
-    gExpectedCookies -= 1;
-  }
-
-  
   window.addEventListener("message", messageReceiver);
 
   prefSet.then(() => {
