@@ -971,6 +971,11 @@ pref("browser.tabs.insertRelatedAfterCurrent", true);
 
 
 pref("browser.tabs.insertAfterCurrent", false);
+
+
+
+
+pref("browser.tabs.insertAfterCurrentExceptPinned", false);
 pref("browser.tabs.warnOnClose", false);
 pref("browser.tabs.warnOnCloseOtherTabs", true);
 pref("browser.tabs.warnOnOpen", true);
