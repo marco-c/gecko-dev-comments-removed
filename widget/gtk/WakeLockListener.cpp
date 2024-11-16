@@ -5,6 +5,8 @@
 
 
 
+#include <queue>
+
 #include "WakeLockListener.h"
 #include "WidgetUtilsGtk.h"
 #include "mozilla/ScopeExit.h"
