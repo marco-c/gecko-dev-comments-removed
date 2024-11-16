@@ -152,6 +152,9 @@ class BackgroundUnmarkTask : public GCParallelTask {
   void initZones();
   void run(AutoLockHelperThreadState& lock) override;
 
+ private:
+  void unmark();
+
   ZoneVector zones;
 };
 
@@ -638,6 +641,7 @@ class GCRuntime {
   void joinTask(GCParallelTask& task, AutoLockHelperThreadState& lock);
   void updateHelperThreadCount();
   size_t parallelWorkerCount() const;
+  void maybeRequestGCAfterBackgroundTask(const AutoLockHelperThreadState& lock);
 
   
   size_t getMaxParallelThreads() const;
@@ -965,21 +969,10 @@ class GCRuntime {
   void releaseHeldRelocatedArenasWithoutUnlocking(const AutoLockGC& lock);
 #endif
 
-  
+  IncrementalProgress waitForBackgroundTask(GCParallelTask& task,
+                                            const JS::SliceBudget& budget,
+                                            bool shouldPauseMutator);
 
-
-
-
-  enum ShouldTriggerSliceWhenFinished : bool {
-    DontTriggerSliceWhenFinished = false,
-    TriggerSliceWhenFinished = true
-  };
-
-  IncrementalProgress waitForBackgroundTask(
-      GCParallelTask& task, const JS::SliceBudget& budget,
-      bool shouldPauseMutator, ShouldTriggerSliceWhenFinished triggerSlice);
-
-  void maybeRequestGCAfterBackgroundTask(const AutoLockHelperThreadState& lock);
   void cancelRequestedGCAfterBackgroundTask();
   void finishCollection(JS::GCReason reason);
   void maybeStopPretenuring();
