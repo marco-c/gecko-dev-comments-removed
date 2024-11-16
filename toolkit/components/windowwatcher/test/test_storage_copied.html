@@ -1,9 +1,9 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
-
+<!--
+Test sessionStorage is copied over when a new window opens to the
+same domain as the opener.
+-->
 <head>
   <meta charset="utf-8">
   <title>Test storage copied</title>
@@ -24,6 +24,8 @@
     }
 
     add_task(async function() {
+      await SimpleTest.enableLegacyUnpartitionedStorage();
+
       const TEST_VALUE = "test-value";
       // This magic value of 2 means that by default, when content tries
       // to open a new window, it'll actually open in a new window instead
