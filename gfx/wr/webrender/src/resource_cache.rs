@@ -2,7 +2,7 @@
 
 
 
-use api::{BlobImageRequest, RasterizedBlobImage, ImageFormat, ImageDescriptorFlags};
+use api::{BlobImageRequest, ImageDescriptorFlags, ImageFormat, RasterizedBlobImage};
 use api::{DebugFlags, FontInstanceKey, FontKey, FontTemplate, GlyphIndex};
 use api::{ExternalImageData, ExternalImageType, ExternalImageId, BlobImageResult};
 use api::{DirtyRect, GlyphDimensions, IdNamespace, DEFAULT_TILE_SIZE};
@@ -117,6 +117,11 @@ pub enum CachedImageData {
     Blob,
     
     
+    
+    
+    Snapshot,
+    
+    
     External(ExternalImageData),
 }
 
@@ -139,6 +144,14 @@ impl CachedImageData {
         }
     }
 
+    #[inline]
+    pub fn is_snapshot(&self) -> bool {
+        match *self {
+            CachedImageData::Snapshot => true,
+            _ => false,
+        }
+    }
+
     
     
     #[inline]
@@ -150,6 +163,7 @@ impl CachedImageData {
             },
             CachedImageData::Blob => true,
             CachedImageData::Raw(_) => true,
+            CachedImageData::Snapshot => true,
         }
     }
 }
@@ -575,6 +589,7 @@ impl ResourceCache {
                 
                 info.image_type == ExternalImageType::Buffer && size_check
             }
+            CachedImageData::Snapshot => false,
         }
     }
 
@@ -598,10 +613,10 @@ impl ResourceCache {
         gpu_buffer_builder: &mut GpuBufferBuilderF,
         rg_builder: &mut RenderTaskGraphBuilder,
         surface_builder: &mut SurfaceBuilder,
-        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF) -> RenderTaskId,
+        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF, &mut GpuCache) -> RenderTaskId,
     ) -> RenderTaskId {
         self.cached_render_tasks.request_render_task(
-            key,
+            key.clone(),
             &mut self.texture_cache,
             is_opaque,
             parent,
@@ -748,11 +763,25 @@ impl ResourceCache {
                 ResourceUpdate::DeleteBlobImage(img) => {
                     self.delete_image_template(img.as_image());
                 }
-                ResourceUpdate::AddSnapshotImage(_img) => {
-                    
+                ResourceUpdate::AddSnapshotImage(img) => {
+                    let format = self.texture_cache.shared_color_expected_format();
+                    self.add_image_template(
+                        img.key.as_image(),
+                        ImageDescriptor {
+                            format,
+                            
+                            size: DeviceIntSize::zero(),
+                            stride: None,
+                            offset: 0,
+                            flags: ImageDescriptorFlags::empty(),
+                        },
+                        CachedImageData::Snapshot,
+                        &DeviceIntRect::zero(),
+                        None,
+                    );
                 }
-                ResourceUpdate::DeleteSnapshotImage(_img) => {
-                    
+                ResourceUpdate::DeleteSnapshotImage(img) => {
+                    self.delete_image_template(img.as_image());
                 }
                 ResourceUpdate::DeleteFont(font) => {
                     if let Some(shared_key) = self.resources.fonts.font_keys.delete_key(&font) {
@@ -1333,7 +1362,10 @@ impl ResourceCache {
                     ExternalImageType::Buffer => None,
                 },
                 
-                CachedImageData::Raw(..) | CachedImageData::Blob => None,
+                CachedImageData::Raw(..)
+                | CachedImageData::Blob
+                | CachedImageData::Snapshot
+                 => None,
             };
 
             ImageProperties {
@@ -1437,7 +1469,11 @@ impl ResourceCache {
             let mut updates: SmallVec<[(CachedImageData, Option<DeviceIntRect>); 1]> = SmallVec::new();
 
             match image_template.data {
-                CachedImageData::Raw(..) | CachedImageData::External(..) => {
+                CachedImageData::Snapshot => {
+                    
+                }
+                CachedImageData::Raw(..)
+                | CachedImageData::External(..) => {
                     
                     
                     updates.push((image_template.data.clone(), None));
@@ -1517,11 +1553,14 @@ impl ResourceCache {
                     }
                 };
 
-                let eviction = if image_template.data.is_blob() {
-                    entry.manual_eviction = true;
-                    Eviction::Manual
-                } else {
-                    Eviction::Auto
+                let eviction = match &image_template.data {
+                    CachedImageData::Blob | CachedImageData::Snapshot => {
+                        entry.manual_eviction = true;
+                        Eviction::Manual
+                    }
+                    _ => {
+                        Eviction::Auto
+                    }
                 };
 
                 
@@ -1788,7 +1827,9 @@ impl ResourceCache {
         for (_, image) in self.resources.image_templates.images.iter() {
             report.images += match image.data {
                 CachedImageData::Raw(ref v) => unsafe { op(v.as_ptr() as *const c_void) },
-                CachedImageData::Blob | CachedImageData::External(..) => 0,
+                CachedImageData::Blob
+                | CachedImageData::External(..)
+                | CachedImageData::Snapshot => 0,
             }
         }
 
@@ -2130,6 +2171,9 @@ impl ResourceCache {
                         .write_all(&result.data)
                         .unwrap();
                     other_paths.insert(key, short_path);
+                }
+                CachedImageData::Snapshot => {
+                    unimplemented!();
                 }
                 CachedImageData::External(ref ext) => {
                     let short_path = format!("externals/{}", external_images.len() + 1);
