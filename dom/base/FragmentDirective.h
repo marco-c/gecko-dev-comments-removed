@@ -124,6 +124,19 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
   bool IsTextDirectiveAllowedToBeScrolledTo();
 
+  
+
+
+
+  void GetTextDirectiveRanges(nsTArray<RefPtr<nsRange>>& aRanges) const;
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void RemoveAllTextDirectives(ErrorResult& aRv);
+
  private:
   RefPtr<Document> mDocument;
   UniquePtr<TextDirectiveFinder> mFinder;
