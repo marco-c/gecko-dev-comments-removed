@@ -701,8 +701,7 @@ enum ReactionRecordSlots {
   ReactionRecordSlot_Reject,
 
   
-  
-  ReactionRecordSlot_HostDefinedData,
+  ReactionRecordSlot_IncumbentGlobalObject,
 
   
   ReactionRecordSlot_Flags,
@@ -902,10 +901,10 @@ class PromiseReactionRecord : public NativeObject {
     return getFixedSlot(handlerArgSlot());
   }
 
-  JSObject* getAndClearHostDefinedData() {
+  JSObject* getAndClearIncumbentGlobalObject() {
     JSObject* obj =
-        getFixedSlot(ReactionRecordSlot_HostDefinedData).toObjectOrNull();
-    setFixedSlot(ReactionRecordSlot_HostDefinedData, UndefinedValue());
+        getFixedSlot(ReactionRecordSlot_IncumbentGlobalObject).toObjectOrNull();
+    setFixedSlot(ReactionRecordSlot_IncumbentGlobalObject, UndefinedValue());
     return obj;
   }
 
@@ -1546,15 +1545,26 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     }
   }
 
-  JS::Rooted<JSObject*> hostDefinedData(cx);
-  if (JSObject* hostDefined = reaction->getAndClearHostDefinedData()) {
-    hostDefined = CheckedUnwrapStatic(hostDefined);
-    MOZ_ASSERT(hostDefined);
-    hostDefinedData = hostDefined;
+  
+  
+  
+  
+  Rooted<GlobalObject*> global(cx);
+  if (JSObject* objectFromIncumbentGlobal =
+          reaction->getAndClearIncumbentGlobalObject()) {
+    objectFromIncumbentGlobal = CheckedUnwrapStatic(objectFromIncumbentGlobal);
+    MOZ_ASSERT(objectFromIncumbentGlobal);
+    global = &objectFromIncumbentGlobal->nonCCWGlobal();
   }
 
   
-  return cx->runtime()->enqueuePromiseJob(cx, job, promise, hostDefinedData);
+  
+  
+  
+  
+  
+  
+  return cx->runtime()->enqueuePromiseJob(cx, job, promise, global);
 }
 
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,
@@ -2490,13 +2500,11 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
   RootedObject promise(cx, &promiseToResolve.toObject());
 
-  Rooted<JSObject*> hostDefinedData(cx);
-  if (!cx->runtime()->getHostDefinedData(cx, &hostDefinedData)) {
-    return false;
-  }
+  Rooted<GlobalObject*> incumbentGlobal(cx,
+                                        cx->runtime()->getIncumbentGlobal(cx));
 
   
-  return cx->runtime()->enqueuePromiseJob(cx, job, promise, hostDefinedData);
+  return cx->runtime()->enqueuePromiseJob(cx, job, promise, incumbentGlobal);
 }
 
 
@@ -2538,14 +2546,12 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   job->setExtendedSlot(ThenableJobSlot_Promise, ObjectValue(*promiseToResolve));
   job->setExtendedSlot(ThenableJobSlot_Thenable, ObjectValue(*thenable));
 
-  Rooted<JSObject*> hostDefinedData(cx);
-  if (!cx->runtime()->getHostDefinedData(cx, &hostDefinedData)) {
-    return false;
-  }
+  Rooted<GlobalObject*> incumbentGlobal(cx,
+                                        cx->runtime()->getIncumbentGlobal(cx));
 
   
   return cx->runtime()->enqueuePromiseJob(cx, job, promiseToResolve,
-                                          hostDefinedData);
+                                          incumbentGlobal);
 }
 
 [[nodiscard]] static bool AddDummyPromiseReactionForDebugger(
@@ -5053,7 +5059,7 @@ bool js::Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-enum class HostDefinedDataObject {
+enum class IncumbentGlobalObject {
   
   
   No,
@@ -5075,10 +5081,10 @@ enum class HostDefinedDataObject {
 static PromiseReactionRecord* NewReactionRecord(
     JSContext* cx, Handle<PromiseCapability> resultCapability,
     HandleValue onFulfilled, HandleValue onRejected,
-    HostDefinedDataObject hostDefinedDataObjectOption) {
+    IncumbentGlobalObject incumbentGlobalObjectOption) {
 #ifdef DEBUG
   if (resultCapability.promise()) {
-    if (hostDefinedDataObjectOption == HostDefinedDataObject::Yes) {
+    if (incumbentGlobalObjectOption == IncumbentGlobalObject::Yes) {
       if (resultCapability.promise()->is<PromiseObject>()) {
         
         
@@ -5116,7 +5122,7 @@ static PromiseReactionRecord* NewReactionRecord(
     
     MOZ_ASSERT(!resultCapability.resolve());
     MOZ_ASSERT(!resultCapability.reject());
-    MOZ_ASSERT(hostDefinedDataObjectOption == HostDefinedDataObject::Yes);
+    MOZ_ASSERT(incumbentGlobalObjectOption == IncumbentGlobalObject::Yes);
   }
 #endif
 
@@ -5137,9 +5143,9 @@ static PromiseReactionRecord* NewReactionRecord(
   
   MOZ_ASSERT(onFulfilled.isNull() == onRejected.isNull());
 
-  RootedObject hostDefinedData(cx);
-  if (hostDefinedDataObjectOption == HostDefinedDataObject::Yes) {
-    if (!GetObjectFromHostDefinedData(cx, &hostDefinedData)) {
+  RootedObject incumbentGlobalObject(cx);
+  if (incumbentGlobalObjectOption == IncumbentGlobalObject::Yes) {
+    if (!GetObjectFromIncumbentGlobal(cx, &incumbentGlobalObject)) {
       return nullptr;
     }
   }
@@ -5155,7 +5161,7 @@ static PromiseReactionRecord* NewReactionRecord(
   cx->check(onRejected);
   cx->check(resultCapability.resolve());
   cx->check(resultCapability.reject());
-  cx->check(hostDefinedData);
+  cx->check(incumbentGlobalObject);
 
   
   
@@ -5177,8 +5183,8 @@ static PromiseReactionRecord* NewReactionRecord(
                          ObjectOrNullValue(resultCapability.resolve()));
   reaction->setFixedSlot(ReactionRecordSlot_Reject,
                          ObjectOrNullValue(resultCapability.reject()));
-  reaction->setFixedSlot(ReactionRecordSlot_HostDefinedData,
-                         ObjectOrNullValue(hostDefinedData));
+  reaction->setFixedSlot(ReactionRecordSlot_IncumbentGlobalObject,
+                         ObjectOrNullValue(incumbentGlobalObject));
 
   return reaction;
 }
@@ -5347,7 +5353,7 @@ static bool PromiseThenNewPromiseCapability(
 
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            HostDefinedDataObject::Yes));
+                            IncumbentGlobalObject::Yes));
   if (!reaction) {
     return false;
   }
@@ -5600,7 +5606,7 @@ template <typename T>
   resultCapability.promise().set(resultPromise);
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilledValue,
-                            onRejectedValue, HostDefinedDataObject::Yes));
+                            onRejectedValue, IncumbentGlobalObject::Yes));
   if (!reaction) {
     return false;
   }
@@ -6090,7 +6096,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            HostDefinedDataObject::Yes));
+                            IncumbentGlobalObject::Yes));
   if (!reaction) {
     return false;
   }
@@ -6130,7 +6136,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            HostDefinedDataObject::Yes));
+                            IncumbentGlobalObject::Yes));
   if (!reaction) {
     return false;
   }
@@ -6319,7 +6325,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
 
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, capability, NullHandleValue, NullHandleValue,
-                            HostDefinedDataObject::No));
+                            IncumbentGlobalObject::No));
   if (!reaction) {
     return false;
   }
@@ -6711,8 +6717,9 @@ void PromiseReactionRecord::dumpOwnFields(js::JSONPrinter& json) const {
   }
 
   {
-    js::GenericPrinter& out = json.beginStringProperty("hostDefinedData");
-    getFixedSlot(ReactionRecordSlot_HostDefinedData).dumpStringContent(out);
+    js::GenericPrinter& out = json.beginStringProperty("incumbentGlobal");
+    getFixedSlot(ReactionRecordSlot_IncumbentGlobalObject)
+        .dumpStringContent(out);
     json.endStringProperty();
   }
 
