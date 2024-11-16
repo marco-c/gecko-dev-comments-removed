@@ -39,6 +39,10 @@ class WebExtensionDescriptorFront extends DescriptorMixin(
     this.traits = json.traits || {};
   }
 
+  setTarget(targetFront) {
+    this._targetFront = targetFront;
+  }
+
   get backgroundScriptStatus() {
     return this._form.backgroundScriptStatus;
   }
@@ -104,11 +108,7 @@ class WebExtensionDescriptorFront extends DescriptorMixin(
     
     
     
-    
-    
-    
-    
-    return false;
+    return this.traits.isServerTargetSwitchingEnabled;
   }
 
   getWatcher() {

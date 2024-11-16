@@ -205,6 +205,13 @@ class ParentProcessStorage {
 
   async _onNewWindowGlobal(windowGlobal, isBfCacheNavigation) {
     
+    
+    
+    if (this.watcherActor.sessionContext.type == "webextension") {
+      return;
+    }
+
+    
     if (
       !isWindowGlobalPartOfContext(
         windowGlobal,

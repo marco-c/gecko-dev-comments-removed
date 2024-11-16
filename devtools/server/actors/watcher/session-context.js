@@ -97,26 +97,11 @@ function createBrowserElementSessionContext(browserElement, config) {
 
 
 
-
-
-
-
-
-
-
-
-function createWebExtensionSessionContext(
-  { addonId, browsingContextID, innerWindowId },
-  config
-) {
+function createWebExtensionSessionContext({ addonId }, config) {
   const type = SESSION_TYPES.WEBEXTENSION;
   return {
     type,
     addonId,
-    addonBrowsingContextID: browsingContextID,
-    addonInnerWindowId: innerWindowId,
-    
-    
     isServerTargetSwitchingEnabled: config.isServerTargetSwitchingEnabled,
     supportedTargets: getWatcherSupportedTargets(type),
     supportedResources: getWatcherSupportedResources(type),

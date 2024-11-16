@@ -151,7 +151,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
     if (this.sessionContext.type == "browser-element") {
       return !this.browserElement.browsingContext;
     } else if (this.sessionContext.type == "webextension") {
-      return !BrowsingContext.get(this.sessionContext.addonBrowsingContextID);
+      
+      return false;
     } else if (this.sessionContext.type == "all") {
       return false;
     }
@@ -475,26 +476,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
       return;
     }
 
-    if (this.sessionContext.type == "webextension") {
-      this._overrideResourceBrowsingContextForWebExtension(resources);
-    }
-
     this.emit(`resources-${updateType}-array`, [[resourceType, resources]]);
-  }
-
-  
-
-
-
-
-
-
-
-
-  _overrideResourceBrowsingContextForWebExtension(resources) {
-    resources.forEach(resource => {
-      resource.browsingContextID = this.sessionContext.addonBrowsingContextID;
-    });
   }
 
   

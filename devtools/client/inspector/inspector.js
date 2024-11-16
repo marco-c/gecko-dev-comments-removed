@@ -243,9 +243,7 @@ Inspector.prototype = {
     
     const isBrowserToolbox =
       this.commands.descriptorFront.isBrowserProcessDescriptor;
-    const isWebExtension =
-      this.commands.descriptorFront.isWebExtensionDescriptor;
-    if (isBrowserToolbox || isWebExtension) {
+    if (isBrowserToolbox) {
       this._watchedResources.push(TYPES.ROOT_NODE);
     }
 

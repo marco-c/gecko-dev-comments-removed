@@ -162,15 +162,6 @@ class ExtensionStorageActor extends BaseStorageActor {
     for (const [key, value] of Object.entries(data)) {
       storeMap.set(key, value);
     }
-
-    if (this.storageActor.parentActor.fallbackWindow) {
-      
-      
-      
-      const storageData = {};
-      storageData[host] = this.getNamesForHost(host);
-      this.storageActor.update("added", this.typeName, storageData);
-    }
   }
   
 

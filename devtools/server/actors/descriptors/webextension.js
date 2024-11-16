@@ -44,6 +44,11 @@ loader.lazyRequireGetter(
   true
 );
 
+const { WEBEXTENSION_FALLBACK_DOC_URL } = ChromeUtils.importESModule(
+  "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
+  { global: "contextual" }
+);
+
 const BGSCRIPT_STATUSES = {
   RUNNING: "RUNNING",
   STOPPED: "STOPPED",
@@ -115,6 +120,9 @@ class WebExtensionDescriptorActor extends Actor {
         supportsReloadDescriptor: true,
         
         watcher: true,
+        
+        
+        isServerTargetSwitchingEnabled: true,
       },
       url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
       warnings: lazy.ExtensionParent.DebugUtils.getExtensionManifestWarnings(
@@ -131,14 +139,14 @@ class WebExtensionDescriptorActor extends Actor {
   async getWatcher(config = {}) {
     if (!this.watcher) {
       
-      await this._extensionFrameConnect();
+      
+      await this.#createFallbackDocument();
+
       this.watcher = new WatcherActor(
         this.conn,
         createWebExtensionSessionContext(
           {
             addonId: this.addonId,
-            browsingContextID: this._form.browsingContextID,
-            innerWindowId: this._form.innerWindowId,
           },
           config
         )
@@ -146,6 +154,33 @@ class WebExtensionDescriptorActor extends Actor {
       this.manage(this.watcher);
     }
     return this.watcher;
+  }
+
+  
+
+
+
+
+
+
+  async #createFallbackDocument() {
+    if (this._browser) {
+      return;
+    }
+
+    
+    
+    this._browser =
+      await lazy.ExtensionParent.DebugUtils.getExtensionProcessBrowser(this);
+
+    
+    
+    
+    
+    this._browser.setAttribute(
+      "src",
+      `${WEBEXTENSION_FALLBACK_DOC_URL}#${this.addonId}`
+    );
   }
 
   async getTarget() {
@@ -335,6 +370,10 @@ class WebExtensionDescriptorActor extends Actor {
       });
 
       lazy.ExtensionParent.DebugUtils.releaseExtensionProcessBrowser(this);
+    }
+
+    if (this.watcher) {
+      this.watcher = null;
     }
 
     this._browser = null;

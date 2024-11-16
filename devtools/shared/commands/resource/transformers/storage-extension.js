@@ -10,16 +10,15 @@ const {
 
 const { Front, types } = require("resource://devtools/shared/protocol.js");
 
-module.exports = function ({ resource, watcherFront, targetFront }) {
+module.exports = function ({ resource, watcherFront }) {
   if (!(resource instanceof Front) && watcherFront) {
-    const { innerWindowId } = resource;
-
     
-    resource = types.getType("extensionStorage").read(resource, targetFront);
+    
+    
+    resource = types.getType("extensionStorage").read(resource, watcherFront);
     resource.resourceType = EXTENSION_STORAGE;
-    resource.resourceId = `${EXTENSION_STORAGE}-${targetFront.browsingContextID}`;
+    resource.resourceId = EXTENSION_STORAGE;
     resource.resourceKey = "extensionStorage";
-    resource.innerWindowId = innerWindowId;
   }
 
   return resource;

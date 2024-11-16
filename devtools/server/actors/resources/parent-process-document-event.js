@@ -84,7 +84,7 @@ class ParentProcessDocumentEventWatcher {
     
     const isTracked = this.webProgresses.find(
       webProgress =>
-        webProgress.browsingContext.currentWindowGlobal.innerWindowId ==
+        webProgress.browsingContext.currentWindowGlobal?.innerWindowId ==
         innerWindowId
     );
     if (isTracked) {
@@ -115,15 +115,22 @@ class ParentProcessDocumentEventWatcher {
       }
 
       
+      
+      
       if (
         this.watcherActor.sessionContext.type == "all" &&
         browsingContext.isContent
       ) {
-        
-        
-        
         return;
       }
+      
+      
+      
+      if (this.watcherActor.sessionContext.type == "webextension") {
+        return;
+      }
+
+      
       const isTopLevel = browsingContext.top == browsingContext;
       if (!isTopLevel) {
         return;
