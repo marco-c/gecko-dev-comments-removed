@@ -468,8 +468,10 @@ BounceTrackingProtection::Observe(nsISupports* aSubject, const char* aTopic,
           ("%s: aTopic: %s", __FUNCTION__, aTopic));
 
   if (!strcmp(aTopic, "idle-daily")) {
+#ifndef MOZ_WIDGET_ANDROID  
     
     glean_pings::BounceTrackingProtection.Submit();
+#endif  
   }
   return NS_OK;
 }
