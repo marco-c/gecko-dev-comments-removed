@@ -399,6 +399,9 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   static float GetDefaultPixelDensity();
 
+  
+  static double GetDevicePixelRatioAtZoom(float aZoom);
+
  private:
   nsresult Init();
 

@@ -2393,3 +2393,10 @@ dom::OrientationType nsRFPService::GetDefaultOrientationType() {
 
 
 float nsRFPService::GetDefaultPixelDensity() { return 2.0f; }
+
+
+double nsRFPService::GetDevicePixelRatioAtZoom(float aZoom) {
+  return double(AppUnitsPerCSSPixel()) /
+         double(NSToIntRound(AppUnitsPerCSSPixel() / GetDefaultPixelDensity() /
+                             aZoom));
+}
