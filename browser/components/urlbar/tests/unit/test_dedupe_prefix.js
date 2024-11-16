@@ -3,6 +3,10 @@
 
 "use strict";
 
+add_setup(() => {
+  UrlbarPrefs.set("suggest.quickactions", false);
+});
+
 
 
 add_task(async function dedupe_prefix() {

@@ -14,6 +14,11 @@ add_setup(async () => {
   
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   
+  Services.prefs.setBoolPref(
+    "browser.urlbar.scotchBonnet.enableOverride",
+    false
+  );
+  
   
   Services.prefs.setIntPref(
     "browser.urlbar.tabToSearch.onboard.interactionsLeft",
@@ -27,6 +32,7 @@ add_setup(async () => {
       "browser.urlbar.tabToSearch.onboard.interactionsLeft"
     );
     Services.prefs.clearUserPref("browser.search.suggest.enabled");
+    Services.prefs.clearUserPref("browser.urlbar.scotchBonnet.enableOverride");
   });
 });
 

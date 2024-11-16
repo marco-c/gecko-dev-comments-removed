@@ -24,6 +24,8 @@ add_setup(async function () {
   engine = await addTestSuggestionsEngine();
   port = engine.getSubmission("abc").uri.port;
 
+  Services.prefs.setBoolPref("browser.urlbar.suggest.quickactions", false);
+
   
   
   await SearchTestUtils.installSearchExtension(
