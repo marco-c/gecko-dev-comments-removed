@@ -3102,7 +3102,6 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 #endif
 
 bool arena_t::Purge(bool aForce) {
-  MaybeMutexAutoLock lock(mLock);
   
   
   arena_chunk_t* chunk;
@@ -3116,6 +3115,8 @@ bool arena_t::Purge(bool aForce) {
   
   
   {
+    MaybeMutexAutoLock lock(mLock);
+
 #ifdef MOZ_DEBUG
     size_t ndirty = 0;
     for (auto chunk : mChunksDirty.iter()) {
@@ -3213,7 +3214,7 @@ bool arena_t::Purge(bool aForce) {
     
     MOZ_ASSERT(!chunk->mIsPurging);
     chunk->mIsPurging = true;
-  }
+  }  
 
 #ifdef MALLOC_DECOMMIT
   const size_t free_operation = CHUNK_MAP_DECOMMITTED;
@@ -3233,6 +3234,8 @@ bool arena_t::Purge(bool aForce) {
   
   
   {
+    MaybeMutexAutoLock lock(mLock);
+
     MOZ_ASSERT(chunk->mIsPurging);
     chunk->mIsPurging = false;
 
@@ -3312,7 +3315,7 @@ bool arena_t::Purge(bool aForce) {
     }
 
     return mNumDirty > (aForce ? 0 : EffectiveMaxDirty() >> 1);
-  }
+  }  
 }
 
 
