@@ -193,13 +193,6 @@ nsresult NotificationParent::Show() {
                       mOptions.silent(), mOptions.vibrate()));
 
   nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service();
-
-  
-  
-  
-  
-  
-  
   MOZ_TRY(alertService->ShowAlert(alert, this));
 
 #ifdef ANDROID
