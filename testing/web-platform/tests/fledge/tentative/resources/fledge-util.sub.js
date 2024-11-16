@@ -549,8 +549,6 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportURLs,
 
 
 
-
-
 async function runAdditionalBidTest(test, uuid, buyers, auctionNonce,
                                     additionalBidsPromise,
                                     highestScoringOtherBid,
@@ -567,25 +565,6 @@ async function runAdditionalBidTest(test, uuid, buyers, auctionNonce,
   await waitForObservedRequests(
       uuid, [createHighestScoringOtherBidReportURL(uuid, highestScoringOtherBid),
              createBidderReportURL(uuid, winningAdditionalBidId)]);
-}
-
-
-
-
-
-
-
-
-
-
-async function runAdditionalBidTestNoWinner(
-    test, uuid, buyers, auctionNonce, additionalBidsPromise) {
-  await runBasicFledgeTestExpectingNoWinner(test, uuid, {
-    interestGroupBuyers: buyers,
-    auctionNonce: auctionNonce,
-    additionalBids: additionalBidsPromise,
-    decisionLogicURL: createDecisionScriptURL(uuid)
-  });
 }
 
 
@@ -834,38 +813,6 @@ let additionalBidHelper = function() {
   }
 
   
-  function setSellerNonce(additionalBid, sellerNonce) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        sellerNonce = sellerNonce;
-  }
-
-  
-  
-  function removeAuctionNonceFromBid(additionalBid) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        removeAuctionNonceFromBid = true;
-  }
-
-  
-  
-  
-  function setBidAuctionNonceOverride(additionalBid, bidAuctionNonceOverride) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        bidAuctionNonceOverride = bidAuctionNonceOverride;
-  }
-
-  
-  
-  async function computeBidNonce(auctionNonce, sellerNonce) {
-    
-    const combined_utf8 = new TextEncoder().encode(auctionNonce + sellerNonce);
-    const hashed = await crypto.subtle.digest('SHA-256',combined_utf8);
-
-    
-    return btoa(String.fromCharCode(...new Uint8Array(hashed)));
-  }
-
-  
   
   function addNegativeInterestGroup(additionalBid, negativeInterestGroup) {
     additionalBid["negativeInterestGroup"] = negativeInterestGroup;
@@ -899,10 +846,6 @@ let additionalBidHelper = function() {
     createAdditionalBid: createAdditionalBid,
     signWithSecretKeys: signWithSecretKeys,
     incorrectlySignWithSecretKeys: incorrectlySignWithSecretKeys,
-    setSellerNonce: setSellerNonce,
-    removeAuctionNonceFromBid: removeAuctionNonceFromBid,
-    setBidAuctionNonceOverride: setBidAuctionNonceOverride,
-    computeBidNonce: computeBidNonce,
     addNegativeInterestGroup: addNegativeInterestGroup,
     addNegativeInterestGroups: addNegativeInterestGroups,
     fetchAdditionalBids: fetchAdditionalBids
