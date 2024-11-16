@@ -2,7 +2,7 @@
 
 
 
-use api::{BlobImageRequest, ImageDescriptorFlags, ImageFormat, RasterizedBlobImage};
+use api::{BlobImageRequest, RasterizedBlobImage, ImageFormat, ImageDescriptorFlags};
 use api::{DebugFlags, FontInstanceKey, FontKey, FontTemplate, GlyphIndex};
 use api::{ExternalImageData, ExternalImageType, ExternalImageId, BlobImageResult};
 use api::{DirtyRect, GlyphDimensions, IdNamespace, DEFAULT_TILE_SIZE};
@@ -10,10 +10,7 @@ use api::{ColorF, ImageData, ImageDescriptor, ImageKey, ImageRendering, TileSize
 use api::{BlobImageHandler, BlobImageKey, VoidPtrToSizeFn};
 use api::units::*;
 use euclid::size2;
-use crate::render_target::RenderTargetKind;
-use crate::render_task::{RenderTaskLocation, StaticRenderTaskSurface};
 use crate::{render_api::{ClearCache, AddFont, ResourceUpdate, MemoryReport}, util::WeakTable};
-use crate::prim_store::image::AdjustedImageSource;
 use crate::image_tiling::{compute_tile_size, compute_tile_range};
 #[cfg(feature = "capture")]
 use crate::capture::ExternalCaptureImage;
@@ -118,11 +115,6 @@ pub enum CachedImageData {
     Blob,
     
     
-    
-    
-    Snapshot,
-    
-    
     External(ExternalImageData),
 }
 
@@ -145,14 +137,6 @@ impl CachedImageData {
         }
     }
 
-    #[inline]
-    pub fn is_snapshot(&self) -> bool {
-        match *self {
-            CachedImageData::Snapshot => true,
-            _ => false,
-        }
-    }
-
     
     
     #[inline]
@@ -164,7 +148,6 @@ impl CachedImageData {
             },
             CachedImageData::Blob => true,
             CachedImageData::Raw(_) => true,
-            CachedImageData::Snapshot => true,
         }
     }
 }
@@ -179,7 +162,6 @@ pub struct ImageProperties {
     
     
     pub visible_rect: DeviceIntRect,
-    pub adjustment: AdjustedImageSource,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -208,7 +190,6 @@ struct ImageResource {
     
     
     visible_rect: DeviceIntRect,
-    adjustment: AdjustedImageSource,
     generation: ImageGeneration,
 }
 
@@ -592,7 +573,6 @@ impl ResourceCache {
                 
                 info.image_type == ExternalImageType::Buffer && size_check
             }
-            CachedImageData::Snapshot => false,
         }
     }
 
@@ -616,10 +596,10 @@ impl ResourceCache {
         gpu_buffer_builder: &mut GpuBufferBuilderF,
         rg_builder: &mut RenderTaskGraphBuilder,
         surface_builder: &mut SurfaceBuilder,
-        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF, &mut GpuCache) -> RenderTaskId,
+        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF) -> RenderTaskId,
     ) -> RenderTaskId {
         self.cached_render_tasks.request_render_task(
-            key.clone(),
+            key,
             &mut self.texture_cache,
             is_opaque,
             parent,
@@ -629,85 +609,6 @@ impl ResourceCache {
             surface_builder,
             f
         )
-    }
-
-    pub fn render_as_image(
-        &mut self,
-        image_key: ImageKey,
-        size: DeviceIntSize,
-        rg_builder: &mut RenderTaskGraphBuilder,
-        gpu_buffer_builder: &mut GpuBufferBuilderF,
-        gpu_cache: &mut GpuCache,
-        is_opaque: bool,
-        adjustment: &AdjustedImageSource,
-        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF, &mut GpuCache) -> RenderTaskId,
-    ) -> RenderTaskId {
-
-        let task_id = f(rg_builder, gpu_buffer_builder, gpu_cache);
-
-        let render_task = rg_builder.get_task_mut(task_id);
-
-        let mut texture_cache_handle = TextureCacheHandle::invalid();
-
-        let flags = if is_opaque {
-            ImageDescriptorFlags::IS_OPAQUE
-        } else {
-            ImageDescriptorFlags::empty()
-        };
-
-        let descriptor = ImageDescriptor::new(
-            size.width,
-            size.height,
-            self.texture_cache.shared_color_expected_format(),
-            flags,
-        );
- 
-        
-        
-        let user_data = [0.0; 4];
-        self.texture_cache.update(
-            &mut texture_cache_handle,
-            descriptor,
-            TextureFilter::Linear,
-            None,
-            user_data,
-            DirtyRect::All,
-            gpu_cache,
-            None,
-            render_task.uv_rect_kind(),
-            Eviction::Manual,
-            TargetShader::Default,
-        );
-
-        
-        
-        
-        let (texture_id, uv_rect, _, _, _) =
-            self.texture_cache.get_cache_location(&texture_cache_handle);
-
-        render_task.location = RenderTaskLocation::Static {
-            surface: StaticRenderTaskSurface::TextureCache {
-                texture: texture_id,
-                target_kind: RenderTargetKind::Color,
-            },
-            rect: uv_rect.to_i32(),
-        };
-
-        self.cached_images.insert(
-            image_key,
-            ImageResult::UntiledAuto(CachedImageInfo {
-                texture_cache_handle,
-                dirty_rect: ImageDirtyRect::All,
-                manual_eviction: true,
-            })
-        );
-
-        self.resources.image_templates
-            .get_mut(image_key)
-            .unwrap()
-            .adjustment = *adjustment;
-
-        task_id
     }
 
     pub fn post_scene_building_update(
@@ -770,26 +671,6 @@ impl ResourceCache {
                     profile.set(profiler::IMAGE_TEMPLATES_MEM, bytes_to_mb(self.image_templates_memory));
                 }
                 ResourceUpdate::DeleteBlobImage(img) => {
-                    self.delete_image_template(img.as_image());
-                }
-                ResourceUpdate::AddSnapshotImage(img) => {
-                    let format = self.texture_cache.shared_color_expected_format();
-                    self.add_image_template(
-                        img.key.as_image(),
-                        ImageDescriptor {
-                            format,
-                            
-                            size: DeviceIntSize::zero(),
-                            stride: None,
-                            offset: 0,
-                            flags: ImageDescriptorFlags::empty(),
-                        },
-                        CachedImageData::Snapshot,
-                        &DeviceIntRect::zero(),
-                        None,
-                    );
-                }
-                ResourceUpdate::DeleteSnapshotImage(img) => {
                     self.delete_image_template(img.as_image());
                 }
                 ResourceUpdate::DeleteFont(font) => {
@@ -933,7 +814,6 @@ impl ResourceCache {
             data,
             tiling,
             visible_rect: *visible_rect,
-            adjustment: AdjustedImageSource::new(),
             generation: ImageGeneration(0),
         };
 
@@ -1003,7 +883,6 @@ impl ResourceCache {
             data,
             tiling,
             visible_rect: descriptor.size.into(),
-            adjustment: AdjustedImageSource::new(),
             generation: ImageGeneration(image.generation.0 + 1),
         };
     }
@@ -1373,10 +1252,7 @@ impl ResourceCache {
                     ExternalImageType::Buffer => None,
                 },
                 
-                CachedImageData::Raw(..)
-                | CachedImageData::Blob
-                | CachedImageData::Snapshot
-                 => None,
+                CachedImageData::Raw(..) | CachedImageData::Blob => None,
             };
 
             ImageProperties {
@@ -1384,7 +1260,6 @@ impl ResourceCache {
                 external_image,
                 tiling: image_template.tiling,
                 visible_rect: image_template.visible_rect,
-                adjustment: image_template.adjustment,
             }
         })
     }
@@ -1481,11 +1356,7 @@ impl ResourceCache {
             let mut updates: SmallVec<[(CachedImageData, Option<DeviceIntRect>); 1]> = SmallVec::new();
 
             match image_template.data {
-                CachedImageData::Snapshot => {
-                    
-                }
-                CachedImageData::Raw(..)
-                | CachedImageData::External(..) => {
+                CachedImageData::Raw(..) | CachedImageData::External(..) => {
                     
                     
                     updates.push((image_template.data.clone(), None));
@@ -1565,14 +1436,11 @@ impl ResourceCache {
                     }
                 };
 
-                let eviction = match &image_template.data {
-                    CachedImageData::Blob | CachedImageData::Snapshot => {
-                        entry.manual_eviction = true;
-                        Eviction::Manual
-                    }
-                    _ => {
-                        Eviction::Auto
-                    }
+                let eviction = if image_template.data.is_blob() {
+                    entry.manual_eviction = true;
+                    Eviction::Manual
+                } else {
+                    Eviction::Auto
                 };
 
                 
@@ -1839,9 +1707,7 @@ impl ResourceCache {
         for (_, image) in self.resources.image_templates.images.iter() {
             report.images += match image.data {
                 CachedImageData::Raw(ref v) => unsafe { op(v.as_ptr() as *const c_void) },
-                CachedImageData::Blob
-                | CachedImageData::External(..)
-                | CachedImageData::Snapshot => 0,
+                CachedImageData::Blob | CachedImageData::External(..) => 0,
             }
         }
 
@@ -2184,9 +2050,6 @@ impl ResourceCache {
                         .unwrap();
                     other_paths.insert(key, short_path);
                 }
-                CachedImageData::Snapshot => {
-                    unimplemented!();
-                }
                 CachedImageData::External(ref ext) => {
                     let short_path = format!("externals/{}", external_images.len() + 1);
                     other_paths.insert(key, short_path.clone());
@@ -2417,7 +2280,6 @@ impl ResourceCache {
                 descriptor: template.descriptor,
                 tiling: template.tiling,
                 visible_rect: template.descriptor.size.into(),
-                adjustment: AdjustedImageSource::new(), 
                 generation: template.generation,
             });
         }
