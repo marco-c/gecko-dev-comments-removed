@@ -14,9 +14,9 @@
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "mozilla/EventQueue.h"
-#include "mozilla/IOInterposer.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ThreadEventQueue.h"
+#include "GeckoProfiler.h"
 
 #ifdef XP_WIN
 #  include <windows.h>
@@ -141,24 +141,18 @@ nsresult CacheIOThread::Init() {
     mNativeThreadHandle = MakeUnique<detail::NativeThreadHandle>();
   }
 
-  
-  
-  
-  RefPtr<CacheIOThread> self = this;
-  mThread =
-      PR_CreateThread(PR_USER_THREAD, ThreadFunc, this, PR_PRIORITY_NORMAL,
-                      PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 128 * 1024);
-  if (!mThread) {
-    
+  nsCOMPtr<nsIRunnable> runnable =
+      NS_NewRunnableFunction("CacheIOThread::ThreadFunc",
+                             [self = RefPtr{this}] { self->ThreadFunc(); });
+
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv =
+      NS_NewNamedThread("Cache2 I/O", getter_AddRefs(thread), runnable);
+  if (NS_FAILED(rv) || NS_FAILED(thread->GetPRThread(&mThread)) || !mThread) {
     MonitorAutoLock lock(mMonitor);
     mShutdown = true;
-    return NS_ERROR_FAILURE;
+    return NS_FAILED(rv) ? rv : NS_ERROR_FAILURE;
   }
-
-  
-  
-  
-  Unused << self.forget().take();
 
   return NS_OK;
 }
@@ -269,7 +263,9 @@ void CacheIOThread::Shutdown() {
     mMonitor.NotifyAll();
   }
 
-  PR_JoinThread(mThread);
+  if (nsIThread* thread = mXPCOMThread) {
+    thread->Shutdown();
+  }
   mThread = nullptr;
 }
 
@@ -306,21 +302,8 @@ already_AddRefed<nsIEventTarget> CacheIOThread::Target() {
   return target.forget();
 }
 
-
-void CacheIOThread::ThreadFunc(void* aClosure) {
-  
-  
-  NS_SetCurrentThreadName("Cache2 I/O");
-
-  mozilla::IOInterposer::RegisterCurrentThread();
-  
-  RefPtr<CacheIOThread> thread =
-      dont_AddRef(static_cast<CacheIOThread*>(aClosure));
-  thread->ThreadFunc();
-  mozilla::IOInterposer::UnregisterCurrentThread();
-}
-
 void CacheIOThread::ThreadFunc() {
+  AUTO_PROFILER_REGISTER_THREAD("Cache2 I/O");
   nsCOMPtr<nsIThreadInternal> threadInternal;
 
   {
@@ -329,16 +312,15 @@ void CacheIOThread::ThreadFunc() {
     MOZ_ASSERT(mNativeThreadHandle);
     mNativeThreadHandle->InitThread();
 
-    auto queue =
-        MakeRefPtr<ThreadEventQueue>(MakeUnique<mozilla::EventQueue>());
-    nsCOMPtr<nsIThread> xpcomThread =
-        nsThreadManager::get().CreateCurrentThread(queue);
+    nsCOMPtr<nsIThread> xpcomThread = NS_GetCurrentThread();
+    nsCOMPtr<nsIThread> thread = xpcomThread;
 
     threadInternal = do_QueryInterface(xpcomThread);
-    if (threadInternal) threadInternal->SetObserver(this);
+    if (threadInternal) {
+      threadInternal->SetObserver(this);
+    }
 
     mXPCOMThread = xpcomThread.forget().take();
-    nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
 
     lock.NotifyAll();
 
@@ -394,13 +376,15 @@ void CacheIOThread::ThreadFunc() {
 
     MOZ_ASSERT(!EventsPending());
 
+    if (threadInternal) {
+      threadInternal->SetObserver(nullptr);
+    }
+
 #ifdef DEBUG
     
     mInsideLoop = false;
 #endif
   }  
-
-  if (threadInternal) threadInternal->SetObserver(nullptr);
 }
 
 void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
@@ -475,7 +459,11 @@ bool CacheIOThread::EventsPending(uint32_t aLastLevel) {
 NS_IMETHODIMP CacheIOThread::OnDispatchedEvent() {
   MonitorAutoLock lock(mMonitor);
   mHasXPCOMEvents = true;
-  MOZ_ASSERT(mInsideLoop);
+  
+  
+  
+  
+  MOZ_ASSERT(mInsideLoop || mShutdown);
   lock.Notify();
   return NS_OK;
 }
