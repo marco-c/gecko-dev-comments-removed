@@ -339,7 +339,7 @@ void nsCocoaUtils::PrepareForNativeAppModalDialog() {
       "Main menu does not have any items, something is terribly wrong!");
 
   
-  NSMenu* newMenuBar = [[NSMenu alloc] initWithTitle:@""];
+  NSMenu* newMenuBar = [[GeckoNSMenu alloc] initWithTitle:@""];
 
   
   
