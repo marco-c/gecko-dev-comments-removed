@@ -23,12 +23,7 @@ namespace mozilla::dom {
 
 
 
-
-
 inline uint8_t* TryToGenerateRandomDataForPlaceholderCanvasData() {
-  if (!StaticPrefs::privacy_resistFingerprinting_randomDataOnCanvasExtract()) {
-    return nullptr;
-  }
   nsresult rv;
   nsCOMPtr<nsIRandomGenerator> rg =
       do_GetService("@mozilla.org/security/random-generator;1", &rv);
