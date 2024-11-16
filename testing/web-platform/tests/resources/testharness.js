@@ -2038,24 +2038,40 @@
 
 
 
-
-
-
-
     function assert_readonly(object, property_name, description)
     {
-         var initial_value = object[property_name];
-         try {
-             
-             
-             object[property_name] = initial_value + "a"; 
-             assert(same_value(object[property_name], initial_value),
-                    "assert_readonly", description,
-                    "changing property ${p} succeeded",
-                    {p:property_name});
-         } finally {
-             object[property_name] = initial_value;
-         }
+        assert(property_name in object,
+               "assert_readonly", description,
+               "property ${p} not found",
+               {p:property_name});
+
+        let desc;
+        while (object && (desc = Object.getOwnPropertyDescriptor(object, property_name)) === undefined) {
+            object = Object.getPrototypeOf(object);
+        }
+
+        assert(desc !== undefined,
+               "assert_readonly", description,
+               "could not find a descriptor for property ${p}",
+               {p:property_name});
+
+        if (desc.hasOwnProperty("value")) {
+            
+            assert(desc.writable === false, "assert_readonly", description,
+                   "descriptor [[Writable]] expected false got ${actual}", {actual:desc.writable});
+        } else if (desc.hasOwnProperty("get") || desc.hasOwnProperty("set")) {
+            
+            assert(desc.set === undefined, "assert_readonly", description,
+                   "property ${p} is an accessor property with a [[Set]] attribute, cannot test readonly-ness",
+                   {p:property_name});
+        } else {
+            
+            
+            
+            
+            assert(false, "assert_readonly", description,
+                   "Object.getOwnPropertyDescriptor must return a fully populated property descriptor");
+        }
     }
     expose_assert(assert_readonly, "assert_readonly");
 
