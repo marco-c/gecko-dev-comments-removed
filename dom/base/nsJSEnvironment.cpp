@@ -55,6 +55,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectorStats.h"
+#include "mozilla/MainThreadIdlePeriod.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -1246,7 +1247,7 @@ void nsJSContext::EndCycleCollectionCallback(
         "A max duration ICC shouldn't reduce GC delay to 0");
 
     TimeDuration delay;
-    if (aResults.mFreedGCed > 10000 && aResults.mFreedRefCounted > 10000) {
+    if (sScheduler->PreferFasterCollection()) {
       
       
       delay = TimeDuration::FromMilliseconds(
@@ -1268,9 +1269,16 @@ void nsJSContext::EndCycleCollectionCallback(
 #endif
 }
 
-
 bool CCGCScheduler::CCRunnerFired(TimeStamp aDeadline) {
   AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Incremental CC", GCCC);
+
+  if (!aDeadline) {
+    mCurrentCollectionHasSeenNonIdle = true;
+  } else if (mPreferFasterCollection) {
+    
+    
+    aDeadline = aDeadline + TimeDuration::FromMilliseconds(5.0);
+  }
 
   bool didDoWork = false;
 

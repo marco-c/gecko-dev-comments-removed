@@ -132,7 +132,7 @@ class CCGCScheduler {
         mReadyForMajorGC(!mAskParentBeforeMajorGC),
         mInterruptRequested(false) {}
 
-  static bool CCRunnerFired(TimeStamp aDeadline);
+  bool CCRunnerFired(TimeStamp aDeadline);
 
   
 
@@ -178,7 +178,9 @@ class CCGCScheduler {
   JS::SliceBudget CreateGCSliceBudget(mozilla::TimeDuration aDuration,
                                       bool isIdle, bool isExtended) {
     mInterruptRequested = false;
-    auto budget = JS::SliceBudget(aDuration, &mInterruptRequested);
+    
+    auto budget = JS::SliceBudget(
+        aDuration, mPreferFasterCollection ? nullptr : &mInterruptRequested);
     budget.idle = isIdle;
     budget.extended = isExtended;
     return budget;
@@ -350,6 +352,8 @@ class CCGCScheduler {
   JS::SliceBudget ComputeInterSliceGCBudget(TimeStamp aDeadline,
                                             TimeStamp aNow);
 
+  TimeDuration ComputeMinimumBudgetForRunner(TimeDuration aBaseValue);
+
   bool ShouldForgetSkippable(uint32_t aSuspectedCCObjects) const {
     
     
@@ -451,6 +455,8 @@ class CCGCScheduler {
   JS::SliceBudget ComputeForgetSkippableBudget(TimeStamp aStartTimeStamp,
                                                TimeStamp aDeadline);
 
+  bool PreferFasterCollection() const { return mPreferFasterCollection; }
+
  private:
   
 
@@ -522,6 +528,9 @@ class CCGCScheduler {
   bool mIsCompactingOnUserInactive = false;
   bool mIsCollectingCycles = false;
   bool mUserIsActive = true;
+
+  bool mCurrentCollectionHasSeenNonIdle = false;
+  bool mPreferFasterCollection = false;
 
  public:
   uint32_t mCCollectedWaitingForGC = 0;
