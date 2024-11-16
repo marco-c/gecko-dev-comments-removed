@@ -222,14 +222,6 @@ bool IsStuckAtTop(gfxFloat aTranslation, const LayerRectAbsolute& aInnerRange,
 
 
 
-ScreenPoint ComputeFixedMarginsOffset(
-    const ScreenMargin& aCompositorFixedLayerMargins, SideBits aFixedSides,
-    const ScreenMargin& aGeckoFixedLayerMargins);
-
-
-
-
-
 
 
 

@@ -810,6 +810,12 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   ScreenMargin GetCompositorFixedLayerMargins(
       const MutexAutoLock& aProofOfMapLock) const;
 
+  
+
+
+
+
+
   ScreenPoint ComputeFixedMarginsOffset(
       const ScreenMargin& aCompositorFixedLayerMargins, SideBits aFixedSides,
       const ScreenMargin& aGeckoFixedLayerMargins) const;
