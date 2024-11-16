@@ -1871,6 +1871,29 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
     }
   }
   TextLeafPoint lastPoint = *this;
+  
+  
+  
+  const bool shouldTraversePrevLeaf = [&]() {
+    const bool shouldTraverse =
+        !aIncludeOrigin && aDirection == eDirPrevious && mOffset == 0;
+    Accessible* prevSibling = mAcc->PrevSibling();
+    if (prevSibling) {
+      return shouldTraverse && !prevSibling->IsText();
+    }
+    return shouldTraverse;
+  }();
+  if (shouldTraversePrevLeaf) {
+    
+    Accessible* prevLeaf = PrevLeaf(mAcc);
+    if (!prevLeaf) {
+      return *this;
+    }
+    lastPoint = TextLeafPoint(
+        prevLeaf, static_cast<int32_t>(nsAccUtils::TextLength(prevLeaf)));
+  }
+  
+  
   for (;;) {
     if (TextLeafPoint offsetAttr = lastPoint.FindTextOffsetAttributeSameAcc(
             aDirection, aIncludeOrigin && lastPoint.mAcc == mAcc)) {
@@ -1890,19 +1913,26 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
     if (attrs && lastAttrs && !attrs->Equal(lastAttrs)) {
       
       
+      if (aDirection == eDirNext) {
+        return point;
+      }
+
       
       
-      if (aDirection == eDirPrevious) {
-        point = lastPoint;
-        point.mOffset = 0;
+      const auto attrsStart = TextLeafPoint(lastPoint.mAcc, 0);
+
+      
+      
+      
+      
+      
+      
+      if (aIncludeOrigin || attrsStart != *this) {
+        return attrsStart;
       }
-      if (!aIncludeOrigin && point == *this) {
-        MOZ_ASSERT(aDirection == eDirPrevious);
-        
-        
-        continue;
-      }
-      return point;
+
+      
+      
     }
     lastPoint = point;
     if (aDirection == eDirPrevious) {
@@ -1913,12 +1943,22 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
     }
     lastAttrs = attrs;
   }
+
+  
+  if (aDirection == eDirPrevious) {
+    
+    return TextLeafPoint(lastPoint.mAcc, 0);
+  }
+  
+  
+  Accessible* nextLeaf = NextLeaf(lastPoint.mAcc);
+  if (nextLeaf) {
+    return TextLeafPoint(nextLeaf, 0);
+  }
   
   return TextLeafPoint(
       lastPoint.mAcc,
-      aDirection == eDirPrevious
-          ? 0
-          : static_cast<int32_t>(nsAccUtils::TextLength(lastPoint.mAcc)));
+      static_cast<int32_t>(nsAccUtils::TextLength(lastPoint.mAcc)));
 }
 
 LayoutDeviceIntRect TextLeafPoint::CharBounds() {

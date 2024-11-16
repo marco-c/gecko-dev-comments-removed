@@ -172,6 +172,16 @@ TextLeafPoint UiaTextRange::FindBoundary(const TextLeafPoint& aOrigin,
     }
     return TextLeafPoint(doc, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
   }
+  if (aUnit == TextUnit_Format) {
+    
+    
+    
+    
+    
+    
+    
+    return aOrigin.FindTextAttrsStart(aDirection, aIncludeOrigin);
+  }
   AccessibleTextBoundary boundary;
   switch (aUnit) {
     case TextUnit_Character:
