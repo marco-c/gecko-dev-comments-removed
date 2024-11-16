@@ -1149,41 +1149,34 @@ bool xpc::GlobalProperties::DefineInSandbox(JSContext* cx,
   return Define(cx, obj);
 }
 
-
-
-
-
-
-nsresult ApplyAddonContentScriptCSP(nsISupports* prinOrSop) {
+nsresult SetSandboxCSP(nsISupports* prinOrSop, const nsAString& cspString) {
   nsCOMPtr<nsIPrincipal> principal = do_QueryInterface(prinOrSop);
   if (!principal) {
-    return NS_OK;
+    return NS_ERROR_INVALID_ARG;
   }
-
   auto* basePrin = BasePrincipal::Cast(principal);
-  
-  
-  auto* addonPolicy = basePrin->ContentScriptAddonPolicy();
-  if (!addonPolicy) {
-    return NS_OK;
+  if (!basePrin->Is<ExpandedPrincipal>()) {
+    return NS_ERROR_INVALID_ARG;
   }
-  
-  
-  if (addonPolicy->ManifestVersion() < 3) {
-    return NS_OK;
-  }
+  auto* expanded = basePrin->As<ExpandedPrincipal>();
 
-  nsString url;
-  MOZ_TRY_VAR(url, addonPolicy->GetURL(u""_ns));
-
-  nsCOMPtr<nsIURI> selfURI;
-  MOZ_TRY(NS_NewURI(getter_AddRefs(selfURI), url));
-
-  const nsAString& baseCSP = addonPolicy->BaseCSP();
-
-  
-  auto expanded = basePrin->As<ExpandedPrincipal>();
   nsCOMPtr<nsIContentSecurityPolicy> csp;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> selfURI;
+  MOZ_TRY(NS_NewURI(getter_AddRefs(selfURI), "moz-extension://dummy"_ns));
 
 #ifdef MOZ_DEBUG
   
@@ -1196,7 +1189,7 @@ nsresult ApplyAddonContentScriptCSP(nsISupports* prinOrSop) {
       nsAutoString parsedPolicyStr;
       for (uint32_t i = 0; i < count; i++) {
         csp->GetPolicyString(i, parsedPolicyStr);
-        MOZ_ASSERT(!parsedPolicyStr.Equals(baseCSP));
+        MOZ_ASSERT(!parsedPolicyStr.Equals(cspString));
       }
     }
   }
@@ -1217,7 +1210,7 @@ nsresult ApplyAddonContentScriptCSP(nsISupports* prinOrSop) {
   MOZ_TRY(
       csp->SetRequestContextWithPrincipal(clonedPrincipal, selfURI, ""_ns, 0));
 
-  MOZ_TRY(csp->AppendPolicy(baseCSP, false, false));
+  MOZ_TRY(csp->AppendPolicy(cspString, false, false));
 
   expanded->SetCsp(csp);
   return NS_OK;
@@ -1801,6 +1794,33 @@ bool OptionsBase::ParseString(const char* name, nsString& prop) {
 
 
 
+bool OptionsBase::ParseOptionalString(const char* name, Maybe<nsString>& prop) {
+  RootedValue value(mCx);
+  bool found;
+  bool ok = ParseValue(name, &value, &found);
+  NS_ENSURE_TRUE(ok, false);
+
+  if (!found || value.isUndefined()) {
+    return true;
+  }
+
+  if (!value.isString()) {
+    JS_ReportErrorASCII(mCx, "Expected a string value for property %s", name);
+    return false;
+  }
+
+  nsAutoJSString strVal;
+  if (!strVal.init(mCx, value.toString())) {
+    return false;
+  }
+
+  prop = Some(strVal);
+  return true;
+}
+
+
+
+
 bool OptionsBase::ParseId(const char* name, MutableHandleId prop) {
   RootedValue value(mCx);
   bool found;
@@ -1883,6 +1903,8 @@ bool SandboxOptions::Parse() {
             ParseBoolean("isWebExtensionContentScript",
                          &isWebExtensionContentScript) &&
             ParseBoolean("forceSecureContext", &forceSecureContext) &&
+            ParseOptionalString("sandboxContentSecurityPolicy",
+                                sandboxContentSecurityPolicy) &&
             ParseString("sandboxName", sandboxName) &&
             ParseObject("sameZoneAs", &sameZoneAs) &&
             ParseBoolean("freshCompartment", &freshCompartment) &&
@@ -1994,8 +2016,6 @@ nsresult nsXPCComponents_utils_Sandbox::CallOrConstruct(
       } else {
         ok = GetExpandedPrincipal(cx, obj, options, getter_AddRefs(expanded));
         prinOrSop = expanded;
-        
-        MOZ_TRY(ApplyAddonContentScriptCSP(prinOrSop));
       }
     } else {
       ok = GetPrincipalOrSOP(cx, obj, getter_AddRefs(prinOrSop));
@@ -2008,6 +2028,21 @@ nsresult nsXPCComponents_utils_Sandbox::CallOrConstruct(
 
   if (!ok) {
     return ThrowAndFail(NS_ERROR_INVALID_ARG, cx, _retval);
+  }
+
+  if (options.sandboxContentSecurityPolicy.isSome()) {
+    if (!expanded) {
+      
+      
+      JS_ReportErrorASCII(cx,
+                          "sandboxContentSecurityPolicy is currently only "
+                          "supported with ExpandedPrincipals");
+      return ThrowAndFail(NS_ERROR_INVALID_ARG, cx, _retval);
+    }
+    rv = SetSandboxCSP(prinOrSop, options.sandboxContentSecurityPolicy.value());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   if (NS_FAILED(AssembleSandboxMemoryReporterName(cx, options.sandboxName))) {

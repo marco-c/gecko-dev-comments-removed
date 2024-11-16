@@ -498,8 +498,7 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     
     auto* basePrin = BasePrincipal::Cast(subjectPrincipal);
     
-    
-    if (basePrin->ContentScriptAddonPolicy()) {
+    if (basePrin->Is<ExpandedPrincipal>()) {
       basePrin->As<ExpandedPrincipal>()->GetCsp(getter_AddRefs(csp));
     }
     
