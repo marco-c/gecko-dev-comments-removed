@@ -47,6 +47,17 @@ namespace mozilla::dom::quota {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 Result<Ok, nsresult> ArtificialFailure(
     nsIQuotaArtificialFailure::Category aCategory);
 
