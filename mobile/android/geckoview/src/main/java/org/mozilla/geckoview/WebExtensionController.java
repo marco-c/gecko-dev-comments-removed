@@ -247,29 +247,6 @@ public class WebExtensionController {
 
   @UiThread
   public interface PromptDelegate {
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-install-prompt", version = 134)
-    default GeckoResult<AllowOrDeny> onInstallPrompt(
-        @NonNull final WebExtension extension,
-        @NonNull final String[] permissions,
-        @NonNull final String[] origins) {
-      return null;
-    }
 
     
 
@@ -1199,38 +1176,20 @@ public class WebExtensionController {
       return;
     }
 
-    @SuppressWarnings("deprecation")
-    final GeckoResult<AllowOrDeny> promptResponseDeprecated =
-        mPromptDelegate.onInstallPrompt(
+    final GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
+        mPromptDelegate.onInstallPromptRequest(
             extension, message.getStringArray("permissions"), message.getStringArray("origins"));
-    
-    
-    
-    if (promptResponseDeprecated != null) {
-      callback.resolveTo(
-          promptResponseDeprecated.map(
-              allowOrDeny -> {
-                final GeckoBundle response = new GeckoBundle(2);
-                response.putBoolean("allow", AllowOrDeny.ALLOW.equals(allowOrDeny));
-                response.putBoolean("privateBrowsingAllowed", false);
-                return response;
-              }));
-    } else {
-      final GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
-          mPromptDelegate.onInstallPromptRequest(
-              extension, message.getStringArray("permissions"), message.getStringArray("origins"));
-      if (promptResponse == null) {
-        return;
-      }
-      callback.resolveTo(
-          promptResponse.map(
-              userResponse -> {
-                final GeckoBundle response = new GeckoBundle(2);
-                response.putBoolean("allow", userResponse.isPermissionsGranted);
-                response.putBoolean("privateBrowsingAllowed", userResponse.isPrivateModeGranted);
-                return response;
-              }));
+    if (promptResponse == null) {
+      return;
     }
+    callback.resolveTo(
+        promptResponse.map(
+            userResponse -> {
+              final GeckoBundle response = new GeckoBundle(2);
+              response.putBoolean("allow", userResponse.isPermissionsGranted);
+              response.putBoolean("privateBrowsingAllowed", userResponse.isPrivateModeGranted);
+              return response;
+            }));
   }
 
   private void updatePrompt(final GeckoBundle message, final EventCallback callback) {
