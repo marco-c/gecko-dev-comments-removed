@@ -306,6 +306,10 @@ class nsLineBox final : public nsLineLink {
     return GetOverflowArea(mozilla::OverflowType::Scrollable);
   }
 
+  
+  void SetInFlowChildBounds(const mozilla::Maybe<nsRect>& aInFlowChildBounds);
+  mozilla::Maybe<nsRect> GetInFlowChildBounds() const;
+
   void SlideBy(nscoord aDBCoord, const nsSize& aContainerSize) {
     NS_ASSERTION(
         aContainerSize == mContainerSize || mContainerSize == nsSize(-1, -1),
@@ -320,6 +324,9 @@ class nsLineBox final : public nsLineLink {
               .GetPhysicalPoint(mWritingMode, nullContainerSize);
       for (const auto otype : mozilla::AllOverflowTypes()) {
         mData->mOverflowAreas.Overflow(otype) += physicalDelta;
+      }
+      if (mData->mInFlowChildBounds) {
+        *mData->mInFlowChildBounds += physicalDelta;
       }
     }
   }
@@ -337,6 +344,9 @@ class nsLineBox final : public nsLineLink {
       nsPoint physicalDelta(-delta.width, 0);
       for (const auto otype : mozilla::AllOverflowTypes()) {
         mData->mOverflowAreas.Overflow(otype) += physicalDelta;
+      }
+      if (mData->mInFlowChildBounds) {
+        *mData->mInFlowChildBounds += physicalDelta;
       }
     }
     return delta;
@@ -524,6 +534,12 @@ class nsLineBox final : public nsLineLink {
     explicit ExtraData(const nsRect& aBounds)
         : mOverflowAreas(aBounds, aBounds) {}
     mozilla::OverflowAreas mOverflowAreas;
+    
+    
+    
+    
+    
+    mozilla::Maybe<nsRect> mInFlowChildBounds;
   };
 
   struct ExtraBlockData : public ExtraData {
