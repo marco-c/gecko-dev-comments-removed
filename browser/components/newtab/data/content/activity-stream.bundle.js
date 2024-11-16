@@ -4363,7 +4363,7 @@ class _CardGrid extends (external_React_default()).PureComponent {
       const fakespotEnabled = prefs[PREF_FAKESPOT_ENABLED];
       if (!isFakespot || isFakespot && fakespotEnabled) {
         
-        cards.splice(2, 0, this.renderListFeed(this.props.data.recommendations, listFeedSelectedFeed));
+        cards.splice(2, 1, this.renderListFeed(this.props.data.recommendations, listFeedSelectedFeed));
       }
     }
     let moreRecsHeader = "";
