@@ -3405,11 +3405,11 @@ TSFTextStore::RecordCompositionUpdateAction() {
       }
       
       
-      LONG start = std::min(std::max(rangeStart, mComposition->StartOffset()),
-                            mComposition->EndOffset());
-      LONG end = std::max(
-          std::min(rangeStart + rangeLength, mComposition->EndOffset()),
-          mComposition->StartOffset());
+      LONG start = std::clamp(rangeStart, mComposition->StartOffset(),
+                              mComposition->EndOffset());
+      LONG end =
+          std::clamp(rangeStart + rangeLength, mComposition->StartOffset(),
+                     mComposition->EndOffset());
       LONG length = end - start;
       if (length < 0) {
         MOZ_LOG(gIMELog, LogLevel::Error,
