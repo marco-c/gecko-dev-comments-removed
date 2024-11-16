@@ -1551,6 +1551,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "1898960",
+    platform: "android",
+    domain: "hrm.online.comarch.pl",
+    bug: "1898960",
+    config: {
+      matches: ["*://hrm.online.comarch.pl/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
