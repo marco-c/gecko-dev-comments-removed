@@ -232,7 +232,7 @@ class TracerActor extends Actor {
     }
   }
 
-  stopTracing() {
+  async stopTracing() {
     if (!this.tracingListener) {
       return;
     }
@@ -252,13 +252,9 @@ class TracerActor extends Actor {
 
 
 
-  getProfile() {
-    const profile = this.#stopResult;
+  async getProfile() {
     
-    if (profile.threads[0].samples.data.length) {
-      return profile;
-    }
-    return null;
+    return this.#stopResult;
   }
 
   createValueGrip(value) {
