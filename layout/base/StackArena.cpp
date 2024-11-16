@@ -5,7 +5,6 @@
 
 
 #include "StackArena.h"
-#include "nsAlgorithm.h"
 #include "nsDebug.h"
 
 namespace mozilla {
@@ -114,7 +113,7 @@ void* StackArena::Allocate(size_t aSize) {
   NS_ASSERTION(mStackTop > 0, "Allocate called without Push");
 
   
-  aSize = NS_ROUNDUP<size_t>(aSize, 8);
+  aSize = RoundUpToMultiple(aSize, 8);
 
   
   if (mPos + aSize >= StackBlock::MAX_USABLE_SIZE) {
