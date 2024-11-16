@@ -81,7 +81,6 @@ class Handle;
 #define CHECK_EQ(lhs, rhs) MOZ_RELEASE_ASSERT((lhs) == (rhs))
 #define CHECK_LE(lhs, rhs) MOZ_RELEASE_ASSERT((lhs) <= (rhs))
 #define CHECK_GE(lhs, rhs) MOZ_RELEASE_ASSERT((lhs) >= (rhs))
-#define CHECK_IMPLIES(lhs, rhs) MOZ_RELEASE_ASSERT(!(lhs) || (rhs))
 #define CONSTEXPR_DCHECK MOZ_ASSERT
 
 
@@ -186,10 +185,6 @@ inline Dst saturated_cast(Src value);
 template <>
 inline uint8_t saturated_cast<uint8_t, int>(int x) {
   return (x >= 0) ? ((x < 255) ? uint8_t(x) : 255) : 0;
-}
-template <>
-inline uint8_t saturated_cast<uint8_t, uint32_t>(uint32_t x) {
-  return (x < 255) ? uint8_t(x) : 255;
 }
 
 
@@ -436,13 +431,11 @@ constexpr int kSystemPointerSize = sizeof(void*);
 
 
 
-constexpr uint64_t kMaxSafeIntegerUint64 = (uint64_t{1} << 53) - 1;
-constexpr double kMaxSafeInteger = static_cast<double>(kMaxSafeIntegerUint64);
+constexpr double kMaxSafeInteger = 9007199254740991.0;  
 
 constexpr int kBitsPerByte = 8;
 constexpr int kBitsPerByteLog2 = 3;
 constexpr int kUInt16Size = sizeof(uint16_t);
-constexpr int kInt32Size = sizeof(int32_t);
 constexpr int kUInt32Size = sizeof(uint32_t);
 constexpr int kInt64Size = sizeof(int64_t);
 
@@ -932,12 +925,8 @@ inline Handle<T> handle(T object, Isolate* isolate) {
 
 
 
-
 template <typename T>
 using DirectHandle = Handle<T>;
-
-template <typename T>
-using IndirectHandle = Handle<T>;
 
 
 
@@ -1033,8 +1022,6 @@ class String : public HeapObject {
   template <typename Char>
   base::Vector<const Char> GetCharVector(
       const DisallowGarbageCollection& no_gc);
-
-  friend class RegExpUtils;
 };
 
 template <>
@@ -1053,20 +1040,12 @@ inline base::Vector<const base::uc16> String::GetCharVector(
   return flat.ToUC16Vector();
 }
 
-using RegExpFlags = JS::RegExpFlags;
-using RegExpFlag = JS::RegExpFlags::Flag;
-
 class JSRegExp {
  public:
   
   static constexpr int RegistersForCaptureCount(int count) {
     return (count + 1) * 2;
   }
-
-  static RegExpFlags AsRegExpFlags(RegExpFlags flags) { return flags; }
-  static RegExpFlags AsJSRegExpFlags(RegExpFlags flags) { return flags; }
-
-  static Handle<String> StringFromFlags(Isolate* isolate, RegExpFlags flags);
 
   
   
@@ -1107,18 +1086,14 @@ class IrRegExpData : public HeapObject {
     return inner()->getMaxRegisters();
   }
 
-  RegExpFlags flags() const { return inner()->getFlags(); }
-
-  size_t capture_count() const {
-    
-    return inner()->pairCount() - 1;
-  }
-
  private:
   js::RegExpShared* inner() const {
     return value().toGCThing()->as<js::RegExpShared>();
   }
 };
+
+using RegExpFlags = JS::RegExpFlags;
+using RegExpFlag = JS::RegExpFlags::Flag;
 
 inline bool IsUnicode(RegExpFlags flags) { return flags.unicode(); }
 inline bool IsGlobal(RegExpFlags flags) { return flags.global(); }
@@ -1371,12 +1346,6 @@ class Label {
   js::jit::CodeOffset patchOffset_;
 
   friend class SMRegExpMacroAssembler;
-};
-
-class RegExpUtils {
- public:
-  static uint64_t AdvanceStringIndex(Tagged<String> string, uint64_t index,
-                                     bool unicode);
 };
 
 #define v8_flags js::jit::JitOptions

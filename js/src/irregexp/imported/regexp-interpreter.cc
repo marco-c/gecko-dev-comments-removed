@@ -1,26 +1,26 @@
-// Copyright 2011 the V8 project authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
 
-// A simple interpreter for the Irregexp byte code.
+
+
+
+
 
 #include "irregexp/imported/regexp-interpreter.h"
 
 #include "irregexp/imported/regexp-bytecodes.h"
 #include "irregexp/imported/regexp-macro-assembler.h"
-#include "irregexp/imported/regexp-stack.h"  // For kMaximumStackSize.
+#include "irregexp/imported/regexp-stack.h"  
 #include "irregexp/imported/regexp.h"
 
 #ifdef V8_INTL_SUPPORT
 #include "unicode/uchar.h"
-#endif  // V8_INTL_SUPPORT
+#endif  
 
-// Use token threaded dispatch iff the compiler supports computed gotos and the
-// build argument v8_enable_regexp_interpreter_threaded_dispatch was set.
+
+
 #if V8_HAS_COMPUTED_GOTO && \
     defined(V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH)
 #define V8_USE_COMPUTED_GOTO 1
-#endif  // V8_HAS_COMPUTED_GOTO
+#endif  
 
 namespace v8 {
 namespace internal {
@@ -46,16 +46,16 @@ bool BackRefMatchesNoCase(Isolate* isolate, int from, int current, int len,
 
 bool BackRefMatchesNoCase(Isolate* isolate, int from, int current, int len,
                           base::Vector<const uint8_t> subject, bool unicode) {
-  // For Latin1 characters the unicode flag makes no difference.
+  
   for (int i = 0; i < len; i++) {
     unsigned int old_char = subject[from++];
     unsigned int new_char = subject[current++];
     if (old_char == new_char) continue;
-    // Convert both characters to lower case.
+    
     old_char |= 0x20;
     new_char |= 0x20;
     if (old_char != new_char) return false;
-    // Not letters in the ASCII range and Latin-1 range.
+    
     if (!(old_char - 'a' <= 'z' - 'a') &&
         !(old_char - 224 <= 254 - 224 && old_char != 247)) {
       return false;
@@ -81,7 +81,7 @@ void MaybeTraceInterpreter(const uint8_t* code_base, const uint8_t* pc,
     RegExpBytecodeDisassembleSingle(code_base, pc);
   }
 }
-#endif  // DEBUG
+#endif  
 
 int32_t Load32Aligned(const uint8_t* pc) {
   DCHECK_EQ(0, reinterpret_cast<intptr_t>(pc) & 3);
@@ -98,11 +98,11 @@ int32_t Load16AlignedSigned(const uint8_t* pc) {
   return *reinterpret_cast<const int16_t*>(pc);
 }
 
-// Helpers to access the packed argument. Takes the 32 bits containing the
-// current bytecode, where the 8 LSB contain the bytecode and the rest contains
-// a packed 24-bit argument.
-// TODO(jgruber): Specify signed-ness in bytecode signature declarations, and
-// police restrictions during bytecode generation.
+
+
+
+
+
 int32_t LoadPacked24Signed(int32_t bytecode_and_packed_arg) {
   return bytecode_and_packed_arg >> BYTECODE_SHIFT;
 }
@@ -110,11 +110,11 @@ uint32_t LoadPacked24Unsigned(int32_t bytecode_and_packed_arg) {
   return static_cast<uint32_t>(bytecode_and_packed_arg) >> BYTECODE_SHIFT;
 }
 
-// A simple abstraction over the backtracking stack used by the interpreter.
-//
-// Despite the name 'backtracking' stack, it's actually used as a generic stack
-// that stores both program counters (= offsets into the bytecode) and generic
-// integer values.
+
+
+
+
+
 class BacktrackStack {
  public:
   BacktrackStack() = default;
@@ -135,7 +135,7 @@ class BacktrackStack {
     return v;
   }
 
-  // The 'sp' is the index of the first empty element in the stack.
+  
   int sp() const { return static_cast<int>(data_.size()); }
   void set_sp(uint32_t new_sp) {
     DCHECK_LE(new_sp, sp());
@@ -143,8 +143,8 @@ class BacktrackStack {
   }
 
  private:
-  // Semi-arbitrary. Should be large enough for common cases to remain in the
-  // static stack-allocated backing store, but small enough not to waste space.
+  
+  
   static constexpr int kStaticCapacity = 64;
 
   using ValueT = int;
@@ -154,11 +154,11 @@ class BacktrackStack {
       RegExpStack::kMaximumStackSize / sizeof(ValueT);
 };
 
-// Registers used during interpreter execution. These consist of output
-// registers in indices [0, output_register_count[ which will contain matcher
-// results as a {start,end} index tuple for each capture (where the whole match
-// counts as implicit capture 0); and internal registers in indices
-// [output_register_count, total_register_count[.
+
+
+
+
+
 class InterpreterRegisters {
  public:
   using RegisterT = int;
@@ -169,15 +169,15 @@ class InterpreterRegisters {
         output_registers_(output_registers),
         total_register_count_(total_register_count),
         output_register_count_(output_register_count) {
-    // TODO(jgruber): Use int32_t consistently for registers. Currently, CSA
-    // uses int32_t while runtime uses int.
+    
+    
     static_assert(sizeof(int) == sizeof(int32_t));
-    SBXCHECK_GE(output_register_count, 2);  // At least 2 for the match itself.
+    SBXCHECK_GE(output_register_count, 2);  
     SBXCHECK_GE(total_register_count, output_register_count);
     SBXCHECK_LE(total_register_count, RegExpMacroAssembler::kMaxRegisterCount);
     DCHECK_NOT_NULL(output_registers);
 
-    // Initialize the output register region to -1 signifying 'no match'.
+    
     std::memset(registers_.data(), -1,
                 output_register_count * sizeof(RegisterT));
     USE(total_register_count_);
@@ -198,7 +198,7 @@ class InterpreterRegisters {
   }
 
  private:
-  static constexpr int kStaticCapacity = 64;  // Arbitrary.
+  static constexpr int kStaticCapacity = 64;  
   base::SmallVector<RegisterT, kStaticCapacity> registers_;
   RegisterT* const output_registers_;
   const int total_register_count_;
@@ -208,15 +208,15 @@ class InterpreterRegisters {
 IrregexpInterpreter::Result ThrowStackOverflow(Isolate* isolate,
                                                RegExp::CallOrigin call_origin) {
   CHECK(call_origin == RegExp::CallOrigin::kFromRuntime);
-  // We abort interpreter execution after the stack overflow is thrown, and thus
-  // allow allocation here despite the outer DisallowGarbageCollectionScope.
+  
+  
   AllowGarbageCollection yes_gc;
   isolate->StackOverflow();
   return IrregexpInterpreter::EXCEPTION;
 }
 
-// Only throws if called from the runtime, otherwise just returns the EXCEPTION
-// status code.
+
+
 IrregexpInterpreter::Result MaybeThrowStackOverflow(
     Isolate* isolate, RegExp::CallOrigin call_origin) {
   if (call_origin == RegExp::CallOrigin::kFromRuntime) {
@@ -248,8 +248,8 @@ void UpdateCodeAndSubjectReferences(
   *subject_string_vector_out = subject_string->GetCharVector<Char>(no_gc);
 }
 
-// Runs all pending interrupts and updates unhandlified object references if
-// necessary.
+
+
 template <typename Char>
 IrregexpInterpreter::Result HandleInterrupts(
     Isolate* isolate, RegExp::CallOrigin call_origin,
@@ -263,11 +263,11 @@ IrregexpInterpreter::Result HandleInterrupts(
   bool js_has_overflowed = check.JsHasOverflowed();
 
   if (call_origin == RegExp::CallOrigin::kFromJs) {
-    // Direct calls from JavaScript can be interrupted in two ways:
-    // 1. A real stack overflow, in which case we let the caller throw the
-    //    exception.
-    // 2. The stack guard was used to interrupt execution for another purpose,
-    //    forcing the call through the runtime system.
+    
+    
+    
+    
+    
     if (js_has_overflowed) {
       return IrregexpInterpreter::EXCEPTION;
     } else if (check.InterruptRequested()) {
@@ -275,7 +275,7 @@ IrregexpInterpreter::Result HandleInterrupts(
     }
   } else {
     DCHECK(call_origin == RegExp::CallOrigin::kFromRuntime);
-    // Prepare for possible GC.
+    
     HandleScope handles(isolate);
     Handle<TrustedByteArray> code_handle(*code_array_out, isolate);
     Handle<String> subject_handle(*subject_string_out, isolate);
@@ -294,9 +294,9 @@ IrregexpInterpreter::Result HandleInterrupts(
         return IrregexpInterpreter::EXCEPTION;
       }
 
-      // If we changed between a LATIN1 and a UC16 string, we need to
-      // restart regexp matching with the appropriate template instantiation of
-      // RawMatch.
+      
+      
+      
       if (String::IsOneByteRepresentationUnderneath(*subject_handle) !=
           was_one_byte) {
         return IrregexpInterpreter::RETRY;
@@ -318,16 +318,16 @@ bool CheckBitInTable(const uint32_t current_char, const uint8_t* const table) {
   return (b & (1 << bit)) != 0;
 }
 
-// Returns true iff 0 <= index < length.
+
 bool IndexIsInBounds(int index, int length) {
   DCHECK_GE(length, 0);
   return static_cast<uintptr_t>(index) < static_cast<uintptr_t>(length);
 }
 
-// If computed gotos are supported by the compiler, we can get addresses to
-// labels directly in C/C++. Every bytecode handler has its own label and we
-// store the addresses in a dispatch table indexed by bytecode. To execute the
-// next handler we simply jump (goto) directly to its address.
+
+
+
+
 #if V8_USE_COMPUTED_GOTO
 #define BC_LABEL(name) BC_##name:
 #define DECODE()                                                   \
@@ -339,25 +339,25 @@ bool IndexIsInBounds(int index, int length) {
   pc = next_pc;     \
   insn = next_insn; \
   goto* next_handler_addr
-// Without computed goto support, we fall back to a simple switch-based
-// dispatch (A large switch statement inside a loop with a case for every
-// bytecode).
-#else  // V8_USE_COMPUTED_GOTO
+
+
+
+#else  
 #define BC_LABEL(name) case BC_##name:
 #define DECODE() next_insn = Load32Aligned(next_pc)
 #define DISPATCH()  \
   pc = next_pc;     \
   insn = next_insn; \
   goto switch_dispatch_continuation
-#endif  // V8_USE_COMPUTED_GOTO
+#endif  
 
-// ADVANCE/SET_PC_FROM_OFFSET are separated from DISPATCH, because ideally some
-// instructions can be executed between ADVANCE/SET_PC_FROM_OFFSET and DISPATCH.
-// We want those two macros as far apart as possible, because the goto in
-// DISPATCH is dependent on a memory load in ADVANCE/SET_PC_FROM_OFFSET. If we
-// don't hit the cache and have to fetch the next handler address from physical
-// memory, instructions between ADVANCE/SET_PC_FROM_OFFSET and DISPATCH can
-// potentially be executed unconditionally, reducing memory stall.
+
+
+
+
+
+
+
 #define ADVANCE(name)                             \
   next_pc = pc + RegExpBytecodeLength(BC_##name); \
   DECODE()
@@ -365,7 +365,7 @@ bool IndexIsInBounds(int index, int length) {
   next_pc = code_base + offset;    \
   DECODE()
 
-// Current position mutations.
+
 #define SET_CURRENT_POSITION(value)                        \
   do {                                                     \
     current = (value);                                     \
@@ -380,7 +380,7 @@ bool IndexIsInBounds(int index, int length) {
                         current_char, RegExpBytecodeLength(BC_##name), #name);
 #else
 #define BYTECODE(name) BC_LABEL(name)
-#endif  // DEBUG
+#endif  
 
 template <typename Char>
 IrregexpInterpreter::Result RawMatch(
@@ -393,21 +393,21 @@ IrregexpInterpreter::Result RawMatch(
 
 #if V8_USE_COMPUTED_GOTO
 
-// We have to make sure that no OOB access to the dispatch table is possible and
-// all values are valid label addresses.
-// Otherwise jumps to arbitrary addresses could potentially happen.
-// This is ensured as follows:
-// Every index to the dispatch table gets masked using BYTECODE_MASK in
-// DECODE(). This way we can only get values between 0 (only the least
-// significant byte of an integer is used) and kRegExpPaddedBytecodeCount - 1
-// (BYTECODE_MASK is defined to be exactly this value).
-// All entries from kRegExpBytecodeCount to kRegExpPaddedBytecodeCount have to
-// be filled with BREAKs (invalid operation).
 
-// Fill dispatch table from last defined bytecode up to the next power of two
-// with BREAK (invalid operation).
-// TODO(pthier): Find a way to fill up automatically (at compile time)
-// 59 real bytecodes -> 5 fillers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define BYTECODE_FILLER_ITERATOR(V) \
   V(BREAK) /* 1 */                  \
   V(BREAK) /* 2 */                  \
@@ -420,12 +420,12 @@ IrregexpInterpreter::Result RawMatch(
       BYTECODE_FILLER_ITERATOR(COUNT);
 #undef COUNT
 
-  // Make sure kRegExpPaddedBytecodeCount is actually the closest possible power
-  // of two.
+  
+  
   DCHECK_EQ(kRegExpPaddedBytecodeCount,
             base::bits::RoundUpToPowerOfTwo32(kRegExpBytecodeCount));
 
-  // Make sure every bytecode we get by using BYTECODE_MASK is well defined.
+  
   static_assert(kRegExpBytecodeCount <= kRegExpPaddedBytecodeCount);
   static_assert(kRegExpBytecodeCount + kRegExpBytecodeFillerCount ==
                 kRegExpPaddedBytecodeCount);
@@ -437,7 +437,7 @@ IrregexpInterpreter::Result RawMatch(
 #undef DECLARE_DISPATCH_TABLE_ENTRY
 #undef BYTECODE_FILLER_ITERATOR
 
-#endif  // V8_USE_COMPUTED_GOTO
+#endif  
 
   const uint8_t* pc = code_array->begin();
   const uint8_t* code_base = pc;
@@ -465,7 +465,7 @@ IrregexpInterpreter::Result RawMatch(
 #else
     insn = Load32Aligned(pc);
     switch (insn & BYTECODE_MASK) {
-#endif  // V8_USE_COMPUTED_GOTO
+#endif
     BYTECODE(BREAK) { UNREACHABLE(); }
     BYTECODE(PUSH_CP) {
       ADVANCE(PUSH_CP);
@@ -972,7 +972,7 @@ IrregexpInterpreter::Result RawMatch(
     }
     BYTECODE(SKIP_UNTIL_BIT_IN_TABLE) {
       int32_t load_offset = LoadPacked24Signed(insn);
-      int32_t advance = Load32Aligned(pc + 4);
+      int32_t advance = Load16AlignedSigned(pc + 4);
       const uint8_t* table = pc + 8;
       while (IndexIsInBounds(current + load_offset, subject.length())) {
         current_char = subject[current + load_offset];
@@ -1012,9 +1012,9 @@ IrregexpInterpreter::Result RawMatch(
       uint16_t c2 = Load16AlignedUnsigned(pc + 10);
       while (IndexIsInBounds(current + load_offset, subject.length())) {
         current_char = subject[current + load_offset];
-        // The two if-statements below are split up intentionally, as combining
-        // them seems to result in register allocation behaving quite
-        // differently and slowing down the resulting code.
+        
+        
+        
         if (c == current_char) {
           SET_PC_FROM_OFFSET(Load32Aligned(pc + 12));
           DISPATCH();
@@ -1029,16 +1029,16 @@ IrregexpInterpreter::Result RawMatch(
       DISPATCH();
     }
 #if V8_USE_COMPUTED_GOTO
-// Lint gets confused a lot if we just use !V8_USE_COMPUTED_GOTO or ifndef
-// V8_USE_COMPUTED_GOTO here.
+
+
 #else
       default:
         UNREACHABLE();
     }
-  // Label we jump to in DISPATCH(). There must be no instructions between the
-  // end of the switch, this label and the end of the loop.
+  
+  
   switch_dispatch_continuation : {}
-#endif  // V8_USE_COMPUTED_GOTO
+#endif  
   }
 }
 
@@ -1052,9 +1052,9 @@ IrregexpInterpreter::Result RawMatch(
 #undef BC_LABEL
 #undef V8_USE_COMPUTED_GOTO
 
-}  // namespace
+}  
 
-// static
+
 IrregexpInterpreter::Result IrregexpInterpreter::Match(
     Isolate* isolate, Tagged<IrRegExpData> regexp_data,
     Tagged<String> subject_string, int* output_registers,
@@ -1079,19 +1079,19 @@ IrregexpInterpreter::Result IrregexpInterpreter::MatchInternal(
     RegExp::CallOrigin call_origin, uint32_t backtrack_limit) {
   DCHECK(subject_string->IsFlat());
 
-  // Note: Heap allocation *is* allowed in two situations if calling from
-  // Runtime:
-  // 1. When creating & throwing a stack overflow exception. The interpreter
-  //    aborts afterwards, and thus possible-moved objects are never used.
-  // 2. When handling interrupts. We manually relocate unhandlified references
-  //    after interrupts have run.
+  
+  
+  
+  
+  
+  
   DisallowGarbageCollection no_gc;
 
   base::uc16 previous_char = '\n';
   String::FlatContent subject_content = subject_string->GetFlatContent(no_gc);
-  // Because interrupts can result in GC and string content relocation, the
-  // checksum verification in FlatContent may fail even though this code is
-  // safe. See (2) above.
+  
+  
+  
   subject_content.UnsafeDisableChecksumVerification();
   if (subject_content.IsOneByte()) {
     base::Vector<const uint8_t> subject_vector =
@@ -1115,8 +1115,8 @@ IrregexpInterpreter::Result IrregexpInterpreter::MatchInternal(
 
 #ifndef COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
 
-// This method is called through an external reference from RegExpExecInternal
-// builtin.
+
+
 IrregexpInterpreter::Result IrregexpInterpreter::MatchForCallFromJs(
     Address subject, int32_t start_position, Address, Address,
     int* output_registers, int32_t output_register_count,
@@ -1135,8 +1135,8 @@ IrregexpInterpreter::Result IrregexpInterpreter::MatchForCallFromJs(
       Cast<IrRegExpData>(Tagged<Object>(regexp_data));
 
   if (regexp_data_obj->MarkedForTierUp()) {
-    // Returning RETRY will re-enter through runtime, where actual recompilation
-    // for tier-up takes place.
+    
+    
     return IrregexpInterpreter::RETRY;
   }
 
@@ -1144,7 +1144,7 @@ IrregexpInterpreter::Result IrregexpInterpreter::MatchForCallFromJs(
                output_register_count, start_position, call_origin);
 }
 
-#endif  // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+#endif  
 
 IrregexpInterpreter::Result IrregexpInterpreter::MatchForCallFromRuntime(
     Isolate* isolate, DirectHandle<IrRegExpData> regexp_data,
@@ -1155,5 +1155,5 @@ IrregexpInterpreter::Result IrregexpInterpreter::MatchForCallFromRuntime(
                RegExp::CallOrigin::kFromRuntime);
 }
 
-}  // namespace internal
-}  // namespace v8
+}  
+}  

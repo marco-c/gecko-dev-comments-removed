@@ -1,6 +1,6 @@
-// Copyright 2019 the V8 project authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+
+
+
 
 #include "irregexp/imported/regexp-dotprinter.h"
 
@@ -9,8 +9,8 @@
 namespace v8 {
 namespace internal {
 
-// -------------------------------------------------------------------
-// Dot/dotty output
+
+
 
 class DotPrinterImpl : public NodeVisitor {
  public:
@@ -108,7 +108,6 @@ void DotPrinterImpl::VisitChoice(ChoiceNode* that) {
     GuardedAlternative alt = that->alternatives()->at(i);
     alt.node()->Accept(this);
   }
-  PrintAttributes(that);
 }
 
 void DotPrinterImpl::VisitLoopChoice(LoopChoiceNode* that) {
@@ -250,5 +249,5 @@ void DotPrinter::DotPrint(const char* label, RegExpNode* node) {
   printer.PrintNode(label, node);
 }
 
-}  // namespace internal
-}  // namespace v8
+}  
+}  
