@@ -7,25 +7,25 @@
 
 define(function (require, exports, module) {
   
-  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
   const {
     div,
     span,
-  } = require("devtools/client/shared/vendor/react-dom-factories");
+  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
   
   const {
     wrapRender,
-  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
   const {
     cleanFunctionName,
-  } = require("devtools/client/shared/components/reps/reps/function");
+  } = require("resource://devtools/client/shared/components/reps/reps/function.js");
   const {
     isLongString,
-  } = require("devtools/client/shared/components/reps/reps/string");
+  } = require("resource://devtools/client/shared/components/reps/reps/string.js");
   const {
     MODE,
-  } = require("devtools/client/shared/components/reps/reps/constants");
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
 
   const IGNORED_SOURCE_URLS = ["debugger eval code"];
 
@@ -80,7 +80,7 @@ define(function (require, exports, module) {
     if (mode !== MODE.TINY && mode !== MODE.HEADER) {
       const {
         Rep,
-      } = require("devtools/client/shared/components/reps/reps/rep");
+      } = require("resource://devtools/client/shared/components/reps/reps/rep.js");
       content.push(
         Rep({
           ...props,
@@ -223,7 +223,9 @@ define(function (require, exports, module) {
 
 
   function getCauseElement(props, preview) {
-    const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
+    const {
+      Rep,
+    } = require("resource://devtools/client/shared/components/reps/reps/rep.js");
     return div(
       {
         key: "cause-container",

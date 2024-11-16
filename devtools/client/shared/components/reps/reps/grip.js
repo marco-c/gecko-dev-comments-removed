@@ -7,18 +7,20 @@
 
 define(function (require, exports, module) {
   
-  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+  const {
+    span,
+  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
   
   const {
     interleave,
     wrapRender,
-  } = require("devtools/client/shared/components/reps/reps/rep-utils");
-  const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
+  const PropRep = require("resource://devtools/client/shared/components/reps/reps/prop-rep.js");
   const {
     MODE,
-  } = require("devtools/client/shared/components/reps/reps/constants");
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
 
   
 
@@ -164,7 +166,7 @@ define(function (require, exports, module) {
     ) {
       const {
         Rep,
-      } = require("devtools/client/shared/components/reps/reps/rep");
+      } = require("resource://devtools/client/shared/components/reps/reps/rep.js");
 
       return [
         Rep({

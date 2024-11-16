@@ -7,17 +7,19 @@
 
 define(function (require, exports, module) {
   
-  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+  const {
+    span,
+  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
   const {
     cropString,
     cropMultipleLines,
     wrapRender,
-  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
   const {
     MODE,
-  } = require("devtools/client/shared/components/reps/reps/constants");
-  const nodeConstants = require("devtools/client/shared/components/reps/shared/dom-node-constants");
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
+  const nodeConstants = require("resource://devtools/client/shared/components/reps/shared/dom-node-constants.js");
 
   
 

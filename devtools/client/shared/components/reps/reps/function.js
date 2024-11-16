@@ -7,21 +7,21 @@
 
 define(function (require, exports, module) {
   
-  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
   const {
     button,
     span,
-  } = require("devtools/client/shared/vendor/react-dom-factories");
+  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
   
   const {
     getGripType,
     cropString,
     wrapRender,
-  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
   const {
     MODE,
-  } = require("devtools/client/shared/components/reps/reps/constants");
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
 
   const IGNORED_SOURCE_URLS = ["debugger eval code"];
 
