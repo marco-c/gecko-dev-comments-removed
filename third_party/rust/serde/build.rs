@@ -51,11 +51,6 @@ fn main() {
     }
 
     
-    if minor < 56 {
-        println!("cargo:rustc-cfg=no_serde_derive");
-    }
-
-    
     if minor < 60 {
         println!("cargo:rustc-cfg=no_target_has_atomic");
         
@@ -74,6 +69,11 @@ fn main() {
         if minor < 34 || !has_atomic32 {
             println!("cargo:rustc-cfg=no_std_atomic");
         }
+    }
+
+    
+    if minor < 61 {
+        println!("cargo:rustc-cfg=no_serde_derive");
     }
 
     
