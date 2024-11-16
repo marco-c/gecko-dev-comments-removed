@@ -9510,12 +9510,15 @@ void MacroAssembler::prepareHashObject(Register setObj, ValueOperand value,
   loadPrivate(Address(setObj, SetObject::getDataSlotOffset()), temp1);
 
   
-  static_assert(ValueSet::offsetOfImplHcsK0() == ValueMap::offsetOfImplHcsK0());
-  static_assert(ValueSet::offsetOfImplHcsK1() == ValueMap::offsetOfImplHcsK1());
+  static_assert(ValueMap::offsetOfImplHashCodeScrambler() ==
+                ValueSet::offsetOfImplHashCodeScrambler());
+  loadPrivate(Address(temp1, ValueSet::offsetOfImplHashCodeScrambler()), temp1);
+
+  
   auto k0 = Register64(temp1);
   auto k1 = Register64(temp2);
-  load64(Address(temp1, ValueSet::offsetOfImplHcsK1()), k1);
-  load64(Address(temp1, ValueSet::offsetOfImplHcsK0()), k0);
+  load64(Address(temp1, mozilla::HashCodeScrambler::offsetOfMK1()), k1);
+  load64(Address(temp1, mozilla::HashCodeScrambler::offsetOfMK0()), k0);
 
   
   static_assert(sizeof(mozilla::HashNumber) == 4);
