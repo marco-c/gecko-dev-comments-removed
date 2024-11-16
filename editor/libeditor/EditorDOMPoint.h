@@ -281,6 +281,11 @@ class EditorDOMPointBase final {
   
 
 
+  bool IsContainerElement() const { return mParent && mParent->IsElement(); }
+
+  
+
+
 
   bool IsContainerHTMLElement(nsAtom* aTag) const {
     return mParent && mParent->IsHTMLElement(aTag);
