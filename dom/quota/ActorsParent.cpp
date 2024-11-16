@@ -3274,11 +3274,15 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
           return std::make_pair(timestamp, persisted);
         });
 
-    QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
-                                                  persisted, aOriginMetadata)));
-
+    
+    
+    
+    
     AddTemporaryOrigin(
         FullOriginMetadata{aOriginMetadata, persisted, timestamp});
+
+    QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
+                                                  persisted, aOriginMetadata)));
   }
 
   return std::move(directory);
@@ -6104,16 +6108,20 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
     if (created) {
       const int64_t timestamp = PR_Now();
 
-      
-      QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
-                                                     false,
-                                                    aOriginMetadata)));
-
       FullOriginMetadata fullOriginMetadata =
           FullOriginMetadata{aOriginMetadata,
                               false, timestamp};
 
+      
+      
+      
+      
       AddTemporaryOrigin(fullOriginMetadata);
+
+      
+      QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
+                                                     false,
+                                                    aOriginMetadata)));
 
       
       InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
