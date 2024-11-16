@@ -3480,6 +3480,10 @@ class nsDisplayListSet {
   
   void* operator new(size_t sz) noexcept(true);
 
+  
+  
+  
+  
   std::array<nsDisplayList*, 6> mLists;
 };
 
@@ -3518,6 +3522,9 @@ struct nsDisplayListCollection : public nsDisplayListSet {
   
   void* operator new(size_t sz) noexcept(true);
 
+  
+  
+  
   nsDisplayList mLists[6];
 };
 
