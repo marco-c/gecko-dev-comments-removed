@@ -51,7 +51,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1577519",
     config: {
       matches: [
-        "*://*.attwatchtv.com/*",
         "*://*.directv.com.ec/*", 
         "*://*.directv.com/*",
       ],
