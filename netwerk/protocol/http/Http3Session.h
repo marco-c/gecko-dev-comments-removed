@@ -220,6 +220,8 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
 
   void CloseWebTransportConn();
 
+  void SetServer(const nsACString& aServer) { mServer.Assign(aServer); }
+
  private:
   ~Http3Session();
 
@@ -353,6 +355,10 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   int64_t mTotalBytesRead = 0;     
   int64_t mTotalBytesWritten = 0;  
   PRIntervalTime mLastWriteTime = 0;
+  PRIntervalTime mLastReadTime = 0;
+  uint64_t mTotelReadInterval = 0;
+  uint32_t mTotelReadIntervalCount = 0;
+  nsCString mServer;
 
   
   EchExtensionStatus mEchExtensionStatus = EchExtensionStatus::kNotPresent;
