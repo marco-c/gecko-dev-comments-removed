@@ -128,8 +128,8 @@ class GlobalObjectData {
   
   
   struct ConstructorWithProto {
-    HeapPtr<JSObject*> constructor;
-    HeapPtr<JSObject*> prototype;
+    GCPtr<JSObject*> constructor;
+    GCPtr<JSObject*> prototype;
   };
   using CtorArray = mozilla::EnumeratedArray<JSProtoKey, ConstructorWithProto,
                                              size_t(JSProto_LIMIT)>;
@@ -155,72 +155,72 @@ class GlobalObjectData {
 
     Limit
   };
-  using ProtoArray = mozilla::EnumeratedArray<ProtoKind, HeapPtr<JSObject*>,
+  using ProtoArray = mozilla::EnumeratedArray<ProtoKind, GCPtr<JSObject*>,
                                               size_t(ProtoKind::Limit)>;
   ProtoArray builtinProtos;
 
-  HeapPtr<GlobalScope*> emptyGlobalScope;
+  GCPtr<GlobalScope*> emptyGlobalScope;
 
   
-  HeapPtr<GlobalLexicalEnvironmentObject*> lexicalEnvironment;
+  GCPtr<GlobalLexicalEnvironmentObject*> lexicalEnvironment;
 
   
-  HeapPtr<JSObject*> windowProxy;
+  GCPtr<JSObject*> windowProxy;
 
   
   
   
-  HeapPtr<NativeObject*> intrinsicsHolder;
-  HeapPtr<NativeObject*> computedIntrinsicsHolder;
+  GCPtr<NativeObject*> intrinsicsHolder;
+  GCPtr<NativeObject*> computedIntrinsicsHolder;
 
   
-  HeapPtr<NativeObject*> forOfPICChain;
+  GCPtr<NativeObject*> forOfPICChain;
 
   
-  HeapPtr<ArrayObject*> sourceURLsHolder;
+  GCPtr<ArrayObject*> sourceURLsHolder;
 
   
-  HeapPtr<PlainObject*> realmKeyObject;
+  GCPtr<PlainObject*> realmKeyObject;
 
   
-  HeapPtr<JSFunction*> throwTypeError;
+  GCPtr<JSFunction*> throwTypeError;
 
   
-  HeapPtr<JSFunction*> eval;
+  GCPtr<JSFunction*> eval;
 
   
-  HeapPtr<PropertyIteratorObject*> emptyIterator;
+  GCPtr<PropertyIteratorObject*> emptyIterator;
 
   
-  HeapPtr<SharedShape*> arrayShapeWithDefaultProto;
+  GCPtr<SharedShape*> arrayShapeWithDefaultProto;
 
   
   
   using PlainObjectShapeArray =
-      mozilla::EnumeratedArray<PlainObjectSlotsKind, HeapPtr<SharedShape*>,
+      mozilla::EnumeratedArray<PlainObjectSlotsKind, GCPtr<SharedShape*>,
                                size_t(PlainObjectSlotsKind::Limit)>;
   PlainObjectShapeArray plainObjectShapesWithDefaultProto;
 
   
   
-  HeapPtr<SharedShape*> functionShapeWithDefaultProto;
-  HeapPtr<SharedShape*> extendedFunctionShapeWithDefaultProto;
+  GCPtr<SharedShape*> functionShapeWithDefaultProto;
+  GCPtr<SharedShape*> extendedFunctionShapeWithDefaultProto;
 
   
-  HeapPtr<SharedShape*> boundFunctionShapeWithDefaultProto;
+  GCPtr<SharedShape*> boundFunctionShapeWithDefaultProto;
 
   
   RegExpRealm regExpRealm;
 
-  HeapPtr<ArgumentsObject*> mappedArgumentsTemplate;
-  HeapPtr<ArgumentsObject*> unmappedArgumentsTemplate;
+  GCPtr<ArgumentsObject*> mappedArgumentsTemplate;
+  GCPtr<ArgumentsObject*> unmappedArgumentsTemplate;
 
-  HeapPtr<PlainObject*> iterResultTemplate;
-  HeapPtr<PlainObject*> iterResultWithoutPrototypeTemplate;
+  GCPtr<PlainObject*> iterResultTemplate;
+  GCPtr<PlainObject*> iterResultWithoutPrototypeTemplate;
 
   
   
-  HeapPtr<ScriptSourceObject*> selfHostingScriptSource;
+  GCPtr<ScriptSourceObject*> selfHostingScriptSource;
 
   UniquePtr<gc::FinalizationRegistryGlobalData> finalizationRegistryData;
 

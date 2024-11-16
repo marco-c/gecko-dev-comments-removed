@@ -373,7 +373,7 @@ class RegExpRealm {
 
 
 
-  HeapPtr<SharedShape*> matchResultShapes_[ResultShapeKind::NumKinds];
+  GCPtr<SharedShape*> matchResultShapes_[ResultShapeKind::NumKinds];
 
   
 
@@ -388,14 +388,14 @@ class RegExpRealm {
 
 
 
-  HeapPtr<Shape*> optimizableRegExpPrototypeShape_;
+  GCPtr<Shape*> optimizableRegExpPrototypeShape_;
 
   
 
 
 
 
-  HeapPtr<Shape*> optimizableRegExpInstanceShape_;
+  GCPtr<Shape*> optimizableRegExpInstanceShape_;
 
   SharedShape* createMatchResultShape(JSContext* cx, ResultShapeKind kind);
 
@@ -461,7 +461,7 @@ class RegExpRealm {
     return offsetof(RegExpRealm, regExpStatics);
   }
   static constexpr size_t offsetOfNormalMatchResultShape() {
-    static_assert(sizeof(HeapPtr<SharedShape*>) == sizeof(uintptr_t));
+    static_assert(sizeof(GCPtr<SharedShape*>) == sizeof(uintptr_t));
     return offsetof(RegExpRealm, matchResultShapes_) +
            ResultShapeKind::Normal * sizeof(uintptr_t);
   }
