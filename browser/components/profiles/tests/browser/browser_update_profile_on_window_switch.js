@@ -8,6 +8,13 @@ const { SelectableProfile } = ChromeUtils.importESModule(
 );
 
 add_task(async function test_updateDefaultProfileOnWindowSwitch() {
+  if (!AppConstants.MOZ_SELECTABLE_PROFILES) {
+    
+    
+    ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
+    return;
+  }
+
   await initGroupDatabase();
   let currentProfile = SelectableProfileService.currentProfile;
   let profileRootDir = await currentProfile.rootDir;
