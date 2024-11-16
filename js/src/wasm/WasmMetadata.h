@@ -114,7 +114,11 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   CustomSectionRangeVector customSectionRanges;
 
   
-  MaybeSectionRange codeSection;
+  MaybeSectionRange codeSectionRange;
+  
+  
+  
+  SharedBytes codeSectionBytecode;
 
   
   
@@ -135,8 +139,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  
-  SharedBytes bytecode;
+  SharedBytes debugBytecode;
 
   
   
@@ -350,8 +353,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
 
   size_t codeSectionSize() const {
-    if (codeSection) {
-      return codeSection->size;
+    if (codeSectionRange) {
+      return codeSectionRange->size;
     }
     return 0;
   }
