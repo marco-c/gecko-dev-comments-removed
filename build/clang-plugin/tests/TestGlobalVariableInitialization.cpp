@@ -44,6 +44,14 @@ struct InvalidRuninitGlobal {
 };
 
 MOZ_RUNINIT InvalidRuninitGlobal g5; 
+constexpr InvalidRuninitGlobal g5a;
+
+struct InvalidRuninitGlobal2 {
+  int i;
+};
+
+MOZ_RUNINIT InvalidRuninitGlobal2 g5b; 
+InvalidRuninitGlobal2 g5c;
 
 
 Global g6;  
