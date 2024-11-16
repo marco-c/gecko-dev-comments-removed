@@ -341,7 +341,7 @@ enum class StyleTextSecurity : uint8_t {
 
 enum class StyleTopLayer : uint8_t {
   None,
-  Top,
+  Auto,
 };
 
 
