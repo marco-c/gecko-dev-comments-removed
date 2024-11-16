@@ -76,8 +76,8 @@ SMRegExpMacroAssembler::SMRegExpMacroAssembler(JSContext* cx,
   masm_.bind(&start_label_);  
 }
 
-int SMRegExpMacroAssembler::stack_limit_slack() {
-  return RegExpStack::kStackLimitSlack;
+int SMRegExpMacroAssembler::stack_limit_slack_slot_count() {
+  return RegExpStack::kStackLimitSlackSlotCount;
 }
 
 void SMRegExpMacroAssembler::AdvanceCurrentPosition(int by) {
@@ -1015,7 +1015,8 @@ static Handle<HeapObject> DummyCode() {
 
 
 
-Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<String> source) {
+Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<String> source,
+                                                   RegExpFlags flags) {
   if (!cx_->zone()->ensureJitZoneExists(cx_)) {
     return DummyCode();
   }

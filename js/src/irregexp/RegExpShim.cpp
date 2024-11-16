@@ -336,5 +336,12 @@ uint64_t RegExpUtils::AdvanceStringIndex(Tagged<String> wrappedString,
   return index + 1;
 }
 
+
+
+
+Handle<String> JSRegExp::StringFromFlags(Isolate* isolate, RegExpFlags flags) {
+  return Handle<String>(String(isolate->cx()->names().flags), isolate);
+}
+
 }  
 }  
