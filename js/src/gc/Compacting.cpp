@@ -160,9 +160,9 @@ std::pair<Arena*, Arena*> ArenaList::pickArenasToRelocate(
 
   
   
-  size_t fullArenaCount = 0;      
-  size_t nonFullArenaCount = 0;   
-  size_t totalUsedCells = 0;      
+  size_t fullArenaCount = 0;     
+  size_t nonFullArenaCount = 0;  
+  size_t totalUsedCells = 0;     
   Arena* lastNonFullArena = nullptr;
 
   Iterator arena = iter();
@@ -185,7 +185,7 @@ std::pair<Arena*, Arena*> ArenaList::pickArenasToRelocate(
   size_t followingUsedCells =
       totalUsedCells;  
   size_t relocCount = nonFullArenaCount;  
-  Arena* prev = nullptr;  
+  Arena* prev = nullptr;                  
 
   const size_t cellsPerArena = Arena::thingsPerArena(kind);
 
