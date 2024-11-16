@@ -306,10 +306,6 @@ struct arena_t;
 
 struct arena_chunk_map_t {
   
-  
-  
-  
-  
   RedBlackTreeNode<arena_chunk_map_t> link;
 
   
@@ -987,15 +983,6 @@ struct ArenaChunkMapLink {
   }
 };
 
-struct ArenaRunTreeTrait : public ArenaChunkMapLink {
-  static inline Order Compare(arena_chunk_map_t* aNode,
-                              arena_chunk_map_t* aOther) {
-    MOZ_ASSERT(aNode);
-    MOZ_ASSERT(aOther);
-    return CompareAddr(aNode, aOther);
-  }
-};
-
 struct ArenaAvailTreeTrait : public ArenaChunkMapLink {
   static inline Order Compare(arena_chunk_map_t* aNode,
                               arena_chunk_map_t* aOther) {
@@ -1052,6 +1039,9 @@ struct arena_run_t {
 #endif
 
   
+  DoublyLinkedListElement<arena_run_t> mRunListElem;
+
+  
   arena_bin_t* mBin;
 
   
@@ -1066,17 +1056,28 @@ struct arena_run_t {
   unsigned mRegionsMask[];  
 };
 
+namespace mozilla {
+
+template <>
+struct GetDoublyLinkedListElement<arena_run_t> {
+  static DoublyLinkedListElement<arena_run_t>& Get(arena_run_t* aThis) {
+    return aThis->mRunListElem;
+  }
+};
+
+}  
+
 struct arena_bin_t {
   
   
-  arena_run_t* mCurrentRun;
-
   
   
   
   
   
-  RedBlackTree<arena_chunk_map_t, ArenaRunTreeTrait> mNonFullRuns;
+  
+  
+  DoublyLinkedList<arena_run_t> mNonFullRuns;
 
   
   size_t mSizeClass;
@@ -1293,7 +1294,9 @@ struct arena_t {
   void TrimRunTail(arena_chunk_t* aChunk, arena_run_t* aRun, size_t aOldSize,
                    size_t aNewSize, bool dirty) MOZ_REQUIRES(mLock);
 
-  arena_run_t* GetNonFullBinRun(arena_bin_t* aBin) MOZ_REQUIRES(mLock);
+  arena_run_t* GetNewEmptyBinRun(arena_bin_t* aBin) MOZ_REQUIRES(mLock);
+
+  inline arena_run_t* GetNonFullBinRun(arena_bin_t* aBin) MOZ_REQUIRES(mLock);
 
   inline uint8_t FindFreeBitInMask(uint32_t aMask, uint32_t& aRng)
       MOZ_REQUIRES(mLock);
@@ -3653,31 +3656,15 @@ void arena_t::TrimRunTail(arena_chunk_t* aChunk, arena_run_t* aRun,
   MOZ_ASSERT(!no_chunk);
 }
 
-arena_run_t* arena_t::GetNonFullBinRun(arena_bin_t* aBin) {
-  arena_chunk_map_t* mapelm;
+arena_run_t* arena_t::GetNewEmptyBinRun(arena_bin_t* aBin) {
   arena_run_t* run;
   unsigned i, remainder;
-
-  
-  mapelm = aBin->mNonFullRuns.First();
-  if (mapelm) {
-    
-    aBin->mNonFullRuns.Remove(mapelm);
-    run = (arena_run_t*)(mapelm->bits & ~gPageSizeMask);
-    return run;
-  }
-  
 
   
   run = AllocRun(static_cast<size_t>(aBin->mRunSizePages) << gPageSize2Pow,
                  false, false);
   if (!run) {
     return nullptr;
-  }
-  
-  
-  if (run == aBin->mCurrentRun) {
-    return run;
   }
 
   
@@ -3702,8 +3689,25 @@ arena_run_t* arena_t::GetNonFullBinRun(arena_bin_t* aBin) {
   run->mMagic = ARENA_RUN_MAGIC;
 #endif
 
+  
+  new (&run->mRunListElem) DoublyLinkedListElement<arena_run_t>();
+  aBin->mNonFullRuns.pushFront(run);
+
   aBin->mNumRuns++;
   return run;
+}
+
+arena_run_t* arena_t::GetNonFullBinRun(arena_bin_t* aBin) {
+  auto mrf_head = aBin->mNonFullRuns.begin();
+  if (mrf_head) {
+    
+    arena_run_t* run = &(*mrf_head);
+    if (run->mNumFree == 1) {
+      aBin->mNonFullRuns.remove(run);
+    }
+    return run;
+  }
+  return GetNewEmptyBinRun(aBin);
 }
 
 void arena_bin_t::Init(SizeClass aSizeClass) {
@@ -3716,8 +3720,6 @@ void arena_bin_t::Init(SizeClass aSizeClass) {
 
   try_run_size = gPageSize;
 
-  mCurrentRun = nullptr;
-  mNonFullRuns.Init();
   mSizeClass = aSizeClass.Size();
   mNumRuns = 0;
 
@@ -3780,6 +3782,10 @@ void arena_bin_t::Init(SizeClass aSizeClass) {
   MOZ_ASSERT(kFixedHeaderSize + (sizeof(unsigned) * try_mask_nelms) <=
              try_reg0_offset);
   MOZ_ASSERT((try_mask_nelms << (LOG2(sizeof(int)) + 3)) >= try_nregs);
+
+  
+  
+  MOZ_ASSERT(try_nregs > 1);
 
   
   MOZ_ASSERT((try_run_size >> gPageSize2Pow) <= UINT8_MAX);
@@ -3875,10 +3881,7 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
     MOZ_ASSERT(!mRandomizeSmallAllocations || mPRNG ||
                (mIsPRNGInitializing && !isInitializingThread));
 
-    run = bin->mCurrentRun;
-    if (MOZ_UNLIKELY(!run || run->mNumFree == 0)) {
-      run = bin->mCurrentRun = GetNonFullBinRun(bin);
-    }
+    run = GetNonFullBinRun(bin);
     if (MOZ_UNLIKELY(!run)) {
       return nullptr;
     }
@@ -4326,52 +4329,27 @@ arena_chunk_t* arena_t::DallocSmall(arena_chunk_t* aChunk, void* aPtr,
 
   if (run->mNumFree == bin->mRunNumRegions) {
     
-    if (run == bin->mCurrentRun) {
-      bin->mCurrentRun = nullptr;
-    } else if (bin->mRunNumRegions != 1) {
-      size_t run_pageind =
-          (uintptr_t(run) - uintptr_t(aChunk)) >> gPageSize2Pow;
-      arena_chunk_map_t* run_mapelm = &aChunk->map[run_pageind];
-
-      
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT(bin->mNonFullRuns.Search(run_mapelm) == run_mapelm);
-      bin->mNonFullRuns.Remove(run_mapelm);
-    }
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
     run->mMagic = 0;
 #endif
+    MOZ_ASSERT(bin->mNonFullRuns.ElementProbablyInList(run));
+    bin->mNonFullRuns.remove(run);
     dealloc_chunk = DallocRun(run, true);
     bin->mNumRuns--;
-  } else if (run->mNumFree == 1 && run != bin->mCurrentRun) {
+  } else if (run->mNumFree == 1) {
     
-    
-    if (!bin->mCurrentRun) {
-      bin->mCurrentRun = run;
-    } else if (uintptr_t(run) < uintptr_t(bin->mCurrentRun)) {
-      
-      if (bin->mCurrentRun->mNumFree > 0) {
-        arena_chunk_t* runcur_chunk = GetChunkForPtr(bin->mCurrentRun);
-        size_t runcur_pageind =
-            (uintptr_t(bin->mCurrentRun) - uintptr_t(runcur_chunk)) >>
-            gPageSize2Pow;
-        arena_chunk_map_t* runcur_mapelm = &runcur_chunk->map[runcur_pageind];
-
-        
-        MOZ_DIAGNOSTIC_ASSERT(!bin->mNonFullRuns.Search(runcur_mapelm));
-        bin->mNonFullRuns.Insert(runcur_mapelm);
-      }
-      bin->mCurrentRun = run;
-    } else {
-      size_t run_pageind =
-          (uintptr_t(run) - uintptr_t(aChunk)) >> gPageSize2Pow;
-      arena_chunk_map_t* run_mapelm = &aChunk->map[run_pageind];
-
-      MOZ_DIAGNOSTIC_ASSERT(bin->mNonFullRuns.Search(run_mapelm) == nullptr);
-      bin->mNonFullRuns.Insert(run_mapelm);
-    }
+    MOZ_ASSERT(!bin->mNonFullRuns.ElementProbablyInList(run));
+    bin->mNonFullRuns.pushFront(run);
   }
+  
+  
+  
+  
+  
+  
+  
+  
+
   mStats.allocated_small -= size;
 
   return dealloc_chunk;
@@ -4674,7 +4652,7 @@ arena_t::~arena_t() {
     chunk_dealloc(mSpare, kChunkSize, ARENA_CHUNK);
   }
   for (i = 0; i < NUM_SMALL_CLASSES; i++) {
-    MOZ_RELEASE_ASSERT(!mBins[i].mNonFullRuns.First(), "Bin is not empty");
+    MOZ_RELEASE_ASSERT(mBins[i].mNonFullRuns.isEmpty(), "Bin is not empty");
   }
 #ifdef MOZ_DEBUG
   {
@@ -5393,14 +5371,8 @@ inline void MozJemalloc::jemalloc_stats_internal(
         size_t bin_unused = 0;
         size_t num_non_full_runs = 0;
 
-        for (auto mapelm : bin->mNonFullRuns.iter()) {
-          arena_run_t* run = (arena_run_t*)(mapelm->bits & ~gPageSizeMask);
-          bin_unused += run->mNumFree * bin->mSizeClass;
-          num_non_full_runs++;
-        }
-
-        if (bin->mCurrentRun) {
-          bin_unused += bin->mCurrentRun->mNumFree * bin->mSizeClass;
+        for (auto run : bin->mNonFullRuns) {
+          bin_unused += run.mNumFree * bin->mSizeClass;
           num_non_full_runs++;
         }
 
