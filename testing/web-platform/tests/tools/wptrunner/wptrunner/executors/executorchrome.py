@@ -143,9 +143,6 @@ class ChromeDriverTestharnessProtocolPart(WebDriverTestharnessProtocolPart):
         for command, params in [
             
             
-            ("Network.clearBrowserCookies", None),
-            
-            
             ("Browser.resetPermissions", None),
             
             
