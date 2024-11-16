@@ -2,6 +2,8 @@
 
 
 
+use std::sync::Arc;
+
 use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::Metric;
@@ -15,12 +17,28 @@ use crate::Glean;
 
 #[derive(Clone, Debug)]
 pub struct QuantityMetric {
-    meta: CommonMetricDataInternal,
+    meta: Arc<CommonMetricDataInternal>,
 }
 
 impl MetricType for QuantityMetric {
     fn meta(&self) -> &CommonMetricDataInternal {
         &self.meta
+    }
+
+    fn with_name(&self, name: String) -> Self {
+        let mut meta = (*self.meta).clone();
+        meta.inner.name = name;
+        Self {
+            meta: Arc::new(meta),
+        }
+    }
+
+    fn with_dynamic_label(&self, label: String) -> Self {
+        let mut meta = (*self.meta).clone();
+        meta.inner.dynamic_label = Some(label);
+        Self {
+            meta: Arc::new(meta),
+        }
     }
 }
 
@@ -31,7 +49,9 @@ impl MetricType for QuantityMetric {
 impl QuantityMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self { meta: meta.into() }
+        Self {
+            meta: Arc::new(meta.into()),
+        }
     }
 
     
