@@ -1,28 +1,70 @@
-
 async function runNavigateAncestorTest(test_type, ancestor_type) {
   
-  
-  
-  
-  
-  
-  
-  
-  const navigate_ancestor_key = token();
-  const navigate_ancestor_from_nested_key = token();
+  window.onbeforeunload =
+      e => {
+        assert_unreached(
+            `The top-level test runner document does not navigate when a ` +
+            `${test_type} navigates ${ancestor_type}`);
+      }
 
-  const win = window.open(generateURL(
-      "resources/navigate-ancestor-test-runner.https.html",
-      [navigate_ancestor_key, navigate_ancestor_from_nested_key]));
-  await new Promise(resolve => {
-    win.onload = resolve;
-  });
+  let fenced_frame = await attachFencedFrameContext();
+  await multiClick(10, 10, fenced_frame.element);
 
-  const pagehidePromise = new Promise(resolve => {
-    win.onpagehide = resolve;
-  });
+  
+  const [uuid, url] = generateRemoteContextURL([]);
 
-  await win.runTest(test_type, ancestor_type);
-  win.close();
-  await pagehidePromise;
+  switch (test_type) {
+    case 'top-level fenced frame':
+      
+      
+      
+      
+      await fenced_frame.execute(async (url, ancestor_type) => {
+        window.executor.suspend(() => {
+          window[ancestor_type].location = url;
+        });
+      }, [url, ancestor_type]);
+      
+      fenced_frame.context_id = uuid;
+      await fenced_frame.execute(() => {});
+      break;
+    case 'nested fenced frame':
+      await fenced_frame.execute(async (url, uuid, ancestor_type) => {
+        const inner_fenced_frame = await attachFencedFrameContext();
+        await inner_fenced_frame.execute((url, ancestor_type) => {
+          window.executor.suspend(() => {
+            window[ancestor_type].location = url;
+          });
+        }, [url, ancestor_type]);
+        
+        inner_fenced_frame.context_id = uuid;
+        await inner_fenced_frame.execute(() => {});
+      }, [url, uuid, ancestor_type]);
+      
+      
+      await fenced_frame.execute(() => {});
+      break;
+    case 'nested iframe':
+      
+      
+      
+      
+      await fenced_frame.execute(async (url, ancestor_type) => {
+        const inner_iframe = await attachIFrameContext();
+        await inner_iframe.execute((url, ancestor_type) => {
+          try {
+            window[ancestor_type].location = url;
+            assert_unreached(
+                'The navigation from the nested iframe should ' +
+                'not be successful.');
+          } catch (error) {
+            assert_equals(error.name, 'SecurityError');
+          }
+        }, [url, ancestor_type]);
+      }, [url, ancestor_type]);
+      
+      
+      await fenced_frame.execute(() => {});
+      break;
+  }
 }
