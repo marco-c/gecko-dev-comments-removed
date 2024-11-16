@@ -105,8 +105,9 @@ void IdleSchedulerParent::CalculateNumIdleTasks() {
   
   
   sMaxConcurrentIdleTasksInChildProcesses = int32_t(std::max(sNumCPUs, 1u));
-  sMaxConcurrentGCs = std::clamp(sNumCPUs / sPrefConcurrentGCsCPUDivisor, 1u,
-                                 sPrefConcurrentGCsMax);
+  sMaxConcurrentGCs =
+      std::min(std::max(sNumCPUs / sPrefConcurrentGCsCPUDivisor, 1u),
+               sPrefConcurrentGCsMax);
 
   if (sActiveChildCounter && sActiveChildCounter->Memory()) {
     static_cast<Atomic<int32_t>*>(
