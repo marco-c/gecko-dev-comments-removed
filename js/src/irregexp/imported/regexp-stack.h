@@ -38,16 +38,27 @@ class RegExpStack final {
   RegExpStack(const RegExpStack&) = delete;
   RegExpStack& operator=(const RegExpStack&) = delete;
 
+#if defined(V8_TARGET_ARCH_PPC64) || defined(V8_TARGET_ARCH_S390X)
+  static constexpr int kSlotSize = kSystemPointerSize;
+#else
+  static constexpr int kSlotSize = kInt32Size;
+#endif
   
   
-  static constexpr int kStackLimitSlack = 32;
+  static constexpr int kStackLimitSlackSlotCount = 32;
+  static constexpr int kStackLimitSlackSize =
+      kStackLimitSlackSlotCount * kSlotSize;
 
-  Address memory_top() const {
+  Address begin() const {
+    return reinterpret_cast<Address>(thread_local_.memory_);
+  }
+  Address end() const {
     DCHECK_NE(0, thread_local_.memory_size_);
     DCHECK_EQ(thread_local_.memory_top_,
               thread_local_.memory_ + thread_local_.memory_size_);
     return reinterpret_cast<Address>(thread_local_.memory_top_);
   }
+  Address memory_top() const { return end(); }
 
   Address stack_pointer() const {
     return reinterpret_cast<Address>(thread_local_.stack_pointer_);
@@ -83,19 +94,20 @@ class RegExpStack final {
       static_cast<Address>(static_cast<uintptr_t>(-1));
 
   
-  static constexpr size_t kMinimumDynamicStackSize = 1 * KB;
-
   
   
   
+  static constexpr size_t kStaticStackSize = 1 * KB;
   
   
   
-  static constexpr size_t kStaticStackSize =
-      2 * kStackLimitSlack * kSystemPointerSize;
+  static_assert(kStaticStackSize >= 2 * kStackLimitSlackSize);
+  static_assert(kStaticStackSize <= kMaximumStackSize);
   uint8_t static_stack_[kStaticStackSize] = {0};
 
-  static_assert(kStaticStackSize <= kMaximumStackSize);
+  
+  static constexpr size_t kMinimumDynamicStackSize = 2 * KB;
+  static_assert(kMinimumDynamicStackSize == 2 * kStaticStackSize);
 
   
   

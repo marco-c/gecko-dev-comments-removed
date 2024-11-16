@@ -20,7 +20,6 @@ using namespace regexp_compiler_constants;
 constexpr base::uc32 kMaxCodePoint = 0x10ffff;
 constexpr int kMaxUtf16CodeUnit = 0xffff;
 constexpr uint32_t kMaxUtf16CodeUnitU = 0xffff;
-constexpr int32_t kMaxOneByteCharCode = unibrow::Latin1::kMaxChar;
 
 
 
@@ -416,6 +415,7 @@ RegExpNode* UnanchoredAdvance(RegExpCompiler* compiler,
 }
 
 }  
+
 
 
 void CharacterRange::AddUnicodeCaseEquivalents(ZoneList<CharacterRange>* ranges,
@@ -1087,16 +1087,17 @@ RegExpNode* RegExpAssertion::ToNode(RegExpCompiler* compiler,
                                      newline_ranges, false, zone);
       RegExpClassRanges* newline_atom =
           zone->New<RegExpClassRanges>(StandardCharacterSet::kLineTerminator);
+      ActionNode* submatch_success = ActionNode::PositiveSubmatchSuccess(
+          stack_pointer_register, position_register,
+          0,   
+          -1,  
+          on_success);
       TextNode* newline_matcher =
-          zone->New<TextNode>(newline_atom, false,
-                              ActionNode::PositiveSubmatchSuccess(
-                                  stack_pointer_register, position_register,
-                                  0,   
-                                  -1,  
-                                  on_success));
+          zone->New<TextNode>(newline_atom, false, submatch_success);
       
       RegExpNode* end_of_line = ActionNode::BeginPositiveSubmatch(
-          stack_pointer_register, position_register, newline_matcher);
+          stack_pointer_register, position_register, newline_matcher,
+          submatch_success);
       
       GuardedAlternative eol_alternative(end_of_line);
       result->AddAlternative(eol_alternative);
@@ -1188,8 +1189,9 @@ RegExpLookaround::Builder::Builder(bool is_positive, RegExpNode* on_success,
 
 RegExpNode* RegExpLookaround::Builder::ForMatch(RegExpNode* match) {
   if (is_positive_) {
-    return ActionNode::BeginPositiveSubmatch(stack_pointer_register_,
-                                             position_register_, match);
+    ActionNode* on_match_success = on_match_success_->AsActionNode();
+    return ActionNode::BeginPositiveSubmatch(
+        stack_pointer_register_, position_register_, match, on_match_success);
   } else {
     Zone* zone = on_success_->zone();
     
@@ -1444,6 +1446,7 @@ void CharacterRange::AddClassEscape(StandardCharacterSet standard_character_set,
 }
 
 
+
 void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
                                         ZoneList<CharacterRange>* ranges,
                                         bool is_one_byte) {
@@ -1459,8 +1462,8 @@ void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
     
     if (from >= kLeadSurrogateStart && to <= kTrailSurrogateEnd) continue;
     if (is_one_byte && !RangeContainsLatin1Equivalents(range)) {
-      if (from > kMaxOneByteCharCode) continue;
-      if (to > kMaxOneByteCharCode) to = kMaxOneByteCharCode;
+      if (from > String::kMaxOneByteCharCode) continue;
+      if (to > String::kMaxOneByteCharCode) to = String::kMaxOneByteCharCode;
     }
     others.add(from, to);
   }
@@ -1502,8 +1505,8 @@ void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
     
     if (bottom >= kLeadSurrogateStart && top <= kTrailSurrogateEnd) continue;
     if (is_one_byte && !RangeContainsLatin1Equivalents(range)) {
-      if (bottom > kMaxOneByteCharCode) continue;
-      if (top > kMaxOneByteCharCode) top = kMaxOneByteCharCode;
+      if (bottom > String::kMaxOneByteCharCode) continue;
+      if (top > String::kMaxOneByteCharCode) top = String::kMaxOneByteCharCode;
     }
     unibrow::uchar chars[unibrow::Ecma262UnCanonicalize::kMaxWidth];
     if (top == bottom) {
