@@ -10,6 +10,11 @@
 #include <cstdint>
 #include "mozilla/Assertions.h"
 
+template <class T>
+inline T NS_ROUNDUP(const T& aA, const T& aB) {
+  return ((aA + (aB - 1)) / aB) * aB;
+}
+
 
 
 
