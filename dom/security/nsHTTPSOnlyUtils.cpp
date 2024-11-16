@@ -86,7 +86,8 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   
   if ((!IsHttpsOnlyModeEnabled(isPrivateWin) &&
        !IsHttpsFirstModeEnabled(isPrivateWin)) &&
-      !(loadInfo->GetWasSchemelessInput() &&
+      !(loadInfo->GetSchemelessInput() ==
+            nsILoadInfo::SchemelessInputTypeSchemeless &&
         mozilla::StaticPrefs::dom_security_https_first_schemeless())) {
     return;
   }
@@ -131,7 +132,8 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   
   if (!mozilla::StaticPrefs::dom_security_https_first_for_custom_ports() &&
       (IsHttpsFirstModeEnabled(isPrivateWin) ||
-       (loadInfo->GetWasSchemelessInput() &&
+       (loadInfo->GetSchemelessInput() ==
+            nsILoadInfo::SchemelessInputTypeSchemeless &&
         mozilla::StaticPrefs::dom_security_https_first_schemeless()))) {
     int32_t port = 0;
     nsresult rv = channelURI->GetPort(&port);
@@ -356,14 +358,16 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
 
 bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
                                                       nsILoadInfo* aLoadInfo) {
+  MOZ_ASSERT(aURI->SchemeIs("http"), "how come the request is not 'http'?");
+
   
   bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   if (!IsHttpsFirstModeEnabled(isPrivateWin) &&
-      !(aLoadInfo->GetWasSchemelessInput() &&
+      !(aLoadInfo->GetSchemelessInput() ==
+            nsILoadInfo::SchemelessInputTypeSchemeless &&
         mozilla::StaticPrefs::dom_security_https_first_schemeless())) {
     return false;
   }
-
   
   ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
   if (contentType != ExtContentPolicy::TYPE_DOCUMENT &&
@@ -384,8 +388,16 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   }
 
   
-  MOZ_ASSERT(aURI->SchemeIs("http"), "how come the request is not 'http'?");
+  if (aLoadInfo->GetSchemelessInput() ==
+          nsILoadInfo::SchemelessInputTypeSchemeful &&
+      aLoadInfo->GetExternalContentPolicyType() !=
+          ExtContentPolicy::TYPE_SPECULATIVE &&
+      aURI->SchemeIs("http")) {
+    AddHTTPSFirstException(aURI, aLoadInfo);
+    return false;
+  }
 
+  
   if (!mozilla::StaticPrefs::dom_security_https_first_for_custom_ports()) {
     int defaultPortforScheme = NS_GetDefaultPort("http");
     
@@ -405,7 +417,8 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
 
   
   
-  if (aLoadInfo->GetWasSchemelessInput() &&
+  if (aLoadInfo->GetSchemelessInput() ==
+          nsILoadInfo::SchemelessInputTypeSchemeless &&
       !IsHttpsFirstModeEnabled(isPrivateWin)) {
     nsAutoCString urlCString;
     aURI->GetSpec(urlCString);
@@ -575,7 +588,8 @@ void nsHTTPSOnlyUtils::UpdateLoadStateAfterHTTPSFirstDowngrade(
   
   nsCOMPtr<nsIChannel> channel = aDocumentLoadListener->GetChannel();
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  if (loadInfo->GetWasSchemelessInput()) {
+  if (loadInfo->GetSchemelessInput() ==
+      nsILoadInfo::SchemelessInputTypeSchemeless) {
     aLoadState->SetHttpsUpgradeTelemetry(
         nsILoadInfo::HTTPS_FIRST_SCHEMELESS_UPGRADE_DOWNGRADE);
   } else {
@@ -593,7 +607,8 @@ void nsHTTPSOnlyUtils::UpdateLoadStateAfterHTTPSFirstDowngrade(
 
       bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
       bool isSchemeless =
-          loadInfo->GetWasSchemelessInput() &&
+          loadInfo->GetSchemelessInput() ==
+              nsILoadInfo::SchemelessInputTypeSchemeless &&
           !nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin);
 
       nsresult channelStatus;
@@ -635,7 +650,8 @@ void nsHTTPSOnlyUtils::SubmitHTTPSFirstTelemetry(
              nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST) {
     
 
-    if (aLoadInfo->GetWasSchemelessInput()) {
+    if (aLoadInfo->GetSchemelessInput() ==
+        nsILoadInfo::SchemelessInputTypeSchemeless) {
       upgraded_schemeless.Add();
     } else {
       upgraded.Add();
@@ -704,7 +720,8 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   bool isHttpsOnly = IsHttpsOnlyModeEnabled(isPrivateWin);
   bool isHttpsFirst = IsHttpsFirstModeEnabled(isPrivateWin);
   bool isSchemelessHttpsFirst =
-      (loadInfo->GetWasSchemelessInput() &&
+      (loadInfo->GetSchemelessInput() ==
+           nsILoadInfo::SchemelessInputTypeSchemeless &&
        mozilla::StaticPrefs::dom_security_https_first_schemeless());
   if (!isHttpsOnly && !isHttpsFirst && !isSchemelessHttpsFirst) {
     return;

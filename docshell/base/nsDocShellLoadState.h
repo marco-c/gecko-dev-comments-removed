@@ -10,6 +10,8 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 
+#include "nsILoadInfo.h"
+
 
 #include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
@@ -335,11 +337,13 @@ class nsDocShellLoadState final {
 
   void SetRemoteTypeOverride(const nsCString& aRemoteTypeOverride);
 
-  void SetWasSchemelessInput(bool aWasSchemelessInput) {
-    mWasSchemelessInput = aWasSchemelessInput;
+  void SetSchemelessInput(nsILoadInfo::SchemelessInputType aSchemelessInput) {
+    mSchemelessInput = aSchemelessInput;
   }
 
-  bool GetWasSchemelessInput() { return mWasSchemelessInput; }
+  nsILoadInfo::SchemelessInputType GetSchemelessInput() {
+    return mSchemelessInput;
+  }
 
   void SetHttpsUpgradeTelemetry(
       nsILoadInfo::HTTPSUpgradeTelemetryType aHttpsUpgradeTelemetry) {
@@ -628,7 +632,8 @@ class nsDocShellLoadState final {
   nsCString mTriggeringRemoteType;
 
   
-  bool mWasSchemelessInput = false;
+  nsILoadInfo::SchemelessInputType mSchemelessInput =
+      nsILoadInfo::SchemelessInputTypeUnset;
 
   
   nsILoadInfo::HTTPSUpgradeTelemetryType mHttpsUpgradeTelemetry =
