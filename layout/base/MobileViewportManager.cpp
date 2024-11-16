@@ -413,7 +413,7 @@ void MobileViewportManager::UpdateResolutionForViewportSizeChange(
   
 
   
-  float denominator = clamped(c, a, b);
+  float denominator = std::clamp(c, a, b);
 
   float adjustedRatio = d / denominator;
   CSSToScreenScale adjustedZoom = ScaleZoomWithDisplayWidth(

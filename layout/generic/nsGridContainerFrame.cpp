@@ -25,7 +25,6 @@
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsAbsoluteContainingBlock.h"
-#include "nsAlgorithm.h"  
 #include "nsCSSFrameConstructor.h"
 #include "nsDisplayList.h"
 #include "nsFieldSetFrame.h"
@@ -4595,9 +4594,10 @@ nsGridContainerFrame::LineRange nsGridContainerFrame::Grid::ResolveLineRange(
     
     
     
-    r.first = clamped(r.first, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
+    r.first =
+        std::clamp(r.first, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
     r.second =
-        clamped(r.second, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
+        std::clamp(r.second, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
 
     
     

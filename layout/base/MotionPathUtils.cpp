@@ -354,7 +354,7 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
     } else {
       
       
-      usedDistance = clamped(usedDistance, 0.0f, pathLength);
+      usedDistance = std::clamp(usedDistance, 0.0f, pathLength);
     }
     gfx::Point tangent;
     point = path->ComputePointAtLength(usedDistance, &tangent);

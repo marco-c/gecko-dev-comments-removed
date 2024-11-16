@@ -1632,8 +1632,8 @@ void nsLayoutUtils::ConstrainToCoordValues(float& aStart, float& aSize) {
   
   
   float end = aStart + aSize;
-  aStart = clamped(aStart, float(nscoord_MIN), float(nscoord_MAX));
-  end = clamped(end, float(nscoord_MIN), float(nscoord_MAX));
+  aStart = std::clamp(aStart, float(nscoord_MIN), float(nscoord_MAX));
+  end = std::clamp(end, float(nscoord_MIN), float(nscoord_MAX));
 
   aSize = end - aStart;
 

@@ -116,11 +116,11 @@ static nscolor ProcessSelectionBackground(nscolor aColor, ColorScheme aScheme) {
   if (sat > 0) {
     
     
-    sat = mozilla::clamped(sat * factor, 0, 255);
+    sat = std::clamp(sat * factor, 0, 255);
   } else {
     
     
-    value = mozilla::clamped(255 - (255 - value) * factor, 0, 255);
+    value = std::clamp(255 - (255 - value) * factor, 0, 255);
   }
   NS_HSV2RGB(resultColor, hue, sat, value, alpha);
   return resultColor;

@@ -411,7 +411,7 @@ int CALLBACK GDIFontFamily::FamilyAddStylesProc(
   }
 
   
-  logFont.lfWeight = clamped(logFont.lfWeight, LONG(100), LONG(900));
+  logFont.lfWeight = std::clamp(logFont.lfWeight, LONG(100), LONG(900));
 
   gfxWindowsFontType feType =
       GDIFontEntry::DetermineFontType(metrics, fontType);

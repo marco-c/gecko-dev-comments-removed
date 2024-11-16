@@ -579,7 +579,7 @@ void nsSliderFrame::Reflow(nsPresContext* aPresContext,
   int32_t pageIncrement = GetPageIncrement(scrollbar);
 
   maxPos = std::max(minPos, maxPos);
-  curPos = clamped(curPos, minPos, maxPos);
+  curPos = std::clamp(curPos, minPos, maxPos);
 
   
   
@@ -876,7 +876,7 @@ void nsSliderFrame::CurrentPositionChanged() {
   int32_t maxPos = GetMaxPosition(scrollbar);
 
   maxPos = std::max(minPos, maxPos);
-  curPos = clamped(curPos, minPos, maxPos);
+  curPos = std::clamp(curPos, minPos, maxPos);
 
   
   nsIFrame* thumbFrame = mFrames.FirstChild();

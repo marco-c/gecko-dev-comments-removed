@@ -1103,8 +1103,8 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       
       nextGuess = aColData.mSumBSize / aConfig.mUsedColCount + extraBlockSize;
       
-      nextGuess = clamped(nextGuess, aConfig.mKnownInfeasibleBSize + 1,
-                          aConfig.mKnownFeasibleBSize - 1);
+      nextGuess = std::clamp(nextGuess, aConfig.mKnownInfeasibleBSize + 1,
+                             aConfig.mKnownFeasibleBSize - 1);
       
       
       extraBlockSize *= 2;

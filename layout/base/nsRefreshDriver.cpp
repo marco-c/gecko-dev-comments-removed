@@ -891,7 +891,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       
       
-      TimeDuration timeForOutsideTick = clamped(
+      TimeDuration timeForOutsideTick = std::clamp(
           tickStart - mLastTickEnd - gracePeriod, gracePeriod, rate * 4);
       mSuspendVsyncPriorityTicksUntil = tickEnd + timeForOutsideTick;
     } else if (ShouldGiveNonVsyncTasksMoreTime(true)) {
