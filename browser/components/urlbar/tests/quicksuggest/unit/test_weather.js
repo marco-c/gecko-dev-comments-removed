@@ -806,7 +806,7 @@ async function doCityTest({ desc, query, geolocation, expected }) {
 }
 
 
-add_task(async function cachedGeolocation() {
+add_task(async function merinoCache() {
   let query = "waterloo";
   let geolocation = {
     location: {
