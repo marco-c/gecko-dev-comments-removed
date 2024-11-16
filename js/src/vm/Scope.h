@@ -332,10 +332,10 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
 
   
   
-  const HeapPtr<SharedShape*> environmentShape_;
+  const GCPtr<SharedShape*> environmentShape_;
 
   
-  HeapPtr<Scope*> enclosingScope_;
+  GCPtr<Scope*> enclosingScope_;
 
   Scope(ScopeKind kind, Scope* enclosing, SharedShape* environmentShape)
       : TenuredCellWithNonGCPointer(nullptr),
@@ -715,7 +715,7 @@ class FunctionScope : public Scope {
     
     
     
-    HeapPtr<JSFunction*> canonicalFunction = {};
+    GCPtr<JSFunction*> canonicalFunction = {};
 
     explicit RuntimeData(size_t length) { PoisonNames(this, length); }
     RuntimeData() = delete;
@@ -1017,7 +1017,7 @@ class ModuleScope : public Scope {
       : public AbstractBaseScopeData<JSAtom> {
     SlotInfo slotInfo;
     
-    HeapPtr<ModuleObject*> module = {};
+    GCPtr<ModuleObject*> module = {};
 
     explicit RuntimeData(size_t length);
     RuntimeData() = delete;
@@ -1078,7 +1078,7 @@ class WasmInstanceScope : public Scope {
       : public AbstractBaseScopeData<JSAtom> {
     SlotInfo slotInfo;
     
-    HeapPtr<WasmInstanceObject*> instance = {};
+    GCPtr<WasmInstanceObject*> instance = {};
 
     explicit RuntimeData(size_t length);
     RuntimeData() = delete;

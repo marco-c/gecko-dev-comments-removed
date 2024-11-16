@@ -621,7 +621,9 @@ class GCPtr : public WriteBarriered<T> {
     
     
     
-    MOZ_ASSERT(CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing());
+    
+    MOZ_ASSERT(CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing() ||
+               this->value == JS::SafelyInitialized<T>::create());
 
     Poison(this, JS_FREED_HEAP_PTR_PATTERN, sizeof(*this),
            MemCheckKind::MakeNoAccess);
