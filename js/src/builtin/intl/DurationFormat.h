@@ -31,6 +31,14 @@ class DurationFormatObject : public NativeObject {
   static const ClassSpec classSpec_;
 };
 
+
+
+
+
+
+[[nodiscard]] extern bool intl_GetTimeSeparator(JSContext* cx, unsigned argc,
+                                                Value* vp);
+
 }  
 
 #endif 
