@@ -144,6 +144,16 @@ mod test {
         {
             
             let _raii = ipc::test_set_need_ipc(true);
+
+            
+            
+            {
+                let mut map = crate::metrics::__glean_metric_maps::submetric_maps::COUNTER_MAP
+                    .write()
+                    .expect("Write lock for COUNTER_MAP was poisoned");
+                map.clear();
+            }
+
             let child_metric = parent_metric.get(label);
 
             let metric_id = child_metric.metric_id();
@@ -162,6 +172,15 @@ mod test {
                     "Stored the correct value in the ipc payload"
                 );
             });
+
+            
+            
+            {
+                let mut map = crate::metrics::__glean_metric_maps::submetric_maps::COUNTER_MAP
+                    .write()
+                    .expect("Write lock for COUNTER_MAP was poisoned");
+                map.clear();
+            }
         }
 
         assert!(

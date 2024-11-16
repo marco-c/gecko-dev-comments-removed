@@ -245,6 +245,17 @@ mod test {
         {
             
             let _raii = ipc::test_set_need_ipc(true);
+
+            
+            
+            {
+                let mut map =
+                    crate::metrics::__glean_metric_maps::submetric_maps::TIMING_DISTRIBUTION_MAP
+                        .write()
+                        .expect("Write lock for TIMING_DISTRIBUTION_MAP was poisoned");
+                map.clear();
+            }
+
             let child_metric = parent_metric.get(label);
 
             let id = child_metric.start();
@@ -268,6 +279,16 @@ mod test {
                     "Stored the correct number of samples in the ipc payload"
                 );
             });
+
+            
+            
+            {
+                let mut map =
+                    crate::metrics::__glean_metric_maps::submetric_maps::TIMING_DISTRIBUTION_MAP
+                        .write()
+                        .expect("Write lock for TIMING_DISTRIBUTION_MAP was poisoned");
+                map.clear();
+            }
         }
 
         let parent_only_data = parent_metric.get(label).test_get_value(None).unwrap();
