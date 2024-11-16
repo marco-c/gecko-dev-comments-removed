@@ -11323,6 +11323,54 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
+    InlinableNative native) {
+  MOZ_ASSERT(native == InlinableNative::MapConstructor ||
+             native == InlinableNative::SetConstructor);
+  MOZ_ASSERT(flags_.isConstructing());
+
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!isFirstStub()) {
+    
+    return AttachDecision::NoAction;
+  }
+
+  JSObject* templateObj;
+  if (native == InlinableNative::MapConstructor) {
+    templateObj = GlobalObject::getOrCreateMapTemplateObject(cx_);
+  } else {
+    templateObj = GlobalObject::getOrCreateSetTemplateObject(cx_);
+  }
+  if (!templateObj) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  if (native == InlinableNative::MapConstructor) {
+    writer.newMapObjectResult(templateObj);
+  } else {
+    writer.newSetObjectResult(templateObj);
+  }
+  writer.returnFromIC();
+
+  if (native == InlinableNative::MapConstructor) {
+    trackAttached("MapConstructor");
+  } else {
+    trackAttached("SetConstructor");
+  }
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachSpecializedFunctionBind(
     Handle<JSObject*> target, Handle<BoundFunctionObject*> templateObj) {
   
@@ -11859,6 +11907,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
         return tryAttachArrayConstructor();
       case InlinableNative::TypedArrayConstructor:
         return tryAttachTypedArrayConstructor();
+      case InlinableNative::MapConstructor:
+      case InlinableNative::SetConstructor:
+        return tryAttachMapSetConstructor(native);
       case InlinableNative::String:
         return tryAttachStringConstructor();
       case InlinableNative::Object:
@@ -12276,12 +12327,16 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachBoolean();
 
     
+    case InlinableNative::SetConstructor:
+      return AttachDecision::NoAction;  
     case InlinableNative::SetHas:
       return tryAttachSetHas();
     case InlinableNative::SetSize:
       return tryAttachSetSize();
 
     
+    case InlinableNative::MapConstructor:
+      return AttachDecision::NoAction;  
     case InlinableNative::MapHas:
       return tryAttachMapHas();
     case InlinableNative::MapGet:
