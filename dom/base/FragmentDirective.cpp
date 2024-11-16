@@ -10,21 +10,16 @@
 #include "mozilla/Assertions.h"
 #include "BasePrincipal.h"
 #include "Document.h"
+#include "TextDirectiveUtil.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/FragmentDirectiveBinding.h"
 #include "mozilla/dom/FragmentOrElement.h"
-#include "mozilla/dom/NodeBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
-#include "mozilla/intl/WordBreaker.h"
 #include "mozilla/PresShell.h"
-#include "nsComputedDOMStyle.h"
 #include "nsContentUtils.h"
-#include "nsDOMAttributeMap.h"
 #include "nsDocShell.h"
-#include "nsFind.h"
-#include "nsGkAtoms.h"
 #include "nsICSSDeclaration.h"
 #include "nsIFrame.h"
 #include "nsINode.h"
@@ -33,36 +28,6 @@
 #include "nsString.h"
 
 namespace mozilla::dom {
-static LazyLogModule sFragmentDirectiveLog("FragmentDirective");
-
-#define DBG_FN(msg, func, ...)                    \
-  MOZ_LOG(sFragmentDirectiveLog, LogLevel::Debug, \
-          ("%s(): " msg, func, ##__VA_ARGS__))
-
-
-
-#define DBG(msg, ...) DBG_FN(msg, __FUNCTION__, ##__VA_ARGS__)
-
-MOZ_ALWAYS_INLINE static bool ShouldLog() {
-  return MOZ_LOG_TEST(sFragmentDirectiveLog, LogLevel::Debug);
-}
-
-
-static nsCString ToString(const TextDirective& aTextDirective) {
-  nsCString str;
-  create_text_directive(&aTextDirective, &str);
-  return str;
-}
-
-
-static nsCString ToString(nsIURI* aURI) {
-  nsCString url;
-  if (!aURI) {
-    return url;
-  }
-  Unused << aURI->GetSpec(url);
-  return url;
-}
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(FragmentDirective, mDocument)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(FragmentDirective)
@@ -83,33 +48,40 @@ JSObject* FragmentDirective::WrapObject(JSContext* aCx,
 bool FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
     nsCString& aFragment, nsTArray<TextDirective>* aTextDirectives,
     nsIURI* aURI) {
+  auto uri = TextDirectiveUtil::ShouldLog() && aURI ? aURI->GetSpecOrDefault()
+                                                    : nsCString();
   if (aFragment.IsEmpty()) {
-    DBG("URL '%s' has no fragment.", ToString(aURI).Data());
+    TEXT_FRAGMENT_LOG("URL '%s' has no fragment.", uri.Data());
     return false;
   }
-  DBG("Trying to extract a fragment directive from fragment '%s' of URL '%s'.",
-      aFragment.Data(), ToString(aURI).Data());
+  TEXT_FRAGMENT_LOG(
+      "Trying to extract a fragment directive from fragment '%s' of URL '%s'.",
+      aFragment.Data(), uri.Data());
   ParsedFragmentDirectiveResult fragmentDirective;
   const bool hasRemovedFragmentDirective =
       StaticPrefs::dom_text_fragments_enabled() &&
       parse_fragment_directive(&aFragment, &fragmentDirective);
   if (hasRemovedFragmentDirective) {
-    DBG("Found a fragment directive '%s', which was removed from the fragment. "
+    TEXT_FRAGMENT_LOG(
+        "Found a fragment directive '%s', which was removed from the fragment. "
         "New fragment is '%s'.",
         fragmentDirective.fragment_directive.Data(),
         fragmentDirective.hash_without_fragment_directive.Data());
-    if (ShouldLog()) {
+    if (TextDirectiveUtil::ShouldLog()) {
       if (fragmentDirective.text_directives.IsEmpty()) {
-        DBG("Found no valid text directives in fragment directive '%s'.",
+        TEXT_FRAGMENT_LOG(
+            "Found no valid text directives in fragment directive '%s'.",
             fragmentDirective.fragment_directive.Data());
       } else {
-        DBG("Found %zu valid text directives in fragment directive '%s':",
+        TEXT_FRAGMENT_LOG(
+            "Found %zu valid text directives in fragment directive '%s':",
             fragmentDirective.text_directives.Length(),
             fragmentDirective.fragment_directive.Data());
         for (size_t index = 0;
              index < fragmentDirective.text_directives.Length(); ++index) {
           const auto& textDirective = fragmentDirective.text_directives[index];
-          DBG(" [%zu]: %s", index, ToString(textDirective).Data());
+          TEXT_FRAGMENT_LOG(" [%zu]: %s", index,
+                            ToString(textDirective).c_str());
         }
       }
     }
@@ -118,8 +90,9 @@ bool FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
       aTextDirectives->SwapElements(fragmentDirective.text_directives);
     }
   } else {
-    DBG("Fragment '%s' of URL '%s' did not contain a fragment directive.",
-        aFragment.Data(), ToString(aURI).Data());
+    TEXT_FRAGMENT_LOG(
+        "Fragment '%s' of URL '%s' did not contain a fragment directive.",
+        aFragment.Data(), uri.Data());
   }
   return hasRemovedFragmentDirective;
 }
@@ -135,7 +108,8 @@ void FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
   nsAutoCString hash;
   aURI->GetRef(hash);
   if (!hasRef || hash.IsEmpty()) {
-    DBG("URL '%s' has no fragment. Exiting.", ToString(aURI).Data());
+    TEXT_FRAGMENT_LOG("URL '%s' has no fragment. Exiting.",
+                      aURI->GetSpecOrDefault().Data());
   }
 
   const bool hasRemovedFragmentDirective =
@@ -145,18 +119,22 @@ void FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
     return;
   }
   Unused << NS_MutateURI(aURI).SetRef(hash).Finalize(aURI);
-  DBG("Updated hash of the URL. New URL: %s", ToString(aURI).Data());
+  TEXT_FRAGMENT_LOG("Updated hash of the URL. New URL: %s",
+                    aURI->GetSpecOrDefault().Data());
 }
 
 nsTArray<RefPtr<nsRange>> FragmentDirective::FindTextFragmentsInDocument() {
   MOZ_ASSERT(mDocument);
+  auto uri = TextDirectiveUtil::ShouldLog() && mDocument->GetDocumentURI()
+                 ? mDocument->GetDocumentURI()->GetSpecOrDefault()
+                 : nsCString();
   if (mUninvokedTextDirectives.IsEmpty()) {
-    DBG("No uninvoked text directives in document '%s'. Exiting.",
-        ToString(mDocument->GetDocumentURI()).Data());
+    TEXT_FRAGMENT_LOG("No uninvoked text directives in document '%s'. Exiting.",
+                      uri.Data());
     return {};
   }
-  DBG("Trying to find text directives in document '%s'.",
-      ToString(mDocument->GetDocumentURI()).Data());
+  TEXT_FRAGMENT_LOG("Trying to find text directives in document '%s'.",
+                    uri.Data());
   mDocument->FlushPendingNotifications(FlushType::Frames);
   
   
@@ -178,29 +156,33 @@ nsTArray<RefPtr<nsRange>> FragmentDirective::FindTextFragmentsInDocument() {
     
     if (RefPtr<nsRange> range = FindRangeForTextDirective(textDirective)) {
       textDirectiveRanges.AppendElement(range);
-      DBG("Found text directive '%s'", ToString(textDirective).Data());
+      TEXT_FRAGMENT_LOG("Found text directive '%s'",
+                        ToString(textDirective).c_str());
     } else {
       uninvokedTextDirectives.AppendElement(std::move(textDirective));
     }
   }
-  if (ShouldLog()) {
+  if (TextDirectiveUtil::ShouldLog()) {
     if (uninvokedTextDirectives.Length() == mUninvokedTextDirectives.Length()) {
-      DBG("Did not find any of the %zu uninvoked text directives.",
+      TEXT_FRAGMENT_LOG(
+          "Did not find any of the %zu uninvoked text directives.",
           mUninvokedTextDirectives.Length());
     } else {
-      DBG("Found %zu of %zu text directives in the document.",
+      TEXT_FRAGMENT_LOG(
+          "Found %zu of %zu text directives in the document.",
           mUninvokedTextDirectives.Length() - uninvokedTextDirectives.Length(),
           mUninvokedTextDirectives.Length());
     }
     if (uninvokedTextDirectives.IsEmpty()) {
-      DBG("No uninvoked text directives left.");
+      TEXT_FRAGMENT_LOG("No uninvoked text directives left.");
     } else {
-      DBG("There are %zu uninvoked text directives left:",
-          uninvokedTextDirectives.Length());
+      TEXT_FRAGMENT_LOG("There are %zu uninvoked text directives left:",
+                        uninvokedTextDirectives.Length());
       for (size_t index = 0; index < uninvokedTextDirectives.Length();
            ++index) {
-        DBG(" [%zu]: %s", index,
-            ToString(uninvokedTextDirectives[index]).Data());
+        TEXT_FRAGMENT_LOG(
+            " [%zu]: %s", index,
+            ToString(uninvokedTextDirectives[index]).c_str());
       }
     }
   }
@@ -248,9 +230,13 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   
 
   MOZ_ASSERT(mDocument);
-  DBG("Trying to find out if the load of URL '%s' is allowed to scroll to the "
+  auto uri = TextDirectiveUtil::ShouldLog() && mDocument->GetDocumentURI()
+                 ? mDocument->GetDocumentURI()->GetSpecOrDefault()
+                 : nsCString();
+  TEXT_FRAGMENT_LOG(
+      "Trying to find out if the load of URL '%s' is allowed to scroll to the "
       "text fragment",
-      ToString(mDocument->GetDocumentURI()).Data());
+      uri.Data());
   
   
   
@@ -262,8 +248,8 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   const bool isSameDocumentNavigation =
       loadInfo && loadInfo->GetIsSameDocumentNavigation();
 
-  DBG("Current load is%s a same-document navigation.",
-      isSameDocumentNavigation ? "" : " not");
+  TEXT_FRAGMENT_LOG("Current load is%s a same-document navigation.",
+                    isSameDocumentNavigation ? "" : " not");
 
   
   
@@ -282,7 +268,8 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   
   const bool textDirectiveUserActivation =
       mDocument->ConsumeTextDirectiveUserActivation();
-  DBG("Consumed Document's TextDirectiveUserActivation flag (value=%s)",
+  TEXT_FRAGMENT_LOG(
+      "Consumed Document's TextDirectiveUserActivation flag (value=%s)",
       textDirectiveUserActivation ? "true" : "false");
 
   
@@ -290,13 +277,13 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   const bool isAllowedMIMEType = [doc = this->mDocument, func = __FUNCTION__] {
     nsAutoString contentType;
     doc->GetContentType(contentType);
-    DBG_FN("Got document MIME type: %s", func,
-           NS_ConvertUTF16toUTF8(contentType).Data());
+    TEXT_FRAGMENT_LOG_FN("Got document MIME type: %s", func,
+                         NS_ConvertUTF16toUTF8(contentType).Data());
     return contentType == u"text/html" || contentType == u"text/plain";
   }();
 
   if (!isAllowedMIMEType) {
-    DBG("Invalid document MIME type. Scrolling not allowed.");
+    TEXT_FRAGMENT_LOG("Invalid document MIME type. Scrolling not allowed.");
     return false;
   }
 
@@ -327,17 +314,19 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
       triggeringPrincipal && triggeringPrincipal->IsSystemPrincipal();
 
   if (isTriggeredFromBrowserUI) {
-    DBG("The load is triggered from browser UI. Scrolling allowed.");
+    TEXT_FRAGMENT_LOG(
+        "The load is triggered from browser UI. Scrolling allowed.");
     return true;
   }
-  DBG("The load is not triggered from browser UI.");
+  TEXT_FRAGMENT_LOG("The load is not triggered from browser UI.");
   
   
   
   
   
   if (!textDirectiveUserActivation && !isSameDocumentNavigation) {
-    DBG("User involvement is false and not same-document navigation. Scrolling "
+    TEXT_FRAGMENT_LOG(
+        "User involvement is false and not same-document navigation. Scrolling "
         "not allowed.");
     return false;
   }
@@ -349,7 +338,8 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   nsDocShell* docShell = nsDocShell::Cast(mDocument->GetDocShell());
   if (!isSameDocumentNavigation &&
       (!docShell || !docShell->GetIsTopLevelContentDocShell())) {
-    DBG("Document's node navigable has a parent and this is not a "
+    TEXT_FRAGMENT_LOG(
+        "Document's node navigable has a parent and this is not a "
         "same-document navigation. Scrolling not allowed.");
     return false;
   }
@@ -362,10 +352,10 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   }();
 
   if (isSameOrigin) {
-    DBG("Same origin. Scrolling allowed.");
+    TEXT_FRAGMENT_LOG("Same origin. Scrolling allowed.");
     return true;
   }
-  DBG("Not same origin.");
+  TEXT_FRAGMENT_LOG("Not same origin.");
 
   
   
@@ -380,13 +370,14 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
               : nullptr) {
     const bool isNoOpenerContext = group->Toplevels().Length() == 1;
     if (!isNoOpenerContext) {
-      DBG("Cross-origin + noopener=false. Scrolling not allowed.");
+      TEXT_FRAGMENT_LOG(
+          "Cross-origin + noopener=false. Scrolling not allowed.");
     }
     return isNoOpenerContext;
   }
 
   
-  DBG("Scrolling not allowed.");
+  TEXT_FRAGMENT_LOG("Scrolling not allowed.");
   return false;
 }
 
@@ -396,15 +387,19 @@ void FragmentDirective::HighlightTextDirectives(
   if (!StaticPrefs::dom_text_fragments_enabled()) {
     return;
   }
+  auto uri = TextDirectiveUtil::ShouldLog() && mDocument->GetDocumentURI()
+                 ? mDocument->GetDocumentURI()->GetSpecOrDefault()
+                 : nsCString();
   if (aTextDirectiveRanges.IsEmpty()) {
-    DBG("No text directive ranges to highlight for document '%s'. Exiting.",
-        ToString(mDocument->GetDocumentURI()).Data());
+    TEXT_FRAGMENT_LOG(
+        "No text directive ranges to highlight for document '%s'. Exiting.",
+        uri.Data());
     return;
   }
 
-  DBG("Highlighting text directives for document '%s' (%zu ranges).",
-      ToString(mDocument->GetDocumentURI()).Data(),
-      aTextDirectiveRanges.Length());
+  TEXT_FRAGMENT_LOG(
+      "Highlighting text directives for document '%s' (%zu ranges).",
+      uri.Data(), aTextDirectiveRanges.Length());
 
   const RefPtr<Selection> targetTextSelection =
       [doc = this->mDocument]() -> Selection* {
@@ -424,298 +419,10 @@ void FragmentDirective::HighlightTextDirectives(
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool NodeIsSearchInvisible(nsINode& aNode) {
-  if (!aNode.IsElement()) {
-    return false;
-  }
-  
-  nsAtom* nodeNameAtom = aNode.NodeInfo()->NameAtom();
-  if (FragmentOrElement::IsHTMLVoid(nodeNameAtom)) {
-    return true;
-  }
-  
-  
-  
-  if (aNode.IsAnyOfHTMLElements(
-          nsGkAtoms::iframe, nsGkAtoms::image, nsGkAtoms::meter,
-          nsGkAtoms::object, nsGkAtoms::progress, nsGkAtoms::style,
-          nsGkAtoms::script, nsGkAtoms::video, nsGkAtoms::audio)) {
-    return true;
-  }
-  
-  if (aNode.IsHTMLElement(nsGkAtoms::select)) {
-    return aNode.GetAttributes()->GetNamedItem(u"multiple"_ns) == nullptr;
-  }
-  
-  
-  const Element* nodeAsElement = Element::FromNode(aNode);
-  const RefPtr<const ComputedStyle> computedStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(nodeAsElement);
-  return !computedStyle ||
-         computedStyle->StyleDisplay()->mDisplay == StyleDisplay::None;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool NodeHasBlockLevelDisplay(nsINode& aNode) {
-  if (!aNode.IsElement()) {
-    return false;
-  }
-  const Element* nodeAsElement = Element::FromNode(aNode);
-  const RefPtr<const ComputedStyle> computedStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(nodeAsElement);
-  if (!computedStyle) {
-    return false;
-  }
-  const StyleDisplay& styleDisplay = computedStyle->StyleDisplay()->mDisplay;
-  return styleDisplay == StyleDisplay::Block ||
-         styleDisplay == StyleDisplay::Table ||
-         styleDisplay == StyleDisplay::FlowRoot ||
-         styleDisplay == StyleDisplay::Grid ||
-         styleDisplay == StyleDisplay::Flex || styleDisplay.IsListItem();
-}
-
-
-
-
-
-
-nsINode* GetBlockAncestorForNode(nsINode* aNode) {
-  
-  RefPtr<nsINode> curNode = aNode;
-  
-  while (curNode) {
-    
-    
-    if (!curNode->IsText() && NodeHasBlockLevelDisplay(*curNode)) {
-      return curNode;
-    }
-    
-    curNode = curNode->GetParentNode();
-  }
-  
-  return aNode->GetOwnerDocument();
-}
-
-
-
-
-
-
-
-
-
-bool NodeIsPartOfNonSearchableSubTree(nsINode& aNode) {
-  nsINode* node = &aNode;
-  do {
-    if (NodeIsSearchInvisible(*node)) {
-      return true;
-    }
-  } while ((node = node->GetParentOrShadowHostNode()));
-  return false;
-}
-
-
-
-
-
-
-
-
-
-
-bool NodeIsVisibleTextNode(const nsINode& aNode) {
-  const Text* text = Text::FromNode(aNode);
-  if (!text) {
-    return false;
-  }
-  const nsIFrame* frame = text->GetPrimaryFrame();
-  return frame && frame->StyleVisibility()->IsVisible();
-}
-
-enum class TextScanDirection { Left = -1, Right = 1 };
-
-
-
-
-
-
-
-
-
-
-
-bool IsWhitespaceAtPosition(const Text* aText, uint32_t aPos) {
-  if (!aText || aText->Length() == 0 || aPos >= aText->Length()) {
-    return 0;
-  }
-  const nsTextFragment& frag = aText->TextFragment();
-  const char NBSP_CHAR = char(0xA0);
-  if (frag.Is2b()) {
-    const char16_t* content = frag.Get2b();
-    return IsSpaceCharacter(content[aPos]) ||
-           content[aPos] == char16_t(NBSP_CHAR);
-  }
-  const char* content = frag.Get1b();
-  return IsSpaceCharacter(content[aPos]) || content[aPos] == NBSP_CHAR;
-}
-
-
-
-
-
-void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange) {
-  
-  while (!aRange.Collapsed()) {
-    
-    RefPtr<nsINode> node = aRange.GetStartContainer();
-    MOZ_ASSERT(node);
-    
-    const uint32_t offset = aRange.StartOffset();
-    
-    
-    if (NodeIsPartOfNonSearchableSubTree(*node) ||
-        !NodeIsVisibleTextNode(*node) || offset == node->Length()) {
-      
-      
-      
-      if (NS_FAILED(aRange.SetStart(node->GetNextNode(), 0))) {
-        return;
-      }
-      
-      continue;
-    }
-    const Text* text = Text::FromNode(node);
-    MOZ_ASSERT(text);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!IsWhitespaceAtPosition(text, offset)) {
-      return;
-    }
-
-    aRange.SetStart(node, offset + 1);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-RangeBoundary MoveRangeBoundaryOneWord(const RangeBoundary& aRangeBoundary,
-                                       TextScanDirection aDirection) {
-  MOZ_ASSERT(aRangeBoundary.IsSetAndValid());
-  RefPtr<nsINode> curNode = aRangeBoundary.Container();
-  uint32_t offset = *aRangeBoundary.Offset(
-      RangeBoundary::OffsetFilter::kValidOrInvalidOffsets);
-
-  const int offsetIncrement = int(aDirection);
-  
-  
-  nsAutoString textContent;
-  if (NodeIsVisibleTextNode(*curNode)) {
-    const Text* textNode = Text::FromNode(curNode);
-
-    
-    
-    if (!IsWhitespaceAtPosition(textNode, offset)) {
-      textNode->GetData(textContent);
-      const intl::WordRange wordRange =
-          intl::WordBreaker::FindWord(textContent, offset);
-      if (aDirection == TextScanDirection::Right &&
-          offset != wordRange.mBegin) {
-        offset = wordRange.mEnd;
-      } else if (aDirection == TextScanDirection::Left &&
-                 offset != wordRange.mEnd) {
-        
-        
-        offset = wordRange.mBegin - 1;
-      }
-    }
-  }
-  
-  
-  while (curNode) {
-    if (!NodeIsVisibleTextNode(*curNode) || NodeIsSearchInvisible(*curNode) ||
-        offset >= curNode->Length()) {
-      curNode = aDirection == TextScanDirection::Left ? curNode->GetPrevNode()
-                                                      : curNode->GetNextNode();
-      if (!curNode) {
-        break;
-      }
-      offset =
-          aDirection == TextScanDirection::Left ? curNode->Length() - 1 : 0;
-      continue;
-    }
-    const Text* textNode = Text::FromNode(curNode);
-    if (IsWhitespaceAtPosition(textNode, offset)) {
-      offset += offsetIncrement;
-      continue;
-    }
-
-    
-    
-    
-    textNode->GetData(textContent);
-    const intl::WordRange wordRange =
-        intl::WordBreaker::FindWord(textContent, offset);
-    offset = aDirection == TextScanDirection::Left ? wordRange.mBegin
-                                                   : wordRange.mEnd;
-
-    return {curNode, offset};
-  }
-  return {};
-}
-
 RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
     const TextDirective& aTextDirective) {
-  DBG("Find range for text directive '%s'.", ToString(aTextDirective).Data());
+  TEXT_FRAGMENT_LOG("Find range for text directive '%s'.",
+                    ToString(aTextDirective).c_str());
   
   
   ErrorResult rv;
@@ -733,23 +440,25 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       
       
       
-      RefPtr<nsRange> prefixMatch =
-          FindStringInRange(searchRange, aTextDirective.prefix, true, false);
+      RefPtr<nsRange> prefixMatch = TextDirectiveUtil::FindStringInRange(
+          searchRange, aTextDirective.prefix, true, false);
       
       if (!prefixMatch) {
-        DBG("Did not find prefix '%s'. The text directive does not exist "
+        TEXT_FRAGMENT_LOG(
+            "Did not find prefix '%s'. The text directive does not exist "
             "in the document.",
             NS_ConvertUTF16toUTF8(aTextDirective.prefix).Data());
         return nullptr;
       }
-      DBG("Did find prefix '%s'.",
-          NS_ConvertUTF16toUTF8(aTextDirective.prefix).Data());
+      TEXT_FRAGMENT_LOG("Did find prefix '%s'.",
+                        NS_ConvertUTF16toUTF8(aTextDirective.prefix).Data());
 
       
       
-      const RangeBoundary boundaryPoint = MoveRangeBoundaryOneWord(
-          {prefixMatch->GetStartContainer(), prefixMatch->StartOffset()},
-          TextScanDirection::Right);
+      const RangeBoundary boundaryPoint =
+          TextDirectiveUtil::MoveRangeBoundaryOneWord(
+              {prefixMatch->GetStartContainer(), prefixMatch->StartOffset()},
+              TextScanDirection::Right);
       if (!boundaryPoint.IsSetAndValid()) {
         return nullptr;
       }
@@ -767,7 +476,7 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
         return nullptr;
       }
       
-      AdvanceStartToNextNonWhitespacePosition(*matchRange);
+      TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(*matchRange);
       
       
       
@@ -786,24 +495,26 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       
       
       
-      potentialMatch = FindStringInRange(matchRange, aTextDirective.start,
-                                         false, mustEndAtWordBoundary);
+      potentialMatch = TextDirectiveUtil::FindStringInRange(
+          matchRange, aTextDirective.start, false, mustEndAtWordBoundary);
       
       if (!potentialMatch) {
-        DBG("Did not find start '%s'. The text directive does not exist "
+        TEXT_FRAGMENT_LOG(
+            "Did not find start '%s'. The text directive does not exist "
             "in the document.",
             NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
         return nullptr;
       }
-      DBG("Did find start '%s'.",
-          NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
+      TEXT_FRAGMENT_LOG("Did find start '%s'.",
+                        NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
       
       
       
       
       
       if (potentialMatch->StartRef() != matchRange->StartRef()) {
-        DBG("The prefix is not directly followed by the start element. "
+        TEXT_FRAGMENT_LOG(
+            "The prefix is not directly followed by the start element. "
             "Discarding this attempt.");
         continue;
       }
@@ -817,20 +528,23 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       
       
       
-      potentialMatch = FindStringInRange(searchRange, aTextDirective.start,
-                                         true, mustEndAtWordBoundary);
+      potentialMatch = TextDirectiveUtil::FindStringInRange(
+          searchRange, aTextDirective.start, true, mustEndAtWordBoundary);
       
       if (!potentialMatch) {
-        DBG("Did not find start '%s'. The text directive does not exist "
+        TEXT_FRAGMENT_LOG(
+            "Did not find start '%s'. The text directive does not exist "
             "in the document.",
             NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
         return nullptr;
       }
       
       
-      RangeBoundary newRangeBoundary = MoveRangeBoundaryOneWord(
-          {potentialMatch->GetStartContainer(), potentialMatch->StartOffset()},
-          TextScanDirection::Right);
+      RangeBoundary newRangeBoundary =
+          TextDirectiveUtil::MoveRangeBoundaryOneWord(
+              {potentialMatch->GetStartContainer(),
+               potentialMatch->StartOffset()},
+              TextScanDirection::Right);
       if (!newRangeBoundary.IsSetAndValid()) {
         return nullptr;
       }
@@ -858,12 +572,13 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
         
         
         
-        RefPtr<nsRange> endMatch =
-            FindStringInRange(rangeEndSearchRange, aTextDirective.end, true,
-                              mustEndAtWordBoundary);
+        RefPtr<nsRange> endMatch = TextDirectiveUtil::FindStringInRange(
+            rangeEndSearchRange, aTextDirective.end, true,
+            mustEndAtWordBoundary);
         
         if (!endMatch) {
-          DBG("Did not find end '%s'. The text directive does not exist "
+          TEXT_FRAGMENT_LOG(
+              "Did not find end '%s'. The text directive does not exist "
               "in the document.",
               NS_ConvertUTF16toUTF8(aTextDirective.end).Data());
           return nullptr;
@@ -878,7 +593,7 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
 
       
       if (aTextDirective.suffix.IsEmpty()) {
-        DBG("Did find a match.");
+        TEXT_FRAGMENT_LOG("Did find a match.");
         return potentialMatch;
       }
       
@@ -890,19 +605,20 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
         return nullptr;
       }
       
-      AdvanceStartToNextNonWhitespacePosition(*suffixRange);
+      TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(*suffixRange);
 
       
       
       
-      RefPtr<nsRange> suffixMatch =
-          FindStringInRange(suffixRange, aTextDirective.suffix, false, true);
+      RefPtr<nsRange> suffixMatch = TextDirectiveUtil::FindStringInRange(
+          suffixRange, aTextDirective.suffix, false, true);
 
       
       
       
       if (!suffixMatch) {
-        DBG("Did not find suffix '%s'. The text directive does not exist "
+        TEXT_FRAGMENT_LOG(
+            "Did not find suffix '%s'. The text directive does not exist "
             "in the document.",
             NS_ConvertUTF16toUTF8(aTextDirective.suffix).Data());
         return nullptr;
@@ -912,7 +628,7 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       if (suffixMatch->GetStartContainer() ==
               suffixRange->GetStartContainer() &&
           suffixMatch->StartOffset() == suffixRange->StartOffset()) {
-        DBG("Did find a match.");
+        TEXT_FRAGMENT_LOG("Did find a match.");
         return potentialMatch;
       }
       
@@ -950,205 +666,20 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       
       
       if (aTextDirective.end.IsEmpty() && aTextDirective.suffix.IsEmpty()) {
-        DBG("rangeEndSearchRange was collapsed, no end or suffix "
+        TEXT_FRAGMENT_LOG(
+            "rangeEndSearchRange was collapsed, no end or suffix "
             "present. Returning a match");
         return potentialMatch;
       }
-      DBG("rangeEndSearchRange was collapsed, there is an end or "
+      TEXT_FRAGMENT_LOG(
+          "rangeEndSearchRange was collapsed, there is an end or "
           "suffix. There can't be a match.");
       return nullptr;
     }
   }
   
-  DBG("Did not find a match.");
+  TEXT_FRAGMENT_LOG("Did not find a match.");
   return nullptr;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-bool IsAtWordBoundary(const nsAString& aText, uint32_t aPosition) {
-  const intl::WordRange wordRange =
-      intl::WordBreaker::FindWord(aText, aPosition);
-  return wordRange.mBegin == aPosition || wordRange.mEnd == aPosition;
-}
-
-enum class IsEndIndex : bool { No, Yes };
-RangeBoundary GetBoundaryPointAtIndex(
-    uint32_t aIndex, const nsTArray<RefPtr<Text>>& aTextNodeList,
-    IsEndIndex aIsEndIndex) {
-  
-  uint32_t counted = 0;
-  
-  for (Text* curNode : aTextNodeList) {
-    
-    uint32_t nodeEnd = counted + curNode->Length();
-    
-    if (aIsEndIndex == IsEndIndex::Yes) {
-      ++nodeEnd;
-    }
-    
-    if (nodeEnd > aIndex) {
-      
-      return RangeBoundary(curNode->AsNode(), aIndex - counted);
-    }
-    
-    counted += curNode->Length();
-  }
-  return {};
-}
-
-RefPtr<nsRange> FindRangeFromNodeList(
-    nsRange* aSearchRange, const nsAString& aQuery,
-    const nsTArray<RefPtr<Text>>& aTextNodeList, bool aWordStartBounded,
-    bool aWordEndBounded) {
-  
-  
-  
-  
-  uint32_t bufferLength = 0;
-  for (const Text* text : aTextNodeList) {
-    bufferLength += text->Length();
-  }
-  
-  if (bufferLength < aQuery.Length()) {
-    return nullptr;
-  }
-  nsAutoString searchBuffer;
-  searchBuffer.SetCapacity(bufferLength);
-  for (Text* text : aTextNodeList) {
-    text->AppendTextTo(searchBuffer);
-  }
-  
-  
-  
-  uint32_t searchStart =
-      aTextNodeList.SafeElementAt(0) == aSearchRange->GetStartContainer()
-          ? aSearchRange->StartOffset()
-          : 0;
-
-  
-  RangeBoundary start, end;
-  
-  
-  
-  int32_t matchIndex = -1;
-
-  
-  
-  while (matchIndex == -1) {
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    matchIndex = searchBuffer.Find(aQuery, searchStart);
-    
-    if (matchIndex == -1) {
-      return nullptr;
-    }
-
-    
-    
-    const uint32_t endIx = matchIndex + aQuery.Length();
-
-    
-    
-    start = GetBoundaryPointAtIndex(matchIndex, aTextNodeList, IsEndIndex::No);
-    
-    
-    end = GetBoundaryPointAtIndex(endIx, aTextNodeList, IsEndIndex::Yes);
-
-    
-    
-    
-    
-    
-    if ((aWordStartBounded && !IsAtWordBoundary(searchBuffer, matchIndex)) ||
-        (aWordEndBounded && !IsAtWordBoundary(searchBuffer, endIx))) {
-      
-      searchStart = matchIndex + 1;
-      
-      matchIndex = -1;
-    }
-  }
-  
-  
-  
-  
-  
-  
-  uint32_t endInset =
-      aTextNodeList.LastElement() == aSearchRange->GetEndContainer()
-          ? aSearchRange->GetEndContainer()->Length() -
-                aSearchRange->EndOffset()
-          : 0;
-
-  
-  
-  
-  if (matchIndex + aQuery.Length() > searchBuffer.Length() - endInset) {
-    return nullptr;
-  }
-
-  
-  
-  MOZ_ASSERT(start.IsSetAndValid());
-  MOZ_ASSERT(end.IsSetAndValid());
-
-  
-  ErrorResult rv;
-  RefPtr<nsRange> range = nsRange::Create(start, end, rv);
-  if (rv.Failed()) {
-    return nullptr;
-  }
-
-  return range;
-}
-
-RefPtr<nsRange> FragmentDirective::FindStringInRange(nsRange* aSearchRange,
-                                                     const nsAString& aQuery,
-                                                     bool aWordStartBounded,
-                                                     bool aWordEndBounded) {
-  MOZ_ASSERT(aSearchRange);
-  DBG("query='%s', wordStartBounded='%d', wordEndBounded='%d'.\n",
-      NS_ConvertUTF16toUTF8(aQuery).Data(), aWordStartBounded, aWordEndBounded);
-  RefPtr<nsFind> finder = new nsFind();
-  finder->SetWordStartBounded(aWordStartBounded);
-  finder->SetWordEndBounded(aWordEndBounded);
-  finder->SetCaseSensitive(false);
-  RefPtr<nsRange> searchRangeStart = nsRange::Create(
-      aSearchRange->StartRef(), aSearchRange->StartRef(), IgnoreErrors());
-  RefPtr<nsRange> searchRangeEnd = nsRange::Create(
-      aSearchRange->EndRef(), aSearchRange->EndRef(), IgnoreErrors());
-  RefPtr<nsRange> result;
-  Unused << finder->Find(aQuery, aSearchRange, searchRangeStart, searchRangeEnd,
-                         getter_AddRefs(result));
-  if (!result || result->Collapsed()) {
-    DBG("Did not find query '%s'", NS_ConvertUTF16toUTF8(aQuery).Data());
-  } else {
-    auto rangeToString = [](nsRange* range) -> nsCString {
-      nsString rangeString;
-      range->ToString(rangeString, IgnoreErrors());
-      return NS_ConvertUTF16toUTF8(rangeString);
-    };
-    DBG("find returned '%s'", rangeToString(result).Data());
-  }
-  return result;
-}
 }  
