@@ -2834,6 +2834,37 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
+- (void)windowDidFailToEnterFullScreen:(NSNotification*)notification {
+  if (!mGeckoWindow) {
+    return;
+  }
+
+  MOZ_ASSERT((mGeckoWindow->GetCocoaWindow().styleMask &
+              NSWindowStyleMaskFullScreen) == 0);
+  MOZ_ASSERT(mGeckoWindow->SizeMode() == nsSizeMode_Fullscreen);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
+}
+
+- (void)windowDidFailToExitFullScreen:(NSNotification*)notification {
+  if (!mGeckoWindow) {
+    return;
+  }
+  
+  
+  mGeckoWindow->CocoaWindowDidEnterFullscreen(true);
+}
+
 - (void)windowDidBecomeMain:(NSNotification*)aNotification {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
