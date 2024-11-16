@@ -20,7 +20,6 @@ UNSUPPORTED_FEATURES = set(
     [
         "tail-call-optimization",
         "Intl.Locale-info",  
-        "Intl.DurationFormat",  
         "Atomics.waitAsync",  
         "legacy-regexp",  
         "set-methods",  
@@ -38,6 +37,7 @@ FEATURE_CHECK_NEEDED = {
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
     "Intl.Segmenter": "!Intl.Segmenter",  
+    "Intl.DurationFormat": "!Intl.hasOwnProperty('DurationFormat')",  
     "resizable-arraybuffer": "!ArrayBuffer.prototype.resize",  
     "uint8array-base64": "!Uint8Array.fromBase64",  
     "json-parse-with-source": "!JSON.hasOwnProperty('isRawJSON')",  
