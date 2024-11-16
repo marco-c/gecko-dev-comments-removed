@@ -1662,6 +1662,20 @@ class nsINode : public mozilla::dom::EventTarget {
   bool IsSelected(uint32_t aStartOffset, uint32_t aEndOffset,
                   mozilla::dom::SelectionNodeCache* aCache = nullptr) const;
 
+#ifdef DEBUG
+  void AssertIsRootElementSlow(bool) const;
+#endif
+
+  
+  bool IsRootElement() const {
+    
+    const bool isRoot = !GetParent() && IsInUncomposedDoc() && IsElement();
+#ifdef DEBUG
+    AssertIsRootElementSlow(isRoot);
+#endif
+    return isRoot;
+  }
+
   
 
 
