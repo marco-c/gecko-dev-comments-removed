@@ -62,7 +62,7 @@ add_task(async function enable_external_startuptask() {
     value: { enabled: true },
   });
   
-  await WindowsLaunchOnLogin.disableLaunchOnLoginMSIX();
+  await WindowsLaunchOnLogin._disableLaunchOnLoginMSIX();
   let enabled = await WindowsLaunchOnLogin.enableLaunchOnLoginMSIX();
   ok(enabled, "Task is enabled");
 
@@ -86,7 +86,7 @@ add_task(async function disable_external_startuptask() {
     value: { enabled: true },
   });
   
-  await WindowsLaunchOnLogin.disableLaunchOnLoginMSIX();
+  await WindowsLaunchOnLogin._disableLaunchOnLoginMSIX();
 
   
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
