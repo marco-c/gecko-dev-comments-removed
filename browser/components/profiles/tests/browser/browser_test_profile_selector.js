@@ -4,6 +4,13 @@
 "use strict";
 
 add_task(async function test_selector_window() {
+  if (!AppConstants.MOZ_SELECTABLE_PROFILES) {
+    
+    
+    ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
+    return;
+  }
+
   await initGroupDatabase();
   let profile = SelectableProfileService.currentProfile;
 
