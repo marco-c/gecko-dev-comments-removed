@@ -1,3 +1,5 @@
+
+
 const m = new WebAssembly.Module(wasmTextToBinary(`(module
   (import "imp" "f" (func $f (result i32)))
 
