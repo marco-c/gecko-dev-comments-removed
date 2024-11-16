@@ -477,3 +477,16 @@ async function simulateDropAndCheck(win, dropTarget, urls) {
     ok(added.has(url), url + " is added to download");
   }
 }
+
+
+
+
+
+
+
+async function expectNonZeroDownloadTargetSize(downloadTarget) {
+  if (!downloadTarget.size) {
+    await downloadTarget.refresh();
+  }
+  return downloadTarget.size;
+}
