@@ -100,6 +100,9 @@ var gExceptionPaths = [
 
   
   "chrome://global/content/ml/",
+
+  
+  "chrome://browser/content/profiles/assets/",
 ];
 
 
