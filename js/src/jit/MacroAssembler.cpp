@@ -9827,7 +9827,7 @@ void MacroAssembler::mapObjectGet(Register mapObj, ValueOperand value,
 
   
   bind(&found);
-  loadValue(Address(temp1, ValueMap::Entry::offsetOfValue()), result);
+  loadValue(Address(temp1, MapObject::Table::Entry::offsetOfValue()), result);
 
   bind(&done);
 }
