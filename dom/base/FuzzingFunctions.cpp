@@ -17,6 +17,8 @@
 #include "nsIAccessibilityService.h"
 #include "nsPIDOMWindow.h"
 #include "xpcAccessibilityService.h"
+#include "mozilla/SpinEventLoopUntil.h"
+#include "nsITimer.h"
 
 #ifdef FUZZING_SNAPSHOT
 #  include "mozilla/dom/ContentChild.h"
@@ -383,6 +385,30 @@ void FuzzingFunctions::SynthesizeKeyboardEvents(
   
   
   
+}
+
+static void SpinEventLoopForCallback(nsITimer* aTimer, void* aClosure) {
+  *static_cast<bool*>(aClosure) = true;
+}
+
+
+void FuzzingFunctions::SpinEventLoopFor(const GlobalObject&,
+                                        uint32_t aMilliseconds) {
+  bool didRun = false;
+  nsCOMPtr<nsITimer> timer = NS_NewTimer();
+  nsresult rv = timer->InitWithNamedFuncCallback(
+      SpinEventLoopForCallback, &didRun, aMilliseconds, nsITimer::TYPE_ONE_SHOT,
+      "FuzzingFunctions::SpinEventLoopFor");
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  SpinEventLoopUntil("FuzzingFunctions::SpinEventLoopFor"_ns,
+                     [&]() { return didRun; });
+
+  
+  
+  timer->Cancel();
 }
 
 }  
