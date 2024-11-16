@@ -1,11 +1,10 @@
-<!DOCTYPE html>
-<title>MediaCapabilities.decodingInfo() for webrtc</title>
-<script src=/resources/testharness.js></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
 
-// Minimal VideoConfiguration that will be allowed per spec. All optional
-// properties are missing.
+'use strict';
+
+const isWorkerEnvironment = typeof self.WorkerGlobalScope !== 'undefined';
+
+
+
 const minimalVideoConfiguration = {
   contentType: 'video/VP9; profile-level="0"',
   width: 800,
@@ -14,8 +13,8 @@ const minimalVideoConfiguration = {
   framerate: 24,
 };
 
-// Minimal AudioConfiguration that will be allowed per spec. All optional
-// properties are missing.
+
+
 const minimalAudioConfiguration = {
   contentType: 'audio/opus',
 };
@@ -150,16 +149,22 @@ promise_test(t => {
 }, "Test that decodingInfo returns supported, smooth, and powerEfficient set to false for non-webrtc audio content type.");
 
 const validAudioCodecs = (() => {
-  // Some codecs that are returned by getCapabilities() are not real codecs,
-  // exclude these from the test.
+  
+  
   const excludeList = [ 'audio/CN', 'audio/telephone-event', 'audio/red' ];
   const audioCodecs = [];
-  RTCRtpReceiver.getCapabilities("audio")['codecs'].forEach(codec => {
-    if (excludeList.indexOf(codec.mimeType) < 0 &&
-        audioCodecs.indexOf(codec.mimeType) < 0) {
-      audioCodecs.push(codec.mimeType);
-    }
-  });
+  if (isWorkerEnvironment) {
+    
+    audioCodecs.push(minimalAudioConfiguration.contentType);
+  }
+  else {
+    RTCRtpReceiver.getCapabilities("audio")['codecs'].forEach(codec => {
+      if (excludeList.indexOf(codec.mimeType) < 0 &&
+          audioCodecs.indexOf(codec.mimeType) < 0) {
+        audioCodecs.push(codec.mimeType);
+      }
+    });
+  }
   return audioCodecs;
 })();
 
@@ -173,27 +178,33 @@ validAudioCodecs.forEach(codec => {
   }).then(ability => {
     assert_true(ability.supported);
   });
-}, "Test that decodingInfo returns supported true for the codec " + codec + " returned by RTCRtpReceiver.getCapabilities()")}
+}, "Test that decodingInfo returns supported true for the codec " + codec + (isWorkerEnvironment ? "" : " returned by RTCRtpReceiver.getCapabilities()"))}
 );
 
 const validVideoCodecs = (() => {
-  // Some codecs that are returned by getCapabilities() are not real codecs but
-  // only used for error correction, exclude these from the test.
+  
+  
   const excludeList = [ 'video/rtx', 'video/red', 'video/ulpfec',
                       'video/flexfec-03' ];
   const videoCodecs = [];
 
-  RTCRtpReceiver.getCapabilities("video")['codecs'].forEach(codec => {
-    if (excludeList.indexOf(codec.mimeType) < 0) {
-      let mimeType = codec.mimeType;
-      if ('sdpFmtpLine' in codec) {
-        mimeType += "; " + codec.sdpFmtpLine;
+  if (isWorkerEnvironment) {
+    
+    videoCodecs.push(minimalVideoConfiguration.contentType);
+  }
+  else {
+    RTCRtpReceiver.getCapabilities("video")['codecs'].forEach(codec => {
+      if (excludeList.indexOf(codec.mimeType) < 0) {
+        let mimeType = codec.mimeType;
+        if ('sdpFmtpLine' in codec) {
+          mimeType += "; " + codec.sdpFmtpLine;
+        }
+        if (!(mimeType in videoCodecs)) {
+          videoCodecs.push(mimeType);
+        }
       }
-      if (!(mimeType in videoCodecs)) {
-        videoCodecs.push(mimeType);
-      }
-    }
-  });
+    });
+  }
   return videoCodecs;
 })();
 
@@ -211,7 +222,6 @@ validVideoCodecs.forEach(codec => {
   }).then(ability => {
     assert_true(ability.supported);
   });
-}, "Test that decodingInfo returns supported true for the codec " + codec + " returned by RTCRtpReceiver.getCapabilities()")}
+}, "Test that decodingInfo returns supported true for the codec " + codec + (isWorkerEnvironment ? "" : " returned by RTCRtpReceiver.getCapabilities()"))}
 );
 
-</script>
