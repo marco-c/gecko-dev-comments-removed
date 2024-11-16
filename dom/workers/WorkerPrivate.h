@@ -66,6 +66,7 @@ class ThrottledEventQueue;
 namespace dom {
 
 class RemoteWorkerChild;
+class RemoteWorkerNonLifeCycleOpControllerChild;
 
 
 
@@ -1482,6 +1483,11 @@ class WorkerPrivate final
   
   
   RefPtr<RemoteWorkerChild> mRemoteWorkerController;
+
+  
+  
+  RefPtr<RemoteWorkerNonLifeCycleOpControllerChild>
+      mRemoteWorkerNonLifeCycleOpController;
 
   mozilla::ipc::Endpoint<PRemoteWorkerNonLifeCycleOpControllerChild> mChildEp;
 
