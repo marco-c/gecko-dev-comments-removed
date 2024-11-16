@@ -17,6 +17,7 @@
 #include "mozilla/Baseline.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
@@ -59,6 +60,7 @@
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
 #include "nsFlexContainerFrame.h"
+#include "nsTextControlFrame.h"
 
 #include "nsBidiPresUtils.h"
 
@@ -260,6 +262,11 @@ static nscolor GetBackplateColor(nsIFrame* aFrame) {
   return NS_ComposeColors(backgroundColor, currentBackgroundColor);
 }
 
+static nsRect GetNormalMarginRect(nsIFrame* aFrame) {
+  auto rect = aFrame->GetMarginRectRelativeToSelf();
+  return rect + aFrame->GetNormalPosition();
+}
+
 #ifdef DEBUG
 #  include "nsBlockDebugFlags.h"
 
@@ -422,7 +429,6 @@ NS_DECLARE_FRAME_PROPERTY_FRAMELIST(FloatsProperty)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(PushedFloatsProperty)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OutsideMarkerProperty)
 NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(InsideMarkerProperty, nsIFrame)
-NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(BlockEndEdgeOfChildrenProperty, nscoord)
 
 
 
@@ -1699,9 +1705,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 
   aMetrics.SetOverflowAreasToDesiredBounds();
-  ComputeOverflowAreas(aMetrics.mOverflowAreas,
-                       trialState.mBlockEndEdgeOfChildren,
-                       aReflowInput.mStyleDisplay);
+  ComputeOverflowAreas(aMetrics.mOverflowAreas, aReflowInput.mStyleDisplay);
   
   aMetrics.mOverflowAreas.UnionWith(trialState.mOcBounds);
   
@@ -2382,13 +2386,6 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 
   
   finalSize.BSize(wm) = std::max(0, finalSize.BSize(wm));
-
-  if (blockEndEdgeOfChildren != finalSize.BSize(wm) - borderPadding.BEnd(wm)) {
-    SetProperty(BlockEndEdgeOfChildrenProperty(), blockEndEdgeOfChildren);
-  } else {
-    RemoveProperty(BlockEndEdgeOfChildrenProperty());
-  }
-
   aMetrics.SetSize(wm, finalSize);
 
   return blockEndEdgeOfChildren;
@@ -2465,69 +2462,7 @@ void nsBlockFrame::AlignContent(BlockReflowState& aState,
   }
 }
 
-void nsBlockFrame::ConsiderBlockEndEdgeOfChildren(
-    OverflowAreas& aOverflowAreas, nscoord aBEndEdgeOfChildren,
-    const nsStyleDisplay* aDisplay) const {
-  const auto wm = GetWritingMode();
-
-  
-  
-  
-  
-  
-  
-
-  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(GetLogicalUsedBorderAndPadding(wm) == GetLogicalUsedPadding(wm),
-               "A scrolled inner frame shouldn't have any border!");
-    aBEndEdgeOfChildren += GetLogicalUsedPadding(wm).BEnd(wm);
-  }
-
-  
-  
-  
-  if (wm.IsVertical()) {
-    if (wm.IsVerticalLR()) {
-      for (const auto otype : AllOverflowTypes()) {
-        if (!(aDisplay->IsContainLayout() &&
-              otype == OverflowType::Scrollable)) {
-          
-          
-          
-          
-          nsRect& o = aOverflowAreas.Overflow(otype);
-          o.width = std::max(o.XMost(), aBEndEdgeOfChildren) - o.x;
-        }
-      }
-    } else {
-      for (const auto otype : AllOverflowTypes()) {
-        if (!(aDisplay->IsContainLayout() &&
-              otype == OverflowType::Scrollable)) {
-          nsRect& o = aOverflowAreas.Overflow(otype);
-          nscoord xmost = o.XMost();
-          o.x = std::min(o.x, xmost - aBEndEdgeOfChildren);
-          o.width = xmost - o.x;
-        }
-      }
-    }
-  } else {
-    for (const auto otype : AllOverflowTypes()) {
-      if (!(aDisplay->IsContainLayout() && otype == OverflowType::Scrollable)) {
-        nsRect& o = aOverflowAreas.Overflow(otype);
-        o.height = std::max(o.YMost(), aBEndEdgeOfChildren) - o.y;
-      }
-    }
-  }
-}
-
 void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
-                                        nscoord aBEndEdgeOfChildren,
                                         const nsStyleDisplay* aDisplay) const {
   
   
@@ -2540,7 +2475,27 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
   
   nsRect frameBounds = aOverflowAreas.ScrollableOverflow();
 
+  const auto wm = GetWritingMode();
+  const auto borderPadding =
+      GetLogicalUsedBorderAndPadding(wm).GetPhysicalMargin(wm);
+  
+  
+  
+  
+  auto frameContentBounds = frameBounds;
+  frameContentBounds.Deflate(borderPadding);
+  
+  
+  
+  auto inFlowChildBounds = frameContentBounds;
+  
+  
+  
+  auto inFlowScrollableOverflow = frameContentBounds;
+
   for (const auto& line : Lines()) {
+    aOverflowAreas.InkOverflow() =
+        aOverflowAreas.InkOverflow().Union(line.InkOverflowRect());
     if (aDisplay->IsContainLayout()) {
       
       
@@ -2548,13 +2503,28 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
       
       
       
-      nsRect childVisualRect = line.InkOverflowRect();
-      OverflowAreas childVisualArea = OverflowAreas(childVisualRect, nsRect());
-      aOverflowAreas.UnionWith(childVisualArea);
-    } else {
-      aOverflowAreas.UnionWith(line.GetOverflowAreas());
+      
+      
+      continue;
     }
+
+    auto lineInFlowChildBounds = line.GetInFlowChildBounds();
+    if (lineInFlowChildBounds) {
+      inFlowChildBounds = inFlowChildBounds.UnionEdges(*lineInFlowChildBounds);
+    }
+    inFlowScrollableOverflow =
+        inFlowScrollableOverflow.Union(line.ScrollableOverflowRect());
   }
+
+  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    
+    const auto paddingInflatedOverflow =
+        ComputePaddingInflatedScrollableOverflow(inFlowChildBounds);
+    aOverflowAreas.UnionAllWith(paddingInflatedOverflow);
+  }
+  
+  
+  aOverflowAreas.UnionAllWith(inFlowScrollableOverflow);
 
   
   
@@ -2564,8 +2534,6 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
   if (nsIFrame* outsideMarker = GetOutsideMarker()) {
     aOverflowAreas.UnionAllWith(outsideMarker->GetRect());
   }
-
-  ConsiderBlockEndEdgeOfChildren(aOverflowAreas, aBEndEdgeOfChildren, aDisplay);
 
   if (!overflowClipAxes.isEmpty()) {
     aOverflowAreas.ApplyClipping(frameBounds, overflowClipAxes,
@@ -2579,12 +2547,113 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 #endif
 }
 
+
+
+static bool IsScrolledFrameForTextArea(const nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame && aFrame->Style()->GetPseudoType() ==
+                           PseudoStyleType::scrolledContent,
+             "expecting a scrolled frame");
+  
+  
+  const auto* parent = aFrame->GetParent();
+  if (!parent) {
+    return false;
+  }
+  MOZ_ASSERT(parent->IsScrollContainerOrSubclass(), "Not a scrolled frame?");
+  
+  
+  if (!parent->Style()->IsPseudoElement()) {
+    return false;
+  }
+  const auto* grandParent = parent->GetParent();
+  if (!grandParent) {
+    return false;
+  }
+  const auto* textControlElement =
+      mozilla::TextControlElement::FromNodeOrNull(grandParent->GetContent());
+  if (!textControlElement) {
+    return false;
+  }
+  return textControlElement->IsTextArea();
+}
+
+nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
+    const nsRect& aInFlowChildBounds) const {
+  MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::scrolledContent,
+             "Expected scrolled frame");
+  auto result = aInFlowChildBounds;
+  const auto wm = GetWritingMode();
+  auto padding = GetLogicalUsedPadding(wm);
+  MOZ_ASSERT(GetLogicalUsedBorderAndPadding(wm) == padding,
+             "A scrolled inner frame shouldn't have any border!");
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(IsScrolledFrameForTextArea(this))) {
+    padding.IStart(wm) = padding.IEnd(wm) = 0;
+  }
+  result.Inflate(padding.GetPhysicalMargin(wm));
+  return result;
+}
+
+Maybe<nsRect> nsBlockFrame::GetLineFrameInFlowBounds(
+    const nsLineBox& aLine, const nsIFrame& aLineChildFrame) const {
+  MOZ_ASSERT(aLineChildFrame.GetParent() == this,
+             "Line's frame doesn't belong to this block frame?");
+  if (aLineChildFrame.IsPlaceholderFrame()) {
+    return Nothing{};
+  }
+  if (aLine.IsInline()) {
+    return Some(aLineChildFrame.GetMarginRectRelativeToSelf() +
+                aLineChildFrame.GetNormalPosition());
+  }
+  const auto wm = GetWritingMode();
+  
+  auto logicalMargin = aLineChildFrame.GetLogicalUsedMargin(wm);
+  logicalMargin.BEnd(wm) = aLine.GetCarriedOutBEndMargin().Get();
+
+  const auto linePoint = aLine.GetPhysicalBounds().TopLeft();
+  
+  
+  
+  
+  const auto normalPosition = aLineChildFrame.GetLogicalSize(wm).BSize(wm) == 0
+                                  ? linePoint
+                                  : aLineChildFrame.GetNormalPosition();
+  const auto margin = logicalMargin.GetPhysicalMargin(wm).ApplySkipSides(
+      aLineChildFrame.GetSkipSides());
+  auto rect = aLineChildFrame.GetRectRelativeToSelf();
+  rect.Inflate(margin);
+  return Some(rect + normalPosition);
+}
+
 void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
                                       bool aAsIfScrolled) {
   
   
   
   
+  const auto wm = GetWritingMode();
+  const auto borderPadding =
+      GetLogicalUsedBorderAndPadding(wm).GetPhysicalMargin(wm);
+  
+  
+  
+  const bool isScrolled =
+      Style()->GetPseudoType() == PseudoStyleType::scrolledContent;
+
+  
+  auto frameContentBounds = aOverflowAreas.ScrollableOverflow();
+  frameContentBounds.Deflate(borderPadding);
+  
+  
+  auto inFlowChildBounds = frameContentBounds;
+  auto inFlowScrollableOverflow = frameContentBounds;
+
+  const auto inkOverflowOnly = StyleDisplay()->IsContainLayout();
+
   for (auto& line : Lines()) {
     nsRect bounds = line.GetPhysicalBounds();
     OverflowAreas lineAreas(bounds, bounds);
@@ -2592,19 +2661,45 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
     int32_t n = line.GetChildCount();
     for (nsIFrame* lineFrame = line.mFirstChild; n > 0;
          lineFrame = lineFrame->GetNextSibling(), --n) {
+      
       ConsiderChildOverflow(lineAreas, lineFrame);
+
+      if (inkOverflowOnly || !isScrolled) {
+        continue;
+      }
+
+      if (auto lineFrameBounds = GetLineFrameInFlowBounds(line, *lineFrame)) {
+        inFlowChildBounds = inFlowChildBounds.UnionEdges(*lineFrameBounds);
+      }
     }
 
     
     if (line.HasFloats()) {
       for (nsIFrame* f : line.Floats()) {
         ConsiderChildOverflow(lineAreas, f);
+        if (inkOverflowOnly || !isScrolled) {
+          continue;
+        }
+        inFlowChildBounds =
+            inFlowChildBounds.UnionEdges(GetNormalMarginRect(f));
       }
     }
 
     line.SetOverflowAreas(lineAreas);
-    aOverflowAreas.UnionWith(lineAreas);
+    aOverflowAreas.InkOverflow() =
+        aOverflowAreas.InkOverflow().Union(lineAreas.InkOverflow());
+    if (!inkOverflowOnly) {
+      inFlowScrollableOverflow =
+          inFlowScrollableOverflow.Union(lineAreas.ScrollableOverflow());
+    }
   }
+
+  if (isScrolled) {
+    const auto paddingInflatedOverflow =
+        ComputePaddingInflatedScrollableOverflow(inFlowChildBounds);
+    aOverflowAreas.UnionAllWith(paddingInflatedOverflow);
+  }
+  aOverflowAreas.UnionAllWith(inFlowScrollableOverflow);
 
   
   
@@ -2614,14 +2709,6 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
 }
 
 bool nsBlockFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
-  bool found;
-  nscoord blockEndEdgeOfChildren =
-      GetProperty(BlockEndEdgeOfChildrenProperty(), &found);
-  if (found) {
-    ConsiderBlockEndEdgeOfChildren(aOverflowAreas, blockEndEdgeOfChildren,
-                                   StyleDisplay());
-  }
-
   
   
   ClearLineCursors();
@@ -4573,6 +4660,15 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
         }
       }
 
+      if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+        auto lineFrameBounds = GetLineFrameInFlowBounds(*aLine, *frame);
+        MOZ_ASSERT(aLine->GetChildCount() == 1,
+                   "More than one child in block line?");
+        
+        
+        aLine->SetInFlowChildBounds(lineFrameBounds);
+      }
+
       aLine->SetOverflowAreas(overflowAreas);
       if (*aKeepReflowGoing) {
         
@@ -5555,6 +5651,23 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
   
   OverflowAreas overflowAreas;
   aLineLayout.RelativePositionFrames(overflowAreas);
+  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    Maybe<nsRect> inFlowBounds;
+    int32_t n = aLine->GetChildCount();
+    for (nsIFrame* lineFrame = aLine->mFirstChild; n > 0;
+         lineFrame = lineFrame->GetNextSibling(), --n) {
+      auto lineFrameBounds = GetLineFrameInFlowBounds(*aLine, *lineFrame);
+      if (!lineFrameBounds) {
+        continue;
+      }
+      if (inFlowBounds) {
+        *inFlowBounds = inFlowBounds->UnionEdges(*lineFrameBounds);
+      } else {
+        inFlowBounds = Some(*lineFrameBounds);
+      }
+    }
+    aLine->SetInFlowChildBounds(inFlowBounds);
+  }
   aLine->SetOverflowAreas(overflowAreas);
   if (addedMarker) {
     aLineLayout.RemoveMarkerFrame(GetOutsideMarker());
@@ -5631,6 +5744,18 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
     OverflowAreas lineOverflowAreas = aState.mFloatOverflowAreas;
     lineOverflowAreas.UnionWith(aLine->GetOverflowAreas());
     aLine->SetOverflowAreas(lineOverflowAreas);
+    if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+      auto itr = aLine->Floats().begin();
+      
+      auto floatRect = GetNormalMarginRect(*itr);
+      ++itr;
+      for (; itr != aLine->Floats().end(); ++itr) {
+        floatRect = floatRect.UnionEdges(GetNormalMarginRect(*itr));
+      }
+      auto inFlowBounds = aLine->GetInFlowChildBounds();
+      aLine->SetInFlowChildBounds(
+          Some(inFlowBounds ? inFlowBounds->UnionEdges(floatRect) : floatRect));
+    }
 
 #ifdef NOISY_OVERFLOW_AREAS
     printf("%s: Line %p, InkOverflowRect=%s, ScrollableOverflowRect=%s\n",
