@@ -281,9 +281,6 @@ add_task(async function () {
         "privacy.partition.always_partition_third_party_non_cookie_storage",
         false,
       ],
-      
-      
-      ["privacy.restrict3rdpartystorage.heuristic.window_open", true],
     ],
   });
 
