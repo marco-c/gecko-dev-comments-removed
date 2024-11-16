@@ -1566,12 +1566,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     
     mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
   }
-
-  if (aAttribute == nsGkAtoms::slot &&
-      !mContent->GetFlattenedTreeParentNode() && this != mDoc) {
-    
-    mDoc->ContentRemoved(this);
-  }
 }
 
 void LocalAccessible::ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,

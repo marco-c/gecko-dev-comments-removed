@@ -4,6 +4,9 @@
 
 "use strict";
 
+
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
+
 const REORDER = { expected: [[EVENT_REORDER, "container"]] };
 
 
@@ -95,4 +98,35 @@ addAccessibleTask(
     is(docAcc.childCount, 0, "document has no children after body move");
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+);
+
+addAccessibleTask(
+  `
+    <marquee id="container"><span><button>Help</button></span></marquee>
+  `,
+  async function (browser, docAcc) {
+    info("A slotted inline");
+    const container = findAccessibleChildByID(docAcc, "container");
+
+    testAccessibleTree(container, {
+      TEXT_CONTAINER: [{ TEXT_CONTAINER: [{ PUSHBUTTON: { name: "Help" } }] }],
+    });
+
+    const SLOT_REORDER = {
+      expected: [
+        [
+          EVENT_REORDER,
+          evt => getAccessibleDOMNodeID(evt.accessible.parent) == "container",
+        ],
+      ],
+    };
+    await contentSpawnMutation(browser, SLOT_REORDER, function () {
+      content.document.getElementById("container").firstElementChild.slot =
+        "foo";
+    });
+
+    testAccessibleTree(container, {
+      TEXT_CONTAINER: [{ TEXT_CONTAINER: [] }],
+    });
+  }
 );
