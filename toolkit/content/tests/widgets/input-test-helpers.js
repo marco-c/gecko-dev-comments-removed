@@ -3,6 +3,9 @@
 
 "use strict";
 
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
 const { BrowserTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/BrowserTestUtils.sys.mjs"
 );
@@ -18,9 +21,20 @@ class InputTestHelpers {
     ({
       html: this.html,
       staticHtml: this.staticHtml,
-      literal: this.literal,
       render: this.render,
     } = lit);
+    this.SpreadDirective = class extends lit.Directive {
+      render() {
+        return lit.nothing;
+      }
+      update(part, [attrs]) {
+        for (let [key, value] of Object.entries(attrs)) {
+          part.element.setAttribute(key, value);
+        }
+        return lit.noChange;
+      }
+    };
+    this.spread = lit.directive(this.SpreadDirective);
     return lit;
   }
 
@@ -34,20 +48,9 @@ class InputTestHelpers {
 
 
 
-
-
-
-  async setupInputTests(
-    inputElement,
-    defaultTemplate,
-    wrapperFn = template => template
-  ) {
-    this.htmlTag = inputElement;
-    this.wrapperFn = wrapperFn;
-    this.defaultTemplate =
-      defaultTemplate ||
-      this
-        .staticHtml`<${this.htmlTag} label="Default" value="default"></${this.htmlTag}>`;
+  async setupInputTests({ templateFn }) {
+    this.templateFn = (args = {}, children) =>
+      templateFn(this.spread(args), children);
     this.renderTarget = document.createElement("div");
     document.body.append(this.renderTarget);
   }
@@ -58,8 +61,9 @@ class InputTestHelpers {
 
 
 
-  async renderInputElements(template = this.defaultTemplate) {
-    this.render(this.wrapperFn(template), this.renderTarget);
+  async renderInputElements(template = this.templateFn()) {
+    this.render(this.html``, this.renderTarget);
+    this.render(template, this.renderTarget);
     await this.renderTarget.firstElementChild.updateComplete;
     return this.renderTarget;
   }
@@ -128,7 +132,9 @@ class InputTestHelpers {
     await this.verifyDescription(elementName);
     await this.verifySupportPage(elementName);
     await this.verifyAccesskey(elementName);
-    await this.verifyChecked(elementName);
+    if (this.checkable) {
+      await this.verifyChecked(elementName);
+    }
   }
 
   
@@ -140,9 +146,10 @@ class InputTestHelpers {
     const INITIAL_LABEL = "This is a label.";
     const NEW_LABEL = "Testing...";
 
-    let labelTemplate = this.staticHtml`
-    <${this.htmlTag} value="label" label=${INITIAL_LABEL}></${this.htmlTag}>
-  `;
+    let labelTemplate = this.templateFn({
+      value: "label",
+      label: INITIAL_LABEL,
+    });
     let renderTarget = await this.renderInputElements(labelTemplate);
     let firstInput = renderTarget.querySelector(selector);
 
@@ -191,9 +198,10 @@ class InputTestHelpers {
     const INITIAL_VALUE = "value";
     const NEW_VALUE = "new value";
 
-    let valueTemplate = this.staticHtml`
-    <${this.htmlTag} label="Testing value" value=${INITIAL_VALUE}></${this.htmlTag}>
-  `;
+    let valueTemplate = this.templateFn({
+      label: "Testing value",
+      value: INITIAL_VALUE,
+    });
     let renderTarget = await this.renderInputElements(valueTemplate);
     let firstInput = renderTarget.querySelector(selector);
 
@@ -209,11 +217,13 @@ class InputTestHelpers {
 
 
   async verifyIcon(selector) {
-    const ICON_SRC = this.literal`chrome://global/skin/icons/edit-copy.svg`;
+    const ICON_SRC = "chrome://global/skin/icons/edit-copy.svg";
 
-    let iconTemplate = this.staticHtml`
-    <${this.htmlTag} value="icon" label="Testing icon" iconsrc=${ICON_SRC}></${this.htmlTag}>
-  `;
+    let iconTemplate = this.templateFn({
+      value: "icon",
+      label: "Testing icon",
+      iconsrc: ICON_SRC,
+    });
 
     let renderTarget = await this.renderInputElements(iconTemplate);
     let firstInput = renderTarget.querySelector(selector);
@@ -262,17 +272,18 @@ class InputTestHelpers {
     const ATTR_DESCRIPTION = "This description is set via an attribute.";
     const SLOTTED_DESCRIPTION = "This description is set via a slot.";
 
-    let descriptionTemplate = this.staticHtml`
-    <${this.htmlTag} checked value="first" label="First" description=${ATTR_DESCRIPTION}></${this.htmlTag}>
-    <${this.htmlTag} value="second" label="Second">
-      <span slot="description">${SLOTTED_DESCRIPTION}</span>
-    </${this.htmlTag}>
-    <${this.htmlTag} value="third" label="Third" description=${ATTR_DESCRIPTION}>
-      <span slot="description">${SLOTTED_DESCRIPTION}</span>
-    </${this.htmlTag}>
-  `;
+    let templatesArgs = [
+      [{ description: ATTR_DESCRIPTION }],
+      [{}, this.html`<span slot="description">${SLOTTED_DESCRIPTION}</span>`],
+      [
+        { description: ATTR_DESCRIPTION },
+        this.html`<span slot="description">${SLOTTED_DESCRIPTION}</span>`,
+      ],
+    ];
 
-    let renderTarget = await this.renderInputElements(descriptionTemplate);
+    let renderTarget = await this.renderInputElements(
+      templatesArgs.map(args => this.templateFn(...args))
+    );
     let [firstInput, secondInput, thirdInput] =
       renderTarget.querySelectorAll(selector);
 
@@ -321,27 +332,28 @@ class InputTestHelpers {
   async verifySupportPage(selector) {
     const LEARN_MORE_TEXT = "Learn more";
 
-    let supportLinkTemplate = this.staticHtml`
-    <${this.htmlTag} value="first" label="First" support-page="test-page"></${this.htmlTag}>
-    <${this.htmlTag} value="second" label="Second">
-      <a slot="support-link" href="www.example.com">Help me!</a>
-    </${this.htmlTag}>
-  `;
+    let templatesArgs = [
+      [{ "support-page": "test-page" }],
+      [
+        {},
+        this.html`<a slot="support-link" href="www.example.com">Help me!</a>`,
+      ],
+    ];
 
-    let renderTarget = await this.renderInputElements(supportLinkTemplate);
+    let renderTarget = await this.renderInputElements(
+      templatesArgs.map(args => this.templateFn(...args))
+    );
     let [firstInput, secondInput] = renderTarget.querySelectorAll(selector);
 
     let supportLink = firstInput.shadowRoot.querySelector(
       "a[is=moz-support-link]"
     );
 
-    
-    if (firstInput.ownerDocument.hasPendingL10nMutations) {
-      await BrowserTestUtils.waitForEvent(
-        firstInput.ownerDocument,
-        "L10nMutationsFinished"
-      );
-    }
+    await BrowserTestUtils.waitForMutationCondition(
+      supportLink,
+      { childList: true },
+      () => supportLink.textContent.trim()
+    );
 
     ok(
       supportLink,
@@ -384,11 +396,12 @@ class InputTestHelpers {
     const UNIQUE_ACCESS_KEY = "t";
     const SHARED_ACCESS_KEY = "d";
 
-    let accesskeyTemplate = this.staticHtml`
-    <${this.htmlTag} value="first" label="First" accesskey=${UNIQUE_ACCESS_KEY}></${this.htmlTag}>
-    <${this.htmlTag} value="second" label="Second" accesskey=${SHARED_ACCESS_KEY}></${this.htmlTag}>
-    <${this.htmlTag} value="third" label="Third" accesskey=${SHARED_ACCESS_KEY}></${this.htmlTag}>
-  `;
+    let attrs = [
+      { value: "first", label: "First", accesskey: UNIQUE_ACCESS_KEY },
+      { value: "second", label: "Second", accesskey: SHARED_ACCESS_KEY },
+      { value: "third", label: "Third", accesskey: SHARED_ACCESS_KEY },
+    ];
+    let accesskeyTemplate = this.html`${attrs.map(a => this.templateFn(a))}`;
 
     let renderTarget = await this.renderInputElements(accesskeyTemplate);
     let [firstInput, secondInput, thirdInput] =
@@ -421,7 +434,9 @@ class InputTestHelpers {
       firstInput.inputEl,
       "Input element is focused after accesskey is pressed."
     );
-    ok(firstInput.checked, "Input is checked after accesskey is pressed.");
+    if (this.checkable) {
+      ok(firstInput.checked, "Input is checked after accesskey is pressed.");
+    }
 
     
     synthesizeKey(
@@ -436,7 +451,9 @@ class InputTestHelpers {
       secondInput,
       "Focus moves to the input with the shared accesskey."
     );
-    ok(!secondInput.checked, "Second input is not checked.");
+    if (this.checkable) {
+      ok(!secondInput.checked, "Second input is not checked.");
+    }
 
     synthesizeKey(
       SHARED_ACCESS_KEY,
@@ -450,7 +467,9 @@ class InputTestHelpers {
       thirdInput,
       "Focus cycles between inputs with the same accesskey."
     );
-    ok(!thirdInput.checked, "Third input is not checked.");
+    if (this.checkable) {
+      ok(!thirdInput.checked, "Third input is not checked.");
+    }
   }
 
   
