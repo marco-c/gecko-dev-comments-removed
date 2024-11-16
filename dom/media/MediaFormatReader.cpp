@@ -2423,9 +2423,6 @@ void MediaFormatReader::Update(TrackType aTrack) {
     } else if (decoder.HasFatalError()) {
       nsCString mimeType = decoder.GetCurrentInfo()->mMimeType;
       if (!mimeType.IsEmpty()) {
-        
-        glean::media::decode_error_per_mime_type.Get(mimeType).Add(
-            1 );
         glean::media_playback::DecodeErrorExtra extraData;
         extraData.mimeType = Some(mimeType);
         extraData.errorName = Some(decoder.mError->ErrorName());
