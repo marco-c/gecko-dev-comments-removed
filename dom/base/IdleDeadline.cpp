@@ -62,7 +62,7 @@ DOMHighResTimeStamp IdleDeadline::TimeRemaining() {
 
     
     
-    return std::min(std::max(mDeadline - performance->Now(), 0.0), 50.0);
+    return std::clamp(mDeadline - performance->Now(), 0.0, 50.0);
   }
 
   
