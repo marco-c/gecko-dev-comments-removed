@@ -56,9 +56,6 @@ def method(prop):
 
 LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
     
-    "border-spacing",
-
-    
     "max-height",
     "max-width",
     "min-height",
