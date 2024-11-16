@@ -360,13 +360,8 @@ function forgetClosedWindows() {
 
 
 function forgetClosedTabs(win) {
-  const closedTabCount = ss.getClosedTabCountForWindow(win);
-  for (let i = 0; i < closedTabCount; i++) {
-    try {
-      ss.forgetClosedTab(win, 0);
-    } catch (err) {
-      
-    }
+  while (ss.getClosedTabCountForWindow(win) > 0) {
+    ss.forgetClosedTab(win, 0);
   }
 }
 
