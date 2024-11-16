@@ -3311,7 +3311,7 @@ pref("dom.push.maxQuotaPerSubscription", 16);
 
 
 
-pref("dom.push.maxRecentMessageIDsPerSubscription", 10);
+pref("dom.push.maxRecentMessageIDsPerSubscription", 100);
 
 
 
