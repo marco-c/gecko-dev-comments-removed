@@ -504,7 +504,7 @@ async function assertPseudoElementRulesNumbers(
   
   await waitFor(() =>
     Object.entries(ruleNbs).every(([key, nb]) => {
-      if (!PSEUDO_DICT[key] || nb === 0) {
+      if (!PSEUDO_DICT[key]) {
         return true;
       }
       return (
