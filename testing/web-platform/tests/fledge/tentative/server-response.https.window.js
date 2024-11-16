@@ -23,6 +23,7 @@
 
 
 
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const adA = createTrackerURL(window.location.origin, uuid, 'track_get', 'a');
@@ -1028,6 +1029,32 @@ subsetTest(promise_test, async test => {
         }
       });
 }, 'Hybrid B&A auction --- beacon reporting');
+
+
+
+
+
+
+
+
+
+subsetTest(promise_test, async test => {
+  await testWithMutatedServerResponse(test,  true, msg => {
+    msg.updateGroups = {
+      [window.location.origin]: [
+        {index: 2048, updateIfOlderThanMs: 1000}]};
+  });
+}, 'Basic B&A auction - updateIfOlderThanMs - invalid index');
+
+
+subsetTest(promise_test, async test => {
+  await testWithMutatedServerResponse(test,  true, msg => {
+    msg.updateGroups = {
+      [window.location.origin]: [
+        {index: 0, updateIfOlderThanMs: 1000},
+        {index: 1, updateIfOlderThanMs: 10000}]};
+  });
+}, 'Basic B&A auction - updateIfOlderThanMs');
 
 
 
