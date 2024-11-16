@@ -273,10 +273,11 @@ add_task(
     }
 
     
+    const testExtId = testExt.id;
     let uninstalled = testExt.unload();
 
     details = await extension.awaitMessage("onUninstalled");
-    equal(testExt.id, details.id, "got onUninstalled event");
+    equal(testExtId, details.id, "got onUninstalled event");
 
     await extension.unload();
     await uninstalled;

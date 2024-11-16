@@ -23,17 +23,17 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+add_setup(async () => {
+  await AddonTestUtils.promiseStartupManager();
+});
+
 add_task(async function test_hasPersistedScripts_startup_cache() {
   let extension1 = ExtensionTestUtils.loadExtension({
+    useAddonManager: "permanent",
     manifest: {
       manifest_version: 2,
       permissions: ["scripting"],
     },
-    
-    
-    
-    
-    startupReason: "APP_STARTUP",
     background() {
       browser.test.onMessage.addListener(async (msg, ...args) => {
         switch (msg) {
@@ -48,6 +48,7 @@ add_task(async function test_hasPersistedScripts_startup_cache() {
         }
         browser.test.sendMessage(`${msg}:done`);
       });
+      browser.test.sendMessage("bgpage:ready");
     },
     files: {
       "script-1.js": "",
@@ -55,6 +56,7 @@ add_task(async function test_hasPersistedScripts_startup_cache() {
   });
 
   await extension1.startup();
+  await extension1.awaitMessage("bgpage:ready");
 
   info(`Checking StartupCache for ${extension1.id} ${extension1.version}`);
   await assertHasPersistedScriptsCachedFlag(extension1);
@@ -97,6 +99,16 @@ add_task(async function test_hasPersistedScripts_startup_cache() {
   const cleanupSpies = () => {
     storeGetAllSpy.restore();
   };
+
+  
+  
+  
+  
+  await AddonTestUtils.promiseRestartManager();
+  await extension1.awaitStartup();
+
+  info("Wait for the extension to be fully restarted");
+  await extension1.awaitMessage("bgpage:ready");
 
   
   

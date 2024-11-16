@@ -144,6 +144,14 @@ add_task(async function test_late_XPIDB_load_rejected() {
   XPIExports.XPIProvider._closing = true;
   XPIExports.XPIDatabase._dbPromise = null;
 
+  
+  
+  
+  
+  PromiseTestUtils.expectUncaughtRejection(
+    /XPIDatabase\.asyncLoadDB attempt after XPIProvider shutdown/
+  );
+
   Assert.equal(
     await XPIExports.XPIDatabase.getAddonByID("test@addon"),
     null,
