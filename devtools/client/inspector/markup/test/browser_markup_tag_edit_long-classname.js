@@ -19,7 +19,13 @@ add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URL);
 
   await selectNode("div", inspector);
+
+  
+  
+  
+  AccessibilityUtils.setEnv({ focusabeRule: false });
   await clickContainer("div", inspector);
+  AccessibilityUtils.resetEnv();
 
   const container = await focusNode("div", inspector);
   ok(container && container.editor, "The markup-container was found");
