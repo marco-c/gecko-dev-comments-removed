@@ -2730,7 +2730,11 @@ static bool DecodeElemSegment(Decoder& d, CodeMetadata* codeMeta,
   
   
   if (segmentKind == ElemSegmentKind::Active) {
-    elemType = RefType::func();
+    
+    
+    elemType = payload == ElemSegmentPayload::Expressions
+                   ? RefType::func()
+                   : RefType::func().asNonNullable();
   } else {
     switch (payload) {
       case ElemSegmentPayload::Expressions: {
@@ -2747,7 +2751,7 @@ static bool DecodeElemSegment(Decoder& d, CodeMetadata* codeMeta,
         if (elemKind != uint8_t(DefinitionKind::Function)) {
           return d.fail("invalid element kind");
         }
-        elemType = RefType::func();
+        elemType = RefType::func().asNonNullable();
       } break;
     }
   }
