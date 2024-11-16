@@ -5955,10 +5955,15 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   }
 #  endif  
 
+  
+  
+#  ifdef MOZ_BUILD_APP_IS_BROWSER
   {
     DebugOnly<bool> result = WindowsOleAut32Initialization();
     MOZ_ASSERT(result);
   }
+#  endif  
+
 #endif  
 
   
