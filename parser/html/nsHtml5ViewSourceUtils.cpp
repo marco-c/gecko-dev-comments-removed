@@ -3,7 +3,6 @@
 
 
 #include "nsHtml5ViewSourceUtils.h"
-#include "mozilla/Preferences.h"
 #include "nsHtml5AttributeName.h"
 #include "nsHtml5String.h"
 #include "mozilla/StaticPrefs_view_source.h"
