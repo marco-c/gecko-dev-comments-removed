@@ -544,6 +544,11 @@ class nsIWidget : public nsISupports {
 
 
   nsIWidget* GetTopLevelWidget();
+  bool IsTopLevelWidget() const {
+    return mWindowType == WindowType::TopLevel ||
+           mWindowType == WindowType::Dialog ||
+           mWindowType == WindowType::Invisible;
+  }
 
   
 
