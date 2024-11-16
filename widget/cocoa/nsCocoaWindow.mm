@@ -2157,7 +2157,14 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
   if (mMenuBar && ((!gSomeMenuBarPainted &&
                     nsMenuUtilsX::GetHiddenWindowMenuBar() == mMenuBar) ||
                    mWindow.isMainWindow)) {
-    mMenuBar->Paint();
+    
+    
+    NS_DispatchToCurrentThread(
+        NS_NewRunnableFunction("PaintMenuBar", [menuBar = mMenuBar] {
+          NS_WARN_IF(!NS_IsMainThread());
+
+          menuBar->Paint();
+        }));
   }
 }
 
