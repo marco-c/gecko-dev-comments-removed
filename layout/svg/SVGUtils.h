@@ -425,12 +425,6 @@ class SVGUtils final {
 
 
 
-  static void UpdateNonScalingStrokeStateBit(nsIFrame* aFrame);
-
-  
-
-
-
 
 
 
