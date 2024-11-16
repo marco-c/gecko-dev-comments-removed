@@ -531,6 +531,11 @@ void MediaDecodeTask::FinishDecode() {
     const AudioDataValue* bufferData =
         static_cast<AudioDataValue*>(audioData->mAudioBuffer->Data());
 
+    
+    MOZ_DIAGNOSTIC_ASSERT(audioData->mChannels <= channelCount,
+                          "MediaDecodeTask: "
+                          "AudioData has more channels than AudioInfo!");
+
     if (sampleRate != destSampleRate) {
       const uint32_t maxOutSamples = resampledFrames - writeIndex;
 
