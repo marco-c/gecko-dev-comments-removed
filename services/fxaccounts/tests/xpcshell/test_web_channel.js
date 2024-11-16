@@ -919,6 +919,68 @@ add_task(async function test_helpers_login_nothing_offered() {
   Assert.ok(configured);
 });
 
+add_task(async function test_helpers_persist_requested_services() {
+  ensureOauthConfigured();
+  let accountData = null;
+  const helpers = new FxAccountsWebChannelHelpers({
+    fxAccounts: {
+      _internal: {
+        async setSignedInUser(newAccountData) {
+          accountData = newAccountData;
+          return accountData;
+        },
+      },
+      async getSignedInUser() {
+        return accountData;
+      },
+      telemetry: {
+        recordConnection() {},
+      },
+    },
+    weaveXPCOM: {
+      whenLoaded() {},
+      Weave: {
+        Service: {},
+      },
+    },
+  });
+
+  await helpers.login({
+    uid: "auid",
+    email: "testuser@testuser.com",
+    verifiedCanLinkAccount: true,
+    services: {
+      first_only: { x: 10 }, 
+      sync: { important: true },
+    },
+  });
+
+  Assert.deepEqual(JSON.parse(accountData.requestedServices), {
+    first_only: { x: 10 },
+    sync: { important: true },
+  });
+  
+  await helpers.login({
+    uid: "auid",
+    email: "testuser@testuser.com",
+    verifiedCanLinkAccount: true,
+    services: {
+      
+      sync: {},
+      
+      new: { name: "opted in" }, 
+    },
+  });
+  
+  Assert.deepEqual(JSON.parse(accountData.requestedServices), {
+    first_only: { x: 10 },
+    sync: { important: true },
+    new: { name: "opted in" },
+  });
+
+  resetOauthConfig();
+});
+
 add_test(function test_helpers_open_sync_preferences() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {},
@@ -997,7 +1059,7 @@ add_task(async function test_helpers_getFxAStatus_engines_oauth() {
   ok(!!fxaStatus);
   ok(!!fxaStatus.signedInUser);
   
-  deepEqual(fxaStatus.capabilities.engines, [
+  deepEqual(fxaStatus.capabilities.engines.toSorted(), [
     "addons",
     "bookmarks",
     "creditcards",
@@ -1010,15 +1072,15 @@ add_task(async function test_helpers_getFxAStatus_engines_oauth() {
   
   Services.prefs.setBoolPref("services.sync.engine.addresses.available", true);
   fxaStatus = await helpers.getFxaStatus("sync", mockSendingContext);
-  deepEqual(fxaStatus.capabilities.engines, [
+  deepEqual(fxaStatus.capabilities.engines.toSorted(), [
     "addons",
+    "addresses",
     "bookmarks",
     "creditcards",
     "history",
     "passwords",
     "prefs",
     "tabs",
-    "addresses",
   ]);
 
   resetOauthConfig();
