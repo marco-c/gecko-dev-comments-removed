@@ -395,6 +395,9 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   static dom::OrientationType GetDefaultOrientationType();
 
+  
+  static float GetDefaultPixelDensity();
+
  private:
   nsresult Init();
 

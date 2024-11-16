@@ -195,7 +195,8 @@ float Gecko_MediaFeatures_GetResolution(const Document* aDocument) {
   }
 
   if (aDocument->ShouldResistFingerprinting(RFPTarget::CSSResolution)) {
-    return pc->DeviceContext()->GetFullZoom();
+    return pc->DeviceContext()->GetFullZoom() *
+           nsRFPService::GetDefaultPixelDensity();
   }
   
   return float(AppUnitsPerCSSPixel()) /
