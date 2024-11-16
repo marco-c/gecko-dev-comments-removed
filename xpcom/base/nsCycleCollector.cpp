@@ -3507,6 +3507,9 @@ void nsCycleCollector::CleanupAfterCollection() {
   mGraph.Clear();
   timeLog.Checkpoint("CleanupAfterCollection::mGraph.Clear()");
 
+  FreeSnowWhite(true);
+  timeLog.Checkpoint("Collect::FreeSnowWhite");
+
   TimeStamp endTime = TimeStamp::Now();
   uint32_t interval = (uint32_t)((endTime - mCollectionStart).ToMilliseconds());
 #ifdef COLLECT_TIME_DEBUG
@@ -3602,7 +3605,11 @@ bool nsCycleCollector::Collect(CCReason aReason, ccIsManual aIsManual,
 
   
   
-  if (!startedIdle) {
+  
+  
+  
+  
+  if (!startedIdle && mIncrementalPhase != CleanupPhase) {
     TimeLog timeLog;
     FreeSnowWhite(true);
     timeLog.Checkpoint("Collect::FreeSnowWhite");
