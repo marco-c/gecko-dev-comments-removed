@@ -381,7 +381,8 @@ uint64_t HTMLTextFieldAccessible::NativeState() const {
   state |= states::EDITABLE;
 
   
-  if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+  if (mContent->IsHTMLElement(nsGkAtoms::input) &&
+      mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                          nsGkAtoms::password, eIgnoreCase)) {
     state |= states::PROTECTED;
   }
