@@ -56,15 +56,23 @@
 
 
 
-root.runParallelAsyncHarness = function(options) {
+
+function DomContentLoadedPromise() {
+    return new Promise(resolve => {
+        document.addEventListener("DOMContentLoaded", (event) => {
+            resolve();
+        });
+    });
+}
+
+root.runParallelAsyncHarness = async function(options) {
+    const ready = DomContentLoadedPromise();
+
     if (!options.cases) {
         throw new Error("Options don't contain test cases!");
     }
 
     var noop = function(){};
-
-    
-    var duration = Math.ceil(options.duration + 100);
 
     
     var cases = Object.keys(options.cases);
@@ -98,7 +106,6 @@ root.runParallelAsyncHarness = function(options) {
         var tests = options.tests.slice(offset, offset + testPerSlice);
         tests.forEach(function(data) {
             (options.setup || noop)(data, options);
-
         });
 
         
@@ -112,6 +119,9 @@ root.runParallelAsyncHarness = function(options) {
                 });
             });
         });
+
+        
+        (options.transitionsStarted || noop)(options, tests);
 
         
         var concludeSlice = function() {
@@ -133,16 +143,14 @@ root.runParallelAsyncHarness = function(options) {
             
             (options.sliceDone || noop)(options, tests);
 
-            
-            setTimeout(runLoop, 50);
+            requestAnimationFrame(runLoop);
         }
 
-        
-        setTimeout(function() {requestAnimationFrame(concludeSlice)},duration);
+        options.allTransitionsCompleted = concludeSlice;
     }
 
     
-    setTimeout(runLoop, 100);
+    ready.then(runLoop);
 };
 
 })(window);

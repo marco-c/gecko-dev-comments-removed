@@ -30,9 +30,9 @@
         </style>
     </head>
     <body>
-        
+        <!-- required by testharnessreport.js -->
         <div id="log"></div>
-        
+        <!-- elements used for testing -->
         <div id="fixture" class="fixture">
             <div class="container">
                 <div class="transition">Text sample</div>
@@ -40,10 +40,10 @@
         </div>
         <div id="offscreen"></div>
 
-        
-
-
-
+        <!--
+            SEE ./support/README.md for an abstract explanation of the test procedure
+            http://test.csswg.org/source/contributors/rodneyrehm/submitted/css3-transitions/README.md
+        -->
 
         <script>
 
@@ -113,6 +113,8 @@
                 teardown: generalParallelTest.teardown,
                 // invoked prior to running a slice of tests
                 sliceStart: generalParallelTest.sliceStart,
+                // Invoked after transitions have started.
+                transitionsStarted: generalParallelTest.transitionsStarted,
                 // invoked after running a slice of tests
                 sliceDone: generalParallelTest.sliceDone,
                 // test cases, make them as granular as possible
