@@ -163,11 +163,9 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
-      gfx::ReferencePtr aRefPtr, int64_t aTextureId,
-      RemoteTextureOwnerId aTextureOwnerId, const gfx::IntSize& aSize,
-      gfx::SurfaceFormat aFormat);
+      gfx::ReferencePtr aRefPtr, RemoteTextureOwnerId aTextureOwnerId,
+      const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat);
 
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
       gfx::ReferencePtr aRefPtr, const gfx::IntSize& aSize,
@@ -186,17 +184,20 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-  void RemoveTexture(int64_t aTextureId, RemoteTextureTxnType aTxnType = 0,
+  void RemoveTexture(const RemoteTextureOwnerId aTextureOwnerId,
+                     RemoteTextureTxnType aTxnType = 0,
                      RemoteTextureTxnId aTxnId = 0);
 
-  bool LockTexture(int64_t aTextureId, OpenMode aMode,
+  bool LockTexture(const RemoteTextureOwnerId aTextureOwnerId, OpenMode aMode,
                    bool aInvalidContents = false);
-  bool UnlockTexture(int64_t aTextureId);
+  bool UnlockTexture(const RemoteTextureOwnerId aTextureOwnerId);
 
-  bool PresentTexture(int64_t aTextureId, RemoteTextureId aId);
+  bool PresentTexture(const RemoteTextureOwnerId aTextureOwnerId,
+                      RemoteTextureId aId);
 
-  bool PushRemoteTexture(int64_t aTextureId, TextureData* aData,
-                         RemoteTextureId aId, RemoteTextureOwnerId aOwnerId);
+  bool PushRemoteTexture(const RemoteTextureOwnerId aTextureOwnerId,
+                         TextureData* aData, RemoteTextureId aId,
+                         RemoteTextureOwnerId aOwnerId);
 
   
 
@@ -282,7 +283,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   UniquePtr<gfx::DataSourceSurface::ScopedMap> GetPreparedMap(
       gfx::ReferencePtr aSurface);
 
-  void PrepareShmem(int64_t aTextureId);
+  void PrepareShmem(const RemoteTextureOwnerId aTextureOwnerId);
 
   void RecycleBuffer();
 
@@ -389,7 +390,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
   void Deactivate();
 
-  bool TryDrawTargetWebglFallback(int64_t aTextureId,
+  bool TryDrawTargetWebglFallback(const RemoteTextureOwnerId aTextureOwnerId,
                                   gfx::DrawTargetWebgl* aWebgl);
   void ForceDrawTargetWebglFallback();
 
@@ -406,9 +407,8 @@ class CanvasTranslator final : public gfx::InlineTranslator,
                                                     gfx::SurfaceFormat aFormat);
 
   already_AddRefed<gfx::DrawTarget> CreateFallbackDrawTarget(
-      gfx::ReferencePtr aRefPtr, int64_t aTextureId,
-      RemoteTextureOwnerId aTextureOwnerId, const gfx::IntSize& aSize,
-      gfx::SurfaceFormat aFormat);
+      gfx::ReferencePtr aRefPtr, RemoteTextureOwnerId aTextureOwnerId,
+      const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat);
 
   void ClearTextureInfo();
 
@@ -420,10 +420,13 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
   void NotifyDeviceReset(const RemoteTextureOwnerIdSet& aIds);
   bool EnsureSharedContextWebgl();
-  gfx::DrawTargetWebgl* GetDrawTargetWebgl(int64_t aTextureId,
-                                           bool aCheckForFallback = true) const;
-  void NotifyRequiresRefresh(int64_t aTextureId, bool aDispatch = true);
-  void CacheSnapshotShmem(int64_t aTextureId, bool aDispatch = true);
+  gfx::DrawTargetWebgl* GetDrawTargetWebgl(
+      const RemoteTextureOwnerId aTextureOwnerId,
+      bool aCheckForFallback = true) const;
+  void NotifyRequiresRefresh(const RemoteTextureOwnerId aTextureOwnerId,
+                             bool aDispatch = true);
+  void CacheSnapshotShmem(const RemoteTextureOwnerId aTextureOwnerId,
+                          bool aDispatch = true);
 
   void CacheDataSnapshots();
 
@@ -490,7 +493,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
     gfx::ReferencePtr mRefPtr;
     UniquePtr<TextureData> mTextureData;
     RefPtr<gfx::DrawTarget> mDrawTarget;
-    RemoteTextureOwnerId mRemoteTextureOwnerId;
     bool mNotifiedRequiresRefresh = false;
     
     int32_t mLocked = 1;
@@ -499,7 +501,9 @@ class CanvasTranslator final : public gfx::InlineTranslator,
     gfx::DrawTargetWebgl* GetDrawTargetWebgl(
         bool aCheckForFallback = true) const;
   };
-  std::unordered_map<int64_t, TextureInfo> mTextureInfo;
+  std::unordered_map<RemoteTextureOwnerId, TextureInfo,
+                     RemoteTextureOwnerId::HashFn>
+      mTextureInfo;
   nsRefPtrHashtable<nsPtrHashKey<void>, gfx::DataSourceSurface> mDataSurfaces;
   gfx::ReferencePtr mMappedSurface;
   UniquePtr<gfx::DataSourceSurface::ScopedMap> mPreparedMap;

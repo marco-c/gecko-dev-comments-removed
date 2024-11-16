@@ -25,7 +25,6 @@ class DrawTargetRecording final : public DrawTarget {
   DrawTargetRecording(DrawEventRecorder* aRecorder, DrawTarget* aDT,
                       IntRect aRect, bool aHasData = false);
   DrawTargetRecording(layers::CanvasDrawEventRecorder* aRecorder,
-                      int64_t aTextureId,
                       const layers::RemoteTextureOwnerId& aTextureOwnerId,
                       DrawTarget* aDT, const IntSize& aSize);
 
@@ -222,6 +221,9 @@ class DrawTargetRecording final : public DrawTarget {
 
 
   virtual void PopClip() override;
+
+  
+  virtual bool RemoveAllClips() override;
 
   
 

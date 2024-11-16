@@ -63,6 +63,7 @@ class TextureClient;
 class ITextureClientRecycleAllocator;
 class SharedSurfaceTextureData;
 class TextureForwarder;
+class RecordedTextureData;
 struct RemoteTextureOwnerId;
 
 
@@ -306,6 +307,8 @@ class TextureData {
     return nullptr;
   }
 
+  virtual RecordedTextureData* AsRecordedTextureData() { return nullptr; }
+
   
   
   
@@ -317,8 +320,6 @@ class TextureData {
   virtual mozilla::ipc::FileDescriptor GetAcquireFence() {
     return mozilla::ipc::FileDescriptor();
   }
-
-  virtual void SetRemoteTextureOwnerId(RemoteTextureOwnerId) {}
 
   virtual bool RequiresRefresh() const { return false; }
 

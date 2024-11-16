@@ -53,10 +53,11 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
   ipc::IPCResult RecvBlockCanvas();
 
-  ipc::IPCResult RecvNotifyRequiresRefresh(int64_t aTextureId);
+  ipc::IPCResult RecvNotifyRequiresRefresh(
+      const RemoteTextureOwnerId aTextureOwnerId);
 
-  ipc::IPCResult RecvSnapshotShmem(int64_t aTextureId, Handle&& aShmemHandle,
-                                   uint32_t aShmemSize,
+  ipc::IPCResult RecvSnapshotShmem(const RemoteTextureOwnerId aTextureOwnerId,
+                                   Handle&& aShmemHandle, uint32_t aShmemSize,
                                    SnapshotShmemResolver&& aResolve);
 
   
@@ -106,8 +107,8 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
   already_AddRefed<gfx::DrawTargetRecording> CreateDrawTarget(
-      int64_t aTextureId, const RemoteTextureOwnerId& aTextureOwnerId,
-      gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
+      const RemoteTextureOwnerId& aTextureOwnerId, gfx::IntSize aSize,
+      gfx::SurfaceFormat aFormat);
 
   
 
@@ -125,7 +126,8 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
   already_AddRefed<gfx::SourceSurface> WrapSurface(
-      const RefPtr<gfx::SourceSurface>& aSurface, int64_t aTextureId);
+      const RefPtr<gfx::SourceSurface>& aSurface,
+      const RemoteTextureOwnerId aTextureOwnerId);
 
   
 
@@ -151,12 +153,12 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
   already_AddRefed<gfx::DataSourceSurface> GetDataSurface(
-      int64_t aTextureId, const gfx::SourceSurface* aSurface, bool aDetached,
-      bool& aMayInvalidate);
+      const RemoteTextureOwnerId aTextureOwnerId,
+      const gfx::SourceSurface* aSurface, bool aDetached, bool& aMayInvalidate);
 
-  bool RequiresRefresh(int64_t aTextureId) const;
+  bool RequiresRefresh(const RemoteTextureOwnerId aTextureOwnerId) const;
 
-  void CleanupTexture(int64_t aTextureId);
+  void CleanupTexture(const RemoteTextureOwnerId aTextureOwnerId);
 
   void ReturnDataSurfaceShmem(
       already_AddRefed<ipc::SharedMemory> aDataSurfaceShmem);
@@ -190,7 +192,9 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
     RefPtr<mozilla::ipc::SharedMemory> mSnapshotShmem;
     bool mRequiresRefresh = false;
   };
-  std::unordered_map<int64_t, TextureInfo> mTextureInfo;
+  std::unordered_map<RemoteTextureOwnerId, TextureInfo,
+                     RemoteTextureOwnerId::HashFn>
+      mTextureInfo;
   bool mIsInTransaction = false;
   bool mDormant = false;
   bool mBlocked = false;
