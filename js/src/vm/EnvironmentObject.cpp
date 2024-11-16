@@ -4409,14 +4409,13 @@ bool js::AnalyzeEntrainedVariables(JSContext* cx, HandleScript script) {
 }
 #endif
 
-JSObject* js::MaybeOptimizeBindUnqualifiedGlobalName(
-    JSContext* cx, Handle<GlobalObject*> global, Handle<PropertyName*> name) {
+JSObject* js::MaybeOptimizeBindUnqualifiedGlobalName(GlobalObject* global,
+                                                     PropertyName* name) {
   
   
   
-  Rooted<GlobalLexicalEnvironmentObject*> env(cx,
-                                              &global->lexicalEnvironment());
-  mozilla::Maybe<PropertyInfo> prop = env->lookup(cx, name);
+  GlobalLexicalEnvironmentObject* env = &global->lexicalEnvironment();
+  mozilla::Maybe<PropertyInfo> prop = env->lookupPure(name);
   if (prop.isSome()) {
     if (prop->writable() &&
         !env->getSlot(prop->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
@@ -4425,7 +4424,7 @@ JSObject* js::MaybeOptimizeBindUnqualifiedGlobalName(
     return nullptr;
   }
 
-  prop = global->lookup(cx, name);
+  prop = global->lookupPure(name);
   if (prop.isSome()) {
     
     
