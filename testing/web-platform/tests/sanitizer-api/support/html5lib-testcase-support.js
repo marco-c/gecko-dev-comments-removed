@@ -116,6 +116,12 @@ function is_html_template(node) {
 function build_node_tree(root, docstr) {
   
   
+
+  
+  
+  
+  if (!docstr) return root;
+
   for (const line of docstr.split("\n")) {
     const [_, indent, remainder] = line.match(/^\| ( *)(.*)/);
     const level = indent.length / 2;
