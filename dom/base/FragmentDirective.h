@@ -9,7 +9,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/UniquePtr.h"
+
 #include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsStringFwd.h"
@@ -21,8 +21,6 @@ class nsRange;
 namespace mozilla::dom {
 class Document;
 class Text;
-class TextDirectiveFinder;
-
 
 
 
@@ -46,9 +44,13 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
  public:
   explicit FragmentDirective(Document* aDocument);
+  FragmentDirective(Document* aDocument,
+                    nsTArray<TextDirective>&& aTextDirectives)
+      : mDocument(aDocument),
+        mUninvokedTextDirectives(std::move(aTextDirectives)) {}
 
  protected:
-  ~FragmentDirective();
+  ~FragmentDirective() = default;
 
  public:
   Document* GetParentObject() const { return mDocument; };
@@ -59,15 +61,19 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   
 
 
-  void SetTextDirectives(nsTArray<TextDirective>&& aTextDirectives);
+  void SetTextDirectives(nsTArray<TextDirective>&& aTextDirectives) {
+    mUninvokedTextDirectives = std::move(aTextDirectives);
+  }
 
   
 
 
-  bool HasUninvokedDirectives() const;
+  bool HasUninvokedDirectives() const {
+    return !mUninvokedTextDirectives.IsEmpty();
+  };
 
   
-  void ClearUninvokedDirectives();
+  void ClearUninvokedDirectives() { mUninvokedTextDirectives.Clear(); }
 
   
   MOZ_CAN_RUN_SCRIPT
@@ -75,6 +81,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
       const nsTArray<RefPtr<nsRange>>& aTextDirectiveRanges);
 
   
+
 
 
 
@@ -138,8 +145,15 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT void RemoveAllTextDirectives(ErrorResult& aRv);
 
  private:
+  RefPtr<nsRange> FindRangeForTextDirective(
+      const TextDirective& aTextDirective);
+  RefPtr<nsRange> FindStringInRange(nsRange* aSearchRange,
+                                    const nsAString& aQuery,
+                                    bool aWordStartBounded,
+                                    bool aWordEndBounded);
+
   RefPtr<Document> mDocument;
-  UniquePtr<TextDirectiveFinder> mFinder;
+  nsTArray<TextDirective> mUninvokedTextDirectives;
 };
 
 }  
