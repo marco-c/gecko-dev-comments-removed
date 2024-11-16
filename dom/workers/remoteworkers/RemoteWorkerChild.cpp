@@ -205,7 +205,10 @@ void RemoteWorkerChild::ActorDestroy(ActorDestroyReason) {
   }
 }
 
-void RemoteWorkerChild::ExecWorker(const RemoteWorkerData& aData) {
+void RemoteWorkerChild::ExecWorker(
+    const RemoteWorkerData& aData,
+    mozilla::ipc::Endpoint<PRemoteWorkerNonLifeCycleOpControllerChild>&&
+        aChildEp) {
 #ifdef DEBUG
   MOZ_ASSERT(GetActorEventTarget()->IsOnCurrentThread());
   auto launcherData = mLauncherData.Access();
@@ -215,8 +218,10 @@ void RemoteWorkerChild::ExecWorker(const RemoteWorkerData& aData) {
   RefPtr<RemoteWorkerChild> self = this;
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      __func__, [self = std::move(self), data = aData]() mutable {
-        nsresult rv = self->ExecWorkerOnMainThread(std::move(data));
+      __func__, [self = std::move(self), data = aData,
+                 childEp = std::move(aChildEp)]() mutable {
+        nsresult rv =
+            self->ExecWorkerOnMainThread(std::move(data), std::move(childEp));
 
         
         
@@ -226,7 +231,10 @@ void RemoteWorkerChild::ExecWorker(const RemoteWorkerData& aData) {
   MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
 }
 
-nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
+nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
+    RemoteWorkerData&& aData,
+    mozilla::ipc::Endpoint<PRemoteWorkerNonLifeCycleOpControllerChild>&&
+        aChildEp) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -401,7 +409,8 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
       
       
       
-      [self]() { self->TransitionStateFromCanceledToKilled(); });
+      [self]() { self->TransitionStateFromCanceledToKilled(); },
+      std::move(aChildEp));
 
   if (NS_WARN_IF(error.Failed())) {
     MOZ_ASSERT(!workerPrivate);
