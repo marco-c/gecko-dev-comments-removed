@@ -1533,6 +1533,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "1898994",
+    platform: "all",
+    domain: "eportal.uestc.edu.cn",
+    bug: "1898994",
+    config: {
+      matches: ["*://eportal.uestc.edu.cn/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
