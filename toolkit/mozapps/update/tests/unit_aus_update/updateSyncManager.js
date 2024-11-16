@@ -7,6 +7,15 @@
 
 
 
+const { Subprocess } = ChromeUtils.importESModule(
+  "resource://gre/modules/Subprocess.sys.mjs"
+);
+
+
+
+const thisBinary = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+const greDir = Services.dirsvc.get("GreD", Ci.nsIFile);
+
 add_task(async function () {
   setupTestCommon();
 
@@ -22,9 +31,48 @@ add_task(async function () {
   
   
   
+  
+  
+  const args = [
+    "-g",
+    greDir.path,
+    "-e",
+    `
+      const customGreDirPath = "${getApplyDirFile(
+        DIR_RESOURCES
+      ).path.replaceAll("\\", "\\\\")}";
+      const customGreBinDirPath = "${getApplyDirFile(DIR_MACOS).path.replaceAll(
+        "\\",
+        "\\\\"
+      )}";
+      const customExePath = "${getApplyDirFile(
+        DIR_MACOS + FILE_APP_BIN
+      ).path.replaceAll("\\", "\\\\")}";
+      const customUpdDirPath = "${getMockUpdRootD().path.replaceAll(
+        "\\",
+        "\\\\"
+      )}";
+      const customOldUpdDirPath = "${getMockUpdRootD(true).path.replaceAll(
+        "\\",
+        "\\\\"
+      )}";
+    `,
+    "-f",
+    getTestDirFile("syncManagerTestChild.js").path,
+  ];
+
+  
+  
   for (let runs = 0; runs < 2; runs++) {
     
-    runInSubprocessWithPrelude(getTestDirFile("syncManagerTestChild.js").path);
+    debugDump(
+      `launching child process at ${thisBinary.path} with args ${args}`
+    );
+    Subprocess.call({
+      command: thisBinary.path,
+      arguments: args,
+      stderr: "stdout",
+    });
 
     
     
