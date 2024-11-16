@@ -2164,6 +2164,7 @@ const JSClassOps ShapeListObject::classOps_ = {
 
   
   if (!cx->zone()->registerObjectWithWeakPointers(obj)) {
+    ReportOutOfMemory(cx);
     return nullptr;
   }
 
