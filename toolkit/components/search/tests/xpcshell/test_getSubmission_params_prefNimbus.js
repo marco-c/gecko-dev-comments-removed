@@ -44,8 +44,6 @@ add_setup(async function () {
   getVariableStub = sinon.stub(NimbusFeatures.search, "getVariable");
   sinon.stub(NimbusFeatures.search, "ready").resolves();
 
-  
-  
   SearchTestUtils.setRemoteSettingsConfig(CONFIG);
 });
 

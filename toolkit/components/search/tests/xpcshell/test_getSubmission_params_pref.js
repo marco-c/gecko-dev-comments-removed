@@ -40,8 +40,6 @@ const CONFIG = [
 ];
 
 add_setup(async function () {
-  
-  
   SearchTestUtils.setRemoteSettingsConfig(CONFIG);
 });
 
