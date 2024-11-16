@@ -10735,7 +10735,7 @@ static bool HtmlObjectContentSupportsDocument(const nsCString& aMimeType) {
 
 
 uint32_t nsContentUtils::HtmlObjectContentTypeForMIMEType(
-    const nsCString& aMIMEType) {
+    const nsCString& aMIMEType, bool aIsSandboxed) {
   if (aMIMEType.IsEmpty()) {
     return nsIObjectLoadingContent::TYPE_FALLBACK;
   }
@@ -10746,8 +10746,11 @@ uint32_t nsContentUtils::HtmlObjectContentTypeForMIMEType(
 
   
   
-  if (aMIMEType.LowerCaseEqualsLiteral("application/pdf") && IsPDFJSEnabled()) {
-    return nsIObjectLoadingContent::TYPE_DOCUMENT;
+  if (aMIMEType.LowerCaseEqualsLiteral(APPLICATION_PDF) && IsPDFJSEnabled()) {
+    
+    
+    return aIsSandboxed ? nsIObjectLoadingContent::TYPE_FALLBACK
+                        : nsIObjectLoadingContent::TYPE_DOCUMENT;
   }
 
   if (HtmlObjectContentSupportsDocument(aMIMEType)) {

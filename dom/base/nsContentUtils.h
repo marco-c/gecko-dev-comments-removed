@@ -3259,7 +3259,9 @@ class nsContentUtils {
 
 
 
-  static uint32_t HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType);
+
+  static uint32_t HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
+                                                   bool aIsSandboxed);
 
   
 
