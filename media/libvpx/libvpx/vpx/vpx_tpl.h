@@ -42,6 +42,7 @@ typedef struct VpxTplBlockStats {
   int16_t mv_c;           
   int64_t srcrf_rate;     
   int64_t srcrf_dist;     
+  int64_t pred_error;     
   int64_t inter_pred_err; 
   int64_t intra_pred_err; 
   int ref_frame_index;    

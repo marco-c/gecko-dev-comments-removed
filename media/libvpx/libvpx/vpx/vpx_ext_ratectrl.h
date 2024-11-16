@@ -135,11 +135,25 @@ typedef void *vpx_rc_model_t;
 
 
 
+typedef struct sb_parameters {
+  int q_index; 
+  int rdmult;  
+} sb_params;
+
+
+
+
 
 
 typedef struct vpx_rc_encodeframe_decision {
   int q_index; 
   int rdmult;  
+  
+
+
+
+
+  sb_params *sb_params_list;
 } vpx_rc_encodeframe_decision_t;
 
 
