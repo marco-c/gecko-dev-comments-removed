@@ -3,7 +3,7 @@
 
 
 function loadBergamot(Module) {
-  var BERGAMOT_VERSION_FULL = "v0.4.5+05a8778";
+  var BERGAMOT_VERSION_FULL = "v0.4.5+371c2da";
   null;
 
   var Module = typeof Module != "undefined" ? Module : {};
