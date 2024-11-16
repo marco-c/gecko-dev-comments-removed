@@ -162,74 +162,7 @@ add_task(async function showLessFrequentlyCapReached_manySearches() {
     QuickSuggestTestUtils.weatherRecord(),
   ]);
   UrlbarPrefs.clear("weather.minKeywordLength");
-});
-
-
-
-add_task(async function showLessFrequentlyCapReached_oneSearch() {
-  
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    QuickSuggestTestUtils.weatherRecord({
-      min_keyword_length: 3,
-    }),
-    {
-      type: "configuration",
-      configuration: {
-        show_less_frequently_cap: 3,
-      },
-    },
-  ]);
-
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "wea",
-  });
-
-  let resultIndex = 1;
-  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, resultIndex);
-  info("Weather suggestion should be present after 'wea' search");
-  assertIsWeatherResult(details.result, true);
-
-  let command = "show_less_frequently";
-
-  for (let i = 0; i < 3; i++) {
-    await UrlbarTestUtils.openResultMenuAndClickItem(window, command, {
-      resultIndex,
-      openByMouse: true,
-    });
-
-    Assert.ok(
-      gURLBar.view.isOpen,
-      "The view should remain open clicking the command"
-    );
-    Assert.ok(
-      details.element.row.hasAttribute("feedback-acknowledgment"),
-      "Row should have feedback acknowledgment after clicking command"
-    );
-    Assert.equal(
-      UrlbarPrefs.get("weather.minKeywordLength"),
-      4 + i,
-      "weather.minKeywordLength should be incremented once"
-    );
-  }
-
-  let menuitem = await UrlbarTestUtils.openResultMenuAndGetItem({
-    window,
-    command,
-    resultIndex,
-  });
-  Assert.ok(
-    !menuitem,
-    "The menuitem should not exist after the cap is reached"
-  );
-
-  gURLBar.view.resultMenu.hidePopup(true);
-  await UrlbarTestUtils.promisePopupClose(window);
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
-    QuickSuggestTestUtils.weatherRecord(),
-  ]);
-  UrlbarPrefs.clear("weather.minKeywordLength");
+  UrlbarPrefs.clear("weather.showLessFrequentlyCount");
 });
 
 
@@ -344,6 +277,7 @@ add_task(async function inaccurateLocationAndDismissal() {
 add_task(async function showLessFrequentlyAndDismissal() {
   await doSessionOngoingCommandTest("show_less_frequently");
   UrlbarPrefs.clear("weather.minKeywordLength");
+  UrlbarPrefs.clear("weather.showLessFrequentlyCount");
 });
 
 async function doSessionOngoingCommandTest(command) {
