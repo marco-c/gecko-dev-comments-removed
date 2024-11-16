@@ -73,7 +73,16 @@ already_AddRefed<BounceTrackingState> BounceTrackingState::GetOrCreate(
     return nullptr;
   }
 
+  
+  
   if (!ShouldCreateBounceTrackingStateForWebProgress(aWebProgress)) {
+    
+    
+    
+    if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
+        nsIBounceTrackingProtection::MODE_DISABLED) {
+      BounceTrackingProtection::RecordModePrefTelemetry();
+    }
     return nullptr;
   }
 

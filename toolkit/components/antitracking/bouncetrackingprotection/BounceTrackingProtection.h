@@ -45,6 +45,9 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   static already_AddRefed<BounceTrackingProtection> GetSingleton();
 
   
+  static void RecordModePrefTelemetry();
+
+  
   
   
   
@@ -94,7 +97,7 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
 
   
   
-  static Maybe<bool> sFeatureIsEnabled;
+  static Maybe<uint32_t> sLastRecordedModeTelemetry;
 
   
   nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
