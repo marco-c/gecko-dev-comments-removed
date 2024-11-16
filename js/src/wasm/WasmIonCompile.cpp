@@ -8565,24 +8565,18 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
 static bool EmitArrayInitData(FunctionCompiler& f) {
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
-  uint32_t typeIndex, segIndex;
+  uint32_t unusedTypeIndex, segIndex;
   MDefinition* array;
   MDefinition* arrayIndex;
   MDefinition* segOffset;
   MDefinition* length;
-  if (!f.iter().readArrayInitData(&typeIndex, &segIndex, &array, &arrayIndex,
-                                  &segOffset, &length)) {
+  if (!f.iter().readArrayInitData(&unusedTypeIndex, &segIndex, &array,
+                                  &arrayIndex, &segOffset, &length)) {
     return false;
   }
 
   if (f.inDeadCode()) {
     return true;
-  }
-
-  
-  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
-    return false;
   }
 
   
@@ -8595,9 +8589,8 @@ static bool EmitArrayInitData(FunctionCompiler& f) {
   
   
   
-  return f.emitInstanceCall6(lineOrBytecode, SASigArrayInitData, array,
-                             arrayIndex, segOffset, length, typeDefData,
-                             segIndexM);
+  return f.emitInstanceCall5(lineOrBytecode, SASigArrayInitData, array,
+                             arrayIndex, segOffset, length, segIndexM);
 }
 
 static bool EmitArrayInitElem(FunctionCompiler& f) {

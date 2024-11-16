@@ -1505,14 +1505,15 @@ template void* Instance::arrayNew<false>(Instance* instance,
 
 
 
+
 static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
-                              const TypeDef* typeDef, uint32_t arrayIndex,
-                              const DataSegment* seg, uint32_t segByteOffset,
-                              uint32_t numElements) {
+                              uint32_t arrayIndex, const DataSegment* seg,
+                              uint32_t segByteOffset, uint32_t numElements) {
+  uint32_t elemSize = arrayObj->typeDef().arrayType().elementType().size();
+
   
   CheckedUint32 numBytesToCopy =
-      CheckedUint32(numElements) *
-      CheckedUint32(typeDef->arrayType().elementType().size());
+      CheckedUint32(numElements) * CheckedUint32(elemSize);
   if (!numBytesToCopy.isValid()) {
     
     ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
@@ -1543,8 +1544,13 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
   
   
+  
+  uint64_t dstByteOffset = uint64_t(arrayIndex) * uint64_t(elemSize);
+
+  
+  
   if (numElements != 0) {
-    memcpy(arrayObj->data_, &seg->bytes[segByteOffset],
+    memcpy(&arrayObj->data_[dstByteOffset], &seg->bytes[segByteOffset],
            size_t(numBytesToCopy.value()));
   }
 
@@ -1579,7 +1585,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
   GCPtr<AnyRef>* dst = reinterpret_cast<GCPtr<AnyRef>*>(arrayObj->data_);
   for (uint32_t i = 0; i < numElements; i++) {
-    dst[i] = seg[segOffset + i];
+    dst[arrayIndex + i] = seg[segOffset + i];
   }
 
   return true;
@@ -1614,7 +1620,6 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   
   
 
-  const TypeDef* typeDef = typeDefData->typeDef;
   Rooted<WasmArrayObject*> arrayObj(
       cx,
       WasmArrayObject::createArray<true>(
@@ -1630,8 +1635,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
     return arrayObj;
   }
 
-  if (!ArrayCopyFromData(cx, arrayObj, typeDef, 0, seg, segByteOffset,
-                         numElements)) {
+  if (!ArrayCopyFromData(cx, arrayObj, 0, seg, segByteOffset, numElements)) {
     
     return nullptr;
   }
@@ -1692,9 +1696,11 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
 
 
- int32_t Instance::arrayInitData(
-    Instance* instance, void* array, uint32_t index, uint32_t segByteOffset,
-    uint32_t numElements, TypeDefInstanceData* typeDefData, uint32_t segIndex) {
+ int32_t Instance::arrayInitData(Instance* instance, void* array,
+                                             uint32_t index,
+                                             uint32_t segByteOffset,
+                                             uint32_t numElements,
+                                             uint32_t segIndex) {
   MOZ_ASSERT(SASigArrayInitData.failureMode == FailureMode::FailOnNegI32);
   JSContext* cx = instance->cx();
 
@@ -1722,15 +1728,15 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
   if (!seg) {
     
+    
     return 0;
   }
 
   
-  const TypeDef* typeDef = typeDefData->typeDef;
   Rooted<WasmArrayObject*> arrayObj(cx, static_cast<WasmArrayObject*>(array));
   MOZ_RELEASE_ASSERT(arrayObj->is<WasmArrayObject>());
 
-  if (!ArrayCopyFromData(cx, arrayObj, typeDef, index, seg, segByteOffset,
+  if (!ArrayCopyFromData(cx, arrayObj, index, seg, segByteOffset,
                          numElements)) {
     
     return -1;

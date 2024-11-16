@@ -8262,9 +8262,9 @@ bool BaseCompiler::emitArrayNewElem() {
 }
 
 bool BaseCompiler::emitArrayInitData() {
-  uint32_t typeIndex, segIndex;
+  uint32_t unusedTypeIndex, segIndex;
   Nothing nothing;
-  if (!iter_.readArrayInitData(&typeIndex, &segIndex, &nothing, &nothing,
+  if (!iter_.readArrayInitData(&unusedTypeIndex, &segIndex, &nothing, &nothing,
                                &nothing, &nothing)) {
     return false;
   }
@@ -8273,9 +8273,9 @@ bool BaseCompiler::emitArrayInitData() {
     return true;
   }
 
-  pushPtr(loadTypeDefInstanceData(typeIndex));
   pushI32(int32_t(segIndex));
 
+  
   
   
   
