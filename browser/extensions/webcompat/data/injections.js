@@ -443,7 +443,6 @@ const AVAILABLE_INJECTIONS = [
         "*://*.franmar.com/*", 
         "*://*.themusiclab.org/*", 
         "*://*.oregonfoodbank.org/*", 
-        "*://bluetokaicoffee.com/*", 
         "*://bathpublishing.com/*", 
         "*://dylantalkstone.com/*", 
         "*://renewd.com.au/*", 
@@ -456,7 +455,6 @@ const AVAILABLE_INJECTIONS = [
         "*://drafthouse.com/*", 
         "*://*.lafoodbank.org/*", 
         "*://rutamayacoffee.com/*", 
-        "*://ottoandspike.com.au/*", 
         "*://give.umrelief.org/give/*", 
       ],
       js: [
