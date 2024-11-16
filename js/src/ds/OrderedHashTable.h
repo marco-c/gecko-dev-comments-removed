@@ -121,6 +121,8 @@ class OrderedHashTable {
   
   static constexpr uint32_t InitialBucketsLog2 = 1;
   static constexpr uint32_t InitialBuckets = 1 << InitialBucketsLog2;
+  static constexpr uint32_t InitialHashShift =
+      js::kHashNumberBits - InitialBucketsLog2;
 
   
   
@@ -202,14 +204,12 @@ class OrderedHashTable {
 
     std::uninitialized_fill_n(tableAlloc, buckets, nullptr);
 
-    
-    
     hashTable_ = tableAlloc;
     data_ = dataAlloc;
     dataLength_ = 0;
     dataCapacity_ = capacity;
     liveCount_ = 0;
-    hashShift_ = js::kHashNumberBits - InitialBucketsLog2;
+    hashShift_ = InitialHashShift;
     MOZ_ASSERT(hashBuckets() == buckets);
     return true;
   }
@@ -351,23 +351,24 @@ class OrderedHashTable {
 
 
 
+
   [[nodiscard]] bool clear() {
     if (dataLength_ != 0) {
-      Data** oldHashTable = hashTable_;
-      Data* oldData = data_;
-      uint32_t oldHashBuckets = hashBuckets();
-      uint32_t oldDataLength = dataLength_;
-      uint32_t oldDataCapacity = dataCapacity_;
+      destroyData(data_, dataLength_);
+      dataLength_ = 0;
+      liveCount_ = 0;
 
-      hashTable_ = nullptr;
-      if (!init()) {
-        
-        hashTable_ = oldHashTable;
-        return false;
-      }
+      size_t buckets = hashBuckets();
+      std::fill_n(hashTable_, buckets, nullptr);
 
-      freeData(oldData, oldDataLength, oldDataCapacity, oldHashBuckets);
       forEachRange([](Range* range) { range->onClear(); });
+
+      
+      if (buckets > InitialBuckets) {
+        if (!rehash(InitialHashShift)) {
+          return false;
+        }
+      }
     }
 
     MOZ_ASSERT(hashTable_);
