@@ -102,27 +102,52 @@ class API_AVAILABLE(macos(13.3)) MicrosoftEntraSSOUtils final {
 
         if (!err) {
           NSMutableArray* allHeaders = [NSMutableArray array];
+
           if (ssoCookiesDict[@"device_headers"]) {
             [allHeaders addObject:ssoCookiesDict[@"device_headers"]];
+          } else {
+            MOZ_LOG(gMacOSWebAuthnServiceLog, mozilla::LogLevel::Debug,
+                    ("SSORequestDelegate::didCompleteWithAuthorization: "
+                     "Missing device_headers"));
           }
+
           if (ssoCookiesDict[@"prt_headers"]) {
             [allHeaders addObject:ssoCookiesDict[@"prt_headers"]];
+          } else {
+            MOZ_LOG(gMacOSWebAuthnServiceLog, mozilla::LogLevel::Debug,
+                    ("SSORequestDelegate::didCompleteWithAuthorization: "
+                     "Missing prt_headers"));
           }
 
           
-          for (NSArray* headerArray in allHeaders) {
-            for (NSDictionary* headerDict in headerArray) {
-              NSDictionary* headers = headerDict[@"header"];
-              for (NSString* key in headers) {
-                NSString* value = headers[key];
-                nsAutoString nsKey;
-                nsAutoString nsValue;
-                mozilla::CopyNSStringToXPCOMString(key, nsKey);
-                mozilla::CopyNSStringToXPCOMString(value, nsValue);
-                mCallback->AddRequestHeader(NS_ConvertUTF16toUTF8(nsKey),
-                                            NS_ConvertUTF16toUTF8(nsValue));
+          
+          if (allHeaders.count == 2) {
+            
+            for (NSArray* headerArray in allHeaders) {
+              if (headerArray) {
+                for (NSDictionary* headerDict in headerArray) {
+                  NSDictionary* headers = headerDict[@"header"];
+                  if (headers) {
+                    for (NSString* key in headers) {
+                      NSString* value = headers[key];
+                      if (value) {
+                        nsAutoString nsKey;
+                        nsAutoString nsValue;
+                        mozilla::CopyNSStringToXPCOMString(key, nsKey);
+                        mozilla::CopyNSStringToXPCOMString(value, nsValue);
+                        mCallback->AddRequestHeader(
+                            NS_ConvertUTF16toUTF8(nsKey),
+                            NS_ConvertUTF16toUTF8(nsValue));
+                      }
+                    }
+                  }
+                }
               }
             }
+          } else {
+            MOZ_LOG(gMacOSWebAuthnServiceLog, mozilla::LogLevel::Debug,
+                    ("SSORequestDelegate::didCompleteWithAuthorization: "
+                     "sso_cookies has missing headers"));
           }
         } else {
           MOZ_LOG(gMacOSWebAuthnServiceLog, mozilla::LogLevel::Debug,
