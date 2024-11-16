@@ -985,6 +985,7 @@ enum class BuiltinInlineOp {
 
   StringCast,
   StringTest,
+  StringLength,
 
   
   Limit

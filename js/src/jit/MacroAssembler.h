@@ -49,6 +49,7 @@
 #include "vm/FunctionFlags.h"
 #include "vm/Opcodes.h"
 #include "vm/RealmFuses.h"
+#include "wasm/WasmAnyRef.h"
 
 
 
@@ -4148,6 +4149,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   void extractWasmAnyRefTag(Register src, Register dest);
+
+  
+  void untagWasmAnyRef(Register src, Register dest, wasm::AnyRefTag tag);
 
   
   void branchWasmAnyRefIsNull(bool isNull, Register src, Label* label);
