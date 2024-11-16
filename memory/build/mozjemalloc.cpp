@@ -147,6 +147,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Likely.h"
@@ -424,6 +425,9 @@ struct arena_chunk_t {
 
   
   size_t ndirty;
+
+  bool mIsPurging;
+  bool mDying;
 
   
   arena_chunk_map_t map[];  
@@ -1214,7 +1218,7 @@ struct arena_t {
   
   
   
-  void RemoveChunk(arena_chunk_t* aChunk);
+  bool RemoveChunk(arena_chunk_t* aChunk);
 
   
   
@@ -2788,6 +2792,9 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
   
   aChunk->ndirty = 0;
 
+  aChunk->mIsPurging = false;
+  aChunk->mDying = false;
+
   
   
   
@@ -2852,7 +2859,15 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
 #endif
 }
 
-void arena_t::RemoveChunk(arena_chunk_t* aChunk) {
+bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
+  aChunk->mDying = true;
+
+  
+  
+  if (aChunk->mIsPurging) {
+    return false;
+  }
+
   if (aChunk->ndirty > 0) {
     aChunk->arena->mChunksDirty.Remove(aChunk);
     mNumDirty -= aChunk->ndirty;
@@ -2886,11 +2901,18 @@ void arena_t::RemoveChunk(arena_chunk_t* aChunk) {
 
   mStats.mapped -= kChunkSize;
   mStats.committed -= gChunkHeaderNumPages - 1;
+
+  return true;
 }
 
 arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
   if (mSpare) {
-    RemoveChunk(mSpare);
+    if (!RemoveChunk(mSpare)) {
+      
+      
+      
+      mSpare = nullptr;
+    }
   }
 
   arena_chunk_t* chunk_dealloc = mSpare;
@@ -3100,6 +3122,10 @@ bool arena_t::Purge(bool aForce) {
 
     chunk->ndirty -= npages;
     mNumDirty -= npages;
+
+    
+    MOZ_ASSERT(!chunk->mIsPurging);
+    chunk->mIsPurging = true;
   }
 
 #ifdef MALLOC_DECOMMIT
@@ -3118,6 +3144,9 @@ bool arena_t::Purge(bool aForce) {
   
   
   {
+    MOZ_ASSERT(chunk->mIsPurging);
+    chunk->mIsPurging = false;
+
 #ifndef MALLOC_DECOMMIT
     mNumMAdvised += npages;
 #endif
@@ -3127,15 +3156,25 @@ bool arena_t::Purge(bool aForce) {
     if (chunk->ndirty == 0) {
       mChunksDirty.Remove(chunk);
     }
+    if (chunk->mDying) {
+      
+      
+      DebugOnly<bool> release_chunk = RemoveChunk(chunk);
+      
+      
+      MOZ_ASSERT(release_chunk);
+      chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
 
 #ifdef MALLOC_DOUBLE_PURGE
-    
-    
-    if (mChunksMAdvised.ElementProbablyInList(chunk)) {
-      mChunksMAdvised.remove(chunk);
-    }
-    mChunksMAdvised.pushFront(chunk);
+    } else {
+      
+      
+      if (mChunksMAdvised.ElementProbablyInList(chunk)) {
+        mChunksMAdvised.remove(chunk);
+      }
+      mChunksMAdvised.pushFront(chunk);
 #endif
+    }
 
     return mNumDirty > (aForce ? 0 : EffectiveMaxDirty() >> 1);
   }
