@@ -131,10 +131,11 @@ static bool DecompileArgumentFromStack(JSContext* cx, int formalIndex,
 
 [[nodiscard]] static bool DumpPCCounts(JSContext* cx, HandleScript script,
                                        StringPrinter* sp) {
-  MOZ_ASSERT(script->hasScriptCounts());
-
   
-  gc::AutoSuppressGC suppress(cx);
+  
+  if (!script->hasScriptCounts()) {
+    return true;
+  }
 
 #ifdef DEBUG
   jsbytecode* pc = script->code();
@@ -146,16 +147,21 @@ static bool DecompileArgumentFromStack(JSContext* cx, int formalIndex,
     }
 
     sp->put("                  {");
-
-    PCCounts* counts = script->maybeGetPCCounts(pc);
-    if (double val = counts ? counts->numExec() : 0.0) {
-      sp->printf("\"%s\": %.0f", PCCounts::numExecName, val);
+    if (script->hasScriptCounts()) {
+      PCCounts* counts = script->maybeGetPCCounts(pc);
+      if (double val = counts ? counts->numExec() : 0.0) {
+        sp->printf("\"%s\": %.0f", PCCounts::numExecName, val);
+      }
     }
     sp->put("}\n");
 
     pc = next;
   }
 #endif
+
+  if (!script->hasScriptCounts()) {
+    return true;
+  }
 
   jit::IonScriptCounts* ionCounts = script->getIonCounts();
   while (ionCounts) {

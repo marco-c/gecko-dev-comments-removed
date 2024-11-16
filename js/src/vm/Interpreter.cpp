@@ -458,6 +458,10 @@ bool js::RunScript(JSContext* cx, RunState& state) {
   
   cx->verifyIsSafeToGC();
 
+  
+  
+  MOZ_ASSERT(!cx->suppressGC);
+
   MOZ_ASSERT(cx->realm() == state.script()->realm());
 
   MOZ_DIAGNOSTIC_ASSERT(cx->realm()->isSystem() ||
