@@ -432,22 +432,7 @@ var FullScreen = {
 
     let transform = shiftSize > 0 ? `translateY(${shiftSize}px)` : "";
     gNavToolbox.style.transform = transform;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    gURLBar.shiftTextboxBy(shiftSize - this._currentToolbarShift);
+    gURLBar.textbox.style.transform = transform;
     if (shiftSize > 0) {
       
       
