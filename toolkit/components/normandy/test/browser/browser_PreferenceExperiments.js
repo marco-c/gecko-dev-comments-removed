@@ -2126,8 +2126,6 @@ decorate_task(
 
 
 
-
-
 decorate_task(
   withMockExperiments(),
   withStub(TelemetryEnvironment, "setExperimentActive"),
@@ -2176,4 +2174,6 @@ decorate_task(
       "Pref should be marked as overridden"
     );
   }
+  
+  
 ).only();
