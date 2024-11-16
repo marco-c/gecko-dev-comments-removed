@@ -2,6 +2,9 @@
 
 "use strict";
 
+const { ExtensionCommon } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionCommon.sys.mjs"
+);
 const { ExtensionAPI } = ExtensionCommon;
 
 AddonTestUtils.init(this);

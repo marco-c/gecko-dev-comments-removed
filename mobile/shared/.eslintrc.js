@@ -4,27 +4,8 @@
 
 "use strict";
 
-const {
-  globals,
-} = require("../../toolkit/components/extensions/parent/.eslintrc.js");
-
 module.exports = {
   overrides: [
-    {
-      files: ["components/extensions/ext-*.js"],
-      excludedFiles: ["components/extensions/ext-c-*.js"],
-      globals: {
-        ...globals,
-        
-        
-        EventDispatcher: true,
-        ExtensionError: true,
-        makeGlobalEvent: true,
-        TabContext: true,
-        tabTracker: true,
-        windowTracker: true,
-      },
-    },
     {
       files: [
         "chrome/geckoview/**",

@@ -8,25 +8,36 @@ module.exports = {
   extends: "../../../../toolkit/components/extensions/parent/.eslintrc.js",
 
   globals: {
+    
     Tab: true,
     TabContext: true,
     Window: true,
-    actionContextMenu: true,
-    browserActionFor: true,
     clickModifiersFromEvent: true,
-    getContainerForCookieStoreId: true,
-    getTargetTabIdForToolbox: true,
-    getToolboxEvalOptions: true,
-    isContainerCookieStoreId: true,
-    isPrivateCookieStoreId: true,
-    isValidCookieStoreId: true,
     makeWidgetId: true,
     openOptionsPage: true,
-    pageActionFor: true,
     replaceUrlInTab: true,
-    sidebarActionFor: true,
     tabTracker: true,
     waitForTabLoaded: true,
     windowTracker: true,
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    browserActionFor: true,
+    
+    actionContextMenu: true,
+    
+    getTargetTabIdForToolbox: true,
+    getToolboxEvalOptions: true,
+    
+    pageActionFor: true,
+    
+    sidebarActionFor: true,
   },
 };

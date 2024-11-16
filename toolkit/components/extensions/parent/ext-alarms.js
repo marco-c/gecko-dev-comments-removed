@@ -5,9 +5,6 @@
 "use strict";
 
 
-
-
-
 class Alarm {
   constructor(api, name, alarmInfo) {
     this.api = api;

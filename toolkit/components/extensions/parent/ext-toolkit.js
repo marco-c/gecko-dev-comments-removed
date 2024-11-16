@@ -11,12 +11,6 @@
 
 
 
-
-
-
-
-
-
 ChromeUtils.defineESModuleGetters(this, {
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
@@ -32,8 +26,6 @@ var { ExtensionError } = ExtensionUtils;
 
 global.EventEmitter = ExtensionCommon.EventEmitter;
 global.EventManager = ExtensionCommon.EventManager;
-
-
 
 global.DEFAULT_STORE = "firefox-default";
 global.PRIVATE_STORE = "firefox-private";

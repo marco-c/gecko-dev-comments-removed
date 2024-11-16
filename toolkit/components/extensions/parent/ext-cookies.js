@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 var { ExtensionError } = ExtensionUtils;
 
 const SAME_SITE_STATUSES = [

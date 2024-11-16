@@ -47,6 +47,7 @@ let gleanFiles = {
     },
   ]),
   "parent.js": () => {
+     
     this.gleanHelper = class extends ExtensionAPI {
       getAPI() {
         return {

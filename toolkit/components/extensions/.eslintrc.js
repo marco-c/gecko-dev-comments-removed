@@ -5,24 +5,6 @@
 "use strict";
 
 module.exports = {
-  globals: {
-    
-    Cc: true,
-    Ci: true,
-    Cr: true,
-    Cu: true,
-    AppConstants: true,
-    ExtensionAPI: true,
-    ExtensionAPIPersistent: true,
-    ExtensionCommon: true,
-    ExtensionUtils: true,
-    extensions: true,
-    global: true,
-    require: false,
-    Services: true,
-    XPCOMUtils: true,
-  },
-
   rules: {
     
     "mozilla/balanced-listeners": "error",
