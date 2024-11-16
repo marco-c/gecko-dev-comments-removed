@@ -545,22 +545,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   class Range {
     friend class OrderedHashTableImpl;
 
@@ -588,9 +572,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     Range* next;
 
     
-
-
-
     Range(OrderedHashTableObject* obj, Range** listp)
         : prevp(listp), next(*listp) {
       *prevp = this;
@@ -725,11 +706,51 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     static size_t offsetOfNext() { return offsetof(Range, next); }
   };
 
-  Range all() const {
-    
-    
-    return Range(obj, getRangesPtr());
+  
+  
+  template <typename F>
+  [[nodiscard]] bool forEachEntry(F&& f) const {
+    const Data* data = getData();
+    uint32_t dataLength = getDataLength();
+#ifdef DEBUG
+    uint32_t liveCount = getLiveCount();
+#endif
+    for (uint32_t i = 0; i < dataLength; i++) {
+      if (!Ops::isEmpty(Ops::getKey(data[i].element))) {
+        if (!f(data[i].element)) {
+          return false;
+        }
+      }
+    }
+    MOZ_ASSERT(getData() == data);
+    MOZ_ASSERT(getDataLength() == dataLength);
+    MOZ_ASSERT(getLiveCount() == liveCount);
+    return true;
   }
+#ifdef DEBUG
+  
+  
+  template <typename F>
+  void forEachEntryUpTo(size_t maxCount, F&& f) const {
+    MOZ_ASSERT(maxCount > 0);
+    const Data* data = getData();
+    uint32_t dataLength = getDataLength();
+    uint32_t liveCount = getLiveCount();
+    size_t count = 0;
+    for (uint32_t i = 0; i < dataLength; i++) {
+      if (!Ops::isEmpty(Ops::getKey(data[i].element))) {
+        f(data[i].element);
+        count++;
+        if (count == maxCount) {
+          break;
+        }
+      }
+    }
+    MOZ_ASSERT(getData() == data);
+    MOZ_ASSERT(getDataLength() == dataLength);
+    MOZ_ASSERT(getLiveCount() == liveCount);
+  }
+#endif
 
   void trace(JSTracer* trc) {
     Data* data = getData();
@@ -1089,7 +1110,16 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
   [[nodiscard]] bool init(JSContext* cx) { return impl.init(cx); }
   uint32_t count() const { return impl.count(); }
   bool has(const Lookup& key) const { return impl.has(key); }
-  Range all() const { return impl.all(); }
+  template <typename F>
+  [[nodiscard]] bool forEachEntry(F&& f) const {
+    return impl.forEachEntry(f);
+  }
+#ifdef DEBUG
+  template <typename F>
+  void forEachEntryUpTo(size_t maxCount, F&& f) const {
+    impl.forEachEntryUpTo(maxCount, f);
+  }
+#endif
   Entry* get(const Lookup& key) { return impl.get(key); }
   bool remove(JSContext* cx, const Lookup& key) { return impl.remove(cx, key); }
   void clear(JSContext* cx) { impl.clear(cx); }
@@ -1178,7 +1208,16 @@ class MOZ_STACK_CLASS OrderedHashSetImpl {
   [[nodiscard]] bool init(JSContext* cx) { return impl.init(cx); }
   uint32_t count() const { return impl.count(); }
   bool has(const Lookup& value) const { return impl.has(value); }
-  Range all() const { return impl.all(); }
+  template <typename F>
+  [[nodiscard]] bool forEachEntry(F&& f) const {
+    return impl.forEachEntry(f);
+  }
+#ifdef DEBUG
+  template <typename F>
+  void forEachEntryUpTo(size_t maxCount, F&& f) const {
+    impl.forEachEntryUpTo(maxCount, f);
+  }
+#endif
   template <typename Input>
   [[nodiscard]] bool put(JSContext* cx, Input&& value) {
     return impl.put(cx, std::forward<Input>(value));
