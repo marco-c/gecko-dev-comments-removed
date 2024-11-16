@@ -360,6 +360,11 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
                             _ => None,
                         }
                     },
+                    ParseErrorKind::Custom(StyleParseErrorKind::PropertySyntaxField(_)) => {
+                        
+                        
+                        return (None, cstr!(""), Action::Nothing);
+                    },
                     _ => None,
                 };
                 return (prefix, cstr!("PEBadSelectorRSIgnored"), Action::Nothing);
@@ -406,6 +411,9 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
                     )) => (cstr!("PEColorNotColor"), Action::Nothing),
                     ParseErrorKind::Custom(StyleParseErrorKind::PropertySyntaxField(ref kind)) => {
                         let name = match kind {
+                            PropertySyntaxParseError::NoSyntax => {
+                                cstr!("PEPRSyntaxFieldMissing")
+                            },
                             PropertySyntaxParseError::EmptyInput => {
                                 cstr!("PEPRSyntaxFieldEmptyInput")
                             },

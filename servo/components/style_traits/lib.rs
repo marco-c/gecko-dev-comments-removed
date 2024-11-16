@@ -217,6 +217,11 @@ impl<'i> StyleParseErrorKind<'i> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum PropertySyntaxParseError {
     
+    
+    
+    
+    NoSyntax,
+    
     EmptyInput,
     
     ExpectedPipeBetweenComponents,

@@ -28,7 +28,7 @@ use cssparser::{
 use selectors::parser::SelectorParseErrorKind;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssWriter, ParseError, PropertySyntaxParseError, StyleParseErrorKind, ToCss};
 use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 
@@ -47,24 +47,25 @@ pub fn parse_property_block<'i, 't>(
         descriptors: &mut descriptors,
     };
     let mut iter = RuleBodyParser::new(input, &mut parser);
+    let mut syntax_err = None;
     while let Some(declaration) = iter.next() {
         if !context.error_reporting_enabled() {
             continue;
         }
         if let Err((error, slice)) = declaration {
             let location = error.location;
-            let error = if matches!(
-                error.kind,
-                ParseErrorKind::Custom(StyleParseErrorKind::PropertySyntaxField(_))
-            ) {
+            let error = match error.kind {
                 
                 
                 
-                ContextualParseError::UnsupportedValue(slice, error)
-            } else {
+                ParseErrorKind::Custom(StyleParseErrorKind::PropertySyntaxField(_)) => {
+                    syntax_err = Some(error.clone());
+                    ContextualParseError::UnsupportedValue(slice, error)
+                },
+
                 
                 
-                ContextualParseError::UnsupportedPropertyDescriptor(slice, error)
+                _ => ContextualParseError::UnsupportedPropertyDescriptor(slice, error),
             };
             context.log_css_error(location, error);
         }
@@ -75,7 +76,18 @@ pub fn parse_property_block<'i, 't>(
     
     
     let Some(syntax) = descriptors.syntax else {
-        return Err(input.new_error(BasicParseErrorKind::AtRuleBodyInvalid));
+        return Err(if let Some(err) = syntax_err {
+            err
+        } else {
+            let err = input.new_custom_error(StyleParseErrorKind::PropertySyntaxField(
+                PropertySyntaxParseError::NoSyntax,
+            ));
+            context.log_css_error(
+                source_location,
+                ContextualParseError::UnsupportedValue("", err.clone()),
+            );
+            err
+        });
     };
 
     
