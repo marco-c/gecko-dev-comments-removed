@@ -1,0 +1,5 @@
+
+
+assertEq(globalThis.DisposableStack, undefined);
+assertEq(globalThis.AsyncDisposableStack, undefined);
+assertEq(globalThis.SuppressedError, undefined);
