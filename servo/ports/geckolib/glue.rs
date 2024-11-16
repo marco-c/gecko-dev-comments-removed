@@ -1233,9 +1233,6 @@ pub extern "C" fn Servo_ComputedValues_ShouldTransition(
     
     
     
-    
-    
-    
     let current_value = match (current_start_value, current_end_value, progress) {
         (Some(from), Some(to), Some(p)) => {
             

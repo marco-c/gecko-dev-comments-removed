@@ -204,27 +204,33 @@ static nsTArray<Keyframe> GetTransitionKeyframes(
 using ReplacedTransitionProperties =
     CSSTransition::ReplacedTransitionProperties;
 static Maybe<ReplacedTransitionProperties> GetReplacedTransitionProperties(
-    const CSSTransition* aTransition,
+    const CSSTransition& aTransition,
     const DocumentTimeline* aTimelineToMatch) {
   Maybe<ReplacedTransitionProperties> result;
 
-  
-  
-  if (!aTransition || !aTransition->HasCurrentEffect() ||
-      !aTransition->IsRunningOnCompositor() ||
-      aTransition->GetStartTime().IsNull()) {
+  if (!aTransition.HasCurrentEffect()) {
     return result;
   }
 
   
-  if (aTransition->GetTimeline() != aTimelineToMatch) {
+  if (aTransition.GetTimeline() != aTimelineToMatch) {
+    return result;
+  }
+
+  auto startTime = aTransition.GetStartTime();
+  if (startTime.IsNull() && !aTransition.GetPendingReadyTime().IsNull()) {
+    startTime =
+        aTimelineToMatch->ToTimelineTime(aTransition.GetPendingReadyTime());
+  }
+
+  if (startTime.IsNull()) {
     return result;
   }
 
   
   const KeyframeEffect* keyframeEffect =
-      aTransition->GetEffect() ? aTransition->GetEffect()->AsKeyframeEffect()
-                               : nullptr;
+      aTransition.GetEffect() ? aTransition.GetEffect()->AsKeyframeEffect()
+                              : nullptr;
   if (!keyframeEffect) {
     return result;
   }
@@ -234,7 +240,7 @@ static Maybe<ReplacedTransitionProperties> GetReplacedTransitionProperties(
   if (keyframeEffect->Properties().Length() != 1 ||
       keyframeEffect->Properties()[0].mSegments.Length() != 1 ||
       keyframeEffect->Properties()[0].mProperty !=
-          aTransition->TransitionProperty()) {
+          aTransition.TransitionProperty()) {
     return result;
   }
 
@@ -242,7 +248,7 @@ static Maybe<ReplacedTransitionProperties> GetReplacedTransitionProperties(
       keyframeEffect->Properties()[0].mSegments[0];
 
   result.emplace(ReplacedTransitionProperties(
-      {aTransition->GetStartTime().Value(), aTransition->PlaybackRate(),
+      {startTime.Value(), aTransition.PlaybackRate(),
        keyframeEffect->SpecifiedTiming(), segment.mTimingFunction,
        segment.mFromValue, segment.mToValue}));
 
@@ -318,11 +324,9 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
     
     
     
-    
-    
     const dom::DocumentTimeline* timeline = aElement->OwnerDoc()->Timeline();
     replacedTransitionProperties =
-        GetReplacedTransitionProperties(oldTransition, timeline);
+        GetReplacedTransitionProperties(*oldTransition, timeline);
     progress = replacedTransitionProperties.andThen(
         [&](const ReplacedTransitionProperties& aProperties) {
           const dom::AnimationTimeline* timeline = oldTransition->GetTimeline();
