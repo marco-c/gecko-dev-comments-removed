@@ -454,6 +454,8 @@ struct arena_chunk_t {
 
   
   arena_chunk_map_t map[];  
+
+  bool IsEmpty();
 };
 
 
@@ -2938,6 +2940,11 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
   return true;
 }
 
+bool arena_chunk_t::IsEmpty() {
+  return (map[gChunkHeaderNumPages].bits &
+          (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass;
+}
+
 arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
   if (mSpare) {
     if (!RemoveChunk(mSpare)) {
@@ -3255,6 +3262,11 @@ bool arena_t::Purge(bool aForce) {
     if (chunk->mDying) {
       
       
+      MOZ_ASSERT(free_run_ind == gChunkHeaderNumPages &&
+                 free_run_len == gChunkNumPages - gChunkHeaderNumPages - 1);
+
+      
+      
       
       
       mNumDirty -= chunk->ndirty;
@@ -3266,8 +3278,21 @@ bool arena_t::Purge(bool aForce) {
       
       MOZ_ASSERT(release_chunk);
       chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
-
     } else {
+      bool was_empty = chunk->IsEmpty();
+      free_run_ind = TryCoalesce(chunk, free_run_ind, free_run_len,
+                                 free_run_len << gPageSize2Pow);
+      
+
+      if (!was_empty && chunk->IsEmpty()) {
+        
+        
+        arena_chunk_t* chunk_to_release = DemoteChunkToSpare(chunk);
+        if (chunk_to_release) {
+          chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
+        }
+      }
+
       if (chunk != mSpare) {
         mRunsAvail.Insert(&chunk->map[free_run_ind]);
       }
@@ -3392,8 +3417,7 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
 
   
   arena_chunk_t* chunk_dealloc = nullptr;
-  if ((chunk->map[gChunkHeaderNumPages].bits &
-       (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass) {
+  if (chunk->IsEmpty()) {
     chunk_dealloc = DemoteChunkToSpare(chunk);
   } else {
     
