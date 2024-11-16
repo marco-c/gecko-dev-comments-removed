@@ -251,8 +251,19 @@ class DebugTargetInfo extends PureComponent {
   }
 
   renderTargetURI() {
-    const url = this.props.toolbox.target.url;
     const { descriptorType } = this.props.debugTargetData;
+    const { url } = this.props.toolbox.target;
+    const isWebExtension = descriptorType === DESCRIPTOR_TYPES.EXTENSION;
+
+    
+    
+    
+    if (isWebExtension) {
+      return dom.span({
+        className: "debug-target-url",
+      });
+    }
+
     const isURLEditable = descriptorType === DESCRIPTOR_TYPES.TAB;
 
     return dom.span(
