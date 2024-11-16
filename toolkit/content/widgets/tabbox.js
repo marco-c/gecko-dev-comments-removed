@@ -16,6 +16,9 @@
     ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   });
 
+  const DIRECTION_BACKWARD = -1;
+  const DIRECTION_FORWARD = 1;
+
   class MozTabbox extends MozXULElement {
     constructor() {
       super();
@@ -329,9 +332,6 @@
       super();
 
       this.addEventListener("mousedown", this);
-      this.addEventListener("keydown", this);
-
-      this.arrowKeysShouldWrap = AppConstants.platform == "macosx";
     }
 
     static get inheritedAttributes() {
@@ -393,55 +393,6 @@
       }
     }
 
-    on_keydown(event) {
-      if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
-        return;
-      }
-      switch (event.keyCode) {
-        case KeyEvent.DOM_VK_LEFT: {
-          let direction = window.getComputedStyle(this.container).direction;
-          this.container.advanceSelectedTab(
-            direction == "ltr" ? -1 : 1,
-            this.arrowKeysShouldWrap
-          );
-          event.preventDefault();
-          break;
-        }
-
-        case KeyEvent.DOM_VK_RIGHT: {
-          let direction = window.getComputedStyle(this.container).direction;
-          this.container.advanceSelectedTab(
-            direction == "ltr" ? 1 : -1,
-            this.arrowKeysShouldWrap
-          );
-          event.preventDefault();
-          break;
-        }
-
-        case KeyEvent.DOM_VK_UP:
-          this.container.advanceSelectedTab(-1, this.arrowKeysShouldWrap);
-          event.preventDefault();
-          break;
-
-        case KeyEvent.DOM_VK_DOWN:
-          this.container.advanceSelectedTab(1, this.arrowKeysShouldWrap);
-          event.preventDefault();
-          break;
-
-        case KeyEvent.DOM_VK_HOME:
-          this.container._selectNewTab(this.container.allTabs[0]);
-          event.preventDefault();
-          break;
-
-        case KeyEvent.DOM_VK_END: {
-          let { allTabs } = this.container;
-          this.container._selectNewTab(allTabs[allTabs.length - 1], -1);
-          event.preventDefault();
-          break;
-        }
-      }
-    }
-
     set value(val) {
       this.setAttribute("value", val);
     }
@@ -473,6 +424,11 @@
       }
     }
 
+    
+    get visible() {
+      return !this.hidden;
+    }
+
     set linkedPanel(val) {
       this.setAttribute("linkedpanel", val);
     }
@@ -487,27 +443,32 @@
   ]);
   customElements.define("tab", MozElements.MozTab);
 
+  const ARIA_FOCUSED_CLASS_NAME = "tablist-keyboard-focus";
+
   class TabsBase extends MozElements.BaseControl {
     constructor() {
       super();
+      this.arrowKeysShouldWrap = AppConstants.platform == "macosx";
 
       this.addEventListener("DOMMouseScroll", event => {
         if (Services.prefs.getBoolPref("toolkit.tabbox.switchByScrolling")) {
           if (event.detail > 0) {
-            this.advanceSelectedTab(1, false);
+            this.advanceSelectedTab(DIRECTION_FORWARD, false);
           } else {
-            this.advanceSelectedTab(-1, false);
+            this.advanceSelectedTab(DIRECTION_BACKWARD, false);
           }
           event.stopPropagation();
         }
       });
+      this.addEventListener("keydown", this);
     }
 
     
     baseConnect() {
       this._tabbox = null;
-      this.ACTIVE_DESCENDANT_ID =
-        "keyboard-focused-tab-" + Math.trunc(Math.random() * 1000000);
+      this.ACTIVE_DESCENDANT_ID = `${ARIA_FOCUSED_CLASS_NAME}-${Math.trunc(
+        Math.random() * 1000000
+      )}`;
 
       if (!this.hasAttribute("orient")) {
         this.setAttribute("orient", "horizontal");
@@ -568,6 +529,9 @@
       return this._tabbox;
     }
 
+    
+
+
     set selectedIndex(val) {
       var tab = this.getItemAtIndex(val);
       if (!tab) {
@@ -592,6 +556,9 @@
       }
     }
 
+    
+
+
     get selectedIndex() {
       const tabs = this.allTabs;
       for (var i = 0; i < tabs.length; i++) {
@@ -602,6 +569,9 @@
       return -1;
     }
 
+    
+
+
     set selectedItem(val) {
       if (val && !val.selected) {
         
@@ -609,6 +579,9 @@
         this.selectedIndex = this.getIndexOfItem(val);
       }
     }
+
+    
+
 
     get selectedItem() {
       const tabs = this.allTabs;
@@ -620,22 +593,36 @@
       return null;
     }
 
+    
+
+
+    get ariaFocusableItems() {
+      return this.allTabs;
+    }
+
+    
+
+
     get ariaFocusedIndex() {
-      const tabs = this.allTabs;
-      for (var i = 0; i < tabs.length; i++) {
-        if (tabs[i].id == this.ACTIVE_DESCENDANT_ID) {
+      const items = this.ariaFocusableItems;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id == this.ACTIVE_DESCENDANT_ID) {
           return i;
         }
       }
       return -1;
     }
 
+    
+
+
     set ariaFocusedItem(val) {
-      let setNewItem = val && this.getIndexOfItem(val) != -1;
+      let setNewItem = val && this.ariaFocusableItems.includes(val);
       let clearExistingItem = this.ariaFocusedItem && (!val || setNewItem);
+
       if (clearExistingItem) {
         let ariaFocusedItem = this.ariaFocusedItem;
-        ariaFocusedItem.classList.remove("keyboard-focused-tab");
+        ariaFocusedItem.classList.remove(ARIA_FOCUSED_CLASS_NAME);
         ariaFocusedItem.id = "";
         this.selectedItem.removeAttribute("aria-activedescendant");
         let evt = new CustomEvent("AriaFocus");
@@ -643,9 +630,8 @@
       }
 
       if (setNewItem) {
-        this.ariaFocusedItem = null;
         val.id = this.ACTIVE_DESCENDANT_ID;
-        val.classList.add("keyboard-focused-tab");
+        val.classList.add(ARIA_FOCUSED_CLASS_NAME);
         this.selectedItem.setAttribute(
           "aria-activedescendant",
           this.ACTIVE_DESCENDANT_ID
@@ -654,6 +640,9 @@
         val.dispatchEvent(evt);
       }
     }
+
+    
+
 
     get ariaFocusedItem() {
       return document.getElementById(this.ACTIVE_DESCENDANT_ID);
@@ -690,15 +679,95 @@
       return tabpanelsElm.children[tabElmIdx];
     }
 
+    
+
+
+    #getDirection() {
+      return window.getComputedStyle(this).direction;
+    }
+
+    
+
+
+    on_keydown(event) {
+      if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      
+      if (document.activeElement == this.selectedItem) {
+        switch (event.keyCode) {
+          case KeyEvent.DOM_VK_LEFT: {
+            this.advanceSelectedTab(
+              this.#getDirection() == "ltr"
+                ? DIRECTION_BACKWARD
+                : DIRECTION_FORWARD,
+              this.arrowKeysShouldWrap
+            );
+            event.preventDefault();
+            break;
+          }
+
+          case KeyEvent.DOM_VK_RIGHT: {
+            this.advanceSelectedTab(
+              this.#getDirection() == "ltr"
+                ? DIRECTION_FORWARD
+                : DIRECTION_BACKWARD,
+              this.arrowKeysShouldWrap
+            );
+            event.preventDefault();
+            break;
+          }
+
+          case KeyEvent.DOM_VK_UP:
+            this.advanceSelectedTab(
+              DIRECTION_BACKWARD,
+              this.arrowKeysShouldWrap
+            );
+            event.preventDefault();
+            break;
+
+          case KeyEvent.DOM_VK_DOWN:
+            this.advanceSelectedTab(
+              DIRECTION_FORWARD,
+              this.arrowKeysShouldWrap
+            );
+            event.preventDefault();
+            break;
+
+          case KeyEvent.DOM_VK_HOME:
+            this._selectNewTab(this.allTabs.at(0), DIRECTION_FORWARD);
+            event.preventDefault();
+            break;
+
+          case KeyEvent.DOM_VK_END: {
+            this._selectNewTab(this.allTabs.at(-1), DIRECTION_BACKWARD);
+            event.preventDefault();
+            break;
+          }
+        }
+      }
+    }
+
+    
+
+
+
     getIndexOfItem(item) {
       return Array.prototype.indexOf.call(this.allTabs, item);
     }
+
+    
+
+
 
     getItemAtIndex(index) {
       return this.allTabs[index] || null;
     }
 
     
+
+
 
 
 
@@ -757,6 +826,12 @@
       }
     }
 
+    
+
+
+
+
+
     _selectNewTab(aNewTab, aFallbackDir, aWrap) {
       this.ariaFocusedItem = null;
 
@@ -800,22 +875,31 @@
       return true;
     }
 
+    
+
+
+
     advanceSelectedTab(aDir, aWrap) {
-      let startTab = this.ariaFocusedItem || this.selectedItem;
+      let { ariaFocusedItem } = this;
+      let startTab = ariaFocusedItem;
+      if (!ariaFocusedItem || !this.allTabs.includes(ariaFocusedItem)) {
+        startTab = this.selectedItem;
+      }
       let newTab = null;
 
       
       
       if (startTab.hidden) {
         if (aDir == 1) {
-          newTab = this.allTabs.find(tab => !tab.hidden);
+          newTab = this.allTabs.find(tab => tab.visible);
         } else {
-          newTab = this.allTabs.findLast(tab => !tab.hidden);
+          newTab = this.allTabs.findLast(tab => tab.visible);
         }
       } else {
         newTab = this.findNextTab(startTab, {
           direction: aDir,
           wrap: aWrap,
+          filter: tab => tab.visible,
         });
       }
 

@@ -5711,17 +5711,6 @@
       }
     },
 
-    moveTabOver(aEvent) {
-      if (
-        (!RTL_UI && aEvent.keyCode == KeyEvent.DOM_VK_RIGHT) ||
-        (RTL_UI && aEvent.keyCode == KeyEvent.DOM_VK_LEFT)
-      ) {
-        this.moveTabForward();
-      } else {
-        this.moveTabBackward();
-      }
-    },
-
     
 
 
