@@ -1163,7 +1163,7 @@ class nsDocShell final : public nsDocLoader,
   nsWeakPtr mBrowserChild;
 
   
-  nsIntRect mBounds;
+  mozilla::LayoutDeviceIntRect mBounds;
 
   
 

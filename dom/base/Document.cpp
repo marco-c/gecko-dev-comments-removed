@@ -993,7 +993,7 @@ nsresult ExternalResourceMap::AddExternalResource(nsIURI* aURI,
     
     aViewer->SetSticky(false);
 
-    rv = aViewer->Init(nullptr, nsIntRect(0, 0, 0, 0), nullptr);
+    rv = aViewer->Init(nullptr, LayoutDeviceIntRect(), nullptr);
     if (NS_SUCCEEDED(rv)) {
       rv = aViewer->Open(nullptr, nullptr);
     }

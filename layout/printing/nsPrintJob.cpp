@@ -1322,7 +1322,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
             do_QueryInterface(mDocViewerPrint)) {
       
       
-      nsIntRect bounds;
+      LayoutDeviceIntRect bounds;
       viewer->GetBounds(bounds);
       adjSize = nsSize(bounds.width * p2a, bounds.height * p2a);
     }
