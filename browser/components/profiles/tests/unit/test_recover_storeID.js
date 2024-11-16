@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { Sqlite } = ChromeUtils.importESModule(
-  "resource://gre/modules/Sqlite.sys.mjs"
-);
-
 add_task(async function test_recover_storeID() {
   startProfileService();
   Services.prefs.setCharPref("toolkit.profiles.storeID", "foobar");
