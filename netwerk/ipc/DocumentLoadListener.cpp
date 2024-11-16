@@ -161,7 +161,7 @@ static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
     loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
   }
 
-  loadInfo->SetSchemelessInput(aLoadState->GetSchemelessInput());
+  loadInfo->SetWasSchemelessInput(aLoadState->GetWasSchemelessInput());
   loadInfo->SetHttpsUpgradeTelemetry(aLoadState->GetHttpsUpgradeTelemetry());
 
   loadInfo->SetTriggeringSandboxFlags(aLoadState->TriggeringSandboxFlags());
@@ -2415,14 +2415,13 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
   }
 
   nsCOMPtr<nsIInputStream> newPostData;
-  nsILoadInfo::SchemelessInputType schemelessInput =
-      nsILoadInfo::SchemelessInputTypeUnset;
+  bool wasSchemelessInput = false;
   nsCOMPtr<nsIURI> newURI = nsDocShell::AttemptURIFixup(
       mChannel, aStatus, mOriginalUriString, mLoadStateLoadType, bc->IsTop(),
       mLoadStateInternalLoadFlags &
           nsDocShell::INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP,
       bc->UsePrivateBrowsing(), true, getter_AddRefs(newPostData),
-      &schemelessInput);
+      &wasSchemelessInput);
 
   
   
@@ -2456,7 +2455,7 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
   loadState->SetPostDataStream(newPostData);
 
   
-  loadState->SetSchemelessInput(schemelessInput);
+  loadState->SetWasSchemelessInput(wasSchemelessInput);
 
   if (isHTTPSFirstFixup) {
     nsHTTPSOnlyUtils::UpdateLoadStateAfterHTTPSFirstDowngrade(this, loadState);

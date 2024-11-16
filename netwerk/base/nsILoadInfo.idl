@@ -536,7 +536,7 @@ interface nsILoadInfo : nsISupports
   
 
 
-  [infallible] attribute boolean hstsStatus;
+[infallible] attribute boolean hstsStatus;
 
   
 
@@ -1568,15 +1568,10 @@ interface nsILoadInfo : nsISupports
 
   [infallible] attribute boolean hasInjectedCookieForCookieBannerHandling;
 
-  cenum SchemelessInputType : 8 {
-    SchemelessInputTypeUnset = 0,
-    SchemelessInputTypeSchemeful = 1,
-    SchemelessInputTypeSchemeless = 2,
-  };
   
 
 
-   [infallible] attribute nsILoadInfo_SchemelessInputType schemelessInput;
+   [infallible] attribute boolean wasSchemelessInput;
 
   cenum HTTPSUpgradeTelemetryType : 32 {
     NOT_INITIALIZED = 0,
