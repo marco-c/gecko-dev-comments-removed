@@ -43,7 +43,13 @@ static float GetInflexion() {
   
   const float inflexion =
       StaticPrefs::apz_android_chrome_fling_physics_inflexion();
-  return std::clamp(inflexion, 0.f, 1.f);
+  if (inflexion < 0.0f) {
+    return 0.0f;
+  }
+  if (inflexion > 1.0f) {
+    return 1.0f;
+  }
+  return inflexion;
 }
 
 

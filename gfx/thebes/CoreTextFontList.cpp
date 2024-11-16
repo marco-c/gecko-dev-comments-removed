@@ -850,7 +850,7 @@ void CTFontFamily::AddFace(CTFontDescriptorRef aFace) {
   if (cssWeight) {
     
     cssWeight = ((cssWeight + 50) / 100);
-    cssWeight = std::clamp(cssWeight, 1, 9);
+    cssWeight = std::max(1, std::min(cssWeight, 9));
     cssWeight *= 100;  
   } else {
     CGFloat weightValue;
@@ -1724,7 +1724,7 @@ void CoreTextFontList::AddFaceInitData(
   if (cssWeight) {
     
     cssWeight = ((cssWeight + 50) / 100);
-    cssWeight = std::clamp(cssWeight, 1, 9);
+    cssWeight = std::max(1, std::min(cssWeight, 9));
     cssWeight *= 100;  
   } else {
     CGFloat weightValue;
