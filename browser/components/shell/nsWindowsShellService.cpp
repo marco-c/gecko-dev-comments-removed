@@ -1204,9 +1204,7 @@ static nsresult FindPinnableShortcut(const nsAString& aAppUserModelId,
     }
   }
 
-  int shortcutCSIDLs[] = {CSIDL_COMMON_PROGRAMS, CSIDL_PROGRAMS,
-                          CSIDL_COMMON_DESKTOPDIRECTORY,
-                          CSIDL_DESKTOPDIRECTORY};
+  int shortcutCSIDLs[] = {CSIDL_COMMON_PROGRAMS, CSIDL_PROGRAMS};
   for (int shortcutCSIDL : shortcutCSIDLs) {
     
     
