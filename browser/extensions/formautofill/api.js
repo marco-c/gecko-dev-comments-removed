@@ -74,7 +74,7 @@ this.formautofill = class extends ExtensionAPI {
 
     if (!addressAutofillAvailable && !creditCardAutofillAvailable) {
       Services.prefs.clearUserPref("dom.forms.autocomplete.formautofill");
-      Services.telemetry.scalarSet("formautofill.availability", false);
+      Glean.formautofill.availability.set(false);
       return;
     }
 
@@ -82,7 +82,7 @@ this.formautofill = class extends ExtensionAPI {
     
     
     Services.prefs.setBoolPref("dom.forms.autocomplete.formautofill", true);
-    Services.telemetry.scalarSet("formautofill.availability", true);
+    Glean.formautofill.availability.set(true);
 
     
     
