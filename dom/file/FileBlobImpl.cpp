@@ -160,11 +160,9 @@ uint64_t FileBlobImpl::GetSize(ErrorResult& aRv) {
 
 class FileBlobImpl::GetTypeRunnable final : public WorkerMainThreadRunnable {
  public:
-  GetTypeRunnable(WorkerPrivate* aWorkerPrivate, FileBlobImpl* aBlobImpl,
-                  const MutexAutoLock& aProofOfLock)
+  GetTypeRunnable(WorkerPrivate* aWorkerPrivate, FileBlobImpl* aBlobImpl)
       : WorkerMainThreadRunnable(aWorkerPrivate, "FileBlobImpl :: GetType"_ns),
-        mBlobImpl(aBlobImpl),
-        mProofOfLock(aProofOfLock) {
+        mBlobImpl(aBlobImpl) {
     MOZ_ASSERT(aBlobImpl);
     aWorkerPrivate->AssertIsOnWorkerThread();
   }
@@ -173,7 +171,7 @@ class FileBlobImpl::GetTypeRunnable final : public WorkerMainThreadRunnable {
     MOZ_ASSERT(NS_IsMainThread());
 
     nsAutoString type;
-    mBlobImpl->GetTypeInternal(type, mProofOfLock);
+    mBlobImpl->GetType(type);
     return true;
   }
 
@@ -181,16 +179,10 @@ class FileBlobImpl::GetTypeRunnable final : public WorkerMainThreadRunnable {
   ~GetTypeRunnable() override = default;
 
   RefPtr<FileBlobImpl> mBlobImpl;
-  const MutexAutoLock& mProofOfLock;
 };
 
 void FileBlobImpl::GetType(nsAString& aType) {
   MutexAutoLock lock(mMutex);
-  GetTypeInternal(aType, lock);
-}
-
-void FileBlobImpl::GetTypeInternal(nsAString& aType,
-                                   const MutexAutoLock& aProofOfLock) {
   aType.Truncate();
 
   if (mContentType.IsVoid()) {
@@ -205,8 +197,25 @@ void FileBlobImpl::GetTypeInternal(nsAString& aType,
         return;
       }
 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MutexAutoUnlock unlock(mMutex);
+
       RefPtr<GetTypeRunnable> runnable =
-          new GetTypeRunnable(workerPrivate, this, aProofOfLock);
+          new GetTypeRunnable(workerPrivate, this);
 
       ErrorResult rv;
       runnable->Dispatch(workerPrivate, Canceling, rv);

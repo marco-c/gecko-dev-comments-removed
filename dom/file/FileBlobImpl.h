@@ -126,7 +126,6 @@ class FileBlobImpl : public BlobImpl {
                                          ErrorResult& aRv) const override;
 
   class GetTypeRunnable;
-  void GetTypeInternal(nsAString& aType, const MutexAutoLock& aProofOfLock);
 
   
   
