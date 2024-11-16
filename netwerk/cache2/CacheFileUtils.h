@@ -98,9 +98,7 @@ class DetailedCacheHitTelemetry {
     HitRate();
 
     void AddRecord(ERecType aType);
-    
-    
-    uint32_t GetHitRateBucket(uint32_t aNumOfBuckets) const;
+    uint32_t GetHitRateBucket() const;
     uint32_t Count();
     void Reset();
 
@@ -113,6 +111,8 @@ class DetailedCacheHitTelemetry {
   
   static const uint32_t kRangeSize = 5000;
   static const uint32_t kNumOfRanges = 20;
+  static const uint32_t kPercentageRange = 5;
+  static const uint32_t kMaxPercentage = 100;
 
   
   
