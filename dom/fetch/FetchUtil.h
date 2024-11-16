@@ -28,6 +28,7 @@ class WorkerPrivate;
 
 class FetchUtil final {
  private:
+  static nsCString WasmAltDataType;
   FetchUtil() = delete;
 
  public:
@@ -57,7 +58,10 @@ class FetchUtil final {
 
 
 
-  static const nsCString WasmAltDataType;
+  static inline const nsCString& GetWasmAltDataType() {
+    MOZ_ASSERT(!WasmAltDataType.IsEmpty());
+    return WasmAltDataType;
+  }
   static void InitWasmAltDataType();
 
   
