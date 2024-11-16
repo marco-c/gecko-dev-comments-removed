@@ -28,10 +28,30 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
   if (!strcmp("alertshow", aTopic)) {
     (void)NS_WARN_IF(NS_FAILED(
         AdjustPushQuota(mPrincipal, NotificationStatusChange::Shown)));
+    if (!mResolver) {
+#ifdef ANDROID
+      
+      
+      return NS_OK;
+#else
+      MOZ_ASSERT_UNREACHABLE("Are we getting double show events?");
+      return NS_ERROR_FAILURE;
+#endif
+    }
+    mResolver.take().value()(CopyableErrorResult());
+    return NS_OK;
   }
   if (!strcmp("alertfinished", aTopic)) {
     (void)NS_WARN_IF(NS_FAILED(
         AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
+    if (mResolver) {
+      
+      
+      
+      
+      mResolver.take().value()(CopyableErrorResult(NS_ERROR_FAILURE));
+      return NS_OK;
+    }
   }
   return NS_OK;
 }
@@ -39,10 +59,17 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
 
 
 mozilla::ipc::IPCResult NotificationParent::RecvShow(ShowResolver&& aResolver) {
+  mResolver.emplace(std::move(aResolver));
+
   
   
   
-  Show();
+  nsresult rv = Show();
+  if (NS_FAILED(rv)) {
+    mResolver.take().value()(CopyableErrorResult(rv));
+  }
+  
+  
   return IPC_OK();
 }
 
@@ -95,6 +122,15 @@ nsresult NotificationParent::Show() {
   
   
   MOZ_TRY(alertService->ShowAlert(alert, this));
+
+#ifdef ANDROID
+  
+  
+  
+  
+  
+  mResolver.take().value()(CopyableErrorResult());
+#endif
 
   return NS_OK;
 }
