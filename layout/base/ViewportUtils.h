@@ -37,7 +37,7 @@ class ViewportUtils {
 
   template <typename Units = CSSPixel>
   static gfx::Matrix4x4TypedFlagged<Units, Units> GetVisualToLayoutTransform(
-      layers::ScrollableLayerGuid::ViewID aScrollId);
+      nsIContent* aContent);
 
   
 
@@ -118,11 +118,9 @@ class ViewportUtils {
 
 
 extern template CSSToCSSMatrix4x4Flagged
-    ViewportUtils::GetVisualToLayoutTransform<CSSPixel>(
-        layers::ScrollableLayerGuid::ViewID);
+ViewportUtils::GetVisualToLayoutTransform<CSSPixel>(nsIContent*);
 extern template LayoutDeviceToLayoutDeviceMatrix4x4Flagged
-    ViewportUtils::GetVisualToLayoutTransform<LayoutDevicePixel>(
-        layers::ScrollableLayerGuid::ViewID);
+ViewportUtils::GetVisualToLayoutTransform<LayoutDevicePixel>(nsIContent*);
 
 }  
 
