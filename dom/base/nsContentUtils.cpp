@@ -200,6 +200,7 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
@@ -10488,6 +10489,15 @@ void nsContentUtils::AppendNativeAnonymousChildren(const nsIContent* aContent,
     }
 
     
+    if (aContent->IsRootElement()) {
+      if (auto* vt = aContent->OwnerDoc()->GetActiveViewTransition()) {
+        if (auto* root = vt->GetRoot()) {
+          aKids.AppendElement(root);
+        }
+      }
+    }
+
+    
     if (auto nac = static_cast<ManualNACArray*>(
             aContent->GetProperty(nsGkAtoms::manualNACProperty))) {
       aKids.AppendElements(*nac);
@@ -10497,7 +10507,7 @@ void nsContentUtils::AppendNativeAnonymousChildren(const nsIContent* aContent,
   
   
   if (!(aFlags & nsIContent::eSkipDocumentLevelNativeAnonymousContent) &&
-      aContent == aContent->OwnerDoc()->GetRootElement()) {
+      aContent->IsRootElement()) {
     AppendDocumentLevelNativeAnonymousContentTo(aContent->OwnerDoc(), aKids);
   }
 }

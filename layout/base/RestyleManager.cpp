@@ -85,19 +85,25 @@ void RestyleManager::ContentInserted(nsIContent* aChild) {
 }
 
 void RestyleManager::ContentAppended(nsIContent* aFirstNewContent) {
-  auto* container = aFirstNewContent->GetParentNode();
-  MOZ_ASSERT(container);
+  MOZ_ASSERT(aFirstNewContent->GetParentNode());
 
 #ifdef DEBUG
-  {
-    for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
-      NS_ASSERTION(!cur->IsRootOfNativeAnonymousSubtree(),
-                   "anonymous nodes should not be in child lists");
-    }
+  for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
+    NS_ASSERTION(cur->IsRootOfNativeAnonymousSubtree() ==
+                     aFirstNewContent->IsRootOfNativeAnonymousSubtree(),
+                 "anonymous nodes should not be in child lists");
   }
 #endif
+
+  
+  
+  if (MOZ_UNLIKELY(aFirstNewContent->IsRootOfNativeAnonymousSubtree())) {
+    return;
+  }
+
   StyleSet()->MaybeInvalidateForElementAppend(*aFirstNewContent);
 
+  auto* container = aFirstNewContent->GetParentNode();
   const auto selectorFlags = container->GetSelectorFlags() &
                              NodeSelectorFlags::AllSimpleRestyleFlagsForAppend;
   if (!selectorFlags) {
@@ -441,6 +447,17 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
     
     IncrementUndisplayedRestyleGeneration();
   }
+
+  
+  
+  
+  if (MOZ_UNLIKELY(aOldChild->IsRootOfNativeAnonymousSubtree())) {
+    MOZ_ASSERT(!aFollowingSibling, "NAC doesn't have siblings");
+    MOZ_ASSERT(aOldChild->GetProperty(nsGkAtoms::restylableAnonymousNode),
+               "anonymous nodes should not be in child lists (bug 439258)");
+    return;
+  }
+
   if (aOldChild->IsElement()) {
     StyleSet()->MaybeInvalidateForElementRemove(*aOldChild->AsElement(),
                                                 aFollowingSibling);
@@ -450,14 +467,6 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
       container->GetSelectorFlags() & NodeSelectorFlags::AllSimpleRestyleFlags;
   if (!selectorFlags) {
     return;
-  }
-
-  if (aOldChild->IsRootOfNativeAnonymousSubtree()) {
-    
-    
-    
-    MOZ_ASSERT(aOldChild->GetProperty(nsGkAtoms::restylableAnonymousNode),
-               "anonymous nodes should not be in child lists (bug 439258)");
   }
 
   
