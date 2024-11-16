@@ -36,16 +36,6 @@ using namespace dom;
 
 
 
-EditActionResult& EditActionResult::operator|=(
-    const MoveNodeResult& aMoveNodeResult) {
-  mHandled |= aMoveNodeResult.Handled();
-  return *this;
-}
-
-
-
-
-
 bool EditorUtils::IsDescendantOf(const nsINode& aNode, const nsINode& aParent,
                                  EditorRawDOMPoint* aOutPoint ) {
   if (aOutPoint) {
