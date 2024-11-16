@@ -593,10 +593,17 @@ mod foreign {
 
     impl HasErrorBufferType for CommandEncoderError {
         fn error_type(&self) -> ErrorBufferType {
-            
-            
-            
-            ErrorBufferType::Validation
+            match self {
+                CommandEncoderError::Device(e) => e.error_type(),
+                CommandEncoderError::Invalid
+                | CommandEncoderError::NotRecording
+                | CommandEncoderError::Locked
+                | CommandEncoderError::InvalidColorAttachment(..)
+                | CommandEncoderError::InvalidResource(..)
+
+                
+                _ => ErrorBufferType::Validation,
+            }
         }
     }
 
