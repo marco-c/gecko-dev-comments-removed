@@ -23,7 +23,7 @@ add_task(async function () {
   
   
   
-  AccessibilityUtils.setEnv({ focusabeRule: false });
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   await clickContainer("div", inspector);
   AccessibilityUtils.resetEnv();
 
