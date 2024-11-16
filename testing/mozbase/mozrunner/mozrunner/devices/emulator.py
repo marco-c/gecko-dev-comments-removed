@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import tempfile
 import time
-from telnetlib import Telnet
 
 from mozdevice import ADBHost
 from mozprocess import ProcessHandler
@@ -189,6 +188,11 @@ class BaseEmulator(Device):
 
     def _run_telnet(self, command):
         if not self.telnet:
+            
+            
+            
+            from telnetlib import Telnet
+
             self.telnet = Telnet("localhost", self.port)
             self._get_telnet_response()
         return self._get_telnet_response(command)
