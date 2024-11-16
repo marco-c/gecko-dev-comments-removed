@@ -311,12 +311,14 @@ class Notification : public DOMEventTargetHelper, public GlobalFreezeObserver {
   
   
   
-  static already_AddRefed<Notification> CreateAndShow(
+  static already_AddRefed<Notification> Create(
       JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aTitle,
       const NotificationOptions& aOptions, const nsAString& aScope,
       ErrorResult& aRv);
+  void ShowOnMainThread(ErrorResult& aRv);
 
   bool CreateActor(Promise* aPromise);
+  bool SendShow(Promise* aPromise);
 
   nsIPrincipal* GetPrincipal();
 

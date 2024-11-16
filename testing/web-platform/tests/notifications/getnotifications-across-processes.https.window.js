@@ -4,6 +4,7 @@
 
 
 
+
 navigator.serviceWorker.addEventListener("message", async ev => {
   if (ev.data === "notification-create") {
     
@@ -14,8 +15,8 @@ navigator.serviceWorker.addEventListener("message", async ev => {
   }
 });
 
-promise_setup(() => {
-  return test_driver.set_permission({ name: "notifications" }, "granted");
+promise_setup(async () => {
+  await trySettingPermission("granted");
 });
 
 service_worker_test("getnotifications-sw.js", "Service worker test setup");

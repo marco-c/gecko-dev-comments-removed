@@ -62,6 +62,9 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
     
     (void)NS_WARN_IF(NS_FAILED(UnpersistNotification(mPrincipal, mId)));
     (void)NS_WARN_IF(NS_FAILED(FireCloseEvent()));
+
+    
+    mDangling = true;
     Close();
 
     return NS_OK;
