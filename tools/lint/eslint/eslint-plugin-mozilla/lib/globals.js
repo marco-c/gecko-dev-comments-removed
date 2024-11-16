@@ -146,16 +146,16 @@ function convertCallExpressionToGlobals(node, isGlobal) {
     });
   }
 
+  
+  
+  if (!isGlobal) {
+    return [];
+  }
+
   let source;
   try {
     source = helpers.getASTSource(node);
   } catch (e) {
-    return [];
-  }
-
-  
-  
-  if (!isGlobal) {
     return [];
   }
 
