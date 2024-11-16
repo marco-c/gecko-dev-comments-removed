@@ -5,7 +5,6 @@
 
 
 #include "StackArena.h"
-#include "nsAlgorithm.h"
 #include "nsDebug.h"
 
 namespace mozilla {
