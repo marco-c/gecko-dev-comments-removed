@@ -279,7 +279,7 @@ struct ComputedKeyframe {
 
     
     
-    values: Vec<AnimationValue>,
+    values: Box<[AnimationValue]>,
 }
 
 impl ComputedKeyframe {
@@ -290,7 +290,7 @@ impl ComputedKeyframe {
         base_style: &Arc<ComputedValues>,
         default_timing_function: TimingFunction,
         resolver: &mut StyleResolverForElement<E>,
-    ) -> Vec<Self>
+    ) -> Box<[Self]>
     where
         E: TElement,
     {
@@ -328,7 +328,7 @@ impl ComputedKeyframe {
                 
                 
                 let default_values = if start_percentage == 0. || start_percentage == 1.0 {
-                    &animation_values_from_style
+                    animation_values_from_style.as_slice()
                 } else {
                     debug_assert!(step_index != 0);
                     &computed_steps[step_index - 1].values
@@ -357,7 +357,7 @@ impl ComputedKeyframe {
                 values,
             });
         }
-        computed_steps
+        computed_steps.into_boxed_slice()
     }
 }
 
@@ -371,7 +371,7 @@ pub struct Animation {
     properties_changed: PropertyDeclarationIdSet,
 
     
-    computed_steps: Vec<ComputedKeyframe>,
+    computed_steps: Box<[ComputedKeyframe]>,
 
     
     
