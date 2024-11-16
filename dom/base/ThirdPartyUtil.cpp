@@ -436,7 +436,14 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
     
     
     
-    rv = aHostURI->GetAsciiHost(aBaseDomain);
+
+    
+    
+    if (net::SchemeIsViewSource(aHostURI)) {
+      rv = NS_GetInnermostURIHost(aHostURI, aBaseDomain);
+    } else {
+      rv = aHostURI->GetAsciiHost(aBaseDomain);
+    }
   }
 
   if (NS_FAILED(rv)) {
