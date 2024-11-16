@@ -40,12 +40,7 @@ loader.lazyRequireGetter(
 
 
 
-function connectToFrame(
-  connection,
-  frame,
-  onDestroy,
-  { addonId, addonBrowsingContextGroupId } = {}
-) {
+function connectToFrame(connection, frame, onDestroy) {
   return new Promise(resolve => {
     
     
@@ -162,8 +157,6 @@ function connectToFrame(
 
     mm.sendAsyncMessage("debug:connect", {
       prefix,
-      addonId,
-      addonBrowsingContextGroupId,
     });
   });
 }

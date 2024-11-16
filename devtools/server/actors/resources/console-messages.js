@@ -55,13 +55,9 @@ class ConsoleMessageWatcher {
     
     
     
-    
-    
-    
     const messagesShouldMatchWindow =
       targetActor.targetType === Targets.TYPES.FRAME &&
-      targetActor.typeName != "parentProcessTarget" &&
-      targetActor.typeName != "webExtensionTarget";
+      targetActor.typeName != "parentProcessTarget";
     const window = messagesShouldMatchWindow ? targetActor.window : null;
 
     
@@ -75,7 +71,6 @@ class ConsoleMessageWatcher {
     const listener = new ConsoleAPIListener(window, onConsoleAPICall, {
       excludeMessagesBoundToWindow: isTargetActorContentProcess,
       matchExactWindow: targetActor.ignoreSubFrames,
-      ...(targetActor.consoleAPIListenerOptions || {}),
     });
     this.listener = listener;
     listener.init();

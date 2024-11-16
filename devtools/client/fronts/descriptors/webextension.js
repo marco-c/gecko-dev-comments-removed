@@ -14,12 +14,6 @@ const {
   DescriptorMixin,
 } = require("resource://devtools/client/fronts/descriptors/descriptor-mixin.js");
 const DESCRIPTOR_TYPES = require("resource://devtools/client/fronts/descriptors/descriptor-types.js");
-loader.lazyRequireGetter(
-  this,
-  "WindowGlobalTargetFront",
-  "resource://devtools/client/fronts/targets/window-global.js",
-  true
-);
 
 class WebExtensionDescriptorFront extends DescriptorMixin(
   FrontClassWithSpec(webExtensionDescriptorSpec)
@@ -117,13 +111,6 @@ class WebExtensionDescriptorFront extends DescriptorMixin(
     });
   }
 
-  _createWebExtensionTarget(form) {
-    const front = new WindowGlobalTargetFront(this.conn, null, this);
-    front.form(form);
-    this.manage(front);
-    return front;
-  }
-
   
 
 
@@ -147,25 +134,9 @@ class WebExtensionDescriptorFront extends DescriptorMixin(
       return this._targetFront;
     }
 
-    if (this._targetFrontPromise) {
-      return this._targetFrontPromise;
-    }
-
-    this._targetFrontPromise = (async () => {
-      let targetFront = null;
-      try {
-        const targetForm = await super.getTarget();
-        targetFront = this._createWebExtensionTarget(targetForm);
-      } catch (e) {
-        console.log(
-          `Request to connect to WebExtensionDescriptor "${this.id}" failed: ${e}`
-        );
-      }
-      this._targetFront = targetFront;
-      this._targetFrontPromise = null;
-      return targetFront;
-    })();
-    return this._targetFrontPromise;
+    throw new Error(
+      "Missing webextension target actor front. TargetCommand did not notify it (yet?) to the descriptor"
+    );
   }
 }
 

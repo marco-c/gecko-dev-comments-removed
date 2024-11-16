@@ -57,8 +57,6 @@ try {
     const onConnect = DevToolsUtils.makeInfallible(function (msg) {
       const mm = msg.target;
       const prefix = msg.data.prefix;
-      const addonId = msg.data.addonId;
-      const addonBrowsingContextGroupId = msg.data.addonBrowsingContextGroupId;
 
       
       
@@ -74,64 +72,34 @@ try {
       const conn = DevToolsServer.connectToParent(prefix, mm);
       connections.set(prefix, conn);
 
-      let actor;
+      const {
+        WindowGlobalTargetActor,
+      } = require("resource://devtools/server/actors/targets/window-global.js");
+      const {
+        createBrowserElementSessionContext,
+      } = require("resource://devtools/server/actors/watcher/session-context.js");
 
-      if (addonId) {
-        const {
-          WebExtensionTargetActor,
-        } = require("resource://devtools/server/actors/targets/webextension.js");
-        const {
-          createWebExtensionSessionContext,
-        } = require("resource://devtools/server/actors/watcher/session-context.js");
-        const { browsingContext } = docShell;
-        actor = new WebExtensionTargetActor(conn, {
-          addonId,
-          addonBrowsingContextGroupId,
-          chromeGlobal,
-          isTopLevelTarget: true,
-          prefix,
-          sessionContext: createWebExtensionSessionContext(
-            {
-              addonId,
-              browsingContextID: browsingContext.id,
-              innerWindowId: browsingContext.currentWindowContext.innerWindowId,
-            },
-            {
-              isServerTargetSwitchingEnabled:
-                msg.data.isServerTargetSwitchingEnabled,
-            }
-          ),
-        });
-      } else {
-        const {
-          WindowGlobalTargetActor,
-        } = require("resource://devtools/server/actors/targets/window-global.js");
-        const {
-          createBrowserElementSessionContext,
-        } = require("resource://devtools/server/actors/watcher/session-context.js");
-
-        const { docShell } = chromeGlobal;
+      const { docShell } = chromeGlobal;
+      
+      
+      
+      
+      
+      
+      
+      const fakeBrowserElement = {
+        browserId: docShell.browsingContext.browserId,
+      };
+      const actor = new WindowGlobalTargetActor(conn, {
+        docShell,
+        isTopLevelTarget: true,
         
         
-        
-        
-        
-        
-        
-        const fakeBrowserElement = {
-          browserId: docShell.browsingContext.browserId,
-        };
-        actor = new WindowGlobalTargetActor(conn, {
-          docShell,
-          isTopLevelTarget: true,
-          
-          
-          sessionContext: createBrowserElementSessionContext(
-            fakeBrowserElement,
-            {}
-          ),
-        });
-      }
+        sessionContext: createBrowserElementSessionContext(
+          fakeBrowserElement,
+          {}
+        ),
+      });
       actor.manage(actor);
 
       sendAsyncMessage("debug:actor", { actor: actor.form(), prefix });

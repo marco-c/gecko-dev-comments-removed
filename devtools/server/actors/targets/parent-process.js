@@ -12,7 +12,6 @@
 
 
 
-
 const {
   DevToolsServer,
 } = require("resource://devtools/server/devtools-server.js");
@@ -43,17 +42,11 @@ class ParentProcessTargetActor extends WindowGlobalTargetActor {
 
 
 
-
-
-
-  constructor(
-    conn,
-    { isTopLevelTarget, sessionContext, customSpec = parentProcessTargetSpec }
-  ) {
+  constructor(conn, { isTopLevelTarget, sessionContext }) {
     super(conn, {
       isTopLevelTarget,
       sessionContext,
-      customSpec,
+      customSpec: parentProcessTargetSpec,
     });
 
     
@@ -72,15 +65,9 @@ class ParentProcessTargetActor extends WindowGlobalTargetActor {
     Services.obs.addObserver(this, "chrome-webnavigation-create");
     Services.obs.addObserver(this, "chrome-webnavigation-destroy");
 
-    
-    
-    
-    if (customSpec == parentProcessTargetSpec) {
-      this.setDocShell(this._getInitialDocShell());
-    }
+    this.setDocShell(this._getInitialDocShell());
   }
 
-  
   
   
   setDocShell(initialDocShell) {

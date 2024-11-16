@@ -426,10 +426,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   }
 
   
-  
-  consoleAPIListenerOptions = {};
-
-  
 
 
   get dbg() {

@@ -18,9 +18,6 @@ const {
 } = require("resource://devtools/shared/specs/descriptors/webextension.js");
 
 const {
-  connectToFrame,
-} = require("resource://devtools/server/connectors/frame-connector.js");
-const {
   createWebExtensionSessionContext,
 } = require("resource://devtools/server/actors/watcher/session-context.js");
 
@@ -83,10 +80,8 @@ class WebExtensionDescriptorActor extends Actor {
     super(conn, webExtensionDescriptorSpec);
     this.addon = addon;
     this.addonId = addon.id;
-    this._childFormPromise = null;
 
     this.destroy = this.destroy.bind(this);
-    this._onChildExit = this._onChildExit.bind(this);
 
     lazy.AddonManager.addAddonListener(this);
   }
@@ -211,63 +206,6 @@ class WebExtensionDescriptorActor extends Actor {
     await onLocationChanged;
   }
 
-  async getTarget() {
-    const form = await this._extensionFrameConnect();
-    
-    
-    return Object.assign(form, {
-      iconURL: this.addon.iconURL,
-      id: this.addon.id,
-      name: this.addon.name,
-    });
-  }
-
-  getChildren() {
-    return [];
-  }
-
-  async _extensionFrameConnect() {
-    if (this._form) {
-      return this._form;
-    }
-
-    if (!this._browser) {
-      
-      
-      this._browser =
-        await lazy.ExtensionParent.DebugUtils.getExtensionProcessBrowser(this);
-    }
-
-    const policy = lazy.ExtensionParent.WebExtensionPolicy.getByID(
-      this.addonId
-    );
-
-    this._form = await connectToFrame(this.conn, this._browser, this.destroy, {
-      addonId: this.addonId,
-      addonBrowsingContextGroupId: policy.browsingContextGroupId,
-      
-      
-      
-      
-      
-      isServerTargetSwitchingEnabled: false,
-    });
-
-    
-    
-    if (!this._form) {
-      throw new Error(
-        "browser element destroyed while connecting to it: " + this.addon.name
-      );
-    }
-
-    this._mm.addMessageListener("debug:webext_child_exit", this._onChildExit);
-
-    this._childActorID = this._form.actor;
-
-    return this._form;
-  }
-
   
 
 
@@ -344,27 +282,6 @@ class WebExtensionDescriptorActor extends Actor {
     return isRunning ? BGSCRIPT_STATUSES.RUNNING : BGSCRIPT_STATUSES.STOPPED;
   }
 
-  get _mm() {
-    return (
-      this._browser &&
-      (this._browser.messageManager || this._browser.frameLoader.messageManager)
-    );
-  }
-
-  
-
-
-  _onChildExit(msg) {
-    if (msg.json.actor !== this._childActorID) {
-      return;
-    }
-
-    
-    
-    delete this._form;
-    delete this._childActorID;
-  }
-
   
   onInstalled(addon) {
     if (addon.id != this.addonId) {
@@ -387,25 +304,15 @@ class WebExtensionDescriptorActor extends Actor {
     lazy.AddonManager.removeAddonListener(this);
 
     this.addon = null;
-    if (this._mm) {
-      this._mm.removeMessageListener(
-        "debug:webext_child_exit",
-        this._onChildExit
-      );
-
-      this._mm.sendAsyncMessage("debug:webext_parent_exit", {
-        actor: this._childActorID,
-      });
-
-      lazy.ExtensionParent.DebugUtils.releaseExtensionProcessBrowser(this);
-    }
 
     if (this.watcher) {
       this.watcher = null;
     }
 
-    this._browser = null;
-    this._childActorID = null;
+    if (this._browser) {
+      lazy.ExtensionParent.DebugUtils.releaseExtensionProcessBrowser(this);
+      this._browser = null;
+    }
 
     this.emit("descriptor-destroyed");
 

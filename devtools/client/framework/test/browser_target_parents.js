@@ -75,27 +75,6 @@ add_task(async function () {
 
   const mainRoot = client.mainRoot;
 
-  const addons = await mainRoot.listAddons();
-  await Promise.all(
-    
-    
-    addons
-      .filter(a => a.debuggable)
-      .map(async addonDescriptorFront => {
-        const addonFront = await addonDescriptorFront.getTarget();
-        ok(addonFront, "Got the addon target");
-      })
-  );
-
-  await client.close();
-});
-
-
-add_task(async function () {
-  const client = await setupDebuggerClient();
-
-  const mainRoot = client.mainRoot;
-
   const { workers } = await mainRoot.listWorkers();
 
   ok(!!workers.length, "list workers returned a non-empty list of workers");
