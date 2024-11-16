@@ -3232,6 +3232,11 @@ bool arena_t::Purge(bool aForce) {
 #endif
 
   
+  bool continue_purge;
+
+  arena_chunk_t* chunk_to_release = nullptr;
+
+  
   
   {
     MaybeMutexAutoLock lock(mLock);
@@ -3281,7 +3286,7 @@ bool arena_t::Purge(bool aForce) {
       
       
       MOZ_ASSERT(release_chunk);
-      chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
+      chunk_to_release = chunk;
     } else {
       bool was_empty = chunk->IsEmpty();
       free_run_ind = TryCoalesce(chunk, free_run_ind, free_run_len,
@@ -3291,10 +3296,7 @@ bool arena_t::Purge(bool aForce) {
       if (!was_empty && chunk->IsEmpty()) {
         
         
-        arena_chunk_t* chunk_to_release = DemoteChunkToSpare(chunk);
-        if (chunk_to_release) {
-          chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
-        }
+        chunk_to_release = DemoteChunkToSpare(chunk);
       }
 
       if (chunk != mSpare) {
@@ -3314,8 +3316,14 @@ bool arena_t::Purge(bool aForce) {
 #endif
     }
 
-    return mNumDirty > (aForce ? 0 : EffectiveMaxDirty() >> 1);
+    continue_purge = mNumDirty > (aForce ? 0 : EffectiveMaxDirty() >> 1);
   }  
+
+  if (chunk_to_release) {
+    chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
+  }
+
+  return continue_purge;
 }
 
 
