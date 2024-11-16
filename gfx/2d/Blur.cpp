@@ -122,9 +122,8 @@ static inline void BoxBlurRow(const uint8_t* aInput, uint8_t* aOutput,
   
   
   
-  int32_t splitLeft = std::min(std::max(aLeftLobe, aStart), aEnd);
-  int32_t splitRight =
-      std::min(std::max(aWidth - (boxSize - aLeftLobe), aStart), aEnd);
+  int32_t splitLeft = std::clamp(aLeftLobe, aStart, aEnd);
+  int32_t splitRight = std::clamp(aWidth - (boxSize - aLeftLobe), aStart, aEnd);
   
   
   
@@ -317,7 +316,7 @@ static void BoxBlur(uint8_t* aData, const int32_t aLobes[3][2], int32_t aWidth,
     
     
     int32_t skipStart =
-        inSkipRectY ? std::min(std::max(aSkipRect.X(), 0), aWidth) : aWidth;
+        inSkipRectY ? std::clamp(aSkipRect.X(), 0, aWidth) : aWidth;
     int32_t skipEnd = std::max(skipStart, aSkipRect.XMost());
     if (skipStart > 0) {
       BoxBlurRow<false, aTranspose>(tmpRow2, aData, aLobes[2][0], aLobes[2][1],
