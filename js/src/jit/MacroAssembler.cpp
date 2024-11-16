@@ -9505,14 +9505,9 @@ void MacroAssembler::prepareHashObject(Register setObj, ValueOperand value,
   
 
   
-  static_assert(SetObject::getDataSlotOffset() ==
-                MapObject::getDataSlotOffset());
-  loadPrivate(Address(setObj, SetObject::getDataSlotOffset()), temp1);
-
-  
-  static_assert(ValueMap::offsetOfImplHashCodeScrambler() ==
-                ValueSet::offsetOfImplHashCodeScrambler());
-  loadPrivate(Address(temp1, ValueSet::offsetOfImplHashCodeScrambler()), temp1);
+  static_assert(MapObject::offsetOfHashCodeScrambler() ==
+                SetObject::offsetOfHashCodeScrambler());
+  loadPrivate(Address(setObj, SetObject::offsetOfHashCodeScrambler()), temp1);
 
   
   auto k0 = Register64(temp1);
@@ -9672,7 +9667,7 @@ void MacroAssembler::prepareHashValue(Register setObj, ValueOperand value,
   bind(&done);
 }
 
-template <typename OrderedHashTable>
+template <typename TableObject>
 void MacroAssembler::orderedHashTableLookup(Register setOrMapObj,
                                             ValueOperand value, Register hash,
                                             Register entryTemp, Register temp1,
@@ -9709,11 +9704,12 @@ void MacroAssembler::orderedHashTableLookup(Register setOrMapObj,
   passABIArg(temp2);
   passABIArg(hash);
 
-  if constexpr (std::is_same_v<OrderedHashTable, ValueSet>) {
+  if constexpr (std::is_same_v<TableObject, SetObject>) {
     using Fn =
         void (*)(JSContext*, SetObject*, const Value*, mozilla::HashNumber);
     callWithABI<Fn, jit::AssertSetObjectHash>();
   } else {
+    static_assert(std::is_same_v<TableObject, MapObject>);
     using Fn =
         void (*)(JSContext*, MapObject*, const Value*, mozilla::HashNumber);
     callWithABI<Fn, jit::AssertMapObjectHash>();
@@ -9724,16 +9720,12 @@ void MacroAssembler::orderedHashTableLookup(Register setOrMapObj,
 #endif
 
   
-  static_assert(SetObject::getDataSlotOffset() ==
-                MapObject::getDataSlotOffset());
-  loadPrivate(Address(setOrMapObj, SetObject::getDataSlotOffset()), temp1);
-
   
   move32(hash, entryTemp);
-  load32(Address(temp1, OrderedHashTable::offsetOfImplHashShift()), temp2);
+  unboxInt32(Address(setOrMapObj, TableObject::offsetOfHashShift()), temp2);
   flexibleRshift32(temp2, entryTemp);
 
-  loadPtr(Address(temp1, OrderedHashTable::offsetOfImplHashTable()), temp2);
+  loadPrivate(Address(setOrMapObj, TableObject::offsetOfHashTable()), temp2);
   loadPtr(BaseIndex(temp2, entryTemp, ScalePointer), entryTemp);
 
   
@@ -9743,9 +9735,9 @@ void MacroAssembler::orderedHashTableLookup(Register setOrMapObj,
   {
     
 
-    static_assert(OrderedHashTable::offsetOfImplDataElement() == 0,
+    static_assert(TableObject::Table::offsetOfImplDataElement() == 0,
                   "offsetof(Data, element) is 0");
-    auto keyAddr = Address(entryTemp, OrderedHashTable::offsetOfEntryKey());
+    auto keyAddr = Address(entryTemp, TableObject::Table::offsetOfEntryKey());
 
     if (isBigInt == IsBigInt::No) {
       
@@ -9778,7 +9770,7 @@ void MacroAssembler::orderedHashTableLookup(Register setOrMapObj,
       bind(&next);
     }
   }
-  loadPtr(Address(entryTemp, OrderedHashTable::offsetOfImplDataChain()),
+  loadPtr(Address(entryTemp, TableObject::Table::offsetOfImplDataChain()),
           entryTemp);
   bind(&start);
   branchTestPtr(Assembler::NonZero, entryTemp, entryTemp, &loop);
@@ -9790,8 +9782,8 @@ void MacroAssembler::setObjectHas(Register setObj, ValueOperand value,
                                   Register temp3, Register temp4,
                                   IsBigInt isBigInt) {
   Label found;
-  orderedHashTableLookup<ValueSet>(setObj, value, hash, result, temp1, temp2,
-                                   temp3, temp4, &found, isBigInt);
+  orderedHashTableLookup<SetObject>(setObj, value, hash, result, temp1, temp2,
+                                    temp3, temp4, &found, isBigInt);
 
   Label done;
   move32(Imm32(0), result);
@@ -9808,8 +9800,8 @@ void MacroAssembler::mapObjectHas(Register mapObj, ValueOperand value,
                                   Register temp3, Register temp4,
                                   IsBigInt isBigInt) {
   Label found;
-  orderedHashTableLookup<ValueMap>(mapObj, value, hash, result, temp1, temp2,
-                                   temp3, temp4, &found, isBigInt);
+  orderedHashTableLookup<MapObject>(mapObj, value, hash, result, temp1, temp2,
+                                    temp3, temp4, &found, isBigInt);
 
   Label done;
   move32(Imm32(0), result);
@@ -9826,8 +9818,8 @@ void MacroAssembler::mapObjectGet(Register mapObj, ValueOperand value,
                                   Register temp3, Register temp4,
                                   Register temp5, IsBigInt isBigInt) {
   Label found;
-  orderedHashTableLookup<ValueMap>(mapObj, value, hash, temp1, temp2, temp3,
-                                   temp4, temp5, &found, isBigInt);
+  orderedHashTableLookup<MapObject>(mapObj, value, hash, temp1, temp2, temp3,
+                                    temp4, temp5, &found, isBigInt);
 
   Label done;
   moveValue(UndefinedValue(), result);
@@ -9840,26 +9832,21 @@ void MacroAssembler::mapObjectGet(Register mapObj, ValueOperand value,
   bind(&done);
 }
 
-template <typename OrderedHashTable>
+template <typename TableObject>
 void MacroAssembler::loadOrderedHashTableCount(Register setOrMapObj,
                                                Register result) {
   
 
   
-  static_assert(SetObject::getDataSlotOffset() ==
-                MapObject::getDataSlotOffset());
-  loadPrivate(Address(setOrMapObj, SetObject::getDataSlotOffset()), result);
-
-  
-  load32(Address(result, OrderedHashTable::offsetOfImplLiveCount()), result);
+  unboxInt32(Address(setOrMapObj, TableObject::offsetOfLiveCount()), result);
 }
 
 void MacroAssembler::loadSetObjectSize(Register setObj, Register result) {
-  loadOrderedHashTableCount<ValueSet>(setObj, result);
+  loadOrderedHashTableCount<SetObject>(setObj, result);
 }
 
 void MacroAssembler::loadMapObjectSize(Register mapObj, Register result) {
-  loadOrderedHashTableCount<ValueMap>(mapObj, result);
+  loadOrderedHashTableCount<MapObject>(mapObj, result);
 }
 
 

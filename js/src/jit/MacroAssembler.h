@@ -5516,7 +5516,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
 
 
-  template <typename OrderedHashTable>
+  template <typename TableObject>
   void orderedHashTableLookup(Register setOrMapObj, ValueOperand value,
                               Register hash, Register entryTemp, Register temp1,
                               Register temp3, Register temp4, Register temp5,
@@ -5592,7 +5592,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   }
 
  private:
-  template <typename OrderedHashTable>
+  template <typename TableObject>
   void loadOrderedHashTableCount(Register setOrMapObj, Register result);
 
  public:
