@@ -10,8 +10,8 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Variant.h"
 
-#include "ds/OrderedHashTable.h"
 #include "gc/Barrier.h"
+#include "js/HashTable.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
 #include "threading/ProtectedData.h"
@@ -52,17 +52,6 @@ class MarkStackIter;
 class ParallelMarker;
 class UnmarkGrayTracer;
 
-struct EphemeronEdgeTableHashPolicy {
-  using Lookup = Cell*;
-  static HashNumber hash(const Lookup& v,
-                         const mozilla::HashCodeScrambler& hcs) {
-    return hcs.scramble(mozilla::HashGeneric(v));
-  }
-  static bool match(Cell* const& k, const Lookup& l) { return k == l; }
-  static bool isEmpty(Cell* const& v) { return !v; }
-  static void makeEmpty(Cell** vp) { *vp = nullptr; }
-};
-
 
 
 
@@ -77,9 +66,8 @@ struct EphemeronEdge {
 
 using EphemeronEdgeVector = Vector<EphemeronEdge, 2, js::SystemAllocPolicy>;
 
-using EphemeronEdgeTable =
-    OrderedHashMap<Cell*, EphemeronEdgeVector, EphemeronEdgeTableHashPolicy,
-                   js::SystemAllocPolicy>;
+using EphemeronEdgeTable = HashMap<Cell*, EphemeronEdgeVector,
+                                   PointerHasher<Cell*>, js::SystemAllocPolicy>;
 
 
 

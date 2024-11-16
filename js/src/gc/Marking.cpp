@@ -785,12 +785,12 @@ void GCMarker::markImplicitEdges(T* markedThing) {
   MOZ_ASSERT(!zone->isGCSweeping());
 
   auto& ephemeronTable = zone->gcEphemeronEdges();
-  auto* p = ephemeronTable.get(markedThing);
+  auto p = ephemeronTable.lookup(markedThing);
   if (!p) {
     return;
   }
 
-  EphemeronEdgeVector& edges = p->value;
+  EphemeronEdgeVector& edges = p->value();
 
   
   
@@ -2165,14 +2165,9 @@ void GCMarker::start() {
 }
 
 static void ClearEphemeronEdges(JSRuntime* rt) {
-  AutoEnterOOMUnsafeRegion oomUnsafe;
   for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
-    if (!zone->gcEphemeronEdges().clear()) {
-      oomUnsafe.crash("clearing weak keys in GCMarker::stop()");
-    }
-    if (!zone->gcNurseryEphemeronEdges().clear()) {
-      oomUnsafe.crash("clearing (nursery) weak keys in GCMarker::stop()");
-    }
+    zone->gcEphemeronEdges().clearAndCompact();
+    zone->gcNurseryEphemeronEdges().clearAndCompact();
   }
 }
 
@@ -2346,15 +2341,10 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
 
   MOZ_ASSERT(gcNurseryEphemeronEdges().count() == 0);
 
-  
-  
-  
-  EphemeronEdgeTable::MutableRange r = gcEphemeronEdges().mutableAll();
-  while (!r.empty()) {
-    Cell* src = r.front().key;
+  for (auto r = gcEphemeronEdges().all(); !r.empty(); r.popFront()) {
+    Cell* src = r.front().key();
     CellColor srcColor = gc::detail::GetEffectiveColor(marker, src);
-    auto& edges = r.front().value;
-    r.popFront();  
+    auto& edges = r.front().value();
 
     if (IsMarked(srcColor) && edges.length() > 0) {
       uint32_t steps = edges.length();

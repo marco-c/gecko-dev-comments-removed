@@ -166,9 +166,6 @@ JS::Zone::Zone(JSRuntime* rt, Kind kind)
       allocNurseryBigInts_(true),
       pretenuring(this),
       crossZoneStringWrappers_(this),
-      gcEphemeronEdges_(SystemAllocPolicy(), rt->randomHashCodeScrambler()),
-      gcNurseryEphemeronEdges_(SystemAllocPolicy(),
-                               rt->randomHashCodeScrambler()),
       shapeZone_(this),
       gcScheduled_(false),
       gcScheduledSaved_(false),
@@ -208,8 +205,7 @@ Zone::~Zone() {
 
 bool Zone::init() {
   regExps_.ref() = make_unique<RegExpZone>(this);
-  return regExps_.ref() && gcEphemeronEdges().init() &&
-         gcNurseryEphemeronEdges().init();
+  return !!regExps_.ref();
 }
 
 void Zone::setNeedsIncrementalBarrier(bool needs) {
@@ -267,8 +263,7 @@ void Zone::sweepAfterMinorGC(JSTracer* trc) {
 }
 
 void Zone::sweepEphemeronTablesAfterMinorGC() {
-  for (auto r = gcNurseryEphemeronEdges().mutableAll(); !r.empty();
-       r.popFront()) {
+  for (auto r = gcNurseryEphemeronEdges().all(); !r.empty(); r.popFront()) {
     
     
     
@@ -280,7 +275,7 @@ void Zone::sweepEphemeronTablesAfterMinorGC() {
     
     
     
-    gc::Cell* key = r.front().key;
+    gc::Cell* key = r.front().key();
     MOZ_ASSERT(!key->isTenured());
     if (!Nursery::getForwardedPointer(&key)) {
       
@@ -289,18 +284,19 @@ void Zone::sweepEphemeronTablesAfterMinorGC() {
 
     
     
-    EphemeronEdgeVector& entries = r.front().value;
+    EphemeronEdgeVector& entries = r.front().value();
     SweepEphemeronEdgesWhileMinorSweeping(entries);
 
     
     EphemeronEdgeTable& tenuredEdges = gcEphemeronEdges();
     AutoEnterOOMUnsafeRegion oomUnsafe;
-    auto* entry = tenuredEdges.getOrAdd(key);
+    auto entry = tenuredEdges.lookupForAdd(key);
     if (!entry) {
-      oomUnsafe.crash("Failed to tenure weak keys entry");
+      if (!tenuredEdges.add(entry, key, EphemeronEdgeVector())) {
+        oomUnsafe.crash("Failed to tenure weak keys entry");
+      }
     }
-
-    if (!entry->value.appendAll(entries)) {
+    if (!entry->value().appendAll(entries)) {
       oomUnsafe.crash("Failed to tenure weak keys entry");
     }
 
@@ -319,16 +315,13 @@ void Zone::sweepEphemeronTablesAfterMinorGC() {
     
     
     
-    auto* p = delegate->zone()->gcEphemeronEdges().get(delegate);
+    auto p = delegate->zone()->gcEphemeronEdges().lookup(delegate);
     if (p) {
-      SweepEphemeronEdgesWhileMinorSweeping(p->value);
+      SweepEphemeronEdgesWhileMinorSweeping(p->value());
     }
   }
 
-  if (!gcNurseryEphemeronEdges().clear()) {
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    oomUnsafe.crash("OOM while clearing gcNurseryEphemeronEdges.");
-  }
+  gcNurseryEphemeronEdges().clearAndCompact();
 }
 
 void Zone::traceWeakCCWEdges(JSTracer* trc) {
