@@ -281,7 +281,7 @@ var gBrowserInit = {
 
     
     gUIDensity.init();
-    TabletModeUpdater.init();
+    Win10TabletModeUpdater.init();
     CombinedStopReload.ensureInitialized();
     gPrivateBrowsingUI.init();
     BrowserSearch.init();
@@ -1060,7 +1060,7 @@ var gBrowserInit = {
 
     BookmarkingUI.uninit();
 
-    TabletModeUpdater.uninit();
+    Win10TabletModeUpdater.uninit();
 
     CaptivePortalWatcher.uninit();
 

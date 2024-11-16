@@ -4653,7 +4653,9 @@ function updateToggleControlLabel(control) {
   control.setAttribute("label", control.getAttribute(`label-${prefix}checked`));
 }
 
-var TabletModeUpdater = {
+
+
+const Win10TabletModeUpdater = {
   init() {
     if (AppConstants.platform == "win") {
       this.update(WindowsUIUtils.inWin10TabletMode);
@@ -4672,11 +4674,10 @@ var TabletModeUpdater = {
   },
 
   update(isInTabletMode) {
-    
     if (isInTabletMode) {
-      document.documentElement.setAttribute("tabletmode", "true");
+      document.documentElement.setAttribute("win10-tablet-mode", "true");
     } else {
-      document.documentElement.removeAttribute("tabletmode");
+      document.documentElement.removeAttribute("win10-tablet-mode");
     }
   },
 };
