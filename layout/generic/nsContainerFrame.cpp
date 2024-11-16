@@ -819,6 +819,13 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
     nscoord aAvailableISize, const LogicalSize& aMargin,
     const mozilla::LogicalSize& aBorderPadding,
     const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
+  const bool isTableCaption = IsTableCaption();
+  
+  if (IsAbsolutelyPositionedWithDefiniteContainingBlock() && !isTableCaption) {
+    return ComputeAbsolutePosAutoSize(aRenderingContext, aWM, aCBSize,
+                                      aAvailableISize, aMargin, aBorderPadding,
+                                      aSizeOverrides, aFlags);
+  }
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
   if (aFlags.contains(ComputeSizeFlag::ShrinkWrap)) {
     
@@ -831,7 +838,7 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
         aAvailableISize - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
   }
 
-  if (IsTableCaption()) {
+  if (isTableCaption) {
     
     
     AutoMaybeDisableFontInflation an(this);
