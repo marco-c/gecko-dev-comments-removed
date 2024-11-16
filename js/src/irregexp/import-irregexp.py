@@ -53,7 +53,8 @@ def copy_and_update_includes(src_path, dst_path):
 
     
     
-    regexp_include = re.compile('#include "src/regexp(?!/regexp-flags.h)')
+    
+    regexp_include = re.compile('#include "src/regexp(?!/regexp-(flags|utils).h)')
     regexp_include_new = '#include "irregexp/imported'
 
     
