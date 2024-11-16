@@ -134,6 +134,12 @@
         "browser.tabs.tooltipsShowPidAndActiveness",
         false
       );
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_unloadTabInContextMenu",
+        "browser.tabs.unloadTabInContextMenu",
+        false
+      );
 
       if (AppConstants.MOZ_CRASHREPORTER) {
         ChromeUtils.defineESModuleGetters(this, {
@@ -4799,6 +4805,27 @@
       return closedCount;
     },
 
+    async explicitUnloadTabs(tabs) {
+      let unloadBlocked = await this.runBeforeUnloadForTabs(tabs);
+      if (unloadBlocked) {
+        return;
+      }
+      if (tabs.some(tab => tab.selected)) {
+        
+        
+        let newTab = this._findTabToBlurTo(this.selectedTab, tabs);
+        if (newTab) {
+          this.selectedTab = newTab;
+        } else if (FirefoxViewHandler.tab) {
+          
+          FirefoxViewHandler.openTab("opentabs");
+        }
+      }
+      for (let tab of tabs) {
+        this.discardBrowser(tab, true);
+      }
+    },
+
     
 
 
@@ -8137,6 +8164,24 @@ var TabContextMenu = {
     document.getElementById("context_reloadTab").hidden = multiselectionContext;
     document.getElementById("context_reloadSelectedTabs").hidden =
       !multiselectionContext;
+    let unloadTabItem = document.getElementById("context_unloadTab");
+    if (gBrowser._unloadTabInContextMenu) {
+      let tabs = this.contextTab.multiselected
+        ? gBrowser.selectedTabs
+        : [this.contextTab];
+      
+      
+      let unloadableTabs = tabs.filter(
+        t => t.linkedPanel && t.linkedBrowser?.isRemoteBrowser
+      );
+      unloadTabItem.hidden = unloadableTabs.length === 0;
+      unloadTabItem.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({ tabCount: unloadableTabs.length })
+      );
+    } else {
+      unloadTabItem.hidden = true;
+    }
 
     
     document.getElementById("context_playTab").hidden = !(
@@ -8424,6 +8469,14 @@ var TabContextMenu = {
       gBrowser.removeMultiSelectedTabs();
     } else {
       gBrowser.removeTab(this.contextTab, { animate: true });
+    }
+  },
+
+  explicitUnloadTabs() {
+    if (this.contextTab.multiselected) {
+      gBrowser.explicitUnloadTabs(gBrowser.selectedTabs);
+    } else {
+      gBrowser.explicitUnloadTabs([this.contextTab]);
     }
   },
 
