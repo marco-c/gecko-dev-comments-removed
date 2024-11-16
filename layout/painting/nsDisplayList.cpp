@@ -6354,7 +6354,10 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
 
   
   
-  if (!aBuilder->IsPaintingToWindow()) {
+  
+  
+  
+  if (!aBuilder->IsPaintingToWindow() && !aBuilder->IsForGenerateGlyphMask()) {
     return result;
   }
 
