@@ -11,6 +11,8 @@ var gProfiles = {
     this.handleCommand = this.handleCommand.bind(this);
     this.launchProfile = this.launchProfile.bind(this);
     this.manageProfiles = this.manageProfiles.bind(this);
+    this.onAppMenuViewHiding = this.onAppMenuViewHiding.bind(this);
+    this.onAppMenuViewShowing = this.onAppMenuViewShowing.bind(this);
     this.onPopupShowing = this.onPopupShowing.bind(this);
     this.toggleProfileMenus = this.toggleProfileMenus.bind(this);
     this.updateView = this.updateView.bind(this);
@@ -33,37 +35,62 @@ var gProfiles = {
       () => SelectableProfileService?.isEnabled
     );
 
-    await this.toggleProfileMenus();
+    this.toggleProfileMenus();
   },
 
-  async toggleProfileMenus() {
+  toggleProfileMenus() {
     let profilesMenu = document.getElementById("profiles-menu");
     profilesMenu.hidden = !this.PROFILES_ENABLED;
 
-    await this.toggleProfileButtonVisibility();
+    this.emptyProfilesButton = PanelMultiView.getViewNode(
+      document,
+      "appMenu-empty-profiles-button"
+    );
+    this.profilesButton = PanelMultiView.getViewNode(
+      document,
+      "appMenu-profiles-button"
+    );
+    this.subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
+
+    this.toggleAppMenuButton();
   },
 
   
 
 
-  async toggleProfileButtonVisibility() {
-    let profilesButton = PanelMultiView.getViewNode(
-      document,
-      "appMenu-profiles-button"
-    );
-    let subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
 
-    profilesButton.hidden = !this.PROFILES_ENABLED;
-
+  toggleAppMenuButton() {
     if (!this.PROFILES_ENABLED) {
-      document.l10n.setAttributes(profilesButton, "appmenu-profiles");
-      profilesButton.classList.remove("subviewbutton-iconic");
-      profilesButton.removeEventListener("command", this.handleCommand);
-      subview.removeEventListener("command", this.handleCommand);
+      PanelUI.mainView.removeEventListener(
+        "ViewShowing",
+        this.onAppMenuViewShowing
+      );
+      PanelUI.mainView.removeEventListener(
+        "ViewHiding",
+        this.onAppMenuViewHiding
+      );
+    } else {
+      PanelUI.mainView.addEventListener(
+        "ViewShowing",
+        this.onAppMenuViewShowing
+      );
+      PanelUI.mainView.addEventListener("ViewHiding", this.onAppMenuViewHiding);
+    }
+    this.onAppMenuViewShowing();
+  },
+
+  
+
+
+
+  async onAppMenuViewShowing() {
+    if (!this.PROFILES_ENABLED) {
+      this.profilesButton.hidden = true;
+      this.emptyProfilesButton.hidden = true;
       return;
     }
-    profilesButton.addEventListener("command", this.handleCommand);
-    subview.addEventListener("command", this.handleCommand);
+    this.profilesButton.addEventListener("command", this.handleCommand);
+    this.subview.addEventListener("command", this.handleCommand);
 
     
     
@@ -71,25 +98,42 @@ var gProfiles = {
       ? await SelectableProfileService.getAllProfiles()
       : [];
     if (profiles.length < 2) {
-      profilesButton.classList.remove("subviewbutton-iconic");
-      document.l10n.setAttributes(profilesButton, "appmenu-profiles");
+      this.profilesButton.hidden = true;
+      this.emptyProfilesButton.hidden = false;
+      this.emptyProfilesButton.addEventListener("command", this.handleCommand);
       return;
     }
-
+    this.emptyProfilesButton.hidden = true;
+    this.profilesButton.hidden = false;
+    this.profilesButton.addEventListener("command", this.handleCommand);
     let { themeBg, themeFg } = SelectableProfileService.currentProfile.theme;
-    profilesButton.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
-    profilesButton.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
-
-    profilesButton.classList.add("subviewbutton-iconic");
-    profilesButton.setAttribute(
+    this.profilesButton.style.setProperty(
+      "--appmenu-profiles-theme-bg",
+      themeBg
+    );
+    this.profilesButton.style.setProperty(
+      "--appmenu-profiles-theme-fg",
+      themeFg
+    );
+    this.profilesButton.setAttribute(
       "label",
       SelectableProfileService.currentProfile.name
     );
     let avatar = SelectableProfileService.currentProfile.avatar;
-    profilesButton.setAttribute(
+    this.profilesButton.setAttribute(
       "image",
       `chrome://browser/content/profiles/assets/16_${avatar}.svg`
     );
+  },
+
+  
+
+
+
+  onAppMenuViewHiding() {
+    this.profilesButton.removeEventListener("command", this.handleCommand);
+    this.emptyProfilesButton.removeEventListener("command", this.handleCommand);
+    this.subview.removeEventListener("command", this.handleCommand);
   },
 
   
@@ -192,7 +236,9 @@ var gProfiles = {
   handleCommand(aEvent) {
     switch (aEvent.target.id) {
       
-      case "appMenu-profiles-button": {
+      case "appMenu-profiles-button":
+      
+      case "appMenu-empty-profiles-button": {
         this.updateView(aEvent.target);
         break;
       }
