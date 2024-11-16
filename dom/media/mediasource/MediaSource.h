@@ -81,13 +81,10 @@ class MediaSource final : public DOMEventTargetHelper,
 
   static bool IsTypeSupported(const GlobalObject&, const nsAString& aType);
   
-  
-  
   static void IsTypeSupported(const nsAString& aType,
                               DecoderDoctorDiagnostics* aDiagnostics,
                               ErrorResult& aRv,
-                              Maybe<bool> aShouldResistFingerprinting,
-                              Maybe<nsCString> aOrigin = Nothing());
+                              Maybe<bool> aShouldResistFingerprinting);
 
   IMPL_EVENT_HANDLER(sourceopen);
   IMPL_EVENT_HANDLER(sourceended);
