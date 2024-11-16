@@ -15,10 +15,9 @@ promise_setup(async () => {
 
   
   
-  await test_driver.set_permission({ name: "notifications" }, "granted");
+  await trySettingPermission("granted");
   
-  registration = await registerSw("noop-sw.js");
-  await navigator.serviceWorker.ready;
+  registration = await getActiveServiceWorker("noop-sw.js");
 });
 
 promise_test(async (t) => {

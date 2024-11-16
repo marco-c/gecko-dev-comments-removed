@@ -1,12 +1,39 @@
-function resetSw() {
-  return navigator.serviceWorker.getRegistrations().then(registrations => {
-    return Promise.all(registrations.map(r => r.unregister()));
-  });
-}
+import { encrypt as eceEncrypt } from "./ece.js"
 
-async function registerSw(path) {
-  await resetSw();
-  add_completion_callback(resetSw);
-  const reg = await navigator.serviceWorker.register(path);
-  return reg;
+export async function encrypt(data, p256dhKey, authKey) {
+  if (!(data instanceof Uint8Array)) {
+    throw new Error("Expecting Uint8Array for `data` parameter");
+  }
+
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  const keyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ["deriveBits"]);
+  const publicKey = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
+
+  const body = await eceEncrypt(data, {
+    userAgentPublicKey: new Uint8Array(p256dhKey),
+    appServer: {
+      privateKey: keyPair.privateKey,
+      publicKey,
+    },
+    salt,
+    authSecret: authKey,
+  });
+
+  const headers = {
+    
+    
+    'Content-Encoding': "aes128gcm",
+    
+    
+    
+    
+    
+    TTL: 15,
+  };
+
+  return {
+    body,
+    headers,
+  }
 }
