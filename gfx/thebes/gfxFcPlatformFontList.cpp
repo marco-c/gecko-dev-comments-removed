@@ -1860,26 +1860,25 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
     
     nsAutoCString psname, fullname;
     GetFaceNames(aPattern, aFamilyName, psname, fullname);
+    MOZ_PUSH_IGNORE_THREAD_SAFETY
     if (!psname.IsEmpty()) {
       ToLowerCase(psname);
-      mLocalNameTable.InsertOrUpdate(
+      MaybeAddToLocalNameTable(
           psname, fontlist::LocalFaceRec::InitData(keyName, descriptor));
     }
     if (!fullname.IsEmpty()) {
       ToLowerCase(fullname);
       if (fullname != psname) {
-        mLocalNameTable.WithEntryHandle(fullname, [&](auto&& entry) {
-          if (entry && !singleName) {
-            
-            
-            
-            return;
-          }
-          entry.InsertOrUpdate(
-              fontlist::LocalFaceRec::InitData(keyName, descriptor));
-        });
+        
+        
+        
+        if (singleName || !mLocalNameTable.Contains(fullname)) {
+          MaybeAddToLocalNameTable(
+              fullname, fontlist::LocalFaceRec::InitData(keyName, descriptor));
+        }
       }
     }
+    MOZ_POP_THREAD_SAFETY
 
     return visibility == FontVisibility::Base;
   };
@@ -1938,6 +1937,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
       
       
       FcChar8* fontFormat;
+      MOZ_PUSH_IGNORE_THREAD_SAFETY
       if (FcPatternGetString(clone, FC_FONTFORMAT, 0, &fontFormat) ==
               FcResultMatch &&
           (!FcStrCmp(fontFormat, (const FcChar8*)"TrueType") ||
@@ -1951,6 +1951,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
           ++count;
         }
       }
+      MOZ_POP_THREAD_SAFETY
 
       FcPatternDestroy(clone);
     }

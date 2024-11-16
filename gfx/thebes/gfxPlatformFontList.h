@@ -872,6 +872,14 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
       MOZ_REQUIRES(mLock);
 
   
+  
+  
+  void MaybeAddToLocalNameTable(
+      const nsACString& aName,
+      const mozilla::fontlist::LocalFaceRec::InitData& aData)
+      MOZ_REQUIRES(mLock);
+
+  
   void LoadBadUnderlineList();
 
   
