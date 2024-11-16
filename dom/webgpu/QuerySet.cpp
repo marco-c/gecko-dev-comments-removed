@@ -3,20 +3,46 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
-#include "QuerySet.h"
-
 #include "Device.h"
+#include "QuerySet.h"
+#include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
 
-QuerySet::~QuerySet() = default;
+QuerySet::~QuerySet() { Cleanup(); }
+
+void QuerySet::Cleanup() {
+  if (!mValid) {
+    return;
+  }
+  mValid = false;
+
+  auto bridge = mParent->GetBridge();
+  if (!bridge) {
+    return;
+  }
+
+  if (bridge->CanSend()) {
+    bridge->SendQuerySetDrop(mId);
+  }
+
+  wgpu_client_free_query_set_id(bridge->GetClient(), mId);
+}
 
 GPU_IMPL_CYCLE_COLLECTION(QuerySet, mParent)
 GPU_IMPL_JS_WRAP(QuerySet)
 
+QuerySet::QuerySet(Device* const aParent,
+                   const dom::GPUQuerySetDescriptor& aDesc, RawId aId)
+    : ChildOf(aParent), mId(aId), mType(aDesc.mType), mCount(aDesc.mCount) {}
+
 void QuerySet::Destroy() {
   
 }
+
+dom::GPUQueryType QuerySet::Type() const { return mType; }
+
+uint32_t QuerySet::Count() const { return mCount; }
 
 }  
