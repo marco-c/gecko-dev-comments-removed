@@ -490,12 +490,14 @@ class FunctionCompiler {
     
     if (inliningBudget_ >= 0) {
       inliningBudget_ -= int64_t(inlineeBytecodeSize);
-      if (inliningBudget_ <= 0) {
+#ifdef JS_JITSPEW
+      if (inliningBudget_ < 0) {
         JS_LOG(wasmPerf, mozilla::LogLevel::Info,
                "CM=..%06lx  FC::updateILStats     "
                "Inlining budget for fI=%u exceeded",
                0xFFFFFF & (unsigned long)uintptr_t(&codeMeta_), funcIndex());
       }
+#endif
     }
   }
   FunctionCompiler* toplevelCompiler() { return toplevelCompiler_; }
@@ -697,16 +699,18 @@ class FunctionCompiler {
       if (guard->inliningBudget >= 0) {
         guard->inliningBudget -= int64_t(stats_.inlinedDirectBytecodeSize);
         guard->inliningBudget -= int64_t(stats_.inlinedCallRefBytecodeSize);
-        if (guard->inliningBudget <= 0) {
+#ifdef JS_JITSPEW
+        if (guard->inliningBudget < 0) {
           JS_LOG(wasmPerf, mozilla::LogLevel::Info,
                  "CM=..%06lx  FC::finish            "
                  "Inlining budget for entire module exceeded",
                  0xFFFFFF & (unsigned long)uintptr_t(&codeMeta_));
         }
+#endif
       }
       
       
-      if (inliningBudget_ <= 0) {
+      if (inliningBudget_ < 0) {
         guard->partialInlineBudgetOverruns++;
       }
     }
@@ -2631,7 +2635,7 @@ class FunctionCompiler {
     const int64_t availableBudget = toplevelCompiler_
                                         ? toplevelCompiler_->inliningBudget_
                                         : inliningBudget_;
-    if (availableBudget <= 0) {
+    if (availableBudget < 0) {
       return false;
     }
 
