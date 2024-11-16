@@ -200,6 +200,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
 
   
   nsCOMPtr<nsISerialEventTarget> mAsyncQueue;
+  nsISerialEventTarget* AsyncQueue();
 
   static nsToolkitProfileService* gService;
 
