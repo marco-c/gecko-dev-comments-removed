@@ -463,6 +463,7 @@ struct NonAutoAlignParams {
 
 
 
+
 static nscoord OffsetToAlignedStaticPos(
     const ReflowInput& aKidReflowInput, const LogicalSize& aKidSizeInAbsPosCBWM,
     const LogicalSize& aAbsPosCBSize,
