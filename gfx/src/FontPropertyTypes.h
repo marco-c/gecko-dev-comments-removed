@@ -66,11 +66,7 @@ class FontPropertyRange {
   
 
 
-
-
-  T Clamp(T aValue) const {
-    return aValue <= Min() ? Min() : (aValue >= Max() ? Max() : aValue);
-  }
+  T Clamp(T aValue) const { return std::clamp(aValue, Min(), Max()); }
 
   
 
