@@ -280,20 +280,22 @@ class BasePythonSupport:
         cpuTime_measurements = {}
 
         
-        cpu_vals = raw_result.get("cpu", [])
-        if cpu_vals and self.app in FIREFOX_APPS:
-            cpuTime_measurements.setdefault("cpuTimePageload", {"unit": "ms"})[
-                "replicates"
-            ] = cpu_vals
-
-        
         for res in raw_result["extras"]:
             for metric, vals in res.items():
                 if metric != "cpuTime":
                     continue
-                cpuTime_measurements.setdefault(
-                    "cpuTimeSupport", {"unit": "ms"}
-                ).setdefault("replicates", []).extend(vals)
+                cpuTime_measurements.setdefault("cpuTime", {"unit": "ms"}).setdefault(
+                    "replicates", []
+                ).extend(vals)
+
+        
+        
+        if "cpuTime" not in cpuTime_measurements:
+            cpu_vals = raw_result.get("cpu", [])
+            if cpu_vals and self.app in FIREFOX_APPS:
+                cpuTime_measurements.setdefault("cpuTime", {"unit": "ms"})[
+                    "replicates"
+                ] = cpu_vals
 
         return cpuTime_measurements
 
