@@ -1821,6 +1821,8 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
     nsCOMPtr<nsIWindowsUIUtils> uiUtils(
         do_GetService("@mozilla.org/windows-ui-utils;1"));
     if (!NS_WARN_IF(!uiUtils)) {
+      
+      
       if (IsWin11OrLater()) {
         uiUtils->GetInWin11TabletMode(&isInTabletMode);
       } else {
