@@ -17,19 +17,22 @@ class BackupTest(MarionetteTestCase):
 
     def setUp(self):
         MarionetteTestCase.setUp(self)
+
         
+        
+        self.marionette.enforce_gecko_prefs({"browser.backup.log": True})
+
+        self.marionette.set_context("chrome")
+
+    def tearDown(self):
         
         self.marionette.quit()
-        self.marionette.instance.prefs = {
-            "browser.backup.log": True,
-        }
-        
         self.marionette.instance.switch_profile()
         self.marionette.start_session()
 
-    def test_backup(self):
-        self.marionette.set_context("chrome")
+        MarionetteTestCase.tearDown(self)
 
+    def test_backup(self):
         self.add_test_cookie()
         self.add_test_login()
         self.add_test_certificate()
@@ -81,9 +84,8 @@ class BackupTest(MarionetteTestCase):
 
         
         
-        self.marionette.quit()
-        self.marionette.start_session()
-        self.marionette.set_context("chrome")
+        self.marionette.restart()
+
         
         
         self.marionette.execute_script(
@@ -147,7 +149,7 @@ class BackupTest(MarionetteTestCase):
         
         
         self.marionette.quit()
-        self.marionette.instance.profile = None
+        self.marionette.instance.switch_profile()
         self.marionette.start_session()
         self.marionette.set_context("chrome")
 
@@ -273,12 +275,12 @@ class BackupTest(MarionetteTestCase):
         )
         self.assertEqual(recoveredClientID, expectedClientID)
 
-        
-        
         self.marionette.quit()
         self.marionette.instance.profile = originalProfile
         self.marionette.start_session()
         self.marionette.set_context("chrome")
+
+        
         self.marionette.execute_async_script(
             """
           let [newProfileName, outerResolve] = arguments;
@@ -292,7 +294,6 @@ class BackupTest(MarionetteTestCase):
             script_args=[newProfileName],
         )
 
-        
         
         mozfile.remove(archivePath)
         mozfile.remove(recoveryPath)
