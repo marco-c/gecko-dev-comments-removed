@@ -56,20 +56,30 @@ static bool CheckNextInFlowParenthood(nsIFrame* aFrame, nsIFrame* aParent) {
 
 
 static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
+  
+  
+  
+  
+  
+  if (!aFrame->HasAnyStateBits(NS_BLOCK_HAS_MARKER)) {
+    return 0;
+  }
+
+  
+  
+  
+  float inflation = nsLayoutUtils::FontSizeInflationFor(aFrame);
+  if (inflation <= 1.0f) {
+    return 0;
+  }
+
   if (!aFrame->IsBlockFrameOrSubclass()) {
     return 0;
   }
 
   
-  const auto* blockFrame = static_cast<const nsBlockFrame*>(aFrame);
-  if (!blockFrame->HasMarker()) {
-    return 0;
-  }
-
-  float inflation = nsLayoutUtils::FontSizeInflationFor(aFrame);
-  if (inflation <= 1.0f) {
-    return 0;
-  }
+  
+  MOZ_ASSERT(static_cast<const nsBlockFrame*>(aFrame)->HasMarker());
 
   const auto* list = aFrame->StyleList();
   if (list->mListStyleType.IsNone()) {
