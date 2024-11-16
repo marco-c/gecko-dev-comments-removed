@@ -467,13 +467,15 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-
-
-
-
-
-
   virtual mozilla::StyleAlignFlags CSSAlignmentForAbsPosChild(
+      const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis) const;
+
+  
+
+
+
+
+  mozilla::StyleAlignFlags CSSAlignmentForAbsPosChildWithinContainingBlock(
       const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis) const;
 
 #define NS_DECLARE_FRAME_PROPERTY_FRAMELIST(prop) \

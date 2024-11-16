@@ -32,6 +32,9 @@ class CSSAlignUtils {
     
     
     IgnoreAutoMargins = 1 << 2,
+    
+    
+    AligningMarginBox = 1 << 3,
   };
 
   
