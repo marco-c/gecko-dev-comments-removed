@@ -353,6 +353,7 @@ struct arena_chunk_map_t {
   
   
   
+  
   size_t bits;
 
 
@@ -391,6 +392,11 @@ struct arena_chunk_map_t {
 
 
 
+
+
+
+
+#define CHUNK_MAP_BUSY ((size_t)0x100U)
 #define CHUNK_MAP_FRESH ((size_t)0x80U)
 #define CHUNK_MAP_MADVISED ((size_t)0x40U)
 #define CHUNK_MAP_DECOMMITTED ((size_t)0x20U)
@@ -398,6 +404,9 @@ struct arena_chunk_map_t {
   (CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED)
 #define CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED \
   (CHUNK_MAP_FRESH | CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED)
+#define CHUNK_MAP_FRESH_MADVISED_DECOMMITTED_OR_BUSY              \
+  (CHUNK_MAP_FRESH | CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED | \
+   CHUNK_MAP_BUSY)
 #define CHUNK_MAP_KEY ((size_t)0x10U)
 #define CHUNK_MAP_DIRTY ((size_t)0x08U)
 #define CHUNK_MAP_ZEROED ((size_t)0x04U)
@@ -3096,19 +3105,13 @@ bool arena_t::Purge(bool aForce) {
     MOZ_ASSERT(chunk->ndirty > 0);
     mChunksDirty.Remove(chunk);
 
-#ifdef MALLOC_DECOMMIT
-    const size_t free_operation = CHUNK_MAP_DECOMMITTED;
-#else
-    const size_t free_operation = CHUNK_MAP_MADVISED;
-#endif
-
     
     for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - 1; i++) {
       if (chunk->map[i].bits & CHUNK_MAP_DIRTY) {
         MOZ_ASSERT((chunk->map[i].bits &
                     CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
         first_dirty = i;
-        chunk->map[i].bits ^= free_operation | CHUNK_MAP_DIRTY;
+        chunk->map[i].bits ^= CHUNK_MAP_BUSY | CHUNK_MAP_DIRTY;
         break;
       }
     }
@@ -3123,7 +3126,7 @@ bool arena_t::Purge(bool aForce) {
       }
       MOZ_ASSERT((chunk->map[first_dirty + i].bits &
                   CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
-      chunk->map[first_dirty + i].bits ^= free_operation | CHUNK_MAP_DIRTY;
+      chunk->map[first_dirty + i].bits ^= CHUNK_MAP_BUSY | CHUNK_MAP_DIRTY;
     }
     MOZ_ASSERT(npages > 0);
     MOZ_ASSERT(npages <= chunk->ndirty);
@@ -3137,9 +3140,11 @@ bool arena_t::Purge(bool aForce) {
   }
 
 #ifdef MALLOC_DECOMMIT
+  const size_t free_operation = CHUNK_MAP_DECOMMITTED;
   pages_decommit((void*)(uintptr_t(chunk) + (first_dirty << gPageSize2Pow)),
                  (npages << gPageSize2Pow));
 #else
+  const size_t free_operation = CHUNK_MAP_MADVISED;
 #  ifdef XP_SOLARIS
   posix_madvise((void*)(uintptr_t(chunk) + (first_dirty << gPageSize2Pow)),
                 (npages << gPageSize2Pow), MADV_FREE);
@@ -3154,6 +3159,15 @@ bool arena_t::Purge(bool aForce) {
   {
     MOZ_ASSERT(chunk->mIsPurging);
     chunk->mIsPurging = false;
+
+    for (size_t i = 0; i < npages; i++) {
+      
+      MOZ_ASSERT((chunk->map[first_dirty + i].bits &
+                  (CHUNK_MAP_FRESH_MADVISED_DECOMMITTED_OR_BUSY |
+                   CHUNK_MAP_DIRTY)) == CHUNK_MAP_BUSY);
+
+      chunk->map[first_dirty + i].bits ^= free_operation | CHUNK_MAP_BUSY;
+    }
 
 #ifndef MALLOC_DECOMMIT
     mNumMAdvised += npages;
