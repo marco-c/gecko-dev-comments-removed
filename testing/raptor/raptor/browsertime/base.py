@@ -394,9 +394,11 @@ class Browsertime(Perftest):
             
             "--browsertime.post_startup_delay",
             
-            str(min(self.post_startup_delay, 1000))
-            if extra_profiler_run
-            else str(self.post_startup_delay),
+            (
+                str(min(self.post_startup_delay, 1000))
+                if extra_profiler_run
+                else str(self.post_startup_delay)
+            ),
             "--iterations",
             str(browser_cycles),
             
@@ -409,9 +411,11 @@ class Browsertime(Perftest):
             "--browsertime.moz_fetch_dir",
             os.environ.get("MOZ_FETCHES_DIR", "None"),
             "--browsertime.expose_profiler",
-            "true"
-            if self._expose_browser_profiler(extra_profiler_run, test)
-            else "false",
+            (
+                "true"
+                if self._expose_browser_profiler(extra_profiler_run, test)
+                else "false"
+            ),
         ]
 
         if test.get("perfstats") == "true":
@@ -562,15 +566,15 @@ class Browsertime(Perftest):
         if self.config["app"] in GECKO_PROFILER_APPS and (
             self.config["gecko_profile"] or extra_profiler_run
         ):
-            self.config[
-                "browsertime_result_dir"
-            ] = self.results_handler.result_dir_for_test(test)
+            self.config["browsertime_result_dir"] = (
+                self.results_handler.result_dir_for_test(test)
+            )
             self._compose_gecko_profiler_cmds(test, priority1_options)
 
         elif self.config["app"] in TRACE_APPS and extra_profiler_run:
-            self.config[
-                "browsertime_result_dir"
-            ] = self.results_handler.result_dir_for_test(test)
+            self.config["browsertime_result_dir"] = (
+                self.results_handler.result_dir_for_test(test)
+            )
             self._compose_chrome_trace_cmds(
                 test, priority1_options, browsertime_options
             )

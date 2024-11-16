@@ -247,9 +247,9 @@ class ManifestParser(object):
             
             
             
-            self.manifest_defaults[
-                (parentmanifest, manifest_defaults_filename)
-            ] = defaults
+            self.manifest_defaults[(parentmanifest, manifest_defaults_filename)] = (
+                defaults
+            )
             if manifest_defaults_filename != filename:
                 self.manifest_defaults[(parentmanifest, filename)] = defaults
         else:

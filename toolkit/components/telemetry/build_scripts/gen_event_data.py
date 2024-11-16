@@ -170,9 +170,9 @@ def generate_JSON_definitions(output, *filenames):
                 "methods": event.methods,
                 "objects": event.objects,
                 "extra_keys": event.extra_keys,
-                "record_on_release": True
-                if event.dataset_short == "opt-out"
-                else False,
+                "record_on_release": (
+                    True if event.dataset_short == "opt-out" else False
+                ),
                 
                 
                 "expires": event.expiry_version,

@@ -186,9 +186,9 @@ def generate_JSON_definitions(output, *filenames):
                 "kind": scalar.nsITelemetry_kind,
                 "keyed": scalar.keyed,
                 "keys": scalar.keys,
-                "record_on_release": True
-                if scalar.dataset_short == "opt-out"
-                else False,
+                "record_on_release": (
+                    True if scalar.dataset_short == "opt-out" else False
+                ),
                 
                 
                 "expired": False,

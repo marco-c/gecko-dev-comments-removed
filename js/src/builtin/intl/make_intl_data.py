@@ -3914,9 +3914,11 @@ def readICUNumberingSystemsResourceFile(filepath):
 
     
     return {
-        key: {"digits": value["desc"], "algorithmic": False}
-        if not bool(value["algorithmic"])
-        else {"algorithmic": True}
+        key: (
+            {"digits": value["desc"], "algorithmic": False}
+            if not bool(value["algorithmic"])
+            else {"algorithmic": True}
+        )
         for (key, value) in numbering_systems.items()
     }
 

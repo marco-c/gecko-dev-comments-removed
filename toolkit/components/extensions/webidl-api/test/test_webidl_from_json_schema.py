@@ -71,9 +71,9 @@ def test_ambiguous_stub_mappings(write_jsonschema_fixtures):
 
     assert "testAPINamespace.configuredAsAmbiguousMethod" not in WEBEXT_STUBS_MAPPING
     
-    WEBEXT_STUBS_MAPPING[
-        "testAPINamespace.configuredAsAmbiguousMethod"
-    ] = "AsyncAmbiguous"
+    WEBEXT_STUBS_MAPPING["testAPINamespace.configuredAsAmbiguousMethod"] = (
+        "AsyncAmbiguous"
+    )
 
     schemas = Schemas()
     schemas.load_schemas(schema_dir, "toolkit")

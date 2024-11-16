@@ -50,7 +50,7 @@ config = {
         "MOZ_CRASHREPORTER_NO_REPORT": "1",
         "LC_ALL": "C",
         
-        "PATH": "/usr/local/bin:/bin:" "/usr/bin:/usr/local/sbin:/usr/sbin:" "/sbin"
+        "PATH": "/usr/local/bin:/bin:" "/usr/bin:/usr/local/sbin:/usr/sbin:" "/sbin",
         
     },
     "mozconfig_platform": "linux64",
