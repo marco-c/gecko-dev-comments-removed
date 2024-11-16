@@ -1632,6 +1632,15 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
     return false;
   }
 
+  
+  
+  if (primaryFrame->IsSVGFrame() &&
+      primaryFrame->HasAnyStateBits(
+          NS_STATE_SVG_MAY_CONTAIN_NON_SCALING_STROKE)) {
+    aPerformanceWarning = AnimationPerformanceWarning::Type::NonScalingStroke;
+    return false;
+  }
+
   return true;
 }
 

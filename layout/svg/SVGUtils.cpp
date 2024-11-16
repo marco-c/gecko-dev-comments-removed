@@ -1071,6 +1071,21 @@ bool SVGUtils::GetNonScalingStrokeTransform(const nsIFrame* aFrame,
   return aUserToOuterSVG->HasNonTranslation() && !aUserToOuterSVG->IsSingular();
 }
 
+void SVGUtils::UpdateNonScalingStrokeStateBit(nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT),
+             "Called on invalid frame type");
+  MOZ_ASSERT(aFrame->StyleSVGReset()->HasNonScalingStroke(),
+             "Expecting initial frame to have non-scaling-stroke style");
+
+  do {
+    MOZ_ASSERT(aFrame->IsSVGFrame(), "Unexpected frame type");
+    aFrame->AddStateBits(NS_STATE_SVG_MAY_CONTAIN_NON_SCALING_STROKE);
+    if (aFrame->IsSVGOuterSVGFrame()) {
+      return;
+    }
+  } while ((aFrame = aFrame->GetParent()));
+}
+
 
 static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
                                              const nsIFrame* aFrame,
