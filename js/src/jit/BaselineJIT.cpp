@@ -759,8 +759,7 @@ jsbytecode* BaselineScript::approximatePcForNativeAddress(
   
   
   MOZ_ASSERT(!retAddrEntries().empty());
-  const RetAddrEntry& lastEntry = retAddrEntries()[retAddrEntries().size() - 1];
-  return script->offsetToPC(lastEntry.pcOffset());
+  return script->offsetToPC(retAddrEntries().crbegin()->pcOffset());
 }
 
 void BaselineScript::toggleDebugTraps(JSScript* script, jsbytecode* pc) {
