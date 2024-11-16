@@ -1950,8 +1950,7 @@ void nsCocoaWindow::BackingScaleFactorChanged() {
   CGFloat newScale = GetBackingScaleFactor(mWindow);
 
   
-  
-  if (mBackingScaleFactor == newScale) {
+  if (BackingScaleFactor() == newScale) {
     return;
   }
 
@@ -2763,13 +2762,8 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   
   
   
-  NSWindow* window = (NSWindow*)[aNotification object];
-  if ([window respondsToSelector:@selector(backingScaleFactor)]) {
-    if (GetBackingScaleFactor(window) != mGeckoWindow->BackingScaleFactor()) {
-      mGeckoWindow->BackingScaleFactorChanged();
-    }
-  }
-
+  
+  mGeckoWindow->BackingScaleFactorChanged();
   mGeckoWindow->ReportMoveEvent();
 }
 
@@ -2993,15 +2987,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 - (void)windowDidChangeBackingProperties:(NSNotification*)aNotification {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  NSWindow* window = (NSWindow*)[aNotification object];
-
-  if ([window respondsToSelector:@selector(backingScaleFactor)]) {
-    CGFloat oldFactor = [[[aNotification userInfo]
-        objectForKey:@"NSBackingPropertyOldScaleFactorKey"] doubleValue];
-    if (window.backingScaleFactor != oldFactor) {
-      mGeckoWindow->BackingScaleFactorChanged();
-    }
-  }
+  mGeckoWindow->BackingScaleFactorChanged();
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
