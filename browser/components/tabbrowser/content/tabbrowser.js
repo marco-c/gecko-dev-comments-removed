@@ -2988,6 +2988,17 @@
       if (this.tabGroupMenu.panel.state != "closed") {
         this.tabGroupMenu.panel.hidePopup(options.animate);
       }
+
+      
+      
+      group.dispatchEvent(
+        new CustomEvent("TabGroupRemoveRequested", { bubbles: true })
+      );
+
+      
+      
+      options.skipSessionStore = true;
+
       this.removeTabs(group.tabs, options);
     },
 
@@ -4279,7 +4290,9 @@
         return;
       }
 
-      SessionStore.resetLastClosedTabCount(window);
+      if (!skipSessionStore) {
+        SessionStore.resetLastClosedTabCount(window);
+      }
       this._clearMultiSelectionLocked = true;
 
       
