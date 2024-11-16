@@ -260,7 +260,7 @@ class DownscalingFilter final : public SurfaceFilter {
 
     
     mRowsInWindow -= diff;
-    mRowsInWindow = std::min(std::max(mRowsInWindow, 0), mWindowCapacity);
+    mRowsInWindow = std::clamp(mRowsInWindow, 0, mWindowCapacity);
 
     
     

@@ -262,7 +262,7 @@ nsresult imgFrame::InitForDecoderRecycle(const AnimationParams& aAnimParams) {
     
     
     int32_t refreshInterval =
-        std::max(std::min(nsRefreshDriver::DefaultInterval(), 20), 4);
+        std::clamp(nsRefreshDriver::DefaultInterval(), 4, 20);
     TimeDuration waitInterval =
         TimeDuration::FromMilliseconds(refreshInterval >> 2);
     TimeStamp timeout =
