@@ -28,6 +28,35 @@ export class MarionetteCommandsParent extends JSWindowActorParent {
     this.#deferredDialogOpened = null;
   }
 
+  assertInViewPort(target, _context) {
+    return this.sendQuery("MarionetteCommandsParent:_assertInViewPort", {
+      target,
+    });
+  }
+
+  dispatchEvent(eventName, details) {
+    return this.sendQuery("MarionetteCommandsParent:_dispatchEvent", {
+      eventName,
+      details,
+    });
+  }
+
+  finalizeAction() {
+    return this.sendQuery("MarionetteCommandsParent:_finalizeAction");
+  }
+
+  getClientRects(element, _context) {
+    return this.executeScript("return arguments[0].getClientRects()", [
+      element,
+    ]);
+  }
+
+  getInViewCentrePoint(rect, _context) {
+    return this.sendQuery("MarionetteCommandsParent:_getInViewCentrePoint", {
+      rect,
+    });
+  }
+
   async sendQuery(name, serializedValue) {
     const seenNodes = lazy.getSeenNodesForBrowsingContext(
       webDriverSessionId,
@@ -242,13 +271,19 @@ export class MarionetteCommandsParent extends JSWindowActorParent {
     });
   }
 
-  async performActions(actions) {
+  performActions(actions) {
     return this.sendQuery("MarionetteCommandsParent:performActions", {
       actions,
     });
   }
 
-  async releaseActions() {
+  /**
+   * The release actions command is used to release all the keys and pointer
+   * buttons that are currently depressed. This causes events to be fired
+   * as if the state was released by an explicit series of actions. It also
+   * clears all the internal state of the virtual devices.
+   */
+  releaseActions() {
     return this.sendQuery("MarionetteCommandsParent:releaseActions");
   }
 
@@ -341,16 +376,29 @@ export function getMarionetteCommandsActorProxy(browsingContextFn) {
       get(target, methodName) {
         return async (...args) => {
           let attempts = 0;
+          // eslint-disable-next-line no-constant-condition
           while (true) {
-            try {
-              const browsingContext = browsingContextFn();
-              if (!browsingContext) {
-                throw new DOMException(
-                  "No BrowsingContext found",
-                  "NoBrowsingContext"
-                );
-              }
+            let browsingContext = browsingContextFn();
 
+            // If a top-level browsing context was replaced and retrying is allowed,
+            // retrieve the new one for the current browser.
+            if (
+              browsingContext?.isReplaced &&
+              browsingContext.top === browsingContext &&
+              !NO_RETRY_METHODS.includes(methodName)
+            ) {
+              browsingContext = BrowsingContext.getCurrentTopByBrowserId(
+                browsingContext.browserId
+              );
+            }
+
+            if (!browsingContext) {
+              throw new lazy.error.UnknownError(
+                `BrowsingContext does no longer exist`
+              );
+            }
+
+            try {
               // TODO: Scenarios where the window/tab got closed and
               // currentWindowGlobal is null will be handled in Bug 1662808.
               const actor =
@@ -368,25 +416,27 @@ export function getMarionetteCommandsActorProxy(browsingContextFn) {
               }
 
               if (NO_RETRY_METHODS.includes(methodName)) {
-                const browsingContextId = browsingContextFn()?.id;
                 lazy.logger.trace(
-                  `[${browsingContextId}] Querying "${methodName}" failed with` +
-                    ` ${e.name}, returning "null" as fallback`
+                  `[${browsingContext.id}] Querying "${methodName}"` +
+                    ` failed with ${e.name}, returning "null" as fallback`
                 );
                 return null;
               }
 
               if (++attempts > MAX_ATTEMPTS) {
-                const browsingContextId = browsingContextFn()?.id;
                 lazy.logger.trace(
-                  `[${browsingContextId}] Querying "${methodName} "` +
-                    `reached the limit of retry attempts (${MAX_ATTEMPTS})`
+                  `[${browsingContext.id}] Querying "${methodName}"` +
+                    ` reached the limit of retry attempts (${MAX_ATTEMPTS})`
                 );
                 throw e;
               }
 
               lazy.logger.trace(
-                `Retrying "${methodName}", attempt: ${attempts}`
+                `[${browsingContext.id}] Retrying "${methodName}"` +
+                  `, attempt: ${attempts}`
+              );
+              await new Promise(resolve =>
+                Services.tm.dispatchToMainThread(resolve)
               );
             }
           }
