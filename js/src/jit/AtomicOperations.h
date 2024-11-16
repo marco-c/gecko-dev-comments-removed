@@ -175,6 +175,9 @@ class AtomicOperations {
   static inline void fenceSeqCst();
 
   
+  static inline void pause();
+
+  
   
 
   template <typename T>

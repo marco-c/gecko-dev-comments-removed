@@ -860,6 +860,35 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+static bool atomics_pause(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (args.hasDefined(0)) {
+    if (!args[0].isNumber() || !IsInteger(args[0].toNumber())) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_ATOMICS_PAUSE_BAD_COUNT);
+      return false;
+    }
+  }
+
+  
+  
+  
+  jit::AtomicOperations::pause();
+
+  
+  args.rval().setUndefined();
+  return true;
+}
+#endif
+
 
 bool js::FutexThread::initialize() {
   MOZ_ASSERT(!lock_);
@@ -1088,6 +1117,9 @@ const JSFunctionSpec AtomicsMethods[] = {
     JS_FN("wait", atomics_wait, 4, 0),
     JS_FN("notify", atomics_notify, 3, 0),
     JS_FN("wake", atomics_notify, 3, 0),  
+#ifdef NIGHTLY_BUILD
+    JS_FN("pause", atomics_pause, 0, 0),
+#endif
     JS_FS_END,
 };
 
