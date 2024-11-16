@@ -5,9 +5,15 @@
 
 
 #include "APZCBasicTester.h"
+#include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
+#include "FrameMetrics.h"
 #include "InputUtils.h"
 #include "gtest/gtest.h"
+#include "mozilla/ScrollSnapInfo.h"
+#include "mozilla/ServoComputedData.h"
+#include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 
 class APZCPanningTester : public APZCBasicTester {
  protected:
@@ -255,6 +261,11 @@ TEST_F(APZCPanningTester, DuplicatePanEndEvents_Bug1833950) {
              true);
 }
 
+class APZCPanningTesterMock : public APZCTreeManagerTester {
+ public:
+  APZCPanningTesterMock() { CreateMockHitTester(); }
+};
+
 #ifdef MOZ_WIDGET_GTK  
 TEST_F(APZCPanningTester, HoldGesture_HoldAndRelease) {
   
@@ -320,5 +331,217 @@ TEST_F(APZCPanningTester, HoldGesture_HoldAndScroll) {
   
   float scrollYAfter = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
   EXPECT_GT(scrollYAfter, scrollYBefore);
+}
+
+TEST_F(APZCPanningTesterMock, HoldGesture_ActiveWheelListener) {
+  
+  
+  
+  SCOPED_GFX_PREF_INT("apz.content_response_timeout", 100);
+
+  CreateSimpleScrollingLayer();
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+
+  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+  ScrollableLayerGuid::ViewID scrollId = ScrollableLayerGuid::START_SCROLL_ID;
+  ScreenIntPoint panPoint(50, 80);
+
+  
+  
+  gfx::CompositorHitTestInfo dispatchToContent{
+      CompositorHitTestFlags::eVisibleToHitTest,
+      CompositorHitTestFlags::eApzAwareListeners};
+
+  
+  
+  
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_MAYSTART, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  
+  
+  
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_CANCELLED, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(scrollId, dispatchToContent);
+  auto startResult = PanGesture(PanGestureInput::PANGESTURE_START, manager,
+                                panPoint, ScreenPoint(0, 10), mcc->Time());
+
+  
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, 10), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, 10), mcc->Time());
+
+  
+  manager->SetTargetAPZC(startResult.mInputBlockId, {startResult.mTargetGuid});
+  manager->ContentReceivedInputBlock(startResult.mInputBlockId,
+                                     false);
+
+  
+  
+  
+  
+  
+  EXPECT_GT(apzc->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+
+  
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_END, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+  apzc->AssertStateIsReset();
+}
+
+TEST_F(APZCPanningTesterMock, HoldGesture_PreventDefaultAfterLongHold) {
+  
+  SCOPED_GFX_PREF_INT("apz.content_response_timeout", 20);
+
+  CreateSimpleScrollingLayer();
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+
+  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+  ScrollableLayerGuid::ViewID scrollId = ScrollableLayerGuid::START_SCROLL_ID;
+  ScreenIntPoint panPoint(50, 80);
+
+  
+  
+  gfx::CompositorHitTestInfo dispatchToContent{
+      CompositorHitTestFlags::eVisibleToHitTest,
+      CompositorHitTestFlags::eApzAwareListeners};
+
+  
+  
+  
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_MAYSTART, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  mcc->AdvanceByMillis(30);
+
+  
+  
+  
+  
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_CANCELLED, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(scrollId, dispatchToContent);
+  auto startResult = PanGesture(PanGestureInput::PANGESTURE_START, manager,
+                                panPoint, ScreenPoint(0, 10), mcc->Time());
+
+  
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, 10), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, 10), mcc->Time());
+
+  
+  manager->SetTargetAPZC(startResult.mInputBlockId, {startResult.mTargetGuid});
+  manager->ContentReceivedInputBlock(startResult.mInputBlockId,
+                                     true);
+
+  
+  
+  
+  
+  
+  EXPECT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+
+  
+  QueueMockHitResult(scrollId, dispatchToContent);
+  PanGesture(PanGestureInput::PANGESTURE_END, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+  apzc->AssertStateIsReset();
+}
+
+TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
+  
+  const char* treeShape = "x(x)";
+  LayerIntRect layerVisibleRect[] = {
+      LayerIntRect(0, 0, 100, 100),
+      LayerIntRect(0, 0, 100, 100),
+  };
+  CreateScrollData(treeShape, layerVisibleRect);
+  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
+                            CSSRect(0, 0, 100, 100));
+  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1,
+                            CSSRect(0, 0, 100, 200));
+  SetScrollHandoff(layers[1], root);
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+
+  auto* rootApzc = ApzcOf(root);
+  auto* subframeApzc = ApzcOf(layers[1]);
+  rootApzc->GetFrameMetrics().SetIsRootContent(true);
+
+  
+  
+  subframeApzc->GetScrollMetadata().SetOverscrollBehavior(
+      OverscrollBehaviorInfo::FromStyleConstants(
+          StyleOverscrollBehavior::None, StyleOverscrollBehavior::None));
+
+  ScrollableLayerGuid::ViewID subframeScrollId =
+      ScrollableLayerGuid::START_SCROLL_ID + 1;
+  ScreenIntPoint panPoint(50, 50);
+
+  
+  
+  
+  
+  QueueMockHitResult(subframeScrollId,
+                     CompositorHitTestFlags::eVisibleToHitTest);
+  PanGesture(PanGestureInput::PANGESTURE_MAYSTART, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  
+  
+  
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(subframeScrollId,
+                     CompositorHitTestFlags::eVisibleToHitTest);
+  PanGesture(PanGestureInput::PANGESTURE_CANCELLED, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  
+  
+  mcc->AdvanceByMillis(5);
+  QueueMockHitResult(subframeScrollId,
+                     CompositorHitTestFlags::eVisibleToHitTest);
+  PanGesture(PanGestureInput::PANGESTURE_START, manager, panPoint,
+             ScreenPoint(0, 10), mcc->Time());
+
+  
+  EXPECT_GT(subframeApzc->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+
+  
+  QueueMockHitResult(subframeScrollId,
+                     CompositorHitTestFlags::eVisibleToHitTest);
+  PanGesture(PanGestureInput::PANGESTURE_END, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
 }
 #endif

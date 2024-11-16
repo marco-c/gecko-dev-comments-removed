@@ -371,6 +371,14 @@ class PanGestureBlockState : public CancelableBlockState {
   }
   Maybe<LayersId> WheelTransactionLayersId() const override;
 
+  void ConfirmForHoldGesture() {
+    
+    
+    
+    
+    mTargetConfirmed = InputBlockState::TargetConfirmationState::eConfirmed;
+  }
+
  private:
   bool mInterrupted;
   bool mWaitingForContentResponse;
