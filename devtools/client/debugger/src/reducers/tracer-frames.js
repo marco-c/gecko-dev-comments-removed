@@ -11,9 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BinarySearch: "resource://gre/modules/BinarySearch.sys.mjs",
 });
 
-export const NO_SEARCH_VALUE = Symbol("no-search-value");
-
-function initialState(previousState = { searchValueOrGrip: NO_SEARCH_VALUE }) {
+function initialState(previousState = {}) {
   return {
     
 
@@ -37,18 +35,6 @@ function initialState(previousState = { searchValueOrGrip: NO_SEARCH_VALUE }) {
 
     
     mutableMutationTraces: [],
-
-    
-    
-    mutableMatchingTraces: [],
-
-    
-    
-    searchExceptionMessage: null,
-
-    
-    
-    searchValueOrGrip: previousState.searchValueOrGrip,
 
     
     mutableEventNames: new Set(),
@@ -86,59 +72,15 @@ function initialState(previousState = { searchValueOrGrip: NO_SEARCH_VALUE }) {
     
     localPlatformVersion: null,
     remotePlatformVersion: null,
-
-    
-    traceValues: false,
   };
 }
 
 
 function update(state = initialState(), action) {
   switch (action.type) {
-    case "SET_TRACE_SEARCH_EXCEPTION": {
-      return {
-        ...state,
-        searchExceptionMessage: action.errorMessage,
-        searchValueOrGrip: NO_SEARCH_VALUE,
-        mutableMatchingTraces: [],
-      };
-    }
-    case "SET_TRACE_SEARCH_STRING": {
-      const { searchValueOrGrip } = action;
-      if (searchValueOrGrip === NO_SEARCH_VALUE) {
-        return {
-          ...state,
-          searchValueOrGrip,
-          searchExceptionMessage: null,
-          mutableMatchingTraces: [],
-        };
-      }
-      const mutableMatchingTraces = [];
-      for (const trace of state.mutableTraces) {
-        const type = trace[TRACER_FIELDS_INDEXES.TYPE];
-        if (type != "enter") {
-          continue;
-        }
-        if (isTraceMatchingSearch(trace, searchValueOrGrip)) {
-          mutableMatchingTraces.push(trace);
-        }
-      }
-      return {
-        ...state,
-        searchValueOrGrip,
-        mutableMatchingTraces,
-        searchExceptionMessage: null,
-      };
-    }
     case "TRACING_TOGGLED": {
       if (action.enabled) {
-        state = initialState(state);
-        if (action.traceValues) {
-          state.traceValues = true;
-        } else {
-          state.searchValueOrGrip = NO_SEARCH_VALUE;
-        }
-        return state;
+        return initialState(state);
       }
       return state;
     }
@@ -357,8 +299,6 @@ function addTraces(state, traces) {
     mutableFilteredTopTraces,
     mutableChildren,
     mutableParents,
-    mutableMatchingTraces,
-    searchValueOrGrip,
   } = state;
 
   function matchParent(traceIndex, depth) {
@@ -412,13 +352,6 @@ function addTraces(state, traces) {
         mutableChildren.push([]);
         const depth = traceResource[TRACER_FIELDS_INDEXES.DEPTH];
         matchParent(traceIndex, depth);
-
-        if (
-          searchValueOrGrip != NO_SEARCH_VALUE &&
-          isTraceMatchingSearch(traceResource, searchValueOrGrip)
-        ) {
-          mutableMatchingTraces.push(traceResource);
-        }
         break;
       }
 
@@ -532,35 +465,6 @@ function locationMatchTrace(location, trace) {
     trace.lineNumber == location.line &&
     trace.columnNumber == location.column
   );
-}
-
-
-
-
-
-
-
-
-
-
-function isTraceMatchingSearch(trace, searchValueOrGrip) {
-  const argumentValues = trace[TRACER_FIELDS_INDEXES.ENTER_ARGS];
-  if (!argumentValues) {
-    return false;
-  }
-  if (searchValueOrGrip) {
-    const { actor } = searchValueOrGrip;
-    if (actor) {
-      return argumentValues.some(v => v.actor === searchValueOrGrip.actor);
-    }
-  }
-  
-  if (searchValueOrGrip === null) {
-    return argumentValues.some(v => v?.type == "null");
-  } else if (searchValueOrGrip === undefined) {
-    return argumentValues.some(v => v?.type == "undefined");
-  }
-  return argumentValues.some(v => v === searchValueOrGrip);
 }
 
 

@@ -12,7 +12,6 @@ import {
   button,
   footer,
 } from "devtools/client/shared/vendor/react-dom-factories";
-import SearchInput from "../shared/SearchInput";
 import EventListeners from "../shared/EventListeners";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import {
@@ -27,23 +26,11 @@ import {
   getIsCurrentlyTracing,
   getRuntimeVersions,
   getTraceHighlightedDomEvents,
-  getTraceMatchingSearchTraces,
-  getTraceMatchingSearchException,
-  getTraceMatchingSearchValueOrGrip,
-  getIsTracingValues,
 } from "../../selectors/index";
-import { NO_SEARCH_VALUE } from "../../reducers/tracer-frames";
-
-const { throttle } = require("resource://devtools/shared/throttle.js");
 const VirtualizedTree = require("resource://devtools/client/shared/components/VirtualizedTree.js");
 const FrameView = createFactory(
   require("resource://devtools/client/shared/components/Frame.js")
 );
-import Reps from "devtools/client/shared/components/reps/index";
-const {
-  REPS: { Rep },
-  MODE,
-} = Reps;
 const {
   TRACER_FIELDS_INDEXES,
 } = require("resource://devtools/server/actors/tracer.js");
@@ -89,12 +76,6 @@ export class Tracer extends Component {
     this.onSliderClick = this.onSliderClick.bind(this);
     this.onSliderWheel = this.onSliderWheel.bind(this);
     this.resetZoom = this.resetZoom.bind(this);
-
-    
-    this.throttledUpdateSearch = throttle(
-      this.throttledUpdateSearch.bind(this),
-      250
-    );
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
@@ -201,7 +182,7 @@ export class Tracer extends Component {
     }
   }
 
-  renderCallTree() {
+  renderTree() {
     let {
       selectedTraceIndex,
       topTraces,
@@ -750,118 +731,6 @@ export class Tracer extends Component {
     );
   }
 
-  searchInputOnChange = e => {
-    const searchString = e.target.value;
-
-    
-    this.throttledUpdateSearch(searchString);
-  };
-
-  throttledUpdateSearch(searchString) {
-    this.props.searchTraceArguments(searchString);
-  }
-
-  
-
-
-
-
-
-
-  selectNextMatchingTrace = goForward => {
-    const { tracesMatchingSearch, allTraces } = this.props;
-    const selectedTrace = allTraces[this.props.selectedTraceIndex];
-    const currentIndexInMatchingArray =
-      tracesMatchingSearch.indexOf(selectedTrace);
-
-    let nextIndexInMatchingArray;
-    if (goForward) {
-      
-      
-      if (
-        currentIndexInMatchingArray == -1 ||
-        currentIndexInMatchingArray == tracesMatchingSearch.length - 1
-      ) {
-        nextIndexInMatchingArray = 0;
-      } else {
-        nextIndexInMatchingArray = currentIndexInMatchingArray + 1;
-      }
-    } else if (
-      currentIndexInMatchingArray == -1 ||
-      currentIndexInMatchingArray == 0
-    ) {
-      nextIndexInMatchingArray = tracesMatchingSearch.length - 1;
-    } else {
-      nextIndexInMatchingArray = currentIndexInMatchingArray - 1;
-    }
-
-    
-    const nextTraceIndex = allTraces.indexOf(
-      tracesMatchingSearch[nextIndexInMatchingArray]
-    );
-
-    this.props.selectTrace(nextTraceIndex);
-  };
-
-  renderCallTreeSearchInput() {
-    const { tracesMatchingSearch, searchExceptionMessage, searchValueOrGrip } =
-      this.props;
-    return [
-      React.createElement(SearchInput, {
-        
-        
-        count: 2,
-
-        placeholder: `Search for function call argument values ("foo", 42, $0, $("canvas"), …)`,
-        size: "small",
-        showClose: false,
-        onChange: this.searchInputOnChange,
-        onKeyDown: e => {
-          if (e.key == "Enter") {
-            
-            this.selectNextMatchingTrace(!e.shiftKey);
-          }
-        },
-        handlePrev: () => this.selectNextMatchingTrace(false),
-        handleNext: () => this.selectNextMatchingTrace(true),
-      }),
-
-      
-      
-      searchExceptionMessage
-        ? div({ className: "search-exception" }, searchExceptionMessage)
-        : null,
-
-      this.props.allTraces.length && !this.props.traceValues
-        ? div(
-            { className: "search-exception" },
-            "Need to enable tracing values to search for values"
-          )
-        : null,
-
-      
-      
-      this.props.traceValues && searchValueOrGrip != NO_SEARCH_VALUE
-        ? div(
-            { className: "search-value" },
-            "Searching for:",
-            Rep({
-              object: searchValueOrGrip,
-              mode: MODE.SHORT,
-              onDOMNodeClick: () =>
-                this.props.openElementInInspector(searchValueOrGrip),
-              onInspectIconClick: () =>
-                this.props.openElementInInspector(searchValueOrGrip),
-              onDOMNodeMouseOver: () =>
-                this.props.highlightDomElement(searchValueOrGrip),
-              onDOMNodeMouseOut: () => this.props.unHighlightDomElement(),
-            }),
-            ` (${tracesMatchingSearch.length} match(es))`
-          )
-        : null,
-    ];
-  }
-
   render() {
     const { runtimeVersions } = this.props;
 
@@ -908,11 +777,7 @@ export class Tracer extends Component {
             id: "tracer-traces",
             title: "Call Traces",
           },
-          div(
-            { className: "call-tree-container" },
-            ...this.renderCallTreeSearchInput(),
-            this.renderCallTree()
-          )
+          this.renderTree()
         ),
         React.createElement(
           TabPanel,
@@ -1032,17 +897,9 @@ const mapStateToProps = state => {
     selectedTraceIndex: getSelectedTraceIndex(state),
     runtimeVersions: getRuntimeVersions(state),
     highlightedDomEvents: getTraceHighlightedDomEvents(state),
-    tracesMatchingSearch: getTraceMatchingSearchTraces(state),
-    searchExceptionMessage: getTraceMatchingSearchException(state),
-    searchValueOrGrip: getTraceMatchingSearchValueOrGrip(state),
-    traceValues: getIsTracingValues(state),
   };
 };
 
 export default connect(mapStateToProps, {
   selectTrace: actions.selectTrace,
-  searchTraceArguments: actions.searchTraceArguments,
-  openElementInInspector: actions.openElementInInspectorCommand,
-  highlightDomElement: actions.highlightDomElement,
-  unHighlightDomElement: actions.unHighlightDomElement,
 })(Tracer);

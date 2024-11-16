@@ -909,8 +909,7 @@ class WebConsoleActor extends Actor {
             evalInfo,
             input,
             request.eager,
-            mapped,
-            request.evalInTracer
+            mapped
           );
           resolve(result);
         } catch (err) {
@@ -921,7 +920,7 @@ class WebConsoleActor extends Actor {
   }
 
   
-  prepareEvaluationResult(evalInfo, input, eager, mapped, evalInTracer) {
+  prepareEvaluationResult(evalInfo, input, eager, mapped) {
     const evalResult = evalInfo.result;
     const helperResult = evalInfo.helperResult;
 
@@ -1041,6 +1040,7 @@ class WebConsoleActor extends Actor {
         }
       }
     }
+
     
     
     let resultGrip;
@@ -1048,10 +1048,7 @@ class WebConsoleActor extends Actor {
       try {
         const objectActor =
           this.targetActor.threadActor.getThreadLifetimeObject(result);
-        if (evalInTracer) {
-          const tracerActor = this.targetActor.getTargetScopedActor("tracer");
-          resultGrip = tracerActor.createValueGrip(result);
-        } else if (objectActor) {
+        if (objectActor) {
           resultGrip = this.targetActor.threadActor.createValueGrip(result);
         } else {
           resultGrip = this.createValueGrip(result);
