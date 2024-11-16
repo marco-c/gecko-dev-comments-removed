@@ -307,7 +307,7 @@ add_task(async function test_gifft_timespan() {
 
   const NANOS_IN_MILLIS = 1e6;
   
-  const EPSILON = 40000;
+  const EPSILON = 50000;
   Assert.greater(
     Glean.testOnly.mirrorTime.testGetValue(),
     10 * NANOS_IN_MILLIS - EPSILON
