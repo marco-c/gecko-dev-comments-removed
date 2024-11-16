@@ -1470,6 +1470,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "1898992",
+    platform: "all",
+    domain: "asp.attenix.co.il",
+    bug: "1898992",
+    config: {
+      matches: ["*://asp.attenix.co.il/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
