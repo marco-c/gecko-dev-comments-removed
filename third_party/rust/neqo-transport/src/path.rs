@@ -718,7 +718,7 @@ impl Path {
         
         let tos = self.tos();
         self.ecn_info.on_packet_sent(stats);
-        Datagram::new(self.local, self.remote, tos, payload.into())
+        Datagram::new(self.local, self.remote, tos, payload)
     }
 
     

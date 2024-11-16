@@ -58,27 +58,27 @@ pub fn connect(client: &mut Connection, server: &mut Server) -> ConnectionRef {
     server.set_validation(ValidateAddress::Never);
 
     assert_eq!(*client.state(), State::Init);
-    let out = client.process_output(now()); 
+    let out = client.process(None, now()); 
     assert!(out.as_dgram_ref().is_some());
-    let out = server.process(out.dgram(), now()); 
+    let out = server.process(out.as_dgram_ref(), now()); 
     assert!(out.as_dgram_ref().is_some());
 
     
-    let out = client.process(out.dgram(), now());
+    let out = client.process(out.as_dgram_ref(), now());
     assert!(out.as_dgram_ref().is_some()); 
-    let out = server.process(out.dgram(), now());
+    let out = server.process(out.as_dgram_ref(), now());
     assert!(out.as_dgram_ref().is_none()); 
 
     
     client.authenticated(AuthenticationStatus::Ok, now());
-    let out = client.process_output(now());
+    let out = client.process(None, now());
     assert!(out.as_dgram_ref().is_some());
     assert_eq!(*client.state(), State::Connected);
-    let out = server.process(out.dgram(), now());
+    let out = server.process(out.as_dgram_ref(), now());
     assert!(out.as_dgram_ref().is_some()); 
 
     
-    let out = client.process(out.dgram(), now());
+    let out = client.process(out.as_dgram_ref(), now());
     assert!(out.as_dgram_ref().is_none());
     assert_eq!(*client.state(), State::Confirmed);
 
@@ -105,14 +105,14 @@ pub fn generate_ticket(server: &mut Server) -> ResumptionToken {
     let mut server_conn = connect(&mut client, server);
 
     server_conn.borrow_mut().send_ticket(now(), &[]).unwrap();
-    let out = server.process_output(now());
-    client.process_input(out.dgram().unwrap(), now()); 
+    let out = server.process(None, now());
+    client.process_input(out.as_dgram_ref().unwrap(), now()); 
     let ticket = find_ticket(&mut client);
 
     
     client.close(now(), 0, "got a ticket");
     let out = client.process_output(now());
-    mem::drop(server.process(out.dgram(), now()));
+    mem::drop(server.process(out.as_dgram_ref(), now()));
     
     assert_eq!(server.active_connections().len(), 1);
     ticket
