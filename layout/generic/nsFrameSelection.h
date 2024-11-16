@@ -615,17 +615,6 @@ class nsFrameSelection final {
 
 
 
-
-
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult IntraParagraphMove(bool aForward,
-                                                          bool aExtend);
-
-  
-
-
-
-
   template <typename RangeType>
   MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
   CreateRangeExtendedToNextGraphemeClusterBoundary() {

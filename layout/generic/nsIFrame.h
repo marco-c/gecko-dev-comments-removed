@@ -197,10 +197,8 @@ enum nsSelectionAmount {
 
   eSelectBeginLine = 5,
   eSelectEndLine = 6,
-  eSelectNoAmount = 7,   
-  eSelectParagraph = 8,  
-  eSelectBeginParagraph = 9,
-  eSelectEndParagraph = 10
+  eSelectNoAmount = 7,  
+  eSelectParagraph = 8  
 };
 
 
@@ -4045,7 +4043,6 @@ class nsIFrame : public nsQueryFrame {
   nsresult PeekOffsetForWord(mozilla::PeekOffsetStruct* aPos, int32_t aOffset);
   nsresult PeekOffsetForLine(mozilla::PeekOffsetStruct* aPos);
   nsresult PeekOffsetForLineEdge(mozilla::PeekOffsetStruct* aPos);
-  nsresult PeekOffsetForParagraphEdge(mozilla::PeekOffsetStruct* aPos);
 
   
 
