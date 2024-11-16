@@ -820,6 +820,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   bool mIgnoreCacheEntry{false};
+  bool mAllowRCWN{true};
   
   
   mozilla::Mutex mRCWNLock MOZ_UNANNOTATED{"nsHttpChannel.mRCWNLock"};

@@ -428,6 +428,11 @@ nsresult EarlyHintPreloader::OpenChannel(
 
   PriorizeAsPreload();
 
+  if (nsCOMPtr<nsIRaceCacheWithNetwork> rcwn = do_QueryInterface(httpChannel)) {
+    
+    rcwn->SetAllowRacing(false);
+  }
+
   rv = mChannel->AsyncOpen(mParentListener);
   if (NS_FAILED(rv)) {
     mParentListener = nullptr;
