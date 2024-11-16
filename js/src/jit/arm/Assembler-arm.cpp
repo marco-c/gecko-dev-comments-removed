@@ -1784,6 +1784,15 @@ BufferOffset Assembler::as_csdb() {
 
 
 
+BufferOffset Assembler::as_yield() {
+  
+  
+  
+  return writeInst(0xe320f001);
+}
+
+
+
 
 BufferOffset Assembler::as_bx(Register r, Condition c) {
   BufferOffset ret = writeInst(((int)c) | OpBx | r.code());

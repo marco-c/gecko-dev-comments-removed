@@ -1556,6 +1556,11 @@ class Assembler : public AssemblerShared {
   
 
   
+  BufferOffset as_yield();
+
+  
+
+  
   BufferOffset as_bx(Register r, Condition c = Always);
 
   

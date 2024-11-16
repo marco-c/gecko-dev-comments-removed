@@ -595,6 +595,9 @@ class Instruction {
   inline bool IsNopType1() const { return Bits(24, 0) == 0x0120F000; }
 
   
+  inline bool IsYieldType1() const { return Bits(24, 0) == 0x0120F001; }
+
+  
   inline bool IsCsdbType1() const { return Bits(24, 0) == 0x0120F014; }
 
   

@@ -293,6 +293,9 @@ class SimInstruction {
   inline bool isNopType1() const { return bits(24, 0) == 0x0120F000; }
 
   
+  inline bool isYieldType1() const { return bits(24, 0) == 0x0120F001; }
+
+  
   inline bool isCsdbType1() const { return bits(24, 0) == 0x0120F014; }
 
   
@@ -2861,6 +2864,8 @@ void Simulator::decodeType01(SimInstruction* instr) {
     }
   } else if ((type == 1) && instr->isNopType1()) {
     
+  } else if ((type == 1) && instr->isYieldType1()) {
+    AtomicOperations::pause();
   } else if ((type == 1) && instr->isCsdbType1()) {
     
   } else {
