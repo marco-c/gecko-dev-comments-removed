@@ -489,7 +489,6 @@ void MouseScrollHandler::ProcessNativeMouseWheelMessage(nsWindow* aWidget,
 
   
   
-  
   if (WinUtils::IsOurProcessWindow(underCursorWnd)) {
     nsWindow* destWindow = WinUtils::GetNSWindowPtr(underCursorWnd);
     if (!destWindow) {
@@ -535,24 +534,9 @@ void MouseScrollHandler::ProcessNativeMouseWheelMessage(nsWindow* aWidget,
 
   
   
-  
-  HWND pluginWnd = WinUtils::FindOurProcessWindow(underCursorWnd);
-  if (!pluginWnd) {
-    
-    
-    
-    MOZ_LOG(gMouseScrollLog, LogLevel::Info,
-            ("MouseScroll::ProcessNativeMouseWheelMessage: "
-             "Our window is not found under the cursor"));
-    return;
-  }
-
-  
-  MOZ_LOG(
-      gMouseScrollLog, LogLevel::Info,
-      ("MouseScroll::ProcessNativeMouseWheelMessage: Succeeded, "
-       "Redirecting the message to a window which is a plugin child window"));
-  ::PostMessage(underCursorWnd, aMessage, aWParam, aLParam);
+  MOZ_LOG(gMouseScrollLog, LogLevel::Info,
+          ("MouseScroll::ProcessNativeMouseWheelMessage: "
+           "Our window is not found under the cursor"));
 }
 
 bool MouseScrollHandler::ProcessNativeScrollMessage(nsWindow* aWidget,
