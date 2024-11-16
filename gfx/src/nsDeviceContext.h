@@ -278,6 +278,9 @@ class nsDeviceContext final {
       bool aWantReferenceContext);
 
   void SetDPI();
+
+  
+  
   already_AddRefed<mozilla::widget::Screen> FindScreen();
 
   
