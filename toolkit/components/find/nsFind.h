@@ -12,6 +12,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINode.h"
+#include "mozilla/intl/Segmenter.h"
 
 #define NS_FIND_CONTRACTID "@mozilla.org/embedcomp/rangefind;1"
 
@@ -51,7 +52,7 @@ class nsFind : public nsIFind {
 
   bool mWordStartBounded = false;
   bool mWordEndBounded = false;
-
+  mozilla::intl::WordBreakIteratorUtf16 mWordBreakIter{nullptr};
   struct State;
   class StateRestorer;
 
@@ -63,7 +64,7 @@ class nsFind : public nsIFind {
   
   
   
-  bool BreakInBetween(char32_t x, char32_t y) const;
+  bool BreakInBetween(char32_t x, char32_t y);
 
   
   
