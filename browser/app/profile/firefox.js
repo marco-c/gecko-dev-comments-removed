@@ -1912,6 +1912,12 @@ pref("browser.newtabpage.activity-stream.discoverystream.contextualContent.local
 
 pref("browser.newtabpage.activity-stream.discoverystream.contextualContent.region-content-config", "");
 
+
+pref("browser.newtabpage.activity-stream.discoverystream.sections.locale-content-config", "en-US,en-CA");
+
+pref("browser.newtabpage.activity-stream.discoverystream.sections.region-content-config", "");
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.endpoint", "merino.services.mozilla.com");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "US,CA,DE,GB,FR,IT,ES");
