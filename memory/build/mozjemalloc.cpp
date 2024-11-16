@@ -946,20 +946,33 @@ class AddressRadixTree {
                 "AddressRadixTree parameters don't work out");
 
   Mutex mLock MOZ_UNANNOTATED;
+  
+  
   void** mRoot;
 
  public:
-  bool Init() MOZ_REQUIRES(gInitLock);
+  bool Init() MOZ_REQUIRES(gInitLock) MOZ_EXCLUDES(mLock);
 
-  inline void* Get(void* aAddr);
+  inline void* Get(void* aAddr) MOZ_EXCLUDES(mLock);
 
   
-  inline bool Set(void* aAddr, void* aValue);
+  inline bool Set(void* aAddr, void* aValue) MOZ_EXCLUDES(mLock);
 
-  inline bool Unset(void* aAddr) { return Set(aAddr, nullptr); }
+  inline bool Unset(void* aAddr) MOZ_EXCLUDES(mLock) {
+    return Set(aAddr, nullptr);
+  }
 
  private:
-  inline void** GetSlot(void* aAddr, bool aCreate = false);
+  
+  
+  inline void** GetSlotInternal(void* aAddr, bool aCreate);
+
+  inline void** GetSlotIfExists(void* aAddr) MOZ_EXCLUDES(mLock) {
+    return GetSlotInternal(aAddr, false);
+  }
+  inline void** GetOrCreateSlot(void* aAddr) MOZ_REQUIRES(mLock) {
+    return GetSlotInternal(aAddr, true);
+  }
 };
 
 
@@ -2203,8 +2216,8 @@ bool AddressRadixTree<Bits>::Init() {
 }
 
 template <size_t Bits>
-void** AddressRadixTree<Bits>::GetSlot(void* aKey, bool aCreate) {
-  uintptr_t key = reinterpret_cast<uintptr_t>(aKey);
+void** AddressRadixTree<Bits>::GetSlotInternal(void* aAddr, bool aCreate) {
+  uintptr_t key = reinterpret_cast<uintptr_t>(aAddr);
   uintptr_t subkey;
   unsigned i, lshift, height, bits;
   void** node;
@@ -2234,10 +2247,10 @@ void** AddressRadixTree<Bits>::GetSlot(void* aKey, bool aCreate) {
 }
 
 template <size_t Bits>
-void* AddressRadixTree<Bits>::Get(void* aKey) {
+void* AddressRadixTree<Bits>::Get(void* aAddr) {
   void* ret = nullptr;
 
-  void** slot = GetSlot(aKey);
+  void** slot = GetSlotIfExists(aAddr);
 
   if (slot) {
     ret = *slot;
@@ -2254,7 +2267,7 @@ void* AddressRadixTree<Bits>::Get(void* aKey) {
   
   if (!slot) {
     
-    slot = GetSlot(aKey);
+    slot = GetSlotInternal(aAddr, false);
   }
   if (slot) {
     
@@ -2268,9 +2281,9 @@ void* AddressRadixTree<Bits>::Get(void* aKey) {
 }
 
 template <size_t Bits>
-bool AddressRadixTree<Bits>::Set(void* aKey, void* aValue) {
+bool AddressRadixTree<Bits>::Set(void* aAddr, void* aValue) {
   MutexAutoLock lock(mLock);
-  void** slot = GetSlot(aKey,  true);
+  void** slot = GetOrCreateSlot(aAddr);
   if (slot) {
     *slot = aValue;
   }
