@@ -1488,6 +1488,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "1899060",
+    platform: "desktop",
+    domain: "wbte.drcedirect.com",
+    bug: "1899060",
+    config: {
+      matches: ["*://wbte.drcedirect.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
