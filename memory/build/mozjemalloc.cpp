@@ -2778,7 +2778,7 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
     chunk->map[run_ind].bits |= aSize;
   }
 
-  if (chunk->ndirty == 0 && old_ndirty > 0) {
+  if (chunk->ndirty == 0 && old_ndirty > 0 && !chunk->mIsPurging) {
     mChunksDirty.Remove(chunk);
   }
   return true;
@@ -3075,7 +3075,8 @@ bool arena_t::Purge(bool aForce) {
     for (auto chunk : mChunksDirty.iter()) {
       ndirty += chunk->ndirty;
     }
-    MOZ_ASSERT(ndirty == mNumDirty);
+    
+    MOZ_ASSERT(ndirty <= mNumDirty);
 #endif
 
     if (mNumDirty <= (aForce ? 0 : EffectiveMaxDirty() >> 1)) {
@@ -3085,8 +3086,15 @@ bool arena_t::Purge(bool aForce) {
     
     
     chunk = mChunksDirty.Last();
-    MOZ_DIAGNOSTIC_ASSERT(chunk);
+    if (!chunk) {
+      
+      
+      
+      return false;
+    }
+
     MOZ_ASSERT(chunk->ndirty > 0);
+    mChunksDirty.Remove(chunk);
 
 #ifdef MALLOC_DECOMMIT
     const size_t free_operation = CHUNK_MAP_DECOMMITTED;
@@ -3153,20 +3161,26 @@ bool arena_t::Purge(bool aForce) {
 
     mStats.committed -= npages;
 
-    if (chunk->ndirty == 0) {
-      mChunksDirty.Remove(chunk);
-    }
     if (chunk->mDying) {
       
       
+      
+      
+      mNumDirty -= chunk->ndirty;
+      mStats.committed -= chunk->ndirty;
+      chunk->ndirty = 0;
+
       DebugOnly<bool> release_chunk = RemoveChunk(chunk);
       
       
       MOZ_ASSERT(release_chunk);
       chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
 
-#ifdef MALLOC_DOUBLE_PURGE
     } else {
+      if (chunk->ndirty != 0) {
+        mChunksDirty.Insert(chunk);
+      }
+#ifdef MALLOC_DOUBLE_PURGE
       
       
       if (mChunksMAdvised.ElementProbablyInList(chunk)) {
@@ -3206,7 +3220,7 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
       chunk->map[run_ind + i].bits = CHUNK_MAP_DIRTY;
     }
 
-    if (chunk->ndirty == 0) {
+    if (chunk->ndirty == 0 && !chunk->mIsPurging) {
       mChunksDirty.Insert(chunk);
     }
     chunk->ndirty += run_pages;
