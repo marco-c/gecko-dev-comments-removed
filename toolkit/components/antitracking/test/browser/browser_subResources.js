@@ -22,9 +22,6 @@ add_task(async function () {
       ],
       
       ["network.cookie.sameSite.laxByDefault", false],
-      
-      
-      ["privacy.restrict3rdpartystorage.heuristic.window_open", true],
     ],
   });
 
