@@ -993,17 +993,9 @@ void ReflowInput::ComputeAbsPosInlineAutoMargin(nscoord aAvailMarginSpace,
     if (aIsMarginIEndAuto) {
       
       aMargin.IEnd(aContainingBlockWM) = aAvailMarginSpace;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      aOffsets.IEnd(aContainingBlockWM) += aAvailMarginSpace;
     }
+    
+    
   }
 }
 
@@ -1029,12 +1021,8 @@ void ReflowInput::ComputeAbsPosBlockAutoMargin(nscoord aAvailMarginSpace,
     if (aIsMarginBEndAuto) {
       
       aMargin.BEnd(aContainingBlockWM) = aAvailMarginSpace;
-    } else {
-      
-      
-      
-      aOffsets.BEnd(aContainingBlockWM) += aAvailMarginSpace;
     }
+    
   }
 }
 
