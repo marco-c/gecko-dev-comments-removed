@@ -4,7 +4,10 @@
 
 
 #include <windows.h>
+#include <winreg.h>
 #include <wrl.h>
+#include <powerbase.h>
+#include <cfgmgr32.h>
 
 #include "nsServiceManagerUtils.h"
 
@@ -29,6 +32,11 @@
 #include "nsPIDOMWindow.h"
 #include "nsWindowGfx.h"
 #include "Units.h"
+#include "nsWindowsHelpers.h"
+#include "WinRegistry.h"
+#include "WinUtils.h"
+
+mozilla::LazyLogModule gTabletModeLog("TabletMode");
 
 
 
@@ -188,8 +196,10 @@ IUISettings5 : public IInspectable {
 
 using namespace mozilla;
 
+
+
 enum class TabletModeState : uint8_t { Unknown, Off, On };
-static TabletModeState sInTabletModeState;
+static TabletModeState sInTabletModeState = TabletModeState::Unknown;
 
 WindowsUIUtils::WindowsUIUtils() = default;
 WindowsUIUtils::~WindowsUIUtils() = default;
@@ -282,17 +292,37 @@ WindowsUIUtils::SetWindowIconNoData(mozIDOMWindowProxy* aWindow) {
   return NS_OK;
 }
 
-bool WindowsUIUtils::GetInTabletMode() {
+bool WindowsUIUtils::GetInWin10TabletMode() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  if (IsWin11OrLater()) {
+    return false;
+  }
   if (sInTabletModeState == TabletModeState::Unknown) {
-    UpdateInTabletMode();
+    UpdateInWin10TabletMode();
+  }
+  return sInTabletModeState == TabletModeState::On;
+}
+
+bool WindowsUIUtils::GetInWin11TabletMode() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  if (!IsWin11OrLater()) {
+    return false;
+  }
+  if (sInTabletModeState == TabletModeState::Unknown) {
+    UpdateInWin11TabletMode();
   }
   return sInTabletModeState == TabletModeState::On;
 }
 
 NS_IMETHODIMP
-WindowsUIUtils::GetInTabletMode(bool* aResult) {
-  *aResult = GetInTabletMode();
+WindowsUIUtils::GetInWin10TabletMode(bool* aResult) {
+  *aResult = GetInWin10TabletMode();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WindowsUIUtils::GetInWin11TabletMode(bool* aResult) {
+  *aResult = GetInWin11TabletMode();
   return NS_OK;
 }
 
@@ -543,7 +573,18 @@ bool WindowsUIUtils::ComputeTransparencyEffects() {
 #endif
 }
 
-void WindowsUIUtils::UpdateInTabletMode() {
+void WindowsUIUtils::UpdateInWin10TabletMode() {
+  if (IsWin11OrLater()) {
+    
+    
+    
+    return;
+  }
+
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
 #ifndef __MINGW32__
   nsresult rv;
   nsCOMPtr<nsIWindowMediator> winMediator(
@@ -592,6 +633,7 @@ void WindowsUIUtils::UpdateInTabletMode() {
   TabletModeState oldTabletModeState = sInTabletModeState;
   sInTabletModeState = mode == UserInteractionMode_Touch ? TabletModeState::On
                                                          : TabletModeState::Off;
+
   if (sInTabletModeState != oldTabletModeState) {
     nsCOMPtr<nsIObserverService> observerService =
         mozilla::services::GetObserverService();
@@ -601,6 +643,199 @@ void WindowsUIUtils::UpdateInTabletMode() {
                                          : u"normal-mode");
   }
 #endif
+}
+
+
+
+
+static Maybe<bool> sIsTabletCapable = Nothing();
+
+
+
+
+
+
+#define MOZ_DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+  EXTERN_C const GUID DECLSPEC_SELECTANY name = {                        \
+      l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
+ MOZ_DEFINE_GUID(
+    MOZ_GUID_GPIOBUTTONS_LAPTOPSLATE_INTERFACE, 0x317fc439, 0x3f77, 0x41c8,
+    0xb0, 0x9e, 0x08, 0xad, 0x63, 0x27, 0x2a, 0xa3);
+
+void WindowsUIUtils::UpdateInWin11TabletMode() {
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
+  if (!IsWin11OrLater()) {
+    
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (sIsTabletCapable.isNothing()) {
+    bool const heuristic = ([]() -> bool {
+      
+      
+      switch (StaticPrefs::widget_windows_tablet_detection_override()) {
+        case -1:
+          MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                  ("TCH: override detected (-1)"));
+          return false;
+        case 1:
+          MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                  ("TCH: override detected (+1)"));
+          return true;
+        default:
+          break;
+      }
+
+      
+      
+      
+      if (::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) != 0) {
+        MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                ("TCH: SM_CONVERTIBLESLATEMODE != 0"));
+        return true;
+      }
+
+      
+      if (GetSystemMetrics(SM_MAXIMUMTOUCHES) == 0) {
+        MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                ("TCH: SM_MAXIMUMTOUCHES != 0"));
+        return false;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      namespace Reg = mozilla::widget::WinRegistry;
+      Reg::Key key(HKEY_LOCAL_MACHINE,
+                   uR"(System\CurrentControlSet\Control\PriorityControl)"_ns,
+                   Reg::KeyMode::QueryValue);
+      if (key && key.GetValueType(u"ConvertibleSlateMode"_ns) !=
+                     Reg::ValueType::None) {
+        MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                ("TCH: 'ConvertibleSlateMode' found"));
+        return true;
+      }
+
+      
+      
+      
+      
+      bool const hasTabletGpioPin = [&]() {
+        ULONG size = 0;
+        GUID guid{MOZ_GUID_GPIOBUTTONS_LAPTOPSLATE_INTERFACE};
+
+        CONFIGRET const err = ::CM_Get_Device_Interface_List_SizeW(
+            &size, &guid, nullptr, CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+
+        
+        
+        
+        
+        
+        
+        
+        return err == CR_SUCCESS && size > 1;
+      }();
+      if (hasTabletGpioPin) {
+        MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                ("TCH: relevant GPIO interface found"));
+        return true;
+      }
+
+      
+      
+      AR_STATE rotation_state;
+      if (HRESULT hr = ::GetAutoRotationState(&rotation_state); !FAILED(hr)) {
+        if ((rotation_state & (AR_NOT_SUPPORTED | AR_LAPTOP | AR_NOSENSOR)) !=
+            0) {
+          MOZ_LOG(gTabletModeLog, LogLevel::Info, ("TCH: no rotation sensor"));
+          return false;
+        }
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      POWER_PLATFORM_ROLE const role =
+          mozilla::widget::WinUtils::GetPowerPlatformRole();
+      if (role == PlatformRoleSlate) {
+        MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                ("TCH: role == PlatformRoleSlate"));
+        return true;
+      }
+
+      
+      
+      MOZ_LOG(gTabletModeLog, LogLevel::Info,
+              ("TCH: no indication; falling through"));
+      return false;
+    })();
+
+    MOZ_LOG(gTabletModeLog, LogLevel::Info,
+            ("tablet-capability heuristic: %s", heuristic ? "true" : "false"));
+
+    sIsTabletCapable = Some(heuristic);
+    
+    
+    if (!heuristic) {
+      sInTabletModeState = TabletModeState::Off;
+      return;
+    }
+  } else if (sIsTabletCapable == Some(false)) {
+    
+    
+    
+    
+    
+    
+    
+    MOZ_LOG(gTabletModeLog, LogLevel::Warning,
+            ("recv'd update signal after false heuristic run; reversing"));
+    sIsTabletCapable = Some(true);
+  }
+
+  
+  MOZ_ASSERT(sIsTabletCapable == Some(true));
+
+  TabletModeState const oldState = sInTabletModeState;
+  bool const isTableting =
+      ::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) == 0 ;
+  sInTabletModeState = isTableting ? TabletModeState::On : TabletModeState::Off;
 }
 
 #ifndef __MINGW32__

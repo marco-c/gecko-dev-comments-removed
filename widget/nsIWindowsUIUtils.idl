@@ -25,7 +25,21 @@ interface nsIWindowsUIUtils : nsISupports
 
 
 
-  readonly attribute boolean inTabletMode;
+
+
+
+
+  readonly attribute boolean inWin10TabletMode;
+
+  
+
+
+
+
+
+
+
+  readonly attribute boolean inWin11TabletMode;
 
   
 
