@@ -11,15 +11,6 @@ const { ResetProfile } = ChromeUtils.importESModule(
 
 var defaultToReset = false;
 
-function restartApp() {
-  appStartup.quit(appStartup.eForceQuit | appStartup.eRestart);
-}
-
-function resetProfile() {
-  
-  Services.env.set("MOZ_RESET_PROFILE_RESTART", "1");
-}
-
 function showResetDialog() {
   
   let retVals = {
@@ -34,8 +25,8 @@ function showResetDialog() {
   if (!retVals.reset) {
     return;
   }
-  resetProfile();
-  restartApp();
+
+  ResetProfile.doReset();
 }
 
 function onDefaultButton(event) {
@@ -43,8 +34,7 @@ function onDefaultButton(event) {
     
     event.preventDefault();
     
-    resetProfile();
-    restartApp();
+    ResetProfile.doReset();
   }
   
   
