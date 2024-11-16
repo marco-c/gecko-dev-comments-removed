@@ -203,9 +203,9 @@ define(function (require, exports, module) {
             
             
             const {
-              objectInspector,
               MODE,
             } = require("resource://devtools/client/shared/components/reps/index.js");
+            const objectInspector = require("resource://devtools/client/shared/components/object-inspector/index.js");
             childElement = createElement(objectInspector.ObjectInspector, {
               ...props,
               mode: props.mode == MODE.LONG ? MODE.SHORT : MODE.TINY,
