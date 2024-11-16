@@ -67,13 +67,12 @@ add_task(async function test_extension_adding_engine() {
     baseURI.resolve("foo.ico"),
     "16x16 icon path matches"
   );
-  
-  
-  
-  
-  
-  
-  
+
+  equal(
+    await engine.getIconURL(32),
+    baseURI.resolve("foo32.ico"),
+    "32x32 icon path matches"
+  );
 
   let expectedSuggestURL = kSearchSuggestURL.replace(
     "{searchTerms}",
