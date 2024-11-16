@@ -11,6 +11,8 @@
 #ifndef gc_ArenaList_h
 #define gc_ArenaList_h
 
+#include <utility>
+
 #include "ds/SinglyLinkedList.h"
 #include "gc/AllocKind.h"
 #include "gc/Memory.h"
@@ -34,6 +36,8 @@ struct Statistics;
 namespace gc {
 
 class Arena;
+class ArenaIter;
+class ArenaIterInGC;
 class AutoGatherSweptArenas;
 class BackgroundUnmarkTask;
 struct FinalizePhase;
@@ -60,83 +64,33 @@ class TenuringTracer;
 
 
 
-class ArenaList {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Arena* head_;
-  Arena** cursorp_;
 
-  
-  inline void moveFrom(ArenaList& other);
 
+
+
+
+
+
+
+
+
+
+
+
+
+class ArenaList : public SinglyLinkedList<Arena> {
  public:
-  inline ArenaList();
-  inline ArenaList(ArenaList&& other);
-  inline ~ArenaList();
-
-  inline ArenaList& operator=(ArenaList&& other);
-
-  
-  
-  ArenaList(const ArenaList& other) = delete;
-  ArenaList& operator=(const ArenaList& other) = delete;
-
-  inline ArenaList(Arena* head, Arena* arenaBeforeCursor);
-
-  inline void check() const;
-
-  inline void clear();
-  inline bool isEmpty() const;
-
-  
-  inline Arena* head() const;
-
-  inline bool isCursorAtHead() const;
-  inline bool isCursorAtEnd() const;
-
-  
-  inline Arena* arenaAfterCursor() const;
-
-  
-  inline Arena* takeNextArena();
+  inline bool hasNonFullArenas() const;
 
   
   
   
-  
-  inline void insertAtCursor(Arena* a);
+  inline Arena* takeInitialNonFullArena();
 
-  
-  inline void insertBeforeCursor(Arena* a);
+  std::pair<Arena*, Arena*> pickArenasToRelocate(AllocKind kind,
+                                                 size_t& arenaTotalOut,
+                                                 size_t& relocTotalOut);
 
-  
-  
-  inline ArenaList& insertListWithCursorAtEnd(ArenaList& other);
-
-  inline Arena* takeFirstArena();
-
-  Arena* removeRemainingArenas(Arena** arenap);
-  Arena** pickArenasToRelocate(size_t& arenaTotalOut, size_t& relocTotalOut);
   Arena* relocateArenas(Arena* toRelocate, Arena* relocated,
                         JS::SliceBudget& sliceBudget,
                         gcstats::Statistics& stats);
@@ -237,7 +191,7 @@ class MOZ_RAII AutoGatherSweptArenas {
   AutoGatherSweptArenas(JS::Zone* zone, AllocKind kind);
   ~AutoGatherSweptArenas();
 
-  Arena* sweptArenas() const;
+  ArenaList& sweptArenas() { return linked; }
 };
 
 enum class ShouldCheckThresholds {
@@ -325,7 +279,6 @@ class ArenaLists {
 
   inline Arena* getFirstArena(AllocKind thingKind) const;
   inline Arena* getFirstCollectingArena(AllocKind thingKind) const;
-  inline Arena* getArenaAfterCursor(AllocKind thingKind) const;
 
   inline bool arenaListsAreEmpty() const;
 
@@ -391,6 +344,8 @@ class ArenaLists {
                                   ShouldCheckThresholds checkThresholds,
                                   StallAndRetry stallAndRetry);
 
+  friend class ArenaIter;
+  friend class ArenaIterInGC;
   friend class BackgroundUnmarkTask;
   friend class GCRuntime;
   friend class js::Nursery;
