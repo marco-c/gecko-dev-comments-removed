@@ -61,6 +61,11 @@ NS_IMPL_ADDREF_INHERITED(Performance, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Performance, DOMEventTargetHelper)
 
 
+
+
+static FILE* sMarkerFile = nullptr;
+
+
 already_AddRefed<Performance> Performance::CreateForMainThread(
     nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
     nsDOMNavigationTiming* aDOMTiming, nsITimedChannel* aChannel) {
@@ -524,6 +529,10 @@ DOMHighResTimeStamp Performance::ResolveEndTimeForMeasure(
     }
 
     endTime = start + duration;
+  } else if (aReturnUnclamped) {
+    MOZ_DIAGNOSTIC_ASSERT(sMarkerFile ||
+                          profiler_thread_is_being_profiled_for_markers());
+    endTime = NowUnclamped();
   } else {
     endTime = Now();
   }
@@ -599,19 +608,27 @@ std::pair<TimeStamp, TimeStamp> Performance::GetTimeStampsForMarker(
   return std::make_pair(startTimeStamp, endTimeStamp);
 }
 
-static FILE* MaybeOpenMarkerFile() {
+
+
+
+
+static bool MaybeOpenMarkerFile() {
   if (!getenv("MOZ_USE_PERFORMANCE_MARKER_FILE")) {
-    return nullptr;
+    return false;
+  }
+
+  
+  if (sMarkerFile) {
+    return true;
   }
 
 #ifdef XP_LINUX
   
   
   int fd = open(GetMarkerFilename().c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
-  FILE* markerFile = fdopen(fd, "w+");
-
-  if (!markerFile) {
-    return nullptr;
+  sMarkerFile = fdopen(fd, "w+");
+  if (!sMarkerFile) {
+    return false;
   }
 
   
@@ -633,10 +650,10 @@ static FILE* MaybeOpenMarkerFile() {
   long page_size = sysconf(_SC_PAGESIZE);
   void* mmap_address = mmap(nullptr, page_size, protection, MAP_PRIVATE, fd, 0);
   if (mmap_address == MAP_FAILED) {
-    fclose(markerFile);
-    return nullptr;
+    fclose(sMarkerFile);
+    sMarkerFile = nullptr;
+    return false;
   }
-  return markerFile;
 #else
   
   
@@ -644,8 +661,12 @@ static FILE* MaybeOpenMarkerFile() {
   
   
   
-  return fopen(GetMarkerFilename().c_str(), "w+");
+  sMarkerFile = fopen(GetMarkerFilename().c_str(), "w+");
+  if (!sMarkerFile) {
+    return false;
+  }
 #endif
+  return true;
 }
 
 
@@ -653,8 +674,7 @@ static FILE* MaybeOpenMarkerFile() {
 void Performance::MaybeEmitExternalProfilerMarker(
     const nsAString& aName, Maybe<const PerformanceMeasureOptions&> aOptions,
     Maybe<const nsAString&> aStartMark, const Optional<nsAString>& aEndMark) {
-  static FILE* markerFile = MaybeOpenMarkerFile();
-  if (!markerFile) {
+  if (!MaybeOpenMarkerFile()) {
     return;
   }
 
@@ -688,9 +708,9 @@ void Performance::MaybeEmitExternalProfilerMarker(
   
   
   
-  fprintf(markerFile, "%" PRIu64 " %" PRIu64 " %s\n", rawStart, rawEnd,
+  fprintf(sMarkerFile, "%" PRIu64 " %" PRIu64 " %s\n", rawStart, rawEnd,
           NS_ConvertUTF16toUTF8(aName).get());
-  fflush(markerFile);
+  fflush(sMarkerFile);
 }
 
 already_AddRefed<PerformanceMeasure> Performance::Measure(
