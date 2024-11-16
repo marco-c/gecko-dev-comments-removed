@@ -279,26 +279,6 @@ class OrderedHashTable {
 
 
 
-  template <typename ElementInput>
-  [[nodiscard]] T* getOrAdd(ElementInput&& element) {
-    HashNumber h = prepareHash(Ops::getKey(element));
-    if (Data* e = lookup(Ops::getKey(element), h)) {
-      return &e->element;
-    }
-
-    if (dataLength_ == dataCapacity_ && !rehashOnFull()) {
-      return nullptr;
-    }
-
-    auto [entry, chain] = addEntry(h);
-    new (entry) Data(std::forward<ElementInput>(element), chain);
-    return &entry->element;
-  }
-
-  
-
-
-
 
 
 
@@ -577,30 +557,12 @@ class OrderedHashTable {
     static size_t offsetOfNext() { return offsetof(Range, next); }
   };
 
-  class MutableRange : public Range {
-    MutableRange(OrderedHashTable* ht, Range** listp) : Range(ht, listp) {}
-    friend class OrderedHashTable;
-
-   public:
-    T& front() {
-      MOZ_ASSERT(this->valid());
-      MOZ_ASSERT(!this->empty());
-      return this->ht->data_[this->i].element;
-    }
-
-    void rekeyFront(const Key& k) {
-      MOZ_ASSERT(this->valid());
-      this->ht->rekey(&this->ht->data_[this->i], k);
-    }
-  };
-
   Range all() const {
     
     
     auto* self = const_cast<OrderedHashTable*>(this);
     return Range(self, &self->ranges_);
   }
-  MutableRange mutableAll() { return MutableRange(this, &ranges_); }
 
   void trace(JSTracer* trc) {
     for (uint32_t i = 0; i < dataLength_; i++) {
@@ -988,7 +950,6 @@ class OrderedHashMap {
  public:
   using Lookup = typename Impl::Lookup;
   using Range = typename Impl::Range;
-  using MutableRange = typename Impl::MutableRange;
 
   OrderedHashMap(AllocPolicy ap, mozilla::HashCodeScrambler hcs)
       : impl(std::move(ap), hcs) {}
@@ -996,7 +957,6 @@ class OrderedHashMap {
   uint32_t count() const { return impl.count(); }
   bool has(const Lookup& key) const { return impl.has(key); }
   Range all() const { return impl.all(); }
-  MutableRange mutableAll() { return impl.mutableAll(); }
   const Entry* get(const Lookup& key) const { return impl.get(key); }
   Entry* get(const Lookup& key) { return impl.get(key); }
   bool remove(const Lookup& key, bool* foundp) {
@@ -1013,11 +973,6 @@ class OrderedHashMap {
   template <typename K, typename V>
   [[nodiscard]] bool put(K&& key, V&& value) {
     return impl.put(Entry(std::forward<K>(key), std::forward<V>(value)));
-  }
-
-  template <typename K>
-  [[nodiscard]] Entry* getOrAdd(K&& key) {
-    return impl.getOrAdd(Entry(std::forward<K>(key)));
   }
 
   HashNumber hash(const Lookup& key) const { return impl.prepareHash(key); }
@@ -1098,7 +1053,6 @@ class OrderedHashSet {
  public:
   using Lookup = typename Impl::Lookup;
   using Range = typename Impl::Range;
-  using MutableRange = typename Impl::MutableRange;
 
   explicit OrderedHashSet(AllocPolicy ap, mozilla::HashCodeScrambler hcs)
       : impl(std::move(ap), hcs) {}
@@ -1106,7 +1060,6 @@ class OrderedHashSet {
   uint32_t count() const { return impl.count(); }
   bool has(const Lookup& value) const { return impl.has(value); }
   Range all() const { return impl.all(); }
-  MutableRange mutableAll() { return impl.mutableAll(); }
   template <typename Input>
   [[nodiscard]] bool put(Input&& value) {
     return impl.put(std::forward<Input>(value));
