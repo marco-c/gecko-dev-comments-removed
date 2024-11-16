@@ -457,12 +457,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
 
 
-
-
-
-
-
-  bool remove(const Lookup& l, bool* foundp) {
+  bool remove(const Lookup& l) {
     
     
     
@@ -470,15 +465,9 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     
     Data* e = lookup(l, prepareHash(l));
     if (e == nullptr) {
-      *foundp = false;
-      return true;
+      return false;
     }
 
-    *foundp = true;
-    return remove(e);
-  }
-
-  bool remove(Data* e) {
     MOZ_ASSERT(uint32_t(e - getData()) < getDataCapacity());
 
     uint32_t liveCount = getLiveCount();
@@ -491,11 +480,11 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     forEachRange([this, pos](Range* range) { range->onRemove(obj, pos); });
 
     
+    
+    
     if (hashBuckets() > InitialBuckets &&
         liveCount < getDataLength() * MinDataFill) {
-      if (!rehash(getHashShift() + 1)) {
-        return false;
-      }
+      (void)rehash(getHashShift() + 1);
     }
 
     return true;
@@ -508,11 +497,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
 
 
-
-
-
-
-  [[nodiscard]] bool clear() {
+  void clear() {
     if (getDataLength() != 0) {
       destroyData(getData(), getDataLength());
       setDataLength(0);
@@ -524,10 +509,9 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
       forEachRange([](Range* range) { range->onClear(); });
 
       
+      
       if (buckets > InitialBuckets) {
-        if (!rehash(InitialHashShift)) {
-          return false;
-        }
+        (void)rehash(InitialHashShift);
       }
     }
 
@@ -535,7 +519,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     MOZ_ASSERT(getData());
     MOZ_ASSERT(getDataLength() == 0);
     MOZ_ASSERT(getLiveCount() == 0);
-    return true;
   }
 
   
@@ -1103,10 +1086,8 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
   bool has(const Lookup& key) const { return impl.has(key); }
   Range all() const { return impl.all(); }
   Entry* get(const Lookup& key) { return impl.get(key); }
-  bool remove(const Lookup& key, bool* foundp) {
-    return impl.remove(key, foundp);
-  }
-  [[nodiscard]] bool clear() { return impl.clear(); }
+  bool remove(const Lookup& key) { return impl.remove(key); }
+  void clear() { impl.clear(); }
 
   void destroy(JS::GCContext* gcx) { impl.destroy(gcx); }
 
@@ -1199,10 +1180,8 @@ class MOZ_STACK_CLASS OrderedHashSetImpl {
   [[nodiscard]] bool put(Input&& value) {
     return impl.put(std::forward<Input>(value));
   }
-  bool remove(const Lookup& value, bool* foundp) {
-    return impl.remove(value, foundp);
-  }
-  [[nodiscard]] bool clear() { return impl.clear(); }
+  bool remove(const Lookup& value) { return impl.remove(value); }
+  void clear() { impl.clear(); }
 
   void destroy(JS::GCContext* gcx) { impl.destroy(gcx); }
 
