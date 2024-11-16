@@ -411,11 +411,6 @@ def run_remaining_transforms(config, tasks):
         
         
         ("chunk", None),
-        (
-            "os_integration",
-            lambda t: t.get("attributes", {}).get("unittest_variant")
-            == "os-integration",
-        ),
     )
 
     for task in tasks:
