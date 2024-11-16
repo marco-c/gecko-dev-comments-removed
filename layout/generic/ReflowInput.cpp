@@ -1711,6 +1711,12 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   LogicalSize cbSize = aCBSize;
   LogicalMargin offsets(cbwm);
 
+  
+  
+  
+  
+  
+  
   if (iStartIsAuto) {
     offsets.IStart(cbwm) = 0;
   } else {
