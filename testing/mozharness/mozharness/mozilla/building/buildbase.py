@@ -990,9 +990,8 @@ items from that key's value."
             return False
 
         
-        if self.config.get("platform") == "macosx64":
-            if not self.config.get("build_variant"):
-                return True
+        if self.query_is_nightly():
+            return True
 
         
         if self.config.get("platform") == "android":
