@@ -6827,7 +6827,17 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
                                    : LogicalSize(aWM);
   auto shouldStretch = [](StyleSelfAlignment aAlignment, const nsIFrame* aFrame,
                           bool aStartIsAuto, bool aEndIsAuto) {
-    const bool insetNonAuto = !aStartIsAuto && !aEndIsAuto;
+    if (aStartIsAuto || aEndIsAuto) {
+      
+      
+      
+      
+      
+      
+      
+      
+      return false;
+    }
     
     aAlignment &= ~StyleSelfAlignment::FLAG_BITS;
 
@@ -6838,8 +6848,7 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
     if (aAlignment == StyleSelfAlignment::NORMAL) {
       
       
-      return insetNonAuto && !aFrame->HasReplacedSizing() &&
-             !aFrame->IsTableWrapperFrame();
+      return !aFrame->HasReplacedSizing() && !aFrame->IsTableWrapperFrame();
     }
 
     return false;
