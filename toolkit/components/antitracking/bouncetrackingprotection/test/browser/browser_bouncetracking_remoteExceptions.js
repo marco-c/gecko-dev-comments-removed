@@ -7,6 +7,10 @@ const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
 
+let bounceTrackingProtection = Cc[
+  "@mozilla.org/bounce-tracking-protection;1"
+].getService(Ci.nsIBounceTrackingProtection);
+
 
 const COLLECTION_NAME = "bounce-tracking-protection-exceptions";
 
