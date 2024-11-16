@@ -80,6 +80,7 @@ IPCFuzzController::IPCFuzzController()
   portNameToIndex["PRemoteLazyInputStream"] = 9;
   portNameToIndex["PRemoteWorkerService"] = 10;
   portNameToIndex["PBackgroundLSDatabase"] = 11;
+  portNameToIndex["PRemoteWorkerNonLifeCycleOpController"] = 12;
 
   
   
