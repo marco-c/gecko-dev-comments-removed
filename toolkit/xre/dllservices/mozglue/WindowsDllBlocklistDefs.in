@@ -378,6 +378,10 @@ CHILD_PROCESSES += [
 
     
     DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("TbdgHook.dll", (1, 5, 9, 0)),
+    DllBlocklistEntry("TbdgHook64.dll", (1, 5, 9, 0)),
 ]
 
 GPU_PROCESSES += [
