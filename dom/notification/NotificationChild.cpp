@@ -6,12 +6,54 @@
 
 #include "NotificationChild.h"
 
+#include "WindowGlobalChild.h"
+#include "mozilla/dom/Event.h"
+#include "mozilla/dom/Notification.h"
+#include "nsFocusManager.h"
+
 namespace mozilla::dom::notification {
 
 using IPCResult = mozilla::ipc::IPCResult;
 
-NotificationChild::NotificationChild() = default;
+NotificationChild::NotificationChild(Notification* aNonPersistentNotification,
+                                     WindowGlobalChild* aWindow)
+    : mNonPersistentNotification(aNonPersistentNotification),
+      mWindow(aWindow) {}
 
-IPCResult NotificationChild::RecvNotifyClick() { return IPC_OK(); }
+
+
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY IPCResult NotificationChild::RecvNotifyClick() {
+  
+  
+  
+  bool intoFocus = true;
+  if (mNonPersistentNotification) {
+    RefPtr<Event> event =
+        NS_NewDOMEvent(mNonPersistentNotification, nullptr, nullptr);
+    event->InitEvent(u"click"_ns,  false,  true);
+    event->SetTrusted(true);
+    WantsPopupControlCheck popupControlCheck(event);
+    intoFocus = mNonPersistentNotification->DispatchEvent(
+        *event, CallerType::System, IgnoreErrors());
+  }
+
+  if (!intoFocus) {
+    return IPC_OK();
+  }
+
+  
+  
+  if (mWindow) {
+    if (RefPtr<nsGlobalWindowInner> inner = mWindow->GetWindowGlobal()) {
+      if (inner->IsCurrentInnerWindow()) {
+        nsCOMPtr<nsPIDOMWindowOuter> outer = inner->GetOuterWindow();
+        nsFocusManager::FocusWindow(outer, CallerType::System);
+      }
+    }
+  }
+  return IPC_OK();
+}
 
 }  

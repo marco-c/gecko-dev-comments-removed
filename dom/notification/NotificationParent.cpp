@@ -77,6 +77,13 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 nsresult NotificationParent::FireClickEvent() {
+  if (mScope.IsEmpty()) {
+    if (SendNotifyClick()) {
+      return NS_OK;
+    }
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   

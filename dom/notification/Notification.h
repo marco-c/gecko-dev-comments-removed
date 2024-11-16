@@ -87,7 +87,9 @@ enum class PermissionCheckPurpose : uint8_t;
 
 
 
-class Notification : public DOMEventTargetHelper, public GlobalFreezeObserver {
+class Notification : public DOMEventTargetHelper,
+                     public GlobalFreezeObserver,
+                     public SupportsWeakPtr {
   friend class CloseNotificationRunnable;
   friend class NotificationTask;
   friend class NotificationPermissionRequest;
