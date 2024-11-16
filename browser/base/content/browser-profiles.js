@@ -7,20 +7,10 @@
 
 var gProfiles = {
   async init() {
-    this.createNewProfile = this.createNewProfile.bind(this);
-    this.handleCommand = this.handleCommand.bind(this);
-    this.launchProfile = this.launchProfile.bind(this);
-    this.manageProfiles = this.manageProfiles.bind(this);
-    this.onAppMenuViewHiding = this.onAppMenuViewHiding.bind(this);
-    this.onAppMenuViewShowing = this.onAppMenuViewShowing.bind(this);
-    this.onPopupShowing = this.onPopupShowing.bind(this);
-    this.toggleProfileMenus = this.toggleProfileMenus.bind(this);
-    this.updateView = this.updateView.bind(this);
-
-    this.profiles = [];
-    if (SelectableProfileService.initialized) {
-      this.profiles = await SelectableProfileService.getAllProfiles();
-    }
+    this.handleEvent.bind(this);
+    this.launchProfile.bind(this);
+    this.toggleProfileButtonVisibility.bind(this);
+    this.updateView.bind(this);
 
     this.bundle = Services.strings.createBundle(
       "chrome://browser/locale/browser.properties"
@@ -31,66 +21,35 @@ var gProfiles = {
       "PROFILES_ENABLED",
       "browser.profiles.enabled",
       false,
-      this.toggleProfileMenus,
+      this.toggleProfileButtonVisibility.bind(this),
       () => SelectableProfileService?.isEnabled
     );
 
-    this.toggleProfileMenus();
+    if (!this.PROFILES_ENABLED) {
+      return;
+    }
+
+    await this.toggleProfileButtonVisibility();
   },
 
-  toggleProfileMenus() {
-    let profilesMenu = document.getElementById("profiles-menu");
-    profilesMenu.hidden = !this.PROFILES_ENABLED;
-
-    this.emptyProfilesButton = PanelMultiView.getViewNode(
-      document,
-      "appMenu-empty-profiles-button"
-    );
-    this.profilesButton = PanelMultiView.getViewNode(
+  async toggleProfileButtonVisibility() {
+    let profilesButton = PanelMultiView.getViewNode(
       document,
       "appMenu-profiles-button"
     );
-    this.subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
+    let subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
 
-    this.toggleAppMenuButton();
-  },
+    profilesButton.hidden = !this.PROFILES_ENABLED;
 
-  
-
-
-
-  toggleAppMenuButton() {
     if (!this.PROFILES_ENABLED) {
-      PanelUI.mainView.removeEventListener(
-        "ViewShowing",
-        this.onAppMenuViewShowing
-      );
-      PanelUI.mainView.removeEventListener(
-        "ViewHiding",
-        this.onAppMenuViewHiding
-      );
-    } else {
-      PanelUI.mainView.addEventListener(
-        "ViewShowing",
-        this.onAppMenuViewShowing
-      );
-      PanelUI.mainView.addEventListener("ViewHiding", this.onAppMenuViewHiding);
-    }
-    this.onAppMenuViewShowing();
-  },
-
-  
-
-
-
-  async onAppMenuViewShowing() {
-    if (!this.PROFILES_ENABLED) {
-      this.profilesButton.hidden = true;
-      this.emptyProfilesButton.hidden = true;
+      document.l10n.setAttributes(profilesButton, "appmenu-profiles");
+      profilesButton.classList.remove("subviewbutton-iconic");
+      profilesButton.removeEventListener("command", this);
+      subview.removeEventListener("command", this);
       return;
     }
-    this.profilesButton.addEventListener("command", this.handleCommand);
-    this.subview.addEventListener("command", this.handleCommand);
+    profilesButton.addEventListener("command", this);
+    subview.addEventListener("command", this);
 
     
     
@@ -98,129 +57,33 @@ var gProfiles = {
       ? await SelectableProfileService.getAllProfiles()
       : [];
     if (profiles.length < 2) {
-      this.profilesButton.hidden = true;
-      this.emptyProfilesButton.hidden = false;
-      this.emptyProfilesButton.addEventListener("command", this.handleCommand);
+      profilesButton.classList.remove("subviewbutton-iconic");
+      document.l10n.setAttributes(profilesButton, "appmenu-profiles");
       return;
     }
-    this.emptyProfilesButton.hidden = true;
-    this.profilesButton.hidden = false;
-    this.profilesButton.addEventListener("command", this.handleCommand);
+
     let { themeBg, themeFg } = SelectableProfileService.currentProfile.theme;
-    this.profilesButton.style.setProperty(
-      "--appmenu-profiles-theme-bg",
-      themeBg
-    );
-    this.profilesButton.style.setProperty(
-      "--appmenu-profiles-theme-fg",
-      themeFg
-    );
-    this.profilesButton.setAttribute(
+    profilesButton.style.cssText = `--themeBg: ${themeBg}; --themeFg: ${themeFg};`;
+
+    profilesButton.classList.add("subviewbutton-iconic");
+    profilesButton.setAttribute(
       "label",
       SelectableProfileService.currentProfile.name
     );
     let avatar = SelectableProfileService.currentProfile.avatar;
-    this.profilesButton.setAttribute(
+    profilesButton.setAttribute(
       "image",
       `chrome://browser/content/profiles/assets/16_${avatar}.svg`
     );
   },
 
-  
-
-
-
-  onAppMenuViewHiding() {
-    this.profilesButton.removeEventListener("command", this.handleCommand);
-    this.emptyProfilesButton.removeEventListener("command", this.handleCommand);
-    this.subview.removeEventListener("command", this.handleCommand);
-  },
-
-  
-
-
-  onPopupShowing() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SelectableProfileService.getAllProfiles().then(profiles => {
-      this.profiles = profiles;
-    });
-
-    let menuPopup = document.getElementById("menu_ProfilesPopup");
-
-    while (menuPopup.hasChildNodes()) {
-      menuPopup.firstChild.remove();
-    }
-
-    let profiles = this.profiles;
-    let currentProfile = SelectableProfileService.currentProfile;
-
-    for (let profile of profiles) {
-      let menuitem = document.createXULElement("menuitem");
-      let { themeBg, themeFg } = profile.theme;
-      menuitem.setAttribute("profileid", profile.id);
-      menuitem.setAttribute("command", "Profiles:LaunchProfile");
-      menuitem.setAttribute("label", profile.name);
-      menuitem.style.setProperty("--menu-profiles-theme-bg", themeBg);
-      menuitem.style.setProperty("--menu-profiles-theme-fg", themeFg);
-      menuitem.style.listStyleImage = `url(chrome://browser/content/profiles/assets/48_${profile.avatar}.svg)`;
-      menuitem.classList.add("menuitem-iconic", "menuitem-iconic-profile");
-
-      if (profile.id === currentProfile.id) {
-        menuitem.classList.add("current");
-        menuitem.setAttribute("type", "checkbox");
-        menuitem.setAttribute("checked", "true");
-      }
-
-      menuPopup.appendChild(menuitem);
-    }
-
-    let newProfile = document.createXULElement("menuitem");
-    newProfile.id = "menu_newProfile";
-    newProfile.setAttribute("command", "Profiles:CreateProfile");
-    newProfile.setAttribute("data-l10n-id", "menu-profiles-new-profile");
-    menuPopup.appendChild(newProfile);
-
-    let separator = document.createXULElement("menuseparator");
-    separator.id = "profilesSeparator";
-    menuPopup.appendChild(separator);
-
-    let manageProfiles = document.createXULElement("menuitem");
-    manageProfiles.id = "menu_manageProfiles";
-    manageProfiles.setAttribute("command", "Profiles:ManageProfiles");
-    manageProfiles.setAttribute(
-      "data-l10n-id",
-      "menu-profiles-manage-profiles"
-    );
-    menuPopup.appendChild(manageProfiles);
-  },
-
-  manageProfiles() {
-    return SelectableProfileService.maybeSetupDataStore().then(() => {
-      openTrustedLinkIn("about:profilemanager", "tab");
-    });
-  },
-
-  createNewProfile() {
-    SelectableProfileService.createNewProfile();
-  },
-
-  async updateView(panel) {
-    await this.populateSubView();
+  updateView(panel) {
+    this.populateSubView();
     PanelUI.showSubView("PanelUI-profiles", panel);
   },
 
+  
+  
   launchProfile(aEvent) {
     SelectableProfileService.getProfile(
       aEvent.target.getAttribute("profileid")
@@ -229,55 +92,31 @@ var gProfiles = {
     });
   },
 
-  handleCommand(aEvent) {
-    switch (aEvent.target.id) {
-      
-      case "appMenu-profiles-button":
-      
-      case "appMenu-empty-profiles-button": {
-        this.updateView(aEvent.target);
-        break;
-      }
-      case "profiles-appmenu-back-button": {
-        aEvent.target.closest("panelview").panelMultiView.goBack();
-        aEvent.target.blur();
-        break;
-      }
-      case "profiles-edit-this-profile-button": {
-        openTrustedLinkIn("about:editprofile", "tab");
-        break;
-      }
-      case "profiles-manage-profiles-button": {
-        this.manageProfiles();
-        break;
-      }
-      case "profiles-create-profile-button": {
-        this.createNewProfile();
-        break;
-      }
+  async handleEvent(aEvent) {
+    let id = aEvent.target.id;
+    switch (aEvent.type) {
+      case "command": {
+        if (id == "appMenu-profiles-button") {
+          this.updateView(aEvent.target);
+        } else if (id == "profiles-appmenu-back-button") {
+          aEvent.target.closest("panelview").panelMultiView.goBack();
+          aEvent.target.blur();
+        } else if (id == "profiles-edit-this-profile-button") {
+          openTrustedLinkIn("about:editprofile", "tab");
+        } else if (id == "profiles-manage-profiles-button") {
+          
+          openTrustedLinkIn("about:profilemanager", "tab");
+        } else if (id == "profiles-create-profile-button") {
+          SelectableProfileService.createNewProfile();
+        } else if (aEvent.target.classList.contains("profile-item")) {
+          
+          this.launchProfile(aEvent);
+        }
 
-      
-      case "Profiles:CreateProfile": {
-        this.createNewProfile();
         break;
       }
-      case "Profiles:ManageProfiles": {
-        this.manageProfiles();
-        break;
-      }
-      case "Profiles:LaunchProfile": {
-        this.launchProfile(aEvent.sourceEvent);
-        break;
-      }
-    }
-    
-    if (aEvent.target.classList.contains("profile-item")) {
-      this.launchProfile(aEvent);
     }
   },
-
-  
-
 
   async populateSubView() {
     let profiles = [];
@@ -317,15 +156,14 @@ var gProfiles = {
       profilesHeader.removeAttribute("style");
       editButton.hidden = true;
     } else {
-      profilesHeader.style.backgroundColor = "var(--appmenu-profiles-theme-bg)";
+      profilesHeader.style.backgroundColor = "var(--themeBg)";
       editButton.hidden = false;
     }
 
     if (currentProfile && profiles.length > 1) {
       let subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
       let { themeBg, themeFg } = currentProfile.theme;
-      subview.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
-      subview.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
+      subview.style.cssText = `--themeBg: ${themeBg}; --themeFg: ${themeFg};`;
 
       let headerText = PanelMultiView.getViewNode(
         document,
@@ -337,14 +175,7 @@ var gProfiles = {
         document,
         "profile-icon-image"
       );
-      currentProfileCard.style.setProperty(
-        "--appmenu-profiles-theme-bg",
-        themeBg
-      );
-      currentProfileCard.style.setProperty(
-        "--appmenu-profiles-theme-fg",
-        themeFg
-      );
+      currentProfileCard.style.cssText = `--themeFg: ${themeFg}; --themeBg: ${themeBg};`;
 
       let avatar = currentProfile.avatar;
       profileIconEl.style.listStyleImage = `url("chrome://browser/content/profiles/assets/80_${avatar}.svg")`;
@@ -367,8 +198,7 @@ var gProfiles = {
       button.setAttribute("label", profile.name);
       button.className = "subviewbutton subviewbutton-iconic profile-item";
       let { themeFg, themeBg } = profile.theme;
-      button.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
-      button.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
+      button.style.cssText = `--themeBg: ${themeBg}; --themeFg: ${themeFg};`;
       button.setAttribute(
         "image",
         `chrome://browser/content/profiles/assets/16_${profile.avatar}.svg`

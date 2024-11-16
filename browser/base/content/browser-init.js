@@ -949,11 +949,9 @@ var gBrowserInit = {
       gGfxUtils.init();
     });
 
-    if (AppConstants.MOZ_SELECTABLE_PROFILES) {
-      scheduleIdleTask(async () => {
-        await gProfiles.init();
-      });
-    }
+    scheduleIdleTask(async () => {
+      await gProfiles.init();
+    });
 
     
     
