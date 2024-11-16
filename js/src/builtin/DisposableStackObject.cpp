@@ -109,7 +109,7 @@ using namespace js;
   
   
   JS::Rooted<ArrayObject*> disposeCapability(
-      cx, disposableStack->getOrCreateDisposeCapability(cx));
+      cx, GetOrCreateDisposeCapability(cx, disposableStack));
   if (!disposeCapability) {
     return false;
   }
@@ -161,7 +161,7 @@ using namespace js;
   
   
   JS::Rooted<ArrayObject*> disposeCapability(
-      cx, disposableStack->getOrCreateDisposeCapability(cx));
+      cx, GetOrCreateDisposeCapability(cx, disposableStack));
   if (!disposeCapability) {
     return false;
   }
@@ -283,7 +283,7 @@ using namespace js;
   
   
   JS::Rooted<ArrayObject*> disposeCapability(
-      cx, disposableStack->getOrCreateDisposeCapability(cx));
+      cx, GetOrCreateDisposeCapability(cx, disposableStack));
   if (!disposeCapability) {
     return false;
   }
