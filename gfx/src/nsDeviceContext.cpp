@@ -201,37 +201,32 @@ bool nsDeviceContext::GetScreenIsHDR() {
   return screen->GetIsHDR();
 }
 
-nsresult nsDeviceContext::GetDeviceSurfaceDimensions(nscoord& aWidth,
-                                                     nscoord& aHeight) {
+nsSize nsDeviceContext::GetDeviceSurfaceDimensions() {
+  return GetRect().Size();
+}
+
+nsRect nsDeviceContext::GetRect() {
   if (IsPrinterContext()) {
-    aWidth = mWidth;
-    aHeight = mHeight;
-  } else {
-    nsRect area;
-    ComputeFullAreaUsingScreen(&area);
-    aWidth = area.Width();
-    aHeight = area.Height();
+    return {0, 0, mWidth, mHeight};
   }
-
-  return NS_OK;
+  RefPtr<widget::Screen> screen = FindScreen();
+  if (!screen) {
+    return {};
+  }
+  return LayoutDeviceIntRect::ToAppUnits(screen->GetRect(),
+                                         AppUnitsPerDevPixel());
 }
 
-nsresult nsDeviceContext::GetRect(nsRect& aRect) {
+nsRect nsDeviceContext::GetClientRect() {
   if (IsPrinterContext()) {
-    aRect.SetRect(0, 0, mWidth, mHeight);
-  } else
-    ComputeFullAreaUsingScreen(&aRect);
-
-  return NS_OK;
-}
-
-nsresult nsDeviceContext::GetClientRect(nsRect& aRect) {
-  if (IsPrinterContext()) {
-    aRect.SetRect(0, 0, mWidth, mHeight);
-  } else
-    ComputeClientRectUsingScreen(&aRect);
-
-  return NS_OK;
+    return {0, 0, mWidth, mHeight};
+  }
+  RefPtr<widget::Screen> screen = FindScreen();
+  if (!screen) {
+    return {};
+  }
+  return LayoutDeviceIntRect::ToAppUnits(screen->GetAvailRect(),
+                                         AppUnitsPerDevPixel());
 }
 
 nsresult nsDeviceContext::InitForPrinting(nsIDeviceContextSpec* aDevice) {
@@ -357,33 +352,6 @@ nsresult nsDeviceContext::EndPage() {
   }
   return NS_OK;
 }
-
-void nsDeviceContext::ComputeClientRectUsingScreen(nsRect* outRect) {
-  
-  
-  
-  
-  
-  if (RefPtr<widget::Screen> screen = FindScreen()) {
-    *outRect = LayoutDeviceIntRect::ToAppUnits(screen->GetAvailRect(),
-                                               AppUnitsPerDevPixel());
-  }
-}
-
-void nsDeviceContext::ComputeFullAreaUsingScreen(nsRect* outRect) {
-  
-  
-  
-  
-  
-  if (RefPtr<widget::Screen> screen = FindScreen()) {
-    *outRect = LayoutDeviceIntRect::ToAppUnits(screen->GetRect(),
-                                               AppUnitsPerDevPixel());
-    mWidth = outRect->Width();
-    mHeight = outRect->Height();
-  }
-}
-
 
 
 

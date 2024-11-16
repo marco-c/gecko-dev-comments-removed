@@ -157,11 +157,14 @@ class nsDeviceContext final {
   
 
 
+  nsSize GetDeviceSurfaceDimensions();
+
+  
 
 
 
 
-  nsresult GetDeviceSurfaceDimensions(nscoord& aWidth, nscoord& aHeight);
+  nsRect GetRect();
 
   
 
@@ -171,21 +174,7 @@ class nsDeviceContext final {
 
 
 
-
-  nsresult GetRect(nsRect& aRect);
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsresult GetClientRect(nsRect& aRect);
+  nsRect GetClientRect();
 
   
 
@@ -289,8 +278,6 @@ class nsDeviceContext final {
       bool aWantReferenceContext);
 
   void SetDPI();
-  void ComputeClientRectUsingScreen(nsRect* outRect);
-  void ComputeFullAreaUsingScreen(nsRect* outRect);
   already_AddRefed<mozilla::widget::Screen> FindScreen();
 
   

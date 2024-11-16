@@ -3680,7 +3680,7 @@ nsDOMWindowUtils::HandleFullscreenRequests(bool* aRetVal) {
   
   nsRect screenRect;
   if (nsPresContext* presContext = GetPresContext()) {
-    presContext->DeviceContext()->GetRect(screenRect);
+    screenRect = presContext->DeviceContext()->GetRect();
   }
   nsSize oldSize;
   PrepareForFullscreenChange(GetDocShell(), screenRect.Size(), &oldSize);

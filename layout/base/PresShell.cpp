@@ -5080,8 +5080,7 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
   
   float scale = 1.0;
 
-  nsRect maxSize;
-  pc->DeviceContext()->GetClientRect(maxSize);
+  const nsRect maxSize = pc->DeviceContext()->GetClientRect();
 
   
   bool resize = !!(aFlags & RenderImageFlags::AutoScale);
