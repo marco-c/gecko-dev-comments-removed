@@ -3,6 +3,7 @@
 
 
 import time
+from copy import deepcopy
 from cProfile import Profile
 from pathlib import Path
 
@@ -184,11 +185,16 @@ class MachRegistrar(object):
 
             
             
-            old_defaults = parser._defaults.copy()
-            parser.set_defaults(**kwargs)
-            kwargs, unknown = parser.parse_known_args(argv or [])
-            kwargs = vars(kwargs)
-            parser._defaults = old_defaults
+            old_defaults = deepcopy(parser._defaults)
+            old_actions = deepcopy(parser._actions)
+
+            try:
+                parser.set_defaults(**kwargs)
+                kwargs, unknown = parser.parse_known_args(argv or [])
+                kwargs = vars(kwargs)
+            finally:
+                parser._defaults = old_defaults
+                parser._actions = old_actions
 
             if unknown:
                 if subcommand:
