@@ -359,6 +359,13 @@
       return this.tabContainer.allGroups;
     },
 
+    get tabsInCollapsedTabGroups() {
+      return this.tabGroups
+        .filter(tabGroup => tabGroup.collapsed)
+        .flatMap(tabGroup => tabGroup.tabs)
+        .filter(tab => !tab.hidden && !tab.isClosing);
+    },
+
     get tabGroupMenu() {
       delete this.tabGroupMenu;
       return (this.tabGroupMenu = document.getElementById("tab-group-editor"));
@@ -4541,7 +4548,13 @@
 
       var closeWindow = false;
       var newTab = false;
-      if (aTab.visible && this.visibleTabs.length == 1) {
+      let anyRemainingTabsInCollapsedTabGroups =
+        !!this.tabsInCollapsedTabGroups.length;
+      if (
+        aTab.visible &&
+        this.visibleTabs.length == 1 &&
+        !anyRemainingTabsInCollapsedTabGroups
+      ) {
         closeWindow =
           closeWindowWithLastTab != null
             ? closeWindowWithLastTab
@@ -4955,6 +4968,28 @@
         tab = this.tabContainer.findNextTab(aTab, {
           direction: -1,
           filter: _tab => remainingTabs.includes(_tab),
+        });
+      }
+
+      if (tab) {
+        return tab;
+      }
+
+      
+      
+      let eligibleTabs = new Set(this.tabsInCollapsedTabGroups).difference(
+        excludeTabs
+      );
+
+      tab = this.tabContainer.findNextTab(aTab, {
+        direction: 1,
+        filter: _tab => eligibleTabs.has(_tab),
+      });
+
+      if (!tab) {
+        tab = this.tabContainer.findNextTab(aTab, {
+          direction: -1,
+          filter: _tab => eligibleTabs.has(_tab),
         });
       }
 
