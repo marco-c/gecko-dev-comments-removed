@@ -77,10 +77,9 @@ document.addEventListener(
           case "cmd_toggleMute":
             gBrowser.toggleMuteAudioOnMultiSelectedTabs(gBrowser.selectedTab);
             break;
-          
-          
-          
-          
+          case "cmd_CustomizeToolbars":
+            gCustomizeMode.enter();
+            break;
           case "cmd_toggleOfflineStatus":
             BrowserOffline.toggleOfflineStatus();
             break;
