@@ -280,8 +280,6 @@ public:
         kBaselineSnap_Flag        = 0x2000,
 
         kNeedsForegroundColor_Flag = 0x4000,
-
-        kLightOnDark_Flag         = 0x8000, 
     };
 
     
