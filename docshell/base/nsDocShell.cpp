@@ -6106,8 +6106,12 @@ nsresult nsDocShell::FilterStatusForErrorPage(
     
     
     
+    
+    
+    
     nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
-    if (!info->TriggeringPrincipal()->IsSystemPrincipal()) {
+    if (!info->TriggeringPrincipal()->IsSystemPrincipal() &&
+        !BasePrincipal::Cast(info->TriggeringPrincipal())->AddonPolicy()) {
       if (aSkippedUnknownProtocolNavigation) {
         *aSkippedUnknownProtocolNavigation = true;
       }
