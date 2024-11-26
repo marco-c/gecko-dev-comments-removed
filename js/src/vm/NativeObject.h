@@ -1384,6 +1384,18 @@ class NativeObject : public JSObject {
   }
 
   
+  
+  
+  template <typename T>
+  T** addressOfFixedSlotPrivatePtr(size_t slot) {
+    MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(getClass()));
+    MOZ_ASSERT(slotIsFixed(slot));
+    MOZ_ASSERT(getReservedSlot(slot).isDouble());
+    void* addr = &getFixedSlotRef(slot);
+    return reinterpret_cast<T**>(addr);
+  }
+
+  
 
 
 
