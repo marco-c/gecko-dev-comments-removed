@@ -100,13 +100,6 @@ const AboutWelcomeUtils = {
   getLoadingStrategyFor(url) {
     return url?.startsWith("http") ? "lazy" : "eager";
   },
-  handleCampaignAction(action, messageId) {
-    window.AWSendToParent("HANDLE_CAMPAIGN_ACTION", action).then(handled => {
-      if (handled) {
-        this.sendActionTelemetry(messageId, "CAMPAIGN_ACTION");
-      }
-    });
-  },
 };
 
 const DEFAULT_RTAMO_CONTENT = {
@@ -222,20 +215,6 @@ const MultiStageAboutWelcome = props => {
       
       setScreens(filteredScreens.map(filtered => screens.find(s => s.id === filtered.id) ?? filtered));
       didFilter.current = true;
-
-      
-      
-      
-      
-      
-      
-      window.AWGetUnhandledCampaignAction?.().then(action => {
-        if (typeof action === "string") {
-          _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleCampaignAction(action, props.message_id);
-        }
-      }).catch(error => {
-        console.error("Failed to get unhandled campaign action:", error);
-      });
       const screenInitials = filteredScreens.map(({
         id
       }) => id?.split("_")[1]?.[0]).join("");
