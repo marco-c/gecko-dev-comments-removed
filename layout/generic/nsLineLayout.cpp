@@ -91,11 +91,12 @@ nsLineLayout::nsLineLayout(nsPresContext* aPresContext,
   }
 }
 
-void nsLineLayout::BeginLineReflow(
-    nscoord aICoord, nscoord aBCoord, nscoord aISize, nscoord aBSize,
-    bool aImpactedByFloats, bool aIsTopOfPage,
-    CollapseEmptyInlineFramesInLine aCollapseEmptyInlineFramesInLine,
-    WritingMode aWritingMode, const nsSize& aContainerSize, nscoord aInset) {
+void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
+                                   nscoord aISize, nscoord aBSize,
+                                   bool aImpactedByFloats, bool aIsTopOfPage,
+                                   WritingMode aWritingMode,
+                                   const nsSize& aContainerSize,
+                                   nscoord aInset) {
   MOZ_ASSERT(nullptr == mRootSpan, "bad linelayout user");
   LAYOUT_WARN_IF_FALSE(aISize != NS_UNCONSTRAINEDSIZE,
                        "have unconstrained width; this should only result from "
@@ -148,9 +149,6 @@ void nsLineLayout::BeginLineReflow(
   psd->mIStart = aICoord;
   psd->mICoord = aICoord;
   psd->mIEnd = aICoord + aISize;
-  psd->mDoCollapseEmptyInlineFramesInLine =
-      aCollapseEmptyInlineFramesInLine ==
-      CollapseEmptyInlineFramesInLine::Collapse;
   
   
   psd->mInset = aISize > aInset ? aInset : 0;
@@ -356,7 +354,6 @@ nsLineLayout::PerSpanData* nsLineLayout::NewPerSpanData() {
   psd->mContainsFloat = false;
   psd->mHasNonemptyContent = false;
   psd->mBaseline = nullptr;
-  psd->mDoCollapseEmptyInlineFramesInLine = false;
 
 #ifdef DEBUG
   outerLineLayout->mSpansAllocated++;
@@ -1493,34 +1490,6 @@ void nsLineLayout::VerticalAlignLine() {
   
   
   PerSpanData* psd = mRootSpan;
-  if (mLineIsEmpty && psd->mDoCollapseEmptyInlineFramesInLine) {
-    
-    
-    WritingMode lineWM = psd->mWritingMode;
-    for (PerFrameData* pfd = psd->mFirstFrame; pfd; pfd = pfd->mNext) {
-      
-      
-      if (!pfd->mFrame->IsInlineFrame() && !pfd->mFrame->IsRubyFrame()) {
-        continue;
-      }
-      
-      pfd->mBounds.BStart(lineWM) = mBStartEdge;
-      pfd->mBounds.BSize(lineWM) = 0;
-      
-      
-      pfd->mBlockDirAlign = VALIGN_OTHER;
-      pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSize());
-    }
-
-    mFinalLineBSize = 0;
-    if (mGotLineBox) {
-      mLineBox->SetBounds(psd->mWritingMode, psd->mIStart, mBStartEdge,
-                          psd->mICoord - psd->mIStart, 0, ContainerSize());
-
-      mLineBox->SetLogicalAscent(0);
-    }
-    return;
-  }
   VerticalAlignFrames(psd);
 
   
