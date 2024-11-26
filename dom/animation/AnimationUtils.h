@@ -115,18 +115,13 @@ class AnimationUtils {
   
   
   
-  static dom::Element* GetElementForRestyle(dom::Element* aElement,
-                                            PseudoStyleType aPseudoType);
-
   
   
   
   
   
-  
-  
-  static std::pair<const dom::Element*, PseudoStyleType> GetElementPseudoPair(
-      const dom::Element* aElementOrPseudo);
+  static std::pair<const dom::Element*, PseudoStyleRequest>
+  GetElementPseudoPair(const dom::Element* aElementOrPseudo);
 };
 
 }  

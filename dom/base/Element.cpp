@@ -4313,11 +4313,12 @@ void Element::GetImplementedPseudoElement(nsAString& aPseudo) const {
   aPseudo.Append(pseudo);
 }
 
-const Element* Element::GetPseudoElement(
-    const PseudoStyleRequest& aRequest) const {
+Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
   switch (aRequest.mType) {
     case PseudoStyleType::NotPseudo:
-      return this;
+      
+      
+      return const_cast<Element*>(this);
     case PseudoStyleType::before:
       return nsLayoutUtils::GetBeforePseudo(this);
     case PseudoStyleType::after:

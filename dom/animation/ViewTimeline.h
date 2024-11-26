@@ -75,6 +75,8 @@ class ViewTimeline final : public ScrollTimeline {
   
   
   RefPtr<Element> mSubject;
+  
+  
   PseudoStyleType mSubjectPseudoType;
 
   

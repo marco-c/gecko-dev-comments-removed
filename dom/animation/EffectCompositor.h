@@ -90,7 +90,8 @@ class EffectCompositor {
   
   
   
-  void RequestRestyle(dom::Element* aElement, PseudoStyleType aPseudoType,
+  void RequestRestyle(dom::Element* aElement,
+                      const PseudoStyleRequest& aPseudoRequest,
                       RestyleType aRestyleType, CascadeLevel aCascadeLevel);
 
   
@@ -98,7 +99,7 @@ class EffectCompositor {
   
   
   void PostRestyleForAnimation(dom::Element* aElement,
-                               PseudoStyleType aPseudoType,
+                               const PseudoStyleRequest& aPseudoRequest,
                                CascadeLevel aCascadeLevel);
 
   
@@ -117,7 +118,7 @@ class EffectCompositor {
   
   void UpdateEffectProperties(const ComputedStyle* aStyle,
                               dom::Element* aElement,
-                              PseudoStyleType aPseudoType);
+                              const PseudoStyleRequest& aPseudoRequest);
 
   
   
@@ -126,7 +127,7 @@ class EffectCompositor {
   
   
   bool GetServoAnimationRule(const dom::Element* aElement,
-                             PseudoStyleType aPseudoType,
+                             const PseudoStyleRequest& aPseudoRequest,
                              CascadeLevel aCascadeLevel,
                              StyleAnimationValueMap* aAnimationValues);
 
@@ -157,8 +158,8 @@ class EffectCompositor {
   
   
   
-  static void MaybeUpdateCascadeResults(dom::Element* aElement,
-                                        PseudoStyleType aPseudoType);
+  static void MaybeUpdateCascadeResults(
+      dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest);
 
   
   
@@ -174,7 +175,7 @@ class EffectCompositor {
   
   static void UpdateCascadeResults(EffectSet& aEffectSet,
                                    dom::Element* aElement,
-                                   PseudoStyleType aPseudoType);
+                                   const PseudoStyleRequest& aPseudoRequest);
 
   
   
@@ -233,7 +234,7 @@ class EffectCompositor {
   
   static nsCSSPropertyIDSet GetOverriddenProperties(
       EffectSet& aEffectSet, dom::Element* aElement,
-      PseudoStyleType aPseudoType);
+      const PseudoStyleRequest& aPseudoRequest);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);
 

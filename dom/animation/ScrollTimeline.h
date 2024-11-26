@@ -77,6 +77,8 @@ class ScrollTimeline : public AnimationTimeline {
     };
     Type mType = Type::Root;
     RefPtr<Element> mElement;
+    
+    
     PseudoStyleType mPseudoType;
 
     
@@ -226,8 +228,8 @@ class ScrollTimeline : public AnimationTimeline {
 
   const ScrollContainerFrame* GetScrollContainerFrame() const;
 
-  static std::pair<const Element*, PseudoStyleType> FindNearestScroller(
-      Element* aSubject, PseudoStyleType aPseudoType);
+  static std::pair<const Element*, PseudoStyleRequest> FindNearestScroller(
+      Element* aSubject, const PseudoStyleRequest& aPseudoRequest);
 
   RefPtr<Document> mDocument;
 

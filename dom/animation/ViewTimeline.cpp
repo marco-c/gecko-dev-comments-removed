@@ -24,8 +24,10 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
 
   
   
-  auto [element, pseudo] = FindNearestScroller(aSubject, aPseudoType);
-  auto scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
+  auto [element, pseudo] =
+      FindNearestScroller(aSubject, PseudoStyleRequest(aPseudoType));
+  auto scroller =
+      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
 
   
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller,
@@ -38,9 +40,10 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
     Document* aDocument, const NonOwningAnimationTarget& aTarget,
     StyleScrollAxis aAxis, const StyleViewTimelineInset& aInset) {
   
-  auto [element, pseudo] =
-      FindNearestScroller(aTarget.mElement, aTarget.mPseudoType);
-  Scroller scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
+  auto [element, pseudo] = FindNearestScroller(
+      aTarget.mElement, PseudoStyleRequest(aTarget.mPseudoType));
+  Scroller scroller =
+      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
                                      aTarget.mElement, aTarget.mPseudoType,
                                      aInset);
@@ -70,7 +73,7 @@ Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
   MOZ_ASSERT(aScrollContainerFrame);
 
   const Element* subjectElement =
-      AnimationUtils::GetElementForRestyle(mSubject, mSubjectPseudoType);
+      mSubject->GetPseudoElement(PseudoStyleRequest(mSubjectPseudoType));
   const nsIFrame* subject = subjectElement->GetPrimaryFrame();
   if (!subject) {
     

@@ -8065,9 +8065,12 @@ void ScrollContainerFrame::ScheduleScrollAnimations() {
     return;
   }
 
-  const auto [element, type] =
+  
+  
+  const auto [element, request] =
       AnimationUtils::GetElementPseudoPair(elementOrPseudo);
-  const auto* scheduler = ProgressTimelineScheduler::Get(element, type);
+  const auto* scheduler =
+      ProgressTimelineScheduler::Get(element, request.mType);
   if (!scheduler) {
     
     return;

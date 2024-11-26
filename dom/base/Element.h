@@ -1853,7 +1853,7 @@ class Element : public FragmentOrElement {
 
 
 
-  const Element* GetPseudoElement(const PseudoStyleRequest&) const;
+  Element* GetPseudoElement(const PseudoStyleRequest&) const;
 
   ReferrerPolicy GetReferrerPolicyAsEnum() const;
   ReferrerPolicy ReferrerPolicyFromAttr(const nsAttrValue* aValue) const;

@@ -347,7 +347,7 @@ class RestyleManager {
 
 
 
-  void PostRestyleEventForAnimations(dom::Element*, PseudoStyleType,
+  void PostRestyleEventForAnimations(dom::Element*, const PseudoStyleRequest&,
                                      RestyleHint);
 
   void NextRestyleIsForCSSRuleChanges() { mRestyleForCSSRuleChanges = true; }
