@@ -30,6 +30,9 @@
     LOAD_FLAGS_DISABLE_TRR,
   } = Ci.nsIWebNavigation;
 
+  const DIRECTION_FORWARD = 1;
+  const DIRECTION_BACKWARD = -1;
+
   
 
 
@@ -228,8 +231,6 @@
     _isBusy = false;
 
     _awaitingToggleCaretBrowsingPrompt = false;
-
-    arrowKeysShouldWrap = AppConstants == "macosx";
 
     _previewMode = false;
 
@@ -5635,6 +5636,12 @@
       this.selectedTab._selected = true;
     }
 
+    
+
+
+
+
+
     moveTabTo(aTab, aIndex, aKeepRelatedTabs) {
       
       if (aTab.pinned) {
@@ -5675,6 +5682,11 @@
       this._handleTabMove(aTab, () => aGroup.appendChild(aTab));
     }
 
+    
+
+
+
+
     _handleTabMove(aTab, moveActionCallback) {
       let wasFocused = document.activeElement == this.selectedTab;
       let oldPosition = aTab._tPos;
@@ -5704,19 +5716,6 @@
       var evt = document.createEvent("UIEvents");
       evt.initUIEvent("TabMove", true, false, window, oldPosition);
       aTab.dispatchEvent(evt);
-    }
-
-    moveTabForward() {
-      let nextTab = this.tabContainer.findNextTab(this.selectedTab, {
-        direction: 1,
-        filter: tab => tab.visible,
-      });
-
-      if (nextTab) {
-        this.moveTabTo(this.selectedTab, nextTab._tPos);
-      } else if (this.arrowKeysShouldWrap) {
-        this.moveTabToStart();
-      }
     }
 
     
@@ -5774,16 +5773,57 @@
       return newTab;
     }
 
+    moveTabForward() {
+      let { selectedTab } = this;
+      let nextTab = this.tabContainer.findNextTab(selectedTab, {
+        direction: DIRECTION_FORWARD,
+        filter: tab => !tab.hidden && selectedTab.pinned == tab.pinned,
+      });
+      if (nextTab) {
+        this._handleTabMove(selectedTab, () => {
+          if (!selectedTab.group && nextTab.group) {
+            if (nextTab.group.collapsed) {
+              
+              nextTab.group.after(selectedTab);
+            } else {
+              
+              nextTab.group.prepend(selectedTab);
+            }
+          } else if (selectedTab.group != nextTab.group) {
+            
+            selectedTab.group.after(selectedTab);
+          } else {
+            nextTab.after(selectedTab);
+          }
+        });
+      }
+    }
+
     moveTabBackward() {
-      let previousTab = this.tabContainer.findNextTab(this.selectedTab, {
-        direction: -1,
-        filter: tab => tab.visible,
+      let { selectedTab } = this;
+
+      let previousTab = this.tabContainer.findNextTab(selectedTab, {
+        direction: DIRECTION_BACKWARD,
+        filter: tab => !tab.hidden && selectedTab.pinned == tab.pinned,
       });
 
       if (previousTab) {
-        this.moveTabTo(this.selectedTab, previousTab._tPos);
-      } else if (this.arrowKeysShouldWrap) {
-        this.moveTabToEnd();
+        this._handleTabMove(selectedTab, () => {
+          if (!selectedTab.group && previousTab.group) {
+            if (previousTab.group.collapsed) {
+              
+              previousTab.group.before(selectedTab);
+            } else {
+              
+              previousTab.group.append(selectedTab);
+            }
+          } else if (selectedTab.group != previousTab.group) {
+            
+            selectedTab.group.before(selectedTab);
+          } else {
+            previousTab.before(selectedTab);
+          }
+        });
       }
     }
 
