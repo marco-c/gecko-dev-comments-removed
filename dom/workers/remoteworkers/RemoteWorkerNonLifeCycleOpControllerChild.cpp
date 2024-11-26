@@ -38,21 +38,21 @@ void RemoteWorkerNonLifeCycleOpControllerChild::TransistionStateToCanceled() {
   auto lock = mState.Lock();
   MOZ_ASSERT(lock->is<Running>());
 
-  
   *lock = VariantType<Canceled>();
-
-  
-  
-  if (!CanSend()) {
-    return;
-  }
-  Unused << SendTerminated();
 }
 
 void RemoteWorkerNonLifeCycleOpControllerChild::TransistionStateToKilled() {
   auto lock = mState.Lock();
   MOZ_ASSERT(lock->is<Canceled>());
   *lock = VariantType<Killed>();
+
+  if (!CanSend()) {
+    return;
+  }
+  Unused << SendTerminated();
+  if (GetIPCChannel()) {
+    GetIPCChannel()->Close();
+  }
 }
 
 void RemoteWorkerNonLifeCycleOpControllerChild::ErrorPropagation(
@@ -96,6 +96,9 @@ IPCResult RemoteWorkerNonLifeCycleOpControllerChild::RecvExecServiceWorkerOp(
 }
 
 IPCResult RemoteWorkerNonLifeCycleOpControllerChild::RecvShutdown() {
+  if (GetIPCChannel()) {
+    GetIPCChannel()->Close();
+  }
   return IPC_OK();
 }
 
