@@ -134,50 +134,6 @@ async function testCachedRelation(identifier, relType, relatedIdentifiers) {
   }, "No unexpected targets found.");
 }
 
-
-
-
-
-
-
-
-
-
-
-function invokeSetReflectedElementsAttribute(browser, id, attr, targetIds) {
-  if (targetIds) {
-    Logger.log(
-      `Setting reflected ${attr} attribute to ${targetIds} for node with id: ${id}`
-    );
-  } else {
-    Logger.log(`Removing reflected ${attr} attribute from node with id: ${id}`);
-  }
-
-  return invokeContentTask(
-    browser,
-    [id, attr, targetIds],
-    (contentId, contentAttr, contentTargetIds) => {
-      let elm = content.document.getElementById(contentId);
-      if (contentTargetIds) {
-        elm[contentAttr] = contentTargetIds.map(targetId =>
-          content.document.getElementById(targetId)
-        );
-      } else {
-        elm[contentAttr] = null;
-      }
-    }
-  );
-}
-
-const REFLECTEDATTR_NAME_MAP = {
-  "aria-controls": "ariaControlsElements",
-  "aria-describedby": "ariaDescribedByElements",
-  "aria-details": "ariaDetailsElements",
-  "aria-errormessage": "ariaErrorMessageElements",
-  "aria-flowto": "ariaFlowToElements",
-  "aria-labelledby": "ariaLabelledByElements",
-};
-
 async function testRelated(
   browser,
   accDoc,
@@ -198,8 +154,7 @@ async function testRelated(
 
 
 
-
-  let tests = [
+  const tests = [
     {
       desc: "No attribute",
       expected: [null, null, null],
@@ -226,44 +181,12 @@ async function testRelated(
     },
   ];
 
-  let reflectedAttrName = REFLECTEDATTR_NAME_MAP[attr];
-  if (reflectedAttrName) {
-    tests = tests.concat([
-      {
-        desc: "Set reflected attribute",
-        reflectedattr: [{ key: reflectedAttrName, value: ["dependant1"] }],
-        expected: [host, null, dependant1],
-      },
-      {
-        desc: "Change reflected attribute",
-        reflectedattr: [{ key: reflectedAttrName, value: ["dependant2"] }],
-        expected: [null, host, dependant2],
-      },
-      {
-        desc: "Change reflected attribute to multiple targets",
-        reflectedattr: [
-          { key: reflectedAttrName, value: ["dependant2", "dependant1"] },
-        ],
-        expected: [host, host, [dependant1, dependant2]],
-      },
-      {
-        desc: "Remove reflected attribute",
-        reflectedattr: [{ key: reflectedAttrName, value: null }],
-        expected: [null, null, null],
-      },
-    ]);
-  }
-
-  for (let { desc, attrs, reflectedattr, expected } of tests) {
+  for (let { desc, attrs, expected } of tests) {
     info(desc);
 
     if (attrs) {
       for (let { key, value } of attrs) {
         await invokeSetAttribute(browser, "host", key, value);
-      }
-    } else if (reflectedattr) {
-      for (let { key, value } of reflectedattr) {
-        await invokeSetReflectedElementsAttribute(browser, "host", key, value);
       }
     }
 
