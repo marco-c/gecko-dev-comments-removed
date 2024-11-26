@@ -1563,14 +1563,18 @@ static nscoord PartiallyResolveAutoMinSize(
 
   
   
-  
-  
-  
-  const auto percentBasis =
-      aFlexItem.Frame()->IsPercentageResolvedAgainstZero(mainStyleSize,
-                                                         maxMainStyleSize)
-          ? LogicalSize(cbWM, 0, 0)
-          : aItemReflowInput.mContainingBlockSize.ConvertTo(cbWM, itemWM);
+  auto PercentageBasisForItem = [&]() {
+    
+    
+    
+    
+    
+    if (aFlexItem.Frame()->IsPercentageResolvedAgainstZero(mainStyleSize,
+                                                           maxMainStyleSize)) {
+      return LogicalSize(cbWM, 0, 0);
+    }
+    return aItemReflowInput.mContainingBlockSize.ConvertTo(cbWM, itemWM);
+  };
 
   
   
@@ -1582,16 +1586,17 @@ static nscoord PartiallyResolveAutoMinSize(
       
       
       specifiedSizeSuggestion = aFlexItem.Frame()->ComputeISizeValue(
-          cbWM, percentBasis, boxSizingAdjust,
+          cbWM, PercentageBasisForItem(), boxSizingAdjust,
           mainStyleSize.AsLengthPercentage());
     }
   } else {
-    if (!nsLayoutUtils::IsAutoBSize(mainStyleSize, percentBasis.BSize(cbWM))) {
+    const auto percentageBasisBSize = PercentageBasisForItem().BSize(cbWM);
+    if (!nsLayoutUtils::IsAutoBSize(mainStyleSize, percentageBasisBSize)) {
       
       
       
       specifiedSizeSuggestion = nsLayoutUtils::ComputeBSizeValue(
-          percentBasis.BSize(cbWM), boxSizingAdjust.BSize(cbWM),
+          percentageBasisBSize, boxSizingAdjust.BSize(cbWM),
           mainStyleSize.AsLengthPercentage());
     }
   }
