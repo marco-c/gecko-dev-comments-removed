@@ -217,6 +217,7 @@ nsresult NotificationParent::Show() {
 
 mozilla::ipc::IPCResult NotificationParent::RecvClose() {
   Unregister(CloseMode::CloseMethod);
+  Close();
   return IPC_OK();
 }
 
@@ -225,6 +226,8 @@ void NotificationParent::Unregister(CloseMode aCloseMode) {
     
     return;
   }
+
+  mDangling = true;
 
   nsAutoString alertName;
   GetAlertName(alertName);
