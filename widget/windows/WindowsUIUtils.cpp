@@ -726,24 +726,49 @@ void WindowsUIUtils::UpdateInWin11TabletMode() {
         return false;
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      namespace Reg = mozilla::widget::WinRegistry;
-      Reg::Key key(HKEY_LOCAL_MACHINE,
-                   uR"(System\CurrentControlSet\Control\PriorityControl)"_ns,
-                   Reg::KeyMode::QueryValue);
-      if (key && key.GetValueType(u"ConvertibleSlateMode"_ns) !=
-                     Reg::ValueType::None) {
-        MOZ_LOG(gTabletModeLog, LogLevel::Info,
-                ("TCH: 'ConvertibleSlateMode' found"));
-        return true;
+      if (MOZ_LOG_TEST(gTabletModeLog, LogLevel::Info)) {
+        [&]() -> void {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          namespace Reg = mozilla::widget::WinRegistry;
+          Reg::Key key(
+              HKEY_LOCAL_MACHINE,
+              uR"(System\CurrentControlSet\Control\PriorityControl)"_ns,
+              Reg::KeyMode::QueryValue);
+          if (!key) {
+            MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                    ("TCH: \"PriorityControl\" registry path not found"));
+          }
+
+          auto const valueType = key.GetValueType(u"ConvertibleSlateMode"_ns);
+          if (valueType == Reg::ValueType::None) {
+            MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                    ("TCH: 'ConvertibleSlateMode' not found"));
+            return;
+          }
+
+          if (auto const val =
+                  key.GetValueAsDword(u"ConvertibleSlateMode"_ns)) {
+            MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                    ("TCH: 'ConvertibleSlateMode' found; value is 0x%08" PRIX32,
+                     *val));
+          } else {
+            MOZ_LOG(gTabletModeLog, LogLevel::Info,
+                    ("TCH: 'ConvertibleSlateMode' found, but not a DWORD "
+                     "(type=0x%08" PRIX32 ")",
+                     uint32_t(valueType)));
+          }
+        }();
       }
 
       
@@ -783,6 +808,7 @@ void WindowsUIUtils::UpdateInWin11TabletMode() {
         }
       }
 
+      
       
       
       
