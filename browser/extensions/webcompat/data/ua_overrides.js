@@ -1669,6 +1669,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1930632",
+    platform: "desktop",
+    domain: "support.hp.com",
+    bug: "1930632",
+    config: {
+      matches: ["*://support.hp.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
