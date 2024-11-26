@@ -58,26 +58,28 @@ void MiddleCroppingBlockFrame::UpdateDisplayedValueToUncroppedValue(
 
 nscoord MiddleCroppingBlockFrame::IntrinsicISize(
     const IntrinsicSizeInput& aInput, IntrinsicISizeType aType) {
-  nsAutoString prevValue;
-  bool restoreOldValue = false;
-
-  
-  if (mCropped && mCachedPrefISize == NS_INTRINSIC_ISIZE_UNKNOWN) {
-    mTextNode->GetNodeValue(prevValue);
-    restoreOldValue = true;
-    UpdateDisplayedValueToUncroppedValue(false);
+  auto* first = FirstContinuation();
+  if (this != first) {
+    return first->IntrinsicISize(aInput, aType);
   }
-
-  
-  
-  nscoord result =
-      nsBlockFrame::IntrinsicISize(aInput, IntrinsicISizeType::PrefISize);
-
-  if (restoreOldValue) {
-    UpdateDisplayedValue(prevValue,  true, false);
-  }
-
-  return result;
+  return mCachedIntrinsics.GetOrSet(*this, aType, aInput, [&] {
+    nsAutoString prevValue;
+    bool restoreOldValue = false;
+    if (mCropped) {
+      
+      
+      mTextNode->GetNodeValue(prevValue);
+      UpdateDisplayedValueToUncroppedValue(false);
+      restoreOldValue = true;
+    }
+    
+    
+    const nscoord result = nsBlockFrame::PrefISize(aInput);
+    if (restoreOldValue) {
+      UpdateDisplayedValue(prevValue,  true, false);
+    }
+    return result;
+  });
 }
 
 bool MiddleCroppingBlockFrame::CropTextToWidth(gfxContext& aRenderingContext,
@@ -177,8 +179,9 @@ void MiddleCroppingBlockFrame::Reflow(nsPresContext* aPresContext,
         aStatus.Reset();
         MarkSubtreeDirty();
         AddStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
-        mCachedMinISize = NS_INTRINSIC_ISIZE_UNKNOWN;
-        mCachedPrefISize = NS_INTRINSIC_ISIZE_UNKNOWN;
+        
+        
+        mCachedIntrinsics.Clear();
         cropped = true;
         continue;
       }
