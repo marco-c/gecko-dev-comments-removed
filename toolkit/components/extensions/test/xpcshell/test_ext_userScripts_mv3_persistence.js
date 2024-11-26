@@ -1,5 +1,9 @@
 "use strict";
 
+const { ExtensionPermissions } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionPermissions.sys.mjs"
+);
+
 const { ExtensionTestCommon } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionTestCommon.sys.mjs"
 );
@@ -12,11 +16,18 @@ AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 
 function loadTestExtension({ background }) {
+  const id = Services.uuid.generateUUID().number;
+  
+  
+  
+  
+  ExtensionPermissions.add(id, { permissions: ["userScripts"], origins: [] });
   return ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",
     manifest: {
+      browser_specific_settings: { gecko: { id } },
       manifest_version: 3,
-      permissions: ["userScripts"],
+      optional_permissions: ["userScripts"],
     },
     background,
     files: {

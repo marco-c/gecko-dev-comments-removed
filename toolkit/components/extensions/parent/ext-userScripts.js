@@ -6,6 +6,10 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ExtensionUserScripts: "resource://gre/modules/ExtensionUserScripts.sys.mjs",
+});
+
 var { ExtensionUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionUtils.sys.mjs"
 );
@@ -109,6 +113,14 @@ this.userScripts = class extends ExtensionAPI {
         
         throw new ExtensionError(`Invalid worldId: ${worldId}`);
       }
+    }
+
+    if (!extension.userScriptsManager) {
+      
+      
+      
+      
+      ExtensionUserScripts.initExtension(extension);
     }
 
     const usm = extension.userScriptsManager;
