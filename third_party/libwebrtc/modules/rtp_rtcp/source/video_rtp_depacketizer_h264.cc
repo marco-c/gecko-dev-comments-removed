@@ -70,7 +70,7 @@ std::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
   parsed_payload->video_header.height = 0;
   parsed_payload->video_header.codec = kVideoCodecH264;
   parsed_payload->video_header.simulcastIdx = 0;
-  parsed_payload->video_header.is_first_packet_in_frame = false;
+  parsed_payload->video_header.is_first_packet_in_frame = true;
   auto& h264_header = parsed_payload->video_header.video_type_header
                           .emplace<RTPVideoHeaderH264>();
 
@@ -120,6 +120,7 @@ std::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
                                             end_offset - start_offset);
     switch (nalu.type) {
       case H264::NaluType::kSps: {
+        
         
         
 
@@ -174,7 +175,6 @@ std::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
                 VideoFrameType::kVideoFrameKey;
             break;
         }
-        parsed_payload->video_header.is_first_packet_in_frame = true;
         break;
       }
       case H264::NaluType::kPps: {
@@ -199,9 +199,8 @@ std::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
             PpsParser::ParseSliceHeader(nalu_data);
         if (slice_header) {
           nalu.pps_id = slice_header->pic_parameter_set_id;
-          if (slice_header->first_mb_in_slice == 0) {
-            parsed_payload->video_header.is_first_packet_in_frame = true;
-          }
+          parsed_payload->video_header.is_first_packet_in_frame &=
+              slice_header->first_mb_in_slice == 0;
         } else {
           RTC_LOG(LS_WARNING) << "Failed to parse PPS id from slice of type: "
                               << static_cast<int>(nalu.type);
