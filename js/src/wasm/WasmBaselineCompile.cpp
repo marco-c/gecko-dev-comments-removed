@@ -678,13 +678,17 @@ bool BaseCompiler::endFunction() {
 
   fr.patchCheckStack();
 
+  
+  
+  
+  deadCode_ = !returnLabel_.used();
   masm.bind(&returnLabel_);
 
   ResultType resultType(ResultType::Vector(funcType().results()));
 
   popStackReturnValues(resultType);
 
-  if (compilerEnv_.debugEnabled()) {
+  if (compilerEnv_.debugEnabled() && !deadCode_) {
     
     
     saveRegisterReturnValues(resultType);
@@ -714,8 +718,8 @@ bool BaseCompiler::endFunction() {
   
   
 #endif
-
   JitSpew(JitSpew_Codegen, "# endFunction: end of function epilogue");
+
   JitSpew(JitSpew_Codegen, "# endFunction: start of OOL code");
   if (!generateOutOfLineCode()) {
     return false;
@@ -769,6 +773,7 @@ bool BaseCompiler::endFunction() {
 
 
 void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
+  MOZ_ASSERT(!deadCode_);
 #ifndef RABALDR_PIN_INSTANCE
   fr.loadInstancePtr(InstanceReg);
 #endif
@@ -1592,7 +1597,7 @@ void BaseCompiler::shuffleStackResultsBeforeBranch(StackHeight srcHeight,
 }
 
 bool BaseCompiler::insertDebugCollapseFrame() {
-  if (!compilerEnv_.debugEnabled()) {
+  if (!compilerEnv_.debugEnabled() || deadCode_) {
     return true;
   }
   insertBreakablePoint(CallSiteDesc::CollapseFrame);
@@ -10349,7 +10354,8 @@ bool BaseCompiler::emitBody() {
     CHECK(iter_.readOp(&op));
 
     
-    if (compilerEnv_.debugEnabled() && op.shouldHaveBreakpoint()) {
+    if (compilerEnv_.debugEnabled() && op.shouldHaveBreakpoint() &&
+        !deadCode_) {
       if (previousBreakablePoint_ != masm.currentOffset()) {
         
         
