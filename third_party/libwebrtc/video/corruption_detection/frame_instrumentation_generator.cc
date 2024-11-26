@@ -51,6 +51,7 @@ std::optional<FilterSettings> GetCorruptionFilterSettings(
 
 
 
+
   int qp = encoded_image.qp_;
   if (qp == -1) {
     std::optional<uint32_t> parsed_qp = QpParser().Parse(

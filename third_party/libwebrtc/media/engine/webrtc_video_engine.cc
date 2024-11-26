@@ -1496,6 +1496,7 @@ bool WebRtcVideoSendChannel::AddSendStream(const StreamParams& sp) {
   config.encoder_settings.encoder_switch_request_callback = this;
 
   
+  
   if (webrtc::RtpExtension::FindHeaderExtensionByUri(
           config.rtp.extensions, webrtc::RtpExtension::kCorruptionDetectionUri,
           webrtc::RtpExtension::kRequireEncryptedExtension)) {
