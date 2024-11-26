@@ -2106,8 +2106,8 @@ void RestyleManager::AnimationsWithDestroyedFrame ::StopAnimationsWithoutFrame(
 
     
     
-    animationManager->StopAnimationsForElement(element, aPseudoRequest.mType);
-    transitionManager->StopAnimationsForElement(element, aPseudoRequest.mType);
+    animationManager->StopAnimationsForElement(element, aPseudoRequest);
+    transitionManager->StopAnimationsForElement(element, aPseudoRequest);
 
     
     

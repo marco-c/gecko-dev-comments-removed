@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PseudoStyleType.h"
 #include "mozilla/RefPtr.h"
 #include "nsAtomHashKeys.h"
 #include "nsTHashMap.h"
@@ -20,7 +21,6 @@ namespace mozilla {
 namespace dom {
 class Element;
 }
-enum class PseudoStyleType : uint8_t;
 
 
 
@@ -31,8 +31,9 @@ class TimelineCollection final
   using SelfType = TimelineCollection<TimelineType>;
   using TimelineMap = nsTHashMap<RefPtr<nsAtom>, RefPtr<TimelineType>>;
 
-  TimelineCollection(dom::Element& aElement, PseudoStyleType aPseudoType)
-      : mElement(aElement), mPseudo(aPseudoType) {
+  TimelineCollection(dom::Element& aElement,
+                     const PseudoStyleRequest& aPseudoRequest)
+      : mElement(aElement), mPseudo(aPseudoRequest) {
     MOZ_COUNT_CTOR(TimelineCollection);
   }
 
@@ -54,13 +55,13 @@ class TimelineCollection final
   
   
   static TimelineCollection* Get(const dom::Element* aElement,
-                                 PseudoStyleType aPseudoType);
+                                 const PseudoStyleRequest& aPseudoRequest);
   const TimelineMap& Timelines() const { return mTimelines; }
 
  private:
   
   dom::Element& mElement;
-  const PseudoStyleType mPseudo;
+  const PseudoStyleRequest mPseudo;
 
   TimelineMap mTimelines;
 };

@@ -34,7 +34,8 @@ class ViewTimeline final : public ScrollTimeline {
   
   
   static already_AddRefed<ViewTimeline> MakeNamed(
-      Document* aDocument, Element* aSubject, PseudoStyleType aPseudoType,
+      Document* aDocument, Element* aSubject,
+      const PseudoStyleRequest& aPseudoRequest,
       const StyleViewTimeline& aStyleTimeline);
 
   static already_AddRefed<ViewTimeline> MakeAnonymous(
@@ -49,7 +50,7 @@ class ViewTimeline final : public ScrollTimeline {
   bool IsViewTimeline() const override { return true; }
 
   void ReplacePropertiesWith(Element* aSubjectElement,
-                             PseudoStyleType aPseudoType,
+                             const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
  private:
