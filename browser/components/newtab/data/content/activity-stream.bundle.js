@@ -9235,6 +9235,21 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     filterArray.push(...DS_COMPONENTS);
   }
 
+  
+  function getMaxTiles(responsiveLayouts) {
+    return responsiveLayouts
+      .flatMap(responsiveLayout => responsiveLayout)
+      .reduce((acc, t) => {
+        acc[t.columnCount] = t.tiles.length;
+
+        
+        if (!acc.maxTile || t.tiles.length > acc.maxTile) {
+          acc.maxTile = t.tiles.length;
+        }
+        return acc;
+      }, {});
+  }
+
   const placeholderComponent = component => {
     if (!component.feed) {
       
@@ -9408,6 +9423,23 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       };
     }
 
+    
+    if (sectionsEnabled) {
+      let currentPosition = 0;
+      data.sections.forEach(section => {
+        
+        const { maxTile } = getMaxTiles(section?.layout?.responsiveLayouts);
+        for (let i = 0; i < maxTile; i++) {
+          if (section.data[i]) {
+            section.data[i] = {
+              ...section.data[i],
+              pos: currentPosition++,
+            };
+          }
+        }
+      });
+    }
+
     return { ...component, data };
   };
 
@@ -9565,8 +9597,8 @@ function CardSections({
   }
 
   
-  function getMaxTiles(responsiveLayout) {
-    return responsiveLayout.flatMap(layout => layout).reduce((acc, t) => {
+  function getMaxTiles(responsiveLayouts) {
+    return responsiveLayouts.flatMap(responsiveLayout => responsiveLayout).reduce((acc, t) => {
       acc[t.columnCount] = t.tiles.length;
 
       
