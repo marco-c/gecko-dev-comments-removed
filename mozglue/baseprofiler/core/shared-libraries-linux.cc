@@ -163,7 +163,7 @@ class MemoryMappedFile {
   MemoryMappedFile(const MemoryMappedFile&) = delete;
   MemoryMappedFile& operator=(const MemoryMappedFile&) = delete;
 
-  ~MemoryMappedFile() {}
+  ~MemoryMappedFile() { Unmap(); }
 
   
   
