@@ -49,17 +49,13 @@ class nsIWidgetListener {
 
 
 
-  virtual nsIAppWindow* GetAppWindow();
+  virtual nsIAppWindow* GetAppWindow() { return nullptr; }
 
   
-
-
-  virtual nsView* GetView();
+  virtual nsView* GetView() { return nullptr; }
 
   
-
-
-  virtual mozilla::PresShell* GetPresShell();
+  virtual mozilla::PresShell* GetPresShell() { return nullptr; }
 
   
 
@@ -67,61 +63,57 @@ class nsIWidgetListener {
 
   enum class ByMoveToRect : bool { No, Yes };
   virtual bool WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY,
-                           ByMoveToRect);
+                           ByMoveToRect) {
+    return false;
+  }
 
   
 
 
 
   virtual bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
-                             int32_t aHeight);
+                             int32_t aHeight) {
+    return false;
+  }
 
   
 
 
-  virtual void SizeModeChanged(nsSizeMode aSizeMode);
+  virtual void SizeModeChanged(nsSizeMode aSizeMode) {}
 
 #if defined(MOZ_WIDGET_ANDROID)
-  virtual void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight);
-  virtual void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset);
-
+  virtual void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight) {
+  }
+  virtual void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) {}
   
-
-
-  virtual void KeyboardHeightChanged(mozilla::ScreenIntCoord aHeight);
+  virtual void KeyboardHeightChanged(mozilla::ScreenIntCoord aHeight) {}
 #endif
 
   
-
-
   virtual void MacFullscreenMenubarOverlapChanged(
-      mozilla::DesktopCoord aOverlapAmount);
+      mozilla::DesktopCoord aOverlapAmount) {}
 
   
 
 
-  virtual void OcclusionStateChanged(bool aIsFullyOccluded);
+  virtual void OcclusionStateChanged(bool aIsFullyOccluded) {}
+
+  
+  virtual void WindowActivated() {}
+
+  
+  virtual void WindowDeactivated() {}
 
   
 
 
-  virtual void WindowActivated();
-
-  
-
-
-  virtual void WindowDeactivated();
-
-  
-
-
-  virtual void OSToolbarButtonPressed();
+  virtual void OSToolbarButtonPressed() {}
 
   
 
 
 
-  virtual bool RequestWindowClose(nsIWidget* aWidget);
+  virtual bool RequestWindowClose(nsIWidget* aWidget) { return false; }
 
   
 
@@ -129,7 +121,7 @@ class nsIWidgetListener {
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void WillPaintWindow(nsIWidget* aWidget);
+  virtual void WillPaintWindow(nsIWidget* aWidget) {}
 
   
 
@@ -139,8 +131,9 @@ class nsIWidgetListener {
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual bool PaintWindow(nsIWidget* aWidget,
-                           mozilla::LayoutDeviceIntRegion aRegion);
-
+                           mozilla::LayoutDeviceIntRegion aRegion) {
+    return false;
+  }
   
 
 
@@ -148,35 +141,32 @@ class nsIWidgetListener {
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void DidPaintWindow();
+  virtual void DidPaintWindow() {}
 
   virtual void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
                                   const mozilla::TimeStamp& aCompositeStart,
-                                  const mozilla::TimeStamp& aCompositeEnd);
+                                  const mozilla::TimeStamp& aCompositeEnd) {}
+
+  
+
+  virtual void RequestRepaint() {}
 
   
 
 
-  virtual void RequestRepaint();
+
+
+  virtual bool ShouldNotBeVisible() { return false; }
 
   
-
-
-
-
-  virtual bool ShouldNotBeVisible();
-
-  
-
-
   virtual nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent,
-                                    bool aUseAttachedEvents);
+                                    bool aUseAttachedEvents) {
+    return nsEventStatus_eIgnore;
+  }
 
   
-
-
   virtual void SafeAreaInsetsChanged(
-      const mozilla::LayoutDeviceIntMargin& aSafeAreaInsets);
+      const mozilla::LayoutDeviceIntMargin& aSafeAreaInsets) {}
 };
 
 #endif
