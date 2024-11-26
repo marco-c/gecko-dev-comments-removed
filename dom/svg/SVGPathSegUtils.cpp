@@ -9,7 +9,7 @@
 #include "mozilla/ArrayUtils.h"        
 #include "mozilla/ServoStyleConsts.h"  
 #include "gfx2DGlue.h"
-#include "SVGPathDataParser.h"
+#include "SVGArcConverter.h"
 #include "nsMathUtils.h"
 #include "nsTextFormatter.h"
 

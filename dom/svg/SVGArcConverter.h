@@ -4,14 +4,14 @@
 
 
 
-#ifndef DOM_SVG_SVGPATHDATAPARSER_H_
-#define DOM_SVG_SVGPATHDATAPARSER_H_
+#ifndef DOM_SVG_SVGARCCONVERTER_H_
+#define DOM_SVG_SVGARCCONVERTER_H_
 
 #include "mozilla/gfx/Point.h"
 
 namespace mozilla {
 
-class SVGArcConverter {
+class MOZ_STACK_CLASS SVGArcConverter {
   using Point = mozilla::gfx::Point;
 
  public:
