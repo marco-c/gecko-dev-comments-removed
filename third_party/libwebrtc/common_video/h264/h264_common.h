@@ -67,12 +67,6 @@ RTC_EXPORT std::vector<NaluIndex> FindNaluIndices(
     rtc::ArrayView<const uint8_t> buffer);
 
 
-inline std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
-                                              size_t buffer_size) {
-  return FindNaluIndices(rtc::MakeArrayView(buffer, buffer_size));
-}
-
-
 RTC_EXPORT NaluType ParseNaluType(uint8_t data);
 
 
