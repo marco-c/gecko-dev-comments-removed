@@ -529,7 +529,7 @@ class TrackBuffersManager final
       MOZ_GUARDED_BY(mTaskQueueCapability);
   
   
-  media::TimeInterval mAppendWindow MOZ_GUARDED_BY(mTaskQueueCapability);
+  media::Interval<double> mAppendWindow MOZ_GUARDED_BY(mTaskQueueCapability);
 
   
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;

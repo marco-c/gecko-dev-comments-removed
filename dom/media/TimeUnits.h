@@ -96,6 +96,11 @@ class TimeUnit final {
 
   
   static TimeUnit FromSeconds(double aValue, int64_t aBase = USECS_PER_S);
+  static TimeUnit FromSecondsWithBaseOf(double aSeconds,
+                                        const TimeUnit& aOtherForBase) {
+    return FromSeconds(aSeconds, aOtherForBase.mBase);
+  }
+
   static constexpr TimeUnit FromMicroseconds(int64_t aValue) {
     return TimeUnit(aValue, USECS_PER_S);
   }

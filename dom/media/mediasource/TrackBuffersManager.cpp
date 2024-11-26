@@ -47,6 +47,7 @@ mozilla::LogModule* GetMediaSourceSamplesLog() {
 namespace mozilla {
 
 using dom::SourceBufferAppendMode;
+using media::Interval;
 using media::TimeInterval;
 using media::TimeIntervals;
 using media::TimeUnit;
@@ -231,10 +232,9 @@ void TrackBuffersManager::ProcessTasks() {
       }
       mSourceBufferAttributes = MakeUnique<SourceBufferAttributes>(
           task->As<AppendBufferTask>()->mAttributes);
-      mAppendWindow = TimeInterval(
-          TimeUnit::FromSeconds(
-              mSourceBufferAttributes->GetAppendWindowStart()),
-          TimeUnit::FromSeconds(mSourceBufferAttributes->GetAppendWindowEnd()));
+      mAppendWindow =
+          Interval<double>(mSourceBufferAttributes->GetAppendWindowStart(),
+                           mSourceBufferAttributes->GetAppendWindowEnd());
       ScheduleSegmentParserLoop();
       break;
     case Type::RangeRemoval: {
@@ -2155,15 +2155,25 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
 
     
     
-
+    
+    
+    Interval<double> frameStartAndEnd(
+        sampleInterval.mStart.ToSeconds(),
+        sampleInterval.mStart.ToSeconds() + sampleDuration.ToSeconds());
     
     
     
     
     
     
-    if (!mAppendWindow.ContainsStrict(sampleInterval)) {
-      if (mAppendWindow.IntersectsStrict(sampleInterval)) {
+    if (!mAppendWindow.ContainsStrict(frameStartAndEnd)) {
+      
+      
+      
+      TimeInterval appendWindow(
+          TimeUnit::FromSecondsWithBaseOf(mAppendWindow.mStart, sampleTime),
+          TimeUnit::FromSecondsWithBaseOf(mAppendWindow.mEnd, sampleTime));
+      if (appendWindow.IntersectsStrict(sampleInterval)) {
         
         
         
@@ -2183,9 +2193,7 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         
         
         
-        TimeInterval intersection = mAppendWindow.Intersection(sampleInterval);
-        intersection.mStart = intersection.mStart.ToBase(sample->mTime);
-        intersection.mEnd = intersection.mEnd.ToBase(sample->mTime);
+        TimeInterval intersection = appendWindow.Intersection(sampleInterval);
         sample->mOriginalPresentationWindow = Some(sampleInterval);
         MSE_DEBUGV("will truncate frame from [%" PRId64 "%s,%" PRId64
                    "%s] to [%" PRId64 "%s,%" PRId64 "%s]",
@@ -2203,16 +2211,13 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         sample->mTimecode = decodeTimestamp;
         previouslyDroppedSample = sample;
         MSE_DEBUGV("frame [%" PRId64 "%s,%" PRId64
-                   "%s] outside appendWindow [%" PRId64 "%s,%" PRId64
-                   "%s] dropping",
+                   "%s] outside appendWindow [%f.6%s,%f.6%s] dropping",
                    sampleInterval.mStart.ToMicroseconds(),
                    sampleInterval.mStart.ToString().get(),
                    sampleInterval.mEnd.ToMicroseconds(),
-                   sampleInterval.mEnd.ToString().get(),
-                   mAppendWindow.mStart.ToMicroseconds(),
-                   mAppendWindow.mStart.ToString().get(),
-                   mAppendWindow.mEnd.ToMicroseconds(),
-                   mAppendWindow.mEnd.ToString().get());
+                   sampleInterval.mEnd.ToString().get(), mAppendWindow.mStart,
+                   appendWindow.mStart.ToString().get(), mAppendWindow.mEnd,
+                   appendWindow.mEnd.ToString().get());
         if (samples.Length()) {
           
           
