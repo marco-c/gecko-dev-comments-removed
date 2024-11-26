@@ -158,12 +158,11 @@ var SidebarController = {
         "viewReviewCheckerSidebar",
         {
           elementId: "sidebar-switcher-review-checker",
-          url: "about:shoppingsidebar",
+          url: "chrome://browser/content/shopping/shopping.html",
           menuId: "menu_reviewCheckerSidebar",
           menuL10nId: "menu-view-review-checker",
           revampL10nId: "sidebar-menu-review-checker-label",
           iconUrl: "chrome://browser/content/shopping/assets/shopping.svg",
-          remoteType: E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE,
         }
       );
     }
@@ -218,14 +217,6 @@ var SidebarController = {
     }
     return (this._browser = document.getElementById("sidebar"));
   },
-
-  set browser(browser) {
-    let currentBrowser = this.browser;
-    currentBrowser.destroy();
-    currentBrowser.replaceWith(browser);
-    this._browser = browser;
-  },
-
   POSITION_START_PREF: "sidebar.position_start",
   DEFAULT_SIDEBAR_ID: "viewBookmarksSidebar",
   TOOLS_PREF: "sidebar.main.tools",
@@ -696,8 +687,9 @@ var SidebarController = {
 
     this.hideSwitcherPanel();
 
-    if (!this.browser.isRemoteBrowser) {
-      this.browser.contentWindow.updatePosition?.();
+    let content = SidebarController.browser.contentWindow;
+    if (content && content.updatePosition) {
+      content.updatePosition();
     }
   },
 
@@ -876,10 +868,8 @@ var SidebarController = {
 
 
   _fireFocusedEvent() {
-    if (!this.browser.isRemoteBrowser) {
-      let event = new CustomEvent("SidebarFocused", { bubbles: true });
-      this.browser.contentWindow.dispatchEvent(event);
-    }
+    let event = new CustomEvent("SidebarFocused", { bubbles: true });
+    this.browser.contentWindow.dispatchEvent(event);
   },
 
   
@@ -1495,218 +1485,92 @@ var SidebarController = {
 
 
 
-  async _show(commandID) {
-    if (this.sidebarRevampEnabled) {
-      this.sidebarContainer.hidden = false;
-      this._box.dispatchEvent(
-        new CustomEvent("sidebar-show", { detail: { viewId: commandID } })
-      );
-
-      
-      
-      
-      this._previousExpandedState = this.sidebarMain.expanded;
-
-      this.toggleExpanded(false);
-    } else {
-      this.hideSwitcherPanel();
-    }
-
-    this.selectMenuItem(commandID);
-    this._box.hidden = this._splitter.hidden = false;
-
-    this._box.setAttribute("checked", "true");
-    this._box.setAttribute("sidebarcommand", commandID);
-
-    let { icon, url, title, sourceL10nEl, contextMenuId, remoteType } =
-      this.sidebars.get(commandID);
-    if (icon) {
-      this._switcherTarget.style.setProperty(
-        "--webextension-menuitem-image",
-        icon
-      );
-    } else {
-      this._switcherTarget.style.removeProperty(
-        "--webextension-menuitem-image"
-      );
-    }
-
-    if (contextMenuId) {
-      this._box.setAttribute("context", contextMenuId);
-    } else {
-      this._box.removeAttribute("context");
-    }
-
-    
-    this.lastOpenedId = commandID;
-    
-    if (!this.sidebarRevampEnabled) {
-      this.title = title;
-      
-      this.observeTitleChanges(sourceL10nEl);
-    }
-
-    await this._loadURL(url, remoteType);
-
-    
-    this._fireShowEvent();
-    this._recordBrowserSize();
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  async _loadURL(url, remoteType) {
-    let targetURI = makeURI(url);
-
-    if (
-      remoteType &&
-      (!this.browser.isRemoteBrowser || this.browser.remoteType !== remoteType)
-    ) {
-      this.browser = this._createBrowser({ remoteType });
-    } else if (!remoteType && this.browser.hasAttribute("remote")) {
-      this.browser = this._createBrowser();
-    }
-
-    let loadPromise;
-    if (this.browser.isRemoteBrowser) {
-      this.browser.loadURI(targetURI, {
-        triggeringPrincipal:
-          Services.scriptSecurityManager.getSystemPrincipal(),
-      });
-      loadPromise = this._hasProgressStopped(targetURI);
-    } else {
-      this.browser.setAttribute("src", url); 
-      loadPromise = this._hasLoaded(url);
-    }
-
-    await loadPromise;
-  },
-
-  
-
-
-
-
-
-
-
-  _createBrowser(options = { remoteType: E10SUtils.NOT_REMOTE }) {
-    let { remoteType } = options;
-    let browser = document.createXULElement("browser");
-    browser.setAttribute("id", "sidebar");
-    browser.setAttribute("autoscroll", "false");
-    browser.setAttribute("disablehistory", "true");
-    browser.setAttribute("disablefullscreen", "true");
-    browser.setAttribute("tooltip", "aHTMLTooltip");
-    if (remoteType) {
-      browser.setAttribute("type", "content");
-      browser.setAttribute("remote", "true");
-      browser.setAttribute("remoteType", remoteType);
-      browser.setAttribute("maychangeremoteness", "true");
-      browser.setAttribute("messagemanagergroup", "sidebar-browsers");
-    }
-    return browser;
-  },
-
-  
-
-
-
-
-
-  async _hasLoaded(url) {
+  _show(commandID) {
     return new Promise(resolve => {
-      if (
-        this.browser.contentDocument.location.href == url &&
-        this.browser.contentDocument.readyState === "complete"
-      ) {
-        resolve();
-        return;
+      if (this.sidebarRevampEnabled) {
+        this.sidebarContainer.hidden = false;
+        this._box.dispatchEvent(
+          new CustomEvent("sidebar-show", { detail: { viewId: commandID } })
+        );
+
+        
+        
+        
+        this._previousExpandedState = this.sidebarMain.expanded;
+
+        this.toggleExpanded(false);
+      } else {
+        this.hideSwitcherPanel();
+      }
+
+      this.selectMenuItem(commandID);
+      this._box.hidden = this._splitter.hidden = false;
+
+      this._box.setAttribute("checked", "true");
+      this._box.setAttribute("sidebarcommand", commandID);
+
+      let { icon, url, title, sourceL10nEl, contextMenuId } =
+        this.sidebars.get(commandID);
+      if (icon) {
+        this._switcherTarget.style.setProperty(
+          "--webextension-menuitem-image",
+          icon
+        );
+      } else {
+        this._switcherTarget.style.removeProperty(
+          "--webextension-menuitem-image"
+        );
+      }
+
+      if (contextMenuId) {
+        this._box.setAttribute("context", contextMenuId);
+      } else {
+        this._box.removeAttribute("context");
       }
 
       
-      this.browser.addEventListener("unload", () => {
-        if (this.browser.loadingTimerID) {
-          clearTimeout(this.browser.loadingTimerID);
-          delete this.browser.loadingTimerID;
-          resolve();
-        }
-      });
-      this.browser.addEventListener(
-        "load",
-        () => {
-          
-          
-          this.browser.loadingTimerID = setTimeout(() => {
+      this.lastOpenedId = commandID;
+      
+      if (!this.sidebarRevampEnabled) {
+        this.title = title;
+        
+        this.observeTitleChanges(sourceL10nEl);
+      }
+
+      this.browser.setAttribute("src", url); 
+
+      if (this.browser.contentDocument.location.href != url) {
+        
+        this.browser.addEventListener("unload", () => {
+          if (this.browser.loadingTimerID) {
+            clearTimeout(this.browser.loadingTimerID);
             delete this.browser.loadingTimerID;
             resolve();
-          }, 0);
-        },
-        { capture: true, once: true }
-      );
-    });
-  },
-
-  
-
-
-
-
-
-
-  async _hasProgressStopped(targetURI) {
-    return new Promise(resolve => {
-      let b = this.browser;
-
-      if (
-        b.currentURI?.equalsExceptRef(targetURI) &&
-        !b.webProgress.isLoadingDocument
-      ) {
-        resolve();
-        return;
-      }
-
-      let referenceKeeper = new Set();
-      const { STATE_IS_WINDOW, STATE_STOP } = Ci.nsIWebProgressListener;
-      let progListener = {
-        onStateChange: (webProgress, request, flags, _status) => {
-          if (
-            flags & STATE_IS_WINDOW &&
-            flags & STATE_STOP &&
-            webProgress.isTopLevel &&
-            (request?.originalURI?.equalsExceptRef(targetURI) ||
-              b.currentURI?.equalsExceptRef(targetURI))
-          ) {
-            resolve();
-            referenceKeeper.delete(filter);
-            b.removeProgressListener(filter);
           }
-        },
-        QueryInterface: ChromeUtils.generateQI([
-          "nsIWebProgressListener",
-          "nsISupportsWeakReference",
-        ]),
-      };
-      const filter = Cc[
-        "@mozilla.org/appshell/component/browser-status-filter;1"
-      ].createInstance(Ci.nsIWebProgress);
-      filter.addProgressListener(
-        progListener,
-        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
-      );
-      referenceKeeper.add(filter);
-      this.browser.addProgressListener(
-        filter,
-        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
-      );
+        });
+        this.browser.addEventListener(
+          "load",
+          () => {
+            
+            
+            this.browser.loadingTimerID = setTimeout(() => {
+              delete this.browser.loadingTimerID;
+              resolve();
+
+              
+              this._fireShowEvent();
+              this._recordBrowserSize();
+            }, 0);
+          },
+          { capture: true, once: true }
+        );
+      } else {
+        resolve();
+
+        
+        this._fireShowEvent();
+        this._recordBrowserSize();
+      }
     });
   },
 
@@ -1737,21 +1601,11 @@ var SidebarController = {
 
     
     
-    if (this.browser.isRemoteBrowser) {
-      let nullPrincipal = Services.scriptSecurityManager.createNullPrincipal(
-        {}
-      );
-      this.browser.loadURI(Services.io.newURI("about:blank"), {
-        triggeringPrincipal: nullPrincipal,
-      });
-      this.browser.createAboutBlankDocumentViewer(nullPrincipal, nullPrincipal);
-    } else {
-      
-      
-      
-      this.browser.setAttribute("src", "about:blank");
-      this.browser.docShell?.createAboutBlankDocumentViewer(null, null);
-    }
+    
+    
+    
+    this.browser.setAttribute("src", "about:blank");
+    this.browser.docShell?.createAboutBlankDocumentViewer(null, null);
 
     this._box.removeAttribute("checked");
     this._box.removeAttribute("context");
