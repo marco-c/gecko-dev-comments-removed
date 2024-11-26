@@ -2731,12 +2731,15 @@ WorkerPrivate::ComputeAgentClusterIdAndCoop(WorkerPrivate* aParent,
   
   
   
+  
   if (aIsChromeWorker) {
     if (nsIGlobalObject* systemGlobal =
             xpc::NativeGlobal(xpc::PrivilegedJunkScope())) {
       nsID agentClusterId = systemGlobal->GetAgentClusterId().valueOrFrom(
           [] { return nsID::GenerateUUID(); });
-      return {agentClusterId, agentClusterCoop};
+      return {
+          agentClusterId,
+          nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP};
     }
   }
 
@@ -6288,7 +6291,7 @@ bool WorkerPrivate::IsSharedMemoryAllowed() const {
   }
 
   
-  if (mIsChromeWorker || mIsPrivilegedAddonGlobal) {
+  if (mIsPrivilegedAddonGlobal) {
     return true;
   }
 
