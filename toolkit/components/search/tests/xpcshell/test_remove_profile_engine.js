@@ -5,6 +5,7 @@
 
 
 add_setup(async function () {
+  await SearchTestUtils.initXPCShellAddonManager();
   SearchTestUtils.setRemoteSettingsConfig([{ identifier: "unused" }]);
 });
 
