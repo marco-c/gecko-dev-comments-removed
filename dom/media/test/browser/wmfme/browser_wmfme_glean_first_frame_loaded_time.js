@@ -6,9 +6,6 @@
 
 
 
-
-
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/dom/media/test/browser/head.js",
   this
