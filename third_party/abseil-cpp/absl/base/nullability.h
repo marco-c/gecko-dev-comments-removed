@@ -147,6 +147,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #ifndef ABSL_BASE_NULLABILITY_H_
 #define ABSL_BASE_NULLABILITY_H_
 
@@ -220,5 +228,20 @@ template <typename T>
 using NullabilityUnknown = nullability_internal::NullabilityUnknownImpl<T>;
 
 }  
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_FEATURE(nullability_on_classes)
+#define ABSL_NULLABILITY_COMPATIBLE _Nullable
+#else
+#define ABSL_NULLABILITY_COMPATIBLE
+#endif
 
 #endif  
