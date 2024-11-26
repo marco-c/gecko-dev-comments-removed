@@ -71,7 +71,7 @@ std::vector<FilteredSample> GetSampleValuesForFrame(
     std::vector<HaltonFrameSampler::Coordinates> sample_coordinates,
     int scaled_width,
     int scaled_height,
-    double stddev_gaussian_blur);
+    double std_dev_gaussian_blur);
 
 double GetFilteredElement(int width,
                           int height,
@@ -79,7 +79,7 @@ double GetFilteredElement(int width,
                           const uint8_t* data,
                           int row,
                           int column,
-                          double stddev);
+                          double std_dev);
 
 }  
 
