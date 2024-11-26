@@ -58,8 +58,7 @@ class VideoStreamFactory
   
   
   std::vector<webrtc::VideoStream> CreateEncoderStreams(
-      const webrtc::FieldTrialsView& field_trials,
-      int aWidth, int aHeight,
+      const webrtc::FieldTrialsView& field_trials, int aWidth, int aHeight,
       const webrtc::VideoEncoderConfig& aConfig) override;
 
   
