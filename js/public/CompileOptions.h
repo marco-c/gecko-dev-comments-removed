@@ -728,13 +728,16 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     return *this;
   }
 
+  void warnAboutConflictingDelazification() const;
   CompileOptions& setEagerDelazificationStrategy(
       DelazificationOption strategy) {
-    
-    MOZ_RELEASE_ASSERT(eagerDelazificationStrategy_ !=
-                           DelazificationOption::ParseEverythingEagerly ||
-                       strategy ==
-                           DelazificationOption::ParseEverythingEagerly);
+    const auto PEE = DelazificationOption::ParseEverythingEagerly;
+    if (eagerDelazificationStrategy_ == PEE && strategy != PEE) {
+      
+      warnAboutConflictingDelazification();
+      return *this;
+    }
+
     eagerDelazificationStrategy_ = strategy;
     return *this;
   }
