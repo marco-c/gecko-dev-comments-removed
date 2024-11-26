@@ -3334,11 +3334,6 @@ pref("dom.push.pingInterval", 1800000);
 pref("dom.push.requestTimeout", 10000);
 
 
-pref("dom.push.http2.reset_retry_count_after_ms", 60000);
-pref("dom.push.http2.maxRetries", 2);
-pref("dom.push.http2.retryInterval", 5000);
-
-
 
 
 pref("memory.ghost_window_timeout_seconds", 60);
