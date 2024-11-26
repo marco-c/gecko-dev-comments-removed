@@ -227,12 +227,11 @@ class nsDocShell final : public nsDocLoader,
 
 
 
-
   nsresult OnLinkClick(nsIContent* aContent, nsIURI* aURI,
                        const nsAString& aTargetSpec, const nsAString& aFileName,
                        nsIInputStream* aPostDataStream,
                        nsIInputStream* aHeadersDataStream,
-                       bool aIsUserTriggered, bool aIsTrusted,
+                       bool aIsUserTriggered,
                        nsIPrincipal* aTriggeringPrincipal,
                        nsIContentSecurityPolicy* aCsp);
   

@@ -3274,7 +3274,7 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
         nsAutoString target;
         GetLinkTarget(target);
         nsContentUtils::TriggerLink(this, absURI, target,
-                                     false,  true);
+                                     false);
         
         aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
       }
@@ -3433,8 +3433,7 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
               nsAutoString target;
               GetLinkTarget(target);
               nsContentUtils::TriggerLink(this, absURI, target,
-                                           true,
-                                          mouseEvent->IsTrusted());
+                                           true);
             }
             
             
@@ -3458,10 +3457,7 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
         if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
           nsAutoString target;
           GetLinkTarget(target);
-          const InternalUIEvent* activeEvent = aVisitor.mEvent->AsUIEvent();
-          MOZ_ASSERT(activeEvent);
-          nsContentUtils::TriggerLink(this, absURI, target,  true,
-                                      activeEvent->IsTrustable());
+          nsContentUtils::TriggerLink(this, absURI, target,  true);
           aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
         }
       }
