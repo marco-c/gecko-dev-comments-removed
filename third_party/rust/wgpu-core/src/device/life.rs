@@ -139,22 +139,7 @@ pub enum WaitIdleError {
 
 
 
-
-
-
-
-
-
-
-
-
-
 pub(crate) struct LifetimeTracker {
-    
-    
-    
-    mapped: Vec<Arc<Buffer>>,
-
     
     
     
@@ -182,7 +167,6 @@ pub(crate) struct LifetimeTracker {
 impl LifetimeTracker {
     pub fn new() -> Self {
         Self {
-            mapped: Vec::new(),
             active: Vec::new(),
             ready_to_map: Vec::new(),
             work_done_closures: SmallVec::new(),
@@ -211,8 +195,21 @@ impl LifetimeTracker {
         });
     }
 
-    pub(crate) fn map(&mut self, value: &Arc<Buffer>) {
-        self.mapped.push(value.clone());
+    pub(crate) fn map(&mut self, buffer: &Arc<Buffer>) -> Option<SubmissionIndex> {
+        
+        let submission = self
+            .active
+            .iter_mut()
+            .rev()
+            .find(|a| a.contains_buffer(buffer));
+
+        let maybe_submission_index = submission.as_ref().map(|s| s.index);
+
+        submission
+            .map_or(&mut self.ready_to_map, |a| &mut a.mapped)
+            .push(buffer.clone());
+
+        maybe_submission_index
     }
 
     
@@ -304,38 +301,21 @@ impl LifetimeTracker {
         }
     }
 
-    pub fn add_work_done_closure(&mut self, closure: SubmittedWorkDoneClosure) {
+    pub fn add_work_done_closure(
+        &mut self,
+        closure: SubmittedWorkDoneClosure,
+    ) -> Option<SubmissionIndex> {
         match self.active.last_mut() {
             Some(active) => {
                 active.work_done_closures.push(closure);
+                Some(active.index)
             }
             
             
             None => {
                 self.work_done_closures.push(closure);
+                None
             }
-        }
-    }
-
-    
-    
-    
-    
-    pub(crate) fn triage_mapped(&mut self) {
-        if self.mapped.is_empty() {
-            return;
-        }
-
-        for buffer in self.mapped.drain(..) {
-            let submission = self
-                .active
-                .iter_mut()
-                .rev()
-                .find(|a| a.contains_buffer(&buffer));
-
-            submission
-                .map_or(&mut self.ready_to_map, |a| &mut a.mapped)
-                .push(buffer);
         }
     }
 
