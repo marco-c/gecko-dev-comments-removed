@@ -2504,20 +2504,34 @@ void LocalAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
   presShell->ScrollContentIntoView(mContent, ScrollAxis(), ScrollAxis(),
                                    ScrollFlags::ScrollOverflowHidden);
 
-  AutoWeakFrame frame = mContent->GetPrimaryFrame();
-  if (!frame) return;
+  AutoWeakFrame frame = GetFrame();
+  if (!frame) {
+    return;
+  }
 
   
-  nsPoint point;
-  nsCOMPtr<nsIWidget> widget = frame->GetNearestWidget(point);
-  if (!widget) return;
+  
+  
+  nsIFrame* boundingFrame = nullptr;
+  nsRect rect = RelativeBounds(&boundingFrame);
+  MOZ_ASSERT(boundingFrame);
 
-  nsSize size = frame->GetSize();
+  
+  nsPoint offsetToWidget;
+  nsCOMPtr<nsIWidget> widget = boundingFrame->GetNearestWidget(offsetToWidget);
+  if (!widget) {
+    return;
+  }
 
+  rect += offsetToWidget;
   RefPtr<nsPresContext> presContext = presShell->GetPresContext();
-  int32_t x = presContext->AppUnitsToDevPixels(point.x + size.width / 2);
-  int32_t y = presContext->AppUnitsToDevPixels(point.y + size.height / 2);
+  int32_t x = presContext->AppUnitsToDevPixels(rect.x + rect.width / 2);
+  int32_t y = presContext->AppUnitsToDevPixels(rect.y + rect.height / 2);
 
+  
+  
+  
+  
   
   nsCoreUtils::DispatchTouchEvent(eTouchStart, x, y, mContent, frame, presShell,
                                   widget);
