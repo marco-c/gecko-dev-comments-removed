@@ -322,6 +322,7 @@ class ArenaChunkBase : public ChunkBase {
     info.numArenasFree = ArenasPerChunk;
   }
 
+  void initAsCommitted();
   void initAsDecommitted();
 };
 static_assert(FirstArenaOffset ==
@@ -772,14 +773,6 @@ static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGrayInCC(GCCellPtr thing) {
 }
 
 extern JS_PUBLIC_API JS::TraceKind GCThingTraceKind(void* thing);
-
-extern JS_PUBLIC_API void EnableNurseryStrings(JSContext* cx);
-
-extern JS_PUBLIC_API void DisableNurseryStrings(JSContext* cx);
-
-extern JS_PUBLIC_API void EnableNurseryBigInts(JSContext* cx);
-
-extern JS_PUBLIC_API void DisableNurseryBigInts(JSContext* cx);
 
 
 
