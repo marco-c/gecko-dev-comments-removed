@@ -506,13 +506,13 @@ ProfilerParentTracker* ProfilerParentTracker::GetInstance() {
 
   
   
-  static UniquePtr<ProfilerParentTracker> instance = nullptr;
+  static StaticAutoPtr<ProfilerParentTracker> instance;
   if (MOZ_UNLIKELY(!instance)) {
     if (PastShutdownPhase(ShutdownPhase::XPCOMShutdownThreads)) {
       return nullptr;
     }
 
-    instance = MakeUnique<ProfilerParentTracker>();
+    instance = new ProfilerParentTracker();
 
     
     
