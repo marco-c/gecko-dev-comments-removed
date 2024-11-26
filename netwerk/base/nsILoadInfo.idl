@@ -791,6 +791,12 @@ interface nsILoadInfo : nsISupports
 
 
 
+  readonly attribute ACString fetchDestination;
+
+  
+
+
+
 
 
 

@@ -415,7 +415,6 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   
   InternalRequest(const InternalRequest& aOther, ConstructorGuard);
 
- private:
   
   
   
@@ -424,6 +423,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   static RequestDestination MapContentPolicyTypeToRequestDestination(
       nsContentPolicyType aContentPolicyType);
 
+ private:
   static bool IsNavigationContentPolicy(nsContentPolicyType aContentPolicyType);
 
   static bool IsWorkerContentPolicy(nsContentPolicyType aContentPolicyType);
