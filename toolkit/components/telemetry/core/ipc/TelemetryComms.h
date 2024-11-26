@@ -12,7 +12,7 @@
 #include "mozilla/TelemetryProcessEnums.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
-#include "mozilla/dom/WebGLIpdl.h"
+#include "mozilla/ParamTraits_TiedFields.h"
 #include "nsITelemetry.h"
 
 namespace mozilla {
@@ -52,18 +52,8 @@ struct ScalarAction {
   mozilla::Telemetry::ProcessID mProcessType;
 };
 
-struct KeyedScalarAction {
-  uint32_t mId;
-  bool mDynamic;
-  ScalarActionType mActionType;
+struct KeyedScalarAction : public ScalarAction {
   nsCString mKey;
-  
-  
-  Maybe<ScalarVariant> mData;
-  
-  
-  
-  mozilla::Telemetry::ProcessID mProcessType;
 };
 
 
