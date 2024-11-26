@@ -59,6 +59,7 @@ class UserScriptChild {
     const { context } = this;
 
     
+    
     return {
       unregister: () => {
         return context.wrapPromise(this.unregister());
@@ -69,6 +70,10 @@ class UserScriptChild {
 
 this.userScripts = class extends ExtensionAPI {
   getAPI(context) {
+    if (context.extension.manifestVersion !== 2) {
+      
+      return {};
+    }
     
     
     const blobURLsByHash = new Map();
