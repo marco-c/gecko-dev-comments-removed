@@ -7707,6 +7707,17 @@ MDefinition* MArrayLength::foldsTo(TempAllocator& alloc) {
   MObjectKeysLength* keysLength = MObjectKeysLength::New(alloc, noproxy);
   keysLength->stealResumePoint(keys->toObjectKeys());
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  keysLength->setDependency(keys);
+
   return keysLength;
 }
 
