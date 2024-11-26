@@ -4,7 +4,6 @@
 
 
 #include "GPUProcessImpl.h"
-#include "mozilla/ipc/IOThreadChild.h"
 #include "nsXPCOM.h"
 #include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/GeckoArgs.h"
