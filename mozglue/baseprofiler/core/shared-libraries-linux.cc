@@ -553,8 +553,6 @@ class FileID {
   
   static bool HashElfTextSection(const void* elf_mapped_base,
                                  std::vector<uint8_t>& identifier) {
-    identifier.resize(kMDGUIDSize);
-
     void* text_section;
     size_t text_size;
     if (!FindElfSection(elf_mapped_base, ".text", SHT_PROGBITS,
@@ -565,6 +563,7 @@ class FileID {
 
     
     
+    identifier.resize(kMDGUIDSize);
     memset(&identifier[0], 0, kMDGUIDSize);
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(text_section);
     const uint8_t* ptr_end =
