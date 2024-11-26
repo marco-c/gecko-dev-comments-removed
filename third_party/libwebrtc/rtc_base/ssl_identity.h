@@ -85,11 +85,6 @@ class RTC_EXPORT KeyParams {
 
 
 
-KeyType IntKeyTypeFamilyToKeyType(int key_type_family);
-
-
-
-
 struct SSLIdentityParams {
   std::string common_name;
   time_t not_before;  
