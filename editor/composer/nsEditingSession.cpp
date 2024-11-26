@@ -273,7 +273,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
     
     doc->FlushPendingNotifications(mozilla::FlushType::Frames);
     if (mMakeWholeDocumentEditable) {
-      doc->SetEditableFlag(true);
+      doc->SetDocumentEditableFlag(true);
       
       doc->SetEditingState(Document::EditingState::eDesignMode);
     }
@@ -495,7 +495,7 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy* aWindow) {
     RestoreAnimationMode(window);
 
     if (mMakeWholeDocumentEditable) {
-      doc->SetEditableFlag(false);
+      doc->SetDocumentEditableFlag(false);
       doc->SetEditingState(Document::EditingState::eOff);
     }
   }
