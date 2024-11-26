@@ -40,7 +40,7 @@ async function navigateTo(browser, urls, expectedPersist) {
       "pageshow"
     );
     info(`Navigating back from uri=${browser.currentURI.spec}`);
-    browser.goBack(false);
+    browser.goBack();
     await pageShowPromise;
     info(`Got pageshow event`);
     
@@ -71,7 +71,7 @@ async function navigateTo(browser, urls, expectedPersist) {
       pageShowCheck
     );
     info(`Navigating back from uri=${browser.currentURI.spec}`);
-    browser.goBack(false);
+    browser.goBack();
     await pageShowPromise;
     info(`Got pageshow event`);
     

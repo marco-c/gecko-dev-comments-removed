@@ -65,13 +65,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
 
 
 
-
-
-
-
-
-
-  bool CanGo(int32_t aOffset, bool aRequireUserInteraction);
+  bool CanGo(int32_t aOffset);
   void Go(int32_t aOffset, bool aRequireUserInteraction, bool aUserActivation,
           ErrorResult& aRv);
   void AsyncGo(int32_t aOffset, bool aRequireUserInteraction,
