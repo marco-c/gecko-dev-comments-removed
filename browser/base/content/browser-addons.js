@@ -1609,6 +1609,12 @@ var gUnifiedExtensions = {
     if (quarantinedAttention) {
       msgId = "unified-extensions-button-quarantined";
     }
+    
+    
+    
+    if (blocklistAttention) {
+      msgId = "unified-extensions-button-blocklisted";
+    }
     this.button.ownerDocument.l10n.setAttributes(this.button, msgId);
   },
 
