@@ -15,22 +15,23 @@
 
 #include "absl/strings/string_view.h"
 #include "api/video_codecs/scalability_mode.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
 
-std::optional<int> ScalabilityModeStringToNumSpatialLayers(
+RTC_EXPORT std::optional<int> ScalabilityModeStringToNumSpatialLayers(
     absl::string_view scalability_mode_string);
 
 
 
-std::optional<int> ScalabilityModeStringToNumTemporalLayers(
+RTC_EXPORT std::optional<int> ScalabilityModeStringToNumTemporalLayers(
     absl::string_view scalability_mode_string);
 
 
 
-std::optional<ScalabilityMode> ScalabilityModeStringToEnum(
+RTC_EXPORT std::optional<ScalabilityMode> ScalabilityModeStringToEnum(
     absl::string_view scalability_mode_string);
 
 }  
