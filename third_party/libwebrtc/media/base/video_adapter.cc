@@ -212,28 +212,6 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   }
 
   
-  
-  if (requested_resolution_.has_value()) {
-    
-    webrtc::Resolution requested_resolution = requested_resolution_.value();
-    if ((in_width < in_height) !=
-        (requested_resolution_->width < requested_resolution_->height)) {
-      requested_resolution = {.width = requested_resolution_->height,
-                              .height = requested_resolution_->width};
-    }
-    
-    if (in_width > 0 && in_height > 0 &&
-        (requested_resolution.width < in_width ||
-         requested_resolution.height < in_height)) {
-      double scale_factor = std::min(
-          requested_resolution.width / static_cast<double>(in_width),
-          requested_resolution.height / static_cast<double>(in_height));
-      in_width = std::round(in_width * scale_factor);
-      in_height = std::round(in_height * scale_factor);
-    }
-  }
-
-  
   if (!target_aspect_ratio || target_aspect_ratio->first <= 0 ||
       target_aspect_ratio->second <= 0) {
     *cropped_width = in_width;
@@ -264,6 +242,33 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   *out_height = *cropped_height / scale.denominator * scale.numerator;
   RTC_DCHECK_EQ(0, *out_width % resolution_alignment_);
   RTC_DCHECK_EQ(0, *out_height % resolution_alignment_);
+
+  
+  
+  
+  if (requested_resolution_.has_value()) {
+    
+    webrtc::Resolution requested_resolution = requested_resolution_.value();
+    if ((*out_width < *out_height) !=
+        (requested_resolution_->width < requested_resolution_->height)) {
+      requested_resolution = {.width = requested_resolution_->height,
+                              .height = requested_resolution_->width};
+    }
+    
+    if (*out_width > 0 && *out_height > 0 &&
+        (requested_resolution.width < *out_width ||
+         requested_resolution.height < *out_height)) {
+      double scale_factor = std::min(
+          requested_resolution.width / static_cast<double>(*out_width),
+          requested_resolution.height / static_cast<double>(*out_height));
+      *out_width = roundUp(std::round(*out_width * scale_factor),
+                           resolution_alignment_, requested_resolution.width);
+      *out_height = roundUp(std::round(*out_height * scale_factor),
+                            resolution_alignment_, requested_resolution.height);
+      RTC_DCHECK_EQ(0, *out_width % resolution_alignment_);
+      RTC_DCHECK_EQ(0, *out_height % resolution_alignment_);
+    }
+  }
 
   ++frames_out_;
   if (scale.numerator != scale.denominator)
