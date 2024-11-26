@@ -3871,7 +3871,7 @@ bool JSStructuredCloneReader::readMapField(Handle<MapObject*> mapObj,
   if (!startRead(&val)) {
     return false;
   }
-  return MapObject::set(context(), mapObj, key, val);
+  return mapObj->set(context(), key, val);
 }
 
 
@@ -4015,7 +4015,7 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
     if (obj->is<SetObject>()) {
       
       
-      if (!SetObject::add(context(), obj, key)) {
+      if (!obj->as<SetObject>().add(context(), key)) {
         return false;
       }
     } else if (obj->is<MapObject>()) {

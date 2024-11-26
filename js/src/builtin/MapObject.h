@@ -159,8 +159,7 @@ class MapObject : public OrderedHashMapObject {
   
   
   
-  [[nodiscard]] static bool set(JSContext* cx, HandleObject obj,
-                                HandleValue key, HandleValue val);
+  [[nodiscard]] bool set(JSContext* cx, const Value& key, const Value& val);
   void clear(JSContext* cx);
   [[nodiscard]] static bool iterator(JSContext* cx, IteratorKind kind,
                                      HandleObject obj, MutableHandleValue iter);
@@ -272,8 +271,7 @@ class SetObject : public OrderedHashSetObject {
   [[nodiscard]] static bool keys(JSContext* cx, HandleObject obj,
                                  JS::MutableHandle<GCVector<JS::Value>> keys);
   [[nodiscard]] static bool values(JSContext* cx, unsigned argc, Value* vp);
-  [[nodiscard]] static bool add(JSContext* cx, HandleObject obj,
-                                HandleValue key);
+  [[nodiscard]] bool add(JSContext* cx, const Value& key);
 
   
   
