@@ -68,6 +68,25 @@ struct UlpfecConfig {
   int red_rtx_payload_type;
 };
 
+struct RtpStreamConfig {
+  std::string ToString() const;
+
+  uint32_t ssrc = 0;
+  std::string rid;
+  std::string payload_name;
+  int payload_type = -1;
+  bool raw_payload = false;
+  struct Rtx {
+    std::string ToString() const;
+    
+    uint32_t ssrc = 0;
+
+    
+    int payload_type = -1;
+  };
+  std::optional<Rtx> rtx;
+};
+
 static const size_t kDefaultMaxPacketSize = 1500 - 40;  
 struct RtpConfig {
   RtpConfig();
@@ -114,6 +133,9 @@ struct RtpConfig {
   
   
   bool raw_payload = false;
+
+  
+  std::vector<RtpStreamConfig> stream_configs;
 
   
   LntfConfig lntf;
