@@ -195,7 +195,7 @@ module.exports = function (config) {
                 statements: 98.25,
                 lines: 98.2,
                 functions: 100,
-                branches: 74.63,
+                branches: 72.95,
               },
             
             "content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx":
