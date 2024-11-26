@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/x86/Assembler-x86.h"
 
@@ -20,6 +20,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
     case MIRType::Float32:
     case MIRType::Pointer:
     case MIRType::WasmAnyRef:
+    case MIRType::WasmArrayData:
     case MIRType::StackResults:
       current_ = ABIArg(stackOffset_);
       stackOffset_ += sizeof(uint32_t);
@@ -30,10 +31,10 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       stackOffset_ += sizeof(uint64_t);
       break;
     case MIRType::Simd128:
-      // On Win64, >64 bit args need to be passed by reference.  However, wasm
-      // doesn't allow passing SIMD values to JS, so the only way to reach this
-      // is wasm to wasm calls.  Ergo we can break the native ABI here and use
-      // the Wasm ABI instead.
+      
+      
+      
+      
       stackOffset_ = AlignBytes(stackOffset_, SimdMemoryAlignment);
       current_ = ABIArg(stackOffset_);
       stackOffset_ += Simd128DataSize;

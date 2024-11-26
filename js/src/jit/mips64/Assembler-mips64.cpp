@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/mips64/Assembler-mips64.h"
 
@@ -26,7 +26,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       current_ = ABIArg(stackOffset_);
       stackOffset_ += sizeof(uint64_t);
     } else {
-      // Mips platform does not support simd yet.
+      
       MOZ_CRASH("Unexpected argument type");
     }
     return current_;
@@ -36,6 +36,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
     case MIRType::Int64:
     case MIRType::Pointer:
     case MIRType::WasmAnyRef:
+    case MIRType::WasmArrayData:
     case MIRType::StackResults: {
       Register destReg;
       GetIntArgReg(regIndex_++, &destReg);
@@ -108,19 +109,19 @@ static void TraceOneDataRelocation(JSTracer* trc,
   void* ptr = (void*)Assembler::ExtractLoad64Value(inst);
   void* prior = ptr;
 
-  // Data relocations can be for Values or for raw pointers. If a Value is
-  // zero-tagged, we can trace it as if it were a raw pointer. If a Value
-  // is not zero-tagged, we have to interpret it as a Value to ensure that the
-  // tag bits are masked off to recover the actual pointer.
+  
+  
+  
+  
   uintptr_t word = reinterpret_cast<uintptr_t>(ptr);
   if (word >> JSVAL_TAG_SHIFT) {
-    // This relocation is a Value with a non-zero tag.
+    
     Value v = Value::fromRawBits(word);
     TraceManuallyBarrieredEdge(trc, &v, "jit-masm-value");
     ptr = (void*)v.bitsAsPunboxPointer();
   } else {
-    // This relocation is a raw pointer or a Value with a zero tag.
-    // No barrier needed since these are constants.
+    
+    
     TraceManuallyBarrieredGenericPointerEdge(
         trc, reinterpret_cast<gc::Cell**>(&ptr), "jit-masm-ptr");
   }
@@ -133,7 +134,7 @@ static void TraceOneDataRelocation(JSTracer* trc,
   }
 }
 
-/* static */
+
 void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
                                      CompactBufferReader& reader) {
   mozilla::Maybe<AutoWritableJitCode> awjc;
@@ -166,7 +167,7 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
   InstImm inst_bgezal = InstImm(op_regimm, zero, rt_bgezal, BOffImm16(0));
   InstImm inst_beq = InstImm(op_beq, zero, zero, BOffImm16(0));
 
-  // If encoded offset is 4, then the jump must be short
+  
   if (BOffImm16(inst[0]).decode() == 4) {
     MOZ_ASSERT(BOffImm16::IsInRange(offset));
     inst[0].setBOffImm16(BOffImm16(offset));
@@ -174,20 +175,20 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
     return;
   }
 
-  // Generate the long jump for calls because return address has to be the
-  // address after the reserved block.
+  
+  
   if (inst[0].encode() == inst_bgezal.encode()) {
     addLongJump(BufferOffset(branch), BufferOffset(target));
     Assembler::WriteLoad64Instructions(inst, ScratchRegister,
                                        LabelBase::INVALID_OFFSET);
     inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr).encode();
-    // There is 1 nop after this.
+    
     return;
   }
 
   if (BOffImm16::IsInRange(offset)) {
-    // Don't skip trailing nops can improve performance
-    // on Loongson3 platform.
+    
+    
     bool skipNops =
         !isLoongson() && (inst[0].encode() != inst_bgezal.encode() &&
                           inst[0].encode() != inst_beq.encode());
@@ -199,13 +200,13 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
       inst[2] =
           InstImm(op_regimm, zero, rt_bgez, BOffImm16(5 * sizeof(uint32_t)))
               .encode();
-      // There are 4 nops after this
+      
     }
     return;
   }
 
   if (inst[0].encode() == inst_beq.encode()) {
-    // Handle long unconditional jump.
+    
     addLongJump(BufferOffset(branch), BufferOffset(target));
     Assembler::WriteLoad64Instructions(inst, ScratchRegister,
                                        LabelBase::INVALID_OFFSET);
@@ -215,11 +216,11 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
 #else
     inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
 #endif
-    // There is 1 nop after this.
+    
   } else {
-    // Handle long conditional jump.
+    
     inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
-    // No need for a "nop" here because we can clobber scratch.
+    
     addLongJump(BufferOffset(branch + sizeof(uint32_t)), BufferOffset(target));
     Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister,
                                        LabelBase::INVALID_OFFSET);
@@ -229,7 +230,7 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
 #else
     inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
 #endif
-    // There is 1 nop after this.
+    
   }
 }
 
@@ -240,7 +241,7 @@ void Assembler::processCodeLabels(uint8_t* rawCode) {
 }
 
 uint32_t Assembler::PatchWrite_NearCallSize() {
-  // Load an address needs 4 instructions, and a jump with a delay slot.
+  
   return (4 + 2) * sizeof(uint32_t);
 }
 
@@ -249,11 +250,11 @@ void Assembler::PatchWrite_NearCall(CodeLocationLabel start,
   Instruction* inst = (Instruction*)start.raw();
   uint8_t* dest = toCall.raw();
 
-  // Overwrite whatever instruction used to be here with a call.
-  // Always use long jump for two reasons:
-  // - Jump has to be the same size because of PatchWrite_NearCallSize.
-  // - Return address has to be at the end of replaced block.
-  // Short jump wouldn't be more efficient.
+  
+  
+  
+  
+  
   Assembler::WriteLoad64Instructions(inst, ScratchRegister, (uint64_t)dest);
   inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr);
   inst[5] = InstNOP();
@@ -336,11 +337,11 @@ void Assembler::PatchDataWithValueCheck(CodeLocationLabel label,
                                         PatchedImmPtr expectedValue) {
   Instruction* inst = (Instruction*)label.raw();
 
-  // Extract old Value
+  
   DebugOnly<uint64_t> value = Assembler::ExtractLoad64Value(inst);
   MOZ_ASSERT(value == uint64_t(expectedValue.value));
 
-  // Replace with new value
+  
   Assembler::UpdateLoad64Value(inst, uint64_t(newValue.value));
 }
 

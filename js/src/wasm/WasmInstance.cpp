@@ -1790,13 +1790,19 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   return 0;
 }
 
+
+
+
+
+
+
+
  int32_t Instance::arrayCopy(Instance* instance, void* dstArray,
                                          uint32_t dstIndex, void* srcArray,
                                          uint32_t srcIndex,
                                          uint32_t numElements,
                                          uint32_t elementSize) {
   MOZ_ASSERT(SASigArrayCopy.failureMode == FailureMode::FailOnNegI32);
-  JSContext* cx = instance->cx();
 
   
   
@@ -1804,7 +1810,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
   
   if (!srcArray || !dstArray) {
-    ReportTrapError(cx, JSMSG_WASM_DEREF_NULL);
+    ReportTrapError(instance->cx(), JSMSG_WASM_DEREF_NULL);
     return -1;
   }
 
@@ -1816,13 +1822,10 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   MOZ_ASSERT(elementSize >= 1 && elementSize <= 16);
 
   
-  Rooted<WasmArrayObject*> dstArrayObj(cx,
-                                       static_cast<WasmArrayObject*>(dstArray));
-  MOZ_RELEASE_ASSERT(dstArrayObj->is<WasmArrayObject>());
-
-  Rooted<WasmArrayObject*> srcArrayObj(cx,
-                                       static_cast<WasmArrayObject*>(srcArray));
-  MOZ_RELEASE_ASSERT(srcArrayObj->is<WasmArrayObject>());
+  WasmArrayObject* dstArrayObj = static_cast<WasmArrayObject*>(dstArray);
+  WasmArrayObject* srcArrayObj = static_cast<WasmArrayObject*>(srcArray);
+  MOZ_ASSERT(dstArrayObj->is<WasmArrayObject>() &&
+             srcArrayObj->is<WasmArrayObject>());
 
   
   
@@ -1831,27 +1834,25 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   
   uint64_t dstNumElements = uint64_t(dstArrayObj->numElements_);
   if (uint64_t(dstIndex) + uint64_t(numElements) > dstNumElements) {
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    
+    
+    ReportTrapError(instance->cx(), JSMSG_WASM_OUT_OF_BOUNDS);
     return -1;
   }
 
   
   uint64_t srcNumElements = uint64_t(srcArrayObj->numElements_);
   if (uint64_t(srcIndex) + uint64_t(numElements) > srcNumElements) {
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    
+    
+    ReportTrapError(instance->cx(), JSMSG_WASM_OUT_OF_BOUNDS);
     return -1;
   }
 
-  
-  uint64_t numBytesToCopy = uint64_t(numElements) * uint64_t(elementSize);
-#ifndef JS_64BIT
-  if (numBytesToCopy > uint64_t(UINT32_MAX)) {
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return -1;
+  if (numElements == 0) {
+    
+    return 0;
   }
-#endif
-  
-  
 
   
   
@@ -1859,47 +1860,25 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   uint8_t* dstBase = dstArrayObj->data_;
   srcBase += size_t(srcIndex) * size_t(elementSize);
   dstBase += size_t(dstIndex) * size_t(elementSize);
-
-  if (numBytesToCopy == 0 || srcBase == dstBase) {
+  if (srcBase == dstBase) {
     
     return 0;
   }
 
   if (!elemsAreRefTyped) {
     
-    memmove(dstBase, srcBase, size_t(numBytesToCopy));
+    memmove(dstBase, srcBase, size_t(numElements) * size_t(elementSize));
     return 0;
   }
 
+  GCPtr<AnyRef>* dst = (GCPtr<AnyRef>*)dstBase;
+  AnyRef* src = (AnyRef*)srcBase;
   
-  uint8_t* nextSrc;
-  uint8_t* nextDst;
-  intptr_t step;
-  if (dstBase < srcBase) {
-    
-    
-    step = intptr_t(elementSize);
-    nextSrc = srcBase;
-    nextDst = dstBase;
+  if (uintptr_t(dstBase) < uintptr_t(srcBase)) {
+    std::copy(src, src + numElements, dst);
   } else {
-    
-    step = -intptr_t(elementSize);
-    nextSrc = srcBase + size_t(numBytesToCopy) - size_t(elementSize);
-    nextDst = dstBase + size_t(numBytesToCopy) - size_t(elementSize);
+    std::copy_backward(src, src + numElements, dst + numElements);
   }
-  
-  
-  RefType aRefType = RefType::eq();
-  
-  for (size_t i = 0; i < size_t(numElements); i++) {
-    
-    RootedVal value(cx, aRefType);
-    value.get().readFromHeapLocation(nextSrc);
-    value.get().writeToHeapLocation(nextDst);
-    nextSrc += step;
-    nextDst += step;
-  }
-
   return 0;
 }
 
