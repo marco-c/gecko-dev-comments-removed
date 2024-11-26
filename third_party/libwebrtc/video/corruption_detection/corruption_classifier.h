@@ -41,6 +41,14 @@ class CorruptionClassifier {
   
   
   
+  double CalculateCorruptionProbability(
+      rtc::ArrayView<const FilteredSample> filtered_original_samples,
+      rtc::ArrayView<const FilteredSample> filtered_compressed_samples,
+      int luma_threshold,
+      int chroma_threshold) const;
+
+  
+  
   double CalculateCorruptionProbablility(
       rtc::ArrayView<const FilteredSample> filtered_original_samples,
       rtc::ArrayView<const FilteredSample> filtered_compressed_samples,
