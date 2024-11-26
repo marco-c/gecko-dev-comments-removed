@@ -379,6 +379,9 @@ inline bool SameFragment(const nsScannerIterator& a,
   return a.fragment().mFragmentStart == b.fragment().mFragmentStart;
 }
 
+
+
+
 template <>
 struct nsCharSourceTraits<nsScannerIterator> {
   typedef nsScannerIterator::difference_type difference_type;
