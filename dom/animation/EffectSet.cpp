@@ -5,8 +5,8 @@
 
 
 #include "EffectSet.h"
-#include "mozilla/dom/Element.h"         
-#include "mozilla/PseudoStyleType.h"     
+#include "mozilla/dom/Element.h"      
+#include "mozilla/PseudoStyleType.h"  
 #include "mozilla/RestyleManager.h"
 #include "mozilla/LayerAnimationInfo.h"
 #include "nsCycleCollectionNoteChild.h"  
