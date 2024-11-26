@@ -82,7 +82,8 @@ class AnimationUtils {
 
 
   static bool HasCurrentTransitions(const dom::Element* aElement,
-                                    PseudoStyleType aPseudoType);
+                                    const PseudoStyleRequest& aPseudoRequest =
+                                        PseudoStyleRequest::NotPseudo());
 
   
 

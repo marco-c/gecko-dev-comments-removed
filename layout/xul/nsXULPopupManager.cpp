@@ -1836,8 +1836,7 @@ void nsXULPopupManager::FirePopupHidingEvent(Element* aPopup,
   
   
   
-  if (shouldAnimate && AnimationUtils::HasCurrentTransitions(
-                           aPopup, PseudoStyleType::NotPseudo)) {
+  if (shouldAnimate && AnimationUtils::HasCurrentTransitions(aPopup)) {
     RefPtr<TransitionEnder> ender = new TransitionEnder(aPopup, aOptions);
     aPopup->AddSystemEventListener(u"transitionend"_ns, ender, false, false);
     aPopup->AddSystemEventListener(u"transitioncancel"_ns, ender, false, false);

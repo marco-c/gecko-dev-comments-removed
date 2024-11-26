@@ -5,10 +5,10 @@
 
 
 #include "EffectSet.h"
-#include "mozilla/dom/Element.h"  
+#include "mozilla/dom/Element.h"         
+#include "mozilla/PseudoStyleType.h"     
 #include "mozilla/RestyleManager.h"
 #include "mozilla/LayerAnimationInfo.h"
-#include "nsCSSPseudoElements.h"         
 #include "nsCycleCollectionNoteChild.h"  
 #include "nsPresContext.h"
 #include "nsLayoutUtils.h"
@@ -25,17 +25,18 @@ void EffectSet::Traverse(nsCycleCollectionTraversalCallback& aCallback) {
 
 
 EffectSet* EffectSet::Get(const dom::Element* aElement,
-                          PseudoStyleType aPseudoType) {
+                          const PseudoStyleRequest& aPseudoRequest) {
   if (auto* data = aElement->GetAnimationData()) {
-    return data->GetEffectSetFor(aPseudoType);
+    return data->GetEffectSetFor(aPseudoRequest.mType);
   }
   return nullptr;
 }
 
 
 EffectSet* EffectSet::GetOrCreate(dom::Element* aElement,
-                                  PseudoStyleType aPseudoType) {
-  return &aElement->EnsureAnimationData().EnsureEffectSetFor(aPseudoType);
+                                  const PseudoStyleRequest& aPseudoRequest) {
+  return &aElement->EnsureAnimationData().EnsureEffectSetFor(
+      aPseudoRequest.mType);
 }
 
 
@@ -64,11 +65,7 @@ EffectSet* EffectSet::GetForFrame(const nsIFrame* aFrame,
 
   Maybe<NonOwningAnimationTarget> target =
       EffectCompositor::GetAnimationElementAndPseudoForFrame(frameToQuery);
-  if (!target) {
-    return nullptr;
-  }
-
-  return Get(target->mElement, target->mPseudoRequest.mType);
+  return target ? Get(*target) : nullptr;
 }
 
 
@@ -82,29 +79,20 @@ EffectSet* EffectSet::GetForFrame(const nsIFrame* aFrame,
 EffectSet* EffectSet::GetForStyleFrame(const nsIFrame* aStyleFrame) {
   Maybe<NonOwningAnimationTarget> target =
       EffectCompositor::GetAnimationElementAndPseudoForFrame(aStyleFrame);
-
-  if (!target) {
-    return nullptr;
-  }
-
-  return Get(target->mElement, target->mPseudoRequest.mType);
+  return target ? Get(*target) : nullptr;
 }
 
 
 EffectSet* EffectSet::GetForEffect(const dom::KeyframeEffect* aEffect) {
   NonOwningAnimationTarget target = aEffect->GetAnimationTarget();
-  if (!target) {
-    return nullptr;
-  }
-
-  return EffectSet::Get(target.mElement, target.mPseudoRequest.mType);
+  return target ? Get(target) : nullptr;
 }
 
 
 void EffectSet::DestroyEffectSet(dom::Element* aElement,
-                                 PseudoStyleType aPseudoType) {
+                                 const PseudoStyleRequest& aPseudoRequest) {
   if (auto* data = aElement->GetAnimationData()) {
-    data->ClearEffectSetFor(aPseudoType);
+    data->ClearEffectSetFor(aPseudoRequest.mType);
   }
 }
 

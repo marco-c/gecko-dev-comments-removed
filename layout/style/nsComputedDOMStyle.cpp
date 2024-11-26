@@ -130,11 +130,9 @@ static bool ElementNeedsRestyle(Element* aElement,
   }
 
   
-  
-  if (aElement->MayHaveAnimations() &&
-      aPseudo.mType != PseudoStyleType::NotPseudo &&
+  if (aElement->MayHaveAnimations() && !aPseudo.IsNotPseudo() &&
       AnimationUtils::IsSupportedPseudoForAnimations(aPseudo)) {
-    if (EffectSet::Get(aElement, aPseudo.mType)) {
+    if (EffectSet::Get(aElement, aPseudo)) {
       return true;
     }
   }
