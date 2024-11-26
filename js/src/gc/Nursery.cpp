@@ -1525,7 +1525,7 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
     poisonAndInitCurrentChunk();
   }
 
-  clearMapAndSetNurseryRanges();
+  clearMapAndSetNurseryIterators();
 
   
   tenuredEverything = shouldTenureEverything(reason);
@@ -2492,15 +2492,15 @@ bool js::Nursery::isSubChunkMode() const {
   return capacity() <= NurseryChunkUsableSize;
 }
 
-void js::Nursery::clearMapAndSetNurseryRanges() {
+void js::Nursery::clearMapAndSetNurseryIterators() {
   
   
   
-  for (auto* map : mapsWithNurseryRanges_) {
-    map->clearNurseryRangesBeforeMinorGC();
+  for (auto* map : mapsWithNurseryIterators_) {
+    map->clearNurseryIteratorsBeforeMinorGC();
   }
-  for (auto* set : setsWithNurseryRanges_) {
-    set->clearNurseryRangesBeforeMinorGC();
+  for (auto* set : setsWithNurseryIterators_) {
+    set->clearNurseryIteratorsBeforeMinorGC();
   }
 }
 
@@ -2520,22 +2520,22 @@ void js::Nursery::sweepMapAndSetObjects() {
   AutoEnterOOMUnsafeRegion oomUnsafe;
 
   MapObjectVector maps;
-  std::swap(mapsWithNurseryRanges_, maps);
+  std::swap(mapsWithNurseryIterators_, maps);
   for (auto* mapobj : maps) {
     mapobj = MapObject::sweepAfterMinorGC(gcx, mapobj);
     if (mapobj) {
-      if (!mapsWithNurseryRanges_.append(mapobj)) {
+      if (!mapsWithNurseryIterators_.append(mapobj)) {
         oomUnsafe.crash("sweepAfterMinorGC");
       }
     }
   }
 
   SetObjectVector sets;
-  std::swap(setsWithNurseryRanges_, sets);
+  std::swap(setsWithNurseryIterators_, sets);
   for (auto* setobj : sets) {
     setobj = SetObject::sweepAfterMinorGC(gcx, setobj);
     if (setobj) {
-      if (!setsWithNurseryRanges_.append(setobj)) {
+      if (!setsWithNurseryIterators_.append(setobj)) {
         oomUnsafe.crash("sweepAfterMinorGC");
       }
     }
