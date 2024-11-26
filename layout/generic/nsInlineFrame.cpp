@@ -691,7 +691,7 @@ void nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
       
       
       
-      StyleClear oldClearType = aStatus.FloatClearType();
+      UsedClear oldClearType = aStatus.FloatClearType();
       aStatus.Reset();
       aStatus.SetIncomplete();
       aStatus.SetInlineLineBreakAfter(oldClearType);

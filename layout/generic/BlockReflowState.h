@@ -174,7 +174,7 @@ class BlockReflowState {
     FloatsPushedOrSplit,
   };
   std::tuple<nscoord, ClearFloatsResult> ClearFloats(
-      nscoord aBCoord, StyleClear aClearType,
+      nscoord aBCoord, UsedClear aClearType,
       nsIFrame* aFloatAvoidingBlock = nullptr);
 
   nsFloatManager* FloatManager() const {
@@ -403,7 +403,7 @@ class BlockReflowState {
 
   
   
-  StyleClear mTrailingClearFromPIF;
+  UsedClear mTrailingClearFromPIF;
 
   
   

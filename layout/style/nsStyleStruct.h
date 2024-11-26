@@ -103,6 +103,23 @@ struct ContainSizeAxes {
   const bool mBContained;
 };
 
+
+
+enum class UsedFloat : uint8_t {
+  None,
+  Left,
+  Right,
+};
+
+
+
+enum class UsedClear : uint8_t {
+  None,
+  Left,
+  Right,
+  Both,
+};
+
 }  
 
 #define STYLE_STRUCT(name_)                          \
@@ -1330,8 +1347,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   }
 
   
-  inline mozilla::StyleFloat UsedFloat(mozilla::WritingMode aWM) const;
-  inline mozilla::StyleClear UsedClear(mozilla::WritingMode aWM) const;
+  inline mozilla::UsedFloat UsedFloat(mozilla::WritingMode aWM) const;
+  inline mozilla::UsedClear UsedClear(mozilla::WritingMode aWM) const;
 
  private:
   mozilla::StyleAppearance mAppearance;
