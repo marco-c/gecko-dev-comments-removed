@@ -13,10 +13,30 @@ struct PRLibrary;
 #include "mozilla/Path.h"
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"
+
+
 namespace mozilla {
-using PathString = nsTString<filesystem::Path::value_type>;
 using PathSubstring = nsTSubstring<filesystem::Path::value_type>;
-} 
+using PathString = nsTString<filesystem::Path::value_type>;
+using AutoPathString = nsTAutoString<filesystem::Path::value_type>;
+using DependentPathString = nsTDependentString<filesystem::Path::value_type>;
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+XPCOM_API([[nodiscard]] nsresult)
+NS_NewPathStringLocalFile(const mozilla::PathSubstring& aPath,
+                          nsIFile** aResult);
 %}
 
 [ptr] native PRFileDescStar(PRFileDesc);
@@ -431,8 +451,10 @@ interface nsIFile : nsISupports
 
 
 
+    [must_use]
     void initWithPath(in AString filePath);
-    [noscript] void initWithNativePath(in ACString filePath);
+    [noscript, must_use]
+    void initWithNativePath(in ACString filePath);
 
     
 

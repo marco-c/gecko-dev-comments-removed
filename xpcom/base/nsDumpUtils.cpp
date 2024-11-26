@@ -410,7 +410,8 @@ nsresult nsDumpUtils::OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
   
   if (!*aFile) {
     if (char* env = PR_GetEnv("DOWNLOADS_DIRECTORY")) {
-      NS_NewNativeLocalFile(nsCString(env), aFile);
+      Unused << NS_WARN_IF(
+          NS_FAILED(NS_NewNativeLocalFile(nsCString(env), aFile)));
     }
   }
 #endif

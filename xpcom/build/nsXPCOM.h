@@ -131,28 +131,37 @@ XPCOM_API(nsresult) NS_GetComponentManager(nsIComponentManager** aResult);
 
 XPCOM_API(nsresult) NS_GetComponentRegistrar(nsIComponentRegistrar** aResult);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __cplusplus
 
-XPCOM_API(nsresult)
+
+
+
+
+
+
+
+
+
+
+
+
+XPCOM_API([[nodiscard]] nsresult)
 NS_NewLocalFile(const nsAString& aPath, nsIFile** aResult);
 
-XPCOM_API(nsresult)
+
+
+
+
+
+
+
+
+
+
+
+
+
+XPCOM_API([[nodiscard]] nsresult)
 NS_NewNativeLocalFile(const nsACString& aPath, nsIFile** aResult);
 
 
@@ -161,6 +170,61 @@ NS_NewNativeLocalFile(const nsACString& aPath, nsIFile** aResult);
 class NS_ConvertUTF16toUTF8;
 nsresult NS_NewNativeLocalFile(const NS_ConvertUTF16toUTF8& aPath,
                                nsIFile** aResult) = delete;
+
+
+
+
+
+
+
+
+
+
+
+
+
+XPCOM_API([[nodiscard]] nsresult)
+NS_NewUTF8LocalFile(const nsACString& aPath, nsIFile** aResult);
+
+
+
+
+
+
+
+
+
+
+XPCOM_API([[nodiscard]] nsresult)
+NS_NewLocalFileWithFile(nsIFile* aFile, nsIFile** aResult);
+
+
+
+
+
+
+
+
+
+
+
+XPCOM_API([[nodiscard]] nsresult)
+NS_NewLocalFileWithRelativeDescriptor(nsIFile* aFromFile,
+                                      const nsACString& aRelativeDesc,
+                                      nsIFile** aResult);
+
+
+
+
+
+
+
+
+
+
+XPCOM_API([[nodiscard]] nsresult)
+NS_NewLocalFileWithPersistentDescriptor(const nsACString& aPersistentDescriptor,
+                                        nsIFile** aResult);
 
 #endif
 

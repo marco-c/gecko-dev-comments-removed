@@ -89,22 +89,14 @@ nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
   
   if (path.CharAt(0) == '\\') path.Cut(0, 1);
 
-  nsCOMPtr<nsIFile> localFile;
   if (IsUtf8(path)) {
-    rv =
-        NS_NewLocalFile(NS_ConvertUTF8toUTF16(path), getter_AddRefs(localFile));
+    return NS_NewUTF8LocalFile(path, result);
   }
   
   
   
   
-  else {
-    
-    rv = NS_NewNativeLocalFile(path, getter_AddRefs(localFile));
-  }
 
-  if (NS_FAILED(rv)) return rv;
-
-  localFile.forget(result);
-  return NS_OK;
+  
+  return NS_NewNativeLocalFile(path, result);
 }
