@@ -111,15 +111,6 @@ class nsViewManager final {
   
 
 
-
-
-
-
-  void InvalidateViewNoSuppression(nsView* aView, const nsRect& aRect);
-
-  
-
-
   void InvalidateAllViews();
 
   
@@ -347,8 +338,6 @@ class nsViewManager final {
   bool IsPainting() const { return RootViewManager()->mPainting; }
 
   void SetPainting(bool aPainting) { RootViewManager()->mPainting = aPainting; }
-
-  void InvalidateView(nsView* aView, const nsRect& aRect);
 
   nsViewManager* RootViewManager() const {
     return mRootViewManager ? mRootViewManager.get()
