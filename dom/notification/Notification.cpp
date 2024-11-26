@@ -268,21 +268,6 @@ class GetPermissionRunnable final : public WorkerMainThreadRunnable {
   PermissionCheckPurpose mPurpose;
 };
 
-nsresult CheckScope(nsIPrincipal* aPrincipal, const nsACString& aScope,
-                    uint64_t aWindowID) {
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aPrincipal);
-
-  nsCOMPtr<nsIURI> scopeURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), aScope);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  return aPrincipal->CheckMayLoadWithReporting(
-      scopeURI,
-       false, aWindowID);
-}
 }  
 
 
@@ -1072,49 +1057,6 @@ Result<Ok, QMResult> Notification::InitFromBase64(const nsAString& aData) {
 
 
 
-
-
-
-
-class CheckLoadRunnable final : public WorkerMainThreadRunnable {
-  nsresult mRv;
-  nsCString mScope;
-  ServiceWorkerRegistrationDescriptor mDescriptor;
-
- public:
-  explicit CheckLoadRunnable(
-      WorkerPrivate* aWorker, const nsACString& aScope,
-      const ServiceWorkerRegistrationDescriptor& aDescriptor)
-      : WorkerMainThreadRunnable(aWorker, "Notification :: Check Load"_ns),
-        mRv(NS_ERROR_DOM_SECURITY_ERR),
-        mScope(aScope),
-        mDescriptor(aDescriptor) {}
-
-  bool MainThreadRun() override {
-    MOZ_ASSERT(mWorkerRef);
-    nsIPrincipal* principal = mWorkerRef->Private()->GetPrincipal();
-    mRv = CheckScope(principal, mScope, mWorkerRef->Private()->WindowID());
-
-    if (NS_FAILED(mRv)) {
-      return true;
-    }
-
-    auto activeWorker = mDescriptor.GetActive();
-
-    if (!activeWorker ||
-        activeWorker.ref().Id() != mWorkerRef->Private()->ServiceWorkerID()) {
-      mRv = NS_ERROR_NOT_AVAILABLE;
-    }
-
-    return true;
-  }
-
-  nsresult Result() { return mRv; }
-};
-
-
-
-
 already_AddRefed<Promise> Notification::ShowPersistentNotification(
     JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aScope,
     const nsAString& aTitle, const NotificationOptions& aOptions,
@@ -1122,63 +1064,27 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   MOZ_ASSERT(aGlobal);
 
   
-  
-  
-  
-  
-  
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aGlobal);
-    if (NS_WARN_IF(!sop)) {
-      aRv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    nsIPrincipal* principal = sop->GetPrincipal();
-    if (NS_WARN_IF(!principal)) {
-      aRv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    uint64_t windowID = 0;
-    nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(aGlobal);
-    if (win) {
-      windowID = win->WindowID();
-    }
-
-    aRv = CheckScope(principal, NS_ConvertUTF16toUTF8(aScope), windowID);
-    if (NS_WARN_IF(aRv.Failed())) {
-      aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-      return nullptr;
-    }
-  } else {
-    WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(worker);
-    worker->AssertIsOnWorkerThread();
-
-    RefPtr<CheckLoadRunnable> loadChecker = new CheckLoadRunnable(
-        worker, NS_ConvertUTF16toUTF8(aScope), aDescriptor);
-    loadChecker->Dispatch(worker, Canceling, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-
-    if (NS_WARN_IF(NS_FAILED(loadChecker->Result()))) {
-      if (loadChecker->Result() == NS_ERROR_NOT_AVAILABLE) {
-        aRv.ThrowTypeError<MSG_NO_ACTIVE_WORKER>(NS_ConvertUTF16toUTF8(aScope));
-      } else {
-        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-      }
-      return nullptr;
-    }
-  }
-
-  
   RefPtr<Promise> p = Promise::Create(aGlobal, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
+  
+  
+  if (!aDescriptor.GetActive()) {
+    aRv.ThrowTypeError<MSG_NO_ACTIVE_WORKER>(NS_ConvertUTF16toUTF8(aScope));
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
