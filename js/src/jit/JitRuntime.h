@@ -165,9 +165,6 @@ class JitRuntime {
   WriteOnceData<uint32_t> wasmAnyRefPreBarrierOffset_{0};
 
   
-  WriteOnceData<uint32_t> freeStubOffset_{0};
-
-  
   WriteOnceData<uint32_t> lazyLinkStubOffset_{0};
 
   
@@ -268,7 +265,6 @@ class JitRuntime {
   void generateInvalidator(MacroAssembler& masm, Label* bailoutTail);
   uint32_t generatePreBarrier(JSContext* cx, MacroAssembler& masm,
                               MIRType type);
-  void generateFreeStub(MacroAssembler& masm);
   void generateIonGenericCallStub(MacroAssembler& masm,
                                   IonGenericCallKind kind);
 
@@ -429,8 +425,6 @@ class JitRuntime {
         MOZ_CRASH();
     }
   }
-
-  TrampolinePtr freeStub() const { return trampolineCode(freeStubOffset_); }
 
   TrampolinePtr lazyLinkStub() const {
     return trampolineCode(lazyLinkStubOffset_);
