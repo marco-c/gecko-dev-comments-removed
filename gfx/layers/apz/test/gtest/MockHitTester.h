@@ -26,7 +26,7 @@ class MockHitTester final : public IAPZHitTester {
 
   
   
-  void QueueHitResult(ScrollableLayerGuid::ViewID aScrollId,
+  void QueueHitResult(ScrollableLayerGuid aGuid,
                       gfx::CompositorHitTestInfo aHitInfo);
 
   
