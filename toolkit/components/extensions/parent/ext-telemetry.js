@@ -9,12 +9,6 @@ ChromeUtils.defineESModuleGetters(this, {
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.sys.mjs",
 });
 
-const SCALAR_TYPES = {
-  count: Ci.nsITelemetry.SCALAR_TYPE_COUNT,
-  string: Ci.nsITelemetry.SCALAR_TYPE_STRING,
-  boolean: Ci.nsITelemetry.SCALAR_TYPE_BOOLEAN,
-};
-
 
 
 function desktopCheck() {
@@ -54,70 +48,37 @@ this.telemetry = class extends ExtensionAPI {
             throw new ExtensionUtils.ExtensionError(ex);
           }
         },
-        scalarAdd(name, value) {
+        scalarAdd(_name, _value) {
           desktopCheck();
-          try {
-            Services.telemetry.scalarAdd(name, value);
-          } catch (ex) {
-            throw new ExtensionUtils.ExtensionError(ex);
-          }
+          
         },
-        scalarSet(name, value) {
+        scalarSet(_name, _value) {
           desktopCheck();
-          try {
-            Services.telemetry.scalarSet(name, value);
-          } catch (ex) {
-            throw new ExtensionUtils.ExtensionError(ex);
-          }
+          
         },
-        scalarSetMaximum(name, value) {
+        scalarSetMaximum(_name, _value) {
           desktopCheck();
-          try {
-            Services.telemetry.scalarSetMaximum(name, value);
-          } catch (ex) {
-            throw new ExtensionUtils.ExtensionError(ex);
-          }
+          
         },
-        keyedScalarAdd(name, key, value) {
+        keyedScalarAdd(_name, _key, _value) {
           desktopCheck();
-          try {
-            Services.telemetry.keyedScalarAdd(name, key, value);
-          } catch (ex) {
-            throw new ExtensionUtils.ExtensionError(ex);
-          }
+          
         },
-        keyedScalarSet(name, key, value) {
+        keyedScalarSet(_name, _key, _value) {
           desktopCheck();
-          try {
-            Services.telemetry.keyedScalarSet(name, key, value);
-          } catch (ex) {
-            throw new ExtensionUtils.ExtensionError(ex);
-          }
+          
         },
-        keyedScalarSetMaximum(name, key, value) {
+        keyedScalarSetMaximum(_name, _key, _value) {
           desktopCheck();
-          try {
-            Services.telemetry.keyedScalarSetMaximum(name, key, value);
-          } catch (ex) {
-            throw new ExtensionUtils.ExtensionError(ex);
-          }
+          
         },
         recordEvent(_category, _method, _object, _value, _extra) {
           desktopCheck();
           
         },
-        registerScalars(category, data) {
+        registerScalars(_category, _data) {
           desktopCheck();
-          try {
-            
-            
-            Object.keys(data).forEach(scalar => {
-              data[scalar].kind = SCALAR_TYPES[data[scalar].kind];
-            });
-            Services.telemetry.registerScalars(category, data);
-          } catch (ex) {
-            throw new ExtensionUtils.ExtensionError(ex);
-          }
+          
         },
         setEventRecordingEnabled(_category, _enabled) {
           desktopCheck();
