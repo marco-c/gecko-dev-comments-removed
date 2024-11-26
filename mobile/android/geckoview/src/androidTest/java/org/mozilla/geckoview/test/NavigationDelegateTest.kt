@@ -783,8 +783,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Setting(key = Setting.Key.USE_TRACKING_PROTECTION, value = "true")
-    @Ignore
-    
+    @Ignore 
     @Test
     fun trackingProtection() {
         val category = ContentBlocking.AntiTracking.TEST
