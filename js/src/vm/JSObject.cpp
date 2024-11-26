@@ -2304,7 +2304,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
-#ifdef NIGHTLY_BUILD
   
   
   
@@ -2313,6 +2312,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
+#ifdef NIGHTLY_BUILD
   if (key == JSProto_Math && !JS::Prefs::experimental_math_sumprecise() &&
       id == NameToId(cx->names().sumPrecise)) {
     return true;
