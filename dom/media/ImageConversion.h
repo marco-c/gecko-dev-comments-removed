@@ -8,6 +8,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsError.h"
+#include "mozilla/gfx/Point.h"
 
 namespace mozilla {
 
@@ -36,7 +37,8 @@ nsresult ConvertToI420(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
 
 
 nsresult ConvertToNV12(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
-                       uint8_t* aDestUV, int aDestStrideUV);
+                       uint8_t* aDestUV, int aDestStrideUV,
+                       gfx::IntSize aDestSize);
 
 
 
