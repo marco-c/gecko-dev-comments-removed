@@ -96,7 +96,7 @@ def fill_template(config, tasks):
             if artifact:
                 pass
             elif "linux" in os_hint:
-                artifact = "target.tar.xz"
+                artifact = "target.tar.bz2"
             elif "macosx" in os_hint:
                 artifact = "target.dmg"
             elif "android" in os_hint:
