@@ -164,12 +164,6 @@ class Nursery {
   
   
   
-  void* allocateBufferSameLocation(gc::Cell* owner, size_t nbytes,
-                                   arena_id_t arenaId);
-
-  
-  
-  
   
   std::tuple<void*, bool> allocateZeroedBuffer(JS::Zone* zone, size_t nbytes,
                                                arena_id_t arena);
