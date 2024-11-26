@@ -346,6 +346,9 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
   handler.maybeDisableIon();
 
   
+  handler.createAllocSites();
+
+  
   
   
   {
@@ -644,10 +647,10 @@ static bool CreateAllocSitesForCacheIRStub(JSScript* script, uint32_t pcOffset,
   return true;
 }
 
-static void CreateAllocSitesForICChain(JSScript* script, uint32_t pcOffset,
-                                       uint32_t entryIndex) {
+static void CreateAllocSitesForICChain(JSScript* script, uint32_t entryIndex) {
   JitScript* jitScript = script->jitScript();
   ICStub* stub = jitScript->icEntry(entryIndex).firstStub();
+  uint32_t pcOffset = jitScript->fallbackStub(entryIndex)->pcOffset();
 
   while (!stub->isFallback()) {
     if (!CreateAllocSitesForCacheIRStub(script, pcOffset,
@@ -657,6 +660,12 @@ static void CreateAllocSitesForICChain(JSScript* script, uint32_t pcOffset,
       return;
     }
     stub = stub->toCacheIRStub()->next();
+  }
+}
+
+void BaselineCompilerHandler::createAllocSites() {
+  for (uint32_t allocSiteIndex : allocSiteIndices_) {
+    CreateAllocSitesForICChain(script(), allocSiteIndex);
   }
 }
 
@@ -684,8 +693,9 @@ bool BaselineCompilerCodeGen::emitNextIC() {
   MOZ_ASSERT(stub->pcOffset() == pcOffset);
   MOZ_ASSERT(BytecodeOpHasIC(JSOp(*handler.pc())));
 
-  if (BytecodeOpCanHaveAllocSite(JSOp(*handler.pc()))) {
-    CreateAllocSitesForICChain(script, pcOffset, entryIndex);
+  if (BytecodeOpCanHaveAllocSite(JSOp(*handler.pc())) &&
+      !handler.addAllocSiteIndex(entryIndex)) {
+    return false;
   }
 
   
