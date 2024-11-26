@@ -732,6 +732,14 @@ class Accessible {
   static void TranslateString(const nsString& aKey, nsAString& aStringOut,
                               const nsTArray<nsString>& aParams = {});
 
+  
+
+
+
+
+
+  virtual int32_t GetLevel(bool aFast) const;
+
  protected:
   
 
@@ -750,14 +758,6 @@ class Accessible {
 
 
   virtual AccGroupInfo* GetOrCreateGroupInfo() = 0;
-
-  
-
-
-
-
-
-  virtual int32_t GetLevel(bool aFast) const;
 
   
 
