@@ -115,18 +115,23 @@ bool nsStyleUtil::ValueIncludes(const nsAString& aValueList,
 
   while (p < p_end) {
     
-    while (p != p_end && nsContentUtils::IsHTMLWhitespace(*p)) ++p;
+    while (p != p_end && nsContentUtils::IsHTMLWhitespace(*p)) {
+      ++p;
+    }
 
     const char16_t* val_start = p;
 
     
-    while (p != p_end && !nsContentUtils::IsHTMLWhitespace(*p)) ++p;
+    while (p != p_end && !nsContentUtils::IsHTMLWhitespace(*p)) {
+      ++p;
+    }
 
     const char16_t* val_end = p;
 
     if (val_start < val_end &&
-        aValue.Equals(Substring(val_start, val_end), aComparator))
+        aValue.Equals(Substring(val_start, val_end), aComparator)) {
       return true;
+    }
 
     ++p;  
   }
@@ -180,7 +185,9 @@ void nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent,
   const char16_t* in = aIdent.BeginReading();
   const char16_t* const end = aIdent.EndReading();
 
-  if (in == end) return;
+  if (in == end) {
+    return;
+  }
 
   
   
