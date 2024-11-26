@@ -95,10 +95,9 @@ document.addEventListener(
           case "View:PageInfo":
             BrowserCommands.pageInfo();
             break;
-          
-          
-          
-          
+          case "View:FullScreen":
+            BrowserCommands.fullScreen();
+            break;
           
           
           
