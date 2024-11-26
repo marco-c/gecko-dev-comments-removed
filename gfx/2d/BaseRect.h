@@ -678,10 +678,11 @@ struct BaseRect {
 
 
 
+
   [[nodiscard]] Point ClampPoint(const Point& aPoint) const {
     using Coord = decltype(aPoint.x);
-    return Point(std::clamp(aPoint.x, Coord(x), Coord(XMost())),
-                 std::clamp(aPoint.y, Coord(y), Coord(YMost())));
+    return {std::max(Coord(x), std::min(Coord(XMost()), aPoint.x)),
+            std::max(Coord(y), std::min(Coord(YMost()), aPoint.y))};
   }
 
   
