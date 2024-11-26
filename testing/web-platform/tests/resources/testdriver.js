@@ -98,6 +98,30 @@
                         });
                     },
                 }
+            },
+            
+
+
+            permissions: {
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                set_permission: function (params) {
+                    return window.test_driver_internal.bidi.permissions.set_permission(
+                        params);
+                }
             }
         },
 
@@ -1239,6 +1263,12 @@
                         throw new Error(
                             "bidi.log.entry_added.on is not implemented by testdriver-vendor.js");
                     }
+                }
+            },
+            permissions: {
+                async set_permission() {
+                    throw new Error(
+                        "bidi.permissions.set_permission() is not implemented by testdriver-vendor.js");
                 }
             }
         },
