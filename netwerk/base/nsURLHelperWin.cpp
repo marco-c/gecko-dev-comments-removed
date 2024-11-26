@@ -56,12 +56,6 @@ nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
     return NS_ERROR_MALFORMED_URI;
   }
 
-  nsCOMPtr<nsIFile> localFile(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
-  if (NS_FAILED(rv)) {
-    NS_ERROR("Only nsIFile supported right now");
-    return rv;
-  }
-
   const nsACString* specPtr;
 
   nsAutoCString buf;
@@ -95,14 +89,19 @@ nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
   
   if (path.CharAt(0) == '\\') path.Cut(0, 1);
 
-  if (IsUtf8(path)) rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
+  nsCOMPtr<nsIFile> localFile;
+  if (IsUtf8(path)) {
+    rv =
+        NS_NewLocalFile(NS_ConvertUTF8toUTF16(path), getter_AddRefs(localFile));
+  }
   
   
   
   
-  else
+  else {
     
-    rv = localFile->InitWithNativePath(path);
+    rv = NS_NewNativeLocalFile(path, getter_AddRefs(localFile));
+  }
 
   if (NS_FAILED(rv)) return rv;
 
