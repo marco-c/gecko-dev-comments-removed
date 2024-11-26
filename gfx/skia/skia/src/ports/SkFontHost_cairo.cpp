@@ -496,7 +496,7 @@ bool SkScalerContext_CairoFT::prepareGlyph(FT_GlyphSlot glyph)
     if (fRec.fFlags & SkScalerContext::kEmbolden_Flag) {
         
         mozilla_glyphslot_embolden_less(glyph);
-        bool modified = true;
+        modified = true;
     }
     return modified;
 }
