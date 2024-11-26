@@ -26,23 +26,29 @@ class UserAgentInput extends PureComponent {
     };
   }
 
+  static getDerivedStateFromProps(props, state) {
+    if (props.userAgent !== state.prevUserAgent) {
+      return {
+        value: props.userAgent,
+        prevUserAgent: props.userAgent,
+      };
+    }
+    return null;
+  }
+
   constructor(props) {
     super(props);
 
     this.state = {
       
       value: this.props.userAgent,
+      
+      
+      prevUserAgent: this.props.userAgent,
     };
 
     this.onChange = this.onChange.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
-  }
-
-  
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    if (this.props.userAgent !== nextProps.userAgent) {
-      this.setState({ value: nextProps.userAgent });
-    }
   }
 
   
