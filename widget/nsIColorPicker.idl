@@ -6,7 +6,7 @@
 
 #include "nsISupports.idl"
 
-interface mozIDOMWindowProxy;
+webidl BrowsingContext;
 
 
 
@@ -62,7 +62,8 @@ interface nsIColorPicker : nsISupports
 
 
 
-  void init(in mozIDOMWindowProxy parent, in AString title, in AString initialColor, in Array<AString> defaultColors);
+  void init(in BrowsingContext browsingContext, in AString title,
+            in AString initialColor, in Array<AString> defaultColors);
 
  
 

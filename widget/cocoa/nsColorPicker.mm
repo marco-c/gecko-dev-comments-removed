@@ -96,8 +96,8 @@ nsColorPicker::~nsColorPicker() {
 
 
 NS_IMETHODIMP
-nsColorPicker::Init(mozIDOMWindowProxy* aParent, const nsAString& aTitle,
-                    const nsAString& aInitialColor,
+nsColorPicker::Init(dom::BrowsingContext* aBrowsingContext,
+                    const nsAString& aTitle, const nsAString& aInitialColor,
                     const nsTArray<nsString>& aDefaultColors) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Color pickers can only be opened from main thread currently");
