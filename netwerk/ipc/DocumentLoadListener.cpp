@@ -521,6 +521,10 @@ WindowGlobalParent* DocumentLoadListener::GetParentWindowContext() const {
 
 bool CheckRecursiveLoad(CanonicalBrowsingContext* aLoadingContext,
                         nsDocShellLoadState* aLoadState, bool aIsDocumentLoad) {
+  if (!aLoadState->ShouldCheckForRecursion()) {
+    return true;
+  }
+
   
   
   

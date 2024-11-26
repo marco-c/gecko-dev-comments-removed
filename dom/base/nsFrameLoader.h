@@ -191,7 +191,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  void LoadFrame(bool aOriginalSrc);
+  void LoadFrame(bool aOriginalSrc, bool aShouldCheckForRecursion);
 
   
 
@@ -207,7 +207,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
   nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
-                   nsIContentSecurityPolicy* aCsp, bool aOriginalSrc);
+                   nsIContentSecurityPolicy* aCsp, bool aOriginalSrc,
+                   bool aShouldCheckForRecursion);
 
   
 
@@ -548,6 +549,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   bool mLoadingOriginalSrc : 1;
+
+  
+  bool mShouldCheckForRecursion : 1;
 
   bool mRemoteBrowserShown : 1;
   bool mRemoteBrowserSized : 1;

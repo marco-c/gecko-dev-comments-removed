@@ -160,6 +160,10 @@ class nsDocShellLoadState final {
 
   void SetOriginalFrameSrc(bool aOriginalFrameSrc);
 
+  bool ShouldCheckForRecursion() const;
+
+  void SetShouldCheckForRecursion(bool aShouldCheckForRecursion);
+
   bool IsFormSubmission() const;
 
   void SetIsFormSubmission(bool aIsFormSubmission);
@@ -513,6 +517,12 @@ class nsDocShellLoadState final {
   
   
   bool mOriginalFrameSrc;
+
+  
+  
+  
+  
+  bool mShouldCheckForRecursion;
 
   
   
