@@ -135,7 +135,7 @@
 #include "js/experimental/CTypes.h"         
 #include "js/experimental/Intl.h"  
 #include "js/experimental/JitInfo.h"  
-#include "js/experimental/JSStencil.h"   
+#include "js/experimental/JSStencil.h"  
 #include "js/experimental/SourceHook.h"  
 #include "js/experimental/TypedData.h"   
 #include "js/friend/DumpFunctions.h"     
@@ -5540,9 +5540,8 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
   if (jsonModule) {
     module = JS::CompileJsonModule(cx, options, srcBuf);
   } else {
-    AutoReportFrontendContext fc(cx);
     options.setModule();
-    module = frontend::CompileModule(cx, &fc, options, srcBuf);
+    module = JS::CompileModule(cx, options, srcBuf);
   }
   if (!module) {
     return false;
@@ -5674,28 +5673,21 @@ static bool InstantiateModuleStencil(JSContext* cx, uint32_t argc, Value* vp) {
     }
   }
 
-  
-  AutoReportFrontendContext fc(cx);
-  Rooted<frontend::CompilationInput> input(cx,
-                                           frontend::CompilationInput(options));
-  if (!input.get().initForModule(&fc)) {
-    return false;
-  }
-
   if (!js::ValidateLazinessOfStencilAndGlobal(cx, *stencilObj->stencil())) {
     return false;
   }
 
-  
-  Rooted<frontend::CompilationGCOutput> output(cx);
-  if (!frontend::CompilationStencil::instantiateStencils(
-          cx, input.get(), *stencilObj->stencil(), output.get())) {
+  JS::InstantiateOptions instantiateOptions(options);
+  Rooted<JSObject*> modObject(
+      cx, JS::InstantiateModuleStencil(cx, instantiateOptions,
+                                       stencilObj->stencil(), nullptr));
+  if (!modObject) {
     return false;
   }
 
-  Rooted<ModuleObject*> modObject(cx, output.get().module);
+  Rooted<ModuleObject*> module(cx, &modObject->as<ModuleObject>());
   Rooted<ShellModuleObjectWrapper*> wrapper(
-      cx, ShellModuleObjectWrapper::create(cx, modObject));
+      cx, ShellModuleObjectWrapper::create(cx, module));
   if (!wrapper) {
     return false;
   }
@@ -5742,48 +5734,40 @@ static bool InstantiateModuleStencilXDR(JSContext* cx, uint32_t argc,
     }
   }
 
-  
-  AutoReportFrontendContext fc(cx);
-  Rooted<frontend::CompilationInput> input(cx,
-                                           frontend::CompilationInput(options));
-  if (!input.get().initForModule(&fc)) {
-    return false;
-  }
-  frontend::CompilationStencil stencil(nullptr);
-
-  
   JS::TranscodeRange xdrRange(xdrObj->buffer(), xdrObj->bufferLength());
-  bool succeeded = false;
-  if (!stencil.deserializeStencils(&fc, options, xdrRange, &succeeded)) {
+  JS::DecodeOptions decodeOptions(options);
+  RefPtr<JS::Stencil> stencil;
+  auto result =
+      JS::DecodeStencil(cx, decodeOptions, xdrRange, getter_AddRefs(stencil));
+  if (result == JS::TranscodeResult::Throw) {
     return false;
   }
-  if (!succeeded) {
-    fc.clearAutoReport();
+  if (JS::IsTranscodeFailureResult(result)) {
     JS_ReportErrorASCII(cx, "Decoding failure");
     return false;
   }
 
-  if (!stencil.isModule()) {
-    fc.clearAutoReport();
+  if (!stencil->isModule()) {
     JS_ReportErrorASCII(cx,
                         "instantiateModuleStencilXDR: Module stencil expected");
     return false;
   }
 
-  if (!js::ValidateLazinessOfStencilAndGlobal(cx, stencil)) {
+  if (!js::ValidateLazinessOfStencilAndGlobal(cx, *stencil)) {
     return false;
   }
 
-  
-  Rooted<frontend::CompilationGCOutput> output(cx);
-  if (!frontend::CompilationStencil::instantiateStencils(
-          cx, input.get(), stencil, output.get())) {
+  JS::InstantiateOptions instantiateOptions(options);
+  Rooted<JSObject*> modObject(
+      cx,
+      JS::InstantiateModuleStencil(cx, instantiateOptions, stencil, nullptr));
+  if (!modObject) {
     return false;
   }
 
-  Rooted<ModuleObject*> modObject(cx, output.get().module);
+  Rooted<ModuleObject*> module(cx, &modObject->as<ModuleObject>());
   Rooted<ShellModuleObjectWrapper*> wrapper(
-      cx, ShellModuleObjectWrapper::create(cx, modObject));
+      cx, ShellModuleObjectWrapper::create(cx, module));
   if (!wrapper) {
     return false;
   }
