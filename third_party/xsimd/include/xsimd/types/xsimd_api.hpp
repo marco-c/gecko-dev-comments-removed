@@ -45,6 +45,7 @@ namespace xsimd
 
 
 
+
     
 
 
@@ -2513,6 +2514,23 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return batch_cast<as_integer_t<T>>(x);
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A>
+    XSIMD_INLINE void transpose(batch<T, A>* matrix_begin, batch<T, A>* matrix_end) noexcept
+    {
+        assert((matrix_end - matrix_begin == batch<T, A>::size) && "correctly sized matrix");
+        detail::static_check_supported_config<T, A>();
+        return kernel::transpose(matrix_begin, matrix_end, A {});
     }
 
     
