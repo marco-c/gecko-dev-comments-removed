@@ -2271,6 +2271,13 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
       if (NS_FAILED(rv)) {
         LOG(("    VerifyTraffic failed (%08x)\n", static_cast<uint32_t>(rv)));
       }
+      
+      
+      
+      
+      
+      MutexAutoLock lock(mHttpExclusionLock);
+      mExcludedHttp3Origins.Clear();
     }
   } else if (!strcmp(topic, "application-background")) {
     
