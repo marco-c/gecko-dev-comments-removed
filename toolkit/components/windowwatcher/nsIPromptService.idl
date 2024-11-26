@@ -284,6 +284,12 @@ interface nsIPromptService : nsISupports
   
 
 
+
+  const unsigned long BUTTON_POS_1_IS_SECONDARY  = 1 << 29;
+
+  
+
+
   const unsigned long STD_OK_CANCEL_BUTTONS      = (BUTTON_TITLE_OK     * BUTTON_POS_0) |
                                                    (BUTTON_TITLE_CANCEL * BUTTON_POS_1);
 
