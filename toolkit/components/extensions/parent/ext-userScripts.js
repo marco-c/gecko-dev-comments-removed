@@ -20,6 +20,7 @@ var { ExtensionError } = ExtensionUtils;
 
 
 
+
 class UserScriptParent {
   constructor(details) {
     this.scriptId = details.scriptId;
@@ -88,16 +89,57 @@ this.userScripts = class extends ExtensionAPI {
       return this.getLegacyMV2API(context);
     }
 
+    function ensureIdsValidAndUnique(publicScriptIds) {
+      let seen = new Set();
+      for (let id of publicScriptIds) {
+        if (!id.length || id.startsWith("_")) {
+          throw new ExtensionError("Invalid id for RegisteredUserScript.");
+        }
+        if (seen.has(id)) {
+          throw new ExtensionError(`Duplicate script id: ${id}`);
+        }
+        seen.add(id);
+      }
+    }
+
+    const usm = extension.userScriptsManager;
+
     return {
       userScripts: {
         register: async scripts => {
-          
-          
-          
-          if (!Array.isArray(scripts)) {
-            
-            throw new ExtensionError("scripts param should be an array!");
+          ensureIdsValidAndUnique(scripts.map(s => s.id));
+
+          return usm.runWriteTask(async () => {
+            await usm.registerNewScripts(scripts);
+          });
+        },
+
+        update: async scripts => {
+          ensureIdsValidAndUnique(scripts.map(s => s.id));
+
+          return usm.runWriteTask(async () => {
+            await usm.updateScripts(scripts);
+          });
+        },
+
+        unregister: async filter => {
+          let ids = filter?.ids;
+          if (ids) {
+            ensureIdsValidAndUnique(ids);
           }
+          return usm.runWriteTask(async () => {
+            await usm.unregisterScripts(ids);
+          });
+        },
+
+        getScripts: async filter => {
+          let ids = filter?.ids;
+          if (ids) {
+            ensureIdsValidAndUnique(ids);
+          }
+          return usm.runReadTask(async () => {
+            return usm.getScripts(ids);
+          });
         },
       },
     };
