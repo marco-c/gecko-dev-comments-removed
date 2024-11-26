@@ -621,10 +621,8 @@ size_t WebRtcSpl_FilterAR(const int16_t* ar_coef,
                           int16_t* filter_state,
                           size_t filter_state_length,
                           int16_t* filter_state_low,
-                          size_t filter_state_low_length,
                           int16_t* out_vector,
-                          int16_t* out_vector_low,
-                          size_t out_vector_low_length);
+                          int16_t* out_vector_low);
 
 
 
@@ -932,9 +930,6 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
 }
 #endif  
 #endif
-
-
-
 
 
 
