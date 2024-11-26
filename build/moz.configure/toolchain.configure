@@ -665,11 +665,11 @@ def check_compiler(configure_cache, compiler, language, target, android_version)
     
     
     
-    
-    if info.language == "C" and info.language_version != 199901:
+    c17_version = 201710
+    if info.language == "C" and info.language_version != c17_version:
         if info.type == "clang-cl":
             flags.append("-Xclang")
-        flags.append("-std=gnu99")
+        flags.append("-std=gnu17")
 
     cxx17_version = 201703
     if info.language == "C++":
