@@ -69,6 +69,9 @@ user_pref("toolkit.telemetry.coverage.endpoint.base", "http://localhost");
 user_pref("media.geckoview.autoplay.request", false);
 
 user_pref("media.wakelock.audio.delay-releasing.ms", 0);
+
+
+user_pref("media.getdisplaymedia.screencapturekit.picker.enabled", false);
 user_pref("geo.provider.network.compare.url", "");
 user_pref("browser.region.network.url", "");
 
