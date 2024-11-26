@@ -295,6 +295,12 @@ class GlobalObject : public NativeObject {
     MOZ_ASSERT(!hasBuiltinProto(kind));
     data().builtinProtos[kind].init(proto);
   }
+
+  void setBuiltinProto(ProtoKind kind, JSObject* proto) {
+    MOZ_ASSERT(proto);
+    data().builtinProtos[kind].set(proto);
+  }
+
   bool hasBuiltinProto(ProtoKind kind) const {
     return bool(data().builtinProtos[kind]);
   }
@@ -799,7 +805,7 @@ class GlobalObject : public NativeObject {
       JSContext* cx, Handle<GlobalObject*> global);
 
   void setGeneratorObjectPrototype(JSObject* obj) {
-    initBuiltinProto(ProtoKind::GeneratorObjectProto, obj);
+    setBuiltinProto(ProtoKind::GeneratorObjectProto, obj);
   }
 
   static JSObject* getOrCreateGeneratorObjectPrototype(
