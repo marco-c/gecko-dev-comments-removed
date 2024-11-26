@@ -548,6 +548,14 @@ std::optional<Codec> FindMatchingCodec(const std::vector<Codec>& codecs1,
         bool has_parameters_1 = red_parameters_1 != codec_to_match.params.end();
         bool has_parameters_2 =
             red_parameters_2 != potential_match.params.end();
+        
+        
+        if (potential_match.id == Codec::kIdNotSet && !has_parameters_2) {
+          return potential_match;
+        }
+        if (codec_to_match.id == Codec::kIdNotSet && !has_parameters_1) {
+          return potential_match;
+        }
         if (has_parameters_1 && has_parameters_2) {
           
           
