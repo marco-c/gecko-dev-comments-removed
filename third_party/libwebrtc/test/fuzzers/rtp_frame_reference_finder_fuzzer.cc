@@ -157,6 +157,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         VideoContentType::UNSPECIFIED,
         video_header,
         std::nullopt,
+        std::nullopt,
         RtpPacketInfos(),
         EncodedImageBuffer::Create(0));
     

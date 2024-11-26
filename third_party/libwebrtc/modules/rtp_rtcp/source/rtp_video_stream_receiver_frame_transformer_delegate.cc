@@ -211,7 +211,8 @@ void RtpVideoStreamReceiverFrameTransformerDelegate::ManageFrame(
         transformed_frame->GetTimestamp(),
         0, timing, transformed_frame->GetPayloadType(),
         metadata.GetCodec(), metadata.GetRotation(), metadata.GetContentType(),
-        video_header, video_header.color_space, RtpPacketInfos(),
+        video_header, video_header.color_space,
+        video_header.frame_instrumentation_data, RtpPacketInfos(),
         EncodedImageBuffer::Create(data.data(), data.size())));
   }
 }

@@ -12,6 +12,7 @@
 
 #include <cstdio>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -50,8 +51,8 @@ std::unique_ptr<RtpFrameObject> CreateRtpFrameObject(
       5, 6, 7,
       VideoSendTiming(), 8, video_header.codec,
       kVideoRotation_0, VideoContentType::UNSPECIFIED, video_header,
-      std::nullopt, RtpPacketInfos({packet_info}),
-      EncodedImageBuffer::Create(0));
+      std::nullopt, std::nullopt,
+      RtpPacketInfos({packet_info}), EncodedImageBuffer::Create(0));
 }
 
 std::unique_ptr<RtpFrameObject> CreateRtpFrameObject() {

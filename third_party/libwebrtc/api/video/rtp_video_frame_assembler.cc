@@ -175,22 +175,23 @@ RtpVideoFrameAssembler::Impl::AssembleFrames(
 
       const video_coding::PacketBuffer::Packet& last_packet = *packet;
       result.push_back(std::make_unique<RtpFrameObject>(
-          first_packet->seq_num(),                
-          last_packet.seq_num(),                  
-          last_packet.marker_bit,                 
+          first_packet->seq_num(),                              
+          last_packet.seq_num(),                                
+          last_packet.marker_bit,                               
+          0,                                   
           0,                     
-          0,       
-          0,        
-          first_packet->timestamp,                
           0,                      
-          VideoSendTiming(),           
-          first_packet->payload_type,             
-          first_packet->codec(),                  
-          last_packet.video_header.rotation,      
-          last_packet.video_header.content_type,  
-          first_packet->video_header,             
-          last_packet.video_header.color_space,   
-          RtpPacketInfos(),      
+          first_packet->timestamp,                              
+          0,                                    
+          VideoSendTiming(),                         
+          first_packet->payload_type,                           
+          first_packet->codec(),                                
+          last_packet.video_header.rotation,                    
+          last_packet.video_header.content_type,                
+          first_packet->video_header,                           
+          last_packet.video_header.color_space,                 
+          last_packet.video_header.frame_instrumentation_data,  
+          RtpPacketInfos(),                    
           std::move(bitstream)));
     }
   }

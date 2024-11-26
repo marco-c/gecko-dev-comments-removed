@@ -10,6 +10,7 @@
 
 #include "modules/video_coding/rtp_vp9_ref_finder.h"
 
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -128,6 +129,7 @@ class Frame {
         kVideoRotation_0,
         VideoContentType::UNSPECIFIED,
         video_header,
+        std::nullopt,
         std::nullopt,
         RtpPacketInfos(),
         EncodedImageBuffer::Create(0));
