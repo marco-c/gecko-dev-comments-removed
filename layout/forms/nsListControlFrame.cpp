@@ -88,7 +88,9 @@ void nsListControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  if (aBuilder->IsBackgroundOnly()) return;
+  if (aBuilder->IsBackgroundOnly()) {
+    return;
+  }
 
   DO_GLOBAL_REFLOW_COUNT_DSP("nsListControlFrame");
 
@@ -116,7 +118,9 @@ void nsListControlFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt) {
   }
 
   nsIFrame* containerFrame = GetOptionsContainer();
-  if (!containerFrame) return;
+  if (!containerFrame) {
+    return;
+  }
 
   nsIFrame* childframe = nullptr;
   nsCOMPtr<nsIContent> focusedContent = GetCurrentOption();
@@ -627,7 +631,9 @@ nsresult nsListControlFrame::HandleEvent(nsPresContext* aPresContext,
 
 
 
-  if (nsEventStatus_eConsumeNoDefault == *aEventStatus) return NS_OK;
+  if (nsEventStatus_eConsumeNoDefault == *aEventStatus) {
+    return NS_OK;
+  }
 
   
   
@@ -827,11 +833,18 @@ nsListControlFrame::RemoveOption(int32_t aIndex) {
     int32_t forward = mEndSelectionIndex - mStartSelectionIndex;
     int32_t* low = forward >= 0 ? &mStartSelectionIndex : &mEndSelectionIndex;
     int32_t* high = forward >= 0 ? &mEndSelectionIndex : &mStartSelectionIndex;
-    if (aIndex < *low) *low = ::DecrementAndClamp(*low, numOptions);
-    if (aIndex <= *high) *high = ::DecrementAndClamp(*high, numOptions);
-    if (forward == 0) *low = *high;
-  } else
+    if (aIndex < *low) {
+      *low = ::DecrementAndClamp(*low, numOptions);
+    }
+    if (aIndex <= *high) {
+      *high = ::DecrementAndClamp(*high, numOptions);
+    }
+    if (forward == 0) {
+      *low = *high;
+    }
+  } else {
     NS_ASSERTION(mEndSelectionIndex == kNothingSelected, "");
+  }
 
   InvalidateFocus();
   return NS_OK;
