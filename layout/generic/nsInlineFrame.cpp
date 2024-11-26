@@ -850,6 +850,8 @@ Maybe<nscoord> nsInlineFrame::GetNaturalBaselineBOffset(
   if (aBaselineGroup == BaselineSharingGroup::Last) {
     return Nothing{};
   }
+  
+  
   return Some(mBaseline);
 }
 
