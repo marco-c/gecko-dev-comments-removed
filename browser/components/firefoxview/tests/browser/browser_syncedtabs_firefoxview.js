@@ -2,11 +2,9 @@
 
 
 add_setup(async function () {
-  Services.prefs.setBoolPref("identity.fxaccounts.oauth.enabled", false);
   registerCleanupFunction(() => {
     
     TabsSetupFlowManager.resetInternalState();
-    Services.prefs.clearUserPref("identity.fxaccounts.oauth.enabled");
   });
 
   
