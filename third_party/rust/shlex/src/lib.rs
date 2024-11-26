@@ -18,6 +18,23 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
@@ -29,124 +46,45 @@ use alloc::vec;
 #[cfg(test)]
 use alloc::borrow::ToOwned;
 
+pub mod bytes;
+#[cfg(all(doc, not(doctest)))]
+#[path = "quoting_warning.md"]
+pub mod quoting_warning;
 
 
-pub struct Shlex<'a> {
-    in_iter: core::str::Bytes<'a>,
-    
-    pub line_no: usize,
-    
-    
-    
-    
-    pub had_error: bool,
-}
+
+
+
+pub struct Shlex<'a>(bytes::Shlex<'a>);
 
 impl<'a> Shlex<'a> {
     pub fn new(in_str: &'a str) -> Self {
-        Shlex {
-            in_iter: in_str.bytes(),
-            line_no: 1,
-            had_error: false,
-        }
-    }
-
-    fn parse_word(&mut self, mut ch: u8) -> Option<String> {
-        let mut result: Vec<u8> = Vec::new();
-        loop {
-            match ch as char {
-                '"' => if let Err(()) = self.parse_double(&mut result) {
-                    self.had_error = true;
-                    return None;
-                },
-                '\'' => if let Err(()) = self.parse_single(&mut result) {
-                    self.had_error = true;
-                    return None;
-                },
-                '\\' => if let Some(ch2) = self.next_char() {
-                    if ch2 != '\n' as u8 { result.push(ch2); }
-                } else {
-                    self.had_error = true;
-                    return None;
-                },
-                ' ' | '\t' | '\n' => { break; },
-                _ => { result.push(ch as u8); },
-            }
-            if let Some(ch2) = self.next_char() { ch = ch2; } else { break; }
-        }
-        unsafe { Some(String::from_utf8_unchecked(result)) }
-    }
-
-    fn parse_double(&mut self, result: &mut Vec<u8>) -> Result<(), ()> {
-        loop {
-            if let Some(ch2) = self.next_char() {
-                match ch2 as char {
-                    '\\' => {
-                        if let Some(ch3) = self.next_char() {
-                            match ch3 as char {
-                                
-                                '$' | '`' | '"' | '\\' => { result.push(ch3); },
-                                
-                                '\n' => {},
-                                
-                                _ => { result.push('\\' as u8); result.push(ch3); }
-                            }
-                        } else {
-                            return Err(());
-                        }
-                    },
-                    '"' => { return Ok(()); },
-                    _ => { result.push(ch2); },
-                }
-            } else {
-                return Err(());
-            }
-        }
-    }
-
-    fn parse_single(&mut self, result: &mut Vec<u8>) -> Result<(), ()> {
-        loop {
-            if let Some(ch2) = self.next_char() {
-                match ch2 as char {
-                    '\'' => { return Ok(()); },
-                    _ => { result.push(ch2); },
-                }
-            } else {
-                return Err(());
-            }
-        }
-    }
-
-    fn next_char(&mut self) -> Option<u8> {
-        let res = self.in_iter.next();
-        if res == Some('\n' as u8) { self.line_no += 1; }
-        res
+        Self(bytes::Shlex::new(in_str.as_bytes()))
     }
 }
 
 impl<'a> Iterator for Shlex<'a> {
     type Item = String;
     fn next(&mut self) -> Option<String> {
-        if let Some(mut ch) = self.next_char() {
+        self.0.next().map(|byte_word| {
             
-            loop {
-                match ch as char {
-                    ' ' | '\t' | '\n' => {},
-                    '#' => {
-                        while let Some(ch2) = self.next_char() {
-                            if ch2 as char == '\n' { break; }
-                        }
-                    },
-                    _ => { break; }
-                }
-                if let Some(ch2) = self.next_char() { ch = ch2; } else { return None; }
-            }
-            self.parse_word(ch)
-        } else { 
-            None
-        }
+            unsafe { String::from_utf8_unchecked(byte_word) }
+        })
     }
+}
 
+impl<'a> core::ops::Deref for Shlex<'a> {
+    type Target = bytes::Shlex<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'a> core::ops::DerefMut for Shlex<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 
@@ -158,37 +96,150 @@ pub fn split(in_str: &str) -> Option<Vec<String>> {
 }
 
 
-pub fn quote(in_str: &str) -> Cow<str> {
-    if in_str.len() == 0 {
-        "\"\"".into()
-    } else if in_str.bytes().any(|c| match c as char {
-        '|' | '&' | ';' | '<' | '>' | '(' | ')' | '$' | '`' | '\\' | '"' | '\'' | ' ' | '\t' |
-        '\r' | '\n' | '*' | '?' | '[' | '#' | '~' | '=' | '%' => true,
-        _ => false
-    }) {
-        let mut out: Vec<u8> = Vec::new();
-        out.push('"' as u8);
-        for c in in_str.bytes() {
-            match c as char {
-                '$' | '`' | '"' | '\\' => out.push('\\' as u8),
-                _ => ()
-            }
-            out.push(c);
+
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum QuoteError {
+    
+    
+    
+    
+    Nul,
+}
+
+impl core::fmt::Display for QuoteError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            QuoteError::Nul => f.write_str("cannot shell-quote string containing nul byte"),
         }
-        out.push('"' as u8);
-        unsafe { String::from_utf8_unchecked(out) }.into()
-    } else {
-        in_str.into()
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for QuoteError {}
+
+
+
+
+
+#[derive(Default, Debug, Clone)]
+pub struct Quoter {
+    inner: bytes::Quoter,
+}
+
+impl Quoter {
+    
+    #[inline]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    
+    
+    #[inline]
+    pub fn allow_nul(mut self, allow: bool) -> Self {
+        self.inner = self.inner.allow_nul(allow);
+        self
+    }
+
+    
+    
+    pub fn join<'a, I: IntoIterator<Item = &'a str>>(&self, words: I) -> Result<String, QuoteError> {
+        
+        self.inner.join(words.into_iter().map(|s| s.as_bytes()))
+            .map(|bytes| unsafe { String::from_utf8_unchecked(bytes) })
+    }
+
+    
+    pub fn quote<'a>(&self, in_str: &'a str) -> Result<Cow<'a, str>, QuoteError> {
+        Ok(match self.inner.quote(in_str.as_bytes())? {
+            Cow::Borrowed(out) => {
+                
+                unsafe { core::str::from_utf8_unchecked(out) }.into()
+            }
+            Cow::Owned(out) => {
+                
+                unsafe { String::from_utf8_unchecked(out) }.into()
+            }
+        })
+    }
+}
+
+impl From<bytes::Quoter> for Quoter {
+    fn from(inner: bytes::Quoter) -> Quoter {
+        Quoter { inner }
+    }
+}
+
+impl From<Quoter> for bytes::Quoter {
+    fn from(quoter: Quoter) -> bytes::Quoter {
+        quoter.inner
     }
 }
 
 
 
+
+
+
+
+
+
+
+
+
+#[deprecated(since = "1.3.0", note = "replace with `try_join(words)?` to avoid nul byte danger")]
 pub fn join<'a, I: IntoIterator<Item = &'a str>>(words: I) -> String {
-    words.into_iter()
-        .map(quote)
-        .collect::<Vec<_>>()
-        .join(" ")
+    Quoter::new().allow_nul(true).join(words).unwrap()
+}
+
+
+
+
+
+
+
+
+
+pub fn try_join<'a, I: IntoIterator<Item = &'a str>>(words: I) -> Result<String, QuoteError> {
+    Quoter::new().join(words)
+}
+
+
+
+
+
+
+
+
+
+
+
+#[deprecated(since = "1.3.0", note = "replace with `try_quote(str)?` to avoid nul byte danger")]
+pub fn quote(in_str: &str) -> Cow<str> {
+    Quoter::new().allow_nul(true).quote(in_str).unwrap()
+}
+
+
+
+
+
+
+
+
+
+
+pub fn try_quote(in_str: &str) -> Result<Cow<str>, QuoteError> {
+    Quoter::new().quote(in_str)
 }
 
 #[cfg(test)]
@@ -233,17 +284,75 @@ fn test_lineno() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "std"), allow(unreachable_code, unused_mut))]
 fn test_quote() {
-    assert_eq!(quote("foobar"), "foobar");
-    assert_eq!(quote("foo bar"), "\"foo bar\"");
-    assert_eq!(quote("\""), "\"\\\"\"");
-    assert_eq!(quote(""), "\"\"");
+    
+    
+    
+    
+    
+    let tests = r#"
+        <>                => <''>
+        <foobar>          => <foobar>
+        <foo bar>         => <'foo bar'>
+        <"foo bar'">      => <"\"foo bar'\"">
+        <'foo bar'>       => <"'foo bar'">
+        <">               => <'"'>
+        <"'>              => <"\"'">
+        <hello!world>     => <'hello!world'>
+        <'hello!world>    => <"'hello"'!world'>
+        <'hello!>         => <"'hello"'!'>
+        <hello ^ world>   => <'hello ''^ world'>
+        <hello^>          => <hello'^'>
+        <!world'>         => <'!world'"'">
+        <{a, b}>          => <'{a, b}'>
+        <NL>              => <'NL'>
+        <^>               => <'^'>
+        <foo^bar>         => <foo'^bar'>
+        <NLx^>            => <'NLx''^'>
+        <NL^x>            => <'NL''^x'>
+        <NL ^x>           => <'NL ''^x'>
+        <{a,b}>           => <'{a,b}'>
+        <a,b>             => <'a,b'>
+        <a..b             => <a..b>
+        <'$>              => <"'"'$'>
+        <"^>              => <'"''^'>
+    "#;
+    let mut ok = true;
+    for test in tests.trim().split('\n') {
+        let parts: Vec<String> = test
+            .replace("NL", "\n")
+            .split("=>")
+            .map(|part| part.trim().trim_start_matches('<').trim_end_matches('>').to_owned())
+            .collect();
+        assert!(parts.len() == 2);
+        let unquoted = &*parts[0];
+        let quoted_expected = &*parts[1];
+        let quoted_actual = try_quote(&parts[0]).unwrap();
+        if quoted_expected != quoted_actual {
+            #[cfg(not(feature = "std"))]
+            panic!("FAIL: for input <{}>, expected <{}>, got <{}>",
+                     unquoted, quoted_expected, quoted_actual);
+            #[cfg(feature = "std")]
+            println!("FAIL: for input <{}>, expected <{}>, got <{}>",
+                     unquoted, quoted_expected, quoted_actual);
+            ok = false;
+        }
+    }
+    assert!(ok);
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_join() {
     assert_eq!(join(vec![]), "");
-    assert_eq!(join(vec![""]), "\"\"");
+    assert_eq!(join(vec![""]), "''");
     assert_eq!(join(vec!["a", "b"]), "a b");
-    assert_eq!(join(vec!["foo bar", "baz"]), "\"foo bar\" baz");
+    assert_eq!(join(vec!["foo bar", "baz"]), "'foo bar' baz");
+}
+
+#[test]
+fn test_fallible() {
+    assert_eq!(try_join(vec!["\0"]), Err(QuoteError::Nul));
+    assert_eq!(try_quote("\0"), Err(QuoteError::Nul));
 }
