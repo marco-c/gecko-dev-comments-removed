@@ -230,23 +230,6 @@ struct BoxSizingAdjustment {
   Maybe<LogicalSize> mValue;
 };
 
-template <typename Type>
-static inline bool IsInitialSize(const Type&, const LogicalAxis);
-
-template <>
-inline bool IsInitialSize(const StyleSize& aSize, const LogicalAxis aAxis) {
-  return aAxis == LogicalAxis::Inline
-             ? aSize.IsAuto()
-             : aSize.BehavesLikeInitialValueOnBlockAxis();
-}
-
-template <>
-inline bool IsInitialSize(const StyleMaxSize& aSize, const LogicalAxis aAxis) {
-  return aAxis == LogicalAxis::Inline
-             ? aSize.IsNone()
-             : aSize.BehavesLikeInitialValueOnBlockAxis();
-}
-
 static Maybe<nscoord> GetPercentageBasisForAR(
     const LogicalAxis aRatioDeterminingAxis, const WritingMode aWM,
     const Maybe<LogicalSize>& aContainingBlockSize) {
@@ -320,7 +303,7 @@ struct RepeatTrackSizingInput {
                cbSizeInAxis != NS_UNCONSTRAINEDSIZE) {
       min = adjustForBoxSizing(
           styleMinSize.AsLengthPercentage().Resolve(cbSizeInAxis));
-    } else if (aAspectRatio && IsInitialSize(styleMinSize, aAxis)) {
+    } else if (aAspectRatio && styleMinSize.BehavesLikeInitialValue(aAxis)) {
       
       
       const auto& styleRDMinSize = pos->MinSize(GetOrthogonalAxis(aAxis), aWM);
@@ -340,7 +323,7 @@ struct RepeatTrackSizingInput {
       max = std::max(
           min, adjustForBoxSizing(
                    styleMaxSize.AsLengthPercentage().Resolve(cbSizeInAxis)));
-    } else if (aAspectRatio && IsInitialSize(styleMaxSize, aAxis)) {
+    } else if (aAspectRatio && styleMaxSize.BehavesLikeInitialValue(aAxis)) {
       const auto& styleRDMaxSize = pos->MaxSize(GetOrthogonalAxis(aAxis), aWM);
       if (Maybe<nscoord> resolvedMaxSize = ComputeTransferredSize(
               styleRDMaxSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment,
@@ -358,7 +341,7 @@ struct RepeatTrackSizingInput {
           std::clamp(adjustForBoxSizing(
                          styleSize.AsLengthPercentage().Resolve(cbSizeInAxis)),
                      min, max);
-    } else if (aAspectRatio && IsInitialSize(styleSize, aAxis)) {
+    } else if (aAspectRatio && styleSize.BehavesLikeInitialValue(aAxis)) {
       const auto& styleRDSize = pos->Size(GetOrthogonalAxis(aAxis), aWM);
       if (Maybe<nscoord> resolvedSize = ComputeTransferredSize(
               styleRDSize, aAxis, aWM, aAspectRatio, boxSizingAdjustment,
@@ -857,7 +840,10 @@ struct nsGridContainerFrame::GridItemInfo {
       
       return false;
     }
-    const bool isInlineAxis = aContainerAxis == LogicalAxis::Inline;
+    const LogicalAxis itemAxis =
+        aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode())
+            ? GetOrthogonalAxis(aContainerAxis)
+            : aContainerAxis;
     const auto* pos =
         mFrame->IsTableWrapperFrame()
             ? mFrame->PrincipalChildList().FirstChild()->StylePosition()
@@ -867,10 +853,7 @@ struct nsGridContainerFrame::GridItemInfo {
     
     
     
-    bool isAuto = size.IsAuto() ||
-                  (isInlineAxis ==
-                       aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode()) &&
-                   size.BehavesLikeInitialValueOnBlockAxis());
+    bool isAuto = size.BehavesLikeInitialValue(itemAxis);
     
     
     
@@ -882,10 +865,7 @@ struct nsGridContainerFrame::GridItemInfo {
     
     
     
-    isAuto = minSize.IsAuto() ||
-             (isInlineAxis ==
-                  aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode()) &&
-              minSize.BehavesLikeInitialValueOnBlockAxis());
+    isAuto = minSize.BehavesLikeInitialValue(itemAxis);
     return isAuto && !mFrame->StyleDisplay()->IsScrollableOverflow();
   }
 
