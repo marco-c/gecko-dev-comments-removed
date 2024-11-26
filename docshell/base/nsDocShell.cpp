@@ -5187,7 +5187,6 @@ void nsDocShell::SetupRefreshURIFromHeader(Document* aDocument,
   const char16_t* end = aHeader.EndReading();
 
   
-  
 
   
   position = SkipASCIIWhitespace(position, end);
@@ -5219,7 +5218,10 @@ void nsDocShell::SetupRefreshURIFromHeader(Document* aDocument,
       
       
       
-      MOZ_ASSERT(!(result & nsContentUtils::eParseHTMLInteger_ErrorOverflow));
+      MOZ_ASSERT(
+          !(result & ~(nsContentUtils::eParseHTMLInteger_DidNotConsumeAllInput |
+                       nsContentUtils::eParseHTMLInteger_Error |
+                       nsContentUtils::eParseHTMLInteger_ErrorOverflow)));
       return;
     }
     MOZ_ASSERT(
