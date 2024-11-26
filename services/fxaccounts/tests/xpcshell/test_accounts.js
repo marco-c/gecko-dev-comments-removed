@@ -392,6 +392,7 @@ add_test(function test_client_mock() {
 
 
 add_test(function test_verification_poll() {
+  ensureOauthNotConfigured();
   let fxa = new MockFxAccounts();
   let test_user = getTestUser("francine");
   let login_notification_received = false;
@@ -436,6 +437,7 @@ add_test(function test_verification_poll() {
 
 
 add_test(function test_polling_timeout() {
+  ensureOauthNotConfigured();
   
   
   
@@ -1010,6 +1012,7 @@ add_test(function test_fetchAndUnwrapAndDeriveKeys_no_token() {
 
 
 add_test(function test_overlapping_signins() {
+  ensureOauthNotConfigured();
   let fxa = new MockFxAccounts();
   let alice = getTestUser("alice");
   let bob = getTestUser("bob");
