@@ -777,9 +777,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
   virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
                     nsIFrame* aPrevInFlow);
 
@@ -3286,12 +3283,6 @@ class nsIFrame : public nsQueryFrame {
     const auto& bSize = StylePosition()->BSize(GetWritingMode());
     return IsIntrinsicKeyword(bSize);
   }
-
-  
-
-
-
-  void CreateView();
 
  protected:
   virtual nsView* GetViewInternal() const {
