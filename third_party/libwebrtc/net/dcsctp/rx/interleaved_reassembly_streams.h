@@ -81,7 +81,9 @@ class InterleavedReassemblyStreams : public ReassemblyStreams {
     
     
     size_t TryToAssembleMessage(UnwrappedMID mid);
-    size_t AssembleMessage(const ChunkMap& tsn_chunks);
+    size_t AssembleMessage(ChunkMap& tsn_chunks);
+    size_t AssembleMessage(UnwrappedTSN tsn, Data data);
+
     
     
     
