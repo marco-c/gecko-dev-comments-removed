@@ -214,7 +214,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   SharedCode partialTieringCode_;
 
   
-  FuncDefRangeVector funcDefRanges_;
+  BytecodeRangeVector funcDefRanges_;
   FeatureUsageVector funcDefFeatureUsages_;
   CallRefMetricsRangeVector funcDefCallRefMetrics_;
   FuncImportVector funcImports_;

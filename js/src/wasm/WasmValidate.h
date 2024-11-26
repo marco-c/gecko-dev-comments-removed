@@ -145,7 +145,7 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 [[nodiscard]] bool StartsCodeSection(const uint8_t* begin, const uint8_t* end,
-                                     SectionRange* codeSection);
+                                     BytecodeRange* codeSection);
 
 
 
@@ -159,6 +159,12 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 [[nodiscard]] bool ValidateFunctionBody(const CodeMetadata& codeMeta,
                                         uint32_t funcIndex, uint32_t bodySize,
                                         Decoder& d);
+#ifdef DEBUG
+[[nodiscard]] bool DumpFunctionBody(const CodeMetadata& codeMeta,
+                                    uint32_t funcIndex,
+                                    const uint8_t* bodyBegin, uint32_t bodySize,
+                                    IndentedPrinter& out, UniqueChars* error);
+#endif
 
 [[nodiscard]] bool DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
                                     ModuleMetadata* meta);

@@ -4637,7 +4637,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
 
   
   Bytes envBytes_;
-  SectionRange codeSection_;
+  BytecodeRange codeSection_;
 
   
   

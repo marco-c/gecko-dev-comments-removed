@@ -237,22 +237,6 @@ WASM_DECLARE_CACHEABLE_POD(FuncDesc);
 
 using FuncDescVector = Vector<FuncDesc, 0, SystemAllocPolicy>;
 
-struct FuncDefRange {
-  explicit FuncDefRange(uint32_t bytecodeOffset, uint32_t bodyLength)
-      : bytecodeOffset(bytecodeOffset), bodyLength(bodyLength) {}
-
-  
-  uint32_t bytecodeOffset = 0;
-  
-  uint32_t bodyLength = 0;
-
-  WASM_CHECK_CACHEABLE_POD(bytecodeOffset, bodyLength);
-};
-
-WASM_DECLARE_CACHEABLE_POD(FuncDefRange);
-
-using FuncDefRangeVector = Vector<FuncDefRange, 0, SystemAllocPolicy>;
-
 struct CallRefMetricsRange {
   explicit CallRefMetricsRange() {}
   explicit CallRefMetricsRange(uint32_t begin, uint32_t length)

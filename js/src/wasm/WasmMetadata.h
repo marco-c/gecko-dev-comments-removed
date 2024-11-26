@@ -114,7 +114,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   CustomSectionRangeVector customSectionRanges;
 
   
-  MaybeSectionRange codeSectionRange;
+  MaybeBytecodeRange codeSectionRange;
   
   
   
@@ -123,7 +123,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  FuncDefRangeVector funcDefRanges;
+  BytecodeRangeVector funcDefRanges;
 
   
   
@@ -309,12 +309,17 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
       return 0;
     }
     uint32_t funcDefIndex = funcIndex - numFuncImports;
-    return funcDefRanges[funcDefIndex].bytecodeOffset;
+    return funcDefRanges[funcDefIndex].start;
   }
-  const FuncDefRange& funcDefRange(uint32_t funcIndex) const {
+  const BytecodeRange& funcDefRange(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex >= numFuncImports);
     uint32_t funcDefIndex = funcIndex - numFuncImports;
     return funcDefRanges[funcDefIndex];
+  }
+  BytecodeSpan funcDefBody(uint32_t funcIndex) const {
+    return funcDefRange(funcIndex)
+        .relativeTo(*codeSectionRange)
+        .toSpan(*codeSectionBytecode);
   }
   FeatureUsage funcDefFeatureUsage(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex >= numFuncImports);

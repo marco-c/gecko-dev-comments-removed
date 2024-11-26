@@ -880,7 +880,7 @@ enum class MiscOp {
 
 enum class ThreadOp {
   
-  Wake = 0x00,
+  Notify = 0x00,
   I32Wait = 0x01,
   I64Wait = 0x02,
   Fence = 0x03,
@@ -1109,6 +1109,11 @@ struct OpBytes {
         return true;
     }
   }
+
+#ifdef DEBUG
+  
+  const char* toString() const;
+#endif
 };
 
 static const char NameSectionName[] = "name";
