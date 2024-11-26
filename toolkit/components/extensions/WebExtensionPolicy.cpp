@@ -705,6 +705,7 @@ MozDocumentMatcher::MozDocumentMatcher(GlobalObject& aGlobal,
                                        bool aRestricted, ErrorResult& aRv)
     : mHasActiveTabPermission(aInit.mHasActiveTabPermission),
       mRestricted(aRestricted),
+      mIsUserScript(aInit.mIsUserScript),
       mAllFrames(aInit.mAllFrames),
       mCheckPermissions(aInit.mCheckPermissions),
       mFrameID(aInit.mFrameID),
@@ -872,15 +873,31 @@ bool MozDocumentMatcher::MatchesURI(const URLInfo& aURL,
                                     bool aIgnorePermissions) const {
   MOZ_ASSERT((!mRestricted && !mCheckPermissions) || mExtension);
 
-  if (!mMatches->Matches(aURL)) {
-    return false;
+  if (MOZ_LIKELY(!mIsUserScript)) {
+    
+    if (!mMatches->Matches(aURL)) {
+      return false;
+    }
+    
+    if (!mIncludeGlobs.IsNull() &&
+        !mIncludeGlobs.Value().Matches(aURL.CSpec())) {
+      return false;
+    }
+  } else {
+    
+    
+    
+    
+    
+    
+    if (!mMatches->Matches(aURL) &&
+        (mIncludeGlobs.IsNull() ||
+         !mIncludeGlobs.Value().Matches(aURL.CSpec()))) {
+      return false;
+    }
   }
 
   if (mExcludeMatches && mExcludeMatches->Matches(aURL)) {
-    return false;
-  }
-
-  if (!mIncludeGlobs.IsNull() && !mIncludeGlobs.Value().Matches(aURL.CSpec())) {
     return false;
   }
 

@@ -101,6 +101,18 @@ add_task(async function userScript_require_host_permissions() {
           runAt: "document_end",
           world: "MAIN",
         },
+        {
+          
+          
+          
+          
+          
+          id: "includeGlobs without matches",
+          includeGlobs: ["*resultCollector"],
+          js: [{ code: "resultCollector.push(origin)" }],
+          runAt: "document_end",
+          world: "MAIN",
+        },
       ]);
       browser.test.sendMessage("registered");
     },
@@ -115,7 +127,7 @@ add_task(async function userScript_require_host_permissions() {
     );
     Assert.deepEqual(
       await collectResults(contentPage),
-      ["http://example.net"],
+      ["http://example.net", "http://example.net"],
       "Can execute with host permissions"
     );
     await contentPage.close();
