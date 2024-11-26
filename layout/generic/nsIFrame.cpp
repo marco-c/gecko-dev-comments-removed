@@ -5499,7 +5499,12 @@ static bool SelfIsSelectable(nsIFrame* aFrame, nsIFrame* aParentFrame,
   if (aFrame->Style()->UserSelect() == StyleUserSelect::None) {
     return false;
   }
-  if (aFrame->IsEmpty()) {
+  if (aFrame->IsEmpty() &&
+      (!aFrame->IsTextFrame() || !aFrame->ContentIsEditable())) {
+    
+    
+    
+    
     return false;
   }
   return true;
