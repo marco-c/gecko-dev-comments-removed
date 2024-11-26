@@ -10,11 +10,6 @@
 #include <windows.h>
 
 #include "mozilla/MozPromise.h"
-#include "mozilla/dom/BlobImpl.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "nsIContentAnalysis.h"
-#include "nsIFile.h"
-#include "nsISimpleEnumerator.h"
 #include "nsCOMArray.h"
 #include "nsBaseFilePicker.h"
 #include "nsString.h"
@@ -23,13 +18,23 @@
 #include <shobjidl.h>
 #undef LogSeverity  // SetupAPI.h #defines this as DWORD
 
+class nsIFile;
 class nsILoadContext;
+class nsISimpleEnumerator;
 
-namespace mozilla::widget::filedialog {
+namespace mozilla {
+
+namespace dom {
+class BrowsingContext;
+}  
+
+namespace widget::filedialog {
 class Command;
 class Results;
 enum class FileDialogType : uint8_t;
 struct Error;
+}  
+
 }  
 
 class nsBaseWinFilePicker : public nsBaseFilePicker {
@@ -111,7 +116,7 @@ class nsFilePicker final : public nsBaseWinFilePicker {
   nsCOMPtr<nsIWidget> mParentWidget;
   nsString mTitle;
   nsCString mFile;
-  int32_t mSelectedType;
+  int32_t mSelectedType = 1;
   nsCOMArray<nsIFile> mFiles;
   nsString mUnicodeFile;
 
