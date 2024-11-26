@@ -4988,13 +4988,27 @@ void nsBlockFrame::DoReflowInlineFrames(
   
   aLine->EnableResizeReflowOptimization();
 
-  aLineLayout.BeginLineReflow(
-      iStart, aState.mBCoord, availISize, availBSize,
-      aFloatAvailableSpace.HasFloats(), false ,
-      HasOutsideMarker() || Style()->IsAnonBox()
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto collapseEmptyInlineFramesInLine =
+      HasOutsideMarker() ||
+              (Style()->IsAnonBox() &&
+               Style()->GetPseudoType() != PseudoStyleType::scrolledContent)
           ? CollapseEmptyInlineFramesInLine::Preserve
-          : CollapseEmptyInlineFramesInLine::Collapse,
-      lineWM, aState.mContainerSize, aState.mInsetForBalance);
+          : CollapseEmptyInlineFramesInLine::Collapse;
+
+  aLineLayout.BeginLineReflow(iStart, aState.mBCoord, availISize, availBSize,
+                              aFloatAvailableSpace.HasFloats(),
+                              false ,
+                              collapseEmptyInlineFramesInLine, lineWM,
+                              aState.mContainerSize, aState.mInsetForBalance);
 
   aState.mFlags.mIsLineLayoutEmpty = false;
 
