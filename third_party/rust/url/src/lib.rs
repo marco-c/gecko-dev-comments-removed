@@ -134,16 +134,7 @@
 
 
 
-
-
-
-
-
-
-
-
-#![no_std]
-#![doc(html_root_url = "https://docs.rs/url/2.5.3")]
+#![doc(html_root_url = "https://docs.rs/url/2.5.1")]
 #![cfg_attr(
     feature = "debugger_visualizer",
     debugger_visualizer(natvis_file = "../../debug_metadata/url.natvis")
@@ -151,60 +142,29 @@
 
 pub use form_urlencoded;
 
-
-#[cfg(feature = "std")]
-extern crate std;
-
-#[macro_use]
-extern crate alloc;
-
 #[cfg(feature = "serde")]
 extern crate serde;
 
 use crate::host::HostInternal;
-
-use crate::net::IpAddr;
-#[cfg(feature = "std")]
-#[cfg(any(
-    unix,
-    windows,
-    target_os = "redox",
-    target_os = "wasi",
-    target_os = "hermit"
-))]
-use crate::net::{SocketAddr, ToSocketAddrs};
-use crate::parser::{to_u32, Context, Parser, SchemeType, USERINFO};
-use alloc::borrow::ToOwned;
-use alloc::str;
-use alloc::string::{String, ToString};
-use core::borrow::Borrow;
-use core::convert::TryFrom;
-use core::fmt::Write;
-use core::ops::{Range, RangeFrom, RangeTo};
-use core::{cmp, fmt, hash, mem};
-use percent_encoding::utf8_percent_encode;
-#[cfg(feature = "std")]
-#[cfg(any(
-    unix,
-    windows,
-    target_os = "redox",
-    target_os = "wasi",
-    target_os = "hermit"
-))]
+use crate::parser::{
+    to_u32, Context, Parser, SchemeType, PATH_SEGMENT, SPECIAL_PATH_SEGMENT, USERINFO,
+};
+use percent_encoding::{percent_decode, percent_encode, utf8_percent_encode};
+use std::borrow::Borrow;
+use std::cmp;
+use std::fmt::{self, Write};
+use std::hash;
+#[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
 use std::io;
-#[cfg(feature = "std")]
+use std::mem;
+use std::net::IpAddr;
+#[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
+use std::net::{SocketAddr, ToSocketAddrs};
+use std::ops::{Range, RangeFrom, RangeTo};
 use std::path::{Path, PathBuf};
+use std::str;
 
-
-#[cfg(feature = "std")]
-pub(crate) mod net {
-    pub use std::net::*;
-}
-
-#[cfg(not(feature = "std"))]
-pub(crate) mod net {
-    pub use core::net::*;
-}
+use std::convert::TryFrom;
 
 pub use crate::host::Host;
 pub use crate::origin::{OpaqueOrigin, Origin};
@@ -1316,18 +1276,11 @@ impl Url {
     
     
     
-    #[cfg(feature = "std")]
-    #[cfg(any(
-        unix,
-        windows,
-        target_os = "redox",
-        target_os = "wasi",
-        target_os = "hermit"
-    ))]
+    #[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
     pub fn socket_addrs(
         &self,
         default_port_number: impl Fn() -> Option<u16>,
-    ) -> io::Result<alloc::vec::Vec<SocketAddr>> {
+    ) -> io::Result<Vec<SocketAddr>> {
         
         
         
@@ -1384,10 +1337,6 @@ impl Url {
         }
     }
 
-    
-    
-    
-    
     
     
     
@@ -1757,39 +1706,6 @@ impl Url {
         let old_after_path_pos = to_u32(self.serialization.len()).unwrap();
         let cannot_be_a_base = self.cannot_be_a_base();
         let scheme_type = SchemeType::from(self.scheme());
-        let mut path_empty = false;
-
-        
-        let mut has_host = if let Some(index) = self.serialization.find(":") {
-            if self.serialization.len() > index + 1
-                && self.serialization.as_bytes().get(index + 1) == Some(&b'/')
-            {
-                let rest = &self.serialization[(index + ":/".len())..];
-                let host_part = rest.split('/').next().unwrap_or("");
-                path_empty = rest.is_empty();
-                !host_part.is_empty() && !host_part.contains('@')
-            } else {
-                false
-            }
-        } else {
-            false
-        };
-
-        
-        
-        
-        
-        
-        
-        if path.len() > 1 {
-            if let Some(index) = self.serialization.find(":") {
-                let removal_start = index + ":".len();
-                if self.serialization[removal_start..].starts_with("/.") {
-                    self.path_start -= "/.".len() as u32;
-                }
-            }
-        }
-
         self.serialization.truncate(self.path_start as usize);
         self.mutate(|parser| {
             if cannot_be_a_base {
@@ -1799,6 +1715,7 @@ impl Url {
                 }
                 parser.parse_cannot_be_a_base_path(parser::Input::new_no_trim(path));
             } else {
+                let mut has_host = true; 
                 parser.parse_path_start(
                     scheme_type,
                     &mut has_host,
@@ -1806,26 +1723,6 @@ impl Url {
                 );
             }
         });
-
-        
-        
-        
-        
-        
-        
-        
-        if !has_host && path.len() > 1 && path_empty {
-            if let Some(index) = self.serialization.find(":") {
-                if self.serialization.len() > index + 2
-                    && self.serialization.as_bytes().get(index + 1) == Some(&b'/')
-                    && self.serialization.as_bytes().get(index + 2) == Some(&b'/')
-                {
-                    self.serialization.insert_str(index + ":".len(), "/.");
-                    self.path_start += "/.".len() as u32;
-                }
-            }
-        }
-
         self.restore_after_path(old_after_path_pos, &after_path);
     }
 
@@ -1856,14 +1753,6 @@ impl Url {
         self.serialization.push_str(after_path)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -2577,20 +2466,9 @@ impl Url {
     
     
     
-    
-    
-    #[cfg(all(
-        feature = "std",
-        any(
-            unix,
-            windows,
-            target_os = "redox",
-            target_os = "wasi",
-            target_os = "hermit"
-        )
-    ))]
+    #[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
     #[allow(clippy::result_unit_err)]
-    pub fn from_file_path<P: AsRef<std::path::Path>>(path: P) -> Result<Url, ()> {
+    pub fn from_file_path<P: AsRef<Path>>(path: P) -> Result<Url, ()> {
         let mut serialization = "file://".to_owned();
         let host_start = serialization.len() as u32;
         let (host_end, host) = path_to_file_url_segments(path.as_ref(), &mut serialization)?;
@@ -2625,20 +2503,9 @@ impl Url {
     
     
     
-    
-    
-    #[cfg(all(
-        feature = "std",
-        any(
-            unix,
-            windows,
-            target_os = "redox",
-            target_os = "wasi",
-            target_os = "hermit"
-        )
-    ))]
+    #[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
     #[allow(clippy::result_unit_err)]
-    pub fn from_directory_path<P: AsRef<std::path::Path>>(path: P) -> Result<Url, ()> {
+    pub fn from_directory_path<P: AsRef<Path>>(path: P) -> Result<Url, ()> {
         let mut url = Url::from_file_path(path)?;
         if !url.serialization.ends_with('/') {
             url.serialization.push('/')
@@ -2700,7 +2567,7 @@ impl Url {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::{Deserialize, Error};
+        use serde::de::{Deserialize, Error, Unexpected};
         let (
             serialization,
             scheme_end,
@@ -2726,8 +2593,10 @@ impl Url {
             fragment_start,
         };
         if cfg!(debug_assertions) {
-            url.check_invariants()
-                .map_err(|reason| Error::custom(reason))?
+            url.check_invariants().map_err(|reason| {
+                let reason: &str = &reason;
+                Error::invalid_value(Unexpected::Other("value"), &reason)
+            })?
         }
         Ok(url)
     }
@@ -2750,19 +2619,8 @@ impl Url {
     
     
     
-    
-    
     #[inline]
-    #[cfg(all(
-        feature = "std",
-        any(
-            unix,
-            windows,
-            target_os = "redox",
-            target_os = "wasi",
-            target_os = "hermit"
-        )
-    ))]
+    #[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
     #[allow(clippy::result_unit_err)]
     pub fn to_file_path(&self) -> Result<PathBuf, ()> {
         if let Some(segments) = self.path_segments() {
@@ -2940,7 +2798,7 @@ impl<'de> serde::Deserialize<'de> for Url {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::{Error, Visitor};
+        use serde::de::{Error, Unexpected, Visitor};
 
         struct UrlVisitor;
 
@@ -2955,7 +2813,10 @@ impl<'de> serde::Deserialize<'de> for Url {
             where
                 E: Error,
             {
-                Url::parse(s).map_err(|err| Error::custom(format!("{}: {:?}", err, s)))
+                Url::parse(s).map_err(|err| {
+                    let err_s = format!("{}", err);
+                    Error::invalid_value(Unexpected::Str(s), &err_s.as_str())
+                })
             }
         }
 
@@ -2963,20 +2824,15 @@ impl<'de> serde::Deserialize<'de> for Url {
     }
 }
 
-#[cfg(all(
-    feature = "std",
-    any(unix, target_os = "redox", target_os = "wasi", target_os = "hermit")
-))]
+#[cfg(any(unix, target_os = "redox", target_os = "wasi"))]
 fn path_to_file_url_segments(
     path: &Path,
     serialization: &mut String,
 ) -> Result<(u32, HostInternal), ()> {
-    use parser::SPECIAL_PATH_SEGMENT;
-    use percent_encoding::percent_encode;
-    #[cfg(target_os = "hermit")]
-    use std::os::hermit::ffi::OsStrExt;
     #[cfg(any(unix, target_os = "redox"))]
     use std::os::unix::prelude::OsStrExt;
+    #[cfg(target_os = "wasi")]
+    use std::os::wasi::prelude::OsStrExt;
     if !path.is_absolute() {
         return Err(());
     }
@@ -2986,14 +2842,8 @@ fn path_to_file_url_segments(
     for component in path.components().skip(1) {
         empty = false;
         serialization.push('/');
-        #[cfg(not(target_os = "wasi"))]
         serialization.extend(percent_encode(
             component.as_os_str().as_bytes(),
-            SPECIAL_PATH_SEGMENT,
-        ));
-        #[cfg(target_os = "wasi")]
-        serialization.extend(percent_encode(
-            component.as_os_str().to_string_lossy().as_bytes(),
             SPECIAL_PATH_SEGMENT,
         ));
     }
@@ -3004,7 +2854,7 @@ fn path_to_file_url_segments(
     Ok((host_end, HostInternal::None))
 }
 
-#[cfg(all(feature = "std", windows))]
+#[cfg(windows)]
 fn path_to_file_url_segments(
     path: &Path,
     serialization: &mut String,
@@ -3013,14 +2863,11 @@ fn path_to_file_url_segments(
 }
 
 
-#[cfg(feature = "std")]
 #[cfg_attr(not(windows), allow(dead_code))]
 fn path_to_file_url_segments_windows(
     path: &Path,
     serialization: &mut String,
 ) -> Result<(u32, HostInternal), ()> {
-    use crate::parser::PATH_SEGMENT;
-    use percent_encoding::percent_encode;
     use std::path::{Component, Prefix};
     if !path.is_absolute() {
         return Err(());
@@ -3079,23 +2926,16 @@ fn path_to_file_url_segments_windows(
     Ok((host_end, host_internal))
 }
 
-#[cfg(all(
-    feature = "std",
-    any(unix, target_os = "redox", target_os = "wasi", target_os = "hermit")
-))]
+#[cfg(any(unix, target_os = "redox", target_os = "wasi"))]
 fn file_url_segments_to_pathbuf(
     host: Option<&str>,
     segments: str::Split<'_, char>,
 ) -> Result<PathBuf, ()> {
-    use alloc::vec::Vec;
-    use percent_encoding::percent_decode;
-    #[cfg(not(target_os = "wasi"))]
     use std::ffi::OsStr;
-    #[cfg(target_os = "hermit")]
-    use std::os::hermit::ffi::OsStrExt;
     #[cfg(any(unix, target_os = "redox"))]
     use std::os::unix::prelude::OsStrExt;
-    use std::path::PathBuf;
+    #[cfg(target_os = "wasi")]
+    use std::os::wasi::prelude::OsStrExt;
 
     if host.is_some() {
         return Err(());
@@ -3120,12 +2960,8 @@ fn file_url_segments_to_pathbuf(
         bytes.push(b'/');
     }
 
-    #[cfg(not(target_os = "wasi"))]
-    let path = PathBuf::from(OsStr::from_bytes(&bytes));
-    #[cfg(target_os = "wasi")]
-    let path = String::from_utf8(bytes)
-        .map(|path| PathBuf::from(path))
-        .map_err(|_| ())?;
+    let os_str = OsStr::from_bytes(&bytes);
+    let path = PathBuf::from(os_str);
 
     debug_assert!(
         path.is_absolute(),
@@ -3135,7 +2971,7 @@ fn file_url_segments_to_pathbuf(
     Ok(path)
 }
 
-#[cfg(all(feature = "std", windows))]
+#[cfg(windows)]
 fn file_url_segments_to_pathbuf(
     host: Option<&str>,
     segments: str::Split<char>,
@@ -3144,13 +2980,11 @@ fn file_url_segments_to_pathbuf(
 }
 
 
-#[cfg(feature = "std")]
 #[cfg_attr(not(windows), allow(dead_code))]
 fn file_url_segments_to_pathbuf_windows(
     host: Option<&str>,
     mut segments: str::Split<'_, char>,
 ) -> Result<PathBuf, ()> {
-    use percent_encoding::percent_decode;
     let mut string = if let Some(host) = host {
         r"\\".to_owned() + host
     } else {

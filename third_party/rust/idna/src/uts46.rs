@@ -26,7 +26,13 @@ use crate::punycode::InternalCaller;
 use alloc::borrow::Cow;
 use alloc::string::String;
 use core::fmt::Write;
-use idna_adapter::*;
+use icu_normalizer::properties::CanonicalCombiningClassMap;
+use icu_normalizer::uts46::Uts46Mapper;
+use icu_properties::maps::CodePointMapDataBorrowed;
+use icu_properties::BidiClass;
+use icu_properties::CanonicalCombiningClass;
+use icu_properties::GeneralCategory;
+use icu_properties::JoiningType;
 use smallvec::SmallVec;
 use utf8_iter::Utf8CharsEx;
 
@@ -99,6 +105,79 @@ const fn ldh_mask() -> u128 {
     }
     accu
 }
+
+
+const fn joining_type_to_mask(jt: JoiningType) -> u32 {
+    1u32 << jt.0
+}
+
+
+const LEFT_OR_DUAL_JOINING_MASK: u32 =
+    joining_type_to_mask(JoiningType::LeftJoining) | joining_type_to_mask(JoiningType::DualJoining);
+
+
+const RIGHT_OR_DUAL_JOINING_MASK: u32 = joining_type_to_mask(JoiningType::RightJoining)
+    | joining_type_to_mask(JoiningType::DualJoining);
+
+
+const fn bidi_class_to_mask(bc: BidiClass) -> u32 {
+    1u32 << bc.0
+}
+
+
+const RTL_MASK: u32 = bidi_class_to_mask(BidiClass::RightToLeft)
+    | bidi_class_to_mask(BidiClass::ArabicLetter)
+    | bidi_class_to_mask(BidiClass::ArabicNumber);
+
+
+
+const FIRST_BC_MASK: u32 = bidi_class_to_mask(BidiClass::LeftToRight)
+    | bidi_class_to_mask(BidiClass::RightToLeft)
+    | bidi_class_to_mask(BidiClass::ArabicLetter);
+
+
+
+const LAST_LTR_MASK: u32 =
+    bidi_class_to_mask(BidiClass::LeftToRight) | bidi_class_to_mask(BidiClass::EuropeanNumber);
+
+
+
+const LAST_RTL_MASK: u32 = bidi_class_to_mask(BidiClass::RightToLeft)
+    | bidi_class_to_mask(BidiClass::ArabicLetter)
+    | bidi_class_to_mask(BidiClass::EuropeanNumber)
+    | bidi_class_to_mask(BidiClass::ArabicNumber);
+
+
+const MIDDLE_LTR_MASK: u32 = bidi_class_to_mask(BidiClass::LeftToRight)
+    | bidi_class_to_mask(BidiClass::EuropeanNumber)
+    | bidi_class_to_mask(BidiClass::EuropeanSeparator)
+    | bidi_class_to_mask(BidiClass::CommonSeparator)
+    | bidi_class_to_mask(BidiClass::EuropeanTerminator)
+    | bidi_class_to_mask(BidiClass::OtherNeutral)
+    | bidi_class_to_mask(BidiClass::BoundaryNeutral)
+    | bidi_class_to_mask(BidiClass::NonspacingMark);
+
+
+const MIDDLE_RTL_MASK: u32 = bidi_class_to_mask(BidiClass::RightToLeft)
+    | bidi_class_to_mask(BidiClass::ArabicLetter)
+    | bidi_class_to_mask(BidiClass::ArabicNumber)
+    | bidi_class_to_mask(BidiClass::EuropeanNumber)
+    | bidi_class_to_mask(BidiClass::EuropeanSeparator)
+    | bidi_class_to_mask(BidiClass::CommonSeparator)
+    | bidi_class_to_mask(BidiClass::EuropeanTerminator)
+    | bidi_class_to_mask(BidiClass::OtherNeutral)
+    | bidi_class_to_mask(BidiClass::BoundaryNeutral)
+    | bidi_class_to_mask(BidiClass::NonspacingMark);
+
+
+const fn general_category_to_mask(gc: GeneralCategory) -> u32 {
+    1 << (gc as u32)
+}
+
+
+const MARK_MASK: u32 = general_category_to_mask(GeneralCategory::NonspacingMark)
+    | general_category_to_mask(GeneralCategory::SpacingMark)
+    | general_category_to_mask(GeneralCategory::EnclosingMark);
 
 const PUNYCODE_PREFIX: u32 =
     ((b'-' as u32) << 24) | ((b'-' as u32) << 16) | ((b'N' as u32) << 8) | b'X' as u32;
@@ -487,7 +566,11 @@ pub fn verify_dns_length(domain_name: &str, allow_trailing_dot: bool) -> bool {
 
 
 pub struct Uts46 {
-    data: idna_adapter::Adapter,
+    mapper: Uts46Mapper,
+    canonical_combining_class: CanonicalCombiningClassMap,
+    general_category: CodePointMapDataBorrowed<'static, GeneralCategory>,
+    bidi_class: CodePointMapDataBorrowed<'static, BidiClass>,
+    joining_type: CodePointMapDataBorrowed<'static, JoiningType>,
 }
 
 #[cfg(feature = "compiled_data")]
@@ -502,7 +585,11 @@ impl Uts46 {
     #[cfg(feature = "compiled_data")]
     pub const fn new() -> Self {
         Self {
-            data: idna_adapter::Adapter::new(),
+            mapper: Uts46Mapper::new(),
+            canonical_combining_class: CanonicalCombiningClassMap::new(),
+            general_category: icu_properties::maps::general_category(),
+            bidi_class: icu_properties::maps::bidi_class(),
+            joining_type: icu_properties::maps::joining_type(),
         }
     }
 
@@ -1027,7 +1114,8 @@ impl Uts46 {
     }
 
     
-    #[inline(always)]
+    
+    #[inline(never)]
     fn process_inner<'a>(
         &self,
         domain_name: &'a [u8],
@@ -1041,7 +1129,7 @@ impl Uts46 {
         
         let mut iter = domain_name.iter();
         let mut most_recent_label_start = iter.clone();
-        loop {
+        let tail = loop {
             if let Some(&b) = iter.next() {
                 if in_inclusive_range8(b, b'a', b'z') {
                     continue;
@@ -1050,38 +1138,13 @@ impl Uts46 {
                     most_recent_label_start = iter.clone();
                     continue;
                 }
-                return self.process_innermost(
-                    domain_name,
-                    ascii_deny_list,
-                    hyphens,
-                    fail_fast,
-                    domain_buffer,
-                    already_punycode,
-                    most_recent_label_start.as_slice(),
-                );
+                break most_recent_label_start.as_slice();
             } else {
                 
                 return (domain_name.len(), false, false);
             }
-        }
-    }
+        };
 
-    
-    
-    
-    
-    #[allow(clippy::too_many_arguments)]
-    #[inline(never)]
-    fn process_innermost<'a>(
-        &self,
-        domain_name: &'a [u8],
-        ascii_deny_list: AsciiDenyList,
-        hyphens: Hyphens,
-        fail_fast: bool,
-        domain_buffer: &mut SmallVec<[char; 253]>,
-        already_punycode: &mut SmallVec<[AlreadyAsciiLabel<'a>; 8]>,
-        tail: &'a [u8],
-    ) -> (usize, bool, bool) {
         let deny_list = ascii_deny_list.bits;
         let deny_list_deny_dot = deny_list | DOT_MASK;
 
@@ -1232,7 +1295,7 @@ impl Uts46 {
                 let mut first_needs_combining_mark_check = ascii.is_empty();
                 let mut needs_contextj_check = !non_ascii.is_empty();
                 let mut mapping = self
-                    .data
+                    .mapper
                     .map_normalize(non_ascii.chars())
                     .map(|c| apply_ascii_deny_list_to_lower_cased_unicode(c, deny_list));
                 loop {
@@ -1368,8 +1431,8 @@ impl Uts46 {
         if is_bidi {
             for label in domain_buffer.split_mut(|c| *c == '.') {
                 if let Some((first, tail)) = label.split_first_mut() {
-                    let first_bc = self.data.bidi_class(*first);
-                    if !FIRST_BC_MASK.intersects(first_bc.to_mask()) {
+                    let first_bc = self.bidi_class.get(*first);
+                    if (FIRST_BC_MASK & bidi_class_to_mask(first_bc)) == 0 {
                         
                         if fail_fast {
                             return (0, false, true);
@@ -1378,19 +1441,19 @@ impl Uts46 {
                         *first = '\u{FFFD}';
                         continue;
                     }
-                    let is_ltr = first_bc.is_ltr();
+                    let is_ltr = first_bc == BidiClass::LeftToRight;
                     
                     let mut middle = tail;
                     #[allow(clippy::while_let_loop)]
                     loop {
                         if let Some((last, prior)) = middle.split_last_mut() {
-                            let last_bc = self.data.bidi_class(*last);
-                            if last_bc.is_nonspacing_mark() {
+                            let last_bc = self.bidi_class.get(*last);
+                            if last_bc == BidiClass::NonspacingMark {
                                 middle = prior;
                                 continue;
                             }
                             let last_mask = if is_ltr { LAST_LTR_MASK } else { LAST_RTL_MASK };
-                            if !last_mask.intersects(last_bc.to_mask()) {
+                            if (bidi_class_to_mask(last_bc) & last_mask) == 0 {
                                 if fail_fast {
                                     return (0, false, true);
                                 }
@@ -1399,8 +1462,8 @@ impl Uts46 {
                             }
                             if is_ltr {
                                 for c in prior.iter_mut() {
-                                    let bc = self.data.bidi_class(*c);
-                                    if !MIDDLE_LTR_MASK.intersects(bc.to_mask()) {
+                                    let bc = self.bidi_class.get(*c);
+                                    if (bidi_class_to_mask(bc) & MIDDLE_LTR_MASK) == 0 {
                                         if fail_fast {
                                             return (0, false, true);
                                         }
@@ -1411,8 +1474,8 @@ impl Uts46 {
                             } else {
                                 let mut numeral_state = RtlNumeralState::Undecided;
                                 for c in prior.iter_mut() {
-                                    let bc = self.data.bidi_class(*c);
-                                    if !MIDDLE_RTL_MASK.intersects(bc.to_mask()) {
+                                    let bc = self.bidi_class.get(*c);
+                                    if (bidi_class_to_mask(bc) & MIDDLE_RTL_MASK) == 0 {
                                         if fail_fast {
                                             return (0, false, true);
                                         }
@@ -1421,14 +1484,14 @@ impl Uts46 {
                                     } else {
                                         match numeral_state {
                                             RtlNumeralState::Undecided => {
-                                                if bc.is_european_number() {
+                                                if bc == BidiClass::EuropeanNumber {
                                                     numeral_state = RtlNumeralState::European;
-                                                } else if bc.is_arabic_number() {
+                                                } else if bc == BidiClass::ArabicNumber {
                                                     numeral_state = RtlNumeralState::Arabic;
                                                 }
                                             }
                                             RtlNumeralState::European => {
-                                                if bc.is_arabic_number() {
+                                                if bc == BidiClass::ArabicNumber {
                                                     if fail_fast {
                                                         return (0, false, true);
                                                     }
@@ -1437,7 +1500,7 @@ impl Uts46 {
                                                 }
                                             }
                                             RtlNumeralState::Arabic => {
-                                                if bc.is_european_number() {
+                                                if bc == BidiClass::EuropeanNumber {
                                                     if fail_fast {
                                                         return (0, false, true);
                                                     }
@@ -1449,9 +1512,9 @@ impl Uts46 {
                                     }
                                 }
                                 if (numeral_state == RtlNumeralState::European
-                                    && last_bc.is_arabic_number())
+                                    && last_bc == BidiClass::ArabicNumber)
                                     || (numeral_state == RtlNumeralState::Arabic
-                                        && last_bc.is_european_number())
+                                        && last_bc == BidiClass::EuropeanNumber)
                                 {
                                     if fail_fast {
                                         return (0, false, true);
@@ -1486,7 +1549,7 @@ impl Uts46 {
         had_errors: &mut bool,
     ) -> bool {
         for c in self
-            .data
+            .mapper
             .normalize_validate(label_buffer.iter().copied())
             .map(|c| apply_ascii_deny_list_to_lower_cased_unicode(c, deny_list_deny_dot))
         {
@@ -1543,7 +1606,7 @@ impl Uts46 {
         }
         if first_needs_combining_mark_check {
             if let Some(first) = mut_label.first_mut() {
-                if self.data.is_mark(*first) {
+                if (general_category_to_mask(self.general_category.get(*first)) & MARK_MASK) != 0 {
                     if fail_fast {
                         return true;
                     }
@@ -1563,7 +1626,9 @@ impl Uts46 {
 
                 if let Some((joiner, tail)) = joiner_and_tail.split_first_mut() {
                     if let Some(previous) = head.last() {
-                        if self.data.is_virama(*previous) {
+                        if self.canonical_combining_class.get(*previous)
+                            == CanonicalCombiningClass::Virama
+                        {
                             continue;
                         }
                     } else {
@@ -1621,14 +1686,14 @@ impl Uts46 {
     fn has_appropriately_joining_char<I: Iterator<Item = char>>(
         &self,
         iter: I,
-        required_mask: JoiningTypeMask,
+        required_mask: u32,
     ) -> bool {
         for c in iter {
-            let jt = self.data.joining_type(c);
-            if jt.to_mask().intersects(required_mask) {
+            let jt = self.joining_type.get(c);
+            if (joining_type_to_mask(jt) & required_mask) != 0 {
                 return true;
             }
-            if jt.is_transparent() {
+            if jt == JoiningType::Transparent {
                 continue;
             }
             return false;
@@ -1656,7 +1721,7 @@ impl Uts46 {
             if in_inclusive_range_char(c, '\u{11000}', '\u{1E7FF}') {
                 continue;
             }
-            if RTL_MASK.intersects(self.data.bidi_class(c).to_mask()) {
+            if (RTL_MASK & bidi_class_to_mask(self.bidi_class.get(c))) != 0 {
                 return true;
             }
         }

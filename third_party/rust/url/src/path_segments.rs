@@ -8,12 +8,7 @@
 
 use crate::parser::{self, to_u32, SchemeType};
 use crate::Url;
-use alloc::string::String;
-use core::str;
-
-
-
-
+use std::str;
 
 
 
@@ -94,19 +89,11 @@ impl<'a> PathSegmentsMut<'a> {
     
     
     
-    
-    
-    
-    
     pub fn clear(&mut self) -> &mut Self {
         self.url.serialization.truncate(self.after_first_slash);
         self
     }
 
-    
-    
-    
-    
     
     
     
@@ -172,14 +159,6 @@ impl<'a> PathSegmentsMut<'a> {
         self.extend(Some(segment))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
