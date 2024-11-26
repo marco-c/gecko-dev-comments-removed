@@ -17,6 +17,7 @@
 #include "js/Object.h"              
 #include "js/Proxy.h"
 #include "js/Wrapper.h"
+#include "mozilla/dom/ScriptSettings.h"
 
 
 
@@ -138,6 +139,8 @@ class XrayTraits {
   XrayTraits(XrayTraits&) = delete;
   const XrayTraits& operator=(XrayTraits&) = delete;
 };
+
+void ExpandoObjectFinalize(JS::GCContext* gcx, JSObject* obj);
 
 class DOMXrayTraits : public XrayTraits {
  public:
@@ -478,8 +481,24 @@ extern const JSClassOps XrayExpandoObjectClassOps;
 
 
 
-void ClearXrayExpandoSlots(JS::RootingContext* cx, JSObject* target,
-                           size_t slotIndex);
+
+template <typename F>
+void ForEachXrayExpandoObject(JS::RootingContext* aCx, JSObject* aTarget,
+                              F&& aFunc) {
+  if (!NS_IsMainThread()) {
+    
+    return;
+  }
+
+  MOZ_ASSERT(GetXrayTraits(aTarget) == &DOMXrayTraits::singleton);
+  JS::RootedObject rootedTarget(aCx, aTarget);
+  JS::RootedObject head(aCx,
+                        DOMXrayTraits::singleton.getExpandoChain(rootedTarget));
+  while (head) {
+    aFunc(head);
+    head = JS::GetReservedSlot(head, JSSLOT_EXPANDO_NEXT).toObjectOrNull();
+  }
+}
 
 
 

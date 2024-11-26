@@ -1044,6 +1044,17 @@ class IDLInterfaceMixin(IDLInterfaceOrInterfaceMixinOrNamespace):
         return set(self.members)
 
 
+class ReflectedHTMLAttributesReturningFrozenArray(object):
+    __slots__ = (
+        "slotIndex",
+        "totalMembersInSlots",
+    )
+
+    def __init__(self, slotIndex):
+        self.slotIndex = slotIndex
+        self.totalMembersInSlots = 0
+
+
 class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
     __slots__ = (
         "parent",
@@ -1057,6 +1068,7 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         "_isOnGlobalProtoChain",
         "totalMembersInSlots",
         "_ownMembersInSlots",
+        "reflectedHTMLAttributesReturningFrozenArray",
         "iterableInterface",
         "asyncIterableInterface",
         "hasCrossOriginMembers",
@@ -1085,9 +1097,19 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
 
         
         
+        
+        
+        
+        
+        
+        
         self.totalMembersInSlots = 0
         
         self._ownMembersInSlots = 0
+        
+        
+        
+        self.reflectedHTMLAttributesReturningFrozenArray = None
         
         
         self.iterableInterface = None
@@ -1460,8 +1482,40 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                     )
                 if member.slotIndices is None:
                     member.slotIndices = dict()
-                member.slotIndices[self.identifier.name] = self.totalMembersInSlots
-                self.totalMembersInSlots += 1
+                if member.getExtendedAttribute(
+                    "ReflectedHTMLAttributeReturningFrozenArray"
+                ):
+                    parent = self.parent
+                    while parent:
+                        if self.parent.reflectedHTMLAttributesReturningFrozenArray:
+                            raise WebIDLError(
+                                "Interface %s has at least one attribute marked "
+                                "as[ReflectedHTMLAttributeReturningFrozenArray],"
+                                "but one of its ancestors also has an attribute "
+                                "marked as "
+                                "[ReflectedHTMLAttributeReturningFrozenArray]"
+                                % self.identifier.name,
+                                [self.location, member.location, parent.location],
+                            )
+                        parent = parent.parent
+
+                    if not self.reflectedHTMLAttributesReturningFrozenArray:
+                        self.reflectedHTMLAttributesReturningFrozenArray = (
+                            ReflectedHTMLAttributesReturningFrozenArray(
+                                self.totalMembersInSlots
+                            )
+                        )
+                        self.totalMembersInSlots += 1
+                    member.slotIndices[self.identifier.name] = (
+                        self.reflectedHTMLAttributesReturningFrozenArray.slotIndex,
+                        self.reflectedHTMLAttributesReturningFrozenArray.totalMembersInSlots,
+                    )
+                    self.reflectedHTMLAttributesReturningFrozenArray.totalMembersInSlots += (
+                        1
+                    )
+                else:
+                    member.slotIndices[self.identifier.name] = self.totalMembersInSlots
+                    self.totalMembersInSlots += 1
                 if member.getExtendedAttribute("StoreInSlot"):
                     self._ownMembersInSlots += 1
 
@@ -5416,6 +5470,10 @@ class IDLAttribute(IDLInterfaceMember):
         self.legacyLenientThis = False
         self._legacyUnforgeable = False
         self.stringifier = stringifier
+        
+        
+        
+        
         self.slotIndices = None
         assert maplikeOrSetlike is None or isinstance(
             maplikeOrSetlike, IDLMaplikeOrSetlike
