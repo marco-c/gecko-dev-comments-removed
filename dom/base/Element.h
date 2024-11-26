@@ -1339,6 +1339,16 @@ class Element : public FragmentOrElement {
 
   Element* GetExplicitlySetAttrElement(nsAtom* aAttr) const;
 
+  
+
+
+
+
+
+
+  void GetExplicitlySetAttrElements(nsAtom* aAttr,
+                                    nsTArray<Element*>& aElements) const;
+
   PseudoStyleType GetPseudoElementType() const {
     nsresult rv = NS_OK;
     auto raw = GetProperty(nsGkAtoms::pseudoProperty, &rv);
