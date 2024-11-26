@@ -57,6 +57,25 @@ struct VideoStreamEncoderSettings {
   
   
   bool enable_frame_instrumentation_generator = false;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool use_standard_requested_resolution = false;
 };
 
 }  

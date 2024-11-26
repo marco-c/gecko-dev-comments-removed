@@ -2530,23 +2530,121 @@ TEST_F(VideoStreamEncoderTest, FrameRateLimitCanBeReset) {
   video_stream_encoder_->Stop();
 }
 
-TEST_F(VideoStreamEncoderTest,
-       ResolutionLimitPropagatedToSinkWantsBeforeFirstFrame) {
+
+
+
+enum class RequestedResolutionVersion {
+  kLegacyRequestedResolution,
+  kStandardRequestedResolution,
+};
+class VideoStreamEncoderStandardOrLegacyRequestedResolutionTest
+    : public VideoStreamEncoderTest,
+      public ::testing::WithParamInterface<RequestedResolutionVersion> {
+ public:
+  VideoStreamEncoderStandardOrLegacyRequestedResolutionTest()
+      : VideoStreamEncoderTest(), requested_resolution_version_(GetParam()) {}
+
+  void SetUp() override {
+    VideoStreamEncoderTest::SetUp();
+    
+    switch (requested_resolution_version_) {
+      case RequestedResolutionVersion::kLegacyRequestedResolution:
+        video_send_config_.encoder_settings.use_standard_requested_resolution =
+            false;
+        break;
+      case RequestedResolutionVersion::kStandardRequestedResolution:
+        video_send_config_.encoder_settings.use_standard_requested_resolution =
+            true;
+        break;
+    }
+
+    
+    
+    video_encoder_config_.video_stream_factory = nullptr;
+
+    ConfigureEncoder(video_encoder_config_.Copy());
+
+    video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+        kTargetBitrate, kTargetBitrate, kTargetBitrate, 0, 0, 0);
+  }
+
+ protected:
+  const RequestedResolutionVersion requested_resolution_version_;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    VideoStreamEncoderStandardOrLegacyRequestedResolutionTest,
+    VideoStreamEncoderStandardOrLegacyRequestedResolutionTest,
+    ::testing::Values(
+        RequestedResolutionVersion::kLegacyRequestedResolution,
+        RequestedResolutionVersion::kStandardRequestedResolution));
+
+TEST_P(VideoStreamEncoderStandardOrLegacyRequestedResolutionTest,
+       ResolutionLimitMaybePropagatedToSinkWantsBeforeFirstFrame) {
   ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
   video_encoder_config_.simulcast_layers[0].requested_resolution.emplace(
       Resolution({.width = 320, .height = 160}));
 
   video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
                                           kMaxPayloadLength);
-  EXPECT_EQ(video_source_.sink_wants().requested_resolution,
-            rtc::VideoSinkWants::FrameSize(320, 160));
+
+  
+  
+  switch (requested_resolution_version_) {
+    case RequestedResolutionVersion::kLegacyRequestedResolution:
+      EXPECT_EQ(video_source_.sink_wants().requested_resolution,
+                rtc::VideoSinkWants::FrameSize(320, 160));
+      break;
+    case RequestedResolutionVersion::kStandardRequestedResolution:
+      EXPECT_FALSE(video_source_.sink_wants().requested_resolution.has_value());
+      break;
+  }
 
   video_encoder_config_.simulcast_layers[0].requested_resolution->height = 320;
   video_encoder_config_.simulcast_layers[0].requested_resolution->width = 640;
   video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
                                           kMaxPayloadLength);
-  EXPECT_EQ(video_source_.sink_wants().requested_resolution,
-            rtc::VideoSinkWants::FrameSize(640, 320));
+
+  switch (requested_resolution_version_) {
+    case RequestedResolutionVersion::kLegacyRequestedResolution:
+      EXPECT_EQ(video_source_.sink_wants().requested_resolution,
+                rtc::VideoSinkWants::FrameSize(640, 320));
+      break;
+    case RequestedResolutionVersion::kStandardRequestedResolution:
+      EXPECT_FALSE(video_source_.sink_wants().requested_resolution.has_value());
+      break;
+  }
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_P(VideoStreamEncoderStandardOrLegacyRequestedResolutionTest,
+       RequestedResolutionInWrongAspectRatioAndSourceIsAdapting) {
+  
+  AdaptingFrameForwarder source(&time_controller_);
+  source.set_adaptation_enabled(true);
+  video_stream_encoder_->SetSource(
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+
+  ASSERT_THAT(video_encoder_config_.simulcast_layers, SizeIs(1));
+  video_encoder_config_.simulcast_layers[0].requested_resolution = {
+      .width = 30, .height = 30};
+  video_stream_encoder_->ConfigureEncoder(video_encoder_config_.Copy(),
+                                          kMaxPayloadLength);
+
+  
+  source.IncomingCapturedFrame(CreateFrame(1, 60, 30));
+  
+  
+  
+  switch (requested_resolution_version_) {
+    case RequestedResolutionVersion::kLegacyRequestedResolution:
+      WaitForEncodedFrame(30, 30);
+      break;
+    case RequestedResolutionVersion::kStandardRequestedResolution:
+      WaitForEncodedFrame(30, 15);
+      break;
+  }
 
   video_stream_encoder_->Stop();
 }
