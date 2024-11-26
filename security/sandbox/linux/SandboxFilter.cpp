@@ -1599,6 +1599,10 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
         
       case __NR_clone:
         return ClonePolicy(Error(EPERM));
+#  ifdef __NR_fork
+      case __NR_fork:
+        return Error(ENOSYS);
+#  endif
 
 #  ifdef __NR_fadvise64
       case __NR_fadvise64:
@@ -1986,6 +1990,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
       case __NR_clone:
         return ClonePolicy(Error(EPERM));
+#ifdef __NR_fork
+      case __NR_fork:
+        return Error(ENOSYS);
+#endif
 
         
       default:
