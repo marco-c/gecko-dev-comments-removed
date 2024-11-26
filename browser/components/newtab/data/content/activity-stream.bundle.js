@@ -105,6 +105,7 @@ for (const type of [
   "ARCHIVE_FROM_POCKET",
   "BLOCK_URL",
   "BOOKMARK_URL",
+  "CARD_SECTION_IMPRESSION",
   "CLEAR_PREF",
   "COPY_DOWNLOAD_LINK",
   "DELETE_BOOKMARK_BY_ID",
@@ -1650,6 +1651,12 @@ const LinkMenuOptions = {
         is_pocket_card: site.type === "CardGrid",
         is_list_card: site.is_list_card,
         ...(site.format ? { format: site.format } : {}),
+        ...(site.section
+          ? {
+              section: site.section,
+              section_position: site.section_position,
+            }
+          : {}),
       })),
     }),
     impression: actionCreators.ImpressionStats({
@@ -2161,6 +2168,10 @@ class DSLinkMenu extends (external_React_default()).PureComponent {
         is_list_card: this.props.is_list_card,
         ...(this.props.format ? {
           format: this.props.format
+        } : {}),
+        ...(this.props.section ? {
+          section: this.props.section,
+          section_position: this.props.section_position
         } : {})
       }
     })));
@@ -2322,6 +2333,10 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
             is_list_card: link.is_list_card,
             ...(link.format ? {
               format: link.format
+            } : {}),
+            ...(link.section ? {
+              section: link.section,
+              section_position: link.section_position
             } : {})
           })),
           firstVisibleTimestamp: this.props.firstVisibleTimestamp
@@ -3134,6 +3149,10 @@ class _DSCard extends (external_React_default()).PureComponent {
             is_list_card: this.props.isListCard,
             ...(this.props.format ? {
               format: this.props.format
+            } : {}),
+            ...(this.props.section ? {
+              section: this.props.section,
+              section_position: this.props.sectionPosition
             } : {})
           }
         }));
@@ -3155,6 +3174,10 @@ class _DSCard extends (external_React_default()).PureComponent {
             is_list_card: this.props.isListCard,
             ...(this.props.format ? {
               format: this.props.format
+            } : {}),
+            ...(this.props.section ? {
+              section: this.props.section,
+              section_position: this.props.sectionPosition
             } : {})
           }]
         }));
@@ -3195,6 +3218,10 @@ class _DSCard extends (external_React_default()).PureComponent {
           is_list_card: this.props.isListCard,
           ...(this.props.format ? {
             format: this.props.format
+          } : {}),
+          ...(this.props.section ? {
+            section: this.props.section,
+            section_position: this.props.sectionPosition
           } : {})
         }
       }));
@@ -3213,6 +3240,10 @@ class _DSCard extends (external_React_default()).PureComponent {
           is_list_card: this.props.isListCard,
           ...(this.props.format ? {
             format: this.props.format
+          } : {}),
+          ...(this.props.section ? {
+            section: this.props.section,
+            section_position: this.props.sectionPosition
           } : {})
         }]
       }));
@@ -3516,7 +3547,11 @@ class _DSCard extends (external_React_default()).PureComponent {
           format
         } : {}),
         isFakespot,
-        category: this.props.category
+        category: this.props.category,
+        ...(this.props.section ? {
+          section: this.props.section,
+          section_position: this.props.sectionPosition
+        } : {})
       }],
       dispatch: this.props.dispatch,
       isFakespot: isFakespot,
@@ -3583,6 +3618,8 @@ class _DSCard extends (external_React_default()).PureComponent {
       recommended_at: this.props.recommended_at,
       received_rank: this.props.received_rank,
       is_list_card: this.props.isListCard,
+      section: this.props.section,
+      section_position: this.props.sectionPosition,
       format: format
     }))));
   }
@@ -9426,6 +9463,51 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+function useIntersectionObserver(callback, options = {
+  threshold: 0.3
+}) {
+  const elementsRef = (0,external_React_namespaceObject.useRef)([]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          callback(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, options);
+    elementsRef.current.forEach(el => {
+      if (el) {
+        observer.observe(el);
+      }
+    });
+  }, [callback, options]);
+  return elementsRef;
+}
+
+;
+
+
+
+
+
+
+
+
+
+
+
+
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
 const CardSections_PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const CardSections_PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
@@ -9442,7 +9524,6 @@ function CardSections({
   ctaButtonVariant,
   ctaButtonSponsors
 }) {
-  
   const {
     recommendations,
     sections
@@ -9454,6 +9535,18 @@ function CardSections({
   const mayHaveThumbsUpDown = prefs[CardSections_PREF_THUMBS_UP_DOWN_ENABLED];
   const selectedTopics = prefs[CardSections_PREF_TOPICS_SELECTED];
   const availableTopics = prefs[CardSections_PREF_TOPICS_AVAILABLE];
+  const handleIntersection = (0,external_React_namespaceObject.useCallback)(el => {
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.CARD_SECTION_IMPRESSION,
+      data: {
+        section: el.id,
+        section_position: el.dataset.sectionPosition
+      }
+    }));
+  }, [dispatch]);
+
+  
+  const sectionRefs = useIntersectionObserver(handleIntersection);
 
   
   if (!data) {
@@ -9491,7 +9584,7 @@ function CardSections({
     feed: feed
   })) : external_React_default().createElement("div", {
     className: "ds-section-wrapper"
-  }, sections.map(section => {
+  }, sections.map((section, sectionIndex) => {
     const {
       sectionKey,
       title,
@@ -9505,7 +9598,11 @@ function CardSections({
     } = getMaxTiles(responsiveLayouts);
     return external_React_default().createElement("section", {
       key: sectionKey,
-      className: "ds-section"
+      id: sectionKey,
+      className: "ds-section",
+      ref: el => {
+        sectionRefs.current[sectionIndex] = el;
+      }
     }, external_React_default().createElement("div", {
       className: "section-heading"
     }, external_React_default().createElement("h2", {
@@ -9565,7 +9662,9 @@ function CardSections({
         "data-position-one": position.col1,
         "data-position-two": position.col2,
         "data-position-three": position.col3,
-        "data-position-four": position.col4
+        "data-position-four": position.col4,
+        section: sectionKey,
+        sectionPosition: sectionIndex
       });
     })));
   }));
