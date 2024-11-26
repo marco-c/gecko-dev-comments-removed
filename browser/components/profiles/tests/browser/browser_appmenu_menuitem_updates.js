@@ -13,8 +13,6 @@ async function promiseAppMenuOpened() {
 }
 
 add_task(async function test_appmenu_updates_on_edit() {
-  await gProfiles.init();
-
   
   
   SelectableProfileService._getExecutableProcess =
