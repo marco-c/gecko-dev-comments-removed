@@ -15,45 +15,46 @@ namespace js {
 
 using JSONParseNode = JSString;
 
-class ParseRecordObject : public NativeObject {
-  enum { ParseNodeSlot, ValueSlot, KeySlot, EntriesSlot, SlotCount };
-
+class ParseRecordObject {
  public:
-  using EntryMap = JSObject;
-
-  static const JSClass class_;
-
-  static ParseRecordObject* create(JSContext* cx, const Value& val);
-  static ParseRecordObject* create(JSContext* cx,
-                                   Handle<js::JSONParseNode*> parseNode,
-                                   const Value& val);
+  using EntryMap = js::GCHashMap<PropertyKey, ParseRecordObject>;
 
   
   
-  JSONParseNode* getParseNode() const {
-    const Value& slot = getSlot(ParseNodeSlot);
-    return slot.isUndefined() ? nullptr : slot.toString();
+  JSONParseNode* parseNode;
+  
+  
+  JS::PropertyKey key;
+  
+  
+  Value value;
+  
+  
+  
+  UniquePtr<EntryMap> entries;
+
+  ParseRecordObject();
+  ParseRecordObject(Handle<js::JSONParseNode*> parseNode, const Value& val);
+  ParseRecordObject(ParseRecordObject&& other)
+      : parseNode(std::move(other.parseNode)),
+        key(std::move(other.key)),
+        value(std::move(other.value)),
+        entries(std::move(other.entries)) {}
+
+  bool isEmpty() const { return value.isUndefined(); }
+
+  bool addEntries(JSContext* cx, EntryMap&& appendEntries);
+
+  
+  ParseRecordObject& operator=(ParseRecordObject&& other) noexcept {
+    parseNode = other.parseNode;
+    key = other.key;
+    value = other.value;
+    entries = std::move(other.entries);
+    return *this;
   }
 
-  
-  
-  JS::PropertyKey getKey(JSContext* cx) const;
-
-  bool setKey(JSContext* cx, const JS::PropertyKey& key);
-
-  
-  
-  const Value& getValue() const { return getSlot(ValueSlot); }
-
-  void setValue(JS::Handle<JS::Value> value) { setSlot(ValueSlot, value); }
-
-  bool hasValue() const { return !getValue().isUndefined(); }
-
-  
-  
-  EntryMap* getEntries(JSContext* cx);
-
-  bool setEntries(JSContext* cx, Handle<EntryMap*> entries);
+  void trace(JSTracer* trc);
 };
 
 }  
