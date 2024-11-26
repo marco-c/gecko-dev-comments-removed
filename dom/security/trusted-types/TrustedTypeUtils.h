@@ -42,7 +42,6 @@ nsString GetTrustedTypeName();
 
 
 
-
 MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantString(
     const TrustedHTMLOrString& aInput, const nsAString& aSink,
     const nsAString& aSinkGroup, const nsINode& aNode,
