@@ -1793,6 +1793,23 @@ export function canUseAsRenderTarget(format) {
   return kTextureFormatInfo[format].colorRender || isDepthOrStencilTextureFormat(format);
 }
 
+export function is32Float(format) {
+  return format === 'r32float' || format === 'rg32float' || format === 'rgba32float';
+}
+
+
+
+
+
+
+
+
+
+export function isFilterableAsTextureF32(format) {
+  const info = kTextureFormatInfo[format];
+  return info.color?.type === 'float' || is32Float(format);
+}
+
 export const kCompatModeUnsupportedStorageTextureFormats = [
 'rg32float',
 'rg32sint',
@@ -1821,6 +1838,15 @@ export function isRegularTextureFormat(format) {
 
 export function isCompressedFloatTextureFormat(format) {
   return isCompressedTextureFormat(format) && format.includes('float');
+}
+
+
+
+
+export function isSintOrUintFormat(format) {
+  const info = kTextureFormatInfo[format];
+  const type = info.color?.type ?? info.depth?.type ?? info.stencil?.type;
+  return type === 'sint' || type === 'uint';
 }
 
 

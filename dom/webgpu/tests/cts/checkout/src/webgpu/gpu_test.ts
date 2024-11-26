@@ -301,6 +301,14 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
   }
 
   
+  skipIfDepthTextureCanNotBeUsedWithNonComparisonSampler() {
+    this.skipIf(
+      this.isCompatibility,
+      'depth textures are not usable with non-comparison samplers in compatibility mode'
+    );
+  }
+
+  
   skipIfLanguageFeatureNotSupported(langFeature: WGSLLanguageFeature) {
     if (!this.hasLanguageFeature(langFeature)) {
       this.skip(`WGSL language feature '${langFeature}' is not supported`);
@@ -1296,7 +1304,7 @@ export interface TextureTestMixinType {
 
 
   expectTexelViewComparisonIsOkInTexture(
-    src: GPUImageCopyTexture,
+    src: GPUTexelCopyTextureInfo,
     exp: TexelView,
     size: GPUExtent3D,
     comparisonOptions?: TexelCompareOptions
@@ -1307,7 +1315,7 @@ export interface TextureTestMixinType {
 
 
   expectSinglePixelComparisonsAreOkInTexture<E extends PixelExpectation>(
-    src: GPUImageCopyTexture,
+    src: GPUTexelCopyTextureInfo,
     exp: PerPixelComparison<E>[],
     comparisonOptions?: TexelCompareOptions
   ): void;
@@ -1383,7 +1391,7 @@ export interface TextureTestMixinType {
 
 
   getTexelOffsetInBytes(
-    textureDataLayout: Required<GPUImageDataLayout>,
+    textureDataLayout: Required<GPUTexelCopyBufferLayout>,
     format: ColorTextureFormat,
     texel: Required<GPUOrigin3DDict>,
     origin?: Required<GPUOrigin3DDict>
@@ -1481,7 +1489,7 @@ function getPipelineToRenderTextureToRGB8UnormTexture(
 }
 
 type LinearCopyParameters = {
-  dataLayout: Required<GPUImageDataLayout>;
+  dataLayout: Required<GPUTexelCopyBufferLayout>;
   origin: Required<GPUOrigin3DDict>;
   data: Uint8Array;
 };
@@ -1511,7 +1519,7 @@ export function TextureTestMixin<F extends FixtureClass<GPUTest>>(
     }
 
     expectTexelViewComparisonIsOkInTexture(
-      src: GPUImageCopyTexture,
+      src: GPUTexelCopyTextureInfo,
       exp: TexelView,
       size: GPUExtent3D,
       comparisonOptions = {
@@ -1526,7 +1534,7 @@ export function TextureTestMixin<F extends FixtureClass<GPUTest>>(
     }
 
     expectSinglePixelComparisonsAreOkInTexture<E extends PixelExpectation>(
-      src: GPUImageCopyTexture,
+      src: GPUTexelCopyTextureInfo,
       exp: PerPixelComparison<E>[],
       comparisonOptions = {
         maxIntDiff: 0,
@@ -1836,7 +1844,7 @@ export function TextureTestMixin<F extends FixtureClass<GPUTest>>(
 
     
     getTexelOffsetInBytes(
-      textureDataLayout: Required<GPUImageDataLayout>,
+      textureDataLayout: Required<GPUTexelCopyBufferLayout>,
       format: ColorTextureFormat,
       texel: Required<GPUOrigin3DDict>,
       origin: Required<GPUOrigin3DDict> = { x: 0, y: 0, z: 0 }

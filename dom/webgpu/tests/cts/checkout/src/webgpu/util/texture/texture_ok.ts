@@ -167,7 +167,7 @@ function comparePerComponent(
 
 function createTextureCopyForMapRead(
   t: GPUTest,
-  source: GPUImageCopyTexture,
+  source: GPUTexelCopyTextureInfo,
   copySize: GPUExtent3D,
   { format }: { format: EncodableTextureFormat }
 ): { buffer: GPUBuffer; bytesPerRow: number; rowsPerImage: number } {
@@ -298,7 +298,7 @@ ${generatePrettyTable(opts, [
 
 export async function textureContentIsOKByT2B(
   t: GPUTest,
-  source: GPUImageCopyTexture,
+  source: GPUTexelCopyTextureInfo,
   copySize_: GPUExtent3D,
   { expTexelView }: { expTexelView: TexelView },
   texelCompareOptions: TexelCompareOptions,

@@ -301,6 +301,14 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
   }
 
   
+  skipIfDepthTextureCanNotBeUsedWithNonComparisonSampler() {
+    this.skipIf(
+      this.isCompatibility,
+      'depth textures are not usable with non-comparison samplers in compatibility mode'
+    );
+  }
+
+  
   skipIfLanguageFeatureNotSupported(langFeature) {
     if (!this.hasLanguageFeature(langFeature)) {
       this.skip(`WGSL language feature '${langFeature}' is not supported`);

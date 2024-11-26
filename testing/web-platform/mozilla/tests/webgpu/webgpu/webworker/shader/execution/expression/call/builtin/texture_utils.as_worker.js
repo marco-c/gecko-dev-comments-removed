@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../../../shader/execution/expression/call/builtin/texture_utils.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

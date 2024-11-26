@@ -135,7 +135,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
     rowsPerImage: number | undefined,
     bytesPerRow: number | undefined,
     changeBeforePass: ChangeBeforePass
-  ): GPUImageDataLayout {
+  ): GPUTexelCopyBufferLayout {
     if (changeBeforePass === 'undefined') {
       if (offset === 0) {
         offset = undefined;
@@ -163,7 +163,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
     origin_z: number | undefined,
     mipLevel: number | undefined,
     changeBeforePass: ChangeBeforePass
-  ): GPUImageCopyTexture {
+  ): GPUTexelCopyTextureInfo {
     let origin: GPUOrigin3D | undefined = { x: origin_x, y: origin_y, z: origin_z };
 
     if (changeBeforePass === 'undefined') {
@@ -225,7 +225,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
     buffer: GPUBuffer,
     format: ColorTextureFormat,
     size: Required<GPUExtent3DDict>,
-    dataLayout: Required<GPUImageDataLayout>
+    dataLayout: Required<GPUTexelCopyBufferLayout>
   ) {
     if (isCompressedTextureFormat(format)) {
       this.expectGPUBufferValuesEqual(buffer, expected);
@@ -323,7 +323,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
   
   copyTextureToBufferWithAppliedArguments(
     buffer: GPUBuffer,
-    { offset, rowsPerImage, bytesPerRow }: Required<GPUImageDataLayout>,
+    { offset, rowsPerImage, bytesPerRow }: Required<GPUTexelCopyBufferLayout>,
     { width, height, depthOrArrayLayers }: Required<GPUExtent3DDict>,
     { texture, mipLevel, origin }: TextureCopyViewWithRequiredOrigin,
     changeBeforePass: ChangeBeforePass
@@ -363,7 +363,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
   
   uploadLinearTextureDataToTextureSubBox(
     textureCopyView: TextureCopyViewWithRequiredOrigin,
-    textureDataLayout: GPUImageDataLayout & { bytesPerRow: number },
+    textureDataLayout: GPUTexelCopyBufferLayout & { bytesPerRow: number },
     copySize: Required<GPUExtent3DDict>,
     partialData: Uint8Array,
     method: InitMethod,
@@ -432,7 +432,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
     copySize: Required<GPUExtent3DDict>,
     format: ColorTextureFormat,
     expected: Uint8Array,
-    expectedDataLayout: Required<GPUImageDataLayout>
+    expectedDataLayout: Required<GPUTexelCopyBufferLayout>
   ): void {
     const size = [
       actualTexture.width,
@@ -507,7 +507,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
     checkSize: Required<GPUExtent3DDict>,
     format: ColorTextureFormat,
     expected: Uint8Array,
-    expectedDataLayout: Required<GPUImageDataLayout>,
+    expectedDataLayout: Required<GPUTexelCopyBufferLayout>,
     changeBeforePass: ChangeBeforePass = 'none'
   ): void {
     
@@ -573,7 +573,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
   copyWholeTextureToBufferAndCheckContentsWithUpdatedData(
     { texture, mipLevel, origin }: TextureCopyViewWithRequiredOrigin,
     fullTextureCopyLayout: TextureCopyLayout,
-    texturePartialDataLayout: Required<GPUImageDataLayout>,
+    texturePartialDataLayout: Required<GPUTexelCopyBufferLayout>,
     copySize: Required<GPUExtent3DDict>,
     format: ColorTextureFormat,
     fullData: GPUBuffer,
@@ -632,7 +632,7 @@ class ImageCopyTest extends TextureTestMixin(GPUTest) {
     checkMethod,
     changeBeforePass = 'none',
   }: {
-    textureDataLayout: Required<GPUImageDataLayout>;
+    textureDataLayout: Required<GPUTexelCopyBufferLayout>;
     copySize: Required<GPUExtent3DDict>;
     dataSize: number;
     mipLevel?: number;

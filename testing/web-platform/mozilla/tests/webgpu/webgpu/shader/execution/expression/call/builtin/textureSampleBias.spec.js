@@ -8,7 +8,7 @@ Samples a texture with a bias to the mip level.
 - TODO: test cube maps with more than one mip level.
 - TODO: Test un-encodable formats.
 `;import { makeTestGroup } from '../../../../../../common/framework/test_group.js';
-import { kCompressedTextureFormats, kEncodableTextureFormats } from '../../../../../format_info.js';
+import { isFilterableAsTextureF32, kAllTextureFormats } from '../../../../../format_info.js';
 import { TextureTestMixin } from '../../../../../gpu_test.js';
 
 import {
@@ -35,9 +35,11 @@ import {
   skipIfNeedsFilteringAndIsUnfilterable } from
 './texture_utils.js';
 
-const kTestableColorFormats = [...kEncodableTextureFormats, ...kCompressedTextureFormats];
-
 export const g = makeTestGroup(TextureTestMixin(WGSLTextureSampleTest));
+
+
+
+const kMinBlocksForTextureSampleBias = 3;
 
 g.test('sampled_2d_coords').
 specURL('https://www.w3.org/TR/WGSL/#texturesamplebias').
@@ -61,9 +63,10 @@ Parameters:
 ).
 params((u) =>
 u.
-combine('format', kTestableColorFormats).
+combine('format', kAllTextureFormats).
 filter((t) => isPotentiallyFilterableAndFillable(t.format)).
 combine('filt', ['nearest', 'linear']).
+filter((t) => t.filt === 'nearest' || isFilterableAsTextureF32(t.format)).
 combine('modeU', kShortAddressModes).
 combine('modeV', kShortAddressModes).
 combine('offset', [false, true]).
@@ -78,7 +81,11 @@ fn(async (t) => {
   skipIfNeedsFilteringAndIsUnfilterable(t, minFilter, format);
 
   
-  const [width, height] = chooseTextureSize({ minSize: 8, minBlocks: 4, format });
+  const [width, height] = chooseTextureSize({
+    minSize: 8,
+    minBlocks: kMinBlocksForTextureSampleBias,
+    format
+  });
 
   const descriptor = {
     format,
@@ -159,11 +166,12 @@ Parameters:
 ).
 params((u) =>
 u.
-combine('format', kTestableColorFormats).
+combine('format', kAllTextureFormats).
 filter((t) => isPotentiallyFilterableAndFillable(t.format)).
 combine('dim', ['3d', 'cube']).
 filter((t) => isSupportedViewFormatCombo(t.format, t.dim)).
 combine('filt', ['nearest', 'linear']).
+filter((t) => t.filt === 'nearest' || isFilterableAsTextureF32(t.format)).
 combine('modeU', kShortAddressModes).
 combine('modeV', kShortAddressModes).
 combine('modeW', kShortAddressModes).
@@ -296,9 +304,10 @@ Parameters:
 ).
 params((u) =>
 u.
-combine('format', kTestableColorFormats).
+combine('format', kAllTextureFormats).
 filter((t) => isPotentiallyFilterableAndFillable(t.format)).
 combine('filt', ['nearest', 'linear']).
+filter((t) => t.filt === 'nearest' || isFilterableAsTextureF32(t.format)).
 combine('modeU', kShortAddressModes).
 combine('modeV', kShortAddressModes).
 combine('offset', [false, true]).
@@ -314,7 +323,11 @@ fn(async (t) => {
   skipIfNeedsFilteringAndIsUnfilterable(t, minFilter, format);
 
   
-  const [width, height] = chooseTextureSize({ minSize: 8, minBlocks: 4, format });
+  const [width, height] = chooseTextureSize({
+    minSize: 8,
+    minBlocks: kMinBlocksForTextureSampleBias,
+    format
+  });
   const depthOrArrayLayers = 4;
 
   const descriptor = {
@@ -400,9 +413,10 @@ Parameters:
 ).
 params((u) =>
 u.
-combine('format', kTestableColorFormats).
+combine('format', kAllTextureFormats).
 filter((t) => isPotentiallyFilterableAndFillable(t.format)).
 combine('filt', ['nearest', 'linear']).
+filter((t) => t.filt === 'nearest' || isFilterableAsTextureF32(t.format)).
 combine('mode', kShortAddressModes).
 beginSubcases().
 combine('samplePoints', kCubeSamplePointMethods).
