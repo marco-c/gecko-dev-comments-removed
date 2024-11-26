@@ -1997,20 +1997,14 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
 
   
   
-  
-  const Margin nonClientMargin{0, 2, 2, 2};
-
   if (sMaximized) {
     sNonClientOffset.top = sCaptionHeight - sVerticalResizeMargin;
   } else {
     
     sNonClientOffset.top = sCaptionHeight;
-    sNonClientOffset.bottom =
-        std::min(sVerticalResizeMargin, nonClientMargin.bottom);
-    sNonClientOffset.left =
-        std::min(sHorizontalResizeMargin, nonClientMargin.left);
-    sNonClientOffset.right =
-        std::min(sHorizontalResizeMargin, nonClientMargin.right);
+    sNonClientOffset.bottom = sVerticalResizeMargin;
+    sNonClientOffset.left = sHorizontalResizeMargin;
+    sNonClientOffset.right = sHorizontalResizeMargin;
   }
 
   if (sMaximized) {
