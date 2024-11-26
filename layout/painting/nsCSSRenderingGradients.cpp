@@ -1051,7 +1051,9 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
   
   
   nsRect dirty;
-  if (!dirty.IntersectRect(aDirtyRect, aFillArea)) return;
+  if (!dirty.IntersectRect(aDirtyRect, aFillArea)) {
+    return;
+  }
 
   gfxRect areaToFill =
       nsLayoutUtils::RectToGfxRect(aFillArea, appUnitsPerDevPixel);
