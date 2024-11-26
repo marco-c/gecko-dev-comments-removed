@@ -91,10 +91,15 @@ add_task(async function testNodePickerInExtensionPopup() {
     onSelected,
   });
   const onPanelOpened = AppTestDelegate.awaitExtensionPanel(window, extension);
+
+  const onReloaded = inspector.once("reloaded");
   clickOnAddonWidget(ADDON_ID);
   await onPanelOpened;
   info("Wait for the target front related to the popup");
   await onNewTarget;
+  
+  info("Wait for the inspector to be reloaded against the popup's document");
+  await onReloaded;
 
   const popup = gBrowser.ownerDocument.querySelector(
     ".webextension-popup-browser"
@@ -102,7 +107,6 @@ add_task(async function testNodePickerInExtensionPopup() {
 
   info("Pick an element inside the webextension popup");
   
-  const onReloaded = inspector.once("reloaded");
   BrowserTestUtils.synthesizeMouseAtCenter(
     "#pick-me",
     { type: "mousemove" },
@@ -114,8 +118,6 @@ add_task(async function testNodePickerInExtensionPopup() {
     types: [targetCommand.TYPES.FRAME],
     onAvailable,
   });
-  info("Wait for the inspector to be reloaded against the popup's document");
-  await onReloaded;
 
   
   const onNewNodeFront = inspector.selection.once("new-node-front");
