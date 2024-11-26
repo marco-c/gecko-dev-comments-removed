@@ -59,8 +59,9 @@ impl WebExtStorageStore {
     
     
     pub fn set(&self, ext_id: &str, val: JsonValue) -> Result<StorageChanges> {
-        let db = self.db.lock();
-        let tx = db.unchecked_transaction()?;
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        let tx = conn.unchecked_transaction()?;
         let result = api::set(&tx, ext_id, val)?;
         tx.commit()?;
         Ok(result)
@@ -68,8 +69,9 @@ impl WebExtStorageStore {
 
     
     pub fn usage(&self) -> Result<Vec<crate::UsageInfo>> {
-        let db = self.db.lock();
-        api::usage(&db)
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        api::usage(conn)
     }
 
     
@@ -90,8 +92,9 @@ impl WebExtStorageStore {
     
     pub fn get(&self, ext_id: &str, keys: JsonValue) -> Result<JsonValue> {
         
-        let db = self.db.lock();
-        api::get(&db, ext_id, keys)
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        api::get(conn, ext_id, keys)
     }
 
     
@@ -99,8 +102,9 @@ impl WebExtStorageStore {
     
     
     pub fn remove(&self, ext_id: &str, keys: JsonValue) -> Result<StorageChanges> {
-        let db = self.db.lock();
-        let tx = db.unchecked_transaction()?;
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        let tx = conn.unchecked_transaction()?;
         let result = api::remove(&tx, ext_id, keys)?;
         tx.commit()?;
         Ok(result)
@@ -110,8 +114,9 @@ impl WebExtStorageStore {
     
     
     pub fn clear(&self, ext_id: &str) -> Result<StorageChanges> {
-        let db = self.db.lock();
-        let tx = db.unchecked_transaction()?;
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        let tx = conn.unchecked_transaction()?;
         let result = api::clear(&tx, ext_id)?;
         tx.commit()?;
         Ok(result)
@@ -120,8 +125,9 @@ impl WebExtStorageStore {
     
     
     pub fn get_bytes_in_use(&self, ext_id: &str, keys: JsonValue) -> Result<usize> {
-        let db = self.db.lock();
-        api::get_bytes_in_use(&db, ext_id, keys)
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        api::get_bytes_in_use(conn, ext_id, keys)
     }
 
     
@@ -135,8 +141,8 @@ impl WebExtStorageStore {
         
         
         
-        let shared: ThreadSafeStorageDb = match Arc::try_unwrap(self.db) {
-            Ok(shared) => shared,
+        let shared: ThreadSafeStorageDb = match Arc::into_inner(self.db) {
+            Some(shared) => shared,
             _ => {
                 
                 
@@ -157,7 +163,7 @@ impl WebExtStorageStore {
             }
         };
         
-        let db = shared.into_inner();
+        let mut db = shared.into_inner();
         db.close()
     }
 
@@ -177,12 +183,13 @@ impl WebExtStorageStore {
     
     
     pub fn migrate(&self, filename: impl AsRef<Path>) -> Result<()> {
-        let db = self.db.lock();
-        let tx = db.unchecked_transaction()?;
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        let tx = conn.unchecked_transaction()?;
         let result = migrate(&tx, filename.as_ref())?;
         tx.commit()?;
         
-        if let Err(e) = result.store(&db) {
+        if let Err(e) = result.store(conn) {
             debug_assert!(false, "Migration error: {:?}", e);
             log::warn!("Failed to record migration telmetry: {}", e);
         }
@@ -192,8 +199,9 @@ impl WebExtStorageStore {
     
     
     pub fn take_migration_info(&self) -> Result<Option<MigrationInfo>> {
-        let db = self.db.lock();
-        let tx = db.unchecked_transaction()?;
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        let tx = conn.unchecked_transaction()?;
         let result = MigrationInfo::take(&tx)?;
         tx.commit()?;
         Ok(result)

@@ -2,11 +2,10 @@
 
 
 
+use crate::{Attachment, RemoteSettingsRecord, Result};
 use camino::Utf8PathBuf;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json;
-
-use crate::{Attachment, RemoteSettingsRecord, Result};
 
 
 
@@ -82,7 +81,6 @@ impl Storage {
     ) -> Result<Option<Vec<RemoteSettingsRecord>>> {
         let tx = self.conn.transaction()?;
 
-        
         let fetched: Option<bool> = tx
             .prepare("SELECT fetched FROM collection_metadata WHERE collection_url = ?")?
             .query_row(params![collection_url], |row| row.get(0))
@@ -135,7 +133,7 @@ impl Storage {
     pub fn set_records(
         &mut self,
         collection_url: &str,
-        records: &[RemoteSettingsRecord],
+        records: &Vec<RemoteSettingsRecord>,
     ) -> Result<()> {
         let tx = self.conn.transaction()?;
 
@@ -151,6 +149,7 @@ impl Storage {
             for record in records {
                 max_last_modified = max_last_modified.max(record.last_modified);
                 let data = serde_json::to_vec(record)?;
+
                 stmt.execute(params![record.id, collection_url, data])?;
             }
         }
@@ -163,6 +162,7 @@ impl Storage {
         )?;
 
         tx.commit()?;
+
         Ok(())
     }
 
@@ -282,7 +282,7 @@ mod tests {
         let collection_url = "https://example.com/api";
 
         
-        storage.set_records(collection_url, &[])?;
+        storage.set_records(collection_url, &Vec::<RemoteSettingsRecord>::default())?;
 
         
         let fetched_records = storage.get_records(collection_url)?;
@@ -497,6 +497,14 @@ mod tests {
 
         
         storage.set_records(collection_url1, &records_collection_url1)?;
+
+        
+        let fetched_records = storage.get_records(collection_url1)?;
+        assert!(fetched_records.is_some());
+        let fetched_records = fetched_records.unwrap();
+        assert_eq!(fetched_records.len(), 1);
+        assert_eq!(fetched_records, records_collection_url1);
+
         
         storage.set_records(collection_url2, &records_collection_url2)?;
 
@@ -550,7 +558,7 @@ mod tests {
             last_modified: 200,
             deleted: false,
             attachment: None,
-            fields: serde_json::json!({"key": "value2"})
+            fields: serde_json::json!({"key": "value2_updated"})
                 .as_object()
                 .unwrap()
                 .clone(),

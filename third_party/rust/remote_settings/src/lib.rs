@@ -2,6 +2,8 @@
 
 
 
+use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use std::{collections::HashMap, fs::File, io::prelude::Write, sync::Arc};
 
 use error_support::{convert_log_report_error, handle_error};
@@ -14,6 +16,9 @@ pub mod error;
 pub mod service;
 pub mod storage;
 
+#[cfg(feature = "jexl")]
+pub(crate) mod jexl_filter;
+
 pub use client::{Attachment, RemoteSettingsRecord, RemoteSettingsResponse, RsJsonObject};
 pub use config::{RemoteSettingsConfig, RemoteSettingsConfig2, RemoteSettingsServer};
 pub use error::{ApiResult, RemoteSettingsError, Result};
@@ -23,6 +28,51 @@ use error::Error;
 use storage::Storage;
 
 uniffi::setup_scaffolding!("remote_settings");
+
+
+
+
+
+
+
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default, uniffi::Record)]
+pub struct RemoteSettingsContext {
+    
+    pub app_name: String,
+    
+    pub app_id: String,
+    
+    pub channel: String,
+    
+    #[serde(rename = "version")]
+    pub app_version: Option<String>,
+    
+    pub app_build: Option<String>,
+    
+    pub architecture: Option<String>,
+    
+    pub device_manufacturer: Option<String>,
+    
+    pub device_model: Option<String>,
+    
+    pub locale: Option<String>,
+    
+    pub os: Option<String>,
+    
+    pub os_version: Option<String>,
+    
+    pub android_sdk_version: Option<String>,
+    
+    pub debug_tag: Option<String>,
+    
+    pub installation_date: Option<i64>,
+    
+    pub home_directory: Option<String>,
+    
+    #[serde(flatten)]
+    pub custom_targeting_attributes: Option<Map<String, Value>>,
+}
 
 
 
@@ -49,8 +99,12 @@ impl RemoteSettingsService {
 
     
     #[handle_error(Error)]
-    pub fn make_client(&self, collection_name: String) -> ApiResult<Arc<RemoteSettingsClient>> {
-        self.internal.make_client(collection_name)
+    pub fn make_client(
+        &self,
+        collection_name: String,
+        app_context: Option<RemoteSettingsContext>,
+    ) -> ApiResult<Arc<RemoteSettingsClient>> {
+        self.internal.make_client(collection_name, app_context)
     }
 
     
@@ -156,6 +210,7 @@ impl RemoteSettingsClient {
         base_url: Url,
         bucket_name: String,
         collection_name: String,
+        #[cfg(feature = "jexl")] context: Option<RemoteSettingsContext>,
         storage: Storage,
     ) -> Result<Self> {
         Ok(Self {
@@ -163,6 +218,8 @@ impl RemoteSettingsClient {
                 base_url,
                 bucket_name,
                 collection_name,
+                #[cfg(feature = "jexl")]
+                context,
                 storage,
             )?,
         })

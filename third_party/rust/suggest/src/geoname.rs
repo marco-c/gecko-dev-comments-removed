@@ -24,7 +24,8 @@ use crate::{
     Result,
 };
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, uniffi::Enum)]
 pub enum GeonameType {
     City,
     Region,
@@ -35,7 +36,8 @@ pub enum GeonameType {
 
 
 
-#[derive(Clone, Debug)]
+
+#[derive(Clone, Debug, uniffi::Record)]
 pub struct Geoname {
     
     pub geoname_id: i64,
@@ -83,14 +85,17 @@ impl Hash for Geoname {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, uniffi::Record)]
 pub struct GeonameMatch {
+    
     pub geoname: Geoname,
+    
     pub match_type: GeonameMatchType,
+    
     pub prefix: bool,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, uniffi::Enum)]
 pub enum GeonameMatchType {
     
     Abbreviation,
@@ -1416,6 +1421,116 @@ pub(crate) mod tests {
 
             Ok(())
         })?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn geonames_store_api() -> anyhow::Result<()> {
+        before_each();
+
+        let store = new_test_store();
+
+        
+        store.ingest(SuggestIngestionConstraints {
+            providers: Some(vec![SuggestionProvider::Weather]),
+            ..SuggestIngestionConstraints::all_providers()
+        });
+
+        #[derive(Debug)]
+        struct Test {
+            query: &'static str,
+            match_name_prefix: bool,
+            geoname_type: Option<GeonameType>,
+            filter: Option<Vec<Geoname>>,
+            expected: Vec<GeonameMatch>,
+        }
+
+        
+        
+        let tests = [
+            
+            Test {
+                query: "ia",
+                match_name_prefix: false,
+                geoname_type: None,
+                filter: None,
+                expected: vec![GeonameMatch {
+                    geoname: ia(),
+                    match_type: GeonameMatchType::Abbreviation,
+                    prefix: false,
+                }],
+            },
+            
+            Test {
+                query: "ia",
+                match_name_prefix: false,
+                geoname_type: None,
+                filter: Some(vec![waterloo_ia(), waterloo_al()]),
+                expected: vec![GeonameMatch {
+                    geoname: ia(),
+                    match_type: GeonameMatchType::Abbreviation,
+                    prefix: false,
+                }],
+            },
+            
+            Test {
+                query: "ia",
+                match_name_prefix: false,
+                geoname_type: Some(GeonameType::Region),
+                filter: None,
+                expected: vec![GeonameMatch {
+                    geoname: ia(),
+                    match_type: GeonameMatchType::Abbreviation,
+                    prefix: false,
+                }],
+            },
+            
+            Test {
+                query: "ny",
+                match_name_prefix: false,
+                geoname_type: Some(GeonameType::City),
+                filter: None,
+                expected: vec![GeonameMatch {
+                    geoname: nyc(),
+                    match_type: GeonameMatchType::Abbreviation,
+                    prefix: false,
+                }],
+            },
+            
+            Test {
+                query: "ny",
+                match_name_prefix: true,
+                geoname_type: None,
+                filter: None,
+                expected: vec![
+                    GeonameMatch {
+                        geoname: nyc(),
+                        match_type: GeonameMatchType::Abbreviation,
+                        prefix: false,
+                    },
+                    GeonameMatch {
+                        geoname: ny_state(),
+                        match_type: GeonameMatchType::Abbreviation,
+                        prefix: false,
+                    },
+                ],
+            },
+        ];
+
+        for t in tests {
+            assert_eq!(
+                store.fetch_geonames(
+                    t.query,
+                    t.match_name_prefix,
+                    t.geoname_type.clone(),
+                    t.filter.clone()
+                ),
+                t.expected,
+                "Test: {:?}",
+                t
+            );
+        }
 
         Ok(())
     }

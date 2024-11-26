@@ -10,9 +10,19 @@
 
 
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::{
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        OnceLock,
+    },
+};
+use tempfile::TempDir;
+
+use crate::{SuggestIngestionConstraints, SuggestStore};
 
 pub mod client;
+pub mod geoname;
 pub mod ingest;
 pub mod query;
 
@@ -31,18 +41,49 @@ pub trait Benchmark {
 
 
 
-
 pub trait BenchmarkWithInput {
-    type Input;
+    
+    
+    type GlobalInput;
 
     
-    fn generate_input(&self) -> Self::Input;
+    type IterationInput;
 
     
-    fn benchmarked_code(&self, input: Self::Input);
+    fn global_input(&self) -> Self::GlobalInput;
+
+    
+    fn iteration_input(&self) -> Self::IterationInput;
+
+    
+    fn benchmarked_code(&self, g_input: &Self::GlobalInput, i_input: Self::IterationInput);
 }
 
 fn unique_db_filename() -> String {
     static COUNTER: AtomicU32 = AtomicU32::new(0);
     format!("db{}.sqlite", COUNTER.fetch_add(1, Ordering::Relaxed))
+}
+
+
+
+fn new_store() -> SuggestStore {
+    
+    
+    
+    static STARTER: OnceLock<(TempDir, PathBuf)> = OnceLock::new();
+    let (starter_dir, starter_db_path) = STARTER.get_or_init(|| {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = temp_dir.path().join(unique_db_filename());
+        let store =
+            SuggestStore::new(&db_path.to_string_lossy(), None).expect("Error building store");
+        store
+            .ingest(SuggestIngestionConstraints::all_providers())
+            .expect("Error during ingestion");
+        store.checkpoint();
+        (temp_dir, db_path)
+    });
+
+    let db_path = starter_dir.path().join(unique_db_filename());
+    std::fs::copy(starter_db_path, &db_path).expect("Error copying starter DB file");
+    SuggestStore::new(&db_path.to_string_lossy(), None).expect("Error building store")
 }

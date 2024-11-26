@@ -169,8 +169,11 @@ impl SuggestDao<'_> {
                 }
             })
             
-            .map(|(city, region, kw)| {
-                (city.map(|c| c.geoname), region.map(|r| r.geoname), kw.map(|k| k.keyword))
+            
+            
+            
+            .map(|(city, region, _)| {
+                (city.map(|c| c.geoname), region.map(|r| r.geoname))
             })
             
             .collect::<HashSet<_>>()
@@ -179,7 +182,7 @@ impl SuggestDao<'_> {
 
         
         matches.sort_by(
-            |(city1, region1, kw1), (city2, region2, kw2)| match (&city1, &city2) {
+            |(city1, region1), (city2, region2)| match (&city1, &city2) {
                 (Some(_), None) => Ordering::Less,
                 (None, Some(_)) => Ordering::Greater,
                 (Some(c1), Some(c2)) => c2.population.cmp(&c1.population),
@@ -187,7 +190,7 @@ impl SuggestDao<'_> {
                     (Some(_), None) => Ordering::Less,
                     (None, Some(_)) => Ordering::Greater,
                     (Some(r1), Some(r2)) => r2.population.cmp(&r1.population),
-                    (None, None) => kw1.cmp(kw2),
+                    (None, None) => Ordering::Equal,
                 },
             },
         );
@@ -195,7 +198,7 @@ impl SuggestDao<'_> {
         
         Ok(matches
             .iter()
-            .map(|(city, _, _)| Suggestion::Weather {
+            .map(|(city, _)| Suggestion::Weather {
                 city: city.as_ref().map(|c| c.name.clone()),
                 region: city.as_ref().map(|c| c.admin1_code.clone()),
                 country: city.as_ref().map(|c| c.country_code.clone()),
@@ -646,7 +649,11 @@ mod tests {
             "weather",
             "weather-1",
             json!({
-                "keywords": ["ab", "xyz", "weather"],
+                // Include a keyword that's a prefix of another keyword --
+                // "weather" and "weather near me" -- so that when a test
+                // matches both we can verify only one suggestion is returned,
+                // not two.
+                "keywords": ["ab", "xyz", "weather", "weather near me"],
                 "min_keyword_length": 5,
                 "max_keyword_length": "weather".len(),
                 "max_keyword_word_count": 1,

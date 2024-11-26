@@ -438,8 +438,9 @@ mod tests {
     #[test]
     fn test_simple() -> Result<()> {
         let ext_id = "x";
-        let mut db = new_mem_db();
-        let tx = db.transaction()?;
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction()?;
 
         
         for q in vec![JsonValue::Null, json!("foo"), json!(["foo"])].into_iter() {
@@ -529,8 +530,9 @@ mod tests {
     fn test_check_get_impl() -> Result<()> {
         
         let ext_id = "x";
-        let mut db = new_mem_db();
-        let tx = db.transaction()?;
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction()?;
 
         let prop = "test-prop";
         let value = "test-value";
@@ -584,8 +586,9 @@ mod tests {
     fn test_bug_1621162() -> Result<()> {
         
         
-        let mut db = new_mem_db();
-        let tx = db.transaction()?;
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction()?;
         let ext_id = "xyz";
 
         set(&tx, ext_id, json!({"foo": "bar" }))?;
@@ -599,8 +602,9 @@ mod tests {
 
     #[test]
     fn test_quota_maxitems() -> Result<()> {
-        let mut db = new_mem_db();
-        let tx = db.transaction()?;
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction()?;
         let ext_id = "xyz";
         for i in 1..SYNC_MAX_ITEMS + 1 {
             set(
@@ -619,8 +623,9 @@ mod tests {
 
     #[test]
     fn test_quota_bytesperitem() -> Result<()> {
-        let mut db = new_mem_db();
-        let tx = db.transaction()?;
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction()?;
         let ext_id = "xyz";
         
         
@@ -645,8 +650,9 @@ mod tests {
 
     #[test]
     fn test_quota_bytes() -> Result<()> {
-        let mut db = new_mem_db();
-        let tx = db.transaction()?;
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction()?;
         let ext_id = "xyz";
         let val = "x".repeat(SYNC_QUOTA_BYTES + 1);
 
@@ -682,8 +688,9 @@ mod tests {
 
     #[test]
     fn test_get_bytes_in_use() -> Result<()> {
-        let mut db = new_mem_db();
-        let tx = db.transaction()?;
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction()?;
         let ext_id = "xyz";
 
         assert_eq!(get_bytes_in_use(&tx, ext_id, json!(null))?, 0);
@@ -714,8 +721,9 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let mut db = new_mem_db();
-        let tx = db.transaction().unwrap();
+        let db = new_mem_db();
+        let conn = db.get_connection().expect("should retrieve connection");
+        let tx = conn.unchecked_transaction().unwrap();
         
         set(&tx, "xyz", json!({ "a": "a" })).unwrap();
         set(&tx, "xyz", json!({ "b": "bb" })).unwrap();
@@ -727,7 +735,7 @@ mod tests {
 
         tx.commit().unwrap();
 
-        let usage = usage(&db).unwrap();
+        let usage = usage(conn).unwrap();
         let expect = [
             UsageInfo {
                 ext_id: "abc".to_string(),

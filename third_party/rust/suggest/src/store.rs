@@ -20,6 +20,7 @@ use crate::{
     config::{SuggestGlobalConfig, SuggestProviderConfig},
     db::{ConnectionType, IngestedRecord, Sqlite3Extension, SuggestDao, SuggestDb},
     error::Error,
+    geoname::{Geoname, GeonameMatch, GeonameType},
     metrics::{MetricsContext, SuggestIngestionMetrics, SuggestQueryMetrics},
     provider::{SuggestionProvider, SuggestionProviderConstraints, DEFAULT_INGEST_PROVIDERS},
     rs::{
@@ -258,11 +259,54 @@ impl SuggestStore {
     ) -> SuggestApiResult<Option<SuggestProviderConfig>> {
         self.inner.fetch_provider_config(provider)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn fetch_geonames(
+        &self,
+        query: &str,
+        match_name_prefix: bool,
+        geoname_type: Option<GeonameType>,
+        filter: Option<Vec<Geoname>>,
+    ) -> SuggestApiResult<Vec<GeonameMatch>> {
+        self.inner
+            .fetch_geonames(query, match_name_prefix, geoname_type, filter)
+    }
 }
 
 impl SuggestStore {
     pub fn force_reingest(&self) {
         self.inner.force_reingest()
+    }
+}
+
+#[cfg(feature = "benchmark_api")]
+impl SuggestStore {
+    
+    
+    
+    pub fn checkpoint(&self) {
+        self.inner.checkpoint();
     }
 }
 
@@ -445,6 +489,23 @@ impl<S> SuggestStoreInner<S> {
     pub fn force_reingest(&self) {
         let writer = &self.dbs().unwrap().writer;
         writer.write(|dao| dao.force_reingest()).unwrap();
+    }
+
+    fn fetch_geonames(
+        &self,
+        query: &str,
+        match_name_prefix: bool,
+        geoname_type: Option<GeonameType>,
+        filter: Option<Vec<Geoname>>,
+    ) -> Result<Vec<GeonameMatch>> {
+        self.dbs()?.reader.read(|dao| {
+            dao.fetch_geonames(
+                query,
+                match_name_prefix,
+                geoname_type,
+                filter.as_ref().map(|f| f.iter().collect()),
+            )
+        })
     }
 }
 
@@ -751,6 +812,12 @@ where
         self.dbs().unwrap();
     }
 
+    fn checkpoint(&self) {
+        let conn = self.dbs().unwrap().writer.conn.lock();
+        conn.pragma_update(None, "wal_checkpoint", "TRUNCATE")
+            .expect("Error performing checkpoint");
+    }
+
     pub fn ingest_records_by_type(&self, ingest_record_type: SuggestRecordType) {
         let writer = &self.dbs().unwrap().writer;
         let mut context = MetricsContext::default();
@@ -897,6 +964,18 @@ pub(crate) mod tests {
             self.inner
                 .fetch_provider_config(provider)
                 .expect("Error fetching provider config")
+        }
+
+        pub fn fetch_geonames(
+            &self,
+            query: &str,
+            match_name_prefix: bool,
+            geoname_type: Option<GeonameType>,
+            filter: Option<Vec<Geoname>>,
+        ) -> Vec<GeonameMatch> {
+            self.inner
+                .fetch_geonames(query, match_name_prefix, geoname_type, filter)
+                .expect("Error fetching geonames")
         }
     }
 
