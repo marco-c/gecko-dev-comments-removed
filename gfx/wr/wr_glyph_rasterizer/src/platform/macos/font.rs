@@ -127,12 +127,6 @@ lazy_static! {
     static ref FONT_SMOOTHING_MODE: Option<FontRenderMode> = determine_font_smoothing_mode();
 }
 
-fn should_use_white_on_black(color: ColorU) -> bool {
-    let (r, g, b) = (color.r as u32, color.g as u32, color.b as u32);
-    
-    r >= 85 && g >= 85 && b >= 85 && r + g + b >= 2 * 255
-}
-
 fn get_glyph_metrics(
     ct_font: &CTFont,
     transform: Option<&CGAffineTransform>,
@@ -450,13 +444,22 @@ impl FontContext {
         render_mode: FontRenderMode,
         color: ColorU,
     ) {
+        let ColorU {r, g, b, a} = color;
+        let smooth_color = match *FONT_SMOOTHING_MODE {
+            
+            Some(FontRenderMode::Subpixel) => ColorU::new(r - r / 4, g - g / 4, b - b / 4, a),
+            
+            Some(FontRenderMode::Alpha) => ColorU::new(r / 2, g / 2, b / 2, a),
+            _ => color,
+        };
+
         
         match render_mode {
             FontRenderMode::Alpha => {
-                self.gamma_lut.preblend_grayscale(pixels, color);
+                self.gamma_lut.preblend_grayscale(pixels, smooth_color);
             }
             FontRenderMode::Subpixel => {
-                self.gamma_lut.preblend(pixels, color);
+                self.gamma_lut.preblend(pixels, smooth_color);
             }
             _ => {} 
         }
@@ -512,23 +515,13 @@ impl FontContext {
             }
             FontRenderMode::Alpha => {
                 font.color = if font.flags.contains(FontInstanceFlags::FONT_SMOOTHING) {
-                    
-                    
-                    let ColorU { g, a, .. } = font.color.luminance_color().quantized_ceil();
-                    let rb = if should_use_white_on_black(font.color) { 255 } else { 0 };
-                    ColorU::new(rb, g, rb, a)
+                    font.color.luminance_color().quantize()
                 } else {
                     ColorU::new(255, 255, 255, 255)
                 };
             }
             FontRenderMode::Subpixel => {
-                
-                
-                font.color = if should_use_white_on_black(font.color) {
-                    font.color.quantized_ceil()
-                } else {
-                    font.color.quantized_floor()
-                };
+                font.color = font.color.quantize();
             }
         }
     }
@@ -641,20 +634,15 @@ impl FontContext {
         
         
         
-        let use_white_on_black = should_use_white_on_black(font.color);
         let use_font_smoothing = font.flags.contains(FontInstanceFlags::FONT_SMOOTHING);
-        let (antialias, smooth, text_color, bg_color, invert) = match glyph_type {
-            GlyphType::Bitmap => (true, false, ColorF::from(font.color), ColorF::TRANSPARENT, false),
+        let (antialias, smooth, text_color, bg_color) = match glyph_type {
+            GlyphType::Bitmap => (true, false, ColorF::from(font.color), ColorF::TRANSPARENT),
             GlyphType::Vector => {
                 match (font.render_mode, use_font_smoothing) {
                     (FontRenderMode::Subpixel, _) |
-                    (FontRenderMode::Alpha, true) => if use_white_on_black {
-                        (true, true, ColorF::WHITE, ColorF::BLACK, false)
-                    } else {
-                        (true, true, ColorF::BLACK, ColorF::WHITE, true)
-                    },
-                    (FontRenderMode::Alpha, false) => (true, false, ColorF::BLACK, ColorF::WHITE, true),
-                    (FontRenderMode::Mono, _) => (false, false, ColorF::BLACK, ColorF::WHITE, true),
+                    (FontRenderMode::Alpha, true) => (true, true, ColorF::BLACK, ColorF::WHITE),
+                    (FontRenderMode::Alpha, false) => (true, false, ColorF::BLACK, ColorF::WHITE),
+                    (FontRenderMode::Mono, _) => (false, false, ColorF::BLACK, ColorF::WHITE),
                 }
             }
         };
@@ -757,11 +745,9 @@ impl FontContext {
             }
 
             for pixel in rasterized_pixels.chunks_mut(4) {
-                if invert {
-                    pixel[0] = 255 - pixel[0];
-                    pixel[1] = 255 - pixel[1];
-                    pixel[2] = 255 - pixel[2];
-                }
+                pixel[0] = 255 - pixel[0];
+                pixel[1] = 255 - pixel[1];
+                pixel[2] = 255 - pixel[2];
 
                 
                 
