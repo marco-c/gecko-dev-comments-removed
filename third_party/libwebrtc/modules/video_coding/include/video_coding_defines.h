@@ -16,8 +16,10 @@
 
 #include <optional>
 
+#include "api/units/time_delta.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
+#include "api/video/video_frame_type.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/video_decoder.h"
 
@@ -51,11 +53,26 @@ enum VCMVideoProtection {
 
 class VCMReceiveCallback {
  public:
+  struct FrameToRender {
+    VideoFrame& video_frame;
+    std::optional<uint8_t> qp;
+    TimeDelta decode_time;
+    VideoContentType content_type;
+    VideoFrameType frame_type;
+  };
+
+  
   virtual int32_t FrameToRender(VideoFrame& videoFrame,  
                                 std::optional<uint8_t> qp,
                                 TimeDelta decode_time,
                                 VideoContentType content_type,
                                 VideoFrameType frame_type) = 0;
+  
+  virtual int32_t FrameToRender(const struct FrameToRender& arguments) {
+    return FrameToRender(arguments.video_frame, arguments.qp,
+                         arguments.decode_time, arguments.content_type,
+                         arguments.frame_type);
+  }
 
   virtual void OnDroppedFrames(uint32_t frames_dropped);
 
