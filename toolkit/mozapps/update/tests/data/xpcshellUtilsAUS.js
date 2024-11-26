@@ -27,8 +27,14 @@
 
 "use strict";
 
+const EXIT_CODE_BASE = ChromeUtils.importESModule(
+  "resource://gre/modules/BackgroundTasksManager.sys.mjs"
+).EXIT_CODE;
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
+);
+const { Subprocess } = ChromeUtils.importESModule(
+  "resource://gre/modules/Subprocess.sys.mjs"
 );
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
@@ -1053,10 +1059,7 @@ function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
   
   
   debugDump("resetting update lock");
-  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
-    Ci.nsIUpdateSyncManager
-  );
-  syncManager.resetLock();
+  resetSyncManagerLock();
 
   
   
@@ -1914,8 +1917,9 @@ function getMockUpdRootDMac() {
     do_throw("Mac OS X only function called by a different platform!");
   }
 
-  let appDir = Services.dirsvc.get(XRE_EXECUTABLE_FILE, Ci.nsIFile).parent
-    .parent.parent;
+  let exeFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  exeFile.initWithPath(gCustomGeneralPaths[XRE_EXECUTABLE_FILE]);
+  let appDir = exeFile.parent.parent.parent;
   let appDirPath = appDir.path;
   appDirPath = appDirPath.substr(0, appDirPath.length - 4);
 
@@ -4633,37 +4637,125 @@ function getLaunchScript() {
   return launchScript;
 }
 
+var gCustomGeneralPaths;
+var gOriginalGeneralPaths;
 
 
 
 
-function adjustGeneralPaths() {
-  let dirProvider = {
+
+function registerCustomDirProvider() {
+  const nsFile = Components.Constructor(
+    "@mozilla.org/file/local;1",
+    "nsIFile",
+    "initWithPath"
+  );
+  const dirProvider = {
     getFile: function AGP_DP_getFile(aProp, aPersistent) {
       
       
       aPersistent.value = false;
-      switch (aProp) {
-        case NS_GRE_DIR:
-          return getApplyDirFile(DIR_RESOURCES);
-        case NS_GRE_BIN_DIR:
-          return getApplyDirFile(DIR_MACOS);
-        case XRE_EXECUTABLE_FILE:
-          return getApplyDirFile(DIR_MACOS + FILE_APP_BIN);
-        case XRE_UPDATE_ROOT_DIR:
-          return getMockUpdRootD();
-        case XRE_OLD_UPDATE_ROOT_DIR:
-          return getMockUpdRootD(true);
+      if (aProp in gCustomGeneralPaths) {
+        return nsFile(gCustomGeneralPaths[aProp]);
       }
       return null;
     },
     QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
   };
   let ds = Services.dirsvc.QueryInterface(Ci.nsIDirectoryService);
-  ds.QueryInterface(Ci.nsIProperties).undefine(NS_GRE_DIR);
-  ds.QueryInterface(Ci.nsIProperties).undefine(NS_GRE_BIN_DIR);
-  ds.QueryInterface(Ci.nsIProperties).undefine(XRE_EXECUTABLE_FILE);
+  let props = ds.QueryInterface(Ci.nsIProperties);
+  for (const prop of Object.keys(gCustomGeneralPaths)) {
+    if (props.has(prop)) {
+      props.undefine(prop);
+    }
+  }
   ds.registerProvider(dirProvider);
+
+  return dirProvider;
+}
+
+
+
+function resetSyncManagerLock() {
+  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+    Ci.nsIUpdateSyncManager
+  );
+  syncManager.resetLock();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function runInSubprocessWithPrelude(aScriptPath, aExtraPrelude) {
+  let prelude = `
+const gCustomGeneralPaths = ${JSON.stringify(gCustomGeneralPaths)};
+${registerCustomDirProvider.toString()}
+${resetSyncManagerLock.toString()}
+`;
+  if (aExtraPrelude !== undefined) {
+    prelude += aExtraPrelude;
+  }
+  const args = [
+    "-g",
+    gOriginalGeneralPaths[NS_GRE_DIR],
+    "-e",
+    prelude,
+    "-f",
+    aScriptPath,
+  ];
+  debugDump(
+    `launching child process at ${gOriginalGeneralPaths[XRE_EXECUTABLE_FILE]} with args ${args}`
+  );
+  return Subprocess.call({
+    command: gOriginalGeneralPaths[XRE_EXECUTABLE_FILE],
+    arguments: args,
+    stderr: "stdout",
+  });
+}
+
+
+
+
+
+function adjustGeneralPaths() {
+  gCustomGeneralPaths = {
+    [NS_GRE_DIR]: getApplyDirFile(DIR_RESOURCES).path,
+    [NS_GRE_BIN_DIR]: getApplyDirFile(DIR_MACOS).path,
+    [XRE_EXECUTABLE_FILE]: getApplyDirFile(DIR_MACOS + FILE_APP_BIN).path,
+  };
+
+  gOriginalGeneralPaths = {};
+  for (const prop of Object.keys(gCustomGeneralPaths)) {
+    gOriginalGeneralPaths[prop] = Services.dirsvc.get(prop, Ci.nsIFile).path;
+  }
+
+  
+  gCustomGeneralPaths[XRE_UPDATE_ROOT_DIR] = getMockUpdRootD().path;
+  gCustomGeneralPaths[XRE_OLD_UPDATE_ROOT_DIR] = getMockUpdRootD(true).path;
+
+  let dirProvider = registerCustomDirProvider();
   registerCleanupFunction(function AGP_cleanup() {
     debugDump("start - unregistering directory provider");
 
@@ -4717,6 +4809,7 @@ function adjustGeneralPaths() {
       }
     }
 
+    let ds = Services.dirsvc.QueryInterface(Ci.nsIDirectoryService);
     ds.unregisterProvider(dirProvider);
     cleanupTestCommon();
 
@@ -4724,10 +4817,7 @@ function adjustGeneralPaths() {
     
     
     
-    let syncManager = Cc[
-      "@mozilla.org/updates/update-sync-manager;1"
-    ].getService(Ci.nsIUpdateSyncManager);
-    syncManager.resetLock();
+    resetSyncManagerLock();
 
     debugDump("finish - unregistering directory provider");
   });
@@ -5239,5 +5329,171 @@ class DownloadHeadersTest {
         Assert.stringMatches(r.getHeader("user-agent"), userAgentPattern);
       }
     }
+  }
+}
+
+class TestUpdateMutexInProcess {
+  #updateMutex;
+  kind;
+
+  constructor() {
+    this.#updateMutex = Cc[
+      "@mozilla.org/updates/update-mutex;1"
+    ].createInstance(Ci.nsIUpdateMutex);
+    this.kind = "in-process";
+  }
+
+  async expectAcquire() {
+    return this.#updateMutex.tryLock();
+  }
+
+  async expectFailToAcquire() {
+    let failedToAcquire = !this.#updateMutex.tryLock();
+    if (!failedToAcquire) {
+      this.#updateMutex.unlock();
+    }
+    return failedToAcquire;
+  }
+
+  async release() {
+    return this.#updateMutex.unlock();
+  }
+}
+
+class TestUpdateMutexCrossProcess {
+  static EXIT_CODE = {
+    ...EXIT_CODE_BASE,
+    FAILED_TO_ACQUIRE_UPDATE_MUTEX: EXIT_CODE_BASE.LAST_RESERVED + 1,
+  };
+
+  static isSuccessExitCode(aExitCode) {
+    return aExitCode === TestUpdateMutexCrossProcess.EXIT_CODE.SUCCESS;
+  }
+
+  static isAcquisitionFailureExitCode(aExitCode) {
+    return (
+      aExitCode ===
+      TestUpdateMutexCrossProcess.EXIT_CODE.FAILED_TO_ACQUIRE_UPDATE_MUTEX
+    );
+  }
+
+  static isExpectedExitCode(aExitCode) {
+    return (
+      TestUpdateMutexCrossProcess.isSuccessExitCode(aExitCode) ||
+      TestUpdateMutexCrossProcess.isAcquisitionFailureExitCode(aExitCode)
+    );
+  }
+
+  #proc;
+  kind;
+
+  constructor() {
+    this.#proc = null;
+    this.kind = "cross-process";
+  }
+
+  runUpdateMutexTestChild() {
+    return runInSubprocessWithPrelude(
+      getTestDirFile("updateMutexTestChild.js").path,
+      `
+const EXIT_CODE = ${JSON.stringify(TestUpdateMutexCrossProcess.EXIT_CODE)};
+`
+    );
+  }
+
+  async expectAcquire() {
+    
+    
+    let updateMutex = Cc["@mozilla.org/updates/update-mutex;1"].createInstance(
+      Ci.nsIUpdateMutex
+    );
+
+    let childIsRunning = () =>
+      this.#proc !== null && this.#proc.exitCode === null;
+    let updateMutexCanBeAcquired = () => {
+      let isAcquired = updateMutex.tryLock();
+      if (isAcquired) {
+        updateMutex.unlock();
+      }
+      return isAcquired;
+    };
+
+    Assert.ok(
+      !childIsRunning(),
+      "child process for the " +
+        this.kind +
+        " update mutex should not be running yet"
+    );
+    Assert.ok(
+      updateMutexCanBeAcquired(),
+      "it should be possible to acquire the in-process equivalent of the " +
+        this.kind +
+        " update mutex before the child process is running"
+    );
+
+    this.#proc = await this.runUpdateMutexTestChild();
+
+    
+    
+    
+    
+    
+    
+    await TestUtils.waitForCondition(
+      () => !childIsRunning() || !updateMutexCanBeAcquired(),
+      "waiting for child process to take the " +
+        this.kind +
+        " update mutex or exit",
+       1000,
+       10
+    );
+
+    
+    if (!childIsRunning()) {
+      Assert.ok(
+        TestUpdateMutexCrossProcess.isExpectedExitCode(this.#proc.exitCode),
+        "child process for the " +
+          this.kind +
+          " update mutex should have exited with an expected code (got: " +
+          this.#proc.exitCode +
+          ")"
+      );
+
+      Assert.ok(
+        !TestUpdateMutexCrossProcess.isSuccessExitCode(this.#proc.exitCode),
+        "child process for the " +
+          this.kind +
+          " should not exit normally if it failed to acquire the update mutex"
+      );
+
+      
+      
+      return false;
+    }
+
+    return true;
+  }
+
+  async expectFailToAcquire() {
+    let proc = await this.runUpdateMutexTestChild();
+
+    let { exitCode } = await proc.wait();
+    Assert.ok(
+      TestUpdateMutexCrossProcess.isExpectedExitCode(exitCode),
+      "child process for the " +
+        this.kind +
+        " update mutex should have exited with an expected code (got: " +
+        exitCode +
+        ")"
+    );
+
+    let failedToAcquire =
+      TestUpdateMutexCrossProcess.isAcquisitionFailureExitCode(exitCode);
+    return failedToAcquire;
+  }
+
+  async release() {
+    await this.#proc.kill();
+    this.#proc = null;
   }
 }
