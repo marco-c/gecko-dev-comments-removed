@@ -82,6 +82,7 @@ add_task(async function register_and_restart() {
         
         
         world: "USER_SCRIPT",
+        worldId: "",
       };
       browser.runtime.onInstalled.addListener(async ({ reason }) => {
         browser.test.assertEq("install", reason, "onInstalled reason");
@@ -173,6 +174,7 @@ add_task(async function register_and_update_all_values() {
         excludeGlobs: [],
         runAt: "document_idle",
         world: "USER_SCRIPT",
+        worldId: "",
       };
       const scriptDefaultsOut = {
         ...scriptDefaults,
@@ -197,6 +199,10 @@ add_task(async function register_and_update_all_values() {
         excludeGlobs: ["*excludeme*"],
         runAt: "document_end",
         world: "MAIN",
+        
+        
+        
+        worldId: "",
       };
 
       const nullUpdate = Object.fromEntries(
@@ -301,6 +307,7 @@ add_task(async function register_and_update_all_values() {
       
       runAt: "document_end",
       world: "MAIN",
+      worldId: "",
     };
     const expectedScriptKeys = Object.keys(expectedScriptsInContent);
     Assert.deepEqual(
@@ -539,6 +546,7 @@ add_task(async function no_partial_registrations_on_error() {
           excludeGlobs: null,
           runAt: null, 
           world: null, 
+          worldId: null, 
         },
       ],
     ],
