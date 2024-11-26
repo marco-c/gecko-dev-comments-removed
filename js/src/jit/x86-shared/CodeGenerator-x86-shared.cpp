@@ -3065,6 +3065,10 @@ static int ScanConstant(const T* lanes, int v, int i) {
 
 template <typename T>
 static void MapLanes(T* result, const T* input, int (*f)(int)) {
+  
+  
+  JS::AutoSuppressGCAnalysis nogc;
+
   int len = int(16 / sizeof(T));
   for (int i = 0; i < len; i++) {
     result[i] = f(input[i]);
