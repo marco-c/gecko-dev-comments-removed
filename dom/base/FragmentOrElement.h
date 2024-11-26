@@ -271,18 +271,7 @@ class FragmentOrElement : public nsIContent {
 
 
 
-    nsTHashMap<RefPtr<nsAtom>, nsWeakPtr> mExplicitlySetAttrElementMap;
-    
-
-
-
-
-
-
-
-    nsTHashMap<RefPtr<nsAtom>, std::pair<Maybe<nsTArray<nsWeakPtr>>,
-                                         Maybe<nsTArray<RefPtr<Element>>>>>
-        mAttrElementsMap;
+    nsTHashMap<RefPtr<nsAtom>, nsWeakPtr> mExplicitlySetAttrElements;
   };
 
   class nsDOMSlots : public nsIContent::nsContentSlots {
