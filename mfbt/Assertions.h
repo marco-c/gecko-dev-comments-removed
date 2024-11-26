@@ -307,6 +307,19 @@ MOZ_NoReturn(int aLine) {
 
 
 
+#if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
+#  define MOZ_DIAGNOSTIC_CRASH(...) MOZ_CRASH(__VA_ARGS__)
+#else
+#  define MOZ_DIAGNOSTIC_CRASH(...) \
+    do { /* nothing */              \
+    } while (false)
+#endif
+
+
+
+
+
+
 
 
 
@@ -659,13 +672,13 @@ struct AssertionConditionType {
 
 
 
-#define MOZ_ALWAYS_TRUE(expr)              \
-  do {                                     \
-    if (MOZ_LIKELY(expr)) {                \
-      /* Silence [[nodiscard]]. */         \
-    } else {                               \
-      MOZ_DIAGNOSTIC_ASSERT(false, #expr); \
-    }                                      \
+#define MOZ_ALWAYS_TRUE(expr)      \
+  do {                             \
+    if (MOZ_LIKELY(expr)) {        \
+      /* Silence [[nodiscard]]. */ \
+    } else {                       \
+      MOZ_DIAGNOSTIC_CRASH(#expr); \
+    }                              \
   } while (false)
 
 #define MOZ_ALWAYS_FALSE(expr) MOZ_ALWAYS_TRUE(!(expr))
