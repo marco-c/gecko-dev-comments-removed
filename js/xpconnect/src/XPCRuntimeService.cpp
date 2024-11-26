@@ -23,7 +23,8 @@ NS_IMPL_ISUPPORTS(BackstagePass, nsIXPCScriptable, nsIGlobalObject,
                   nsISupportsWeakReference)
 
 BackstagePass::BackstagePass()
-    : mPrincipal(nsContentUtils::GetSystemPrincipal()),
+    : mAgentClusterId(nsID::GenerateUUID()),
+      mPrincipal(nsContentUtils::GetSystemPrincipal()),
       mWrapper(nullptr){}
 
 
