@@ -1631,7 +1631,9 @@ PresShell::GetDisplaySelection(int16_t* aToggle) {
 NS_IMETHODIMP
 PresShell::GetSelectionFromScript(RawSelectionType aRawSelectionType,
                                   Selection** aSelection) {
-  if (!aSelection || !mSelection) return NS_ERROR_NULL_POINTER;
+  if (!aSelection || !mSelection) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   RefPtr<Selection> selection =
@@ -2283,7 +2285,9 @@ NS_IMETHODIMP PresShell::SetCaretEnabled(bool aInEnable) {
 }
 
 NS_IMETHODIMP PresShell::SetCaretReadOnly(bool aReadOnly) {
-  if (mCaret) mCaret->SetCaretReadOnly(aReadOnly);
+  if (mCaret) {
+    mCaret->SetCaretReadOnly(aReadOnly);
+  }
   return NS_OK;
 }
 
@@ -2294,7 +2298,9 @@ NS_IMETHODIMP PresShell::GetCaretEnabled(bool* aOutEnabled) {
 }
 
 NS_IMETHODIMP PresShell::SetCaretVisibilityDuringSelection(bool aVisibility) {
-  if (mCaret) mCaret->SetVisibilityDuringSelection(aVisibility);
+  if (mCaret) {
+    mCaret->SetVisibilityDuringSelection(aVisibility);
+  }
   return NS_OK;
 }
 
@@ -2340,7 +2346,9 @@ PresShell::WordMove(bool aForward, bool aExtend) {
   nsresult result = frameSelection->WordMove(aForward, aExtend);
   
   
-  if (NS_FAILED(result)) result = CompleteMove(aForward, aExtend);
+  if (NS_FAILED(result)) {
+    result = CompleteMove(aForward, aExtend);
+  }
   return result;
 }
 
@@ -2350,7 +2358,9 @@ PresShell::LineMove(bool aForward, bool aExtend) {
   nsresult result = frameSelection->LineMove(aForward, aExtend);
   
   
-  if (NS_FAILED(result)) result = CompleteMove(aForward, aExtend);
+  if (NS_FAILED(result)) {
+    result = CompleteMove(aForward, aExtend);
+  }
   return result;
 }
 
@@ -2455,7 +2465,9 @@ PresShell::CompleteMove(bool aForward, bool aExtend) {
   nsIContent* limiter = frameSelection->GetAncestorLimiter();
   nsIFrame* frame = limiter ? limiter->GetPrimaryFrame()
                             : FrameConstructor()->GetRootElementFrame();
-  if (!frame) return NS_ERROR_FAILURE;
+  if (!frame) {
+    return NS_ERROR_FAILURE;
+  }
   nsIFrame::CaretPosition pos = frame->GetExtremeCaretPosition(!aForward);
 
   const nsFrameSelection::FocusMode focusMode =
@@ -2665,10 +2677,14 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
 
   
   
-  if (!mDidInitialize) return;
+  if (!mDidInitialize) {
+    return;
+  }
 
   
-  if (mIsDestroying) return;
+  if (mIsDestroying) {
+    return;
+  }
 
 #ifdef DEBUG
   
@@ -3955,7 +3971,9 @@ void PresShell::DispatchSynthMouseMove(WidgetGUIEvent* aEvent) {
                                         GRAPHICS, mPresContext->GetDocShell());
   nsEventStatus status = nsEventStatus_eIgnore;
   nsView* targetView = nsView::GetViewFor(aEvent->mWidget);
-  if (!targetView) return;
+  if (!targetView) {
+    return;
+  }
   RefPtr<nsViewManager> viewManager = targetView->GetViewManager();
   viewManager->DispatchEvent(aEvent, targetView, &status);
 }
@@ -4029,7 +4047,9 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
   
   
   nsCOMPtr<nsIDocShell> docShell(mPresContext->GetDocShell());
-  if (!docShell) return NS_ERROR_FAILURE;
+  if (!docShell) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsCOMPtr<nsILayoutHistoryState> historyState;
   docShell->GetLayoutHistoryState(getter_AddRefs(historyState));
@@ -4044,7 +4064,9 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
 
   
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  if (!rootFrame) return NS_OK;
+  if (!rootFrame) {
+    return NS_OK;
+  }
 
   mFrameConstructor->CaptureFrameState(rootFrame, historyState);
 
@@ -4122,10 +4144,11 @@ void PresShell::UnsuppressPainting() {
   
   
   
-  if (!mDirtyRoots.IsEmpty())
+  if (!mDirtyRoots.IsEmpty()) {
     mShouldUnsuppressPainting = true;
-  else
+  } else {
     UnsuppressAndInvalidate();
+  }
 }
 
 
@@ -4682,7 +4705,9 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
   nsRootPresContext* rootPresContext = mPresContext->GetRootPresContext();
   if (rootPresContext) {
     rootPresContext->FlushWillPaintObservers();
-    if (mIsDestroying) return NS_OK;
+    if (mIsDestroying) {
+      return NS_OK;
+    }
   }
 
   nsAutoScriptBlocker blockScripts;
@@ -4896,9 +4921,10 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
     if (itemToInsert || sublist) {
       aList->AppendToTop(itemToInsert ? itemToInsert : i);
       
-      if (sublist)
+      if (sublist) {
         surfaceRect.UnionRect(surfaceRect,
                               ClipListToRange(aBuilder, sublist, aRange));
+      }
     } else {
       
       i->Destroy(aBuilder);
@@ -4949,8 +4975,9 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
     
     
     while (ancestorFrame &&
-           nsLayoutUtils::GetNextContinuationOrIBSplitSibling(ancestorFrame))
+           nsLayoutUtils::GetNextContinuationOrIBSplitSibling(ancestorFrame)) {
       ancestorFrame = ancestorFrame->GetParent();
+    }
   }
 
   if (!ancestorFrame) {
@@ -5070,7 +5097,9 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
     const LayoutDeviceIntPoint aPoint, LayoutDeviceIntRect* aScreenRect,
     RenderImageFlags aFlags) {
   nsPresContext* pc = GetPresContext();
-  if (!pc || aArea.width == 0 || aArea.height == 0) return nullptr;
+  if (!pc || aArea.width == 0 || aArea.height == 0) {
+    return nullptr;
+  }
 
   
   LayoutDeviceIntRect pixelArea = LayoutDeviceIntRect::FromAppUnitsToOutside(
@@ -5114,10 +5143,12 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
         
         
         
-        if (pixelArea.width > maxWidth)
+        if (pixelArea.width > maxWidth) {
           scale = std::min(scale, float(maxWidth) / pixelArea.width);
-        if (pixelArea.height > maxHeight)
+        }
+        if (pixelArea.height > maxHeight) {
           scale = std::min(scale, float(maxHeight) / pixelArea.height);
+        }
       }
     }
 
@@ -5295,7 +5326,9 @@ already_AddRefed<SourceSurface> PresShell::RenderNode(
     area.IntersectRect(area, rrect);
 
     nsPresContext* pc = GetPresContext();
-    if (!pc) return nullptr;
+    if (!pc) {
+      return nullptr;
+    }
 
     
     
@@ -5813,7 +5846,9 @@ static nsView* FindViewContaining(nsView* aRelativeToView,
   for (nsView* v = aView->GetFirstChild(); v; v = v->GetNextSibling()) {
     nsView* r =
         FindViewContaining(aRelativeToView, aRelativeToViewportType, v, aPt);
-    if (r) return r;
+    if (r) {
+      return r;
+    }
   }
 
   return frame ? aView : nullptr;
@@ -6315,7 +6350,9 @@ void PresShell::ScheduleApproximateFrameVisibilityUpdateNow() {
   if (!mPresContext->IsRootContentDocumentInProcess()) {
     nsPresContext* presContext =
         mPresContext->GetInProcessRootContentDocumentPresContext();
-    if (!presContext) return;
+    if (!presContext) {
+      return;
+    }
     MOZ_ASSERT(presContext->IsRootContentDocumentInProcess(),
                "Didn't get a root prescontext from "
                "GetInProcessRootContentDocumentPresContext?");
@@ -9231,7 +9268,9 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
     if (popupFrame) {
       nsIFrame* itemFrame = (static_cast<nsMenuPopupFrame*>(popupFrame))
                                 ->GetCurrentMenuItemFrame();
-      if (!itemFrame) itemFrame = popupFrame;
+      if (!itemFrame) {
+        itemFrame = popupFrame;
+      }
 
       nsCOMPtr<nsIWidget> widget = popupFrame->GetNearestWidget();
       aMouseEvent->mWidget = widget;
@@ -9339,7 +9378,9 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
   NS_ENSURE_TRUE(caret, false);
 
   bool caretVisible = caret->IsVisible();
-  if (!caretVisible) return false;
+  if (!caretVisible) {
+    return false;
+  }
 
   
   
@@ -9408,10 +9449,14 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
   
   nsRect caretCoords;
   nsIFrame* caretFrame = caret->GetGeometry(&caretCoords);
-  if (!caretFrame) return false;
+  if (!caretFrame) {
+    return false;
+  }
   nsPoint viewOffset;
   nsView* view = caretFrame->GetClosestView(&viewOffset);
-  if (!view) return false;
+  if (!view) {
+    return false;
+  }
   
   if (aEventWidget) {
     viewOffset += view->GetOffsetToWidget(aEventWidget);
@@ -9584,7 +9629,9 @@ void PresShell::WillPaint() {
   }
 
   rootPresContext->FlushWillPaintObservers();
-  if (mIsDestroying) return;
+  if (mIsDestroying) {
+    return;
+  }
 
   
   
@@ -9616,21 +9663,31 @@ void PresShell::DidPaintWindow() {
 }
 
 bool PresShell::IsVisible() const {
-  if (!mIsActive || !mViewManager) return false;
+  if (!mIsActive || !mViewManager) {
+    return false;
+  }
 
   nsView* view = mViewManager->GetRootView();
-  if (!view) return true;
+  if (!view) {
+    return true;
+  }
 
   
   view = view->GetParent();
-  if (!view) return true;
+  if (!view) {
+    return true;
+  }
 
   
   view = view->GetParent();
-  if (!view) return true;
+  if (!view) {
+    return true;
+  }
 
   nsIFrame* frame = view->GetFrame();
-  if (!frame) return true;
+  if (!frame) {
+    return true;
+  }
 
   return frame->IsVisibleConsideringAncestors(
       nsIFrame::VISIBILITY_CROSS_CHROME_CONTENT_BOUNDARY);

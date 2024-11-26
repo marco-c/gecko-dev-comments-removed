@@ -1351,7 +1351,9 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
   
   NS_ENSURE_STATE(mDocument);
   nsPIDOMWindowOuter* window = mDocument->GetWindow();
-  if (window) window->PageHidden(!aIsUnload);
+  if (window) {
+    window->PageHidden(!aIsUnload);
+  }
 
   if (aIsUnload) {
     
@@ -1436,7 +1438,9 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
 
   mHidden = false;
 
-  if (mPresShell) mPresShell->SetForwardingContainer(WeakPtr<nsDocShell>());
+  if (mPresShell) {
+    mPresShell->SetForwardingContainer(WeakPtr<nsDocShell>());
+  }
 
   
   
@@ -1501,7 +1505,9 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
   
   
 
-  if (!mDocument) return NS_OK;
+  if (!mDocument) {
+    return NS_OK;
+  }
 
   if (mSHEntry) {
     if (mBFCachePreventionObserver) {
@@ -1523,7 +1529,9 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
     
     mDocument->SetScriptGlobalObject(nullptr);
 
-    if (!mSHEntry && mDocument) mDocument->RemovedFromDocShell();
+    if (!mSHEntry && mDocument) {
+      mDocument->RemovedFromDocShell();
+    }
   }
 
   RemoveFocusListener();
@@ -1602,7 +1610,9 @@ nsDocumentViewer::Destroy() {
   
   
   if (mSHEntry) {
-    if (mPresShell) mPresShell->Freeze();
+    if (mPresShell) {
+      mPresShell->Freeze();
+    }
 
     
     mSHEntry->SetSticky(mIsSticky);
@@ -1791,7 +1801,9 @@ nsresult nsDocumentViewer::SetDocument(Document* aDocument) {
   
   
 
-  if (!aDocument) return NS_ERROR_NULL_POINTER;
+  if (!aDocument) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   return SetDocumentInternal(aDocument, false);
 }
@@ -2094,7 +2106,9 @@ nsDocumentViewer::Show() {
     rv = MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
                            mPresContext->DevPixelsToAppUnits(mBounds.height)),
                     containerView);
-    if (NS_FAILED(rv)) return rv;
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
 
     if (mPresContext) {
       Hide();
@@ -2126,7 +2140,9 @@ nsDocumentViewer::Hide() {
     mWindow->Show(false);
   }
 
-  if (!mPresShell) return NS_OK;
+  if (!mPresShell) {
+    return NS_OK;
+  }
 
   NS_ASSERTION(mPresContext, "Can't have a presshell and no prescontext!");
 
@@ -2224,13 +2240,17 @@ nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
   nsDeviceContext* dx = mPresContext->DeviceContext();
 
   nsresult rv = mViewManager->Init(dx);
-  if (NS_FAILED(rv)) return rv;
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   
   nsRect tbounds(nsPoint(0, 0), aSize);
   
   nsView* view = mViewManager->CreateView(tbounds, aContainerView);
-  if (!view) return NS_ERROR_OUT_OF_MEMORY;
+  if (!view) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
   
   
@@ -2245,7 +2265,9 @@ nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
     } else {
       rv = view->CreateWidget(mParentWidget, true, false);
     }
-    if (NS_FAILED(rv)) return rv;
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   
@@ -2391,7 +2413,9 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocumentViewer::SelectAll() {
   } else {
     bodyNode = mDocument->GetRootElement();
   }
-  if (!bodyNode) return NS_ERROR_FAILURE;
+  if (!bodyNode) {
+    return NS_ERROR_FAILURE;
+  }
 
   ErrorResult err;
   selection->RemoveAllRanges(err);
@@ -2422,7 +2446,9 @@ NS_IMETHODIMP nsDocumentViewer::CopyLinkLocation() {
 
   nsAutoString locationText;
   nsContentUtils::GetLinkLocation(elm, locationText);
-  if (locationText.IsEmpty()) return NS_ERROR_FAILURE;
+  if (locationText.IsEmpty()) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsresult rv = NS_OK;
   nsCOMPtr<nsIClipboardHelper> clipboard(
@@ -2796,10 +2822,14 @@ NS_IMETHODIMP nsDocViewerSelectionListener::NotifySelectionChanged(
   }
 
   Document* theDoc = mDocViewer->GetDocument();
-  if (!theDoc) return NS_ERROR_FAILURE;
+  if (!theDoc) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsCOMPtr<nsPIDOMWindowOuter> domWindow = theDoc->GetWindow();
-  if (!domWindow) return NS_ERROR_FAILURE;
+  if (!domWindow) {
+    return NS_ERROR_FAILURE;
+  }
 
   bool selectionCollapsed = selection->IsCollapsed();
   
@@ -2987,8 +3017,9 @@ static nscoord ScrollPositionForFrame(
 
 NS_IMETHODIMP
 nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
-  if (!GetIsPrintPreview() || mPrintJob->GetIsCreatingPrintPreview())
+  if (!GetIsPrintPreview() || mPrintJob->GetIsCreatingPrintPreview()) {
     return NS_ERROR_FAILURE;
+  }
 
   ScrollContainerFrame* sf = mPresShell->GetRootScrollContainerFrame();
   if (!sf) {
@@ -3493,8 +3524,9 @@ void nsDocumentViewer::DestroyPresShell() {
   mPresShell->EndObservingDocument();
 
   RefPtr<mozilla::dom::Selection> selection = GetDocumentSelection();
-  if (selection && mSelectionListener)
+  if (selection && mSelectionListener) {
     selection->RemoveSelectionListener(mSelectionListener);
+  }
 
   mPresShell->Destroy();
   mPresShell = nullptr;

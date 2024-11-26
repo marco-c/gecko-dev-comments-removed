@@ -1378,7 +1378,9 @@ static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint) {
 
   
   
-  if (dirtyType == IntrinsicDirty::None && !dirtyBits) return;
+  if (dirtyType == IntrinsicDirty::None && !dirtyBits) {
+    return;
+  }
 
   ReflowRootHandling rootHandling;
   if (aHint & nsChangeHint_ReflowChangesSizeOrPosition) {
