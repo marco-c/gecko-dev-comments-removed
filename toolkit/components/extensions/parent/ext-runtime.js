@@ -37,6 +37,7 @@ this.runtime = class extends ExtensionAPIPersistent {
     
     
     
+    
 
     onInstalled({ fire }) {
       let { extension } = this;
