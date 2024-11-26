@@ -146,7 +146,9 @@ bool nsInlineFrame::IsEmpty() {
   }
 
   for (nsIFrame* kid : mFrames) {
-    if (!kid->IsEmpty()) return false;
+    if (!kid->IsEmpty()) {
+      return false;
+    }
   }
 
   return true;
@@ -157,7 +159,9 @@ nsIFrame::FrameSearchResult nsInlineFrame::PeekOffsetCharacter(
   
   NS_ASSERTION(aOffset && *aOffset <= 1, "aOffset out of range");
   int32_t startOffset = *aOffset;
-  if (startOffset < 0) startOffset = 1;
+  if (startOffset < 0) {
+    startOffset = 1;
+  }
   if (aForward == (startOffset == 0)) {
     
     
@@ -854,8 +858,9 @@ a11y::AccType nsInlineFrame::AccessibleType() {
   
   
   if (mContent->IsHTMLElement(
-          nsGkAtoms::img))  
+          nsGkAtoms::img)) {  
     return a11y::eHyperTextType;
+  }
 
   return a11y::eNoType;
 }

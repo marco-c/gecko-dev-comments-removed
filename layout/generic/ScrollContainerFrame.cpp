@@ -988,7 +988,9 @@ bool ScrollContainerFrame::GuessVScrollbarNeeded(
 
   
   
-  if (InInitialReflow()) return false;
+  if (InInitialReflow()) {
+    return false;
+  }
 
   if (mIsRoot) {
     nsIFrame* f = mScrolledFrame->PrincipalChildList().FirstChild();
@@ -2674,7 +2676,9 @@ void ScrollContainerFrame::MarkEverScrolled() {
 }
 
 void ScrollContainerFrame::MarkNotRecentlyScrolled() {
-  if (!mHasBeenScrolledRecently) return;
+  if (!mHasBeenScrolledRecently) {
+    return;
+  }
 
   mHasBeenScrolledRecently = false;
   SchedulePaint();
@@ -6450,7 +6454,9 @@ void ScrollContainerFrame::AdjustScrollbarRectForResizer(
 }
 
 static void AdjustOverlappingScrollbars(nsRect& aVRect, nsRect& aHRect) {
-  if (aVRect.IsEmpty() || aHRect.IsEmpty()) return;
+  if (aVRect.IsEmpty() || aHRect.IsEmpty()) {
+    return;
+  }
 
   const nsRect oldVRect = aVRect;
   const nsRect oldHRect = aHRect;
@@ -6723,7 +6729,9 @@ static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nscoord& aXRadius,
                         nscoord& aYRadius) {
   
   
-  if (aXRadius <= aXBorder || aYRadius <= aYBorder) return;
+  if (aXRadius <= aXBorder || aYRadius <= aYBorder) {
+    return;
+  }
 
   
   double ratio =
@@ -7958,11 +7966,13 @@ bool ScrollContainerFrame::CanApzScrollInTheseDirections(
     ScrollDirections aDirections) {
   ScrollStyles styles = GetScrollStyles();
   if (aDirections.contains(ScrollDirection::eHorizontal) &&
-      styles.mHorizontal == StyleOverflow::Hidden)
+      styles.mHorizontal == StyleOverflow::Hidden) {
     return false;
+  }
   if (aDirections.contains(ScrollDirection::eVertical) &&
-      styles.mVertical == StyleOverflow::Hidden)
+      styles.mVertical == StyleOverflow::Hidden) {
     return false;
+  }
   return true;
 }
 

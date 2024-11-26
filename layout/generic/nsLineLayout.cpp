@@ -2205,8 +2205,12 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
             blockEnd = BLOCKDIR_ALIGN_FRAMES_NO_MAXIMUM;
           }
         }
-        if (blockStart < minBCoord) minBCoord = blockStart;
-        if (blockEnd > maxBCoord) maxBCoord = blockEnd;
+        if (blockStart < minBCoord) {
+          minBCoord = blockStart;
+        }
+        if (blockEnd > maxBCoord) {
+          maxBCoord = blockEnd;
+        }
 #ifdef NOISY_BLOCKDIR_ALIGN
         printf(
             "     [frame]raw: a=%d h=%d bp=%d,%d logical: h=%d leading=%d y=%d "
@@ -3395,10 +3399,11 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
     
     
     
-    if (frame->HasView())
+    if (frame->HasView()) {
       nsContainerFrame::SyncFrameViewAfterReflow(
           mPresContext, frame, frame->GetView(), r.InkOverflow(),
           nsIFrame::ReflowChildFlags::NoMoveView);
+    }
 
     overflowAreas.UnionWith(r + frame->GetPosition());
   }

@@ -243,8 +243,9 @@ class nsTextFrame : public nsIFrame {
         !nsSplittableFrame::IsInNextContinuationChain(aNextContinuation, this),
         "creating a loop in continuation chain!");
     mNextContinuation = static_cast<nsTextFrame*>(aNextContinuation);
-    if (aNextContinuation)
+    if (aNextContinuation) {
       aNextContinuation->RemoveStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
+    }
     
     
     if (GetContent()->HasFlag(NS_HAS_FLOWLENGTH_PROPERTY)) {
@@ -675,7 +676,9 @@ class nsTextFrame : public nsIFrame {
                                      uint32_t* aFlowEndInTextRun = nullptr);
 
   gfxTextRun* GetTextRun(TextRunType aWhichTextRun) const {
-    if (aWhichTextRun == eInflated || !HasFontSizeInflation()) return mTextRun;
+    if (aWhichTextRun == eInflated || !HasFontSizeInflation()) {
+      return mTextRun;
+    }
     return GetUninflatedTextRun();
   }
   gfxTextRun* GetUninflatedTextRun() const;

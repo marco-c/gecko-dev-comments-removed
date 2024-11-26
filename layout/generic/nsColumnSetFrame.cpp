@@ -127,14 +127,20 @@ void nsColumnSetFrame::ForEachColumnRule(
     const std::function<void(const nsRect& lineRect)>& aSetLineRect,
     const nsPoint& aPt) const {
   nsIFrame* child = mFrames.FirstChild();
-  if (!child) return;  
+  if (!child) {
+    return;  
+  }
 
   nsIFrame* nextSibling = child->GetNextSibling();
-  if (!nextSibling) return;  
+  if (!nextSibling) {
+    return;  
+  }
 
   const nsStyleColumn* colStyle = StyleColumn();
   nscoord ruleWidth = colStyle->GetColumnRuleWidth();
-  if (!ruleWidth) return;
+  if (!ruleWidth) {
+    return;
+  }
 
   WritingMode wm = GetWritingMode();
   bool isVertical = wm.IsVertical();
