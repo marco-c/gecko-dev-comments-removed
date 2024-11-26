@@ -1923,7 +1923,7 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
                                                          sThemeRegSuffix)));
   ThemeMode themeMode = static_cast<ThemeMode>(theme);
   if (themeMode == ThemeMode::Default) {
-    if (IsSystemDarkThemeEnabled() == true) {
+    if (IsSystemDarkThemeEnabled()) {
       themeMode = ThemeMode::Dark;
     }
   }
@@ -1952,7 +1952,7 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
   
   
   
-  if (sDwmGetWindowAttribute != nullptr) {
+  {
     constexpr static auto const CloakWindow = [](HWND hwnd, BOOL state) {
       sDwmSetWindowAttribute(sPreXULSkeletonUIWindow, DWMWA_CLOAK, &state,
                              sizeof(state));
