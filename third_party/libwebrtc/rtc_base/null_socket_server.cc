@@ -21,7 +21,7 @@ NullSocketServer::NullSocketServer() = default;
 NullSocketServer::~NullSocketServer() {}
 
 bool NullSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
-                            bool process_io) {
+                            bool ) {
   
   
   

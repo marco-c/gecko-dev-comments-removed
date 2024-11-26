@@ -42,7 +42,8 @@ namespace {
 
 
 
-void LogCertificates(SSL* ssl, X509* certificate) {
+void LogCertificates([[maybe_unused]] SSL* ssl,
+                     [[maybe_unused]] X509* certificate) {
 
 #ifdef LOG_CERTIFICATES
   BIO* mem = BIO_new(BIO_s_mem());
