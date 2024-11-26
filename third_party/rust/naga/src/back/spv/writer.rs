@@ -1802,10 +1802,11 @@ impl Writer {
 
         
         
-        let member_array_subty_inner = match arena[member.ty].inner {
-            crate::TypeInner::Array { base, .. } => &arena[base].inner,
-            ref other => other,
-        };
+        let mut member_array_subty_inner = &arena[member.ty].inner;
+        while let crate::TypeInner::Array { base, .. } = *member_array_subty_inner {
+            member_array_subty_inner = &arena[base].inner;
+        }
+
         if let crate::TypeInner::Matrix {
             columns: _,
             rows,

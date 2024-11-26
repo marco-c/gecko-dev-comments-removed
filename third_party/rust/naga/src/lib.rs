@@ -269,6 +269,7 @@ pub use crate::arena::{Arena, Handle, Range, UniqueArena};
 pub use crate::span::{SourceLocation, Span, SpanContext, WithSpan};
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
+use diagnostic_filter::DiagnosticFilterNode;
 #[cfg(feature = "deserialize")]
 use serde::Deserialize;
 #[cfg(feature = "serialize")]
@@ -1199,6 +1200,7 @@ pub enum MathFunction {
     Inverse,
     Transpose,
     Determinant,
+    QuantizeToF16,
     
     CountTrailingZeros,
     CountLeadingZeros,
@@ -2119,6 +2121,14 @@ pub struct Function {
     pub named_expressions: NamedExpressions,
     
     pub body: Block,
+    
+    
+    
+    
+    
+    
+    
+    pub diagnostic_filter_leaf: Option<Handle<DiagnosticFilterNode>>,
 }
 
 
@@ -2271,4 +2281,17 @@ pub struct Module {
     pub functions: Arena<Function>,
     
     pub entry_points: Vec<EntryPoint>,
+    
+    
+    
+    
+    
+    pub diagnostic_filters: Arena<DiagnosticFilterNode>,
+    
+    
+    
+    
+    
+    
+    pub diagnostic_filter_leaf: Option<Handle<DiagnosticFilterNode>>,
 }

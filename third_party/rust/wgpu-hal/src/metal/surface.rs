@@ -1,6 +1,5 @@
 #![allow(clippy::let_unit_value)] 
 
-use std::ffi::c_uint;
 use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
 use std::sync::Once;
@@ -207,23 +206,26 @@ impl super::Surface {
             let new_layer: *mut Object = msg_send![class!(CAMetalLayer), new];
             let () = msg_send![root_layer, addSublayer: new_layer];
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let width_sizable = 1 << 1; 
-            let height_sizable = 1 << 4; 
-            let mask: c_uint = width_sizable | height_sizable;
-            let () = msg_send![new_layer, setAutoresizingMask: mask];
+            #[cfg(target_os = "macos")]
+            {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let width_sizable = 1 << 1; 
+                let height_sizable = 1 << 4; 
+                let mask: std::ffi::c_uint = width_sizable | height_sizable;
+                let () = msg_send![new_layer, setAutoresizingMask: mask];
+            }
 
             
             

@@ -386,7 +386,7 @@ pub struct Writer<W> {
     
     
     
-    loop_reachable_macro_name: String,
+    force_bounded_loop_macro_name: String,
 }
 
 impl crate::Scalar {
@@ -682,7 +682,7 @@ impl<W: Write> Writer<W> {
             #[cfg(test)]
             put_block_stack_pointers: Default::default(),
             struct_member_pads: FastHashSet::default(),
-            loop_reachable_macro_name: String::default(),
+            force_bounded_loop_macro_name: String::default(),
         }
     }
 
@@ -797,19 +797,19 @@ impl<W: Write> Writer<W> {
     
     
     
-    fn emit_loop_reachable_macro(&mut self) -> BackendResult {
-        if !self.loop_reachable_macro_name.is_empty() {
+    fn emit_force_bounded_loop_macro(&mut self) -> BackendResult {
+        if !self.force_bounded_loop_macro_name.is_empty() {
             return Ok(());
         }
 
-        self.loop_reachable_macro_name = self.namer.call("LOOP_IS_REACHABLE");
-        let loop_reachable_volatile_name = self.namer.call("unpredictable_jump_over_loop");
+        self.force_bounded_loop_macro_name = self.namer.call("LOOP_IS_BOUNDED");
+        let loop_bounded_volatile_name = self.namer.call("unpredictable_break_from_loop");
         writeln!(
             self.out,
-            "#define {} if (volatile bool {} = true; {})",
-            self.loop_reachable_macro_name,
-            loop_reachable_volatile_name,
-            loop_reachable_volatile_name,
+            "#define {} {{ volatile bool {} = false; if ({}) break; }}",
+            self.force_bounded_loop_macro_name,
+            loop_bounded_volatile_name,
+            loop_bounded_volatile_name,
         )?;
 
         Ok(())
@@ -1936,6 +1936,7 @@ impl<W: Write> Writer<W> {
                     Mf::Inverse => return Err(Error::UnsupportedCall(format!("{fun:?}"))),
                     Mf::Transpose => "transpose",
                     Mf::Determinant => "determinant",
+                    Mf::QuantizeToF16 => "",
                     
                     Mf::CountTrailingZeros => "ctz",
                     Mf::CountLeadingZeros => "clz",
@@ -2143,6 +2144,22 @@ impl<W: Write> Writer<W> {
                         write!(self.out, " >> 16, ")?;
                         self.put_expression(arg, context, true)?;
                         write!(self.out, " >> 24) << 24 >> 24")?;
+                    }
+                    Mf::QuantizeToF16 => {
+                        match *context.resolve_type(arg) {
+                            crate::TypeInner::Scalar { .. } => write!(self.out, "float(half(")?,
+                            crate::TypeInner::Vector { size, .. } => write!(
+                                self.out,
+                                "{NAMESPACE}::float{size}({NAMESPACE}::half{size}(",
+                                size = back::vector_size_str(size),
+                            )?,
+                            _ => unreachable!(
+                                "Correct TypeInner for QuantizeToF16 should be already validated"
+                            ),
+                        };
+
+                        self.put_expression(arg, context, true)?;
+                        write!(self.out, "))")?;
                     }
                     _ => {
                         write!(self.out, "{NAMESPACE}::{fun_name}")?;
@@ -3028,15 +3045,10 @@ impl<W: Write> Writer<W> {
                     ref continuing,
                     break_if,
                 } => {
-                    self.emit_loop_reachable_macro()?;
                     if !continuing.is_empty() || break_if.is_some() {
                         let gate_name = self.namer.call("loop_init");
                         writeln!(self.out, "{level}bool {gate_name} = true;")?;
-                        writeln!(
-                            self.out,
-                            "{level}{} while(true) {{",
-                            self.loop_reachable_macro_name,
-                        )?;
+                        writeln!(self.out, "{level}while(true) {{",)?;
                         let lif = level.next();
                         let lcontinuing = lif.next();
                         writeln!(self.out, "{lif}if (!{gate_name}) {{")?;
@@ -3051,13 +3063,16 @@ impl<W: Write> Writer<W> {
                         writeln!(self.out, "{lif}}}")?;
                         writeln!(self.out, "{lif}{gate_name} = false;")?;
                     } else {
-                        writeln!(
-                            self.out,
-                            "{level}{} while(true) {{",
-                            self.loop_reachable_macro_name,
-                        )?;
+                        writeln!(self.out, "{level}while(true) {{",)?;
                     }
                     self.put_block(level.next(), body, context)?;
+                    self.emit_force_bounded_loop_macro()?;
+                    writeln!(
+                        self.out,
+                        "{}{}",
+                        level.next(),
+                        self.force_bounded_loop_macro_name
+                    )?;
                     writeln!(self.out, "{level}}}")?;
                 }
                 crate::Statement::Break => {
@@ -3536,7 +3551,7 @@ impl<W: Write> Writer<W> {
             &[CLAMPED_LOD_LOAD_PREFIX],
             &mut self.names,
         );
-        self.loop_reachable_macro_name.clear();
+        self.force_bounded_loop_macro_name.clear();
         self.struct_member_pads.clear();
 
         writeln!(

@@ -1,9 +1,24 @@
 
 
+#[cfg(feature = "wgsl-in")]
+use crate::Span;
+use crate::{Arena, Handle};
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
+#[cfg(feature = "wgsl-in")]
+use indexmap::IndexMap;
+#[cfg(feature = "deserialize")]
+use serde::Deserialize;
+#[cfg(feature = "serialize")]
+use serde::Serialize;
+
 
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum Severity {
     Off,
     Info,
@@ -12,28 +27,11 @@ pub enum Severity {
 }
 
 impl Severity {
-    const ERROR: &'static str = "error";
-    const WARNING: &'static str = "warning";
-    const INFO: &'static str = "info";
-    const OFF: &'static str = "off";
-
-    
-    pub fn from_ident(s: &str) -> Option<Self> {
-        Some(match s {
-            Self::ERROR => Self::Error,
-            Self::WARNING => Self::Warning,
-            Self::INFO => Self::Info,
-            Self::OFF => Self::Off,
-            _ => return None,
-        })
-    }
-
     
     
     
     
     
-    #[cfg(feature = "wgsl-in")]
     pub(crate) fn report_diag<E>(
         self,
         err: E,
@@ -56,33 +54,35 @@ impl Severity {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum FilterableTriggeringRule {
+    Standard(StandardFilterableTriggeringRule),
+    Unknown(Box<str>),
+    User(Box<[Box<str>; 2]>),
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum StandardFilterableTriggeringRule {
     DerivativeUniformity,
 }
 
-impl FilterableTriggeringRule {
-    const DERIVATIVE_UNIFORMITY: &'static str = "derivative_uniformity";
-
+impl StandardFilterableTriggeringRule {
     
-    pub fn from_ident(s: &str) -> Option<Self> {
-        Some(match s {
-            Self::DERIVATIVE_UNIFORMITY => Self::DerivativeUniformity,
-            _ => return None,
-        })
-    }
-
     
-    pub const fn to_ident(self) -> &'static str {
+    
+    
+    pub(crate) const fn default_severity(self) -> Severity {
         match self {
-            Self::DerivativeUniformity => Self::DERIVATIVE_UNIFORMITY,
-        }
-    }
-
-    #[cfg(feature = "wgsl-in")]
-    pub(crate) const fn tracking_issue_num(self) -> u16 {
-        match self {
-            FilterableTriggeringRule::DerivativeUniformity => 5320,
+            Self::DerivativeUniformity => Severity::Error,
         }
     }
 }
@@ -91,7 +91,181 @@ impl FilterableTriggeringRule {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct DiagnosticFilter {
     pub new_severity: Severity,
     pub triggering_rule: FilterableTriggeringRule,
+}
+
+
+
+
+
+#[cfg(feature = "wgsl-in")]
+pub(crate) enum ShouldConflictOnFullDuplicate {
+    
+    Yes,
+    
+    No,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, Default)]
+#[cfg(feature = "wgsl-in")]
+pub(crate) struct DiagnosticFilterMap(IndexMap<FilterableTriggeringRule, (Severity, Span)>);
+
+#[cfg(feature = "wgsl-in")]
+impl DiagnosticFilterMap {
+    pub(crate) fn new() -> Self {
+        Self::default()
+    }
+
+    
+    pub(crate) fn add(
+        &mut self,
+        diagnostic_filter: DiagnosticFilter,
+        span: Span,
+        should_conflict_on_full_duplicate: ShouldConflictOnFullDuplicate,
+    ) -> Result<(), ConflictingDiagnosticRuleError> {
+        use indexmap::map::Entry;
+
+        let &mut Self(ref mut diagnostic_filters) = self;
+        let DiagnosticFilter {
+            new_severity,
+            triggering_rule,
+        } = diagnostic_filter;
+
+        match diagnostic_filters.entry(triggering_rule.clone()) {
+            Entry::Vacant(entry) => {
+                entry.insert((new_severity, span));
+            }
+            Entry::Occupied(entry) => {
+                let &(first_severity, first_span) = entry.get();
+                let should_conflict_on_full_duplicate = match should_conflict_on_full_duplicate {
+                    ShouldConflictOnFullDuplicate::Yes => true,
+                    ShouldConflictOnFullDuplicate::No => false,
+                };
+                if first_severity != new_severity || should_conflict_on_full_duplicate {
+                    return Err(ConflictingDiagnosticRuleError {
+                        triggering_rule_spans: [first_span, span],
+                    });
+                }
+            }
+        }
+        Ok(())
+    }
+
+    
+    pub(crate) fn is_empty(&self) -> bool {
+        let &Self(ref map) = self;
+        map.is_empty()
+    }
+
+    
+    pub(crate) fn spans(&self) -> impl Iterator<Item = Span> + '_ {
+        let &Self(ref map) = self;
+        map.iter().map(|(_, &(_, span))| span)
+    }
+}
+
+#[cfg(feature = "wgsl-in")]
+impl IntoIterator for DiagnosticFilterMap {
+    type Item = (FilterableTriggeringRule, (Severity, Span));
+
+    type IntoIter = indexmap::map::IntoIter<FilterableTriggeringRule, (Severity, Span)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let Self(this) = self;
+        this.into_iter()
+    }
+}
+
+
+#[cfg(feature = "wgsl-in")]
+#[derive(Clone, Debug)]
+pub(crate) struct ConflictingDiagnosticRuleError {
+    pub triggering_rule_spans: [Span; 2],
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct DiagnosticFilterNode {
+    pub inner: DiagnosticFilter,
+    pub parent: Option<Handle<DiagnosticFilterNode>>,
+}
+
+impl DiagnosticFilterNode {
+    
+    
+    
+    
+    
+    pub(crate) fn search(
+        node: Option<Handle<Self>>,
+        arena: &Arena<Self>,
+        triggering_rule: StandardFilterableTriggeringRule,
+    ) -> Severity {
+        let mut next = node;
+        while let Some(handle) = next {
+            let node = &arena[handle];
+            let &Self { ref inner, parent } = node;
+            let &DiagnosticFilter {
+                triggering_rule: ref rule,
+                new_severity,
+            } = inner;
+
+            if rule == &FilterableTriggeringRule::Standard(triggering_rule) {
+                return new_severity;
+            }
+
+            next = parent;
+        }
+        triggering_rule.default_severity()
+    }
 }

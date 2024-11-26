@@ -7,16 +7,13 @@ use std::{
 use once_cell::sync::OnceCell;
 
 use crate::lock::{rank, Mutex};
-use crate::{PreHashedKey, PreHashedMap};
+use crate::FastHashMap;
 
 type SlotInner<V> = Weak<V>;
 type ResourcePoolSlot<V> = Arc<OnceCell<SlotInner<V>>>;
 
 pub struct ResourcePool<K, V> {
-    
-    
-    
-    inner: Mutex<PreHashedMap<K, ResourcePoolSlot<V>>>,
+    inner: Mutex<FastHashMap<K, ResourcePoolSlot<V>>>,
 }
 
 impl<K: Clone + Eq + Hash, V> ResourcePool<K, V> {
@@ -36,9 +33,6 @@ impl<K: Clone + Eq + Hash, V> ResourcePool<K, V> {
         F: FnOnce(K) -> Result<Arc<V>, E>,
     {
         
-        let hashed_key = PreHashedKey::from_key(&key);
-
-        
         
         let mut key = Some(key);
         let mut constructor = Some(constructor);
@@ -46,7 +40,7 @@ impl<K: Clone + Eq + Hash, V> ResourcePool<K, V> {
         'race: loop {
             let mut map_guard = self.inner.lock();
 
-            let entry = match map_guard.entry(hashed_key) {
+            let entry = match map_guard.entry(key.clone().unwrap()) {
                 
                 
                 
@@ -91,6 +85,8 @@ impl<K: Clone + Eq + Hash, V> ResourcePool<K, V> {
             
             
             
+            
+            
             continue 'race;
         }
     }
@@ -101,13 +97,11 @@ impl<K: Clone + Eq + Hash, V> ResourcePool<K, V> {
     
     
     pub fn remove(&self, key: &K) {
-        let hashed_key = PreHashedKey::from_key(key);
-
         let mut map_guard = self.inner.lock();
 
         
         
-        map_guard.remove(&hashed_key);
+        map_guard.remove(key);
     }
 }
 

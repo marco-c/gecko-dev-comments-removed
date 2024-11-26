@@ -8,7 +8,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::AtomicFenceValue;
+use crate::{AtomicFenceValue, TlasInstance};
 use arrayvec::ArrayVec;
 use std::sync::atomic::Ordering;
 
@@ -501,14 +501,6 @@ impl super::Device {
 impl crate::Device for super::Device {
     type A = super::Api;
 
-    unsafe fn exit(self, queue: super::Queue) {
-        let gl = &self.shared.context.lock();
-        unsafe { gl.delete_vertex_array(self.main_vao) };
-        unsafe { gl.delete_framebuffer(queue.draw_fbo) };
-        unsafe { gl.delete_framebuffer(queue.copy_fbo) };
-        unsafe { gl.delete_buffer(queue.zero_buffer) };
-    }
-
     unsafe fn create_buffer(
         &self,
         desc: &crate::BufferDescriptor,
@@ -834,7 +826,7 @@ impl crate::Device for super::Device {
                                 0,
                                 format_desc.external,
                                 format_desc.data_type,
-                                None,
+                                glow::PixelUnpackData::Slice(None),
                             );
                             width = max(1, width / 2);
                             height = max(1, height / 2);
@@ -854,7 +846,7 @@ impl crate::Device for super::Device {
                                 0,
                                 format_desc.external,
                                 format_desc.data_type,
-                                None,
+                                glow::PixelUnpackData::Slice(None),
                             );
                             width = max(1, width / 2);
                             height = max(1, height / 2);
@@ -907,7 +899,7 @@ impl crate::Device for super::Device {
                                     0,
                                     format_desc.external,
                                     format_desc.data_type,
-                                    None,
+                                    glow::PixelUnpackData::Slice(None),
                                 );
                             }
                             width = max(1, width / 2);
@@ -926,7 +918,7 @@ impl crate::Device for super::Device {
                                 0,
                                 format_desc.external,
                                 format_desc.data_type,
-                                None,
+                                glow::PixelUnpackData::Slice(None),
                             );
                             width = max(1, width / 2);
                             height = max(1, height / 2);
@@ -1563,6 +1555,10 @@ impl crate::Device for super::Device {
     ) -> Result<bool, crate::DeviceError> {
         if fence.last_completed.load(Ordering::Relaxed) < wait_value {
             let gl = &self.shared.context.lock();
+            
+            
+            
+            
             let timeout_ns = if cfg!(any(webgl, Emscripten)) {
                 0
             } else {
@@ -1635,6 +1631,10 @@ impl crate::Device for super::Device {
         &self,
         _acceleration_structure: super::AccelerationStructure,
     ) {
+    }
+
+    fn tlas_instance_to_bytes(&self, _instance: TlasInstance) -> Vec<u8> {
+        unimplemented!()
     }
 
     fn get_internal_counters(&self) -> wgt::HalCounters {

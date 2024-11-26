@@ -4,6 +4,7 @@
 
 
 
+mod diagnostic_filter;
 mod error;
 mod index;
 mod lower;

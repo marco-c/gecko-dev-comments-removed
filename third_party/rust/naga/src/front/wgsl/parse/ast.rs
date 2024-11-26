@@ -1,3 +1,4 @@
+use crate::diagnostic_filter::DiagnosticFilterNode;
 use crate::front::wgsl::parse::directive::enable_extension::EnableExtensions;
 use crate::front::wgsl::parse::number::Number;
 use crate::front::wgsl::Scalar;
@@ -26,6 +27,17 @@ pub struct TranslationUnit<'a> {
     
     
     pub types: Arena<Type<'a>>,
+
+    
+    
+    
+    
+    pub diagnostic_filters: Arena<DiagnosticFilterNode>,
+    
+    
+    
+    
+    pub diagnostic_filter_leaf: Option<Handle<DiagnosticFilterNode>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -121,6 +133,7 @@ pub struct Function<'a> {
     pub arguments: Vec<FunctionArgument<'a>>,
     pub result: Option<FunctionResult<'a>>,
     pub body: Block<'a>,
+    pub diagnostic_filter_leaf: Option<Handle<DiagnosticFilterNode>>,
 }
 
 #[derive(Debug)]

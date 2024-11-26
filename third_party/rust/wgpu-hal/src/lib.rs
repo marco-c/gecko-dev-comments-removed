@@ -707,8 +707,6 @@ pub trait Device: WasmNotSendSync {
     type A: Api;
 
     
-    unsafe fn exit(self, queue: <Self::A as Api>::Queue);
-    
     
     
     unsafe fn create_buffer(
@@ -973,6 +971,7 @@ pub trait Device: WasmNotSendSync {
         &self,
         acceleration_structure: <Self::A as Api>::AccelerationStructure,
     );
+    fn tlas_instance_to_bytes(&self, instance: TlasInstance) -> Vec<u8>;
 
     fn get_internal_counters(&self) -> wgt::HalCounters;
 
@@ -1773,6 +1772,12 @@ pub struct Alignments {
     
     
     pub uniform_bounds_check_alignment: wgt::BufferSize,
+
+    
+    pub raw_tlas_instance_size: usize,
+
+    
+    pub ray_tracing_scratch_buffer_alignment: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -2520,4 +2525,12 @@ bitflags::bitflags! {
 #[derive(Debug, Clone)]
 pub struct AccelerationStructureBarrier {
     pub usage: Range<AccelerationStructureUses>,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct TlasInstance {
+    pub transform: [f32; 12],
+    pub custom_index: u32,
+    pub mask: u8,
+    pub blas_address: u64,
 }
