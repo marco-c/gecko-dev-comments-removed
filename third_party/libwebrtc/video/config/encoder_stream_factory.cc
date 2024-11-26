@@ -472,9 +472,27 @@ EncoderStreamFactory::GetLayerResolutionFromRequestedResolution(
     int frame_width,
     int frame_height,
     webrtc::Resolution requested_resolution) const {
+  
+  if ((frame_width < frame_height) !=
+      (requested_resolution.width < requested_resolution.height)) {
+    requested_resolution = {.width = requested_resolution.height,
+                            .height = requested_resolution.width};
+  }
+  
+  if (frame_width > 0 && frame_height > 0 &&
+      (requested_resolution.width < frame_width ||
+       requested_resolution.height < frame_height)) {
+    double scale_factor = std::min(
+        requested_resolution.width / static_cast<double>(frame_width),
+        requested_resolution.height / static_cast<double>(frame_height));
+    frame_width = std::round(frame_width * scale_factor);
+    frame_height = std::round(frame_height * scale_factor);
+  }
+  webrtc::Resolution frame = {.width = frame_width, .height = frame_height};
+
+  
   VideoAdapter adapter(encoder_info_requested_resolution_alignment_);
-  adapter.OnOutputFormatRequest(requested_resolution.ToPair(),
-                                requested_resolution.PixelCount(),
+  adapter.OnOutputFormatRequest(frame.ToPair(), frame.PixelCount(),
                                 std::nullopt);
   if (restrictions_) {
     rtc::VideoSinkWants wants;
