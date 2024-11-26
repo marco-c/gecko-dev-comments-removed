@@ -306,6 +306,9 @@ class HasSeenObjectEmulateUndefinedFuse : public js::InvalidatingRuntimeFuse {
     
     return true;
   }
+
+ public:
+  virtual void popFuse(JSContext* cx) override;
 };
 
 }  
