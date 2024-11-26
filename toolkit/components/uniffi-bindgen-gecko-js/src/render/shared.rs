@@ -5,30 +5,53 @@
 
 use crate::Config;
 use extend::ext;
-use uniffi_bindgen::interface::{Function, Method, Object};
+use uniffi_bindgen::interface::{Callable, Constructor, Function, Method, Object};
 
 
+pub enum CallStyle {
+    
+    Sync,
+    
+    Async,
+    
+    AsyncWrapper,
+}
 
+impl CallStyle {
+    
+    pub fn is_js_async(&self) -> bool {
+        matches!(self, Self::Async | Self::AsyncWrapper)
+    }
+}
 
-
-fn use_async_wrapper(config: &Config, spec: &str) -> bool {
-    config.async_wrappers.enable && !config.async_wrappers.main_thread.contains(spec)
+fn call_style(callable: impl Callable, config: &Config, spec: &str) -> CallStyle {
+    if callable.is_async() {
+        CallStyle::Async
+    } else if config.async_wrappers.enable && !config.async_wrappers.main_thread.contains(spec) {
+        CallStyle::AsyncWrapper
+    } else {
+        CallStyle::Sync
+    }
 }
 
 #[ext]
 pub impl Function {
-    fn use_async_wrapper(&self, config: &Config) -> bool {
-        use_async_wrapper(config, self.name())
+    fn call_style(&self, config: &Config) -> CallStyle {
+        call_style(self, config, self.name())
     }
 }
 
 #[ext]
 pub impl Object {
-    fn use_async_wrapper_for_constructor(&self, config: &Config) -> bool {
-        use_async_wrapper(config, self.name())
+    fn call_style_for_constructor(&self, cons: &Constructor, config: &Config) -> CallStyle {
+        call_style(cons, config, &format!("{}.{}", self.name(), cons.name()))
     }
 
-    fn use_async_wrapper_for_method(&self, method: &Method, config: &Config) -> bool {
-        use_async_wrapper(config, &format!("{}.{}", self.name(), method.name()))
+    fn call_style_for_method(&self, method: &Method, config: &Config) -> CallStyle {
+        call_style(
+            method,
+            config,
+            &format!("{}.{}", self.name(), method.name()),
+        )
     }
 }
