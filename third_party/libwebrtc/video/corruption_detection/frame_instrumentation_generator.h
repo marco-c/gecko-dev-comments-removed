@@ -41,6 +41,12 @@ class FrameInstrumentationGenerator {
       absl::variant<FrameInstrumentationSyncData, FrameInstrumentationData>>
   OnEncodedImage(const EncodedImage& encoded_image);
 
+  
+  std::optional<int> GetHaltonSequenceIndex(int layer_id) const;
+  void SetHaltonSequenceIndex(int index, int layer_id);
+
+  int GetLayerId(const EncodedImage& encoded_image) const;
+
  private:
   struct Context {
     HaltonFrameSampler frame_sampler;
