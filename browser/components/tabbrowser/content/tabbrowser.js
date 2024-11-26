@@ -5659,14 +5659,10 @@
 
       this._handleTabMove(aTab, () => {
         let neighbor = this.tabs[aIndex];
-        if (aIndex < aTab._tPos) {
-          neighbor.before(aTab);
-        } else if (!neighbor) {
-          
-          
-          aTab.parentElement.append(aTab);
-        } else {
+        if (neighbor && aIndex >= aTab._tPos) {
           neighbor.after(aTab);
+        } else {
+          this.tabContainer.insertBefore(aTab, neighbor);
         }
       });
     }
