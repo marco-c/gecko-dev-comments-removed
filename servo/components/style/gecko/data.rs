@@ -137,7 +137,6 @@ impl StylesheetInDocument for GeckoStyleSheet {
                 return if result.mConstructed {
                     Some(ImplicitScopeRoot::Constructed)
                 } else {
-                    
                     None
                 };
             }
