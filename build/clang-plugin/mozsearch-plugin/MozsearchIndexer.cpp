@@ -2393,8 +2393,13 @@ public:
 
       FieldDecl *Member = Ci->getMember();
       std::string Mangled = getMangledName(CurMangleContext, Member);
+      
+      
+      
+      
+      
       visitIdentifier("use", "field", getQualifiedName(Member), Loc, Mangled,
-                      Member->getType(), getContext(D));
+                      Member->getType(), translateContext(D));
     }
 
     return true;
