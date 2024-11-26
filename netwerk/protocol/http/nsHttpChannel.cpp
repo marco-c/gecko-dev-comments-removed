@@ -4123,13 +4123,16 @@ nsresult nsHttpChannel::OpenCacheEntry(bool isHttps) {
 
   
   MOZ_ASSERT(!mCacheEntry, "cache entry already open");
-  if (!mRequestHead.IsGet() && !mRequestHead.IsHead() &&
-      !mRequestHead.IsPost() && !mRequestHead.IsPatch()) {
+
+  if (mRequestHead.IsPost()) {
+    
+    
+    
+    if (mPostID == 0) mPostID = gHttpHandler->GenerateUniqueID();
+  } else if (!mRequestHead.IsGet() && !mRequestHead.IsHead()) {
     
     return NS_OK;
   }
-
-  MOZ_ASSERT_IF(mRequestHead.IsPost() || mRequestHead.IsPatch(), mPostID > 0);
 
   return OpenCacheEntryInternal(isHttps);
 }
@@ -7058,25 +7061,6 @@ nsresult nsHttpChannel::BeginConnect() {
   if (NS_FAILED(rv)) {
     LOG(("nsHttpChannel %p AddAuthorizationHeaders failed (%08x)", this,
          static_cast<uint32_t>(rv)));
-  }
-
-  if (mRequestHead.IsPost() || mRequestHead.IsPatch()) {
-    
-    
-    
-    if (mPostID == 0) {
-      mPostID = gHttpHandler->GenerateUniqueID();
-    }
-
-    if (!mRequestHead.HasHeader(nsHttp::Idempotency_Key)) {
-      
-      
-      
-      nsAutoCString key;
-      gHttpHandler->GenerateIdempotencyKeyForPost(mPostID, mLoadInfo, key);
-      MOZ_ALWAYS_SUCCEEDS(
-          mRequestHead.SetHeader(nsHttp::Idempotency_Key, key, false));
-    }
   }
 
   
