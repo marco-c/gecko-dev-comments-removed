@@ -3758,7 +3758,11 @@ pref("browser.translations.chaos.errors", false);
 pref("browser.translations.chaos.timeoutMS", 0);
 
 
-pref("browser.ml.enable", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.ml.enable", true);
+#else
+  pref("browser.ml.enable", false);
+#endif
 
 pref("browser.ml.logLevel", "Error");
 
@@ -4131,6 +4135,10 @@ pref("extensions.formautofill.heuristics.captureOnFormRemoval", true);
 pref("extensions.formautofill.heuristics.captureOnPageNavigation", true);
 
 pref("extensions.formautofill.heuristics.autofillSameOriginWithTop", true);
+
+#ifdef NIGHTLY_BUILD
+  pref("extensions.formautofill.ml.experiment.enabled", true);
+#endif
 
 pref("toolkit.osKeyStore.loglevel", "Warn");
 
