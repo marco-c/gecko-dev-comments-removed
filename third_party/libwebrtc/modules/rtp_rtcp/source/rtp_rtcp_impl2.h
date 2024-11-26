@@ -50,7 +50,6 @@
 
 namespace webrtc {
 
-class Clock;
 struct PacedPacketInfo;
 struct RTPVideoHeader;
 
@@ -278,11 +277,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
     
     RTPSender packet_generator;
   };
-
-  struct TagConfigurationIncludesEnvironment {};
-  explicit ModuleRtpRtcpImpl2(TagConfigurationIncludesEnvironment,
-                              const Environment& env,
-                              const Configuration& configuration);
 
   void set_rtt_ms(int64_t rtt_ms);
   int64_t rtt_ms() const;

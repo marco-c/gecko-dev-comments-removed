@@ -20,7 +20,6 @@
 
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
-#include "api/field_trials_view.h"
 #include "api/frame_transformer_interface.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_packet_sender.h"
@@ -43,7 +42,6 @@ namespace webrtc {
 
 class FrameEncryptorInterface;
 class RateLimiter;
-class RtcEventLog;
 class RTPSender;
 class Transport;
 class VideoBitrateAllocationObserver;
@@ -55,9 +53,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     bool audio = false;
     bool receiver_only = false;
-
-    
-    Clock* clock = nullptr;
 
     ReceiveStatisticsProvider* receive_statistics = nullptr;
 
@@ -104,7 +99,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     VideoFecGenerator* fec_generator = nullptr;
 
     BitrateStatisticsObserver* send_bitrate_observer = nullptr;
-    RtcEventLog* event_log = nullptr;
     SendPacketObserver* send_packet_observer = nullptr;
     RateLimiter* retransmission_rate_limiter = nullptr;
     StreamDataCountersCallback* rtp_stats_callback = nullptr;
@@ -130,9 +124,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     
     bool always_send_mid_and_rid = false;
-
-    
-    const FieldTrialsView* field_trials = nullptr;
 
     
     
