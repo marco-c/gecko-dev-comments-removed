@@ -48,41 +48,6 @@ enum class PermissionCheckPurpose : uint8_t;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   friend class CloseNotificationRunnable;
   friend class NotificationTask;
