@@ -59,12 +59,100 @@ using UniqueCompileInfoVector = Vector<UniqueCompileInfo, 1, SystemAllocPolicy>;
 
 using BlockVector = Vector<MBasicBlock*, 8, SystemAllocPolicy>;
 using DefVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
-
-
-
-
 using ControlInstructionVector =
     Vector<MControlInstruction*, 8, SystemAllocPolicy>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 struct TryControl {
   
@@ -93,6 +181,70 @@ struct TryControl {
 using UniqueTryControl = UniquePtr<TryControl>;
 using VectorUniqueTryControl = Vector<UniqueTryControl, 2, SystemAllocPolicy>;
 
+struct ControlFlowPatch {
+  MControlInstruction* ins;
+  uint32_t index;
+  ControlFlowPatch(MControlInstruction* ins, uint32_t index)
+      : ins(ins), index(index) {}
+};
+
+using ControlFlowPatchVector = Vector<ControlFlowPatch, 0, SystemAllocPolicy>;
+
+struct PendingBlockTarget {
+  ControlFlowPatchVector patches;
+  BranchHint hint = BranchHint::Invalid;
+};
+
+using PendingBlockTargetVector =
+    Vector<PendingBlockTarget, 0, SystemAllocPolicy>;
+
+
+
+struct PendingInlineReturn {
+  PendingInlineReturn(MGoto* jump, DefVector&& results)
+      : jump(jump), results(std::move(results)) {}
+
+  MGoto* jump;
+  DefVector results;
+};
+
+using PendingInlineReturnVector =
+    Vector<PendingInlineReturn, 1, SystemAllocPolicy>;
+
+
+struct CallCompileState {
+  
+  WasmABIArgGenerator abi;
+
+  
+  MWasmCallBase::Args regArgs;
+
+  
+  ABIArg instanceArg;
+
+  
+  
+  MWasmStackResultArea* stackResultArea = nullptr;
+
+  
+  bool returnCall = false;
+
+  
+  
+  ControlInstructionVector* tryLandingPadPatches = nullptr;
+
+  
+  uint32_t tryNoteIndex = UINT32_MAX;
+
+  
+  MBasicBlock* fallthroughBlock = nullptr;
+
+  
+  MBasicBlock* prePadBlock = nullptr;
+
+  bool isCatchable() const { return tryLandingPadPatches != nullptr; }
+};
+
 struct Control {
   MBasicBlock* block;
   UniqueTryControl tryControl;
@@ -101,98 +253,6 @@ struct Control {
   Control(Control&&) = default;
   Control(const Control&) = delete;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 struct IonCompilePolicy {
   
@@ -316,69 +376,6 @@ class RootCompiler {
 
 
 class FunctionCompiler {
-  struct ControlFlowPatch {
-    MControlInstruction* ins;
-    uint32_t index;
-    ControlFlowPatch(MControlInstruction* ins, uint32_t index)
-        : ins(ins), index(index) {}
-  };
-
-  using ControlFlowPatchVector = Vector<ControlFlowPatch, 0, SystemAllocPolicy>;
-
-  struct PendingBlockTarget {
-    ControlFlowPatchVector patches;
-    BranchHint hint = BranchHint::Invalid;
-  };
-
-  using PendingBlockTargetVector =
-      Vector<PendingBlockTarget, 0, SystemAllocPolicy>;
-
-  
-  
-  struct PendingInlineReturn {
-    PendingInlineReturn(MGoto* jump, DefVector&& results)
-        : jump(jump), results(std::move(results)) {}
-
-    MGoto* jump;
-    DefVector results;
-  };
-  using PendingInlineReturnVector =
-      Vector<PendingInlineReturn, 1, SystemAllocPolicy>;
-
-  
-  struct CallCompileState {
-    
-    WasmABIArgGenerator abi;
-
-    
-    MWasmCallBase::Args regArgs;
-
-    
-    ABIArg instanceArg;
-
-    
-    
-    MWasmStackResultArea* stackResultArea = nullptr;
-
-    
-    bool returnCall = false;
-
-    
-    
-    ControlInstructionVector* tryLandingPadPatches = nullptr;
-
-    
-    uint32_t tryNoteIndex = UINT32_MAX;
-
-    
-    MBasicBlock* fallthroughBlock = nullptr;
-
-    
-    MBasicBlock* prePadBlock = nullptr;
-
-    bool isCatchable() const { return tryLandingPadPatches != nullptr; }
-  };
-
   
   RootCompiler& rootCompiler_;
 
