@@ -129,7 +129,7 @@ struct LineFrameFinder {
 
 
 
-class MOZ_STACK_CLASS AutoAssertNoDomMutations final {
+class MOZ_RAII AutoAssertNoDomMutations final {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   nsMutationGuard mGuard;
 #endif
