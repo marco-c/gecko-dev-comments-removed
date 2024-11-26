@@ -1587,6 +1587,25 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1913759",
+    platform: "desktop",
+    domain: "playblackdesert.com",
+    bug: "1913759",
+    config: {
+      matches: ["*://eu-trade.naeu.playblackdesert.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
