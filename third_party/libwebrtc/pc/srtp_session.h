@@ -19,7 +19,7 @@
 #include "api/field_trials_view.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/buffer.h"
 
 
 struct srtp_event_data_t;
@@ -44,25 +44,41 @@ class SrtpSession {
 
   
   
+  [[deprecated("Pass ZeroOnFreeBuffer to SetSend")]] bool SetSend(
+      int crypto_suite,
+      const uint8_t* key,
+      size_t len,
+      const std::vector<int>& extension_ids);
   bool SetSend(int crypto_suite,
-               const uint8_t* key,
-               size_t len,
+               const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                const std::vector<int>& extension_ids);
+  [[deprecated("Pass ZeroOnFreeBuffer to UpdateSend")]] bool UpdateSend(
+      int crypto_suite,
+      const uint8_t* key,
+      size_t len,
+      const std::vector<int>& extension_ids);
   bool UpdateSend(int crypto_suite,
-                  const uint8_t* key,
-                  size_t len,
+                  const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                   const std::vector<int>& extension_ids);
 
   
   
-  bool SetRecv(int crypto_suite,
-               const uint8_t* key,
-               size_t len,
-               const std::vector<int>& extension_ids);
-  bool UpdateRecv(int crypto_suite,
-                  const uint8_t* key,
-                  size_t len,
+  [[deprecated("Pass ZeroOnFreeBuffer to SetReceive")]] bool SetRecv(
+      int crypto_suite,
+      const uint8_t* key,
+      size_t len,
+      const std::vector<int>& extension_ids);
+  bool SetReceive(int crypto_suite,
+                  const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                   const std::vector<int>& extension_ids);
+  [[deprecated("Pass ZeroOnFreeBuffer to UpdateReceive")]] bool UpdateRecv(
+      int crypto_suite,
+      const uint8_t* key,
+      size_t len,
+      const std::vector<int>& extension_ids);
+  bool UpdateReceive(int crypto_suite,
+                     const rtc::ZeroOnFreeBuffer<uint8_t>& key,
+                     const std::vector<int>& extension_ids);
 
   
   
@@ -108,18 +124,15 @@ class SrtpSession {
  private:
   bool DoSetKey(int type,
                 int crypto_suite,
-                const uint8_t* key,
-                size_t len,
+                const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                 const std::vector<int>& extension_ids);
   bool SetKey(int type,
               int crypto_suite,
-              const uint8_t* key,
-              size_t len,
+              const rtc::ZeroOnFreeBuffer<uint8_t>& key,
               const std::vector<int>& extension_ids);
   bool UpdateKey(int type,
                  int crypto_suite,
-                 const uint8_t* key,
-                 size_t len,
+                 const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                  const std::vector<int>& extension_ids);
   
   bool GetSendStreamPacketIndex(void* data, int in_len, int64_t* index);

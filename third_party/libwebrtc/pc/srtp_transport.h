@@ -58,24 +58,20 @@ class SrtpTransport : public RtpTransport {
   
   
   bool SetRtpParams(int send_crypto_suite,
-                    const uint8_t* send_key,
-                    int send_key_len,
+                    const rtc::ZeroOnFreeBuffer<uint8_t>& send_key,
                     const std::vector<int>& send_extension_ids,
                     int recv_crypto_suite,
-                    const uint8_t* recv_key,
-                    int recv_key_len,
+                    const rtc::ZeroOnFreeBuffer<uint8_t>& recv_key,
                     const std::vector<int>& recv_extension_ids);
 
   
   
   
   bool SetRtcpParams(int send_crypto_suite,
-                     const uint8_t* send_key,
-                     int send_key_len,
+                     const rtc::ZeroOnFreeBuffer<uint8_t>& send_key,
                      const std::vector<int>& send_extension_ids,
                      int recv_crypto_suite,
-                     const uint8_t* recv_key,
-                     int recv_key_len,
+                     const rtc::ZeroOnFreeBuffer<uint8_t>& recv_key,
                      const std::vector<int>& recv_extension_ids);
 
   void ResetParams();
