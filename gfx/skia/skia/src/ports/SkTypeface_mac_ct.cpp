@@ -982,12 +982,28 @@ void SkTypeface_Mac::onFilterRec(SkScalerContextRec* rec) const {
 
     
     
+    if (rec->fMaskFormat == SkMask::kLCD16_Format ||
+        (rec->fMaskFormat == SkMask::kA8_Format && rec->getHinting() != SkFontHinting::kNone)) {
+        SkColor color = rec->getLuminanceColor();
+        int r = SkColorGetR(color);
+        int g = SkColorGetG(color);
+        int b = SkColorGetB(color);
+        
+        
+        if (r >= 85 && g >= 85 && b >= 85 && r + g + b >= 2 * 255) {
+            rec->fFlags |= SkScalerContext::kLightOnDark_Flag;
+        }
+    }
+
+    
+    
     if (SkMask::kA8_Format == rec->fMaskFormat && SkFontHinting::kNone == rec->getHinting()) {
 #ifndef SK_GAMMA_APPLY_TO_A8
         
         rec->ignorePreBlend();
 #endif
     } else {
+#ifndef SK_IGNORE_MAC_BLENDING_MATCH_FIX
         SkColor color = rec->getLuminanceColor();
         if (smoothBehavior == SkCTFontSmoothBehavior::some) {
             
@@ -1005,6 +1021,7 @@ void SkTypeface_Mac::onFilterRec(SkScalerContextRec* rec) const {
                                   SkColorGetB(color) * 3/4);
         }
         rec->setLuminanceColor(color);
+#endif
 
         
         rec->setContrast(0);
