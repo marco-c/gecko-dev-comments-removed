@@ -771,6 +771,12 @@ WebExtensionContentScript::WebExtensionContentScript(
   if (mExtension->ManifestVersion() >= 3) {
     mCheckPermissions = true;
   }
+
+  
+  MOZ_ASSERT_IF(!mIsUserScript,
+                mWorld != ContentScriptExecutionWorld::USER_SCRIPT);
+  
+  MOZ_ASSERT_IF(mIsUserScript, mWorld != ContentScriptExecutionWorld::ISOLATED);
 }
 
 bool MozDocumentMatcher::Matches(const DocInfo& aDoc,

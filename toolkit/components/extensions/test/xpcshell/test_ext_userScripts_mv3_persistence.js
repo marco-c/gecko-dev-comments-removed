@@ -70,12 +70,6 @@ add_task(async function register_and_restart() {
         id: "test1",
         matches: ["https://example.com/*"],
         js: [{ file: "file1.js" }, { file: "file2.js" }],
-        
-        
-        
-        
-        
-        world: "MAIN",
       };
       const expectedScriptOut = {
         ...scriptIn,
@@ -85,6 +79,9 @@ add_task(async function register_and_restart() {
         excludeGlobs: null,
         runAt: "document_idle",
         
+        
+        
+        world: "USER_SCRIPT",
       };
       browser.runtime.onInstalled.addListener(async ({ reason }) => {
         browser.test.assertEq("install", reason, "onInstalled reason");
