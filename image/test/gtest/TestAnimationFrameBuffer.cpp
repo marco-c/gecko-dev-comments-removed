@@ -759,8 +759,7 @@ TEST_F(ImageAnimationFrameBuffer, RecyclingResetBeforeComplete) {
   while (!buffer.Recycle().empty()) {
     gfx::IntRect recycleRect;
     RawAccessFrameRef frameRef = buffer.RecycleFrame(recycleRect);
-    EXPECT_TRUE(frameRef);
-    EXPECT_FALSE(ReinitForRecycle(frameRef));
+    EXPECT_FALSE(frameRef);
   }
 
   
@@ -829,8 +828,7 @@ TEST_F(ImageAnimationFrameBuffer, RecyclingRect) {
   gfx::IntRect recycleRect;
   EXPECT_FALSE(buffer.Recycle().empty());
   RawAccessFrameRef frameRef = buffer.RecycleFrame(recycleRect);
-  EXPECT_TRUE(frameRef);
-  EXPECT_FALSE(ReinitForRecycle(frameRef));
+  EXPECT_FALSE(frameRef);
   EXPECT_TRUE(buffer.Recycle().empty());
 
   
@@ -842,8 +840,7 @@ TEST_F(ImageAnimationFrameBuffer, RecyclingRect) {
   VerifyAdvance(buffer, 5, true);
   EXPECT_FALSE(buffer.Recycle().empty());
   frameRef = buffer.RecycleFrame(recycleRect);
-  EXPECT_TRUE(frameRef);
-  EXPECT_FALSE(ReinitForRecycle(frameRef));
+  EXPECT_FALSE(frameRef);
   EXPECT_TRUE(buffer.Recycle().empty());
 
   

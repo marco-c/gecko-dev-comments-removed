@@ -432,32 +432,38 @@ RawAccessFrameRef AnimationFrameRecyclingQueue::RecycleFrame(
 
   RawAccessFrameRef recycledFrame;
   if (mRecycle.front().mFrame) {
-    recycledFrame = mRecycle.front().mFrame->RawAccessRef();
-    MOZ_ASSERT(recycledFrame);
+    recycledFrame = mRecycle.front().mFrame->RawAccessRef(
+        gfx::DataSourceSurface::READ_WRITE);
     mRecycle.pop_front();
 
-    if (mForceUseFirstFrameRefreshArea) {
-      
-      
-      
-      aRecycleRect = mFirstFrameRefreshArea;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      aRecycleRect.SetRect(0, 0, 0, 0);
-      for (const RefPtr<imgFrame>& frame : mDisplay) {
-        aRecycleRect = aRecycleRect.Union(frame->GetDirtyRect());
-      }
-      for (const RecycleEntry& entry : mRecycle) {
-        aRecycleRect = aRecycleRect.Union(entry.mDirtyRect);
+    
+    
+    
+    if (recycledFrame) {
+      if (mForceUseFirstFrameRefreshArea) {
+        
+        
+        
+        aRecycleRect = mFirstFrameRefreshArea;
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        aRecycleRect.SetRect(0, 0, 0, 0);
+        for (const RefPtr<imgFrame>& frame : mDisplay) {
+          aRecycleRect = aRecycleRect.Union(frame->GetDirtyRect());
+        }
+        for (const RecycleEntry& entry : mRecycle) {
+          aRecycleRect = aRecycleRect.Union(entry.mDirtyRect);
+        }
       }
     }
   } else {
