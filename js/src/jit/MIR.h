@@ -5201,7 +5201,11 @@ class MDiv : public MBinaryArithInstruction {
 
   double getIdentity() override { MOZ_CRASH("not used"); }
 
-  bool canBeNegativeZero() const { return canBeNegativeZero_; }
+  bool canBeNegativeZero() const {
+    
+    MOZ_ASSERT(type() == MIRType::Int32);
+    return canBeNegativeZero_;
+  }
   void setCanBeNegativeZero(bool negativeZero) {
     canBeNegativeZero_ = negativeZero;
   }
