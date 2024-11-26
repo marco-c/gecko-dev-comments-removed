@@ -605,7 +605,7 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
   
   
   
-  if (TimingEnabled() && GetRequestStart().IsNull()) {
+  if (GetRequestStart().IsNull()) {
     if (status == NS_NET_STATUS_RESOLVING_HOST) {
       SetDomainLookupStart(TimeStamp::Now(), true);
     } else if (status == NS_NET_STATUS_RESOLVED_HOST) {
@@ -816,10 +816,8 @@ nsresult nsHttpTransaction::WritePipeSegment(nsIOutputStream* stream,
 
   if (trans->mTransactionDone) return NS_BASE_STREAM_CLOSED;  
 
-  if (trans->TimingEnabled()) {
-    
-    trans->SetResponseStart(TimeStamp::Now(), true);
-  }
+  
+  trans->SetResponseStart(TimeStamp::Now(), true);
 
   
   MOZ_ASSERT(trans->mWriter);
@@ -1675,46 +1673,45 @@ void nsHttpTransaction::Close(nsresult reason) {
   
   
   
-  if (TimingEnabled()) {
-    const TimingStruct timings = Timings();
-    if (timings.responseEnd.IsNull() && !timings.responseStart.IsNull()) {
-      SetResponseEnd(TimeStamp::Now());
-    }
 
-    
-    if ((mContentRead > TELEMETRY_REQUEST_SIZE_10M) &&
-        !timings.requestStart.IsNull() && !timings.responseEnd.IsNull()) {
-      TimeDuration elapsed = timings.responseEnd - timings.requestStart;
-      double megabits = static_cast<double>(mContentRead) * 8.0 / 1000000.0;
-      uint32_t mpbs = static_cast<uint32_t>(megabits / elapsed.ToSeconds());
+  const TimingStruct timings = Timings();
+  if (timings.responseEnd.IsNull() && !timings.responseStart.IsNull()) {
+    SetResponseEnd(TimeStamp::Now());
+  }
 
-      switch (mHttpVersion) {
-        case HttpVersion::v1_0:
-        case HttpVersion::v1_1:
-          glean::networking::http_1_download_throughput.AccumulateSingleSample(
-              mpbs);
-          break;
-        case HttpVersion::v2_0:
-          glean::networking::http_2_download_throughput.AccumulateSingleSample(
-              mpbs);
-          break;
-        case HttpVersion::v3_0:
-          glean::networking::http_3_download_throughput.AccumulateSingleSample(
-              mpbs);
-          if (mContentRead <= TELEMETRY_REQUEST_SIZE_50M) {
-            glean::networking::http_3_download_throughput_10_50
-                .AccumulateSingleSample(mpbs);
-          } else if (mContentRead <= TELEMETRY_REQUEST_SIZE_100M) {
-            glean::networking::http_3_download_throughput_50_100
-                .AccumulateSingleSample(mpbs);
-          } else {
-            glean::networking::http_3_download_throughput_100
-                .AccumulateSingleSample(mpbs);
-          }
-          break;
-        default:
-          break;
-      }
+  
+  if ((mContentRead > TELEMETRY_REQUEST_SIZE_10M) &&
+      !timings.requestStart.IsNull() && !timings.responseEnd.IsNull()) {
+    TimeDuration elapsed = timings.responseEnd - timings.requestStart;
+    double megabits = static_cast<double>(mContentRead) * 8.0 / 1000000.0;
+    uint32_t mpbs = static_cast<uint32_t>(megabits / elapsed.ToSeconds());
+
+    switch (mHttpVersion) {
+      case HttpVersion::v1_0:
+      case HttpVersion::v1_1:
+        glean::networking::http_1_download_throughput.AccumulateSingleSample(
+            mpbs);
+        break;
+      case HttpVersion::v2_0:
+        glean::networking::http_2_download_throughput.AccumulateSingleSample(
+            mpbs);
+        break;
+      case HttpVersion::v3_0:
+        glean::networking::http_3_download_throughput.AccumulateSingleSample(
+            mpbs);
+        if (mContentRead <= TELEMETRY_REQUEST_SIZE_50M) {
+          glean::networking::http_3_download_throughput_10_50
+              .AccumulateSingleSample(mpbs);
+        } else if (mContentRead <= TELEMETRY_REQUEST_SIZE_100M) {
+          glean::networking::http_3_download_throughput_50_100
+              .AccumulateSingleSample(mpbs);
+        } else {
+          glean::networking::http_3_download_throughput_100
+              .AccumulateSingleSample(mpbs);
+        }
+        break;
+      default:
+        break;
     }
   }
 
@@ -2506,9 +2503,7 @@ nsresult nsHttpTransaction::HandleContent(char* buf, uint32_t count,
     }
     ReleaseBlockingTransaction();
 
-    if (TimingEnabled()) {
-      SetResponseEnd(TimeStamp::Now());
-    }
+    SetResponseEnd(TimeStamp::Now());
 
     
     gHttpHandler->ObserveHttpActivityWithArgs(

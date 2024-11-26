@@ -4711,7 +4711,6 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
       do_QueryInterface(static_cast<nsIHttpChannel*>(this)));
   if (oldTimedChannel) {
     config.timedChannelInfo = Some(dom::TimedChannelInfo());
-    config.timedChannelInfo->timingEnabled() = LoadTimingEnabled();
     config.timedChannelInfo->redirectCount() = mRedirectCount;
     config.timedChannelInfo->internalRedirectCount() = mInternalRedirectCount;
     config.timedChannelInfo->asyncOpen() = mAsyncOpenTime;
@@ -4807,8 +4806,6 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
   
   nsCOMPtr<nsITimedChannel> newTimedChannel(do_QueryInterface(newChannel));
   if (config.timedChannelInfo && newTimedChannel) {
-    newTimedChannel->SetTimingEnabled(config.timedChannelInfo->timingEnabled());
-
     
     
     
@@ -5377,18 +5374,6 @@ HttpBaseChannel::SetMatchedTrackingInfo(
 
 
 NS_IMETHODIMP
-HttpBaseChannel::SetTimingEnabled(bool enabled) {
-  StoreTimingEnabled(enabled);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpBaseChannel::GetTimingEnabled(bool* _retval) {
-  *_retval = LoadTimingEnabled();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 HttpBaseChannel::GetChannelCreation(TimeStamp* _retval) {
   *_retval = mChannelCreationTimestamp;
   return NS_OK;
@@ -5860,12 +5845,6 @@ IMPL_TIMING_ATTR(TransactionPending)
 #undef IMPL_TIMING_ATTR
 
 void HttpBaseChannel::MaybeReportTimingData() {
-  
-  
-  if (!LoadTimingEnabled()) {
-    return;
-  }
-
   
   
   

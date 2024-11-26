@@ -106,9 +106,6 @@ constexpr nsLiteralCString kHttp3Versions[] = {"h3-29"_ns, "h3-30"_ns,
 #define NS_HTTP_LOAD_ANONYMOUS (1 << 4)
 
 
-#define NS_HTTP_TIMING_ENABLED (1 << 5)
-
-
 
 #define NS_HTTP_LOAD_AS_BLOCKING (1 << 6)
 

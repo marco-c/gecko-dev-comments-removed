@@ -125,9 +125,7 @@ void InterceptedHttpChannel::AsyncOpenInternal() {
 
   
   
-  if (LoadTimingEnabled()) {
-    MOZ_DIAGNOSTIC_ASSERT(!mAsyncOpenTime.IsNull());
-  }
+  MOZ_DIAGNOSTIC_ASSERT(!mAsyncOpenTime.IsNull());
 
   StoreIsPending(true);
   StoreResponseCouldBeSynthesized(true);
