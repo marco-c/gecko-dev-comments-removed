@@ -341,9 +341,9 @@ void nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    lineLayout->BeginLineReflow(0, 0, reflowInput->ComputedISize(),
-                                NS_UNCONSTRAINEDSIZE, false, false, reflowWM,
-                                nsSize(0, 0));
+    lineLayout->BeginLineReflow(
+        0, 0, reflowInput->ComputedISize(), NS_UNCONSTRAINEDSIZE, false, false,
+        CollapseEmptyInlineFramesInLine::Collapse, reflowWM, nsSize(0, 0));
     lineLayout->AttachRootFrameToBaseLineLayout();
   }
 
