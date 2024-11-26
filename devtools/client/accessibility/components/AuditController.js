@@ -28,13 +28,9 @@ class AuditController extends React.Component {
     this.onAudited = this.onAudited.bind(this);
   }
 
-  
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     const { accessibleFront } = this.props;
     accessibleFront.on("audited", this.onAudited);
-  }
-
-  componentDidMount() {
     this.maybeRequestAudit();
   }
 
