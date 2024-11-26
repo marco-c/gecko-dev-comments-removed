@@ -684,7 +684,7 @@ def build_docker_worker_payload(config, task, task_def):
                 
                 
                 
-                Optional("format"): Any("rar", "tar.bz2", "tar.gz", "zip"),
+                Optional("format"): Any("rar", "tar.bz2", "tar.gz", "zip", "tar.xz"),
             }
         ],
         
