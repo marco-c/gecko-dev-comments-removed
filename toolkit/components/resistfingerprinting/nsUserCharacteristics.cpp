@@ -675,7 +675,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 
 
 
-const int kSubmissionSchema = 11;
+const int kSubmissionSchema = 12;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
