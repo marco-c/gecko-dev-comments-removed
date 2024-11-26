@@ -958,7 +958,7 @@ nsresult nsPrintSettingsService::MaybeSavePrintSettingsToPrefs(
   
   
   if (prtName.IsEmpty()) {
-    MOZ_DIAGNOSTIC_ASSERT(false, "Print settings must be saved with a prefix");
+    MOZ_DIAGNOSTIC_CRASH("Print settings must be saved with a prefix");
     return NS_ERROR_FAILURE;
   }
 #endif

@@ -49,7 +49,7 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
   
   
   if (rootElement->CanAttachShadowDOM()) {
-    MOZ_DIAGNOSTIC_ASSERT(false, "We shouldn't be getting this root element");
+    MOZ_DIAGNOSTIC_CRASH("We shouldn't be getting this root element");
     return NS_ERROR_UNEXPECTED;
   }
 
