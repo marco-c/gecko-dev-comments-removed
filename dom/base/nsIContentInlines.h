@@ -184,15 +184,11 @@ inline bool nsINode::IsInDesignMode() const {
     return false;
   }
 
-  if (IsDocument()) {
-    return HasFlag(NODE_IS_EDITABLE);
-  }
-
   
   
   
   
-  if (IsInUncomposedDoc() && GetUncomposedDoc()->HasFlag(NODE_IS_EDITABLE)) {
+  if (IsInUncomposedDoc()) {
     return true;
   }
 
