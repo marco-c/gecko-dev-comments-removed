@@ -46,7 +46,7 @@ namespace a11y {
 
 static constexpr uint64_t kNecessaryBoundsDomains =
     CacheDomain::Bounds | CacheDomain::TransformMatrix | CacheDomain::Style |
-    CacheDomain::ScrollPosition | CacheDomain::APZ;
+    CacheDomain::ScrollPosition;
 static constexpr uint64_t kNecessaryStateDomains =
     CacheDomain::State | CacheDomain::Viewport;
 
@@ -784,26 +784,6 @@ bool RemoteAccessible::ApplyScrollOffset(nsRect& aBounds) const {
   return true;
 }
 
-void RemoteAccessible::ApplyVisualViewportOffset(nsRect& aBounds) const {
-  ASSERT_DOMAINS_ACTIVE(CacheDomain::APZ);
-  MOZ_ASSERT(IsDoc(), "Attempting to get visual viewport data from non-doc?");
-  Maybe<const nsTArray<int32_t>&> maybeViewportOffset =
-      mCachedFields->GetAttribute<nsTArray<int32_t>>(
-          CacheKey::VisualViewportOffset);
-
-  if (!maybeViewportOffset || maybeViewportOffset->Length() != 2) {
-    return;
-  }
-  
-  
-  const nsTArray<int32_t>& viewportOffset = *maybeViewportOffset;
-
-  
-  
-  
-  aBounds.MoveBy(-viewportOffset[0], -viewportOffset[1]);
-}
-
 nsRect RemoteAccessible::BoundsInAppUnits() const {
   if (RequestDomainsIfInactive(kNecessaryBoundsDomains)) {
     return {};
@@ -901,10 +881,6 @@ LayoutDeviceIntRect RemoteAccessible::BoundsWithOffset(
         
         
         if (remoteAcc->IsDoc()) {
-          
-          
-          
-          remoteAcc->ApplyVisualViewportOffset(bounds);
           
           
           

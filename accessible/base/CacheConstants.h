@@ -38,7 +38,6 @@ class CacheDomain {
   static constexpr uint64_t InnerHTML = ((uint64_t)0x1) << 17;
 #endif
   static constexpr uint64_t TextBounds = ((uint64_t)0x1) << 18;
-  static constexpr uint64_t APZ = ((uint64_t)0x1) << 19;
   static constexpr uint64_t All = ~((uint64_t)0x0);
 };
 
@@ -117,11 +116,6 @@ class CacheKey {
   
   static constexpr nsStaticAtom* AppUnitsPerDevPixel =
       nsGkAtoms::_moz_device_pixel_ratio;
-  
-  
-  
-  
-  static constexpr nsStaticAtom* VisualViewportOffset = nsGkAtoms::voffset_;
   
   
   
