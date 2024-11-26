@@ -32,8 +32,6 @@ class TrustedHTMLOrNullIsEmptyString;
 
 namespace TrustedTypeUtils {
 
-template <typename T>
-nsString GetTrustedTypeName();
 
 
 
@@ -52,10 +50,10 @@ MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantString(
     Maybe<nsAutoString>& aResultHolder, ErrorResult& aError);
 
 
-template <typename ExpectedType>
+
 MOZ_CAN_RUN_SCRIPT void ProcessValueWithADefaultPolicy(
     const Document& aDocument, const nsAString& aInput, const nsAString& aSink,
-    ExpectedType** aResult, ErrorResult& aError);
+    TrustedHTML** aResult, ErrorResult& aError);
 
 }  
 
@@ -87,15 +85,12 @@ MOZ_CAN_RUN_SCRIPT void ProcessValueWithADefaultPolicy(
     const nsString mData;                                              \
                                                                        \
    private:                                                            \
-    template <typename T, typename... Args>                            \
-    friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);             \
     friend mozilla::dom::TrustedTypePolicy;                            \
     friend mozilla::dom::TrustedTypePolicyFactory;                     \
-    template <typename ExpectedType>                                   \
     friend void                                                        \
     mozilla::dom::TrustedTypeUtils::ProcessValueWithADefaultPolicy(    \
         const Document& aDocument, const nsAString&, const nsAString&, \
-        ExpectedType**, ErrorResult&);                                 \
+        TrustedHTML**, ErrorResult&);                                  \
                                                                        \
     explicit _class(const nsAString& aData) : mData{aData} {           \
       MOZ_ASSERT(!aData.IsVoid());                                     \
