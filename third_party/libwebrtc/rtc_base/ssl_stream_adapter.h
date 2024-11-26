@@ -185,6 +185,9 @@ class SSLStreamAdapter : public StreamInterface {
   
   
   virtual bool GetSslCipherSuite(int* cipher_suite);
+  
+  
+  virtual std::optional<absl::string_view> GetTlsCipherSuiteName() const = 0;
 
   
   
@@ -235,11 +238,6 @@ class SSLStreamAdapter : public StreamInterface {
   
   static bool IsAcceptableCipher(int cipher, KeyType key_type);
   static bool IsAcceptableCipher(absl::string_view cipher, KeyType key_type);
-
-  
-  
-  
-  static std::string SslCipherSuiteToName(int cipher_suite);
 
   
   

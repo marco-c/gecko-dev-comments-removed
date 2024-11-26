@@ -103,8 +103,7 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter,
   void Close() override;
   StreamState GetState() const override;
 
-  
-  static std::string SslCipherSuiteToName(int crypto_suite);
+  std::optional<absl::string_view> GetTlsCipherSuiteName() const override;
 
   bool GetSslCipherSuite(int* cipher) override;
   [[deprecated("Use GetSslVersionBytes")]] SSLProtocolVersion GetSslVersion()

@@ -169,6 +169,7 @@ class DtlsTransport : public DtlsTransportInternal {
 
   
   bool GetSslCipherSuite(int* cipher) override;
+  std::optional<absl::string_view> GetTlsCipherSuiteName() const override;
 
   
   

@@ -70,6 +70,7 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   
   
   virtual bool GetSslCipherSuite(int* cipher) = 0;
+  virtual std::optional<absl::string_view> GetTlsCipherSuiteName() const = 0;
 
   
   
