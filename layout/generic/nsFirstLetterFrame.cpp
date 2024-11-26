@@ -226,7 +226,7 @@ void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
     
     ll.BeginLineReflow(
         bp.IStart(wm), bp.BStart(wm), availSize.ISize(wm), NS_UNCONSTRAINEDSIZE,
-        false, true, kidWritingMode,
+        false, true, CollapseEmptyInlineFramesInLine::Collapse, kidWritingMode,
         nsSize(aReflowInput.AvailableWidth(), aReflowInput.AvailableHeight()));
     rs.mLineLayout = &ll;
     ll.SetInFirstLetter(true);

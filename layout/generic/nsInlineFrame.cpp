@@ -154,21 +154,6 @@ bool nsInlineFrame::IsEmpty() {
   return true;
 }
 
-nscoord nsInlineFrame::GetCaretBaseline() const {
-  if (mBaseline == 0 && mRect.IsEmpty()) {
-    nsBlockFrame* container = do_QueryFrame(FindLineContainer());
-    
-    
-    
-    
-    if (container && container->LinesAreEmpty()) {
-      nscoord blockSize = container->ContentBSize(GetWritingMode());
-      return GetFontMetricsDerivedCaretBaseline(blockSize);
-    }
-  }
-  return nsIFrame::GetCaretBaseline();
-}
-
 nsIFrame::FrameSearchResult nsInlineFrame::PeekOffsetCharacter(
     bool aForward, int32_t* aOffset, PeekOffsetCharacterOptions aOptions) {
   
