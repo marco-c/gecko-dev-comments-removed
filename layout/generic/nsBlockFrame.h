@@ -233,13 +233,12 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   
-  bool MarkerIsEmpty() const;
+  
+  
+  bool MarkerIsEmpty(const nsIFrame* aMarker) const;
 
   
   bool HasMarker() const { return HasAnyStateBits(NS_BLOCK_HAS_MARKER); }
-
-  
-  bool HasInsideMarker() const;
 
   
   bool HasOutsideMarker() const;
