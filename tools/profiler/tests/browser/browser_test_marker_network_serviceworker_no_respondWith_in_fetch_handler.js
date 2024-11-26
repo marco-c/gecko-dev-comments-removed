@@ -202,6 +202,7 @@ add_task(async function test_network_markers_service_worker_use() {
         status: "STATUS_STOP",
         URI: expectedFile,
         httpVersion: "http/1.1",
+        classOfService: "Unset",
         requestMethod: "GET",
         contentType: Expect.stringMatches(/^(text\/html|image\/svg\+xml)$/),
         startTime: Expect.number(),
@@ -226,6 +227,7 @@ add_task(async function test_network_markers_service_worker_use() {
         URI: expectedFile,
         RedirectURI: expectedFile,
         httpVersion: "http/1.1",
+        classOfService: "Unset",
         requestMethod: "GET",
         contentType: null,
         startTime: Expect.number(),
@@ -249,17 +251,23 @@ add_task(async function test_network_markers_service_worker_use() {
           
           
           cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
+          classOfService: "UrgentStart",
         });
-        Assert.objectContainsOnly(contentStopMarker.data, commonDataProperties);
+        Assert.objectContainsOnly(contentStopMarker.data, {
+          ...commonDataProperties,
+          classOfService: "UrgentStart",
+        });
 
         Assert.objectContainsOnly(parentRedirectMarkerIntercept.data, {
           ...commonRedirectProperties,
           redirectId: parentRedirectMarkerReset.data.id,
           cache: "Unresolved",
+          classOfService: "UrgentStart",
         });
         Assert.objectContainsOnly(parentRedirectMarkerReset.data, {
           ...commonRedirectProperties,
           redirectId: parentStopMarker.data.id,
+          classOfService: "UrgentStart",
         });
 
         

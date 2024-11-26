@@ -165,6 +165,7 @@ add_task(async function test_network_markers_service_worker_use() {
         status: "STATUS_STOP",
         URI: expectedFile,
         httpVersion: "http/1.1",
+        classOfService: "Unset",
         requestMethod: "GET",
         contentType: Expect.stringMatches(/^(text\/html|image\/svg\+xml)$/),
         startTime: Expect.number(),
@@ -196,9 +197,13 @@ add_task(async function test_network_markers_service_worker_use() {
           
           
           cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
+          classOfService: "UrgentStart",
         });
 
-        Assert.objectContainsOnly(contentMarker.data, commonDataProperties);
+        Assert.objectContainsOnly(contentMarker.data, {
+          ...commonDataProperties,
+          classOfService: "UrgentStart",
+        });
       } else {
         
         Assert.objectContainsOnly(parentMarker.data, {
