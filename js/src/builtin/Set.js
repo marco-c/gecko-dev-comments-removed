@@ -99,7 +99,7 @@ function SetIteratorNext() {
     
 
     
-    var itemKind = UnsafeGetInt32FromReservedSlot(O, ITERATOR_SLOT_ITEM_KIND);
+    var itemKind = UnsafeGetInt32FromReservedSlot(O, MAP_SET_ITERATOR_SLOT_ITEM_KIND);
 
     var result;
     if (itemKind === ITEM_KIND_VALUE) {

@@ -98,7 +98,7 @@ function MapIteratorNext() {
     
 
     
-    var itemKind = UnsafeGetInt32FromReservedSlot(O, ITERATOR_SLOT_ITEM_KIND);
+    var itemKind = UnsafeGetInt32FromReservedSlot(O, MAP_SET_ITERATOR_SLOT_ITEM_KIND);
 
     var result;
     if (itemKind === ITEM_KIND_KEY) {
@@ -132,7 +132,6 @@ function $MapSpecies() {
 }
 SetCanonicalName($MapSpecies, "get [Symbol.species]");
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -197,4 +196,3 @@ function MapGroupBy(items, callbackfn) {
   
   return map;
 }
-#endif

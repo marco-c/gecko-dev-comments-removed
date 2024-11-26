@@ -1465,6 +1465,10 @@ enum {
   ArrayIteratorSlotCount
 };
 
+static_assert(ArrayIteratorSlotIteratedObject == ITERATOR_SLOT_TARGET);
+static_assert(ArrayIteratorSlotNextIndex == ITERATOR_SLOT_NEXT_INDEX);
+static_assert(ArrayIteratorSlotItemKind == ARRAY_ITERATOR_SLOT_ITEM_KIND);
+
 const JSClass ArrayIteratorObject::class_ = {
     "Array Iterator",
     JSCLASS_HAS_RESERVED_SLOTS(ArrayIteratorSlotCount),
@@ -1505,6 +1509,9 @@ enum {
   StringIteratorSlotNextIndex,
   StringIteratorSlotCount
 };
+
+static_assert(StringIteratorSlotIteratedObject == ITERATOR_SLOT_TARGET);
+static_assert(StringIteratorSlotNextIndex == ITERATOR_SLOT_NEXT_INDEX);
 
 const JSClass StringIteratorObject::class_ = {
     "String Iterator",
