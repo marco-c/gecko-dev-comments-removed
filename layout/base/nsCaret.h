@@ -56,15 +56,6 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-
-
-
-
-  void SetIgnoreUserModify(bool aIgnoreUserModify);
-  
-
-
-
   void SetVisible(bool aVisible);
   
 
@@ -253,11 +244,6 @@ class nsCaret final : public nsISelectionListener {
 
 
   bool mShowDuringSelection = false;
-  
-
-
-
-  bool mIgnoreUserModify = true;
 
   
 

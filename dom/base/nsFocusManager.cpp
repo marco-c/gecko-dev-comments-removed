@@ -3243,8 +3243,6 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
       aPresShell->SetCaretEnabled(false);
 
       
-      caret->SetIgnoreUserModify(true);
-      
       caret->SetSelection(domSelection);
 
       

@@ -143,7 +143,6 @@ void nsCaret::SetSelection(Selection* aDOMSel) {
 void nsCaret::SetVisible(bool aVisible) {
   const bool wasVisible = mVisible;
   mVisible = aVisible;
-  mIgnoreUserModify = aVisible;
   if (mVisible != wasVisible) {
     CaretVisibilityMaybeChanged();
   }
@@ -500,9 +499,7 @@ nsIFrame* nsCaret::GetPaintGeometry(nsRect* aCaretRect, nsRect* aHookRect,
   
   
   
-  const nsStyleUI* ui = unadjustedFrame->StyleUI();
-  if ((!mIgnoreUserModify && ui->UserModify() == StyleUserModify::ReadOnly) ||
-      unadjustedFrame->IsContentDisabled()) {
+  if (unadjustedFrame->IsContentDisabled()) {
     return nullptr;
   }
 
@@ -727,9 +724,4 @@ void nsCaret::CaretBlinkCallback(nsITimer* aTimer, void* aClosure) {
       theCaret->StopBlinking();
     }
   }
-}
-
-void nsCaret::SetIgnoreUserModify(bool aIgnoreUserModify) {
-  mIgnoreUserModify = aIgnoreUserModify;
-  SchedulePaint();
 }

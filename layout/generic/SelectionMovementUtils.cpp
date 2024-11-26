@@ -469,7 +469,6 @@ static void AdjustCaretFrameForLineEnd(nsIFrame** aFrame, uint32_t* aOffset,
       return;
     }
     
-    
     MOZ_ASSERT(r->IsTextFrame(), "Expected text frame");
     *aFrame = r;
     *aOffset = (static_cast<nsTextFrame*>(r))->GetContentEnd();

@@ -5589,14 +5589,6 @@ nsresult EditorBase::InitializeSelection(
       NS_SUCCEEDED(rvIgnored),
       "nsISelectionController::SetCaretEnabled() failed, but ignored");
   
-  
-  
-  
-  
-  
-  caret->SetIgnoreUserModify(aOriginalEventTargetNode.IsInDesignMode());
-
-  
   rvIgnored =
       selectionController->SetSelectionFlags(nsISelectionDisplay::DISPLAY_ALL);
   NS_WARNING_ASSERTION(
@@ -5674,7 +5666,6 @@ nsresult EditorBase::FinalizeSelection() {
   }
 
   if (RefPtr<nsCaret> caret = GetCaret()) {
-    caret->SetIgnoreUserModify(true);
     DebugOnly<nsresult> rvIgnored = selectionController->SetCaretEnabled(false);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
