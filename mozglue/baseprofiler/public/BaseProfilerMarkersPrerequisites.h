@@ -879,6 +879,11 @@ class MarkerSchema {
     return *this;
   }
 
+  MarkerSchema& SetIsStackBased() {
+    mIsStackBased = true;
+    return *this;
+  }
+
   
   
   
@@ -959,6 +964,7 @@ class MarkerSchema {
   std::string mChartLabel;
   std::string mTooltipLabel;
   std::string mTableLabel;
+  bool mIsStackBased = false;
   
  private:
   struct DynamicData {
@@ -1033,6 +1039,11 @@ struct BaseMarkerType {
 
   
   
+  
+  static constexpr bool IsStackBased = false;
+
+  
+  
   static constexpr bool StoreName = false;
 
   static constexpr MarkerSchema::ETWMarkerGroup Group =
@@ -1052,6 +1063,9 @@ struct BaseMarkerType {
     }
     if (T::TooltipLabel) {
       schema.SetTooltipLabel(T::TooltipLabel);
+    }
+    if (T::IsStackBased) {
+      schema.SetIsStackBased();
     }
     for (const MS::PayloadField field : T::PayloadFields) {
       if (field.Label) {
