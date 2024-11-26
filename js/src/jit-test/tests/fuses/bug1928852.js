@@ -1,0 +1,16 @@
+
+
+if (!('oomTest' in this)) {
+  return;
+}
+
+g = newGlobal();
+g.eval(`
+Int8Array;
+evalcx('\
+  /x/;\
+  oomTest(function() {\
+    eval("function b() {}; function* f() {}");\
+  });\
+', newGlobal());
+`);
