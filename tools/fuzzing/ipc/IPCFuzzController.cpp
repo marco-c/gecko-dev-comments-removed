@@ -81,6 +81,7 @@ IPCFuzzController::IPCFuzzController()
   portNameToIndex["PRemoteWorkerService"] = 10;
   portNameToIndex["PBackgroundLSDatabase"] = 11;
   portNameToIndex["PRemoteWorkerNonLifeCycleOpController"] = 12;
+  portNameToIndex["PNotification"] = 13;
 
   
   
