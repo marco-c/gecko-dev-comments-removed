@@ -75,7 +75,7 @@ add_task(async function test_observe_add_user_pref() {
       Preferences.reset(PREF_NEW);
       this.search(PREF_NEW);
       row = this.getRow(PREF_NEW);
-      Assert.ok(row.hasClass("deleted"));
+      Assert.ok(!row.hasClass("deleted"));
 
       
       Preferences.set(PREF_NEW, value);
