@@ -51,4 +51,14 @@ enum { LEGACY_FACTORY_FUNCTION_RESERVED_SLOT = 0 };
 
 #define OBSERVABLE_ARRAY_BACKING_LIST_OBJECT_SLOT 1
 
+namespace mozilla::dom {
+
+
+
+enum ExpandoSlots {
+  DOM_EXPANDO_RESERVED_SLOTS = 4,
+};
+
+}  
+
 #endif 
