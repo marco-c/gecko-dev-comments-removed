@@ -58,23 +58,19 @@ void NodeChannel::Destroy() {
   
   
   
-  MessageLoop* ioThread = XRE_GetIOMessageLoop();
-  if (ioThread->IsAcceptingTasks()) {
-    ioThread->PostTask(NewNonOwningRunnableMethod("NodeChannel::Destroy", this,
-                                                  &NodeChannel::FinalDestroy));
-    return;
-  }
+  nsISerialEventTarget* ioThread = XRE_GetAsyncIOEventTarget();
 
   
   
   
-  
-  if (MessageLoop::current() == ioThread) {
+  if (ioThread->IsOnCurrentThread() && MessageLoop::current() &&
+      !MessageLoop::current()->IsAcceptingTasks()) {
     FinalDestroy();
     return;
   }
 
-  MOZ_ASSERT_UNREACHABLE("Leaking NodeChannel after IOThread destroyed!");
+  MOZ_ALWAYS_SUCCEEDS(ioThread->Dispatch(NewNonOwningRunnableMethod(
+      "NodeChannel::Destroy", this, &NodeChannel::FinalDestroy)));
 }
 
 void NodeChannel::FinalDestroy() {
@@ -202,7 +198,7 @@ void NodeChannel::SendMessage(UniquePtr<IPC::Message> aMessage) {
     
     State expected = State::Active;
     if (mState.compare_exchange_strong(expected, State::Closing)) {
-      XRE_GetIOMessageLoop()->PostTask(
+      XRE_GetAsyncIOEventTarget()->Dispatch(
           NewRunnableMethod("NodeChannel::CloseForSendError", this,
                             &NodeChannel::OnChannelError));
     }
