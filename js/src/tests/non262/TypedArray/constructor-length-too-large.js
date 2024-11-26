@@ -7,11 +7,11 @@
 
 
 const INT32_MAX = 2**31 - 1;
-const SIXTEENGB = 16 * 1024 * 1024 * 1024;
+const EIGHTGB = 8 * 1024 * 1024 * 1024;
 
 function tooLarge(elementSize) {
     if (largeArrayBufferSupported()) {
-        return (SIXTEENGB / elementSize) + 1;
+        return (EIGHTGB / elementSize) + 1;
     }
     return (INT32_MAX + 1) / elementSize;
 }
