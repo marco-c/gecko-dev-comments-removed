@@ -488,5 +488,15 @@ class InputTestHelpers {
     await firstInput.updateComplete;
     ok(firstInput.inputEl.checked, "Input is checked.");
     ok(firstInput.checked, "Checked state is propagated.");
+
+    
+    
+    firstInput.checked = false;
+    await firstInput.updateComplete;
+
+    synthesizeMouseAtCenter(firstInput.inputEl, {});
+    await firstInput.updateComplete;
+    ok(firstInput.inputEl.checked, "Input is checked via mouse.");
+    ok(firstInput.checked, "Checked state is propagated.");
   }
 }
