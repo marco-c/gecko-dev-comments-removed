@@ -1531,22 +1531,9 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
   ResolveAutoFlexBasisAndMinSize(item, childRI, aAxisTracker);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-static nscoord PartiallyResolveAutoMinSize(
+nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
     const FlexItem& aFlexItem, const ReflowInput& aItemReflowInput,
-    const FlexboxAxisTracker& aAxisTracker) {
+    const FlexboxAxisTracker& aAxisTracker) const {
   MOZ_ASSERT(aFlexItem.NeedsMinSizeAutoResolution(),
              "only call for FlexItems that need min-size auto resolution");
 

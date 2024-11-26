@@ -440,6 +440,25 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
 
 
+
+
+  nscoord PartiallyResolveAutoMinSize(
+      const FlexItem& aFlexItem, const ReflowInput& aItemReflowInput,
+      const FlexboxAxisTracker& aAxisTracker) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   void GenerateFlexLines(const ReflowInput& aReflowInput,
                          const nscoord aTentativeContentBoxMainSize,
                          const nscoord aTentativeContentBoxCrossSize,
