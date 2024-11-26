@@ -105,6 +105,7 @@ class RtpSenderInternal : public RtpSenderInterface {
   
   
   virtual void SetSendCodecs(std::vector<cricket::Codec> send_codecs) = 0;
+  virtual std::vector<cricket::Codec> GetSendCodecs() const = 0;
 };
 
 
@@ -224,6 +225,9 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   void SetSendCodecs(std::vector<cricket::Codec> send_codecs) override {
     send_codecs_ = send_codecs;
+  }
+  std::vector<cricket::Codec> GetSendCodecs() const override {
+    return send_codecs_;
   }
 
  protected:
