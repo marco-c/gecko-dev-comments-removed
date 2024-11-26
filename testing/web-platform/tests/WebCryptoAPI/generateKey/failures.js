@@ -166,6 +166,14 @@ function run_test(algorithmNames) {
         });
     });
 
+    
+    allValidUsages(["decrypt", "sign", "deriveBits"], true, []) 
+        .forEach(function(usages) {
+            [false, true, "RED", 7].forEach(function(extractable){
+                testError({}, extractable, usages, "TypeError", "Empty algorithm");
+            });
+        });
+
 
     
     
