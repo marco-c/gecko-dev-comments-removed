@@ -29,6 +29,7 @@
 #include "src/core/SkBlenderBase.h"
 #include "src/core/SkBlurEngine.h"
 #include "src/core/SkCanvasPriv.h"
+#include "src/core/SkColorSpacePriv.h"
 #include "src/core/SkDevice.h"
 #include "src/core/SkImageFilterCache.h"
 #include "src/core/SkImageFilter_Base.h"
@@ -39,6 +40,8 @@
 #include "src/effects/colorfilters/SkColorFilterBase.h"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 namespace skif {
 
@@ -97,7 +100,7 @@ void decompose_transform(const SkMatrix& transform, SkPoint representativePoint,
         
         
         SkScalar approxScale = SkMatrixPriv::DifferentialAreaScale(transform, representativePoint);
-        if (SkScalarIsFinite(approxScale) && !SkScalarNearlyZero(approxScale)) {
+        if (SkIsFinite(approxScale) && !SkScalarNearlyZero(approxScale)) {
             
             approxScale = SkScalarSqrt(approxScale);
         } else {
@@ -127,12 +130,12 @@ std::optional<LayerSpace<SkMatrix>> periodic_axis_transform(
     double cropHeight = crop.bottom() - cropT;
 
     
-    int periodL = sk_double_floor2int((output.left() - cropL) / cropWidth);
-    int periodT = sk_double_floor2int((output.top() - cropT) / cropHeight);
-    int periodR = sk_double_ceil2int((output.right() - cropL) / cropWidth);
-    int periodB = sk_double_ceil2int((output.bottom() - cropT) / cropHeight);
+    double periodL = std::floor((output.left() - cropL) / cropWidth);
+    double periodT = std::floor((output.top() - cropT) / cropHeight);
+    double periodR = std::ceil((output.right() - cropL) / cropWidth);
+    double periodB = std::ceil((output.bottom() - cropT) / cropHeight);
 
-    if (periodR - periodL <= 1 && periodB - periodT <= 1) {
+    if (periodR - periodL <= 1.0 && periodB - periodT <= 1.0) {
         
         
         
@@ -143,11 +146,12 @@ std::optional<LayerSpace<SkMatrix>> periodic_axis_transform(
 
         if (tileMode == SkTileMode::kMirror) {
             
-            if (periodL % 2 != 0) {
+            
+            if (std::fmod(periodL, 2.f) > SK_ScalarNearlyZero) {
                 sx = -1.f;
                 tx = cropWidth - tx;
             }
-            if (periodT % 2 != 0) {
+            if (std::fmod(periodT, 2.f) > SK_ScalarNearlyZero) {
                 sy = -1.f;
                 ty = cropHeight - ty;
             }
@@ -198,7 +202,16 @@ public:
         return SkImages::RasterFromBitmap(data);
     }
 
+#if defined(SK_USE_LEGACY_BLUR_RASTER)
     const SkBlurEngine* getBlurEngine() const override { return nullptr; }
+#else
+    bool useLegacyFilterResultBlur() const override { return false; }
+
+    const SkBlurEngine* getBlurEngine() const override {
+        return SkBlurEngine::GetRasterBlurEngine();
+    }
+#endif
+
 };
 
 } 
@@ -327,10 +340,10 @@ SkIRect Mapping::map<SkIRect>(const SkIRect& geom, const SkMatrix& matrix) {
         double r = (double)matrix.getScaleX()*geom.fRight  + (double)matrix.getTranslateX();
         double t = (double)matrix.getScaleY()*geom.fTop    + (double)matrix.getTranslateY();
         double b = (double)matrix.getScaleY()*geom.fBottom + (double)matrix.getTranslateY();
-        return {sk_double_saturate2int(sk_double_floor(std::min(l, r) + kRoundEpsilon)),
-                sk_double_saturate2int(sk_double_floor(std::min(t, b) + kRoundEpsilon)),
-                sk_double_saturate2int(sk_double_ceil(std::max(l, r)  - kRoundEpsilon)),
-                sk_double_saturate2int(sk_double_ceil(std::max(t, b)  - kRoundEpsilon))};
+        return {sk_double_saturate2int(std::floor(std::min(l, r) + kRoundEpsilon)),
+                sk_double_saturate2int(std::floor(std::min(t, b) + kRoundEpsilon)),
+                sk_double_saturate2int(std::ceil(std::max(l, r)  - kRoundEpsilon)),
+                sk_double_saturate2int(std::ceil(std::max(t, b)  - kRoundEpsilon))};
     } else {
         return RoundOut(matrix.mapRect(SkRect::Make(geom)));
     }
@@ -490,10 +503,10 @@ bool LayerSpace<SkMatrix>::inverseMapRect(const LayerSpace<SkIRect>& rect,
         double t = (rect.top()    - (double)fData.getTranslateY()) / (double)fData.getScaleY();
         double b = (rect.bottom() - (double)fData.getTranslateY()) / (double)fData.getScaleY();
 
-        SkIRect mapped{sk_double_saturate2int(sk_double_floor(std::min(l, r) + kRoundEpsilon)),
-                       sk_double_saturate2int(sk_double_floor(std::min(t, b) + kRoundEpsilon)),
-                       sk_double_saturate2int(sk_double_ceil(std::max(l, r)  - kRoundEpsilon)),
-                       sk_double_saturate2int(sk_double_ceil(std::max(t, b)  - kRoundEpsilon))};
+        SkIRect mapped{sk_double_saturate2int(std::floor(std::min(l, r) + kRoundEpsilon)),
+                       sk_double_saturate2int(std::floor(std::min(t, b) + kRoundEpsilon)),
+                       sk_double_saturate2int(std::ceil(std::max(l, r)  - kRoundEpsilon)),
+                       sk_double_saturate2int(std::ceil(std::max(t, b)  - kRoundEpsilon))};
         *out = LayerSpace<SkIRect>(mapped);
         return true;
     } else {
@@ -525,22 +538,32 @@ class FilterResult::AutoSurface {
 public:
     AutoSurface(const Context& ctx,
                 const LayerSpace<SkIRect>& dstBounds,
-                [[maybe_unused]] PixelBoundary boundary,
+                PixelBoundary boundary,
                 bool renderInParameterSpace,
                 const SkSurfaceProps* props = nullptr)
             : fDstBounds(dstBounds)
-#if defined(SK_DONT_PAD_LAYER_IMAGES)
-            , fBoundary(PixelBoundary::kUnknown) {
-#else
             , fBoundary(boundary) {
-#endif
-
-
-
-
+        
+        
+        
+        
         sk_sp<SkDevice> device = nullptr;
         if (!dstBounds.isEmpty()) {
-            fDstBounds.outset(LayerSpace<SkISize>({this->padding(), this->padding()}));
+            int padding = this->padding();
+            if (padding) {
+                fDstBounds.outset(LayerSpace<SkISize>({padding, padding}));
+                
+                
+                
+                
+                
+                if (fDstBounds.left() >= dstBounds.left() ||
+                    fDstBounds.right() <= dstBounds.right() ||
+                    fDstBounds.top() >= dstBounds.top() ||
+                    fDstBounds.bottom() <= dstBounds.bottom()) {
+                    return;
+                }
+            }
             device = ctx.backend()->makeDevice(SkISize(fDstBounds.size()),
                                                ctx.refColorSpace(),
                                                props);
@@ -575,8 +598,9 @@ public:
 
     explicit operator bool() const { return fCanvas.has_value(); }
 
-    SkDevice* device() { SkASSERT(fCanvas.has_value()); return SkCanvasPriv::TopDevice(&*fCanvas); }
-    SkCanvas* operator->() { SkASSERT(fCanvas.has_value()); return &*fCanvas; }
+    SkCanvas* canvas() { SkASSERT(fCanvas.has_value()); return &*fCanvas; }
+    SkDevice* device() { return SkCanvasPriv::TopDevice(this->canvas()); }
+    SkCanvas* operator->() { return this->canvas(); }
 
     FilterResult snap() {
         if (fCanvas.has_value()) {
@@ -718,7 +742,8 @@ SkEnumBitMask<FilterResult::BoundsAnalysis> FilterResult::analyzeBounds(
     
     
     
-    const bool decalLeaks = fTileMode == SkTileMode::kDecal &&
+    const bool decalLeaks = scope != BoundsScope::kRescale &&
+                            fTileMode == SkTileMode::kDecal &&
                             fSamplingOptions != kNearestNeighbor &&
                             !isPixelAligned;
 
@@ -942,6 +967,9 @@ FilterResult FilterResult::applyColorFilter(const Context& ctx,
                 SkPaint paint;
                 paint.setColor4f(SkColors::kTransparent, nullptr);
                 paint.setColorFilter(std::move(colorFilter));
+#if !defined(SK_USE_SRCOVER_FOR_FILTERS)
+                paint.setBlendMode(SkBlendMode::kSrc);
+#endif
                 surface->drawPaint(paint);
             }
             FilterResult solidColor = surface.snap();
@@ -955,8 +983,7 @@ FilterResult FilterResult::applyColorFilter(const Context& ctx,
             
             newLayerBounds.outset(LayerSpace<SkISize>({1, 1}));
             SkAssertResult(newLayerBounds.intersect(ctx.desiredOutput()));
-            FilterResult filtered = this->resolve(ctx, newLayerBounds,
-                                                  true);
+            FilterResult filtered = this->resolve(ctx, newLayerBounds, true);
             filtered.fColorFilter = std::move(colorFilter);
             filtered.updateTileMode(ctx, SkTileMode::kClamp);
             return filtered;
@@ -1250,51 +1277,55 @@ void FilterResult::draw(const Context& ctx,
         
         
         SkPaint paint;
-        paint.setBlender(sk_ref_sp(blender));
+        if (!preserveDeviceState && !blender) {
+            
+#if !defined(SK_USE_SRCOVER_FOR_FILTERS)
+            paint.setBlendMode(SkBlendMode::kSrc);
+#endif
+        } else {
+            paint.setBlender(sk_ref_sp(blender));
+        }
         paint.setShader(this->getAnalyzedShaderView(ctx, sampling, analysis));
         device->drawPaint(paint);
     } else {
-        this->drawAnalyzedImage(ctx, device, sampling, analysis, blender);
+        SkPaint paint;
+        paint.setBlender(sk_ref_sp(blender));
+        paint.setColorFilter(fColorFilter);
+
+        
+        
+        
+        SkMatrix netTransform = SkMatrix::Concat(device->localToDevice(), SkMatrix(fTransform));
+
+        
+        
+        if (this->canClampToTransparentBoundary(analysis) && fSamplingOptions == kDefaultSampling) {
+            SkASSERT(!(analysis & BoundsAnalysis::kRequiresShaderTiling));
+            
+            
+            if (!preserveDeviceState && !blender) {
+                
+                
+#if !defined(SK_USE_SRCOVER_FOR_FILTERS)
+                paint.setBlendMode(SkBlendMode::kSrc);
+#endif
+            }
+            netTransform.preTranslate(-1.f, -1.f);
+            device->drawSpecial(fImage->makePixelOutset().get(), netTransform, sampling, paint,
+                                SkCanvas::kFast_SrcRectConstraint);
+        } else {
+            paint.setAntiAlias(true);
+            SkCanvas::SrcRectConstraint constraint = SkCanvas::kFast_SrcRectConstraint;
+            if (analysis & BoundsAnalysis::kRequiresShaderTiling) {
+                constraint = SkCanvas::kStrict_SrcRectConstraint;
+                ctx.markShaderBasedTilingRequired(SkTileMode::kClamp);
+            }
+            device->drawSpecial(fImage.get(), netTransform, sampling, paint, constraint);
+        }
     }
 
     if (preserveDeviceState && (analysis & BoundsAnalysis::kRequiresLayerCrop)) {
         device->popClipStack();
-    }
-}
-
-void FilterResult::drawAnalyzedImage(const Context& ctx,
-                                     SkDevice* device,
-                                     const SkSamplingOptions& finalSampling,
-                                     SkEnumBitMask<BoundsAnalysis> analysis,
-                                     const SkBlender* blender) const {
-    SkASSERT(!(analysis & BoundsAnalysis::kHasLayerFillingEffect));
-
-    SkPaint paint;
-    paint.setBlender(sk_ref_sp(blender));
-    paint.setColorFilter(fColorFilter);
-
-    
-    
-    
-    SkMatrix netTransform = SkMatrix::Concat(device->localToDevice(), SkMatrix(fTransform));
-
-    
-    
-    if (this->canClampToTransparentBoundary(analysis) && fSamplingOptions == kDefaultSampling) {
-        SkASSERT(!(analysis & BoundsAnalysis::kRequiresShaderTiling));
-        
-        
-        netTransform.preTranslate(-1.f, -1.f);
-        device->drawSpecial(fImage->makePixelOutset().get(), netTransform, finalSampling, paint,
-                            SkCanvas::kFast_SrcRectConstraint);
-    } else {
-        paint.setAntiAlias(true);
-        SkCanvas::SrcRectConstraint constraint = SkCanvas::kFast_SrcRectConstraint;
-        if (analysis & BoundsAnalysis::kRequiresShaderTiling) {
-            constraint = SkCanvas::kStrict_SrcRectConstraint;
-            ctx.markShaderBasedTilingRequired(SkTileMode::kClamp);
-        }
-        device->drawSpecial(fImage.get(), netTransform, finalSampling, paint, constraint);
     }
 }
 
@@ -1426,7 +1457,7 @@ sk_sp<SkShader> FilterResult::getAnalyzedShaderView(
         imageShader = builder.makeShader();
     }
 
-    if (imageShader && !postDecal.isIdentity()) {
+    if (imageShader && (analysis & BoundsAnalysis::kRequiresDecalInLayerSpace)) {
         imageShader = imageShader->makeWithLocalMatrix(postDecal);
     }
 
@@ -1441,7 +1472,16 @@ sk_sp<SkShader> FilterResult::getAnalyzedShaderView(
     return imageShader;
 }
 
-static int downscale_step_count(float netScaleFactor) {
+
+
+namespace {
+
+
+
+template <typename T>
+using PixelSpace = LayerSpace<T>;
+
+int downscale_step_count(float netScaleFactor) {
     int steps = SkNextLog2(sk_float_ceil2int(1.f / netScaleFactor));
     
     
@@ -1451,7 +1491,7 @@ static int downscale_step_count(float netScaleFactor) {
         
         
         
-        static constexpr float kMultiPassLimit = 0.8f;
+        static constexpr float kMultiPassLimit = 0.9f;
         static constexpr float kNearIdentityLimit = 1.f - kRoundEpsilon; 
 
         float finalStepScale = netScaleFactor * (1 << (steps - 1));
@@ -1464,10 +1504,120 @@ static int downscale_step_count(float netScaleFactor) {
     return steps;
 }
 
+PixelSpace<SkRect> scale_about_center(const PixelSpace<SkRect> src, float sx, float sy) {
+    float cx = sx == 1.f ? 0.f : (0.5f * src.left() + 0.5f * src.right());
+    float cy = sy == 1.f ? 0.f : (0.5f * src.top()  + 0.5f * src.bottom());
+    return LayerSpace<SkRect>({(src.left()  - cx) * sx, (src.top()    - cy) * sy,
+                               (src.right() - cx) * sx, (src.bottom() - cy) * sy});
+}
 
+void draw_color_filtered_border(SkCanvas* canvas,
+                                PixelSpace<SkIRect> border,
+                                sk_sp<SkColorFilter> colorFilter) {
+    SkPaint cfOnly;
+    cfOnly.setColor4f(SkColors::kTransparent);
+    cfOnly.setColorFilter(std::move(colorFilter));
+#if !defined(SK_USE_SRCOVER_FOR_FILTERS)
+    cfOnly.setBlendMode(SkBlendMode::kSrc);
+#endif
 
-template <typename T>
-using PixelSpace = LayerSpace<T>;
+    canvas->drawIRect({border.left(),      border.top(),
+                       border.right(),     border.top() + 1},
+                       cfOnly); 
+    canvas->drawIRect({border.left(),      border.bottom() - 1,
+                       border.right(),     border.bottom()},
+                       cfOnly); 
+    canvas->drawIRect({border.left(),      border.top() + 1,
+                       border.left() + 1,  border.bottom() - 1},
+                       cfOnly); 
+    canvas->drawIRect({border.right() - 1, border.top() + 1,
+                       border.right(),     border.bottom() - 1},
+                       cfOnly); 
+}
+
+void draw_tiled_border(SkCanvas* canvas,
+                       SkTileMode tileMode,
+                       const SkPaint& paint,
+                       const PixelSpace<SkMatrix>& srcToDst,
+                       PixelSpace<SkRect> srcBorder,
+                       PixelSpace<SkRect> dstBorder) {
+    SkASSERT(tileMode != SkTileMode::kDecal); 
+
+    
+    
+    
+    auto drawEdge = [&](const SkRect& src, const SkRect& dst) {
+        canvas->save();
+        canvas->concat(SkMatrix::RectToRect(src, dst));
+        canvas->drawRect(src, paint);
+        canvas->restore();
+    };
+    auto drawCorner = [&](const SkPoint& src, const SkPoint& dst) {
+        drawEdge(SkRect::MakeXYWH(src.fX, src.fY, 1.f, 1.f),
+                 SkRect::MakeXYWH(dst.fX, dst.fY, 1.f, 1.f));
+    };
+
+    
+    
+    PixelSpace<SkRect> dstSampleBounds{dstBorder};
+    dstSampleBounds.inset(PixelSpace<SkSize>({1.f, 1.f}));
+
+    
+    PixelSpace<SkRect> srcSampleBounds;
+    SkAssertResult(srcToDst.inverseMapRect(dstSampleBounds, &srcSampleBounds));
+
+    if (tileMode == SkTileMode::kMirror || tileMode == SkTileMode::kRepeat) {
+        
+        
+        
+        
+        srcBorder = dstSampleBounds;
+        srcBorder.inset(PixelSpace<SkSize>({0.5f, 0.5f}));
+        SkAssertResult(srcToDst.inverseMapRect(srcBorder, &srcBorder));
+        srcBorder.outset(PixelSpace<SkSize>({0.5f, 0.5f}));
+    }
+
+    
+    
+    if (tileMode == SkTileMode::kRepeat) {
+        dstBorder = PixelSpace<SkRect>({dstBorder.right() - 1.f, dstBorder.bottom() - 1.f,
+                                        dstBorder.left()  + 1.f, dstBorder.top()    + 1.f});
+    }
+
+    
+    drawEdge({srcBorder.left(),        srcSampleBounds.top(),
+              srcBorder.left() + 1.f,  srcSampleBounds.bottom()},
+             {dstBorder.left(),        dstSampleBounds.top(),
+              dstBorder.left() + 1.f,  dstSampleBounds.bottom()}); 
+
+    drawEdge({srcBorder.right() - 1.f, srcSampleBounds.top(),
+              srcBorder.right(),       srcSampleBounds.bottom()},
+             {dstBorder.right() - 1.f, dstSampleBounds.top(),
+              dstBorder.right(),       dstSampleBounds.bottom()}); 
+
+    drawEdge({srcSampleBounds.left(),  srcBorder.top(),
+              srcSampleBounds.right(), srcBorder.top() + 1.f},
+             {dstSampleBounds.left(),  dstBorder.top(),
+              dstSampleBounds.right(), dstBorder.top() + 1.f});    
+
+    drawEdge({srcSampleBounds.left(),  srcBorder.bottom() - 1.f,
+              srcSampleBounds.right(), srcBorder.bottom()},
+             {dstSampleBounds.left(),  dstBorder.bottom() - 1.f,
+              dstSampleBounds.right(), dstBorder.bottom()});       
+
+    
+    
+    drawCorner({srcBorder.left(),        srcBorder.top()},
+               {dstBorder.left(),        dstBorder.top()});          
+    drawCorner({srcBorder.right() - 1.f, srcBorder.top()},
+               {dstBorder.right() - 1.f, dstBorder.top()});          
+    drawCorner({srcBorder.right() - 1.f, srcBorder.bottom() - 1.f},
+               {dstBorder.right() - 1.f, dstBorder.bottom() - 1.f}); 
+    drawCorner({srcBorder.left(),        srcBorder.bottom() - 1.f},
+               {dstBorder.left(),        dstBorder.bottom() - 1.f}); 
+}
+
+} 
 
 FilterResult FilterResult::rescale(const Context& ctx,
                                    const LayerSpace<SkSize>& scale,
@@ -1478,14 +1628,11 @@ FilterResult FilterResult::rescale(const Context& ctx,
         return {};
     }
 
-    int xSteps = downscale_step_count(scale.width());
-    int ySteps = downscale_step_count(scale.height());
-
     
     PixelSpace<SkIPoint> origin;
     const bool pixelAligned = is_nearly_integer_translation(fTransform, &origin);
     SkEnumBitMask<BoundsAnalysis> analysis = this->analyzeBounds(ctx.desiredOutput(),
-                                                                 BoundsScope::kShaderOnly);
+                                                                 BoundsScope::kRescale);
 
     
     
@@ -1495,12 +1642,19 @@ FilterResult FilterResult::rescale(const Context& ctx,
             !(analysis & BoundsAnalysis::kRequiresLayerCrop) &&
             !(enforceDecal && (analysis & BoundsAnalysis::kHasLayerFillingEffect));
 
+    
+    
+    const SkColorSpace* srcCS = fImage->getColorSpace() ? fImage->getColorSpace()
+                                                        : sk_srgb_singleton();
+    const SkColorSpace* dstCS = ctx.colorSpace() ? ctx.colorSpace() : srcCS;
     const bool hasEffectsToApply =
             !canDeferTiling ||
             SkToBool(fColorFilter) ||
             fImage->colorType() != ctx.backend()->colorType() ||
-            !SkColorSpace::Equals(fImage->getColorSpace(), ctx.colorSpace());
+            !SkColorSpace::Equals(srcCS, dstCS);
 
+    int xSteps = downscale_step_count(scale.width());
+    int ySteps = downscale_step_count(scale.height());
     if (xSteps == 0 && ySteps == 0 && !hasEffectsToApply) {
         if (analysis & BoundsAnalysis::kHasLayerFillingEffect) {
             
@@ -1516,12 +1670,23 @@ FilterResult FilterResult::rescale(const Context& ctx,
 
     PixelSpace<SkIRect> srcRect;
     SkTileMode tileMode;
+    bool cfBorder = false;
+    bool deferPeriodicTiling = false;
     if (canDeferTiling && (analysis & BoundsAnalysis::kHasLayerFillingEffect)) {
         
         
         srcRect = LayerSpace<SkIRect>(SkIRect::MakeXYWH(origin.x(), origin.y(),
                                                         fImage->width(), fImage->height()));
-        tileMode = fTileMode;
+        if (fTileMode == SkTileMode::kDecal &&
+            (analysis & BoundsAnalysis::kHasLayerFillingEffect)) {
+            
+            tileMode = SkTileMode::kClamp;
+            cfBorder = true;
+        } else {
+            tileMode = fTileMode;
+            deferPeriodicTiling = tileMode == SkTileMode::kRepeat ||
+                                  tileMode == SkTileMode::kMirror;
+        }
     } else {
         
         
@@ -1531,132 +1696,198 @@ FilterResult FilterResult::rescale(const Context& ctx,
     }
 
     srcRect = srcRect.relevantSubset(ctx.desiredOutput(), tileMode);
-    if (srcRect.isEmpty()) {
-        return {};
-    }
-
     
     
     
     
     PixelSpace<SkRect> stepBoundsF{srcRect};
+    if (stepBoundsF.isEmpty()) {
+        return {};
+    }
     
     
-    
-    
-    PixelSpace<SkIRect> stepPixelBounds{srcRect};
-    stepPixelBounds.outset(PixelSpace<SkISize>({1, 1}));
+    PixelSpace<SkRect> stepPixelBounds{srcRect};
 
     
-    sk_sp<SkSpecialImage> image = nullptr;
-    while(!image || xSteps > 0 || ySteps > 0) {
+    FilterResult image = *this;
+    if (!pixelAligned && (xSteps > 0 || ySteps > 0)) {
+        
+        
+        
+        
+        
+        LayerSpace<SkSize> netScale = image.fTransform.mapSize(scale);
+        int nextXSteps = std::isfinite(netScale.width()) ? downscale_step_count(netScale.width())
+                                                         : std::numeric_limits<int>::max();
+        int nextYSteps = std::isfinite(netScale.height()) ? downscale_step_count(netScale.height())
+                                                          : std::numeric_limits<int>::max();
+        
+        
+        
+        if ((xSteps > 0 && nextXSteps > xSteps) || (ySteps > 0 && nextYSteps > ySteps)) {
+            
+            
+            
+            image = image.resolve(ctx, srcRect);
+            if (!image) {
+                
+                return {};
+            }
+            if (!cfBorder) {
+                
+                image.fTileMode = tileMode;
+            } 
+        }
+    }
+
+    
+    
+    
+    
+    float finalScaleX = xSteps > 0 ? scale.width() : 1.f;
+    float finalScaleY = ySteps > 0 ? scale.height() : 1.f;
+    if (deferPeriodicTiling) {
+        PixelSpace<SkRect> dstBoundsF = scale_about_center(stepBoundsF, finalScaleX, finalScaleY);
+        
+        
+        
+        PixelSpace<SkIRect> innerDstPixels = dstBoundsF.roundIn();
+        int dstCenterX = sk_float_floor2int(0.5f * dstBoundsF.right()  + 0.5f * dstBoundsF.left());
+        int dstCenterY = sk_float_floor2int(0.5f * dstBoundsF.bottom() + 0.5f * dstBoundsF.top());
+        dstBoundsF = PixelSpace<SkRect>({(float) std::min(dstCenterX,   innerDstPixels.left()),
+                                         (float) std::min(dstCenterY,   innerDstPixels.top()),
+                                         (float) std::max(dstCenterX+1, innerDstPixels.right()),
+                                         (float) std::max(dstCenterY+1, innerDstPixels.bottom())});
+
+        finalScaleX = dstBoundsF.width() / srcRect.width();
+        finalScaleY = dstBoundsF.height() / srcRect.height();
+
+        
+        xSteps = downscale_step_count(finalScaleX);
+        ySteps = downscale_step_count(finalScaleY);
+
+        
+        
+        image.fTileMode = SkTileMode::kClamp;
+    }
+
+    do {
         float sx = 1.f;
         if (xSteps > 0) {
-            sx = xSteps > 1 ? 0.5f : srcRect.width()*scale.width() / stepBoundsF.width();
+            sx = xSteps > 1 ? 0.5f : srcRect.width()*finalScaleX / stepBoundsF.width();
             xSteps--;
         }
 
         float sy = 1.f;
         if (ySteps > 0) {
-            sy = ySteps > 1 ? 0.5f : srcRect.height()*scale.height() / stepBoundsF.height();
+            sy = ySteps > 1 ? 0.5f : srcRect.height()*finalScaleY / stepBoundsF.height();
             ySteps--;
         }
 
-        PixelSpace<SkRect> dstBoundsF{SkRect::MakeWH(stepBoundsF.width() * sx,
-                                                     stepBoundsF.height() * sy)};
+        
+        
+        PixelSpace<SkRect> dstBoundsF = scale_about_center(stepBoundsF, sx, sy);
+
+        
+        
+        
+        
         PixelSpace<SkIRect> dstPixelBounds = dstBoundsF.roundOut();
-        if (tileMode == SkTileMode::kClamp || tileMode == SkTileMode::kDecal) {
-            
-            
-            
-            
-            
-            float srcFracX = stepPixelBounds.right() - stepBoundsF.right() - 0.5f;
-            float dstFracX = dstPixelBounds.right()  - dstBoundsF.right()  - 0.5f;
-            int px = std::max(1, sk_float_ceil2int((sx*srcFracX - dstFracX)));
 
-            float srcFracY = stepPixelBounds.bottom() - stepBoundsF.bottom() - 0.5f;
-            float dstFracY = dstPixelBounds.bottom()  - dstBoundsF.bottom()  - 0.5f;
-            int py = std::max(1, sk_float_ceil2int((sy*srcFracY - dstFracY)));
-
-            dstPixelBounds.outset(PixelSpace<SkISize>({px, py}));
-
+        PixelBoundary boundary = PixelBoundary::kUnknown;
+        PixelSpace<SkIRect> sampleBounds = dstPixelBounds;
+        if (tileMode == SkTileMode::kDecal) {
+            boundary = PixelBoundary::kTransparent;
+        } else {
             
             
-            
-            SkASSERT(sx != 1.f || dstPixelBounds.width() == stepPixelBounds.width());
-            SkASSERT(sy != 1.f || dstPixelBounds.height() == stepPixelBounds.height());
+            dstPixelBounds.outset(LayerSpace<SkISize>({1,1}));
         }
 
-        
-        
-        AutoSurface surface{ctx, dstPixelBounds, PixelBoundary::kUnknown,
-                            false};
+        AutoSurface surface{ctx, dstPixelBounds, boundary, false};
         if (surface) {
-            
             const auto scaleXform = PixelSpace<SkMatrix>::RectToRect(stepBoundsF, dstBoundsF);
-            surface->concat(SkMatrix(scaleXform));
 
+            
+            
+            
+            
+            
+            
+            
+            analysis = image.analyzeBounds(SkMatrix(scaleXform),
+                                           SkIRect(sampleBounds),
+                                           BoundsScope::kRescale);
+
+            
             SkPaint paint;
-            if (!image) {
-                
-                
-                
-                analysis = this->analyzeBounds(SkMatrix(scaleXform), SkIRect(dstPixelBounds),
-                                               BoundsScope::kShaderOnly);
-                analysis &= ~BoundsAnalysis::kRequiresDecalInLayerSpace;
-                paint.setShader(this->getAnalyzedShaderView(ctx, fSamplingOptions, analysis));
-            } else {
-                
-                paint.setShader(image->asShader(tileMode, SkFilterMode::kLinear,
-                                                SkMatrix::Translate(origin.x(), origin.y())));
-                if (!image->isExactFit()) {
-                    ctx.markShaderBasedTilingRequired(tileMode);
-                }
-            }
+            paint.setShader(image.getAnalyzedShaderView(ctx, image.sampling(), analysis));
+#if !defined(SK_USE_SRCOVER_FOR_FILTERS)
+            paint.setBlendMode(SkBlendMode::kSrc);
+#endif
 
-            surface->drawPaint(paint);
+            PixelSpace<SkRect> srcSampled;
+            SkAssertResult(scaleXform.inverseMapRect(PixelSpace<SkRect>(sampleBounds),
+                                                     &srcSampled));
+
+            surface->save();
+                surface->concat(SkMatrix(scaleXform));
+                surface->drawRect(SkRect(srcSampled), paint);
+            surface->restore();
+
+            if (cfBorder) {
+                
+                
+                
+                SkASSERT(fColorFilter && as_CFB(fColorFilter)->affectsTransparentBlack());
+                SkASSERT(tileMode == SkTileMode::kClamp);
+
+                draw_color_filtered_border(surface.canvas(), dstPixelBounds, fColorFilter);
+                
+                cfBorder = false;
+            } else if (tileMode != SkTileMode::kDecal) {
+                
+                draw_tiled_border(surface.canvas(), tileMode, paint, scaleXform,
+                                  stepPixelBounds, PixelSpace<SkRect>(dstPixelBounds));
+            }
         } else {
             
             return {};
         }
 
-        if (tileMode == SkTileMode::kDecal) {
-            
-            
-            
-            tileMode = SkTileMode::kClamp;
-        } 
+        image = surface.snap();
+        
+        
+        image.fTileMode = deferPeriodicTiling ? SkTileMode::kClamp : tileMode;
 
-        
-        
-        FilterResult snapped = surface.snap();
-        image = snapped.fImage;
-        origin = snapped.fLayerBounds.topLeft();
         stepBoundsF = dstBoundsF;
-        stepPixelBounds = dstPixelBounds;
-    }
+        stepPixelBounds = PixelSpace<SkRect>(dstPixelBounds);
+    } while(xSteps > 0 || ySteps > 0);
+
 
     
     
-    FilterResult result{std::move(image), origin};
-    result.fTransform.postConcat(
-            LayerSpace<SkMatrix>::RectToRect(stepBoundsF, LayerSpace<SkRect>{srcRect}));
-    result.fLayerBounds = visibleLayerBounds;
-
-    
-    
-    if (enforceDecal) {
+    if (deferPeriodicTiling) {
         
         
-        
-        
-        SkASSERT(!canDeferTiling && tileMode == SkTileMode::kClamp);
-        result.fTileMode = SkTileMode::kDecal;
+        image = image.insetByPixel();
     } else {
-        result.fTileMode = tileMode;
+        SkASSERT(tileMode == SkTileMode::kDecal || tileMode == SkTileMode::kClamp);
+        
+        
+        
+        
     }
-    return result;
+    image.fTileMode = tileMode;
+    image.fTransform.postConcat(
+            LayerSpace<SkMatrix>::RectToRect(stepBoundsF, LayerSpace<SkRect>{srcRect}));
+    image.fLayerBounds = visibleLayerBounds;
+
+    SkASSERT(!enforceDecal || image.fTileMode == SkTileMode::kDecal);
+    SkASSERT(image.fTileMode != SkTileMode::kDecal ||
+             image.fBoundary == PixelBoundary::kTransparent);
+    SkASSERT(!deferPeriodicTiling || image.fBoundary == PixelBoundary::kInitialized);
+    return image;
 }
 
 FilterResult FilterResult::MakeFromPicture(const Context& ctx,
@@ -1675,7 +1906,9 @@ FilterResult FilterResult::MakeFromPicture(const Context& ctx,
     
     SkSurfaceProps props = ctx.backend()->surfaceProps()
                                          .cloneWithPixelGeometry(kUnknown_SkPixelGeometry);
-    AutoSurface surface{ctx, dstBounds, PixelBoundary::kTransparent,
+    
+    
+    AutoSurface surface{ctx, dstBounds, PixelBoundary::kUnknown,
                         true, &props};
     if (surface) {
         surface->clipRect(SkRect(cullRect));
@@ -1688,12 +1921,19 @@ FilterResult FilterResult::MakeFromShader(const Context& ctx,
                                           sk_sp<SkShader> shader,
                                           bool dither) {
     SkASSERT(shader);
-    AutoSurface surface{ctx, ctx.desiredOutput(), PixelBoundary::kTransparent,
-                        true};
+
+    
+    
+    
+    PixelBoundary boundary = dither ? PixelBoundary::kUnknown : PixelBoundary::kTransparent;
+    AutoSurface surface{ctx, ctx.desiredOutput(), boundary, true};
     if (surface) {
         SkPaint paint;
         paint.setShader(shader);
         paint.setDither(dither);
+#if !defined(SK_USE_SRCOVER_FOR_FILTERS)
+        paint.setBlendMode(SkBlendMode::kSrc);
+#endif
         surface->drawPaint(paint);
     }
     return surface.snap();
@@ -1823,6 +2063,9 @@ FilterResult FilterResult::Builder::drawShader(sk_sp<SkShader> shader,
     if (surface) {
         SkPaint paint;
         paint.setShader(std::move(shader));
+#if !defined(SK_USE_SRCOVER_FOR_FILTERS)
+        paint.setBlendMode(SkBlendMode::kSrc);
+#endif
         surface->drawPaint(paint);
     }
     return surface.snap();
@@ -1865,7 +2108,6 @@ FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
     const SkBlurEngine* blurEngine = fContext.backend()->getBlurEngine();
     SkASSERT(blurEngine);
 
-    
     const SkBlurEngine::Algorithm* algorithm = blurEngine->findAlgorithm(
             SkSize(sigma), fContext.backend()->colorType());
     if (!algorithm) {
@@ -1873,19 +2115,12 @@ FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
     }
 
     
-    SkASSERT(sigma.width() <= algorithm->maxSigma() && sigma.height() <= algorithm->maxSigma());
-
-    
-    skif::LayerSpace<SkISize> radii =
+    LayerSpace<SkISize> radii =
             LayerSpace<SkSize>({3.f*sigma.width(), 3.f*sigma.height()}).ceil();
     auto maxOutput = fInputs[0].fImage.layerBounds();
     maxOutput.outset(radii);
 
-    
-    
-    
-    
-    const auto outputBounds = this->outputBounds(maxOutput);
+    auto outputBounds = this->outputBounds(maxOutput);
     if (outputBounds.isEmpty()) {
         return {};
     }
@@ -1896,33 +2131,123 @@ FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
     auto sampleBounds = outputBounds;
     sampleBounds.outset(radii);
 
+    if (fContext.backend()->useLegacyFilterResultBlur()) {
+        SkASSERT(sigma.width() <= algorithm->maxSigma() && sigma.height() <= algorithm->maxSigma());
+
+        FilterResult resolved = fInputs[0].fImage.resolve(fContext, sampleBounds);
+        if (!resolved) {
+            return {};
+        }
+        auto srcRelativeOutput = outputBounds;
+        srcRelativeOutput.offset(-resolved.layerBounds().topLeft());
+        resolved = {algorithm->blur(SkSize(sigma),
+                                    resolved.fImage,
+                                    SkIRect::MakeSize(resolved.fImage->dimensions()),
+                                    SkTileMode::kDecal,
+                                    SkIRect(srcRelativeOutput)),
+                    outputBounds.topLeft()};
+        return resolved;
+    }
+
+    float sx = sigma.width()  > algorithm->maxSigma() ? algorithm->maxSigma()/sigma.width()  : 1.f;
+    float sy = sigma.height() > algorithm->maxSigma() ? algorithm->maxSigma()/sigma.height() : 1.f;
     
     
     
-    
-    
-    
-    
-    
-    
-    FilterResult resolved = fInputs[0].fImage.resolve(fContext, sampleBounds);
-    if (!resolved) {
+    FilterResult lowResImage = fInputs[0].fImage.rescale(
+            fContext.withNewDesiredOutput(sampleBounds),
+            LayerSpace<SkSize>({sx, sy}),
+            algorithm->supportsOnlyDecalTiling());
+    if (!lowResImage) {
         return {};
     }
+    SkASSERT(lowResImage.tileMode() == SkTileMode::kDecal ||
+             !algorithm->supportsOnlyDecalTiling());
 
     
     
-    auto srcRelativeOutput = outputBounds;
-    srcRelativeOutput.offset(-resolved.layerBounds().topLeft());
-    resolved = {algorithm->blur(SkSize(sigma),
-                                resolved.fImage,
-                                SkIRect::MakeSize(resolved.fImage->dimensions()),
-                                SkTileMode::kDecal,
-                                SkIRect(srcRelativeOutput)),
-                outputBounds.topLeft()};
+    PixelSpace<SkMatrix> layerToLowRes;
+    SkAssertResult(lowResImage.fTransform.invert(&layerToLowRes));
+    PixelSpace<SkSize> lowResSigma = layerToLowRes.mapSize(sigma);
     
     
-    return resolved;
+    lowResSigma = PixelSpace<SkSize>{{std::min(algorithm->maxSigma(), lowResSigma.width()),
+                                      std::min(algorithm->maxSigma(), lowResSigma.height())}};
+    PixelSpace<SkIRect> lowResMaxOutput{SkISize{lowResImage.fImage->width(),
+                                                lowResImage.fImage->height()}};
+
+    PixelSpace<SkIRect> srcRelativeOutput;
+    if (lowResImage.tileMode() == SkTileMode::kRepeat ||
+        lowResImage.tileMode() == SkTileMode::kMirror) {
+        
+        
+        srcRelativeOutput = lowResMaxOutput;
+    } else {
+        
+        
+        srcRelativeOutput = layerToLowRes.mapRect(outputBounds);
+
+        
+        
+        lowResMaxOutput.outset(PixelSpace<SkSize>({3.f * lowResSigma.width(),
+                                                   3.f * lowResSigma.height()}).ceil());
+        srcRelativeOutput = lowResMaxOutput.relevantSubset(srcRelativeOutput,
+                                                           lowResImage.tileMode());
+        
+        
+        SkASSERT(!srcRelativeOutput.isEmpty());
+
+        
+        
+        srcRelativeOutput.outset(PixelSpace<SkISize>({1, 1}));
+    }
+
+    sk_sp<SkSpecialImage> lowResBlur = lowResImage.refImage();
+    SkIRect blurOutputBounds = SkIRect(srcRelativeOutput);
+    SkTileMode tileMode = lowResImage.tileMode();
+    if (!algorithm->supportsOnlyDecalTiling() &&
+        lowResImage.canClampToTransparentBoundary(BoundsAnalysis::kSimple)) {
+        
+        lowResBlur = lowResBlur->makePixelOutset();
+        
+        
+        
+        blurOutputBounds.offset(1, 1);
+        tileMode = SkTileMode::kClamp;
+    }
+
+    lowResBlur = algorithm->blur(SkSize(lowResSigma),
+                                 lowResBlur,
+                                 SkIRect::MakeSize(lowResBlur->dimensions()),
+                                 tileMode,
+                                 blurOutputBounds);
+    if (!lowResBlur) {
+        
+        
+        
+        return {};
+    }
+
+    FilterResult result{std::move(lowResBlur), srcRelativeOutput.topLeft()};
+    if (lowResImage.tileMode() == SkTileMode::kClamp ||
+        lowResImage.tileMode() == SkTileMode::kDecal) {
+        
+        result = result.insetByPixel();
+    }
+
+    result.fTransform.postConcat(lowResImage.fTransform);
+    if (lowResImage.tileMode() == SkTileMode::kDecal) {
+        
+        
+        
+        
+        
+        outputBounds = this->outputBounds(
+                result.fTransform.mapRect(LayerSpace<SkIRect>(result.fImage->dimensions())));
+    }
+    result.fLayerBounds = outputBounds;
+    result.fTileMode = lowResImage.tileMode();
+    return result;
 }
 
 } 

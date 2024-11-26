@@ -8,32 +8,48 @@
 #define SkPDFDocumentPriv_DEFINED
 
 #include "include/core/SkCanvas.h"
+#include "include/core/SkData.h"
+#include "include/core/SkDocument.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"  
 #include "include/core/SkStream.h"
+#include "include/core/SkString.h"
+#include "include/core/SkTypes.h"
 #include "include/docs/SkPDFDocument.h"
 #include "include/private/base/SkMutex.h"
+#include "include/private/base/SkSemaphore.h"
+#include "src/base/SkUTF.h"
 #include "src/core/SkTHash.h"
 #include "src/pdf/SkPDFBitmap.h"
+#include "src/pdf/SkPDFFont.h"
 #include "src/pdf/SkPDFGraphicState.h"
-#include "src/pdf/SkPDFMetadata.h"
 #include "src/pdf/SkPDFShader.h"
 #include "src/pdf/SkPDFTag.h"
+#include "src/pdf/SkPDFTypes.h"
+#include "src/pdf/SkUUID.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <atomic>
 #include <vector>
 #include <memory>
 
+class SkDescriptor;
 class SkExecutor;
 class SkPDFDevice;
-class SkPDFFont;
 struct SkAdvancedTypefaceMetrics;
 struct SkBitmapKey;
+class SkMatrix;
 
 namespace SkPDFGradientShader {
 struct Key;
 struct KeyHash;
 }  
 
-const char* SkPDFGetNodeIdKey();
+const char* SkPDFGetElemIdKey();
 
 
 class SkPDFOffsetMap {
@@ -62,16 +78,16 @@ struct SkPDFLink {
         kNamedDestination,
     };
 
-    SkPDFLink(Type type, SkData* data, const SkRect& rect, int nodeId)
+    SkPDFLink(Type type, SkData* data, const SkRect& rect, int elemId)
         : fType(type)
         , fData(sk_ref_sp(data))
         , fRect(rect)
-        , fNodeId(nodeId) {}
+        , fElemId(elemId) {}
     const Type fType;
     
     const sk_sp<SkData> fData;
     const SkRect fRect;
-    const int fNodeId;
+    const int fElemId;
 };
 
 
@@ -117,16 +133,18 @@ public:
     SkPDFIndirectReference currentPage() const {
         return SkASSERT(this->hasCurrentPage() && !fPageRefs.empty()), fPageRefs.back();
     }
-    
-    
-    
-    SkPDFTagTree::Mark createMarkIdForNodeId(int nodeId, SkPoint);
-    
-    
-    
-    int createStructParentKeyForNodeId(int nodeId);
 
-    void addNodeTitle(int nodeId, SkSpan<const char>);
+    
+    
+    
+    SkPDFStructTree::Mark createMarkForElemId(int elemId);
+
+    
+    
+    
+    int createStructParentKeyForElemId(int elemId, SkPDFIndirectReference contentItemRef);
+
+    void addStructElemTitle(int elemId, SkSpan<const char>);
 
     std::unique_ptr<SkPDFArray> getAnnotations();
 
@@ -157,9 +175,10 @@ public:
     skia_private::THashMap<uint32_t, std::unique_ptr<SkAdvancedTypefaceMetrics>> fTypefaceMetrics;
     skia_private::THashMap<uint32_t, std::vector<SkString>> fType1GlyphNames;
     skia_private::THashMap<uint32_t, std::vector<SkUnichar>> fToUnicodeMap;
+    skia_private::THashMap<uint32_t, skia_private::THashMap<SkGlyphID, SkString>> fToUnicodeMapEx;
     skia_private::THashMap<uint32_t, SkPDFIndirectReference> fFontDescriptors;
     skia_private::THashMap<uint32_t, SkPDFIndirectReference> fType3FontDescriptors;
-    skia_private::THashMap<uint64_t, SkPDFFont> fFontMap;
+    skia_private::THashTable<sk_sp<SkPDFStrike>, const SkDescriptor&, SkPDFStrike::Traits> fStrikes;
     skia_private::THashMap<SkPDFStrokeGraphicState,
                            SkPDFIndirectReference,
                            SkPDFStrokeGraphicState::Hash> fStrokeGSMap;
@@ -184,13 +203,13 @@ private:
     SkUUID fUUID;
     SkPDFIndirectReference fInfoDict;
     SkPDFIndirectReference fXMP;
-    SkPDF::Metadata fMetadata;
-    SkScalar fRasterScale = 1;
-    SkScalar fInverseRasterScale = 1;
-    SkExecutor* fExecutor = nullptr;
+    const SkPDF::Metadata fMetadata;
+    const SkScalar fRasterScale;
+    const SkScalar fInverseRasterScale;
+    SkExecutor *const fExecutor;
 
     
-    SkPDFTagTree fTagTree;
+    SkPDFStructTree fStructTree;
 
     SkMutex fMutex;
     SkSemaphore fSemaphore;

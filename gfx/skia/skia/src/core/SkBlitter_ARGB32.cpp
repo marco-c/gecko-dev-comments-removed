@@ -438,7 +438,7 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
                 
                 __m128i dst_sse = _mm_load_si128(d);
                 
-                __m128i mask_sse =  _mm_loadl_epi64((const __m128i*)mask);
+                __m128i mask_sse = _mm_loadl_epi64((const __m128i*)mask);
 
                 
                 

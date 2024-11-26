@@ -13,7 +13,9 @@
 
 class GrDirectContext;
 struct GrContextOptions;
-struct GrVkBackendContext;
+namespace skgpu {
+struct VulkanBackendContext;
+}
 
 namespace GrDirectContexts {
 
@@ -23,8 +25,9 @@ namespace GrDirectContexts {
 
 
 
-SK_API sk_sp<GrDirectContext> MakeVulkan(const GrVkBackendContext&, const GrContextOptions&);
-SK_API sk_sp<GrDirectContext> MakeVulkan(const GrVkBackendContext&);
+SK_API sk_sp<GrDirectContext> MakeVulkan(const skgpu::VulkanBackendContext&,
+                                         const GrContextOptions&);
+SK_API sk_sp<GrDirectContext> MakeVulkan(const skgpu::VulkanBackendContext&);
 }
 
 #endif

@@ -16,13 +16,13 @@
 #include "include/core/SkShader.h"
 #include "include/core/SkTileMode.h"
 #include "include/private/SkColorData.h"
-#include "include/private/base/SkFloatBits.h"
 #include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkMalloc.h"
 #include "include/private/base/SkTArray.h"
 #include "include/private/base/SkTPin.h"
 #include "include/private/base/SkTo.h"
 #include "src/base/SkArenaAlloc.h"
+#include "src/base/SkFloatBits.h"
 #include "src/base/SkVx.h"
 #include "src/core/SkColorSpacePriv.h"
 #include "src/core/SkColorSpaceXformSteps.h"
@@ -201,9 +201,10 @@ SkGradientBaseShader::SkGradientBaseShader(const Descriptor& desc, const SkMatri
 
 
     fColorCount = desc.fColorCount;
+
     
     if (desc.fPositions) {
-        fFirstStopIsImplicit = desc.fPositions[0] != 0;
+        fFirstStopIsImplicit = desc.fPositions[0] > 0;
         fLastStopIsImplicit = desc.fPositions[desc.fColorCount - 1] != SK_Scalar1;
         fColorCount += fFirstStopIsImplicit + fLastStopIsImplicit;
     }
@@ -239,15 +240,62 @@ SkGradientBaseShader::SkGradientBaseShader(const Descriptor& desc, const SkMatri
         const SkScalar uniformStep = desc.fPositions[startIndex] - prev;
         for (int i = startIndex; i < count; i++) {
             
-            auto curr = (i == desc.fColorCount) ? 1 : SkTPin(desc.fPositions[i], prev, 1.0f);
+            float curr = 1.0f;
+            if (i != desc.fColorCount) {
+                curr = SkTPin(desc.fPositions[i], prev, 1.0f);
+
+                
+                
+                if (curr == 1.0f && fLastStopIsImplicit) {
+                    fLastStopIsImplicit = false;
+                }
+            }
+
             uniformStops &= SkScalarNearlyEqual(uniformStep, curr - prev);
 
             *positions++ = prev = curr;
         }
 
-        
         if (uniformStops) {
+            
             fPositions = nullptr;
+        } else {
+            
+            
+            
+            
+            
+            int i = 0;
+            int dedupedColorCount = 0;
+            for (int j = 1; j <= fColorCount; j++) {
+                
+                
+                if (j == fColorCount || fPositions[i] != fPositions[j]) {
+                    bool dupStop = j - i > 1;
+
+                    
+                    
+                    bool ignoreLeftmost = dupStop && fTileMode != SkTileMode::kClamp
+                                                    && fPositions[i] == 0;
+                    if (!ignoreLeftmost) {
+                        fPositions[dedupedColorCount] = fPositions[i];
+                        fColors[dedupedColorCount] =  fColors[i];
+                        dedupedColorCount++;
+                    }
+
+                    
+                    
+                    bool ignoreRightmost = fTileMode != SkTileMode::kClamp
+                                                    && fPositions[j - 1] == 1;
+                    if (dupStop && !ignoreRightmost) {
+                        fPositions[dedupedColorCount] = fPositions[j - 1];
+                        fColors[dedupedColorCount] = fColors[j - 1];
+                        dedupedColorCount++;
+                    }
+                    i = j;
+                }
+            }
+            fColorCount = dedupedColorCount;
         }
     }
 }
@@ -391,7 +439,7 @@ void SkGradientBaseShader::AppendGradientFillStages(SkRasterPipeline* p,
                 SkASSERT(t_l <= t_r);
                 if (t_l < t_r) {
                     float c_scale = sk_ieee_float_divide(1, t_r - t_l);
-                    if (sk_float_isfinite(c_scale)) {
+                    if (SkIsFinite(c_scale)) {
                         init_stop_pos(ctx, stopCount, t_l, c_scale, c_l, c_r);
                         stopCount += 1;
                     }

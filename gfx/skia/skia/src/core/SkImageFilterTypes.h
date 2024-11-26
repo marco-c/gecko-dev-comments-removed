@@ -21,6 +21,7 @@
 #include "include/core/SkSurfaceProps.h"
 #include "include/core/SkTileMode.h"
 #include "include/core/SkTypes.h"
+#include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkTArray.h"
 #include "include/private/base/SkTPin.h"
 #include "include/private/base/SkTo.h"
@@ -75,7 +76,7 @@ struct Vector {
     Vector(SkScalar x, SkScalar y) : fX(x), fY(y) {}
     explicit Vector(const SkVector& v) : fX(v.fX), fY(v.fY) {}
 
-    bool isFinite() const { return SkScalarsAreFinite(fX, fY); }
+    bool isFinite() const { return SkIsFinite(fX, fY); }
 };
 
 
@@ -879,7 +880,8 @@ private:
     enum class BoundsScope : int {
         kDeferred,        
         kCanDrawDirectly, 
-        kShaderOnly       
+        kShaderOnly,      
+        kRescale          
     };
 
     
@@ -916,7 +918,6 @@ private:
     FilterResult rescale(const Context& ctx,
                          const LayerSpace<SkSize>& scale,
                          bool enforceDecal) const;
-
     
     
     
@@ -932,14 +933,6 @@ private:
               SkDevice* device,
               bool preserveDeviceState,
               const SkBlender* blender=nullptr) const;
-
-    
-    
-    void drawAnalyzedImage(const Context& ctx,
-                           SkDevice* device,
-                           const SkSamplingOptions& finalSampling,
-                           SkEnumBitMask<BoundsAnalysis> analysis,
-                           const SkBlender* blender=nullptr) const;
 
     
     
@@ -1100,6 +1093,10 @@ public:
 
     
     virtual const SkBlurEngine* getBlurEngine() const = 0;
+
+    
+    
+    virtual bool useLegacyFilterResultBlur() const { return true; }
 
     
     const SkSurfaceProps& surfaceProps() const { return fSurfaceProps; }

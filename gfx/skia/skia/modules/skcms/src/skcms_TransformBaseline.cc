@@ -27,6 +27,8 @@
         
         #include <smmintrin.h>
     #endif
+#elif defined(__loongarch_sx)
+    #include <lsxintrin.h>
 #endif
 
 namespace skcms_private {

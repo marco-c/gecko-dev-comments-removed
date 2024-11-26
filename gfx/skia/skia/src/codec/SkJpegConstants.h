@@ -43,13 +43,6 @@ static constexpr uint8_t kICCSig[] = {
 };
 
 
-static constexpr uint32_t kGainmapMarker = kJpegMarkerAPP0 + 15;
-static constexpr uint32_t kGainmapMarkerIndexSize = 2;
-static constexpr uint8_t kGainmapSig[] = {
-        'H', 'D', 'R', '_', 'G', 'A', 'I', 'N', '_', 'M', 'A', 'P', '\0',
-};
-
-
 static constexpr uint32_t kXMPMarker = kJpegMarkerAPP0 + 1;
 static constexpr uint8_t kXMPStandardSig[] = {
         'h', 't', 't', 'p', ':', '/', '/', 'n', 's', '.', 'a', 'd', 'o', 'b', 'e', '.', 'c', 'o',
@@ -65,5 +58,11 @@ constexpr uint8_t kExifSig[] = {'E', 'x', 'i', 'f', '\0'};
 
 static constexpr uint32_t kMpfMarker = kJpegMarkerAPP0 + 2;
 static constexpr uint8_t kMpfSig[] = {'M', 'P', 'F', '\0'};
+
+
+static constexpr uint32_t kISOGainmapMarker = kJpegMarkerAPP0 + 2;
+static constexpr uint8_t kISOGainmapSig[] = {'u', 'r', 'n', ':', 'i', 's', 'o', ':', 's', 't',
+                                             'd', ':', 'i', 's', 'o', ':', 't', 's', ':', '2',
+                                             '1', '4', '9', '6', ':', '-', '1', '\0'};
 
 #endif

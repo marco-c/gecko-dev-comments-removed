@@ -6,24 +6,47 @@
 
 
 #include "include/docs/SkPDFDocument.h"
-#include "src/pdf/SkPDFDocumentPriv.h"
 
+#include "include/core/SkCanvas.h"
+#include "include/core/SkData.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkStream.h"
-#include "include/docs/SkPDFDocument.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkMutex.h"
+#include "include/private/base/SkPoint_impl.h"
+#include "include/private/base/SkSemaphore.h"
+#include "include/private/base/SkSpan_impl.h"
+#include "include/private/base/SkTemplates.h"
+#include "include/private/base/SkThreadAnnotations.h"
 #include "include/private/base/SkTo.h"
 #include "src/base/SkUTF.h"
+#include "src/core/SkAdvancedTypefaceMetrics.h"
+#include "src/core/SkTHash.h"
+#include "src/pdf/SkBitmapKey.h"
+#include "src/pdf/SkPDFBitmap.h"
 #include "src/pdf/SkPDFDevice.h"
+#include "src/pdf/SkPDFDocumentPriv.h"
 #include "src/pdf/SkPDFFont.h"
 #include "src/pdf/SkPDFGradientShader.h"
 #include "src/pdf/SkPDFGraphicState.h"
+#include "src/pdf/SkPDFMetadata.h"
 #include "src/pdf/SkPDFShader.h"
 #include "src/pdf/SkPDFTag.h"
+#include "src/pdf/SkPDFTypes.h"
 #include "src/pdf/SkPDFUtils.h"
+#include "src/pdf/SkUUID.h"
 
+#include <algorithm>
+#include <atomic>
+#include <cstddef>
+#include <new>
 #include <utility>
 
 
-const char* SkPDFGetNodeIdKey() {
+const char* SkPDFGetElemIdKey() {
     static constexpr char key[] = "PDF_Node_Key";
     return key;
 }
@@ -207,20 +230,14 @@ static void reset_object(T* dst, Args&&... args) {
 
 
 
-SkPDFDocument::SkPDFDocument(SkWStream* stream,
-                             SkPDF::Metadata metadata)
+SkPDFDocument::SkPDFDocument(SkWStream* stream, SkPDF::Metadata metadata)
     : SkDocument(stream)
-    , fMetadata(std::move(metadata)) {
-    constexpr float kDpiForRasterScaleOne = 72.0f;
-    if (fMetadata.fRasterDPI != kDpiForRasterScaleOne) {
-        fInverseRasterScale = kDpiForRasterScaleOne / fMetadata.fRasterDPI;
-        fRasterScale        = fMetadata.fRasterDPI / kDpiForRasterScaleOne;
-    }
-    if (fMetadata.fStructureElementTreeRoot) {
-        fTagTree.init(fMetadata.fStructureElementTreeRoot, fMetadata.fOutline);
-    }
-    fExecutor = fMetadata.fExecutor;
-}
+    , fMetadata(std::move(metadata))
+    , fRasterScale(fMetadata.fRasterDPI / SK_ScalarDefaultRasterDPI)
+    , fInverseRasterScale(SK_ScalarDefaultRasterDPI / fMetadata.fRasterDPI)
+    , fExecutor(fMetadata.fExecutor)
+    , fStructTree(fMetadata.fStructureElementTreeRoot, fMetadata.fOutline)
+{}
 
 SkPDFDocument::~SkPDFDocument() {
     
@@ -335,18 +352,16 @@ std::unique_ptr<SkPDFArray> SkPDFDocument::getAnnotations() {
             SkDEBUGFAIL("Unknown link type.");
         }
 
-        if (link->fNodeId) {
-            int structParentKey = createStructParentKeyForNodeId(link->fNodeId);
+        SkPDFIndirectReference annotationRef = this->reserveRef();
+        if (link->fElemId) {
+            int structParentKey = this->createStructParentKeyForElemId(link->fElemId, annotationRef);
             if (structParentKey != -1) {
                 annotation.insertInt("StructParent", structParentKey);
             }
         }
 
-        SkPDFIndirectReference annotationRef = emit(annotation);
+        this->emit(annotation, annotationRef);
         array->appendRef(annotationRef);
-        if (link->fNodeId) {
-            fTagTree.addNodeAnnotation(link->fNodeId, annotationRef, SkToUInt(this->currentPageIndex()));
-        }
     }
     return array;
 }
@@ -362,7 +377,6 @@ void SkPDFDocument::onEndPage() {
     std::unique_ptr<SkStreamAsset> pageContent = fPageDevice->content();
     auto resourceDict = fPageDevice->makeResourceDict();
     SkASSERT(!fPageRefs.empty());
-    fPageDevice = nullptr;
 
     page->insertObject("Resources", std::move(resourceDict));
     page->insertObject("MediaBox", SkPDFUtils::RectToArray(SkRect::MakeSize(mediaSize)));
@@ -376,7 +390,12 @@ void SkPDFDocument::onEndPage() {
     
     
     page->insertInt("StructParents", SkToInt(this->currentPageIndex()));
+
+    
+    page->insertName("Tabs", "S");
+
     fPages.emplace_back(std::move(page));
+    fPageDevice = nullptr;
 }
 
 void SkPDFDocument::onAbort() {
@@ -532,34 +551,37 @@ const SkMatrix& SkPDFDocument::currentPageTransform() const {
     return fPageDevice->initialTransform();
 }
 
-SkPDFTagTree::Mark SkPDFDocument::createMarkIdForNodeId(int nodeId, SkPoint p) {
+SkPDFStructTree::Mark SkPDFDocument::createMarkForElemId(int elemId) {
     
     
     if (!this->hasCurrentPage()) {
-        return SkPDFTagTree::Mark();
+        return SkPDFStructTree::Mark();
     }
-    return fTagTree.createMarkIdForNodeId(nodeId, SkToUInt(this->currentPageIndex()), p);
+    return fStructTree.createMarkForElemId(elemId, SkToUInt(this->currentPageIndex()));
 }
 
-void SkPDFDocument::addNodeTitle(int nodeId, SkSpan<const char> title) {
-    fTagTree.addNodeTitle(nodeId, std::move(title));
+void SkPDFDocument::addStructElemTitle(int elemId, SkSpan<const char> title) {
+    fStructTree.addStructElemTitle(elemId, std::move(title));
 }
 
-int SkPDFDocument::createStructParentKeyForNodeId(int nodeId) {
+int SkPDFDocument::createStructParentKeyForElemId(int elemId, SkPDFIndirectReference contentItem) {
     
     if (!this->hasCurrentPage()) {
         return -1;
     }
-    return fTagTree.createStructParentKeyForNodeId(nodeId, SkToUInt(this->currentPageIndex()));
+    return fStructTree.createStructParentKeyForElemId(elemId, contentItem,
+                                                      SkToUInt(this->currentPageIndex()));
 }
 
 static std::vector<const SkPDFFont*> get_fonts(const SkPDFDocument& canon) {
     std::vector<const SkPDFFont*> fonts;
-    fonts.reserve(canon.fFontMap.count());
+    fonts.reserve(canon.fStrikes.count());
+    canon.fStrikes.foreach([&fonts](const sk_sp<SkPDFStrike>& strike) {
+        for (const auto& [unused, font] : strike->fFontMap) {
+            fonts.push_back(&font);
+        }
+    });
     
-    for (const auto& [unused, font] : canon.fFontMap) {
-        fonts.push_back(&font);
-    }
     std::sort(fonts.begin(), fonts.end(), [](const SkPDFFont* u, const SkPDFFont* v) {
         return u->indirectReference().fValue < v->indirectReference().fValue;
     });
@@ -606,14 +628,14 @@ void SkPDFDocument::onClose(SkWStream* stream) {
     }
 
     
-    if (SkPDFIndirectReference root = fTagTree.makeStructTreeRoot(this)) {
+    if (SkPDFIndirectReference root = fStructTree.emitStructTreeRoot(this)) {
         
         auto markInfo = SkPDFMakeDict("MarkInfo");
         markInfo->insertBool("Marked", true);
         docCatalog->insertObject("MarkInfo", std::move(markInfo));
         docCatalog->insertRef("StructTreeRoot", root);
 
-        if (SkPDFIndirectReference outline = fTagTree.makeOutline(this)) {
+        if (SkPDFIndirectReference outline = fStructTree.makeOutline(this)) {
             docCatalog->insertRef("Outlines", outline);
         }
     }
@@ -627,7 +649,7 @@ void SkPDFDocument::onClose(SkWStream* stream) {
 
     SkString lang = fMetadata.fLang;
     if (lang.isEmpty()) {
-        lang = fTagTree.getRootLanguage();
+        lang = fStructTree.getRootLanguage();
     }
     if (!lang.isEmpty()) {
         docCatalog->insertTextString("Lang", lang);
@@ -660,9 +682,9 @@ void SkPDFDocument::waitForJobs() {
 
 
 
-void SkPDF::SetNodeId(SkCanvas* canvas, int nodeID) {
-    sk_sp<SkData> payload = SkData::MakeWithCopy(&nodeID, sizeof(nodeID));
-    const char* key = SkPDFGetNodeIdKey();
+void SkPDF::SetNodeId(SkCanvas* canvas, int elemId) {
+    sk_sp<SkData> payload = SkData::MakeWithCopy(&elemId, sizeof(elemId));
+    const char* key = SkPDFGetElemIdKey();
     canvas->drawAnnotation({0, 0, 0, 0}, key, payload.get());
 }
 

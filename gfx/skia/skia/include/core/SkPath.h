@@ -26,6 +26,7 @@
 #include <tuple>
 #include <type_traits>
 
+struct SkArc;
 class SkData;
 class SkPathRef;
 class SkRRect;
@@ -136,6 +137,18 @@ public:
 
 
     ~SkPath();
+
+    
+    SkPath snapshot() const {
+        return *this;
+    }
+
+    
+    SkPath detach() {
+        SkPath result = *this;
+        this->reset();
+        return result;
+    }
 
     
 
@@ -267,6 +280,16 @@ public:
 
 
     bool isRRect(SkRRect* rrect) const;
+
+    
+
+
+
+
+
+
+
+    bool isArc(SkArc* arc) const;
 
     
 
@@ -1334,8 +1357,9 @@ public:
 
 
 
-    void offset(SkScalar dx, SkScalar dy) {
+    SkPath& offset(SkScalar dx, SkScalar dy) {
         this->offset(dx, dy, this);
+        return *this;
     }
 
     
@@ -1359,9 +1383,10 @@ public:
 
 
 
-    void transform(const SkMatrix& matrix,
+    SkPath& transform(const SkMatrix& matrix,
                    SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) {
         this->transform(matrix, this, pc);
+        return *this;
     }
 
     SkPath makeTransform(const SkMatrix& m,
@@ -1803,7 +1828,6 @@ private:
 
     size_t writeToMemoryAsRRect(void* buffer) const;
     size_t readAsRRect(const void*, size_t);
-    size_t readFromMemory_EQ4Or5(const void*, size_t);
 
     friend class Iter;
     friend class SkPathPriv;

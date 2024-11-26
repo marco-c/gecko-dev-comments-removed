@@ -107,8 +107,26 @@ public:
                             const SkRect*) const {
         return false;
     }
-    virtual DashType onAsADash(DashInfo*) const {
-        return kNone_DashType;
+
+    enum class DashType {
+        kNone, 
+        kDash, 
+    };
+
+    struct DashInfo {
+        DashInfo() : fIntervals(nullptr), fCount(0), fPhase(0) {}
+        DashInfo(SkScalar* intervals, int32_t count, SkScalar phase)
+            : fIntervals(intervals), fCount(count), fPhase(phase) {}
+
+        SkScalar*   fIntervals;         
+                                        
+        int32_t     fCount;             
+        SkScalar    fPhase;             
+                                        
+    };
+
+    virtual DashType asADash(DashInfo*) const {
+        return DashType::kNone;
     }
 
 

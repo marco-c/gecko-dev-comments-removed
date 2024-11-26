@@ -122,7 +122,7 @@ SkCodec::Result SkBmpStandardCodec::onGetPixels(const SkImageInfo& dstInfo,
         
         
         for (; i < maxColors; i++) {
-            colorTable[i] = SkPackARGB32NoCheck(0xFF, 0, 0, 0);
+            colorTable[i] = SkPackARGB32(0xFF, 0, 0, 0);
         }
 
         if (this->colorXform() && !this->xformOnDecode()) {

@@ -14,13 +14,25 @@
 #include "src/core/SkStrikeSpec.h"
 #include "src/core/SkTHash.h"
 
+#include <cstddef>
 #include <cstdint>
 
 struct SkPackedGlyphID;
 
+
+
+#ifndef SK_DEFAULT_GPU_FONT_CACHE_COUNT_LIMIT
+    #define SK_DEFAULT_GPU_FONT_CACHE_COUNT_LIMIT   2048
+#endif
+
+#ifndef SK_DEFAULT_GPU_FONT_CACHE_LIMIT
+    #define SK_DEFAULT_GPU_FONT_CACHE_LIMIT     (2 * 1024 * 1024)
+#endif
+
 namespace sktext::gpu {
 
 class Glyph;
+class StrikeCache;
 
 
 
@@ -28,12 +40,16 @@ class Glyph;
 
 class TextStrike : public SkNVRefCnt<TextStrike> {
 public:
-    TextStrike(const SkStrikeSpec& strikeSpec);
+    TextStrike(StrikeCache* strikeCache,
+               const SkStrikeSpec& strikeSpec);
 
     Glyph* getGlyph(SkPackedGlyphID);
     const SkStrikeSpec& strikeSpec() const { return fStrikeSpec; }
+    const SkDescriptor& getDescriptor() const { return fStrikeSpec.descriptor(); }
 
 private:
+    StrikeCache* const fStrikeCache;
+
     
     const SkStrikeSpec fStrikeSpec;
 
@@ -46,6 +62,11 @@ private:
 
     
     SkArenaAlloc fAlloc{512};
+
+    TextStrike*  fNext{nullptr};
+    TextStrike*  fPrev{nullptr};
+    size_t       fMemoryUsed{sizeof(TextStrike)};
+    bool         fRemoved{false};
 
     friend class StrikeCache;
 };
@@ -62,16 +83,36 @@ public:
     void freeAll();
 
 private:
+    friend class TextStrike;  
+    sk_sp<TextStrike> internalFindStrikeOrNull(const SkDescriptor& desc);
     sk_sp<TextStrike> generateStrike(const SkStrikeSpec& strikeSpec);
+
+    void internalRemoveStrike(TextStrike* strike);
+    void internalAttachToHead(sk_sp<TextStrike> strike);
+
+    
+    
+    
+    size_t internalPurge(size_t minBytesNeeded = 0);
+
+    
+    void validate() const;
+
+    TextStrike* fHead{nullptr};
+    TextStrike* fTail{nullptr};
 
     struct HashTraits {
         static const SkDescriptor& GetKey(const sk_sp<TextStrike>& strike);
         static uint32_t Hash(const SkDescriptor& strikeSpec);
     };
-
     using StrikeHash = skia_private::THashTable<sk_sp<TextStrike>, const SkDescriptor&, HashTraits>;
 
     StrikeHash fCache;
+
+    size_t  fCacheSizeLimit{SK_DEFAULT_GPU_FONT_CACHE_LIMIT};
+    size_t  fTotalMemoryUsed{0};
+    int32_t fCacheCountLimit{SK_DEFAULT_GPU_FONT_CACHE_COUNT_LIMIT};
+    int32_t fCacheCount{0};
 };
 
 }  

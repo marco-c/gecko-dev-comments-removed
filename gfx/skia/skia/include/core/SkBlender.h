@@ -15,7 +15,6 @@
 
 
 
-
 class SK_API SkBlender : public SkFlattenable {
 public:
     

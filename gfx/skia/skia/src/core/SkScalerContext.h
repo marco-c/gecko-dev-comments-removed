@@ -9,6 +9,7 @@
 #define SkScalerContext_DEFINED
 
 #include "include/core/SkColor.h"
+#include "include/core/SkFourByteTag.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkRect.h"
@@ -29,7 +30,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <utility>
 
 class SkArenaAlloc;
 class SkAutoDescriptor;
@@ -41,6 +41,13 @@ class SkPath;
 class SkPathEffect;
 enum class SkFontHinting;
 struct SkFontMetrics;
+
+
+
+
+
+
+typedef SkTMaskGamma<3, 3, 3> SkMaskGamma;
 
 enum class SkScalerContextFlags : uint32_t {
     kNone                      = 0,
@@ -73,38 +80,42 @@ private:
     
     uint32_t      fLumBits;
     uint8_t       fDeviceGamma; 
-    uint8_t       fPaintGamma;  
+    const uint8_t fReservedAlign2{0};
     uint8_t       fContrast;    
     const uint8_t fReservedAlign{0};
 
+    static constexpr SkScalar ExternalGammaFromInternal(uint8_t g) {
+        return SkIntToScalar(g) / (1 << 6);
+    }
+    static constexpr uint8_t InternalGammaFromExternal(SkScalar g) {
+        
+        return static_cast<uint8_t>(g * (1 << 6));
+    }
+    static constexpr SkScalar ExternalContrastFromInternal(uint8_t c) {
+        return SkIntToScalar(c) / ((1 << 8) - 1);
+    }
+    static constexpr uint8_t InternalContrastFromExternal(SkScalar c) {
+        
+        return static_cast<uint8_t>((c * ((1 << 8) - 1)) + 0.5f);
+    }
 public:
-
-    SkScalar getDeviceGamma() const {
-        return SkIntToScalar(fDeviceGamma) / (1 << 6);
-    }
-    void setDeviceGamma(SkScalar dg) {
-        SkASSERT(SkSurfaceProps::kMinGammaInclusive <= dg &&
-                 dg < SkIntToScalar(SkSurfaceProps::kMaxGammaExclusive));
-        fDeviceGamma = SkScalarFloorToInt(dg * (1 << 6));
+    void setDeviceGamma(SkScalar g) {
+        sk_ignore_unused_variable(fReservedAlign2);
+        SkASSERT(SkSurfaceProps::kMinGammaInclusive <= g &&
+                 g < SkIntToScalar(SkSurfaceProps::kMaxGammaExclusive));
+        fDeviceGamma = InternalGammaFromExternal(g);
     }
 
-    SkScalar getPaintGamma() const {
-        return SkIntToScalar(fPaintGamma) / (1 << 6);
-    }
-    void setPaintGamma(SkScalar pg) {
-        SkASSERT(SkSurfaceProps::kMinGammaInclusive <= pg &&
-                 pg < SkIntToScalar(SkSurfaceProps::kMaxGammaExclusive));
-        fPaintGamma = SkScalarFloorToInt(pg * (1 << 6));
-    }
-
-    SkScalar getContrast() const {
-        sk_ignore_unused_variable(fReservedAlign);
-        return SkIntToScalar(fContrast) / ((1 << 8) - 1);
-    }
     void setContrast(SkScalar c) {
+        sk_ignore_unused_variable(fReservedAlign);
         SkASSERT(SkSurfaceProps::kMinContrastInclusive <= c &&
                  c <= SkIntToScalar(SkSurfaceProps::kMaxContrastInclusive));
-        fContrast = SkScalarRoundToInt(c * ((1 << 8) - 1));
+        fContrast = InternalContrastFromExternal(c);
+    }
+
+    static const SkMaskGamma& CachedMaskGamma(uint8_t contrast, uint8_t gamma);
+    const SkMaskGamma& cachedMaskGamma() const {
+        return CachedMaskGamma(fContrast, fDeviceGamma);
     }
 
     
@@ -113,7 +124,6 @@ public:
 
     void ignoreGamma() {
         setLuminanceColor(SK_ColorTRANSPARENT);
-        setPaintGamma(SK_Scalar1);
         setDeviceGamma(SK_Scalar1);
     }
 
@@ -125,6 +135,9 @@ public:
         ignoreGamma();
         setContrast(0);
     }
+
+    
+    void useStrokeForFakeBold();
 
     SkMask::Format fMaskFormat;
 
@@ -148,8 +161,8 @@ public:
                    fPost2x2[0][1], fPost2x2[1][0], fPost2x2[1][1]);
         msg.appendf("      frame %g miter %g format %d join %d cap %d flags %#hx\n",
                    fFrameWidth, fMiterLimit, fMaskFormat, fStrokeJoin, fStrokeCap, fFlags);
-        msg.appendf("      lum bits %x, device gamma %d, paint gamma %d contrast %d\n", fLumBits,
-                    fDeviceGamma, fPaintGamma, fContrast);
+        msg.appendf("      lum bits %x, device gamma %d, contrast %d\n", fLumBits,
+                    fDeviceGamma, fContrast);
         msg.appendf("      foreground color %x\n", fForegroundColor);
         return msg;
     }
@@ -239,13 +252,6 @@ struct SkScalerContextEffects {
     SkMaskFilter*   fMaskFilter;
 };
 
-
-
-
-
-
-typedef SkTMaskGamma<3, 3, 3> SkMaskGamma;
-
 class SkScalerContext {
 public:
     enum Flags {
@@ -311,7 +317,7 @@ public:
 
     
 
-    static size_t GetGammaLUTSize(SkScalar contrast, SkScalar paintGamma, SkScalar deviceGamma,
+    static size_t GetGammaLUTSize(SkScalar contrast, SkScalar deviceGamma,
                                   int* width, int* height);
 
     
@@ -319,8 +325,7 @@ public:
 
 
 
-    static bool   GetGammaLUTData(SkScalar contrast, SkScalar paintGamma, SkScalar deviceGamma,
-                                  uint8_t* data);
+    static bool GetGammaLUTData(SkScalar contrast, SkScalar deviceGamma, uint8_t* data);
 
     static void MakeRecAndEffects(const SkFont& font, const SkPaint& paint,
                                   const SkSurfaceProps& surfaceProps,
@@ -425,7 +430,7 @@ protected:
 
 
 
-    [[nodiscard]] virtual bool generatePath(const SkGlyph&, SkPath*) = 0;
+    [[nodiscard]] virtual bool generatePath(const SkGlyph&, SkPath*, bool* modified) = 0;
 
     
 
@@ -447,6 +452,7 @@ private:
     friend class PathText;  
     friend class PathTextBench;  
     friend class RandomScalerContext;  
+    friend class SkScalerContext_fontconfig;
 
     static SkScalerContextRec PreprocessRec(const SkTypeface&,
                                             const SkScalerContextEffects&,

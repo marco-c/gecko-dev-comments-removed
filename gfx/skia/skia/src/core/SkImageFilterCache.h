@@ -60,7 +60,10 @@ public:
 
     ~SkImageFilterCache() override {}
     static sk_sp<SkImageFilterCache> Create(size_t maxBytes);
-    static sk_sp<SkImageFilterCache> Get();
+
+    
+    enum class CreateIfNecessary : bool { kNo, kYes };
+    static sk_sp<SkImageFilterCache> Get(CreateIfNecessary = CreateIfNecessary::kYes);
 
     
     

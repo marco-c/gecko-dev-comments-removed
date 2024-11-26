@@ -9,6 +9,7 @@
 #define SkImageFilters_DEFINED
 
 #include "include/core/SkColor.h"
+#include "include/core/SkColorSpace.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkImageFilter.h"
 #include "include/core/SkPicture.h"
@@ -27,7 +28,7 @@
 class SkBlender;
 class SkColorFilter;
 class SkMatrix;
-class SkRuntimeShaderBuilder;
+class SkRuntimeEffectBuilder;
 enum class SkBlendMode;
 struct SkIPoint;
 struct SkISize;
@@ -196,11 +197,25 @@ public:
 
 
 
+
+    static sk_sp<SkImageFilter> DropShadow(SkScalar dx, SkScalar dy,
+                                           SkScalar sigmaX, SkScalar sigmaY,
+                                           SkColor4f color, sk_sp<SkColorSpace> colorSpace,
+                                           sk_sp<SkImageFilter> input,
+                                           const CropRect& cropRect = {});
     static sk_sp<SkImageFilter> DropShadow(SkScalar dx, SkScalar dy,
                                            SkScalar sigmaX, SkScalar sigmaY,
                                            SkColor color, sk_sp<SkImageFilter> input,
-                                           const CropRect& cropRect = {});
+                                           const CropRect& cropRect = {}) {
+        return DropShadow(dx, dy,
+                          sigmaX, sigmaY,
+                          SkColor4f::FromColor(color), nullptr,
+                          std::move(input),
+                          cropRect);
+    }
+
     
+
 
 
 
@@ -214,8 +229,19 @@ public:
 
     static sk_sp<SkImageFilter> DropShadowOnly(SkScalar dx, SkScalar dy,
                                                SkScalar sigmaX, SkScalar sigmaY,
-                                               SkColor color, sk_sp<SkImageFilter> input,
+                                               SkColor4f color, sk_sp<SkColorSpace>,
+                                               sk_sp<SkImageFilter> input,
                                                const CropRect& cropRect = {});
+    static sk_sp<SkImageFilter> DropShadowOnly(SkScalar dx, SkScalar dy,
+                                               SkScalar sigmaX, SkScalar sigmaY,
+                                               SkColor color, sk_sp<SkImageFilter> input,
+                                               const CropRect& cropRect = {}) {
+        return DropShadowOnly(dx, dy,
+                              sigmaX, sigmaY,
+                              SkColor4f::FromColor(color), nullptr,
+                              std::move(input),
+                              cropRect);
+    }
 
     
 
@@ -373,7 +399,7 @@ public:
 
 
 
-    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
+    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeEffectBuilder& builder,
                                               std::string_view childShaderName,
                                               sk_sp<SkImageFilter> input) {
         return RuntimeShader(builder, 0.f, childShaderName, std::move(input));
@@ -390,7 +416,7 @@ public:
 
 
 
-    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
+    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeEffectBuilder& builder,
                                               SkScalar sampleRadius,
                                               std::string_view childShaderName,
                                               sk_sp<SkImageFilter> input);
@@ -412,7 +438,7 @@ public:
 
 
 
-    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
+    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeEffectBuilder& builder,
                                               std::string_view childShaderNames[],
                                               const sk_sp<SkImageFilter> inputs[],
                                               int inputCount) {
@@ -429,7 +455,7 @@ public:
 
 
 
-    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
+    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeEffectBuilder& builder,
                                               SkScalar maxSampleRadius,
                                               std::string_view childShaderNames[],
                                               const sk_sp<SkImageFilter> inputs[],

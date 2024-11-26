@@ -37,16 +37,16 @@ struct SkHighContrastConfig {
     SkHighContrastConfig(bool grayscale,
                          InvertStyle invertStyle,
                          SkScalar contrast)
-        : fGrayscale(grayscale),
-          fInvertStyle(invertStyle),
-          fContrast(contrast) {}
+        : fGrayscale(grayscale)
+        , fInvertStyle(invertStyle)
+        , fContrast(contrast) {}
 
     
     bool isValid() const {
         return fInvertStyle >= InvertStyle::kNoInvert &&
-            fInvertStyle <= InvertStyle::kInvertLightness &&
-            fContrast >= -1.0 &&
-            fContrast <= 1.0;
+               fInvertStyle <= InvertStyle::kInvertLightness &&
+               fContrast >= -1.0 &&
+               fContrast <= 1.0;
     }
 
     

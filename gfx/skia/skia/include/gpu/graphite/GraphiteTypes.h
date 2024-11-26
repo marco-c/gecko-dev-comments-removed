@@ -9,6 +9,7 @@
 #define skgpu_graphite_GraphiteTypes_DEFINED
 
 #include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 #include "include/core/SkTypes.h"
 #include "include/gpu/GpuTypes.h"
 
@@ -57,11 +58,15 @@ using GpuFinishedProc = void (*)(GpuFinishedContext finishedContext, CallbackRes
 
 
 
+
+
+
 struct InsertRecordingInfo {
     Recording* fRecording = nullptr;
 
     SkSurface* fTargetSurface = nullptr;
     SkIVector fTargetTranslation = {0, 0};
+    SkIRect fTargetClip = {0, 0, 0, 0};
     MutableTextureState* fTargetTextureState = nullptr;
 
     size_t fNumWaitSemaphores = 0;
@@ -103,36 +108,57 @@ enum class Volatile : bool {
     kYes = true               
 };
 
-
-
-
-
-enum DrawTypeFlags : uint8_t {
-
-    kNone           = 0b0000,
-
-    
-    kText           = 0b0001,
-
-    
-    kDrawVertices   = 0b0010,
-
-    
-    
-    
-    
-    
-    
-    
-    kSimpleShape    = 0b0100,
-    
-    kNonSimpleShape = 0b1000,
-
-    kShape          = kSimpleShape | kNonSimpleShape,
-
-    kMostCommon     = kText | kShape,
-    kAll            = kText | kDrawVertices | kShape
+enum class DepthStencilFlags : int {
+    kNone         = 0b000,
+    kDepth        = 0b001,
+    kStencil      = 0b010,
+    kDepthStencil = kDepth | kStencil,
 };
+
+
+
+
+
+enum DrawTypeFlags : uint16_t {
+
+    kNone             = 0b000000000,
+
+    
+    kBitmapText_Mask  = 0b00000001,
+    
+    kBitmapText_LCD   = 0b00000010,
+    
+    kBitmapText_Color = 0b00000100,
+    
+    kSDFText          = 0b00001000,
+    
+    kSDFText_LCD      = 0b00010000,
+
+    
+    
+    
+    
+    kDrawVertices     = 0b00100000,
+
+    
+    
+    
+    
+    
+    kSimpleShape      = 0b01000000,
+
+    
+    
+    
+    
+    
+    
+    
+    kNonSimpleShape   = 0b10000000,
+
+    kLast = kNonSimpleShape,
+};
+static constexpr int kDrawTypeFlagsCnt = static_cast<int>(DrawTypeFlags::kLast) + 1;
 
 } 
 

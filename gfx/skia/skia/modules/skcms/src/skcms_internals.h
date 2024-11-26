@@ -42,11 +42,14 @@ extern "C" {
         
         
         
+        
+        
         #if __has_cpp_attribute(clang::musttail) && !__has_feature(memory_sanitizer) \
                                                  && !__has_feature(address_sanitizer) \
                                                  && !defined(__EMSCRIPTEN__) \
                                                  && !defined(__arm__) \
                                                  && !defined(__riscv) \
+                                                 && !defined(__powerpc__) \
                                                  && !defined(__loongarch__) \
                                                  && !defined(_WIN32) && !defined(__SYMBIAN32__)
             #define SKCMS_HAS_MUSTTAIL 1

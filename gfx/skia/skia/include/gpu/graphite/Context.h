@@ -59,7 +59,40 @@ public:
     
     bool hasUnfinishedGpuWork() const;
 
-    void asyncRescaleAndReadPixels(const SkImage* image,
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void asyncRescaleAndReadPixels(const SkImage* src,
+                                   const SkImageInfo& dstImageInfo,
+                                   const SkIRect& srcRect,
+                                   SkImage::RescaleGamma rescaleGamma,
+                                   SkImage::RescaleMode rescaleMode,
+                                   SkImage::ReadPixelsCallback callback,
+                                   SkImage::ReadPixelsContext context);
+    void asyncRescaleAndReadPixels(const SkSurface* src,
                                    const SkImageInfo& dstImageInfo,
                                    const SkIRect& srcRect,
                                    SkImage::RescaleGamma rescaleGamma,
@@ -67,15 +100,44 @@ public:
                                    SkImage::ReadPixelsCallback callback,
                                    SkImage::ReadPixelsContext context);
 
-    void asyncRescaleAndReadPixels(const SkSurface* surface,
-                                   const SkImageInfo& dstImageInfo,
-                                   const SkIRect& srcRect,
-                                   SkImage::RescaleGamma rescaleGamma,
-                                   SkImage::RescaleMode rescaleMode,
-                                   SkImage::ReadPixelsCallback callback,
-                                   SkImage::ReadPixelsContext context);
+    
 
-    void asyncRescaleAndReadPixelsYUV420(const SkImage*,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void asyncRescaleAndReadPixelsYUV420(const SkImage* src,
+                                         SkYUVColorSpace yuvColorSpace,
+                                         sk_sp<SkColorSpace> dstColorSpace,
+                                         const SkIRect& srcRect,
+                                         const SkISize& dstSize,
+                                         SkImage::RescaleGamma rescaleGamma,
+                                         SkImage::RescaleMode rescaleMode,
+                                         SkImage::ReadPixelsCallback callback,
+                                         SkImage::ReadPixelsContext context);
+    void asyncRescaleAndReadPixelsYUV420(const SkSurface* src,
                                          SkYUVColorSpace yuvColorSpace,
                                          sk_sp<SkColorSpace> dstColorSpace,
                                          const SkIRect& srcRect,
@@ -85,17 +147,12 @@ public:
                                          SkImage::ReadPixelsCallback callback,
                                          SkImage::ReadPixelsContext context);
 
-    void asyncRescaleAndReadPixelsYUV420(const SkSurface*,
-                                         SkYUVColorSpace yuvColorSpace,
-                                         sk_sp<SkColorSpace> dstColorSpace,
-                                         const SkIRect& srcRect,
-                                         const SkISize& dstSize,
-                                         SkImage::RescaleGamma rescaleGamma,
-                                         SkImage::RescaleMode rescaleMode,
-                                         SkImage::ReadPixelsCallback callback,
-                                         SkImage::ReadPixelsContext context);
+    
 
-    void asyncRescaleAndReadPixelsYUVA420(const SkImage*,
+
+
+
+    void asyncRescaleAndReadPixelsYUVA420(const SkImage* src,
                                           SkYUVColorSpace yuvColorSpace,
                                           sk_sp<SkColorSpace> dstColorSpace,
                                           const SkIRect& srcRect,
@@ -104,8 +161,7 @@ public:
                                           SkImage::RescaleMode rescaleMode,
                                           SkImage::ReadPixelsCallback callback,
                                           SkImage::ReadPixelsContext context);
-
-    void asyncRescaleAndReadPixelsYUVA420(const SkSurface*,
+    void asyncRescaleAndReadPixelsYUVA420(const SkSurface* src,
                                           SkYUVColorSpace yuvColorSpace,
                                           sk_sp<SkColorSpace> dstColorSpace,
                                           const SkIRect& srcRect,
@@ -151,6 +207,11 @@ public:
 
 
     size_t currentBudgetedBytes() const;
+
+    
+
+
+    size_t currentPurgeableBytes() const;
 
     
 
@@ -232,41 +293,45 @@ private:
 
     void checkForFinishedWork(SyncToCpu);
 
-    void asyncRescaleAndReadPixelsYUV420Impl(const SkImage*,
-                                             SkYUVColorSpace yuvColorSpace,
-                                             bool readAlpha,
-                                             sk_sp<SkColorSpace> dstColorSpace,
-                                             const SkIRect& srcRect,
-                                             const SkISize& dstSize,
-                                             SkImage::RescaleGamma rescaleGamma,
-                                             SkImage::RescaleMode rescaleMode,
-                                             SkImage::ReadPixelsCallback callback,
-                                             SkImage::ReadPixelsContext context);
+    std::unique_ptr<Recorder> makeInternalRecorder() const;
 
-    void asyncReadPixels(const TextureProxy* textureProxy,
-                         const SkImageInfo& srcImageInfo,
-                         const SkColorInfo& dstColorInfo,
-                         const SkIRect& srcRect,
-                         SkImage::ReadPixelsCallback callback,
-                         SkImage::ReadPixelsContext context);
+    template <typename SrcPixels> struct AsyncParams;
 
-    void asyncReadPixelsYUV420(Recorder*,
-                               const SkImage*,
-                               SkYUVColorSpace yuvColorSpace,
-                               bool readAlpha,
-                               const SkIRect& srcRect,
-                               SkImage::ReadPixelsCallback callback,
-                               SkImage::ReadPixelsContext context);
-
-    void finalizeAsyncReadPixels(SkSpan<PixelTransferResult>,
-                                 SkImage::ReadPixelsCallback callback,
-                                 SkImage::ReadPixelsContext callbackContext);
+    template <typename ReadFn, typename... ExtraArgs>
+    void asyncRescaleAndReadImpl(ReadFn Context::* asyncRead,
+                                 SkImage::RescaleGamma rescaleGamma,
+                                 SkImage::RescaleMode rescaleMode,
+                                 const AsyncParams<SkImage>&,
+                                 ExtraArgs...);
 
     
-    PixelTransferResult transferPixels(const TextureProxy*,
-                                       const SkImageInfo& srcImageInfo,
+    
+    void asyncReadPixels(std::unique_ptr<Recorder>, const AsyncParams<SkImage>&);
+    void asyncReadPixelsYUV420(std::unique_ptr<Recorder>,
+                               const AsyncParams<SkImage>&,
+                               SkYUVColorSpace);
+
+    
+    
+    void asyncReadTexture(std::unique_ptr<Recorder>,
+                          const AsyncParams<TextureProxy>&,
+                          const SkColorInfo& srcColorInfo);
+
+    
+    
+    
+    PixelTransferResult transferPixels(Recorder*,
+                                       const TextureProxy* srcProxy,
+                                       const SkColorInfo& srcColorInfo,
                                        const SkColorInfo& dstColorInfo,
                                        const SkIRect& srcRect);
+
+    
+    
+    void finalizeAsyncReadPixels(std::unique_ptr<Recorder>,
+                                 SkSpan<PixelTransferResult>,
+                                 SkImage::ReadPixelsCallback callback,
+                                 SkImage::ReadPixelsContext callbackContext);
 
     sk_sp<SharedContext> fSharedContext;
     std::unique_ptr<ResourceProvider> fResourceProvider;
@@ -277,7 +342,7 @@ private:
     
     mutable SingleOwner fSingleOwner;
 
-#if defined(GRAPHITE_TEST_UTILS)
+#if defined(GPU_TEST_UTILS)
     
     bool fStoreContextRefInRecorder = false;
     

@@ -38,6 +38,19 @@ public:
     ~SkBitSet() = default;
 
     
+    bool operator==(const SkBitSet& that) {
+        if (fSize != that.fSize) {
+            return false;
+        }
+        const size_t numChunks = NumChunksFor(fSize);
+        return 0 == memcmp(fChunks.get(), that.fChunks.get(), sizeof(Chunk) * numChunks);
+    }
+
+    bool operator!=(const SkBitSet& that) {
+        return !this->operator==(that);
+    }
+
+    
     void set(size_t index) {
         SkASSERT(index < fSize);
         *this->chunkFor(index) |= ChunkMaskFor(index);

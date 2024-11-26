@@ -9,8 +9,10 @@
 #define SkFontArguments_DEFINED
 
 #include "include/core/SkColor.h"
-#include "include/core/SkScalar.h"
+#include "include/core/SkFourByteTag.h"
 #include "include/core/SkTypes.h"
+
+#include <cstdint>
 
 
 struct SkFontArguments {

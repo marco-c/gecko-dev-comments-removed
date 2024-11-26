@@ -41,18 +41,16 @@ public:
     VarDeclaration(Variable* var,
                    const Type* baseType,
                    int arraySize,
-                   std::unique_ptr<Expression> value,
-                   bool isClone = false)
+                   std::unique_ptr<Expression> value)
             : INHERITED(var->fPosition, kIRNodeKind)
             , fVar(var)
             , fBaseType(*baseType)
             , fArraySize(arraySize)
-            , fValue(std::move(value))
-            , fIsClone(isClone) {}
+            , fValue(std::move(value)) {}
 
     ~VarDeclaration() override {
         
-        if (fVar && !fIsClone) {
+        if (fVar) {
             fVar->detachDeadVarDeclaration();
         }
     }
@@ -125,8 +123,6 @@ private:
     const Type& fBaseType;
     int fArraySize;  
     std::unique_ptr<Expression> fValue;
-    
-    bool fIsClone;
 
     using INHERITED = Statement;
 };

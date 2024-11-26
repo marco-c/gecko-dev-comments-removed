@@ -8,78 +8,85 @@
 #ifndef SkPDFTag_DEFINED
 #define SkPDFTag_DEFINED
 
+#include "include/core/SkSpan.h"
+#include "include/core/SkString.h"
 #include "include/docs/SkPDFDocument.h"
 #include "include/private/base/SkTArray.h"
 #include "src/base/SkArenaAlloc.h"
 #include "src/core/SkTHash.h"
+#include "src/pdf/SkPDFTypes.h"
+
+#include <cstddef>
 
 class SkPDFDocument;
-struct SkPDFIndirectReference;
-struct SkPDFTagNode;
+struct SkPDFStructElem;
+struct SkPoint;
 
-class SkPDFTagTree {
+class SkPDFStructTree {
 public:
-    SkPDFTagTree();
-    ~SkPDFTagTree();
-    void init(SkPDF::StructureElementNode*, SkPDF::Metadata::Outline);
+    SkPDFStructTree(SkPDF::StructureElementNode*, SkPDF::Metadata::Outline);
+    SkPDFStructTree(const SkPDFStructTree&) = delete;
+    SkPDFStructTree& operator=(const SkPDFStructTree&) = delete;
+    SkPDFStructTree(SkPDFStructTree&&) = delete;
+    SkPDFStructTree& operator=(SkPDFStructTree&&) = delete;
+    ~SkPDFStructTree();
 
     class Mark {
-        SkPDFTagNode *const fNode;
-        size_t const fMarkIndex;
+        SkPDFStructElem* fStructElem;
+        size_t fMarkIndex;
     public:
-        Mark(SkPDFTagNode* node, size_t index) : fNode(node), fMarkIndex(index) {}
+        Mark(SkPDFStructElem* structElem, size_t markIndex)
+            : fStructElem(structElem), fMarkIndex(markIndex) {}
         Mark() : Mark(nullptr, 0) {}
-        Mark(const Mark&) = delete;
-        Mark& operator=(const Mark&) = delete;
+        Mark(const Mark&) = default;
+        Mark& operator=(const Mark&) = default;
         Mark(Mark&&) = default;
-        Mark& operator=(Mark&&) = delete;
+        Mark& operator=(Mark&&) = default;
 
-        explicit operator bool() const { return fNode; }
-        int id();
-        SkPoint& point();
+        explicit operator bool() const { return fStructElem; }
+        int mcid() const; 
+        int elemId() const; 
+        SkString structType() const; 
+        void accumulate(SkPoint); 
     };
-    
-    
-    
-    Mark createMarkIdForNodeId(int nodeId, unsigned pageIndex, SkPoint);
-    
-    
-    
-    int createStructParentKeyForNodeId(int nodeId, unsigned pageIndex);
 
-    void addNodeAnnotation(int nodeId, SkPDFIndirectReference annotationRef, unsigned pageIndex);
-    void addNodeTitle(int nodeId, SkSpan<const char>);
-    SkPDFIndirectReference makeStructTreeRoot(SkPDFDocument* doc);
-    SkPDFIndirectReference makeOutline(SkPDFDocument* doc);
+    
+    
+    
+    
+    
+    SkPDFStructTree::Mark createMarkForElemId(int elemId, unsigned pageIndex);
+
+    
+    
+    
+    
+    
+    int createStructParentKeyForElemId(int elemId, SkPDFIndirectReference contentItemRef,
+                                       unsigned pageIndex);
+
+    void addStructElemTitle(int elemId, SkSpan<const char>);
+    SkPDFIndirectReference emitStructTreeRoot(SkPDFDocument* doc) const;
+    SkPDFIndirectReference makeOutline(SkPDFDocument* doc) const;
     SkString getRootLanguage();
 
-private:
     
     
     struct IDTreeEntry {
-        int nodeId;
-        SkPDFIndirectReference ref;
+        int elemId;
+        SkPDFIndirectReference structElemRef;
     };
-
-    void Copy(SkPDF::StructureElementNode& node,
-              SkPDFTagNode* dst,
-              SkArenaAlloc* arena,
-              skia_private::THashMap<int, SkPDFTagNode*>* nodeMap,
-              bool wantTitle);
-    SkPDFIndirectReference PrepareTagTreeToEmit(SkPDFIndirectReference parent,
-                                                SkPDFTagNode* node,
-                                                SkPDFDocument* doc);
+private:
+    void move(SkPDF::StructureElementNode& node, SkPDFStructElem* structElem, bool wantTitle);
 
     SkArenaAlloc fArena;
-    skia_private::THashMap<int, SkPDFTagNode*> fNodeMap;
-    SkPDFTagNode* fRoot = nullptr;
-    SkPDF::Metadata::Outline fOutline;
-    skia_private::TArray<skia_private::TArray<SkPDFTagNode*>> fMarksPerPage;
-    std::vector<IDTreeEntry> fIdTreeEntries;
-    std::vector<int> fParentTreeAnnotationNodeIds;
-
-    SkPDFTagTree(const SkPDFTagTree&) = delete;
-    SkPDFTagTree& operator=(const SkPDFTagTree&) = delete;
+    skia_private::THashMap<int, SkPDFStructElem*> fStructElemForElemId;
+    SkPDFStructElem* fRoot = nullptr;
+    SkPDF::Metadata::Outline fOutline = SkPDF::Metadata::Outline::None;
+    
+    skia_private::TArray<skia_private::TArray<SkPDFStructElem*>> fStructElemForMcidForPage;
+    
+    skia_private::TArray<SkPDFStructElem*> fStructElemForContentItem;
 };
 
 #endif

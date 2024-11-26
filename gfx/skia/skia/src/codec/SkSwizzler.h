@@ -54,8 +54,10 @@ public:
 
 
 
-    static std::unique_ptr<SkSwizzler> MakeSimple(int srcBPP, const SkImageInfo& dstInfo,
-                                                  const SkCodec::Options&);
+    static std::unique_ptr<SkSwizzler> MakeSimple(int srcBPP,
+                                                  const SkImageInfo& dstInfo,
+                                                  const SkCodec::Options&,
+                                                  const SkIRect* frame = nullptr);
 
     
 

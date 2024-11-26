@@ -8,38 +8,48 @@
 #ifndef SkPDFDevice_DEFINED
 #define SkPDFDevice_DEFINED
 
-#include "include/core/SkBitmap.h"
 #include "include/core/SkCanvas.h"
-#include "include/core/SkData.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkRect.h"
+#include "include/core/SkMatrix.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkStream.h"
 #include "src/core/SkClipStack.h"
 #include "src/core/SkClipStackDevice.h"
 #include "src/core/SkTHash.h"
-#include "src/core/SkTextBlobPriv.h"
 #include "src/pdf/SkKeyedImage.h"
 #include "src/pdf/SkPDFGraphicStackState.h"
+#include "src/pdf/SkPDFTag.h"
 #include "src/pdf/SkPDFTypes.h"
 
-#include <vector>
+#include <cstddef>
+#include <memory>
+
+class SkBitmap;
+class SkBlender;
+class SkData;
+class SkDevice;
+class SkImage;
+class SkMesh;
+class SkPDFDocument;
+class SkPaint;
+class SkPath;
+class SkRRect;
+class SkSpecialImage;
+class SkSurface;
+class SkSurfaceProps;
+class SkVertices;
+enum class SkBlendMode;
+struct SkIRect;
+struct SkISize;
+struct SkImageInfo;
+struct SkPoint;
+struct SkRect;
 
 namespace sktext {
 class GlyphRun;
 class GlyphRunList;
 }
-
-class SkKeyedImage;
-class SkPDFArray;
-class SkPDFDevice;
-class SkPDFDict;
-class SkPDFDocument;
-class SkPDFFont;
-class SkPDFObject;
-class SkPath;
-class SkRRect;
-struct SkPDFIndirectReference;
 
 
 
@@ -129,7 +139,44 @@ private:
     skia_private::THashSet<SkPDFIndirectReference> fXObjectResources;
     skia_private::THashSet<SkPDFIndirectReference> fShaderResources;
     skia_private::THashSet<SkPDFIndirectReference> fFontResources;
-    int fNodeId;
+
+    class MarkedContentManager {
+    public:
+        MarkedContentManager(SkPDFDocument* document, SkDynamicMemoryWStream* out);
+        ~MarkedContentManager();
+
+        
+        
+        
+        void setNextMarksElemId(int nextMarksElemId);
+
+        
+        int elemId() const;
+
+        
+        
+        
+        
+        
+        void beginMark();
+
+        
+        bool hasActiveMark() const;
+
+        
+        
+        void accumulate(const SkPoint& p);
+
+        
+        bool madeMarks() const { return fMadeMarks; }
+
+    private:
+        SkPDFDocument* fDoc;
+        SkDynamicMemoryWStream* fOut;
+        SkPDFStructTree::Mark fCurrentlyActiveMark;
+        int fNextMarksElemId;
+        bool fMadeMarks;
+    } fMarkManager;
 
     SkDynamicMemoryWStream fContent;
     SkDynamicMemoryWStream fContentBuffer;

@@ -11,6 +11,8 @@
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkMath.h"
 
+#include <optional>
+
 namespace skgpu { class ShaderErrorHandler; }
 
 namespace skgpu::graphite {
@@ -95,6 +97,26 @@ struct SK_API ContextOptions {
 
 
     size_t fGpuBudgetInBytes = kDefaultContextBudget;
+
+    
+
+
+#if defined(SK_DEBUG)
+    bool fSetBackendLabels = true;
+#else
+    bool fSetBackendLabels = false;
+#endif
+
+    
+
+
+
+
+
+
+
+
+    std::optional<uint64_t> fVulkanVMALargeHeapBlockSize;
 
     
 

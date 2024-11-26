@@ -98,30 +98,51 @@ protected:
     }
 
     bool visitExpression(const Expression& e) override {
-        
-        if (e.is<ChildCall>() && &e.as<ChildCall>().child() == &fChild) {
-            
-            const ExpressionArray& arguments = e.as<ChildCall>().arguments();
-            SkASSERT(!arguments.empty());
+        switch (e.kind()) {
+            case ExpressionKind::kChildCall: {
+                const ChildCall& cc = e.as<ChildCall>();
+                if (&cc.child() == &fChild) {
+                    
+                    
+                    const ExpressionArray& arguments = cc.arguments();
+                    SkASSERT(!arguments.empty());
 
-            const Expression* maybeCoords = arguments[0].get();
-            if (maybeCoords->type().matches(*fContext.fTypes.fFloat2)) {
-                
-                
-                
-                if (!fWritesToSampleCoords && maybeCoords->is<VariableReference>() &&
-                    maybeCoords->as<VariableReference>().variable() == fMainCoordsParam) {
-                    fUsage.merge(SampleUsage::PassThrough());
-                    ++fElidedSampleCoordCount;
-                } else {
-                    fUsage.merge(SampleUsage::Explicit());
+                    const Expression* maybeCoords = arguments[0].get();
+                    if (maybeCoords->type().matches(*fContext.fTypes.fFloat2)) {
+                        
+                        
+                        
+                        if (!fWritesToSampleCoords && maybeCoords->is<VariableReference>() &&
+                            maybeCoords->as<VariableReference>().variable() == fMainCoordsParam) {
+                            fUsage.merge(SampleUsage::PassThrough());
+                            ++fElidedSampleCoordCount;
+                        } else {
+                            fUsage.merge(SampleUsage::Explicit());
+                        }
+                    } else {
+                        
+                        fUsage.merge(SampleUsage::PassThrough());
+                    }
                 }
-            } else {
-                
-                fUsage.merge(SampleUsage::PassThrough());
+                break;
             }
+            case ExpressionKind::kFunctionCall: {
+                
+                const FunctionCall& call = e.as<FunctionCall>();
+                for (const std::unique_ptr<Expression>& arg : call.arguments()) {
+                    if (arg->is<VariableReference>() &&
+                        arg->as<VariableReference>().variable() == &fChild) {
+                        
+                        
+                        fUsage.merge(SampleUsage::Explicit());
+                        break;
+                    }
+                }
+                break;
+            }
+            default:
+                break;
         }
-
         return INHERITED::visitExpression(e);
     }
 

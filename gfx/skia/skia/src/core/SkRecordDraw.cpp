@@ -97,13 +97,14 @@ DRAW(Restore, restore())
 DRAW(Save, save())
 DRAW(SaveLayer,
      saveLayer(SkCanvasPriv::ScaledBackdropLayer(
-             r.bounds,
-             r.paint,
-             r.backdrop.get(),
-             r.backdropScale,
-             r.saveLayerFlags,
-             SkCanvas::FilterSpan{const_cast<sk_sp<SkImageFilter>*>(r.filters.data()),
-                                  r.filters.size()})))
+               r.bounds,
+               r.paint,
+               r.backdrop.get(),
+               r.backdropScale,
+               r.backdropTileMode,
+               r.saveLayerFlags,
+               SkCanvas::FilterSpan{const_cast<sk_sp<SkImageFilter>*>(r.filters.data()),
+                                    r.filters.size()})))
 
 template <> void Draw::draw(const SaveBehind& r) {
     SkCanvasPriv::SaveBehind(fCanvas, r.subset);
@@ -286,9 +287,15 @@ private:
 
     
     
-    void trackBounds(const Save&)          { this->pushSaveBlock(nullptr); }
-    void trackBounds(const SaveLayer& op)  { this->pushSaveBlock(op.paint); }
-    void trackBounds(const SaveBehind&)    { this->pushSaveBlock(nullptr); }
+    void trackBounds(const Save&) {
+        this->pushSaveBlock(nullptr, false);
+    }
+    void trackBounds(const SaveLayer& op) {
+        this->pushSaveBlock(op.paint, op.backdrop != nullptr);
+    }
+    void trackBounds(const SaveBehind&) {
+        this->pushSaveBlock(nullptr, false);
+    }
     void trackBounds(const Restore&) {
         const bool isSaveLayer = fSaveStack.back().paint != nullptr;
         fBounds[fCurrentOp] = this->popSaveBlock();
@@ -316,14 +323,15 @@ private:
         this->updateSaveBounds(fBounds[fCurrentOp]);
     }
 
-    void pushSaveBlock(const SkPaint* paint) {
+    void pushSaveBlock(const SkPaint* paint, bool hasBackdropFilter) {
         
         SaveBounds sb;
         sb.controlOps = 0;
+
         
         
-        sb.bounds =
-            PaintMayAffectTransparentBlack(paint) ? fCullRect : Bounds::MakeEmpty();
+        bool affectsFullCullRect = hasBackdropFilter || PaintMayAffectTransparentBlack(paint);
+        sb.bounds = affectsFullCullRect ? fCullRect : Bounds::MakeEmpty();
         sb.paint = paint;
         sb.ctm = this->fCTM;
 

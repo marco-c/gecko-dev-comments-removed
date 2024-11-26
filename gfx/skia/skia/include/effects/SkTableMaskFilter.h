@@ -20,6 +20,8 @@ class SkMaskFilter;
 
 
 
+
+
 class SK_API SkTableMaskFilter {
 public:
     

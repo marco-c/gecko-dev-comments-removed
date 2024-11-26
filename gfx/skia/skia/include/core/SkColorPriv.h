@@ -102,17 +102,15 @@ static inline U8CPU SkUnitScalarClampToByte(SkScalar x) {
 
 
 
-
 static inline SkPMColor SkPackARGB32(U8CPU a, U8CPU r, U8CPU g, U8CPU b) {
     SkA32Assert(a);
-    SkASSERT(r <= a);
-    SkASSERT(g <= a);
-    SkASSERT(b <= a);
+    SkR32Assert(r);
+    SkG32Assert(g);
+    SkB32Assert(b);
 
     return (a << SK_A32_SHIFT) | (r << SK_R32_SHIFT) |
            (g << SK_G32_SHIFT) | (b << SK_B32_SHIFT);
 }
-
 
 
 

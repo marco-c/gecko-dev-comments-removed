@@ -18,7 +18,6 @@
 #include "include/core/SkStream.h"
 #include "include/core/SkTypes.h"
 #include "include/core/SkYUVAInfo.h"
-#include "include/private/SkJpegMetadataDecoder.h"
 #include "include/private/base/SkAlign.h"
 #include "include/private/base/SkMalloc.h"
 #include "include/private/base/SkTemplates.h"
@@ -26,23 +25,19 @@
 #include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkJpegConstants.h"
 #include "src/codec/SkJpegDecoderMgr.h"
+#include "src/codec/SkJpegMetadataDecoderImpl.h"
 #include "src/codec/SkJpegPriv.h"
 #include "src/codec/SkParseEncodedOrigin.h"
 #include "src/codec/SkSwizzler.h"
 
 #ifdef SK_CODEC_DECODES_JPEG_GAINMAPS
 #include "include/private/SkGainmapInfo.h"
-#include "include/private/SkXmp.h"
-#include "src/codec/SkJpegMultiPicture.h"
-#include "src/codec/SkJpegSegmentScan.h"
-#include "src/codec/SkJpegXmp.h"
 #endif  
 
 #include <array>
 #include <csetjmp>
 #include <cstring>
 #include <utility>
-#include <vector>
 
 using namespace skia_private;
 
@@ -62,9 +57,6 @@ bool SkJpegCodec::IsJpeg(const void* buffer, size_t bytesRead) {
     return bytesRead >= sizeof(kJpegSig) && !memcmp(buffer, kJpegSig, sizeof(kJpegSig));
 }
 
-using SkJpegMarker = SkJpegMetadataDecoder::Segment;
-using SkJpegMarkerList = std::vector<SkJpegMarker>;
-
 SkJpegMarkerList get_sk_marker_list(jpeg_decompress_struct* dinfo) {
     SkJpegMarkerList markerList;
     for (auto* marker = dinfo->marker_list; marker; marker = marker->next) {
@@ -72,173 +64,6 @@ SkJpegMarkerList get_sk_marker_list(jpeg_decompress_struct* dinfo) {
                                 SkData::MakeWithoutCopy(marker->data, marker->data_length));
     }
     return markerList;
-}
-
-
-
-
-
-static bool marker_has_signature(const SkJpegMarker& marker,
-                                 const uint32_t targetMarker,
-                                 const uint8_t* signature,
-                                 size_t signatureSize) {
-    if (targetMarker != marker.fMarker) {
-        return false;
-    }
-    if (marker.fData->size() <= signatureSize) {
-        return false;
-    }
-    if (memcmp(marker.fData->bytes(), signature, signatureSize) != 0) {
-        return false;
-    }
-    return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static sk_sp<SkData> read_metadata(const SkJpegMarkerList& markerList,
-                                   const uint32_t targetMarker,
-                                   const uint8_t* signature,
-                                   size_t signatureSize,
-                                   size_t signaturePadding,
-                                   size_t bytesInIndex,
-                                   bool alwaysCopyData) {
-    
-    
-    const size_t headerSize = signatureSize + signaturePadding + 2 * bytesInIndex;
-
-    
-    std::vector<sk_sp<SkData>> parts;
-
-    
-    size_t partsTotalSize = 0;
-
-    
-    uint32_t foundPartCount = 0;
-
-    
-    uint32_t expectedPartCount = 0;
-
-    
-    for (const auto& marker : markerList) {
-        
-        if (!marker_has_signature(marker, targetMarker, signature, signatureSize)) {
-            continue;
-        }
-
-        
-        const size_t dataLength = marker.fData->size();
-        if (dataLength <= headerSize) {
-            continue;
-        }
-
-        
-        
-        const uint8_t* data = marker.fData->bytes();
-        uint32_t partIndex = 0;
-        uint32_t partCount = 0;
-        if (bytesInIndex == 0) {
-            partIndex = 1;
-            partCount = 1;
-        } else {
-            for (size_t i = 0; i < bytesInIndex; ++i) {
-                const size_t offset = signatureSize + signaturePadding;
-                partIndex = (partIndex << 8) + data[offset + i];
-                partCount = (partCount << 8) + data[offset + bytesInIndex + i];
-            }
-        }
-
-        
-        if (!partCount) {
-            SkCodecPrintf("Invalid marker part count zero\n");
-            return nullptr;
-        }
-
-        
-        if (partIndex <= 0 || partIndex > partCount) {
-            SkCodecPrintf("Invalid marker index %u for count %u\n", partIndex, partCount);
-            return nullptr;
-        }
-
-        
-        if (expectedPartCount == 0) {
-            expectedPartCount = partCount;
-            parts.resize(expectedPartCount);
-        }
-
-        
-        if (partCount != expectedPartCount) {
-            SkCodecPrintf("Conflicting marker counts %u vs %u\n", partCount, expectedPartCount);
-            return nullptr;
-        }
-
-        
-        auto partData = SkData::MakeWithoutCopy(data + headerSize, dataLength - headerSize);
-
-        
-        if (parts[partIndex-1]) {
-            SkCodecPrintf("Duplicate parts for index %u of %u\n", partIndex, expectedPartCount);
-            return nullptr;
-        }
-
-        
-        partsTotalSize += partData->size();
-        parts[partIndex-1] = std::move(partData);
-        foundPartCount += 1;
-
-        
-        if (foundPartCount == expectedPartCount) {
-            break;
-        }
-    }
-
-    
-    if (expectedPartCount == 0) {
-        return nullptr;
-    }
-
-    
-    if (foundPartCount != expectedPartCount) {
-        SkCodecPrintf("Incomplete set of markers (expected %u got %u)\n",
-                      expectedPartCount,
-                      foundPartCount);
-        return nullptr;
-    }
-
-    
-    if (!alwaysCopyData && expectedPartCount == 1) {
-        return std::move(parts[0]);
-    }
-
-    
-    auto result = SkData::MakeUninitialized(partsTotalSize);
-    void* copyDest = result->writable_data();
-    for (const auto& part : parts) {
-        memcpy(copyDest, part->data(), part->size());
-        copyDest = SkTAddOffset<void>(copyDest, part->size());
-    }
-    return result;
 }
 
 static SkEncodedOrigin get_exif_orientation(sk_sp<SkData> exifData) {
@@ -274,11 +99,10 @@ SkCodec::Result SkJpegCodec::ReadHeader(
         jpeg_save_markers(dinfo, kExifMarker, 0xFFFF);
         jpeg_save_markers(dinfo, kICCMarker, 0xFFFF);
         jpeg_save_markers(dinfo, kMpfMarker, 0xFFFF);
-        jpeg_save_markers(dinfo, kGainmapMarker, 0xFFFF);
     }
 
     
-    switch (jpeg_read_header(dinfo, true)) {
+    switch (jpeg_read_header(dinfo, TRUE)) {
         case JPEG_HEADER_OK:
             break;
         case JPEG_SUSPENDED:
@@ -294,7 +118,8 @@ SkCodec::Result SkJpegCodec::ReadHeader(
             return kInvalidInput;
         }
 
-        auto metadataDecoder = SkJpegMetadataDecoder::Make(get_sk_marker_list(dinfo));
+        auto metadataDecoder =
+                std::make_unique<SkJpegMetadataDecoderImpl>(get_sk_marker_list(dinfo));
 
         SkEncodedOrigin orientation =
                 get_exif_orientation(metadataDecoder->getExifMetadata(false));
@@ -1080,309 +905,40 @@ SkCodec::Result SkJpegCodec::onGetYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps) {
     return kSuccess;
 }
 
-#ifdef SK_CODEC_DECODES_JPEG_GAINMAPS
-
-static std::unique_ptr<SkXmp> get_xmp_metadata(const SkJpegMarkerList& markerList) {
-    std::vector<sk_sp<SkData>> decoderApp1Params;
-    for (const auto& marker : markerList) {
-        if (marker.fMarker == kXMPMarker) {
-            decoderApp1Params.push_back(marker.fData);
-        }
-    }
-    return SkJpegMakeXmp(decoderApp1Params);
-}
-
-
-
-
-static std::unique_ptr<SkJpegMultiPictureParameters> find_mp_params(
-        const SkJpegMarkerList& markerList,
-        SkJpegSourceMgr* sourceMgr,
-        SkJpegSegment* outMpParamsSegment) {
-    std::unique_ptr<SkJpegMultiPictureParameters> mpParams;
-    size_t skippedSegmentCount = 0;
-
-    
-    
-    for (const auto& marker : markerList) {
-        if (marker.fMarker != kMpfMarker) {
-            continue;
-        }
-        mpParams = SkJpegMultiPictureParameters::Make(marker.fData);
-        if (mpParams) {
-            break;
-        }
-        ++skippedSegmentCount;
-    }
-    if (!mpParams) {
-        return nullptr;
-    }
-
-    
-    if (!sourceMgr) {
-        SkASSERT(!outMpParamsSegment);
-        return mpParams;
-    }
-
-    
-    
-    
-    for (const auto& segment : sourceMgr->getAllSegments()) {
-        if (segment.marker != kMpfMarker) {
-            continue;
-        }
-        if (skippedSegmentCount == 0) {
-            *outMpParamsSegment = segment;
-            return mpParams;
-        }
-        skippedSegmentCount--;
-    }
-    return nullptr;
-}
-
-
-
-
-static bool extract_gainmap(SkJpegSourceMgr* decoderSource,
-                            size_t offset,
-                            size_t size,
-                            bool base_image_has_hdrgm,
-                            SkGainmapInfo* outInfo,
-                            std::unique_ptr<SkStream>* outGainmapImageStream) {
-    
-    bool imageDataWasCopied = false;
-    auto imageData = decoderSource->getSubsetData(offset, size, &imageDataWasCopied);
-    if (!imageData) {
-        SkCodecPrintf("Failed to extract MP image.\n");
+bool SkJpegCodec::onGetGainmapCodec(SkGainmapInfo* info, std::unique_ptr<SkCodec>* gainmapCodec) {
+    std::unique_ptr<SkStream> stream;
+    if (!this->onGetGainmapInfo(info, &stream)) {
         return false;
     }
-
-    
-    SkJpegSegmentScanner scan(kJpegMarkerStartOfScan);
-    scan.onBytes(imageData->data(), imageData->size());
-    if (scan.hadError() || !scan.isDone()) {
-        SkCodecPrintf("Failed to scan header of MP image.\n");
-        return false;
-    }
-
-    
-    std::vector<sk_sp<SkData>> app1Params;
-    for (const auto& segment : scan.getSegments()) {
-        if (segment.marker != kXMPMarker) {
-            continue;
-        }
-        auto parameters = SkJpegSegmentScanner::GetParameters(imageData.get(), segment);
-        if (!parameters) {
-            continue;
-        }
-        app1Params.push_back(std::move(parameters));
-    }
-    auto xmp = SkJpegMakeXmp(app1Params);
-    if (!xmp) {
-        return false;
-    }
-
-    
-    bool did_populate_info = false;
-    SkGainmapInfo info;
-
-    
-    did_populate_info = base_image_has_hdrgm && xmp->getGainmapInfoHDRGM(&info);
-
-    
-    if (!did_populate_info) {
-        did_populate_info = xmp->getGainmapInfoHDRGainMap(&info);
-    }
-
-    
-    if (!did_populate_info) {
-        return false;
-    }
-
-    
-    if (outGainmapImageStream) {
-        if (imageDataWasCopied) {
-            *outGainmapImageStream = SkMemoryStream::Make(imageData);
-        } else {
-            *outGainmapImageStream = SkMemoryStream::MakeCopy(imageData->data(), imageData->size());
+    if (gainmapCodec) {
+        Result result;
+        *gainmapCodec = MakeFromStream(std::move(stream), &result);
+        if (!*gainmapCodec) {
+            return false;
         }
     }
-    *outInfo = info;
     return true;
 }
 
-static bool get_gainmap_info(const SkJpegMarkerList& markerList,
-                             SkJpegSourceMgr* sourceMgr,
-                             SkGainmapInfo* info,
-                             std::unique_ptr<SkStream>* gainmapImageStream) {
-    
-    std::unique_ptr<SkXmp> xmp = get_xmp_metadata(markerList);
-
-    
-    SkGainmapInfo base_image_info;
-
-    
-    
-    const bool base_image_has_hdrgm = xmp && xmp->getGainmapInfoHDRGM(&base_image_info);
-
-    
-    size_t containerGainmapOffset = 0;
-    size_t containerGainmapSize = 0;
-    if (xmp && xmp->getContainerGainmapLocation(&containerGainmapOffset, &containerGainmapSize)) {
-        const auto& segments = sourceMgr->getAllSegments();
-        if (!segments.empty()) {
-            const auto& lastSegment = segments.back();
-            if (lastSegment.marker == kJpegMarkerEndOfImage) {
-                containerGainmapOffset += lastSegment.offset + kJpegMarkerCodeSize;
-            }
-        }
-    }
-
-    
-    SkJpegSegment mpParamsSegment;
-    auto mpParams = find_mp_params(markerList, sourceMgr, &mpParamsSegment);
-
-    
-    if (mpParams) {
-        for (size_t mpImageIndex = 1; mpImageIndex < mpParams->images.size(); ++mpImageIndex) {
-            size_t mpImageOffset = SkJpegMultiPictureParameters::GetAbsoluteOffset(
-                    mpParams->images[mpImageIndex].dataOffset, mpParamsSegment.offset);
-            size_t mpImageSize = mpParams->images[mpImageIndex].size;
-
-            if (extract_gainmap(sourceMgr,
-                                mpImageOffset,
-                                mpImageSize,
-                                base_image_has_hdrgm,
-                                info,
-                                gainmapImageStream)) {
-                
-                
-                if (containerGainmapOffset) {
-                    SkASSERT(containerGainmapOffset == mpImageOffset);
-                    SkASSERT(containerGainmapSize == mpImageSize);
-                }
-                return true;
-            }
-        }
-    }
-
-    
-    if (containerGainmapOffset) {
-        if (extract_gainmap(sourceMgr,
-                            containerGainmapOffset,
-                            containerGainmapSize,
-                            base_image_has_hdrgm,
-                            info,
-                            gainmapImageStream)) {
-            return true;
-        }
-        SkCodecPrintf("Failed to extract container-specified gainmap.\n");
-    }
-
-    
-    
-    if (xmp && base_image_has_hdrgm) {
-        auto gainmapData = read_metadata(markerList,
-                                         kGainmapMarker,
-                                         kGainmapSig,
-                                         sizeof(kGainmapSig),
-                                         0,
-                                         kGainmapMarkerIndexSize,
-                                         true);
-        if (gainmapData) {
-            *gainmapImageStream = SkMemoryStream::Make(std::move(gainmapData));
-            if (*gainmapImageStream) {
-                *info = base_image_info;
-                return true;
-            }
-        } else {
-            SkCodecPrintf("Parsed HDRGM metadata but did not find image\n");
-        }
-    }
-    return false;
-}
-
 bool SkJpegCodec::onGetGainmapInfo(SkGainmapInfo* info,
                                    std::unique_ptr<SkStream>* gainmapImageStream) {
-    auto markerList = get_sk_marker_list(fDecoderMgr->dinfo());
-    return get_gainmap_info(markerList, fDecoderMgr->getSourceMgr(), info, gainmapImageStream);
-}
+#ifdef SK_CODEC_DECODES_JPEG_GAINMAPS
+    sk_sp<SkData> gainmap_data;
+    SkGainmapInfo gainmap_info;
 
+    auto metadataDecoder =
+            std::make_unique<SkJpegMetadataDecoderImpl>(get_sk_marker_list(fDecoderMgr->dinfo()));
+    if (!metadataDecoder->findGainmapImage(
+                fDecoderMgr->getSourceMgr(), gainmap_data, gainmap_info)) {
+        return false;
+    }
+
+    *info = gainmap_info;
+    *gainmapImageStream = SkMemoryStream::Make(gainmap_data);
+    return true;
 #else
-bool SkJpegCodec::onGetGainmapInfo(SkGainmapInfo* info,
-                                   std::unique_ptr<SkStream>* gainmapImageStream) {
     return false;
-}
 #endif  
-
-class SkJpegMetadataDecoderImpl : public SkJpegMetadataDecoder {
-public:
-    SkJpegMetadataDecoderImpl(SkJpegMarkerList markerList) : fMarkerList(std::move(markerList)) {}
-
-    sk_sp<SkData> getExifMetadata(bool copyData) const override {
-        return read_metadata(fMarkerList,
-                             kExifMarker,
-                             kExifSig,
-                             sizeof(kExifSig),
-                             1,
-                             0,
-                             copyData);
-    }
-
-    sk_sp<SkData> getICCProfileData(bool copyData) const override {
-        return read_metadata(fMarkerList,
-                             kICCMarker,
-                             kICCSig,
-                             sizeof(kICCSig),
-                             0,
-                             kICCMarkerIndexSize,
-                             copyData);
-    }
-
-    bool mightHaveGainmapImage() const override {
-#ifdef SK_CODEC_DECODES_JPEG_GAINMAPS
-        
-        return find_mp_params(fMarkerList, nullptr, nullptr) != nullptr;
-#else
-        return false;
-#endif
-    }
-
-    bool findGainmapImage(sk_sp<SkData> baseImageData,
-                          sk_sp<SkData>& outGainmapImageData,
-                          SkGainmapInfo& outGainmapInfo) override {
-#ifdef SK_CODEC_DECODES_JPEG_GAINMAPS
-        auto baseImageStream = SkMemoryStream::Make(baseImageData);
-        auto sourceMgr = SkJpegSourceMgr::Make(baseImageStream.get());
-        SkGainmapInfo gainmapInfo;
-        std::unique_ptr<SkStream> gainmapImageStream;
-        if (!get_gainmap_info(fMarkerList, sourceMgr.get(), &gainmapInfo, &gainmapImageStream)) {
-            return false;
-        }
-
-        
-        
-        
-        SkASSERT(gainmapImageStream->getMemoryBase());
-        outGainmapImageData = SkData::MakeWithCopy(gainmapImageStream->getMemoryBase(),
-                                                   gainmapImageStream->getLength());
-        outGainmapInfo = gainmapInfo;
-        return true;
-#else
-        return false;
-#endif
-    }
-
-private:
-    SkJpegMarkerList fMarkerList;
-};
-
-std::unique_ptr<SkJpegMetadataDecoder> SkJpegMetadataDecoder::Make(std::vector<Segment> segments) {
-    SkJpegMarkerList markerList;
-    for (const auto& segment : segments) {
-        markerList.emplace_back(segment.fMarker, segment.fData);
-    }
-    return std::make_unique<SkJpegMetadataDecoderImpl>(std::move(markerList));
 }
 
 namespace SkJpegDecoder {

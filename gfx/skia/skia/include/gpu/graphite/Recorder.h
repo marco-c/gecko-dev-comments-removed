@@ -16,7 +16,6 @@
 #include "include/private/base/SkTArray.h"
 
 #include <chrono>
-#include <vector>
 
 struct AHardwareBuffer;
 class SkCanvas;
@@ -45,6 +44,7 @@ class DrawBufferManager;
 class GlobalCache;
 class ImageProvider;
 class ProxyCache;
+class ProxyReadCountMap;
 class RecorderPriv;
 class ResourceProvider;
 class RuntimeEffectDictionary;
@@ -55,9 +55,9 @@ class TextureDataBlock;
 class TextureInfo;
 class UniformDataBlock;
 class UploadBufferManager;
+class UploadList;
 
 template<typename T> class PipelineDataCache;
-using UniformDataCache = PipelineDataCache<UniformDataBlock>;
 using TextureDataCache = PipelineDataCache<TextureDataBlock>;
 
 struct SK_API RecorderOptions final {
@@ -87,6 +87,11 @@ public:
 
     ImageProvider* clientImageProvider() { return fClientImageProvider.get(); }
     const ImageProvider* clientImageProvider() const { return fClientImageProvider.get(); }
+
+    
+
+
+    int maxTextureSize() const;
 
     
 
@@ -124,9 +129,13 @@ public:
 
 
 
+
+
     bool updateBackendTexture(const BackendTexture&,
                               const SkPixmap srcData[],
-                              int numLevels);
+                              int numLevels,
+                              GpuFinishedProc = nullptr,
+                              GpuFinishedContext = nullptr);
 
     
 
@@ -139,9 +148,12 @@ public:
 
 
 
+
     bool updateCompressedBackendTexture(const BackendTexture&,
                                         const void* data,
-                                        size_t dataSize);
+                                        size_t dataSize,
+                                        GpuFinishedProc = nullptr,
+                                        GpuFinishedContext = nullptr);
 
     
 
@@ -190,6 +202,11 @@ public:
     
 
 
+    size_t currentPurgeableBytes() const;
+
+    
+
+
     size_t maxBudgetedBytes() const;
 
     
@@ -207,7 +224,9 @@ private:
     friend class Device; 
     friend class RecorderPriv; 
 
-    Recorder(sk_sp<SharedContext>, const RecorderOptions&);
+    
+    
+    Recorder(sk_sp<SharedContext>, const RecorderOptions&, const Context*);
 
     SingleOwner* singleOwner() const { return &fSingleOwner; }
 
@@ -233,16 +252,26 @@ private:
     void deregisterDevice(const Device*);
 
     sk_sp<SharedContext> fSharedContext;
-    std::unique_ptr<ResourceProvider> fResourceProvider;
+    ResourceProvider* fResourceProvider; 
+    std::unique_ptr<ResourceProvider> fOwnedResourceProvider; 
     std::unique_ptr<RuntimeEffectDictionary> fRuntimeEffectDict;
 
     
     std::unique_ptr<TaskList> fRootTaskList;
-    std::unique_ptr<UniformDataCache> fUniformDataCache;
+    
+    std::unique_ptr<UploadList> fRootUploads;
+
     std::unique_ptr<TextureDataCache> fTextureDataCache;
     std::unique_ptr<DrawBufferManager> fDrawBufferManager;
     std::unique_ptr<UploadBufferManager> fUploadBufferManager;
-    std::vector<sk_sp<Device>> fTrackedDevices;
+    std::unique_ptr<ProxyReadCountMap> fProxyReadCounts;
+
+    
+    
+    
+    
+    skia_private::TArray<sk_sp<Device>> fTrackedDevices;
+    int fFlushingDevicesIndex = -1;
 
     uint32_t fUniqueID;  
     uint32_t fNextRecordingID = 1;
@@ -263,7 +292,7 @@ private:
 
     skia_private::TArray<sk_sp<RefCntedCallback>> fFinishedProcs;
 
-#if defined(GRAPHITE_TEST_UTILS)
+#if defined(GPU_TEST_UTILS)
     
     Context* fContext = nullptr;
 #endif

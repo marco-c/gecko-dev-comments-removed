@@ -10,6 +10,9 @@
 
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkStream.h"
+#include "src/base/SkEndian.h"
+
+#include <cstdint>
 
 class SkData;
 
@@ -39,6 +42,24 @@ public:
 private:
     size_t fBytesWritten = 0;
 };
+
+
+
+
+inline bool SkWStreamWriteU16BE(SkWStream* s, uint16_t value) {
+    value = SkEndian_SwapBE16(value);
+    return s->write(&value, sizeof(value));
+}
+
+inline bool SkWStreamWriteU32BE(SkWStream* s, uint32_t value) {
+    value = SkEndian_SwapBE32(value);
+    return s->write(&value, sizeof(value));
+}
+
+inline bool SkWStreamWriteS32BE(SkWStream* s, int32_t value) {
+    value = SkEndian_SwapBE32(value);
+    return s->write(&value, sizeof(value));
+}
 
 
 

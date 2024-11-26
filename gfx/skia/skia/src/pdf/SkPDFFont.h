@@ -8,21 +8,61 @@
 #define SkPDFFont_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkTypeface.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
+#include "src/base/SkUTF.h"
 #include "src/core/SkAdvancedTypefaceMetrics.h"
-#include "src/core/SkStrikeCache.h"
+#include "src/core/SkStrikeSpec.h"
+#include "src/core/SkTHash.h"
 #include "src/pdf/SkPDFGlyphUse.h"
 #include "src/pdf/SkPDFTypes.h"
 
+#include <cstdint>
 #include <vector>
 
+class SkDescriptor;
+class SkFont;
+class SkGlyph;
+class SkPaint;
 class SkPDFDocument;
+class SkPDFFont;
 class SkString;
+class SkTypeface;
+
+class SkPDFStrikeSpec {
+public:
+    SkPDFStrikeSpec(SkStrikeSpec, SkScalar em);
+
+    const SkStrikeSpec fStrikeSpec;
+    const SkScalar fUnitsPerEM;
+};
+
+class SkPDFStrike : public SkRefCnt {
+public:
+    
+
+
+    static sk_sp<SkPDFStrike> Make(SkPDFDocument* doc, const SkFont&, const SkPaint&);
+
+    const SkPDFStrikeSpec fPath;
+    const SkPDFStrikeSpec fImage;
+    const bool fHasMaskFilter;
+    SkPDFDocument* fDoc;
+    skia_private::THashMap<SkGlyphID, SkPDFFont> fFontMap;
+
+    
 
 
 
+    SkPDFFont* getFontResource(const SkGlyph* glyph);
 
+    struct Traits {
+        static const SkDescriptor& GetKey(const sk_sp<SkPDFStrike>& strike);
+        static uint32_t Hash(const SkDescriptor& descriptor);
+    };
+private:
+    SkPDFStrike(SkPDFStrikeSpec path, SkPDFStrikeSpec image, bool hasMaskFilter, SkPDFDocument*);
+};
 
 
 
@@ -31,19 +71,14 @@ class SkPDFFont {
 public:
     ~SkPDFFont();
     SkPDFFont(SkPDFFont&&);
-    SkPDFFont& operator=(SkPDFFont&&);
-
-    
-
-
-    SkTypeface* typeface() const { return fTypeface.get(); }
+    SkPDFFont& operator=(SkPDFFont&&) = delete;
 
     
 
 
     SkAdvancedTypefaceMetrics::FontType getType() const { return fFontType; }
 
-    static SkAdvancedTypefaceMetrics::FontType FontType(const SkTypeface&,
+    static SkAdvancedTypefaceMetrics::FontType FontType(const SkPDFStrike&,
                                                         const SkAdvancedTypefaceMetrics&);
     static void GetType1GlyphNames(const SkTypeface&, SkString*);
 
@@ -84,23 +119,13 @@ public:
 
 
 
-
-
-
-
-    static SkPDFFont* GetFontResource(SkPDFDocument* doc,
-                                      const SkGlyph* glyphs,
-                                      SkTypeface* typeface);
-
-    
-
-
-
-    static const SkAdvancedTypefaceMetrics* GetMetrics(const SkTypeface* typeface,
+    static const SkAdvancedTypefaceMetrics* GetMetrics(const SkTypeface& typeface,
                                                        SkPDFDocument* canon);
 
-    static const std::vector<SkUnichar>& GetUnicodeMap(const SkTypeface* typeface,
+    static const std::vector<SkUnichar>& GetUnicodeMap(const SkTypeface& typeface,
                                                        SkPDFDocument* canon);
+    static skia_private::THashMap<SkGlyphID, SkString>& GetUnicodeMapEx(
+            const SkTypeface& typeface, SkPDFDocument* canon);
 
     static void PopulateCommonFontDescriptor(SkPDFDict* descriptor,
                                              const SkAdvancedTypefaceMetrics&,
@@ -110,23 +135,21 @@ public:
     void emitSubset(SkPDFDocument*) const;
 
     
-
-
-
-    static bool CanEmbedTypeface(SkTypeface*, SkPDFDocument*);
+    static bool CanEmbedTypeface(const SkTypeface&, SkPDFDocument*);
 
     SkGlyphID firstGlyphID() const { return fGlyphUsage.firstNonZero(); }
     SkGlyphID lastGlyphID() const { return fGlyphUsage.lastGlyph(); }
     const SkPDFGlyphUse& glyphUsage() const { return fGlyphUsage; }
-    sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
+
+    const SkPDFStrike& strike() const { return *fStrike; }
 
 private:
-    sk_sp<SkTypeface> fTypeface;
+    const SkPDFStrike* fStrike;
     SkPDFGlyphUse fGlyphUsage;
     SkPDFIndirectReference fIndirectReference;
     SkAdvancedTypefaceMetrics::FontType fFontType;
 
-    SkPDFFont(sk_sp<SkTypeface>,
+    SkPDFFont(const SkPDFStrike*,
               SkGlyphID firstGlyphID,
               SkGlyphID lastGlyphID,
               SkAdvancedTypefaceMetrics::FontType fontType,
@@ -137,6 +160,7 @@ private:
     SkPDFFont() = delete;
     SkPDFFont(const SkPDFFont&) = delete;
     SkPDFFont& operator=(const SkPDFFont&) = delete;
+    friend class SkPDFStrike;
 };
 
 #endif

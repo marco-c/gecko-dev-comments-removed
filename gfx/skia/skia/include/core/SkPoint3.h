@@ -10,7 +10,7 @@
 
 #include "include/core/SkScalar.h"
 #include "include/private/base/SkAPI.h"
-#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkFloatingPoint.h"
 
 struct SK_API SkPoint3 {
     SkScalar fX, fY, fZ;
@@ -114,17 +114,7 @@ struct SK_API SkPoint3 {
 
 
     bool isFinite() const {
-        SkScalar accum = 0;
-        accum *= fX;
-        accum *= fY;
-        accum *= fZ;
-
-        
-        SkASSERT(0 == accum || SkScalarIsNaN(accum));
-
-        
-        
-        return !SkScalarIsNaN(accum);
+        return SkIsFinite(fX, fY, fZ);
     }
 
     

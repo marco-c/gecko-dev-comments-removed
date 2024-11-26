@@ -7,9 +7,12 @@
 #ifndef SkKeyedImage_DEFINED
 #define SkKeyedImage_DEFINED
 
-#include "include/core/SkBitmap.h"
 #include "include/core/SkImage.h"
+#include "include/core/SkRefCnt.h"
 #include "src/pdf/SkBitmapKey.h"
+
+class SkBitmap;
+struct SkIRect;
 
 
 

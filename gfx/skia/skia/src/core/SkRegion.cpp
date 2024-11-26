@@ -61,7 +61,9 @@ public:
     void resizeToAtLeast(int count) {
         if (count > fCount) {
             
-            count += count >> 1;
+            SkSafeMath safe;
+            int newCount = safe.addInt(count, count >> 1);
+            count = safe ? newCount : SK_MaxS32;
             fMalloc.realloc(count);
             if (fPtr == fStack) {
                 memcpy(fMalloc.get(), fStack, fCount * sizeof(SkRegionPriv::RunType));

@@ -5,6 +5,7 @@
 #define SkContainers_DEFINED
 
 #include "include/private/base/SkAPI.h"
+#include "include/private/base/SkAlign.h"
 #include "include/private/base/SkSpan_impl.h"
 
 #include <cstddef>
@@ -20,8 +21,15 @@ public:
     
     SkSpan<std::byte> allocate(int capacity, double growthFactor = 1.0);
 
+    
+    template <typename T>
+    static constexpr size_t RoundUp(size_t capacity) {
+        return SkAlignTo(capacity * sizeof(T), kCapacityMultiple) / sizeof(T);
+    }
+
 private:
     friend struct SkContainerAllocatorTestingPeer;
+
     
     
     static constexpr int64_t kCapacityMultiple = 8;

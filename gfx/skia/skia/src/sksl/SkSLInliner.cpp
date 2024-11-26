@@ -186,6 +186,24 @@ std::unique_ptr<Expression> Inliner::inlineExpression(Position pos,
         }
         return args;
     };
+    auto childRemap = [&](const Variable& var) -> const Variable& {
+        
+        if (std::unique_ptr<Expression>* remap = varMap->find(&var)) {
+            
+            
+            if ((*remap)->is<VariableReference>()) {
+                const VariableReference& remappedRef = (*remap)->as<VariableReference>();
+                return *remappedRef.variable();
+            } else {
+                SkDEBUGFAILF("Child effect '%.*s' remaps to unexpected expression '%s'",
+                             (int)var.name().size(), var.name().data(),
+                             (*remap)->description().c_str());
+            }
+        }
+
+        
+        return var;
+    };
 
     switch (expression.kind()) {
         case Expression::Kind::kBinary: {
@@ -205,7 +223,7 @@ std::unique_ptr<Expression> Inliner::inlineExpression(Position pos,
             return ChildCall::Make(*fContext,
                                    pos,
                                    childCall.type().clone(*fContext, symbolTableForExpression),
-                                   childCall.child(),
+                                   childRemap(childCall.child()),
                                    argList(childCall.arguments()));
         }
         case Expression::Kind::kConstructorArray: {

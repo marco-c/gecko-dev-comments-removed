@@ -1421,6 +1421,17 @@ std::optional<SlotRange> Generator::writeFunction(
 
             
             
+            if (arg.type().isEffectChild()) {
+                if (int* childIndex = fChildEffectMap.find(arg.as<VariableReference>()
+                                                              .variable())) {
+                    SkASSERT(!fChildEffectMap.find(&param));
+                    fChildEffectMap[&param] = *childIndex;
+                }
+                continue;
+            }
+
+            
+            
             if (IsInoutParameter(param) || IsOutParameter(param)) {
                 lvalues[index] = this->makeLValue(arg);
                 if (!lvalues[index]) {
@@ -1526,6 +1537,14 @@ std::optional<SlotRange> Generator::writeFunction(
             fProgramSlots.mapVariableToSlots(*remapped.fVariable, *remapped.fSlotRange);
         } else {
             fProgramSlots.unmapVariableSlots(*remapped.fVariable);
+        }
+    }
+
+    
+    for (size_t index = 0; index < arguments.size(); ++index) {
+        const Expression& arg = *arguments[index];
+        if (arg.type().isEffectChild()) {
+            fChildEffectMap.remove(parameters[index]);
         }
     }
 

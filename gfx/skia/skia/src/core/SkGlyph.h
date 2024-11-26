@@ -131,7 +131,7 @@ struct SkPackedGlyphID {
 
     SkString shortDump() const {
         SkString str;
-        str.appendf("0x%x|%1d|%1d", this->glyphID(),
+        str.appendf("0x%x|%1u|%1u", this->glyphID(),
                                     this->subPixelField(kSubPixelX),
                                     this->subPixelField(kSubPixelY));
         return str;
@@ -480,7 +480,7 @@ public:
     
     
     bool setPath(SkArenaAlloc* alloc, SkScalerContext* scalerContext);
-    bool setPath(SkArenaAlloc* alloc, const SkPath* path, bool hairline);
+    bool setPath(SkArenaAlloc* alloc, const SkPath* path, bool hairline, bool modified);
 
     
     bool setPathHasBeenCalled() const { return fPathData != nullptr; }
@@ -489,6 +489,7 @@ public:
     
     const SkPath* path() const;
     bool pathIsHairline() const;
+    bool pathIsModified() const;
 
     bool setDrawable(SkArenaAlloc* alloc, SkScalerContext* scalerContext);
     bool setDrawable(SkArenaAlloc* alloc, sk_sp<SkDrawable> drawable);
@@ -582,6 +583,12 @@ private:
         
         
         bool       fHairline{false};
+        
+        
+        
+        
+        
+        bool       fModified{false};
     };
 
     struct DrawableData {
@@ -598,7 +605,7 @@ private:
     }
 
     
-    void installPath(SkArenaAlloc* alloc, const SkPath* path, bool hairline);
+    void installPath(SkArenaAlloc* alloc, const SkPath* path, bool hairline, bool modified);
 
     
     void installDrawable(SkArenaAlloc* alloc, sk_sp<SkDrawable> drawable);

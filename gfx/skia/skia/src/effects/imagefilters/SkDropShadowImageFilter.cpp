@@ -10,6 +10,7 @@
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkColorFilter.h"
+#include "include/core/SkColorSpace.h"
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkImageFilter.h"
 #include "include/core/SkMatrix.h"
@@ -33,7 +34,8 @@ namespace {
 
 static sk_sp<SkImageFilter> make_drop_shadow_graph(SkVector offset,
                                                    SkSize sigma,
-                                                   SkColor color,
+                                                   SkColor4f color,
+                                                   sk_sp<SkColorSpace> colorSpace,
                                                    bool shadowOnly,
                                                    sk_sp<SkImageFilter> input,
                                                    const std::optional<SkRect>& crop) {
@@ -43,7 +45,7 @@ static sk_sp<SkImageFilter> make_drop_shadow_graph(SkVector offset,
     sk_sp<SkImageFilter> filter = input;
     filter = SkImageFilters::Blur(sigma.fWidth, sigma.fHeight, std::move(filter));
     filter = SkImageFilters::ColorFilter(
-            SkColorFilters::Blend(color, SkBlendMode::kSrcIn),
+            SkColorFilters::Blend(color, std::move(colorSpace), SkBlendMode::kSrcIn),
             std::move(filter));
     
     
@@ -82,30 +84,31 @@ sk_sp<SkFlattenable> legacy_drop_shadow_create_proc(SkReadBuffer& buffer) {
     SkScalar dy = buffer.readScalar();
     SkScalar sigmaX = buffer.readScalar();
     SkScalar sigmaY = buffer.readScalar();
-    SkColor color = buffer.readColor();
+    SkColor4f color = SkColor4f::FromColor(buffer.readColor());
 
     
     
     
     bool shadowOnly = SkToBool(buffer.read32LE(1));
-    return make_drop_shadow_graph({dx, dy}, {sigmaX, sigmaY}, color, shadowOnly,
-                                  std::move(child), cropRect);
+    return make_drop_shadow_graph({dx, dy}, {sigmaX, sigmaY}, color, nullptr,
+                                  shadowOnly, std::move(child), cropRect);
 }
 
 } 
 
 sk_sp<SkImageFilter> SkImageFilters::DropShadow(
-        SkScalar dx, SkScalar dy, SkScalar sigmaX, SkScalar sigmaY, SkColor color,
+        SkScalar dx, SkScalar dy, SkScalar sigmaX, SkScalar sigmaY, SkColor4f color,
+        sk_sp<SkColorSpace> colorSpace,
         sk_sp<SkImageFilter> input, const CropRect& cropRect) {
-    return make_drop_shadow_graph({dx, dy}, {sigmaX, sigmaY}, color, false,
-                                  std::move(input), cropRect);
+    return make_drop_shadow_graph({dx, dy}, {sigmaX, sigmaY}, color, std::move(colorSpace),
+                                  false, std::move(input), cropRect);
 }
 
 sk_sp<SkImageFilter> SkImageFilters::DropShadowOnly(
-        SkScalar dx, SkScalar dy, SkScalar sigmaX, SkScalar sigmaY, SkColor color,
-        sk_sp<SkImageFilter> input, const CropRect& cropRect) {
-    return make_drop_shadow_graph({dx, dy}, {sigmaX, sigmaY}, color, true,
-                                  std::move(input), cropRect);
+        SkScalar dx, SkScalar dy, SkScalar sigmaX, SkScalar sigmaY, SkColor4f color,
+        sk_sp<SkColorSpace> colorSpace, sk_sp<SkImageFilter> input, const CropRect& cropRect) {
+    return make_drop_shadow_graph({dx, dy}, {sigmaX, sigmaY}, color, std::move(colorSpace),
+                                  true, std::move(input), cropRect);
 }
 
 

@@ -8,18 +8,70 @@
 #ifndef SkJpegEncoderImpl_DEFINED
 #define SkJpegEncoderImpl_DEFINED
 
+#include "include/codec/SkEncodedOrigin.h"
+#include "include/core/SkData.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkYUVAPixmaps.h"
 #include "include/encode/SkEncoder.h"
 
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <utility>
+#include <vector>
 
+class SkColorSpace;
 class SkJpegEncoderMgr;
 class SkPixmap;
-class SkYUVAPixmaps;
+class SkWStream;
+
+namespace SkJpegEncoder {
+struct Options;
+}  
+
+
+
+namespace SkJpegMetadataEncoder {
+
+
+struct Segment {
+    Segment(uint8_t marker, sk_sp<SkData> parameters)
+            : fMarker(marker), fParameters(std::move(parameters)) {}
+    uint8_t fMarker = 0;
+    sk_sp<SkData> fParameters;
+};
+
+using SegmentList = std::vector<Segment>;
+
+
+
+
+void AppendICC(SegmentList& segmentList,
+               const SkJpegEncoder::Options& options,
+               const SkColorSpace* colorSpace);
+
+
+void AppendXMPStandard(SegmentList& segmentList, const SkData* xmpMetadata);
+
+
+void AppendOrigin(SegmentList& segmentList, SkEncodedOrigin origin);
+
+}  
 
 class SkJpegEncoderImpl : public SkEncoder {
 public:
-    SkJpegEncoderImpl(std::unique_ptr<SkJpegEncoderMgr>, const SkPixmap& src);
-    SkJpegEncoderImpl(std::unique_ptr<SkJpegEncoderMgr>, const SkYUVAPixmaps* srcYUVA);
+    
+    
+    
+    static std::unique_ptr<SkEncoder> MakeRGB(SkWStream* dst,
+                                              const SkPixmap& src,
+                                              const SkJpegEncoder::Options& options,
+                                              const SkJpegMetadataEncoder::SegmentList& metadata);
+    static std::unique_ptr<SkEncoder> MakeYUV(SkWStream* dst,
+                                              const SkYUVAPixmaps& srcYUVA,
+                                              const SkColorSpace* srcYUVAColorSpace,
+                                              const SkJpegEncoder::Options& options,
+                                              const SkJpegMetadataEncoder::SegmentList& metadata);
 
     ~SkJpegEncoderImpl() override;
 
@@ -27,8 +79,11 @@ protected:
     bool onEncodeRows(int numRows) override;
 
 private:
+    SkJpegEncoderImpl(std::unique_ptr<SkJpegEncoderMgr>, const SkPixmap& src);
+    SkJpegEncoderImpl(std::unique_ptr<SkJpegEncoderMgr>, const SkYUVAPixmaps& srcYUVA);
+
     std::unique_ptr<SkJpegEncoderMgr> fEncoderMgr;
-    const SkYUVAPixmaps* fSrcYUVA = nullptr;
+    std::optional<SkYUVAPixmaps> fSrcYUVA;
 };
 
 #endif

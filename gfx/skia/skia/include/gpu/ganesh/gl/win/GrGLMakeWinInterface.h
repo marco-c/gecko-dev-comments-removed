@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+#ifndef GrGLMakeWinInterface_DEFINED
+#define GrGLMakeWinInterface_DEFINED
+
+#include "include/core/SkRefCnt.h"
+#include "include/private/base/SkAPI.h"
+
+struct GrGLInterface;
+
+namespace GrGLInterfaces {
+SK_API sk_sp<const GrGLInterface> MakeWin();
+}
+
+#endif  

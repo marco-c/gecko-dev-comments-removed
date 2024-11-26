@@ -14,17 +14,9 @@
 #include "src/codec/SkJpegConstants.h"
 #include "src/codec/SkJpegSegmentScan.h"
 #include "src/codec/SkTiffUtility.h"
+#include "src/core/SkStreamPriv.h"
 
 #include <cstring>
-
-constexpr size_t kMpEndianSize = 4;
-constexpr uint8_t kMpBigEndian[kMpEndianSize] = {0x4D, 0x4D, 0x00, 0x2A};
-
-constexpr uint16_t kTypeUnsignedLong = 0x4;
-constexpr uint16_t kTypeUndefined = 0x7;
-
-constexpr uint32_t kIfdEntrySize = 12;
-constexpr uint32_t kIfdSerializedEntryCount = 3;
 
 constexpr uint16_t kVersionTag = 0xB000;
 constexpr uint32_t kVersionCount = 4;
@@ -67,13 +59,13 @@ std::unique_ptr<SkJpegMultiPictureParameters> SkJpegMultiPictureParameters::Make
     
     bool littleEndian = false;
     uint32_t ifdOffset = 0;
-    if (!SkTiffImageFileDirectory::ParseHeader(ifdData.get(), &littleEndian, &ifdOffset)) {
+    if (!SkTiff::ImageFileDirectory::ParseHeader(ifdData.get(), &littleEndian, &ifdOffset)) {
         SkCodecPrintf("Failed to parse endian-ness and index IFD offset.\n");
         return nullptr;
     }
 
     
-    auto ifd = SkTiffImageFileDirectory::MakeFromOffset(ifdData, littleEndian, ifdOffset);
+    auto ifd = SkTiff::ImageFileDirectory::MakeFromOffset(ifdData, littleEndian, ifdOffset);
     if (!ifd) {
         SkCodecPrintf("Failed to create MP Index IFD offset.\n");
         return nullptr;
@@ -181,8 +173,7 @@ std::unique_ptr<SkJpegMultiPictureParameters> SkJpegMultiPictureParameters::Make
     }
 
     
-    auto result = std::make_unique<SkJpegMultiPictureParameters>();
-    result->images.resize(numberOfImages);
+    auto result = std::make_unique<SkJpegMultiPictureParameters>(numberOfImages);
 
     
 
@@ -219,121 +210,112 @@ std::unique_ptr<SkJpegMultiPictureParameters> SkJpegMultiPictureParameters::Make
     return result;
 }
 
-
-
-size_t multi_picture_params_serialized_size(size_t numberOfImages) {
-    return sizeof(kMpfSig) +                           
-           kMpEndianSize +                             
-           sizeof(uint32_t) +                          
-           sizeof(uint16_t) +                          
-           kIfdSerializedEntryCount * kIfdEntrySize +  
-           sizeof(uint32_t) +                          
-           numberOfImages * kMPEntrySize;              
-}
-
-
-
-#define WRITE_UINT16(value)                         \
-    do {                                            \
-        if (!s.write16(SkEndian_SwapBE16(value))) { \
-            return nullptr;                         \
-        }                                           \
-    } while (0)
-
-#define WRITE_UINT32(value)                         \
-    do {                                            \
-        if (!s.write32(SkEndian_SwapBE32(value))) { \
-            return nullptr;                         \
-        }                                           \
-    } while (0)
-
-sk_sp<SkData> SkJpegMultiPictureParameters::serialize() const {
-    
+sk_sp<SkData> SkJpegMultiPictureParameters::serialize(uint32_t individualImageNumber) const {
     SkDynamicMemoryWStream s;
-    if (!s.write(kMpfSig, sizeof(kMpfSig))) {
-        SkCodecPrintf("Failed to write signature.\n");
-        return nullptr;
-    }
+
+    const uint32_t numberOfImages = static_cast<uint32_t>(images.size());
 
     
-    if (!s.write(kMpBigEndian, kMpEndianSize)) {
-        SkCodecPrintf("Failed to write endianness.\n");
-        return nullptr;
-    }
-    
-    uint32_t numberOfImages = static_cast<uint32_t>(images.size());
+    s.write(kMpfSig, sizeof(kMpfSig));
 
     
-    constexpr uint32_t indexIfdOffset =
-            static_cast<uint16_t>(sizeof(kMpBigEndian) + sizeof(uint32_t));
-    WRITE_UINT32(indexIfdOffset);
+    s.write(SkTiff::kEndianBig, sizeof(SkTiff::kEndianBig));
 
     
-    constexpr uint32_t numberOfTags = 3;
-    WRITE_UINT16(numberOfTags);
-
     
-    WRITE_UINT16(kVersionTag);
-    WRITE_UINT16(kTypeUndefined);
-    WRITE_UINT32(kVersionCount);
-    if (!s.write(kVersionExpected, kVersionSize)) {
-        SkCodecPrintf("Failed to write version.\n");
-        return nullptr;
-    }
-
     
-    WRITE_UINT16(kNumberOfImagesTag);
-    WRITE_UINT16(kTypeUnsignedLong);
-    WRITE_UINT32(kNumberOfImagesCount);
-    WRITE_UINT32(numberOfImages);
+    constexpr uint32_t firstIfdOffset = sizeof(SkTiff::kEndianBig) +  
+                                        sizeof(uint32_t);             
+    SkWStreamWriteU32BE(&s, firstIfdOffset);
+    SkASSERT(s.bytesWritten() - sizeof(kMpfSig) == firstIfdOffset);
 
-    
-    WRITE_UINT16(kMPEntryTag);
-    WRITE_UINT16(kTypeUndefined);
-    WRITE_UINT32(kMPEntrySize * numberOfImages);
-    const uint32_t mpEntryOffset =
-            static_cast<uint32_t>(s.bytesWritten() -  
-                                  sizeof(kMpfSig) +   
-                                  sizeof(uint32_t) +  
-                                  sizeof(uint32_t));  
-    WRITE_UINT32(mpEntryOffset);
-
-    
-    WRITE_UINT32(0);
-
-    
-    for (size_t i = 0; i < images.size(); ++i) {
-        const auto& image = images[i];
-
-        uint32_t attribute = kMPEntryAttributeFormatJpeg;
-        if (i == 0) {
-            attribute |= kMPEntryAttributeTypePrimary;
-        }
-
-        WRITE_UINT32(attribute);
-        WRITE_UINT32(image.size);
-        WRITE_UINT32(image.dataOffset);
+    if (individualImageNumber == 0) {
         
-        WRITE_UINT16(0);
-        WRITE_UINT16(0);
+        
+        const uint32_t mpIndexIfdNumberOfTags = 3;
+        SkWStreamWriteU16BE(&s, mpIndexIfdNumberOfTags);
+    } else {
+        
+        
+        
+        const uint16_t mpAttributeIfdNumberOfTags = 1;
+        SkWStreamWriteU16BE(&s, mpAttributeIfdNumberOfTags);
     }
 
-    SkASSERT(s.bytesWritten() == multi_picture_params_serialized_size(images.size()));
+    
+    SkWStreamWriteU16BE(&s, kVersionTag);
+    SkWStreamWriteU16BE(&s, SkTiff::kTypeUndefined);
+    SkWStreamWriteU32BE(&s, kVersionCount);
+    s.write(kVersionExpected, kVersionSize);
+
+    if (individualImageNumber == 0) {
+        
+        SkWStreamWriteU16BE(&s, kNumberOfImagesTag);
+        SkWStreamWriteU16BE(&s, SkTiff::kTypeUnsignedLong);
+        SkWStreamWriteU32BE(&s, kNumberOfImagesCount);
+        SkWStreamWriteU32BE(&s, numberOfImages);
+
+        
+        SkWStreamWriteU16BE(&s, kMPEntryTag);
+        SkWStreamWriteU16BE(&s, SkTiff::kTypeUndefined);
+        const uint32_t mpEntriesSize = kMPEntrySize * numberOfImages;
+        SkWStreamWriteU32BE(&s, mpEntriesSize);
+        const uint32_t mpEntryOffset = static_cast<uint32_t>(
+                s.bytesWritten() -  
+                sizeof(kMpfSig) +   
+                sizeof(uint32_t) +  
+                sizeof(uint32_t));  
+        SkWStreamWriteU32BE(&s, mpEntryOffset);
+
+        
+        SkWStreamWriteU32BE(&s, 0);
+
+        
+        SkASSERT(s.bytesWritten() - sizeof(kMpfSig) == mpEntryOffset);
+        for (size_t i = 0; i < images.size(); ++i) {
+            const auto& image = images[i];
+
+            uint32_t attribute = kMPEntryAttributeFormatJpeg;
+            if (i == 0) {
+                attribute |= kMPEntryAttributeTypePrimary;
+            }
+
+            SkWStreamWriteU32BE(&s, attribute);
+            SkWStreamWriteU32BE(&s, image.size);
+            SkWStreamWriteU32BE(&s, image.dataOffset);
+            
+            SkWStreamWriteU16BE(&s, 0);
+            SkWStreamWriteU16BE(&s, 0);
+        }
+    } else {
+        
+        SkWStreamWriteU32BE(&s, 0);
+    }
+
     return s.detachAsData();
 }
 
-#undef WRITE_UINT16
-#undef WRITE_UINT32
+static size_t mp_header_absolute_offset(size_t mpSegmentOffset) {
+    return mpSegmentOffset +                  
+           kJpegMarkerCodeSize +              
+           kJpegSegmentParameterLengthSize +  
+           sizeof(kMpfSig);                   
+}
 
-size_t SkJpegMultiPictureParameters::GetAbsoluteOffset(uint32_t dataOffset,
-                                                       size_t mpSegmentOffset) {
+size_t SkJpegMultiPictureParameters::GetImageAbsoluteOffset(uint32_t dataOffset,
+                                                            size_t mpSegmentOffset) {
     
     if (dataOffset == 0) {
         return 0;
     }
-    return mpSegmentOffset +                  
-           kJpegMarkerCodeSize +              
-           kJpegSegmentParameterLengthSize +  
-           sizeof(kMpfSig) +                  
-           dataOffset;
+    return mp_header_absolute_offset(mpSegmentOffset) + dataOffset;
+}
+
+uint32_t SkJpegMultiPictureParameters::GetImageDataOffset(size_t imageAbsoluteOffset,
+                                                          size_t mpSegmentOffset) {
+    
+    if (imageAbsoluteOffset == 0) {
+        return 0;
+    }
+    return static_cast<uint32_t>(imageAbsoluteOffset - mp_header_absolute_offset(mpSegmentOffset));
 }

@@ -50,6 +50,11 @@ public:
     
 
 
+    static std::unique_ptr<SkJpegMetadataDecoder> Make(sk_sp<SkData> data);
+
+    
+
+
 
 
     virtual sk_sp<SkData> getExifMetadata(bool copyData) const = 0;
@@ -60,6 +65,13 @@ public:
 
 
     virtual sk_sp<SkData> getICCProfileData(bool copyData) const = 0;
+
+    
+
+
+
+
+    virtual sk_sp<SkData> getISOGainmapMetadata(bool copyData) const = 0;
 
     
 

@@ -18,6 +18,9 @@
 static bool ios_get_path_in_bundle(const char path[], SkString* result) {
     
     CFBundleRef mainBundle = CFBundleGetMainBundle();
+    if (!mainBundle) {
+        return false;
+    }
 
     
     
@@ -25,7 +28,9 @@ static bool ios_get_path_in_bundle(const char path[], SkString* result) {
                                                                      (const UInt8*)path,
                                                                      strlen(path),
                                                                      false));
+
     sk_cfp<CFStringRef> pathRef(CFURLCopyFileSystemPath(pathURL.get(), kCFURLPOSIXPathStyle));
+
     
     
     sk_cfp<CFURLRef> fileURL(CFBundleCopyResourceURL(mainBundle, pathRef.get(),

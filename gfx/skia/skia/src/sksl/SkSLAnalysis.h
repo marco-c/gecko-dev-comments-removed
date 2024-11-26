@@ -76,9 +76,7 @@ bool ReturnsInputAlpha(const FunctionDefinition& function, const ProgramUsage& u
 
 
 
-
-
-bool CheckProgramStructure(const Program& program, bool enforceSizeLimit);
+bool CheckProgramStructure(const Program& program);
 
 
 bool ContainsRTAdjust(const Expression& expr);

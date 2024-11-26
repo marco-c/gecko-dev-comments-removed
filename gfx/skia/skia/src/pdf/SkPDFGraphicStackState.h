@@ -9,7 +9,10 @@
 #include "include/private/base/SkFloatingPoint.h"
 #include "src/core/SkClipStack.h"
 
+#include <cstdint>
+
 class SkDynamicMemoryWStream;
+struct SkIRect;
 
 
 

@@ -171,8 +171,10 @@ static_assert( 0 == SkCLZ_portable(~0U));
             _BitScanReverse(&index, mask);
             
             
+            #pragma warning(push)
             #pragma warning(suppress : 6102) // Using 'index' from failed function call
-            return index ^ 0x1F;
+            return static_cast<int>(index ^ 0x1F);
+            #pragma warning(pop)
         } else {
             return 32;
         }
@@ -209,8 +211,10 @@ static_assert( 0 == SkCTZ_portable(~0U));
             _BitScanForward(&index, mask);
             
             
+            #pragma warning(push)
             #pragma warning(suppress : 6102) // Using 'index' from failed function call
-            return index;
+            return static_cast<int>(index);
+            #pragma warning(pop)
         } else {
             return 32;
         }
@@ -299,14 +303,7 @@ constexpr int SkPrevPow2_portable(int value) {
 
 
 
-static inline uint32_t GrNextPow2(uint32_t n) {
-    return n ? (1 << (32 - SkCLZ(n - 1))) : 1;
-}
-
-
-
-
-static inline size_t GrNextSizePow2(size_t n) {
+constexpr size_t SkNextSizePow2(size_t n) {
     constexpr int kNumSizeTBits = 8 * sizeof(size_t);
     constexpr size_t kHighBitSet = size_t(1) << (kNumSizeTBits - 1);
 

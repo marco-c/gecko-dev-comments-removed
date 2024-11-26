@@ -5,9 +5,11 @@
 
 
 
+#include "include/codec/SkEncodedOrigin.h"
 #include "include/core/SkStream.h"
 #include "include/ports/SkImageGeneratorWIC.h"
 #include "include/private/base/SkTemplates.h"
+#include "src/codec/SkPixmapUtilsPriv.h"
 #include "src/utils/win/SkIStream.h"
 #include "src/utils/win/SkTScopedComPtr.h"
 
@@ -30,7 +32,7 @@ public:
 
 
     ImageGeneratorWIC(const SkImageInfo& info, IWICImagingFactory* imagingFactory,
-            IWICBitmapSource* imageSource, sk_sp<SkData>);
+            IWICBitmapSource* imageSource, sk_sp<SkData>, SkEncodedOrigin);
 protected:
     sk_sp<SkData> onRefEncodedData() override;
 
@@ -41,6 +43,7 @@ private:
     SkTScopedComPtr<IWICImagingFactory> fImagingFactory;
     SkTScopedComPtr<IWICBitmapSource>   fImageSource;
     sk_sp<SkData>                       fData;
+    SkEncodedOrigin                     fOrigin;
 
     using INHERITED = SkImageGenerator;
 };
@@ -77,6 +80,26 @@ std::unique_ptr<SkImageGenerator> SkImageGeneratorWIC::MakeFromEncodedWIC(sk_sp<
     hr = decoder->GetFrame(0, &imageFrame);
     if (FAILED(hr)) {
         return nullptr;
+    }
+
+    
+    SkEncodedOrigin origin = kDefault_SkEncodedOrigin;
+    SkTScopedComPtr<IWICMetadataQueryReader> queryReader;
+    hr = imageFrame->GetMetadataQueryReader(&queryReader);
+
+    
+    
+    if (SUCCEEDED(hr)) {
+      
+      PROPVARIANT propValue;
+      PropVariantInit(&propValue);
+      hr = queryReader->GetMetadataByName(L"/app1/ifd/{ushort=274}", &propValue);
+      if (SUCCEEDED(hr) && propValue.vt == VT_UI2) {
+          SkEncodedOrigin originValue = static_cast<SkEncodedOrigin>(propValue.uiVal);
+          if (originValue >= kTopLeft_SkEncodedOrigin && originValue <= kLast_SkEncodedOrigin) {
+            origin = originValue;
+          }
+      }
     }
 
     
@@ -149,17 +172,21 @@ std::unique_ptr<SkImageGenerator> SkImageGeneratorWIC::MakeFromEncodedWIC(sk_sp<
     
     
     SkImageInfo info = SkImageInfo::MakeS32(width, height, alphaType);
+    if (SkEncodedOriginSwapsWidthHeight(origin)) {
+        info = SkPixmapUtils::SwapWidthHeight(info);
+    }
     return std::unique_ptr<SkImageGenerator>(
             new ImageGeneratorWIC(info, imagingFactory.release(), imageSource.release(),
-                                    std::move(data)));
+                                    std::move(data), origin));
 }
 
 ImageGeneratorWIC::ImageGeneratorWIC(const SkImageInfo& info,
-        IWICImagingFactory* imagingFactory, IWICBitmapSource* imageSource, sk_sp<SkData> data)
+        IWICImagingFactory* imagingFactory, IWICBitmapSource* imageSource, sk_sp<SkData> data, SkEncodedOrigin origin)
     : INHERITED(info)
     , fImagingFactory(imagingFactory)
     , fImageSource(imageSource)
     , fData(std::move(data))
+    , fOrigin(origin)
 {}
 
 sk_sp<SkData> ImageGeneratorWIC::onRefEncodedData() {
@@ -197,9 +224,17 @@ bool ImageGeneratorWIC::onGetPixels(const SkImageInfo& info, void* pixels, size_
         return false;
     }
 
-    
-    hr = formatConverterSrc->CopyPixels(nullptr, (UINT) rowBytes, (UINT) rowBytes * info.height(),
-            (BYTE*) pixels);
+    SkPixmap dst(info, pixels, rowBytes);
+    auto decode = [&formatConverterSrc](const SkPixmap& pm) {
+        
+        void* pixelsAddr = pm.writable_addr();
+        size_t rowBytes = pm.rowBytes();
+        const SkImageInfo& info = pm.info();
 
-    return SUCCEEDED(hr);
+        
+        HRESULT hr = formatConverterSrc->CopyPixels(nullptr, (UINT) rowBytes, (UINT) rowBytes * info.height(),
+            (BYTE*) pixelsAddr);
+        return SUCCEEDED(hr);
+    };
+    return SkPixmapUtils::Orient(dst, fOrigin, decode);
 }

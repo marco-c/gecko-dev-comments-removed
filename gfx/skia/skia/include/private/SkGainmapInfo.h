@@ -10,6 +10,8 @@
 
 #include "include/core/SkColor.h"
 #include "include/core/SkColorSpace.h"
+#include "include/core/SkRefCnt.h"
+class SkData;
 
 
 
@@ -76,7 +78,51 @@ struct SkGainmapInfo {
 
 
 
+
+
+
+
+    enum class Type {
+        kDefault,
+        kApple,
+    };
+    Type fType = Type::kDefault;
+
+    
+
+
+
     sk_sp<SkColorSpace> fGainmapMathColorSpace = nullptr;
+
+    
+
+
+    bool isUltraHDRv1Compatible() const;
+
+    
+
+
+
+    static bool ParseVersion(const SkData* data);
+
+    
+
+
+
+
+
+
+    static bool Parse(const SkData* data, SkGainmapInfo& info);
+
+    
+
+
+    static sk_sp<SkData> SerializeVersion();
+
+    
+
+
+    sk_sp<SkData> serialize() const;
 
     inline bool operator==(const SkGainmapInfo& other) const {
         return fGainmapRatioMin == other.fGainmapRatioMin &&
@@ -84,17 +130,11 @@ struct SkGainmapInfo {
                fEpsilonSdr == other.fEpsilonSdr && fEpsilonHdr == other.fEpsilonHdr &&
                fDisplayRatioSdr == other.fDisplayRatioSdr &&
                fDisplayRatioHdr == other.fDisplayRatioHdr &&
-               fBaseImageType == other.fBaseImageType &&
+               fBaseImageType == other.fBaseImageType && fType == other.fType &&
                SkColorSpace::Equals(fGainmapMathColorSpace.get(),
                                     other.fGainmapMathColorSpace.get());
     }
     inline bool operator!=(const SkGainmapInfo& other) const { return !(*this == other); }
-
-    
-    enum class Type {
-        kDefault,
-    };
-    Type fType = Type::kDefault;
 };
 
 #endif

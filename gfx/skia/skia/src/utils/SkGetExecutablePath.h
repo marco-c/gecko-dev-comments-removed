@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+#ifndef SkGetExecutablePath_DEFINED
+#define SkGetExecutablePath_DEFINED
+
+#include <string>
+
+
+std::string SkGetExecutablePath();
+
+#endif

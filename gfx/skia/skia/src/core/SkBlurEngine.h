@@ -8,11 +8,24 @@
 #ifndef SkBlurEngine_DEFINED
 #define SkBlurEngine_DEFINED
 
+#include "include/core/SkM44.h"  
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkSpan.h"
+#include "include/private/base/SkFloatingPoint.h"
 
+#include <algorithm>
+#include <array>
+#include <cmath>
+
+class SkDevice;
+class SkRuntimeEffect;
+class SkRuntimeEffectBuilder;
 class SkSpecialImage;
+struct SkImageInfo;
 struct SkIRect;
-struct SkSize;
+
+enum class SkFilterMode;
 enum class SkTileMode;
 enum SkColorType : int;
 
@@ -45,8 +58,40 @@ public:
                                            SkColorType colorType) const = 0;
 
     
+
+    
+    
+    
+    static constexpr bool IsEffectivelyIdentity(float sigma) { return sigma <= 0.03f; }
+
+    
+    
+    static int SigmaToRadius(float sigma) {
+        
+        return IsEffectivelyIdentity(sigma) ? 0 : sk_float_ceil2int(3.f * sigma);
+    }
+
+    
+    
+    
+    static const SkBlurEngine* GetRasterBlurEngine();
+
+    
     
 
+    
+    
+    
+    
+    
+    
+    
+    static int BoxBlurWindow(float sigma) {
+        int possibleWindow = sk_float_floor2int(sigma * 3 * sqrt(2 * SK_FloatPI) / 4 + 0.5f);
+        return std::max(1, possibleWindow);
+    }
+
+    
 };
 
 class SkBlurEngine::Algorithm {
@@ -81,6 +126,162 @@ public:
                                        const SkIRect& srcRect,
                                        SkTileMode tileMode,
                                        const SkIRect& dstRect) const = 0;
+};
+
+
+
+
+
+
+class SkShaderBlurAlgorithm : public SkBlurEngine::Algorithm {
+public:
+    float maxSigma() const override { return kMaxLinearSigma; }
+    bool supportsOnlyDecalTiling() const override { return false; }
+
+    sk_sp<SkSpecialImage> blur(SkSize sigma,
+                               sk_sp<SkSpecialImage> src,
+                               const SkIRect& srcRect,
+                               SkTileMode tileMode,
+                               const SkIRect& dstRect) const override;
+
+private:
+    
+    virtual sk_sp<SkDevice> makeDevice(const SkImageInfo&) const = 0;
+
+    sk_sp<SkSpecialImage> renderBlur(SkRuntimeEffectBuilder* blurEffectBuilder,
+                                     SkFilterMode filter,
+                                     SkISize radii,
+                                     sk_sp<SkSpecialImage> input,
+                                     const SkIRect& srcRect,
+                                     SkTileMode tileMode,
+                                     const SkIRect& dstRect) const;
+    sk_sp<SkSpecialImage> evalBlur2D(SkSize sigma,
+                                     SkISize radii,
+                                     sk_sp<SkSpecialImage> input,
+                                     const SkIRect& srcRect,
+                                     SkTileMode tileMode,
+                                     const SkIRect& dstRect) const;
+    sk_sp<SkSpecialImage> evalBlur1D(float sigma,
+                                     int radius,
+                                     SkV2 dir,
+                                     sk_sp<SkSpecialImage> input,
+                                     SkIRect srcRect,
+                                     SkTileMode tileMode,
+                                     SkIRect dstRect) const;
+
+
+
+
+public:
+
+    
+    static constexpr int KernelWidth(int radius) { return 2 * radius + 1; }
+
+    
+    
+    static constexpr int LinearKernelWidth(int radius) { return radius + 1; }
+
+    
+    
+    
+    
+    
+    
+    static constexpr int kMaxSamples = 28;
+
+    
+    
+    
+    
+    static constexpr float kMaxLinearSigma = 4.f; 
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static const SkRuntimeEffect* GetBlur2DEffect(const SkISize& radii);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static const SkRuntimeEffect* GetLinearBlur1DEffect(int radius);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static void Compute2DBlurKernel(SkSize sigma,
+                                    SkISize radius,
+                                    SkSpan<float> kernel);
+
+    
+    
+    static void Compute2DBlurKernel(SkSize sigma,
+                                    SkISize radius,
+                                    std::array<SkV4, kMaxSamples/4>& kernel);
+
+    
+    static  void Compute1DBlurKernel(float sigma, int radius, SkSpan<float> kernel) {
+        Compute2DBlurKernel(SkSize{sigma, 0.f}, SkISize{radius, 0}, kernel);
+    }
+
+    
+    
+    
+    
+    static void Compute2DBlurOffsets(SkISize radius, std::array<SkV4, kMaxSamples/2>& offsets);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static void Compute1DBlurLinearKernel(float sigma,
+                                          int radius,
+                                          std::array<SkV4, kMaxSamples/2>& offsetsAndKernel);
+
 };
 
 #endif 

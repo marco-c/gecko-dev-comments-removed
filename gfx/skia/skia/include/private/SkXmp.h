@@ -35,10 +35,19 @@ public:
     static std::unique_ptr<SkXmp> Make(sk_sp<SkData> xmpStandard, sk_sp<SkData> xmpExtended);
 
     
-    virtual bool getGainmapInfoHDRGM(SkGainmapInfo* info) const = 0;
+    
+    bool getGainmapInfoHDRGM(SkGainmapInfo* info) const { return getGainmapInfoAdobe(info); }
 
     
-    virtual bool getGainmapInfoHDRGainMap(SkGainmapInfo* info) const = 0;
+    virtual bool getGainmapInfoAdobe(SkGainmapInfo* info) const = 0;
+
+    
+    
+    
+    
+    
+    
+    virtual bool getGainmapInfoApple(float exifHdrHeadroom, SkGainmapInfo* info) const = 0;
 
     
     

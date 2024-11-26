@@ -9,6 +9,7 @@
 #define SkTHash_DEFINED
 
 #include "include/core/SkTypes.h"
+#include "src/base/SkMathPriv.h"
 #include "src/core/SkChecksum.h"
 
 #include <initializer_list>
@@ -74,6 +75,17 @@ public:
     size_t approxBytesUsed() const { return fCapacity * sizeof(Slot); }
 
     
+    void swap(THashTable& that) {
+        std::swap(fCount, that.fCount);
+        std::swap(fCapacity, that.fCapacity);
+        std::swap(fSlots, that.fSlots);
+    }
+
+    void swap(THashTable&& that) {
+        *this = std::move(that);
+    }
+
+    
     
     
     
@@ -130,11 +142,11 @@ public:
                 return false;
             }
             if (hash == s.fHash && key == Traits::GetKey(*s)) {
-               this->removeSlot(index);
-               if (4 * fCount <= fCapacity && fCapacity > 4) {
-                   this->resize(fCapacity / 2);
-               }
-               return true;
+                this->removeSlot(index);
+                if (4 * fCount <= fCapacity && fCapacity > 4) {
+                    this->resize(fCapacity / 2);
+                }
+                return true;
             }
             index = this->next(index);
         }
@@ -150,7 +162,12 @@ public:
     
     
     void resize(int capacity) {
+        
         SkASSERT(capacity >= fCount);
+        
+        
+        SkASSERT((capacity & (capacity - 1)) == 0);
+
         int oldCapacity = fCapacity;
         SkDEBUGCODE(int oldCount = fCount);
 
@@ -166,6 +183,22 @@ public:
             }
         }
         SkASSERT(fCount == oldCount);
+    }
+
+    
+    
+    
+    
+    
+    void reserve(int n) {
+        int newCapacity = SkNextPow2(n);
+        if (n * 4 > newCapacity * 3) {
+            newCapacity *= 2;
+        }
+
+        if (newCapacity > fCapacity) {
+            this->resize(newCapacity);
+        }
     }
 
     
@@ -447,7 +480,9 @@ public:
     };
 
     THashMap(std::initializer_list<Pair> pairs) {
-        fTable.resize(pairs.size() * 5 / 3);
+        int capacity = pairs.size() >= 4 ? SkNextPow2(pairs.size() * 4 / 3)
+                                         : 4;
+        fTable.resize(capacity);
         for (const Pair& p : pairs) {
             fTable.set(p);
         }
@@ -464,6 +499,13 @@ public:
 
     
     size_t approxBytesUsed() const { return fTable.approxBytesUsed(); }
+
+    
+    void reserve(int n) { fTable.reserve(n); }
+
+    
+    void swap(THashMap& that) { fTable.swap(that.fTable); }
+    void swap(THashMap&& that) { fTable.swap(std::move(that.fTable)); }
 
     
 
@@ -551,7 +593,9 @@ public:
 
     
     THashSet(std::initializer_list<T> vals) {
-        fTable.resize(vals.size() * 5 / 3);
+        int capacity = vals.size() >= 4 ? SkNextPow2(vals.size() * 4 / 3)
+                                        : 4;
+        fTable.resize(capacity);
         for (const T& val : vals) {
             fTable.set(val);
         }
@@ -568,6 +612,13 @@ public:
 
     
     size_t approxBytesUsed() const { return fTable.approxBytesUsed(); }
+
+    
+    void reserve(int n) { fTable.reserve(n); }
+
+    
+    void swap(THashSet& that) { fTable.swap(that.fTable); }
+    void swap(THashSet&& that) { fTable.swap(std::move(that.fTable)); }
 
     
     void add(T item) { fTable.set(std::move(item)); }

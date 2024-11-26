@@ -25,7 +25,7 @@ extern "C" {
 
 
 
-struct skjpeg_error_mgr : jpeg_error_mgr {
+struct skjpeg_error_mgr : public jpeg_error_mgr {
     class AutoPushJmpBuf {
     public:
         AutoPushJmpBuf(skjpeg_error_mgr* mgr) : fMgr(mgr) { fMgr->push(&fJmpBuf); }
@@ -36,6 +36,11 @@ struct skjpeg_error_mgr : jpeg_error_mgr {
         skjpeg_error_mgr* const fMgr;
         jmp_buf fJmpBuf;
     };
+
+      
+      
+      
+    skjpeg_error_mgr() : jpeg_error_mgr({}) {}
 
     void push(jmp_buf* j) {
         SkASSERT(fStack[3] == nullptr);  

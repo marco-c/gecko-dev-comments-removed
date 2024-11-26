@@ -21,6 +21,7 @@
 #include <cstring>
 
 struct SkRect;
+class SkString;
 
 
 
@@ -709,18 +710,7 @@ struct SK_API SkRect {
 
 
     bool isFinite() const {
-        float accum = 0;
-        accum *= fLeft;
-        accum *= fTop;
-        accum *= fRight;
-        accum *= fBottom;
-
-        
-        SkASSERT(0 == accum || std::isnan(accum));
-
-        
-        
-        return !std::isnan(accum);
+        return SkIsFinite(fLeft, fTop, fRight, fBottom);
     }
 
     
@@ -1263,8 +1253,8 @@ public:
 
 
     void roundOut(SkRect* dst) const {
-        dst->setLTRB(sk_float_floor(fLeft), sk_float_floor(fTop),
-                     sk_float_ceil(fRight), sk_float_ceil(fBottom));
+        dst->setLTRB(std::floor(fLeft), std::floor(fTop),
+                     std::ceil(fRight), std::ceil(fBottom));
     }
 
     
@@ -1358,6 +1348,7 @@ public:
 
 
     void dump(bool asHex) const;
+    SkString dumpToString(bool asHex) const;
 
     
 

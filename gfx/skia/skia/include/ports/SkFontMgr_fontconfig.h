@@ -8,8 +8,9 @@
 #ifndef SkFontMgr_fontconfig_DEFINED
 #define SkFontMgr_fontconfig_DEFINED
 
-#include "include/core/SkRefCnt.h"
 #include <fontconfig/fontconfig.h>
+#include "include/core/SkRefCnt.h"
+#include <memory>
 
 class SkFontMgr;
 
@@ -17,6 +18,7 @@ class SkFontMgr;
 
 
 
+class SkFontScanner;
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_FontConfig(FcConfig* fc, std::unique_ptr<SkFontScanner> scanner);
 SK_API sk_sp<SkFontMgr> SkFontMgr_New_FontConfig(FcConfig* fc);
-
 #endif 

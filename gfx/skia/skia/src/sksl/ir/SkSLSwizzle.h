@@ -9,13 +9,14 @@
 #define SKSL_SWIZZLE
 
 #include "include/core/SkTypes.h"
-#include "src/sksl/SkSLDefines.h"
+#include "src/base/SkFixedArray.h"
 #include "src/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLExpression.h"
 #include "src/sksl/ir/SkSLIRNode.h"
 #include "src/sksl/ir/SkSLType.h"
 
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -42,6 +43,11 @@ enum Type : int8_t {
 
 
 
+using ComponentArray = skia_private::FixedArray<4, int8_t>;
+
+
+
+
 class Swizzle final : public Expression {
 public:
     inline static constexpr Kind kIRNodeKind = Kind::kSwizzle;
@@ -64,20 +70,20 @@ public:
                                                Position pos,
                                                Position maskPos,
                                                std::unique_ptr<Expression> base,
-                                               ComponentArray inComponents);
-
-    static std::unique_ptr<Expression> Convert(const Context& context,
-                                               Position pos,
-                                               Position maskPos,
-                                               std::unique_ptr<Expression> base,
-                                               std::string_view maskString);
+                                               std::string_view componentString);
 
     
     
     static std::unique_ptr<Expression> Make(const Context& context,
                                             Position pos,
                                             std::unique_ptr<Expression> expr,
-                                            ComponentArray inComponents);
+                                            ComponentArray components);
+
+    
+    static std::unique_ptr<Expression> MakeExact(const Context& context,
+                                                 Position pos,
+                                                 std::unique_ptr<Expression> expr,
+                                                 ComponentArray components);
 
     std::unique_ptr<Expression>& base() {
         return fBase;
@@ -100,6 +106,9 @@ public:
 
     
     static std::string MaskString(const ComponentArray& inComponents);
+
+    
+    static bool IsIdentity(const ComponentArray& components);
 
 private:
     Swizzle(Position pos, const Type* type, std::unique_ptr<Expression> base,

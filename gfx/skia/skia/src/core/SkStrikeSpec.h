@@ -78,9 +78,6 @@ public:
     
     static SkStrikeSpec MakeWithNoDevice(const SkFont& font, const SkPaint* paint = nullptr);
 
-    
-    static SkStrikeSpec MakePDFVector(const SkTypeface& typeface, int* size);
-
     sk_sp<sktext::StrikeForGPU> findOrCreateScopedStrike(
             sktext::StrikeForGPUCacheInterface* cache) const;
 

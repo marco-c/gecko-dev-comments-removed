@@ -12,6 +12,7 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
+#include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkMacros.h"
 #include "include/private/base/SkTo.h"
 
@@ -1830,7 +1831,7 @@ public:
 
 
 
-    bool isFinite() const { return SkScalarsAreFinite(fMat, 9); }
+    bool isFinite() const { return SkIsFinite(fMat, 9); }
 
 private:
     

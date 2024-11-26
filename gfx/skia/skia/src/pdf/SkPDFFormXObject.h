@@ -9,10 +9,13 @@
 #ifndef SkPDFFormXObject_DEFINED
 #define SkPDFFormXObject_DEFINED
 
-#include "src/pdf/SkPDFDevice.h"
 #include "src/pdf/SkPDFTypes.h"
 
+#include <memory>
+
+class SkMatrix;
 class SkPDFDocument;
+class SkStreamAsset;
 
 
 

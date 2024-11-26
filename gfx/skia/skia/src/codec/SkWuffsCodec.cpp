@@ -377,41 +377,44 @@ const SkFrame* SkWuffsFrameHolder::onGetFrame(int i) const {
 
 
 
-SkWuffsCodec::SkWuffsCodec(SkEncodedInfo&&                                         encodedInfo,
-                           std::unique_ptr<SkStream>                               stream,
-                           bool                                                    canSeek,
+SkWuffsCodec::SkWuffsCodec(SkEncodedInfo&& encodedInfo,
+                           std::unique_ptr<SkStream> stream,
+                           bool canSeek,
                            std::unique_ptr<wuffs_gif__decoder, decltype(&sk_free)> dec,
-                           std::unique_ptr<uint8_t, decltype(&sk_free)>            workbuf_ptr,
-                           size_t                                                  workbuf_len,
-                           wuffs_base__image_config                                imgcfg,
-                           wuffs_base__io_buffer                                   iobuf)
-    : INHERITED(std::move(encodedInfo),
-                skcms_PixelFormat_RGBA_8888,
-                
-                
-                
-                nullptr),
-      fFrameHolder(),
-      fPrivStream(std::move(stream)),
-      fWorkbufPtr(std::move(workbuf_ptr)),
-      fWorkbufLen(workbuf_len),
-      fDecoder(std::move(dec)),
-      fFirstFrameIOPosition(imgcfg.first_frame_io_position()),
-      fFrameConfig(wuffs_base__null_frame_config()),
-      fPixelConfig(imgcfg.pixcfg),
-      fPixelBuffer(wuffs_base__null_pixel_buffer()),
-      fIOBuffer(wuffs_base__empty_io_buffer()),
-      fIncrDecDst(nullptr),
-      fIncrDecRowBytes(0),
-      fIncrDecPixelBlend(WUFFS_BASE__PIXEL_BLEND__SRC),
-      fIncrDecOnePass(false),
-      fFirstCallToIncrementalDecode(false),
-      fTwoPassPixbufPtr(nullptr, &sk_free),
-      fTwoPassPixbufLen(0),
-      fNumFullyReceivedFrames(0),
-      fFramesComplete(false),
-      fDecoderIsSuspended(false),
-      fCanSeek(canSeek) {
+                           std::unique_ptr<uint8_t, decltype(&sk_free)> workbuf_ptr,
+                           size_t workbuf_len,
+                           wuffs_base__image_config imgcfg,
+                           wuffs_base__io_buffer iobuf)
+        : INHERITED(std::move(encodedInfo),
+                    skcms_PixelFormat_RGBA_8888,
+                    
+                    
+                    
+                    
+                    
+                    
+                    nullptr)
+        , fFrameHolder()
+        , fPrivStream(std::move(stream))
+        , fWorkbufPtr(std::move(workbuf_ptr))
+        , fWorkbufLen(workbuf_len)
+        , fDecoder(std::move(dec))
+        , fFirstFrameIOPosition(imgcfg.first_frame_io_position())
+        , fFrameConfig(wuffs_base__null_frame_config())
+        , fPixelConfig(imgcfg.pixcfg)
+        , fPixelBuffer(wuffs_base__null_pixel_buffer())
+        , fIOBuffer(wuffs_base__empty_io_buffer())
+        , fIncrDecDst(nullptr)
+        , fIncrDecRowBytes(0)
+        , fIncrDecPixelBlend(WUFFS_BASE__PIXEL_BLEND__SRC)
+        , fIncrDecOnePass(false)
+        , fFirstCallToIncrementalDecode(false)
+        , fTwoPassPixbufPtr(nullptr, &sk_free)
+        , fTwoPassPixbufLen(0)
+        , fNumFullyReceivedFrames(0)
+        , fFramesComplete(false)
+        , fDecoderIsSuspended(false)
+        , fCanSeek(canSeek) {
     fFrameHolder.init(this, imgcfg.pixcfg.width(), imgcfg.pixcfg.height());
 
     
@@ -964,6 +967,9 @@ void SkWuffsCodec::updateNumFullyReceivedFrames() {
         fNumFullyReceivedFrames = n;
     }
 }
+
+
+
 
 
 

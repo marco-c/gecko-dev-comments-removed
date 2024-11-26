@@ -162,6 +162,7 @@ public:
 
     
     
+    
     static Result MakeForColorFilter(SkString sksl, const Options&);
     static Result MakeForColorFilter(SkString sksl) {
         return MakeForColorFilter(std::move(sksl), Options{});
@@ -329,8 +330,44 @@ private:
 };
 
 
-class SkRuntimeEffectBuilder {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SK_API SkRuntimeEffectBuilder {
 public:
+    explicit SkRuntimeEffectBuilder(sk_sp<SkRuntimeEffect> effect)
+            : fEffect(std::move(effect))
+            , fUniforms(SkData::MakeZeroInitialized(fEffect->uniformSize()))
+            , fChildren(fEffect->children().size()) {}
+    explicit SkRuntimeEffectBuilder(sk_sp<SkRuntimeEffect> effect, sk_sp<SkData> uniforms)
+            : fEffect(std::move(effect))
+            , fUniforms(std::move(uniforms))
+            , fChildren(fEffect->children().size()) {}
+
+    
+    
+    SkRuntimeEffectBuilder(const SkRuntimeEffectBuilder&) = default;
+
     struct BuilderUniform {
         
         
@@ -419,19 +456,17 @@ public:
     sk_sp<const SkData> uniforms() const { return fUniforms; }
     SkSpan<const SkRuntimeEffect::ChildPtr> children() const { return fChildren; }
 
+    
+    sk_sp<SkShader> makeShader(const SkMatrix* localMatrix = nullptr) const;
+    sk_sp<SkColorFilter> makeColorFilter() const;
+    sk_sp<SkBlender> makeBlender() const;
+
+    ~SkRuntimeEffectBuilder() = default;
+
 protected:
     SkRuntimeEffectBuilder() = delete;
-    explicit SkRuntimeEffectBuilder(sk_sp<SkRuntimeEffect> effect)
-            : fEffect(std::move(effect))
-            , fUniforms(SkData::MakeZeroInitialized(fEffect->uniformSize()))
-            , fChildren(fEffect->children().size()) {}
-    explicit SkRuntimeEffectBuilder(sk_sp<SkRuntimeEffect> effect, sk_sp<SkData> uniforms)
-            : fEffect(std::move(effect))
-            , fUniforms(std::move(uniforms))
-            , fChildren(fEffect->children().size()) {}
 
     SkRuntimeEffectBuilder(SkRuntimeEffectBuilder&&) = default;
-    SkRuntimeEffectBuilder(const SkRuntimeEffectBuilder&) = default;
 
     SkRuntimeEffectBuilder& operator=(SkRuntimeEffectBuilder&&) = delete;
     SkRuntimeEffectBuilder& operator=(const SkRuntimeEffectBuilder&) = delete;
@@ -447,41 +482,6 @@ private:
     sk_sp<SkRuntimeEffect>                 fEffect;
     sk_sp<SkData>                          fUniforms;
     std::vector<SkRuntimeEffect::ChildPtr> fChildren;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SK_API SkRuntimeShaderBuilder : public SkRuntimeEffectBuilder {
-public:
-    explicit SkRuntimeShaderBuilder(sk_sp<SkRuntimeEffect>);
-    
-    
-    SkRuntimeShaderBuilder(const SkRuntimeShaderBuilder&) = default;
-    ~SkRuntimeShaderBuilder();
-
-    sk_sp<SkShader> makeShader(const SkMatrix* localMatrix = nullptr) const;
-
-private:
-    explicit SkRuntimeShaderBuilder(sk_sp<SkRuntimeEffect> effect, sk_sp<SkData> uniforms)
-            : SkRuntimeEffectBuilder(std::move(effect), std::move(uniforms)) {}
 
     friend class SkRuntimeImageFilter;
 };
@@ -489,29 +489,8 @@ private:
 
 
 
-class SK_API SkRuntimeColorFilterBuilder : public SkRuntimeEffectBuilder {
-public:
-    explicit SkRuntimeColorFilterBuilder(sk_sp<SkRuntimeEffect>);
-    ~SkRuntimeColorFilterBuilder();
-
-    SkRuntimeColorFilterBuilder(const SkRuntimeColorFilterBuilder&) = delete;
-    SkRuntimeColorFilterBuilder& operator=(const SkRuntimeColorFilterBuilder&) = delete;
-
-    sk_sp<SkColorFilter> makeColorFilter() const;
-};
-
-
-
-
-class SK_API SkRuntimeBlendBuilder : public SkRuntimeEffectBuilder {
-public:
-    explicit SkRuntimeBlendBuilder(sk_sp<SkRuntimeEffect>);
-    ~SkRuntimeBlendBuilder();
-
-    SkRuntimeBlendBuilder(const SkRuntimeBlendBuilder&) = delete;
-    SkRuntimeBlendBuilder& operator=(const SkRuntimeBlendBuilder&) = delete;
-
-    sk_sp<SkBlender> makeBlender() const;
-};
+using SkRuntimeShaderBuilder = SkRuntimeEffectBuilder;
+using SkRuntimeColorFilterBuilder = SkRuntimeEffectBuilder;
+using SkRuntimeBlendBuilder = SkRuntimeEffectBuilder;
 
 #endif  

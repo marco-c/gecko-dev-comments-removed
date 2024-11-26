@@ -178,13 +178,19 @@ const Type* SymbolTable::addArrayDimension(const Context& context,
     }
     
     
-    if (fParent && !fAtModuleBoundary && !context.fConfig->fIsBuiltinCode && type->isBuiltin()) {
+    if (fParent && !fAtModuleBoundary && !context.fConfig->isBuiltinCode() && type->isBuiltin()) {
         return fParent->addArrayDimension(context, type, arraySize);
     }
     
     std::string arrayName = type->getArrayName(arraySize);
-    if (const Symbol* existingType = this->find(arrayName)) {
-        return &existingType->as<Type>();
+    if (const Symbol* existingSymbol = this->find(arrayName)) {
+        
+        
+        
+        const Type* existingType = &existingSymbol->as<Type>();
+        if (existingType->isArray() && type->matches(existingType->componentType())) {
+            return existingType;
+        }
     }
     
     const std::string* arrayNamePtr = this->takeOwnershipOfString(std::move(arrayName));

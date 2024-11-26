@@ -71,7 +71,7 @@ public:
 
     
     const SkPath* mergePath(
-            SkGlyph* glyph, const SkPath* path, bool hairline) SK_EXCLUDES(fStrikeLock);
+            SkGlyph* glyph, const SkPath* path, bool hairline, bool modified) SK_EXCLUDES(fStrikeLock);
 
     
     const SkDrawable* mergeDrawable(

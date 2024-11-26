@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 class SkArenaAlloc;
 class SkRasterPipeline;
@@ -176,7 +177,7 @@ private:
         SkSpan<float> stack;
         SkSpan<float> immutable;
     };
-    SlotData allocateSlotData(SkArenaAlloc* alloc) const;
+    std::optional<SlotData> allocateSlotData(SkArenaAlloc* alloc) const;
 
     struct Stage {
         ProgramOp op;
@@ -186,7 +187,6 @@ private:
                     SkArenaAlloc* alloc,
                     SkSpan<const float> uniforms,
                     const SlotData& slots) const;
-    void optimize();
     StackDepths tempStackMaxDepths() const;
 
     
@@ -273,6 +273,9 @@ private:
     void appendAdjacentNWayTernaryOp(skia_private::TArray<Stage>* pipeline, SkArenaAlloc* alloc,
                                      ProgramOp stage, std::byte* basePtr, SkRPOffset dst,
                                      SkRPOffset src0, SkRPOffset src1, int numSlots) const;
+
+    
+    void appendStackRewindForNonTailcallers(skia_private::TArray<Stage>* pipeline) const;
 
     
     void appendStackRewind(skia_private::TArray<Stage>* pipeline) const;
@@ -673,33 +676,11 @@ public:
         this->appendInstruction(BuilderOp::mask_off_return_mask, {});
     }
 
-    void invoke_shader(int childIdx) {
-        this->appendInstruction(BuilderOp::invoke_shader, {}, childIdx);
-    }
-
-    void invoke_color_filter(int childIdx) {
-        this->appendInstruction(BuilderOp::invoke_color_filter, {}, childIdx);
-    }
-
-    void invoke_blender(int childIdx) {
-        this->appendInstruction(BuilderOp::invoke_blender, {}, childIdx);
-    }
-
-    void invoke_to_linear_srgb() {
-        
-        
-        this->pad_stack(1);
-        this->appendInstruction(BuilderOp::invoke_to_linear_srgb, {});
-        this->discard_stack(1);
-    }
-
-    void invoke_from_linear_srgb() {
-        
-        
-        this->pad_stack(1);
-        this->appendInstruction(BuilderOp::invoke_from_linear_srgb, {});
-        this->discard_stack(1);
-    }
+    void invoke_shader(int childIdx);
+    void invoke_color_filter(int childIdx);
+    void invoke_blender(int childIdx);
+    void invoke_to_linear_srgb();
+    void invoke_from_linear_srgb();
 
     
     void trace_line(int traceMaskStackID, int line) {

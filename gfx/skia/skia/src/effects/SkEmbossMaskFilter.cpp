@@ -12,6 +12,7 @@
 #include "include/core/SkPoint.h"
 #include "include/core/SkPoint3.h"
 #include "include/core/SkTypes.h"
+#include "include/private/base/SkFloatingPoint.h"
 #include "src/core/SkBlurMask.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
@@ -24,7 +25,7 @@
 #include <cstring>
 
 sk_sp<SkMaskFilter> SkEmbossMaskFilter::Make(SkScalar blurSigma, const Light& light) {
-    if (!SkScalarIsFinite(blurSigma) || blurSigma <= 0) {
+    if (!SkIsFinite(blurSigma) || blurSigma <= 0) {
         return nullptr;
     }
 
@@ -66,7 +67,7 @@ SkEmbossMaskFilter::SkEmbossMaskFilter(SkScalar blurSigma, const Light& light)
     : fLight(light), fBlurSigma(blurSigma)
 {
     SkASSERT(fBlurSigma > 0);
-    SkASSERT(SkScalarsAreFinite(fLight.fDirection, 3));
+    SkASSERT(SkIsFinite(fLight.fDirection, 3));
 }
 
 SkMask::Format SkEmbossMaskFilter::getFormat() const {
@@ -98,11 +99,13 @@ bool SkEmbossMaskFilter::filterMask(SkMaskBuilder* dst, const SkMask& src,
 
     {
         uint8_t* alphaPlane = dst->image();
-        size_t   planeSize = dst->computeImageSize();
-        if (0 == planeSize) {
-            return false;   
+        size_t totalSize = dst->computeTotalImageSize();
+        if (totalSize == 0) {
+            return false;  
         }
-        dst->image() = SkMaskBuilder::AllocImage(planeSize * 3);
+        size_t planeSize = dst->computeImageSize();
+        SkASSERT(planeSize != 0);  
+        dst->image() = SkMaskBuilder::AllocImage(totalSize);
         memcpy(dst->image(), alphaPlane, planeSize);
         SkMaskBuilder::FreeImage(alphaPlane);
     }

@@ -375,7 +375,7 @@ public:
 
 
 
-    bool isFinite() const { return SkScalarsAreFinite(fMat, 16); }
+    bool isFinite() const { return SkIsFinite(fMat, 16); }
 
     
 

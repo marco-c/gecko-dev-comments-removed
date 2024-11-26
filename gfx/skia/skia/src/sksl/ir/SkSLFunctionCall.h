@@ -32,11 +32,15 @@ class FunctionCall final : public Expression {
 public:
     inline static constexpr Kind kIRNodeKind = Kind::kFunctionCall;
 
-    FunctionCall(Position pos, const Type* type, const FunctionDeclaration* function,
-                 ExpressionArray arguments)
-        : INHERITED(pos, kIRNodeKind, type)
-        , fFunction(*function)
-        , fArguments(std::move(arguments)) {}
+    FunctionCall(Position pos,
+                 const Type* type,
+                 const FunctionDeclaration* function,
+                 ExpressionArray arguments,
+                 const FunctionCall* stablePointer)
+            : INHERITED(pos, kIRNodeKind, type)
+            , fFunction(*function)
+            , fArguments(std::move(arguments))
+            , fStablePointer(stablePointer ? stablePointer : this) {}
 
     
     
@@ -73,6 +77,10 @@ public:
         return fArguments;
     }
 
+    const FunctionCall* stablePointer() const {
+        return fStablePointer;
+    }
+
     std::unique_ptr<Expression> clone(Position pos) const override;
 
     std::string description(OperatorPrecedence) const override;
@@ -80,6 +88,10 @@ public:
 private:
     const FunctionDeclaration& fFunction;
     ExpressionArray fArguments;
+
+    
+    
+    const FunctionCall* fStablePointer = nullptr;
 
     using INHERITED = Expression;
 };

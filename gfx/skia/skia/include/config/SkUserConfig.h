@@ -118,6 +118,7 @@
 
 
 
+
 #define MOZ_SKIA
 
 
@@ -142,8 +143,6 @@
 
 #define SK_IGNORE_MAC_BLENDING_MATCH_FIX
 
-#define SK_DISABLE_LEGACY_IMAGE_READBUFFER
-
 #ifndef MOZ_IMPLICIT
 #  ifdef MOZ_CLANG_PLUGIN
 #    define MOZ_IMPLICIT __attribute__((annotate("moz_implicit")))
@@ -151,5 +150,7 @@
 #    define MOZ_IMPLICIT
 #  endif
 #endif
+
+#define SK_DISABLE_LEGACY_IMAGE_READBUFFER
 
 #endif

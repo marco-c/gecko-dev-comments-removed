@@ -17,7 +17,6 @@
 #include "src/sksl/ir/SkSLModifierFlags.h"
 #include "src/sksl/ir/SkSLNop.h"
 #include "src/sksl/ir/SkSLStatement.h"
-#include "src/sksl/ir/SkSLSwitchStatement.h"
 #include "src/sksl/ir/SkSLSymbolTable.h"
 #include "src/sksl/ir/SkSLVarDeclarations.h"
 #include "src/sksl/ir/SkSLVariable.h"
@@ -33,9 +32,10 @@ namespace SkSL {
 
 class Context;
 
-std::unique_ptr<Statement> Transform::HoistSwitchVarDeclarationsAtTopLevel(
-        const Context& context,
-        std::unique_ptr<SwitchStatement> stmt) {
+std::unique_ptr<Block> Transform::HoistSwitchVarDeclarationsAtTopLevel(const Context& context,
+                                                                       StatementArray& cases,
+                                                                       SymbolTable& switchSymbols,
+                                                                       Position pos) {
     struct HoistSwitchVarDeclsVisitor : public ProgramWriter {
         HoistSwitchVarDeclsVisitor(const Context& c) : fContext(c) {}
 
@@ -79,18 +79,17 @@ std::unique_ptr<Statement> Transform::HoistSwitchVarDeclarationsAtTopLevel(
 
     
     HoistSwitchVarDeclsVisitor visitor(context);
-    for (std::unique_ptr<Statement>& sc : stmt->as<SwitchStatement>().cases()) {
+    for (std::unique_ptr<Statement>& sc : cases) {
         visitor.visitStatementPtr(sc);
     }
 
     
     if (visitor.fVarDeclarations.empty()) {
-        return stmt;
+        return nullptr;
     }
 
     
-    SymbolTable* switchSymbols = stmt->caseBlock()->as<Block>().symbolTable();
-    std::unique_ptr<SymbolTable> blockSymbols = switchSymbols->insertNewParent();
+    std::unique_ptr<SymbolTable> blockSymbols = switchSymbols.insertNewParent();
 
     StatementArray blockStmts;
     blockStmts.reserve_exact(visitor.fVarDeclarations.size() + 1);
@@ -129,12 +128,10 @@ std::unique_ptr<Statement> Transform::HoistSwitchVarDeclarationsAtTopLevel(
 
         
         
-        switchSymbols->moveSymbolTo(blockSymbols.get(), var, context);
+        switchSymbols.moveSymbolTo(blockSymbols.get(), var, context);
     }
 
     
-    Position pos = stmt->fPosition;
-    blockStmts.push_back(std::move(stmt));
     return Block::MakeBlock(pos, std::move(blockStmts), Block::Kind::kBracedScope,
                             std::move(blockSymbols));
 }

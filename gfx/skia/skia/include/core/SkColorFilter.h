@@ -53,14 +53,6 @@ public:
 
 
 
-
-
-    SkColor filterColor(SkColor) const;
-
-    
-
-
-
     SkColor4f filterColor4f(const SkColor4f& srcColor, SkColorSpace* srcCS,
                             SkColorSpace* dstCS) const;
 
@@ -100,8 +92,10 @@ public:
     static sk_sp<SkColorFilter> Blend(const SkColor4f& c, sk_sp<SkColorSpace>, SkBlendMode mode);
     static sk_sp<SkColorFilter> Blend(SkColor c, SkBlendMode mode);
 
-    static sk_sp<SkColorFilter> Matrix(const SkColorMatrix&);
-    static sk_sp<SkColorFilter> Matrix(const float rowMajor[20]);
+    enum class Clamp : bool { kNo, kYes };
+
+    static sk_sp<SkColorFilter> Matrix(const SkColorMatrix&, Clamp clamp = Clamp::kYes);
+    static sk_sp<SkColorFilter> Matrix(const float rowMajor[20], Clamp clamp = Clamp::kYes);
 
     
     

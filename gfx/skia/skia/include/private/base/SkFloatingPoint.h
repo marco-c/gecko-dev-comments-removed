@@ -9,35 +9,16 @@
 #define SkFloatingPoint_DEFINED
 
 #include "include/private/base/SkAttributes.h"
-#include "include/private/base/SkFloatBits.h"
 #include "include/private/base/SkMath.h"
 
 #include <cmath>
 #include <cstdint>
-#include <cstring>
 #include <limits>
+#include <type_traits>
 
 inline constexpr float SK_FloatSqrt2 = 1.41421356f;
 inline constexpr float SK_FloatPI    = 3.14159265f;
 inline constexpr double SK_DoublePI  = 3.14159265358979323846264338327950288;
-
-static inline float sk_float_sqrt(float x) { return std::sqrt(x); }
-static inline float sk_float_sin(float x) { return std::sin(x); }
-static inline float sk_float_cos(float x) { return std::cos(x); }
-static inline float sk_float_tan(float x) { return std::tan(x); }
-static inline float sk_float_floor(float x) { return std::floor(x); }
-static inline float sk_float_ceil(float x) { return std::ceil(x); }
-static inline float sk_float_trunc(float x) { return std::trunc(x); }
-static inline float sk_float_acos(float x) { return std::acos(x); }
-static inline float sk_float_asin(float x) { return std::asin(x); }
-static inline float sk_float_atan2(float y, float x) { return std::atan2(y,x); }
-static inline float sk_float_abs(float x) { return std::fabs(x); }
-static inline float sk_float_copysign(float x, float y) { return std::copysign(x, y); }
-static inline float sk_float_mod(float x, float y) { return std::fmod(x,y); }
-static inline float sk_float_pow(float x, float y) { return std::pow(x, y); }
-static inline float sk_float_exp(float x) { return std::exp(x); }
-static inline float sk_float_log(float x) { return std::log(x); }
-static inline float sk_float_log2(float x) { return std::log2(x); }
 
 static constexpr int sk_float_sgn(float x) {
     return (0.0f < x) - (x < 0.0f);
@@ -56,36 +37,33 @@ static constexpr float sk_float_radians_to_degrees(float radians) {
 
 #define sk_float_round(x) (float)sk_double_round((double)(x))
 
-static inline bool sk_float_isfinite(float x) {
-    return SkFloatBits_IsFinite(SkFloat2Bits(x));
+template <typename T, std::enable_if_t<std::is_floating_point_v<T>, bool> = true>
+static inline constexpr bool SkIsNaN(T x) {
+    return x != x;
 }
 
-static inline bool sk_floats_are_finite(float a, float b) {
-    return sk_float_isfinite(a) && sk_float_isfinite(b);
+
+
+
+
+template <typename T, typename... Pack, std::enable_if_t<std::is_floating_point_v<T>, bool> = true>
+static inline bool SkIsFinite(T x, Pack... values) {
+    T prod = x - x;
+    prod = (prod * ... * values);
+    
+    return prod == prod;
 }
 
-static inline bool sk_floats_are_finite(const float array[], int count) {
-    float prod = 0;
-    for (int i = 0; i < count; ++i) {
+template <typename T, std::enable_if_t<std::is_floating_point_v<T>, bool> = true>
+static inline bool SkIsFinite(const T array[], int count) {
+    T x = array[0];
+    T prod = x - x;
+    for (int i = 1; i < count; ++i) {
         prod *= array[i];
     }
     
-    return prod == 0;   
+    return prod == prod;
 }
-
-static inline bool sk_float_isinf(float x) {
-    return SkFloatBits_IsInf(SkFloat2Bits(x));
-}
-
-#ifdef SK_BUILD_FOR_WIN
-    #define sk_float_isnan(x)       _isnan(x)
-#elif defined(__clang__) || defined(__GNUC__)
-    #define sk_float_isnan(x)       __builtin_isnan(x)
-#else
-    #define sk_float_isnan(x)       isnan(x)
-#endif
-
-#define sk_double_isnan(a)          sk_float_isnan(a)
 
 inline constexpr int SK_MaxS32FitsInFloat = 2147483520;
 inline constexpr int SK_MinS32FitsInFloat = -SK_MaxS32FitsInFloat;
@@ -97,7 +75,19 @@ inline constexpr int64_t SK_MinS64FitsInFloat = -SK_MaxS64FitsInFloat;
 
 
 
+
+
+#if defined(_MSC_VER) && !defined(__clang__)
+    #define SK_CHECK_NAN(resultVal) if (SkIsNaN(x)) { return resultVal; }
+#else
+    #define SK_CHECK_NAN(resultVal)
+#endif
+
+
+
+
 static constexpr int sk_float_saturate2int(float x) {
+    SK_CHECK_NAN(SK_MaxS32FitsInFloat)
     x = x < SK_MaxS32FitsInFloat ? x : SK_MaxS32FitsInFloat;
     x = x > SK_MinS32FitsInFloat ? x : SK_MinS32FitsInFloat;
     return (int)x;
@@ -107,6 +97,7 @@ static constexpr int sk_float_saturate2int(float x) {
 
 
 static constexpr int sk_double_saturate2int(double x) {
+    SK_CHECK_NAN(SK_MaxS32)
     x = x < SK_MaxS32 ? x : SK_MaxS32;
     x = x > SK_MinS32 ? x : SK_MinS32;
     return (int)x;
@@ -116,25 +107,26 @@ static constexpr int sk_double_saturate2int(double x) {
 
 
 static constexpr int64_t sk_float_saturate2int64(float x) {
+    SK_CHECK_NAN(SK_MaxS64FitsInFloat)
     x = x < SK_MaxS64FitsInFloat ? x : SK_MaxS64FitsInFloat;
     x = x > SK_MinS64FitsInFloat ? x : SK_MinS64FitsInFloat;
     return (int64_t)x;
 }
 
-#define sk_float_floor2int(x)   sk_float_saturate2int(sk_float_floor(x))
+#undef SK_CHECK_NAN
+
+#define sk_float_floor2int(x)   sk_float_saturate2int(std::floor(x))
 #define sk_float_round2int(x)   sk_float_saturate2int(sk_float_round(x))
-#define sk_float_ceil2int(x)    sk_float_saturate2int(sk_float_ceil(x))
+#define sk_float_ceil2int(x)    sk_float_saturate2int(std::ceil(x))
 
-#define sk_float_floor2int_no_saturate(x)   (int)sk_float_floor(x)
-#define sk_float_round2int_no_saturate(x)   (int)sk_float_round(x)
-#define sk_float_ceil2int_no_saturate(x)    (int)sk_float_ceil(x)
+#define sk_float_floor2int_no_saturate(x)   ((int)std::floor(x))
+#define sk_float_round2int_no_saturate(x)   ((int)sk_float_round(x))
+#define sk_float_ceil2int_no_saturate(x)    ((int)std::ceil(x))
 
-#define sk_double_floor(x)          floor(x)
-#define sk_double_round(x)          floor((x) + 0.5)
-#define sk_double_ceil(x)           ceil(x)
-#define sk_double_floor2int(x)      (int)sk_double_floor(x)
-#define sk_double_round2int(x)      (int)sk_double_round(x)
-#define sk_double_ceil2int(x)       (int)sk_double_ceil(x)
+#define sk_double_round(x)          (std::floor((x) + 0.5))
+#define sk_double_floor2int(x)      ((int)std::floor(x))
+#define sk_double_round2int(x)      ((int)std::round(x))
+#define sk_double_ceil2int(x)       ((int)std::ceil(x))
 
 
 
@@ -160,23 +152,15 @@ static constexpr float sk_float_midpoint(float a, float b) {
     return static_cast<float>(0.5 * (static_cast<double>(a) + b));
 }
 
-
-
-bool sk_floats_are_unit(const float array[], size_t count);
-
-static inline float sk_float_rsqrt_portable(float x) { return 1.0f / sk_float_sqrt(x); }
-static inline float sk_float_rsqrt         (float x) { return 1.0f / sk_float_sqrt(x); }
-
-
-inline constexpr int SK_FLT_DECIMAL_DIG = std::numeric_limits<float>::max_digits10;
+static inline float sk_float_rsqrt_portable(float x) { return 1.0f / std::sqrt(x); }
+static inline float sk_float_rsqrt         (float x) { return 1.0f / std::sqrt(x); }
 
 
 
 #ifdef SK_BUILD_FOR_WIN
-#pragma warning( push )
-#pragma warning( disable : 4723)
+#pragma warning(push)
+#pragma warning(disable : 4723)
 #endif
-
 #ifdef __clang__
 SK_NO_SANITIZE("float-divide-by-zero")
 #elif defined(__GNUC__)
@@ -194,15 +178,9 @@ SK_ATTRIBUTE(no_sanitize_undefined)
 static constexpr double sk_ieee_double_divide(double numer, double denom) {
     return numer / denom;
 }
-
 #ifdef SK_BUILD_FOR_WIN
 #pragma warning( pop )
 #endif
-
-
-static inline float sk_fmaf(float a, float b, float c) {
-    return std::fma(a, b, c);
-}
 
 
 bool sk_double_nearly_zero(double a);
@@ -213,6 +191,6 @@ bool sk_double_nearly_zero(double a);
 
 
 
-bool sk_doubles_nearly_equal_ulps(double a, double b, uint8_t maxUlpsDiff=16);
+bool sk_doubles_nearly_equal_ulps(double a, double b, uint8_t maxUlpsDiff = 16);
 
 #endif

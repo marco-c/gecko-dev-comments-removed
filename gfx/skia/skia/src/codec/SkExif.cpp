@@ -8,8 +8,11 @@
 #include "include/private/SkExif.h"
 
 #include "include/core/SkData.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkStream.h"
 #include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkTiffUtility.h"
+#include "src/core/SkStreamPriv.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,20 +20,12 @@
 #include <memory>
 #include <utility>
 
+namespace SkExif {
+
 constexpr uint16_t kSubIFDOffsetTag = 0x8769;
-constexpr uint16_t kOriginTag = 0x112;
 constexpr uint16_t kMarkerNoteTag = 0x927c;
 
-
-constexpr uint16_t kXResolutionTag = 0x011a;
-constexpr uint16_t kYResolutionTag = 0x011b;
-constexpr uint16_t kResolutionUnitTag = 0x0128;
-
-
-constexpr uint16_t kPixelXDimensionTag = 0xa002;
-constexpr uint16_t kPixelYDimensionTag = 0xa003;
-
-static bool get_maker_note_hdr_headroom(sk_sp<SkData> data, float* hdrHeadroom) {
+static std::optional<float> get_maker_note_hdr_headroom(sk_sp<SkData> data) {
     
     
     const bool kLittleEndian = false;
@@ -38,15 +33,15 @@ static bool get_maker_note_hdr_headroom(sk_sp<SkData> data, float* hdrHeadroom) 
             'A', 'p', 'p', 'l', 'e', ' ', 'i', 'O', 'S', 0, 0, 1, 'M', 'M',  
     };
     if (!data || data->size() < sizeof(kSig)) {
-        return false;
+        return std::nullopt;
     }
     if (memcmp(data->data(), kSig, sizeof(kSig)) != 0) {
-        return false;
+        return std::nullopt;
     }
-    auto ifd =
-            SkTiffImageFileDirectory::MakeFromOffset(std::move(data), kLittleEndian, sizeof(kSig));
+    auto ifd = SkTiff::ImageFileDirectory::MakeFromOffset(
+            std::move(data), kLittleEndian, sizeof(kSig));
     if (!ifd) {
-        return false;
+        return std::nullopt;
     }
 
     
@@ -71,8 +66,9 @@ static bool get_maker_note_hdr_headroom(sk_sp<SkData> data, float* hdrHeadroom) 
                 break;
         }
     }
-    if (!hasMaker33 || !hasMaker48) {
-        return false;
+    
+    if (!hasMaker33) {
+        return std::nullopt;
     }
     float stops = 0.f;
     if (maker33 < 1.0f) {
@@ -88,100 +84,281 @@ static bool get_maker_note_hdr_headroom(sk_sp<SkData> data, float* hdrHeadroom) 
             stops = -0.303f * maker48 + 2.303f;
         }
     }
-    *hdrHeadroom = std::pow(2.f, std::max(stops, 0.f));
-    return true;
+    return std::pow(2.f, std::max(stops, 0.f));
 }
 
-SkExifMetadata::SkExifMetadata(sk_sp<SkData> data) : fData(std::move(data)) {
-    bool littleEndian = false;
-    uint32_t ifdOffset = 0;
-    if (!SkTiffImageFileDirectory::ParseHeader(fData.get(), &littleEndian, &ifdOffset)) {
-        SkCodecPrintf("Failed to parse Exif header.\n");
-        return;
-    }
-    parseIfd(ifdOffset, littleEndian, true);
-}
-
-void SkExifMetadata::parseIfd(uint32_t ifdOffset, bool littleEndian, bool isRoot) {
-    auto ifd = SkTiffImageFileDirectory::MakeFromOffset(fData, littleEndian, ifdOffset);
+static void parse_ifd(Metadata& exif,
+                      sk_sp<SkData> data,
+                      std::unique_ptr<SkTiff::ImageFileDirectory> ifd,
+                      bool littleEndian,
+                      bool isRoot) {
     if (!ifd) {
-        SkCodecPrintf("Failed to make IFD\n");
         return;
     }
     for (uint32_t i = 0; i < ifd->getNumEntries(); ++i) {
         switch (ifd->getEntryTag(i)) {
             case kOriginTag: {
                 uint16_t value = 0;
-                if (!fOriginPresent && ifd->getEntryUnsignedShort(i, 1, &value)) {
+                if (!exif.fOrigin.has_value() && ifd->getEntryUnsignedShort(i, 1, &value)) {
                     if (0 < value && value <= kLast_SkEncodedOrigin) {
-                        fOriginValue = static_cast<SkEncodedOrigin>(value);
-                        fOriginPresent = true;
+                        exif.fOrigin = static_cast<SkEncodedOrigin>(value);
                     }
                 }
                 break;
             }
             case kMarkerNoteTag:
-                if (!fHdrHeadroomPresent) {
+                if (!exif.fHdrHeadroom.has_value()) {
                     if (auto makerNoteData = ifd->getEntryUndefinedData(i)) {
-                        fHdrHeadroomPresent = get_maker_note_hdr_headroom(std::move(makerNoteData),
-                                                                          &fHdrHeadroomValue);
+                        exif.fHdrHeadroom = get_maker_note_hdr_headroom(std::move(makerNoteData));
                     }
                 }
                 break;
             case kSubIFDOffsetTag: {
                 uint32_t subIfdOffset = 0;
                 if (isRoot && ifd->getEntryUnsignedLong(i, 1, &subIfdOffset)) {
-                    parseIfd(subIfdOffset, littleEndian, false);
+                    auto subIfd = SkTiff::ImageFileDirectory::MakeFromOffset(
+                            data, littleEndian, subIfdOffset, true);
+                    parse_ifd(exif,
+                              data,
+                              std::move(subIfd),
+                              littleEndian,
+                              false);
                 }
                 break;
             }
-            case kXResolutionTag:
-                if (!fXResolutionPresent) {
-                    fXResolutionPresent = ifd->getEntryUnsignedRational(i, 1, &fXResolutionValue);
+            case kXResolutionTag: {
+                float value = 0.f;
+                if (!exif.fXResolution.has_value() && ifd->getEntryUnsignedRational(i, 1, &value)) {
+                    exif.fXResolution = value;
                 }
                 break;
-            case kYResolutionTag:
-                if (!fYResolutionPresent) {
-                    fYResolutionPresent = ifd->getEntryUnsignedRational(i, 1, &fYResolutionValue);
+            }
+            case kYResolutionTag: {
+                float value = 0.f;
+                if (!exif.fYResolution.has_value() && ifd->getEntryUnsignedRational(i, 1, &value)) {
+                    exif.fYResolution = value;
                 }
                 break;
-            case kResolutionUnitTag:
-                if (!fResolutionUnitPresent) {
-                    fResolutionUnitPresent =
-                            ifd->getEntryUnsignedShort(i, 1, &fResolutionUnitValue);
+            }
+            case kResolutionUnitTag: {
+                uint16_t value = 0;
+                if (!exif.fResolutionUnit.has_value() && ifd->getEntryUnsignedShort(i, 1, &value)) {
+                    exif.fResolutionUnit = value;
                 }
                 break;
-            case kPixelXDimensionTag:
+            }
+            case kPixelXDimensionTag: {
                 
                 
                 
-                if (!fPixelXDimensionPresent) {
-                    uint16_t value16 = 0;
-                    if (ifd->getEntryUnsignedShort(i, 1, &value16)) {
-                        fPixelXDimensionValue = value16;
-                        fPixelXDimensionPresent = true;
-                    }
+                uint16_t value16 = 0;
+                if (!exif.fPixelXDimension.has_value() &&
+                    ifd->getEntryUnsignedShort(i, 1, &value16)) {
+                    exif.fPixelXDimension = value16;
                 }
-                if (!fPixelXDimensionPresent) {
-                    fPixelXDimensionPresent =
-                            ifd->getEntryUnsignedLong(i, 1, &fPixelXDimensionValue);
-                }
-                break;
-            case kPixelYDimensionTag:
-                if (!fPixelYDimensionPresent) {
-                    uint16_t value16 = 0;
-                    if (ifd->getEntryUnsignedShort(i, 1, &value16)) {
-                        fPixelYDimensionValue = value16;
-                        fPixelYDimensionPresent = true;
-                    }
-                }
-                if (!fPixelYDimensionPresent) {
-                    fPixelYDimensionPresent =
-                            ifd->getEntryUnsignedLong(i, 1, &fPixelYDimensionValue);
+                uint32_t value32 = 0;
+                if (!exif.fPixelXDimension.has_value() &&
+                    ifd->getEntryUnsignedLong(i, 1, &value32)) {
+                    exif.fPixelXDimension = value32;
                 }
                 break;
+            }
+            case kPixelYDimensionTag: {
+                uint16_t value16 = 0;
+                if (!exif.fPixelYDimension.has_value() &&
+                    ifd->getEntryUnsignedShort(i, 1, &value16)) {
+                    exif.fPixelYDimension = value16;
+                }
+                uint32_t value32 = 0;
+                if (!exif.fPixelYDimension.has_value() &&
+                    ifd->getEntryUnsignedLong(i, 1, &value32)) {
+                    exif.fPixelYDimension = value32;
+                }
+                break;
+            }
             default:
                 break;
         }
     }
 }
+
+void Parse(Metadata& metadata, const SkData* data) {
+    bool littleEndian = false;
+    uint32_t ifdOffset = 0;
+    if (data && SkTiff::ImageFileDirectory::ParseHeader(data, &littleEndian, &ifdOffset)) {
+        auto dataRef = SkData::MakeWithoutCopy(data->data(), data->size());
+        auto ifd = SkTiff::ImageFileDirectory::MakeFromOffset(
+                dataRef, littleEndian, ifdOffset, true);
+        parse_ifd(metadata, std::move(dataRef), std::move(ifd), littleEndian, true);
+    }
+}
+
+
+bool write_entry(uint16_t tag, uint16_t type, uint32_t count, uint32_t value,
+                uint32_t* endOfData, SkWStream* stream, SkWStream* buffer) {
+    bool success = true;
+    success &= SkWStreamWriteU16BE(stream, tag);
+    success &= SkWStreamWriteU16BE(stream, type);
+    success &= SkWStreamWriteU32BE(stream, count);
+    switch (tag) {
+      case kOriginTag:
+      case kResolutionUnitTag:
+        success &= SkWStreamWriteU16BE(stream, value);
+        success &= SkWStreamWriteU16BE(stream, 0); 
+        return success;
+      case kPixelXDimensionTag:
+      case kPixelYDimensionTag:
+        success &= SkWStreamWriteU32BE(stream, value);
+        return success;
+      case kXResolutionTag:
+      case kYResolutionTag:
+        
+        
+        
+        success &= SkWStreamWriteU32BE(stream, *endOfData);
+        *endOfData += 8;
+        success &= SkWStreamWriteU32BE(buffer, value); 
+        success &= SkWStreamWriteU32BE(buffer, 1); 
+        return success;
+      case kSubIFDOffsetTag:
+        
+        
+        success &= SkWStreamWriteU32BE(stream, value);
+        return success;
+      default:
+        return false;
+    }
+}
+
+sk_sp<SkData> WriteExif(Metadata& metadata) {
+    
+    
+    
+    
+    if (metadata.fHdrHeadroom.has_value()) {
+        SkCodecPrintf("Cannot encode maker noter from the headroom value.\n");
+        return nullptr;
+    }
+
+    SkDynamicMemoryWStream stream;
+    
+    
+    bool subIFDExists = false;
+    
+    
+    SkDynamicMemoryWStream bufferForLargerValues;
+    constexpr uint32_t kOffset = 8;
+
+    
+    if (!stream.write(SkTiff::kEndianBig, sizeof(SkTiff::kEndianBig))) {
+      return nullptr;
+    }
+    
+    if (!SkWStreamWriteU32BE(&stream, kOffset)) {
+        return nullptr;
+    }
+    
+    uint16_t numTags = 0;
+    uint16_t numSubIFDTags = 0;
+    if (metadata.fOrigin.has_value()) numTags++;
+    if (metadata.fResolutionUnit.has_value()) numTags++;
+    if (metadata.fXResolution.has_value()) numTags++;
+    if (metadata.fYResolution.has_value()) numTags++;
+    if (metadata.fPixelXDimension.has_value()) numSubIFDTags++;
+    if (metadata.fPixelYDimension.has_value()) numSubIFDTags++;
+    if (numSubIFDTags > 0) {
+      subIFDExists = true;
+      numTags++;
+    }
+
+    
+    uint32_t endOfData = kOffset
+                        + SkTiff::kSizeShort  
+                        + (SkTiff::kSizeEntry * numTags) 
+                        + SkTiff::kSizeLong; 
+    
+    const uint32_t kSubIfdOffset = endOfData;
+    if (subIFDExists) {
+      endOfData += SkTiff::kSizeShort  
+                  + (SkTiff::kSizeEntry * numSubIFDTags) 
+                  + SkTiff::kSizeLong; 
+    }
+
+    
+    SkWStreamWriteU16BE(&stream, numTags);
+
+    
+    if (metadata.fOrigin.has_value()
+        && !write_entry(kOriginTag, SkTiff::kTypeUnsignedShort, 1,
+                        metadata.fOrigin.value(), &endOfData, &stream,
+                        &bufferForLargerValues)) {
+          return nullptr;
+        }
+
+    if (metadata.fResolutionUnit.has_value()
+        && !write_entry(kResolutionUnitTag, SkTiff::kTypeUnsignedShort, 1,
+                        metadata.fResolutionUnit.value(), &endOfData, &stream,
+                        &bufferForLargerValues)) {
+          return nullptr;
+        }
+
+    if (metadata.fXResolution.has_value()
+        && !write_entry(kXResolutionTag, SkTiff::kTypeUnsignedRational, 1,
+                        metadata.fXResolution.value(), &endOfData, &stream,
+                        &bufferForLargerValues)) {
+          return nullptr;
+        }
+
+    if (metadata.fYResolution.has_value()
+        && !write_entry(kYResolutionTag, SkTiff::kTypeUnsignedRational, 1,
+                        metadata.fYResolution.value(), &endOfData, &stream,
+                        &bufferForLargerValues)) {
+          return nullptr;
+        }
+
+    if (subIFDExists && !write_entry(kSubIFDOffsetTag, SkTiff::kTypeUnsignedLong, 1,
+                      kSubIfdOffset, &endOfData, &stream, &bufferForLargerValues)) {
+          return nullptr;
+        }
+
+    
+    if (!SkWStreamWriteU32BE(&stream, 0)) {
+        return nullptr;
+    }
+
+    
+    if (subIFDExists) {
+      
+      if (!SkWStreamWriteU16BE(&stream, numSubIFDTags)) {
+        return nullptr;
+      }
+
+      if (metadata.fPixelXDimension.has_value()
+          && !write_entry(kPixelXDimensionTag, SkTiff::kTypeUnsignedLong, 1,
+                          metadata.fPixelXDimension.value(), &endOfData, &stream,
+                          &bufferForLargerValues)) {
+            return nullptr;
+          }
+
+      if (metadata.fPixelYDimension.has_value()
+          && !write_entry(kPixelYDimensionTag, SkTiff::kTypeUnsignedLong, 1,
+                          metadata.fPixelYDimension.value(), &endOfData, &stream,
+                          &bufferForLargerValues)) {
+            return nullptr;
+          }
+
+      
+      if (!SkWStreamWriteU32BE(&stream, 0)) {
+        return nullptr;
+      }
+    }
+
+    
+    if (!bufferForLargerValues.writeToStream(&stream)) {
+        return nullptr;
+    }
+
+    return stream.detachAsData();
+}
+
+}  

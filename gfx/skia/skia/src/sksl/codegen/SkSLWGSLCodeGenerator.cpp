@@ -33,6 +33,7 @@
 #include "src/sksl/SkSLUtil.h"
 #include "src/sksl/analysis/SkSLProgramUsage.h"
 #include "src/sksl/analysis/SkSLProgramVisitor.h"
+#include "src/sksl/codegen/SkSLCodeGenTypes.h"
 #include "src/sksl/codegen/SkSLCodeGenerator.h"
 #include "src/sksl/ir/SkSLBinaryExpression.h"
 #include "src/sksl/ir/SkSLBlock.h"
@@ -45,10 +46,12 @@
 #include "src/sksl/ir/SkSLExpression.h"
 #include "src/sksl/ir/SkSLExpressionStatement.h"
 #include "src/sksl/ir/SkSLFieldAccess.h"
+#include "src/sksl/ir/SkSLFieldSymbol.h"
 #include "src/sksl/ir/SkSLForStatement.h"
 #include "src/sksl/ir/SkSLFunctionCall.h"
 #include "src/sksl/ir/SkSLFunctionDeclaration.h"
 #include "src/sksl/ir/SkSLFunctionDefinition.h"
+#include "src/sksl/ir/SkSLIRHelpers.h"
 #include "src/sksl/ir/SkSLIRNode.h"
 #include "src/sksl/ir/SkSLIfStatement.h"
 #include "src/sksl/ir/SkSLIndexExpression.h"
@@ -86,12 +89,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-
-#ifdef SK_ENABLE_WGSL_VALIDATION
-#include "tint/tint.h"
-#include "src/tint/lang/wgsl/reader/options.h"
-#include "src/tint/lang/wgsl/extension.h"
-#endif
 
 using namespace skia_private;
 
@@ -166,13 +163,16 @@ public:
     WGSLCodeGenerator(const Context* context,
                       const ShaderCaps* caps,
                       const Program* program,
-                      OutputStream* out)
-            : INHERITED(context, caps, program, out) {}
+                      OutputStream* out,
+                      PrettyPrint pp,
+                      IncludeSyntheticCode isc)
+            : CodeGenerator(context, caps, program, out)
+            , fPrettyPrint(pp)
+            , fGenSyntheticCode(isc) {}
 
     bool generateCode() override;
 
 private:
-    using INHERITED = CodeGenerator;
     using Precedence = OperatorPrecedence;
 
     
@@ -186,10 +186,12 @@ private:
     
     void writePipelineIODeclaration(const Layout& layout,
                                     const Type& type,
+                                    ModifierFlags modifiers,
                                     std::string_view name,
                                     Delimiter delimiter);
     void writeUserDefinedIODecl(const Layout& layout,
                                 const Type& type,
+                                ModifierFlags modifiers,
                                 std::string_view name,
                                 Delimiter delimiter);
     void writeBuiltinIODecl(const Type& type,
@@ -312,7 +314,7 @@ private:
 
     
     
-    std::string writeScratchLet(const std::string& expr);
+    std::string writeScratchLet(const std::string& expr, bool isCompileTimeConstant = false);
     std::string writeScratchLet(const Expression& expr, Precedence parentPrecedence);
 
     
@@ -385,6 +387,8 @@ private:
     bool fWrittenInverse2 = false;
     bool fWrittenInverse3 = false;
     bool fWrittenInverse4 = false;
+    PrettyPrint fPrettyPrint;
+    IncludeSyntheticCode fGenSyntheticCode;
 
     
     
@@ -994,7 +998,7 @@ private:
     bool visitProgramElement(const ProgramElement& p) override {
         
         if (p.is<FunctionDefinition>() && &p.as<FunctionDefinition>().declaration() == fFunction) {
-            return INHERITED::visitProgramElement(p);
+            return ProgramVisitor::visitProgramElement(p);
         }
         
         return false;
@@ -1041,15 +1045,13 @@ private:
                 fDeps |= calleeDeps;
             }
         }
-        return INHERITED::visitExpression(e);
+        return ProgramVisitor::visitExpression(e);
     }
 
     const Program* const fProgram;
     const FunctionDeclaration* const fFunction;
     DepsMap* const fDependencyMap;
     Deps fDeps = WGSLFunctionDependency::kNone;
-
-    using INHERITED = ProgramVisitor;
 };
 
 WGSLCodeGenerator::ProgramRequirements resolve_program_requirements(const Program* program) {
@@ -1194,17 +1196,36 @@ public:
         }
 
         
-        
         fReintegrationSwizzle.resize(fullSlotCount);
-        for (int index = 0; index < fComponents.size(); ++index) {
-            fReintegrationSwizzle[fComponents[index]] = index;
-        }
+        int reintegrateIndex = 0;
+
         
-        int originalValueComponentIndex = fComponents.size();
-        for (int index = 0; index < fullSlotCount; ++index) {
-            if (!used[index]) {
-                fReintegrationSwizzle[index] = originalValueComponentIndex++;
+        auto refillUntouchedSlots = [&] {
+            for (int index = 0; index < fullSlotCount; ++index) {
+                if (!used[index]) {
+                    fReintegrationSwizzle[index] = reintegrateIndex++;
+                }
             }
+        };
+
+        
+        auto insertNewValuesIntoSlots = [&] {
+            for (int index = 0; index < fComponents.size(); ++index) {
+                fReintegrationSwizzle[fComponents[index]] = reintegrateIndex++;
+            }
+        };
+
+        
+        
+        
+        if (used[0]) {
+            fReintegrateNewValueFirst = true;
+            insertNewValuesIntoSlots();
+            refillUntouchedSlots();
+        } else {
+            fReintegrateNewValueFirst = false;
+            refillUntouchedSlots();
+            insertNewValuesIntoSlots();
         }
     }
 
@@ -1221,9 +1242,8 @@ public:
             
             result += '(';
             result += value;
-            result += ").";
-            result += Swizzle::MaskString(fReintegrationSwizzle);
-        } else {
+            result += ")";
+        } else if (fReintegrateNewValueFirst) {
             
             result += to_wgsl_type(fContext, fType);
             result += "((";
@@ -1234,9 +1254,27 @@ public:
             result += fName;
             result += '.';
             result += Swizzle::MaskString(fUntouchedComponents);
-            result += ").";
+            result += ')';
+        } else {
+            
+            result += to_wgsl_type(fContext, fType);
+            result += '(';
+            result += fName;
+            result += '.';
+            result += Swizzle::MaskString(fUntouchedComponents);
+
+            
+            result += ", (";
+            result += value;
+            result += "))";
+        }
+
+        if (!Swizzle::IsIdentity(fReintegrationSwizzle)) {
+            
+            result += '.';
             result += Swizzle::MaskString(fReintegrationSwizzle);
         }
+
         return result + ';';
     }
 
@@ -1247,6 +1285,7 @@ private:
     ComponentArray fComponents;
     ComponentArray fUntouchedComponents;
     ComponentArray fReintegrationSwizzle;
+    bool fReintegrateNewValueFirst = false;
 };
 
 bool WGSLCodeGenerator::generateCode() {
@@ -1514,13 +1553,11 @@ void WGSLCodeGenerator::write(std::string_view s) {
     if (s.empty()) {
         return;
     }
-#if defined(SK_DEBUG) || defined(SKSL_STANDALONE)
-    if (fAtLineStart) {
+    if (fAtLineStart && fPrettyPrint == PrettyPrint::kYes) {
         for (int i = 0; i < fIndentation; i++) {
             fOut->writeText("  ");
         }
     }
-#endif
     fOut->writeText(std::string(s).c_str());
     fAtLineStart = false;
 }
@@ -1561,6 +1598,7 @@ void WGSLCodeGenerator::writeVariableDecl(const Layout& layout,
 
 void WGSLCodeGenerator::writePipelineIODeclaration(const Layout& layout,
                                                    const Type& type,
+                                                   ModifierFlags modifiers,
                                                    std::string_view name,
                                                    Delimiter delimiter) {
     
@@ -1576,7 +1614,7 @@ void WGSLCodeGenerator::writePipelineIODeclaration(const Layout& layout,
     
     
     if (layout.fLocation >= 0) {
-        this->writeUserDefinedIODecl(layout, type, name, delimiter);
+        this->writeUserDefinedIODecl(layout, type, modifiers, name, delimiter);
         return;
     }
     if (layout.fBuiltin >= 0) {
@@ -1587,6 +1625,9 @@ void WGSLCodeGenerator::writePipelineIODeclaration(const Layout& layout,
         }
         auto builtin = builtin_from_sksl_name(layout.fBuiltin);
         if (builtin.has_value()) {
+            
+            
+            SkASSERT(!(modifiers & ~(ModifierFlag::kIn | ModifierFlag::kOut)));
             this->writeBuiltinIODecl(type, name, *builtin, delimiter);
             return;
         }
@@ -1596,6 +1637,7 @@ void WGSLCodeGenerator::writePipelineIODeclaration(const Layout& layout,
 
 void WGSLCodeGenerator::writeUserDefinedIODecl(const Layout& layout,
                                                const Type& type,
+                                               ModifierFlags flags,
                                                std::string_view name,
                                                Delimiter delimiter) {
     this->write("@location(" + std::to_string(layout.fLocation) + ") ");
@@ -1607,8 +1649,15 @@ void WGSLCodeGenerator::writeUserDefinedIODecl(const Layout& layout,
 
     
     
-    if (type.isInteger() || (type.isVector() && type.componentType().isInteger())) {
-        this->write("@interpolate(flat) ");
+    if (flags.isFlat() || type.isInteger() ||
+        (type.isVector() && type.componentType().isInteger())) {
+        
+        
+        
+        
+        this->write("@interpolate(flat, either) ");
+    } else if (flags & ModifierFlag::kNoPerspective) {
+        this->write("@interpolate(linear) ");
     }
 
     this->writeVariableDecl(layout, type, name, delimiter);
@@ -1739,7 +1788,14 @@ void WGSLCodeGenerator::writeFunctionDeclaration(const FunctionDeclaration& decl
                 this->write(this->assembleName(param.name()));
             }
             this->write(": ");
-            if (param.modifierFlags() & ModifierFlag::kOut) {
+            if (param.type().isUnsizedArray()) {
+                
+                
+                
+                this->write("ptr<storage, ");
+                this->write(to_wgsl_type(fContext, param.type(), &param.layout()));
+                this->write(", read>");
+            } else if (param.modifierFlags() & ModifierFlag::kOut) {
                 
                 this->write(to_ptr_type(fContext, param.type(), &param.layout()));
             } else {
@@ -1758,8 +1814,8 @@ void WGSLCodeGenerator::writeEntryPoint(const FunctionDefinition& main) {
     SkASSERT(main.declaration().isMain());
     const ProgramKind programKind = fProgram.fConfig->fKind;
 
-#if defined(SKSL_STANDALONE)
-    if (ProgramConfig::IsRuntimeShader(programKind)) {
+    if (fGenSyntheticCode == IncludeSyntheticCode::kYes &&
+        ProgramConfig::IsRuntimeShader(programKind)) {
         
         
         
@@ -1771,7 +1827,6 @@ void WGSLCodeGenerator::writeEntryPoint(const FunctionDefinition& main) {
         this->writeLine("}");
         return;
     }
-#endif
 
     
     
@@ -1824,18 +1879,16 @@ void WGSLCodeGenerator::writeEntryPoint(const FunctionDefinition& main) {
         this->writeLine("Out;");
     }
 
-#if defined(SKSL_STANDALONE)
     
     
     
     
     
-    if (ProgramConfig::IsFragment(programKind)) {
+    if (fGenSyntheticCode == IncludeSyntheticCode::kYes && ProgramConfig::IsFragment(programKind)) {
         if (main.declaration().returnType().matches(*fContext.fTypes.fHalf4)) {
             this->write("_stageOut.sk_FragColor = ");
         }
     }
-#endif
 
     
     this->write("_skslMain(");
@@ -1852,21 +1905,22 @@ void WGSLCodeGenerator::writeEntryPoint(const FunctionDefinition& main) {
         }
     }
 
-#if defined(SKSL_STANDALONE)
-    if (const Variable* v = main.declaration().getMainCoordsParameter()) {
-        
-        
-        SkASSERT(ProgramConfig::IsFragment(programKind));
-        const Type& type = v->type();
-        if (!type.matches(*fContext.fTypes.fFloat2)) {
-            fContext.fErrors->error(main.fPosition, "main function has unsupported parameter: " +
-                                                    type.description());
-            return;
+    if (fGenSyntheticCode == IncludeSyntheticCode::kYes) {
+        if (const Variable* v = main.declaration().getMainCoordsParameter()) {
+            
+            
+            SkASSERT(ProgramConfig::IsFragment(programKind));
+            const Type& type = v->type();
+            if (!type.matches(*fContext.fTypes.fFloat2)) {
+                fContext.fErrors->error(
+                        main.fPosition,
+                        "main function has unsupported parameter: " + type.description());
+                return;
+            }
+            this->write(separator());
+            this->write("/*fragcoord*/ vec2<f32>()");
         }
-        this->write(separator());
-        this->write("/*fragcoord*/ vec2<f32>()");
     }
-#endif
 
     this->writeLine(");");
 
@@ -2350,12 +2404,13 @@ void WGSLCodeGenerator::writeVarDeclaration(const VarDeclaration& varDecl) {
             varDecl.value() ? this->assembleExpression(*varDecl.value(), Precedence::kAssignment)
                             : std::string();
 
-    if (varDecl.var()->modifierFlags().isConst()) {
+    if (varDecl.var()->modifierFlags().isConst() ||
+        (fProgram.fUsage->get(*varDecl.var()).fWrite == 1 && varDecl.value())) {
         
-        SkASSERTF(varDecl.value(), "a constant variable must specify a value");
-        this->write((!fAtFunctionScope || Analysis::IsCompileTimeConstant(*varDecl.value()))
-                            ? "const "
-                            : "let ");
+        SkASSERTF(varDecl.value(), "an immutable variable must specify a value");
+        const bool useConst =
+                !fAtFunctionScope || Analysis::IsCompileTimeConstant(*varDecl.value());
+        this->write(useConst ? "const " : "let ");
     } else {
         this->write("var ");
     }
@@ -3461,6 +3516,19 @@ std::string WGSLCodeGenerator::assembleFunctionCall(const FunctionCall& call,
             expr += ", ";
             expr += this->assembleExpression(*args[index], Precedence::kSequence);
             expr += kSamplerSuffix;
+        } else if (args[index]->type().isUnsizedArray()) {
+            
+            
+            if (args[index]->is<VariableReference>()) {
+                const Variable* v = args[index]->as<VariableReference>().variable();
+                
+                
+                
+                SkASSERT(v->storage() == Variable::Storage::kParameter);
+                expr += this->assembleName(v->mangledName());
+            } else {
+                expr += "&(" + this->assembleExpression(*args[index], Precedence::kSequence) + ")";
+            }
         } else {
             expr += this->assembleExpression(*args[index], Precedence::kSequence);
         }
@@ -3626,9 +3694,10 @@ std::string WGSLCodeGenerator::writeScratchVar(const Type& type, const std::stri
     return scratchVarName;
 }
 
-std::string WGSLCodeGenerator::writeScratchLet(const std::string& expr) {
+std::string WGSLCodeGenerator::writeScratchLet(const std::string& expr,
+                                               bool isCompileTimeConstant) {
     std::string scratchVarName = "_skTemp" + std::to_string(fScratchCount++);
-    this->write(fAtFunctionScope ? "let " : "const ");
+    this->write(fAtFunctionScope && !isCompileTimeConstant ? "let " : "const ");
     this->write(scratchVarName);
     this->write(" = ");
     this->write(expr);
@@ -3644,8 +3713,9 @@ std::string WGSLCodeGenerator::writeScratchLet(const Expression& expr,
 std::string WGSLCodeGenerator::writeNontrivialScratchLet(const Expression& expr,
                                                          Precedence parentPrecedence) {
     std::string result = this->assembleExpression(expr, parentPrecedence);
-    return is_nontrivial_expression(expr) ? this->writeScratchLet(result)
-                                          : result;
+    return is_nontrivial_expression(expr)
+                   ? this->writeScratchLet(result, Analysis::IsCompileTimeConstant(expr))
+                   : result;
 }
 
 std::string WGSLCodeGenerator::assembleTernaryExpression(const TernaryExpression& t,
@@ -3754,8 +3824,9 @@ std::string WGSLCodeGenerator::variablePrefix(const Variable& v) {
 std::string WGSLCodeGenerator::variableReferenceNameForLValue(const VariableReference& r) {
     const Variable& v = *r.variable();
 
-    if ((v.storage() == Variable::Storage::kParameter &&
-         v.modifierFlags() & ModifierFlag::kOut)) {
+    if (v.storage() == Variable::Storage::kParameter &&
+         (v.modifierFlags() & ModifierFlag::kOut || v.type().isUnsizedArray())) {
+        
         
         
         return "(*" + this->assembleName(v.mangledName()) + ')';
@@ -3878,8 +3949,7 @@ std::string WGSLCodeGenerator::assembleConstructorDiagonalMatrix(
 
 std::string WGSLCodeGenerator::assembleConstructorMatrixResize(
         const ConstructorMatrixResize& ctor) {
-    std::string source = this->writeScratchLet(this->assembleExpression(*ctor.argument(),
-                                                                        Precedence::kSequence));
+    std::string source = this->writeNontrivialScratchLet(*ctor.argument(), Precedence::kSequence);
     int columns = ctor.type().columns();
     int rows = ctor.type().rows();
     int sourceColumns = ctor.argument()->type().columns();
@@ -4222,7 +4292,7 @@ void WGSLCodeGenerator::writeEnables() {
         this->writeLine("enable chromium_experimental_framebuffer_fetch;");
     }
     if (fProgram.fInterface.fOutputSecondaryColor) {
-        this->writeLine("enable chromium_internal_dual_source_blending;");
+        this->writeLine("enable dual_source_blending;");
     }
 }
 
@@ -4248,11 +4318,12 @@ void WGSLCodeGenerator::writeStageInputStruct() {
     for (const Variable* v : fPipelineInputs) {
         if (v->type().isInterfaceBlock()) {
             for (const Field& f : v->type().fields()) {
-                this->writePipelineIODeclaration(f.fLayout, *f.fType, f.fName, Delimiter::kComma);
+                this->writePipelineIODeclaration(f.fLayout, *f.fType, f.fModifierFlags, f.fName,
+                                                 Delimiter::kComma);
             }
         } else {
-            this->writePipelineIODeclaration(v->layout(), v->type(), v->mangledName(),
-                                             Delimiter::kComma);
+            this->writePipelineIODeclaration(v->layout(), v->type(), v->modifierFlags(),
+                                             v->mangledName(), Delimiter::kComma);
         }
     }
 
@@ -4285,7 +4356,8 @@ void WGSLCodeGenerator::writeStageOutputStruct() {
     for (const Variable* v : fPipelineOutputs) {
         if (v->type().isInterfaceBlock()) {
             for (const auto& f : v->type().fields()) {
-                this->writePipelineIODeclaration(f.fLayout, *f.fType, f.fName, Delimiter::kComma);
+                this->writePipelineIODeclaration(f.fLayout, *f.fType, f.fModifierFlags, f.fName,
+                                                 Delimiter::kComma);
                 if (f.fLayout.fBuiltin == SK_POSITION_BUILTIN) {
                     declaredPositionBuiltin = true;
                 } else if (f.fLayout.fBuiltin == SK_POINTSIZE_BUILTIN) {
@@ -4296,8 +4368,8 @@ void WGSLCodeGenerator::writeStageOutputStruct() {
                 }
             }
         } else {
-            this->writePipelineIODeclaration(v->layout(), v->type(), v->mangledName(),
-                                             Delimiter::kComma);
+            this->writePipelineIODeclaration(v->layout(), v->type(), v->modifierFlags(),
+                                             v->mangledName(), Delimiter::kComma);
         }
     }
 
@@ -4505,69 +4577,46 @@ bool WGSLCodeGenerator::writeFunctionDependencyParams(const FunctionDeclaration&
     return true;
 }
 
-#if defined(SK_ENABLE_WGSL_VALIDATION)
-static bool validate_wgsl(ErrorReporter& reporter, const std::string& wgsl, std::string* warnings) {
-    
-    tint::wgsl::reader::Options options;
-    for (auto extension : {tint::wgsl::Extension::kChromiumExperimentalPixelLocal,
-                           tint::wgsl::Extension::kChromiumInternalDualSourceBlending}) {
-        options.allowed_features.extensions.insert(extension);
-    }
-
-    
-    tint::Source::File srcFile("", wgsl);
-    tint::Program program(tint::wgsl::reader::Parse(&srcFile, options));
-
-    if (program.Diagnostics().ContainsErrors()) {
-        
-#if defined(SKSL_STANDALONE)
-        reporter.error(Position(), std::string("Tint compilation failed.\n\n") + wgsl);
-#else
-        
-        
-        tint::diag::Formatter diagFormatter;
-        std::string diagOutput = diagFormatter.Format(program.Diagnostics()).Plain();
-        diagOutput += "\n";
-        diagOutput += wgsl;
-        SkDEBUGFAILF("%s", diagOutput.c_str());
-#endif
-        return false;
-    }
-
-    if (!program.Diagnostics().empty()) {
-        
-        tint::diag::Formatter diagFormatter;
-        *warnings = diagFormatter.Format(program.Diagnostics()).Plain();
-    }
-    return true;
-}
-#endif  
-
-bool ToWGSL(Program& program, const ShaderCaps* caps, OutputStream& out) {
+bool ToWGSL(Program& program,
+            const ShaderCaps* caps,
+            OutputStream& out,
+            PrettyPrint pp,
+            IncludeSyntheticCode isc,
+            ValidateWGSLProc validateWGSL) {
     TRACE_EVENT0("skia.shaders", "SkSL::ToWGSL");
     SkASSERT(caps != nullptr);
 
     program.fContext->fErrors->setSource(*program.fSource);
-#ifdef SK_ENABLE_WGSL_VALIDATION
-    StringStream wgsl;
-    WGSLCodeGenerator cg(program.fContext.get(), caps, &program, &wgsl);
-    bool result = cg.generateCode();
-    if (result) {
-        std::string wgslString = wgsl.str();
-        std::string warnings;
-        result = validate_wgsl(*program.fContext->fErrors, wgslString, &warnings);
-        if (!warnings.empty()) {
-            out.writeText("/* Tint reported warnings. */\n\n");
+    bool result;
+    if (validateWGSL) {
+        StringStream wgsl;
+        WGSLCodeGenerator cg(program.fContext.get(), caps, &program, &wgsl, pp, isc);
+        result = cg.generateCode();
+        if (result) {
+            std::string_view wgslBytes = wgsl.str();
+            std::string warnings;
+            result = validateWGSL(*program.fContext->fErrors, wgslBytes, &warnings);
+            if (!warnings.empty()) {
+                out.writeText("/* Tint reported warnings. */\n\n");
+            }
+            out.write(wgslBytes.data(), wgslBytes.size());
         }
-        out.writeString(wgslString);
+    } else {
+        WGSLCodeGenerator cg(program.fContext.get(), caps, &program, &out, pp, isc);
+        result = cg.generateCode();
     }
-#else
-    WGSLCodeGenerator cg(program.fContext.get(), caps, &program, &out);
-    bool result = cg.generateCode();
-#endif
     program.fContext->fErrors->setSource(std::string_view());
 
     return result;
+}
+
+bool ToWGSL(Program& program, const ShaderCaps* caps, OutputStream& out) {
+#if defined(SK_DEBUG)
+    constexpr PrettyPrint defaultPrintOpts = PrettyPrint::kYes;
+#else
+    constexpr PrettyPrint defaultPrintOpts = PrettyPrint::kNo;
+#endif
+    return ToWGSL(program, caps, out, defaultPrintOpts, IncludeSyntheticCode::kNo, nullptr);
 }
 
 bool ToWGSL(Program& program, const ShaderCaps* caps, std::string* out) {

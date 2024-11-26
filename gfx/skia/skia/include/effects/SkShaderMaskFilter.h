@@ -14,6 +14,8 @@
 class SkMaskFilter;
 class SkShader;
 
+
+
 class SK_API SkShaderMaskFilter {
 public:
     static sk_sp<SkMaskFilter> Make(sk_sp<SkShader> shader);

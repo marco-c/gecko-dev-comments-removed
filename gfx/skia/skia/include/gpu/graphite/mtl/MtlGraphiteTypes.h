@@ -8,15 +8,18 @@
 #ifndef skgpu_graphite_MtlGraphiteTypes_DEFINED
 #define skgpu_graphite_MtlGraphiteTypes_DEFINED
 
+#include "include/core/SkTypes.h"
+
+#if __OBJC__  
+#include "include/gpu/graphite/BackendTexture.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
+#include "include/gpu/graphite/TextureInfo.h"
 #include "include/ports/SkCFObject.h"
+#include "include/private/base/SkAPI.h"
 
-
-
-#ifdef __APPLE__
-
-#include <CoreFoundation/CoreFoundation.h>
-#include <TargetConditionals.h>
+#import <CoreFoundation/CoreFoundation.h>
+#import <Metal/Metal.h>
+#import <TargetConditionals.h>
 
 #if TARGET_OS_SIMULATOR
 #define SK_API_AVAILABLE_CA_METAL_LAYER SK_API_AVAILABLE(macos(10.11), ios(13.0), tvos(13.0))
@@ -24,36 +27,24 @@
 #define SK_API_AVAILABLE_CA_METAL_LAYER SK_API_AVAILABLE(macos(10.11), ios(8.0), tvos(9.0))
 #endif  
 
-#endif 
-
-
 namespace skgpu::graphite {
 
-
-
-
-using MtlPixelFormat = unsigned int;
-using MtlTextureUsage = unsigned int;
-using MtlStorageMode = unsigned int;
-
-struct MtlTextureInfo {
+struct SK_API MtlTextureInfo {
     uint32_t fSampleCount = 1;
     skgpu::Mipmapped fMipmapped = skgpu::Mipmapped::kNo;
 
-    
-    
-    MtlPixelFormat fFormat = 0;       
-    MtlTextureUsage fUsage = 0;       
-    MtlStorageMode fStorageMode = 0;  
+    MTLPixelFormat fFormat = MTLPixelFormatInvalid;
+    MTLTextureUsage fUsage = MTLTextureUsageUnknown;
+    MTLStorageMode fStorageMode = MTLStorageModeShared;
     bool fFramebufferOnly = false;
 
     MtlTextureInfo() = default;
     MtlTextureInfo(CFTypeRef mtlTexture);
     MtlTextureInfo(uint32_t sampleCount,
                    skgpu::Mipmapped mipmapped,
-                   MtlPixelFormat format,
-                   MtlTextureUsage usage,
-                   MtlStorageMode storageMode,
+                   MTLPixelFormat format,
+                   MTLTextureUsage usage,
+                   MTLStorageMode storageMode,
                    bool framebufferOnly)
             : fSampleCount(sampleCount)
             , fMipmapped(mipmapped)
@@ -63,6 +54,31 @@ struct MtlTextureInfo {
             , fFramebufferOnly(framebufferOnly) {}
 };
 
+namespace TextureInfos {
+SK_API TextureInfo MakeMetal(const MtlTextureInfo&);
+SK_API TextureInfo MakeMetal(CFTypeRef mtlTexture);
+
+SK_API bool GetMtlTextureInfo(const TextureInfo&, MtlTextureInfo*);
+}  
+
+namespace BackendTextures {
+
+
+SK_API BackendTexture MakeMetal(SkISize dimensions, CFTypeRef mtlTexture);
+
+SK_API CFTypeRef GetMtlTexture(const BackendTexture&);
+}  
+
+namespace BackendSemaphores {
+
+SK_API BackendSemaphore MakeMetal(CFTypeRef mtlEvent, uint64_t value);
+
+SK_API CFTypeRef GetMtlEvent(const BackendSemaphore&);
+SK_API uint64_t GetMtlValue(const BackendSemaphore&);
+}  
+
 } 
+
+#endif  
 
 #endif 

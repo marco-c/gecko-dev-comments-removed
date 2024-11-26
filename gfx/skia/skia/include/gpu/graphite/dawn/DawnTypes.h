@@ -8,10 +8,15 @@
 #ifndef skgpu_graphite_DawnTypes_DEFINED
 #define skgpu_graphite_DawnTypes_DEFINED
 
+#include "include/core/SkSize.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
+#include "include/private/base/SkAPI.h"
+
 #include "webgpu/webgpu_cpp.h"  
 
 namespace skgpu::graphite {
+class BackendTexture;
+class TextureInfo;
 
 struct DawnTextureInfo {
     uint32_t fSampleCount = 1;
@@ -24,12 +29,22 @@ struct DawnTextureInfo {
     wgpu::TextureUsage fUsage = wgpu::TextureUsage::None;
     
     wgpu::TextureAspect fAspect = wgpu::TextureAspect::All;
+    uint32_t fSlice = 0;
+
+#if !defined(__EMSCRIPTEN__)
+    
+    
+    
+    
+    wgpu::YCbCrVkDescriptor fYcbcrVkDescriptor = {};
+#endif
 
     wgpu::TextureFormat getViewFormat() const {
         return fViewFormat != wgpu::TextureFormat::Undefined ? fViewFormat : fFormat;
     }
 
     DawnTextureInfo() = default;
+
     DawnTextureInfo(uint32_t sampleCount,
                     Mipmapped mipmapped,
                     wgpu::TextureFormat format,
@@ -40,22 +55,92 @@ struct DawnTextureInfo {
                               format,
                               format,
                               usage,
-                              aspect) {}
+                              aspect,
+                              0) {}
+
     DawnTextureInfo(uint32_t sampleCount,
                     Mipmapped mipmapped,
                     wgpu::TextureFormat format,
                     wgpu::TextureFormat viewFormat,
                     wgpu::TextureUsage usage,
-                    wgpu::TextureAspect aspect)
+                    wgpu::TextureAspect aspect,
+                    uint32_t slice)
             : fSampleCount(sampleCount)
             , fMipmapped(mipmapped)
             , fFormat(format)
             , fViewFormat(viewFormat)
             , fUsage(usage)
-            , fAspect(aspect) {}
+            , fAspect(aspect)
+            , fSlice(slice) {}
+
+#if !defined(__EMSCRIPTEN__)
+    DawnTextureInfo(uint32_t sampleCount,
+                    Mipmapped mipmapped,
+                    wgpu::TextureFormat format,
+                    wgpu::TextureFormat viewFormat,
+                    wgpu::TextureUsage usage,
+                    wgpu::TextureAspect aspect,
+                    uint32_t slice,
+                    wgpu::YCbCrVkDescriptor ycbcrVkDescriptor)
+            : fSampleCount(sampleCount)
+            , fMipmapped(mipmapped)
+            , fFormat(format)
+            , fViewFormat(viewFormat)
+            , fUsage(usage)
+            , fAspect(aspect)
+            , fSlice(slice)
+            , fYcbcrVkDescriptor(ycbcrVkDescriptor) {}
+#endif
 };
 
-} 
+namespace TextureInfos {
+SK_API TextureInfo MakeDawn(const DawnTextureInfo& dawnInfo);
+
+SK_API bool GetDawnTextureInfo(const TextureInfo&, DawnTextureInfo*);
+}  
+
+namespace BackendTextures {
+
+
+
+
+
+
+
+
+
+SK_API BackendTexture MakeDawn(WGPUTexture);
+
+
+
+
+
+
+
+
+
+SK_API BackendTexture MakeDawn(SkISize planeDimensions, const DawnTextureInfo&, WGPUTexture);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SK_API BackendTexture MakeDawn(SkISize dimensions,
+                               const DawnTextureInfo& info,
+                               WGPUTextureView textureView);
+
+}  
+
+}  
 
 #endif 
 

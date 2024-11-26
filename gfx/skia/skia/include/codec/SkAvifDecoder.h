@@ -18,6 +18,8 @@ class SkStream;
 
 namespace SkAvifDecoder {
 
+namespace LibAvif {
+
 
 SK_API bool IsAvif(const void*, size_t);
 
@@ -38,6 +40,40 @@ SK_API std::unique_ptr<SkCodec> Decode(sk_sp<SkData>,
 inline constexpr SkCodecs::Decoder Decoder() {
     return { "avif", IsAvif, Decode };
 }
+
+}  
+
+
+
+
+inline constexpr SkCodecs::Decoder Decoder() {
+    return { "avif", LibAvif::IsAvif, LibAvif::Decode };
+}
+
+namespace CrabbyAvif {
+
+
+SK_API bool IsAvif(const void*, size_t);
+
+
+
+
+
+
+
+
+SK_API std::unique_ptr<SkCodec> Decode(std::unique_ptr<SkStream>,
+                                       SkCodec::Result*,
+                                       SkCodecs::DecodeContext = nullptr);
+SK_API std::unique_ptr<SkCodec> Decode(sk_sp<SkData>,
+                                       SkCodec::Result*,
+                                       SkCodecs::DecodeContext = nullptr);
+
+inline constexpr SkCodecs::Decoder Decoder() {
+    return { "avif", IsAvif, Decode };
+}
+
+}  
 
 }  
 

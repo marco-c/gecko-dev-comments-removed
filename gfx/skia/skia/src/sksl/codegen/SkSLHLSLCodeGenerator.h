@@ -9,16 +9,28 @@
 #define SKSL_HLSLCODEGENERATOR
 
 #include <string>
+#include <string_view>
 
 namespace SkSL {
 
+class ErrorReporter;
 class OutputStream;
 struct Program;
 struct ShaderCaps;
 
+using ValidateSPIRVProc = bool (*)(ErrorReporter&, std::string_view);
 
-bool ToHLSL(Program& program, const ShaderCaps* caps, OutputStream& out);
-bool ToHLSL(Program& program, const ShaderCaps* caps, std::string* out);
+
+bool ToHLSL(Program& program,
+            const ShaderCaps* caps,
+            OutputStream& out,
+            ValidateSPIRVProc = nullptr);
+bool ToHLSL(Program& program, const ShaderCaps* caps, std::string* out, ValidateSPIRVProc);
+
+
+inline bool ToHLSL(Program& program, const ShaderCaps* caps, std::string* out) {
+    return ToHLSL(program, caps, out, nullptr);
+}
 
 }  
 

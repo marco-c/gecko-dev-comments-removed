@@ -8,11 +8,17 @@
 #ifndef SkPicturePriv_DEFINED
 #define SkPicturePriv_DEFINED
 
+#include "include/core/SkFourByteTag.h"
 #include "include/core/SkPicture.h"
+#include "include/core/SkRefCnt.h"
 
+#include <atomic>
+#include <cstdint>
+
+class SkBigPicture;
 class SkReadBuffer;
-class SkWriteBuffer;
 class SkStream;
+class SkWriteBuffer;
 struct SkPictInfo;
 
 class SkPicturePriv {
@@ -115,6 +121,8 @@ public:
     
     
     
+    
+    
 
     enum Version {
         kPictureShaderFilterParam_Version   = 82,
@@ -140,6 +148,8 @@ public:
         kConvolutionImageFilterTilingUpdate = 102,
         kRemoveDeprecatedCropRect           = 103,
         kMultipleFiltersOnSaveLayer         = 104,
+        kUnclampedMatrixColorFilter         = 105,
+        kSaveLayerBackdropTileMode          = 106,
 
         
         
@@ -164,7 +174,7 @@ public:
         
         
         kMin_Version     = kPictureShaderFilterParam_Version,
-        kCurrent_Version = kMultipleFiltersOnSaveLayer
+        kCurrent_Version = kSaveLayerBackdropTileMode
     };
 };
 

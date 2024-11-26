@@ -10,11 +10,15 @@
 
 #include "include/sksl/SkSLVersion.h"
 #include "src/sksl/SkSLDefines.h"
+#include "src/sksl/SkSLModule.h"
 #include "src/sksl/SkSLProgramKind.h"
 
+#include <optional>
 #include <vector>
 
 namespace SkSL {
+
+enum class ModuleType : int8_t;
 
 
 
@@ -80,9 +84,16 @@ struct ProgramSettings {
 
 struct ProgramConfig {
     
-    bool fIsBuiltinCode;
+
+
+
+    ModuleType fModuleType;
     ProgramKind fKind;
     ProgramSettings fSettings;
+
+    bool isBuiltinCode() {
+        return fModuleType != ModuleType::program;
+    }
 
     
     
@@ -150,6 +161,11 @@ struct ProgramConfig {
     static bool IsRuntimeBlender(ProgramKind kind) {
         return (kind == ProgramKind::kRuntimeBlender ||
                 kind == ProgramKind::kPrivateRuntimeBlender);
+    }
+
+    static bool IsMesh(ProgramKind kind) {
+        return (kind == ProgramKind::kMeshVertex ||
+                kind == ProgramKind::kMeshFragment);
     }
 
     static bool AllowsPrivateIdentifiers(ProgramKind kind) {

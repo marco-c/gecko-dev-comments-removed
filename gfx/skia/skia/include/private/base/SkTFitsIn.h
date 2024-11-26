@@ -10,7 +10,6 @@
 
 #include "include/private/base/SkDebug.h"
 
-#include <cstdint>
 #include <limits>
 #include <type_traits>
 
@@ -88,18 +87,8 @@ typename std::enable_if<(std::is_integral<S>::value || std::is_enum<S>::value) &
     (std::is_signed<Da>::value && std::is_unsigned<Sa>::value && sizeof(Da) <= sizeof(Sa)) ?
         src <= (S)std::numeric_limits<Da>::max() :
 
-#if !defined(SK_DEBUG) && !defined(__MSVC_RUNTIME_CHECKS )
     
     (S)(D)src == src;
-#else
-
-    (std::is_signed<Sa>::value) ?
-        (intmax_t)src >= (intmax_t)std::numeric_limits<Da>::min() &&
-        (intmax_t)src <= (intmax_t)std::numeric_limits<Da>::max() :
-
-    
-        (uintmax_t)src <= (uintmax_t)std::numeric_limits<Da>::max();
-#endif
 }
 
 #endif

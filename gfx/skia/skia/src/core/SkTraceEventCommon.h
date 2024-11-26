@@ -155,7 +155,7 @@ PERFETTO_DEFINE_CATEGORIES(
 #error SK_DISABLE_TRACING and SK_BUILD_FOR_ANDROID_FRAMEWORK are mutually exclusive.
 #endif 
 
-#define SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE 256
+#define SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE 512
 
 class SkAndroidFrameworkTraceUtil {
 public:
@@ -234,9 +234,11 @@ static inline void sk_noop(Args...) {}
     #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
     #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
     #define TRACE_EVENT0(cg, n) TRACE_EMPTY(cg, n)
-    #define TRACE_EVENT0_ALWAYS(cg, n) TRACE_EMPTY(cg, n)
     #define TRACE_EVENT1(cg, n, a1n, a1v) TRACE_EMPTY(cg, n, a1n, a1v)
     #define TRACE_EVENT2(cg, n, a1n, a1v, a2n, a2v) TRACE_EMPTY(cg, n, a1n, a1v, a2n, a2v)
+    #define TRACE_EVENT0_ALWAYS(cg, n) TRACE_EMPTY(cg, n)
+    #define TRACE_EVENT1_ALWAYS(cg, n, a1n, a1v) TRACE_EMPTY(cg, n, a1n, a1v)
+    #define TRACE_EVENT2_ALWAYS(cg, n, a1n, a1v, a2n, a2v) TRACE_EMPTY(cg, n, a1n, a1v, a2n, a2v)
     #define TRACE_EVENT_INSTANT0(cg, n, scope) TRACE_EMPTY(cg, n, scope)
     #define TRACE_EVENT_INSTANT1(cg, n, scope, a1n, a1v) TRACE_EMPTY(cg, n, scope, a1n, a1v)
     #define TRACE_EVENT_INSTANT2(cg, n, scope, a1n, a1v, a2n, a2v)  \
@@ -263,6 +265,25 @@ namespace skia_private {
         return str;
     }
 
+    
+    
+    
+    
+    
+    template<typename T>
+    inline std::string WrapTraceArgInStdString(const T numeric) {
+        return std::to_string(numeric);
+    }
+    inline std::string WrapTraceArgInStdString(const ::perfetto::DynamicString& str) {
+        return std::string(str.value);
+    }
+    inline std::string WrapTraceArgInStdString(const ::perfetto::StaticString& str) {
+        return std::string(str.value);
+    }
+    inline std::string WrapTraceArgInStdString(const char* str) {
+        return std::string(str);
+    }
+
     constexpr bool StrEndsWithAndLongerThan(const char* str, const char* suffix) {
         auto strView = std::basic_string_view(str);
         auto suffixView = std::basic_string_view(suffix);
@@ -279,6 +300,107 @@ namespace skia_private {
 #define SK_PERFETTO_INTERNAL_CONCAT2(a, b) a##b
 #define SK_PERFETTO_INTERNAL_CONCAT(a, b) SK_PERFETTO_INTERNAL_CONCAT2(a, b)
 #define SK_PERFETTO_UID(prefix) SK_PERFETTO_INTERNAL_CONCAT(prefix, __LINE__)
+
+
+
+
+
+#define SK_INTERNAL_GET_ATRACE_ARGS_MACRO(_0, _1a, _1b, _2a, _2b, macro_name, ...) macro_name
+
+
+#define SK_INTERNAL_ATRACE_ARGS_BEGIN_DANGEROUS_0(name) \
+    atrace_begin_body(::skia_private::UnboxPerfettoString(name));
+
+
+#define SK_INTERNAL_ATRACE_ARGS_BEGIN_DANGEROUS_1(name, arg1_name, arg1_val)       \
+    char SK_PERFETTO_UID(skTraceStrBuf1)[SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE]; \
+    snprintf(SK_PERFETTO_UID(skTraceStrBuf1),                                      \
+             SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE,                              \
+             "^(%s: %s)",                                                          \
+             ::skia_private::UnboxPerfettoString(arg1_name),                       \
+             ::skia_private::WrapTraceArgInStdString(arg1_val).c_str());           \
+    atrace_begin_body(::skia_private::UnboxPerfettoString(name));                  \
+    atrace_begin_body(SK_PERFETTO_UID(skTraceStrBuf1));
+
+
+#define SK_INTERNAL_ATRACE_ARGS_BEGIN_DANGEROUS_2(                                 \
+        name, arg1_name, arg1_val, arg2_name, arg2_val, ...)                       \
+    char SK_PERFETTO_UID(skTraceStrBuf1)[SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE]; \
+    char SK_PERFETTO_UID(skTraceStrBuf2)[SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE]; \
+    snprintf(SK_PERFETTO_UID(skTraceStrBuf1),                                      \
+             SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE,                              \
+             "^(%s: %s)",                                                          \
+             ::skia_private::UnboxPerfettoString(arg1_name),                       \
+             ::skia_private::WrapTraceArgInStdString(arg1_val).c_str());           \
+    snprintf(SK_PERFETTO_UID(skTraceStrBuf2),                                      \
+             SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE,                              \
+            "^(%s: %s)",                                                           \
+             ::skia_private::UnboxPerfettoString(arg2_name),                       \
+             ::skia_private::WrapTraceArgInStdString(arg2_val).c_str());           \
+    atrace_begin_body(::skia_private::UnboxPerfettoString(name));                  \
+    atrace_begin_body(SK_PERFETTO_UID(skTraceStrBuf1));                            \
+    atrace_begin_body(SK_PERFETTO_UID(skTraceStrBuf2));
+
+
+
+
+
+
+
+
+
+
+#define SK_INTERNAL_ATRACE_ARGS_BEGIN(slice_name, ...)                              \
+    if (CC_UNLIKELY(ATRACE_ENABLED())) {                                            \
+        SK_INTERNAL_GET_ATRACE_ARGS_MACRO(0,                                        \
+                                        ##__VA_ARGS__,                              \
+                                        SK_INTERNAL_ATRACE_ARGS_BEGIN_DANGEROUS_2,  \
+                                        0,                                          \
+                                        SK_INTERNAL_ATRACE_ARGS_BEGIN_DANGEROUS_1,  \
+                                        0,                                          \
+                                        SK_INTERNAL_ATRACE_ARGS_BEGIN_DANGEROUS_0)  \
+        (slice_name, ##__VA_ARGS__);                                                \
+    }
+
+
+#define SK_INTERNAL_ATRACE_ARGS_END_DANGEROUS_2(arg1_name, arg1_val, arg2_name, arg2_val, ...)  \
+    atrace_end_body();                                                                          \
+    atrace_end_body();                                                                          \
+    atrace_end_body();
+
+
+#define SK_INTERNAL_ATRACE_ARGS_END_DANGEROUS_1(arg1_name, arg1_val)    \
+    atrace_end_body();                                                  \
+    atrace_end_body();
+
+
+#define SK_INTERNAL_ATRACE_ARGS_END_DANGEROUS_0() \
+    atrace_end_body();
+
+
+
+
+
+
+
+
+#define SK_INTERNAL_ATRACE_ARGS_END(...)                                            \
+    if (CC_UNLIKELY(ATRACE_ENABLED())) {                                            \
+        SK_INTERNAL_GET_ATRACE_ARGS_MACRO(0,                                        \
+                                        ##__VA_ARGS__,                              \
+                                        SK_INTERNAL_ATRACE_ARGS_END_DANGEROUS_2,    \
+                                        0,                                          \
+                                        SK_INTERNAL_ATRACE_ARGS_END_DANGEROUS_1,    \
+                                        0,                                          \
+                                        SK_INTERNAL_ATRACE_ARGS_END_DANGEROUS_0)    \
+        (__VA_ARGS__);                                                              \
+    }
+
+
+
+
+
+
 
 
 
@@ -305,7 +427,7 @@ namespace skia_private {
                     if (SkAndroidFrameworkTraceUtil::getUsePerfettoTrackEvents()) {             \
                         TRACE_EVENT_END(category);                                              \
                     } else {                                                                    \
-                        ATRACE_END();                                                           \
+                        SK_INTERNAL_ATRACE_ARGS_END(__VA_ARGS__);                               \
                     }                                                                           \
                 }                                                                               \
             }                                                                                   \
@@ -319,14 +441,14 @@ namespace skia_private {
     } SK_PERFETTO_UID(scoped_event) {                                                           \
         [&]() {                                                                                 \
             static_assert(!force_always_trace ||                                                \
-                        ::skia_private::StrEndsWithAndLongerThan(category, ".always"),         \
+                        ::skia_private::StrEndsWithAndLongerThan(category, ".always"),          \
                     "[force_always_trace == true] requires [category] to end in '.always'");    \
             if (force_always_trace ||                                                           \
                     CC_UNLIKELY(SkAndroidFrameworkTraceUtil::getEnableTracing())) {             \
                 if (SkAndroidFrameworkTraceUtil::getUsePerfettoTrackEvents()) {                 \
                     TRACE_EVENT_BEGIN(category, name, ##__VA_ARGS__);                           \
                 } else {                                                                        \
-                    ATRACE_BEGIN(::skia_private::UnboxPerfettoString(name));                   \
+                    SK_INTERNAL_ATRACE_ARGS_BEGIN(name, ##__VA_ARGS__);                         \
                 }                                                                               \
             }                                                                                   \
             return 0;                                                                           \
@@ -334,9 +456,15 @@ namespace skia_private {
     }
 
 
+
 #define TRACE_EVENT_ATRACE_OR_PERFETTO(category, name, ...)                     \
     TRACE_EVENT_ATRACE_OR_PERFETTO_FORCEABLE(                                   \
             /* force_always_trace = */ false, category, name, ##__VA_ARGS__)
+
+
+
+
+
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...)                                                  \
     char SK_PERFETTO_UID(skTraceStrBuf)[SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE];           \
@@ -345,6 +473,11 @@ namespace skia_private {
                  fmt, ##__VA_ARGS__);                                                       \
     }                                                                                       \
     TRACE_EVENT0("skia.android", TRACE_STR_COPY(SK_PERFETTO_UID(skTraceStrBuf)))
+
+
+
+
+
 
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...)                                           \
     char SK_PERFETTO_UID(skTraceStrBuf)[SK_ANDROID_FRAMEWORK_ATRACE_BUFFER_SIZE];           \
@@ -355,15 +488,36 @@ namespace skia_private {
 
 
 
+
+
+
 #define TRACE_EVENT0(category_group, name) \
     TRACE_EVENT_ATRACE_OR_PERFETTO(category_group, name)
-
-#define TRACE_EVENT0_ALWAYS(category_group, name) TRACE_EVENT_ATRACE_OR_PERFETTO_FORCEABLE( \
-        /* force_always_trace = */ true, category_group ".always", name)
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
     TRACE_EVENT_ATRACE_OR_PERFETTO(category_group, name, arg1_name, arg1_val)
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
     TRACE_EVENT_ATRACE_OR_PERFETTO(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
+
+
+
+
+
+
+
+#define TRACE_EVENT0_ALWAYS(category_group, name) \
+    TRACE_EVENT_ATRACE_OR_PERFETTO_FORCEABLE(     \
+            /* force_always_trace = */ true, category_group ".always", name)
+#define TRACE_EVENT1_ALWAYS(category_group, name, arg1_name, arg1_val) \
+    TRACE_EVENT_ATRACE_OR_PERFETTO_FORCEABLE(                          \
+            /* force_always_trace = */ true, category_group ".always", name, arg1_name, arg1_val)
+#define TRACE_EVENT2_ALWAYS(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
+    TRACE_EVENT_ATRACE_OR_PERFETTO_FORCEABLE(/* force_always_trace = */ true,               \
+                                             category_group ".always",                      \
+                                             name,                                          \
+                                             arg1_name,                                     \
+                                             arg1_val,                                      \
+                                             arg2_name,                                     \
+                                             arg2_val)
 
 
 
@@ -433,13 +587,19 @@ namespace skia_private {
 #define TRACE_EVENT0(category_group, name) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
-#define TRACE_EVENT0_ALWAYS(category_group, name) \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
-
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
+
+#define TRACE_EVENT0_ALWAYS(category_group, name) \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+
+#define TRACE_EVENT1_ALWAYS(category_group, name, arg1_name, arg1_val) \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
+
+#define TRACE_EVENT2_ALWAYS(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
 
 

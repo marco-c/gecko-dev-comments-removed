@@ -277,6 +277,10 @@ public:
 
 
 
+    bool getGainmapAndroidCodec(SkGainmapInfo* outInfo, std::unique_ptr<SkAndroidCodec>* outCodec);
+
+    
+    
     bool getAndroidGainmap(SkGainmapInfo* outInfo,
                            std::unique_ptr<SkStream>* outGainmapImageStream);
 

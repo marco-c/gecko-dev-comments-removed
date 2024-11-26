@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+#ifndef SKSL_CODEGENTYPES
+#define SKSL_CODEGENTYPES
+
+namespace SkSL {
+
+enum class PrettyPrint : bool {
+    kNo = false,
+    kYes = true,
+};
+
+}  
+
+#endif

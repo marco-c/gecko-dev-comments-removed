@@ -665,6 +665,148 @@ static std::unique_ptr<Expression> fold_expression(Position pos,
     return Literal::Make(pos, result, resultType);
 }
 
+static std::unique_ptr<Expression> fold_two_constants(const Context& context,
+                                                      Position pos,
+                                                      const Expression* left,
+                                                      Operator op,
+                                                      const Expression* right,
+                                                      const Type& resultType) {
+    SkASSERT(Analysis::IsCompileTimeConstant(*left));
+    SkASSERT(Analysis::IsCompileTimeConstant(*right));
+    const Type& leftType = left->type();
+    const Type& rightType = right->type();
+
+    
+    if (left->isIntLiteral() && right->isIntLiteral()) {
+        using SKSL_UINT = uint64_t;
+        SKSL_INT leftVal  = left->as<Literal>().intValue();
+        SKSL_INT rightVal = right->as<Literal>().intValue();
+
+        
+        #define RESULT(Op)   fold_expression(pos, (SKSL_INT)(leftVal) Op \
+                                                  (SKSL_INT)(rightVal), &resultType)
+        #define URESULT(Op)  fold_expression(pos, (SKSL_INT)((SKSL_UINT)(leftVal) Op \
+                                                  (SKSL_UINT)(rightVal)), &resultType)
+        switch (op.kind()) {
+            case Operator::Kind::PLUS:       return URESULT(+);
+            case Operator::Kind::MINUS:      return URESULT(-);
+            case Operator::Kind::STAR:       return URESULT(*);
+            case Operator::Kind::SLASH:
+                if (leftVal == std::numeric_limits<SKSL_INT>::min() && rightVal == -1) {
+                    context.fErrors->error(pos, "arithmetic overflow");
+                    return nullptr;
+                }
+                return RESULT(/);
+
+            case Operator::Kind::PERCENT:
+                if (leftVal == std::numeric_limits<SKSL_INT>::min() && rightVal == -1) {
+                    context.fErrors->error(pos, "arithmetic overflow");
+                    return nullptr;
+                }
+                return RESULT(%);
+
+            case Operator::Kind::BITWISEAND: return RESULT(&);
+            case Operator::Kind::BITWISEOR:  return RESULT(|);
+            case Operator::Kind::BITWISEXOR: return RESULT(^);
+            case Operator::Kind::EQEQ:       return RESULT(==);
+            case Operator::Kind::NEQ:        return RESULT(!=);
+            case Operator::Kind::GT:         return RESULT(>);
+            case Operator::Kind::GTEQ:       return RESULT(>=);
+            case Operator::Kind::LT:         return RESULT(<);
+            case Operator::Kind::LTEQ:       return RESULT(<=);
+            case Operator::Kind::SHL:
+                if (rightVal >= 0 && rightVal <= 31) {
+                    
+                    
+                    
+                    return URESULT(<<);
+                }
+                context.fErrors->error(pos, "shift value out of range");
+                return nullptr;
+
+            case Operator::Kind::SHR:
+                if (rightVal >= 0 && rightVal <= 31) {
+                    return RESULT(>>);
+                }
+                context.fErrors->error(pos, "shift value out of range");
+                return nullptr;
+
+            default:
+                break;
+        }
+        #undef RESULT
+        #undef URESULT
+
+        return nullptr;
+    }
+
+    
+    if (left->isFloatLiteral() && right->isFloatLiteral()) {
+        SKSL_FLOAT leftVal  = left->as<Literal>().floatValue();
+        SKSL_FLOAT rightVal = right->as<Literal>().floatValue();
+
+        #define RESULT(Op) fold_expression(pos, leftVal Op rightVal, &resultType)
+        switch (op.kind()) {
+            case Operator::Kind::PLUS:  return RESULT(+);
+            case Operator::Kind::MINUS: return RESULT(-);
+            case Operator::Kind::STAR:  return RESULT(*);
+            case Operator::Kind::SLASH: return RESULT(/);
+            case Operator::Kind::EQEQ:  return RESULT(==);
+            case Operator::Kind::NEQ:   return RESULT(!=);
+            case Operator::Kind::GT:    return RESULT(>);
+            case Operator::Kind::GTEQ:  return RESULT(>=);
+            case Operator::Kind::LT:    return RESULT(<);
+            case Operator::Kind::LTEQ:  return RESULT(<=);
+            default:                    break;
+        }
+        #undef RESULT
+
+        return nullptr;
+    }
+
+    
+    if (op.kind() == Operator::Kind::STAR) {
+        if (leftType.isMatrix() && rightType.isMatrix()) {
+            return simplify_matrix_times_matrix(context, pos, *left, *right);
+        }
+        if (leftType.isVector() && rightType.isMatrix()) {
+            return simplify_vector_times_matrix(context, pos, *left, *right);
+        }
+        if (leftType.isMatrix() && rightType.isVector()) {
+            return simplify_matrix_times_vector(context, pos, *left, *right);
+        }
+    }
+
+    
+    if (is_vec_or_mat(leftType) && leftType.matches(rightType)) {
+        return simplify_componentwise(context, pos, *left, op, *right);
+    }
+
+    
+    if (rightType.isScalar() && is_vec_or_mat(leftType) &&
+        leftType.componentType().matches(rightType)) {
+        return simplify_componentwise(context, pos,
+                                      *left, op, *splat_scalar(context, *right, left->type()));
+    }
+
+    
+    if (leftType.isScalar() && is_vec_or_mat(rightType) &&
+        rightType.componentType().matches(leftType)) {
+        return simplify_componentwise(context, pos,
+                                      *splat_scalar(context, *left, right->type()), op, *right);
+    }
+
+    
+    if ((leftType.isMatrix() && rightType.isMatrix()) ||
+        (leftType.isArray() && rightType.isArray()) ||
+        (leftType.isStruct() && rightType.isStruct())) {
+        return simplify_constant_equality(context, pos, *left, op, *right);
+    }
+
+    
+    return nullptr;
+}
+
 std::unique_ptr<Expression> ConstantFolder::Simplify(const Context& context,
                                                      Position pos,
                                                      const Expression& leftExpr,
@@ -732,131 +874,10 @@ std::unique_ptr<Expression> ConstantFolder::Simplify(const Context& context,
     }
 
     
-    const Type& leftType = left->type();
-    const Type& rightType = right->type();
     bool leftSideIsConstant = Analysis::IsCompileTimeConstant(*left);
     bool rightSideIsConstant = Analysis::IsCompileTimeConstant(*right);
-
     if (leftSideIsConstant && rightSideIsConstant) {
-        
-        if (left->isIntLiteral() && right->isIntLiteral()) {
-            using SKSL_UINT = uint64_t;
-            SKSL_INT leftVal  = left->as<Literal>().intValue();
-            SKSL_INT rightVal = right->as<Literal>().intValue();
-
-            
-            #define RESULT(Op)   fold_expression(pos, (SKSL_INT)(leftVal) Op \
-                                                      (SKSL_INT)(rightVal), &resultType)
-            #define URESULT(Op)  fold_expression(pos, (SKSL_INT)((SKSL_UINT)(leftVal) Op \
-                                                      (SKSL_UINT)(rightVal)), &resultType)
-            switch (op.kind()) {
-                case Operator::Kind::PLUS:       return URESULT(+);
-                case Operator::Kind::MINUS:      return URESULT(-);
-                case Operator::Kind::STAR:       return URESULT(*);
-                case Operator::Kind::SLASH:
-                    if (leftVal == std::numeric_limits<SKSL_INT>::min() && rightVal == -1) {
-                        context.fErrors->error(pos, "arithmetic overflow");
-                        return nullptr;
-                    }
-                    return RESULT(/);
-                case Operator::Kind::PERCENT:
-                    if (leftVal == std::numeric_limits<SKSL_INT>::min() && rightVal == -1) {
-                        context.fErrors->error(pos, "arithmetic overflow");
-                        return nullptr;
-                    }
-                    return RESULT(%);
-                case Operator::Kind::BITWISEAND: return RESULT(&);
-                case Operator::Kind::BITWISEOR:  return RESULT(|);
-                case Operator::Kind::BITWISEXOR: return RESULT(^);
-                case Operator::Kind::EQEQ:       return RESULT(==);
-                case Operator::Kind::NEQ:        return RESULT(!=);
-                case Operator::Kind::GT:         return RESULT(>);
-                case Operator::Kind::GTEQ:       return RESULT(>=);
-                case Operator::Kind::LT:         return RESULT(<);
-                case Operator::Kind::LTEQ:       return RESULT(<=);
-                case Operator::Kind::SHL:
-                    if (rightVal >= 0 && rightVal <= 31) {
-                        
-                        
-                        
-                        return URESULT(<<);
-                    }
-                    context.fErrors->error(pos, "shift value out of range");
-                    return nullptr;
-                case Operator::Kind::SHR:
-                    if (rightVal >= 0 && rightVal <= 31) {
-                        return RESULT(>>);
-                    }
-                    context.fErrors->error(pos, "shift value out of range");
-                    return nullptr;
-
-                default:
-                    return nullptr;
-            }
-            #undef RESULT
-            #undef URESULT
-        }
-
-        
-        if (left->isFloatLiteral() && right->isFloatLiteral()) {
-            SKSL_FLOAT leftVal  = left->as<Literal>().floatValue();
-            SKSL_FLOAT rightVal = right->as<Literal>().floatValue();
-
-            #define RESULT(Op) fold_expression(pos, leftVal Op rightVal, &resultType)
-            switch (op.kind()) {
-                case Operator::Kind::PLUS:  return RESULT(+);
-                case Operator::Kind::MINUS: return RESULT(-);
-                case Operator::Kind::STAR:  return RESULT(*);
-                case Operator::Kind::SLASH: return RESULT(/);
-                case Operator::Kind::EQEQ:  return RESULT(==);
-                case Operator::Kind::NEQ:   return RESULT(!=);
-                case Operator::Kind::GT:    return RESULT(>);
-                case Operator::Kind::GTEQ:  return RESULT(>=);
-                case Operator::Kind::LT:    return RESULT(<);
-                case Operator::Kind::LTEQ:  return RESULT(<=);
-                default:                    return nullptr;
-            }
-            #undef RESULT
-        }
-
-        
-        if (op.kind() == Operator::Kind::STAR) {
-            if (leftType.isMatrix() && rightType.isMatrix()) {
-                return simplify_matrix_times_matrix(context, pos, *left, *right);
-            }
-            if (leftType.isVector() && rightType.isMatrix()) {
-                return simplify_vector_times_matrix(context, pos, *left, *right);
-            }
-            if (leftType.isMatrix() && rightType.isVector()) {
-                return simplify_matrix_times_vector(context, pos, *left, *right);
-            }
-        }
-
-        
-        if (is_vec_or_mat(leftType) && leftType.matches(rightType)) {
-            return simplify_componentwise(context, pos, *left, op, *right);
-        }
-
-        
-        if (rightType.isScalar() && is_vec_or_mat(leftType) &&
-            leftType.componentType().matches(rightType)) {
-            return simplify_componentwise(context, pos,
-                                          *left, op, *splat_scalar(context, *right, left->type()));
-        }
-
-        
-        if (leftType.isScalar() && is_vec_or_mat(rightType) &&
-            rightType.componentType().matches(leftType)) {
-            return simplify_componentwise(context, pos,
-                                          *splat_scalar(context, *left, right->type()), op, *right);
-        }
-
-        
-        if ((leftType.isMatrix() && rightType.isMatrix()) ||
-            (leftType.isArray() && rightType.isArray()) ||
-            (leftType.isStruct() && rightType.isStruct())) {
-            return simplify_constant_equality(context, pos, *left, op, *right);
-        }
+        return fold_two_constants(context, pos, left, op, right, resultType);
     }
 
     if (context.fConfig->fSettings.fOptimize) {

@@ -239,6 +239,7 @@ public:
 
 
 
+
     struct GradientInfo {
         int         fColorCount    = 0;        
                                                

@@ -498,6 +498,9 @@ public:
 
 
 
+
+
+
     bool readPixels(GrDirectContext* context,
                     const SkImageInfo& dstInfo,
                     void* dstPixels,
@@ -536,18 +539,14 @@ public:
 
 
 
+
+
+
     bool readPixels(GrDirectContext* context,
                     const SkPixmap& dst,
                     int srcX,
                     int srcY,
                     CachingHint cachingHint = kAllow_CachingHint) const;
-
-#if defined(GRAPHITE_TEST_UTILS)
-    bool readPixelsGraphite(skgpu::graphite::Recorder*,
-                            const SkPixmap& dst,
-                            int srcX,
-                            int srcY) const;
-#endif
 
 #ifndef SK_IMAGE_READ_PIXELS_DISABLE_LEGACY_API
     
@@ -566,8 +565,17 @@ public:
         AsyncReadResult& operator=(AsyncReadResult&&) = delete;
 
         virtual ~AsyncReadResult() = default;
+        
         virtual int count() const = 0;
+        
+
+
+
+
+
+
         virtual const void* data(int i) const = 0;
+        
         virtual size_t rowBytes(int i) const = 0;
 
     protected:
@@ -592,6 +600,9 @@ public:
     };
 
     
+
+
+
 
 
 
@@ -700,6 +711,26 @@ public:
 
     bool scalePixels(const SkPixmap& dst, const SkSamplingOptions&,
                      CachingHint cachingHint = kAllow_CachingHint) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkImage> makeScaled(skgpu::graphite::Recorder*,
+                              const SkImageInfo&,
+                              const SkSamplingOptions&) const;
+
+    sk_sp<SkImage> makeScaled(const SkImageInfo& info,
+                              const SkSamplingOptions& sampling) const {
+        return this->makeScaled(nullptr, info, sampling);
+    }
 
     
 

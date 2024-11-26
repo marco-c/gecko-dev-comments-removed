@@ -392,9 +392,13 @@ public:
 
 
 
+
+
     bool readPixels(const SkPixmap& dst, int srcX, int srcY);
 
     
+
+
 
 
 
@@ -456,6 +460,8 @@ public:
 
 
 
+
+
     bool readPixels(const SkBitmap& dst, int srcX, int srcY);
 
     using AsyncReadResult = SkImage::AsyncReadResult;
@@ -475,6 +481,9 @@ public:
     using RescaleMode  = SkImage::RescaleMode;
 
     
+
+
+
 
 
 

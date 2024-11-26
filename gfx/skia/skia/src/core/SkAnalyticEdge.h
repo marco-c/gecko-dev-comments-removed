@@ -29,10 +29,6 @@ struct SkAnalyticEdge {
     SkAnalyticEdge* fNext;
     SkAnalyticEdge* fPrev;
 
-    
-    
-    SkAnalyticEdge* fRiteE;
-
     SkFixed fX;
     SkFixed fDX;
     SkFixed fUpperX;        
@@ -41,10 +37,6 @@ struct SkAnalyticEdge {
     SkFixed fLowerY;        
     SkFixed fDY;            
                             
-
-    SkFixed fSavedX;        
-    SkFixed fSavedY;        
-    SkFixed fSavedDY;       
 
     Type    fEdgeType;      
 
@@ -79,12 +71,6 @@ struct SkAnalyticEdge {
         SkASSERT(fDX == 0 || y - fY == SK_Fixed1 >> yShift);
         fY = y;
         fX += fDX >> yShift;
-    }
-
-    inline void saveXY(SkFixed x, SkFixed y, SkFixed dY) {
-        fSavedX = x;
-        fSavedY = y;
-        fSavedDY = dY;
     }
 
     bool setLine(const SkPoint& p0, const SkPoint& p1);

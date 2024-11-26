@@ -12,6 +12,7 @@
 #include "include/private/gpu/vk/SkiaVulkan.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
@@ -65,18 +66,24 @@ struct VulkanYcbcrConversionInfo {
         if (!this->isValid() && !that.isValid()) {
             return true;
         }
-        return this->fFormat == that.fFormat &&
-               this->fExternalFormat == that.fExternalFormat &&
-               this->fYcbcrModel == that.fYcbcrModel &&
-               this->fYcbcrRange == that.fYcbcrRange &&
-               this->fXChromaOffset == that.fXChromaOffset &&
-               this->fYChromaOffset == that.fYChromaOffset &&
-               this->fChromaFilter == that.fChromaFilter &&
+
+        
+        
+        
+        
+        
+        return this->fFormat                      == that.fFormat                      &&
+               this->fExternalFormat              == that.fExternalFormat              &&
+               this->fYcbcrModel                  == that.fYcbcrModel                  &&
+               this->fYcbcrRange                  == that.fYcbcrRange                  &&
+               this->fXChromaOffset               == that.fXChromaOffset               &&
+               this->fYChromaOffset               == that.fYChromaOffset               &&
+               this->fChromaFilter                == that.fChromaFilter                &&
                this->fForceExplicitReconstruction == that.fForceExplicitReconstruction &&
-               this->fComponents.r == that.fComponents.r &&
-               this->fComponents.g == that.fComponents.g &&
-               this->fComponents.b == that.fComponents.b &&
-               this->fComponents.a == that.fComponents.a;
+               this->fComponents.r                == that.fComponents.r                &&
+               this->fComponents.g                == that.fComponents.g                &&
+               this->fComponents.b                == that.fComponents.b                &&
+               this->fComponents.a                == that.fComponents.a;
     }
     bool operator!=(const VulkanYcbcrConversionInfo& that) const { return !(*this == that); }
 

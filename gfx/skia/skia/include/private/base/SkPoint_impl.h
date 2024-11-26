@@ -9,7 +9,7 @@
 #define SkPoint_DEFINED
 
 #include "include/private/base/SkAPI.h"
-#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkSafe32.h"
 
 #include <cmath>
@@ -410,16 +410,7 @@ struct SK_API SkPoint {
 
 
     bool isFinite() const {
-        float accum = 0;
-        accum *= fX;
-        accum *= fY;
-
-        
-        SkASSERT(0 == accum || std::isnan(accum));
-
-        
-        
-        return !std::isnan(accum);
+        return SkIsFinite(fX, fY);
     }
 
     

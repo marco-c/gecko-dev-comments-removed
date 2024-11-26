@@ -37,6 +37,7 @@ enum SkColorType : int {
                                
     kRGBA_F16_SkColorType,     
                                
+    kRGB_F16F16F16x_SkColorType,     
     kRGBA_F32_SkColorType,     
 
     

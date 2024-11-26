@@ -242,6 +242,16 @@ public:
     
 
 
+    bool hasHighBitDepthEncodedData() const {
+        
+        
+        
+        return this->getEncodedInfo().bitsPerComponent() >= 16;
+    }
+
+    
+
+
 
     SkEncodedOrigin getOrigin() const { return fOrigin; }
 
@@ -638,6 +648,12 @@ public:
 
 
 
+
+
+
+
+
+
     int getFrameCount() {
         return this->onGetFrameCount();
     }
@@ -648,11 +664,6 @@ public:
     
     
     static constexpr int kNoFrame = -1;
-
-    
-#ifdef SK_LEGACY_SKCODEC_NONE_ENUM
-    static constexpr int kNone = kNoFrame;
-#endif
 
     
 
@@ -800,6 +811,10 @@ protected:
         return fSrcXformFormat;
     }
 
+    virtual bool onGetGainmapCodec(SkGainmapInfo*, std::unique_ptr<SkCodec>*) { return false; }
+
+    
+    
     virtual bool onGetGainmapInfo(SkGainmapInfo*, std::unique_ptr<SkStream>*) { return false; }
 
     virtual SkISize onGetScaledDimensions(float ) const {

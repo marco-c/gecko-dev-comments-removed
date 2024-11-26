@@ -23,6 +23,8 @@ class SkData;
 
 
 struct SkJpegMultiPictureParameters {
+    explicit SkJpegMultiPictureParameters(size_t numberOfImages) : images(numberOfImages) {}
+
     
     struct Image {
         
@@ -50,14 +52,22 @@ struct SkJpegMultiPictureParameters {
 
 
 
-    sk_sp<SkData> serialize() const;
+    sk_sp<SkData> serialize(uint32_t individualImageNumber) const;
 
     
 
 
 
 
-    static size_t GetAbsoluteOffset(uint32_t dataOffset, size_t mpSegmentOffset);
+    static size_t GetImageAbsoluteOffset(uint32_t dataOffset, size_t mpSegmentOffset);
+
+    
+
+
+
+
+
+    static uint32_t GetImageDataOffset(size_t imageAbsoluteOffset, size_t mpSegmentOffset);
 };
 
 #endif

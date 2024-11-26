@@ -8,9 +8,14 @@
 #ifndef skgpu_VulkanBackendContext_DEFINED
 #define skgpu_VulkanBackendContext_DEFINED
 
+#include "include/core/SkRefCnt.h"
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/vk/VulkanMemoryAllocator.h"
 #include "include/gpu/vk/VulkanTypes.h"
+#include "include/private/base/SkAPI.h"
+#include "include/private/gpu/vk/SkiaVulkan.h"
+
+#include <cstdint>
 
 namespace skgpu {
 
@@ -18,14 +23,14 @@ class VulkanExtensions;
 
 
 struct SK_API VulkanBackendContext {
-    VkInstance                       fInstance;
-    VkPhysicalDevice                 fPhysicalDevice;
-    VkDevice                         fDevice;
-    VkQueue                          fQueue;
-    uint32_t                         fGraphicsQueueIndex;
+    VkInstance                       fInstance = VK_NULL_HANDLE;
+    VkPhysicalDevice                 fPhysicalDevice = VK_NULL_HANDLE;
+    VkDevice                         fDevice = VK_NULL_HANDLE;
+    VkQueue                          fQueue = VK_NULL_HANDLE;
+    uint32_t                         fGraphicsQueueIndex = 0;
     
     
-    uint32_t                         fMaxAPIVersion;
+    uint32_t                         fMaxAPIVersion = 0;
     const skgpu::VulkanExtensions*   fVkExtensions = nullptr;
     
     
@@ -38,7 +43,7 @@ struct SK_API VulkanBackendContext {
     
     sk_sp<VulkanMemoryAllocator>     fMemoryAllocator;
     skgpu::VulkanGetProc             fGetProc;
-    Protected                        fProtectedContext;
+    Protected                        fProtectedContext = Protected::kNo;
     
     
     
@@ -47,6 +52,6 @@ struct SK_API VulkanBackendContext {
     skgpu::VulkanDeviceLostProc      fDeviceLostProc = nullptr;
 };
 
-} 
+}  
 
 #endif 

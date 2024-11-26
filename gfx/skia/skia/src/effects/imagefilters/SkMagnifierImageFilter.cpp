@@ -21,6 +21,7 @@
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/effects/SkRuntimeEffect.h"
+#include "include/private/base/SkFloatingPoint.h"
 #include "src/core/SkImageFilterTypes.h"
 #include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkKnownRuntimeEffects.h"
@@ -85,8 +86,8 @@ sk_sp<SkImageFilter> SkImageFilters::Magnifier(const SkRect& lensBounds,
                                                sk_sp<SkImageFilter> input,
                                                const CropRect& cropRect) {
     if (lensBounds.isEmpty() || !lensBounds.isFinite() ||
-        zoomAmount <= 0.f || !SkScalarIsFinite(zoomAmount) ||
-        inset < 0.f || !SkScalarIsFinite(inset)) {
+        zoomAmount <= 0.f || inset < 0.f ||
+        !SkIsFinite(zoomAmount, inset)) {
         return nullptr; 
     }
     
@@ -192,7 +193,9 @@ skif::FilterResult SkMagnifierImageFilter::onFilterImage(const skif::Context& co
     
     
     SkASSERT(this->getCTMCapability() == MatrixCapability::kScaleTranslate);
-    float invZoom = 1.f / fZoomAmount;
+    
+    const float maxLensSize = std::max(1.f, std::max(lensBounds.width(), lensBounds.height()));
+    const float invZoom = 1.f /  std::min(fZoomAmount, 2.f * maxLensSize);
 
     
     
@@ -242,7 +245,9 @@ skif::FilterResult SkMagnifierImageFilter::onFilterImage(const skif::Context& co
         
         
         skif::LayerSpace<SkMatrix> invZoomXform;
-        SkAssertResult(zoomXform.invert(&invZoomXform));
+        if (!zoomXform.invert(&invZoomXform)) {
+            return {}; 
+        }
         skif::FilterResult childOutput =
                 this->getChildOutput(0, context.withNewDesiredOutput(srcRect.roundOut()));
         return childOutput.applyTransform(context, invZoomXform, fSampling)

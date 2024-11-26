@@ -59,6 +59,8 @@ static const char* skip_sep(const char str[]) {
     return str;
 }
 
+
+
 static const char* find_points(const char str[], SkPoint value[], int count,
                                bool isRelative, SkPoint* relative) {
     str = SkParse::FindScalars(str, &value[0].fX, count * 2);
@@ -70,6 +72,8 @@ static const char* find_points(const char str[], SkPoint value[], int count,
     }
     return str;
 }
+
+
 
 static const char* find_scalar(const char str[], SkScalar* value,
                                bool isRelative, SkScalar relative) {
@@ -101,11 +105,18 @@ static const char* find_flag(const char str[], bool* value) {
 }
 
 bool SkParsePath::FromSVGString(const char data[], SkPath* result) {
+    
+    
     SkPath path;
     SkPoint first = {0, 0};
     SkPoint c = {0, 0};
     SkPoint lastc = {0, 0};
-    SkPoint points[3];
+    
+    
+    
+    
+    SkPoint points[3] = {};
+    SkScalar scratch = 0;
     char op = '\0';
     char previousOp = '\0';
     bool relative = false;
@@ -136,34 +147,39 @@ bool SkParsePath::FromSVGString(const char data[], SkPath* result) {
             data = skip_sep(data);
         }
         switch (op) {
-            case 'M':
+            case 'M':  
                 data = find_points(data, points, 1, relative, &c);
+                
+                
+                
                 path.moveTo(points[0]);
                 previousOp = '\0';
                 op = 'L';
                 c = points[0];
                 break;
-            case 'L':
+            case 'L':  
                 data = find_points(data, points, 1, relative, &c);
                 path.lineTo(points[0]);
                 c = points[0];
                 break;
-            case 'H': {
-                SkScalar x;
-                data = find_scalar(data, &x, relative, c.fX);
-                path.lineTo(x, c.fY);
-                c.fX = x;
-            } break;
-            case 'V': {
-                SkScalar y;
-                data = find_scalar(data, &y, relative, c.fY);
-                path.lineTo(c.fX, y);
-                c.fY = y;
-            } break;
-            case 'C':
+            case 'H':  
+                data = find_scalar(data, &scratch, relative, c.fX);
+                
+                
+                
+                
+                path.lineTo(scratch, c.fY);
+                c.fX = scratch;
+                break;
+            case 'V':  
+                data = find_scalar(data, &scratch, relative, c.fY);
+                path.lineTo(c.fX, scratch);
+                c.fY = scratch;
+                break;
+            case 'C':  
                 data = find_points(data, points, 3, relative, &c);
                 goto cubicCommon;
-            case 'S':
+            case 'S':  
                 data = find_points(data, &points[1], 2, relative, &c);
                 points[0] = c;
                 if (previousOp == 'C' || previousOp == 'S') {
@@ -178,7 +194,7 @@ bool SkParsePath::FromSVGString(const char data[], SkPath* result) {
             case 'Q':  
                 data = find_points(data, points, 2, relative, &c);
                 goto quadraticCommon;
-            case 'T':
+            case 'T':  
                 data = find_points(data, &points[1], 1, relative, &c);
                 points[0] = c;
                 if (previousOp == 'Q' || previousOp == 'T') {
@@ -190,7 +206,7 @@ bool SkParsePath::FromSVGString(const char data[], SkPath* result) {
                 lastc = points[0];
                 c = points[1];
                 break;
-            case 'A': {
+            case 'A': {  
                 SkPoint radii;
                 SkScalar angle;
                 bool largeArc, sweep;
@@ -208,16 +224,10 @@ bool SkParsePath::FromSVGString(const char data[], SkPath* result) {
                     path.getLastPt(&c);
                 }
                 } break;
-            case 'Z':
+            case 'Z':  
                 path.close();
                 c = first;
                 break;
-            case '~': {
-                SkPoint args[2];
-                data = find_points(data, args, 2, false, nullptr);
-                path.moveTo(args[0].fX, args[0].fY);
-                path.lineTo(args[1].fX, args[1].fY);
-            } break;
             default:
                 return false;
         }
@@ -232,13 +242,6 @@ bool SkParsePath::FromSVGString(const char data[], SkPath* result) {
 }
 
 
-
-static void write_scalar(SkWStream* stream, SkScalar value) {
-    char buffer[64];
-    int len = snprintf(buffer, sizeof(buffer), "%g", value);
-    char* stop = buffer + len;
-    stream->write(buffer, stop - buffer);
-}
 
 SkString SkParsePath::ToSVGString(const SkPath& path, PathEncoding encoding) {
     SkDynamicMemoryWStream  stream;
@@ -256,9 +259,9 @@ SkString SkParsePath::ToSVGString(const SkPath& path, PathEncoding encoding) {
             if (i > 0) {
                 stream.write(" ", 1);
             }
-            write_scalar(&stream, pt.fX);
+            stream.writeScalarAsText(pt.fX);
             stream.write(" ", 1);
-            write_scalar(&stream, pt.fY);
+            stream.writeScalarAsText(pt.fY);
         }
 
         SkASSERT(count > 0);

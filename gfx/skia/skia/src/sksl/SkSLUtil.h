@@ -149,6 +149,10 @@ struct ShaderCaps {
     
     
     bool fMustDeclareFragmentFrontFacing = false;
+    
+    
+    
+    bool fForceStd430ArrayLayout = false;
 
     const char* fVersionDeclString = "";
 

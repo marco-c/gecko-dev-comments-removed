@@ -22,7 +22,7 @@ namespace sktext::gpu {
 
 SkDEBUGCODE(static const int kExpectedDistanceAdjustTableSize = 8;)
 
-SkScalar* build_distance_adjust_table(SkScalar paintGamma, SkScalar deviceGamma) {
+SkScalar* build_distance_adjust_table(SkScalar deviceGamma) {
     
     
     
@@ -62,14 +62,14 @@ SkScalar* build_distance_adjust_table(SkScalar paintGamma, SkScalar deviceGamma)
     size_t size;
     SkScalar contrast = SK_GAMMA_CONTRAST;
 
-    size = SkScalerContext::GetGammaLUTSize(contrast, paintGamma, deviceGamma,
+    size = SkScalerContext::GetGammaLUTSize(contrast, deviceGamma,
         &width, &height);
 
     SkASSERT(kExpectedDistanceAdjustTableSize == height);
     SkScalar* table = new SkScalar[height];
 
     AutoTArray<uint8_t> data((int)size);
-    if (!SkScalerContext::GetGammaLUTData(contrast, paintGamma, deviceGamma, data.get())) {
+    if (!SkScalerContext::GetGammaLUTData(contrast, deviceGamma, data.get())) {
         
         for (int row = 0; row < height; ++row) {
             table[row] = 0;
@@ -110,8 +110,8 @@ const DistanceFieldAdjustTable* DistanceFieldAdjustTable::Get() {
 }
 
 DistanceFieldAdjustTable::DistanceFieldAdjustTable() {
-    fTable = build_distance_adjust_table(SK_GAMMA_EXPONENT, SK_GAMMA_EXPONENT);
-    fGammaCorrectTable = build_distance_adjust_table(SK_Scalar1, SK_Scalar1);
+    fTable = build_distance_adjust_table(SK_GAMMA_EXPONENT);
+    fGammaCorrectTable = build_distance_adjust_table(SK_Scalar1);
 }
 
 }  

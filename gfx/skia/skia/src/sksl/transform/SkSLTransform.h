@@ -8,25 +8,25 @@
 #ifndef SKSL_TRANSFORM
 #define SKSL_TRANSFORM
 
-#include "include/core/SkSpan.h"
+#include "src/sksl/SkSLDefines.h"
 #include "src/sksl/ir/SkSLModifierFlags.h"
 
+#include <cstdint>
 #include <memory>
-#include <vector>
 
 namespace SkSL {
 
+class Block;
 class Context;
 class Expression;
 class IndexExpression;
-struct Module;
-struct Program;
-class ProgramElement;
+class Position;
 class ProgramUsage;
-class Statement;
-class SwitchStatement;
+class SymbolTable;
 class Variable;
 enum class ProgramKind : int8_t;
+struct Module;
+struct Program;
 
 namespace Transform {
 
@@ -82,7 +82,13 @@ void EliminateEmptyStatements(Module& module);
 
 
 
-void EliminateUnnecessaryBraces(Module& module);
+void EliminateUnnecessaryBraces(const Context& context, Module& module);
+
+
+
+
+
+void ReplaceSplatCastsWithSwizzles(const Context& context, Module& module);
 
 
 
@@ -139,8 +145,8 @@ void ReplaceConstVarsWithLiterals(Module& module, ProgramUsage* usage);
 
 
 
-std::unique_ptr<Statement> HoistSwitchVarDeclarationsAtTopLevel(const Context&,
-                                                                std::unique_ptr<SwitchStatement>);
+std::unique_ptr<Block> HoistSwitchVarDeclarationsAtTopLevel(const Context&, StatementArray& cases,
+                                                            SymbolTable& symbolTable, Position pos);
 
 } 
 } 

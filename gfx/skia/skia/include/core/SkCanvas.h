@@ -8,6 +8,7 @@
 #ifndef SkCanvas_DEFINED
 #define SkCanvas_DEFINED
 
+#include "include/core/SkArc.h"
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkClipOp.h"
 #include "include/core/SkColor.h"
@@ -27,6 +28,7 @@
 #include "include/core/SkSpan.h"
 #include "include/core/SkString.h"
 #include "include/core/SkSurfaceProps.h"
+#include "include/core/SkTileMode.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkCPUTypes.h"
 #include "include/private/base/SkDeque.h"
@@ -51,6 +53,7 @@ class GrRecordingContext;
 
 class SkBitmap;
 class SkBlender;
+class SkColorSpace;
 class SkData;
 class SkDevice;
 class SkDrawable;
@@ -78,6 +81,10 @@ class SkEnumBitMask;
 namespace skgpu::graphite { class Recorder; }
 namespace sktext::gpu { class Slug; }
 namespace SkRecords { class Draw; }
+namespace skiatest {
+template <typename Key>
+class TestCanvas;
+}
 
 
 
@@ -694,7 +701,8 @@ public:
 
 
         SaveLayerRec(const SkRect* bounds, const SkPaint* paint, SaveLayerFlags saveLayerFlags = 0)
-            : SaveLayerRec(bounds, paint, nullptr, 1.f, saveLayerFlags, {}) {}
+            : SaveLayerRec(bounds, paint, nullptr, nullptr, 1.f, SkTileMode::kClamp,
+                           saveLayerFlags, {}) {}
 
         
 
@@ -710,15 +718,8 @@ public:
 
         SaveLayerRec(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
                      SaveLayerFlags saveLayerFlags)
-            : SaveLayerRec(bounds, paint, backdrop, 1.f, saveLayerFlags, {}) {}
-
-        
-        const SkRect*        fBounds         = nullptr;
-
-        
-        const SkPaint*       fPaint          = nullptr;
-
-        FilterSpan           fFilters        = {};
+            : SaveLayerRec(bounds, paint, backdrop, nullptr, 1.f, SkTileMode::kClamp,
+                           saveLayerFlags, {}) {}
 
         
 
@@ -726,10 +727,83 @@ public:
 
 
 
-        const SkImageFilter* fBackdrop       = nullptr;
+
+
+
+
+
+
+
+
+
+
+
+
+        SaveLayerRec(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
+                     const SkColorSpace* colorSpace, SaveLayerFlags saveLayerFlags)
+            : SaveLayerRec(bounds, paint, backdrop, colorSpace, 1.f, SkTileMode::kClamp,
+                           saveLayerFlags, {}) {}
+
 
         
-        SaveLayerFlags       fSaveLayerFlags = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        SaveLayerRec(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
+                     SkTileMode backdropTileMode, const SkColorSpace* colorSpace,
+                     SaveLayerFlags saveLayerFlags)
+            : SaveLayerRec(bounds, paint, backdrop, colorSpace, 1.f, backdropTileMode,
+                           saveLayerFlags, {}) {}
+
+        
+        const SkRect* fBounds = nullptr;
+
+        
+        const SkPaint* fPaint = nullptr;
+
+        FilterSpan fFilters = {};
+
+        
+
+
+
+
+
+        const SkImageFilter* fBackdrop = nullptr;
+
+        
+
+
+
+
+        SkTileMode fBackdropTileMode = SkTileMode::kClamp;
+
+        
+
+
+
+
+        const SkColorSpace* fColorSpace = nullptr;
+
+        
+        SaveLayerFlags fSaveLayerFlags = 0;
 
     private:
         friend class SkCanvas;
@@ -738,13 +812,17 @@ public:
         SaveLayerRec(const SkRect* bounds,
                      const SkPaint* paint,
                      const SkImageFilter* backdrop,
+                     const SkColorSpace* colorSpace,
                      SkScalar backdropScale,
+                     SkTileMode backdropTileMode,
                      SaveLayerFlags saveLayerFlags,
                      FilterSpan filters)
                 : fBounds(bounds)
                 , fPaint(paint)
                 , fFilters(filters)
                 , fBackdrop(backdrop)
+                , fBackdropTileMode(backdropTileMode)
+                , fColorSpace(colorSpace)
                 , fSaveLayerFlags(saveLayerFlags)
                 , fExperimentalBackdropScale(backdropScale) {
             
@@ -1435,6 +1513,27 @@ public:
 
     void drawArc(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle,
                  bool useCenter, const SkPaint& paint);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void drawArc(const SkArc& arc, const SkPaint& paint) {
+        this->drawArc(arc.fOval, arc.fStartAngle, arc.fSweepAngle, arc.isWedge(), paint);
+    }
 
     
 
@@ -2351,10 +2450,15 @@ private:
         bool                                           fIsCoverage;
         bool                                           fDiscard;
 
+        
+        
+        bool                                           fIncludesPadding;
+
         Layer(sk_sp<SkDevice> device,
               FilterSpan imageFilters,
               const SkPaint& paint,
-              bool isCoverage);
+              bool isCoverage,
+              bool includesPadding);
     };
 
     
@@ -2392,7 +2496,8 @@ private:
         void newLayer(sk_sp<SkDevice> layerDevice,
                       FilterSpan filters,
                       const SkPaint& restorePaint,
-                      bool layerIsCoverage);
+                      bool layerIsCoverage,
+                      bool includesPadding);
 
         void reset(SkDevice* device);
     };
@@ -2441,7 +2546,7 @@ private:
     friend class SkRasterHandleAllocator;
     friend class SkRecords::Draw;
     template <typename Key>
-    friend class SkTestCanvas;
+    friend class skiatest::TestCanvas;
 
 protected:
     
@@ -2506,15 +2611,21 @@ private:
     void internalSave();
     void internalRestore();
 
-    enum class DeviceCompatibleWithFilter : bool {
+    enum class DeviceCompatibleWithFilter : int {
         
         
         
-        kUnknown = false,
+        kUnknown,
         
-        kYes     = true
+        kYes,
+        
+        
+        kYesWithPadding
     };
     
+
+
+
 
 
 
@@ -2528,7 +2639,9 @@ private:
     void internalDrawDeviceWithFilter(SkDevice* src, SkDevice* dst,
                                       FilterSpan filters, const SkPaint& paint,
                                       DeviceCompatibleWithFilter compat,
+                                      const SkColorInfo& filterColorInfo,
                                       SkScalar scaleFactor = 1.f,
+                                      SkTileMode srcTileMode = SkTileMode::kDecal,
                                       bool srcIsCoverageLayer = false);
 
     
@@ -2538,12 +2651,6 @@ private:
 
     bool wouldOverwriteEntireSurface(const SkRect*, const SkPaint*,
                                      SkEnumBitMask<PredrawFlags>) const;
-
-    
-
-
-    bool canDrawBitmapAsSprite(SkScalar x, SkScalar y, int w, int h, const SkSamplingOptions&,
-                               const SkPaint&);
 
     
 
