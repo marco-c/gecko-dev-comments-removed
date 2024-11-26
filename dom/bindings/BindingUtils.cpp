@@ -4313,6 +4313,11 @@ already_AddRefed<Promise> CreateRejectedPromiseFromThrownException(
   return Promise::RejectWithExceptionFromContext(global, aCx, aError);
 }
 
+void ClearXrayExpandoSlots(JS::RootingContext* aCx, JSObject* aObject,
+                           size_t aSlotIndex) {
+  xpc::ClearXrayExpandoSlots(aCx, aObject, aSlotIndex);
+}
+
 }  
 
 static_assert(UnderlyingValue(DOM_EXPANDO_RESERVED_SLOTS) ==
