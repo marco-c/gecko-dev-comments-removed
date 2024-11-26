@@ -2638,8 +2638,9 @@ TEST_P(PeerConnectionIntegrationTest, GetSourcesVideo) {
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   
+  
   MediaExpectations media_expectations;
-  media_expectations.CalleeExpectsSomeVideo(1);
+  media_expectations.CalleeExpectsSomeVideo(2);
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
   ASSERT_EQ(callee()->pc()->GetReceivers().size(), 1u);
   auto receiver = callee()->pc()->GetReceivers()[0];
