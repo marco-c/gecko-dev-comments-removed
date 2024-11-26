@@ -194,6 +194,8 @@ static StorageAccess InternalStorageAllowedCheck(
   }
 
   
+  
+  
   if (aRejectedReason ==
           static_cast<uint32_t>(
               nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER) ||
@@ -509,6 +511,7 @@ bool ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow, nsIURI* aURI,
   
   
   
+  
   if (behavior != nsICookieService::BEHAVIOR_REJECT_TRACKER &&
       behavior !=
           nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
@@ -564,6 +567,11 @@ bool ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow, nsIURI* aURI,
              nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
     if (nsContentUtils::IsThirdPartyTrackingResourceWindow(aWindow)) {
       
+      
+      if (!StaticPrefs::network_cookie_cookieBehavior_trackerCookieBlocking()) {
+        blockedReason =
+            nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
+      }
     } else if (AntiTrackingUtils::IsThirdPartyWindow(aWindow, aURI)) {
       LOG(("We're in the third-party context, storage should be partitioned"));
       
@@ -574,7 +582,8 @@ bool ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow, nsIURI* aURI,
     }
   } else {
     MOZ_ASSERT_UNREACHABLE(
-        "This should be an exhaustive list of cookie behaviors possible here.");
+        "This should be an exhaustive list of cookie behaviors possible "
+        "here.");
   }
 
   Document* doc = aWindow->GetExtantDoc();
@@ -751,6 +760,11 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
     if (classifiedChannel &&
         classifiedChannel->IsThirdPartyTrackingResource()) {
       
+      
+      if (!StaticPrefs::network_cookie_cookieBehavior_trackerCookieBlocking()) {
+        blockedReason =
+            nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
+      }
     } else if (AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
       LOG(("We're in the third-party context, storage should be partitioned"));
       
@@ -761,7 +775,8 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
     }
   } else {
     MOZ_ASSERT_UNREACHABLE(
-        "This should be an exhaustive list of cookie behaviors possible here.");
+        "This should be an exhaustive list of cookie behaviors possible "
+        "here.");
   }
 
   RefPtr<BrowsingContext> targetBC;
@@ -796,6 +811,7 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
 
   
 
+  
   
   
   bool isDocument = false;
