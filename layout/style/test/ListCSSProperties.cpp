@@ -107,7 +107,6 @@ const char* gInaccessibleProperties[] = {
     "-moz-window-input-region-margin",    
     "-moz-window-opacity",                
     "-moz-window-transform",              
-    "-moz-window-transform-origin",       
     "-moz-window-shadow",                 
 };
 
