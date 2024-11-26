@@ -969,10 +969,7 @@ class LogicalSize {
   
 
 
-  bool IsAllZero() const { return IsAllValues(0); }
-  bool IsAllValues(nscoord aValue) const {
-    return ISize() == aValue && BSize() == aValue;
-  }
+  bool IsAllZero() const { return ISize() == 0 && BSize() == 0; }
 
   
 

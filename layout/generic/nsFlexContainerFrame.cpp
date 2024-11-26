@@ -2062,7 +2062,9 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
 
 
 void nsFlexContainerFrame::MarkIntrinsicISizesDirty() {
-  mCachedIntrinsicSizes.Clear();
+  mCachedMinISize = NS_INTRINSIC_ISIZE_UNKNOWN;
+  mCachedPrefISize = NS_INTRINSIC_ISIZE_UNKNOWN;
+
   nsContainerFrame::MarkIntrinsicISizesDirty();
 }
 
@@ -2476,14 +2478,6 @@ bool FlexItem::CanMainSizeInfluenceCrossSize() const {
 
   if (IsInlineAxisCrossAxis()) {
     
-    
-
-    
-    
-    if (mFrame->HasAnyStateBits(
-            NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE)) {
-      return true;
-    }
     
     
     if (mFrame->IsBlockFrame() || mFrame->IsTableWrapperFrame()) {
@@ -6557,9 +6551,13 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
 
 nscoord nsFlexContainerFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                              IntrinsicISizeType aType) {
-  return mCachedIntrinsicSizes.GetOrSet(*this, aType, aInput, [&] {
-    return ComputeIntrinsicISize(aInput, aType);
-  });
+  nscoord& cachedISize = aType == IntrinsicISizeType::MinISize
+                             ? mCachedMinISize
+                             : mCachedPrefISize;
+  if (cachedISize == NS_INTRINSIC_ISIZE_UNKNOWN) {
+    cachedISize = ComputeIntrinsicISize(aInput, aType);
+  }
+  return cachedISize;
 }
 
 int32_t nsFlexContainerFrame::GetNumLines() const {
