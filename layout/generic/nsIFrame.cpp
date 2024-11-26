@@ -6158,7 +6158,8 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aClearType) {
 
     for (const FloatInfo& floatInfo : mFloats) {
       const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-      StyleClear clearType = floatDisp->mClear;
+      auto cbWM = floatInfo.Frame()->GetParent()->GetWritingMode();
+      StyleClear clearType = floatDisp->UsedClear(cbWM);
       if (clearType == StyleClear::Left || clearType == StyleClear::Right ||
           clearType == StyleClear::Both) {
         nscoord floatsCur = NSCoordSaturatingAdd(floatsCurLeft, floatsCurRight);
@@ -6173,7 +6174,7 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aClearType) {
         }
       }
 
-      StyleFloat floatStyle = floatDisp->mFloat;
+      StyleFloat floatStyle = floatDisp->UsedFloat(cbWM);
       nscoord& floatsCur =
           floatStyle == StyleFloat::Left ? floatsCurLeft : floatsCurRight;
       nscoord floatISize = floatInfo.ISize();
@@ -6207,7 +6208,8 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aClearType) {
       
       for (FloatInfo& floatInfo : Reversed(mFloats)) {
         const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-        if (floatDisp->mFloat != clearFloatType) {
+        auto cbWM = floatInfo.Frame()->GetParent()->GetWritingMode();
+        if (floatDisp->UsedFloat(cbWM) != clearFloatType) {
           newFloats.AppendElement(floatInfo);
         } else {
           
@@ -6217,7 +6219,7 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aClearType) {
           
           
           
-          StyleClear clearType = floatDisp->mClear;
+          StyleClear clearType = floatDisp->UsedClear(cbWM);
           if (clearType != aClearType && clearType != StyleClear::None) {
             break;
           }

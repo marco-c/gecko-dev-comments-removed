@@ -359,6 +359,10 @@ struct ReflowInput : public SizeComputationInput {
   nsSize ComputedSizeAsContainerIfConstrained() const;
 
   
+  
+  WritingMode GetCBWritingMode() const;
+
+  
   LogicalSize mContainingBlockSize{mWritingMode};
 
   
