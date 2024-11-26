@@ -10,6 +10,11 @@ use glean::traits::StringList;
 
 use crate::ipc::{need_ipc, with_ipc_payload};
 
+#[cfg(feature = "with_gecko")]
+use super::profiler_utils::StringLikeMetricMarker;
+#[cfg(feature = "with_gecko")]
+use gecko_profiler::gecko_profiler_category;
+
 
 
 
@@ -63,8 +68,19 @@ impl StringList for StringListMetric {
     
     pub fn add<S: Into<String>>(&self, value: S) {
         match self {
-            StringListMetric::Parent { inner, .. } => {
-                inner.add(value.into());
+            #[allow(unused)]
+            StringListMetric::Parent { id, inner } => {
+                let value = value.into();
+                #[cfg(feature = "with_gecko")]
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "StringList::add",
+                        gecko_profiler_category!(Telemetry),
+                        Default::default(),
+                        StringLikeMetricMarker::new(*id, &value),
+                    );
+                }
+                inner.add(value);
             }
             StringListMetric::Child(c) => {
                 with_ipc_payload(move |payload| {
@@ -92,7 +108,20 @@ impl StringList for StringListMetric {
     
     pub fn set(&self, value: Vec<String>) {
         match self {
-            StringListMetric::Parent { inner, .. } => {
+            #[allow(unused)]
+            StringListMetric::Parent { id, inner } => {
+                #[cfg(feature = "with_gecko")]
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "StringList::set",
+                        gecko_profiler_category!(Telemetry),
+                        Default::default(),
+                        StringLikeMetricMarker::new_owned(
+                            *id,
+                            format!("[{}]", value.clone().join(",")),
+                        ),
+                    );
+                }
                 inner.set(value);
             }
             StringListMetric::Child(c) => {
