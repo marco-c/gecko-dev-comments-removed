@@ -27,6 +27,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/BrowserHost.h"
+#include "mozilla/dom/VisualViewport.h"
 
 #include "nsIDocShellTreeOwner.h"
 #include "mozilla/dom/Event.h"
@@ -161,6 +162,12 @@ nsresult RootAccessible::AddEventListeners() {
     }
   }
 
+  
+  
+  if (auto* win = nsGlobalWindowInner::Cast(mDocumentNode->GetInnerWindow())) {
+    win->VisualViewport()->AddEventListener(u"scroll"_ns, this, false, false);
+  }
+
   return DocAccessible::AddEventListeners();
 }
 
@@ -173,6 +180,10 @@ nsresult RootAccessible::RemoveEventListeners() {
          e < e_end; ++e) {
       target->RemoveEventListener(NS_ConvertASCIItoUTF16(*e), this, true);
     }
+  }
+
+  if (auto* win = nsGlobalWindowInner::Cast(mDocumentNode->GetInnerWindow())) {
+    win->VisualViewport()->RemoveEventListener(u"scroll"_ns, this, false);
   }
 
   
@@ -199,10 +210,21 @@ RootAccessible::HandleEvent(Event* aDOMEvent) {
     
     return NS_OK;
   }
-
-  nsCOMPtr<nsINode> origTargetNode =
-      do_QueryInterface(aDOMEvent->GetOriginalTarget());
-  if (!origTargetNode) return NS_OK;
+  auto target = aDOMEvent->GetOriginalTarget();
+  nsCOMPtr<nsINode> origTargetNode = do_QueryInterface(target);
+  if (!origTargetNode) {
+    
+    
+    if (auto* win =
+            nsGlobalWindowInner::Cast(mDocumentNode->GetInnerWindow())) {
+      if (target == win->VisualViewport()) {
+        if (DocAccessible* d = PresShellPtr()->GetDocAccessible()) {
+          d->QueueCacheUpdate(d, CacheDomain::APZ);
+        }
+      }
+    }
+    return NS_OK;
+  }
 
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eDOMEvents)) {
