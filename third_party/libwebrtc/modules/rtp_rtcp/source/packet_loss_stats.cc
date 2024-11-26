@@ -16,11 +16,14 @@
 
 #include "rtc_base/checks.h"
 
-
-
-static const int kBufferSize = 100;
-
 namespace webrtc {
+namespace {
+
+
+
+constexpr int kBufferSize = 100;
+
+}  
 
 PacketLossStats::PacketLossStats()
     : single_loss_historic_count_(0),

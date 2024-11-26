@@ -19,9 +19,6 @@
 
 namespace webrtc {
 namespace rtcp {
-constexpr uint8_t SenderReport::kPacketType;
-constexpr size_t SenderReport::kMaxNumberOfReportBlocks;
-constexpr size_t SenderReport::kSenderBaseLength;
 
 
 

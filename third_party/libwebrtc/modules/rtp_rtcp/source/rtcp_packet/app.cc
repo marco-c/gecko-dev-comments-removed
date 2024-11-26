@@ -21,8 +21,6 @@
 
 namespace webrtc {
 namespace rtcp {
-constexpr uint8_t App::kPacketType;
-constexpr size_t App::kMaxDataSize;
 
 
 

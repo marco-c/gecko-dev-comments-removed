@@ -19,8 +19,6 @@
 
 namespace webrtc {
 namespace rtcp {
-constexpr uint8_t ExtendedReports::kPacketType;
-constexpr size_t ExtendedReports::kMaxNumberOfDlrrItems;
 
 
 

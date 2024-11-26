@@ -73,13 +73,6 @@ constexpr TimeDelta kTimeWrapPeriod = kBaseTimeTick * (1 << 24);
 
 
 }  
-constexpr uint8_t TransportFeedback::kFeedbackMessageType;
-constexpr size_t TransportFeedback::kMaxReportedPackets;
-
-constexpr size_t TransportFeedback::LastChunk::kMaxRunLengthCapacity;
-constexpr size_t TransportFeedback::LastChunk::kMaxOneBitCapacity;
-constexpr size_t TransportFeedback::LastChunk::kMaxTwoBitCapacity;
-constexpr size_t TransportFeedback::LastChunk::kMaxVectorCapacity;
 
 TransportFeedback::LastChunk::LastChunk() {
   Clear();

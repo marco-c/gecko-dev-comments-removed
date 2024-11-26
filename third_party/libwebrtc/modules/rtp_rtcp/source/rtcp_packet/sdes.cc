@@ -22,8 +22,6 @@
 
 namespace webrtc {
 namespace rtcp {
-constexpr uint8_t Sdes::kPacketType;
-constexpr size_t Sdes::kMaxNumberOfChunks;
 
 
 

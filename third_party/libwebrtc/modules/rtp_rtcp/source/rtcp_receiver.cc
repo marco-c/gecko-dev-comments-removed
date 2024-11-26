@@ -107,8 +107,6 @@ bool ResetTimestampIfExpired(const Timestamp now,
 
 }  
 
-constexpr size_t RTCPReceiver::RegisteredSsrcs::kMediaSsrcIndex;
-
 RTCPReceiver::RegisteredSsrcs::RegisteredSsrcs(
     bool disable_sequence_checker,
     const RtpRtcpInterface::Configuration& config)

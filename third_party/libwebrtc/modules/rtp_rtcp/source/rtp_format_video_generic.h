@@ -23,11 +23,11 @@ class RtpPacketToSend;
 struct RTPVideoHeader;
 
 namespace RtpFormatVideoGeneric {
-static const uint8_t kKeyFrameBit = 0x01;
-static const uint8_t kFirstPacketBit = 0x02;
+inline constexpr uint8_t kKeyFrameBit = 0x01;
+inline constexpr uint8_t kFirstPacketBit = 0x02;
 
 
-static const uint8_t kExtendedHeaderBit = 0x04;
+inline constexpr uint8_t kExtendedHeaderBit = 0x04;
 }  
 
 class RtpPacketizerGeneric : public RtpPacketizer {

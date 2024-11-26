@@ -21,8 +21,6 @@
 
 namespace webrtc {
 namespace rtcp {
-constexpr uint8_t Nack::kFeedbackMessageType;
-constexpr size_t Nack::kNackItemLength;
 
 
 
