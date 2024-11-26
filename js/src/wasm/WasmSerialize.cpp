@@ -1495,6 +1495,7 @@ bool Module::canSerialize() const {
   
   
   return code_->mode() != CompileMode::LazyTiering &&
+         !codeMeta().isBuiltinModule() &&
          codeMeta().features().builtinModules.hasNone() &&
          !codeMeta().debugEnabled;
 }

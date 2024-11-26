@@ -1406,7 +1406,8 @@ SharedModule ModuleGenerator::finishModule(
   
   
   
-  if (!isAsmJS() && compileArgs_->features.testSerialization) {
+  if (!isAsmJS() && compileArgs_->features.testSerialization &&
+      module->canSerialize()) {
     MOZ_RELEASE_ASSERT(mode() == CompileMode::Once &&
                        tier() == Tier::Serialized);
 
