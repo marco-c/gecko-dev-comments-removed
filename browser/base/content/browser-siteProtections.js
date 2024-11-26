@@ -1652,6 +1652,13 @@ var gProtectionsHandler = {
       false
     );
 
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "smartblockEmbedsEnabledPref",
+      "extensions.webcompat.smartblockEmbeds.enabled",
+      false
+    );
+
     for (let blocker of Object.values(this.blockers)) {
       if (blocker.init) {
         blocker.init();
@@ -2199,6 +2206,11 @@ var gProtectionsHandler = {
         this.maybeUpdateEarliestRecordedDateTooltip();
         break;
       case "smartblock:open-protections-panel":
+        if (!this.smartblockEmbedsEnabledPref) {
+          
+          break;
+        }
+
         if (this._protectionsPopup?.state == "open") {
           
           
@@ -2355,6 +2367,11 @@ var gProtectionsHandler = {
 
 
   _addSmartblockEmbedToggles() {
+    if (!this.smartblockEmbedsEnabledPref) {
+      
+      return false;
+    }
+
     let contentBlockingLog = gBrowser.selectedBrowser.getContentBlockingLog();
     contentBlockingLog = JSON.parse(contentBlockingLog);
     let smartBlockEmbedToggleAdded = false;
