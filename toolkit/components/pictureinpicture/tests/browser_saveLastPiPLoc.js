@@ -79,8 +79,8 @@ async function doTest() {
       let pipWin = await triggerPictureInPicture(browser, "with-controls");
       ok(pipWin, "Got Picture-in-Picture window.");
 
-      let defaultPiPWidth = pipWin.innerWidth;
-      let defaultPiPHeight = pipWin.innerHeight;
+      let defaultPiPWidth = pipWin.outerWidth;
+      let defaultPiPHeight = pipWin.outerHeight;
 
       
       isfuzzy(
@@ -105,13 +105,13 @@ async function doTest() {
         );
       }
       isfuzzy(
-        pipWin.innerHeight,
+        pipWin.outerHeight,
         defaultPiPHeight,
         ACCEPTABLE_DIFFERENCE,
         "Default PiP height"
       );
       isfuzzy(
-        pipWin.innerWidth,
+        pipWin.outerWidth,
         defaultPiPWidth,
         ACCEPTABLE_DIFFERENCE,
         "Default PiP width"
@@ -120,8 +120,8 @@ async function doTest() {
       let top = defaultY;
       let left = defaultX;
       pipWin.moveTo(left, top);
-      let height = pipWin.innerHeight / 2;
-      let width = pipWin.innerWidth / 2;
+      let height = pipWin.outerHeight / 2;
+      let width = pipWin.outerWidth / 2;
       pipWin.resizeTo(width, height);
 
       
@@ -143,13 +143,13 @@ async function doTest() {
         "Opened at last Y location"
       );
       isfuzzy(
-        pipWin.innerHeight,
+        pipWin.outerHeight,
         height,
         ACCEPTABLE_DIFFERENCE,
         "Opened with 1/2 default height"
       );
       isfuzzy(
-        pipWin.innerWidth,
+        pipWin.outerWidth,
         width,
         ACCEPTABLE_DIFFERENCE,
         "Opened with 1/2 default width"
@@ -162,7 +162,7 @@ async function doTest() {
         left = -11111;
         top = -11111;
         pipWin.moveTo(left, top);
-        pipWin.resizeTo(pipWin.innerWidth / 4, pipWin.innerHeight / 4);
+        pipWin.resizeTo(pipWin.outerWidth / 4, pipWin.outerHeight / 4);
 
         await ensureMessageAndClosePiP(browser, "with-controls", pipWin, true);
         pipWin = await triggerPictureInPicture(browser, "with-controls");
@@ -182,13 +182,13 @@ async function doTest() {
           "Opened at default Y location"
         );
         isfuzzy(
-          pipWin.innerWidth,
+          pipWin.outerWidth,
           defaultPiPWidth,
           ACCEPTABLE_DIFFERENCE,
           "Opened at default PiP width"
         );
         isfuzzy(
-          pipWin.innerHeight,
+          pipWin.outerHeight,
           defaultPiPHeight,
           ACCEPTABLE_DIFFERENCE,
           "Opened at default PiP height"
@@ -200,8 +200,8 @@ async function doTest() {
       
       if (AppConstants.platform != "linux") {
         
-        height = pipWin.innerHeight;
-        width = pipWin.innerWidth;
+        height = pipWin.outerHeight;
+        width = pipWin.outerWidth;
 
         left = 200;
         top = 100;
@@ -226,14 +226,14 @@ async function doTest() {
           "Opened at last Y location"
         );
         isfuzzy(
-          pipWin.innerHeight,
+          pipWin.outerHeight,
           height,
           ACCEPTABLE_DIFFERENCE,
           "Opened height with previous width"
         );
         isfuzzy(
-          pipWin.innerWidth,
-          height * (pipWin.innerWidth / pipWin.innerHeight),
+          pipWin.outerWidth,
+          height * (pipWin.outerWidth / pipWin.outerHeight),
           ACCEPTABLE_DIFFERENCE,
           "Width is changed to adjust for aspect ration"
         );
@@ -244,7 +244,7 @@ async function doTest() {
         pipWin.resizeTo(defaultPiPWidth / 2, defaultPiPHeight / 2);
 
         
-        height = pipWin.innerHeight;
+        height = pipWin.outerHeight;
 
         
         await switchVideoSource("test-video.mp4");
@@ -265,14 +265,14 @@ async function doTest() {
           "Opened at last Y location"
         );
         isfuzzy(
-          pipWin.innerHeight,
+          pipWin.outerHeight,
           height,
           ACCEPTABLE_DIFFERENCE,
           "Opened with previous height"
         );
         isfuzzy(
-          pipWin.innerWidth,
-          height * (pipWin.innerWidth / pipWin.innerHeight),
+          pipWin.outerWidth,
+          height * (pipWin.outerWidth / pipWin.outerHeight),
           ACCEPTABLE_DIFFERENCE,
           "Width is changed to adjust for aspect ration"
         );
@@ -280,8 +280,8 @@ async function doTest() {
 
       
 
-      left = rightEdge - Math.round((3 * pipWin.innerWidth) / 4);
-      top = bottomEdge - Math.round((3 * pipWin.innerHeight) / 4);
+      left = rightEdge - Math.round((3 * pipWin.outerWidth) / 4);
+      top = bottomEdge - Math.round((3 * pipWin.outerHeight) / 4);
 
       let movePromise = BrowserTestUtils.waitForEvent(
         pipWin.windowRoot,
@@ -295,8 +295,8 @@ async function doTest() {
       ok(pipWin, "Got Picture-in-Picture window.");
 
       
-      left = rightEdge - pipWin.innerWidth;
-      top = bottomEdge - pipWin.innerHeight;
+      left = rightEdge - pipWin.outerWidth;
+      top = bottomEdge - pipWin.outerHeight;
 
       
       
@@ -323,8 +323,8 @@ async function doTest() {
       }
 
       
-      left = defaultX - Math.round(pipWin.innerWidth / 4);
-      top = defaultY - Math.round(pipWin.innerHeight / 4);
+      left = defaultX - Math.round(pipWin.outerWidth / 4);
+      top = defaultY - Math.round(pipWin.outerHeight / 4);
 
       movePromise = BrowserTestUtils.waitForEvent(
         pipWin.windowRoot,
@@ -354,15 +354,15 @@ async function doTest() {
       if (AppConstants.platform != "linux") {
         
         
-        left = rightEdge - pipWin.innerWidth;
+        left = rightEdge - pipWin.outerWidth;
         top = Math.round(bottomEdge / 4);
 
         pipWin.moveTo(left, top);
 
         
-        width = pipWin.innerWidth;
+        width = pipWin.outerWidth;
         isfuzzy(
-          pipWin.innerWidth + pipWin.screenX,
+          pipWin.outerWidth + pipWin.screenX,
           rightEdge,
           ACCEPTABLE_DIFFERENCE,
           "Video is on right edge before video is changed"
@@ -374,9 +374,9 @@ async function doTest() {
         pipWin = await triggerPictureInPicture(browser, "with-controls");
         ok(pipWin, "Got Picture-in-Picture window.");
 
-        Assert.less(pipWin.innerWidth, width, "New video width is smaller");
+        Assert.less(pipWin.outerWidth, width, "New video width is smaller");
         isfuzzy(
-          pipWin.innerWidth + pipWin.screenX,
+          pipWin.outerWidth + pipWin.screenX,
           rightEdge,
           ACCEPTABLE_DIFFERENCE,
           "Video is on right edge after video is changed"
