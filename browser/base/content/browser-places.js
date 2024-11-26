@@ -638,8 +638,7 @@ class HistoryMenu extends PlacesMenu {
     
     let tabsFragment = RecentlyClosedTabsAndWindowsMenuUtils.getTabsFragment(
       window,
-      "menuitem",
-       false
+      "menuitem"
     );
     undoPopup.appendChild(tabsFragment);
   }
