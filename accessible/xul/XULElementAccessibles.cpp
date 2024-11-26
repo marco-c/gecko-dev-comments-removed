@@ -42,11 +42,10 @@ void XULLabelAccessible::Shutdown() {
   HyperTextAccessible::Shutdown();
 }
 
-void XULLabelAccessible::DispatchClickEvent(nsIContent* aContent,
-                                            uint32_t aActionIndex) const {
+void XULLabelAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
   
   
-  RefPtr<nsXULElement> el = nsXULElement::FromNodeOrNull(aContent);
+  RefPtr<nsXULElement> el = nsXULElement::FromNodeOrNull(mContent);
   if (el) {
     el->Click(mozilla::dom::CallerType::System);
   }

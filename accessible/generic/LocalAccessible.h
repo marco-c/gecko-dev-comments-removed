@@ -899,16 +899,13 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-
-  void DoCommand(nsIContent* aContent = nullptr,
-                 uint32_t aActionIndex = 0) const;
+  void DoCommand(uint32_t aActionIndex = 0) const;
 
   
 
 
   MOZ_CAN_RUN_SCRIPT
-  virtual void DispatchClickEvent(nsIContent* aContent,
-                                  uint32_t aActionIndex) const;
+  virtual void DispatchClickEvent(uint32_t aActionIndex) const;
 
   
   
