@@ -732,7 +732,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  mozilla::StyleClear FindTrailingClear();
+  mozilla::UsedClear FindTrailingClear();
 
   
 

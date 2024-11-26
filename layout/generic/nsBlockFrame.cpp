@@ -936,9 +936,9 @@ nscoord nsBlockFrame::PrefISize(const IntrinsicSizeInput& aInput) {
 #endif
       if (line->IsBlock()) {
         nsIFrame* kid = line->mFirstChild;
-        StyleClear clearType;
+        UsedClear clearType;
         if (!data.mLineIsEmpty || BlockCanIntersectFloats(kid)) {
-          clearType = StyleClear::Both;
+          clearType = UsedClear::Both;
         } else {
           clearType = kid->StyleDisplay()->UsedClear(GetWritingMode());
         }
@@ -2207,7 +2207,7 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     std::tie(blockEndEdgeOfChildren, std::ignore) =
-        aState.ClearFloats(blockEndEdgeOfChildren, StyleClear::Both);
+        aState.ClearFloats(blockEndEdgeOfChildren, UsedClear::Both);
   }
 
   
@@ -2840,9 +2840,8 @@ void nsBlockFrame::PrepareResizeReflow(BlockReflowState& aState) {
             line->HasForcedLineBreakAfter() ? "has-break-after " : "",
             line->HasFloats() ? "has-floats " : "",
             line->IsImpactedByFloat() ? "impacted " : "",
-            line->StyleClearToString(line->FloatClearTypeBefore()),
-            line->StyleClearToString(line->FloatClearTypeAfter()),
-            line->IEnd());
+            line->UsedClearToString(line->FloatClearTypeBefore()),
+            line->UsedClearToString(line->FloatClearTypeAfter()), line->IEnd());
       }
 #endif
     }
@@ -3000,7 +2999,7 @@ bool nsBlockFrame::LinesAreEmpty() const {
 bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool keepGoing = true;
   bool repositionViews = false;  
-  bool foundAnyClears = aState.mTrailingClearFromPIF != StyleClear::None;
+  bool foundAnyClears = aState.mTrailingClearFromPIF != UsedClear::None;
   bool willReflowAgain = false;
   bool usedOverflowWrap = false;
 
@@ -3044,7 +3043,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
       GetFloats()->FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
   bool lastLineMovedUp = false;
   
-  StyleClear inlineFloatClearType = aState.mTrailingClearFromPIF;
+  UsedClear inlineFloatClearType = aState.mTrailingClearFromPIF;
 
   LineIterator line = LinesBegin(), line_end = LinesEnd();
 
@@ -3113,7 +3112,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
       nscoord curBCoord = aState.mBCoord;
       
       
-      if (inlineFloatClearType != StyleClear::None) {
+      if (inlineFloatClearType != UsedClear::None) {
         std::tie(curBCoord, std::ignore) =
             aState.ClearFloats(curBCoord, inlineFloatClearType);
       }
@@ -3140,7 +3139,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
     }
 
     
-    if (inlineFloatClearType != StyleClear::None) {
+    if (inlineFloatClearType != UsedClear::None) {
       std::tie(aState.mBCoord, std::ignore) =
           aState.ClearFloats(aState.mBCoord, inlineFloatClearType);
       if (aState.mBCoord != line->BStart() + deltaBCoord) {
@@ -3148,7 +3147,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
         
         line->MarkDirty();
       }
-      inlineFloatClearType = StyleClear::None;
+      inlineFloatClearType = UsedClear::None;
     }
 
     bool previousMarginWasDirty = line->IsPreviousMarginDirty();
@@ -3480,7 +3479,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   }
 
   
-  if (inlineFloatClearType != StyleClear::None) {
+  if (inlineFloatClearType != UsedClear::None) {
     std::tie(aState.mBCoord, std::ignore) =
         aState.ClearFloats(aState.mBCoord, inlineFloatClearType);
   }
@@ -4170,16 +4169,16 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   nsBlockReflowContext brc(aState.mPresContext, aState.mReflowInput);
 
   WritingMode cbWM = frame->GetContainingBlock()->GetWritingMode();
-  StyleClear clearType = frame->StyleDisplay()->UsedClear(cbWM);
-  if (aState.mTrailingClearFromPIF != StyleClear::None) {
+  UsedClear clearType = frame->StyleDisplay()->UsedClear(cbWM);
+  if (aState.mTrailingClearFromPIF != UsedClear::None) {
     clearType = nsLayoutUtils::CombineClearType(clearType,
                                                 aState.mTrailingClearFromPIF);
-    aState.mTrailingClearFromPIF = StyleClear::None;
+    aState.mTrailingClearFromPIF = UsedClear::None;
   }
 
   
   aLine->ClearForcedLineBreak();
-  if (clearType != StyleClear::None) {
+  if (clearType != UsedClear::None) {
     aLine->SetFloatClearTypeBefore(clearType);
   }
 
@@ -4197,7 +4196,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   }
   bool treatWithClearance = aLine->HasClearance();
 
-  bool mightClearFloats = clearType != StyleClear::None;
+  bool mightClearFloats = clearType != UsedClear::None;
   nsIFrame* floatAvoidingBlock = nullptr;
   if (!nsBlockFrame::BlockCanIntersectFloats(frame)) {
     mightClearFloats = true;
@@ -4545,7 +4544,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
         }
         
         std::tie(aState.mBCoord, std::ignore) =
-            aState.ClearFloats(newBCoord, StyleClear::None, floatAvoidingBlock);
+            aState.ClearFloats(newBCoord, UsedClear::None, floatAvoidingBlock);
 
         
         floatAvailableSpace = aState.GetFloatAvailableSpaceWithState(
@@ -5243,7 +5242,7 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
   
   aLine->ClearForcedLineBreak();
   if (frameReflowStatus.IsInlineBreak() ||
-      aState.mTrailingClearFromPIF != StyleClear::None) {
+      aState.mTrailingClearFromPIF != UsedClear::None) {
     
     
     *aLineReflowStatus = LineReflowStatus::Stop;
@@ -5271,20 +5270,20 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
       }
     } else {
       MOZ_ASSERT(frameReflowStatus.IsInlineBreakAfter() ||
-                     aState.mTrailingClearFromPIF != StyleClear::None,
+                     aState.mTrailingClearFromPIF != UsedClear::None,
                  "We should've handled inline break-before in the if-branch!");
 
       
       
       
-      StyleClear clearType = frameReflowStatus.FloatClearType();
-      if (aState.mTrailingClearFromPIF != StyleClear::None) {
+      UsedClear clearType = frameReflowStatus.FloatClearType();
+      if (aState.mTrailingClearFromPIF != UsedClear::None) {
         clearType = nsLayoutUtils::CombineClearType(
             clearType, aState.mTrailingClearFromPIF);
-        aState.mTrailingClearFromPIF = StyleClear::None;
+        aState.mTrailingClearFromPIF = UsedClear::None;
       }
       
-      if (clearType != StyleClear::None || aLineLayout.GetLineEndsInBR()) {
+      if (clearType != UsedClear::None || aLineLayout.GetLineEndsInBR()) {
         aLine->SetForcedLineBreakAfter(clearType);
       }
       if (frameReflowStatus.IsComplete()) {
@@ -5368,12 +5367,12 @@ void nsBlockFrame::SplitFloat(BlockReflowState& aState, nsIFrame* aFloat,
     nextInFlow->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
   }
 
-  StyleFloat floatStyle =
+  UsedFloat floatStyle =
       aFloat->StyleDisplay()->UsedFloat(aState.mReflowInput.GetWritingMode());
-  if (floatStyle == StyleFloat::Left) {
+  if (floatStyle == UsedFloat::Left) {
     aState.FloatManager()->SetSplitLeftFloatAcrossBreak();
   } else {
-    MOZ_ASSERT(floatStyle == StyleFloat::Right, "Unexpected float side!");
+    MOZ_ASSERT(floatStyle == UsedFloat::Right, "Unexpected float side!");
     aState.FloatManager()->SetSplitRightFloatAcrossBreak();
   }
 
@@ -7529,7 +7528,7 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
   aFloat->DidReflow(aState.mPresContext, &aFloatRI);
 }
 
-StyleClear nsBlockFrame::FindTrailingClear() {
+UsedClear nsBlockFrame::FindTrailingClear() {
   for (nsBlockFrame* b = this; b;
        b = static_cast<nsBlockFrame*>(b->GetPrevInFlow())) {
     auto endLine = b->LinesRBegin();
@@ -7537,7 +7536,7 @@ StyleClear nsBlockFrame::FindTrailingClear() {
       return endLine->FloatClearTypeAfter();
     }
   }
-  return StyleClear::None;
+  return UsedClear::None;
 }
 
 void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
@@ -7638,7 +7637,7 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
 
   
   
-  if (auto [bCoord, result] = aState.ClearFloats(0, StyleClear::Both);
+  if (auto [bCoord, result] = aState.ClearFloats(0, UsedClear::Both);
       result != ClearFloatsResult::BCoordNoChange) {
     Unused << bCoord;
     if (auto* prevBlock = static_cast<nsBlockFrame*>(GetPrevInFlow())) {
