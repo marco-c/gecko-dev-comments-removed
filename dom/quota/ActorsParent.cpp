@@ -3253,6 +3253,32 @@ QuotaManager::GetOrCreateTemporaryOriginDirectory(
   MOZ_ASSERT(IsTemporaryGroupInitializedInternal(aOriginMetadata));
   MOZ_ASSERT(IsTemporaryOriginInitializedInternal(aOriginMetadata));
 
+  
+  
+  
+  QM_TRY(
+      
+      MOZ_TO_RESULT(IsTemporaryOriginInitializedInternal(aOriginMetadata))
+          .mapErr([](const nsresult rv) { return NS_ERROR_NOT_INITIALIZED; }),
+      
+      QM_PROPAGATE,
+      
+      ([this, aOriginMetadata](const nsresult) {
+        MOZ_ALWAYS_SUCCEEDS(mOwningThread->Dispatch(
+            NS_NewRunnableFunction(
+                "QuotaManager::GetOrCreateTemporaryOriginDirectory",
+                [aOriginMetadata]() {
+                  QuotaManager* quotaManager = QuotaManager::Get();
+                  MOZ_ASSERT(quotaManager);
+
+                  OriginMetadataArray originMetadataArray;
+                  originMetadataArray.AppendElement(aOriginMetadata);
+
+                  quotaManager->NoteUninitializedOrigins(originMetadataArray);
+                }),
+            NS_DISPATCH_NORMAL));
+      }));
+
   QM_TRY_UNWRAP(auto directory, GetOriginDirectory(aOriginMetadata));
 
   QM_TRY_INSPECT(const bool& created, EnsureOriginDirectory(*directory));
