@@ -359,6 +359,7 @@ create_object(
 
 
     (void)nssToken_Destroy(object->token);
+    object->token = NULL;
     rvCachedObject->object = object;
     rvCachedObject->attributes = nss_ZNEWARRAY(arena, CK_ATTRIBUTE, numTypes);
     if (!rvCachedObject->attributes) {
@@ -579,7 +580,7 @@ get_token_objects_for_cache(
         for (j = 0; j < i; j++) {
             
 
-            nssToken_AddRef(cache->objects[objectType][j]->object->token);
+
             nssArena_Destroy(cache->objects[objectType][j]->arena);
         }
         nss_ZFreeIf(cache->objects[objectType]);

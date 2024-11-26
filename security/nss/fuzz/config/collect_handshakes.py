@@ -10,6 +10,7 @@ import dataclasses
 import hashlib
 import itertools
 import os
+import random
 import re
 import subprocess
 import sys
@@ -18,19 +19,12 @@ import threading
 EXTERNAL_PSK = "0x783666676F55306932745A32303354442B394A3271735A7A30714B464B645943"
 ECH_CONFIGS = "AEX+DQBBcQAgACDh4IuiuhhInUcKZx5uYcehlG9PQ1ZlzhvVZyjJl7dscQAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA="
 
-TSTCLNT_ARGS = [
+DEFAULT_TSTCLNT_ARGS = [
     "-o",  
     "-D",  
     "-Q",  
     "-b",  
     "-CCC",  
-    "--enable-rfc8701-grease",
-    "--enable-ch-extension-permutation",
-    "--zlib-certificate-compression",
-    "-z",
-    EXTERNAL_PSK,
-    "-N",
-    ECH_CONFIGS,
 ]
 
 NS_CERT_HEADER = "-----BEGIN CERTIFICATE-----"
@@ -84,16 +78,64 @@ def parse_tstclnt_output(output):
     return hs_data
 
 
+def get_random_tstclnt_args():
+    tstclnt_args = []
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-N", ECH_CONFIGS]
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-z", EXTERNAL_PSK]
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-u"]
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-U"]
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-B"]
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-G"]
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-Z"]
+
+    
+    if random.randint(0, 1):
+        tstclnt_args += ["-e"]
+
+    if random.randint(0, 1):
+        tstclnt_args += ["--enable-rfc8701-grease"]
+
+    if random.randint(0, 1):
+        tstclnt_args += ["--enable-ch-extension-permutation"]
+
+    if random.randint(0, 1):
+        tstclnt_args += ["--zlib-certificate-compression"]
+
+    return tstclnt_args
+
+
 def brrrrr(hosts, args):
     tstclnt_bin = os.path.join(args.nss_build, "bin/tstclnt")
     ld_libary_path = os.path.join(args.nss_build, "lib")
 
     for host in hosts:
+        tstclnt_args = get_random_tstclnt_args()
         try:
             result = subprocess.run([
                 "strace", "-f", "-x", "-s", "65535", "-e", "trace=network",
                 tstclnt_bin, "-h", host
-            ] + TSTCLNT_ARGS,
+            ] + DEFAULT_TSTCLNT_ARGS + tstclnt_args,
                                     env={
                                         "LD_LIBRARY_PATH": ld_libary_path,
                                     },
@@ -130,10 +172,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--nss-build",
                         required=True,
+                        type=str,
                         help="e.g. /path/to/dist/Debug")
-    parser.add_argument("--hosts", required=True)
+    parser.add_argument("--hosts", required=True, type=str)
     parser.add_argument("--threads", required=True, type=int)
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--output", required=True, type=str)
 
     args = parser.parse_args()
 
