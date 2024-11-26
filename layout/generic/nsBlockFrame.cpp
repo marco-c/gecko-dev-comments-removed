@@ -661,18 +661,28 @@ Maybe<nscoord> nsBlockFrame::GetNaturalBaselineBOffset(
 }
 
 nscoord nsBlockFrame::GetCaretBaseline() const {
-  const auto wm = GetWritingMode();
+  nsRect contentRect = GetContentRect();
+  nsMargin bp = GetUsedBorderAndPadding();
+
   if (!mLines.empty()) {
     ConstLineIterator line = LinesBegin();
     if (!line->IsEmpty()) {
       if (line->IsBlock()) {
-        return GetLogicalUsedBorderAndPadding(wm).BStart(wm) +
-               line->mFirstChild->GetCaretBaseline();
+        return bp.top + line->mFirstChild->GetCaretBaseline();
       }
       return line->BStart() + line->GetLogicalAscent();
     }
   }
-  return GetFontMetricsDerivedCaretBaseline(ContentBSize(wm));
+
+  float inflation = nsLayoutUtils::FontSizeInflationFor(this);
+  RefPtr<nsFontMetrics> fm =
+      nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
+  nscoord lineHeight = ReflowInput::CalcLineHeight(
+      *Style(), PresContext(), GetContent(), contentRect.height, inflation);
+  const WritingMode wm = GetWritingMode();
+  return nsLayoutUtils::GetCenteredFontBaseline(fm, lineHeight,
+                                                wm.IsLineInverted()) +
+         bp.top;
 }
 
 
@@ -2987,8 +2997,8 @@ static void DumpLine(const BlockReflowState& aState, nsLineBox* aLine,
 #endif
 }
 
-bool nsBlockFrame::LinesAreEmpty() const {
-  for (const auto& line : mLines) {
+static bool LinesAreEmpty(const nsLineList& aList) {
+  for (const auto& line : aList) {
     if (!line.IsEmpty()) {
       return false;
     }
@@ -3708,7 +3718,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
     }
   }
 
-  if (LinesAreEmpty() && ShouldHaveLineIfEmpty()) {
+  if (LinesAreEmpty(mLines) && ShouldHaveLineIfEmpty()) {
     aState.mBCoord += aState.mMinLineHeight;
   }
 
@@ -4093,7 +4103,7 @@ bool nsBlockFrame::IsEmpty() {
     return false;
   }
 
-  return LinesAreEmpty();
+  return LinesAreEmpty(mLines);
 }
 
 bool nsBlockFrame::ShouldApplyBStartMargin(BlockReflowState& aState,
@@ -4969,9 +4979,26 @@ void nsBlockFrame::DoReflowInlineFrames(
   
   aLine->EnableResizeReflowOptimization();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto collapseEmptyInlineFramesInLine =
+      HasOutsideMarker() ||
+              (Style()->IsAnonBox() &&
+               Style()->GetPseudoType() != PseudoStyleType::scrolledContent)
+          ? CollapseEmptyInlineFramesInLine::Preserve
+          : CollapseEmptyInlineFramesInLine::Collapse;
+
   aLineLayout.BeginLineReflow(iStart, aState.mBCoord, availISize, availBSize,
                               aFloatAvailableSpace.HasFloats(),
-                              false , lineWM,
+                              false ,
+                              collapseEmptyInlineFramesInLine, lineWM,
                               aState.mContainerSize, aState.mInsetForBalance);
 
   aState.mFlags.mIsLineLayoutEmpty = false;

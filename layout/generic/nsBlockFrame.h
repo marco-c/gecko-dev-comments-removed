@@ -230,7 +230,6 @@ class nsBlockFrame : public nsContainerFrame {
   bool IsEmpty() override;
   bool CachedIsEmpty() override;
   bool IsSelfEmpty() override;
-  bool LinesAreEmpty() const;
 
   
   

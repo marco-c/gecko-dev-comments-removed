@@ -1799,17 +1799,6 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  nscoord GetFontMetricsDerivedCaretBaseline(
-      nscoord aBSize = NS_UNCONSTRAINEDSIZE) const;
-
-  
 
 
 
@@ -2622,11 +2611,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual nsIFrame* LastInFlow() const { return const_cast<nsIFrame*>(this); }
-
-  
-
-
-  nsIFrame* FindLineContainer() const;
 
   
 

@@ -20,6 +20,18 @@
 class nsFloatManager;
 struct nsStyleText;
 
+
+
+
+
+
+
+
+enum class CollapseEmptyInlineFramesInLine {
+  Preserve,
+  Collapse,
+};
+
 class nsLineLayout {
   using BlockReflowState = mozilla::BlockReflowState;
   using ReflowInput = mozilla::ReflowInput;
@@ -49,13 +61,14 @@ class nsLineLayout {
 
   int32_t GetLineNumber() const { return mLineNumber; }
 
-  void BeginLineReflow(nscoord aICoord, nscoord aBCoord, nscoord aISize,
-                       nscoord aBSize, bool aImpactedByFloats,
-                       bool aIsTopOfPage, mozilla::WritingMode aWritingMode,
-                       const nsSize& aContainerSize,
-                       
-                       
-                       nscoord aInset = 0);
+  void BeginLineReflow(
+      nscoord aICoord, nscoord aBCoord, nscoord aISize, nscoord aBSize,
+      bool aImpactedByFloats, bool aIsTopOfPage,
+      CollapseEmptyInlineFramesInLine aCollapseEmptyInlineFramesInLine,
+      mozilla::WritingMode aWritingMode, const nsSize& aContainerSize,
+      
+      
+      nscoord aInset = 0);
 
   
 
@@ -497,6 +510,7 @@ class nsLineLayout {
     mozilla::WritingMode mWritingMode;
     bool mContainsFloat;
     bool mHasNonemptyContent;
+    bool mDoCollapseEmptyInlineFramesInLine;
 
     nscoord mIStart;
     nscoord mICoord;
