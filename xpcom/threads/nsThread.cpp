@@ -1076,6 +1076,10 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     DoMainThreadSpecificProcessing();
   }
 
+#ifdef DEBUG
+  BlockingResourceBase::AssertSafeToProcessEventLoop();
+#endif
+
   ++mNestedEventLoopDepth;
 
   
