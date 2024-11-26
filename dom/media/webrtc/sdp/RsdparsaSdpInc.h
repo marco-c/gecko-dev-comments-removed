@@ -194,15 +194,6 @@ struct RustSdpAttributeImageAttr {
   RustSdpAttributeImageAttrSetList recv;
 };
 
-struct RustAv1FmtpParameters {
-  uint8_t profile;
-  bool has_profile;
-  uint8_t level_idx;
-  bool has_level_idx;
-  uint8_t tier;
-  bool has_tier;
-};
-
 struct RustRtxFmtpParameters {
   uint8_t apt;
   bool has_rtx_time;
@@ -237,9 +228,6 @@ struct RustSdpAttributeFmtpParameters {
 
   
   StringView dtmf_tones;
-
-  
-  RustAv1FmtpParameters av1;
 
   
   RustRtxFmtpParameters rtx;

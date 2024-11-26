@@ -183,8 +183,9 @@ const statsExpectedByType = {
       "transportId",
       "mimeType",
       "clockRate",
+      "sdpFmtpLine",
     ],
-    optional: ["codecType", "channels", "sdpFmtpLine"],
+    optional: ["codecType", "channels"],
     unimplemented: [],
     deprecated: [],
   },
@@ -903,7 +904,7 @@ function pedanticChecks(report) {
       
       
       const mimeType = report.get(stat.codecId).mimeType;
-      if (mimeType.includes("VP") || mimeType.includes("AV1")) {
+      if (mimeType.includes("VP")) {
         ok(
           stat.qpSum >= 0,
           `${stat.type}.qpSum is a sane number (${stat.kind}) ` +
@@ -1126,9 +1127,6 @@ function pedanticChecks(report) {
             `codec.payloadType for H264 was ${stat.payloadType}, exp. 97, 126, 103, or 105`
           );
           break;
-        case "video/AV1":
-          is(stat.payloadType, 99, "codec.payloadType for AV1");
-          break;
         default:
           ok(
             false,
@@ -1151,10 +1149,7 @@ function pedanticChecks(report) {
 
       
       
-      
-      if (stat.mimeType != "video/AV1") {
-        ok(stat.sdpFmtpLine, "codec.sdp FmtpLine is set");
-      }
+      ok(stat.sdpFmtpLine, "codec.sdpFmtpLine is set");
       const opusParams = [
         "maxplaybackrate",
         "maxaveragebitrate",
@@ -1177,21 +1172,9 @@ function pedanticChecks(report) {
         "max-br",
         "max-mbps",
       ];
-      
-      
-      const av1Params = ["profile", "level-idx", "tier"];
-      
-      for (const param of (stat.sdpFmtpLine || "").split(";")) {
+      for (const param of stat.sdpFmtpLine.split(";")) {
         const [key, value] = param.split("=");
-        if (stat.payloadType == 99) {
-          
-          if (key) {
-            ok(
-              av1Params.includes(key),
-              `codec.sdpFmtpLine param ${key}=${value} for AV1`
-            );
-          }
-        } else if (stat.payloadType == 109) {
+        if (stat.payloadType == 109) {
           ok(
             opusParams.includes(key),
             `codec.sdpFmtpLine param ${key}=${value} for opus`

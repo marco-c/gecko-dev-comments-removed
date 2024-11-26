@@ -445,9 +445,7 @@ const sdp_namearray_t sdp_fmtp_codec_param[SDP_MAX_FMTP_PARAM] =
     {"max-fr",                          sizeof("max-fr")}, 
     {"maxplaybackrate",                 sizeof("maxplaybackrate")}, 
     {"apt",                             sizeof("apt")}, 
-    {"rtx-time",                         sizeof("rtx-time")}, 
-    {"level-idx",                        sizeof("level-idx")}, 
-    {"tier",                             sizeof("tier")}, 
+    {"rtx-time",                         sizeof("rtx-time")} 
 } ;
 
 

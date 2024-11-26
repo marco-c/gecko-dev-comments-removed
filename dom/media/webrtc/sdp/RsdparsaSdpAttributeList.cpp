@@ -4,7 +4,6 @@
 
 
 
-#include "SdpAttribute.h"
 #include "nsCRT.h"
 
 #include "sdp/RsdparsaSdpAttributeList.h"
@@ -797,21 +796,6 @@ void RsdparsaSdpAttributeList::LoadFmtp(RustAttributeList* attributeList) {
 
       fmtpParameters.reset(
           new SdpFmtpAttributeList::RtxParameters(rtxParameters));
-    } else if (codecName == "AV1") {
-      SdpFmtpAttributeList::Av1Parameters av1Parameters;
-
-      av1Parameters.profile = rustFmtpParameters.av1.has_profile
-                                  ? Some(rustFmtpParameters.av1.profile)
-                                  : Nothing();
-      av1Parameters.levelIdx = rustFmtpParameters.av1.has_level_idx
-                                   ? Some(rustFmtpParameters.av1.level_idx)
-                                   : Nothing();
-      av1Parameters.tier = rustFmtpParameters.av1.has_tier
-                               ? Some(rustFmtpParameters.av1.tier)
-                               : Nothing();
-      fmtpParameters.reset(
-          new SdpFmtpAttributeList::Av1Parameters(av1Parameters));
-
     } else {
       
       continue;

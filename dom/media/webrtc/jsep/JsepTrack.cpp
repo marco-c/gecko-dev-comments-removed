@@ -480,12 +480,6 @@ void JsepTrack::MaybeStoreCodecToLog(const std::string& codec,
 std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
     const SdpMediaSection& remote, bool remoteIsOffer,
     Maybe<const SdpMediaSection&> local) {
-  
-  
-  
-  
-  
-
   std::vector<UniquePtr<JsepCodecDescription>> negotiatedCodecs;
   std::vector<UniquePtr<JsepCodecDescription>> newPrototypeCodecs;
   
