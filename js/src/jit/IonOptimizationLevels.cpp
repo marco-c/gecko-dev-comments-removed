@@ -19,9 +19,24 @@ using namespace js::jit;
 namespace js {
 namespace jit {
 
-uint32_t OptimizationInfo::compilerWarmUpThreshold(JSContext* cx,
-                                                   JSScript* script,
-                                                   jsbytecode* pc) const {
+
+uint32_t OptimizationInfo::baseWarmUpThresholdForScript(JSContext* cx,
+                                                        JSScript* script) {
+  
+  if (cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+    JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+    uint32_t hintThreshold;
+    if (jitHints->getIonThresholdHint(script, hintThreshold)) {
+      return hintThreshold;
+    }
+  }
+  return JitOptions.normalIonWarmUpThreshold;
+}
+
+
+uint32_t OptimizationInfo::warmUpThresholdForPC(JSScript* script,
+                                                jsbytecode* pc,
+                                                uint32_t baseThreshold) {
   MOZ_ASSERT(pc == nullptr || pc == script->code() ||
              JSOp(*pc) == JSOp::LoopHead);
 
@@ -29,16 +44,7 @@ uint32_t OptimizationInfo::compilerWarmUpThreshold(JSContext* cx,
   
   MOZ_ASSERT_IF(pc && JSOp(*pc) == JSOp::LoopHead, pc > script->code());
 
-  uint32_t warmUpThreshold = baseCompilerWarmUpThreshold();
-
-  
-  if (cx->runtime()->jitRuntime()->hasJitHintsMap()) {
-    JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
-    uint32_t hintThreshold;
-    if (jitHints->getIonThresholdHint(script, hintThreshold)) {
-      warmUpThreshold = hintThreshold;
-    }
-  }
+  uint32_t warmUpThreshold = baseThreshold;
 
   if (pc == script->code()) {
     pc = nullptr;
@@ -69,36 +75,16 @@ uint32_t OptimizationInfo::compilerWarmUpThreshold(JSContext* cx,
   
   uint32_t loopDepth = LoopHeadDepthHint(pc);
   MOZ_ASSERT(loopDepth > 0);
-  return warmUpThreshold + loopDepth * (baseCompilerWarmUpThreshold() / 10);
-}
-
-uint32_t OptimizationInfo::recompileWarmUpThreshold(JSContext* cx,
-                                                    JSScript* script,
-                                                    jsbytecode* pc) const {
-  MOZ_ASSERT(pc == script->code() || JSOp(*pc) == JSOp::LoopHead);
-
-  uint32_t threshold = compilerWarmUpThreshold(cx, script, pc);
-  if (JSOp(*pc) != JSOp::LoopHead || JitOptions.eagerIonCompilation()) {
-    return threshold;
-  }
-
-  
-  
-  
-  
-  
-
-  uint32_t loopDepth = LoopHeadDepthHint(pc);
-  MOZ_ASSERT(loopDepth > 0);
-  return threshold + loopDepth * (baseCompilerWarmUpThreshold() / 10);
+  return warmUpThreshold + loopDepth * (baseThreshold / 10);
 }
 
 OptimizationLevel OptimizationLevelInfo::levelForScript(JSContext* cx,
                                                         JSScript* script,
                                                         jsbytecode* pc) const {
-  const OptimizationInfo* info = get(OptimizationLevel::Normal);
+  uint32_t baseThreshold =
+      OptimizationInfo::baseWarmUpThresholdForScript(cx, script);
   if (script->getWarmUpCount() <
-      info->compilerWarmUpThreshold(cx, script, pc)) {
+      OptimizationInfo::warmUpThresholdForPC(script, pc, baseThreshold)) {
     return OptimizationLevel::DontCompile;
   }
 
