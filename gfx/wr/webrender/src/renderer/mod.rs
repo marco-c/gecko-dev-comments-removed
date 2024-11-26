@@ -54,11 +54,11 @@ use crate::batch::{AlphaBatchContainer, BatchKind, BatchFeatures, BatchTextures,
 use crate::batch::ClipMaskInstanceList;
 #[cfg(any(feature = "capture", feature = "replay"))]
 use crate::capture::{CaptureConfig, ExternalCaptureImage, PlainExternalImage};
-use crate::composite::{CompositeState, CompositeTileSurface, ResolvedExternalSurface, CompositorSurfaceTransform};
+use crate::composite::{CompositeState, CompositeTileSurface, CompositorInputLayer, CompositorSurfaceTransform, ResolvedExternalSurface};
 use crate::composite::{CompositorKind, Compositor, NativeTileId, CompositeFeatures, CompositeSurfaceFormat, ResolvedExternalSurfaceColorData};
 use crate::composite::{CompositorConfig, NativeSurfaceOperationDetails, NativeSurfaceId, NativeSurfaceOperation};
 use crate::composite::TileKind;
-use crate::{debug_colors, Compositor2, CompositorInputConfig};
+use crate::{debug_colors, Compositor2, CompositorInputConfig, CompositorSurfaceUsage};
 use crate::device::{DepthFunction, Device, DrawTarget, ExternalTexture, GpuFrameId, UploadPBOPool};
 use crate::device::{ReadTarget, ShaderError, Texture, TextureFilter, TextureFlags, TextureSlot, Texel};
 use crate::device::query::{GpuSampler, GpuTimer};
@@ -264,6 +264,15 @@ const GPU_TAG_COMPOSITE: GpuProfileTag = GpuProfileTag {
     label: "Composite",
     color: debug_colors::TOMATO,
 };
+
+#[derive(Debug)]
+
+
+struct SwapChainLayer {
+    opaque_items: Vec<occlusion::Item<usize>>,
+    alpha_items: Vec<occlusion::Item<usize>>,
+    clear_tiles: Vec<occlusion::Item<usize>>,
+}
 
 
 
@@ -3333,11 +3342,12 @@ impl Renderer {
         &mut self,
         composite_state: &CompositeState,
         draw_target: DrawTarget,
+        clear_color: ColorF,
         projection: &default::Transform3D<f32>,
         results: &mut RenderResults,
         partial_present_mode: Option<PartialPresentMode>,
         occlusion: &occlusion::FrontToBackBuilder<usize>,
-        clear_tiles: &[occlusion::Item<usize>],
+        layer: &SwapChainLayer,
     ) {
         self.device.bind_draw_target(draw_target);
         self.device.disable_depth_write();
@@ -3355,7 +3365,7 @@ impl Renderer {
         }
 
         
-        let clear_color = Some(self.clear_color.to_array());
+        let clear_color = Some(clear_color.to_array());
 
         match partial_present_mode {
             Some(PartialPresentMode::Single { dirty_rect }) => {
@@ -3378,11 +3388,12 @@ impl Renderer {
             }
         }
 
-        if !occlusion.opaque_items().is_empty() {
+        
+        if !layer.opaque_items.is_empty() {
             let opaque_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_OPAQUE);
             self.set_blend(false, FramebufferKind::Main);
             self.draw_tile_list(
-                occlusion.opaque_items().iter(),
+                layer.opaque_items.iter(),
                 &composite_state,
                 &composite_state.external_surfaces,
                 projection,
@@ -3391,12 +3402,13 @@ impl Renderer {
             self.gpu_profiler.finish_sampler(opaque_sampler);
         }
 
-        if !clear_tiles.is_empty() {
+        
+        if !layer.clear_tiles.is_empty() {
             let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
             self.set_blend(true, FramebufferKind::Main);
             self.device.set_blend_mode_premultiplied_dest_out();
             self.draw_tile_list(
-                clear_tiles.iter(),
+                layer.clear_tiles.iter(),
                 &composite_state,
                 &composite_state.external_surfaces,
                 projection,
@@ -3406,12 +3418,12 @@ impl Renderer {
         }
 
         
-        if !occlusion.alpha_items().is_empty() {
+        if !layer.alpha_items.is_empty() {
             let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
             self.set_blend(true, FramebufferKind::Main);
             self.set_blend_mode_premultiplied_alpha(FramebufferKind::Main);
             self.draw_tile_list(
-                occlusion.alpha_items().iter().rev(),
+                layer.alpha_items.iter(),
                 &composite_state,
                 &composite_state.external_surfaces,
                 projection,
@@ -3428,7 +3440,7 @@ impl Renderer {
     fn composite_simple(
         &mut self,
         composite_state: &CompositeState,
-        draw_target: DrawTarget,
+        fb_draw_target: DrawTarget,
         projection: &default::Transform3D<f32>,
         results: &mut RenderResults,
         partial_present_mode: Option<PartialPresentMode>,
@@ -3436,7 +3448,11 @@ impl Renderer {
         let _gm = self.gpu_profiler.start_marker("framebuffer");
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
 
+        let mut input_layers: Vec<CompositorInputLayer> = Vec::new();
+        let mut swapchain_layers = Vec::new();
         let cap = composite_state.tiles.len();
+        let mut occlusion = occlusion::FrontToBackBuilder::with_capacity(cap, cap);
+        let mut clear_tiles = Vec::new();
 
         
         
@@ -3444,9 +3460,6 @@ impl Renderer {
             .iter()
             .filter(|tile| tile.kind != TileKind::Clear).count();
         self.profile.set(profiler::PICTURE_TILES, num_tiles);
-
-        let mut occlusion = occlusion::FrontToBackBuilder::with_capacity(cap, cap);
-        let mut clear_tiles = Vec::new();
 
         for (idx, tile) in composite_state.tiles.iter().enumerate() {
             
@@ -3477,42 +3490,186 @@ impl Renderer {
                 continue;
             }
 
-            if tile.kind == TileKind::Clear {
-                
-                
-                
-                
-                clear_tiles.push(occlusion::Item { rectangle: rect, key: idx });
-                continue;
+            
+            
+            match tile.kind {
+                TileKind::Opaque | TileKind::Alpha => {
+                    
+                    occlusion.add(&rect, is_opaque, idx); 
+                }
+                TileKind::Clear => {
+                    
+                    
+                    
+                    
+                    clear_tiles.push(occlusion::Item { rectangle: rect, key: idx });
+                }
+            }
+        }
+
+        assert_eq!(swapchain_layers.len(), input_layers.len());
+
+        for item in occlusion.opaque_items().iter().chain(occlusion.alpha_items().iter().rev()) {
+            let tile = &composite_state.tiles[item.key];
+
+            
+            let is_opaque = tile.kind != TileKind::Alpha;
+
+            
+            let usage = match tile.surface {
+                CompositeTileSurface::Texture { .. } |
+                CompositeTileSurface::Color { .. } |
+                CompositeTileSurface::Clear => {
+                    CompositorSurfaceUsage::Content
+                }
+                CompositeTileSurface::ExternalSurface { .. } => {
+                    CompositorSurfaceUsage::Content
+                }
+            };
+
+            
+            let new_layer_kind = match input_layers.last() {
+                Some(curr_layer) => {
+                    match (curr_layer.usage, usage) {
+                        
+                        (CompositorSurfaceUsage::Content, CompositorSurfaceUsage::Content) => None,
+
+                        
+                        (CompositorSurfaceUsage::Content, CompositorSurfaceUsage::External) |
+                        (CompositorSurfaceUsage::External, CompositorSurfaceUsage::Content) |
+                        (CompositorSurfaceUsage::External, CompositorSurfaceUsage::External) => {
+                            
+                            self.compositor2.as_ref().map(|_| usage)
+                        }
+                    }
+                }
+                None => {
+                    
+                    Some(usage)
+                }
+            };
+
+            if let Some(new_layer_kind) = new_layer_kind {
+                let (rect, is_opaque) = match usage {
+                    CompositorSurfaceUsage::Content => {
+                        (fb_draw_target.dimensions().into(), input_layers.is_empty())
+                    }
+                    CompositorSurfaceUsage::External => {
+                        let rect = composite_state.get_device_rect(
+                            &tile.local_rect,
+                            tile.transform_index
+                        );
+
+                        (rect.to_i32(), is_opaque)
+                    }
+                };
+
+                input_layers.push(CompositorInputLayer {
+                    usage: new_layer_kind,
+                    is_opaque,
+                    rect,
+                });
+
+                swapchain_layers.push(SwapChainLayer {
+                    opaque_items: Vec::new(),
+                    alpha_items: Vec::new(),
+                    clear_tiles: Vec::new(),
+                })
             }
 
-            occlusion.add(&rect, is_opaque, idx);
+            let item = occlusion::Item {
+                rectangle: item.rectangle,
+                key: item.key,
+            };
+
+            let layer = swapchain_layers.last_mut().unwrap();
+            if is_opaque {
+                layer.opaque_items.push(item);
+            } else {
+                layer.alpha_items.push(item);
+            }
         }
 
         
         
         
+        if input_layers.is_empty() {
+            input_layers.push(CompositorInputLayer {
+                usage: CompositorSurfaceUsage::Content,
+                is_opaque: true,
+                rect: DeviceIntRect::zero(),
+            });
+
+            swapchain_layers.push(SwapChainLayer {
+                opaque_items: Vec::new(),
+                alpha_items: Vec::new(),
+                clear_tiles: Vec::new(),
+            })
+        }
+
+        
         if let Some(ref mut compositor) = self.compositor2 {
             let input = CompositorInputConfig {
-                framebuffer_size: draw_target.dimensions(),
+                layers: &input_layers,
+                framebuffer_size: fb_draw_target.dimensions(),
             };
 
             compositor.begin_frame(&input);
         }
 
-        
-        self.composite_pass(
-            composite_state,
-            draw_target,
-            projection,
-            results,
-            partial_present_mode,
-            &occlusion,
-            &clear_tiles,
-        );
+        for (layer_index, (layer, swapchain_layer)) in input_layers.iter().zip(swapchain_layers.iter()).enumerate() {
+            self.device.reset_state();
+
+            let clear_color = if layer_index == 0 {
+                self.clear_color
+            } else {
+                ColorF::TRANSPARENT
+            };
+
+            let draw_target = match self.compositor2 {
+                Some(ref mut compositor) => {
+                    compositor.bind_layer(layer_index);
+
+                    DrawTarget::NativeSurface {
+                        offset: -layer.rect.min,
+                        external_fbo_id: 0,
+                        dimensions: fb_draw_target.dimensions(),
+                    }
+                }
+                None => {
+                    fb_draw_target
+                }
+            };
+
+            
+
+            
+            self.composite_pass(
+                composite_state,
+                draw_target,
+                clear_color,
+                projection,
+                results,
+                partial_present_mode,
+                &occlusion,
+                swapchain_layer,
+            );
+
+            if let Some(ref mut compositor) = self.compositor2 {
+                compositor.present_layer(layer_index);
+            }
+        }
 
         
         if let Some(ref mut compositor) = self.compositor2 {
+            for (layer_index, layer) in input_layers.iter().enumerate() {
+                compositor.add_surface(
+                    layer_index,
+                    layer.rect,
+                    ImageRendering::Auto,
+                );
+            }
+
             compositor.end_frame();
         }
     }

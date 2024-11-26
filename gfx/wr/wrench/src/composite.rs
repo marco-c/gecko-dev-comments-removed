@@ -6,7 +6,7 @@ use std::os::raw::c_void;
 use std::ptr;
 
 use glutin::platform::windows::EGLContext;
-use webrender::{Compositor2, CompositorInputConfig, CompositorOutputConfig};
+use webrender::{Compositor2, CompositorInputConfig};
 use winit::platform::windows::WindowExtWindows;
 
 use crate::WindowWrapper;
@@ -37,10 +37,13 @@ extern "C" {
     fn wrc_new(d3d11_device: *const c_void, hwnd: *const c_void) -> CompositorHandle;
     fn wrc_delete(compositor: CompositorHandle);
 
-    fn wrc_create_layer(compositor: CompositorHandle, width: i32, height: i32) -> LayerId;
+    fn wrc_create_layer(compositor: CompositorHandle, width: i32, height: i32, is_opaque: bool) -> LayerId;
     fn wrc_get_layer_backbuffer(layer_id: LayerId) -> *mut c_void;
+    fn wrc_set_layer_position(layer_id: LayerId, x: f32, y: f32);
     fn wrc_present_layer(layer_id: LayerId);
+    fn wrc_add_layer(compositor: CompositorHandle, layer_id: LayerId);
 
+    fn wrc_begin_frame(compositor: CompositorHandle);
     fn wrc_end_frame(compositor: CompositorHandle);
 }
 
@@ -50,9 +53,9 @@ struct WrLayer {
     width: i32,
     height: i32,
     
-    layer_id: LayerId,
-    
     surface: EGLSurface,
+    
+    layer_id: LayerId,
 }
 
 impl WrLayer {
@@ -74,7 +77,7 @@ pub struct WrCompositor {
     
     compositor: CompositorHandle,
     
-    main_layer: WrLayer,
+    layers: Vec<WrLayer>,
 }
 
 impl WrCompositor {
@@ -99,7 +102,7 @@ impl WrCompositor {
             display,
             context,
             compositor,
-            main_layer: WrLayer::empty(),
+            layers: Vec::new(),
         }
     }
 }
@@ -120,98 +123,146 @@ impl Compositor2 for WrCompositor {
     fn begin_frame(
         &mut self,
         input: &CompositorInputConfig,
-    ) -> CompositorOutputConfig {
-        let output = CompositorOutputConfig {
-        };
-
-        
-        if self.main_layer.width != input.framebuffer_size.width ||
-           self.main_layer.height != input.framebuffer_size.height {
+    ) {
+        unsafe {
             
-            
-            assert_eq!(self.main_layer.layer_id, LayerId::INVALID);
-
-            
-            let layer_id = unsafe {
-                wrc_create_layer(self.compositor, input.framebuffer_size.width, input.framebuffer_size.height)
-            };
-
-            let pbuffer_attribs: [EGLint; 5] = [
-                egl::ffi::WIDTH as EGLint, input.framebuffer_size.width,
-                egl::ffi::HEIGHT as EGLint, input.framebuffer_size.height,
-                egl::ffi::NONE as EGLint,
-            ];
-
-            let attribs: [EGLint; 18] = [
-                egl::ffi::SURFACE_TYPE as EGLint, egl::ffi::WINDOW_BIT as EGLint,
-                egl::ffi::RED_SIZE as EGLint, 8,
-                egl::ffi::GREEN_SIZE as EGLint, 8,
-                egl::ffi::BLUE_SIZE as EGLint, 8,
-                egl::ffi::ALPHA_SIZE as EGLint, 8,
-                egl::ffi::RENDERABLE_TYPE as EGLint, egl::ffi::OPENGL_ES2_BIT as EGLint,
-                
-                egl::ffi::DEPTH_SIZE as EGLint, 24,
-                egl::ffi::STENCIL_SIZE as EGLint, 8,
-                egl::ffi::NONE as EGLint, egl::ffi::NONE as EGLint
-            ];
-
-            
-            let back_buffer = unsafe {
-                wrc_get_layer_backbuffer(layer_id)
-            };
-
-            
-            let mut egl_config = ptr::null();
-            let mut cfg_count = 0;
-
-            let ok = unsafe {
-                egl::ffi::ChooseConfig(self.display, attribs.as_ptr(), &mut egl_config, 1, &mut cfg_count)
-            };
-
-            assert_ne!(ok, 0);
-            assert_eq!(cfg_count, 1);
-            assert_ne!(egl_config, ptr::null());
-
-            let surface = unsafe {
-                egl::ffi::CreatePbufferFromClientBuffer(
-                    self.display,
-                    egl::ffi::D3D_TEXTURE_ANGLE,
-                    back_buffer,
-                    egl_config,
-                    pbuffer_attribs.as_ptr(),
-                )
-            };
-            assert_ne!(surface, ptr::null());
-
-            self.main_layer = WrLayer {
-                width: input.framebuffer_size.width,
-                height: input.framebuffer_size.height,
-                layer_id,
-                surface,
-            };
+            wrc_begin_frame(self.compositor);
         }
 
+        let prev_layer_count = self.layers.len();
+        let curr_layer_count = input.layers.len();
+
+        if prev_layer_count > curr_layer_count {
+            todo!();
+        } else if curr_layer_count > prev_layer_count {
+            
+            for _ in 0 .. curr_layer_count-prev_layer_count {
+                self.layers.push(WrLayer::empty());
+            }
+        }
+
+        assert_eq!(self.layers.len(), input.layers.len());
+
+        for (input, layer) in input.layers.iter().zip(self.layers.iter_mut()) {
+            let input_size = input.rect.size();
+
+            
+
+            
+            if input_size.width != layer.width ||
+                input_size.height != layer.height {
+                
+                
+                assert_eq!(layer.layer_id, LayerId::INVALID);
+
+                
+                layer.width = input_size.width;
+                layer.height = input_size.height;
+                layer.layer_id = unsafe {
+                    wrc_create_layer(self.compositor, layer.width, layer.height, input.is_opaque)
+                };
+
+                let pbuffer_attribs: [EGLint; 5] = [
+                    egl::ffi::WIDTH as EGLint, layer.width,
+                    egl::ffi::HEIGHT as EGLint, layer.height,
+                    egl::ffi::NONE as EGLint,
+                ];
+
+                let attribs: [EGLint; 18] = [
+                    egl::ffi::SURFACE_TYPE as EGLint, egl::ffi::WINDOW_BIT as EGLint,
+                    egl::ffi::RED_SIZE as EGLint, 8,
+                    egl::ffi::GREEN_SIZE as EGLint, 8,
+                    egl::ffi::BLUE_SIZE as EGLint, 8,
+                    egl::ffi::ALPHA_SIZE as EGLint, 8,
+                    egl::ffi::RENDERABLE_TYPE as EGLint, egl::ffi::OPENGL_ES2_BIT as EGLint,
+                    
+                    egl::ffi::DEPTH_SIZE as EGLint, 24,
+                    egl::ffi::STENCIL_SIZE as EGLint, 8,
+                    egl::ffi::NONE as EGLint, egl::ffi::NONE as EGLint
+                ];
+
+                
+                let back_buffer = unsafe {
+                    wrc_get_layer_backbuffer(layer.layer_id)
+                };
+
+                
+                let mut egl_config = ptr::null();
+                let mut cfg_count = 0;
+
+                let ok = unsafe {
+                    egl::ffi::ChooseConfig(self.display, attribs.as_ptr(), &mut egl_config, 1, &mut cfg_count)
+                };
+
+                assert_ne!(ok, 0);
+                assert_eq!(cfg_count, 1);
+                assert_ne!(egl_config, ptr::null());
+
+                let surface = unsafe {
+                    egl::ffi::CreatePbufferFromClientBuffer(
+                        self.display,
+                        egl::ffi::D3D_TEXTURE_ANGLE,
+                        back_buffer,
+                        egl_config,
+                        pbuffer_attribs.as_ptr(),
+                    )
+                };
+                assert_ne!(surface, ptr::null());
+
+                layer.surface = surface;
+            }
+
+            unsafe {
+                wrc_set_layer_position(
+                    layer.layer_id,
+                    input.rect.min.x as f32,
+                    input.rect.min.y as f32,
+                );
+            }
+        }
+    }
+
+    
+    fn bind_layer(&mut self, index: usize) {
         
+        let layer = &self.layers[index];
+
         let ok = unsafe {
             egl::ffi::MakeCurrent(
                 self.display,
-                self.main_layer.surface,
-                self.main_layer.surface,
+                layer.surface,
+                layer.surface,
                 self.context,
             )
         };
         assert!(ok != 0);
+    }
 
-        output
+    
+    fn present_layer(&mut self, index: usize) {
+        let layer = &self.layers[index];
+
+        unsafe {
+            wrc_present_layer(layer.layer_id);
+        }
+    }
+
+    fn add_surface(
+            &mut self,
+            index: usize,
+            _clip_rect: webrender::api::units::DeviceIntRect,
+            _image_rendering: webrender::api::ImageRendering,
+        ) {
+        let layer = &self.layers[index];
+
+        unsafe {
+            wrc_add_layer(self.compositor, layer.layer_id);
+        }
     }
 
     
     fn end_frame(&mut self) {
         unsafe {
-            
-            
-            wrc_present_layer(self.main_layer.layer_id);
-
             
             wrc_end_frame(self.compositor);
         }
