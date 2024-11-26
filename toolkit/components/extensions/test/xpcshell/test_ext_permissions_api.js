@@ -64,6 +64,7 @@ add_task(async function setup() {
     "tabHide",
     "tabs",
     "trialML",
+    "userScripts", 
     "webRequestAuthProvider",
     "webRequestBlocking",
     "webRequestFilterResponse",

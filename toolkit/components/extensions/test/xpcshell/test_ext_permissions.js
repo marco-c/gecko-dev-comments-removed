@@ -750,7 +750,6 @@ const GRANTED_WITHOUT_USER_PROMPT = [
   "telemetry",
   "theme",
   "unlimitedStorage",
-  "userScripts", 
   "webRequest",
   "webRequestAuthProvider",
   "webRequestBlocking",
