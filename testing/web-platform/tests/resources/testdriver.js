@@ -58,7 +58,35 @@
 
 
 
+            
 
+
+            bluetooth: {
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_adapter: function (params) {
+                    return window.test_driver_internal.bidi.bluetooth.simulate_adapter(params);
+                }
+            },
             
 
 
@@ -1287,6 +1315,12 @@
         in_automation: false,
 
         bidi: {
+            bluetooth: {
+                simulate_adapter: function () {
+                    throw new Error(
+                        "bidi.bluetooth.simulate_adapter is not implemented by testdriver-vendor.js");
+                }
+            },
             log: {
                 entry_added: {
                     async subscribe() {
