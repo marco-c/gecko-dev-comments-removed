@@ -25,20 +25,28 @@ nsresult nsTreeUtils::TokenizeProperties(const nsAString& aProperties,
 
   do {
     
-    while (iter != end && nsCRT::IsAsciiSpace(*iter)) ++iter;
+    while (iter != end && nsCRT::IsAsciiSpace(*iter)) {
+      ++iter;
+    }
 
     
-    if (iter == end) break;
+    if (iter == end) {
+      break;
+    }
 
     
     nsAString::const_iterator first = iter;
 
     
-    while (iter != end && !nsCRT::IsAsciiSpace(*iter)) ++iter;
+    while (iter != end && !nsCRT::IsAsciiSpace(*iter)) {
+      ++iter;
+    }
 
     
     NS_ASSERTION(iter != first, "eh? something's wrong here");
-    if (iter == first) break;
+    if (iter == first) {
+      break;
+    }
 
     RefPtr<nsAtom> atom = NS_Atomize(Substring(first, iter));
     aPropertiesArray.AppendElement(atom);
