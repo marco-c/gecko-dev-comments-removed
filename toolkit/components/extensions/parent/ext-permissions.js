@@ -6,6 +6,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+  Schemas: "resource://gre/modules/Schemas.sys.mjs",
 });
 
 var { ExtensionError } = ExtensionUtils;
@@ -15,6 +16,15 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "promptsEnabled",
   "extensions.webextOptionalPermissionPrompts"
 );
+
+ChromeUtils.defineLazyGetter(this, "OPTIONAL_ONLY_PERMISSIONS", () => {
+  
+  
+  
+  
+  
+  return new Set(Schemas.getPermissionNames(["OptionalOnlyPermission"]));
+});
 
 function normalizePermissions(perms) {
   perms = { ...perms };
@@ -83,6 +93,14 @@ this.permissions = class extends ExtensionAPIPersistent {
             if (!optionalPermissions.includes(perm)) {
               throw new ExtensionError(
                 `Cannot request permission ${perm} since it was not declared in optional_permissions`
+              );
+            }
+            if (
+              OPTIONAL_ONLY_PERMISSIONS.has(perm) &&
+              (permissions.length > 1 || origins.length)
+            ) {
+              throw new ExtensionError(
+                `Cannot request permission ${perm} with another permission`
               );
             }
           }
