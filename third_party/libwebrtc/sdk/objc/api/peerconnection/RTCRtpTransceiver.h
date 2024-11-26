@@ -47,6 +47,7 @@ RTC_OBJC_EXPORT
 
 @class RTC_OBJC_TYPE(RTCRtpTransceiver);
 @class RTC_OBJC_TYPE(RTCRtpCodecCapability);
+@class RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability);
 
 
 
@@ -111,6 +112,17 @@ RTC_OBJC_EXPORT
 
 
 
+@property(nonatomic, readonly, copy)
+    NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *> *headerExtensionsToNegotiate;
+@property(nonatomic, readonly, copy)
+    NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *> *negotiatedHeaderExtensions;
+
+
+
+
+
+
+
 - (BOOL)currentDirection:(RTCRtpTransceiverDirection *)currentDirectionOut;
 
 
@@ -129,6 +141,14 @@ RTC_OBJC_EXPORT
 
 - (void)setCodecPreferences:(NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *_Nullable)codecs
     RTC_OBJC_DEPRECATED("Use setCodecPreferences:error: instead.");
+
+
+
+
+
+- (BOOL)setHeaderExtensionsToNegotiate:
+            (NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *> *)extensions
+                                 error:(NSError **)error;
 
 
 
