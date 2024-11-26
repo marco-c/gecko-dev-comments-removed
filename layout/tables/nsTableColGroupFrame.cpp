@@ -141,14 +141,17 @@ void nsTableColGroupFrame::DidSetComputedStyle(
     ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
-  if (!aOldComputedStyle)  
+  if (!aOldComputedStyle) {  
     return;
+  }
 
   nsTableFrame* tableFrame = GetTableFrame();
   if (tableFrame->IsBorderCollapse() &&
       tableFrame->BCRecalcNeeded(aOldComputedStyle, Style())) {
     int32_t colCount = GetColCount();
-    if (!colCount) return;  
+    if (!colCount) {
+      return;  
+    }
     TableArea damageArea(GetFirstColumn()->GetColIndex(), 0, colCount,
                          tableFrame->GetRowCount());
     tableFrame->AddBCDamageArea(damageArea);
@@ -259,8 +262,9 @@ void nsTableColGroupFrame::RemoveChild(DestroyContext& aContext,
       ResetColIndices(this, colIndex, nextChild);
     } else {
       nsIFrame* nextGroup = GetNextSibling();
-      if (nextGroup)  
+      if (nextGroup) {  
         ResetColIndices(nextGroup, colIndex);
+      }
     }
   }
 
@@ -431,7 +435,9 @@ nsresult nsTableColGroupFrame::GetFrameName(nsAString& aResult) const {
 
 void nsTableColGroupFrame::Dump(int32_t aIndent) {
   char* indent = new char[aIndent + 1];
-  if (!indent) return;
+  if (!indent) {
+    return;
+  }
   for (int32_t i = 0; i < aIndent + 1; i++) {
     indent[i] = ' ';
   }

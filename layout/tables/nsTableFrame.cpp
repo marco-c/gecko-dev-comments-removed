@@ -439,10 +439,11 @@ int32_t nsTableFrame::GetEffectiveRowSpan(const nsTableCellFrame& aCell,
   uint32_t colIndex = aCell.ColIndex();
   uint32_t rowIndex = aCell.RowIndex();
 
-  if (aCellMap)
+  if (aCellMap) {
     return aCellMap->GetRowSpan(rowIndex, colIndex, true);
-  else
+  } else {
     return tableCellMap->GetEffectiveRowSpan(rowIndex, colIndex);
+  }
 }
 
 int32_t nsTableFrame::GetEffectiveColSpan(const nsTableCellFrame& aCell,
@@ -453,10 +454,11 @@ int32_t nsTableFrame::GetEffectiveColSpan(const nsTableCellFrame& aCell,
   uint32_t colIndex = aCell.ColIndex();
   uint32_t rowIndex = aCell.RowIndex();
 
-  if (aCellMap)
+  if (aCellMap) {
     return aCellMap->GetEffectiveColSpan(*tableCellMap, rowIndex, colIndex);
-  else
+  } else {
     return tableCellMap->GetEffectiveColSpan(rowIndex, colIndex);
+  }
 }
 
 bool nsTableFrame::HasMoreThanOneCell(int32_t aRowIndex) const {
@@ -740,11 +742,14 @@ void nsTableFrame::MatchCellMapToColCache(nsTableCellMap* aCellMap) {
 void nsTableFrame::DidResizeColumns() {
   MOZ_ASSERT(!GetPrevInFlow(), "should only be called on first-in-flow");
 
-  if (mBits.mResizedColumns) return;  
+  if (mBits.mResizedColumns) {
+    return;  
+  }
 
   for (nsTableFrame* f = this; f;
-       f = static_cast<nsTableFrame*>(f->GetNextInFlow()))
+       f = static_cast<nsTableFrame*>(f->GetNextInFlow())) {
     f->mBits.mResizedColumns = true;
+  }
 }
 
 void nsTableFrame::AppendCell(nsTableCellFrame& aCellFrame, int32_t aRowIndex) {
@@ -954,7 +959,9 @@ void nsTableFrame::AddDeletedRowIndex(int32_t aDeletedRowStoredIndex) {
 }
 
 int32_t nsTableFrame::GetAdjustmentForStoredIndex(int32_t aStoredIndex) {
-  if (mDeletedRowIndexRanges.empty()) return 0;
+  if (mDeletedRowIndexRanges.empty()) {
+    return 0;
+  }
 
   int32_t adjustment = 0;
 
@@ -1993,22 +2000,26 @@ nscoord nsTableFrame::GetCollapsedISize(const WritingMode aWM,
 void nsTableFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
-  if (!aOldComputedStyle)  
+  if (!aOldComputedStyle) {  
     return;
+  }
 
   if (IsBorderCollapse() && BCRecalcNeeded(aOldComputedStyle, Style())) {
     SetFullBCDamageArea();
   }
 
   
-  if (!mTableLayoutStrategy || GetPrevInFlow()) return;
+  if (!mTableLayoutStrategy || GetPrevInFlow()) {
+    return;
+  }
 
   bool isAuto = IsAutoLayout();
   if (isAuto != (LayoutStrategy()->GetType() == nsITableLayoutStrategy::Auto)) {
-    if (isAuto)
+    if (isAuto) {
       mTableLayoutStrategy = MakeUnique<BasicTableLayoutStrategy>(this);
-    else
+    } else {
       mTableLayoutStrategy = MakeUnique<FixedTableLayoutStrategy>(this);
+    }
   }
 }
 
@@ -2350,7 +2361,9 @@ void nsTableFrame::RemoveFrame(DestroyContext& aContext, ChildListID aListID,
 
 
 nsMargin nsTableFrame::GetUsedBorder() const {
-  if (!IsBorderCollapse()) return nsContainerFrame::GetUsedBorder();
+  if (!IsBorderCollapse()) {
+    return nsContainerFrame::GetUsedBorder();
+  }
 
   WritingMode wm = GetWritingMode();
   return GetOuterBCBorder(wm).GetPhysicalMargin(wm);
@@ -2358,7 +2371,9 @@ nsMargin nsTableFrame::GetUsedBorder() const {
 
 
 nsMargin nsTableFrame::GetUsedPadding() const {
-  if (!IsBorderCollapse()) return nsContainerFrame::GetUsedPadding();
+  if (!IsBorderCollapse()) {
+    return nsContainerFrame::GetUsedPadding();
+  }
 
   return nsMargin(0, 0, 0, 0);
 }
@@ -3473,7 +3488,9 @@ nscoord nsTableFrame::CalcBorderBoxBSize(const ReflowInput& aReflowInput,
 }
 
 bool nsTableFrame::IsAutoLayout() {
-  if (StyleTable()->mLayoutStrategy == StyleTableLayout::Auto) return true;
+  if (StyleTable()->mLayoutStrategy == StyleTableLayout::Auto) {
+    return true;
+  }
   
   
   
@@ -4231,7 +4248,9 @@ void BCMapCellIterator::PeekBEnd(const BCMapCellInfo& aRefInfo,
         nextRow = rg->GetFirstRow();
       }
     } while (rg && !nextRow);
-    if (!rg) return;
+    if (!rg) {
+      return;
+    }
   } else {
     
     nextRow = mRow;
@@ -4376,9 +4395,12 @@ bool nsTableFrame::BCRecalcNeeded(ComputedStyle* aOldComputedStyle,
   const nsStyleBorder* oldStyleData = aOldComputedStyle->StyleBorder();
   const nsStyleBorder* newStyleData = aNewComputedStyle->StyleBorder();
   nsChangeHint change = newStyleData->CalcDifference(*oldStyleData);
-  if (!change) return false;
-  if (change & nsChangeHint_NeedReflow)
+  if (!change) {
+    return false;
+  }
+  if (change & nsChangeHint_NeedReflow) {
     return true;  
+  }
   if (change & nsChangeHint_RepaintFrame) {
     
     
@@ -4421,9 +4443,13 @@ static const BCCellBorder& CompareBorders(
     }
   }
 
-  if (aFirstDominates) *aFirstDominates = firstDominates;
+  if (aFirstDominates) {
+    *aFirstDominates = firstDominates;
+  }
 
-  if (firstDominates) return aBorder1;
+  if (firstDominates) {
+    return aBorder1;
+  }
   return aBorder2;
 }
 
@@ -4765,7 +4791,9 @@ void nsTableFrame::ExpandBCDamageArea(TableArea& aArea) const {
       nsTableRowGroupFrame* rgFrame = rowGroups[rgIdx];
       int32_t rgStartY = rgFrame->GetStartRowIndex();
       int32_t rgEndY = rgStartY + rgFrame->GetRowCount() - 1;
-      if (endRowIdx < rgStartY) break;
+      if (endRowIdx < rgStartY) {
+        break;
+      }
       cellMap = tableCellMap->GetMapFor(rgFrame, cellMap);
       if (!cellMap) ABORT0();
       
@@ -5092,7 +5120,9 @@ void nsTableFrame::CalcBCBorders() {
   if (!tableCellMap) ABORT0();
   int32_t numRows = GetRowCount();
   int32_t numCols = GetColCount();
-  if (!numRows || !numCols) return;  
+  if (!numRows || !numCols) {
+    return;  
+  }
 
   
   TableBCData* propData = GetTableBCData();
@@ -6022,8 +6052,9 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
           nsTableRowFrame* fifRow =
               static_cast<nsTableRowFrame*>(rowFrame->FirstInFlow());
           endRowIndex = fifRow->GetRowIndex();
-        } else
+        } else {
           done = true;
+        }
       } else {
         
         nscoord borderHalf = mTable->GetNextInFlow()
@@ -6050,10 +6081,14 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   
   
   
-  if (!haveIntersect) return false;
+  if (!haveIntersect) {
+    return false;
+  }
   
   haveIntersect = false;
-  if (0 == mNumTableCols) return false;
+  if (0 == mNumTableCols) {
+    return false;
+  }
 
   LogicalMargin bp = mTable->GetOuterBCBorder(mTableWM);
 
@@ -6073,8 +6108,9 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
       nscoord iStartBorderHalf = colFrame->GetIStartBorderWidth() + onePx;
       if (dirtyRect.IEnd(mTableWM) >= x - iStartBorderHalf) {
         endColIndex = colIdx;
-      } else
+      } else {
         break;
+      }
     } else {
       
       nscoord iEndBorderHalf = colFrame->GetIEndBorderWidth() + onePx;
@@ -6087,7 +6123,9 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
     }
     x += colISize;
   }
-  if (!haveIntersect) return false;
+  if (!haveIntersect) {
+    return false;
+  }
   mDamageArea =
       TableArea(startColIndex, startRowIndex,
                 1 + DeprecatedAbs<int32_t>(endColIndex - startColIndex),
@@ -7166,7 +7204,9 @@ void nsTableFrame::IterateBCBorders(BCPaintBorderAction& aAction,
   
   
   BCPaintBorderIterator iter(this);
-  if (!iter.SetDamageArea(aDirtyRect)) return;
+  if (!iter.SetDamageArea(aDirtyRect)) {
+    return;
+  }
 
   
   
