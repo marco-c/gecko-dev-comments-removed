@@ -66,17 +66,20 @@
 #include <cstddef>
 #include <utility>
 
+#include "absl/base/nullability.h"
+
 namespace webrtc {
 
 template <class T>
-class scoped_refptr {
+class ABSL_NULLABILITY_COMPATIBLE scoped_refptr {
  public:
-  typedef T element_type;
+  using absl_nullability_compatible = void;
+  using element_type = T;
 
   scoped_refptr() : ptr_(nullptr) {}
   scoped_refptr(std::nullptr_t) : ptr_(nullptr) {}  
 
-  explicit scoped_refptr(T* p) : ptr_(p) {
+  explicit scoped_refptr(absl::Nullable<T*> p) : ptr_(p) {
     if (ptr_)
       ptr_->AddRef();
   }
@@ -119,7 +122,7 @@ class scoped_refptr {
     return retVal;
   }
 
-  scoped_refptr<T>& operator=(T* p) {
+  scoped_refptr<T>& operator=(absl::Nullable<T*> p) {
     
     if (p)
       p->AddRef();
@@ -149,7 +152,7 @@ class scoped_refptr {
     return *this;
   }
 
-  void swap(T** pp) noexcept {
+  void swap(absl::Nonnull<T**> pp) noexcept {
     T* p = ptr_;
     ptr_ = *pp;
     *pp = p;
@@ -220,8 +223,7 @@ bool operator<(const scoped_refptr<T>& a, const scoped_refptr<U>& b) {
 namespace rtc {
 
 
-template <typename T>
-using scoped_refptr = webrtc::scoped_refptr<T>;
+using ::webrtc::scoped_refptr;
 }  
 
 #endif  
