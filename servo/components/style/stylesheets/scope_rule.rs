@@ -171,33 +171,64 @@ impl ScopeBounds {
 }
 
 
-#[derive(Debug, Clone, MallocSizeOf)]
+#[derive(Debug, Copy, Clone, MallocSizeOf)]
 pub enum ImplicitScopeRoot {
     
     InLightTree(OpaqueElement),
     
-    InShadowTree(OpaqueElement),
     
-    ShadowHost(OpaqueElement),
+    
+    DocumentElement,
     
     
     Constructed,
+    
+    InShadowTree(OpaqueElement),
+    
+    ShadowHost(OpaqueElement),
 }
 
 impl ImplicitScopeRoot {
     
     pub fn matches_shadow_host(&self) -> bool {
         match self {
-            Self::InLightTree(..) | Self::InShadowTree(..) => false,
+            Self::InLightTree(..) | Self::InShadowTree(..) | Self::DocumentElement => false,
             Self::ShadowHost(..) | Self::Constructed => true,
         }
     }
 
     
-    pub fn element(&self, current_host: Option<OpaqueElement>) -> Option<OpaqueElement> {
+    pub fn element(&self, current_host: Option<OpaqueElement>) -> ImplicitScopeTarget {
         match self {
-            Self::InLightTree(e) | Self::InShadowTree(e) | Self::ShadowHost(e) => Some(*e),
-            Self::Constructed => current_host,
+            Self::InLightTree(e) | Self::InShadowTree(e) | Self::ShadowHost(e) => {
+                ImplicitScopeTarget::Element(*e)
+            },
+            Self::Constructed | Self::DocumentElement => {
+                if matches!(self, Self::Constructed) {
+                    if let Some(host) = current_host {
+                        return ImplicitScopeTarget::Element(host);
+                    }
+                }
+                ImplicitScopeTarget::DocumentElement
+            },
+        }
+    }
+}
+
+
+pub enum ImplicitScopeTarget {
+    
+    Element(OpaqueElement),
+    
+    DocumentElement,
+}
+
+impl ImplicitScopeTarget {
+    
+    fn check<E: TElement>(&self, element: E) -> bool {
+        match self {
+            Self::Element(e) => element.opaque() == *e,
+            Self::DocumentElement => element.is_root(),
         }
     }
 }
@@ -207,7 +238,7 @@ pub enum ScopeTarget<'a> {
     
     Selector(&'a SelectorList<SelectorImpl>),
     
-    Element(OpaqueElement),
+    Implicit(ImplicitScopeTarget),
 }
 
 impl<'a> ScopeTarget<'a> {
@@ -220,20 +251,18 @@ impl<'a> ScopeTarget<'a> {
         context: &mut MatchingContext<E::Impl>,
     ) -> bool {
         match self {
-            Self::Selector(list) => {
-                context.nest_for_scope_condition(scope, |context| {
-                    if scope_subject_map.early_reject(element, context.quirks_mode()) {
-                        return false;
+            Self::Selector(list) => context.nest_for_scope_condition(scope, |context| {
+                if scope_subject_map.early_reject(element, context.quirks_mode()) {
+                    return false;
+                }
+                for selector in list.slice().iter() {
+                    if matches_selector(selector, 0, None, &element, context) {
+                        return true;
                     }
-                    for selector in list.slice().iter() {
-                        if matches_selector(selector, 0, None, &element, context) {
-                            return true;
-                        }
-                    }
-                    false
-                })
-            },
-            Self::Element(e) => element.opaque() == *e,
+                }
+                false
+            }),
+            Self::Implicit(t) => t.check(element),
         }
     }
 }

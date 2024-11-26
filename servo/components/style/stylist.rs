@@ -2483,7 +2483,7 @@ struct ScopeConditionReference {
     parent: ScopeConditionId,
     condition: Option<ScopeBoundsWithHashes>,
     #[ignore_malloc_size_of = "Raw ptr behind the scenes"]
-    implicit_scope_root: Option<StylistImplicitScopeRoot>,
+    implicit_scope_root: StylistImplicitScopeRoot,
     is_trivial: bool,
 }
 
@@ -2492,7 +2492,7 @@ impl ScopeConditionReference {
         Self {
             parent: ScopeConditionId::none(),
             condition: None,
-            implicit_scope_root: None,
+            implicit_scope_root: StylistImplicitScopeRoot::default_const(),
             is_trivial: true,
         }
     }
@@ -2575,13 +2575,26 @@ impl ScopeBoundsWithHashes {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf)]
+#[derive(Copy, Clone, Debug, MallocSizeOf)]
 enum StylistImplicitScopeRoot {
     Normal(ImplicitScopeRoot),
     Cached(usize),
 }
 
 unsafe impl Sync for StylistImplicitScopeRoot {}
+
+impl StylistImplicitScopeRoot {
+    const fn default_const() -> Self {
+        
+        Self::Normal(ImplicitScopeRoot::DocumentElement)
+    }
+}
+
+impl Default for StylistImplicitScopeRoot {
+    fn default() -> Self {
+        Self::default_const()
+    }
+}
 
 
 
@@ -3027,22 +3040,10 @@ impl CascadeData {
                 }),
             )
         } else {
-            let implicit_root = match condition_ref
-                .implicit_scope_root
-                .as_ref() {
-                    Some(r) => r,
-                    None => {
-                        
-                        warn!("No implicit root found.");
-                        return ScopeRootCandidates::empty(is_trivial)
-                    },
-            };
+            let implicit_root = condition_ref.implicit_scope_root;
             match implicit_root {
                 StylistImplicitScopeRoot::Normal(r) => {
-                    match r.element(context.current_host.clone()) {
-                        None => return ScopeRootCandidates::empty(is_trivial),
-                        Some(root) => (ScopeTarget::Element(root), r.matches_shadow_host()),
-                    }
+                    (ScopeTarget::Implicit(r.element(context.current_host.clone())), r.matches_shadow_host())
                 },
                 StylistImplicitScopeRoot::Cached(index) => {
                     use crate::dom::TShadowRoot;
@@ -3052,14 +3053,10 @@ impl CascadeData {
                     let shadow_root = E::unopaque(host)
                         .shadow_root()
                         .expect("Shadow host without root?");
-                    match shadow_root.implicit_scope_for_sheet(*index) {
+                    match shadow_root.implicit_scope_for_sheet(index) {
                         None => return ScopeRootCandidates::empty(is_trivial),
-                        Some(root) => {
-                            match root.element(context.current_host.clone()) {
-                                None => return ScopeRootCandidates::empty(is_trivial),
-                                Some(r) =>  (ScopeTarget::Element(r), root.matches_shadow_host()),
-                            }
-                        },
+                        Some(root) =>
+                            (ScopeTarget::Implicit(root.element(context.current_host.clone())), root.matches_shadow_host()),
                     }
                 },
             }
@@ -3695,15 +3692,16 @@ impl CascadeData {
                                 .is_empty()
                         });
                         
-                        None
+                        StylistImplicitScopeRoot::default()
                     } else {
                         
                         
-                        stylesheet.implicit_scope_root().map(|root| {
+                        if let Some(root) = stylesheet.implicit_scope_root() {
                             matches_shadow_host = root.matches_shadow_host();
                             match root {
                                 ImplicitScopeRoot::InLightTree(_) |
-                                ImplicitScopeRoot::Constructed => {
+                                ImplicitScopeRoot::Constructed |
+                                ImplicitScopeRoot::DocumentElement => {
                                     StylistImplicitScopeRoot::Normal(root)
                                 },
                                 ImplicitScopeRoot::ShadowHost(_) | ImplicitScopeRoot::InShadowTree(_) => {
@@ -3716,7 +3714,10 @@ impl CascadeData {
                                     StylistImplicitScopeRoot::Cached(sheet_index)
                                 },
                             }
-                        })
+                        } else {
+                            
+                            StylistImplicitScopeRoot::default()
+                        }
                     };
 
                     let replaced = {
