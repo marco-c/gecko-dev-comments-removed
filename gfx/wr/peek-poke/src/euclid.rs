@@ -8,6 +8,8 @@
 
 
 
+#![allow(clippy::let_and_return)]
+
 use crate::{Peek, Poke};
 use euclid::{Point2D, Rect, Box2D, SideOffsets2D, Size2D, Transform3D, Vector2D};
 

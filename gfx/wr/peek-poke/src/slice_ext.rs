@@ -8,6 +8,7 @@
 
 
 
+#[allow(clippy::wrong_self_convention)]
 pub trait AsEndMutPtr<T> {
     fn as_end_mut_ptr(self) -> *mut T;
 }
