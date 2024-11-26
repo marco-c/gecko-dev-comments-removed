@@ -484,7 +484,6 @@ class nsView final : public nsIWidgetListener {
   nsRect mDimBounds;
   
   nsPoint mViewToWidgetOffset;
-  uint32_t mVFlags;
   bool mWidgetIsTopLevel;
   bool mForcedRepaint;
   bool mNeedsWindowPropertiesSync;
