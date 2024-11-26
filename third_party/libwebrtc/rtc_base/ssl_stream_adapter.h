@@ -184,7 +184,7 @@ class SSLStreamAdapter : public StreamInterface {
 
   
   
-  virtual bool GetSslCipherSuite(int* cipher_suite);
+  virtual bool GetSslCipherSuite(int* cipher_suite) const = 0;
   
   
   virtual std::optional<absl::string_view> GetTlsCipherSuiteName() const = 0;
@@ -220,8 +220,9 @@ class SSLStreamAdapter : public StreamInterface {
   virtual uint16_t GetPeerSignatureAlgorithm() const = 0;
 
   
-  virtual bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites);
-  virtual bool GetDtlsSrtpCryptoSuite(int* crypto_suite);
+  virtual bool SetDtlsSrtpCryptoSuites(
+      const std::vector<int>& crypto_suites) = 0;
+  virtual bool GetDtlsSrtpCryptoSuite(int* crypto_suite) const = 0;
 
   
   

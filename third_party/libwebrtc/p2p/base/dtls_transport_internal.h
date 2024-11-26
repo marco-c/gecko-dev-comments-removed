@@ -65,11 +65,11 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   virtual bool GetSslVersionBytes(int* version) const = 0;
   
   
-  virtual bool GetSrtpCryptoSuite(int* cipher) = 0;
+  virtual bool GetSrtpCryptoSuite(int* cipher) const = 0;
 
   
   
-  virtual bool GetSslCipherSuite(int* cipher) = 0;
+  virtual bool GetSslCipherSuite(int* cipher) const = 0;
   virtual std::optional<absl::string_view> GetTlsCipherSuiteName() const = 0;
 
   

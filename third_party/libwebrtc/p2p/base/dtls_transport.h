@@ -156,7 +156,7 @@ class DtlsTransport : public DtlsTransportInternal {
   
   bool GetSslVersionBytes(int* version) const override;
   
-  bool GetSrtpCryptoSuite(int* cipher) override;
+  bool GetSrtpCryptoSuite(int* cipher) const override;
 
   
   
@@ -168,7 +168,7 @@ class DtlsTransport : public DtlsTransportInternal {
   bool SetDtlsRole(rtc::SSLRole role) override;
 
   
-  bool GetSslCipherSuite(int* cipher) override;
+  bool GetSslCipherSuite(int* cipher) const override;
   std::optional<absl::string_view> GetTlsCipherSuiteName() const override;
 
   

@@ -247,10 +247,7 @@ class JsepTransportController : public PayloadTypeSuggester,
                            PayloadType payload_type,
                            const cricket::Codec& codec) override;
 
-  
-  
-  
-  bool GetStats(const std::string& mid, cricket::TransportStats* stats);
+  bool GetStats(const std::string& mid, cricket::TransportStats* stats) const;
 
   bool initial_offerer() const { return initial_offerer_ && *initial_offerer_; }
 

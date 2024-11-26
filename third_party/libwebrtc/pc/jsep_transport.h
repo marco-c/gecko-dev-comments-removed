@@ -147,8 +147,7 @@ class JsepTransport {
   
   std::optional<rtc::SSLRole> GetDtlsRole() const;
 
-  
-  bool GetStats(TransportStats* stats);
+  bool GetStats(TransportStats* stats) const;
 
   const JsepTransportDescription* local_description() const {
     RTC_DCHECK_RUN_ON(network_thread_);
@@ -285,7 +284,7 @@ class JsepTransport {
 
   bool GetTransportStats(DtlsTransportInternal* dtls_transport,
                          int component,
-                         TransportStats* stats);
+                         TransportStats* stats) const;
 
   
   const rtc::Thread* const network_thread_;
