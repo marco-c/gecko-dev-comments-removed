@@ -5,7 +5,6 @@
 
 #include "UtilityProcessImpl.h"
 
-#include "mozilla/ipc/IOThreadChild.h"
 #include "mozilla/GeckoArgs.h"
 #include "mozilla/ProcInfo.h"
 
