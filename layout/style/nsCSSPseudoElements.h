@@ -154,7 +154,7 @@ class nsCSSPseudoElements {
     return false;
   }
 
-  static nsString PseudoTypeAsString(Type aPseudoType);
+  static nsString PseudoRequestAsString(const Request& aPseudoRequest);
 
  private:
   

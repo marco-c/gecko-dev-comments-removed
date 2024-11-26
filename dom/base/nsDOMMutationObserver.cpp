@@ -372,7 +372,7 @@ void nsAnimationReceiver::RecordAnimationMutation(
   }
 
   
-  if (animationTarget.mPseudoType != PseudoStyleType::NotPseudo && !Subtree()) {
+  if (!animationTarget.mPseudoRequest.IsNotPseudo() && !Subtree()) {
     return;
   }
 

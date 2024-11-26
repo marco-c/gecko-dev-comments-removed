@@ -218,10 +218,8 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
   
   
   
-  
-  
-  for (Element* curr = aTarget.mElement->GetPseudoElement(
-           PseudoStyleRequest(aTarget.mPseudoType));
+  for (Element* curr =
+           aTarget.mElement->GetPseudoElement(aTarget.mPseudoRequest);
        curr; curr = curr->GetParentElement()) {
     
     
@@ -341,7 +339,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   KeyframeEffectParams effectOptions(composition);
   auto effect = MakeRefPtr<dom::CSSAnimationKeyframeEffect>(
       aPresContext->Document(),
-      OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoType),
+      OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoRequest),
       std::move(timing), effectOptions);
 
   aBuilder.SetKeyframes(*effect, std::move(keyframes), timeline);
@@ -349,7 +347,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   auto animation = MakeRefPtr<CSSAnimation>(
       aPresContext->Document()->GetScopeObject(), animationName);
   animation->SetOwningElement(
-      OwningElementRef(*aTarget.mElement, aTarget.mPseudoType));
+      OwningElementRef(*aTarget.mElement, aTarget.mPseudoRequest));
 
   animation->SetTimelineNoUpdate(timeline);
   animation->SetEffectNoUpdate(effect);
@@ -417,7 +415,7 @@ void nsAnimationManager::UpdateAnimations(dom::Element* aElement,
     return;
   }
 
-  NonOwningAnimationTarget target(aElement, aPseudoType);
+  NonOwningAnimationTarget target(aElement, PseudoStyleRequest(aPseudoType));
   ServoCSSAnimationBuilder builder(aComputedStyle);
 
   DoUpdateAnimations(target, *aComputedStyle->StyleUIReset(), builder);
@@ -431,8 +429,8 @@ void nsAnimationManager::DoUpdateAnimations(
   
   
 
-  auto* collection =
-      CSSAnimationCollection::Get(aTarget.mElement, aTarget.mPseudoType);
+  auto* collection = CSSAnimationCollection::Get(aTarget.mElement,
+                                                 aTarget.mPseudoRequest.mType);
   if (!collection && aStyle.mAnimationNameCount == 1 &&
       aStyle.mAnimations[0].GetName() == nsGkAtoms::_empty) {
     return;
@@ -456,7 +454,7 @@ void nsAnimationManager::DoUpdateAnimations(
   if (!collection) {
     collection =
         &aTarget.mElement->EnsureAnimationData().EnsureAnimationCollection(
-            *aTarget.mElement, aTarget.mPseudoType);
+            *aTarget.mElement, aTarget.mPseudoRequest.mType);
     if (!collection->isInList()) {
       AddElementCollection(collection);
     }

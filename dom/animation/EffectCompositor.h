@@ -110,11 +110,6 @@ class EffectCompositor {
   
   
   
-  void ClearRestyleRequestsFor(dom::Element* aElement);
-
-  
-  
-  
   
   void UpdateEffectProperties(const ComputedStyle* aStyle,
                               dom::Element* aElement,

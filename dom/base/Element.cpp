@@ -3954,12 +3954,16 @@ void Element::CloneAnimationsFrom(const Element& aOther) {
   MOZ_ASSERT(timeline, "Timeline has not been set on the document yet");
   
   
+  
+  
+  
   for (PseudoStyleType pseudoType :
        {PseudoStyleType::NotPseudo, PseudoStyleType::before,
         PseudoStyleType::after, PseudoStyleType::marker}) {
     
     
     if (auto* const effects = EffectSet::Get(&aOther, pseudoType)) {
+      const PseudoStyleRequest request(pseudoType);
       auto* const clonedEffects = EffectSet::GetOrCreate(this, pseudoType);
       for (KeyframeEffect* const effect : *effects) {
         auto* animation = effect->GetAnimation();
@@ -3969,7 +3973,7 @@ void Element::CloneAnimationsFrom(const Element& aOther) {
         }
         
         RefPtr<KeyframeEffect> clonedEffect = new KeyframeEffect(
-            OwnerDoc(), OwningAnimationTarget{this, pseudoType}, *effect);
+            OwnerDoc(), OwningAnimationTarget{this, request}, *effect);
 
         
         RefPtr<Animation> clonedAnimation = Animation::ClonePausedAnimation(

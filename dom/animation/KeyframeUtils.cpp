@@ -211,7 +211,8 @@ static void MarkAsComputeValuesFailureKey(PropertyValuePair& aPair);
 
 static nsTArray<ComputedKeyframeValues> GetComputedKeyframeValues(
     const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
-    PseudoStyleType aPseudoType, const ComputedStyle* aComputedValues);
+    const PseudoStyleRequest& aPseudoRequest,
+    const ComputedStyle* aComputedValues);
 
 static void BuildSegmentsFromValueEntries(
     nsTArray<KeyframeValueEntry>& aEntries,
@@ -307,12 +308,12 @@ void KeyframeUtils::DistributeKeyframes(nsTArray<Keyframe>& aKeyframes) {
 
 nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
-    PseudoStyleType aPseudoType, const ComputedStyle* aStyle,
+    const PseudoStyleRequest& aPseudoRequest, const ComputedStyle* aStyle,
     dom::CompositeOperation aEffectComposite) {
   nsTArray<AnimationProperty> result;
 
   const nsTArray<ComputedKeyframeValues> computedValues =
-      GetComputedKeyframeValues(aKeyframes, aElement, aPseudoType, aStyle);
+      GetComputedKeyframeValues(aKeyframes, aElement, aPseudoRequest, aStyle);
   if (computedValues.IsEmpty()) {
     
     
@@ -742,7 +743,8 @@ static void MarkAsComputeValuesFailureKey(PropertyValuePair& aPair) {
 
 static nsTArray<ComputedKeyframeValues> GetComputedKeyframeValues(
     const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
-    PseudoStyleType aPseudoType, const ComputedStyle* aComputedStyle) {
+    const PseudoStyleRequest& aPseudoRequest,
+    const ComputedStyle* aComputedStyle) {
   MOZ_ASSERT(aElement);
 
   nsTArray<ComputedKeyframeValues> result;
@@ -757,7 +759,7 @@ static nsTArray<ComputedKeyframeValues> GetComputedKeyframeValues(
   }
 
   result = presContext->StyleSet()->GetComputedKeyframeValuesFor(
-      aKeyframes, aElement, aPseudoType, aComputedStyle);
+      aKeyframes, aElement, aPseudoRequest, aComputedStyle);
   return result;
 }
 
