@@ -432,16 +432,6 @@ pub struct CompositeTileDescriptor {
 }
 
 
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum CompositorSurfaceUsage {
-    Content,
-    External,
-}
-
-
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(PartialEq, Clone)]
@@ -1307,20 +1297,15 @@ pub trait Compositor {
 
 
 
-pub struct CompositorInputLayer {
-    
-    pub rect: DeviceIntRect,
-    
-    pub usage: CompositorSurfaceUsage,
-    
-    pub is_opaque: bool,
+pub struct CompositorInputConfig {
+    pub framebuffer_size: DeviceIntSize,
 }
 
 
 
-pub struct CompositorInputConfig<'a> {
-    pub layers: &'a [CompositorInputLayer],
-    pub framebuffer_size: DeviceIntSize,
+
+pub struct CompositorOutputConfig {
+
 }
 
 
@@ -1328,28 +1313,11 @@ pub struct CompositorInputConfig<'a> {
 
 
 pub trait Compositor2 {
-    
-    
     fn begin_frame(
         &mut self,
         input: &CompositorInputConfig,
-    );
+    ) -> CompositorOutputConfig;
 
-    
-    
-    fn bind_layer(&mut self, index: usize);
-
-    
-    fn present_layer(&mut self, index: usize);
-
-    fn add_surface(
-        &mut self,
-        index: usize,
-        clip_rect: DeviceIntRect,
-        image_rendering: ImageRendering,
-    );
-
-    
     fn end_frame(&mut self);
 }
 
