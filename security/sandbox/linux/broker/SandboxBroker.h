@@ -92,9 +92,6 @@ class SandboxBroker final : private SandboxBrokerCommon,
     void AddTree(int aPerms, const char* aPath);
     
     
-    void AddDir(int aPerms, const char* aPath);
-    
-    
     void AddFutureDir(int aPerms, const char* aPath);
     
     void AddFilePrefix(int aPerms, const char* aDir, const char* aPrefix);
@@ -128,7 +125,7 @@ class SandboxBroker final : private SandboxBrokerCommon,
     
     bool ValidatePath(const char* path) const;
     void AddPrefixInternal(int aPerms, const nsACString& aPath);
-    void AddDirInternal(int aPerms, const char* aPath);
+    void AddTreeInternal(int aPerms, const char* aPath);
   };
 
   
