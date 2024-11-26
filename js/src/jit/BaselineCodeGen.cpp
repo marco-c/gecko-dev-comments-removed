@@ -343,6 +343,10 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
 
   
   
+  handler.maybeDisableIon();
+
+  
+  
   
   {
     JitSpew(JitSpew_Profiling,
@@ -382,6 +386,15 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
 #endif
 
   return true;
+}
+
+void BaselineCompilerHandler::maybeDisableIon() {
+  if (analysis_.isIonDisabled()) {
+    script()->disableIon();
+  }
+  if (analysis_.isInliningDisabled()) {
+    script()->setUninlineable();
+  }
 }
 
 
