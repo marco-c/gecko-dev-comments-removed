@@ -214,13 +214,20 @@ nsView* nsViewManager::GetDisplayRootFor(nsView* aView) {
   nsView* displayRoot = aView;
   for (;;) {
     nsView* displayParent = displayRoot->GetParent();
-    if (!displayParent) {
-      return displayRoot;
-    }
+    if (!displayParent) return displayRoot;
 
+    if (displayRoot->GetFloating() && !displayParent->GetFloating())
+      return displayRoot;
+
+    
+    
+    
     
     nsIWidget* widget = displayRoot->GetWidget();
     if (widget && widget->GetWindowType() == widget::WindowType::Popup) {
+      NS_ASSERTION(displayRoot->GetFloating() && displayParent->GetFloating(),
+                   "this should only happen with floating views that have "
+                   "floating parents");
       return displayRoot;
     }
 
@@ -748,6 +755,10 @@ void nsViewManager::InsertChild(nsView* aParent, nsView* aChild,
         ReparentWidgets(aChild, aParent);
       }
     }
+
+    
+    
+    if (aParent->GetFloating()) aChild->SetFloating(true);
   }
 }
 
@@ -782,6 +793,12 @@ void nsViewManager::ResizeView(nsView* aView, const nsRect& aRect) {
   
   
   
+}
+
+void nsViewManager::SetViewFloating(nsView* aView, bool aFloating) {
+  NS_ASSERTION(aView, "no view");
+
+  aView->SetFloating(aFloating);
 }
 
 void nsViewManager::SetViewVisibility(nsView* aView, ViewVisibility aVisible) {

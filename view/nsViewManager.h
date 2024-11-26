@@ -200,6 +200,15 @@ class nsViewManager final {
 
 
 
+
+
+
+  void SetViewFloating(nsView* aView, bool aFloatingView);
+
+  
+
+
+
   void SetPresShell(mozilla::PresShell* aPresShell) { mPresShell = aPresShell; }
 
   

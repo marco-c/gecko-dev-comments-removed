@@ -103,6 +103,11 @@ enum class ViewVisibility : uint8_t { Hide = 0, Show = 1 };
 
 
 
+#define NS_VIEW_FLAG_FLOATING 0x0008
+
+
+
+
 
 
 
@@ -219,6 +224,16 @@ class nsView final : public nsIWidgetListener {
 
 
   ViewVisibility GetVisibility() const { return mVis; }
+
+  
+
+
+
+
+
+
+
+  bool GetFloating() const { return (mVFlags & NS_VIEW_FLAG_FLOATING) != 0; }
 
   
 
@@ -385,7 +400,8 @@ class nsView final : public nsIWidgetListener {
 
   nsRegion& GetDirtyRegion() {
     if (!mDirtyRegion) {
-      NS_ASSERTION(!mParent, "Only display roots should have dirty regions");
+      NS_ASSERTION(!mParent || GetFloating(),
+                   "Only display roots should have dirty regions");
       mDirtyRegion = mozilla::MakeUnique<nsRegion>();
     }
     return *mDirtyRegion;
@@ -455,6 +471,16 @@ class nsView final : public nsIWidgetListener {
 
 
   void SetVisibility(ViewVisibility visibility);
+
+  
+
+
+
+
+
+
+
+  void SetFloating(bool aFloatingView);
 
   
   
