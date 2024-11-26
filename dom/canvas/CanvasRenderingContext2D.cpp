@@ -892,12 +892,17 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CanvasRenderingContext2D)
     ImplCycleCollectionUnlink(
         tmp->mStyleStack[i].gradientStyles[Style::STROKE]);
     ImplCycleCollectionUnlink(tmp->mStyleStack[i].gradientStyles[Style::FILL]);
-    auto autoSVGFiltersObserver =
-        tmp->mStyleStack[i].autoSVGFiltersObserver.get();
-    if (autoSVGFiltersObserver) {
+    if (auto* autoSVGFiltersObserver =
+            tmp->mStyleStack[i].autoSVGFiltersObserver.get()) {
       
-      
-      SVGObserverUtils::DetachFromCanvasContext(autoSVGFiltersObserver);
+
+
+
+
+
+
+
+      autoSVGFiltersObserver->Detach();
     }
     ImplCycleCollectionUnlink(tmp->mStyleStack[i].autoSVGFiltersObserver);
   }
