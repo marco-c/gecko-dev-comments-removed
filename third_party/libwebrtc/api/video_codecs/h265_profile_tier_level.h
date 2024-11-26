@@ -112,6 +112,16 @@ RTC_EXPORT std::optional<H265ProfileTierLevel> ParseSdpForH265ProfileTierLevel(
 RTC_EXPORT bool H265IsSameProfileTierLevel(const CodecParameterMap& params1,
                                            const CodecParameterMap& params2);
 
+
+
+RTC_EXPORT bool H265IsSameProfile(const CodecParameterMap& params1,
+                                  const CodecParameterMap& params2);
+
+
+
+RTC_EXPORT bool H265IsSameTier(const CodecParameterMap& params1,
+                               const CodecParameterMap& params2);
+
 }  
 
 #endif  

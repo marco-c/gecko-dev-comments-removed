@@ -231,8 +231,9 @@ TEST(H265ProfileTierLevel, TestProfileTierLevelCompare) {
   params2.clear();
   params1["profile-id"] = "1";
   params2["profile-id"] = "1";
-  params1["level-id"] = "93";
-  params2["level-id"] = "93";
+  params1["level-id"] = "180";
+  
+  params2["level-id"] = "180";
   params1["tier-flag"] = "0";
   params2["tier-flag"] = "1";
   EXPECT_FALSE(H265IsSameProfileTierLevel(params1, params2));
@@ -245,6 +246,114 @@ TEST(H265ProfileTierLevel, TestProfileTierLevelCompare) {
   params1["tier-flag"] = "0";
   params2["tier-flag"] = "4";
   EXPECT_FALSE(H265IsSameProfileTierLevel(params1, params2));
+}
+
+TEST(H265ProfileTierLevel, TestProfileCompare) {
+  CodecParameterMap params1;
+  CodecParameterMap params2;
+
+  
+  EXPECT_TRUE(H265IsSameProfile(params1, params2));
+
+  
+  params1["profile-id"] = "1";
+  params1["tier-flag"] = "0";
+  params1["level-id"] = "120";
+  params2["profile-id"] = "1";
+  params2["tier-flag"] = "0";
+  params2["level-id"] = "120";
+  EXPECT_TRUE(H265IsSameProfile(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "2";
+  EXPECT_FALSE(H265IsSameProfile(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "1";
+  params1["level-id"] = "93";
+  params2["level-id"] = "183";
+  EXPECT_TRUE(H265IsSameProfile(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "1";
+  params1["level-id"] = "180";
+  
+  params2["level-id"] = "180";
+  params1["tier-flag"] = "0";
+  params2["tier-flag"] = "1";
+  EXPECT_TRUE(H265IsSameProfile(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "1";
+  params1["tier-flag"] = "0";
+  params2["tier-flag"] = "4";
+  EXPECT_FALSE(H265IsSameProfile(params1, params2));
+}
+
+TEST(H265ProfileTierLevel, TestTierCompare) {
+  CodecParameterMap params1;
+  CodecParameterMap params2;
+
+  
+  EXPECT_TRUE(H265IsSameTier(params1, params2));
+
+  
+  params1["profile-id"] = "1";
+  params1["tier-flag"] = "0";
+  params1["level-id"] = "120";
+  params2["profile-id"] = "1";
+  params2["tier-flag"] = "0";
+  params2["level-id"] = "120";
+  EXPECT_TRUE(H265IsSameTier(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "2";
+  EXPECT_TRUE(H265IsSameTier(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "1";
+  params1["level-id"] = "93";
+  params2["level-id"] = "183";
+  EXPECT_TRUE(H265IsSameTier(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "1";
+  params1["level-id"] = "180";
+  
+  params2["level-id"] = "180";
+  params1["tier-flag"] = "0";
+  params2["tier-flag"] = "1";
+  EXPECT_FALSE(H265IsSameTier(params1, params2));
+
+  
+  params1.clear();
+  params2.clear();
+  params1["profile-id"] = "1";
+  params2["profile-id"] = "1";
+  params1["tier-flag"] = "0";
+  params2["tier-flag"] = "4";
+  EXPECT_FALSE(H265IsSameTier(params1, params2));
 }
 
 TEST(H265ProfileTierLevel, TestGetSupportedH265Level) {

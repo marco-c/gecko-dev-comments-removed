@@ -421,7 +421,7 @@ TEST(CodecTest, TestH265CodecMatches) {
     c_level_id_4.params[cricket::kH265FmtpLevelId] = kLevel4;
 
     
-    EXPECT_FALSE(c_ptl_blank.Matches(c_level_id_4));
+    EXPECT_TRUE(c_ptl_blank.Matches(c_level_id_4));
   }
 
   {
