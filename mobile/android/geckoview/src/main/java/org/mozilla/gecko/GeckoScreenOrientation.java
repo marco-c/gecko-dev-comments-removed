@@ -102,7 +102,6 @@ public class GeckoScreenOrientation {
 
 
 
-
   public boolean update() {
     
     final Context appContext = GeckoAppShell.getApplicationContext();
@@ -121,8 +120,6 @@ public class GeckoScreenOrientation {
 
 
 
-
-
   public boolean update(final Display aDisplay) {
     return update(getScreenOrientation(aDisplay));
   }
@@ -134,15 +131,11 @@ public class GeckoScreenOrientation {
 
 
 
-
-
   public boolean update(final int aAndroidOrientation) {
     return update(getScreenOrientation(aAndroidOrientation, getRotation()));
   }
 
   
-
-
 
 
 
@@ -194,15 +187,11 @@ public class GeckoScreenOrientation {
   
 
 
-
   public ScreenOrientation getScreenOrientation() {
     return mScreenOrientation;
   }
 
   
-
-
-
 
 
 
@@ -232,7 +221,6 @@ public class GeckoScreenOrientation {
   }
 
   
-
 
 
 
