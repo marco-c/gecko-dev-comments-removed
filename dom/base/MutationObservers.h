@@ -99,8 +99,9 @@ class MutationObservers {
 
 
 
-  static void NotifyContentWillBeRemoved(nsINode* aContainer,
-                                         nsIContent* aChild);
+
+  static void NotifyContentRemoved(nsINode* aContainer, nsIContent* aChild,
+                                   nsIContent* aPreviousSibling);
 
   
 

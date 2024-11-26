@@ -320,7 +320,12 @@ class RestyleManager {
   void ContentAppended(nsIContent* aFirstNewContent);
 
   
-  void ContentWillBeRemoved(nsIContent* aOldChild);
+  
+  
+  
+  
+  
+  void ContentRemoved(nsIContent* aOldChild, nsIContent* aFollowingSibling);
 
   
   

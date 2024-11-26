@@ -1606,12 +1606,11 @@ static bool CheckOverflow(const ComputedStyle* aComputedStyle,
 
 
 static Element* GetPropagatedScrollStylesForViewport(
-    nsPresContext* aPresContext, const Element* aRemovedChild,
-    ScrollStyles* aStyles) {
+    nsPresContext* aPresContext, ScrollStyles* aStyles) {
   Document* document = aPresContext->Document();
   Element* docElement = document->GetRootElement();
   
-  if (!docElement || docElement == aRemovedChild) {
+  if (!docElement) {
     return nullptr;
   }
 
@@ -1631,15 +1630,17 @@ static Element* GetPropagatedScrollStylesForViewport(
   
   
   
-  if (!document->IsHTMLOrXHTML() ||
-      !docElement->IsHTMLElement(nsGkAtoms::html)) {
+  if (!document->IsHTMLOrXHTML() || !docElement->IsHTMLElement()) {
     return nullptr;
   }
 
-  Element* bodyElement = document->GetBodyElement(aRemovedChild);
+  Element* bodyElement = document->AsHTMLDocument()->GetBodyElement();
   if (!bodyElement) {
     return nullptr;
   }
+
+  MOZ_ASSERT(bodyElement->IsHTMLElement(nsGkAtoms::body),
+             "GetBodyElement returned something bogus");
 
   const auto* bodyStyle = Servo_Element_GetMaybeOutOfDateStyle(bodyElement);
   if (bodyStyle && bodyStyle->StyleDisplay()->IsContainAny()) {
@@ -1654,8 +1655,7 @@ static Element* GetPropagatedScrollStylesForViewport(
   return nullptr;
 }
 
-Element* nsPresContext::UpdateViewportScrollStylesOverride(
-    const Element* aRemovedChild) {
+Element* nsPresContext::UpdateViewportScrollStylesOverride() {
   ScrollStyles oldViewportScrollStyles = mViewportScrollStyles;
 
   
@@ -1664,8 +1664,8 @@ Element* nsPresContext::UpdateViewportScrollStylesOverride(
   mViewportScrollOverrideElement = nullptr;
   
   if (!IsPaginated()) {
-    mViewportScrollOverrideElement = GetPropagatedScrollStylesForViewport(
-        this, aRemovedChild, &mViewportScrollStyles);
+    mViewportScrollOverrideElement =
+        GetPropagatedScrollStylesForViewport(this, &mViewportScrollStyles);
   }
 
   dom::Document* document = Document();
@@ -1705,8 +1705,7 @@ bool nsPresContext::ElementWouldPropagateScrollStyles(const Element& aElement) {
   
   
   ScrollStyles dummy(StyleOverflow::Auto, StyleOverflow::Auto);
-  return GetPropagatedScrollStylesForViewport(this, nullptr, &dummy) ==
-         &aElement;
+  return GetPropagatedScrollStylesForViewport(this, &dummy) == &aElement;
 }
 
 nsISupports* nsPresContext::GetContainerWeak() const {

@@ -138,7 +138,8 @@ void CrossShadowBoundaryRange::DoSetRange(
     }
   }
 }
-void CrossShadowBoundaryRange::ContentWillBeRemoved(nsIContent* aChild) {
+void CrossShadowBoundaryRange::ContentRemoved(nsIContent* aChild,
+                                              nsIContent* aPreviousSibling) {
   
   
   
@@ -173,15 +174,14 @@ void CrossShadowBoundaryRange::ContentWillBeRemoved(nsIContent* aChild) {
   nsINode* container = aChild->GetParentNode();
 
   auto MaybeCreateNewBoundary =
-      [container, aChild](
+      [container, aChild, aPreviousSibling](
           const nsINode* aContainer,
           const RangeBoundary& aBoundary) -> Maybe<RawRangeBoundary> {
     if (container == aContainer) {
       
       
       if (aChild == aBoundary.Ref()) {
-        return Some<RawRangeBoundary>(
-            {container, aChild->GetPreviousSibling()});
+        return Some<RawRangeBoundary>({container, aPreviousSibling});
       }
       RawRangeBoundary newBoundary;
       newBoundary.CopyFrom(aBoundary, RangeBoundaryIsMutationObserved::Yes);

@@ -2327,9 +2327,7 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify) {
   nsMutationGuard::DidMutate();
   mozAutoDocUpdate updateBatch(GetComposedDoc(), aNotify);
 
-  if (aNotify) {
-    MutationObservers::NotifyContentWillBeRemoved(this, aKid);
-  }
+  nsIContent* previousSibling = aKid->GetPreviousSibling();
 
   
   nsCOMPtr<nsIContent> kungfuDeathGrip = aKid;
@@ -2337,6 +2335,11 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify) {
 
   
   InvalidateChildNodes();
+
+  if (aNotify) {
+    MutationObservers::NotifyContentRemoved(this, aKid, previousSibling);
+  }
+
   aKid->UnbindFromTree();
 }
 

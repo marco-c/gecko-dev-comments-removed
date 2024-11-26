@@ -250,7 +250,7 @@ void HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
 
     
     
-    aPresShell->ContentWillBeRemoved(aContent);
+    aPresShell->ContentRemoved(aContent, nullptr);
   }
 
   

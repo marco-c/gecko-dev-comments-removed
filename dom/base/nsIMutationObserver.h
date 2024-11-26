@@ -254,7 +254,10 @@ class nsIMutationObserver
 
 
 
-  virtual void ContentWillBeRemoved(nsIContent* aChild) = 0;
+
+
+  virtual void ContentRemoved(nsIContent* aChild,
+                              nsIContent* aPreviousSibling) = 0;
 
   
 
@@ -309,7 +312,7 @@ class nsIMutationObserver
     kAttributeSetToCurrentValue = 1 << 4,
     kContentAppended = 1 << 5,
     kContentInserted = 1 << 6,
-    kContentWillBeRemoved = 1 << 7,
+    kContentRemoved = 1 << 7,
     kNodeWillBeDestroyed = 1 << 8,
     kParentChainChanged = 1 << 9,
     kARIAAttributeDefaultWillChange = 1 << 10,
@@ -368,7 +371,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIMutationObserver, NS_IMUTATION_OBSERVER_IID)
   virtual void ContentInserted(nsIContent* aChild) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED \
-  virtual void ContentWillBeRemoved(nsIContent* aChild) override;
+  virtual void ContentRemoved(nsIContent* aChild,  \
+                              nsIContent* aPreviousSibling) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED \
   virtual void NodeWillBeDestroyed(nsINode* aNode) override;
@@ -415,7 +419,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIMutationObserver, NS_IMUTATION_OBSERVER_IID)
       nsAtom* aAttribute, int32_t aModType, const nsAttrValue* aOldValue) {}   \
   void _class::ContentAppended(nsIContent* aFirstNewContent) {}                \
   void _class::ContentInserted(nsIContent* aChild) {}                          \
-  void _class::ContentWillBeRemoved(nsIContent* aChild) {}                     \
+  void _class::ContentRemoved(nsIContent* aChild,                              \
+                              nsIContent* aPreviousSibling) {}                 \
   void _class::ParentChainChanged(nsIContent* aContent) {}                     \
   void _class::ARIAAttributeDefaultWillChange(                                 \
       mozilla::dom::Element* aElement, nsAtom* aAttribute, int32_t aModType) { \

@@ -52,46 +52,40 @@ bool NodeIterator::NodePointer::MoveToPrevious(nsINode* aRoot) {
     return true;
   }
 
-  if (mNode == aRoot) {
-    return false;
-  }
+  if (mNode == aRoot) return false;
 
   MoveBackward(mNode->GetParentNode(), mNode->GetPreviousSibling());
 
   return true;
 }
 
-void NodeIterator::NodePointer::AdjustForRemoval(nsINode* aRoot,
-                                                 nsINode* aContainer,
-                                                 nsIContent* aChild) {
+void NodeIterator::NodePointer::AdjustAfterRemoval(
+    nsINode* aRoot, nsINode* aContainer, nsIContent* aChild,
+    nsIContent* aPreviousSibling) {
   
-  if (!mNode || mNode == aRoot) {
-    return;
-  }
+  if (!mNode || mNode == aRoot) return;
 
   
-  if (!mNode->IsInclusiveDescendantOf(aChild)) {
-    return;
-  }
+  if (!mNode->IsInclusiveDescendantOf(aChild)) return;
 
   if (mBeforeNode) {
     
-    nsINode* nextSibling = aChild->GetNextSibling();
+    nsINode* nextSibling = aPreviousSibling ? aPreviousSibling->GetNextSibling()
+                                            : aContainer->GetFirstChild();
+
     if (nextSibling) {
       mNode = nextSibling;
       return;
     }
 
     
-    if (MoveForward(aRoot, aContainer)) {
-      return;
-    }
+    if (MoveForward(aRoot, aContainer)) return;
 
     
     mBeforeNode = false;
   }
 
-  MoveBackward(aContainer, aChild->GetPreviousSibling());
+  MoveBackward(aContainer, aPreviousSibling);
 }
 
 bool NodeIterator::NodePointer::MoveForward(nsINode* aRoot, nsINode* aNode) {
@@ -201,10 +195,13 @@ void NodeIterator::Detach() {
 
 
 
-void NodeIterator::ContentWillBeRemoved(nsIContent* aChild) {
+void NodeIterator::ContentRemoved(nsIContent* aChild,
+                                  nsIContent* aPreviousSibling) {
   nsINode* container = aChild->GetParentNode();
-  mPointer.AdjustForRemoval(mRoot, container, aChild);
-  mWorkingPointer.AdjustForRemoval(mRoot, container, aChild);
+
+  mPointer.AdjustAfterRemoval(mRoot, container, aChild, aPreviousSibling);
+  mWorkingPointer.AdjustAfterRemoval(mRoot, container, aChild,
+                                     aPreviousSibling);
 }
 
 bool NodeIterator::WrapObject(JSContext* cx, JS::Handle<JSObject*> aGivenProto,
