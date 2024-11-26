@@ -90,10 +90,10 @@ nsresult SVGViewBoxSMILType::ComputeDistance(const SMILValue& aFrom,
   
   
 
-  float dLeft = to->x - from->x;
-  float dTop = to->y - from->y;
-  float dRight = (to->x + to->width) - (from->x + from->width);
-  float dBottom = (to->y + to->height) - (from->y + from->height);
+  double dLeft = to->x - from->x;
+  double dTop = to->y - from->y;
+  double dRight = (to->x + to->width) - (from->x + from->width);
+  double dBottom = (to->y + to->height) - (from->y + from->height);
 
   aDistance = std::sqrt(dLeft * dLeft + dTop * dTop + dRight * dRight +
                         dBottom * dBottom);
