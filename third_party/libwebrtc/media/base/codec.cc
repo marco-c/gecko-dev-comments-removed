@@ -235,6 +235,7 @@ bool Codec::Matches(const Codec& codec) const {
   
   
   
+  
   const int kLowerDynamicRangeMin = 35;
   const int kLowerDynamicRangeMax = 65;
   const int kUpperDynamicRangeMin = 96;
@@ -246,9 +247,13 @@ bool Codec::Matches(const Codec& codec) const {
       (codec.id >= kLowerDynamicRangeMin &&
        codec.id <= kLowerDynamicRangeMax) ||
       (codec.id >= kUpperDynamicRangeMin && codec.id <= kUpperDynamicRangeMax);
-  bool matches_id = is_id_in_dynamic_range && is_codec_id_in_dynamic_range
-                        ? (absl::EqualsIgnoreCase(name, codec.name))
-                        : (id == codec.id);
+  bool matches_id;
+  if ((is_id_in_dynamic_range && is_codec_id_in_dynamic_range) ||
+      id == kIdNotSet || codec.id == kIdNotSet) {
+    matches_id = absl::EqualsIgnoreCase(name, codec.name);
+  } else {
+    matches_id = (id == codec.id);
+  }
 
   auto matches_type_specific = [&]() {
     switch (type) {
