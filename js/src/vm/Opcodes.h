@@ -849,7 +849,7 @@
 
 
  \
-    MACRO(ImportMeta, import_meta, NULL, 1, 0, 1, JOF_BYTE) \
+    MACRO(ImportMeta, import_meta, NULL, 1, 0, 1, JOF_BYTE|JOF_IC) \
     
 
 
