@@ -2477,6 +2477,14 @@ bool FlexItem::CanMainSizeInfluenceCrossSize() const {
   if (IsInlineAxisCrossAxis()) {
     
     
+
+    
+    
+    if (mFrame->HasAnyStateBits(
+            NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE)) {
+      return true;
+    }
+    
     
     if (mFrame->IsBlockFrame() || mFrame->IsTableWrapperFrame()) {
       
