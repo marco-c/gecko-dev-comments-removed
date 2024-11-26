@@ -825,6 +825,12 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
     return false;
   }
 
+  if (mIsUserScript && mExtension &&
+      !mExtension->HasPermission(nsGkAtoms::userScripts)) {
+    
+    return false;
+  }
+
   
   
   

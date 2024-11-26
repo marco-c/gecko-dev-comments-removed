@@ -2034,6 +2034,7 @@ STATIC_ATOMS = [
     Atom("privateBrowsingAllowedPermission", "internal:privateBrowsingAllowed"),
     Atom("svgContextPropertiesAllowedPermission", "internal:svgContextPropertiesAllowed"),
     Atom("theme", "theme"),
+    Atom("userScripts", "userScripts"),
     
     Atom("decimal_leading_zero", "decimal-leading-zero"),
     Atom("arabic_indic", "arabic-indic"),
