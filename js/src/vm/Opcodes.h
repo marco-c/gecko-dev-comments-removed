@@ -1775,7 +1775,7 @@
 
 
  \
-    MACRO(BuiltinObject, builtin_object, NULL, 2, 0, 1, JOF_UINT8) \
+    MACRO(BuiltinObject, builtin_object, NULL, 2, 0, 1, JOF_UINT8|JOF_IC) \
     
 
 

@@ -6376,30 +6376,15 @@ bool BaselineCodeGen<Handler>::emit_InitHomeObject() {
   return true;
 }
 
-template <>
-bool BaselineCompilerCodeGen::emit_BuiltinObject() {
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_BuiltinObject() {
+  frame.syncStack(0);
+
+  if (!emitNextIC()) {
+    return false;
+  }
+
   
-  auto kind = BuiltinObjectKind(GET_UINT8(handler.pc()));
-  JSObject* builtin = BuiltinObjectOperation(cx, kind);
-  if (!builtin) {
-    return false;
-  }
-  frame.push(ObjectValue(*builtin));
-  return true;
-}
-
-template <>
-bool BaselineInterpreterCodeGen::emit_BuiltinObject() {
-  prepareVMCall();
-
-  pushUint8BytecodeOperandArg(R0.scratchReg());
-
-  using Fn = JSObject* (*)(JSContext*, BuiltinObjectKind);
-  if (!callVM<Fn, BuiltinObjectOperation>()) {
-    return false;
-  }
-
-  masm.tagValue(JSVAL_TYPE_OBJECT, ReturnReg, R0);
   frame.push(R0);
   return true;
 }
