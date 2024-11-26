@@ -235,11 +235,8 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   
   
   
-  
-  
   if (data->CloneScope() ==
-          StructuredCloneHolder::StructuredCloneScope::SameProcess &&
-      NS_IsMainThread()) {
+      StructuredCloneHolder::StructuredCloneScope::SameProcess) {
     data->SetAsErrorMessageData();
   }
 
