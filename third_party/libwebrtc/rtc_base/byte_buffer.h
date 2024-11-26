@@ -101,6 +101,10 @@ class ByteBufferWriterT {
     WriteBytesInternal(reinterpret_cast<const value_type*>(val), len);
   }
 
+  void Write(ArrayView<const value_type> data) {
+    WriteBytesInternal(data.data(), data.size());
+  }
+
   
   
   
@@ -114,6 +118,8 @@ class ByteBufferWriterT {
 
   
   void Clear() { buffer_.Clear(); }
+
+  BufferClassT Extract() && { return std::move(buffer_); }
 
  private:
   static constexpr size_t kDefaultCapacity = 4096;
