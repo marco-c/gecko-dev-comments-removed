@@ -10,8 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "base/RTCMacros.h"
 #import "base/RTCVideoEncoder.h"
+#import "sdk/objc/base/RTCMacros.h"
 
 
 
