@@ -1645,10 +1645,18 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
   nscoord resolvedMinSize;  
   bool minSizeNeedsToMeasureContent = false;  
   if (isMainMinSizeAuto) {
-    
-    
-    resolvedMinSize =
-        PartiallyResolveAutoMinSize(aFlexItem, aItemReflowInput, aAxisTracker);
+    if (IsLegacyBox(this)) {
+      
+      
+      
+      
+      resolvedMinSize = 0;
+    } else {
+      
+      
+      resolvedMinSize = PartiallyResolveAutoMinSize(aFlexItem, aItemReflowInput,
+                                                    aAxisTracker);
+    }
     if (resolvedMinSize > 0) {
       
       
