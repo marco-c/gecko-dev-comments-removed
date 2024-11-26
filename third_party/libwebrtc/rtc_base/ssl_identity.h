@@ -32,8 +32,9 @@ class SSLCertificate;
 
 enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_ECDSA };
 
-static const int kRsaDefaultModSize = 1024;
+static const int kRsaDefaultModSize = 2048;
 static const int kRsaDefaultExponent = 0x10001;  
+
 static const int kRsaMinModSize = 1024;
 static const int kRsaMaxModSize = 8192;
 
