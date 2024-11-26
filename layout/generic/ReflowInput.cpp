@@ -296,6 +296,11 @@ nscoord SizeComputationInput::ComputeBSizeValue(
   return nsLayoutUtils::ComputeBSizeValue(aContainingBlockBSize, inside, aSize);
 }
 
+WritingMode ReflowInput::GetCBWritingMode() const {
+  return mCBReflowInput ? mCBReflowInput->GetWritingMode()
+                        : mFrame->GetContainingBlock()->GetWritingMode();
+}
+
 nsSize ReflowInput::ComputedSizeAsContainerIfConstrained() const {
   LogicalSize size = ComputedSize();
   if (size.ISize(mWritingMode) == NS_UNCONSTRAINEDSIZE) {
@@ -2378,8 +2383,8 @@ void ReflowInput::InitConstraints(
           
           return true;
         }
-        if (!alignCB->IsGridContainerFrame() && mCBReflowInput &&
-            mCBReflowInput->GetWritingMode().IsOrthogonalTo(mWritingMode)) {
+        if (!alignCB->IsGridContainerFrame() &&
+            mWritingMode.IsOrthogonalTo(GetCBWritingMode())) {
           
           
           return true;
@@ -2605,8 +2610,7 @@ void ReflowInput::CalculateBlockSideMargins() {
   
   
   
-  WritingMode cbWM =
-      mCBReflowInput ? mCBReflowInput->GetWritingMode() : GetWritingMode();
+  WritingMode cbWM = GetCBWritingMode();
 
   nscoord availISizeCBWM = AvailableSize(cbWM).ISize(cbWM);
   nscoord computedISizeCBWM = ComputedSize(cbWM).ISize(cbWM);
