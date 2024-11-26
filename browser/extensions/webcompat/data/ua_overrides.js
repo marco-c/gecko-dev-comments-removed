@@ -1651,6 +1651,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1899929",
+    platform: "all",
+    domain: "selecionases.saude.pe.gov.br",
+    bug: "1899929",
+    config: {
+      matches: ["*://selecionases.saude.pe.gov.br/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
