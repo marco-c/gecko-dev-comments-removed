@@ -194,10 +194,8 @@ class EglBase10Impl implements EglBase10 {
   @Override
   public void createSurface(Surface surface) {
     
-
-
-
-
+    
+    
     class FakeSurfaceHolder implements SurfaceHolder {
       private final Surface surface;
 
