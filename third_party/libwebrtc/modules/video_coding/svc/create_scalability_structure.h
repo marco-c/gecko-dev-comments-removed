@@ -16,14 +16,15 @@
 
 #include "api/video_codecs/scalability_mode.h"
 #include "modules/video_coding/svc/scalable_video_controller.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
 
 
-std::unique_ptr<ScalableVideoController> CreateScalabilityStructure(
-    ScalabilityMode name);
+std::unique_ptr<ScalableVideoController> RTC_EXPORT
+CreateScalabilityStructure(ScalabilityMode name);
 
 
 
