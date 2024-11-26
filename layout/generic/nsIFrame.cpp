@@ -6145,10 +6145,10 @@ void nsIFrame::InlineMinISizeData::OptionallyBreak(nscoord aHyphenWidth) {
   ForceBreak();
 }
 
-void nsIFrame::InlinePrefISizeData::ForceBreak(UsedClear aClearType) {
+void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aClearType) {
   
   
-  if (!mFloats.IsEmpty() && aClearType != UsedClear::None) {
+  if (!mFloats.IsEmpty() && aClearType != StyleClear::None) {
     
     
     nscoord floatsDone = 0;
@@ -6158,25 +6158,24 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(UsedClear aClearType) {
 
     for (const FloatInfo& floatInfo : mFloats) {
       const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-      auto cbWM = floatInfo.Frame()->GetParent()->GetWritingMode();
-      UsedClear clearType = floatDisp->UsedClear(cbWM);
-      if (clearType == UsedClear::Left || clearType == UsedClear::Right ||
-          clearType == UsedClear::Both) {
+      StyleClear clearType = floatDisp->mClear;
+      if (clearType == StyleClear::Left || clearType == StyleClear::Right ||
+          clearType == StyleClear::Both) {
         nscoord floatsCur = NSCoordSaturatingAdd(floatsCurLeft, floatsCurRight);
         if (floatsCur > floatsDone) {
           floatsDone = floatsCur;
         }
-        if (clearType != UsedClear::Right) {
+        if (clearType != StyleClear::Right) {
           floatsCurLeft = 0;
         }
-        if (clearType != UsedClear::Left) {
+        if (clearType != StyleClear::Left) {
           floatsCurRight = 0;
         }
       }
 
-      UsedFloat floatStyle = floatDisp->UsedFloat(cbWM);
+      StyleFloat floatStyle = floatDisp->mFloat;
       nscoord& floatsCur =
-          floatStyle == UsedFloat::Left ? floatsCurLeft : floatsCurRight;
+          floatStyle == StyleFloat::Left ? floatsCurLeft : floatsCurRight;
       nscoord floatISize = floatInfo.ISize();
       
       
@@ -6190,7 +6189,7 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(UsedClear aClearType) {
 
     mCurrentLine = NSCoordSaturatingAdd(mCurrentLine, floatsDone);
 
-    if (aClearType == UsedClear::Both) {
+    if (aClearType == StyleClear::Both) {
       mFloats.Clear();
     } else {
       
@@ -6200,16 +6199,15 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(UsedClear aClearType) {
       
       nsTArray<FloatInfo> newFloats;
       MOZ_ASSERT(
-          aClearType == UsedClear::Left || aClearType == UsedClear::Right,
+          aClearType == StyleClear::Left || aClearType == StyleClear::Right,
           "Other values should have been handled in other branches");
-      UsedFloat clearFloatType =
-          aClearType == UsedClear::Left ? UsedFloat::Left : UsedFloat::Right;
+      StyleFloat clearFloatType =
+          aClearType == StyleClear::Left ? StyleFloat::Left : StyleFloat::Right;
       
       
       for (FloatInfo& floatInfo : Reversed(mFloats)) {
         const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-        auto cbWM = floatInfo.Frame()->GetParent()->GetWritingMode();
-        if (floatDisp->UsedFloat(cbWM) != clearFloatType) {
+        if (floatDisp->mFloat != clearFloatType) {
           newFloats.AppendElement(floatInfo);
         } else {
           
@@ -6219,8 +6217,8 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(UsedClear aClearType) {
           
           
           
-          UsedClear clearType = floatDisp->UsedClear(cbWM);
-          if (clearType != aClearType && clearType != UsedClear::None) {
+          StyleClear clearType = floatDisp->mClear;
+          if (clearType != aClearType && clearType != StyleClear::None) {
             break;
           }
         }

@@ -121,27 +121,21 @@ class BlockReflowState {
 
 
 
-
-
-
-  nsFlowAreaRect GetFloatAvailableSpace(WritingMode aCBWM) const {
-    return GetFloatAvailableSpace(aCBWM, mBCoord);
+  nsFlowAreaRect GetFloatAvailableSpace() const {
+    return GetFloatAvailableSpace(mBCoord);
   }
-  nsFlowAreaRect GetFloatAvailableSpaceForPlacingFloat(WritingMode aCBWM,
-                                                       nscoord aBCoord) const {
-    return GetFloatAvailableSpaceWithState(aCBWM, aBCoord, ShapeType::Margin,
+  nsFlowAreaRect GetFloatAvailableSpaceForPlacingFloat(nscoord aBCoord) const {
+    return GetFloatAvailableSpaceWithState(aBCoord, ShapeType::Margin, nullptr);
+  }
+  nsFlowAreaRect GetFloatAvailableSpace(nscoord aBCoord) const {
+    return GetFloatAvailableSpaceWithState(aBCoord, ShapeType::ShapeOutside,
                                            nullptr);
   }
-  nsFlowAreaRect GetFloatAvailableSpace(WritingMode aCBWM,
-                                        nscoord aBCoord) const {
-    return GetFloatAvailableSpaceWithState(aCBWM, aBCoord,
-                                           ShapeType::ShapeOutside, nullptr);
-  }
   nsFlowAreaRect GetFloatAvailableSpaceWithState(
-      WritingMode aCBWM, nscoord aBCoord, ShapeType aShapeType,
+      nscoord aBCoord, ShapeType aShapeType,
       nsFloatManager::SavedState* aState) const;
   nsFlowAreaRect GetFloatAvailableSpaceForBSize(
-      WritingMode aCBWM, nscoord aBCoord, nscoord aBSize,
+      nscoord aBCoord, nscoord aBSize,
       nsFloatManager::SavedState* aState) const;
 
   
@@ -174,7 +168,7 @@ class BlockReflowState {
     FloatsPushedOrSplit,
   };
   std::tuple<nscoord, ClearFloatsResult> ClearFloats(
-      nscoord aBCoord, UsedClear aClearType,
+      nscoord aBCoord, StyleClear aClearType,
       nsIFrame* aFloatAvoidingBlock = nullptr);
 
   nsFloatManager* FloatManager() const {
@@ -403,7 +397,7 @@ class BlockReflowState {
 
   
   
-  UsedClear mTrailingClearFromPIF;
+  StyleClear mTrailingClearFromPIF;
 
   
   

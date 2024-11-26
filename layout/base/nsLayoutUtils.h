@@ -630,8 +630,8 @@ class nsLayoutUtils {
 
   
   
-  static mozilla::UsedClear CombineClearType(mozilla::UsedClear aOrigClearType,
-                                             mozilla::UsedClear aNewClearType);
+  static mozilla::StyleClear CombineClearType(
+      mozilla::StyleClear aOrigClearType, mozilla::StyleClear aNewClearType);
 
   
 
