@@ -69,7 +69,7 @@ void FdWatcher::Init() {
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   os->AddObserver(this, "xpcom-shutdown",  false);
 
-  XRE_GetAsyncIOEventTarget()->Dispatch(NewRunnableMethod(
+  XRE_GetIOMessageLoop()->PostTask(NewRunnableMethod(
       "FdWatcher::StartWatching", this, &FdWatcher::StartWatching));
 }
 
@@ -77,7 +77,7 @@ void FdWatcher::Init() {
 
 
 void FdWatcher::StartWatching() {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(XRE_GetIOMessageLoop() == MessageLoopForIO::current());
   MOZ_ASSERT(mFd == -1);
 
   mFd = OpenFd();
@@ -94,7 +94,7 @@ void FdWatcher::StartWatching() {
 
 
 void FdWatcher::StopWatching() {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(XRE_GetIOMessageLoop() == MessageLoopForIO::current());
 
   mReadWatcher.StopWatchingFileDescriptor();
   if (mFd != -1) {
@@ -159,7 +159,7 @@ SignalPipeWatcher::~SignalPipeWatcher() {
 }
 
 int SignalPipeWatcher::OpenFd() {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(XRE_GetIOMessageLoop() == MessageLoopForIO::current());
 
   
   
@@ -181,7 +181,7 @@ int SignalPipeWatcher::OpenFd() {
 }
 
 void SignalPipeWatcher::StopWatching() {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(XRE_GetIOMessageLoop() == MessageLoopForIO::current());
 
   
   
@@ -197,7 +197,7 @@ void SignalPipeWatcher::StopWatching() {
 }
 
 void SignalPipeWatcher::OnFileCanReadWithoutBlocking(int aFd) {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(XRE_GetIOMessageLoop() == MessageLoopForIO::current());
 
   uint8_t signum;
   ssize_t numReceived = read(aFd, &signum, sizeof(signum));
@@ -346,7 +346,7 @@ int FifoWatcher::OpenFd() {
 }
 
 void FifoWatcher::OnFileCanReadWithoutBlocking(int aFd) {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(XRE_GetIOMessageLoop() == MessageLoopForIO::current());
 
   char buf[1024];
   int nread;

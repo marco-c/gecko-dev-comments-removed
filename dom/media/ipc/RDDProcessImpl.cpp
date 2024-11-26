@@ -5,6 +5,7 @@
 
 #include "RDDProcessImpl.h"
 
+#include "mozilla/ipc/IOThreadChild.h"
 #include "mozilla/GeckoArgs.h"
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)

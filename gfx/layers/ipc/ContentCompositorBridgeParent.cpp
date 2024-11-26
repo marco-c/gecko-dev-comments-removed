@@ -376,7 +376,7 @@ void ContentCompositorBridgeParent::SetConfirmedTargetAPZC(
 void ContentCompositorBridgeParent::DeferredDestroy() { mSelfRef = nullptr; }
 
 ContentCompositorBridgeParent::~ContentCompositorBridgeParent() {
-  MOZ_ASSERT(XRE_GetAsyncIOEventTarget());
+  MOZ_ASSERT(XRE_GetIOMessageLoop());
 }
 
 PTextureParent* ContentCompositorBridgeParent::AllocPTextureParent(

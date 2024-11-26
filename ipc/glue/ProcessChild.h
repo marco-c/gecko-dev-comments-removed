@@ -11,8 +11,9 @@
 #include "base/message_loop.h"
 #include "base/process.h"
 
-#include "mozilla/GeckoArgs.h"
-#include "mozilla/ipc/IOThread.h"
+#include "chrome/common/child_process.h"
+
+#include "mozilla/ipc/ProcessUtils.h"
 
 
 
@@ -21,7 +22,7 @@
 namespace mozilla {
 namespace ipc {
 
-class ProcessChild {
+class ProcessChild : public ChildProcess {
  protected:
   typedef base::ProcessId ProcessId;
 
@@ -76,7 +77,6 @@ class ProcessChild {
   MessageLoop* mUILoop;
   ProcessId mParentPid;
   nsID mMessageChannelId;
-  UniquePtr<IOThreadChild> mChildThread;
 };
 
 }  

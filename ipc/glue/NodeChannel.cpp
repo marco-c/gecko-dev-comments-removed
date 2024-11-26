@@ -8,7 +8,7 @@
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "mojo/core/ports/name.h"
-#include "mozilla/ipc/IOThread.h"
+#include "mozilla/ipc/BrowserProcessSubThread.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -58,19 +58,23 @@ void NodeChannel::Destroy() {
   
   
   
-  nsISerialEventTarget* ioThread = XRE_GetAsyncIOEventTarget();
+  MessageLoop* ioThread = XRE_GetIOMessageLoop();
+  if (ioThread->IsAcceptingTasks()) {
+    ioThread->PostTask(NewNonOwningRunnableMethod("NodeChannel::Destroy", this,
+                                                  &NodeChannel::FinalDestroy));
+    return;
+  }
 
   
   
   
-  if (ioThread->IsOnCurrentThread() && MessageLoop::current() &&
-      !MessageLoop::current()->IsAcceptingTasks()) {
+  
+  if (MessageLoop::current() == ioThread) {
     FinalDestroy();
     return;
   }
 
-  MOZ_ALWAYS_SUCCEEDS(ioThread->Dispatch(NewNonOwningRunnableMethod(
-      "NodeChannel::Destroy", this, &NodeChannel::FinalDestroy)));
+  MOZ_ASSERT_UNREACHABLE("Leaking NodeChannel after IOThread destroyed!");
 }
 
 void NodeChannel::FinalDestroy() {
@@ -198,7 +202,7 @@ void NodeChannel::SendMessage(UniquePtr<IPC::Message> aMessage) {
     
     State expected = State::Active;
     if (mState.compare_exchange_strong(expected, State::Closing)) {
-      XRE_GetAsyncIOEventTarget()->Dispatch(
+      XRE_GetIOMessageLoop()->PostTask(
           NewRunnableMethod("NodeChannel::CloseForSendError", this,
                             &NodeChannel::OnChannelError));
     }

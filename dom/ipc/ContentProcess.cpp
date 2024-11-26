@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/ipc/IOThreadChild.h"
+
 #include "ContentProcess.h"
 #include "mozilla/Preferences.h"
 
@@ -19,6 +21,8 @@
 #include "mozilla/GeckoArgs.h"
 #include "mozilla/Omnijar.h"
 #include "nsCategoryManagerUtils.h"
+
+using mozilla::ipc::IOThreadChild;
 
 namespace mozilla::dom {
 

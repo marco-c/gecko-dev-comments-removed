@@ -4378,7 +4378,7 @@ void ContentParent::KillHard(const char* aReason) {
   }
 
   
-  XRE_GetAsyncIOEventTarget()->Dispatch(
+  XRE_GetIOMessageLoop()->PostTask(
       NewRunnableFunction("EnsureProcessTerminatedRunnable",
                           &ProcessWatcher::EnsureProcessTerminated,
                           otherProcessHandle, true));
