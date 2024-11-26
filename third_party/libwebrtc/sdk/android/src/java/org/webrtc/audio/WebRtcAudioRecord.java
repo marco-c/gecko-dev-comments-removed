@@ -283,7 +283,7 @@ class WebRtcAudioRecord {
     final int bytesPerFrame = channels * getBytesPerSample(audioFormat);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
-    if (!(byteBuffer.hasArray())) {
+    if (!byteBuffer.hasArray()) {
       reportWebRtcAudioRecordInitError("ByteBuffer does not have backing array.");
       return -1;
     }
@@ -721,7 +721,7 @@ class WebRtcAudioRecord {
   
   
   private static boolean checkDeviceMatch(AudioDeviceInfo devA, AudioDeviceInfo devB) {
-    return ((devA.getId() == devB.getId() && (devA.getType() == devB.getType())));
+    return (devA.getId() == devB.getId() && (devA.getType() == devB.getType()));
   }
 
   private static String audioStateToString(int state) {
