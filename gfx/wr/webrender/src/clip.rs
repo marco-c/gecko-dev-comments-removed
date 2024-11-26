@@ -1930,7 +1930,8 @@ impl ClipItemKind {
             }
             ClipItemKind::RoundedRectangle { ref radius, .. } => {
                 
-                radius.all_sides_uniform()
+                
+                radius.is_uniform().is_some()
             }
         }
     }
