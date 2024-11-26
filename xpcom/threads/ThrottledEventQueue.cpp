@@ -148,7 +148,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
     
     
-    MOZ_ASSERT_IF(!mEventQueue.IsEmpty(lock), NS_IsMainThread());
+    MOZ_ASSERT_IF(!mEventQueue.IsEmpty(lock), IsOnCurrentThread());
 #endif
   }
 
@@ -260,7 +260,6 @@ class ThrottledEventQueue::Inner final : public nsISupports {
  public:
   static already_AddRefed<Inner> Create(nsISerialEventTarget* aBaseTarget,
                                         const char* aName, uint32_t aPriority) {
-    MOZ_ASSERT(NS_IsMainThread());
     
     
     
@@ -392,7 +391,6 @@ ThrottledEventQueue::ThrottledEventQueue(already_AddRefed<Inner> aInner)
 
 already_AddRefed<ThrottledEventQueue> ThrottledEventQueue::Create(
     nsISerialEventTarget* aBaseTarget, const char* aName, uint32_t aPriority) {
-  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aBaseTarget);
 
   RefPtr<Inner> inner = Inner::Create(aBaseTarget, aName, aPriority);
