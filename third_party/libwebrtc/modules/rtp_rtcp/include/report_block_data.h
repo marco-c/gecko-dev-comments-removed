@@ -72,9 +72,14 @@ class ReportBlockData {
   TimeDelta jitter(int rtp_clock_rate_hz) const;
 
   
+  
+  
   Timestamp report_block_timestamp_utc() const {
     return report_block_timestamp_utc_;
   }
+
+  
+  Timestamp report_block_timestamp() const { return report_block_timestamp_; }
 
   
   
@@ -91,13 +96,19 @@ class ReportBlockData {
     extended_highest_sequence_number_ = sn;
   }
   void set_jitter(uint32_t jitter) { jitter_ = jitter; }
+  
+  
   void set_report_block_timestamp_utc(Timestamp arrival_time) {
     report_block_timestamp_utc_ = arrival_time;
+  }
+  void set_report_block_timestamp(Timestamp arrival_time) {
+    report_block_timestamp_ = arrival_time;
   }
 
   void SetReportBlock(uint32_t sender_ssrc,
                       const rtcp::ReportBlock& report_block,
-                      Timestamp report_block_timestamp_utc);
+                      Timestamp report_block_timestamp_utc,
+                      Timestamp report_block_timestamp);
   void AddRoundTripTimeSample(TimeDelta rtt);
 
  private:
@@ -107,7 +118,10 @@ class ReportBlockData {
   int32_t cumulative_lost_ = 0;
   uint32_t extended_highest_sequence_number_ = 0;
   uint32_t jitter_ = 0;
+  
+  
   Timestamp report_block_timestamp_utc_ = Timestamp::Zero();
+  Timestamp report_block_timestamp_ = Timestamp::Zero();
   TimeDelta last_rtt_ = TimeDelta::Zero();
   TimeDelta sum_rtt_ = TimeDelta::Zero();
   size_t num_rtts_ = 0;
