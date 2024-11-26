@@ -105,13 +105,6 @@ Maybe<PseudoStyleRequest> nsCSSPseudoElements::ParsePseudoElement(
 }
 
 
-mozilla::Maybe<PseudoStyleType> nsCSSPseudoElements::GetPseudoType(
-    const nsAString& aPseudoElement, CSSEnabledState aEnabledState) {
-  return ParsePseudoElement(aPseudoElement, aEnabledState)
-      .map([](const auto& r) { return r.mType; });
-}
-
-
 bool nsCSSPseudoElements::PseudoElementSupportsUserActionState(
     const Type aType) {
   return PseudoElementHasFlags(aType,

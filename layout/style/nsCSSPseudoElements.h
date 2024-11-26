@@ -58,8 +58,9 @@
 #define CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM (1 << 7)
 
 class nsCSSPseudoElements {
-  typedef mozilla::PseudoStyleType Type;
-  typedef mozilla::CSSEnabledState EnabledState;
+  using EnabledState = mozilla::CSSEnabledState;
+  using Request = mozilla::PseudoStyleRequest;
+  using Type = mozilla::PseudoStyleType;
 
  public:
   static bool IsEagerlyCascadedInServo(const Type aType) {
@@ -83,15 +84,7 @@ class nsCSSPseudoElements {
 
   
   
-  
-  
-  static mozilla::Maybe<mozilla::PseudoStyleRequest> ParsePseudoElement(
-      const nsAString& aPseudoElement,
-      EnabledState = EnabledState::ForAllContent);
-
-  
-  
-  static mozilla::Maybe<Type> GetPseudoType(
+  static mozilla::Maybe<Request> ParsePseudoElement(
       const nsAString& aPseudoElement,
       EnabledState = EnabledState::ForAllContent);
 
@@ -99,11 +92,6 @@ class nsCSSPseudoElements {
   
   
   static nsAtom* GetPseudoAtom(Type aType);
-
-  
-  
-  static already_AddRefed<nsAtom> GetPseudoAtom(
-      const nsAString& aPseudoElement);
 
   static bool PseudoElementContainsElements(const Type aType) {
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS);

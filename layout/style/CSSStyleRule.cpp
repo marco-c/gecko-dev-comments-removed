@@ -254,9 +254,9 @@ bool CSSStyleRule::SelectorMatchesElement(uint32_t aSelectorIndex,
                                           Element& aElement,
                                           const nsAString& aPseudo,
                                           bool aRelevantLinkVisited) {
-  Maybe<PseudoStyleType> pseudoType = nsCSSPseudoElements::GetPseudoType(
+  Maybe<PseudoStyleRequest> pseudo = nsCSSPseudoElements::ParsePseudoElement(
       aPseudo, CSSEnabledState::IgnoreEnabledState);
-  if (!pseudoType) {
+  if (!pseudo) {
     return false;
   }
 
@@ -288,8 +288,10 @@ bool CSSStyleRule::SelectorMatchesElement(uint32_t aSelectorIndex,
   AutoTArray<const StyleLockedStyleRule*, 8> rules;
   CollectStyleRules(*this,  true, rules);
 
+  
+  
   return Servo_StyleRule_SelectorMatchesElement(
-      &rules, &aElement, aSelectorIndex, host, *pseudoType,
+      &rules, &aElement, aSelectorIndex, host, pseudo->mType,
       aRelevantLinkVisited);
 }
 
