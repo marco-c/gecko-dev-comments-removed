@@ -1226,7 +1226,7 @@ void ContentParent::LogAndAssertFailedPrincipalValidationInfo(
   } else {
     principalType.AssignLiteral("Unknown");
   }
-  extra.principalType = Some(principalType);
+  extra.principaltype = Some(principalType);
   extra.value = Some(aMethod);
 
   
