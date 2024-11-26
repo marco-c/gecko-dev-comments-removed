@@ -1,5 +1,7 @@
 
 
+
+
 const fun1 = new WebAssembly.Function({ parameters: [], results: [] }, () => { });
 const isFun1 = function (f) { return f == fun1; }
 const ext1 = {};
