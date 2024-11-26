@@ -685,12 +685,11 @@ uint32_t GetCubebMTGLatencyInFrames(cubeb_stream_params* params) {
   }
 
 #ifdef MOZ_WIDGET_ANDROID
-  int frames = AndroidGetAudioOutputFramesPerBuffer();
-  if (frames > 0) {
-    return frames;
-  } else {
-    return 512;
-  }
+  int32_t frames = AndroidGetAudioOutputFramesPerBuffer();
+  
+  
+  
+  return std::max(1024, frames);
 #else
   RefPtr<CubebHandle> handle = GetCubebUnlocked();
   if (!handle) {
