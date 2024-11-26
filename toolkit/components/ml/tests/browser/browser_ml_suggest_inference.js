@@ -2,8 +2,6 @@
 
 "use strict";
 
-const ITERATIONS = 1;
-
 const PREFIX = "inference";
 const METRICS = [
   `${PREFIX}-${PIPELINE_READY_LATENCY}`,
