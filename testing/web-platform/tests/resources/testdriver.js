@@ -56,12 +56,26 @@
             
 
 
+
+
+
+            
+
+
             log: {
-                
-
-
                 entry_added: {
                     
+
+
+
+                    
+
+
+
+
+
+
+
 
 
 
@@ -84,15 +98,21 @@
 
 
 
-
                     on: function (callback) {
                         return window.test_driver_internal.bidi.log.entry_added.on(callback);
                     },
+                    
+
+
+
+
+
+
                     once: function () {
                         return new Promise(resolve => {
                             const remove_handler = window.test_driver_internal.bidi.log.entry_added.on(
-                                data => {
-                                    resolve(data);
+                                event => {
+                                    resolve(event);
                                     remove_handler();
                                 });
                         });
@@ -104,6 +124,20 @@
 
             permissions: {
                 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
