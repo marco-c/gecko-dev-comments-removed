@@ -10,8 +10,6 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  AppProvidedSearchEngine:
-    "resource://gre/modules/AppProvidedSearchEngine.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
 
@@ -130,38 +128,6 @@ const MAIN_CONFIG = [
   },
 ];
 
-const CONFIG_WITH_MODIFIED_CLASSIFICATION = [
-  {
-    identifier: "originalDefault",
-    base: {
-      name: "Original Default",
-      urls: {
-        search: {
-          base: "https://example.com/search",
-          searchTermParamName: "q",
-        },
-      },
-      classification: "unknown",
-    },
-  },
-];
-
-const CONFIG_WITH_MODIFIED_NAME = [
-  {
-    identifier: "originalDefault",
-    base: {
-      name: "Modified Engine Name",
-      urls: {
-        search: {
-          base: "https://example.com/search",
-          searchTermParamName: "q",
-        },
-      },
-      classification: "general",
-    },
-  },
-];
-
 const testSearchEngine = {
   id: "originalDefault",
   name: "Original Default",
@@ -205,6 +171,13 @@ async function checkTelemetry(
   checkPrivate = false,
   additionalEventsExpected = false
 ) {
+  
+  
+  
+  
+  
+  
+  
   let snapshot;
   if (checkPrivate) {
     snapshot = await Glean.searchEnginePrivate.changed.testGetValue();
@@ -212,8 +185,6 @@ async function checkTelemetry(
     snapshot = await Glean.searchEngineDefault.changed.testGetValue();
   }
 
-  
-  
   if (additionalEventsExpected) {
     delete snapshot[0].timestamp;
     Assert.deepEqual(
@@ -315,7 +286,8 @@ add_task(async function test_experiment_changes_default() {
     "experiment",
     testNewDefaultEngine,
     testDefaultForExperiment,
-    false
+    false,
+    true
   );
 
   
@@ -334,7 +306,8 @@ add_task(async function test_locale_changes_default() {
     "locale",
     testDefaultForExperiment,
     testDefaultInLocaleFRNotRegionDEEngine,
-    false
+    false,
+    true
   );
 });
 
@@ -350,7 +323,8 @@ add_task(async function test_region_changes_default() {
     "region",
     testDefaultInLocaleFRNotRegionDEEngine,
     testPrefEngine,
-    false
+    false,
+    true
   );
 });
 
@@ -471,78 +445,3 @@ add_task(async function test_default_engine_update() {
   await checkTelemetry("engine-update", defaultEngineData, defaultEngineData);
   await extension.unload();
 });
-
-add_task(async function test_only_notify_on_relevant_engine_property_change() {
-  clearTelemetry();
-  await SearchTestUtils.updateRemoteSettingsConfig(BASE_CONFIG);
-
-  
-  
-  
-  let notificationSpy = sinon.spy(
-    AppProvidedSearchEngine.prototype,
-    "_resetPrevEngineInfo"
-  );
-
-  
-  
-  let reloadObserved =
-    SearchTestUtils.promiseSearchNotification("engines-reloaded");
-  await SearchTestUtils.updateRemoteSettingsConfig(
-    CONFIG_WITH_MODIFIED_CLASSIFICATION
-  );
-  await reloadObserved;
-
-  Assert.equal(
-    notificationSpy.callCount,
-    0,
-    "Should not have sent a notification"
-  );
-
-  notificationSpy.restore();
-});
-
-add_task(
-  async function test_multiple_updates_only_notify_on_relevant_engine_property_change() {
-    clearTelemetry();
-    await SearchTestUtils.updateRemoteSettingsConfig(BASE_CONFIG);
-
-    
-    
-    
-    let notificationSpy = sinon.spy(
-      AppProvidedSearchEngine.prototype,
-      "_resetPrevEngineInfo"
-    );
-
-    
-    
-    let reloadObserved1 =
-      SearchTestUtils.promiseSearchNotification("engines-reloaded");
-    await SearchTestUtils.updateRemoteSettingsConfig(
-      CONFIG_WITH_MODIFIED_CLASSIFICATION
-    );
-    await reloadObserved1;
-
-    Assert.equal(
-      notificationSpy.callCount,
-      0,
-      "Should not have sent a notification"
-    );
-
-    
-    
-    let reloadObserved2 =
-      SearchTestUtils.promiseSearchNotification("engines-reloaded");
-    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_WITH_MODIFIED_NAME);
-    await reloadObserved2;
-
-    Assert.equal(
-      notificationSpy.callCount,
-      1,
-      "Should have sent a notification"
-    );
-
-    notificationSpy.restore();
-  }
-);
