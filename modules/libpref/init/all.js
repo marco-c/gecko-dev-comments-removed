@@ -1851,6 +1851,13 @@ pref("extensions.browser_style_mv3.supported", false);
 pref("extensions.browser_style_mv3.same_as_mv2", false);
 
 
+#ifdef NIGHTLY_BUILD
+  pref("extensions.ml.enabled", true);
+#else
+  pref("extensions.ml.enabled", false);
+#endif
+
+
 pref("middlemouse.paste", false);
 pref("middlemouse.contentLoadURL", false);
 pref("middlemouse.scrollbarPosition", false);
