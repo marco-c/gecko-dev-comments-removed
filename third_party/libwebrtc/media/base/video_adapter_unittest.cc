@@ -59,13 +59,8 @@ rtc::VideoSinkWants BuildSinkWants(
   wants.resolution_alignment = 1;
   wants.is_active = true;
   if (requested_resolution) {
-    wants.target_pixel_count = requested_resolution->PixelCount();
-    wants.max_pixel_count = requested_resolution->PixelCount();
     wants.requested_resolution.emplace(rtc::VideoSinkWants::FrameSize(
         requested_resolution->width, requested_resolution->height));
-  } else {
-    wants.target_pixel_count = kWidth * kHeight;
-    wants.max_pixel_count = kWidth * kHeight;
   }
   wants.aggregates.emplace(rtc::VideoSinkWants::Aggregates());
   wants.aggregates->any_active_without_requested_resolution =
@@ -1304,6 +1299,19 @@ TEST_P(VideoAdapterTest, RequestedResolutionIsOrientationAgnostic) {
             .first,
         Eq(Resolution{.width = 1280, .height = 720}));
   }
+}
+
+TEST_P(VideoAdapterTest, RequestedResolutionMaintainsAspectRatio) {
+  
+  adapter_.OnSinkWants(
+      BuildSinkWants(Resolution{.width = 720, .height = 720},
+                      false));
+
+  
+  EXPECT_THAT(
+      AdaptFrameResolution( {.width = 1280, .height = 720})
+          .first,
+      Eq(Resolution{.width = 720, .height = 405}));
 }
 
 class VideoAdapterWithSourceAlignmentTest : public VideoAdapterTest {
