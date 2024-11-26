@@ -10,50 +10,10 @@
 
 
 let CONFIG = [
-  {
-    identifier: "engine_no_initial_icon",
-    base: {
-      urls: {
-        search: {
-          base: "https://example.com/1",
-          searchTermParamName: "q",
-        },
-      },
-    },
-  },
-  {
-    identifier: "engine_icon_updates",
-    base: {
-      urls: {
-        search: {
-          base: "https://example.com/2",
-          searchTermParamName: "q",
-        },
-      },
-    },
-  },
-  {
-    identifier: "engine_icon_not_local",
-    base: {
-      urls: {
-        search: {
-          base: "https://example.com/3",
-          searchTermParamName: "q",
-        },
-      },
-    },
-  },
-  {
-    identifier: "engine_icon_out_of_date",
-    base: {
-      urls: {
-        search: {
-          base: "https://example.com/4",
-          searchTermParamName: "q",
-        },
-      },
-    },
-  },
+  { identifier: "engine_no_initial_icon" },
+  { identifier: "engine_icon_updates" },
+  { identifier: "engine_icon_not_local" },
+  { identifier: "engine_icon_out_of_date" },
 ];
 
 async function assertIconMatches(actualIconData, expectedIcon) {
@@ -70,9 +30,10 @@ async function assertIconMatches(actualIconData, expectedIcon) {
   );
 }
 
-async function assertEngineIcon(engineId, expectedIcon) {
+async function assertEngineIcon(engineId, expectedIcon, size = 0) {
+  
   let engine = Services.search.getEngineById(engineId);
-  let engineIconURL = await engine.getIconURL(16);
+  let engineIconURL = await engine.getIconURL(size);
 
   if (expectedIcon) {
     Assert.notEqual(
@@ -82,9 +43,9 @@ async function assertEngineIcon(engineId, expectedIcon) {
     );
 
     let response = await fetch(engineIconURL);
-    let buffer = new Uint8Array(await response.arrayBuffer());
+    let actualBuffer = new Uint8Array(await response.arrayBuffer());
 
-    await assertIconMatches(buffer, expectedIcon);
+    await assertIconMatches(actualBuffer, expectedIcon);
   } else {
     Assert.equal(
       engineIconURL,
@@ -115,6 +76,12 @@ add_setup(async function setup() {
     
     engineIdentifiers: ["engine_icon_upd*"],
     imageSize: 16,
+  });
+  await insertRecordIntoCollection(client, {
+    id: Services.uuid.generateUUID().toString(),
+    filename: "svgIcon.svg",
+    engineIdentifiers: ["engine_icon_updates"],
+    imageSize: 32,
   });
   
   await insertRecordIntoCollection(
@@ -268,6 +235,8 @@ add_task(async function test_icon_updated() {
 
   await promiseIconChanged;
   await assertEngineIcon("engine_icon_updates", "bigIcon.ico");
+  info("Other icon should be untouched.");
+  await assertEngineIcon("engine_icon_updates", "svgIcon.svg", 32);
 });
 
 add_task(async function test_icon_not_local() {
