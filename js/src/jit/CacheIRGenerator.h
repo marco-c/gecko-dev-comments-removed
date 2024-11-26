@@ -854,13 +854,13 @@ class MOZ_RAII ToBoolIRGenerator : public IRGenerator {
   AttachDecision tryAttachStub();
 };
 
-class MOZ_RAII GetIntrinsicIRGenerator : public IRGenerator {
+class MOZ_RAII LazyConstantIRGenerator : public IRGenerator {
   HandleValue val_;
 
   void trackAttached(const char* name );
 
  public:
-  GetIntrinsicIRGenerator(JSContext* cx, HandleScript, jsbytecode* pc,
+  LazyConstantIRGenerator(JSContext* cx, HandleScript, jsbytecode* pc,
                           ICState state, HandleValue val);
 
   AttachDecision tryAttachStub();
