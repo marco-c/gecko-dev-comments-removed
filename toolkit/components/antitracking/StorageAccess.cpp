@@ -163,11 +163,23 @@ static StorageAccess InternalStorageAllowedCheck(
     nsIURI* documentURI = aURI ? aURI : aWindow->GetDocumentURI();
     disabled = !documentURI ||
                !ShouldAllowAccessFor(aWindow, documentURI, &aRejectedReason);
+
+    
+    
+    uint32_t rejectedReason = aRejectedReason;
+    if (aRejectedReason ==
+            static_cast<uint32_t>(
+                nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN) &&
+        nsContentUtils::IsThirdPartyTrackingResourceWindow(aWindow)) {
+      rejectedReason =
+          nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER;
+    }
+
     ContentBlockingNotifier::OnDecision(
         aWindow,
         disabled ? ContentBlockingNotifier::BlockingDecision::eBlock
                  : ContentBlockingNotifier::BlockingDecision::eAllow,
-        aRejectedReason);
+        rejectedReason);
   } else if (aChannel) {
     disabled = false;
     nsCOMPtr<nsIURI> uri;
@@ -175,11 +187,27 @@ static StorageAccess InternalStorageAllowedCheck(
     if (!NS_WARN_IF(NS_FAILED(rv))) {
       disabled = !ShouldAllowAccessFor(aChannel, uri, &aRejectedReason);
     }
+
+    
+    
+    uint32_t rejectedReason = aRejectedReason;
+    nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+        do_QueryInterface(aChannel);
+
+    if (classifiedChannel &&
+        classifiedChannel->IsThirdPartyTrackingResource() &&
+        aRejectedReason ==
+            static_cast<uint32_t>(
+                nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN)) {
+      rejectedReason =
+          nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER;
+    }
+
     ContentBlockingNotifier::OnDecision(
         aChannel,
         disabled ? ContentBlockingNotifier::BlockingDecision::eBlock
                  : ContentBlockingNotifier::BlockingDecision::eAllow,
-        aRejectedReason);
+        rejectedReason);
   } else {
     MOZ_ASSERT(aPrincipal);
     nsCOMPtr<nsICookieJarSettings> cookieJarSettings = aCookieJarSettings;
