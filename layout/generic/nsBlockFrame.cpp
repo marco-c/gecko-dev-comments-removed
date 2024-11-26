@@ -4971,8 +4971,7 @@ void nsBlockFrame::DoReflowInlineFrames(
 
   aLineLayout.BeginLineReflow(iStart, aState.mBCoord, availISize, availBSize,
                               aFloatAvailableSpace.HasFloats(),
-                              false ,
-                              lineWM,
+                              false , lineWM,
                               aState.mContainerSize, aState.mInsetForBalance);
 
   aState.mFlags.mIsLineLayoutEmpty = false;
