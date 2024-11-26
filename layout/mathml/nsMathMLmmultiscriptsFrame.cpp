@@ -37,7 +37,9 @@ NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmmultiscriptsFrame)
 nsMathMLmmultiscriptsFrame::~nsMathMLmmultiscriptsFrame() = default;
 
 uint8_t nsMathMLmmultiscriptsFrame::ScriptIncrement(nsIFrame* aFrame) {
-  if (!aFrame) return 0;
+  if (!aFrame) {
+    return 0;
+  }
   if (mFrames.ContainsFrame(aFrame)) {
     if (mFrames.FirstChild() == aFrame ||
         aFrame->GetContent()->IsMathMLElement(nsGkAtoms::mprescripts_)) {
@@ -116,12 +118,13 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   
   
   
-  if (aFrame->GetContent()->IsMathMLElement(nsGkAtoms::mover_))
+  if (aFrame->GetContent()->IsMathMLElement(nsGkAtoms::mover_)) {
     tag = nsGkAtoms::msup_;
-  else if (aFrame->GetContent()->IsMathMLElement(nsGkAtoms::munder_))
+  } else if (aFrame->GetContent()->IsMathMLElement(nsGkAtoms::munder_)) {
     tag = nsGkAtoms::msub_;
-  else if (aFrame->GetContent()->IsMathMLElement(nsGkAtoms::munderover_))
+  } else if (aFrame->GetContent()->IsMathMLElement(nsGkAtoms::munderover_)) {
     tag = nsGkAtoms::msubsup_;
+  }
 
   nsBoundingMetrics bmFrame;
 
@@ -135,10 +138,11 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   nsIFrame* baseFrame = aFrame->PrincipalChildList().FirstChild();
 
   if (!baseFrame) {
-    if (tag == nsGkAtoms::mmultiscripts_)
+    if (tag == nsGkAtoms::mmultiscripts_) {
       aFrame->ReportErrorToConsole("NoBase");
-    else
+    } else {
       aFrame->ReportChildCountError();
+    }
     return aFrame->PlaceAsMrow(aDrawTarget, aFlags, aDesiredSize);
   }
 
@@ -425,10 +429,11 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
                      supScriptSize.Height() - supScriptSize.BlockStartAscent() +
                          supScriptMargin.bottom);
 
-        if (bmSupScript.width)
+        if (bmSupScript.width) {
           width =
               std::max(width, bmSupScript.width + supScriptMargin.LeftRight() +
                                   scriptSpace);
+        }
 
         if (!prescriptsFrame) {  
           rightBearing = std::max(rightBearing,
@@ -525,8 +530,12 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
 
   
   
-  if (!subScriptFrame) maxSubScriptShift = 0;
-  if (!supScriptFrame) maxSupScriptShift = 0;
+  if (!subScriptFrame) {
+    maxSubScriptShift = 0;
+  }
+  if (!supScriptFrame) {
+    maxSupScriptShift = 0;
+  }
 
   
   if (tag == nsGkAtoms::msub_) {
@@ -587,10 +596,11 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
     
     
     
-    if (tag == nsGkAtoms::msub_ || tag == nsGkAtoms::msup_)
+    if (tag == nsGkAtoms::msub_ || tag == nsGkAtoms::msup_) {
       count = 1;
-    else
+    } else {
       count = 0;
+    }
     childFrame = prescriptsFrame;
     bool isPreScript = true;
     do {
@@ -630,7 +640,9 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
           subScriptFrame = childFrame;
           count = 1;
         } else if (1 == count) {
-          if (tag != nsGkAtoms::msub_) supScriptFrame = childFrame;
+          if (tag != nsGkAtoms::msub_) {
+            supScriptFrame = childFrame;
+          }
           count = 0;
 
           

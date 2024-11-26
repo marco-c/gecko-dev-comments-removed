@@ -109,7 +109,9 @@ void nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   nsMathMLContainerFrame::BuildDisplayList(aBuilder, aLists);
 
-  if (ShouldUseRowFallback()) return;
+  if (ShouldUseRowFallback()) {
+    return;
+  }
 
   
   
@@ -149,8 +151,12 @@ void nsMathMLmrootFrame::GetRadicalXOffsets(nscoord aIndexWidth,
 
   dxIndex = radicalKernBeforeDegree;
   dxSqr = radicalKernBeforeDegree + aIndexWidth + radicalKernAfterDegree;
-  if (aIndexOffset) *aIndexOffset = dxIndex;
-  if (aSqrOffset) *aSqrOffset = dxSqr;
+  if (aIndexOffset) {
+    *aIndexOffset = dxIndex;
+  }
+  if (aSqrOffset) {
+    *aSqrOffset = dxSqr;
+  }
 }
 
 nsresult nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
@@ -220,7 +226,9 @@ nsresult nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
   
   
   nscoord delta = psi % onePixel;
-  if (delta) psi += onePixel - delta;  
+  if (delta) {
+    psi += onePixel - delta;  
+  }
 
   
   

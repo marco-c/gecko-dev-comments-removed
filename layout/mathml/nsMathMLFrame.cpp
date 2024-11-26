@@ -27,12 +27,14 @@ using namespace mozilla::gfx;
 
 eMathMLFrameType nsMathMLFrame::GetMathMLFrameType() {
   
-  if (mEmbellishData.coreFrame)
+  if (mEmbellishData.coreFrame) {
     return GetMathMLFrameTypeFor(mEmbellishData.coreFrame);
+  }
 
   
-  if (mPresentationData.baseFrame)
+  if (mPresentationData.baseFrame) {
     return GetMathMLFrameTypeFor(mPresentationData.baseFrame);
+  }
 
   
   return eMathMLFrameType_Ordinary;
@@ -127,7 +129,9 @@ void nsMathMLFrame::GetPresentationDataFrom(
     nsIContent* content = frame->GetContent();
     NS_ASSERTION(content || !frame->GetParent(),  
                  "dangling frame without a content node");
-    if (!content) break;
+    if (!content) {
+      break;
+    }
 
     if (content->IsMathMLElement(nsGkAtoms::math)) {
       break;
@@ -289,7 +293,9 @@ void nsMathMLFrame::DisplayBar(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                                const nsRect& aRect,
                                const nsDisplayListSet& aLists,
                                uint32_t aIndex) {
-  if (!aFrame->StyleVisibility()->IsVisible() || aRect.IsEmpty()) return;
+  if (!aFrame->StyleVisibility()->IsVisible() || aRect.IsEmpty()) {
+    return;
+  }
 
   aLists.Content()->AppendNewToTopWithIndex<nsDisplayMathMLBar>(
       aBuilder, aFrame, aIndex, aRect);

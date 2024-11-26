@@ -138,7 +138,9 @@ class nsGlyphTable {
 static void Clean(nsString& aValue) {
   
   int32_t comment = aValue.RFindChar('#');
-  if (comment > 0) aValue.Truncate(comment);
+  if (comment > 0) {
+    aValue.Truncate(comment);
+  }
   aValue.CompressWhitespace();
 }
 
@@ -245,7 +247,9 @@ nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
                                          gfxFontGroup* ,
                                          char16_t aChar, bool ,
                                          uint32_t aPosition) {
-  if (mState == NS_TABLE_STATE_ERROR) return kNullGlyph;
+  if (mState == NS_TABLE_STATE_ERROR) {
+    return kNullGlyph;
+  }
   
   if (mState == NS_TABLE_STATE_EMPTY) {
     nsresult rv = LoadProperties(PrimaryFontName(), mGlyphProperties);
@@ -288,7 +292,9 @@ nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
     nsAutoString value;
     nsresult rv =
         mGlyphProperties->GetStringProperty(nsDependentCString(key), value);
-    if (NS_FAILED(rv)) return kNullGlyph;
+    if (NS_FAILED(rv)) {
+      return kNullGlyph;
+    }
     Clean(value);
     
     
@@ -337,7 +343,9 @@ nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
 
   
   uint32_t index = 3 * aPosition;
-  if (index + 2 >= mGlyphCache.Length()) return kNullGlyph;
+  if (index + 2 >= mGlyphCache.Length()) {
+    return kNullGlyph;
+  }
   nsGlyphCode ch;
   ch.code[0] = mGlyphCache.CharAt(index);
   ch.code[1] = mGlyphCache.CharAt(index + 1);
@@ -568,7 +576,9 @@ nsGlyphTableList::Observe(nsISupports* aSubject, const char* aTopic,
 
 nsresult nsGlyphTableList::Initialize() {
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (!obs) return NS_ERROR_FAILURE;
+  if (!obs) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsresult rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -581,10 +591,11 @@ nsresult nsGlyphTableList::Finalize() {
   
   nsresult rv = NS_OK;
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs)
+  if (obs) {
     rv = obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
-  else
+  } else {
     rv = NS_ERROR_FAILURE;
+  }
 
   gGlyphTableInitialized = false;
   
@@ -596,7 +607,9 @@ nsGlyphTable* nsGlyphTableList::AddGlyphTable(
     const nsACString& aPrimaryFontName) {
   
   nsGlyphTable* glyphTable = GetGlyphTableFor(aPrimaryFontName);
-  if (glyphTable != &mUnicodeTable) return glyphTable;
+  if (glyphTable != &mUnicodeTable) {
+    return glyphTable;
+  }
 
   
   glyphTable = mPropertiesTableList.AppendElement(aPrimaryFontName);
@@ -789,10 +802,15 @@ static bool IsSizeOK(nscoord a, nscoord b, uint32_t aHint) {
 }
 
 static bool IsSizeBetter(nscoord a, nscoord olda, nscoord b, uint32_t aHint) {
-  if (0 == olda) return true;
-  if (aHint & (NS_STRETCH_LARGER | NS_STRETCH_LARGEOP))
+  if (0 == olda) {
+    return true;
+  }
+  if (aHint & (NS_STRETCH_LARGER | NS_STRETCH_LARGEOP)) {
     return (a >= olda) ? (olda < b) : (a >= b);
-  if (aHint & NS_STRETCH_SMALLER) return (a <= olda) ? (olda > b) : (a <= b);
+  }
+  if (aHint & NS_STRETCH_SMALLER) {
+    return (a <= olda) ? (olda > b) : (a <= b);
+  }
 
   
   return Abs(a - b) < Abs(olda - b);
@@ -823,12 +841,16 @@ static nscoord ComputeSizeFromParts(nsPresContext* aPresContext,
   
   
   nscoord maxSize = sum - 2 * joins * oneDevPixel + maxGlyphs * aSizes[glue];
-  if (maxSize < aTargetSize) return maxSize;  
+  if (maxSize < aTargetSize) {
+    return maxSize;  
+  }
 
   
   nscoord minSize = NSToCoordRound(NS_MATHML_DELIMITER_FACTOR * sum);
 
-  if (minSize > aTargetSize) return minSize;  
+  if (minSize > aTargetSize) {
+    return minSize;  
+  }
 
   
   return aTargetSize;
@@ -1017,7 +1039,9 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamilyList, font,
                               aFontGroup)) {
       
-      if (largeopOnly) break;
+      if (largeopOnly) {
+        break;
+      }
       ++size;
       continue;
     }
@@ -1055,12 +1079,15 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
       if (maxWidth) {
         
         
-        if (mBoundingMetrics.width < bm.width)
+        if (mBoundingMetrics.width < bm.width) {
           mBoundingMetrics.width = bm.width;
-        if (mBoundingMetrics.leftBearing > bm.leftBearing)
+        }
+        if (mBoundingMetrics.leftBearing > bm.leftBearing) {
           mBoundingMetrics.leftBearing = bm.leftBearing;
-        if (mBoundingMetrics.rightBearing < bm.rightBearing)
+        }
+        if (mBoundingMetrics.rightBearing < bm.rightBearing) {
           mBoundingMetrics.rightBearing = bm.rightBearing;
+        }
         
         haveBetter = largeopOnly;
       } else {
@@ -1077,7 +1104,9 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
 #ifdef NOISY_SEARCH
       printf("    size:%d Rejected!\n", size);
 #endif
-      if (haveBetter) break;  
+      if (haveBetter) {
+        break;  
+      }
     }
 
     
@@ -1112,8 +1141,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
   char16_t uchar = mChar->mData[0];
   bool maxWidth = (NS_STRETCH_MAXWIDTH & mStretchHint) != 0;
   if (!aGlyphTable->HasPartsOf(mDrawTarget, oneDevPixel, *aFontGroup, uchar,
-                               isVertical))
+                               isVertical)) {
     return false;  
+  }
 
   for (int32_t i = 0; i < 4; i++) {
     nsGlyphCode ch = aGlyphTable->ElementAt(mDrawTarget, oneDevPixel,
@@ -1121,8 +1151,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     chdata[i] = ch;
     if (ch.Exists()) {
       if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamilyList,
-                                font, aFontGroup))
+                                font, aFontGroup)) {
         return false;
+      }
 
       textRun[i] =
           aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
@@ -1193,7 +1224,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     int32_t i;
     
     
-    for (i = 0; i <= 3 && !textRun[i]; i++);
+    for (i = 0; i <= 3 && !textRun[i]; i++) {
+      ;
+    }
     if (i == 4) {
       NS_ERROR("Cannot stretch - All parts missing");
       return false;
@@ -1203,7 +1236,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     nscoord width = bmdata[i].width;
     i++;
     for (; i <= 3; i++) {
-      if (!textRun[i]) continue;
+      if (!textRun[i]) {
+        continue;
+      }
       lbearing = std::min(lbearing, bmdata[i].leftBearing);
       rbearing = std::max(rbearing, bmdata[i].rightBearing);
       width = std::max(width, bmdata[i].width);
@@ -1226,7 +1261,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     int32_t i;
     
     
-    for (i = 0; i <= 3 && !textRun[i]; i++);
+    for (i = 0; i <= 3 && !textRun[i]; i++) {
+      ;
+    }
     if (i == 4) {
       NS_ERROR("Cannot stretch - All parts missing");
       return false;
@@ -1235,7 +1272,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     nscoord descent = bmdata[i].descent;
     i++;
     for (; i <= 3; i++) {
-      if (!textRun[i]) continue;
+      if (!textRun[i]) {
+        continue;
+      }
       ascent = std::max(ascent, bmdata[i].ascent);
       descent = std::max(descent, bmdata[i].descent);
     }
@@ -1246,7 +1285,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     mBoundingMetrics.rightBearing = computedSize;
   }
   mGlyphFound = true;
-  if (maxWidth) return false;  
+  if (maxWidth) {
+    return false;  
+  }
 
   
   mChar->mDraw = DRAW_PARTS;
@@ -1306,8 +1347,9 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
   }
 
   if (!openTypeTable) {
-    if (context->mTablesTried.Contains(glyphTable))
+    if (context->mTablesTried.Contains(glyphTable)) {
       return false;  
+    }
 
     
     context->mTablesTried.AppendElement(glyphTable);
@@ -1471,8 +1513,9 @@ nsresult nsMathMLChar::StretchInternal(
     
     
     if ((targetSize <= 0) || ((isVertical && charSize >= targetSize) ||
-                              IsSizeOK(charSize, targetSize, aStretchHint)))
+                              IsSizeOK(charSize, targetSize, aStretchHint))) {
       done = true;
+    }
   }
 
   
@@ -1880,10 +1923,11 @@ void nsMathMLChar::PaintForeground(nsIFrame* aForFrame,
       break;
     case DRAW_PARTS: {
       
-      if (NS_STRETCH_DIRECTION_VERTICAL == mDirection)
+      if (NS_STRETCH_DIRECTION_VERTICAL == mDirection) {
         PaintVertically(presContext, &aRenderingContext, r, fgColor);
-      else if (NS_STRETCH_DIRECTION_HORIZONTAL == mDirection)
+      } else if (NS_STRETCH_DIRECTION_HORIZONTAL == mDirection) {
         PaintHorizontally(presContext, &aRenderingContext, r, fgColor);
+      }
       break;
     }
     default:
@@ -2040,10 +2084,12 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
         lbearing = mBmData[last].leftBearing;
         rbearing = mBmData[last].rightBearing;
         if (mGlyphs[first]) {
-          if (lbearing < mBmData[first].leftBearing)
+          if (lbearing < mBmData[first].leftBearing) {
             lbearing = mBmData[first].leftBearing;
-          if (rbearing > mBmData[first].rightBearing)
+          }
+          if (rbearing > mBmData[first].rightBearing) {
             rbearing = mBmData[first].rightBearing;
+          }
         }
       } else if (mGlyphs[first]) {
         lbearing = mBmData[first].leftBearing;
@@ -2199,9 +2245,12 @@ nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
         ascent = mBmData[last].ascent;
         descent = mBmData[last].descent;
         if (mGlyphs[first]) {
-          if (ascent > mBmData[first].ascent) ascent = mBmData[first].ascent;
-          if (descent > mBmData[first].descent)
+          if (ascent > mBmData[first].ascent) {
+            ascent = mBmData[first].ascent;
+          }
+          if (descent > mBmData[first].descent) {
             descent = mBmData[first].descent;
+          }
         }
       } else if (mGlyphs[first]) {
         ascent = mBmData[first].ascent;
