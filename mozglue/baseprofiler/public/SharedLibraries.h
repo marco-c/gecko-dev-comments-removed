@@ -4,8 +4,8 @@
 
 
 
-#ifndef BASE_PROFILER_SHARED_LIBRARIES_H_
-#define BASE_PROFILER_SHARED_LIBRARIES_H_
+#ifndef SHARED_LIBRARIES_H_
+#define SHARED_LIBRARIES_H_
 
 #include "BaseProfiler.h"
 
