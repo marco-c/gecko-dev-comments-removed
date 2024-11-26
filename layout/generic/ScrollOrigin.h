@@ -5,61 +5,65 @@
 #ifndef mozilla_ScrollOrigin_h_
 #define mozilla_ScrollOrigin_h_
 
+#include "mozilla/DefineEnum.h"
+
 namespace mozilla {
 
 
 
 
-enum class ScrollOrigin : uint8_t {
-  
-  
-  
-  
-  
-  None,
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(
+    ScrollOrigin, uint8_t,
+    (
+        
+        
+        
+        
+        
+        None,
 
-  
-  
-  NotSpecified,
-  
-  Apz,
-  
-  
-  Restore,
-  
-  
-  
-  Relative,
-  
-  
-  Clamp,
+        
+        
+        NotSpecified,
+        
+        Apz,
+        
+        
+        Restore,
+        
+        
+        
+        Relative,
+        
+        
+        Clamp,
 
-  
-  
-  
-  
-  
-  
+        
+        
+        
+        
+        
+        
+        
 
-  
-  
-  
-  
-  Other,
-  
-  
-  Pixels,
-  
-  
-  Lines,
-  
-  
-  Pages,
-  
-  MouseWheel,
-  
-  Scrollbars,
-};
+        
+        
+        
+        
+        Other,
+        
+        
+        Pixels,
+        
+        
+        Lines,
+        
+        
+        Pages,
+        
+        MouseWheel,
+        
+        Scrollbars));
 
 }  
 

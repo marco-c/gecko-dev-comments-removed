@@ -9,6 +9,7 @@
 #include <iosfwd>
 
 #include "nsPoint.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/ScrollGeneration.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/ScrollSnapTargetId.h"
@@ -22,19 +23,20 @@ struct ParamTraits;
 
 namespace mozilla {
 
-enum class ScrollUpdateType {
-  
-  
-  Absolute,
-  
-  
-  
-  Relative,
-  
-  
-  
-  PureRelative,
-};
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(
+    ScrollUpdateType, uint8_t,
+    (
+        
+        
+        Absolute,
+        
+        
+        
+        Relative,
+        
+        
+        
+        PureRelative));
 
 enum class ScrollTriggeredByScript : bool { No, Yes };
 

@@ -5,6 +5,7 @@
 #ifndef mozilla_ScrollTypes_h
 #define mozilla_ScrollTypes_h
 
+#include "mozilla/DefineEnum.h"
 #include "mozilla/TypedEnumBits.h"
 
 
@@ -41,7 +42,9 @@ namespace mozilla {
 
 
 
-enum class ScrollMode { Instant, Smooth, SmoothMsd, Normal };
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(ScrollMode, uint8_t,
+                                             (Instant, Smooth, SmoothMsd,
+                                              Normal));
 
 
 
