@@ -10242,6 +10242,37 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachSetAdd() {
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<SetObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (argc_ != 1) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Set);
+
+  ValOperandId keyId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  writer.setAddResult(objId, keyId);
+  writer.returnFromIC();
+
+  trackAttached("SetAdd");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachSetSize() {
   
   if (!thisval_.isObject() || !thisval_.toObject().is<SetObject>()) {
@@ -10443,6 +10474,44 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet() {
   writer.returnFromIC();
 
   trackAttached("MapGet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
+#ifdef JS_CODEGEN_X86
+  
+  
+  return AttachDecision::NoAction;
+#endif
+
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<MapObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (argc_ != 2) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Map);
+
+  ValOperandId keyId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ValOperandId valId = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
+  writer.mapSetResult(objId, keyId, valId);
+  writer.returnFromIC();
+
+  trackAttached("MapSet");
   return AttachDecision::Attach;
 }
 
@@ -12332,6 +12401,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return AttachDecision::NoAction;  
     case InlinableNative::SetHas:
       return tryAttachSetHas();
+    case InlinableNative::SetAdd:
+      return tryAttachSetAdd();
     case InlinableNative::SetSize:
       return tryAttachSetSize();
 
@@ -12342,6 +12413,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachMapHas();
     case InlinableNative::MapGet:
       return tryAttachMapGet();
+    case InlinableNative::MapSet:
+      return tryAttachMapSet();
 
     
     case InlinableNative::DateGetTime:
