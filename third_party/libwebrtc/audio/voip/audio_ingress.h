@@ -20,12 +20,14 @@
 
 #include "api/array_view.h"
 #include "api/audio/audio_mixer.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/environment/environment.h"
+#include "api/neteq/neteq.h"
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
 #include "api/voip/voip_statistics.h"
 #include "audio/audio_level.h"
-#include "modules/audio_coding/acm2/acm_receiver.h"
+#include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
@@ -81,12 +83,7 @@ class AudioIngress : public AudioMixer::Source {
     return output_audio_level_.TotalDuration();
   }
 
-  NetworkStatistics GetNetworkStatistics() const {
-    NetworkStatistics stats;
-    acm_receiver_.GetNetworkStatistics(&stats,
-                                       false);
-    return stats;
-  }
+  NetworkStatistics GetNetworkStatistics() const;
 
   ChannelStatistics GetChannelStatistics();
 
@@ -98,11 +95,14 @@ class AudioIngress : public AudioMixer::Source {
     return rtc::dchecked_cast<int>(remote_ssrc_.load());
   }
   int PreferredSampleRate() const override {
+    std::optional<NetEq::DecoderFormat> decoder =
+        neteq_->GetCurrentDecoderFormat();
+
     
     
     
-    return std::max(acm_receiver_.last_packet_sample_rate_hz().value_or(0),
-                    acm_receiver_.last_output_sample_rate_hz());
+    return std::max(decoder ? decoder->sample_rate_hz : 0,
+                    neteq_->last_output_sample_rate_hz());
   }
 
  private:
@@ -127,7 +127,7 @@ class AudioIngress : public AudioMixer::Source {
   RtpRtcpInterface* const rtp_rtcp_;
 
   
-  acm2::AcmReceiver acm_receiver_;
+  const std::unique_ptr<NetEq> neteq_;
 
   
   voe::AudioLevel output_audio_level_;
@@ -141,6 +141,9 @@ class AudioIngress : public AudioMixer::Source {
   std::map<int, int> receive_codec_info_ RTC_GUARDED_BY(lock_);
 
   RtpTimestampUnwrapper timestamp_wrap_handler_ RTC_GUARDED_BY(lock_);
+
+  
+  acm2::ResamplerHelper resampler_helper_ RTC_GUARDED_BY(lock_);
 };
 
 }  
