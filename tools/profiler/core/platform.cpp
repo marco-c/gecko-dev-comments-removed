@@ -5893,6 +5893,10 @@ void profiler_init(void* aStackTop) {
 
   SharedLibraryInfo::Initialize();
 
+  
+  
+  Flow::Init();
+
   uint32_t features = DefaultFeatures() & AvailableFeatures();
 
   UniquePtr<char[]> filterStorage;

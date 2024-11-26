@@ -775,7 +775,16 @@ class MarkerSchema {
     
     
     
-    Decimal
+    Decimal,
+
+    
+    
+    
+    Flow,
+    
+    
+    
+    TerminatingFlow
   };
 
   

@@ -15,10 +15,12 @@
 #include "mozilla/ProgressLogger.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/Flow.h"
 
 #include <functional>
 #include <ostream>
 #include <string_view>
+#include <stdint.h>
 
 namespace mozilla {
 namespace baseprofiler {
@@ -327,6 +329,22 @@ class SpliceableJSONWriter : public JSONWriter, public FailureLatch {
           aMaybePropertyName,
           (aTime - TimeStamp::ProcessCreation()).ToMilliseconds());
     }
+  }
+
+  
+  static std::array<char, 17> HexString(uint64_t aId) {
+    std::array<char, 17> buf = {};
+    static const char* hex_digits = "0123456789abcdef";
+    for (int i = 0; i < 16; i++) {
+      buf[i] = hex_digits[(aId >> (60 - i * 4)) & 0xf];
+    }
+    buf[16] = '0';  
+    return buf;
+  }
+
+  
+  void FlowProperty(const Span<const char>& aName, Flow aFlow) {
+    UniqueStringProperty(aName, HexString(aFlow.Id()));
   }
 
   void NullElements(uint32_t aCount) {
