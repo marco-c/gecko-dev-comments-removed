@@ -3093,7 +3093,11 @@ pref("devtools.debugger.hide-ignored-sources", false);
 pref("devtools.popup.disable_autohide", false);
 
 
-pref("devtools.high-contrast-mode-support", false);
+#if defined(NIGHTLY_BUILD)
+  pref("devtools.high-contrast-mode-support", true);
+#else
+  pref("devtools.high-contrast-mode-support", false);
+#endif
 
 
 pref("first-startup.timeout", 30000);
