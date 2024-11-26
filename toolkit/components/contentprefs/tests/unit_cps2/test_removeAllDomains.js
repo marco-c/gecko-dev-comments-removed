@@ -51,7 +51,8 @@ add_task(async function privateBrowsing() {
   await set("a.com", "foo", 6, context);
   await setGlobal("foo", 7, context);
   await new Promise(resolve =>
-    cps.removeAllDomains(context, makeCallback(resolve))
+    
+    cps.removeAllDomains(null, makeCallback(resolve))
   );
   await dbOK([
     [null, "foo", 3],
