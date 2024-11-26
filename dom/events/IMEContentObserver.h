@@ -49,6 +49,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
   using TextChangeDataBase = widget::IMENotification::TextChangeDataBase;
   using IMENotificationRequests = widget::IMENotificationRequests;
   using IMEMessage = widget::IMEMessage;
+  enum class ForRemoval : bool { No, Yes };
 
   IMEContentObserver();
 
@@ -563,8 +564,10 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+
     [[nodiscard]] static Result<uint32_t, nsresult> ComputeTextLengthOfContent(
-        const nsIContent& aContent, const dom::Element* aRootElement);
+        const nsIContent& aContent, const dom::Element* aRootElement,
+        ForRemoval = ForRemoval::No);
 
     
 
@@ -640,8 +643,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
     [[nodiscard]] Maybe<uint32_t> GetFlatTextLengthBeforeContent(
-        const nsIContent& aContent, const nsIContent* aPreviousSibling,
-        const dom::Element* aRootElement) const;
+        const nsIContent& aContent, const dom::Element* aRootElement,
+        ForRemoval = ForRemoval::No) const;
 
     
 
@@ -677,10 +680,9 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-    void ContentRemoved(const nsIContent& aContent,
-                        const nsIContent* aPreviousSibling,
-                        uint32_t aFlatTextLengthOfContent,
-                        const dom::Element* aRootElement);
+    void ContentWillBeRemoved(const nsIContent& aContent,
+                              uint32_t aFlatTextLengthOfContent,
+                              const dom::Element* aRootElement);
 
    public:
     
@@ -757,16 +759,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
     bool TryToCache(const nsIContent& aFirstContent,
                     const nsIContent& aLastContent,
                     const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-    [[nodiscard]] bool ContentRemoved(const nsIContent& aContent,
-                                      const nsIContent* aPreviousSibling,
-                                      const dom::Element* aRootElement);
 
     
 

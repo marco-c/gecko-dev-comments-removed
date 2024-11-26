@@ -743,7 +743,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
 
-  mozilla::dom::Element* UpdateViewportScrollStylesOverride();
+
+
+  mozilla::dom::Element* UpdateViewportScrollStylesOverride(
+      const mozilla::dom::Element* aRemovedChild = nullptr);
 
   
 

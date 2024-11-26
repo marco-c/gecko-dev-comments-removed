@@ -92,8 +92,7 @@ void nsMenuGroupOwnerX::AttributeChanged(dom::Element* aElement,
   }
 }
 
-void nsMenuGroupOwnerX::ContentRemoved(nsIContent* aChild,
-                                       nsIContent* aPreviousSibling) {
+void nsMenuGroupOwnerX::ContentWillBeRemoved(nsIContent* aChild) {
   nsIContent* container = aChild->GetParent();
   if (!container) {
     return;
@@ -102,8 +101,7 @@ void nsMenuGroupOwnerX::ContentRemoved(nsIContent* aChild,
   nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
   nsChangeObserver* obs = LookupContentChangeObserver(container);
   if (obs) {
-    obs->ObserveContentRemoved(aChild->OwnerDoc(), container, aChild,
-                               aPreviousSibling);
+    obs->ObserveContentRemoved(aChild->OwnerDoc(), container, aChild);
   } else if (container != mContent) {
     
     
@@ -112,8 +110,7 @@ void nsMenuGroupOwnerX::ContentRemoved(nsIContent* aChild,
     if (parent) {
       obs = LookupContentChangeObserver(parent);
       if (obs) {
-        obs->ObserveContentRemoved(aChild->OwnerDoc(), container, aChild,
-                                   aPreviousSibling);
+        obs->ObserveContentRemoved(aChild->OwnerDoc(), container, aChild);
       }
     }
   }

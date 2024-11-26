@@ -3155,15 +3155,7 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
 
   
   
-  
-  
   if (aIsRemovingNode) {
-    DebugOnly<nsIContent*> parent = aStartPosition.Container()->GetParent();
-    MOZ_ASSERT(
-        parent &&
-            parent->ComputeIndexOf(aStartPosition.Container()).isNothing(),
-        "At removing the node, the node shouldn't be in the array of children "
-        "of its parent");
     MOZ_ASSERT(aStartPosition.Container() == endPosition.Container(),
                "At removing the node, start and end node should be same");
     MOZ_ASSERT(*aStartPosition.Offset(

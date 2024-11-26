@@ -124,9 +124,11 @@ void HTMLOutputElement::ContentInserted(nsIContent* aChild) {
   DescendantsChanged();
 }
 
-void HTMLOutputElement::ContentRemoved(nsIContent* aChild,
-                                       nsIContent* aPreviousSibling) {
-  DescendantsChanged();
+void HTMLOutputElement::ContentWillBeRemoved(nsIContent* aChild) {
+  
+  nsContentUtils::AddScriptRunner(
+      NewRunnableMethod("HTMLOutputElement::DescendantsChanged", this,
+                        &HTMLOutputElement::DescendantsChanged));
 }
 
 JSObject* HTMLOutputElement::WrapNode(JSContext* aCx,

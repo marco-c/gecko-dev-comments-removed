@@ -431,8 +431,7 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
   }
 }
 
-void RestyleManager::ContentRemoved(nsIContent* aOldChild,
-                                    nsIContent* aFollowingSibling) {
+void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
   auto* container = aOldChild->GetParentNode();
   MOZ_ASSERT(container);
 
@@ -452,15 +451,14 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
   
   
   if (MOZ_UNLIKELY(aOldChild->IsRootOfNativeAnonymousSubtree())) {
-    MOZ_ASSERT(!aFollowingSibling, "NAC doesn't have siblings");
+    MOZ_ASSERT(!aOldChild->GetNextSibling(), "NAC doesn't have siblings");
     MOZ_ASSERT(aOldChild->GetProperty(nsGkAtoms::restylableAnonymousNode),
                "anonymous nodes should not be in child lists (bug 439258)");
     return;
   }
 
   if (aOldChild->IsElement()) {
-    StyleSet()->MaybeInvalidateForElementRemove(*aOldChild->AsElement(),
-                                                aFollowingSibling);
+    StyleSet()->MaybeInvalidateForElementRemove(*aOldChild->AsElement());
   }
 
   const auto selectorFlags =
@@ -482,7 +480,7 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
       
       
       
-      if (nsStyleUtil::IsSignificantChild(child, false)) {
+      if (child != aOldChild && nsStyleUtil::IsSignificantChild(child, false)) {
         isEmpty = false;
         break;
       }
@@ -514,24 +512,26 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
   if (selectorFlags & NodeSelectorFlags::HasSlowSelectorLaterSiblings) {
     
     if (selectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
-      Element* nextSibling =
-          aFollowingSibling ? aFollowingSibling->IsElement()
-                                  ? aFollowingSibling->AsElement()
-                                  : aFollowingSibling->GetNextElementSibling()
-                            : nullptr;
+      Element* nextSibling = aOldChild->GetNextElementSibling();
       StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
           nextSibling,  true);
     } else {
-      RestyleSiblingsStartingWith(aFollowingSibling);
+      RestyleSiblingsStartingWith(aOldChild->GetNextSibling());
     }
   }
 
   if (selectorFlags & NodeSelectorFlags::HasEdgeChildSelector) {
+    const nsIContent* nextSibling = aOldChild->GetNextSibling();
     
     bool reachedFollowingSibling = false;
     for (nsIContent* content = container->GetFirstChild(); content;
          content = content->GetNextSibling()) {
-      if (content == aFollowingSibling) {
+      if (content == aOldChild) {
+        
+        
+        continue;
+      }
+      if (content == nextSibling) {
         reachedFollowingSibling = true;
         
       }
@@ -547,9 +547,13 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
       }
     }
     
-    reachedFollowingSibling = (aFollowingSibling == nullptr);
+    reachedFollowingSibling = !nextSibling;
     for (nsIContent* content = container->GetLastChild(); content;
          content = content->GetPreviousSibling()) {
+      if (content == aOldChild) {
+        
+        continue;
+      }
       if (content->IsElement()) {
         if (reachedFollowingSibling) {
           auto* element = content->AsElement();
@@ -560,7 +564,7 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
         }
         break;
       }
-      if (content == aFollowingSibling) {
+      if (content == nextSibling) {
         reachedFollowingSibling = true;
       }
     }
