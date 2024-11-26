@@ -145,7 +145,6 @@ class DOMProxyHandler : public BaseDOMProxyHandler {
 
 
 class ShadowingDOMProxyHandler : public DOMProxyHandler {
- public:
   virtual void trace(JSTracer* trc, JSObject* proxy) const override;
 };
 
