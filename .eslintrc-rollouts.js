@@ -48,6 +48,7 @@ const rollouts = [
     
     
     files: [
+      "android/modules/geckoview/AndroidLog.sys.mjs",
       "browser/base/content/browser-data-submission-info-bar.js",
       "browser/base/content/browser-sync.js",
       "browser/base/content/browser.js",
