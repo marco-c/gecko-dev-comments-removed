@@ -81,7 +81,8 @@ class SkipUnlessChanged(OptimizationStrategy):
 
     def should_remove_task(self, task, params, file_patterns):
         
-        if params.get("repository_type") == "hg" and params.get("pushlog_id") == -1:
+        
+        if params.get("base_rev") and params.get("head_rev") == params.get("base_rev"):
             return False
 
         changed = self.check(params["files_changed"], file_patterns)
