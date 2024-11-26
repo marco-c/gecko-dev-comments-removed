@@ -7529,16 +7529,6 @@ void nsIFrame::SetView(nsView* aView) {
   }
 }
 
-
-nsIFrame* nsIFrame::GetAncestorWithView() const {
-  for (nsIFrame* f = GetParent(); nullptr != f; f = f->GetParent()) {
-    if (f->HasView()) {
-      return f;
-    }
-  }
-  return nullptr;
-}
-
 template <nsPoint (nsIFrame::*PositionGetter)() const>
 static nsPoint OffsetCalculator(const nsIFrame* aThis, const nsIFrame* aOther) {
   MOZ_ASSERT(aOther, "Must have frame for destination coordinate system!");

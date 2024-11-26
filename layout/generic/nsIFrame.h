@@ -3314,11 +3314,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  nsIFrame* GetAncestorWithView() const;
-
-  
-
-
 
 
 
