@@ -1510,11 +1510,7 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   
   
   
-  #if defined(EARLY_BETA_OR_EARLIER)
-    pref("security.sandbox.content.level", 8);
-  #else
-    pref("security.sandbox.content.level", 7);
-  #endif
+  pref("security.sandbox.content.level", 8);
 
   
   pref("security.sandbox.logging.enabled", false);
