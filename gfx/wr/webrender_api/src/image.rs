@@ -214,9 +214,10 @@ impl ImageFormat {
 
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub enum ColorDepth {
     
+    #[default]
     Color8,
     
     Color10,
@@ -224,12 +225,6 @@ pub enum ColorDepth {
     Color12,
     
     Color16,
-}
-
-impl Default for ColorDepth {
-    fn default() -> Self {
-        ColorDepth::Color8
-    }
 }
 
 impl ColorDepth {
