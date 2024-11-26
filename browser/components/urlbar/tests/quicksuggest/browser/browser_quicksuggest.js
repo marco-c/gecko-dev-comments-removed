@@ -173,15 +173,18 @@ add_tasks_with_rust(
 
 
 
-
-add_tasks_with_rust(async function ampTopPickCharThreshold_fullKeyword() {
+add_tasks_with_rust(async function ampTopPickCharThreshold_meetsThreshold() {
+  
+  
+  
+  let query = "fra";
   const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
-    quickSuggestAmpTopPickCharThreshold: 100,
+    quickSuggestAmpTopPickCharThreshold: query.length,
   });
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    value: "frab",
+    value: query,
   });
   await QuickSuggestTestUtils.assertIsQuickSuggest({
     window,
@@ -195,8 +198,8 @@ add_tasks_with_rust(async function ampTopPickCharThreshold_fullKeyword() {
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
   Assert.equal(
     row.querySelector(".urlbarView-title > strong").textContent,
-    "frab",
-    "The full keyword should be bold"
+    query,
+    "The title should include the full keyword and the part that matches the query should be bold"
   );
 
   
@@ -215,14 +218,16 @@ add_tasks_with_rust(async function ampTopPickCharThreshold_fullKeyword() {
 
 
 add_tasks_with_rust(async function ampTopPickCharThreshold_belowThreshold() {
+  
+  
+  let queryAndFullKeyword = "frab";
   const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
     quickSuggestAmpTopPickCharThreshold: 100,
   });
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    
-    value: "fra",
+    value: queryAndFullKeyword,
   });
   await QuickSuggestTestUtils.assertIsQuickSuggest({
     window,
@@ -232,15 +237,9 @@ add_tasks_with_rust(async function ampTopPickCharThreshold_belowThreshold() {
   });
 
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
-  Assert.equal(
-    row.querySelector(".urlbarView-title").firstChild.textContent,
-    "fra",
-    "The part of the keyword that matches users input is not bold."
-  );
-  Assert.equal(
-    row.querySelector(".urlbarView-title > strong").textContent,
-    "b",
-    "The auto completed section of the keyword is bolded."
+  Assert.ok(
+    !row.querySelector(".urlbarView-title > strong"),
+    "Since the full keyword was matched, the title shouldn't have any bold text"
   );
 
   

@@ -1907,6 +1907,7 @@ add_tasks_with_rust(async function keywordLengthThreshold() {
 
 
 
+
 add_tasks_with_rust(async function ampTopPickCharThreshold() {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
@@ -1918,24 +1919,62 @@ add_tasks_with_rust(async function ampTopPickCharThreshold() {
   );
 
   let tests = [
+    
+    
     { keyword: "amp full key", amp: true, isTopPick: false },
     { keyword: "amp full keyw", amp: true, isTopPick: false },
+    { keyword: "                 amp full key", amp: true, isTopPick: false },
+    { keyword: "                 amp full keyw", amp: true, isTopPick: false },
+
+    
     { keyword: "amp full keywo", amp: true, isTopPick: true },
     { keyword: "amp full keywor", amp: true, isTopPick: true },
     { keyword: "amp full keyword", amp: true, isTopPick: true },
     { keyword: "AmP FuLl KeYwOrD", amp: true, isTopPick: true },
+    { keyword: "               amp full keywo", amp: true, isTopPick: true },
+    { keyword: "               amp full keywor", amp: true, isTopPick: true },
+    { keyword: "               amp full keyword", amp: true, isTopPick: true },
+    { keyword: "               AmP FuLl KeYwOrD", amp: true, isTopPick: true },
+
     
     
-    { keyword: "xyz", fullKeyword: "xyz", amp: true, isTopPick: true },
-    { keyword: "XyZ", fullKeyword: "xyz", amp: true, isTopPick: true },
+    
+    { keyword: "xyz", fullKeyword: "xyz", amp: true, isTopPick: false },
+    { keyword: "XyZ", fullKeyword: "xyz", amp: true, isTopPick: false },
+    {
+      keyword: "                            xyz",
+      fullKeyword: "xyz",
+      amp: true,
+      isTopPick: false,
+    },
+    {
+      keyword: "                            XyZ",
+      fullKeyword: "xyz",
+      amp: true,
+      isTopPick: false,
+    },
+
+    
+    
     { keyword: "wikipedia full key", isTopPick: false },
     { keyword: "wikipedia full keyw", isTopPick: false },
     { keyword: "wikipedia full keywo", isTopPick: false },
     { keyword: "wikipedia full keywor", isTopPick: false },
     { keyword: "wikipedia full keyword", isTopPick: false },
+
+    
+    
+    { keyword: "                 amp full key   ", noMatch: true },
+    { keyword: "                 amp full keyw   ", noMatch: true },
+    { keyword: "               amp full keywo   ", noMatch: true },
+    { keyword: "               amp full keywor   ", noMatch: true },
+    { keyword: "               amp full keyword   ", noMatch: true },
+    { keyword: "               AmP FuLl KeYwOrD   ", noMatch: true },
+    { keyword: "                            xyz   ", noMatch: true },
+    { keyword: "                            XyZ   ", noMatch: true },
   ];
 
-  for (let { keyword, fullKeyword, amp, isTopPick } of tests) {
+  for (let { keyword, fullKeyword, amp, isTopPick, noMatch } of tests) {
     fullKeyword ??= amp ? "amp full keyword" : "wikipedia full keyword";
     info(
       "Running subtest: " +
@@ -1943,31 +1982,33 @@ add_tasks_with_rust(async function ampTopPickCharThreshold() {
     );
 
     let expectedResult;
-    if (!amp) {
-      expectedResult = QuickSuggestTestUtils.wikipediaResult({
-        keyword,
-        fullKeyword,
-        title: "Wikipedia suggestion with full keyword and prefix keywords",
-        url: "https://example.com/wikipedia-full-keyword",
-      });
-    } else if (isTopPick) {
-      expectedResult = QuickSuggestTestUtils.ampResult({
-        keyword,
-        fullKeyword,
-        title: "AMP suggestion with full keyword and prefix keywords",
-        url: "https://example.com/amp-full-keyword",
-        suggestedIndex: 1,
-        isSuggestedIndexRelativeToGroup: false,
-        isBestMatch: true,
-        descriptionL10n: null,
-      });
-    } else {
-      expectedResult = QuickSuggestTestUtils.ampResult({
-        keyword,
-        fullKeyword,
-        title: "AMP suggestion with full keyword and prefix keywords",
-        url: "https://example.com/amp-full-keyword",
-      });
+    if (!noMatch) {
+      if (!amp) {
+        expectedResult = QuickSuggestTestUtils.wikipediaResult({
+          keyword,
+          fullKeyword,
+          title: "Wikipedia suggestion with full keyword and prefix keywords",
+          url: "https://example.com/wikipedia-full-keyword",
+        });
+      } else if (isTopPick) {
+        expectedResult = QuickSuggestTestUtils.ampResult({
+          keyword,
+          fullKeyword,
+          title: "AMP suggestion with full keyword and prefix keywords",
+          url: "https://example.com/amp-full-keyword",
+          suggestedIndex: 1,
+          isSuggestedIndexRelativeToGroup: false,
+          isBestMatch: true,
+          descriptionL10n: null,
+        });
+      } else {
+        expectedResult = QuickSuggestTestUtils.ampResult({
+          keyword,
+          fullKeyword,
+          title: "AMP suggestion with full keyword and prefix keywords",
+          url: "https://example.com/amp-full-keyword",
+        });
+      }
     }
 
     await check_results({
@@ -1975,7 +2016,7 @@ add_tasks_with_rust(async function ampTopPickCharThreshold() {
         providers: [UrlbarProviderQuickSuggest.name],
         isPrivate: false,
       }),
-      matches: [expectedResult],
+      matches: expectedResult ? [expectedResult] : [],
     });
   }
 
