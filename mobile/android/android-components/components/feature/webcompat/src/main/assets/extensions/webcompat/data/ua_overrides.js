@@ -1606,6 +1606,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1899066",
+    platform: "all",
+    domain: "bookcreator.com",
+    bug: "1899066",
+    config: {
+      matches: ["*://app.bookcreator.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
