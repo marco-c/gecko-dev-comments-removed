@@ -101,9 +101,10 @@ module.exports = {
 
 
 
+
   toFixed(number, decimals = 1) {
     if (typeof number !== "number") {
-      return number;
+      throw new Error(`Input: "${number}" is not a number.`);
     }
 
     return Math.floor(number * Math.pow(10, decimals)) / Math.pow(10, decimals);

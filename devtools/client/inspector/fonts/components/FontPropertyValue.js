@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -19,28 +19,28 @@ const {
 class FontPropertyValue extends PureComponent {
   static get propTypes() {
     return {
-      
+      // Whether to allow input values above the value defined by the `max` prop.
       allowOverflow: PropTypes.bool,
-      
+      // Whether to allow input values below the value defined by the `min` prop.
       allowUnderflow: PropTypes.bool,
       className: PropTypes.string,
       defaultValue: PropTypes.number,
       disabled: PropTypes.bool.isRequired,
       label: PropTypes.string.isRequired,
       min: PropTypes.number.isRequired,
-      
+      // Whether to show the `min` prop value as a label.
       minLabel: PropTypes.bool,
       max: PropTypes.number.isRequired,
-      
+      // Whether to show the `max` prop value as a label.
       maxLabel: PropTypes.bool,
       name: PropTypes.string.isRequired,
-      
+      // Whether to show the `name` prop value as an extra label (used to show axis tags).
       nameLabel: PropTypes.bool,
       onChange: PropTypes.func.isRequired,
       step: PropTypes.number,
-      
+      // Whether to show the value input field.
       showInput: PropTypes.bool,
-      
+      // Whether to show the unit select dropdown.
       showUnit: PropTypes.bool,
       unit: PropTypes.string,
       unitOptions: PropTypes.array,
@@ -68,13 +68,13 @@ class FontPropertyValue extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      
+      // Whether the user is dragging the slider thumb or pressing on the numeric stepper.
       interactive: false,
-      
-      
+      // Snapshot of the value from props before the user starts editing the number input.
+      // Used to restore the value when the input is left invalid.
       initialValue: this.props.value,
-      
-      
+      // Snapshot of the value from props. Reconciled with props on blur.
+      // Used while the user is interacting with the inputs.
       value: this.props.value,
     };
 
@@ -86,32 +86,39 @@ class FontPropertyValue extends PureComponent {
     this.onUnitChange = this.onUnitChange.bind(this);
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Given a `prop` key found on the component's props, check the matching `propLabel`.
+   * If `propLabel` is true, return the `prop` value; Otherwise, return null.
+   *
+   * @param {String} prop
+   *        Key found on the component's props.
+   * @return {Number|null}
+   */
   getPropLabel(prop) {
     const label = this.props[`${prop}Label`];
-    
-    const decimals = Math.abs(Math.log10(this.props.step));
+    let labelValue;
 
-    return label ? toFixed(this.props[prop], decimals) : null;
+    // If the prop is a number, we round it
+    if (typeof this.props[prop] === "number") {
+      // Decimal count used to limit numbers in labels.
+      const decimals = Math.abs(Math.log10(this.props.step));
+      labelValue = toFixed(this.props[prop], decimals);
+    } else {
+      labelValue = this.props[prop];
+    }
+    return label ? labelValue : null;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Check if the given value is valid according to the constraints of this component.
+   * Ensure it is a number and that it does not go outside the min/max limits, unless
+   * allowed by the `allowOverflow` and `allowUnderflow` props.
+   *
+   * @param  {Number} value
+   *         Numeric value
+   * @return {Boolean}
+   *         Whether the value conforms to the components contraints.
+   */
   isValueValid(value) {
     const { allowOverflow, allowUnderflow, min, max } = this.props;
 
@@ -119,12 +126,12 @@ class FontPropertyValue extends PureComponent {
       return false;
     }
 
-    
+    // Ensure it does not go below minimum value, unless underflow is allowed.
     if (min !== undefined && value < min && !allowUnderflow) {
       return false;
     }
 
-    
+    // Ensure it does not go over maximum value, unless overflow is allowed.
     if (max !== undefined && value > max && !allowOverflow) {
       return false;
     }
@@ -132,11 +139,11 @@ class FontPropertyValue extends PureComponent {
     return true;
   }
 
-  
-
-
-
-
+  /**
+   * Handler for "blur" events from the range and number input fields.
+   * Reconciles the value between internal state and props.
+   * Marks the input as non-interactive so it may update in response to changes in props.
+   */
   onBlur() {
     const isValid = this.isValueValid(this.state.value);
     let value;
@@ -152,7 +159,7 @@ class FontPropertyValue extends PureComponent {
       value = this.state.initialValue;
     }
 
-    
+    // Avoid updating the value if a keyword value like "normal" is present
     if (!this.props.valueLabel) {
       this.updateValue(value);
     }
@@ -160,39 +167,40 @@ class FontPropertyValue extends PureComponent {
     this.toggleInteractiveState(false);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Handler for "change" events from the range and number input fields. Calls the change
+   * handler provided with props and updates internal state with the current value.
+   *
+   * Number inputs in Firefox can't be trusted to filter out non-digit characters,
+   * therefore we must implement our own validation.
+   * @see https://bugzilla.mozilla.org/show_bug.cgi?id=1398528
+   *
+   * @param {Event} e
+   *        Change event.
+   */
   onChange(e) {
-    
-    
-    
+    // Regular expresion to check for floating point or integer numbers. Accept negative
+    // numbers only if the min value is negative. Otherwise, expect positive numbers.
+    // Whitespace and non-digit characters are invalid (aside from a single dot).
     const regex =
       this.props.min && this.props.min < 0
         ? /^-?[0-9]+(.[0-9]+)?$/
         : /^[0-9]+(.[0-9]+)?$/;
     let string = e.target.value.trim();
 
+    // Check if the input does not match
     if (e.target.validity.badInput) {
       return;
     }
 
-    
+    // Prefix with zero if the string starts with a dot: .5 => 0.5
     if (string.charAt(0) === "." && string.length > 1) {
       string = "0" + string;
       e.target.value = string;
     }
 
-    
-    
+    // Accept empty strings to allow the input value to be completely erased while typing.
+    // A null value will be handled on blur. @see this.onBlur()
     if (string === "") {
       this.setState(prevState => {
         return {
@@ -233,7 +241,7 @@ class FontPropertyValue extends PureComponent {
       this.props.unit,
       e.target.value
     );
-    
+    // Reset internal state value and wait for converted value from props.
     this.setState(prevState => {
       return {
         ...prevState,
@@ -250,14 +258,14 @@ class FontPropertyValue extends PureComponent {
     this.toggleInteractiveState(false);
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Toggle the "interactive" state which causes render() to use `value` fom internal
+   * state instead of from props to prevent jittering during continous dragging of the
+   * range input thumb or incrementing from the number input.
+   *
+   * @param {Boolean} isInteractive
+   *        Whether to mark the interactive state on or off.
+   */
   toggleInteractiveState(isInteractive) {
     this.setState(prevState => {
       return {
@@ -267,21 +275,21 @@ class FontPropertyValue extends PureComponent {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Calls the given `onChange` callback with the current property name, value and unit
+   * if the value is valid according to the constraints of this component (min, max).
+   * Updates the internal state with the current value. This will be used to render the
+   * UI while the input is interactive and the user may be typing a value that's not yet
+   * valid.
+   *
+   * @see this.onBlur() for logic reconciling the internal state with props.
+   *
+   * @param {Number} value
+   *        Numeric property value.
+   */
   updateValue(value) {
     if (this.isValueValid(value)) {
-      this.props.onChange(this.props.name, value, this.props.unit);
+      this.props.onChange(this.props.name, toFixed(value, 3), this.props.unit);
     }
 
     this.setState(prevState => {
@@ -297,8 +305,8 @@ class FontPropertyValue extends PureComponent {
       return null;
     }
 
-    
-    
+    // Ensure the select element has the current unit type even if we don't recognize it.
+    // The unit conversion function will use a 1-to-1 scale for unrecognized units.
     const options = this.props.unitOptions.includes(this.props.unit)
       ? this.props.unitOptions
       : this.props.unitOptions.concat([this.props.unit]);
@@ -333,7 +341,7 @@ class FontPropertyValue extends PureComponent {
       label
     );
 
-    
+    // Show the `name` prop value as an additional label if the `nameLabel` prop is true.
     const detailEl = nameLabel
       ? dom.span(
           {
@@ -356,7 +364,7 @@ class FontPropertyValue extends PureComponent {
   }
 
   render() {
-    
+    // Guard against bad axis data.
     if (this.props.min === this.props.max) {
       return null;
     }
@@ -371,8 +379,8 @@ class FontPropertyValue extends PureComponent {
       onChange: this.onChange,
       onFocus: this.onFocus,
       step: this.props.step,
-      
-      
+      // While interacting with the range and number inputs, prevent updating value from
+      // outside props which is debounced and causes jitter on successive renders.
       value: this.state.interactive ? this.state.value : propsValue,
     };
 
@@ -389,9 +397,9 @@ class FontPropertyValue extends PureComponent {
 
     const input = dom.input({
       ...defaults,
-      
+      // Remove lower limit from number input if it is allowed to underflow.
       min: this.props.allowUnderflow ? null : this.props.min,
-      
+      // Remove upper limit from number input if it is allowed to overflow.
       max: this.props.allowOverflow ? null : this.props.max,
       name: this.props.name,
       className: "font-value-input",
