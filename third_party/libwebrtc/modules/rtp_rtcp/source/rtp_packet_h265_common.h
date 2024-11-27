@@ -18,6 +18,8 @@ namespace webrtc {
 
 
 constexpr size_t kH265PayloadHeaderSizeBytes = 2;
+constexpr uint8_t kH265MaxLayerId = 127;
+constexpr uint8_t kH265MaxTemporalId = 7;
 
 constexpr size_t kH265NalHeaderSizeBytes = 2;
 
