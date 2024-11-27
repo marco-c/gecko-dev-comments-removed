@@ -2161,11 +2161,19 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
   auto error = sender->SetParameters(parameters);
   EXPECT_FALSE(error.ok());
   EXPECT_EQ(error.type(), RTCErrorType::INVALID_MODIFICATION);
+  
+  parameters = sender->GetParameters();
+  parameters.encodings[0].requested_resolution = {.width = 640, .height = 480};
+  parameters.encodings[1].active = false;
+  parameters.encodings[1].requested_resolution = std::nullopt;
+  error = sender->SetParameters(parameters);
+  EXPECT_TRUE(error.ok());
 
   
   sender = transceiver_or_error.value()->sender();
   parameters = sender->GetParameters();
   parameters.encodings[0].requested_resolution = {.width = 1280, .height = 0};
+  parameters.encodings[1].active = true;
   parameters.encodings[1].requested_resolution = {.width = 0, .height = 720};
   error = sender->SetParameters(parameters);
   EXPECT_FALSE(error.ok());
