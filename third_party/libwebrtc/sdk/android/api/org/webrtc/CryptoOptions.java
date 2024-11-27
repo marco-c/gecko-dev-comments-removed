@@ -21,6 +21,7 @@ public final class CryptoOptions {
   
 
 
+  @SuppressWarnings("ClassCanBeStatic")
   public final class Srtp {
     
 
@@ -66,6 +67,7 @@ public final class CryptoOptions {
   
 
 
+  @SuppressWarnings("ClassCanBeStatic")
   public final class SFrame {
     
 
