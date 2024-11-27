@@ -150,6 +150,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   struct SenderReportStats {
     
+    Timestamp last_arrival_timestamp = Timestamp::Zero();
+    
+    
+    
     NtpTime last_arrival_ntp_timestamp;
     
     NtpTime last_remote_ntp_timestamp;
