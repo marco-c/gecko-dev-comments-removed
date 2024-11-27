@@ -150,9 +150,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   struct SenderReportStats {
     
-    NtpTime last_arrival_timestamp;
+    NtpTime last_arrival_ntp_timestamp;
     
-    NtpTime last_remote_timestamp;
+    NtpTime last_remote_ntp_timestamp;
     
     uint32_t last_remote_rtp_timestamp = 0;
     
