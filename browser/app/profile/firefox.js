@@ -454,6 +454,9 @@ pref("browser.urlbar.scotchBonnet.enableOverride", false);
 #endif
 
 
+pref("browser.urlbar.usb.dynamic", true);
+
+
 pref("browser.urlbar.trending.featureGate", true);
 pref("browser.urlbar.trending.requireSearchMode", false);
 pref("browser.urlbar.recentsearches.featureGate", true);
@@ -1032,6 +1035,7 @@ pref("browser.tabs.hoverPreview.showThumbnails", true);
 pref("browser.tabs.groups.enabled", false);
 pref("browser.tabs.groups.dragOverThresholdPercent", 20);
 pref("browser.tabs.groups.dragOverDelayMS", 30);
+pref("browser.tabs.dragdrop.moveOverThresholdPercent", 70);
 
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 
@@ -1764,8 +1768,13 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 pref("browser.newtab.preload", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
+pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", true);
+#else
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", false);
 pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", false);
+#endif
 pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://ads.mozilla.org/");
 
 

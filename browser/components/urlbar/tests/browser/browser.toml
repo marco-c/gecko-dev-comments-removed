@@ -201,6 +201,8 @@ support-files = [
 
 ["browser_contextualsearch.js"]
 
+["browser_contextualsearch_install.js"]
+
 ["browser_copy_and_paste_first_result.js"]
 
 ["browser_copy_during_load.js"]
@@ -444,6 +446,9 @@ support-files = ["dummy_page.html"]
 ["browser_searchHistoryLimit.js"]
 
 ["browser_searchModeSwitcher_basic.js"]
+
+["browser_searchModeSwitcher_dynamicUSB.js"]
+support-files = ["has-a-link.html"]
 
 ["browser_searchModeSwitcher_keyNavigation.js"]
 
