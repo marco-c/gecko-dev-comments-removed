@@ -791,44 +791,31 @@ void HTMLTextAreaElement::ContentInserted(nsIContent* aChild) {
   ContentChanged(aChild);
 }
 
-void HTMLTextAreaElement::ContentRemoved(nsIContent* aChild,
-                                         nsIContent* aPreviousSibling) {
-  ContentChanged(aChild);
+void HTMLTextAreaElement::ContentWillBeRemoved(nsIContent* aChild) {
+  if (mValueChanged || !mDoneAddingChildren ||
+      !nsContentUtils::IsInSameAnonymousTree(this, aChild)) {
+    return;
+  }
+  if (mState->IsSelectionCached()) {
+    
+    auto& props = mState->GetSelectionProperties();
+    props.CollapseToStart();
+  }
+  nsContentUtils::AddScriptRunner(
+      NewRunnableMethod("HTMLTextAreaElement::ResetIfUnchanged", this,
+                        &HTMLTextAreaElement::ResetIfUnchanged));
 }
 
 void HTMLTextAreaElement::ContentChanged(nsIContent* aContent) {
-  if (!mValueChanged && mDoneAddingChildren &&
-      nsContentUtils::IsInSameAnonymousTree(this, aContent)) {
-    if (mState->IsSelectionCached()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      auto& props = mState->GetSelectionProperties();
-      nsAutoString resetVal;
-      GetDefaultValue(resetVal, IgnoreErrors());
-      props.SetMaxLength(resetVal.Length());
-      props.SetStart(props.GetStart());
-      props.SetEnd(props.GetEnd());
-    }
-    
-    
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "ResetHTMLTextAreaElementIfValueHasNotChangedYet",
-        [self = RefPtr{this}]() {
-          
-          
-          if (!self->mValueChanged) {
-            self->Reset();
-          }
-        }));
+  if (mValueChanged || !mDoneAddingChildren ||
+      !nsContentUtils::IsInSameAnonymousTree(this, aContent)) {
+    return;
   }
+  
+  
+  nsContentUtils::AddScriptRunner(
+      NewRunnableMethod("HTMLTextAreaElement::ResetIfUnchanged", this,
+                        &HTMLTextAreaElement::ResetIfUnchanged));
 }
 
 void HTMLTextAreaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
