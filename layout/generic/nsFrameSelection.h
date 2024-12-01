@@ -458,6 +458,13 @@ class nsFrameSelection final {
   
 
 
+  mozilla::dom::Selection& NormalSelection() const {
+    return *GetSelection(mozilla::SelectionType::eNormal);
+  }
+
+  
+
+
   MOZ_CAN_RUN_SCRIPT void AddHighlightSelection(
       nsAtom* aHighlightName, mozilla::dom::Highlight& aHighlight);
   
