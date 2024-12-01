@@ -577,16 +577,34 @@ add_task(async function test_checkForAddons_contentSignatureSuccess() {
     
     
     
-    Assert.equal(res.addons.length, 5);
+    Assert.equal(res.addons.length, 7);
     Assert.equal(res.addons[0].id, "test1");
     Assert.equal(res.addons[0].usedFallback, false);
+    Assert.deepEqual(res.addons[0].mirrorURLs, []);
     Assert.equal(res.addons[1].id, "test2");
     Assert.equal(res.addons[1].usedFallback, false);
+    Assert.deepEqual(res.addons[1].mirrorURLs, []);
     Assert.equal(res.addons[2].id, "test3");
     Assert.equal(res.addons[2].usedFallback, false);
+    Assert.deepEqual(res.addons[2].mirrorURLs, []);
     Assert.equal(res.addons[3].id, "test4");
     Assert.equal(res.addons[3].usedFallback, false);
+    Assert.deepEqual(res.addons[3].mirrorURLs, []);
     Assert.equal(res.addons[4].id, undefined);
+    Assert.equal(res.addons[4].usedFallback, false);
+    Assert.deepEqual(res.addons[4].mirrorURLs, []);
+    Assert.equal(res.addons[5].id, "test6");
+    Assert.equal(res.addons[5].usedFallback, false);
+    Assert.deepEqual(res.addons[5].mirrorURLs, [
+      "http://alt.example.com/test6.xpi",
+    ]);
+    Assert.equal(res.addons[5].mirrorURLs.length, 1);
+    Assert.equal(res.addons[6].id, "test7");
+    Assert.equal(res.addons[6].usedFallback, false);
+    Assert.deepEqual(res.addons[6].mirrorURLs, [
+      "http://alt.example.com/test7.xpi",
+      "http://alt2.example.com/test7.xpi",
+    ]);
   } catch (e) {
     Assert.ok(false, "checkForAddons should succeed");
   }
@@ -646,14 +664,33 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
     if (res.addons.length == 1) {
       Assert.equal(res.addons[0].id, "gmp-widevinecdm");
       Assert.equal(res.addons[0].usedFallback, true);
+      Assert.ok(res.addons[0].URL.startsWith("https://edgedl.me.gvt1.com"));
+      Assert.equal(res.addons[0].mirrorURLs.length, 1);
+      Assert.ok(
+        res.addons[0].mirrorURLs[0].startsWith("https://www.google.com")
+      );
     } else {
       Assert.equal(res.addons[0].id, "gmp-gmpopenh264");
       Assert.equal(res.addons[0].usedFallback, true);
+      Assert.ok(
+        res.addons[0].URL.startsWith("http://ciscobinary.openh264.org")
+      );
+      Assert.deepEqual(res.addons[0].mirrorURLs, []);
       Assert.equal(res.addons[1].id, "gmp-widevinecdm");
       Assert.equal(res.addons[1].usedFallback, true);
+      Assert.ok(res.addons[1].URL.startsWith("https://edgedl.me.gvt1.com"));
+      Assert.equal(res.addons[1].mirrorURLs.length, 1);
+      Assert.ok(
+        res.addons[1].mirrorURLs[0].startsWith("https://www.google.com")
+      );
       if (res.addons.length >= 3) {
         Assert.equal(res.addons[2].id, "gmp-widevinecdm-l1");
         Assert.equal(res.addons[2].usedFallback, true);
+        Assert.ok(res.addons[2].URL.startsWith("https://edgedl.me.gvt1.com"));
+        Assert.equal(res.addons[2].mirrorURLs.length, 1);
+        Assert.ok(
+          res.addons[2].mirrorURLs[0].startsWith("https://www.google.com")
+        );
       }
     }
   } catch (e) {
@@ -1019,17 +1056,27 @@ add_task(async function test_checkForAddons_telemetry_certPinning() {
 
 async function test_checkForAddons_installAddon(
   id,
-  includeSize,
-  wantInstallReject
+  sizeConfig,
+  defaultConfig,
+  mirrorConfig,
+  secondMirrorConfig,
+  expectedError
 ) {
   info(
     "Running installAddon for id: " +
       id +
-      ", includeSize: " +
-      includeSize +
-      " and wantInstallReject: " +
-      wantInstallReject
+      ", sizeConfig: " +
+      sizeConfig +
+      ", defaultConfig: " +
+      defaultConfig +
+      ", mirrorConfig: " +
+      mirrorConfig +
+      ", secondMirrorConfig: " +
+      secondMirrorConfig +
+      ", expectedError: " +
+      expectedError
   );
+
   let httpServer = new HttpServer();
   let dir = FileUtils.getDir("TmpD", []);
   httpServer.registerDirectory("/", dir);
@@ -1045,9 +1092,44 @@ async function test_checkForAddons_installAddon(
   let hashFunc = "sha256";
   let expectedDigest = await IOUtils.computeHexDigest(zipFile.path, hashFunc);
   let fileSize = zipFile.fileSize;
-  if (wantInstallReject) {
+  if (sizeConfig === "mismatch") {
     fileSize = 1;
   }
+
+  let badZipURL;
+  let badZipFileName;
+  let badZipFile;
+  if (
+    defaultConfig === "mismatch" ||
+    mirrorConfig === "mismatch" ||
+    secondMirrorConfig === "mismatch"
+  ) {
+    let badData = "e~=0.5772156648";
+    badZipFileName = "test_" + id + "_bad_GMP.zip";
+    badZipFile = createNewZipFile(badZipFileName, badData);
+    badZipURL = URL_HOST + ":" + testserverPort + "/" + badZipFileName;
+  }
+
+  let missingZipURL = zipURL + ".missing";
+
+  function selectUrl(config) {
+    switch (config) {
+      case "success":
+        return zipURL;
+      case "not_found":
+        return missingZipURL;
+      case "mismatch":
+        return badZipURL;
+      case "none":
+        return null;
+      default:
+        throw new Error("bad config " + config);
+    }
+  }
+
+  let defaultURL = selectUrl(defaultConfig);
+  let mirrorURL = selectUrl(mirrorConfig);
+  let secondMirrorURL = selectUrl(secondMirrorConfig);
 
   let responseXML =
     '<?xml version="1.0"?>' +
@@ -1056,17 +1138,20 @@ async function test_checkForAddons_installAddon(
     '        <addon id="' +
     id +
     '-gmp-gmpopenh264"' +
-    '               URL="' +
-    zipURL +
-    '"' +
+    (defaultURL ? ' URL="' + defaultURL + '"' : "") +
     '               hashFunction="' +
     hashFunc +
     '"' +
     '               hashValue="' +
     expectedDigest +
     '"' +
-    (includeSize ? ' size="' + fileSize + '"' : "") +
-    '               version="1.1"/>' +
+    (sizeConfig !== "none" ? ' size="' + fileSize + '"' : "") +
+    '               version="1.1">' +
+    (mirrorURL ? '          <mirror URL="' + mirrorURL + '"/>' : "") +
+    (secondMirrorURL
+      ? '          <mirror URL="' + secondMirrorURL + '"/>'
+      : "") +
+    "        </addon>" +
     "  </addons>" +
     "</updates>";
 
@@ -1082,7 +1167,7 @@ async function test_checkForAddons_installAddon(
 
   try {
     let extractedPaths = await installManager.installAddon(gmpAddon);
-    if (wantInstallReject) {
+    if (sizeConfig === "mismatch") {
       Assert.ok(false); 
     }
     Assert.equal(extractedPaths.length, 1);
@@ -1120,20 +1205,333 @@ async function test_checkForAddons_installAddon(
 
     
     extractedFile.parent.remove(true);
-    zipFile.remove(false);
     httpServer.stop(function () {});
     installManager.uninit();
+    Assert.equal(expectedError, null, "Succeeded without errors");
   } catch (ex) {
+    Assert.ok(
+      ex?.message?.match(expectedError),
+      ex?.message + " matches " + expectedError
+    );
+  } finally {
     zipFile.remove(false);
-    if (!wantInstallReject) {
-      do_throw("install update should not reject " + ex.message);
+    if (badZipFile) {
+      badZipFile.remove(false);
     }
   }
 }
 
-add_task(test_checkForAddons_installAddon.bind(null, "1", true, false));
-add_task(test_checkForAddons_installAddon.bind(null, "2", false, false));
-add_task(test_checkForAddons_installAddon.bind(null, "3", true, true));
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_successURL_noMirror() {
+    await test_checkForAddons_installAddon(
+       "includeSize_successURL_noMirror",
+       "include",
+       "success",
+       "none",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_successURL_noMirror() {
+    await test_checkForAddons_installAddon(
+       "noSize_successURL_noMirror",
+       "none",
+       "success",
+       "none",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_mismatchSize_successURL_noMirror() {
+    await test_checkForAddons_installAddon(
+       "mismatchSize_successURL_noMirror",
+       "mismatch",
+       "success",
+       "none",
+       "none",
+       /Downloaded file was \d+ bytes but expected \d+ bytes/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_notFoundURL_noMirror() {
+    await test_checkForAddons_installAddon(
+       "includeSize_notFoundURL_noMirror",
+       "include",
+       "not_found",
+       "none",
+       "none",
+       /File download failed/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_notFoundURL_noMirror() {
+    await test_checkForAddons_installAddon(
+       "noSize_notFoundURL_noMirror",
+       "none",
+       "not_found",
+       "none",
+       "none",
+       /File download failed/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_mismatchURL_noMirror() {
+    await test_checkForAddons_installAddon(
+       "includeSize_mismatchURL_noMirror",
+       "include",
+       "mismatch",
+       "none",
+       "none",
+       /Hash was [\w`]+ but expected [\w`]+/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_mismatchURL_noMirror() {
+    await test_checkForAddons_installAddon(
+       "noSize_mismatchURL_noMirror",
+       "none",
+       "mismatch",
+       "none",
+       "none",
+       /Hash was [\w`]+ but expected [\w`]+/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_successURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "includeSize_successURL_successMirror",
+       "include",
+       "success",
+       "success",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_successURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "noSize_successURL_successMirror",
+       "none",
+       "success",
+       "success",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_mismatchSize_successURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "mismatchSize_successURL_successMirror",
+       "mismatch",
+       "success",
+       "success",
+       "none",
+       /Downloaded file was \d+ bytes but expected \d+ bytes/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_notFoundURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "includeSize_notFoundURL_successMirror",
+       "include",
+       "not_found",
+       "success",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_notFoundURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "noSize_notFoundURL_successMirror",
+       "none",
+       "not_found",
+       "success",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_mismatchSize_notFoundURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "mismatchSize_notFoundURL_successMirror",
+       "mismatch",
+       "not_found",
+       "success",
+       "none",
+       /File download failed/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_mismatchURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "includeSize_mismatchURL_successMirror",
+       "include",
+       "mismatch",
+       "success",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_mismatchURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "noSize_mismatchURL_successMirror",
+       "none",
+       "mismatch",
+       "success",
+       "none",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_mismatchSize_mismatchURL_successMirror() {
+    await test_checkForAddons_installAddon(
+       "mismatchSize_mismatchURL_successMirror",
+       "mismatch",
+       "mismatch",
+       "success",
+       "none",
+       /Downloaded file was \d+ bytes but expected \d+ bytes/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_mismatchURL_mismatchMirror() {
+    await test_checkForAddons_installAddon(
+       "noSize_mismatchURL_mismatchMirror",
+       "none",
+       "mismatch",
+       "mismatch",
+       "none",
+       /Hash was [\w`]+ but expected [\w`]+/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_notFoundURL_notFoundMirrors() {
+    await test_checkForAddons_installAddon(
+       "noSize_notFoundURL_notFoundMirrors",
+       "none",
+       "not_found",
+       "not_found",
+       "not_found",
+       /File download failed/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_notFoundURL_notFoundAndSuccessMirrors() {
+    await test_checkForAddons_installAddon(
+       "noSize_notFoundURL_notFoundAndSuccessMirrors",
+       "none",
+       "not_found",
+       "not_found",
+       "success",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_mismatchURL_mismatchMirrors() {
+    await test_checkForAddons_installAddon(
+       "noSize_mismatchURL_mismatchMirrors",
+       "none",
+       "mismatch",
+       "mismatch",
+       "mismatch",
+       /Hash was [\w`]+ but expected [\w`]+/
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_noSize_mismatchURL_mismatchAndSuccessMirrors() {
+    await test_checkForAddons_installAddon(
+       "noSize_mismatchURL_mismatchAndSuccessMirrors",
+       "none",
+       "mismatch",
+       "mismatch",
+       "success",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_successURL_notFoundMirrors() {
+    await test_checkForAddons_installAddon(
+       "includeSize_successURL_notFoundMirrors",
+       "include",
+       "success",
+       "not_found",
+       "not_found",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_successURL_mismatchMirrors() {
+    await test_checkForAddons_installAddon(
+       "includeSize_successURL_mismatchMirrors",
+       "include",
+       "success",
+       "mismatch",
+       "mismatch",
+       null
+    );
+  }
+);
+
+add_task(
+  async function test_checkForAddons_installAddon_includeSize_mismatchURL_successAndMismatchMirrors() {
+    await test_checkForAddons_installAddon(
+       "includeSize_mismatchURL_successAndMismatchMirrors",
+       "include",
+       "mismatch",
+       "success",
+       "mismatch",
+       null
+    );
+  }
+);
 
 
 
@@ -1633,7 +2031,7 @@ function getTestServerForContentSignatureTests() {
   
   
   const goodXmlContentSignature =
-    "7QYnPqFoOlS02BpDdIRIljzmPr6BFwPs1z1y8KJUBlnU7EVG6FbnXmVVt5Op9wDzgvhXX7th8qFJvpPOZs_B_tHRDNJ8SK0HN95BAN15z3ZW2r95SSHmU-fP2JgoNOR3";
+    "7QYnPqFoOlS02BpDdIRIljzmPr6BFwPs1z1y8KJUBlnU7EVG6FbnXmVVt5Op9wDzHeN7pJOM7ANmTqU50IbHnV8q87wmY83QL4p6NZzjsFnWolFmwK2ZjlLnhyxFcVSz";
 
   
   const validX5uPath = "/valid_x5u";
