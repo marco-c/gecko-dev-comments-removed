@@ -4,6 +4,12 @@
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="/resources/check-layout-th.js"></script>
+<!-- NOTE: This test is meant to be an near-exact copy of the neighboring test
+     file of nearly-the-same-name, with this version just adding "-alias" and
+     ".tentative" to the filename. The markup should be identical to the
+     original, aside from s/stretch/-webkit-fill-available/ in the CSS rule
+     ".test {...}".  The expectation is that those keywords can be considered
+     to be aliases that give the exact same sizing behavior. -->
 <meta name="assert"
   content="min-inline-size:stretch (setting 'min-width' in this case) resolves and clamps as expected (producing similar results as if we had specified the keyword for the inline-size property)">
 <style>
@@ -44,7 +50,7 @@
 
     /* We expect "min-inline-size:stretch" to cause the used value of
      * "inline-size" to be clamped to the resolved "stretch" size. */
-    min-inline-size: stretch;
+    min-inline-size: -webkit-fill-available;
     inline-size: 0;
     block-size: 20px;
     background: fuchsia;
