@@ -6,6 +6,7 @@
 
 
 include protocol PNecko;
+include NeckoChannelParams;
 
 namespace mozilla {
 namespace net {
@@ -22,6 +23,8 @@ parent:
   
   
   async __delete__();
+  async NotifyListeners(FileChannelInfo aFileChannelInfo);
+  async SetChannelIdForRedirect(uint64_t aChannelId);
 };
 
 } 

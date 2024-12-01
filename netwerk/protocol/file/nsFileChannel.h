@@ -45,6 +45,8 @@ class nsFileChannel : public nsBaseChannel,
   
   
   nsresult ListenerBlockingPromise(BlockingPromise** promise) override;
+  virtual nsresult NotifyListeners();
+  uint64_t mChannelId = 0;
 
  private:
   nsresult FixupContentLength(bool async);
@@ -53,7 +55,6 @@ class nsFileChannel : public nsBaseChannel,
   nsCOMPtr<nsIInputStream> mUploadStream;
   int64_t mUploadLength;
   nsCOMPtr<nsIURI> mFileURI;
-  uint64_t mChannelId = 0;
 };
 
 #endif  

@@ -4,6 +4,7 @@
 
 
 
+#include "nsFileChannel.h"
 #include "FileChannelParent.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/ContentParent.h"
@@ -21,15 +22,6 @@ namespace mozilla {
 namespace net {
 
 NS_IMPL_ISUPPORTS(FileChannelParent, nsIParentChannel, nsIStreamListener)
-
-bool FileChannelParent::Init(const uint64_t& aChannelId) {
-  nsCOMPtr<nsIChannel> channel;
-
-  MOZ_ALWAYS_SUCCEEDS_FUZZING(
-      NS_LinkRedirectChannels(aChannelId, this, getter_AddRefs(channel)));
-
-  return true;
-}
 
 NS_IMETHODIMP
 FileChannelParent::SetParentListener(ParentChannelListener* aListener) {
@@ -99,6 +91,54 @@ FileChannelParent::OnDataAvailable(nsIRequest* aRequest,
                                    uint64_t aOffset, uint32_t aCount) {
   
   MOZ_CRASH("Should never be called");
+}
+mozilla::ipc::IPCResult FileChannelParent::RecvNotifyListeners(
+    const FileChannelInfo& aFileChannelInfo) {
+  nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
+  if (!obsService) {
+    return IPC_OK();
+  }
+
+  nsAutoCString remoteType;
+  nsresult rv = GetRemoteType(remoteType);
+  if (NS_FAILED(rv)) {
+    return IPC_FAIL(this, "Failed to get remote type");
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
+      aFileChannelInfo.loadInfo(), remoteType, getter_AddRefs(loadInfo));
+  if (NS_FAILED(rv)) {
+    return IPC_FAIL(this, "Failed to deserialize LoadInfo");
+  }
+
+  
+  
+  RefPtr<nsFileChannel> channel;
+  channel = new nsFileChannel(aFileChannelInfo.uri());
+  channel->SetURI(aFileChannelInfo.uri());
+  channel->SetOriginalURI(aFileChannelInfo.originalURI());
+  channel->SetLoadFlags(aFileChannelInfo.loadFlags());
+  channel->SetLoadInfo(loadInfo);
+  channel->SetContentType(aFileChannelInfo.contentType());
+
+  rv = channel->SetChannelId(aFileChannelInfo.channelId());
+  if (NS_FAILED(rv)) {
+    return IPC_FAIL(this, "Failed to set channel id");
+  }
+  obsService->NotifyObservers(static_cast<nsIIdentChannel*>(channel),
+                              "file-channel-opened", nullptr);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult FileChannelParent::RecvSetChannelIdForRedirect(
+    const uint64_t& aChannelId) {
+  nsCOMPtr<nsIChannel> channel;
+
+  MOZ_ALWAYS_SUCCEEDS_FUZZING(
+      NS_LinkRedirectChannels(aChannelId, this, getter_AddRefs(channel)));
+
+  return IPC_OK();
 }
 
 }  
