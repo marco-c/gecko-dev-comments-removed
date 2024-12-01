@@ -4,6 +4,7 @@
 
 import datetime
 import errno
+import functools
 import json
 import os
 import posixpath
@@ -14,6 +15,7 @@ from collections import defaultdict
 import mozpack.path as mozpath
 import requests
 import six.moves.urllib_parse as urlparse
+import yaml
 from mozbuild.base import MachCommandConditions as conditions
 from mozbuild.base import MozbuildObject
 from mozfile import which
@@ -22,6 +24,13 @@ from redo import retriable
 
 REFERER = "https://wiki.developer.mozilla.org/en-US/docs/Mozilla/Test-Info"
 MAX_DAYS = 30
+
+
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+        return super().default(obj)
 
 
 class TestInfo(object):
@@ -565,6 +574,7 @@ class TestInfoReport(TestInfo):
         end,
         show_testruns,
         runcounts_input_file,
+        config_matrix_output_file,
     ):
         def matches_filters(test):
             """
@@ -634,6 +644,24 @@ class TestInfoReport(TestInfo):
         print(
             "Resolver found {} tests, {} manifests".format(len(tests), manifest_count)
         )
+
+        if config_matrix_output_file:
+            topsrcdir = self.build_obj.topsrcdir
+            config_matrix = {}
+            for manifest in manifest_paths:
+                
+                
+                if ".toml" in manifest:
+                    relpath = mozpath.relpath(
+                        f"{manifest.split('.toml')[0]}.toml", topsrcdir
+                    )
+                else:
+                    relpath = mozpath.relpath(manifest, topsrcdir)
+                
+                if relpath.startswith(".."):
+                    relpath = "/" + relpath.replace("../", "")
+                config_matrix[relpath] = self.create_matrix_from_task_graph(relpath)
+            self.write_report(config_matrix, config_matrix_output_file)
 
         if show_manifests:
             topsrcdir = self.build_obj.topsrcdir
@@ -738,11 +766,11 @@ class TestInfoReport(TestInfo):
                                 temp.extend(condition.split("\n"))
                             annotation_conditions = temp
 
-                            for condition in annotation_conditions:
+                            for c in annotation_conditions:
                                 condition_count += 1
                                 
                                 
-                                condition = condition.split(",")[0]
+                                condition = c.split(",")[0]
                                 if condition not in conditions:
                                     conditions[condition] = 0
                                 conditions[condition] += 1
@@ -871,7 +899,7 @@ class TestInfoReport(TestInfo):
         )
 
     def write_report(self, by_component, output_file):
-        json_report = json.dumps(by_component, indent=2, sort_keys=True)
+        json_report = json.dumps(by_component, indent=2, sort_keys=True, cls=SetEncoder)
         if output_file:
             output_file = os.path.abspath(output_file)
             output_dir = os.path.dirname(output_file)
@@ -954,3 +982,199 @@ class TestInfoReport(TestInfo):
             "%s: %d deleted, %d added, %d common"
             % (component, len(deleted), len(added), common)
         )
+
+    
+    
+    
+    
+
+    
+    variant_data = {}
+
+    
+    
+    
+    osmap = {
+        "macosx": "mac",
+        "windows": "win",
+    }
+
+    buildmap = {
+        "debug-isolated-process": "isolated-process",
+    }
+
+    
+    osversionmap = {
+        "1015": "10.15",
+        "1400": "14.70",
+        "1100": "11.20",
+        "1804": "18.04",
+        "2204": "22.04",
+        "2404": "24.04",
+        "7.0": "24",
+        "13.0": "33",
+    }
+
+    processormap = {
+        "64": "x86_64",
+        "32": "x86",
+    }
+
+    @functools.cache
+    def get_variant_data(self):
+        
+        filename = (
+            os.environ.get("GECKO_PATH", ".") + "/taskcluster/kinds/test/variants.yml"
+        )
+        try:
+            with open(filename, "r") as f:
+                variant_data = yaml.safe_load(f.read())
+        except:
+            raise
+
+        return variant_data
+
+    def get_variant_condition(self, variant):
+        if not variant:
+            return ""
+
+        variants = self.get_variant_data()
+        if variant not in variants.keys():
+            return ""
+
+        mozinfo = variants[variant].get("mozinfo", "")
+
+        
+        
+        
+        if variant in ["no-fission"]:
+            mozinfo = "!" + mozinfo
+        return mozinfo
+
+    def build_matrix_cache(self):
+        
+        filename = "task-graph.json"
+        if os.path.exists(filename):
+            with open(filename, "r") as f:
+                data = json.load(f)
+        else:
+            url = (
+                "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-central.latest.taskgraph.decision/artifacts/public/"
+                + filename
+            )
+            response = requests.get(url, headers={"User-agent": "mach-test-info/1.0"})
+            data = response.json()
+            with open(filename, "w") as f:
+                json.dump(data, f)
+
+        for task in data.values():
+            task_label = task["label"]
+
+            
+            if not task_label.startswith("test-"):
+                continue
+            if task_label.endswith("-cf"):
+                continue
+
+            
+            env = task.get("task", {}).get("payload", {}).get("env", {})
+
+            mhtp = json.loads(env.get("MOZHARNESS_TEST_PATHS", "{}"))
+            if not mhtp:
+                continue
+
+            
+            
+            
+            if json.loads(env.get("MOZHARNESS_TEST_TAG", "{}")) and task_label.endswith(
+                "-1"
+            ):
+                continue
+
+            for suite in mhtp:
+                for manifest in mhtp[suite]:
+                    self.matrix_map[manifest].append(task_label)
+
+            extra = task.get("task", {}).get("extra", {}).get("test-setting", {})
+            osname = self.osmap.get(
+                extra["platform"]["os"]["name"], extra["platform"]["os"]["name"]
+            )
+
+            os_version = extra["platform"]["os"]["version"]
+            if extra["platform"]["os"].get("build", ""):
+                os_version += "." + extra["platform"]["os"].get("build", "")
+            os_version = self.osversionmap.get(os_version, os_version)
+
+            processor = self.processormap.get(
+                extra["platform"]["arch"], extra["platform"]["arch"]
+            )
+
+            build_type = extra["build"]["type"]
+            if len(extra["build"].keys()) > 1:
+                if list(extra["build"].keys()) != ["shippable", "type"]:
+                    build_type = [
+                        x
+                        for x in extra["build"].keys()
+                        if x not in ["type", "shippable"]
+                    ][0]
+            build_type = self.buildmap.get(build_type, build_type)
+
+            
+            if build_type in ["devedition", "mingwclang"]:  
+                build_type = "opt"
+            if osname == "mac" and build_type == "ccov":  
+                build_type = "opt"
+            if (
+                osname == "android" and build_type == "lite"
+            ):  
+                build_type = "opt"
+
+            
+
+            test_variants = "+".join(
+                [
+                    v
+                    for v in [
+                        self.get_variant_condition(x)
+                        for x in list(extra.get("runtime", {}).keys())
+                    ]
+                    if v
+                ]
+            )
+            if not extra.get("runtime", {}) or not test_variants:
+                test_variants = "no_variant"
+
+            self.task_tuples[task_label] = (
+                osname,
+                os_version,
+                processor,
+                build_type,
+                test_variants,
+            )
+
+    matrix_map = defaultdict(list)
+    task_tuples = defaultdict(tuple)
+
+    
+    
+    def create_matrix_from_task_graph(self, target_manifest):
+        results = {}
+
+        if not self.matrix_map:
+            self.build_matrix_cache()
+
+        for task_label in self.matrix_map.get(target_manifest, []):
+            
+            osname, os_version, processor, build_type, test_variants = self.task_tuples[
+                task_label
+            ]
+            if osname not in results:
+                results[osname] = {}
+            if os_version not in results[osname]:
+                results[osname][os_version] = {}
+            if processor not in results[osname][os_version]:
+                results[osname][os_version][processor] = {}
+            if build_type not in results[osname][os_version][processor]:
+                results[osname][os_version][processor][build_type] = set()
+            results[osname][os_version][processor][build_type].add(test_variants)
+        return results
