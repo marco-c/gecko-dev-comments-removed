@@ -793,8 +793,9 @@ Modifiers nsCocoaUtils::ModifiersForEvent(NSEvent* aNativeEvent) {
   
   
   if (!!(modifiers & NSEventModifierFlagFunction) &&
-      (aNativeEvent.type == NSKeyDown || aNativeEvent.type == NSKeyUp ||
-       aNativeEvent.type == NSFlagsChanged) &&
+      (aNativeEvent.type == NSEventTypeKeyDown ||
+       aNativeEvent.type == NSEventTypeKeyUp ||
+       aNativeEvent.type == NSEventTypeFlagsChanged) &&
       !(kVK_Return <= aNativeEvent.keyCode &&
         aNativeEvent.keyCode <= NSModeSwitchFunctionKey)) {
     result |= MODIFIER_FN;
