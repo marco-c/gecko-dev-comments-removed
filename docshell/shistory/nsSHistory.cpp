@@ -1222,6 +1222,7 @@ nsSHistory::EvictAllDocumentViewers() {
   return NS_OK;
 }
 
+MOZ_CAN_RUN_SCRIPT
 static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
                           nsDocShellLoadState* aLoadState,
                           SessionHistoryEntry* aEntry,
@@ -1372,22 +1373,24 @@ void nsSHistory::LoadURIOrBFCache(LoadEntryResult& aLoadEntry) {
                   currentFrameLoader->GetMaybePendingBrowsingContext()
                       ->Canonical()
                       ->GetCurrentWindowGlobal()) {
-            wgp->PermitUnload([canonicalBC, loadState, she, frameLoader,
-                               currentFrameLoader, canSave](bool aAllow) {
-              if (aAllow && !canonicalBC->IsReplaced()) {
-                FinishRestore(canonicalBC, loadState, she, frameLoader,
-                              canSave && canonicalBC->AllowedInBFCache(
-                                             Nothing(), nullptr));
-              } else if (currentFrameLoader->GetMaybePendingBrowsingContext()) {
-                nsISHistory* shistory =
-                    currentFrameLoader->GetMaybePendingBrowsingContext()
-                        ->Canonical()
-                        ->GetSessionHistory();
-                if (shistory) {
-                  shistory->InternalSetRequestedIndex(-1);
-                }
-              }
-            });
+            wgp->PermitUnload(
+                [canonicalBC, loadState, she, frameLoader, currentFrameLoader,
+                 canSave](bool aAllow) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                  if (aAllow && !canonicalBC->IsReplaced()) {
+                    FinishRestore(canonicalBC, loadState, she, frameLoader,
+                                  canSave && canonicalBC->AllowedInBFCache(
+                                                 Nothing(), nullptr));
+                  } else if (currentFrameLoader
+                                 ->GetMaybePendingBrowsingContext()) {
+                    nsISHistory* shistory =
+                        currentFrameLoader->GetMaybePendingBrowsingContext()
+                            ->Canonical()
+                            ->GetSessionHistory();
+                    if (shistory) {
+                      shistory->InternalSetRequestedIndex(-1);
+                    }
+                  }
+                });
             return;
           }
         }
@@ -2055,6 +2058,24 @@ nsSHistory::HasUserInteractionAtIndex(int32_t aIndex) {
     return false;
   }
   return entry->GetHasUserInteraction();
+}
+
+NS_IMETHODIMP
+nsSHistory::CanGoBackFromEntryAtIndex(int32_t aIndex, bool* aCanGoBack) {
+  *aCanGoBack = false;
+  if (!StaticPrefs::browser_navigation_requireUserInteraction()) {
+    *aCanGoBack = aIndex > 0;
+    return NS_OK;
+  }
+
+  for (int32_t i = aIndex - 1; i >= 0; i--) {
+    if (HasUserInteractionAtIndex(i)) {
+      *aCanGoBack = true;
+      break;
+    }
+  }
+
+  return NS_OK;
 }
 
 nsresult nsSHistory::LoadNextPossibleEntry(

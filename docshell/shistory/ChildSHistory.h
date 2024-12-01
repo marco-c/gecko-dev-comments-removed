@@ -56,8 +56,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
   int32_t Index();
 
   
-
-
+  MOZ_CAN_RUN_SCRIPT
   void Reload(uint32_t aReloadFlags, ErrorResult& aRv);
 
   
@@ -65,13 +64,21 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
 
 
 
-  bool CanGo(int32_t aOffset);
+
+
+
+
+
+
+  bool CanGo(int32_t aOffset, bool aRequireUserInteraction);
+  MOZ_CAN_RUN_SCRIPT
   void Go(int32_t aOffset, bool aRequireUserInteraction, bool aUserActivation,
           ErrorResult& aRv);
   void AsyncGo(int32_t aOffset, bool aRequireUserInteraction,
                bool aUserActivation, CallerType aCallerType, ErrorResult& aRv);
 
   
+  MOZ_CAN_RUN_SCRIPT
   void GotoIndex(int32_t aIndex, int32_t aOffset, bool aRequireUserInteraction,
                  bool aUserActivation, ErrorResult& aRv);
 
@@ -109,7 +116,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
           mUserActivation(aUserActivation),
           mOffset(aOffset) {}
 
-    NS_IMETHOD Run() override {
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
       if (isInList()) {
         remove();
         mHistory->Go(mOffset, mRequireUserInteraction, mUserActivation,
@@ -119,7 +126,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
     }
 
    private:
-    RefPtr<ChildSHistory> mHistory;
+    const RefPtr<ChildSHistory> mHistory;
     bool mRequireUserInteraction;
     bool mUserActivation;
     int32_t mOffset;

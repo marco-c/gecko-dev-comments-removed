@@ -20,6 +20,6 @@ add_task(async () => {
     
     await BrowserTestUtils.synthesizeMouseAtCenter("#link", {}, browser);
 
-    await assertMenulist([TEST_URI + "#1", TEST_URI + "#inject", TEST_URI]);
+    await assertMenulist([TEST_URI + "#1", TEST_URI]);
   });
 });
