@@ -1509,16 +1509,19 @@ void AppWindow::SyncAttributesToWidget() {
   bool maintainClientSize = mDominantClientSize;
 
   
-  mWindow->HideWindowChrome(windowElement->GetBoolAttr(nsGkAtoms::hidechrome));
+  if (windowElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::hidechrome,
+                                 nsGkAtoms::_true, eCaseMatters)) {
+    mWindow->HideWindowChrome(true);
+  }
+
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
-  
-  
-  
-  
-  if (windowElement->GetBoolAttr(nsGkAtoms::customtitlebar)) {
-    mWindow->SetCustomTitlebar(true);
+  nsIntMargin margins;
+  windowElement->GetAttribute(u"chromemargin"_ns, attr);
+  if (nsContentUtils::ParseIntMarginValue(attr, margins)) {
+    mWindow->SetNonClientMargins(
+        LayoutDeviceIntMargin::FromUnknownMargin(margins));
   }
 
   NS_ENSURE_TRUE_VOID(mWindow);
@@ -1547,17 +1550,18 @@ void AppWindow::SyncAttributesToWidget() {
   }
 
   
-  mWindow->SetDrawsTitle(windowElement->GetBoolAttr(nsGkAtoms::drawtitle));
+  windowElement->GetAttribute(u"drawtitle"_ns, attr);
+  mWindow->SetDrawsTitle(attr.LowerCaseEqualsLiteral("true"));
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
-  mWindow->SetShowsToolbarButton(
-      windowElement->HasAttribute(u"toggletoolbar"_ns));
+  windowElement->GetAttribute(u"toggletoolbar"_ns, attr);
+  mWindow->SetShowsToolbarButton(attr.LowerCaseEqualsLiteral("true"));
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
-  mWindow->SetSupportsNativeFullscreen(
-      windowElement->HasAttribute(u"macnativefullscreen"_ns));
+  windowElement->GetAttribute(u"macnativefullscreen"_ns, attr);
+  mWindow->SetSupportsNativeFullscreen(attr.LowerCaseEqualsLiteral("true"));
   NS_ENSURE_TRUE_VOID(mWindow);
 
   

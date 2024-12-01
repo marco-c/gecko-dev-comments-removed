@@ -941,7 +941,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
               .ToUnknownRect());
 
       
-      SetCustomTitlebar(true);
+      
+      
+      SetNonClientMargins(LayoutDeviceIntMargin(0, 2, 2, 2));
       
       
       mNeedsNCAreaClear = false;
@@ -2521,7 +2523,8 @@ void nsWindow::SetColorScheme(const Maybe<ColorScheme>& aScheme) {
 }
 
 LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
-  MOZ_ASSERT(mCustomNonClient);
+  LayoutDeviceIntMargin nonClientOffset;
+
   
   
   
@@ -2529,10 +2532,51 @@ LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
   
   
   
-  
-  
-  return LayoutDeviceIntMargin(mCaptionHeight + mVertResizeMargin, 0, 0, 0);
+
+  if (mNonClientMargins.top > 0) {
+    nonClientOffset.top = std::min(mCaptionHeight, mNonClientMargins.top);
+  } else if (mNonClientMargins.top == 0) {
+    nonClientOffset.top = mCaptionHeight;
+  } else {
+    nonClientOffset.top = 0;
+  }
+
+  if (mNonClientMargins.bottom > 0) {
+    nonClientOffset.bottom =
+        std::min(mVertResizeMargin, mNonClientMargins.bottom);
+  } else if (mNonClientMargins.bottom == 0) {
+    nonClientOffset.bottom = mVertResizeMargin;
+  } else {
+    nonClientOffset.bottom = 0;
+  }
+
+  if (mNonClientMargins.left > 0) {
+    nonClientOffset.left = std::min(mHorResizeMargin, mNonClientMargins.left);
+  } else if (mNonClientMargins.left == 0) {
+    nonClientOffset.left = mHorResizeMargin;
+  } else {
+    nonClientOffset.left = 0;
+  }
+
+  if (mNonClientMargins.right > 0) {
+    nonClientOffset.right = std::min(mHorResizeMargin, mNonClientMargins.right);
+  } else if (mNonClientMargins.right == 0) {
+    nonClientOffset.right = mHorResizeMargin;
+  } else {
+    nonClientOffset.right = 0;
+  }
+  return nonClientOffset;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2556,7 +2600,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
 
   const nsSizeMode sizeMode = mFrameState->GetSizeMode();
 
-  const bool hasCaption =
+  bool hasCaption =
       bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
                            BorderStyle::Menu | BorderStyle::Default));
 
@@ -2571,29 +2615,41 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   
   
   
-  mHorResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  mVertResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
-
-  
   
   
   mCaptionHeight =
-      hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CYCAPTION, dpi) : 0;
+      WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CYCAPTION, dpi) +
+                        WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                  : 0);
+  if (!mUseResizeMarginOverrides) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mHorResizeMargin =
+        WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
+        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                    : 0);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    mVertResizeMargin =
+        WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                    : 0);
+  }
 
   if (sizeMode == nsSizeMode_Minimized) {
     
@@ -2606,13 +2662,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     
-    
-    
-    
-    
-    
-    
-    mNonClientOffset.top = mVertResizeMargin + mCaptionHeight;
+    mNonClientOffset.top = mCaptionHeight;
     mNonClientOffset.bottom = mVertResizeMargin;
     mNonClientOffset.left = mHorResizeMargin;
     mNonClientOffset.right = mHorResizeMargin;
@@ -2620,7 +2670,12 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     
-    mNonClientOffset.top = mCaptionHeight;
+    int verticalResize =
+        WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                    : 0);
+
+    mNonClientOffset.top = mCaptionHeight - verticalResize;
     mNonClientOffset.bottom = 0;
     mNonClientOffset.left = 0;
     mNonClientOffset.right = 0;
@@ -2653,23 +2708,26 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   return true;
 }
 
-void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
+nsresult nsWindow::SetNonClientMargins(const LayoutDeviceIntMargin& margins) {
   if (!IsTopLevelWidget() || mBorderStyle == BorderStyle::None) {
-    return;
+    return NS_ERROR_INVALID_ARG;
   }
 
-  if (mCustomNonClient == aCustomTitlebar) {
-    return;
+  if (mNonClientMargins == margins) {
+    return NS_OK;
   }
 
   if (mHideChrome) {
-    mCustomTitlebarOnceChromeShows = Some(aCustomTitlebar);
-    return;
+    mFutureMarginsOnceChromeShows = margins;
+    mFutureMarginsToUse = true;
+    return NS_OK;
   }
 
-  mCustomTitlebarOnceChromeShows.reset();
+  mFutureMarginsToUse = false;
 
-  mCustomNonClient = aCustomTitlebar;
+  
+  mCustomNonClient = margins != LayoutDeviceIntMargin(-1, -1, -1, -1);
+  mNonClientMargins = margins;
 
   
   if (mCustomNonClient) {
@@ -2677,10 +2735,15 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
   } else {
     ResetLayout();
   }
+
+  return NS_OK;
 }
 
 void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
-  mCustomResizeMargin = aResizeMargin;
+  mUseResizeMarginOverrides = true;
+  mHorResizeMargin = aResizeMargin;
+  mVertResizeMargin = aResizeMargin;
+  UpdateNonClientMargins();
 }
 
 nsAutoRegion nsWindow::ComputeNonClientHRGN() {
@@ -2705,7 +2768,7 @@ nsAutoRegion nsWindow::ComputeNonClientHRGN() {
   
   
   ::GetWindowRect(mWnd, &rect);
-  rect.top += mCaptionHeight + mVertResizeMargin;
+  rect.top += mCaptionHeight;
   rect.right -= mHorResizeMargin;
   rect.bottom -= mVertResizeMargin;
   rect.left += mHorResizeMargin;
@@ -2975,9 +3038,8 @@ void nsWindow::HideWindowChrome(bool aShouldHide) {
     
     oldChrome = mOldStyles.refOr(currentChrome);
     newChrome = oldChrome;
-    if (mCustomTitlebarOnceChromeShows) {
-      SetCustomTitlebar(mCustomTitlebarOnceChromeShows.extract());
-      MOZ_ASSERT(!mCustomTitlebarOnceChromeShows);
+    if (mFutureMarginsToUse) {
+      SetNonClientMargins(mFutureMarginsOnceChromeShows);
     }
   }
 
@@ -4922,9 +4984,8 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
 
 
-      if (mSendingSetText || !mCustomNonClient) {
+      if (mSendingSetText || !mCustomNonClient || mNonClientMargins.top == -1)
         break;
-      }
 
       {
         
@@ -5867,11 +5928,10 @@ void nsWindow::FinishLiveResizing(ResizeState aNewState) {
 
 LayoutDeviceIntMargin nsWindow::NonClientSizeMargin(
     const LayoutDeviceIntMargin& aNonClientOffset) const {
-  return LayoutDeviceIntMargin(
-      mCaptionHeight + mVertResizeMargin - aNonClientOffset.top,
-      mHorResizeMargin - aNonClientOffset.right,
-      mVertResizeMargin - aNonClientOffset.bottom,
-      mHorResizeMargin - aNonClientOffset.left);
+  return LayoutDeviceIntMargin(mCaptionHeight - aNonClientOffset.top,
+                               mHorResizeMargin - aNonClientOffset.right,
+                               mVertResizeMargin - aNonClientOffset.bottom,
+                               mHorResizeMargin - aNonClientOffset.left);
 }
 
 int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
@@ -5924,12 +5984,6 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
   borderSize.EnsureAtLeast(
       LayoutDeviceIntMargin(mVertResizeMargin, mHorResizeMargin,
                             mVertResizeMargin, mHorResizeMargin));
-  
-  if (mCustomResizeMargin) {
-    borderSize.EnsureAtLeast(
-        LayoutDeviceIntMargin(mCustomResizeMargin, mCustomResizeMargin,
-                              mCustomResizeMargin, mCustomResizeMargin));
-  }
 
   bool top = false;
   bool bottom = false;

@@ -881,6 +881,17 @@ class nsContentUtils {
 
 
 
+
+  static bool ParseIntMarginValue(const nsAString& aString,
+                                  nsIntMargin& aResult);
+
+  
+
+
+
+
+
+
   static int32_t ParseLegacyFontSize(const nsAString& aValue);
 
   static void Shutdown();

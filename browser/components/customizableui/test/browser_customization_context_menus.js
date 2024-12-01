@@ -92,7 +92,7 @@ add_task(async function tabstrip_context() {
 
 
 add_task(async function titlebar_spacer_context() {
-  if (!CustomTitlebar.enabled) {
+  if (!TabsInTitlebar.enabled) {
     info("Skipping test that requires tabs in the title bar.");
     return;
   }

@@ -52,7 +52,7 @@ function getExpectedElements(win, tabstripOrientation = "horizontal") {
   if (tabstripOrientation == "horizontal") {
     selectors = ["#TabsToolbar"];
 
-    if (win.CustomTitlebar.enabled) {
+    if (win.TabsInTitlebar.enabled) {
       selectors.push("#TabsToolbar .titlebar-buttonbox-container");
       if (sizeMode == "normal") {
         selectors.push("#TabsToolbar .titlebar-spacer");
@@ -62,7 +62,7 @@ function getExpectedElements(win, tabstripOrientation = "horizontal") {
   }
 
   selectors = ["#vertical-tabs"];
-  if (win.CustomTitlebar.enabled) {
+  if (win.TabsInTitlebar.enabled) {
     selectors.push("#nav-bar .titlebar-buttonbox-container");
     if (sizeMode == "normal") {
       selectors.push("#nav-bar .titlebar-spacer[type='post-tabs']");
@@ -89,7 +89,7 @@ add_task(async function test_toggle_vertical_tabs() {
   );
   info(`sizemode: ${document.documentElement.getAttribute("sizemode")}`);
   info(
-    `customtitlebar: ${document.documentElement.getAttribute("customtitlebar")}`
+    `tabsintitlebar: ${document.documentElement.getAttribute("tabsintitlebar")}`
   );
 
   const expectedElementsWhenHorizontal = getExpectedElements(

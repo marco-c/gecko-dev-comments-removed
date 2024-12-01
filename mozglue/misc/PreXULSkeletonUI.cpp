@@ -131,7 +131,7 @@ static int sVerticalResizeMargin = 0;
 
 
 static Margin NonClientSizeMargin() {
-  return Margin{sCaptionHeight + sVerticalResizeMargin - sNonClientOffset.top,
+  return Margin{sCaptionHeight - sNonClientOffset.top,
                 sHorizontalResizeMargin - sNonClientOffset.right,
                 sVerticalResizeMargin - sNonClientOffset.bottom,
                 sHorizontalResizeMargin - sNonClientOffset.left};
@@ -1992,15 +1992,25 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
                             sGetSystemMetricsForDpi(SM_CXPADDEDBORDER, sDpi);
   sVerticalResizeMargin = sGetSystemMetricsForDpi(SM_CYFRAME, sDpi) +
                           sGetSystemMetricsForDpi(SM_CXPADDEDBORDER, sDpi);
-  sCaptionHeight = sGetSystemMetricsForDpi(SM_CYCAPTION, sDpi);
+  sCaptionHeight =
+      sVerticalResizeMargin + sGetSystemMetricsForDpi(SM_CYCAPTION, sDpi);
 
   
   
+  
+  const Margin nonClientMargin{0, 2, 2, 2};
+
   if (sMaximized) {
-    sNonClientOffset = Margin{sCaptionHeight, 0, 0, 0};
+    sNonClientOffset.top = sCaptionHeight - sVerticalResizeMargin;
   } else {
     
-    sNonClientOffset = Margin{sCaptionHeight + sVerticalResizeMargin, 0, 0, 0};
+    sNonClientOffset.top = sCaptionHeight;
+    sNonClientOffset.bottom =
+        std::min(sVerticalResizeMargin, nonClientMargin.bottom);
+    sNonClientOffset.left =
+        std::min(sHorizontalResizeMargin, nonClientMargin.left);
+    sNonClientOffset.right =
+        std::min(sHorizontalResizeMargin, nonClientMargin.right);
   }
 
   if (sMaximized) {

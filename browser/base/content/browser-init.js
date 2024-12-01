@@ -106,9 +106,8 @@ var gBrowserInit = {
     
     AutoHideMenubar.init();
     
-    
     window.TabBarVisibility.update();
-    CustomTitlebar.init();
+    TabsInTitlebar.init();
 
     new LightweightThemeConsumer(document);
 
@@ -1025,7 +1024,7 @@ var gBrowserInit = {
   onUnload() {
     gUIDensity.uninit();
 
-    CustomTitlebar.uninit();
+    TabsInTitlebar.uninit();
 
     ToolbarIconColor.uninit();
 
