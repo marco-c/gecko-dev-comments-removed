@@ -263,9 +263,8 @@ void nsINode::AssertInvariantsOnNodeInfoChange() {
 
 #ifdef DEBUG
 void nsINode::AssertIsRootElementSlow(bool aIsRoot) const {
-  
-  
-  
+  const bool isRootSlow = this == OwnerDoc()->GetRootElement();
+  MOZ_ASSERT(aIsRoot == isRootSlow);
 }
 #endif
 
@@ -2327,7 +2326,9 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify) {
   nsMutationGuard::DidMutate();
   mozAutoDocUpdate updateBatch(GetComposedDoc(), aNotify);
 
-  nsIContent* previousSibling = aKid->GetPreviousSibling();
+  if (aNotify) {
+    MutationObservers::NotifyContentWillBeRemoved(this, aKid);
+  }
 
   
   nsCOMPtr<nsIContent> kungfuDeathGrip = aKid;
@@ -2335,11 +2336,6 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify) {
 
   
   InvalidateChildNodes();
-
-  if (aNotify) {
-    MutationObservers::NotifyContentRemoved(this, aKid, previousSibling);
-  }
-
   aKid->UnbindFromTree();
 }
 
