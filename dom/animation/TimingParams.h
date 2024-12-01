@@ -163,8 +163,7 @@ struct TimingParams {
   StickyTimeDuration CalcBeforeActiveBoundary() const {
     static constexpr StickyTimeDuration zeroDuration;
     
-    return std::max(std::min(StickyTimeDuration(mDelay), mEndTime),
-                    zeroDuration);
+    return std::clamp(StickyTimeDuration(mDelay), zeroDuration, mEndTime);
   }
 
   StickyTimeDuration CalcActiveAfterBoundary() const {
