@@ -2526,6 +2526,12 @@ public:
     for (auto *Candidate : E->decls()) {
       visitHeuristicResult(Loc, Candidate);
     }
+
+    
+    
+    if (TemplateStack) {
+      TemplateStack->visitDependent(Loc);
+    }
     return true;
   }
 
