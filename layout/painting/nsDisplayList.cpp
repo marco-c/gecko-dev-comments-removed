@@ -6049,9 +6049,14 @@ void nsDisplayTransform::SetReferenceFrameToAncestor(
   
   
   
-  nsIFrame* outerFrame = nsLayoutUtils::GetCrossDocParentFrameInProcess(mFrame);
-  const nsIFrame* referenceFrame = aBuilder->FindReferenceFrameFor(outerFrame);
-  mToReferenceFrame = mFrame->GetOffsetToCrossDoc(referenceFrame);
+  
+  
+  
+  MOZ_ASSERT(aBuilder->FindReferenceFrameFor(
+                 nsLayoutUtils::GetCrossDocParentFrameInProcess(mFrame)) ==
+             aBuilder->GetCurrentReferenceFrame());
+  mToReferenceFrame =
+      mFrame->GetOffsetToCrossDoc(aBuilder->GetCurrentReferenceFrame());
 }
 
 void nsDisplayTransform::Init(nsDisplayListBuilder* aBuilder,
