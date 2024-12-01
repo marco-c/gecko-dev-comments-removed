@@ -219,11 +219,20 @@
       return this.children[0];
     }
 
+    get #panelPosition() {
+      if (gBrowser.tabContainer.verticalMode) {
+        return SidebarController._positionStart
+          ? "topleft topright"
+          : "topright topleft";
+      }
+      return "bottomleft topleft";
+    }
+
     openCreateModal(group) {
       this.activeGroup = group;
       this.createMode = true;
       this.#panel.openPopup(group.firstChild, {
-        position: "bottomleft topleft",
+        position: this.#panelPosition,
       });
     }
 
@@ -231,10 +240,10 @@
       this.activeGroup = group;
       this.createMode = false;
       this.#panel.openPopup(group.firstChild, {
-        position: "bottomleft topleft",
+        position: this.#panelPosition,
       });
       document.getElementById("tabGroupEditor_moveGroupToNewWindow").disabled =
-        gBrowser.openTabCount == this.activeGroup?.tabs.length;
+        gBrowser.openTabs.length == this.activeGroup?.tabs.length;
     }
 
     on_popupshown() {
