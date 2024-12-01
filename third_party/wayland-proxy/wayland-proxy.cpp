@@ -26,7 +26,8 @@
 #include <cassert>
 #include <pthread.h>
 #include <sched.h>
-#include <fstream> 
+#include <fstream>
+#include <ctime>
 
 #include "wayland-proxy.h"
 
@@ -110,7 +111,7 @@ class ProxiedConnection {
   
   
   bool Process();
-  void ProcessFailure();
+  bool ProcessFailure();
 
   void PrintConnectionInfo();
 
@@ -160,6 +161,13 @@ class ProxiedConnection {
   int mStatRecvFromClient = 0;
   int mStatSentToClient = 0;
   int mStatSentToClientLater = 0;
+
+
+  
+  
+  
+  constexpr static const double sFailureTimeout = CLOCKS_PER_SEC / 2;
+  clock_t mFailureTime = 0;
 };
 
 WaylandMessage::~WaylandMessage() {
@@ -503,11 +511,29 @@ void ProxiedConnection::PrintConnectionInfo() {
 
 bool ProxiedConnection::Process() {
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mApplicationFailed || mCompositorFailed) {
+    return false;
+  }
+
+  
+  
+
+  
   if (mApplicationFlags & (POLLHUP | POLLERR)) {
     Print("ProxiedConnection::Process(): Client socket is not listening\n");
     WaylandProxy::AddState(WAYLAND_PROXY_APP_CONNECTION_FAILED);
     mApplicationFailed = true;
-    return false;
   }
 
   
@@ -516,7 +542,6 @@ bool ProxiedConnection::Process() {
       Print("ProxiedConnection::Process(): Compositor socket is not listening\n");
       WaylandProxy::AddState(WAYLAND_PROXY_COMPOSITOR_CONNECTION_FAILED);
       mCompositorFailed = true;
-      return false;
     }
   } else {
     
@@ -524,11 +549,9 @@ bool ProxiedConnection::Process() {
       Error("ProxiedConnection::Process(): Failed to connect to compositor\n");
       WaylandProxy::AddState(WAYLAND_PROXY_COMPOSITOR_CONNECTION_FAILED);
       mCompositorFailed = true;
-      return false;
-    }
-    
-    
-    if (!mCompositorConnected) {
+    } else if (!mCompositorConnected) {
+      
+      
       return true;
     }
   }
@@ -539,7 +562,6 @@ bool ProxiedConnection::Process() {
     Error("ProxiedConnection::Process(): Failed to read data from compositor!");
       WaylandProxy::AddState(WAYLAND_PROXY_COMPOSITOR_CONNECTION_FAILED);
     mCompositorFailed = true;
-    return false;
   }
   if (!TransferOrQueue(mApplicationSocket, mApplicationFlags, mCompositorSocket,
                        &mToCompositorQueue, mStatRecvFromClient,
@@ -547,32 +569,41 @@ bool ProxiedConnection::Process() {
     Error("ProxiedConnection::Process(): Failed to read data from client!");
     WaylandProxy::AddState(WAYLAND_PROXY_APP_CONNECTION_FAILED);
     mApplicationFailed = true;
-    return false;
   }
   if (!FlushQueue(mCompositorSocket, mCompositorFlags, mToCompositorQueue,
                   mStatSentToCompositorLater)) {
     Error("ProxiedConnection::Process(): Failed to flush queue to compositor!");
     WaylandProxy::AddState(WAYLAND_PROXY_COMPOSITOR_CONNECTION_FAILED);
     mCompositorFailed = true;
-    return false;
   }
   if (!FlushQueue(mApplicationSocket, mApplicationFlags, mToApplicationQueue,
                   mStatSentToClientLater)) {
     Error("ProxiedConnection::Process(): Failed to flush queue to client!");
     WaylandProxy::AddState(WAYLAND_PROXY_APP_CONNECTION_FAILED);
     mApplicationFailed = true;
-    return false;
   }
 
   if (sPrintInfo) {
     PrintConnectionInfo();
   }
 
-  return true;
+  if (mCompositorFailed) {
+    mFailureTime = clock();
+  }
+  return !mApplicationFailed && !mCompositorFailed;
 }
 
-void ProxiedConnection::ProcessFailure() {
+bool ProxiedConnection::ProcessFailure() {
+  if (!mCompositorFailed && !mApplicationFailed) {
+    return false;
+  }
+
   if (mCompositorFailed) {
+    double time = (double)(clock() - mFailureTime);
+    if (time < sFailureTimeout) {
+      return false;
+    }
+
     struct stat buffer;
     if (stat(mWaylandDisplay, &buffer) < 0) {
       Print("ProxiedConnection(): compositor crashed!\n");
@@ -583,8 +614,9 @@ void ProxiedConnection::ProcessFailure() {
   } else if (mApplicationFailed) {
     Print("ProxiedConnection(): application fails to read/write events!\n");
   }
-}
 
+  return true;
+}
 
 bool WaylandProxy::CheckWaylandDisplay(const char* aWaylandDisplay) {
   struct sockaddr_un addr = {};
@@ -839,12 +871,13 @@ bool WaylandProxy::ProcessConnections() {
   for (connection = mConnections.begin(); connection != mConnections.end();) {
     if (!(*connection)->Process()) {
       WaylandProxy::AddState(WAYLAND_PROXY_CONNECTION_REMOVED);
-      (*connection)->ProcessFailure();
-      connection = mConnections.erase(connection);
-      if (mConnections.empty()) {
-        
-        Info("removed last connection, quit\n");
-        return false;
+      if ((*connection)->ProcessFailure()) {
+        connection = mConnections.erase(connection);
+        if (mConnections.empty()) {
+          
+          Info("removed last connection, quit\n");
+          return false;
+        }
       }
     } else {
       connection++;
