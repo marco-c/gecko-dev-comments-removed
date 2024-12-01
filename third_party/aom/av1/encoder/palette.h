@@ -51,7 +51,7 @@ void AV1_K_MEANS_RENAME(av1_k_means, 2)(const int16_t *data, int16_t *centroids,
 
 
 
-static INLINE void av1_calc_indices(const int16_t *data,
+static inline void av1_calc_indices(const int16_t *data,
                                     const int16_t *centroids, uint8_t *indices,
                                     int n, int k, int dim) {
   assert(n > 0);
@@ -85,7 +85,7 @@ static INLINE void av1_calc_indices(const int16_t *data,
 
 
 
-static INLINE void av1_k_means(const int16_t *data, int16_t *centroids,
+static inline void av1_k_means(const int16_t *data, int16_t *centroids,
                                uint8_t *indices, int n, int k, int dim,
                                int max_itr) {
   assert(n > 0);
@@ -98,20 +98,6 @@ static INLINE void av1_k_means(const int16_t *data, int16_t *centroids,
     assert(0 && "Untemplated k means dimension");
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av1_remove_duplicates(int16_t *centroids, int num_centroids);
 
 
 

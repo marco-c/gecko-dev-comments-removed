@@ -28,48 +28,9 @@ bool av1_resize_plane(const uint8_t *input, int height, int width,
                       int in_stride, uint8_t *output, int height2, int width2,
                       int out_stride);
 
-
-void av1_resize_frame420(const uint8_t *y, int y_stride, const uint8_t *u,
-                         const uint8_t *v, int uv_stride, int height, int width,
-                         uint8_t *oy, int oy_stride, uint8_t *ou, uint8_t *ov,
-                         int ouv_stride, int oheight, int owidth);
-bool av1_resize_frame422(const uint8_t *y, int y_stride, const uint8_t *u,
-                         const uint8_t *v, int uv_stride, int height, int width,
-                         uint8_t *oy, int oy_stride, uint8_t *ou, uint8_t *ov,
-                         int ouv_stride, int oheight, int owidth);
-bool av1_resize_frame444(const uint8_t *y, int y_stride, const uint8_t *u,
-                         const uint8_t *v, int uv_stride, int height, int width,
-                         uint8_t *oy, int oy_stride, uint8_t *ou, uint8_t *ov,
-                         int ouv_stride, int oheight, int owidth);
-
-void av1_highbd_resize_plane(const uint8_t *input, int height, int width,
-                             int in_stride, uint8_t *output, int height2,
-                             int width2, int out_stride, int bd);
-void av1_highbd_resize_frame420(const uint8_t *y, int y_stride,
-                                const uint8_t *u, const uint8_t *v,
-                                int uv_stride, int height, int width,
-                                uint8_t *oy, int oy_stride, uint8_t *ou,
-                                uint8_t *ov, int ouv_stride, int oheight,
-                                int owidth, int bd);
-void av1_highbd_resize_frame422(const uint8_t *y, int y_stride,
-                                const uint8_t *u, const uint8_t *v,
-                                int uv_stride, int height, int width,
-                                uint8_t *oy, int oy_stride, uint8_t *ou,
-                                uint8_t *ov, int ouv_stride, int oheight,
-                                int owidth, int bd);
-void av1_highbd_resize_frame444(const uint8_t *y, int y_stride,
-                                const uint8_t *u, const uint8_t *v,
-                                int uv_stride, int height, int width,
-                                uint8_t *oy, int oy_stride, uint8_t *ou,
-                                uint8_t *ov, int ouv_stride, int oheight,
-                                int owidth, int bd);
-
 void av1_upscale_normative_rows(const AV1_COMMON *cm, const uint8_t *src,
                                 int src_stride, uint8_t *dst, int dst_stride,
                                 int plane, int rows);
-void av1_upscale_normative_and_extend_frame(const AV1_COMMON *cm,
-                                            const YV12_BUFFER_CONFIG *src,
-                                            YV12_BUFFER_CONFIG *dst);
 
 YV12_BUFFER_CONFIG *av1_realloc_and_scale_if_required(
     AV1_COMMON *cm, YV12_BUFFER_CONFIG *unscaled, YV12_BUFFER_CONFIG *scaled,
@@ -89,11 +50,6 @@ void av1_calculate_scaled_size(int *width, int *height, int resize_denom);
 void av1_calculate_scaled_superres_size(int *width, int *height,
                                         int superres_denom);
 
-
-
-
-void av1_calculate_unscaled_superres_size(int *width, int *height, int denom);
-
 void av1_superres_upscale(AV1_COMMON *cm, BufferPool *const pool,
                           bool alloc_pyramid);
 
@@ -107,7 +63,7 @@ void down2_symeven(const uint8_t *const input, int length, uint8_t *output,
 bool should_resize_by_half(int height, int width, int height2, int width2);
 
 
-static INLINE int av1_superres_scaled(const AV1_COMMON *cm) {
+static inline int av1_superres_scaled(const AV1_COMMON *cm) {
   
   
   
@@ -124,7 +80,7 @@ static INLINE int av1_superres_scaled(const AV1_COMMON *cm) {
 
 
 
-static INLINE bool av1_has_optimized_scaler(const int src_width,
+static inline bool av1_has_optimized_scaler(const int src_width,
                                             const int src_height,
                                             const int dst_width,
                                             const int dst_height) {

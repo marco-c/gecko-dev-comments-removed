@@ -12,9 +12,10 @@
 #include "av1/encoder/txb_rdopt.h"
 #include "av1/encoder/txb_rdopt_utils.h"
 
+#include "aom_ports/mem.h"
 #include "av1/common/idct.h"
 
-static INLINE void update_coeff_general(
+static inline void update_coeff_general(
     int *accu_rate, int64_t *accu_dist, int si, int eob, TX_SIZE tx_size,
     TX_CLASS tx_class, int bhl, int width, int64_t rdmult, int shift,
     int dc_sign_ctx, const int16_t *dequant, const int16_t *scan,
@@ -239,7 +240,7 @@ static AOM_FORCE_INLINE void update_coeff_eob(
   }
 }
 
-static INLINE void update_skip(int *accu_rate, int64_t accu_dist, int *eob,
+static inline void update_skip(int *accu_rate, int64_t accu_dist, int *eob,
                                int nz_num, int *nz_ci, int64_t rdmult,
                                int skip_cost, int non_skip_cost,
                                tran_low_t *qcoeff, tran_low_t *dqcoeff) {
@@ -335,13 +336,18 @@ int av1_optimize_txb(const struct AV1_COMP *cpi, MACROBLOCK *x, int plane,
   const LV_MAP_EOB_COST *txb_eob_costs =
       &coeff_costs->eob_costs[eob_multi_size][plane_type];
 
-  const int rshift = 2;
+  
+  
+  
+  
+  
+  
+  const int rshift = cpi->oxcf.tune_cfg.tuning == AOM_TUNE_SSIMULACRA2 ? 4 : 2;
 
-  const int64_t rdmult =
-      (((int64_t)x->rdmult *
-        (plane_rd_mult[is_inter][plane_type] << (2 * (xd->bd - 8)))) +
-       2) >>
-      rshift;
+  const int64_t rdmult = ROUND_POWER_OF_TWO(
+      (int64_t)x->rdmult *
+          (plane_rd_mult[is_inter][plane_type] << (2 * (xd->bd - 8))),
+      rshift);
 
   uint8_t levels_buf[TX_PAD_2D];
   uint8_t *const levels = set_levels(levels_buf, height);
@@ -543,9 +549,38 @@ static AOM_FORCE_INLINE int warehouse_efficients_txb(
   return cost;
 }
 
-int av1_cost_coeffs_txb_estimate(const MACROBLOCK *x, const int plane,
-                                 const int block, const TX_SIZE tx_size,
-                                 const TX_TYPE tx_type) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static int av1_cost_coeffs_txb_estimate(const MACROBLOCK *x, const int plane,
+                                        const int block, const TX_SIZE tx_size,
+                                        const TX_TYPE tx_type) {
   assert(plane == 0);
 
   int cost = 0;

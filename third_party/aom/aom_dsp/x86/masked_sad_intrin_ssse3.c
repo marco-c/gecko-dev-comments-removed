@@ -22,7 +22,7 @@
 #include "aom_dsp/x86/masked_sad_intrin_ssse3.h"
 
 
-static INLINE unsigned int masked_sad_ssse3(const uint8_t *src_ptr,
+static inline unsigned int masked_sad_ssse3(const uint8_t *src_ptr,
                                             int src_stride,
                                             const uint8_t *a_ptr, int a_stride,
                                             const uint8_t *b_ptr, int b_stride,
@@ -84,14 +84,17 @@ MASKSAD8XN_SSSE3(8)
 MASKSAD8XN_SSSE3(4)
 MASKSAD4XN_SSSE3(8)
 MASKSAD4XN_SSSE3(4)
+
+#if !CONFIG_REALTIME_ONLY
 MASKSAD4XN_SSSE3(16)
 MASKSADMXN_SSSE3(16, 4)
 MASKSAD8XN_SSSE3(32)
 MASKSADMXN_SSSE3(32, 8)
 MASKSADMXN_SSSE3(16, 64)
 MASKSADMXN_SSSE3(64, 16)
+#endif  
 
-static INLINE unsigned int masked_sad_ssse3(const uint8_t *src_ptr,
+static inline unsigned int masked_sad_ssse3(const uint8_t *src_ptr,
                                             int src_stride,
                                             const uint8_t *a_ptr, int a_stride,
                                             const uint8_t *b_ptr, int b_stride,
@@ -225,8 +228,9 @@ unsigned int aom_masked_sad4xh_ssse3(const uint8_t *src_ptr, int src_stride,
   return (unsigned int)_mm_cvtsi128_si32(res);
 }
 
+#if CONFIG_AV1_HIGHBITDEPTH
 
-static INLINE unsigned int highbd_masked_sad_ssse3(
+static inline unsigned int highbd_masked_sad_ssse3(
     const uint8_t *src8, int src_stride, const uint8_t *a8, int a_stride,
     const uint8_t *b8, int b_stride, const uint8_t *m_ptr, int m_stride,
     int width, int height);
@@ -275,14 +279,17 @@ HIGHBD_MASKSADMXN_SSSE3(8, 8)
 HIGHBD_MASKSADMXN_SSSE3(8, 4)
 HIGHBD_MASKSAD4XN_SSSE3(8)
 HIGHBD_MASKSAD4XN_SSSE3(4)
+
+#if !CONFIG_REALTIME_ONLY
 HIGHBD_MASKSAD4XN_SSSE3(16)
 HIGHBD_MASKSADMXN_SSSE3(16, 4)
 HIGHBD_MASKSADMXN_SSSE3(8, 32)
 HIGHBD_MASKSADMXN_SSSE3(32, 8)
 HIGHBD_MASKSADMXN_SSSE3(16, 64)
 HIGHBD_MASKSADMXN_SSSE3(64, 16)
+#endif  
 
-static INLINE unsigned int highbd_masked_sad_ssse3(
+static inline unsigned int highbd_masked_sad_ssse3(
     const uint8_t *src8, int src_stride, const uint8_t *a8, int a_stride,
     const uint8_t *b8, int b_stride, const uint8_t *m_ptr, int m_stride,
     int width, int height) {
@@ -398,3 +405,4 @@ unsigned int aom_highbd_masked_sad4xh_ssse3(const uint8_t *src8, int src_stride,
   int sad = _mm_cvtsi128_si32(res);
   return sad;
 }
+#endif  

@@ -28,7 +28,7 @@
 
 
 
-static INLINE void filter_4x2_sse4_1(uint8_t *dst, const ptrdiff_t stride,
+static inline void filter_4x2_sse4_1(uint8_t *dst, const ptrdiff_t stride,
                                      const __m128i *pixels,
                                      const __m128i *taps_0_1,
                                      const __m128i *taps_2_3,
@@ -56,7 +56,7 @@ static INLINE void filter_4x2_sse4_1(uint8_t *dst, const ptrdiff_t stride,
 
 
 
-static INLINE void filter_4xh(uint8_t *dest, ptrdiff_t stride,
+static inline void filter_4xh(uint8_t *dest, ptrdiff_t stride,
                               const uint8_t *const top_ptr,
                               const uint8_t *const left_ptr, int mode,
                               const int height) {
@@ -208,7 +208,7 @@ static INLINE void filter_4xh(uint8_t *dest, ptrdiff_t stride,
   }
 }
 
-static INLINE void filter_intra_predictor_sse4_1(void *const dest,
+static inline void filter_intra_predictor_sse4_1(void *const dest,
                                                  ptrdiff_t stride,
                                                  const void *const top_row,
                                                  const void *const left_column,

@@ -126,6 +126,7 @@ void av1_convolve_horiz_rs_sse4_1(const uint8_t *src, int src_stride,
   }
 }
 
+#if CONFIG_AV1_HIGHBITDEPTH
 
 
 
@@ -226,3 +227,4 @@ void av1_highbd_convolve_horiz_rs_sse4_1(const uint16_t *src, int src_stride,
     }
   }
 }
+#endif  

@@ -25,6 +25,7 @@ typedef enum {
   CDEF_NONE = 0,      
   CDEF_ALL = 1,       
   CDEF_REFERENCE = 2, 
+  CDEF_ADAPTIVE = 3,  
 } CDEF_CONTROL;
 
 
@@ -171,7 +172,7 @@ typedef struct {
   bool use_highbitdepth;
 } CdefSearchCtx;
 
-static INLINE int sb_all_skip(const CommonModeInfoParams *const mi_params,
+static inline int sb_all_skip(const CommonModeInfoParams *const mi_params,
                               int mi_row, int mi_col) {
   const int maxr = AOMMIN(mi_params->mi_rows - mi_row, MI_SIZE_64X64);
   const int maxc = AOMMIN(mi_params->mi_cols - mi_col, MI_SIZE_64X64);
@@ -194,7 +195,7 @@ static INLINE int sb_all_skip(const CommonModeInfoParams *const mi_params,
 
 
 
-static INLINE int cdef_sb_skip(const CommonModeInfoParams *const mi_params,
+static inline int cdef_sb_skip(const CommonModeInfoParams *const mi_params,
                                int fbr, int fbc) {
   const MB_MODE_INFO *const mbmi =
       mi_params->mi_grid_base[MI_SIZE_64X64 * fbr * mi_params->mi_stride +

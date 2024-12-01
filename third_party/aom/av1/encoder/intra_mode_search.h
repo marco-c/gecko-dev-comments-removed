@@ -286,7 +286,7 @@ void av1_count_colors_highbd(const uint8_t *src8, int stride, int rows,
 
 
 
-static AOM_INLINE void init_intra_mode_search_state(
+static inline void init_intra_mode_search_state(
     IntraModeSearchState *intra_search_state) {
   memset(intra_search_state, 0, sizeof(*intra_search_state));
   intra_search_state->rate_uv_intra = INT_MAX;
@@ -306,22 +306,6 @@ static AOM_INLINE void init_intra_mode_search_state(
 
 void set_y_mode_and_delta_angle(const int mode_idx, MB_MODE_INFO *const mbmi,
                                 int reorder_delta_angle_eval);
-
-
-
-
-
-
-
-
-
-
-
-
-int prune_intra_y_mode(int64_t this_model_rd, int64_t *best_model_rd,
-                       int64_t top_intra_model_rd[], int max_model_cnt_allowed,
-                       int model_rd_index_for_pruning);
-
 #ifdef __cplusplus
 }  
 #endif

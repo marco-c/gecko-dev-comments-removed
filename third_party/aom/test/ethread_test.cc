@@ -11,7 +11,7 @@
 
 #include <string>
 #include <vector>
-#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/md5_helper.h"
@@ -102,6 +102,8 @@ class AVxFirstPassEncoderThreadTest
     firstpass_stats_.sz += pkt_size;
   }
 
+  void DoTest();
+
   bool encoder_initialized_;
   ::libaom_test::TestMode encoding_mode_;
   int set_cpu_used_;
@@ -129,7 +131,7 @@ static void compare_fp_stats_md5(aom_fixed_buf_t *fp_stats) {
       << "MD5 checksums don't match";
 }
 
-TEST_P(AVxFirstPassEncoderThreadTest, FirstPassStatsTest) {
+void AVxFirstPassEncoderThreadTest::DoTest() {
   ::libaom_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
   aom_fixed_buf_t firstpass_stats;
   size_t single_run_sz;
@@ -201,6 +203,13 @@ TEST_P(AVxFirstPassEncoderThreadTest, FirstPassStatsTest) {
   
   compare_fp_stats_md5(&firstpass_stats);
 }
+
+TEST_P(AVxFirstPassEncoderThreadTest, FirstPassStatsTest) { DoTest(); }
+
+using AVxFirstPassEncoderThreadTestLarge = AVxFirstPassEncoderThreadTest;
+
+TEST_P(AVxFirstPassEncoderThreadTestLarge, FirstPassStatsTest) { DoTest(); }
+
 #endif  
 
 class AVxEncoderThreadTest
@@ -461,7 +470,7 @@ AV1_INSTANTIATE_TEST_SUITE(AVxEncoderThreadRTTest,
 
 
 
-#if !AOM_VALGRIND_BUILD
+#if !defined(AOM_VALGRIND_BUILD)
 class AVxEncoderThreadTestLarge : public AVxEncoderThreadTest {};
 
 TEST_P(AVxEncoderThreadTestLarge, EncoderResultTest) {
@@ -504,9 +513,13 @@ TEST_P(AVxEncoderThreadAllIntraTestLarge, EncoderResultTest) {
 
 AV1_INSTANTIATE_TEST_SUITE(AVxFirstPassEncoderThreadTest,
                            ::testing::Values(::libaom_test::kTwoPassGood),
-                           ::testing::Range(0, 6, 2), ::testing::Range(0, 2),
+                           ::testing::Values(4), ::testing::Range(0, 2),
                            ::testing::Range(1, 3));
 
+AV1_INSTANTIATE_TEST_SUITE(AVxFirstPassEncoderThreadTestLarge,
+                           ::testing::Values(::libaom_test::kTwoPassGood),
+                           ::testing::Values(0, 2), ::testing::Range(0, 2),
+                           ::testing::Range(1, 3));
 
 
 AV1_INSTANTIATE_TEST_SUITE(AVxEncoderThreadTest,
@@ -557,7 +570,7 @@ TEST_P(AVxEncoderThreadLSTest, EncoderResultTest) {
 
 
 
-#if !CONFIG_REALTIME_ONLY && !AOM_VALGRIND_BUILD
+#if !CONFIG_REALTIME_ONLY && !defined(AOM_VALGRIND_BUILD)
 class AVxEncoderThreadLSTestLarge : public AVxEncoderThreadLSTest {};
 
 TEST_P(AVxEncoderThreadLSTestLarge, EncoderResultTest) {

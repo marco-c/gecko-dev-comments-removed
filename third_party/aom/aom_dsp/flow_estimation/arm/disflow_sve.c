@@ -30,7 +30,7 @@ DECLARE_ALIGNED(16, static const uint16_t, kDeinterleaveTbl[8]) = {
 
 
 
-static INLINE void compute_flow_error(const uint8_t *src, const uint8_t *ref,
+static inline void compute_flow_error(const uint8_t *src, const uint8_t *ref,
                                       int width, int height, int stride, int x,
                                       int y, double u, double v, int16_t *dt) {
   
@@ -169,7 +169,7 @@ static INLINE void compute_flow_error(const uint8_t *src, const uint8_t *ref,
 
 
 
-static INLINE void compute_flow_matrix(const int16_t *dx, int dx_stride,
+static inline void compute_flow_matrix(const int16_t *dx, int dx_stride,
                                        const int16_t *dy, int dy_stride,
                                        double *M_inv) {
   int64x2_t sum[3] = { vdupq_n_s64(0), vdupq_n_s64(0), vdupq_n_s64(0) };
@@ -213,7 +213,7 @@ static INLINE void compute_flow_matrix(const int16_t *dx, int dx_stride,
   M_inv[3] = M0 * det_inv;
 }
 
-static INLINE void compute_flow_vector(const int16_t *dx, int dx_stride,
+static inline void compute_flow_vector(const int16_t *dx, int dx_stride,
                                        const int16_t *dy, int dy_stride,
                                        const int16_t *dt, int dt_stride,
                                        int *b) {

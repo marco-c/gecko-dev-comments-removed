@@ -103,7 +103,7 @@ int av1_denoiser_alloc(AV1_COMMON *cm, struct SVC *svc, AV1_DENOISER *denoiser,
 
 
 
-static INLINE int total_adj_strong_thresh(BLOCK_SIZE bs,
+static inline int total_adj_strong_thresh(BLOCK_SIZE bs,
                                           int increase_denoising) {
   return (1 << num_pels_log2_lookup[bs]) * (increase_denoising ? 3 : 2);
 }
