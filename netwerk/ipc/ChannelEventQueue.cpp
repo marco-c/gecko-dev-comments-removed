@@ -61,7 +61,7 @@ void ChannelEventQueue::FlushQueue() {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       
       
-      MOZ_DIAGNOSTIC_ASSERT(false);
+      MOZ_DIAGNOSTIC_CRASH("IsOnCurrentThread failed");
       isCurrentThread = true;
     }
 
