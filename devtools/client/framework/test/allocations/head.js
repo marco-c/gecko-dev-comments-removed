@@ -133,9 +133,8 @@ async function stopRecordingAllocations(
   ok(!tracker.overflowed, "Allocation were all recorded in the parent process");
 
   
-  const parentProcessData = await tracker.stopRecordingAllocations(
-    DEBUG_ALLOCATIONS
-  );
+  const parentProcessData =
+    await tracker.stopRecordingAllocations(DEBUG_ALLOCATIONS);
 
   const objectNodeIds = TrackedObjects.getAllNodeIds();
   if (objectNodeIds.length) {

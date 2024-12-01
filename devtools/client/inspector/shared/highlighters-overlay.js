@@ -1023,9 +1023,8 @@ class HighlightersOverlay {
     let parentGridHighlighter = null;
     if (node.displayType === "subgrid") {
       parentGridNode = await node.walkerFront.getParentGridNode(node);
-      parentGridHighlighter = await this.showParentGridHighlighter(
-        parentGridNode
-      );
+      parentGridHighlighter =
+        await this.showParentGridHighlighter(parentGridNode);
     }
 
     

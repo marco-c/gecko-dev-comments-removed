@@ -5,7 +5,9 @@
 
 
 
-const sharedJestConfig = require(`${__dirname}/../../../shared/test-helpers/shared-jest.config`);
+const sharedJestConfig = require(
+  `${__dirname}/../../../shared/test-helpers/shared-jest.config`
+);
 
 module.exports = {
   ...sharedJestConfig,

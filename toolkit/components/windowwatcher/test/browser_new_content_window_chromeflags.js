@@ -108,9 +108,8 @@ function getContentChromeFlags(win) {
         .QueryInterface(Ci.nsIWebBrowserChrome).chromeFlags;
     } catch (e) {
       
-      return docShell.treeOwner.QueryInterface(
-        Ci.nsIWebBrowserChrome
-      ).chromeFlags;
+      return docShell.treeOwner.QueryInterface(Ci.nsIWebBrowserChrome)
+        .chromeFlags;
     }
   });
 }

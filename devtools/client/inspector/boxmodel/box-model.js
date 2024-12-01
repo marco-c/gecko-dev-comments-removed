@@ -199,9 +199,8 @@ BoxModel.prototype = {
       });
 
       
-      const offsetParent = await inspectorFront.walker.getOffsetParent(
-        nodeFront
-      );
+      const offsetParent =
+        await inspectorFront.walker.getOffsetParent(nodeFront);
       this.store.dispatch(updateOffsetParent(offsetParent));
 
       

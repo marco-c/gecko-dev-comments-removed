@@ -313,9 +313,8 @@ var PrintUtils = {
       }
 
       if (useSystemDialog) {
-        const hasSelection = await PrintUtils.checkForSelection(
-          browsingContext
-        );
+        const hasSelection =
+          await PrintUtils.checkForSelection(browsingContext);
 
         
         

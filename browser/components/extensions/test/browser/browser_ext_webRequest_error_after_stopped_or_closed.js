@@ -64,9 +64,8 @@ async function runTest(stopLoadFunc) {
   stopLoadFunc(slowTab);
 
   
-  let requestIdOnBeforeRequest = await extension.awaitMessage(
-    "onBeforeRequest"
-  );
+  let requestIdOnBeforeRequest =
+    await extension.awaitMessage("onBeforeRequest");
 
   
   let doneMessage = await extension.awaitMessage("done");

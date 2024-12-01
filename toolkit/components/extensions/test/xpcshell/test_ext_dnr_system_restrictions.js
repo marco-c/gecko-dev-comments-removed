@@ -106,9 +106,8 @@ add_task(async function dnr_ignores_css_import_at_restrictedDomains() {
   
   
   let extension = await startDNRExtension();
-  let contentPage = await ExtensionTestUtils.loadContentPage(
-    "http://restricted/"
-  );
+  let contentPage =
+    await ExtensionTestUtils.loadContentPage("http://restricted/");
   await contentPage.spawn([], async () => {
     
     
@@ -217,9 +216,8 @@ add_task(
     
     
     
-    let contentPage = await ExtensionTestUtils.loadContentPage(
-      "about:logo?blockme"
-    );
+    let contentPage =
+      await ExtensionTestUtils.loadContentPage("about:logo?blockme");
     await contentPage.spawn([], async () => {
       const { document } = content;
       

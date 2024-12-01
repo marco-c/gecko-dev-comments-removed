@@ -43,9 +43,8 @@ add_task(async function () {
   await commands.threadConfigurationCommand.updateConfiguration({
     skipBreakpoints: false,
   });
-  const threadFront = await commands.targetCommand.targetFront.getFront(
-    "thread"
-  );
+  const threadFront =
+    await commands.targetCommand.targetFront.getFront("thread");
 
   
   

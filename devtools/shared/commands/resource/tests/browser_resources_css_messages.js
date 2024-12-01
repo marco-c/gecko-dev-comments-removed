@@ -37,9 +37,8 @@ async function testWatchingCssMessages() {
   
   const tab = await addTab(TEST_URI);
 
-  const { client, resourceCommand, targetCommand } = await initResourceCommand(
-    tab
-  );
+  const { client, resourceCommand, targetCommand } =
+    await initResourceCommand(tab);
 
   const receivedMessages = [];
   const { onAvailable, onAllMessagesReceived } = setupOnAvailableFunction(
@@ -97,9 +96,8 @@ async function testWatchingCachedCssMessages() {
 
   
   
-  const { client, resourceCommand, targetCommand } = await initResourceCommand(
-    tab
-  );
+  const { client, resourceCommand, targetCommand } =
+    await initResourceCommand(tab);
 
   const receivedMessages = [];
   const { onAvailable } = setupOnAvailableFunction(

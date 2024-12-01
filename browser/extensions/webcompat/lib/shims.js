@@ -831,9 +831,8 @@ class Shims {
           
           if (isDFPIActive === null) {
             const tabIsPB = (await browser.tabs.get(tabId)).incognito;
-            isDFPIActive = await browser.trackingProtection.isDFPIActive(
-              tabIsPB
-            );
+            isDFPIActive =
+              await browser.trackingProtection.isDFPIActive(tabIsPB);
           }
           if (!isDFPIActive) {
             return;
@@ -1093,9 +1092,8 @@ class Shims {
 
     
     const topHost = new URL((await browser.tabs.get(tabId)).url).hostname;
-    const unblocked = await browser.trackingProtection.wasRequestUnblocked(
-      requestId
-    );
+    const unblocked =
+      await browser.trackingProtection.wasRequestUnblocked(requestId);
 
     let match;
     let shimToApply;

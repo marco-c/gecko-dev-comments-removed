@@ -448,9 +448,8 @@ add_task(async function test_cumulative_searches_recently_closed_telemetry() {
     EventUtils.synthesizeMouseAtCenter(searchTextbox, {}, content);
     EventUtils.sendString(URLs[0], content);
     
-    const [recentlyclosedSlot, tabList] = await waitForRecentlyClosedTabsList(
-      document
-    );
+    const [recentlyclosedSlot, tabList] =
+      await waitForRecentlyClosedTabsList(document);
     await TestUtils.waitForCondition(() => recentlyclosedSlot?.searchQuery);
 
     await click_recently_closed_tab_item(tabList[0]);

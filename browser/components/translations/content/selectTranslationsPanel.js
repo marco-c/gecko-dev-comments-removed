@@ -309,13 +309,11 @@ var SelectTranslationsPanel = new (class {
     );
 
     
-    const { language, languages } = await LanguageDetector.detectLanguage(
-      textToTranslate
-    );
+    const { language, languages } =
+      await LanguageDetector.detectLanguage(textToTranslate);
     for (const { languageCode } of languages) {
-      const isSupported = await TranslationsParent.isSupportedAsFromLang(
-        languageCode
-      );
+      const isSupported =
+        await TranslationsParent.isSupportedAsFromLang(languageCode);
       if (isSupported) {
         return languageCode;
       }
@@ -722,9 +720,8 @@ var SelectTranslationsPanel = new (class {
   async #registerSourceText(sourceText, langPairPromise) {
     const { textArea } = this.elements;
     const { fromLanguage, toLanguage } = await langPairPromise;
-    const isFromLangSupported = await TranslationsParent.isSupportedAsFromLang(
-      fromLanguage
-    );
+    const isFromLangSupported =
+      await TranslationsParent.isSupportedAsFromLang(fromLanguage);
 
     if (isFromLangSupported) {
       this.#changeStateTo("idle", /* retainEntries */ false, {

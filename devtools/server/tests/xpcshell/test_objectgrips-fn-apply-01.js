@@ -72,9 +72,8 @@ add_task(
     
     
     
-    const { result: secondObjectFront } = await commands.scriptCommand.execute(
-      "obj"
-    );
+    const { result: secondObjectFront } =
+      await commands.scriptCommand.execute("obj");
 
     const onPropertyResumed = secondObjectFront.getPropertyValue(
       "pausingProp",

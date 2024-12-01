@@ -136,9 +136,8 @@ var AboutWebauthnManagerJS = {
           list_bio_enrollments();
         } else {
           
-          document.getElementById(
-            "bio-enrollment-list-subsection"
-          ).hidden = true;
+          document.getElementById("bio-enrollment-list-subsection").hidden =
+            true;
         }
       } else if (data.result.UpdateSuccess) {
         fake_click_event_for_id("bio-enrollments-tab-button");

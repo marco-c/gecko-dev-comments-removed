@@ -8,9 +8,8 @@
 
 add_task(async function () {
   const tab = await addTab("data:text/html,Test");
-  const { client, resourceCommand, targetCommand } = await initResourceCommand(
-    tab
-  );
+  const { client, resourceCommand, targetCommand } =
+    await initResourceCommand(tab);
 
   
   

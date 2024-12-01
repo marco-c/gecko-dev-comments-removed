@@ -207,9 +207,8 @@ async function prettyPrintHtmlFile({
 
   
   
-  prettyPrintWorkerResult.sourceMap = await prettyPrintWorker.getSourceMap(
-    prettyPrintTaskId
-  );
+  prettyPrintWorkerResult.sourceMap =
+    await prettyPrintWorker.getSourceMap(prettyPrintTaskId);
 
   
   replacements.sort((a, b) => a.startIndex < b.startIndex);

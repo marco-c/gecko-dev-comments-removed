@@ -35,9 +35,8 @@ add_setup(async () => {
 
 
 add_task(async function test_ArchiveEncryptor_initializer() {
-  let { instance: encState } = await ArchiveEncryptionState.initialize(
-    TEST_RECOVERY_CODE
-  );
+  let { instance: encState } =
+    await ArchiveEncryptionState.initialize(TEST_RECOVERY_CODE);
   let encryptor = await ArchiveEncryptor.initialize(
     encState.publicKey,
     encState.backupAuthKey
@@ -49,9 +48,8 @@ add_task(async function test_ArchiveEncryptor_initializer() {
 
 
 add_task(async function test_ArchiveEncryption_single_chunk() {
-  let { instance: encState } = await ArchiveEncryptionState.initialize(
-    TEST_RECOVERY_CODE
-  );
+  let { instance: encState } =
+    await ArchiveEncryptionState.initialize(TEST_RECOVERY_CODE);
   let encryptor = await ArchiveEncryptor.initialize(
     encState.publicKey,
     encState.backupAuthKey
@@ -111,9 +109,8 @@ add_task(async function test_ArchiveEncryption_single_chunk() {
 
 
 add_task(async function test_ArchiveEncryption_uneven_chunks() {
-  let { instance: encState } = await ArchiveEncryptionState.initialize(
-    TEST_RECOVERY_CODE
-  );
+  let { instance: encState } =
+    await ArchiveEncryptionState.initialize(TEST_RECOVERY_CODE);
   let encryptor = await ArchiveEncryptor.initialize(
     encState.publicKey,
     encState.backupAuthKey
@@ -209,9 +206,8 @@ add_task(async function test_ArchiveEncryption_uneven_chunks() {
 
 
 add_task(async function test_ArchiveEncryption_even_chunks() {
-  let { instance: encState } = await ArchiveEncryptionState.initialize(
-    TEST_RECOVERY_CODE
-  );
+  let { instance: encState } =
+    await ArchiveEncryptionState.initialize(TEST_RECOVERY_CODE);
   let encryptor = await ArchiveEncryptor.initialize(
     encState.publicKey,
     encState.backupAuthKey
@@ -300,9 +296,8 @@ add_task(async function test_ArchiveEncryption_even_chunks() {
 
 
 add_task(async function test_ArchiveEncryption_wrong_recoveryCode() {
-  let { instance: encState } = await ArchiveEncryptionState.initialize(
-    TEST_RECOVERY_CODE
-  );
+  let { instance: encState } =
+    await ArchiveEncryptionState.initialize(TEST_RECOVERY_CODE);
   let encryptor = await ArchiveEncryptor.initialize(
     encState.publicKey,
     encState.backupAuthKey

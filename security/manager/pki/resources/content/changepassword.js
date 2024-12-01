@@ -200,9 +200,8 @@ function checkPasswords() {
       
       
       
-      document
-        .getElementById("set_password")
-        .getButton("accept").disabled = true;
+      document.getElementById("set_password").getButton("accept").disabled =
+        true;
       return;
     }
   }

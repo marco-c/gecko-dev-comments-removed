@@ -345,9 +345,8 @@ class FirefoxDataProvider {
     
     let stacktrace = [];
     if (!actor.targetFront.isDestroyed()) {
-      const networkContentFront = await actor.targetFront.getFront(
-        "networkContent"
-      );
+      const networkContentFront =
+        await actor.targetFront.getFront("networkContent");
       stacktrace = await networkContentFront.getStackTrace(
         actor.stacktraceResourceId
       );

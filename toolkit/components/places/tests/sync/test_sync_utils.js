@@ -200,9 +200,8 @@ add_task(async function test_determineNonSyncableGuids() {
   }
 
   
-  let filteredGuids = await PlacesSyncUtils.history.determineNonSyncableGuids(
-    guids
-  );
+  let filteredGuids =
+    await PlacesSyncUtils.history.determineNonSyncableGuids(guids);
 
   let filtered = [TRANSITION_FRAMED_LINK, TRANSITION_DOWNLOAD];
   

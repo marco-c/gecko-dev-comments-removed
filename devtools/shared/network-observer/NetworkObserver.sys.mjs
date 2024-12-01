@@ -591,7 +591,9 @@ export class NetworkObserver {
       ) {
         return;
       }
-      const channel = subject.QueryInterface(Ci.nsIChannel);
+      const channel = subject.QueryInterface(Ci.nsIDataChannel);
+      channel.QueryInterface(Ci.nsIIdentChannel);
+      channel.QueryInterface(Ci.nsIChannel);
 
       if (this.#ignoreChannelFunction(channel)) {
         return;
@@ -625,6 +627,29 @@ export class NetworkObserver {
         ),
         transferredSize: 0,
       };
+
+      // For data URIs all timings can be set to
+      const result = NetworkTimings.getEmptyHARTimings();
+      networkEvent.addEventTimings(
+        result.total,
+        result.timings,
+        result.offsets
+      );
+
+      const url = channel.URI.spec;
+      response.text = url.substring(url.indexOf(",") + 1);
+      if (
+        !response.mimeType ||
+        !lazy.NetworkHelper.isTextMimeType(response.mimeType)
+      ) {
+        response.encoding = "base64";
+        try {
+          response.text = btoa(response.text);
+        } catch (err) {
+          // Ignore.
+        }
+      }
+
       networkEvent.addResponseContent(response, {});
     }
   );
@@ -751,83 +776,85 @@ export class NetworkObserver {
    * @param number extraSizeData
    * @param string extraStringData
    */
-  observeActivity = DevToolsInfaillibleUtils.makeInfallible(function (
-    channel,
-    activityType,
-    activitySubtype,
-    timestamp,
-    extraSizeData,
-    extraStringData
-  ) {
-    if (
-      this.#isDestroyed ||
-      (activityType != gActivityDistributor.ACTIVITY_TYPE_HTTP_TRANSACTION &&
-        activityType != gActivityDistributor.ACTIVITY_TYPE_SOCKET_TRANSPORT)
+  observeActivity = DevToolsInfaillibleUtils.makeInfallible(
+    function (
+      channel,
+      activityType,
+      activitySubtype,
+      timestamp,
+      extraSizeData,
+      extraStringData
     ) {
-      return;
-    }
+      if (
+        this.#isDestroyed ||
+        (activityType != gActivityDistributor.ACTIVITY_TYPE_HTTP_TRANSACTION &&
+          activityType != gActivityDistributor.ACTIVITY_TYPE_SOCKET_TRANSPORT)
+      ) {
+        return;
+      }
 
-    if (
-      !(channel instanceof Ci.nsIHttpChannel) ||
-      !(channel instanceof Ci.nsIClassifiedChannel)
-    ) {
-      return;
-    }
+      if (
+        !(channel instanceof Ci.nsIHttpChannel) ||
+        !(channel instanceof Ci.nsIClassifiedChannel)
+      ) {
+        return;
+      }
 
-    channel = channel.QueryInterface(Ci.nsIHttpChannel);
-    channel = channel.QueryInterface(Ci.nsIClassifiedChannel);
+      channel = channel.QueryInterface(Ci.nsIHttpChannel);
+      channel = channel.QueryInterface(Ci.nsIClassifiedChannel);
 
-    if (DEBUG_PLATFORM_EVENTS) {
-      logPlatformEvent(
-        this.getActivityTypeString(activityType, activitySubtype),
-        channel
-      );
-    }
+      if (DEBUG_PLATFORM_EVENTS) {
+        logPlatformEvent(
+          this.getActivityTypeString(activityType, activitySubtype),
+          channel
+        );
+      }
 
-    if (
-      activitySubtype == gActivityDistributor.ACTIVITY_SUBTYPE_REQUEST_HEADER
-    ) {
-      this.#onRequestHeader(channel, timestamp, extraStringData);
-      return;
-    }
+      if (
+        activitySubtype == gActivityDistributor.ACTIVITY_SUBTYPE_REQUEST_HEADER
+      ) {
+        this.#onRequestHeader(channel, timestamp, extraStringData);
+        return;
+      }
 
-    // Iterate over all currently ongoing requests. If channel can't
-    // be found within them, then exit this function.
-    const httpActivity = this.#findActivityObject(channel);
-    if (!httpActivity) {
-      return;
-    }
+      // Iterate over all currently ongoing requests. If channel can't
+      // be found within them, then exit this function.
+      const httpActivity = this.#findActivityObject(channel);
+      if (!httpActivity) {
+        return;
+      }
 
-    // If we're throttling, we must not report events as they arrive
-    // from platform, but instead let the throttler emit the events
-    // after some time has elapsed.
-    if (
-      httpActivity.downloadThrottle &&
-      HTTP_DOWNLOAD_ACTIVITIES.includes(activitySubtype)
-    ) {
-      const callback = this.#dispatchActivity.bind(this);
-      httpActivity.downloadThrottle.addActivityCallback(
-        callback,
-        httpActivity,
-        channel,
-        activityType,
-        activitySubtype,
-        timestamp,
-        extraSizeData,
-        extraStringData
-      );
-    } else {
-      this.#dispatchActivity(
-        httpActivity,
-        channel,
-        activityType,
-        activitySubtype,
-        timestamp,
-        extraSizeData,
-        extraStringData
-      );
+      // If we're throttling, we must not report events as they arrive
+      // from platform, but instead let the throttler emit the events
+      // after some time has elapsed.
+      if (
+        httpActivity.downloadThrottle &&
+        HTTP_DOWNLOAD_ACTIVITIES.includes(activitySubtype)
+      ) {
+        const callback = this.#dispatchActivity.bind(this);
+        httpActivity.downloadThrottle.addActivityCallback(
+          callback,
+          httpActivity,
+          channel,
+          activityType,
+          activitySubtype,
+          timestamp,
+          extraSizeData,
+          extraStringData
+        );
+      } else {
+        this.#dispatchActivity(
+          httpActivity,
+          channel,
+          activityType,
+          activitySubtype,
+          timestamp,
+          extraSizeData,
+          extraStringData
+        );
+      }
     }
-  });
+  );
 
   /**
    * Craft the "event" object passed to the Watcher class in order
@@ -956,8 +983,8 @@ export class NetworkObserver {
    * this point.
    *
    * @see http://www.softwareishard.com/blog/har-12-spec
-   * @param {(nsIHttpChannel|nsIFileChannel)} channel
-   *        The HTTP channel for which the HTTP activity object is created.
+   * @param {nsIChannel} channel
+   *        The channel for which the activity object is created.
    * @return object
    *         The new HTTP activity object.
    */
@@ -1274,27 +1301,7 @@ export const NetworkTimings = new (class {
     if (httpActivity.fromCache) {
       // If it came from the browser cache, we have no timing
       // information and these should all be 0
-      return {
-        total: 0,
-        timings: {
-          blocked: 0,
-          dns: 0,
-          ssl: 0,
-          connect: 0,
-          send: 0,
-          wait: 0,
-          receive: 0,
-        },
-        offsets: {
-          blocked: 0,
-          dns: 0,
-          ssl: 0,
-          connect: 0,
-          send: 0,
-          wait: 0,
-          receive: 0,
-        },
-      };
+      return this.getEmptyHARTimings();
     }
 
     const timings = httpActivity.timings;
@@ -1435,6 +1442,37 @@ export const NetworkTimings = new (class {
       handledByServiceWorker:
         timedChannel.handleFetchEventEndTime -
         timedChannel.handleFetchEventStartTime,
+    };
+  }
+
+  /**
+   * For some requests such as cached or data: URI requests, we don't have
+   * access to any timing information so all timings should be 0.
+   *
+   * @return {Object}
+   *     A timings object (@see extractHarTimings), with all values set to 0.
+   */
+  getEmptyHARTimings() {
+    return {
+      total: 0,
+      timings: {
+        blocked: 0,
+        dns: 0,
+        ssl: 0,
+        connect: 0,
+        send: 0,
+        wait: 0,
+        receive: 0,
+      },
+      offsets: {
+        blocked: 0,
+        dns: 0,
+        ssl: 0,
+        connect: 0,
+        send: 0,
+        wait: 0,
+        receive: 0,
+      },
     };
   }
 

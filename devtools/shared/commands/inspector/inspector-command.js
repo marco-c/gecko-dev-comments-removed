@@ -197,9 +197,8 @@ class InspectorCommand {
       return null;
     }
 
-    const { walker } = await this.commands.targetCommand.targetFront.getFront(
-      "inspector"
-    );
+    const { walker } =
+      await this.commands.targetCommand.targetFront.getFront("inspector");
     
     nodeSelectors = [...nodeSelectors];
     const querySelectors = async nodeFront => {

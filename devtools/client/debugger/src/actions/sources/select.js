@@ -157,9 +157,8 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   
   
   
-  let shouldSelectOriginalLocation = getShouldSelectOriginalLocation(
-    getState()
-  );
+  let shouldSelectOriginalLocation =
+    getShouldSelectOriginalLocation(getState());
   if (keepContext) {
     
     

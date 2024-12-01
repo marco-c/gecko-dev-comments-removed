@@ -2415,9 +2415,8 @@ MarkupView.prototype = {
 
     
     
-    const inspectorFront = await container.node.targetFront.getFront(
-      "inspector"
-    );
+    const inspectorFront =
+      await container.node.targetFront.getFront("inspector");
     return inspectorFront.walker.children(container.node, {
       maxNodes: maxChildren,
       center: centered,

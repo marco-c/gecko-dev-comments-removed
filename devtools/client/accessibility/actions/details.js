@@ -15,9 +15,8 @@ const {
 exports.updateDetails =
   accessible =>
   async ({ dispatch }) => {
-    const { walker: domWalker } = await accessible.targetFront.getFront(
-      "inspector"
-    );
+    const { walker: domWalker } =
+      await accessible.targetFront.getFront("inspector");
     
     
     if (accessible.isDestroyed()) {

@@ -81,9 +81,8 @@ var test = {
       ],
     };
 
-    let insertedBookmarks = await PlacesUtils.bookmarks.insertTree(
-      bookmarksTree
-    );
+    let insertedBookmarks =
+      await PlacesUtils.bookmarks.insertTree(bookmarksTree);
 
     
     this._queryURI1 = `place:parent=${this._folderGuids[0]}&queryType=1`;

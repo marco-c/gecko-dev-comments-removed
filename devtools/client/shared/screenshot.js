@@ -77,9 +77,8 @@ async function captureScreenshot(targetFront, args) {
     await new Promise(res => setTimeout(res, args.delay * 1000));
   }
 
-  const screenshotContentFront = await targetFront.getFront(
-    "screenshot-content"
-  );
+  const screenshotContentFront =
+    await targetFront.getFront("screenshot-content");
 
   
   
