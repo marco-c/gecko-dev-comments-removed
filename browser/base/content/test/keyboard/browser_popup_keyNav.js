@@ -42,9 +42,12 @@ add_task(async function test_popup_keynav() {
     
     EventUtils.synthesizeKey("KEY_Tab", {}, win);
     
-    let firstButton = win.document
+    let buttons = win.document
       .getElementById("urlbar-container")
-      .querySelector("toolbarbutton,[role=button]");
+      .querySelectorAll("toolbarbutton, [role=button]");
+    let firstButton = [...buttons].find(button =>
+      BrowserTestUtils.isVisible(button)
+    );
     await expectFocusAfterKey("Tab", firstButton, false, win);
     await BrowserTestUtils.closeWindow(win);
   });
