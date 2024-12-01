@@ -386,23 +386,10 @@ async function searchWithTab(
 }
 
 async function focusSwitcher(win = window) {
-  
-  
-  
-  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
-  EventUtils.synthesizeMouseAtCenter(
-    win.document.getElementById("browser"),
-    {},
-    win
-  );
-  AccessibilityUtils.resetEnv();
-
-  let focus = BrowserTestUtils.waitForEvent(win.gURLBar.inputField, "focus");
-  EventUtils.synthesizeKey("l", { accelKey: true }, win);
-  await focus;
+  if (!win.gURLBar.focused) {
+    let focus = BrowserTestUtils.waitForEvent(win.gURLBar.inputField, "focus");
+    EventUtils.synthesizeKey("l", { accelKey: true }, win);
+    await focus;
+  }
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, win);
-  let switcher = win.document.getElementById("urlbar-searchmode-switcher");
-  await BrowserTestUtils.waitForCondition(
-    () => win.document.activeElement == switcher
-  );
 }

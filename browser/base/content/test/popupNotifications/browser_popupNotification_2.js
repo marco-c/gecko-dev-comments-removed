@@ -205,7 +205,8 @@ var tests = [
       
       
       
-      EventUtils.synthesizeMouseAtCenter(button, {});
+      
+      EventUtils.synthesizeMouse(button, 4, 4, {});
     },
     onShown(popup) {
       checkPopup(popup, this.notifyObj);
