@@ -454,6 +454,9 @@ pref("browser.urlbar.scotchBonnet.enableOverride", false);
 #endif
 
 
+pref("browser.urlbar.usb.dynamic", true);
+
+
 pref("browser.urlbar.trending.featureGate", true);
 pref("browser.urlbar.trending.requireSearchMode", false);
 pref("browser.urlbar.recentsearches.featureGate", true);
