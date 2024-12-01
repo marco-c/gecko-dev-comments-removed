@@ -5675,6 +5675,7 @@
       }
 
       this._handleTabMove(aTab, () => aGroup.appendChild(aTab));
+      this.removeFromMultiSelectedTabs(aTab);
     }
 
     
