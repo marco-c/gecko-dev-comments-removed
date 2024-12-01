@@ -28,6 +28,7 @@ class StringOrWorkerOptions;
 struct WorkerOptions;
 
 class SharedWorkerChild;
+class TrustedScriptURLOrUSVString;
 
 
 
@@ -44,8 +45,10 @@ class SharedWorker final : public DOMEventTargetHelper {
   bool mFrozen;
 
  public:
-  static already_AddRefed<SharedWorker> Constructor(
-      const GlobalObject& aGlobal, const nsAString& aScriptURL,
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static already_AddRefed<SharedWorker> Constructor(
+      const GlobalObject& aGlobal,
+      const TrustedScriptURLOrUSVString& aScriptURL,
       const StringOrWorkerOptions& aOptions, ErrorResult& aRv);
 
   MessagePort* Port();
@@ -81,8 +84,9 @@ class SharedWorker final : public DOMEventTargetHelper {
   void Thaw();
 
  private:
-  static already_AddRefed<SharedWorker> Constructor(
-      const GlobalObject& aGlobal, const nsAString& aScriptURL,
+  MOZ_CAN_RUN_SCRIPT static already_AddRefed<SharedWorker> Constructor(
+      const GlobalObject& aGlobal,
+      const TrustedScriptURLOrUSVString& aScriptURL,
       const WorkerOptions& aOptions, ErrorResult& aRv);
 
   SharedWorker(nsPIDOMWindowInner* aWindow, SharedWorkerChild* aActor,
