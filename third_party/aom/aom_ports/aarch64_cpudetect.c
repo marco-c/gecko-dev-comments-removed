@@ -36,7 +36,7 @@ static int arm_get_cpu_caps(void) {
 
 
 
-static INLINE bool have_feature(const char *feature) {
+static inline bool have_feature(const char *feature) {
   int64_t feature_present = 0;
   size_t size = sizeof(feature_present);
   if (sysctlbyname(feature, &feature_present, &size, NULL, 0) != 0) {
@@ -85,7 +85,35 @@ static int arm_get_cpu_caps(void) {
   }
 #endif  
 #endif  
+#if HAVE_NEON_I8MM
+
+
+#if defined(PF_ARM_SVE_I8MM_INSTRUCTIONS_AVAILABLE)
   
+  
+  
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_I8MM_INSTRUCTIONS_AVAILABLE)) {
+    flags |= HAS_NEON_I8MM;
+  }
+#endif  
+#endif  
+#if HAVE_SVE
+
+#if defined(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)) {
+    flags |= HAS_SVE;
+  }
+#endif  
+#endif  
+#if HAVE_SVE2
+
+
+#if defined(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)
+  if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)) {
+    flags |= HAS_SVE2;
+  }
+#endif  
+#endif  
   return flags;
 }
 

@@ -57,7 +57,7 @@ static AOM_FORCE_INLINE void update_yrd_loop_vars(
   this_rdc->dist += av1_block_error_lp(low_coeff, low_dqcoeff, step << 4) >> 2;
 }
 
-static INLINE void aom_process_hadamard_lp_8x16(MACROBLOCK *x,
+static inline void aom_process_hadamard_lp_8x16(MACROBLOCK *x,
                                                 int max_blocks_high,
                                                 int max_blocks_wide,
                                                 int num_4x4_w, int step,
@@ -331,9 +331,8 @@ void av1_block_yrd(MACROBLOCK *x, RD_STATS *this_rdc, int *skippable,
 
 
 
-static AOM_INLINE void scale_square_buf_vals(int16_t *dst, int tx_width,
-                                             const int16_t *src,
-                                             int src_stride) {
+static inline void scale_square_buf_vals(int16_t *dst, int tx_width,
+                                         const int16_t *src, int src_stride) {
 #define DO_SCALING                                                   \
   do {                                                               \
     for (int idy = 0; idy < tx_width; ++idy) {                       \
@@ -562,7 +561,7 @@ static void compute_intra_yprediction(const AV1_COMMON *cm,
 
 
 
-static INLINE bool is_prune_intra_mode(
+static inline bool is_prune_intra_mode(
     AV1_COMP *cpi, int mode_index, int force_intra_check, BLOCK_SIZE bsize,
     uint8_t segment_id, SOURCE_SAD source_sad_nonrd,
     uint8_t color_sensitivity[MAX_MB_PLANE - 1]) {

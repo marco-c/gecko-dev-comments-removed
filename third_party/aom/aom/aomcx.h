@@ -238,6 +238,12 @@ enum aome_enc_control_id {
 
 
 
+
+
+
+
+
+
   AOME_SET_SHARPNESS = AOME_SET_ENABLEAUTOALTREF + 2,  
 
   
@@ -1128,6 +1134,8 @@ enum aome_enc_control_id {
 
 
 
+
+
   AV1E_SET_DELTAQ_MODE = 107,
 
   
@@ -1281,7 +1289,6 @@ enum aome_enc_control_id {
   AV1E_SET_SVC_PARAMS = 132,
 
   
-
 
 
   AV1E_SET_SVC_REF_FRAME_CONFIG = 133,
@@ -1531,6 +1538,7 @@ enum aome_enc_control_id {
 
 
 
+
   AV1E_SET_MAX_CONSEC_FRAME_DROP_CBR = 164,
 
   
@@ -1538,6 +1546,36 @@ enum aome_enc_control_id {
 
 
   AV1E_SET_SVC_FRAME_DROP_MODE = 165,
+
+  
+
+
+
+
+
+  AV1E_SET_AUTO_TILES = 166,
+
+  
+
+
+
+
+  AV1E_GET_HIGH_MOTION_CONTENT_SCREEN_RTC = 167,
+
+  
+
+
+
+
+
+
+  AV1E_SET_POSTENCODE_DROP_RTC = 168,
+
+  
+
+
+
+  AV1E_SET_MAX_CONSEC_FRAME_DROP_MS_CBR = 169,
 
   
   
@@ -1630,6 +1668,18 @@ typedef enum {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 typedef enum {
   AOM_TUNE_PSNR = 0,
   AOM_TUNE_SSIM = 1,
@@ -1640,6 +1690,14 @@ typedef enum {
   AOM_TUNE_VMAF_NEG_MAX_GAIN = 7,
   AOM_TUNE_BUTTERAUGLI = 8,
   AOM_TUNE_VMAF_SALIENCY_MAP = 9,
+
+
+
+#define AOM_HAVE_TUNE_SSIMULACRA2 1
+  
+
+
+  AOM_TUNE_SSIMULACRA2 = 10,
 } aom_tune_metric;
 
 
@@ -1690,6 +1748,19 @@ typedef struct aom_svc_params {
 
 
 typedef struct aom_svc_ref_frame_config {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   int reference[7]; 
@@ -2195,6 +2266,18 @@ AOM_CTRL_USE_TYPE(AV1E_SET_SVC_FRAME_DROP_MODE, unsigned int)
 
 AOM_CTRL_USE_TYPE(AV1E_SET_MAX_CONSEC_FRAME_DROP_CBR, int)
 #define AOM_CTRL_AV1E_SET_MAX_CONSEC_FRAME_DROP_CBR
+
+AOM_CTRL_USE_TYPE(AV1E_SET_AUTO_TILES, unsigned int)
+#define AOM_CTRL_AV1E_SET_AUTO_TILES
+
+AOM_CTRL_USE_TYPE(AV1E_GET_HIGH_MOTION_CONTENT_SCREEN_RTC, int *)
+#define AOM_CTRL_AV1E_GET_HIGH_MOTION_CONTENT_SCREEN_RTC
+
+AOM_CTRL_USE_TYPE(AV1E_SET_POSTENCODE_DROP_RTC, int)
+#define AOM_CTRL_AV1E_SET_POSTENCODE_DROP_RTC
+
+AOM_CTRL_USE_TYPE(AV1E_SET_MAX_CONSEC_FRAME_DROP_MS_CBR, int)
+#define AOM_CTRL_AV1E_SET_MAX_CONSEC_FRAME_DROP_MS_CBR
 
 
 

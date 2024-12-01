@@ -1649,6 +1649,12 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   int check_scene_detection;
 
   
+  int rc_adjust_keyframe;
+
+  
+  int rc_compute_spatial_var_sc;
+
+  
   
   int prefer_large_partition_blocks;
 
@@ -1919,6 +1925,10 @@ typedef struct REAL_TIME_SPEED_FEATURES {
 
   
   int skip_encoding_non_reference_slide_change;
+
+  
+  
+  int rc_faster_convergence_static;
 } REAL_TIME_SPEED_FEATURES;
 
 

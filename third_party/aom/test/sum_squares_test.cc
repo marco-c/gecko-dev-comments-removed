@@ -14,7 +14,7 @@
 #include <string>
 #include <tuple>
 
-#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "config/aom_config.h"
 #include "config/aom_dsp_rtcd.h"
@@ -780,6 +780,7 @@ INSTANTIATE_TEST_SUITE_P(NEON_DOTPROD, Lowbd2dVarTest,
 
 #endif  
 
+#if CONFIG_AV1_HIGHBITDEPTH
 class Highbd2dVarTest : public ::testing::TestWithParam<TestFuncVar2D> {
  public:
   ~Highbd2dVarTest() override = default;
@@ -924,5 +925,6 @@ INSTANTIATE_TEST_SUITE_P(SVE, Highbd2dVarTest,
                          ::testing::Values(TestFuncVar2D(&aom_var_2d_u16_c,
                                                          &aom_var_2d_u16_sve)));
 
+#endif  
 #endif  
 }  

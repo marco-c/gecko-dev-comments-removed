@@ -118,7 +118,7 @@ static const arg_def_t *all_args[] = {
 
 #if CONFIG_LIBYUV
 
-static INLINE int libyuv_scale(const aom_image_t *src, aom_image_t *dst,
+static inline int libyuv_scale(const aom_image_t *src, aom_image_t *dst,
                                FilterModeEnum mode) {
   if (src->fmt != dst->fmt) {
     fprintf(stderr,

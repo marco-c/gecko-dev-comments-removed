@@ -83,6 +83,8 @@ extern "C" {
 
 
 
+
+
 typedef struct aom_fixed_buf {
   void *buf;       
   size_t sz;       
@@ -791,6 +793,8 @@ typedef struct aom_codec_enc_cfg {
   unsigned int sframe_dist;
 
   
+
+
 
 
 

@@ -15,29 +15,7 @@
 #include "aom_ports/bitops.h"
 
 
-
-
-
-
-void aom_write_primitive_symmetric(aom_writer *w, int16_t v,
-                                   unsigned int abs_bits) {
-  if (v == 0) {
-    aom_write_bit(w, 0);
-  } else {
-    const int x = abs(v);
-    const int s = v < 0;
-    aom_write_bit(w, 1);
-    aom_write_bit(w, s);
-    aom_write_literal(w, x - 1, abs_bits);
-  }
-}
-
-int aom_count_primitive_symmetric(int16_t v, unsigned int abs_bits) {
-  return (v == 0 ? 1 : abs_bits + 2);
-}
-
-
-void aom_write_primitive_quniform(aom_writer *w, uint16_t n, uint16_t v) {
+static void write_primitive_quniform(aom_writer *w, uint16_t n, uint16_t v) {
   if (n <= 1) return;
   const int l = get_msb(n) + 1;
   const int m = (1 << l) - n;
@@ -49,7 +27,7 @@ void aom_write_primitive_quniform(aom_writer *w, uint16_t n, uint16_t v) {
   }
 }
 
-int aom_count_primitive_quniform(uint16_t n, uint16_t v) {
+static int count_primitive_quniform(uint16_t n, uint16_t v) {
   if (n <= 1) return 0;
   const int l = get_msb(n) + 1;
   const int m = (1 << l) - n;
@@ -57,15 +35,15 @@ int aom_count_primitive_quniform(uint16_t n, uint16_t v) {
 }
 
 
-void aom_write_primitive_subexpfin(aom_writer *w, uint16_t n, uint16_t k,
-                                   uint16_t v) {
+static void write_primitive_subexpfin(aom_writer *w, uint16_t n, uint16_t k,
+                                      uint16_t v) {
   int i = 0;
   int mk = 0;
   while (1) {
     int b = (i ? k + i - 1 : k);
     int a = (1 << b);
     if (n <= mk + 3 * a) {
-      aom_write_primitive_quniform(w, n - mk, v - mk);
+      write_primitive_quniform(w, n - mk, v - mk);
       break;
     } else {
       int t = (v >= mk + a);
@@ -81,7 +59,7 @@ void aom_write_primitive_subexpfin(aom_writer *w, uint16_t n, uint16_t k,
   }
 }
 
-int aom_count_primitive_subexpfin(uint16_t n, uint16_t k, uint16_t v) {
+static int count_primitive_subexpfin(uint16_t n, uint16_t k, uint16_t v) {
   int count = 0;
   int i = 0;
   int mk = 0;
@@ -89,7 +67,7 @@ int aom_count_primitive_subexpfin(uint16_t n, uint16_t k, uint16_t v) {
     int b = (i ? k + i - 1 : k);
     int a = (1 << b);
     if (n <= mk + 3 * a) {
-      count += aom_count_primitive_quniform(n - mk, v - mk);
+      count += count_primitive_quniform(n - mk, v - mk);
       break;
     } else {
       int t = (v >= mk + a);
@@ -111,21 +89,12 @@ int aom_count_primitive_subexpfin(uint16_t n, uint16_t k, uint16_t v) {
 
 void aom_write_primitive_refsubexpfin(aom_writer *w, uint16_t n, uint16_t k,
                                       uint16_t ref, uint16_t v) {
-  aom_write_primitive_subexpfin(w, n, k, recenter_finite_nonneg(n, ref, v));
-}
-
-void aom_write_signed_primitive_refsubexpfin(aom_writer *w, uint16_t n,
-                                             uint16_t k, int16_t ref,
-                                             int16_t v) {
-  ref += n - 1;
-  v += n - 1;
-  const uint16_t scaled_n = (n << 1) - 1;
-  aom_write_primitive_refsubexpfin(w, scaled_n, k, ref, v);
+  write_primitive_subexpfin(w, n, k, recenter_finite_nonneg(n, ref, v));
 }
 
 int aom_count_primitive_refsubexpfin(uint16_t n, uint16_t k, uint16_t ref,
                                      uint16_t v) {
-  return aom_count_primitive_subexpfin(n, k, recenter_finite_nonneg(n, ref, v));
+  return count_primitive_subexpfin(n, k, recenter_finite_nonneg(n, ref, v));
 }
 
 int aom_count_signed_primitive_refsubexpfin(uint16_t n, uint16_t k, int16_t ref,

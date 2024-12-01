@@ -52,9 +52,11 @@ extern "C" {
 
 
 
+
 int av1_encode_strategy(AV1_COMP *const cpi, size_t *const size,
-                        uint8_t *const dest, unsigned int *frame_flags,
-                        int64_t *const time_stamp, int64_t *const time_end,
+                        uint8_t *const dest, size_t dest_size,
+                        unsigned int *frame_flags, int64_t *const time_stamp,
+                        int64_t *const time_end,
                         const aom_rational64_t *const timestamp_ratio,
                         int *const pop_lookahead, int flush);
 
@@ -94,7 +96,7 @@ int is_forced_keyframe_pending(struct lookahead_ctx *lookahead,
                                const int up_to_index,
                                const COMPRESSOR_STAGE compressor_stage);
 
-static AOM_INLINE int is_frame_droppable(
+static inline int is_frame_droppable(
     const RTC_REF *const rtc_ref,
     const ExtRefreshFrameFlagsInfo *const ext_refresh_frame_flags) {
   
@@ -111,7 +113,7 @@ static AOM_INLINE int is_frame_droppable(
     return 0;
 }
 
-static AOM_INLINE int get_current_frame_ref_type(const AV1_COMP *const cpi) {
+static inline int get_current_frame_ref_type(const AV1_COMP *const cpi) {
   
   
   

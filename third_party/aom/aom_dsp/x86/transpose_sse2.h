@@ -16,7 +16,7 @@
 
 #include "config/aom_config.h"
 
-static INLINE __m128i transpose_8bit_4x4(const __m128i *const in) {
+static inline __m128i transpose_8bit_4x4(const __m128i *const in) {
   
   
   
@@ -33,7 +33,7 @@ static INLINE __m128i transpose_8bit_4x4(const __m128i *const in) {
   return _mm_unpacklo_epi16(a0, a1);
 }
 
-static INLINE void transpose_8bit_8x8(const __m128i *const in,
+static inline void transpose_8bit_8x8(const __m128i *const in,
                                       __m128i *const out) {
   
   
@@ -93,7 +93,7 @@ static INLINE void transpose_8bit_8x8(const __m128i *const in,
   out[7] = _mm_unpackhi_epi64(c3, c3);
 }
 
-static INLINE void transpose_16bit_4x4(const __m128i *const in,
+static inline void transpose_16bit_4x4(const __m128i *const in,
                                        __m128i *const out) {
   
   
@@ -121,7 +121,7 @@ static INLINE void transpose_16bit_4x4(const __m128i *const in,
   out[3] = _mm_srli_si128(out[2], 8);
 }
 
-static INLINE void transpose_16bit_4x8(const __m128i *const in,
+static inline void transpose_16bit_4x8(const __m128i *const in,
                                        __m128i *const out) {
   
   
@@ -163,7 +163,7 @@ static INLINE void transpose_16bit_4x8(const __m128i *const in,
   out[3] = _mm_unpackhi_epi64(b2, b3);
 }
 
-static INLINE void transpose_16bit_8x4(const __m128i *const in,
+static inline void transpose_16bit_8x4(const __m128i *const in,
                                        __m128i *const out) {
   
   
@@ -211,7 +211,7 @@ static INLINE void transpose_16bit_8x4(const __m128i *const in,
   out[7] = _mm_unpackhi_epi64(b6, zeros);
 }
 
-static INLINE void transpose_16bit_8x8(const __m128i *const in,
+static inline void transpose_16bit_8x8(const __m128i *const in,
                                        __m128i *const out) {
   
   
@@ -278,7 +278,7 @@ static INLINE void transpose_16bit_8x8(const __m128i *const in,
 }
 
 
-static INLINE void transpose_16bit_16x16(__m128i *const left,
+static inline void transpose_16bit_16x16(__m128i *const left,
                                          __m128i *const right) {
   __m128i tbuf[8];
   transpose_16bit_8x8(left, left);
@@ -296,7 +296,7 @@ static INLINE void transpose_16bit_16x16(__m128i *const left,
   left[15] = tbuf[7];
 }
 
-static INLINE void transpose_32bit_4x4(const __m128i *const in,
+static inline void transpose_32bit_4x4(const __m128i *const in,
                                        __m128i *const out) {
   
   
@@ -325,7 +325,7 @@ static INLINE void transpose_32bit_4x4(const __m128i *const in,
   out[3] = _mm_unpackhi_epi64(a2, a3);
 }
 
-static INLINE void transpose_32bit_4x4x2(const __m128i *const in,
+static inline void transpose_32bit_4x4x2(const __m128i *const in,
                                          __m128i *const out) {
   
   
@@ -373,7 +373,7 @@ static INLINE void transpose_32bit_4x4x2(const __m128i *const in,
   out[7] = _mm_unpackhi_epi64(a6, a7);
 }
 
-static INLINE void transpose_32bit_8x4(const __m128i *const in,
+static inline void transpose_32bit_8x4(const __m128i *const in,
                                        __m128i *const out) {
   
   

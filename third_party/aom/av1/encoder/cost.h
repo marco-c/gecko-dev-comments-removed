@@ -29,7 +29,7 @@ extern const uint16_t av1_prob_cost[128];
 #define av1_cost_literal(n) ((n) * (1 << AV1_PROB_COST_SHIFT))
 
 
-static INLINE int av1_cost_symbol(aom_cdf_prob p15) {
+static inline int av1_cost_symbol(aom_cdf_prob p15) {
   
   
   
