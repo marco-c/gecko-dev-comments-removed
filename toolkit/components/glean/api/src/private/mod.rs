@@ -230,7 +230,6 @@ pub(crate) mod profiler_utils {
             
 
             use chrono::{FixedOffset, Utc};
-            use time;
 
             
             let tm = time::now();
