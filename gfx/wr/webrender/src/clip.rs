@@ -1928,10 +1928,8 @@ impl ClipItemKind {
             ClipItemKind::BoxShadow { .. } => {
                 false
             }
-            ClipItemKind::RoundedRectangle { ref radius, .. } => {
-                
-                
-                radius.is_uniform().is_some()
+            ClipItemKind::RoundedRectangle { ref rect, ref radius, .. } => {
+                radius.can_use_fast_path_in(rect)
             }
         }
     }
