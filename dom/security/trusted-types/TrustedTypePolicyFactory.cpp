@@ -204,48 +204,47 @@ void TrustedTypePolicyFactory::GetAttributeType(const nsAString& aTagName,
                                                 const nsAString& aElementNs,
                                                 const nsAString& aAttrNs,
                                                 DOMString& aResult) {
+  
+  
+  
+  
+
+  
+  
+  int32_t attributeNamespaceID = kNameSpaceID_Unknown;
+  if (aAttrNs.IsEmpty()) {
+    attributeNamespaceID = kNameSpaceID_None;
+  } else if (nsGkAtoms::nsuri_xlink->Equals(aAttrNs)) {
+    attributeNamespaceID = kNameSpaceID_XLink;
+  } else {
+    aResult.SetNull();
+    return;
+  }
+
+  
+  
+  int32_t elementNamespaceID = kNameSpaceID_Unknown;
+  if (aElementNs.IsEmpty() || nsGkAtoms::nsuri_xhtml->Equals(aElementNs)) {
+    elementNamespaceID = kNameSpaceID_XHTML;
+  } else if (nsGkAtoms::nsuri_svg->Equals(aElementNs)) {
+    elementNamespaceID = kNameSpaceID_SVG;
+  }
+
   nsAutoString attribute;
   nsContentUtils::ASCIIToLower(aAttribute, attribute);
   RefPtr<nsAtom> attributeAtom = NS_Atomize(attribute);
 
-  
-  
-  
-  if (aAttrNs.IsEmpty() &&
-      nsContentUtils::IsEventAttributeName(
-          attributeAtom, EventNameType_All & ~EventNameType_XUL)) {
-    
-    aResult.SetKnownLiveString(GetTrustedTypeName<TrustedScript>());
+  nsAutoString localName;
+  nsContentUtils::ASCIIToLower(aTagName, localName);
+  RefPtr<nsAtom> elementAtom = NS_Atomize(localName);
+
+  TrustedType trustedType;
+  nsAutoString unusedSink;
+  if (GetTrustedTypeDataForAttribute(elementAtom, elementNamespaceID,
+                                     attributeAtom, attributeNamespaceID,
+                                     trustedType, unusedSink)) {
+    aResult.SetKnownLiveString(GetTrustedTypeName(trustedType));
     return;
-  }
-  if (aElementNs.IsEmpty() ||
-      aElementNs == nsDependentAtomString(nsGkAtoms::nsuri_xhtml)) {
-    if (nsContentUtils::EqualsIgnoreASCIICase(
-            aTagName, nsDependentAtomString(nsGkAtoms::iframe))) {
-      
-      if (aAttrNs.IsEmpty() && attributeAtom == nsGkAtoms::srcdoc) {
-        aResult.SetKnownLiveString(GetTrustedTypeName<TrustedHTML>());
-        return;
-      }
-    } else if (nsContentUtils::EqualsIgnoreASCIICase(
-                   aTagName, nsDependentAtomString(nsGkAtoms::script))) {
-      
-      if (aAttrNs.IsEmpty() && attributeAtom == nsGkAtoms::src) {
-        aResult.SetKnownLiveString(GetTrustedTypeName<TrustedScriptURL>());
-        return;
-      }
-    }
-  } else if (aElementNs == nsDependentAtomString(nsGkAtoms::nsuri_svg)) {
-    if (nsContentUtils::EqualsIgnoreASCIICase(
-            aTagName, nsDependentAtomString(nsGkAtoms::script))) {
-      
-      if ((aAttrNs.IsEmpty() ||
-           aAttrNs == nsDependentAtomString(nsGkAtoms::nsuri_xlink)) &&
-          attributeAtom == nsGkAtoms::href) {
-        aResult.SetKnownLiveString(GetTrustedTypeName<TrustedScriptURL>());
-        return;
-      }
-    }
   }
 
   aResult.SetNull();
@@ -263,8 +262,7 @@ void TrustedTypePolicyFactory::GetPropertyType(const nsAString& aTagName,
                                                const nsAString& aElementNs,
                                                DOMString& aResult) {
   RefPtr<nsAtom> propertyAtom = NS_Atomize(aProperty);
-  if (aElementNs.IsEmpty() ||
-      aElementNs == nsDependentAtomString(nsGkAtoms::nsuri_xhtml)) {
+  if (aElementNs.IsEmpty() || nsGkAtoms::nsuri_xhtml->Equals(aElementNs)) {
     if (nsContentUtils::EqualsIgnoreASCIICase(
             aTagName, nsDependentAtomString(nsGkAtoms::iframe))) {
       
