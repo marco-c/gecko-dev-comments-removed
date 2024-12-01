@@ -37,6 +37,10 @@
   stroke: var(--theme-icon-color);
   /* Prevent line break when copy/pasting an entire rule */
   user-select: auto;
+
+  &:hover {
+    stroke: var(--theme-icon-alternate-hover-color);
+  }
 }
 
 :is(
@@ -44,7 +48,8 @@
   .inspector-grid,
   .inspector-shapeswatch
 )[aria-pressed="true"] {
-  stroke: var(--theme-icon-checked-color);
+  background-color: var(--theme-toolbarbutton-checked-background);
+  stroke: var(--theme-toolbarbutton-checked-color);
 }
 
 .inspector-flex {
@@ -73,6 +78,7 @@
 .inspector-shape-point.active,
 .inspector-shapeswatch[aria-pressed="true"] + .inspector-shape > .inspector-shape-point:hover {
   background-color: var(--inspector-highlight-background-color);
+  color: var(--inspector-highlight-color);
   /* Add an outline so when the property is highlighted because of search,
      the active point still stands out */
   outline: 1px solid var(--theme-contrast-border);
