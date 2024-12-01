@@ -1874,6 +1874,12 @@ class HTMLMediaElement::ChannelLoader final {
     loadInfo->SetIsMediaRequest(true);
     loadInfo->SetIsMediaInitialRequest(true);
 
+    if (nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(channel)) {
+      nsString initiatorType =
+          aElement->IsHTMLElement(nsGkAtoms::audio) ? u"audio"_ns : u"video"_ns;
+      timedChannel->SetInitiatorType(initiatorType);
+    }
+
     nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
     if (cos) {
       if (aElement->mUseUrgentStartForChannel) {
@@ -2179,10 +2185,9 @@ void HTMLMediaElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   }
 }
 
-void HTMLMediaElement::ContentRemoved(nsIContent* aChild,
-                                      nsIContent* aPreviousSibling) {
+void HTMLMediaElement::ContentWillBeRemoved(nsIContent* aChild) {
   if (aChild == mSourcePointer) {
-    mSourcePointer = aPreviousSibling;
+    mSourcePointer = aChild->GetPreviousSibling();
   }
 }
 
