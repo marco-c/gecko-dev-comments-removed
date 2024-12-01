@@ -1209,7 +1209,10 @@ public:
     
     
     
-    LocRangeEndValid = 1 << 2
+    LocRangeEndValid = 1 << 2,
+    
+    
+    Heuristic = 1 << 3,
   };
 
   void emitStructuredRecordInfo(llvm::json::OStream &J, SourceLocation Loc,
@@ -1741,6 +1744,14 @@ public:
 
     if (Flags & NoCrossref) {
       J.attribute("no_crossref", 1);
+    }
+
+    if (Flags & Heuristic) {
+      J.attributeBegin("confidence");
+      J.arrayBegin();
+      J.value("cppTemplateHeuristic");
+      J.arrayEnd();
+      J.attributeEnd();
     }
 
     if (ArgRanges) {
@@ -2501,7 +2512,7 @@ public:
     if (SyntaxKind) {
       std::string Mangled = getMangledName(CurMangleContext, ND);
       visitIdentifier("use", SyntaxKind, getQualifiedName(ND), Loc, Mangled,
-                      MaybeType, getContext(SpellingLoc));
+                      MaybeType, getContext(SpellingLoc), Heuristic);
     }
   }
 
