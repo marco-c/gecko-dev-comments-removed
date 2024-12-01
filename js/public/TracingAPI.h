@@ -135,7 +135,8 @@ class TracingContext {
   
   class Functor {
    public:
-    virtual void operator()(TracingContext* tcx, char* buf, size_t bufsize) = 0;
+    virtual void operator()(TracingContext* tcx, const char* name, char* buf,
+                            size_t bufsize) = 0;
   };
 
  private:
