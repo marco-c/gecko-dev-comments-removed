@@ -52,6 +52,8 @@ class DrawTargetOffset : public DrawTarget {
 
   bool Init(DrawTarget* aDrawTarget, IntPoint aOrigin);
 
+  virtual bool IsValid() const override { return mDrawTarget->IsValid(); }
+
   
   virtual bool IsTiledDrawTarget() const override { return true; }
 
