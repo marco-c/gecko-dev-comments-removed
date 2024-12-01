@@ -76,6 +76,7 @@ fn right_produces_items_with_no_complete() {
 
 
 #[test]
+#[cfg_attr(not(panic = "unwind"), ignore)]
 fn produces_items_with_no_complete() {
     let counter = DropCounter::default();
     let mut v = vec![];
@@ -273,6 +274,7 @@ fn right_panics() {
 
 
 #[test]
+#[cfg_attr(not(panic = "unwind"), ignore)]
 fn left_produces_fewer_items_drops() {
     let counter = DropCounter::default();
     let mut v = vec![];

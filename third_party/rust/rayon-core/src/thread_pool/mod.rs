@@ -102,6 +102,43 @@ impl ThreadPool {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn install<OP, R>(&self, op: OP) -> R
     where
         OP: FnOnce() -> R + Send,

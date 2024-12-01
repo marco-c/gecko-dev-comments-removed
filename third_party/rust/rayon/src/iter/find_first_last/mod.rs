@@ -182,24 +182,16 @@ impl<'p, P: 'p + Fn(&T) -> bool, T> Folder<T> for FindFolder<'p, T, P> {
 
         if !found_best_in_range && (self.find_op)(&item) {
             
+            let update =
+                self.best_found
+                    .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                        better_position(self.boundary, current, self.match_position)
+                            .then_some(self.boundary)
+                    });
+
             
-            let mut current = self.best_found.load(Ordering::Relaxed);
-            loop {
-                if better_position(current, self.boundary, self.match_position) {
-                    break;
-                }
-                match self.best_found.compare_exchange_weak(
-                    current,
-                    self.boundary,
-                    Ordering::Relaxed,
-                    Ordering::Relaxed,
-                ) {
-                    Ok(_) => {
-                        self.item = Some(item);
-                        break;
-                    }
-                    Err(v) => current = v,
-                }
+            if update.is_ok() || update == Err(self.boundary) {
+                self.item = Some(item);
             }
         }
         self

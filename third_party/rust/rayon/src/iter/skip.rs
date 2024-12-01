@@ -1,7 +1,6 @@
 use super::noop::NoopConsumer;
 use super::plumbing::*;
 use super::*;
-use std::cmp::min;
 
 
 
@@ -21,7 +20,7 @@ where
 {
     
     pub(super) fn new(base: I, n: usize) -> Self {
-        let n = min(base.len(), n);
+        let n = Ord::min(base.len(), n);
         Skip { base, n }
     }
 }

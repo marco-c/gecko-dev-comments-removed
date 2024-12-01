@@ -82,7 +82,8 @@
 use self::plumbing::*;
 use self::private::Try;
 pub use either::Either;
-use std::cmp::{self, Ordering};
+use std::cmp::Ordering;
+use std::collections::LinkedList;
 use std::iter::{Product, Sum};
 use std::ops::{Fn, RangeBounds};
 
@@ -102,6 +103,7 @@ mod test;
 
 
 
+mod blocks;
 mod chain;
 mod chunks;
 mod cloned;
@@ -141,20 +143,26 @@ mod reduce;
 mod repeat;
 mod rev;
 mod skip;
+mod skip_any;
+mod skip_any_while;
 mod splitter;
 mod step_by;
 mod sum;
 mod take;
+mod take_any;
+mod take_any_while;
 mod try_fold;
 mod try_reduce;
 mod try_reduce_with;
 mod unzip;
 mod update;
+mod walk_tree;
 mod while_some;
 mod zip;
 mod zip_eq;
 
 pub use self::{
+    blocks::{ExponentialBlocks, UniformBlocks},
     chain::Chain,
     chunks::Chunks,
     cloned::Cloned,
@@ -185,11 +193,18 @@ pub use self::{
     repeat::{repeat, repeatn, Repeat, RepeatN},
     rev::Rev,
     skip::Skip,
+    skip_any::SkipAny,
+    skip_any_while::SkipAnyWhile,
     splitter::{split, Split},
     step_by::StepBy,
     take::Take,
+    take_any::TakeAny,
+    take_any_while::TakeAnyWhile,
     try_fold::{TryFold, TryFoldWith},
     update::Update,
+    walk_tree::{
+        walk_tree, walk_tree_postfix, walk_tree_prefix, WalkTree, WalkTreePostfix, WalkTreePrefix,
+    },
     while_some::WhileSome,
     zip::Zip,
     zip_eq::ZipEq,
@@ -1436,7 +1451,7 @@ pub trait ParallelIterator: Sized + Send {
     where
         Self::Item: Ord,
     {
-        self.reduce_with(cmp::min)
+        self.reduce_with(Ord::min)
     }
 
     
@@ -1534,7 +1549,7 @@ pub trait ParallelIterator: Sized + Send {
     where
         Self::Item: Ord,
     {
-        self.reduce_with(cmp::max)
+        self.reduce_with(Ord::max)
     }
 
     
@@ -1658,6 +1673,9 @@ pub trait ParallelIterator: Sized + Send {
         find::find(self, predicate)
     }
 
+    
+    
+    
     
     
     
@@ -2041,6 +2059,9 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
+    
+    
+    
     fn collect<C>(self) -> C
     where
         C: FromParallelIterator<Self::Item>,
@@ -2206,6 +2227,188 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn take_any(self, n: usize) -> TakeAny<Self> {
+        TakeAny::new(self, n)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn skip_any(self, n: usize) -> SkipAny<Self> {
+        SkipAny::new(self, n)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn take_any_while<P>(self, predicate: P) -> TakeAnyWhile<Self, P>
+    where
+        P: Fn(&Self::Item) -> bool + Sync + Send,
+    {
+        TakeAnyWhile::new(self, predicate)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn skip_any_while<P>(self, predicate: P) -> SkipAnyWhile<Self, P>
+    where
+        P: Fn(&Self::Item) -> bool + Sync + Send,
+    {
+        SkipAnyWhile::new(self, predicate)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn collect_vec_list(self) -> LinkedList<Vec<Self::Item>> {
+        match extend::fast_collect(self) {
+            Either::Left(vec) => {
+                let mut list = LinkedList::new();
+                if !vec.is_empty() {
+                    list.push_back(vec);
+                }
+                list
+            }
+            Either::Right(list) => list,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn drive_unindexed<C>(self, consumer: C) -> C::Result
     where
         C: UnindexedConsumer<Self::Item>;
@@ -2246,6 +2449,70 @@ impl<T: ParallelIterator> IntoParallelIterator for T {
 
 #[allow(clippy::len_without_is_empty)]
 pub trait IndexedParallelIterator: ParallelIterator {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn by_exponential_blocks(self) -> ExponentialBlocks<Self> {
+        ExponentialBlocks::new(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    fn by_uniform_blocks(self, block_size: usize) -> UniformBlocks<Self> {
+        assert!(block_size != 0, "block_size must not be zero");
+        UniformBlocks::new(self, block_size)
+    }
+
     
     
     
@@ -2419,6 +2686,9 @@ pub trait IndexedParallelIterator: ParallelIterator {
     
     
     
+    
+    
+    #[track_caller]
     fn chunks(self, chunk_size: usize) -> Chunks<Self> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         Chunks::new(self, chunk_size)
@@ -3038,6 +3308,7 @@ pub trait FromParallelIterator<T>
 where
     T: Send,
 {
+    
     
     
     

@@ -5,7 +5,10 @@ use std::borrow::Cow;
 use std::collections::LinkedList;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::collections::{BinaryHeap, VecDeque};
+use std::ffi::{OsStr, OsString};
 use std::hash::{BuildHasher, Hash};
+use std::rc::Rc;
+use std::sync::Arc;
 
 
 fn collect_extended<C, I>(par_iter: I) -> C
@@ -28,6 +31,45 @@ where
         I: IntoParallelIterator<Item = T>,
     {
         collect_extended(par_iter)
+    }
+}
+
+
+impl<T> FromParallelIterator<T> for Box<[T]>
+where
+    T: Send,
+{
+    fn from_par_iter<I>(par_iter: I) -> Self
+    where
+        I: IntoParallelIterator<Item = T>,
+    {
+        Vec::from_par_iter(par_iter).into()
+    }
+}
+
+
+impl<T> FromParallelIterator<T> for Rc<[T]>
+where
+    T: Send,
+{
+    fn from_par_iter<I>(par_iter: I) -> Self
+    where
+        I: IntoParallelIterator<Item = T>,
+    {
+        Vec::from_par_iter(par_iter).into()
+    }
+}
+
+
+impl<T> FromParallelIterator<T> for Arc<[T]>
+where
+    T: Send,
+{
+    fn from_par_iter<I>(par_iter: I) -> Self
+    where
+        I: IntoParallelIterator<Item = T>,
+    {
+        Vec::from_par_iter(par_iter).into()
     }
 }
 
@@ -175,10 +217,50 @@ impl FromParallelIterator<String> for String {
 }
 
 
+impl FromParallelIterator<Box<str>> for String {
+    fn from_par_iter<I>(par_iter: I) -> Self
+    where
+        I: IntoParallelIterator<Item = Box<str>>,
+    {
+        collect_extended(par_iter)
+    }
+}
+
+
 impl<'a> FromParallelIterator<Cow<'a, str>> for String {
     fn from_par_iter<I>(par_iter: I) -> Self
     where
         I: IntoParallelIterator<Item = Cow<'a, str>>,
+    {
+        collect_extended(par_iter)
+    }
+}
+
+
+impl<'a> FromParallelIterator<&'a OsStr> for OsString {
+    fn from_par_iter<I>(par_iter: I) -> Self
+    where
+        I: IntoParallelIterator<Item = &'a OsStr>,
+    {
+        collect_extended(par_iter)
+    }
+}
+
+
+impl FromParallelIterator<OsString> for OsString {
+    fn from_par_iter<I>(par_iter: I) -> Self
+    where
+        I: IntoParallelIterator<Item = OsString>,
+    {
+        collect_extended(par_iter)
+    }
+}
+
+
+impl<'a> FromParallelIterator<Cow<'a, OsStr>> for OsString {
+    fn from_par_iter<I>(par_iter: I) -> Self
+    where
+        I: IntoParallelIterator<Item = Cow<'a, OsStr>>,
     {
         collect_extended(par_iter)
     }

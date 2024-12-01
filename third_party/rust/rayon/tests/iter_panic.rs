@@ -20,6 +20,7 @@ fn iter_panic() {
 }
 
 #[test]
+#[cfg_attr(not(panic = "unwind"), ignore)]
 fn iter_panic_fuse() {
     
     

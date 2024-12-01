@@ -1,6 +1,5 @@
 use super::plumbing::*;
 use super::*;
-use std::cmp;
 
 
 
@@ -107,7 +106,7 @@ where
     }
 
     fn min_len(&self) -> usize {
-        cmp::max(self.min, self.base.min_len())
+        Ord::max(self.min, self.base.min_len())
     }
 
     fn max_len(&self) -> usize {
@@ -245,7 +244,7 @@ where
     }
 
     fn max_len(&self) -> usize {
-        cmp::min(self.max, self.base.max_len())
+        Ord::min(self.max, self.base.max_len())
     }
 
     fn split_at(self, index: usize) -> (Self, Self) {

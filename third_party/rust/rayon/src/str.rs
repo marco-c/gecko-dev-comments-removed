@@ -174,6 +174,27 @@ pub trait ParallelString {
     
     
     
+    fn par_split_inclusive<P: Pattern>(&self, separator: P) -> SplitInclusive<'_, P> {
+        SplitInclusive::new(self.as_parallel_string(), separator)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     fn par_split_terminator<P: Pattern>(&self, terminator: P) -> SplitTerminator<'_, P> {
         SplitTerminator::new(self.as_parallel_string(), terminator)
@@ -213,8 +234,65 @@ pub trait ParallelString {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn par_split_whitespace(&self) -> SplitWhitespace<'_> {
         SplitWhitespace(self.as_parallel_string())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_split_ascii_whitespace(&self) -> SplitAsciiWhitespace<'_> {
+        SplitAsciiWhitespace(self.as_parallel_string())
     }
 
     
@@ -293,6 +371,9 @@ mod private {
         fn fold_splits<'ch, F>(&self, haystack: &'ch str, folder: F, skip_last: bool) -> F
         where
             F: Folder<&'ch str>;
+        fn fold_inclusive_splits<'ch, F>(&self, haystack: &'ch str, folder: F) -> F
+        where
+            F: Folder<&'ch str>;
         fn fold_matches<'ch, F>(&self, haystack: &'ch str, folder: F) -> F
         where
             F: Folder<&'ch str>;
@@ -338,6 +419,13 @@ macro_rules! impl_pattern {
             folder.consume_iter(split)
         }
 
+        fn fold_inclusive_splits<'ch, F>(&$self, chars: &'ch str, folder: F) -> F
+        where
+            F: Folder<&'ch str>,
+        {
+            folder.consume_iter(chars.split_inclusive($pattern))
+        }
+
         fn fold_matches<'ch, F>(&$self, chars: &'ch str, folder: F) -> F
         where
             F: Folder<&'ch str>,
@@ -360,6 +448,17 @@ impl Pattern for char {
 
 impl Pattern for &[char] {
     impl_pattern!(&self => *self);
+}
+
+
+
+
+impl<const N: usize> Pattern for [char; N] {
+    impl_pattern!(&self => self.as_slice());
+}
+
+impl<const N: usize> Pattern for &[char; N] {
+    impl_pattern!(&self => self.as_slice());
 }
 
 impl<FN: Sync + Send + Fn(char) -> bool> Pattern for FN {
@@ -600,18 +699,56 @@ impl<'ch, P: Pattern> Fissile<P> for &'ch str {
         separator.rfind_in(&self[..end])
     }
 
-    fn split_once(self, index: usize) -> (Self, Self) {
-        let (left, right) = self.split_at(index);
-        let mut right_iter = right.chars();
-        right_iter.next(); 
-        (left, right_iter.as_str())
+    fn split_once<const INCL: bool>(self, index: usize) -> (Self, Self) {
+        if INCL {
+            
+            let separator = self[index..].chars().next().unwrap();
+            self.split_at(index + separator.len_utf8())
+        } else {
+            let (left, right) = self.split_at(index);
+            let mut right_iter = right.chars();
+            right_iter.next(); 
+            (left, right_iter.as_str())
+        }
     }
 
-    fn fold_splits<F>(self, separator: &P, folder: F, skip_last: bool) -> F
+    fn fold_splits<F, const INCL: bool>(self, separator: &P, folder: F, skip_last: bool) -> F
     where
         F: Folder<Self>,
     {
-        separator.fold_splits(self, folder, skip_last)
+        if INCL {
+            debug_assert!(!skip_last);
+            separator.fold_inclusive_splits(self, folder)
+        } else {
+            separator.fold_splits(self, folder, skip_last)
+        }
+    }
+}
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct SplitInclusive<'ch, P: Pattern> {
+    chars: &'ch str,
+    separator: P,
+}
+
+impl<'ch, P: Pattern> SplitInclusive<'ch, P> {
+    fn new(chars: &'ch str, separator: P) -> Self {
+        SplitInclusive { chars, separator }
+    }
+}
+
+impl<'ch, P: Pattern> ParallelIterator for SplitInclusive<'ch, P> {
+    type Item = &'ch str;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    where
+        C: UnindexedConsumer<Self::Item>,
+    {
+        let producer = SplitInclusiveProducer::new_incl(self.chars, &self.separator);
+        bridge_unindexed(producer, consumer)
     }
 }
 
@@ -726,6 +863,31 @@ impl<'ch> ParallelIterator for SplitWhitespace<'ch> {
     {
         self.0
             .par_split(char::is_whitespace)
+            .filter(not_empty)
+            .drive_unindexed(consumer)
+    }
+}
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct SplitAsciiWhitespace<'ch>(&'ch str);
+
+#[inline]
+fn is_ascii_whitespace(c: char) -> bool {
+    c.is_ascii_whitespace()
+}
+
+impl<'ch> ParallelIterator for SplitAsciiWhitespace<'ch> {
+    type Item = &'ch str;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    where
+        C: UnindexedConsumer<Self::Item>,
+    {
+        self.0
+            .par_split(is_ascii_whitespace)
             .filter(not_empty)
             .drive_unindexed(consumer)
     }

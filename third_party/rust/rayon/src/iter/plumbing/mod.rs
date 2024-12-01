@@ -8,7 +8,6 @@ use crate::join_context;
 
 use super::IndexedParallelIterator;
 
-use std::cmp;
 use std::usize;
 
 
@@ -275,7 +274,7 @@ impl Splitter {
         if stolen {
             
             
-            self.splits = cmp::max(crate::current_num_threads(), self.splits / 2);
+            self.splits = Ord::max(crate::current_num_threads(), self.splits / 2);
             true
         } else if splits > 0 {
             
@@ -313,14 +312,14 @@ impl LengthSplitter {
     fn new(min: usize, max: usize, len: usize) -> LengthSplitter {
         let mut splitter = LengthSplitter {
             inner: Splitter::new(),
-            min: cmp::max(min, 1),
+            min: Ord::max(min, 1),
         };
 
         
         
         
         
-        let min_splits = len / cmp::max(max, 1);
+        let min_splits = len / Ord::max(max, 1);
 
         
         if min_splits > splitter.inner.splits {
