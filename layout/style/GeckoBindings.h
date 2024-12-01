@@ -334,8 +334,10 @@ bool Gecko_AnimationNameMayBeReferencedFromStyle(const nsPresContext*,
 float Gecko_GetScrollbarInlineSize(const nsPresContext*);
 
 
-mozilla::PseudoStyleType Gecko_GetImplementedPseudo(
+mozilla::PseudoStyleType Gecko_GetImplementedPseudoType(
     const mozilla::dom::Element*);
+
+nsAtom* Gecko_GetImplementedPseudoIdentifier(const mozilla::dom::Element*);
 
 
 
