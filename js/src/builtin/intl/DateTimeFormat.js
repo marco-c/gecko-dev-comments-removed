@@ -196,9 +196,9 @@ function CanonicalizeTimeZoneName(timeZone) {
   );
 
   
-  assert(ianaTimeZone !== "Etc/UTC", "Invalid link to UTC");
-  assert(ianaTimeZone !== "Etc/GMT", "Invalid link to UTC");
-  assert(ianaTimeZone !== "GMT", "Invalid link to UTC");
+  if (ianaTimeZone === "Etc/UTC" || ianaTimeZone === "Etc/GMT") {
+    ianaTimeZone = "UTC";
+  }
 
   
   return ianaTimeZone;
