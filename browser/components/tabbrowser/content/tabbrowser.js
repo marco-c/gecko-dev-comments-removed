@@ -8094,23 +8094,23 @@ var TabBarVisibility = {
       
       
       hideTabstrip = true;
-      TabsInTitlebar.allowedBy("tabs-visible", true);
+      CustomTitlebar.allowedBy("tabs-visible", true);
     } else {
-      TabsInTitlebar.allowedBy("tabs-visible", !hideTabstrip);
+      CustomTitlebar.allowedBy("tabs-visible", !hideTabstrip);
     }
 
     gNavToolbox.toggleAttribute("tabs-hidden", hideTabstrip);
     
     navbar.classList.toggle(
       "browser-titlebar",
-      TabsInTitlebar.enabled && hideTabstrip
+      CustomTitlebar.enabled && hideTabstrip
     );
 
     document
       .getElementById("browser")
       .classList.toggle(
         "browser-toolbox-background",
-        TabsInTitlebar.enabled && nonPopupWithVerticalTabs
+        CustomTitlebar.enabled && nonPopupWithVerticalTabs
       );
 
     if (

@@ -5846,7 +5846,7 @@ function warnAboutClosingWindow() {
 
   if (!isPBWindow && !toolbar.visible) {
     return gBrowser.warnAboutClosingTabs(
-      gBrowser.openTabCount,
+      gBrowser.openTabs.length,
       gBrowser.closingTabsEnum.ALL
     );
   }
@@ -5886,7 +5886,7 @@ function warnAboutClosingWindow() {
     return (
       isPBWindow ||
       gBrowser.warnAboutClosingTabs(
-        gBrowser.openTabCount,
+        gBrowser.openTabs.length,
         gBrowser.closingTabsEnum.ALL
       )
     );
@@ -5911,7 +5911,7 @@ function warnAboutClosingWindow() {
     AppConstants.platform != "macosx" ||
     isPBWindow ||
     gBrowser.warnAboutClosingTabs(
-      gBrowser.openTabCount,
+      gBrowser.openTabs.length,
       gBrowser.closingTabsEnum.ALL
     )
   );
@@ -6642,7 +6642,7 @@ var ToolbarIconColor = {
   _windowState: {
     active: false,
     fullscreen: false,
-    tabsintitlebar: false,
+    customtitlebar: false,
   },
   init() {
     this._initialized = true;
@@ -6709,8 +6709,8 @@ var ToolbarIconColor = {
       case "toolbarvisibilitychange":
         
         break;
-      case "tabsintitlebar":
-        this._windowState.tabsintitlebar = reasonValue;
+      case "customtitlebar":
+        this._windowState.customtitlebar = reasonValue;
         break;
     }
 

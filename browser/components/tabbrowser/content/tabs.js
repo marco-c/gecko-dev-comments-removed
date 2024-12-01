@@ -344,7 +344,7 @@
       
       
       
-      if (TabsInTitlebar.enabled && !this.verticalMode) {
+      if (CustomTitlebar.enabled && !this.verticalMode) {
         return;
       }
 
@@ -1498,16 +1498,28 @@
       return children.filter(node => node.tagName == "tab-group");
     }
 
-    #visibleTabs;
+    
+
+
+
+    get openTabs() {
+      if (!this.#openTabs) {
+        this.#openTabs = this.allTabs.filter(tab => tab.isOpen);
+      }
+      return this.#openTabs;
+    }
+    #openTabs;
+
+    
+
+
     get visibleTabs() {
       if (!this.#visibleTabs) {
-        this.#visibleTabs = Array.prototype.filter.call(
-          this.allTabs,
-          tab => tab.visible
-        );
+        this.#visibleTabs = this.openTabs.filter(tab => tab.visible);
       }
       return this.#visibleTabs;
     }
+    #visibleTabs;
 
     
 
@@ -1569,6 +1581,7 @@
     }
 
     _invalidateCachedVisibleTabs() {
+      this.#openTabs = null;
       this.#visibleTabs = null;
       
       
@@ -2326,7 +2339,12 @@
         }
         return index;
       };
-      let moveOverThreshold = gBrowser._tabGroupsEnabled ? 0.7 : 0.5;
+      let moveOverThreshold = gBrowser._tabGroupsEnabled
+        ? Services.prefs.getIntPref(
+            "browser.tabs.dragdrop.moveOverThresholdPercent"
+          ) / 100
+        : 0.5;
+      moveOverThreshold = Math.min(1, Math.max(0, moveOverThreshold));
       let newIndex = getDragOverIndex(moveOverThreshold);
       if (newIndex >= oldIndex) {
         newIndex++;
@@ -2341,8 +2359,10 @@
           Services.prefs.getIntPref(
             "browser.tabs.groups.dragOverThresholdPercent"
           ) / 100;
-        dragOverGroupingThreshold = Math.max(0, dragOverGroupingThreshold);
-        dragOverGroupingThreshold = Math.min(0.5, dragOverGroupingThreshold);
+        dragOverGroupingThreshold = Math.min(
+          moveOverThreshold,
+          Math.max(0, dragOverGroupingThreshold)
+        );
         let groupDropIndex = getDragOverIndex(dragOverGroupingThreshold);
         if (
           "groupDropIndex" in dragData &&
