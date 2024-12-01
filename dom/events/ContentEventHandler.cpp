@@ -441,10 +441,8 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
   if (mSelection->Type() == SelectionType::eNormal) {
     normalSelection = mSelection;
   } else {
-    normalSelection = frameSel->GetSelection(SelectionType::eNormal);
-    if (NS_WARN_IF(!normalSelection)) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
+    normalSelection = &frameSel->NormalSelection();
+    MOZ_ASSERT(normalSelection);
   }
 
   rv = InitRootContent(*normalSelection);
@@ -3155,15 +3153,7 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
 
   
   
-  
-  
   if (aIsRemovingNode) {
-    DebugOnly<nsIContent*> parent = aStartPosition.Container()->GetParent();
-    MOZ_ASSERT(
-        parent &&
-            parent->ComputeIndexOf(aStartPosition.Container()).isNothing(),
-        "At removing the node, the node shouldn't be in the array of children "
-        "of its parent");
     MOZ_ASSERT(aStartPosition.Container() == endPosition.Container(),
                "At removing the node, start and end node should be same");
     MOZ_ASSERT(*aStartPosition.Offset(

@@ -3153,36 +3153,34 @@ void nsFocusManager::MoveCaretToFocus(PresShell* aPresShell,
   nsCOMPtr<Document> doc = aPresShell->GetDocument();
   if (doc) {
     RefPtr<nsFrameSelection> frameSelection = aPresShell->FrameSelection();
-    RefPtr<Selection> domSelection =
-        frameSelection->GetSelection(SelectionType::eNormal);
-    if (domSelection) {
-      
-      
-      domSelection->RemoveAllRanges(IgnoreErrors());
-      if (aContent) {
-        ErrorResult rv;
-        RefPtr<nsRange> newRange = doc->CreateRange(rv);
-        if (NS_WARN_IF(rv.Failed())) {
-          rv.SuppressException();
-          return;
-        }
+    RefPtr<Selection> domSelection = &frameSelection->NormalSelection();
+    MOZ_ASSERT(domSelection);
 
-        
-        
-        newRange->SelectNodeContents(*aContent, IgnoreErrors());
-
-        if (!aContent->GetFirstChild() ||
-            aContent->IsHTMLFormControlElement()) {
-          
-          
-          
-          newRange->SetStartBefore(*aContent, IgnoreErrors());
-          newRange->SetEndBefore(*aContent, IgnoreErrors());
-        }
-        domSelection->AddRangeAndSelectFramesAndNotifyListeners(*newRange,
-                                                                IgnoreErrors());
-        domSelection->CollapseToStart(IgnoreErrors());
+    
+    
+    domSelection->RemoveAllRanges(IgnoreErrors());
+    if (aContent) {
+      ErrorResult rv;
+      RefPtr<nsRange> newRange = doc->CreateRange(rv);
+      if (NS_WARN_IF(rv.Failed())) {
+        rv.SuppressException();
+        return;
       }
+
+      
+      
+      newRange->SelectNodeContents(*aContent, IgnoreErrors());
+
+      if (!aContent->GetFirstChild() || aContent->IsHTMLFormControlElement()) {
+        
+        
+        
+        newRange->SetStartBefore(*aContent, IgnoreErrors());
+        newRange->SetEndBefore(*aContent, IgnoreErrors());
+      }
+      domSelection->AddRangeAndSelectFramesAndNotifyListeners(*newRange,
+                                                              IgnoreErrors());
+      domSelection->CollapseToStart(IgnoreErrors());
     }
   }
 }
@@ -3216,23 +3214,21 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
 
   if (docFrameSelection && caret &&
       (frameSelection == docFrameSelection || !aContent)) {
-    Selection* domSelection =
-        docFrameSelection->GetSelection(SelectionType::eNormal);
-    if (domSelection) {
-      
-      
-      aPresShell->SetCaretEnabled(false);
+    Selection& domSelection = docFrameSelection->NormalSelection();
 
-      
-      caret->SetSelection(domSelection);
+    
+    
+    aPresShell->SetCaretEnabled(false);
 
-      
-      
-      
+    
+    caret->SetSelection(&domSelection);
 
-      aPresShell->SetCaretReadOnly(false);
-      aPresShell->SetCaretEnabled(aVisible);
-    }
+    
+    
+    
+
+    aPresShell->SetCaretReadOnly(false);
+    aPresShell->SetCaretEnabled(aVisible);
   }
 
   return NS_OK;
@@ -3248,10 +3244,8 @@ void nsFocusManager::GetSelectionLocation(Document* aDocument,
   NS_ASSERTION(presContext, "mPresContent is null!!");
 
   RefPtr<Selection> domSelection =
-      aPresShell->ConstFrameSelection()->GetSelection(SelectionType::eNormal);
-  if (!domSelection) {
-    return;
-  }
+      &aPresShell->ConstFrameSelection()->NormalSelection();
+  MOZ_ASSERT(domSelection);
 
   const nsRange* domRange = domSelection->GetRangeAt(0);
   if (!domRange || !domRange->IsPositioned()) {

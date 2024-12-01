@@ -229,7 +229,7 @@ static void SetOrUpdateRectValuedProperty(
 
 FrameDestroyContext::~FrameDestroyContext() {
   for (auto& content : mozilla::Reversed(mAnonymousContent)) {
-    mPresShell->NativeAnonymousContentRemoved(content);
+    mPresShell->NativeAnonymousContentWillBeRemoved(content);
     content->UnbindFromTree();
   }
 }
@@ -4958,53 +4958,51 @@ bool nsIFrame::MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
           aContentAtEventPoint.IsTextControlElement()
               ? &aContentAtEventPoint
               : aContentAtEventPoint.GetClosestNativeAnonymousSubtreeRoot());
-  if (Selection* selection =
-          aFrameSelection.GetSelection(SelectionType::eNormal)) {
-    const bool selectionIsCollapsed =
-        selection->AreNormalAndCrossShadowBoundaryRangesCollapsed();
+  const Selection& selection = aFrameSelection.NormalSelection();
+  const bool selectionIsCollapsed =
+      selection.AreNormalAndCrossShadowBoundaryRangesCollapsed();
+  
+  
+  if (!selectionIsCollapsed && nsContentUtils::IsPointInSelection(
+                                   selection, aContentAtEventPoint,
+                                   static_cast<uint32_t>(aOffsetAtEventPoint),
+                                   true )) {
+    return false;
+  }
+  const bool wantToPreventMoveCaret =
+      StaticPrefs::
+          ui_mouse_right_click_move_caret_stop_if_in_focused_editable_node() &&
+      selectionIsCollapsed && (contentIsEditable || contentAsTextControl);
+  const bool wantToPreventCollapseSelection =
+      StaticPrefs::
+          ui_mouse_right_click_collapse_selection_stop_if_non_collapsed_selection() &&
+      !selectionIsCollapsed;
+  if (wantToPreventMoveCaret || wantToPreventCollapseSelection) {
     
     
-    if (!selectionIsCollapsed && nsContentUtils::IsPointInSelection(
-                                     *selection, aContentAtEventPoint,
-                                     static_cast<uint32_t>(aOffsetAtEventPoint),
-                                     true )) {
-      return false;
+    
+    
+    
+    
+    
+    
+    if (nsIContent* ancestorLimiter = selection.GetAncestorLimiter()) {
+      MOZ_ASSERT(ancestorLimiter->IsEditable());
+      return !aContentAtEventPoint.IsInclusiveDescendantOf(ancestorLimiter);
     }
-    const bool wantToPreventMoveCaret =
-        StaticPrefs::
-            ui_mouse_right_click_move_caret_stop_if_in_focused_editable_node() &&
-        selectionIsCollapsed && (contentIsEditable || contentAsTextControl);
-    const bool wantToPreventCollapseSelection =
-        StaticPrefs::
-            ui_mouse_right_click_collapse_selection_stop_if_non_collapsed_selection() &&
-        !selectionIsCollapsed;
-    if (wantToPreventMoveCaret || wantToPreventCollapseSelection) {
-      
-      
-      
-      
-      
-      
-      
-      
-      if (nsIContent* ancestorLimiter = selection->GetAncestorLimiter()) {
-        MOZ_ASSERT(ancestorLimiter->IsEditable());
-        return !aContentAtEventPoint.IsInclusiveDescendantOf(ancestorLimiter);
-      }
-    }
-    
-    
-    
-    if (wantToPreventMoveCaret && contentAsTextControl &&
-        contentAsTextControl == nsFocusManager::GetFocusedElementStatic()) {
-      return false;
-    }
-    
-    
-    
-    if (wantToPreventCollapseSelection && !contentIsEditable) {
-      return false;
-    }
+  }
+  
+  
+  
+  if (wantToPreventMoveCaret && contentAsTextControl &&
+      contentAsTextControl == nsFocusManager::GetFocusedElementStatic()) {
+    return false;
+  }
+  
+  
+  
+  if (wantToPreventCollapseSelection && !contentIsEditable) {
+    return false;
   }
 
   return !StaticPrefs::
@@ -7341,14 +7339,10 @@ bool nsIFrame::HasSelectionInSubtree() {
     return false;
   }
 
-  const Selection* selection =
-      frameSelection->GetSelection(SelectionType::eNormal);
-  if (!selection) {
-    return false;
-  }
+  const Selection& selection = frameSelection->NormalSelection();
 
-  for (uint32_t i = 0; i < selection->RangeCount(); i++) {
-    auto* range = selection->GetRangeAt(i);
+  for (uint32_t i = 0; i < selection.RangeCount(); i++) {
+    auto* range = selection.GetRangeAt(i);
     MOZ_ASSERT(range);
 
     const auto* commonAncestorNode =
