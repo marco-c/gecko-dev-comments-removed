@@ -18,6 +18,7 @@
 #include "ScopedNSSTypes.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/net/DNS.h"
@@ -1086,10 +1087,19 @@ bool Http3Session::AddStream(nsAHttpTransaction* aHttpTransaction,
 
   nsHttpTransaction* trans = aHttpTransaction->QueryHttpTransaction();
 
+  bool firstStream = false;
   if (!mConnection) {
     
     mConnection = aHttpTransaction->Connection();
+    firstStream = true;
   }
+
+  
+  auto reportConnectStart = MakeScopeExit([&] {
+    if (firstStream) {
+      OnTransportStatus(nullptr, NS_NET_STATUS_CONNECTING_TO, 0);
+    }
+  });
 
   if (IsClosing()) {
     LOG3(
