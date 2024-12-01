@@ -2,7 +2,9 @@
 
 const BASE_URL = document.baseURI.substring(0, document.baseURI.lastIndexOf('/') + 1);
 const BASE_PATH = (new URL(BASE_URL)).pathname;
-const RESOURCE_PATH = `${BASE_PATH}resources/`
+
+
+RESOURCE_PATH = `${BASE_PATH}resources/`
 
 const DEFAULT_INTEREST_GROUP_NAME = 'default name';
 
