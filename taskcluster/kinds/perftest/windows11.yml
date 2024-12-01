@@ -273,7 +273,6 @@ ml-perf:
         fetch:
             - ort.wasm
             - ort.jsep.wasm
-            - ort-training.wasm
             - xenova-all-minilm-l6-v2
     description: Run ML Models Perf Tests
     treeherder:
@@ -293,12 +292,36 @@ ml-perf:
             --output $MOZ_FETCHES_DIR/../artifacts
             toolkit/components/ml/tests/browser/browser_ml_engine_perf.js
 
+ml-summarizer-perf:
+    fetches:
+        fetch:
+            - ort.wasm
+            - ort.jsep.wasm
+            - qwen2.5-0.5-instruct
+            - distilbart-cnn-12-6
+    description: Run ML Models Perf Tests
+    treeherder:
+        symbol: perftest(win-ml-sum-perf)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [autoland, mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            toolkit/components/ml/tests/browser/browser_ml_summarizer_perf.js
+
 ml-multi-perf:
     fetches:
         fetch:
             - ort.wasm
             - ort.jsep.wasm
-            - ort-training.wasm
             - xenova-all-minilm-l6-v2
             - mozilla-ner
             - mozilla-intent
@@ -325,7 +348,6 @@ ml-perf-suggest-inf:
         fetch:
             - ort.wasm
             - ort.jsep.wasm
-            - ort-training.wasm
             - mozilla-ner
             - mozilla-intent
     description: Run ML Suggest Inference Model
@@ -351,7 +373,6 @@ ml-perf-suggest-int:
         fetch:
             - ort.wasm
             - ort.jsep.wasm
-            - ort-training.wasm
             - mozilla-intent
     description: Run ML Suggest Intent Model
     treeherder:
@@ -376,7 +397,6 @@ ml-perf-suggest-ner:
         fetch:
             - ort.wasm
             - ort.jsep.wasm
-            - ort-training.wasm
             - mozilla-ner
     description: Run ML Suggest NER Model
     treeherder:

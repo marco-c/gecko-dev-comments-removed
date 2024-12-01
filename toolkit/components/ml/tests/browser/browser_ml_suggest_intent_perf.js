@@ -11,21 +11,21 @@ const perfMetadata = {
       perfherder: true,
       perfherder_metrics: [
         {
-          name: "intent-pipeline-ready-latency",
+          name: "INTENT-pipeline-ready-latency",
           unit: "ms",
           shouldAlert: true,
         },
         {
-          name: "intent-initialization-latency",
+          name: "INTENT-initialization-latency",
           unit: "ms",
           shouldAlert: true,
         },
-        { name: "intent-model-run-latency", unit: "ms", shouldAlert: true },
-        { name: "intent-pipeline-ready-memory", unit: "MB", shouldAlert: true },
-        { name: "intent-initialization-memory", unit: "MB", shouldAlert: true },
-        { name: "intent-model-run-memory", unit: "MB", shouldAlert: true },
+        { name: "INTENT-model-run-latency", unit: "ms", shouldAlert: true },
+        { name: "INTENT-pipeline-ready-memory", unit: "MB", shouldAlert: true },
+        { name: "INTENT-initialization-memory", unit: "MB", shouldAlert: true },
+        { name: "INTENT-model-run-memory", unit: "MB", shouldAlert: true },
         {
-          name: "intent-total-memory-usage",
+          name: "INTENT-total-memory-usage",
           unit: "MB",
           shouldAlert: true,
         },
@@ -52,5 +52,9 @@ add_task(async function test_ml_generic_pipeline() {
     dtype: "q8",
   };
   const args = ["restaurants in seattle, wa"];
-  await perfTest("intent", options, args);
+  const request = {
+    args,
+    options: { pooling: "mean", normalize: true },
+  };
+  await perfTest("intent", options, request);
 });
