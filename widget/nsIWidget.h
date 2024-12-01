@@ -1176,6 +1176,7 @@ class nsIWidget : public nsISupports {
 
 
   virtual void UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {}
+  virtual LayoutDeviceIntRegion GetOpaqueRegionForTesting() const { return {}; }
 
   
 
