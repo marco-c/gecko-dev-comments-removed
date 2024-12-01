@@ -812,13 +812,13 @@ class nsWindow final : public nsBaseWidget {
   
   bool mCustomNonClient = false;
   
-  bool mUseResizeMarginOverrides = false;
-  
   mozilla::LayoutDeviceIntCoord mHorResizeMargin;
   
   mozilla::LayoutDeviceIntCoord mVertResizeMargin;
   
   mozilla::LayoutDeviceIntCoord mCaptionHeight;
+  
+  mozilla::LayoutDeviceIntCoord mCustomResizeMargin{0};
 
   
   double mDefaultScale = -1.0;
