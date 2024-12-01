@@ -4,8 +4,9 @@
 
 'use strict';
 
-const kQuotaPerOrigin = 64 * 1024;  
+const QUOTA_PER_ORIGIN = 64 * 1024;  
 const {ORIGIN, HTTPS_NOTSAMESITE_ORIGIN} = get_host_info();
+const TEST_ENDPOINT = '/fetch-later';
 
 
 
@@ -13,8 +14,7 @@ function fetchLaterPostTest(body, description) {
   test(() => {
     const controller = new AbortController();
     const result = fetchLater(
-        '/fetch-later',
-        {method: 'POST', signal: controller.signal, body: body});
+        TEST_ENDPOINT, {method: 'POST', signal: controller.signal, body: body});
     assert_false(result.activated);
     
     controller.abort();
@@ -30,19 +30,25 @@ for (const [dataType, skipCharset] of Object.entries(
 }
 
 
-for (const dataType in BeaconDataType) {
-  if (dataType !== BeaconDataType.FormData &&
-      dataType !== BeaconDataType.URLSearchParams) {
+
+
+
+const POST_TEST_REQUEST_URL_SIZE = (ORIGIN + TEST_ENDPOINT).length;
+
+const POST_TEST_REQUEST_HEADER_SIZE = 36;
+
+
+
+
+fetchLaterPostTest(
     
-    
-    
-    fetchLaterPostTest(
-        
-        makeBeaconData(generatePayload(kQuotaPerOrigin), dataType),
-        `A single fetchLater() call takes up the per-origin quota for its ` +
-            `body of ${dataType}.`);
-  }
-}
+    makeBeaconData(
+        generatePayload(
+            QUOTA_PER_ORIGIN - POST_TEST_REQUEST_URL_SIZE -
+            POST_TEST_REQUEST_HEADER_SIZE),
+        BeaconDataType.String),
+    `A single fetchLater() call takes up the per-origin quota for its ` +
+        `body of String.`);
 
 
 for (const dataType in BeaconDataType) {
@@ -64,8 +70,8 @@ for (const dataType in BeaconDataType) {
             () => fetchLater('/fetch-later', {
               method: 'POST',
               
-              body:
-                  makeBeaconData(generatePayload(kQuotaPerOrigin + 1), dataType)
+              body: makeBeaconData(
+                  generatePayload(QUOTA_PER_ORIGIN + 1), dataType)
             }));
       },
       `A single fetchLater() call is not allowed to exceed per-origin quota ` +
@@ -81,7 +87,7 @@ for (const dataType in BeaconDataType) {
         fetchLater('/fetch-later', {
           method: 'POST',
           signal: controller.signal,
-          body: makeBeaconData(generatePayload(kQuotaPerOrigin / 2), dataType)
+          body: makeBeaconData(generatePayload(QUOTA_PER_ORIGIN / 2), dataType)
         });
 
         
@@ -90,7 +96,7 @@ for (const dataType in BeaconDataType) {
             method: 'POST',
             signal: controller.signal,
             body: makeBeaconData(
-                generatePayload(kQuotaPerOrigin / 2 + 1), dataType)
+                generatePayload(QUOTA_PER_ORIGIN / 2 + 1), dataType)
           });
         });
         
@@ -109,7 +115,7 @@ for (const dataType in BeaconDataType) {
         fetchLater('/fetch-later', {
           method: 'POST',
           signal: controller.signal,
-          body: makeBeaconData(generatePayload(kQuotaPerOrigin / 2), dataType)
+          body: makeBeaconData(generatePayload(QUOTA_PER_ORIGIN / 2), dataType)
         });
 
         
@@ -117,8 +123,8 @@ for (const dataType in BeaconDataType) {
         fetchLater(`${HTTPS_NOTSAMESITE_ORIGIN}/fetch-later`, {
           method: 'POST',
           signal: controller.signal,
-          body:
-              makeBeaconData(generatePayload(kQuotaPerOrigin / 2 + 1), dataType)
+          body: makeBeaconData(
+              generatePayload(QUOTA_PER_ORIGIN / 2 + 1), dataType)
         });
         
         controller.abort();
