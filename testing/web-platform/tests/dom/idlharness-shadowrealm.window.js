@@ -1,3 +1,0 @@
-
-
-idl_test_shadowrealm(["dom"], ["html"]);
