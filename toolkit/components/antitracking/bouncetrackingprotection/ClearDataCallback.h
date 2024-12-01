@@ -14,7 +14,7 @@ namespace mozilla {
 
 
 using ClearDataMozPromise =
-    MozPromise<RefPtr<BounceTrackingMapEntry>, uint32_t, true>;
+    MozPromise<RefPtr<BounceTrackingPurgeEntry>, uint32_t, true>;
 
 extern LazyLogModule gBounceTrackingProtectionLog;
 
@@ -36,7 +36,7 @@ class ClearDataCallback final : public nsIClearDataCallback,
 
   
   
-  RefPtr<BounceTrackingMapEntry> mEntry;
+  RefPtr<BounceTrackingPurgeEntry> mEntry;
 
   
   RefPtr<ClearDataMozPromise::Private> mPromise;

@@ -32,7 +32,7 @@ class WindowContext;
 }
 
 using ClearDataMozPromise =
-    MozPromise<RefPtr<BounceTrackingMapEntry>, uint32_t, true>;
+    MozPromise<RefPtr<BounceTrackingPurgeEntry>, uint32_t, true>;
 
 extern LazyLogModule gBounceTrackingProtectionLog;
 
@@ -122,13 +122,13 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
 
   
   using PurgeBounceTrackersMozPromise =
-      MozPromise<nsTArray<RefPtr<BounceTrackingMapEntry>>, nsresult, true>;
+      MozPromise<nsTArray<RefPtr<BounceTrackingPurgeEntry>>, nsresult, true>;
   RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
 
   
   
   static void ReportPurgedTrackersToAntiTrackingDB(
-      const nsTArray<RefPtr<BounceTrackingMapEntry>>& aPurgedSiteHosts);
+      const nsTArray<RefPtr<BounceTrackingPurgeEntry>>& aPurgedSiteHosts);
 
   
   
@@ -160,6 +160,22 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   [[nodiscard]] static nsresult LogBounceTrackersClassifiedToWebConsole(
       BounceTrackingState* aBounceTrackingState,
       const nsTArray<nsCString>& aSiteHosts);
+
+  
+  class PurgeEntryTimeComparator {
+   public:
+    bool Equals(const BounceTrackingPurgeEntry* a,
+                const BounceTrackingPurgeEntry* b) const {
+      MOZ_ASSERT(a && b);
+      return a->PurgeTimeRefConst() == b->PurgeTimeRefConst();
+    }
+
+    bool LessThan(const BounceTrackingPurgeEntry* a,
+                  const BounceTrackingPurgeEntry* b) const {
+      MOZ_ASSERT(a && b);
+      return a->PurgeTimeRefConst() < b->PurgeTimeRefConst();
+    }
+  };
 };
 
 }  

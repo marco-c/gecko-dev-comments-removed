@@ -7,10 +7,12 @@
 #ifndef mozilla_BounceTrackingStateGlobal_h
 #define mozilla_BounceTrackingStateGlobal_h
 
+#include "BounceTrackingMapEntry.h"
 #include "BounceTrackingProtectionStorage.h"
 #include "mozilla/WeakPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashMap.h"
+#include "nsTArray.h"
 #include "nsISupports.h"
 
 namespace mozilla {
@@ -63,6 +65,11 @@ class BounceTrackingStateGlobal final {
                                              bool aSkipStorage = false);
 
   
+  
+  [[nodiscard]] nsresult RecordPurgedTracker(
+      const RefPtr<BounceTrackingPurgeEntry>& aEntry);
+
+  
   [[nodiscard]] nsresult RemoveBounceTrackers(
       const nsTArray<nsCString>& aSiteHosts);
 
@@ -84,6 +91,12 @@ class BounceTrackingStateGlobal final {
 
   const nsTHashMap<nsCStringHashKey, PRTime>& BounceTrackersMapRef() {
     return mBounceTrackers;
+  }
+
+  const nsTHashMap<nsCStringHashKey,
+                   nsTArray<RefPtr<BounceTrackingPurgeEntry>>>&
+  RecentPurgesMapRef() {
+    return mRecentPurges;
   }
 
   
@@ -113,6 +126,12 @@ class BounceTrackingStateGlobal final {
   
   
   nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers;
+
+  
+  
+  
+  nsTHashMap<nsCStringHashKey, nsTArray<RefPtr<BounceTrackingPurgeEntry>>>
+      mRecentPurges;
 
   
   static nsCString DescribeMap(

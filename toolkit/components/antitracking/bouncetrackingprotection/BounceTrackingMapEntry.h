@@ -16,29 +16,67 @@ namespace mozilla {
 
 
 
-class BounceTrackingMapEntry final : public nsIBounceTrackingMapEntry {
+class BTPMapEntry {
  public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIBOUNCETRACKINGMAPENTRY
-
-  BounceTrackingMapEntry(const OriginAttributes& aOriginAttributes,
-                         const nsACString& aSiteHost, PRTime aTimeStamp)
-      : mOriginAttributes(aOriginAttributes),
-        mSiteHost(aSiteHost),
-        mTimeStamp(aTimeStamp) {}
-
   OriginAttributes& OriginAttributesRef() { return mOriginAttributes; }
 
   nsACString& SiteHostRef() { return mSiteHost; }
 
   PRTime& TimeStampRef() { return mTimeStamp; }
 
- private:
-  ~BounceTrackingMapEntry() = default;
+ protected:
+  BTPMapEntry(const OriginAttributes& aOriginAttributes,
+              const nsACString& aSiteHost, PRTime aTimeStamp)
+      : mOriginAttributes(aOriginAttributes),
+        mSiteHost(aSiteHost),
+        mTimeStamp(aTimeStamp) {}
 
   OriginAttributes mOriginAttributes;
   nsAutoCString mSiteHost;
   PRTime mTimeStamp;
+};
+
+class BounceTrackingMapEntry final : public BTPMapEntry,
+                                     public nsIBounceTrackingMapEntry {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIBOUNCETRACKINGMAPENTRY
+
+  BounceTrackingMapEntry(const OriginAttributes& aOriginAttributes,
+                         const nsACString& aSiteHost, PRTime aTimeStamp)
+      : BTPMapEntry(aOriginAttributes, aSiteHost, aTimeStamp) {}
+
+ private:
+  ~BounceTrackingMapEntry() = default;
+};
+
+
+
+
+
+class BounceTrackingPurgeEntry final : public BTPMapEntry,
+                                       public nsIBounceTrackingPurgeEntry {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIBOUNCETRACKINGMAPENTRY
+  NS_DECL_NSIBOUNCETRACKINGPURGEENTRY
+  BounceTrackingPurgeEntry(const OriginAttributes& aOriginAttributes,
+                           const nsACString& aSiteHost, PRTime aBounceTime,
+                           PRTime aPurgeTime)
+      : BTPMapEntry(aOriginAttributes, aSiteHost, aBounceTime),
+        mPurgeTime(aPurgeTime) {}
+
+  PRTime& BounceTimeRef() { return mTimeStamp; }
+
+  PRTime& PurgeTimeRef() { return mPurgeTime; }
+
+  const PRTime& PurgeTimeRefConst() const { return mPurgeTime; }
+
+ private:
+  ~BounceTrackingPurgeEntry() = default;
+  
+  
+  PRTime mPurgeTime;
 };
 
 }  
