@@ -941,9 +941,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
               .ToUnknownRect());
 
       
-      
-      
-      SetNonClientMargins(LayoutDeviceIntMargin());
+      SetCustomTitlebar(true);
       
       
       mNeedsNCAreaClear = false;
@@ -2523,8 +2521,7 @@ void nsWindow::SetColorScheme(const Maybe<ColorScheme>& aScheme) {
 }
 
 LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
-  LayoutDeviceIntMargin nonClientOffset;
-
+  MOZ_ASSERT(mCustomNonClient);
   
   
   
@@ -2532,32 +2529,10 @@ LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
   
   
   
-  constexpr LayoutDeviceIntCoord kZero(0);
-  if (mNonClientMargins.top == 0) {
-    
-    nonClientOffset.top = mCaptionHeight + mVertResizeMargin;
-  } else {
-    nonClientOffset.top =
-        std::clamp(mNonClientMargins.top, kZero, mVertResizeMargin);
-  }
-  nonClientOffset.bottom =
-      std::clamp(mNonClientMargins.bottom, kZero, mVertResizeMargin);
-  nonClientOffset.left =
-      std::clamp(mNonClientMargins.left, kZero, mHorResizeMargin);
-  nonClientOffset.right =
-      std::clamp(mNonClientMargins.right, kZero, mHorResizeMargin);
-
-  return nonClientOffset;
+  
+  
+  return LayoutDeviceIntMargin(mCaptionHeight + mVertResizeMargin, 0, 0, 0);
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2678,26 +2653,23 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   return true;
 }
 
-nsresult nsWindow::SetNonClientMargins(const LayoutDeviceIntMargin& margins) {
+void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
   if (!IsTopLevelWidget() || mBorderStyle == BorderStyle::None) {
-    return NS_ERROR_INVALID_ARG;
+    return;
   }
 
-  if (mNonClientMargins == margins) {
-    return NS_OK;
+  if (mCustomNonClient == aCustomTitlebar) {
+    return;
   }
 
   if (mHideChrome) {
-    mFutureMarginsOnceChromeShows = margins;
-    mFutureMarginsToUse = true;
-    return NS_OK;
+    mCustomTitlebarOnceChromeShows = Some(aCustomTitlebar);
+    return;
   }
 
-  mFutureMarginsToUse = false;
+  mCustomTitlebarOnceChromeShows.reset();
 
-  
-  mCustomNonClient = margins != LayoutDeviceIntMargin(-1, -1, -1, -1);
-  mNonClientMargins = margins;
+  mCustomNonClient = aCustomTitlebar;
 
   
   if (mCustomNonClient) {
@@ -2705,8 +2677,6 @@ nsresult nsWindow::SetNonClientMargins(const LayoutDeviceIntMargin& margins) {
   } else {
     ResetLayout();
   }
-
-  return NS_OK;
 }
 
 void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
@@ -3005,8 +2975,9 @@ void nsWindow::HideWindowChrome(bool aShouldHide) {
     
     oldChrome = mOldStyles.refOr(currentChrome);
     newChrome = oldChrome;
-    if (mFutureMarginsToUse) {
-      SetNonClientMargins(mFutureMarginsOnceChromeShows);
+    if (mCustomTitlebarOnceChromeShows) {
+      SetCustomTitlebar(mCustomTitlebarOnceChromeShows.extract());
+      MOZ_ASSERT(!mCustomTitlebarOnceChromeShows);
     }
   }
 
@@ -4951,8 +4922,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
 
 
-      if (mSendingSetText || !mCustomNonClient || mNonClientMargins.top == -1)
+      if (mSendingSetText || !mCustomNonClient) {
         break;
+      }
 
       {
         

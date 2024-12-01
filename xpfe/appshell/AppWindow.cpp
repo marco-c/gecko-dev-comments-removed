@@ -1517,11 +1517,12 @@ void AppWindow::SyncAttributesToWidget() {
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
-  nsIntMargin margins;
-  windowElement->GetAttribute(u"chromemargin"_ns, attr);
-  if (nsContentUtils::ParseIntMarginValue(attr, margins)) {
-    mWindow->SetNonClientMargins(
-        LayoutDeviceIntMargin::FromUnknownMargin(margins));
+  
+  
+  
+  
+  if (windowElement->GetBoolAttr(nsGkAtoms::customtitlebar)) {
+    mWindow->SetCustomTitlebar(true);
   }
 
   NS_ENSURE_TRUE_VOID(mWindow);

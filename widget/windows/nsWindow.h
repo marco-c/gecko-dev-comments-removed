@@ -293,7 +293,7 @@ class nsWindow final : public nsBaseWidget {
   TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override;
   void SetTransparencyMode(TransparencyMode aMode) override;
   TransparencyMode GetTransparencyMode() override;
-  nsresult SetNonClientMargins(const LayoutDeviceIntMargin&) override;
+  void SetCustomTitlebar(bool) override;
   void SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) override;
   void UpdateWindowDraggingRegion(
       const LayoutDeviceIntRegion& aRegion) override;
@@ -802,15 +802,12 @@ class nsWindow final : public nsBaseWidget {
   
   
   LayoutDeviceIntMargin mNonClientOffset;
-  
-  LayoutDeviceIntMargin mNonClientMargins{-1, -1, -1, -1};
-  
-  LayoutDeviceIntMargin mFutureMarginsOnceChromeShows;
-  
-  bool mFutureMarginsToUse = false;
 
   
   bool mCustomNonClient = false;
+  
+  
+  mozilla::Maybe<bool> mCustomTitlebarOnceChromeShows;
   
   mozilla::LayoutDeviceIntCoord mHorResizeMargin;
   

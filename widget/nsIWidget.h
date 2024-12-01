@@ -871,23 +871,14 @@ class nsIWidget : public nsISupports {
   virtual LayoutDeviceIntRect GetClientBounds() = 0;
 
   
-
-
-
-
-
-
-
-
-
-
-  virtual nsresult SetNonClientMargins(const LayoutDeviceIntMargin&) = 0;
+  virtual void SetCustomTitlebar(bool) {}
 
   
 
 
 
-  virtual void SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) = 0;
+  virtual void SetResizeMargin(mozilla::LayoutDeviceIntCoord) {}
+
   
 
 

@@ -1997,13 +1997,10 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
   
   
   if (sMaximized) {
-    sNonClientOffset.top = sCaptionHeight;
+    sNonClientOffset = Margin{sCaptionHeight, 0, 0, 0};
   } else {
     
-    sNonClientOffset.top = sCaptionHeight + sVerticalResizeMargin;
-    sNonClientOffset.bottom = 0;
-    sNonClientOffset.left = 0;
-    sNonClientOffset.right = 0;
+    sNonClientOffset = Margin{sCaptionHeight + sVerticalResizeMargin, 0, 0, 0};
   }
 
   if (sMaximized) {
