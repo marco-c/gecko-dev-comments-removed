@@ -2539,9 +2539,17 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 #endif
 }
 
+enum class RestrictPaddingInflation {
+  No,
+  Block,
+  Inline,
+};
 
 
-static bool IsScrolledFrameForTextArea(const nsIFrame* aFrame) {
+
+
+static RestrictPaddingInflation RestrictPaddingInflation(
+    const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame && aFrame->Style()->GetPseudoType() ==
                            PseudoStyleType::scrolledContent,
              "expecting a scrolled frame");
@@ -2549,24 +2557,32 @@ static bool IsScrolledFrameForTextArea(const nsIFrame* aFrame) {
   
   const auto* parent = aFrame->GetParent();
   if (!parent) {
-    return false;
+    return RestrictPaddingInflation::No;
   }
   MOZ_ASSERT(parent->IsScrollContainerOrSubclass(), "Not a scrolled frame?");
-  
-  
-  if (!parent->Style()->IsPseudoElement()) {
-    return false;
-  }
+
   const auto* grandParent = parent->GetParent();
   if (!grandParent) {
-    return false;
+    return RestrictPaddingInflation::No;
   }
-  const auto* textControlElement =
-      mozilla::TextControlElement::FromNodeOrNull(grandParent->GetContent());
-  if (!textControlElement) {
-    return false;
+  const auto* content = grandParent->GetContent();
+  if (!content) {
+    
+    return RestrictPaddingInflation::No;
   }
-  return textControlElement->IsTextArea();
+  nsTextControlFrame* textControl = do_QueryFrame(content->GetPrimaryFrame());
+  if (MOZ_LIKELY(!textControl)) {
+    return RestrictPaddingInflation::No;
+  }
+
+  
+  
+  
+  
+  
+  
+  return textControl->IsTextArea() ? RestrictPaddingInflation::Inline
+                                   : RestrictPaddingInflation::Block;
 }
 
 nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
@@ -2578,13 +2594,16 @@ nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
   auto padding = GetLogicalUsedPadding(wm);
   MOZ_ASSERT(GetLogicalUsedBorderAndPadding(wm) == padding,
              "A scrolled inner frame shouldn't have any border!");
-  
-  
-  
-  
-  
-  if (MOZ_UNLIKELY(IsScrolledFrameForTextArea(this))) {
-    padding.IStart(wm) = padding.IEnd(wm) = 0;
+  const auto restriction = RestrictPaddingInflation(this);
+  switch (restriction) {
+    case RestrictPaddingInflation::Block:
+      padding.BStart(wm) = padding.BEnd(wm) = 0;
+      break;
+    case RestrictPaddingInflation::Inline:
+      padding.IStart(wm) = padding.IEnd(wm) = 0;
+      break;
+    case RestrictPaddingInflation::No:
+      break;
   }
   result.Inflate(padding.GetPhysicalMargin(wm));
   return result;
