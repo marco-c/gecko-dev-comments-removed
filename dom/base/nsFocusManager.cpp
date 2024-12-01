@@ -267,14 +267,11 @@ static bool ActionIdComparableAndLower(uint64_t aActionId,
 
 
 static nsPIDOMWindowOuter* GetContentWindow(nsIContent* aContent) {
-  Document* doc = aContent->GetComposedDoc();
-  if (doc) {
-    Document* subdoc = doc->GetSubDocumentFor(aContent);
-    if (subdoc) {
+  if (Document* doc = aContent->GetComposedDoc()) {
+    if (Document* subdoc = doc->GetSubDocumentFor(aContent)) {
       return subdoc->GetWindow();
     }
   }
-
   return nullptr;
 }
 
@@ -440,10 +437,10 @@ nsresult nsFocusManager::SetFocusedWindowWithCallerType(
     
     
     
-    nsIContent* content = windowToFocus->GetFocusedElement();
-    if (content) {
-      if (nsCOMPtr<nsPIDOMWindowOuter> childWindow = GetContentWindow(content))
+    if (Element* el = windowToFocus->GetFocusedElement()) {
+      if (nsCOMPtr<nsPIDOMWindowOuter> childWindow = GetContentWindow(el)) {
         ClearFocus(windowToFocus);
+      }
     }
   }
 
@@ -1271,8 +1268,13 @@ void nsFocusManager::FireDelayedEvents(Document* aDocument) {
 
 void nsFocusManager::WasNuked(nsPIDOMWindowOuter* aWindow) {
   MOZ_ASSERT(aWindow, "Expected non-null window.");
-  MOZ_ASSERT(aWindow != mActiveWindow,
-             "How come we're nuking a window that's still active?");
+  if (aWindow == mActiveWindow) {
+    
+    
+    
+    mActiveWindow = nullptr;
+    SetActiveBrowsingContextInChrome(nullptr, GenerateFocusActionId());
+  }
   if (aWindow == mFocusedWindow) {
     mFocusedWindow = nullptr;
     SetFocusedBrowsingContext(nullptr, GenerateFocusActionId());
@@ -2542,6 +2544,18 @@ void nsFocusManager::ActivateRemoteFrameIfNeeded(Element& aElement,
   }
 }
 
+void nsFocusManager::FixUpFocusAfterFrameLoaderChange(Element& aElement) {
+  MOZ_ASSERT(mFocusedElement == &aElement);
+  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+  if (GetContentWindow(&aElement)) {
+    
+    SetFocusInner(&aElement, 0, false, false);
+  } else {
+    
+    ActivateRemoteFrameIfNeeded(aElement, GenerateFocusActionId());
+  }
+}
+
 void nsFocusManager::Focus(
     nsPIDOMWindowOuter* aWindow, Element* aElement, uint32_t aFlags,
     bool aIsNewDocument, bool aFocusChanged, bool aWindowRaised,
@@ -3025,15 +3039,13 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
     
     
     
-
-    nsCOMPtr<nsPIDOMWindowOuter> window(aWindow);
-    RefPtr<nsFocusManager> self(this);
     NS_DispatchToCurrentThread(NS_NewRunnableFunction(
         "nsFocusManager::RaiseWindow",
         
-        [self, window]() MOZ_CAN_RUN_SCRIPT_BOUNDARY -> void {
-          self->WindowRaised(window, GenerateFocusActionId());
-        }));
+        [self = RefPtr{this}, window = nsCOMPtr{aWindow}]()
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY -> void {
+              self->WindowRaised(window, GenerateFocusActionId());
+            }));
     return;
   }
 
@@ -3048,36 +3060,6 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
     }
   }
 
-#if defined(XP_WIN)
-  
-  
-  
-  
-  
-  nsCOMPtr<nsPIDOMWindowOuter> childWindow;
-  GetFocusedDescendant(aWindow, eIncludeAllDescendants,
-                       getter_AddRefs(childWindow));
-  if (!childWindow) {
-    childWindow = aWindow;
-  }
-
-  nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
-  if (!docShell) {
-    return;
-  }
-
-  PresShell* presShell = docShell->GetPresShell();
-  if (!presShell) {
-    return;
-  }
-
-  if (nsViewManager* vm = presShell->GetViewManager()) {
-    nsCOMPtr<nsIWidget> widget = vm->GetRootWidget();
-    if (widget) {
-      widget->SetFocus(nsIWidget::Raise::Yes, aCallerType);
-    }
-  }
-#else
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin =
       do_QueryInterface(aWindow->GetDocShell());
   if (treeOwnerAsWin) {
@@ -3087,7 +3069,6 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
       widget->SetFocus(nsIWidget::Raise::Yes, aCallerType);
     }
   }
-#endif
 }
 
 void nsFocusManager::UpdateCaretForCaretBrowsingMode() {
