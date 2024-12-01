@@ -2339,6 +2339,15 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
+  
+  
+  
+  if (key == JSProto_Function &&
+      !JS::Prefs::experimental_iterator_sequencing() &&
+      id == NameToId(cx->names().concat)) {
+    return true;
+  }
+
   if (key == JSProto_Atomics && !JS::Prefs::experimental_atomics_pause() &&
       id == NameToId(cx->names().pause)) {
     return true;
