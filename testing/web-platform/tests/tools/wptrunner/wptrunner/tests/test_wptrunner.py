@@ -26,7 +26,7 @@ def test_get_pause_after_test():
             }
         },
         "url_base": "/",
-        "version": 8,
+        "version": 9,
     }
 
     kwargs = {
