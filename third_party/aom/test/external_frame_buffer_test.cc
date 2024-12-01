@@ -8,7 +8,6 @@
 
 
 
-
 #include <memory>
 #include <string>
 #include "common/tools_common.h"

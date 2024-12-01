@@ -63,7 +63,7 @@ DECLARE_ALIGNED(32, static const uint32_t,
 
 
 
-static inline void prepare_weights_for_5x5_convolve(
+static INLINE void prepare_weights_for_5x5_convolve(
     const float *layer_config_weights, int off, float weight[5][8],
     const int cstep, __m256 *shuffle_weight, const __m256i weight_mask_0,
     const __m256i weight_mask_1) {
@@ -119,7 +119,7 @@ static inline void prepare_weights_for_5x5_convolve(
   } while (0)
 
 
-static inline void load_shuffle_masks_for_2x2_convolve(__m256i *output_mask,
+static INLINE void load_shuffle_masks_for_2x2_convolve(__m256i *output_mask,
                                                        __m256i *weight_mask) {
   
   *output_mask =
@@ -134,7 +134,7 @@ static inline void load_shuffle_masks_for_2x2_convolve(__m256i *output_mask,
 
 
 
-static inline void prepare_weights_for_2x2_convolve(
+static INLINE void prepare_weights_for_2x2_convolve(
     const float *layer_config_weights, int off, const int cstep,
     __m256 *shuffle_weight, __m256i *weight_mask) {
   
@@ -182,7 +182,7 @@ static inline void prepare_weights_for_2x2_convolve(
   } while (0)
 
 
-static inline void perform_convolve_for_8h_2x2_blocks(
+static INLINE void perform_convolve_for_8h_2x2_blocks(
     const float *input_ptr, int in_stride, __m256 *weight, __m256 *out_accum,
     __m256i shuffle_output_mask) {
   __m256 load_src[4];
@@ -209,7 +209,7 @@ static inline void perform_convolve_for_8h_2x2_blocks(
 }
 
 
-static inline void perform_convolve_for_4hx2v_2x2_blocks(
+static INLINE void perform_convolve_for_4hx2v_2x2_blocks(
     const float *input_ptr, int in_stride, __m256 *weight, __m256 *out_accum,
     __m256i shuffle_output_mask) {
   __m256 load_src[4];
@@ -363,7 +363,7 @@ static void cnn_convolve_no_maxpool_padding_valid_5x5_avx2(
 }
 
 
-static inline void cnn_convolve_no_maxpool_padding_valid_layer1_avx2(
+static INLINE void cnn_convolve_no_maxpool_padding_valid_layer1_avx2(
     const float **input, int in_stride,
     const CNN_LAYER_CONFIG *const layer_config, float **output, int out_stride,
     int start_idx, const int cstep, const int channel_step) {
@@ -410,7 +410,7 @@ static inline void cnn_convolve_no_maxpool_padding_valid_layer1_avx2(
 }
 
 
-static inline void cnn_convolve_no_maxpool_padding_valid_layer2_avx2(
+static INLINE void cnn_convolve_no_maxpool_padding_valid_layer2_avx2(
     const float **input, int in_stride,
     const CNN_LAYER_CONFIG *const layer_config, float **output, int out_stride,
     int start_idx, const int cstep, const int channel_step) {

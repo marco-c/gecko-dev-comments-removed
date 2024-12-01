@@ -29,7 +29,7 @@
 
 
 
-static inline __m128i compute_cubic_kernels(double u, double v) {
+static INLINE __m128i compute_cubic_kernels(double u, double v) {
   const __m128d x = _mm_set_pd(v, u);
 
   const __m128d x2 = _mm_mul_pd(x, x);
@@ -80,7 +80,7 @@ static inline __m128i compute_cubic_kernels(double u, double v) {
 
 
 
-static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
+static INLINE void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
                                        int width, int height, int stride, int x,
                                        int y, double u, double v,
                                        const int16_t *dx, const int16_t *dy,
@@ -245,7 +245,7 @@ static inline void compute_flow_vector(const uint8_t *src, const uint8_t *ref,
 
 
 
-static inline void sobel_filter(const uint8_t *src, int src_stride, int16_t *dx,
+static INLINE void sobel_filter(const uint8_t *src, int src_stride, int16_t *dx,
                                 int16_t *dy) {
   
   
@@ -304,7 +304,7 @@ static inline void sobel_filter(const uint8_t *src, int src_stride, int16_t *dx,
   }
 }
 
-static inline void compute_flow_matrix(const int16_t *dx, int dx_stride,
+static INLINE void compute_flow_matrix(const int16_t *dx, int dx_stride,
                                        const int16_t *dy, int dy_stride,
                                        double *M) {
   __m128i acc[4] = { 0 };
@@ -346,7 +346,7 @@ static inline void compute_flow_matrix(const int16_t *dx, int dx_stride,
 
 
 
-static inline void invert_2x2(const double *M, double *M_inv) {
+static INLINE void invert_2x2(const double *M, double *M_inv) {
   double det = (M[0] * M[3]) - (M[1] * M[2]);
   assert(det >= 1);
   const double det_inv = 1 / det;

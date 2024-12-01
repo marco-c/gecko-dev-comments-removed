@@ -41,7 +41,7 @@
 
 
 
-static inline void av1_sort_fi32_16(float k[], int32_t v[]) {
+static AOM_INLINE void av1_sort_fi32_16(float k[], int32_t v[]) {
   SWAP(0, 1);
   SWAP(2, 3);
   SWAP(4, 5);
@@ -115,7 +115,7 @@ static inline void av1_sort_fi32_16(float k[], int32_t v[]) {
 
 
 
-static inline void av1_sort_fi32_8(float k[], int32_t v[]) {
+static AOM_INLINE void av1_sort_fi32_8(float k[], int32_t v[]) {
   SWAP(0, 1);
   SWAP(2, 3);
   SWAP(4, 5);

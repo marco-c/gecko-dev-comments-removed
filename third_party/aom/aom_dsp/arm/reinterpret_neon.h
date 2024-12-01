@@ -8,13 +8,12 @@
 
 
 
-
 #ifndef AOM_AOM_DSP_ARM_REINTERPRET_NEON_H_
 #define AOM_AOM_DSP_ARM_REINTERPRET_NEON_H_
 
 #include <arm_neon.h>
 
-#include "aom_dsp/aom_dsp_common.h"  
+#include "aom/aom_integer.h"  
 #include "config/aom_config.h"
 
 #define REINTERPRET_NEON(u, to_sz, to_count, from_sz, from_count, n, q)     \

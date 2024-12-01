@@ -17,7 +17,7 @@
 #include "aom/aom_encoder.h"
 #include "aom/aom_image.h"
 #include "aom/aomcx.h"
-#include "gtest/gtest.h"
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
@@ -190,7 +190,7 @@ class KeyFrameIntervalTestLarge
 
 
 const char *TestFileName() {
-#ifdef AOM_VALGRIND_BUILD
+#if AOM_VALGRIND_BUILD
   return "hantro_collage_w176h144.yuv";
 #else
   return "hantro_collage_w352h288.yuv";
@@ -198,7 +198,7 @@ const char *TestFileName() {
 }
 
 int TestFileWidth() {
-#ifdef AOM_VALGRIND_BUILD
+#if AOM_VALGRIND_BUILD
   return 176;
 #else
   return 352;
@@ -206,7 +206,7 @@ int TestFileWidth() {
 }
 
 int TestFileHeight() {
-#ifdef AOM_VALGRIND_BUILD
+#if AOM_VALGRIND_BUILD
   return 144;
 #else
   return 288;

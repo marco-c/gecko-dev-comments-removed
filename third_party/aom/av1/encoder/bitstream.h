@@ -16,10 +16,6 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include "av1/common/av1_common_int.h"
 #include "av1/common/blockd.h"
 #include "av1/common/enums.h"
@@ -90,21 +86,16 @@ typedef struct {
 
 
 uint32_t av1_write_sequence_header_obu(const SequenceHeader *seq_params,
-                                       uint8_t *const dst, size_t dst_size);
-
+                                       uint8_t *const dst);
 
 
 
 uint32_t av1_write_obu_header(AV1LevelParams *const level_params,
                               int *frame_header_count, OBU_TYPE obu_type,
-                              bool has_nonzero_operating_point_idc,
                               int obu_extension, uint8_t *const dst);
 
-
-
-
-int av1_write_uleb_obu_size(size_t obu_payload_size, uint8_t *dest,
-                            size_t dest_size);
+int av1_write_uleb_obu_size(size_t obu_header_size, size_t obu_payload_size,
+                            uint8_t *dest);
 
 
 
@@ -123,8 +114,7 @@ void av1_write_last_tile_info(
 
 
 
-int av1_pack_bitstream(struct AV1_COMP *const cpi, uint8_t *dst,
-                       size_t dst_size, size_t *size,
+int av1_pack_bitstream(struct AV1_COMP *const cpi, uint8_t *dst, size_t *size,
                        int *const largest_tile_id);
 
 void av1_write_tx_type(const AV1_COMMON *const cm, const MACROBLOCKD *xd,

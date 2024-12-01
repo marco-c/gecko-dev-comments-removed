@@ -15,21 +15,21 @@
 
 #include "aom/aom_integer.h"
 
-static inline void init_one_qp(const __m128i *p, __m256i *qp) {
+static INLINE void init_one_qp(const __m128i *p, __m256i *qp) {
   const __m128i sign = _mm_srai_epi16(*p, 15);
   const __m128i dc = _mm_unpacklo_epi16(*p, sign);
   const __m128i ac = _mm_unpackhi_epi16(*p, sign);
   *qp = _mm256_insertf128_si256(_mm256_castsi128_si256(dc), ac, 1);
 }
 
-static inline void update_qp(__m256i *qp) {
+static INLINE void update_qp(__m256i *qp) {
   int i;
   for (i = 0; i < 5; ++i) {
     qp[i] = _mm256_permute2x128_si256(qp[i], qp[i], 0x11);
   }
 }
 
-static inline void init_qp(const int16_t *zbin_ptr, const int16_t *round_ptr,
+static INLINE void init_qp(const int16_t *zbin_ptr, const int16_t *round_ptr,
                            const int16_t *quant_ptr, const int16_t *dequant_ptr,
                            const int16_t *quant_shift_ptr, __m256i *qp,
                            int log_scale) {
@@ -59,7 +59,7 @@ static inline void init_qp(const int16_t *zbin_ptr, const int16_t *round_ptr,
 
 
 
-static inline __m256i mm256_mul_shift_epi32(const __m256i *x,
+static INLINE __m256i mm256_mul_shift_epi32(const __m256i *x,
                                             const __m256i *y) {
   __m256i prod_lo = _mm256_mul_epi32(*x, *y);
   __m256i prod_hi = _mm256_srli_epi64(*x, 32);

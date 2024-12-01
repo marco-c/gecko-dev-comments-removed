@@ -17,10 +17,10 @@
 #include "aom_dsp/x86/synonyms.h"
 
 #define pair_set_epi16(a, b) \
-  _mm_set1_epi32((int32_t)(((uint16_t)(a)) | (((uint32_t)(uint16_t)(b)) << 16)))
+  _mm_set1_epi32((int32_t)(((uint16_t)(a)) | (((uint32_t)(b)) << 16)))
 
 
-static inline __m128i mm_reverse_epi16(const __m128i x) {
+static INLINE __m128i mm_reverse_epi16(const __m128i x) {
   const __m128i a = _mm_shufflelo_epi16(x, 0x1b);
   const __m128i b = _mm_shufflehi_epi16(a, 0x1b);
   return _mm_shuffle_epi32(b, 0x4e);

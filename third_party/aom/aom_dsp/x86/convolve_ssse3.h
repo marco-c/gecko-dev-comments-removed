@@ -14,7 +14,7 @@
 
 #include <tmmintrin.h>  
 
-static inline void shuffle_filter_ssse3(const int16_t *const filter,
+static INLINE void shuffle_filter_ssse3(const int16_t *const filter,
                                         __m128i *const f) {
   const __m128i f_values = _mm_load_si128((const __m128i *)filter);
   
@@ -24,7 +24,7 @@ static inline void shuffle_filter_ssse3(const int16_t *const filter,
   f[3] = _mm_shuffle_epi8(f_values, _mm_set1_epi16(0x0e0cu));
 }
 
-static inline __m128i convolve8_8_ssse3(const __m128i *const s,
+static INLINE __m128i convolve8_8_ssse3(const __m128i *const s,
                                         const __m128i *const f) {
   
   const __m128i k_64 = _mm_set1_epi16(1 << 6);

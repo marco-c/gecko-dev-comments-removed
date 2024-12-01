@@ -33,7 +33,6 @@
 #include "av1/encoder/encoder_utils.h"
 #include "av1/encoder/encode_strategy.h"
 #include "av1/encoder/gop_structure.h"
-#include "av1/encoder/mcomp.h"
 #include "av1/encoder/random.h"
 #include "av1/encoder/ratectrl.h"
 
@@ -164,23 +163,8 @@ double av1_convert_qindex_to_q(int qindex, aom_bit_depth_t bit_depth) {
   }
 }
 
-int av1_convert_q_to_qindex(double q, aom_bit_depth_t bit_depth) {
-  int qindex = MINQ;
-
-  
-  
-  
-  
-  while (qindex < MAXQ && av1_convert_qindex_to_q(qindex, bit_depth) < q) {
-    qindex++;
-  }
-
-  return qindex;
-}
-
-
-static int get_bpmb_enumerator(FRAME_TYPE frame_type,
-                               const int is_screen_content_type) {
+int av1_get_bpmb_enumerator(FRAME_TYPE frame_type,
+                            const int is_screen_content_type) {
   int enumerator;
 
   if (is_screen_content_type) {
@@ -194,46 +178,13 @@ static int get_bpmb_enumerator(FRAME_TYPE frame_type,
 
 static int get_init_ratio(double sse) { return (int)(300000 / sse); }
 
-
-
-static int adjust_rtc_keyframe(const RATE_CONTROL *rc, int enumerator) {
-  
-  if (rc->perc_flat_blocks_keyframe > 70) return enumerator;
-  if (rc->last_encoded_size_keyframe == 0 ||
-      rc->frames_since_scene_change < rc->frames_since_key) {
-    
-    if (rc->frame_spatial_variance > 1000 ||
-        (rc->frame_spatial_variance > 500 &&
-         rc->perc_flat_blocks_keyframe == 0))
-      return enumerator << 3;
-    else if (rc->frame_spatial_variance > 500 &&
-             rc->perc_flat_blocks_keyframe < 10)
-      return enumerator << 2;
-    else if (rc->frame_spatial_variance > 400)
-      return enumerator << 1;
-  } else if (rc->frames_since_scene_change >= rc->frames_since_key) {
-    
-    
-    if (rc->last_encoded_size_keyframe > 4 * rc->last_target_size_keyframe &&
-        rc->frame_spatial_variance > 500)
-      return enumerator << 3;
-    else if (rc->last_encoded_size_keyframe >
-                 2 * rc->last_target_size_keyframe &&
-             rc->frame_spatial_variance > 200)
-      return enumerator << 2;
-    else if (rc->last_encoded_size_keyframe > rc->last_target_size_keyframe)
-      return enumerator << 1;
-  }
-  return enumerator;
-}
-
 int av1_rc_bits_per_mb(const AV1_COMP *cpi, FRAME_TYPE frame_type, int qindex,
                        double correction_factor, int accurate_estimate) {
   const AV1_COMMON *const cm = &cpi->common;
   const int is_screen_content_type = cpi->is_screen_content_type;
   const aom_bit_depth_t bit_depth = cm->seq_params->bit_depth;
   const double q = av1_convert_qindex_to_q(qindex, bit_depth);
-  int enumerator = get_bpmb_enumerator(frame_type, is_screen_content_type);
+  int enumerator = av1_get_bpmb_enumerator(frame_type, is_screen_content_type);
 
   assert(correction_factor <= MAX_BPB_FACTOR &&
          correction_factor >= MIN_BPB_FACTOR);
@@ -248,12 +199,8 @@ int av1_rc_bits_per_mb(const AV1_COMP *cpi, FRAME_TYPE frame_type, int qindex,
                                                    : cpi->rc.bit_est_ratio;
     
     enumerator = AOMMIN(AOMMAX((int)(ratio * sse_sqrt), 20000), 170000);
-  } else if (cpi->oxcf.rc_cfg.mode == AOM_CBR && frame_type == KEY_FRAME &&
-             cpi->sf.rt_sf.rc_adjust_keyframe && bit_depth == 8 &&
-             cpi->oxcf.rc_cfg.max_intra_bitrate_pct > 0 &&
-             cpi->svc.spatial_layer_id == 0) {
-    enumerator = adjust_rtc_keyframe(&cpi->rc, enumerator);
   }
+
   
   return (int)(enumerator * correction_factor / q);
 }
@@ -270,10 +217,10 @@ int av1_estimate_bits_at_q(const AV1_COMP *cpi, int q,
                 (int)((uint64_t)bpm * mbs) >> BPER_MB_NORMBITS);
 }
 
-static int clamp_pframe_target_size(const AV1_COMP *const cpi, int64_t target,
+int av1_rc_clamp_pframe_target_size(const AV1_COMP *const cpi, int target,
                                     FRAME_UPDATE_TYPE frame_update_type) {
   const RATE_CONTROL *rc = &cpi->rc;
-  const RateControlCfg *const rc_cfg = &cpi->oxcf.rc_cfg;
+  const AV1EncoderConfig *oxcf = &cpi->oxcf;
   const int min_frame_target =
       AOMMAX(rc->min_frame_bandwidth, rc->avg_frame_bandwidth >> 5);
   
@@ -290,16 +237,16 @@ static int clamp_pframe_target_size(const AV1_COMP *const cpi, int64_t target,
 
   
   if (target > rc->max_frame_bandwidth) target = rc->max_frame_bandwidth;
-  if (rc_cfg->max_inter_bitrate_pct) {
-    const int64_t max_rate =
-        (int64_t)rc->avg_frame_bandwidth * rc_cfg->max_inter_bitrate_pct / 100;
+  if (oxcf->rc_cfg.max_inter_bitrate_pct) {
+    const int max_rate =
+        rc->avg_frame_bandwidth * oxcf->rc_cfg.max_inter_bitrate_pct / 100;
     target = AOMMIN(target, max_rate);
   }
 
-  return (int)target;
+  return target;
 }
 
-static int clamp_iframe_target_size(const AV1_COMP *const cpi, int64_t target) {
+int av1_rc_clamp_iframe_target_size(const AV1_COMP *const cpi, int64_t target) {
   const RATE_CONTROL *rc = &cpi->rc;
   const RateControlCfg *const rc_cfg = &cpi->oxcf.rc_cfg;
   if (rc_cfg->max_intra_bitrate_pct) {
@@ -404,10 +351,7 @@ int av1_rc_get_default_min_gf_interval(int width, int height,
   
 }
 
-
-
-
-static int get_default_max_gf_interval(double framerate, int min_gf_interval) {
+int av1_rc_get_default_max_gf_interval(double framerate, int min_gf_interval) {
   int interval = AOMMIN(MAX_GF_INTERVAL, (int)(framerate * 0.75));
   interval += (interval & 0x01);  
   interval = AOMMAX(MAX_GF_INTERVAL, interval);
@@ -427,7 +371,7 @@ void av1_primary_rc_init(const AV1EncoderConfig *oxcf,
         oxcf->frm_dim_cfg.width, oxcf->frm_dim_cfg.height,
         oxcf->input_cfg.init_framerate);
   if (max_gf_interval == 0)
-    max_gf_interval = get_default_max_gf_interval(
+    max_gf_interval = av1_rc_get_default_max_gf_interval(
         oxcf->input_cfg.init_framerate, min_gf_interval);
   p_rc->baseline_gf_interval = (min_gf_interval + max_gf_interval) / 2;
   p_rc->this_key_frame_forced = 0;
@@ -485,7 +429,7 @@ void av1_rc_init(const AV1EncoderConfig *oxcf, RATE_CONTROL *rc) {
         oxcf->frm_dim_cfg.width, oxcf->frm_dim_cfg.height,
         oxcf->input_cfg.init_framerate);
   if (rc->max_gf_interval == 0)
-    rc->max_gf_interval = get_default_max_gf_interval(
+    rc->max_gf_interval = av1_rc_get_default_max_gf_interval(
         oxcf->input_cfg.init_framerate, rc->min_gf_interval);
   rc->avg_frame_low_motion = 0;
 
@@ -497,9 +441,6 @@ void av1_rc_init(const AV1EncoderConfig *oxcf, RATE_CONTROL *rc) {
   rc->frame_level_fast_extra_bits = 0;
   rc->use_external_qp_one_pass = 0;
   rc->percent_blocks_inactive = 0;
-  rc->force_max_q = 0;
-  rc->postencode_drop = 0;
-  rc->frames_since_scene_change = 0;
 }
 
 static bool check_buffer_below_thresh(AV1_COMP *cpi, int64_t buffer_level,
@@ -609,7 +550,7 @@ static int adjust_q_cbr(const AV1_COMP *cpi, int q, int active_worst_quality,
       p_rc->buffer_level < (p_rc->optimal_buffer_level >> 1) &&
       rc->frames_since_key > 4;
   int max_delta_down;
-  int max_delta_up = overshoot_buffer_low ? 120 : 20;
+  int max_delta_up = overshoot_buffer_low ? 60 : 20;
   const int change_avg_frame_bandwidth =
       abs(rc->avg_frame_bandwidth - rc->prev_avg_frame_bandwidth) >
       0.1 * (rc->avg_frame_bandwidth);
@@ -629,7 +570,7 @@ static int adjust_q_cbr(const AV1_COMP *cpi, int q, int active_worst_quality,
       
       if (p_rc->buffer_level > p_rc->optimal_buffer_level) {
         max_delta_up = AOMMAX(4, max_delta_down);
-      } else if (!overshoot_buffer_low) {
+      } else {
         max_delta_up = AOMMAX(8, max_delta_down);
       }
     }
@@ -638,26 +579,6 @@ static int adjust_q_cbr(const AV1_COMP *cpi, int q, int active_worst_quality,
                          ? AOMMIN(8, AOMMAX(1, rc->q_1_frame / 16))
                          : AOMMIN(16, AOMMAX(1, rc->q_1_frame / 8));
   }
-  
-  
-  
-  if (cpi->sf.rt_sf.rc_faster_convergence_static == 1 &&
-      cpi->sf.rt_sf.check_scene_detection && rc->frame_source_sad == 0 &&
-      rc->static_since_last_scene_change &&
-      p_rc->buffer_level > (p_rc->optimal_buffer_level >> 1) &&
-      cpi->oxcf.q_cfg.aq_mode == CYCLIC_REFRESH_AQ &&
-      cpi->cyclic_refresh->counter_encode_maxq_scene_change > 4) {
-    int qp_delta = 32;
-    int qp_bias = 16;
-    if (p_rc->buffer_level > p_rc->optimal_buffer_level) {
-      qp_delta = 60;
-      qp_bias = 32;
-    }
-    if (cpi->rc.rc_1_frame == 1) q = q - qp_bias;
-    max_delta_down = AOMMAX(max_delta_down, qp_delta);
-    max_delta_up = AOMMIN(max_delta_up, 4);
-  }
-
   
   
   const int change_target_bits_mb =
@@ -731,14 +652,10 @@ static int adjust_q_cbr(const AV1_COMP *cpi, int q, int active_worst_quality,
       LAYER_CONTEXT *lc = &svc->layer_context[layer];
       
       
-      const int last_qindex_tl0 =
-          rc->frames_since_key < svc->number_temporal_layers
-              ? lc->p_rc.last_q[KEY_FRAME]
-              : lc->p_rc.last_q[INTER_FRAME];
       if (rc->avg_frame_bandwidth < lc->rc.avg_frame_bandwidth &&
-          q < last_qindex_tl0 - 4)
-        q = last_qindex_tl0 - 4;
-    } else if (cpi->svc.temporal_layer_id == 0 && !frame_is_intra_only(cm) &&
+          q < lc->p_rc.last_q[INTER_FRAME] - 4)
+        q = lc->p_rc.last_q[INTER_FRAME] - 4;
+    } else if (cpi->svc.temporal_layer_id == 0 &&
                p_rc->buffer_level > (p_rc->optimal_buffer_level >> 2) &&
                rc->frame_source_sad < 100000) {
       
@@ -913,12 +830,7 @@ void av1_rc_update_rate_correction_factors(AV1_COMP *cpi, int is_encode_stage,
   
   
   
-  
-  
-  
   if ((cpi->oxcf.q_cfg.aq_mode == CYCLIC_REFRESH_AQ) &&
-      (cpi->sf.rt_sf.overshoot_detection_cbr == FAST_DETECTION_MAXQ) &&
-      cpi->rc.high_source_sad &&
       (cpi->cyclic_refresh->counter_encode_maxq_scene_change == 0) &&
       !frame_is_intra_only(cm) && !cpi->ppi->use_svc) {
     cpi->rc.q_2_frame = cm->quant_params.base_qindex;
@@ -1210,7 +1122,7 @@ static int calc_active_worst_quality_no_stats_cbr(const AV1_COMP *cpi) {
   int adjustment = 0;
   int active_worst_quality;
   int ambient_qp;
-  if (frame_is_intra_only(cm)) return rc->worst_quality;
+  if (cm->current_frame.frame_type == KEY_FRAME) return rc->worst_quality;
   
   
   
@@ -1225,15 +1137,9 @@ static int calc_active_worst_quality_no_stats_cbr(const AV1_COMP *cpi) {
     avg_qindex_key =
         AOMMIN(lp_rc->avg_frame_qindex[KEY_FRAME], lp_rc->last_q[KEY_FRAME]);
   }
-  if (svc->temporal_layer_id > 0 &&
-      rc->frames_since_key < 2 * svc->number_temporal_layers) {
-    ambient_qp = avg_qindex_key;
-  } else {
-    ambient_qp =
-        (cm->current_frame.frame_number < num_frames_weight_key)
-            ? AOMMIN(p_rc->avg_frame_qindex[INTER_FRAME], avg_qindex_key)
-            : p_rc->avg_frame_qindex[INTER_FRAME];
-  }
+  ambient_qp = (cm->current_frame.frame_number < num_frames_weight_key)
+                   ? AOMMIN(p_rc->avg_frame_qindex[INTER_FRAME], avg_qindex_key)
+                   : p_rc->avg_frame_qindex[INTER_FRAME];
   ambient_qp = AOMMIN(rc->worst_quality, ambient_qp);
 
   if (p_rc->buffer_level > p_rc->optimal_buffer_level) {
@@ -1670,7 +1576,7 @@ static int rc_pick_q_and_bounds_no_stats(const AV1_COMP *cpi, int width,
 static const double arf_layer_deltas[MAX_ARF_LAYERS + 1] = { 2.50, 2.00, 1.75,
                                                              1.50, 1.25, 1.15,
                                                              1.0 };
-static int frame_type_qdelta(const AV1_COMP *cpi, int q) {
+int av1_frame_type_qdelta(const AV1_COMP *cpi, int q) {
   const GF_GROUP *const gf_group = &cpi->ppi->gf_group;
   const RATE_FACTOR_LEVEL rf_lvl =
       get_rate_factor_level(gf_group, cpi->gf_frame_index);
@@ -1855,7 +1761,7 @@ static void adjust_active_best_and_worst_quality(const AV1_COMP *cpi,
   
   if (!(frame_is_intra_only(cm)) || !p_rc->this_key_frame_forced ||
       (cpi->ppi->twopass.last_kfgroup_zeromotion_pct < STATIC_MOTION_THRESH)) {
-    const int qdelta = frame_type_qdelta(cpi, active_worst_quality);
+    const int qdelta = av1_frame_type_qdelta(cpi, active_worst_quality);
     active_worst_quality =
         AOMMAX(active_worst_quality + qdelta, active_best_quality);
   }
@@ -2010,6 +1916,39 @@ static int get_active_best_quality(const AV1_COMP *const cpi,
     --this_height;
   }
   return active_best_quality;
+}
+
+
+
+int av1_q_mode_get_q_index(int base_q_index, int gf_update_type,
+                           int gf_pyramid_level, int arf_q) {
+  const int is_intrl_arf_boost = gf_update_type == INTNL_ARF_UPDATE;
+  int is_leaf_or_overlay_frame = gf_update_type == LF_UPDATE ||
+                                 gf_update_type == OVERLAY_UPDATE ||
+                                 gf_update_type == INTNL_OVERLAY_UPDATE;
+
+  if (is_leaf_or_overlay_frame) return base_q_index;
+
+  if (!is_intrl_arf_boost) return arf_q;
+
+  int active_best_quality = arf_q;
+  int active_worst_quality = base_q_index;
+
+  while (gf_pyramid_level > 1) {
+    active_best_quality = (active_best_quality + active_worst_quality + 1) / 2;
+    --gf_pyramid_level;
+  }
+  return active_best_quality;
+}
+
+
+int av1_get_arf_q_index(int base_q_index, int gfu_boost, int bit_depth,
+                        double arf_boost_factor) {
+  int active_best_quality =
+      get_gf_active_quality_no_rc(gfu_boost, base_q_index, bit_depth);
+  const int min_boost = get_gf_high_motion_quality(base_q_index, bit_depth);
+  const int boost = min_boost - active_best_quality;
+  return min_boost - (int)(boost * arf_boost_factor);
 }
 
 static int rc_pick_q_and_bounds_q_mode(const AV1_COMP *cpi, int width,
@@ -2289,8 +2228,8 @@ void av1_rc_compute_frame_size_bounds(const AV1_COMP *cpi, int frame_target,
     const int tolerance = (int)AOMMAX(
         100, ((int64_t)cpi->sf.hl_sf.recode_tolerance * frame_target) / 100);
     *frame_under_shoot_limit = AOMMAX(frame_target - tolerance, 0);
-    *frame_over_shoot_limit = (int)AOMMIN((int64_t)frame_target + tolerance,
-                                          cpi->rc.max_frame_bandwidth);
+    *frame_over_shoot_limit =
+        AOMMIN(frame_target + tolerance, cpi->rc.max_frame_bandwidth);
   }
 }
 
@@ -2302,15 +2241,14 @@ void av1_rc_set_frame_target(AV1_COMP *cpi, int target, int width, int height) {
 
   
   if (av1_frame_scaled(cm) && cpi->oxcf.rc_cfg.mode != AOM_CBR) {
-    rc->this_frame_target = saturate_cast_double_to_int(
-        rc->this_frame_target *
-        resize_rate_factor(&cpi->oxcf.frm_dim_cfg, width, height));
+    rc->this_frame_target =
+        (int)(rc->this_frame_target *
+              resize_rate_factor(&cpi->oxcf.frm_dim_cfg, width, height));
   }
 
   
-  const int64_t sb64_target_rate =
-      ((int64_t)rc->this_frame_target << 12) / (width * height);
-  rc->sb64_target_rate = (int)AOMMIN(sb64_target_rate, INT_MAX);
+  rc->sb64_target_rate =
+      (int)(((int64_t)rc->this_frame_target << 12) / (width * height));
 }
 
 static void update_alt_ref_frame_stats(AV1_COMP *cpi) {
@@ -2373,10 +2311,6 @@ void av1_rc_postencode_update(AV1_COMP *cpi, uint64_t bytes_used) {
     p_rc->last_q[KEY_FRAME] = qindex;
     p_rc->avg_frame_qindex[KEY_FRAME] =
         ROUND_POWER_OF_TWO(3 * p_rc->avg_frame_qindex[KEY_FRAME] + qindex, 2);
-    if (cpi->svc.spatial_layer_id == 0) {
-      rc->last_encoded_size_keyframe = rc->projected_frame_size;
-      rc->last_target_size_keyframe = rc->this_frame_target;
-    }
   } else {
     if ((cpi->ppi->use_svc && cpi->oxcf.rc_cfg.mode == AOM_CBR) ||
         cpi->rc.rtc_external_ratectrl ||
@@ -2415,14 +2349,14 @@ void av1_rc_postencode_update(AV1_COMP *cpi, uint64_t bytes_used) {
   
   
   if (av1_frame_scaled(cm))
-    rc->this_frame_target = saturate_cast_double_to_int(
-        rc->this_frame_target /
-        resize_rate_factor(&cpi->oxcf.frm_dim_cfg, cm->width, cm->height));
+    rc->this_frame_target = (int)(rc->this_frame_target /
+                                  resize_rate_factor(&cpi->oxcf.frm_dim_cfg,
+                                                     cm->width, cm->height));
   if (current_frame->frame_type != KEY_FRAME) {
     p_rc->rolling_target_bits = (int)ROUND_POWER_OF_TWO_64(
-        (int64_t)p_rc->rolling_target_bits * 3 + rc->this_frame_target, 2);
+        p_rc->rolling_target_bits * 3 + rc->this_frame_target, 2);
     p_rc->rolling_actual_bits = (int)ROUND_POWER_OF_TWO_64(
-        (int64_t)p_rc->rolling_actual_bits * 3 + rc->projected_frame_size, 2);
+        p_rc->rolling_actual_bits * 3 + rc->projected_frame_size, 2);
   }
 
   
@@ -2465,10 +2399,7 @@ void av1_rc_postencode_update(AV1_COMP *cpi, uint64_t bytes_used) {
       p_rc->temp_rate_correction_factors[i] = p_rc->rate_correction_factors[i];
   }
 #endif
-  if (current_frame->frame_type == KEY_FRAME) {
-    rc->frames_since_key = 0;
-    rc->frames_since_scene_change = 0;
-  }
+  if (current_frame->frame_type == KEY_FRAME) rc->frames_since_key = 0;
   if (cpi->refresh_frame.golden_frame)
     rc->frame_num_last_gf_refresh = current_frame->frame_number;
   rc->prev_coded_width = cm->width;
@@ -2476,11 +2407,21 @@ void av1_rc_postencode_update(AV1_COMP *cpi, uint64_t bytes_used) {
   rc->frame_number_encoded++;
   rc->prev_frame_is_dropped = 0;
   rc->drop_count_consec = 0;
+  
+  
+
+
+
+
 }
 
 void av1_rc_postencode_update_drop_frame(AV1_COMP *cpi) {
   
   update_buffer_level(cpi, 0);
+  if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1) {
+    cpi->rc.frames_since_key++;
+    cpi->rc.frames_to_key--;
+  }
   cpi->rc.rc_2_frame = 0;
   cpi->rc.rc_1_frame = 0;
   cpi->rc.prev_avg_frame_bandwidth = cpi->rc.avg_frame_bandwidth;
@@ -2570,7 +2511,7 @@ int av1_compute_qdelta_by_rate(const AV1_COMP *cpi, FRAME_TYPE frame_type,
   return target_index - qindex;
 }
 
-static void set_gf_interval_range(const AV1_COMP *const cpi,
+void av1_rc_set_gf_interval_range(const AV1_COMP *const cpi,
                                   RATE_CONTROL *const rc) {
   const AV1EncoderConfig *const oxcf = &cpi->oxcf;
 
@@ -2587,8 +2528,8 @@ static void set_gf_interval_range(const AV1_COMP *const cpi,
       rc->min_gf_interval = av1_rc_get_default_min_gf_interval(
           oxcf->frm_dim_cfg.width, oxcf->frm_dim_cfg.height, cpi->framerate);
     if (rc->max_gf_interval == 0)
-      rc->max_gf_interval =
-          get_default_max_gf_interval(cpi->framerate, rc->min_gf_interval);
+      rc->max_gf_interval = av1_rc_get_default_max_gf_interval(
+          cpi->framerate, rc->min_gf_interval);
     
 
 
@@ -2612,8 +2553,9 @@ void av1_rc_update_framerate(AV1_COMP *cpi, int width, int height) {
   RATE_CONTROL *const rc = &cpi->rc;
   const int MBs = av1_get_MBs(width, height);
 
-  rc->avg_frame_bandwidth = saturate_cast_double_to_int(
-      round(oxcf->rc_cfg.target_bandwidth / cpi->framerate));
+  const double avg_frame_bandwidth =
+      round(oxcf->rc_cfg.target_bandwidth / cpi->framerate);
+  rc->avg_frame_bandwidth = (int)AOMMIN(avg_frame_bandwidth, INT_MAX);
 
   int64_t vbr_min_bits =
       (int64_t)rc->avg_frame_bandwidth * oxcf->rc_cfg.vbrmin_section / 100;
@@ -2635,7 +2577,7 @@ void av1_rc_update_framerate(AV1_COMP *cpi, int width, int height) {
   rc->max_frame_bandwidth =
       AOMMAX(AOMMAX((MBs * MAX_MB_RATE), MAXRATE_1080P), (int)vbr_max_bits);
 
-  set_gf_interval_range(cpi, rc);
+  av1_rc_set_gf_interval_range(cpi, rc);
 }
 
 #define VBR_PCT_ADJUSTMENT_LIMIT 50
@@ -2655,12 +2597,12 @@ static void vbr_rate_correction(AV1_COMP *cpi, int *this_frame_target) {
 #endif
   int64_t frame_target = *this_frame_target;
 
-  const double stats_count =
+  const int stats_count =
       cpi->ppi->twopass.stats_buf_ctx->total_stats != NULL
-          ? cpi->ppi->twopass.stats_buf_ctx->total_stats->count
-          : 0.0;
-  const int frame_window =
-      (int)AOMMIN(16, stats_count - cpi->common.current_frame.frame_number);
+          ? (int)cpi->ppi->twopass.stats_buf_ctx->total_stats->count
+          : 0;
+  const int frame_window = AOMMIN(
+      16, (int)(stats_count - (int)cpi->common.current_frame.frame_number));
   assert(VBR_PCT_ADJUSTMENT_LIMIT <= 100);
   if (frame_window > 0) {
     const int64_t max_delta =
@@ -2743,17 +2685,18 @@ int av1_calc_pframe_target_size_one_pass_vbr(
     target = ((int64_t)rc->avg_frame_bandwidth * p_rc->baseline_gf_interval) /
              (p_rc->baseline_gf_interval + af_ratio - 1);
   }
+  if (target > INT_MAX) target = INT_MAX;
 #else
   target = rc->avg_frame_bandwidth;
 #endif
-  return clamp_pframe_target_size(cpi, target, frame_update_type);
+  return av1_rc_clamp_pframe_target_size(cpi, (int)target, frame_update_type);
 }
 
 int av1_calc_iframe_target_size_one_pass_vbr(const AV1_COMP *const cpi) {
   static const int kf_ratio = 25;
   const RATE_CONTROL *rc = &cpi->rc;
   const int64_t target = (int64_t)rc->avg_frame_bandwidth * kf_ratio;
-  return clamp_iframe_target_size(cpi, target);
+  return av1_rc_clamp_iframe_target_size(cpi, target);
 }
 
 int av1_calc_pframe_target_size_one_pass_cbr(
@@ -2766,17 +2709,16 @@ int av1_calc_pframe_target_size_one_pass_cbr(
   const int64_t one_pct_bits = 1 + p_rc->optimal_buffer_level / 100;
   int min_frame_target =
       AOMMAX(rc->avg_frame_bandwidth >> 4, FRAME_OVERHEAD_BITS);
-  int64_t target;
+  int target;
 
   if (rc_cfg->gf_cbr_boost_pct) {
     const int af_ratio_pct = rc_cfg->gf_cbr_boost_pct + 100;
     if (frame_update_type == GF_UPDATE || frame_update_type == OVERLAY_UPDATE) {
-      target = ((int64_t)rc->avg_frame_bandwidth * p_rc->baseline_gf_interval *
+      target = (rc->avg_frame_bandwidth * p_rc->baseline_gf_interval *
                 af_ratio_pct) /
                (p_rc->baseline_gf_interval * 100 + af_ratio_pct - 100);
     } else {
-      target = ((int64_t)rc->avg_frame_bandwidth * p_rc->baseline_gf_interval *
-                100) /
+      target = (rc->avg_frame_bandwidth * p_rc->baseline_gf_interval * 100) /
                (p_rc->baseline_gf_interval * 100 + af_ratio_pct - 100);
     }
   } else {
@@ -2805,12 +2747,11 @@ int av1_calc_pframe_target_size_one_pass_cbr(
     target += (target * pct_high) / 200;
   }
   if (rc_cfg->max_inter_bitrate_pct) {
-    const int64_t max_rate =
-        (int64_t)rc->avg_frame_bandwidth * rc_cfg->max_inter_bitrate_pct / 100;
+    const int max_rate =
+        rc->avg_frame_bandwidth * rc_cfg->max_inter_bitrate_pct / 100;
     target = AOMMIN(target, max_rate);
   }
-  if (target > INT_MAX) target = INT_MAX;
-  return AOMMAX(min_frame_target, (int)target);
+  return AOMMAX(min_frame_target, target);
 }
 
 int av1_calc_iframe_target_size_one_pass_cbr(const AV1_COMP *cpi) {
@@ -2826,15 +2767,15 @@ int av1_calc_iframe_target_size_one_pass_cbr(const AV1_COMP *cpi) {
     }
   } else {
     int kf_boost = 32;
-    double framerate = cpi->framerate;
+    int framerate = (int)round(cpi->framerate);
 
-    kf_boost = AOMMAX(kf_boost, (int)round(2 * framerate - 16));
+    kf_boost = AOMMAX(kf_boost, (int)(2 * framerate - 16));
     if (rc->frames_since_key < framerate / 2) {
       kf_boost = (int)(kf_boost * rc->frames_since_key / (framerate / 2));
     }
-    target = ((int64_t)(16 + kf_boost) * rc->avg_frame_bandwidth) >> 4;
+    target = ((16 + kf_boost) * rc->avg_frame_bandwidth) >> 4;
   }
-  return clamp_iframe_target_size(cpi, target);
+  return av1_rc_clamp_iframe_target_size(cpi, target);
 }
 
 static void set_golden_update(AV1_COMP *const cpi) {
@@ -3058,13 +2999,11 @@ void av1_set_rtc_reference_structure_one_layer(AV1_COMP *cpi, int gf_update) {
     cpi->rt_reduce_num_ref_buffers &= (rtc_ref->ref_idx[2] < 7);
 }
 
-
-
 static int set_block_is_active(unsigned char *const active_map_4x4, int mi_cols,
-                               int mi_rows, int sbi_col, int sbi_row) {
-  int num_4x4 = 16;
-  int r = sbi_row << 4;
-  int c = sbi_col << 4;
+                               int mi_rows, int sbi_col, int sbi_row, int sh,
+                               int num_4x4) {
+  int r = sbi_row << sh;
+  int c = sbi_col << sh;
   const int row_max = AOMMIN(num_4x4, mi_rows - r);
   const int col_max = AOMMIN(num_4x4, mi_cols - c);
   
@@ -3076,80 +3015,6 @@ static int set_block_is_active(unsigned char *const active_map_4x4, int mi_cols,
     }
   }
   return 0;
-}
-
-
-static unsigned int estimate_scroll_motion(
-    const AV1_COMP *cpi, uint8_t *src_buf, uint8_t *last_src_buf,
-    int src_stride, int ref_stride, BLOCK_SIZE bsize, int pos_col, int pos_row,
-    int *best_intmv_col, int *best_intmv_row) {
-  const AV1_COMMON *const cm = &cpi->common;
-  const int bw = block_size_wide[bsize];
-  const int bh = block_size_high[bsize];
-  const int full_search = 1;
-  
-  const int border = (cpi->oxcf.border_in_pixels >> 4) << 4;
-  
-  
-  
-  int search_size_width = 96;
-  int search_size_height = cpi->rc.drop_count_consec > 1 ? 224 : 192;
-  
-  if ((pos_col - search_size_width < -border) ||
-      (pos_col + search_size_width > cm->width + border))
-    search_size_width = border;
-  if ((pos_row - search_size_height < -border) ||
-      (pos_row + search_size_height > cm->height + border))
-    search_size_height = border;
-  const uint8_t *ref_buf;
-  const int row_norm_factor = mi_size_high_log2[bsize] + 1;
-  const int col_norm_factor = 3 + (bw >> 5);
-  const int ref_buf_width = (search_size_width << 1) + bw;
-  const int ref_buf_height = (search_size_height << 1) + bh;
-  int16_t *hbuf = (int16_t *)aom_malloc(ref_buf_width * sizeof(*hbuf));
-  int16_t *vbuf = (int16_t *)aom_malloc(ref_buf_height * sizeof(*vbuf));
-  int16_t *src_hbuf = (int16_t *)aom_malloc(bw * sizeof(*src_hbuf));
-  int16_t *src_vbuf = (int16_t *)aom_malloc(bh * sizeof(*src_vbuf));
-  if (!hbuf || !vbuf || !src_hbuf || !src_vbuf) {
-    aom_free(hbuf);
-    aom_free(vbuf);
-    aom_free(src_hbuf);
-    aom_free(src_vbuf);
-    aom_internal_error(cm->error, AOM_CODEC_MEM_ERROR,
-                       "Failed to allocate hbuf, vbuf, src_hbuf, or src_vbuf");
-  }
-  
-  ref_buf = last_src_buf - search_size_width;
-  aom_int_pro_row(hbuf, ref_buf, ref_stride, ref_buf_width, bh,
-                  row_norm_factor);
-  
-  ref_buf = last_src_buf - search_size_height * ref_stride;
-  aom_int_pro_col(vbuf, ref_buf, ref_stride, bw, ref_buf_height,
-                  col_norm_factor);
-  
-  aom_int_pro_row(src_hbuf, src_buf, src_stride, bw, bh, row_norm_factor);
-  aom_int_pro_col(src_vbuf, src_buf, src_stride, bw, bh, col_norm_factor);
-  unsigned int best_sad;
-  int best_sad_col, best_sad_row;
-  
-  *best_intmv_col =
-      av1_vector_match(hbuf, src_hbuf, mi_size_wide_log2[bsize],
-                       search_size_width, full_search, &best_sad_col);
-  *best_intmv_row =
-      av1_vector_match(vbuf, src_vbuf, mi_size_high_log2[bsize],
-                       search_size_height, full_search, &best_sad_row);
-  if (best_sad_col < best_sad_row) {
-    *best_intmv_row = 0;
-    best_sad = best_sad_col;
-  } else {
-    *best_intmv_col = 0;
-    best_sad = best_sad_row;
-  }
-  aom_free(hbuf);
-  aom_free(vbuf);
-  aom_free(src_hbuf);
-  aom_free(src_vbuf);
-  return best_sad;
 }
 
 
@@ -3215,8 +3080,7 @@ static void rc_scene_detection_onepass_rt(AV1_COMP *cpi,
     num_mi_rows = cpi->svc.mi_rows_full_resoln;
   }
   int num_zero_temp_sad = 0;
-  uint32_t min_thresh =
-      (cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN) ? 8000 : 10000;
+  uint32_t min_thresh = 10000;
   if (cpi->sf.rt_sf.higher_thresh_scene_detection) {
     min_thresh = cm->width * cm->height <= 320 * 240 && cpi->framerate < 10.0
                      ? 50000
@@ -3228,10 +3092,7 @@ static void rc_scene_detection_onepass_rt(AV1_COMP *cpi,
   uint64_t tmp_sad = 0;
   int num_samples = 0;
   const int thresh =
-      ((cm->width * cm->height <= 320 * 240 && cpi->framerate < 10.0) ||
-       (cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN))
-          ? 5
-          : 6;
+      cm->width * cm->height <= 320 * 240 && cpi->framerate < 10.0 ? 5 : 6;
   
   const int sb_size_by_mb = (cm->seq_params->sb_size == BLOCK_128X128)
                                 ? (cm->seq_params->mib_size >> 1)
@@ -3261,6 +3122,8 @@ static void rc_scene_detection_onepass_rt(AV1_COMP *cpi,
   const CommonModeInfoParams *const mi_params = &cpi->common.mi_params;
   const int mi_cols = mi_params->mi_cols;
   const int mi_rows = mi_params->mi_rows;
+  int sh = (cm->seq_params->sb_size == BLOCK_128X128) ? 5 : 4;
+  int num_4x4 = (cm->seq_params->sb_size == BLOCK_128X128) ? 32 : 16;
   unsigned char *const active_map_4x4 = cpi->active_map.map;
   
   for (int sbi_row = 0; sbi_row < sb_rows - border; ++sbi_row) {
@@ -3268,7 +3131,7 @@ static void rc_scene_detection_onepass_rt(AV1_COMP *cpi,
       int block_is_active = 1;
       if (cpi->active_map.enabled && rc->percent_blocks_inactive > 0) {
         block_is_active = set_block_is_active(active_map_4x4, mi_cols, mi_rows,
-                                              sbi_col, sbi_row);
+                                              sbi_col, sbi_row, sh, num_4x4);
       }
       if (block_is_active) {
         tmp_sad = cpi->ppi->fn_ptr[bsize].sdf(src_y, src_ystride, last_src_y,
@@ -3321,59 +3184,6 @@ static void rc_scene_detection_onepass_rt(AV1_COMP *cpi,
   if (num_samples > 0)
     rc->percent_blocks_with_motion =
         ((num_samples - num_zero_temp_sad) * 100) / num_samples;
-  if (rc->frame_source_sad > 0) rc->static_since_last_scene_change = 0;
-  if (rc->high_source_sad) {
-    cpi->rc.frames_since_scene_change = 0;
-    rc->static_since_last_scene_change = 1;
-  }
-  
-  
-  const uint64_t thresh_high_motion = 9 * 64 * 64;
-  if (cpi->svc.temporal_layer_id == 0 && rc->drop_count_consec < 3) {
-    cpi->rc.high_motion_content_screen_rtc = 0;
-    if (cpi->oxcf.speed >= 11 &&
-        cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN &&
-        rc->percent_blocks_with_motion > 40 &&
-        rc->prev_avg_source_sad > thresh_high_motion &&
-        rc->avg_source_sad > thresh_high_motion &&
-        rc->avg_frame_low_motion < 60 && unscaled_src->y_width >= 1280 &&
-        unscaled_src->y_height >= 720) {
-      cpi->rc.high_motion_content_screen_rtc = 1;
-      
-      
-      
-      if (cm->seq_params->bit_depth == 8) {
-        int pos_col = (unscaled_src->y_width >> 1) - 64;
-        int pos_row = (unscaled_src->y_height >> 1) - 64;
-        src_y = unscaled_src->y_buffer + pos_row * src_ystride + pos_col;
-        last_src_y =
-            unscaled_last_src->y_buffer + pos_row * last_src_ystride + pos_col;
-        int best_intmv_col = 0;
-        int best_intmv_row = 0;
-        unsigned int y_sad = estimate_scroll_motion(
-            cpi, src_y, last_src_y, src_ystride, last_src_ystride,
-            BLOCK_128X128, pos_col, pos_row, &best_intmv_col, &best_intmv_row);
-        if (y_sad < 100 &&
-            (abs(best_intmv_col) > 16 || abs(best_intmv_row) > 16))
-          cpi->rc.high_motion_content_screen_rtc = 0;
-      }
-    }
-    
-    if (cpi->svc.number_spatial_layers > 1 ||
-        cpi->svc.number_temporal_layers > 1) {
-      SVC *svc = &cpi->svc;
-      for (int sl = 0; sl < svc->number_spatial_layers; ++sl) {
-        for (int tl = 1; tl < svc->number_temporal_layers; ++tl) {
-          const int layer =
-              LAYER_IDS_TO_IDX(sl, tl, svc->number_temporal_layers);
-          LAYER_CONTEXT *lc = &svc->layer_context[layer];
-          RATE_CONTROL *lrc = &lc->rc;
-          lrc->high_motion_content_screen_rtc =
-              rc->high_motion_content_screen_rtc;
-        }
-      }
-    }
-  }
   
   
   if (cpi->svc.number_spatial_layers > 1) {
@@ -3390,67 +3200,6 @@ static void rc_scene_detection_onepass_rt(AV1_COMP *cpi,
       lrc->max_block_source_sad = rc->max_block_source_sad;
     }
   }
-}
-
-
-static const uint8_t AV1_VAR_OFFS[MAX_SB_SIZE] = {
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-  128, 128, 128, 128, 128, 128, 128, 128
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void rc_spatial_act_keyframe_onepass_rt(AV1_COMP *cpi, uint8_t *src_y,
-                                               int src_ystride) {
-  AV1_COMMON *const cm = &cpi->common;
-  int num_mi_cols = cm->mi_params.mi_cols;
-  int num_mi_rows = cm->mi_params.mi_rows;
-  const BLOCK_SIZE bsize = BLOCK_64X64;
-  
-  uint64_t avg_variance = 0;
-  int num_samples = 0;
-  int num_zero_var_blocks = 0;
-  cpi->rc.perc_flat_blocks_keyframe = 0;
-  const int sb_size_by_mb = (cm->seq_params->sb_size == BLOCK_128X128)
-                                ? (cm->seq_params->mib_size >> 1)
-                                : cm->seq_params->mib_size;
-  const int sb_cols = (num_mi_cols + sb_size_by_mb - 1) / sb_size_by_mb;
-  const int sb_rows = (num_mi_rows + sb_size_by_mb - 1) / sb_size_by_mb;
-  for (int sbi_row = 0; sbi_row < sb_rows; ++sbi_row) {
-    for (int sbi_col = 0; sbi_col < sb_cols; ++sbi_col) {
-      unsigned int sse;
-      const unsigned int var =
-          cpi->ppi->fn_ptr[bsize].vf(src_y, src_ystride, AV1_VAR_OFFS, 0, &sse);
-      avg_variance += var;
-      num_samples++;
-      if (var == 0) num_zero_var_blocks++;
-      src_y += 64;
-    }
-    src_y += (src_ystride << 6) - (sb_cols << 6);
-  }
-  if (num_samples > 0) {
-    cpi->rc.perc_flat_blocks_keyframe = 100 * num_zero_var_blocks / num_samples;
-    avg_variance = avg_variance / num_samples;
-  }
-  cpi->rc.frame_spatial_variance = avg_variance >> 12;
 }
 
 
@@ -3639,7 +3388,7 @@ static void dynamic_resize_one_pass_cbr(AV1_COMP *cpi) {
   return;
 }
 
-static inline int set_key_frame(AV1_COMP *cpi, unsigned int frame_flags) {
+static INLINE int set_key_frame(AV1_COMP *cpi, unsigned int frame_flags) {
   RATE_CONTROL *const rc = &cpi->rc;
   AV1_COMMON *const cm = &cpi->common;
   SVC *const svc = &cpi->svc;
@@ -3696,12 +3445,6 @@ void av1_get_one_pass_rt_params(AV1_COMP *cpi, FRAME_TYPE *const frame_type,
   const int layer =
       LAYER_IDS_TO_IDX(svc->spatial_layer_id, svc->temporal_layer_id,
                        svc->number_temporal_layers);
-  if (cpi->oxcf.rc_cfg.max_consec_drop_ms > 0) {
-    double framerate =
-        cpi->framerate > 1 ? round(cpi->framerate) : cpi->framerate;
-    rc->max_consec_drop = saturate_cast_double_to_int(
-        ceil(cpi->oxcf.rc_cfg.max_consec_drop_ms * framerate / 1000));
-  }
   if (cpi->ppi->use_svc) {
     av1_update_temporal_layer_framerate(cpi);
     av1_restore_layer_context(cpi);
@@ -3724,7 +3467,6 @@ void av1_get_one_pass_rt_params(AV1_COMP *cpi, FRAME_TYPE *const frame_type,
     }
     rc->frame_number_encoded = 0;
     cpi->ppi->rtc_ref.non_reference_frame = 0;
-    rc->static_since_last_scene_change = 0;
   } else {
     *frame_type = INTER_FRAME;
     gf_group->update_type[cpi->gf_frame_index] = LF_UPDATE;
@@ -3736,24 +3478,23 @@ void av1_get_one_pass_rt_params(AV1_COMP *cpi, FRAME_TYPE *const frame_type,
           svc->spatial_layer_id == 0
               ? 0
               : svc->layer_context[svc->temporal_layer_id].is_key_frame;
-    }
-    
-    
-    
-    if (cpi->ppi->rtc_ref.set_ref_frame_config) {
-      int no_references_set = 1;
-      for (int i = 0; i < INTER_REFS_PER_FRAME; i++) {
-        if (cpi->ppi->rtc_ref.reference[i]) {
-          no_references_set = 0;
-          break;
+      
+      
+      
+      if (cpi->ppi->rtc_ref.set_ref_frame_config) {
+        int no_references_set = 1;
+        for (int i = 0; i < INTER_REFS_PER_FRAME; i++) {
+          if (cpi->ppi->rtc_ref.reference[i]) {
+            no_references_set = 0;
+            break;
+          }
         }
+        
+        
+        
+        
+        if (no_references_set) *frame_type = INTRA_ONLY_FRAME;
       }
-
-      
-      
-      
-      
-      if (no_references_set) *frame_type = INTRA_ONLY_FRAME;
     }
   }
   if (cpi->active_map.enabled && cpi->rc.percent_blocks_inactive == 100) {
@@ -3771,12 +3512,6 @@ void av1_get_one_pass_rt_params(AV1_COMP *cpi, FRAME_TYPE *const frame_type,
       cpi->src_sad_blk_64x64 = NULL;
     }
   }
-  if (((*frame_type == KEY_FRAME && cpi->sf.rt_sf.rc_adjust_keyframe) ||
-       (cpi->sf.rt_sf.rc_compute_spatial_var_sc && rc->high_source_sad)) &&
-      svc->spatial_layer_id == 0 && cm->seq_params->bit_depth == 8 &&
-      cpi->oxcf.rc_cfg.max_intra_bitrate_pct > 0)
-    rc_spatial_act_keyframe_onepass_rt(cpi, frame_input->source->y_buffer,
-                                       frame_input->source->y_stride);
   
   
   if (cpi->oxcf.resize_cfg.resize_mode == RESIZE_DYNAMIC) {
@@ -3862,25 +3597,10 @@ int av1_encodedframe_overshoot_cbr(AV1_COMP *cpi, int *q) {
   if (cpi->svc.spatial_layer_id > 0 && inter_layer_pred_on) {
     *q = (cpi->rc.worst_quality + *q) >> 1;
   } else {
+    *q = (3 * cpi->rc.worst_quality + *q) >> 2;
     
     
-    
-    if (cpi->sf.rt_sf.rc_compute_spatial_var_sc) {
-      if (cpi->rc.frame_spatial_variance < 100) {
-        *q = (cpi->rc.worst_quality + *q) >> 1;
-      } else if (cpi->rc.frame_spatial_variance < 400 ||
-                 (cpi->rc.frame_source_sad < 80000 &&
-                  cpi->rc.frame_spatial_variance < 1000)) {
-        *q = (3 * cpi->rc.worst_quality + *q) >> 2;
-      } else {
-        *q = cpi->rc.worst_quality;
-      }
-    } else {
-      *q = (3 * cpi->rc.worst_quality + *q) >> 2;
-      
-      
-      if (is_screen_content) *q = cpi->rc.worst_quality;
-    }
+    if (is_screen_content) *q = cpi->rc.worst_quality;
   }
   
   
@@ -3899,7 +3619,7 @@ int av1_encodedframe_overshoot_cbr(AV1_COMP *cpi, int *q) {
   
   
   q2 = av1_convert_qindex_to_q(*q, cm->seq_params->bit_depth);
-  enumerator = get_bpmb_enumerator(INTER_NORMAL, is_screen_content);
+  enumerator = av1_get_bpmb_enumerator(INTER_NORMAL, is_screen_content);
   new_correction_factor = (double)target_bits_per_mb * q2 / enumerator;
   if (new_correction_factor > rate_correction_factor) {
     rate_correction_factor =
@@ -3930,56 +3650,4 @@ int av1_encodedframe_overshoot_cbr(AV1_COMP *cpi, int *q) {
     }
   }
   return 1;
-}
-
-int av1_postencode_drop_cbr(AV1_COMP *cpi, size_t *size) {
-  PRIMARY_RATE_CONTROL *const p_rc = &cpi->ppi->p_rc;
-  size_t frame_size = *size << 3;
-  const int64_t new_buffer_level =
-      p_rc->buffer_level + cpi->rc.avg_frame_bandwidth - (int64_t)frame_size;
-  
-  
-  
-  
-  const int qp_thresh = 3 * (cpi->rc.worst_quality >> 2);
-  const int64_t buffer_thresh = p_rc->optimal_buffer_level >> 2;
-  if (!cpi->rc.high_source_sad && new_buffer_level < buffer_thresh &&
-      frame_size > 8 * (unsigned int)cpi->rc.avg_frame_bandwidth &&
-      cpi->common.quant_params.base_qindex < qp_thresh) {
-    *size = 0;
-    cpi->is_dropped_frame = true;
-    restore_all_coding_context(cpi);
-    av1_rc_postencode_update_drop_frame(cpi);
-    
-    cpi->rc.force_max_q = 1;
-    p_rc->avg_frame_qindex[INTER_FRAME] = cpi->rc.worst_quality;
-    p_rc->buffer_level = p_rc->optimal_buffer_level;
-    p_rc->bits_off_target = p_rc->optimal_buffer_level;
-    cpi->rc.rc_1_frame = 0;
-    cpi->rc.rc_2_frame = 0;
-    if (cpi->svc.number_spatial_layers > 1 ||
-        cpi->svc.number_temporal_layers > 1) {
-      SVC *svc = &cpi->svc;
-      
-      
-      for (int sl = 0; sl < svc->number_spatial_layers; ++sl) {
-        for (int tl = 0; tl < svc->number_temporal_layers; ++tl) {
-          const int layer =
-              LAYER_IDS_TO_IDX(sl, tl, svc->number_temporal_layers);
-          LAYER_CONTEXT *lc = &svc->layer_context[layer];
-          RATE_CONTROL *lrc = &lc->rc;
-          PRIMARY_RATE_CONTROL *lp_rc = &lc->p_rc;
-          
-          lrc->force_max_q = 1;
-          lp_rc->avg_frame_qindex[INTER_FRAME] = cpi->rc.worst_quality;
-          lp_rc->buffer_level = lp_rc->optimal_buffer_level;
-          lp_rc->bits_off_target = lp_rc->optimal_buffer_level;
-          lrc->rc_1_frame = 0;
-          lrc->rc_2_frame = 0;
-        }
-      }
-    }
-    return 1;
-  }
-  return 0;
 }

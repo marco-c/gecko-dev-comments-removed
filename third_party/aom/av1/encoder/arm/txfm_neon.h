@@ -12,11 +12,11 @@
 #ifndef AOM_AV1_ENCODER_ARM_TXFM_NEON_H_
 #define AOM_AV1_ENCODER_ARM_TXFM_NEON_H_
 
-#include <stdint.h>
+#include "aom/aom_integer.h"  
 
-static inline void ud_adjust_input_and_stride(int ud_flip,
-                                              const int16_t **input,
-                                              int *stride, int out_size) {
+static AOM_INLINE void ud_adjust_input_and_stride(int ud_flip,
+                                                  const int16_t **input,
+                                                  int *stride, int out_size) {
   if (ud_flip) {
     *input = *input + (out_size - 1) * *stride;
     *stride = -*stride;

@@ -22,9 +22,6 @@
 #define MAX_UPSAMPLE_SZ 16
 
 
-#if AOM_ARCH_AARCH64
-
-
 
 DECLARE_ALIGNED(16, const uint8_t,
                 av1_filter_intra_taps_neon[FILTER_INTRA_MODES][7][8]) = {
@@ -212,7 +209,6 @@ void av1_filter_intra_predictor_neon(uint8_t *dst, ptrdiff_t stride,
     } while (r < height + 1);
   }
 }
-#endif
 
 void av1_filter_intra_edge_neon(uint8_t *p, int sz, int strength) {
   if (!strength) return;

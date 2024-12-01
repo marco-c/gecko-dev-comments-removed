@@ -9,7 +9,7 @@
 
 
 #include "aom/aom_codec.h"
-#include "gtest/gtest.h"
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/y4m_video_source.h"

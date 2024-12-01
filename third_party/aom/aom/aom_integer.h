@@ -14,6 +14,14 @@
 
 #include <stddef.h>  
 
+#if defined(_MSC_VER)
+#define AOM_FORCE_INLINE __forceinline
+#define AOM_INLINE __inline
+#else
+#define AOM_FORCE_INLINE __inline__ __attribute__((always_inline))
+#define AOM_INLINE inline
+#endif
+
 
 
 #if defined(__cplusplus)

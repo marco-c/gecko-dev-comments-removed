@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <cstddef>
 
-#include "gtest/gtest.h"
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 
 TEST(AomMemTest, Overflow) {
   

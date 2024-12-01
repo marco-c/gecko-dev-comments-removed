@@ -130,7 +130,7 @@ static void integral_images_highbd(const uint16_t *src, int src_stride,
 
 
 
-static inline __m128i boxsum_from_ii(const int32_t *ii, int stride, int r) {
+static INLINE __m128i boxsum_from_ii(const int32_t *ii, int stride, int r) {
   const __m128i tl = xx_loadu_128(ii - (r + 1) - (r + 1) * stride);
   const __m128i tr = xx_loadu_128(ii + (r + 0) - (r + 1) * stride);
   const __m128i bl = xx_loadu_128(ii - (r + 1) + r * stride);
@@ -256,7 +256,7 @@ static void calc_ab(int32_t *A, int32_t *B, const int32_t *C, const int32_t *D,
 
 
 
-static inline __m128i cross_sum(const int32_t *buf, int stride) {
+static INLINE __m128i cross_sum(const int32_t *buf, int stride) {
   const __m128i xtl = xx_loadu_128(buf - 1 - stride);
   const __m128i xt = xx_loadu_128(buf - stride);
   const __m128i xtr = xx_loadu_128(buf + 1 - stride);
@@ -398,7 +398,7 @@ static void calc_ab_fast(int32_t *A, int32_t *B, const int32_t *C,
 
 
 
-static inline __m128i cross_sum_fast_even_row(const int32_t *buf, int stride) {
+static INLINE __m128i cross_sum_fast_even_row(const int32_t *buf, int stride) {
   const __m128i xtl = xx_loadu_128(buf - 1 - stride);
   const __m128i xt = xx_loadu_128(buf - stride);
   const __m128i xtr = xx_loadu_128(buf + 1 - stride);
@@ -431,7 +431,7 @@ static inline __m128i cross_sum_fast_even_row(const int32_t *buf, int stride) {
 
 
 
-static inline __m128i cross_sum_fast_odd_row(const int32_t *buf) {
+static INLINE __m128i cross_sum_fast_odd_row(const int32_t *buf) {
   const __m128i xl = xx_loadu_128(buf - 1);
   const __m128i x = xx_loadu_128(buf);
   const __m128i xr = xx_loadu_128(buf + 1);

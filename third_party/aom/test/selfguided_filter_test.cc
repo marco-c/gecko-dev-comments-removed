@@ -12,7 +12,7 @@
 #include <ctime>
 #include <tuple>
 
-#include "gtest/gtest.h"
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 
 #include "config/av1_rtcd.h"
 

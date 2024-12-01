@@ -212,7 +212,7 @@ int aom_copy_metadata_to_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 
 
 
-static inline int aom_calc_y_stride(int aligned_width, int border) {
+static AOM_INLINE int aom_calc_y_stride(int aligned_width, int border) {
   return ((aligned_width + 2 * border) + 31) & ~31;
 }
 

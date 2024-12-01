@@ -22,7 +22,7 @@
 
 
 
-DECLARE_ALIGNED(16, static const int, cdef_directions_padded[12][2]) = {
+DECLARE_ALIGNED(16, const int, cdef_directions_padded[12][2]) = {
   
   { 1 * CDEF_BSTRIDE + 0, 2 * CDEF_BSTRIDE + 0 },
   
@@ -286,16 +286,16 @@ void cdef_filter_16_3_c(void *dst16, int dstride, const uint16_t *in,
 
 
 
-static inline int adjust_strength(int strength, int32_t var) {
+static INLINE int adjust_strength(int strength, int32_t var) {
   const int i = var >> 6 ? AOMMIN(get_msb(var >> 6), 12) : 0;
   
   return var ? (strength * (4 + i) + 8) >> 4 : 0;
 }
 
-static inline void aom_cdef_find_dir(const uint16_t *in, cdef_list *dlist,
-                                     int var[CDEF_NBLOCKS][CDEF_NBLOCKS],
-                                     int cdef_count, int coeff_shift,
-                                     int dir[CDEF_NBLOCKS][CDEF_NBLOCKS]) {
+static AOM_INLINE void aom_cdef_find_dir(const uint16_t *in, cdef_list *dlist,
+                                         int var[CDEF_NBLOCKS][CDEF_NBLOCKS],
+                                         int cdef_count, int coeff_shift,
+                                         int dir[CDEF_NBLOCKS][CDEF_NBLOCKS]) {
   int bi;
 
   

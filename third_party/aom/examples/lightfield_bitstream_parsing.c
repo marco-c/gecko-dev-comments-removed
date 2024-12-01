@@ -40,11 +40,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "aom/aom_codec.h"
 #include "aom/aom_decoder.h"
 #include "aom/aom_encoder.h"
 #include "aom/aom_integer.h"
 #include "aom/aomdx.h"
+#include "aom_dsp/bitwriter_buffer.h"
 #include "common/tools_common.h"
 #include "common/video_reader.h"
 #include "common/video_writer.h"
@@ -101,6 +101,7 @@ static void process_tile_list(const TILE_LIST_INFO *tiles, int num_tiles,
                               uint8_t output_frame_width_in_tiles_minus_1,
                               uint8_t output_frame_height_in_tiles_minus_1) {
   unsigned char *tl = tl_buf;
+  struct aom_write_bit_buffer wb = { tl, 0 };
   unsigned char *saved_obu_size_loc = NULL;
   uint32_t tile_list_obu_header_size = 0;
   uint32_t tile_list_obu_size = 0;
@@ -108,23 +109,26 @@ static void process_tile_list(const TILE_LIST_INFO *tiles, int num_tiles,
   int i;
 
   
-  int obu_type = OBU_TILE_LIST;
-  int obu_has_size_field = 1;
-  *tl++ = (obu_type << 3) | (obu_has_size_field << 1);
+  aom_wb_write_literal(&wb, 0, 1);  
+  aom_wb_write_literal(&wb, 8, 4);  
+  aom_wb_write_literal(&wb, 0, 1);  
+  aom_wb_write_literal(&wb, 1, 1);  
+  aom_wb_write_literal(&wb, 0, 1);  
+  tl++;
   tile_list_obu_header_size++;
 
   
   saved_obu_size_loc = tl;
-  for (i = 0; i < 4; i++) {
-    *tl++ = 0;
-  }
+  
+  aom_wb_write_unsigned_literal(&wb, 0, 32);
+  tl += 4;
   tile_list_obu_header_size += 4;
 
   
-  *tl++ = output_frame_width_in_tiles_minus_1;
-  *tl++ = output_frame_height_in_tiles_minus_1;
-  *tl++ = (num_tiles_minus_1 >> 8) & 0xff;
-  *tl++ = num_tiles_minus_1 & 0xff;
+  aom_wb_write_literal(&wb, output_frame_width_in_tiles_minus_1, 8);
+  aom_wb_write_literal(&wb, output_frame_height_in_tiles_minus_1, 8);
+  aom_wb_write_literal(&wb, num_tiles_minus_1, 16);
+  tl += 4;
   tile_list_obu_size += 4;
 
   
@@ -135,6 +139,10 @@ static void process_tile_list(const TILE_LIST_INFO *tiles, int num_tiles,
     int ref_idx = tiles[i].reference_idx;
     int tc = tiles[i].tile_col;
     int tr = tiles[i].tile_row;
+
+    
+    wb.bit_buffer = tl;
+    wb.bit_offset = 0;
 
     size_t frame_size = frame_sizes[image_idx];
     const unsigned char *frame = frames[image_idx];
@@ -155,12 +163,11 @@ static void process_tile_list(const TILE_LIST_INFO *tiles, int num_tiles,
     
     
     uint32_t tile_info_bytes = 5;
-    *tl++ = ref_idx;
-    *tl++ = tr;
-    *tl++ = tc;
-    int coded_tile_data_size_minus_1 = (int)tile_data.coded_tile_data_size - 1;
-    *tl++ = (coded_tile_data_size_minus_1 >> 8) & 0xff;
-    *tl++ = coded_tile_data_size_minus_1 & 0xff;
+    aom_wb_write_literal(&wb, ref_idx, 8);
+    aom_wb_write_literal(&wb, tr, 8);
+    aom_wb_write_literal(&wb, tc, 8);
+    aom_wb_write_literal(&wb, (int)tile_data.coded_tile_data_size - 1, 16);
+    tl += tile_info_bytes;
 
     memcpy(tl, (uint8_t *)tile_data.coded_tile_data,
            tile_data.coded_tile_data_size);

@@ -11,7 +11,7 @@
 
 #include <tuple>
 
-#include "gtest/gtest.h"
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 
 #include "config/av1_rtcd.h"
 
@@ -171,8 +171,6 @@ INSTANTIATE_TEST_SUITE_P(
 #endif  
 
 #if HAVE_NEON
-
-#if AOM_ARCH_AARCH64
 const PredFuncMode kPredFuncMdArrayNEON[] = {
   make_tuple(&av1_filter_intra_predictor_c, &av1_filter_intra_predictor_neon,
              FILTER_DC_PRED),
@@ -194,9 +192,6 @@ INSTANTIATE_TEST_SUITE_P(
     NEON, AV1FilterIntraPredTest,
     ::testing::Combine(::testing::ValuesIn(kPredFuncMdArrayNEON),
                        ::testing::ValuesIn(kTxSizeNEON)));
-#else   
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(AV1FilterIntraPredTest);
-#endif  
 #endif  
 
 }  

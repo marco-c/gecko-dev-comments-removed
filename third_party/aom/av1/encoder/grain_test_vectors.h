@@ -16,8 +16,6 @@
 
 
 
-
-#if !CONFIG_REALTIME_ONLY
 static aom_film_grain_t film_grain_test_vectors[16] = {
   
   {
@@ -780,5 +778,4 @@ static aom_film_grain_t film_grain_test_vectors[16] = {
       45231 
   },
 };
-#endif  
 #endif  

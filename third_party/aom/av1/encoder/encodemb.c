@@ -106,39 +106,31 @@ int av1_optimize_b(const struct AV1_COMP *cpi, MACROBLOCK *x, int plane,
 
 
 
-static const tran_low_t DROPOUT_COEFF_MAX = 2;  
+const tran_low_t DROPOUT_COEFF_MAX = 2;  
 
 
 
-static const int DROPOUT_CONTINUITY_MAX =
-    2;  
+const int DROPOUT_CONTINUITY_MAX = 2;  
 
 
-static const int DROPOUT_Q_MAX = 128;
-static const int DROPOUT_Q_MIN = 16;
-
-
-
+const int DROPOUT_Q_MAX = 128;
+const int DROPOUT_Q_MIN = 16;
 
 
 
 
 
 
-static const int DROPOUT_BEFORE_BASE_MAX =
-    32;  
-static const int DROPOUT_BEFORE_BASE_MIN =
-    16;  
-static const int DROPOUT_AFTER_BASE_MAX =
-    32;  
-static const int DROPOUT_AFTER_BASE_MIN =
-    16;  
-static const int DROPOUT_MULTIPLIER_MAX =
-    8;  
-static const int DROPOUT_MULTIPLIER_MIN =
-    2;  
-static const int DROPOUT_MULTIPLIER_Q_BASE =
-    32;  
+
+
+
+const int DROPOUT_BEFORE_BASE_MAX = 32;  
+const int DROPOUT_BEFORE_BASE_MIN = 16;  
+const int DROPOUT_AFTER_BASE_MAX = 32;   
+const int DROPOUT_AFTER_BASE_MIN = 16;   
+const int DROPOUT_MULTIPLIER_MAX = 8;    
+const int DROPOUT_MULTIPLIER_MIN = 2;    
+const int DROPOUT_MULTIPLIER_Q_BASE = 32;  
 
 void av1_dropout_qcoeff(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
                         TX_TYPE tx_type, int qindex) {
@@ -253,12 +245,12 @@ void av1_dropout_qcoeff_num(MACROBLOCK *mb, int plane, int block,
 
 
 
-static const OPT_TYPE KEY_BLOCK_OPT_TYPE = TRELLIS_DROPOUT_OPT;
+const OPT_TYPE KEY_BLOCK_OPT_TYPE = TRELLIS_DROPOUT_OPT;
 
-static const OPT_TYPE INTRA_BLOCK_OPT_TYPE = TRELLIS_DROPOUT_OPT;
+const OPT_TYPE INTRA_BLOCK_OPT_TYPE = TRELLIS_DROPOUT_OPT;
 
 
-static const OPT_TYPE INTER_BLOCK_OPT_TYPE = TRELLIS_DROPOUT_OPT;
+const OPT_TYPE INTER_BLOCK_OPT_TYPE = TRELLIS_DROPOUT_OPT;
 
 enum {
   QUANT_FUNC_LOWBD = 0,
@@ -725,9 +717,23 @@ void av1_encode_sb(const struct AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
   }
 }
 
-static void encode_block_intra(int plane, int block, int blk_row, int blk_col,
-                               BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
-                               void *arg) {
+static void encode_block_intra_and_set_context(int plane, int block,
+                                               int blk_row, int blk_col,
+                                               BLOCK_SIZE plane_bsize,
+                                               TX_SIZE tx_size, void *arg) {
+  av1_encode_block_intra(plane, block, blk_row, blk_col, plane_bsize, tx_size,
+                         arg);
+
+  struct encode_b_args *const args = arg;
+  MACROBLOCK *x = args->x;
+  ENTROPY_CONTEXT *a = &args->ta[blk_col];
+  ENTROPY_CONTEXT *l = &args->tl[blk_row];
+  av1_set_txb_context(x, plane, block, tx_size, a, l);
+}
+
+void av1_encode_block_intra(int plane, int block, int blk_row, int blk_col,
+                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                            void *arg) {
   struct encode_b_args *const args = arg;
   const AV1_COMP *const cpi = args->cpi;
   const AV1_COMMON *const cm = &cpi->common;
@@ -831,24 +837,9 @@ static void encode_block_intra(int plane, int block, int blk_row, int blk_col,
   
   mbmi->skip_txfm = 0;
 
-#if !CONFIG_REALTIME_ONLY
   if (plane == AOM_PLANE_Y && xd->cfl.store_y) {
     cfl_store_tx(xd, blk_row, blk_col, tx_size, plane_bsize);
   }
-#endif
-}
-
-static void encode_block_intra_and_set_context(int plane, int block,
-                                               int blk_row, int blk_col,
-                                               BLOCK_SIZE plane_bsize,
-                                               TX_SIZE tx_size, void *arg) {
-  encode_block_intra(plane, block, blk_row, blk_col, plane_bsize, tx_size, arg);
-
-  struct encode_b_args *const args = arg;
-  MACROBLOCK *x = args->x;
-  ENTROPY_CONTEXT *a = &args->ta[blk_col];
-  ENTROPY_CONTEXT *l = &args->tl[blk_row];
-  av1_set_txb_context(x, plane, block, tx_size, a, l);
 }
 
 void av1_encode_intra_block_plane(const struct AV1_COMP *cpi, MACROBLOCK *x,

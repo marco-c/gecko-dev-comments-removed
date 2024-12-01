@@ -98,7 +98,7 @@ typedef struct {
 
 
 
-static inline int aom_check_grain_params_equiv(
+static INLINE int aom_check_grain_params_equiv(
     const aom_film_grain_t *const pa, const aom_film_grain_t *const pb) {
   if (pa->apply_grain != pb->apply_grain) return 0;
   

@@ -11,21 +11,21 @@
 
 #include <arm_neon.h>
 #include <arm_sve.h>
+#include <string.h>
 
-#include <assert.h>
-#include <stdint.h>
+#include "config/aom_config.h"
+#include "config/av1_rtcd.h"
 
 #include "aom_dsp/arm/aom_neon_sve_bridge.h"
 #include "aom_dsp/arm/mem_neon.h"
 #include "aom_dsp/arm/sum_neon.h"
 #include "aom_dsp/arm/transpose_neon.h"
-#include "av1/encoder/arm/pickrst_neon.h"
-#include "av1/encoder/arm/pickrst_sve.h"
+#include "av1/common/restoration.h"
 #include "av1/encoder/pickrst.h"
+#include "av1/encoder/arm/pickrst_sve.h"
 
-static inline uint16_t highbd_find_average_sve(const uint16_t *src,
-                                               int src_stride, int width,
-                                               int height) {
+static INLINE uint16_t find_average_sve(const uint16_t *src, int src_stride,
+                                        int width, int height) {
   uint64x2_t avg_u64 = vdupq_n_u64(0);
   uint16x8_t ones = vdupq_n_u16(1);
 
@@ -51,10 +51,9 @@ static inline uint16_t highbd_find_average_sve(const uint16_t *src,
   return (uint16_t)(vaddvq_u64(avg_u64) / (width * height));
 }
 
-static inline void sub_avg_block_highbd_sve(const uint16_t *buf, int buf_stride,
-                                            int16_t avg, int width, int height,
-                                            int16_t *buf_avg,
-                                            int buf_avg_stride) {
+static INLINE void compute_sub_avg(const uint16_t *buf, int buf_stride,
+                                   int16_t avg, int16_t *buf_avg,
+                                   int buf_avg_stride, int width, int height) {
   uint16x8_t avg_u16 = vdupq_n_u16(avg);
 
   
@@ -82,86 +81,361 @@ static inline void sub_avg_block_highbd_sve(const uint16_t *buf, int buf_stride,
   } while (--height > 0);
 }
 
-void av1_compute_stats_highbd_sve(int32_t wiener_win, const uint8_t *dgd8,
+static INLINE void copy_upper_triangle(int64_t *H, int64_t *H_tmp,
+                                       const int wiener_win2,
+                                       const int divider) {
+  for (int i = 0; i < wiener_win2 - 2; i = i + 2) {
+    
+    
+    int64x2_t row0 = vld1q_s64(H_tmp + i * wiener_win2 + i + 1);
+    int64x2_t row1 = vld1q_s64(H_tmp + (i + 1) * wiener_win2 + i + 1);
+
+    int64x2_t tr_row = aom_vtrn2q_s64(row0, row1);
+
+    vst1_s64(H_tmp + (i + 1) * wiener_win2 + i, vget_low_s64(row0));
+    vst1q_s64(H_tmp + (i + 2) * wiener_win2 + i, tr_row);
+
+    
+    for (int j = i + 3; j < wiener_win2; j = j + 2) {
+      row0 = vld1q_s64(H_tmp + i * wiener_win2 + j);
+      row1 = vld1q_s64(H_tmp + (i + 1) * wiener_win2 + j);
+
+      int64x2_t tr_row0 = aom_vtrn1q_s64(row0, row1);
+      int64x2_t tr_row1 = aom_vtrn2q_s64(row0, row1);
+
+      vst1q_s64(H_tmp + (j + 0) * wiener_win2 + i, tr_row0);
+      vst1q_s64(H_tmp + (j + 1) * wiener_win2 + i, tr_row1);
+    }
+  }
+  for (int i = 0; i < wiener_win2 * wiener_win2; i++) {
+    H[i] += H_tmp[i] / divider;
+  }
+}
+
+
+static INLINE void acc_transpose_M(int64_t *M, const int64_t *M_trn,
+                                   const int wiener_win, const int divider) {
+  for (int i = 0; i < wiener_win; ++i) {
+    for (int j = 0; j < wiener_win; ++j) {
+      int tr_idx = j * wiener_win + i;
+      *M++ += (int64_t)(M_trn[tr_idx] / divider);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static INLINE void highbd_compute_stats_win7_sve(
+    int16_t *dgd_avg, int dgd_avg_stride, int16_t *src_avg, int src_avg_stride,
+    int width, int height, int64_t *M, int64_t *H, int bit_depth_divider) {
+  const int wiener_win = 7;
+  const int wiener_win2 = wiener_win * wiener_win;
+
+  
+  svbool_t pattern = svwhilelt_b16_u32(0, width % 8 == 0 ? 8 : width % 8);
+
+  
+  
+  int64_t M_trn[49];
+  memset(M_trn, 0, sizeof(M_trn));
+
+  int64_t H_tmp[49 * 49];
+  memset(H_tmp, 0, sizeof(H_tmp));
+
+  do {
+    
+    for (int row = 0; row < wiener_win; row++) {
+      int j = 0;
+      while (j < width) {
+        int16x8_t dgd[7];
+        load_s16_8x7(dgd_avg + row * dgd_avg_stride + j, 1, &dgd[0], &dgd[1],
+                     &dgd[2], &dgd[3], &dgd[4], &dgd[5], &dgd[6]);
+        int16x8_t s = vld1q_s16(src_avg + j);
+
+        
+        compute_M_one_row_win7(s, dgd, M_trn, row);
+
+        j += 8;
+      }
+    }
+
+    
+    int j = 0;
+    while (j < width - 8) {
+      for (int col0 = 0; col0 < wiener_win; col0++) {
+        int16x8_t dgd0[7];
+        load_s16_8x7(dgd_avg + j + col0, dgd_avg_stride, &dgd0[0], &dgd0[1],
+                     &dgd0[2], &dgd0[3], &dgd0[4], &dgd0[5], &dgd0[6]);
+
+        
+        
+        
+        
+        
+        compute_H_one_col(dgd0, col0, H_tmp, wiener_win, wiener_win2);
+
+        
+        for (int col1 = col0 + 1; col1 < wiener_win; col1++) {
+          
+          int16x8_t dgd1[7];
+          load_s16_8x7(dgd_avg + j + col1, dgd_avg_stride, &dgd1[0], &dgd1[1],
+                       &dgd1[2], &dgd1[3], &dgd1[4], &dgd1[5], &dgd1[6]);
+
+          
+          
+          compute_H_two_rows_win7(dgd0, dgd1, col0, col1, H_tmp);
+        }
+      }
+      j += 8;
+    }
+
+    
+    for (int col0 = 0; col0 < wiener_win; col0++) {
+      
+      int16x8_t dgd0[7];
+      dgd0[0] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 0 * dgd_avg_stride + j + col0));
+      dgd0[1] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 1 * dgd_avg_stride + j + col0));
+      dgd0[2] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 2 * dgd_avg_stride + j + col0));
+      dgd0[3] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 3 * dgd_avg_stride + j + col0));
+      dgd0[4] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 4 * dgd_avg_stride + j + col0));
+      dgd0[5] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 5 * dgd_avg_stride + j + col0));
+      dgd0[6] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 6 * dgd_avg_stride + j + col0));
+
+      
+      
+      
+      
+      
+      compute_H_one_col(dgd0, col0, H_tmp, wiener_win, wiener_win2);
+
+      
+      for (int col1 = col0 + 1; col1 < wiener_win; col1++) {
+        
+        int16x8_t dgd1[7];
+        load_s16_8x7(dgd_avg + j + col1, dgd_avg_stride, &dgd1[0], &dgd1[1],
+                     &dgd1[2], &dgd1[3], &dgd1[4], &dgd1[5], &dgd1[6]);
+
+        
+        
+        compute_H_two_rows_win7(dgd0, dgd1, col0, col1, H_tmp);
+      }
+    }
+    dgd_avg += dgd_avg_stride;
+    src_avg += src_avg_stride;
+  } while (--height != 0);
+
+  
+  acc_transpose_M(M, M_trn, 7, bit_depth_divider);
+
+  
+  copy_upper_triangle(H, H_tmp, wiener_win2, bit_depth_divider);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static INLINE void highbd_compute_stats_win5_sve(
+    int16_t *dgd_avg, int dgd_avg_stride, int16_t *src_avg, int src_avg_stride,
+    int width, int height, int64_t *M, int64_t *H, int bit_depth_divider) {
+  const int wiener_win = 5;
+  const int wiener_win2 = wiener_win * wiener_win;
+
+  
+  svbool_t pattern = svwhilelt_b16_u32(0, width % 8 == 0 ? 8 : width % 8);
+
+  
+  
+  int64_t M_trn[25];
+  memset(M_trn, 0, sizeof(M_trn));
+
+  int64_t H_tmp[25 * 25];
+  memset(H_tmp, 0, sizeof(H_tmp));
+
+  do {
+    
+    for (int row = 0; row < wiener_win; row++) {
+      int j = 0;
+      while (j < width) {
+        int16x8_t dgd[5];
+        load_s16_8x5(dgd_avg + row * dgd_avg_stride + j, 1, &dgd[0], &dgd[1],
+                     &dgd[2], &dgd[3], &dgd[4]);
+        int16x8_t s = vld1q_s16(src_avg + j);
+
+        
+        compute_M_one_row_win5(s, dgd, M_trn, row);
+
+        j += 8;
+      }
+    }
+
+    
+    int j = 0;
+    while (j < width - 8) {
+      for (int col0 = 0; col0 < wiener_win; col0++) {
+        
+        int16x8_t dgd0[5];
+        load_s16_8x5(dgd_avg + j + col0, dgd_avg_stride, &dgd0[0], &dgd0[1],
+                     &dgd0[2], &dgd0[3], &dgd0[4]);
+
+        
+        
+        
+        
+        
+        compute_H_one_col(dgd0, col0, H_tmp, wiener_win, wiener_win2);
+
+        
+        for (int col1 = col0 + 1; col1 < wiener_win; col1++) {
+          
+          int16x8_t dgd1[5];
+          load_s16_8x5(dgd_avg + j + col1, dgd_avg_stride, &dgd1[0], &dgd1[1],
+                       &dgd1[2], &dgd1[3], &dgd1[4]);
+
+          
+          
+          compute_H_two_rows_win5(dgd0, dgd1, col0, col1, H_tmp);
+        }
+      }
+      j += 8;
+    }
+
+    
+    for (int col0 = 0; col0 < wiener_win; col0++) {
+      int16x8_t dgd0[5];
+      dgd0[0] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 0 * dgd_avg_stride + j + col0));
+      dgd0[1] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 1 * dgd_avg_stride + j + col0));
+      dgd0[2] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 2 * dgd_avg_stride + j + col0));
+      dgd0[3] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 3 * dgd_avg_stride + j + col0));
+      dgd0[4] = svget_neonq_s16(
+          svld1_s16(pattern, dgd_avg + 4 * dgd_avg_stride + j + col0));
+
+      
+      
+      
+      
+      
+      compute_H_one_col(dgd0, col0, H_tmp, wiener_win, wiener_win2);
+
+      
+      for (int col1 = col0 + 1; col1 < wiener_win; col1++) {
+        
+        int16x8_t dgd1[5];
+        load_s16_8x5(dgd_avg + j + col1, dgd_avg_stride, &dgd1[0], &dgd1[1],
+                     &dgd1[2], &dgd1[3], &dgd1[4]);
+
+        
+        
+        compute_H_two_rows_win5(dgd0, dgd1, col0, col1, H_tmp);
+      }
+    }
+    dgd_avg += dgd_avg_stride;
+    src_avg += src_avg_stride;
+  } while (--height != 0);
+
+  
+  acc_transpose_M(M, M_trn, 5, bit_depth_divider);
+
+  
+  copy_upper_triangle(H, H_tmp, wiener_win2, bit_depth_divider);
+}
+
+void av1_compute_stats_highbd_sve(int wiener_win, const uint8_t *dgd8,
                                   const uint8_t *src8, int16_t *dgd_avg,
-                                  int16_t *src_avg, int32_t h_start,
-                                  int32_t h_end, int32_t v_start, int32_t v_end,
-                                  int32_t dgd_stride, int32_t src_stride,
-                                  int64_t *M, int64_t *H,
+                                  int16_t *src_avg, int h_start, int h_end,
+                                  int v_start, int v_end, int dgd_stride,
+                                  int src_stride, int64_t *M, int64_t *H,
                                   aom_bit_depth_t bit_depth) {
-  const int32_t wiener_win2 = wiener_win * wiener_win;
-  const int32_t wiener_halfwin = (wiener_win >> 1);
+  assert(wiener_win == WIENER_WIN || wiener_win == WIENER_WIN_CHROMA);
+
   const uint16_t *src = CONVERT_TO_SHORTPTR(src8);
   const uint16_t *dgd = CONVERT_TO_SHORTPTR(dgd8);
+  const int wiener_win2 = wiener_win * wiener_win;
+  const int wiener_halfwin = wiener_win >> 1;
   const int32_t width = h_end - h_start;
   const int32_t height = v_end - v_start;
-  const int32_t d_stride = (width + 2 * wiener_halfwin + 15) & ~15;
-  const int32_t s_stride = (width + 15) & ~15;
 
-  const uint16_t *dgd_start = dgd + h_start + v_start * dgd_stride;
+  uint8_t bit_depth_divider = 1;
+  if (bit_depth == AOM_BITS_12)
+    bit_depth_divider = 16;
+  else if (bit_depth == AOM_BITS_10)
+    bit_depth_divider = 4;
+
+  const uint16_t *dgd_start = &dgd[v_start * dgd_stride + h_start];
+  memset(H, 0, sizeof(*H) * wiener_win2 * wiener_win2);
+  memset(M, 0, sizeof(*M) * wiener_win * wiener_win);
+
+  const uint16_t avg = find_average_sve(dgd_start, dgd_stride, width, height);
+
+  
+  
+  
+  const int dgd_avg_stride = ((width + 2 * wiener_halfwin) & ~7) + 8;
+  const int src_avg_stride = (width & ~7) + 8;
+
+  
+  
+  
+  
+  
+  
+  const int vert_offset = v_start - wiener_halfwin;
+  const int horiz_offset = h_start - wiener_halfwin;
+  const uint16_t *dgd_win = dgd + horiz_offset + vert_offset * dgd_stride;
+  compute_sub_avg(dgd_win, dgd_stride, avg, dgd_avg, dgd_avg_stride,
+                  width + 2 * wiener_halfwin, height + 2 * wiener_halfwin);
+
+  
   const uint16_t *src_start = src + h_start + v_start * src_stride;
-  const uint16_t avg =
-      highbd_find_average_sve(dgd_start, dgd_stride, width, height);
-
-  sub_avg_block_highbd_sve(src_start, src_stride, avg, width, height, src_avg,
-                           s_stride);
-  sub_avg_block_highbd_sve(
-      dgd + (v_start - wiener_halfwin) * dgd_stride + h_start - wiener_halfwin,
-      dgd_stride, avg, width + 2 * wiener_halfwin, height + 2 * wiener_halfwin,
-      dgd_avg, d_stride);
+  compute_sub_avg(src_start, src_stride, avg, src_avg, src_avg_stride, width,
+                  height);
 
   if (wiener_win == WIENER_WIN) {
-    compute_stats_win7_sve(dgd_avg, d_stride, src_avg, s_stride, width, height,
-                           M, H);
+    highbd_compute_stats_win7_sve(dgd_avg, dgd_avg_stride, src_avg,
+                                  src_avg_stride, width, height, M, H,
+                                  bit_depth_divider);
   } else {
-    assert(wiener_win == WIENER_WIN_CHROMA);
-    compute_stats_win5_sve(dgd_avg, d_stride, src_avg, s_stride, width, height,
-                           M, H);
-  }
-
-  
-  
-  if (bit_depth == AOM_BITS_8) {
-    diagonal_copy_stats_neon(wiener_win2, H);
-  } else if (bit_depth == AOM_BITS_10) {  
-    const int32_t k4 = wiener_win2 & ~3;
-
-    int32_t k = 0;
-    do {
-      int64x2_t dst = div4_neon(vld1q_s64(M + k));
-      vst1q_s64(M + k, dst);
-      dst = div4_neon(vld1q_s64(M + k + 2));
-      vst1q_s64(M + k + 2, dst);
-      H[k * wiener_win2 + k] /= 4;
-      k += 4;
-    } while (k < k4);
-
-    H[k * wiener_win2 + k] /= 4;
-
-    for (; k < wiener_win2; ++k) {
-      M[k] /= 4;
-    }
-
-    div4_diagonal_copy_stats_neon(wiener_win2, H);
-  } else {  
-    const int32_t k4 = wiener_win2 & ~3;
-
-    int32_t k = 0;
-    do {
-      int64x2_t dst = div16_neon(vld1q_s64(M + k));
-      vst1q_s64(M + k, dst);
-      dst = div16_neon(vld1q_s64(M + k + 2));
-      vst1q_s64(M + k + 2, dst);
-      H[k * wiener_win2 + k] /= 16;
-      k += 4;
-    } while (k < k4);
-
-    H[k * wiener_win2 + k] /= 16;
-
-    for (; k < wiener_win2; ++k) {
-      M[k] /= 16;
-    }
-
-    div16_diagonal_copy_stats_neon(wiener_win2, H);
+    highbd_compute_stats_win5_sve(dgd_avg, dgd_avg_stride, src_avg,
+                                  src_avg_stride, width, height, M, H,
+                                  bit_depth_divider);
   }
 }

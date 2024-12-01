@@ -228,6 +228,41 @@ void od_ec_encode_cdf_q15(od_ec_enc *enc, int s, const uint16_t *icdf,
   od_ec_encode_q15(enc, s > 0 ? icdf[s - 1] : OD_ICDF(0), icdf[s], s, nsyms);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void od_ec_enc_patch_initial_bits(od_ec_enc *enc, unsigned val, int nbits) {
+  int shift;
+  unsigned mask;
+  assert(nbits >= 0);
+  assert(nbits <= 8);
+  assert(val < 1U << nbits);
+  shift = 8 - nbits;
+  mask = ((1U << nbits) - 1) << shift;
+  if (enc->offs > 0) {
+    
+    enc->buf[0] = (unsigned char)((enc->buf[0] & ~mask) | val << shift);
+  } else if (9 + enc->cnt + (enc->rng == 0x8000) > nbits) {
+    
+    enc->low = (enc->low & ~((od_ec_enc_window)mask << (16 + enc->cnt))) |
+               (od_ec_enc_window)val << (16 + enc->cnt + shift);
+  } else {
+    
+    enc->error = -1;
+  }
+}
+
 #if OD_MEASURE_EC_OVERHEAD
 #include <stdio.h>
 #endif

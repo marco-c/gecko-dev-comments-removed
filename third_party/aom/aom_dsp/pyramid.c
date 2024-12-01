@@ -217,7 +217,7 @@ ImagePyramid *aom_alloc_pyramid(int width, int height, bool image_is_16bit) {
 
 
 
-static inline void fill_border(uint8_t *img_buf, const int width,
+static INLINE void fill_border(uint8_t *img_buf, const int width,
                                const int height, const int stride) {
   
   for (int row = 0; row < height; row++) {
@@ -254,7 +254,7 @@ static inline void fill_border(uint8_t *img_buf, const int width,
 
 
 
-static inline int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
+static INLINE int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
                                int n_levels, ImagePyramid *frame_pyr) {
   int already_filled_levels = frame_pyr->filled_levels;
 

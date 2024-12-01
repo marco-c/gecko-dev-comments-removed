@@ -33,8 +33,8 @@ enum {
   FTXS_USE_TRANSFORM_DOMAIN = 1 << 2
 } UENUM1BYTE(FAST_TX_SEARCH_MODE);
 
-static inline int tx_size_cost(const MACROBLOCK *const x, BLOCK_SIZE bsize,
-                               TX_SIZE tx_size) {
+static AOM_INLINE int tx_size_cost(const MACROBLOCK *const x, BLOCK_SIZE bsize,
+                                   TX_SIZE tx_size) {
   assert(bsize == x->e_mbd.mi[0]->bsize);
   if (x->txfm_search_params.tx_mode_search_type != TX_MODE_SELECT ||
       !block_signals_txsize(bsize))
@@ -71,6 +71,30 @@ int64_t av1_pixel_diff_dist(const MACROBLOCK *x, int plane, int blk_row,
 int64_t av1_estimate_txfm_yrd(const AV1_COMP *const cpi, MACROBLOCK *x,
                               RD_STATS *rd_stats, int64_t ref_best_rd,
                               BLOCK_SIZE bs, TX_SIZE tx_size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int64_t av1_uniform_txfm_yrd(const AV1_COMP *const cpi, MACROBLOCK *x,
+                             RD_STATS *rd_stats, int64_t ref_best_rd,
+                             BLOCK_SIZE bs, TX_SIZE tx_size,
+                             FAST_TX_SEARCH_MODE ftxs_mode, int skip_trellis);
 
 
 

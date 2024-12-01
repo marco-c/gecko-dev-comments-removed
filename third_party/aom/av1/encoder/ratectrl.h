@@ -190,16 +190,9 @@ typedef struct {
   int sframe_due;
 
   int high_source_sad;
-  int high_motion_content_screen_rtc;
   uint64_t avg_source_sad;
   uint64_t prev_avg_source_sad;
   uint64_t frame_source_sad;
-  uint64_t frame_spatial_variance;
-  int static_since_last_scene_change;
-  int last_encoded_size_keyframe;
-  int last_target_size_keyframe;
-  int frames_since_scene_change;
-  int perc_flat_blocks_keyframe;
 
   int avg_frame_bandwidth;  
   int min_frame_bandwidth;  
@@ -214,8 +207,6 @@ typedef struct {
   int prev_frame_is_dropped;
   int drop_count_consec;
   int max_consec_drop;
-  int force_max_q;
-  int postencode_drop;
 
   
 
@@ -588,12 +579,13 @@ int av1_estimate_bits_at_q(const struct AV1_COMP *cpi, int q,
 
 double av1_convert_qindex_to_q(int qindex, aom_bit_depth_t bit_depth);
 
-
-int av1_convert_q_to_qindex(double q, aom_bit_depth_t bit_depth);
-
 void av1_rc_init_minq_luts(void);
 
 int av1_rc_get_default_min_gf_interval(int width, int height, double framerate);
+
+
+
+int av1_rc_get_default_max_gf_interval(double framerate, int min_gf_interval);
 
 
 
@@ -687,9 +679,19 @@ int av1_rc_regulate_q(const struct AV1_COMP *cpi, int target_bits_per_frame,
 
 
 
+int av1_get_bpmb_enumerator(FRAME_TYPE frame_type,
+                            const int is_screen_content_type);
+
+
 int av1_rc_bits_per_mb(const struct AV1_COMP *cpi, FRAME_TYPE frame_type,
                        int qindex, double correction_factor,
                        int accurate_estimate);
+
+
+int av1_rc_clamp_iframe_target_size(const struct AV1_COMP *const cpi,
+                                    int64_t target);
+int av1_rc_clamp_pframe_target_size(const struct AV1_COMP *const cpi,
+                                    int target, uint8_t frame_update_type);
 
 
 
@@ -709,7 +711,12 @@ int av1_compute_qdelta_by_rate(const struct AV1_COMP *cpi,
                                FRAME_TYPE frame_type, int qindex,
                                double rate_target_ratio);
 
+int av1_frame_type_qdelta(const struct AV1_COMP *cpi, int q);
+
 void av1_rc_update_framerate(struct AV1_COMP *cpi, int width, int height);
+
+void av1_rc_set_gf_interval_range(const struct AV1_COMP *const cpi,
+                                  RATE_CONTROL *const rc);
 
 void av1_set_target_rate(struct AV1_COMP *cpi, int width, int height);
 
@@ -826,8 +833,33 @@ int av1_encodedframe_overshoot_cbr(struct AV1_COMP *cpi, int *q);
 
 
 
-int av1_postencode_drop_cbr(struct AV1_COMP *cpi, size_t *size);
+int av1_q_mode_get_q_index(int base_q_index, int gf_update_type,
+                           int gf_pyramid_level, int arf_q);
 
+
+
+
+
+
+
+
+
+
+int av1_get_arf_q_index(int base_q_index, int gfu_boost, int bit_depth,
+                        double arf_boost_factor);
+
+#if !CONFIG_REALTIME_ONLY
+struct TplDepFrame;
+
+
+
+
+
+
+
+int av1_get_arf_q_index_q_mode(struct AV1_COMP *cpi,
+                               struct TplDepFrame *tpl_frame);
+#endif
 #ifdef __cplusplus
 }  
 #endif

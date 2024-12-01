@@ -26,7 +26,7 @@
 
 
 
-static inline void get_cdef_filter_strengths(CDEF_PICK_METHOD pick_method,
+static INLINE void get_cdef_filter_strengths(CDEF_PICK_METHOD pick_method,
                                              int *pri_strength,
                                              int *sec_strength,
                                              int strength_idx) {
@@ -223,7 +223,7 @@ static uint64_t joint_strength_search_dual(int *best_lev0, int *best_lev1,
   return best_tot_mse;
 }
 
-static inline void init_src_params(int *src_stride, int *width, int *height,
+static INLINE void init_src_params(int *src_stride, int *width, int *height,
                                    int *width_log2, int *height_log2,
                                    BLOCK_SIZE bsize) {
   *src_stride = block_size_wide[bsize];
@@ -260,7 +260,7 @@ static uint64_t compute_cdef_dist_highbd(void *dst, int dstride, uint16_t *src,
 
 
 
-static inline int is_dual_or_quad_applicable(cdef_list *dlist, int width,
+static INLINE int is_dual_or_quad_applicable(cdef_list *dlist, int width,
                                              int cdef_count, int bi, int iter) {
   assert(width == 8 || width == 4);
   const int blk_offset = (width == 8) ? 1 : 3;
@@ -314,7 +314,7 @@ static uint64_t compute_cdef_dist(void *dst, int dstride, uint16_t *src,
 
 
 
-static inline void fill_borders_for_fbs_on_frame_boundary(
+static INLINE void fill_borders_for_fbs_on_frame_boundary(
     uint16_t *inbuf, int hfilt_size, int vfilt_size,
     bool is_fb_on_frm_left_boundary, bool is_fb_on_frm_right_boundary,
     bool is_fb_on_frm_top_boundary, bool is_fb_on_frm_bottom_boundary) {
@@ -398,7 +398,7 @@ static AOM_FORCE_INLINE int get_error_calc_width_in_filt_units(
 }
 
 
-static inline uint64_t get_filt_error(
+static INLINE uint64_t get_filt_error(
     const CdefSearchCtx *cdef_search_ctx, const struct macroblockd_plane *pd,
     cdef_list *dlist, int dir[CDEF_NBLOCKS][CDEF_NBLOCKS], int *dirinit,
     int var[CDEF_NBLOCKS][CDEF_NBLOCKS], uint16_t *in, uint8_t *ref_buffer,
@@ -680,11 +680,11 @@ void av1_cdef_dealloc_data(CdefSearchCtx *cdef_search_ctx) {
 
 
 
-static inline void cdef_params_init(const YV12_BUFFER_CONFIG *frame,
-                                    const YV12_BUFFER_CONFIG *ref,
-                                    AV1_COMMON *cm, MACROBLOCKD *xd,
-                                    CdefSearchCtx *cdef_search_ctx,
-                                    CDEF_PICK_METHOD pick_method) {
+static AOM_INLINE void cdef_params_init(const YV12_BUFFER_CONFIG *frame,
+                                        const YV12_BUFFER_CONFIG *ref,
+                                        AV1_COMMON *cm, MACROBLOCKD *xd,
+                                        CdefSearchCtx *cdef_search_ctx,
+                                        CDEF_PICK_METHOD pick_method) {
   const CommonModeInfoParams *const mi_params = &cm->mi_params;
   const int num_planes = av1_num_planes(cm);
   cdef_search_ctx->mi_params = &cm->mi_params;
@@ -826,13 +826,7 @@ void av1_cdef_search(AV1_COMP *cpi) {
   CDEF_CONTROL cdef_control = cpi->oxcf.tool_cfg.cdef_control;
 
   assert(cdef_control != CDEF_NONE);
-  
-  
-  if ((cdef_control == CDEF_REFERENCE &&
-       cpi->ppi->rtc_ref.non_reference_frame) ||
-      (cdef_control == CDEF_ADAPTIVE && cpi->oxcf.mode == ALLINTRA &&
-       (cpi->oxcf.rc_cfg.mode == AOM_Q || cpi->oxcf.rc_cfg.mode == AOM_CQ) &&
-       cpi->oxcf.rc_cfg.cq_level < 100)) {
+  if (cdef_control == CDEF_REFERENCE && cpi->ppi->rtc_ref.non_reference_frame) {
     CdefInfo *const cdef_info = &cm->cdef_info;
     cdef_info->nb_cdef_strengths = 1;
     cdef_info->cdef_bits = 0;

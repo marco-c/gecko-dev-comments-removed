@@ -67,8 +67,8 @@ static int64_t calculate_sse(MACROBLOCKD *const xd,
   return sse;
 }
 
-static inline int64_t compute_sse_plane(MACROBLOCK *x, MACROBLOCKD *xd,
-                                        int plane, const BLOCK_SIZE bsize) {
+static AOM_INLINE int64_t compute_sse_plane(MACROBLOCK *x, MACROBLOCKD *xd,
+                                            int plane, const BLOCK_SIZE bsize) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const BLOCK_SIZE plane_bsize =
       get_plane_block_size(bsize, pd->subsampling_x, pd->subsampling_y);
@@ -82,11 +82,11 @@ static inline int64_t compute_sse_plane(MACROBLOCK *x, MACROBLOCKD *xd,
   return sse;
 }
 
-static inline void model_rd_from_sse(const AV1_COMP *const cpi,
-                                     const MACROBLOCK *const x,
-                                     BLOCK_SIZE plane_bsize, int plane,
-                                     int64_t sse, int num_samples, int *rate,
-                                     int64_t *dist) {
+static AOM_INLINE void model_rd_from_sse(const AV1_COMP *const cpi,
+                                         const MACROBLOCK *const x,
+                                         BLOCK_SIZE plane_bsize, int plane,
+                                         int64_t sse, int num_samples,
+                                         int *rate, int64_t *dist) {
   (void)num_samples;
   const MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
@@ -114,11 +114,11 @@ static inline void model_rd_from_sse(const AV1_COMP *const cpi,
 
 
 
-static inline void model_rd_with_curvfit(const AV1_COMP *const cpi,
-                                         const MACROBLOCK *const x,
-                                         BLOCK_SIZE plane_bsize, int plane,
-                                         int64_t sse, int num_samples,
-                                         int *rate, int64_t *dist) {
+static AOM_INLINE void model_rd_with_curvfit(const AV1_COMP *const cpi,
+                                             const MACROBLOCK *const x,
+                                             BLOCK_SIZE plane_bsize, int plane,
+                                             int64_t sse, int num_samples,
+                                             int *rate, int64_t *dist) {
   (void)cpi;
   (void)plane_bsize;
   const MACROBLOCKD *const xd = &x->e_mbd;
@@ -155,13 +155,11 @@ static inline void model_rd_with_curvfit(const AV1_COMP *const cpi,
   if (dist) *dist = dist_i;
 }
 
-static inline void model_rd_for_sb(const AV1_COMP *const cpi, BLOCK_SIZE bsize,
-                                   MACROBLOCK *x, MACROBLOCKD *xd,
-                                   int plane_from, int plane_to,
-                                   int *out_rate_sum, int64_t *out_dist_sum,
-                                   uint8_t *skip_txfm_sb, int64_t *skip_sse_sb,
-                                   int *plane_rate, int64_t *plane_sse,
-                                   int64_t *plane_dist) {
+static AOM_INLINE void model_rd_for_sb(
+    const AV1_COMP *const cpi, BLOCK_SIZE bsize, MACROBLOCK *x, MACROBLOCKD *xd,
+    int plane_from, int plane_to, int *out_rate_sum, int64_t *out_dist_sum,
+    uint8_t *skip_txfm_sb, int64_t *skip_sse_sb, int *plane_rate,
+    int64_t *plane_sse, int64_t *plane_dist) {
   
   
   
@@ -209,7 +207,7 @@ static inline void model_rd_for_sb(const AV1_COMP *const cpi, BLOCK_SIZE bsize,
   *out_dist_sum = dist_sum;
 }
 
-static inline void model_rd_for_sb_with_curvfit(
+static AOM_INLINE void model_rd_for_sb_with_curvfit(
     const AV1_COMP *const cpi, BLOCK_SIZE bsize, MACROBLOCK *x, MACROBLOCKD *xd,
     int plane_from, int plane_to, int *out_rate_sum, int64_t *out_dist_sum,
     uint8_t *skip_txfm_sb, int64_t *skip_sse_sb, int *plane_rate,

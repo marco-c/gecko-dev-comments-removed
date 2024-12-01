@@ -104,6 +104,15 @@ int64_t av1_segmented_frame_error(int use_hbd, int bd, const uint8_t *ref,
 
 
 
+int64_t av1_warp_error(WarpedMotionParams *wm, int use_hbd, int bd,
+                       const uint8_t *ref, int ref_width, int ref_height,
+                       int ref_stride, uint8_t *dst, int dst_stride, int p_col,
+                       int p_row, int p_width, int p_height, int subsampling_x,
+                       int subsampling_y, int64_t best_error,
+                       uint8_t *segment_map, int segment_map_stride);
+
+
+
 
 int64_t av1_refine_integerized_param(
     WarpedMotionParams *wm, TransformationType wmtype, int use_hbd, int bd,

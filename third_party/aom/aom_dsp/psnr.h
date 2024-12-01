@@ -13,7 +13,6 @@
 #define AOM_AOM_DSP_PSNR_H_
 
 #include "aom_scale/yv12config.h"
-#include "config/aom_config.h"
 
 #define MAX_PSNR 100.0
 
@@ -30,7 +29,6 @@ typedef struct {
   uint32_t samples_hbd[4];  
 } PSNR_STATS;
 
-#if CONFIG_INTERNAL_STATS
 
 
 
@@ -40,7 +38,6 @@ typedef struct {
 
 
 double aom_sse_to_psnr(double samples, double peak, double sse);
-#endif  
 uint64_t aom_get_y_var(const YV12_BUFFER_CONFIG *a, int hstart, int width,
                        int vstart, int height);
 uint64_t aom_get_u_var(const YV12_BUFFER_CONFIG *a, int hstart, int width,

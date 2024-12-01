@@ -11,7 +11,6 @@
 
 #include <assert.h>
 
-#include "config/aom_config.h"
 #include "config/aom_dsp_rtcd.h"
 
 uint64_t aom_sum_squares_2d_i16_c(const int16_t *src, int src_stride, int width,
@@ -56,7 +55,6 @@ uint64_t aom_var_2d_u8_c(uint8_t *src, int src_stride, int width, int height) {
   return (ss - s * s / (width * height));
 }
 
-#if CONFIG_AV1_HIGHBITDEPTH
 uint64_t aom_var_2d_u16_c(uint8_t *src, int src_stride, int width, int height) {
   uint16_t *srcp = CONVERT_TO_SHORTPTR(src);
   int r, c;
@@ -73,7 +71,6 @@ uint64_t aom_var_2d_u16_c(uint8_t *src, int src_stride, int width, int height) {
 
   return (ss - s * s / (width * height));
 }
-#endif  
 
 uint64_t aom_sum_sse_2d_i16_c(const int16_t *src, int src_stride, int width,
                               int height, int *sum) {

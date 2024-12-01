@@ -35,12 +35,12 @@ void av1_init_lk_params(LK_PARAMS *lk_params) {
 }
 
 
-static inline int is_frame_high_bitdepth(const YV12_BUFFER_CONFIG *frame) {
+static INLINE int is_frame_high_bitdepth(const YV12_BUFFER_CONFIG *frame) {
   return (frame->flags & YV12_FLAG_HIGHBITDEPTH) ? 1 : 0;
 }
 
 
-static inline int is_sparse(const OPFL_PARAMS *opfl_params) {
+static INLINE int is_sparse(const OPFL_PARAMS *opfl_params) {
   return (opfl_params->flags & OPFL_FLAG_SPARSE) ? 1 : 0;
 }
 

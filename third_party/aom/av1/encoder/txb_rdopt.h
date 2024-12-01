@@ -119,6 +119,40 @@ int av1_cost_coeffs_txb_laplacian(const MACROBLOCK *x, const int plane,
                                   const TXB_CTX *const txb_ctx,
                                   const int reduced_tx_set_used,
                                   const int adjust_eob);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av1_cost_coeffs_txb_estimate(const MACROBLOCK *x, const int plane,
+                                 const int block, const TX_SIZE tx_size,
+                                 const TX_TYPE tx_type);
+
 #ifdef __cplusplus
 }
 #endif

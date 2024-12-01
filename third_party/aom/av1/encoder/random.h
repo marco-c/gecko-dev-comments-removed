@@ -22,13 +22,13 @@ extern "C" {
 
 
 
-static inline uint32_t lcg_next(uint32_t *state) {
+static INLINE uint32_t lcg_next(uint32_t *state) {
   *state = (uint32_t)(*state * 1103515245ULL + 12345);
   return *state;
 }
 
 
-static inline uint32_t lcg_rand16(uint32_t *state) {
+static INLINE uint32_t lcg_rand16(uint32_t *state) {
   return (lcg_next(state) / 65536) % 32768;
 }
 
@@ -37,13 +37,13 @@ static inline uint32_t lcg_rand16(uint32_t *state) {
 
 
 
-static inline uint32_t lcg_randint(uint32_t *state, uint32_t n) {
+static INLINE uint32_t lcg_randint(uint32_t *state, uint32_t n) {
   uint64_t v = ((uint64_t)lcg_next(state) * n) >> 32;
   return (uint32_t)v;
 }
 
 
-static inline uint32_t lcg_randrange(uint32_t *state, uint32_t lo,
+static INLINE uint32_t lcg_randrange(uint32_t *state, uint32_t lo,
                                      uint32_t hi) {
   assert(lo < hi);
   return lo + lcg_randint(state, hi - lo);
@@ -56,7 +56,7 @@ static inline uint32_t lcg_randrange(uint32_t *state, uint32_t lo,
 
 
 
-static inline void lcg_pick(int n, int k, int *out, unsigned int *seed) {
+static INLINE void lcg_pick(int n, int k, int *out, unsigned int *seed) {
   assert(0 <= k && k <= n);
   for (int i = 0; i < k; i++) {
     int v;

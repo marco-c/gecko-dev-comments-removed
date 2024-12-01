@@ -9,7 +9,7 @@
 
 
 
-#include "gtest/gtest.h"
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 
 #include "av1/common/seg_common.h"
 #include "av1/decoder/decodemv.h"

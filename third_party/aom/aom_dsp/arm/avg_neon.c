@@ -8,7 +8,6 @@
 
 
 
-
 #include <arm_neon.h>
 #include <assert.h>
 #include <stdlib.h>

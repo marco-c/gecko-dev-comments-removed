@@ -25,7 +25,7 @@
 #include "av1/encoder/pickrst.h"
 #include "av1/encoder/arm/pickrst_sve.h"
 
-static inline uint8_t find_average_sve(const uint8_t *src, int src_stride,
+static INLINE uint8_t find_average_sve(const uint8_t *src, int src_stride,
                                        int width, int height) {
   uint32x4_t avg_u32 = vdupq_n_u32(0);
   uint8x16_t ones = vdupq_n_u8(1);
@@ -52,7 +52,7 @@ static inline uint8_t find_average_sve(const uint8_t *src, int src_stride,
   return (uint8_t)(vaddlvq_u32(avg_u32) / (width * height));
 }
 
-static inline void compute_sub_avg(const uint8_t *buf, int buf_stride, int avg,
+static INLINE void compute_sub_avg(const uint8_t *buf, int buf_stride, int avg,
                                    int16_t *buf_avg, int buf_avg_stride,
                                    int width, int height,
                                    int downsample_factor) {
@@ -84,7 +84,7 @@ static inline void compute_sub_avg(const uint8_t *buf, int buf_stride, int avg,
   } while (height > 0);
 }
 
-static inline void copy_upper_triangle(int64_t *H, int64_t *H_tmp,
+static INLINE void copy_upper_triangle(int64_t *H, int64_t *H_tmp,
                                        const int wiener_win2, const int scale) {
   for (int i = 0; i < wiener_win2 - 2; i = i + 2) {
     
@@ -115,7 +115,7 @@ static inline void copy_upper_triangle(int64_t *H, int64_t *H_tmp,
 }
 
 
-static inline void acc_transpose_M(int64_t *M, const int64_t *M_trn,
+static INLINE void acc_transpose_M(int64_t *M, const int64_t *M_trn,
                                    const int wiener_win, int scale) {
   for (int i = 0; i < wiener_win; ++i) {
     for (int j = 0; j < wiener_win; ++j) {
@@ -142,9 +142,10 @@ static inline void acc_transpose_M(int64_t *M, const int64_t *M_trn,
 
 
 
-static inline void compute_stats_win7_downsampled_sve(
-    int16_t *dgd_avg, int dgd_avg_stride, int16_t *src_avg, int src_avg_stride,
-    int width, int height, int64_t *M, int64_t *H, int downsample_factor) {
+static INLINE void compute_stats_win7_sve(int16_t *dgd_avg, int dgd_avg_stride,
+                                          int16_t *src_avg, int src_avg_stride,
+                                          int width, int height, int64_t *M,
+                                          int64_t *H, int downsample_factor) {
   const int wiener_win = 7;
   const int wiener_win2 = wiener_win * wiener_win;
 
@@ -275,9 +276,10 @@ static inline void compute_stats_win7_downsampled_sve(
 
 
 
-static inline void compute_stats_win5_downsampled_sve(
-    int16_t *dgd_avg, int dgd_avg_stride, int16_t *src_avg, int src_avg_stride,
-    int width, int height, int64_t *M, int64_t *H, int downsample_factor) {
+static INLINE void compute_stats_win5_sve(int16_t *dgd_avg, int dgd_avg_stride,
+                                          int16_t *src_avg, int src_avg_stride,
+                                          int width, int height, int64_t *M,
+                                          int64_t *H, int downsample_factor) {
   const int wiener_win = 5;
   const int wiener_win2 = wiener_win * wiener_win;
 
@@ -387,10 +389,12 @@ static inline void compute_stats_win5_downsampled_sve(
   copy_upper_triangle(H, H_tmp, wiener_win2, downsample_factor);
 }
 
-static inline void av1_compute_stats_downsampled_sve(
-    int wiener_win, const uint8_t *dgd, const uint8_t *src, int16_t *dgd_avg,
-    int16_t *src_avg, int h_start, int h_end, int v_start, int v_end,
-    int dgd_stride, int src_stride, int64_t *M, int64_t *H) {
+void av1_compute_stats_sve(int wiener_win, const uint8_t *dgd,
+                           const uint8_t *src, int16_t *dgd_avg,
+                           int16_t *src_avg, int h_start, int h_end,
+                           int v_start, int v_end, int dgd_stride,
+                           int src_stride, int64_t *M, int64_t *H,
+                           int use_downsampled_wiener_stats) {
   assert(wiener_win == WIENER_WIN || wiener_win == WIENER_WIN_CHROMA);
 
   const int wiener_win2 = wiener_win * wiener_win;
@@ -402,7 +406,8 @@ static inline void av1_compute_stats_downsampled_sve(
   memset(M, 0, sizeof(*M) * wiener_win * wiener_win);
 
   const uint8_t avg = find_average_sve(dgd_start, dgd_stride, width, height);
-  const int downsample_factor = WIENER_STATS_DOWNSAMPLE_FACTOR;
+  const int downsample_factor =
+      use_downsampled_wiener_stats ? WIENER_STATS_DOWNSAMPLE_FACTOR : 1;
 
   
   
@@ -435,89 +440,26 @@ static inline void av1_compute_stats_downsampled_sve(
 
   if (downsample_height > 0) {
     if (wiener_win == WIENER_WIN) {
-      compute_stats_win7_downsampled_sve(
-          dgd_avg, dgd_avg_stride, src_avg, src_avg_stride, width,
-          downsample_height, M, H, downsample_factor);
+      compute_stats_win7_sve(dgd_avg, dgd_avg_stride, src_avg, src_avg_stride,
+                             width, downsample_height, M, H, downsample_factor);
     } else {
-      compute_stats_win5_downsampled_sve(
-          dgd_avg, dgd_avg_stride, src_avg, src_avg_stride, width,
-          downsample_height, M, H, downsample_factor);
+      compute_stats_win5_sve(dgd_avg, dgd_avg_stride, src_avg, src_avg_stride,
+                             width, downsample_height, M, H, downsample_factor);
     }
   }
 
   if (downsample_remainder > 0) {
     const int remainder_offset = height - downsample_remainder;
     if (wiener_win == WIENER_WIN) {
-      compute_stats_win7_downsampled_sve(
+      compute_stats_win7_sve(
           dgd_avg + remainder_offset * dgd_avg_stride, dgd_avg_stride,
           src_avg + downsample_height * src_avg_stride, src_avg_stride, width,
           1, M, H, downsample_remainder);
     } else {
-      compute_stats_win5_downsampled_sve(
+      compute_stats_win5_sve(
           dgd_avg + remainder_offset * dgd_avg_stride, dgd_avg_stride,
           src_avg + downsample_height * src_avg_stride, src_avg_stride, width,
           1, M, H, downsample_remainder);
     }
   }
-}
-
-void av1_compute_stats_sve(int wiener_win, const uint8_t *dgd,
-                           const uint8_t *src, int16_t *dgd_avg,
-                           int16_t *src_avg, int h_start, int h_end,
-                           int v_start, int v_end, int dgd_stride,
-                           int src_stride, int64_t *M, int64_t *H,
-                           int use_downsampled_wiener_stats) {
-  assert(wiener_win == WIENER_WIN || wiener_win == WIENER_WIN_CHROMA);
-
-  if (use_downsampled_wiener_stats) {
-    av1_compute_stats_downsampled_sve(wiener_win, dgd, src, dgd_avg, src_avg,
-                                      h_start, h_end, v_start, v_end,
-                                      dgd_stride, src_stride, M, H);
-    return;
-  }
-
-  const int wiener_win2 = wiener_win * wiener_win;
-  const int wiener_halfwin = wiener_win >> 1;
-  const int32_t width = h_end - h_start;
-  const int32_t height = v_end - v_start;
-  const uint8_t *dgd_start = &dgd[v_start * dgd_stride + h_start];
-  memset(H, 0, sizeof(*H) * wiener_win2 * wiener_win2);
-  memset(M, 0, sizeof(*M) * wiener_win * wiener_win);
-
-  const uint8_t avg = find_average_sve(dgd_start, dgd_stride, width, height);
-
-  
-  
-  
-  const int dgd_avg_stride = ((width + 2 * wiener_halfwin) & ~7) + 8;
-  const int src_avg_stride = (width & ~7) + 8;
-
-  
-  
-  
-  
-  
-  
-  const int vert_offset = v_start - wiener_halfwin;
-  const int horiz_offset = h_start - wiener_halfwin;
-  const uint8_t *dgd_win = dgd + horiz_offset + vert_offset * dgd_stride;
-  compute_sub_avg(dgd_win, dgd_stride, avg, dgd_avg, dgd_avg_stride,
-                  width + 2 * wiener_halfwin, height + 2 * wiener_halfwin, 1);
-
-  
-  const uint8_t *src_start = src + h_start + v_start * src_stride;
-  compute_sub_avg(src_start, src_stride, avg, src_avg, src_avg_stride, width,
-                  height, 1);
-
-  if (wiener_win == WIENER_WIN) {
-    compute_stats_win7_sve(dgd_avg, dgd_avg_stride, src_avg, src_avg_stride,
-                           width, height, M, H);
-  } else {
-    compute_stats_win5_sve(dgd_avg, dgd_avg_stride, src_avg, src_avg_stride,
-                           width, height, M, H);
-  }
-
-  
-  
-  diagonal_copy_stats_neon(wiener_win2, H);
 }

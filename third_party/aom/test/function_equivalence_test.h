@@ -14,7 +14,7 @@
 
 #include <ostream>
 
-#include "gtest/gtest.h"
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 #include "test/acm_random.h"
 #include "test/util.h"
 

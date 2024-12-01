@@ -80,14 +80,8 @@ int32 MkvWriter::Position(int64 position) {
   return _fseeki64(file_, position, SEEK_SET);
 #elif defined(_WIN32)
   return fseeko64(file_, static_cast<off_t>(position), SEEK_SET);
-#elif !(defined(__ANDROID__) && __ANDROID_API__ < 24 && !defined(__LP64__) && \
-        defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64)
-  
-  
-  
-  return fseeko(file_, static_cast<off_t>(position), SEEK_SET);
 #else
-  return fseek(file_, static_cast<long>(position), SEEK_SET);
+  return fseeko(file_, static_cast<off_t>(position), SEEK_SET);
 #endif
 }
 

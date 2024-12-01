@@ -24,7 +24,7 @@
 
 
 
-static inline void compute_flow_error(const uint8_t *src, const uint8_t *ref,
+static INLINE void compute_flow_error(const uint8_t *src, const uint8_t *ref,
                                       int width, int height, int stride, int x,
                                       int y, double u, double v, int16_t *dt) {
   
@@ -160,7 +160,7 @@ static inline void compute_flow_error(const uint8_t *src, const uint8_t *ref,
 
 
 
-static inline void compute_flow_matrix(const int16_t *dx, int dx_stride,
+static INLINE void compute_flow_matrix(const int16_t *dx, int dx_stride,
                                        const int16_t *dy, int dy_stride,
                                        double *M_inv) {
   int32x4_t sum[4] = { vdupq_n_s32(0), vdupq_n_s32(0), vdupq_n_s32(0),
@@ -208,7 +208,7 @@ static inline void compute_flow_matrix(const int16_t *dx, int dx_stride,
   M_inv[3] = M0 * det_inv;
 }
 
-static inline void compute_flow_vector(const int16_t *dx, int dx_stride,
+static INLINE void compute_flow_vector(const int16_t *dx, int dx_stride,
                                        const int16_t *dy, int dy_stride,
                                        const int16_t *dt, int dt_stride,
                                        int *b) {

@@ -8,7 +8,6 @@
 
 
 
-
 #include <arm_neon.h>
 
 #include "config/aom_dsp_rtcd.h"
@@ -16,7 +15,7 @@
 #include "aom_dsp/arm/mem_neon.h"
 #include "aom_dsp/arm/transpose_neon.h"
 
-static inline void hadamard_4x4_one_pass(int16x4_t *a0, int16x4_t *a1,
+static INLINE void hadamard_4x4_one_pass(int16x4_t *a0, int16x4_t *a1,
                                          int16x4_t *a2, int16x4_t *a3) {
   const int16x4_t b0 = vhadd_s16(*a0, *a1);
   const int16x4_t b1 = vhsub_s16(*a0, *a1);

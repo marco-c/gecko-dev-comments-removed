@@ -514,7 +514,7 @@ void av1_highbd_quantize_b_facade(const tran_low_t *coeff_ptr,
   }
 }
 
-static inline void highbd_quantize_dc(
+static INLINE void highbd_quantize_dc(
     const tran_low_t *coeff_ptr, int n_coeffs, int skip_block,
     const int16_t *round_ptr, const int16_t quant, tran_low_t *qcoeff_ptr,
     tran_low_t *dqcoeff_ptr, const int16_t dequant_ptr, uint16_t *eob_ptr,
@@ -674,7 +674,7 @@ void av1_build_quantizer(aom_bit_depth_t bit_depth, int y_dc_delta_q,
   }
 }
 
-static inline bool deltaq_params_have_changed(
+static INLINE bool deltaq_params_have_changed(
     const DeltaQuantParams *prev_deltaq_params,
     const CommonQuantParams *quant_params) {
   return (prev_deltaq_params->y_dc_delta_q != quant_params->y_dc_delta_q ||
@@ -708,18 +708,8 @@ void av1_init_quantizer(EncQuantDequantParams *const enc_quant_dequant_params,
   prev_deltaq_params->v_ac_delta_q = quant_params->v_ac_delta_q;
 }
 
-
-
-
-
-
-
-
-
-
-
-static void set_q_index(const EncQuantDequantParams *enc_quant_dequant_params,
-                        int qindex, MACROBLOCK *x) {
+void av1_set_q_index(const EncQuantDequantParams *enc_quant_dequant_params,
+                     int qindex, MACROBLOCK *x) {
   const QUANTS *const quants = &enc_quant_dequant_params->quants;
   const Dequants *const dequants = &enc_quant_dequant_params->dequants;
   x->qindex = qindex;
@@ -754,15 +744,8 @@ static void set_q_index(const EncQuantDequantParams *enc_quant_dequant_params,
   x->plane[2].dequant_QTX = dequants->v_dequant_QTX[qindex];
 }
 
-
-
-
-
-
-
-
-static void set_qmatrix(const CommonQuantParams *quant_params, int segment_id,
-                        MACROBLOCKD *xd) {
+void av1_set_qmatrix(const CommonQuantParams *quant_params, int segment_id,
+                     MACROBLOCKD *xd) {
   const int use_qmatrix = av1_use_qmatrix(quant_params, xd, segment_id);
   const int qmlevel_y =
       use_qmatrix ? quant_params->qmatrix_level_y : NUM_QM_LEVELS - 1;
@@ -815,17 +798,17 @@ void av1_init_plane_quantizers(const AV1_COMP *cpi, MACROBLOCK *x,
       qindex_rdmult, cm->seq_params->bit_depth,
       cpi->ppi->gf_group.update_type[cpi->gf_frame_index], layer_depth,
       boost_index, frame_type, cpi->oxcf.q_cfg.use_fixed_qp_offsets,
-      is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning);
+      is_stat_consumption_stage(cpi));
 
   const int qindex_change = x->qindex != qindex;
   if (qindex_change || do_update) {
-    set_q_index(&cpi->enc_quant_dequant_params, qindex, x);
+    av1_set_q_index(&cpi->enc_quant_dequant_params, qindex, x);
   }
 
   MACROBLOCKD *const xd = &x->e_mbd;
   if ((segment_id != x->prev_segment_id) ||
       av1_use_qmatrix(quant_params, xd, segment_id)) {
-    set_qmatrix(quant_params, segment_id, xd);
+    av1_set_qmatrix(quant_params, segment_id, xd);
   }
 
   x->seg_skip_block = segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP);
@@ -864,8 +847,7 @@ static int adjust_hdr_cr_deltaq(int base_qindex) {
 }
 
 void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
-                       int q, int enable_chroma_deltaq, int enable_hdr_deltaq,
-                       bool is_allintra, aom_tune_metric tuning) {
+                       int q, int enable_chroma_deltaq, int enable_hdr_deltaq) {
   
   
   CommonQuantParams *quant_params = &cm->quant_params;
@@ -873,57 +855,11 @@ void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
   quant_params->y_dc_delta_q = 0;
 
   if (enable_chroma_deltaq) {
-    if (is_allintra && tuning == AOM_TUNE_SSIMULACRA2) {
-      int chroma_dc_delta_q = 0;
-      int chroma_ac_delta_q = 0;
-
-      if (cm->seq_params->subsampling_x == 1 &&
-          cm->seq_params->subsampling_y == 1) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        chroma_dc_delta_q = -clamp((quant_params->base_qindex / 2) - 14, 0, 16);
-        chroma_ac_delta_q = chroma_dc_delta_q;
-      } else if (cm->seq_params->subsampling_x == 0 &&
-                 cm->seq_params->subsampling_y == 0) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        chroma_dc_delta_q = 0;
-        chroma_ac_delta_q = clamp((quant_params->base_qindex / 2), 0, 24);
-      }
-
-      
-      
-      quant_params->u_dc_delta_q = chroma_dc_delta_q;
-      quant_params->u_ac_delta_q = chroma_ac_delta_q;
-      quant_params->v_dc_delta_q = chroma_dc_delta_q;
-      quant_params->v_ac_delta_q = chroma_ac_delta_q;
-    } else {
-      
-      quant_params->u_dc_delta_q = 2;
-      quant_params->u_ac_delta_q = 2;
-      quant_params->v_dc_delta_q = 2;
-      quant_params->v_ac_delta_q = 2;
-    }
+    
+    quant_params->u_dc_delta_q = 2;
+    quant_params->u_ac_delta_q = 2;
+    quant_params->v_dc_delta_q = 2;
+    quant_params->v_ac_delta_q = 2;
   } else {
     quant_params->u_dc_delta_q = 0;
     quant_params->u_ac_delta_q = 0;
@@ -943,45 +879,18 @@ void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
     }
   }
 
-  
-  
-  int (*get_luma_qmlevel)(int, int, int);
-  int (*get_chroma_qmlevel)(int, int, int);
-
-  if (is_allintra) {
-    get_luma_qmlevel = aom_get_qmlevel_allintra;
-  } else {
-    get_luma_qmlevel = aom_get_qmlevel;
-  }
-
-  if (is_allintra) {
-    if (tuning == AOM_TUNE_SSIMULACRA2 && cm->seq_params->subsampling_x == 0 &&
-        cm->seq_params->subsampling_y == 0) {
-      
-      
-      
-      
-      get_chroma_qmlevel = aom_get_qmlevel_444_chroma_ssimulacra2;
-    } else {
-      get_chroma_qmlevel = aom_get_qmlevel_allintra;
-    }
-  } else {
-    get_chroma_qmlevel = aom_get_qmlevel;
-  }
-
   quant_params->qmatrix_level_y =
-      get_luma_qmlevel(quant_params->base_qindex, min_qmlevel, max_qmlevel);
+      aom_get_qmlevel(quant_params->base_qindex, min_qmlevel, max_qmlevel);
   quant_params->qmatrix_level_u =
-      get_chroma_qmlevel(quant_params->base_qindex + quant_params->u_ac_delta_q,
-                         min_qmlevel, max_qmlevel);
+      aom_get_qmlevel(quant_params->base_qindex + quant_params->u_ac_delta_q,
+                      min_qmlevel, max_qmlevel);
 
-  if (cm->seq_params->separate_uv_delta_q) {
-    quant_params->qmatrix_level_v = get_chroma_qmlevel(
-        quant_params->base_qindex + quant_params->v_ac_delta_q, min_qmlevel,
-        max_qmlevel);
-  } else {
+  if (!cm->seq_params->separate_uv_delta_q)
     quant_params->qmatrix_level_v = quant_params->qmatrix_level_u;
-  }
+  else
+    quant_params->qmatrix_level_v =
+        aom_get_qmlevel(quant_params->base_qindex + quant_params->v_ac_delta_q,
+                        min_qmlevel, max_qmlevel);
 }
 
 

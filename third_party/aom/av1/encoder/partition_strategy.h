@@ -12,12 +12,29 @@
 #ifndef AOM_AV1_ENCODER_PARTITION_STRATEGY_H_
 #define AOM_AV1_ENCODER_PARTITION_STRATEGY_H_
 
-#include "config/aom_config.h"
-
 #include "av1/encoder/encodeframe.h"
 #include "av1/encoder/encodeframe_utils.h"
 #include "av1/encoder/encodemb.h"
 #include "av1/encoder/encoder.h"
+
+void av1_intra_mode_cnn_partition(const AV1_COMMON *const cm, MACROBLOCK *x,
+                                  int label_idx,
+                                  int intra_cnn_based_part_prune_level,
+                                  PartitionSearchState *part_state);
+
+
+
+
+void av1_simple_motion_search_based_split(AV1_COMP *const cpi, MACROBLOCK *x,
+                                          SIMPLE_MOTION_DATA_TREE *sms_tree,
+                                          PartitionSearchState *part_state);
+
+
+
+
+void av1_simple_motion_search_prune_rect(AV1_COMP *const cpi, MACROBLOCK *x,
+                                         SIMPLE_MOTION_DATA_TREE *sms_tree,
+                                         PartitionSearchState *part_state);
 
 #if !CONFIG_REALTIME_ONLY
 
@@ -64,6 +81,13 @@ void av1_ml_prune_rect_partition(AV1_COMP *const cpi, const MACROBLOCK *const x,
                                  PartitionSearchState *part_state);
 
 
+
+void av1_ml_prune_ab_partition(AV1_COMP *const cpi, int part_ctx, int var_ctx,
+                               int64_t best_rd,
+                               PartitionSearchState *part_state,
+                               int *ab_partitions_allowed);
+
+
 void av1_ml_prune_4_partition(AV1_COMP *const cpi, MACROBLOCK *const x,
                               int part_ctx, int64_t best_rd,
                               PartitionSearchState *part_state,
@@ -108,7 +132,6 @@ void av1_collect_motion_search_features_sb(AV1_COMP *const cpi, ThreadData *td,
                                            const int mi_row, const int mi_col,
                                            const BLOCK_SIZE bsize,
                                            aom_partition_features_t *features);
-#if CONFIG_PARTITION_SEARCH_ORDER
 void av1_prepare_motion_search_features_block(
     AV1_COMP *const cpi, ThreadData *td, TileDataEnc *tile_data,
     const int mi_row, const int mi_col, const BLOCK_SIZE bsize,
@@ -118,11 +141,10 @@ void av1_prepare_motion_search_features_block(
     unsigned int horz_block_var[2], unsigned int vert_block_sse[2],
     unsigned int vert_block_var[2]);
 #endif  
-#endif  
 
 
 
-static inline void set_offsets_for_motion_search(const AV1_COMP *const cpi,
+static INLINE void set_offsets_for_motion_search(const AV1_COMP *const cpi,
                                                  MACROBLOCK *const x,
                                                  int mi_row, int mi_col,
                                                  BLOCK_SIZE bsize) {
@@ -169,7 +191,7 @@ void av1_init_simple_motion_search_mvs_for_sb(const AV1_COMP *cpi,
                                               SIMPLE_MOTION_DATA_TREE *sms_root,
                                               int mi_row, int mi_col);
 
-static inline int is_full_sb(const CommonModeInfoParams *const mi_params,
+static INLINE int is_full_sb(const CommonModeInfoParams *const mi_params,
                              int mi_row, int mi_col, BLOCK_SIZE sb_size) {
   const int sb_mi_wide = mi_size_wide[sb_size];
   const int sb_mi_high = mi_size_high[sb_size];
@@ -182,7 +204,7 @@ static inline int is_full_sb(const CommonModeInfoParams *const mi_params,
 
 
 
-static inline int use_auto_max_partition(const AV1_COMP *const cpi,
+static INLINE int use_auto_max_partition(const AV1_COMP *const cpi,
                                          BLOCK_SIZE sb_size, int mi_row,
                                          int mi_col) {
   assert(IMPLIES(cpi->ppi->gf_group.size > 0,
@@ -211,11 +233,11 @@ static BLOCK_SIZE dim_to_size(int dim) {
   }
 }
 
-static inline void set_max_min_partition_size(SuperBlockEnc *sb_enc,
-                                              AV1_COMP *cpi, MACROBLOCK *x,
-                                              const SPEED_FEATURES *sf,
-                                              BLOCK_SIZE sb_size, int mi_row,
-                                              int mi_col) {
+static AOM_INLINE void set_max_min_partition_size(SuperBlockEnc *sb_enc,
+                                                  AV1_COMP *cpi, MACROBLOCK *x,
+                                                  const SPEED_FEATURES *sf,
+                                                  BLOCK_SIZE sb_size,
+                                                  int mi_row, int mi_col) {
   const AV1_COMMON *cm = &cpi->common;
 
   sb_enc->max_partition_size =

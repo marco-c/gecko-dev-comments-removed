@@ -21,7 +21,7 @@
 
 
 
-static inline void horver_correlation_4x4(const int16_t *diff, int stride,
+INLINE static void horver_correlation_4x4(const int16_t *diff, int stride,
                                           int32x4_t *xy_sum_32,
                                           int32x4_t *xz_sum_32,
                                           int32x4_t *x_sum_32,

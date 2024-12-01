@@ -150,7 +150,7 @@ class AV1InvTxfm2d : public ::testing::TestWithParam<AV1InvTxfm2dParam> {
   TxSize tx_size_;
 };
 
-static const int max_error_ls[TX_SIZES_ALL] = {
+static int max_error_ls[TX_SIZES_ALL] = {
   2,  
   2,  
   2,  
@@ -172,7 +172,7 @@ static const int max_error_ls[TX_SIZES_ALL] = {
   3,  
 };
 
-static const double avg_error_ls[TX_SIZES_ALL] = {
+static double avg_error_ls[TX_SIZES_ALL] = {
   0.002,  
   0.05,   
   0.07,   

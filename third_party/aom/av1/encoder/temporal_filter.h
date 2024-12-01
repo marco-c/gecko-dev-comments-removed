@@ -352,14 +352,18 @@ int av1_check_show_filtered_frame(const YV12_BUFFER_CONFIG *frame,
 
 
 
+int av1_get_q(const struct AV1_COMP *cpi);
 
 
 
 
 
 
-static inline bool tf_alloc_and_reset_data(TemporalFilterData *tf_data,
-                                           int num_pels, int is_high_bitdepth) {
+
+
+static AOM_INLINE bool tf_alloc_and_reset_data(TemporalFilterData *tf_data,
+                                               int num_pels,
+                                               int is_high_bitdepth) {
   tf_data->tmp_mbmi = (MB_MODE_INFO *)aom_calloc(1, sizeof(*tf_data->tmp_mbmi));
   tf_data->accum =
       (uint32_t *)aom_memalign(16, num_pels * sizeof(*tf_data->accum));
@@ -386,9 +390,9 @@ static inline bool tf_alloc_and_reset_data(TemporalFilterData *tf_data,
 
 
 
-static inline void tf_setup_macroblockd(MACROBLOCKD *mbd,
-                                        TemporalFilterData *tf_data,
-                                        const struct scale_factors *scale) {
+static AOM_INLINE void tf_setup_macroblockd(MACROBLOCKD *mbd,
+                                            TemporalFilterData *tf_data,
+                                            const struct scale_factors *scale) {
   mbd->block_ref_scale_factors[0] = scale;
   mbd->block_ref_scale_factors[1] = scale;
   mbd->mi = &tf_data->tmp_mbmi;
@@ -401,8 +405,8 @@ static inline void tf_setup_macroblockd(MACROBLOCKD *mbd,
 
 
 
-static inline void tf_dealloc_data(TemporalFilterData *tf_data,
-                                   int is_high_bitdepth) {
+static AOM_INLINE void tf_dealloc_data(TemporalFilterData *tf_data,
+                                       int is_high_bitdepth) {
   if (is_high_bitdepth)
     tf_data->pred = (uint8_t *)CONVERT_TO_SHORTPTR(tf_data->pred);
   aom_free(tf_data->tmp_mbmi);
@@ -424,7 +428,7 @@ static inline void tf_dealloc_data(TemporalFilterData *tf_data,
 
 
 
-static inline void tf_save_state(MACROBLOCKD *mbd, MB_MODE_INFO ***input_mbmi,
+static INLINE void tf_save_state(MACROBLOCKD *mbd, MB_MODE_INFO ***input_mbmi,
                                  uint8_t **input_buffer, int num_planes) {
   for (int i = 0; i < num_planes; i++) {
     input_buffer[i] = mbd->plane[i].pre[0].buf;
@@ -440,7 +444,7 @@ static inline void tf_save_state(MACROBLOCKD *mbd, MB_MODE_INFO ***input_mbmi,
 
 
 
-static inline void tf_restore_state(MACROBLOCKD *mbd, MB_MODE_INFO **input_mbmi,
+static INLINE void tf_restore_state(MACROBLOCKD *mbd, MB_MODE_INFO **input_mbmi,
                                     uint8_t **input_buffer, int num_planes) {
   for (int i = 0; i < num_planes; i++) {
     mbd->plane[i].pre[0].buf = input_buffer[i];

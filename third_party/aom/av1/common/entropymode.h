@@ -191,7 +191,7 @@ void av1_setup_frame_contexts(struct AV1Common *cm);
 void av1_setup_past_independence(struct AV1Common *cm);
 
 
-static inline int av1_ceil_log2(int n) {
+static INLINE int av1_ceil_log2(int n) {
   if (n < 2) return 0;
   return get_msb(n - 1) + 1;
 }

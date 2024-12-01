@@ -102,7 +102,7 @@ extern "C" {
 
 
 #ifndef AOM_DEPRECATED
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __GNUC__
 #define AOM_DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
 #define AOM_DEPRECATED
@@ -112,7 +112,7 @@ extern "C" {
 #endif 
 
 #ifndef AOM_DECLSPEC_DEPRECATED
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __GNUC__
 #define AOM_DECLSPEC_DEPRECATED
 #elif defined(_MSC_VER)
 
@@ -132,7 +132,7 @@ extern "C" {
 
 
 #ifndef ATTRIBUTE_PACKED
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __GNUC__
 #define ATTRIBUTE_PACKED __attribute__((packed))
 #elif defined(_MSC_VER)
 #define ATTRIBUTE_PACKED
@@ -225,24 +225,7 @@ typedef long aom_codec_caps_t;
 
 
 
-
-
-
-
 typedef long aom_codec_flags_t;
-
-
-
-
-
-
-
-
-
-
-
-
-#define AOM_CODEC_USE_EXPERIMENTAL 0x1 /**< Enables experimental features */
 
 
 

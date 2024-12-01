@@ -15,7 +15,7 @@
 
 
 
-static inline void btf_32_avx2_type0(const int32_t w0, const int32_t w1,
+static INLINE void btf_32_avx2_type0(const int32_t w0, const int32_t w1,
                                      __m256i *in0, __m256i *in1,
                                      const __m256i _r, const int32_t cos_bit) {
   __m256i _in0 = *in0;
@@ -34,7 +34,7 @@ static inline void btf_32_avx2_type0(const int32_t w0, const int32_t w1,
   *in1 = _mm256_srai_epi32(temp1, cos_bit);
 }
 
-static inline void btf_32_avx2_type1(const int32_t w0, const int32_t w1,
+static INLINE void btf_32_avx2_type1(const int32_t w0, const int32_t w1,
                                      __m256i *in0, __m256i *in1,
                                      const __m256i _r, const int32_t cos_bit) {
   __m256i _in0 = *in0;
@@ -55,7 +55,7 @@ static inline void btf_32_avx2_type1(const int32_t w0, const int32_t w1,
 
 
 
-static inline void btf_32_avx2_type0_new(const __m256i ww0, const __m256i ww1,
+static INLINE void btf_32_avx2_type0_new(const __m256i ww0, const __m256i ww1,
                                          __m256i *in0, __m256i *in1,
                                          const __m256i _r,
                                          const int32_t cos_bit) {
@@ -75,7 +75,7 @@ static inline void btf_32_avx2_type0_new(const __m256i ww0, const __m256i ww1,
 
 
 
-static inline void btf_32_avx2_type1_new(const __m256i ww0, const __m256i ww1,
+static INLINE void btf_32_avx2_type1_new(const __m256i ww0, const __m256i ww1,
                                          __m256i *in0, __m256i *in1,
                                          const __m256i _r,
                                          const int32_t cos_bit) {
