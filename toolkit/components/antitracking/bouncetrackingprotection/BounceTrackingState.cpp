@@ -753,6 +753,17 @@ nsresult BounceTrackingState::OnDocumentLoaded(
              Describe().get()));
   }
 
+  bool shouldTrackPrincipal =
+      BounceTrackingState::ShouldTrackPrincipal(aDocumentPrincipal);
+
+  
+  
+  
+  if (shouldTrackPrincipal) {
+    mBounceTrackingProtection->MaybeLogPurgedWarningForSite(aDocumentPrincipal,
+                                                            this);
+  }
+
   
   
   if (!mBounceTrackingRecord) {
@@ -760,7 +771,7 @@ nsresult BounceTrackingState::OnDocumentLoaded(
   }
 
   nsAutoCString siteHost;
-  if (!BounceTrackingState::ShouldTrackPrincipal(aDocumentPrincipal)) {
+  if (!shouldTrackPrincipal) {
     siteHost = "";
   } else {
     nsresult rv = aDocumentPrincipal->GetBaseDomain(siteHost);

@@ -78,6 +78,14 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   [[nodiscard]] nsresult ClearExpiredUserInteractions(
       BounceTrackingStateGlobal* aStateGlobal = nullptr);
 
+  
+  
+  
+  
+  
+  void MaybeLogPurgedWarningForSite(nsIPrincipal* aPrincipal,
+                                    BounceTrackingState* aBounceTrackingState);
+
  private:
   BounceTrackingProtection() = default;
   ~BounceTrackingProtection() = default;
