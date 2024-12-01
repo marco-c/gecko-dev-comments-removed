@@ -479,15 +479,6 @@ void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aValue);
 
 
 
-void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
-
-
-
-
-
-
-
-
 void ScalarAdd(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
                uint32_t aValue);
 
@@ -510,17 +501,6 @@ void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
 
 void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
                bool aValue);
-
-
-
-
-
-
-
-
-
-void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
-                      uint32_t aValue);
 
 }  
 }  
