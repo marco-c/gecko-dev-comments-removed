@@ -88,7 +88,7 @@ enum class FileType {
 
 
 
-FileType relativizePath(std::string& path) {
+FileType relativizePath(std::string &path) {
   if (path.compare(0, Objdir.length(), Objdir) == 0) {
     path.replace(0, Objdir.length(), GENERATED);
     return FileType::Generated;
@@ -96,7 +96,8 @@ FileType relativizePath(std::string& path) {
   
   
   
-  if (path.length() > Srcdir.length() && path.compare(0, Srcdir.length(), Srcdir) == 0) {
+  if (path.length() > Srcdir.length() &&
+      path.compare(0, Srcdir.length(), Srcdir) == 0) {
     
     path.erase(0, Srcdir.length() + 1);
     return FileType::Source;
@@ -127,12 +128,12 @@ static bool isValidIdentifier(std::string Input) {
 }
 
 template <size_t N>
-static bool stringStartsWith(const std::string& Input,
+static bool stringStartsWith(const std::string &Input,
                              const char (&Prefix)[N]) {
   return Input.length() > N - 1 && memcmp(Input.c_str(), Prefix, N - 1) == 0;
 }
 
-static bool isASCII(const std::string& Input) {
+static bool isASCII(const std::string &Input) {
   for (char C : Input) {
     if (C & 0x80) {
       return false;
@@ -142,36 +143,27 @@ static bool isASCII(const std::string& Input) {
 }
 
 struct RAIITracer {
-  RAIITracer(const char *log) : mLog(log) {
-    printf("<%s>\n", mLog);
-  }
+  RAIITracer(const char *log) : mLog(log) { printf("<%s>\n", mLog); }
 
-  ~RAIITracer() {
-    printf("</%s>\n", mLog);
-  }
+  ~RAIITracer() { printf("</%s>\n", mLog); }
 
-  const char* mLog;
+  const char *mLog;
 };
 
 #define TRACEFUNC RAIITracer tracer(__FUNCTION__);
 
 
 
-template<typename T>
-class ValueRollback {
+template <typename T> class ValueRollback {
 public:
-  template<typename U = T>
+  template <typename U = T>
   ValueRollback(T &variable, U &&value)
-    : mVariable{&variable}
-    , mSavedValue{std::exchange(variable, std::forward<U>(value))}
-  {
-  }
+      : mVariable{&variable},
+        mSavedValue{std::exchange(variable, std::forward<U>(value))} {}
 
   ValueRollback(ValueRollback &&other) noexcept
-    : mVariable{std::exchange(other.mVariable, nullptr)}
-    , mSavedValue{std::move(other.mSavedValue)}
-  {
-  }
+      : mVariable{std::exchange(other.mVariable, nullptr)},
+        mSavedValue{std::move(other.mSavedValue)} {}
 
   ValueRollback(const ValueRollback &) = delete;
   ValueRollback &operator=(ValueRollback &&) = delete;
@@ -189,7 +181,7 @@ private:
 
 class IndexConsumer;
 
-bool isPure(FunctionDecl* D) {
+bool isPure(FunctionDecl *D) {
 #if CLANG_VERSION_MAJOR >= 18
   return D->isPureVirtual();
 #else
@@ -204,18 +196,18 @@ bool isPure(FunctionDecl* D) {
 struct FileInfo {
   FileInfo(std::string &Rname) : Realname(Rname) {
     switch (relativizePath(Realname)) {
-      case FileType::Generated:
-        Interesting = true;
-        Generated = true;
-        break;
-      case FileType::Source:
-        Interesting = true;
-        Generated = false;
-        break;
-      case FileType::Unknown:
-        Interesting = false;
-        Generated = false;
-        break;
+    case FileType::Generated:
+      Interesting = true;
+      Generated = true;
+      break;
+    case FileType::Source:
+      Interesting = true;
+      Generated = false;
+      break;
+    case FileType::Unknown:
+      Interesting = false;
+      Generated = false;
+      break;
     }
   }
   std::string Realname;
@@ -227,7 +219,8 @@ struct FileInfo {
 struct MacroExpansionState {
   Token MacroNameToken;
   const MacroInfo *MacroInfo = nullptr;
-  std::vector<std::string> Dependencies; 
+  
+  std::vector<std::string> Dependencies;
   std::string Expansion;
   std::map<SourceLocation, unsigned> TokenLocations;
   SourceRange Range;
@@ -255,10 +248,8 @@ public:
                            FileID PrevFID) override;
 
   virtual void InclusionDirective(SourceLocation HashLoc,
-                                  const Token &IncludeTok,
-                                  StringRef FileName,
-                                  bool IsAngled,
-                                  CharSourceRange FileNameRange,
+                                  const Token &IncludeTok, StringRef FileName,
+                                  bool IsAngled, CharSourceRange FileNameRange,
 #if CLANG_VERSION_MAJOR >= 16
                                   OptionalFileEntryRef File,
 #elif CLANG_VERSION_MAJOR >= 15
@@ -266,8 +257,7 @@ public:
 #else
                                   const FileEntry *File,
 #endif
-                                  StringRef SearchPath,
-                                  StringRef RelativePath,
+                                  StringRef SearchPath, StringRef RelativePath,
 #if CLANG_VERSION_MAJOR >= 19
                                   const Module *SuggestedModule,
                                   bool ModuleImported,
@@ -314,9 +304,11 @@ private:
   
   
   struct AutoSetContext {
-    AutoSetContext(IndexConsumer *Self, NamedDecl *Context, bool VisitImplicit = false)
+    AutoSetContext(IndexConsumer *Self, NamedDecl *Context,
+                   bool VisitImplicit = false)
         : Self(Self), Prev(Self->CurDeclContext), Decl(Context) {
-      this->VisitImplicit = VisitImplicit || (Prev ? Prev->VisitImplicit : false);
+      this->VisitImplicit =
+          VisitImplicit || (Prev ? Prev->VisitImplicit : false);
       Self->CurDeclContext = this;
     }
 
@@ -419,8 +411,8 @@ private:
   
   
   std::string pathAndLineRangeToString(FileID fromFileID, SourceRange Range) {
-    FileInfo* toFile = getFileInfo(Range.getBegin());
-    FileInfo* fromFile = FileMap.find(fromFileID)->second.get();
+    FileInfo *toFile = getFileInfo(Range.getBegin());
+    FileInfo *fromFile = FileMap.find(fromFileID)->second.get();
 
     auto lineRange = lineRangeToString(Range, true);
 
@@ -453,7 +445,8 @@ private:
     if (IsInvalid) {
       return "";
     }
-    unsigned Column1 = SM.getColumnNumber(Begin.first, Begin.second, &IsInvalid);
+    unsigned Column1 =
+        SM.getColumnNumber(Begin.first, Begin.second, &IsInvalid);
     if (IsInvalid) {
       return "";
     }
@@ -496,8 +489,8 @@ private:
           std::string Backing;
           llvm::raw_string_ostream Stream(Backing);
           const TemplateArgumentList &TemplateArgs = Spec->getTemplateArgs();
-          printTemplateArgumentList(
-              Stream, TemplateArgs.asArray(), PrintingPolicy(CI.getLangOpts()));
+          printTemplateArgumentList(Stream, TemplateArgs.asArray(),
+                                    PrintingPolicy(CI.getLangOpts()));
           Result += Stream.str();
         }
       } else if (const auto *Nd = dyn_cast<NamespaceDecl>(DC)) {
@@ -548,8 +541,9 @@ private:
       
       
       
-      char* Platform = getenv("MOZSEARCH_PLATFORM");
-      Filename = std::string(Platform ? Platform : "") + std::string("@") + Filename;
+      char *Platform = getenv("MOZSEARCH_PLATFORM");
+      Filename =
+          std::string(Platform ? Platform : "") + std::string("@") + Filename;
     }
     return hash(Filename + std::string("@") + locationToString(Loc));
   }
@@ -590,8 +584,9 @@ private:
       
       
       
-      char* Platform = getenv("MOZSEARCH_PLATFORM");
-      Filename = std::string(Platform ? Platform : "") + std::string("@") + Filename;
+      char *Platform = getenv("MOZSEARCH_PLATFORM");
+      Filename =
+          std::string(Platform ? Platform : "") + std::string("@") + Filename;
     }
     return Filename;
   }
@@ -708,11 +703,11 @@ private:
 
 public:
   IndexConsumer(CompilerInstance &CI)
-      : CI(CI), SM(CI.getSourceManager()), LO(CI.getLangOpts()), CurMangleContext(nullptr),
-        AstContext(nullptr), ConcatInfo(CI.getPreprocessor()), CurDeclContext(nullptr),
+      : CI(CI), SM(CI.getSourceManager()), LO(CI.getLangOpts()),
+        CurMangleContext(nullptr), AstContext(nullptr),
+        ConcatInfo(CI.getPreprocessor()), CurDeclContext(nullptr),
         TemplateStack(nullptr) {
-    CI.getPreprocessor().addPPCallbacks(
-        make_unique<PreprocessorHook>(this));
+    CI.getPreprocessor().addPPCallbacks(make_unique<PreprocessorHook>(this));
     CI.getPreprocessor().setTokenWatcher(
         [this](const auto &token) { onTokenLexed(token); });
   }
@@ -741,7 +736,7 @@ public:
   
   virtual void HandleTranslationUnit(ASTContext &Ctx) {
     CurMangleContext =
-      clang::ItaniumMangleContext::create(Ctx, CI.getDiagnostics());
+        clang::ItaniumMangleContext::create(Ctx, CI.getDiagnostics());
 
     AstContext = &Ctx;
     Resolver = std::make_unique<clangd::HeuristicResolver>(Ctx);
@@ -757,9 +752,9 @@ public:
       FileInfo &Info = *It->second;
 
       std::string Filename = Outdir + Info.Realname;
-      std::string SrcFilename = Info.Generated
-        ? Objdir + Info.Realname.substr(GENERATED.length())
-        : Srcdir + PATHSEP_STRING + Info.Realname;
+      std::string SrcFilename =
+          Info.Generated ? Objdir + Info.Realname.substr(GENERATED.length())
+                         : Srcdir + PATHSEP_STRING + Info.Realname;
 
       ensurePath(Filename);
 
@@ -778,19 +773,21 @@ public:
       std::ifstream Fin(Filename.c_str(), std::ios::in | std::ios::binary);
       FILE *OutFp = Lock.openTmp();
       if (!OutFp) {
-        fprintf(stderr, "Unable to open tmp out file for %s\n", Filename.c_str());
+        fprintf(stderr, "Unable to open tmp out file for %s\n",
+                Filename.c_str());
         exit(1);
       }
 
       
       std::sort(Info.Output.begin(), Info.Output.end());
-      std::vector<std::string>::const_iterator NewLinesIter = Info.Output.begin();
+      std::vector<std::string>::const_iterator NewLinesIter =
+          Info.Output.begin();
       std::string LastNewWritten;
 
       
       
       
-      while(Fin.good()) {
+      while (Fin.good()) {
         std::string OldLine;
         std::getline(Fin, OldLine);
         
@@ -815,8 +812,10 @@ public:
             
             continue;
           }
-          if (fwrite(NewLinesIter->c_str(), NewLinesIter->length(), 1, OutFp) != 1) {
-            fprintf(stderr, "Unable to write %zu bytes[1] to tmp output file for %s\n",
+          if (fwrite(NewLinesIter->c_str(), NewLinesIter->length(), 1, OutFp) !=
+              1) {
+            fprintf(stderr,
+                    "Unable to write %zu bytes[1] to tmp output file for %s\n",
                     NewLinesIter->length(), Filename.c_str());
             exit(1);
           }
@@ -825,7 +824,8 @@ public:
 
         
         if (fwrite(OldLine.c_str(), OldLine.length(), 1, OutFp) != 1) {
-          fprintf(stderr, "Unable to write %zu bytes[2] to tmp output file for %s\n",
+          fprintf(stderr,
+                  "Unable to write %zu bytes[2] to tmp output file for %s\n",
                   OldLine.length(), Filename.c_str());
           exit(1);
         }
@@ -839,8 +839,10 @@ public:
         if (*NewLinesIter == LastNewWritten) {
           continue;
         }
-        if (fwrite(NewLinesIter->c_str(), NewLinesIter->length(), 1, OutFp) != 1) {
-          fprintf(stderr, "Unable to write %zu bytes[3] to tmp output file for %s\n",
+        if (fwrite(NewLinesIter->c_str(), NewLinesIter->length(), 1, OutFp) !=
+            1) {
+          fprintf(stderr,
+                  "Unable to write %zu bytes[3] to tmp output file for %s\n",
                   NewLinesIter->length(), Filename.c_str());
           exit(1);
         }
@@ -851,7 +853,9 @@ public:
       
       fclose(OutFp);
       if (!Lock.moveTmp()) {
-        fprintf(stderr, "Unable to move tmp output file into place for %s (err %d)\n", Filename.c_str(), errno);
+        fprintf(stderr,
+                "Unable to move tmp output file into place for %s (err %d)\n",
+                Filename.c_str(), errno);
         exit(1);
       }
     }
@@ -950,7 +954,8 @@ public:
       D = F->getTemplateInstantiationPattern();
     }
 
-    return Context(D->getQualifiedNameAsString(), getMangledName(CurMangleContext, D));
+    return Context(D->getQualifiedNameAsString(),
+                   getMangledName(CurMangleContext, D));
   }
 
   Context getContext(SourceLocation Loc) {
@@ -990,6 +995,7 @@ public:
     return Context();
   }
 
+  
   
   const FunctionDecl *getCurrentFunctionTemplateInstantiation() {
     const auto *Ctxt = CurDeclContext;
@@ -1033,9 +1039,9 @@ public:
   
   struct AutoTemplateContext {
     AutoTemplateContext(IndexConsumer *Self)
-        : Self(Self)
-        , CurMode(Self->TemplateStack ? Self->TemplateStack->CurMode : Mode::GatherDependent)
-        , Parent(Self->TemplateStack) {
+        : Self(Self), CurMode(Self->TemplateStack ? Self->TemplateStack->CurMode
+                                                  : Mode::GatherDependent),
+          Parent(Self->TemplateStack) {
       Self->TemplateStack = this;
     }
 
@@ -1066,9 +1072,7 @@ public:
       }
     }
 
-    bool inGatherMode() {
-      return CurMode == Mode::GatherDependent;
-    }
+    bool inGatherMode() { return CurMode == Mode::GatherDependent; }
 
     
     
@@ -1119,7 +1123,8 @@ public:
 
   AutoTemplateContext *TemplateStack;
 
-  std::unordered_multimap<const FunctionDecl *, const Stmt *> ForwardingTemplates;
+  std::unordered_multimap<const FunctionDecl *, const Stmt *>
+      ForwardingTemplates;
   std::unordered_set<unsigned> ForwardedTemplateLocations;
 
   bool shouldVisitTemplateInstantiations() const {
@@ -1198,6 +1203,7 @@ public:
     NoCrossref = 1 << 0,
     
     
+    
     NotIdentifierToken = 1 << 1,
     
     
@@ -1206,8 +1212,10 @@ public:
     LocRangeEndValid = 1 << 2
   };
 
-  void emitStructuredRecordInfo(llvm::json::OStream &J, SourceLocation Loc, const RecordDecl *decl) {
-    J.attribute("kind", TypeWithKeyword::getTagTypeKindName(decl->getTagKind()));
+  void emitStructuredRecordInfo(llvm::json::OStream &J, SourceLocation Loc,
+                                const RecordDecl *decl) {
+    J.attribute("kind",
+                TypeWithKeyword::getTagTypeKindName(decl->getTagKind()));
 
     const ASTContext &C = *AstContext;
     const ASTRecordLayout &Layout = C.getASTRecordLayout(decl);
@@ -1226,7 +1234,8 @@ public:
         
         
         const QualType ptrType = C.getUIntPtrType();
-        J.attribute("ownVFPtrBytes", C.getTypeSizeInChars(ptrType).getQuantity());
+        J.attribute("ownVFPtrBytes",
+                    C.getTypeSizeInChars(ptrType).getQuantity());
       }
 
       J.attributeBegin("supers");
@@ -1310,14 +1319,17 @@ public:
     J.arrayBegin();
     uint64_t iField = 0;
     for (RecordDecl::field_iterator It = decl->field_begin(),
-          End = decl->field_end(); It != End; ++It, ++iField) {
+                                    End = decl->field_end();
+         It != End; ++It, ++iField) {
       const FieldDecl &Field = **It;
-      auto sourceRange = SM.getExpansionRange(Field.getSourceRange()).getAsRange();
+      auto sourceRange =
+          SM.getExpansionRange(Field.getSourceRange()).getAsRange();
       uint64_t localOffsetBits = Layout.getFieldOffset(iField);
       CharUnits localOffsetBytes = C.toCharUnitsFromBits(localOffsetBits);
 
       J.objectBegin();
-      J.attribute("lineRange", pathAndLineRangeToString(structFileID, sourceRange));
+      J.attribute("lineRange",
+                  pathAndLineRangeToString(structFileID, sourceRange));
       J.attribute("pretty", getQualifiedName(&Field));
       J.attribute("sym", getMangledName(CurMangleContext, &Field));
 
@@ -1346,7 +1358,8 @@ public:
         J.attributeBegin("bitPositions");
         J.objectBegin();
 
-        J.attribute("begin", unsigned(localOffsetBits - C.toBits(localOffsetBytes)));
+        J.attribute("begin",
+                    unsigned(localOffsetBits - C.toBits(localOffsetBytes)));
         J.attribute("width", Field.getBitWidthValue(C));
 
         J.objectEnd();
@@ -1381,7 +1394,8 @@ public:
     J.attribute("kind", "enumConstant");
   }
 
-  void emitStructuredFunctionInfo(llvm::json::OStream &J, const FunctionDecl *decl) {
+  void emitStructuredFunctionInfo(llvm::json::OStream &J,
+                                  const FunctionDecl *decl) {
     emitBindingAttributes(J, *decl);
 
     J.attributeBegin("args");
@@ -1428,6 +1442,7 @@ public:
       for (const CXXMethodDecl *MethodDecl : cxxDecl->overridden_methods()) {
         J.objectBegin();
 
+        
         
         
         
@@ -1507,7 +1522,8 @@ public:
 
 
   void emitStructuredVarInfo(llvm::json::OStream &J, const VarDecl *decl) {
-    const auto *parentDecl = dyn_cast_or_null<RecordDecl>(decl->getDeclContext());
+    const auto *parentDecl =
+        dyn_cast_or_null<RecordDecl>(decl->getDeclContext());
 
     J.attribute("kind", "field");
 
@@ -1572,8 +1588,7 @@ public:
   
   void visitIdentifier(const char *Kind, const char *SyntaxKind,
                        llvm::StringRef QualName, SourceRange LocRange,
-                       std::string Symbol,
-                       QualType MaybeType = QualType(),
+                       std::string Symbol, QualType MaybeType = QualType(),
                        Context TokenContext = Context(), int Flags = 0,
                        SourceRange PeekRange = SourceRange(),
                        SourceRange NestingRange = SourceRange(),
@@ -1583,7 +1598,9 @@ public:
     
     SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
     if (SpellingLoc != Loc) {
-      visitIdentifier(Kind, SyntaxKind, QualName, SpellingLoc, Symbol, MaybeType, TokenContext, Flags, PeekRange, NestingRange, ArgRanges);
+      visitIdentifier(Kind, SyntaxKind, QualName, SpellingLoc, Symbol,
+                      MaybeType, TokenContext, Flags, PeekRange, NestingRange,
+                      ArgRanges);
     }
 
     SourceLocation ExpansionLoc = SM.getExpansionLoc(Loc);
@@ -1598,12 +1615,16 @@ public:
 
     
     unsigned StartOffset = SM.getFileOffset(ExpansionLoc);
-    unsigned EndOffset = (Flags & LocRangeEndValid)
-        ? SM.getFileOffset(LocRange.getEnd())
-        : StartOffset + Lexer::MeasureTokenLength(ExpansionLoc, SM, CI.getLangOpts());
+    unsigned EndOffset =
+        (Flags & LocRangeEndValid)
+            ? SM.getFileOffset(LocRange.getEnd())
+            : StartOffset +
+                  Lexer::MeasureTokenLength(ExpansionLoc, SM, CI.getLangOpts());
 
-    std::string LocStr = locationToString(ExpansionLoc, EndOffset - StartOffset);
-    std::string RangeStr = locationToString(ExpansionLoc, EndOffset - StartOffset);
+    std::string LocStr =
+        locationToString(ExpansionLoc, EndOffset - StartOffset);
+    std::string RangeStr =
+        locationToString(ExpansionLoc, EndOffset - StartOffset);
     std::string PeekRangeStr;
 
     if (!(Flags & NotIdentifierToken)) {
@@ -1727,10 +1748,10 @@ public:
       J.arrayBegin();
 
       for (auto range : *ArgRanges) {
-          std::string ArgRangeStr = fullRangeToString(range);
-          if (!ArgRangeStr.empty()) {
-            J.value(ArgRangeStr);
-          }
+        std::string ArgRangeStr = fullRangeToString(range);
+        if (!ArgRangeStr.empty()) {
+          J.value(ArgRangeStr);
+        }
       }
 
       J.arrayEnd();
@@ -1746,6 +1767,7 @@ public:
         J.attributeBegin(macroInfo.Key);
         J.objectBegin();
         J.attribute("", macroInfo.Expansion); 
+                                              
         J.objectEnd();
         J.attributeEnd();
         J.objectEnd();
@@ -1757,7 +1779,8 @@ public:
           J.objectBegin();
           J.attributeBegin(macroInfo.Key);
           J.objectBegin();
-          J.attributeBegin(""); 
+          J.attributeBegin(
+              ""); 
           J.arrayBegin();
           J.value(it->second);
           J.arrayEnd();
@@ -1790,7 +1813,7 @@ public:
   }
 
   
-  SourceRange getCompoundStmtRange(Stmt* D) {
+  SourceRange getCompoundStmtRange(Stmt *D) {
     if (!D) {
       return SourceRange();
     }
@@ -1803,7 +1826,7 @@ public:
     return SourceRange();
   }
 
-  SourceRange getFunctionPeekRange(FunctionDecl* D) {
+  SourceRange getFunctionPeekRange(FunctionDecl *D) {
     
     
     SourceLocation Start = D->getBeginLoc();
@@ -1814,8 +1837,9 @@ public:
     std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedLoc(End);
 
     
-    for (ParmVarDecl* Param : D->parameters()) {
-      std::pair<FileID, unsigned> ParamLoc = SM.getDecomposedLoc(Param->getLocation());
+    for (ParmVarDecl *Param : D->parameters()) {
+      std::pair<FileID, unsigned> ParamLoc =
+          SM.getDecomposedLoc(Param->getLocation());
 
       
       
@@ -1828,7 +1852,7 @@ public:
     return SourceRange(Start, End);
   }
 
-  SourceRange getTagPeekRange(TagDecl* D) {
+  SourceRange getTagPeekRange(TagDecl *D) {
     SourceLocation Start = D->getBeginLoc();
 
     
@@ -1836,9 +1860,9 @@ public:
 
     std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedLoc(End);
 
-    if (CXXRecordDecl* D2 = dyn_cast<CXXRecordDecl>(D)) {
+    if (CXXRecordDecl *D2 = dyn_cast<CXXRecordDecl>(D)) {
       
-      for (CXXBaseSpecifier& Base : D2->bases()) {
+      for (CXXBaseSpecifier &Base : D2->bases()) {
         std::pair<FileID, unsigned> Loc = SM.getDecomposedLoc(Base.getEndLoc());
 
         
@@ -1853,9 +1877,8 @@ public:
     return SourceRange(Start, End);
   }
 
-  SourceRange getCommentRange(NamedDecl* D) {
-    const RawComment* RC =
-      AstContext->getRawCommentForDeclNoCache(D);
+  SourceRange getCommentRange(NamedDecl *D) {
+    const RawComment *RC = AstContext->getRawCommentForDeclNoCache(D);
     if (!RC) {
       return SourceRange();
     }
@@ -1944,7 +1967,8 @@ public:
         D = D2->getTemplateInstantiationPattern();
       }
       
-      Kind = (D2->isThisDeclarationADefinition() || isPure(D2)) ? "def" : "decl";
+      Kind =
+          (D2->isThisDeclarationADefinition() || isPure(D2)) ? "def" : "decl";
       PrettyKind = "function";
       PeekRange = getFunctionPeekRange(D2);
 
@@ -1998,8 +2022,9 @@ public:
       if (D2) {
         
         NestingRange = SourceRange(
-          findLeftBraceFromLoc(D2->isAnonymousNamespace() ? D2->getBeginLoc() : ExpansionLoc),
-          D2->getRBraceLoc());
+            findLeftBraceFromLoc(D2->isAnonymousNamespace() ? D2->getBeginLoc()
+                                                            : ExpansionLoc),
+            D2->getRBraceLoc());
       }
     } else if (isa<FieldDecl>(D)) {
       Kind = "def";
@@ -2046,9 +2071,9 @@ public:
       }
     }
 
-    visitIdentifier(Kind, PrettyKind, getQualifiedName(D), SourceRange(Loc), Symbol,
-                    qtype,
-                    getContext(D), Flags, PeekRange, NestingRange);
+    visitIdentifier(Kind, PrettyKind, getQualifiedName(D), SourceRange(Loc),
+                    Symbol, qtype, getContext(D), Flags, PeekRange,
+                    NestingRange);
 
     
     if (RecordDecl *D2 = dyn_cast<RecordDecl>(D)) {
@@ -2058,8 +2083,7 @@ public:
           
           
           
-          !D2->isDependentType() &&
-          !TemplateStack) {
+          !D2->isDependentType() && !TemplateStack) {
         if (auto *D3 = dyn_cast<CXXRecordDecl>(D2)) {
           findBindingToJavaClass(*AstContext, *D3);
           findBoundAsJavaClasses(*AstContext, *D3);
@@ -2082,10 +2106,8 @@ public:
       if ((D2->isThisDeclarationADefinition() || isPure(D2)) &&
           
           
-          !D2->isTemplateInstantiation() &&
-          !wasTemplate &&
-          !D2->isFunctionTemplateSpecialization() &&
-          !TemplateStack) {
+          !D2->isTemplateInstantiation() && !wasTemplate &&
+          !D2->isFunctionTemplateSpecialization() && !TemplateStack) {
         if (auto *D3 = dyn_cast<CXXMethodDecl>(D2)) {
           findBindingToJavaMember(*AstContext, *D3);
         } else {
@@ -2095,14 +2117,12 @@ public:
       }
     }
     if (FieldDecl *D2 = dyn_cast<FieldDecl>(D)) {
-      if (!D2->isTemplated() &&
-          !TemplateStack) {
+      if (!D2->isTemplated() && !TemplateStack) {
         emitStructuredInfo(ExpansionLoc, D2);
       }
     }
     if (VarDecl *D2 = dyn_cast<VarDecl>(D)) {
-      if (!D2->isTemplated() &&
-          !TemplateStack &&
+      if (!D2->isTemplated() && !TemplateStack &&
           isa<CXXRecordDecl>(D2->getDeclContext())) {
         findBindingToJavaConstant(*AstContext, *D2);
         emitStructuredInfo(ExpansionLoc, D2);
@@ -2120,9 +2140,12 @@ public:
 
     
     
+    
     if (TemplateStack && !TemplateStack->inGatherMode()) {
-      if (ForwardedTemplateLocations.find(E->getBeginLoc().getRawEncoding()) != ForwardedTemplateLocations.end()) {
-        ForwardingTemplates.insert({getCurrentFunctionTemplateInstantiation(), E});
+      if (ForwardedTemplateLocations.find(E->getBeginLoc().getRawEncoding()) !=
+          ForwardedTemplateLocations.end()) {
+        ForwardingTemplates.insert(
+            {getCurrentFunctionTemplateInstantiation(), E});
         return true;
       }
     }
@@ -2148,6 +2171,7 @@ public:
   }
 
   bool VisitUnresolvedLookupExpr(UnresolvedLookupExpr *E) {
+    
     
     
     if (TemplateStack && TemplateStack->inGatherMode()) {
@@ -2210,9 +2234,10 @@ public:
       argRanges.push_back(argExpr->getSourceRange());
     }
 
-    visitIdentifier("use", "function", getQualifiedName(NamedCallee), Loc, Mangled,
-                    E->getCallReturnType(*AstContext), getContext(SpellingLoc), Flags,
-                    SourceRange(), SourceRange(), &argRanges);
+    visitIdentifier("use", "function", getQualifiedName(NamedCallee), Loc,
+                    Mangled, E->getCallReturnType(*AstContext),
+                    getContext(SpellingLoc), Flags, SourceRange(),
+                    SourceRange(), &argRanges);
 
     return true;
   }
@@ -2301,6 +2326,7 @@ public:
 
   void VisitForwardedStatements(const Expr *E, SourceLocation Loc) {
     
+    
     auto todo = std::stack{std::vector<const Stmt *>{E}};
     auto seen = std::unordered_set<const Stmt *>{};
     while (!todo.empty()) {
@@ -2326,8 +2352,10 @@ public:
         continue;
       if (!F->isTemplateInstantiation())
         continue;
-      const auto [ForwardedBegin, ForwardedEnd] = ForwardingTemplates.equal_range(F);
-      for (auto ForwardedIt = ForwardedBegin; ForwardedIt != ForwardedEnd; ++ForwardedIt)
+      const auto [ForwardedBegin, ForwardedEnd] =
+          ForwardingTemplates.equal_range(F);
+      for (auto ForwardedIt = ForwardedBegin; ForwardedIt != ForwardedEnd;
+           ++ForwardedIt)
         if (seen.find(ForwardedIt->second) == seen.end())
           todo.push(ForwardedIt->second);
     }
@@ -2341,10 +2369,14 @@ public:
 
     
     
+    
     if (TemplateStack && !TemplateStack->inGatherMode()) {
-      const auto IsForwarded = ForwardedTemplateLocations.find(E->getBeginLoc().getRawEncoding()) != ForwardedTemplateLocations.end();
+      const auto IsForwarded =
+          ForwardedTemplateLocations.find(E->getBeginLoc().getRawEncoding()) !=
+          ForwardedTemplateLocations.end();
       if (IsForwarded) {
-        ForwardingTemplates.insert({getCurrentFunctionTemplateInstantiation(), E});
+        ForwardingTemplates.insert(
+            {getCurrentFunctionTemplateInstantiation(), E});
         return true;
       }
     }
@@ -2515,6 +2547,7 @@ public:
 
     
     
+    
     if (TemplateStack && TemplateStack->inGatherMode()) {
       const auto *TypeInfo = N->getAllocatedTypeSourceInfo();
       const auto ConstructExprLoc = TypeInfo->getTypeLoc().getBeginLoc();
@@ -2544,7 +2577,8 @@ public:
 
       
       for (auto NestedNameLoc = E->getQualifierLoc();
-           NestedNameLoc && NestedNameLoc.getNestedNameSpecifier()->isDependent();
+           NestedNameLoc &&
+           NestedNameLoc.getNestedNameSpecifier()->isDependent();
            NestedNameLoc = NestedNameLoc.getPrefix()) {
         TemplateStack->visitDependent(NestedNameLoc.getLocalBeginLoc());
       }
@@ -2575,16 +2609,15 @@ public:
 
     std::string symbol = std::string("URL_") + mangleURL(s);
 
-    visitIdentifier("use", "file", StringRef(s), Loc, symbol,
-                    QualType(), Context(),
-                    NotIdentifierToken | LocRangeEndValid);
+    visitIdentifier("use", "file", StringRef(s), Loc, symbol, QualType(),
+                    Context(), NotIdentifierToken | LocRangeEndValid);
 
     return true;
   }
 
   void enterSourceFile(SourceLocation Loc) {
     normalizeLocation(&Loc);
-    FileInfo* newFile = getFileInfo(Loc);
+    FileInfo *newFile = getFileInfo(Loc);
     if (!newFile->Interesting) {
       return;
     }
@@ -2595,20 +2628,21 @@ public:
     
     
     
-    visitIdentifier("def", "file", newFile->Realname, SourceRange(Loc),
-                    symbol, QualType(), Context(),
+    visitIdentifier("def", "file", newFile->Realname, SourceRange(Loc), symbol,
+                    QualType(), Context(),
                     NotIdentifierToken | LocRangeEndValid);
   }
 
-  void inclusionDirective(SourceRange FileNameRange, const FileEntry* File) {
+  void inclusionDirective(SourceRange FileNameRange, const FileEntry *File) {
     std::string includedFile(File->tryGetRealPathName());
     FileType type = relativizePath(includedFile);
     if (type == FileType::Unknown) {
       return;
     }
-    std::string symbol =
-        std::string("FILE_") + mangleFile(includedFile, type);
+    std::string symbol = std::string("FILE_") + mangleFile(includedFile, type);
 
+    
+    
     
     
     
@@ -2616,7 +2650,8 @@ public:
     
     
     if (MacroExpansionState) {
-      MacroExpansionState->TokenLocations[FileNameRange.getBegin()] = MacroExpansionState->Expansion.length();
+      MacroExpansionState->TokenLocations[FileNameRange.getBegin()] =
+          MacroExpansionState->Expansion.length();
       MacroExpansionState->Expansion += '"';
       MacroExpansionState->Expansion += includedFile;
       MacroExpansionState->Expansion += '"';
@@ -2640,8 +2675,8 @@ public:
 
     IdentifierInfo *Ident = Tok.getIdentifierInfo();
     if (Ident) {
-      std::string Mangled =
-          std::string("M_") + mangleLocation(Loc, std::string(Ident->getName()));
+      std::string Mangled = std::string("M_") +
+                            mangleLocation(Loc, std::string(Ident->getName()));
       visitIdentifier("def", "macro", Ident->getName(), Loc, Mangled);
     }
   }
@@ -2661,13 +2696,14 @@ public:
     IdentifierInfo *Ident = Tok.getIdentifierInfo();
     if (Ident) {
       std::string Mangled =
-          std::string("M_") +
-          mangleLocation(Macro->getDefinitionLoc(), std::string(Ident->getName()));
+          std::string("M_") + mangleLocation(Macro->getDefinitionLoc(),
+                                             std::string(Ident->getName()));
       visitIdentifier("use", "macro", Ident->getName(), Loc, Mangled);
     }
   }
 
-  void beginMacroExpansion(const Token &Tok, const MacroInfo *Macro, SourceRange Range) {
+  void beginMacroExpansion(const Token &Tok, const MacroInfo *Macro,
+                           SourceRange Range) {
     if (!Macro)
       return;
 
@@ -2683,12 +2719,19 @@ public:
       return;
 
     if (MacroExpansionState) {
-      const auto InMacroArgs = MacroExpansionState->Range.fullyContains(SM.getExpansionRange(Range).getAsRange());
-      const auto InMacroBody = SM.getExpansionLoc(Tok.getLocation()) == SM.getExpansionLoc(MacroExpansionState->MacroNameToken.getLocation());
+      const auto InMacroArgs = MacroExpansionState->Range.fullyContains(
+          SM.getExpansionRange(Range).getAsRange());
+      const auto InMacroBody =
+          SM.getExpansionLoc(Tok.getLocation()) ==
+          SM.getExpansionLoc(MacroExpansionState->MacroNameToken.getLocation());
       if (InMacroArgs || InMacroBody) {
-        if (MacroExpansionState->MacroInfo->getDefinitionLoc() != Macro->getDefinitionLoc()) {
+        if (MacroExpansionState->MacroInfo->getDefinitionLoc() !=
+            Macro->getDefinitionLoc()) {
           IdentifierInfo *DependencyIdent = Tok.getIdentifierInfo();
-          std::string DependencySymbol = std::string("M_") + mangleLocation(Macro->getDefinitionLoc(), std::string(DependencyIdent->getName()));
+          std::string DependencySymbol =
+              std::string("M_") +
+              mangleLocation(Macro->getDefinitionLoc(),
+                             std::string(DependencyIdent->getName()));
 
           MacroExpansionState->Dependencies.push_back(DependencySymbol);
         }
@@ -2701,42 +2744,49 @@ public:
     }
 
     MacroExpansionState = ::MacroExpansionState{
-      .MacroNameToken = Tok,
-      .MacroInfo = Macro,
-      .Expansion = {},
-      .TokenLocations = {},
-      .Range = Range,
-      .PrevPrevTok = {},
-      .PrevTok = {},
+        .MacroNameToken = Tok,
+        .MacroInfo = Macro,
+        .Expansion = {},
+        .TokenLocations = {},
+        .Range = Range,
+        .PrevPrevTok = {},
+        .PrevTok = {},
     };
   }
 
   void endMacroExpansion() {
     
+    
     static constexpr auto includedFileExpansionReformatThreshold = 20'000;
     static constexpr auto mainFileExpansionReformatThreshold = 200'000;
 
-    const auto expansionLocation = SM.getExpansionLoc(MacroExpansionState->MacroNameToken.getLocation());
+    const auto expansionLocation =
+        SM.getExpansionLoc(MacroExpansionState->MacroNameToken.getLocation());
     const auto expansionFilename = SM.getFilename(expansionLocation);
-    const auto includedExtensions = std::array{".h", ".hpp", ".hxx", ".inc", ".def"};
-    const auto isIncludedFile = std::any_of(includedExtensions.begin(), includedExtensions.end(), [&](const auto *extension) {
-      return expansionFilename.ends_with_insensitive(extension);
-    });
-    const auto expansionReformatThreshold = isIncludedFile ? includedFileExpansionReformatThreshold : mainFileExpansionReformatThreshold;
+    const auto includedExtensions =
+        std::array{".h", ".hpp", ".hxx", ".inc", ".def"};
+    const auto isIncludedFile =
+        std::any_of(includedExtensions.begin(), includedExtensions.end(),
+                    [&](const auto *extension) {
+                      return expansionFilename.ends_with_insensitive(extension);
+                    });
+    const auto expansionReformatThreshold =
+        isIncludedFile ? includedFileExpansionReformatThreshold
+                       : mainFileExpansionReformatThreshold;
 
     if (MacroExpansionState->Expansion.length() < expansionReformatThreshold) {
       
       
       auto style = clang::format::getMozillaStyle();
-      if (MacroExpansionState->Expansion.length() > includedFileExpansionReformatThreshold)
+      if (MacroExpansionState->Expansion.length() >
+          includedFileExpansionReformatThreshold)
         style.ColumnLimit = 0;
 
       const auto replacements = clang::format::reformat(
-        style,
-        MacroExpansionState->Expansion,
-        {tooling::Range(0, MacroExpansionState->Expansion.length())}
-      );
-      auto formatted = clang::tooling::applyAllReplacements(MacroExpansionState->Expansion, replacements);
+          style, MacroExpansionState->Expansion,
+          {tooling::Range(0, MacroExpansionState->Expansion.length())});
+      auto formatted = clang::tooling::applyAllReplacements(
+          MacroExpansionState->Expansion, replacements);
       if (formatted) {
         for (auto &[k, v] : MacroExpansionState->TokenLocations) {
           v = replacements.getShiftedCodePosition(v);
@@ -2745,15 +2795,18 @@ public:
       }
     }
 
-    IdentifierInfo *Ident = MacroExpansionState->MacroNameToken.getIdentifierInfo();
+    IdentifierInfo *Ident =
+        MacroExpansionState->MacroNameToken.getIdentifierInfo();
     std::string Symbol =
         std::string("M_") +
-        mangleLocation(MacroExpansionState->MacroInfo->getDefinitionLoc(), std::string(Ident->getName()));
+        mangleLocation(MacroExpansionState->MacroInfo->getDefinitionLoc(),
+                       std::string(Ident->getName()));
 
     const auto dependenciesBegin = MacroExpansionState->Dependencies.begin();
     const auto dependenciesEnd = MacroExpansionState->Dependencies.end();
     std::sort(dependenciesBegin, dependenciesEnd);
-    MacroExpansionState->Dependencies.erase(std::unique(dependenciesBegin, dependenciesEnd), dependenciesEnd);
+    MacroExpansionState->Dependencies.erase(
+        std::unique(dependenciesBegin, dependenciesEnd), dependenciesEnd);
 
     auto Key = Symbol;
     for (const auto &Dependency : MacroExpansionState->Dependencies) {
@@ -2762,18 +2815,19 @@ public:
     }
 
     MacroMaps.emplace(std::pair{
-      MacroExpansionState->MacroNameToken.getLocation(),
-      ExpandedMacro{
-        std::move(Symbol),
-        std::move(Key),
-        std::move(MacroExpansionState->Expansion),
-        std::move(MacroExpansionState->TokenLocations),
-      },
+        MacroExpansionState->MacroNameToken.getLocation(),
+        ExpandedMacro{
+            std::move(Symbol),
+            std::move(Key),
+            std::move(MacroExpansionState->Expansion),
+            std::move(MacroExpansionState->TokenLocations),
+        },
     });
 
     MacroExpansionState.reset();
 
-    macroUsed(MacroExpansionState->MacroNameToken, MacroExpansionState->MacroInfo);
+    macroUsed(MacroExpansionState->MacroNameToken,
+              MacroExpansionState->MacroInfo);
   }
 
   void onTokenLexed(const Token &Tok) {
@@ -2787,7 +2841,8 @@ public:
       return;
     }
 
-    if (ConcatInfo.AvoidConcat(MacroExpansionState->PrevPrevTok, MacroExpansionState->PrevTok, Tok)) {
+    if (ConcatInfo.AvoidConcat(MacroExpansionState->PrevPrevTok,
+                               MacroExpansionState->PrevTok, Tok)) {
       MacroExpansionState->Expansion += ' ';
     }
 
@@ -2799,7 +2854,8 @@ public:
     } else {
       const auto spelling = CI.getPreprocessor().getSpelling(Tok);
       if (Tok.isAnyIdentifier()) {
-        MacroExpansionState->TokenLocations[SLoc] = MacroExpansionState->Expansion.length();
+        MacroExpansionState->TokenLocations[SLoc] =
+            MacroExpansionState->Expansion.length();
       }
       MacroExpansionState->Expansion += spelling;
     }
@@ -2813,45 +2869,42 @@ void PreprocessorHook::FileChanged(SourceLocation Loc, FileChangeReason Reason,
                                    SrcMgr::CharacteristicKind FileType,
                                    FileID PrevFID = FileID()) {
   switch (Reason) {
-    case PPCallbacks::RenameFile:
-    case PPCallbacks::SystemHeaderPragma:
-      
-      break;
-    case PPCallbacks::EnterFile:
-      Indexer->enterSourceFile(Loc);
-      break;
-    case PPCallbacks::ExitFile:
-      
-      break;
+  case PPCallbacks::RenameFile:
+  case PPCallbacks::SystemHeaderPragma:
+    
+    break;
+  case PPCallbacks::EnterFile:
+    Indexer->enterSourceFile(Loc);
+    break;
+  case PPCallbacks::ExitFile:
+    
+    break;
   }
 }
 
-void PreprocessorHook::InclusionDirective(SourceLocation HashLoc,
-                                          const Token &IncludeTok,
-                                          StringRef FileName,
-                                          bool IsAngled,
-                                          CharSourceRange FileNameRange,
+void PreprocessorHook::InclusionDirective(
+    SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
+    bool IsAngled, CharSourceRange FileNameRange,
 #if CLANG_VERSION_MAJOR >= 16
-                                          OptionalFileEntryRef File,
+    OptionalFileEntryRef File,
 #elif CLANG_VERSION_MAJOR >= 15
-                                          Optional<FileEntryRef> File,
+    Optional<FileEntryRef> File,
 #else
-                                          const FileEntry *File,
+    const FileEntry *File,
 #endif
-                                          StringRef SearchPath,
-                                          StringRef RelativePath,
+    StringRef SearchPath, StringRef RelativePath,
 #if CLANG_VERSION_MAJOR >= 19
-                                          const Module *SuggestedModule,
-                                          bool ModuleImported,
+    const Module *SuggestedModule, bool ModuleImported,
 #else
-                                          const Module *Imported,
+    const Module *Imported,
 #endif
-                                          SrcMgr::CharacteristicKind FileType) {
+    SrcMgr::CharacteristicKind FileType) {
 #if CLANG_VERSION_MAJOR >= 15
   if (!File) {
     return;
   }
-  Indexer->inclusionDirective(FileNameRange.getAsRange(), &File->getFileEntry());
+  Indexer->inclusionDirective(FileNameRange.getAsRange(),
+                              &File->getFileEntry());
 #else
   Indexer->inclusionDirective(FileNameRange.getAsRange(), File);
 #endif
@@ -2869,8 +2922,7 @@ void PreprocessorHook::MacroExpands(const Token &Tok, const MacroDefinition &Md,
 
 void PreprocessorHook::MacroUndefined(const Token &Tok,
                                       const MacroDefinition &Md,
-                                      const MacroDirective *Undef)
-{
+                                      const MacroDirective *Undef) {
   Indexer->macroUsed(Tok, Md.getMacroInfo());
 }
 
