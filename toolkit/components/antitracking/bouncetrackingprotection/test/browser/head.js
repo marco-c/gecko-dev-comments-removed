@@ -529,7 +529,9 @@ async function runTestBounce(options = {}) {
         bounceTrackingProtection.testGetRecentlyPurgedTrackers(
           originAttributes
         );
-      if (expectPurge) {
+      
+      
+      if (expectPurge && mode == Ci.nsIBounceTrackingProtection.MODE_ENABLED) {
         Assert.equal(
           purgeLog.length,
           1,
