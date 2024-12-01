@@ -367,7 +367,7 @@ static float GetSuitableScale(float aMaxScale, float aMinScale,
     
     return aMaxScale;
   }
-  return std::clamp(displayVisibleRatio, aMinScale, aMaxScale);
+  return std::max(std::min(aMaxScale, displayVisibleRatio), aMinScale);
 }
 
 
@@ -4391,7 +4391,7 @@ static nscoord GetFitContentSizeForMaxOrPreferredSize(
   }
 
   
-  return std::clamp(size, aMinContentSize, aMaxContentSize);
+  return std::max(aMinContentSize, std::min(aMaxContentSize, size));
 }
 
 
@@ -4529,7 +4529,8 @@ static nscoord AddIntrinsicSizeOffset(
       
       minSize.emplace(0);
     }
-    nscoord fitContentFuncSize = CSSMinMax(*minSize, minContent, maxContent);
+    nscoord fitContentFuncSize =
+        std::max(minContent, std::min(maxContent, *minSize));
     *minSize = NSCoordSaturatingAdd(fitContentFuncSize, boxSizingToMarginDiff);
     if (result < *minSize) {
       result = *minSize;
