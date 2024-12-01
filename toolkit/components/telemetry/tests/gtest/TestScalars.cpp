@@ -46,12 +46,6 @@ TEST_F(TelemetryTestFixture, ScalarUnsigned) {
   CheckUintScalar("telemetry.test.unsigned_int_kind", cx.GetJSContext(),
                   scalarsSnapshot, kExpectedUint);
 
-  
-  const uint32_t kExpectedUintMaximum = kExpectedUint * 2;
-  Telemetry::ScalarSetMaximum(
-      Telemetry::ScalarID::TELEMETRY_TEST_UNSIGNED_INT_KIND,
-      kExpectedUintMaximum);
-
 
 
 #ifndef DEBUG
@@ -64,7 +58,7 @@ TEST_F(TelemetryTestFixture, ScalarUnsigned) {
   
   GetScalarsSnapshot(false, cx.GetJSContext(), &scalarsSnapshot);
   CheckUintScalar("telemetry.test.unsigned_int_kind", cx.GetJSContext(),
-                  scalarsSnapshot, kExpectedUintMaximum);
+                  scalarsSnapshot, kExpectedUint);
 }
 
 
@@ -81,8 +75,6 @@ TEST_F(TelemetryTestFixture, ScalarBoolean) {
 #ifndef DEBUG
   Telemetry::ScalarSet(Telemetry::ScalarID::TELEMETRY_TEST_BOOLEAN_KIND,
                        static_cast<uint32_t>(12));
-  Telemetry::ScalarSetMaximum(Telemetry::ScalarID::TELEMETRY_TEST_BOOLEAN_KIND,
-                              20);
   Telemetry::ScalarAdd(Telemetry::ScalarID::TELEMETRY_TEST_BOOLEAN_KIND, 2);
   Telemetry::ScalarSet(Telemetry::ScalarID::TELEMETRY_TEST_BOOLEAN_KIND,
                        u"test"_ns);
@@ -110,8 +102,6 @@ TEST_F(TelemetryTestFixture, ScalarString) {
 #ifndef DEBUG
   Telemetry::ScalarSet(Telemetry::ScalarID::TELEMETRY_TEST_STRING_KIND,
                        static_cast<uint32_t>(12));
-  Telemetry::ScalarSetMaximum(Telemetry::ScalarID::TELEMETRY_TEST_STRING_KIND,
-                              20);
   Telemetry::ScalarAdd(Telemetry::ScalarID::TELEMETRY_TEST_STRING_KIND, 2);
   Telemetry::ScalarSet(Telemetry::ScalarID::TELEMETRY_TEST_STRING_KIND, true);
 #endif
@@ -159,20 +149,6 @@ TEST_F(TelemetryTestFixture, KeyedScalarUnsigned) {
   CheckKeyedUintScalar(kScalarName, "key2", cx.GetJSContext(), scalarsSnapshot,
                        kKey2Value);
   CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 2);
-
-  
-  const uint32_t kExpectedUintMaximum = kKey1Value * 2;
-  Telemetry::ScalarSetMaximum(
-      Telemetry::ScalarID::TELEMETRY_TEST_KEYED_UNSIGNED_INT, u"key1"_ns,
-      kExpectedUintMaximum);
-
-  GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
-  
-  CheckKeyedUintScalar(kScalarName, "key1", cx.GetJSContext(), scalarsSnapshot,
-                       kExpectedUintMaximum);
-  CheckKeyedUintScalar(kScalarName, "key2", cx.GetJSContext(), scalarsSnapshot,
-                       kKey2Value);
-  CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 2);
 }
 
 TEST_F(TelemetryTestFixture, KeyedScalarBoolean) {
@@ -191,8 +167,6 @@ TEST_F(TelemetryTestFixture, KeyedScalarBoolean) {
 #ifndef DEBUG
   Telemetry::ScalarSet(Telemetry::ScalarID::TELEMETRY_TEST_KEYED_BOOLEAN_KIND,
                        u"key1"_ns, static_cast<uint32_t>(12));
-  Telemetry::ScalarSetMaximum(
-      Telemetry::ScalarID::TELEMETRY_TEST_KEYED_BOOLEAN_KIND, u"key1"_ns, 20);
   Telemetry::ScalarAdd(Telemetry::ScalarID::TELEMETRY_TEST_KEYED_BOOLEAN_KIND,
                        u"key1"_ns, 2);
 #endif
@@ -257,7 +231,6 @@ TEST_F(TelemetryTestFixture, ScalarUnknownID) {
     Telemetry::ScalarSet(scalarId, true);
     Telemetry::ScalarSet(scalarId, u"test"_ns);
     Telemetry::ScalarAdd(scalarId, 1);
-    Telemetry::ScalarSetMaximum(scalarId, 1);
 
     
     JS::Rooted<JS::Value> scalarsSnapshot(cx.GetJSContext());
@@ -269,7 +242,6 @@ TEST_F(TelemetryTestFixture, ScalarUnknownID) {
     Telemetry::ScalarSet(scalarId, u"key1"_ns, static_cast<uint32_t>(1));
     Telemetry::ScalarSet(scalarId, u"key1"_ns, true);
     Telemetry::ScalarAdd(scalarId, u"key1"_ns, 1);
-    Telemetry::ScalarSetMaximum(scalarId, u"key1"_ns, 1);
 
     
     JS::Rooted<JS::Value> keyedSnapshot(cx.GetJSContext());
