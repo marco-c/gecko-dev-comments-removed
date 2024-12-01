@@ -169,6 +169,19 @@ static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
   return (NS_SUCCEEDED(rv) && allowsInlineScript);
 }
 
+static bool IsPromiseValue(JSContext* aCx, JS::Handle<JS::Value> aValue) {
+  if (!aValue.isObject()) {
+    return false;
+  }
+
+  
+  JS::Rooted<JSObject*> obj(aCx, js::CheckedUnwrapStatic(&aValue.toObject()));
+  if (!obj) {
+    return false;
+  }
+
+  return JS::IsPromiseObject(obj);
+}
 
 
 
@@ -180,33 +193,37 @@ static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
 
 
 
-static void ExecScriptAndGetString(JSContext* aCx,
-                                   JS::Handle<JSScript*> aScript,
-                                   JS::MutableHandle<JS::Value> aRetValue,
-                                   mozilla::ErrorResult& aRv) {
+
+static void ExecScriptAndCoerceToString(JSContext* aCx,
+                                        JS::Handle<JSScript*> aScript,
+                                        JS::MutableHandle<JS::Value> aRetValue,
+                                        mozilla::ErrorResult& aRv) {
   MOZ_ASSERT(aScript);
 
-  
-  
   if (!JS_ExecuteScript(aCx, aScript, aRetValue)) {
     aRv.NoteJSContextException(aCx);
     return;
   }
 
-  
-  
-  
-  
-  if (aRetValue.isString()) {
-    return;
+  if (IsPromiseValue(aCx, aRetValue)) {
+    
+    
+    
+    
+    
+    aRetValue.setUndefined();
   }
 
-  
-  
-  
-  
-  
-  aRetValue.setUndefined();
+  if (!aRetValue.isUndefined()) {
+    JSString* str = JS::ToString(aCx, aRetValue);
+    if (!str) {
+      
+      
+      aRv.NoteJSContextException(aCx);
+      return;
+    }
+    aRetValue.set(JS::StringValue(str));
+  }
 }
 
 nsresult nsJSThunk::EvaluateScript(
@@ -388,16 +405,15 @@ nsresult nsJSThunk::EvaluateScript(
 
       if (!erv.Failed()) {
         MOZ_ASSERT(!options.noScriptRval);
-        ExecScriptAndGetString(cx, compiledScript, &v, erv);
+        ExecScriptAndCoerceToString(cx, compiledScript, &v, erv);
       }
     }
     rv = mozilla::dom::EvaluationExceptionToNSResult(erv);
   }
 
   js::AssertSameCompartment(cx, v);
-  MOZ_ASSERT(v.isString() || v.isUndefined());
 
-  if (NS_FAILED(rv)) {
+  if (NS_FAILED(rv) || !(v.isString() || v.isUndefined())) {
     return NS_ERROR_MALFORMED_URI;
   }
   if (v.isUndefined()) {
